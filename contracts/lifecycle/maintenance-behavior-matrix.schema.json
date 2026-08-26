@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hiddenjoya.local/contracts/lifecycle/maintenance-behavior-matrix.schema.json",
+  "title": "Maintenance Behavior Matrix",
+  "description": "DEC-001 Maintenance 行为矩阵的结构契约。behaviors 为封闭键集合（additionalProperties=false），未列出的行为按矩阵 fallbackPolicy=deny 失败关闭。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "type": "object",
+  "required": [
+    "matrixVersion",
+    "updatedAt",
+    "x-decision-versions",
+    "status",
+    "description",
+    "subject",
+    "fallbackPolicy",
+    "commandPolicy",
+    "behaviors",
+    "frozenUpgradePath"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "matrixVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "矩阵自身版本。provisional 为 0.x；DEC-001 冻结后必须 >= 1.0.0。"
+    },
+    "updatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "UTC ISO-8601 时间戳。"
+    },
+    "x-decision-versions": {
+      "type": "array",
+      "description": "决策追溯引用，格式 决策ID@semver；必须包含 DEC-001@<当前登记版本>。"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["provisional", "frozen"],
+      "description": "provisional=暂定值（DEC-001 pending/proposed）；frozen=已冻结（DEC-001 frozen）。"
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "subject": {
+      "type": "object",
+      "required": ["operationalStatus", "independentState", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "operationalStatus": { "type": "string", "enum": ["MAINTENANCE"] },
+        "independentState": { "type": "boolean", "enum": [true] },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "fallbackPolicy": {
+      "type": "string",
+      "enum": ["deny"],
+      "description": "未列出行为的默认策略：失败关闭，禁止默认放行。"
+    },
+    "commandPolicy": {
+      "type": "object",
+      "required": ["mode", "reference", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["same-as-suspended", "explicit"],
+          "description": "same-as-suspended=命令允许集合引用 command-catalog.json 的 Suspended 限制；explicit=冻结后可改为显式列举。"
+        },
+        "reference": { "type": "string", "minLength": 1 },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "behaviors": {
+      "type": "object",
+      "required": [
+        "SYNC",
+        "MAINTENANCE_COMMANDS",
+        "PROCESSING_COMMANDS",
+        "TELEMETRY_INGESTION",
+        "ALARM_EVENT_TAMPER_PROCESSING",
+        "OTA",
+        "RETIREMENT"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "SYNC": { "$ref": "#/$defs/behavior" },
+        "MAINTENANCE_COMMANDS": { "$ref": "#/$defs/behavior" },
+        "PROCESSING_COMMANDS": { "$ref": "#/$defs/behavior" },
+        "TELEMETRY_INGESTION": { "$ref": "#/$defs/behavior" },
+        "ALARM_EVENT_TAMPER_PROCESSING": { "$ref": "#/$defs/behavior" },
+        "OTA": { "$ref": "#/$defs/behavior" },
+        "RETIREMENT": { "$ref": "#/$defs/behavior" }
+      }
+    },
+    "frozenUpgradePath": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "behavior": {
+      "type": "object",
+      "required": ["allowed", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "allowed": { "type": "boolean" },
+        "syncIntervalSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "仅 SYNC 行为使用；Maintenance 下设备 Sync 节奏（秒）。"
+        },
+        "consumers": {
+          "type": "array",
+          "description": "消费该行为条目的任务 ID（DOM-01、BE-SYNC-01、BE-DEV-04、BE-CMD-01、BE-CMD-02 等）。"
+        },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

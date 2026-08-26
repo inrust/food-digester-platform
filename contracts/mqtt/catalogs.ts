@@ -3,7 +3,7 @@
  *
  * 事实源：contracts/mqtt/notification-catalog.json 与 command-catalog.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-001@0.1.0（MAINTENANCE 暂定按 Suspended 限制）。
+ * 决策追溯：DEC-001@0.2.0（MAINTENANCE 暂定按 Suspended 限制）。
  *
  * 功能边界：不实现 MQTT 发布或设备动作。
  */
