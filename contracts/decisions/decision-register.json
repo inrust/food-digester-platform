@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.5.0",
-  "updatedAt": "2026-08-26T07:08:54Z",
+  "registerVersion": "1.6.0",
+  "updatedAt": "2026-08-26T08:30:42Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -218,7 +218,7 @@
     },
     {
       "id": "DEC-006",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "status": "pending",
       "title": "下行消息是否补充 meta.seq",
       "conflict": "下行消息（Command 等）是否强制 meta.seq 序号未冻结，影响下行 Schema 与幂等键设计。",
@@ -234,6 +234,12 @@
           "at": "2026-08-26T00:00:00Z",
           "by": "CT-01",
           "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        },
+        {
+          "version": "0.2.0",
+          "at": "2026-08-26T08:30:42Z",
+          "by": "DEC-006",
+          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/mqtt/downlink-policy.json + 查询模块与测试；暂定值（V1 下行不强制 meta.seq、Command 以 meta.id 幂等）已由 common.schema.json 承载并显式化为策略事实源，测试锁定 metaBase/metaSeq 与 cmd/notification/ota 引用一致性；冻结值若变化按 additive-contract-change 演进；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
         }
       ]
     },

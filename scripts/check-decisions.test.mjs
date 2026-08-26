@@ -255,11 +255,12 @@ test('追溯校验：缺少 x-decision-versions 或格式非法被拒绝', () =>
 
 test('追溯校验：嵌套在 OpenAPI info 下的 x-decision-versions 可被递归发现', () => {
   const register = realRegister();
+  const dec006 = register.decisions.find((d) => d.id === 'DEC-006');
   withTraceFixture(
     {
       'openapi.json': {
         openapi: '3.1.0',
-        info: { title: 'x', version: '0.1.0', 'x-decision-versions': ['DEC-006@0.1.0'] },
+        info: { title: 'x', version: '0.1.0', 'x-decision-versions': [`DEC-006@${dec006.version}`] },
         paths: {},
       },
     },
