@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.4.0",
-  "updatedAt": "2026-08-26T06:44:03Z",
+  "registerVersion": "1.5.0",
+  "updatedAt": "2026-08-26T07:08:54Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -191,7 +191,7 @@
     },
     {
       "id": "DEC-005",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "status": "pending",
       "title": "Media 文件与元数据保留期",
       "conflict": "Media 文件与元数据的保留期限未冻结，影响 S3/RDS 存储与查询接口语义。",
@@ -207,6 +207,12 @@
           "at": "2026-08-26T00:00:00Z",
           "by": "CT-01",
           "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        },
+        {
+          "version": "0.2.0",
+          "at": "2026-08-26T07:08:54Z",
+          "by": "DEC-005",
+          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/media/media-retention-policy.json + 查询模块与测试；存储分离（RDS 元数据 / S3 文件）锁定可执行；保留天数与到期处置行为显式标记 null，读取失败关闭，冻结前禁止任何自动过期/删除；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
         }
       ]
     },
