@@ -43,14 +43,34 @@ test('负向结构：AWS 授权、矩阵可编辑与缺失字段被 Schema 拒�
     return validate(policySchema, 'role-mapping-policy.schema.json', m, registry);
   };
   // Operator 授予 AWS 资源权限被拒绝（锁定 false）
-  assert.ok(run((m) => { (m.awsPermissions as Record<string, unknown>).operatorGetsAwsResourceAccess = true; }).some((e) => e.path === 'awsPermissions.operatorGetsAwsResourceAccess' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.awsPermissions as Record<string, unknown>).operatorGetsAwsResourceAccess = true;
+    }).some((e) => e.path === 'awsPermissions.operatorGetsAwsResourceAccess' && e.keyword === 'enum'),
+  );
   // 权限矩阵可编辑被拒绝（锁定 true）
-  assert.ok(run((m) => { (m.matrix as Record<string, unknown>).permissionMatrixFixed = false; }).some((e) => e.path === 'matrix.permissionMatrixFixed' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.matrix as Record<string, unknown>).permissionMatrixFixed = false;
+    }).some((e) => e.path === 'matrix.permissionMatrixFixed' && e.keyword === 'enum'),
+  );
   // 复选框可编辑被拒绝（锁定 true）
-  assert.ok(run((m) => { (m.matrix as Record<string, unknown>).prototypeCheckboxesReadonly = false; }).some((e) => e.path === 'matrix.prototypeCheckboxesReadonly' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.matrix as Record<string, unknown>).prototypeCheckboxesReadonly = false;
+    }).some((e) => e.path === 'matrix.prototypeCheckboxesReadonly' && e.keyword === 'enum'),
+  );
   // 缺字段与额外字段被拒绝
-  assert.ok(run((m) => { delete m.roleMappings; }).some((e) => e.keyword === 'required'));
-  assert.ok(run((m) => { m.extra = 1; }).some((e) => e.keyword === 'additionalProperties'));
+  assert.ok(
+    run((m) => {
+      delete m.roleMappings;
+    }).some((e) => e.keyword === 'required'),
+  );
+  assert.ok(
+    run((m) => {
+      m.extra = 1;
+    }).some((e) => e.keyword === 'additionalProperties'),
+  );
 });
 
 test('x-decision-versions 引用 DEC-012 且版本与决策登记一致；prototype-traceability.yaml 同步', () => {
@@ -58,7 +78,10 @@ test('x-decision-versions 引用 DEC-012 且版本与决策登记一致；protot
   const dec012 = registerJson.decisions.find((d: { id: string }) => d.id === 'DEC-012');
   assert.ok(dec012, '决策登记必须包含 DEC-012');
   assert.ok(refs.includes(`DEC-012@${dec012.version}`), `引用必须包含 DEC-012@${dec012.version}`);
-  assert.ok(traceabilityYaml.includes(`DEC-012@${dec012.version}`), 'prototype-traceability.yaml 必须引用 DEC-012 当前登记版本');
+  assert.ok(
+    traceabilityYaml.includes(`DEC-012@${dec012.version}`),
+    'prototype-traceability.yaml 必须引用 DEC-012 当前登记版本',
+  );
   if (dec012.status !== 'frozen') {
     assert.equal(policyJson.status, 'provisional');
     assert.ok(policyJson.policyVersion.startsWith('0.'));
@@ -105,7 +128,10 @@ test('TS 常量与 role-mapping-policy.json 完全一致', () => {
   assert.deepEqual(policyJson.roleMappings.mappings, [...ROLE_MAPPING_POLICY.roleMappings.mappings]);
   assert.equal(policyJson.roleMappings.note, ROLE_MAPPING_POLICY.roleMappings.note);
   assert.deepEqual(policyJson.roleMappings.consumers, [...ROLE_MAPPING_POLICY.roleMappings.consumers]);
-  assert.equal(policyJson.awsPermissions.operatorGetsAwsResourceAccess, ROLE_MAPPING_POLICY.awsPermissions.operatorGetsAwsResourceAccess);
+  assert.equal(
+    policyJson.awsPermissions.operatorGetsAwsResourceAccess,
+    ROLE_MAPPING_POLICY.awsPermissions.operatorGetsAwsResourceAccess,
+  );
   assert.equal(policyJson.awsPermissions.note, ROLE_MAPPING_POLICY.awsPermissions.note);
   assert.deepEqual(policyJson.awsPermissions.consumers, [...ROLE_MAPPING_POLICY.awsPermissions.consumers]);
   assert.equal(policyJson.matrix.permissionMatrixFixed, ROLE_MAPPING_POLICY.matrix.permissionMatrixFixed);

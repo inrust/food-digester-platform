@@ -45,15 +45,35 @@ test('负向结构：缺失必填字段、非法枚举与额外行为键被 Sche
     return validate(schemaJson, 'maintenance-behavior-matrix.schema.json', m, registry);
   };
   // 缺少必填字段
-  assert.ok(run((m) => { delete m.matrixVersion; }).some((e) => e.keyword === 'required'));
+  assert.ok(
+    run((m) => {
+      delete m.matrixVersion;
+    }).some((e) => e.keyword === 'required'),
+  );
   // status 非法枚举
-  assert.ok(run((m) => { m.status = 'draft'; }).some((e) => e.path === 'status' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      m.status = 'draft';
+    }).some((e) => e.path === 'status' && e.keyword === 'enum'),
+  );
   // fallbackPolicy 必须为 deny（失败关闭）
-  assert.ok(run((m) => { m.fallbackPolicy = 'allow'; }).some((e) => e.path === 'fallbackPolicy' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      m.fallbackPolicy = 'allow';
+    }).some((e) => e.path === 'fallbackPolicy' && e.keyword === 'enum'),
+  );
   // 额外行为键被拒绝（封闭键集合）
-  assert.ok(run((m) => { (m.behaviors as Record<string, unknown>).REALTIME_VIDEO = { allowed: true, consumers: ['FE-14'], note: 'x' }; }).some((e) => e.keyword === 'additionalProperties'));
+  assert.ok(
+    run((m) => {
+      (m.behaviors as Record<string, unknown>).REALTIME_VIDEO = { allowed: true, consumers: ['FE-14'], note: 'x' };
+    }).some((e) => e.keyword === 'additionalProperties'),
+  );
   // 行为缺少 note
-  assert.ok(run((m) => { delete (m.behaviors as Record<string, Record<string, unknown>>).OTA.note; }).some((e) => e.path.startsWith('behaviors.OTA') && e.keyword === 'required'));
+  assert.ok(
+    run((m) => {
+      delete (m.behaviors as Record<string, Record<string, unknown>>).OTA.note;
+    }).some((e) => e.path.startsWith('behaviors.OTA') && e.keyword === 'required'),
+  );
 });
 
 test('x-decision-versions 引用 DEC-001 且版本与决策登记一致', () => {
@@ -71,7 +91,14 @@ test('x-decision-versions 引用 DEC-001 且版本与决策登记一致', () => 
 test('暂定值：独立状态；允许维护、同步、遥测、告警和 OTA', () => {
   assert.equal(matrixJson.subject.operationalStatus, 'MAINTENANCE');
   assert.equal(matrixJson.subject.independentState, true);
-  for (const b of ['SYNC', 'MAINTENANCE_COMMANDS', 'TELEMETRY_INGESTION', 'ALARM_EVENT_TAMPER_PROCESSING', 'OTA', 'RETIREMENT'] as const) {
+  for (const b of [
+    'SYNC',
+    'MAINTENANCE_COMMANDS',
+    'TELEMETRY_INGESTION',
+    'ALARM_EVENT_TAMPER_PROCESSING',
+    'OTA',
+    'RETIREMENT',
+  ] as const) {
     assert.equal(isMaintenanceBehaviorAllowed(b), true, `${b} 必须允许`);
   }
   // 启动处理类命令在 Maintenance 拒绝（与 Suspended 一致）
@@ -88,7 +115,7 @@ test('失败关闭：未知行为拒绝并抛出稳定错误', () => {
   assert.equal(isKnownMaintenanceBehavior('OTA'), true);
   assert.throws(
     () => getMaintenanceBehavior('REALTIME_VIDEO'),
-    (e: unknown) => e instanceof MaintenanceMatrixError && (e as MaintenanceMatrixError).kind === 'UNKNOWN_BEHAVIOR'
+    (e: unknown) => e instanceof MaintenanceMatrixError && (e as MaintenanceMatrixError).kind === 'UNKNOWN_BEHAVIOR',
   );
 });
 
@@ -98,7 +125,7 @@ test('命令策略与 command-catalog 一致：Maintenance 允许集合 == Suspe
     assert.equal(
       isMaintenanceCommandAllowed(code),
       isCommandAllowed(code, 'SUSPENDED'),
-      `${code} 在 Maintenance 应与 Suspended 一致（暂定值）`
+      `${code} 在 Maintenance 应与 Suspended 一致（暂定值）`,
     );
   }
   // 维护/停止/同步类允许
@@ -106,7 +133,14 @@ test('命令策略与 command-catalog 一致：Maintenance 允许集合 == Suspe
     assert.equal(isMaintenanceCommandAllowed(c), true, `${c} 必须允许`);
   }
   // 启动处理类拒绝
-  for (const c of ['START', 'RESUME', 'AGITATOR_FORWARD', 'HEATING_ON', 'DISCHARGE_START', 'FACTORY_RESET'] as CommandCode[]) {
+  for (const c of [
+    'START',
+    'RESUME',
+    'AGITATOR_FORWARD',
+    'HEATING_ON',
+    'DISCHARGE_START',
+    'FACTORY_RESET',
+  ] as CommandCode[]) {
     assert.equal(isMaintenanceCommandAllowed(c), false, `${c} 必须拒绝`);
   }
   // 未知命令失败关闭
@@ -140,10 +174,7 @@ test('TS 常量与 maintenance-behavior-matrix.json 完全一致', () => {
   assert.equal(matrixJson.fallbackPolicy, MAINTENANCE_BEHAVIOR_MATRIX.fallbackPolicy);
   assert.equal(matrixJson.commandPolicy.mode, MAINTENANCE_BEHAVIOR_MATRIX.commandPolicy.mode);
   assert.equal(matrixJson.commandPolicy.reference, MAINTENANCE_BEHAVIOR_MATRIX.commandPolicy.reference);
-  assert.deepEqual(
-    Object.keys(matrixJson.behaviors).sort(),
-    [...ALL_BEHAVIORS].sort()
-  );
+  assert.deepEqual(Object.keys(matrixJson.behaviors).sort(), [...ALL_BEHAVIORS].sort());
   for (const b of ALL_BEHAVIORS) {
     const json = matrixJson.behaviors[b];
     const spec = MAINTENANCE_BEHAVIOR_MATRIX.behaviors[b];

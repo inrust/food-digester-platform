@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { assert, test } from 'vitest';
 import { SERVICE_NAME, serviceLayers } from '../src/index.js';
 
 test('summary-worker 骨架可加载', () => {

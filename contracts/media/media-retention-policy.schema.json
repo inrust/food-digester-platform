@@ -53,9 +53,21 @@
       "required": ["metadataRetentionDays", "fileRetentionDays", "expiryAction", "consumers", "note"],
       "additionalProperties": false,
       "properties": {
-        "metadataRetentionDays": { "type": ["integer", "null"], "minimum": 1, "description": "DEC-005 待冻结参数：RDS 元数据保留天数。provisional 为 null。" },
-        "fileRetentionDays": { "type": ["integer", "null"], "minimum": 1, "description": "DEC-005 待冻结参数：S3 文件保留天数。provisional 为 null。" },
-        "expiryAction": { "type": ["string", "null"], "enum": ["delete", "archive", "delete-file-keep-metadata", null], "description": "DEC-005 待冻结参数：到期处置行为。provisional 为 null。" },
+        "metadataRetentionDays": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "DEC-005 待冻结参数：RDS 元数据保留天数。provisional 为 null。"
+        },
+        "fileRetentionDays": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "DEC-005 待冻结参数：S3 文件保留天数。provisional 为 null。"
+        },
+        "expiryAction": {
+          "type": ["string", "null"],
+          "enum": ["delete", "archive", "delete-file-keep-metadata", null],
+          "description": "DEC-005 待冻结参数：到期处置行为。provisional 为 null。"
+        },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }
       }

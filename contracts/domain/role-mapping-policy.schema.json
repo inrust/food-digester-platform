@@ -43,7 +43,10 @@
       "required": ["mappings", "consumers", "note"],
       "additionalProperties": false,
       "properties": {
-        "mappings": { "type": "array", "description": "原型角色 → 系统角色封闭映射，元素含 prototypeRole/systemRole/uiName。" },
+        "mappings": {
+          "type": "array",
+          "description": "原型角色 → 系统角色封闭映射，元素含 prototypeRole/systemRole/uiName。"
+        },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }
       }
@@ -53,7 +56,11 @@
       "required": ["operatorGetsAwsResourceAccess", "consumers", "note"],
       "additionalProperties": false,
       "properties": {
-        "operatorGetsAwsResourceAccess": { "type": "boolean", "enum": [false], "description": "PlatformOperator 不授予 AWS 资源权限，锁定为 false。" },
+        "operatorGetsAwsResourceAccess": {
+          "type": "boolean",
+          "enum": [false],
+          "description": "PlatformOperator 不授予 AWS 资源权限，锁定为 false。"
+        },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }
       }
@@ -64,7 +71,11 @@
       "additionalProperties": false,
       "properties": {
         "permissionMatrixFixed": { "type": "boolean", "enum": [true], "description": "V1 权限矩阵固定，锁定为 true。" },
-        "prototypeCheckboxesReadonly": { "type": "boolean", "enum": [true], "description": "原型权限复选框只读，锁定为 true。" },
+        "prototypeCheckboxesReadonly": {
+          "type": "boolean",
+          "enum": [true],
+          "description": "原型权限复选框只读，锁定为 true。"
+        },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }
       }

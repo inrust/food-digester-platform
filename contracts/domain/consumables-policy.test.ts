@@ -44,18 +44,39 @@ test('负向结构：数据来源篡改与缺失字段被 Schema 拒绝', () => 
     return validate(policySchema, 'consumables-policy.schema.json', m, registry);
   };
   // 云端臆测百分比被拒绝（锁定 false）
-  assert.ok(run((m) => { (m.dataSource as Record<string, unknown>).cloudDerivedPercentage = true; }).some((e) => e.path === 'dataSource.cloudDerivedPercentage' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.dataSource as Record<string, unknown>).cloudDerivedPercentage = true;
+    }).some((e) => e.path === 'dataSource.cloudDerivedPercentage' && e.keyword === 'enum'),
+  );
   // 数据来源锁定 device-reported-only
-  assert.ok(run((m) => { (m.dataSource as Record<string, unknown>).mode = 'cloud-computed'; }).some((e) => e.path === 'dataSource.mode' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.dataSource as Record<string, unknown>).mode = 'cloud-computed';
+    }).some((e) => e.path === 'dataSource.mode' && e.keyword === 'enum'),
+  );
   // 冻结参数允许填入（frozen 后合法）
-  assert.deepEqual(run((m) => {
-    const d = m.display as Record<string, Record<string, unknown>>;
-    d.names.CARBON_FILTER = '碳滤网'; d.names.BIO_ADDITIVE = '生物添加剂';
-    d.thresholds.CARBON_FILTER = 20; d.thresholds.BIO_ADDITIVE = 15;
-  }), []);
+  assert.deepEqual(
+    run((m) => {
+      const d = m.display as Record<string, Record<string, unknown>>;
+      d.names.CARBON_FILTER = '碳滤网';
+      d.names.BIO_ADDITIVE = '生物添加剂';
+      d.thresholds.CARBON_FILTER = 20;
+      d.thresholds.BIO_ADDITIVE = 15;
+    }),
+    [],
+  );
   // 缺字段与额外字段被拒绝
-  assert.ok(run((m) => { delete m.display; }).some((e) => e.keyword === 'required'));
-  assert.ok(run((m) => { m.extra = 1; }).some((e) => e.keyword === 'additionalProperties'));
+  assert.ok(
+    run((m) => {
+      delete m.display;
+    }).some((e) => e.keyword === 'required'),
+  );
+  assert.ok(
+    run((m) => {
+      m.extra = 1;
+    }).some((e) => e.keyword === 'additionalProperties'),
+  );
 });
 
 test('x-decision-versions 引用 DEC-008 且版本与决策登记一致；prototype-traceability.yaml 同步', () => {
@@ -63,7 +84,10 @@ test('x-decision-versions 引用 DEC-008 且版本与决策登记一致；protot
   const dec008 = registerJson.decisions.find((d: { id: string }) => d.id === 'DEC-008');
   assert.ok(dec008, '决策登记必须包含 DEC-008');
   assert.ok(refs.includes(`DEC-008@${dec008.version}`), `引用必须包含 DEC-008@${dec008.version}`);
-  assert.ok(traceabilityYaml.includes(`DEC-008@${dec008.version}`), 'prototype-traceability.yaml 必须引用 DEC-008 当前登记版本');
+  assert.ok(
+    traceabilityYaml.includes(`DEC-008@${dec008.version}`),
+    'prototype-traceability.yaml 必须引用 DEC-008 当前登记版本',
+  );
   if (dec008.status !== 'frozen') {
     assert.equal(policyJson.status, 'provisional');
     assert.ok(policyJson.policyVersion.startsWith('0.'));
@@ -83,13 +107,30 @@ test('待冻结参数失败关闭：正式名称与阈值禁止臆测', () => {
   for (const code of ['CARBON_FILTER', 'BIO_ADDITIVE'] as const) {
     assert.equal(CONSUMABLES_POLICY.display.names[code], null);
     assert.equal(CONSUMABLES_POLICY.display.thresholds[code], null);
-    assert.throws(() => getConsumableDisplayName(code), (e: unknown) => e instanceof PolicyParameterPendingError);
-    assert.throws(() => getConsumableThreshold(code), (e: unknown) => e instanceof PolicyParameterPendingError);
+    assert.throws(
+      () => getConsumableDisplayName(code),
+      (e: unknown) => e instanceof PolicyParameterPendingError,
+    );
+    assert.throws(
+      () => getConsumableThreshold(code),
+      (e: unknown) => e instanceof PolicyParameterPendingError,
+    );
   }
   // 未知类型优先失败关闭
-  assert.throws(() => getConsumableDisplayName('FILTER'), (e: unknown) => e instanceof UnknownConsumableTypeError);
-  assert.throws(() => getConsumableThreshold('FILTER'), (e: unknown) => e instanceof UnknownConsumableTypeError);
-  assert.deepEqual([...CONSUMABLES_POLICY.pendingParameters].sort(), ['display.names.BIO_ADDITIVE', 'display.names.CARBON_FILTER', 'display.thresholds.BIO_ADDITIVE', 'display.thresholds.CARBON_FILTER']);
+  assert.throws(
+    () => getConsumableDisplayName('FILTER'),
+    (e: unknown) => e instanceof UnknownConsumableTypeError,
+  );
+  assert.throws(
+    () => getConsumableThreshold('FILTER'),
+    (e: unknown) => e instanceof UnknownConsumableTypeError,
+  );
+  assert.deepEqual([...CONSUMABLES_POLICY.pendingParameters].sort(), [
+    'display.names.BIO_ADDITIVE',
+    'display.names.CARBON_FILTER',
+    'display.thresholds.BIO_ADDITIVE',
+    'display.thresholds.CARBON_FILTER',
+  ]);
 });
 
 test('策略消费者均为合法任务 ID 且覆盖 DEC-008 阻塞任务', () => {

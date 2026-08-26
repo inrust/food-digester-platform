@@ -10,17 +10,47 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
   "tags": [
-    { "name": "device", "description": "/api/v1/device/* 设备 mTLS API", "x-path-prefix": "/api/v1/device", "x-auth": "DeviceMtls" },
-    { "name": "admin", "description": "/api/v1/admin/* 平台管理 API", "x-path-prefix": "/api/v1/admin", "x-auth": "CognitoJwt" },
-    { "name": "customer", "description": "/api/v1/customer/* Customer 业务 API", "x-path-prefix": "/api/v1/customer", "x-auth": "CognitoJwt" },
-    { "name": "internal", "description": "/api/v1/internal/* 仅限云端任务调用", "x-path-prefix": "/api/v1/internal", "x-auth": "InternalKey" }
+    {
+      "name": "device",
+      "description": "/api/v1/device/* 设备 mTLS API",
+      "x-path-prefix": "/api/v1/device",
+      "x-auth": "DeviceMtls"
+    },
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 平台管理 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    },
+    {
+      "name": "customer",
+      "description": "/api/v1/customer/* Customer 业务 API",
+      "x-path-prefix": "/api/v1/customer",
+      "x-auth": "CognitoJwt"
+    },
+    {
+      "name": "internal",
+      "description": "/api/v1/internal/* 仅限云端任务调用",
+      "x-path-prefix": "/api/v1/internal",
+      "x-auth": "InternalKey"
+    }
   ],
   "paths": {},
   "components": {
     "securitySchemes": {
       "DeviceMtls": { "type": "mutualTLS", "description": "设备 X.509 mTLS（API Gateway 自定义域名）" },
-      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT", "description": "Cognito User Pool JWT" },
-      "InternalKey": { "type": "apiKey", "in": "header", "name": "X-Internal-Key", "description": "云端内部任务调用凭证" }
+      "CognitoJwt": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Cognito User Pool JWT"
+      },
+      "InternalKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Internal-Key",
+        "description": "云端内部任务调用凭证"
+      }
     },
     "parameters": {
       "IdempotencyKey": {
@@ -53,7 +83,12 @@
     },
     "schemas": {
       "IdempotencyKeyValue": { "type": "string", "pattern": "^[A-Za-z0-9_:-]{1,128}$" },
-      "UtcTimestamp": { "type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$", "description": "UTC ISO 8601，以 Z 结尾" },
+      "UtcTimestamp": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+        "description": "UTC ISO 8601，以 Z 结尾"
+      },
       "ResponseMeta": {
         "type": "object",
         "required": ["requestId", "timestamp"],
@@ -105,7 +140,11 @@
         "additionalProperties": false,
         "properties": {
           "code": { "$ref": "#/components/schemas/ErrorCode" },
-          "message": { "type": "string", "minLength": 1, "description": "对客户端安全的描述；不得包含堆栈、SQL 或 AWS 内部错误" },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "description": "对客户端安全的描述；不得包含堆栈、SQL 或 AWS 内部错误"
+          },
           "requestId": { "type": "string", "minLength": 1 }
         }
       },
@@ -119,12 +158,30 @@
       }
     },
     "responses": {
-      "BadRequest": { "description": "校验失败", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "Unauthorized": { "description": "未认证", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "Forbidden": { "description": "无权限", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "NotFound": { "description": "不存在", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "Conflict": { "description": "业务/版本/幂等冲突", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "InternalError": { "description": "内部错误（不暴露细节）", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+      "BadRequest": {
+        "description": "校验失败",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "Unauthorized": {
+        "description": "未认证",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "Forbidden": {
+        "description": "无权限",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "NotFound": {
+        "description": "不存在",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "Conflict": {
+        "description": "业务/版本/幂等冲突",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      }
     }
   }
 }

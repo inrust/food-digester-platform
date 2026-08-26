@@ -109,7 +109,12 @@ export function renderTypes(schemaDir) {
   out.push('');
   out.push('/** Topic type 到 Payload 类型的映射。 */');
   out.push('export interface PayloadByTopicType {');
-  out.push(indent(payloadNames.map(([t, p]) => `${t}: ${p};`), '  '));
+  out.push(
+    indent(
+      payloadNames.map(([t, p]) => `${t}: ${p};`),
+      '  ',
+    ),
+  );
   out.push('}');
   out.push('');
   return out.join('\n');

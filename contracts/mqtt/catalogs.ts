@@ -47,12 +47,24 @@ export const NOTIFICATION_CATALOG: Readonly<Record<NotificationType, Notificatio
   USERS_CHANGED: { type: 'USERS_CHANGED', deviceAction: 'SYNC', description: '调用 /api/v1/device/sync' },
   STATUS_CHANGED: { type: 'STATUS_CHANGED', deviceAction: 'SYNC', description: '调用 /api/v1/device/sync' },
   ASSIGNMENT_CHANGED: { type: 'ASSIGNMENT_CHANGED', deviceAction: 'SYNC', description: '调用 /api/v1/device/sync' },
-  CERTIFICATE_EXPIRING: { type: 'CERTIFICATE_EXPIRING', deviceAction: 'CHECK_CERTIFICATE_STATUS', description: '调用证书状态 API' },
-  CERTIFICATE_ROTATION_REQUIRED: { type: 'CERTIFICATE_ROTATION_REQUIRED', deviceAction: 'ROTATE_CERTIFICATE', description: '调用证书轮换 API' },
+  CERTIFICATE_EXPIRING: {
+    type: 'CERTIFICATE_EXPIRING',
+    deviceAction: 'CHECK_CERTIFICATE_STATUS',
+    description: '调用证书状态 API',
+  },
+  CERTIFICATE_ROTATION_REQUIRED: {
+    type: 'CERTIFICATE_ROTATION_REQUIRED',
+    deviceAction: 'ROTATE_CERTIFICATE',
+    description: '调用证书轮换 API',
+  },
   OTA_AVAILABLE: { type: 'OTA_AVAILABLE', deviceAction: 'AWAIT_OTA_MESSAGE', description: '等待/接收 OTA Topic' },
   OTA_CANCELLED: { type: 'OTA_CANCELLED', deviceAction: 'CANCEL_PENDING_OTA', description: '取消待执行升级' },
   SECURITY_POLICY_UPDATED: { type: 'SECURITY_POLICY_UPDATED', deviceAction: 'SYNC', description: 'Sync 最新安全策略' },
-  DEVICE_SUSPENDED: { type: 'DEVICE_SUSPENDED', deviceAction: 'ENTER_SUSPENDED_MODE', description: '进入 Suspended 模式' },
+  DEVICE_SUSPENDED: {
+    type: 'DEVICE_SUSPENDED',
+    deviceAction: 'ENTER_SUSPENDED_MODE',
+    description: '进入 Suspended 模式',
+  },
   DEVICE_RETIRED: { type: 'DEVICE_RETIRED', deviceAction: 'ENTER_RETIRED_MODE', description: '进入 Retired 模式' },
 } as const;
 
@@ -105,7 +117,12 @@ export const COMMAND_CATALOG: Readonly<Record<CommandCode, CommandSpec>> = {
   STOP: { command: 'STOP', category: 'MACHINE', highRisk: false, allowedStatuses: STOP_DIAG_SYNC_MAINT },
   PAUSE: { command: 'PAUSE', category: 'MACHINE', highRisk: false, allowedStatuses: ACTIVE_ONLY },
   RESUME: { command: 'RESUME', category: 'MACHINE', highRisk: false, allowedStatuses: ACTIVE_ONLY },
-  EMERGENCY_STOP: { command: 'EMERGENCY_STOP', category: 'MACHINE', highRisk: true, allowedStatuses: STOP_DIAG_SYNC_MAINT },
+  EMERGENCY_STOP: {
+    command: 'EMERGENCY_STOP',
+    category: 'MACHINE',
+    highRisk: true,
+    allowedStatuses: STOP_DIAG_SYNC_MAINT,
+  },
   // Motor
   AGITATOR_FORWARD: { command: 'AGITATOR_FORWARD', category: 'MOTOR', highRisk: true, allowedStatuses: ACTIVE_ONLY },
   AGITATOR_REVERSE: { command: 'AGITATOR_REVERSE', category: 'MOTOR', highRisk: true, allowedStatuses: ACTIVE_ONLY },
@@ -113,20 +130,45 @@ export const COMMAND_CATALOG: Readonly<Record<CommandCode, CommandSpec>> = {
   // Heating
   HEATING_ON: { command: 'HEATING_ON', category: 'HEATING', highRisk: true, allowedStatuses: ACTIVE_ONLY },
   HEATING_OFF: { command: 'HEATING_OFF', category: 'HEATING', highRisk: true, allowedStatuses: STOP_DIAG_SYNC_MAINT },
-  SET_TARGET_TEMPERATURE: { command: 'SET_TARGET_TEMPERATURE', category: 'HEATING', highRisk: true, allowedStatuses: ACTIVE_ONLY },
+  SET_TARGET_TEMPERATURE: {
+    command: 'SET_TARGET_TEMPERATURE',
+    category: 'HEATING',
+    highRisk: true,
+    allowedStatuses: ACTIVE_ONLY,
+  },
   // Ventilation
   EXHAUST_ON: { command: 'EXHAUST_ON', category: 'VENTILATION', highRisk: false, allowedStatuses: ACTIVE_ONLY },
-  EXHAUST_OFF: { command: 'EXHAUST_OFF', category: 'VENTILATION', highRisk: false, allowedStatuses: STOP_DIAG_SYNC_MAINT },
+  EXHAUST_OFF: {
+    command: 'EXHAUST_OFF',
+    category: 'VENTILATION',
+    highRisk: false,
+    allowedStatuses: STOP_DIAG_SYNC_MAINT,
+  },
   AIR_SUPPLY_ON: { command: 'AIR_SUPPLY_ON', category: 'VENTILATION', highRisk: false, allowedStatuses: ACTIVE_ONLY },
-  AIR_SUPPLY_OFF: { command: 'AIR_SUPPLY_OFF', category: 'VENTILATION', highRisk: false, allowedStatuses: STOP_DIAG_SYNC_MAINT },
+  AIR_SUPPLY_OFF: {
+    command: 'AIR_SUPPLY_OFF',
+    category: 'VENTILATION',
+    highRisk: false,
+    allowedStatuses: STOP_DIAG_SYNC_MAINT,
+  },
   // Discharge
   DISCHARGE_START: { command: 'DISCHARGE_START', category: 'DISCHARGE', highRisk: true, allowedStatuses: ACTIVE_ONLY },
-  DISCHARGE_STOP: { command: 'DISCHARGE_STOP', category: 'DISCHARGE', highRisk: true, allowedStatuses: STOP_DIAG_SYNC_MAINT },
+  DISCHARGE_STOP: {
+    command: 'DISCHARGE_STOP',
+    category: 'DISCHARGE',
+    highRisk: true,
+    allowedStatuses: STOP_DIAG_SYNC_MAINT,
+  },
   // Device
   REBOOT: { command: 'REBOOT', category: 'DEVICE', highRisk: false, allowedStatuses: STOP_DIAG_SYNC_MAINT },
   SHUTDOWN: { command: 'SHUTDOWN', category: 'DEVICE', highRisk: true, allowedStatuses: STOP_DIAG_SYNC_MAINT },
   FACTORY_RESET: { command: 'FACTORY_RESET', category: 'DEVICE', highRisk: true, allowedStatuses: ACTIVE_ONLY },
-  TAKE_SNAPSHOT: { command: 'TAKE_SNAPSHOT', category: 'DEVICE', highRisk: false, allowedStatuses: STOP_DIAG_SYNC_MAINT },
+  TAKE_SNAPSHOT: {
+    command: 'TAKE_SNAPSHOT',
+    category: 'DEVICE',
+    highRisk: false,
+    allowedStatuses: STOP_DIAG_SYNC_MAINT,
+  },
   FORCE_SYNC: { command: 'FORCE_SYNC', category: 'DEVICE', highRisk: false, allowedStatuses: STOP_DIAG_SYNC_MAINT },
 } as const;
 
@@ -180,7 +222,7 @@ export function listCommands(filter?: { category?: CommandCategory; highRisk?: b
   return Object.values(COMMAND_CATALOG).filter(
     (spec) =>
       (filter?.category === undefined || spec.category === filter.category) &&
-      (filter?.highRisk === undefined || spec.highRisk === filter.highRisk)
+      (filter?.highRisk === undefined || spec.highRisk === filter.highRisk),
   );
 }
 

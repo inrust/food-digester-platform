@@ -40,17 +40,34 @@ export const TOPIC_TIER_REGISTRY: TopicTierRegistry = {
   tierVersion: '0.1.0',
   status: 'provisional',
   fallbackPolicy: 'deny',
-  sourceRule: '具体 Payload 示例优先：Tier 以《Device-Cloud Communication Design》各类消息的 Payload 示例为事实源，不得由云端臆测添加或删除 audit。',
+  sourceRule:
+    '具体 Payload 示例优先：Tier 以《Device-Cloud Communication Design》各类消息的 Payload 示例为事实源，不得由云端臆测添加或删除 audit。',
   topics: {
     heartbeat: { tier: 'STANDARD', consumers: ['CT-03', 'BE-IOT-02'], note: 'Payload 示例无 audit。' },
-    telemetry: { tier: 'AUDITED', consumers: ['CT-03', 'BE-IOT-02'], note: '暂定值明确：Telemetry 含 audit；示例信封 meta+audit+data。' },
-    report: { tier: 'AUDITED', consumers: ['CT-03', 'BE-IOT-02'], note: '暂定值明确：ESG Report 含 audit；保留 audit.hash 与计算方法版本。' },
+    telemetry: {
+      tier: 'AUDITED',
+      consumers: ['CT-03', 'BE-IOT-02'],
+      note: '暂定值明确：Telemetry 含 audit；示例信封 meta+audit+data。',
+    },
+    report: {
+      tier: 'AUDITED',
+      consumers: ['CT-03', 'BE-IOT-02'],
+      note: '暂定值明确：ESG Report 含 audit；保留 audit.hash 与计算方法版本。',
+    },
     alarm: { tier: 'STANDARD', consumers: ['CT-03', 'BE-IOT-02'], note: 'Payload 示例无 audit。' },
     event: { tier: 'STANDARD', consumers: ['CT-03', 'BE-IOT-02'], note: 'Payload 示例无 audit。' },
     ack: { tier: 'STANDARD', consumers: ['CT-03', 'BE-IOT-02'], note: 'Payload 示例无 audit。' },
-    tamper: { tier: 'AUDITED', consumers: ['CT-03', 'BE-IOT-02'], note: '暂定值明确：Tamper 含 audit；Tamper 使用 audit.hash 防篡改。' },
+    tamper: {
+      tier: 'AUDITED',
+      consumers: ['CT-03', 'BE-IOT-02'],
+      note: '暂定值明确：Tamper 含 audit；Tamper 使用 audit.hash 防篡改。',
+    },
     media: { tier: 'STANDARD', consumers: ['CT-03', 'BE-IOT-02'], note: 'Payload 示例无 audit。' },
-    cmd: { tier: 'STANDARD', consumers: ['CT-03'], note: '暂定值明确：Command 不含 audit；下行消息以 meta.id 幂等（DEC-006）。' },
+    cmd: {
+      tier: 'STANDARD',
+      consumers: ['CT-03'],
+      note: '暂定值明确：Command 不含 audit；下行消息以 meta.id 幂等（DEC-006）。',
+    },
     ota: { tier: 'STANDARD', consumers: ['CT-03'], note: '下行 Payload 示例无 audit。' },
     notification: { tier: 'STANDARD', consumers: ['CT-03'], note: '下行 Payload 示例无 audit。' },
   },
@@ -85,7 +102,7 @@ export function topicRequiresAudit(topic: string): boolean {
 
 export function listTopicsByTier(tier: TopicTier): TopicType[] {
   return (Object.keys(TOPIC_TIER_REGISTRY.topics) as TopicType[]).filter(
-    (t) => TOPIC_TIER_REGISTRY.topics[t].tier === tier
+    (t) => TOPIC_TIER_REGISTRY.topics[t].tier === tier,
   );
 }
 

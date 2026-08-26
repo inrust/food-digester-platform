@@ -16,7 +16,11 @@
         "mediaType": { "type": "string", "enum": ["IMAGE", "VIDEO"] },
         "captureTime": { "$ref": "common.schema.json#/$defs/utcDateTime" },
         "fileName": { "type": "string", "minLength": 1 },
-        "objectPath": { "type": "string", "minLength": 1, "description": "云存储路径；授权前缀校验由 BE-IOT-08/BE-MED-01 处理。" },
+        "objectPath": {
+          "type": "string",
+          "minLength": 1,
+          "description": "云存储路径；授权前缀校验由 BE-IOT-08/BE-MED-01 处理。"
+        },
         "sizeKb": { "type": "number", "minimum": 0 },
         "durationSec": { "type": "number", "minimum": 0, "description": "视频时长，图片为 0。" }
       }

@@ -44,16 +44,41 @@ test('负向结构：单字段混用、独立存储"启用"与缺失字段被 Sc
     return validate(policySchema, 'device-status-axes-policy.schema.json', m, registry);
   };
   // 单字段混用被拒绝（锁定 false）
-  assert.ok(run((m) => { (m.axes as Record<string, unknown>).singleFieldMixing = true; }).some((e) => e.path === 'axes.singleFieldMixing' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.axes as Record<string, unknown>).singleFieldMixing = true;
+    }).some((e) => e.path === 'axes.singleFieldMixing' && e.keyword === 'enum'),
+  );
   // "启用"作为存储字段被拒绝（锁定 false）
-  assert.ok(run((m) => { (m.enabledDisplay as Record<string, unknown>).storedAsField = true; }).some((e) => e.path === 'enabledDisplay.storedAsField' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.enabledDisplay as Record<string, unknown>).storedAsField = true;
+    }).some((e) => e.path === 'enabledDisplay.storedAsField' && e.keyword === 'enum'),
+  );
   // 非派生被拒绝（锁定 true）
-  assert.ok(run((m) => { (m.enabledDisplay as Record<string, unknown>).derived = false; }).some((e) => e.path === 'enabledDisplay.derived' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.enabledDisplay as Record<string, unknown>).derived = false;
+    }).some((e) => e.path === 'enabledDisplay.derived' && e.keyword === 'enum'),
+  );
   // 冻结参数允许填入（frozen 后合法）
-  assert.deepEqual(run((m) => { (m.enabledDisplay as Record<string, unknown>).rule = 'lifecycle=ACTIVE && license=VALID'; }), []);
+  assert.deepEqual(
+    run((m) => {
+      (m.enabledDisplay as Record<string, unknown>).rule = 'lifecycle=ACTIVE && license=VALID';
+    }),
+    [],
+  );
   // 缺字段与额外字段被拒绝
-  assert.ok(run((m) => { delete m.axes; }).some((e) => e.keyword === 'required'));
-  assert.ok(run((m) => { m.extra = 1; }).some((e) => e.keyword === 'additionalProperties'));
+  assert.ok(
+    run((m) => {
+      delete m.axes;
+    }).some((e) => e.keyword === 'required'),
+  );
+  assert.ok(
+    run((m) => {
+      m.extra = 1;
+    }).some((e) => e.keyword === 'additionalProperties'),
+  );
 });
 
 test('x-decision-versions 引用 DEC-010 且版本与决策登记一致；prototype-traceability.yaml 同步', () => {
@@ -61,7 +86,10 @@ test('x-decision-versions 引用 DEC-010 且版本与决策登记一致；protot
   const dec010 = registerJson.decisions.find((d: { id: string }) => d.id === 'DEC-010');
   assert.ok(dec010, '决策登记必须包含 DEC-010');
   assert.ok(refs.includes(`DEC-010@${dec010.version}`), `引用必须包含 DEC-010@${dec010.version}`);
-  assert.ok(traceabilityYaml.includes(`DEC-010@${dec010.version}`), 'prototype-traceability.yaml 必须引用 DEC-010 当前登记版本');
+  assert.ok(
+    traceabilityYaml.includes(`DEC-010@${dec010.version}`),
+    'prototype-traceability.yaml 必须引用 DEC-010 当前登记版本',
+  );
   if (dec010.status !== 'frozen') {
     assert.equal(policyJson.status, 'provisional');
     assert.ok(policyJson.policyVersion.startsWith('0.'));
@@ -81,7 +109,9 @@ test('待冻结参数失败关闭：派生规则禁止臆测', () => {
   assert.equal(DEVICE_STATUS_AXES_POLICY.enabledDisplay.rule, null);
   assert.throws(
     () => getEnabledDerivationRule(),
-    (e: unknown) => e instanceof PolicyParameterPendingError && (e as PolicyParameterPendingError).parameter === 'enabledDisplay.rule'
+    (e: unknown) =>
+      e instanceof PolicyParameterPendingError &&
+      (e as PolicyParameterPendingError).parameter === 'enabledDisplay.rule',
   );
   // 冻结前禁止输出 enabled 字段
   assert.equal(isEnabledDisplayAvailable(), false);

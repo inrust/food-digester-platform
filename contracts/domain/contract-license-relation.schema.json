@@ -43,7 +43,10 @@
       "required": ["contractScope", "licenseScope", "consumers", "note"],
       "additionalProperties": false,
       "properties": {
-        "contractScope": { "type": "array", "description": "Contract 职责集合：commercial-lease-term、device-association。" },
+        "contractScope": {
+          "type": "array",
+          "description": "Contract 职责集合：commercial-lease-term、device-association。"
+        },
         "licenseScope": { "type": "array", "description": "License 职责集合：device-capability-authorization。" },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }
@@ -54,8 +57,16 @@
       "required": ["contractCreateActivatesLicense", "contractUnbindRevokesLicense", "consumers", "note"],
       "additionalProperties": false,
       "properties": {
-        "contractCreateActivatesLicense": { "type": "boolean", "enum": [false], "description": "创建 Contract 不自动激活 License，锁定为 false。" },
-        "contractUnbindRevokesLicense": { "type": "boolean", "enum": [false], "description": "解绑 Contract 不自动撤销 License，锁定为 false。" },
+        "contractCreateActivatesLicense": {
+          "type": "boolean",
+          "enum": [false],
+          "description": "创建 Contract 不自动激活 License，锁定为 false。"
+        },
+        "contractUnbindRevokesLicense": {
+          "type": "boolean",
+          "enum": [false],
+          "description": "解绑 Contract 不自动撤销 License，锁定为 false。"
+        },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }
       }
@@ -65,7 +76,11 @@
       "required": ["contractStatusIndependentOfLicense", "consumers", "note"],
       "additionalProperties": false,
       "properties": {
-        "contractStatusIndependentOfLicense": { "type": "boolean", "enum": [true], "description": "Contract 状态独立展示，不等同 License 状态，锁定为 true。" },
+        "contractStatusIndependentOfLicense": {
+          "type": "boolean",
+          "enum": [true],
+          "description": "Contract 状态独立展示，不等同 License 状态，锁定为 true。"
+        },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }
       }

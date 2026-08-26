@@ -185,7 +185,11 @@ export function run(argv, log = console.log) {
   if (opts.json) {
     log(JSON.stringify(result, null, 2));
   } else {
-    log(`菜单 ${stats.menus}/9，页面 ${stats.pages}/12，元素 ${stats.elements}（${Object.entries(stats.byDisposition).map(([k, v]) => `${k}:${v}`).join(', ')}）`);
+    log(
+      `菜单 ${stats.menus}/9，页面 ${stats.pages}/12，元素 ${stats.elements}（${Object.entries(stats.byDisposition)
+        .map(([k, v]) => `${k}:${v}`)
+        .join(', ')}）`,
+    );
     for (const e of errors) log(`  ✗ ${e}`);
     log(errors.length === 0 ? '检查通过' : '检查失败');
   }

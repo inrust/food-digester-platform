@@ -41,10 +41,22 @@ test('负向结构：设备地域真值与缺失字段被 Schema 拒绝', () => 
     return validate(policySchema, 'geo-model-policy.schema.json', m, registry);
   };
   // 设备保存地域真值被拒绝（锁定 false）
-  assert.ok(run((m) => { (m.geoAttributes as Record<string, unknown>).deviceStoresGeoTruth = true; }).some((e) => e.path === 'geoAttributes.deviceStoresGeoTruth' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.geoAttributes as Record<string, unknown>).deviceStoresGeoTruth = true;
+    }).some((e) => e.path === 'geoAttributes.deviceStoresGeoTruth' && e.keyword === 'enum'),
+  );
   // 缺字段与额外字段被拒绝
-  assert.ok(run((m) => { delete m.hierarchy; }).some((e) => e.keyword === 'required'));
-  assert.ok(run((m) => { m.extra = 1; }).some((e) => e.keyword === 'additionalProperties'));
+  assert.ok(
+    run((m) => {
+      delete m.hierarchy;
+    }).some((e) => e.keyword === 'required'),
+  );
+  assert.ok(
+    run((m) => {
+      m.extra = 1;
+    }).some((e) => e.keyword === 'additionalProperties'),
+  );
 });
 
 test('x-decision-versions 引用 DEC-011 且版本与决策登记一致；prototype-traceability.yaml 同步', () => {
@@ -52,7 +64,10 @@ test('x-decision-versions 引用 DEC-011 且版本与决策登记一致；protot
   const dec011 = registerJson.decisions.find((d: { id: string }) => d.id === 'DEC-011');
   assert.ok(dec011, '决策登记必须包含 DEC-011');
   assert.ok(refs.includes(`DEC-011@${dec011.version}`), `引用必须包含 DEC-011@${dec011.version}`);
-  assert.ok(traceabilityYaml.includes(`DEC-011@${dec011.version}`), 'prototype-traceability.yaml 必须引用 DEC-011 当前登记版本');
+  assert.ok(
+    traceabilityYaml.includes(`DEC-011@${dec011.version}`),
+    'prototype-traceability.yaml 必须引用 DEC-011 当前登记版本',
+  );
   if (dec011.status !== 'frozen') {
     assert.equal(policyJson.status, 'provisional');
     assert.ok(policyJson.policyVersion.startsWith('0.'));

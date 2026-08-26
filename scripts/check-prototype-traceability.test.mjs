@@ -45,7 +45,10 @@ test('矩阵的 x-decision-versions 可追溯到决策登记（DEC-007~012）', 
   assert.deepEqual(errors, []);
   const refs = m['x-decision-versions'];
   for (const dec of ['DEC-007', 'DEC-008', 'DEC-009', 'DEC-010', 'DEC-011', 'DEC-012']) {
-    assert.ok(refs.some((r) => r.startsWith(`${dec}@`)), `缺少 ${dec} 引用`);
+    assert.ok(
+      refs.some((r) => r.startsWith(`${dec}@`)),
+      `缺少 ${dec} 引用`,
+    );
   }
   assert.equal(checked.length, refs.length);
 });
@@ -54,12 +57,29 @@ function baseMatrix() {
   return {
     matrixVersion: '1.0.0',
     menus: [
-      'menu.dashboard', 'menu.device-view', 'menu.device-operate', 'menu.device-group',
-      'menu.device-consumable', 'menu.esg-overview', 'menu.esg-device', 'menu.contract-modify', 'menu.settings',
+      'menu.dashboard',
+      'menu.device-view',
+      'menu.device-operate',
+      'menu.device-group',
+      'menu.device-consumable',
+      'menu.esg-overview',
+      'menu.esg-device',
+      'menu.contract-modify',
+      'menu.settings',
     ].map((menuId, i) => ({
       menuId,
       label: 'x',
-      pageState: ['dashboard', 'device-view', 'device-operate', 'device-group', 'device-consumable', 'esg-overview', 'esg-device', 'contract-modify', 'settings'][i],
+      pageState: [
+        'dashboard',
+        'device-view',
+        'device-operate',
+        'device-group',
+        'device-consumable',
+        'esg-overview',
+        'esg-device',
+        'contract-modify',
+        'settings',
+      ][i],
       routeId: '/x',
       feTask: 'FE-01',
       roles: ['PlatformSuperAdmin'],
@@ -67,8 +87,18 @@ function baseMatrix() {
       source: { taskId: 'FE-01' },
     })),
     pages: [
-      'dashboard', 'device-view', 'device-operate', 'device-group', 'device-manage', 'device-consumable',
-      'contract-modify', 'contract-new', 'contract-detail', 'esg-overview', 'esg-device', 'settings',
+      'dashboard',
+      'device-view',
+      'device-operate',
+      'device-group',
+      'device-manage',
+      'device-consumable',
+      'contract-modify',
+      'contract-new',
+      'contract-detail',
+      'esg-overview',
+      'esg-device',
+      'settings',
     ].map((pageState) => ({
       pageState,
       routeId: '/x',
@@ -76,7 +106,13 @@ function baseMatrix() {
       beTasks: ['BE-DEV-01'],
       disposition: 'Adopt',
       elements: [
-        { id: `${pageState}.field.a`, kind: 'field', name: 'x', disposition: 'Adopt', source: { taskId: 'BE-DEV-01', api: 'listDevices' } },
+        {
+          id: `${pageState}.field.a`,
+          kind: 'field',
+          name: 'x',
+          disposition: 'Adopt',
+          source: { taskId: 'BE-DEV-01', api: 'listDevices' },
+        },
       ],
     })),
   };
@@ -99,19 +135,39 @@ test('重复元素 ID 被拒绝', () => {
 
 test('Adapt/Reject 缺少依据被拒绝', () => {
   const m = baseMatrix();
-  m.pages[0].elements[0] = { id: 'dashboard.field.a', kind: 'field', name: 'x', disposition: 'Adapt', source: { taskId: 'BE-DEV-01', api: 'listDevices' } };
+  m.pages[0].elements[0] = {
+    id: 'dashboard.field.a',
+    kind: 'field',
+    name: 'x',
+    disposition: 'Adapt',
+    source: { taskId: 'BE-DEV-01', api: 'listDevices' },
+  };
   assert.ok(checkMatrix(m).some((e) => e.includes('R3')));
 });
 
 test('Adopt/Adapt 生产字段缺少 API 来源被拒绝', () => {
   const m = baseMatrix();
-  m.pages[0].elements[0] = { id: 'dashboard.field.a', kind: 'table-column', name: 'x', disposition: 'Adopt', source: { taskId: 'BE-DEV-01' } };
+  m.pages[0].elements[0] = {
+    id: 'dashboard.field.a',
+    kind: 'table-column',
+    name: 'x',
+    disposition: 'Adopt',
+    source: { taskId: 'BE-DEV-01' },
+  };
   assert.ok(checkMatrix(m).some((e) => e.includes('R4')));
 });
 
 test('rejectCategory 项非 Reject 或携带实现任务被拒绝', () => {
   const m = baseMatrix();
-  m.pages[0].elements[0] = { id: 'dashboard.button.a', kind: 'button', name: '播放', disposition: 'Adapt', basis: 'x', rejectCategory: 'realtime-stream', source: { taskId: 'FE-06' } };
+  m.pages[0].elements[0] = {
+    id: 'dashboard.button.a',
+    kind: 'button',
+    name: '播放',
+    disposition: 'Adapt',
+    basis: 'x',
+    rejectCategory: 'realtime-stream',
+    source: { taskId: 'FE-06' },
+  };
   const errors = checkMatrix(m);
   assert.ok(errors.some((e) => e.includes('R5')));
 });
@@ -124,6 +180,9 @@ test('未知角色被拒绝（R7）', () => {
 
 test('CLI：真实矩阵退出码 0，违规矩阵退出码 1', () => {
   const lines = [];
-  assert.equal(run(['--matrix', MATRIX_PATH], (s) => lines.push(s)), 0);
+  assert.equal(
+    run(['--matrix', MATRIX_PATH], (s) => lines.push(s)),
+    0,
+  );
   assert.ok(lines.some((l) => l.includes('9/9') && l.includes('12/12')));
 });

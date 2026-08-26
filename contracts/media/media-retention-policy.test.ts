@@ -42,21 +42,50 @@ test('负向结构：存储位置篡改、非法处置行为与缺失字段被 S
     return validate(policySchema, 'media-retention-policy.schema.json', m, registry);
   };
   // 元数据存储锁定 RDS
-  assert.ok(run((m) => { (m.storageSplit as Record<string, unknown>).metadataStore = 's3'; }).some((e) => e.path === 'storageSplit.metadataStore' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.storageSplit as Record<string, unknown>).metadataStore = 's3';
+    }).some((e) => e.path === 'storageSplit.metadataStore' && e.keyword === 'enum'),
+  );
   // 文件存储锁定 S3
-  assert.ok(run((m) => { (m.storageSplit as Record<string, unknown>).fileStore = 'rds'; }).some((e) => e.path === 'storageSplit.fileStore' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.storageSplit as Record<string, unknown>).fileStore = 'rds';
+    }).some((e) => e.path === 'storageSplit.fileStore' && e.keyword === 'enum'),
+  );
   // 非法处置行为被拒绝
-  assert.ok(run((m) => { (m.retention as Record<string, unknown>).expiryAction = 'purge-everything'; }).some((e) => e.path === 'retention.expiryAction' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.retention as Record<string, unknown>).expiryAction = 'purge-everything';
+    }).some((e) => e.path === 'retention.expiryAction' && e.keyword === 'enum'),
+  );
   // 保留天数非正数被拒绝
-  assert.ok(run((m) => { (m.retention as Record<string, unknown>).fileRetentionDays = 0; }).some((e) => e.path === 'retention.fileRetentionDays' && e.keyword === 'minimum'));
+  assert.ok(
+    run((m) => {
+      (m.retention as Record<string, unknown>).fileRetentionDays = 0;
+    }).some((e) => e.path === 'retention.fileRetentionDays' && e.keyword === 'minimum'),
+  );
   // 冻结参数允许填入（frozen 后合法）
-  assert.deepEqual(run((m) => {
-    const r = m.retention as Record<string, unknown>;
-    r.metadataRetentionDays = 365; r.fileRetentionDays = 90; r.expiryAction = 'delete';
-  }), []);
+  assert.deepEqual(
+    run((m) => {
+      const r = m.retention as Record<string, unknown>;
+      r.metadataRetentionDays = 365;
+      r.fileRetentionDays = 90;
+      r.expiryAction = 'delete';
+    }),
+    [],
+  );
   // 缺字段与额外字段被拒绝
-  assert.ok(run((m) => { delete m.pendingParameters; }).some((e) => e.keyword === 'required'));
-  assert.ok(run((m) => { m.extra = 1; }).some((e) => e.keyword === 'additionalProperties'));
+  assert.ok(
+    run((m) => {
+      delete m.pendingParameters;
+    }).some((e) => e.keyword === 'required'),
+  );
+  assert.ok(
+    run((m) => {
+      m.extra = 1;
+    }).some((e) => e.keyword === 'additionalProperties'),
+  );
 });
 
 test('x-decision-versions 引用 DEC-005 且版本与决策登记一致', () => {
@@ -86,11 +115,19 @@ test('待冻结参数失败关闭：禁止臆测保留期与处置行为', () =>
     [getExpiryAction, 'retention.expiryAction'],
   ];
   for (const [fn, param] of pendingCases) {
-    assert.throws(fn, (e: unknown) => e instanceof PolicyParameterPendingError && (e as PolicyParameterPendingError).parameter === param);
+    assert.throws(
+      fn,
+      (e: unknown) =>
+        e instanceof PolicyParameterPendingError && (e as PolicyParameterPendingError).parameter === param,
+    );
   }
   // 冻结前禁止任何自动过期/删除
   assert.equal(isAutomaticExpiryEnabled(), false);
-  assert.deepEqual([...MEDIA_RETENTION_POLICY.pendingParameters].sort(), ['retention.expiryAction', 'retention.fileRetentionDays', 'retention.metadataRetentionDays']);
+  assert.deepEqual([...MEDIA_RETENTION_POLICY.pendingParameters].sort(), [
+    'retention.expiryAction',
+    'retention.fileRetentionDays',
+    'retention.metadataRetentionDays',
+  ]);
 });
 
 test('策略消费者均为合法任务 ID 且覆盖 DEC-005 阻塞任务与关联任务', () => {

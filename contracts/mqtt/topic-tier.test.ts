@@ -29,9 +29,17 @@ const registerJson = read('../decisions/decision-register.json');
 const ALL_TOPICS = Object.keys(TOPIC_CATALOG) as TopicType[];
 const TASK_ID = /^[A-Z]{2,4}(-[A-Z]{2,4})?-\d{2}$/;
 const SCHEMA_FILE: Record<TopicType, string> = {
-  heartbeat: 'heartbeat', telemetry: 'telemetry', report: 'report', alarm: 'alarm',
-  event: 'event', ack: 'ack', tamper: 'tamper', media: 'media',
-  cmd: 'cmd', ota: 'ota', notification: 'notification',
+  heartbeat: 'heartbeat',
+  telemetry: 'telemetry',
+  report: 'report',
+  alarm: 'alarm',
+  event: 'event',
+  ack: 'ack',
+  tamper: 'tamper',
+  media: 'media',
+  cmd: 'cmd',
+  ota: 'ota',
+  notification: 'notification',
 };
 
 test('Tier 登记 JSON 通过自身 JSON Schema 结构校验', () => {
@@ -48,15 +56,35 @@ test('负向结构：非法 Tier、未知 Topic 键与缺失字段被 Schema 拒
     return validate(tierSchema, 'topic-tier.schema.json', m, registry);
   };
   // 非法 Tier 枚举
-  assert.ok(run((m) => { (m.topics as Record<string, Record<string, unknown>>).telemetry.tier = 'CRITICAL'; }).some((e) => e.path === 'topics.telemetry.tier' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.topics as Record<string, Record<string, unknown>>).telemetry.tier = 'CRITICAL';
+    }).some((e) => e.path === 'topics.telemetry.tier' && e.keyword === 'enum'),
+  );
   // 未知 Topic 键被拒绝（封闭键集合）
-  assert.ok(run((m) => { (m.topics as Record<string, unknown>).video = { tier: 'STANDARD', consumers: ['CT-03'], note: 'x' }; }).some((e) => e.keyword === 'additionalProperties'));
+  assert.ok(
+    run((m) => {
+      (m.topics as Record<string, unknown>).video = { tier: 'STANDARD', consumers: ['CT-03'], note: 'x' };
+    }).some((e) => e.keyword === 'additionalProperties'),
+  );
   // 缺少必填 Topic
-  assert.ok(run((m) => { delete (m.topics as Record<string, unknown>).tamper; }).some((e) => e.path === 'topics' && e.keyword === 'required'));
+  assert.ok(
+    run((m) => {
+      delete (m.topics as Record<string, unknown>).tamper;
+    }).some((e) => e.path === 'topics' && e.keyword === 'required'),
+  );
   // fallbackPolicy 必须为 deny（失败关闭）
-  assert.ok(run((m) => { (m.tierPolicy as Record<string, unknown>).fallbackPolicy = 'allow'; }).some((e) => e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.tierPolicy as Record<string, unknown>).fallbackPolicy = 'allow';
+    }).some((e) => e.keyword === 'enum'),
+  );
   // status 非法枚举
-  assert.ok(run((m) => { m.status = 'draft'; }).some((e) => e.path === 'status' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      m.status = 'draft';
+    }).some((e) => e.path === 'status' && e.keyword === 'enum'),
+  );
 });
 
 test('x-decision-versions 引用 DEC-002 且版本与决策登记一致', () => {
@@ -89,7 +117,7 @@ test('Tier 与 topic-catalog.json 的 payloadEnvelope 完全一致', () => {
     assert.equal(
       topicRequiresAudit(entry.type),
       expectAudited,
-      `${entry.type}: Tier 与 payloadEnvelope (${entry.payloadEnvelope}) 不一致`
+      `${entry.type}: Tier 与 payloadEnvelope (${entry.payloadEnvelope}) 不一致`,
     );
   }
 });
@@ -110,7 +138,7 @@ test('Tier 与 11 个 MQTT Schema 的 audit 强制完全一致', () => {
 test('失败关闭：未知 Topic 拒绝并抛出稳定错误', () => {
   assert.throws(
     () => getTopicTier('video'),
-    (e: unknown) => e instanceof TopicTierError && (e as TopicTierError).kind === 'UNKNOWN_TOPIC'
+    (e: unknown) => e instanceof TopicTierError && (e as TopicTierError).kind === 'UNKNOWN_TOPIC',
   );
   assert.throws(() => topicRequiresAudit(''), TopicTierError);
   assert.throws(() => getTopicTierSpec('CMD'), TopicTierError);

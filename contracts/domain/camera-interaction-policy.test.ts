@@ -40,14 +40,34 @@ test('负向结构：实时流启用、非法范围/刷新模式与缺失字段�
     return validate(policySchema, 'camera-interaction-policy.schema.json', m, registry);
   };
   // 实时流启用被拒绝（锁定 false）
-  assert.ok(run((m) => { (m.liveStreaming as Record<string, unknown>).enabled = true; }).some((e) => e.path === 'liveStreaming.enabled' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.liveStreaming as Record<string, unknown>).enabled = true;
+    }).some((e) => e.path === 'liveStreaming.enabled' && e.keyword === 'enum'),
+  );
   // 非法查看范围被拒绝
-  assert.ok(run((m) => { (m.viewing as Record<string, unknown>).scope = 'everything'; }).some((e) => e.path === 'viewing.scope' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.viewing as Record<string, unknown>).scope = 'everything';
+    }).some((e) => e.path === 'viewing.scope' && e.keyword === 'enum'),
+  );
   // 非法刷新模式被拒绝
-  assert.ok(run((m) => { (m.refresh as Record<string, unknown>).mode = 'websocket'; }).some((e) => e.path === 'refresh.mode' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.refresh as Record<string, unknown>).mode = 'websocket';
+    }).some((e) => e.path === 'refresh.mode' && e.keyword === 'enum'),
+  );
   // 缺字段与额外字段被拒绝
-  assert.ok(run((m) => { delete m.liveStreaming; }).some((e) => e.keyword === 'required'));
-  assert.ok(run((m) => { m.extra = 1; }).some((e) => e.keyword === 'additionalProperties'));
+  assert.ok(
+    run((m) => {
+      delete m.liveStreaming;
+    }).some((e) => e.keyword === 'required'),
+  );
+  assert.ok(
+    run((m) => {
+      m.extra = 1;
+    }).some((e) => e.keyword === 'additionalProperties'),
+  );
 });
 
 test('x-decision-versions 引用 DEC-009 且版本与决策登记一致；prototype-traceability.yaml 同步', () => {
@@ -55,7 +75,10 @@ test('x-decision-versions 引用 DEC-009 且版本与决策登记一致；protot
   const dec009 = registerJson.decisions.find((d: { id: string }) => d.id === 'DEC-009');
   assert.ok(dec009, '决策登记必须包含 DEC-009');
   assert.ok(refs.includes(`DEC-009@${dec009.version}`), `引用必须包含 DEC-009@${dec009.version}`);
-  assert.ok(traceabilityYaml.includes(`DEC-009@${dec009.version}`), 'prototype-traceability.yaml 必须引用 DEC-009 当前登记版本');
+  assert.ok(
+    traceabilityYaml.includes(`DEC-009@${dec009.version}`),
+    'prototype-traceability.yaml 必须引用 DEC-009 当前登记版本',
+  );
   if (dec009.status !== 'frozen') {
     assert.equal(policyJson.status, 'provisional');
     assert.ok(policyJson.policyVersion.startsWith('0.'));
@@ -71,7 +94,11 @@ test('暂定值定性规则可执行：仅最新授权 Media、手动刷新、�
 
 test('策略消费者均为合法任务 ID 且覆盖 DEC-009 阻塞任务', () => {
   const consumers = new Set<string>();
-  for (const s of [CAMERA_INTERACTION_POLICY.viewing, CAMERA_INTERACTION_POLICY.refresh, CAMERA_INTERACTION_POLICY.liveStreaming]) {
+  for (const s of [
+    CAMERA_INTERACTION_POLICY.viewing,
+    CAMERA_INTERACTION_POLICY.refresh,
+    CAMERA_INTERACTION_POLICY.liveStreaming,
+  ]) {
     assert.ok(s.note.length > 0, '缺少 note');
     assert.ok(s.consumers.length > 0, '缺少 consumers');
     for (const c of s.consumers) {

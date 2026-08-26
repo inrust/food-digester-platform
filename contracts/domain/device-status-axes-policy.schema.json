@@ -43,7 +43,11 @@
       "additionalProperties": false,
       "properties": {
         "list": { "type": "array", "description": "状态轴封闭集合：connectivity、lifecycle、operational、license。" },
-        "singleFieldMixing": { "type": "boolean", "enum": [false], "description": "禁止单一字段混用多维状态，锁定为 false。" },
+        "singleFieldMixing": {
+          "type": "boolean",
+          "enum": [false],
+          "description": "禁止单一字段混用多维状态，锁定为 false。"
+        },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }
       }
@@ -54,8 +58,16 @@
       "additionalProperties": false,
       "properties": {
         "derived": { "type": "boolean", "enum": [true], "description": "\"启用\"必须由业务规则派生，锁定为 true。" },
-        "storedAsField": { "type": "boolean", "enum": [false], "description": "\"启用\"不得作为独立存储字段，锁定为 false。" },
-        "rule": { "type": ["string", "null"], "minLength": 1, "description": "DEC-010 待冻结参数：\"启用\"的具体派生规则。provisional 为 null。" },
+        "storedAsField": {
+          "type": "boolean",
+          "enum": [false],
+          "description": "\"启用\"不得作为独立存储字段，锁定为 false。"
+        },
+        "rule": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "DEC-010 待冻结参数：\"启用\"的具体派生规则。provisional 为 null。"
+        },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }
       }

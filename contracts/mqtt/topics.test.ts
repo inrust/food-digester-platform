@@ -27,7 +27,7 @@ test('catalog 恰好包含 8 个上行和 3 个下行 Topic', () => {
   assert.equal(DOWNLINK_TOPIC_TYPES.length, 3);
   assert.deepEqual(
     [...UPLINK_TOPIC_TYPES].sort(),
-    ['ack', 'alarm', 'event', 'heartbeat', 'media', 'report', 'tamper', 'telemetry'].sort()
+    ['ack', 'alarm', 'event', 'heartbeat', 'media', 'report', 'tamper', 'telemetry'].sort(),
   );
   assert.deepEqual([...DOWNLINK_TOPIC_TYPES].sort(), ['cmd', 'notification', 'ota'].sort());
 });
@@ -106,7 +106,10 @@ test('buildTopic 与 parseTopic 往返一致', () => {
 
 test('未知层级和空 deviceId 被拒绝', () => {
   const reject = (topic: string, reason: TopicError['reason']) =>
-    assert.throws(() => parseTopic(topic), (err: unknown) => err instanceof TopicError && err.reason === reason);
+    assert.throws(
+      () => parseTopic(topic),
+      (err: unknown) => err instanceof TopicError && err.reason === reason,
+    );
 
   // 未知 type / 未知层级
   reject('bnx/device/DEV-001/unknown', 'UNKNOWN_TOPIC_TYPE');
@@ -127,9 +130,18 @@ test('未知层级和空 deviceId 被拒绝', () => {
 });
 
 test('buildTopic 拒绝空和非法 deviceId', () => {
-  assert.throws(() => buildTopic('', 'cmd'), (e: unknown) => e instanceof TopicError && e.reason === 'EMPTY_DEVICE_ID');
-  assert.throws(() => buildTopic('a+b', 'cmd'), (e: unknown) => e instanceof TopicError && e.reason === 'INVALID_DEVICE_ID');
-  assert.throws(() => buildTopic('a/b', 'cmd'), (e: unknown) => e instanceof TopicError && e.reason === 'INVALID_DEVICE_ID');
+  assert.throws(
+    () => buildTopic('', 'cmd'),
+    (e: unknown) => e instanceof TopicError && e.reason === 'EMPTY_DEVICE_ID',
+  );
+  assert.throws(
+    () => buildTopic('a+b', 'cmd'),
+    (e: unknown) => e instanceof TopicError && e.reason === 'INVALID_DEVICE_ID',
+  );
+  assert.throws(
+    () => buildTopic('a/b', 'cmd'),
+    (e: unknown) => e instanceof TopicError && e.reason === 'INVALID_DEVICE_ID',
+  );
   assert.equal(isValidDeviceId('DEV-001'), true);
   assert.equal(isValidDeviceId(''), false);
   assert.equal(isValidDeviceId('+'), false);

@@ -15,7 +15,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['scripts/**/*.mjs', 'contracts/**/*.mjs'],
+    files: ['scripts/**/*.mjs', 'contracts/**/*.mjs', '*.config.mjs'],
     rules: {
       // 纯 JS/MJS 文件由 Node 运行时提供全局对象，避免维护易过时的 globals 清单
       'no-undef': 'off',

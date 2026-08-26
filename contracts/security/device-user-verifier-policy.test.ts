@@ -44,21 +44,51 @@ test('负向结构：复用云端 Hash、非独立 salt 与非法字段被 Schem
     return validate(policySchema, 'device-user-verifier-policy.schema.json', m, registry);
   };
   // 复用云端密码 Hash 被拒绝（锁定 false）
-  assert.ok(run((m) => { (m.separation as Record<string, unknown>).cloudHashReuse = true; }).some((e) => e.path === 'separation.cloudHashReuse' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.separation as Record<string, unknown>).cloudHashReuse = true;
+    }).some((e) => e.path === 'separation.cloudHashReuse' && e.keyword === 'enum'),
+  );
   // 用途锁定 device-local-only
-  assert.ok(run((m) => { (m.separation as Record<string, unknown>).purpose = 'shared'; }).some((e) => e.path === 'separation.purpose' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.separation as Record<string, unknown>).purpose = 'shared';
+    }).some((e) => e.path === 'separation.purpose' && e.keyword === 'enum'),
+  );
   // 共享 salt 被拒绝（锁定 true）
-  assert.ok(run((m) => { (m.material as Record<string, unknown>).saltPerUser = false; }).some((e) => e.path === 'material.saltPerUser' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.material as Record<string, unknown>).saltPerUser = false;
+    }).some((e) => e.path === 'material.saltPerUser' && e.keyword === 'enum'),
+  );
   // 冻结参数允许填入（frozen 后合法）
-  assert.deepEqual(run((m) => {
-    const mat = m.material as Record<string, unknown>;
-    mat.kdf = 'argon2id'; mat.kdfParameters = { iterations: 3 }; mat.saltBytes = 16; mat.hashBytes = 32;
-  }), []);
+  assert.deepEqual(
+    run((m) => {
+      const mat = m.material as Record<string, unknown>;
+      mat.kdf = 'argon2id';
+      mat.kdfParameters = { iterations: 3 };
+      mat.saltBytes = 16;
+      mat.hashBytes = 32;
+    }),
+    [],
+  );
   // salt/hash 长度过小被拒绝
-  assert.ok(run((m) => { (m.material as Record<string, unknown>).saltBytes = 4; }).some((e) => e.path === 'material.saltBytes' && e.keyword === 'minimum'));
+  assert.ok(
+    run((m) => {
+      (m.material as Record<string, unknown>).saltBytes = 4;
+    }).some((e) => e.path === 'material.saltBytes' && e.keyword === 'minimum'),
+  );
   // 缺字段与额外字段被拒绝
-  assert.ok(run((m) => { delete m.pendingParameters; }).some((e) => e.keyword === 'required'));
-  assert.ok(run((m) => { m.extra = 1; }).some((e) => e.keyword === 'additionalProperties'));
+  assert.ok(
+    run((m) => {
+      delete m.pendingParameters;
+    }).some((e) => e.keyword === 'required'),
+  );
+  assert.ok(
+    run((m) => {
+      m.extra = 1;
+    }).some((e) => e.keyword === 'additionalProperties'),
+  );
 });
 
 test('x-decision-versions 引用 DEC-004 且版本与决策登记一致', () => {
@@ -95,14 +125,27 @@ test('待冻结参数失败关闭：禁止臆测 KDF 默认值', () => {
     [getVerifierHashBytes, 'material.hashBytes'],
   ];
   for (const [fn, param] of pendingCases) {
-    assert.throws(fn, (e: unknown) => e instanceof PolicyParameterPendingError && (e as PolicyParameterPendingError).parameter === param);
+    assert.throws(
+      fn,
+      (e: unknown) =>
+        e instanceof PolicyParameterPendingError && (e as PolicyParameterPendingError).parameter === param,
+    );
   }
-  assert.deepEqual([...DEVICE_USER_VERIFIER_POLICY.pendingParameters].sort(), ['material.hashBytes', 'material.kdf', 'material.kdfParameters', 'material.saltBytes']);
+  assert.deepEqual([...DEVICE_USER_VERIFIER_POLICY.pendingParameters].sort(), [
+    'material.hashBytes',
+    'material.kdf',
+    'material.kdfParameters',
+    'material.saltBytes',
+  ]);
 });
 
 test('策略消费者均为合法任务 ID 且覆盖 DEC-004 阻塞任务', () => {
   const consumers = new Set<string>();
-  for (const s of [DEVICE_USER_VERIFIER_POLICY.separation, DEVICE_USER_VERIFIER_POLICY.material, DEVICE_USER_VERIFIER_POLICY.distribution]) {
+  for (const s of [
+    DEVICE_USER_VERIFIER_POLICY.separation,
+    DEVICE_USER_VERIFIER_POLICY.material,
+    DEVICE_USER_VERIFIER_POLICY.distribution,
+  ]) {
     assert.ok(s.note.length > 0, '缺少 note');
     assert.ok(s.consumers.length > 0, '缺少 consumers');
     for (const c of s.consumers) {

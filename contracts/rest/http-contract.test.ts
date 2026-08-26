@@ -58,7 +58,11 @@ test('游标分页响应与往返解析', () => {
 });
 
 test('非法游标返回 CURSOR_INVALID（400）', () => {
-  for (const bad of ['not-base64!!!', Buffer.from('{"o":-1,"v":1}').toString('base64url'), Buffer.from('{"o":0,"v":2}').toString('base64url')]) {
+  for (const bad of [
+    'not-base64!!!',
+    Buffer.from('{"o":-1,"v":1}').toString('base64url'),
+    Buffer.from('{"o":0,"v":2}').toString('base64url'),
+  ]) {
     const err = catchApiError(() => decodeCursor(bad));
     assert.equal(err.code, 'CURSOR_INVALID');
     assert.equal(err.httpStatus, 400);

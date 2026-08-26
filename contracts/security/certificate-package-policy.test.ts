@@ -43,18 +43,48 @@ test('负向结构：非法枚举、非空待冻结参数与缺失字段被 Sche
     return validate(policySchema, 'certificate-package-policy.schema.json', m, registry);
   };
   // 非 KMS 信封加密被拒绝
-  assert.ok(run((m) => { (m.storage as Record<string, unknown>).encryption = 'plaintext'; }).some((e) => e.path === 'storage.encryption' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.storage as Record<string, unknown>).encryption = 'plaintext';
+    }).some((e) => e.path === 'storage.encryption' && e.keyword === 'enum'),
+  );
   // 非一次性领取被拒绝
-  assert.ok(run((m) => { (m.claim as Record<string, unknown>).oneTime = false; }).some((e) => e.path === 'claim.oneTime' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.claim as Record<string, unknown>).oneTime = false;
+    }).some((e) => e.path === 'claim.oneTime' && e.keyword === 'enum'),
+  );
   // 成功领取后不销毁被拒绝
-  assert.ok(run((m) => { (m.claim as Record<string, unknown>).destroyOnSuccessfulClaim = false; }).some((e) => e.path === 'claim.destroyOnSuccessfulClaim' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.claim as Record<string, unknown>).destroyOnSuccessfulClaim = false;
+    }).some((e) => e.path === 'claim.destroyOnSuccessfulClaim' && e.keyword === 'enum'),
+  );
   // 丢失处置非 reissue 被拒绝
-  assert.ok(run((m) => { (m.lossHandling as Record<string, unknown>).mode = 'recover'; }).some((e) => e.path === 'lossHandling.mode' && e.keyword === 'enum'));
+  assert.ok(
+    run((m) => {
+      (m.lossHandling as Record<string, unknown>).mode = 'recover';
+    }).some((e) => e.path === 'lossHandling.mode' && e.keyword === 'enum'),
+  );
   // 冻结参数允许填入整数（frozen 后合法）
-  assert.deepEqual(run((m) => { (m.storage as Record<string, unknown>).retentionSeconds = 900; (m.claim as Record<string, unknown>).maxClaims = 1; }), []);
+  assert.deepEqual(
+    run((m) => {
+      (m.storage as Record<string, unknown>).retentionSeconds = 900;
+      (m.claim as Record<string, unknown>).maxClaims = 1;
+    }),
+    [],
+  );
   // 缺字段与额外字段被拒绝
-  assert.ok(run((m) => { delete m.pendingParameters; }).some((e) => e.keyword === 'required'));
-  assert.ok(run((m) => { m.extra = 1; }).some((e) => e.keyword === 'additionalProperties'));
+  assert.ok(
+    run((m) => {
+      delete m.pendingParameters;
+    }).some((e) => e.keyword === 'required'),
+  );
+  assert.ok(
+    run((m) => {
+      m.extra = 1;
+    }).some((e) => e.keyword === 'additionalProperties'),
+  );
 });
 
 test('x-decision-versions 引用 DEC-003 且版本与决策登记一致', () => {
@@ -83,16 +113,22 @@ test('待冻结参数失败关闭：禁止臆测默认值', () => {
   assert.equal(CERTIFICATE_PACKAGE_POLICY.claim.maxClaims, null);
   assert.throws(
     () => getRetentionSeconds(),
-    (e: unknown) => e instanceof PolicyParameterPendingError && (e as PolicyParameterPendingError).parameter === 'storage.retentionSeconds'
+    (e: unknown) =>
+      e instanceof PolicyParameterPendingError &&
+      (e as PolicyParameterPendingError).parameter === 'storage.retentionSeconds',
   );
   assert.throws(
     () => getMaxClaims(),
-    (e: unknown) => e instanceof PolicyParameterPendingError && (e as PolicyParameterPendingError).parameter === 'claim.maxClaims'
+    (e: unknown) =>
+      e instanceof PolicyParameterPendingError && (e as PolicyParameterPendingError).parameter === 'claim.maxClaims',
   );
   // 重复领取在冻结前拒绝（失败关闭）
   assert.equal(isRepeatClaimAllowed(), false);
   // pendingParameters 列表与 null 字段一一对应
-  assert.deepEqual([...CERTIFICATE_PACKAGE_POLICY.pendingParameters].sort(), ['claim.maxClaims', 'storage.retentionSeconds']);
+  assert.deepEqual([...CERTIFICATE_PACKAGE_POLICY.pendingParameters].sort(), [
+    'claim.maxClaims',
+    'storage.retentionSeconds',
+  ]);
 });
 
 test('策略消费者均为合法任务 ID 且覆盖 DEC-003 阻塞任务与 SEC-01', () => {
@@ -134,9 +170,13 @@ test('TS 常量与 certificate-package-policy.json 完全一致', () => {
   assert.equal(policyJson.lossHandling.mode, CERTIFICATE_PACKAGE_POLICY.lossHandling.mode);
   assert.equal(policyJson.lossHandling.note, CERTIFICATE_PACKAGE_POLICY.lossHandling.note);
   assert.deepEqual(policyJson.lossHandling.consumers, [...CERTIFICATE_PACKAGE_POLICY.lossHandling.consumers]);
-  assert.deepEqual(policyJson.destructionTriggers.triggers, [...CERTIFICATE_PACKAGE_POLICY.destructionTriggers.triggers]);
+  assert.deepEqual(policyJson.destructionTriggers.triggers, [
+    ...CERTIFICATE_PACKAGE_POLICY.destructionTriggers.triggers,
+  ]);
   assert.equal(policyJson.destructionTriggers.note, CERTIFICATE_PACKAGE_POLICY.destructionTriggers.note);
-  assert.deepEqual(policyJson.destructionTriggers.consumers, [...CERTIFICATE_PACKAGE_POLICY.destructionTriggers.consumers]);
+  assert.deepEqual(policyJson.destructionTriggers.consumers, [
+    ...CERTIFICATE_PACKAGE_POLICY.destructionTriggers.consumers,
+  ]);
   assert.deepEqual(policyJson.pendingParameters, [...CERTIFICATE_PACKAGE_POLICY.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, CERTIFICATE_PACKAGE_POLICY.frozenUpgradePath);
   assert.equal(getPolicyStatus(), 'provisional');

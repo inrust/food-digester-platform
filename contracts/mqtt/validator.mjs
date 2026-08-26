@@ -49,8 +49,7 @@ export class SchemaRegistry {
   }
 }
 
-export const registryFromUrl = (schemaFileUrl) =>
-  new SchemaRegistry(dirname(schemaFileUrl.pathname ?? schemaFileUrl));
+export const registryFromUrl = (schemaFileUrl) => new SchemaRegistry(dirname(schemaFileUrl.pathname ?? schemaFileUrl));
 
 function typeOf(value) {
   if (value === null) return 'null';

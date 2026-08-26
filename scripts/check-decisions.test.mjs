@@ -3,13 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import {
-  loadJson,
-  validateRegister,
-  validateContractVersion,
-  validateTraceability,
-  run,
-} from './check-decisions.mjs';
+import { loadJson, validateRegister, validateContractVersion, validateTraceability, run } from './check-decisions.mjs';
 
 const REGISTER_PATH = new URL('../contracts/decisions/decision-register.json', import.meta.url).pathname;
 const CONTRACT_VERSION_PATH = new URL('../contracts/contract-version.json', import.meta.url).pathname;
@@ -83,10 +77,7 @@ test('真实契约版本文件：decisionRegisterVersion 与登记一致', () =>
 
 test('契约版本不一致被拒绝', () => {
   const register = realRegister();
-  const errors = validateContractVersion(
-    { contractVersion: '0.1.0', decisionRegisterVersion: '9.9.9' },
-    register
-  );
+  const errors = validateContractVersion({ contractVersion: '0.1.0', decisionRegisterVersion: '9.9.9' }, register);
   assert.equal(errors.length, 1);
   assert.match(errors[0], /不一致/);
 });
@@ -147,7 +138,10 @@ test('history 必须非空且末条版本与条目版本一致', () => {
   const noHistory = makeRegister([makeDecision({ history: [] })]);
   assert.ok(validateRegister(noHistory).errors.some((e) => e.includes('history')));
   const mismatch = makeRegister([
-    makeDecision({ version: '0.2.0', history: [{ version: '0.1.0', at: '2026-08-26T00:00:00Z', by: 'CT-01', note: 'x' }] }),
+    makeDecision({
+      version: '0.2.0',
+      history: [{ version: '0.1.0', at: '2026-08-26T00:00:00Z', by: 'CT-01', note: 'x' }],
+    }),
   ]);
   assert.ok(validateRegister(mismatch).errors.some((e) => e.includes('不一致')));
 });
@@ -165,7 +159,10 @@ test('CLI validate 模式：真实文件退出码 0 且输出未决清单；--fa
   assert.equal(code, 0);
   assert.ok(lines[0].includes('未决决策（12 条）'));
 
-  const code2 = run(['--register', REGISTER_PATH, '--contract-version', CONTRACT_VERSION_PATH, '--fail-on-pending', '--json'], () => {});
+  const code2 = run(
+    ['--register', REGISTER_PATH, '--contract-version', CONTRACT_VERSION_PATH, '--fail-on-pending', '--json'],
+    () => {},
+  );
   assert.equal(code2, 2);
 });
 
@@ -213,30 +210,24 @@ test('追溯校验：合法 x-decision-versions 引用通过（Schema 可追溯�
       const { errors, checked } = validateTraceability([file], register);
       assert.deepEqual(errors, []);
       assert.equal(checked.length, 2);
-    }
+    },
   );
 });
 
 test('追溯校验：不存在的决策 ID 被拒绝', () => {
   const register = realRegister();
-  withTraceFixture(
-    { 'bad.schema.json': { 'x-decision-versions': ['DEC-999@1.0.0'] } },
-    ([file]) => {
-      const { errors } = validateTraceability([file], register);
-      assert.ok(errors.some((e) => e.includes('不存在')));
-    }
-  );
+  withTraceFixture({ 'bad.schema.json': { 'x-decision-versions': ['DEC-999@1.0.0'] } }, ([file]) => {
+    const { errors } = validateTraceability([file], register);
+    assert.ok(errors.some((e) => e.includes('不存在')));
+  });
 });
 
 test('追溯校验：引用版本与登记版本不一致被拒绝', () => {
   const register = realRegister();
-  withTraceFixture(
-    { 'stale.schema.json': { 'x-decision-versions': ['DEC-002@9.9.9'] } },
-    ([file]) => {
-      const { errors } = validateTraceability([file], register);
-      assert.ok(errors.some((e) => e.includes('不一致')));
-    }
-  );
+  withTraceFixture({ 'stale.schema.json': { 'x-decision-versions': ['DEC-002@9.9.9'] } }, ([file]) => {
+    const { errors } = validateTraceability([file], register);
+    assert.ok(errors.some((e) => e.includes('不一致')));
+  });
 });
 
 test('追溯校验：缺少 x-decision-versions 或格式非法被拒绝', () => {
@@ -249,7 +240,7 @@ test('追溯校验：缺少 x-decision-versions 或格式非法被拒绝', () =>
     ([missing, malformed]) => {
       assert.ok(validateTraceability([missing], register).errors.some((e) => e.includes('未找到')));
       assert.ok(validateTraceability([malformed], register).errors.some((e) => e.includes('格式必须为')));
-    }
+    },
   );
 });
 
@@ -268,6 +259,6 @@ test('追溯校验：嵌套在 OpenAPI info 下的 x-decision-versions 可被递
       const { errors, checked } = validateTraceability([file], register);
       assert.deepEqual(errors, []);
       assert.equal(checked.length, 1);
-    }
+    },
   );
 });

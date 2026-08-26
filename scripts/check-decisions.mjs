@@ -195,7 +195,7 @@ export function validateContractVersion(contractVersion, register, path = 'contr
   }
   if (contractVersion.decisionRegisterVersion !== register.registerVersion) {
     errors.push(
-      `${path}.decisionRegisterVersion (${contractVersion.decisionRegisterVersion}) 与登记 registerVersion (${register.registerVersion}) 不一致`
+      `${path}.decisionRegisterVersion (${contractVersion.decisionRegisterVersion}) 与登记 registerVersion (${register.registerVersion}) 不一致`,
     );
   }
   return errors;
@@ -269,7 +269,14 @@ export function validateTraceability(files, register) {
 }
 
 function parseArgs(argv) {
-  const opts = { mode: 'validate', files: [], register: 'contracts/decisions/decision-register.json', contractVersion: 'contracts/contract-version.json', failOnPending: false, json: false };
+  const opts = {
+    mode: 'validate',
+    files: [],
+    register: 'contracts/decisions/decision-register.json',
+    contractVersion: 'contracts/contract-version.json',
+    failOnPending: false,
+    json: false,
+  };
   const args = [...argv];
   if (args[0] === 'trace') {
     opts.mode = 'trace';
@@ -315,7 +322,14 @@ export function run(argv, log = console.log) {
     errors.push(...validateContractVersion(contractVersion, register, opts.contractVersion));
   }
 
-  const result = { ok: errors.length === 0, mode: 'validate', registerVersion: register.registerVersion, pendingCount: pending.length, pending, errors };
+  const result = {
+    ok: errors.length === 0,
+    mode: 'validate',
+    registerVersion: register.registerVersion,
+    pendingCount: pending.length,
+    pending,
+    errors,
+  };
   log(opts.json ? JSON.stringify(result, null, 2) : formatHuman(result));
   if (errors.length > 0) return 1;
   if (opts.failOnPending && pending.length > 0) return 2;

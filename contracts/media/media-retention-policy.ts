@@ -97,9 +97,11 @@ export function getExpiryAction(): ExpiryAction {
  * 冻结前是否允许自动过期/删除：恒为 false（参数未冻结，禁止任何自动清理）。
  */
 export function isAutomaticExpiryEnabled(): boolean {
-  return MEDIA_RETENTION_POLICY.retention.metadataRetentionDays !== null
-    && MEDIA_RETENTION_POLICY.retention.fileRetentionDays !== null
-    && MEDIA_RETENTION_POLICY.retention.expiryAction !== null;
+  return (
+    MEDIA_RETENTION_POLICY.retention.metadataRetentionDays !== null &&
+    MEDIA_RETENTION_POLICY.retention.fileRetentionDays !== null &&
+    MEDIA_RETENTION_POLICY.retention.expiryAction !== null
+  );
 }
 
 /** 策略当前状态：provisional 表示 DEC-005 未冻结，消费方不得把值固化为不可迁移结构。 */

@@ -23,7 +23,9 @@ import {
 } from './catalogs.ts';
 
 const commandCatalogJson = JSON.parse(readFileSync(new URL('./command-catalog.json', import.meta.url), 'utf8'));
-const notificationCatalogJson = JSON.parse(readFileSync(new URL('./notification-catalog.json', import.meta.url), 'utf8'));
+const notificationCatalogJson = JSON.parse(
+  readFileSync(new URL('./notification-catalog.json', import.meta.url), 'utf8'),
+);
 
 const ALL_COMMANDS = Object.keys(COMMAND_CATALOG) as CommandCode[];
 const ALL_STATUSES: OperationalStatus[] = ['ACTIVE', 'MAINTENANCE', 'SUSPENDED', 'RETIRED'];
@@ -37,7 +39,7 @@ test('22 个 Command 全部唯一且覆盖六大分类', () => {
   }
   assert.deepEqual(
     [...byCategory.keys()].sort(),
-    ['DEVICE', 'DISCHARGE', 'HEATING', 'MACHINE', 'MOTOR', 'VENTILATION'].sort()
+    ['DEVICE', 'DISCHARGE', 'HEATING', 'MACHINE', 'MOTOR', 'VENTILATION'].sort(),
   );
   assert.deepEqual(Object.fromEntries([...byCategory.entries()].sort()), {
     DEVICE: 5,
@@ -58,8 +60,18 @@ test('13 个 Notification 全部唯一且有设备动作映射', () => {
   }
   // 六个触发 Sync 的通知 + 安全策略
   assert.deepEqual(
-    listNotificationsByAction('SYNC').map((s) => s.type).sort(),
-    ['ASSIGNMENT_CHANGED', 'CONFIG_CHANGED', 'LICENSE_CHANGED', 'SECURITY_POLICY_UPDATED', 'STATUS_CHANGED', 'SYNC_REQUIRED', 'USERS_CHANGED'].sort()
+    listNotificationsByAction('SYNC')
+      .map((s) => s.type)
+      .sort(),
+    [
+      'ASSIGNMENT_CHANGED',
+      'CONFIG_CHANGED',
+      'LICENSE_CHANGED',
+      'SECURITY_POLICY_UPDATED',
+      'STATUS_CHANGED',
+      'SYNC_REQUIRED',
+      'USERS_CHANGED',
+    ].sort(),
   );
   assert.equal(getNotification('CERTIFICATE_ROTATION_REQUIRED').deviceAction, 'ROTATE_CERTIFICATE');
   assert.equal(getNotification('OTA_AVAILABLE').deviceAction, 'AWAIT_OTA_MESSAGE');
@@ -67,14 +79,25 @@ test('13 个 Notification 全部唯一且有设备动作映射', () => {
 });
 
 test('高风险标记与文档一致（EMERGENCY_STOP/FACTORY_RESET/SHUTDOWN/全部加热、排料、电机控制）', () => {
-  const highRisk = listCommands({ highRisk: true }).map((s) => s.command).sort();
-  assert.deepEqual(highRisk, [
-    'AGITATOR_FORWARD', 'AGITATOR_REVERSE', 'AGITATOR_STOP',
-    'DISCHARGE_START', 'DISCHARGE_STOP',
-    'EMERGENCY_STOP', 'FACTORY_RESET',
-    'HEATING_ON', 'HEATING_OFF',
-    'SET_TARGET_TEMPERATURE', 'SHUTDOWN',
-  ].sort());
+  const highRisk = listCommands({ highRisk: true })
+    .map((s) => s.command)
+    .sort();
+  assert.deepEqual(
+    highRisk,
+    [
+      'AGITATOR_FORWARD',
+      'AGITATOR_REVERSE',
+      'AGITATOR_STOP',
+      'DISCHARGE_START',
+      'DISCHARGE_STOP',
+      'EMERGENCY_STOP',
+      'FACTORY_RESET',
+      'HEATING_ON',
+      'HEATING_OFF',
+      'SET_TARGET_TEMPERATURE',
+      'SHUTDOWN',
+    ].sort(),
+  );
 });
 
 test('允许状态矩阵无遗漏：22 命令 × 4 状态', () => {
@@ -95,13 +118,36 @@ test('允许状态矩阵无遗漏：22 命令 × 4 状态', () => {
 
 test('Suspended 仅允许安全停止、诊断、同步和维护/恢复类命令', () => {
   const allowedInSuspended = ALL_COMMANDS.filter((c) => isCommandAllowed(c, 'SUSPENDED')).sort();
-  assert.deepEqual(allowedInSuspended, [
-    'AGITATOR_STOP', 'AIR_SUPPLY_OFF', 'DISCHARGE_STOP', 'EMERGENCY_STOP', 'EXHAUST_OFF',
-    'FORCE_SYNC', 'HEATING_OFF', 'REBOOT', 'SHUTDOWN', 'STOP',
-    'TAKE_SNAPSHOT',
-  ].sort());
+  assert.deepEqual(
+    allowedInSuspended,
+    [
+      'AGITATOR_STOP',
+      'AIR_SUPPLY_OFF',
+      'DISCHARGE_STOP',
+      'EMERGENCY_STOP',
+      'EXHAUST_OFF',
+      'FORCE_SYNC',
+      'HEATING_OFF',
+      'REBOOT',
+      'SHUTDOWN',
+      'STOP',
+      'TAKE_SNAPSHOT',
+    ].sort(),
+  );
   // 会启动处理的命令必须拒绝
-  for (const c of ['START', 'RESUME', 'PAUSE', 'AGITATOR_FORWARD', 'AGITATOR_REVERSE', 'HEATING_ON', 'SET_TARGET_TEMPERATURE', 'EXHAUST_ON', 'AIR_SUPPLY_ON', 'DISCHARGE_START', 'FACTORY_RESET'] as CommandCode[]) {
+  for (const c of [
+    'START',
+    'RESUME',
+    'PAUSE',
+    'AGITATOR_FORWARD',
+    'AGITATOR_REVERSE',
+    'HEATING_ON',
+    'SET_TARGET_TEMPERATURE',
+    'EXHAUST_ON',
+    'AIR_SUPPLY_ON',
+    'DISCHARGE_START',
+    'FACTORY_RESET',
+  ] as CommandCode[]) {
     assert.equal(isCommandAllowed(c, 'SUSPENDED'), false, `${c} 在 Suspended 必须拒绝`);
   }
 });
@@ -111,7 +157,7 @@ test('MAINTENANCE 暂按 Suspended 限制（DEC-001）', () => {
     assert.equal(
       isCommandAllowed(code, 'MAINTENANCE'),
       isCommandAllowed(code, 'SUSPENDED'),
-      `${code} 在 Maintenance 应与 Suspended 一致（暂定值）`
+      `${code} 在 Maintenance 应与 Suspended 一致（暂定值）`,
     );
   }
 });
@@ -119,8 +165,14 @@ test('MAINTENANCE 暂按 Suspended 限制（DEC-001）', () => {
 test('未知命令/通知在运行时被拒绝', () => {
   assert.equal(isKnownCommand('SELF_DESTRUCT'), false);
   assert.equal(isKnownNotification('FIRMWARE_UPDATED'), false);
-  assert.throws(() => getCommand('SELF_DESTRUCT'), (e: unknown) => e instanceof CatalogError && (e as CatalogError).kind === 'UNKNOWN_COMMAND');
-  assert.throws(() => getNotification('FOO'), (e: unknown) => e instanceof CatalogError && (e as CatalogError).kind === 'UNKNOWN_NOTIFICATION');
+  assert.throws(
+    () => getCommand('SELF_DESTRUCT'),
+    (e: unknown) => e instanceof CatalogError && (e as CatalogError).kind === 'UNKNOWN_COMMAND',
+  );
+  assert.throws(
+    () => getNotification('FOO'),
+    (e: unknown) => e instanceof CatalogError && (e as CatalogError).kind === 'UNKNOWN_NOTIFICATION',
+  );
   assert.equal(isCommandAllowed('SELF_DESTRUCT', 'ACTIVE'), false);
 });
 

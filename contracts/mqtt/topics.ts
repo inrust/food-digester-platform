@@ -11,15 +11,7 @@ export const TOPIC_PREFIX = 'bnx/device' as const;
 
 export type TopicDirection = 'uplink' | 'downlink';
 
-export type UplinkTopicType =
-  | 'heartbeat'
-  | 'telemetry'
-  | 'report'
-  | 'alarm'
-  | 'event'
-  | 'ack'
-  | 'tamper'
-  | 'media';
+export type UplinkTopicType = 'heartbeat' | 'telemetry' | 'report' | 'alarm' | 'event' | 'ack' | 'tamper' | 'media';
 
 export type DownlinkTopicType = 'cmd' | 'ota' | 'notification';
 
@@ -41,17 +33,105 @@ export interface TopicSpec {
 }
 
 export const TOPIC_CATALOG: Readonly<Record<TopicType, TopicSpec>> = {
-  heartbeat: { type: 'heartbeat', name: 'Heartbeat', direction: 'uplink', frequency: '每 60 秒', specifiedQos: 1, awsEffectiveQos: 1, payloadEnvelope: 'meta+data' },
-  telemetry: { type: 'telemetry', name: 'Telemetry', direction: 'uplink', frequency: '每 10～60 秒可配置', specifiedQos: 1, awsEffectiveQos: 1, payloadEnvelope: 'meta+audit+data' },
-  report: { type: 'report', name: 'ESG Report', direction: 'uplink', frequency: '每周期/每小时/每日', specifiedQos: 2, awsEffectiveQos: 1, payloadEnvelope: 'meta+audit+data' },
-  alarm: { type: 'alarm', name: 'Alarm', direction: 'uplink', frequency: '事件触发', specifiedQos: 1, awsEffectiveQos: 1, payloadEnvelope: 'meta+data' },
-  event: { type: 'event', name: 'Event', direction: 'uplink', frequency: '事件触发', specifiedQos: 1, awsEffectiveQos: 1, payloadEnvelope: 'meta+data' },
-  ack: { type: 'ack', name: 'ACK', direction: 'uplink', frequency: '命令执行后', specifiedQos: 1, awsEffectiveQos: 1, payloadEnvelope: 'meta+data' },
-  tamper: { type: 'tamper', name: 'Tamper', direction: 'uplink', frequency: '事件触发', specifiedQos: 2, awsEffectiveQos: 1, payloadEnvelope: 'meta+audit+data' },
-  media: { type: 'media', name: 'Media', direction: 'uplink', frequency: '事件触发', specifiedQos: 1, awsEffectiveQos: 1, payloadEnvelope: 'meta+data' },
-  cmd: { type: 'cmd', name: 'Command', direction: 'downlink', frequency: '按需', specifiedQos: 2, awsEffectiveQos: 1, payloadEnvelope: 'meta+data' },
-  ota: { type: 'ota', name: 'OTA', direction: 'downlink', frequency: '按需', specifiedQos: 1, awsEffectiveQos: 1, payloadEnvelope: 'meta+data' },
-  notification: { type: 'notification', name: 'Notification', direction: 'downlink', frequency: '按需', specifiedQos: 1, awsEffectiveQos: 1, payloadEnvelope: 'meta+data' },
+  heartbeat: {
+    type: 'heartbeat',
+    name: 'Heartbeat',
+    direction: 'uplink',
+    frequency: '每 60 秒',
+    specifiedQos: 1,
+    awsEffectiveQos: 1,
+    payloadEnvelope: 'meta+data',
+  },
+  telemetry: {
+    type: 'telemetry',
+    name: 'Telemetry',
+    direction: 'uplink',
+    frequency: '每 10～60 秒可配置',
+    specifiedQos: 1,
+    awsEffectiveQos: 1,
+    payloadEnvelope: 'meta+audit+data',
+  },
+  report: {
+    type: 'report',
+    name: 'ESG Report',
+    direction: 'uplink',
+    frequency: '每周期/每小时/每日',
+    specifiedQos: 2,
+    awsEffectiveQos: 1,
+    payloadEnvelope: 'meta+audit+data',
+  },
+  alarm: {
+    type: 'alarm',
+    name: 'Alarm',
+    direction: 'uplink',
+    frequency: '事件触发',
+    specifiedQos: 1,
+    awsEffectiveQos: 1,
+    payloadEnvelope: 'meta+data',
+  },
+  event: {
+    type: 'event',
+    name: 'Event',
+    direction: 'uplink',
+    frequency: '事件触发',
+    specifiedQos: 1,
+    awsEffectiveQos: 1,
+    payloadEnvelope: 'meta+data',
+  },
+  ack: {
+    type: 'ack',
+    name: 'ACK',
+    direction: 'uplink',
+    frequency: '命令执行后',
+    specifiedQos: 1,
+    awsEffectiveQos: 1,
+    payloadEnvelope: 'meta+data',
+  },
+  tamper: {
+    type: 'tamper',
+    name: 'Tamper',
+    direction: 'uplink',
+    frequency: '事件触发',
+    specifiedQos: 2,
+    awsEffectiveQos: 1,
+    payloadEnvelope: 'meta+audit+data',
+  },
+  media: {
+    type: 'media',
+    name: 'Media',
+    direction: 'uplink',
+    frequency: '事件触发',
+    specifiedQos: 1,
+    awsEffectiveQos: 1,
+    payloadEnvelope: 'meta+data',
+  },
+  cmd: {
+    type: 'cmd',
+    name: 'Command',
+    direction: 'downlink',
+    frequency: '按需',
+    specifiedQos: 2,
+    awsEffectiveQos: 1,
+    payloadEnvelope: 'meta+data',
+  },
+  ota: {
+    type: 'ota',
+    name: 'OTA',
+    direction: 'downlink',
+    frequency: '按需',
+    specifiedQos: 1,
+    awsEffectiveQos: 1,
+    payloadEnvelope: 'meta+data',
+  },
+  notification: {
+    type: 'notification',
+    name: 'Notification',
+    direction: 'downlink',
+    frequency: '按需',
+    specifiedQos: 1,
+    awsEffectiveQos: 1,
+    payloadEnvelope: 'meta+data',
+  },
 } as const;
 
 export const UPLINK_TOPIC_TYPES: readonly UplinkTopicType[] = Object.values(TOPIC_CATALOG)
@@ -67,11 +147,7 @@ const DEVICE_ID_PATTERN = /^[A-Za-z0-9:_@.-]{1,128}$/;
 
 export class TopicError extends Error {
   readonly reason:
-    | 'INVALID_PREFIX'
-    | 'INVALID_SEGMENT_COUNT'
-    | 'EMPTY_DEVICE_ID'
-    | 'INVALID_DEVICE_ID'
-    | 'UNKNOWN_TOPIC_TYPE';
+    'INVALID_PREFIX' | 'INVALID_SEGMENT_COUNT' | 'EMPTY_DEVICE_ID' | 'INVALID_DEVICE_ID' | 'UNKNOWN_TOPIC_TYPE';
 
   constructor(reason: TopicError['reason'], topic: string) {
     super(`${reason}: ${topic}`);

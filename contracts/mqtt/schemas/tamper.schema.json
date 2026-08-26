@@ -15,7 +15,11 @@
       "additionalProperties": false,
       "properties": {
         "eventType": { "type": "string", "minLength": 1, "description": "安全事件类型，如 ROOT_DETECTED。" },
-        "severity": { "type": "string", "enum": ["INFO", "WARNING", "HIGH", "CRITICAL"], "description": "沿用 Alarm 严重度词表（通信设计仅示例 CRITICAL，待协议冻结确认）。" },
+        "severity": {
+          "type": "string",
+          "enum": ["INFO", "WARNING", "HIGH", "CRITICAL"],
+          "description": "沿用 Alarm 严重度词表（通信设计仅示例 CRITICAL，待协议冻结确认）。"
+        },
         "component": { "type": "string", "minLength": 1 },
         "details": { "type": "string" },
         "actionTaken": { "type": "string", "minLength": 1, "description": "自动响应动作，如 DEVICE_SUSPENDED。" }

@@ -28,10 +28,7 @@ test('11 类消息均有 Schema 和 Fixture，且每类 >=1 合法 + >=3 非法'
   assert.equal(fixtureFiles.length, 11);
   for (const file of fixtureFiles) {
     const fixture = JSON.parse(readFileSync(`${FIXTURE_DIR}/${file}`, 'utf8'));
-    assert.ok(
-      schemaFiles.includes(`${fixture.topicType}.schema.json`),
-      `${fixture.topicType} 缺少 Schema`
-    );
+    assert.ok(schemaFiles.includes(`${fixture.topicType}.schema.json`), `${fixture.topicType} 缺少 Schema`);
     assert.ok(fixture.valid.length >= 1, `${fixture.topicType} 合法 Fixture 不足`);
     assert.ok(fixture.invalid.length >= 3, `${fixture.topicType} 非法 Fixture 不足（${fixture.invalid.length}）`);
   }
@@ -58,7 +55,7 @@ test('所有非法 Fixture 被稳定拒绝并返回明确错误路径', () => {
       if (expectPath) {
         assert.ok(
           errors.some((e) => e.path === expectPath || e.path.startsWith(expectPath + '.')),
-          `${fixture.topicType} "${name}" 错误路径 ${errors.map((e) => e.path).join(',')} 中应包含 ${expectPath}`
+          `${fixture.topicType} "${name}" 错误路径 ${errors.map((e) => e.path).join(',')} 中应包含 ${expectPath}`,
         );
       }
     }
@@ -100,7 +97,11 @@ test('缺少必填字段被拒绝（meta.id、上行 seq、Heartbeat 必填 data
 
   const noFirmware = structuredClone(base);
   delete noFirmware.data.firmwareVersion;
-  assert.ok(validate(schema, fileName, noFirmware, registry).some((e) => e.path === 'data' && e.message.includes('firmwareVersion')));
+  assert.ok(
+    validate(schema, fileName, noFirmware, registry).some(
+      (e) => e.path === 'data' && e.message.includes('firmwareVersion'),
+    ),
+  );
 });
 
 test('额外身份字段（customerId/tenantId/deviceId）在各层均被拒绝', () => {
@@ -109,15 +110,23 @@ test('额外身份字段（customerId/tenantId/deviceId）在各层均被拒绝'
 
   const inData = structuredClone(base);
   inData.data.customerId = 'CUS-1';
-  assert.ok(validate(schema, fileName, inData, registry).some((e) => e.path === 'data' && e.keyword === 'additionalProperties'));
+  assert.ok(
+    validate(schema, fileName, inData, registry).some((e) => e.path === 'data' && e.keyword === 'additionalProperties'),
+  );
 
   const inMeta = structuredClone(base);
   inMeta.meta.tenantId = 'T-1';
-  assert.ok(validate(schema, fileName, inMeta, registry).some((e) => e.path === 'meta' && e.keyword === 'additionalProperties'));
+  assert.ok(
+    validate(schema, fileName, inMeta, registry).some((e) => e.path === 'meta' && e.keyword === 'additionalProperties'),
+  );
 
   const atRoot = structuredClone(base);
   atRoot.deviceId = 'DEV001';
-  assert.ok(validate(schema, fileName, atRoot, registry).some((e) => e.path === '(root)' && e.keyword === 'additionalProperties'));
+  assert.ok(
+    validate(schema, fileName, atRoot, registry).some(
+      (e) => e.path === '(root)' && e.keyword === 'additionalProperties',
+    ),
+  );
 });
 
 test('下行消息 meta.seq 可选（DEC-006），上行强制', () => {
@@ -140,7 +149,7 @@ test('Telemetry/Report/Tamper 强制 audit.hash；Command 禁止 audit（DEC-002
     delete noAudit.audit;
     assert.ok(
       validate(schema, fileName, noAudit, registry).some((e) => e.path === '(root)' && e.message.includes('audit')),
-      `${type} 缺少 audit 应被拒绝`
+      `${type} 缺少 audit 应被拒绝`,
     );
   }
 });

@@ -133,7 +133,9 @@ export function toErrorResponse(err: unknown, ctx: RequestContext): { status: nu
   }
   return {
     status: 500,
-    body: { error: { code: 'INTERNAL_ERROR', message: ERROR_DEFAULT_MESSAGE.INTERNAL_ERROR, requestId: ctx.requestId } },
+    body: {
+      error: { code: 'INTERNAL_ERROR', message: ERROR_DEFAULT_MESSAGE.INTERNAL_ERROR, requestId: ctx.requestId },
+    },
   };
 }
 

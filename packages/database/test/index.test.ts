@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { assert, test } from 'vitest';
 import { PACKAGE_NAME, LAYER_CHAIN } from '../src/index.js';
 
 test('@fdp/database 骨架可加载', () => {
