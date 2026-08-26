@@ -1,0 +1,18 @@
+{
+  "contractVersion": "0.1.0",
+  "decisionRegisterVersion": "1.0.0",
+  "updatedAt": "2026-08-26T00:00:00Z",
+  "fields": {
+    "decisionRegisterVersion": {
+      "description": "契约包构建时所依据的决策登记版本，必须等于 contracts/decisions/decision-register.json 的 registerVersion。",
+      "convention": "任何契约包（OpenAPI、MQTT JSON Schema、Topic Catalog）发布时必须携带该版本；消费方按 id@version 引用单条决策。"
+    },
+    "decisionVersions": {
+      "description": "单个契约文件声明其依赖的决策条目及版本。",
+      "format": "DEC-xxx@<semver>",
+      "openapiField": "info.x-decision-versions",
+      "jsonSchemaField": "x-decision-versions",
+      "example": ["DEC-002@1.0.0", "ADP-002@1.0.0"]
+    }
+  }
+}

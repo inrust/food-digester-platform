@@ -1,0 +1,337 @@
+{
+  "registerVersion": "1.0.0",
+  "updatedAt": "2026-08-26T00:00:00Z",
+  "sourceDocuments": [
+    {
+      "tier": 1,
+      "id": "device-cloud-communication-design",
+      "file": "docs/Device-Cloud Communication Design.pdf",
+      "title": "Device-Cloud Communication Design（设备-云通信设计，最高优先级事实源）"
+    },
+    {
+      "tier": 2,
+      "id": "aws-key-solutions",
+      "file": "docs/AWS云端方案关键问题与解决方案.md",
+      "title": "AWS 云端方案关键问题与解决方案"
+    },
+    {
+      "tier": 2,
+      "id": "aws-implementation-plan",
+      "file": "docs/AWS云端业务与管理后台开发实施方案.md",
+      "title": "AWS 云端业务与管理后台开发实施方案"
+    },
+    {
+      "tier": 3,
+      "id": "admin-prototype",
+      "file": "docs/index19.html",
+      "title": "管理后台原型 index19.html（静态演示，仅作信息架构/布局/字段/交互意图参考）"
+    }
+  ],
+  "principles": [
+    {
+      "id": "PRI-001",
+      "version": "1.0.0",
+      "status": "active",
+      "title": "需求解释三级优先原则",
+      "statement": "需求解释优先级固定为：①《Device-Cloud Communication Design》；②两份 AWS 云端方案（关键问题与解决方案、开发实施方案）；③index19.html 原型。原型与前两级冲突时必须修正原型实现，不能反向修改协议或弱化安全约束；原型新增但上级资料未定义的能力必须进入决策门禁（DEC-xxx），不能直接假设设备端已支持。",
+      "approvedBy": "管理后台开发任务清单 §1",
+      "affectedModules": ["all"],
+      "history": [
+        {
+          "version": "1.0.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "依据任务清单 §1 登记为固定原则。"
+        }
+      ]
+    },
+    {
+      "id": "ADP-001",
+      "version": "1.0.0",
+      "status": "active",
+      "title": "Customer 语义与服务端身份注入",
+      "statement": "所有 Customer 范围由服务端身份上下文注入：设备提交的 customerId 不可信，身份由证书/Thing 与设备台账解析；管理后台 actor 与 customer scope 由 Cognito JWT 映射注入；Repository 默认强制 customerId，平台跨 Customer 查询必须调用显式管理接口。所有时间以 UTC 存储。",
+      "approvedBy": "管理后台开发任务清单 §3",
+      "affectedModules": ["CT-05", "DB-02", "AUTH-01", "AUTH-03", "BE-IOT-01", "BE-IOT-02"],
+      "history": [
+        {
+          "version": "1.0.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "依据任务清单 §3 执行规范第 4 条及 BE-IOT-01 技术对接要求登记。"
+        }
+      ]
+    },
+    {
+      "id": "ADP-002",
+      "version": "1.0.0",
+      "status": "active",
+      "title": "MQTT QoS 2→1 适配",
+      "statement": "ESG Report、Tamper、Command 三个 Topic 的规定 QoS（specifiedQos）为 2，AWS IoT Core 实施值（awsEffectiveQos）为 1；其余 Topic 均为 1。契约必须同时保存 specifiedQos 与 awsEffectiveQos 两个字段；QoS 降级带来的重复/乱序风险由 ingestion 幂等（deviceId+type+seq receipt 与 Payload Hash 比对）吸收，不得反向修改协议规定值。",
+      "approvedBy": "管理后台开发任务清单 CT-02 / BE-IOT-03",
+      "affectedModules": ["CT-02", "CT-03", "BE-CMD-02", "BE-IOT-02", "BE-IOT-03", "BE-OTA-03"],
+      "history": [
+        {
+          "version": "1.0.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "依据 CT-02 技术对接要求与 BE-CMD-02 决策引用要求登记。"
+        }
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "DEC-001",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "Maintenance 行为矩阵",
+      "conflict": "设备进入 Maintenance 生命周期后，允许/禁止的云端与设备行为集合未冻结，影响同步、命令、遥测与 OTA 处理。",
+      "provisionalValue": "独立状态；暂按 Suspended 限制，但允许维护、同步、遥测、告警和 OTA。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["DOM-01", "BE-SYNC-01", "BE-DEV-04", "BE-CMD-01", "BE-CMD-02"],
+      "affectedModules": ["DOM", "BE-SYNC", "BE-DEV", "BE-CMD"],
+      "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-002",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "Topic Tier 标记",
+      "conflict": "各上行/下行 Topic 是否携带 audit 字段的 Tier 标记未冻结，影响 MQTT JSON Schema 的强制字段。",
+      "provisionalValue": "具体 Payload 示例优先；Telemetry/Report/Tamper 含 audit，Command 不含 audit。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["CT-03", "BE-IOT-02"],
+      "affectedModules": ["CT", "BE-IOT"],
+      "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-003",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "一次性证书包领取有效期和次数",
+      "conflict": "证书包一次性领取的有效期、允许领取次数与丢失后的处置策略未冻结。",
+      "provisionalValue": "KMS 加密短期保存；成功领取后销毁；丢失后重签。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["BE-ONB-03", "BE-CERT-02"],
+      "affectedModules": ["SEC", "BE-ONB", "BE-CERT"],
+      "sourceRefs": ["aws-key-solutions", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-004",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "Device User 密码验证格式",
+      "conflict": "设备本地登录验证值的 KDF 格式与下发材料未冻结。",
+      "provisionalValue": "设备本地专用加盐验证值，禁止复用云端密码 Hash。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["BE-DUSR-02"],
+      "affectedModules": ["BE-DUSR", "SEC"],
+      "sourceRefs": ["aws-key-solutions", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-005",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "Media 文件与元数据保留期",
+      "conflict": "Media 文件与元数据的保留期限未冻结，影响 S3/RDS 存储与查询接口语义。",
+      "provisionalValue": "RDS 保存元数据、S3 保存文件；具体期限待定。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["BE-MED-01", "FE-14"],
+      "affectedModules": ["BE-MED", "BE-ARC", "FE"],
+      "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-006",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "下行消息是否补充 meta.seq",
+      "conflict": "下行消息（Command 等）是否强制 meta.seq 序号未冻结，影响下行 Schema 与幂等键设计。",
+      "provisionalValue": "V1 不强制；Command 以 meta.id 幂等。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["CT-03", "BE-CMD-02"],
+      "affectedModules": ["CT", "BE-CMD"],
+      "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-007",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "Contract 与 License 的关系",
+      "conflict": "原型将合约与授权混用；Contract（商业租期/设备关联）与 License（设备能力授权）的职责边界与联动规则未冻结。",
+      "provisionalValue": "Contract 管商业租期和设备关联；License 管设备能力授权；创建 Contract 不自动激活 License。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["DB-01", "BE-CON-01", "BE-CON-02", "FE-17"],
+      "affectedModules": ["DB", "BE-CON", "BE-LIC", "FE"],
+      "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-008",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "耗材正式名称、数据来源与阈值",
+      "conflict": "原型的“碳包/碳滤网、活性菌/添加剂”为原型新增需求；正式名称、设备上报来源和展示阈值未冻结。",
+      "provisionalValue": "暂用 CARBON_FILTER、BIO_ADDITIVE；仅保存设备已定义上报值，不由云端臆测百分比。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["DB-01", "BE-IOT-05", "BE-CNS-01", "FE-18"],
+      "affectedModules": ["DB", "BE-IOT", "BE-CNS", "FE"],
+      "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-009",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "摄像头交互语义",
+      "conflict": "原型提供摄像头“播放/停止”和“实时画面”，但上级协议未定义实时流媒体能力。",
+      "provisionalValue": "V1 仅查看最新授权 Media 并手动刷新；实时视频流暂不实现。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["BE-MED-01", "FE-06", "FE-12", "FE-14"],
+      "affectedModules": ["BE-MED", "FE"],
+      "sourceRefs": ["device-cloud-communication-design", "admin-prototype"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-010",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "原型设备状态映射",
+      "conflict": "原型“是否启用/启用状态/在线/离线/维护/待机”混用单一字段，与云端多维状态模型冲突。",
+      "provisionalValue": "connectivity、lifecycle、operational、license 四轴分离；“启用”由明确业务规则派生。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["BE-DEV-01", "BE-DEV-05", "FE-03", "FE-06"],
+      "affectedModules": ["BE-DEV", "BE-DASH", "FE"],
+      "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-011",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "Region/Subregion/Site 模型",
+      "conflict": "原型区域/子区域/站点层级与事实关联 Customer→Site→Device 的归属关系未冻结。",
+      "provisionalValue": "Region/Subregion 为 Site 可筛选属性；设备只关联 Site，不直接保存重复地域真值。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["DB-01", "BE-CUS-02", "BE-DEV-01", "FE-05", "FE-06"],
+      "affectedModules": ["DB", "BE-CUS", "BE-DEV", "FE"],
+      "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-012",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "原型角色映射",
+      "conflict": "原型“平台管理员/运维人员”与正式 RBAC 角色及权限矩阵的映射未冻结。",
+      "provisionalValue": "平台管理员→PlatformSuperAdmin；原型“运维人员”→PlatformOperator（界面名“设备操作员”），且不授予 AWS 资源权限；V1 权限矩阵固定，原型权限复选框只读。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["AUTH-01", "BE-RBAC-01", "FE-01", "FE-16"],
+      "affectedModules": ["AUTH", "BE-RBAC", "FE"],
+      "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-08-26T00:00:00Z",
+          "by": "CT-01",
+          "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        }
+      ]
+    }
+  ]
+}

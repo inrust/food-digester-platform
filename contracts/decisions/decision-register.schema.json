@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hiddenjoya.local/contracts/decisions/decision-register.schema.json",
+  "title": "Decision Register",
+  "description": "需求优先级与技术适配决策登记（CT-01）。所有协议冻结门禁决策与技术适配原则的唯一结构化事实源。",
+  "type": "object",
+  "required": ["registerVersion", "updatedAt", "sourceDocuments", "principles", "decisions"],
+  "additionalProperties": false,
+  "properties": {
+    "registerVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "登记文件自身版本，语义化版本。任何条目增删改必须提升该版本。"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO-8601 时间戳。"
+    },
+    "sourceDocuments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["tier", "id", "file", "title"],
+        "additionalProperties": false,
+        "properties": {
+          "tier": { "type": "integer", "minimum": 1, "maximum": 3 },
+          "id": { "type": "string", "minLength": 1 },
+          "file": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "principles": {
+      "type": "array",
+      "description": "已固化的优先级原则与技术适配规则（非门禁，直接生效）。",
+      "items": { "$ref": "#/$defs/principle" }
+    },
+    "decisions": {
+      "type": "array",
+      "description": "协议冻结门禁决策 DEC-xxx。",
+      "items": { "$ref": "#/$defs/decision" }
+    }
+  },
+  "$defs": {
+    "historyEntry": {
+      "type": "object",
+      "required": ["version", "at", "by", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "at": { "type": "string", "format": "date-time" },
+        "by": { "type": "string", "minLength": 1 },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "principle": {
+      "type": "object",
+      "required": ["id", "version", "status", "title", "statement", "approvedBy", "affectedModules", "history"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^(PRI|ADP)-\\d{3}$" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "status": { "type": "string", "enum": ["active", "superseded"] },
+        "title": { "type": "string", "minLength": 1 },
+        "statement": { "type": "string", "minLength": 1 },
+        "approvedBy": { "type": "string", "minLength": 1 },
+        "affectedModules": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "history": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/historyEntry" }
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "required": [
+        "id",
+        "version",
+        "status",
+        "title",
+        "conflict",
+        "provisionalValue",
+        "approver",
+        "approvedAt",
+        "blockingTasks",
+        "affectedModules",
+        "sourceRefs",
+        "history"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^DEC-\\d{3}$" },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "决策条目版本。frozen 时必须 >= 1.0.0；0.x 表示暂定值。"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "proposed", "frozen", "superseded"],
+          "description": "pending=未决（仅暂定值）；proposed=已提交待批准；frozen=已冻结；superseded=已被新版本替代。"
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "conflict": { "type": "string", "minLength": 1, "description": "该决策解决的已知冲突或开放问题。" },
+        "provisionalValue": { "type": "string", "minLength": 1, "description": "冻结前的暂定值；冻结后记录最终冻结值。" },
+        "approver": {
+          "type": ["string", "null"],
+          "description": "批准人。pending 状态必须为 null；frozen 状态必填。"
+        },
+        "approvedAt": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "批准时间（UTC）。pending 状态必须为 null；frozen 状态必填。"
+        },
+        "blockingTasks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "pattern": "^[A-Z]{2,4}(-[A-Z]{2,4})?-\\d{2}$" },
+          "description": "被该决策阻塞的任务 ID。"
+        },
+        "affectedModules": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "sourceRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "依据来源（sourceDocuments 的 id 或章节）。"
+        },
+        "history": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/historyEntry" }
+        }
+      }
+    }
+  }
+}
