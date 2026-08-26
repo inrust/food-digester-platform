@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ack.schema.json",
+  "title": "ACK",
+  "x-typescript-name": "Ack",
+  "x-decision-versions": ["DEC-002@0.1.0"],
+  "type": "object",
+  "required": ["meta", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": { "$ref": "common.schema.json#/$defs/metaSeq" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "commandId": { "type": "string", "minLength": 1, "description": "关联的 Command meta.id，如 CMD-DEV001-6001。" },
+        "command": { "type": "string", "minLength": 1, "description": "命令名，正式白名单见 CT-04。" },
+        "result": { "type": "string", "enum": ["SUCCESS", "FAILED"] },
+        "executeTimeMs": { "type": "integer", "minimum": 0 },
+        "errorCode": { "type": ["string", "null"] },
+        "message": { "type": "string" }
+      }
+    }
+  }
+}

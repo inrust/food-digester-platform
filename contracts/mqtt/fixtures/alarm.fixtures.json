@@ -1,0 +1,55 @@
+{
+  "topicType": "alarm",
+  "valid": [
+    {
+      "meta": { "id": "ALM-DEV001-30001", "ts": "2026-08-01T10:15:00Z", "seq": 30001 },
+      "data": {
+        "code": "TEMP_HIGH",
+        "category": "TEMPERATURE",
+        "severity": "HIGH",
+        "status": "ACTIVE",
+        "detectedTime": "2026-08-01T10:15:00Z",
+        "component": "HEATER",
+        "currentValue": 88,
+        "threshold": 80,
+        "unit": "C",
+        "message": "Heating temperature exceeded threshold",
+        "recommendedAction": "CHECK_HEATER"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "非法枚举 severity",
+      "payload": {
+        "meta": { "id": "ALM-DEV001-30002", "ts": "2026-08-01T10:15:00Z", "seq": 30002 },
+        "data": { "code": "TEMP_HIGH", "severity": "SEVERE", "status": "ACTIVE" }
+      },
+      "expectPath": "data.severity"
+    },
+    {
+      "name": "非法枚举 status",
+      "payload": {
+        "meta": { "id": "ALM-DEV001-30003", "ts": "2026-08-01T10:15:00Z", "seq": 30003 },
+        "data": { "code": "TEMP_HIGH", "severity": "HIGH", "status": "OPEN" }
+      },
+      "expectPath": "data.status"
+    },
+    {
+      "name": "detectedTime 非 UTC ISO 8601",
+      "payload": {
+        "meta": { "id": "ALM-DEV001-30004", "ts": "2026-08-01T10:15:00Z", "seq": 30004 },
+        "data": { "code": "TEMP_HIGH", "detectedTime": "2026-08-01 10:15:00" }
+      },
+      "expectPath": "data.detectedTime"
+    },
+    {
+      "name": "currentValue 类型错误",
+      "payload": {
+        "meta": { "id": "ALM-DEV001-30005", "ts": "2026-08-01T10:15:00Z", "seq": 30005 },
+        "data": { "code": "TEMP_HIGH", "currentValue": "88" }
+      },
+      "expectPath": "data.currentValue"
+    }
+  ]
+}

@@ -1,0 +1,251 @@
+/**
+ * 由 scripts/generate-payload-types.mjs 从 contracts/mqtt/schemas/*.schema.json 生成。
+ * 请勿手工编辑；修改 Schema 后重新运行生成器。
+ */
+
+/** 消息 meta（下行：seq 可选，DEC-006）。 */
+export interface Meta {
+  id: string;
+  ts: string;
+  seq?: number;
+  schemaVer?: string;
+}
+
+/** 上行消息 meta：seq 必填。 */
+export interface MetaSeq extends Meta {
+  seq: number;
+}
+
+export interface Audit {
+  hash: string;
+}
+
+export interface AckData {
+  /** 关联的 Command meta.id，如 CMD-DEV001-6001。 */
+  commandId?: string;
+  /** 命令名，正式白名单见 CT-04。 */
+  command?: string;
+  result?: "SUCCESS" | "FAILED";
+  executeTimeMs?: number;
+  errorCode?: string | null;
+  message?: string;
+}
+
+export interface AckPayload {
+  meta: MetaSeq;
+  audit?: never;
+  data: AckData;
+}
+
+export interface AlarmData {
+  code?: string;
+  category?: string;
+  severity?: "INFO" | "WARNING" | "HIGH" | "CRITICAL";
+  status?: "ACTIVE" | "CLEARED";
+  detectedTime?: string;
+  component?: string;
+  currentValue?: number;
+  threshold?: number;
+  unit?: string;
+  message?: string;
+  recommendedAction?: string;
+}
+
+export interface AlarmPayload {
+  meta: MetaSeq;
+  audit?: never;
+  data: AlarmData;
+}
+
+export interface CommandData {
+  /** 命令名，V1 白名单见 CT-04；meta.id 即 commandId。 */
+  command: string;
+  /** 请求发起者；云端以身份上下文为准，不信任客户端声明（ADP-001）。 */
+  requestedBy?: string;
+  requestTime: string;
+  timeoutSec: number;
+  remarks?: string;
+}
+
+export interface CommandPayload {
+  meta: Meta;
+  audit?: never;
+  data: CommandData;
+}
+
+export interface EventData {
+  eventType?: string;
+  userId?: string;
+  username?: string;
+  source?: "LOCAL" | "REMOTE";
+  remarks?: string;
+}
+
+export interface EventPayload {
+  meta: MetaSeq;
+  audit?: never;
+  data: EventData;
+}
+
+export interface HeartbeatData {
+  deviceStatus: "ONLINE" | "DEGRADED" | "OFFLINE";
+  uptimeSeconds: number;
+  firmwareVersion: string;
+  operationalStatus: "ACTIVE" | "SUSPENDED" | "RETIRED";
+  machineRunning: boolean;
+  /** 枚举以通信设计原文为准（含 DISCHARING 原文拼写，待协议冻结确认）。 */
+  machineMode: "IDLE" | "PROCESSING" | "HEATING" | "DISCHARING" | "STOPPED" | "ERROR";
+  licenseStatus: "ACTIVE" | "EXPIRING" | "EXPIRED" | "REVOKED";
+  licenseExpiryDate?: string;
+  /** 通信设计标记为 Enum 但未给出完整枚举值（示例 4G），冻结前按非空字符串处理。 */
+  networkType: string;
+  networkStatus: "CONNECTED" | "WEAK" | "DISCONNECTED";
+  signalStrength?: number;
+  cpuUsagePct?: number;
+  memoryUsagePct?: number;
+  storageUsagePct?: number;
+  sensorOverallStatus: "NORMAL" | "WARNING" | "FAILED";
+  temperatureSensor?: "NORMAL" | "WARNING" | "FAILED";
+  humiditySensor?: "NORMAL" | "WARNING" | "FAILED";
+  weightSensor?: "NORMAL" | "WARNING" | "FAILED";
+  gasSensor?: "NORMAL" | "WARNING" | "FAILED";
+  certificateStatus?: "VALID" | "EXPIRING" | "EXPIRED" | "REVOKED";
+  /** 通信设计仅给出示例 NORMAL，冻结前按非空字符串处理。 */
+  tamperStatus?: string;
+}
+
+export interface HeartbeatPayload {
+  meta: MetaSeq;
+  audit?: never;
+  data: HeartbeatData;
+}
+
+export interface MediaData {
+  mediaType?: "IMAGE" | "VIDEO";
+  captureTime?: string;
+  fileName?: string;
+  /** 云存储路径；授权前缀校验由 BE-IOT-08/BE-MED-01 处理。 */
+  objectPath?: string;
+  sizeKb?: number;
+  /** 视频时长，图片为 0。 */
+  durationSec?: number;
+}
+
+export interface MediaPayload {
+  meta: MetaSeq;
+  audit?: never;
+  data: MediaData;
+}
+
+export interface NotificationData {
+  /** 通知类型（如 LICENSE_CHANGED）；13 类正式目录见 CT-04。 */
+  type?: string;
+  priority?: "LOW" | "NORMAL" | "HIGH";
+  title?: string;
+  message?: string;
+  /** 建议设备动作，如 SYNC。 */
+  action?: string;
+}
+
+export interface NotificationPayload {
+  meta: Meta;
+  audit?: never;
+  data: NotificationData;
+}
+
+export interface OtaData {
+  version?: string;
+  packageType?: "APP" | "FIRMWARE";
+  downloadUrl?: string;
+  sha256?: string;
+  mandatory?: boolean;
+  scheduledTime?: string;
+}
+
+export interface OtaPayload {
+  meta: Meta;
+  audit?: never;
+  data: OtaData;
+}
+
+export interface EsgReportData {
+  reportType?: "CYCLE" | "HOURLY" | "DAILY";
+  periodStartTime?: string;
+  periodEndTime?: string;
+  feedingWeightKg?: number;
+  dischargeWeightKg?: number;
+  reductionWeightKg?: number;
+  cycleCount?: number;
+  processingDurationMinutes?: number;
+  energyConsumptionKwh?: number;
+  averagePowerKw?: number;
+  averageO2Pct?: number;
+  averageCo2Ppm?: number;
+  averageCh4Ppm?: number;
+  averageN2oPpm?: number;
+  carbonReductionKg?: number;
+  /** 计算方法版本，如 DEFAULT_V1。 */
+  carbonReductionMethod?: string;
+  dataCompletenessPct?: number;
+  missingRecordCount?: number;
+}
+
+export interface EsgReportPayload {
+  meta: MetaSeq;
+  audit: Audit;
+  data: EsgReportData;
+}
+
+export interface TamperData {
+  /** 安全事件类型，如 ROOT_DETECTED。 */
+  eventType?: string;
+  /** 沿用 Alarm 严重度词表（通信设计仅示例 CRITICAL，待协议冻结确认）。 */
+  severity?: "INFO" | "WARNING" | "HIGH" | "CRITICAL";
+  component?: string;
+  details?: string;
+  /** 自动响应动作，如 DEVICE_SUSPENDED。 */
+  actionTaken?: string;
+}
+
+export interface TamperPayload {
+  meta: MetaSeq;
+  audit: Audit;
+  data: TamperData;
+}
+
+export interface TelemetryData {
+  feedingWeightKg?: number;
+  chamberWeightKg?: number;
+  dischargeWeightKg?: number;
+  humidityPct?: number;
+  ambientTempC?: number;
+  heatTemperatureC?: number;
+  siloTemperatureC?: number;
+  powerConsumptionKw?: number;
+  o2Pct?: number;
+  co2Ppm?: number;
+  ch4Ppm?: number;
+  n2oPpm?: number;
+  currentAmp?: number;
+}
+
+export interface TelemetryPayload {
+  meta: MetaSeq;
+  audit: Audit;
+  data: TelemetryData;
+}
+
+/** Topic type 到 Payload 类型的映射。 */
+export interface PayloadByTopicType {
+  ack: AckPayload;
+  alarm: AlarmPayload;
+  cmd: CommandPayload;
+  event: EventPayload;
+  heartbeat: HeartbeatPayload;
+  media: MediaPayload;
+  notification: NotificationPayload;
+  ota: OtaPayload;
+  report: EsgReportPayload;
+  tamper: TamperPayload;
+  telemetry: TelemetryPayload;
+}

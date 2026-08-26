@@ -1,0 +1,42 @@
+{
+  "topicType": "media",
+  "valid": [
+    {
+      "meta": { "id": "MED-DEV001-70001", "ts": "2026-08-01T12:05:00Z", "seq": 70001 },
+      "data": {
+        "mediaType": "IMAGE",
+        "captureTime": "2026-08-01T12:04:55Z",
+        "fileName": "snapshot.jpg",
+        "objectPath": "s3://bucket/path",
+        "sizeKb": 512,
+        "durationSec": 0
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "非法枚举 mediaType",
+      "payload": {
+        "meta": { "id": "MED-DEV001-70002", "ts": "2026-08-01T12:05:00Z", "seq": 70002 },
+        "data": { "mediaType": "AUDIO", "fileName": "a.mp3" }
+      },
+      "expectPath": "data.mediaType"
+    },
+    {
+      "name": "durationSec 为负数",
+      "payload": {
+        "meta": { "id": "MED-DEV001-70003", "ts": "2026-08-01T12:05:00Z", "seq": 70003 },
+        "data": { "mediaType": "VIDEO", "durationSec": -1 }
+      },
+      "expectPath": "data.durationSec"
+    },
+    {
+      "name": "captureTime 非 UTC",
+      "payload": {
+        "meta": { "id": "MED-DEV001-70004", "ts": "2026-08-01T12:05:00Z", "seq": 70004 },
+        "data": { "mediaType": "IMAGE", "captureTime": "2026-08-01T12:04:55+08:00" }
+      },
+      "expectPath": "data.captureTime"
+    }
+  ]
+}

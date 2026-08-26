@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ota.schema.json",
+  "title": "OTA",
+  "x-typescript-name": "Ota",
+  "x-decision-versions": ["DEC-002@0.1.0", "DEC-006@0.1.0"],
+  "type": "object",
+  "required": ["meta", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": { "$ref": "common.schema.json#/$defs/metaBase" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": { "type": "string", "minLength": 1 },
+        "packageType": { "type": "string", "enum": ["APP", "FIRMWARE"] },
+        "downloadUrl": { "type": "string", "pattern": "^https://" },
+        "sha256": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" },
+        "mandatory": { "type": "boolean" },
+        "scheduledTime": { "$ref": "common.schema.json#/$defs/utcDateTime" }
+      }
+    }
+  }
+}

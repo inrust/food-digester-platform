@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "alarm.schema.json",
+  "title": "Alarm",
+  "x-typescript-name": "Alarm",
+  "x-decision-versions": ["DEC-002@0.1.0"],
+  "type": "object",
+  "required": ["meta", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": { "$ref": "common.schema.json#/$defs/metaSeq" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "category": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "enum": ["INFO", "WARNING", "HIGH", "CRITICAL"] },
+        "status": { "type": "string", "enum": ["ACTIVE", "CLEARED"] },
+        "detectedTime": { "$ref": "common.schema.json#/$defs/utcDateTime" },
+        "component": { "type": "string", "minLength": 1 },
+        "currentValue": { "type": "number" },
+        "threshold": { "type": "number" },
+        "unit": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "recommendedAction": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

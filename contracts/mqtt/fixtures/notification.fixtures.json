@@ -1,0 +1,42 @@
+{
+  "topicType": "notification",
+  "valid": [
+    {
+      "meta": { "id": "NTF-DEV001-90001", "ts": "2026-08-01T09:00:00Z" },
+      "data": {
+        "type": "LICENSE_CHANGED",
+        "priority": "NORMAL",
+        "title": "License Updated",
+        "message": "New license is available",
+        "action": "SYNC"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "非法枚举 priority",
+      "payload": {
+        "meta": { "id": "NTF-DEV001-90002", "ts": "2026-08-01T09:00:00Z" },
+        "data": { "type": "LICENSE_CHANGED", "priority": "URGENT", "title": "t", "message": "m", "action": "SYNC" }
+      },
+      "expectPath": "data.priority"
+    },
+    {
+      "name": "title 为空字符串",
+      "payload": {
+        "meta": { "id": "NTF-DEV001-90003", "ts": "2026-08-01T09:00:00Z" },
+        "data": { "type": "LICENSE_CHANGED", "priority": "NORMAL", "title": "", "message": "m", "action": "SYNC" }
+      },
+      "expectPath": "data.title"
+    },
+    {
+      "name": "顶层额外身份字段 deviceId",
+      "payload": {
+        "meta": { "id": "NTF-DEV001-90004", "ts": "2026-08-01T09:00:00Z" },
+        "data": { "type": "SYNC_REQUIRED", "priority": "HIGH", "title": "t", "message": "m", "action": "SYNC" },
+        "deviceId": "DEV001"
+      },
+      "expectPath": "(root)"
+    }
+  ]
+}

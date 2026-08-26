@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "report.schema.json",
+  "title": "ESG Report",
+  "x-typescript-name": "EsgReport",
+  "x-decision-versions": ["DEC-002@0.1.0"],
+  "type": "object",
+  "required": ["meta", "audit", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": { "$ref": "common.schema.json#/$defs/metaSeq" },
+    "audit": { "$ref": "common.schema.json#/$defs/audit" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reportType": { "type": "string", "enum": ["CYCLE", "HOURLY", "DAILY"] },
+        "periodStartTime": { "$ref": "common.schema.json#/$defs/utcDateTime" },
+        "periodEndTime": { "$ref": "common.schema.json#/$defs/utcDateTime" },
+        "feedingWeightKg": { "type": "number", "minimum": 0 },
+        "dischargeWeightKg": { "type": "number", "minimum": 0 },
+        "reductionWeightKg": { "type": "number", "minimum": 0 },
+        "cycleCount": { "type": "integer", "minimum": 0 },
+        "processingDurationMinutes": { "type": "number", "minimum": 0 },
+        "energyConsumptionKwh": { "type": "number", "minimum": 0 },
+        "averagePowerKw": { "type": "number", "minimum": 0 },
+        "averageO2Pct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "averageCo2Ppm": { "type": "number", "minimum": 0 },
+        "averageCh4Ppm": { "type": "number", "minimum": 0 },
+        "averageN2oPpm": { "type": "number", "minimum": 0 },
+        "carbonReductionKg": { "type": "number" },
+        "carbonReductionMethod": { "type": "string", "minLength": 1, "description": "计算方法版本，如 DEFAULT_V1。" },
+        "dataCompletenessPct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "missingRecordCount": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "topicType": "cmd",
+  "valid": [
+    {
+      "meta": { "id": "CMD-DEV001-6001", "ts": "2026-08-01T10:00:00Z" },
+      "data": {
+        "command": "START",
+        "requestedBy": "tenant_admin",
+        "requestTime": "2026-08-01T10:00:00Z",
+        "timeoutSec": 30,
+        "remarks": "Start processing batch"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "timeoutSec 小于 1",
+      "payload": {
+        "meta": { "id": "CMD-DEV001-6002", "ts": "2026-08-01T10:00:00Z" },
+        "data": { "command": "START", "requestedBy": "tenant_admin", "requestTime": "2026-08-01T10:00:00Z", "timeoutSec": 0 }
+      },
+      "expectPath": "data.timeoutSec"
+    },
+    {
+      "name": "Command 不允许携带 audit（DEC-002）",
+      "payload": {
+        "meta": { "id": "CMD-DEV001-6003", "ts": "2026-08-01T10:00:00Z" },
+        "audit": { "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
+        "data": { "command": "START", "requestedBy": "tenant_admin", "requestTime": "2026-08-01T10:00:00Z", "timeoutSec": 30 }
+      },
+      "expectPath": "(root)"
+    },
+    {
+      "name": "缺少必填字段 command",
+      "payload": {
+        "meta": { "id": "CMD-DEV001-6004", "ts": "2026-08-01T10:00:00Z" },
+        "data": { "requestedBy": "tenant_admin", "requestTime": "2026-08-01T10:00:00Z", "timeoutSec": 30 }
+      },
+      "expectPath": "data"
+    },
+    {
+      "name": "requestTime 非 UTC",
+      "payload": {
+        "meta": { "id": "CMD-DEV001-6005", "ts": "2026-08-01T10:00:00Z" },
+        "data": { "command": "START", "requestedBy": "tenant_admin", "requestTime": "2026-08-01 10:00", "timeoutSec": 30 }
+      },
+      "expectPath": "data.requestTime"
+    }
+  ]
+}

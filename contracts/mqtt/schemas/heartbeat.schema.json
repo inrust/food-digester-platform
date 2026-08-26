@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "heartbeat.schema.json",
+  "title": "Heartbeat",
+  "x-typescript-name": "Heartbeat",
+  "x-decision-versions": ["DEC-002@0.1.0"],
+  "type": "object",
+  "required": ["meta", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": { "$ref": "common.schema.json#/$defs/metaSeq" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deviceStatus",
+        "uptimeSeconds",
+        "firmwareVersion",
+        "operationalStatus",
+        "machineRunning",
+        "machineMode",
+        "licenseStatus",
+        "networkType",
+        "networkStatus",
+        "sensorOverallStatus"
+      ],
+      "properties": {
+        "deviceStatus": { "type": "string", "enum": ["ONLINE", "DEGRADED", "OFFLINE"] },
+        "uptimeSeconds": { "type": "integer", "minimum": 0 },
+        "firmwareVersion": { "type": "string", "minLength": 1 },
+        "operationalStatus": { "type": "string", "enum": ["ACTIVE", "SUSPENDED", "RETIRED"] },
+        "machineRunning": { "type": "boolean" },
+        "machineMode": { "type": "string", "enum": ["IDLE", "PROCESSING", "HEATING", "DISCHARING", "STOPPED", "ERROR"], "description": "枚举以通信设计原文为准（含 DISCHARING 原文拼写，待协议冻结确认）。" },
+        "licenseStatus": { "type": "string", "enum": ["ACTIVE", "EXPIRING", "EXPIRED", "REVOKED"] },
+        "licenseExpiryDate": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "networkType": { "type": "string", "minLength": 1, "description": "通信设计标记为 Enum 但未给出完整枚举值（示例 4G），冻结前按非空字符串处理。" },
+        "networkStatus": { "type": "string", "enum": ["CONNECTED", "WEAK", "DISCONNECTED"] },
+        "signalStrength": { "type": "integer" },
+        "cpuUsagePct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "memoryUsagePct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "storageUsagePct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "sensorOverallStatus": { "type": "string", "enum": ["NORMAL", "WARNING", "FAILED"] },
+        "temperatureSensor": { "type": "string", "enum": ["NORMAL", "WARNING", "FAILED"] },
+        "humiditySensor": { "type": "string", "enum": ["NORMAL", "WARNING", "FAILED"] },
+        "weightSensor": { "type": "string", "enum": ["NORMAL", "WARNING", "FAILED"] },
+        "gasSensor": { "type": "string", "enum": ["NORMAL", "WARNING", "FAILED"] },
+        "certificateStatus": { "type": "string", "enum": ["VALID", "EXPIRING", "EXPIRED", "REVOKED"] },
+        "tamperStatus": { "type": "string", "minLength": 1, "description": "通信设计仅给出示例 NORMAL，冻结前按非空字符串处理。" }
+      }
+    }
+  }
+}

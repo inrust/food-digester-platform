@@ -1,0 +1,128 @@
+{
+  "topicType": "heartbeat",
+  "valid": [
+    {
+      "meta": { "id": "HB-DEV001-100", "ts": "2026-08-01T10:00:00Z", "seq": 100 },
+      "data": {
+        "deviceStatus": "ONLINE",
+        "uptimeSeconds": 86400,
+        "firmwareVersion": "1.0.5",
+        "operationalStatus": "ACTIVE",
+        "machineRunning": true,
+        "machineMode": "PROCESSING",
+        "licenseStatus": "ACTIVE",
+        "licenseExpiryDate": "2027-12-31",
+        "networkType": "4G",
+        "networkStatus": "CONNECTED",
+        "signalStrength": -68,
+        "cpuUsagePct": 25,
+        "memoryUsagePct": 40,
+        "storageUsagePct": 30,
+        "sensorOverallStatus": "NORMAL",
+        "temperatureSensor": "NORMAL",
+        "humiditySensor": "NORMAL",
+        "weightSensor": "NORMAL",
+        "gasSensor": "NORMAL",
+        "certificateStatus": "VALID",
+        "tamperStatus": "NORMAL"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "非法枚举 machineMode",
+      "payload": {
+        "meta": { "id": "HB-DEV001-101", "ts": "2026-08-01T10:00:00Z", "seq": 101 },
+        "data": {
+          "deviceStatus": "ONLINE",
+          "uptimeSeconds": 86400,
+          "firmwareVersion": "1.0.5",
+          "operationalStatus": "ACTIVE",
+          "machineRunning": true,
+          "machineMode": "COOKING",
+          "licenseStatus": "ACTIVE",
+          "networkType": "4G",
+          "networkStatus": "CONNECTED",
+          "sensorOverallStatus": "NORMAL"
+        }
+      },
+      "expectPath": "data.machineMode"
+    },
+    {
+      "name": "单位类型错误 uptimeSeconds 为字符串",
+      "payload": {
+        "meta": { "id": "HB-DEV001-102", "ts": "2026-08-01T10:00:00Z", "seq": 102 },
+        "data": {
+          "deviceStatus": "ONLINE",
+          "uptimeSeconds": "86400",
+          "firmwareVersion": "1.0.5",
+          "operationalStatus": "ACTIVE",
+          "machineRunning": true,
+          "machineMode": "IDLE",
+          "licenseStatus": "ACTIVE",
+          "networkType": "4G",
+          "networkStatus": "CONNECTED",
+          "sensorOverallStatus": "NORMAL"
+        }
+      },
+      "expectPath": "data.uptimeSeconds"
+    },
+    {
+      "name": "缺少必填字段 firmwareVersion",
+      "payload": {
+        "meta": { "id": "HB-DEV001-103", "ts": "2026-08-01T10:00:00Z", "seq": 103 },
+        "data": {
+          "deviceStatus": "ONLINE",
+          "uptimeSeconds": 86400,
+          "operationalStatus": "ACTIVE",
+          "machineRunning": true,
+          "machineMode": "IDLE",
+          "licenseStatus": "ACTIVE",
+          "networkType": "4G",
+          "networkStatus": "CONNECTED",
+          "sensorOverallStatus": "NORMAL"
+        }
+      },
+      "expectPath": "data"
+    },
+    {
+      "name": "额外身份字段 customerId",
+      "payload": {
+        "meta": { "id": "HB-DEV001-104", "ts": "2026-08-01T10:00:00Z", "seq": 104 },
+        "data": {
+          "deviceStatus": "ONLINE",
+          "uptimeSeconds": 86400,
+          "firmwareVersion": "1.0.5",
+          "operationalStatus": "ACTIVE",
+          "machineRunning": true,
+          "machineMode": "IDLE",
+          "licenseStatus": "ACTIVE",
+          "networkType": "4G",
+          "networkStatus": "CONNECTED",
+          "sensorOverallStatus": "NORMAL",
+          "customerId": "CUS-1"
+        }
+      },
+      "expectPath": "data"
+    },
+    {
+      "name": "上行缺少 meta.seq",
+      "payload": {
+        "meta": { "id": "HB-DEV001-105", "ts": "2026-08-01T10:00:00Z" },
+        "data": {
+          "deviceStatus": "ONLINE",
+          "uptimeSeconds": 86400,
+          "firmwareVersion": "1.0.5",
+          "operationalStatus": "ACTIVE",
+          "machineRunning": true,
+          "machineMode": "IDLE",
+          "licenseStatus": "ACTIVE",
+          "networkType": "4G",
+          "networkStatus": "CONNECTED",
+          "sensorOverallStatus": "NORMAL"
+        }
+      },
+      "expectPath": "meta"
+    }
+  ]
+}

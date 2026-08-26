@@ -1,0 +1,44 @@
+{
+  "topicType": "tamper",
+  "valid": [
+    {
+      "meta": { "id": "TMP-DEV001-60001", "ts": "2026-08-01T11:00:00Z", "seq": 60001 },
+      "audit": { "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
+      "data": {
+        "eventType": "ROOT_DETECTED",
+        "severity": "CRITICAL",
+        "component": "ANDROID_OS",
+        "details": "Root binary detected",
+        "actionTaken": "DEVICE_SUSPENDED"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "非法枚举 severity",
+      "payload": {
+        "meta": { "id": "TMP-DEV001-60002", "ts": "2026-08-01T11:00:00Z", "seq": 60002 },
+        "audit": { "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
+        "data": { "eventType": "ROOT_DETECTED", "severity": "FATAL" }
+      },
+      "expectPath": "data.severity"
+    },
+    {
+      "name": "缺少强制 audit（DEC-002）",
+      "payload": {
+        "meta": { "id": "TMP-DEV001-60003", "ts": "2026-08-01T11:00:00Z", "seq": 60003 },
+        "data": { "eventType": "ROOT_DETECTED", "severity": "CRITICAL" }
+      },
+      "expectPath": "(root)"
+    },
+    {
+      "name": "audit.hash 长度非法",
+      "payload": {
+        "meta": { "id": "TMP-DEV001-60004", "ts": "2026-08-01T11:00:00Z", "seq": 60004 },
+        "audit": { "hash": "abc123" },
+        "data": { "eventType": "ROOT_DETECTED", "severity": "CRITICAL" }
+      },
+      "expectPath": "audit.hash"
+    }
+  ]
+}

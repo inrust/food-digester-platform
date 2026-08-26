@@ -1,0 +1,41 @@
+{
+  "topicType": "event",
+  "valid": [
+    {
+      "meta": { "id": "EVT-DEV001-40001", "ts": "2026-08-01T08:00:00Z", "seq": 40001 },
+      "data": {
+        "eventType": "MACHINE_STARTED",
+        "userId": "USR001",
+        "username": "operator01",
+        "source": "LOCAL",
+        "remarks": "Daily operation start"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "非法枚举 source",
+      "payload": {
+        "meta": { "id": "EVT-DEV001-40002", "ts": "2026-08-01T08:00:00Z", "seq": 40002 },
+        "data": { "eventType": "MACHINE_STARTED", "source": "CLOUD" }
+      },
+      "expectPath": "data.source"
+    },
+    {
+      "name": "userId 类型错误",
+      "payload": {
+        "meta": { "id": "EVT-DEV001-40003", "ts": "2026-08-01T08:00:00Z", "seq": 40003 },
+        "data": { "eventType": "MACHINE_STARTED", "userId": 1001 }
+      },
+      "expectPath": "data.userId"
+    },
+    {
+      "name": "额外身份字段 tenantId",
+      "payload": {
+        "meta": { "id": "EVT-DEV001-40004", "ts": "2026-08-01T08:00:00Z", "seq": 40004 },
+        "data": { "eventType": "MACHINE_STARTED", "tenantId": "T-1" }
+      },
+      "expectPath": "data"
+    }
+  ]
+}

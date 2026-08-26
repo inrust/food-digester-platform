@@ -1,0 +1,61 @@
+{
+  "topicType": "telemetry",
+  "valid": [
+    {
+      "meta": { "id": "TEL-DEV001-10001", "ts": "2026-08-01T10:00:00Z", "seq": 10001 },
+      "audit": { "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
+      "data": {
+        "feedingWeightKg": 25,
+        "chamberWeightKg": 120,
+        "dischargeWeightKg": 5,
+        "humidityPct": 45.2,
+        "ambientTempC": 28.5,
+        "heatTemperatureC": 72.1,
+        "siloTemperatureC": 62.5,
+        "powerConsumptionKw": 2.8,
+        "o2Pct": 20.5,
+        "co2Ppm": 420,
+        "ch4Ppm": 12,
+        "n2oPpm": 1.5,
+        "currentAmp": 3.8
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "单位类型错误 feedingWeightKg 为字符串",
+      "payload": {
+        "meta": { "id": "TEL-DEV001-10002", "ts": "2026-08-01T10:00:10Z", "seq": 10002 },
+        "audit": { "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
+        "data": { "feedingWeightKg": "25" }
+      },
+      "expectPath": "data.feedingWeightKg"
+    },
+    {
+      "name": "humidityPct 超出 0-100 范围",
+      "payload": {
+        "meta": { "id": "TEL-DEV001-10003", "ts": "2026-08-01T10:00:20Z", "seq": 10003 },
+        "audit": { "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
+        "data": { "humidityPct": 120 }
+      },
+      "expectPath": "data.humidityPct"
+    },
+    {
+      "name": "缺少强制 audit（DEC-002）",
+      "payload": {
+        "meta": { "id": "TEL-DEV001-10004", "ts": "2026-08-01T10:00:30Z", "seq": 10004 },
+        "data": { "feedingWeightKg": 25 }
+      },
+      "expectPath": "(root)"
+    },
+    {
+      "name": "额外身份字段 tenantId",
+      "payload": {
+        "meta": { "id": "TEL-DEV001-10005", "ts": "2026-08-01T10:00:40Z", "seq": 10005 },
+        "audit": { "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
+        "data": { "feedingWeightKg": 25, "tenantId": "T-1" }
+      },
+      "expectPath": "data"
+    }
+  ]
+}

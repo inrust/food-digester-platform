@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "telemetry.schema.json",
+  "title": "Telemetry",
+  "x-typescript-name": "Telemetry",
+  "x-decision-versions": ["DEC-002@0.1.0"],
+  "type": "object",
+  "required": ["meta", "audit", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": { "$ref": "common.schema.json#/$defs/metaSeq" },
+    "audit": { "$ref": "common.schema.json#/$defs/audit" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "13 项指标字段与单位以通信设计为准；通信设计未标记必填，故均为可选，但类型与范围固定。",
+      "properties": {
+        "feedingWeightKg": { "type": "number", "minimum": 0 },
+        "chamberWeightKg": { "type": "number", "minimum": 0 },
+        "dischargeWeightKg": { "type": "number", "minimum": 0 },
+        "humidityPct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "ambientTempC": { "type": "number" },
+        "heatTemperatureC": { "type": "number" },
+        "siloTemperatureC": { "type": "number" },
+        "powerConsumptionKw": { "type": "number", "minimum": 0 },
+        "o2Pct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "co2Ppm": { "type": "number", "minimum": 0 },
+        "ch4Ppm": { "type": "number", "minimum": 0 },
+        "n2oPpm": { "type": "number", "minimum": 0 },
+        "currentAmp": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

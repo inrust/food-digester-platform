@@ -1,0 +1,50 @@
+{
+  "topicType": "ota",
+  "valid": [
+    {
+      "meta": { "id": "OTA-DEV001-80001", "ts": "2026-08-01T22:00:00Z" },
+      "data": {
+        "version": "2.1.0",
+        "packageType": "FIRMWARE",
+        "downloadUrl": "https://example.s3.amazonaws.com/pkg.bin?sig=abc",
+        "sha256": "ABC123DEF4567890ABC123DEF4567890ABC123DEF4567890ABC123DEF4567890",
+        "mandatory": false,
+        "scheduledTime": "2026-08-01T23:00:00Z"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "非法枚举 packageType",
+      "payload": {
+        "meta": { "id": "OTA-DEV001-80002", "ts": "2026-08-01T22:00:00Z" },
+        "data": { "version": "2.1.0", "packageType": "OS" }
+      },
+      "expectPath": "data.packageType"
+    },
+    {
+      "name": "sha256 非 64 位十六进制",
+      "payload": {
+        "meta": { "id": "OTA-DEV001-80003", "ts": "2026-08-01T22:00:00Z" },
+        "data": { "version": "2.1.0", "sha256": "XYZ" }
+      },
+      "expectPath": "data.sha256"
+    },
+    {
+      "name": "downloadUrl 非 https",
+      "payload": {
+        "meta": { "id": "OTA-DEV001-80004", "ts": "2026-08-01T22:00:00Z" },
+        "data": { "version": "2.1.0", "downloadUrl": "http://example.com/pkg.bin" }
+      },
+      "expectPath": "data.downloadUrl"
+    },
+    {
+      "name": "mandatory 类型错误",
+      "payload": {
+        "meta": { "id": "OTA-DEV001-80005", "ts": "2026-08-01T22:00:00Z" },
+        "data": { "version": "2.1.0", "mandatory": "false" }
+      },
+      "expectPath": "data.mandatory"
+    }
+  ]
+}

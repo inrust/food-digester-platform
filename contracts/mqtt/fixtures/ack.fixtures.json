@@ -1,0 +1,42 @@
+{
+  "topicType": "ack",
+  "valid": [
+    {
+      "meta": { "id": "ACK-DEV001-50001", "ts": "2026-08-01T10:01:00Z", "seq": 50001 },
+      "data": {
+        "commandId": "CMD-DEV001-6001",
+        "command": "START",
+        "result": "SUCCESS",
+        "executeTimeMs": 523,
+        "errorCode": null,
+        "message": "Machine Started"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "非法枚举 result",
+      "payload": {
+        "meta": { "id": "ACK-DEV001-50002", "ts": "2026-08-01T10:01:00Z", "seq": 50002 },
+        "data": { "commandId": "CMD-DEV001-6001", "command": "START", "result": "OK" }
+      },
+      "expectPath": "data.result"
+    },
+    {
+      "name": "executeTimeMs 为负数",
+      "payload": {
+        "meta": { "id": "ACK-DEV001-50003", "ts": "2026-08-01T10:01:00Z", "seq": 50003 },
+        "data": { "commandId": "CMD-DEV001-6001", "command": "START", "result": "SUCCESS", "executeTimeMs": -5 }
+      },
+      "expectPath": "data.executeTimeMs"
+    },
+    {
+      "name": "executeTimeMs 非整数",
+      "payload": {
+        "meta": { "id": "ACK-DEV001-50004", "ts": "2026-08-01T10:01:00Z", "seq": 50004 },
+        "data": { "commandId": "CMD-DEV001-6001", "command": "START", "result": "SUCCESS", "executeTimeMs": 52.3 }
+      },
+      "expectPath": "data.executeTimeMs"
+    }
+  ]
+}

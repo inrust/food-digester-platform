@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tamper.schema.json",
+  "title": "Tamper",
+  "x-typescript-name": "Tamper",
+  "x-decision-versions": ["DEC-002@0.1.0"],
+  "type": "object",
+  "required": ["meta", "audit", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": { "$ref": "common.schema.json#/$defs/metaSeq" },
+    "audit": { "$ref": "common.schema.json#/$defs/audit" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "eventType": { "type": "string", "minLength": 1, "description": "安全事件类型，如 ROOT_DETECTED。" },
+        "severity": { "type": "string", "enum": ["INFO", "WARNING", "HIGH", "CRITICAL"], "description": "沿用 Alarm 严重度词表（通信设计仅示例 CRITICAL，待协议冻结确认）。" },
+        "component": { "type": "string", "minLength": 1 },
+        "details": { "type": "string" },
+        "actionTaken": { "type": "string", "minLength": 1, "description": "自动响应动作，如 DEVICE_SUSPENDED。" }
+      }
+    }
+  }
+}

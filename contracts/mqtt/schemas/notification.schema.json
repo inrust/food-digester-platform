@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "notification.schema.json",
+  "title": "Notification",
+  "x-typescript-name": "Notification",
+  "x-decision-versions": ["DEC-002@0.1.0", "DEC-006@0.1.0"],
+  "type": "object",
+  "required": ["meta", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": { "$ref": "common.schema.json#/$defs/metaBase" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "minLength": 1, "description": "通知类型（如 LICENSE_CHANGED）；13 类正式目录见 CT-04。" },
+        "priority": { "type": "string", "enum": ["LOW", "NORMAL", "HIGH"] },
+        "title": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "action": { "type": "string", "minLength": 1, "description": "建议设备动作，如 SYNC。" }
+      }
+    }
+  }
+}

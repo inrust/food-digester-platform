@@ -1,0 +1,68 @@
+{
+  "topicType": "report",
+  "valid": [
+    {
+      "meta": { "id": "RPT-DEV001-20001", "ts": "2026-08-02T00:00:00Z", "seq": 20001 },
+      "audit": { "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
+      "data": {
+        "reportType": "DAILY",
+        "periodStartTime": "2026-08-01T00:00:00Z",
+        "periodEndTime": "2026-08-01T23:59:59Z",
+        "feedingWeightKg": 250,
+        "dischargeWeightKg": 180,
+        "reductionWeightKg": 70,
+        "cycleCount": 12,
+        "processingDurationMinutes": 480,
+        "energyConsumptionKwh": 18.5,
+        "averagePowerKw": 2.4,
+        "averageO2Pct": 20.4,
+        "averageCo2Ppm": 430,
+        "averageCh4Ppm": 11,
+        "averageN2oPpm": 1.4,
+        "carbonReductionKg": 35.6,
+        "carbonReductionMethod": "DEFAULT_V1",
+        "dataCompletenessPct": 99.8,
+        "missingRecordCount": 2
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "非法枚举 reportType",
+      "payload": {
+        "meta": { "id": "RPT-DEV001-20002", "ts": "2026-08-02T00:00:00Z", "seq": 20002 },
+        "audit": { "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
+        "data": { "reportType": "MONTHLY" }
+      },
+      "expectPath": "data.reportType"
+    },
+    {
+      "name": "dataCompletenessPct 超出 0-100",
+      "payload": {
+        "meta": { "id": "RPT-DEV001-20003", "ts": "2026-08-02T00:00:00Z", "seq": 20003 },
+        "audit": { "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
+        "data": { "dataCompletenessPct": 101 }
+      },
+      "expectPath": "data.dataCompletenessPct"
+    },
+    {
+      "name": "audit.hash 非 SHA-256 十六进制",
+      "payload": {
+        "meta": { "id": "RPT-DEV001-20004", "ts": "2026-08-02T00:00:00Z", "seq": 20004 },
+        "audit": { "hash": "not-a-hash" },
+        "data": { "reportType": "DAILY" }
+      },
+      "expectPath": "audit.hash"
+    },
+    {
+      "name": "顶层额外身份字段 customerId",
+      "payload": {
+        "meta": { "id": "RPT-DEV001-20005", "ts": "2026-08-02T00:00:00Z", "seq": 20005 },
+        "audit": { "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
+        "data": { "reportType": "DAILY" },
+        "customerId": "CUS-1"
+      },
+      "expectPath": "(root)"
+    }
+  ]
+}

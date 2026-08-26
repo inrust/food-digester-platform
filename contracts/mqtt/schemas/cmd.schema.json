@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cmd.schema.json",
+  "title": "Command",
+  "x-typescript-name": "Command",
+  "x-decision-versions": ["DEC-002@0.1.0", "DEC-006@0.1.0"],
+  "type": "object",
+  "required": ["meta", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": { "$ref": "common.schema.json#/$defs/metaBase" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "requestTime", "timeoutSec"],
+      "properties": {
+        "command": { "type": "string", "minLength": 1, "description": "命令名，V1 白名单见 CT-04；meta.id 即 commandId。" },
+        "requestedBy": { "type": "string", "minLength": 1, "description": "请求发起者；云端以身份上下文为准，不信任客户端声明（ADP-001）。" },
+        "requestTime": { "$ref": "common.schema.json#/$defs/utcDateTime" },
+        "timeoutSec": { "type": "integer", "minimum": 1 },
+        "remarks": { "type": "string" }
+      }
+    }
+  }
+}
