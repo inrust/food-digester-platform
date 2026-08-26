@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.2.0",
-  "updatedAt": "2026-08-26T06:05:53Z",
+  "registerVersion": "1.3.0",
+  "updatedAt": "2026-08-26T06:20:00Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -137,7 +137,7 @@
     },
     {
       "id": "DEC-003",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "status": "pending",
       "title": "一次性证书包领取有效期和次数",
       "conflict": "证书包一次性领取的有效期、允许领取次数与丢失后的处置策略未冻结。",
@@ -153,6 +153,12 @@
           "at": "2026-08-26T00:00:00Z",
           "by": "CT-01",
           "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        },
+        {
+          "version": "0.2.0",
+          "at": "2026-08-26T06:20:00Z",
+          "by": "DEC-003",
+          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/security/certificate-package-policy.json + 查询模块与测试；定性规则（KMS 信封、一次性领取、成功即销毁、丢失重签）可执行；定量参数 retentionSeconds/maxClaims 显式标记 null，读取失败关闭，禁止臆测；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
         }
       ]
     },
