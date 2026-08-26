@@ -11,6 +11,7 @@
  *   默认查询排除已删除；审计与状态历史等无 deletedAt 的表调用 softDelete 抛错。
  */
 import {
+  AppendOnlyViolationError,
   CursorInvalidError,
   RecordNotFoundError,
   ScopeRequiredError,
@@ -19,6 +20,16 @@ import {
 } from './errors.js';
 import { decodeKeysetCursor, encodeKeysetCursor, normalizeLimit, type Page, type PageArgs } from './pagination.js';
 import type { DbClient } from './transaction.js';
+
+/** append-only 表（审计与状态历史）：业务 Repository 不提供更新/删除路径。 */
+export const APPEND_ONLY_MODELS: ReadonlySet<string> = new Set([
+  'auditLog',
+  'deviceStateHistory',
+  'licenseHistory',
+  'otaStatusHistory',
+  'ingestionReceipt',
+  'ingestionGap',
+]);
 
 export interface Scope {
   readonly customerId: string;
@@ -111,6 +122,7 @@ export function scopedRepository(client: DbClient, model: string, options: RepoO
     },
 
     async updateWithVersion(id, expectedVersion, data, scope) {
+      if (APPEND_ONLY_MODELS.has(model)) throw new AppendOnlyViolationError(model, 'updateWithVersion');
       const customerId = requireScope(model, scope);
       const delegate = delegateOf(client, model);
       const { count } = await delegate.updateMany({
@@ -128,6 +140,7 @@ export function scopedRepository(client: DbClient, model: string, options: RepoO
     },
 
     async softDelete(id, scope) {
+      if (APPEND_ONLY_MODELS.has(model)) throw new AppendOnlyViolationError(model, 'softDelete');
       if (!softDelete) throw new SoftDeleteNotSupportedError(model);
       const customerId = requireScope(model, scope);
       const delegate = delegateOf(client, model);

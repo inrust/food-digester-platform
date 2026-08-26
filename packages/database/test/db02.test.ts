@@ -9,6 +9,7 @@ import { PrismaPGlite } from 'pglite-prisma-adapter';
 import { readFileSync } from 'node:fs';
 import { PrismaClient, type Prisma } from '../src/generated/client.js';
 import {
+  AppendOnlyViolationError,
   CursorInvalidError,
   RecordNotFoundError,
   ScopeRequiredError,
@@ -237,9 +238,12 @@ describe('软删除策略', () => {
     // 其他 Customer 不可软删除本站点
     await expect(siteRepo.softDelete(site.id, { customerId: 'cust-b' })).rejects.toBeInstanceOf(RecordNotFoundError);
 
-    // 审计与历史表（无 deletedAt）不支持软删除
+    // 审计与历史表（无 deletedAt）不支持软删除；审计表另受 append-only 拦截（DOM-03）
+    await expect(
+      scopedRepository(prisma, 'deviceEvent').softDelete('x', { customerId: 'cust-a' }),
+    ).rejects.toBeInstanceOf(SoftDeleteNotSupportedError);
     await expect(scopedRepository(prisma, 'auditLog').softDelete('x', { customerId: 'cust-a' })).rejects.toBeInstanceOf(
-      SoftDeleteNotSupportedError,
+      AppendOnlyViolationError,
     );
   });
 });

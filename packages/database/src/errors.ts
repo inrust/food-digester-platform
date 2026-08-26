@@ -59,6 +59,17 @@ export class SoftDeleteNotSupportedError extends DbError {
   }
 }
 
+/** 审计与历史表为 append-only：业务 Repository 不允许更新/删除。 */
+export class AppendOnlyViolationError extends DbError {
+  override readonly name = 'AppendOnlyViolationError';
+  constructor(
+    readonly model: string,
+    readonly operation: string,
+  ) {
+    super(`${model} is append-only; ${operation} is not allowed`);
+  }
+}
+
 /** DB 错误 → HTTP/CT-05 错误码映射（API 层使用；此处不引入 contracts 依赖）。 */
 export function mapDbErrorToHttp(err: unknown): { status: number; code: string } {
   if (err instanceof VersionConflictError) return { status: 409, code: 'VERSION_CONFLICT' };
@@ -67,5 +78,6 @@ export function mapDbErrorToHttp(err: unknown): { status: number; code: string }
   if (err instanceof CursorInvalidError) return { status: 400, code: 'CURSOR_INVALID' };
   if (err instanceof PaginationLimitError) return { status: 400, code: 'VALIDATION_FAILED' };
   if (err instanceof SoftDeleteNotSupportedError) return { status: 400, code: 'VALIDATION_FAILED' };
+  if (err instanceof AppendOnlyViolationError) return { status: 400, code: 'VALIDATION_FAILED' };
   return { status: 500, code: 'INTERNAL_ERROR' };
 }
