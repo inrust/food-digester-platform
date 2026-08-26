@@ -1,0 +1,877 @@
+// DB-01 核心数据库 Schema（PostgreSQL）
+// 约定：
+// - 所有 Customer 业务表携带 customerId（customer_id）
+// - 所有时间为 timestamptz，统一 UTC
+// - 软删除（deletedAt）仅用于需要恢复的业务实体（customers/sites）；审计与状态历史不软删除
+// - 不创建原始 Telemetry 长期表；Region/Subregion 归属 Site
+// - Contract 与 License 独立主键、独立状态机（DEC-007）
+// - 无法用 Prisma 表达的数据库约束（部分唯一索引、排他约束、CHECK）见
+//   prisma/migrations/20260826120000_init/migration.sql 末尾的“自定义约束”段
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Customer 与站点 ----------
+
+model Customer {
+  id        String    @id @default(uuid())
+  name      String
+  status    String    @default("ACTIVE") // ACTIVE | SUSPENDED
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  sites    Site[]
+  users    UserScope[]
+  devices  Device[]
+  contracts Contract[]
+
+  @@map("customers")
+}
+
+model Site {
+  id           String    @id @default(uuid())
+  customerId   String    @map("customer_id")
+  name         String
+  region       String? // DEC-011：Region/Subregion 为 Site 可筛选属性
+  subregion    String?   @map("subregion")
+  address      String?
+  timezone     String    @default("UTC")
+  contactName  String?   @map("contact_name")
+  contactPhone String?   @map("contact_phone")
+  contactEmail String?   @map("contact_email")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  devices  Device[]
+
+  @@unique([customerId, name])
+  @@map("sites")
+}
+
+// ---------- 用户与权限 ----------
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  displayName String   @map("display_name")
+  // 密码不落库：认证由 Cognito 承担，仅保存其主体标识
+  cognitoSub  String?  @unique @map("cognito_sub")
+  status      String   @default("INVITED") // INVITED | ACTIVE | DISABLED
+  mfaEnabled  Boolean  @default(false) @map("mfa_enabled")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  roles  UserRole[]
+  scopes UserScope[]
+
+  @@map("users")
+}
+
+model Role {
+  code        String @id // PlatformSuperAdmin | PlatformOperator | Auditor | CustomerAdmin | CustomerViewer
+  name        String
+  description String?
+
+  users UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId    String   @map("user_id")
+  roleCode  String   @map("role_code")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleCode], references: [code])
+
+  @@id([userId, roleCode])
+  @@map("user_roles")
+}
+
+model UserScope {
+  id         String  @id @default(uuid())
+  userId     String  @map("user_id")
+  // 平台角色为 null（跨 Customer）；Customer 角色必须指向所属 Customer
+  customerId String? @map("customer_id")
+  siteId     String? @map("site_id")
+
+  user     User     @relation(fields: [userId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@map("user_scopes")
+}
+
+// ---------- 设备 ----------
+
+model Device {
+  id               String    @id // 设备 ID，Onboarding 审批通过后签发
+  serialNumber     String    @unique @map("serial_number")
+  model            String
+  hardwareVersion  String    @map("hardware_version")
+  manufacturer     String
+  manufactureDate  DateTime  @map("manufacture_date") @db.Date
+  alias            String?
+  customerId       String?   @map("customer_id")
+  siteId           String?   @map("site_id")
+  // 生命周期以通信设计为准；Maintenance 为试运营独立状态（DEC-001）
+  lifecycleStatus  String    @default("PendingOnboarding") @map("lifecycle_status")
+  firmwareVersion  String?   @map("firmware_version")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+  site     Site?     @relation(fields: [siteId], references: [id])
+
+  assignments    DeviceAssignment[]
+  stateHistory   DeviceStateHistory[]
+  certificates   DeviceCertificate[]
+  licenses       License[]
+  latestState    DeviceLatestState?
+
+  @@map("devices")
+}
+
+model DeviceAssignment {
+  id         String    @id @default(uuid())
+  deviceId   String    @map("device_id")
+  customerId String    @map("customer_id")
+  siteId     String    @map("site_id")
+  status     String    @default("ACTIVE") // ACTIVE | ENDED
+  assignedBy String    @map("assigned_by")
+  reason     String?
+  assignedAt DateTime  @default(now()) @map("assigned_at") @db.Timestamptz
+  endedAt    DateTime? @map("ended_at") @db.Timestamptz
+
+  device Device @relation(fields: [deviceId], references: [id])
+
+  @@map("device_assignments")
+  // 部分唯一索引（每设备仅一条 ACTIVE）见 migration.sql 自定义约束
+}
+
+model DeviceStateHistory {
+  id         String   @id @default(uuid())
+  deviceId   String   @map("device_id")
+  fromStatus String?  @map("from_status") // 初始迁移为 null
+  toStatus   String   @map("to_status")
+  actorType  String   @map("actor_type") // ADMIN | DEVICE | SYSTEM
+  actorId    String?  @map("actor_id")
+  reason     String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  device Device @relation(fields: [deviceId], references: [id])
+
+  @@index([deviceId, createdAt])
+  @@map("device_state_history")
+}
+
+// ---------- 证书与 Onboarding ----------
+
+model OnboardingToken {
+  id               String    @id @default(uuid())
+  // 一次一机、只保存 Hash（实施方案 8.2）
+  tokenHash        String    @unique @map("token_hash")
+  serialNumber     String    @map("serial_number")
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz
+  usedAt           DateTime? @map("used_at") @db.Timestamptz
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  request OnboardingRequest?
+
+  @@map("onboarding_tokens")
+}
+
+model OnboardingRequest {
+  id              String    @id @default(uuid())
+  tokenId         String    @unique @map("token_id")
+  serialNumber    String    @map("serial_number")
+  model           String
+  hardwareVersion String    @map("hardware_version")
+  manufacturer    String
+  manufactureDate DateTime  @map("manufacture_date") @db.Date
+  status          String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  rejectReason    String?   @map("reject_reason")
+  reviewedBy      String?   @map("reviewed_by")
+  reviewedAt      DateTime? @map("reviewed_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  token OnboardingToken @relation(fields: [tokenId], references: [id])
+
+  @@map("onboarding_requests")
+  // 部分唯一索引（同序列号仅一条 PENDING）见 migration.sql 自定义约束
+}
+
+model DeviceCertificate {
+  id                String    @id // certificateId
+  deviceId          String    @map("device_id")
+  fingerprint       String    @unique
+  status            String    @default("PENDING_CLAIM") // PENDING_CLAIM | ACTIVE | REVOKED | EXPIRED
+  certificatePem    String?   @map("certificate_pem") // 公钥证书可保存
+  // 证书包：KMS 信封加密短期保存，领取成功或新证书 Heartbeat 后销毁（DEC-003）；私钥明文绝不落库
+  packageCiphertext Bytes?    @map("package_ciphertext")
+  packageKmsKeyId   String?   @map("package_kms_key_id")
+  packageExpiresAt  DateTime? @map("package_expires_at") @db.Timestamptz
+  claimedAt         DateTime? @map("claimed_at") @db.Timestamptz
+  notBefore         DateTime  @map("not_before") @db.Timestamptz
+  notAfter          DateTime  @map("not_after") @db.Timestamptz
+  rotatedFromId     String?   @map("rotated_from_id")
+  revokedAt         DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  device Device @relation(fields: [deviceId], references: [id])
+
+  @@index([deviceId, status])
+  @@map("device_certificates")
+}
+
+// ---------- Contract（DEC-007：商业租期与设备关联，独立于 License） ----------
+
+model Contract {
+  id             String    @id @default(uuid())
+  contractNumber String    @unique @map("contract_number")
+  name           String
+  customerId     String    @map("customer_id")
+  contact        String?
+  startAt        DateTime  @map("start_at") @db.Timestamptz
+  endAt          DateTime  @map("end_at") @db.Timestamptz
+  // DRAFT | EFFECTIVE | EXPIRING_SOON | EXPIRED | TERMINATED；状态由显式动作与 evaluateAt 推导
+  status         String    @default("DRAFT")
+  version        Int       @default(1) // 乐观锁（If-Match）
+  createdBy      String    @map("created_by")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  customer Customer         @relation(fields: [customerId], references: [id])
+  devices  ContractDevice[]
+
+  @@map("contracts")
+  // CHECK (start_at < end_at) 见 migration.sql 自定义约束
+}
+
+model ContractDevice {
+  id         String    @id @default(uuid())
+  contractId String    @map("contract_id")
+  deviceId   String    @map("device_id")
+  customerId String    @map("customer_id")
+  validFrom  DateTime  @map("valid_from") @db.Timestamptz
+  validTo    DateTime? @map("valid_to") @db.Timestamptz // null = 无限期
+  status     String    @default("ACTIVE") // ACTIVE | ENDED
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  endedAt    DateTime? @map("ended_at") @db.Timestamptz
+
+  contract Contract @relation(fields: [contractId], references: [id])
+
+  @@index([deviceId, status])
+  @@map("contract_devices")
+  // 排他约束（同设备有效关联时间段不重叠）见 migration.sql 自定义约束
+}
+
+// ---------- License 与 Entitlement ----------
+
+model License {
+  id         String   @id @default(uuid())
+  deviceId   String   @map("device_id")
+  customerId String   @map("customer_id")
+  // NoLicense 不落库；Draft | Issued | Active | ExpiringSoon | Renewed | Expired | Revoked
+  status     String   @default("DRAFT")
+  validFrom  DateTime @map("valid_from") @db.Timestamptz
+  validTo    DateTime @map("valid_to") @db.Timestamptz
+  signature  String? // 供 Device Sync 下发的签名
+  version    Int      @default(1)
+  createdBy  String   @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  device       Device                @relation(fields: [deviceId], references: [id])
+  entitlements LicenseEntitlement[]
+  history      LicenseHistory[]
+
+  @@map("licenses")
+  // 部分唯一索引（每设备仅一个有效许可证）见 migration.sql 自定义约束
+}
+
+model LicenseEntitlement {
+  id        String  @id @default(uuid())
+  licenseId String  @map("license_id")
+  code      String // REMOTE_CONTROL | OTA_UPDATE | ESG_REPORTING | ...
+  enabled   Boolean @default(true)
+
+  license License @relation(fields: [licenseId], references: [id])
+
+  @@unique([licenseId, code])
+  @@map("license_entitlements")
+}
+
+model LicenseHistory {
+  id         String   @id @default(uuid())
+  licenseId  String   @map("license_id")
+  fromStatus String?  @map("from_status")
+  toStatus   String   @map("to_status")
+  actorId    String?  @map("actor_id")
+  reason     String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  license License @relation(fields: [licenseId], references: [id])
+
+  @@index([licenseId, createdAt])
+  @@map("license_history")
+}
+
+// ---------- 配置 ----------
+
+model DeviceConfiguration {
+  id          String   @id @default(uuid())
+  name        String
+  targetModel String?  @map("target_model") // 按设备或型号发布
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  versions ConfigurationVersion[]
+
+  @@map("device_configurations")
+}
+
+model ConfigurationVersion {
+  id              String    @id @default(uuid())
+  configurationId String    @map("configuration_id")
+  version         Int
+  payload         Json // Heartbeat/Telemetry/Camera Refresh/温度阈值等完整快照
+  status          String    @default("DRAFT") // DRAFT | PUBLISHED
+  effectiveAt     DateTime? @map("effective_at") @db.Timestamptz
+  changeNote      String?   @map("change_note")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  configuration DeviceConfiguration @relation(fields: [configurationId], references: [id])
+
+  @@unique([configurationId, version])
+  @@map("configuration_versions")
+}
+
+// ---------- 设备用户（DEC-004：设备本地专用加盐验证值） ----------
+
+model DeviceUser {
+  id              String   @id @default(uuid())
+  customerId      String   @map("customer_id")
+  username        String
+  displayName     String?  @map("display_name")
+  // 设备本地专用验证值，禁止复用云端密码 Hash；KDF 与版本字段按 DEC-004 冻结后收敛
+  verifierValue   String   @map("verifier_value")
+  verifierSalt    String   @map("verifier_salt")
+  verifierKdf     String?  @map("verifier_kdf")
+  verifierVersion String?  @map("verifier_version")
+  status          String   @default("ACTIVE") // ACTIVE | DISABLED
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  assignments DeviceUserAssignment[]
+
+  @@unique([customerId, username])
+  @@map("device_users")
+}
+
+model DeviceUserAssignment {
+  id          String    @id @default(uuid())
+  deviceUserId String   @map("device_user_id")
+  deviceId    String    @map("device_id")
+  customerId  String    @map("customer_id")
+  status      String    @default("ACTIVE") // ACTIVE | REVOKED
+  assignedAt  DateTime  @default(now()) @map("assigned_at") @db.Timestamptz
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamptz
+
+  deviceUser DeviceUser @relation(fields: [deviceUserId], references: [id])
+
+  @@map("device_user_assignments")
+  // 部分唯一索引（同设备同用户仅一条 ACTIVE）见 migration.sql 自定义约束
+}
+
+// ---------- 运行数据（不含原始 Telemetry 长期表） ----------
+
+model DeviceLatestState {
+  deviceId          String    @id @map("device_id")
+  customerId        String?   @map("customer_id")
+  connectivity      String? // ONLINE | OFFLINE
+  operationalStatus String?   @map("operational_status") // Active | Maintenance | Suspended | Retired
+  machineRunning    Boolean?  @map("machine_running")
+  machineMode       String?   @map("machine_mode")
+  firmwareVersion   String?   @map("firmware_version")
+  licenseStatus     String?   @map("license_status")
+  licenseExpiryDate DateTime? @map("license_expiry_date") @db.Timestamptz
+  networkType       String?   @map("network_type")
+  networkStatus     String?   @map("network_status")
+  signalStrength    Int?      @map("signal_strength")
+  cpuUsagePct       Decimal?  @map("cpu_usage_pct") @db.Decimal(5, 2)
+  memoryUsagePct    Decimal?  @map("memory_usage_pct") @db.Decimal(5, 2)
+  storageUsagePct   Decimal?  @map("storage_usage_pct") @db.Decimal(5, 2)
+  sensorStatus      Json?     @map("sensor_status")
+  certificateStatus String?   @map("certificate_status")
+  tamperStatus      String?   @map("tamper_status")
+  uptimeSeconds     Int?      @map("uptime_seconds")
+  lastHeartbeatAt   DateTime? @map("last_heartbeat_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  device Device @relation(fields: [deviceId], references: [id])
+
+  @@map("device_latest_state")
+}
+
+model TelemetryHourly {
+  id                String   @id @default(uuid())
+  deviceId          String   @map("device_id")
+  customerId        String   @map("customer_id")
+  bucketStart       DateTime @map("bucket_start") @db.Timestamptz // 整点 UTC
+  sampleCount       Int      @map("sample_count")
+  completenessPct   Decimal? @map("completeness_pct") @db.Decimal(5, 2)
+  // 7.4 基线字段的聚合值（avg/min/max），键名与 Telemetry Payload 一致
+  metrics           Json
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([deviceId, bucketStart])
+  @@map("telemetry_hourly")
+}
+
+model TelemetryDaily {
+  id                String   @id @default(uuid())
+  deviceId          String   @map("device_id")
+  customerId        String   @map("customer_id")
+  bucketDate        DateTime @map("bucket_date") @db.Date // UTC 日期
+  sampleCount       Int      @map("sample_count")
+  completenessPct   Decimal? @map("completeness_pct") @db.Decimal(5, 2)
+  metrics           Json
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([deviceId, bucketDate])
+  @@map("telemetry_daily")
+}
+
+// ---------- 耗材（DEC-008） ----------
+
+model ConsumableProjection {
+  id               String    @id @default(uuid())
+  deviceId         String    @map("device_id")
+  customerId       String    @map("customer_id")
+  consumableType   String    @map("consumable_type") // CARBON_FILTER | BIO_ADDITIVE（封闭集合，DEC-008）
+  // 仅保存设备上报值；未上报为 null（未知），云端不得臆测
+  remainingPercent Int?      @map("remaining_percent")
+  sourceMessageId  String?   @map("source_message_id")
+  observedAt       DateTime? @map("observed_at") @db.Timestamptz
+  stale            Boolean   @default(false)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([deviceId, consumableType])
+  @@map("consumable_projections")
+  // CHECK (consumable_type IN ...)、CHECK (remaining_percent BETWEEN 0 AND 100) 见 migration.sql
+}
+
+model ConsumableRequest {
+  id             String    @id @default(uuid())
+  customerId     String    @map("customer_id")
+  deviceId       String    @map("device_id")
+  consumableType String    @map("consumable_type") // CARBON_FILTER | BIO_ADDITIVE
+  // PENDING | PROCESSING | COMPLETED | CANCELLED（BE-CNS-02 状态机）
+  status         String    @default("PENDING")
+  source         String    @default("ADMIN") // 协议冻结前仅管理端创建（BE-CNS-02）
+  requestedBy    String    @map("requested_by")
+  requestedAt    DateTime  @default(now()) @map("requested_at") @db.Timestamptz
+  processedBy    String?   @map("processed_by")
+  processNote    String?   @map("process_note")
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz
+  version        Int       @default(1)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("consumable_requests")
+  // CHECK (status IN ('PENDING','PROCESSING','COMPLETED','CANCELLED')) 见 migration.sql
+}
+
+// ---------- ESG ----------
+
+model EsgCalculationVersion {
+  id           String   @id @default(uuid())
+  version      String   @unique // 如 1.0.0
+  description  String?
+  formula      Json? // 计算方法参数
+  effectiveFrom DateTime @map("effective_from") @db.Timestamptz
+  status       String   @default("ACTIVE") // ACTIVE | SUPERSEDED
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  reports  EsgReport[]
+  summaries EsgDailySummary[]
+
+  @@map("esg_calculation_versions")
+}
+
+model EsgReport {
+  id                    String   @id @default(uuid())
+  deviceId              String   @map("device_id")
+  customerId            String   @map("customer_id")
+  reportType            String   @map("report_type") // CYCLE | HOURLY | DAILY
+  periodStartTime       DateTime @map("period_start_time") @db.Timestamptz
+  periodEndTime         DateTime @map("period_end_time") @db.Timestamptz
+  feedingWeightKg       Decimal? @map("feeding_weight_kg") @db.Decimal(12, 3)
+  dischargeWeightKg     Decimal? @map("discharge_weight_kg") @db.Decimal(12, 3)
+  reductionWeightKg     Decimal? @map("reduction_weight_kg") @db.Decimal(12, 3)
+  cycleCount            Int?     @map("cycle_count")
+  processingMinutes     Int?     @map("processing_minutes")
+  powerConsumptionKwh   Decimal? @map("power_consumption_kwh") @db.Decimal(12, 3)
+  avgPowerKw            Decimal? @map("avg_power_kw") @db.Decimal(10, 3)
+  avgO2Pct              Decimal? @map("avg_o2_pct") @db.Decimal(5, 2)
+  avgCo2Ppm             Decimal? @map("avg_co2_ppm") @db.Decimal(10, 2)
+  avgCh4Ppm             Decimal? @map("avg_ch4_ppm") @db.Decimal(10, 2)
+  avgN2oPpm             Decimal? @map("avg_n2o_ppm") @db.Decimal(10, 2)
+  carbonReductionKg     Decimal? @map("carbon_reduction_kg") @db.Decimal(12, 3)
+  carbonReductionMethod String?  @map("carbon_reduction_method")
+  dataCompletenessPct   Decimal? @map("data_completeness_pct") @db.Decimal(5, 2)
+  missingRecordCount    Int?     @map("missing_record_count")
+  calculationVersionId  String?  @map("calculation_version_id")
+  sourceMessageId       String?  @unique @map("source_message_id")
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  calculationVersion EsgCalculationVersion? @relation(fields: [calculationVersionId], references: [id])
+
+  @@unique([deviceId, reportType, periodStartTime])
+  @@map("esg_reports")
+}
+
+model EsgDailySummary {
+  id                   String   @id @default(uuid())
+  deviceId             String   @map("device_id")
+  customerId           String   @map("customer_id")
+  summaryDate          DateTime @map("summary_date") @db.Date // UTC
+  feedingWeightKg      Decimal? @map("feeding_weight_kg") @db.Decimal(12, 3)
+  dischargeWeightKg    Decimal? @map("discharge_weight_kg") @db.Decimal(12, 3)
+  reductionWeightKg    Decimal? @map("reduction_weight_kg") @db.Decimal(12, 3)
+  powerConsumptionKwh  Decimal? @map("power_consumption_kwh") @db.Decimal(12, 3)
+  carbonReductionKg    Decimal? @map("carbon_reduction_kg") @db.Decimal(12, 3)
+  dataCompletenessPct  Decimal? @map("data_completeness_pct") @db.Decimal(5, 2)
+  missingRecordCount   Int?     @map("missing_record_count")
+  calculationVersionId String?  @map("calculation_version_id")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  calculationVersion EsgCalculationVersion? @relation(fields: [calculationVersionId], references: [id])
+
+  @@unique([deviceId, summaryDate])
+  @@map("esg_daily_summary")
+}
+
+// ---------- 告警与事件 ----------
+
+model Alarm {
+  id                String    @id @default(uuid())
+  deviceId          String    @map("device_id")
+  customerId        String    @map("customer_id")
+  code              String
+  category          String
+  severity          String // INFO | WARNING | MAJOR | CRITICAL
+  status            String    @default("ACTIVE") // ACTIVE | ACKNOWLEDGED | CLEARED
+  detectedTime      DateTime  @map("detected_time") @db.Timestamptz
+  component         String?
+  currentValue      String?   @map("current_value")
+  threshold         String?
+  unit              String?
+  message           String?
+  recommendedAction String?   @map("recommended_action")
+  acknowledgedBy    String?   @map("acknowledged_by")
+  acknowledgedAt    DateTime? @map("acknowledged_at") @db.Timestamptz
+  clearedAt         DateTime? @map("cleared_at") @db.Timestamptz
+  sourceMessageId   String?   @unique @map("source_message_id")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([customerId, severity, status])
+  @@index([deviceId, detectedTime])
+  @@map("alarms")
+}
+
+model DeviceEvent {
+  id              String   @id @default(uuid())
+  deviceId        String   @map("device_id")
+  customerId      String   @map("customer_id")
+  eventType       String   @map("event_type")
+  userId          String?  @map("user_id")
+  username        String?
+  source          String?
+  remarks         String?
+  occurredAt      DateTime @map("occurred_at") @db.Timestamptz
+  sourceMessageId String?  @unique @map("source_message_id")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([deviceId, occurredAt])
+  @@map("device_events")
+}
+
+model TamperEvent {
+  id              String   @id @default(uuid())
+  deviceId        String   @map("device_id")
+  customerId      String   @map("customer_id")
+  eventType       String   @map("event_type")
+  severity        String
+  component       String?
+  details         Json?
+  actionTaken     String?  @map("action_taken")
+  occurredAt      DateTime @map("occurred_at") @db.Timestamptz
+  sourceMessageId String?  @unique @map("source_message_id")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([deviceId, occurredAt])
+  @@map("tamper_events")
+}
+
+// ---------- Remote Command ----------
+
+model DeviceCommand {
+  id          String    @id // commandId（meta.id 幂等，DEC-006）
+  deviceId    String    @map("device_id")
+  customerId  String    @map("customer_id")
+  command     String // CT-04 白名单 22 类
+  category    String // MACHINE | MOTOR | HEATING | VENTILATION | DISCHARGE | DEVICE
+  highRisk    Boolean   @default(false) @map("high_risk")
+  // CREATED | AUTHORIZED | PUBLISHED | ACKNOWLEDGED | SUCCEEDED | FAILED | TIMED_OUT | CANCELLED
+  status      String    @default("CREATED")
+  requestedBy String    @map("requested_by")
+  requestTime DateTime  @map("request_time") @db.Timestamptz
+  timeoutSec  Int       @map("timeout_sec")
+  expiresAt   DateTime? @map("expires_at") @db.Timestamptz
+  remarks     String?
+  confirmedBy String?   @map("confirmed_by") // 高风险命令二次确认人
+  version     Int       @default(1)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  attempts CommandAttempt[]
+  acks     CommandAck[]
+
+  @@index([deviceId, status])
+  @@map("device_commands")
+}
+
+model CommandAttempt {
+  id          String   @id @default(uuid())
+  commandId   String   @map("command_id")
+  attemptNo   Int      @map("attempt_no")
+  publishedAt DateTime @default(now()) @map("published_at") @db.Timestamptz
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  command DeviceCommand @relation(fields: [commandId], references: [id])
+
+  @@unique([commandId, attemptNo])
+  @@map("command_attempts")
+}
+
+model CommandAck {
+  id              String   @id @default(uuid())
+  commandId       String   @map("command_id")
+  result          String // SUCCEEDED | FAILED | ...
+  executeTimeMs   Int?     @map("execute_time_ms")
+  errorCode       String?  @map("error_code")
+  message         String?
+  ackAt           DateTime @map("ack_at") @db.Timestamptz
+  sourceMessageId String?  @unique @map("source_message_id")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  command DeviceCommand @relation(fields: [commandId], references: [id])
+
+  @@map("command_acks")
+}
+
+// ---------- OTA ----------
+
+model FirmwarePackage {
+  id          String   @id @default(uuid())
+  version     String
+  model       String
+  packageType String   @map("package_type")
+  sha256      String   @unique
+  sizeBytes   BigInt   @map("size_bytes")
+  s3Key       String   @map("s3_key")
+  signature   String?
+  status      String   @default("UPLOADED") // UPLOADED | VERIFIED | RETIRED
+  uploadedBy  String   @map("uploaded_by")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  campaigns OtaCampaign[]
+
+  @@unique([model, version, packageType])
+  @@map("firmware_packages")
+}
+
+model OtaCampaign {
+  id          String   @id @default(uuid())
+  name        String
+  packageId   String   @map("package_id")
+  targetModel String   @map("target_model")
+  strategy    String   @default("CANARY") // CANARY | BATCH；试运营禁止默认全量强制升级
+  status      String   @default("DRAFT") // DRAFT | RUNNING | PAUSED | COMPLETED | CANCELLED
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  package FirmwarePackage @relation(fields: [packageId], references: [id])
+  targets OtaTarget[]
+
+  @@map("ota_campaigns")
+}
+
+model OtaTarget {
+  id            String    @id @default(uuid())
+  campaignId    String    @map("campaign_id")
+  deviceId      String    @map("device_id")
+  batchNo       Int       @map("batch_no") // 1 = 灰度批次
+  // PENDING | NOTIFIED | DOWNLOADING | INSTALLING | SUCCEEDED | FAILED | ROLLED_BACK | CANCELLED
+  status        String    @default("PENDING")
+  scheduledTime DateTime? @map("scheduled_time") @db.Timestamptz
+  completedAt   DateTime? @map("completed_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  campaign OtaCampaign        @relation(fields: [campaignId], references: [id])
+  history  OtaStatusHistory[]
+
+  @@unique([campaignId, deviceId])
+  @@map("ota_targets")
+}
+
+model OtaStatusHistory {
+  id         String   @id @default(uuid())
+  targetId   String   @map("target_id")
+  fromStatus String?  @map("from_status")
+  toStatus   String   @map("to_status")
+  detail     Json?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  target OtaTarget @relation(fields: [targetId], references: [id])
+
+  @@index([targetId, createdAt])
+  @@map("ota_status_history")
+}
+
+// ---------- Media（DEC-005：RDS 元数据 + S3 文件） ----------
+
+model MediaUploadSession {
+  id                     String    @id @default(uuid())
+  deviceId               String    @map("device_id")
+  customerId             String    @map("customer_id")
+  mediaType              String    @map("media_type") // IMAGE | VIDEO
+  fileName               String    @map("file_name")
+  sizeKb                 Int       @map("size_kb")
+  status                 String    @default("ISSUED") // ISSUED | COMPLETED | EXPIRED
+  presignedUrlExpiresAt  DateTime  @map("presigned_url_expires_at") @db.Timestamptz
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  completedAt            DateTime? @map("completed_at") @db.Timestamptz
+
+  mediaObject MediaObject?
+
+  @@map("media_upload_sessions")
+}
+
+model MediaObject {
+  id              String    @id @default(uuid())
+  deviceId        String    @map("device_id")
+  customerId      String    @map("customer_id")
+  uploadSessionId String?   @unique @map("upload_session_id")
+  mediaType       String    @map("media_type")
+  captureTime     DateTime  @map("capture_time") @db.Timestamptz
+  fileName        String    @map("file_name")
+  objectPath      String    @map("object_path") // S3 Key
+  sizeKb          Int       @map("size_kb")
+  durationSec     Int?      @map("duration_sec")
+  sha256          String?
+  status          String    @default("AVAILABLE") // AVAILABLE | DELETED
+  sourceMessageId String?   @unique @map("source_message_id")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  uploadSession MediaUploadSession? @relation(fields: [uploadSessionId], references: [id])
+
+  @@index([deviceId, captureTime])
+  @@map("media_objects")
+}
+
+// ---------- 可靠性：Ingestion / Outbox / Replay ----------
+
+model IngestionReceipt {
+  id             String    @id @default(uuid())
+  // 幂等键：deviceId + type + seq（实施方案 9.2）
+  idempotencyKey String    @unique @map("idempotency_key")
+  deviceId       String    @map("device_id")
+  topicType      String    @map("topic_type")
+  seq            Int?
+  payloadHash    String    @map("payload_hash")
+  // PROCESSED | DUPLICATE | INVALID | SECURITY_VIOLATION（同键不同 Hash 标记安全异常，不覆盖原记录）
+  result         String
+  receivedAt     DateTime  @default(now()) @map("received_at") @db.Timestamptz
+  processedAt    DateTime? @map("processed_at") @db.Timestamptz
+
+  @@map("ingestion_receipts")
+}
+
+model IngestionGap {
+  id          String    @id @default(uuid())
+  deviceId    String    @map("device_id")
+  topicType   String    @map("topic_type")
+  expectedSeq Int       @map("expected_seq")
+  receivedSeq Int       @map("received_seq")
+  detectedAt  DateTime  @default(now()) @map("detected_at") @db.Timestamptz
+  resolvedAt  DateTime? @map("resolved_at") @db.Timestamptz
+
+  @@index([deviceId, topicType, detectedAt])
+  @@map("ingestion_gaps")
+}
+
+model OutboxEvent {
+  id            String    @id @default(uuid())
+  eventType     String    @map("event_type") // ARCHIVE 等
+  aggregateType String    @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id")
+  payload       Json
+  status        String    @default("PENDING") // PENDING | PUBLISHED | FAILED
+  publishedAt   DateTime? @map("published_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([status, createdAt])
+  @@map("outbox_events")
+}
+
+model ReplayJob {
+  id            String    @id @default(uuid())
+  requestedBy   String    @map("requested_by")
+  scope         Json // deviceId / 时间范围 / topicType
+  status        String    @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED
+  resultSummary Json?     @map("result_summary")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  completedAt   DateTime? @map("completed_at") @db.Timestamptz
+
+  @@map("replay_jobs")
+}
+
+// ---------- 审计（只追加，业务 API 不修改不删除；由 DB-02/DOM-03 的 Repository 策略强制） ----------
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorId     String?  @map("actor_id")
+  actorRole   String?  @map("actor_role")
+  customerId  String?  @map("customer_id")
+  objectType  String   @map("object_type")
+  objectId    String   @map("object_id")
+  action      String
+  reason      String?
+  beforeValue Json?    @map("before_value")
+  afterValue  Json?    @map("after_value")
+  ip          String?
+  userAgent   String?  @map("user_agent")
+  result      String // SUCCESS | FAILURE
+  requestId   String?  @map("request_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([customerId, createdAt])
+  @@index([objectType, objectId])
+  @@map("audit_logs")
+}

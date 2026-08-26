@@ -24,8 +24,15 @@ const LOCK = 'provider = "postgresql"';
 const SQL = 'CREATE TABLE "devices" ("id" TEXT PRIMARY KEY);';
 const DIR = 'packages/database/prisma';
 
-test('当前仓库（schema.prisma 未落地）跳过并通过', () => {
+test('当前仓库（DB-01 已落地）Migration 结构通过', () => {
   const root = new URL('..', import.meta.url).pathname;
+  const { skipped, errors } = checkMigrations(root);
+  assert.equal(skipped, false);
+  assert.deepEqual(errors, []);
+});
+
+test('schema.prisma 未落地时跳过并通过（骨架期行为）', () => {
+  const root = fixture({});
   const { skipped, errors } = checkMigrations(root);
   assert.equal(skipped, true);
   assert.deepEqual(errors, []);
