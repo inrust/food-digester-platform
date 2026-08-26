@@ -1,0 +1,20 @@
+{
+  "catalogVersion": "1.0.0",
+  "updatedAt": "2026-08-26T00:00:00Z",
+  "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0"],
+  "description": "REST 稳定错误码目录（实施方案 13.2/13.3）。错误响应不得暴露堆栈、SQL 或 AWS 内部错误；message 必须对客户端安全。",
+  "errorCodes": [
+    { "code": "VALIDATION_FAILED", "httpStatus": 400, "description": "请求参数、Header 或正文校验失败" },
+    { "code": "CURSOR_INVALID", "httpStatus": 400, "description": "分页游标非法或已损坏" },
+    { "code": "IDEMPOTENCY_KEY_REQUIRED", "httpStatus": 400, "description": "写操作缺少 Idempotency-Key" },
+    { "code": "UNAUTHENTICATED", "httpStatus": 401, "description": "缺少或非法的身份凭证（JWT/Token/证书）" },
+    { "code": "FORBIDDEN", "httpStatus": 403, "description": "身份有效但无权限（含跨 Customer 访问）" },
+    { "code": "NOT_FOUND", "httpStatus": 404, "description": "资源不存在或对调用方不可见" },
+    { "code": "CONFLICT", "httpStatus": 409, "description": "业务约束冲突（如重复唯一键、非法状态迁移）" },
+    { "code": "VERSION_CONFLICT", "httpStatus": 409, "description": "If-Match 版本与当前资源版本不一致" },
+    { "code": "IDEMPOTENCY_CONFLICT", "httpStatus": 409, "description": "相同 Idempotency-Key 携带不同请求体" },
+    { "code": "DEVICE_STATE_NOT_ALLOWED", "httpStatus": 409, "description": "当前设备状态不允许该操作" },
+    { "code": "RATE_LIMITED", "httpStatus": 429, "description": "请求频率超限" },
+    { "code": "INTERNAL_ERROR", "httpStatus": 500, "description": "服务端内部错误（对外仅暴露通用信息）" }
+  ]
+}
