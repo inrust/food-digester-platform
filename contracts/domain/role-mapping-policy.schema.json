@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hiddenjoya.local/contracts/domain/role-mapping-policy.schema.json",
+  "title": "Role Mapping Policy",
+  "description": "DEC-012 原型角色映射策略的结构契约。AWS 权限、矩阵固定与复选框只读规则全部布尔锁定。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "type": "object",
+  "required": [
+    "policyVersion",
+    "updatedAt",
+    "x-decision-versions",
+    "status",
+    "description",
+    "roleMappings",
+    "awsPermissions",
+    "matrix",
+    "pendingParameters",
+    "frozenUpgradePath"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "policyVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "策略自身版本。provisional 为 0.x；DEC-012 冻结后必须 >= 1.0.0。"
+    },
+    "updatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "UTC ISO-8601 时间戳。"
+    },
+    "x-decision-versions": {
+      "type": "array",
+      "description": "决策追溯引用，格式 决策ID@semver；必须包含 DEC-012@<当前登记版本>。"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["provisional", "frozen"],
+      "description": "provisional=暂定值（DEC-012 pending/proposed）；frozen=已冻结。"
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "roleMappings": {
+      "type": "object",
+      "required": ["mappings", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "mappings": { "type": "array", "description": "原型角色 → 系统角色封闭映射，元素含 prototypeRole/systemRole/uiName。" },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "awsPermissions": {
+      "type": "object",
+      "required": ["operatorGetsAwsResourceAccess", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "operatorGetsAwsResourceAccess": { "type": "boolean", "enum": [false], "description": "PlatformOperator 不授予 AWS 资源权限，锁定为 false。" },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "matrix": {
+      "type": "object",
+      "required": ["permissionMatrixFixed", "prototypeCheckboxesReadonly", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "permissionMatrixFixed": { "type": "boolean", "enum": [true], "description": "V1 权限矩阵固定，锁定为 true。" },
+        "prototypeCheckboxesReadonly": { "type": "boolean", "enum": [true], "description": "原型权限复选框只读，锁定为 true。" },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "pendingParameters": {
+      "type": "array",
+      "description": "待冻结参数列表。DEC-012 为定性决策，当前为空。"
+    },
+    "frozenUpgradePath": { "type": "string", "minLength": 1 }
+  }
+}
