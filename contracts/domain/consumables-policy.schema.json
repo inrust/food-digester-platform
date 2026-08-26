@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hiddenjoya.local/contracts/domain/consumables-policy.schema.json",
+  "title": "Consumables Policy",
+  "description": "DEC-008 耗材正式名称、数据来源与阈值的结构契约。display.names/thresholds 为待冻结参数：provisional 状态必须为 null，frozen 状态必须填入。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "type": "object",
+  "required": [
+    "policyVersion",
+    "updatedAt",
+    "x-decision-versions",
+    "status",
+    "description",
+    "types",
+    "dataSource",
+    "display",
+    "pendingParameters",
+    "frozenUpgradePath"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "policyVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "策略自身版本。provisional 为 0.x；DEC-008 冻结后必须 >= 1.0.0。"
+    },
+    "updatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "UTC ISO-8601 时间戳。"
+    },
+    "x-decision-versions": {
+      "type": "array",
+      "description": "决策追溯引用，格式 决策ID@semver；必须包含 DEC-008@<当前登记版本>。"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["provisional", "frozen"],
+      "description": "provisional=暂定值（DEC-008 pending/proposed）；frozen=已冻结。"
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "types": {
+      "type": "object",
+      "required": ["codes", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "codes": { "type": "array", "description": "耗材类型代码封闭集合。" },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "dataSource": {
+      "type": "object",
+      "required": ["mode", "cloudDerivedPercentage", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "type": "string", "enum": ["device-reported-only"], "description": "数据来源锁定为仅设备上报。" },
+        "cloudDerivedPercentage": { "type": "boolean", "enum": [false], "description": "禁止云端臆测百分比，锁定为 false。" },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "display": {
+      "type": "object",
+      "required": ["names", "thresholds", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "names": { "type": "object", "description": "各类型正式展示名称。值为 string 或 null（待冻结）。" },
+        "thresholds": { "type": "object", "description": "各类型展示/告警阈值。值为 integer 或 null（待冻结）。" },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "pendingParameters": {
+      "type": "array",
+      "description": "DEC-008 冻结前必须显式给出取值的参数路径列表。"
+    },
+    "frozenUpgradePath": { "type": "string", "minLength": 1 }
+  }
+}

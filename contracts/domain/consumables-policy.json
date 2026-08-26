@@ -1,0 +1,26 @@
+{
+  "policyVersion": "0.1.0",
+  "updatedAt": "2026-08-26T08:52:53Z",
+  "x-decision-versions": ["DEC-008@0.2.0"],
+  "status": "provisional",
+  "description": "DEC-008 耗材正式名称、数据来源与阈值策略（暂定值的可执行扩展点）。暂定值：暂用 CARBON_FILTER、BIO_ADDITIVE；仅保存设备已定义上报值，不由云端臆测百分比。类型代码与数据来源规则已可执行；正式展示名称与展示阈值是 DEC-008 待冻结内容，以 null 显式标记，读取失败关闭。冻结时按 decision-change-template 将 DEC-008 升至 >=1.0.0 并整体替换本文件；消费方（DB-01、BE-IOT-05、BE-CNS-01、FE-18）只经 consumables-policy.ts 访问。",
+  "types": {
+    "codes": ["CARBON_FILTER", "BIO_ADDITIVE"],
+    "consumers": ["DB-01", "BE-IOT-05", "BE-CNS-01", "FE-18"],
+    "note": "暂定耗材类型代码（封闭集合）。新增类型必须先走 DEC-008 冻结或版本升级，禁止代码中硬编码其他耗材类型。"
+  },
+  "dataSource": {
+    "mode": "device-reported-only",
+    "cloudDerivedPercentage": false,
+    "consumers": ["BE-IOT-05", "BE-CNS-01", "DB-01"],
+    "note": "仅保存设备已定义上报值（原始值原样入库）；云端不得由上报值推算/臆测剩余百分比或寿命。设备未上报的维度在 API 与 UI 中显示为未知，不得填充估算值。"
+  },
+  "display": {
+    "names": { "CARBON_FILTER": null, "BIO_ADDITIVE": null },
+    "thresholds": { "CARBON_FILTER": null, "BIO_ADDITIVE": null },
+    "consumers": ["FE-18", "BE-CNS-01"],
+    "note": "DEC-008 待冻结参数：正式展示名称与展示/告警阈值。当前均为 null；FE-18 冻结前显示类型代码原文并标注待定，不得使用原型名称（碳包/活性菌等）。"
+  },
+  "pendingParameters": ["display.names.CARBON_FILTER", "display.names.BIO_ADDITIVE", "display.thresholds.CARBON_FILTER", "display.thresholds.BIO_ADDITIVE"],
+  "frozenUpgradePath": "DEC-008 冻结时：按 decision-change-template 变更 DEC-008 至 >=1.0.0，填入正式名称与阈值并提升 policyVersion、status 改 frozen；若类型代码变更需同步 DB 枚举与 BE-IOT-05 校验。"
+}
