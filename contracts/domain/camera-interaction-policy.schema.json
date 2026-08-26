@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hiddenjoya.local/contracts/domain/camera-interaction-policy.schema.json",
+  "title": "Camera Interaction Policy",
+  "description": "DEC-009 摄像头交互语义策略的结构契约。查看范围、刷新方式与实时流能力全部枚举/布尔锁定。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "type": "object",
+  "required": [
+    "policyVersion",
+    "updatedAt",
+    "x-decision-versions",
+    "status",
+    "description",
+    "viewing",
+    "refresh",
+    "liveStreaming",
+    "pendingParameters",
+    "frozenUpgradePath"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "policyVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "策略自身版本。provisional 为 0.x；DEC-009 冻结后必须 >= 1.0.0。"
+    },
+    "updatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "UTC ISO-8601 时间戳。"
+    },
+    "x-decision-versions": {
+      "type": "array",
+      "description": "决策追溯引用，格式 决策ID@semver；必须包含 DEC-009@<当前登记版本>。"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["provisional", "frozen"],
+      "description": "provisional=暂定值（DEC-009 pending/proposed）；frozen=已冻结。"
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "viewing": {
+      "type": "object",
+      "required": ["scope", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "scope": { "type": "string", "enum": ["latest-authorized-media-only", "history-timeline", "live"], "description": "查看范围。V1 暂定 latest-authorized-media-only。" },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "refresh": {
+      "type": "object",
+      "required": ["mode", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "type": "string", "enum": ["manual-only", "polling", "push"], "description": "刷新方式。V1 暂定 manual-only。" },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "liveStreaming": {
+      "type": "object",
+      "required": ["enabled", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "enum": [false], "description": "实时视频流能力，V1 锁定为 false。" },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "pendingParameters": {
+      "type": "array",
+      "description": "待冻结参数列表。DEC-009 为定性决策，当前为空。"
+    },
+    "frozenUpgradePath": { "type": "string", "minLength": 1 }
+  }
+}

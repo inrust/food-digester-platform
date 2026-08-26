@@ -1,0 +1,24 @@
+{
+  "policyVersion": "0.1.0",
+  "updatedAt": "2026-08-26T09:34:34Z",
+  "x-decision-versions": ["DEC-009@0.2.0"],
+  "status": "provisional",
+  "description": "DEC-009 摄像头交互语义策略（暂定值的可执行扩展点）。暂定值：V1 仅查看最新授权 Media 并手动刷新；实时视频流暂不实现。全部为定性规则，已可直接执行：查看范围锁定为最新授权 Media、刷新方式锁定为手动、实时流能力锁定为禁用。冻结时按 decision-change-template 将 DEC-009 升至 >=1.0.0；若未来启用实时流，需先由上级协议定义流媒体能力并新增契约。",
+  "viewing": {
+    "scope": "latest-authorized-media-only",
+    "consumers": ["BE-MED-01", "FE-06", "FE-12", "FE-14"],
+    "note": "摄像头画面仅呈现设备已上报、且当前授权范围内的最新 Media 对象（经 BE-MED-01 元数据 + 授权校验）；不得提供历史连拍浏览或时间轴回放入口（历史查询走 FE-14 Media 列表）。"
+  },
+  "refresh": {
+    "mode": "manual-only",
+    "consumers": ["FE-06", "FE-12"],
+    "note": "画面更新仅由用户手动刷新触发；禁止前端轮询定时拉取最新画面（自动刷新属于实时语义，V1 不提供）。"
+  },
+  "liveStreaming": {
+    "enabled": false,
+    "consumers": ["BE-MED-01", "FE-06", "FE-12"],
+    "note": "实时视频流暂不实现：不提供播放/停止按钮、不接入任何流媒体协议、不预留 streaming 接口。上级协议未定义该能力；冻结前任何实时流实现视为越界。"
+  },
+  "pendingParameters": [],
+  "frozenUpgradePath": "DEC-009 冻结时：按 decision-change-template 变更 DEC-009 至 >=1.0.0，status 改 frozen；若冻结值启用实时流，需先在上级通信协议中定义流媒体能力并新增契约与 Topic。"
+}
