@@ -23,8 +23,8 @@ export interface Audit {
 export interface AckData {
   /** 关联的 Command meta.id，如 CMD-DEV001-6001。 */
   commandId?: string;
-  /** 命令名，正式白名单见 CT-04。 */
-  command?: string;
+  /** V1 命令白名单（22 个，command-catalog.json，CT-04）。 */
+  command?: "START" | "STOP" | "PAUSE" | "RESUME" | "EMERGENCY_STOP" | "AGITATOR_FORWARD" | "AGITATOR_REVERSE" | "AGITATOR_STOP" | "HEATING_ON" | "HEATING_OFF" | "SET_TARGET_TEMPERATURE" | "EXHAUST_ON" | "EXHAUST_OFF" | "AIR_SUPPLY_ON" | "AIR_SUPPLY_OFF" | "DISCHARGE_START" | "DISCHARGE_STOP" | "REBOOT" | "SHUTDOWN" | "FACTORY_RESET" | "TAKE_SNAPSHOT" | "FORCE_SYNC";
   result?: "SUCCESS" | "FAILED";
   executeTimeMs?: number;
   errorCode?: string | null;
@@ -58,8 +58,8 @@ export interface AlarmPayload {
 }
 
 export interface CommandData {
-  /** 命令名，V1 白名单见 CT-04；meta.id 即 commandId。 */
-  command: string;
+  /** V1 命令白名单（22 个，command-catalog.json，CT-04）；meta.id 即 commandId。 */
+  command: "START" | "STOP" | "PAUSE" | "RESUME" | "EMERGENCY_STOP" | "AGITATOR_FORWARD" | "AGITATOR_REVERSE" | "AGITATOR_STOP" | "HEATING_ON" | "HEATING_OFF" | "SET_TARGET_TEMPERATURE" | "EXHAUST_ON" | "EXHAUST_OFF" | "AIR_SUPPLY_ON" | "AIR_SUPPLY_OFF" | "DISCHARGE_START" | "DISCHARGE_STOP" | "REBOOT" | "SHUTDOWN" | "FACTORY_RESET" | "TAKE_SNAPSHOT" | "FORCE_SYNC";
   /** 请求发起者；云端以身份上下文为准，不信任客户端声明（ADP-001）。 */
   requestedBy?: string;
   requestTime: string;
@@ -138,8 +138,8 @@ export interface MediaPayload {
 }
 
 export interface NotificationData {
-  /** 通知类型（如 LICENSE_CHANGED）；13 类正式目录见 CT-04。 */
-  type?: string;
+  /** 通知类型（13 个，notification-catalog.json，CT-04）。 */
+  type?: "SYNC_REQUIRED" | "LICENSE_CHANGED" | "CONFIG_CHANGED" | "USERS_CHANGED" | "STATUS_CHANGED" | "ASSIGNMENT_CHANGED" | "CERTIFICATE_EXPIRING" | "CERTIFICATE_ROTATION_REQUIRED" | "OTA_AVAILABLE" | "OTA_CANCELLED" | "SECURITY_POLICY_UPDATED" | "DEVICE_SUSPENDED" | "DEVICE_RETIRED";
   priority?: "LOW" | "NORMAL" | "HIGH";
   title?: string;
   message?: string;

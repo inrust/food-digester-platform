@@ -1,0 +1,21 @@
+{
+  "catalogVersion": "1.0.0",
+  "updatedAt": "2026-08-26T00:00:00Z",
+  "x-decision-versions": ["PRI-001@1.0.0"],
+  "description": "13 个 Notification 类型及设备动作映射（通信设计 + 实施方案 11.4）。",
+  "notifications": [
+    { "type": "SYNC_REQUIRED", "deviceAction": "SYNC", "description": "调用 /api/v1/device/sync" },
+    { "type": "LICENSE_CHANGED", "deviceAction": "SYNC", "description": "调用 /api/v1/device/sync" },
+    { "type": "CONFIG_CHANGED", "deviceAction": "SYNC", "description": "调用 /api/v1/device/sync" },
+    { "type": "USERS_CHANGED", "deviceAction": "SYNC", "description": "调用 /api/v1/device/sync" },
+    { "type": "STATUS_CHANGED", "deviceAction": "SYNC", "description": "调用 /api/v1/device/sync" },
+    { "type": "ASSIGNMENT_CHANGED", "deviceAction": "SYNC", "description": "调用 /api/v1/device/sync" },
+    { "type": "CERTIFICATE_EXPIRING", "deviceAction": "CHECK_CERTIFICATE_STATUS", "description": "调用证书状态 API" },
+    { "type": "CERTIFICATE_ROTATION_REQUIRED", "deviceAction": "ROTATE_CERTIFICATE", "description": "调用证书轮换 API" },
+    { "type": "OTA_AVAILABLE", "deviceAction": "AWAIT_OTA_MESSAGE", "description": "等待/接收 OTA Topic" },
+    { "type": "OTA_CANCELLED", "deviceAction": "CANCEL_PENDING_OTA", "description": "取消待执行升级" },
+    { "type": "SECURITY_POLICY_UPDATED", "deviceAction": "SYNC", "description": "Sync 最新安全策略" },
+    { "type": "DEVICE_SUSPENDED", "deviceAction": "ENTER_SUSPENDED_MODE", "description": "进入 Suspended 模式" },
+    { "type": "DEVICE_RETIRED", "deviceAction": "ENTER_RETIRED_MODE", "description": "进入 Retired 模式" }
+  ]
+}

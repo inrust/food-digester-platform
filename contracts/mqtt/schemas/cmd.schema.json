@@ -14,7 +14,18 @@
       "additionalProperties": false,
       "required": ["command", "requestTime", "timeoutSec"],
       "properties": {
-        "command": { "type": "string", "minLength": 1, "description": "命令名，V1 白名单见 CT-04；meta.id 即 commandId。" },
+        "command": {
+          "type": "string",
+          "enum": [
+            "START", "STOP", "PAUSE", "RESUME", "EMERGENCY_STOP",
+            "AGITATOR_FORWARD", "AGITATOR_REVERSE", "AGITATOR_STOP",
+            "HEATING_ON", "HEATING_OFF", "SET_TARGET_TEMPERATURE",
+            "EXHAUST_ON", "EXHAUST_OFF", "AIR_SUPPLY_ON", "AIR_SUPPLY_OFF",
+            "DISCHARGE_START", "DISCHARGE_STOP",
+            "REBOOT", "SHUTDOWN", "FACTORY_RESET", "TAKE_SNAPSHOT", "FORCE_SYNC"
+          ],
+          "description": "V1 命令白名单（22 个，command-catalog.json，CT-04）；meta.id 即 commandId。"
+        },
         "requestedBy": { "type": "string", "minLength": 1, "description": "请求发起者；云端以身份上下文为准，不信任客户端声明（ADP-001）。" },
         "requestTime": { "$ref": "common.schema.json#/$defs/utcDateTime" },
         "timeoutSec": { "type": "integer", "minimum": 1 },

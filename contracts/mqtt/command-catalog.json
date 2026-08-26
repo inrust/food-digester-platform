@@ -1,0 +1,41 @@
+{
+  "catalogVersion": "1.0.0",
+  "updatedAt": "2026-08-26T00:00:00Z",
+  "x-decision-versions": ["DEC-001@0.1.0"],
+  "description": "V1 Command 白名单（22 个，通信设计 + 实施方案 11.7）。allowedStatuses 基于设备 Operational 状态；MAINTENANCE 为 DEC-001 暂定映射（暂按 Suspended 限制）。高风险命令需更严格的权限、确认、审计和超时策略（BE-CMD-01）。",
+  "statusPolicy": {
+    "ACTIVE": "全部命令允许（仍需权限/Entitlement/型号白名单/确认等发布前校验）",
+    "MAINTENANCE": "DEC-001 暂定：与 Suspended 相同",
+    "SUSPENDED": "仅允许安全停止、诊断、同步、必要维护和经批准的恢复类命令；START/RESUME/加热/搅拌/排料等启动处理的命令必须拒绝",
+    "RETIRED": "拒绝全部命令"
+  },
+  "commands": [
+    { "command": "START", "category": "MACHINE", "highRisk": false, "allowedStatuses": ["ACTIVE"] },
+    { "command": "STOP", "category": "MACHINE", "highRisk": false, "allowedStatuses": ["ACTIVE", "MAINTENANCE", "SUSPENDED"] },
+    { "command": "PAUSE", "category": "MACHINE", "highRisk": false, "allowedStatuses": ["ACTIVE"] },
+    { "command": "RESUME", "category": "MACHINE", "highRisk": false, "allowedStatuses": ["ACTIVE"] },
+    { "command": "EMERGENCY_STOP", "category": "MACHINE", "highRisk": true, "allowedStatuses": ["ACTIVE", "MAINTENANCE", "SUSPENDED"] },
+
+    { "command": "AGITATOR_FORWARD", "category": "MOTOR", "highRisk": true, "allowedStatuses": ["ACTIVE"] },
+    { "command": "AGITATOR_REVERSE", "category": "MOTOR", "highRisk": true, "allowedStatuses": ["ACTIVE"] },
+    { "command": "AGITATOR_STOP", "category": "MOTOR", "highRisk": true, "allowedStatuses": ["ACTIVE", "MAINTENANCE", "SUSPENDED"] },
+
+    { "command": "HEATING_ON", "category": "HEATING", "highRisk": true, "allowedStatuses": ["ACTIVE"] },
+    { "command": "HEATING_OFF", "category": "HEATING", "highRisk": true, "allowedStatuses": ["ACTIVE", "MAINTENANCE", "SUSPENDED"] },
+    { "command": "SET_TARGET_TEMPERATURE", "category": "HEATING", "highRisk": true, "allowedStatuses": ["ACTIVE"] },
+
+    { "command": "EXHAUST_ON", "category": "VENTILATION", "highRisk": false, "allowedStatuses": ["ACTIVE"] },
+    { "command": "EXHAUST_OFF", "category": "VENTILATION", "highRisk": false, "allowedStatuses": ["ACTIVE", "MAINTENANCE", "SUSPENDED"] },
+    { "command": "AIR_SUPPLY_ON", "category": "VENTILATION", "highRisk": false, "allowedStatuses": ["ACTIVE"] },
+    { "command": "AIR_SUPPLY_OFF", "category": "VENTILATION", "highRisk": false, "allowedStatuses": ["ACTIVE", "MAINTENANCE", "SUSPENDED"] },
+
+    { "command": "DISCHARGE_START", "category": "DISCHARGE", "highRisk": true, "allowedStatuses": ["ACTIVE"] },
+    { "command": "DISCHARGE_STOP", "category": "DISCHARGE", "highRisk": true, "allowedStatuses": ["ACTIVE", "MAINTENANCE", "SUSPENDED"] },
+
+    { "command": "REBOOT", "category": "DEVICE", "highRisk": false, "allowedStatuses": ["ACTIVE", "MAINTENANCE", "SUSPENDED"] },
+    { "command": "SHUTDOWN", "category": "DEVICE", "highRisk": true, "allowedStatuses": ["ACTIVE", "MAINTENANCE", "SUSPENDED"] },
+    { "command": "FACTORY_RESET", "category": "DEVICE", "highRisk": true, "allowedStatuses": ["ACTIVE"] },
+    { "command": "TAKE_SNAPSHOT", "category": "DEVICE", "highRisk": false, "allowedStatuses": ["ACTIVE", "MAINTENANCE", "SUSPENDED"] },
+    { "command": "FORCE_SYNC", "category": "DEVICE", "highRisk": false, "allowedStatuses": ["ACTIVE", "MAINTENANCE", "SUSPENDED"] }
+  ]
+}
