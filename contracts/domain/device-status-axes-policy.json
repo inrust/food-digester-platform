@@ -1,0 +1,22 @@
+{
+  "policyVersion": "0.1.0",
+  "updatedAt": "2026-08-26T09:41:47Z",
+  "x-decision-versions": ["DEC-010@0.2.0"],
+  "status": "provisional",
+  "description": "DEC-010 原型设备状态映射策略（暂定值的可执行扩展点）。暂定值：connectivity、lifecycle、operational、license 四轴分离；\"启用\"由明确业务规则派生。四轴分离与派生原则已可执行：任何接口/页面不得使用单一字段混用多维状态；\"启用\"不得作为独立存储字段。具体派生规则（enabledDerivationRule）是 DEC-010 待冻结内容，以 null 显式标记，读取失败关闭。冻结时按 decision-change-template 将 DEC-010 升至 >=1.0.0 并整体替换本文件；消费方（BE-DEV-01、BE-DEV-05、FE-03、FE-06）只经 device-status-axes-policy.ts 访问。",
+  "axes": {
+    "list": ["connectivity", "lifecycle", "operational", "license"],
+    "singleFieldMixing": false,
+    "consumers": ["DB-01", "DOM-01", "DOM-03", "BE-DEV-01", "BE-DEV-05", "FE-03", "FE-06"],
+    "note": "设备状态按四轴独立建模与展示：connectivity（在线/离线）、lifecycle（注册/激活/停用等）、operational（运行/维护/待机）、license（授权状态）。禁止用单一字段混用表达（如原型的\"是否启用/启用状态/在线/离线/维护/待机\"合并列）。"
+  },
+  "enabledDisplay": {
+    "derived": true,
+    "storedAsField": false,
+    "rule": null,
+    "consumers": ["BE-DEV-01", "FE-03", "FE-06"],
+    "note": "\"启用\"展示值必须由明确业务规则从四轴派生，不得作为独立字段存储。DEC-010 待冻结参数：rule（具体派生规则，如 lifecycle=ACTIVE 且 license 有效），当前 null；冻结前 API/页面不得输出 enabled 字段或\"启用\"文案。"
+  },
+  "pendingParameters": ["enabledDisplay.rule"],
+  "frozenUpgradePath": "DEC-010 冻结时：按 decision-change-template 变更 DEC-010 至 >=1.0.0，填入 enabledDisplay.rule 的明确派生规则并提升 policyVersion、status 改 frozen；规则变更需同步 FE-03/FE-06 展示与 BE-DEV-01 查询契约。"
+}

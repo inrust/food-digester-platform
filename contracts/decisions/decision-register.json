@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.9.0",
-  "updatedAt": "2026-08-26T09:34:34Z",
+  "registerVersion": "1.10.0",
+  "updatedAt": "2026-08-26T09:41:47Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -326,7 +326,7 @@
     },
     {
       "id": "DEC-010",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "status": "pending",
       "title": "原型设备状态映射",
       "conflict": "原型“是否启用/启用状态/在线/离线/维护/待机”混用单一字段，与云端多维状态模型冲突。",
@@ -342,6 +342,12 @@
           "at": "2026-08-26T00:00:00Z",
           "by": "CT-01",
           "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        },
+        {
+          "version": "0.2.0",
+          "at": "2026-08-26T09:41:47Z",
+          "by": "DEC-010",
+          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/device-status-axes-policy.json + 查询模块与测试；四轴分离（connectivity/lifecycle/operational/license）与派生原则（禁单字段混用、禁独立存储\"启用\"）锁定可执行；具体派生规则 enabledDisplay.rule 显式标记 null，读取失败关闭，冻结前 API/页面不得输出 enabled 字段；同步 prototype-traceability.yaml 引用至 DEC-010@0.2.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
         }
       ]
     },
