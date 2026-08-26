@@ -6,7 +6,7 @@
  *   默认写入 contracts/mqtt/payloads.ts；--check 只校验生成结果与现有文件一致。
  */
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const SCHEMA_DIR = new URL('../contracts/mqtt/schemas/', import.meta.url);

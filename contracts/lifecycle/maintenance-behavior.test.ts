@@ -11,7 +11,6 @@ import {
   MAINTENANCE_BEHAVIOR_MATRIX,
   MaintenanceMatrixError,
   getMaintenanceBehavior,
-  getMaintenanceMatrixStatus,
   getMaintenanceSyncIntervalSeconds,
   isKnownMaintenanceBehavior,
   isMaintenanceBehaviorAllowed,

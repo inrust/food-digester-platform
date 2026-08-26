@@ -1,0 +1,14 @@
+{
+  "name": "@fdp/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./*"
+  },
+  "scripts": {
+    "build": "node -e \"console.log('@fdp/contracts 为源码契约包：内部使用 .ts 扩展名互引，不经 tsc 构建；消费方经 tsx/打包器直接使用源码')\"",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --import tsx --test mqtt/*.test.ts mqtt/*.test.mjs domain/*.test.ts lifecycle/*.test.ts media/*.test.ts security/*.test.ts rest/*.test.ts"
+  }
+}
