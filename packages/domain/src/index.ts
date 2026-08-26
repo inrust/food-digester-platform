@@ -5,3 +5,4 @@
 export const PACKAGE_NAME = '@fdp/domain';
 
 export * from './device-lifecycle.js';
+export * from './license.js';
