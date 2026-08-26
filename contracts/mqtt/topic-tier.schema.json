@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hiddenjoya.local/contracts/mqtt/topic-tier.schema.json",
+  "title": "Topic Tier Registry",
+  "description": "DEC-002 Topic Tier 标记的结构契约。topics 为封闭键集合（11 个 Topic，additionalProperties=false）。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "type": "object",
+  "required": [
+    "tierVersion",
+    "updatedAt",
+    "x-decision-versions",
+    "status",
+    "description",
+    "tierPolicy",
+    "topics",
+    "frozenUpgradePath"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "tierVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Tier 登记自身版本。provisional 为 0.x；DEC-002 冻结后必须 >= 1.0.0。"
+    },
+    "updatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "UTC ISO-8601 时间戳。"
+    },
+    "x-decision-versions": {
+      "type": "array",
+      "description": "决策追溯引用，格式 决策ID@semver；必须包含 DEC-002@<当前登记版本>。"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["provisional", "frozen"],
+      "description": "provisional=暂定值（DEC-002 pending/proposed）；frozen=已冻结。"
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "tierPolicy": {
+      "type": "object",
+      "required": ["sourceRule", "fallbackPolicy", "tiers"],
+      "additionalProperties": false,
+      "properties": {
+        "sourceRule": { "type": "string", "minLength": 1 },
+        "fallbackPolicy": {
+          "type": "string",
+          "enum": ["deny"],
+          "description": "未知 Topic 的 Tier 查询失败关闭，禁止默认放行。"
+        },
+        "tiers": {
+          "type": "object",
+          "required": ["AUDITED", "STANDARD"],
+          "additionalProperties": false,
+          "properties": {
+            "AUDITED": { "type": "string", "minLength": 1 },
+            "STANDARD": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "topics": {
+      "type": "object",
+      "required": [
+        "heartbeat",
+        "telemetry",
+        "report",
+        "alarm",
+        "event",
+        "ack",
+        "tamper",
+        "media",
+        "cmd",
+        "ota",
+        "notification"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "heartbeat": { "$ref": "#/$defs/topicTier" },
+        "telemetry": { "$ref": "#/$defs/topicTier" },
+        "report": { "$ref": "#/$defs/topicTier" },
+        "alarm": { "$ref": "#/$defs/topicTier" },
+        "event": { "$ref": "#/$defs/topicTier" },
+        "ack": { "$ref": "#/$defs/topicTier" },
+        "tamper": { "$ref": "#/$defs/topicTier" },
+        "media": { "$ref": "#/$defs/topicTier" },
+        "cmd": { "$ref": "#/$defs/topicTier" },
+        "ota": { "$ref": "#/$defs/topicTier" },
+        "notification": { "$ref": "#/$defs/topicTier" }
+      }
+    },
+    "frozenUpgradePath": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "topicTier": {
+      "type": "object",
+      "required": ["tier", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "tier": { "type": "string", "enum": ["AUDITED", "STANDARD"] },
+        "consumers": {
+          "type": "array",
+          "description": "消费该 Tier 条目的任务 ID（CT-03、BE-IOT-02 等）。"
+        },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

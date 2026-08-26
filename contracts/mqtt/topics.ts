@@ -2,7 +2,7 @@
  * CT-02 MQTT Topic 与 QoS 契约。
  *
  * 事实源：contracts/mqtt/topic-catalog.json（本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：ADP-002@1.0.0（QoS 2→1 适配）、PRI-001@1.0.0（三级优先原则）。
+ * 决策追溯：ADP-002@1.0.0（QoS 2→1 适配）、PRI-001@1.0.0（三级优先原则）、DEC-002@0.2.0（Topic Tier：payloadEnvelope 的 audit 标记）。
  *
  * 功能边界：不创建 AWS 资源，不处理 Payload。
  */

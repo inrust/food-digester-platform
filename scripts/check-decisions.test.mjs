@@ -200,11 +200,12 @@ function withTraceFixture(files, fn) {
 
 test('追溯校验：合法 x-decision-versions 引用通过（Schema 可追溯到决策版本）', () => {
   const register = realRegister();
+  const dec002 = register.decisions.find((d) => d.id === 'DEC-002');
   withTraceFixture(
     {
       'command.schema.json': {
         $schema: 'https://json-schema.org/draft/2020-12/schema',
-        'x-decision-versions': ['DEC-002@0.1.0', 'ADP-002@1.0.0'],
+        'x-decision-versions': [`DEC-002@${dec002.version}`, 'ADP-002@1.0.0'],
         type: 'object',
       },
     },
