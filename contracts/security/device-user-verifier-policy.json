@@ -1,0 +1,30 @@
+{
+  "policyVersion": "0.1.0",
+  "updatedAt": "2026-08-26T06:44:03Z",
+  "x-decision-versions": ["DEC-004@0.2.0"],
+  "status": "provisional",
+  "description": "DEC-004 Device User 密码验证格式（暂定值的可执行扩展点）。定性规则已可执行：设备本地专用加盐验证值，与云端身份完全分离，禁止复用 Cognito 或任何云端密码 Hash；验证材料只在 Sync DTO 中下发。KDF 具体格式（算法、参数、salt/hash 长度）是 DEC-004 待冻结内容，以 null 显式标记，读取失败关闭。冻结时按 decision-change-template 将 DEC-004 升至 >=1.0.0 并整体替换本文件；消费方（BE-DUSR-02）只经 device-user-verifier-policy.ts 访问。",
+  "separation": {
+    "purpose": "device-local-only",
+    "cloudHashReuse": false,
+    "consumers": ["BE-DUSR-02"],
+    "note": "验证值仅供设备本地登录校验；禁止复用 Cognito 或云端用户密码 Hash；与云端账号体系完全分离，不赋予云端登录权限。"
+  },
+  "material": {
+    "fields": ["version", "kdf", "salt", "hash"],
+    "kdf": null,
+    "kdfParameters": null,
+    "saltBytes": null,
+    "hashBytes": null,
+    "saltPerUser": true,
+    "consumers": ["BE-DUSR-02"],
+    "note": "验证材料结构固定为 version+kdf+salt+hash 四字段，version 支持算法迁移。kdf/kdfParameters/saltBytes/hashBytes 为 DEC-004 待冻结参数，当前 null。每用户独立随机 salt（不同 salt 结果必须不同）。"
+  },
+  "distribution": {
+    "channels": ["SYNC"],
+    "consumers": ["BE-DUSR-02", "BE-SYNC-01"],
+    "note": "验证材料仅经 Unified Device Sync（BE-SYNC-01）的 Device Users 域下发；任何查询类 API 不得返回；接口日志与业务审计必须脱敏（盐值可按冻结规则保留，hash 永不入日志）。"
+  },
+  "pendingParameters": ["material.kdf", "material.kdfParameters", "material.saltBytes", "material.hashBytes"],
+  "frozenUpgradePath": "DEC-004 冻结时：按 decision-change-template 变更 DEC-004 至 >=1.0.0，填入 KDF 算法、参数与 salt/hash 长度并提升 policyVersion、status 改 frozen；同时提供固定测试向量供设备方复验（BE-DUSR-02 验收基准）。"
+}

@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.3.0",
-  "updatedAt": "2026-08-26T06:20:00Z",
+  "registerVersion": "1.4.0",
+  "updatedAt": "2026-08-26T06:44:03Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -164,7 +164,7 @@
     },
     {
       "id": "DEC-004",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "status": "pending",
       "title": "Device User 密码验证格式",
       "conflict": "设备本地登录验证值的 KDF 格式与下发材料未冻结。",
@@ -180,6 +180,12 @@
           "at": "2026-08-26T00:00:00Z",
           "by": "CT-01",
           "note": "登记任务清单 §4 暂定值，待业务方冻结。"
+        },
+        {
+          "version": "0.2.0",
+          "at": "2026-08-26T06:44:03Z",
+          "by": "DEC-004",
+          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/security/device-user-verifier-policy.json + 查询模块与测试；定性规则（设备本地专用、禁复用云端 Hash、每用户 salt、仅 Sync 下发）可执行；KDF 算法/参数/salt/hash 长度显式标记 null，读取失败关闭；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
         }
       ]
     },

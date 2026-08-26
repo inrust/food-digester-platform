@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hiddenjoya.local/contracts/security/device-user-verifier-policy.schema.json",
+  "title": "Device User Verifier Policy",
+  "description": "DEC-004 Device User 密码验证格式的结构契约。kdf/kdfParameters/saltBytes/hashBytes 为待冻结参数：provisional 状态必须为 null，frozen 状态必须填入。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "type": "object",
+  "required": [
+    "policyVersion",
+    "updatedAt",
+    "x-decision-versions",
+    "status",
+    "description",
+    "separation",
+    "material",
+    "distribution",
+    "pendingParameters",
+    "frozenUpgradePath"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "policyVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "策略自身版本。provisional 为 0.x；DEC-004 冻结后必须 >= 1.0.0。"
+    },
+    "updatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "UTC ISO-8601 时间戳。"
+    },
+    "x-decision-versions": {
+      "type": "array",
+      "description": "决策追溯引用，格式 决策ID@semver；必须包含 DEC-004@<当前登记版本>。"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["provisional", "frozen"],
+      "description": "provisional=暂定值（DEC-004 pending/proposed）；frozen=已冻结。"
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "separation": {
+      "type": "object",
+      "required": ["purpose", "cloudHashReuse", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "purpose": { "type": "string", "enum": ["device-local-only"] },
+        "cloudHashReuse": { "type": "boolean", "enum": [false], "description": "禁止复用云端密码 Hash，锁定为 false。" },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "material": {
+      "type": "object",
+      "required": ["fields", "kdf", "kdfParameters", "saltBytes", "hashBytes", "saltPerUser", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "fields": { "type": "array", "description": "验证材料固定字段：version、kdf、salt、hash。" },
+        "kdf": { "type": ["string", "null"], "minLength": 1, "description": "DEC-004 待冻结参数：KDF 算法标识。provisional 为 null。" },
+        "kdfParameters": { "type": ["object", "null"], "description": "DEC-004 待冻结参数：KDF 参数（迭代次数/内存等）。provisional 为 null。" },
+        "saltBytes": { "type": ["integer", "null"], "minimum": 8, "description": "DEC-004 待冻结参数：salt 长度（字节）。provisional 为 null。" },
+        "hashBytes": { "type": ["integer", "null"], "minimum": 16, "description": "DEC-004 待冻结参数：hash 输出长度（字节）。provisional 为 null。" },
+        "saltPerUser": { "type": "boolean", "enum": [true], "description": "每用户独立随机 salt，锁定为 true。" },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "distribution": {
+      "type": "object",
+      "required": ["channels", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "channels": { "type": "array", "description": "允许下发通道枚举：SYNC。" },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "pendingParameters": {
+      "type": "array",
+      "description": "DEC-004 冻结前必须显式给出取值的参数路径列表。"
+    },
+    "frozenUpgradePath": { "type": "string", "minLength": 1 }
+  }
+}
