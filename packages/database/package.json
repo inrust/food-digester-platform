@@ -17,16 +17,21 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json",
+    "generate": "prisma generate",
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:generate": "prisma generate",
     "db:seed": "psql \"$DATABASE_URL\" -f prisma/seed.sql"
   },
   "dependencies": {
     "@fdp/domain": "workspace:*",
-    "@prisma/client": "^7.9.1"
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.9.1",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.7",
+    "@types/pg": "^8.23.1",
+    "pglite-prisma-adapter": "^0.7.2",
     "prisma": "7.9.1"
   }
 }
