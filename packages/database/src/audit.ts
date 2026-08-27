@@ -91,6 +91,9 @@ export interface AuditedOperation {
   /** 成功时的 afterValue：常量或基于业务结果的函数。 */
   readonly afterValue?: unknown | ((result: unknown) => unknown);
   readonly customerId?: string | null;
+  /** 显式 actor（优先于 AsyncLocalStorage 上下文）。 */
+  readonly actorId?: string;
+  readonly actorRole?: string;
 }
 
 /**

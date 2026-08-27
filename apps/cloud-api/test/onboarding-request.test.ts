@@ -7,13 +7,9 @@
  * - 重复提交幂等返回原 request（200）；并发重复提交仅产生一条记录；
  * - 稳定错误码与 CT-05 目录一致（见 onboarding-contract-parity.test.ts）。
  */
-import { PGlite } from '@electric-sql/pglite';
-import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
-import { PrismaPGlite } from 'pglite-prisma-adapter';
-import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
-import { PrismaClient } from '@fdp/database';
+import type { PrismaClient } from '@fdp/database';
 import type { DbClient } from '@fdp/database';
 import {
   createRateLimiter,
@@ -24,16 +20,12 @@ import {
 } from '@fdp/auth';
 import { createOnboardingRequestHandler, submitOnboardingRequest } from '../src/index.js';
 import type { OnboardingHttpRequest, OnboardingHttpResponse } from '../src/index.js';
-
-const MIGRATION_SQL = readFileSync(
-  new URL('../../../packages/database/prisma/migrations/20260826120000_init/migration.sql', import.meta.url),
-  'utf8',
-);
+import { createTestDb } from './helpers.js';
 
 const NOW = new Date('2026-08-27T08:00:00Z');
 const now = () => NOW;
 
-let pg: PGlite;
+let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
 
 const SERIALS = {
@@ -44,9 +36,7 @@ const SERIALS = {
 } as const;
 
 beforeAll(async () => {
-  pg = new PGlite({ extensions: { btree_gist } });
-  await pg.exec(MIGRATION_SQL);
-  prisma = new PrismaClient({ adapter: new PrismaPGlite(pg) });
+  ({ pg, prisma } = await createTestDb());
   for (const [i, serial] of Object.values(SERIALS).entries()) {
     await prisma.device.create({
       data: {
