@@ -18,3 +18,4 @@ export function serviceLayers(): readonly string[] {
 export * from './onboarding/index.js';
 export * from './admin/onboarding/index.js';
 export * from './provisioning/index.js';
+export * from './device/index.js';

@@ -1,0 +1,107 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Device Certificate API",
+    "version": "0.1.0",
+    "description": "BE-CERT-01 设备证书状态接口。认证为 Device mTLS（AUTH-03 白名单）；只允许查询当前 mTLS 身份对应的证书；日期一律 UTC；响应不包含 PEM/私钥。通用响应/错误契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "device",
+      "description": "/api/v1/device/* 设备 mTLS API",
+      "x-path-prefix": "/api/v1/device",
+      "x-auth": "DeviceMtls"
+    }
+  ],
+  "paths": {
+    "/api/v1/device/certificate/status": {
+      "get": {
+        "tags": ["device"],
+        "operationId": "getCertificateStatus",
+        "summary": "查询当前设备证书状态（BE-CERT-01）",
+        "description": "返回当前 mTLS 身份对应证书的 certificateId、状态（ACTIVE/EXPIRING/EXPIRED/REVOKED）、expiryDate（UTC YYYY-MM-DD）与 daysRemaining（UTC 整日差）。EXPIRING 阈值由部署配置注入（默认 30 天）。不自动轮换、不发送到期告警。",
+        "security": [{ "DeviceMtls": [] }],
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "query",
+            "required": false,
+            "description": "可选；提供时必须等于当前证书绑定的设备，否则 403 FORBIDDEN（跨设备查询拒绝）",
+            "schema": { "type": "string", "minLength": 1 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "证书状态",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CertificateStatusSuccess" }
+              }
+            }
+          },
+          "401": {
+            "description": "证书缺失/未登记/非 ACTIVE/过期（UNAUTHENTICATED，不区分原因）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "跨设备查询或设备已退役（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "内部错误（INTERNAL_ERROR，不暴露细节）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "DeviceMtls": { "$ref": "openapi-base.json#/components/securitySchemes/DeviceMtls" }
+    },
+    "schemas": {
+      "CertificateStatus": {
+        "type": "object",
+        "required": ["certificateId", "status", "expiryDate", "daysRemaining"],
+        "additionalProperties": false,
+        "description": "证书状态视图；不含 certificatePem/privateKey 等密钥材料",
+        "properties": {
+          "certificateId": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["ACTIVE", "EXPIRING", "EXPIRED", "REVOKED"] },
+          "expiryDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "UTC 到期日"
+          },
+          "daysRemaining": { "type": "integer", "minimum": 0, "description": "UTC 整日剩余天数" }
+        }
+      },
+      "CertificateStatusSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/CertificateStatus" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}
