@@ -17,3 +17,9 @@ export type {
   OnboardingCompletionDeps,
   OnboardingCompletionResult,
 } from './onboarding-completion.js';
+export { confirmCertificateRotationOnFirstHeartbeat } from './rotation-confirmation.js';
+export type {
+  RotationConfirmationDeps,
+  RotationConfirmationInput,
+  RotationConfirmationResult,
+} from './rotation-confirmation.js';

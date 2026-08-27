@@ -69,6 +69,73 @@
           }
         }
       }
+    },
+    "/api/v1/device/certificate/rotate": {
+      "post": {
+        "tags": ["device"],
+        "operationId": "rotateCertificate",
+        "summary": "轮换设备证书（BE-CERT-02）",
+        "description": "校验 currentCertificateId 必须等于当前 mTLS 身份证书（旧证书 ACTIVE 且属于设备由认证链保证）；创建新证书并一次性返回证书包（certificateId/certificatePem/privateKey/effectiveDate/expiryDate），进入双证书窗口（旧证保持可用）；新证书首个合法 Heartbeat 后停用旧证并销毁新证书包。同旧证书的未确认轮换重复请求 → 409 CONFLICT（重试不产生新证书）。",
+        "security": [{ "DeviceMtls": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CertificateRotateInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "轮换成功，返回新证书包（仅本响应携带 privateKey 明文）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CertificateRotateSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "缺少/非法 currentCertificateId（VALIDATION_FAILED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "证书缺失/未登记/撤销/过期（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "currentCertificateId 与 mTLS 身份不符（跨设备/错误声明，FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "同旧证书的轮换已在进行中（CONFLICT，DEC-003 重复领取失败关闭）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "内部错误（INTERNAL_ERROR，不暴露细节）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -76,6 +143,49 @@
       "DeviceMtls": { "$ref": "openapi-base.json#/components/securitySchemes/DeviceMtls" }
     },
     "schemas": {
+      "CertificateRotateInput": {
+        "type": "object",
+        "required": ["currentCertificateId"],
+        "additionalProperties": false,
+        "properties": {
+          "currentCertificateId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "当前在用（旧）证书 ID；必须等于 mTLS 身份证书"
+          }
+        }
+      },
+      "CertificateRotateResult": {
+        "type": "object",
+        "required": ["certificateId", "certificatePem", "privateKey", "effectiveDate", "expiryDate"],
+        "additionalProperties": false,
+        "description": "新证书包；privateKey 仅本响应携带一次，任何存储/日志/审计不得包含",
+        "properties": {
+          "certificateId": { "type": "string", "minLength": 1 },
+          "certificatePem": { "type": "string", "minLength": 1 },
+          "privateKey": { "type": "string", "minLength": 1 },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "新证书生效时间（UTC，双证书窗口起点）"
+          },
+          "expiryDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "UTC 到期日"
+          }
+        }
+      },
+      "CertificateRotateSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/CertificateRotateResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
       "CertificateStatus": {
         "type": "object",
         "required": ["certificateId", "status", "expiryDate", "daysRemaining"],

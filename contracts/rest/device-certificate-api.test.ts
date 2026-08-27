@@ -35,6 +35,21 @@ test('端点存在且使用 Device mTLS 认证', () => {
   const get = doc.paths['/api/v1/device/certificate/status'].get;
   assert.equal(get.operationId, 'getCertificateStatus');
   assert.deepEqual(get.security, [{ DeviceMtls: [] }]);
+  const post = doc.paths['/api/v1/device/certificate/rotate'].post;
+  assert.equal(post.operationId, 'rotateCertificate');
+  assert.deepEqual(post.security, [{ DeviceMtls: [] }]);
+});
+
+test('轮换契约：请求强制 currentCertificateId；响应五字段；409/403/400/401 齐整', () => {
+  const post = doc.paths['/api/v1/device/certificate/rotate'].post;
+  const input = doc.components.schemas.CertificateRotateInput;
+  assert.deepEqual(input.required, ['currentCertificateId']);
+  assert.equal(input.additionalProperties, false);
+  const result = doc.components.schemas.CertificateRotateResult;
+  assert.deepEqual(result.required, ['certificateId', 'certificatePem', 'privateKey', 'effectiveDate', 'expiryDate']);
+  for (const status of ['200', '400', '401', '403', '409', '500']) {
+    assert.ok(post.responses[status], `缺少 ${status} 响应`);
+  }
 });
 
 test('状态契约为四态枚举且响应不含 PEM/私钥字段', () => {
