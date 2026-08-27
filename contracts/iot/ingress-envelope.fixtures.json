@@ -1,0 +1,94 @@
+{
+  "topicType": "ingress-envelope",
+  "x-note": "BE-IOT-01 Ingress Envelope Fixture。Envelope = 原始 Payload 平铺 + iot* 保留上下文字段。",
+  "valid": [
+    {
+      "iotTopic": "bnx/device/dev-001/heartbeat",
+      "iotDeviceId": "dev-001",
+      "iotType": "heartbeat",
+      "iotReceivedAt": 1787812800000,
+      "iotPrincipal": "arn:aws:iot:ap-southeast-1:123456789012:cert/abc123",
+      "meta": {
+        "schemaVersion": "1.0.0",
+        "messageId": "msg-1",
+        "deviceId": "dev-001",
+        "occurredAt": "2026-08-27T08:00:00Z",
+        "seq": 1
+      },
+      "data": { "battery": 87 }
+    },
+    {
+      "iotTopic": "bnx/device/dev-002/report",
+      "iotDeviceId": "dev-002",
+      "iotType": "report",
+      "iotReceivedAt": 1787812800123,
+      "iotPrincipal": "arn:aws:iot:ap-southeast-1:123456789012:cert/def456",
+      "meta": {
+        "schemaVersion": "1.0.0",
+        "messageId": "msg-2",
+        "deviceId": "spoofed-device",
+        "occurredAt": "2026-08-27T08:00:00Z",
+        "seq": 7
+      },
+      "data": {},
+      "audit": { "customerId": "untrusted-value" },
+      "_x-note": "Payload 内 deviceId/customerId 为设备自报、不可信；消费端只用 iotDeviceId/iotPrincipal"
+    }
+  ],
+  "invalid": [
+    {
+      "name": "缺少 iotTopic",
+      "expectPath": "(root)",
+      "payload": {
+        "iotDeviceId": "dev-001",
+        "iotType": "heartbeat",
+        "iotReceivedAt": 1787812800000,
+        "iotPrincipal": "arn:aws:iot:ap-southeast-1:123456789012:cert/abc123"
+      }
+    },
+    {
+      "name": "未知 Topic 类型（downlink cmd 不属于上行 Envelope）",
+      "expectPath": "iotTopic",
+      "payload": {
+        "iotTopic": "bnx/device/dev-001/cmd",
+        "iotDeviceId": "dev-001",
+        "iotType": "heartbeat",
+        "iotReceivedAt": 1787812800000,
+        "iotPrincipal": "arn:aws:iot:ap-southeast-1:123456789012:cert/abc123"
+      }
+    },
+    {
+      "name": "iotType 不在 8 个上行类型枚举内",
+      "expectPath": "iotType",
+      "payload": {
+        "iotTopic": "bnx/device/dev-001/heartbeat",
+        "iotDeviceId": "dev-001",
+        "iotType": "cmd",
+        "iotReceivedAt": 1787812800000,
+        "iotPrincipal": "arn:aws:iot:ap-southeast-1:123456789012:cert/abc123"
+      }
+    },
+    {
+      "name": "空 deviceId",
+      "expectPath": "iotDeviceId",
+      "payload": {
+        "iotTopic": "bnx/device/dev-001/heartbeat",
+        "iotDeviceId": "",
+        "iotType": "heartbeat",
+        "iotReceivedAt": 1787812800000,
+        "iotPrincipal": "arn:aws:iot:ap-southeast-1:123456789012:cert/abc123"
+      }
+    },
+    {
+      "name": "非法 broker 时间戳（负数）",
+      "expectPath": "iotReceivedAt",
+      "payload": {
+        "iotTopic": "bnx/device/dev-001/heartbeat",
+        "iotDeviceId": "dev-001",
+        "iotType": "heartbeat",
+        "iotReceivedAt": -1,
+        "iotPrincipal": "arn:aws:iot:ap-southeast-1:123456789012:cert/abc123"
+      }
+    }
+  ]
+}

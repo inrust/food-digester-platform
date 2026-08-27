@@ -209,9 +209,12 @@ export class AppDependenciesStack extends Stack {
 
     for (const type of UPLINK_TOPIC_TYPES) {
       const idSuffix = type.charAt(0).toUpperCase() + type.slice(1);
-      // Envelope 契约归 BE-IOT-01；此处保留原始 Payload 并附 topic/接收时间/principal 上下文
+      // BE-IOT-01 Envelope 契约（contracts/iot/ingress-envelope.schema.json）：
+      // 原始 Payload 全字段平铺（SELECT *）+ 五个 iot* 保留上下文字段；
+      // 设备自报身份字段不可信，消费端只用 iotDeviceId/iotPrincipal 结合台账解析。
       const sql =
-        `SELECT *, topic() AS topic, timestamp() AS brokerReceivedAt, principal() AS principal ` +
+        `SELECT *, topic() AS iotTopic, topic(3) AS iotDeviceId, topic(4) AS iotType, ` +
+        `timestamp() AS iotReceivedAt, principal() AS iotPrincipal ` +
         `FROM '${uplinkTopicFilter(type)}'`;
       new iot.CfnTopicRule(this, `IotRule${idSuffix}`, {
         ruleName: this.naming.iotRule(`iot-${type}`),
@@ -219,6 +222,7 @@ export class AppDependenciesStack extends Stack {
           sql,
           awsIotSqlVersion: '2016-03-23',
           ruleDisabled: false,
+          // useBase64=false：保留 JSON 原文（Envelope 平铺），不做 Base64 包装
           actions: [{ sqs: { queueUrl: messaging.ingress.queueUrl, roleArn: ruleRole.roleArn, useBase64: false } }],
           errorAction: {
             sqs: { queueUrl: messaging.ruleError.queueUrl, roleArn: ruleRole.roleArn, useBase64: false },
