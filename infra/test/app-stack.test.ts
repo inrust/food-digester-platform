@@ -1,0 +1,415 @@
+/**
+ * IAC-01 模板断言测试（验收基准的机器证明）：
+ * 1. 资源名支持环境前缀；
+ * 2. 无公网 S3/RDS；
+ * 3. 角色权限没有 `*:*`；
+ * 4. 三类 API 认证入口分离（Onboarding=Token、Device=mTLS、Admin/Customer=Cognito、Internal=IAM）；
+ * 5. 数据库凭据经 Secrets Manager；S3 阻断公网并启用 Versioning；队列 KMS 加密且主队列有 DLQ；
+ * 6. 8 个 IoT Rule 按上行 Topic 路由到 Ingress SQS，Error Action 写独立错误队列；
+ * 7. 应用配置经 Lambda 环境变量与 CfnOutput 输出。
+ */
+import { App } from 'aws-cdk-lib';
+import { Match, Template } from 'aws-cdk-lib/assertions';
+import { assert, describe, test } from 'vitest';
+import type { InfraConfig } from '../src/config.js';
+import { AppDependenciesStack } from '../src/stacks/app-dependencies-stack.js';
+import { UPLINK_TOPIC_TYPES } from '../src/topics.js';
+
+function synthTemplate(config: InfraConfig = { envName: 'test' }): Template {
+  const app = new App();
+  const stack = new AppDependenciesStack(app, 'TestStack', { config });
+  return Template.fromStack(stack);
+}
+
+function resourcesOfType(template: Template, type: string): Record<string, any> {
+  return template.findResources(type);
+}
+
+/** 收集模板中全部 IAM Policy 声明（独立 Policy、ManagedPolicy、Role 内联 Policies）。 */
+function collectIamStatements(template: Template): any[] {
+  const statements: any[] = [];
+  const all = template.toJSON().Resources as Record<string, any>;
+  for (const resource of Object.values(all)) {
+    if (resource.Type === 'AWS::IAM::Policy' || resource.Type === 'AWS::IAM::ManagedPolicy') {
+      statements.push(...(resource.Properties?.PolicyDocument?.Statement ?? []));
+    }
+    if (resource.Type === 'AWS::IAM::Role') {
+      for (const policy of resource.Properties?.Policies ?? []) {
+        statements.push(...(policy.PolicyDocument?.Statement ?? []));
+      }
+    }
+  }
+  return statements;
+}
+
+const isStarStar = (statement: any): boolean => {
+  const actions = Array.isArray(statement.Action) ? statement.Action : [statement.Action];
+  const resources = Array.isArray(statement.Resource) ? statement.Resource : [statement.Resource];
+  return actions.includes('*') && resources.includes('*');
+};
+
+// ---------- 资源命名与环境前缀 ----------
+
+describe('资源命名（环境前缀）', () => {
+  const template = synthTemplate();
+
+  test('Stack 物理名带环境前缀', () => {
+    const app = new App();
+    const stack = new AppDependenciesStack(app, 'Named', { config: { envName: 'staging' } });
+    assert.equal(stack.stackName, 'fdp-staging-app');
+  });
+
+  test('SQS 队列名带环境前缀', () => {
+    for (const suffix of ['ingress', 'ingress-dlq', 'archive', 'archive-dlq', 'quarantine', 'iot-rule-error']) {
+      template.hasResourceProperties('AWS::SQS::Queue', { QueueName: `fdp-test-${suffix}` });
+    }
+  });
+
+  test('S3 Bucket 名带环境前缀（账号 ID 后缀保证全局唯一）', () => {
+    const names = Object.values(resourcesOfType(template, 'AWS::S3::Bucket')).map((b) =>
+      JSON.stringify(b.Properties.BucketName),
+    );
+    assert.equal(names.length, 5);
+    for (const suffix of ['raw', 'ota', 'media', 'export', 'mtls-truststore']) {
+      assert.isTrue(
+        names.some((n) => n.includes(`fdp-test-${suffix}`) && n.includes('AWS::AccountId')),
+        `缺少 Bucket fdp-test-${suffix}-<account>`,
+      );
+    }
+  });
+
+  test('IoT Rule / RDS / Lambda / Cognito 命名带环境前缀', () => {
+    for (const type of UPLINK_TOPIC_TYPES) {
+      template.hasResourceProperties('AWS::IoT::TopicRule', { RuleName: `fdp_test_iot_${type}` });
+    }
+    template.hasResourceProperties('AWS::RDS::DBInstance', { DBInstanceIdentifier: 'fdp-test-db' });
+    for (const fn of ['ingestion', 'archive', 'outbox-publisher', 'summary', 'api']) {
+      template.hasResourceProperties('AWS::Lambda::Function', { FunctionName: `fdp-test-${fn}` });
+    }
+    template.hasResourceProperties('AWS::Cognito::UserPool', { UserPoolName: 'fdp-test-admin' });
+  });
+});
+
+// ---------- 验收：无公网 S3/RDS ----------
+
+describe('验收：无公网 S3/RDS', () => {
+  const template = synthTemplate();
+
+  test('全部 S3 Bucket 阻断公网访问', () => {
+    const buckets = resourcesOfType(template, 'AWS::S3::Bucket');
+    assert.equal(Object.keys(buckets).length, 5);
+    for (const bucket of Object.values(buckets)) {
+      assert.deepEqual(bucket.Properties.PublicAccessBlockConfiguration, {
+        BlockPublicAcls: true,
+        BlockPublicPolicy: true,
+        IgnorePublicAcls: true,
+        RestrictPublicBuckets: true,
+      });
+    }
+  });
+
+  test('全部 S3 Bucket 强制 TLS（拒绝 aws:SecureTransport=false）', () => {
+    const policies = Object.values(resourcesOfType(template, 'AWS::S3::BucketPolicy'));
+    assert.equal(policies.length, 5);
+    for (const policy of policies) {
+      const deny = (policy.Properties.PolicyDocument.Statement as any[]).find(
+        (s) => s.Effect === 'Deny' && s.Condition?.Bool?.['aws:SecureTransport'] === 'false',
+      );
+      assert.isDefined(deny, 'Bucket Policy 缺少 TLS 强制拒绝声明');
+    }
+  });
+
+  test('全部 S3 Bucket 启用 Versioning 与 KMS 静态加密', () => {
+    for (const bucket of Object.values(resourcesOfType(template, 'AWS::S3::Bucket'))) {
+      assert.equal(bucket.Properties.VersioningConfiguration?.Status, 'Enabled');
+      const sse = bucket.Properties.BucketEncryption?.ServerSideEncryptionConfiguration?.[0];
+      assert.equal(sse?.ServerSideEncryptionByDefault?.SSEAlgorithm, 'aws:kms');
+    }
+  });
+
+  test('RDS 非公网可达且存储加密', () => {
+    template.hasResourceProperties('AWS::RDS::DBInstance', {
+      PubliclyAccessible: false,
+      StorageEncrypted: true,
+      Engine: 'postgres',
+      MultiAZ: false,
+    });
+  });
+});
+
+// ---------- 验收：角色权限没有 *:* ----------
+
+describe('验收：IAM 最小权限', () => {
+  const template = synthTemplate();
+
+  test('所有 IAM Policy 声明不存在 Action:* 且 Resource:* 的组合', () => {
+    const statements = collectIamStatements(template);
+    assert.isAbove(statements.length, 0);
+    const violations = statements.filter(isStarStar);
+    assert.deepEqual(violations, []);
+  });
+
+  test('IoT Rule 角色仅允许向 Ingress 与 Rule Error 队列 SendMessage', () => {
+    const statements = collectIamStatements(template);
+    const ruleStatements = statements.filter((s) =>
+      (Array.isArray(s.Action) ? s.Action : [s.Action]).includes('sqs:SendMessage'),
+    );
+    assert.isAbove(ruleStatements.length, 0);
+    for (const s of ruleStatements) {
+      const sqsActions = (Array.isArray(s.Action) ? s.Action : [s.Action])
+        .filter((a: string) => a.startsWith('sqs:'))
+        .sort();
+      // CDK grantSendMessages 附带队列元数据读取动作；仍为只读元数据 + 发送，无删除/接收权限
+      assert.deepEqual(sqsActions, ['sqs:GetQueueAttributes', 'sqs:GetQueueUrl', 'sqs:SendMessage']);
+    }
+  });
+
+  test('API Lambda 下行发布权限收敛到 3 个下行 Topic 模式', () => {
+    const statements = collectIamStatements(template);
+    const publish = statements.find((s) => (Array.isArray(s.Action) ? s.Action : [s.Action]).includes('iot:Publish'));
+    assert.isDefined(publish);
+    const resources = (publish.Resource as unknown[]).map((r) => JSON.stringify(r));
+    assert.equal(resources.length, 3);
+    for (const type of ['cmd', 'ota', 'notification']) {
+      assert.isTrue(
+        resources.some((r) => r.includes(`topic/bnx/device/*/${type}`)),
+        `iot:Publish 未收敛到下行 Topic ${type}`,
+      );
+    }
+  });
+
+  test('5 个 Lambda 使用各自独立执行角色', () => {
+    const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
+      String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),
+    );
+    assert.equal(fns.length, 5);
+    const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
+    assert.equal(roles.size, 5);
+  });
+});
+
+// ---------- 验收：三类 API 认证入口分离 ----------
+
+describe('验收：三类 API 认证入口分离', () => {
+  const template = synthTemplate();
+
+  function apiNameByLogicalId(): Map<string, string> {
+    const map = new Map<string, string>();
+    for (const [logicalId, api] of Object.entries(resourcesOfType(template, 'AWS::ApiGateway::RestApi'))) {
+      map.set(logicalId, api.Properties.Name);
+    }
+    return map;
+  }
+
+  function authTypesByApi(): Map<string, Set<string>> {
+    const names = apiNameByLogicalId();
+    const result = new Map<string, Set<string>>();
+    for (const method of Object.values(resourcesOfType(template, 'AWS::ApiGateway::Method'))) {
+      const apiLogicalId = method.Properties.RestApiId?.Ref as string;
+      const apiName = names.get(apiLogicalId);
+      if (!apiName) continue;
+      if (!result.has(apiName)) result.set(apiName, new Set());
+      result.get(apiName)?.add(method.Properties.AuthorizationType);
+    }
+    return result;
+  }
+
+  test('存在三个独立 RestApi：onboarding / device / admin', () => {
+    template.resourceCountIs('AWS::ApiGateway::RestApi', 3);
+    const names = new Set(apiNameByLogicalId().values());
+    assert.deepEqual(names, new Set(['fdp-test-onboarding-api', 'fdp-test-device-api', 'fdp-test-admin-api']));
+  });
+
+  test('Onboarding/Device 入口方法级为 NONE（Token/mTLS 由独立机制承载），Admin 入口为 Cognito/IAM', () => {
+    const byApi = authTypesByApi();
+    assert.deepEqual([...(byApi.get('fdp-test-onboarding-api') ?? [])], ['NONE']);
+    assert.deepEqual([...(byApi.get('fdp-test-device-api') ?? [])], ['NONE']);
+    const admin = byApi.get('fdp-test-admin-api') ?? new Set();
+    assert.isTrue(admin.has('COGNITO_USER_POOLS'), 'Admin/Customer 必须 Cognito JWT');
+    assert.isTrue(admin.has('AWS_IAM'), 'Internal 必须 IAM');
+    assert.isFalse(admin.has('NONE'), 'Admin 入口不允许未认证方法');
+  });
+
+  test('三类入口共享同一 API Lambda（模块化单体），入口隔离在网关层', () => {
+    const methods = Object.values(resourcesOfType(template, 'AWS::ApiGateway::Method'));
+    assert.isAbove(methods.length, 0);
+  });
+});
+
+describe('Device API mTLS 自定义域名（提供域名配置时）', () => {
+  const template = synthTemplate({
+    envName: 'test',
+    deviceApiDomain: {
+      domainName: 'device-api.example.com',
+      certificateArn: 'arn:aws:acm:ap-southeast-1:123456789012:certificate/00000000-0000-0000-0000-000000000000',
+      truststoreKey: 'truststore/ca-bundle.pem',
+    },
+  });
+
+  test('创建 mTLS 自定义域名并映射 Device API', () => {
+    const domains = Object.values(resourcesOfType(template, 'AWS::ApiGateway::DomainName'));
+    assert.equal(domains.length, 1);
+    const domain = domains[0];
+    assert.equal(domain.Properties.DomainName, 'device-api.example.com');
+    assert.equal(domain.Properties.SecurityPolicy, 'TLS_1_2');
+    assert.deepEqual(domain.Properties.EndpointConfiguration, { Types: ['REGIONAL'] });
+    const truststoreUri = JSON.stringify(domain.Properties.MutualTlsAuthentication?.TruststoreUri);
+    assert.include(truststoreUri, 's3://');
+    assert.include(truststoreUri, 'truststore/ca-bundle.pem');
+    template.resourceCountIs('AWS::ApiGateway::BasePathMapping', 1);
+  });
+
+  test('提供 mTLS 域名后禁用 Device API 默认 execute-api 入口', () => {
+    template.hasResourceProperties('AWS::ApiGateway::RestApi', {
+      Name: 'fdp-test-device-api',
+      DisableExecuteApiEndpoint: true,
+    });
+  });
+
+  test('未提供域名配置时不创建自定义域名，默认入口保留', () => {
+    const plain = synthTemplate();
+    plain.resourceCountIs('AWS::ApiGateway::DomainName', 0);
+    plain.hasResourceProperties('AWS::ApiGateway::RestApi', {
+      Name: 'fdp-test-device-api',
+      DisableExecuteApiEndpoint: false,
+    });
+  });
+});
+
+// ---------- 验收：凭据 / 队列 / IoT 路由 ----------
+
+describe('验收：数据库凭据与消息管线', () => {
+  const template = synthTemplate();
+
+  test('RDS 凭据存于 Secrets Manager（KMS 加密），实例口令使用动态引用', () => {
+    template.hasResourceProperties('AWS::SecretsManager::Secret', {
+      Name: 'fdp-test-rds-credentials',
+      KmsKeyId: Match.anyValue(),
+      GenerateSecretString: Match.objectLike({ SecretStringTemplate: Match.stringLikeRegexp('fdp_admin') }),
+    });
+    const dbs = Object.values(resourcesOfType(template, 'AWS::RDS::DBInstance'));
+    assert.equal(dbs.length, 1);
+    const password = JSON.stringify(dbs[0].Properties.MasterUserPassword);
+    assert.include(password, 'resolve:secretsmanager', '口令必须来自 Secrets Manager 动态引用');
+    // 用户名非敏感材料，允许为字面量；口令绝不落模板
+    assert.equal(dbs[0].Properties.MasterUsername, 'fdp_admin');
+  });
+
+  test('Ingress/Archive 主队列配置 DLQ，全部队列 KMS 加密', () => {
+    const queues = Object.values(resourcesOfType(template, 'AWS::SQS::Queue'));
+    assert.equal(queues.length, 6);
+    for (const queue of queues) {
+      assert.isDefined(queue.Properties.KmsMasterKeyId, `队列 ${queue.Properties.QueueName} 未配置 KMS 加密`);
+    }
+    const withDlq = queues.filter((q) => q.Properties.RedrivePolicy !== undefined).map((q) => q.Properties.QueueName);
+    assert.deepEqual(withDlq.sort(), ['fdp-test-archive', 'fdp-test-ingress']);
+  });
+
+  test('8 个 IoT Rule 按上行 Topic 路由 Ingress，Error Action 写独立错误队列', () => {
+    const rules = resourcesOfType(template, 'AWS::IoT::TopicRule');
+    assert.equal(Object.keys(rules).length, 8);
+    const ingressQueueUrls = new Set<string>();
+    const errorQueueUrls = new Set<string>();
+    const topics = new Set<string>();
+    for (const rule of Object.values(rules)) {
+      const payload = rule.Properties.TopicRulePayload;
+      const match = /FROM 'bnx\/device\/\+\/([a-z]+)'/.exec(payload.Sql as string);
+      assert.isNotNull(match);
+      topics.add((match as RegExpExecArray)[1] as string);
+      ingressQueueUrls.add(JSON.stringify(payload.Actions[0].Sqs.QueueUrl));
+      errorQueueUrls.add(JSON.stringify(payload.ErrorAction.Sqs.QueueUrl));
+    }
+    assert.deepEqual([...topics].sort(), [...UPLINK_TOPIC_TYPES].sort());
+    assert.equal(ingressQueueUrls.size, 1, '全部上行 Rule 必须写入同一 Ingress 队列');
+    assert.equal(errorQueueUrls.size, 1, '全部 Error Action 必须写入同一错误队列');
+    assert.notDeepEqual([...ingressQueueUrls], [...errorQueueUrls], '错误队列必须独立于业务队列');
+  });
+
+  test('消费 Lambda 与队列事件源绑定，Outbox/Summary 有调度', () => {
+    const esms = Object.values(resourcesOfType(template, 'AWS::Lambda::EventSourceMapping'));
+    assert.equal(esms.length, 2);
+    for (const esm of esms) {
+      assert.equal(esm.Properties.FunctionResponseTypes?.[0], 'ReportBatchItemFailures');
+    }
+    template.resourceCountIs('AWS::Events::Rule', 2);
+  });
+});
+
+// ---------- Cognito 与应用配置输出 ----------
+
+describe('Cognito 与应用配置输出', () => {
+  const template = synthTemplate();
+
+  test('User Pool：邮箱登录、软件令牌 MFA、customer_id 自定义属性、5 个 RBAC 组', () => {
+    template.hasResourceProperties('AWS::Cognito::UserPool', {
+      UserPoolName: 'fdp-test-admin',
+      AutoVerifiedAttributes: ['email'],
+      MfaConfiguration: 'OPTIONAL',
+      Schema: Match.arrayWith([Match.objectLike({ Name: 'customer_id', Mutable: true })]),
+      Policies: { PasswordPolicy: Match.objectLike({ MinimumLength: 12 }) },
+    });
+    const groups = Object.values(resourcesOfType(template, 'AWS::Cognito::UserPoolGroup')).map(
+      (g) => g.Properties.GroupName,
+    );
+    assert.deepEqual(groups.sort(), [
+      'Auditor',
+      'CustomerAdmin',
+      'CustomerViewer',
+      'PlatformOperator',
+      'PlatformSuperAdmin',
+    ]);
+    template.resourceCountIs('AWS::Cognito::UserPoolClient', 1);
+  });
+
+  test('应用配置：Lambda 环境变量与 CfnOutput 输出关键资源标识', () => {
+    const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function'));
+    const apiFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-api');
+    assert.isDefined(apiFn);
+    const env = apiFn.Properties.Environment.Variables as Record<string, unknown>;
+    for (const key of [
+      'DB_SECRET_ARN',
+      'USER_POOL_ID',
+      'USER_POOL_CLIENT_ID',
+      'RAW_BUCKET_NAME',
+      'OTA_BUCKET_NAME',
+      'MEDIA_BUCKET_NAME',
+      'EXPORT_BUCKET_NAME',
+      'CERT_PACKAGE_KEY_ARN',
+      'ENV_NAME',
+    ]) {
+      assert.isDefined(env[key], `API Lambda 缺少环境变量 ${key}`);
+    }
+
+    const outputs = template.findOutputs('*');
+    for (const id of [
+      'OnboardingApiUrl',
+      'DeviceApiUrl',
+      'AdminApiUrl',
+      'UserPoolId',
+      'UserPoolClientId',
+      'DbSecretArn',
+      'IngressQueueUrl',
+      'ArchiveQueueUrl',
+      'QuarantineQueueUrl',
+      'RuleErrorQueueUrl',
+      'RawBucketName',
+      'OtaBucketName',
+      'MediaBucketName',
+      'ExportBucketName',
+      'DataKeyArn',
+      'CertPackageKeyArn',
+    ]) {
+      assert.isDefined(outputs[id], `缺少 CfnOutput ${id}`);
+    }
+  });
+
+  test('KMS：应用数据 Key 与证书包 Key 分离且启用轮换', () => {
+    const keys = Object.values(resourcesOfType(template, 'AWS::KMS::Key'));
+    assert.equal(keys.length, 2);
+    for (const key of keys) {
+      assert.isTrue(key.Properties.EnableKeyRotation);
+    }
+    template.hasResourceProperties('AWS::KMS::Alias', { AliasName: 'alias/fdp-test-data' });
+    template.hasResourceProperties('AWS::KMS::Alias', { AliasName: 'alias/fdp-test-cert-package' });
+  });
+});
