@@ -18,7 +18,7 @@
 - AWS IoT Core、Thing、证书、IoT Policy、IoT Rules Engine；
 - SQS、DLQ、Quarantine Queue、Rule Error Queue；
 - Lambda 的部署参数、并发、重试、告警和运行维护；
-- RDS MySQL 的部署、加密、备份、恢复、监控和扩容；
+- RDS PostgreSQL 的部署、加密、备份、恢复、监控和扩容；
 - S3 原始归档、OTA、Media、前端、导出和日志桶的运行配置；
 - Athena/Glue 查询环境与原始归档审计能力；
 - Cognito、API Gateway、CloudFront、KMS、Secrets Manager、CloudWatch、CloudTrail、SNS、EventBridge；
@@ -480,13 +480,13 @@
 
 完成标准：数据完整性不低于原链路，Athena 扫描量和查询成本显著下降，失败记录可追踪。
 
-## 12. Amazon RDS MySQL
+## 12. Amazon RDS PostgreSQL
 
 ### OPS-RDS-001 部署试运营数据库（P0）
 
 操作步骤：
 
-1. prod 采用小规格、单 AZ RDS MySQL 起步；dev/staging 使用独立实例并可按计划停机。
+1. prod 采用小规格、单 AZ RDS PostgreSQL 起步；dev/staging 使用独立实例并可按计划停机。
 2. 将数据库部署在非公网可访问子网，限制 Security Group 来源到授权工作负载。
 3. 启用存储加密、自动小版本维护策略和删除保护。
 4. 将凭据存入 Secrets Manager，不在部署配置中明文保存。

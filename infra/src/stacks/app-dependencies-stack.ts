@@ -7,7 +7,7 @@
  *
  * 事实源对齐：
  * - Topic/QoS：contracts/mqtt/topic-catalog.json（CT-02），一致性由 topic-catalog-parity 测试强制；
- * - 数据库引擎：packages/database（DB-01 已落地 PostgreSQL，优先于方案文档中 MySQL 的旧表述）；
+ * - 数据库引擎：PostgreSQL（DB-01 落地实现与全部方案文档的统一选型）；
  * - 三类 API 认证入口分离：docs/AWS云端方案关键问题与解决方案.md §4.3
  *   （Onboarding=一次性 Token，Device=X.509 mTLS 自定义域名，Admin/Customer=Cognito JWT，Internal=IAM）。
  *

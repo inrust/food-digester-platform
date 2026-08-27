@@ -7,7 +7,7 @@
 | 项目名称 | 厨余设备 ESG 物联网平台 |
 | 文档范围 | AWS 云端业务系统、设备云端接入、运营管理后台 |
 | 目标阶段 | 最多 10 台设备的早期试运营 |
-| 推荐技术栈 | TypeScript、Node.js、AWS CDK、Lambda、API Gateway、RDS MySQL、S3、Cognito、Next.js/React |
+| 推荐技术栈 | TypeScript、Node.js、AWS CDK、Lambda、API Gateway、RDS PostgreSQL、S3、Cognito、Next.js/React |
 | 不包含 | 设备固件、Android Edge、本地数据库、本地离线队列、设备安装施工 |
 
 ### 1.1 需求来源与优先级
@@ -109,7 +109,7 @@
 │ Admin Web ── CloudFront ── S3                   │
 │ Admin/Business API ── API Gateway ── Lambda      │
 │ Cognito ── JWT/MFA                               │
-│ RDS MySQL ── 业务数据、状态、聚合、审计           │
+│ RDS PostgreSQL ── 业务数据、状态、聚合、审计      │
 │ S3 ── 原始数据、OTA、Media、报表导出              │
 └──────────────────────────────────────────────────┘
                       │

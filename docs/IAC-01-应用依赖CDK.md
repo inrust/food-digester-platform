@@ -9,7 +9,7 @@
 | 任务 | IAC-01（P0 / 基础设施代码），依赖 ENG-01、DB-01、CT-02 |
 | Stack | 单一 `AppDependencies`（物理名 `fdp-{env}-app`），按领域分 section 组织 |
 | Topic 事实源 | `contracts/mqtt/topic-catalog.json`（CT-02）；一致性由 `test/topic-catalog-parity.test.ts` 强制 |
-| 数据库引擎 | PostgreSQL 16（DB-01 已落地的 Prisma provider 与 btree_gist 排他约束为事实源，优先于方案文档中 RDS MySQL 的旧表述） |
+| 数据库引擎 | PostgreSQL 16（全库统一选型：DB-01 Prisma provider、btree_gist 排他约束与方案文档均已统一为 PostgreSQL） |
 | 三类 API 入口 | 《AWS 云端方案关键问题与解决方案》§4.3 独立入口决策 |
 
 功能边界（明确不做）：生产 Multi-AZ、备份、告警、Dashboard、Budget、WAF、扩缩容和发布流水线。
@@ -77,7 +77,7 @@ pnpm verify                        # lint/format/typecheck/test/build/boundaries
 
 | 项 | 决策 | 理由 |
 |---|---|---|
-| 数据库引擎 | PostgreSQL 16（`VER_16`） | DB-01 已落地 PostgreSQL（Prisma provider、`btree_gist` 排他约束）；方案文档 MySQL 为旧表述 |
+| 数据库引擎 | PostgreSQL 16（`VER_16`） | DB-01 已落地 PostgreSQL（Prisma provider、`btree_gist` 排他约束）；三份方案/运维文档已于 2026-08-27 同步统一为 PostgreSQL |
 | `exactOptionalPropertyTypes` | infra 包关闭该单项 | aws-cdk-lib 官方类型与该标志不兼容（`IVpc`/`IBucket` 接口属性为必选但可为 `undefined`）；其余 strict 项保留 |
 | Lambda 占位 Handler | `Code.fromInline` 返回 501 | 业务实现属 BE 任务；占位不承诺契约行为，避免绑定未实现的 apps 构建产物 |
 | MFA | 池级 OPTIONAL（软件令牌） | Cognito 不支持按组强制 MFA；平台管理员强制策略由 AUTH-01/BE-RBAC-01 收口 |

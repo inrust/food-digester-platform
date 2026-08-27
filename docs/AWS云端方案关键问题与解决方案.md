@@ -28,7 +28,7 @@
 
 建议采用“轻量试运营架构 + 明确扩容边界”的方式：
 
-1. 试运营阶段以 AWS IoT Core、SQS、Lambda、RDS MySQL、S3、Cognito、API Gateway 和 CloudFront 为主；
+1. 试运营阶段以 AWS IoT Core、SQS、Lambda、RDS PostgreSQL、S3、Cognito、API Gateway 和 CloudFront 为主；
 2. 原始数据进入 S3，RDS 只保存业务数据、最新状态、告警和聚合结果；
 3. 所有基础设施使用 AWS CDK 管理，后期可以在不改变业务协议的前提下将高负载 Worker 迁移到 ECS Fargate；
 4. 不降低证书、权限、幂等、审计和 OTA 安全标准，这些能力后期返工成本最高。
@@ -161,7 +161,7 @@ Onboarding API 使用 Token，而已入网设备 API 使用 X.509 mTLS。两类�
 | OTA 状态 | 是 | 可选 |
 | Media | 只保存元数据 | 文件本体进入独立 S3 桶 |
 
-试运营阶段使用 RDS MySQL 单 AZ 小规格即可；正式生产再启用 Multi-AZ、PITR 和更长备份。不得以扩大 RDS 实例代替数据分层设计。
+试运营阶段使用 RDS PostgreSQL 单 AZ 小规格即可；正式生产再启用 Multi-AZ、PITR 和更长备份。不得以扩大 RDS 实例代替数据分层设计。
 
 ### 4.6 S3 小文件与不可变归档
 
@@ -332,7 +332,7 @@ AWS 方案只概括了设备影子和配置同步，但通信设计明确要求�
     → API Gateway
     → Cognito JWT Authorizer
     → Business/Admin Lambda
-    → RDS MySQL + S3
+    → RDS PostgreSQL + S3
 
 监控与审计
     → CloudWatch + CloudTrail + SNS
