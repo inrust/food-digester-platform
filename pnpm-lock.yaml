@@ -84,6 +84,9 @@ importers:
 
   apps/ingestion-worker:
     dependencies:
+      '@fdp/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@fdp/aws-clients':
         specifier: workspace:*
         version: link:../../packages/aws-clients
@@ -99,6 +102,13 @@ importers:
       '@fdp/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+    devDependencies:
+      '@electric-sql/pglite':
+        specifier: ^0.5.7
+        version: 0.5.7
+      pglite-prisma-adapter:
+        specifier: ^0.7.2
+        version: 0.7.2(@electric-sql/pglite@0.5.7)(@prisma/client@7.9.1(prisma@7.9.1(@types/react@19.2.18)(magicast@0.5.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3))(typescript@5.9.3))
 
   apps/summary-worker:
     dependencies:

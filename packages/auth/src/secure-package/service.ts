@@ -194,14 +194,15 @@ export class SecurePackageService {
     }
   }
 
-  /** 销毁密文包（新证书 Heartbeat 确认后由 BE-ONB-04 调用）；幂等。 */
-  async destroyPackage(certificateId: string): Promise<boolean> {
-    const { count } = await this.certificates(this.db).updateMany({
+  /** 销毁密文包（新证书 Heartbeat 确认后由 BE-ONB-04 调用）；幂等；可传入事务客户端加入外层事务。 */
+  async destroyPackage(certificateId: string, client?: DbClient): Promise<boolean> {
+    const db = client ?? this.db;
+    const { count } = await this.certificates(db).updateMany({
       where: { id: certificateId, packageCiphertext: { not: null } },
       data: { packageCiphertext: null, packageKmsKeyId: null, packageExpiresAt: null },
     });
     if (count === 1) {
-      await recordAudit(this.db, {
+      await recordAudit(db, {
         objectType: AUDIT_OBJECT_TYPE,
         objectId: certificateId,
         action: 'CERT_PACKAGE_DESTROY',

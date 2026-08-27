@@ -10,3 +10,10 @@ export const SERVICE_NAME = 'ingestion-worker';
 export function serviceLayers(): readonly string[] {
   return [DOMAIN_PACKAGE, OBSERVABILITY_PACKAGE];
 }
+
+export { completeOnboardingOnFirstHeartbeat } from './onboarding-completion.js';
+export type {
+  FirstHeartbeatInput,
+  OnboardingCompletionDeps,
+  OnboardingCompletionResult,
+} from './onboarding-completion.js';
