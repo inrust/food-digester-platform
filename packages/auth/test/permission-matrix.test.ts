@@ -26,6 +26,16 @@ describe('权限矩阵结构', () => {
   test('PlatformSuperAdmin 持有全部权限', () => {
     assert.deepEqual(granted('PlatformSuperAdmin'), ALL);
   });
+
+  test('BE-CERT-03：certificate:rotate 仅授权安全角色（PlatformSuperAdmin）持有', () => {
+    for (const role of ROLES) {
+      assert.equal(
+        hasPermission(role, 'certificate:rotate'),
+        role === 'PlatformSuperAdmin',
+        `${role} 的 certificate:rotate 授权不符合预期`,
+      );
+    }
+  });
 });
 
 describe('角色权限边界', () => {

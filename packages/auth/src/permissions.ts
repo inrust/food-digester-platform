@@ -22,6 +22,8 @@ export const PERMISSIONS = [
   'device-user:write',
   'onboarding:read',
   'onboarding:approve',
+  // BE-CERT-03：证书轮换发起为安全敏感操作，仅授权安全角色（PlatformSuperAdmin）
+  'certificate:rotate',
   'contract:read',
   'contract:write',
   'license:read',

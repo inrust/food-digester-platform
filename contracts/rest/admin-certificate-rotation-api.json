@@ -1,0 +1,144 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Certificate Rotation API",
+    "version": "0.1.0",
+    "description": "BE-CERT-03 管理员证书轮换发起接口（Cognito 认证，certificate:rotate 权限，权限矩阵唯一持有者 PlatformSuperAdmin）。仅创建轮换请求并经 Outbox 下发 CERTIFICATE_ROTATION_REQUIRED 通知（CT-04）；设备经 BE-CERT-02 自行完成密钥生成与领取。管理端响应绝不包含 PEM/私钥。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/devices/{deviceId}/certificate-rotation-requests": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createCertificateRotationRequest",
+        "summary": "发起设备证书轮换请求（BE-CERT-03）",
+        "description": "校验设备生命周期（Retired/Onboarding 中拒绝）与当前 ACTIVE 证书；幂等：同设备已有 PENDING 请求返回原请求（200）且不重复通知；新建立即入 Outbox 通知一次。响应仅含证书 ID/状态/到期日与请求状态。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "minLength": 1 }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "轮换请求已创建并已通知设备",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RotationRequestSuccess" }
+              }
+            }
+          },
+          "200": {
+            "description": "幂等重放：同设备已有未完成轮换请求",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RotationRequestSuccess" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无 certificate:rotate 权限（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "设备不存在（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "生命周期不允许（DEVICE_STATE_NOT_ALLOWED）或无 ACTIVE 证书（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "内部错误（INTERNAL_ERROR，不暴露细节）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "$ref": "openapi-base.json#/components/securitySchemes/CognitoJwt" }
+    },
+    "schemas": {
+      "RotationRequest": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "deviceId",
+          "certificateId",
+          "certificateStatus",
+          "expiryDate",
+          "requestStatus",
+          "requestedAt"
+        ],
+        "additionalProperties": false,
+        "description": "轮换请求视图；不含 certificatePem/privateKey 等密钥材料",
+        "properties": {
+          "requestId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "certificateId": { "type": "string", "minLength": 1 },
+          "certificateStatus": {
+            "type": "string",
+            "enum": ["ACTIVE", "EXPIRING", "EXPIRED", "REVOKED", "PENDING_CLAIM"]
+          },
+          "expiryDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "当前证书 UTC 到期日"
+          },
+          "requestStatus": { "type": "string", "enum": ["PENDING", "COMPLETED", "SUPERSEDED"] },
+          "requestedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RotationRequestSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/RotationRequest" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}

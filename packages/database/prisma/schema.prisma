@@ -135,10 +135,28 @@ model Device {
   assignments    DeviceAssignment[]
   stateHistory   DeviceStateHistory[]
   certificates   DeviceCertificate[]
+  rotationRequests CertificateRotationRequest[]
   licenses       License[]
   latestState    DeviceLatestState?
 
   @@map("devices")
+}
+
+// BE-CERT-03 管理员发起的证书轮换请求；每台设备同时至多一个 PENDING（部分唯一索引见 migration）
+model CertificateRotationRequest {
+  id            String    @id @default(uuid())
+  deviceId      String    @map("device_id")
+  certificateId String    @map("certificate_id") // 发起时的当前（旧）证书
+  status        String    @default("PENDING") // PENDING | COMPLETED | SUPERSEDED
+  requestedBy   String    @map("requested_by")
+  notifiedAt    DateTime? @map("notified_at") @db.Timestamptz
+  completedAt   DateTime? @map("completed_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  device Device @relation(fields: [deviceId], references: [id])
+
+  @@index([deviceId, status])
+  @@map("certificate_rotation_requests")
 }
 
 model DeviceAssignment {

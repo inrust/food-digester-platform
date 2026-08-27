@@ -99,6 +99,17 @@ describe('confirmCertificateRotationOnFirstHeartbeat', () => {
   test('新证书首个 Heartbeat：旧证 REVOKED + 新包销毁 + 审计；确认后旧证认证 401', async () => {
     const { deviceId, oldPem, newPem, oldCertificateId, newCertificateId } = await plantRotationWindow();
 
+    // BE-CERT-03：管理端发起的 PENDING 轮换请求在确认时完成
+    await prisma.certificateRotationRequest.create({
+      data: {
+        deviceId,
+        certificateId: oldCertificateId,
+        status: 'PENDING',
+        requestedBy: 'admin-1',
+        notifiedAt: NOW,
+      },
+    });
+
     // 切换前旧证可用
     const before = await verifyDeviceCertificate(prisma, { clientCertPem: oldPem }, { now: now() });
     assert.equal(before.deviceId, deviceId);
@@ -129,6 +140,11 @@ describe('confirmCertificateRotationOnFirstHeartbeat', () => {
     const audits = await prisma.auditLog.findMany({ where: { objectId: newCertificateId } });
     assert.ok(audits.some((a) => a.action === 'CERT_ROTATION_CONFIRM' && a.result === 'SUCCESS'));
     assert.ok(!JSON.stringify(audits).includes('PRIVATE KEY'));
+
+    // BE-CERT-03：PENDING 轮换请求已完成
+    const request = await prisma.certificateRotationRequest.findFirst({ where: { deviceId } });
+    assert.equal(request?.status, 'COMPLETED');
+    assert.ok(request?.completedAt);
   });
 
   test('幂等：重复确认无副作用；旧证书 Heartbeat（非轮换）不触发确认；并发仅一个生效', async () => {

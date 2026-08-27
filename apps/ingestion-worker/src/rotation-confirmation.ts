@@ -100,6 +100,16 @@ export async function confirmCertificateRotationOnFirstHeartbeat(
 
       // 销毁新证书包（DEC-003 销毁触发点；幂等）
       await deps.securePackage.destroyPackage(newCert.id, tx);
+
+      // BE-CERT-03：轮换确认即完成管理端发起的 PENDING 轮换请求（如有）
+      const requests = (tx as unknown as Record<string, unknown>).certificateRotationRequest as {
+        updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
+      };
+      await requests.updateMany({
+        where: { deviceId: input.deviceId, status: 'PENDING' },
+        data: { status: 'COMPLETED', completedAt: now },
+      });
+
       return { deviceId: input.deviceId, confirmed: true, revokedCertificateId: newCert.rotatedFromId };
     },
   );
