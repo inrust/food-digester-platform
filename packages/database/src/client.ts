@@ -10,4 +10,6 @@ export function createPrismaClient(databaseUrl: string): PrismaClient {
   return new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
 }
 
-export type { Prisma, PrismaClient } from './generated/client.js';
+// PrismaClient 同时导出值（测试/Worker 用适配器构造）与类型
+export { PrismaClient } from './generated/client.js';
+export type { Prisma } from './generated/client.js';

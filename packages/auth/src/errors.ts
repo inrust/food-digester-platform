@@ -3,21 +3,27 @@
  *
  * 错误码对齐 CT-05 稳定错误码目录（contracts/rest/error-codes.json）：
  * - UNAUTHENTICATED → 401（缺少/过期/伪造凭证一律 401，不区分原因，避免探测）；
- * - FORBIDDEN → 403（身份有效但无权限，含跨 Customer 访问）。
+ * - FORBIDDEN → 403（身份有效但无权限，含跨 Customer 访问）；
+ * - RATE_LIMITED → 429（限频保护，AUTH-02）；
+ * - VALIDATION_FAILED → 400（认证前置参数缺失/非法，如缺少序列号）。
  *
  * 一致性由 test/contract-parity.test.ts 强制；message 必须对客户端安全，不携带内部细节。
  */
 
-export type AuthErrorCode = 'UNAUTHENTICATED' | 'FORBIDDEN';
+export type AuthErrorCode = 'UNAUTHENTICATED' | 'FORBIDDEN' | 'RATE_LIMITED' | 'VALIDATION_FAILED';
 
-export const AUTH_ERROR_HTTP_STATUS: Readonly<Record<AuthErrorCode, 401 | 403>> = {
+export const AUTH_ERROR_HTTP_STATUS: Readonly<Record<AuthErrorCode, 400 | 401 | 403 | 429>> = {
   UNAUTHENTICATED: 401,
   FORBIDDEN: 403,
+  RATE_LIMITED: 429,
+  VALIDATION_FAILED: 400,
 } as const;
 
 export const AUTH_ERROR_DEFAULT_MESSAGE: Readonly<Record<AuthErrorCode, string>> = {
   UNAUTHENTICATED: 'Authentication is required or the credential is invalid',
   FORBIDDEN: 'The caller is not allowed to perform this operation',
+  RATE_LIMITED: 'Too many requests',
+  VALIDATION_FAILED: 'The request failed validation',
 } as const;
 
 export class AuthError extends Error {
@@ -29,7 +35,7 @@ export class AuthError extends Error {
     this.code = code;
   }
 
-  get httpStatus(): 401 | 403 {
+  get httpStatus(): 400 | 401 | 403 | 429 {
     return AUTH_ERROR_HTTP_STATUS[this.code];
   }
 }
@@ -42,4 +48,14 @@ export function unauthenticated(message?: string): AuthError {
 /** 403：角色越权、Customer scope 不匹配、未知角色失败关闭。 */
 export function forbidden(message?: string): AuthError {
   return new AuthError('FORBIDDEN', message);
+}
+
+/** 429：限频保护触发（AUTH-02）。 */
+export function rateLimited(message?: string): AuthError {
+  return new AuthError('RATE_LIMITED', message);
+}
+
+/** 400：认证前置参数缺失/非法。 */
+export function validationFailed(message?: string): AuthError {
+  return new AuthError('VALIDATION_FAILED', message);
 }
