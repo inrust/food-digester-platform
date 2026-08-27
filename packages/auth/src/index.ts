@@ -47,3 +47,11 @@ export { createRateLimiter, InMemoryRateLimitStore } from './onboarding/rate-lim
 export type { RateLimiter, RateLimitRule, RateLimitStore } from './onboarding/rate-limit.js';
 export { withOnboardingAuth } from './onboarding/guard.js';
 export type { OnboardingGuardOptions } from './onboarding/guard.js';
+
+// ---------- AUTH-03 Device mTLS ----------
+export { certificateFingerprintFromPem } from './device/mtls-context.js';
+export type { ClientCertIdentity } from './device/mtls-context.js';
+export { CERT_STATUS_ACTIVE, verifyDeviceCertificate } from './device/verifier.js';
+export type { DeviceAuthContext, VerifyDeviceCertificateOptions } from './device/verifier.js';
+export { withDeviceAuth } from './device/guard.js';
+export type { DeviceAuthGuardOptions } from './device/guard.js';

@@ -1,0 +1,102 @@
+/**
+ * AUTH-03 Device mTLS 身份映射（应用白名单校验）。
+ *
+ * CA 链验证（API Gateway mTLS）不能替代应用白名单：同 CA 签出但未登记的证书必须拒绝。
+ * 校验链：证书存在（指纹唯一索引）→ 状态 ACTIVE（PENDING_CLAIM/REVOKED/EXPIRED 拒绝）→
+ * 有效期（notBefore/notAfter）→ Device 归属（请求 deviceId 必须等于证书绑定设备）→
+ * 设备生命周期（Retired 拒绝，DOM-01）；Suspended 设备放行（行为矩阵允许心跳/遥测，
+ * 业务操作级限制由对应 BE 任务执行）。
+ *
+ * 凭证问题（缺失/未登记/非 ACTIVE/过期）→ 401 UNAUTHENTICATED；
+ * 归属与生命周期拒绝 → 403 FORBIDDEN。
+ */
+import type { DbClient } from '@fdp/database';
+import { forbidden, unauthenticated } from '../errors.js';
+import { certificateFingerprintFromPem } from './mtls-context.js';
+import type { ClientCertIdentity } from './mtls-context.js';
+
+/** 证书状态（device_certificates.status，DB-01）。仅 ACTIVE 可通过认证。 */
+export const CERT_STATUS_ACTIVE = 'ACTIVE' as const;
+
+/** 注入下游的可信设备上下文。 */
+export interface DeviceAuthContext {
+  readonly deviceId: string;
+  readonly certificateId: string;
+  /** 证书指纹（日志/审计使用，等价于证书身份）。 */
+  readonly certificateFingerprint: string;
+  readonly customerId: string | null;
+  readonly siteId: string | null;
+  readonly deviceLifecycleStatus: string;
+}
+
+interface DeviceCertificateDelegate {
+  findFirst(args: { where: Record<string, unknown> }): Promise<{
+    id: string;
+    deviceId: string;
+    status: string;
+    revokedAt: Date | null;
+    notBefore: Date;
+    notAfter: Date;
+  } | null>;
+}
+
+interface DeviceDelegate {
+  findFirst(args: { where: Record<string, unknown> }): Promise<{
+    id: string;
+    customerId: string | null;
+    siteId: string | null;
+    lifecycleStatus: string;
+  } | null>;
+}
+
+export interface VerifyDeviceCertificateOptions {
+  /** 请求路径/参数中的 deviceId；提供时强制与证书绑定设备一致（不一致 → 403）。 */
+  readonly requestedDeviceId?: string;
+  /** 注入时钟（测试用）。 */
+  readonly now?: Date;
+}
+
+export async function verifyDeviceCertificate(
+  client: DbClient,
+  identity: ClientCertIdentity | null | undefined,
+  options: VerifyDeviceCertificateOptions = {},
+): Promise<DeviceAuthContext> {
+  if (!identity?.clientCertPem) throw unauthenticated();
+  const fingerprint = certificateFingerprintFromPem(identity.clientCertPem);
+
+  const certificates = (client as unknown as Record<string, unknown>).deviceCertificate as DeviceCertificateDelegate;
+  const certificate = await certificates.findFirst({ where: { fingerprint } });
+  // 同 CA 未登记证书：白名单拒绝
+  if (!certificate) throw unauthenticated();
+  // 状态白名单：仅 ACTIVE；REVOKED/EXPIRED/PENDING_CLAIM 一律拒绝
+  if (certificate.status !== CERT_STATUS_ACTIVE) throw unauthenticated();
+  // 冗余防线：撤销时间戳存在即拒绝（状态机之外的直接置位）
+  if (certificate.revokedAt !== null) throw unauthenticated();
+
+  const now = options.now ?? new Date();
+  if (now.getTime() < certificate.notBefore.getTime() || now.getTime() >= certificate.notAfter.getTime()) {
+    throw unauthenticated();
+  }
+
+  // Device 归属：请求其他 deviceId → 403（身份有效但无权代表该设备）
+  if (options.requestedDeviceId !== undefined && options.requestedDeviceId !== certificate.deviceId) {
+    throw forbidden('The certificate is not bound to the requested device');
+  }
+
+  const devices = (client as unknown as Record<string, unknown>).device as DeviceDelegate;
+  const device = await devices.findFirst({ where: { id: certificate.deviceId } });
+  if (!device) throw unauthenticated();
+  // Retired 为永久退役（DOM-01），拒绝一切接入
+  if (device.lifecycleStatus === 'Retired') {
+    throw forbidden('The device is retired');
+  }
+
+  return {
+    deviceId: device.id,
+    certificateId: certificate.id,
+    certificateFingerprint: fingerprint,
+    customerId: device.customerId,
+    siteId: device.siteId,
+    deviceLifecycleStatus: device.lifecycleStatus,
+  };
+}
