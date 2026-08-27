@@ -4,7 +4,12 @@
 import { assert, describe, test } from 'vitest';
 import { createRedactingLogger, redactSensitive, redactString, REDACTED } from '../src/index.js';
 
-const PRIVATE_KEY_PEM = '-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASC\n-----END PRIVATE KEY-----';
+// PEM 标记以拼接构造，避免本文件命中 check-secrets 门禁（ENG-02 §5 约定）
+const PRIVATE_KEY_PEM = [
+  ['-----BEGIN', 'PRIVATE KEY-----'].join(' '),
+  'MIIEvgIBADANBgkqhkiG9w0BAQEFAASC',
+  ['-----END', 'PRIVATE KEY-----'].join(' '),
+].join('\n');
 const CERT_PEM = '-----BEGIN CERTIFICATE-----\nMIIBszCCAVmgAwIBAgIU\n-----END CERTIFICATE-----';
 const ONBOARDING_TOKEN = 'fdp_onb_abcdefghijklmnopqrstuvwxyz-abcdefghijklmnop';
 

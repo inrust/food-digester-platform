@@ -1,0 +1,157 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Device Onboarding API",
+    "version": "0.1.0",
+    "description": "BE-ONB-01 设备 Onboarding 申请接口。认证为 AUTH-02 Onboarding Token（一次一机、只存 Hash、与库存序列号绑定）；本端点不审批、不签发证书。通用响应/错误契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "device",
+      "description": "/api/v1/device/* 设备 API；Onboarding 阶段设备尚无证书，使用 Onboarding Token 认证",
+      "x-path-prefix": "/api/v1/device",
+      "x-auth": "OnboardingToken"
+    }
+  ],
+  "paths": {
+    "/api/v1/device/onboarding/request": {
+      "post": {
+        "tags": ["device"],
+        "operationId": "submitOnboardingRequest",
+        "summary": "提交设备 Onboarding 申请",
+        "description": "校验设备资料与库存授权，创建唯一 requestId 的 PENDING 记录。同一设备正常只提交一次：重复请求幂等返回原 request（200），并发重复提交由部分唯一索引兜底同样返回原 request。",
+        "security": [{ "OnboardingToken": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OnboardingRequestInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "幂等重放：该设备已存在 PENDING 申请，返回原 request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OnboardingRequestSuccess" }
+              }
+            }
+          },
+          "201": {
+            "description": "申请已创建（PENDING）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OnboardingRequestSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "字段非法（VALIDATION_FAILED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Token 缺失/非法/过期/撤销/跨序列号（UNAUTHENTICATED，不区分原因）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "序列号不存在于设备库存（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "设备已 Onboarded 或处于其他不允许提交的状态（DEVICE_STATE_NOT_ALLOWED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "请求频率超限（RATE_LIMITED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "内部错误（INTERNAL_ERROR，不暴露细节）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "OnboardingToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "AUTH-02 Onboarding Token（Authorization: Bearer fdp_onb_...）；一次一机、与库存序列号绑定，服务端只存 Hash"
+      }
+    },
+    "schemas": {
+      "OnboardingRequestInput": {
+        "type": "object",
+        "required": ["serialNumber", "model", "hardwareVersion", "manufacturer", "manufactureDate"],
+        "additionalProperties": false,
+        "properties": {
+          "serialNumber": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9-]{1,64}$",
+            "description": "设备库存序列号；必须与 Onboarding Token 绑定的序列号一致"
+          },
+          "model": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "hardwareVersion": { "type": "string", "minLength": 1, "maxLength": 32 },
+          "manufacturer": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "manufactureDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "生产日期（UTC，YYYY-MM-DD），不得晚于当前日期"
+          }
+        }
+      },
+      "OnboardingRequestResult": {
+        "type": "object",
+        "required": ["requestId", "status", "serialNumber", "createdAt"],
+        "additionalProperties": false,
+        "properties": {
+          "requestId": { "type": "string", "minLength": 1, "description": "Onboarding 申请唯一 ID" },
+          "status": { "type": "string", "enum": ["PENDING"] },
+          "serialNumber": { "type": "string" },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "OnboardingRequestSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/OnboardingRequestResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}

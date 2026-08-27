@@ -4,7 +4,8 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
 
 /**
  * cloud-api 构建骨架（ENG-01）。
- * /api/v1/device、/admin、/customer、/internal 路由在 BE/CT-05 后续任务实现。
+ * BE-ONB-01 已落地：POST /api/v1/device/onboarding/request（见 ./onboarding）；
+ * 其余 /api/v1/device、/admin、/customer、/internal 路由在后续 BE 任务实现。
  */
 export const SERVICE_NAME = 'cloud-api';
 
@@ -12,3 +13,5 @@ export const SERVICE_NAME = 'cloud-api';
 export function serviceLayers(): readonly string[] {
   return [DOMAIN_PACKAGE, DATABASE_PACKAGE, OBSERVABILITY_PACKAGE];
 }
+
+export * from './onboarding/index.js';

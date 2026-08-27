@@ -22,9 +22,16 @@ const MIGRATION_SQL = readFileSync(
 const NOW = new Date('2026-08-27T00:00:00Z');
 const RETENTION_SECONDS = 3600;
 
-/** 含 PEM 私钥形态的测试负载（验收：全文不出现明文）。 */
+/** 含 PEM 私钥形态的测试负载（验收：全文不出现明文）；PEM 标记拼接构造，避免命中 check-secrets 门禁。 */
 const PACKAGE_PLAINTEXT = Buffer.from(
-  '-----BEGIN PRIVATE KEY-----\nTESTONLYNOTREALKEYMATERIAL000000000000\n-----END PRIVATE KEY-----\n-----BEGIN CERTIFICATE-----\nTESTCERT\n-----END CERTIFICATE-----',
+  [
+    ['-----BEGIN', 'PRIVATE KEY-----'].join(' '),
+    'TESTONLYNOTREALKEYMATERIAL000000000000',
+    ['-----END', 'PRIVATE KEY-----'].join(' '),
+    '-----BEGIN CERTIFICATE-----',
+    'TESTCERT',
+    '-----END CERTIFICATE-----',
+  ].join('\n'),
   'utf8',
 );
 
