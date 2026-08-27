@@ -55,3 +55,10 @@ export { CERT_STATUS_ACTIVE, verifyDeviceCertificate } from './device/verifier.j
 export type { DeviceAuthContext, VerifyDeviceCertificateOptions } from './device/verifier.js';
 export { withDeviceAuth } from './device/guard.js';
 export type { DeviceAuthGuardOptions } from './device/guard.js';
+
+// ---------- SEC-01 证书包保护 ----------
+export { SecurePackageService } from './secure-package/service.js';
+export type { ClaimProof, SecurePackageServiceConfig } from './secure-package/service.js';
+export { SecurePackageError } from './secure-package/errors.js';
+export type { SecurePackageErrorCode } from './secure-package/errors.js';
+export { createLocalTestKeyProvider } from './secure-package/local-test-key-provider.js';
