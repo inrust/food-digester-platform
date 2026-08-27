@@ -100,6 +100,82 @@
           }
         }
       }
+    },
+    "/api/v1/device/onboarding/status": {
+      "get": {
+        "tags": ["device"],
+        "operationId": "getOnboardingStatus",
+        "summary": "查询 Onboarding 状态（BE-ONB-03）",
+        "description": "三类外部状态：PENDING（含审批中及内部 Provisioning 进行中，内部步骤不暴露）、REJECTED（含 rejectReason）、APPROVED（一次性返回证书包：deviceId/certificatePem/privateKey/mqttEndpoint/heartbeatInterval=60，领取成功即销毁密文并核销 Token，重复领取返回 409）。",
+        "security": [{ "OnboardingToken": [] }],
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "query",
+            "required": true,
+            "description": "设备库存序列号；必须与 Onboarding Token 绑定的序列号一致",
+            "schema": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,64}$" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "当前 Onboarding 状态",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OnboardingStatusSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "参数非法（VALIDATION_FAILED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Token 缺失/非法/过期/撤销/已核销/跨序列号（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "该 Token 无对应申请（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "证书包已被领取或已过期（CONFLICT，DEC-003 一次性领取失败关闭）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "请求频率超限（RATE_LIMITED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "内部错误（INTERNAL_ERROR，不暴露细节）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -149,6 +225,64 @@
         "additionalProperties": false,
         "properties": {
           "data": { "$ref": "#/components/schemas/OnboardingRequestResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "OnboardingStatusPending": {
+        "type": "object",
+        "required": ["status", "requestId"],
+        "additionalProperties": false,
+        "properties": {
+          "status": { "type": "string", "enum": ["PENDING"] },
+          "requestId": { "type": "string", "minLength": 1 }
+        }
+      },
+      "OnboardingStatusRejected": {
+        "type": "object",
+        "required": ["status", "requestId", "rejectReason"],
+        "additionalProperties": false,
+        "properties": {
+          "status": { "type": "string", "enum": ["REJECTED"] },
+          "requestId": { "type": "string", "minLength": 1 },
+          "rejectReason": { "type": ["string", "null"] }
+        }
+      },
+      "OnboardingStatusApproved": {
+        "type": "object",
+        "required": [
+          "status",
+          "requestId",
+          "deviceId",
+          "certificatePem",
+          "privateKey",
+          "mqttEndpoint",
+          "heartbeatInterval"
+        ],
+        "additionalProperties": false,
+        "description": "证书包一次性下发：仅本响应携带 privateKey 明文；服务端领取成功即销毁密文",
+        "properties": {
+          "status": { "type": "string", "enum": ["APPROVED"] },
+          "requestId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "certificatePem": { "type": "string", "minLength": 1 },
+          "privateKey": { "type": "string", "minLength": 1 },
+          "mqttEndpoint": { "type": "string", "minLength": 1 },
+          "heartbeatInterval": { "type": "integer", "enum": [60] }
+        }
+      },
+      "OnboardingStatusResult": {
+        "oneOf": [
+          { "$ref": "#/components/schemas/OnboardingStatusPending" },
+          { "$ref": "#/components/schemas/OnboardingStatusRejected" },
+          { "$ref": "#/components/schemas/OnboardingStatusApproved" }
+        ]
+      },
+      "OnboardingStatusSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/OnboardingStatusResult" },
           "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
         }
       }

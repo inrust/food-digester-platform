@@ -18,6 +18,7 @@ export interface OnboardingRequestRecord {
   readonly manufacturer: string;
   readonly manufactureDate: Date;
   readonly status: string;
+  readonly rejectReason: string | null;
   readonly createdAt: Date;
 }
 
@@ -41,6 +42,14 @@ export function findPendingOnboardingRequest(
   serialNumber: string,
 ): Promise<OnboardingRequestRecord | null> {
   return requests(client).findFirst({ where: { serialNumber, status: 'PENDING' } });
+}
+
+/** 按 Token 精确查询申请（Status API：Token 一次一机，tokenId 唯一）。 */
+export function findOnboardingRequestByTokenId(
+  client: DbClient,
+  tokenId: string,
+): Promise<OnboardingRequestRecord | null> {
+  return requests(client).findFirst({ where: { tokenId } });
 }
 
 export interface CreateOnboardingRequestData {

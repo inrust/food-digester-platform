@@ -84,3 +84,28 @@ test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.
     assert.notEqual(resolvePointer(targetDoc, pointer), undefined, `悬空引用: ${ref}`);
   }
 });
+
+test('BE-ONB-03 status 端点：三态契约与一次性证书包字段', () => {
+  const get = doc.paths['/api/v1/device/onboarding/status'].get;
+  assert.equal(get.operationId, 'getOnboardingStatus');
+  assert.deepEqual(get.security, [{ OnboardingToken: [] }]);
+  const serialParam = get.parameters.find((p: { name?: string }) => p.name === 'serialNumber');
+  assert.ok(serialParam?.required);
+
+  const result = doc.components.schemas.OnboardingStatusResult;
+  assert.equal(result.oneOf.length, 3, 'PENDING/REJECTED/APPROVED 三态');
+
+  const approved = doc.components.schemas.OnboardingStatusApproved;
+  for (const field of ['deviceId', 'certificatePem', 'privateKey', 'mqttEndpoint', 'heartbeatInterval']) {
+    assert.ok(approved.required.includes(field), `APPROVED 缺少 ${field}`);
+  }
+  assert.deepEqual(approved.properties.heartbeatInterval.enum, [60]);
+
+  const rejected = doc.components.schemas.OnboardingStatusRejected;
+  assert.ok(rejected.required.includes('rejectReason'));
+  // PENDING 形态不得携带任何证书材料字段
+  const pending = doc.components.schemas.OnboardingStatusPending;
+  assert.ok(!('privateKey' in pending.properties) && !('certificatePem' in pending.properties));
+  // 重复领取/过期为确定性 409
+  assert.ok(get.responses['409']);
+});
