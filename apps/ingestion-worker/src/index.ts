@@ -24,3 +24,4 @@ export type {
   RotationConfirmationResult,
 } from './rotation-confirmation.js';
 export * from './ingest/index.js';
+export * from './heartbeat/index.js';
