@@ -27,5 +27,6 @@ export * from './admin/customer/index.js';
 export * from './admin/site/index.js';
 export * from './admin/device/index.js';
 export * from './admin/device-assignment/index.js';
+export * from './admin/device-status/index.js';
 export * from './provisioning/index.js';
 export * from './device/index.js';

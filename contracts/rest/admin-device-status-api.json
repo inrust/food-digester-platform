@@ -1,0 +1,241 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Device Status API",
+    "version": "0.1.0",
+    "description": "BE-DEV-03 设备挂起/恢复接口（Cognito 认证，device:write：PlatformSuperAdmin/PlatformOperator）：suspend（Active→Suspended，强制原因，生成 DEVICE_SUSPENDED 通知）；reactivate（Suspended→Active，强制原因 + 问题已解决标志 issueResolved=true，管理员批准写审计，生成 STATUS_CHANGED 通知）。重复请求幂等（已处于目标状态返回 replayed=true 且不重复通知）。不执行设备端模式切换；通知经 Outbox 下行（deviceAction=SYNC）。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-001@0.2.0", "DEC-010@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/devices/{deviceId}/suspend": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "suspendDevice",
+        "summary": "挂起设备（Active→Suspended，强制原因 + DEVICE_SUSPENDED 通知）",
+        "description": "生命周期条件更新防并发（漂移 → 409 CONFLICT）；operational 镜像状态历史同事务落库；审计 device.suspend 含原因。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SuspendRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已挂起或幂等重放",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeviceStatusSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺 reason）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：无 device:write 权限）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "设备不存在（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "非法状态转换（DEVICE_STATE_NOT_ALLOWED：非 Active）或并发冲突（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}/reactivate": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "reactivateDevice",
+        "summary": "恢复设备（Suspended→Active，强制原因 + 问题已解决标志 + STATUS_CHANGED 通知）",
+        "description": "恢复要求 issueResolved=true（问题已解决标志）；管理员批准（调用者身份）与原因写入审计（device.reactivate）。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReactivateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已恢复或幂等重放",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeviceStatusSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺 reason 或 issueResolved 非 true）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：无 device:write 权限）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "设备不存在（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "非法状态转换（DEVICE_STATE_NOT_ALLOWED：非 Suspended）或并发冲突（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "SuspendRequest": {
+        "type": "object",
+        "required": ["reason"],
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "挂起原因（强制，写入审计与状态历史）"
+          }
+        }
+      },
+      "ReactivateRequest": {
+        "type": "object",
+        "required": ["reason", "issueResolved"],
+        "additionalProperties": false,
+        "properties": {
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "issueResolved": {
+            "type": "boolean",
+            "enum": [true],
+            "description": "问题已解决标志（必须为 true；管理员批准由调用者身份承担）"
+          }
+        }
+      },
+      "DeviceStatus": {
+        "type": "object",
+        "required": ["deviceId", "lifecycleStatus", "operationalStatus", "notification", "replayed"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "lifecycleStatus": { "type": "string", "enum": ["Active", "Suspended"] },
+          "operationalStatus": {
+            "oneOf": [
+              { "type": "string", "enum": ["Active", "Maintenance", "Suspended", "Retired"] },
+              { "type": "null" }
+            ]
+          },
+          "notification": {
+            "type": ["string", "null"],
+            "enum": ["DEVICE_SUSPENDED", "STATUS_CHANGED", null],
+            "description": "本次真实变更生成的通知类型；幂等重放为 null"
+          },
+          "replayed": { "type": "boolean", "description": "幂等重放（已处于目标状态，无写入/通知）" }
+        }
+      },
+      "DeviceStatusSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/DeviceStatus" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}
