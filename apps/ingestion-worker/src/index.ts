@@ -25,3 +25,4 @@ export type {
 } from './rotation-confirmation.js';
 export * from './ingest/index.js';
 export * from './heartbeat/index.js';
+export * from './telemetry/index.js';
