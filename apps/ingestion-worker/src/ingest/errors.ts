@@ -8,7 +8,13 @@
 export type IngestErrorClassification = 'TRANSIENT' | 'QUARANTINE';
 
 export type IngestErrorType =
-  'INVALID_JSON' | 'INVALID_ENVELOPE' | 'UNKNOWN_DEVICE' | 'IDENTITY_VIOLATION' | 'SCHEMA_VIOLATION' | 'CLOCK_SKEW';
+  | 'INVALID_JSON'
+  | 'INVALID_ENVELOPE'
+  | 'UNKNOWN_DEVICE'
+  | 'IDENTITY_VIOLATION'
+  | 'SCHEMA_VIOLATION'
+  | 'CLOCK_SKEW'
+  | 'PAYLOAD_CONFLICT';
 
 export class IngestError extends Error {
   override readonly name = 'IngestError';

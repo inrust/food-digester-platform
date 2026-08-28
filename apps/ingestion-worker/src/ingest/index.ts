@@ -8,6 +8,10 @@ export { assertClockSkew, createSchemaValidator } from './schema.js';
 export type { SchemaValidator } from './schema.js';
 export { validateRecord } from './pipeline.js';
 export type { IngestPipelineDeps, ValidatedMessage } from './pipeline.js';
+export { hashPayload, idempotencyKeyOf, processWithReceipt } from './receipt.js';
+export type { ProcessReceiptResult, ProcessWithReceiptParams, ReceiptKey, ReceiptOutcome } from './receipt.js';
+export { gapStatus, recordGapForNewReceipt } from './gap.js';
+export type { GapKey, GapStatusView } from './gap.js';
 export { createIngestionHandler } from './handler.js';
 export type {
   IngestionHandlerDeps,
