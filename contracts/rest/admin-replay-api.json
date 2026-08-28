@@ -1,0 +1,290 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Replay API",
+    "version": "0.1.0",
+    "description": "BE-RPL-01 消息重放管理接口（Cognito 认证，replay:create 权限；权限矩阵持有者 PlatformSuperAdmin/PlatformOperator）。按 Customer/设备/时间/序号范围创建 replay job（创建写审计），Replay Worker 从 S3 归档读取原始记录沿用原幂等键重投 Ingress（执行写审计），提供任务状态与成功/跳过/失败统计。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/replay/jobs": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createReplayJob",
+        "summary": "创建消息重放任务（BE-RPL-01）",
+        "description": "customerId 必须存在；deviceId 可选且必须属于该 Customer（跨 Customer 拒绝）；from/to 必填 UTC 且 from<=to；topicType 限可归档上行类型；seqFrom<=seqTo。创建即写审计（replay.job.create）。",
+        "security": [{ "CognitoJwt": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReplayJobCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "重放任务已创建（PENDING，异步执行）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReplayJobSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：范围非法/跨 Customer 设备引用）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：仅 PlatformSuperAdmin/PlatformOperator）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer 或设备不存在（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listReplayJobs",
+        "summary": "重放任务列表（键集游标分页）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+          },
+          { "name": "cursor", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "customerId", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["PENDING", "RUNNING", "COMPLETED", "FAILED"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "任务列表（meta.nextCursor 续页）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReplayJobListSuccess" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/replay/jobs/{jobId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getReplayJob",
+        "summary": "重放任务详情（含成功/跳过/失败统计）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "jobId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "任务详情",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReplayJobSuccess" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "任务不存在（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "ReplayScope": {
+        "type": "object",
+        "required": ["customerId", "from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "customerId": { "type": "string", "minLength": 1 },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "可选；必须属于 customerId（跨 Customer 拒绝）。"
+          },
+          "topicType": {
+            "type": "string",
+            "enum": ["telemetry", "report", "alarm", "event", "tamper", "ack"],
+            "description": "可选；缺省重放全部可归档上行类型。"
+          },
+          "from": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$" },
+          "to": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$" },
+          "seqFrom": { "type": "integer", "minimum": 0 },
+          "seqTo": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "ReplayJobCreateRequest": {
+        "type": "object",
+        "required": ["customerId", "from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "customerId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "topicType": { "type": "string", "enum": ["telemetry", "report", "alarm", "event", "tamper", "ack"] },
+          "from": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$" },
+          "to": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$" },
+          "seqFrom": { "type": "integer", "minimum": 0 },
+          "seqTo": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "ReplayResultSummary": {
+        "type": "object",
+        "required": ["scannedObjects", "scannedLines", "sent", "skipped", "failed"],
+        "additionalProperties": true,
+        "properties": {
+          "scannedObjects": { "type": "integer", "minimum": 0 },
+          "scannedLines": { "type": "integer", "minimum": 0 },
+          "sent": { "type": "integer", "minimum": 0, "description": "成功重投 Ingress 数。" },
+          "skipped": { "type": "integer", "minimum": 0, "description": "范围外/不可解析跳过数。" },
+          "failed": { "type": "integer", "minimum": 0, "description": "重投失败数。" }
+        }
+      },
+      "ReplayJob": {
+        "type": "object",
+        "required": ["jobId", "scope", "status", "resultSummary", "requestedBy", "createdAt", "completedAt"],
+        "additionalProperties": false,
+        "properties": {
+          "jobId": { "type": "string", "minLength": 1 },
+          "scope": { "$ref": "#/components/schemas/ReplayScope" },
+          "status": { "type": "string", "enum": ["PENDING", "RUNNING", "COMPLETED", "FAILED"] },
+          "resultSummary": { "oneOf": [{ "$ref": "#/components/schemas/ReplayResultSummary" }, { "type": "null" }] },
+          "requestedBy": { "type": "string", "minLength": 1 },
+          "createdAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$" },
+          "completedAt": {
+            "oneOf": [
+              { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$" },
+              { "type": "null" }
+            ]
+          }
+        }
+      },
+      "ReplayJobSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/ReplayJob" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "ReplayJobListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/ReplayJob" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}

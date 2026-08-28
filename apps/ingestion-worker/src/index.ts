@@ -30,3 +30,4 @@ export * from './report/index.js';
 export * from './signals/index.js';
 export * from './outbox/index.js';
 export * from './archive/index.js';
+export * from './replay/index.js';
