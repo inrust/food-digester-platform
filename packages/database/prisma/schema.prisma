@@ -40,6 +40,8 @@ model Site {
   id           String    @id @default(uuid())
   customerId   String    @map("customer_id")
   name         String
+  status       String    @default("ACTIVE") // ACTIVE | SUSPENDED（BE-CUS-02 停用）
+  version      Int       @default(1) // 乐观锁（If-Match，BE-CUS-02）
   region       String? // DEC-011：Region/Subregion 为 Site 可筛选属性
   subregion    String?   @map("subregion")
   address      String?

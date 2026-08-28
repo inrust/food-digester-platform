@@ -1,0 +1,539 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Site API",
+    "version": "0.1.0",
+    "description": "BE-CUS-02 Site 管理接口（Cognito 认证）：列表（customerId/region/subregion/status 筛选 + 键集游标分页）、详情（含设备数量）、创建、更新、停用、软删除。Site 必须属于唯一 Customer（customerId 创建后不可变，DEC-011：Customer→Site→Device）；Region/Subregion 为 Site 可筛选属性，设备不维护地域真值；时区使用 IANA 标识。写操作（site:write，PlatformSuperAdmin/PlatformOperator）强制 If-Match 乐观锁并写审计（DOM-03）；读操作需 site:read，Customer 角色由服务端身份上下文强制限定所属 Customer。删除为软删除：有关联设备时返回 409 CONFLICT；V1 不做物理删除。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-011@0.2.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/sites": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listSites",
+        "summary": "Site 列表（可筛选 + 键集游标分页，含设备数量）",
+        "description": "需 site:read（全部五角色）；Customer 角色的 customerId 由服务端身份上下文强制注入（query 中 customerId 与自身不一致返回 403）；默认排除已软删除记录；按 id 升序键集分页。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "$ref": "openapi-base.json#/components/parameters/Limit" },
+          { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+          { "name": "customerId", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "region", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "subregion", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["ACTIVE", "SUSPENDED"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site 列表（meta.nextCursor 续页）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SiteListSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：非法 status/limit；CURSOR_INVALID：非法游标）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：Customer 角色指定他人 customerId）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createSite",
+        "summary": "创建 Site（site:write + Customer 存在性校验 + 审计）",
+        "description": "Customer 不存在或已删除返回 404；同 Customer 下名称唯一（重复 409）；初始 ACTIVE/version=1；创建与审计（site.create）同一事务。",
+        "security": [{ "CognitoJwt": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SiteCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Site 已创建",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SiteSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：name/时区/邮箱等非法）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：Auditor/Customer 角色只读）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer 不存在或已删除（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "同 Customer 下名称重复（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sites/{siteId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getSite",
+        "summary": "Site 详情（含设备数量；Customer 角色仅本 Customer 站点）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "siteId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site 详情",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SiteSuccess" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：Customer 角色访问其他 Customer 的 Site）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Site 不存在或已删除（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["admin"],
+        "operationId": "updateSite",
+        "summary": "更新 Site（site:write + If-Match + 审计；customerId 不可变）",
+        "description": "可更新 name/region/subregion/address/timezone/contactName/contactPhone/contactEmail；至少一个字段；If-Match 版本不符返回 409 VERSION_CONFLICT；改名撞唯一约束返回 409 CONFLICT。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "siteId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "$ref": "openapi-base.json#/components/parameters/IfMatch" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SiteUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Site 已更新（version 自增）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SiteSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺 If-Match/字段非法/customerId 不可变）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Site 不存在或已删除（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "版本冲突（VERSION_CONFLICT）或名称重复（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["admin"],
+        "operationId": "deleteSite",
+        "summary": "软删除 Site（site:write + If-Match + 审计；有关联设备时拒绝）",
+        "description": "V1 仅软删除（deletedAt 标记，记录保留），不做物理删除；存在关联设备（任意生命周期）时返回 409 CONFLICT 明确错误。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "siteId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "$ref": "openapi-base.json#/components/parameters/IfMatch" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site 已软删除（version 自增；后续查询不可见）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SiteSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺 If-Match）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Site 不存在或已删除（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "版本冲突（VERSION_CONFLICT）或存在关联设备（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sites/{siteId}/deactivate": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "deactivateSite",
+        "summary": "停用 Site（site:write + If-Match + 强制原因 + 审计）",
+        "description": "ACTIVE → SUSPENDED；reason 必填并写入审计；重复停用返回 409 CONFLICT；停用与审计（site.deactivate）同一事务。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "siteId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "$ref": "openapi-base.json#/components/parameters/IfMatch" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SiteDeactivateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Site 已停用（status=SUSPENDED，version 自增）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SiteSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺 If-Match/reason）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Site 不存在或已删除（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "版本冲突（VERSION_CONFLICT）或已处于 SUSPENDED（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "Site": {
+        "type": "object",
+        "required": [
+          "id",
+          "customerId",
+          "name",
+          "status",
+          "region",
+          "subregion",
+          "address",
+          "timezone",
+          "contactName",
+          "contactPhone",
+          "contactEmail",
+          "deviceCount",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1, "description": "所属 Customer（创建后不可变）" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "status": { "type": "string", "enum": ["ACTIVE", "SUSPENDED"] },
+          "region": { "type": ["string", "null"], "maxLength": 200, "description": "DEC-011 可筛选属性" },
+          "subregion": { "type": ["string", "null"], "maxLength": 200, "description": "DEC-011 可筛选属性" },
+          "address": { "type": ["string", "null"], "maxLength": 500 },
+          "timezone": { "type": "string", "description": "IANA 时区标识（如 Asia/Shanghai）" },
+          "contactName": { "type": ["string", "null"], "maxLength": 200 },
+          "contactPhone": { "type": ["string", "null"], "maxLength": 200 },
+          "contactEmail": { "type": ["string", "null"], "maxLength": 200 },
+          "deviceCount": { "type": "integer", "minimum": 0, "description": "关联设备数量（统计，不分生命周期）" },
+          "version": { "type": "integer", "minimum": 1, "description": "乐观锁版本（写操作经 If-Match 携带）" },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "SiteCreateRequest": {
+        "type": "object",
+        "required": ["customerId", "name"],
+        "additionalProperties": false,
+        "properties": {
+          "customerId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "region": { "type": ["string", "null"], "maxLength": 200 },
+          "subregion": { "type": ["string", "null"], "maxLength": 200 },
+          "address": { "type": ["string", "null"], "maxLength": 500 },
+          "timezone": { "type": "string", "description": "IANA 时区标识；缺省 UTC" },
+          "contactName": { "type": ["string", "null"], "maxLength": 200 },
+          "contactPhone": { "type": ["string", "null"], "maxLength": 200 },
+          "contactEmail": { "type": ["string", "null"], "maxLength": 200 }
+        }
+      },
+      "SiteUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "region": { "type": ["string", "null"], "maxLength": 200 },
+          "subregion": { "type": ["string", "null"], "maxLength": 200 },
+          "address": { "type": ["string", "null"], "maxLength": 500 },
+          "timezone": { "type": "string", "description": "IANA 时区标识" },
+          "contactName": { "type": ["string", "null"], "maxLength": 200 },
+          "contactPhone": { "type": ["string", "null"], "maxLength": 200 },
+          "contactEmail": { "type": ["string", "null"], "maxLength": 200 }
+        }
+      },
+      "SiteDeactivateRequest": {
+        "type": "object",
+        "required": ["reason"],
+        "additionalProperties": false,
+        "properties": {
+          "reason": { "type": "string", "minLength": 1, "description": "停用原因（强制，写入审计）" }
+        }
+      },
+      "SiteSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/Site" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "SiteListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Site" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      }
+    }
+  }
+}

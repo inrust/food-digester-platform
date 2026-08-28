@@ -1,0 +1,3 @@
+-- BE-CUS-02：sites 增加业务状态（ACTIVE|SUSPENDED，停用能力）与乐观锁版本列（If-Match）
+ALTER TABLE "sites" ADD COLUMN "status" TEXT NOT NULL DEFAULT 'ACTIVE';
+ALTER TABLE "sites" ADD COLUMN "version" INTEGER NOT NULL DEFAULT 1;
