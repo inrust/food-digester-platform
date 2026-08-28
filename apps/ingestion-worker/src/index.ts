@@ -26,3 +26,4 @@ export type {
 export * from './ingest/index.js';
 export * from './heartbeat/index.js';
 export * from './telemetry/index.js';
+export * from './report/index.js';

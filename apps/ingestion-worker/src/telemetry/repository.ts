@@ -54,10 +54,6 @@ function hourly(client: DbClient): HourlyDelegate {
   return (client as unknown as Record<string, unknown>).telemetryHourly as HourlyDelegate;
 }
 
-function isUniqueViolation(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'P2002';
-}
-
 /** 从 Payload data 提取本消息出现的指标样本（仅 13 项固定键、数值类型）。 */
 export function extractSamples(data: Record<string, unknown>): Partial<Record<TelemetryMetricKey, number>> {
   const samples: Partial<Record<TelemetryMetricKey, number>> = {};
@@ -90,7 +86,8 @@ function mergeMetrics(existing: MetricsMap, samples: Partial<Record<TelemetryMet
 
 /**
  * 增量合并一条 Telemetry 样本到整点窗口；返回合并后 sampleCount。
- * 并发首创建败方（P2002）回读胜方行后按更新路径合并一次。
+ * 并发首创建的 P2002 不在此处捕获——PostgreSQL 事务内语句失败即中止（25P02），
+ * 应让事务回滚由上层 TRANSIENT 重试，重试时胜方行已存在走更新路径。
  */
 export async function mergeHourlyAggregate(
   client: DbClient,
@@ -112,29 +109,14 @@ export async function mergeHourlyAggregate(
     });
     return { sampleCount: existing.sampleCount + 1 };
   }
-  try {
-    await hourly(client).create({
-      data: {
-        deviceId: params.deviceId,
-        customerId: params.customerId,
-        bucketStart: params.bucketStart,
-        sampleCount: 1,
-        metrics: mergeMetrics({}, params.samples),
-      },
-    });
-    return { sampleCount: 1 };
-  } catch (err) {
-    if (!isUniqueViolation(err)) throw err;
-    // 并发首创建败方：胜方行已存在，按更新路径合并
-    const winner = await hourly(client).findFirst({
-      where: { deviceId: params.deviceId, bucketStart: params.bucketStart },
-    });
-    if (!winner) throw err;
-    const metrics = mergeMetrics((winner.metrics ?? {}) as MetricsMap, params.samples);
-    await hourly(client).updateMany({
-      where: { id: winner.id },
-      data: { sampleCount: winner.sampleCount + 1, metrics },
-    });
-    return { sampleCount: winner.sampleCount + 1 };
-  }
+  await hourly(client).create({
+    data: {
+      deviceId: params.deviceId,
+      customerId: params.customerId,
+      bucketStart: params.bucketStart,
+      sampleCount: 1,
+      metrics: mergeMetrics({}, params.samples),
+    },
+  });
+  return { sampleCount: 1 };
 }

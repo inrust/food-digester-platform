@@ -14,7 +14,8 @@ export type IngestErrorType =
   | 'IDENTITY_VIOLATION'
   | 'SCHEMA_VIOLATION'
   | 'CLOCK_SKEW'
-  | 'PAYLOAD_CONFLICT';
+  | 'PAYLOAD_CONFLICT'
+  | 'INVALID_REPORT';
 
 export class IngestError extends Error {
   override readonly name = 'IngestError';

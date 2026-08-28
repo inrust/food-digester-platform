@@ -20,13 +20,11 @@ function latestState(client: DbClient): LatestStateDelegate {
   return (client as unknown as Record<string, unknown>).deviceLatestState as LatestStateDelegate;
 }
 
-function isUniqueViolation(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'P2002';
-}
-
 /**
  * 条件覆盖 latest state：仅当 occurredAt 新于已存 lastHeartbeatAt（或尚无记录）时写入。
  * state 不含 deviceId；lastHeartbeatAt 由调用方放入 state。
+ * 并发首创建的 P2002 不在此处捕获——PostgreSQL 事务内语句失败即中止（25P02），
+ * 应让事务回滚由上层 TRANSIENT 重试，重试时胜方行已存在走条件更新/乱序判定路径。
  */
 export async function applyLatestState(
   client: DbClient,
@@ -43,11 +41,6 @@ export async function applyLatestState(
   const existing = await latestState(client).findFirst({ where: { deviceId } });
   if (existing) return 'stale'; // 乱序旧消息：不倒退最新状态
 
-  try {
-    await latestState(client).create({ data: { deviceId, ...state } });
-    return 'created';
-  } catch (err) {
-    if (isUniqueViolation(err)) return 'stale'; // 并发首创建败方
-    throw err;
-  }
+  await latestState(client).create({ data: { deviceId, ...state } });
+  return 'created';
 }
