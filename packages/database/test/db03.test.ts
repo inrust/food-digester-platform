@@ -7,8 +7,8 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { PrismaPGlite } from 'pglite-prisma-adapter';
-import { readFileSync } from 'node:fs';
 import { PrismaClient } from '../src/generated/client.js';
+import { readAllMigrationSql } from './helpers.js';
 import {
   AppendOnlyViolationError,
   DbError,
@@ -27,9 +27,7 @@ let prisma: PrismaClient;
 
 beforeAll(async () => {
   pg = new PGlite({ extensions: { btree_gist } });
-  await pg.exec(
-    readFileSync(new URL('../prisma/migrations/20260826120000_init/migration.sql', import.meta.url), 'utf8'),
-  );
+  await pg.exec(readAllMigrationSql());
   prisma = new PrismaClient({ adapter: new PrismaPGlite(pg) });
 }, 60_000);
 

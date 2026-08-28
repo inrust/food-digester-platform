@@ -5,7 +5,8 @@
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { PrismaPGlite } from 'pglite-prisma-adapter';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import { PrismaClient } from '@fdp/database';
@@ -13,10 +14,13 @@ import { certificateFingerprintFromPem, verifyDeviceCertificate, withDeviceAuth 
 import type { ClientCertIdentity, DeviceAuthContext } from '../src/index.js';
 import { expectAuthError } from './helpers.js';
 
-const MIGRATION_SQL = readFileSync(
-  new URL('../../database/prisma/migrations/20260826120000_init/migration.sql', import.meta.url),
-  'utf8',
-);
+// 生成的 Prisma Client 以最新 Schema 为准：按序应用全部迁移（与 cloud-api 测试同策略）
+const MIGRATIONS_DIR = new URL('../../database/prisma/migrations/', import.meta.url);
+const MIGRATION_SQL = readdirSync(MIGRATIONS_DIR)
+  .filter((entry) => /^\d{14}_[a-z0-9_]+$/.test(entry))
+  .sort()
+  .map((entry) => readFileSync(fileURLToPath(new URL(`${entry}/migration.sql`, MIGRATIONS_DIR)), 'utf8'))
+  .join('\n');
 
 const PAST = new Date('2020-01-01T00:00:00Z');
 const FUTURE = new Date('2030-01-01T00:00:00Z');

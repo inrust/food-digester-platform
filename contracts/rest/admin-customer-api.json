@@ -1,0 +1,481 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Customer API",
+    "version": "0.1.0",
+    "description": "BE-CUS-01 Customer 管理接口（Cognito 认证）：列表（键集游标分页 + status 筛选）、详情、创建、更新、停用、软删除。写操作（customer:write，权限矩阵持有者 PlatformSuperAdmin/PlatformOperator）强制 If-Match 乐观锁并写审计（DOM-03）；读操作需 customer:read（平台三角色），Customer 角色仅可读取自身详情（跨 Customer 拒绝 403）。删除为软删除：存在关联有效设备（生命周期非 Rejected/Retired）或有效 License（Issued/Active/ExpiringSoon/Renewed）时返回 409 CONFLICT；V1 不做物理删除。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/customers": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listCustomers",
+        "summary": "Customer 列表（键集游标分页 + status 筛选）",
+        "description": "需 customer:read（PlatformSuperAdmin/PlatformOperator/Auditor）；默认排除已软删除记录；按 id 升序键集分页。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "$ref": "openapi-base.json#/components/parameters/Limit" },
+          { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["ACTIVE", "SUSPENDED"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer 列表（meta.nextCursor 续页）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CustomerListSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：非法 status/limit；CURSOR_INVALID：非法游标）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：Customer 角色无 customer:read）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createCustomer",
+        "summary": "创建 Customer（customer:write + 审计）",
+        "description": "初始状态 ACTIVE、version=1；创建与审计（customer.create）同一事务。",
+        "security": [{ "CognitoJwt": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CustomerCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer 已创建",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CustomerSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：name 缺失或长度非法）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：Auditor/Customer 角色只读）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/customers/{customerId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getCustomer",
+        "summary": "Customer 详情（Customer 角色仅可读自身）",
+        "description": "customer:read 持有者（平台三角色）可读任意 Customer；Customer 角色（CustomerAdmin/CustomerViewer）仅可读取自身，跨 Customer 返回 403。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "customerId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer 详情",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CustomerSuccess" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：Customer 角色访问其他 Customer）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer 不存在或已删除（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["admin"],
+        "operationId": "updateCustomer",
+        "summary": "更新 Customer 名称（customer:write + If-Match + 审计）",
+        "description": "If-Match 乐观锁：版本不符返回 409 VERSION_CONFLICT；更新与审计（customer.update）同一事务。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "customerId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "$ref": "openapi-base.json#/components/parameters/IfMatch" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CustomerUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer 已更新（version 自增）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CustomerSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺 If-Match/name 非法）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer 不存在或已删除（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "版本冲突（VERSION_CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["admin"],
+        "operationId": "deleteCustomer",
+        "summary": "软删除 Customer（customer:write + If-Match + 审计；受关联约束）",
+        "description": "V1 仅软删除（deletedAt 标记，记录保留），不做物理删除；存在关联有效设备（生命周期非 Rejected/Retired）或有效 License（Issued/Active/ExpiringSoon/Renewed）时返回 409 CONFLICT 明确错误。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "customerId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "$ref": "openapi-base.json#/components/parameters/IfMatch" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer 已软删除（version 自增；后续查询不可见）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CustomerSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺 If-Match）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer 不存在或已删除（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "版本冲突（VERSION_CONFLICT）或存在关联有效设备/License（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/customers/{customerId}/deactivate": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "deactivateCustomer",
+        "summary": "停用 Customer（customer:write + If-Match + 强制原因 + 审计）",
+        "description": "ACTIVE → SUSPENDED；reason 必填并写入审计；重复停用返回 409 CONFLICT；停用与审计（customer.deactivate）同一事务。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "customerId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "$ref": "openapi-base.json#/components/parameters/IfMatch" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CustomerDeactivateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer 已停用（status=SUSPENDED，version 自增）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CustomerSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺 If-Match/reason）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer 不存在或已删除（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "版本冲突（VERSION_CONFLICT）或已处于 SUSPENDED（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "Customer": {
+        "type": "object",
+        "required": ["id", "name", "status", "version", "createdAt", "updatedAt"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "status": { "type": "string", "enum": ["ACTIVE", "SUSPENDED"] },
+          "version": { "type": "integer", "minimum": 1, "description": "乐观锁版本（写操作经 If-Match 携带）" },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "CustomerCreateRequest": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 }
+        }
+      },
+      "CustomerUpdateRequest": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 }
+        }
+      },
+      "CustomerDeactivateRequest": {
+        "type": "object",
+        "required": ["reason"],
+        "additionalProperties": false,
+        "properties": {
+          "reason": { "type": "string", "minLength": 1, "description": "停用原因（强制，写入审计）" }
+        }
+      },
+      "CustomerSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/Customer" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "CustomerListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Customer" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      }
+    }
+  }
+}

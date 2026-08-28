@@ -23,6 +23,7 @@ model Customer {
   id        String    @id @default(uuid())
   name      String
   status    String    @default("ACTIVE") // ACTIVE | SUSPENDED
+  version   Int       @default(1) // 乐观锁（If-Match，BE-CUS-01）
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz

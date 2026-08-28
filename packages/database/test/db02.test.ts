@@ -8,6 +8,7 @@ import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { PrismaPGlite } from 'pglite-prisma-adapter';
 import { readFileSync } from 'node:fs';
 import { PrismaClient, type Prisma } from '../src/generated/client.js';
+import { readAllMigrationSql } from './helpers.js';
 import {
   AppendOnlyViolationError,
   CursorInvalidError,
@@ -23,10 +24,7 @@ import {
   withTransaction,
 } from '../src/index.js';
 
-const MIGRATION_SQL = readFileSync(
-  new URL('../prisma/migrations/20260826120000_init/migration.sql', import.meta.url),
-  'utf8',
-);
+const MIGRATION_SQL = readAllMigrationSql();
 
 let pg: PGlite;
 let prisma: PrismaClient;
