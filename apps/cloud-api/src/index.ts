@@ -8,6 +8,7 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
  * BE-ONB-02 已落地：/api/v1/admin/onboarding/requests 列表/详情/approve/reject（见 ./admin/onboarding）；
  * BE-CUS-01 已落地：/api/v1/admin/customers 列表/创建/详情/更新/停用/软删除（见 ./admin/customer）；
  * BE-CUS-02 已落地：/api/v1/admin/sites 列表/创建/详情/更新/停用/软删除（见 ./admin/site）；
+ * BE-DEV-01 已落地：/api/v1/admin/devices 台账列表/详情（只读，见 ./admin/device）；
  * 其余 /api/v1/device、/admin、/customer、/internal 路由在后续 BE 任务实现。
  */
 export const SERVICE_NAME = 'cloud-api';
@@ -23,5 +24,6 @@ export * from './admin/certificate-rotation/index.js';
 export * from './admin/replay/index.js';
 export * from './admin/customer/index.js';
 export * from './admin/site/index.js';
+export * from './admin/device/index.js';
 export * from './provisioning/index.js';
 export * from './device/index.js';

@@ -1,0 +1,354 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Device Registry API",
+    "version": "0.1.0",
+    "description": "BE-DEV-01 Device 台账查询接口（Cognito 认证，device:read，全部五角色）：列表（Customer/Site/Region/Subregion/生命周期/Operational/连接/授权/型号/关键字筛选 + 键集游标分页）与详情。连接状态由 lastHeartbeatAt 与明确阈值（默认 10 分钟）派生，不写回生命周期字段；证书仅返回 certificateId + fingerprint 摘要，不返回私钥或完整证书；Region/Subregion 只取 Site（DEC-011）；Customer 角色的可见范围由服务端身份上下文强制注入。只读接口，不修改任何状态。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-010@0.2.0", "DEC-011@0.2.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/devices": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listDevices",
+        "summary": "设备台账列表（四轴状态组合筛选 + 键集游标分页）",
+        "description": "四轴（lifecycleStatus/operationalStatus/connectivity/licenseStatus）与 Customer/Site/Region/Subregion/型号/关键字以 AND 组合、互不覆盖；Customer 角色强制本 Customer scope（query 指定他人 customerId → 403）；按 id 升序键集分页。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "$ref": "openapi-base.json#/components/parameters/Limit" },
+          { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+          { "name": "customerId", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "siteId", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "region", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "subregion", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "lifecycleStatus",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PendingOnboarding",
+                "Rejected",
+                "OnboardingApproved",
+                "Onboarded",
+                "Assigned",
+                "Licensed",
+                "Active",
+                "Suspended",
+                "Retired"
+              ]
+            }
+          },
+          {
+            "name": "operationalStatus",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["Active", "Maintenance", "Suspended", "Retired"] }
+          },
+          {
+            "name": "connectivity",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["ONLINE", "OFFLINE"] },
+            "description": "由 lastHeartbeatAt 与阈值派生（OFFLINE 含无心跳/无 latestState 设备）"
+          },
+          {
+            "name": "licenseStatus",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["Draft", "Issued", "Active", "ExpiringSoon", "Renewed", "Expired", "Revoked", "None"]
+            },
+            "description": "授权轴：设备存在该状态 License；None = 无任何 License"
+          },
+          { "name": "model", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "关键字（序列号/别名/设备 id，大小写不敏感包含匹配）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "设备列表（meta.nextCursor 续页）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeviceListSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：非法筛选枚举/limit；CURSOR_INVALID：非法游标）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：Customer 角色指定他人 customerId）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getDevice",
+        "summary": "设备台账详情（Customer 角色仅本 Customer 设备）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "设备详情",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeviceSuccess" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：Customer 角色访问其他 Customer 或未分配设备）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "设备不存在（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "DeviceCertificateSummary": {
+        "type": "object",
+        "required": ["certificateId", "fingerprint", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "certificateId": { "type": "string", "minLength": 1 },
+          "fingerprint": { "type": "string", "minLength": 1, "description": "证书指纹摘要（不返回完整证书/私钥）" },
+          "status": { "type": "string", "enum": ["PENDING_CLAIM", "ACTIVE", "REVOKED", "EXPIRED"] }
+        }
+      },
+      "DeviceLicenseSummary": {
+        "type": "object",
+        "required": ["licenseId", "status", "validFrom", "validTo", "entitlements"],
+        "additionalProperties": false,
+        "properties": {
+          "licenseId": { "type": "string", "minLength": 1 },
+          "status": {
+            "type": "string",
+            "enum": ["Draft", "Issued", "Active", "ExpiringSoon", "Renewed", "Expired", "Revoked"]
+          },
+          "validFrom": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "validTo": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "entitlements": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["REMOTE_CONTROL", "OTA_UPDATE", "ESG_REPORTING"] },
+            "description": "已启用 Entitlement 编码"
+          }
+        }
+      },
+      "DeviceContractSummary": {
+        "type": "object",
+        "required": ["contractId", "contractNumber", "name", "status", "endAt"],
+        "additionalProperties": false,
+        "properties": {
+          "contractId": { "type": "string", "minLength": 1 },
+          "contractNumber": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["DRAFT", "EFFECTIVE", "EXPIRING_SOON", "EXPIRED", "TERMINATED"] },
+          "endAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "Device": {
+        "type": "object",
+        "required": [
+          "id",
+          "serialNumber",
+          "model",
+          "hardwareVersion",
+          "manufacturer",
+          "manufactureDate",
+          "alias",
+          "firmwareVersion",
+          "customer",
+          "site",
+          "lifecycleStatus",
+          "operationalStatus",
+          "connectivity",
+          "lastHeartbeatAt",
+          "certificate",
+          "license",
+          "contract",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "serialNumber": { "type": "string", "minLength": 1 },
+          "model": { "type": "string", "minLength": 1 },
+          "hardwareVersion": { "type": "string", "minLength": 1 },
+          "manufacturer": { "type": "string", "minLength": 1 },
+          "manufactureDate": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "alias": { "type": ["string", "null"] },
+          "firmwareVersion": { "type": ["string", "null"] },
+          "customer": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["id", "name"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": { "type": "string", "minLength": 1 },
+                  "name": { "type": "string", "minLength": 1 }
+                }
+              },
+              { "type": "null" }
+            ]
+          },
+          "site": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["id", "name", "region", "subregion"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": { "type": "string", "minLength": 1 },
+                  "name": { "type": "string", "minLength": 1 },
+                  "region": { "type": ["string", "null"] },
+                  "subregion": { "type": ["string", "null"] }
+                }
+              },
+              { "type": "null" }
+            ]
+          },
+          "lifecycleStatus": {
+            "type": "string",
+            "enum": [
+              "PendingOnboarding",
+              "Rejected",
+              "OnboardingApproved",
+              "Onboarded",
+              "Assigned",
+              "Licensed",
+              "Active",
+              "Suspended",
+              "Retired"
+            ]
+          },
+          "operationalStatus": {
+            "oneOf": [
+              { "type": "string", "enum": ["Active", "Maintenance", "Suspended", "Retired"] },
+              { "type": "null" }
+            ]
+          },
+          "connectivity": {
+            "type": "string",
+            "enum": ["ONLINE", "OFFLINE"],
+            "description": "由 lastHeartbeatAt 与阈值派生，不写回生命周期字段"
+          },
+          "lastHeartbeatAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "certificate": {
+            "oneOf": [{ "$ref": "#/components/schemas/DeviceCertificateSummary" }, { "type": "null" }]
+          },
+          "license": {
+            "oneOf": [{ "$ref": "#/components/schemas/DeviceLicenseSummary" }, { "type": "null" }]
+          },
+          "contract": {
+            "oneOf": [{ "$ref": "#/components/schemas/DeviceContractSummary" }, { "type": "null" }]
+          },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "DeviceSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/Device" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "DeviceListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Device" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      }
+    }
+  }
+}
