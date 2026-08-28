@@ -23,3 +23,4 @@ export type {
   RotationConfirmationInput,
   RotationConfirmationResult,
 } from './rotation-confirmation.js';
+export * from './ingest/index.js';
