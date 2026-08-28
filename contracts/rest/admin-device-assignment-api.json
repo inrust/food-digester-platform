@@ -1,0 +1,235 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Device Assignment API",
+    "version": "0.1.0",
+    "description": "BE-DEV-02 设备分配接口（Cognito 认证）：分配/调整 Customer 和 Site（device:assign，PlatformSuperAdmin/PlatformOperator；首次分配 Onboarded→Assigned 按 DOM-01 迁移表仅 PlatformSuperAdmin），记录 Assignment 历史与授权窗口（assignedAt/endedAt），每次真实变更恰好生成一个 ASSIGNMENT_CHANGED Notification（经 Outbox 下行，deviceAction=SYNC）。仅 Onboarded/Assigned 生命周期合法；Site 必须属于目标 Customer（跨 Customer 拒绝 400）；目标与当前 ACTIVE 分配一致的重复请求幂等（无写入、无新通知）；不自动创建 License。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-011@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/devices/{deviceId}/assignment": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "assignDevice",
+        "summary": "分配/调整设备 Customer 和 Site（device:assign + 审计 + ASSIGNMENT_CHANGED 通知）",
+        "description": "首次分配（Onboarded→Assigned）经 DOM-01 生命周期迁移（仅 PlatformSuperAdmin）；Assigned 状态调整为同状态再分配；写审计（device.assignment.assign）；幂等重放返回 replayed=true 且 notification=null。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssignmentRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "分配完成或幂等重放",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AssignmentSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺 customerId/siteId、跨 Customer Site 引用）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：无 device:assign 权限，或 Operator 执行首次分配）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "设备/Customer/Site 不存在（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "生命周期不允许分配（DEVICE_STATE_NOT_ALLOWED）或并发冲突（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}/assignments": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listDeviceAssignments",
+        "summary": "设备 Assignment 历史（含授权窗口，按 assignedAt 倒序，上限 50 条）",
+        "description": "需 device:read；Customer 角色仅可查看本 Customer 设备（跨 Customer/未分配 → 403）。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assignment 历史列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AssignmentListSuccess" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：Customer 角色访问其他 Customer 设备）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "设备不存在（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "AssignmentRequest": {
+        "type": "object",
+        "required": ["customerId", "siteId"],
+        "additionalProperties": false,
+        "properties": {
+          "customerId": { "type": "string", "minLength": 1 },
+          "siteId": { "type": "string", "minLength": 1, "description": "必须属于 customerId" },
+          "reason": { "type": "string", "maxLength": 500, "description": "可选；写入分配记录与审计" }
+        }
+      },
+      "DeviceAssignment": {
+        "type": "object",
+        "required": [
+          "assignmentId",
+          "deviceId",
+          "customerId",
+          "siteId",
+          "status",
+          "assignedBy",
+          "reason",
+          "assignedAt",
+          "endedAt",
+          "lifecycleStatus",
+          "notification",
+          "replayed"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "assignmentId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "siteId": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["ACTIVE", "ENDED"] },
+          "assignedBy": { "type": "string", "minLength": 1 },
+          "reason": { "type": ["string", "null"] },
+          "assignedAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "description": "授权窗口起点"
+          },
+          "endedAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }],
+            "description": "授权窗口终点（ACTIVE 为 null）"
+          },
+          "lifecycleStatus": {
+            "type": "string",
+            "enum": ["Onboarded", "Assigned"],
+            "description": "操作后的设备生命周期（分配接口只允许这两种源状态）"
+          },
+          "notification": {
+            "type": ["string", "null"],
+            "enum": ["ASSIGNMENT_CHANGED", null],
+            "description": "本次真实变更恰好生成一个通知；幂等重放为 null"
+          },
+          "replayed": { "type": "boolean", "description": "幂等重放（目标与当前 ACTIVE 分配一致）" }
+        }
+      },
+      "AssignmentSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/DeviceAssignment" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "AssignmentListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/DeviceAssignment" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}
