@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fdp.dev/contracts/archive/archive-manifest.schema.json",
+  "title": "ArchiveManifest",
+  "description": "BE-ARC-02 S3 Raw Archive 对象 Manifest：记录数、时间/序号范围、SHA-256、Schema 版本与 Worker 版本。与 NDJSON/GZIP 对象同前缀旁挂（part-*.manifest.json）。",
+  "type": "object",
+  "required": [
+    "manifestVersion",
+    "bucket",
+    "key",
+    "topicType",
+    "customerId",
+    "windowStartUtc",
+    "recordCount",
+    "occurredAtMin",
+    "occurredAtMax",
+    "seqMin",
+    "seqMax",
+    "sha256",
+    "schemaVersions",
+    "workerVersion",
+    "eventIds",
+    "createdAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "manifestVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Manifest 结构版本（当前 1.0）。"
+    },
+    "bucket": { "type": "string", "minLength": 1 },
+    "key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "NDJSON/GZIP 对象 Key（规定前缀 raw/topic_type=/customer_id=/year=/month=/day=/hour=/part-*.json.gz）。"
+    },
+    "topicType": { "type": "string", "minLength": 1 },
+    "customerId": { "type": "string", "minLength": 1 },
+    "windowStartUtc": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+      "description": "分组小时窗口起点（UTC 整点，Z 结尾）。"
+    },
+    "recordCount": { "type": "integer", "minimum": 1, "description": "对象内 NDJSON 行数（去重后）。" },
+    "occurredAtMin": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$" },
+    "occurredAtMax": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$" },
+    "seqMin": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "行内原始 Payload meta.seq 最小值；全部缺失为 null。"
+    },
+    "seqMax": { "type": ["integer", "null"], "minimum": 0 },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "GZIP 对象字节 SHA-256（可复算）。" },
+    "schemaVersions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "description": "行内原始 Payload meta.schemaVer 去重集合。"
+    },
+    "workerVersion": { "type": "string", "minLength": 1, "description": "生成该对象的 Archive Worker 版本。" },
+    "eventIds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true,
+      "minItems": 1,
+      "description": "去重后行对应的 outbox 事件 ID（稳定去重键，Replay 溯源）。"
+    },
+    "createdAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$" }
+  }
+}
