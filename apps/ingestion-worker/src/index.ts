@@ -28,3 +28,4 @@ export * from './heartbeat/index.js';
 export * from './telemetry/index.js';
 export * from './report/index.js';
 export * from './signals/index.js';
+export * from './outbox/index.js';

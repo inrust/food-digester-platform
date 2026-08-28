@@ -8,3 +8,5 @@ export { buildDevicePolicy, DOWNLINK_TOPIC_TYPES, TOPIC_PATTERN, UPLINK_TOPIC_TY
 export type { DevicePolicy, DevicePolicyInput, IotPolicyDocument, IotPolicyStatement } from './iot-device-policy.js';
 export { createKmsDataKeyProvider } from './kms-data-key-provider.js';
 export type { DataKeyProvider, GeneratedDataKey, KmsDataKeyProviderConfig } from './kms-data-key-provider.js';
+export { createSqsArchiveSender } from './sqs-archive-sender.js';
+export type { ArchiveEventMessage, ArchiveEventSender, SqsArchiveSenderConfig } from './sqs-archive-sender.js';

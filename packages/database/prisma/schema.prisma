@@ -852,6 +852,8 @@ model OutboxEvent {
   aggregateId   String    @map("aggregate_id")
   payload       Json
   status        String    @default("PENDING") // PENDING | PUBLISHED | FAILED
+  retryCount    Int       @default(0) @map("retry_count") // BE-ARC-01 发布重试计数
+  lastError     String?   @map("last_error") // BE-ARC-01 最近一次发布错误（截断）
   publishedAt   DateTime? @map("published_at") @db.Timestamptz
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
