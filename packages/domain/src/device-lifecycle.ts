@@ -123,6 +123,13 @@ export const LIFECYCLE_TRANSITIONS: Readonly<Record<LifecycleStatus, readonly Li
       requiresReason: true,
       operationalMirror: 'Suspended',
     },
+    // BE-IOT-07 Tamper 安全策略自动挂起（SYSTEM actor；必须有策略原因，审计由调用方落）
+    {
+      to: 'Suspended',
+      actorTypes: ['SYSTEM'],
+      requiresReason: true,
+      operationalMirror: 'Suspended',
+    },
     {
       to: 'Retired',
       actorTypes: ['ADMIN'],
@@ -232,7 +239,10 @@ export function transitionLifecycle(
   actor: Actor,
   ctx: TransitionContext = {},
 ): TransitionEffects {
-  const rule = LIFECYCLE_TRANSITIONS[device.lifecycleStatus].find((r) => r.to === to);
+  // 同一 from→to 可有多条规则（不同 actorType，如 Active→Suspended 的 ADMIN/SYSTEM）：
+  // 优先匹配 actorType 相符的规则；无匹配则回退首条由 assertActor 抛出 FORBIDDEN
+  const candidates = LIFECYCLE_TRANSITIONS[device.lifecycleStatus].filter((r) => r.to === to);
+  const rule = candidates.find((r) => r.actorTypes.includes(actor.actorType)) ?? candidates[0];
   if (!rule) {
     throw new DeviceStateError('DEVICE_STATE_NOT_ALLOWED', `生命周期不允许迁移: ${device.lifecycleStatus} → ${to}`);
   }

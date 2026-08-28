@@ -50,6 +50,8 @@ const LEGAL: ReadonlyArray<{
   { from: 'Assigned', to: 'Licensed', actor: SYSTEM, ctx: { licenseIssuedAndSynced: true } },
   { from: 'Licensed', to: 'Active', actor: DEVICE, ctx: { licenseVerifiedByDevice: true } },
   { from: 'Active', to: 'Suspended', actor: OPERATOR, ctx: { reason: '安全调查' } },
+  // BE-IOT-07 Tamper 安全策略自动挂起（SYSTEM actor + 策略原因）
+  { from: 'Active', to: 'Suspended', actor: SYSTEM, ctx: { reason: 'TAMPER_AUTO_SUSPEND: severity=CRITICAL' } },
   { from: 'Suspended', to: 'Active', actor: SUPER_ADMIN, ctx: { issueResolvedApproved: true, reason: '问题已解决' } },
   { from: 'Active', to: 'Retired', actor: SUPER_ADMIN, ctx: { reason: '合约终止' } },
   { from: 'Suspended', to: 'Retired', actor: SUPER_ADMIN, ctx: { reason: '永久退役' } },
@@ -167,11 +169,13 @@ describe('执行者与前置条件', () => {
     );
   });
 
-  test('DEVICE/SYSTEM 不能执行管理迁移', () => {
+  test('DEVICE 不能执行管理迁移；SYSTEM 仅允许策略挂起（BE-IOT-07）且必须填原因', () => {
     expect(() => transitionLifecycle(device('Active', 'Active'), 'Suspended', DEVICE, { reason: 'r' })).toThrow(
       DeviceStateError,
     );
-    expect(() => transitionLifecycle(device('Active', 'Active'), 'Suspended', SYSTEM, { reason: 'r' })).toThrow(
+    // BE-IOT-07 起 SYSTEM 允许 Active→Suspended（Tamper 策略），但缺原因仍拒绝；其他管理迁移仍禁止
+    expect(() => transitionLifecycle(device('Active', 'Active'), 'Suspended', SYSTEM, {})).toThrow(DeviceStateError);
+    expect(() => transitionLifecycle(device('Active', 'Active'), 'Retired', SYSTEM, { reason: 'r' })).toThrow(
       DeviceStateError,
     );
   });
