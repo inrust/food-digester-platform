@@ -49,6 +49,37 @@ export class DeviceDeactivateError extends Error {
 export const RETIREMENT_PENDING = 'PENDING_CONFIRMATION' as const;
 export const RETIREMENT_CONFIRMED = 'CONFIRMED' as const;
 export const COMPLETION_DEVICE_CONFIRM = 'DEVICE_CONFIRM' as const;
+/** BE-DEV-04 force-complete 的完成方式标记。 */
+export const COMPLETION_FORCE_COMPLETE = 'FORCE_COMPLETE' as const;
+
+/**
+ * 退役完成步骤（共享：BE-SYNC-02 设备确认 / BE-DEV-04 force-complete）。
+ * 同事务：条件更新退役记录 PENDING_CONFIRMATION → CONFIRMED（并发漂移返回 confirmed=false），
+ * 随后撤销该设备全部 ACTIVE 证书（确认在先、断证在后）。
+ */
+export async function completeRetirementStep(
+  tx: DbClient,
+  input: { readonly deviceId: string; readonly at: Date; readonly completionMethod: string },
+): Promise<{ readonly confirmed: boolean; readonly revoked: readonly CertificateRow[] }> {
+  const { count } = await retirements(tx).updateMany({
+    where: { deviceId: input.deviceId, status: RETIREMENT_PENDING },
+    data: {
+      status: RETIREMENT_CONFIRMED,
+      confirmedAt: input.at,
+      completionMethod: input.completionMethod,
+      certificateRevokedAt: input.at,
+    },
+  });
+  if (count !== 1) return { confirmed: false, revoked: [] };
+  const active = await certificates(tx).findMany({ where: { deviceId: input.deviceId, status: 'ACTIVE' } });
+  if (active.length > 0) {
+    await certificates(tx).updateMany({
+      where: { id: { in: active.map((c) => c.id) }, status: 'ACTIVE' },
+      data: { status: 'REVOKED', revokedAt: input.at },
+    });
+  }
+  return { confirmed: true, revoked: active };
+}
 
 export interface RevokedCertificateSummary {
   readonly certificateId: string;
@@ -271,27 +302,14 @@ export async function confirmDeactivation(
       },
     },
     async (tx) => {
-      // 并发兜底：条件更新退役记录，仅一个事务完成确认
-      const { count } = await retirements(tx).updateMany({
-        where: { deviceId: device.id, status: RETIREMENT_PENDING },
-        data: {
-          status: RETIREMENT_CONFIRMED,
-          confirmedAt: at,
-          completionMethod: COMPLETION_DEVICE_CONFIRM,
-          certificateRevokedAt: at,
-        },
+      // 并发兜底 + 退役完成步骤：确认在先、断证在后（共享 completeRetirementStep）
+      const step = await completeRetirementStep(tx, {
+        deviceId: device.id,
+        at,
+        completionMethod: COMPLETION_DEVICE_CONFIRM,
       });
-      if (count !== 1) {
+      if (!step.confirmed) {
         throw new DeviceDeactivateError('CONFLICT', 'The retirement was confirmed concurrently; refresh and retry');
-      }
-
-      // 退役完成步骤：撤销该设备全部 ACTIVE 证书（确认在先、断证在后）
-      const active = await certificates(tx).findMany({ where: { deviceId: device.id, status: 'ACTIVE' } });
-      if (active.length > 0) {
-        await certificates(tx).updateMany({
-          where: { id: { in: active.map((c) => c.id) }, status: 'ACTIVE' },
-          data: { status: 'REVOKED', revokedAt: at },
-        });
       }
 
       return toResult(
@@ -303,7 +321,7 @@ export async function confirmDeactivation(
           completionMethod: COMPLETION_DEVICE_CONFIRM,
           certificateRevokedAt: at,
         },
-        active.map((c) => ({ ...c, status: 'REVOKED', revokedAt: at })),
+        step.revoked.map((c) => ({ ...c, status: 'REVOKED', revokedAt: at })),
         false,
       );
     },

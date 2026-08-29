@@ -1,0 +1,268 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Device Retirement API",
+    "version": "0.1.0",
+    "description": "BE-DEV-04 设备退役工作流（Cognito 认证，device:write）：管理员 retire（仅 Active/Suspended→Retired，DOM-01 迁移仅 PlatformSuperAdmin，强制原因 + confirm=true；撤销 Assignment/License/Entitlement；创建 PENDING_CONFIRMATION 退役记录；生成 DEVICE_RETIRED 通知；证书保持 ACTIVE 直至设备确认）；force-complete（离线设备不等待确认，强制原因，完成退役并撤销证书，与 BE-SYNC-02 共享完成步骤）。Retired 永久不可恢复；不实现离线等待期限的运维调度。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-001@0.2.0", "DEC-010@0.2.0", "SEC-001@1.0.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/devices/{deviceId}/retire": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "retireDevice",
+        "summary": "管理员退役设备（Active/Suspended→Retired + 撤销授权 + DEVICE_RETIRED + 待确认记录）",
+        "description": "强制原因与确认标志；已退役设备重复请求幂等（replayed=true）；审计 device.retire；证书不撤销（设备确认由 BE-SYNC-02 deactivate 完成）。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RetireRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已退役或幂等重放",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RetirementSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺 reason 或 confirm 非 true）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN：无 device:write，或 Operator 执行退役——DOM-01 仅 SuperAdmin）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "设备不存在（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "生命周期不允许（DEVICE_STATE_NOT_ALLOWED：非 Active/Suspended）或并发冲突（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}/retire/complete": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "forceCompleteRetirement",
+        "summary": "强制完成退役（离线设备不等待确认；完成退役 + 证书停用 + 审计）",
+        "description": "仅 Retired 且 PENDING_CONFIRMATION 可执行；重复调用幂等；审计 device.retire.force_complete。不实现离线等待期限的运维调度。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ForceCompleteRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已完成或幂等重放",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RetirementSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺 reason）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "设备不存在（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "非 Retired（DEVICE_STATE_NOT_ALLOWED）或无退役记录/并发冲突（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "RetireRequest": {
+        "type": "object",
+        "required": ["reason", "confirm"],
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "退役原因（强制，写入审计/状态历史/退役记录）"
+          },
+          "confirm": { "type": "boolean", "enum": [true], "description": "管理员确认标志（必须为 true）" }
+        }
+      },
+      "ForceCompleteRequest": {
+        "type": "object",
+        "required": ["reason"],
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "强制完成原因（强制，写入审计）"
+          }
+        }
+      },
+      "RetirementRecord": {
+        "type": "object",
+        "required": [
+          "retirementId",
+          "status",
+          "reason",
+          "initiatedBy",
+          "initiatedAt",
+          "confirmedAt",
+          "completionMethod",
+          "certificateRevokedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "retirementId": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["PENDING_CONFIRMATION", "CONFIRMED"] },
+          "reason": { "type": "string", "minLength": 1 },
+          "initiatedBy": { "type": "string", "minLength": 1 },
+          "initiatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "confirmedAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "completionMethod": {
+            "type": ["string", "null"],
+            "enum": ["DEVICE_CONFIRM", "FORCE_COMPLETE", null]
+          },
+          "certificateRevokedAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          }
+        }
+      },
+      "RetirementResult": {
+        "type": "object",
+        "required": ["deviceId", "lifecycleStatus", "retirement", "notification", "replayed"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "lifecycleStatus": { "type": "string", "enum": ["Retired"] },
+          "retirement": { "$ref": "#/components/schemas/RetirementRecord" },
+          "notification": {
+            "type": ["string", "null"],
+            "enum": ["DEVICE_RETIRED", null],
+            "description": "retire 真实变更为 DEVICE_RETIRED；force-complete/重放为 null"
+          },
+          "replayed": { "type": "boolean" }
+        }
+      },
+      "RetirementSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/RetirementResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}
