@@ -1,0 +1,444 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin License API",
+    "version": "0.1.0",
+    "description": "BE-LIC-01 License/Entitlement 管理接口（Cognito 认证；license:write=PlatformSuperAdmin/PlatformOperator，license:read 另含 Auditor）：创建 Draft（配置 REMOTE_CONTROL/OTA_UPDATE/ESG_REPORTING Entitlement）、Issue（生成签名）、Activate（SYSTEM 激活，要求已到 validFrom）、Renew（ExpiringSoon→Renewed，延长 validTo + 重签，同目标重复请求幂等回放）、Revoke（Active/Expired→Revoked，强制原因）、Evaluate（可测试时间派生：Active→ExpiringSoon/Expired、ExpiringSoon→Expired、Renewed→Active 结算；不实现定时扫描）、详情与历史。所有迁移走 DOM-02 状态机；每次真实变化恰好一条历史 + 一次审计 + 一个 LICENSE_CHANGED 通知（Outbox 下行 SYNC）；一个设备不能出现两个有效 License（领域拒绝 + DB 部分唯一索引兜底）。License 返回 signature 字段供 Sync（HMAC-SHA256 暂定机制，签名密钥部署注入）。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/licenses": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createLicense",
+        "summary": "创建 License Draft（配置 Entitlement）",
+        "description": "设备须已分配 Customer 且未退役；设备存在任一非终态 License（Draft/Issued/Active/ExpiringSoon/Renewed）→ 409。",
+        "security": [{ "CognitoJwt": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LicenseCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Draft 已创建",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LicenseSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/licenses/{licenseId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getLicense",
+        "summary": "License 详情（含 signature 供 Sync）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "licenseId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "License 详情",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LicenseSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/licenses/{licenseId}/history": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listLicenseHistory",
+        "summary": "License 状态历史（createdAt 倒序，上限 100）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "licenseId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "历史列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LicenseHistorySuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/licenses/{licenseId}/issue": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "issueLicense",
+        "summary": "签发 License（Draft→Issued，生成签名）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "licenseId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "已签发",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LicenseSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/licenses/{licenseId}/activate": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "activateLicense",
+        "summary": "激活 License（Issued→Active，SYSTEM 激活事件，要求已到 validFrom）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "licenseId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "已激活",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LicenseSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/licenses/{licenseId}/renew": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "renewLicense",
+        "summary": "续期 License（ExpiringSoon→Renewed，延长 validTo + 重签；同目标幂等回放）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "licenseId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LicenseRenewRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已续期或幂等回放",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LicenseRenewSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/licenses/{licenseId}/revoke": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "revokeLicense",
+        "summary": "吊销 License（Active/Expired→Revoked，强制原因）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "licenseId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LicenseRevokeRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已吊销",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LicenseSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/licenses/{licenseId}/evaluate": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "evaluateLicense",
+        "summary": "时间派生评估（可测试 evaluateAt；不实现定时扫描）",
+        "description": "SYSTEM actor：Active→ExpiringSoon/Expired、ExpiringSoon→Expired、Renewed→Active 结算；无变化时 changed=false 且无写入/审计/通知。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "licenseId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LicenseEvaluateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "评估结果",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LicenseEvaluateSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证（UNAUTHENTICATED）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（FORBIDDEN）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "不存在（NOT_FOUND）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Conflict": {
+        "description": "状态/并发冲突（CONFLICT / DEVICE_STATE_NOT_ALLOWED）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "服务器内部错误（INTERNAL_ERROR）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "LicenseCreateRequest": {
+        "type": "object",
+        "required": ["deviceId", "validFrom", "validTo", "entitlements"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "validFrom": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "validTo": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "entitlements": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "enum": ["REMOTE_CONTROL", "OTA_UPDATE", "ESG_REPORTING"] }
+          },
+          "reason": { "type": "string", "maxLength": 500 }
+        }
+      },
+      "LicenseRenewRequest": {
+        "type": "object",
+        "required": ["newValidTo"],
+        "additionalProperties": false,
+        "properties": {
+          "newValidTo": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "description": "必须晚于当前 validTo"
+          }
+        }
+      },
+      "LicenseRevokeRequest": {
+        "type": "object",
+        "required": ["reason"],
+        "additionalProperties": false,
+        "properties": {
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      },
+      "LicenseEvaluateRequest": {
+        "type": "object",
+        "required": [],
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "description": "评估时点（缺省为服务器当前时间；测试可注入）"
+          }
+        }
+      },
+      "LicenseEntitlement": {
+        "type": "object",
+        "required": ["code", "enabled"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string", "enum": ["REMOTE_CONTROL", "OTA_UPDATE", "ESG_REPORTING"] },
+          "enabled": { "type": "boolean" }
+        }
+      },
+      "License": {
+        "type": "object",
+        "required": [
+          "licenseId",
+          "deviceId",
+          "customerId",
+          "status",
+          "validFrom",
+          "validTo",
+          "entitlements",
+          "signature",
+          "version",
+          "effective",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "licenseId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "status": {
+            "type": "string",
+            "enum": ["Draft", "Issued", "Active", "ExpiringSoon", "Renewed", "Expired", "Revoked"]
+          },
+          "validFrom": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "validTo": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "entitlements": { "type": "array", "items": { "$ref": "#/components/schemas/LicenseEntitlement" } },
+          "signature": {
+            "type": ["string", "null"],
+            "description": "供 Device Sync 下发的签名（HMAC-SHA256/base64url，暂定机制；Draft 为 null）"
+          },
+          "version": { "type": "integer", "minimum": 1 },
+          "effective": { "type": "boolean", "description": "查询时点派生（DOM-02 isLicenseEffective）" },
+          "createdBy": { "type": "string", "minLength": 1 },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "LicenseHistoryEntry": {
+        "type": "object",
+        "required": ["historyId", "fromStatus", "toStatus", "actorId", "reason", "createdAt"],
+        "additionalProperties": false,
+        "properties": {
+          "historyId": { "type": "string", "minLength": 1 },
+          "fromStatus": {
+            "type": ["string", "null"],
+            "enum": ["Draft", "Issued", "Active", "ExpiringSoon", "Renewed", "Expired", "Revoked", null]
+          },
+          "toStatus": {
+            "type": "string",
+            "enum": ["Draft", "Issued", "Active", "ExpiringSoon", "Renewed", "Expired", "Revoked"]
+          },
+          "actorId": { "type": ["string", "null"] },
+          "reason": { "type": ["string", "null"] },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "LicenseSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/License" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "LicenseRenewSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "allOf": [
+              { "$ref": "#/components/schemas/License" },
+              {
+                "type": "object",
+                "required": ["replayed"],
+                "properties": { "replayed": { "type": "boolean", "description": "同目标重复请求幂等回放" } }
+              }
+            ]
+          },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "LicenseEvaluateSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "allOf": [
+              { "$ref": "#/components/schemas/License" },
+              {
+                "type": "object",
+                "required": ["changed"],
+                "properties": { "changed": { "type": "boolean", "description": "是否发生时间派生/结算迁移" } }
+              }
+            ]
+          },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "LicenseHistorySuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/LicenseHistoryEntry" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}

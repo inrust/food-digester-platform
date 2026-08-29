@@ -13,6 +13,7 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
  * BE-DEV-03 已落地：/api/v1/admin/devices/{deviceId}/suspend|reactivate 挂起/恢复（见 ./admin/device-status）；
  * BE-DEV-04 已落地：/api/v1/admin/devices/{deviceId}/retire[/complete] 退役工作流（见 ./admin/device-retirement）；
  * BE-SYNC-02 已落地：/api/v1/device/deactivate 退役确认（见 ./device/deactivate）；
+ * BE-LIC-01 已落地：/api/v1/admin/licenses 创建/签发/激活/续期/吊销/详情/历史（见 ./admin/license）；
  * 其余 /api/v1/device、/admin、/customer、/internal 路由在后续 BE 任务实现。
  */
 export const SERVICE_NAME = 'cloud-api';
@@ -32,5 +33,6 @@ export * from './admin/device/index.js';
 export * from './admin/device-assignment/index.js';
 export * from './admin/device-status/index.js';
 export * from './admin/device-retirement/index.js';
+export * from './admin/license/index.js';
 export * from './provisioning/index.js';
 export * from './device/index.js';
