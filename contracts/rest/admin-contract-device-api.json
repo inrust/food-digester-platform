@@ -1,0 +1,370 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Contract-Device API",
+    "version": "0.1.0",
+    "description": "BE-CON-02 Contract 与 Device 关联接口（Cognito 认证；contract:write=PlatformSuperAdmin，contract:read 另含 PlatformOperator/Auditor）：查询可关联设备、批量关联、批量解绑和关联历史；Contract 详情的设备视图返回 Region/Subregion/Site、ID、别名、四轴状态（lifecycle/operational/connectivity/license）、固件和租期展示值。设备与 Contract 必须属于同一 Customer（跨 Customer → 409）；默认禁止有效期重叠的多个有效 Contract（服务预检 + DB 排他约束 contract_devices_no_overlap 兜底，重叠 → 409）；批量操作全成或全败（单事务）；关联事务不直接改变 Device lifecycle 或 License（DEC-007：解绑不联动撤销 License；Contract 关联不替代 Assignment，不代表 Entitlement）。所有变化经 DOM-03 审计（contract.devices.bind/unbind，强制原因）。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-007@0.2.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/contracts/{contractId}/devices": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listContractDevices",
+        "summary": "已关联设备（四轴状态/固件/Region/Subregion/Site/别名 + 租期展示值）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "已关联设备列表",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ContractDeviceListSuccess" } }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/contracts/{contractId}/available-devices": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listAvailableDevices",
+        "summary": "可关联设备（同 Customer、非 Retired、当前无 ACTIVE 关联）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "可关联设备列表",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/AvailableDeviceListSuccess" } }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/contracts/{contractId}/associations": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listContractAssociations",
+        "summary": "关联历史（ACTIVE/ENDED，创建倒序）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "关联历史",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssociationListSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/contracts/{contractId}/devices/bind": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "bindContractDevices",
+        "summary": "批量关联（全成或全败；窗口缺省为合同窗口；强制原因）",
+        "description": "关联窗口必须落在合同窗口内；同设备 ACTIVE 关联重叠/重复关联/跨 Customer/Retired/EXPIRED/TERMINATED 合同 → 409。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/BindDevicesRequest" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "已关联",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BindDevicesSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/contracts/{contractId}/devices/unbind": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "unbindContractDevices",
+        "summary": "批量解绑（全成或全败；强制原因；不撤销 License）",
+        "description": "任一设备无本合同 ACTIVE 关联 → 409 且全部回滚；解绑闭合关联窗口（status=ENDED），不改变 Device lifecycle 与 License（DEC-007）。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UnbindDevicesRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已解绑",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UnbindDevicesSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：deviceIds 为空/窗口非法/缺原因）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证（UNAUTHENTICATED）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（FORBIDDEN）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "不存在（NOT_FOUND）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Conflict": {
+        "description": "冲突（CONFLICT：跨 Customer/重叠租期/重复关联/合同状态不允许/无 ACTIVE 关联）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "服务器内部错误（INTERNAL_ERROR）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "BindDevicesRequest": {
+        "type": "object",
+        "required": ["deviceIds", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "validFrom": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "description": "关联窗口起点（缺省 = 合同 startAt；必须落在合同窗口内）"
+          },
+          "validTo": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "description": "关联窗口终点（缺省 = 合同 endAt）"
+          },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      },
+      "UnbindDevicesRequest": {
+        "type": "object",
+        "required": ["deviceIds", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      },
+      "ContractDeviceAssociation": {
+        "type": "object",
+        "required": [
+          "associationId",
+          "deviceId",
+          "customerId",
+          "validFrom",
+          "validTo",
+          "status",
+          "createdAt",
+          "endedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "associationId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "validFrom": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "validTo": { "type": ["string", "null"], "format": "date-time", "description": "租期展示值（解绑后闭合）" },
+          "status": { "type": "string", "enum": ["ACTIVE", "ENDED"] },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "endedAt": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "ContractDeviceSite": {
+        "type": "object",
+        "required": ["name", "region", "subregion"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "region": { "type": ["string", "null"] },
+          "subregion": { "type": ["string", "null"] }
+        }
+      },
+      "ContractDeviceSnapshot": {
+        "type": "object",
+        "required": [
+          "deviceId",
+          "serialNumber",
+          "model",
+          "alias",
+          "firmwareVersion",
+          "site",
+          "lifecycleStatus",
+          "operationalStatus",
+          "connectivity",
+          "licenseStatus",
+          "lastHeartbeatAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "serialNumber": { "type": "string", "minLength": 1 },
+          "model": { "type": "string", "minLength": 1 },
+          "alias": { "type": ["string", "null"] },
+          "firmwareVersion": { "type": ["string", "null"], "description": "固件" },
+          "site": { "anyOf": [{ "$ref": "#/components/schemas/ContractDeviceSite" }, { "type": "null" }] },
+          "lifecycleStatus": { "type": "string", "description": "生命周期轴（DOM-01）" },
+          "operationalStatus": { "type": ["string", "null"], "description": "Operational 轴（DEC-010）" },
+          "connectivity": { "type": "string", "enum": ["ONLINE", "OFFLINE"], "description": "连接轴（心跳阈值派生）" },
+          "licenseStatus": { "type": ["string", "null"], "description": "授权轴：当前有效 License 状态（DOM-02）" },
+          "lastHeartbeatAt": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "ContractDeviceDetail": {
+        "type": "object",
+        "required": ["association", "device"],
+        "additionalProperties": false,
+        "properties": {
+          "association": { "$ref": "#/components/schemas/ContractDeviceAssociation" },
+          "device": { "$ref": "#/components/schemas/ContractDeviceSnapshot" }
+        }
+      },
+      "AvailableDevice": {
+        "type": "object",
+        "required": ["deviceId", "serialNumber", "model", "alias", "lifecycleStatus", "site"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "serialNumber": { "type": "string", "minLength": 1 },
+          "model": { "type": "string", "minLength": 1 },
+          "alias": { "type": ["string", "null"] },
+          "lifecycleStatus": { "type": "string" },
+          "site": { "anyOf": [{ "$ref": "#/components/schemas/ContractDeviceSite" }, { "type": "null" }] }
+        }
+      },
+      "BindDevicesResult": {
+        "type": "object",
+        "required": ["contractId", "bound", "associations"],
+        "additionalProperties": false,
+        "properties": {
+          "contractId": { "type": "string", "minLength": 1 },
+          "bound": { "type": "array", "items": { "type": "string" } },
+          "associations": { "type": "array", "items": { "$ref": "#/components/schemas/ContractDeviceAssociation" } }
+        }
+      },
+      "UnbindDevicesResult": {
+        "type": "object",
+        "required": ["contractId", "unbound"],
+        "additionalProperties": false,
+        "properties": {
+          "contractId": { "type": "string", "minLength": 1 },
+          "unbound": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "ContractDeviceListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/ContractDeviceDetail" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "AvailableDeviceListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/AvailableDevice" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "AssociationListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/ContractDeviceAssociation" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "BindDevicesSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/BindDevicesResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "UnbindDevicesSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/UnbindDevicesResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}

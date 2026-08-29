@@ -107,3 +107,29 @@ export function assertContractEditable(
     throw new ContractStateError('CONFLICT', 'startAt/endAt can only be edited while DRAFT; use renew to extend');
   }
 }
+
+// ---------- 设备关联（BE-CON-02） ----------
+
+/** 可关联状态：EXPIRED/TERMINATED 不可新增关联（DRAFT/EFFECTIVE/EXPIRING_SOON 可）。 */
+export function assertContractAssociatable(status: ContractStatus): void {
+  if (status === 'EXPIRED' || status === 'TERMINATED') {
+    throw new ContractStateError('CONFLICT', 'An expired or terminated contract cannot accept device associations');
+  }
+}
+
+/** 关联窗口：validFrom < validTo（validTo null = 无限期仅限 DRAFT 前禁用，调用方须闭合）且必须落在合同窗口内。 */
+export function assertAssociationWindow(
+  contract: { readonly startAt: Date; readonly endAt: Date },
+  validFrom: Date,
+  validTo: Date,
+): void {
+  assertContractWindow(validFrom, validTo);
+  if (validFrom.getTime() < contract.startAt.getTime() || validTo.getTime() > contract.endAt.getTime()) {
+    throw new ContractStateError('VALIDATION_FAILED', 'The association window must be within the contract window');
+  }
+}
+
+/** 区间重叠判定（[from,to) 半开区间；用于同设备有效关联不重叠的预检，DB 排他约束兜底）。 */
+export function windowsOverlap(aFrom: Date, aTo: Date, bFrom: Date, bTo: Date): boolean {
+  return aFrom.getTime() < bTo.getTime() && bFrom.getTime() < aTo.getTime();
+}

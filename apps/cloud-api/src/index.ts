@@ -16,6 +16,7 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
  * BE-LIC-01 已落地：/api/v1/admin/licenses 创建/签发/激活/续期/吊销/详情/历史（见 ./admin/license）；
  * BE-CFG-01 已落地：/api/v1/admin/configurations 配置版本管理（见 ./admin/configuration）；
  * BE-CON-01 已落地：/api/v1/admin/contracts Contract CRUD/状态（见 ./admin/contract）；
+ * BE-CON-02 已落地：/api/v1/admin/contracts/{id}/devices 关联/解绑/历史（见 ./admin/contract-device）；
  * 其余 /api/v1/device、/admin、/customer、/internal 路由在后续 BE 任务实现。
  */
 export const SERVICE_NAME = 'cloud-api';
@@ -38,5 +39,6 @@ export * from './admin/device-retirement/index.js';
 export * from './admin/license/index.js';
 export * from './admin/configuration/index.js';
 export * from './admin/contract/index.js';
+export * from './admin/contract-device/index.js';
 export * from './provisioning/index.js';
 export * from './device/index.js';

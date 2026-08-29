@@ -98,7 +98,8 @@ function contractDevices(client: DbClient): ContractDeviceDelegate {
   return (client as unknown as Record<string, unknown>).contractDevice as ContractDeviceDelegate;
 }
 
-const DEVICE_INCLUDE = {
+/** 设备台账关系 include（BE-CON-02 等复用）。 */
+export const DEVICE_INCLUDE = {
   customer: { select: { id: true, name: true } },
   site: { select: { id: true, name: true, region: true, subregion: true } },
   latestState: { select: { lastHeartbeatAt: true, operationalStatus: true } },

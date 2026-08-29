@@ -6,12 +6,15 @@ import {
   CONTRACT_EXPIRING_SOON_WINDOW_DAYS,
   ContractStateError,
   assertContractActivatable,
+  assertContractAssociatable,
   assertContractEditable,
   assertContractTerminatable,
   assertContractWindow,
+  assertAssociationWindow,
   deriveContractStatus,
   evaluateContractAt,
   renewContractWindow,
+  windowsOverlap,
 } from '../src/index.js';
 import type { ContractSnapshot } from '../src/index.js';
 
@@ -127,5 +130,45 @@ describe('续约', () => {
       codeOf(() => renewContractWindow(snap('EFFECTIVE'), new Date(END.getTime() - DAY), NOW)),
       'VALIDATION_FAILED',
     );
+  });
+});
+
+describe('设备关联规则（BE-CON-02）', () => {
+  test('EXPIRED/TERMINATED 不可关联；其余状态可', () => {
+    for (const s of ['DRAFT', 'EFFECTIVE', 'EXPIRING_SOON'] as const) {
+      assert.doesNotThrow(() => assertContractAssociatable(s));
+    }
+    assert.equal(
+      codeOf(() => assertContractAssociatable('EXPIRED')),
+      'CONFLICT',
+    );
+    assert.equal(
+      codeOf(() => assertContractAssociatable('TERMINATED')),
+      'CONFLICT',
+    );
+  });
+
+  test('关联窗口必须有效且落在合同窗口内', () => {
+    const contract = { startAt: START, endAt: END };
+    assert.doesNotThrow(() => assertAssociationWindow(contract, START, END));
+    assert.equal(
+      codeOf(() => assertAssociationWindow(contract, new Date(START.getTime() - DAY), END)),
+      'VALIDATION_FAILED',
+    );
+    assert.equal(
+      codeOf(() => assertAssociationWindow(contract, START, new Date(END.getTime() + DAY))),
+      'VALIDATION_FAILED',
+    );
+    assert.equal(
+      codeOf(() => assertAssociationWindow(contract, END, END)),
+      'VALIDATION_FAILED',
+    );
+  });
+
+  test('windowsOverlap 半开区间判定', () => {
+    const a = [START, END] as const;
+    assert.ok(windowsOverlap(a[0], a[1], new Date(END.getTime() - DAY), new Date(END.getTime() + DAY)));
+    assert.ok(!windowsOverlap(a[0], a[1], END, new Date(END.getTime() + DAY)), '[from,to) 相邻不重叠');
+    assert.ok(!windowsOverlap(a[0], a[1], new Date(START.getTime() - 2 * DAY), START));
   });
 });
