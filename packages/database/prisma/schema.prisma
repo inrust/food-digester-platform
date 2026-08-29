@@ -372,14 +372,16 @@ model LicenseHistory {
 // ---------- 配置 ----------
 
 model DeviceConfiguration {
-  id          String   @id @default(uuid())
-  name        String
-  targetModel String?  @map("target_model") // 按设备或型号发布
-  createdBy   String   @map("created_by")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  id             String   @id @default(uuid())
+  name           String
+  targetModel    String?  @map("target_model") // 按设备或型号发布（二选一，CHECK 兜底）
+  targetDeviceId String?  @map("target_device_id") // BE-CFG-01：按设备发布
+  createdBy      String   @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   versions ConfigurationVersion[]
 
+  @@index([targetDeviceId])
   @@map("device_configurations")
 }
 

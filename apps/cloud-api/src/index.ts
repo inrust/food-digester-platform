@@ -34,5 +34,6 @@ export * from './admin/device-assignment/index.js';
 export * from './admin/device-status/index.js';
 export * from './admin/device-retirement/index.js';
 export * from './admin/license/index.js';
+export * from './admin/configuration/index.js';
 export * from './provisioning/index.js';
 export * from './device/index.js';

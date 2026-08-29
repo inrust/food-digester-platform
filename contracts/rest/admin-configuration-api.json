@@ -1,0 +1,542 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Configuration API",
+    "version": "0.1.0",
+    "description": "BE-CFG-01 Configuration 版本管理接口（Cognito 认证；config:publish=PlatformSuperAdmin/PlatformOperator，config:read 另含 Auditor）：创建不可变配置版本（协议允许的图像宽高/上传间隔、旋转间隔 M/时长 N、电机过载电流、最低/最高加热温度、语言、heartbeatInterval/telemetryInterval/cameraRefreshInterval/temperatureThreshold 完整快照），按设备或型号发布并查询同步状态。频率、尺寸和阈值做范围与交叉校验（minTemperature<maxTemperature、旋转时长 N<间隔 M）；历史版本不可覆盖（DRAFT→PUBLISHED 单向，payload 无更新路径），旧版本仍可审计读取；发布生成 CONFIG_CHANGED（Outbox 下行 SYNC，每目标设备一条）。派生字段（Contract/Region/Subregion/Site/Alias）从业务实体读取、配置页只读展示，随配置提交即 400；云平台域名/NTP 在 PDF 明确允许前不是下发字段，提交即 400。允许范围为暂定值（领域常量 CONFIGURATION_LIMITS，可整体替换）。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/configurations": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createConfiguration",
+        "summary": "创建配置（targetModel / targetDeviceId 二选一，DB CHECK 兜底）",
+        "security": [{ "CognitoJwt": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationCreateRequest" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "配置已创建",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationSummarySuccess" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listConfigurations",
+        "summary": "配置列表（可按 targetModel/targetDeviceId 过滤）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "targetModel", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "targetDeviceId", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "配置列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationListSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/configurations/{configurationId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getConfiguration",
+        "summary": "配置详情（版本列表 + 派生只读上下文）",
+        "description": "按设备发布时返回 derivedContext（Alias/Site/Region/Subregion/Contract，从业务实体读取，只读展示）。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "configurationId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "配置详情",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationDetailSuccess" } }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/configurations/{configurationId}/versions": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createConfigurationVersion",
+        "summary": "创建不可变配置版本（DRAFT；版本号递增）",
+        "description": "payload 为完整快照，封闭 Schema：范围与交叉校验；派生字段/未冻结网络字段提交即 400。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "configurationId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationVersionCreateRequest" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "版本已创建（DRAFT）",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationVersionSuccess" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/configurations/{configurationId}/versions/{version}/publish": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "publishConfigurationVersion",
+        "summary": "发布版本（DRAFT→PUBLISHED；CONFIG_CHANGED 通知目标设备）",
+        "description": "重复发布/并发发布 → 409（历史版本不可覆盖）；每个非 Retired 目标设备一条 CONFIG_CHANGED（deviceAction=SYNC）。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "configurationId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "version", "in": "path", "required": true, "schema": { "type": "integer", "minimum": 1 } }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationPublishRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已发布",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationPublishSuccess" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/configurations/{configurationId}/versions/{version}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getConfigurationVersion",
+        "summary": "版本详情（旧版本仍可审计读取）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "configurationId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "version", "in": "path", "required": true, "schema": { "type": "integer", "minimum": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "版本详情",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationVersionSuccess" } }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/configurations/{configurationId}/versions/{version}/status": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getConfigurationVersionStatus",
+        "summary": "发布同步状态（每目标设备的通知投递状态）",
+        "description": "notificationStatus 为 CONFIG_CHANGED Outbox 投递状态（PENDING/PUBLISHED/FAILED）；设备确认回执由 BE-SYNC-01 的 lastSyncTime 机制补齐。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "configurationId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "version", "in": "path", "required": true, "schema": { "type": "integer", "minimum": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "同步状态",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationSyncStatusSuccess" } }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：非法频率/尺寸/阈值、交叉校验失败、派生字段、未冻结网络字段）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证（UNAUTHENTICATED）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（FORBIDDEN）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "不存在（NOT_FOUND）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Conflict": {
+        "description": "冲突（CONFLICT：已发布不可覆盖/并发版本）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "服务器内部错误（INTERNAL_ERROR）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "ConfigurationCreateRequest": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "description": "targetModel 与 targetDeviceId 必须且只能提供一个（服务端校验 + DB CHECK）",
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "targetModel": { "type": "string", "minLength": 1, "description": "按型号发布" },
+          "targetDeviceId": { "type": "string", "minLength": 1, "description": "按设备发布" },
+          "reason": { "type": "string", "maxLength": 500 }
+        }
+      },
+      "ConfigurationPayloadImage": {
+        "type": "object",
+        "required": ["width", "height", "uploadIntervalSeconds"],
+        "additionalProperties": false,
+        "properties": {
+          "width": { "type": "integer", "minimum": 160, "maximum": 1920 },
+          "height": { "type": "integer", "minimum": 120, "maximum": 1080 },
+          "uploadIntervalSeconds": { "type": "integer", "minimum": 60, "maximum": 86400 }
+        }
+      },
+      "ConfigurationPayloadRotation": {
+        "type": "object",
+        "required": ["intervalMinutes", "durationSeconds"],
+        "additionalProperties": false,
+        "description": "交叉校验：durationSeconds（N）必须小于 intervalMinutes（M）",
+        "properties": {
+          "intervalMinutes": { "type": "integer", "minimum": 1, "maximum": 1440 },
+          "durationSeconds": { "type": "integer", "minimum": 5, "maximum": 3600 }
+        }
+      },
+      "ConfigurationPayloadMotor": {
+        "type": "object",
+        "required": ["overloadCurrentAmps"],
+        "additionalProperties": false,
+        "properties": {
+          "overloadCurrentAmps": { "type": "number", "minimum": 0.1, "maximum": 32 }
+        }
+      },
+      "ConfigurationPayloadHeating": {
+        "type": "object",
+        "required": ["minTemperatureCelsius", "maxTemperatureCelsius"],
+        "additionalProperties": false,
+        "description": "交叉校验：minTemperatureCelsius < maxTemperatureCelsius",
+        "properties": {
+          "minTemperatureCelsius": { "type": "number", "minimum": 0, "maximum": 80 },
+          "maxTemperatureCelsius": { "type": "number", "minimum": 0, "maximum": 120 }
+        }
+      },
+      "ConfigurationPayload": {
+        "type": "object",
+        "required": [
+          "image",
+          "rotation",
+          "motor",
+          "heating",
+          "language",
+          "heartbeatInterval",
+          "telemetryInterval",
+          "cameraRefreshInterval",
+          "temperatureThreshold"
+        ],
+        "additionalProperties": false,
+        "description": "配置完整快照（封闭 Schema）。派生字段（contract/region/subregion/site/alias）与未冻结网络字段（cloudDomain/ntpServer）提交即 400。范围为暂定值（CONFIGURATION_LIMITS）。",
+        "properties": {
+          "image": { "$ref": "#/components/schemas/ConfigurationPayloadImage" },
+          "rotation": { "$ref": "#/components/schemas/ConfigurationPayloadRotation" },
+          "motor": { "$ref": "#/components/schemas/ConfigurationPayloadMotor" },
+          "heating": { "$ref": "#/components/schemas/ConfigurationPayloadHeating" },
+          "language": { "type": "string", "enum": ["zh-CN", "en-US"] },
+          "heartbeatInterval": { "type": "integer", "minimum": 30, "maximum": 600 },
+          "telemetryInterval": { "type": "integer", "minimum": 60, "maximum": 3600 },
+          "cameraRefreshInterval": { "type": "integer", "minimum": 5, "maximum": 600 },
+          "temperatureThreshold": { "type": "number", "minimum": 0, "maximum": 150 }
+        }
+      },
+      "ConfigurationVersionCreateRequest": {
+        "type": "object",
+        "required": ["payload"],
+        "additionalProperties": false,
+        "properties": {
+          "payload": { "$ref": "#/components/schemas/ConfigurationPayload" },
+          "changeNote": { "type": "string", "maxLength": 500 },
+          "reason": { "type": "string", "maxLength": 500 }
+        }
+      },
+      "ConfigurationPublishRequest": {
+        "type": "object",
+        "required": [],
+        "additionalProperties": false,
+        "properties": {
+          "effectiveAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "description": "生效时间（缺省为发布时间）"
+          },
+          "reason": { "type": "string", "maxLength": 500 }
+        }
+      },
+      "ConfigurationSummary": {
+        "type": "object",
+        "required": [
+          "configurationId",
+          "name",
+          "targetModel",
+          "targetDeviceId",
+          "versionCount",
+          "latestPublishedVersion",
+          "createdBy",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "configurationId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "targetModel": { "type": ["string", "null"] },
+          "targetDeviceId": { "type": ["string", "null"] },
+          "versionCount": { "type": "integer", "minimum": 0 },
+          "latestPublishedVersion": { "type": ["integer", "null"], "minimum": 1 },
+          "createdBy": { "type": "string", "minLength": 1 },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "ConfigurationVersion": {
+        "type": "object",
+        "required": [
+          "versionId",
+          "configurationId",
+          "version",
+          "payload",
+          "status",
+          "effectiveAt",
+          "changeNote",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "versionId": { "type": "string", "minLength": 1 },
+          "configurationId": { "type": "string", "minLength": 1 },
+          "version": { "type": "integer", "minimum": 1 },
+          "payload": { "$ref": "#/components/schemas/ConfigurationPayload" },
+          "status": { "type": "string", "enum": ["DRAFT", "PUBLISHED"] },
+          "effectiveAt": { "type": ["string", "null"], "format": "date-time", "description": "RFC 3339 UTC 时间戳" },
+          "changeNote": { "type": ["string", "null"] },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "ConfigurationDerivedContext": {
+        "type": "object",
+        "required": ["alias", "site", "region", "subregion", "contract"],
+        "additionalProperties": false,
+        "description": "派生只读字段：从业务实体读取，配置页只读展示，不得随配置提交",
+        "properties": {
+          "alias": { "type": ["string", "null"] },
+          "site": { "type": ["string", "null"] },
+          "region": { "type": ["string", "null"] },
+          "subregion": { "type": ["string", "null"] },
+          "contract": {
+            "type": ["object", "null"],
+            "required": ["contractNumber", "name"],
+            "additionalProperties": false,
+            "properties": {
+              "contractNumber": { "type": "string", "minLength": 1 },
+              "name": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      },
+      "ConfigurationDetail": {
+        "type": "object",
+        "required": [
+          "configurationId",
+          "name",
+          "targetModel",
+          "targetDeviceId",
+          "versionCount",
+          "latestPublishedVersion",
+          "createdBy",
+          "createdAt",
+          "versions",
+          "derivedContext"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "configurationId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "targetModel": { "type": ["string", "null"] },
+          "targetDeviceId": { "type": ["string", "null"] },
+          "versionCount": { "type": "integer", "minimum": 0 },
+          "latestPublishedVersion": { "type": ["integer", "null"], "minimum": 1 },
+          "createdBy": { "type": "string", "minLength": 1 },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "versions": { "type": "array", "items": { "$ref": "#/components/schemas/ConfigurationVersion" } },
+          "derivedContext": {
+            "anyOf": [{ "$ref": "#/components/schemas/ConfigurationDerivedContext" }, { "type": "null" }]
+          }
+        }
+      },
+      "ConfigurationPublishResult": {
+        "type": "object",
+        "required": ["version", "notifiedDeviceIds"],
+        "additionalProperties": false,
+        "properties": {
+          "version": { "$ref": "#/components/schemas/ConfigurationVersion" },
+          "notifiedDeviceIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "收到 CONFIG_CHANGED 通知的目标设备"
+          }
+        }
+      },
+      "ConfigurationSyncStatusTarget": {
+        "type": "object",
+        "required": ["deviceId", "notificationStatus"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "notificationStatus": {
+            "type": "string",
+            "enum": ["PENDING", "PUBLISHED", "FAILED"],
+            "description": "CONFIG_CHANGED Outbox 投递状态"
+          }
+        }
+      },
+      "ConfigurationSyncStatus": {
+        "type": "object",
+        "required": ["configurationId", "version", "status", "effectiveAt", "targets"],
+        "additionalProperties": false,
+        "properties": {
+          "configurationId": { "type": "string", "minLength": 1 },
+          "version": { "type": "integer", "minimum": 1 },
+          "status": { "type": "string", "enum": ["DRAFT", "PUBLISHED"] },
+          "effectiveAt": { "type": ["string", "null"], "format": "date-time", "description": "RFC 3339 UTC 时间戳" },
+          "targets": { "type": "array", "items": { "$ref": "#/components/schemas/ConfigurationSyncStatusTarget" } }
+        }
+      },
+      "ConfigurationSummarySuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/ConfigurationSummary" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "ConfigurationListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/ConfigurationSummary" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "ConfigurationDetailSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/ConfigurationDetail" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "ConfigurationVersionSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/ConfigurationVersion" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "ConfigurationPublishSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/ConfigurationPublishResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "ConfigurationSyncStatusSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/ConfigurationSyncStatus" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}
