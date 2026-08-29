@@ -1,0 +1,436 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Contract API",
+    "version": "0.1.0",
+    "description": "BE-CON-01 Contract CRUD 与状态接口（Cognito 认证；contract:write=PlatformSuperAdmin，contract:read 另含 PlatformOperator/Auditor）：列表（按派生状态 EFFECTIVE/EXPIRING_SOON/EXPIRED/TERMINATED 与 customerId 筛选）、详情、创建、编辑、激活、续约、终止、时间派生复验（evaluate，at 可注入）。状态机：DRAFT →activate→ EFFECTIVE →时间派生→ EXPIRING_SOON（30 天窗口暂定值）→ EXPIRED；任意非终态 →terminate（强制原因）→ TERMINATED。contractNumber 全局唯一；startAt<endAt（领域校验 + DB CHECK）；所有写操作强制 If-Match 乐观锁 + 原因 + 审计；Customer 联系方式按最小权限返回（contact 仅 SuperAdmin/Operator 可见，Auditor 视图为 null）。边界（DEC-007）：不管理价格/开票/收付款/电子签署；不自动创建、激活或续期 License。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-007@0.2.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/contracts": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createContract",
+        "summary": "创建 Contract（DRAFT；contractNumber 全局唯一；startAt<endAt）",
+        "security": [{ "CognitoJwt": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ContractCreateRequest" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contract 已创建",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContractSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listContracts",
+        "summary": "Contract 列表（按派生状态/customerId 筛选）",
+        "description": "status 筛选作用于查询时点派生状态（derivedStatus，不写回）。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["DRAFT", "EFFECTIVE", "EXPIRING_SOON", "EXPIRED", "TERMINATED"] }
+          },
+          { "name": "customerId", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract 列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContractListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/contracts/{contractId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getContract",
+        "summary": "Contract 详情",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract 详情",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContractSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "patch": {
+        "tags": ["admin"],
+        "operationId": "updateContract",
+        "summary": "编辑 Contract（If-Match + 强制原因；startAt/endAt 仅 DRAFT 可改）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string", "description": "当前 version（乐观锁；漂移 → 409 VERSION_CONFLICT）" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ContractUpdateRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已更新",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContractSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/contracts/{contractId}/activate": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "activateContract",
+        "summary": "激活 Contract（DRAFT→EFFECTIVE，If-Match + 强制原因）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "If-Match", "in": "header", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ContractReasonRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已激活",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContractSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/contracts/{contractId}/renew": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "renewContract",
+        "summary": "续约 Contract（延长 endAt，状态按新窗口重推导；If-Match + 强制原因）",
+        "description": "EFFECTIVE/EXPIRING_SOON/EXPIRED 可续约；newEndAt 必须晚于当前 endAt；DRAFT 走编辑，TERMINATED 不可续约。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "If-Match", "in": "header", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ContractRenewRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已续约",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContractSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/contracts/{contractId}/terminate": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "terminateContract",
+        "summary": "终止 Contract（任意非终态→TERMINATED，If-Match + 强制原因）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "If-Match", "in": "header", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ContractReasonRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已终止",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContractSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/contracts/{contractId}/evaluate": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "evaluateContract",
+        "summary": "时间派生复验（evaluateAt 可注入时间；到期边界复验并落库）",
+        "description": "EFFECTIVE→EXPIRING_SOON/EXPIRED、EXPIRING_SOON→EXPIRED；无变化时 changed=false 且无写入/审计。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "If-Match", "in": "header", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ContractEvaluateRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "评估结果",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContractEvaluateSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：缺 If-Match/原因、startAt≥endAt、非法状态筛选）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证（UNAUTHENTICATED）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（FORBIDDEN）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "不存在（NOT_FOUND）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Conflict": {
+        "description": "冲突（CONFLICT：重复编号/非法状态迁移；VERSION_CONFLICT：If-Match 漂移）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "服务器内部错误（INTERNAL_ERROR）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "ContractCreateRequest": {
+        "type": "object",
+        "required": ["contractNumber", "name", "customerId", "startAt", "endAt"],
+        "additionalProperties": false,
+        "properties": {
+          "contractNumber": { "type": "string", "minLength": 1, "maxLength": 100, "description": "全局唯一" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "contact": { "type": "string", "maxLength": 200, "description": "Customer 联系方式（最小权限返回）" },
+          "startAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "endAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp", "description": "必须晚于 startAt" },
+          "reason": { "type": "string", "maxLength": 500 }
+        }
+      },
+      "ContractUpdateRequest": {
+        "type": "object",
+        "required": ["reason"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "contact": { "type": ["string", "null"], "maxLength": 200 },
+          "startAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp", "description": "仅 DRAFT 可改" },
+          "endAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "description": "仅 DRAFT 可改；续约走 renew"
+          },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      },
+      "ContractReasonRequest": {
+        "type": "object",
+        "required": ["reason"],
+        "additionalProperties": false,
+        "properties": {
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      },
+      "ContractRenewRequest": {
+        "type": "object",
+        "required": ["newEndAt", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "newEndAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "description": "必须晚于当前 endAt"
+          },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      },
+      "ContractEvaluateRequest": {
+        "type": "object",
+        "required": [],
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "description": "评估时点（缺省为服务器当前时间；测试可注入）"
+          }
+        }
+      },
+      "Contract": {
+        "type": "object",
+        "required": [
+          "contractId",
+          "contractNumber",
+          "name",
+          "customerId",
+          "contact",
+          "startAt",
+          "endAt",
+          "status",
+          "derivedStatus",
+          "version",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "contractId": { "type": "string", "minLength": 1 },
+          "contractNumber": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "contact": {
+            "type": ["string", "null"],
+            "description": "最小权限：仅 SuperAdmin/Operator 可见，Auditor 视图为 null"
+          },
+          "startAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "endAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "status": {
+            "type": "string",
+            "enum": ["DRAFT", "EFFECTIVE", "EXPIRING_SOON", "EXPIRED", "TERMINATED"],
+            "description": "落库状态（显式动作 + evaluate 写入）"
+          },
+          "derivedStatus": {
+            "type": "string",
+            "enum": ["DRAFT", "EFFECTIVE", "EXPIRING_SOON", "EXPIRED", "TERMINATED"],
+            "description": "查询时点派生状态（不写回；筛选依据）"
+          },
+          "version": { "type": "integer", "minimum": 1 },
+          "createdBy": { "type": "string", "minLength": 1 },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "ContractSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/Contract" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "ContractListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Contract" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "ContractEvaluateSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "allOf": [
+              { "$ref": "#/components/schemas/Contract" },
+              {
+                "type": "object",
+                "required": ["changed"],
+                "properties": { "changed": { "type": "boolean", "description": "是否发生时间派生迁移" } }
+              }
+            ]
+          },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}
