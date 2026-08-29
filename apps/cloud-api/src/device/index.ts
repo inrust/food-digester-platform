@@ -1,5 +1,5 @@
 /**
- * BE-CERT-01 device 模块导出。
+ * device 模块导出（BE-CERT-01/02、BE-SYNC-02）。
  */
 export { createCertificateStatusHandler, deriveCertificateStatus } from './certificate-status.js';
 export type {
@@ -17,3 +17,24 @@ export type {
   CertificateRotateRequest,
   CertificateRotateResponse,
 } from './rotate-handler.js';
+export {
+  COMPLETION_DEVICE_CONFIRM,
+  DEACTIVATE_ERROR_HTTP_STATUS,
+  DeviceDeactivateError,
+  RETIREMENT_CONFIRMED,
+  RETIREMENT_PENDING,
+  confirmDeactivation,
+  verifyDeactivateIdentity,
+} from './deactivate.js';
+export type {
+  DeactivateErrorCode,
+  DeactivateIdentity,
+  DeactivationResult,
+  RevokedCertificateSummary,
+} from './deactivate.js';
+export { createDeviceDeactivateHandler } from './deactivate-handler.js';
+export type {
+  DeviceDeactivateHandlerDeps,
+  DeviceDeactivateRequest,
+  DeviceDeactivateResponse,
+} from './deactivate-handler.js';

@@ -141,6 +141,7 @@ model Device {
   rotationRequests CertificateRotationRequest[]
   licenses       License[]
   latestState    DeviceLatestState?
+  retirement     DeviceRetirement?
 
   @@map("devices")
 }
@@ -160,6 +161,25 @@ model CertificateRotationRequest {
 
   @@index([deviceId, status])
   @@map("certificate_rotation_requests")
+}
+
+// BE-SYNC-02 退役确认记录：BE-DEV-04 管理员 retire 创建 PENDING_CONFIRMATION；
+// 设备 Deactivate 确认（或 BE-DEV-04 force-complete）后 CONFIRMED 并完成证书停用
+model DeviceRetirement {
+  id                   String    @id @default(uuid())
+  deviceId             String    @unique @map("device_id")
+  status               String    @default("PENDING_CONFIRMATION") // PENDING_CONFIRMATION | CONFIRMED
+  reason               String
+  initiatedBy          String    @map("initiated_by")
+  initiatedAt          DateTime  @map("initiated_at") @db.Timestamptz
+  confirmedAt          DateTime? @map("confirmed_at") @db.Timestamptz
+  completionMethod     String?   @map("completion_method") // DEVICE_CONFIRM | FORCE_COMPLETE
+  certificateRevokedAt DateTime? @map("certificate_revoked_at") @db.Timestamptz
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  device Device @relation(fields: [deviceId], references: [id])
+
+  @@map("device_retirements")
 }
 
 model DeviceAssignment {
