@@ -1,0 +1,297 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Unified Device Sync API",
+    "version": "0.1.0",
+    "description": "BE-SYNC-01 统一设备同步接口（mTLS 认证，设备自身身份，AUTH-03 白名单校验）：接收 lastSyncTime，返回 Assignment（customerId/customerName、siteId/siteName、授权窗口）、Device Metadata（别名）、License/Entitlements/签名、Device Users（含 DEC-004 设备本地专用验证材料 version+kdf+salt+hash，Sync 域为唯一授权下发通道）、Configuration（设备定向优先、未来生效不下发）、Operational Status 的完整事实快照。快照为全量事实源：即使 etag 未变化也不省略任何必要域（设备无法安全缓存的域不下发增量）；etag 仅覆盖稳定域（snapshotAt/connectivity/lastHeartbeatAt 为 volatile，不参与）。设备调用节奏为设备契约（Active 5 分钟 / Suspended 15 分钟 / 重连与 Notification 后立即调用），云端不实现设备端定时器与本地缓存。Retired 设备由 AUTH-03 拒绝（403），不产生快照。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "SEC-001@1.0.0", "DEC-001@0.2.0", "DEC-004@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "device",
+      "description": "/api/v1/device/* 设备端 API",
+      "x-path-prefix": "/api/v1/device",
+      "x-auth": "DeviceMtls"
+    }
+  ],
+  "paths": {
+    "/api/v1/device/sync": {
+      "post": {
+        "tags": ["device"],
+        "operationId": "syncDevice",
+        "summary": "统一设备同步（完整事实源快照）",
+        "description": "身份即设备（mTLS 客户端证书，AUTH-03）。请求体封闭：仅 lastSyncTime（首次同步为 null 或可省略请求体）。响应始终为全量快照；etag 为稳定域内容寻址版本（SHA-256），供设备检测配置域变化。",
+        "security": [{ "DeviceMtls": [] }],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SyncRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "完整事实快照",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "请求体校验失败（VALIDATION_FAILED：未知字段/lastSyncTime 非 UTC 时间戳）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED：证书缺失/未登记/非 ACTIVE/过期）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "设备已退役（FORBIDDEN：Retired 设备拒绝一切接入，不产生快照）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "DeviceMtls": { "$ref": "openapi-base.json#/components/securitySchemes/DeviceMtls" }
+    },
+    "schemas": {
+      "SyncRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "lastSyncTime": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }],
+            "description": "上一次成功同步时点；首次同步为 null（或可省略请求体）"
+          }
+        }
+      },
+      "SyncAssignment": {
+        "type": "object",
+        "required": [
+          "assignmentId",
+          "customerId",
+          "customerName",
+          "siteId",
+          "siteName",
+          "region",
+          "subregion",
+          "assignedAt",
+          "endedAt"
+        ],
+        "additionalProperties": false,
+        "description": "当前 ACTIVE 分配与授权窗口（[assignedAt, endedAt)，ACTIVE 为 null）",
+        "properties": {
+          "assignmentId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "customerName": { "type": "string", "minLength": 1 },
+          "siteId": { "type": "string", "minLength": 1 },
+          "siteName": { "type": "string", "minLength": 1 },
+          "region": { "type": ["string", "null"] },
+          "subregion": { "type": ["string", "null"] },
+          "assignedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "endedAt": { "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }] }
+        }
+      },
+      "SyncDeviceMetadata": {
+        "type": "object",
+        "required": ["deviceId", "alias", "serialNumber", "model", "firmwareVersion"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "alias": { "type": ["string", "null"], "description": "Device Alias（管理后台可改，经本域下发）" },
+          "serialNumber": { "type": "string", "minLength": 1 },
+          "model": { "type": "string", "minLength": 1 },
+          "firmwareVersion": { "type": ["string", "null"] }
+        }
+      },
+      "SyncLicense": {
+        "type": "object",
+        "required": [
+          "licenseId",
+          "status",
+          "validFrom",
+          "validTo",
+          "entitlements",
+          "signature",
+          "version",
+          "effective"
+        ],
+        "additionalProperties": false,
+        "description": "当前 License：有效优先（状态有效且在有效期内），否则最新一条；签名供设备校验（Draft 无签名为 null）",
+        "properties": {
+          "licenseId": { "type": "string", "minLength": 1 },
+          "status": {
+            "type": "string",
+            "enum": ["Draft", "Issued", "Active", "ExpiringSoon", "Renewed", "Expired", "Revoked"]
+          },
+          "validFrom": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "validTo": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "entitlements": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["REMOTE_CONTROL", "OTA_UPDATE", "ESG_REPORTING"] },
+            "description": "启用的 Entitlement 代码"
+          },
+          "signature": {
+            "type": ["string", "null"],
+            "description": "License 规范载荷签名（HMAC-SHA256/base64url；暂定机制）"
+          },
+          "version": { "type": "integer", "minimum": 1 },
+          "effective": { "type": "boolean", "description": "查询时点派生：是否可支撑设备运行" }
+        }
+      },
+      "SyncDeviceUserVerifier": {
+        "type": "object",
+        "required": ["version", "kdf", "salt", "hash"],
+        "additionalProperties": false,
+        "description": "DEC-004 设备本地专用加盐验证材料（固定四字段）；禁止复用云端密码 Hash；kdf/version 在 DEC-004 冻结前可为 null",
+        "properties": {
+          "version": { "type": ["string", "null"], "description": "验证材料版本（算法迁移用）" },
+          "kdf": { "type": ["string", "null"], "description": "KDF 算法标识（DEC-004 冻结后必填）" },
+          "salt": { "type": "string", "minLength": 1, "description": "每用户独立随机 salt" },
+          "hash": { "type": "string", "minLength": 1, "description": "设备本地专用验证值" }
+        }
+      },
+      "SyncDeviceUser": {
+        "type": "object",
+        "required": ["deviceUserId", "username", "version", "assignedAt", "verifier"],
+        "additionalProperties": false,
+        "description": "授权到本设备的 ACTIVE 设备操作员（停用用户不下发）",
+        "properties": {
+          "deviceUserId": { "type": "string", "minLength": 1 },
+          "username": { "type": "string", "minLength": 1 },
+          "version": { "type": "integer", "minimum": 1, "description": "同步版本（任何用户/分配变化 +1）" },
+          "assignedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "verifier": { "$ref": "#/components/schemas/SyncDeviceUserVerifier" }
+        }
+      },
+      "SyncConfiguration": {
+        "type": "object",
+        "required": ["configurationId", "version", "payload", "effectiveAt"],
+        "additionalProperties": false,
+        "description": "当前有效配置（设备定向优先于型号定向；已发布且已到 effectiveAt 的最高版本；未来生效不下发）。payload 封闭结构见 admin-configuration-api.json ConfigurationPayload",
+        "properties": {
+          "configurationId": { "type": "string", "minLength": 1 },
+          "version": { "type": "integer", "minimum": 1 },
+          "payload": {
+            "type": "object",
+            "description": "配置完整快照（封闭 Schema，同 admin-configuration-api.json ConfigurationPayload）"
+          },
+          "effectiveAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "SyncOperationalStatus": {
+        "type": "object",
+        "required": ["lifecycleStatus", "operationalStatus", "connectivity", "lastHeartbeatAt", "syncIntervalSeconds"],
+        "additionalProperties": false,
+        "properties": {
+          "lifecycleStatus": {
+            "type": "string",
+            "enum": [
+              "PendingOnboarding",
+              "Rejected",
+              "OnboardingApproved",
+              "Onboarded",
+              "Assigned",
+              "Licensed",
+              "Active",
+              "Suspended"
+            ],
+            "description": "DOM-01 生命周期（Retired 由认证层 403，不产生快照）"
+          },
+          "operationalStatus": {
+            "oneOf": [
+              { "type": "string", "enum": ["Active", "Maintenance", "Suspended", "Retired"] },
+              { "type": "null" }
+            ],
+            "description": "运行状态轴（设备上报值；未上报时按生命周期兜底，无法兜底为 null）"
+          },
+          "connectivity": { "type": "string", "enum": ["ONLINE", "OFFLINE"], "description": "心跳阈值派生（不写回）" },
+          "lastHeartbeatAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "syncIntervalSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "设备契约同步节奏：Active=300、Suspended=900；Maintenance 经 DEC-001 行为矩阵注入（暂定 900）；其余沿用 Active 节奏（暂定）"
+          }
+        }
+      },
+      "DeviceSyncSnapshot": {
+        "type": "object",
+        "required": [
+          "deviceId",
+          "snapshotAt",
+          "lastSyncTime",
+          "etag",
+          "assignment",
+          "device",
+          "license",
+          "deviceUsers",
+          "configuration",
+          "operationalStatus"
+        ],
+        "additionalProperties": false,
+        "description": "完整事实源快照（全量，不做增量裁剪；未分配/未许可/无配置域为 null 或空数组）",
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "snapshotAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "lastSyncTime": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }],
+            "description": "请求回显"
+          },
+          "etag": {
+            "type": "string",
+            "minLength": 1,
+            "description": "稳定域内容寻址版本（SHA-256 hex）；volatile 域（snapshotAt/connectivity/lastHeartbeatAt）不参与"
+          },
+          "assignment": { "oneOf": [{ "$ref": "#/components/schemas/SyncAssignment" }, { "type": "null" }] },
+          "device": { "$ref": "#/components/schemas/SyncDeviceMetadata" },
+          "license": { "oneOf": [{ "$ref": "#/components/schemas/SyncLicense" }, { "type": "null" }] },
+          "deviceUsers": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SyncDeviceUser" }
+          },
+          "configuration": { "oneOf": [{ "$ref": "#/components/schemas/SyncConfiguration" }, { "type": "null" }] },
+          "operationalStatus": { "$ref": "#/components/schemas/SyncOperationalStatus" }
+        }
+      },
+      "SyncSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/DeviceSyncSnapshot" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}

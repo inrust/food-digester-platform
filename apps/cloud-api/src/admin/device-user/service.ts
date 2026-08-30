@@ -521,25 +521,63 @@ export async function getDeviceUser(
 
 // ---------- Sync 读取路径（BE-SYNC-01 消费） ----------
 
+/** DEC-004 验证材料（固定四字段 version+kdf+salt+hash）：仅经 Unified Device Sync 下发，查询 API 永不返回。 */
+export interface DeviceUserVerifierMaterial {
+  readonly version: string | null;
+  readonly kdf: string | null;
+  readonly salt: string;
+  readonly hash: string;
+}
+
+export interface DeviceUserSyncAssignment {
+  readonly deviceId: string;
+  readonly assignedAt: string;
+}
+
 export interface DeviceUserSyncEntry {
   readonly deviceUserId: string;
   readonly username: string;
   readonly version: number;
-  /** ACTIVE 分配的设备。 */
-  readonly deviceIds: readonly string[];
+  /** ACTIVE 分配的设备（含授权时间，供 Sync 按设备过滤）。 */
+  readonly assignments: readonly DeviceUserSyncAssignment[];
+  /** DEC-004 设备本地专用验证材料（仅 Sync 域下发）。 */
+  readonly verifier: DeviceUserVerifierMaterial;
+}
+
+interface SyncUserRow extends UserRow {
+  readonly verifierValue: string;
+  readonly verifierSalt: string;
+  readonly verifierKdf: string | null;
+  readonly verifierVersion: string | null;
+  readonly assignments: readonly { deviceId: string; assignedAt: Date }[];
 }
 
 /** Device Users 域同步读取：仅 ACTIVE 用户 + ACTIVE 分配（停用用户不进入新 Sync）。 */
 export async function listDeviceUsersForSync(deps: DeviceUserDeps, customerId: string): Promise<DeviceUserSyncEntry[]> {
-  const rows = await users(deps.client).findMany({
+  const rows = (await users(deps.client).findMany({
     where: { customerId, status: 'ACTIVE' },
-    include: { assignments: { where: { status: 'ACTIVE' }, select: { deviceId: true } } },
+    select: {
+      id: true,
+      customerId: true,
+      username: true,
+      displayName: true,
+      status: true,
+      version: true,
+      createdAt: true,
+      updatedAt: true,
+      verifierValue: true,
+      verifierSalt: true,
+      verifierKdf: true,
+      verifierVersion: true,
+      assignments: { where: { status: 'ACTIVE' }, select: { deviceId: true, assignedAt: true } },
+    },
     orderBy: { id: 'asc' },
-  });
+  })) as unknown as SyncUserRow[];
   return rows.map((r) => ({
     deviceUserId: r.id,
     username: r.username,
     version: r.version,
-    deviceIds: r.assignments.map((a) => a.deviceId),
+    assignments: r.assignments.map((a) => ({ deviceId: a.deviceId, assignedAt: a.assignedAt.toISOString() })),
+    verifier: { version: r.verifierVersion, kdf: r.verifierKdf, salt: r.verifierSalt, hash: r.verifierValue },
   }));
 }

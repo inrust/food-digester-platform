@@ -198,7 +198,7 @@ describe('完整链路：创建→修改→分配→撤销→停用', () => {
 
     // Sync 读取路径：ACTIVE 用户含 ACTIVE 分配
     let sync = await listDeviceUsersForSync({ client: prisma, now }, customerId);
-    assert.ok(sync.some((s) => s.deviceUserId === userId && s.deviceIds.includes(d1)));
+    assert.ok(sync.some((s) => s.deviceUserId === userId && s.assignments.some((a) => a.deviceId === d1)));
 
     await h.disable(writeReq(superAdmin, 2, { params: { deviceUserId: userId }, body: { reason: '停用' } }));
     sync = await listDeviceUsersForSync({ client: prisma, now }, customerId);
