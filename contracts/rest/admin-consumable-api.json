@@ -1,0 +1,200 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Consumable API",
+    "version": "0.1.0",
+    "description": "BE-CNS-01 耗材状态投影与查询接口（Cognito 认证，device:read；Customer 角色租户隔离）：查询设备上报的耗材类型（CARBON_FILTER/BIO_ADDITIVE，DEC-008 封闭集合）、剩余百分比、来源消息、observedAt 与 stale 状态；支持 Region/Subregion/Site、连接状态、关键字和耗材阈值筛选（AND 组合）；返回设备联系人授权摘要（仅 PlatformSuperAdmin/PlatformOperator/CustomerAdmin，其余角色为 null）。数据来源 device-reported-only：未上报维度为 null 且 remainingDisplay='unknown'（绝不默认 50%）；每设备每耗材仅维护最新投影，乱序消息不覆盖（投影写路径 recordConsumableReport 经 DEC-008 字典映射，未知名称失败关闭）。不预测更换日期、不虚构未上报值、不自动联系客户或创建采购单。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-008@0.2.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/consumables": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listConsumableStatus",
+        "summary": "耗材状态列表（Region/Subregion/Site、连接状态、关键字、耗材阈值筛选）",
+        "description": "两种耗材列（CARBON_FILTER/BIO_ADDITIVE）恒在；未上报为 null。maxRemainingPercent 配合 consumableType（缺省任一已上报耗材）做阈值筛选。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "region", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "subregion", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "siteId", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "connectivity",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["ONLINE", "OFFLINE"] }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "description": "设备 ID/序列号/别名" }
+          },
+          {
+            "name": "maxRemainingPercent",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 0, "maximum": 100 }
+          },
+          {
+            "name": "consumableType",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["CARBON_FILTER", "BIO_ADDITIVE"] }
+          },
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "description": "平台角色可用；Customer 角色强制本 Customer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "耗材状态列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConsumableListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：非法筛选值）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证（UNAUTHENTICATED）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（FORBIDDEN）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "服务器内部错误（INTERNAL_ERROR）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "ConsumableValue": {
+        "type": "object",
+        "required": ["remainingPercent", "remainingDisplay", "stale", "observedAt", "sourceMessageId"],
+        "additionalProperties": false,
+        "properties": {
+          "remainingPercent": {
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 100,
+            "description": "设备上报剩余百分比；未上报为 null（云端不臆测）"
+          },
+          "remainingDisplay": {
+            "type": "string",
+            "description": "展示值：'<n>%' 或 'unknown'（未知值显示 unknown 而非 50%）"
+          },
+          "stale": { "type": "boolean", "description": "observedAt 超过阈值或未上报 → true（读取时点派生）" },
+          "observedAt": { "type": ["string", "null"], "format": "date-time" },
+          "sourceMessageId": { "type": ["string", "null"], "description": "来源消息 ID" }
+        }
+      },
+      "ConsumableSite": {
+        "type": "object",
+        "required": ["siteId", "name", "region", "subregion"],
+        "additionalProperties": false,
+        "properties": {
+          "siteId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "region": { "type": ["string", "null"] },
+          "subregion": { "type": ["string", "null"] }
+        }
+      },
+      "ConsumableContact": {
+        "type": "object",
+        "required": ["name", "phone", "email"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": ["string", "null"] },
+          "phone": { "type": ["string", "null"] },
+          "email": { "type": ["string", "null"] }
+        }
+      },
+      "ConsumableStatus": {
+        "type": "object",
+        "required": [
+          "deviceId",
+          "serialNumber",
+          "model",
+          "alias",
+          "lifecycleStatus",
+          "site",
+          "connectivity",
+          "consumables",
+          "contact"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "serialNumber": { "type": "string", "minLength": 1 },
+          "model": { "type": "string", "minLength": 1 },
+          "alias": { "type": ["string", "null"] },
+          "lifecycleStatus": { "type": "string" },
+          "site": { "anyOf": [{ "$ref": "#/components/schemas/ConsumableSite" }, { "type": "null" }] },
+          "connectivity": {
+            "type": "string",
+            "enum": ["ONLINE", "OFFLINE"],
+            "description": "连接状态（心跳阈值派生）"
+          },
+          "consumables": {
+            "type": "object",
+            "required": ["CARBON_FILTER", "BIO_ADDITIVE"],
+            "additionalProperties": false,
+            "properties": {
+              "CARBON_FILTER": { "anyOf": [{ "$ref": "#/components/schemas/ConsumableValue" }, { "type": "null" }] },
+              "BIO_ADDITIVE": { "anyOf": [{ "$ref": "#/components/schemas/ConsumableValue" }, { "type": "null" }] }
+            }
+          },
+          "contact": {
+            "anyOf": [{ "$ref": "#/components/schemas/ConsumableContact" }, { "type": "null" }],
+            "description": "设备联系人授权摘要；未授权角色（Auditor/CustomerViewer）为 null"
+          }
+        }
+      },
+      "ConsumableListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/ConsumableStatus" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}

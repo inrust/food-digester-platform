@@ -502,7 +502,7 @@ model TelemetryDaily {
 model ConsumableProjection {
   id               String    @id @default(uuid())
   deviceId         String    @map("device_id")
-  customerId       String    @map("customer_id")
+  customerId       String?   @map("customer_id") // 冗余查询列；设备未分配 Customer 时为 null（BE-CNS-01）
   consumableType   String    @map("consumable_type") // CARBON_FILTER | BIO_ADDITIVE（封闭集合，DEC-008）
   // 仅保存设备上报值；未上报为 null（未知），云端不得臆测
   remainingPercent Int?      @map("remaining_percent")
