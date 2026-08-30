@@ -21,6 +21,7 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
  * BE-CNS-01 已落地：/api/v1/admin/consumables 耗材状态查询 + 投影保存（见 ./consumable）；
  * BE-CNS-02 已落地：/api/v1/admin/consumable-requests 更换申请工作流（见 ./consumable）；
  * BE-DUSR-01 已落地：/api/v1/admin/device-users 设备操作员管理（见 ./admin/device-user）；
+ * BE-DUSR-02 已落地：设备本地密码验证值生成器（KDF adapter/DTO/脱敏管线，DEC-004 冻结前 fail-closed，见 ./admin/device-user/verifier）；
  * 其余 /api/v1/device、/admin、/customer、/internal 路由在后续 BE 任务实现。
  */
 export const SERVICE_NAME = 'cloud-api';
