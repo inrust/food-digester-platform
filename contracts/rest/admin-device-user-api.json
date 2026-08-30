@@ -1,0 +1,440 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Device User API",
+    "version": "0.1.0",
+    "description": "BE-DUSR-01 设备操作员管理接口（Cognito 认证；device-user:write=PlatformSuperAdmin/CustomerAdmin（CustomerAdmin 仅本 Customer，租户强制；DEC-012 矩阵中 PlatformOperator 无 device-user 权限），device-user:read=SuperAdmin/Auditor/CustomerAdmin/CustomerViewer + Customer 租户隔离）：创建、修改（含验证材料轮换）、停用、批量分配/撤销设备和列表。账号与云端 Cognito 用户分离（DEC-004：仅预计算验证材料 verifierValue/verifierSalt，拒收明文密码与云端密码 Hash；DTO/审计永不返回验证材料）。同步版本：任何用户/分配变化 version+1（兼 If-Match 乐观锁）并向受影响设备生成 USERS_CHANGED（Outbox，deviceAction=SYNC）；停用用户不进入新 Sync。分配约束：设备与用户同 Customer（跨 Customer → 409）、非 Retired、停用用户不可新分配；批量全成或全败；分配历史 append-only（ACTIVE/REVOKED）。不实现工单派遣/设备端 Topic（协议冻结前仅管理端）。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-004@0.2.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/device-users": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createDeviceUser",
+        "summary": "创建设备操作员（(customerId, username) 唯一；仅预计算验证材料）",
+        "security": [{ "CognitoJwt": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/DeviceUserCreateRequest" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "已创建",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeviceUserSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listDeviceUsers",
+        "summary": "设备操作员列表（customerId/status/keyword 筛选；含 ACTIVE 分配设备数）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "description": "平台角色可用；Customer 角色强制本 Customer" }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["ACTIVE", "DISABLED"] }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "description": "username/displayName" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "用户列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeviceUserListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/device-users/{deviceUserId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getDeviceUser",
+        "summary": "设备操作员详情（含分配历史；跨 Customer → 404）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceUserId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "用户详情",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeviceUserDetailSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "patch": {
+        "tags": ["admin"],
+        "operationId": "updateDeviceUser",
+        "summary": "修改/验证材料轮换（If-Match + 强制原因；verifierValue+verifierSalt 成对）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceUserId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string", "description": "当前 version（乐观锁；漂移 → 409 VERSION_CONFLICT）" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeviceUserUpdateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "已更新",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeviceUserSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/device-users/{deviceUserId}/disable": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "disableDeviceUser",
+        "summary": "停用（ACTIVE→DISABLED，If-Match + 强制原因；停用用户不进入新 Sync）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceUserId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "If-Match", "in": "header", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReasonRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "已停用",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeviceUserSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/device-users/{deviceUserId}/assignments": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "assignDeviceUser",
+        "summary": "批量分配设备（If-Match + 强制原因；跨 Customer/Retired/停用用户 → 409；全成或全败）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceUserId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "If-Match", "in": "header", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssignmentRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "已分配",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssignSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/device-users/{deviceUserId}/assignments/revoke": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "revokeDeviceUser",
+        "summary": "批量撤销分配（If-Match + 强制原因；无 ACTIVE 分配 → 409 全回滚）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceUserId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "If-Match", "in": "header", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssignmentRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "已撤销",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RevokeSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：明文密码字段、缺 If-Match/原因、验证材料过短）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证（UNAUTHENTICATED）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（FORBIDDEN）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "不存在（NOT_FOUND；跨 Customer 同 404）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Conflict": {
+        "description": "冲突（CONFLICT：用户名重复/跨 Customer 分配/停用用户新分配/重复停用；VERSION_CONFLICT：If-Match 漂移）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "服务器内部错误（INTERNAL_ERROR）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "DeviceUserCreateRequest": {
+        "type": "object",
+        "required": ["username", "verifierValue", "verifierSalt"],
+        "additionalProperties": false,
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "平台角色必传；Customer 角色强制本 Customer"
+          },
+          "username": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "displayName": { "type": "string", "maxLength": 200 },
+          "verifierValue": {
+            "type": "string",
+            "minLength": 16,
+            "description": "DEC-004 预计算验证值（设备本地专用，禁止云端密码 Hash）"
+          },
+          "verifierSalt": { "type": "string", "minLength": 8, "description": "每用户独立随机 salt" },
+          "verifierKdf": { "type": "string", "maxLength": 64, "description": "KDF 标识（DEC-004 冻结后收敛）" },
+          "verifierVersion": { "type": "string", "maxLength": 32 },
+          "reason": { "type": "string", "maxLength": 500 }
+        }
+      },
+      "DeviceUserUpdateRequest": {
+        "type": "object",
+        "required": ["reason"],
+        "additionalProperties": false,
+        "properties": {
+          "displayName": { "type": ["string", "null"], "maxLength": 200 },
+          "verifierValue": { "type": "string", "minLength": 16, "description": "轮换时必须与 verifierSalt 成对" },
+          "verifierSalt": { "type": "string", "minLength": 8 },
+          "verifierKdf": { "type": "string", "maxLength": 64 },
+          "verifierVersion": { "type": "string", "maxLength": 32 },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      },
+      "ReasonRequest": {
+        "type": "object",
+        "required": ["reason"],
+        "additionalProperties": false,
+        "properties": {
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      },
+      "AssignmentRequest": {
+        "type": "object",
+        "required": ["deviceIds", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      },
+      "DeviceUser": {
+        "type": "object",
+        "required": [
+          "deviceUserId",
+          "customerId",
+          "username",
+          "displayName",
+          "status",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "deviceUserId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "username": { "type": "string", "minLength": 1 },
+          "displayName": { "type": ["string", "null"] },
+          "status": { "type": "string", "enum": ["ACTIVE", "DISABLED"] },
+          "version": { "type": "integer", "minimum": 1, "description": "同步版本（兼 If-Match 乐观锁）" },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "DeviceUserListItem": {
+        "allOf": [
+          { "$ref": "#/components/schemas/DeviceUser" },
+          {
+            "type": "object",
+            "required": ["activeDeviceCount"],
+            "properties": { "activeDeviceCount": { "type": "integer", "minimum": 0 } }
+          }
+        ]
+      },
+      "DeviceUserAssignment": {
+        "type": "object",
+        "required": ["assignmentId", "deviceId", "status", "assignedAt", "revokedAt"],
+        "additionalProperties": false,
+        "properties": {
+          "assignmentId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["ACTIVE", "REVOKED"] },
+          "assignedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "revokedAt": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "DeviceUserDetail": {
+        "allOf": [
+          { "$ref": "#/components/schemas/DeviceUser" },
+          {
+            "type": "object",
+            "required": ["assignments"],
+            "properties": {
+              "assignments": { "type": "array", "items": { "$ref": "#/components/schemas/DeviceUserAssignment" } }
+            }
+          }
+        ]
+      },
+      "AssignResult": {
+        "type": "object",
+        "required": ["deviceUserId", "deviceIds", "assignments"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceUserId": { "type": "string", "minLength": 1 },
+          "deviceIds": { "type": "array", "items": { "type": "string" } },
+          "assignments": { "type": "array", "items": { "$ref": "#/components/schemas/DeviceUserAssignment" } }
+        }
+      },
+      "RevokeResult": {
+        "type": "object",
+        "required": ["deviceUserId", "deviceIds"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceUserId": { "type": "string", "minLength": 1 },
+          "deviceIds": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "DeviceUserSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/DeviceUser" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "DeviceUserDetailSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/DeviceUserDetail" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "DeviceUserListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/DeviceUserListItem" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "AssignSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/AssignResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "RevokeSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/RevokeResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}

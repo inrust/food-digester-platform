@@ -414,6 +414,7 @@ model DeviceUser {
   verifierKdf     String?  @map("verifier_kdf")
   verifierVersion String?  @map("verifier_version")
   status          String   @default("ACTIVE") // ACTIVE | DISABLED
+  version         Int      @default(1) // 乐观锁（If-Match）+ 设备同步版本（BE-DUSR-01）
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
