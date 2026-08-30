@@ -20,7 +20,7 @@ export const CONSUMABLE_STALE_AFTER_MS = 24 * 3_600_000;
 export class ConsumableError extends Error {
   override readonly name = 'ConsumableError';
   constructor(
-    readonly code: 'VALIDATION_FAILED' | 'UNKNOWN_CONSUMABLE_TYPE',
+    readonly code: 'VALIDATION_FAILED' | 'UNKNOWN_CONSUMABLE_TYPE' | 'CONFLICT',
     message: string,
   ) {
     super(message);
@@ -96,4 +96,38 @@ export function decideProjectionUpdate(
 export function isConsumableStale(observedAt: Date | null, at: Date): boolean {
   if (observedAt === null) return true;
   return at.getTime() - observedAt.getTime() > CONSUMABLE_STALE_AFTER_MS;
+}
+
+// ---------- 耗材更换申请状态机（BE-CNS-02） ----------
+
+/** 申请状态封闭集合（与 DB CHECK 一致，大写）。 */
+export const CONSUMABLE_REQUEST_STATUSES = ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'] as const;
+export type ConsumableRequestStatus = (typeof CONSUMABLE_REQUEST_STATUSES)[number];
+
+/** 开放状态：同设备同耗材存在开放申请时重复申请幂等返回现有记录。 */
+export const OPEN_REQUEST_STATUSES = ['PENDING', 'PROCESSING'] as const;
+
+/** 合法迁移表（跳级/重复处理 → CONFLICT）。 */
+export const CONSUMABLE_REQUEST_TRANSITIONS: Readonly<
+  Record<ConsumableRequestStatus, readonly ConsumableRequestStatus[]>
+> = {
+  PENDING: ['PROCESSING', 'CANCELLED'],
+  PROCESSING: ['COMPLETED', 'CANCELLED'],
+  COMPLETED: [],
+  CANCELLED: [],
+} as const;
+
+/** 状态迁移校验：非法迁移（跳级/重复处理/终态）抛 CONFLICT。 */
+export function assertConsumableRequestTransition(from: ConsumableRequestStatus, to: ConsumableRequestStatus): void {
+  if (!(CONSUMABLE_REQUEST_TRANSITIONS[from] as readonly string[]).includes(to)) {
+    throw new ConsumableError('CONFLICT', `Invalid consumable request transition: ${from} -> ${to}`);
+  }
+}
+
+/** 申请类型校验：封闭集合外 → VALIDATION_FAILED（查询/创建入口共用）。 */
+export function assertKnownConsumableType(type: string): ConsumableType {
+  if (!(CONSUMABLE_TYPES as readonly string[]).includes(type)) {
+    throw new ConsumableError('VALIDATION_FAILED', `consumableType must be one of ${CONSUMABLE_TYPES.join(', ')}`);
+  }
+  return type as ConsumableType;
 }

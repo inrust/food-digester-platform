@@ -18,6 +18,7 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
  * BE-CON-01 已落地：/api/v1/admin/contracts Contract CRUD/状态（见 ./admin/contract）；
  * BE-CON-02 已落地：/api/v1/admin/contracts/{id}/devices 关联/解绑/历史（见 ./admin/contract-device）；
  * BE-CNS-01 已落地：/api/v1/admin/consumables 耗材状态查询 + 投影保存（见 ./consumable）；
+ * BE-CNS-02 已落地：/api/v1/admin/consumable-requests 更换申请工作流（见 ./consumable）；
  * 其余 /api/v1/device、/admin、/customer、/internal 路由在后续 BE 任务实现。
  */
 export const SERVICE_NAME = 'cloud-api';

@@ -8,6 +8,8 @@ import {
   CONSUMABLE_STALE_AFTER_MS,
   CONSUMABLE_TYPES,
   ConsumableError,
+  assertConsumableRequestTransition,
+  assertKnownConsumableType,
   assertRemainingPercent,
   decideProjectionUpdate,
   isConsumableStale,
@@ -113,5 +115,45 @@ describe('stale 派生', () => {
     assert.ok(isConsumableStale(new Date(now.getTime() - CONSUMABLE_STALE_AFTER_MS - 1), now));
     assert.ok(!isConsumableStale(new Date(now.getTime() - 60_000), now));
     assert.ok(!isConsumableStale(new Date(now.getTime() - CONSUMABLE_STALE_AFTER_MS), now), '恰好阈值边界不 stale');
+  });
+});
+
+describe('更换申请状态机（BE-CNS-02）', () => {
+  test('合法迁移：PENDING→PROCESSING/CANCELLED；PROCESSING→COMPLETED/CANCELLED', () => {
+    assert.doesNotThrow(() => assertConsumableRequestTransition('PENDING', 'PROCESSING'));
+    assert.doesNotThrow(() => assertConsumableRequestTransition('PENDING', 'CANCELLED'));
+    assert.doesNotThrow(() => assertConsumableRequestTransition('PROCESSING', 'COMPLETED'));
+    assert.doesNotThrow(() => assertConsumableRequestTransition('PROCESSING', 'CANCELLED'));
+  });
+
+  test('跳级、重复处理、终态迁移均拒绝（CONFLICT）', () => {
+    assert.equal(
+      codeOf(() => assertConsumableRequestTransition('PENDING', 'COMPLETED')),
+      'CONFLICT',
+      '跳级',
+    );
+    assert.equal(
+      codeOf(() => assertConsumableRequestTransition('COMPLETED', 'PROCESSING')),
+      'CONFLICT',
+      '重复处理',
+    );
+    assert.equal(
+      codeOf(() => assertConsumableRequestTransition('CANCELLED', 'PENDING')),
+      'CONFLICT',
+      '终态',
+    );
+    assert.equal(
+      codeOf(() => assertConsumableRequestTransition('PENDING', 'PENDING')),
+      'CONFLICT',
+      '自环',
+    );
+  });
+
+  test('类型校验：封闭集合外拒绝', () => {
+    assert.equal(assertKnownConsumableType('CARBON_FILTER'), 'CARBON_FILTER');
+    assert.equal(
+      codeOf(() => assertKnownConsumableType('CATALYST')),
+      'VALIDATION_FAILED',
+    );
   });
 });

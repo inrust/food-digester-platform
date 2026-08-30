@@ -1,0 +1,352 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Consumable Request API",
+    "version": "0.1.0",
+    "description": "BE-CNS-02 耗材更换申请工作流接口（Cognito 认证；创建/状态迁移 device:write=PlatformSuperAdmin/PlatformOperator，查询 device:read 且 Customer 角色租户隔离、跨 Customer 详情 404）：创建、列表、详情与状态机 PENDING→PROCESSING→COMPLETED/CANCELLED（跳级/重复处理/终态迁移 → 409）。同设备同耗材存在开放申请（PENDING/PROCESSING）时重复创建幂等返回现有记录（replayed=true，无写入/审计；部分唯一索引并发兜底）；状态迁移强制 If-Match（漂移 → 409 VERSION_CONFLICT）；Processing/Completed 仅授权角色执行并写审计（consumable.request.create/process/complete/cancel）；保存申请时间、来源（协议冻结前固定 ADMIN）、处理人、处理备注和完成时间；完成后保留完整记录。不实现工单派遣/库存/物流/短信联系。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-008@0.2.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/consumable-requests": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createConsumableRequest",
+        "summary": "创建更换申请（幂等：开放申请重复 → 200 + replayed=true 返回现有记录）",
+        "security": [{ "CognitoJwt": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ConsumableRequestCreate" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "幂等返回现有开放申请",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ConsumableRequestCreateSuccess" } }
+            }
+          },
+          "201": {
+            "description": "申请已创建",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ConsumableRequestCreateSuccess" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listConsumableRequests",
+        "summary": "更换申请列表（customerId/deviceId/status/consumableType 筛选）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "description": "平台角色可用；Customer 角色强制本 Customer" }
+          },
+          { "name": "deviceId", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["PENDING", "PROCESSING", "COMPLETED", "CANCELLED"] }
+          },
+          {
+            "name": "consumableType",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["CARBON_FILTER", "BIO_ADDITIVE"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "申请列表",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ConsumableRequestListSuccess" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/consumable-requests/{requestId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getConsumableRequest",
+        "summary": "更换申请详情（跨 Customer → 404）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "requestId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "申请详情",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConsumableRequestSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/consumable-requests/{requestId}/process": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "processConsumableRequest",
+        "summary": "开始处理（PENDING→PROCESSING，If-Match；仅授权角色）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "requestId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string", "description": "当前 version（乐观锁；漂移 → 409 VERSION_CONFLICT）" }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RequestNoteBody" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "已进入处理",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConsumableRequestSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/consumable-requests/{requestId}/complete": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "completeConsumableRequest",
+        "summary": "完成处理（PROCESSING→COMPLETED，If-Match + 强制处理备注；记录 completedAt）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "requestId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "If-Match", "in": "header", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RequestNoteRequiredBody" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "已完成",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConsumableRequestSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/consumable-requests/{requestId}/cancel": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "cancelConsumableRequest",
+        "summary": "取消（PENDING/PROCESSING→CANCELLED，If-Match + 强制原因）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "requestId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "If-Match", "in": "header", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RequestNoteRequiredBody" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "已取消",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConsumableRequestSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：缺 If-Match/处理备注、非法类型/状态）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证（UNAUTHENTICATED）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（FORBIDDEN：未授权角色不得创建/处理）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "不存在（NOT_FOUND；跨 Customer 详情同 404）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Conflict": {
+        "description": "冲突（CONFLICT：跳级/重复处理/设备未分配或已退役；VERSION_CONFLICT：If-Match 漂移）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "服务器内部错误（INTERNAL_ERROR）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "ConsumableRequestCreate": {
+        "type": "object",
+        "required": ["deviceId", "consumableType"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "consumableType": {
+            "type": "string",
+            "enum": ["CARBON_FILTER", "BIO_ADDITIVE"],
+            "description": "DEC-008 封闭集合"
+          },
+          "note": { "type": "string", "maxLength": 500, "description": "申请备注" }
+        }
+      },
+      "RequestNoteBody": {
+        "type": "object",
+        "required": [],
+        "additionalProperties": false,
+        "properties": {
+          "note": { "type": "string", "minLength": 1, "maxLength": 500, "description": "处理备注" }
+        }
+      },
+      "RequestNoteRequiredBody": {
+        "type": "object",
+        "required": ["note"],
+        "additionalProperties": false,
+        "properties": {
+          "note": { "type": "string", "minLength": 1, "maxLength": 500, "description": "处理备注/取消原因（强制）" }
+        }
+      },
+      "ConsumableRequest": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "customerId",
+          "deviceId",
+          "consumableType",
+          "status",
+          "source",
+          "requestedBy",
+          "requestedAt",
+          "processedBy",
+          "processNote",
+          "completedAt",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "requestId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "consumableType": { "type": "string", "enum": ["CARBON_FILTER", "BIO_ADDITIVE"] },
+          "status": { "type": "string", "enum": ["PENDING", "PROCESSING", "COMPLETED", "CANCELLED"] },
+          "source": { "type": "string", "enum": ["ADMIN"], "description": "协议冻结前仅管理端创建" },
+          "requestedBy": { "type": "string", "minLength": 1 },
+          "requestedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "processedBy": { "type": ["string", "null"] },
+          "processNote": { "type": ["string", "null"] },
+          "completedAt": { "type": ["string", "null"], "format": "date-time" },
+          "version": { "type": "integer", "minimum": 1 },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "ConsumableRequestSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/ConsumableRequest" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "ConsumableRequestCreateSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "allOf": [
+              { "$ref": "#/components/schemas/ConsumableRequest" },
+              {
+                "type": "object",
+                "required": ["replayed"],
+                "properties": { "replayed": { "type": "boolean", "description": "开放申请重复创建幂等返回现有记录" } }
+              }
+            ]
+          },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "ConsumableRequestListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/ConsumableRequest" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}
