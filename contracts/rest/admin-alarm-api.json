@@ -1,0 +1,530 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Alarm/Event/Tamper API",
+    "version": "0.1.0",
+    "description": "BE-ALM-01 告警/事件/防拆查询与处理接口（Cognito 认证）：Alarm 列表/详情/确认/清除 + Event 与 Tamper 只读查询；支持 severity、status、deviceId、siteId（经设备归属解析）、customerId 与时间范围筛选 + 键集游标分页（id ASC）。确认/清除仅 alarm:write（PlatformSuperAdmin/PlatformOperator），强制原因，记录操作者/原因/时间（落库 + DOM-03 审计 alarm.acknowledge/alarm.clear）；状态机 ACTIVE→ACKNOWLEDGED→CLEARED、ACTIVE→CLEARED（领域层封闭校验）；重复确认/重复清除幂等（replayed=true，无写入/审计/领域事件）；CRITICAL 告警真实状态迁移时恰好发布一个领域事件 ALARM_STATE_CHANGED（Outbox，通知适配器消费），非 CRITICAL 迁移与重放均不产生。Customer 角色租户隔离（强制所属 Customer scope；跨 Customer 详情/处理 → 404）。不实现 AWS 资源运维告警和人工值守。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/alarms": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listAlarms",
+        "summary": "Alarm 列表（severity/status/device/site/时间范围筛选 + 游标分页）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "description": "平台角色可用；Customer 角色强制本 Customer" }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "description": "经设备归属解析" }
+          },
+          { "name": "deviceId", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["INFO", "WARNING", "MAJOR", "CRITICAL"] }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["ACTIVE", "ACKNOWLEDGED", "CLEARED"] }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+            "description": "detectedTime 下限（含）"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+            "description": "detectedTime 上限（含）"
+          },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alarm 列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AlarmListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/alarms/{alarmId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getAlarm",
+        "summary": "Alarm 详情（跨 Customer → 404）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "alarmId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alarm 详情",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AlarmSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/alarms/{alarmId}/acknowledge": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "acknowledgeAlarm",
+        "summary": "确认告警（ACTIVE→ACKNOWLEDGED；重复确认幂等 replayed=true）",
+        "description": "仅 alarm:write；强制原因；CLEARED 终态确认 → 409 CONFLICT。CRITICAL 告警真实迁移时发布 ALARM_STATE_CHANGED 领域事件。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "alarmId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AlarmReasonBody" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "已确认或幂等重放",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AlarmHandleSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/alarms/{alarmId}/clear": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "clearAlarm",
+        "summary": "清除告警（ACTIVE/ACKNOWLEDGED→CLEARED；重复清除幂等 replayed=true）",
+        "description": "仅 alarm:write；强制原因。CRITICAL 告警真实迁移时发布 ALARM_STATE_CHANGED 领域事件。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "alarmId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AlarmReasonBody" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "已清除或幂等重放",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AlarmHandleSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/events": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listDeviceEvents",
+        "summary": "Event 只读列表（device/site/eventType/时间范围筛选 + 游标分页）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "description": "平台角色可用；Customer 角色强制本 Customer" }
+          },
+          { "name": "siteId", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "deviceId", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "eventType", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+            "description": "occurredAt 下限（含）"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+            "description": "occurredAt 上限（含）"
+          },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event 列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeviceEventListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/tamper-events": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listTamperEvents",
+        "summary": "Tamper 只读列表（device/site/eventType/severity/时间范围筛选 + 游标分页）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "description": "平台角色可用；Customer 角色强制本 Customer" }
+          },
+          { "name": "siteId", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "deviceId", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "eventType", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["INFO", "WARNING", "MAJOR", "CRITICAL"] }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+            "description": "occurredAt 下限（含）"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+            "description": "occurredAt 上限（含）"
+          },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tamper 列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TamperEventListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "$ref": "openapi-base.json#/components/securitySchemes/CognitoJwt" }
+    },
+    "parameters": {
+      "Cursor": { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+      "Limit": { "$ref": "openapi-base.json#/components/parameters/Limit" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：非法枚举/时间范围/缺原因）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（缺 alarm:read/alarm:write）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "不存在或跨 Customer（NOT_FOUND）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Conflict": {
+        "description": "非法状态迁移/并发状态漂移（CONFLICT）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "Alarm": {
+        "type": "object",
+        "required": [
+          "alarmId",
+          "deviceId",
+          "customerId",
+          "code",
+          "category",
+          "severity",
+          "status",
+          "detectedTime",
+          "component",
+          "currentValue",
+          "threshold",
+          "unit",
+          "message",
+          "recommendedAction",
+          "acknowledgedBy",
+          "acknowledgedAt",
+          "acknowledgeReason",
+          "clearedBy",
+          "clearedAt",
+          "clearReason",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "alarmId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "code": { "type": "string", "minLength": 1 },
+          "category": { "type": "string", "minLength": 1 },
+          "severity": { "type": "string", "enum": ["INFO", "WARNING", "MAJOR", "CRITICAL"] },
+          "status": { "type": "string", "enum": ["ACTIVE", "ACKNOWLEDGED", "CLEARED"] },
+          "detectedTime": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "component": { "type": ["string", "null"] },
+          "currentValue": { "type": ["string", "null"] },
+          "threshold": { "type": ["string", "null"] },
+          "unit": { "type": ["string", "null"] },
+          "message": { "type": ["string", "null"] },
+          "recommendedAction": { "type": ["string", "null"] },
+          "acknowledgedBy": { "type": ["string", "null"], "description": "确认操作者" },
+          "acknowledgedAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "acknowledgeReason": { "type": ["string", "null"], "description": "确认原因" },
+          "clearedBy": { "type": ["string", "null"], "description": "清除操作者（管理端；设备上报清除为 null）" },
+          "clearedAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "clearReason": { "type": ["string", "null"], "description": "清除原因（管理端；设备上报清除为 null）" },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "AlarmHandleResult": {
+        "type": "object",
+        "required": [
+          "alarmId",
+          "deviceId",
+          "customerId",
+          "code",
+          "category",
+          "severity",
+          "status",
+          "detectedTime",
+          "component",
+          "currentValue",
+          "threshold",
+          "unit",
+          "message",
+          "recommendedAction",
+          "acknowledgedBy",
+          "acknowledgedAt",
+          "acknowledgeReason",
+          "clearedBy",
+          "clearedAt",
+          "clearReason",
+          "createdAt",
+          "updatedAt",
+          "replayed"
+        ],
+        "additionalProperties": false,
+        "description": "Alarm 视图 + replayed（幂等重放：目标状态已达成，无写入/审计/领域事件）",
+        "properties": {
+          "alarmId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "code": { "type": "string", "minLength": 1 },
+          "category": { "type": "string", "minLength": 1 },
+          "severity": { "type": "string", "enum": ["INFO", "WARNING", "MAJOR", "CRITICAL"] },
+          "status": { "type": "string", "enum": ["ACTIVE", "ACKNOWLEDGED", "CLEARED"] },
+          "detectedTime": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "component": { "type": ["string", "null"] },
+          "currentValue": { "type": ["string", "null"] },
+          "threshold": { "type": ["string", "null"] },
+          "unit": { "type": ["string", "null"] },
+          "message": { "type": ["string", "null"] },
+          "recommendedAction": { "type": ["string", "null"] },
+          "acknowledgedBy": { "type": ["string", "null"] },
+          "acknowledgedAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "acknowledgeReason": { "type": ["string", "null"] },
+          "clearedBy": { "type": ["string", "null"] },
+          "clearedAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "clearReason": { "type": ["string", "null"] },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "replayed": { "type": "boolean" }
+        }
+      },
+      "DeviceEvent": {
+        "type": "object",
+        "required": [
+          "eventId",
+          "deviceId",
+          "customerId",
+          "eventType",
+          "userId",
+          "username",
+          "source",
+          "remarks",
+          "occurredAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "eventId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "eventType": { "type": "string", "minLength": 1 },
+          "userId": { "type": ["string", "null"] },
+          "username": { "type": ["string", "null"] },
+          "source": { "type": ["string", "null"] },
+          "remarks": { "type": ["string", "null"] },
+          "occurredAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "TamperEvent": {
+        "type": "object",
+        "required": [
+          "tamperEventId",
+          "deviceId",
+          "customerId",
+          "eventType",
+          "severity",
+          "component",
+          "details",
+          "actionTaken",
+          "occurredAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "tamperEventId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "eventType": { "type": "string", "minLength": 1 },
+          "severity": { "type": "string", "enum": ["INFO", "WARNING", "MAJOR", "CRITICAL"] },
+          "component": { "type": ["string", "null"] },
+          "details": { "description": "设备上报的结构化细节（原样透传）" },
+          "actionTaken": { "type": ["string", "null"] },
+          "occurredAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "AlarmReasonBody": {
+        "type": "object",
+        "required": ["reason"],
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "操作原因（强制，落库 + 审计）"
+          }
+        }
+      },
+      "AlarmSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/Alarm" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "AlarmHandleSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/AlarmHandleResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "AlarmListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Alarm" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      },
+      "DeviceEventListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/DeviceEvent" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      },
+      "TamperEventListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/TamperEvent" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      }
+    }
+  }
+}

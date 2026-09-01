@@ -22,6 +22,7 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
  * BE-CNS-02 已落地：/api/v1/admin/consumable-requests 更换申请工作流（见 ./consumable）；
  * BE-DUSR-01 已落地：/api/v1/admin/device-users 设备操作员管理（见 ./admin/device-user）；
  * BE-DUSR-02 已落地：设备本地密码验证值生成器（KDF adapter/DTO/脱敏管线，DEC-004 冻结前 fail-closed，见 ./admin/device-user/verifier）；
+ * BE-ALM-01 已落地：/api/v1/admin/alarms 查询/确认/清除 + /events、/tamper-events 只读查询（见 ./admin/alarm）；
  * 其余 /api/v1/device、/admin、/customer、/internal 路由在后续 BE 任务实现。
  */
 export const SERVICE_NAME = 'cloud-api';
@@ -46,6 +47,7 @@ export * from './admin/configuration/index.js';
 export * from './admin/contract/index.js';
 export * from './admin/contract-device/index.js';
 export * from './admin/device-user/index.js';
+export * from './admin/alarm/index.js';
 export * from './consumable/index.js';
 export * from './provisioning/index.js';
 export * from './device/index.js';

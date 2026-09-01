@@ -627,6 +627,10 @@ model Alarm {
   recommendedAction String?   @map("recommended_action")
   acknowledgedBy    String?   @map("acknowledged_by")
   acknowledgedAt    DateTime? @map("acknowledged_at") @db.Timestamptz
+  // BE-ALM-01：确认/清除记录操作者、原因和时间
+  acknowledgeReason String?   @map("acknowledge_reason")
+  clearedBy         String?   @map("cleared_by")
+  clearReason       String?   @map("clear_reason")
   clearedAt         DateTime? @map("cleared_at") @db.Timestamptz
   sourceMessageId   String?   @unique @map("source_message_id")
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz

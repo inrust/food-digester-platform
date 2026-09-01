@@ -9,3 +9,4 @@ export * from './license.js';
 export * from './configuration.js';
 export * from './consumable.js';
 export * from './contract.js';
+export * from './alarm.js';
