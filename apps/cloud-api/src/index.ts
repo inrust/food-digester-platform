@@ -25,6 +25,7 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
  * BE-ALM-01 已落地：/api/v1/admin/alarms 查询/确认/清除 + /events、/tamper-events 只读查询（见 ./admin/alarm）；
  * BE-ALM-02 已落地：业务通知适配器（消费 Critical Alarm/Tamper 领域事件 → 邮件/Webhook，见 ./notification/business-notifier）；
  * BE-ESG-02 已落地：/api/v1/admin/esg 查询与 CSV 导出（含 Export Worker，见 ./admin/esg）；
+ * BE-CMD-01 已落地：POST /api/v1/admin/devices/{id}/commands 创建与授权（见 ./admin/command）；
  * 其余 /api/v1/device、/admin、/customer、/internal 路由在后续 BE 任务实现。
  */
 export const SERVICE_NAME = 'cloud-api';
@@ -50,6 +51,7 @@ export * from './admin/contract/index.js';
 export * from './admin/contract-device/index.js';
 export * from './admin/device-user/index.js';
 export * from './admin/alarm/index.js';
+export * from './admin/command/index.js';
 export * from './admin/esg/index.js';
 export * from './consumable/index.js';
 export * from './notification/index.js';

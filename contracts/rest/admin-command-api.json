@@ -1,0 +1,203 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Command API",
+    "version": "0.1.0",
+    "description": "BE-CMD-01 Command 创建与授权接口（Cognito 认证）。POST /api/v1/admin/devices/{deviceId}/commands：校验角色（command:send = PlatformSuperAdmin/PlatformOperator/CustomerAdmin）、Customer 租户（跨 Customer → 404）、设备状态门（CT-04 command-catalog allowedStatuses；云端 suspension 权威优先；Retired 拒绝全部）、Entitlement（有效 License 且 REMOTE_CONTROL enabled，无 → 403）、命令白名单（22 个）/参数/timeoutSec（1~3600 暂定上限）；高风险命令要求确认凭证（confirmText 精确匹配命令名 + confirmedAt 300s TTL 内，过期确认 400）。创建即授权（status=AUTHORIZED）。meta.id 即 commandId（DEC-006）：客户端可提供 commandId 幂等，重复创建语义一致 → 200 replayed=true，冲突 → 409。requestedBy 从身份上下文取得（不信任客户端声明）；expiresAt 服务器内部计算（requestTime + timeoutSec）。功能边界：不发布 MQTT，不执行设备动作。审计 command.authorize（DOM-03）。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-001@0.2.0", "DEC-006@0.2.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/devices/{deviceId}/commands": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createDeviceCommand",
+        "summary": "创建 Command 并授权（AUTHORIZED）；高风险需确认凭证；meta.id 幂等",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommandCreate" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "幂等重放（replayed=true，无新写入/审计）",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommandSuccess" } } }
+          },
+          "201": {
+            "description": "创建并授权成功（AUTHORIZED）",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommandSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "$ref": "openapi-base.json#/components/securitySchemes/CognitoJwt" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：未知命令/timeoutSec 越界/确认缺失或过期/confirmText 不符）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（缺 command:send）或无 REMOTE_CONTROL Entitlement（FORBIDDEN）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "设备不存在或跨 Customer（NOT_FOUND）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Conflict": {
+        "description": "设备状态不允许（DEVICE_STATE_NOT_ALLOWED）或 commandId 语义冲突（CONFLICT）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "CommandName": {
+        "type": "string",
+        "description": "V1 命令白名单（22 个，contracts/mqtt/command-catalog.json，CT-04）",
+        "enum": [
+          "START",
+          "STOP",
+          "PAUSE",
+          "RESUME",
+          "EMERGENCY_STOP",
+          "AGITATOR_FORWARD",
+          "AGITATOR_REVERSE",
+          "AGITATOR_STOP",
+          "HEATING_ON",
+          "HEATING_OFF",
+          "SET_TARGET_TEMPERATURE",
+          "EXHAUST_ON",
+          "EXHAUST_OFF",
+          "AIR_SUPPLY_ON",
+          "AIR_SUPPLY_OFF",
+          "DISCHARGE_START",
+          "DISCHARGE_STOP",
+          "REBOOT",
+          "SHUTDOWN",
+          "FACTORY_RESET",
+          "TAKE_SNAPSHOT",
+          "FORCE_SYNC"
+        ]
+      },
+      "CommandConfirmation": {
+        "type": "object",
+        "required": ["confirmText", "confirmedAt"],
+        "additionalProperties": false,
+        "description": "高风险命令确认凭证：confirmText 必须与命令名完全一致；confirmedAt 在 300s TTL 内（过期确认拒绝）",
+        "properties": {
+          "confirmText": { "type": "string", "minLength": 1 },
+          "confirmedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "CommandCreate": {
+        "type": "object",
+        "required": ["command", "timeoutSec"],
+        "additionalProperties": false,
+        "properties": {
+          "commandId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "meta.id 即 commandId（DEC-006 幂等键）；缺省由服务器生成"
+          },
+          "command": { "$ref": "#/components/schemas/CommandName" },
+          "timeoutSec": { "type": "integer", "minimum": 1, "maximum": 3600 },
+          "remarks": { "type": "string", "maxLength": 500 },
+          "confirmation": { "$ref": "#/components/schemas/CommandConfirmation" }
+        }
+      },
+      "CommandView": {
+        "type": "object",
+        "required": [
+          "commandId",
+          "deviceId",
+          "customerId",
+          "command",
+          "category",
+          "highRisk",
+          "status",
+          "requestedBy",
+          "requestTime",
+          "timeoutSec",
+          "expiresAt",
+          "remarks",
+          "confirmedBy",
+          "version",
+          "replayed"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "commandId": { "type": "string", "minLength": 1, "description": "meta.id（DEC-006）" },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "command": { "$ref": "#/components/schemas/CommandName" },
+          "category": {
+            "type": "string",
+            "enum": ["MACHINE", "MOTOR", "HEATING", "VENTILATION", "DISCHARGE", "DEVICE"]
+          },
+          "highRisk": { "type": "boolean" },
+          "status": { "type": "string", "enum": ["AUTHORIZED"], "description": "创建即授权" },
+          "requestedBy": { "type": "string", "minLength": 1, "description": "身份上下文取得（不信任客户端声明）" },
+          "requestTime": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "timeoutSec": { "type": "integer", "minimum": 1, "maximum": 3600 },
+          "expiresAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "remarks": { "type": ["string", "null"] },
+          "confirmedBy": { "type": ["string", "null"], "description": "高风险命令确认人（= actor.actorId）" },
+          "version": { "type": "integer", "minimum": 1 },
+          "replayed": { "type": "boolean", "description": "meta.id 幂等重放" }
+        }
+      },
+      "CommandSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/CommandView" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}
