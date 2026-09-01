@@ -163,6 +163,56 @@ describe('createAlarmHandler（BE-IOT-07 Alarm）', () => {
     assert.equal(replay.outcome, 'DUPLICATE_SKIPPED');
     assert.equal(await prisma.outboxEvent.count({ where: { aggregateId: ctx.deviceId } }), 3);
   });
+  test('BE-ALM-02 生产侧：CRITICAL Alarm 激活产出领域事件；非 CRITICAL 不产出', async () => {
+    const ctx = await plantDevice();
+    const handle = createAlarmHandler({ client: prisma });
+
+    await handle(
+      signalMessage(ctx, 'alarm', {
+        seq: 1,
+        data: { code: 'TEMP_HIGH', category: 'HEATING', severity: 'CRITICAL', status: 'ACTIVE', detectedTime: TS },
+      }),
+    );
+    await handle(
+      signalMessage(ctx, 'alarm', {
+        seq: 2,
+        data: { code: 'TEMP_WARN', category: 'HEATING', severity: 'WARNING', status: 'ACTIVE', detectedTime: TS },
+      }),
+    );
+
+    const events = await prisma.outboxEvent.findMany({
+      where: { eventType: 'CRITICAL_ALERT_RAISED', aggregateType: 'alarm' },
+    });
+    assert.equal(events.length, 1, '仅 CRITICAL 激活产出领域事件');
+    const payload = events[0]?.payload as Record<string, unknown>;
+    assert.equal(payload.kind, 'alarm');
+    assert.equal(payload.code, 'TEMP_HIGH');
+    assert.equal(payload.severity, 'CRITICAL');
+    assert.equal(payload.customerId, ctx.customerId);
+    assert.equal(typeof payload.alarmId, 'string');
+    // 载荷仅白名单业务字段（通知内容不含敏感凭据）
+    assert.ok(!('payload' in payload), '领域事件不携带原始报文');
+  });
+
+  test('BE-ALM-02 生产侧：CRITICAL Tamper 产出领域事件（kind=tamper）', async () => {
+    const ctx = await plantDevice();
+    const handle = createTamperHandler({ client: prisma });
+    await handle(
+      signalMessage(ctx, 'tamper', {
+        seq: 1,
+        withAudit: true,
+        data: { eventType: 'COVER_OPEN', severity: 'CRITICAL', component: 'lid' },
+      }),
+    );
+    const events = await prisma.outboxEvent.findMany({
+      where: { eventType: 'CRITICAL_ALERT_RAISED', aggregateType: 'tamper' },
+    });
+    assert.equal(events.length, 1);
+    const payload = events[0]?.payload as Record<string, unknown>;
+    assert.equal(payload.kind, 'tamper');
+    assert.equal(payload.eventType, 'COVER_OPEN');
+    assert.equal(typeof payload.tamperEventId, 'string');
+  });
 });
 
 describe('createEventHandler（BE-IOT-07 Event）', () => {

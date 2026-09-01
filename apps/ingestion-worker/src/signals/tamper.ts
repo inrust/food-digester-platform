@@ -14,7 +14,7 @@ import { transitionLifecycle } from '@fdp/domain';
 import { hashPayload, processWithReceipt } from '../ingest/receipt.js';
 import type { ReceiptOutcome } from '../ingest/receipt.js';
 import type { ValidatedMessage } from '../ingest/pipeline.js';
-import { requireCustomerId, writeArchiveOutbox } from './archive.js';
+import { requireCustomerId, writeArchiveOutbox, writeCriticalAlertOutbox } from './archive.js';
 
 /** 触发自动挂起的 Tamper 严重度策略（封闭集合，协议冻结前 V1）。 */
 export const TAMPER_SUSPEND_SEVERITIES = ['CRITICAL'] as const;
@@ -38,7 +38,7 @@ function asString(value: unknown): string | undefined {
 }
 
 interface TamperDelegate {
-  create(args: { data: Record<string, unknown> }): Promise<unknown>;
+  create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
 }
 
 interface DeviceDelegate {
@@ -133,7 +133,21 @@ export function createTamperHandler(
           sourceMessageId: message.messageId,
         };
         const tampers = (tx as unknown as Record<string, unknown>).tamperEvent as TamperDelegate;
-        await tampers.create({ data: columns });
+        const created = await tampers.create({ data: columns });
+        // BE-ALM-02 生产侧：CRITICAL Tamper → 领域事件（通知适配器消费；非 CRITICAL 不产生）
+        if (severity === 'CRITICAL') {
+          await writeCriticalAlertOutbox(tx, {
+            type: 'CRITICAL_ALERT_RAISED',
+            kind: 'tamper',
+            tamperEventId: created.id,
+            deviceId,
+            customerId,
+            severity: 'CRITICAL',
+            occurredAt: new Date(message.occurredAt).toISOString(),
+            eventType,
+            component: columns.component as string | null,
+          });
+        }
         await writeArchiveOutbox(tx, {
           topicType: 'tamper',
           messageId: message.messageId,

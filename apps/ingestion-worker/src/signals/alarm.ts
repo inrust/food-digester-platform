@@ -11,7 +11,7 @@ import { quarantineError } from '../ingest/errors.js';
 import { hashPayload, processWithReceipt } from '../ingest/receipt.js';
 import type { ReceiptOutcome } from '../ingest/receipt.js';
 import type { ValidatedMessage } from '../ingest/pipeline.js';
-import { requireCustomerId, writeArchiveOutbox } from './archive.js';
+import { requireCustomerId, writeArchiveOutbox, writeCriticalAlertOutbox } from './archive.js';
 
 export interface AlarmHandlerDeps {
   readonly client: DbClient;
@@ -37,7 +37,7 @@ function asNumberString(value: unknown): string | undefined {
 }
 
 interface AlarmDelegate {
-  create(args: { data: Record<string, unknown> }): Promise<unknown>;
+  create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
 }
 
@@ -88,7 +88,22 @@ export function createAlarmHandler(deps: AlarmHandlerDeps): (message: ValidatedM
             recommendedAction: asString(data.recommendedAction) ?? null,
             sourceMessageId: message.messageId,
           };
-          await alarms(tx).create({ data: columns });
+          const created = await alarms(tx).create({ data: columns });
+          // BE-ALM-02 生产侧：CRITICAL 激活 → 领域事件（通知适配器消费；非 CRITICAL 不产生）
+          if (columns.severity === 'CRITICAL') {
+            await writeCriticalAlertOutbox(tx, {
+              type: 'CRITICAL_ALERT_RAISED',
+              kind: 'alarm',
+              alarmId: created.id,
+              deviceId,
+              customerId,
+              severity: 'CRITICAL',
+              occurredAt: new Date(detectedTime).toISOString(),
+              code,
+              category: columns.category as string,
+              message: columns.message as string | null,
+            });
+          }
           action = 'activated';
         } else {
           // CLEARED：关闭同设备同 code 的全部 ACTIVE 行；重复 CLEAR/无 ACTIVE → 幂等 no-op

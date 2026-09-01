@@ -53,3 +53,40 @@ export function requireCustomerId(customerId: string | null): string {
   }
   return customerId;
 }
+
+/**
+ * BE-ALM-02 生产侧：Critical 业务告警领域事件（Alarm 激活 / Tamper），与业务行同事务提交。
+ * 消费方为业务通知适配器（apps/cloud-api/src/notification/business-notifier）；
+ * 载荷仅含白名单业务字段（通知内容不得含敏感凭据）。
+ */
+export const CRITICAL_ALERT_RAISED_EVENT = 'CRITICAL_ALERT_RAISED' as const;
+
+export interface CriticalAlertPayload {
+  readonly type: typeof CRITICAL_ALERT_RAISED_EVENT;
+  readonly kind: 'alarm' | 'tamper';
+  readonly alarmId?: string;
+  readonly tamperEventId?: string;
+  readonly deviceId: string;
+  readonly customerId: string;
+  readonly severity: 'CRITICAL';
+  readonly occurredAt: string;
+  // alarm 专属
+  readonly code?: string;
+  readonly category?: string;
+  readonly message?: string | null;
+  // tamper 专属
+  readonly eventType?: string;
+  readonly component?: string | null;
+}
+
+export async function writeCriticalAlertOutbox(client: DbClient, payload: CriticalAlertPayload): Promise<void> {
+  const outbox = (client as unknown as Record<string, unknown>).outboxEvent as OutboxDelegate;
+  await outbox.create({
+    data: {
+      eventType: CRITICAL_ALERT_RAISED_EVENT,
+      aggregateType: payload.kind,
+      aggregateId: payload.alarmId ?? payload.tamperEventId ?? payload.deviceId,
+      payload,
+    },
+  });
+}

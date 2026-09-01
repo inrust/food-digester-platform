@@ -891,6 +891,42 @@ model OutboxEvent {
   @@map("outbox_events")
 }
 
+// ---------- 业务通知（BE-ALM-02） ----------
+
+model CustomerNotificationConfig {
+  id              String   @id @default(uuid())
+  customerId      String   @unique @map("customer_id")
+  enabled         Boolean  @default(true)
+  emailRecipients Json     @default("[]") @map("email_recipients")
+  webhookUrl      String?  @map("webhook_url")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("customer_notification_configs")
+}
+
+model NotificationDelivery {
+  id             String    @id @default(uuid())
+  // 幂等键：eventId:channel:target（重复事件/重复派发只产生一条投递记录）
+  idempotencyKey String    @unique @map("idempotency_key")
+  eventId        String    @map("event_id")
+  customerId     String    @map("customer_id")
+  channel        String // EMAIL | WEBHOOK
+  target         String
+  subject        String?
+  body           String
+  status         String    @default("PENDING") // PENDING | SENT | FAILED
+  retryCount     Int       @default(0) @map("retry_count")
+  lastError      String?   @map("last_error")
+  sentAt         DateTime? @map("sent_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([status, createdAt])
+  @@index([customerId, createdAt])
+  @@map("notification_deliveries")
+}
+
 model ReplayJob {
   id            String    @id @default(uuid())
   requestedBy   String    @map("requested_by")
