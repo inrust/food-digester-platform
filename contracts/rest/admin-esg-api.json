@@ -1,0 +1,569 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin ESG API",
+    "version": "0.1.0",
+    "description": "BE-ESG-02 ESG 查询与 CSV 导出接口（Cognito 认证）：最近聚合窗口（overview）、小时/日汇总、设备提交 Report、ESG 日汇总（含完整率/计算版本引用）、计算版本查询；异步 CSV 导出（202 入队 → Export Worker 生成 → 短期下载 URL，默认 15 分钟过期后不可用，不长期托管导出文件）。筛选：customerId（平台角色）/siteId（经设备归属解析）/deviceId/日期范围；列表键集游标分页。权限：查询 report:read（全角色）；导出 export:create（PlatformSuperAdmin/Auditor/CustomerAdmin）；Customer 角色租户隔离（强制所属 Customer scope；导出详情跨 Customer → 404）。审计：esg.export.create / esg.export.download（DOM-03）。原始数据审计查询与 RDS 聚合查询分离：本 API 仅查 RDS 聚合表（BE-ESG-01 产出），原始报文归档查询属 BE-ARC 通道。不提供第三方核证结论。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/esg/overview": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getEsgOverview",
+        "summary": "最近聚合窗口（各聚合表最新 bucket + ACTIVE 计算版本）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/CustomerId" }],
+        "responses": {
+          "200": {
+            "description": "最近聚合窗口",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EsgOverviewSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/esg/hourly": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listEsgHourly",
+        "summary": "小时汇总（筛选 + 游标分页；时间列为 bucketStart）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/CustomerId" },
+          { "$ref": "#/components/parameters/SiteId" },
+          { "$ref": "#/components/parameters/DeviceId" },
+          { "$ref": "#/components/parameters/From" },
+          { "$ref": "#/components/parameters/To" },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "小时汇总列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EsgHourlyListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/esg/daily": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listEsgDaily",
+        "summary": "日汇总（筛选 + 游标分页；时间列为 bucketDate）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/CustomerId" },
+          { "$ref": "#/components/parameters/SiteId" },
+          { "$ref": "#/components/parameters/DeviceId" },
+          { "$ref": "#/components/parameters/From" },
+          { "$ref": "#/components/parameters/To" },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "日汇总列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EsgDailyListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/esg/reports": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listEsgReports",
+        "summary": "设备提交 Report（+reportType 筛选；时间列为 periodStartTime）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/CustomerId" },
+          { "$ref": "#/components/parameters/SiteId" },
+          { "$ref": "#/components/parameters/DeviceId" },
+          {
+            "name": "reportType",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["CYCLE", "HOURLY", "DAILY"] }
+          },
+          { "$ref": "#/components/parameters/From" },
+          { "$ref": "#/components/parameters/To" },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report 列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EsgReportListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/esg/daily-summary": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listEsgDailySummary",
+        "summary": "ESG 日汇总（含完整率/计算版本引用；时间列为 summaryDate）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/CustomerId" },
+          { "$ref": "#/components/parameters/SiteId" },
+          { "$ref": "#/components/parameters/DeviceId" },
+          { "$ref": "#/components/parameters/From" },
+          { "$ref": "#/components/parameters/To" },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "ESG 日汇总列表",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/EsgDailySummaryListSuccess" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/esg/calculation-versions": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listEsgCalculationVersions",
+        "summary": "计算版本查询（全局元数据，无租户维度）",
+        "security": [{ "CognitoJwt": [] }],
+        "responses": {
+          "200": {
+            "description": "计算版本列表",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/EsgCalculationVersionListSuccess" } }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/esg/exports": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createEsgExport",
+        "summary": "创建异步 CSV 导出（202 入队；筛选快照冻结；审计 esg.export.create）",
+        "security": [{ "CognitoJwt": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EsgExportCreate" } } }
+        },
+        "responses": {
+          "202": {
+            "description": "导出任务已入队（PENDING）",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EsgExportSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/esg/exports/{exportId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getEsgExport",
+        "summary": "导出任务状态；COMPLETED 且未过期返回短期下载 URL（过期后不可用；下载审计）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "exportId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "导出任务详情",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EsgExportSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "$ref": "openapi-base.json#/components/securitySchemes/CognitoJwt" }
+    },
+    "parameters": {
+      "Cursor": { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+      "Limit": { "$ref": "openapi-base.json#/components/parameters/Limit" },
+      "CustomerId": {
+        "name": "customerId",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "string" },
+        "description": "平台角色可用；Customer 角色强制本 Customer"
+      },
+      "SiteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "string" },
+        "description": "经设备归属解析"
+      },
+      "DeviceId": { "name": "deviceId", "in": "query", "required": false, "schema": { "type": "string" } },
+      "From": {
+        "name": "from",
+        "in": "query",
+        "required": false,
+        "schema": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+        "description": "时间下限（含；各数据集映射到各自时间列）"
+      },
+      "To": {
+        "name": "to",
+        "in": "query",
+        "required": false,
+        "schema": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+        "description": "时间上限（含）"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：非法枚举/时间/缺 dataset）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（缺 report:read/export:create）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "不存在或跨 Customer（NOT_FOUND）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "MetricsAggregate": {
+        "type": "object",
+        "description": "指标聚合值（键名与 Telemetry Payload 一致；值为 {avg,min,max,count}）",
+        "additionalProperties": {
+          "type": "object",
+          "required": ["avg", "min", "max", "count"],
+          "properties": {
+            "avg": { "type": "number" },
+            "min": { "type": "number" },
+            "max": { "type": "number" },
+            "count": { "type": "number" }
+          }
+        }
+      },
+      "EsgHourly": {
+        "type": "object",
+        "required": ["deviceId", "customerId", "bucketStart", "sampleCount", "completenessPct", "metrics"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "bucketStart": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "sampleCount": { "type": "integer", "minimum": 0 },
+          "completenessPct": { "type": ["number", "null"], "description": "完整率（BE-ESG-01 补齐；未补齐为 null）" },
+          "metrics": { "$ref": "#/components/schemas/MetricsAggregate" }
+        }
+      },
+      "EsgDaily": {
+        "type": "object",
+        "required": ["deviceId", "customerId", "bucketDate", "sampleCount", "completenessPct", "metrics"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "bucketDate": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "sampleCount": { "type": "integer", "minimum": 0 },
+          "completenessPct": { "type": ["number", "null"] },
+          "metrics": { "$ref": "#/components/schemas/MetricsAggregate" }
+        }
+      },
+      "EsgReport": {
+        "type": "object",
+        "required": [
+          "reportId",
+          "deviceId",
+          "customerId",
+          "reportType",
+          "periodStartTime",
+          "periodEndTime",
+          "feedingWeightKg",
+          "dischargeWeightKg",
+          "reductionWeightKg",
+          "cycleCount",
+          "processingMinutes",
+          "powerConsumptionKwh",
+          "avgPowerKw",
+          "avgO2Pct",
+          "avgCo2Ppm",
+          "avgCh4Ppm",
+          "avgN2oPpm",
+          "carbonReductionKg",
+          "carbonReductionMethod",
+          "dataCompletenessPct",
+          "missingRecordCount",
+          "calculationVersionId"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "reportId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "reportType": { "type": "string", "enum": ["CYCLE", "HOURLY", "DAILY"] },
+          "periodStartTime": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "periodEndTime": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "feedingWeightKg": { "type": ["number", "null"] },
+          "dischargeWeightKg": { "type": ["number", "null"] },
+          "reductionWeightKg": { "type": ["number", "null"] },
+          "cycleCount": { "type": ["integer", "null"] },
+          "processingMinutes": { "type": ["integer", "null"] },
+          "powerConsumptionKwh": { "type": ["number", "null"] },
+          "avgPowerKw": { "type": ["number", "null"] },
+          "avgO2Pct": { "type": ["number", "null"] },
+          "avgCo2Ppm": { "type": ["number", "null"] },
+          "avgCh4Ppm": { "type": ["number", "null"] },
+          "avgN2oPpm": { "type": ["number", "null"] },
+          "carbonReductionKg": { "type": ["number", "null"] },
+          "carbonReductionMethod": { "type": ["string", "null"] },
+          "dataCompletenessPct": { "type": ["number", "null"], "description": "报告完整率" },
+          "missingRecordCount": { "type": ["integer", "null"] },
+          "calculationVersionId": { "type": ["string", "null"] }
+        }
+      },
+      "EsgDailySummary": {
+        "type": "object",
+        "required": [
+          "deviceId",
+          "customerId",
+          "summaryDate",
+          "feedingWeightKg",
+          "dischargeWeightKg",
+          "reductionWeightKg",
+          "powerConsumptionKwh",
+          "carbonReductionKg",
+          "dataCompletenessPct",
+          "missingRecordCount",
+          "calculationVersionId"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "summaryDate": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "feedingWeightKg": { "type": ["number", "null"] },
+          "dischargeWeightKg": { "type": ["number", "null"] },
+          "reductionWeightKg": { "type": ["number", "null"] },
+          "powerConsumptionKwh": { "type": ["number", "null"] },
+          "carbonReductionKg": { "type": ["number", "null"] },
+          "dataCompletenessPct": { "type": ["number", "null"] },
+          "missingRecordCount": { "type": ["integer", "null"] },
+          "calculationVersionId": { "type": ["string", "null"] }
+        }
+      },
+      "EsgCalculationVersion": {
+        "type": "object",
+        "required": ["versionId", "version", "description", "formula", "effectiveFrom", "status", "createdAt"],
+        "additionalProperties": false,
+        "properties": {
+          "versionId": { "type": "string", "minLength": 1 },
+          "version": { "type": "string", "minLength": 1 },
+          "description": { "type": ["string", "null"] },
+          "formula": { "description": "计算方法参数（BE-ESG-01 落库）" },
+          "effectiveFrom": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "status": { "type": "string", "enum": ["ACTIVE", "SUPERSEDED"] },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "EsgOverview": {
+        "type": "object",
+        "required": [
+          "latestHourlyBucketStart",
+          "latestDailyBucketDate",
+          "latestEsgSummaryDate",
+          "activeCalculationVersion"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "latestHourlyBucketStart": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "latestDailyBucketDate": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "latestEsgSummaryDate": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "activeCalculationVersion": {
+            "oneOf": [{ "$ref": "#/components/schemas/EsgCalculationVersion" }, { "type": "null" }]
+          }
+        }
+      },
+      "EsgExportCreate": {
+        "type": "object",
+        "required": ["dataset"],
+        "additionalProperties": false,
+        "properties": {
+          "dataset": {
+            "type": "string",
+            "enum": ["HOURLY", "DAILY", "REPORTS", "DAILY_SUMMARY"],
+            "description": "导出数据集（CSV Schema 列集合封闭）"
+          },
+          "customerId": { "type": "string", "description": "平台角色可用；Customer 角色强制本 Customer" },
+          "siteId": { "type": "string" },
+          "deviceId": { "type": "string" },
+          "from": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "to": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "EsgExportJob": {
+        "type": "object",
+        "required": [
+          "exportId",
+          "dataset",
+          "status",
+          "filters",
+          "rowCount",
+          "downloadUrl",
+          "urlExpiresAt",
+          "urlExpired",
+          "error",
+          "requestedBy",
+          "createdAt",
+          "completedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "exportId": { "type": "string", "minLength": 1 },
+          "dataset": { "type": "string", "enum": ["HOURLY", "DAILY", "REPORTS", "DAILY_SUMMARY"] },
+          "status": { "type": "string", "enum": ["PENDING", "PROCESSING", "COMPLETED", "FAILED"] },
+          "filters": { "type": "object", "description": "创建时冻结的筛选快照" },
+          "rowCount": { "type": ["integer", "null"], "minimum": 0 },
+          "downloadUrl": {
+            "type": ["string", "null"],
+            "description": "短期下载 URL（COMPLETED 且未过期时返回；过期/未完成为 null）"
+          },
+          "urlExpiresAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "urlExpired": { "type": "boolean", "description": "下载 URL 已过期（过期后不可用）" },
+          "error": { "type": ["string", "null"] },
+          "requestedBy": { "type": "string", "minLength": 1 },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "completedAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          }
+        }
+      },
+      "EsgOverviewSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/EsgOverview" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "EsgHourlyListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/EsgHourly" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      },
+      "EsgDailyListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/EsgDaily" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      },
+      "EsgReportListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/EsgReport" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      },
+      "EsgDailySummaryListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/EsgDailySummary" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      },
+      "EsgCalculationVersionListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/EsgCalculationVersion" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "EsgExportSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/EsgExportJob" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}

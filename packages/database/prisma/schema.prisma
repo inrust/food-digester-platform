@@ -891,6 +891,26 @@ model OutboxEvent {
   @@map("outbox_events")
 }
 
+model EsgExportJob {
+  id           String    @id @default(uuid())
+  customerId   String?   @map("customer_id") // 导出租户范围（Customer 角色强制；平台角色可为空=全量或指定）
+  requestedBy  String    @map("requested_by")
+  dataset      String // HOURLY | DAILY | REPORTS | DAILY_SUMMARY（封闭集合）
+  filters      Json // 创建时冻结的筛选快照（customerId/siteId/deviceId/from/to）
+  status       String    @default("PENDING") // PENDING | PROCESSING | COMPLETED | FAILED
+  rowCount     Int?      @map("row_count")
+  storageKey   String?   @map("storage_key")
+  downloadUrl  String?   @map("download_url")
+  urlExpiresAt DateTime? @map("url_expires_at") @db.Timestamptz
+  error        String?
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  completedAt  DateTime? @map("completed_at") @db.Timestamptz
+
+  @@index([status, createdAt])
+  @@index([customerId, createdAt])
+  @@map("esg_export_jobs")
+}
+
 // ---------- 业务通知（BE-ALM-02） ----------
 
 model CustomerNotificationConfig {
