@@ -1,9 +1,12 @@
 /**
  * BE-CMD-01 Command 创建与授权 API Handler（框架无关）。
+ * BE-CMD-03 扩展：命令列表/详情查询。
  *
  * 接线：AUTH-01 withAuthorization（command:send = PlatformSuperAdmin/PlatformOperator/
- * CustomerAdmin）→ Service。路由：
+ * CustomerAdmin；查询复用 device:read——DEC-012 V1 矩阵无 command:read，不扩矩阵）→ Service。路由：
  * - POST /api/v1/admin/devices/{deviceId}/commands  创建并授权（201；meta.id 幂等重放 200）
+ * - GET  /api/v1/admin/commands                     列表（筛选 + 键集游标分页）
+ * - GET  /api/v1/admin/commands/{commandId}         详情（含 attempts/acks 时间线）
  * 功能边界：不发布 MQTT，不执行设备动作。
  * 响应契约对齐 CT-05：data + meta{requestId,timestamp}；错误 {error{code,message,requestId}}。
  */
@@ -14,11 +17,14 @@ import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.
 import { AdminCommandError, commandValidationFailed } from './errors.js';
 import { createCommand } from './service.js';
 import type { CommandDeps } from './service.js';
+import { getCommandDetail, listCommands } from './query-service.js';
 
 export type AdminCommandHandlerDeps = CommandDeps;
 
 export interface AdminCommandHandlers {
   createCommand(req: AdminHttpRequest): Promise<AdminHttpResponse>;
+  listCommands(req: AdminHttpRequest): Promise<AdminHttpResponse>;
+  getCommand(req: AdminHttpRequest): Promise<AdminHttpResponse>;
 }
 
 const SENSITIVE_LEAK_PATTERN = /(stack|sql|select |insert |update |delete from|aws|arn:aws|access ?key|secret)/i;
@@ -74,10 +80,66 @@ export function createAdminCommandHandlers(deps: AdminCommandHandlerDeps): Admin
     };
   });
 
+  interface ListQuery {
+    customerId?: string;
+    deviceId?: string;
+    status?: string;
+    command?: string;
+    from?: string;
+    to?: string;
+    cursor?: string;
+    limit?: string;
+  }
+
+  const list = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'device:read' }, async (req) => {
+    const q = (req.query ?? {}) as ListQuery;
+    const page = await listCommands(deps, req.actor as ActorContext, {
+      ...(q.customerId !== undefined ? { customerId: q.customerId } : {}),
+      ...(q.deviceId !== undefined ? { deviceId: q.deviceId } : {}),
+      ...(q.status !== undefined ? { status: q.status } : {}),
+      ...(q.command !== undefined ? { command: q.command } : {}),
+      ...(q.from !== undefined ? { from: q.from } : {}),
+      ...(q.to !== undefined ? { to: q.to } : {}),
+      ...(q.cursor !== undefined ? { cursor: q.cursor } : {}),
+      ...(q.limit !== undefined ? { limit: q.limit } : {}),
+    });
+    return {
+      status: 200,
+      body: {
+        data: page.items,
+        meta: { requestId: req.requestId, timestamp: now().toISOString(), nextCursor: page.nextCursor },
+      },
+    };
+  });
+
+  const get = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'device:read' }, async (req) => {
+    const commandId = req.params?.commandId;
+    if (!commandId) throw commandValidationFailed('commandId path parameter is required');
+    const view = await getCommandDetail(deps, req.actor as ActorContext, commandId);
+    return {
+      status: 200,
+      body: { data: view, meta: { requestId: req.requestId, timestamp: now().toISOString() } },
+    };
+  });
+
   return {
     createCommand: async (req) => {
       try {
         return await create(req);
+      } catch (err) {
+        return toErrorResponse(err, req);
+      }
+    },
+    listCommands: async (req) => {
+      try {
+        return await list(req);
+      } catch (err) {
+        return toErrorResponse(err, req);
+      }
+    },
+    getCommand: async (req) => {
+      try {
+        return await get(req);
       } catch (err) {
         return toErrorResponse(err, req);
       }

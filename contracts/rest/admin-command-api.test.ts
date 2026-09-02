@@ -67,6 +67,41 @@ test('响应 Schema 封闭且含 requestedBy/expiresAt/replayed/confirmedBy', ()
   assert.deepEqual(view.properties.status.enum, ['AUTHORIZED'], '创建即授权');
 });
 
+test('BE-CMD-03 查询端点齐备：列表/详情 + 状态枚举 + attempts/acks 时间线', () => {
+  const list = doc.paths['/api/v1/admin/commands'].get;
+  assert.ok(list, '缺少列表端点');
+  assert.equal(list.operationId, 'listCommands');
+  assert.deepEqual(list.security, [{ CognitoJwt: [] }]);
+  for (const code of ['200', '400', '401', '403', '500']) assert.ok(list.responses[code], `列表缺少 ${code}`);
+  const names = list.parameters.map((p: { name?: string; $ref?: string }) => p.name ?? p.$ref);
+  for (const p of ['customerId', 'deviceId', 'status', 'command', 'from', 'to']) {
+    assert.ok(names.includes(p), `列表缺少参数 ${p}`);
+  }
+
+  const detail = doc.paths['/api/v1/admin/commands/{commandId}'].get;
+  assert.ok(detail, '缺少详情端点');
+  assert.equal(detail.operationId, 'getCommand');
+  assert.ok(detail.responses['404'], '详情缺少 404');
+
+  assert.deepEqual(doc.components.schemas.CommandStatus.enum, [
+    'CREATED',
+    'AUTHORIZED',
+    'PUBLISHING',
+    'PUBLISHED',
+    'ACKNOWLEDGED',
+    'SUCCEEDED',
+    'FAILED',
+    'TIMED_OUT',
+    'CANCELLED',
+  ]);
+  const detailSchema = doc.components.schemas.CommandDetail;
+  assert.equal(detailSchema.additionalProperties, false);
+  for (const field of ['attempts', 'acks', 'remarks', 'confirmedBy']) {
+    assert.ok(detailSchema.required.includes(field), `CommandDetail 缺少 ${field}`);
+  }
+  assert.deepEqual(doc.components.schemas.CommandAck.properties.result.enum, ['SUCCESS', 'FAILED', 'RECEIVED']);
+});
+
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {
   const refs = collectRefs(doc);
   assert.ok(refs.length > 0);

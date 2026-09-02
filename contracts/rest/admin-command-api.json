@@ -48,6 +48,82 @@
           "500": { "$ref": "#/components/responses/InternalError" }
         }
       }
+    },
+    "/api/v1/admin/commands": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listCommands",
+        "summary": "Command 列表（BE-CMD-03；status/command/device/时间范围筛选 + 键集游标分页；device:read）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "description": "平台角色可用；Customer 角色强制本 Customer" }
+          },
+          { "name": "deviceId", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "#/components/schemas/CommandStatus" }
+          },
+          {
+            "name": "command",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "#/components/schemas/CommandName" }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+            "description": "requestTime 下限（含）"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+            "description": "requestTime 上限（含）"
+          },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Command 列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommandListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/commands/{commandId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getCommand",
+        "summary": "Command 详情（BE-CMD-03；含 attempts/acks 时间线；跨 Customer → 404）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "commandId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Command 详情",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommandDetailSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
     }
   },
   "components": {
@@ -198,7 +274,152 @@
           "data": { "$ref": "#/components/schemas/CommandView" },
           "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
         }
+      },
+      "CommandStatus": {
+        "type": "string",
+        "description": "命令状态机（实施方案 §11.7 + PUBLISHING 抢占中间态，BE-CMD-02/03）",
+        "enum": [
+          "CREATED",
+          "AUTHORIZED",
+          "PUBLISHING",
+          "PUBLISHED",
+          "ACKNOWLEDGED",
+          "SUCCEEDED",
+          "FAILED",
+          "TIMED_OUT",
+          "CANCELLED"
+        ]
+      },
+      "CommandListItem": {
+        "type": "object",
+        "required": [
+          "commandId",
+          "deviceId",
+          "customerId",
+          "command",
+          "category",
+          "highRisk",
+          "status",
+          "requestedBy",
+          "requestTime",
+          "timeoutSec",
+          "expiresAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "commandId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "command": { "$ref": "#/components/schemas/CommandName" },
+          "category": {
+            "type": "string",
+            "enum": ["MACHINE", "MOTOR", "HEATING", "VENTILATION", "DISCHARGE", "DEVICE"]
+          },
+          "highRisk": { "type": "boolean" },
+          "status": { "$ref": "#/components/schemas/CommandStatus" },
+          "requestedBy": { "type": "string", "minLength": 1 },
+          "requestTime": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "timeoutSec": { "type": "integer", "minimum": 1, "maximum": 3600 },
+          "expiresAt": { "type": ["string", "null"], "format": "date-time" },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "CommandAttempt": {
+        "type": "object",
+        "required": ["attemptNo", "publishedAt"],
+        "additionalProperties": false,
+        "properties": {
+          "attemptNo": { "type": "integer", "minimum": 1 },
+          "publishedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "CommandAck": {
+        "type": "object",
+        "required": ["result", "executeTimeMs", "errorCode", "message", "ackAt", "sourceMessageId"],
+        "additionalProperties": false,
+        "properties": {
+          "result": {
+            "type": "string",
+            "enum": ["SUCCESS", "FAILED", "RECEIVED"],
+            "description": "线上 result 原样保留；RECEIVED = 无 result 的收到确认（BE-CMD-03）"
+          },
+          "executeTimeMs": { "type": ["integer", "null"], "minimum": 0 },
+          "errorCode": { "type": ["string", "null"] },
+          "message": { "type": ["string", "null"] },
+          "ackAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "sourceMessageId": { "type": ["string", "null"], "description": "ack 消息 meta.id（追溯链）" }
+        }
+      },
+      "CommandDetail": {
+        "type": "object",
+        "required": [
+          "commandId",
+          "deviceId",
+          "customerId",
+          "command",
+          "category",
+          "highRisk",
+          "status",
+          "requestedBy",
+          "requestTime",
+          "timeoutSec",
+          "expiresAt",
+          "createdAt",
+          "updatedAt",
+          "remarks",
+          "confirmedBy",
+          "attempts",
+          "acks"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "commandId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "command": { "$ref": "#/components/schemas/CommandName" },
+          "category": {
+            "type": "string",
+            "enum": ["MACHINE", "MOTOR", "HEATING", "VENTILATION", "DISCHARGE", "DEVICE"]
+          },
+          "highRisk": { "type": "boolean" },
+          "status": { "$ref": "#/components/schemas/CommandStatus" },
+          "requestedBy": { "type": "string", "minLength": 1 },
+          "requestTime": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "timeoutSec": { "type": "integer", "minimum": 1, "maximum": 3600 },
+          "expiresAt": { "type": ["string", "null"], "format": "date-time" },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "remarks": { "type": ["string", "null"] },
+          "confirmedBy": { "type": ["string", "null"] },
+          "attempts": { "type": "array", "items": { "$ref": "#/components/schemas/CommandAttempt" } },
+          "acks": { "type": "array", "items": { "$ref": "#/components/schemas/CommandAck" } }
+        }
+      },
+      "CommandListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/CommandListItem" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      },
+      "CommandDetailSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/CommandDetail" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
       }
+    },
+    "parameters": {
+      "Cursor": { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+      "Limit": { "$ref": "openapi-base.json#/components/parameters/Limit" }
     }
   }
 }

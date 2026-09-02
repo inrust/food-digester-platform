@@ -15,7 +15,10 @@ export type IngestErrorType =
   | 'SCHEMA_VIOLATION'
   | 'CLOCK_SKEW'
   | 'PAYLOAD_CONFLICT'
-  | 'INVALID_REPORT';
+  | 'INVALID_REPORT'
+  | 'UNKNOWN_COMMAND'
+  | 'COMMAND_MISMATCH'
+  | 'INVALID_COMMAND_STATE';
 
 export class IngestError extends Error {
   override readonly name = 'IngestError';

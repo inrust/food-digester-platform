@@ -1,5 +1,6 @@
 /**
  * BE-CMD-01 命令领域规则单测：22 命令矩阵（目录一致性）、状态门、参数/timeoutSec、高风险确认凭证。
+ * BE-CMD-03：ACK/Timeout 状态机分类（含迟到 ACK 规则）。
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -8,13 +9,18 @@ import {
   COMMAND_CATALOG,
   COMMAND_CATALOG_VERSION,
   COMMAND_CONFIRMATION_TTL_MS,
+  COMMAND_TERMINAL_STATUSES,
   COMMAND_TIMEOUT_MAX_SEC,
+  COMMAND_UNFINISHED_STATUSES,
   CommandError,
+  ackResultForStorage,
   assertCommandAllowed,
   assertCommandParams,
   assertHighRiskConfirmation,
   assertKnownCommand,
+  classifyAck,
   getCommandSpec,
+  isCommandExpired,
   resolveCommandGateStatus,
 } from '../src/index.js';
 
@@ -176,5 +182,54 @@ describe('高风险确认凭证', () => {
       { confirmText: 'EMERGENCY_STOP', confirmedAt: new Date(NOW.getTime() - 1000).toISOString() },
       NOW,
     );
+  });
+});
+
+describe('ACK/Timeout 状态机（BE-CMD-03）', () => {
+  test('PUBLISHED + SUCCESS/FAILED → SUCCEEDED/FAILED；无 result → ACKNOWLEDGED', () => {
+    assert.deepEqual(classifyAck('PUBLISHED', 'SUCCESS'), { kind: 'APPLY', to: 'SUCCEEDED' });
+    assert.deepEqual(classifyAck('PUBLISHED', 'FAILED'), { kind: 'APPLY', to: 'FAILED' });
+    assert.deepEqual(classifyAck('PUBLISHED', null), { kind: 'APPLY', to: 'ACKNOWLEDGED' });
+  });
+
+  test('ACKNOWLEDGED + result → SUCCEEDED/FAILED；重复收到确认（无 result）→ EVENT_ONLY', () => {
+    assert.deepEqual(classifyAck('ACKNOWLEDGED', 'SUCCESS'), { kind: 'APPLY', to: 'SUCCEEDED' });
+    assert.deepEqual(classifyAck('ACKNOWLEDGED', 'FAILED'), { kind: 'APPLY', to: 'FAILED' });
+    assert.deepEqual(classifyAck('ACKNOWLEDGED', null), { kind: 'EVENT_ONLY' });
+  });
+
+  test('TIMED_OUT + 任意 ACK → EVENT_ONLY（迟到 ACK 不得把 TimedOut 静默改成功）', () => {
+    for (const result of ['SUCCESS', 'FAILED', null] as const) {
+      assert.deepEqual(classifyAck('TIMED_OUT', result), { kind: 'EVENT_ONLY' });
+    }
+  });
+
+  test('终态（SUCCEEDED/FAILED/CANCELLED）+ 任意 ACK → EVENT_ONLY（保存事件不改状态）', () => {
+    for (const status of ['SUCCEEDED', 'FAILED', 'CANCELLED']) {
+      for (const result of ['SUCCESS', 'FAILED', null] as const) {
+        assert.deepEqual(classifyAck(status, result), { kind: 'EVENT_ONLY' }, `${status}/${result}`);
+      }
+    }
+  });
+
+  test('未发布（CREATED/AUTHORIZED/PUBLISHING）→ INVALID_PRECONDITION（设备不可能持有）', () => {
+    for (const status of ['CREATED', 'AUTHORIZED', 'PUBLISHING']) {
+      assert.deepEqual(classifyAck(status, 'SUCCESS'), { kind: 'INVALID_PRECONDITION' }, status);
+    }
+  });
+
+  test('终态与超时扫描集合互斥且覆盖全部迁移后状态；ack 落库值映射；过期判定', () => {
+    for (const s of COMMAND_TERMINAL_STATUSES) {
+      assert.ok(!COMMAND_UNFINISHED_STATUSES.includes(s as never), `${s} 不应出现在超时扫描集`);
+    }
+    assert.deepEqual([...COMMAND_UNFINISHED_STATUSES], ['AUTHORIZED', 'PUBLISHING', 'PUBLISHED', 'ACKNOWLEDGED']);
+    assert.equal(ackResultForStorage('SUCCESS'), 'SUCCESS');
+    assert.equal(ackResultForStorage('FAILED'), 'FAILED');
+    assert.equal(ackResultForStorage(null), 'RECEIVED');
+    const now = new Date('2026-08-31T10:00:00Z');
+    assert.isTrue(isCommandExpired(new Date(now.getTime()), now), '等于 expiresAt 视为过期');
+    assert.isTrue(isCommandExpired(new Date(now.getTime() - 1), now));
+    assert.isFalse(isCommandExpired(new Date(now.getTime() + 1), now));
+    assert.isFalse(isCommandExpired(null, now));
   });
 });

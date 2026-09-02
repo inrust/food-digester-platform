@@ -6,3 +6,5 @@ export { createEventHandler } from './event.js';
 export type { EventHandlerDeps, EventHandleResult } from './event.js';
 export { createTamperHandler, TAMPER_SUSPEND_SEVERITIES } from './tamper.js';
 export type { TamperHandlerDeps, TamperHandleResult } from './tamper.js';
+export { createAckHandler } from './ack.js';
+export type { AckAction, AckHandlerDeps, AckHandleResult } from './ack.js';

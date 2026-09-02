@@ -6,7 +6,7 @@ import type { DbClient } from '@fdp/database';
 import { quarantineError } from '../ingest/errors.js';
 
 export interface ArchiveOutboxParams {
-  readonly topicType: 'alarm' | 'event' | 'tamper';
+  readonly topicType: 'alarm' | 'event' | 'tamper' | 'ack';
   readonly messageId: string;
   readonly deviceId: string;
   readonly customerId: string;

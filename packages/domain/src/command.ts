@@ -1,10 +1,12 @@
 /**
- * DOM-02 扩展：远程命令创建与授权决策（BE-CMD-01）。
+ * DOM-02 扩展：远程命令创建与授权决策（BE-CMD-01）+ ACK/Timeout 状态机（BE-CMD-03）。
  *
  * 事实源：contracts/mqtt/command-catalog.json（CT-04，catalogVersion 1.0.1，22 个命令白名单；
  * allowedStatuses 基于设备 Operational 状态；MAINTENANCE 暂按 Suspended 限制——DEC-001 暂定映射
  * 已内嵌于目录）。契约目录不被 packages 引用（同耗材先例），此处复制常量并由
  * packages/domain/test/command.test.ts 与契约目录做一致性校验。
+ * ACK 语义事实源：contracts/mqtt/schemas/ack.schema.json（result: SUCCESS|FAILED，字段级弱必填）
+ * 与实施方案 §11.7 命令状态机。
  *
  * 本模块纯函数：不做 IO、不发布 MQTT、不执行设备动作（BE-CMD-01 功能边界）。
  */
@@ -174,4 +176,82 @@ export function assertHighRiskConfirmation(
   if (nowMs - confirmedAtMs > COMMAND_CONFIRMATION_TTL_MS) {
     throw new CommandError('VALIDATION_FAILED', 'Confirmation credential has expired');
   }
+}
+
+// ---------- ACK/Timeout 状态机（BE-CMD-03） ----------
+
+/**
+ * 命令状态全集（实施方案 §11.7 + BE-CMD-02 PUBLISHING 抢占中间态）：
+ * CREATED → AUTHORIZED → PUBLISHING → PUBLISHED → ACKNOWLEDGED → SUCCEEDED
+ *                                            ├─────────────────→ FAILED
+ *                                            └─────────────────→ TIMED_OUT
+ * CREATED/AUTHORIZED → CANCELLED。
+ */
+export const COMMAND_STATUSES = [
+  'CREATED',
+  'AUTHORIZED',
+  'PUBLISHING',
+  'PUBLISHED',
+  'ACKNOWLEDGED',
+  'SUCCEEDED',
+  'FAILED',
+  'TIMED_OUT',
+  'CANCELLED',
+] as const;
+export type CommandStatus = (typeof COMMAND_STATUSES)[number];
+
+/** 终态：到达后任何 ACK 不得再迁移（迟到 ACK 仅保存为事件，不得把 TIMED_OUT 静默改成功）。 */
+export const COMMAND_TERMINAL_STATUSES = ['SUCCEEDED', 'FAILED', 'TIMED_OUT', 'CANCELLED'] as const;
+
+/** Timeout 扫描范围：已授权/发布但未完成的全部状态（PUBLISHING 滞留由超时兜底）。 */
+export const COMMAND_UNFINISHED_STATUSES = ['AUTHORIZED', 'PUBLISHING', 'PUBLISHED', 'ACKNOWLEDGED'] as const;
+
+/** ACK 线上 result 值（ack.schema.json data.result 枚举）。 */
+export type AckWireResult = 'SUCCESS' | 'FAILED';
+
+/** ACK 处理结果分类。 */
+export type AckOutcome =
+  | { readonly kind: 'APPLY'; readonly to: 'ACKNOWLEDGED' | 'SUCCEEDED' | 'FAILED' }
+  | { readonly kind: 'EVENT_ONLY' }
+  | { readonly kind: 'INVALID_PRECONDITION' };
+
+/**
+ * ACK 分类（纯函数；状态迁移合法性校验，实施方案 §9.3"必须校验允许的前置状态"）：
+ * - PUBLISHED + result → SUCCEEDED/FAILED；PUBLISHED + 无 result → ACKNOWLEDGED（收到确认，结果后至）；
+ * - ACKNOWLEDGED + result → SUCCEEDED/FAILED；ACKNOWLEDGED + 无 result → 重复收到确认（EVENT_ONLY）；
+ * - 终态（SUCCEEDED/FAILED/CANCELLED）+ 任意 ACK → EVENT_ONLY（重复/竞争，保存事件不改状态）；
+ * - TIMED_OUT + 任意 ACK → EVENT_ONLY（迟到 ACK：保存为事件但不得把 TimedOut 静默改成功）；
+ * - CREATED/AUTHORIZED/PUBLISHING + 任意 ACK → INVALID_PRECONDITION
+ *   （命令尚未发布，设备不可能持有；隔离而非落库）。
+ */
+export function classifyAck(status: string, result: AckWireResult | null): AckOutcome {
+  switch (status) {
+    case 'PUBLISHED':
+      if (result === 'SUCCESS') return { kind: 'APPLY', to: 'SUCCEEDED' };
+      if (result === 'FAILED') return { kind: 'APPLY', to: 'FAILED' };
+      return { kind: 'APPLY', to: 'ACKNOWLEDGED' };
+    case 'ACKNOWLEDGED':
+      if (result === 'SUCCESS') return { kind: 'APPLY', to: 'SUCCEEDED' };
+      if (result === 'FAILED') return { kind: 'APPLY', to: 'FAILED' };
+      return { kind: 'EVENT_ONLY' };
+    case 'SUCCEEDED':
+    case 'FAILED':
+    case 'TIMED_OUT':
+    case 'CANCELLED':
+      return { kind: 'EVENT_ONLY' };
+    default:
+      return { kind: 'INVALID_PRECONDITION' };
+  }
+}
+
+/** command_acks.result 落库值：线上 SUCCESS/FAILED 原样保留；无 result 的收到确认记 RECEIVED。 */
+export type AckStoredResult = 'SUCCESS' | 'FAILED' | 'RECEIVED';
+
+export function ackResultForStorage(result: AckWireResult | null): AckStoredResult {
+  return result ?? 'RECEIVED';
+}
+
+/** 超时判定：expiresAt 已过（>= 视为过期，与 BE-CMD-02 发布器同语义）。 */
+export function isCommandExpired(expiresAt: Date | null, now: Date): boolean {
+  return expiresAt !== null && now.getTime() >= expiresAt.getTime();
 }

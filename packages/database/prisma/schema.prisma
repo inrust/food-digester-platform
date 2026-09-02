@@ -700,6 +700,7 @@ model DeviceCommand {
   acks     CommandAck[]
 
   @@index([deviceId, status])
+  @@index([status, expiresAt], map: "device_commands_status_expires_idx")
   @@map("device_commands")
 }
 
@@ -719,7 +720,7 @@ model CommandAttempt {
 model CommandAck {
   id              String   @id @default(uuid())
   commandId       String   @map("command_id")
-  result          String // SUCCEEDED | FAILED | ...
+  result          String // SUCCESS | FAILED | RECEIVED（无 result 的收到确认，BE-CMD-03）
   executeTimeMs   Int?     @map("execute_time_ms")
   errorCode       String?  @map("error_code")
   message         String?
