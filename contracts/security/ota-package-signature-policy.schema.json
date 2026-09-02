@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hiddenjoya.local/contracts/security/ota-package-signature-policy.schema.json",
+  "title": "OTA Package Signature Policy",
+  "description": "OTA 固件包签名策略的结构契约。signature.algorithm/trustRoot/encoding 为待冻结参数：provisional 状态必须为 null，frozen 状态必须填入。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "type": "object",
+  "required": [
+    "policyVersion",
+    "updatedAt",
+    "x-decision-versions",
+    "status",
+    "description",
+    "verification",
+    "payload",
+    "signature",
+    "trust",
+    "pendingParameters",
+    "frozenUpgradePath"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "policyVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "策略自身版本。provisional 为 0.x；签名机制冻结后必须 >= 1.0.0。"
+    },
+    "updatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "UTC ISO-8601 时间戳。"
+    },
+    "x-decision-versions": {
+      "type": "array",
+      "description": "决策追溯引用，格式 决策ID@semver；当前无登记决策（实施方案 §20 风险表），冻结时补充。"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["provisional", "frozen"],
+      "description": "provisional=暂定值（签名机制未冻结）；frozen=已冻结。"
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "verification": {
+      "type": "object",
+      "required": ["serverSide", "failClosed", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "serverSide": {
+          "type": "boolean",
+          "enum": [true],
+          "description": "服务端验签强制，锁定为 true。"
+        },
+        "failClosed": {
+          "type": "boolean",
+          "enum": [true],
+          "description": "验签失败一律拒绝（失败关闭），锁定为 true。"
+        },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "payload": {
+      "type": "object",
+      "required": ["fields", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "type": "array",
+          "description": "签名覆盖的规范载荷字段与顺序：model、version、packageType、sha256。"
+        },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "required": ["algorithm", "trustRoot", "encoding", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "待冻结参数：签名算法标识。provisional 为 null。"
+        },
+        "trustRoot": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "待冻结参数：信任根（公钥/KMS Key 标识）。provisional 为 null。"
+        },
+        "encoding": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "待冻结参数：签名编码（hex/base64 等）。provisional 为 null。"
+        },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "trust": {
+      "type": "object",
+      "required": ["rootDistribution", "embeddedTrustRootAllowed", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "rootDistribution": {
+          "type": "string",
+          "enum": ["out-of-band"],
+          "description": "信任根带外分发，锁定为 out-of-band。"
+        },
+        "embeddedTrustRootAllowed": {
+          "type": "boolean",
+          "enum": [false],
+          "description": "禁止从上传请求或包内元数据获取信任根，锁定为 false。"
+        },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "pendingParameters": {
+      "type": "array",
+      "description": "签名机制冻结前必须显式给出取值的参数路径列表。"
+    },
+    "frozenUpgradePath": { "type": "string", "minLength": 1 }
+  }
+}

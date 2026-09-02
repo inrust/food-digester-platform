@@ -1,0 +1,319 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin OTA Firmware Package API",
+    "version": "0.1.0",
+    "description": "BE-OTA-01 Firmware Package 上传与校验接口（Cognito 认证）。POST /api/v1/admin/ota/packages/upload-sessions 创建上传会话（ota:write = PlatformSuperAdmin/PlatformOperator）：声明 model/version/packageType（CT-03 OTA Schema 枚举 APP|FIRMWARE）/sizeBytes/SHA-256/签名，同型号+版本+packageType 唯一（重复 → 409），返回服务端生成 objectKey 的短期预签名上传 URL（900s 暂定）。POST /api/v1/admin/ota/packages/{packageId}/complete 上传后校验：对象存在、大小一致、SHA-256 重算匹配、数字签名验证（签名格式由 contracts/security/ota-package-signature-policy 冻结值驱动，冻结前失败关闭 → 409）、病毒扫描 adapter（未选型时缺省不装配）；全部通过 → VERIFIED 不可变。成功包不可覆盖（VERIFIED 重复完成 → 409）；未完成上传（UPLOADED）不进入可发布列表（可发布 = status VERIFIED）。列表/详情 ota:read（含 Auditor）。审计 ota.package.upload_session.create / ota.package.verify（DOM-03）。功能边界：不实现设备端验签、安装和回滚。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.0.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/ota/packages/upload-sessions": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createFirmwareUpload",
+        "summary": "创建固件包上传会话：声明元数据 + 签名，返回短期预签名上传 URL（201；同型号+版本+packageType 重复 → 409）",
+        "security": [{ "CognitoJwt": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/FirmwareUploadSessionCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "上传会话已创建（status=UPLOADED，待 complete 校验）",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/FirmwareUploadSessionSuccess" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/ota/packages/{packageId}/complete": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "completeFirmwareUpload",
+        "summary": "上传完成校验：对象/大小/SHA-256/签名/病毒扫描全部通过 → VERIFIED（不可变）；任一不匹配拒绝且保持 UPLOADED",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "packageId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "校验通过，包进入 VERIFIED（可发布）",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FirmwarePackageSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/ota/packages": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listFirmwarePackages",
+        "summary": "Firmware Package 列表（model/version/packageType/status 筛选 + 键集游标分页；ota:read；可发布列表 = status=VERIFIED）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "model", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "version", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "packageType",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "#/components/schemas/FirmwarePackageType" }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "#/components/schemas/FirmwarePackageStatus" },
+            "description": "可发布列表固定使用 status=VERIFIED；UPLOADED（未完成上传/未完成校验）不进入可发布列表"
+          },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Firmware Package 列表",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/FirmwarePackageListSuccess" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/ota/packages/{packageId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getFirmwarePackage",
+        "summary": "Firmware Package 详情（不含预签名 URL/信任根材料）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "packageId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Firmware Package 详情",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FirmwarePackageSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "$ref": "openapi-base.json#/components/securitySchemes/CognitoJwt" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：元数据非法/对象缺失/大小或 SHA-256 不匹配/签名无效/病毒扫描拒绝）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（写操作缺 ota:write / 查询缺 ota:read）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "包不存在（NOT_FOUND）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Conflict": {
+        "description": "同型号+版本+packageType 重复、VERIFIED 包重复完成（不可覆盖）或签名策略未冻结失败关闭（CONFLICT）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "FirmwarePackageType": {
+        "type": "string",
+        "description": "包类型（与 CT-03 contracts/mqtt/schemas/ota.schema.json 枚举一致）",
+        "enum": ["APP", "FIRMWARE"]
+      },
+      "FirmwarePackageStatus": {
+        "type": "string",
+        "description": "包状态机：UPLOADED（会话已建，未完成校验）→ VERIFIED（可发布，不可变）；RETIRED 由 BE-OTA-02 管理",
+        "enum": ["UPLOADED", "VERIFIED", "RETIRED"]
+      },
+      "FirmwareUploadSessionCreate": {
+        "type": "object",
+        "required": ["model", "version", "packageType", "sizeBytes", "sha256", "signature"],
+        "additionalProperties": false,
+        "properties": {
+          "model": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._-]{1,64}$",
+            "description": "目标设备型号（objectKey 组成部分，禁止路径字符）"
+          },
+          "version": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,64}$" },
+          "packageType": { "$ref": "#/components/schemas/FirmwarePackageType" },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 536870912,
+            "description": "声明的包大小（字节；上限 512MiB 暂定值），complete 时与对象实际大小比对"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{64}$",
+            "description": "声明的 SHA-256（hex；complete 时服务端重算比对，不匹配拒绝）"
+          },
+          "signature": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "对规范载荷（model+version+packageType+sha256，签名策略锁定字段）的数字签名；格式由项目冻结值驱动"
+          }
+        }
+      },
+      "FirmwareUploadSessionView": {
+        "type": "object",
+        "required": [
+          "packageId",
+          "status",
+          "model",
+          "version",
+          "packageType",
+          "sizeBytes",
+          "sha256",
+          "objectKey",
+          "uploadUrl",
+          "uploadUrlExpiresAt",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "packageId": { "type": "string", "minLength": 1 },
+          "status": {
+            "type": "string",
+            "enum": ["UPLOADED"],
+            "description": "会话创建后固定 UPLOADED，待 complete 校验"
+          },
+          "model": { "type": "string", "minLength": 1 },
+          "version": { "type": "string", "minLength": 1 },
+          "packageType": { "$ref": "#/components/schemas/FirmwarePackageType" },
+          "sizeBytes": { "type": "integer", "minimum": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" },
+          "objectKey": {
+            "type": "string",
+            "minLength": 1,
+            "description": "服务端生成的对象 Key（firmware-packages/{model}/{packageType}/{version}/{packageId}），客户端不可指定"
+          },
+          "uploadUrl": {
+            "type": "string",
+            "pattern": "^https://",
+            "description": "短期预签名上传 URL（900s 暂定值，过期后需重建会话）"
+          },
+          "uploadUrlExpiresAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "FirmwarePackageView": {
+        "type": "object",
+        "required": [
+          "packageId",
+          "model",
+          "version",
+          "packageType",
+          "sizeBytes",
+          "sha256",
+          "status",
+          "objectKey",
+          "uploadedBy",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "packageId": { "type": "string", "minLength": 1 },
+          "model": { "type": "string", "minLength": 1 },
+          "version": { "type": "string", "minLength": 1 },
+          "packageType": { "$ref": "#/components/schemas/FirmwarePackageType" },
+          "sizeBytes": { "type": "integer", "minimum": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" },
+          "status": { "$ref": "#/components/schemas/FirmwarePackageStatus" },
+          "objectKey": { "type": "string", "minLength": 1 },
+          "uploadedBy": { "type": "string", "minLength": 1, "description": "身份上下文取得（不信任客户端声明）" },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "FirmwareUploadSessionSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/FirmwareUploadSessionView" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "FirmwarePackageSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/FirmwarePackageView" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "FirmwarePackageListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/FirmwarePackageView" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      }
+    },
+    "parameters": {
+      "Cursor": { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+      "Limit": { "$ref": "openapi-base.json#/components/parameters/Limit" }
+    }
+  }
+}
