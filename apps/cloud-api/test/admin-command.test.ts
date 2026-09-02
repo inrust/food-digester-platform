@@ -287,7 +287,7 @@ describe('meta.id 幂等与服务器计算字段', () => {
   test('重复创建（同 commandId 同语义）→ 200 replayed 无新写入/审计；冲突 → 409', async () => {
     const tenant = await plantTenant({});
     const h = handlers();
-    const body = { commandId: 'cmd-idem-1', command: 'STOP', timeoutSec: 60, remarks: '首次' };
+    const body = { commandId: 'CMD-IDEM-1', command: 'STOP', timeoutSec: 60, remarks: '首次' };
 
     const first = await h.createCommand(req(tenant.customerAdmin, { params: { deviceId: tenant.deviceId }, body }));
     assert.equal(first.status, 201);
@@ -295,8 +295,8 @@ describe('meta.id 幂等与服务器计算字段', () => {
     assert.equal(second.status, 200);
     assert.equal((second.body as DataBody).data.replayed, true);
 
-    assert.equal(await prisma.deviceCommand.count({ where: { id: 'cmd-idem-1' } }), 1);
-    const audits = await prisma.auditLog.count({ where: { objectType: 'device_command', objectId: 'cmd-idem-1' } });
+    assert.equal(await prisma.deviceCommand.count({ where: { id: 'CMD-IDEM-1' } }), 1);
+    const audits = await prisma.auditLog.count({ where: { objectType: 'device_command', objectId: 'CMD-IDEM-1' } });
     assert.equal(audits, 1, '重放无新增审计');
 
     // 语义冲突（不同 timeoutSec / command）→ 409
@@ -381,7 +381,7 @@ describe('契约一致性', () => {
     assert.deepEqual(Object.keys(data).sort(), [...api.components.schemas.CommandView.required].sort());
 
     const dir = fileURLToPath(new URL('../src/admin/command/', import.meta.url));
-    for (const file of ['errors.ts', 'service.ts', 'handler.ts', 'index.ts']) {
+    for (const file of ['errors.ts', 'service.ts', 'handler.ts', 'publisher.ts', 'index.ts']) {
       const source = readFileSync(`${dir}/${file}`, 'utf8');
       assert.ok(!/@fdp\/aws-clients|@aws-sdk|aws-sdk/.test(source), `${file} 引用了 AWS 客户端`);
     }

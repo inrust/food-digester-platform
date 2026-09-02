@@ -216,6 +216,14 @@ export async function createCommand(
     mapDomainError(err);
   }
 
+  // meta.id 即 commandId（DEC-006）：须符合 MQTT meta.id 契约模式（common.schema.json）
+  const META_ID_PATTERN = /^[A-Z0-9][A-Z0-9-]{0,127}$/;
+  if (input.commandId !== undefined && !META_ID_PATTERN.test(input.commandId)) {
+    throw commandValidationFailed(
+      'commandId must match the MQTT meta.id pattern (uppercase letters, digits and hyphens, max 128 characters)',
+    );
+  }
+
   // 2. 设备存在 + Customer 租户隔离（跨 Customer → 404）
   const device = await devices(deps.client).findFirst({ where: { id: input.deviceId } });
   if (!device) throw commandNotFound();
@@ -248,7 +256,7 @@ export async function createCommand(
 
   // 6. 落库：AUTHORIZED；requestedBy/confirmedBy/requestTime/expiresAt 服务器计算。
   // device_commands.id 无 DB 默认值：meta.id 未提供时服务器生成（审计 objectId 用真实 commandId）。
-  const commandId = input.commandId ?? randomUUID();
+  const commandId = input.commandId ?? randomUUID().toUpperCase();
   const expiresAt = new Date(now.getTime() + input.timeoutSec * 1000);
   try {
     return await audited<CommandCreateResult>(
