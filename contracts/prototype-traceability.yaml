@@ -33,12 +33,12 @@
         { "id": "dashboard.field.deviceStats", "kind": "field", "name": "设备总数及授权分布", "disposition": "Adopt", "source": { "taskId": "BE-DASH-01", "api": "getDashboardSummary", "field": "deviceStats" } },
         { "id": "dashboard.field.onlineRate", "kind": "field", "name": "在线数/在线率", "disposition": "Adapt", "basis": "DEC-010：连接状态由 lastHeartbeatAt 派生，不写回生命周期", "source": { "taskId": "BE-DASH-01", "api": "getDashboardSummary", "field": "onlineStats" } },
         { "id": "dashboard.field.carbonToday", "kind": "field", "name": "今日碳排放图表", "disposition": "Adapt", "basis": "任务清单 §2.5：纠偏为带版本的估算碳减排/CO2e，显示单位、时间范围、完整率和计算版本", "source": { "taskId": "BE-ESG-02", "api": "getEsgSummary", "field": "carbonReductionKg" } },
-        { "id": "dashboard.field.latestAlarms", "kind": "field", "name": "最新告警", "disposition": "Adopt", "source": { "taskId": "BE-ALM-01", "api": "listAlarms", "field": "items" } },
+        { "id": "dashboard.field.latestAlarms", "kind": "field", "name": "最新告警", "disposition": "Adopt", "source": { "taskId": "BE-ALM-01", "api": "listAlarms", "field": "data" } },
         { "id": "dashboard.field.deviceCards", "kind": "field", "name": "设备卡片（最多10台）", "disposition": "Adopt", "source": { "taskId": "BE-DASH-01", "api": "getDashboardSummary", "field": "deviceCards" } },
-        { "id": "dashboard.button.start", "kind": "button", "name": "启动", "disposition": "Adapt", "basis": "CT-04：映射为 START 命令，需权限/Entitlement/确认", "source": { "taskId": "BE-CMD-01", "api": "createCommand", "commandCode": "START" } },
-        { "id": "dashboard.button.stop", "kind": "button", "name": "停止", "disposition": "Adapt", "basis": "CT-04：映射为 STOP 命令", "source": { "taskId": "BE-CMD-01", "api": "createCommand", "commandCode": "STOP" } },
+        { "id": "dashboard.button.start", "kind": "button", "name": "启动", "disposition": "Adapt", "basis": "CT-04：映射为 START 命令，需权限/Entitlement/确认", "source": { "taskId": "BE-CMD-01", "api": "createDeviceCommand", "commandCode": "START" } },
+        { "id": "dashboard.button.stop", "kind": "button", "name": "停止", "disposition": "Adapt", "basis": "CT-04：映射为 STOP 命令", "source": { "taskId": "BE-CMD-01", "api": "createDeviceCommand", "commandCode": "STOP" } },
         { "id": "dashboard.button.upgrade", "kind": "button", "name": "升级", "disposition": "Adapt", "basis": "FE-13：跳转受控 OTA Campaign，禁止直接向单设备推送未校验文件", "source": { "taskId": "FE-13", "routeId": "/ota/campaigns" } },
-        { "id": "dashboard.button.reboot", "kind": "button", "name": "重启", "disposition": "Adapt", "basis": "CT-04：映射为 REBOOT 命令", "source": { "taskId": "BE-CMD-01", "api": "createCommand", "commandCode": "REBOOT" } }
+        { "id": "dashboard.button.reboot", "kind": "button", "name": "重启", "disposition": "Adapt", "basis": "CT-04：映射为 REBOOT 命令", "source": { "taskId": "BE-CMD-01", "api": "createDeviceCommand", "commandCode": "REBOOT" } }
       ]
     },
     {
@@ -49,8 +49,8 @@
       "disposition": "Adapt",
       "basis": "任务清单 §13.2：最新读数显示时间/stale；摄像头改为最新 Media 预览",
       "elements": [
-        { "id": "device-view.filter.region", "kind": "filter", "name": "设备区域", "disposition": "Adapt", "basis": "DEC-011：Region 为 Site 可筛选属性", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "region" } },
-        { "id": "device-view.filter.subregion", "kind": "filter", "name": "设备子区域", "disposition": "Adapt", "basis": "DEC-011：Subregion 为 Site 可筛选属性", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "subregion" } },
+        { "id": "device-view.filter.region", "kind": "filter", "name": "设备区域", "disposition": "Adapt", "basis": "DEC-011：Region 为 Site 可筛选属性", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "site.region" } },
+        { "id": "device-view.filter.subregion", "kind": "filter", "name": "设备子区域", "disposition": "Adapt", "basis": "DEC-011：Subregion 为 Site 可筛选属性", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "site.subregion" } },
         { "id": "device-view.filter.device", "kind": "filter", "name": "设备选择", "disposition": "Adopt", "source": { "taskId": "BE-DEV-01", "api": "listDevices" } },
         { "id": "device-view.button.apply", "kind": "button", "name": "应用", "disposition": "Adopt", "source": { "taskId": "FE-06" }, "clientSide": true },
         { "id": "device-view.field.componentStates", "kind": "field", "name": "五类部件运行状态", "disposition": "Adopt", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "components" } },
@@ -71,16 +71,16 @@
       "disposition": "Adapt",
       "basis": "任务清单 §13.2：动作映射命令目录；M/N/阈值走配置版本，不走命令",
       "elements": [
-        { "id": "device-operate.button.agitatorForward", "kind": "button", "name": "搅拌器前向旋转", "disposition": "Adapt", "basis": "CT-04：AGITATOR_FORWARD（高风险，需确认）", "source": { "taskId": "BE-CMD-01", "api": "createCommand", "commandCode": "AGITATOR_FORWARD" } },
-        { "id": "device-operate.button.agitatorReverse", "kind": "button", "name": "搅拌器后向旋转", "disposition": "Adapt", "basis": "CT-04：AGITATOR_REVERSE（高风险，需确认）", "source": { "taskId": "BE-CMD-01", "api": "createCommand", "commandCode": "AGITATOR_REVERSE" } },
-        { "id": "device-operate.button.heating", "kind": "button", "name": "加热", "disposition": "Adapt", "basis": "CT-04：HEATING_ON/HEATING_OFF（高风险，需确认）", "source": { "taskId": "BE-CMD-01", "api": "createCommand", "commandCode": "HEATING_ON" } },
-        { "id": "device-operate.button.exhaust", "kind": "button", "name": "排气", "disposition": "Adapt", "basis": "CT-04：EXHAUST_ON/EXHAUST_OFF", "source": { "taskId": "BE-CMD-01", "api": "createCommand", "commandCode": "EXHAUST_ON" } },
-        { "id": "device-operate.button.reboot", "kind": "button", "name": "重启", "disposition": "Adapt", "basis": "CT-04：REBOOT", "source": { "taskId": "BE-CMD-01", "api": "createCommand", "commandCode": "REBOOT" } },
-        { "id": "device-operate.button.shutdown", "kind": "button", "name": "关机", "disposition": "Adapt", "basis": "CT-04：SHUTDOWN（高风险，需确认）", "source": { "taskId": "BE-CMD-01", "api": "createCommand", "commandCode": "SHUTDOWN" } },
-        { "id": "device-operate.button.modeSwitch", "kind": "button", "name": "模式切换", "disposition": "Adapt", "basis": "CT-04：无独立模式切换命令码；映射为 MACHINE 类命令（START/STOP/PAUSE/RESUME）由当前状态决定，禁止提交无协议 command code 的请求", "source": { "taskId": "BE-CMD-01", "api": "createCommand" } },
-        { "id": "device-operate.button.factoryReset", "kind": "button", "name": "恢复出厂设置", "disposition": "Adapt", "basis": "CT-04：FACTORY_RESET（高风险，需确认凭证）", "source": { "taskId": "BE-CMD-01", "api": "createCommand", "commandCode": "FACTORY_RESET" } },
-        { "id": "device-operate.button.updateStrategy", "kind": "button", "name": "更新策略（旋转间隔 M/时长 N）", "disposition": "Adapt", "basis": "FE-12：M/N 改走 Configuration 版本发布，不走命令 API", "source": { "taskId": "BE-CFG-01", "api": "publishConfiguration" } },
-        { "id": "device-operate.button.updateThreshold", "kind": "button", "name": "更新阈值（温度阈值）", "disposition": "Adapt", "basis": "FE-12：温度阈值改走 Configuration 版本发布", "source": { "taskId": "BE-CFG-01", "api": "publishConfiguration" } },
+        { "id": "device-operate.button.agitatorForward", "kind": "button", "name": "搅拌器前向旋转", "disposition": "Adapt", "basis": "CT-04：AGITATOR_FORWARD（高风险，需确认）", "source": { "taskId": "BE-CMD-01", "api": "createDeviceCommand", "commandCode": "AGITATOR_FORWARD" } },
+        { "id": "device-operate.button.agitatorReverse", "kind": "button", "name": "搅拌器后向旋转", "disposition": "Adapt", "basis": "CT-04：AGITATOR_REVERSE（高风险，需确认）", "source": { "taskId": "BE-CMD-01", "api": "createDeviceCommand", "commandCode": "AGITATOR_REVERSE" } },
+        { "id": "device-operate.button.heating", "kind": "button", "name": "加热", "disposition": "Adapt", "basis": "CT-04：HEATING_ON/HEATING_OFF（高风险，需确认）", "source": { "taskId": "BE-CMD-01", "api": "createDeviceCommand", "commandCode": "HEATING_ON" } },
+        { "id": "device-operate.button.exhaust", "kind": "button", "name": "排气", "disposition": "Adapt", "basis": "CT-04：EXHAUST_ON/EXHAUST_OFF", "source": { "taskId": "BE-CMD-01", "api": "createDeviceCommand", "commandCode": "EXHAUST_ON" } },
+        { "id": "device-operate.button.reboot", "kind": "button", "name": "重启", "disposition": "Adapt", "basis": "CT-04：REBOOT", "source": { "taskId": "BE-CMD-01", "api": "createDeviceCommand", "commandCode": "REBOOT" } },
+        { "id": "device-operate.button.shutdown", "kind": "button", "name": "关机", "disposition": "Adapt", "basis": "CT-04：SHUTDOWN（高风险，需确认）", "source": { "taskId": "BE-CMD-01", "api": "createDeviceCommand", "commandCode": "SHUTDOWN" } },
+        { "id": "device-operate.button.modeSwitch", "kind": "button", "name": "模式切换", "disposition": "Adapt", "basis": "CT-04：无独立模式切换命令码；映射为 MACHINE 类命令（START/STOP/PAUSE/RESUME）由当前状态决定，禁止提交无协议 command code 的请求", "source": { "taskId": "BE-CMD-01", "api": "createDeviceCommand" } },
+        { "id": "device-operate.button.factoryReset", "kind": "button", "name": "恢复出厂设置", "disposition": "Adapt", "basis": "CT-04：FACTORY_RESET（高风险，需确认凭证）", "source": { "taskId": "BE-CMD-01", "api": "createDeviceCommand", "commandCode": "FACTORY_RESET" } },
+        { "id": "device-operate.button.updateStrategy", "kind": "button", "name": "更新策略（旋转间隔 M/时长 N）", "disposition": "Adapt", "basis": "FE-12：M/N 改走 Configuration 版本发布，不走命令 API", "source": { "taskId": "BE-CFG-01", "api": "publishConfigurationVersion" } },
+        { "id": "device-operate.button.updateThreshold", "kind": "button", "name": "更新阈值（温度阈值）", "disposition": "Adapt", "basis": "FE-12：温度阈值改走 Configuration 版本发布", "source": { "taskId": "BE-CFG-01", "api": "publishConfigurationVersion" } },
         { "id": "device-operate.button.saveAlias", "kind": "button", "name": "保存别名", "disposition": "Adapt", "basis": "BE-DEV-06：alias 白名单 + If-Match + 审计", "source": { "taskId": "BE-DEV-06", "api": "patchDeviceMetadata", "field": "alias" } },
         { "id": "device-operate.button.camPlay", "kind": "button", "name": "摄像头播放", "disposition": "Reject", "rejectCategory": "realtime-stream", "basis": "DEC-009：不提供实时流；媒体面板只显示最新 Media" },
         { "id": "device-operate.button.camStop", "kind": "button", "name": "摄像头停止", "disposition": "Reject", "rejectCategory": "realtime-stream", "basis": "DEC-009：不提供实时流" },
@@ -100,23 +100,23 @@
         { "id": "device-group.button.search", "kind": "button", "name": "搜索", "disposition": "Adopt", "source": { "taskId": "BE-DEV-01", "api": "listDevices" } },
         { "id": "device-group.button.reset", "kind": "button", "name": "重置", "disposition": "Adopt", "source": { "taskId": "FE-06" }, "clientSide": true },
         { "id": "device-group.column.seq", "kind": "table-column", "name": "序号", "disposition": "Adopt", "source": { "taskId": "FE-06" }, "clientSide": true },
-        { "id": "device-group.column.region", "kind": "table-column", "name": "设备区域", "disposition": "Adapt", "basis": "DEC-011：Region 为 Site 属性，从 Site 派生", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "region" } },
-        { "id": "device-group.column.subregion", "kind": "table-column", "name": "设备子区域", "disposition": "Adapt", "basis": "DEC-011", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "subregion" } },
-        { "id": "device-group.column.deviceId", "kind": "table-column", "name": "设备唯一ID", "disposition": "Adopt", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "deviceId" } },
+        { "id": "device-group.column.region", "kind": "table-column", "name": "设备区域", "disposition": "Adapt", "basis": "DEC-011：Region 为 Site 属性，从 Site 派生", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "site.region" } },
+        { "id": "device-group.column.subregion", "kind": "table-column", "name": "设备子区域", "disposition": "Adapt", "basis": "DEC-011", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "site.subregion" } },
+        { "id": "device-group.column.deviceId", "kind": "table-column", "name": "设备唯一ID", "disposition": "Adopt", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "id" } },
         { "id": "device-group.column.alias", "kind": "table-column", "name": "设备别名", "disposition": "Adopt", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "alias" } },
         { "id": "device-group.column.enabledFlag", "kind": "table-column", "name": "是否启用", "disposition": "Reject", "rejectCategory": "mixed-status", "basis": "DEC-010/任务清单 §2.5：禁止单字段状态混用，拆为四轴" },
         { "id": "device-group.column.contractName", "kind": "table-column", "name": "关联合约名称", "disposition": "Adapt", "basis": "DEC-007：Contract 摘要独立实体关联", "source": { "taskId": "BE-CON-02", "api": "getDeviceContractSummary", "field": "contractName" } },
         { "id": "device-group.column.leaseTerm", "kind": "table-column", "name": "租期期限", "disposition": "Adapt", "basis": "DEC-007：Contract startAt/endAt 展示值", "source": { "taskId": "BE-CON-02", "api": "getDeviceContractSummary", "field": "leaseTerm" } },
         { "id": "device-group.column.firmware", "kind": "table-column", "name": "软件版本", "disposition": "Adopt", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "firmwareVersion" } },
         { "id": "device-group.column.enabledStatus", "kind": "table-column", "name": "启用状态", "disposition": "Reject", "rejectCategory": "mixed-status", "basis": "DEC-010：与“是否启用”重复且混用状态轴" },
-        { "id": "device-group.field.fourAxisStatus", "kind": "field", "name": "四轴状态徽标（替代启用状态列）", "disposition": "Adapt", "basis": "DEC-010：connectivity/lifecycle/operational/license 分离", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "status" } },
+        { "id": "device-group.field.fourAxisStatus", "kind": "field", "name": "四轴状态徽标（替代启用状态列）", "disposition": "Adapt", "basis": "DEC-010：connectivity/lifecycle/operational/license 分离", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "fields": ["lifecycleStatus", "operationalStatus", "connectivity", "license.status"] } },
         { "id": "device-group.column.actions", "kind": "table-column", "name": "操作（管理按钮）", "disposition": "Adopt", "source": { "taskId": "FE-07", "routeId": "/devices/manage" }, "clientSide": true },
         { "id": "device-group.req.column.deviceId", "kind": "table-column", "name": "新增设备请求-设备唯一ID", "disposition": "Adopt", "source": { "taskId": "BE-ONB-02", "api": "listOnboardingRequests", "field": "serialNumber" } },
-        { "id": "device-group.req.column.creator", "kind": "table-column", "name": "新增设备请求-录入人", "disposition": "Adopt", "source": { "taskId": "BE-ONB-02", "api": "listOnboardingRequests", "field": "requestedBy" } },
-        { "id": "device-group.req.column.requestDate", "kind": "table-column", "name": "新增设备请求-申请日期", "disposition": "Adopt", "source": { "taskId": "BE-ONB-02", "api": "listOnboardingRequests", "field": "requestedAt" } },
+        { "id": "device-group.req.column.creator", "kind": "table-column", "name": "新增设备请求-录入人", "disposition": "Defer", "basis": "BE-ONB-02 当前正式 OpenAPI 不提供 requestedBy；设备自主提交不能伪造管理员录入人，待业务定义来源后再采用" },
+        { "id": "device-group.req.column.requestDate", "kind": "table-column", "name": "新增设备请求-申请日期", "disposition": "Adapt", "basis": "BE-ONB-02：使用申请记录 createdAt 作为申请日期", "source": { "taskId": "BE-ONB-02", "api": "listOnboardingRequests", "field": "createdAt" } },
         { "id": "device-group.req.button.detail", "kind": "button", "name": "请求-详细信息", "disposition": "Adopt", "source": { "taskId": "BE-ONB-02", "api": "getOnboardingRequest" } },
-        { "id": "device-group.req.button.accept", "kind": "button", "name": "请求-接受", "disposition": "Adapt", "basis": "BE-ONB-02：仅 PlatformSuperAdmin，If-Match 防重复审批，写审计", "source": { "taskId": "BE-ONB-02", "api": "approveOnboarding" } },
-        { "id": "device-group.req.button.reject", "kind": "button", "name": "请求-拒绝", "disposition": "Adapt", "basis": "BE-ONB-02：拒绝强制填写原因", "source": { "taskId": "BE-ONB-02", "api": "rejectOnboarding" } }
+        { "id": "device-group.req.button.accept", "kind": "button", "name": "请求-接受", "disposition": "Adapt", "basis": "BE-ONB-02：仅 PlatformSuperAdmin，If-Match 防重复审批，写审计", "source": { "taskId": "BE-ONB-02", "api": "approveOnboardingRequest" } },
+        { "id": "device-group.req.button.reject", "kind": "button", "name": "请求-拒绝", "disposition": "Adapt", "basis": "BE-ONB-02：拒绝强制填写原因", "source": { "taskId": "BE-ONB-02", "api": "rejectOnboardingRequest" } }
       ]
     },
     {
@@ -127,13 +127,13 @@
       "disposition": "Adapt",
       "basis": "任务清单 §13.2：派生字段只读；证书为请求轮换；升级走 Campaign",
       "elements": [
-        { "id": "device-manage.button.updateConfig", "kind": "button", "name": "更新配置文件", "disposition": "Adapt", "basis": "BE-CFG-01：不可变配置版本发布，Contract/Region/Site/Alias 只读派生", "source": { "taskId": "BE-CFG-01", "api": "publishConfiguration" } },
+        { "id": "device-manage.button.updateConfig", "kind": "button", "name": "更新配置文件", "disposition": "Adapt", "basis": "BE-CFG-01：不可变配置版本发布，Contract/Region/Site/Alias 只读派生", "source": { "taskId": "BE-CFG-01", "api": "publishConfigurationVersion" } },
         { "id": "device-manage.button.viewConfig", "kind": "button", "name": "查看当前配置文件", "disposition": "Adopt", "source": { "taskId": "BE-CFG-01", "api": "getConfiguration" } },
         { "id": "device-manage.button.selectFirmware", "kind": "button", "name": "选择固件文件", "disposition": "Adapt", "basis": "BE-OTA-01：上传走预签名 URL + Hash/签名校验", "source": { "taskId": "BE-OTA-01", "api": "createFirmwareUpload" } },
         { "id": "device-manage.button.syncUpdate", "kind": "button", "name": "同步更新", "disposition": "Adapt", "basis": "FE-13：创建受控 OTA Campaign（首批 1 台），禁止直接推送单设备", "source": { "taskId": "BE-OTA-02", "api": "createOtaCampaign" } },
         { "id": "device-manage.button.certDetail", "kind": "button", "name": "证书显示详细信息", "disposition": "Adapt", "basis": "BE-CERT-03：仅显示证书 ID/状态/到期日，不含 PEM 私钥", "source": { "taskId": "BE-CERT-01", "api": "getCertificateStatus" } },
-        { "id": "device-manage.button.issueCert", "kind": "button", "name": "颁发新证书", "disposition": "Adapt", "basis": "BE-CERT-03：改为“请求轮换”，管理端不生成/下载私钥，设备经 BE-CERT-02 完成领取", "source": { "taskId": "BE-CERT-03", "api": "requestCertificateRotation" } },
-        { "id": "device-manage.button.confirm", "kind": "button", "name": "确认配置", "disposition": "Adapt", "basis": "BE-CFG-01：发布生成 CONFIG_CHANGED，If-Match 并发控制", "source": { "taskId": "BE-CFG-01", "api": "publishConfiguration" } },
+        { "id": "device-manage.button.issueCert", "kind": "button", "name": "颁发新证书", "disposition": "Adapt", "basis": "BE-CERT-03：改为“请求轮换”，管理端不生成/下载私钥，设备经 BE-CERT-02 完成领取", "source": { "taskId": "BE-CERT-03", "api": "createCertificateRotationRequest" } },
+        { "id": "device-manage.button.confirm", "kind": "button", "name": "确认配置", "disposition": "Adapt", "basis": "BE-CFG-01：发布生成 CONFIG_CHANGED，If-Match 并发控制", "source": { "taskId": "BE-CFG-01", "api": "publishConfigurationVersion" } },
         { "id": "device-manage.button.back", "kind": "button", "name": "返回", "disposition": "Adopt", "source": { "taskId": "FE-07" }, "clientSide": true }
       ]
     },
@@ -145,19 +145,19 @@
       "disposition": "Adapt",
       "basis": "任务清单 §13.2：名称/来源先冻结；unknown/stale 不伪造百分比",
       "elements": [
-        { "id": "device-consumable.button.search", "kind": "button", "name": "搜索", "disposition": "Adopt", "source": { "taskId": "BE-CNS-01", "api": "listConsumables" } },
+        { "id": "device-consumable.button.search", "kind": "button", "name": "搜索", "disposition": "Adopt", "source": { "taskId": "BE-CNS-01", "api": "listConsumableStatus" } },
         { "id": "device-consumable.button.reset", "kind": "button", "name": "重置", "disposition": "Adopt", "source": { "taskId": "FE-18" }, "clientSide": true },
-        { "id": "device-consumable.column.region", "kind": "table-column", "name": "设备区域", "disposition": "Adapt", "basis": "DEC-011", "source": { "taskId": "BE-CNS-01", "api": "listConsumables", "field": "region" } },
-        { "id": "device-consumable.column.subregion", "kind": "table-column", "name": "设备子区域", "disposition": "Adapt", "basis": "DEC-011", "source": { "taskId": "BE-CNS-01", "api": "listConsumables", "field": "subregion" } },
-        { "id": "device-consumable.column.deviceId", "kind": "table-column", "name": "设备唯一ID", "disposition": "Adopt", "source": { "taskId": "BE-CNS-01", "api": "listConsumables", "field": "deviceId" } },
-        { "id": "device-consumable.column.alias", "kind": "table-column", "name": "设备别名", "disposition": "Adopt", "source": { "taskId": "BE-CNS-01", "api": "listConsumables", "field": "alias" } },
-        { "id": "device-consumable.column.carbonFilterPct", "kind": "table-column", "name": "碳包预估剩余百分比", "disposition": "Adapt", "basis": "DEC-008：标准名 CARBON_FILTER（暂用）；仅显示设备上报值，unknown 显示 unknown", "source": { "taskId": "BE-CNS-01", "api": "listConsumables", "field": "carbonFilterPct" } },
-        { "id": "device-consumable.column.bioAdditivePct", "kind": "table-column", "name": "活性菌预估剩余百分比", "disposition": "Adapt", "basis": "DEC-008：标准名 BIO_ADDITIVE（暂用）", "source": { "taskId": "BE-CNS-01", "api": "listConsumables", "field": "bioAdditivePct" } },
-        { "id": "device-consumable.button.contact", "kind": "button", "name": "联系方式", "disposition": "Adapt", "basis": "BE-CNS-01：点击后按权限加载；无权限时页面和网络响应均不含号码；原型示例电话号码为演示值", "source": { "taskId": "BE-CNS-01", "api": "getDeviceContact" } },
+        { "id": "device-consumable.column.region", "kind": "table-column", "name": "设备区域", "disposition": "Adapt", "basis": "DEC-011", "source": { "taskId": "BE-CNS-01", "api": "listConsumableStatus", "field": "site.region" } },
+        { "id": "device-consumable.column.subregion", "kind": "table-column", "name": "设备子区域", "disposition": "Adapt", "basis": "DEC-011", "source": { "taskId": "BE-CNS-01", "api": "listConsumableStatus", "field": "site.subregion" } },
+        { "id": "device-consumable.column.deviceId", "kind": "table-column", "name": "设备唯一ID", "disposition": "Adopt", "source": { "taskId": "BE-CNS-01", "api": "listConsumableStatus", "field": "deviceId" } },
+        { "id": "device-consumable.column.alias", "kind": "table-column", "name": "设备别名", "disposition": "Adopt", "source": { "taskId": "BE-CNS-01", "api": "listConsumableStatus", "field": "alias" } },
+        { "id": "device-consumable.column.carbonFilterPct", "kind": "table-column", "name": "碳包预估剩余百分比", "disposition": "Adapt", "basis": "DEC-008@1.0.0：正式类型 CARBON_FILTER；从 consumables 中按类型选择，仅显示设备上报值，unknown 不伪造百分比", "source": { "taskId": "BE-CNS-01", "api": "listConsumableStatus", "field": "consumables" } },
+        { "id": "device-consumable.column.bioAdditivePct", "kind": "table-column", "name": "活性菌预估剩余百分比", "disposition": "Adapt", "basis": "DEC-008@1.0.0：正式类型 BIO_ADDITIVE；从 consumables 中按类型选择", "source": { "taskId": "BE-CNS-01", "api": "listConsumableStatus", "field": "consumables" } },
+        { "id": "device-consumable.button.contact", "kind": "button", "name": "联系方式", "disposition": "Adapt", "basis": "BE-CNS-01：点击后使用同一授权列表响应的 contact；无权限时响应为 null；原型示例电话号码为演示值", "source": { "taskId": "BE-CNS-01", "api": "listConsumableStatus" } },
         { "id": "device-consumable.req.column.requestTime", "kind": "table-column", "name": "更换申请-用户申请时间", "disposition": "Adopt", "source": { "taskId": "BE-CNS-02", "api": "listConsumableRequests", "field": "requestedAt" } },
         { "id": "device-consumable.req.column.status", "kind": "table-column", "name": "更换申请-处理状态", "disposition": "Adapt", "basis": "BE-CNS-02：Pending→Processing→Completed/Cancelled 状态机", "source": { "taskId": "BE-CNS-02", "api": "listConsumableRequests", "field": "status" } },
-        { "id": "device-consumable.req.button.process", "kind": "button", "name": "更换申请-处理", "disposition": "Adapt", "basis": "BE-CNS-02：If-Match + 审计；未处理→正在处理", "source": { "taskId": "BE-CNS-02", "api": "transitionConsumableRequest" } },
-        { "id": "device-consumable.req.button.complete", "kind": "button", "name": "更换申请-完成", "disposition": "Adapt", "basis": "BE-CNS-02：正在处理→完成处理，保留完整历史", "source": { "taskId": "BE-CNS-02", "api": "transitionConsumableRequest" } }
+        { "id": "device-consumable.req.button.process", "kind": "button", "name": "更换申请-处理", "disposition": "Adapt", "basis": "BE-CNS-02：If-Match + 审计；未处理→正在处理", "source": { "taskId": "BE-CNS-02", "api": "processConsumableRequest" } },
+        { "id": "device-consumable.req.button.complete", "kind": "button", "name": "更换申请-完成", "disposition": "Adapt", "basis": "BE-CNS-02：正在处理→完成处理，保留完整历史", "source": { "taskId": "BE-CNS-02", "api": "completeConsumableRequest" } }
       ]
     },
     {
@@ -170,12 +170,12 @@
       "elements": [
         { "id": "contract-modify.button.new", "kind": "button", "name": "新建合约", "disposition": "Adopt", "source": { "taskId": "FE-17", "routeId": "/contracts/new" }, "clientSide": true },
         { "id": "contract-modify.column.contractNumber", "kind": "table-column", "name": "合约编号", "disposition": "Adopt", "source": { "taskId": "BE-CON-01", "api": "listContracts", "field": "contractNumber" } },
-        { "id": "contract-modify.column.customer", "kind": "table-column", "name": "客户", "disposition": "Adopt", "source": { "taskId": "BE-CON-01", "api": "listContracts", "field": "customerName" } },
-        { "id": "contract-modify.column.deviceCount", "kind": "table-column", "name": "设备数量", "disposition": "Adopt", "source": { "taskId": "BE-CON-02", "api": "listContracts", "field": "deviceCount" } },
-        { "id": "contract-modify.column.servicePeriod", "kind": "table-column", "name": "服务期限", "disposition": "Adopt", "source": { "taskId": "BE-CON-01", "api": "listContracts", "field": "servicePeriod" } },
+        { "id": "contract-modify.column.customer", "kind": "table-column", "name": "客户", "disposition": "Adapt", "basis": "BE-CON-01：Contract 只返回 customerId，名称从 Customer 目录按 ID 解析", "source": { "taskId": "BE-CON-01", "api": "listContracts", "field": "customerId" } },
+        { "id": "contract-modify.column.deviceCount", "kind": "table-column", "name": "设备数量", "disposition": "Adapt", "basis": "BE-CON-02：从 listContractDevices 返回的 deviceId 集合确定性计数，不使用原型硬编码值", "source": { "taskId": "BE-CON-02", "api": "listContractDevices", "field": "deviceId" } },
+        { "id": "contract-modify.column.servicePeriod", "kind": "table-column", "name": "服务期限", "disposition": "Adapt", "basis": "BE-CON-01：由 startAt/endAt 格式化展示", "source": { "taskId": "BE-CON-01", "api": "listContracts", "fields": ["startAt", "endAt"] } },
         { "id": "contract-modify.column.status", "kind": "table-column", "name": "状态", "disposition": "Adapt", "basis": "DEC-007：Contract 状态由显式动作与 evaluateAt 确定，不等同 License 状态", "source": { "taskId": "BE-CON-01", "api": "listContracts", "field": "status" } },
         { "id": "contract-modify.button.edit", "kind": "button", "name": "编辑", "disposition": "Adapt", "basis": "BE-CON-01：If-Match + 原因 + 审计", "source": { "taskId": "BE-CON-01", "api": "updateContract" } },
-        { "id": "contract-modify.button.renewOrUnbind", "kind": "button", "name": "续约/解绑", "disposition": "Adapt", "basis": "DEC-007：续约走 renewContract；解绑不自动撤销 License", "source": { "taskId": "BE-CON-02", "api": "unbindContractDevice" } },
+        { "id": "contract-modify.button.renewOrUnbind", "kind": "button", "name": "续约/解绑", "disposition": "Adapt", "basis": "DEC-007：续约走 renewContract；解绑不自动撤销 License", "source": { "taskId": "BE-CON-02", "api": "unbindContractDevices" } },
         { "id": "contract-modify.button.queryDevices", "kind": "button", "name": "查询已关联设备", "disposition": "Adopt", "source": { "taskId": "BE-CON-02", "api": "listContractDevices" } }
       ]
     },
@@ -190,8 +190,8 @@
         { "id": "contract-new.field.number", "kind": "field", "name": "合约编号", "disposition": "Adapt", "basis": "BE-CON-01：contractNumber 全局唯一，重复返回明确错误", "source": { "taskId": "BE-CON-01", "api": "createContract", "field": "contractNumber" } },
         { "id": "contract-new.field.name", "kind": "field", "name": "合约名称", "disposition": "Adopt", "source": { "taskId": "BE-CON-01", "api": "createContract", "field": "name" } },
         { "id": "contract-new.field.customer", "kind": "field", "name": "客户", "disposition": "Adapt", "basis": "FE-17：结构化选择器，不能自由文本制造新地域/客户", "source": { "taskId": "BE-CUS-01", "api": "listCustomers" } },
-        { "id": "contract-new.field.period", "kind": "field", "name": "有效期", "disposition": "Adapt", "basis": "BE-CON-01：startAt<endAt，UTC", "source": { "taskId": "BE-CON-01", "api": "createContract", "field": "period" } },
-        { "id": "contract-new.field.devices", "kind": "field", "name": "关联设备选择", "disposition": "Adapt", "basis": "BE-CON-02：只能从 eligible 列表选择；同 Customer；禁止重叠租期", "source": { "taskId": "BE-CON-02", "api": "listEligibleDevices" } },
+        { "id": "contract-new.field.period", "kind": "field", "name": "有效期", "disposition": "Adapt", "basis": "BE-CON-01：startAt<endAt，UTC", "source": { "taskId": "BE-CON-01", "api": "createContract", "fields": ["startAt", "endAt"] } },
+        { "id": "contract-new.field.devices", "kind": "field", "name": "关联设备选择", "disposition": "Adapt", "basis": "BE-CON-02：只能从 eligible 列表选择；同 Customer；禁止重叠租期", "source": { "taskId": "BE-CON-02", "api": "listAvailableDevices" } },
         { "id": "contract-new.button.submit", "kind": "button", "name": "确定", "disposition": "Adapt", "basis": "BE-CON-01：创建不自动激活 License（DEC-007）", "source": { "taskId": "BE-CON-01", "api": "createContract" } },
         { "id": "contract-new.button.cancel", "kind": "button", "name": "返回", "disposition": "Adopt", "source": { "taskId": "FE-17" }, "clientSide": true }
       ]
@@ -264,8 +264,8 @@
         { "id": "settings.button.addDeviceUser", "kind": "button", "name": "新增设备用户", "disposition": "Adapt", "basis": "BE-DUSR-01：账号与云端 Cognito 用户分离；变化生成 USERS_CHANGED", "source": { "taskId": "BE-DUSR-01", "api": "createDeviceUser" } },
         { "id": "settings.button.deviceUserFilter", "kind": "button", "name": "设备用户-筛选", "disposition": "Adopt", "source": { "taskId": "BE-DUSR-01", "api": "listDeviceUsers" } },
         { "id": "settings.button.deviceUserFilterReset", "kind": "button", "name": "设备用户-重置", "disposition": "Adopt", "source": { "taskId": "FE-16" }, "clientSide": true },
-        { "id": "settings.button.resetDeviceUserPassword", "kind": "button", "name": "设备用户-重置密码", "disposition": "Adapt", "basis": "DEC-004/BE-DUSR-02：设备本地专用加盐验证值，密码只进入一次受控提交，不回显", "source": { "taskId": "BE-DUSR-02", "api": "resetDeviceUserSecret" } },
-        { "id": "settings.button.deleteDeviceUser", "kind": "button", "name": "设备用户-删除", "disposition": "Adapt", "basis": "BE-DUSR-01：实现为停用，停用用户不进入新 Sync", "source": { "taskId": "BE-DUSR-01", "api": "deactivateDeviceUser" } },
+        { "id": "settings.button.resetDeviceUserPassword", "kind": "button", "name": "设备用户-重置密码", "disposition": "Adapt", "basis": "DEC-004/BE-DUSR-02：设备本地专用加盐验证值，密码只进入一次受控提交，不回显", "source": { "taskId": "BE-DUSR-02", "api": "updateDeviceUser" } },
+        { "id": "settings.button.deleteDeviceUser", "kind": "button", "name": "设备用户-删除", "disposition": "Adapt", "basis": "BE-DUSR-01：实现为停用，停用用户不进入新 Sync", "source": { "taskId": "BE-DUSR-01", "api": "disableDeviceUser" } },
         { "id": "settings.modal.confirm", "kind": "modal", "name": "通用确认模态框（确认/取消）", "disposition": "Adapt", "basis": "FE-02：危险操作使用明确确认组件，禁止浏览器原生模糊确认", "source": { "taskId": "FE-02" }, "clientSide": true }
       ]
     }

@@ -1,0 +1,213 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP CT-06 Planned API Contracts",
+    "version": "0.1.0",
+    "description": "CT-06 追踪矩阵引用、但后续 BE 任务尚未交付的正式 OpenAPI 契约桩。x-contract-status=planned 明确表示仅冻结 operationId 与页面所需响应字段，不代表接口已实现或可部署。",
+    "x-contract-status": "planned",
+    "x-decision-versions": ["PRI-001@1.0.0", "DEC-007@1.0.0", "DEC-009@1.0.0", "DEC-012@1.0.0"],
+    "x-decision-register-version": "1.27.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "paths": {
+    "/api/v1/admin/dashboard/summary": {
+      "get": {
+        "operationId": "getDashboardSummary",
+        "x-task-id": "BE-DASH-01",
+        "responses": {
+          "200": {
+            "description": "计划中的 Dashboard 聚合视图",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "validContracts": { "type": "integer" },
+                    "deviceStats": { "type": "object" },
+                    "onlineStats": { "type": "object" },
+                    "deviceCards": { "type": "array", "items": { "type": "object" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/esg/summary": {
+      "get": {
+        "operationId": "getEsgSummary",
+        "x-task-id": "BE-ESG-02",
+        "responses": {
+          "200": {
+            "description": "计划中的日/周/月 ESG 页面视图",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "date": { "type": "string", "format": "date" },
+                    "carbonReductionKg": { "type": "number" },
+                    "processedWeightKg": { "type": "number" },
+                    "energyConsumptionKwh": { "type": "number" },
+                    "metrics": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}/console": {
+      "get": {
+        "operationId": "getDeviceConsole",
+        "x-task-id": "BE-DEV-05",
+        "responses": {
+          "200": {
+            "description": "计划中的设备控制台聚合视图",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "components": { "type": "array", "items": { "type": "object" } },
+                    "latestTelemetry": { "type": "object" },
+                    "consumables": { "type": "array", "items": { "type": "object" } },
+                    "recentAlarms": { "type": "array", "items": { "type": "object" } },
+                    "esgDaily": { "type": "array", "items": { "type": "object" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/media": {
+      "get": {
+        "operationId": "listMedia",
+        "x-task-id": "BE-MED-01",
+        "responses": {
+          "200": {
+            "description": "计划中的授权 Media 列表",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "latest": { "type": ["object", "null"] } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}": {
+      "patch": {
+        "operationId": "patchDeviceMetadata",
+        "x-task-id": "BE-DEV-06",
+        "responses": {
+          "200": {
+            "description": "计划中的设备元数据修改结果",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "alias": { "type": ["string", "null"] } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}/activities": {
+      "get": {
+        "operationId": "listDeviceActivities",
+        "x-task-id": "BE-DEV-05",
+        "responses": {
+          "200": {
+            "description": "计划中的设备活动列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "items": { "type": "array", "items": { "type": "object" } } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}/activities/exports": {
+      "post": {
+        "operationId": "exportDeviceActivities",
+        "x-task-id": "BE-DEV-05",
+        "responses": { "202": { "description": "计划中的活动导出任务" } }
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}/contract-summary": {
+      "get": {
+        "operationId": "getDeviceContractSummary",
+        "x-task-id": "BE-CON-02",
+        "responses": {
+          "200": {
+            "description": "计划中的设备合约摘要",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contractName": { "type": ["string", "null"] },
+                    "leaseTerm": { "type": ["object", "null"] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/ota/campaigns": {
+      "post": {
+        "operationId": "createOtaCampaign",
+        "x-task-id": "BE-OTA-02",
+        "responses": { "201": { "description": "计划中的 OTA Campaign 创建结果" } }
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}/license": {
+      "get": {
+        "operationId": "getDeviceLicense",
+        "x-task-id": "BE-LIC-01",
+        "responses": {
+          "200": {
+            "description": "计划中的设备 License 摘要",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "summary": { "type": ["object", "null"] } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/platform-users/invitations": {
+      "post": {
+        "operationId": "invitePlatformUser",
+        "x-task-id": "BE-RBAC-01",
+        "responses": { "201": { "description": "计划中的 Cognito 邀请结果" } }
+      }
+    },
+    "/api/v1/admin/platform-users/{userId}/password-reset": {
+      "post": {
+        "operationId": "triggerPasswordReset",
+        "x-task-id": "BE-RBAC-01",
+        "responses": { "202": { "description": "计划中的 Cognito 密码重置触发结果" } }
+      }
+    },
+    "/api/v1/admin/platform-users/{userId}/deactivate": {
+      "post": {
+        "operationId": "deactivatePlatformUser",
+        "x-task-id": "BE-RBAC-01",
+        "responses": { "200": { "description": "计划中的平台用户停用结果" } }
+      }
+    }
+  }
+}

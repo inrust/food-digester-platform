@@ -1,18 +1,43 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { checkMatrix, run } from './check-prototype-traceability.mjs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import {
+  checkMatrix,
+  loadOperationIndex,
+  loadReferenceIndex,
+  loadRouteIndex,
+  run,
+} from './check-prototype-traceability.mjs';
 import { loadJson, validateTraceability } from './check-decisions.mjs';
 
 const MATRIX_PATH = new URL('../contracts/prototype-traceability.yaml', import.meta.url).pathname;
 const REGISTER_PATH = new URL('../contracts/decisions/decision-register.json', import.meta.url).pathname;
+const REST_DIR = new URL('../contracts/rest/', import.meta.url).pathname;
+const ROUTE_REGISTRY_PATH = new URL('../contracts/prototype-route-registry.json', import.meta.url).pathname;
+const REAL_REFERENCES = loadReferenceIndex(REST_DIR, ROUTE_REGISTRY_PATH);
 
 function realMatrix() {
   return JSON.parse(readFileSync(MATRIX_PATH, 'utf8'));
 }
 
 test('真实矩阵通过完整性检查', () => {
-  assert.deepEqual(checkMatrix(realMatrix()), []);
+  assert.deepEqual(checkMatrix(realMatrix(), REAL_REFERENCES), []);
+});
+
+test('真实引用集合：41 个矩阵 API 与 13 个 routeId 全部可解析', () => {
+  const m = realMatrix();
+  const apiRefs = new Set(m.pages.flatMap((p) => p.elements.map((e) => e.source?.api).filter(Boolean)));
+  const routeRefs = new Set([
+    ...m.menus.map((menu) => menu.routeId),
+    ...m.pages.map((page) => page.routeId),
+    ...m.pages.flatMap((page) => page.elements.map((e) => e.source?.routeId).filter(Boolean)),
+  ]);
+  assert.equal(apiRefs.size, 41);
+  assert.equal(routeRefs.size, 13);
+  for (const operationId of apiRefs) assert.ok(REAL_REFERENCES.operations.has(operationId), operationId);
+  for (const routeId of routeRefs) assert.ok(REAL_REFERENCES.routes.has(routeId), routeId);
 });
 
 test('真实矩阵：9 菜单、12 页面、每项均有处置结论', () => {
@@ -54,6 +79,20 @@ test('矩阵的 x-decision-versions 可追溯到决策登记（DEC-007~012）', 
 });
 
 function baseMatrix() {
+  const pageStates = [
+    'dashboard',
+    'device-view',
+    'device-operate',
+    'device-group',
+    'device-manage',
+    'device-consumable',
+    'contract-modify',
+    'contract-new',
+    'contract-detail',
+    'esg-overview',
+    'esg-device',
+    'settings',
+  ];
   return {
     matrixVersion: '1.0.0',
     menus: [
@@ -66,10 +105,8 @@ function baseMatrix() {
       'menu.esg-device',
       'menu.contract-modify',
       'menu.settings',
-    ].map((menuId, i) => ({
-      menuId,
-      label: 'x',
-      pageState: [
+    ].map((menuId, i) => {
+      const pageState = [
         'dashboard',
         'device-view',
         'device-operate',
@@ -79,29 +116,21 @@ function baseMatrix() {
         'esg-device',
         'contract-modify',
         'settings',
-      ][i],
-      routeId: '/x',
-      feTask: 'FE-01',
-      roles: ['PlatformSuperAdmin'],
-      disposition: 'Adopt',
-      source: { taskId: 'FE-01' },
-    })),
-    pages: [
-      'dashboard',
-      'device-view',
-      'device-operate',
-      'device-group',
-      'device-manage',
-      'device-consumable',
-      'contract-modify',
-      'contract-new',
-      'contract-detail',
-      'esg-overview',
-      'esg-device',
-      'settings',
-    ].map((pageState) => ({
+      ][i];
+      return {
+        menuId,
+        label: 'x',
+        pageState,
+        routeId: `/${pageState}`,
+        feTask: 'FE-01',
+        roles: ['PlatformSuperAdmin'],
+        disposition: 'Adopt',
+        source: { taskId: 'FE-01' },
+      };
+    }),
+    pages: pageStates.map((pageState) => ({
       pageState,
-      routeId: '/x',
+      routeId: `/${pageState}`,
       feTasks: ['FE-01'],
       beTasks: ['BE-DEV-01'],
       disposition: 'Adopt',
@@ -118,19 +147,41 @@ function baseMatrix() {
   };
 }
 
+function fixtureReferences(matrix) {
+  const routes = new Map();
+  for (const page of matrix.pages) routes.set(page.routeId, { routeId: page.routeId, pageState: page.pageState });
+  for (const menu of matrix.menus) {
+    if (!routes.has(menu.routeId)) routes.set(menu.routeId, { routeId: menu.routeId, pageState: menu.pageState });
+  }
+  return {
+    operations: new Map([
+      [
+        'listDevices',
+        { id: 'listDevices', status: 'implemented', taskId: null, fields: new Set(['a']), file: 'fixture' },
+      ],
+    ]),
+    routes,
+    errors: [],
+  };
+}
+
+function checkFixture(matrix) {
+  return checkMatrix(matrix, fixtureReferences(matrix));
+}
+
 test('缺少菜单或页面被拒绝', () => {
   const m = baseMatrix();
   m.menus.pop();
-  assert.ok(checkMatrix(m).some((e) => e.includes('缺少菜单')));
+  assert.ok(checkFixture(m).some((e) => e.includes('缺少菜单')));
   const m2 = baseMatrix();
   m2.pages = m2.pages.filter((p) => p.pageState !== 'settings');
-  assert.ok(checkMatrix(m2).some((e) => e.includes('缺少页面')));
+  assert.ok(checkFixture(m2).some((e) => e.includes('缺少页面')));
 });
 
 test('重复元素 ID 被拒绝', () => {
   const m = baseMatrix();
   m.pages[0].elements.push({ ...m.pages[0].elements[0] });
-  assert.ok(checkMatrix(m).some((e) => e.includes('重复')));
+  assert.ok(checkFixture(m).some((e) => e.includes('重复')));
 });
 
 test('Adapt/Reject 缺少依据被拒绝', () => {
@@ -142,7 +193,7 @@ test('Adapt/Reject 缺少依据被拒绝', () => {
     disposition: 'Adapt',
     source: { taskId: 'BE-DEV-01', api: 'listDevices' },
   };
-  assert.ok(checkMatrix(m).some((e) => e.includes('R3')));
+  assert.ok(checkFixture(m).some((e) => e.includes('R3')));
 });
 
 test('Adopt/Adapt 生产字段缺少 API 来源被拒绝', () => {
@@ -154,7 +205,7 @@ test('Adopt/Adapt 生产字段缺少 API 来源被拒绝', () => {
     disposition: 'Adopt',
     source: { taskId: 'BE-DEV-01' },
   };
-  assert.ok(checkMatrix(m).some((e) => e.includes('R4')));
+  assert.ok(checkFixture(m).some((e) => e.includes('R4')));
 });
 
 test('rejectCategory 项非 Reject 或携带实现任务被拒绝', () => {
@@ -168,14 +219,61 @@ test('rejectCategory 项非 Reject 或携带实现任务被拒绝', () => {
     rejectCategory: 'realtime-stream',
     source: { taskId: 'FE-06' },
   };
-  const errors = checkMatrix(m);
+  const errors = checkFixture(m);
   assert.ok(errors.some((e) => e.includes('R5')));
 });
 
 test('未知角色被拒绝（R7）', () => {
   const m = baseMatrix();
   m.menus[0].roles = ['SuperRoot'];
-  assert.ok(checkMatrix(m).some((e) => e.includes('R7')));
+  assert.ok(checkFixture(m).some((e) => e.includes('R7')));
+});
+
+test('格式合法但不存在的 operationId、routeId 与响应字段被拒绝', () => {
+  const missingOperation = realMatrix();
+  missingOperation.pages[0].elements[0].source.api = 'definitelyMissingOperation';
+  assert.ok(checkMatrix(missingOperation, REAL_REFERENCES).some((e) => e.includes('未在 OpenAPI 中声明')));
+
+  const missingRoute = realMatrix();
+  missingRoute.pages[0].routeId = '/definitely-missing-route';
+  assert.ok(checkMatrix(missingRoute, REAL_REFERENCES).some((e) => e.includes('未在路由登记中声明')));
+
+  const missingField = realMatrix();
+  missingField.pages[0].elements[0].source.field = 'definitelyMissingField';
+  assert.ok(checkMatrix(missingField, REAL_REFERENCES).some((e) => e.includes('不存在于 getDashboardSummary')));
+});
+
+test('planned operation 的任务归属漂移被拒绝', () => {
+  const m = realMatrix();
+  m.pages[0].elements[0].source.taskId = 'BE-DEV-01';
+  assert.ok(checkMatrix(m, REAL_REFERENCES).some((e) => e.includes('planned operation getDashboardSummary 属于')));
+});
+
+test('重复 operationId 与 routeId 被引用索引拒绝', () => {
+  const root = mkdtempSync(join(tmpdir(), 'fdp-prototype-refs-'));
+  const restDir = join(root, 'rest');
+  mkdirSync(restDir);
+  writeFileSync(join(restDir, 'openapi-base.json'), JSON.stringify({ openapi: '3.1.0', info: {}, paths: {} }));
+  const api = (title) => ({
+    openapi: '3.1.0',
+    info: { title, version: '1.0.0' },
+    paths: { '/x': { get: { operationId: 'duplicateOperation', responses: { 200: { description: 'ok' } } } } },
+  });
+  writeFileSync(join(restDir, 'a-api.json'), JSON.stringify(api('a')));
+  writeFileSync(join(restDir, 'b-api.json'), JSON.stringify(api('b')));
+  assert.ok(loadOperationIndex(restDir).errors.some((e) => e.includes('operationId duplicateOperation 重复')));
+
+  const routesPath = join(root, 'routes.json');
+  writeFileSync(
+    routesPath,
+    JSON.stringify({
+      routes: [
+        { routeId: '/x', pageState: 'dashboard', status: 'planned', taskId: 'FE-01' },
+        { routeId: '/x', pageState: 'settings', status: 'planned', taskId: 'FE-02' },
+      ],
+    }),
+  );
+  assert.ok(loadRouteIndex(routesPath).errors.some((e) => e.includes('routeId /x 重复')));
 });
 
 test('CLI：真实矩阵退出码 0，违规矩阵退出码 1', () => {
@@ -185,4 +283,5 @@ test('CLI：真实矩阵退出码 0，违规矩阵退出码 1', () => {
     0,
   );
   assert.ok(lines.some((l) => l.includes('9/9') && l.includes('12/12')));
+  assert.ok(lines.some((l) => l.includes('API 引用 41') && l.includes('路由 13')));
 });
