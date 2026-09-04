@@ -1,6 +1,6 @@
 /**
  * AUTH-03 验收（PGlite 真实 PostgreSQL + 实际 migration.sql）：
- * 有效证书通过；同 CA 未登记证书、撤销/过期/未激活证书、跨 deviceId、Retired 设备均拒绝。
+ * 有效证书通过；同 CA 未登记、撤销/过期/未激活、跨 deviceId 均拒绝；Retired 仅 Sync 限时例外。
  */
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
@@ -154,10 +154,31 @@ describe('verifyDeviceCertificate 白名单校验', () => {
     );
   });
 
-  test('Retired 设备 → 403；Suspended 设备放行（行为矩阵，业务级限制归 BE 任务）', async () => {
+  test('Retired 默认 → 403；仅窗口内 PENDING_CONFIRMATION 可显式申请 Sync 能力', async () => {
     await insertDevice('dev-retired', 'Retired');
     const retiredPem = await insertCertificate('cert-retired', 'dev-retired', 'retired');
     await expectAuthError(verifyDeviceCertificate(prisma, identityOf(retiredPem), { now: NOW }), 'FORBIDDEN');
+
+    await prisma.deviceRetirement.create({
+      data: {
+        deviceId: 'dev-retired',
+        reason: 'retire',
+        initiatedBy: 'admin',
+        initiatedAt: new Date(NOW.getTime() - 71 * 60 * 60 * 1000),
+      },
+    });
+    const syncCtx = await verifyDeviceCertificate(prisma, identityOf(retiredPem), {
+      now: NOW,
+      retiredAccess: 'SYNC',
+    });
+    assert.equal(syncCtx.deviceLifecycleStatus, 'Retired');
+    await expectAuthError(
+      verifyDeviceCertificate(prisma, identityOf(retiredPem), {
+        now: new Date(NOW.getTime() + 60 * 60 * 1000),
+        retiredAccess: 'SYNC',
+      }),
+      'FORBIDDEN',
+    );
 
     await insertDevice('dev-suspended', 'Suspended');
     const suspendedPem = await insertCertificate('cert-suspended', 'dev-suspended', 'suspended');

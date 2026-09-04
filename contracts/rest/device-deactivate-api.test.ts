@@ -51,7 +51,11 @@ test('响应视图封闭：退役记录 + 证书摘要（无证书材料字段�
   assert.deepEqual(result.properties.lifecycleStatus.enum, ['Retired']);
   const retirement = doc.components.schemas.RetirementView;
   assert.deepEqual(retirement.properties.status.enum, ['CONFIRMED']);
-  assert.deepEqual(retirement.properties.completionMethod.enum, ['DEVICE_CONFIRM', 'FORCE_COMPLETE']);
+  assert.deepEqual(retirement.properties.completionMethod.enum, [
+    'DEVICE_CONFIRM',
+    'FORCE_COMPLETE',
+    'UNCONFIRMED_TIMEOUT',
+  ]);
   const cert = doc.components.schemas.RevokedCertificateSummary;
   assert.deepEqual(cert.required.sort(), ['certificateId', 'fingerprint', 'revokedAt', 'status'].sort());
   // 敏感材料不得出现在任何 Schema 字段名

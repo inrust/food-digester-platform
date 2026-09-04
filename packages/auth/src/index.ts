@@ -51,7 +51,12 @@ export type { OnboardingGuardOptions } from './onboarding/guard.js';
 // ---------- AUTH-03 Device mTLS ----------
 export { certificateFingerprintFromPem } from './device/mtls-context.js';
 export type { ClientCertIdentity } from './device/mtls-context.js';
-export { CERT_STATUS_ACTIVE, verifyDeviceCertificate } from './device/verifier.js';
+export {
+  CERT_STATUS_ACTIVE,
+  RETIREMENT_CONFIRMATION_WINDOW_HOURS,
+  RETIREMENT_CONFIRMATION_WINDOW_MS,
+  verifyDeviceCertificate,
+} from './device/verifier.js';
 export type { DeviceAuthContext, VerifyDeviceCertificateOptions } from './device/verifier.js';
 export { withDeviceAuth } from './device/guard.js';
 export type { DeviceAuthGuardOptions } from './device/guard.js';

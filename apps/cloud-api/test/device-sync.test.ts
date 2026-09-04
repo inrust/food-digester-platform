@@ -8,7 +8,7 @@
  * - 未分配/未许可状态：assignment/license/configuration 为 null、deviceUsers 为空；
  * - Customer 数据不串线：仅本 Customer 且 ACTIVE 分配到本设备的用户下发；停用用户不下发；
  * - 未来生效配置不下发；etag 稳定域内容寻址（重复一致、alias 变更后变化）；
- * - 认证：Retired → 403；未登记证书/缺身份 → 401；请求体封闭校验 → 400。
+ * - 认证：DEC-014 窗口内待确认 Retired 仅 Sync 放行，窗口关闭 → 403；未登记/缺身份 → 401。
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -402,11 +402,33 @@ describe('POST /api/v1/device/sync（完整事实快照）', () => {
 });
 
 describe('认证与请求校验', () => {
-  test('Retired 设备 → 403；未登记证书/缺身份 → 401', async () => {
+  test('DEC-014：Retired 待确认在 72h 内可 Sync，到达边界即 → 403', async () => {
     const retired = await plantDevice({ lifecycleStatus: 'Retired', customerName: 'Customer RET' });
-    const resRetired = await handler()({ identity: { clientCertPem: retired.pem }, requestId: 'req-s13' });
+    await prisma.deviceRetirement.create({
+      data: {
+        deviceId: retired.deviceId,
+        reason: 'retire',
+        initiatedBy: 'admin',
+        initiatedAt: new Date(NOW.getTime() - 71 * 60 * 60 * 1000),
+      },
+    });
+    const allowed = await handler()({ identity: { clientCertPem: retired.pem }, requestId: 'req-s13a' });
+    assert.equal(allowed.status, 200);
+    assert.equal(dataOf(allowed).operationalStatus.lifecycleStatus, 'Retired');
+
+    await prisma.deviceRetirement.update({
+      where: { deviceId: retired.deviceId },
+      data: { initiatedAt: new Date(NOW.getTime() - 72 * 60 * 60 * 1000) },
+    });
+    const resRetired = await handler()({ identity: { clientCertPem: retired.pem }, requestId: 'req-s13b' });
     assert.equal(resRetired.status, 403);
     assert.equal((resRetired.body as ErrorBody).error.code, 'FORBIDDEN');
+  });
+
+  test('Retired 无待确认记录 → 403；未登记证书/缺身份 → 401', async () => {
+    const retired = await plantDevice({ lifecycleStatus: 'Retired', customerName: 'Customer RET CLOSED' });
+    const resRetired = await handler()({ identity: { clientCertPem: retired.pem }, requestId: 'req-s13c' });
+    assert.equal(resRetired.status, 403);
 
     const resUnknown = await handler()({ identity: { clientCertPem: fixturePem('unknown') }, requestId: 'req-s14' });
     assert.equal(resUnknown.status, 401);

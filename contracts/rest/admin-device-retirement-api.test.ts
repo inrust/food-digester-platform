@@ -57,7 +57,12 @@ test('请求体封闭：retire 强制原因 + confirm 恒 true；视图封闭且
   assert.deepEqual(result.properties.notification.enum, ['DEVICE_RETIRED', null]);
   const record = doc.components.schemas.RetirementRecord;
   assert.deepEqual(record.properties.status.enum, ['PENDING_CONFIRMATION', 'CONFIRMED']);
-  assert.deepEqual(record.properties.completionMethod.enum, ['DEVICE_CONFIRM', 'FORCE_COMPLETE', null]);
+  assert.deepEqual(record.properties.completionMethod.enum, [
+    'DEVICE_CONFIRM',
+    'FORCE_COMPLETE',
+    'UNCONFIRMED_TIMEOUT',
+    null,
+  ]);
 });
 
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {

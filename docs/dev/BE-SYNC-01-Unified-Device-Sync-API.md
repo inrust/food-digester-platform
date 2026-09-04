@@ -1,6 +1,6 @@
 # BE-SYNC-01 Unified Device Sync API
 
-实现：[apps/cloud-api/src/device/sync.ts](../apps/cloud-api/src/device/sync.ts) + [sync-handler.ts](../apps/cloud-api/src/device/sync-handler.ts)；OpenAPI：[contracts/rest/device-sync-api.json](../contracts/rest/device-sync-api.json)；验收测试：[device-sync.test.ts](../apps/cloud-api/test/device-sync.test.ts)（9 项，PGlite 真实 PostgreSQL）。
+实现：[apps/cloud-api/src/device/sync.ts](../../apps/cloud-api/src/device/sync.ts) + [sync-handler.ts](../../apps/cloud-api/src/device/sync-handler.ts)；OpenAPI：[contracts/rest/device-sync-api.json](../../contracts/rest/device-sync-api.json)；验收测试：[device-sync.test.ts](../../apps/cloud-api/test/device-sync.test.ts)（12 项，PGlite 真实 PostgreSQL）。
 
 ## 1. 范围与事实源
 
@@ -13,7 +13,7 @@
 
 ## 2. 端点与关键设计
 
-`POST /api/v1/device/sync`（DeviceMtls，AUTH-03 `verifyDeviceCertificate` 白名单校验；Retired → 403 不产生快照；Suspended 放行——同步是 Suspended 的允许行为）。
+`POST /api/v1/device/sync`（DeviceMtls，AUTH-03 `verifyDeviceCertificate` 白名单校验）。Retired 默认拒绝；DEC-014 仅允许存在 `PENDING_CONFIRMATION` 记录且尚未到 `initiatedAt+72h` 的 Retired 设备调用 Sync。到达精确边界即 fail closed，即使超时调度延迟也不扩大认证窗口。Suspended 放行。
 
 **请求体封闭**：仅 `lastSyncTime`（UTC ISO 8601 或 null；首次同步可省略请求体）；未知字段/非法时间戳 → 400 VALIDATION_FAILED。
 
@@ -44,7 +44,7 @@
 | Customer 数据不串线 | 跨 Customer 用户/未分配本设备/停用用户均不下发；两 Customer 各自快照隔离 | ✅ |
 | 未来生效配置不下发；未许可语义 | effectiveAt 未来 → configuration=null；Expired License effective=false 仍可见最新状态 | ✅ |
 | 版本/ETag | 重复同步 etag 一致；心跳（volatile）变化不影响 etag；alias（稳定域）变更后 etag 变化 | ✅ |
-| 认证与请求校验 | Retired → 403 FORBIDDEN；未登记证书/缺身份 → 401；非法 lastSyncTime/未知字段 → 400；省略 body 视为首次同步 | ✅ |
+| 认证与请求校验 | Retired 默认 403；待确认且窗口内 Sync 200；精确 72h 边界 403；未登记/缺身份 → 401；非法请求 → 400 | ✅ |
 | 敏感材料不泄露 | 响应序列化不含证书包/PEM/私钥/明文密码字段 | ✅ |
 | 契约一致性 | 响应字段与 OpenAPI 封闭一致（含全部嵌套域）；错误码对齐 CT-05；sync 模块无 AWS 依赖 | ✅ |
 

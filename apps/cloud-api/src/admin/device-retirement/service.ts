@@ -12,19 +12,21 @@
  *
  * force-complete（POST /admin/devices/{id}/retire/complete，强制原因）：
  * 离线设备不等待确认，由调用方触发完成退役（CONFIRMED + FORCE_COMPLETE + 撤销 ACTIVE 证书），
- * 与 BE-SYNC-02 共享 completeRetirementStep。DEC-014@1.0.0 已冻结 72 小时自动强制完成；
- * 本模块当前仍缺超时评估器、调度接线和 UNCONFIRMED_TIMEOUT 审计，见开发文档待实现项。
+ * 与 BE-SYNC-02 共享 completeRetirementStep。DEC-014@1.0.0 的超时评估器按
+ * initiatedAt+72h 自动完成并记录 UNCONFIRMED_TIMEOUT；重复调度和并发确认均无重复副作用。
  *
  * 幂等：已 Retired 且退役记录存在 → replayed；force-complete 已 CONFIRMED → replayed。
  * 审计：device.retire / device.retire.force_complete（DOM-03 audited）。
  */
 import type { DbClient } from '@fdp/database';
-import { audited } from '@fdp/database';
+import { audited, recordAudit, withTransaction } from '@fdp/database';
+import { RETIREMENT_CONFIRMATION_WINDOW_MS } from '@fdp/auth';
 import { transitionLifecycle } from '@fdp/domain';
 import type { OperationalStatus } from '@fdp/domain';
 import type { ActorContext } from '@fdp/auth';
 import {
   COMPLETION_FORCE_COMPLETE,
+  COMPLETION_UNCONFIRMED_TIMEOUT,
   RETIREMENT_CONFIRMED,
   RETIREMENT_PENDING,
   completeRetirementStep,
@@ -89,6 +91,11 @@ interface DeviceDelegate {
 
 interface RetirementDelegate {
   findFirst(args: { where: Record<string, unknown> }): Promise<RetirementRow | null>;
+  findMany(args: {
+    where: Record<string, unknown>;
+    orderBy?: Record<string, unknown>;
+    take?: number;
+  }): Promise<RetirementRow[]>;
   create(args: { data: Record<string, unknown> }): Promise<RetirementRow>;
 }
 
@@ -364,4 +371,66 @@ export async function forceCompleteRetirement(
       };
     },
   );
+}
+
+export interface RetirementTimeoutEvaluation {
+  readonly examined: number;
+  readonly completed: number;
+  readonly skipped: number;
+  readonly completedDeviceIds: readonly string[];
+}
+
+/**
+ * DEC-014 超时评估器。候选查询只是优化，最终状态由事务内条件更新裁决；因此与设备确认、
+ * 人工强制和重复调度并发时，只有一个执行者能完成撤证并写入一次成功审计。
+ */
+export async function evaluateRetirementTimeouts(
+  rootClient: DbClient,
+  options: { readonly now?: Date; readonly batchSize?: number } = {},
+): Promise<RetirementTimeoutEvaluation> {
+  const at = options.now ?? new Date();
+  const batchSize = Math.max(1, Math.min(options.batchSize ?? 100, 1000));
+  const cutoff = new Date(at.getTime() - RETIREMENT_CONFIRMATION_WINDOW_MS);
+  const candidates = await retirements(rootClient).findMany({
+    where: { status: RETIREMENT_PENDING, initiatedAt: { lte: cutoff } },
+    orderBy: { initiatedAt: 'asc' },
+    take: batchSize,
+  });
+  const completedDeviceIds: string[] = [];
+  let skipped = 0;
+
+  for (const retirement of candidates) {
+    const confirmed = await withTransaction(rootClient, async (tx) => {
+      const step = await completeRetirementStep(tx, {
+        deviceId: retirement.deviceId,
+        at,
+        completionMethod: COMPLETION_UNCONFIRMED_TIMEOUT,
+      });
+      if (!step.confirmed) return false;
+      await recordAudit(tx, {
+        objectType: 'device',
+        objectId: retirement.deviceId,
+        action: 'device.retire.timeout',
+        result: 'SUCCESS',
+        actorId: 'system:retirement-timeout',
+        actorRole: 'SYSTEM',
+        reason: COMPLETION_UNCONFIRMED_TIMEOUT,
+        beforeValue: { retirementStatus: RETIREMENT_PENDING },
+        afterValue: {
+          retirementStatus: RETIREMENT_CONFIRMED,
+          completionMethod: COMPLETION_UNCONFIRMED_TIMEOUT,
+        },
+      });
+      return true;
+    });
+    if (confirmed) completedDeviceIds.push(retirement.deviceId);
+    else skipped += 1;
+  }
+
+  return {
+    examined: candidates.length,
+    completed: completedDeviceIds.length,
+    skipped,
+    completedDeviceIds,
+  };
 }

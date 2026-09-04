@@ -1,8 +1,8 @@
 /**
  * BE-SYNC-01 Unified Device Sync API Handler：POST /api/v1/device/sync（框架无关）。
  *
- * 接线：AUTH-03 verifyDeviceCertificate（mTLS 白名单；Retired → 403；Suspended 放行，
- * 同步是 Suspended 的允许行为）→ parseSyncRequest → buildDeviceSyncSnapshot。
+ * 接线：AUTH-03 verifyDeviceCertificate（mTLS 白名单；DEC-014 仅放行 72 小时窗口内的
+ * PENDING_CONFIRMATION Retired；Suspended 放行）→ parseSyncRequest → buildDeviceSyncSnapshot。
  * 响应：data（完整事实快照 + etag）+ meta{requestId,timestamp}（CT-05）；
  * 错误：400 VALIDATION_FAILED / 401 UNAUTHENTICATED / 403 FORBIDDEN / 500 通用消息。
  * 纯读取：无写入/通知/审计；响应不含证书材料与云端凭据（Device Users 验证材料为
@@ -54,7 +54,7 @@ export function createDeviceSyncHandler(
   const now = deps.now ?? (() => new Date());
   return async (req) => {
     try {
-      const auth = await verifyDeviceCertificate(deps.client, req.identity, { now: now() });
+      const auth = await verifyDeviceCertificate(deps.client, req.identity, { now: now(), retiredAccess: 'SYNC' });
       const input = parseSyncRequest(req.body);
       const snapshot = await buildDeviceSyncSnapshot(deps, auth, input);
       return {

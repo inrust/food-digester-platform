@@ -173,7 +173,7 @@ model DeviceRetirement {
   initiatedBy          String    @map("initiated_by")
   initiatedAt          DateTime  @map("initiated_at") @db.Timestamptz
   confirmedAt          DateTime? @map("confirmed_at") @db.Timestamptz
-  completionMethod     String?   @map("completion_method") // DEVICE_CONFIRM | FORCE_COMPLETE
+  completionMethod     String?   @map("completion_method") // DEVICE_CONFIRM | FORCE_COMPLETE | UNCONFIRMED_TIMEOUT
   certificateRevokedAt DateTime? @map("certificate_revoked_at") @db.Timestamptz
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
 

@@ -6,7 +6,7 @@
  *   Assignment/License，创建 PENDING_CONFIRMATION 退役记录；证书保持 ACTIVE 以便设备确认；
  * - 设备调用 POST /api/v1/device/deactivate 确认后，本服务标记 CONFIRMED 并撤销 ACTIVE
  *   证书（退役完成步骤，本服务唯一负责撤销点）；
- * - AUTH-03 verifyDeviceCertificate 对 Retired 设备一律 403（拒绝一切接入），因此本端点
+ * - AUTH-03 verifyDeviceCertificate 对 Retired 默认 403（Sync 有 DEC-014 限时例外），因此本端点
  *   使用专用身份校验：证书 ACTIVE+有效期内 → 正常确认；证书已 REVOKED 且对应退役记录
  *   CONFIRMED 且撤销时间一致 → 判定为重复确认，幂等返回（重复调用结果一致）；其余拒绝。
  *
@@ -51,6 +51,8 @@ export const RETIREMENT_CONFIRMED = 'CONFIRMED' as const;
 export const COMPLETION_DEVICE_CONFIRM = 'DEVICE_CONFIRM' as const;
 /** BE-DEV-04 force-complete 的完成方式标记。 */
 export const COMPLETION_FORCE_COMPLETE = 'FORCE_COMPLETE' as const;
+/** DEC-014：72 小时未确认自动完成。 */
+export const COMPLETION_UNCONFIRMED_TIMEOUT = 'UNCONFIRMED_TIMEOUT' as const;
 
 /**
  * 退役完成步骤（共享：BE-SYNC-02 设备确认 / BE-DEV-04 force-complete）。
@@ -167,7 +169,7 @@ export interface DeactivateIdentity {
 }
 
 /**
- * deactivate 专用身份校验（不使用 AUTH-03 verifyDeviceCertificate：其对 Retired 一律 403，
+ * deactivate 专用身份校验（不使用 AUTH-03 verifyDeviceCertificate：其对 Retired 默认 403，
  * 而本端点正是 Retired 设备在证书撤销前的确认入口）。
  */
 export async function verifyDeactivateIdentity(

@@ -7,8 +7,9 @@ export {
   RETIREABLE_LIFECYCLES,
   REVOCABLE_LICENSE_STATUSES,
   forceCompleteRetirement,
+  evaluateRetirementTimeouts,
   parseForceCompleteBody,
   parseRetireBody,
   retireDevice,
 } from './service.js';
-export type { RetirementRecordView, RetirementView } from './service.js';
+export type { RetirementRecordView, RetirementTimeoutEvaluation, RetirementView } from './service.js';
