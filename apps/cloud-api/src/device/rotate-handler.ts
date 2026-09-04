@@ -20,6 +20,7 @@ export interface CertificateRotateRequest {
 export interface CertificateRotateResponse {
   readonly status: number;
   readonly body: unknown;
+  readonly onCommitted?: (() => Promise<void>) | undefined;
 }
 
 export type CertificateRotateHandlerDeps = RotationServiceDeps;
@@ -65,6 +66,7 @@ export function createCertificateRotateHandler(
           },
           meta: { requestId: req.requestId, timestamp: now.toISOString() },
         },
+        onCommitted: result.confirmDelivery,
       };
     },
   );

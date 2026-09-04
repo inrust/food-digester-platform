@@ -92,6 +92,9 @@ function mockIot(): MockIot {
     async attachThingPrincipal(thingName, principalArn) {
       state.calls.push(`attachThingPrincipal:${thingName}->${principalArn}`);
     },
+    async revokeCertificate(certificateId) {
+      state.calls.push(`revokeCertificate:${certificateId}`);
+    },
   };
   return state;
 }

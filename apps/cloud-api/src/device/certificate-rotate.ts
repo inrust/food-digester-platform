@@ -4,8 +4,7 @@
  * 轮换链（POST /api/v1/device/certificate/rotate，mTLS 认证后调用）：
  * 1. 资格：currentCertificateId 必须等于当前 mTLS 身份证书（错误/跨设备 → 403）；
  *    旧证书 ACTIVE 且属于设备由 AUTH-03 认证链保证（撤销/过期 → 401 先行）；
- * 2. 重试短路：同设备同旧证书已有未确认轮换（新证书带证书包）→ 409 CONFLICT
- *    （DEC-003 重复领取失败关闭），绝不重复调用 AWS 发证（重试不产生无限证书）；
+ * 2. 重试恢复：已封包但未预留则继续交付；已预留但响应未确认则撤销新证书并重签；
  * 3. 发证：CreateKeysAndCertificate → AUTH-04 单设备 Policy（按名幂等）→ attach；
  * 4. 双证书窗口：新证书 ACTIVE + rotatedFromId=旧证书（旧证书保持 ACTIVE 可用），
  *    证书包 SEC-01 信封加密短期保存；写 ROTATION_START 审计；
@@ -48,7 +47,7 @@ export class CertificateRotationError extends Error {
 export interface RotationConfig {
   readonly region: string;
   readonly accountId: string;
-  /** 证书包保存时长（秒）；DEC-003 定量参数冻结前由部署方显式注入。 */
+  /** 证书包保存时长（秒）；组合根必须按 DEC-003@1.0.0 注入 86400。 */
   readonly packageRetentionSeconds: number;
   readonly certificateValiditySeconds: number;
   readonly policyNamePrefix?: string;
@@ -72,6 +71,8 @@ export interface RotationResult {
   readonly expiryDate: string;
   /** 双证书窗口记录：被轮换的旧证书。 */
   readonly rotatedFromId: string;
+  /** HTTP 响应成功提交后调用，销毁唯一密文包。 */
+  readonly confirmDelivery: () => Promise<void>;
 }
 
 interface CertificateRow {
@@ -80,6 +81,10 @@ interface CertificateRow {
   readonly status: string;
   readonly rotatedFromId: string | null;
   readonly packageCiphertext: Uint8Array | null;
+  readonly claimedAt: Date | null;
+  readonly certificatePem: string | null;
+  readonly notBefore: Date;
+  readonly notAfter: Date;
 }
 
 function certificates(client: DbClient) {
@@ -108,14 +113,41 @@ export async function rotateCertificate(
 
   const now = deps.now?.() ?? new Date();
   const certs = certificates(deps.client);
+  const securePackage = new SecurePackageService({
+    db: deps.client,
+    keyProvider: deps.keyProvider,
+    config: {
+      retentionSeconds: deps.config.packageRetentionSeconds,
+      maxClaims: 1,
+      now: deps.now ?? (() => new Date()),
+    },
+  });
 
   // 重试短路：同旧证书的未确认轮换已存在
   const existing = await certs.findFirst({
     where: { deviceId: auth.deviceId, rotatedFromId: auth.certificateId, status: 'ACTIVE' },
   });
-  if (existing?.packageCiphertext) {
-    // DEC-003 失败关闭：重复领取不放行第二次明文下发；不创建新证书
-    throw new CertificateRotationError('CONFLICT', 'A certificate rotation is already in progress');
+  if (existing?.packageCiphertext && existing.claimedAt === null) {
+    const payload = await securePackage.preparePackageDelivery(existing.id, {
+      kind: 'deviceCertificate',
+      context: auth,
+    });
+    const parsed = parseRotationPackage(payload);
+    return {
+      certificateId: existing.id,
+      certificatePem: parsed.certificatePem,
+      privateKey: parsed.privateKey,
+      effectiveDate: existing.notBefore.toISOString(),
+      expiryDate: existing.notAfter.toISOString().slice(0, 10),
+      rotatedFromId: auth.certificateId,
+      confirmDelivery: async () => {
+        await securePackage.confirmPackageDelivery(existing.id);
+      },
+    };
+  }
+  if (existing?.packageCiphertext && existing.claimedAt !== null) {
+    await deps.iot.revokeCertificate(existing.id);
+    await securePackage.revokeUnconfirmedDelivery(existing.id);
   }
   if (existing && !existing.packageCiphertext) {
     // 封包前失败的遗留：DEC-003 丢失处置，REVOKED 后重签（有界替换）
@@ -161,26 +193,35 @@ export async function rotateCertificate(
   });
 
   // AWS 返回私钥后立即信封加密短期保存（窗口期内供确认前重试对账；明文仅内存经过）
-  const securePackage = new SecurePackageService({
-    db: deps.client,
-    keyProvider: deps.keyProvider,
-    config: {
-      retentionSeconds: deps.config.packageRetentionSeconds,
-      maxClaims: 1,
-      now: deps.now ?? (() => new Date()),
-    },
-  });
   await securePackage.storePackage(
     cert.certificateId,
     Buffer.from(JSON.stringify({ certificatePem: cert.certificatePem, privateKey: cert.privateKey }), 'utf8'),
   );
 
+  const delivery = parseRotationPackage(
+    await securePackage.preparePackageDelivery(cert.certificateId, {
+      kind: 'deviceCertificate',
+      context: auth,
+    }),
+  );
+
   return {
     certificateId: cert.certificateId,
-    certificatePem: cert.certificatePem,
-    privateKey: cert.privateKey,
+    certificatePem: delivery.certificatePem,
+    privateKey: delivery.privateKey,
     effectiveDate: now.toISOString(),
     expiryDate: notAfter.toISOString().slice(0, 10),
     rotatedFromId: auth.certificateId,
+    confirmDelivery: async () => {
+      await securePackage.confirmPackageDelivery(cert.certificateId);
+    },
   };
+}
+
+function parseRotationPackage(payload: Uint8Array): { certificatePem: string; privateKey: string } {
+  const parsed = JSON.parse(Buffer.from(payload).toString('utf8')) as Record<string, unknown>;
+  if (typeof parsed.certificatePem !== 'string' || typeof parsed.privateKey !== 'string') {
+    throw new CertificateRotationError('CONFLICT', 'The certificate package is invalid');
+  }
+  return { certificatePem: parsed.certificatePem, privateKey: parsed.privateKey };
 }

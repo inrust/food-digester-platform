@@ -4,7 +4,7 @@
  * 验收基准覆盖：
  * - 正向：创建新证书包并返回五字段；双证书窗口（旧证仍 ACTIVE 可用）；
  * - 旧证书错误/撤销/跨设备均拒绝（400/401/403）；
- * - 重试不产生无限证书（同旧证书未确认轮换 → 409，无新增 AWS 发证/证书行）；
+ * - 响应不确定重试会撤销未确认证书并有界重签；
  * - 私钥不落库、不进审计。
  */
 import { afterAll, beforeAll, describe, test } from 'vitest';
@@ -64,6 +64,7 @@ function mockIot(options: { failNextAttach?: boolean } = {}): IotProvisioningPor
       }
     },
     async attachThingPrincipal() {},
+    async revokeCertificate() {},
   };
   return state;
 }
@@ -150,6 +151,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     assert.equal(newCert?.status, 'ACTIVE');
     assert.equal(newCert?.rotatedFromId, oldCertificateId);
     assert.ok(newCert?.packageCiphertext, '证书包应信封加密保存');
+    assert.isNotNull(newCert?.claimedAt, '返回响应前已预留一次性交付');
     const oldAuth = await verifyDeviceCertificate(prisma, { clientCertPem: oldPem }, { now: now() });
     assert.equal(oldAuth.deviceId, deviceId, '切换前旧证可用');
 
@@ -159,6 +161,11 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     const audits = await prisma.auditLog.findMany({ where: { objectId: body.data.certificateId } });
     assert.ok(audits.some((a) => a.action === 'CERT_ROTATION_START'));
     assert.ok(!JSON.stringify(audits).includes('ROTKEY'));
+    await res.onCommitted?.();
+    assert.isNull(
+      (await prisma.deviceCertificate.findFirst({ where: { id: body.data.certificateId } }))?.packageCiphertext,
+      '响应提交后销毁密文',
+    );
   });
 
   test('旧证书错误/跨设备拒绝：缺字段 400；与身份不符 403（含他设备证书）', async () => {
@@ -199,33 +206,31 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     assert.equal(res.status, 401);
   });
 
-  test('重试不产生无限证书：未确认轮换重复请求 409，无新增 AWS 发证与证书行', async () => {
+  test('响应不确定重试：撤销未确认证书并重签，不重复下发同一私钥', async () => {
     const { deviceId, oldPem, oldCertificateId } = await plantDeviceWithOldCert();
     const iot = mockIot();
     const handler = makeHandler(iot);
 
-    assert.equal(
-      (
-        await handler({
-          identity: { clientCertPem: oldPem },
-          body: { currentCertificateId: oldCertificateId },
-          requestId: 'r5',
-        })
-      ).status,
-      200,
-    );
+    const first = await handler({
+      identity: { clientCertPem: oldPem },
+      body: { currentCertificateId: oldCertificateId },
+      requestId: 'r5',
+    });
+    assert.equal(first.status, 200);
+    const firstId = (first.body as RotatePayload).data.certificateId;
+    // 不调用 first.onCommitted，模拟响应确认中断。
     const retry = await handler({
       identity: { clientCertPem: oldPem },
       body: { currentCertificateId: oldCertificateId },
       requestId: 'r6',
     });
-    assert.equal(retry.status, 409);
-    assert.equal((retry.body as { error: { code: string } }).error.code, 'CONFLICT');
-    assert.equal(iot.createCalls, 1, '不得重复调用 AWS 发证');
-    assert.equal(
-      await prisma.deviceCertificate.count({ where: { deviceId, status: 'ACTIVE' } }),
-      2, // 旧 + 新（双证书窗口）
-    );
+    assert.equal(retry.status, 200);
+    const retryId = (retry.body as RotatePayload).data.certificateId;
+    assert.notEqual(retryId, firstId);
+    assert.equal(iot.createCalls, 2, '只为不确定交付执行一次替换签发');
+    assert.equal((await prisma.deviceCertificate.findFirst({ where: { id: firstId } }))?.status, 'REVOKED');
+    assert.equal(await prisma.deviceCertificate.count({ where: { deviceId, status: 'ACTIVE' } }), 2);
+    await retry.onCommitted?.();
   });
 
   test('部分失败（发证后 attach 失败）可重试：不建孤儿业务记录，重试成功', async () => {

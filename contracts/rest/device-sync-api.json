@@ -106,10 +106,13 @@
         "additionalProperties": false,
         "description": "源稿 Assignment 结构；授权窗口为兼容扩展字段。",
         "properties": {
+          "assignmentId": { "type": "string", "minLength": 1 },
           "customerId": { "type": "string", "minLength": 1 },
           "customerName": { "type": "string", "minLength": 1 },
           "siteId": { "type": "string", "minLength": 1 },
           "siteName": { "type": "string", "minLength": 1 },
+          "region": { "type": ["string", "null"] },
+          "subregion": { "type": ["string", "null"] },
           "assignedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
           "endedAt": { "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }] }
         }

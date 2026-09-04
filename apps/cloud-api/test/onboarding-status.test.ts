@@ -54,17 +54,19 @@ const superAdmin: ActorContext = {
 const keyProvider = createLocalTestKeyProvider('be-onb-03-status');
 
 let statusHandler: ReturnType<typeof createOnboardingStatusHandler>;
+let recoveryProvisioning: ProvisioningService;
+let iotCertificateSequence = 0;
 
 function mockIot(): IotProvisioningPort {
-  let n = 0;
   return {
     ensureThing: () => Promise.resolve(),
     createKeysAndCertificate: () => {
-      n += 1;
+      iotCertificateSequence += 1;
+      const n = iotCertificateSequence;
       return Promise.resolve({
         certificateId: `cert-status-${Date.now()}-${n}`,
         certificateArn: `arn:aws:iot:ap-southeast-1:123456789012:cert/cert-status-${n}`,
-        certificatePem: `-----BEGIN CERTIFICATE-----\nSTATUSCERT${n}\n-----END CERTIFICATE-----`,
+        certificatePem: `-----BEGIN CERTIFICATE-----\n${Buffer.from(`status-cert-${n}`).toString('base64')}\n-----END CERTIFICATE-----`,
         privateKey:
           ['-----BEGIN', 'PRIVATE', 'KEY-----'].join(' ') +
           `\nSTATUSKEY${n}\n` +
@@ -74,6 +76,7 @@ function mockIot(): IotProvisioningPort {
     ensurePolicy: (_name: string, _doc: IotPolicyDocument) => Promise.resolve(),
     attachPolicy: () => Promise.resolve(),
     attachThingPrincipal: () => Promise.resolve(),
+    revokeCertificate: () => Promise.resolve(),
   };
 }
 
@@ -100,12 +103,14 @@ beforeAll(async () => {
     keyProvider,
     config: { retentionSeconds: RETENTION_SECONDS, maxClaims: 1, now },
   });
+  recoveryProvisioning = makeProvisioning();
   statusHandler = createOnboardingStatusHandler({
     client: prisma,
     securePackage: sp,
     mqttEndpoint: MQTT_ENDPOINT,
     rateLimiter: createRateLimiter(new InMemoryRateLimitStore(), { limit: 10_000, windowSeconds: 60 }, now),
     now,
+    deliveryRecovery: recoveryProvisioning,
   });
 }, 60_000);
 
@@ -250,9 +255,15 @@ describe('GET /api/v1/device/onboarding/status', () => {
     assert.equal(body.data.mqttEndpoint, MQTT_ENDPOINT);
     assert.equal(body.data.heartbeatInterval, 60);
 
-    // 领取成功即销毁密文 + 核销 Token：再次访问 401（Token 已核销）
-    const cert = await prisma.deviceCertificate.findFirst({ where: { deviceId: body.data.deviceId } });
-    assert.equal(cert?.packageCiphertext, null);
+    // 返回时仅完成交付预留；适配层确认响应提交后才销毁密文并核销 Token。
+    let cert = await prisma.deviceCertificate.findFirst({ where: { deviceId: body.data.deviceId } });
+    assert.isNotNull(cert?.packageCiphertext);
+    assert.isNotNull(cert?.claimedAt);
+    assert.ok(res.onCommitted);
+    await res.onCommitted?.();
+    if (!cert) assert.fail('certificate row is required');
+    cert = await prisma.deviceCertificate.findFirst({ where: { id: cert.id } });
+    assert.isNull(cert?.packageCiphertext);
     const again = await statusHandler(statusReq(token, serial));
     assert.equal(again.status, 401);
 
@@ -261,6 +272,41 @@ describe('GET /api/v1/device/onboarding/status', () => {
     assert.ok(!JSON.stringify(audits).includes('STATUSKEY'));
     const detail = await admin.detail({ actor: superAdmin, headers: {}, params: { requestId }, requestId: 'req-d' });
     assert.ok(!JSON.stringify(detail.body).includes('STATUSKEY'));
+  });
+
+  test('响应未确认重试：撤销未确认证书、重签并在下一轮安全交付', async () => {
+    const serial = await plantDevice();
+    const { token, requestId } = await submitRequest(serial);
+    const provisioning = makeProvisioning();
+    const admin = createAdminOnboardingHandlers({ client: prisma, now, provisioningTrigger: provisioning });
+    assert.equal((await adminApprove(requestId, admin)).status, 200);
+
+    const first = await statusHandler(statusReq(token, serial));
+    assert.equal(first.status, 200);
+    assert.equal((first.body as StatusPayload).data.status, 'APPROVED');
+    const firstDeviceId = (first.body as StatusPayload).data.deviceId as string;
+    const firstCertificateId = (
+      await prisma.deviceCertificate.findFirst({
+        where: { deviceId: firstDeviceId, status: 'PENDING_CLAIM', packageCiphertext: { not: null } },
+      })
+    )?.id;
+    assert.ok(firstCertificateId);
+
+    // 不调用 first.onCommitted，模拟连接在成功响应确认前中断。
+    const recovery = await statusHandler(statusReq(token, serial));
+    assert.equal(recovery.status, 200);
+    assert.equal((recovery.body as StatusPayload).data.status, 'PENDING');
+    const old = await prisma.deviceCertificate.findFirst({ where: { id: firstCertificateId } });
+    assert.equal(old?.status, 'REVOKED');
+    assert.isNull(old?.packageCiphertext);
+
+    const retried = await statusHandler(statusReq(token, serial));
+    assert.equal(retried.status, 200);
+    assert.equal((retried.body as StatusPayload).data.status, 'APPROVED');
+    const newId = (retried.body as StatusPayload).data.deviceId;
+    assert.ok(newId);
+    await retried.onCommitted?.();
+    assert.equal((await statusHandler(statusReq(token, serial))).status, 401);
   });
 
   test('负向：Token 无申请 → 404；缺序列号 → 400；伪造 Token → 401', async () => {

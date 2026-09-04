@@ -6,7 +6,7 @@
  * - 申请 REJECTED → { status: 'REJECTED', rejectReason }；
  * - APPROVED 且证书包就绪 → 一次性领取（SEC-01/DEC-003）：返回
  *   { status: 'APPROVED', deviceId, certificatePem, privateKey, mqttEndpoint, heartbeatInterval: 60 }，
- *   领取成功即销毁密文并核销 Onboarding Token（AUTH-02 markOnboardingTokenUsed）。
+ *   响应提交后销毁密文并核销 Onboarding Token；提交不确定则下一次轮询撤证重签。
  *
  * 认证：AUTH-02 Onboarding Token（Bearer + query.serialNumber 绑定校验）。
  */
@@ -37,6 +37,12 @@ export interface OnboardingStatusHandlerDeps {
   readonly mqttEndpoint: string;
   readonly rateLimiter?: RateLimiter;
   readonly now?: () => Date;
+  readonly deliveryRecovery: {
+    recoverUnconfirmedDelivery(
+      request: Pick<OnboardingRequestRecord, 'id' | 'serialNumber'>,
+      certificateId: string,
+    ): Promise<unknown>;
+  };
 }
 
 interface DeviceRow {
@@ -48,6 +54,7 @@ interface CertificateRow {
   readonly id: string;
   readonly deviceId: string;
   readonly status: string;
+  readonly claimedAt: Date | null;
 }
 
 function devices(client: DbClient) {
@@ -114,10 +121,11 @@ export function createOnboardingStatusHandler(
       now,
     },
     async (req, auth) => {
-      const body = await resolveStatus(deps, auth);
+      const resolved = await resolveStatus(deps, auth);
       return {
         status: 200,
-        body: { data: body, meta: { requestId: req.requestId, timestamp: now().toISOString() } },
+        body: { data: resolved.body, meta: { requestId: req.requestId, timestamp: now().toISOString() } },
+        ...(resolved.onCommitted ? { onCommitted: resolved.onCommitted } : {}),
       };
     },
   );
@@ -131,15 +139,20 @@ export function createOnboardingStatusHandler(
   };
 }
 
-async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: OnboardingAuthContext): Promise<StatusBody> {
+interface ResolvedStatus {
+  readonly body: StatusBody;
+  readonly onCommitted?: () => Promise<void>;
+}
+
+async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: OnboardingAuthContext): Promise<ResolvedStatus> {
   const request: OnboardingRequestRecord | null = await findOnboardingRequestByTokenId(deps.client, auth.tokenId);
   if (!request) throw new OnboardingApiError('NOT_FOUND', 'The requested resource was not found');
 
   if (request.status === 'REJECTED') {
-    return { status: 'REJECTED', requestId: request.id, rejectReason: request.rejectReason };
+    return { body: { status: 'REJECTED', requestId: request.id, rejectReason: request.rejectReason } };
   }
   if (request.status !== 'APPROVED') {
-    return { status: 'PENDING', requestId: request.id };
+    return { body: { status: 'PENDING', requestId: request.id } };
   }
 
   // APPROVED：证书包未就绪（Provisioning 内部步骤进行中）→ 对外仍为 PENDING
@@ -150,20 +163,33 @@ async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: Onboarding
       })
     : null;
   if (!device || !certificate) {
-    return { status: 'PENDING', requestId: request.id };
+    return { body: { status: 'PENDING', requestId: request.id } };
   }
 
-  // 一次性领取（DEC-003）；成功后核销 Token（一次一机的"一次"）
-  const payload = await deps.securePackage.claimPackage(certificate.id, { kind: 'onboardingToken', context: auth });
+  if (certificate.claimedAt !== null) {
+    await deps.deliveryRecovery.recoverUnconfirmedDelivery(request, certificate.id);
+    return { body: { status: 'PENDING', requestId: request.id } };
+  }
+
+  // 第一阶段：预留并解密，密文保留到适配层确认 HTTP 响应已提交。
+  const payload = await deps.securePackage.preparePackageDelivery(certificate.id, {
+    kind: 'onboardingToken',
+    context: auth,
+  });
   const pkg = parseCertificatePackage(payload);
-  await markOnboardingTokenUsed(deps.client, auth.tokenId, deps.now?.() ?? new Date());
   return {
-    status: 'APPROVED',
-    requestId: request.id,
-    deviceId: device.id,
-    certificatePem: pkg.certificatePem,
-    privateKey: pkg.privateKey,
-    mqttEndpoint: deps.mqttEndpoint,
-    heartbeatInterval: 60,
+    body: {
+      status: 'APPROVED',
+      requestId: request.id,
+      deviceId: device.id,
+      certificatePem: pkg.certificatePem,
+      privateKey: pkg.privateKey,
+      mqttEndpoint: deps.mqttEndpoint,
+      heartbeatInterval: 60,
+    },
+    onCommitted: async () => {
+      await deps.securePackage.confirmPackageDelivery(certificate.id);
+      await markOnboardingTokenUsed(deps.client, auth.tokenId, deps.now?.() ?? new Date());
+    },
   };
 }

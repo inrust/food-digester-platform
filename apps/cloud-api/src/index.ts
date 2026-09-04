@@ -21,7 +21,7 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
  * BE-CNS-01 已落地：/api/v1/admin/consumables 耗材状态查询 + 投影保存（见 ./consumable）；
  * BE-CNS-02 已落地：/api/v1/admin/consumable-requests 更换申请工作流（见 ./consumable）；
  * BE-DUSR-01 已落地：/api/v1/admin/device-users 设备操作员管理（见 ./admin/device-user）；
- * BE-DUSR-02 已落地：设备本地密码验证值生成器（KDF adapter/DTO/脱敏管线，DEC-004 冻结前 fail-closed，见 ./admin/device-user/verifier）；
+ * BE-DUSR-02 已落地：DEC-004@1.0.0 Argon2id PHC 生成、固定向量与脱敏管线；
  * BE-ALM-01 已落地：/api/v1/admin/alarms 查询/确认/清除 + /events、/tamper-events 只读查询（见 ./admin/alarm）；
  * BE-ALM-02 已落地：业务通知适配器（消费 Critical Alarm/Tamper 领域事件 → 邮件/Webhook，见 ./notification/business-notifier）；
  * BE-ESG-02 已落地：/api/v1/admin/esg 查询与 CSV 导出（含 Export Worker，见 ./admin/esg）；

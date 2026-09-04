@@ -35,7 +35,6 @@ import { DEFAULT_CONNECTIVITY_THRESHOLD_MS, deriveConnectivity } from '../admin/
 import { resolveEffectiveConfiguration } from '../admin/configuration/service.js';
 import type { EffectiveConfiguration } from '../admin/configuration/service.js';
 import { listDeviceUsersForSync } from '../admin/device-user/service.js';
-import type { DeviceUserVerifierMaterial } from '../admin/device-user/service.js';
 
 /** 设备契约同步节奏（通信设计 8.5）：Active 每 5 分钟。 */
 export const SYNC_INTERVAL_ACTIVE_SECONDS = 300 as const;
@@ -137,13 +136,12 @@ export interface SyncLicenseView {
 }
 
 export interface SyncDeviceUserView {
-  readonly deviceUserId: string;
+  readonly userId: string;
   readonly username: string;
-  /** 同步版本（任何用户/分配变化 +1）。 */
-  readonly version: number;
-  readonly assignedAt: string;
-  /** DEC-004 设备本地专用验证材料（仅本域下发）。 */
-  readonly verifier: DeviceUserVerifierMaterial;
+  readonly displayName: string;
+  /** DEC-004@1.0.0 设备本地专用 Argon2id PHC；仅本域下发。 */
+  readonly passwordHash: string;
+  readonly status: 'ACTIVE';
 }
 
 export interface SyncOperationalStatusView {
@@ -167,7 +165,7 @@ export interface DeviceSyncSnapshot {
   readonly device: SyncDeviceView;
   readonly license: SyncLicenseView | null;
   readonly deviceUsers: readonly SyncDeviceUserView[];
-  readonly configuration: EffectiveConfiguration | null;
+  readonly configuration: EffectiveConfiguration['payload'] | null;
   readonly operationalStatus: SyncOperationalStatusView;
 }
 
@@ -367,11 +365,11 @@ export async function buildDeviceSyncSnapshot(
       const grant = u.assignments.find((a) => a.deviceId === device.id);
       return grant
         ? {
-            deviceUserId: u.deviceUserId,
+            userId: u.userId,
             username: u.username,
-            version: u.version,
-            assignedAt: grant.assignedAt,
-            verifier: u.verifier,
+            displayName: u.displayName,
+            passwordHash: u.passwordHash,
+            status: u.status,
           }
         : null;
     })
@@ -406,7 +404,7 @@ export async function buildDeviceSyncSnapshot(
     },
     license: license ? toLicenseView(license, now) : null,
     deviceUsers,
-    configuration,
+    configuration: configuration?.payload ?? null,
     operationalStatus: operational,
   };
 

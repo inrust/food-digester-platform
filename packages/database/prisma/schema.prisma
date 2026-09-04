@@ -408,9 +408,10 @@ model DeviceUser {
   customerId      String   @map("customer_id")
   username        String
   displayName     String?  @map("display_name")
-  // 设备本地专用验证值，禁止复用云端密码 Hash；KDF 与版本字段按 DEC-004 冻结后收敛
-  verifierValue   String   @map("verifier_value")
-  verifierSalt    String   @map("verifier_salt")
+  // DEC-004@1.0.0：设备本地专用 Argon2id PHC；旧四组件仅保留兼容读取窗口，不再写入/下发
+  passwordHash    String?  @map("password_hash")
+  verifierValue   String?  @map("verifier_value")
+  verifierSalt    String?  @map("verifier_salt")
   verifierKdf     String?  @map("verifier_kdf")
   verifierVersion String?  @map("verifier_version")
   status          String   @default("ACTIVE") // ACTIVE | DISABLED

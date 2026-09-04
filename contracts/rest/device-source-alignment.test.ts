@@ -16,9 +16,7 @@ const deactivate = load('device-deactivate-api.json');
 const adminConfiguration = load('admin-configuration-api.json');
 const adminLicense = load('admin-license-api.json');
 const adminDevice = load('admin-device-api.json');
-const contractVersion = JSON.parse(
-  readFileSync(new URL('../contract-version.json', import.meta.url), 'utf8'),
-);
+const contractVersion = JSON.parse(readFileSync(new URL('../contract-version.json', import.meta.url), 'utf8'));
 
 test('源稿六个设备 Endpoint 的 Method、Path 与认证方式完整且唯一', () => {
   const expected = [

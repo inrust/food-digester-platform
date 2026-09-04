@@ -3,13 +3,13 @@
  *
  * 规则（DEC-003 / 技术对接要求）：
  * - AWS 返回私钥后立即加密：storePackage 入参明文只经内存，落库为信封密文；
- * - 短期保存：packageExpiresAt = now + retentionSeconds（值由调用方按 DEC-003 策略注入，
- *   本服务不选定数值；DEC-003 冻结前 maxClaims 仅允许 1，构造时强制）；
- * - 一次性领取：单次领取锁（claimedAt 条件更新），重复领取失败关闭（CONFLICT）；
- *   领取成功即销毁密文（明文返回给调用方后库中不再存在）；
+ * - 短期保存：packageExpiresAt = now + retentionSeconds（DEC-003@1.0.0 固定为 86400 秒，
+ *   由组合根注入；本服务强制 maxClaims=1）；
+ * - 两阶段交付：preparePackageDelivery 预留并解密但保留密文；HTTP 适配层确认响应提交后
+ *   调用 confirmPackageDelivery 销毁。预留后未确认的重试必须撤证重签；
  * - 领取资格：仅对应 Onboarding Token（序列号绑定）或旧设备证书（deviceId 绑定）；
  * - 销毁触发：领取成功自动销毁；新证书首个合法 Heartbeat 后由 BE-ONB-04 调用 destroyPackage；
- * - 审计：store/claim/destroy 写 audit_logs（DOM-03），失败 claim 记 FAILURE；
+ * - 审计：store/prepare/confirm/uncertain-revoke/destroy 写 audit_logs；
  *   所有审计负载只含指纹/ID，绝不含明文（DOM-03 脱敏器兜底）。
  *
  * 功能边界：不实现证书业务流程（发证/轮换编排归 BE-ONB-03/04、BE-CERT-02）。
@@ -30,7 +30,7 @@ export type ClaimProof =
 export interface SecurePackageServiceConfig {
   /** 证书包保存时长（秒），>0；由调用方按 DEC-003 策略显式注入，本服务不选定数值。 */
   readonly retentionSeconds: number;
-  /** 领取次数上限；DEC-003 冻结前失败关闭：仅允许 1。 */
+  /** 领取次数上限；DEC-003@1.0.0 固定为 1。 */
   readonly maxClaims: number;
   /** 注入时钟（测试用）。 */
   readonly now?: () => Date;
@@ -72,9 +72,9 @@ export class SecurePackageService {
     if (!Number.isInteger(config.retentionSeconds) || config.retentionSeconds <= 0) {
       throw new SecurePackageError('CONFLICT', 'retentionSeconds must be a positive integer');
     }
-    // DEC-003 失败关闭：maxClaims 未冻结前仅支持一次性领取
+    // DEC-003@1.0.0：只支持一次性交付
     if (config.maxClaims !== 1) {
-      throw new SecurePackageError('CONFLICT', 'maxClaims must be 1 until DEC-003 is frozen');
+      throw new SecurePackageError('CONFLICT', 'maxClaims must be 1 under DEC-003@1.0.0');
     }
     this.db = deps.db;
     this.keyProvider = deps.keyProvider;
@@ -124,10 +124,10 @@ export class SecurePackageService {
   }
 
   /**
-   * 一次性领取：校验资格 → 单次领取锁 → 解密 → 同事务销毁密文 → 返回明文。
-   * 重复领取/过期/资格不符均拒绝；过期包在拒绝后销毁；失败 claim 记 FAILURE 审计。
+   * 第一阶段：校验资格 → 单次交付预留锁 → 解密 → 保留密文 → 返回明文。
+   * 调用方必须在 HTTP 响应提交后调用 confirmPackageDelivery；响应不确定时不得再次解密。
    */
-  async claimPackage(certificateId: string, proof: ClaimProof): Promise<Uint8Array> {
+  async preparePackageDelivery(certificateId: string, proof: ClaimProof): Promise<Uint8Array> {
     try {
       // 预检（只读）：资格与过期；过期包销毁必须在事务外（事务内销毁会随异常回滚）
       const preview = await this.certificates(this.db).findFirst({ where: { id: certificateId } });
@@ -165,18 +165,12 @@ export class SecurePackageService {
         const plaintextKey = await this.keyProvider.decryptDataKey(extractEncryptedKey(certificate.packageCiphertext));
         const payload = unpackEnvelope(plaintextKey, certificate.packageCiphertext);
 
-        // 领取成功即销毁密文（同事务）
-        await this.certificates(tx).updateMany({
-          where: { id: certificateId },
-          data: { packageCiphertext: null, packageKmsKeyId: null, packageExpiresAt: null },
-        });
-
         await recordAudit(tx, {
           objectType: AUDIT_OBJECT_TYPE,
           objectId: certificateId,
-          action: 'CERT_PACKAGE_CLAIM',
+          action: 'CERT_PACKAGE_DELIVERY_PREPARE',
           result: 'SUCCESS',
-          afterValue: { claimedBy: proof.kind, claimedAt: this.now().toISOString() },
+          afterValue: { claimedBy: proof.kind, deliveryReservedAt: this.now().toISOString() },
         });
         return payload;
       });
@@ -185,13 +179,62 @@ export class SecurePackageService {
         await recordAudit(this.db, {
           objectType: AUDIT_OBJECT_TYPE,
           objectId: certificateId,
-          action: 'CERT_PACKAGE_CLAIM',
+          action: 'CERT_PACKAGE_DELIVERY_PREPARE',
           result: 'FAILURE',
           reason: err.code,
         });
       }
       throw err;
     }
+  }
+
+  /** 第二阶段：HTTP 成功响应已经提交后销毁密文；幂等。 */
+  async confirmPackageDelivery(certificateId: string): Promise<boolean> {
+    const { count } = await this.certificates(this.db).updateMany({
+      where: { id: certificateId, claimedAt: { not: null }, packageCiphertext: { not: null } },
+      data: { packageCiphertext: null, packageKmsKeyId: null, packageExpiresAt: null },
+    });
+    if (count === 1) {
+      await recordAudit(this.db, {
+        objectType: AUDIT_OBJECT_TYPE,
+        objectId: certificateId,
+        action: 'CERT_PACKAGE_DELIVERY_CONFIRM',
+        result: 'SUCCESS',
+      });
+    }
+    return count === 1;
+  }
+
+  /**
+   * 响应不确定恢复：销毁未确认包并把新证书标记 REVOKED；调用方还必须撤销云端证书后重签。
+   */
+  async revokeUnconfirmedDelivery(certificateId: string): Promise<boolean> {
+    return withTransaction(this.db, async (tx) => {
+      const { count } = await this.certificates(tx).updateMany({
+        where: {
+          id: certificateId,
+          claimedAt: { not: null },
+          packageCiphertext: { not: null },
+          status: { in: ['PENDING_CLAIM', 'ACTIVE'] },
+        },
+        data: {
+          status: 'REVOKED',
+          revokedAt: this.now(),
+          packageCiphertext: null,
+          packageKmsKeyId: null,
+          packageExpiresAt: null,
+        },
+      });
+      if (count === 1) {
+        await recordAudit(tx, {
+          objectType: AUDIT_OBJECT_TYPE,
+          objectId: certificateId,
+          action: 'CERT_PACKAGE_DELIVERY_UNCERTAIN_REVOKE',
+          result: 'SUCCESS',
+        });
+      }
+      return count === 1;
+    });
   }
 
   /** 销毁密文包（新证书 Heartbeat 确认后由 BE-ONB-04 调用）；幂等；可传入事务客户端加入外层事务。 */

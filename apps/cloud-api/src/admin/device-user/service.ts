@@ -2,9 +2,8 @@
  * BE-DUSR-01 Device User 管理 Service（业务核心，框架无关）。
  *
  * 事实源与规则：
- * - DEC-004：账号与云端 Cognito 用户分离（独立 device_users 表，不赋予云端登录权限）；
- *   冻结前不实现 KDF 计算——API 只接受预计算验证材料（verifierValue/verifierSalt[，
- *   verifierKdf/verifierVersion]），拒收明文密码；DTO/日志/审计永不返回验证材料（脱敏）；
+ * - DEC-004@1.0.0：账号与云端 Cognito 用户分离；写接口受控接收明文密码并立即派生
+ *   Argon2id PHC，数据库只保存 passwordHash；DTO/日志/审计永不返回密码或 PHC；
  * - 租户：CustomerAdmin 只能管理自身 Customer（创建强制 actor.customerId；其余操作行级校验，
  *   跨 Customer → 404 不泄露存在性）；平台角色全量；
  * - 同步版本：device_users.version 兼作乐观锁（If-Match）与设备同步版本——任何用户/分配变化
@@ -22,6 +21,7 @@ import {
   deviceUserValidationFailed,
   deviceUserVersionConflict,
 } from './errors.js';
+import { hashDeviceUserPassword } from './verifier.js';
 
 export const USERS_CHANGED_NOTIFICATION = 'USERS_CHANGED' as const;
 
@@ -30,9 +30,11 @@ const notificationTopic = (deviceId: string): string => `bnx/device/${deviceId}/
 export interface DeviceUserDeps {
   readonly client: DbClient;
   readonly now?: () => Date;
+  /** 测试可注入；生产缺省使用 DEC-004 固定参数 Argon2id。 */
+  readonly hashPassword?: (password: string) => Promise<string>;
 }
 
-/** DTO 永不包含 verifier* 验证材料（DEC-004 脱敏）。 */
+/** 管理查询 DTO 永不包含 passwordHash（DEC-004 脱敏）。 */
 export interface DeviceUserView {
   readonly deviceUserId: string;
   readonly customerId: string;
@@ -187,11 +189,8 @@ export interface CreateDeviceUserInput {
   readonly customerId?: string | undefined;
   readonly username: string;
   readonly displayName?: string | undefined;
-  /** DEC-004：预计算验证材料（冻结前不实现 KDF；拒收明文密码）。 */
-  readonly verifierValue: string;
-  readonly verifierSalt: string;
-  readonly verifierKdf?: string | undefined;
-  readonly verifierVersion?: string | undefined;
+  /** 仅用于本次派生；不得持久化、返回或写入审计。 */
+  readonly password: string;
   readonly reason?: string | undefined;
 }
 
@@ -206,9 +205,7 @@ export async function createDeviceUser(
   if (input.username.trim().length === 0 || input.username.trim().length > 64) {
     throw deviceUserValidationFailed('username must be 1~64 characters');
   }
-  // DEC-004 下限代理（salt≥8、hash≥16 字节由策略 Schema 锁定，此处按字符数校验）
-  if (input.verifierValue.length < 16) throw deviceUserValidationFailed('verifierValue must be at least 16 characters');
-  if (input.verifierSalt.length < 8) throw deviceUserValidationFailed('verifierSalt must be at least 8 characters');
+  const passwordHash = await (deps.hashPassword ?? hashDeviceUserPassword)(input.password);
   const customer = await (
     (deps.client as unknown as Record<string, unknown>).customer as {
       findFirst(args: Record<string, unknown>): Promise<{ id: string } | null>;
@@ -234,10 +231,7 @@ export async function createDeviceUser(
             customerId,
             username: input.username.trim(),
             displayName: input.displayName ?? null,
-            verifierValue: input.verifierValue,
-            verifierSalt: input.verifierSalt,
-            verifierKdf: input.verifierKdf ?? null,
-            verifierVersion: input.verifierVersion ?? null,
+            passwordHash,
             status: 'ACTIVE',
           },
         });
@@ -260,28 +254,17 @@ export interface DeviceUserWriteInput {
   readonly reason: string;
 }
 
-/** 修改（device-user:write + If-Match）：displayName；验证材料轮换（verifierValue+verifierSalt 必须成对）。 */
+/** 修改（device-user:write + If-Match）：displayName；可通过 password 轮换 PHC。 */
 export async function updateDeviceUser(
   deps: DeviceUserDeps,
   actor: ActorContext,
   input: DeviceUserWriteInput & {
     readonly displayName?: string | null | undefined;
-    readonly verifierValue?: string | undefined;
-    readonly verifierSalt?: string | undefined;
-    readonly verifierKdf?: string | undefined;
-    readonly verifierVersion?: string | undefined;
+    readonly password?: string | undefined;
   },
 ): Promise<DeviceUserView> {
-  const rotatesVerifier = input.verifierValue !== undefined || input.verifierSalt !== undefined;
-  if (rotatesVerifier && (input.verifierValue === undefined || input.verifierSalt === undefined)) {
-    throw deviceUserValidationFailed('verifierValue and verifierSalt must be provided together');
-  }
-  if (rotatesVerifier) {
-    if ((input.verifierValue as string).length < 16)
-      throw deviceUserValidationFailed('verifierValue must be at least 16 characters');
-    if ((input.verifierSalt as string).length < 8)
-      throw deviceUserValidationFailed('verifierSalt must be at least 8 characters');
-  }
+  const passwordHash =
+    input.password === undefined ? undefined : await (deps.hashPassword ?? hashDeviceUserPassword)(input.password);
   const row = await loadUser(deps.client, actor, input.deviceUserId);
   if (row.status === 'DISABLED') throw deviceUserConflict('A disabled user cannot be updated');
 
@@ -295,17 +278,12 @@ export async function updateDeviceUser(
       ...auditActor(actor),
       customerId: row.customerId,
       beforeValue: { version: input.ifMatchVersion },
-      afterValue: { status: 'ACTIVE', verifierRotated: rotatesVerifier },
+      afterValue: { status: 'ACTIVE', passwordRotated: passwordHash !== undefined },
     },
     async (tx) => {
       const data: Record<string, unknown> = {};
       if (input.displayName !== undefined) data.displayName = input.displayName;
-      if (rotatesVerifier) {
-        data.verifierValue = input.verifierValue;
-        data.verifierSalt = input.verifierSalt;
-        data.verifierKdf = input.verifierKdf ?? null;
-        data.verifierVersion = input.verifierVersion ?? null;
-      }
+      if (passwordHash !== undefined) data.passwordHash = passwordHash;
       await bumpVersion(tx, row, input.ifMatchVersion, data);
       // 验证材料轮换/资料变更 → 通知全部已分配设备
       for (const deviceId of await activeDeviceIds(tx, row.id)) {
@@ -521,41 +499,30 @@ export async function getDeviceUser(
 
 // ---------- Sync 读取路径（BE-SYNC-01 消费） ----------
 
-/** DEC-004 验证材料（固定四字段 version+kdf+salt+hash）：仅经 Unified Device Sync 下发，查询 API 永不返回。 */
-export interface DeviceUserVerifierMaterial {
-  readonly version: string | null;
-  readonly kdf: string | null;
-  readonly salt: string;
-  readonly hash: string;
-}
-
 export interface DeviceUserSyncAssignment {
   readonly deviceId: string;
   readonly assignedAt: string;
 }
 
 export interface DeviceUserSyncEntry {
-  readonly deviceUserId: string;
+  readonly userId: string;
   readonly username: string;
-  readonly version: number;
+  readonly displayName: string;
+  readonly passwordHash: string;
+  readonly status: 'ACTIVE';
   /** ACTIVE 分配的设备（含授权时间，供 Sync 按设备过滤）。 */
   readonly assignments: readonly DeviceUserSyncAssignment[];
-  /** DEC-004 设备本地专用验证材料（仅 Sync 域下发）。 */
-  readonly verifier: DeviceUserVerifierMaterial;
 }
 
 interface SyncUserRow extends UserRow {
-  readonly verifierValue: string;
-  readonly verifierSalt: string;
-  readonly verifierKdf: string | null;
-  readonly verifierVersion: string | null;
+  readonly passwordHash: string;
   readonly assignments: readonly { deviceId: string; assignedAt: Date }[];
 }
 
 /** Device Users 域同步读取：仅 ACTIVE 用户 + ACTIVE 分配（停用用户不进入新 Sync）。 */
 export async function listDeviceUsersForSync(deps: DeviceUserDeps, customerId: string): Promise<DeviceUserSyncEntry[]> {
   const rows = (await users(deps.client).findMany({
-    where: { customerId, status: 'ACTIVE' },
+    where: { customerId, status: 'ACTIVE', passwordHash: { not: null } },
     select: {
       id: true,
       customerId: true,
@@ -565,19 +532,17 @@ export async function listDeviceUsersForSync(deps: DeviceUserDeps, customerId: s
       version: true,
       createdAt: true,
       updatedAt: true,
-      verifierValue: true,
-      verifierSalt: true,
-      verifierKdf: true,
-      verifierVersion: true,
+      passwordHash: true,
       assignments: { where: { status: 'ACTIVE' }, select: { deviceId: true, assignedAt: true } },
     },
     orderBy: { id: 'asc' },
   })) as unknown as SyncUserRow[];
   return rows.map((r) => ({
-    deviceUserId: r.id,
+    userId: r.id,
     username: r.username,
-    version: r.version,
+    displayName: r.displayName ?? r.username,
+    passwordHash: r.passwordHash,
+    status: 'ACTIVE',
     assignments: r.assignments.map((a) => ({ deviceId: a.deviceId, assignedAt: a.assignedAt.toISOString() })),
-    verifier: { version: r.verifierVersion, kdf: r.verifierKdf, salt: r.verifierSalt, hash: r.verifierValue },
   }));
 }

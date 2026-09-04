@@ -26,6 +26,8 @@ export interface OnboardingHttpRequest {
 export interface OnboardingHttpResponse {
   readonly status: number;
   readonly body: unknown;
+  /** 仅适配层使用：响应字节成功提交后调用；不得序列化到 HTTP body。 */
+  readonly onCommitted?: (() => Promise<void>) | undefined;
 }
 
 export interface OnboardingRequestHandlerDeps {

@@ -25,4 +25,6 @@ export interface IotProvisioningPort {
   attachPolicy(policyName: string, targetArn: string): Promise<void>;
   /** 附加证书到 Thing（幂等）。 */
   attachThingPrincipal(thingName: string, principalArn: string): Promise<void>;
+  /** 撤销不再可信的未确认证书（幂等：已撤销视为成功）。 */
+  revokeCertificate(certificateId: string): Promise<void>;
 }

@@ -5,7 +5,7 @@
  * （DEC-012 矩阵：Operator 无 device-user 权限；CustomerAdmin 租户强制）；
  * device-user:read = SuperAdmin/Auditor/CustomerAdmin/CustomerViewer + Customer 租户隔离）→ Service。
  * 路由：
- * - POST  /api/v1/admin/device-users                          创建（拒收明文密码，仅预计算验证材料）
+ * - POST  /api/v1/admin/device-users                          创建（受控接收密码，立即派生 Argon2id PHC）
  * - GET   /api/v1/admin/device-users                          列表（customerId/status/keyword）
  * - GET   /api/v1/admin/device-users/{deviceUserId}           详情 + 分配历史
  * - PATCH /api/v1/admin/device-users/{deviceUserId}           修改/验证材料轮换（If-Match + 强制原因）
@@ -20,6 +20,7 @@ import type { ActorContext } from '@fdp/auth';
 import { mapDbErrorToHttp } from '@fdp/database';
 import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.js';
 import { AdminDeviceUserError, deviceUserValidationFailed } from './errors.js';
+import { VerifierError } from './verifier.js';
 import {
   assignDevices,
   createDeviceUser,
@@ -95,15 +96,22 @@ function optionalString(value: unknown, field: string): string | undefined {
   return value.trim();
 }
 
-/** DEC-004：拒收明文密码字段（仅接受预计算验证材料）。 */
-function rejectPlaintextPassword(body: Record<string, unknown>): void {
-  if ('password' in body || 'plainPassword' in body || 'passwordHash' in body) {
-    throw deviceUserValidationFailed('Plaintext passwords or cloud password hashes are not accepted');
+/** DEC-004：只允许受控 password 写入；拒收云端 Hash 或冻结前四组件。 */
+function rejectPrecomputedVerifier(body: Record<string, unknown>): void {
+  if (
+    'plainPassword' in body ||
+    'passwordHash' in body ||
+    'verifierValue' in body ||
+    'verifierSalt' in body ||
+    'verifierKdf' in body ||
+    'verifierVersion' in body
+  ) {
+    throw deviceUserValidationFailed('Precomputed or cloud password hashes are not accepted');
   }
 }
 
 function toErrorResponse(err: unknown, req: AdminHttpRequest): AdminHttpResponse {
-  if (err instanceof AuthError || err instanceof AdminDeviceUserError) {
+  if (err instanceof AuthError || err instanceof AdminDeviceUserError || err instanceof VerifierError) {
     const message = SENSITIVE_LEAK_PATTERN.test(err.message) ? 'The request failed' : err.message;
     return { status: err.httpStatus, body: { error: { code: err.code, message, requestId: req.requestId } } };
   }
@@ -134,21 +142,14 @@ export function createAdminDeviceUserHandlers(deps: AdminDeviceUserHandlerDeps):
     { permission: 'device-user:write' },
     async (req) => {
       const body = bodyOf(req);
-      rejectPlaintextPassword(body);
+      rejectPrecomputedVerifier(body);
       if (typeof body.username !== 'string') throw deviceUserValidationFailed('username is required');
-      if (typeof body.verifierValue !== 'string' || typeof body.verifierSalt !== 'string') {
-        throw deviceUserValidationFailed('verifierValue and verifierSalt are required');
-      }
+      if (typeof body.password !== 'string') throw deviceUserValidationFailed('password is required');
       const view = await createDeviceUser(deps, actorOf(req), {
         ...(typeof body.customerId === 'string' ? { customerId: body.customerId } : {}),
         username: body.username,
         ...(body.displayName !== undefined ? { displayName: optionalString(body.displayName, 'displayName') } : {}),
-        verifierValue: body.verifierValue,
-        verifierSalt: body.verifierSalt,
-        ...(body.verifierKdf !== undefined ? { verifierKdf: optionalString(body.verifierKdf, 'verifierKdf') } : {}),
-        ...(body.verifierVersion !== undefined
-          ? { verifierVersion: optionalString(body.verifierVersion, 'verifierVersion') }
-          : {}),
+        password: body.password,
         ...(typeof body.reason === 'string' ? { reason: body.reason } : {}),
       });
       return { status: 201, body: { data: view, meta: meta(req) } };
@@ -180,22 +181,16 @@ export function createAdminDeviceUserHandlers(deps: AdminDeviceUserHandlerDeps):
     { permission: 'device-user:write' },
     async (req) => {
       const body = bodyOf(req);
-      rejectPlaintextPassword(body);
+      rejectPrecomputedVerifier(body);
+      if (body.password !== undefined && typeof body.password !== 'string') {
+        throw deviceUserValidationFailed('password must be a string');
+      }
       const view = await updateDeviceUser(deps, actorOf(req), {
         ...writeInputOf(req),
         ...(body.displayName !== undefined
           ? { displayName: body.displayName === null ? null : optionalString(body.displayName, 'displayName') }
           : {}),
-        ...(body.verifierValue !== undefined
-          ? { verifierValue: typeof body.verifierValue === 'string' ? body.verifierValue : '' }
-          : {}),
-        ...(body.verifierSalt !== undefined
-          ? { verifierSalt: typeof body.verifierSalt === 'string' ? body.verifierSalt : '' }
-          : {}),
-        ...(body.verifierKdf !== undefined ? { verifierKdf: optionalString(body.verifierKdf, 'verifierKdf') } : {}),
-        ...(body.verifierVersion !== undefined
-          ? { verifierVersion: optionalString(body.verifierVersion, 'verifierVersion') }
-          : {}),
+        ...(typeof body.password === 'string' ? { password: body.password } : {}),
       });
       return { status: 200, body: { data: view, meta: meta(req) } };
     },

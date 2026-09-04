@@ -49,7 +49,10 @@ test('轮换契约：请求强制 currentCertificateId；响应五字段；409/4
   assert.deepEqual(result.required, ['certificateId', 'certificatePem', 'privateKey', 'effectiveDate', 'expiryDate']);
   assert.equal(result.properties.effectiveDate.format, 'date');
   assert.ok(result.properties.effectiveDate.pattern);
-  assert.equal(post.responses['200'].content['application/json'].schema.$ref, '#/components/schemas/CertificateRotateResult');
+  assert.equal(
+    post.responses['200'].content['application/json'].schema.$ref,
+    '#/components/schemas/CertificateRotateResult',
+  );
   for (const status of ['200', '400', '401', '403', '409', '500']) {
     assert.ok(post.responses[status], `缺少 ${status} 响应`);
   }

@@ -3,7 +3,7 @@
   "info": {
     "title": "Bio-Nexa CMP Admin Device User API",
     "version": "0.1.0",
-    "description": "BE-DUSR-01 设备操作员管理接口（Cognito 认证；device-user:write=PlatformSuperAdmin/CustomerAdmin（CustomerAdmin 仅本 Customer，租户强制；DEC-012 矩阵中 PlatformOperator 无 device-user 权限），device-user:read=SuperAdmin/Auditor/CustomerAdmin/CustomerViewer + Customer 租户隔离）：创建、修改（含验证材料轮换）、停用、批量分配/撤销设备和列表。账号与云端 Cognito 用户分离（DEC-004：仅预计算验证材料 verifierValue/verifierSalt，拒收明文密码与云端密码 Hash；DTO/审计永不返回验证材料）。同步版本：任何用户/分配变化 version+1（兼 If-Match 乐观锁）并向受影响设备生成 USERS_CHANGED（Outbox，deviceAction=SYNC）；停用用户不进入新 Sync。分配约束：设备与用户同 Customer（跨 Customer → 409）、非 Retired、停用用户不可新分配；批量全成或全败；分配历史 append-only（ACTIVE/REVOKED）。不实现工单派遣/设备端 Topic（协议冻结前仅管理端）。通用契约继承 openapi-base.json（CT-05）。",
+    "description": "BE-DUSR-01 设备操作员管理接口。DEC-004@1.0.0：写接口受控接收 password，服务端立即派生 Argon2id PHC；明文不落库，passwordHash 不由管理查询接口返回且不允许调用方提交预计算 Hash。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-004@1.0.0", "DEC-012@0.2.0"],
     "x-decision-register-version": "1.22.0"
   },
@@ -103,7 +103,7 @@
       "patch": {
         "tags": ["admin"],
         "operationId": "updateDeviceUser",
-        "summary": "修改/验证材料轮换（If-Match + 强制原因；verifierValue+verifierSalt 成对）",
+        "summary": "修改资料或轮换设备本地密码（If-Match + 强制原因）",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "deviceUserId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
@@ -262,7 +262,7 @@
     "schemas": {
       "DeviceUserCreateRequest": {
         "type": "object",
-        "required": ["username", "verifierValue", "verifierSalt"],
+        "required": ["username", "password"],
         "additionalProperties": false,
         "properties": {
           "customerId": {
@@ -272,14 +272,13 @@
           },
           "username": { "type": "string", "minLength": 1, "maxLength": 64 },
           "displayName": { "type": "string", "maxLength": 200 },
-          "verifierValue": {
+          "password": {
             "type": "string",
-            "minLength": 16,
-            "description": "DEC-004 预计算验证值（设备本地专用，禁止云端密码 Hash）"
+            "minLength": 1,
+            "maxLength": 1024,
+            "writeOnly": true,
+            "description": "设备本地密码；仅在 Argon2id 派生调用栈内存在，不落库/日志/审计"
           },
-          "verifierSalt": { "type": "string", "minLength": 8, "description": "每用户独立随机 salt" },
-          "verifierKdf": { "type": "string", "maxLength": 64, "description": "KDF 标识（DEC-004 冻结后收敛）" },
-          "verifierVersion": { "type": "string", "maxLength": 32 },
           "reason": { "type": "string", "maxLength": 500 }
         }
       },
@@ -289,10 +288,13 @@
         "additionalProperties": false,
         "properties": {
           "displayName": { "type": ["string", "null"], "maxLength": 200 },
-          "verifierValue": { "type": "string", "minLength": 16, "description": "轮换时必须与 verifierSalt 成对" },
-          "verifierSalt": { "type": "string", "minLength": 8 },
-          "verifierKdf": { "type": "string", "maxLength": 64 },
-          "verifierVersion": { "type": "string", "maxLength": 32 },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "writeOnly": true,
+            "description": "可选密码轮换；服务端重新生成独立 salt 的 Argon2id PHC"
+          },
           "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
         }
       },

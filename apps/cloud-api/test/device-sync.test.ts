@@ -23,6 +23,8 @@ import { createTestDb } from './helpers.js';
 const NOW = new Date('2026-08-30T08:00:00Z');
 const now = () => NOW;
 const DAY_MS = 86_400_000;
+const DEVICE_USER_PHC =
+  '$argon2id$v=19$m=32768,t=3,p=1$AAECAwQFBgcICQoLDA0ODw$u+TOcl2LGub4w/cLIdrGdoG/cbU//EuAXDXm+qRHfqs';
 /** DEC-001 暂定值（组合根经 getMaintenanceSyncIntervalSeconds() 注入，测试直接给值）。 */
 const MAINTENANCE_SYNC_SECONDS = 900;
 
@@ -179,10 +181,7 @@ async function plantDeviceUser(
       customerId,
       username,
       displayName: username,
-      verifierValue: `hash-${username}`,
-      verifierSalt: `salt-${username}`,
-      verifierKdf: null,
-      verifierVersion: null,
+      passwordHash: DEVICE_USER_PHC,
       status: opts.status ?? 'ACTIVE',
     },
   });
@@ -280,17 +279,19 @@ describe('POST /api/v1/device/sync（完整事实快照）', () => {
     assert.equal(data.license.effective, true);
     assert.deepEqual([...data.license.entitlements].sort(), ['OTA_UPDATE', 'REMOTE_CONTROL']);
 
-    // Device Users：DEC-004 验证材料四字段（Sync 授权下发通道）
+    // Device Users：DEC-004@1.0.0 PHC（Sync 唯一下发通道）
     assert.equal(data.deviceUsers.length, 1);
     const u = data.deviceUsers[0];
-    assert.equal(u.deviceUserId, userId);
+    assert.equal(u.userId, userId);
     assert.equal(u.username, 'operator-full');
-    assert.deepEqual(u.verifier, { version: null, kdf: null, salt: 'salt-operator-full', hash: 'hash-operator-full' });
+    assert.equal(u.displayName, 'operator-full');
+    assert.equal(u.passwordHash, DEVICE_USER_PHC);
+    assert.equal(u.status, 'ACTIVE');
 
     // Configuration：设备定向已生效版本
-    assert.equal(data.configuration.configurationId, configId);
-    assert.equal(data.configuration.version, 1);
-    assert.equal(data.configuration.payload.heartbeatInterval, 60);
+    assert.equal(data.configuration.heartbeatInterval, 60);
+    assert.equal(data.configuration.telemetryInterval, 30);
+    assert.ok(configId);
 
     // Operational Status：Active + ONLINE + 300s
     assert.equal(data.operationalStatus.lifecycleStatus, 'Active');
@@ -438,7 +439,7 @@ describe('认证与请求校验', () => {
 
     // 响应不泄露敏感材料（证书包/私钥/明文密码字段）
     const raw = JSON.stringify(firstSync.body);
-    assert.ok(!/sync-secret-package|BEGIN CERTIFICATE|privateKey|passwordHash|plainPassword/i.test(raw));
+    assert.ok(!/sync-secret-package|BEGIN CERTIFICATE|privateKey|plainPassword/i.test(raw));
   });
 });
 
@@ -473,17 +474,20 @@ describe('契约一致性', () => {
     assert.equal(res.status, 200);
     const data = dataOf(res);
     const schemas = api.components.schemas;
-    assert.deepEqual(Object.keys(data).sort(), [...schemas.DeviceSyncSnapshot.required].sort());
-    assert.deepEqual(Object.keys(data.assignment).sort(), [...schemas.SyncAssignment.required].sort());
-    assert.deepEqual(Object.keys(data.device).sort(), [...schemas.SyncDeviceMetadata.required].sort());
-    assert.deepEqual(Object.keys(data.license).sort(), [...schemas.SyncLicense.required].sort());
-    assert.deepEqual(Object.keys(data.deviceUsers[0]).sort(), [...schemas.SyncDeviceUser.required].sort());
-    assert.deepEqual(
-      Object.keys(data.deviceUsers[0].verifier).sort(),
-      [...schemas.SyncDeviceUserVerifier.required].sort(),
-    );
-    assert.deepEqual(Object.keys(data.configuration).sort(), [...schemas.SyncConfiguration.required].sort());
-    assert.deepEqual(Object.keys(data.operationalStatus).sort(), [...schemas.SyncOperationalStatus.required].sort());
+    const assertContract = (
+      value: Record<string, unknown>,
+      schema: { required: string[]; properties: Record<string, unknown> },
+    ) => {
+      assert.ok(schema.required.every((field: string) => field in value));
+      assert.ok(Object.keys(value).every((field) => field in schema.properties));
+    };
+    assertContract(data, schemas.DeviceSyncSnapshot);
+    assertContract(data.assignment, schemas.SyncAssignment);
+    assertContract(data.device, schemas.SyncDeviceMetadata);
+    assertContract(data.license, schemas.SyncLicense);
+    assertContract(data.deviceUsers[0], schemas.SyncDeviceUser);
+    assertContract(data.configuration, schemas.SyncConfiguration);
+    assertContract(data.operationalStatus, schemas.SyncOperationalStatus);
   });
 
   test('sync 模块无任何 AWS 依赖', () => {

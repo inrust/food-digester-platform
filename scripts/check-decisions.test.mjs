@@ -52,17 +52,17 @@ function makeRegister(decisions, overrides = {}) {
   };
 }
 
-test('真实登记文件：结构校验通过，18 条 DEC 全部识别为未决', () => {
+test('真实登记文件：结构校验通过，并准确识别当前未决 DEC', () => {
   const register = realRegister();
   const { errors, pending } = validateRegister(register, REGISTER_PATH);
   assert.deepEqual(errors, []);
   assert.equal(register.decisions.length, 18);
   assert.equal(register.principles.length, 3);
-  assert.equal(pending.length, 18);
-  const ids = pending.map((p) => p.id);
-  for (let i = 1; i <= 18; i += 1) {
-    assert.ok(ids.includes(`DEC-${String(i).padStart(3, '0')}`), `缺少 DEC-${String(i).padStart(3, '0')}`);
-  }
+  const expectedPendingIds = register.decisions.filter((decision) => decision.status === 'pending').map((d) => d.id);
+  assert.deepEqual(
+    pending.map((p) => p.id),
+    expectedPendingIds,
+  );
   // 每条未决决策必须携带阻塞任务，保证可追溯
   for (const p of pending) {
     assert.ok(p.blockingTasks.length > 0, `${p.id} 缺少 blockingTasks`);
@@ -157,7 +157,8 @@ test('CLI validate 模式：真实文件退出码 0 且输出未决清单；--fa
   const log = (s) => lines.push(s);
   const code = run(['--register', REGISTER_PATH, '--contract-version', CONTRACT_VERSION_PATH], log);
   assert.equal(code, 0);
-  assert.ok(lines[0].includes('未决决策（18 条）'));
+  const pendingCount = realRegister().decisions.filter((decision) => decision.status === 'pending').length;
+  assert.ok(lines[0].includes(`未决决策（${pendingCount} 条）`));
 
   const code2 = run(
     ['--register', REGISTER_PATH, '--contract-version', CONTRACT_VERSION_PATH, '--fail-on-pending', '--json'],

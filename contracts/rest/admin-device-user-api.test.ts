@@ -77,7 +77,7 @@ test('七个端点齐备且 Cognito 认证；写操作强制 If-Match', () => {
   }
 });
 
-test('Schema 封闭：无验证材料泄漏/无明文密码字段/同步版本/强制原因', () => {
+test('Schema 封闭：管理 DTO 无 PHC；写接口只受控接收 writeOnly password', () => {
   const user = doc.components.schemas.DeviceUser;
   assert.equal(user.additionalProperties, false);
   assert.ok(
@@ -88,9 +88,11 @@ test('Schema 封闭：无验证材料泄漏/无明文密码字段/同步版本/�
   assert.deepEqual(user.properties.status.enum, ['ACTIVE', 'DISABLED']);
   const createReq = doc.components.schemas.DeviceUserCreateRequest;
   assert.equal(createReq.additionalProperties, false);
-  assert.ok(!('password' in createReq.properties), '拒收明文密码字段');
-  assert.equal(createReq.properties.verifierValue.minLength, 16);
-  assert.equal(createReq.properties.verifierSalt.minLength, 8);
+  assert.deepEqual(createReq.required.sort(), ['password', 'username']);
+  assert.equal(createReq.properties.password.writeOnly, true);
+  assert.ok(!('passwordHash' in createReq.properties));
+  assert.ok(!('verifierValue' in createReq.properties));
+  assert.equal(doc.components.schemas.DeviceUserUpdateRequest.properties.password.writeOnly, true);
   assert.deepEqual(doc.components.schemas.ReasonRequest.required, ['reason']);
   assert.deepEqual(doc.components.schemas.AssignmentRequest.required.sort(), ['deviceIds', 'reason'].sort());
   assert.deepEqual(doc.components.schemas.DeviceUserAssignment.properties.status.enum, ['ACTIVE', 'REVOKED']);

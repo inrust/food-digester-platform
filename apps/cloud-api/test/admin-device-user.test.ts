@@ -5,7 +5,7 @@
  * - 跨 Customer 分配失败（409）；
  * - 停用用户不进入新 Sync（listDeviceUsersForSync 仅 ACTIVE）；
  * - 通知（USERS_CHANGED Outbox 每设备一条）和审计正确（device.user.* 各一次）；
- * - 拒收明文密码（DEC-004）；DTO 永不返回验证材料；CustomerAdmin 租户强制。
+ * - 受控接收明文密码并立即派生 PHC（DEC-004）；DTO 永不返回 PHC；CustomerAdmin 租户强制。
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -69,8 +69,9 @@ type DataBody = { data: Record<string, unknown>; meta: Record<string, unknown> }
 type ListBody = { data: Record<string, unknown>[]; meta: Record<string, unknown> };
 type ErrorBody = { error: { code: string; message: string; requestId: string } };
 
-const VERIFIER = 'a'.repeat(32);
-const SALT = 'b'.repeat(16);
+const DEVICE_PASSWORD = 'device-local-password';
+const DEVICE_USER_PHC =
+  '$argon2id$v=19$m=32768,t=3,p=1$AAECAwQFBgcICQoLDA0ODw$u+TOcl2LGub4w/cLIdrGdoG/cbU//EuAXDXm+qRHfqs';
 
 let seq = 0;
 async function plantCustomer() {
@@ -104,8 +105,7 @@ async function createUser(h: ReturnType<typeof handlers>, customerId: string, us
         customerId,
         username: username ?? `operator-${seq}-${Math.random().toString(36).slice(2, 6)}`,
         displayName: '操作员',
-        verifierValue: VERIFIER,
-        verifierSalt: SALT,
+        password: DEVICE_PASSWORD,
         reason: '开通',
       },
     }),
@@ -133,7 +133,7 @@ describe('完整链路：创建→修改→分配→撤销→停用', () => {
     const userId = u.deviceUserId as string;
     assert.equal(u.version, 1);
     // DTO 不含验证材料
-    assert.ok(!('verifierValue' in u) && !('verifierSalt' in u), 'DTO 脱敏');
+    assert.ok(!('passwordHash' in u) && !('password' in u), 'DTO 脱敏');
 
     // 分配两台设备（device-user:write = SuperAdmin/CustomerAdmin；Operator 无该权限）
     const assigned = await h.assign(
@@ -146,11 +146,11 @@ describe('完整链路：创建→修改→分配→撤销→停用', () => {
     assert.equal(detail.version, 2);
     assert.equal((detail.assignments as unknown[]).length, 2);
 
-    // 验证材料轮换 → version+1 + 两设备各再一条通知
+    // 密码轮换 → version+1 + 两设备各再一条通知
     const rotated = await h.update(
       writeReq(superAdmin, 2, {
         params: { deviceUserId: userId },
-        body: { verifierValue: 'c'.repeat(32), verifierSalt: 'd'.repeat(16), verifierKdf: 'pending', reason: '改密' },
+        body: { password: 'rotated-device-password', reason: '改密' },
       }),
     );
     assert.equal(rotated.status, 200);
@@ -198,11 +198,11 @@ describe('完整链路：创建→修改→分配→撤销→停用', () => {
 
     // Sync 读取路径：ACTIVE 用户含 ACTIVE 分配
     let sync = await listDeviceUsersForSync({ client: prisma, now }, customerId);
-    assert.ok(sync.some((s) => s.deviceUserId === userId && s.assignments.some((a) => a.deviceId === d1)));
+    assert.ok(sync.some((s) => s.userId === userId && s.assignments.some((a) => a.deviceId === d1)));
 
     await h.disable(writeReq(superAdmin, 2, { params: { deviceUserId: userId }, body: { reason: '停用' } }));
     sync = await listDeviceUsersForSync({ client: prisma, now }, customerId);
-    assert.ok(!sync.some((s) => s.deviceUserId === userId), '停用用户不进入新 Sync');
+    assert.ok(!sync.some((s) => s.userId === userId), '停用用户不进入新 Sync');
 
     // 停用后不可更新/新分配
     assert.equal(
@@ -230,39 +230,39 @@ describe('完整链路：创建→修改→分配→撤销→停用', () => {
 });
 
 describe('安全与冲突', () => {
-  test('拒收明文密码；验证材料过短 400；用户名唯一 409；验证材料不成对 400', async () => {
+  test('受控 password 可用；预计算 Hash/冻结前四组件被拒；空密码 400；用户名唯一 409', async () => {
     const h = handlers();
     const customerId = await plantCustomer();
-    // 明文密码字段 → 400
-    const plain = await h.create(
+    const created = await h.create(
       req(superAdmin, {
-        body: { customerId, username: 'op-x', password: '123456', verifierValue: VERIFIER, verifierSalt: SALT },
+        body: { customerId, username: 'op-x', password: DEVICE_PASSWORD },
       }),
     );
-    assert.equal(plain.status, 400);
-    assert.equal((plain.body as ErrorBody).error.code, 'VALIDATION_FAILED');
-    // 验证材料过短 → 400
+    assert.equal(created.status, 201);
+    const precomputed = await h.create(
+      req(superAdmin, {
+        body: { customerId, username: 'op-precomputed', password: DEVICE_PASSWORD, passwordHash: DEVICE_USER_PHC },
+      }),
+    );
+    assert.equal(precomputed.status, 400);
+    assert.equal((precomputed.body as ErrorBody).error.code, 'VALIDATION_FAILED');
     assert.equal(
-      (
-        await h.create(
-          req(superAdmin, { body: { customerId, username: 'op-y', verifierValue: 'short', verifierSalt: SALT } }),
-        )
-      ).status,
+      (await h.create(req(superAdmin, { body: { customerId, username: 'op-y', password: '' } }))).status,
       400,
     );
     // 用户名唯一
     const u = await createUser(h, customerId, 'dup-name');
     const dup = await h.create(
-      req(superAdmin, { body: { customerId, username: 'dup-name', verifierValue: VERIFIER, verifierSalt: SALT } }),
+      req(superAdmin, { body: { customerId, username: 'dup-name', password: DEVICE_PASSWORD } }),
     );
     assert.equal(dup.status, 409);
-    // 轮换不成对 → 400
+    // 冻结前四组件 → 400
     assert.equal(
       (
         await h.update(
           writeReq(superAdmin, 1, {
             params: { deviceUserId: u.deviceUserId as string },
-            body: { verifierValue: VERIFIER, reason: 'x' },
+            body: { verifierValue: 'legacy', reason: 'x' },
           }),
         )
       ).status,
@@ -348,7 +348,7 @@ describe('租户隔离与权限', () => {
     // CustomerAdmin 创建强制本 Customer（入参他 Customer 被覆盖）
     const forced = await h.create(
       req(customerAdmin, {
-        body: { customerId: otherCustomer, username: 'op-ca', verifierValue: VERIFIER, verifierSalt: SALT },
+        body: { customerId: otherCustomer, username: 'op-ca', password: DEVICE_PASSWORD },
       }),
     );
     assert.equal(forced.status, 201);
@@ -372,11 +372,7 @@ describe('租户隔离与权限', () => {
     // Operator 无 device-user 权限（DEC-012）：读/写均 403
     assert.equal((await h.list(req(operator, {}))).status, 403);
     assert.equal(
-      (
-        await h.create(
-          req(operator, { body: { customerId, username: 'op-z', verifierValue: VERIFIER, verifierSalt: SALT } }),
-        )
-      ).status,
+      (await h.create(req(operator, { body: { customerId, username: 'op-z', password: DEVICE_PASSWORD } }))).status,
       403,
     );
     // Auditor 只读放行
@@ -405,10 +401,11 @@ describe('契约一致性', () => {
     const customerId = await plantCustomer();
     const u = await createUser(h, customerId);
     assert.deepEqual(Object.keys(u).sort(), [...api.components.schemas.DeviceUser.required].sort());
-    // 脱敏：DB 行有验证材料，DTO 无
+    // 脱敏：DB 行有 PHC，DTO 无
     const row = await prisma.deviceUser.findFirst({ where: { id: u.deviceUserId as string } });
-    assert.ok(row?.verifierValue === VERIFIER, '落库保存验证材料');
-    assert.ok(!JSON.stringify(u).includes(VERIFIER), 'DTO 不含验证材料值');
+    assert.match(row?.passwordHash ?? '', /^\$argon2id\$v=19\$m=32768,t=3,p=1\$/);
+    assert.isNull(row?.verifierValue, '不再写冻结前 verifierValue');
+    assert.ok(!JSON.stringify(u).includes(row?.passwordHash ?? '__missing__'), 'DTO 不含 PHC');
   });
 
   test('admin/device-user 模块无任何 AWS 依赖', () => {

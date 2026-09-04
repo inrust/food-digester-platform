@@ -25,7 +25,7 @@ import type { IotProvisioningPort } from './iot-port.js';
 export interface ProvisioningConfig {
   readonly region: string;
   readonly accountId: string;
-  /** 证书包保存时长（秒）；DEC-003 定量参数冻结前由部署方显式注入（SEC-01 不选定数值）。 */
+  /** 证书包保存时长（秒）；组合根必须按 DEC-003@1.0.0 注入 86400。 */
   readonly packageRetentionSeconds: number;
   /** 证书有效期（秒），用于 notBefore/notAfter 登记。 */
   readonly certificateValiditySeconds: number;
@@ -99,7 +99,18 @@ export class ProvisioningService implements ProvisioningTrigger {
     await this.provision(request);
   }
 
-  async provision(request: AdminOnboardingRequestRecord): Promise<ProvisioningResult> {
+  /** DEC-003 响应不确定恢复：云端撤证、销毁未确认包并重签。 */
+  async recoverUnconfirmedDelivery(
+    request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'>,
+    certificateId: string,
+  ): Promise<ProvisioningResult> {
+    await this.deps.iot.revokeCertificate(certificateId);
+    const revoked = await this.securePackage.revokeUnconfirmedDelivery(certificateId);
+    if (!revoked) throw new ProvisioningError('未确认交付状态已变化，请重试');
+    return this.provision(request);
+  }
+
+  async provision(request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'>): Promise<ProvisioningResult> {
     const devices = (this.db as unknown as Record<string, unknown>).device as DeviceDelegate;
     const certificates = (this.db as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
 

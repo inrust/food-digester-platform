@@ -60,7 +60,10 @@ test('成功响应含 requestId 与 PENDING 状态（200 幂等重放 / 201 新�
   const result = doc.components.schemas.OnboardingRequestResult;
   assert.deepEqual(result.required, ['requestId', 'status']);
   assert.deepEqual(result.properties.status.enum, ['PENDING']);
-  assert.equal(post.responses['201'].content['application/json'].schema.$ref, '#/components/schemas/OnboardingRequestResult');
+  assert.equal(
+    post.responses['201'].content['application/json'].schema.$ref,
+    '#/components/schemas/OnboardingRequestResult',
+  );
 });
 
 test('负向响应覆盖稳定错误码语义：400/401/404/409/429/500', () => {
@@ -91,7 +94,10 @@ test('BE-ONB-03 status 端点：Token 隐式定位，三态响应与源稿嵌套
   assert.equal(get.operationId, 'getOnboardingStatus');
   assert.deepEqual(get.security, [{ OnboardingToken: [] }]);
   assert.ok(!get.parameters, '源稿未定义 status Query 参数，不得强制 serialNumber');
-  assert.equal(get.responses['200'].content['application/json'].schema.$ref, '#/components/schemas/OnboardingStatusResult');
+  assert.equal(
+    get.responses['200'].content['application/json'].schema.$ref,
+    '#/components/schemas/OnboardingStatusResult',
+  );
 
   const result = doc.components.schemas.OnboardingStatusResult;
   assert.equal(result.oneOf.length, 3, 'PENDING/REJECTED/APPROVED 三态');

@@ -152,33 +152,52 @@ describe('配置与存储', () => {
 });
 
 describe('一次性领取', () => {
-  test('Onboarding Token 资格（序列号绑定）→ 领取成功并销毁密文', async () => {
+  test('Onboarding Token 资格 → 预留后保留密文，响应确认后销毁', async () => {
     await insertDeviceWithCertificate('dev-sec-2', 'SN-SEC-2', 'cert-sec-2');
     await service.storePackage('cert-sec-2', PACKAGE_PLAINTEXT);
-    const payload = await service.claimPackage('cert-sec-2', onboardingProof('SN-SEC-2'));
+    const payload = await service.preparePackageDelivery('cert-sec-2', onboardingProof('SN-SEC-2'));
     assert.deepEqual(Buffer.from(payload), PACKAGE_PLAINTEXT);
 
     const row = await prisma.deviceCertificate.findFirst({ where: { id: 'cert-sec-2' } });
-    assert.isNull(row?.packageCiphertext, '领取成功后密文必须销毁');
+    assert.isNotNull(row?.packageCiphertext, '响应提交前必须保留可恢复密文');
     assert.isNotNull(row?.claimedAt);
+    assert.isTrue(await service.confirmPackageDelivery('cert-sec-2'));
+    assert.isFalse(await service.confirmPackageDelivery('cert-sec-2'), '确认操作幂等');
+    assert.isNull((await prisma.deviceCertificate.findFirst({ where: { id: 'cert-sec-2' } }))?.packageCiphertext);
   });
 
-  test('重复领取失败关闭（密文已销毁 → 404）', async () => {
-    await expectSecurePackageError(service.claimPackage('cert-sec-2', onboardingProof('SN-SEC-2')), 'NOT_FOUND', 404);
+  test('确认交付后重复领取失败关闭（密文已销毁 → 404）', async () => {
+    await expectSecurePackageError(
+      service.preparePackageDelivery('cert-sec-2', onboardingProof('SN-SEC-2')),
+      'NOT_FOUND',
+      404,
+    );
   });
 
   test('已锁定未销毁（并发部分失败场景）→ 409', async () => {
     await insertDeviceWithCertificate('dev-sec-3', 'SN-SEC-3', 'cert-sec-3');
     await service.storePackage('cert-sec-3', PACKAGE_PLAINTEXT);
     await prisma.deviceCertificate.updateMany({ where: { id: 'cert-sec-3' }, data: { claimedAt: NOW } });
-    await expectSecurePackageError(service.claimPackage('cert-sec-3', onboardingProof('SN-SEC-3')), 'CONFLICT', 409);
+    await expectSecurePackageError(
+      service.preparePackageDelivery('cert-sec-3', onboardingProof('SN-SEC-3')),
+      'CONFLICT',
+      409,
+    );
   });
 
   test('资格不符（跨序列号 / 跨设备证书）→ 403，密文保留', async () => {
     await insertDeviceWithCertificate('dev-sec-4', 'SN-SEC-4', 'cert-sec-4');
     await service.storePackage('cert-sec-4', PACKAGE_PLAINTEXT);
-    await expectSecurePackageError(service.claimPackage('cert-sec-4', onboardingProof('SN-OTHER')), 'FORBIDDEN', 403);
-    await expectSecurePackageError(service.claimPackage('cert-sec-4', deviceCertProof('dev-other')), 'FORBIDDEN', 403);
+    await expectSecurePackageError(
+      service.preparePackageDelivery('cert-sec-4', onboardingProof('SN-OTHER')),
+      'FORBIDDEN',
+      403,
+    );
+    await expectSecurePackageError(
+      service.preparePackageDelivery('cert-sec-4', deviceCertProof('dev-other')),
+      'FORBIDDEN',
+      403,
+    );
     const row = await prisma.deviceCertificate.findFirst({ where: { id: 'cert-sec-4' } });
     assert.isNotNull(row?.packageCiphertext, '资格拒绝不得销毁密文');
   });
@@ -186,8 +205,19 @@ describe('一次性领取', () => {
   test('旧设备证书资格（轮换场景，deviceId 绑定）→ 领取成功', async () => {
     await insertDeviceWithCertificate('dev-sec-5', 'SN-SEC-5', 'cert-sec-5');
     await service.storePackage('cert-sec-5', PACKAGE_PLAINTEXT);
-    const payload = await service.claimPackage('cert-sec-5', deviceCertProof('dev-sec-5'));
+    const payload = await service.preparePackageDelivery('cert-sec-5', deviceCertProof('dev-sec-5'));
     assert.deepEqual(Buffer.from(payload), PACKAGE_PLAINTEXT);
+  });
+
+  test('响应不确定 → 撤销证书并销毁未确认包', async () => {
+    await insertDeviceWithCertificate('dev-sec-8', 'SN-SEC-8', 'cert-sec-8');
+    await service.storePackage('cert-sec-8', PACKAGE_PLAINTEXT);
+    await service.preparePackageDelivery('cert-sec-8', onboardingProof('SN-SEC-8'));
+    assert.isTrue(await service.revokeUnconfirmedDelivery('cert-sec-8'));
+    const row = await prisma.deviceCertificate.findFirst({ where: { id: 'cert-sec-8' } });
+    assert.equal(row?.status, 'REVOKED');
+    assert.equal(row?.revokedAt?.toISOString(), NOW.toISOString());
+    assert.isNull(row?.packageCiphertext);
   });
 
   test('过期包 → 409 且密文销毁', async () => {
@@ -199,7 +229,7 @@ describe('一次性领取', () => {
       config: { retentionSeconds: RETENTION_SECONDS, maxClaims: 1, now: () => new Date(NOW.getTime() + 7200_000) },
     });
     await expectSecurePackageError(
-      expiredService.claimPackage('cert-sec-6', onboardingProof('SN-SEC-6')),
+      expiredService.preparePackageDelivery('cert-sec-6', onboardingProof('SN-SEC-6')),
       'CONFLICT',
       409,
     );
@@ -216,12 +246,14 @@ describe('一次性领取', () => {
 });
 
 describe('审计与脱敏', () => {
-  test('store/claim/destroy 写审计；审计负载无明文、无密钥材料', async () => {
+  test('store/prepare/confirm/revoke/destroy 写审计；审计负载无敏感材料', async () => {
     const logs = await prisma.auditLog.findMany({ where: { objectType: 'deviceCertificate' } });
     const actions = logs.map((l) => `${l.action}:${l.result}`);
     assert.include(actions, 'CERT_PACKAGE_STORE:SUCCESS');
-    assert.include(actions, 'CERT_PACKAGE_CLAIM:SUCCESS');
-    assert.include(actions, 'CERT_PACKAGE_CLAIM:FAILURE');
+    assert.include(actions, 'CERT_PACKAGE_DELIVERY_PREPARE:SUCCESS');
+    assert.include(actions, 'CERT_PACKAGE_DELIVERY_PREPARE:FAILURE');
+    assert.include(actions, 'CERT_PACKAGE_DELIVERY_CONFIRM:SUCCESS');
+    assert.include(actions, 'CERT_PACKAGE_DELIVERY_UNCERTAIN_REVOKE:SUCCESS');
     assert.include(actions, 'CERT_PACKAGE_DESTROY:SUCCESS');
 
     const serialized = JSON.stringify(logs);
