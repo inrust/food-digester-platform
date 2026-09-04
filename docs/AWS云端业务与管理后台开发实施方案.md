@@ -20,7 +20,9 @@
 4. AWS 存在硬性限制时，必须登记为“技术适配”，经协议双方确认后实施，不允许代码自行改变设备契约；
 5. 本文中的 Customer 是通信设计定义的商业主体。`tenant` 只表示多租户隔离机制，不是另一个业务实体；数据库、JWT 或日志若使用 `tenantId`，其语义必须等同于 `customerId`。
 
-当前唯一确定的协议级技术适配是：通信设计中 ESG Report、Tamper 和 Command 的 QoS 2，在 AWS IoT Core 上实施为 QoS 1，并通过消息 ID、序号、Command ACK 和幂等处理保持业务可靠性。
+当前唯一已批准的协议级技术适配是：通信设计中 ESG Report、Tamper 和 Command 的 QoS 2，在 AWS IoT Core 上实施为 QoS 1，并通过消息 ID、序号、Command ACK 和幂等处理保持业务可靠性。
+
+对通信设计的复核还识别出六项尚未冻结的协议问题：MQTT Payload 规范化、Retired 过渡期认证、OTA 状态回传通道、License/OTA 归档语义、Onboarding 超时语义和 Configuration 扩展字段。它们不是已批准适配，必须分别进入 DEC-013～018 决策门禁；冻结前只能实现可替换扩展点，不得把暂定值写成对设备方生效的固定契约。
 
 ## 2. 建设目标
 
@@ -275,7 +277,22 @@ JSON Schema 必须以通信设计中的具体字段和示例为基线。云端�
 | OTA | `version`、`packageType`、`downloadUrl`、`sha256`、`mandatory`、`scheduledTime` |
 | Notification | `type`、`priority`、`title`、`message`、`action` |
 
-字段必填性、枚举和单位以通信设计为准；需要增加 `schemaVer`、接收时间或云端追踪字段时，只能作为向后兼容扩展。
+Heartbeat 表格明确给出了大部分类型和必填性，但其他 Topic 多数只给出字段与示例，不能笼统声称“必填性、枚举和单位均已由通信设计定义”。需要增加 `schemaVer`、接收时间或云端追踪字段时，只能作为向后兼容扩展。
+
+### 7.5 Payload 规范化门禁
+
+在发布 MQTT Schema V1 前，DEC-013 必须冻结以下事项：
+
+| 未决项 | 源稿冲突/缺口 | 冻结要求 |
+|---|---|---|
+| Heartbeat 结构 | 字段表使用扁平字段，JSON 示例使用 `network/system/machine/sensorStatus` 嵌套对象 | 选择唯一规范结构，并明确旧结构兼容期 |
+| 存储使用率 | `storageUsagePct` 行的 Type/Required 列错位 | 明确类型、必填性和范围 |
+| 电机电流 | 字段表为 `currentAmp`，示例为 `motorCurrentAmp` | 选择规范字段名及兼容别名策略 |
+| Machine Mode | 源稿使用 `DISCHARING` | 明确是否修正为 `DISCHARGING` 以及兼容策略 |
+| 非 Heartbeat 字段 | 多数未提供类型、必填性、范围、精度和 Null 语义 | 建立字段矩阵并由设备/云端双方确认 |
+| `audit.hash` | 仅说明 SHA-256，未定义规范化方式和覆盖范围 | 明确规范化序列化、覆盖字段、防重放关系和测试向量 |
+
+CT-03 在 DEC-013 冻结前只能维护草案 Schema 和 Fixture；BE-IOT-02 不得以未经确认的字段规则拒绝真实设备消息。
 
 ## 8. 设备身份与 Onboarding
 
@@ -326,7 +343,7 @@ Retired 是永久退役状态，不允许重新激活。Suspended → Active 必
 |---|---|---|---|
 | `/api/v1/device/onboarding/request` | POST | Onboarding Token | 提交序列号、型号、硬件版本、制造商和生产日期 |
 | `/api/v1/device/onboarding/status` | GET | Onboarding Token | 查询审批状态和发证结果 |
-| `/api/v1/admin/onboarding/{id}/approve` | POST | 管理员 JWT + MFA | 审批、分配站点并触发发证 |
+| `/api/v1/admin/onboarding/{id}/approve` | POST | 管理员 JWT + MFA | 审批并触发发证；不分配 Customer/Site |
 | `/api/v1/admin/onboarding/{id}/reject` | POST | 管理员 JWT + MFA | 拒绝并填写原因 |
 
 Token 必须一次一机、可撤销、有有效期并只保存 Hash。接口应限制每个 Token/IP 的调用频率。
@@ -339,7 +356,7 @@ Token 必须一次一机、可撤销、有有效期并只保存 Hash。接口应
 - `REJECTED`：返回拒绝原因；
 - `APPROVED`：返回 Device ID、Certificate Package、MQTT 配置和初始配置。
 
-必须覆盖通信设计列出的负向案例：序列号不存在、设备已经 Onboarded、管理员拒绝、设备证书安装失败。证书安装失败时不得直接标记 Onboarded；加密证书包仍在有效期内时允许继续领取，失效后重新签发。
+必须覆盖通信设计列出的负向案例：序列号不存在、设备已经 Onboarded、管理员拒绝、设备证书安装失败。证书安装失败时不得直接标记 Onboarded；加密证书包仍在有效期内时允许继续领取，失效后重新签发。首次合法 Heartbeat 长期未到达时，由可重复执行的超时评估器处理，但超时期限、外部状态、证书撤销和重新申请规则必须先通过 DEC-017 冻结；不得新增设备生命周期状态来替代内部 Onboarding 请求状态。
 
 ### 8.3 发证流程
 
@@ -386,6 +403,10 @@ Sync 请求至少包含 `lastSyncTime`。响应必须覆盖：
 - Configuration：Heartbeat、Telemetry、Camera Refresh、温度阈值等最新有效配置；
 - Operational Status：`Active`、`Maintenance`、`Suspended` 或 `Retired`。
 
+V1 Sync 始终返回上述完整事实快照。响应可携带版本号或 ETag 供设备判断是否更新本地缓存，但不得返回 `304` 或省略必要域；`lastSyncTime` 不得在没有版本化协议的情况下被解释为增量裁剪条件。
+
+通信设计示例明确出现的 Configuration 字段只有 `heartbeatInterval`、`telemetryInterval`、`cameraRefreshInterval` 和 `temperatureThreshold`。图像尺寸/上传间隔、旋转 M/N、电机过载电流、最低/最高加热温度和语言等字段属于候选扩展，须经 DEC-018、MQTT/REST Schema 与设备能力协商共同冻结后才能进入 Sync。
+
 调用频率严格采用通信设计：
 
 | 场景 | 调用频率 |
@@ -411,10 +432,10 @@ Device User Sync 示例中的 `passwordHash` 只能是设备本地账号专用�
 | Alarm | 是 | 是 | 告警创建、清除和通知 |
 | Event | 是 | 是 | 设备操作事件 |
 | ACK | 是 | 可选 | 更新 Command 状态 |
-| License | 是 | 可选 | 保存许可证状态、有效期、Entitlement 和历史 |
 | Tamper | 是 | 是 | 安全事件、可自动挂起设备 |
-| OTA | 是 | 可选 | OTA Job、版本和设备执行状态 |
 | Media | 是 | 元数据 | 关联已上传的 S3 Object |
+
+上表只包含 8 个 Device → Cloud MQTT Topic。通信设计的 Retention Policy 还列出 License 和 OTA，但 Topic Catalog 没有 License 上行 Topic，OTA 在 Catalog 中是 Cloud → Device Topic，因此二者不能作为“设备上行原始 MQTT”进入统一 Ingress。DEC-016 必须明确：License 历史是否以领域事件归档，OTA 下发/结果是否以发布记录、ACK 或 DEC-015 选定的状态通道归档，并为非 MQTT 记录使用独立 Envelope 与前缀。
 
 通信设计的 Retention Policy 未列出 Media。上述 Media 策略是试运营实现决策，文件和元数据保留期必须在协议冻结阶段确认。
 
@@ -541,6 +562,8 @@ POST            /api/v1/admin/devices/{deviceId}/retire
 
 退役采用内部两阶段工作流，外部生命周期仍只使用通信设计中的状态：管理员批准退役后撤销 Entitlement/License 和 Assignment，发送 `DEVICE_RETIRED`，设备调用 Sync、进入 Retired 并通过 `/api/v1/device/deactivate` 确认；云端随后停用证书和运行能力。若设备离线无法确认，达到管理策略规定的等待期限后强制停用证书并记录未确认退役。这样既保留通信设计的业务步骤，也避免在通知设备前先切断其认证通道。
 
+为避免 Retired 状态与 mTLS 白名单形成死锁，DEC-014 必须冻结退役过渡期规则。本文采用的暂定安全边界是：`retirement_confirmation_status=PENDING` 仅为云端内部工作流标记，不新增外部生命周期；设备证书在确认前保持 Active，但 Retired 设备只允许调用 `/api/v1/device/sync` 和 `/api/v1/device/deactivate`，其他 Device REST API、业务 MQTT 发布和命令均拒绝；Deactivate 成功或强制完成后立即撤销证书。AUTH 中间件只校验证书有效性和归属，生命周期的 Endpoint Allowlist 由独立授权层执行。
+
 ### 11.3 许可证和 Entitlement
 
 功能：
@@ -573,7 +596,7 @@ Active/Expired ──────────────────→ Revoked
 - 设备调用 Sync 获得最新完整快照；
 - 管理设备本地允许登录的用户列表。
 
-Device Sync 使用版本号和 ETag；当设备已是最新版本时可以返回 `304` 或精简响应。
+Device Sync 使用版本号和 ETag 标识快照版本，但 V1 每次都返回完整事实快照；即使 ETag 未变化，也不得返回 `304` 或省略设备安全更新本地缓存所需的域。
 
 Notification 类型和设备动作必须按通信设计实现：
 
@@ -663,10 +686,12 @@ Created/Authorized ───────────────→ Cancelled
 4. 先选择 1 台设备作为灰度批次；
 5. 发布 MQTT OTA 通知或创建 IoT Job；
 6. 设备通过短期预签名 URL 下载；
-7. 设备上报下载、安装、成功、失败或回滚状态；
+7. 设备发送源设计已定义的 ACK；下载、安装、成功、失败或回滚等多阶段状态只有在 DEC-015 冻结状态通道后才接收；
 8. 管理员确认后扩大批次或暂停 Campaign。
 
 试运营阶段禁止默认对全部设备自动强制升级。
+
+通信设计只定义 Cloud → Device OTA Topic，并在业务场景中显示设备返回 ACK，没有定义多阶段 OTA 状态的上行 Topic 或 Payload。DEC-015 必须在以下方案中冻结一种：扩展现有 ACK、增加版本化 `ota/status` Topic，或采用 AWS IoT Jobs 状态事件；冻结前不得让 BE-OTA-03、IoT Policy、Schema 和模拟器各自假设不同通道。
 
 ### 11.9 Media 管理
 
@@ -1010,7 +1035,12 @@ Merge to main
 | 依赖/风险 | 应对措施 |
 |---|---|
 | 设备无法安全领取或安装一次性证书包 | 第 2 周用真实设备验证；失败时按通信设计处理负向案例并重新签发 |
-| Payload 字段持续变化 | 第 2 周冻结 Schema V1，变更必须版本化 |
+| Payload 字段持续变化且源稿存在扁平/嵌套等冲突 | 先完成 DEC-013 和设备/云端联合 Fixture，再冻结 Schema V1；变更必须版本化 |
+| Retired 后认证过早关闭 | 通过 DEC-014 固定仅 Sync/Deactivate 可用的过渡期 Allowlist，并用集成测试证明不会形成认证死锁 |
+| OTA 多阶段状态没有上行契约 | 通过 DEC-015 选择 ACK 扩展、新 Topic 或 IoT Jobs 状态事件，冻结前不实现多套隐式通道 |
+| License/OTA 归档来源不明确 | 通过 DEC-016 区分 MQTT 原文、领域事件和发布记录，禁止伪装成设备上行消息 |
+| Onboarding 首个 Heartbeat 永久未到达 | 通过 DEC-017 冻结超时、证书处置和重新申请规则，并实现可重复执行的超时评估器 |
+| Configuration 候选字段超出源稿 | 通过 DEC-018 与设备能力协商冻结；未批准字段不得进入 Sync |
 | 真实设备到位延迟 | 使用模拟器开发，但预留至少 3 周真实联调窗口 |
 | ESG 计算口径不明确 | 保存原始数据和计算版本，试运营先标识“非核证” |
 | 远程命令安全责任不清 | 建立命令白名单、权限矩阵和设备安全确认协议 |
@@ -1022,6 +1052,7 @@ Merge to main
 
 ### 协议与设备
 
+- [ ] DEC-013～018 已登记、完成双方确认并解除对应任务阻塞；
 - [ ] Topic、QoS、Schema 和错误码已冻结；
 - [ ] 10 台设备各自使用独立证书；
 - [ ] 设备不能发布或订阅其他设备 Topic；
@@ -1077,6 +1108,7 @@ Merge to main
 ## 24. 参考资料
 
 - [Device-Cloud Communication Design](./Device-Cloud%20Communication%20Design.pdf)
+- [Device-Cloud Communication Design 解析与信息汇编](./Device-Cloud-Communication-Design-解析.md)
 - [厨余设备 ESG 物联网平台 AWS 架构设计与技术方案](./厨余设备ESG物联网平台AWS架构设计与技术方案.docx)
 - [AWS IoT Core MQTT 与 QoS](https://docs.aws.amazon.com/iot/latest/developerguide/mqtt.html)
 - [AWS IoT CreateKeysAndCertificate](https://docs.aws.amazon.com/iot/latest/apireference/API_CreateKeysAndCertificate.html)
