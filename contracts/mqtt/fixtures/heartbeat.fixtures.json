@@ -26,9 +26,45 @@
         "certificateStatus": "VALID",
         "tamperStatus": "NORMAL"
       }
+    },
+    {
+      "meta": { "id": "HB-DEV001-106", "ts": "2026-09-04T10:00:00Z", "seq": 106 },
+      "data": {
+        "deviceStatus": "ONLINE",
+        "uptimeSeconds": 90000,
+        "firmwareVersion": "1.0.6",
+        "operationalStatus": "ACTIVE",
+        "machineRunning": true,
+        "machineMode": "DISCHARGING",
+        "licenseStatus": "ACTIVE",
+        "networkType": "4G",
+        "networkStatus": "CONNECTED",
+        "storageUsagePct": 0,
+        "sensorOverallStatus": "NORMAL"
+      }
     }
   ],
   "invalid": [
+    {
+      "name": "DEC-013 storageUsagePct 禁止 null",
+      "payload": {
+        "meta": { "id": "HB-DEV001-107", "ts": "2026-09-04T10:00:00Z", "seq": 107 },
+        "data": {
+          "deviceStatus": "ONLINE",
+          "uptimeSeconds": 90000,
+          "firmwareVersion": "1.0.6",
+          "operationalStatus": "ACTIVE",
+          "machineRunning": true,
+          "machineMode": "DISCHARGING",
+          "licenseStatus": "ACTIVE",
+          "networkType": "4G",
+          "networkStatus": "CONNECTED",
+          "storageUsagePct": null,
+          "sensorOverallStatus": "NORMAL"
+        }
+      },
+      "expectPath": "data.storageUsagePct"
+    },
     {
       "name": "非法枚举 machineMode",
       "payload": {

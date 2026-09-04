@@ -11,6 +11,7 @@
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
+import { computeAuditHash } from '@fdp/contracts/mqtt/payload-normalization.js';
 import { createIngestionHandler, createTelemetryHandler, hourlyBucketStart } from '../src/index.js';
 import type { QuarantineRecord, ValidatedMessage } from '../src/index.js';
 import { createTestDb } from '../../cloud-api/test/helpers.js';
@@ -29,7 +30,6 @@ afterAll(async () => {
 
 const RECEIVED_AT = Date.parse('2026-08-28T07:55:00.000Z');
 const TS = '2026-08-28T07:55:00.000Z';
-const AUDIT_HASH = 'b'.repeat(64);
 
 let seqCounter = 0;
 async function plantDevice() {
@@ -73,11 +73,13 @@ function telemetryPayload(
   data: Record<string, unknown>,
   ts: string = TS,
 ): Record<string, unknown> {
-  return {
+  const payload = {
     meta: { id: messageIdOf(deviceId, seq), ts, seq, schemaVer: '1.0' },
-    audit: { hash: AUDIT_HASH },
+    audit: { hash: '' },
     data,
   };
+  payload.audit.hash = computeAuditHash(payload);
+  return payload;
 }
 
 function telemetryMessage(
@@ -168,7 +170,7 @@ describe('createTelemetryHandler（BE-IOT-05）', () => {
     const archivePayload = event.payload as Record<string, unknown>;
     assert.equal(archivePayload.topicType, 'telemetry');
     assert.equal(archivePayload.messageId, messageIdOf(ctx.deviceId, 1));
-    assert.equal(archivePayload.auditHash, AUDIT_HASH);
+    assert.equal(archivePayload.auditHash, computeAuditHash(telemetryPayload(ctx.deviceId, 1, FULL_DATA)));
     assert.equal(archivePayload.customerId, ctx.customerId);
     assert.deepEqual(
       (archivePayload.payload as Record<string, unknown>).data,

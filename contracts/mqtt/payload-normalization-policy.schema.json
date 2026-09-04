@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "payload-normalization-policy.schema.json",
+  "title": "DEC-013 MQTT Payload 规范化策略",
+  "x-decision-versions": ["DEC-013@1.0.0"],
+  "type": "object",
+  "required": [
+    "policyVersion",
+    "status",
+    "effectiveAt",
+    "x-decision-versions",
+    "heartbeat",
+    "telemetry",
+    "legacyCompatibility",
+    "nonHeartbeatFields",
+    "auditHash",
+    "consumers",
+    "pendingParameters"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "policyVersion": { "type": "string", "pattern": "^1\\.0\\.0$" },
+    "status": { "type": "string", "enum": ["frozen"] },
+    "effectiveAt": { "type": "string", "pattern": "^2026-09-04T09:46:26Z$" },
+    "x-decision-versions": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["DEC-013@1.0.0"] }
+    },
+    "heartbeat": {
+      "type": "object",
+      "required": ["canonicalShape", "storageUsagePct", "machineModeCanonical"],
+      "additionalProperties": false,
+      "properties": {
+        "canonicalShape": { "type": "string", "enum": ["flat"] },
+        "storageUsagePct": {
+          "type": "object",
+          "required": ["required", "type", "minimum", "maximum", "nullable"],
+          "additionalProperties": false,
+          "properties": {
+            "required": { "type": "boolean", "enum": [false] },
+            "type": { "type": "string", "enum": ["number"] },
+            "minimum": { "type": "number", "enum": [0] },
+            "maximum": { "type": "number", "enum": [100] },
+            "nullable": { "type": "boolean", "enum": [false] }
+          }
+        },
+        "machineModeCanonical": { "type": "string", "enum": ["DISCHARGING"] }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "required": ["motorCurrentCanonical"],
+      "additionalProperties": false,
+      "properties": { "motorCurrentCanonical": { "type": "string", "enum": ["currentAmp"] } }
+    },
+    "legacyCompatibility": {
+      "type": "object",
+      "required": ["durationDays", "endsAt", "accepted", "conflictBehavior", "afterExpiry"],
+      "additionalProperties": false,
+      "properties": {
+        "durationDays": { "type": "integer", "enum": [90] },
+        "endsAt": { "type": "string", "enum": ["2026-12-03T09:46:26Z"] },
+        "accepted": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["nested-heartbeat", "motorCurrentAmp", "DISCHARING"] }
+        },
+        "conflictBehavior": { "type": "string", "enum": ["reject"] },
+        "afterExpiry": { "type": "string", "enum": ["reject"] }
+      }
+    },
+    "nonHeartbeatFields": {
+      "type": "object",
+      "required": ["unspecifiedRequiredness", "nullPolicy", "unknownFieldPolicy", "deviceDeclaredIdentityPolicy"],
+      "additionalProperties": false,
+      "properties": {
+        "unspecifiedRequiredness": { "type": "string", "enum": ["optional"] },
+        "nullPolicy": { "type": "string", "enum": ["reject"] },
+        "unknownFieldPolicy": { "type": "string", "enum": ["reject"] },
+        "deviceDeclaredIdentityPolicy": { "type": "string", "enum": ["reject"] }
+      }
+    },
+    "auditHash": {
+      "type": "object",
+      "required": ["algorithm", "canonicalization", "coveredObject", "encoding", "output", "isSignature", "antiReplay"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": { "type": "string", "enum": ["SHA-256"] },
+        "canonicalization": { "type": "string", "enum": ["RFC-8785"] },
+        "coveredObject": { "type": "string", "enum": ["{meta,data}"] },
+        "encoding": { "type": "string", "enum": ["UTF-8"] },
+        "output": { "type": "string", "enum": ["lowercase-hex-64"] },
+        "isSignature": { "type": "boolean", "enum": [false] },
+        "antiReplay": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["mTLS-device-identity", "meta.seq", "ingestion-receipt-idempotency"]
+          }
+        }
+      }
+    },
+    "consumers": { "type": "array", "items": { "type": "string" } },
+    "pendingParameters": { "type": "array", "items": { "type": "string" } }
+  }
+}

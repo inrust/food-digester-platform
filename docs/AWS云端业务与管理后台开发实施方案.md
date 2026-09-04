@@ -22,7 +22,7 @@
 
 当前唯一已批准的协议级技术适配是：通信设计中 ESG Report、Tamper 和 Command 的 QoS 2，在 AWS IoT Core 上实施为 QoS 1，并通过消息 ID、序号、Command ACK 和幂等处理保持业务可靠性。
 
-对通信设计的复核还识别出六项尚未冻结的协议问题：MQTT Payload 规范化、Retired 过渡期认证、OTA 状态回传通道、License/OTA 归档语义、Onboarding 超时语义和 Configuration 扩展字段。它们不是已批准适配，必须分别进入 DEC-013～018 决策门禁；冻结前只能实现可替换扩展点，不得把暂定值写成对设备方生效的固定契约。
+对通信设计的复核还识别出六项协议问题：MQTT Payload 规范化、Retired 过渡期认证、OTA 状态回传通道、License/OTA 归档语义、Onboarding 超时语义和 Configuration 扩展字段。它们分别进入 DEC-013～018 决策门禁；其中 DEC-013、014、018 已冻结，DEC-015～017 冻结前只能实现可替换扩展点，不得把暂定值写成对设备方生效的固定契约。
 
 ## 2. 建设目标
 
@@ -281,18 +281,18 @@ Heartbeat 表格明确给出了大部分类型和必填性，但其他 Topic 多
 
 ### 7.5 Payload 规范化门禁
 
-在发布 MQTT Schema V1 前，DEC-013 必须冻结以下事项：
+DEC-013@1.0.0 已冻结以下事项，MQTT Schema V1 必须以此表为准：
 
 | 未决项 | 源稿冲突/缺口 | 冻结要求 |
 |---|---|---|
-| Heartbeat 结构 | 字段表使用扁平字段，JSON 示例使用 `network/system/machine/sensorStatus` 嵌套对象 | 选择唯一规范结构，并明确旧结构兼容期 |
-| 存储使用率 | `storageUsagePct` 行的 Type/Required 列错位 | 明确类型、必填性和范围 |
-| 电机电流 | 字段表为 `currentAmp`，示例为 `motorCurrentAmp` | 选择规范字段名及兼容别名策略 |
-| Machine Mode | 源稿使用 `DISCHARING` | 明确是否修正为 `DISCHARGING` 以及兼容策略 |
-| 非 Heartbeat 字段 | 多数未提供类型、必填性、范围、精度和 Null 语义 | 建立字段矩阵并由设备/云端双方确认 |
-| `audit.hash` | 仅说明 SHA-256，未定义规范化方式和覆盖范围 | 明确规范化序列化、覆盖字段、防重放关系和测试向量 |
+| Heartbeat 结构 | 字段表使用扁平字段，JSON 示例使用 `network/system/machine/sensorStatus` 嵌套对象 | 正式结构为扁平字段；旧嵌套结构兼容至 `2026-12-03T09:46:26Z`，入口转换，期满拒绝 |
+| 存储使用率 | `storageUsagePct` 行的 Type/Required 列错位 | 可选 `number`，范围 0～100，禁止 `null` |
+| 电机电流 | 字段表为 `currentAmp`，示例为 `motorCurrentAmp` | 正式名 `currentAmp`；旧名兼容至同一截止时间 |
+| Machine Mode | 源稿使用 `DISCHARING` | 正式值 `DISCHARGING`；旧拼写兼容至同一截止时间 |
+| 非 Heartbeat 字段 | 多数未提供类型、必填性、范围、精度和 Null 语义 | 未明确必填的字段保持可选；存在时严格校验，禁止 Null、未知字段和设备声明身份字段 |
+| `audit.hash` | 仅说明 SHA-256，未定义规范化方式和覆盖范围 | `SHA-256(RFC8785({meta,data}))`，UTF-8、小写 hex；防重放由 mTLS、seq 和收据幂等承担 |
 
-CT-03 在 DEC-013 冻结前只能维护草案 Schema 和 Fixture；BE-IOT-02 不得以未经确认的字段规则拒绝真实设备消息。
+CT-03 Schema、Fixture、生成类型和 BE-IOT-02 校验管线均须引用 `DEC-013@1.0.0`；兼容期后旧格式必须按协议违规隔离。
 
 ## 8. 设备身份与 Onboarding
 

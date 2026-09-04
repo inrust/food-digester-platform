@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.23.0",
-  "updatedAt": "2026-09-04T08:33:33Z",
+  "registerVersion": "1.24.0",
+  "updatedAt": "2026-09-04T09:46:26Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -479,13 +479,13 @@
     },
     {
       "id": "DEC-013",
-      "version": "0.1.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "MQTT Payload 规范化",
       "conflict": "通信设计中的 Heartbeat 字段表与 JSON 示例存在扁平/嵌套结构冲突，storageUsagePct 列错位，currentAmp 与 motorCurrentAmp 命名不一致，DISCHARING 拼写存在歧义；多数非 Heartbeat Topic 还缺少完整类型、必填性、单位、范围、Null 语义及 audit.hash 规范化定义。",
-      "provisionalValue": "未定；冻结 Heartbeat 唯一规范结构与兼容期、storageUsagePct 定义、currentAmp 规范名、DISCHARING 兼容策略、各 Topic 字段矩阵及 audit.hash 规范化与测试向量。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "Heartbeat 正式结构采用扁平字段；storageUsagePct 为可选 number（0～100，禁止 null）；currentAmp 为正式字段并兼容 motorCurrentAmp；正式枚举为 DISCHARGING 并兼容 DISCHARING；嵌套 Heartbeat 与旧别名自生效时间起兼容 90 天，入口规范化后处理，期满拒绝。非 Heartbeat 源稿未明确必填的字段保持可选，存在时严格校验类型、单位与范围，禁止 null、未知字段和设备声明身份字段。audit.hash 为剔除 audit 后的 {meta,data} 按 RFC 8785 规范化后计算的 SHA-256 小写十六进制；防重放由 mTLS、meta.seq 和收据幂等共同负责，Hash 不作为签名。",
+      "approver": "Anray",
+      "approvedAt": "2026-09-04T09:46:26Z",
       "blockingTasks": ["CT-03", "BE-IOT-02", "BE-IOT-03", "QA-02"],
       "affectedModules": ["CT", "BE-IOT", "QA"],
       "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
@@ -495,6 +495,12 @@
           "at": "2026-09-04T01:44:04Z",
           "by": "CT-01",
           "note": "依据任务清单 §4 新增登记；状态为 pending，待设备与云端双方冻结。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T09:46:26Z",
+          "by": "Anray",
+          "note": "批准方案 013-A 并冻结：Heartbeat 扁平结构；storageUsagePct 可选 number 0～100；currentAmp 与 DISCHARGING 为正式名称，旧嵌套结构、motorCurrentAmp 和 DISCHARING 兼容 90 天；非 Heartbeat 字段缺省可选且严格校验；audit.hash 使用 RFC 8785 规范化 {meta,data} 的 SHA-256，防重放由 mTLS、seq 和收据幂等承担。"
         }
       ]
     },

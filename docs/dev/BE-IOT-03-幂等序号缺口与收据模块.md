@@ -19,7 +19,7 @@
 
 | 文件 | 职责 |
 | --- | --- |
-| [receipt.ts](../apps/ingestion-worker/src/ingest/receipt.ts) | `processWithReceipt`：单事务内 插入 receipt(result=PROCESSED) → business(tx) → outbox(tx) → 缺口检测；P2002 唯一冲突 → 回读胜出记录：同 Hash → `DUPLICATE_SKIPPED`（不再执行业务写入）；不同 Hash → 抛 `QUARANTINE/PAYLOAD_CONFLICT` 安全异常（原 receipt 不覆盖）。`hashPayload`：规范化 JSON（键排序、剔除 undefined）SHA-256 |
+| [receipt.ts](../apps/ingestion-worker/src/ingest/receipt.ts) | `processWithReceipt`：单事务内 插入 receipt(result=PROCESSED) → business(tx) → outbox(tx) → 缺口检测；P2002 唯一冲突 → 回读胜出记录：同 Hash → `DUPLICATE_SKIPPED`（不再执行业务写入）；不同 Hash → 抛 `QUARANTINE/PAYLOAD_CONFLICT` 安全异常（原 receipt 不覆盖）。`hashPayload` 是服务端对规范化后完整 Payload 的幂等比较摘要；它与 DEC-013 设备提供的 `audit.hash` 职责不同 |
 | [gap.ts](../apps/ingestion-worker/src/ingest/gap.ts) | `recordGapForNewReceipt`（receipt 同事务）：已知最大 seq 与新 seq 不连续 → 追加缺口（已有覆盖缺口去重）；迟到消息使区间被 receipt 全覆盖 → 置 `resolvedAt`。`gapStatus`：未解除缺口查询（missingFromSeq/missingToSeq） |
 | [errors.ts](../apps/ingestion-worker/src/ingest/errors.ts) | `IngestErrorType` 新增 `PAYLOAD_CONFLICT`（经 BE-IOT-02 Handler 路由进 Quarantine 实现冲突隔离） |
 

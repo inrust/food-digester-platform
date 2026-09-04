@@ -3,7 +3,7 @@
   "$id": "tamper.schema.json",
   "title": "Tamper",
   "x-typescript-name": "Tamper",
-  "x-decision-versions": ["DEC-002@1.0.0"],
+  "x-decision-versions": ["DEC-002@1.0.0", "DEC-013@1.0.0"],
   "type": "object",
   "required": ["meta", "audit", "data"],
   "additionalProperties": false,
@@ -18,7 +18,7 @@
         "severity": {
           "type": "string",
           "enum": ["INFO", "WARNING", "HIGH", "CRITICAL"],
-          "description": "沿用 Alarm 严重度词表（通信设计仅示例 CRITICAL，待协议冻结确认）。"
+          "description": "沿用 Alarm 严重度词表；DEC-013 冻结为可选枚举，存在时禁止 null。"
         },
         "component": { "type": "string", "minLength": 1 },
         "details": { "type": "string" },

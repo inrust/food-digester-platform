@@ -3,7 +3,7 @@
   "$id": "telemetry.schema.json",
   "title": "Telemetry",
   "x-typescript-name": "Telemetry",
-  "x-decision-versions": ["DEC-002@1.0.0"],
+  "x-decision-versions": ["DEC-002@1.0.0", "DEC-013@1.0.0"],
   "type": "object",
   "required": ["meta", "audit", "data"],
   "additionalProperties": false,
@@ -13,7 +13,7 @@
     "data": {
       "type": "object",
       "additionalProperties": false,
-      "description": "13 项指标字段与单位以通信设计为准；通信设计未标记必填，故均为可选，但类型与范围固定。",
+      "description": "13 项指标字段与单位以通信设计为准；DEC-013 冻结为均可选、存在时严格校验类型与范围且禁止 null。currentAmp 为正式字段。",
       "properties": {
         "feedingWeightKg": { "type": "number", "minimum": 0 },
         "chamberWeightKg": { "type": "number", "minimum": 0 },
@@ -27,7 +27,11 @@
         "co2Ppm": { "type": "number", "minimum": 0 },
         "ch4Ppm": { "type": "number", "minimum": 0 },
         "n2oPpm": { "type": "number", "minimum": 0 },
-        "currentAmp": { "type": "number", "minimum": 0 }
+        "currentAmp": {
+          "type": "number",
+          "minimum": 0,
+          "description": "DEC-013 正式字段；motorCurrentAmp 仅由入口兼容转换器在截止时间前接收。"
+        }
       }
     }
   }

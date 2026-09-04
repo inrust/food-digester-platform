@@ -10,6 +10,7 @@
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
+import { DEC013_LEGACY_COMPATIBILITY_ENDS_AT, computeAuditHash } from '@fdp/contracts/mqtt/payload-normalization.js';
 import { createIngestionHandler } from '../src/index.js';
 import type { QuarantineRecord, SqsBatchResponseLike, ValidatedMessage } from '../src/index.js';
 import { createTestDb } from '../../cloud-api/test/helpers.js';
@@ -83,6 +84,16 @@ function heartbeatPayload(id: string, overrides: Record<string, unknown> = {}): 
     },
     ...overrides,
   };
+}
+
+function telemetryPayload(id: string): Record<string, unknown> {
+  const payload = {
+    meta: { id, ts: TS, seq: 1, schemaVer: '1.0' },
+    audit: { hash: '' },
+    data: { currentAmp: 3.8, humidityPct: 45.2 },
+  };
+  payload.audit.hash = computeAuditHash(payload);
+  return payload;
 }
 
 function envelopeBody(
@@ -183,6 +194,75 @@ describe('createIngestionHandler（BE-IOT-02 校验管线）', () => {
     assert.include(q.errorPath, 'deviceStatus');
     assert.equal(q.iotDeviceId, deviceId);
     assert.equal(q.iotTopic, `bnx/device/${deviceId}/heartbeat`);
+  });
+
+  test('DEC-013：兼容期内 Heartbeat 旧嵌套结构转换为正式扁平字段', async () => {
+    const { deviceId, certificateId } = await plantDevice();
+    const h = harness();
+    const payload = heartbeatPayload('HB-LEGACY-1');
+    const data = payload.data as Record<string, unknown>;
+    delete data.machineRunning;
+    delete data.machineMode;
+    delete data.networkType;
+    delete data.networkStatus;
+    delete data.sensorOverallStatus;
+    data.machine = { running: true, currentMode: 'DISCHARING' };
+    data.network = { type: '4G', status: 'CONNECTED' };
+    data.sensorStatus = { overall: 'NORMAL' };
+    const response = await h.handler({
+      Records: [{ messageId: 'sqs-legacy', body: envelopeBody(payload, { deviceId, certificateId }) }],
+    });
+    assert.deepEqual(response.batchItemFailures, []);
+    assert.deepEqual(h.quarantined, []);
+    assert.equal(h.validated[0]?.data.machineMode, 'DISCHARGING');
+    assert.equal(h.validated[0]?.data.networkType, '4G');
+    assert.equal(h.validated[0]?.data.sensorOverallStatus, 'NORMAL');
+  });
+
+  test('DEC-013：兼容截止边界起旧格式进入 Quarantine', async () => {
+    const { deviceId, certificateId } = await plantDevice();
+    const h = harness();
+    const payload = heartbeatPayload('HB-LEGACY-EXPIRED');
+    (payload.data as Record<string, unknown>).machineMode = 'DISCHARING';
+    await h.handler({
+      Records: [
+        {
+          messageId: 'sqs-expired',
+          body: envelopeBody(payload, {
+            deviceId,
+            certificateId,
+            receivedAt: Date.parse(DEC013_LEGACY_COMPATIBILITY_ENDS_AT),
+          }),
+        },
+      ],
+    });
+    assert.equal(h.quarantined[0]?.errorType, 'SCHEMA_VIOLATION');
+    assert.equal(h.quarantined[0]?.errorPath, 'data');
+    assert.include(h.quarantined[0]?.reason ?? '', 'LEGACY_FORMAT_EXPIRED');
+  });
+
+  test('DEC-013：Audited Topic 验证 RFC 8785 audit.hash，不匹配时隔离', async () => {
+    const { deviceId, certificateId } = await plantDevice();
+    const h = harness();
+    const valid = telemetryPayload('TEL-AUDIT-1');
+    const invalid = telemetryPayload('TEL-AUDIT-2');
+    (invalid.audit as Record<string, unknown>).hash = '0'.repeat(64);
+    await h.handler({
+      Records: [
+        {
+          messageId: 'sqs-audit-ok',
+          body: envelopeBody(valid, { deviceId, certificateId, type: 'telemetry' }),
+        },
+        {
+          messageId: 'sqs-audit-bad',
+          body: envelopeBody(invalid, { deviceId, certificateId, type: 'telemetry' }),
+        },
+      ],
+    });
+    assert.equal(h.validated.length, 1);
+    assert.equal(h.quarantined.length, 1);
+    assert.equal(h.quarantined[0]?.errorType, 'AUDIT_HASH_MISMATCH');
+    assert.equal(h.quarantined[0]?.errorPath, 'audit.hash');
   });
 
   test('身份违规进 Quarantine：未知证书 / 非 ACTIVE 证书 / Topic 设备与证书绑定不一致', async () => {

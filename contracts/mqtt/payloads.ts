@@ -93,8 +93,8 @@ export interface HeartbeatData {
   firmwareVersion: string;
   operationalStatus: "ACTIVE" | "SUSPENDED" | "RETIRED";
   machineRunning: boolean;
-  /** 枚举以通信设计原文为准（含 DISCHARING 原文拼写，待协议冻结确认）。 */
-  machineMode: "IDLE" | "PROCESSING" | "HEATING" | "DISCHARING" | "STOPPED" | "ERROR";
+  /** DEC-013 正式枚举使用 DISCHARGING；DISCHARING 仅由入口兼容转换器在截止时间前接收。 */
+  machineMode: "IDLE" | "PROCESSING" | "HEATING" | "DISCHARGING" | "STOPPED" | "ERROR";
   licenseStatus: "ACTIVE" | "EXPIRING" | "EXPIRED" | "REVOKED";
   licenseExpiryDate?: string;
   /** 通信设计标记为 Enum 但未给出完整枚举值（示例 4G），冻结前按非空字符串处理。 */
@@ -103,6 +103,7 @@ export interface HeartbeatData {
   signalStrength?: number;
   cpuUsagePct?: number;
   memoryUsagePct?: number;
+  /** DEC-013 冻结：可选 number，范围 0～100，禁止 null。 */
   storageUsagePct?: number;
   sensorOverallStatus: "NORMAL" | "WARNING" | "FAILED";
   temperatureSensor?: "NORMAL" | "WARNING" | "FAILED";
@@ -110,7 +111,7 @@ export interface HeartbeatData {
   weightSensor?: "NORMAL" | "WARNING" | "FAILED";
   gasSensor?: "NORMAL" | "WARNING" | "FAILED";
   certificateStatus?: "VALID" | "EXPIRING" | "EXPIRED" | "REVOKED";
-  /** 通信设计仅给出示例 NORMAL，冻结前按非空字符串处理。 */
+  /** 通信设计仅给出示例 NORMAL；DEC-013 保持可选非空字符串，存在时禁止 null。 */
   tamperStatus?: string;
 }
 
@@ -199,7 +200,7 @@ export interface EsgReportPayload {
 export interface TamperData {
   /** 安全事件类型，如 ROOT_DETECTED。 */
   eventType?: string;
-  /** 沿用 Alarm 严重度词表（通信设计仅示例 CRITICAL，待协议冻结确认）。 */
+  /** 沿用 Alarm 严重度词表；DEC-013 冻结为可选枚举，存在时禁止 null。 */
   severity?: "INFO" | "WARNING" | "HIGH" | "CRITICAL";
   component?: string;
   details?: string;
@@ -226,6 +227,7 @@ export interface TelemetryData {
   co2Ppm?: number;
   ch4Ppm?: number;
   n2oPpm?: number;
+  /** DEC-013 正式字段；motorCurrentAmp 仅由入口兼容转换器在截止时间前接收。 */
   currentAmp?: number;
 }
 

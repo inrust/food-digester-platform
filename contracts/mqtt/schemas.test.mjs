@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { SchemaRegistry, validate, normalizeEnvelope } from './validator.mjs';
+import { computeAuditHash, verifyAuditHash } from './payload-normalization.ts';
 import { renderTypes } from '../../scripts/generate-payload-types.mjs';
 import { loadJson, validateTraceability } from '../../scripts/check-decisions.mjs';
 
@@ -151,6 +152,16 @@ test('Telemetry/Report/Tamper 强制 audit.hash；Command 禁止 audit（DEC-002
       validate(schema, fileName, noAudit, registry).some((e) => e.path === '(root)' && e.message.includes('audit')),
       `${type} 缺少 audit 应被拒绝`,
     );
+  }
+});
+
+test('DEC-013：Audited 合法 Fixture 携带可复算的 RFC 8785 audit.hash', () => {
+  for (const type of ['telemetry', 'report', 'tamper']) {
+    const fixture = JSON.parse(readFileSync(`${FIXTURE_DIR}/${type}.fixtures.json`, 'utf8'));
+    for (const payload of fixture.valid) {
+      assert.equal(verifyAuditHash(payload), true, `${type} audit.hash 必须覆盖 RFC8785({meta,data})`);
+      assert.equal(payload.audit.hash, computeAuditHash(payload));
+    }
   }
 });
 

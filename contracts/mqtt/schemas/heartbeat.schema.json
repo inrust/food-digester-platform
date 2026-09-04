@@ -3,7 +3,7 @@
   "$id": "heartbeat.schema.json",
   "title": "Heartbeat",
   "x-typescript-name": "Heartbeat",
-  "x-decision-versions": ["DEC-002@1.0.0"],
+  "x-decision-versions": ["DEC-002@1.0.0", "DEC-013@1.0.0"],
   "type": "object",
   "required": ["meta", "data"],
   "additionalProperties": false,
@@ -32,8 +32,8 @@
         "machineRunning": { "type": "boolean" },
         "machineMode": {
           "type": "string",
-          "enum": ["IDLE", "PROCESSING", "HEATING", "DISCHARING", "STOPPED", "ERROR"],
-          "description": "枚举以通信设计原文为准（含 DISCHARING 原文拼写，待协议冻结确认）。"
+          "enum": ["IDLE", "PROCESSING", "HEATING", "DISCHARGING", "STOPPED", "ERROR"],
+          "description": "DEC-013 正式枚举使用 DISCHARGING；DISCHARING 仅由入口兼容转换器在截止时间前接收。"
         },
         "licenseStatus": { "type": "string", "enum": ["ACTIVE", "EXPIRING", "EXPIRED", "REVOKED"] },
         "licenseExpiryDate": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
@@ -46,7 +46,12 @@
         "signalStrength": { "type": "integer" },
         "cpuUsagePct": { "type": "number", "minimum": 0, "maximum": 100 },
         "memoryUsagePct": { "type": "number", "minimum": 0, "maximum": 100 },
-        "storageUsagePct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "storageUsagePct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "DEC-013 冻结：可选 number，范围 0～100，禁止 null。"
+        },
         "sensorOverallStatus": { "type": "string", "enum": ["NORMAL", "WARNING", "FAILED"] },
         "temperatureSensor": { "type": "string", "enum": ["NORMAL", "WARNING", "FAILED"] },
         "humiditySensor": { "type": "string", "enum": ["NORMAL", "WARNING", "FAILED"] },
@@ -56,7 +61,7 @@
         "tamperStatus": {
           "type": "string",
           "minLength": 1,
-          "description": "通信设计仅给出示例 NORMAL，冻结前按非空字符串处理。"
+          "description": "通信设计仅给出示例 NORMAL；DEC-013 保持可选非空字符串，存在时禁止 null。"
         }
       }
     }

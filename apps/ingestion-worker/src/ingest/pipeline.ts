@@ -1,16 +1,23 @@
 /**
  * BE-IOT-02 Ingestion 通用校验管线（框架无关核心）。
  *
- * 处理链（按序）：Envelope 结构 → 身份/台账解析 → CT-03 Schema（含字段范围）→ 时钟偏差。
+ * 处理链（按序）：Envelope 结构 → 身份/台账解析 → DEC-013 audit.hash → 兼容格式规范化
+ * → CT-03 正式 Schema（含字段范围）→ 时钟偏差。
  * 输出 ValidatedMessage 供业务分发（BE-IOT-04 等；本任务不处理具体消息业务）。
  */
 import type { DbClient } from '@fdp/database';
+import {
+  PayloadNormalizationError,
+  normalizeMqttPayload,
+  verifyAuditHash,
+} from '@fdp/contracts/mqtt/payload-normalization.js';
 import { parseEnvelope } from './envelope.js';
 import type { IngressEnvelope } from './envelope.js';
 import { resolveDeviceContext } from './identity.js';
 import type { DeviceContext } from './identity.js';
 import { assertClockSkew, createSchemaValidator } from './schema.js';
 import type { SchemaValidator } from './schema.js';
+import { quarantineError } from './errors.js';
 
 export interface ValidatedMessage {
   readonly envelope: IngressEnvelope;
@@ -31,10 +38,29 @@ export interface IngestPipelineDeps {
 }
 
 const DEFAULT_CLOCK_SKEW_TOLERANCE_SECONDS = 300;
+const AUDITED_TOPIC_TYPES = new Set(['telemetry', 'report', 'tamper']);
+
+function normalizeContractPayload(envelope: IngressEnvelope): IngressEnvelope {
+  try {
+    if (AUDITED_TOPIC_TYPES.has(envelope.iotType) && !verifyAuditHash(envelope.payload)) {
+      throw quarantineError('AUDIT_HASH_MISMATCH', 'audit.hash', 'audit.hash must equal SHA-256(RFC8785({meta,data}))');
+    }
+    return {
+      ...envelope,
+      payload: normalizeMqttPayload(envelope.iotType, envelope.payload, envelope.iotReceivedAt),
+    };
+  } catch (error) {
+    if (error instanceof PayloadNormalizationError) {
+      throw quarantineError('SCHEMA_VIOLATION', error.path, `${error.code}: ${error.message}`);
+    }
+    throw error;
+  }
+}
 
 export async function validateRecord(deps: IngestPipelineDeps, rawBody: string): Promise<ValidatedMessage> {
-  const envelope = parseEnvelope(rawBody);
-  const device = await resolveDeviceContext(deps.client, envelope);
+  const parsed = parseEnvelope(rawBody);
+  const device = await resolveDeviceContext(deps.client, parsed);
+  const envelope = normalizeContractPayload(parsed);
   const validator = deps.schemaValidator ?? createSchemaValidator();
   validator.validatePayload(envelope);
   assertClockSkew(envelope, deps.clockSkewToleranceSeconds ?? DEFAULT_CLOCK_SKEW_TOLERANCE_SECONDS);

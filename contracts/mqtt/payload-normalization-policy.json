@@ -1,0 +1,37 @@
+{
+  "$schema": "./payload-normalization-policy.schema.json",
+  "policyVersion": "1.0.0",
+  "status": "frozen",
+  "effectiveAt": "2026-09-04T09:46:26Z",
+  "x-decision-versions": ["DEC-013@1.0.0"],
+  "heartbeat": {
+    "canonicalShape": "flat",
+    "storageUsagePct": { "required": false, "type": "number", "minimum": 0, "maximum": 100, "nullable": false },
+    "machineModeCanonical": "DISCHARGING"
+  },
+  "telemetry": { "motorCurrentCanonical": "currentAmp" },
+  "legacyCompatibility": {
+    "durationDays": 90,
+    "endsAt": "2026-12-03T09:46:26Z",
+    "accepted": ["nested-heartbeat", "motorCurrentAmp", "DISCHARING"],
+    "conflictBehavior": "reject",
+    "afterExpiry": "reject"
+  },
+  "nonHeartbeatFields": {
+    "unspecifiedRequiredness": "optional",
+    "nullPolicy": "reject",
+    "unknownFieldPolicy": "reject",
+    "deviceDeclaredIdentityPolicy": "reject"
+  },
+  "auditHash": {
+    "algorithm": "SHA-256",
+    "canonicalization": "RFC-8785",
+    "coveredObject": "{meta,data}",
+    "encoding": "UTF-8",
+    "output": "lowercase-hex-64",
+    "isSignature": false,
+    "antiReplay": ["mTLS-device-identity", "meta.seq", "ingestion-receipt-idempotency"]
+  },
+  "consumers": ["CT-03", "BE-IOT-02", "BE-IOT-03", "QA-02"],
+  "pendingParameters": []
+}
