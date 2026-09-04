@@ -1,9 +1,9 @@
 {
-  "policyVersion": "0.1.0",
-  "updatedAt": "2026-08-26T10:05:00Z",
-  "x-decision-versions": ["DEC-012@0.2.0"],
-  "status": "provisional",
-  "description": "DEC-012 原型角色映射策略（暂定值的可执行扩展点）。暂定值：平台管理员→PlatformSuperAdmin；原型\"运维人员\"→PlatformOperator（界面名\"设备操作员\"），且不授予 AWS 资源权限；V1 权限矩阵固定，原型权限复选框只读。全部为定性规则，已可直接执行：角色映射封闭、AWS 资源权限禁用、权限矩阵固定、原型复选框只读。冻结时按 decision-change-template 将 DEC-012 升至 >=1.0.0；消费方（AUTH-01、BE-RBAC-01、FE-01、FE-16）只经 role-mapping-policy.ts 访问。",
+  "policyVersion": "1.0.0",
+  "updatedAt": "2026-09-04T08:33:33Z",
+  "x-decision-versions": ["DEC-012@1.0.0"],
+  "status": "frozen",
+  "description": "DEC-012@1.0.0 冻结策略：角色封闭映射，PlatformOperator 无 AWS 权限，V1 权限矩阵固定且只读。",
   "roleMappings": {
     "mappings": [
       { "prototypeRole": "平台管理员", "systemRole": "PlatformSuperAdmin", "uiName": "平台管理员" },
@@ -24,5 +24,5 @@
     "note": "V1 权限矩阵固定，不支持后台自定义编辑；原型界面中的权限复选框渲染为只读，仅用于展示当前角色的固定权限点。"
   },
   "pendingParameters": [],
-  "frozenUpgradePath": "DEC-012 冻结时：按 decision-change-template 变更 DEC-012 至 >=1.0.0，status 改 frozen；若权限矩阵或角色集合变化需同步 BE-RBAC-01 权限点表与 FE-16 角色管理界面。"
+  "frozenUpgradePath": "角色集合或权限矩阵变化必须提升 DEC-012 与 policyVersion，并同步 RBAC、前端和审计。"
 }

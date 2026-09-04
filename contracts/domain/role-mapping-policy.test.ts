@@ -88,7 +88,7 @@ test('x-decision-versions 引用 DEC-012 且版本与决策登记一致；protot
   }
 });
 
-test('暂定值定性规则可执行：封闭映射、界面名、AWS 权限与矩阵规则', () => {
+test('冻结值定性规则可执行：封闭映射、界面名、AWS 权限与矩阵规则', () => {
   const admin = mapPrototypeRole('平台管理员');
   assert.deepEqual(admin, { prototypeRole: '平台管理员', systemRole: 'PlatformSuperAdmin', uiName: '平台管理员' });
   const operator = mapPrototypeRole('运维人员');
@@ -140,5 +140,5 @@ test('TS 常量与 role-mapping-policy.json 完全一致', () => {
   assert.deepEqual(policyJson.matrix.consumers, [...ROLE_MAPPING_POLICY.matrix.consumers]);
   assert.deepEqual(policyJson.pendingParameters, [...ROLE_MAPPING_POLICY.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, ROLE_MAPPING_POLICY.frozenUpgradePath);
-  assert.equal(getRoleMappingPolicyStatus(), 'provisional');
+  assert.equal(getRoleMappingPolicyStatus(), 'frozen');
 });

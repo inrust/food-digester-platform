@@ -4,7 +4,7 @@
  * 事实源：
  * - 生命周期迁移表：实施方案 8.1（PendingOnboarding … Retired）；
  * - Operational 轴（Active/Maintenance/Suspended/Retired）：DEC-010 四轴分离，
- *   Maintenance 为独立状态（DEC-001，暂定值：行为限制同 Suspended，但允许维护/同步/遥测/告警/OTA）；
+ *   Maintenance 为独立状态（DEC-001 冻结值：行为限制同 Suspended，但允许维护/同步/遥测/告警/OTA）；
  * - Provisioning 是 OnboardingApproved → Onboarded 的内部步骤，不是外部状态。
  *
  * 产出效果（effects）：state_history 条目与业务审计事件描述符；

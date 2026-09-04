@@ -1,7 +1,7 @@
 {
   "matrixVersion": "1.0.0",
   "updatedAt": "2026-08-26T00:00:00Z",
-  "x-decision-versions": ["PRI-001@1.0.0", "DEC-007@0.2.0", "DEC-008@0.2.0", "DEC-009@0.2.0", "DEC-010@0.2.0", "DEC-011@0.2.0", "DEC-012@0.2.0"],
+  "x-decision-versions": ["PRI-001@1.0.0", "DEC-007@1.0.0", "DEC-008@1.0.0", "DEC-009@1.0.0", "DEC-010@1.0.0", "DEC-011@1.0.0", "DEC-012@1.0.0"],
   "format": "YAML 1.2（JSON 语法子集），保证零依赖机器校验；QA-08 消费本文件",
   "source": {
     "prototype": "docs/index19.html",
@@ -55,7 +55,7 @@
         { "id": "device-view.button.apply", "kind": "button", "name": "应用", "disposition": "Adopt", "source": { "taskId": "FE-06" }, "clientSide": true },
         { "id": "device-view.field.componentStates", "kind": "field", "name": "五类部件运行状态", "disposition": "Adopt", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "components" } },
         { "id": "device-view.field.sensorReadings", "kind": "field", "name": "10 类最新传感器读数", "disposition": "Adapt", "basis": "BE-DEV-05：每个数值显示单位、observedAt 和 stale 标记", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "latestTelemetry" } },
-        { "id": "device-view.field.consumables", "kind": "field", "name": "耗材投影", "disposition": "Adapt", "basis": "DEC-008：名称/来源冻结前按暂定映射，unknown 不伪造百分比", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "consumables" } },
+        { "id": "device-view.field.consumables", "kind": "field", "name": "耗材投影", "disposition": "Adapt", "basis": "DEC-008@1.0.0：碳滤网/生物添加剂仅采用设备上报，unknown 不伪造百分比", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "consumables" } },
         { "id": "device-view.field.recentAlarms", "kind": "field", "name": "最近告警", "disposition": "Adopt", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "recentAlarms" } },
         { "id": "device-view.field.esg7d", "kind": "field", "name": "近7日 ESG", "disposition": "Adopt", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "esgDaily" } },
         { "id": "device-view.button.camPlay", "kind": "button", "name": "摄像头播放", "disposition": "Reject", "rejectCategory": "realtime-stream", "basis": "DEC-009：协议未定义实时流媒体；不提供播放/停止语义" },

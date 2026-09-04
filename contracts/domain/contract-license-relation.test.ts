@@ -87,7 +87,7 @@ test('x-decision-versions 引用 DEC-007 且版本与决策登记一致；protot
   }
 });
 
-test('暂定值定性规则可执行：职责划分、联动与展示', () => {
+test('冻结值定性规则可执行：职责划分、联动与展示', () => {
   assert.deepEqual(getContractScope(), ['commercial-lease-term', 'device-association']);
   assert.deepEqual(getLicenseScope(), ['device-capability-authorization']);
   assert.equal(getScopeOwner('commercial-lease-term'), 'contract');
@@ -146,5 +146,5 @@ test('TS 常量与 contract-license-relation.json 完全一致', () => {
   assert.deepEqual(policyJson.presentation.consumers, [...CONTRACT_LICENSE_RELATION.presentation.consumers]);
   assert.deepEqual(policyJson.pendingParameters, [...CONTRACT_LICENSE_RELATION.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, CONTRACT_LICENSE_RELATION.frozenUpgradePath);
-  assert.equal(getRelationPolicyStatus(), 'provisional');
+  assert.equal(getRelationPolicyStatus(), 'frozen');
 });

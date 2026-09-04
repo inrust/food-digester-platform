@@ -74,7 +74,7 @@ test('x-decision-versions 引用 DEC-011 且版本与决策登记一致；protot
   }
 });
 
-test('暂定值定性规则可执行：层级链、Site 属性、设备仅关联 Site', () => {
+test('冻结值定性规则可执行：层级链、Site 属性、设备仅关联 Site', () => {
   assert.deepEqual(getGeoHierarchy(), ['customer', 'site', 'device']);
   assert.deepEqual(getSiteGeoAttributes(), ['region', 'subregion']);
   assert.equal(isSiteGeoAttribute('region'), true);
@@ -112,5 +112,5 @@ test('TS 常量与 geo-model-policy.json 完全一致', () => {
   assert.deepEqual(policyJson.geoAttributes.consumers, [...GEO_MODEL_POLICY.geoAttributes.consumers]);
   assert.deepEqual(policyJson.pendingParameters, [...GEO_MODEL_POLICY.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, GEO_MODEL_POLICY.frozenUpgradePath);
-  assert.equal(getGeoPolicyStatus(), 'provisional');
+  assert.equal(getGeoPolicyStatus(), 'frozen');
 });

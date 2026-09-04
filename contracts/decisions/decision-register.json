@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.22.0",
-  "updatedAt": "2026-09-04T04:40:30Z",
+  "registerVersion": "1.23.0",
+  "updatedAt": "2026-09-04T08:33:33Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -83,13 +83,13 @@
   "decisions": [
     {
       "id": "DEC-001",
-      "version": "0.2.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "Maintenance 行为矩阵",
       "conflict": "设备进入 Maintenance 生命周期后，允许/禁止的云端与设备行为集合未冻结，影响同步、命令、遥测与 OTA 处理。",
-      "provisionalValue": "独立状态；暂按 Suspended 限制，但允许维护、同步、遥测、告警和 OTA。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "Maintenance 为独立 Operational 状态；允许 Sync（900 秒）、遥测、告警、OTA、退役及维护/诊断/安全停止命令；禁止启动处理、加热、搅拌和排料等生产命令。",
+      "approver": "Anray",
+      "approvedAt": "2026-09-04T08:33:33Z",
       "blockingTasks": ["DOM-01", "BE-SYNC-01", "BE-DEV-04", "BE-CMD-01", "BE-CMD-02"],
       "affectedModules": ["DOM", "BE-SYNC", "BE-DEV", "BE-CMD"],
       "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
@@ -105,18 +105,24 @@
           "at": "2026-08-26T04:40:00Z",
           "by": "DEC-001",
           "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/lifecycle/maintenance-behavior-matrix.json（数据驱动、fail-closed、可整体替换）+ maintenance-behavior.ts 查询模块与测试；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T08:33:33Z",
+          "by": "Anray",
+          "note": "选择方案 001-A 并冻结：Maintenance 为独立 Operational 状态；允许 Sync（900 秒）、遥测、告警、OTA、退役及维护/诊断/安全停止命令；禁止启动处理、加热、搅拌和排料等生产命令。"
         }
       ]
     },
     {
       "id": "DEC-002",
-      "version": "0.2.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "Topic Tier 标记",
       "conflict": "各上行/下行 Topic 是否携带 audit 字段的 Tier 标记未冻结，影响 MQTT JSON Schema 的强制字段。",
-      "provisionalValue": "具体 Payload 示例优先；Telemetry/Report/Tamper 含 audit，Command 不含 audit。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "Telemetry、Report、Tamper 为 AUDITED，强制 audit.hash；Heartbeat、Alarm、Event、Ack、Media、Command、OTA、Notification 为 STANDARD。",
+      "approver": "Anray",
+      "approvedAt": "2026-09-04T08:33:33Z",
       "blockingTasks": ["CT-03", "BE-IOT-02"],
       "affectedModules": ["CT", "BE-IOT"],
       "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
@@ -132,6 +138,12 @@
           "at": "2026-08-26T06:05:53Z",
           "by": "DEC-002",
           "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/mqtt/topic-tier.json（数据驱动、fail-closed、可整体替换）+ topic-tier.ts 查询模块与测试；Tier 与 topic-catalog payloadEnvelope、11 个 Schema 的 audit 强制的三方一致性由测试强制；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T08:33:33Z",
+          "by": "Anray",
+          "note": "选择方案 002-A 并冻结：Telemetry、Report、Tamper 为 AUDITED，强制 audit.hash；Heartbeat、Alarm、Event、Ack、Media、Command、OTA、Notification 为 STANDARD。"
         }
       ]
     },
@@ -203,13 +215,13 @@
     },
     {
       "id": "DEC-005",
-      "version": "0.2.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "Media 文件与元数据保留期",
       "conflict": "Media 文件与元数据的保留期限未冻结，影响 S3/RDS 存储与查询接口语义。",
-      "provisionalValue": "RDS 保存元数据、S3 保存文件；具体期限待定。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "RDS 元数据保留 365 天，S3 文件保留 90 天；文件到期删除但元数据及完整性 Hash 继续保留至 365 天。",
+      "approver": "Anray",
+      "approvedAt": "2026-09-04T08:33:33Z",
       "blockingTasks": ["BE-MED-01", "FE-14"],
       "affectedModules": ["BE-MED", "BE-ARC", "FE"],
       "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
@@ -225,18 +237,24 @@
           "at": "2026-08-26T07:08:54Z",
           "by": "DEC-005",
           "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/media/media-retention-policy.json + 查询模块与测试；存储分离（RDS 元数据 / S3 文件）锁定可执行；保留天数与到期处置行为显式标记 null，读取失败关闭，冻结前禁止任何自动过期/删除；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T08:33:33Z",
+          "by": "Anray",
+          "note": "选择方案 005-A 并冻结：RDS 元数据保留 365 天，S3 文件保留 90 天；文件到期删除但元数据及完整性 Hash 继续保留至 365 天。"
         }
       ]
     },
     {
       "id": "DEC-006",
-      "version": "0.2.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "下行消息是否补充 meta.seq",
       "conflict": "下行消息（Command 等）是否强制 meta.seq 序号未冻结，影响下行 Schema 与幂等键设计。",
-      "provisionalValue": "V1 不强制；Command 以 meta.id 幂等。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "V1 下行 meta.seq 可选；Command 以全局唯一 meta.id 幂等；上行 meta.seq 继续必填。",
+      "approver": "Anray",
+      "approvedAt": "2026-09-04T08:33:33Z",
       "blockingTasks": ["CT-03", "BE-CMD-02"],
       "affectedModules": ["CT", "BE-CMD"],
       "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
@@ -252,18 +270,24 @@
           "at": "2026-08-26T08:30:42Z",
           "by": "DEC-006",
           "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/mqtt/downlink-policy.json + 查询模块与测试；暂定值（V1 下行不强制 meta.seq、Command 以 meta.id 幂等）已由 common.schema.json 承载并显式化为策略事实源，测试锁定 metaBase/metaSeq 与 cmd/notification/ota 引用一致性；冻结值若变化按 additive-contract-change 演进；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T08:33:33Z",
+          "by": "Anray",
+          "note": "选择方案 006-A 并冻结：V1 下行 meta.seq 可选；Command 以全局唯一 meta.id 幂等；上行 meta.seq 继续必填。"
         }
       ]
     },
     {
       "id": "DEC-007",
-      "version": "0.2.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "Contract 与 License 的关系",
       "conflict": "原型将合约与授权混用；Contract（商业租期/设备关联）与 License（设备能力授权）的职责边界与联动规则未冻结。",
-      "provisionalValue": "Contract 管商业租期和设备关联；License 管设备能力授权；创建 Contract 不自动激活 License。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "Contract 管商业租期和设备关联，License 管设备能力授权；创建 Contract 不自动激活 License，解绑不自动撤销 License，状态独立展示。",
+      "approver": "Anray",
+      "approvedAt": "2026-09-04T08:33:33Z",
       "blockingTasks": ["DB-01", "BE-CON-01", "BE-CON-02", "FE-17"],
       "affectedModules": ["DB", "BE-CON", "BE-LIC", "FE"],
       "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
@@ -278,19 +302,25 @@
           "version": "0.2.0",
           "at": "2026-08-26T08:41:53Z",
           "by": "DEC-007",
-          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/contract-license-relation.json + 查询模块与测试；职责划分（Contract=商业租期/设备关联，License=能力授权）、联动（创建不激活、解绑不撤销）与展示独立全部锁定为可执行规则，无待定参数；同步 prototype-traceability.yaml 引用至 DEC-007@0.2.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/contract-license-relation.json + 查询模块与测试；职责划分（Contract=商业租期/设备关联，License=能力授权）、联动（创建不激活、解绑不撤销）与展示独立全部锁定为可执行规则，无待定参数；同步 prototype-traceability.yaml 引用至 DEC-007@1.0.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T08:33:33Z",
+          "by": "Anray",
+          "note": "选择方案 007-A 并冻结：Contract 管商业租期和设备关联，License 管设备能力授权；创建 Contract 不自动激活 License，解绑不自动撤销 License，状态独立展示。"
         }
       ]
     },
     {
       "id": "DEC-008",
-      "version": "0.2.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "耗材正式名称、数据来源与阈值",
       "conflict": "原型的“碳包/碳滤网、活性菌/添加剂”为原型新增需求；正式名称、设备上报来源和展示阈值未冻结。",
-      "provisionalValue": "暂用 CARBON_FILTER、BIO_ADDITIVE；仅保存设备已定义上报值，不由云端臆测百分比。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "类型代码为 CARBON_FILTER/碳滤网与 BIO_ADDITIVE/生物添加剂；低余量阈值分别为 20%/15%；仅使用设备上报百分比，超过 24 小时未更新标记为过期。",
+      "approver": "Anray",
+      "approvedAt": "2026-09-04T08:33:33Z",
       "blockingTasks": ["DB-01", "BE-IOT-05", "BE-CNS-01", "FE-18"],
       "affectedModules": ["DB", "BE-IOT", "BE-CNS", "FE"],
       "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
@@ -305,19 +335,25 @@
           "version": "0.2.0",
           "at": "2026-08-26T08:52:53Z",
           "by": "DEC-008",
-          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/consumables-policy.json + 查询模块与测试；类型代码封闭集合（CARBON_FILTER、BIO_ADDITIVE）与仅设备上报、禁云端臆测锁定可执行；正式名称与展示阈值显式标记 null，读取失败关闭；同步 prototype-traceability.yaml 引用至 DEC-008@0.2.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/consumables-policy.json + 查询模块与测试；类型代码封闭集合（CARBON_FILTER、BIO_ADDITIVE）与仅设备上报、禁云端臆测锁定可执行；正式名称与展示阈值显式标记 null，读取失败关闭；同步 prototype-traceability.yaml 引用至 DEC-008@1.0.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T08:33:33Z",
+          "by": "Anray",
+          "note": "选择方案 008-A 并冻结：类型代码为 CARBON_FILTER/碳滤网与 BIO_ADDITIVE/生物添加剂；低余量阈值分别为 20%/15%；仅使用设备上报百分比，超过 24 小时未更新标记为过期。"
         }
       ]
     },
     {
       "id": "DEC-009",
-      "version": "0.2.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "摄像头交互语义",
       "conflict": "原型提供摄像头“播放/停止”和“实时画面”，但上级协议未定义实时流媒体能力。",
-      "provisionalValue": "V1 仅查看最新授权 Media 并手动刷新；实时视频流暂不实现。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "V1 仅显示最新一张已授权 Media 并支持手动刷新；不提供自动轮询、播放/停止或实时视频流。",
+      "approver": "Anray",
+      "approvedAt": "2026-09-04T08:33:33Z",
       "blockingTasks": ["BE-MED-01", "FE-06", "FE-12", "FE-14"],
       "affectedModules": ["BE-MED", "FE"],
       "sourceRefs": ["device-cloud-communication-design", "admin-prototype"],
@@ -332,19 +368,25 @@
           "version": "0.2.0",
           "at": "2026-08-26T09:34:34Z",
           "by": "DEC-009",
-          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/camera-interaction-policy.json + 查询模块与测试；查看范围（仅最新授权 Media）、手动刷新、禁实时流全部锁定为可执行规则，无待定参数；同步 prototype-traceability.yaml 引用至 DEC-009@0.2.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/camera-interaction-policy.json + 查询模块与测试；查看范围（仅最新授权 Media）、手动刷新、禁实时流全部锁定为可执行规则，无待定参数；同步 prototype-traceability.yaml 引用至 DEC-009@1.0.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T08:33:33Z",
+          "by": "Anray",
+          "note": "选择方案 009-A 并冻结：V1 仅显示最新一张已授权 Media 并支持手动刷新；不提供自动轮询、播放/停止或实时视频流。"
         }
       ]
     },
     {
       "id": "DEC-010",
-      "version": "0.2.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "原型设备状态映射",
       "conflict": "原型“是否启用/启用状态/在线/离线/维护/待机”混用单一字段，与云端多维状态模型冲突。",
-      "provisionalValue": "connectivity、lifecycle、operational、license 四轴分离；“启用”由明确业务规则派生。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "connectivity、lifecycle、operational、license 四轴分离；启用仅在 lifecycle=Active 且 license 为 Active、ExpiringSoon 或 Renewed 时派生为 true，不独立落库。",
+      "approver": "Anray",
+      "approvedAt": "2026-09-04T08:33:33Z",
       "blockingTasks": ["BE-DEV-01", "BE-DEV-05", "FE-03", "FE-06"],
       "affectedModules": ["BE-DEV", "BE-DASH", "FE"],
       "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
@@ -359,19 +401,25 @@
           "version": "0.2.0",
           "at": "2026-08-26T09:41:47Z",
           "by": "DEC-010",
-          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/device-status-axes-policy.json + 查询模块与测试；四轴分离（connectivity/lifecycle/operational/license）与派生原则（禁单字段混用、禁独立存储\"启用\"）锁定可执行；具体派生规则 enabledDisplay.rule 显式标记 null，读取失败关闭，冻结前 API/页面不得输出 enabled 字段；同步 prototype-traceability.yaml 引用至 DEC-010@0.2.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/device-status-axes-policy.json + 查询模块与测试；四轴分离（connectivity/lifecycle/operational/license）与派生原则（禁单字段混用、禁独立存储\"启用\"）锁定可执行；具体派生规则 enabledDisplay.rule 显式标记 null，读取失败关闭，冻结前 API/页面不得输出 enabled 字段；同步 prototype-traceability.yaml 引用至 DEC-010@1.0.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T08:33:33Z",
+          "by": "Anray",
+          "note": "选择方案 010-A 并冻结：connectivity、lifecycle、operational、license 四轴分离；启用仅在 lifecycle=Active 且 license 为 Active、ExpiringSoon 或 Renewed 时派生为 true，不独立落库。"
         }
       ]
     },
     {
       "id": "DEC-011",
-      "version": "0.2.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "Region/Subregion/Site 模型",
       "conflict": "原型区域/子区域/站点层级与事实关联 Customer→Site→Device 的归属关系未冻结。",
-      "provisionalValue": "Region/Subregion 为 Site 可筛选属性；设备只关联 Site，不直接保存重复地域真值。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "归属层级为 Customer→Site→Device；Region/Subregion 是 Site 可筛选属性，设备只保存 siteId，地域经 Site 派生。",
+      "approver": "Anray",
+      "approvedAt": "2026-09-04T08:33:33Z",
       "blockingTasks": ["DB-01", "BE-CUS-02", "BE-DEV-01", "FE-05", "FE-06"],
       "affectedModules": ["DB", "BE-CUS", "BE-DEV", "FE"],
       "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
@@ -386,19 +434,25 @@
           "version": "0.2.0",
           "at": "2026-08-26T09:50:55Z",
           "by": "DEC-011",
-          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/geo-model-policy.json + 查询模块与测试；归属层级（Customer→Site→Device）、Region/Subregion 为 Site 可筛选属性、设备禁存地域真值全部锁定为可执行规则，无待定参数；同步 prototype-traceability.yaml 引用至 DEC-011@0.2.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/geo-model-policy.json + 查询模块与测试；归属层级（Customer→Site→Device）、Region/Subregion 为 Site 可筛选属性、设备禁存地域真值全部锁定为可执行规则，无待定参数；同步 prototype-traceability.yaml 引用至 DEC-011@1.0.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T08:33:33Z",
+          "by": "Anray",
+          "note": "选择方案 011-A 并冻结：归属层级为 Customer→Site→Device；Region/Subregion 是 Site 可筛选属性，设备只保存 siteId，地域经 Site 派生。"
         }
       ]
     },
     {
       "id": "DEC-012",
-      "version": "0.2.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "原型角色映射",
       "conflict": "原型“平台管理员/运维人员”与正式 RBAC 角色及权限矩阵的映射未冻结。",
-      "provisionalValue": "平台管理员→PlatformSuperAdmin；原型“运维人员”→PlatformOperator（界面名“设备操作员”），且不授予 AWS 资源权限；V1 权限矩阵固定，原型权限复选框只读。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "平台管理员映射 PlatformSuperAdmin；运维人员映射 PlatformOperator，界面名设备操作员；Operator 无 AWS 权限；V1 权限矩阵固定且只读。",
+      "approver": "Anray",
+      "approvedAt": "2026-09-04T08:33:33Z",
       "blockingTasks": ["AUTH-01", "BE-RBAC-01", "FE-01", "FE-16"],
       "affectedModules": ["AUTH", "BE-RBAC", "FE"],
       "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
@@ -413,7 +467,13 @@
           "version": "0.2.0",
           "at": "2026-08-26T10:05:00Z",
           "by": "DEC-012",
-          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/role-mapping-policy.json + 查询模块与测试；角色封闭映射（平台管理员→PlatformSuperAdmin、运维人员→PlatformOperator/界面名\"设备操作员\"）、Operator 禁授 AWS 资源权限、V1 权限矩阵固定与原型复选框只读全部锁定为可执行规则，无待定参数；同步 prototype-traceability.yaml 引用至 DEC-012@0.2.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+          "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/role-mapping-policy.json + 查询模块与测试；角色封闭映射（平台管理员→PlatformSuperAdmin、运维人员→PlatformOperator/界面名\"设备操作员\"）、Operator 禁授 AWS 资源权限、V1 权限矩阵固定与原型复选框只读全部锁定为可执行规则，无待定参数；同步 prototype-traceability.yaml 引用至 DEC-012@1.0.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T08:33:33Z",
+          "by": "Anray",
+          "note": "选择方案 012-A 并冻结：平台管理员映射 PlatformSuperAdmin；运维人员映射 PlatformOperator，界面名设备操作员；Operator 无 AWS 权限；V1 权限矩阵固定且只读。"
         }
       ]
     },

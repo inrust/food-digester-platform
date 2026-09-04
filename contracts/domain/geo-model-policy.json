@@ -1,9 +1,9 @@
 {
-  "policyVersion": "0.1.0",
-  "updatedAt": "2026-08-26T09:50:55Z",
-  "x-decision-versions": ["DEC-011@0.2.0"],
-  "status": "provisional",
-  "description": "DEC-011 Region/Subregion/Site 模型策略（暂定值的可执行扩展点）。暂定值：Region/Subregion 为 Site 可筛选属性；设备只关联 Site，不直接保存重复地域真值。全部为定性规则，已可直接执行：归属层级锁定 Customer→Site→Device；Region/Subregion 仅作为 Site 的可筛选属性存在；设备行不得冗余存储地域字段。冻结时按 decision-change-template 将 DEC-011 升至 >=1.0.0；消费方（DB-01、BE-CUS-02、BE-DEV-01、FE-05、FE-06）只经 geo-model-policy.ts 访问。",
+  "policyVersion": "1.0.0",
+  "updatedAt": "2026-09-04T08:33:33Z",
+  "x-decision-versions": ["DEC-011@1.0.0"],
+  "status": "frozen",
+  "description": "DEC-011@1.0.0 冻结策略：Customer→Site→Device，Region/Subregion 为 Site 属性，Device 不冗余存储地域真值。",
   "hierarchy": {
     "chain": ["customer", "site", "device"],
     "consumers": ["DB-01", "BE-CUS-02", "BE-DEV-01"],
@@ -16,5 +16,5 @@
     "note": "Region/Subregion 是 Site 的可筛选属性（列表筛选、分组展示），不是独立实体，也不构建设备级真值。设备行禁止冗余存储 region/subregion；设备的地域信息一律经 Site 派生查询。"
   },
   "pendingParameters": [],
-  "frozenUpgradePath": "DEC-011 冻结时：按 decision-change-template 变更 DEC-011 至 >=1.0.0，status 改 frozen；若层级变化（如 Region 实体化）需迁移 DB-01 Schema 与 BE-CUS-02/BE-DEV-01 查询契约。"
+  "frozenUpgradePath": "层级或地域实体变化必须提升 DEC-011 与 policyVersion，并迁移 DB 与查询契约。"
 }

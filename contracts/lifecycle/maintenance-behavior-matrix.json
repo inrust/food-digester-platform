@@ -1,13 +1,13 @@
 {
-  "matrixVersion": "0.1.0",
-  "updatedAt": "2026-08-26T04:40:00Z",
-  "x-decision-versions": ["DEC-001@0.2.0"],
-  "status": "provisional",
-  "description": "DEC-001 Maintenance 行为矩阵（暂定值的可执行扩展点）。MAINTENANCE 是独立 Operational 状态（DEC-010 四轴之一），暂定按 Suspended 限制，但允许维护、同步、遥测、告警和 OTA。本文件为数据驱动契约：冻结时按 decision-change-template 将 DEC-001 升至 >=1.0.0 并整体替换本文件，消费方（DOM-01、BE-SYNC-01、BE-DEV-04、BE-CMD-01、BE-CMD-02）只经 maintenance-behavior.ts 访问，不得复制字段值。",
+  "matrixVersion": "1.0.0",
+  "updatedAt": "2026-09-04T08:33:33Z",
+  "x-decision-versions": ["DEC-001@1.0.0"],
+  "status": "frozen",
+  "description": "DEC-001@1.0.0 Maintenance 冻结行为矩阵：独立状态，允许维护、Sync、遥测、告警、OTA 与退役，禁止生产处理命令。",
   "subject": {
     "operationalStatus": "MAINTENANCE",
     "independentState": true,
-    "note": "独立状态：不是 Suspended 的别名；暂定值仅在行为限制上等价于 Suspended，状态本身独立记录于 state_history。"
+    "note": "独立状态：不是 Suspended 的别名；冻结值仅在行为限制上等价于 Suspended，状态本身独立记录于 state_history。"
   },
   "fallbackPolicy": "deny",
   "commandPolicy": {
@@ -45,7 +45,7 @@
     "OTA": {
       "allowed": true,
       "consumers": ["DOM-01", "BE-CMD-01"],
-      "note": "允许 OTA 下发与状态接收（暂定值明确允许，区别于 Suspended 的处理启动限制）；仍需 OTA Entitlement 与 Campaign 目标校验。"
+      "note": "允许 OTA 下发与状态接收（冻结值明确允许，区别于 Suspended 的处理启动限制）；仍需 OTA Entitlement 与 Campaign 目标校验。"
     },
     "RETIREMENT": {
       "allowed": true,
@@ -53,5 +53,5 @@
       "note": "Maintenance 不阻塞退役工作流；退役顺序（撤销授权→通知→设备确认→证书停用）不变。"
     }
   },
-  "frozenUpgradePath": "DEC-001 冻结时：按 decision-change-template 变更 DEC-001 至 >=1.0.0，整体替换本文件并提升 matrixVersion；消费方代码不经 maintenance-behavior.ts 之外的途径读取矩阵，确保暂定值可迁移。"
+  "frozenUpgradePath": "行为矩阵变化必须提升 DEC-001 与 matrixVersion，并同步命令目录、消费者和设备兼容测试。"
 }

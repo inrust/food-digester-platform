@@ -11,7 +11,7 @@
 | 数据来源 | device-reported-only：仅保存设备上报值（原始名经领域字典映射）；云端不推算百分比；未上报为 null，DTO `remainingDisplay='unknown'`（绝不默认 50%） |
 | 字典映射 | 原型两列严格分离：`碳包/碳滤网/carbon*`→CARBON_FILTER，`活性菌/添加剂/bio*`→BIO_ADDITIVE（trim+小写归一）；未知名称失败关闭（`UNKNOWN_CONSUMABLE_TYPE`，不落库） |
 | 乱序防护 | 每设备每耗材仅最新投影：领域 `decideProjectionUpdate`（更旧/同时刻异消息 → 拒绝；同消息同时间 → replay 幂等）+ `observedAt` 条件更新并发兜底 |
-| stale | 读取时点派生（observedAt 超 24h 暂定阈值或未上报 → stale），不回写 |
+| stale | 读取时点派生（observedAt 超过 DEC-008@1.0.0 冻结阈值 24h，或未上报 → stale），不回写 |
 | 联系人授权摘要 | Site 联系方式仅 PlatformSuperAdmin/PlatformOperator/CustomerAdmin 可见；Auditor/CustomerViewer → null；Customer 角色租户隔离（仅本 Customer） |
 | 功能边界 | 不预测更换日期、不虚构未上报值、不自动联系客户或创建采购单（BE-CNS-02 才管理工单） |
 
@@ -37,7 +37,7 @@
 
 ## 4. 未决风险
 
-- stale 阈值 24h 为暂定值（DEC-008 冻结可整体替换 `CONSUMABLE_STALE_AFTER_MS`）；
+- stale 阈值已按 DEC-008@1.0.0 冻结为 24h，由 `CONSUMABLE_STALE_AFTER_MS` 统一承载；
 - 投影写路径目前由本任务 service 提供；BE-IOT-05 冻结的 telemetry 契约不含耗材字段，设备耗材上报消息格式待协议定义后由采集链路调用 `recordConsumableReport`；
 - 正式展示名称/告警阈值为 DEC-008 待冻结参数（FE-18 冻结前显示类型代码原文）；查询 API 的 `maxRemainingPercent` 是显式入参，与待冻结的默认阈值解耦；
 - 联系人授权角色集合（SuperAdmin/Operator/CustomerAdmin）为暂定判定，冻结需业务方确认。

@@ -1,9 +1,9 @@
 {
-  "tierVersion": "0.1.0",
-  "updatedAt": "2026-08-26T06:05:53Z",
-  "x-decision-versions": ["DEC-002@0.2.0"],
-  "status": "provisional",
-  "description": "DEC-002 Topic Tier 标记（暂定值的可执行扩展点）。Tier 决定 Topic Payload 信封是否强制携带 audit（含 audit.hash）。暂定规则：具体 Payload 示例优先；Telemetry/Report/Tamper 含 audit，Command 不含 audit。本文件为数据驱动契约：冻结时按 decision-change-template 将 DEC-002 升至 >=1.0.0 并整体替换本文件；消费方（CT-03 Schema、BE-IOT-02 校验管线）只经 topic-tier.ts 访问，不得复制 Tier 判定。",
+  "tierVersion": "1.0.0",
+  "updatedAt": "2026-09-04T08:33:33Z",
+  "x-decision-versions": ["DEC-002@1.0.0"],
+  "status": "frozen",
+  "description": "DEC-002@1.0.0 Topic Tier 冻结策略：Telemetry、Report、Tamper 为 AUDITED，其余 Topic 为 STANDARD。",
   "tierPolicy": {
     "sourceRule": "具体 Payload 示例优先：Tier 以《Device-Cloud Communication Design》各类消息的 Payload 示例为事实源，不得由云端臆测添加或删除 audit。",
     "fallbackPolicy": "deny",
@@ -17,12 +17,12 @@
     "telemetry": {
       "tier": "AUDITED",
       "consumers": ["CT-03", "BE-IOT-02"],
-      "note": "暂定值明确：Telemetry 含 audit；示例信封 meta+audit+data。"
+      "note": "冻结值明确：Telemetry 含 audit；示例信封 meta+audit+data。"
     },
     "report": {
       "tier": "AUDITED",
       "consumers": ["CT-03", "BE-IOT-02"],
-      "note": "暂定值明确：ESG Report 含 audit；保留 audit.hash 与计算方法版本。"
+      "note": "冻结值明确：ESG Report 含 audit；保留 audit.hash 与计算方法版本。"
     },
     "alarm": { "tier": "STANDARD", "consumers": ["CT-03", "BE-IOT-02"], "note": "Payload 示例无 audit。" },
     "event": { "tier": "STANDARD", "consumers": ["CT-03", "BE-IOT-02"], "note": "Payload 示例无 audit。" },
@@ -30,16 +30,16 @@
     "tamper": {
       "tier": "AUDITED",
       "consumers": ["CT-03", "BE-IOT-02"],
-      "note": "暂定值明确：Tamper 含 audit；Tamper 使用 audit.hash 防篡改。"
+      "note": "冻结值明确：Tamper 含 audit；Tamper 使用 audit.hash 防篡改。"
     },
     "media": { "tier": "STANDARD", "consumers": ["CT-03", "BE-IOT-02"], "note": "Payload 示例无 audit。" },
     "cmd": {
       "tier": "STANDARD",
       "consumers": ["CT-03"],
-      "note": "暂定值明确：Command 不含 audit；下行消息以 meta.id 幂等（DEC-006）。"
+      "note": "冻结值明确：Command 不含 audit；下行消息以 meta.id 幂等（DEC-006）。"
     },
     "ota": { "tier": "STANDARD", "consumers": ["CT-03"], "note": "下行 Payload 示例无 audit。" },
     "notification": { "tier": "STANDARD", "consumers": ["CT-03"], "note": "下行 Payload 示例无 audit。" }
   },
-  "frozenUpgradePath": "DEC-002 冻结时：按 decision-change-template 变更 DEC-002 至 >=1.0.0，整体替换本文件并提升 tierVersion；若 Tier 判定变化，需同步更新受影响 Schema 的 required/audit 字段与生成类型。"
+  "frozenUpgradePath": "Tier 变化必须提升 DEC-002 与 tierVersion，并同步受影响 Schema、生成类型、固件和 Ingestion。"
 }

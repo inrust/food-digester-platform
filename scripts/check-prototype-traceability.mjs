@@ -14,7 +14,7 @@
  *  R5 带 rejectCategory（realtime-stream/plaintext-password/mixed-status）的项必须为 Reject
  *     且不得携带实现任务来源（不进入实现任务）；
  *  R6 taskId / operationId / routeId 格式固定；
- *  R7 角色必须是已知 RBAC 角色（DEC-012 暂定矩阵）。
+ *  R7 角色必须是已知 RBAC 角色（DEC-012 冻结矩阵）。
  */
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';

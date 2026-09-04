@@ -17,7 +17,7 @@
  * - Configuration：resolveEffectiveConfiguration（设备定向优先，未来生效不下发）；无 → null；
  * - Operational Status：lifecycleStatus + operationalStatus + connectivity 派生 +
  *   syncIntervalSeconds（Active=300/Suspended=900 为设备契约；Maintenance 经 DEC-001
- *   行为矩阵注入，禁止复制暂定值）。
+ *   行为矩阵注入，禁止复制冻结值）。
  *
  * 版本/ETag：etag = 稳定域（assignment/device/license/deviceUsers/configuration/生命周期与
  * 同步节奏）规范 JSON 的 SHA-256；volatile 域（snapshotAt/connectivity/lastHeartbeatAt）不参与，
@@ -65,7 +65,7 @@ export interface DeviceSyncDeps {
   readonly client: DbClient;
   readonly now?: () => Date;
   /**
-   * DEC-001：Maintenance 状态同步节奏（秒）。消费方禁止直接读矩阵 JSON 或复制暂定值，
+   * DEC-001：Maintenance 状态同步节奏（秒）。消费方禁止直接读矩阵 JSON 或复制冻结值，
    * 组合根必须经 contracts/lifecycle/maintenance-behavior.ts 的
    * getMaintenanceSyncIntervalSeconds() 注入。
    */

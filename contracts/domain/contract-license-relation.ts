@@ -1,9 +1,9 @@
 /**
- * DEC-007 Contract 与 License 关系策略（暂定值的可执行扩展点）。
+ * DEC-007 Contract 与 License 关系策略（冻结策略）。
  *
  * 事实源：contracts/domain/contract-license-relation.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-007@0.2.0（status=pending，全部为定性规则，已可直接执行）。
+ * 决策追溯：DEC-007@1.0.0（status=frozen，全部为定性规则，已可直接执行）。
  *
  * 消费方：DB-01（Schema 基线）、BE-CON-01、BE-CON-02、BE-LIC-01、FE-17、DOM-03。
  */
@@ -41,12 +41,12 @@ export interface ContractLicenseRelationPolicy {
 }
 
 /**
- * 暂定值（DEC-007 v0.2.0，pending）：
+ * 冻结值（DEC-007 v1.0.0）：
  * Contract 管商业租期和设备关联；License 管设备能力授权；创建 Contract 不自动激活 License。
  */
 export const CONTRACT_LICENSE_RELATION: ContractLicenseRelationPolicy = {
-  policyVersion: '0.1.0',
-  status: 'provisional',
+  policyVersion: '1.0.0',
+  status: 'frozen',
   ownership: {
     contractScope: ['commercial-lease-term', 'device-association'],
     licenseScope: ['device-capability-authorization'],
@@ -65,8 +65,7 @@ export const CONTRACT_LICENSE_RELATION: ContractLicenseRelationPolicy = {
     note: 'Contract 状态与 License 状态独立展示：合约列表状态列不得直接显示 License 状态；License 授权摘要在合约详情中独立字段展示（getDeviceLicense.summary）。',
   },
   pendingParameters: [],
-  frozenUpgradePath:
-    'DEC-007 冻结时：按 decision-change-template 变更 DEC-007 至 >=1.0.0，status 改 frozen；暂定值未变化则仅改状态，若变化需重新评审 linkage/presentation 并同步 prototype-traceability.yaml 相关 basis。',
+  frozenUpgradePath: '职责或联动变化必须提升 DEC-007 与 policyVersion，并同步 DB、BE-CON、BE-LIC、前端和追溯矩阵。',
 } as const;
 
 /** Contract 职责集合。 */
@@ -101,7 +100,7 @@ export function isContractStatusIndependentOfLicense(): boolean {
   return CONTRACT_LICENSE_RELATION.presentation.contractStatusIndependentOfLicense;
 }
 
-/** 策略当前状态：provisional 表示 DEC-007 未冻结。 */
+/** 策略当前状态：frozen 表示 DEC-007 已冻结。 */
 export function getRelationPolicyStatus(): RelationPolicyStatus {
   return CONTRACT_LICENSE_RELATION.status;
 }

@@ -98,7 +98,7 @@ test('x-decision-versions 引用 DEC-002 且版本与决策登记一致', () => 
   }
 });
 
-test('暂定值：Telemetry/Report/Tamper 为 AUDITED，Command 及其余为 STANDARD', () => {
+test('冻结值：Telemetry/Report/Tamper 为 AUDITED，Command 及其余为 STANDARD', () => {
   assert.deepEqual(listTopicsByTier('AUDITED').sort(), ['report', 'tamper', 'telemetry']);
   assert.equal(topicRequiresAudit('telemetry'), true);
   assert.equal(topicRequiresAudit('report'), true);
@@ -173,5 +173,5 @@ test('登记覆盖全部 11 个 Topic 且 TS 常量与 topic-tier.json 完全一
     assert.deepEqual([...spec.consumers].sort(), [...json.consumers].sort(), t);
     assert.equal(spec.note, json.note, t);
   }
-  assert.equal(getTopicTierStatus(), 'provisional');
+  assert.equal(getTopicTierStatus(), 'frozen');
 });

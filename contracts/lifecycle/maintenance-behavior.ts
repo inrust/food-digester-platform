@@ -1,12 +1,12 @@
 /**
- * DEC-001 Maintenance 行为矩阵（暂定值的可执行扩展点）。
+ * DEC-001 Maintenance 行为矩阵（冻结策略）。
  *
  * 事实源：contracts/lifecycle/maintenance-behavior-matrix.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-001@0.2.0（status=pending，本矩阵为暂定实现，冻结后整体替换）。
+ * 决策追溯：DEC-001@1.0.0（status=frozen，本矩阵为冻结实现）。
  *
  * 消费方：DOM-01、BE-SYNC-01、BE-DEV-04、BE-CMD-01、BE-CMD-02。
- * 约束：消费方只能经本模块查询矩阵，禁止直接读取 JSON 字段或复制暂定值；
+ * 约束：消费方只能经本模块查询矩阵，禁止直接读取 JSON 字段或复制冻结值；
  * 未列出的行为一律失败关闭（fallbackPolicy=deny）。
  */
 
@@ -46,13 +46,13 @@ export interface MaintenanceBehaviorMatrix {
 }
 
 /**
- * 暂定值（DEC-001 v0.2.0，pending）：
+ * 冻结值（DEC-001 v1.0.0）：
  * MAINTENANCE 为独立 Operational 状态；行为限制暂按 Suspended，
  * 但允许维护、同步、遥测、告警和 OTA。
  */
 export const MAINTENANCE_BEHAVIOR_MATRIX: MaintenanceBehaviorMatrix = {
-  matrixVersion: '0.1.0',
-  status: 'provisional',
+  matrixVersion: '1.0.0',
+  status: 'frozen',
   fallbackPolicy: 'deny',
   commandPolicy: {
     mode: 'same-as-suspended',
@@ -89,7 +89,7 @@ export const MAINTENANCE_BEHAVIOR_MATRIX: MaintenanceBehaviorMatrix = {
     OTA: {
       allowed: true,
       consumers: ['DOM-01', 'BE-CMD-01'],
-      note: '允许 OTA 下发与状态接收（暂定值明确允许，区别于 Suspended 的处理启动限制）；仍需 OTA Entitlement 与 Campaign 目标校验。',
+      note: '允许 OTA 下发与状态接收（冻结值明确允许，区别于 Suspended 的处理启动限制）；仍需 OTA Entitlement 与 Campaign 目标校验。',
     },
     RETIREMENT: {
       allowed: true,
@@ -97,8 +97,7 @@ export const MAINTENANCE_BEHAVIOR_MATRIX: MaintenanceBehaviorMatrix = {
       note: 'Maintenance 不阻塞退役工作流；退役顺序（撤销授权→通知→设备确认→证书停用）不变。',
     },
   },
-  frozenUpgradePath:
-    'DEC-001 冻结时：按 decision-change-template 变更 DEC-001 至 >=1.0.0，整体替换本文件并提升 matrixVersion；消费方仅通过 maintenance-behavior.ts 访问，不直接读字段，确保暂定值可迁移。',
+  frozenUpgradePath: '行为矩阵变化必须提升 DEC-001 与 matrixVersion，并同步命令目录、消费者和设备兼容测试。',
 } as const;
 
 export class MaintenanceMatrixError extends Error {
@@ -154,7 +153,7 @@ export function maintenanceCommandDenyReason(command: string): string | null {
   return commandDenyReason(command, 'MAINTENANCE');
 }
 
-/** 矩阵当前状态：provisional 表示 DEC-001 未冻结，消费方不得把值固化为不可迁移结构。 */
+/** 矩阵当前状态：frozen 表示 DEC-001 已冻结，消费方不得把值固化为不可迁移结构。 */
 export function getMaintenanceMatrixStatus(): MatrixStatus {
   return MAINTENANCE_BEHAVIOR_MATRIX.status;
 }

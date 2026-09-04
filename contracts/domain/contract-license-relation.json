@@ -1,9 +1,9 @@
 {
-  "policyVersion": "0.1.0",
-  "updatedAt": "2026-08-26T08:41:53Z",
-  "x-decision-versions": ["DEC-007@0.2.0"],
-  "status": "provisional",
-  "description": "DEC-007 Contract 与 License 关系策略（暂定值的可执行扩展点）。暂定值：Contract 管商业租期和设备关联；License 管设备能力授权；创建 Contract 不自动激活 License。全部为定性规则，已可直接执行：职责划分锁定、联动规则锁定（创建不激活、解绑不撤销、状态独立展示）。冻结时按 decision-change-template 将 DEC-007 升至 >=1.0.0；暂定值若变化需评审联动矩阵并同步 DB-01 Schema 与 BE-CON/BE-LIC API 契约。",
+  "policyVersion": "1.0.0",
+  "updatedAt": "2026-09-04T08:33:33Z",
+  "x-decision-versions": ["DEC-007@1.0.0"],
+  "status": "frozen",
+  "description": "DEC-007@1.0.0 冻结策略：Contract 与 License 职责、状态机和展示独立，创建与解绑不产生 License 自动联动。",
   "ownership": {
     "contractScope": ["commercial-lease-term", "device-association"],
     "licenseScope": ["device-capability-authorization"],
@@ -22,5 +22,5 @@
     "note": "Contract 状态与 License 状态独立展示：合约列表状态列不得直接显示 License 状态；License 授权摘要在合约详情中独立字段展示（getDeviceLicense.summary）。"
   },
   "pendingParameters": [],
-  "frozenUpgradePath": "DEC-007 冻结时：按 decision-change-template 变更 DEC-007 至 >=1.0.0，status 改 frozen；暂定值未变化则仅改状态，若变化需重新评审 linkage/presentation 并同步 prototype-traceability.yaml 相关 basis。"
+  "frozenUpgradePath": "职责或联动变化必须提升 DEC-007 与 policyVersion，并同步 DB、BE-CON、BE-LIC、前端和追溯矩阵。"
 }

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hiddenjoya.local/contracts/media/media-retention-policy.schema.json",
   "title": "Media Retention Policy",
-  "description": "DEC-005 Media 文件与元数据保留期的结构契约。retentionDays/expiryAction 为待冻结参数：provisional 状态必须为 null，frozen 状态必须填入。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "description": "DEC-005 Media 文件与元数据保留期的结构契约。retentionDays/expiryAction 已冻结；兼容性分支仍约束 provisional 状态必须为 null、frozen 状态必须填入。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
   "type": "object",
   "required": [
     "policyVersion",
@@ -54,19 +54,19 @@
       "additionalProperties": false,
       "properties": {
         "metadataRetentionDays": {
-          "type": ["integer", "null"],
-          "minimum": 1,
-          "description": "DEC-005 待冻结参数：RDS 元数据保留天数。provisional 为 null。"
+          "type": "integer",
+          "enum": [365],
+          "description": "DEC-005@1.0.0：RDS 元数据保留 365 天。"
         },
         "fileRetentionDays": {
-          "type": ["integer", "null"],
-          "minimum": 1,
-          "description": "DEC-005 待冻结参数：S3 文件保留天数。provisional 为 null。"
+          "type": "integer",
+          "enum": [90],
+          "description": "DEC-005@1.0.0：S3 文件保留 90 天。"
         },
         "expiryAction": {
-          "type": ["string", "null"],
-          "enum": ["delete", "archive", "delete-file-keep-metadata", null],
-          "description": "DEC-005 待冻结参数：到期处置行为。provisional 为 null。"
+          "type": "string",
+          "enum": ["delete-file-keep-metadata"],
+          "description": "DEC-005@1.0.0：文件到期删除，元数据继续保留。"
         },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }

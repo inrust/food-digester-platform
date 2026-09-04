@@ -12,13 +12,13 @@ import {
   UnknownConsumableTypeError,
   getConsumableDataSource,
   getConsumableDisplayName,
+  getConsumableStaleAfterHours,
   getConsumableThreshold,
   getConsumableTypeCodes,
   getConsumablesPolicyStatus,
   isCloudPercentageDerivationAllowed,
   isKnownConsumableType,
 } from './consumables-policy.ts';
-import { PolicyParameterPendingError } from '../security/certificate-package-policy.ts';
 import { SchemaRegistry, validate } from '../mqtt/validator.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -66,6 +66,12 @@ test('负向结构：数据来源篡改与缺失字段被 Schema 拒绝', () => 
     }),
     [],
   );
+  assert.ok(
+    run((m) => {
+      const d = m.display as Record<string, Record<string, unknown>>;
+      d.thresholds.CARBON_FILTER = 10;
+    }).some((e) => e.path === 'display.thresholds.CARBON_FILTER' && e.keyword === 'enum'),
+  );
   // 缺字段与额外字段被拒绝
   assert.ok(
     run((m) => {
@@ -94,7 +100,7 @@ test('x-decision-versions 引用 DEC-008 且版本与决策登记一致；protot
   }
 });
 
-test('暂定值定性规则可执行：封闭类型集合、仅设备上报、禁云端臆测', () => {
+test('冻结值定性规则可执行：封闭类型集合、仅设备上报、禁云端臆测', () => {
   assert.deepEqual(getConsumableTypeCodes(), ['CARBON_FILTER', 'BIO_ADDITIVE']);
   assert.equal(isKnownConsumableType('CARBON_FILTER'), true);
   assert.equal(isKnownConsumableType('BIO_ADDITIVE'), true);
@@ -103,19 +109,12 @@ test('暂定值定性规则可执行：封闭类型集合、仅设备上报、�
   assert.equal(isCloudPercentageDerivationAllowed(), false);
 });
 
-test('待冻结参数失败关闭：正式名称与阈值禁止臆测', () => {
-  for (const code of ['CARBON_FILTER', 'BIO_ADDITIVE'] as const) {
-    assert.equal(CONSUMABLES_POLICY.display.names[code], null);
-    assert.equal(CONSUMABLES_POLICY.display.thresholds[code], null);
-    assert.throws(
-      () => getConsumableDisplayName(code),
-      (e: unknown) => e instanceof PolicyParameterPendingError,
-    );
-    assert.throws(
-      () => getConsumableThreshold(code),
-      (e: unknown) => e instanceof PolicyParameterPendingError,
-    );
-  }
+test('冻结参数可执行：正式名称、阈值和 24 小时过期规则', () => {
+  assert.equal(getConsumableDisplayName('CARBON_FILTER'), '碳滤网');
+  assert.equal(getConsumableDisplayName('BIO_ADDITIVE'), '生物添加剂');
+  assert.equal(getConsumableThreshold('CARBON_FILTER'), 20);
+  assert.equal(getConsumableThreshold('BIO_ADDITIVE'), 15);
+  assert.equal(getConsumableStaleAfterHours(), 24);
   // 未知类型优先失败关闭
   assert.throws(
     () => getConsumableDisplayName('FILTER'),
@@ -125,17 +124,17 @@ test('待冻结参数失败关闭：正式名称与阈值禁止臆测', () => {
     () => getConsumableThreshold('FILTER'),
     (e: unknown) => e instanceof UnknownConsumableTypeError,
   );
-  assert.deepEqual([...CONSUMABLES_POLICY.pendingParameters].sort(), [
-    'display.names.BIO_ADDITIVE',
-    'display.names.CARBON_FILTER',
-    'display.thresholds.BIO_ADDITIVE',
-    'display.thresholds.CARBON_FILTER',
-  ]);
+  assert.deepEqual(CONSUMABLES_POLICY.pendingParameters, []);
 });
 
 test('策略消费者均为合法任务 ID 且覆盖 DEC-008 阻塞任务', () => {
   const consumers = new Set<string>();
-  for (const s of [CONSUMABLES_POLICY.types, CONSUMABLES_POLICY.dataSource, CONSUMABLES_POLICY.display]) {
+  for (const s of [
+    CONSUMABLES_POLICY.types,
+    CONSUMABLES_POLICY.dataSource,
+    CONSUMABLES_POLICY.display,
+    CONSUMABLES_POLICY.freshness,
+  ]) {
     assert.ok(s.note.length > 0, '缺少 note');
     assert.ok(s.consumers.length > 0, '缺少 consumers');
     for (const c of s.consumers) {
@@ -163,7 +162,10 @@ test('TS 常量与 consumables-policy.json 完全一致', () => {
   assert.deepEqual(policyJson.display.thresholds, CONSUMABLES_POLICY.display.thresholds);
   assert.equal(policyJson.display.note, CONSUMABLES_POLICY.display.note);
   assert.deepEqual(policyJson.display.consumers, [...CONSUMABLES_POLICY.display.consumers]);
+  assert.equal(policyJson.freshness.staleAfterHours, CONSUMABLES_POLICY.freshness.staleAfterHours);
+  assert.equal(policyJson.freshness.note, CONSUMABLES_POLICY.freshness.note);
+  assert.deepEqual(policyJson.freshness.consumers, [...CONSUMABLES_POLICY.freshness.consumers]);
   assert.deepEqual(policyJson.pendingParameters, [...CONSUMABLES_POLICY.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, CONSUMABLES_POLICY.frozenUpgradePath);
-  assert.equal(getConsumablesPolicyStatus(), 'provisional');
+  assert.equal(getConsumablesPolicyStatus(), 'frozen');
 });

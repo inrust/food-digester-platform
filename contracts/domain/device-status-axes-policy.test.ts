@@ -18,7 +18,6 @@ import {
   isKnownStatusAxis,
   isSingleFieldStatusMixingForbidden,
 } from './device-status-axes-policy.ts';
-import { PolicyParameterPendingError } from '../security/certificate-package-policy.ts';
 import { SchemaRegistry, validate } from '../mqtt/validator.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -61,12 +60,18 @@ test('负向结构：单字段混用、独立存储"启用"与缺失字段被 Sc
       (m.enabledDisplay as Record<string, unknown>).derived = false;
     }).some((e) => e.path === 'enabledDisplay.derived' && e.keyword === 'enum'),
   );
-  // 冻结参数允许填入（frozen 后合法）
+  // 冻结规则保持合法，漂移被拒绝
   assert.deepEqual(
     run((m) => {
-      (m.enabledDisplay as Record<string, unknown>).rule = 'lifecycle=ACTIVE && license=VALID';
+      (m.enabledDisplay as Record<string, unknown>).rule =
+        'lifecycle=Active AND license IN (Active, ExpiringSoon, Renewed)';
     }),
     [],
+  );
+  assert.ok(
+    run((m) => {
+      (m.enabledDisplay as Record<string, unknown>).rule = 'lifecycle=Active';
+    }).some((e) => e.path === 'enabledDisplay.rule' && e.keyword === 'enum'),
   );
   // 缺字段与额外字段被拒绝
   assert.ok(
@@ -96,7 +101,7 @@ test('x-decision-versions 引用 DEC-010 且版本与决策登记一致；protot
   }
 });
 
-test('暂定值定性规则可执行：四轴分离、禁单字段混用、派生原则', () => {
+test('冻结值定性规则可执行：四轴分离、禁单字段混用、派生原则', () => {
   assert.deepEqual(getDeviceStatusAxes(), ['connectivity', 'lifecycle', 'operational', 'license']);
   assert.equal(isKnownStatusAxis('connectivity'), true);
   assert.equal(isKnownStatusAxis('enabled'), false);
@@ -105,17 +110,10 @@ test('暂定值定性规则可执行：四轴分离、禁单字段混用、派�
   assert.equal(isEnabledStoredAsField(), false);
 });
 
-test('待冻结参数失败关闭：派生规则禁止臆测', () => {
-  assert.equal(DEVICE_STATUS_AXES_POLICY.enabledDisplay.rule, null);
-  assert.throws(
-    () => getEnabledDerivationRule(),
-    (e: unknown) =>
-      e instanceof PolicyParameterPendingError &&
-      (e as PolicyParameterPendingError).parameter === 'enabledDisplay.rule',
-  );
-  // 冻结前禁止输出 enabled 字段
-  assert.equal(isEnabledDisplayAvailable(), false);
-  assert.deepEqual([...DEVICE_STATUS_AXES_POLICY.pendingParameters], ['enabledDisplay.rule']);
+test('冻结参数可执行：启用由 Active 生命周期和有效 License 派生', () => {
+  assert.equal(getEnabledDerivationRule(), 'lifecycle=Active AND license IN (Active, ExpiringSoon, Renewed)');
+  assert.equal(isEnabledDisplayAvailable(), true);
+  assert.deepEqual(DEVICE_STATUS_AXES_POLICY.pendingParameters, []);
 });
 
 test('策略消费者均为合法任务 ID 且覆盖 DEC-010 阻塞任务与关联任务', () => {
@@ -150,5 +148,5 @@ test('TS 常量与 device-status-axes-policy.json 完全一致', () => {
   assert.deepEqual(policyJson.enabledDisplay.consumers, [...DEVICE_STATUS_AXES_POLICY.enabledDisplay.consumers]);
   assert.deepEqual(policyJson.pendingParameters, [...DEVICE_STATUS_AXES_POLICY.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, DEVICE_STATUS_AXES_POLICY.frozenUpgradePath);
-  assert.equal(getStatusAxesPolicyStatus(), 'provisional');
+  assert.equal(getStatusAxesPolicyStatus(), 'frozen');
 });

@@ -17,7 +17,6 @@ import {
   getRetentionPolicyStatus,
   isAutomaticExpiryEnabled,
 } from './media-retention-policy.ts';
-import { PolicyParameterPendingError } from '../security/certificate-package-policy.ts';
 import { SchemaRegistry, validate } from '../mqtt/validator.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -63,17 +62,16 @@ test('负向结构：存储位置篡改、非法处置行为与缺失字段被 S
   assert.ok(
     run((m) => {
       (m.retention as Record<string, unknown>).fileRetentionDays = 0;
-    }).some((e) => e.path === 'retention.fileRetentionDays' && e.keyword === 'minimum'),
+    }).some((e) => e.path === 'retention.fileRetentionDays' && e.keyword === 'enum'),
   );
-  // 冻结参数允许填入（frozen 后合法）
-  assert.deepEqual(
+  // 冻结参数漂移被拒绝
+  assert.ok(
     run((m) => {
       const r = m.retention as Record<string, unknown>;
-      r.metadataRetentionDays = 365;
-      r.fileRetentionDays = 90;
+      r.metadataRetentionDays = 180;
+      r.fileRetentionDays = 30;
       r.expiryAction = 'delete';
-    }),
-    [],
+    }).some((e) => e.keyword === 'enum'),
   );
   // 缺字段与额外字段被拒绝
   assert.ok(
@@ -99,35 +97,21 @@ test('x-decision-versions 引用 DEC-005 且版本与决策登记一致', () => 
   }
 });
 
-test('暂定值定性规则可执行：RDS 元数据 / S3 文件分离', () => {
+test('冻结值定性规则可执行：RDS 元数据 / S3 文件分离', () => {
   assert.equal(getMetadataStore(), 'rds');
   assert.equal(getFileStore(), 's3');
 });
 
-test('待冻结参数失败关闭：禁止臆测保留期与处置行为', () => {
+test('冻结参数可执行：元数据 365 天、文件 90 天且删除文件保留元数据', () => {
   const r = MEDIA_RETENTION_POLICY.retention;
-  assert.equal(r.metadataRetentionDays, null);
-  assert.equal(r.fileRetentionDays, null);
-  assert.equal(r.expiryAction, null);
-  const pendingCases: Array<[() => unknown, string]> = [
-    [getMetadataRetentionDays, 'retention.metadataRetentionDays'],
-    [getFileRetentionDays, 'retention.fileRetentionDays'],
-    [getExpiryAction, 'retention.expiryAction'],
-  ];
-  for (const [fn, param] of pendingCases) {
-    assert.throws(
-      fn,
-      (e: unknown) =>
-        e instanceof PolicyParameterPendingError && (e as PolicyParameterPendingError).parameter === param,
-    );
-  }
-  // 冻结前禁止任何自动过期/删除
-  assert.equal(isAutomaticExpiryEnabled(), false);
-  assert.deepEqual([...MEDIA_RETENTION_POLICY.pendingParameters].sort(), [
-    'retention.expiryAction',
-    'retention.fileRetentionDays',
-    'retention.metadataRetentionDays',
-  ]);
+  assert.equal(r.metadataRetentionDays, 365);
+  assert.equal(r.fileRetentionDays, 90);
+  assert.equal(r.expiryAction, 'delete-file-keep-metadata');
+  assert.equal(getMetadataRetentionDays(), 365);
+  assert.equal(getFileRetentionDays(), 90);
+  assert.equal(getExpiryAction(), 'delete-file-keep-metadata');
+  assert.equal(isAutomaticExpiryEnabled(), true);
+  assert.deepEqual(MEDIA_RETENTION_POLICY.pendingParameters, []);
 });
 
 test('策略消费者均为合法任务 ID 且覆盖 DEC-005 阻塞任务与关联任务', () => {
@@ -161,5 +145,5 @@ test('TS 常量与 media-retention-policy.json 完全一致', () => {
   assert.deepEqual(policyJson.retention.consumers, [...MEDIA_RETENTION_POLICY.retention.consumers]);
   assert.deepEqual(policyJson.pendingParameters, [...MEDIA_RETENTION_POLICY.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, MEDIA_RETENTION_POLICY.frozenUpgradePath);
-  assert.equal(getRetentionPolicyStatus(), 'provisional');
+  assert.equal(getRetentionPolicyStatus(), 'frozen');
 });

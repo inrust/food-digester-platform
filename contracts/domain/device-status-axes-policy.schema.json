@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hiddenjoya.local/contracts/domain/device-status-axes-policy.schema.json",
   "title": "Device Status Axes Policy",
-  "description": "DEC-010 原型设备状态映射策略的结构契约。enabledDisplay.rule 为待冻结参数：provisional 状态必须为 null，frozen 状态必须填入。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "description": "DEC-010 原型设备状态映射策略的结构契约。enabledDisplay.rule 已冻结；兼容性分支仍约束 provisional 状态必须为 null、frozen 状态必须填入。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
   "type": "object",
   "required": [
     "policyVersion",
@@ -64,9 +64,9 @@
           "description": "\"启用\"不得作为独立存储字段，锁定为 false。"
         },
         "rule": {
-          "type": ["string", "null"],
-          "minLength": 1,
-          "description": "DEC-010 待冻结参数：\"启用\"的具体派生规则。provisional 为 null。"
+          "type": "string",
+          "enum": ["lifecycle=Active AND license IN (Active, ExpiringSoon, Renewed)"],
+          "description": "DEC-010@1.0.0 冻结的启用派生规则。"
         },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }

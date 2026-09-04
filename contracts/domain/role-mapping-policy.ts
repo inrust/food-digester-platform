@@ -1,9 +1,9 @@
 /**
- * DEC-012 原型角色映射策略（暂定值的可执行扩展点）。
+ * DEC-012 原型角色映射策略（冻结策略）。
  *
  * 事实源：contracts/domain/role-mapping-policy.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-012@0.2.0（status=pending，全部为定性规则，已可直接执行）。
+ * 决策追溯：DEC-012@1.0.0（status=frozen，全部为定性规则，已可直接执行）。
  *
  * 消费方：AUTH-01（登录/鉴权）、BE-RBAC-01（RBAC）、FE-01（布局/导航）、FE-16（角色管理）。
  */
@@ -46,13 +46,13 @@ export interface RoleMappingPolicy {
 }
 
 /**
- * 暂定值（DEC-012 v0.2.0，pending）：
+ * 冻结值（DEC-012 v1.0.0）：
  * 平台管理员→PlatformSuperAdmin；原型"运维人员"→PlatformOperator（界面名"设备操作员"），
  * 且不授予 AWS 资源权限；V1 权限矩阵固定，原型权限复选框只读。
  */
 export const ROLE_MAPPING_POLICY: RoleMappingPolicy = {
-  policyVersion: '0.1.0',
-  status: 'provisional',
+  policyVersion: '1.0.0',
+  status: 'frozen',
   roleMappings: {
     mappings: [
       { prototypeRole: '平台管理员', systemRole: 'PlatformSuperAdmin', uiName: '平台管理员' },
@@ -73,8 +73,7 @@ export const ROLE_MAPPING_POLICY: RoleMappingPolicy = {
     note: 'V1 权限矩阵固定，不支持后台自定义编辑；原型界面中的权限复选框渲染为只读，仅用于展示当前角色的固定权限点。',
   },
   pendingParameters: [],
-  frozenUpgradePath:
-    'DEC-012 冻结时：按 decision-change-template 变更 DEC-012 至 >=1.0.0，status 改 frozen；若权限矩阵或角色集合变化需同步 BE-RBAC-01 权限点表与 FE-16 角色管理界面。',
+  frozenUpgradePath: '角色集合或权限矩阵变化必须提升 DEC-012 与 policyVersion，并同步 RBAC、前端和审计。',
 } as const;
 
 /** 原型角色 → 系统角色映射。未知原型角色返回 null（失败关闭）。 */
@@ -114,7 +113,7 @@ export function arePrototypeCheckboxesReadonly(): boolean {
   return ROLE_MAPPING_POLICY.matrix.prototypeCheckboxesReadonly;
 }
 
-/** 策略当前状态：provisional 表示 DEC-012 未冻结。 */
+/** 策略当前状态：frozen 表示 DEC-012 已冻结。 */
 export function getRoleMappingPolicyStatus(): RoleMappingPolicyStatus {
   return ROLE_MAPPING_POLICY.status;
 }

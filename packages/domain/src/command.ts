@@ -2,7 +2,7 @@
  * DOM-02 扩展：远程命令创建与授权决策（BE-CMD-01）+ ACK/Timeout 状态机（BE-CMD-03）。
  *
  * 事实源：contracts/mqtt/command-catalog.json（CT-04，catalogVersion 1.0.1，22 个命令白名单；
- * allowedStatuses 基于设备 Operational 状态；MAINTENANCE 暂按 Suspended 限制——DEC-001 暂定映射
+ * allowedStatuses 基于设备 Operational 状态；MAINTENANCE 按 Suspended 限制——DEC-001 冻结映射
  * 已内嵌于目录）。契约目录不被 packages 引用（同耗材先例），此处复制常量并由
  * packages/domain/test/command.test.ts 与契约目录做一致性校验。
  * ACK 语义事实源：contracts/mqtt/schemas/ack.schema.json（result: SUCCESS|FAILED，字段级弱必填）

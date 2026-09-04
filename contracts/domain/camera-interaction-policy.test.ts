@@ -85,7 +85,7 @@ test('x-decision-versions 引用 DEC-009 且版本与决策登记一致；protot
   }
 });
 
-test('暂定值定性规则可执行：仅最新授权 Media、手动刷新、禁实时流', () => {
+test('冻结值定性规则可执行：仅最新授权 Media、手动刷新、禁实时流', () => {
   assert.equal(getCameraViewingScope(), 'latest-authorized-media-only');
   assert.equal(getCameraRefreshMode(), 'manual-only');
   assert.equal(isCameraAutoRefreshAllowed(), false);
@@ -126,5 +126,5 @@ test('TS 常量与 camera-interaction-policy.json 完全一致', () => {
   assert.deepEqual(policyJson.liveStreaming.consumers, [...CAMERA_INTERACTION_POLICY.liveStreaming.consumers]);
   assert.deepEqual(policyJson.pendingParameters, [...CAMERA_INTERACTION_POLICY.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, CAMERA_INTERACTION_POLICY.frozenUpgradePath);
-  assert.equal(getCameraPolicyStatus(), 'provisional');
+  assert.equal(getCameraPolicyStatus(), 'frozen');
 });

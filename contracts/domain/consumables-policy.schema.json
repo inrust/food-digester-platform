@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hiddenjoya.local/contracts/domain/consumables-policy.schema.json",
   "title": "Consumables Policy",
-  "description": "DEC-008 耗材正式名称、数据来源与阈值的结构契约。display.names/thresholds 为待冻结参数：provisional 状态必须为 null，frozen 状态必须填入。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "description": "DEC-008 耗材正式名称、数据来源与阈值的结构契约。display.names/thresholds 已冻结；兼容性分支仍约束 provisional 状态必须为 null、frozen 状态必须填入。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
   "type": "object",
   "required": [
     "policyVersion",
@@ -13,6 +13,7 @@
     "types",
     "dataSource",
     "display",
+    "freshness",
     "pendingParameters",
     "frozenUpgradePath"
   ],
@@ -68,8 +69,34 @@
       "required": ["names", "thresholds", "consumers", "note"],
       "additionalProperties": false,
       "properties": {
-        "names": { "type": "object", "description": "各类型正式展示名称。值为 string 或 null（待冻结）。" },
-        "thresholds": { "type": "object", "description": "各类型展示/告警阈值。值为 integer 或 null（待冻结）。" },
+        "names": {
+          "type": "object",
+          "required": ["CARBON_FILTER", "BIO_ADDITIVE"],
+          "additionalProperties": false,
+          "properties": {
+            "CARBON_FILTER": { "type": "string", "enum": ["碳滤网"] },
+            "BIO_ADDITIVE": { "type": "string", "enum": ["生物添加剂"] }
+          }
+        },
+        "thresholds": {
+          "type": "object",
+          "required": ["CARBON_FILTER", "BIO_ADDITIVE"],
+          "additionalProperties": false,
+          "properties": {
+            "CARBON_FILTER": { "type": "integer", "enum": [20] },
+            "BIO_ADDITIVE": { "type": "integer", "enum": [15] }
+          }
+        },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "required": ["staleAfterHours", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "staleAfterHours": { "type": "integer", "enum": [24], "description": "DEC-008@1.0.0：24 小时后过期。" },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }
       }

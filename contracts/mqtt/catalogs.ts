@@ -3,7 +3,7 @@
  *
  * 事实源：contracts/mqtt/notification-catalog.json 与 command-catalog.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-001@0.2.0（MAINTENANCE 暂定按 Suspended 限制）。
+ * 决策追溯：DEC-001@1.0.0（MAINTENANCE 按 Suspended 限制）。
  *
  * 功能边界：不实现 MQTT 发布或设备动作。
  */
@@ -72,7 +72,7 @@ export const NOTIFICATION_CATALOG: Readonly<Record<NotificationType, Notificatio
 
 export type CommandCategory = 'MACHINE' | 'MOTOR' | 'HEATING' | 'VENTILATION' | 'DISCHARGE' | 'DEVICE';
 
-/** 设备 Operational 状态。MAINTENANCE 为 DEC-001 暂定值（暂按 Suspended 限制）。 */
+/** 设备 Operational 状态。MAINTENANCE 为 DEC-001 冻结值（按 Suspended 限制）。 */
 export type OperationalStatus = 'ACTIVE' | 'MAINTENANCE' | 'SUSPENDED' | 'RETIRED';
 
 export type CommandCode =

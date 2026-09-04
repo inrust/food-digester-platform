@@ -1,13 +1,12 @@
 /**
- * DEC-010 原型设备状态映射策略（暂定值的可执行扩展点）。
+ * DEC-010 原型设备状态映射策略（冻结策略）。
  *
  * 事实源：contracts/domain/device-status-axes-policy.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-010@0.2.0（status=pending，本策略为暂定实现，冻结后整体替换）。
+ * 决策追溯：DEC-010@1.0.0（status=frozen，本策略为冻结实现）。
  *
  * 消费方：DB-01、DOM-01、DOM-03、BE-DEV-01、BE-DEV-05、FE-03、FE-06。
- * 约束：四轴分离与派生原则可直接执行；"启用"的具体派生规则（enabledDisplay.rule）
- * 是 DEC-010 待冻结内容，读取时失败关闭（抛 PolicyParameterPendingError）。
+ * DEC-010@1.0.0 已冻结四轴分离和 "启用" 派生规则。
  */
 
 import { PolicyParameterPendingError } from '../security/certificate-package-policy.ts';
@@ -31,7 +30,7 @@ export interface DeviceStatusAxesPolicy {
     readonly derived: true;
     /** "启用"不得作为独立存储字段，锁定为 false。 */
     readonly storedAsField: false;
-    /** DEC-010 待冻结参数；provisional 为 null。 */
+    /** 冻结的启用派生规则；类型保留 null 供未来 provisional 版本失败关闭。 */
     readonly rule: string | null;
     readonly consumers: readonly string[];
     readonly note: string;
@@ -41,12 +40,11 @@ export interface DeviceStatusAxesPolicy {
 }
 
 /**
- * 暂定值（DEC-010 v0.2.0，pending）：
- * connectivity、lifecycle、operational、license 四轴分离；"启用"由明确业务规则派生。
+ * DEC-010@1.0.0 冻结值。
  */
 export const DEVICE_STATUS_AXES_POLICY: DeviceStatusAxesPolicy = {
-  policyVersion: '0.1.0',
-  status: 'provisional',
+  policyVersion: '1.0.0',
+  status: 'frozen',
   axes: {
     list: ['connectivity', 'lifecycle', 'operational', 'license'],
     singleFieldMixing: false,
@@ -56,13 +54,12 @@ export const DEVICE_STATUS_AXES_POLICY: DeviceStatusAxesPolicy = {
   enabledDisplay: {
     derived: true,
     storedAsField: false,
-    rule: null,
+    rule: 'lifecycle=Active AND license IN (Active, ExpiringSoon, Renewed)',
     consumers: ['BE-DEV-01', 'FE-03', 'FE-06'],
-    note: '"启用"展示值必须由明确业务规则从四轴派生，不得作为独立字段存储。DEC-010 待冻结参数：rule（具体派生规则，如 lifecycle=ACTIVE 且 license 有效），当前 null；冻结前 API/页面不得输出 enabled 字段或"启用"文案。',
+    note: '启用仅在 lifecycle=Active 且存在有效 License（Active、ExpiringSoon 或 Renewed）时为 true；connectivity 与 operational 不影响启用值。该值只派生展示，不落库。',
   },
-  pendingParameters: ['enabledDisplay.rule'],
-  frozenUpgradePath:
-    'DEC-010 冻结时：按 decision-change-template 变更 DEC-010 至 >=1.0.0，填入 enabledDisplay.rule 的明确派生规则并提升 policyVersion、status 改 frozen；规则变更需同步 FE-03/FE-06 展示与 BE-DEV-01 查询契约。',
+  pendingParameters: [],
+  frozenUpgradePath: '派生规则或状态轴变化必须提升 DEC-010 与 policyVersion，并同步 BE-DEV-01、FE-03、FE-06。',
 } as const;
 
 /** 设备状态轴封闭集合（四轴）。 */
@@ -90,19 +87,19 @@ export function isEnabledStoredAsField(): boolean {
   return DEVICE_STATUS_AXES_POLICY.enabledDisplay.storedAsField;
 }
 
-/** "启用"的具体派生规则。DEC-010 冻结前调用抛 PolicyParameterPendingError。 */
+/** "启用"的具体派生规则；参数缺失时失败关闭。 */
 export function getEnabledDerivationRule(): string {
   const rule = DEVICE_STATUS_AXES_POLICY.enabledDisplay.rule;
   if (rule === null) throw new PolicyParameterPendingError('enabledDisplay.rule');
   return rule;
 }
 
-/** 冻结前是否允许输出 enabled 字段或"启用"文案：恒为 false（规则未冻结）。 */
+/** 冻结规则齐备时允许输出派生的 enabled 字段或"启用"文案。 */
 export function isEnabledDisplayAvailable(): boolean {
   return DEVICE_STATUS_AXES_POLICY.enabledDisplay.rule !== null;
 }
 
-/** 策略当前状态：provisional 表示 DEC-010 未冻结。 */
+/** 策略当前状态：frozen 表示 DEC-010 已冻结。 */
 export function getStatusAxesPolicyStatus(): StatusAxesPolicyStatus {
   return DEVICE_STATUS_AXES_POLICY.status;
 }

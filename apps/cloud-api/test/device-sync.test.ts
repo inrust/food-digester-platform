@@ -25,7 +25,7 @@ const now = () => NOW;
 const DAY_MS = 86_400_000;
 const DEVICE_USER_PHC =
   '$argon2id$v=19$m=32768,t=3,p=1$AAECAwQFBgcICQoLDA0ODw$u+TOcl2LGub4w/cLIdrGdoG/cbU//EuAXDXm+qRHfqs';
-/** DEC-001 暂定值（组合根经 getMaintenanceSyncIntervalSeconds() 注入，测试直接给值）。 */
+/** DEC-001 冻结值（组合根经 getMaintenanceSyncIntervalSeconds() 注入，测试直接给值）。 */
 const MAINTENANCE_SYNC_SECONDS = 900;
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];

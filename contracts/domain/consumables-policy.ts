@@ -1,13 +1,12 @@
 /**
- * DEC-008 耗材正式名称、数据来源与阈值策略（暂定值的可执行扩展点）。
+ * DEC-008 耗材正式名称、数据来源与阈值策略（冻结策略）。
  *
  * 事实源：contracts/domain/consumables-policy.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-008@0.2.0（status=pending，本策略为暂定实现，冻结后整体替换）。
+ * 决策追溯：DEC-008@1.0.0（status=frozen，本策略为冻结实现）。
  *
  * 消费方：DB-01（Schema 基线）、BE-IOT-05（耗材上报接入）、BE-CNS-01（耗材查询）、FE-18（耗材展示）。
- * 约束：类型代码与数据来源规则可直接执行；正式名称与展示阈值是 DEC-008
- * 待冻结内容，读取时失败关闭（抛 PolicyParameterPendingError）。
+ * DEC-008@1.0.0 已冻结正式名称、低余量阈值和 24 小时数据过期规则。
  */
 
 import { PolicyParameterPendingError } from '../security/certificate-package-policy.ts';
@@ -42,9 +41,14 @@ export interface ConsumablesPolicy {
     readonly note: string;
   };
   readonly display: {
-    /** DEC-008 待冻结参数；provisional 为 null。 */
+    /** 冻结的正式名称与低余量阈值；类型保留 null 供未来 provisional 版本失败关闭。 */
     readonly names: Readonly<Record<ConsumableTypeCode, string | null>>;
     readonly thresholds: Readonly<Record<ConsumableTypeCode, number | null>>;
+    readonly consumers: readonly string[];
+    readonly note: string;
+  };
+  readonly freshness: {
+    readonly staleAfterHours: number;
     readonly consumers: readonly string[];
     readonly note: string;
   };
@@ -53,16 +57,15 @@ export interface ConsumablesPolicy {
 }
 
 /**
- * 暂定值（DEC-008 v0.2.0，pending）：
- * 暂用 CARBON_FILTER、BIO_ADDITIVE；仅保存设备已定义上报值，不由云端臆测百分比。
+ * DEC-008@1.0.0 冻结值。
  */
 export const CONSUMABLES_POLICY: ConsumablesPolicy = {
-  policyVersion: '0.1.0',
-  status: 'provisional',
+  policyVersion: '1.0.0',
+  status: 'frozen',
   types: {
     codes: ['CARBON_FILTER', 'BIO_ADDITIVE'],
     consumers: ['DB-01', 'BE-IOT-05', 'BE-CNS-01', 'FE-18'],
-    note: '暂定耗材类型代码（封闭集合）。新增类型必须先走 DEC-008 冻结或版本升级，禁止代码中硬编码其他耗材类型。',
+    note: '冻结的耗材类型代码封闭集合。新增类型必须提升 DEC-008 与策略版本，禁止代码中硬编码其他耗材类型。',
   },
   dataSource: {
     mode: 'device-reported-only',
@@ -71,19 +74,19 @@ export const CONSUMABLES_POLICY: ConsumablesPolicy = {
     note: '仅保存设备已定义上报值（原始值原样入库）；云端不得由上报值推算/臆测剩余百分比或寿命。设备未上报的维度在 API 与 UI 中显示为未知，不得填充估算值。',
   },
   display: {
-    names: { CARBON_FILTER: null, BIO_ADDITIVE: null },
-    thresholds: { CARBON_FILTER: null, BIO_ADDITIVE: null },
+    names: { CARBON_FILTER: '碳滤网', BIO_ADDITIVE: '生物添加剂' },
+    thresholds: { CARBON_FILTER: 20, BIO_ADDITIVE: 15 },
     consumers: ['FE-18', 'BE-CNS-01'],
-    note: 'DEC-008 待冻结参数：正式展示名称与展示/告警阈值。当前均为 null；FE-18 冻结前显示类型代码原文并标注待定，不得使用原型名称（碳包/活性菌等）。',
+    note: '正式名称与低余量阈值：碳滤网 20%，生物添加剂 15%。百分比必须来自设备上报，云端不推算。',
   },
-  pendingParameters: [
-    'display.names.CARBON_FILTER',
-    'display.names.BIO_ADDITIVE',
-    'display.thresholds.CARBON_FILTER',
-    'display.thresholds.BIO_ADDITIVE',
-  ],
+  freshness: {
+    staleAfterHours: 24,
+    consumers: ['BE-CNS-01', 'FE-18'],
+    note: 'observedAt 距查询时点超过 24 小时，或从未上报时，展示为数据过期/未知。',
+  },
+  pendingParameters: [],
   frozenUpgradePath:
-    'DEC-008 冻结时：按 decision-change-template 变更 DEC-008 至 >=1.0.0，填入正式名称与阈值并提升 policyVersion、status 改 frozen；若类型代码变更需同步 DB 枚举与 BE-IOT-05 校验。',
+    '名称、阈值、过期时间或类型代码变化必须提升 DEC-008 与 policyVersion，并同步 DB、接入校验、API 和前端。',
 } as const;
 
 /** 耗材类型代码封闭集合。 */
@@ -111,7 +114,7 @@ export function isCloudPercentageDerivationAllowed(): boolean {
   return CONSUMABLES_POLICY.dataSource.cloudDerivedPercentage;
 }
 
-/** 正式展示名称。未知类型抛 UnknownConsumableTypeError；DEC-008 冻结前抛 PolicyParameterPendingError。 */
+/** 正式展示名称。未知类型失败关闭；参数缺失时抛 PolicyParameterPendingError。 */
 export function getConsumableDisplayName(typeCode: string): string {
   const code = requireKnownType(typeCode);
   const name = CONSUMABLES_POLICY.display.names[code];
@@ -119,7 +122,7 @@ export function getConsumableDisplayName(typeCode: string): string {
   return name;
 }
 
-/** 展示/告警阈值。未知类型抛 UnknownConsumableTypeError；DEC-008 冻结前抛 PolicyParameterPendingError。 */
+/** 展示/告警阈值。未知类型失败关闭；参数缺失时抛 PolicyParameterPendingError。 */
 export function getConsumableThreshold(typeCode: string): number {
   const code = requireKnownType(typeCode);
   const threshold = CONSUMABLES_POLICY.display.thresholds[code];
@@ -127,7 +130,12 @@ export function getConsumableThreshold(typeCode: string): number {
   return threshold;
 }
 
-/** 策略当前状态：provisional 表示 DEC-008 未冻结。 */
+/** 设备上报值在多少小时后标记为过期。 */
+export function getConsumableStaleAfterHours(): number {
+  return CONSUMABLES_POLICY.freshness.staleAfterHours;
+}
+
+/** 策略当前状态：frozen 表示 DEC-008 已冻结。 */
 export function getConsumablesPolicyStatus(): ConsumablesPolicyStatus {
   return CONSUMABLES_POLICY.status;
 }

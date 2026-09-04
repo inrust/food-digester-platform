@@ -83,7 +83,7 @@ test('x-decision-versions 引用 DEC-006 且版本与决策登记一致', () => 
   }
 });
 
-test('暂定值可执行：V1 下行 seq 可选、上行必填、Command 以 meta.id 幂等', () => {
+test('冻结值可执行：V1 下行 seq 可选、上行必填、Command 以 meta.id 幂等', () => {
   assert.equal(isDownlinkMetaSeqRequired(), false);
   assert.equal(isUplinkMetaSeqRequired(), true);
   assert.equal(getCommandIdempotencyKey(), 'meta.id');
@@ -164,5 +164,5 @@ test('TS 常量与 downlink-policy.json 完全一致', () => {
   assert.deepEqual(policyJson.migration.consumers, [...DOWNLINK_POLICY.migration.consumers]);
   assert.deepEqual(policyJson.pendingParameters, [...DOWNLINK_POLICY.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, DOWNLINK_POLICY.frozenUpgradePath);
-  assert.equal(getDownlinkPolicyStatus(), 'provisional');
+  assert.equal(getDownlinkPolicyStatus(), 'frozen');
 });

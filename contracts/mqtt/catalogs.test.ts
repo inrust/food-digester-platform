@@ -152,12 +152,12 @@ test('Suspended 仅允许安全停止、诊断、同步和维护/恢复类命令
   }
 });
 
-test('MAINTENANCE 暂按 Suspended 限制（DEC-001）', () => {
+test('MAINTENANCE 按 Suspended 限制（DEC-001 冻结值）', () => {
   for (const code of ALL_COMMANDS) {
     assert.equal(
       isCommandAllowed(code, 'MAINTENANCE'),
       isCommandAllowed(code, 'SUSPENDED'),
-      `${code} 在 Maintenance 应与 Suspended 一致（暂定值）`,
+      `${code} 在 Maintenance 应与 Suspended 一致（冻结值）`,
     );
   }
 });

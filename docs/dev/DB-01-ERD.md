@@ -65,7 +65,7 @@ erDiagram
 
 ## 3. 状态机字段（初始枚举，迁移只能经领域服务）
 
-- Device.lifecycleStatus：`PendingOnboarding | Rejected | OnboardingApproved | Onboarded | Assigned | Licensed | Active | Maintenance | Suspended | Retired`（Maintenance 为 DEC-001 暂定独立状态）
+- Device.lifecycleStatus：`PendingOnboarding | Rejected | OnboardingApproved | Onboarded | Assigned | Licensed | Active | Maintenance | Suspended | Retired`（Maintenance 为 DEC-001 冻结的独立状态）
 - License.status：`Draft | Issued | Active | ExpiringSoon | Renewed | Expired | Revoked`
 - DeviceCommand.status：`CREATED | AUTHORIZED | PUBLISHED | ACKNOWLEDGED | SUCCEEDED | FAILED | TIMED_OUT | CANCELLED`
 - ConsumableRequest.status：`PENDING | PROCESSING | COMPLETED | CANCELLED`

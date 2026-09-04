@@ -1,7 +1,7 @@
 /**
  * BE-CNS-01 耗材投影领域规则（纯领域，无 IO）。
  *
- * 事实源：DEC-008（contracts/domain/consumables-policy.json，@0.2.0 pending）。
+ * 事实源：DEC-008（contracts/domain/consumables-policy.json，@1.0.0 frozen）。
  * - 类型代码封闭集合：CARBON_FILTER、BIO_ADDITIVE（与策略 JSON 的一致性由单测强制；
  *   冻结或新增类型必须走 DEC-008 决策变更并整体替换本常量）；
  * - 数据来源 device-reported-only：仅保存设备上报值；云端不得推算百分比/寿命；
@@ -14,7 +14,7 @@
 export const CONSUMABLE_TYPES = ['CARBON_FILTER', 'BIO_ADDITIVE'] as const;
 export type ConsumableType = (typeof CONSUMABLE_TYPES)[number];
 
-/** stale 派生阈值（暂定值：observedAt 距今超过 24h 视为 stale；DEC-008 冻结可整体替换）。 */
+/** DEC-008@1.0.0 冻结值：observedAt 距今超过 24h 视为 stale。 */
 export const CONSUMABLE_STALE_AFTER_MS = 24 * 3_600_000;
 
 export class ConsumableError extends Error {
@@ -28,7 +28,7 @@ export class ConsumableError extends Error {
 }
 
 /**
- * 原始上报名称字典（DEC-008 暂定值；key 为 trim + 小写归一后的名称）。
+ * 原始上报名称字典（DEC-008 冻结值；key 为 trim + 小写归一后的名称）。
  * 原型两列严格分离："碳包/碳滤网"只映射 CARBON_FILTER，"活性菌/添加剂"只映射 BIO_ADDITIVE。
  */
 export const CONSUMABLE_RAW_NAME_DICTIONARY: Readonly<Record<string, ConsumableType>> = {

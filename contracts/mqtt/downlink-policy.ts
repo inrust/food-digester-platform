@@ -1,9 +1,9 @@
 /**
- * DEC-006 下行消息 meta.seq 与幂等键策略（暂定值的可执行扩展点）。
+ * DEC-006 下行消息 meta.seq 与幂等键策略（冻结策略）。
  *
  * 事实源：contracts/mqtt/downlink-policy.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-006@0.2.0（status=pending，暂定值已可执行，冻结后仅改状态或按
+ * 决策追溯：DEC-006@1.0.0（status=frozen，冻结值已可执行，冻结后仅改状态或按
  * migration.onFrozenChange 演进契约）。
  *
  * 消费方：CT-03、BE-CMD-02（幂等）、BE-CMD-01、BE-IOT-02。
@@ -37,12 +37,12 @@ export interface DownlinkPolicy {
 }
 
 /**
- * 暂定值（DEC-006 v0.2.0，pending）：
+ * 冻结值（DEC-006 v1.0.0）：
  * V1 下行不强制 meta.seq；Command 以 meta.id 幂等。
  */
 export const DOWNLINK_POLICY: DownlinkPolicy = {
-  policyVersion: '0.1.0',
-  status: 'provisional',
+  policyVersion: '1.0.0',
+  status: 'frozen',
   sequencing: {
     downlinkMetaSeq: 'optional',
     uplinkMetaSeq: 'required',
@@ -61,10 +61,10 @@ export const DOWNLINK_POLICY: DownlinkPolicy = {
   },
   pendingParameters: [],
   frozenUpgradePath:
-    'DEC-006 冻结时：按 decision-change-template 变更 DEC-006 至 >=1.0.0，status 改 frozen；暂定值未变化则仅改状态，若变化按 migration.onFrozenChange 执行契约演进。',
+    '下行 seq 或幂等键变化必须提升 DEC-006 与 policyVersion，并按 additive-contract-change 同步所有下行 Schema 和固件。',
 } as const;
 
-/** 下行 meta.seq 是否必填。V1 暂定为 false。 */
+/** 下行 meta.seq 是否必填。V1 冻结为 false。 */
 export function isDownlinkMetaSeqRequired(): boolean {
   return DOWNLINK_POLICY.sequencing.downlinkMetaSeq === 'required';
 }
@@ -79,7 +79,7 @@ export function getCommandIdempotencyKey(): 'meta.id' {
   return DOWNLINK_POLICY.idempotency.commandKey;
 }
 
-/** 策略当前状态：provisional 表示 DEC-006 未冻结。 */
+/** 策略当前状态：frozen 表示 DEC-006 已冻结。 */
 export function getDownlinkPolicyStatus(): DownlinkPolicyStatus {
   return DOWNLINK_POLICY.status;
 }

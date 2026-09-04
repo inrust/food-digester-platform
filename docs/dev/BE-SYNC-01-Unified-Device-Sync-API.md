@@ -30,7 +30,7 @@
 
 **版本/ETag**：`etag` = 稳定域（assignment/device/license/deviceUsers/configuration/生命周期与同步节奏）规范 JSON 的 SHA-256；volatile 域（snapshotAt/connectivity/lastHeartbeatAt）不参与，避免心跳噪声导致 etag 漂移。即使 etag 未变化也返回完整快照（不得省略设备无法安全缓存的必要域）。
 
-**同步节奏**（设备契约，云端以下发值指引）：Active=300s、Suspended=900s；Maintenance 经 DEC-001 行为矩阵注入（`maintenanceSyncIntervalSeconds`，消费方禁止直接读矩阵 JSON 或复制暂定值——组合根必须经 `contracts/lifecycle/maintenance-behavior.ts` 的 `getMaintenanceSyncIntervalSeconds()` 接线，当前暂定 900）；其余生命周期沿用 Active 节奏（暂定）。
+**同步节奏**（设备契约，云端以下发值指引）：Active=300s、Suspended=900s；Maintenance 经 DEC-001 行为矩阵注入（`maintenanceSyncIntervalSeconds`，消费方禁止直接读矩阵 JSON 或复制冻结值——组合根必须经 `contracts/lifecycle/maintenance-behavior.ts` 的 `getMaintenanceSyncIntervalSeconds()` 接线，冻结值为 900）；其余生命周期沿用 Active 节奏（暂定）。
 
 **租户隔离**：Assignment/Device Users 以证书绑定设备的 customerId 严格限定（Customer 数据不串线）；License/Configuration 按 deviceId 限定。
 

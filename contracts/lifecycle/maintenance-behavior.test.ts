@@ -81,14 +81,14 @@ test('x-decision-versions 引用 DEC-001 且版本与决策登记一致', () => 
   const dec001 = registerJson.decisions.find((d: { id: string }) => d.id === 'DEC-001');
   assert.ok(dec001, '决策登记必须包含 DEC-001');
   assert.ok(refs.includes(`DEC-001@${dec001.version}`), `引用必须包含 DEC-001@${dec001.version}`);
-  // DEC-001 未冻结前矩阵必须为 provisional 且 0.x
+  // 兼容性守卫：若未来登记被回退为未冻结状态，矩阵必须同步回退为 provisional 0.x。
   if (dec001.status !== 'frozen') {
     assert.equal(matrixJson.status, 'provisional');
     assert.ok(matrixJson.matrixVersion.startsWith('0.'));
   }
 });
 
-test('暂定值：独立状态；允许维护、同步、遥测、告警和 OTA', () => {
+test('冻结值：独立状态；允许维护、同步、遥测、告警和 OTA', () => {
   assert.equal(matrixJson.subject.operationalStatus, 'MAINTENANCE');
   assert.equal(matrixJson.subject.independentState, true);
   for (const b of [
@@ -125,7 +125,7 @@ test('命令策略与 command-catalog 一致：Maintenance 允许集合 == Suspe
     assert.equal(
       isMaintenanceCommandAllowed(code),
       isCommandAllowed(code, 'SUSPENDED'),
-      `${code} 在 Maintenance 应与 Suspended 一致（暂定值）`,
+      `${code} 在 Maintenance 应与 Suspended 一致（冻结值）`,
     );
   }
   // 维护/停止/同步类允许
