@@ -1,21 +1,21 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://fdp.dev/contracts/archive/archive-manifest.schema.json",
+  "x-decision-versions": ["DEC-016@1.0.0"],
   "title": "ArchiveManifest",
-  "description": "BE-ARC-02 S3 Raw Archive 对象 Manifest：记录数、时间/序号范围、SHA-256、Schema 版本与 Worker 版本。与 NDJSON/GZIP 对象同前缀旁挂（part-*.manifest.json）。",
+  "description": "BE-ARC-02 Archive 对象 Manifest：支持 DEC-016 MQTT 原文、领域事件和操作记录。",
   "type": "object",
   "required": [
     "manifestVersion",
+    "archiveClass",
+    "sourceType",
     "bucket",
     "key",
-    "topicType",
     "customerId",
     "windowStartUtc",
     "recordCount",
     "occurredAtMin",
     "occurredAtMax",
-    "seqMin",
-    "seqMax",
     "sha256",
     "schemaVersions",
     "workerVersion",
@@ -27,13 +27,15 @@
     "manifestVersion": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+$",
-      "description": "Manifest 结构版本（当前 1.0）。"
+      "description": "Manifest 结构版本（当前 2.0）。"
     },
+    "archiveClass": { "enum": ["MQTT_RAW", "DOMAIN_EVENT", "OPERATION_RECORD"] },
+    "sourceType": { "type": "string", "minLength": 1 },
     "bucket": { "type": "string", "minLength": 1 },
     "key": {
       "type": "string",
       "minLength": 1,
-      "description": "NDJSON/GZIP 对象 Key（规定前缀 raw/topic_type=/customer_id=/year=/month=/day=/hour=/part-*.json.gz）。"
+      "description": "NDJSON/GZIP 对象 Key；首段为 raw、domain 或 operations。"
     },
     "topicType": { "type": "string", "minLength": 1 },
     "customerId": { "type": "string", "minLength": 1 },

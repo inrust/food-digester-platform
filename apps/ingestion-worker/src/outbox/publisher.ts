@@ -83,7 +83,8 @@ export function createOutboxPublisher(deps: OutboxPublisherDeps): {
   return {
     async publishPendingBatch() {
       const batch = await outbox.findMany({
-        where: { status: 'PENDING' },
+        // 归档发布器只消费归档事件；通知等其它 Outbox 由各自发布器处理。
+        where: { status: 'PENDING', eventType: 'ARCHIVE' },
         orderBy: { createdAt: 'asc' },
         take: batchSize,
       });

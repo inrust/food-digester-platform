@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "archive-envelope.schema.json",
+  "title": "DEC-016 Archive Envelope",
+  "type": "object",
+  "required": ["archiveClass", "envelopeVersion", "aggregateId", "customerId", "occurredAt"],
+  "properties": {
+    "archiveClass": { "enum": ["MQTT_RAW", "DOMAIN_EVENT", "OPERATION_RECORD"] },
+    "envelopeVersion": { "const": "1.0" },
+    "aggregateId": { "type": "string", "minLength": 1 },
+    "customerId": { "type": "string", "minLength": 1 },
+    "deviceId": { "type": "string", "minLength": 1 },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "topicType": { "type": "string" },
+    "entityType": { "type": "string" },
+    "domainEventType": { "type": "string" },
+    "operationType": { "type": "string" },
+    "recordType": { "enum": ["PUBLICATION", "RESULT"] },
+    "data": { "type": "object" },
+    "payload": { "type": "object" }
+  },
+  "oneOf": [
+    { "required": ["topicType", "payload"] },
+    { "required": ["entityType", "domainEventType", "data"] },
+    { "required": ["operationType", "recordType", "data"] }
+  ],
+  "additionalProperties": true,
+  "x-decision-versions": ["DEC-016@1.0.0"]
+}

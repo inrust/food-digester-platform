@@ -31,6 +31,9 @@ export async function writeArchiveOutbox(client: DbClient, params: ArchiveOutbox
       aggregateType: 'device',
       aggregateId: params.deviceId,
       payload: {
+        archiveClass: 'MQTT_RAW',
+        envelopeVersion: '1.0',
+        aggregateId: params.deviceId,
         topicType: params.topicType,
         messageId: params.messageId,
         deviceId: params.deviceId,

@@ -66,6 +66,9 @@ function archiveMessage(
     aggregateType: 'device',
     aggregateId: 'dev-arc-1',
     payload: {
+      archiveClass: 'MQTT_RAW',
+      envelopeVersion: '1.0',
+      aggregateId: 'dev-arc-1',
       topicType,
       messageId: (payload.meta as Record<string, unknown>).id,
       deviceId: 'dev-arc-1',
@@ -148,7 +151,9 @@ describe('createArchiveWorker（BE-ARC-02）', () => {
     assert.equal(object.recordCount, 3);
 
     const manifest = store.json(object.manifestKey);
-    assert.equal(manifest.manifestVersion, '1.0');
+    assert.equal(manifest.manifestVersion, '2.0');
+    assert.equal(manifest.archiveClass, 'MQTT_RAW');
+    assert.equal(manifest.sourceType, 'telemetry');
     assert.equal(manifest.bucket, BUCKET);
     assert.equal(manifest.key, object.key);
     assert.equal(manifest.topicType, 'telemetry');
@@ -160,7 +165,7 @@ describe('createArchiveWorker（BE-ARC-02）', () => {
     assert.equal(manifest.seqMin, 100, '序号范围最小值');
     assert.equal(manifest.seqMax, 102, '序号范围最大值');
     assert.deepEqual(manifest.schemaVersions, ['1.0'], 'Schema 版本');
-    assert.equal(manifest.workerVersion, 'archive-worker@1.0.0', 'Worker 版本');
+    assert.equal(manifest.workerVersion, 'archive-worker@2.0.0', 'Worker 版本');
     assert.deepEqual(manifest.eventIds, ['evt-m-1', 'evt-m-3', 'evt-m-2'], '按 occurredAt 稳定排序');
     assert.equal(manifest.createdAt, FIXED_NOW.toISOString());
   });
@@ -219,5 +224,78 @@ describe('createArchiveWorker（BE-ARC-02）', () => {
     for (const object of result.objects) {
       assert.equal(store.ndjsonLines(object.key).length, 1);
     }
+  });
+
+  test('DEC-016：License 领域事件与 OTA 发布/结果使用独立前缀，不进入 raw 分区', async () => {
+    const store = new MemoryObjectStore();
+    const base = {
+      eventType: 'ARCHIVE',
+      createdAt: '2026-09-04T10:58:43.000Z',
+    };
+    const messages: ArchiveEventMessage[] = [
+      {
+        ...base,
+        eventId: 'evt-license-1',
+        aggregateType: 'license',
+        aggregateId: 'lic-1',
+        payload: {
+          archiveClass: 'DOMAIN_EVENT',
+          envelopeVersion: '1.0',
+          entityType: 'license',
+          domainEventType: 'LICENSE_STATUS_CHANGED',
+          aggregateId: 'lic-1',
+          customerId: 'cust-1',
+          occurredAt: '2026-09-04T10:10:00.000Z',
+          data: { fromStatus: 'Draft', toStatus: 'Issued' },
+        },
+      },
+      ...(['PUBLICATION', 'RESULT'] as const).map((recordType) => ({
+        ...base,
+        eventId: `evt-ota-${recordType.toLowerCase()}`,
+        aggregateType: 'ota_target',
+        aggregateId: 'target-1',
+        payload: {
+          archiveClass: 'OPERATION_RECORD',
+          envelopeVersion: '1.0',
+          operationType: 'ota',
+          recordType,
+          aggregateId: 'target-1',
+          customerId: 'cust-1',
+          occurredAt: '2026-09-04T10:20:00.000Z',
+          data: { otaTargetId: 'target-1' },
+        },
+      })),
+    ];
+    const result = await worker(store).archiveBatch(messages);
+
+    assert.equal(result.objects.length, 3);
+    assert.ok(result.objects.some((item) => item.key.startsWith('domain/entity_type=license/')));
+    assert.ok(
+      result.objects.some((item) => item.key.startsWith('operations/operation_type=ota/record_type=publication/')),
+    );
+    assert.ok(result.objects.some((item) => item.key.startsWith('operations/operation_type=ota/record_type=result/')));
+    assert.ok(result.objects.every((item) => !item.key.startsWith('raw/')));
+    for (const item of result.objects) {
+      assert.equal(store.json(item.manifestKey).archiveClass, item.archiveClass);
+      assert.equal(store.ndjsonLines(item.key).length, 1);
+    }
+  });
+
+  test('License/OTA 即使伪装为 topicType 也拒绝进入 MQTT_RAW', async () => {
+    const store = new MemoryObjectStore();
+    const result = await worker(store).archiveBatch([archiveMessage('license'), archiveMessage('ota')]);
+    assert.deepEqual(result.objects, []);
+    assert.deepEqual(result.skipped, { license: 1, ota: 1 });
+  });
+
+  test('DEC-016 Envelope 版本错误或跨类型字段混用时失败关闭', async () => {
+    const store = new MemoryObjectStore();
+    const wrongVersion = archiveMessage('telemetry');
+    (wrongVersion.payload as Record<string, unknown>).envelopeVersion = '2.0';
+    const mixed = archiveMessage('event');
+    (mixed.payload as Record<string, unknown>).entityType = 'license';
+    const result = await worker(store).archiveBatch([wrongVersion, mixed]);
+    assert.deepEqual(result.objects, []);
+    assert.deepEqual(result.skipped, { unknown: 2 });
   });
 });

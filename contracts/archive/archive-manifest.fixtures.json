@@ -3,7 +3,9 @@
     {
       "name": "完整 Manifest（遥测小时窗口）",
       "manifest": {
-        "manifestVersion": "1.0",
+        "manifestVersion": "2.0",
+        "archiveClass": "MQTT_RAW",
+        "sourceType": "telemetry",
         "bucket": "fdp-dev-archive-123456789012",
         "key": "raw/topic_type=telemetry/customer_id=cust-1/year=2026/month=08/day=28/hour=10/part-0123456789abcdef.json.gz",
         "topicType": "telemetry",
@@ -16,7 +18,7 @@
         "seqMax": 102,
         "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "schemaVersions": ["1.0"],
-        "workerVersion": "archive-worker@1.0.0",
+        "workerVersion": "archive-worker@2.0.0",
         "eventIds": ["evt-1", "evt-2", "evt-3"],
         "createdAt": "2026-08-28T11:00:05.000Z"
       }
@@ -24,7 +26,9 @@
     {
       "name": "seq 全部缺失（seqMin/seqMax 为 null）",
       "manifest": {
-        "manifestVersion": "1.0",
+        "manifestVersion": "2.0",
+        "archiveClass": "MQTT_RAW",
+        "sourceType": "event",
         "bucket": "fdp-dev-archive-123456789012",
         "key": "raw/topic_type=event/customer_id=cust-9/year=2026/month=08/day=28/hour=11/part-fedcba9876543210.json.gz",
         "topicType": "event",
@@ -37,9 +41,49 @@
         "seqMax": null,
         "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "schemaVersions": [],
-        "workerVersion": "archive-worker@1.0.0",
+        "workerVersion": "archive-worker@2.0.0",
         "eventIds": ["evt-9"],
         "createdAt": "2026-08-28T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "License 领域事件 Manifest",
+      "manifest": {
+        "manifestVersion": "2.0",
+        "archiveClass": "DOMAIN_EVENT",
+        "sourceType": "license",
+        "bucket": "fdp-dev-archive-123456789012",
+        "key": "domain/entity_type=license/customer_id=cust-1/year=2026/month=09/day=04/hour=10/part-0123456789abcdef.json.gz",
+        "customerId": "cust-1",
+        "windowStartUtc": "2026-09-04T10:00:00Z",
+        "recordCount": 1,
+        "occurredAtMin": "2026-09-04T10:10:00.000Z",
+        "occurredAtMax": "2026-09-04T10:10:00.000Z",
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "schemaVersions": [],
+        "workerVersion": "archive-worker@2.0.0",
+        "eventIds": ["evt-license-1"],
+        "createdAt": "2026-09-04T11:00:00.000Z"
+      }
+    },
+    {
+      "name": "OTA 结果记录 Manifest",
+      "manifest": {
+        "manifestVersion": "2.0",
+        "archiveClass": "OPERATION_RECORD",
+        "sourceType": "ota/result",
+        "bucket": "fdp-dev-archive-123456789012",
+        "key": "operations/operation_type=ota/record_type=result/customer_id=cust-1/year=2026/month=09/day=04/hour=10/part-fedcba9876543210.json.gz",
+        "customerId": "cust-1",
+        "windowStartUtc": "2026-09-04T10:00:00Z",
+        "recordCount": 1,
+        "occurredAtMin": "2026-09-04T10:20:00.000Z",
+        "occurredAtMax": "2026-09-04T10:20:00.000Z",
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "schemaVersions": [],
+        "workerVersion": "archive-worker@2.0.0",
+        "eventIds": ["evt-ota-result"],
+        "createdAt": "2026-09-04T11:00:00.000Z"
       }
     }
   ],

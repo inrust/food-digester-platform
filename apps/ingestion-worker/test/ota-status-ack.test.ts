@@ -113,7 +113,7 @@ describe('DEC-015 OTA ACK', () => {
     assert.equal((await handle(otaAck(ctx, 2, 'INSTALLING'))).toStatus, 'INSTALLING');
     const done = await handle(otaAck(ctx, 3, 'SUCCEEDED'));
     assert.equal(done.toStatus, 'SUCCEEDED');
-    assert.isFalse(done.archived, 'DEC-016 未冻结前 OTA 结果不得伪装成 MQTT archive 记录');
+    assert.isTrue(done.archived, 'OTA 结果应写入 DEC-016 独立操作记录归档');
 
     const target = await prisma.otaTarget.findUniqueOrThrow({ where: { id: ctx.targetId } });
     assert.equal(target.status, 'SUCCEEDED');
@@ -125,6 +125,18 @@ describe('DEC-015 OTA ACK', () => {
       }),
       3,
     );
+    const archived = await prisma.outboxEvent.findMany({
+      where: { aggregateType: 'ota_target', aggregateId: ctx.targetId, eventType: 'ARCHIVE' },
+      orderBy: { createdAt: 'asc' },
+    });
+    assert.equal(archived.length, 3);
+    for (const event of archived) {
+      const payload = event.payload as Record<string, unknown>;
+      assert.equal(payload.archiveClass, 'OPERATION_RECORD');
+      assert.equal(payload.operationType, 'ota');
+      assert.equal(payload.recordType, 'RESULT');
+      assert.notEqual(payload.archiveClass, 'MQTT_RAW');
+    }
   });
 
   test('相同状态新事件为 event-only；同 seq 同载荷完全幂等', async () => {

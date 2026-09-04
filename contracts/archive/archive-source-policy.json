@@ -1,0 +1,32 @@
+{
+  "policyVersion": "1.0.0",
+  "status": "frozen",
+  "x-decision-versions": ["DEC-016@1.0.0"],
+  "envelopeVersion": "1.0",
+  "classes": {
+    "MQTT_RAW": {
+      "sources": ["telemetry", "report", "alarm", "event", "tamper", "ack"],
+      "prefix": "raw/topic_type={topicType}/customer_id={customerId}/year={yyyy}/month={mm}/day={dd}/hour={hh}",
+      "forbiddenSources": ["license", "ota"]
+    },
+    "DOMAIN_EVENT": {
+      "sources": ["license"],
+      "prefix": "domain/entity_type={entityType}/customer_id={customerId}/year={yyyy}/month={mm}/day={dd}/hour={hh}",
+      "eventTypes": ["LICENSE_STATUS_CHANGED"]
+    },
+    "OPERATION_RECORD": {
+      "sources": ["ota"],
+      "prefix": "operations/operation_type={operationType}/record_type={recordType}/customer_id={customerId}/year={yyyy}/month={mm}/day={dd}/hour={hh}",
+      "recordTypes": ["PUBLICATION", "RESULT"]
+    }
+  },
+  "rules": {
+    "mixedEnvelopeAllowed": false,
+    "licenseAsMqttRawAllowed": false,
+    "otaAsMqttRawAllowed": false,
+    "otaResultSource": "DEC-015_ACK_OTA_TARGET",
+    "otaPublicationProducer": "BE-OTA-03"
+  },
+  "consumers": ["BE-ARC-01", "BE-ARC-02", "BE-LIC-01", "BE-OTA-03"],
+  "pendingParameters": []
+}

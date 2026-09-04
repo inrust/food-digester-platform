@@ -96,6 +96,9 @@ export function createTelemetryHandler(
             aggregateType: 'device',
             aggregateId: deviceId,
             payload: {
+              archiveClass: 'MQTT_RAW',
+              envelopeVersion: '1.0',
+              aggregateId: deviceId,
               topicType: 'telemetry',
               messageId: message.messageId,
               deviceId,

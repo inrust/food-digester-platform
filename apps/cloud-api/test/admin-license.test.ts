@@ -118,6 +118,7 @@ function licenseSideEffects(licenseId: string) {
     prisma.licenseHistory.count({ where: { licenseId } }),
     prisma.auditLog.count({ where: { objectId: licenseId, action: { startsWith: 'license.' } } }),
     prisma.outboxEvent.count({ where: { aggregateId: licenseId, eventType: 'LICENSE_CHANGED' } }),
+    prisma.outboxEvent.count({ where: { aggregateId: licenseId, eventType: 'ARCHIVE' } }),
   ]);
 }
 
@@ -199,10 +200,19 @@ describe('全状态路径：Draft→Issued→Active→ExpiringSoon→Renewed→A
     assert.equal((revoked.body as DataBody).data.status, 'Revoked');
 
     // 通知和审计各一次：create + 7 次迁移 = 8
-    const [historyCount, auditCount, outboxCount] = await licenseSideEffects(licenseId);
+    const [historyCount, auditCount, outboxCount, archiveCount] = await licenseSideEffects(licenseId);
     assert.equal(historyCount, 8, '每次变化恰好一条历史');
     assert.equal(auditCount, 8, '每次变化恰好一次审计');
     assert.equal(outboxCount, 8, '每次变化恰好一个 LICENSE_CHANGED');
+    assert.equal(archiveCount, 8, '每次变化恰好一个 DEC-016 License 领域归档事件');
+    const archive = await prisma.outboxEvent.findFirstOrThrow({
+      where: { aggregateId: licenseId, eventType: 'ARCHIVE' },
+      orderBy: { createdAt: 'asc' },
+    });
+    const archivePayload = archive.payload as Record<string, unknown>;
+    assert.equal(archivePayload.archiveClass, 'DOMAIN_EVENT');
+    assert.equal(archivePayload.entityType, 'license');
+    assert.notEqual(archivePayload.archiveClass, 'MQTT_RAW');
 
     // 历史倒序且链路完整
     const history = await h.history(req(auditor, { params: { licenseId } }));

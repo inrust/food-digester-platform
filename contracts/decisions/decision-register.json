@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.25.0",
-  "updatedAt": "2026-09-04T10:16:25Z",
+  "registerVersion": "1.26.0",
+  "updatedAt": "2026-09-04T10:58:43Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -560,13 +560,13 @@
     },
     {
       "id": "DEC-016",
-      "version": "0.1.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "License/OTA 归档语义",
       "conflict": "通信设计的 Retention Policy 列出 License 和 OTA，但 Topic Catalog 没有 License 上行 Topic，OTA 则是 Cloud→Device Topic，二者不能被当作设备上行原始 MQTT 归档。",
-      "provisionalValue": "License 历史与 OTA 下发/结果和设备上行 MQTT 原文分离；如需归档，使用领域事件或发布/结果记录的独立 Envelope 与前缀。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "方案 A：归档来源严格分为 MQTT_RAW、DOMAIN_EVENT、OPERATION_RECORD。设备上行原文只进入 raw/topic_type 前缀，License 状态历史以 LICENSE_STATUS_CHANGED 领域事件进入 domain/entity_type=license 前缀，OTA 下发与结果以 PUBLICATION/RESULT 操作记录进入 operations/operation_type=ota/record_type 前缀。三类记录使用 archiveClass 判别和 1.0 Envelope，License/OTA 禁止伪装成 MQTT 原文；OTA RESULT 来源固定为 DEC-015 ACK OTA_TARGET，PUBLICATION 由 BE-OTA-03 发布方写入。",
+      "approver": "业务方（用户确认）",
+      "approvedAt": "2026-09-04T10:58:43Z",
       "blockingTasks": ["BE-ARC-01", "BE-ARC-02", "BE-LIC-01", "BE-OTA-03"],
       "affectedModules": ["BE-ARC", "BE-LIC", "BE-OTA"],
       "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
@@ -576,6 +576,12 @@
           "at": "2026-09-04T01:44:04Z",
           "by": "CT-01",
           "note": "依据任务清单 §4 新增登记；状态为 pending，暂定分离归档语义待双方冻结。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T10:58:43Z",
+          "by": "业务方（用户确认）",
+          "note": "批准方案 A：冻结 MQTT 原文、License 领域事件、OTA 发布/结果记录的独立 Envelope 与前缀；禁止 License/OTA 混入 raw 分区。"
         }
       ]
     },

@@ -7,7 +7,8 @@
  * - 一个设备不能出现两个有效 License：领域层 ctx.noOtherValidLicense + DB 部分唯一索引兜底
  *   （并发 P2002 → 409 CONFLICT）；
  * - 每次真实状态变化恰好产生：一条 license_history + 一次审计（DOM-02 auditEvent action）+
- *   一个 LICENSE_CHANGED Notification（Outbox 下行，deviceAction=SYNC）；renew 同目标重放不写；
+ *   一个 LICENSE_CHANGED Notification（Outbox 下行）+ 一个 DEC-016 DOMAIN_EVENT 归档；
+ *   renew 同目标重放不写；
  * - License 签名字段供 Sync：Issue/Renew 时以注入签名密钥对规范载荷计算 HMAC-SHA256
  *   （base64url），Draft 无签名；签名机制为暂定值（部署方注入 signingKey）；
  * - 并发：licenses.version 条件更新（版本漂移 → 409）；
@@ -192,6 +193,7 @@ async function applyTransition(
   effects: LicenseTransitionEffects,
   row: LicenseRow,
   data: Record<string, unknown>,
+  occurredAt: Date,
 ): Promise<LicenseRow> {
   const { count } = await licenses(tx).updateMany({
     where: { id: row.id, version: row.version },
@@ -220,6 +222,29 @@ async function applyTransition(
         topic: notificationTopic(row.deviceId),
         data: { type: LICENSE_CHANGED_NOTIFICATION, action: 'SYNC' },
         licenseId: row.id,
+      },
+    },
+  });
+  await outbox.create({
+    data: {
+      eventType: 'ARCHIVE',
+      aggregateType: 'license',
+      aggregateId: row.id,
+      payload: {
+        archiveClass: 'DOMAIN_EVENT',
+        envelopeVersion: '1.0',
+        entityType: 'license',
+        domainEventType: 'LICENSE_STATUS_CHANGED',
+        aggregateId: row.id,
+        customerId: row.customerId,
+        deviceId: row.deviceId,
+        occurredAt: occurredAt.toISOString(),
+        data: {
+          licenseId: row.id,
+          fromStatus: effects.historyEntry.fromStatus,
+          toStatus: effects.historyEntry.toStatus,
+          reason: effects.historyEntry.reason,
+        },
       },
     },
   });
@@ -337,6 +362,29 @@ export async function createDraftLicense(
             },
           },
         });
+        await outbox.create({
+          data: {
+            eventType: 'ARCHIVE',
+            aggregateType: 'license',
+            aggregateId: row.id,
+            payload: {
+              archiveClass: 'DOMAIN_EVENT',
+              envelopeVersion: '1.0',
+              entityType: 'license',
+              domainEventType: 'LICENSE_STATUS_CHANGED',
+              aggregateId: row.id,
+              customerId: row.customerId,
+              deviceId: row.deviceId,
+              occurredAt: now.toISOString(),
+              data: {
+                licenseId: row.id,
+                fromStatus: null,
+                toStatus: 'Draft',
+                reason: input.reason ?? null,
+              },
+            },
+          },
+        });
         return toView(row, now);
       },
     );
@@ -381,7 +429,7 @@ async function runTransition(
       beforeValue: { status: row.status },
       afterValue: effects.auditEvent.afterValue as unknown as object,
     },
-    async (tx) => toView(await applyTransition(tx, effects, row, data), now),
+    async (tx) => toView(await applyTransition(tx, effects, row, data, now), now),
   );
 }
 
@@ -474,7 +522,7 @@ export async function renewLicenseById(
       beforeValue: { status: row.status, validTo: row.validTo.toISOString() },
       afterValue: { status: 'Renewed', validTo: options.newValidTo.toISOString() },
     },
-    async (tx) => toView(await applyTransition(tx, effects, row, { validTo: options.newValidTo, signature }), now),
+    async (tx) => toView(await applyTransition(tx, effects, row, { validTo: options.newValidTo, signature }, now), now),
   );
   return { ...view, replayed: false };
 }
@@ -550,7 +598,7 @@ export async function evaluateLicense(
       beforeValue: { status: row.status },
       afterValue: effects.auditEvent.afterValue as unknown as object,
     },
-    async (tx) => toView(await applyTransition(tx, effects as LicenseTransitionEffects, row, {}), at),
+    async (tx) => toView(await applyTransition(tx, effects as LicenseTransitionEffects, row, {}, at), at),
   );
   return { view, changed: true };
 }

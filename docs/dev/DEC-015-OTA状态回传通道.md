@@ -19,7 +19,7 @@ ACK 采用强制判别字段：
 - 相同 Target、相同状态的新消息作为事件记录但不重复迁移；相同 `{deviceId}:ack:{meta.seq}` 和相同载荷完全跳过。
 - 越级、回退、未知 Target、跨设备 Target 或 COMMAND/OTA 字段混用均进入隔离，不修改业务状态。
 - OTA Target 状态、历史和 `ota.status.ack` 审计在同一事务写入。
-- DEC-016 尚未冻结，因此 OTA 结果不伪装成设备上行原文归档；独立归档 Envelope 留待 DEC-016。
+- DEC-016@1.0.0 已冻结：OTA ACK 结果以 `OPERATION_RECORD/RESULT` 独立 Envelope 归档到 `operations/operation_type=ota/record_type=result/`，不进入 MQTT `raw/` 分区。
 
 ## 证据
 

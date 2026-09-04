@@ -208,6 +208,34 @@ async function handleOtaTargetAck(deps: AckHandlerDeps, message: ValidatedMessag
           createdAt: now,
         },
       });
+      const outbox = (tx as unknown as Record<string, unknown>).outboxEvent as {
+        create(args: { data: Record<string, unknown> }): Promise<unknown>;
+      };
+      await outbox.create({
+        data: {
+          eventType: 'ARCHIVE',
+          aggregateType: 'ota_target',
+          aggregateId: target.id,
+          payload: {
+            archiveClass: 'OPERATION_RECORD',
+            envelopeVersion: '1.0',
+            operationType: 'ota',
+            recordType: 'RESULT',
+            aggregateId: target.id,
+            customerId,
+            deviceId,
+            occurredAt: message.occurredAt,
+            data: {
+              otaTargetId: target.id,
+              fromStatus: target.status,
+              toStatus: status,
+              errorCode,
+              message: ackMessage,
+              sourceMessageId: message.messageId,
+            },
+          },
+        },
+      });
       return {
         action: (sameStatus ? 'ota-event-only' : 'ota-applied') as AckAction,
         toStatus: status,
@@ -223,7 +251,7 @@ async function handleOtaTargetAck(deps: AckHandlerDeps, message: ValidatedMessag
     outcome: processed.outcome,
     action: processed.result?.action,
     toStatus: processed.result?.toStatus,
-    archived: false,
+    archived: true,
   };
 }
 

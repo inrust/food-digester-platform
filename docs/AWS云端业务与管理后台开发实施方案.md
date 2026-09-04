@@ -22,7 +22,7 @@
 
 当前唯一已批准的协议级技术适配是：通信设计中 ESG Report、Tamper 和 Command 的 QoS 2，在 AWS IoT Core 上实施为 QoS 1，并通过消息 ID、序号、Command ACK 和幂等处理保持业务可靠性。
 
-对通信设计的复核还识别出六项协议问题：MQTT Payload 规范化、Retired 过渡期认证、OTA 状态回传通道、License/OTA 归档语义、Onboarding 超时语义和 Configuration 扩展字段。它们分别进入 DEC-013～018 决策门禁；其中 DEC-013、014、015、018 已冻结，DEC-016～017 冻结前只能实现可替换扩展点，不得把暂定值写成对设备方生效的固定契约。
+对通信设计的复核还识别出六项协议问题：MQTT Payload 规范化、Retired 过渡期认证、OTA 状态回传通道、License/OTA 归档语义、Onboarding 超时语义和 Configuration 扩展字段。它们分别进入 DEC-013～018 决策门禁；其中 DEC-013～016、018 已冻结，仅 DEC-017 冻结前只能实现可替换扩展点，不得把暂定值写成对设备方生效的固定契约。
 
 ## 2. 建设目标
 
@@ -435,7 +435,7 @@ Device User Sync 示例中的 `passwordHash` 是 DEC-004@1.0.0 冻结的设备�
 | Tamper | 是 | 是 | 安全事件、可自动挂起设备 |
 | Media | 是 | 元数据 | 关联已上传的 S3 Object |
 
-上表只包含 8 个 Device → Cloud MQTT Topic。通信设计的 Retention Policy 还列出 License 和 OTA，但 Topic Catalog 没有 License 上行 Topic，OTA 在 Catalog 中是 Cloud → Device Topic，因此二者不能作为“设备上行原始 MQTT”进入统一 Ingress。DEC-016 必须明确：License 历史是否以领域事件归档，OTA 下发/结果是否以发布记录、ACK 或 DEC-015 选定的状态通道归档，并为非 MQTT 记录使用独立 Envelope 与前缀。
+上表只包含 8 个 Device → Cloud MQTT Topic。通信设计的 Retention Policy 还列出 License 和 OTA，但 Topic Catalog 没有 License 上行 Topic，OTA 在 Catalog 中是 Cloud → Device Topic，因此二者不能作为“设备上行原始 MQTT”进入统一 Ingress。DEC-016@1.0.0 已冻结方案 A：License 历史以领域事件归档，OTA 下发/结果以发布记录及 DEC-015 ACK 结果记录归档，三类来源使用独立 Envelope 与 `raw/`、`domain/`、`operations/` 前缀。
 
 通信设计的 Retention Policy 未列出 Media。上述 Media 策略是试运营实现决策，文件和元数据保留期必须在协议冻结阶段确认。
 

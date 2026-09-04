@@ -92,6 +92,22 @@ function publisher(sender: ArchiveEventSender, options: { maxAttempts?: number }
 }
 
 describe('createOutboxPublisher（BE-ARC-01）', () => {
+  test('DEC-016：只领取 ARCHIVE，License 通知等其它待发布事件保持原队列', async () => {
+    const notification = await prisma.outboxEvent.create({
+      data: {
+        eventType: 'LICENSE_CHANGED',
+        aggregateType: 'license',
+        aggregateId: 'license-notification-only',
+        payload: { data: { type: 'LICENSE_CHANGED', action: 'SYNC' } },
+      },
+    });
+    const sender = new RecordingSender();
+    const result = await publisher(sender).publishPendingBatch();
+    assert.equal(result.claimed, 0);
+    assert.equal(sender.sent.length, 0);
+    assert.equal((await prisma.outboxEvent.findUniqueOrThrow({ where: { id: notification.id } })).status, 'PENDING');
+  });
+
   test('批量发布：稳定事件 ID + 原子记录 publishedAt；已发布不再领取', async () => {
     const { deviceId, eventIds } = await plantCommittedBusinessWithOutbox(3);
     const sender = new RecordingSender();
