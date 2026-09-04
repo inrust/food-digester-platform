@@ -80,9 +80,10 @@ function ackMessage(
   options: { seq: number; data: Record<string, unknown>; ts?: string },
 ): ValidatedMessage {
   const ts = options.ts ?? TS;
+  const data = { objectType: 'COMMAND', ...options.data };
   const payload: Record<string, unknown> = {
     meta: { id: `ACK-${ctx.deviceId.toUpperCase().replace(/[^A-Z0-9]/g, '')}-${options.seq}`, ts, seq: options.seq },
-    data: options.data,
+    data,
   };
   return {
     envelope: {
@@ -102,7 +103,7 @@ function ackMessage(
     },
     messageId: (payload.meta as Record<string, unknown>).id as string,
     occurredAt: ts,
-    data: options.data,
+    data,
     audit: null,
   };
 }

@@ -21,12 +21,18 @@ export interface Audit {
 }
 
 export interface AckData {
+  /** DEC-015 判别字段：COMMAND 与 OTA_TARGET 关联字段禁止混用。 */
+  objectType: "COMMAND" | "OTA_TARGET";
   /** 关联的 Command meta.id，如 CMD-DEV001-6001。 */
   commandId?: string;
   /** V1 命令白名单（22 个，command-catalog.json，CT-04）。 */
   command?: "START" | "STOP" | "PAUSE" | "RESUME" | "EMERGENCY_STOP" | "AGITATOR_FORWARD" | "AGITATOR_REVERSE" | "AGITATOR_STOP" | "HEATING_ON" | "HEATING_OFF" | "SET_TARGET_TEMPERATURE" | "EXHAUST_ON" | "EXHAUST_OFF" | "AIR_SUPPLY_ON" | "AIR_SUPPLY_OFF" | "DISCHARGE_START" | "DISCHARGE_STOP" | "REBOOT" | "SHUTDOWN" | "FACTORY_RESET" | "TAKE_SNAPSHOT" | "FORCE_SYNC";
   result?: "SUCCESS" | "FAILED";
   executeTimeMs?: number;
+  /** OTA_TARGET 回执关联的云端 OtaTarget ID。 */
+  otaTargetId?: string;
+  /** DEC-015 冻结的 OTA 多阶段状态。 */
+  status?: "DOWNLOADING" | "INSTALLING" | "SUCCEEDED" | "FAILED" | "ROLLED_BACK";
   errorCode?: string | null;
   message?: string;
 }

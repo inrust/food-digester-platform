@@ -19,7 +19,10 @@ export type IngestErrorType =
   | 'INVALID_REPORT'
   | 'UNKNOWN_COMMAND'
   | 'COMMAND_MISMATCH'
-  | 'INVALID_COMMAND_STATE';
+  | 'INVALID_COMMAND_STATE'
+  | 'UNKNOWN_OTA_TARGET'
+  | 'OTA_TARGET_MISMATCH'
+  | 'INVALID_OTA_STATE';
 
 export class IngestError extends Error {
   override readonly name = 'IngestError';

@@ -1,5 +1,5 @@
 /**
- * BE-CMD-03 ACK Handler：设备命令执行回执处理（bnx/device/{deviceId}/ack 上行，QoS 1）。
+ * BE-CMD-03 / DEC-015 ACK Handler：命令回执与 OTA Target 状态共用唯一 ack 上行通道。
  *
  * 事实源与规则：
  * - Payload：contracts/mqtt/schemas/ack.schema.json（meta.seq 必填上行；data.commandId/command/result
@@ -17,6 +17,7 @@
 import type { DbClient } from '@fdp/database';
 import { ackResultForStorage, classifyAck } from '@fdp/domain';
 import type { AckWireResult } from '@fdp/domain';
+import { canTransitionOtaStatus, isOtaWireStatus } from '@fdp/contracts/mqtt/ota-status-channel-policy.js';
 import { quarantineError } from '../ingest/errors.js';
 import { hashPayload, processWithReceipt } from '../ingest/receipt.js';
 import type { ReceiptOutcome } from '../ingest/receipt.js';
@@ -28,7 +29,7 @@ export interface AckHandlerDeps {
   readonly now?: () => Date;
 }
 
-export type AckAction = 'applied' | 'event-only';
+export type AckAction = 'applied' | 'event-only' | 'ota-applied' | 'ota-event-only';
 
 export interface AckHandleResult {
   readonly handled: boolean;
@@ -86,6 +87,21 @@ interface AuditDelegate {
   create(args: { data: Record<string, unknown> }): Promise<unknown>;
 }
 
+interface OtaTargetRow {
+  readonly id: string;
+  readonly deviceId: string;
+  readonly status: string;
+}
+
+interface OtaTargetDelegate {
+  findFirst(args: { where: Record<string, unknown> }): Promise<OtaTargetRow | null>;
+  updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
+}
+
+interface OtaHistoryDelegate {
+  create(args: { data: Record<string, unknown> }): Promise<unknown>;
+}
+
 function commands(client: DbClient): CommandDelegate {
   return (client as unknown as Record<string, unknown>).deviceCommand as CommandDelegate;
 }
@@ -98,11 +114,132 @@ function auditLogs(client: DbClient): AuditDelegate {
   return (client as unknown as Record<string, unknown>).auditLog as AuditDelegate;
 }
 
+function otaTargets(client: DbClient): OtaTargetDelegate {
+  return (client as unknown as Record<string, unknown>).otaTarget as OtaTargetDelegate;
+}
+
+function otaHistory(client: DbClient): OtaHistoryDelegate {
+  return (client as unknown as Record<string, unknown>).otaStatusHistory as OtaHistoryDelegate;
+}
+
+function hasAny(data: Record<string, unknown>, keys: readonly string[]): boolean {
+  return keys.some((key) => data[key] !== undefined);
+}
+
+async function handleOtaTargetAck(deps: AckHandlerDeps, message: ValidatedMessage): Promise<AckHandleResult> {
+  const data = message.data;
+  if (hasAny(data, ['commandId', 'command', 'result', 'executeTimeMs'])) {
+    throw quarantineError('INVALID_ENVELOPE', 'data.objectType', 'OTA_TARGET ack cannot contain command fields');
+  }
+  const otaTargetId = asString(data.otaTargetId);
+  const status = asString(data.status);
+  if (!otaTargetId || !status || !isOtaWireStatus(status)) {
+    throw quarantineError(
+      'INVALID_ENVELOPE',
+      'data.otaTargetId',
+      'OTA_TARGET ack requires otaTargetId and valid status',
+    );
+  }
+  const errorCode = asString(data.errorCode) ?? null;
+  const ackMessage = asString(data.message) ?? null;
+  const meta = message.envelope.payload.meta as Record<string, unknown>;
+  const seq = Number(meta.seq);
+  const deviceId = message.device.deviceId;
+  const payloadHash = hashPayload(message.envelope.payload);
+  const occurredAt = new Date(message.occurredAt);
+  const now = deps.now?.() ?? new Date();
+
+  const processed = await processWithReceipt(deps.client, {
+    key: { deviceId, topicType: 'ack', seq },
+    payloadHash,
+    receivedAtMs: message.envelope.iotReceivedAt,
+    business: async (tx) => {
+      const customerId = requireCustomerId(message.device.customerId);
+      const target = await otaTargets(tx).findFirst({ where: { id: otaTargetId } });
+      if (!target) {
+        throw quarantineError(
+          'UNKNOWN_OTA_TARGET',
+          'data.otaTargetId',
+          `ack references unknown OTA target ${otaTargetId}`,
+        );
+      }
+      if (target.deviceId !== deviceId) {
+        throw quarantineError('OTA_TARGET_MISMATCH', 'data.otaTargetId', 'ack device does not own the OTA target');
+      }
+      if (!canTransitionOtaStatus(target.status, status)) {
+        throw quarantineError(
+          'INVALID_OTA_STATE',
+          'data.status',
+          `OTA target cannot transition from ${target.status} to ${status}`,
+        );
+      }
+
+      const sameStatus = target.status === status;
+      if (!sameStatus) {
+        const terminal = ['SUCCEEDED', 'FAILED', 'ROLLED_BACK'].includes(status);
+        const { count } = await otaTargets(tx).updateMany({
+          where: { id: target.id, deviceId, status: target.status },
+          data: { status, completedAt: terminal ? occurredAt : null },
+        });
+        if (count !== 1) {
+          throw quarantineError('INVALID_OTA_STATE', 'data.status', 'OTA target state changed concurrently');
+        }
+      }
+      await otaHistory(tx).create({
+        data: {
+          targetId: target.id,
+          fromStatus: target.status,
+          toStatus: status,
+          detail: { sourceMessageId: message.messageId, errorCode, message: ackMessage },
+          createdAt: occurredAt,
+        },
+      });
+      await auditLogs(tx).create({
+        data: {
+          actorId: deviceId,
+          actorRole: 'device',
+          customerId,
+          objectType: 'ota_target',
+          objectId: target.id,
+          action: 'ota.status.ack',
+          beforeValue: { status: target.status },
+          afterValue: { status, errorCode },
+          result: 'SUCCESS',
+          createdAt: now,
+        },
+      });
+      return {
+        action: (sameStatus ? 'ota-event-only' : 'ota-applied') as AckAction,
+        toStatus: status,
+      };
+    },
+  });
+
+  if (processed.outcome === 'DUPLICATE_SKIPPED') {
+    return { handled: true, outcome: processed.outcome, action: undefined, toStatus: undefined, archived: false };
+  }
+  return {
+    handled: true,
+    outcome: processed.outcome,
+    action: processed.result?.action,
+    toStatus: processed.result?.toStatus,
+    archived: false,
+  };
+}
+
 export function createAckHandler(deps: AckHandlerDeps): (message: ValidatedMessage) => Promise<AckHandleResult> {
   return async (message) => {
     if (message.envelope.iotType !== 'ack') return NOT_HANDLED;
 
     const data = message.data;
+    const objectType = asString(data.objectType);
+    if (objectType === 'OTA_TARGET') return handleOtaTargetAck(deps, message);
+    if (objectType !== 'COMMAND') {
+      throw quarantineError('INVALID_ENVELOPE', 'data.objectType', 'ack objectType must be COMMAND or OTA_TARGET');
+    }
+    if (hasAny(data, ['otaTargetId', 'status'])) {
+      throw quarantineError('INVALID_ENVELOPE', 'data.objectType', 'COMMAND ack cannot contain OTA target fields');
+    }
     const commandId = asString(data.commandId);
     const command = asString(data.command);
     if (!commandId || !command) {

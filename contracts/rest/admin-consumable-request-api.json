@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-CNS-02 耗材更换申请工作流接口（Cognito 认证；创建/状态迁移 device:write=PlatformSuperAdmin/PlatformOperator，查询 device:read 且 Customer 角色租户隔离、跨 Customer 详情 404）：创建、列表、详情与状态机 PENDING→PROCESSING→COMPLETED/CANCELLED（跳级/重复处理/终态迁移 → 409）。同设备同耗材存在开放申请（PENDING/PROCESSING）时重复创建幂等返回现有记录（replayed=true，无写入/审计；部分唯一索引并发兜底）；状态迁移强制 If-Match（漂移 → 409 VERSION_CONFLICT）；Processing/Completed 仅授权角色执行并写审计（consumable.request.create/process/complete/cancel）；保存申请时间、来源（协议冻结前固定 ADMIN）、处理人、处理备注和完成时间；完成后保留完整记录。不实现工单派遣/库存/物流/短信联系。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-008@1.0.0", "DEC-012@1.0.0"],
-    "x-decision-register-version": "1.24.0"
+    "x-decision-register-version": "1.25.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

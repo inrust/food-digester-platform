@@ -81,6 +81,8 @@ test('TS 常量与 topic-catalog.json 完全一致', () => {
   }
   // 追溯引用必须包含 QoS 适配决策
   assert.ok(catalogJson['x-decision-versions'].includes('ADP-002@1.0.0'));
+  assert.ok(catalogJson['x-decision-versions'].includes('DEC-015@1.0.0'));
+  assert.equal(TOPIC_CATALOG.ack.frequency, '命令执行或 OTA 状态变化后');
 });
 
 test('合法 Topic 可解析出 deviceId/type/direction', () => {

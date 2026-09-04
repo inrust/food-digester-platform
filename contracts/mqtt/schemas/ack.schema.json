@@ -3,7 +3,7 @@
   "$id": "ack.schema.json",
   "title": "ACK",
   "x-typescript-name": "Ack",
-  "x-decision-versions": ["DEC-002@1.0.0", "DEC-013@1.0.0"],
+  "x-decision-versions": ["DEC-002@1.0.0", "DEC-013@1.0.0", "DEC-015@1.0.0"],
   "type": "object",
   "required": ["meta", "data"],
   "additionalProperties": false,
@@ -11,8 +11,14 @@
     "meta": { "$ref": "common.schema.json#/$defs/metaSeq" },
     "data": {
       "type": "object",
+      "required": ["objectType"],
       "additionalProperties": false,
       "properties": {
+        "objectType": {
+          "type": "string",
+          "enum": ["COMMAND", "OTA_TARGET"],
+          "description": "DEC-015 判别字段：COMMAND 与 OTA_TARGET 关联字段禁止混用。"
+        },
         "commandId": {
           "type": "string",
           "minLength": 1,
@@ -48,6 +54,16 @@
         },
         "result": { "type": "string", "enum": ["SUCCESS", "FAILED"] },
         "executeTimeMs": { "type": "integer", "minimum": 0 },
+        "otaTargetId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "OTA_TARGET 回执关联的云端 OtaTarget ID。"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["DOWNLOADING", "INSTALLING", "SUCCEEDED", "FAILED", "ROLLED_BACK"],
+          "description": "DEC-015 冻结的 OTA 多阶段状态。"
+        },
         "errorCode": { "type": ["string", "null"] },
         "message": { "type": "string" }
       }

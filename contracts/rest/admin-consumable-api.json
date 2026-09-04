@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-CNS-01 耗材状态投影与查询接口（Cognito 认证，device:read；Customer 角色租户隔离）：查询设备上报的耗材类型（CARBON_FILTER/BIO_ADDITIVE，DEC-008 封闭集合）、剩余百分比、来源消息、observedAt 与 stale 状态；支持 Region/Subregion/Site、连接状态、关键字和耗材阈值筛选（AND 组合）；返回设备联系人授权摘要（仅 PlatformSuperAdmin/PlatformOperator/CustomerAdmin，其余角色为 null）。数据来源 device-reported-only：未上报维度为 null 且 remainingDisplay='unknown'（绝不默认 50%）；每设备每耗材仅维护最新投影，乱序消息不覆盖（投影写路径 recordConsumableReport 经 DEC-008 字典映射，未知名称失败关闭）。不预测更换日期、不虚构未上报值、不自动联系客户或创建采购单。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-008@1.0.0", "DEC-012@1.0.0"],
-    "x-decision-register-version": "1.24.0"
+    "x-decision-register-version": "1.25.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

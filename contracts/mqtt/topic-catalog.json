@@ -1,7 +1,7 @@
 {
-  "catalogVersion": "1.0.1",
-  "updatedAt": "2026-08-26T06:05:53Z",
-  "x-decision-versions": ["PRI-001@1.0.0", "ADP-002@1.0.0", "DEC-002@1.0.0"],
+  "catalogVersion": "1.1.0",
+  "updatedAt": "2026-09-04T10:16:25Z",
+  "x-decision-versions": ["PRI-001@1.0.0", "ADP-002@1.0.0", "DEC-002@1.0.0", "DEC-015@1.0.0"],
   "topicPattern": "bnx/device/{deviceId}/{type}",
   "qosAdaptation": {
     "description": "specifiedQos 来自《Device-Cloud Communication Design》规定值；awsEffectiveQos 是 AWS IoT Core 实际部署值。QoS 2→1 仅为 AWS 技术适配（ADP-002），不得因此删除 ACK、超时、审计和业务确认机制。",
@@ -58,7 +58,7 @@
       "type": "ack",
       "name": "ACK",
       "direction": "uplink",
-      "frequency": "命令执行后",
+      "frequency": "命令执行或 OTA 状态变化后",
       "specifiedQos": 1,
       "awsEffectiveQos": 1,
       "payloadEnvelope": "meta+data"

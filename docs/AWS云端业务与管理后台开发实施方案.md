@@ -22,7 +22,7 @@
 
 当前唯一已批准的协议级技术适配是：通信设计中 ESG Report、Tamper 和 Command 的 QoS 2，在 AWS IoT Core 上实施为 QoS 1，并通过消息 ID、序号、Command ACK 和幂等处理保持业务可靠性。
 
-对通信设计的复核还识别出六项协议问题：MQTT Payload 规范化、Retired 过渡期认证、OTA 状态回传通道、License/OTA 归档语义、Onboarding 超时语义和 Configuration 扩展字段。它们分别进入 DEC-013～018 决策门禁；其中 DEC-013、014、018 已冻结，DEC-015～017 冻结前只能实现可替换扩展点，不得把暂定值写成对设备方生效的固定契约。
+对通信设计的复核还识别出六项协议问题：MQTT Payload 规范化、Retired 过渡期认证、OTA 状态回传通道、License/OTA 归档语义、Onboarding 超时语义和 Configuration 扩展字段。它们分别进入 DEC-013～018 决策门禁；其中 DEC-013、014、015、018 已冻结，DEC-016～017 冻结前只能实现可替换扩展点，不得把暂定值写成对设备方生效的固定契约。
 
 ## 2. 建设目标
 
@@ -686,12 +686,12 @@ Created/Authorized ───────────────→ Cancelled
 4. 先选择 1 台设备作为灰度批次；
 5. 发布 MQTT OTA 通知或创建 IoT Job；
 6. 设备通过短期预签名 URL 下载；
-7. 设备发送源设计已定义的 ACK；下载、安装、成功、失败或回滚等多阶段状态只有在 DEC-015 冻结状态通道后才接收；
+7. 设备通过既有 ACK Topic 回传；`objectType=OTA_TARGET`、`otaTargetId` 与封闭状态集合承载下载、安装、成功、失败或回滚，普通命令 ACK 使用 `objectType=COMMAND`；
 8. 管理员确认后扩大批次或暂停 Campaign。
 
 试运营阶段禁止默认对全部设备自动强制升级。
 
-通信设计只定义 Cloud → Device OTA Topic，并在业务场景中显示设备返回 ACK，没有定义多阶段 OTA 状态的上行 Topic 或 Payload。DEC-015 必须在以下方案中冻结一种：扩展现有 ACK、增加版本化 `ota/status` Topic，或采用 AWS IoT Jobs 状态事件；冻结前不得让 BE-OTA-03、IoT Policy、Schema 和模拟器各自假设不同通道。
+通信设计只定义 Cloud → Device OTA Topic，并在业务场景中显示设备返回 ACK，没有定义多阶段 OTA 状态的上行 Topic 或 Payload。DEC-015@1.0.0 已冻结扩展现有 ACK 为唯一通道：不新增 `ota/status` Topic，不采用 AWS IoT Jobs 状态事件；Command 与 OTA Target 必须按判别字段和关联 ID 隔离。
 
 ### 11.9 Media 管理
 
@@ -1037,7 +1037,7 @@ Merge to main
 | 设备无法安全领取或安装一次性证书包 | 第 2 周用真实设备验证；失败时按通信设计处理负向案例并重新签发 |
 | Payload 字段持续变化且源稿存在扁平/嵌套等冲突 | 先完成 DEC-013 和设备/云端联合 Fixture，再冻结 Schema V1；变更必须版本化 |
 | Retired 后认证过早关闭 | 通过 DEC-014 固定仅 Sync/Deactivate 可用的过渡期 Allowlist，并用集成测试证明不会形成认证死锁 |
-| OTA 多阶段状态没有上行契约 | 通过 DEC-015 选择 ACK 扩展、新 Topic 或 IoT Jobs 状态事件，冻结前不实现多套隐式通道 |
+| OTA 多阶段状态没有上行契约 | DEC-015@1.0.0 已冻结既有 ACK 扩展为唯一通道，并以判别字段隔离 Command/OTA Target |
 | License/OTA 归档来源不明确 | 通过 DEC-016 区分 MQTT 原文、领域事件和发布记录，禁止伪装成设备上行消息 |
 | Onboarding 首个 Heartbeat 永久未到达 | 通过 DEC-017 冻结超时、证书处置和重新申请规则，并实现可重复执行的超时评估器 |
 | Configuration 候选字段超出源稿 | 通过 DEC-018 与设备能力协商冻结；未批准字段不得进入 Sync |

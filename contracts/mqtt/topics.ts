@@ -82,7 +82,7 @@ export const TOPIC_CATALOG: Readonly<Record<TopicType, TopicSpec>> = {
     type: 'ack',
     name: 'ACK',
     direction: 'uplink',
-    frequency: '命令执行后',
+    frequency: '命令执行或 OTA 状态变化后',
     specifiedQos: 1,
     awsEffectiveQos: 1,
     payloadEnvelope: 'meta+data',
