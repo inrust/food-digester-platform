@@ -19,7 +19,7 @@ function fixture(files) {
   return root;
 }
 
-test('当前仓库全部 Schema 与 OpenAPI 基座通过校验', () => {
+test('当前仓库全部 Schema、OpenAPI 片段与统一 bundle 通过引用校验', () => {
   const root = new URL('..', import.meta.url).pathname;
   assert.deepEqual(checkSchemas(root), []);
 });

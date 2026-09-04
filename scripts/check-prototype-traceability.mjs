@@ -24,7 +24,7 @@
  *      必须双向覆盖。
  */
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -121,9 +121,12 @@ function collectResponseFields(node, currentFile, documents, fields, path = '', 
 export function loadOperationIndex(restDir) {
   const errors = [];
   const documents = new Map();
-  const files = readdirSync(restDir)
-    .filter((name) => name.endsWith('-api.json'))
-    .map((name) => resolve(restDir, name));
+  const bundleFile = resolve(restDir, 'openapi.bundle.json');
+  const files = existsSync(bundleFile)
+    ? [bundleFile]
+    : readdirSync(restDir)
+        .filter((name) => name.endsWith('-api.json'))
+        .map((name) => resolve(restDir, name));
   for (const file of files) {
     try {
       documents.set(file, { doc: JSON.parse(readFileSync(file, 'utf8')) });
@@ -164,7 +167,10 @@ export function loadOperationIndex(restDir) {
           path,
           method,
           fields,
-          status: doc.info?.['x-contract-status'] === 'planned' ? 'planned' : 'implemented',
+          status:
+            operation['x-contract-status'] === 'planned' || doc.info?.['x-contract-status'] === 'planned'
+              ? 'planned'
+              : 'implemented',
           taskId: operation['x-task-id'] ?? null,
         });
       }

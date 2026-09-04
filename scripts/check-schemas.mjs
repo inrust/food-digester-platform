@@ -4,8 +4,9 @@
  *
  * 检查内容：
  *  1. contracts/** 下所有 *.schema.json：JSON 可解析；内部及同目录相对 $ref 均可解析。
- *  2. contracts/rest/openapi-base.json：JSON 可解析；含 openapi/info/paths；
- *     所有内部 $ref（#/...）均可解析。
+ *  2. contracts/rest/openapi-base.json、全部 *-api.json 与统一 bundle：JSON 可解析；
+ *     含 openapi/info/paths；所有内部及同目录相对 $ref 均可解析。
+ *  3. OpenAPI 3.1 标准语义由 pnpm openapi:check 中的 Redocly spec ruleset 执行。
  *
  * 用法：node scripts/check-schemas.mjs [rootDir]
  * 退出码：0 通过；1 存在失效 Schema 或悬空引用。
@@ -103,8 +104,14 @@ export function checkSchemas(root) {
   };
   walk(contractsDir);
 
-  const openapiPath = join(contractsDir, 'rest', 'openapi-base.json');
-  if (existsSync(openapiPath)) errors.push(...checkOpenApiFile(openapiPath));
+  const restDir = join(contractsDir, 'rest');
+  if (existsSync(restDir)) {
+    for (const name of readdirSync(restDir).sort()) {
+      if (name === 'openapi-base.json' || name === 'openapi.bundle.json' || name.endsWith('-api.json')) {
+        errors.push(...checkOpenApiFile(join(restDir, name)));
+      }
+    }
+  }
   return errors.map((e) => e.replace(`${root}/`, ''));
 }
 

@@ -61,6 +61,7 @@
       }
     },
     "/api/v1/admin/devices/{deviceId}/console": {
+      "parameters": [{ "$ref": "#/components/parameters/DeviceId" }],
       "get": {
         "operationId": "getDeviceConsole",
         "x-task-id": "BE-DEV-05",
@@ -102,6 +103,7 @@
       }
     },
     "/api/v1/admin/devices/{deviceId}": {
+      "parameters": [{ "$ref": "#/components/parameters/DeviceId" }],
       "patch": {
         "operationId": "patchDeviceMetadata",
         "x-task-id": "BE-DEV-06",
@@ -118,6 +120,7 @@
       }
     },
     "/api/v1/admin/devices/{deviceId}/activities": {
+      "parameters": [{ "$ref": "#/components/parameters/DeviceId" }],
       "get": {
         "operationId": "listDeviceActivities",
         "x-task-id": "BE-DEV-05",
@@ -137,6 +140,7 @@
       }
     },
     "/api/v1/admin/devices/{deviceId}/activities/exports": {
+      "parameters": [{ "$ref": "#/components/parameters/DeviceId" }],
       "post": {
         "operationId": "exportDeviceActivities",
         "x-task-id": "BE-DEV-05",
@@ -144,6 +148,7 @@
       }
     },
     "/api/v1/admin/devices/{deviceId}/contract-summary": {
+      "parameters": [{ "$ref": "#/components/parameters/DeviceId" }],
       "get": {
         "operationId": "getDeviceContractSummary",
         "x-task-id": "BE-CON-02",
@@ -173,6 +178,7 @@
       }
     },
     "/api/v1/admin/devices/{deviceId}/license": {
+      "parameters": [{ "$ref": "#/components/parameters/DeviceId" }],
       "get": {
         "operationId": "getDeviceLicense",
         "x-task-id": "BE-LIC-01",
@@ -196,6 +202,7 @@
       }
     },
     "/api/v1/admin/platform-users/{userId}/password-reset": {
+      "parameters": [{ "$ref": "#/components/parameters/UserId" }],
       "post": {
         "operationId": "triggerPasswordReset",
         "x-task-id": "BE-RBAC-01",
@@ -203,10 +210,27 @@
       }
     },
     "/api/v1/admin/platform-users/{userId}/deactivate": {
+      "parameters": [{ "$ref": "#/components/parameters/UserId" }],
       "post": {
         "operationId": "deactivatePlatformUser",
         "x-task-id": "BE-RBAC-01",
         "responses": { "200": { "description": "计划中的平台用户停用结果" } }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "DeviceId": {
+        "name": "deviceId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "minLength": 1 }
+      },
+      "UserId": {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "minLength": 1 }
       }
     }
   }

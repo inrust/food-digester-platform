@@ -20,10 +20,13 @@
     "check:schemas": "node scripts/check-schemas.mjs",
     "check:migrations": "node scripts/check-migrations.mjs",
     "check:secrets": "node scripts/check-secrets.mjs",
-    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:secrets"
+    "openapi:bundle": "node scripts/build-openapi.mjs",
+    "openapi:check": "node scripts/build-openapi.mjs --check && redocly lint contracts/rest/openapi-base.json \"contracts/rest/*-api.json\" contracts/rest/openapi.bundle.json --extends spec",
+    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:secrets"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
+    "@redocly/cli": "2.51.1",
     "@types/node": "^20.19.0",
     "eslint": "^9.35.0",
     "prettier": "^3.9.6",
