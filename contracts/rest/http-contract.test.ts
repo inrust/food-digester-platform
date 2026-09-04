@@ -39,7 +39,7 @@ function catchApiError(fn: () => unknown): ApiError {
   assert.fail('应抛出 ApiError');
 }
 
-test('成功响应结构：data + meta(requestId, UTC timestamp)', () => {
+test('基座 SuccessResponse 结构：data + meta(requestId, UTC timestamp)', () => {
   const res = ok({ id: 1 }, ctx);
   assert.deepEqual(res.data, { id: 1 });
   assert.equal(res.meta.requestId, 'req-test-1');

@@ -2,10 +2,10 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bio-Nexa CMP Device Certificate API",
-    "version": "0.1.0",
-    "description": "BE-CERT-01 设备证书状态接口。认证为 Device mTLS（AUTH-03 白名单）；只允许查询当前 mTLS 身份对应的证书；日期一律 UTC；响应不包含 PEM/私钥。通用响应/错误契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0"],
-    "x-decision-register-version": "1.0.0"
+    "version": "0.2.0",
+    "description": "BE-CERT-01/02 设备证书接口。认证为 Device mTLS；成功响应严格保持 Device-Cloud Communication Design 的顶层字段和日期结构，错误响应继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-003@0.2.0"],
+    "x-decision-register-version": "1.18.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
@@ -25,21 +25,12 @@
         "summary": "查询当前设备证书状态（BE-CERT-01）",
         "description": "返回当前 mTLS 身份对应证书的 certificateId、状态（ACTIVE/EXPIRING/EXPIRED/REVOKED）、expiryDate（UTC YYYY-MM-DD）与 daysRemaining（UTC 整日差）。EXPIRING 阈值由部署配置注入（默认 30 天）。不自动轮换、不发送到期告警。",
         "security": [{ "DeviceMtls": [] }],
-        "parameters": [
-          {
-            "name": "deviceId",
-            "in": "query",
-            "required": false,
-            "description": "可选；提供时必须等于当前证书绑定的设备，否则 403 FORBIDDEN（跨设备查询拒绝）",
-            "schema": { "type": "string", "minLength": 1 }
-          }
-        ],
         "responses": {
           "200": {
             "description": "证书状态",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CertificateStatusSuccess" }
+                "schema": { "$ref": "#/components/schemas/CertificateStatus" }
               }
             }
           },
@@ -52,7 +43,7 @@
             }
           },
           "403": {
-            "description": "跨设备查询或设备已退役（FORBIDDEN）",
+            "description": "当前证书绑定设备无权查询状态（FORBIDDEN）",
             "content": {
               "application/json": {
                 "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
@@ -90,7 +81,7 @@
             "description": "轮换成功，返回新证书包（仅本响应携带 privateKey 明文）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CertificateRotateSuccess" }
+                "schema": { "$ref": "#/components/schemas/CertificateRotateResult" }
               }
             }
           },
@@ -166,8 +157,9 @@
           "privateKey": { "type": "string", "minLength": 1 },
           "effectiveDate": {
             "type": "string",
-            "format": "date-time",
-            "description": "新证书生效时间（UTC，双证书窗口起点）"
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "源稿定义的新证书生效日期（UTC YYYY-MM-DD）"
           },
           "expiryDate": {
             "type": "string",
@@ -175,15 +167,6 @@
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "description": "UTC 到期日"
           }
-        }
-      },
-      "CertificateRotateSuccess": {
-        "type": "object",
-        "required": ["data", "meta"],
-        "additionalProperties": false,
-        "properties": {
-          "data": { "$ref": "#/components/schemas/CertificateRotateResult" },
-          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
         }
       },
       "CertificateStatus": {
@@ -201,15 +184,6 @@
             "description": "UTC 到期日"
           },
           "daysRemaining": { "type": "integer", "minimum": 0, "description": "UTC 整日剩余天数" }
-        }
-      },
-      "CertificateStatusSuccess": {
-        "type": "object",
-        "required": ["data", "meta"],
-        "additionalProperties": false,
-        "properties": {
-          "data": { "$ref": "#/components/schemas/CertificateStatus" },
-          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
         }
       }
     }

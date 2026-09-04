@@ -37,6 +37,9 @@ test('deactivate 端点齐备且 DeviceMtls 认证；响应码齐备', () => {
   for (const status of ['200', '401', '404', '409', '500']) {
     assert.ok(op.responses[status], `缺少 ${status}`);
   }
+  assert.ok(!op.requestBody, '源稿未定义请求体，deactivate 必须保持无请求体');
+  assert.ok(doc.info['x-decision-versions'].includes('DEC-014@0.1.0'));
+  assert.ok(!doc.info['x-decision-versions'].some((ref: string) => ref.startsWith('SEC-')));
 });
 
 test('响应视图封闭：退役记录 + 证书摘要（无证书材料字段）；幂等字段齐备', () => {

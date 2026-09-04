@@ -46,44 +46,52 @@ test('请求体封闭：仅 lastSyncTime（UTC 时间戳或 null）', () => {
   assert.ok(!req.required?.includes('lastSyncTime'), '首次同步可省略');
 });
 
-test('快照封闭且六域齐备；etag/版本字段齐备；敏感材料字段不出现', () => {
+test('快照顶层与源稿六域同形，兼容元数据不成为必填线协议', () => {
   const snapshot = doc.components.schemas.DeviceSyncSnapshot;
-  const required = [
-    'deviceId',
-    'snapshotAt',
-    'lastSyncTime',
-    'etag',
-    'assignment',
-    'device',
-    'license',
-    'deviceUsers',
-    'configuration',
-    'operationalStatus',
-  ];
+  const required = ['assignment', 'device', 'license', 'deviceUsers', 'configuration', 'operationalStatus'];
   assert.deepEqual([...snapshot.required].sort(), required.sort());
   assert.equal(snapshot.additionalProperties, false);
+  assert.equal(
+    doc.paths['/api/v1/device/sync'].post.responses['200'].content['application/json'].schema.$ref,
+    '#/components/schemas/DeviceSyncSnapshot',
+  );
 
   const license = doc.components.schemas.SyncLicense;
-  for (const field of ['status', 'validFrom', 'validTo', 'entitlements', 'signature', 'version', 'effective']) {
+  for (const field of ['status', 'validFrom', 'validTo', 'entitlements', 'signature']) {
     assert.ok(license.required.includes(field), `License 缺少 ${field}`);
   }
+  assert.ok(license.properties.status.enum.includes('ACTIVE'));
+  assert.ok(!license.properties.status.enum.includes('Active'));
+  assert.deepEqual(license.properties.entitlements.items.enum, ['REMOTE_CONTROL', 'OTA', 'ESG_REPORTING']);
+  assert.equal(license.properties.validFrom.format, 'date');
 
   const user = doc.components.schemas.SyncDeviceUser;
-  assert.ok(user.required.includes('verifier'), 'Device Users 必须含 DEC-004 验证材料');
-  const verifier = doc.components.schemas.SyncDeviceUserVerifier;
-  assert.deepEqual([...verifier.required].sort(), ['hash', 'kdf', 'salt', 'version'].sort());
-  assert.equal(verifier.additionalProperties, false);
+  assert.deepEqual(user.required, ['userId', 'username', 'displayName', 'passwordHash', 'status']);
+  assert.ok(user.properties.passwordHash.description.includes('设备本地'));
+
+  const configuration = doc.components.schemas.SyncConfiguration;
+  assert.deepEqual(configuration.required, [
+    'heartbeatInterval',
+    'telemetryInterval',
+    'cameraRefreshInterval',
+    'temperatureThreshold',
+  ]);
+  assert.equal(configuration.additionalProperties, false);
 
   const operational = doc.components.schemas.SyncOperationalStatus;
   assert.ok(operational.required.includes('syncIntervalSeconds'), 'Operational Status 必须含同步节奏');
   assert.deepEqual(operational.properties.connectivity.enum, ['ONLINE', 'OFFLINE']);
+  assert.ok(operational.properties.lifecycleStatus.enum.includes('Retired'));
 
-  // 敏感材料不得出现在任何 Schema 字段名（私钥/完整证书/明文密码/云端密码 Hash）
+  // passwordHash 是源稿字段名，但只能表示设备本地验证值；私钥/证书材料/明文密码仍禁止。
   const all = JSON.stringify(doc.components.schemas);
-  assert.ok(
-    !/privateKey|certificatePem|packageCiphertext|plainPassword|passwordHash/i.test(all),
-    '不得出现私钥/证书材料/明文密码字段',
-  );
+  assert.ok(!/privateKey|certificatePem|packageCiphertext|plainPassword/i.test(all), '不得出现密钥材料/明文密码字段');
+});
+
+test('Retired 退役确认待处理设备仍可 Sync，契约不在认证层全局拒绝', () => {
+  const docText = JSON.stringify(doc);
+  assert.ok(!docText.includes('Retired 设备由 AUTH-03 拒绝'));
+  assert.ok(doc.info['x-decision-versions'].includes('DEC-014@0.1.0'));
 });
 
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {

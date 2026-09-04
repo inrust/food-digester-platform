@@ -2,10 +2,10 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bio-Nexa CMP Device Onboarding API",
-    "version": "0.1.0",
-    "description": "BE-ONB-01 设备 Onboarding 申请接口。认证为 AUTH-02 Onboarding Token（一次一机、只存 Hash、与库存序列号绑定）；本端点不审批、不签发证书。通用响应/错误契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0"],
-    "x-decision-register-version": "1.0.0"
+    "version": "0.2.0",
+    "description": "BE-ONB-01/03 设备 Onboarding 接口。认证为 AUTH-02 Onboarding Token（一次一机、只存 Hash、与库存序列号绑定）；成功响应严格保持 Device-Cloud Communication Design 的顶层字段结构，错误响应继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-003@0.2.0"],
+    "x-decision-register-version": "1.18.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
@@ -38,7 +38,7 @@
             "description": "幂等重放：该设备已存在 PENDING 申请，返回原 request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OnboardingRequestSuccess" }
+                "schema": { "$ref": "#/components/schemas/OnboardingRequestResult" }
               }
             }
           },
@@ -46,7 +46,7 @@
             "description": "申请已创建（PENDING）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OnboardingRequestSuccess" }
+                "schema": { "$ref": "#/components/schemas/OnboardingRequestResult" }
               }
             }
           },
@@ -106,23 +106,14 @@
         "tags": ["device"],
         "operationId": "getOnboardingStatus",
         "summary": "查询 Onboarding 状态（BE-ONB-03）",
-        "description": "三类外部状态：PENDING（含审批中及内部 Provisioning 进行中，内部步骤不暴露）、REJECTED（含 rejectReason）、APPROVED（一次性返回证书包：deviceId/certificatePem/privateKey/mqttEndpoint/heartbeatInterval=60，领取成功即销毁密文并核销 Token，重复领取返回 409）。",
+        "description": "三类外部状态：PENDING、REJECTED（字段名 reason）和 APPROVED（deviceId + 嵌套 certificate/mqtt/configuration）。Onboarding Token 隐式绑定唯一申请，不要求源稿未定义的 Query 参数。证书包领取成功即销毁密文并核销 Token，重复领取返回 409。",
         "security": [{ "OnboardingToken": [] }],
-        "parameters": [
-          {
-            "name": "serialNumber",
-            "in": "query",
-            "required": true,
-            "description": "设备库存序列号；必须与 Onboarding Token 绑定的序列号一致",
-            "schema": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,64}$" }
-          }
-        ],
         "responses": {
           "200": {
             "description": "当前 Onboarding 状态",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OnboardingStatusSuccess" }
+                "schema": { "$ref": "#/components/schemas/OnboardingStatusResult" }
               }
             }
           },
@@ -210,64 +201,67 @@
       },
       "OnboardingRequestResult": {
         "type": "object",
-        "required": ["requestId", "status", "serialNumber", "createdAt"],
+        "required": ["requestId", "status"],
         "additionalProperties": false,
         "properties": {
           "requestId": { "type": "string", "minLength": 1, "description": "Onboarding 申请唯一 ID" },
-          "status": { "type": "string", "enum": ["PENDING"] },
-          "serialNumber": { "type": "string" },
-          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
-        }
-      },
-      "OnboardingRequestSuccess": {
-        "type": "object",
-        "required": ["data", "meta"],
-        "additionalProperties": false,
-        "properties": {
-          "data": { "$ref": "#/components/schemas/OnboardingRequestResult" },
-          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+          "status": { "type": "string", "enum": ["PENDING"] }
         }
       },
       "OnboardingStatusPending": {
         "type": "object",
-        "required": ["status", "requestId"],
+        "required": ["status"],
         "additionalProperties": false,
         "properties": {
-          "status": { "type": "string", "enum": ["PENDING"] },
-          "requestId": { "type": "string", "minLength": 1 }
+          "status": { "type": "string", "enum": ["PENDING"] }
         }
       },
       "OnboardingStatusRejected": {
         "type": "object",
-        "required": ["status", "requestId", "rejectReason"],
+        "required": ["status", "reason"],
         "additionalProperties": false,
         "properties": {
           "status": { "type": "string", "enum": ["REJECTED"] },
-          "requestId": { "type": "string", "minLength": 1 },
-          "rejectReason": { "type": ["string", "null"] }
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      },
+      "OnboardingCertificate": {
+        "type": "object",
+        "required": ["certificatePem", "privateKey"],
+        "additionalProperties": false,
+        "description": "源稿证书对象；privateKey 仅在一次性批准响应中返回，禁止写入日志或审计。",
+        "properties": {
+          "certificatePem": { "type": "string", "minLength": 1 },
+          "privateKey": { "type": "string", "minLength": 1 }
+        }
+      },
+      "OnboardingMqtt": {
+        "type": "object",
+        "required": ["endpoint"],
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": { "type": "string", "minLength": 1 }
+        }
+      },
+      "OnboardingInitialConfiguration": {
+        "type": "object",
+        "required": ["heartbeatInterval"],
+        "additionalProperties": false,
+        "properties": {
+          "heartbeatInterval": { "type": "integer", "enum": [60] }
         }
       },
       "OnboardingStatusApproved": {
         "type": "object",
-        "required": [
-          "status",
-          "requestId",
-          "deviceId",
-          "certificatePem",
-          "privateKey",
-          "mqttEndpoint",
-          "heartbeatInterval"
-        ],
+        "required": ["status", "deviceId", "certificate", "mqtt", "configuration"],
         "additionalProperties": false,
-        "description": "证书包一次性下发：仅本响应携带 privateKey 明文；服务端领取成功即销毁密文",
+        "description": "与源稿批准响应同形；证书包一次性下发，服务端领取成功即销毁密文。",
         "properties": {
           "status": { "type": "string", "enum": ["APPROVED"] },
-          "requestId": { "type": "string", "minLength": 1 },
           "deviceId": { "type": "string", "minLength": 1 },
-          "certificatePem": { "type": "string", "minLength": 1 },
-          "privateKey": { "type": "string", "minLength": 1 },
-          "mqttEndpoint": { "type": "string", "minLength": 1 },
-          "heartbeatInterval": { "type": "integer", "enum": [60] }
+          "certificate": { "$ref": "#/components/schemas/OnboardingCertificate" },
+          "mqtt": { "$ref": "#/components/schemas/OnboardingMqtt" },
+          "configuration": { "$ref": "#/components/schemas/OnboardingInitialConfiguration" }
         }
       },
       "OnboardingStatusResult": {
@@ -276,15 +270,6 @@
           { "$ref": "#/components/schemas/OnboardingStatusRejected" },
           { "$ref": "#/components/schemas/OnboardingStatusApproved" }
         ]
-      },
-      "OnboardingStatusSuccess": {
-        "type": "object",
-        "required": ["data", "meta"],
-        "additionalProperties": false,
-        "properties": {
-          "data": { "$ref": "#/components/schemas/OnboardingStatusResult" },
-          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
-        }
       }
     }
   }

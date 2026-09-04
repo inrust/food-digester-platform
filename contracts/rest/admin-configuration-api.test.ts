@@ -69,34 +69,17 @@ test('七个端点齐备且 Cognito 认证；operationId 与响应码齐备', ()
   }
 });
 
-test('Schema 封闭：配置字段齐备/范围校验/派生与网络字段说明/不可变版本/同步状态', () => {
+test('Schema 封闭：V1 只允许源稿四字段，候选扩展在 DEC-018 冻结前拒绝', () => {
   const payload = doc.components.schemas.ConfigurationPayload;
   assert.equal(payload.additionalProperties, false);
   assert.deepEqual(
     [...payload.required].sort(),
-    [
-      'image',
-      'rotation',
-      'motor',
-      'heating',
-      'language',
-      'heartbeatInterval',
-      'telemetryInterval',
-      'cameraRefreshInterval',
-      'temperatureThreshold',
-    ].sort(),
+    ['heartbeatInterval', 'telemetryInterval', 'cameraRefreshInterval', 'temperatureThreshold'].sort(),
   );
-  assert.ok(payload.description.includes('contract'), '派生字段拒绝说明');
-  assert.ok(payload.description.includes('ntpServer'), '未冻结网络字段拒绝说明');
-  // 范围与交叉校验
-  assert.equal(payload.properties.heartbeatInterval.minimum, 30);
-  assert.equal(doc.components.schemas.ConfigurationPayloadImage.properties.width.maximum, 1920);
-  assert.ok(
-    doc.components.schemas.ConfigurationPayloadHeating.description.includes(
-      'minTemperatureCelsius < maxTemperatureCelsius',
-    ),
-  );
-  assert.deepEqual(payload.properties.language.enum, ['zh-CN', 'en-US']);
+  for (const rejected of ['image', 'rotation', 'motor', 'heating', 'language', 'cloudDomain', 'ntpServer']) {
+    assert.ok(!(rejected in payload.properties), `${rejected} 在 DEC-018 冻结前不得进入 V1`);
+  }
+  assert.ok(doc.info['x-decision-versions'].includes('DEC-018@0.1.0'));
   // 版本不可变：无 payload 更新端点
   const version = doc.components.schemas.ConfigurationVersion;
   assert.equal(version.additionalProperties, false);

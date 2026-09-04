@@ -47,6 +47,9 @@ test('轮换契约：请求强制 currentCertificateId；响应五字段；409/4
   assert.equal(input.additionalProperties, false);
   const result = doc.components.schemas.CertificateRotateResult;
   assert.deepEqual(result.required, ['certificateId', 'certificatePem', 'privateKey', 'effectiveDate', 'expiryDate']);
+  assert.equal(result.properties.effectiveDate.format, 'date');
+  assert.ok(result.properties.effectiveDate.pattern);
+  assert.equal(post.responses['200'].content['application/json'].schema.$ref, '#/components/schemas/CertificateRotateResult');
   for (const status of ['200', '400', '401', '403', '409', '500']) {
     assert.ok(post.responses[status], `缺少 ${status} 响应`);
   }
@@ -63,11 +66,10 @@ test('状态契约为四态枚举且响应不含 PEM/私钥字段', () => {
   assert.ok(schema.properties.expiryDate.pattern, 'expiryDate 必须为 UTC 日期格式');
 });
 
-test('跨设备查询语义：deviceId 参数可选且 403 响应存在', () => {
+test('状态查询由 mTLS 身份定位证书，不增加源稿未定义的 deviceId Query', () => {
   const get = doc.paths['/api/v1/device/certificate/status'].get;
-  const deviceIdParam = get.parameters.find((p: { name?: string }) => p.name === 'deviceId');
-  assert.ok(deviceIdParam);
-  assert.equal(deviceIdParam.required, false);
+  assert.ok(!get.parameters);
+  assert.equal(get.responses['200'].content['application/json'].schema.$ref, '#/components/schemas/CertificateStatus');
   assert.ok(get.responses['403']);
   assert.ok(get.responses['401']);
 });

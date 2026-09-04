@@ -58,8 +58,9 @@ test('成功响应含 requestId 与 PENDING 状态（200 幂等重放 / 201 新�
   const post = doc.paths['/api/v1/device/onboarding/request'].post;
   for (const status of ['200', '201']) assert.ok(post.responses[status], `缺少 ${status} 响应`);
   const result = doc.components.schemas.OnboardingRequestResult;
-  assert.ok(result.required.includes('requestId'));
+  assert.deepEqual(result.required, ['requestId', 'status']);
   assert.deepEqual(result.properties.status.enum, ['PENDING']);
+  assert.equal(post.responses['201'].content['application/json'].schema.$ref, '#/components/schemas/OnboardingRequestResult');
 });
 
 test('负向响应覆盖稳定错误码语义：400/401/404/409/429/500', () => {
@@ -85,27 +86,30 @@ test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.
   }
 });
 
-test('BE-ONB-03 status 端点：三态契约与一次性证书包字段', () => {
+test('BE-ONB-03 status 端点：Token 隐式定位，三态响应与源稿嵌套结构一致', () => {
   const get = doc.paths['/api/v1/device/onboarding/status'].get;
   assert.equal(get.operationId, 'getOnboardingStatus');
   assert.deepEqual(get.security, [{ OnboardingToken: [] }]);
-  const serialParam = get.parameters.find((p: { name?: string }) => p.name === 'serialNumber');
-  assert.ok(serialParam?.required);
+  assert.ok(!get.parameters, '源稿未定义 status Query 参数，不得强制 serialNumber');
+  assert.equal(get.responses['200'].content['application/json'].schema.$ref, '#/components/schemas/OnboardingStatusResult');
 
   const result = doc.components.schemas.OnboardingStatusResult;
   assert.equal(result.oneOf.length, 3, 'PENDING/REJECTED/APPROVED 三态');
 
   const approved = doc.components.schemas.OnboardingStatusApproved;
-  for (const field of ['deviceId', 'certificatePem', 'privateKey', 'mqttEndpoint', 'heartbeatInterval']) {
+  for (const field of ['status', 'deviceId', 'certificate', 'mqtt', 'configuration']) {
     assert.ok(approved.required.includes(field), `APPROVED 缺少 ${field}`);
   }
-  assert.deepEqual(approved.properties.heartbeatInterval.enum, [60]);
+  assert.deepEqual(doc.components.schemas.OnboardingInitialConfiguration.properties.heartbeatInterval.enum, [60]);
+  assert.ok(doc.components.schemas.OnboardingCertificate.required.includes('privateKey'));
+  assert.ok(doc.components.schemas.OnboardingMqtt.required.includes('endpoint'));
 
   const rejected = doc.components.schemas.OnboardingStatusRejected;
-  assert.ok(rejected.required.includes('rejectReason'));
+  assert.ok(rejected.required.includes('reason'));
+  assert.ok(!('rejectReason' in rejected.properties));
   // PENDING 形态不得携带任何证书材料字段
   const pending = doc.components.schemas.OnboardingStatusPending;
-  assert.ok(!('privateKey' in pending.properties) && !('certificatePem' in pending.properties));
+  assert.deepEqual(pending.required, ['status']);
   // 重复领取/过期为确定性 409
   assert.ok(get.responses['409']);
 });

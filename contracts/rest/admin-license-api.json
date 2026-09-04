@@ -2,10 +2,10 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bio-Nexa CMP Admin License API",
-    "version": "0.1.0",
-    "description": "BE-LIC-01 License/Entitlement 管理接口（Cognito 认证；license:write=PlatformSuperAdmin/PlatformOperator，license:read 另含 Auditor）：创建 Draft（配置 REMOTE_CONTROL/OTA_UPDATE/ESG_REPORTING Entitlement）、Issue（生成签名）、Activate（SYSTEM 激活，要求已到 validFrom）、Renew（ExpiringSoon→Renewed，延长 validTo + 重签，同目标重复请求幂等回放）、Revoke（Active/Expired→Revoked，强制原因）、Evaluate（可测试时间派生：Active→ExpiringSoon/Expired、ExpiringSoon→Expired、Renewed→Active 结算；不实现定时扫描）、详情与历史。所有迁移走 DOM-02 状态机；每次真实变化恰好一条历史 + 一次审计 + 一个 LICENSE_CHANGED 通知（Outbox 下行 SYNC）；一个设备不能出现两个有效 License（领域拒绝 + DB 部分唯一索引兜底）。License 返回 signature 字段供 Sync（HMAC-SHA256 暂定机制，签名密钥部署注入）。通用契约继承 openapi-base.json（CT-05）。",
+    "version": "0.2.0",
+    "description": "BE-LIC-01 License/Entitlement 管理接口（Cognito 认证；license:write=PlatformSuperAdmin/PlatformOperator，license:read 另含 Auditor）：创建 Draft（配置 REMOTE_CONTROL/OTA/ESG_REPORTING Entitlement）、Issue、Activate、Renew、Revoke、Evaluate、详情与历史。Entitlement 代码保持 Device-Cloud Communication Design 定义的 OTA，不改名为 OTA_UPDATE。每次真实变化生成历史、审计和 LICENSE_CHANGED 通知。License 返回 signature 供 Sync。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-012@0.2.0"],
-    "x-decision-register-version": "1.0.0"
+    "x-decision-register-version": "1.18.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
@@ -277,12 +277,12 @@
         "additionalProperties": false,
         "properties": {
           "deviceId": { "type": "string", "minLength": 1 },
-          "validFrom": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
-          "validTo": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "validFrom": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "validTo": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
           "entitlements": {
             "type": "array",
             "minItems": 1,
-            "items": { "type": "string", "enum": ["REMOTE_CONTROL", "OTA_UPDATE", "ESG_REPORTING"] }
+            "items": { "type": "string", "enum": ["REMOTE_CONTROL", "OTA", "ESG_REPORTING"] }
           },
           "reason": { "type": "string", "maxLength": 500 }
         }
@@ -293,7 +293,9 @@
         "additionalProperties": false,
         "properties": {
           "newValidTo": {
-            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "description": "必须晚于当前 validTo"
           }
         }
@@ -322,7 +324,7 @@
         "required": ["code", "enabled"],
         "additionalProperties": false,
         "properties": {
-          "code": { "type": "string", "enum": ["REMOTE_CONTROL", "OTA_UPDATE", "ESG_REPORTING"] },
+          "code": { "type": "string", "enum": ["REMOTE_CONTROL", "OTA", "ESG_REPORTING"] },
           "enabled": { "type": "boolean" }
         }
       },
@@ -352,8 +354,8 @@
             "type": "string",
             "enum": ["Draft", "Issued", "Active", "ExpiringSoon", "Renewed", "Expired", "Revoked"]
           },
-          "validFrom": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
-          "validTo": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "validFrom": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "validTo": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
           "entitlements": { "type": "array", "items": { "$ref": "#/components/schemas/LicenseEntitlement" } },
           "signature": {
             "type": ["string", "null"],

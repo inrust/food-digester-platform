@@ -67,7 +67,7 @@ test('Schema 封闭：七态枚举/Entitlement 三码/签名字段/强制原因/
   assert.ok(license.required.includes('signature'), 'License 返回签名字段供 Sync');
   assert.ok(license.required.includes('effective'), '查询时点派生 effective');
   const ent = doc.components.schemas.LicenseEntitlement;
-  assert.deepEqual(ent.properties.code.enum, ['REMOTE_CONTROL', 'OTA_UPDATE', 'ESG_REPORTING']);
+  assert.deepEqual(ent.properties.code.enum, ['REMOTE_CONTROL', 'OTA', 'ESG_REPORTING']);
   const createReq = doc.components.schemas.LicenseCreateRequest;
   assert.deepEqual(createReq.required.sort(), ['deviceId', 'entitlements', 'validFrom', 'validTo'].sort());
   assert.equal(createReq.properties.entitlements.minItems, 1);

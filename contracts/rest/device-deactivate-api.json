@@ -2,10 +2,10 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bio-Nexa CMP Device Deactivate API",
-    "version": "0.1.0",
-    "description": "BE-SYNC-02 设备退役确认接口（mTLS 认证，设备自身身份）：接收退役确认，校验待退役上下文（生命周期 Retired + PENDING_CONFIRMATION 退役记录），标记 CONFIRMED 并触发证书停用完成步骤（撤销 ACTIVE 证书）。专用身份校验：Retired 设备在证书撤销前可达（AUTH-03 通用校验对 Retired 一律拒绝，故本端点不复用）；证书撤销后的重复确认按幂等重放返回一致结果。非退役设备直接调用 → 409 DEVICE_STATE_NOT_ALLOWED；审计 device.deactivate.confirm 仅含证书摘要，不泄露证书材料。不负责设备本地数据删除或物理退役。通用契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "SEC-001@1.0.0"],
-    "x-decision-register-version": "1.0.0"
+    "version": "0.2.0",
+    "description": "BE-SYNC-02 设备退役确认接口（mTLS 认证，设备自身身份）：接收源稿定义的无请求体退役确认，校验 Retired + PENDING_CONFIRMATION 上下文，标记 CONFIRMED 后撤销证书。AUTH-03 只校验证书有效性与设备归属，独立 Endpoint Allowlist 在确认完成前仅放行 Sync/Deactivate，避免认证死锁。非退役设备返回 409；审计不包含证书材料。错误与扩展成功响应继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-014@0.1.0"],
+    "x-decision-register-version": "1.18.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

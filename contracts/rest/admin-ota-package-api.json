@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-OTA-01 Firmware Package 上传与校验接口（Cognito 认证）。POST /api/v1/admin/ota/packages/upload-sessions 创建上传会话（ota:write = PlatformSuperAdmin/PlatformOperator）：声明 model/version/packageType（CT-03 OTA Schema 枚举 APP|FIRMWARE）/sizeBytes/SHA-256/签名，同型号+版本+packageType 唯一（重复 → 409），返回服务端生成 objectKey 的短期预签名上传 URL（900s 暂定）。POST /api/v1/admin/ota/packages/{packageId}/complete 上传后校验：对象存在、大小一致、SHA-256 重算匹配、数字签名验证（签名格式由 contracts/security/ota-package-signature-policy 冻结值驱动，冻结前失败关闭 → 409）、病毒扫描 adapter（未选型时缺省不装配）；全部通过 → VERIFIED 不可变。成功包不可覆盖（VERIFIED 重复完成 → 409）；未完成上传（UPLOADED）不进入可发布列表（可发布 = status VERIFIED）。列表/详情 ota:read（含 Auditor）。审计 ota.package.upload_session.create / ota.package.verify（DOM-03）。功能边界：不实现设备端验签、安装和回滚。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-012@0.2.0"],
-    "x-decision-register-version": "1.0.0"
+    "x-decision-register-version": "1.18.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

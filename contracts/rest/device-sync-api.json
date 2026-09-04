@@ -2,10 +2,17 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bio-Nexa CMP Unified Device Sync API",
-    "version": "0.1.0",
-    "description": "BE-SYNC-01 统一设备同步接口（mTLS 认证，设备自身身份，AUTH-03 白名单校验）：接收 lastSyncTime，返回 Assignment（customerId/customerName、siteId/siteName、授权窗口）、Device Metadata（别名）、License/Entitlements/签名、Device Users（含 DEC-004 设备本地专用验证材料 version+kdf+salt+hash，Sync 域为唯一授权下发通道）、Configuration（设备定向优先、未来生效不下发）、Operational Status 的完整事实快照。快照为全量事实源：即使 etag 未变化也不省略任何必要域（设备无法安全缓存的域不下发增量）；etag 仅覆盖稳定域（snapshotAt/connectivity/lastHeartbeatAt 为 volatile，不参与）。设备调用节奏为设备契约（Active 5 分钟 / Suspended 15 分钟 / 重连与 Notification 后立即调用），云端不实现设备端定时器与本地缓存。Retired 设备由 AUTH-03 拒绝（403），不产生快照。通用契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "SEC-001@1.0.0", "DEC-001@0.2.0", "DEC-004@0.2.0"],
-    "x-decision-register-version": "1.0.0"
+    "version": "0.2.0",
+    "description": "BE-SYNC-01 统一设备同步接口（mTLS 认证，设备自身身份）：接收 lastSyncTime，按 Device-Cloud Communication Design 的字段名和嵌套结构返回 Assignment、Device、License、Configuration、Device Users 与 Operational Status 的完整顶层快照。V1 不按 lastSyncTime 或 etag 裁剪必要域。Retired 且退役确认待处理的设备仍可调用 Sync 获取最新状态；生命周期 Endpoint Allowlist 与证书认证分离。错误响应继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": [
+      "PRI-001@1.0.0",
+      "ADP-001@1.0.0",
+      "DEC-001@0.2.0",
+      "DEC-004@0.2.0",
+      "DEC-014@0.1.0",
+      "DEC-018@0.1.0"
+    ],
+    "x-decision-register-version": "1.18.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
@@ -38,7 +45,7 @@
             "description": "完整事实快照",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SyncSuccess" }
+                "schema": { "$ref": "#/components/schemas/DeviceSyncSnapshot" }
               }
             }
           },
@@ -59,7 +66,7 @@
             }
           },
           "403": {
-            "description": "设备已退役（FORBIDDEN：Retired 设备拒绝一切接入，不产生快照）",
+            "description": "生命周期不允许访问（FORBIDDEN）；Retired 且退役确认待处理的设备例外，仅允许 Sync/Deactivate",
             "content": {
               "application/json": {
                 "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
@@ -95,35 +102,23 @@
       },
       "SyncAssignment": {
         "type": "object",
-        "required": [
-          "assignmentId",
-          "customerId",
-          "customerName",
-          "siteId",
-          "siteName",
-          "region",
-          "subregion",
-          "assignedAt",
-          "endedAt"
-        ],
+        "required": ["customerId", "customerName", "siteId", "siteName"],
         "additionalProperties": false,
-        "description": "当前 ACTIVE 分配与授权窗口（[assignedAt, endedAt)，ACTIVE 为 null）",
+        "description": "源稿 Assignment 结构；授权窗口为兼容扩展字段。",
         "properties": {
-          "assignmentId": { "type": "string", "minLength": 1 },
           "customerId": { "type": "string", "minLength": 1 },
           "customerName": { "type": "string", "minLength": 1 },
           "siteId": { "type": "string", "minLength": 1 },
           "siteName": { "type": "string", "minLength": 1 },
-          "region": { "type": ["string", "null"] },
-          "subregion": { "type": ["string", "null"] },
           "assignedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
           "endedAt": { "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }] }
         }
       },
       "SyncDeviceMetadata": {
         "type": "object",
-        "required": ["deviceId", "alias", "serialNumber", "model", "firmwareVersion"],
+        "required": ["alias"],
         "additionalProperties": false,
+        "description": "源稿示例只要求 alias；其余设备元数据为兼容扩展字段。",
         "properties": {
           "deviceId": { "type": "string", "minLength": 1 },
           "alias": { "type": ["string", "null"], "description": "Device Alias（管理后台可改，经本域下发）" },
@@ -140,71 +135,55 @@
           "validFrom",
           "validTo",
           "entitlements",
-          "signature",
-          "version",
-          "effective"
+          "signature"
         ],
         "additionalProperties": false,
-        "description": "当前 License：有效优先（状态有效且在有效期内），否则最新一条；签名供设备校验（Draft 无签名为 null）",
+        "description": "源稿 License 结构；设备线协议使用大写状态和 OTA entitlement。",
         "properties": {
           "licenseId": { "type": "string", "minLength": 1 },
           "status": {
             "type": "string",
-            "enum": ["Draft", "Issued", "Active", "ExpiringSoon", "Renewed", "Expired", "Revoked"]
+            "enum": ["NO_LICENSE", "DRAFT", "ISSUED", "ACTIVE", "EXPIRING_SOON", "RENEWED", "EXPIRED", "REVOKED"]
           },
-          "validFrom": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
-          "validTo": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "validFrom": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "validTo": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
           "entitlements": {
             "type": "array",
-            "items": { "type": "string", "enum": ["REMOTE_CONTROL", "OTA_UPDATE", "ESG_REPORTING"] },
+            "items": { "type": "string", "enum": ["REMOTE_CONTROL", "OTA", "ESG_REPORTING"] },
             "description": "启用的 Entitlement 代码"
           },
           "signature": {
-            "type": ["string", "null"],
-            "description": "License 规范载荷签名（HMAC-SHA256/base64url；暂定机制）"
+            "type": "string",
+            "minLength": 1,
+            "description": "源稿 License 签名；具体算法与规范化方式仍待冻结。"
           },
           "version": { "type": "integer", "minimum": 1 },
           "effective": { "type": "boolean", "description": "查询时点派生：是否可支撑设备运行" }
         }
       },
-      "SyncDeviceUserVerifier": {
-        "type": "object",
-        "required": ["version", "kdf", "salt", "hash"],
-        "additionalProperties": false,
-        "description": "DEC-004 设备本地专用加盐验证材料（固定四字段）；禁止复用云端密码 Hash；kdf/version 在 DEC-004 冻结前可为 null",
-        "properties": {
-          "version": { "type": ["string", "null"], "description": "验证材料版本（算法迁移用）" },
-          "kdf": { "type": ["string", "null"], "description": "KDF 算法标识（DEC-004 冻结后必填）" },
-          "salt": { "type": "string", "minLength": 1, "description": "每用户独立随机 salt" },
-          "hash": { "type": "string", "minLength": 1, "description": "设备本地专用验证值" }
-        }
-      },
       "SyncDeviceUser": {
         "type": "object",
-        "required": ["deviceUserId", "username", "version", "assignedAt", "verifier"],
+        "required": ["userId", "username", "displayName", "passwordHash", "status"],
         "additionalProperties": false,
-        "description": "授权到本设备的 ACTIVE 设备操作员（停用用户不下发）",
+        "description": "与源稿 Device User 结构同形。passwordHash 仅表示设备本地账号专用验证值，不得复用云端用户或 Cognito 密码 Hash；KDF/Salt/版本仍由 DEC-004 冻结。",
         "properties": {
-          "deviceUserId": { "type": "string", "minLength": 1 },
+          "userId": { "type": "string", "minLength": 1 },
           "username": { "type": "string", "minLength": 1 },
-          "version": { "type": "integer", "minimum": 1, "description": "同步版本（任何用户/分配变化 +1）" },
-          "assignedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
-          "verifier": { "$ref": "#/components/schemas/SyncDeviceUserVerifier" }
+          "displayName": { "type": "string", "minLength": 1 },
+          "passwordHash": { "type": "string", "minLength": 1, "description": "设备本地专用验证值；不是云端账号密码 Hash。" },
+          "status": { "type": "string", "enum": ["ACTIVE", "DISABLED"] }
         }
       },
       "SyncConfiguration": {
         "type": "object",
-        "required": ["configurationId", "version", "payload", "effectiveAt"],
+        "required": ["heartbeatInterval", "telemetryInterval", "cameraRefreshInterval", "temperatureThreshold"],
         "additionalProperties": false,
-        "description": "当前有效配置（设备定向优先于型号定向；已发布且已到 effectiveAt 的最高版本；未来生效不下发）。payload 封闭结构见 admin-configuration-api.json ConfigurationPayload",
+        "description": "源稿 V1 Configuration 四字段完整快照；DEC-018 冻结前不得加入候选扩展字段。",
         "properties": {
-          "configurationId": { "type": "string", "minLength": 1 },
-          "version": { "type": "integer", "minimum": 1 },
-          "payload": {
-            "type": "object",
-            "description": "配置完整快照（封闭 Schema，同 admin-configuration-api.json ConfigurationPayload）"
-          },
-          "effectiveAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+          "heartbeatInterval": { "type": "integer" },
+          "telemetryInterval": { "type": "integer" },
+          "cameraRefreshInterval": { "type": "integer" },
+          "temperatureThreshold": { "type": "number" }
         }
       },
       "SyncOperationalStatus": {
@@ -222,9 +201,10 @@
               "Assigned",
               "Licensed",
               "Active",
-              "Suspended"
+              "Suspended",
+              "Retired"
             ],
-            "description": "DOM-01 生命周期（Retired 由认证层 403，不产生快照）"
+            "description": "DOM-01 生命周期；Retired 确认待处理设备可通过本接口取得该状态。"
           },
           "operationalStatus": {
             "oneOf": [
@@ -247,10 +227,6 @@
       "DeviceSyncSnapshot": {
         "type": "object",
         "required": [
-          "deviceId",
-          "snapshotAt",
-          "lastSyncTime",
-          "etag",
           "assignment",
           "device",
           "license",
@@ -259,7 +235,7 @@
           "operationalStatus"
         ],
         "additionalProperties": false,
-        "description": "完整事实源快照（全量，不做增量裁剪；未分配/未许可/无配置域为 null 或空数组）",
+        "description": "与源稿顶层域同形的完整事实源快照（全量，不做增量裁剪；未分配/未许可/无配置域为 null 或空数组）。deviceId/snapshotAt/lastSyncTime/etag 是可选兼容元数据，不包裹 data/meta。",
         "properties": {
           "deviceId": { "type": "string", "minLength": 1 },
           "snapshotAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
@@ -281,15 +257,6 @@
           },
           "configuration": { "oneOf": [{ "$ref": "#/components/schemas/SyncConfiguration" }, { "type": "null" }] },
           "operationalStatus": { "$ref": "#/components/schemas/SyncOperationalStatus" }
-        }
-      },
-      "SyncSuccess": {
-        "type": "object",
-        "required": ["data", "meta"],
-        "additionalProperties": false,
-        "properties": {
-          "data": { "$ref": "#/components/schemas/DeviceSyncSnapshot" },
-          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
         }
       }
     }

@@ -4,8 +4,14 @@
     "title": "Bio-Nexa CMP Admin Device Retirement API",
     "version": "0.1.0",
     "description": "BE-DEV-04 设备退役工作流（Cognito 认证，device:write）：管理员 retire（仅 Active/Suspended→Retired，DOM-01 迁移仅 PlatformSuperAdmin，强制原因 + confirm=true；撤销 Assignment/License/Entitlement；创建 PENDING_CONFIRMATION 退役记录；生成 DEVICE_RETIRED 通知；证书保持 ACTIVE 直至设备确认）；force-complete（离线设备不等待确认，强制原因，完成退役并撤销证书，与 BE-SYNC-02 共享完成步骤）。Retired 永久不可恢复；不实现离线等待期限的运维调度。通用契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-001@0.2.0", "DEC-010@0.2.0", "SEC-001@1.0.0"],
-    "x-decision-register-version": "1.0.0"
+    "x-decision-versions": [
+      "PRI-001@1.0.0",
+      "ADP-001@1.0.0",
+      "DEC-001@0.2.0",
+      "DEC-010@0.2.0",
+      "DEC-014@0.1.0"
+    ],
+    "x-decision-register-version": "1.18.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
