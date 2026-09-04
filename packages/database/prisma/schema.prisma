@@ -233,19 +233,22 @@ model OnboardingToken {
 }
 
 model OnboardingRequest {
-  id              String    @id @default(uuid())
-  tokenId         String    @unique @map("token_id")
-  serialNumber    String    @map("serial_number")
-  model           String
-  hardwareVersion String    @map("hardware_version")
-  manufacturer    String
-  manufactureDate DateTime  @map("manufacture_date") @db.Date
-  status          String    @default("PENDING") // PENDING | APPROVED | REJECTED
-  rejectReason    String?   @map("reject_reason")
-  reviewedBy      String?   @map("reviewed_by")
-  reviewedAt      DateTime? @map("reviewed_at") @db.Timestamptz
-  version         Int       @default(1) // 乐观锁（If-Match，BE-ONB-02）
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  id                    String    @id @default(uuid())
+  tokenId               String    @unique @map("token_id")
+  serialNumber          String    @map("serial_number")
+  model                 String
+  hardwareVersion       String    @map("hardware_version")
+  manufacturer          String
+  manufactureDate       DateTime  @map("manufacture_date") @db.Date
+  status                String    @default("PENDING") // PENDING | APPROVED | REJECTED | TIMED_OUT（内部，外部映射 REJECTED）
+  rejectReason          String?   @map("reject_reason")
+  reviewedBy            String?   @map("reviewed_by")
+  reviewedAt            DateTime? @map("reviewed_at") @db.Timestamptz
+  onboardingDeadlineAt  DateTime? @map("onboarding_deadline_at") @db.Timestamptz
+  timedOutAt            DateTime? @map("timed_out_at") @db.Timestamptz
+  revocationCompletedAt DateTime? @map("revocation_completed_at") @db.Timestamptz
+  version               Int       @default(1) // 乐观锁（If-Match，BE-ONB-02）
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   token OnboardingToken @relation(fields: [tokenId], references: [id])
 

@@ -3,9 +3,9 @@
   "info": {
     "title": "Bio-Nexa CMP Device Onboarding API",
     "version": "0.2.0",
-    "description": "BE-ONB-01/03 设备 Onboarding 接口。认证为 AUTH-02 Onboarding Token（一次一机、只存 Hash、与库存序列号绑定）；成功响应严格保持 Device-Cloud Communication Design 的顶层字段结构，错误响应继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-003@1.0.0"],
-    "x-decision-register-version": "1.26.0"
+    "description": "BE-ONB-01/03 设备 Onboarding 接口。认证为 AUTH-02 Onboarding Token（一次一机、只存 Hash、与库存序列号绑定）；DEC-017@1.0.0 冻结证书包存储后 24 小时首个 Heartbeat 截止，超时外部映射 REJECTED/ONBOARDING_TIMEOUT，重新申请必须使用新 Token。成功响应严格保持 Device-Cloud Communication Design 的顶层字段结构，错误响应继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-003@1.0.0", "DEC-017@1.0.0"],
+    "x-decision-register-version": "1.27.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
@@ -106,7 +106,7 @@
         "tags": ["device"],
         "operationId": "getOnboardingStatus",
         "summary": "查询 Onboarding 状态（BE-ONB-03）",
-        "description": "三类外部状态：PENDING、REJECTED（字段名 reason）和 APPROVED（deviceId + 嵌套 certificate/mqtt/configuration）。Onboarding Token 隐式绑定唯一申请，不要求源稿未定义的 Query 参数。证书包领取成功即销毁密文并核销 Token，重复领取返回 409。",
+        "description": "三类外部状态：PENDING、REJECTED（字段名 reason；DEC-017 超时稳定原因为 ONBOARDING_TIMEOUT）和 APPROVED（deviceId + 嵌套 certificate/mqtt/configuration）。Onboarding Token 隐式绑定唯一申请，不要求源稿未定义的 Query 参数。证书包领取成功即销毁密文并核销 Token，重复领取返回 409。",
         "security": [{ "OnboardingToken": [] }],
         "responses": {
           "200": {

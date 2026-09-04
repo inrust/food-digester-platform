@@ -19,6 +19,7 @@ import { recordAudit, withTransaction } from '@fdp/database';
 import { buildDevicePolicy } from '@fdp/aws-clients';
 import type { DataKeyProvider } from '@fdp/aws-clients';
 import { certificateFingerprintFromPem, SecurePackageService } from '@fdp/auth';
+import { onboardingDeadlineFrom } from '@fdp/contracts/lifecycle/onboarding-timeout-policy.js';
 import type { AdminOnboardingRequestRecord, ProvisioningTrigger } from '../admin/onboarding/index.js';
 import type { IotProvisioningPort } from './iot-port.js';
 
@@ -63,6 +64,7 @@ interface CertificateRow {
   readonly deviceId: string;
   readonly status: string;
   readonly packageCiphertext: Uint8Array | null;
+  readonly packageExpiresAt: Date | null;
 }
 
 interface DeviceDelegate {
@@ -72,6 +74,10 @@ interface DeviceDelegate {
 interface CertificateDelegate {
   findFirst(args: { where: Record<string, unknown> }): Promise<CertificateRow | null>;
   create(args: { data: Record<string, unknown> }): Promise<CertificateRow>;
+  updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
+}
+
+interface OnboardingRequestDelegate {
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
 }
 
@@ -110,6 +116,27 @@ export class ProvisioningService implements ProvisioningTrigger {
     return this.provision(request);
   }
 
+  /** DEC-003 + DEC-017：截止前未领取包过期，撤销旧证书并重签；截止后由评估器终止。 */
+  async recoverExpiredPackage(
+    request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'>,
+    certificateId: string,
+  ): Promise<ProvisioningResult> {
+    await this.deps.iot.revokeCertificate(certificateId);
+    const certificates = (this.db as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
+    const { count } = await certificates.updateMany({
+      where: { id: certificateId, status: 'PENDING_CLAIM' },
+      data: {
+        status: 'REVOKED',
+        revokedAt: this.now(),
+        packageCiphertext: null,
+        packageKmsKeyId: null,
+        packageExpiresAt: null,
+      },
+    });
+    if (count !== 1) throw new ProvisioningError('过期证书状态已变化，请重试');
+    return this.provision(request);
+  }
+
   async provision(request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'>): Promise<ProvisioningResult> {
     const devices = (this.db as unknown as Record<string, unknown>).device as DeviceDelegate;
     const certificates = (this.db as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
@@ -122,6 +149,8 @@ export class ProvisioningService implements ProvisioningTrigger {
       where: { deviceId: device.id, status: 'PENDING_CLAIM' },
     });
     if (existing?.packageCiphertext) {
+      if (!existing.packageExpiresAt) throw new ProvisioningError('证书包缺少过期时间，不能设置 Onboarding 截止时间');
+      await this.setOnboardingDeadline(request.id, this.deadlineFromPackageExpiry(existing.packageExpiresAt));
       return { deviceId: device.id, certificateId: existing.id, replayed: true };
     }
 
@@ -171,8 +200,26 @@ export class ProvisioningService implements ProvisioningTrigger {
 
     // AWS 返回私钥后立即信封加密存储（明文仅内存经过；SEC-01 自记 CERT_PACKAGE_STORE 审计）
     const payload: CertificatePackagePayload = { certificatePem: cert.certificatePem, privateKey: cert.privateKey };
-    await this.securePackage.storePackage(cert.certificateId, Buffer.from(JSON.stringify(payload), 'utf8'));
+    const { expiresAt } = await this.securePackage.storePackage(
+      cert.certificateId,
+      Buffer.from(JSON.stringify(payload), 'utf8'),
+    );
+    await this.setOnboardingDeadline(request.id, this.deadlineFromPackageExpiry(expiresAt));
     return { deviceId: device.id, certificateId: cert.certificateId, replayed: false };
+  }
+
+  private deadlineFromPackageExpiry(packageExpiresAt: Date): Date {
+    const packageStoredAt = new Date(packageExpiresAt.getTime() - this.deps.config.packageRetentionSeconds * 1000);
+    return onboardingDeadlineFrom(packageStoredAt);
+  }
+
+  private async setOnboardingDeadline(requestId: string, deadlineAt: Date): Promise<void> {
+    const requests = (this.db as unknown as Record<string, unknown>).onboardingRequest as OnboardingRequestDelegate;
+    const { count } = await requests.updateMany({
+      where: { id: requestId, status: 'APPROVED', timedOutAt: null },
+      data: { onboardingDeadlineAt: deadlineAt },
+    });
+    if (count !== 1) throw new ProvisioningError('Onboarding 申请状态已变化，不能设置首个 Heartbeat 截止时间');
   }
 }
 

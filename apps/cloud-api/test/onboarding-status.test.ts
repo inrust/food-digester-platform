@@ -226,6 +226,21 @@ describe('GET /api/v1/device/onboarding/status', () => {
     assert.equal(body.data.rejectReason, '资料不完整');
   });
 
+  test('DEC-017 TIMED_OUT：外部稳定映射为 REJECTED/ONBOARDING_TIMEOUT', async () => {
+    const serial = await plantDevice();
+    const { token, requestId } = await submitRequest(serial);
+    await prisma.onboardingRequest.update({
+      where: { id: requestId },
+      data: { status: 'TIMED_OUT', rejectReason: 'ONBOARDING_TIMEOUT', timedOutAt: NOW },
+    });
+
+    const res = await statusHandler(statusReq(token, serial));
+    assert.equal(res.status, 200);
+    const body = res.body as StatusPayload;
+    assert.equal(body.data.status, 'REJECTED');
+    assert.equal(body.data.rejectReason, 'ONBOARDING_TIMEOUT');
+  });
+
   test('APPROVED 但 Provisioning 未就绪 → 对外仍为 PENDING（内部步骤不暴露）', async () => {
     const serial = await plantDevice();
     const { token, requestId } = await submitRequest(serial);
@@ -307,6 +322,51 @@ describe('GET /api/v1/device/onboarding/status', () => {
     assert.ok(newId);
     await retried.onCommitted?.();
     assert.equal((await statusHandler(statusReq(token, serial))).status, 401);
+  });
+
+  test('DEC-017：截止边界即使评估器延迟也失败关闭，不再返回证书包', async () => {
+    const serial = await plantDevice();
+    const { token, requestId } = await submitRequest(serial);
+    const admin = createAdminOnboardingHandlers({
+      client: prisma,
+      now,
+      provisioningTrigger: makeProvisioning(),
+    });
+    assert.equal((await adminApprove(requestId, admin)).status, 200);
+    await prisma.onboardingRequest.update({ where: { id: requestId }, data: { onboardingDeadlineAt: NOW } });
+
+    const res = await statusHandler(statusReq(token, serial));
+    assert.equal(res.status, 200);
+    const body = res.body as StatusPayload;
+    assert.equal(body.data.status, 'REJECTED');
+    assert.equal(body.data.rejectReason, 'ONBOARDING_TIMEOUT');
+    assert.isUndefined(body.data.privateKey);
+  });
+
+  test('DEC-003/017：截止前证书包过期时撤销旧证书并重签，对外保持 PENDING', async () => {
+    const serial = await plantDevice();
+    const { token, requestId } = await submitRequest(serial);
+    const admin = createAdminOnboardingHandlers({
+      client: prisma,
+      now,
+      provisioningTrigger: makeProvisioning(),
+    });
+    assert.equal((await adminApprove(requestId, admin)).status, 200);
+    const device = await prisma.device.findUniqueOrThrow({ where: { serialNumber: serial } });
+    const old = await prisma.deviceCertificate.findFirstOrThrow({
+      where: { deviceId: device.id, status: 'PENDING_CLAIM' },
+    });
+    await prisma.deviceCertificate.update({ where: { id: old.id }, data: { packageExpiresAt: NOW } });
+    await prisma.onboardingRequest.update({
+      where: { id: requestId },
+      data: { onboardingDeadlineAt: new Date(NOW.getTime() + 24 * 3600 * 1000) },
+    });
+
+    const res = await statusHandler(statusReq(token, serial));
+    assert.equal(res.status, 200);
+    assert.equal((res.body as StatusPayload).data.status, 'PENDING');
+    assert.equal((await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: old.id } })).status, 'REVOKED');
+    assert.equal(await prisma.deviceCertificate.count({ where: { deviceId: device.id, status: 'PENDING_CLAIM' } }), 1);
   });
 
   test('负向：Token 无申请 → 404；缺序列号 → 400；伪造 Token → 401', async () => {

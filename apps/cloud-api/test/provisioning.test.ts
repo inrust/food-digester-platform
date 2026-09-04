@@ -115,23 +115,30 @@ async function plantApprovedRequest(): Promise<{ request: AdminOnboardingRequest
       lifecycleStatus: 'OnboardingApproved',
     },
   });
-  return {
-    deviceId,
-    request: {
+  const token = await prisma.onboardingToken.create({
+    data: {
+      tokenHash: `prov-token-${seq}`,
+      serialNumber,
+      expiresAt: new Date('2027-01-01T00:00:00Z'),
+    },
+  });
+  const row = await prisma.onboardingRequest.create({
+    data: {
       id: `req-prov-${seq}`,
+      tokenId: token.id,
       serialNumber,
       model: 'BNX-100',
       hardwareVersion: 'HW1.0',
       manufacturer: 'Hiddenjoy',
       manufactureDate: new Date('2026-01-01T00:00:00Z'),
       status: 'APPROVED',
-      rejectReason: null,
       reviewedBy: 'admin-1',
       reviewedAt: NOW,
       version: 2,
-      createdAt: NOW,
     },
-  };
+  });
+  const request: AdminOnboardingRequestRecord = row;
+  return { deviceId, request };
 }
 
 function makeService(iot: MockIot): ProvisioningService {
@@ -171,6 +178,9 @@ describe('ProvisioningService', () => {
     assert.ok(row?.fingerprint);
     assert.ok(row?.packageCiphertext);
     assert.equal(row?.packageKmsKeyId, 'local-test-key');
+    const requestRow = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: request.id } });
+    assert.equal(requestRow.onboardingDeadlineAt?.toISOString(), '2026-08-28T08:00:00.000Z');
+    assert.equal(requestRow.timedOutAt, null);
     const plainColumns = JSON.stringify({ ...row, packageCiphertext: undefined });
     assert.ok(!plainColumns.includes('MOCKKEY'), '私钥明文不得出现在证书记录列');
     assert.ok(!plainColumns.includes('PRIVATE KEY'));

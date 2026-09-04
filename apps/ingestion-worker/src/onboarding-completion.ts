@@ -14,9 +14,10 @@
  * 功能边界：不自动分配 Customer/Site，不自动发 License。
  */
 import type { DbClient } from '@fdp/database';
-import { audited } from '@fdp/database';
+import { audited, recordAudit, withTransaction } from '@fdp/database';
 import { DeviceStateError, transitionLifecycle } from '@fdp/domain';
 import type { SecurePackageService } from '@fdp/auth';
+import { ONBOARDING_TIMEOUT_POLICY } from '@fdp/contracts/lifecycle/onboarding-timeout-policy.js';
 
 export interface FirstHeartbeatInput {
   /** 来自已认证消息上下文的设备 ID（AUTH-03/BE-IOT-04 注入）。 */
@@ -43,6 +44,7 @@ export interface OnboardingCompletionResult {
 
 interface DeviceRow {
   readonly id: string;
+  readonly serialNumber?: string;
   readonly lifecycleStatus: string;
 }
 
@@ -52,6 +54,15 @@ interface CertificateRow {
   readonly status: string;
 }
 
+interface OnboardingRequestRow {
+  readonly id: string;
+  readonly serialNumber: string;
+  readonly status: string;
+  readonly onboardingDeadlineAt: Date | null;
+  readonly timedOutAt: Date | null;
+  readonly revocationCompletedAt: Date | null;
+}
+
 interface DeviceDelegate {
   findFirst(args: { where: Record<string, unknown> }): Promise<DeviceRow | null>;
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
@@ -59,6 +70,11 @@ interface DeviceDelegate {
 
 interface CertificateDelegate {
   findFirst(args: { where: Record<string, unknown> }): Promise<CertificateRow | null>;
+  updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
+}
+
+interface OnboardingRequestDelegate {
+  findMany(args: Record<string, unknown>): Promise<OnboardingRequestRow[]>;
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
 }
 
@@ -82,9 +98,17 @@ function certificates(client: DbClient): CertificateDelegate {
   return (client as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
 }
 
+function onboardingRequests(client: DbClient): OnboardingRequestDelegate {
+  return (client as unknown as Record<string, unknown>).onboardingRequest as OnboardingRequestDelegate;
+}
+
 /** 并发首个 Heartbeat 败方标记（条件更新未命中）：对外转为幂等重放。 */
 class ConcurrentCompletion extends Error {
   override readonly name = 'ConcurrentCompletion';
+}
+
+class ConcurrentDeadline extends Error {
+  override readonly name = 'ConcurrentDeadline';
 }
 
 export async function completeOnboardingOnFirstHeartbeat(
@@ -194,4 +218,156 @@ export async function completeOnboardingOnFirstHeartbeat(
     }
     throw err;
   }
+}
+
+export interface OnboardingDeadlineEvaluatorDeps extends OnboardingCompletionDeps {
+  readonly certificateRevoker: { revokeCertificate(certificateId: string): Promise<void> };
+}
+
+export interface OnboardingDeadlineBatchResult {
+  readonly evaluated: number;
+  readonly timedOut: number;
+  readonly revocationRetried: number;
+  readonly skipped: number;
+  readonly failed: number;
+}
+
+/**
+ * DEC-017 首个 Heartbeat 截止评估器。
+ *
+ * 本地事务先把申请/设备/证书切到失败关闭状态，再调用幂等云端撤证；云端失败时保留
+ * revocationCompletedAt=null，下一轮只重试撤证，不重复状态迁移或审计。
+ */
+export async function evaluateOnboardingDeadlines(
+  deps: OnboardingDeadlineEvaluatorDeps,
+  options: { readonly at?: Date; readonly limit?: number } = {},
+): Promise<OnboardingDeadlineBatchResult> {
+  const at = options.at ?? deps.now?.() ?? new Date();
+  const limit = options.limit ?? 50;
+  const rows = await onboardingRequests(deps.client).findMany({
+    where: {
+      OR: [
+        { status: 'APPROVED', onboardingDeadlineAt: { lte: at }, timedOutAt: null },
+        { status: 'TIMED_OUT', revocationCompletedAt: null },
+      ],
+    },
+    orderBy: { onboardingDeadlineAt: 'asc' },
+    take: limit,
+  });
+
+  let timedOut = 0;
+  let revocationRetried = 0;
+  let skipped = 0;
+  let failed = 0;
+
+  for (const row of rows) {
+    const device = await devices(deps.client).findFirst({ where: { serialNumber: row.serialNumber } });
+    if (!device) {
+      skipped += 1;
+      continue;
+    }
+    const certificate = await certificates(deps.client).findFirst({
+      where: {
+        deviceId: device.id,
+        ...(row.status === 'APPROVED' ? { status: 'PENDING_CLAIM' } : { status: 'REVOKED', revokedAt: null }),
+      },
+      orderBy: { createdAt: 'desc' },
+    } as { where: Record<string, unknown> });
+    if (!certificate) {
+      skipped += 1;
+      continue;
+    }
+
+    if (row.status === 'APPROVED') {
+      try {
+        const changed = await withTransaction(deps.client, async (tx) => {
+          const requestUpdate = await onboardingRequests(tx).updateMany({
+            where: { id: row.id, status: 'APPROVED', onboardingDeadlineAt: { lte: at }, timedOutAt: null },
+            data: {
+              status: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.internalRequestStatus,
+              rejectReason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason,
+              timedOutAt: at,
+              version: { increment: 1 },
+            },
+          });
+          if (requestUpdate.count !== 1) throw new ConcurrentDeadline();
+
+          const deviceUpdate = await devices(tx).updateMany({
+            where: { id: device.id, lifecycleStatus: 'OnboardingApproved' },
+            data: { lifecycleStatus: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.deviceLifecycle },
+          });
+          const certificateUpdate = await certificates(tx).updateMany({
+            where: { id: certificate.id, deviceId: device.id, status: 'PENDING_CLAIM' },
+            data: { status: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.certificateStatus },
+          });
+          if (deviceUpdate.count !== 1 || certificateUpdate.count !== 1) throw new ConcurrentDeadline();
+          await deps.securePackage.destroyPackage(certificate.id, tx);
+
+          const effects = transitionLifecycle(
+            { id: device.id, lifecycleStatus: 'OnboardingApproved', operationalStatus: null },
+            ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.deviceLifecycle,
+            { actorType: 'SYSTEM', actorId: 'system:onboarding-deadline' },
+            { reason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason },
+          );
+          const history = (tx as unknown as Record<string, unknown>).deviceStateHistory as StateHistoryDelegate;
+          for (const entry of effects.stateHistory) {
+            await history.create({
+              data: {
+                deviceId: entry.deviceId,
+                fromStatus: entry.fromStatus,
+                toStatus: entry.toStatus,
+                actorType: entry.actorType,
+                actorId: entry.actorId,
+                reason: entry.reason,
+              },
+            });
+          }
+          await recordAudit(tx, {
+            objectType: 'onboarding_request',
+            objectId: row.id,
+            action: 'onboarding.timeout',
+            result: 'SUCCESS',
+            reason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason,
+            afterValue: { deviceId: device.id, certificateId: certificate.id, timedOutAt: at.toISOString() },
+          });
+          return true;
+        });
+        if (changed) timedOut += 1;
+      } catch (error) {
+        if (error instanceof ConcurrentDeadline) {
+          skipped += 1;
+          continue;
+        }
+        throw error;
+      }
+    } else {
+      revocationRetried += 1;
+    }
+
+    try {
+      await deps.certificateRevoker.revokeCertificate(certificate.id);
+      await withTransaction(deps.client, async (tx) => {
+        const requestUpdate = await onboardingRequests(tx).updateMany({
+          where: { id: row.id, status: 'TIMED_OUT', revocationCompletedAt: null },
+          data: { revocationCompletedAt: at },
+        });
+        if (requestUpdate.count !== 1) return;
+        await certificates(tx).updateMany({
+          where: { id: certificate.id, status: 'REVOKED', revokedAt: null },
+          data: { revokedAt: at },
+        });
+        await recordAudit(tx, {
+          objectType: 'deviceCertificate',
+          objectId: certificate.id,
+          action: 'onboarding.timeout.certificate_revoke',
+          result: 'SUCCESS',
+          reason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason,
+        });
+      });
+    } catch {
+      failed += 1;
+    }
+  }
+
+  return { evaluated: rows.length, timedOut, revocationRetried, skipped, failed };
 }

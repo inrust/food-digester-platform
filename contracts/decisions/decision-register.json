@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.26.0",
-  "updatedAt": "2026-09-04T10:58:43Z",
+  "registerVersion": "1.27.0",
+  "updatedAt": "2026-09-04T11:12:55Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -587,13 +587,13 @@
     },
     {
       "id": "DEC-017",
-      "version": "0.1.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "Onboarding 超时",
       "conflict": "通信设计未定义证书签发后首次合法 Heartbeat 长期未到达时的截止时间、外部状态、证书处置、重签和重新申请规则。",
-      "provisionalValue": "未定；采用可重复执行的超时评估器，但截止时间、外部响应、证书撤销、重签和重新申请规则必须由双方确认，且不得新增设备生命周期状态替代内部 Onboarding 请求状态。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "方案 A：证书包存储成功时起算 24 小时首个合法 Heartbeat 硬截止，截止边界计入超时。超时后内部申请置 TIMED_OUT，外部映射 REJECTED/ONBOARDING_TIMEOUT；撤销未确认新证书并销毁密文包，设备回到既有 PendingOnboarding，不新增生命周期状态。迟到 Heartbeat 失败关闭，不自动重签；重新申请必须使用新 Onboarding Token 创建新申请。",
+      "approver": "业务方（用户确认）",
+      "approvedAt": "2026-09-04T11:12:55Z",
       "blockingTasks": ["BE-ONB-03", "BE-ONB-04", "QA-02", "QA-04"],
       "affectedModules": ["BE-ONB", "QA"],
       "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
@@ -603,6 +603,12 @@
           "at": "2026-09-04T01:44:04Z",
           "by": "CT-01",
           "note": "依据任务清单 §4 新增登记；状态为 pending，待双方冻结超时与证书处置规则。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T11:12:55Z",
+          "by": "业务方（用户确认）",
+          "note": "批准方案 A：冻结证书包存储后 24 小时硬截止、TIMED_OUT 内部状态、REJECTED 外部映射、撤证销包、迟到失败关闭和新 Token 重新申请规则。"
         }
       ]
     },

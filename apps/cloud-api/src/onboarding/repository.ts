@@ -19,6 +19,9 @@ export interface OnboardingRequestRecord {
   readonly manufactureDate: Date;
   readonly status: string;
   readonly rejectReason: string | null;
+  readonly onboardingDeadlineAt: Date | null;
+  readonly timedOutAt: Date | null;
+  readonly revocationCompletedAt: Date | null;
   readonly createdAt: Date;
 }
 

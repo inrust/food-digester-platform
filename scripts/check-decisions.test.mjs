@@ -152,19 +152,20 @@ test('非 UTC 时间戳被拒绝', () => {
   assert.ok(validateRegister(bad).errors.some((e) => e.includes('updatedAt')));
 });
 
-test('CLI validate 模式：真实文件退出码 0 且输出未决清单；--fail-on-pending 退出码 2', () => {
+test('CLI validate 模式：真实文件退出码 0 且输出实际未决数；--fail-on-pending 按实际未决数返回', () => {
   const lines = [];
   const log = (s) => lines.push(s);
   const code = run(['--register', REGISTER_PATH, '--contract-version', CONTRACT_VERSION_PATH], log);
   assert.equal(code, 0);
   const pendingCount = realRegister().decisions.filter((decision) => decision.status === 'pending').length;
-  assert.ok(lines[0].includes(`未决决策（${pendingCount} 条）`));
+  const pendingSummary = pendingCount > 0 ? `未决决策（${pendingCount} 条）` : '未决决策: 0';
+  assert.ok(lines.some((line) => line.includes(pendingSummary)));
 
   const code2 = run(
     ['--register', REGISTER_PATH, '--contract-version', CONTRACT_VERSION_PATH, '--fail-on-pending', '--json'],
     () => {},
   );
-  assert.equal(code2, 2);
+  assert.equal(code2, pendingCount > 0 ? 2 : 0);
 });
 
 test('CLI：结构错误退出码 1', () => {

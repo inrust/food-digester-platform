@@ -46,6 +46,12 @@ const LEGAL: ReadonlyArray<{
     actor: SYSTEM,
     ctx: { certificateInstalled: true, firstHeartbeatReceived: true },
   },
+  {
+    from: 'OnboardingApproved',
+    to: 'PendingOnboarding',
+    actor: SYSTEM,
+    ctx: { reason: 'ONBOARDING_TIMEOUT' },
+  },
   { from: 'Onboarded', to: 'Assigned', actor: SUPER_ADMIN, ctx: { assignment: { customerId: 'c1', siteId: 's1' } } },
   { from: 'Assigned', to: 'Licensed', actor: SYSTEM, ctx: { licenseIssuedAndSynced: true } },
   { from: 'Licensed', to: 'Active', actor: DEVICE, ctx: { licenseVerifiedByDevice: true } },
@@ -89,6 +95,21 @@ describe('文档允许转换全部成功', () => {
       firstHeartbeatReceived: true,
     });
     expect(effects.internalSteps).toEqual(['PROVISIONING']);
+  });
+
+  test('DEC-017：超时回退仅 SYSTEM 可执行且强制原因', () => {
+    const effects = transitionLifecycle(device('OnboardingApproved'), 'PendingOnboarding', SYSTEM, {
+      reason: 'ONBOARDING_TIMEOUT',
+    });
+    expect(effects.internalSteps).toEqual(['ONBOARDING_TIMEOUT']);
+    expect(() =>
+      transitionLifecycle(device('OnboardingApproved'), 'PendingOnboarding', SUPER_ADMIN, {
+        reason: 'ONBOARDING_TIMEOUT',
+      }),
+    ).toThrow(DeviceStateError);
+    expect(() => transitionLifecycle(device('OnboardingApproved'), 'PendingOnboarding', SYSTEM, {})).toThrow(
+      DeviceStateError,
+    );
   });
 });
 

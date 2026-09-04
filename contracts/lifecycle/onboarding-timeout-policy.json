@@ -1,0 +1,27 @@
+{
+  "policyVersion": "1.0.0",
+  "status": "frozen",
+  "x-decision-versions": ["DEC-017@1.0.0"],
+  "deadline": {
+    "startsAt": "CERTIFICATE_PACKAGE_STORED",
+    "seconds": 86400,
+    "boundary": "INCLUSIVE"
+  },
+  "timeoutDisposition": {
+    "internalRequestStatus": "TIMED_OUT",
+    "externalStatus": "REJECTED",
+    "externalReason": "ONBOARDING_TIMEOUT",
+    "deviceLifecycle": "PendingOnboarding",
+    "certificateStatus": "REVOKED",
+    "destroyCertificatePackage": true,
+    "beforeDeadlinePackageExpiry": "REVOKE_AND_RESIGN",
+    "afterDeadlineAutomaticResign": false
+  },
+  "lateHeartbeat": "REJECT",
+  "retry": {
+    "requiresNewToken": true,
+    "requiresNewRequest": true
+  },
+  "consumers": ["BE-ONB-03", "BE-ONB-04", "QA-02", "QA-04"],
+  "pendingParameters": []
+}

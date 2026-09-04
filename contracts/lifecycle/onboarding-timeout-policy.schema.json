@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "onboarding-timeout-policy.schema.json",
+  "type": "object",
+  "required": [
+    "policyVersion",
+    "status",
+    "x-decision-versions",
+    "deadline",
+    "timeoutDisposition",
+    "lateHeartbeat",
+    "retry",
+    "consumers",
+    "pendingParameters"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "policyVersion": { "const": "1.0.0" },
+    "status": { "const": "frozen" },
+    "x-decision-versions": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "deadline": {
+      "type": "object",
+      "required": ["startsAt", "seconds", "boundary"],
+      "additionalProperties": false,
+      "properties": {
+        "startsAt": { "const": "CERTIFICATE_PACKAGE_STORED" },
+        "seconds": { "const": 86400 },
+        "boundary": { "const": "INCLUSIVE" }
+      }
+    },
+    "timeoutDisposition": {
+      "type": "object",
+      "required": [
+        "internalRequestStatus",
+        "externalStatus",
+        "externalReason",
+        "deviceLifecycle",
+        "certificateStatus",
+        "destroyCertificatePackage",
+        "beforeDeadlinePackageExpiry",
+        "afterDeadlineAutomaticResign"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "internalRequestStatus": { "const": "TIMED_OUT" },
+        "externalStatus": { "const": "REJECTED" },
+        "externalReason": { "const": "ONBOARDING_TIMEOUT" },
+        "deviceLifecycle": { "const": "PendingOnboarding" },
+        "certificateStatus": { "const": "REVOKED" },
+        "destroyCertificatePackage": { "const": true },
+        "beforeDeadlinePackageExpiry": { "const": "REVOKE_AND_RESIGN" },
+        "afterDeadlineAutomaticResign": { "const": false }
+      }
+    },
+    "lateHeartbeat": { "const": "REJECT" },
+    "retry": {
+      "type": "object",
+      "required": ["requiresNewToken", "requiresNewRequest"],
+      "additionalProperties": false,
+      "properties": {
+        "requiresNewToken": { "const": true },
+        "requiresNewRequest": { "const": true }
+      }
+    },
+    "consumers": { "type": "array", "items": { "type": "string" }, "minItems": 1, "uniqueItems": true },
+    "pendingParameters": { "type": "array", "maxItems": 0 }
+  }
+}

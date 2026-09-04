@@ -22,7 +22,7 @@
 
 当前唯一已批准的协议级技术适配是：通信设计中 ESG Report、Tamper 和 Command 的 QoS 2，在 AWS IoT Core 上实施为 QoS 1，并通过消息 ID、序号、Command ACK 和幂等处理保持业务可靠性。
 
-对通信设计的复核还识别出六项协议问题：MQTT Payload 规范化、Retired 过渡期认证、OTA 状态回传通道、License/OTA 归档语义、Onboarding 超时语义和 Configuration 扩展字段。它们分别进入 DEC-013～018 决策门禁；其中 DEC-013～016、018 已冻结，仅 DEC-017 冻结前只能实现可替换扩展点，不得把暂定值写成对设备方生效的固定契约。
+对通信设计的复核还识别出六项协议问题：MQTT Payload 规范化、Retired 过渡期认证、OTA 状态回传通道、License/OTA 归档语义、Onboarding 超时语义和 Configuration 扩展字段。它们分别进入 DEC-013～018 决策门禁，现均已冻结为 1.0.0。
 
 ## 2. 建设目标
 
@@ -356,7 +356,7 @@ Token 必须一次一机、可撤销、有有效期并只保存 Hash。接口应
 - `REJECTED`：返回拒绝原因；
 - `APPROVED`：返回 Device ID、Certificate Package、MQTT 配置和初始配置。
 
-必须覆盖通信设计列出的负向案例：序列号不存在、设备已经 Onboarded、管理员拒绝、设备证书安装失败。证书安装失败时不得直接标记 Onboarded；DEC-003@1.0.0 只允许一次成功领取，密文包最长保存 24 小时，响应不确定、证书包丢失或过期时吊销未确认新证书并重新签发，不恢复旧包。首次合法 Heartbeat 长期未到达时，由可重复执行的超时评估器处理，但超时期限、外部状态、证书撤销和重新申请规则必须先通过 DEC-017 冻结；不得新增设备生命周期状态来替代内部 Onboarding 请求状态。
+必须覆盖通信设计列出的负向案例：序列号不存在、设备已经 Onboarded、管理员拒绝、设备证书安装失败。证书安装失败时不得直接标记 Onboarded；DEC-003@1.0.0 只允许一次成功领取，密文包最长保存 24 小时，响应不确定时吊销未确认新证书并重新签发，不恢复旧包。DEC-017@1.0.0 冻结证书包存储后 24 小时首个合法 Heartbeat 硬截止：截止前包过期仍按 DEC-003 撤证重签；边界到达后内部申请置 TIMED_OUT、外部映射 REJECTED/ONBOARDING_TIMEOUT，撤销未确认新证书并销毁密文包，设备回到既有 PendingOnboarding；迟到 Heartbeat 拒绝，超时后不自动重签，必须使用新 Token 重新申请。
 
 ### 8.3 发证流程
 
@@ -1039,7 +1039,7 @@ Merge to main
 | Retired 后认证过早关闭 | 通过 DEC-014 固定仅 Sync/Deactivate 可用的过渡期 Allowlist，并用集成测试证明不会形成认证死锁 |
 | OTA 多阶段状态没有上行契约 | DEC-015@1.0.0 已冻结既有 ACK 扩展为唯一通道，并以判别字段隔离 Command/OTA Target |
 | License/OTA 归档来源不明确 | 通过 DEC-016 区分 MQTT 原文、领域事件和发布记录，禁止伪装成设备上行消息 |
-| Onboarding 首个 Heartbeat 永久未到达 | 通过 DEC-017 冻结超时、证书处置和重新申请规则，并实现可重复执行的超时评估器 |
+| Onboarding 首个 Heartbeat 永久未到达 | DEC-017@1.0.0：证书包存储后 24 小时硬截止，超时撤证销包、外部 REJECTED/ONBOARDING_TIMEOUT，新 Token 重新申请 |
 | Configuration 候选字段超出源稿 | 通过 DEC-018 与设备能力协商冻结；未批准字段不得进入 Sync |
 | 真实设备到位延迟 | 使用模拟器开发，但预留至少 3 周真实联调窗口 |
 | ESG 计算口径不明确 | 保存原始数据和计算版本，试运营先标识“非核证” |

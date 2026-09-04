@@ -20,6 +20,7 @@ import {
   withOnboardingAuth,
 } from '@fdp/auth';
 import type { OnboardingAuthContext, RateLimiter, SecurePackageService } from '@fdp/auth';
+import { ONBOARDING_TIMEOUT_POLICY } from '@fdp/contracts/lifecycle/onboarding-timeout-policy.js';
 import { OnboardingApiError } from './errors.js';
 import type { OnboardingHttpRequest, OnboardingHttpResponse } from './handler.js';
 import { findOnboardingRequestByTokenId } from './repository.js';
@@ -42,6 +43,10 @@ export interface OnboardingStatusHandlerDeps {
       request: Pick<OnboardingRequestRecord, 'id' | 'serialNumber'>,
       certificateId: string,
     ): Promise<unknown>;
+    recoverExpiredPackage(
+      request: Pick<OnboardingRequestRecord, 'id' | 'serialNumber'>,
+      certificateId: string,
+    ): Promise<unknown>;
   };
 }
 
@@ -55,6 +60,7 @@ interface CertificateRow {
   readonly deviceId: string;
   readonly status: string;
   readonly claimedAt: Date | null;
+  readonly packageExpiresAt: Date | null;
 }
 
 function devices(client: DbClient) {
@@ -148,11 +154,31 @@ async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: Onboarding
   const request: OnboardingRequestRecord | null = await findOnboardingRequestByTokenId(deps.client, auth.tokenId);
   if (!request) throw new OnboardingApiError('NOT_FOUND', 'The requested resource was not found');
 
+  if (request.status === ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.internalRequestStatus) {
+    return {
+      body: {
+        status: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalStatus,
+        requestId: request.id,
+        rejectReason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason,
+      },
+    };
+  }
   if (request.status === 'REJECTED') {
     return { body: { status: 'REJECTED', requestId: request.id, rejectReason: request.rejectReason } };
   }
   if (request.status !== 'APPROVED') {
     return { body: { status: 'PENDING', requestId: request.id } };
+  }
+
+  const current = deps.now?.() ?? new Date();
+  if (request.onboardingDeadlineAt && request.onboardingDeadlineAt.getTime() <= current.getTime()) {
+    return {
+      body: {
+        status: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalStatus,
+        requestId: request.id,
+        rejectReason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason,
+      },
+    };
   }
 
   // APPROVED：证书包未就绪（Provisioning 内部步骤进行中）→ 对外仍为 PENDING
@@ -163,6 +189,12 @@ async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: Onboarding
       })
     : null;
   if (!device || !certificate) {
+    return { body: { status: 'PENDING', requestId: request.id } };
+  }
+
+  if (certificate.packageExpiresAt && certificate.packageExpiresAt.getTime() <= current.getTime()) {
+    await deps.securePackage.destroyPackage(certificate.id);
+    await deps.deliveryRecovery.recoverExpiredPackage(request, certificate.id);
     return { body: { status: 'PENDING', requestId: request.id } };
   }
 

@@ -1,6 +1,6 @@
 # BE-ONB-04 首个 Heartbeat 完成 Onboarding
 
-实现：[apps/ingestion-worker/src/onboarding-completion.ts](../apps/ingestion-worker/src/onboarding-completion.ts)；测试：[onboarding-completion.test.ts](../apps/ingestion-worker/test/onboarding-completion.test.ts)（PGlite 真实 PostgreSQL + 全部 migration + SEC-01 真实信封加解密）。
+实现：[apps/ingestion-worker/src/onboarding-completion.ts](../../apps/ingestion-worker/src/onboarding-completion.ts)；测试：[onboarding-completion.test.ts](../../apps/ingestion-worker/test/onboarding-completion.test.ts)（PGlite 真实 PostgreSQL + 全部 migration + SEC-01 真实信封加解密）。
 
 ## 1. 范围与事实源
 
@@ -10,6 +10,7 @@
 | 触发点 | BE-IOT-04 在消息认证（AUTH-03 提取 deviceId + 证书指纹）与 latest state 更新后调用 `completeOnboardingOnFirstHeartbeat` |
 | 生命周期 | DOM-01：OnboardingApproved → Onboarded（SYSTEM actor，前置 certificateInstalled + firstHeartbeatReceived） |
 | 证书包 | DEC-003 销毁触发点 NEW_CERTIFICATE_FIRST_HEARTBEAT：SEC-01 `destroyPackage`（幂等，本任务扩展支持事务客户端） |
+| 超时 | DEC-017@1.0.0：证书包存储后 24 小时硬截止，TIMED_OUT 内部状态、REJECTED 外部映射、撤证销包、新 Token 重新申请 |
 | 功能边界 | 不自动分配 Customer/Site，不自动发 License |
 
 ## 2. 处理链（单事务原子执行）
@@ -32,8 +33,11 @@
 | 非法状态不迁移 | PendingOnboarding / Active → DEVICE_STATE_NOT_ALLOWED，无状态历史 | ✅ |
 | 重复 Heartbeat 幂等 | 二次调用 transitioned=false，历史/审计计数不变；并发双 Heartbeat 恰一个生效 | ✅ |
 | 已领取（无密文）场景 | 迁移照常成功，销毁幂等 false，证书置 ACTIVE | ✅ |
+| 截止边界与幂等 | 截止前不处理；精确边界只迁移一次；重复评估无重复历史/审计 | ✅ |
+| 超时处置 | 申请 TIMED_OUT、设备 PendingOnboarding、证书 REVOKED、密文销毁、迟到 Heartbeat 拒绝 | ✅ |
+| 云端撤证恢复 | 首次失败保留 revocationCompletedAt=null，下一轮只重试撤证 | ✅ |
 
-`pnpm vitest run apps/ingestion-worker` 6/6 通过；全仓 `pnpm verify` 退出 0（2026-08-27）。
+DEC-017 聚焦测试（含本任务、BE-ONB-03 与领域状态机）128/128 通过；全仓 `pnpm verify` 退出 0：实现测试 683/683、契约测试 250/250、脚本测试 53/53（2026-09-04）。
 
 ## 4. 对接说明（下游任务）
 

@@ -1,12 +1,12 @@
 # BE-ONB-03 证书签发与 Onboarding Status API
 
-实现：[apps/cloud-api/src/provisioning](../apps/cloud-api/src/provisioning)、[status-handler.ts](../apps/cloud-api/src/onboarding/status-handler.ts)；契约：[contracts/rest/device-onboarding-api.json](../contracts/rest/device-onboarding-api.json)（status 端点）；测试：[provisioning.test.ts](../apps/cloud-api/test/provisioning.test.ts)、[onboarding-status.test.ts](../apps/cloud-api/test/onboarding-status.test.ts)（PGlite 真实 PostgreSQL + 全部 migration + 内存 mock IoT Port）。
+实现：[apps/cloud-api/src/provisioning](../../apps/cloud-api/src/provisioning)、[status-handler.ts](../../apps/cloud-api/src/onboarding/status-handler.ts)；契约：[contracts/rest/device-onboarding-api.json](../../contracts/rest/device-onboarding-api.json)（status 端点）；测试：[provisioning.test.ts](../../apps/cloud-api/test/provisioning.test.ts)、[onboarding-status.test.ts](../../apps/cloud-api/test/onboarding-status.test.ts)（PGlite 真实 PostgreSQL + 全部 migration + 内存 mock IoT Port）。
 
 ## 1. 范围与事实源
 
 | 项 | 说明 |
 |---|---|
-| 任务 | BE-ONB-03（P1 / 设备接口），依赖 BE-ONB-02、SEC-01、AUTH-04、DEC-003（均已交付） |
+| 任务 | BE-ONB-03（P1 / 设备接口），依赖 BE-ONB-02、SEC-01、AUTH-04、DEC-003、DEC-017（均已交付） |
 | 端点 | `GET /api/v1/device/onboarding/status`（Onboarding Token 认证，serialNumber 绑定校验） |
 | 签发链 | approve（BE-ONB-02）→ `ProvisioningTrigger` 端口 → ensureThing → CreateKeysAndCertificate → AUTH-04 单设备 Policy → attach Policy/Thing → 证书记录 → SEC-01 信封加密封包 |
 | 证书包 | DEC-003@1.0.0/SEC-01：KMS 信封加密保存 86400 秒、一次成功领取、成功响应提交后销毁；响应不确定、丢失或过期时吊销未确认新证书并重签 |
@@ -17,8 +17,8 @@
 | 模块 | 内容 |
 |---|---|
 | `provisioning/iot-port.ts` | `IotProvisioningPort` 端口：ensureThing/ensurePolicy（按名幂等）、createKeysAndCertificate、attachPolicy/attachThingPrincipal；cloud-api 不依赖 AWS SDK，生产适配器在部署接线任务实现 |
-| `provisioning/service.ts` | `ProvisioningService`：幂等短路（已有证书包 → replayed）；孤儿证书按 DEC-003 丢失处置 REVOKED 后重签；证书记录落库 + `onboarding.provision` 审计；私钥仅内存经过并立即封包 |
-| `onboarding/status-handler.ts` | 三态映射：PENDING / REJECTED（含 rejectReason）/ APPROVED（一次性领取证书包：deviceId、certificatePem、privateKey、mqttEndpoint、heartbeatInterval=60；领取成功核销 Token） |
+| `provisioning/service.ts` | `ProvisioningService`：幂等短路；证书记录落库 + 私钥立即封包；存储完成时写入 DEC-017 的 24 小时首个 Heartbeat 截止 |
+| `onboarding/status-handler.ts` | 三态映射：PENDING / REJECTED（含普通拒绝或 DEC-017 `ONBOARDING_TIMEOUT`）/ APPROVED（一次性领取证书包；领取成功核销 Token） |
 | `onboarding/repository.ts` | 新增 `findOnboardingRequestByTokenId`（Token 一次一机精确查询） |
 
 ## 3. 验收基准与证据
@@ -33,7 +33,7 @@
 | 管理员 API/日志看不到私钥 | 审计（provisioning/store/claim）与 admin detail 序列化扫描无私钥明文；证书记录列无明文 | ✅ |
 | 负向 | Token 无申请 404；缺序列号 400；伪造 Token 401 | ✅ |
 
-`pnpm vitest run apps/cloud-api/test` 37/37 通过；全仓 `pnpm verify` 退出 0（2026-08-27）。
+DEC-017 聚焦测试（含本任务、BE-ONB-04 与领域状态机）128/128 通过；全仓 `pnpm verify` 退出 0：实现测试 683/683、契约测试 250/250、脚本测试 53/53（2026-09-04）。
 
 ## 4. 对接说明（下游任务）
 

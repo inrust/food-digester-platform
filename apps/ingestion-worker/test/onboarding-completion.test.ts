@@ -13,8 +13,8 @@ import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import { createLocalTestKeyProvider, SecurePackageService } from '@fdp/auth';
 import { DeviceStateError } from '@fdp/domain';
-import { completeOnboardingOnFirstHeartbeat } from '../src/index.js';
-import type { OnboardingCompletionDeps } from '../src/index.js';
+import { completeOnboardingOnFirstHeartbeat, evaluateOnboardingDeadlines } from '../src/index.js';
+import type { OnboardingCompletionDeps, OnboardingDeadlineEvaluatorDeps } from '../src/index.js';
 import { createTestDb } from '../../cloud-api/test/helpers.js';
 
 const NOW = new Date('2026-08-27T08:00:00Z');
@@ -41,6 +41,7 @@ afterAll(async () => {
 let seq = 0;
 interface Planted {
   deviceId: string;
+  serialNumber: string;
   certificateId: string;
   fingerprint: string;
 }
@@ -51,12 +52,13 @@ async function plantApprovedDevice(
 ): Promise<Planted> {
   seq += 1;
   const deviceId = `dev-hb-${seq}`;
+  const serialNumber = `SN-HB-${seq}`;
   const certificateId = `cert-hb-${seq}`;
   const fingerprint = `fp-hb-${seq}`;
   await prisma.device.create({
     data: {
       id: deviceId,
-      serialNumber: `SN-HB-${seq}`,
+      serialNumber,
       model: 'BNX-100',
       hardwareVersion: 'HW1.0',
       manufacturer: 'Hiddenjoy',
@@ -80,11 +82,35 @@ async function plantApprovedDevice(
       Buffer.from(JSON.stringify({ certificatePem: 'p', privateKey: 'k' })),
     );
   }
-  return { deviceId, certificateId, fingerprint };
+  return { deviceId, serialNumber, certificateId, fingerprint };
 }
 
 function deps(): OnboardingCompletionDeps {
   return { client: prisma, securePackage, now };
+}
+
+async function plantDeadlineCandidate(deadlineAt: Date): Promise<Planted & { requestId: string }> {
+  const planted = await plantApprovedDevice();
+  const token = await prisma.onboardingToken.create({
+    data: {
+      tokenHash: `token-hash-${planted.deviceId}`,
+      serialNumber: planted.serialNumber,
+      expiresAt: new Date('2027-01-01T00:00:00Z'),
+    },
+  });
+  const request = await prisma.onboardingRequest.create({
+    data: {
+      tokenId: token.id,
+      serialNumber: planted.serialNumber,
+      model: 'BNX-100',
+      hardwareVersion: 'HW1.0',
+      manufacturer: 'Hiddenjoy',
+      manufactureDate: new Date('2026-01-01T00:00:00Z'),
+      status: 'APPROVED',
+      onboardingDeadlineAt: deadlineAt,
+    },
+  });
+  return { ...planted, requestId: request.id };
 }
 
 describe('completeOnboardingOnFirstHeartbeat', () => {
@@ -196,5 +222,82 @@ describe('completeOnboardingOnFirstHeartbeat', () => {
     assert.isFalse(result.packageDestroyed);
     const cert = await prisma.deviceCertificate.findFirst({ where: { id: certificateId } });
     assert.equal(cert?.status, 'ACTIVE');
+  });
+});
+
+describe('evaluateOnboardingDeadlines（DEC-017）', () => {
+  test('截止前不处理；精确边界一次性超时并撤证、销毁包、回到 PendingOnboarding', async () => {
+    const deadline = new Date(NOW.getTime() + 60_000);
+    const planted = await plantDeadlineCandidate(deadline);
+    const revoked: string[] = [];
+    const evaluatorDeps: OnboardingDeadlineEvaluatorDeps = {
+      ...deps(),
+      certificateRevoker: { revokeCertificate: async (id) => void revoked.push(id) },
+    };
+
+    const before = await evaluateOnboardingDeadlines(evaluatorDeps, {
+      at: new Date(deadline.getTime() - 1),
+    });
+    assert.deepEqual(before, { evaluated: 0, timedOut: 0, revocationRetried: 0, skipped: 0, failed: 0 });
+
+    const atBoundary = await evaluateOnboardingDeadlines(evaluatorDeps, { at: deadline });
+    assert.deepEqual(atBoundary, { evaluated: 1, timedOut: 1, revocationRetried: 0, skipped: 0, failed: 0 });
+    assert.deepEqual(revoked, [planted.certificateId]);
+
+    const request = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: planted.requestId } });
+    assert.equal(request.status, 'TIMED_OUT');
+    assert.equal(request.rejectReason, 'ONBOARDING_TIMEOUT');
+    assert.equal(request.timedOutAt?.toISOString(), deadline.toISOString());
+    assert.equal(request.revocationCompletedAt?.toISOString(), deadline.toISOString());
+    assert.equal(
+      (await prisma.device.findUniqueOrThrow({ where: { id: planted.deviceId } })).lifecycleStatus,
+      'PendingOnboarding',
+    );
+    const certificate = await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: planted.certificateId } });
+    assert.equal(certificate.status, 'REVOKED');
+    assert.equal(certificate.revokedAt?.toISOString(), deadline.toISOString());
+    assert.equal(certificate.packageCiphertext, null);
+    assert.equal(await prisma.deviceStateHistory.count({ where: { deviceId: planted.deviceId } }), 1);
+
+    const replay = await evaluateOnboardingDeadlines(evaluatorDeps, { at: new Date(deadline.getTime() + 1) });
+    assert.deepEqual(replay, { evaluated: 0, timedOut: 0, revocationRetried: 0, skipped: 0, failed: 0 });
+    assert.equal(revoked.length, 1);
+
+    try {
+      await completeOnboardingOnFirstHeartbeat(deps(), {
+        deviceId: planted.deviceId,
+        certificateFingerprint: planted.fingerprint,
+        occurredAt: new Date(deadline.getTime() + 1),
+      });
+      assert.fail('超时后的迟到 Heartbeat 应失败关闭');
+    } catch (error) {
+      assert.ok(error instanceof DeviceStateError);
+      assert.equal(error.code, 'DEVICE_STATE_NOT_ALLOWED');
+    }
+  });
+
+  test('云端撤证失败不重复本地迁移，下一轮只重试撤证', async () => {
+    const planted = await plantDeadlineCandidate(NOW);
+    let attempts = 0;
+    const evaluatorDeps: OnboardingDeadlineEvaluatorDeps = {
+      ...deps(),
+      certificateRevoker: {
+        revokeCertificate: async () => {
+          attempts += 1;
+          if (attempts === 1) throw new Error('IoT unavailable');
+        },
+      },
+    };
+
+    const first = await evaluateOnboardingDeadlines(evaluatorDeps, { at: NOW });
+    assert.deepEqual(first, { evaluated: 1, timedOut: 1, revocationRetried: 0, skipped: 0, failed: 1 });
+    const second = await evaluateOnboardingDeadlines(evaluatorDeps, { at: new Date(NOW.getTime() + 1) });
+    assert.deepEqual(second, { evaluated: 1, timedOut: 0, revocationRetried: 1, skipped: 0, failed: 0 });
+    assert.equal(attempts, 2);
+    assert.equal(await prisma.deviceStateHistory.count({ where: { deviceId: planted.deviceId } }), 1);
+    assert.equal(
+      await prisma.auditLog.count({ where: { objectId: planted.requestId, action: 'onboarding.timeout' } }),
+      1,
+    );
   });
 });

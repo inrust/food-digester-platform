@@ -32,6 +32,7 @@ const SERIALS = {
   positive: 'SN-ONB-OK',
   idempotent: 'SN-ONB-IDEM',
   concurrent: 'SN-ONB-RACE',
+  timedOutRetry: 'SN-ONB-TIMEOUT-RETRY',
   onboarded: 'SN-ONB-DONE',
 } as const;
 
@@ -163,6 +164,27 @@ describe('POST /api/v1/device/onboarding/request', () => {
     assert.equal(ids.size, 1);
     for (const res of results) assert.ok(res.status === 200 || res.status === 201);
     assert.equal(await requestCount(SERIALS.concurrent), 1);
+  });
+
+  test('DEC-017：TIMED_OUT 旧申请不复用，必须用新 Token 创建新 PENDING 申请', async () => {
+    const oldToken = await issueToken(SERIALS.timedOutRetry);
+    const handler = makeHandler();
+    const first = await handler(makeReq(oldToken, validBody(SERIALS.timedOutRetry)));
+    const firstId = (first.body as SuccessPayload).data.requestId;
+    await prisma.onboardingRequest.update({
+      where: { id: firstId },
+      data: { status: 'TIMED_OUT', rejectReason: 'ONBOARDING_TIMEOUT', timedOutAt: NOW },
+    });
+
+    const newToken = await issueToken(SERIALS.timedOutRetry);
+    const retry = await handler(makeReq(newToken, validBody(SERIALS.timedOutRetry)));
+    assert.equal(retry.status, 201);
+    assert.notEqual((retry.body as SuccessPayload).data.requestId, firstId);
+    assert.equal(await requestCount(SERIALS.timedOutRetry), 2);
+    assert.equal(
+      await prisma.onboardingRequest.count({ where: { serialNumber: SERIALS.timedOutRetry, status: 'PENDING' } }),
+      1,
+    );
   });
 
   test('并发唯一冲突兜底：create 命中 P2002 时回读胜出记录幂等返回（stub 确定性复现）', async () => {

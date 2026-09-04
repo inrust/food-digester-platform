@@ -104,6 +104,13 @@ export const LIFECYCLE_TRANSITIONS: Readonly<Record<LifecycleStatus, readonly Li
   Rejected: [],
   OnboardingApproved: [
     {
+      // DEC-017：首个 Heartbeat 超时回到既有申请态，不新增外部生命周期。
+      to: 'PendingOnboarding',
+      actorTypes: ['SYSTEM'],
+      requiresReason: true,
+      internalSteps: ['ONBOARDING_TIMEOUT'],
+    },
+    {
       to: 'Onboarded',
       actorTypes: ['SYSTEM', 'DEVICE'],
       requires: ['certificateInstalled', 'firstHeartbeatReceived'],

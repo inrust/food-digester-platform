@@ -11,11 +11,13 @@ export function serviceLayers(): readonly string[] {
   return [DOMAIN_PACKAGE, OBSERVABILITY_PACKAGE];
 }
 
-export { completeOnboardingOnFirstHeartbeat } from './onboarding-completion.js';
+export { completeOnboardingOnFirstHeartbeat, evaluateOnboardingDeadlines } from './onboarding-completion.js';
 export type {
   FirstHeartbeatInput,
   OnboardingCompletionDeps,
   OnboardingCompletionResult,
+  OnboardingDeadlineBatchResult,
+  OnboardingDeadlineEvaluatorDeps,
 } from './onboarding-completion.js';
 export { confirmCertificateRotationOnFirstHeartbeat } from './rotation-confirmation.js';
 export type {
