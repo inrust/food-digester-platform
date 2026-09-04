@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.12.0",
-  "updatedAt": "2026-08-26T10:05:00Z",
+  "registerVersion": "1.18.0",
+  "updatedAt": "2026-09-04T01:44:04Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -402,6 +402,132 @@
           "at": "2026-08-26T10:05:00Z",
           "by": "DEC-012",
           "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/domain/role-mapping-policy.json + 查询模块与测试；角色封闭映射（平台管理员→PlatformSuperAdmin、运维人员→PlatformOperator/界面名\"设备操作员\"）、Operator 禁授 AWS 资源权限、V1 权限矩阵固定与原型复选框只读全部锁定为可执行规则，无待定参数；同步 prototype-traceability.yaml 引用至 DEC-012@0.2.0；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-013",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "MQTT Payload 规范化",
+      "conflict": "通信设计中的 Heartbeat 字段表与 JSON 示例存在扁平/嵌套结构冲突，storageUsagePct 列错位，currentAmp 与 motorCurrentAmp 命名不一致，DISCHARING 拼写存在歧义；多数非 Heartbeat Topic 还缺少完整类型、必填性、单位、范围、Null 语义及 audit.hash 规范化定义。",
+      "provisionalValue": "未定；冻结 Heartbeat 唯一规范结构与兼容期、storageUsagePct 定义、currentAmp 规范名、DISCHARING 兼容策略、各 Topic 字段矩阵及 audit.hash 规范化与测试向量。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["CT-03", "BE-IOT-02", "BE-IOT-03", "QA-02"],
+      "affectedModules": ["CT", "BE-IOT", "QA"],
+      "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-09-04T01:44:04Z",
+          "by": "CT-01",
+          "note": "依据任务清单 §4 新增登记；状态为 pending，待设备与云端双方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-014",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "Retired 过渡期认证",
+      "conflict": "设备进入 Retired 后若认证层立即拒绝其证书，将无法继续调用 Sync 获取退役状态或调用 Deactivate 确认，形成退役认证死锁。",
+      "provisionalValue": "证书在退役确认待处理期间保持 Active；Retired 设备仅允许调用 Sync 和 Deactivate，确认或强制完成后立即撤销证书；退役确认状态只作为云端内部工作流标记。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["AUTH-03", "DOM-01", "BE-SYNC-01", "BE-SYNC-02", "BE-DEV-04", "QA-06"],
+      "affectedModules": ["AUTH", "DOM", "BE-SYNC", "BE-DEV", "QA"],
+      "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-09-04T01:44:04Z",
+          "by": "CT-01",
+          "note": "依据任务清单 §4 新增登记；状态为 pending，暂定最小权限过渡方案待双方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-015",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "OTA 状态回传通道",
+      "conflict": "通信设计只定义 Cloud→Device OTA Topic，并在流程中显示设备返回 ACK，未定义下载、安装、成功、失败或回滚等多阶段 OTA 状态的上行 Topic 与 Payload。",
+      "provisionalValue": "未定；在扩展现有 ACK、增加版本化 ota/status Topic 或采用 AWS IoT Jobs 状态事件中选择唯一通道，并同步 Topic Catalog、Schema、IoT Policy 与模拟器。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["CT-02", "CT-03", "AUTH-04", "BE-OTA-03", "QA-01", "QA-02", "QA-03"],
+      "affectedModules": ["CT", "AUTH", "BE-OTA", "QA"],
+      "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-09-04T01:44:04Z",
+          "by": "CT-01",
+          "note": "依据任务清单 §4 新增登记；状态为 pending，冻结前不得实现多条隐式回传通道。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-016",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "License/OTA 归档语义",
+      "conflict": "通信设计的 Retention Policy 列出 License 和 OTA，但 Topic Catalog 没有 License 上行 Topic，OTA 则是 Cloud→Device Topic，二者不能被当作设备上行原始 MQTT 归档。",
+      "provisionalValue": "License 历史与 OTA 下发/结果和设备上行 MQTT 原文分离；如需归档，使用领域事件或发布/结果记录的独立 Envelope 与前缀。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["BE-ARC-01", "BE-ARC-02", "BE-LIC-01", "BE-OTA-03"],
+      "affectedModules": ["BE-ARC", "BE-LIC", "BE-OTA"],
+      "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-09-04T01:44:04Z",
+          "by": "CT-01",
+          "note": "依据任务清单 §4 新增登记；状态为 pending，暂定分离归档语义待双方冻结。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-017",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "Onboarding 超时",
+      "conflict": "通信设计未定义证书签发后首次合法 Heartbeat 长期未到达时的截止时间、外部状态、证书处置、重签和重新申请规则。",
+      "provisionalValue": "未定；采用可重复执行的超时评估器，但截止时间、外部响应、证书撤销、重签和重新申请规则必须由双方确认，且不得新增设备生命周期状态替代内部 Onboarding 请求状态。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["BE-ONB-03", "BE-ONB-04", "QA-02", "QA-04"],
+      "affectedModules": ["BE-ONB", "QA"],
+      "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-09-04T01:44:04Z",
+          "by": "CT-01",
+          "note": "依据任务清单 §4 新增登记；状态为 pending，待双方冻结超时与证书处置规则。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-018",
+      "version": "0.1.0",
+      "status": "pending",
+      "title": "Configuration 扩展字段",
+      "conflict": "通信设计的 Sync 示例只明确 heartbeatInterval、telemetryInterval、cameraRefreshInterval 和 temperatureThreshold；实施方案与原型提出的图像、旋转、电机阈值、温度上下限和语言等字段缺少设备契约依据。",
+      "provisionalValue": "V1 基线仅包含源稿明确的四个字段；图像、旋转、电机阈值、温度上下限和语言作为候选扩展，须经设备能力协商、REST/MQTT Schema 与版本策略共同冻结后才能下发。",
+      "approver": null,
+      "approvedAt": null,
+      "blockingTasks": ["CT-03", "BE-CFG-01", "BE-SYNC-01", "FE-09", "QA-02"],
+      "affectedModules": ["CT", "BE-CFG", "BE-SYNC", "FE", "QA"],
+      "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan", "admin-prototype"],
+      "history": [
+        {
+          "version": "0.1.0",
+          "at": "2026-09-04T01:44:04Z",
+          "by": "CT-01",
+          "note": "依据任务清单 §4 新增登记；状态为 pending，V1 基线与候选扩展边界待双方冻结。"
         }
       ]
     }
