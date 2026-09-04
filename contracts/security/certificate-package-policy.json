@@ -1,33 +1,33 @@
 {
-  "policyVersion": "0.1.0",
-  "updatedAt": "2026-08-26T06:20:00Z",
-  "x-decision-versions": ["DEC-003@0.2.0"],
-  "status": "provisional",
-  "description": "DEC-003 一次性证书包领取策略（暂定值的可执行扩展点）。定性规则已可执行：KMS 信封加密短期保存、一次性领取、成功领取后销毁、丢失后重签。定量参数（retentionSeconds、maxClaims）正是 DEC-003 待冻结内容，本文件以 null 显式标记，消费方读取时失败关闭（抛错），禁止编码代理臆测数值。冻结时按 decision-change-template 将 DEC-003 升至 >=1.0.0 并整体替换本文件；消费方（SEC-01、BE-ONB-03、BE-CERT-02）只经 certificate-package-policy.ts 访问。",
+  "policyVersion": "1.0.0",
+  "updatedAt": "2026-09-04T04:40:30Z",
+  "x-decision-versions": ["DEC-003@1.0.0"],
+  "status": "frozen",
+  "description": "DEC-003 冻结的一次性证书包领取策略：KMS 信封加密保存 24 小时，只允许一次成功领取；服务端提交成功响应后立即销毁密文。响应不确定、包丢失或过期时不恢复旧包，吊销未确认新证书后重新签发。",
   "storage": {
     "encryption": "kms-envelope",
     "retention": "short-term",
-    "retentionSeconds": null,
+    "retentionSeconds": 86400,
     "consumers": ["SEC-01", "BE-ONB-03", "BE-CERT-02"],
-    "note": "AWS 返回私钥后立即 KMS 信封加密；retentionSeconds 为 DEC-003 待冻结参数，当前 null。明文私钥永不落库；日志/审计只记录证书包指纹。"
+    "note": "AWS 返回私钥后立即 KMS 信封加密，密文包最多保存 86400 秒。明文私钥永不落库；日志/审计只记录证书包指纹。"
   },
   "claim": {
     "oneTime": true,
-    "maxClaims": null,
+    "maxClaims": 1,
     "destroyOnSuccessfulClaim": true,
     "consumers": ["SEC-01", "BE-ONB-03", "BE-CERT-02"],
-    "note": "一次性领取：成功领取后立即销毁密文包；maxClaims 为 DEC-003 待冻结参数，当前 null。重复领取在冻结前按失败关闭处理（拒绝并告警），不放行第二次明文下发。"
+    "note": "一次性领取：只允许一次成功响应；服务端提交 2xx 响应后立即销毁密文包。重复领取拒绝并告警，不放行第二次明文下发。"
   },
   "lossHandling": {
     "mode": "reissue",
     "consumers": ["SEC-01", "BE-ONB-03", "BE-CERT-02"],
-    "note": "证书包丢失后重签新证书包（不恢复旧包明文）；重签走与首次签发相同的加密与领取约束。"
+    "note": "响应不确定、证书包丢失或过期后不恢复旧包明文；吊销未确认的新证书，再按首次签发约束重签。"
   },
   "destructionTriggers": {
     "triggers": ["SUCCESSFUL_CLAIM", "NEW_CERTIFICATE_FIRST_HEARTBEAT"],
     "consumers": ["SEC-01", "BE-ONB-03", "BE-ONB-04", "BE-CERT-02"],
     "note": "销毁触发点：成功领取；或新证书首个合法 Heartbeat（轮换场景确认后停用旧证并销毁新证书包）。销毁为不可逆删除密文材料并写业务审计。"
   },
-  "pendingParameters": ["storage.retentionSeconds", "claim.maxClaims"],
-  "frozenUpgradePath": "DEC-003 冻结时：按 decision-change-template 变更 DEC-003 至 >=1.0.0，将 retentionSeconds/maxClaims 填入冻结数值并提升 policyVersion、status 改 frozen；消费方代码无需修改（数据驱动）。"
+  "pendingParameters": [],
+  "frozenUpgradePath": "策略已按 DEC-003@1.0.0 冻结；后续修改必须新增决策版本、同步消费方并提供迁移与回滚说明。"
 }

@@ -9,7 +9,7 @@
 | 任务 | BE-DEV-04（P1 / 管理后台后端），依赖 BE-DEV-01、DOM-01、BE-SYNC-02、DOM-03（均已交付） |
 | 状态机 | DOM-01 迁移表为唯一事实源：仅 Active/Suspended→Retired，仅 PlatformSuperAdmin，强制原因，operational 镜像 Retired；Retired 无出边（永久不可恢复） |
 | 退役记录 | `device_retirements`（BE-SYNC-02 建表）：retire 创建 PENDING_CONFIRMATION；设备 deactivate（BE-SYNC-02）或本任务 force-complete 置 CONFIRMED 并完成证书停用 |
-| 功能边界 | 不实现离线等待期限的运维调度；force-complete 仅提供可由调用方触发的领域接口和审计 |
+| 当前实现差距 | DEC-014@1.0.0 已冻结 72 小时自动强制完成；现有代码只有人工 force-complete 领域接口，尚缺超时评估器、调度接线和 `UNCONFIRMED_TIMEOUT` 审计 |
 
 ## 2. 端点与工作流
 
@@ -36,8 +36,9 @@
 
 契约测试：`node --import tsx --test contracts/rest/admin-device-retirement-api.test.ts`（3 项）。
 
-## 4. 未决风险
+## 4. 待实现项与风险
 
 - force-complete 权限为 `device:write`（SuperAdmin/Operator 均可），任务未指定更严角色；如需 SuperAdmin 限定，一处权限点调整即可；
 - DEVICE_RETIRED 通知的实际 MQTT 投递依赖下行分发器（Outbox 当前仅归档链路）；
-- 离线等待期限与自动 force-complete 调度按功能边界留给运维侧（本任务仅提供触发接口）。
+- 实现以 `initiatedAt+72h` 为截止点的可重复执行超时评估器，并处理与设备 Deactivate/人工 force-complete 的并发；
+- 超时路径必须记录 `UNCONFIRMED_TIMEOUT`，且不得重复撤证或重复产生业务副作用。

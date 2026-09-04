@@ -8,11 +8,11 @@
       "PRI-001@1.0.0",
       "ADP-001@1.0.0",
       "DEC-001@0.2.0",
-      "DEC-004@0.2.0",
-      "DEC-014@0.1.0",
-      "DEC-018@0.1.0"
+      "DEC-004@1.0.0",
+      "DEC-014@1.0.0",
+      "DEC-018@1.0.0"
     ],
-    "x-decision-register-version": "1.18.0"
+    "x-decision-register-version": "1.22.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
@@ -129,14 +129,7 @@
       },
       "SyncLicense": {
         "type": "object",
-        "required": [
-          "licenseId",
-          "status",
-          "validFrom",
-          "validTo",
-          "entitlements",
-          "signature"
-        ],
+        "required": ["licenseId", "status", "validFrom", "validTo", "entitlements", "signature"],
         "additionalProperties": false,
         "description": "源稿 License 结构；设备线协议使用大写状态和 OTA entitlement。",
         "properties": {
@@ -165,12 +158,16 @@
         "type": "object",
         "required": ["userId", "username", "displayName", "passwordHash", "status"],
         "additionalProperties": false,
-        "description": "与源稿 Device User 结构同形。passwordHash 仅表示设备本地账号专用验证值，不得复用云端用户或 Cognito 密码 Hash；KDF/Salt/版本仍由 DEC-004 冻结。",
+        "description": "与源稿 Device User 结构同形。passwordHash 是 DEC-004@1.0.0 冻结的 Argon2id PHC 字符串，不得复用云端用户或 Cognito 密码 Hash。",
         "properties": {
           "userId": { "type": "string", "minLength": 1 },
           "username": { "type": "string", "minLength": 1 },
           "displayName": { "type": "string", "minLength": 1 },
-          "passwordHash": { "type": "string", "minLength": 1, "description": "设备本地专用验证值；不是云端账号密码 Hash。" },
+          "passwordHash": {
+            "type": "string",
+            "pattern": "^\\$argon2id\\$v=19\\$m=32768,t=3,p=1\\$[^$]+\\$[^$]+$",
+            "description": "设备本地专用 Argon2id PHC 字符串；不是云端账号密码 Hash。"
+          },
           "status": { "type": "string", "enum": ["ACTIVE", "DISABLED"] }
         }
       },
@@ -178,12 +175,36 @@
         "type": "object",
         "required": ["heartbeatInterval", "telemetryInterval", "cameraRefreshInterval", "temperatureThreshold"],
         "additionalProperties": false,
-        "description": "源稿 V1 Configuration 四字段完整快照；DEC-018 冻结前不得加入候选扩展字段。",
+        "description": "DEC-018@1.0.0 冻结的 V1 Configuration 四字段完整快照；候选扩展字段不得进入 V1。",
         "properties": {
-          "heartbeatInterval": { "type": "integer" },
-          "telemetryInterval": { "type": "integer" },
-          "cameraRefreshInterval": { "type": "integer" },
-          "temperatureThreshold": { "type": "number" }
+          "heartbeatInterval": {
+            "type": "integer",
+            "minimum": 10,
+            "maximum": 900,
+            "default": 60,
+            "description": "Heartbeat 间隔，单位：秒。"
+          },
+          "telemetryInterval": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 3600,
+            "default": 30,
+            "description": "Telemetry 间隔，单位：秒。"
+          },
+          "cameraRefreshInterval": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1440,
+            "default": 1,
+            "description": "摄像头刷新间隔，单位：分钟。"
+          },
+          "temperatureThreshold": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 120,
+            "default": 80,
+            "description": "温度阈值，单位：°C。"
+          }
         }
       },
       "SyncOperationalStatus": {
@@ -226,14 +247,7 @@
       },
       "DeviceSyncSnapshot": {
         "type": "object",
-        "required": [
-          "assignment",
-          "device",
-          "license",
-          "deviceUsers",
-          "configuration",
-          "operationalStatus"
-        ],
+        "required": ["assignment", "device", "license", "deviceUsers", "configuration", "operationalStatus"],
         "additionalProperties": false,
         "description": "与源稿顶层域同形的完整事实源快照（全量，不做增量裁剪；未分配/未许可/无配置域为 null 或空数组）。deviceId/snapshotAt/lastSyncTime/etag 是可选兼容元数据，不包裹 data/meta。",
         "properties": {

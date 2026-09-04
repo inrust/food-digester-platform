@@ -19,7 +19,6 @@ import {
   isDistributionChannelAllowed,
   isPerUserSaltRequired,
 } from './device-user-verifier-policy.ts';
-import { PolicyParameterPendingError } from './certificate-package-policy.ts';
 import { SchemaRegistry, validate } from '../mqtt/validator.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -112,31 +111,22 @@ test('暂定值定性规则可执行：设备本地专用、禁复用云端 Hash
   assert.equal(isDistributionChannelAllowed('MQTT'), false);
 });
 
-test('待冻结参数失败关闭：禁止臆测 KDF 默认值', () => {
+test('冻结参数可直接执行：Argon2id PHC、固定参数与长度', () => {
   const mat = DEVICE_USER_VERIFIER_POLICY.material;
-  assert.equal(mat.kdf, null);
-  assert.equal(mat.kdfParameters, null);
-  assert.equal(mat.saltBytes, null);
-  assert.equal(mat.hashBytes, null);
-  const pendingCases: Array<[() => unknown, string]> = [
-    [getVerifierKdf, 'material.kdf'],
-    [getVerifierKdfParameters, 'material.kdfParameters'],
-    [getVerifierSaltBytes, 'material.saltBytes'],
-    [getVerifierHashBytes, 'material.hashBytes'],
-  ];
-  for (const [fn, param] of pendingCases) {
-    assert.throws(
-      fn,
-      (e: unknown) =>
-        e instanceof PolicyParameterPendingError && (e as PolicyParameterPendingError).parameter === param,
-    );
-  }
-  assert.deepEqual([...DEVICE_USER_VERIFIER_POLICY.pendingParameters].sort(), [
-    'material.hashBytes',
-    'material.kdf',
-    'material.kdfParameters',
-    'material.saltBytes',
-  ]);
+  assert.equal(getVerifierKdf(), 'argon2id');
+  assert.deepEqual(getVerifierKdfParameters(), {
+    version: 19,
+    memoryKib: 32768,
+    iterations: 3,
+    parallelism: 1,
+    targetMillisecondsMin: 250,
+    targetMillisecondsMax: 500,
+  });
+  assert.equal(getVerifierSaltBytes(), 16);
+  assert.equal(getVerifierHashBytes(), 32);
+  assert.equal(mat.encoding, 'phc-string');
+  assert.equal(mat.wireField, 'passwordHash');
+  assert.deepEqual(DEVICE_USER_VERIFIER_POLICY.pendingParameters, []);
 });
 
 test('策略消费者均为合法任务 ID 且覆盖 DEC-004 阻塞任务', () => {
@@ -168,7 +158,9 @@ test('TS 常量与 device-user-verifier-policy.json 完全一致', () => {
   assert.deepEqual(policyJson.separation.consumers, [...DEVICE_USER_VERIFIER_POLICY.separation.consumers]);
   assert.deepEqual(policyJson.material.fields, [...DEVICE_USER_VERIFIER_POLICY.material.fields]);
   assert.equal(policyJson.material.kdf, DEVICE_USER_VERIFIER_POLICY.material.kdf);
-  assert.equal(policyJson.material.kdfParameters, DEVICE_USER_VERIFIER_POLICY.material.kdfParameters);
+  assert.deepEqual(policyJson.material.kdfParameters, DEVICE_USER_VERIFIER_POLICY.material.kdfParameters);
+  assert.equal(policyJson.material.encoding, DEVICE_USER_VERIFIER_POLICY.material.encoding);
+  assert.equal(policyJson.material.wireField, DEVICE_USER_VERIFIER_POLICY.material.wireField);
   assert.equal(policyJson.material.saltBytes, DEVICE_USER_VERIFIER_POLICY.material.saltBytes);
   assert.equal(policyJson.material.hashBytes, DEVICE_USER_VERIFIER_POLICY.material.hashBytes);
   assert.equal(policyJson.material.saltPerUser, DEVICE_USER_VERIFIER_POLICY.material.saltPerUser);
@@ -179,5 +171,5 @@ test('TS 常量与 device-user-verifier-policy.json 完全一致', () => {
   assert.deepEqual(policyJson.distribution.consumers, [...DEVICE_USER_VERIFIER_POLICY.distribution.consumers]);
   assert.deepEqual(policyJson.pendingParameters, [...DEVICE_USER_VERIFIER_POLICY.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, DEVICE_USER_VERIFIER_POLICY.frozenUpgradePath);
-  assert.equal(getVerifierPolicyStatus(), 'provisional');
+  assert.equal(getVerifierPolicyStatus(), 'frozen');
 });

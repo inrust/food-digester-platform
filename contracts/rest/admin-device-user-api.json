@@ -4,8 +4,8 @@
     "title": "Bio-Nexa CMP Admin Device User API",
     "version": "0.1.0",
     "description": "BE-DUSR-01 设备操作员管理接口（Cognito 认证；device-user:write=PlatformSuperAdmin/CustomerAdmin（CustomerAdmin 仅本 Customer，租户强制；DEC-012 矩阵中 PlatformOperator 无 device-user 权限），device-user:read=SuperAdmin/Auditor/CustomerAdmin/CustomerViewer + Customer 租户隔离）：创建、修改（含验证材料轮换）、停用、批量分配/撤销设备和列表。账号与云端 Cognito 用户分离（DEC-004：仅预计算验证材料 verifierValue/verifierSalt，拒收明文密码与云端密码 Hash；DTO/审计永不返回验证材料）。同步版本：任何用户/分配变化 version+1（兼 If-Match 乐观锁）并向受影响设备生成 USERS_CHANGED（Outbox，deviceAction=SYNC）；停用用户不进入新 Sync。分配约束：设备与用户同 Customer（跨 Customer → 409）、非 Retired、停用用户不可新分配；批量全成或全败；分配历史 append-only（ACTIVE/REVOKED）。不实现工单派遣/设备端 Topic（协议冻结前仅管理端）。通用契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-004@0.2.0", "DEC-012@0.2.0"],
-    "x-decision-register-version": "1.18.0"
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-004@1.0.0", "DEC-012@0.2.0"],
+    "x-decision-register-version": "1.22.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

@@ -70,15 +70,10 @@ function req(actor: ActorContext | undefined, options: Partial<AdminHttpRequest>
 
 function validPayload() {
   return {
-    image: { width: 640, height: 480, uploadIntervalSeconds: 300 },
-    rotation: { intervalMinutes: 30, durationSeconds: 120 },
-    motor: { overloadCurrentAmps: 5 },
-    heating: { minTemperatureCelsius: 35, maxTemperatureCelsius: 55 },
-    language: 'zh-CN',
     heartbeatInterval: 60,
-    telemetryInterval: 300,
-    cameraRefreshInterval: 30,
-    temperatureThreshold: 70,
+    telemetryInterval: 30,
+    cameraRefreshInterval: 1,
+    temperatureThreshold: 80,
   };
 }
 
@@ -171,20 +166,18 @@ describe('创建与校验', () => {
     );
   });
 
-  test('非法频率、尺寸、minTemperature≥maxTemperature 均拒绝（含旋转 N≥M）', async () => {
+  test('冻结范围外数值与 V1 候选扩展字段均拒绝', async () => {
     const h = handlers();
     const { deviceId } = await plantDevice();
     const cfg = await createDeviceConfig(h, deviceId);
     const configurationId = cfg.configurationId as string;
 
     const invalidPayloads: [string, Record<string, unknown>][] = [
-      ['非法频率 heartbeatInterval', { ...validPayload(), heartbeatInterval: 10 }],
-      ['非法频率 telemetryInterval', { ...validPayload(), telemetryInterval: 30 }],
-      ['非法频率 cameraRefreshInterval', { ...validPayload(), cameraRefreshInterval: 1000 }],
-      ['非法阈值 temperatureThreshold', { ...validPayload(), temperatureThreshold: 200 }],
-      ['非法尺寸 width', { ...validPayload(), image: { width: 100, height: 480, uploadIntervalSeconds: 300 } }],
-      ['非法尺寸 height', { ...validPayload(), image: { width: 640, height: 2000, uploadIntervalSeconds: 300 } }],
-      ['非法上传间隔', { ...validPayload(), image: { width: 640, height: 480, uploadIntervalSeconds: 10 } }],
+      ['非法频率 heartbeatInterval', { ...validPayload(), heartbeatInterval: 9 }],
+      ['非法频率 telemetryInterval', { ...validPayload(), telemetryInterval: 4 }],
+      ['非法频率 cameraRefreshInterval', { ...validPayload(), cameraRefreshInterval: 1441 }],
+      ['非法阈值 temperatureThreshold', { ...validPayload(), temperatureThreshold: 121 }],
+      ['候选字段 image', { ...validPayload(), image: { width: 640, height: 480, uploadIntervalSeconds: 300 } }],
       [
         'minTemperature≥maxTemperature',
         { ...validPayload(), heating: { minTemperatureCelsius: 55, maxTemperatureCelsius: 55 } },
@@ -201,7 +194,7 @@ describe('创建与校验', () => {
     }
     // 缺字段
     const missing = { ...validPayload() } as Record<string, unknown>;
-    delete missing.language;
+    delete missing.cameraRefreshInterval;
     assert.equal(
       (await h.createVersion(req(operator, { params: { configurationId }, body: { payload: missing } }))).status,
       400,

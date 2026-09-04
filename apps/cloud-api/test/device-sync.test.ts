@@ -201,14 +201,10 @@ async function plantDeviceUser(
 }
 
 const VALID_PAYLOAD = {
-  image: { width: 640, height: 480, uploadIntervalSeconds: 300 },
-  rotation: { intervalMinutes: 60, durationSeconds: 30 },
-  motor: { overloadCurrentAmps: 10 },
-  heating: { minTemperatureCelsius: 35, maxTemperatureCelsius: 55 },
-  language: 'zh-CN',
   heartbeatInterval: 60,
-  telemetryInterval: 300,
-  cameraRefreshInterval: 30,
+  telemetryInterval: 30,
+  cameraRefreshInterval: 1,
+  temperatureThreshold: 80,
 };
 
 async function plantConfiguration(target: { deviceId?: string; model?: string }, effectiveAt: Date): Promise<string> {

@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.18.0",
-  "updatedAt": "2026-09-04T01:44:04Z",
+  "registerVersion": "1.22.0",
+  "updatedAt": "2026-09-04T04:40:30Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -137,13 +137,13 @@
     },
     {
       "id": "DEC-003",
-      "version": "0.2.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "一次性证书包领取有效期和次数",
       "conflict": "证书包一次性领取的有效期、允许领取次数与丢失后的处置策略未冻结。",
-      "provisionalValue": "KMS 加密短期保存；成功领取后销毁；丢失后重签。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "证书包使用 KMS 信封加密保存 24 小时（retentionSeconds=86400）；最多一次成功领取（maxClaims=1），服务端提交成功响应后立即销毁密文；响应丢失、包丢失或过期时吊销未确认新证书并重新签发。",
+      "approver": "业务方（用户确认）",
+      "approvedAt": "2026-09-04T04:40:30Z",
       "blockingTasks": ["BE-ONB-03", "BE-CERT-02"],
       "affectedModules": ["SEC", "BE-ONB", "BE-CERT"],
       "sourceRefs": ["aws-key-solutions", "aws-implementation-plan"],
@@ -159,18 +159,24 @@
           "at": "2026-08-26T06:20:00Z",
           "by": "DEC-003",
           "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/security/certificate-package-policy.json + 查询模块与测试；定性规则（KMS 信封、一次性领取、成功即销毁、丢失重签）可执行；定量参数 retentionSeconds/maxClaims 显式标记 null，读取失败关闭，禁止臆测；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T04:40:30Z",
+          "by": "业务方（用户确认）",
+          "note": "选择方案 003-A 并冻结：KMS 信封加密保存 86400 秒、仅一次成功领取、成功响应提交后立即销毁；网络响应不确定、包丢失或过期均不恢复旧包，吊销未确认新证书后重签。"
         }
       ]
     },
     {
       "id": "DEC-004",
-      "version": "0.2.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "Device User 密码验证格式",
       "conflict": "设备本地登录验证值的 KDF 格式与下发材料未冻结。",
-      "provisionalValue": "设备本地专用加盐验证值，禁止复用云端密码 Hash。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "设备本地验证采用 Argon2id v=19（memory=32768 KiB、iterations=3、parallelism=1、salt=16 字节、hash=32 字节），通过 passwordHash 字段按 PHC 字符串编码，仅经 Sync 下发；禁止复用云端密码 Hash。",
+      "approver": "业务方（用户确认）",
+      "approvedAt": "2026-09-04T04:40:30Z",
       "blockingTasks": ["BE-DUSR-02"],
       "affectedModules": ["BE-DUSR", "SEC"],
       "sourceRefs": ["aws-key-solutions", "aws-implementation-plan"],
@@ -186,6 +192,12 @@
           "at": "2026-08-26T06:44:03Z",
           "by": "DEC-004",
           "note": "按任务清单 §4 末段实现暂定值的可执行扩展点：contracts/security/device-user-verifier-policy.json + 查询模块与测试；定性规则（设备本地专用、禁复用云端 Hash、每用户 salt、仅 Sync 下发）可执行；KDF 算法/参数/salt/hash 长度显式标记 null，读取失败关闭；暂定值未变更，决策仍为 pending，冻结需业务方批准人。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T04:40:30Z",
+          "by": "业务方（用户确认）",
+          "note": "选择方案 004-A 并冻结：Argon2id v=19，m=32768 KiB、t=3、p=1，16 字节独立随机 salt、32 字节输出；Sync 的 passwordHash 使用自描述 PHC 字符串，不得复用云端密码 Hash。"
         }
       ]
     },
@@ -428,13 +440,13 @@
     },
     {
       "id": "DEC-014",
-      "version": "0.1.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "Retired 过渡期认证",
       "conflict": "设备进入 Retired 后若认证层立即拒绝其证书，将无法继续调用 Sync 获取退役状态或调用 Deactivate 确认，形成退役认证死锁。",
-      "provisionalValue": "证书在退役确认待处理期间保持 Active；Retired 设备仅允许调用 Sync 和 Deactivate，确认或强制完成后立即撤销证书；退役确认状态只作为云端内部工作流标记。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "退役确认待处理期间证书保持 Active，Retired 设备仅允许调用 Sync 和 Deactivate，其他 Device REST、业务 MQTT 与命令全部拒绝；设备确认后立即撤证，未确认满 72 小时自动强制完成并以 UNCONFIRMED_TIMEOUT 审计，管理员可提前强制完成。",
+      "approver": "业务方（用户确认）",
+      "approvedAt": "2026-09-04T04:40:30Z",
       "blockingTasks": ["AUTH-03", "DOM-01", "BE-SYNC-01", "BE-SYNC-02", "BE-DEV-04", "QA-06"],
       "affectedModules": ["AUTH", "DOM", "BE-SYNC", "BE-DEV", "QA"],
       "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
@@ -444,6 +456,12 @@
           "at": "2026-09-04T01:44:04Z",
           "by": "CT-01",
           "note": "依据任务清单 §4 新增登记；状态为 pending，暂定最小权限过渡方案待双方冻结。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T04:40:30Z",
+          "by": "业务方（用户确认）",
+          "note": "选择方案 014-A 并冻结：确认窗口 72 小时；窗口内仅 Sync/Deactivate，其他设备 REST、MQTT 和命令拒绝；确认、人工强制或超时强制后立即撤证，超时审计为 UNCONFIRMED_TIMEOUT。"
         }
       ]
     },
@@ -512,13 +530,13 @@
     },
     {
       "id": "DEC-018",
-      "version": "0.1.0",
-      "status": "pending",
+      "version": "1.0.0",
+      "status": "frozen",
       "title": "Configuration 扩展字段",
       "conflict": "通信设计的 Sync 示例只明确 heartbeatInterval、telemetryInterval、cameraRefreshInterval 和 temperatureThreshold；实施方案与原型提出的图像、旋转、电机阈值、温度上下限和语言等字段缺少设备契约依据。",
-      "provisionalValue": "V1 基线仅包含源稿明确的四个字段；图像、旋转、电机阈值、温度上下限和语言作为候选扩展，须经设备能力协商、REST/MQTT Schema 与版本策略共同冻结后才能下发。",
-      "approver": null,
-      "approvedAt": null,
+      "provisionalValue": "V1 仅包含 heartbeatInterval（秒，10～900，默认 60）、telemetryInterval（秒，5～3600，默认 30）、cameraRefreshInterval（分钟，1～1440，默认 1）和 temperatureThreshold（°C，0～120，默认 80）；候选扩展字段不得进入 V1。",
+      "approver": "业务方（用户确认）",
+      "approvedAt": "2026-09-04T04:40:30Z",
       "blockingTasks": ["CT-03", "BE-CFG-01", "BE-SYNC-01", "FE-09", "QA-02"],
       "affectedModules": ["CT", "BE-CFG", "BE-SYNC", "FE", "QA"],
       "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan", "admin-prototype"],
@@ -528,6 +546,12 @@
           "at": "2026-09-04T01:44:04Z",
           "by": "CT-01",
           "note": "依据任务清单 §4 新增登记；状态为 pending，V1 基线与候选扩展边界待双方冻结。"
+        },
+        {
+          "version": "1.0.0",
+          "at": "2026-09-04T04:40:30Z",
+          "by": "业务方（用户确认）",
+          "note": "选择方案 018-A 并冻结 V1 四字段、单位、范围与默认值；cameraRefreshInterval 明确使用分钟。图像、旋转、电机阈值、温度上下限、语言及网络字段不属于 V1。"
         }
       ]
     }

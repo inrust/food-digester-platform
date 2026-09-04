@@ -12,7 +12,8 @@
  *
  * force-complete（POST /admin/devices/{id}/retire/complete，强制原因）：
  * 离线设备不等待确认，由调用方触发完成退役（CONFIRMED + FORCE_COMPLETE + 撤销 ACTIVE 证书），
- * 与 BE-SYNC-02 共享 completeRetirementStep；不实现离线等待期限的运维调度。
+ * 与 BE-SYNC-02 共享 completeRetirementStep。DEC-014@1.0.0 已冻结 72 小时自动强制完成；
+ * 本模块当前仍缺超时评估器、调度接线和 UNCONFIRMED_TIMEOUT 审计，见开发文档待实现项。
  *
  * 幂等：已 Retired 且退役记录存在 → replayed；force-complete 已 CONFIRMED → replayed。
  * 审计：device.retire / device.retire.force_complete（DOM-03 audited）。

@@ -1,14 +1,13 @@
 /**
- * DEC-004 Device User 密码验证格式（暂定值的可执行扩展点）。
+ * DEC-004 Device User 密码验证格式（已冻结）。
  *
  * 事实源：contracts/security/device-user-verifier-policy.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-004@0.2.0（status=pending，本策略为暂定实现，冻结后整体替换）。
+ * 决策追溯：DEC-004@1.0.0（status=frozen）。
  *
  * 消费方：BE-DUSR-02（KDF adapter / Sync DTO）；下发通道 BE-SYNC-01。
- * 约束：定性规则（设备本地专用、禁止复用云端密码 Hash、每用户独立 salt、
- * 仅 Sync 下发）可直接执行；KDF 具体格式（算法/参数/salt/hash 长度）是
- * DEC-004 待冻结内容，读取时失败关闭（抛 PolicyParameterPendingError）。
+ * 约束：Argon2id v=19（m=32768 KiB、t=3、p=1、salt=16、hash=32），
+ * 通过 Sync 的 passwordHash 字段按 PHC 字符串下发。
  */
 
 import { PolicyParameterPendingError } from './certificate-package-policy.ts';
@@ -31,9 +30,11 @@ export interface DeviceUserVerifierPolicy {
   };
   readonly material: {
     readonly fields: readonly VerifierMaterialField[];
-    /** DEC-004 待冻结参数；provisional 为 null。 */
+    /** 冻结的 KDF 标识与参数。 */
     readonly kdf: string | null;
     readonly kdfParameters: Readonly<Record<string, number | string>> | null;
+    readonly encoding: 'phc-string';
+    readonly wireField: 'passwordHash';
     readonly saltBytes: number | null;
     readonly hashBytes: number | null;
     readonly saltPerUser: true;
@@ -50,12 +51,11 @@ export interface DeviceUserVerifierPolicy {
 }
 
 /**
- * 暂定值（DEC-004 v0.2.0，pending）：
- * 设备本地专用加盐验证值，禁止复用云端密码 Hash。
+ * 冻结值（DEC-004 v1.0.0）。
  */
 export const DEVICE_USER_VERIFIER_POLICY: DeviceUserVerifierPolicy = {
-  policyVersion: '0.1.0',
-  status: 'provisional',
+  policyVersion: '1.0.0',
+  status: 'frozen',
   separation: {
     purpose: 'device-local-only',
     cloudHashReuse: false,
@@ -64,22 +64,31 @@ export const DEVICE_USER_VERIFIER_POLICY: DeviceUserVerifierPolicy = {
   },
   material: {
     fields: ['version', 'kdf', 'salt', 'hash'],
-    kdf: null,
-    kdfParameters: null,
-    saltBytes: null,
-    hashBytes: null,
+    kdf: 'argon2id',
+    kdfParameters: {
+      version: 19,
+      memoryKib: 32768,
+      iterations: 3,
+      parallelism: 1,
+      targetMillisecondsMin: 250,
+      targetMillisecondsMax: 500,
+    },
+    encoding: 'phc-string',
+    wireField: 'passwordHash',
+    saltBytes: 16,
+    hashBytes: 32,
     saltPerUser: true,
     consumers: ['BE-DUSR-02'],
-    note: '验证材料结构固定为 version+kdf+salt+hash 四字段，version 支持算法迁移。kdf/kdfParameters/saltBytes/hashBytes 为 DEC-004 待冻结参数，当前 null。每用户独立随机 salt（不同 salt 结果必须不同）。',
+    note: '内部逻辑材料为 version+kdf+salt+hash；线协议统一编码为 passwordHash PHC 字符串。每用户使用 16 字节独立随机 salt，输出 32 字节。',
   },
   distribution: {
     channels: ['SYNC'],
     consumers: ['BE-DUSR-02', 'BE-SYNC-01'],
-    note: '验证材料仅经 Unified Device Sync（BE-SYNC-01）的 Device Users 域下发；任何查询类 API 不得返回；接口日志与业务审计必须脱敏（盐值可按冻结规则保留，hash 永不入日志）。',
+    note: '验证材料仅经 Unified Device Sync（BE-SYNC-01）的 Device Users.passwordHash 下发；任何查询类 API 不得返回；接口日志与业务审计必须整体遮蔽 PHC 字符串。',
   },
-  pendingParameters: ['material.kdf', 'material.kdfParameters', 'material.saltBytes', 'material.hashBytes'],
+  pendingParameters: [],
   frozenUpgradePath:
-    'DEC-004 冻结时：按 decision-change-template 变更 DEC-004 至 >=1.0.0，填入 KDF 算法、参数与 salt/hash 长度并提升 policyVersion、status 改 frozen；同时提供固定测试向量供设备方复验（BE-DUSR-02 验收基准）。',
+    '策略已按 DEC-004@1.0.0 冻结；后续算法或参数升级必须新增材料版本和决策版本，并在兼容窗口内同时验证旧、新 PHC 字符串。',
 } as const;
 
 function requireFrozen<T>(value: T | null, parameter: string): T {
@@ -127,7 +136,7 @@ export function isDistributionChannelAllowed(channel: string): channel is Distri
   return (DEVICE_USER_VERIFIER_POLICY.distribution.channels as readonly string[]).includes(channel);
 }
 
-/** 策略当前状态：provisional 表示 DEC-004 未冻结，消费方不得把值固化为不可迁移结构。 */
+/** 策略当前状态。 */
 export function getVerifierPolicyStatus(): VerifierPolicyStatus {
   return DEVICE_USER_VERIFIER_POLICY.status;
 }

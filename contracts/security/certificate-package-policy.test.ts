@@ -9,7 +9,6 @@ import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import {
   CERTIFICATE_PACKAGE_POLICY,
-  PolicyParameterPendingError,
   getLossHandlingMode,
   getMaxClaims,
   getPolicyStatus,
@@ -108,27 +107,13 @@ test('暂定值定性规则可执行：KMS 信封、一次性领取、成功即�
   assert.equal(isDestructionTrigger('MANUAL_DELETE'), false);
 });
 
-test('待冻结参数失败关闭：禁止臆测默认值', () => {
-  assert.equal(CERTIFICATE_PACKAGE_POLICY.storage.retentionSeconds, null);
-  assert.equal(CERTIFICATE_PACKAGE_POLICY.claim.maxClaims, null);
-  assert.throws(
-    () => getRetentionSeconds(),
-    (e: unknown) =>
-      e instanceof PolicyParameterPendingError &&
-      (e as PolicyParameterPendingError).parameter === 'storage.retentionSeconds',
-  );
-  assert.throws(
-    () => getMaxClaims(),
-    (e: unknown) =>
-      e instanceof PolicyParameterPendingError && (e as PolicyParameterPendingError).parameter === 'claim.maxClaims',
-  );
-  // 重复领取在冻结前拒绝（失败关闭）
+test('冻结参数可直接执行：24 小时、一次成功领取、无待定参数', () => {
+  assert.equal(CERTIFICATE_PACKAGE_POLICY.storage.retentionSeconds, 86400);
+  assert.equal(CERTIFICATE_PACKAGE_POLICY.claim.maxClaims, 1);
+  assert.equal(getRetentionSeconds(), 86400);
+  assert.equal(getMaxClaims(), 1);
   assert.equal(isRepeatClaimAllowed(), false);
-  // pendingParameters 列表与 null 字段一一对应
-  assert.deepEqual([...CERTIFICATE_PACKAGE_POLICY.pendingParameters].sort(), [
-    'claim.maxClaims',
-    'storage.retentionSeconds',
-  ]);
+  assert.deepEqual(CERTIFICATE_PACKAGE_POLICY.pendingParameters, []);
 });
 
 test('策略消费者均为合法任务 ID 且覆盖 DEC-003 阻塞任务与 SEC-01', () => {
@@ -179,5 +164,5 @@ test('TS 常量与 certificate-package-policy.json 完全一致', () => {
   ]);
   assert.deepEqual(policyJson.pendingParameters, [...CERTIFICATE_PACKAGE_POLICY.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, CERTIFICATE_PACKAGE_POLICY.frozenUpgradePath);
-  assert.equal(getPolicyStatus(), 'provisional');
+  assert.equal(getPolicyStatus(), 'frozen');
 });

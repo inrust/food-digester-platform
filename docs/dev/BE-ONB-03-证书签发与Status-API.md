@@ -9,7 +9,7 @@
 | 任务 | BE-ONB-03（P1 / 设备接口），依赖 BE-ONB-02、SEC-01、AUTH-04、DEC-003（均已交付） |
 | 端点 | `GET /api/v1/device/onboarding/status`（Onboarding Token 认证，serialNumber 绑定校验） |
 | 签发链 | approve（BE-ONB-02）→ `ProvisioningTrigger` 端口 → ensureThing → CreateKeysAndCertificate → AUTH-04 单设备 Policy → attach Policy/Thing → 证书记录 → SEC-01 信封加密封包 |
-| 证书包 | DEC-003/SEC-01：KMS 信封加密短期保存、一次性领取、领取成功即销毁密文；retentionSeconds/maxClaims 为 DEC-003 待冻结参数，由部署方显式注入（测试用 3600s / maxClaims=1） |
+| 证书包 | DEC-003@1.0.0/SEC-01：KMS 信封加密保存 86400 秒、一次成功领取、成功响应提交后销毁；响应不确定、丢失或过期时吊销未确认新证书并重签 |
 | 功能边界 | 内部 Provisioning 不暴露为外部状态（未就绪对外一律 PENDING）；不实现 CSR |
 
 ## 2. 模块组成
@@ -44,5 +44,5 @@
 ## 5. 未决风险
 
 - CreateKeysAndCertificate 成功但 DB 落库失败时，AWS 侧产生孤儿证书（无业务记录、无私钥泄露）；需运维侧定期清理无关联证书（可加 AWS 侧清单对账任务）；
-- `packageRetentionSeconds`/`maxClaims` 为 DEC-003 待冻结参数，当前由部署配置显式注入；DEC-003 冻结后应切换为读取 `certificate-package-policy`（数据驱动，代码无需改动）；
+- 生产接线必须从 `certificate-package-policy` 读取 `packageRetentionSeconds=86400`、`maxClaims=1`；当前仍由部署配置注入的路径需收敛，禁止使用其他值；
 - Provisioning 在 approve 请求内同步执行，AWS 抖动会延长审批延迟；如需异步化可引入 Outbox（outbox_events 表已就绪），属后续可靠性增强。

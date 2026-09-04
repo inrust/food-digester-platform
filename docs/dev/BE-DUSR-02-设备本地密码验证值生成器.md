@@ -6,9 +6,9 @@
 
 | 项 | 说明 |
 |---|---|
-| 任务 | BE-DUSR-02（P1 / 后端安全），依赖 BE-DUSR-01（已交付）、DEC-004（**pending 0.2.0**）、SEC-01 |
-| 关键前置 | DEC-004 未冻结：KDF 算法/参数/salt/hash 长度为待冻结参数，策略读取 fail-closed（`PolicyParameterPendingError`）。经任务执行决策：本次仅落地 **KDF adapter 接口、DTO 与脱敏管线**，不实现具体 KDF 计算、不变更 DEC-004 状态；**固定测试向量验收项冻结后补齐** |
-| 交付物映射 | KDF adapter → `VerifierKdfAdapter` 接口；DTO → `GeneratedVerifierMaterial`（四字段，与 BE-SYNC-01 Sync DTO 对应）；测试向量 → 冻结后由冻结 adapter 补齐（本次以模拟冻结 adapter 验证管线语义） |
+| 任务 | BE-DUSR-02（P1 / 后端安全），依赖 BE-DUSR-01（已交付）、DEC-004@1.0.0（已冻结）、SEC-01 |
+| 关键前置 | 协议参数已冻结为 Argon2id v=19、m=32768 KiB、t=3、p=1、salt=16 字节、hash=32 字节；当前代码仍只有 adapter 接口和脱敏管线，生产 Argon2id adapter、PHC 编码及固定测试向量待实现 |
+| 交付物映射 | KDF adapter → `VerifierKdfAdapter` 接口；内部 DTO → `GeneratedVerifierMaterial` 四组件；线协议 → `passwordHash` PHC 字符串；生产 Argon2id adapter 与固定测试向量待补齐 |
 | 功能边界 | 不实现设备端登录；明文密码仅存在于生成管线内存中 |
 
 ## 2. 关键设计
@@ -19,7 +19,7 @@
 
 **脱敏管线**（接口日志和审计必须脱敏）：首要防线是 DTO 不含材料（BE-DUSR-01 已保证查询 API 永不返回 verifier\*、拒收明文密码字段）；本模块提供最后防线 `redactVerifierSecrets`（文本中出现的 hash/salt/明文密码替换为 `[REDACTED]`，≥8 字符才参与比对，去重 + 长串优先）与 `assertNoVerifierLeak`（泄漏即 fail-fast）。
 
-**下发通道**：仅 Unified Device Sync 的 Device Users 域（BE-SYNC-01 已落地四字段下发；`VERIFIER_MATERIAL_FIELDS` 与 Sync DTO `DeviceUserVerifierMaterial` 字段一一对应）。
+**下发通道**：仅 Unified Device Sync 的 Device Users 域；内部四组件必须在线路边界编码为 `passwordHash` PHC 字符串，不能继续把 `version/kdf/salt/hash` 作为四个线协议字段下发。
 
 ## 3. 验收基准与证据（vitest，10 项）
 
@@ -34,6 +34,6 @@
 
 ## 4. 未决风险
 
-- **固定测试向量缺失（冻结后验收项）**：DEC-004 冻结（业务方批准、升至 >=1.0.0 frozen）时，需实现冻结 KDF adapter（算法/参数来自策略）、提供固定测试向量并登记 `x-decision-versions`；管线与 DTO 无需变更；
+- **固定测试向量和生产 adapter 缺失**：需按 DEC-004@1.0.0 实现 Argon2id/PHC，并提供设备端可独立复验的固定向量；
 - 组合根接线待落地：Lambda 入口需把 `VerifierPolicyQuery` 绑定到 contracts policy 模块查询函数（当前仅测试以模拟策略验证两种状态）；
 - 生成器未被任何 API 调用：BE-DUSR-01 仍只接受预计算验证材料；冻结后如需"云端代生成"写路径（管理员设密码时云端派生），需新任务定义其授权与审计语义（明文密码过 API 的传输保护）。

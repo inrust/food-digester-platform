@@ -1,9 +1,9 @@
 {
-  "policyVersion": "0.1.0",
-  "updatedAt": "2026-08-26T06:44:03Z",
-  "x-decision-versions": ["DEC-004@0.2.0"],
-  "status": "provisional",
-  "description": "DEC-004 Device User 密码验证格式（暂定值的可执行扩展点）。定性规则已可执行：设备本地专用加盐验证值，与云端身份完全分离，禁止复用 Cognito 或任何云端密码 Hash；验证材料只在 Sync DTO 中下发。KDF 具体格式（算法、参数、salt/hash 长度）是 DEC-004 待冻结内容，以 null 显式标记，读取失败关闭。冻结时按 decision-change-template 将 DEC-004 升至 >=1.0.0 并整体替换本文件；消费方（BE-DUSR-02）只经 device-user-verifier-policy.ts 访问。",
+  "policyVersion": "1.0.0",
+  "updatedAt": "2026-09-04T04:40:30Z",
+  "x-decision-versions": ["DEC-004@1.0.0"],
+  "status": "frozen",
+  "description": "DEC-004 冻结的 Device User 密码验证格式：设备本地验证采用 Argon2id v=19（m=32768 KiB、t=3、p=1、salt=16 字节、hash=32 字节），通过 Sync 的 passwordHash 字段按 PHC 字符串编码下发；禁止复用 Cognito 或任何云端密码 Hash。",
   "separation": {
     "purpose": "device-local-only",
     "cloudHashReuse": false,
@@ -12,19 +12,28 @@
   },
   "material": {
     "fields": ["version", "kdf", "salt", "hash"],
-    "kdf": null,
-    "kdfParameters": null,
-    "saltBytes": null,
-    "hashBytes": null,
+    "kdf": "argon2id",
+    "kdfParameters": {
+      "version": 19,
+      "memoryKib": 32768,
+      "iterations": 3,
+      "parallelism": 1,
+      "targetMillisecondsMin": 250,
+      "targetMillisecondsMax": 500
+    },
+    "encoding": "phc-string",
+    "wireField": "passwordHash",
+    "saltBytes": 16,
+    "hashBytes": 32,
     "saltPerUser": true,
     "consumers": ["BE-DUSR-02"],
-    "note": "验证材料结构固定为 version+kdf+salt+hash 四字段，version 支持算法迁移。kdf/kdfParameters/saltBytes/hashBytes 为 DEC-004 待冻结参数，当前 null。每用户独立随机 salt（不同 salt 结果必须不同）。"
+    "note": "内部逻辑材料为 version+kdf+salt+hash；线协议统一编码为 passwordHash PHC 字符串。每用户使用 16 字节独立随机 salt，输出 32 字节。"
   },
   "distribution": {
     "channels": ["SYNC"],
     "consumers": ["BE-DUSR-02", "BE-SYNC-01"],
-    "note": "验证材料仅经 Unified Device Sync（BE-SYNC-01）的 Device Users 域下发；任何查询类 API 不得返回；接口日志与业务审计必须脱敏（盐值可按冻结规则保留，hash 永不入日志）。"
+    "note": "验证材料仅经 Unified Device Sync（BE-SYNC-01）的 Device Users.passwordHash 下发；任何查询类 API 不得返回；接口日志与业务审计必须整体遮蔽 PHC 字符串。"
   },
-  "pendingParameters": ["material.kdf", "material.kdfParameters", "material.saltBytes", "material.hashBytes"],
-  "frozenUpgradePath": "DEC-004 冻结时：按 decision-change-template 变更 DEC-004 至 >=1.0.0，填入 KDF 算法、参数与 salt/hash 长度并提升 policyVersion、status 改 frozen；同时提供固定测试向量供设备方复验（BE-DUSR-02 验收基准）。"
+  "pendingParameters": [],
+  "frozenUpgradePath": "策略已按 DEC-004@1.0.0 冻结；后续算法或参数升级必须新增材料版本和决策版本，并在兼容窗口内同时验证旧、新 PHC 字符串。"
 }

@@ -7,7 +7,7 @@
 | 项 | 说明 |
 |---|---|
 | 任务 | SEC-01（P0 / 后端安全），依赖 IAC-01、DOM-03、DEC-003（均已就绪） |
-| 策略 | DEC-003（pending）：信封加密短期保存、一次性领取、失败关闭；`retentionSeconds`/`maxClaims` 为冻结参数，本组件强制注入且 maxClaims 仅允许 1 |
+| 策略 | DEC-003@1.0.0（frozen）：KMS 信封加密保存 86400 秒、一次成功领取、成功响应提交后销毁；响应不确定、丢失或过期时吊销未确认新证书并重签 |
 | KMS | IAC-01 已创建 `fdp-{env}-cert-package` 专用 Key，加解密权限仅授予 API Lambda 角色 |
 | 审计 | DOM-03 `recordAudit`（同事务 SUCCESS / 独立 FAILURE） |
 
@@ -45,10 +45,10 @@
 
 - **BE-ONB-03**：`CreateKeysAndCertificate` 返回后立即 `storePackage`；响应组装用 `claimPackage`（proof = Onboarding Token ctx）；
 - **BE-ONB-04 / BE-CERT-02**：轮换重领用 `deviceCertificate` proof；新证书首个合法 Heartbeat 后 `destroyPackage(旧证书)`；
-- **DEC-003 冻结后**：`retentionSeconds`/`maxClaims` 由策略文件提供；若冻结值 >1，需扩展领取计数（当前结构可整体替换）。
+- **DEC-003 接线**：`retentionSeconds=86400`、`maxClaims=1` 必须从冻结策略文件读取，不得继续由部署环境指定其他值。
 
 ## 6. 未决风险
 
 - KMS 真实往返未在本地测试覆盖（mock 验证命令接线）；dev 环境首次部署需联调 GenerateDataKey/Decrypt 权限；
-- 证书包过期后的清扫依赖 claim 时销毁或 BE 定时任务（当前无 sweeper，DEC-003 冻结后可加）；
+- 证书包过期后的清扫依赖 claim 时销毁或 BE 定时任务；当前无 sweeper，需补充到期清扫实现；
 - `local-test-key-provider` 存在于发布产物中，依赖代码评审与命名警示防误用；后续可考虑拆分到 test-only 包。

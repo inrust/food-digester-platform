@@ -356,7 +356,7 @@ Token 必须一次一机、可撤销、有有效期并只保存 Hash。接口应
 - `REJECTED`：返回拒绝原因；
 - `APPROVED`：返回 Device ID、Certificate Package、MQTT 配置和初始配置。
 
-必须覆盖通信设计列出的负向案例：序列号不存在、设备已经 Onboarded、管理员拒绝、设备证书安装失败。证书安装失败时不得直接标记 Onboarded；加密证书包仍在有效期内时允许继续领取，失效后重新签发。首次合法 Heartbeat 长期未到达时，由可重复执行的超时评估器处理，但超时期限、外部状态、证书撤销和重新申请规则必须先通过 DEC-017 冻结；不得新增设备生命周期状态来替代内部 Onboarding 请求状态。
+必须覆盖通信设计列出的负向案例：序列号不存在、设备已经 Onboarded、管理员拒绝、设备证书安装失败。证书安装失败时不得直接标记 Onboarded；DEC-003@1.0.0 只允许一次成功领取，密文包最长保存 24 小时，响应不确定、证书包丢失或过期时吊销未确认新证书并重新签发，不恢复旧包。首次合法 Heartbeat 长期未到达时，由可重复执行的超时评估器处理，但超时期限、外部状态、证书撤销和重新申请规则必须先通过 DEC-017 冻结；不得新增设备生命周期状态来替代内部 Onboarding 请求状态。
 
 ### 8.3 发证流程
 
@@ -370,7 +370,7 @@ Token 必须一次一机、可撤销、有有效期并只保存 Hash。接口应
 8. 设备安装证书并连接 MQTT；
 9. 首次 MQTT Heartbeat 成功后标记 Onboarded。
 
-证书私钥不得写入数据库、日志、Trace 或普通审计字段。待领取证书包使用 KMS 信封加密短期保存，领取成功或新证书 Heartbeat 后销毁；响应丢失且证书包已销毁时重新签发，不找回旧私钥。CSR 模式只作为后续协议升级建议，不能作为 V1 默认实现。
+证书私钥不得写入数据库、日志、Trace 或普通审计字段。待领取证书包使用 KMS 信封加密保存不超过 86400 秒，只允许一次成功领取；服务端提交成功响应后立即销毁，响应不确定、包丢失或过期时吊销未确认新证书并重新签发，不找回旧私钥。CSR 模式只作为后续协议升级建议，不能作为 V1 默认实现。
 
 ### 8.4 证书轮换
 
@@ -405,7 +405,7 @@ Sync 请求至少包含 `lastSyncTime`。响应必须覆盖：
 
 V1 Sync 始终返回上述完整事实快照。响应可携带版本号或 ETag 供设备判断是否更新本地缓存，但不得返回 `304` 或省略必要域；`lastSyncTime` 不得在没有版本化协议的情况下被解释为增量裁剪条件。
 
-通信设计示例明确出现的 Configuration 字段只有 `heartbeatInterval`、`telemetryInterval`、`cameraRefreshInterval` 和 `temperatureThreshold`。图像尺寸/上传间隔、旋转 M/N、电机过载电流、最低/最高加热温度和语言等字段属于候选扩展，须经 DEC-018、MQTT/REST Schema 与设备能力协商共同冻结后才能进入 Sync。
+通信设计示例明确出现的 Configuration 字段只有 `heartbeatInterval`、`telemetryInterval`、`cameraRefreshInterval` 和 `temperatureThreshold`。DEC-018@1.0.0 已将 V1 冻结为这四个字段：Heartbeat 10～900 秒（默认 60）、Telemetry 5～3600 秒（默认 30）、Camera Refresh 1～1440 分钟（默认 1）、温度阈值 0～120 °C（默认 80）。图像尺寸/上传间隔、旋转 M/N、电机过载电流、最低/最高加热温度、语言和网络字段不进入 V1。
 
 调用频率严格采用通信设计：
 
@@ -418,7 +418,7 @@ V1 Sync 始终返回上述完整事实快照。响应可携带版本号或 ETag 
 
 通信设计的状态机总览只列出 Active/Suspended/Retired，但 Sync 和业务流程包含 Maintenance。试运营云端保留独立 Maintenance 状态；在完整行为矩阵确认前，默认沿用 Suspended 的设备处理限制，同时允许维护、同步、遥测、告警和 OTA 相关操作。
 
-Device User Sync 示例中的 `passwordHash` 只能是设备本地账号专用的加盐验证值，不得下发 Cognito 密码、云端用户密码 Hash 或可用于登录云端的凭据。具体 KDF、Salt 和版本字段必须在协议冻结时补充。
+Device User Sync 示例中的 `passwordHash` 是 DEC-004@1.0.0 冻结的设备本地 Argon2id PHC 字符串：v=19、m=32768 KiB、t=3、p=1、16 字节独立随机 Salt、32 字节输出。不得下发 Cognito 密码、云端用户密码 Hash 或可用于登录云端的凭据。
 
 ## 9. 消息路由与处理
 
@@ -560,9 +560,9 @@ POST            /api/v1/admin/devices/{deviceId}/reactivate
 POST            /api/v1/admin/devices/{deviceId}/retire
 ```
 
-退役采用内部两阶段工作流，外部生命周期仍只使用通信设计中的状态：管理员批准退役后撤销 Entitlement/License 和 Assignment，发送 `DEVICE_RETIRED`，设备调用 Sync、进入 Retired 并通过 `/api/v1/device/deactivate` 确认；云端随后停用证书和运行能力。若设备离线无法确认，达到管理策略规定的等待期限后强制停用证书并记录未确认退役。这样既保留通信设计的业务步骤，也避免在通知设备前先切断其认证通道。
+退役采用内部两阶段工作流，外部生命周期仍只使用通信设计中的状态：管理员批准退役后撤销 Entitlement/License 和 Assignment，发送 `DEVICE_RETIRED`，设备调用 Sync、进入 Retired 并通过 `/api/v1/device/deactivate` 确认；云端随后停用证书和运行能力。若设备离线无法确认，满 72 小时后自动强制停用证书并以 `UNCONFIRMED_TIMEOUT` 记录未确认退役；管理员也可在窗口内提前强制完成。这样既保留通信设计的业务步骤，也避免在通知设备前先切断其认证通道。
 
-为避免 Retired 状态与 mTLS 白名单形成死锁，DEC-014 必须冻结退役过渡期规则。本文采用的暂定安全边界是：`retirement_confirmation_status=PENDING` 仅为云端内部工作流标记，不新增外部生命周期；设备证书在确认前保持 Active，但 Retired 设备只允许调用 `/api/v1/device/sync` 和 `/api/v1/device/deactivate`，其他 Device REST API、业务 MQTT 发布和命令均拒绝；Deactivate 成功或强制完成后立即撤销证书。AUTH 中间件只校验证书有效性和归属，生命周期的 Endpoint Allowlist 由独立授权层执行。
+为避免 Retired 状态与 mTLS 白名单形成死锁，DEC-014@1.0.0 冻结如下规则：`retirement_confirmation_status=PENDING` 仅为云端内部工作流标记，不新增外部生命周期；设备证书在最长 72 小时确认窗口内保持 Active，但 Retired 设备只允许调用 `/api/v1/device/sync` 和 `/api/v1/device/deactivate`，其他 Device REST API、业务 MQTT 发布/订阅和命令均拒绝；Deactivate 成功、管理员提前强制或 72 小时超时强制后立即撤销证书。AUTH 中间件只校验证书有效性和归属，生命周期的 Endpoint Allowlist 由独立授权层执行。
 
 ### 11.3 许可证和 Entitlement
 

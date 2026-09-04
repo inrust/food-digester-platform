@@ -3,15 +3,9 @@
   "info": {
     "title": "Bio-Nexa CMP Admin Device Retirement API",
     "version": "0.1.0",
-    "description": "BE-DEV-04 设备退役工作流（Cognito 认证，device:write）：管理员 retire（仅 Active/Suspended→Retired，DOM-01 迁移仅 PlatformSuperAdmin，强制原因 + confirm=true；撤销 Assignment/License/Entitlement；创建 PENDING_CONFIRMATION 退役记录；生成 DEVICE_RETIRED 通知；证书保持 ACTIVE 直至设备确认）；force-complete（离线设备不等待确认，强制原因，完成退役并撤销证书，与 BE-SYNC-02 共享完成步骤）。Retired 永久不可恢复；不实现离线等待期限的运维调度。通用契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": [
-      "PRI-001@1.0.0",
-      "ADP-001@1.0.0",
-      "DEC-001@0.2.0",
-      "DEC-010@0.2.0",
-      "DEC-014@0.1.0"
-    ],
-    "x-decision-register-version": "1.18.0"
+    "description": "BE-DEV-04 设备退役工作流（Cognito 认证，device:write）：管理员 retire（仅 Active/Suspended→Retired，DOM-01 迁移仅 PlatformSuperAdmin，强制原因 + confirm=true；撤销 Assignment/License/Entitlement；创建 PENDING_CONFIRMATION 退役记录；生成 DEVICE_RETIRED 通知）；DEC-014@1.0.0 冻结 72 小时确认窗口，窗口内证书保持 ACTIVE 且仅允许设备调用 Sync/Deactivate；确认、管理员提前强制或 72 小时超时后立即撤证，超时审计结果为 UNCONFIRMED_TIMEOUT。Retired 永久不可恢复。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-001@0.2.0", "DEC-010@0.2.0", "DEC-014@1.0.0"],
+    "x-decision-register-version": "1.22.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
@@ -29,7 +23,7 @@
         "tags": ["admin"],
         "operationId": "retireDevice",
         "summary": "管理员退役设备（Active/Suspended→Retired + 撤销授权 + DEVICE_RETIRED + 待确认记录）",
-        "description": "强制原因与确认标志；已退役设备重复请求幂等（replayed=true）；审计 device.retire；证书不撤销（设备确认由 BE-SYNC-02 deactivate 完成）。",
+        "description": "强制原因与确认标志；已退役设备重复请求幂等（replayed=true）；审计 device.retire；证书在最长 72 小时确认窗口内保持 ACTIVE，但仅允许 Sync/Deactivate。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
@@ -107,7 +101,7 @@
         "tags": ["admin"],
         "operationId": "forceCompleteRetirement",
         "summary": "强制完成退役（离线设备不等待确认；完成退役 + 证书停用 + 审计）",
-        "description": "仅 Retired 且 PENDING_CONFIRMATION 可执行；重复调用幂等；审计 device.retire.force_complete。不实现离线等待期限的运维调度。",
+        "description": "仅 Retired 且 PENDING_CONFIRMATION 可执行；管理员可在 72 小时窗口内提前强制完成，超时评估器在 initiatedAt+72h 自动执行；重复调用幂等。人工审计 device.retire.force_complete，超时审计结果 UNCONFIRMED_TIMEOUT。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }

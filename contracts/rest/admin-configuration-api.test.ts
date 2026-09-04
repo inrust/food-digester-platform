@@ -69,7 +69,7 @@ test('七个端点齐备且 Cognito 认证；operationId 与响应码齐备', ()
   }
 });
 
-test('Schema 封闭：V1 只允许源稿四字段，候选扩展在 DEC-018 冻结前拒绝', () => {
+test('Schema 封闭：DEC-018 冻结 V1 四字段、单位、范围与默认值', () => {
   const payload = doc.components.schemas.ConfigurationPayload;
   assert.equal(payload.additionalProperties, false);
   assert.deepEqual(
@@ -77,9 +77,24 @@ test('Schema 封闭：V1 只允许源稿四字段，候选扩展在 DEC-018 冻�
     ['heartbeatInterval', 'telemetryInterval', 'cameraRefreshInterval', 'temperatureThreshold'].sort(),
   );
   for (const rejected of ['image', 'rotation', 'motor', 'heating', 'language', 'cloudDomain', 'ntpServer']) {
-    assert.ok(!(rejected in payload.properties), `${rejected} 在 DEC-018 冻结前不得进入 V1`);
+    assert.ok(!(rejected in payload.properties), `${rejected} 不得进入 V1`);
   }
-  assert.ok(doc.info['x-decision-versions'].includes('DEC-018@0.1.0'));
+  assert.ok(doc.info['x-decision-versions'].includes('DEC-018@1.0.0'));
+  assert.deepEqual(
+    Object.fromEntries(
+      Object.entries(payload.properties).map(([key, value]: [string, any]) => [
+        key,
+        [value.minimum, value.maximum, value.default],
+      ]),
+    ),
+    {
+      heartbeatInterval: [10, 900, 60],
+      telemetryInterval: [5, 3600, 30],
+      cameraRefreshInterval: [1, 1440, 1],
+      temperatureThreshold: [0, 120, 80],
+    },
+  );
+  assert.ok(payload.properties.cameraRefreshInterval.description.includes('分钟'));
   // 版本不可变：无 payload 更新端点
   const version = doc.components.schemas.ConfigurationVersion;
   assert.equal(version.additionalProperties, false);

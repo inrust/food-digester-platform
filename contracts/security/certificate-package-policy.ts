@@ -1,15 +1,14 @@
 /**
- * DEC-003 一次性证书包领取策略（暂定值的可执行扩展点）。
+ * DEC-003 一次性证书包领取策略（已冻结）。
  *
  * 事实源：contracts/security/certificate-package-policy.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-003@0.2.0（status=pending，本策略为暂定实现，冻结后整体替换）。
+ * 决策追溯：DEC-003@1.0.0（status=frozen）。
  *
  * 消费方：SEC-01（secure package service）、BE-ONB-03（签发与 Status API）、
  * BE-CERT-02（轮换）。
- * 约束：定性规则（KMS 信封加密、一次性领取、成功领取后销毁、丢失后重签）
- * 可直接执行；定量参数（retentionSeconds、maxClaims）是 DEC-003 待冻结内容，
- * 读取时失败关闭（抛 PolicyParameterPendingError），禁止臆测默认值。
+ * 约束：KMS 信封加密保存 86400 秒，仅一次成功领取，成功响应提交后销毁；
+ * 响应不确定、包丢失或过期时吊销未确认新证书后重签。
  */
 
 export type PolicyStatus = 'provisional' | 'frozen';
@@ -22,14 +21,14 @@ export interface CertificatePackagePolicy {
   readonly storage: {
     readonly encryption: 'kms-envelope';
     readonly retention: 'short-term';
-    /** DEC-003 待冻结参数；provisional 为 null。 */
+    /** 冻结保存期限（秒）。 */
     readonly retentionSeconds: number | null;
     readonly consumers: readonly string[];
     readonly note: string;
   };
   readonly claim: {
     readonly oneTime: true;
-    /** DEC-003 待冻结参数；provisional 为 null。 */
+    /** 冻结的成功领取次数上限。 */
     readonly maxClaims: number | null;
     readonly destroyOnSuccessfulClaim: true;
     readonly consumers: readonly string[];
@@ -51,39 +50,37 @@ export interface CertificatePackagePolicy {
 }
 
 /**
- * 暂定值（DEC-003 v0.2.0，pending）：
- * KMS 加密短期保存；成功领取后销毁；丢失后重签。
+ * 冻结值（DEC-003 v1.0.0）。
  */
 export const CERTIFICATE_PACKAGE_POLICY: CertificatePackagePolicy = {
-  policyVersion: '0.1.0',
-  status: 'provisional',
+  policyVersion: '1.0.0',
+  status: 'frozen',
   storage: {
     encryption: 'kms-envelope',
     retention: 'short-term',
-    retentionSeconds: null,
+    retentionSeconds: 86400,
     consumers: ['SEC-01', 'BE-ONB-03', 'BE-CERT-02'],
-    note: 'AWS 返回私钥后立即 KMS 信封加密；retentionSeconds 为 DEC-003 待冻结参数，当前 null。明文私钥永不落库；日志/审计只记录证书包指纹。',
+    note: 'AWS 返回私钥后立即 KMS 信封加密，密文包最多保存 86400 秒。明文私钥永不落库；日志/审计只记录证书包指纹。',
   },
   claim: {
     oneTime: true,
-    maxClaims: null,
+    maxClaims: 1,
     destroyOnSuccessfulClaim: true,
     consumers: ['SEC-01', 'BE-ONB-03', 'BE-CERT-02'],
-    note: '一次性领取：成功领取后立即销毁密文包；maxClaims 为 DEC-003 待冻结参数，当前 null。重复领取在冻结前按失败关闭处理（拒绝并告警），不放行第二次明文下发。',
+    note: '一次性领取：只允许一次成功响应；服务端提交 2xx 响应后立即销毁密文包。重复领取拒绝并告警，不放行第二次明文下发。',
   },
   lossHandling: {
     mode: 'reissue',
     consumers: ['SEC-01', 'BE-ONB-03', 'BE-CERT-02'],
-    note: '证书包丢失后重签新证书包（不恢复旧包明文）；重签走与首次签发相同的加密与领取约束。',
+    note: '响应不确定、证书包丢失或过期后不恢复旧包明文；吊销未确认的新证书，再按首次签发约束重签。',
   },
   destructionTriggers: {
     triggers: ['SUCCESSFUL_CLAIM', 'NEW_CERTIFICATE_FIRST_HEARTBEAT'],
     consumers: ['SEC-01', 'BE-ONB-03', 'BE-ONB-04', 'BE-CERT-02'],
     note: '销毁触发点：成功领取；或新证书首个合法 Heartbeat（轮换场景确认后停用旧证并销毁新证书包）。销毁为不可逆删除密文材料并写业务审计。',
   },
-  pendingParameters: ['storage.retentionSeconds', 'claim.maxClaims'],
-  frozenUpgradePath:
-    'DEC-003 冻结时：按 decision-change-template 变更 DEC-003 至 >=1.0.0，将 retentionSeconds/maxClaims 填入冻结数值并提升 policyVersion、status 改 frozen；消费方代码无需修改（数据驱动）。',
+  pendingParameters: [],
+  frozenUpgradePath: '策略已按 DEC-003@1.0.0 冻结；后续修改必须新增决策版本、同步消费方并提供迁移与回滚说明。',
 } as const;
 
 export class PolicyParameterPendingError extends Error {
@@ -104,12 +101,12 @@ function requireFrozenNumber(value: number | null, parameter: string): number {
   return value;
 }
 
-/** 证书包短期保存时长（秒）。DEC-003 冻结前调用抛 PolicyParameterPendingError。 */
+/** 证书包短期保存时长（秒）。 */
 export function getRetentionSeconds(): number {
   return requireFrozenNumber(CERTIFICATE_PACKAGE_POLICY.storage.retentionSeconds, 'storage.retentionSeconds');
 }
 
-/** 允许领取次数。DEC-003 冻结前调用抛 PolicyParameterPendingError。 */
+/** 允许成功领取次数。 */
 export function getMaxClaims(): number {
   return requireFrozenNumber(CERTIFICATE_PACKAGE_POLICY.claim.maxClaims, 'claim.maxClaims');
 }
@@ -134,13 +131,13 @@ export function isDestructionTrigger(value: string): value is DestructionTrigger
   return (CERTIFICATE_PACKAGE_POLICY.destructionTriggers.triggers as readonly string[]).includes(value);
 }
 
-/** 重复领取在冻结前的处理：失败关闭（拒绝）。DEC-003 冻结后按 maxClaims 重新判定。 */
+/** 是否允许重复成功领取。DEC-003@1.0.0 恒为 false。 */
 export function isRepeatClaimAllowed(): boolean {
   if (CERTIFICATE_PACKAGE_POLICY.claim.maxClaims === null) return false;
   return CERTIFICATE_PACKAGE_POLICY.claim.maxClaims > 1;
 }
 
-/** 策略当前状态：provisional 表示 DEC-003 未冻结，消费方不得把值固化为不可迁移结构。 */
+/** 策略当前状态。 */
 export function getPolicyStatus(): PolicyStatus {
   return CERTIFICATE_PACKAGE_POLICY.status;
 }

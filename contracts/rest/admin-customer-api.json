@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-CUS-01 Customer 管理接口（Cognito 认证）：列表（键集游标分页 + status 筛选）、详情、创建、更新、停用、软删除。写操作（customer:write，权限矩阵持有者 PlatformSuperAdmin/PlatformOperator）强制 If-Match 乐观锁并写审计（DOM-03）；读操作需 customer:read（平台三角色），Customer 角色仅可读取自身详情（跨 Customer 拒绝 403）。删除为软删除：存在关联有效设备（生命周期非 Rejected/Retired）或有效 License（Issued/Active/ExpiringSoon/Renewed）时返回 409 CONFLICT；V1 不做物理删除。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-012@0.2.0"],
-    "x-decision-register-version": "1.18.0"
+    "x-decision-register-version": "1.22.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

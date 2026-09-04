@@ -68,6 +68,7 @@ test('快照顶层与源稿六域同形，兼容元数据不成为必填线协�
   const user = doc.components.schemas.SyncDeviceUser;
   assert.deepEqual(user.required, ['userId', 'username', 'displayName', 'passwordHash', 'status']);
   assert.ok(user.properties.passwordHash.description.includes('设备本地'));
+  assert.ok(user.properties.passwordHash.pattern.includes('argon2id'));
 
   const configuration = doc.components.schemas.SyncConfiguration;
   assert.deepEqual(configuration.required, [
@@ -77,6 +78,9 @@ test('快照顶层与源稿六域同形，兼容元数据不成为必填线协�
     'temperatureThreshold',
   ]);
   assert.equal(configuration.additionalProperties, false);
+  assert.equal(configuration.properties.cameraRefreshInterval.minimum, 1);
+  assert.equal(configuration.properties.cameraRefreshInterval.maximum, 1440);
+  assert.ok(configuration.properties.cameraRefreshInterval.description.includes('分钟'));
 
   const operational = doc.components.schemas.SyncOperationalStatus;
   assert.ok(operational.required.includes('syncIntervalSeconds'), 'Operational Status 必须含同步节奏');
@@ -91,7 +95,7 @@ test('快照顶层与源稿六域同形，兼容元数据不成为必填线协�
 test('Retired 退役确认待处理设备仍可 Sync，契约不在认证层全局拒绝', () => {
   const docText = JSON.stringify(doc);
   assert.ok(!docText.includes('Retired 设备由 AUTH-03 拒绝'));
-  assert.ok(doc.info['x-decision-versions'].includes('DEC-014@0.1.0'));
+  assert.ok(doc.info['x-decision-versions'].includes('DEC-014@1.0.0'));
 });
 
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {

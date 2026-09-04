@@ -55,7 +55,18 @@
     },
     "material": {
       "type": "object",
-      "required": ["fields", "kdf", "kdfParameters", "saltBytes", "hashBytes", "saltPerUser", "consumers", "note"],
+      "required": [
+        "fields",
+        "kdf",
+        "kdfParameters",
+        "encoding",
+        "wireField",
+        "saltBytes",
+        "hashBytes",
+        "saltPerUser",
+        "consumers",
+        "note"
+      ],
       "additionalProperties": false,
       "properties": {
         "fields": { "type": "array", "description": "验证材料固定字段：version、kdf、salt、hash。" },
@@ -67,6 +78,16 @@
         "kdfParameters": {
           "type": ["object", "null"],
           "description": "DEC-004 待冻结参数：KDF 参数（迭代次数/内存等）。provisional 为 null。"
+        },
+        "encoding": {
+          "type": "string",
+          "enum": ["phc-string"],
+          "description": "线协议采用自描述 PHC 字符串。"
+        },
+        "wireField": {
+          "type": "string",
+          "enum": ["passwordHash"],
+          "description": "Device Sync 中承载 PHC 字符串的源稿字段名。"
         },
         "saltBytes": {
           "type": ["integer", "null"],
