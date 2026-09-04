@@ -3,7 +3,8 @@
  * CT-06 原型追踪矩阵自动完整性检查。
  *
  * 用法：node scripts/check-prototype-traceability.mjs
- *   [--matrix <path>] [--rest-dir <path>] [--routes <path>] [--json]
+ *   [--matrix <path>] [--rest-dir <path>] [--routes <path>]
+ *   [--source-inventory <path>] [--prototype <path>] [--json]
  * 退出码：0 通过；1 存在违规。
  *
  * 规则：
@@ -19,7 +20,10 @@
  *  R8 Adopt/Adapt 引用的 operationId 必须存在于 OpenAPI；source.field/source.fields
  *     必须存在于该 operation 的 2xx 响应 Schema；planned operation 的 taskId 必须一致；
  *  R9 菜单、页面及元素引用的 routeId 必须存在于版本化路由登记，页面状态必须一致。
+ *  R10 index19.html 必须与已审查快照一致；源清单与矩阵的菜单、页面、元素 ID 及页面归属
+ *      必须双向覆盖。
  */
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -190,13 +194,109 @@ export function loadRouteIndex(routeRegistryPath) {
   return { routes, errors };
 }
 
-export function loadReferenceIndex(restDir, routeRegistryPath) {
+function normalizeText(value) {
+  return value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** 加载 index19.html 已审查源元素清单，并校验源文件快照及菜单/页面事实。 */
+export function loadSourceIndex(sourceInventoryPath, prototypePath) {
+  const errors = [];
+  let inventory;
+  let html;
+  try {
+    inventory = JSON.parse(readFileSync(sourceInventoryPath, 'utf8'));
+  } catch (error) {
+    return {
+      menus: new Map(),
+      pages: new Map(),
+      elements: new Map(),
+      errors: [`${sourceInventoryPath}: 源元素清单无法解析：${error.message}`],
+    };
+  }
+  try {
+    html = readFileSync(prototypePath, 'utf8');
+  } catch (error) {
+    return {
+      menus: new Map(),
+      pages: new Map(),
+      elements: new Map(),
+      errors: [`${prototypePath}: 原型源文件无法读取：${error.message}`],
+    };
+  }
+
+  const actualSha256 = createHash('sha256').update(html).digest('hex');
+  if (resolve(inventory.prototype?.file ?? '') !== resolve(prototypePath)) {
+    errors.push(`${sourceInventoryPath}: prototype.file 为 ${inventory.prototype?.file}，不是 ${prototypePath}`);
+  }
+  if (inventory.prototype?.sha256 !== actualSha256) {
+    errors.push(`${prototypePath}: SHA-256 与已审查源元素清单不一致（R10）；原型变更后必须重新盘点清单`);
+  }
+
+  const htmlMenus = new Map();
+  const menuPattern =
+    /<div\b(?=[^>]*\bclass=["'][^"']*\bmenu-item\b[^"']*["'])(?=[^>]*\bdata-page=["']([^"']+)["'])[^>]*>([\s\S]*?)<\/div>/g;
+  for (const match of html.matchAll(menuPattern)) htmlMenus.set(match[1], normalizeText(match[2]));
+  const htmlPages = new Set();
+  const pagePattern = /<div\b(?=[^>]*\bclass=["'][^"']*\bpage\b[^"']*["'])(?=[^>]*\bid=["']page-([^"']+)["'])[^>]*>/g;
+  for (const match of html.matchAll(pagePattern)) htmlPages.add(match[1]);
+
+  const menus = new Map();
+  for (const [index, menu] of (inventory.menus ?? []).entries()) {
+    const where = `${sourceInventoryPath}.menus[${index}]`;
+    if (menus.has(menu.menuId)) errors.push(`${where}: menuId ${menu.menuId} 重复`);
+    else menus.set(menu.menuId, menu);
+    if (htmlMenus.get(menu.pageState) !== menu.label) {
+      errors.push(`${where}: index19.html 菜单 ${menu.pageState} 文本不是 ${menu.label}（R10）`);
+    }
+  }
+  for (const [pageState, label] of htmlMenus) {
+    if (![...menus.values()].some((menu) => menu.pageState === pageState && menu.label === label)) {
+      errors.push(`${prototypePath}: 菜单 ${pageState}（${label}）未登记到源元素清单（R10）`);
+    }
+  }
+
+  const pages = new Map();
+  const elements = new Map();
+  for (const [pageIndex, page] of (inventory.pages ?? []).entries()) {
+    const where = `${sourceInventoryPath}.pages[${pageIndex}]`;
+    if (pages.has(page.pageState)) errors.push(`${where}: pageState ${page.pageState} 重复`);
+    else pages.set(page.pageState, page);
+    if (page.sourcePageId !== `page-${page.pageState}` || !htmlPages.has(page.pageState)) {
+      errors.push(`${where}: index19.html 不存在页面 #${page.sourcePageId}（R10）`);
+    }
+    for (const [elementIndex, entry] of (page.elements ?? []).entries()) {
+      const element = typeof entry === 'string' ? { id: entry } : entry;
+      const elementWhere = `${where}.elements[${elementIndex}]`;
+      if (typeof element.id !== 'string' || !element.id.startsWith(`${page.pageState}.`)) {
+        errors.push(`${elementWhere}: 元素 ID 缺失或未以页面状态 ${page.pageState} 为前缀`);
+        continue;
+      }
+      if (elements.has(element.id)) errors.push(`${elementWhere}: 元素 ${element.id} 重复`);
+      else elements.set(element.id, { ...element, pageState: page.pageState });
+    }
+  }
+  for (const pageState of htmlPages) {
+    if (!pages.has(pageState)) errors.push(`${prototypePath}: 页面 ${pageState} 未登记到源元素清单（R10）`);
+  }
+  if (elements.size === 0) errors.push(`${sourceInventoryPath}: 源元素清单不得为空（R10）`);
+  return { menus, pages, elements, errors, actualSha256 };
+}
+
+export function loadReferenceIndex(restDir, routeRegistryPath, sourceInventoryPath, prototypePath) {
   const operationIndex = loadOperationIndex(restDir);
   const routeIndex = loadRouteIndex(routeRegistryPath);
+  const sourceIndex =
+    sourceInventoryPath && prototypePath
+      ? loadSourceIndex(sourceInventoryPath, prototypePath)
+      : { menus: new Map(), pages: new Map(), elements: new Map(), errors: [] };
   return {
     operations: operationIndex.operations,
     routes: routeIndex.routes,
-    errors: [...operationIndex.errors, ...routeIndex.errors],
+    source: sourceIndex,
+    errors: [...operationIndex.errors, ...routeIndex.errors, ...sourceIndex.errors],
   };
 }
 
@@ -218,6 +318,18 @@ export function checkMatrix(matrix, references = { operations: new Map(), routes
   for (const id of menuIds) {
     if (!EXPECTED_MENUS.includes(id)) err('menus', `未知菜单 ${id}`);
   }
+  if (references.source?.menus?.size) {
+    for (const menu of matrix.menus) {
+      const sourceMenu = references.source.menus.get(menu.menuId);
+      if (!sourceMenu) err(`menu[${menu.menuId}]`, '未登记到 index19.html 源元素清单（R10）');
+      else if (sourceMenu.pageState !== menu.pageState || sourceMenu.label !== menu.label) {
+        err(`menu[${menu.menuId}]`, 'pageState/label 与 index19.html 源元素清单不一致（R10）');
+      }
+    }
+    for (const id of references.source.menus.keys()) {
+      if (!menuIds.includes(id)) err('menus', `源元素清单菜单 ${id} 未映射到矩阵（R10）`);
+    }
+  }
 
   // R1 页面覆盖
   const pageStates = matrix.pages.map((p) => p.pageState);
@@ -227,6 +339,14 @@ export function checkMatrix(matrix, references = { operations: new Map(), routes
   }
   for (const p of pageStates) {
     if (!EXPECTED_PAGES.includes(p)) err('pages', `未知页面 ${p}`);
+  }
+  if (references.source?.pages?.size) {
+    for (const pageState of pageStates) {
+      if (!references.source.pages.has(pageState)) err(`page[${pageState}]`, '未登记到 index19.html 源元素清单（R10）');
+    }
+    for (const pageState of references.source.pages.keys()) {
+      if (!pageStates.includes(pageState)) err('pages', `源元素清单页面 ${pageState} 未映射到矩阵（R10）`);
+    }
   }
 
   // 菜单结构
@@ -275,6 +395,13 @@ export function checkMatrix(matrix, references = { operations: new Map(), routes
       const ew = `${where}.${el.id ?? '?'}`;
       if (!el.id || elementIds.has(el.id)) err(ew, '元素 ID 缺失或重复（每项必须有唯一处置结论，R2）');
       elementIds.add(el.id);
+      if (references.source?.elements?.size) {
+        const sourceElement = references.source.elements.get(el.id);
+        if (!sourceElement) err(ew, '未登记到 index19.html 源元素清单（R10）');
+        else if (sourceElement.pageState !== p.pageState) {
+          err(ew, `源元素登记页面为 ${sourceElement.pageState}（R10）`);
+        }
+      }
       if (!el.id?.startsWith(`${p.pageState}.`)) err(ew, '元素 ID 必须以页面状态为前缀');
       if (!KINDS.includes(el.kind)) err(ew, `未知元素类型 ${el.kind}`);
       if (!DISPOSITIONS.includes(el.disposition)) {
@@ -332,6 +459,12 @@ export function checkMatrix(matrix, references = { operations: new Map(), routes
     }
   }
 
+  if (references.source?.elements?.size) {
+    for (const id of references.source.elements.keys()) {
+      if (!elementIds.has(id)) err('elements', `源元素清单元素 ${id} 未映射到矩阵（R10）`);
+    }
+  }
+
   return errors;
 }
 
@@ -340,6 +473,8 @@ function parseArgs(argv) {
     matrix: 'contracts/prototype-traceability.yaml',
     restDir: 'contracts/rest',
     routes: 'contracts/prototype-route-registry.json',
+    sourceInventory: 'contracts/prototype-source-elements.json',
+    prototype: 'docs/index19.html',
     json: false,
   };
   const args = [...argv];
@@ -348,6 +483,8 @@ function parseArgs(argv) {
     if (arg === '--matrix') opts.matrix = args.shift();
     else if (arg === '--rest-dir') opts.restDir = args.shift();
     else if (arg === '--routes') opts.routes = args.shift();
+    else if (arg === '--source-inventory') opts.sourceInventory = args.shift();
+    else if (arg === '--prototype') opts.prototype = args.shift();
     else if (arg === '--json') opts.json = true;
     else throw new Error(`未知参数: ${arg}`);
   }
@@ -358,7 +495,7 @@ export function run(argv, log = console.log) {
   const opts = parseArgs(argv);
   // 文件采用 YAML 1.2 的 JSON 语法子集，零依赖解析
   const matrix = JSON.parse(readFileSync(opts.matrix, 'utf8'));
-  const references = loadReferenceIndex(opts.restDir, opts.routes);
+  const references = loadReferenceIndex(opts.restDir, opts.routes, opts.sourceInventory, opts.prototype);
   const errors = checkMatrix(matrix, references);
   const stats = {
     menus: matrix.menus.length,
@@ -369,6 +506,7 @@ export function run(argv, log = console.log) {
       matrix.pages.flatMap((page) => page.elements.map((element) => element.source?.api).filter(Boolean)),
     ).size,
     registeredRoutes: references.routes.size,
+    sourceElements: references.source.elements.size,
   };
   for (const p of matrix.pages) {
     for (const el of p.elements) {
@@ -380,7 +518,7 @@ export function run(argv, log = console.log) {
     log(JSON.stringify(result, null, 2));
   } else {
     log(
-      `菜单 ${stats.menus}/9，页面 ${stats.pages}/12，元素 ${stats.elements}，API 引用 ${stats.referencedOperations}，路由 ${stats.registeredRoutes}（${Object.entries(
+      `菜单 ${stats.menus}/9，页面 ${stats.pages}/12，元素 ${stats.elements}，源元素 ${stats.sourceElements}，API 引用 ${stats.referencedOperations}，路由 ${stats.registeredRoutes}（${Object.entries(
         stats.byDisposition,
       )
         .map(([k, v]) => `${k}:${v}`)

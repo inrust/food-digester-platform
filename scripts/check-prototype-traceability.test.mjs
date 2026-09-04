@@ -8,6 +8,7 @@ import {
   loadOperationIndex,
   loadReferenceIndex,
   loadRouteIndex,
+  loadSourceIndex,
   run,
 } from './check-prototype-traceability.mjs';
 import { loadJson, validateTraceability } from './check-decisions.mjs';
@@ -16,7 +17,9 @@ const MATRIX_PATH = new URL('../contracts/prototype-traceability.yaml', import.m
 const REGISTER_PATH = new URL('../contracts/decisions/decision-register.json', import.meta.url).pathname;
 const REST_DIR = new URL('../contracts/rest/', import.meta.url).pathname;
 const ROUTE_REGISTRY_PATH = new URL('../contracts/prototype-route-registry.json', import.meta.url).pathname;
-const REAL_REFERENCES = loadReferenceIndex(REST_DIR, ROUTE_REGISTRY_PATH);
+const SOURCE_INVENTORY_PATH = new URL('../contracts/prototype-source-elements.json', import.meta.url).pathname;
+const PROTOTYPE_PATH = new URL('../docs/index19.html', import.meta.url).pathname;
+const REAL_REFERENCES = loadReferenceIndex(REST_DIR, ROUTE_REGISTRY_PATH, SOURCE_INVENTORY_PATH, PROTOTYPE_PATH);
 
 function realMatrix() {
   return JSON.parse(readFileSync(MATRIX_PATH, 'utf8'));
@@ -38,6 +41,15 @@ test('真实引用集合：41 个矩阵 API 与 13 个 routeId 全部可解析',
   assert.equal(routeRefs.size, 13);
   for (const operationId of apiRefs) assert.ok(REAL_REFERENCES.operations.has(operationId), operationId);
   for (const routeId of routeRefs) assert.ok(REAL_REFERENCES.routes.has(routeId), routeId);
+});
+
+test('index19.html 源清单：9 个菜单、12 个页面、128 个元素与矩阵双向覆盖', () => {
+  assert.deepEqual(REAL_REFERENCES.source.errors, []);
+  assert.equal(REAL_REFERENCES.source.menus.size, 9);
+  assert.equal(REAL_REFERENCES.source.pages.size, 12);
+  assert.equal(REAL_REFERENCES.source.elements.size, 128);
+  const matrixIds = new Set(realMatrix().pages.flatMap((page) => page.elements.map((element) => element.id)));
+  assert.deepEqual(new Set(REAL_REFERENCES.source.elements.keys()), matrixIds);
 });
 
 test('真实矩阵：9 菜单、12 页面、每项均有处置结论', () => {
@@ -249,6 +261,37 @@ test('planned operation 的任务归属漂移被拒绝', () => {
   assert.ok(checkMatrix(m, REAL_REFERENCES).some((e) => e.includes('planned operation getDashboardSummary 属于')));
 });
 
+test('源清单与矩阵任一侧删除元素均被双向覆盖检查拒绝', () => {
+  const missingFromMatrix = realMatrix();
+  const removedId = missingFromMatrix.pages[0].elements.pop().id;
+  assert.ok(
+    checkMatrix(missingFromMatrix, REAL_REFERENCES).some(
+      (error) => error.includes(removedId) && error.includes('未映射到矩阵'),
+    ),
+  );
+
+  const root = mkdtempSync(join(tmpdir(), 'fdp-prototype-source-'));
+  const inventory = JSON.parse(readFileSync(SOURCE_INVENTORY_PATH, 'utf8'));
+  const missingFromInventory = inventory.pages[0].elements.pop();
+  const inventoryPath = join(root, 'source-elements.json');
+  writeFileSync(inventoryPath, JSON.stringify(inventory));
+  const source = loadSourceIndex(inventoryPath, PROTOTYPE_PATH);
+  const references = { ...REAL_REFERENCES, source, errors: source.errors };
+  assert.ok(
+    checkMatrix(realMatrix(), references).some(
+      (error) => error.includes(missingFromInventory) && error.includes('未登记到'),
+    ),
+  );
+});
+
+test('index19.html 内容变化但未重新盘点源清单时失败关闭', () => {
+  const root = mkdtempSync(join(tmpdir(), 'fdp-prototype-html-'));
+  const prototypePath = join(root, 'index19.html');
+  writeFileSync(prototypePath, `${readFileSync(PROTOTYPE_PATH, 'utf8')}\n<!-- drift -->\n`);
+  const source = loadSourceIndex(SOURCE_INVENTORY_PATH, prototypePath);
+  assert.ok(source.errors.some((error) => error.includes('SHA-256') && error.includes('R10')));
+});
+
 test('重复 operationId 与 routeId 被引用索引拒绝', () => {
   const root = mkdtempSync(join(tmpdir(), 'fdp-prototype-refs-'));
   const restDir = join(root, 'rest');
@@ -284,4 +327,28 @@ test('CLI：真实矩阵退出码 0，违规矩阵退出码 1', () => {
   );
   assert.ok(lines.some((l) => l.includes('9/9') && l.includes('12/12')));
   assert.ok(lines.some((l) => l.includes('API 引用 41') && l.includes('路由 13')));
+
+  const root = mkdtempSync(join(tmpdir(), 'fdp-prototype-cli-'));
+  const invalidMatrix = realMatrix();
+  invalidMatrix.pages[0].elements.pop();
+  const invalidMatrixPath = join(root, 'matrix.json');
+  writeFileSync(invalidMatrixPath, JSON.stringify(invalidMatrix));
+  assert.equal(
+    run(
+      [
+        '--matrix',
+        invalidMatrixPath,
+        '--rest-dir',
+        REST_DIR,
+        '--routes',
+        ROUTE_REGISTRY_PATH,
+        '--source-inventory',
+        SOURCE_INVENTORY_PATH,
+        '--prototype',
+        PROTOTYPE_PATH,
+      ],
+      () => {},
+    ),
+    1,
+  );
 });
