@@ -94,7 +94,7 @@
         "tags": ["admin"],
         "operationId": "createConfigurationVersion",
         "summary": "创建不可变配置版本（DRAFT；版本号递增）",
-        "description": "payload 为完整快照，封闭 Schema：范围与交叉校验；派生字段/未冻结网络字段提交即 400。",
+        "description": "payload 为 DEC-018@1.0.0 四字段完整快照，封闭 Schema：冻结范围校验；派生字段及 V1 排除字段提交即 400。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "configurationId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
@@ -210,7 +210,7 @@
     },
     "responses": {
       "BadRequest": {
-        "description": "校验失败（VALIDATION_FAILED：非法频率/尺寸/阈值、交叉校验失败、派生字段、未冻结网络字段）",
+        "description": "校验失败（VALIDATION_FAILED：四字段越界或缺失、候选扩展字段、派生字段、V1 排除字段）",
         "content": {
           "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
         }
@@ -267,6 +267,7 @@
         "properties": {
           "heartbeatInterval": {
             "type": "integer",
+            "x-unit": "seconds",
             "minimum": 10,
             "maximum": 900,
             "default": 60,
@@ -274,6 +275,7 @@
           },
           "telemetryInterval": {
             "type": "integer",
+            "x-unit": "seconds",
             "minimum": 5,
             "maximum": 3600,
             "default": 30,
@@ -281,6 +283,7 @@
           },
           "cameraRefreshInterval": {
             "type": "integer",
+            "x-unit": "minutes",
             "minimum": 1,
             "maximum": 1440,
             "default": 1,
@@ -288,6 +291,7 @@
           },
           "temperatureThreshold": {
             "type": "number",
+            "x-unit": "celsius",
             "minimum": 0,
             "maximum": 120,
             "default": 80,

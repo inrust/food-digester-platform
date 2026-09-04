@@ -2,9 +2,9 @@
  * BE-CFG-01 Configuration 版本管理 API 验收（PGlite 真实 PostgreSQL）。
  *
  * 验收基准覆盖：
- * - 非法频率、尺寸、minTemperature≥maxTemperature 均拒绝（范围 + 交叉校验，含旋转 N≥M）；
+ * - 四字段越界、候选扩展字段和未知字段均拒绝；
  * - 派生字段（contract/region/subregion/site/alias）不能随配置提交修改 → 400；
- * - 未冻结网络字段（cloudDomain/ntpServer）提交失败 → 400；
+ * - DEC-018 排除的网络字段（cloudDomain/ntpServer）提交失败 → 400；
  * - 历史版本不可覆盖（重复发布 409、payload 无更新路径）；旧版本仍可审计读取；
  * - 发布生成 CONFIG_CHANGED（每目标设备一条 Outbox；Retired 不通知）；审计各一次；
  * - 发布后 Sync 读取路径（resolveEffectiveConfiguration）返回最新有效版本（设备定向优先）；
@@ -178,13 +178,10 @@ describe('创建与校验', () => {
       ['非法频率 cameraRefreshInterval', { ...validPayload(), cameraRefreshInterval: 1441 }],
       ['非法阈值 temperatureThreshold', { ...validPayload(), temperatureThreshold: 121 }],
       ['候选字段 image', { ...validPayload(), image: { width: 640, height: 480, uploadIntervalSeconds: 300 } }],
-      [
-        'minTemperature≥maxTemperature',
-        { ...validPayload(), heating: { minTemperatureCelsius: 55, maxTemperatureCelsius: 55 } },
-      ],
-      ['旋转 N≥M', { ...validPayload(), rotation: { intervalMinutes: 1, durationSeconds: 60 } }],
-      ['非法电机过载电流', { ...validPayload(), motor: { overloadCurrentAmps: 100 } }],
-      ['非法语言', { ...validPayload(), language: 'fr-FR' }],
+      ['候选字段 heating', { ...validPayload(), heating: { minTemperatureCelsius: 55, maxTemperatureCelsius: 55 } }],
+      ['候选字段 rotation', { ...validPayload(), rotation: { intervalMinutes: 1, durationSeconds: 60 } }],
+      ['候选字段 motor', { ...validPayload(), motor: { overloadCurrentAmps: 100 } }],
+      ['候选字段 language', { ...validPayload(), language: 'fr-FR' }],
       ['未知字段', { ...validPayload(), extra: 1 }],
     ];
     for (const [name, payload] of invalidPayloads) {
@@ -203,7 +200,7 @@ describe('创建与校验', () => {
     assert.equal(await prisma.configurationVersion.count({ where: { configurationId } }), 0);
   });
 
-  test('派生字段不能随配置提交修改；未冻结网络字段提交失败', async () => {
+  test('派生字段不能随配置提交修改；V1 排除的网络字段提交失败', async () => {
     const h = handlers();
     const { deviceId } = await plantDevice();
     const cfg = await createDeviceConfig(h, deviceId);
@@ -220,8 +217,8 @@ describe('创建与校验', () => {
       const res = await h.createVersion(
         req(operator, { params: { configurationId }, body: { payload: { ...validPayload(), [key]: 'x' } } }),
       );
-      assert.equal(res.status, 400, `未冻结网络字段 ${key} 必须 400`);
-      assert.match((res.body as ErrorBody).error.message, /not frozen/i);
+      assert.equal(res.status, 400, `V1 排除字段 ${key} 必须 400`);
+      assert.match((res.body as ErrorBody).error.message, /excluded/i);
     }
   });
 });

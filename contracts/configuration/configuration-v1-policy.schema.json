@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "configuration-v1-policy.schema.json",
+  "type": "object",
+  "required": [
+    "policyVersion",
+    "status",
+    "x-decision-versions",
+    "snapshotMode",
+    "unknownFieldDisposition",
+    "fields",
+    "excludedCandidateFields",
+    "consumers",
+    "pendingParameters"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "policyVersion": { "const": "1.0.0" },
+    "status": { "const": "frozen" },
+    "x-decision-versions": {
+      "type": "array",
+      "const": ["DEC-018@1.0.0"]
+    },
+    "snapshotMode": { "const": "FULL" },
+    "unknownFieldDisposition": { "const": "REJECT" },
+    "fields": {
+      "type": "object",
+      "required": ["heartbeatInterval", "telemetryInterval", "cameraRefreshInterval", "temperatureThreshold"],
+      "additionalProperties": false,
+      "properties": {
+        "heartbeatInterval": { "$ref": "#/$defs/heartbeatInterval" },
+        "telemetryInterval": { "$ref": "#/$defs/telemetryInterval" },
+        "cameraRefreshInterval": { "$ref": "#/$defs/cameraRefreshInterval" },
+        "temperatureThreshold": { "$ref": "#/$defs/temperatureThreshold" }
+      }
+    },
+    "excludedCandidateFields": {
+      "type": "array",
+      "const": ["image", "rotation", "motor", "heating", "language", "cloudDomain", "ntpServer"]
+    },
+    "consumers": { "type": "array", "items": { "type": "string" }, "minItems": 1, "uniqueItems": true },
+    "pendingParameters": { "type": "array", "maxItems": 0 }
+  },
+  "$defs": {
+    "heartbeatInterval": {
+      "const": { "type": "integer", "unit": "seconds", "minimum": 10, "maximum": 900, "default": 60 }
+    },
+    "telemetryInterval": {
+      "const": { "type": "integer", "unit": "seconds", "minimum": 5, "maximum": 3600, "default": 30 }
+    },
+    "cameraRefreshInterval": {
+      "const": { "type": "integer", "unit": "minutes", "minimum": 1, "maximum": 1440, "default": 1 }
+    },
+    "temperatureThreshold": {
+      "const": { "type": "number", "unit": "celsius", "minimum": 0, "maximum": 120, "default": 80 }
+    }
+  }
+}

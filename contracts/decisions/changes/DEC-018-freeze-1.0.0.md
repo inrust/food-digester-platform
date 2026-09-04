@@ -24,5 +24,6 @@ V1 只允许以上四字段。图像、旋转、电机阈值、温度上下限�
 ## 影响与验证
 
 - 影响：CT-03、BE-CFG-01、BE-SYNC-01、FE-09、QA-02、Admin Configuration/Device Sync OpenAPI 和领域校验。
+- 统一策略源：`contracts/configuration/configuration-v1-policy.json`，由 JSON Schema 与跨层一致性测试锁定。
 - 对未知字段和越界值返回 400，不做静默裁剪或单位换算。
 - 回滚：新增字段只能通过版本化扩展与设备能力协商进入后续协议，不得直接放宽 V1。

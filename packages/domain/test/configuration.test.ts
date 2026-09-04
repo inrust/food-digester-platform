@@ -1,5 +1,5 @@
 /**
- * BE-CFG-01 Configuration 领域规则单测：封闭字段、范围与交叉校验、版本生命周期。
+ * BE-CFG-01 Configuration 领域规则单测：DEC-018 封闭字段、冻结范围与版本生命周期。
  */
 import { assert, describe, test } from 'vitest';
 import {
@@ -65,11 +65,11 @@ describe('validateConfigurationPayload', () => {
     }
   });
 
-  test('未冻结网络字段（cloudDomain/ntpServer）提交即拒绝', () => {
+  test('DEC-018 排除的网络字段（cloudDomain/ntpServer）提交即拒绝', () => {
     for (const key of ['cloudDomain', 'ntpServer']) {
       const errors = fieldErrors(() => validateConfigurationPayload({ ...validPayload(), [key]: 'x' }));
       assert.ok(
-        errors.some((e) => e.startsWith(`${key}: is not frozen`)),
+        errors.some((e) => e.startsWith(`${key}: is excluded`)),
         `${key}: ${errors.join('; ')}`,
       );
     }

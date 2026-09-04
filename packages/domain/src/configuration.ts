@@ -7,10 +7,11 @@
  * - 单位与范围：Heartbeat/Telemetry 为秒，Camera Refresh 为分钟，温度为 ℃；
  *   CONFIGURATION_LIMITS 是已冻结契约值。
  * - 派生字段（contract/region/subregion/site/alias）从业务实体读取，只读展示，
- *   不得随配置提交；云平台域名/NTP 在 PDF 明确允许前不是下发字段，提交即拒绝。
+ *   不得随配置提交；云平台域名/NTP 已被 DEC-018 排除在 V1 外，提交即拒绝。
  * - 版本生命周期：DRAFT → PUBLISHED 单向；历史版本不可覆盖（无更新路径）；
  *   设备有效版本 = 已发布且已到 effectiveAt 的最高版本（selectEffectiveVersion）。
  */
+import { CONFIGURATION_V1_POLICY } from '@fdp/contracts/configuration/configuration-v1-policy.js';
 
 export class ConfigurationError extends Error {
   override readonly name = 'ConfigurationError';
@@ -28,16 +29,36 @@ export class ConfigurationError extends Error {
 
 /** min/max 为闭区间；Heartbeat/Telemetry 单位秒，Camera Refresh 单位分钟，温度单位 ℃。 */
 export const CONFIGURATION_LIMITS = {
-  heartbeatInterval: { min: 10, max: 900, default: 60, unit: 'seconds' },
-  telemetryInterval: { min: 5, max: 3600, default: 30, unit: 'seconds' },
-  cameraRefreshInterval: { min: 1, max: 1440, default: 1, unit: 'minutes' },
-  temperatureThreshold: { min: 0, max: 120, default: 80, unit: 'celsius' },
+  heartbeatInterval: {
+    min: CONFIGURATION_V1_POLICY.fields.heartbeatInterval.minimum,
+    max: CONFIGURATION_V1_POLICY.fields.heartbeatInterval.maximum,
+    default: CONFIGURATION_V1_POLICY.fields.heartbeatInterval.default,
+    unit: CONFIGURATION_V1_POLICY.fields.heartbeatInterval.unit,
+  },
+  telemetryInterval: {
+    min: CONFIGURATION_V1_POLICY.fields.telemetryInterval.minimum,
+    max: CONFIGURATION_V1_POLICY.fields.telemetryInterval.maximum,
+    default: CONFIGURATION_V1_POLICY.fields.telemetryInterval.default,
+    unit: CONFIGURATION_V1_POLICY.fields.telemetryInterval.unit,
+  },
+  cameraRefreshInterval: {
+    min: CONFIGURATION_V1_POLICY.fields.cameraRefreshInterval.minimum,
+    max: CONFIGURATION_V1_POLICY.fields.cameraRefreshInterval.maximum,
+    default: CONFIGURATION_V1_POLICY.fields.cameraRefreshInterval.default,
+    unit: CONFIGURATION_V1_POLICY.fields.cameraRefreshInterval.unit,
+  },
+  temperatureThreshold: {
+    min: CONFIGURATION_V1_POLICY.fields.temperatureThreshold.minimum,
+    max: CONFIGURATION_V1_POLICY.fields.temperatureThreshold.maximum,
+    default: CONFIGURATION_V1_POLICY.fields.temperatureThreshold.default,
+    unit: CONFIGURATION_V1_POLICY.fields.temperatureThreshold.unit,
+  },
 } as const;
 
 /** 派生只读字段：从业务实体读取，随配置提交即 400。 */
 export const CONFIGURATION_DERIVED_KEYS = ['contract', 'region', 'subregion', 'site', 'alias'] as const;
-/** 未冻结网络字段：PDF 未明确允许远程下发前，提交即 400。 */
-export const CONFIGURATION_UNFROZEN_NETWORK_KEYS = ['cloudDomain', 'ntpServer'] as const;
+/** DEC-018 明确排除的网络字段：不属于 V1，提交即 400。 */
+export const CONFIGURATION_EXCLUDED_NETWORK_KEYS = ['cloudDomain', 'ntpServer'] as const;
 
 // ---------- 载荷模型 ----------
 
@@ -97,7 +118,7 @@ function checkNumber(
 /**
  * 校验配置载荷（封闭 Schema：全字段必填、无未知字段）：
  * - 派生字段（contract/region/subregion/site/alias）→ 拒绝（只读，从业务实体读取）；
- * - 未冻结网络字段（cloudDomain/ntpServer）→ 拒绝（PDF 未明确允许前不下发）；
+ * - 排除的网络字段（cloudDomain/ntpServer）→ 拒绝（DEC-018：不属于 V1）；
  * - 范围校验：四个冻结字段逐项校验；候选扩展一律拒绝。
  * 校验失败抛 ConfigurationError('VALIDATION_FAILED')，fieldErrors 汇总全部字段错误。
  */
@@ -111,8 +132,8 @@ export function validateConfigurationPayload(input: unknown): ConfigurationPaylo
   for (const key of Object.keys(input)) {
     if ((CONFIGURATION_DERIVED_KEYS as readonly string[]).includes(key)) {
       errors.push(`${key}: is derived from business entities and read-only`);
-    } else if ((CONFIGURATION_UNFROZEN_NETWORK_KEYS as readonly string[]).includes(key)) {
-      errors.push(`${key}: is not frozen for remote configuration`);
+    } else if ((CONFIGURATION_EXCLUDED_NETWORK_KEYS as readonly string[]).includes(key)) {
+      errors.push(`${key}: is excluded from Configuration V1`);
     } else if (!(TOP_LEVEL_KEYS as readonly string[]).includes(key)) {
       errors.push(`${key}: unknown field`);
     }

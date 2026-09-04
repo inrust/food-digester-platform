@@ -2,8 +2,8 @@
  * BE-CFG-01 Configuration 版本管理领域服务。
  *
  * 事实源与规则：
- * - 载荷校验走领域层 validateConfigurationPayload（封闭 Schema + 范围/交叉校验；
- *   派生字段 contract/region/subregion/site/alias 与未冻结网络字段 cloudDomain/ntpServer
+ * - 载荷校验走领域层 validateConfigurationPayload（封闭 Schema + 冻结范围校验；
+ *   派生字段 contract/region/subregion/site/alias 与 V1 排除字段 cloudDomain/ntpServer
  *   提交即 400）；
  * - 版本不可变：仅 create（DRAFT）与 publish（DRAFT→PUBLISHED 条件更新）两条写路径，
  *   payload 创建后无任何更新入口（历史版本不可覆盖），旧版本始终可审计读取；
