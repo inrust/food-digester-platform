@@ -113,7 +113,12 @@ async function plantDevice(
   });
   if (options.heartbeatAt !== undefined) {
     await prisma.deviceLatestState.create({
-      data: { deviceId, lastHeartbeatAt: options.heartbeatAt, operationalStatus: 'RUNNING' },
+      data: {
+        deviceId,
+        customerId: ctx.customerId,
+        lastHeartbeatAt: options.heartbeatAt,
+        operationalStatus: 'RUNNING',
+      },
     });
   }
   if (options.withLicense) {

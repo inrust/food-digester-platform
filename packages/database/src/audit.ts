@@ -21,10 +21,14 @@ import type { PrismaClient } from './generated/client.js';
 export const SENSITIVE_KEY_PATTERN =
   /private[_-]?key|password|passcode|secret|token|verifier|credential|api[_-]?key|access[_-]?key/i;
 
+/** 即使字段名未知，也不得把私钥材料写入审计 JSON。 */
+export const SENSITIVE_VALUE_PATTERN = /-----BEGIN (?:RSA |EC |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY(?: BLOCK)?-----/i;
+
 export const REDACTED = '[REDACTED]' as const;
 
 /** 递归脱敏：对象/数组逐层处理，命中敏感字段名替换为 [REDACTED]；其余原样返回。 */
 export function sanitizeAuditPayload(value: unknown): unknown {
+  if (typeof value === 'string' && SENSITIVE_VALUE_PATTERN.test(value)) return REDACTED;
   if (Array.isArray(value)) return value.map(sanitizeAuditPayload);
   if (value && typeof value === 'object') {
     const out: Record<string, unknown> = {};

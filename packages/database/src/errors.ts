@@ -70,6 +70,17 @@ export class AppendOnlyViolationError extends DbError {
   }
 }
 
+/** scoped Repository 禁止通过通用更新载荷改写的身份/并发控制字段。 */
+export class ReservedFieldMutationError extends DbError {
+  override readonly name = 'ReservedFieldMutationError';
+  constructor(
+    readonly model: string,
+    readonly fields: readonly string[],
+  ) {
+    super(`${model} update contains reserved field(s): ${fields.join(', ')}`);
+  }
+}
+
 /** DB 错误 → HTTP/CT-05 错误码映射（API 层使用；此处不引入 contracts 依赖）。 */
 export function mapDbErrorToHttp(err: unknown): { status: number; code: string } {
   if (err instanceof VersionConflictError) return { status: 409, code: 'VERSION_CONFLICT' };
@@ -79,5 +90,6 @@ export function mapDbErrorToHttp(err: unknown): { status: number; code: string }
   if (err instanceof PaginationLimitError) return { status: 400, code: 'VALIDATION_FAILED' };
   if (err instanceof SoftDeleteNotSupportedError) return { status: 400, code: 'VALIDATION_FAILED' };
   if (err instanceof AppendOnlyViolationError) return { status: 400, code: 'VALIDATION_FAILED' };
+  if (err instanceof ReservedFieldMutationError) return { status: 400, code: 'VALIDATION_FAILED' };
   return { status: 500, code: 'INTERNAL_ERROR' };
 }

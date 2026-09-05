@@ -46,6 +46,7 @@ interface DeviceRow {
   readonly id: string;
   readonly serialNumber?: string;
   readonly lifecycleStatus: string;
+  readonly customerId: string | null;
 }
 
 interface CertificateRow {
@@ -205,8 +206,17 @@ export async function completeOnboardingOnFirstHeartbeat(
         const latestState = (tx as unknown as Record<string, unknown>).deviceLatestState as LatestStateDelegate;
         await latestState.upsert({
           where: { deviceId: device.id },
-          create: { deviceId: device.id, connectivity: 'ONLINE', lastHeartbeatAt: occurredAt },
-          update: { connectivity: 'ONLINE', lastHeartbeatAt: occurredAt },
+          create: {
+            deviceId: device.id,
+            customerId: device.customerId,
+            connectivity: 'ONLINE',
+            lastHeartbeatAt: occurredAt,
+          },
+          update: {
+            customerId: device.customerId,
+            connectivity: 'ONLINE',
+            lastHeartbeatAt: occurredAt,
+          },
         });
 
         return { deviceId: device.id, transitioned: true, packageDestroyed };

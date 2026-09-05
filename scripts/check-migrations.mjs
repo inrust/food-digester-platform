@@ -6,12 +6,15 @@
  *  1. 若不存在 schema.prisma：数据库 Schema 未落地（DB-01 前），跳过并通过。
  *  2. 若存在 schema.prisma：migrations/ 必须存在且非空（防止改了 Schema 未提交 Migration）；
  *  3. 每个 Migration 目录名必须符合 <14位时间戳>_<snake_case 名称>，且含非空 migration.sql；
- *  4. 必须存在 migration_lock.toml。
+ *  4. 必须存在 migration_lock.toml；最新 Migration 必须登记当前 Schema SHA-256 快照；
+ *  5. CLI 额外在 PGlite 中应用全部 Migration，并与 Prisma 从空库生成的期望结构比较。
  *
  * 用法：node scripts/check-migrations.mjs [rootDir]
  * 退出码：0 通过；1 违反上述规则。
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 
 const MIGRATION_DIR_NAME = /^\d{14}_[a-z0-9_]+$/;
@@ -52,6 +55,20 @@ export function checkMigrations(root) {
     }
   }
 
+  const latest = migrationDirs
+    .filter((dir) => MIGRATION_DIR_NAME.test(dir.name))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .at(-1);
+  if (latest) {
+    const snapshotPath = join(migrationsDir, latest.name, 'schema.sha256');
+    const expected = createHash('sha256').update(readFileSync(schemaPath)).digest('hex');
+    if (!existsSync(snapshotPath)) {
+      errors.push(`${latest.name}: 缺少 Schema 快照 schema.sha256（Schema 变化必须提交 Migration）`);
+    } else if (readFileSync(snapshotPath, 'utf8').trim() !== expected) {
+      errors.push(`${latest.name}: Schema 快照与 schema.prisma 不一致（存在未提交 Migration 的 Schema 变化）`);
+    }
+  }
+
   return { skipped: false, errors };
 }
 
@@ -61,10 +78,19 @@ function main(argv) {
   if (skipped) {
     console.log('Migration 检查跳过：packages/database/prisma/schema.prisma 尚未落地（DB-01 引入）');
   } else if (errors.length === 0) {
-    console.log('Migration 检查通过');
-  } else {
-    for (const e of errors) console.error(`Migration 检查失败：${e}`);
+    try {
+      execFileSync(process.execPath, [join(root, 'packages/database/scripts/check-migration-drift.mjs'), root], {
+        cwd: root,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      console.log('Migration 结构与 Prisma Schema 漂移检查通过');
+    } catch (err) {
+      const detail = `${err.stdout ?? ''}${err.stderr ?? ''}`.trim();
+      errors.push(detail || err.message);
+    }
   }
+  for (const e of errors) console.error(`Migration 检查失败：${e}`);
   process.exitCode = errors.length === 0 ? 0 : 1;
 }
 

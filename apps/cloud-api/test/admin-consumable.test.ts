@@ -129,7 +129,9 @@ async function plantDevice(
     },
   });
   if (options.heartbeatAt !== undefined && options.heartbeatAt !== null) {
-    await prisma.deviceLatestState.create({ data: { deviceId, lastHeartbeatAt: options.heartbeatAt } });
+    await prisma.deviceLatestState.create({
+      data: { deviceId, customerId: options.customerId ?? null, lastHeartbeatAt: options.heartbeatAt },
+    });
   }
   return deviceId;
 }

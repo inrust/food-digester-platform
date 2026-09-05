@@ -53,7 +53,8 @@ erDiagram
 |---|---|
 | `devices.device_id` / `serial_number` 唯一 | 主键 + 唯一约束（Prisma） |
 | 幂等键唯一 | `ingestion_receipts.idempotency_key` UNIQUE（Prisma） |
-| 一个设备仅一个有效许可证 | 部分唯一索引 `licenses_one_valid_per_device WHERE status IN ('Issued','Active','ExpiringSoon')`（自定义 SQL） |
+| 一个设备仅一个有效许可证 | 部分唯一索引 `licenses_one_valid_per_device WHERE status IN ('Issued','Active','ExpiringSoon','Renewed')`（自定义 SQL） |
+| Customer 与业务归属一致 | Customer 业务表直接 `customer_id` 外键；Device/Site、Assignment、ContractDevice、License 等通过外键与一致性触发器拒绝孤儿或跨 Customer 组合 |
 | 有效 Contract 关联时间不重叠 | 排他约束 `contract_devices_no_overlap`（btree_gist + tstzrange，自定义 SQL） |
 | 合约 startAt < endAt | CHECK `contracts_valid_period`（自定义 SQL） |
 | 非法耗材类型/请求状态/百分比 | CHECK（DEC-008 封闭集合 CARBON_FILTER/BIO_ADDITIVE；状态 PENDING/PROCESSING/COMPLETED/CANCELLED；百分比 0~100，NULL=未知） |
@@ -74,8 +75,8 @@ erDiagram
 
 ```bash
 pnpm --filter @fdp/database db:validate   # Schema 结构校验
-pnpm check:migrations                     # Migration 结构门禁（ENG-02）
-pnpm exec vitest run packages/database    # 16 项约束验收（PGlite 真实 PostgreSQL）
+pnpm check:migrations                     # Migration 结构、快照和 Prisma 最终结构漂移门禁（ENG-02）
+pnpm exec vitest run packages/database    # 数据库约束验收（PGlite 真实 PostgreSQL）
 pnpm --filter @fdp/database db:generate   # 生成 Prisma Client（输出 src/generated，不入库）
 pnpm --filter @fdp/database db:seed       # 种子字典（需 DATABASE_URL，幂等）
 ```

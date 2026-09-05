@@ -38,6 +38,10 @@ afterAll(async () => {
 
 describe('脱敏器', () => {
   test('私钥、Token、passwordHash、verifier 等字段被遮蔽（含嵌套与数组）', () => {
+    const privateKeyBlock = ['-----BEGIN ', 'PRIVATE KEY-----\nsecret\n-----END ', 'PRIVATE KEY-----'].join('');
+    const rsaPrivateKeyBlock = ['-----BEGIN RSA ', 'PRIVATE KEY-----\nsecret\n-----END RSA ', 'PRIVATE KEY-----'].join(
+      '',
+    );
     const dirty = {
       name: '正常字段',
       privateKey: '-----BEGIN PRIVATE',
@@ -45,6 +49,8 @@ describe('脱敏器', () => {
       users: [{ passwordHash: 'x'.repeat(60), username: 'op1' }],
       verifierValue: 'device-local-verifier',
       bundle: { apiKey: 'k', pem: 'public-cert-ok' },
+      transport: { pem: privateKeyBlock },
+      material: rsaPrivateKeyBlock,
     };
     const clean = sanitizeAuditPayload(dirty) as Record<string, any>;
     expect(clean.name).toBe('正常字段');
@@ -54,6 +60,8 @@ describe('脱敏器', () => {
     expect(clean.verifierValue).toBe(REDACTED);
     expect(clean.bundle.apiKey).toBe(REDACTED);
     expect(clean.bundle.pem).toBe('public-cert-ok');
+    expect(clean.transport.pem).toBe(REDACTED);
+    expect(clean.material).toBe(REDACTED);
 
     // 0 泄露：序列化后不含任何敏感值
     const serialized = JSON.stringify(clean);
@@ -63,6 +71,8 @@ describe('脱敏器', () => {
       'plain-token',
       'x'.repeat(60),
       'device-local-verifier',
+      privateKeyBlock,
+      rsaPrivateKeyBlock,
     ]) {
       expect(serialized).not.toContain(sensitive);
     }

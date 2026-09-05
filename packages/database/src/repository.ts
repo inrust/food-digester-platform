@@ -14,6 +14,7 @@ import {
   AppendOnlyViolationError,
   CursorInvalidError,
   RecordNotFoundError,
+  ReservedFieldMutationError,
   ScopeRequiredError,
   SoftDeleteNotSupportedError,
   VersionConflictError,
@@ -30,6 +31,14 @@ export const APPEND_ONLY_MODELS: ReadonlySet<string> = new Set([
   'ingestionReceipt',
   'ingestionGap',
 ]);
+
+/** 只能由 Repository 自身或专用领域流程控制，禁止从通用更新 payload 覆盖。 */
+export const RESERVED_UPDATE_FIELDS: ReadonlySet<string> = new Set(['id', 'customerId', 'version', 'deletedAt']);
+
+function assertNoReservedUpdateFields(model: string, data: Record<string, unknown>): void {
+  const present = Object.keys(data).filter((key) => RESERVED_UPDATE_FIELDS.has(key));
+  if (present.length > 0) throw new ReservedFieldMutationError(model, present);
+}
 
 export interface Scope {
   readonly customerId: string;
@@ -123,6 +132,7 @@ export function scopedRepository(client: DbClient, model: string, options: RepoO
 
     async updateWithVersion(id, expectedVersion, data, scope) {
       if (APPEND_ONLY_MODELS.has(model)) throw new AppendOnlyViolationError(model, 'updateWithVersion');
+      assertNoReservedUpdateFields(model, data);
       const customerId = requireScope(model, scope);
       const delegate = delegateOf(client, model);
       const { count } = await delegate.updateMany({

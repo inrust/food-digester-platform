@@ -89,6 +89,11 @@ async function plantConfig(options: {
 }) {
   seq += 1;
   const customerId = options.customerId ?? `cus-ntf-${seq}`;
+  await prisma.customer.upsert({
+    where: { id: customerId },
+    create: { id: customerId, name: `Notification Customer ${seq}` },
+    update: {},
+  });
   await prisma.customerNotificationConfig.create({
     data: {
       customerId,

@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 import { checkMigrations } from './check-migrations.mjs';
 
 function fixture(files) {
@@ -67,12 +68,24 @@ test('失败示例：Migration 目录名非法与空 migration.sql', () => {
 });
 
 test('合法 Migration 结构通过', () => {
+  const digest = createHash('sha256').update(SCHEMA).digest('hex');
   const root = fixture({
     [`${DIR}/schema.prisma`]: SCHEMA,
     [`${DIR}/migrations/migration_lock.toml`]: LOCK,
     [`${DIR}/migrations/20260101000000_init/migration.sql`]: SQL,
+    [`${DIR}/migrations/20260101000000_init/schema.sha256`]: digest,
   });
   const { skipped, errors } = checkMigrations(root);
   assert.equal(skipped, false);
   assert.deepEqual(errors, []);
+});
+
+test('失败示例：已有旧 Migration 但 Schema 已变化且未登记快照', () => {
+  const root = fixture({
+    [`${DIR}/schema.prisma`]: 'model Device { id String @id\n name String }',
+    [`${DIR}/migrations/migration_lock.toml`]: LOCK,
+    [`${DIR}/migrations/20260101000000_init/migration.sql`]: SQL,
+  });
+  const { errors } = checkMigrations(root);
+  assert.ok(errors.some((e) => e.includes('Schema 快照')));
 });

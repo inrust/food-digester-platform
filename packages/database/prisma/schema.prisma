@@ -1,6 +1,7 @@
 // DB-01 核心数据库 Schema（PostgreSQL）
 // 约定：
-// - 所有 Customer 业务表携带 customerId（customer_id）
+// - Customer 范围根表/投影表携带 customerId（customer_id）；纯子表经受控父链继承 scope
+// - customer_id 外键及 Device/Site/Contract/DeviceUser 归属一致性由 P0 data-integrity Migration 强制
 // - 所有时间为 timestamptz，统一 UTC
 // - 软删除（deletedAt）仅用于需要恢复的业务实体（customers/sites）；审计与状态历史不软删除
 // - 不创建原始 Telemetry 长期表；Region/Subregion 归属 Site
@@ -342,7 +343,7 @@ model License {
   history      LicenseHistory[]
 
   @@map("licenses")
-  // 部分唯一索引（每设备仅一个有效许可证）见 migration.sql 自定义约束
+  // 部分唯一索引（Issued/Active/ExpiringSoon/Renewed 每设备仅一个）见 migration 自定义约束
 }
 
 model LicenseEntitlement {

@@ -32,6 +32,30 @@ const WINDOW = {
 };
 
 let receiptSeq = 0;
+async function ensureScopedDevice(deviceId: string): Promise<string> {
+  const customerId = `cust-${deviceId}`;
+  await prisma.customer.upsert({
+    where: { id: customerId },
+    create: { id: customerId, name: `Aggregation ${deviceId}` },
+    update: {},
+  });
+  await prisma.device.upsert({
+    where: { id: deviceId },
+    create: {
+      id: deviceId,
+      serialNumber: `SN-${deviceId}`,
+      model: 'BNX-100',
+      hardwareVersion: 'HW1.0',
+      manufacturer: 'Hiddenjoy',
+      manufactureDate: new Date('2026-01-01T00:00:00Z'),
+      lifecycleStatus: 'Active',
+      customerId,
+    },
+    update: {},
+  });
+  return customerId;
+}
+
 async function plantReceipt(deviceId: string, seq: number, receivedAt: string): Promise<void> {
   receiptSeq += 1;
   await prisma.ingestionReceipt.create({
@@ -53,10 +77,11 @@ async function plantHourly(
   sampleCount: number,
   metrics: Record<string, { avg: number; min: number; max: number; count: number }>,
 ): Promise<void> {
+  const customerId = await ensureScopedDevice(deviceId);
   await prisma.telemetryHourly.create({
     data: {
       deviceId,
-      customerId: `cust-${deviceId}`,
+      customerId,
       bucketStart: new Date(bucketStart),
       sampleCount,
       metrics,
@@ -77,10 +102,11 @@ async function plantReport(
     missing: number;
   },
 ): Promise<void> {
+  const customerId = await ensureScopedDevice(deviceId);
   await prisma.esgReport.create({
     data: {
       deviceId,
-      customerId: `cust-${deviceId}`,
+      customerId,
       reportType: 'HOURLY',
       periodStartTime: new Date(periodStartTime),
       periodEndTime: new Date(Date.parse(periodStartTime) + 3_600_000),

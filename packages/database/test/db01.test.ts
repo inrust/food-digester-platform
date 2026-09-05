@@ -6,11 +6,9 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { readFileSync } from 'node:fs';
+import { readAllMigrationSql } from './helpers.js';
 
-const MIGRATION_SQL = readFileSync(
-  new URL('../prisma/migrations/20260826120000_init/migration.sql', import.meta.url),
-  'utf8',
-);
+const MIGRATION_SQL = readAllMigrationSql();
 const SEED_SQL = readFileSync(new URL('../prisma/seed.sql', import.meta.url), 'utf8');
 
 let db: PGlite;
@@ -28,8 +26,8 @@ async function expectRejected(sql: string, code: string, params: unknown[] = [])
 
 async function insertDevice(id: string, serialNumber: string) {
   await db.query(
-    `INSERT INTO "devices" ("id", "serial_number", "model", "hardware_version", "manufacturer", "manufacture_date", "lifecycle_status", "created_at", "updated_at")
-     VALUES ($1, $2, 'BNX-100', 'HW1.0', 'Hiddenjoy', '2026-01-01', 'Onboarded', now(), now())`,
+    `INSERT INTO "devices" ("id", "serial_number", "model", "hardware_version", "manufacturer", "manufacture_date", "lifecycle_status", "customer_id", "site_id", "created_at", "updated_at")
+     VALUES ($1, $2, 'BNX-100', 'HW1.0', 'Hiddenjoy', '2026-01-01', 'Onboarded', 'cust-1', 'site-1', now(), now())`,
     [id, serialNumber],
   );
 }
@@ -45,6 +43,14 @@ async function insertLicense(id: string, deviceId: string, status: string) {
 beforeAll(async () => {
   db = new PGlite({ extensions: { btree_gist } });
   await db.exec(MIGRATION_SQL); // 空库迁移
+  await db.exec(`
+    INSERT INTO "customers" ("id", "name", "created_at", "updated_at") VALUES
+      ('cust-1', '客户一', now(), now()),
+      ('cust-2', '客户二', now(), now());
+    INSERT INTO "sites" ("id", "customer_id", "name", "created_at", "updated_at") VALUES
+      ('site-1', 'cust-1', '站点一', now(), now()),
+      ('site-2', 'cust-2', '站点二', now(), now());
+  `);
 }, 60_000);
 
 afterAll(async () => {
@@ -143,14 +149,25 @@ describe('许可证唯一有效性', () => {
     await insertLicense('lic-3', 'dev-lic-1', 'Revoked');
     await insertLicense('lic-4', 'dev-lic-1', 'Draft');
   });
+
+  test('Renewed 占用有效许可证唯一位，并发创建第二个有效 License 被拒绝', async () => {
+    await insertDevice('dev-lic-renewed', 'SN-LIC-RENEWED');
+    await db.query(
+      `UPDATE "devices" SET "customer_id" = 'cust-1', "site_id" = 'site-1' WHERE "id" = 'dev-lic-renewed'`,
+    );
+    await insertLicense('lic-renewed', 'dev-lic-renewed', 'Renewed');
+    await expectRejected(
+      `INSERT INTO "licenses" ("id", "device_id", "customer_id", "status", "valid_from", "valid_to", "created_by", "created_at", "updated_at")
+       VALUES ('lic-after-renewed', 'dev-lic-renewed', 'cust-1', 'Issued', '2026-02-01T00:00:00Z', '2027-02-01T00:00:00Z', 'admin-1', now(), now())`,
+      '23505',
+    );
+  });
 });
 
 describe('Contract 关联不重叠', () => {
   test('同设备有效 Contract 关联时间段重叠被拒绝', async () => {
-    await db.query(
-      `INSERT INTO "customers" ("id", "name", "created_at", "updated_at") VALUES ('cust-1', '客户一', now(), now())`,
-    );
     await insertDevice('dev-con-1', 'SN-CON-1');
+    await db.query(`UPDATE "devices" SET "customer_id" = 'cust-1', "site_id" = 'site-1' WHERE "id" = 'dev-con-1'`);
     for (const [id, num] of [
       ['con-1', 'C-2026-001'],
       ['con-2', 'C-2026-002'],
@@ -235,6 +252,48 @@ describe('外键与种子字典', () => {
       `INSERT INTO "sites" ("id", "customer_id", "name", "created_at", "updated_at")
        VALUES ('site-bad', 'cust-ghost', '幽灵站点', now(), now())`,
       '23503',
+    );
+  });
+
+  test('Customer 业务表拒绝孤儿 customer_id', async () => {
+    await insertDevice('dev-fk-orphan', 'SN-FK-ORPHAN');
+    await expectRejected(
+      `INSERT INTO "device_assignments" ("id", "device_id", "customer_id", "site_id", "status", "assigned_by")
+       VALUES ('asg-orphan', 'dev-fk-orphan', 'cust-ghost', 'site-1', 'ACTIVE', 'admin-1')`,
+      '23503',
+    );
+  });
+
+  test('Device Assignment 拒绝跨 Customer 的 Site/Device 组合', async () => {
+    await insertDevice('dev-fk-assignment', 'SN-FK-ASG');
+    await db.query(
+      `UPDATE "devices" SET "customer_id" = 'cust-1', "site_id" = 'site-1' WHERE "id" = 'dev-fk-assignment'`,
+    );
+    await expectRejected(
+      `INSERT INTO "device_assignments" ("id", "device_id", "customer_id", "site_id", "status", "assigned_by")
+       VALUES ('asg-cross', 'dev-fk-assignment', 'cust-2', 'site-2', 'ACTIVE', 'admin-1')`,
+      '23514',
+    );
+  });
+
+  test('ContractDevice 与 License 拒绝 customer_id 和父实体归属不一致', async () => {
+    await insertDevice('dev-fk-commercial', 'SN-FK-COM');
+    await db.query(
+      `UPDATE "devices" SET "customer_id" = 'cust-1', "site_id" = 'site-1' WHERE "id" = 'dev-fk-commercial'`,
+    );
+    await db.query(
+      `INSERT INTO "contracts" ("id", "contract_number", "name", "customer_id", "start_at", "end_at", "created_by", "created_at", "updated_at")
+       VALUES ('con-fk', 'C-FK', '约束合约', 'cust-1', '2026-01-01T00:00:00Z', '2027-01-01T00:00:00Z', 'admin-1', now(), now())`,
+    );
+    await expectRejected(
+      `INSERT INTO "contract_devices" ("id", "contract_id", "device_id", "customer_id", "valid_from", "status")
+       VALUES ('cd-cross', 'con-fk', 'dev-fk-commercial', 'cust-2', '2026-01-01T00:00:00Z', 'ACTIVE')`,
+      '23514',
+    );
+    await expectRejected(
+      `INSERT INTO "licenses" ("id", "device_id", "customer_id", "status", "valid_from", "valid_to", "created_by", "created_at", "updated_at")
+       VALUES ('lic-cross', 'dev-fk-commercial', 'cust-2', 'Issued', '2026-01-01T00:00:00Z', '2027-01-01T00:00:00Z', 'admin-1', now(), now())`,
+      '23514',
     );
   });
 

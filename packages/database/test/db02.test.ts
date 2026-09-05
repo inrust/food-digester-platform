@@ -141,6 +141,17 @@ describe('乐观锁并发版本', () => {
     );
     expect(mapDbErrorToHttp(new RecordNotFoundError('contract', 'x'))).toEqual({ status: 404, code: 'NOT_FOUND' });
   });
+
+  test('scoped update 拒绝改写 id/customerId/version/deletedAt 等保留字段', async () => {
+    const repo = scopedRepository(prisma, 'contract');
+    const c = await prisma.contract.findFirstOrThrow({ where: { contractNumber: 'C-LOCK-1' } });
+    await expect(
+      repo.updateWithVersion(c.id, c.version, { customerId: 'cust-b' }, { customerId: 'cust-a' }),
+    ).rejects.toThrow(/reserved field/i);
+    const unchanged = await prisma.contract.findUniqueOrThrow({ where: { id: c.id } });
+    expect(unchanged.customerId).toBe('cust-a');
+    expect(unchanged.version).toBe(c.version);
+  });
 });
 
 describe('事务原子性', () => {
