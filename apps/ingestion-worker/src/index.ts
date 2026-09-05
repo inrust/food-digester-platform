@@ -25,6 +25,8 @@ export type {
   RotationConfirmationInput,
   RotationConfirmationResult,
 } from './rotation-confirmation.js';
+export { createCertificatePackageSweeper } from './certificate-package-sweeper.js';
+export type { CertificatePackageSweeperDeps, CertificatePackageSweepResult } from './certificate-package-sweeper.js';
 export * from './ingest/index.js';
 export * from './heartbeat/index.js';
 export * from './telemetry/index.js';

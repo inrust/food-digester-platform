@@ -17,9 +17,12 @@ import type { DbClient } from '@fdp/database';
 import { audited } from '@fdp/database';
 import { transitionLifecycle } from '@fdp/domain';
 import type { ActorContext } from '@fdp/auth';
+import { createRedactingLogger } from '@fdp/observability';
 import { deviceConflict, requestNotFound, validationFailed } from './errors.js';
 import { findOnboardingRequestById, reviewOnboardingRequestWithVersion } from './repository.js';
 import type { AdminOnboardingRequestRecord } from './repository.js';
+
+const logger = createRedactingLogger(console);
 
 export interface ReviewInput {
   readonly requestId: string;
@@ -165,7 +168,7 @@ export async function reviewOnboardingRequest(
     try {
       await deps.provisioningTrigger.triggerApproved(reviewed);
     } catch (err) {
-      console.error('provisioning 触发失败（可重试）', (err as Error).message);
+      logger.error('provisioning 触发失败（可重试）', err);
     }
   }
   return reviewed;

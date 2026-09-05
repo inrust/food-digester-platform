@@ -17,6 +17,7 @@
 import { recordAudit, withTransaction } from '@fdp/database';
 import type { DbClient } from '@fdp/database';
 import type { DataKeyProvider } from '@fdp/aws-clients';
+import { getMaxClaims, getRetentionSeconds } from '@fdp/contracts/security/certificate-package-policy.js';
 import type { DeviceAuthContext } from '../device/verifier.js';
 import type { OnboardingAuthContext } from '../onboarding/verifier.js';
 import { extractEncryptedKey, packEnvelope, unpackEnvelope } from './envelope.js';
@@ -28,7 +29,7 @@ export type ClaimProof =
   | { readonly kind: 'deviceCertificate'; readonly context: DeviceAuthContext };
 
 export interface SecurePackageServiceConfig {
-  /** 证书包保存时长（秒），>0；由调用方按 DEC-003 策略显式注入，本服务不选定数值。 */
+  /** 证书包保存时长（秒）；必须严格等于 DEC-003 冻结值。 */
   readonly retentionSeconds: number;
   /** 领取次数上限；DEC-003@1.0.0 固定为 1。 */
   readonly maxClaims: number;
@@ -52,6 +53,12 @@ interface DeviceRow {
 
 interface CertificateDelegate {
   findFirst(args: { where: Record<string, unknown> }): Promise<CertificateRow | null>;
+  findMany(args: {
+    where: Record<string, unknown>;
+    select: { id: true };
+    orderBy: { packageExpiresAt: 'asc' };
+    take: number;
+  }): Promise<readonly Pick<CertificateRow, 'id'>[]>;
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
 }
 
@@ -60,6 +67,8 @@ interface DeviceDelegate {
 }
 
 const AUDIT_OBJECT_TYPE = 'deviceCertificate';
+export const CERTIFICATE_PACKAGE_RETENTION_SECONDS = getRetentionSeconds();
+export const CERTIFICATE_PACKAGE_MAX_CLAIMS = getMaxClaims();
 
 export class SecurePackageService {
   private readonly db: DbClient;
@@ -69,12 +78,18 @@ export class SecurePackageService {
 
   constructor(deps: { db: DbClient; keyProvider: DataKeyProvider; config: SecurePackageServiceConfig }) {
     const { config } = deps;
-    if (!Number.isInteger(config.retentionSeconds) || config.retentionSeconds <= 0) {
-      throw new SecurePackageError('CONFLICT', 'retentionSeconds must be a positive integer');
+    if (config.retentionSeconds !== CERTIFICATE_PACKAGE_RETENTION_SECONDS) {
+      throw new SecurePackageError(
+        'CONFLICT',
+        `retentionSeconds must equal DEC-003 frozen value ${CERTIFICATE_PACKAGE_RETENTION_SECONDS}`,
+      );
     }
     // DEC-003@1.0.0：只支持一次性交付
-    if (config.maxClaims !== 1) {
-      throw new SecurePackageError('CONFLICT', 'maxClaims must be 1 under DEC-003@1.0.0');
+    if (config.maxClaims !== CERTIFICATE_PACKAGE_MAX_CLAIMS) {
+      throw new SecurePackageError(
+        'CONFLICT',
+        `maxClaims must be ${CERTIFICATE_PACKAGE_MAX_CLAIMS} under DEC-003@1.0.0`,
+      );
     }
     this.db = deps.db;
     this.keyProvider = deps.keyProvider;
@@ -253,6 +268,30 @@ export class SecurePackageService {
       });
     }
     return count === 1;
+  }
+
+  /**
+   * 定时清理超过冻结保留期且从未被领取的密文包。
+   * 每条记录复用 destroyPackage，确保物理清空密文字段并生成可追踪审计。
+   */
+  async sweepExpiredPackages(limit = 100): Promise<readonly string[]> {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 1_000) {
+      throw new SecurePackageError('CONFLICT', 'sweep limit must be an integer between 1 and 1000');
+    }
+    const expired = await this.certificates(this.db).findMany({
+      where: {
+        packageCiphertext: { not: null },
+        packageExpiresAt: { lte: this.now() },
+      },
+      select: { id: true },
+      orderBy: { packageExpiresAt: 'asc' },
+      take: limit,
+    });
+    const destroyed: string[] = [];
+    for (const certificate of expired) {
+      if (await this.destroyPackage(certificate.id)) destroyed.push(certificate.id);
+    }
+    return destroyed;
   }
 
   private async assertClaimEligibility(tx: DbClient, certificate: CertificateRow, proof: ClaimProof): Promise<void> {

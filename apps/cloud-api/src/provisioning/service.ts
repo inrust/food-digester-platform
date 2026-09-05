@@ -18,7 +18,7 @@ import type { DbClient } from '@fdp/database';
 import { recordAudit, withTransaction } from '@fdp/database';
 import { buildDevicePolicy } from '@fdp/aws-clients';
 import type { DataKeyProvider } from '@fdp/aws-clients';
-import { certificateFingerprintFromPem, SecurePackageService } from '@fdp/auth';
+import { CERTIFICATE_PACKAGE_RETENTION_SECONDS, certificateFingerprintFromPem, SecurePackageService } from '@fdp/auth';
 import { onboardingDeadlineFrom } from '@fdp/contracts/lifecycle/onboarding-timeout-policy.js';
 import type { AdminOnboardingRequestRecord, ProvisioningTrigger } from '../admin/onboarding/index.js';
 import type { IotProvisioningPort } from './iot-port.js';
@@ -26,8 +26,6 @@ import type { IotProvisioningPort } from './iot-port.js';
 export interface ProvisioningConfig {
   readonly region: string;
   readonly accountId: string;
-  /** 证书包保存时长（秒）；组合根必须按 DEC-003@1.0.0 注入 86400。 */
-  readonly packageRetentionSeconds: number;
   /** 证书有效期（秒），用于 notBefore/notAfter 登记。 */
   readonly certificateValiditySeconds: number;
   readonly policyNamePrefix?: string;
@@ -96,7 +94,7 @@ export class ProvisioningService implements ProvisioningTrigger {
     this.securePackage = new SecurePackageService({
       db: deps.client,
       keyProvider: deps.keyProvider,
-      config: { retentionSeconds: deps.config.packageRetentionSeconds, maxClaims: 1, now: this.now },
+      config: { retentionSeconds: CERTIFICATE_PACKAGE_RETENTION_SECONDS, maxClaims: 1, now: this.now },
     });
   }
 
@@ -209,7 +207,7 @@ export class ProvisioningService implements ProvisioningTrigger {
   }
 
   private deadlineFromPackageExpiry(packageExpiresAt: Date): Date {
-    const packageStoredAt = new Date(packageExpiresAt.getTime() - this.deps.config.packageRetentionSeconds * 1000);
+    const packageStoredAt = new Date(packageExpiresAt.getTime() - CERTIFICATE_PACKAGE_RETENTION_SECONDS * 1000);
     return onboardingDeadlineFrom(packageStoredAt);
   }
 

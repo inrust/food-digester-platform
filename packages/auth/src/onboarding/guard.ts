@@ -26,6 +26,11 @@ export interface OnboardingGuardOptions<TReq> {
   readonly rateLimiter?: RateLimiter;
   /** 限频键，默认 `token:{fingerprint}`；可覆盖为 `ip:{sourceIp}` 等。 */
   readonly rateLimitKeyOf?: (req: TReq, fingerprint: string) => string;
+  /** 生产可同时执行 Token 与 IP 等多维共享限频；每一维都必须通过。 */
+  readonly rateLimits?: readonly {
+    readonly limiter: RateLimiter;
+    readonly keyOf: (req: TReq, fingerprint: string) => string;
+  }[];
   /** 注入时钟（测试用）。 */
   readonly now?: () => Date;
 }
@@ -38,7 +43,11 @@ export function withOnboardingAuth<TReq, TRes>(
     const presentedToken = options.tokenOf(req);
     // 指纹可从未校验的原文安全计算（散列单向），用于限频与日志
     const fingerprint = presentedToken ? tokenFingerprint(presentedToken) : 'anonymous';
-    if (options.rateLimiter) {
+    if (options.rateLimits) {
+      for (const rule of options.rateLimits) {
+        await rule.limiter.assertWithinLimit(rule.keyOf(req, fingerprint));
+      }
+    } else if (options.rateLimiter) {
       const key = options.rateLimitKeyOf?.(req, fingerprint) ?? `token:${fingerprint}`;
       await options.rateLimiter.assertWithinLimit(key);
     }

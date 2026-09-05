@@ -21,7 +21,11 @@ const envelopeSchema = JSON.parse(
 
 function synthTemplate(): Template {
   const app = new App();
-  return Template.fromStack(new AppDependenciesStack(app, 'TestStack', { config: { envName: 'test' } }));
+  return Template.fromStack(
+    new AppDependenciesStack(app, 'TestStack', {
+      config: { envName: 'test', allowInsecureDeviceEndpointForLocal: true },
+    }),
+  );
 }
 
 const EXPECTED_CONTEXT_FIELDS = ['iotTopic', 'iotDeviceId', 'iotType', 'iotReceivedAt', 'iotPrincipal'] as const;

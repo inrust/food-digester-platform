@@ -72,3 +72,8 @@ export function createRedactingLogger(base: Logger): Logger {
     error: wrap(base.error.bind(base)),
   };
 }
+
+/** Trace/span 属性必须先经过该入口，避免秘密值绕过日志中间件进入遥测后端。 */
+export function redactTraceAttributes(attributes: Readonly<Record<string, unknown>>): Record<string, unknown> {
+  return redactSensitive(attributes) as Record<string, unknown>;
+}

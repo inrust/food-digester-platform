@@ -9,7 +9,12 @@ import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import { PrismaClient } from '@fdp/database';
-import { createLocalTestKeyProvider, SecurePackageError, SecurePackageService } from '../src/index.js';
+import {
+  CERTIFICATE_PACKAGE_RETENTION_SECONDS,
+  createLocalTestKeyProvider,
+  SecurePackageError,
+  SecurePackageService,
+} from '../src/index.js';
 import type { ClaimProof } from '../src/index.js';
 import type { OnboardingAuthContext } from '../src/onboarding/verifier.js';
 import type { DeviceAuthContext } from '../src/device/verifier.js';
@@ -20,7 +25,7 @@ const MIGRATION_SQL = readFileSync(
 );
 
 const NOW = new Date('2026-08-27T00:00:00Z');
-const RETENTION_SECONDS = 3600;
+const RETENTION_SECONDS = CERTIFICATE_PACKAGE_RETENTION_SECONDS;
 
 /** 含 PEM 私钥形态的测试负载（验收：全文不出现明文）；PEM 标记拼接构造，避免命中 check-secrets 门禁。 */
 const PACKAGE_PLAINTEXT = Buffer.from(
@@ -121,13 +126,27 @@ afterAll(async () => {
 });
 
 describe('配置与存储', () => {
+  test('DEC-003 失败关闭：retentionSeconds 偏离冻结值即拒绝构造', () => {
+    for (const retentionSeconds of [RETENTION_SECONDS - 1, RETENTION_SECONDS + 1]) {
+      assert.throws(
+        () =>
+          new SecurePackageService({
+            db: prisma,
+            keyProvider: createLocalTestKeyProvider('x'),
+            config: { retentionSeconds, maxClaims: 1 },
+          }),
+        /retentionSeconds must equal DEC-003 frozen value/,
+      );
+    }
+  });
+
   test('DEC-003 失败关闭：maxClaims !== 1 拒绝构造', () => {
     assert.throws(
       () =>
         new SecurePackageService({
           db: prisma,
           keyProvider: createLocalTestKeyProvider('x'),
-          config: { retentionSeconds: 60, maxClaims: 2 },
+          config: { retentionSeconds: RETENTION_SECONDS, maxClaims: 2 },
         }),
       /maxClaims must be 1/,
     );
@@ -226,7 +245,11 @@ describe('一次性领取', () => {
     const expiredService = new SecurePackageService({
       db: prisma,
       keyProvider: createLocalTestKeyProvider('sec01-test'),
-      config: { retentionSeconds: RETENTION_SECONDS, maxClaims: 1, now: () => new Date(NOW.getTime() + 7200_000) },
+      config: {
+        retentionSeconds: RETENTION_SECONDS,
+        maxClaims: 1,
+        now: () => new Date(NOW.getTime() + (RETENTION_SECONDS + 1) * 1000),
+      },
     });
     await expectSecurePackageError(
       expiredService.preparePackageDelivery('cert-sec-6', onboardingProof('SN-SEC-6')),
@@ -242,6 +265,22 @@ describe('一次性领取', () => {
     await service.storePackage('cert-sec-7', PACKAGE_PLAINTEXT);
     assert.isTrue(await service.destroyPackage('cert-sec-7'));
     assert.isFalse(await service.destroyPackage('cert-sec-7'));
+  });
+
+  test('定时清理无需领取请求即可销毁过期密文包', async () => {
+    await insertDeviceWithCertificate('dev-sec-9', 'SN-SEC-9', 'cert-sec-9');
+    await service.storePackage('cert-sec-9', PACKAGE_PLAINTEXT);
+    const sweeper = new SecurePackageService({
+      db: prisma,
+      keyProvider: createLocalTestKeyProvider('sec01-test'),
+      config: {
+        retentionSeconds: RETENTION_SECONDS,
+        maxClaims: 1,
+        now: () => new Date(NOW.getTime() + (RETENTION_SECONDS + 1) * 1000),
+      },
+    });
+    assert.include(await sweeper.sweepExpiredPackages(), 'cert-sec-9');
+    assert.isNull((await prisma.deviceCertificate.findFirst({ where: { id: 'cert-sec-9' } }))?.packageCiphertext);
   });
 });
 

@@ -108,7 +108,6 @@ function makeHandler(iot: IotProvisioningPort): ReturnType<typeof createCertific
     config: {
       region: 'ap-southeast-1',
       accountId: '123456789012',
-      packageRetentionSeconds: 3600,
       certificateValiditySeconds: 365 * 24 * 3600,
     },
     now,

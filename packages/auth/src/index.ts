@@ -43,7 +43,7 @@ export {
 export type { IssuedOnboardingToken, OnboardingTokenRecord } from './onboarding/repository.js';
 export { verifyOnboardingToken } from './onboarding/verifier.js';
 export type { OnboardingAuthContext, VerifyOnboardingTokenOptions } from './onboarding/verifier.js';
-export { createRateLimiter, InMemoryRateLimitStore } from './onboarding/rate-limit.js';
+export { createRateLimiter, InMemoryRateLimitStore, PostgresRateLimitStore } from './onboarding/rate-limit.js';
 export type { RateLimiter, RateLimitRule, RateLimitStore } from './onboarding/rate-limit.js';
 export { withOnboardingAuth } from './onboarding/guard.js';
 export type { OnboardingGuardOptions } from './onboarding/guard.js';
@@ -62,7 +62,11 @@ export { withDeviceAuth } from './device/guard.js';
 export type { DeviceAuthGuardOptions } from './device/guard.js';
 
 // ---------- SEC-01 证书包保护 ----------
-export { SecurePackageService } from './secure-package/service.js';
+export {
+  CERTIFICATE_PACKAGE_MAX_CLAIMS,
+  CERTIFICATE_PACKAGE_RETENTION_SECONDS,
+  SecurePackageService,
+} from './secure-package/service.js';
 export type { ClaimProof, SecurePackageServiceConfig } from './secure-package/service.js';
 export { SecurePackageError } from './secure-package/errors.js';
 export type { SecurePackageErrorCode } from './secure-package/errors.js';

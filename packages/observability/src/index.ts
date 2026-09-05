@@ -4,5 +4,12 @@
  */
 export const PACKAGE_NAME = '@fdp/observability';
 
-export { createRedactingLogger, redactSensitive, redactString, REDACTED, SENSITIVE_KEY_PATTERN } from './redaction.js';
+export {
+  createRedactingLogger,
+  redactSensitive,
+  redactString,
+  redactTraceAttributes,
+  REDACTED,
+  SENSITIVE_KEY_PATTERN,
+} from './redaction.js';
 export type { Logger } from './redaction.js';

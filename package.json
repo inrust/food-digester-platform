@@ -21,9 +21,11 @@
     "check:migrations": "node scripts/check-migrations.mjs",
     "check:evidence": "node scripts/check-eng-db-dom-evidence.mjs",
     "check:secrets": "node scripts/check-secrets.mjs",
+    "check:sensitive-sinks": "node scripts/check-sensitive-sinks.mjs",
+    "test:aws-iot-authz": "node --import tsx scripts/verify-aws-iot-authorization.mjs",
     "openapi:bundle": "node scripts/build-openapi.mjs",
     "openapi:check": "node scripts/build-openapi.mjs --check && redocly lint contracts/rest/openapi-base.json \"contracts/rest/*-api.json\" contracts/rest/openapi.bundle.json --extends spec",
-    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets"
+    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

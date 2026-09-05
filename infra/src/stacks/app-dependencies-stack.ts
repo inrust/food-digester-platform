@@ -46,6 +46,7 @@ const PLACEHOLDER_HANDLER_CODE = [
 ].join('\n');
 
 const DB_MASTER_USERNAME = 'fdp_admin' as const;
+const API_ROLE_SUFFIX = 'api-role' as const;
 
 interface MessagingResources {
   readonly ingress: sqs.Queue;
@@ -78,6 +79,7 @@ interface ComputeResources {
   readonly archive: lambda.Function;
   readonly outboxPublisher: lambda.Function;
   readonly summary: lambda.Function;
+  readonly certPackageSweeper: lambda.Function;
   readonly api: lambda.Function;
 }
 
@@ -101,6 +103,15 @@ export class AppDependenciesStack extends Stack {
     super(scope, id, { ...props, stackName: new Naming(props.config.envName).name('app') });
     this.config = props.config;
     this.naming = new Naming(this.config.envName);
+
+    if (!this.config.deviceApiDomain) {
+      if (
+        this.config.allowInsecureDeviceEndpointForLocal !== true ||
+        !['local', 'test'].includes(this.config.envName)
+      ) {
+        throw new Error('Device API mTLS 配置缺失：无证书入口只允许显式 local/test 模式');
+      }
+    }
 
     Tags.of(this).add('fdp:project', 'food-digester-platform');
     Tags.of(this).add('fdp:env', this.config.envName);
@@ -128,10 +139,49 @@ export class AppDependenciesStack extends Stack {
     });
 
     // SEC-01 前置：一次性证书包信封加密专用 Key；解密权限只授予 API Lambda（见 createCompute）
+    const certPackageAdmin = new iam.PolicyStatement({
+      sid: 'KeyAdministrationOnly',
+      effect: iam.Effect.ALLOW,
+      principals: [new iam.AccountRootPrincipal()],
+      actions: [
+        'kms:Create*',
+        'kms:Describe*',
+        'kms:Enable*',
+        'kms:List*',
+        'kms:Put*',
+        'kms:Update*',
+        'kms:Revoke*',
+        'kms:Disable*',
+        'kms:Get*',
+        'kms:Delete*',
+        'kms:TagResource',
+        'kms:UntagResource',
+        'kms:ScheduleKeyDeletion',
+        'kms:CancelKeyDeletion',
+        'kms:RotateKeyOnDemand',
+      ],
+      resources: ['*'],
+    });
+    // 使用确定性角色 ARN 条件，避免 Key ↔ Lambda Role 的 CloudFormation 循环依赖。
+    const apiRoleArn = this.formatArn({
+      service: 'iam',
+      region: '',
+      resource: 'role',
+      resourceName: this.naming.name(API_ROLE_SUFFIX),
+    });
+    const certPackageDataPlane = new iam.PolicyStatement({
+      sid: 'ApiLambdaCertificatePackageDataPlaneOnly',
+      effect: iam.Effect.ALLOW,
+      principals: [new iam.AccountRootPrincipal()],
+      actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:DescribeKey'],
+      resources: ['*'],
+      conditions: { ArnEquals: { 'aws:PrincipalArn': apiRoleArn } },
+    });
     const certPackageKey = new kms.Key(this, 'CertPackageKey', {
       alias: `alias/${this.naming.name('cert-package')}`,
       description: '一次性证书包信封加密（DEC-003 / SEC-01）',
       enableKeyRotation: true,
+      policy: new iam.PolicyDocument({ statements: [certPackageAdmin, certPackageDataPlane] }),
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
@@ -202,7 +252,7 @@ export class AppDependenciesStack extends Stack {
     const ruleRole = new iam.Role(this, 'IotRuleRole', {
       roleName: this.naming.name('iot-rule'),
       assumedBy: new iam.ServicePrincipal('iot.amazonaws.com'),
-      description: 'IoT Rule 写 SQS 的最小权限角色（仅 SendMessage 到 Ingress 与 Rule Error 队列）',
+      description: 'IoT Rule role: SendMessage only to ingress and rule-error queues',
     });
     messaging.ingress.grantSendMessages(ruleRole);
     messaging.ruleError.grantSendMessages(ruleRole);
@@ -250,12 +300,12 @@ export class AppDependenciesStack extends Stack {
     const lambdaSecurityGroup = new ec2.SecurityGroup(this, 'LambdaSg', {
       vpc,
       securityGroupName: this.naming.name('lambda-sg'),
-      description: '应用 Lambda 出站（RDS/AWS 服务）',
+      description: 'Application Lambda egress to RDS and AWS services',
     });
     const dbSecurityGroup = new ec2.SecurityGroup(this, 'DbSg', {
       vpc,
       securityGroupName: this.naming.name('db-sg'),
-      description: 'RDS 入站：仅允许应用 Lambda 安全组访问 5432',
+      description: 'RDS ingress: PostgreSQL 5432 from application Lambda security group only',
     });
     dbSecurityGroup.addIngressRule(lambdaSecurityGroup, ec2.Port.tcp(5432), 'Lambda to PostgreSQL');
 
@@ -347,7 +397,7 @@ export class AppDependenciesStack extends Stack {
     const mkFunction = (
       id: string,
       suffix: string,
-      options: { timeout: Duration; memorySize?: number; environment: Record<string, string> },
+      options: { timeout: Duration; memorySize?: number; environment: Record<string, string>; role?: iam.IRole },
     ): lambda.Function =>
       new lambda.Function(this, id, {
         functionName: this.naming.name(suffix),
@@ -358,6 +408,7 @@ export class AppDependenciesStack extends Stack {
         timeout: options.timeout,
         memorySize: options.memorySize ?? 256,
         environment: { ...options.environment, ENV_NAME: this.config.envName },
+        ...(options.role ? { role: options.role } : {}),
         vpc: data.vpc,
         vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
         securityGroups: [data.lambdaSecurityGroup],
@@ -428,7 +479,28 @@ export class AppDependenciesStack extends Stack {
       targets: [new eventsTargets.LambdaFunction(summary)],
     });
 
+    // SEC-01：主动销毁到期密文包，避免仅在领取请求时被动清理
+    const certPackageSweeper = mkFunction('CertPackageSweeperFn', 'cert-package-sweeper', {
+      timeout: Duration.seconds(300),
+      environment: { DB_SECRET_ARN: dbSecret },
+    });
+    dbSecretGrant(certPackageSweeper);
+    new events.Rule(this, 'CertPackageSweeperSchedule', {
+      ruleName: this.naming.name('cert-package-sweeper'),
+      schedule: events.Schedule.rate(Duration.minutes(5)),
+      targets: [new eventsTargets.LambdaFunction(certPackageSweeper)],
+    });
+
     // API Handler：Onboarding / Device / Admin / Customer / Internal 五个分组的统一计算载体
+    const apiRole = new iam.Role(this, 'ApiFnServiceRole', {
+      roleName: this.naming.name(API_ROLE_SUFFIX),
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      description: 'API Lambda execution role and sole certificate-package KMS data-plane principal',
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
+      ],
+    });
     const api = mkFunction('ApiFn', 'api', {
       timeout: Duration.seconds(30),
       memorySize: 512,
@@ -442,6 +514,7 @@ export class AppDependenciesStack extends Stack {
         EXPORT_BUCKET_NAME: storage.exportBucket.bucketName,
         CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
       },
+      role: apiRole,
     });
     dbSecretGrant(api);
     // 预签名 URL 与重放读取：仅授予业务所需 Bucket 的对象级读写
@@ -450,7 +523,13 @@ export class AppDependenciesStack extends Stack {
     storage.exportBucket.grantReadWrite(api);
     storage.raw.grantRead(api);
     // SEC-01：证书包信封加密 Key 的加解密权限仅此角色持有
-    storage.certPackageKey.grantEncryptDecrypt(api);
+    apiRole.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        sid: 'CertificatePackageKeyDataPlane',
+        actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:DescribeKey'],
+        resources: [storage.certPackageKey.keyArn],
+      }),
+    );
     // 下行发布（BE-CMD-02/BE-OTA-03）：仅允许 3 个下行 Topic 模式
     api.addToRolePolicy(
       new iam.PolicyStatement({
@@ -483,7 +562,7 @@ export class AppDependenciesStack extends Stack {
       }),
     );
 
-    return { ingestion, archive, outboxPublisher, summary, api };
+    return { ingestion, archive, outboxPublisher, summary, certPackageSweeper, api };
   }
 
   // ---------- API Gateway：三类认证入口分离 ----------
@@ -510,7 +589,7 @@ export class AppDependenciesStack extends Stack {
       restApiName: this.naming.name('device-api'),
       description: 'Device API：X.509 mTLS 自定义域名入口（AUTH-03 应用层白名单）',
       endpointTypes: [apigw.EndpointType.REGIONAL],
-      disableExecuteApiEndpoint: this.config.deviceApiDomain !== undefined,
+      disableExecuteApiEndpoint: this.config.allowInsecureDeviceEndpointForLocal !== true,
       deployOptions: stageOptions,
     });
     deviceApi.root

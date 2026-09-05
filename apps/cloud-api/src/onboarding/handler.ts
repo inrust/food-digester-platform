@@ -5,10 +5,10 @@
  * 响应契约对齐 CT-05：成功 { data, meta{requestId,timestamp} }；
  * 错误 { error{code,message,requestId} }，未知异常一律 500 通用消息（不泄露内部细节）。
  *
- * 功能边界：不审批、不签发证书、无 AWS 资源副作用（纯数据库读写 + 进程内限频）。
+ * 功能边界：不审批、不签发证书、无 AWS 资源副作用（纯数据库读写 + 共享限频）。
  */
 import type { DbClient } from '@fdp/database';
-import { AuthError, createRateLimiter, InMemoryRateLimitStore, withOnboardingAuth } from '@fdp/auth';
+import { AuthError, createRateLimiter, PostgresRateLimitStore, withOnboardingAuth } from '@fdp/auth';
 import type { RateLimiter } from '@fdp/auth';
 import { OnboardingApiError } from './errors.js';
 import { serialNumberOfBody } from './dto.js';
@@ -21,6 +21,8 @@ export interface OnboardingHttpRequest {
   readonly body?: unknown;
   /** 平台请求 ID（如 API Gateway requestId），进入响应 meta 与错误体。 */
   readonly requestId: string;
+  /** API Gateway requestContext.identity.sourceIp，经适配层规范化后注入。 */
+  readonly sourceIp?: string | undefined;
 }
 
 export interface OnboardingHttpResponse {
@@ -32,7 +34,7 @@ export interface OnboardingHttpResponse {
 
 export interface OnboardingRequestHandlerDeps {
   readonly client: DbClient;
-  /** 限频器；缺省为进程内固定窗口 30 次/60s（按 Token 指纹）。 */
+  /** 测试/定制覆盖；缺省使用 PostgreSQL 共享 Token+IP 双维限频。 */
   readonly rateLimiter?: RateLimiter;
   /** 注入时钟（测试用）。 */
   readonly now?: () => Date;
@@ -97,15 +99,26 @@ export function createOnboardingRequestHandler(
   deps: OnboardingRequestHandlerDeps,
 ): (req: OnboardingHttpRequest) => Promise<OnboardingHttpResponse> {
   const now = deps.now ?? (() => new Date());
-  const rateLimiter =
-    deps.rateLimiter ?? createRateLimiter(new InMemoryRateLimitStore(), { limit: 30, windowSeconds: 60 });
+  const sharedStore = new PostgresRateLimitStore(deps.client);
+  const tokenRateLimiter = deps.rateLimiter ?? createRateLimiter(sharedStore, { limit: 30, windowSeconds: 60 });
+  const ipRateLimiter = deps.rateLimiter ? undefined : createRateLimiter(sharedStore, { limit: 60, windowSeconds: 60 });
 
   const guarded = withOnboardingAuth<OnboardingHttpRequest, OnboardingHttpResponse>(
     {
       client: deps.client,
       tokenOf: bearerTokenOf,
       serialNumberOf: (req) => serialNumberOfBody(req.body),
-      rateLimiter,
+      rateLimits: [
+        { limiter: tokenRateLimiter, keyOf: (_req, fingerprint) => `onboarding:token:${fingerprint}` },
+        ...(ipRateLimiter
+          ? [
+              {
+                limiter: ipRateLimiter,
+                keyOf: (req: OnboardingHttpRequest) => `onboarding:ip:${req.sourceIp ?? 'unknown'}`,
+              },
+            ]
+          : []),
+      ],
       now,
     },
     async (req, auth) => {

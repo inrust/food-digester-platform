@@ -10,6 +10,7 @@ import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import {
+  CERTIFICATE_PACKAGE_RETENTION_SECONDS,
   certificateFingerprintFromPem,
   createLocalTestKeyProvider,
   SecurePackageService,
@@ -32,7 +33,7 @@ beforeAll(async () => {
   securePackage = new SecurePackageService({
     db: prisma,
     keyProvider: createLocalTestKeyProvider('be-cert-02-confirm'),
-    config: { retentionSeconds: 3600, maxClaims: 1, now },
+    config: { retentionSeconds: CERTIFICATE_PACKAGE_RETENTION_SECONDS, maxClaims: 1, now },
   });
 }, 60_000);
 

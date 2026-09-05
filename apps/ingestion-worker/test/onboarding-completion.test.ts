@@ -11,7 +11,7 @@
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
-import { createLocalTestKeyProvider, SecurePackageService } from '@fdp/auth';
+import { CERTIFICATE_PACKAGE_RETENTION_SECONDS, createLocalTestKeyProvider, SecurePackageService } from '@fdp/auth';
 import { DeviceStateError } from '@fdp/domain';
 import { completeOnboardingOnFirstHeartbeat, evaluateOnboardingDeadlines } from '../src/index.js';
 import type { OnboardingCompletionDeps, OnboardingDeadlineEvaluatorDeps } from '../src/index.js';
@@ -29,7 +29,7 @@ beforeAll(async () => {
   securePackage = new SecurePackageService({
     db: prisma,
     keyProvider: createLocalTestKeyProvider('be-onb-04'),
-    config: { retentionSeconds: 3600, maxClaims: 1, now },
+    config: { retentionSeconds: CERTIFICATE_PACKAGE_RETENTION_SECONDS, maxClaims: 1, now },
   });
 }, 60_000);
 

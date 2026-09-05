@@ -75,6 +75,10 @@ function makeReq(token: string | undefined, body: unknown, requestId = 'req-test
   };
 }
 
+function makeReqFromIp(token: string, sourceIp: string, requestId: string): OnboardingHttpRequest {
+  return { ...makeReq(token, validBody(SERIALS.positive), requestId), sourceIp };
+}
+
 function validBody(serialNumber: string) {
   return {
     serialNumber,
@@ -290,5 +294,36 @@ describe('POST /api/v1/device/onboarding/request', () => {
     } catch (err) {
       assert.equal((err as { code?: string }).code, 'VALIDATION_FAILED');
     }
+  });
+});
+
+describe('AUTH-02 共享 Token/IP 双维限频', () => {
+  test('两个 Handler 实例共享 Token 计数，第 31 次请求返回 429', async () => {
+    const token = generateOnboardingToken();
+    const handlers = [
+      createOnboardingRequestHandler({ client: prisma, now }),
+      createOnboardingRequestHandler({ client: prisma, now }),
+    ];
+    for (let i = 0; i < 30; i += 1) {
+      const res = await handlers[i % 2]!(makeReqFromIp(token, '203.0.113.10', `req-shared-token-${i}`));
+      assert.equal(res.status, 401);
+    }
+    const limited = await handlers[0]!(makeReqFromIp(token, '203.0.113.10', 'req-shared-token-31'));
+    assert.equal(limited.status, 429);
+  });
+
+  test('轮换伪 Token 不能绕过共享 IP 计数，第 61 次请求返回 429', async () => {
+    const handlers = [
+      createOnboardingRequestHandler({ client: prisma, now }),
+      createOnboardingRequestHandler({ client: prisma, now }),
+    ];
+    for (let i = 0; i < 60; i += 1) {
+      const res = await handlers[i % 2]!(
+        makeReqFromIp(generateOnboardingToken(), '203.0.113.20', `req-shared-ip-${i}`),
+      );
+      assert.equal(res.status, 401);
+    }
+    const limited = await handlers[0]!(makeReqFromIp(generateOnboardingToken(), '203.0.113.20', 'req-shared-ip-61'));
+    assert.equal(limited.status, 429);
   });
 });

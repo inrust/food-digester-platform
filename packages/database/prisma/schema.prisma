@@ -239,6 +239,19 @@ model OnboardingToken {
   @@map("onboarding_tokens")
 }
 
+/// AUTH-02 shared fixed-window counters. Both request/status and all Lambda instances
+/// use the same PostgreSQL row so a token or source IP cannot split its allowance.
+model AuthRateLimit {
+  key         String   @map("rate_key")
+  windowStart DateTime @map("window_start") @db.Timestamptz
+  count       Int      @default(0)
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz
+
+  @@id([key, windowStart])
+  @@index([expiresAt])
+  @@map("auth_rate_limits")
+}
+
 model OnboardingRequest {
   id                    String    @id @default(uuid())
   tokenId               String    @unique @map("token_id")

@@ -15,7 +15,7 @@ import type { InfraConfig } from '../src/config.js';
 import { AppDependenciesStack } from '../src/stacks/app-dependencies-stack.js';
 import { UPLINK_TOPIC_TYPES } from '../src/topics.js';
 
-function synthTemplate(config: InfraConfig = { envName: 'test' }): Template {
+function synthTemplate(config: InfraConfig = { envName: 'test', allowInsecureDeviceEndpointForLocal: true }): Template {
   const app = new App();
   const stack = new AppDependenciesStack(app, 'TestStack', { config });
   return Template.fromStack(stack);
@@ -55,7 +55,16 @@ describe('资源命名（环境前缀）', () => {
 
   test('Stack 物理名带环境前缀', () => {
     const app = new App();
-    const stack = new AppDependenciesStack(app, 'Named', { config: { envName: 'staging' } });
+    const stack = new AppDependenciesStack(app, 'Named', {
+      config: {
+        envName: 'staging',
+        deviceApiDomain: {
+          domainName: 'device-api.example.com',
+          certificateArn: 'arn:aws:acm:ap-southeast-1:123456789012:certificate/00000000-0000-0000-0000-000000000000',
+          truststoreKey: 'truststore/ca-bundle.pem',
+        },
+      },
+    });
     assert.equal(stack.stackName, 'fdp-staging-app');
   });
 
@@ -83,7 +92,7 @@ describe('资源命名（环境前缀）', () => {
       template.hasResourceProperties('AWS::IoT::TopicRule', { RuleName: `fdp_test_iot_${type}` });
     }
     template.hasResourceProperties('AWS::RDS::DBInstance', { DBInstanceIdentifier: 'fdp-test-db' });
-    for (const fn of ['ingestion', 'archive', 'outbox-publisher', 'summary', 'api']) {
+    for (const fn of ['ingestion', 'archive', 'outbox-publisher', 'summary', 'cert-package-sweeper', 'api']) {
       template.hasResourceProperties('AWS::Lambda::Function', { FunctionName: `fdp-test-${fn}` });
     }
     template.hasResourceProperties('AWS::Cognito::UserPool', { UserPoolName: 'fdp-test-admin' });
@@ -149,6 +158,27 @@ describe('验收：IAM 最小权限', () => {
     assert.deepEqual(violations, []);
   });
 
+  test('证书包 KMS Key 的数据面权限仅允许确定性的 API Lambda role', () => {
+    const keys = Object.values(resourcesOfType(template, 'AWS::KMS::Key'));
+    const certKey = keys.find((key) => key.Properties.Description.includes('DEC-003'));
+    assert.isDefined(certKey);
+    const statements = certKey.Properties.KeyPolicy.Statement as any[];
+    const cryptoOperations = ['kms:Decrypt', 'kms:Encrypt', 'kms:GenerateDataKey', 'kms:ReEncryptFrom'];
+    const grantsCrypto = (action: string): boolean =>
+      cryptoOperations.some((operation) =>
+        action.endsWith('*') ? operation.startsWith(action.slice(0, -1)) : operation === action,
+      );
+    const dataPlane = statements.filter((statement) =>
+      (Array.isArray(statement.Action) ? statement.Action : [statement.Action]).some(grantsCrypto),
+    );
+    assert.equal(dataPlane.length, 1, '证书包 Key 只能有一条数据面授权声明');
+    assert.include(JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']), 'fdp-test-api-role');
+    const admin = statements.find((statement) => statement.Sid === 'KeyAdministrationOnly');
+    assert.isDefined(admin);
+    const adminActions = Array.isArray(admin.Action) ? admin.Action : [admin.Action];
+    assert.isFalse(adminActions.some(grantsCrypto));
+  });
+
   test('IoT Rule 角色仅允许向 Ingress 与 Rule Error 队列 SendMessage', () => {
     const statements = collectIamStatements(template);
     const ruleStatements = statements.filter((s) =>
@@ -178,13 +208,13 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('5 个 Lambda 使用各自独立执行角色', () => {
+  test('6 个 Lambda 使用各自独立执行角色', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
       String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),
     );
-    assert.equal(fns.length, 5);
+    assert.equal(fns.length, 6);
     const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
-    assert.equal(roles.size, 5);
+    assert.equal(roles.size, 6);
   });
 });
 
@@ -266,13 +296,24 @@ describe('Device API mTLS 自定义域名（提供域名配置时）', () => {
     });
   });
 
-  test('未提供域名配置时不创建自定义域名，默认入口保留', () => {
-    const plain = synthTemplate();
+  test('仅显式 local/test 模式可保留无 mTLS 的默认入口', () => {
+    const plain = synthTemplate({ envName: 'test', allowInsecureDeviceEndpointForLocal: true });
     plain.resourceCountIs('AWS::ApiGateway::DomainName', 0);
     plain.hasResourceProperties('AWS::ApiGateway::RestApi', {
       Name: 'fdp-test-device-api',
       DisableExecuteApiEndpoint: false,
     });
+  });
+
+  test('dev/staging/prod 缺少 mTLS 配置或尝试开启不安全入口时失败关闭', () => {
+    for (const config of [
+      { envName: 'dev' },
+      { envName: 'staging', allowInsecureDeviceEndpointForLocal: true as const },
+      { envName: 'prod' },
+    ]) {
+      const app = new App();
+      assert.throws(() => new AppDependenciesStack(app, `Rejected${config.envName}`, { config }), /mTLS 配置缺失/);
+    }
   });
 });
 
@@ -325,13 +366,17 @@ describe('验收：数据库凭据与消息管线', () => {
     assert.notDeepEqual([...ingressQueueUrls], [...errorQueueUrls], '错误队列必须独立于业务队列');
   });
 
-  test('消费 Lambda 与队列事件源绑定，Outbox/Summary 有调度', () => {
+  test('消费 Lambda 与队列事件源绑定，Outbox/Summary/证书包清理有调度', () => {
     const esms = Object.values(resourcesOfType(template, 'AWS::Lambda::EventSourceMapping'));
     assert.equal(esms.length, 2);
     for (const esm of esms) {
       assert.equal(esm.Properties.FunctionResponseTypes?.[0], 'ReportBatchItemFailures');
     }
-    template.resourceCountIs('AWS::Events::Rule', 2);
+    template.resourceCountIs('AWS::Events::Rule', 3);
+    template.hasResourceProperties('AWS::Events::Rule', {
+      Name: 'fdp-test-cert-package-sweeper',
+      ScheduleExpression: 'rate(5 minutes)',
+    });
   });
 });
 

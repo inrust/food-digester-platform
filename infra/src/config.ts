@@ -2,8 +2,8 @@
  * IAC-01 环境配置解析。
  *
  * 配置来源为 CDK context（`cdk synth -c envName=dev ...`），不读取真实凭据；
- * Device API 的 mTLS 自定义域名为可选配置，缺省时只创建 REGIONAL 默认入口，
- * 便于离线 synth 与开发环境先行验证。
+ * Device API 默认强制 mTLS 自定义域名并禁用 execute-api；只有 local/test 显式开启
+ * allowInsecureDeviceEndpointForLocal 时才可为离线开发保留默认入口。
  */
 import type { App } from 'aws-cdk-lib';
 
@@ -21,6 +21,8 @@ export interface InfraConfig {
   /** 环境名，全部资源名前缀的一部分。 */
   readonly envName: string;
   readonly deviceApiDomain?: DeviceApiDomainConfig;
+  /** 仅 local/test 可显式打开的无 mTLS execute-api 开发入口。 */
+  readonly allowInsecureDeviceEndpointForLocal?: true;
 }
 
 export const ENV_NAME_PATTERN = /^[a-z][a-z0-9-]{0,14}$/;
@@ -41,9 +43,15 @@ export function resolveConfig(app: App): InfraConfig {
   const domainName = app.node.tryGetContext('deviceApiDomainName') as string | undefined;
   const certificateArn = app.node.tryGetContext('deviceApiCertificateArn') as string | undefined;
   const truststoreKey = app.node.tryGetContext('deviceApiTruststoreKey') as string | undefined;
+  const allowInsecureDeviceEndpointForLocal = app.node.tryGetContext('allowInsecureDeviceEndpointForLocal') === true;
 
   if (domainName === undefined && certificateArn === undefined) {
-    return { envName };
+    if (!allowInsecureDeviceEndpointForLocal || !['local', 'test'].includes(envName)) {
+      throw new Error(
+        'Device API 必须配置 mTLS 自定义域名；仅 local/test 可显式设置 allowInsecureDeviceEndpointForLocal=true',
+      );
+    }
+    return { envName, allowInsecureDeviceEndpointForLocal: true };
   }
   if (domainName === undefined || certificateArn === undefined) {
     throw new Error('deviceApiDomainName 与 deviceApiCertificateArn 必须同时提供（mTLS 自定义域名成对出现）');

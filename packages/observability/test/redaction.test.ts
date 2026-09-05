@@ -2,7 +2,7 @@
  * SEC-01 脱敏中间件测试：字段名 + 值形态双层防线；公钥证书不误伤。
  */
 import { assert, describe, test } from 'vitest';
-import { createRedactingLogger, redactSensitive, redactString, REDACTED } from '../src/index.js';
+import { createRedactingLogger, redactSensitive, redactString, redactTraceAttributes, REDACTED } from '../src/index.js';
 
 // PEM 标记以拼接构造，避免本文件命中 check-secrets 门禁（ENG-02 §5 约定）
 const PRIVATE_KEY_PEM = [
@@ -73,5 +73,18 @@ describe('createRedactingLogger', () => {
     const serialized = JSON.stringify(captured, (_, v: unknown) => (v instanceof Error ? v.message : v));
     assert.notInclude(serialized, 'MIIEvgIBADANBgkqhkiG9w0BAQEFAASC');
     assert.notInclude(serialized, ONBOARDING_TOKEN);
+  });
+});
+
+describe('trace 属性脱敏', () => {
+  test('字段名与嵌套秘密值均不可进入 span attributes', () => {
+    const attributes = redactTraceAttributes({
+      requestId: 'req-1',
+      privateKey: PRIVATE_KEY_PEM,
+      detail: `claim with ${ONBOARDING_TOKEN}`,
+    });
+    assert.equal(attributes.requestId, 'req-1');
+    assert.equal(attributes.privateKey, REDACTED);
+    assert.notInclude(String(attributes.detail), ONBOARDING_TOKEN);
   });
 });

@@ -11,7 +11,12 @@
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
-import { certificateFingerprintFromPem, createLocalTestKeyProvider, SecurePackageService } from '@fdp/auth';
+import {
+  CERTIFICATE_PACKAGE_RETENTION_SECONDS,
+  certificateFingerprintFromPem,
+  createLocalTestKeyProvider,
+  SecurePackageService,
+} from '@fdp/auth';
 import { createHeartbeatHandler } from '../src/index.js';
 import type { ValidatedMessage } from '../src/index.js';
 import { createTestDb } from '../../cloud-api/test/helpers.js';
@@ -29,7 +34,7 @@ beforeAll(async () => {
   securePackage = new SecurePackageService({
     db: prisma,
     keyProvider: createLocalTestKeyProvider('be-iot-04'),
-    config: { retentionSeconds: 3600, maxClaims: 1, now },
+    config: { retentionSeconds: CERTIFICATE_PACKAGE_RETENTION_SECONDS, maxClaims: 1, now },
   });
 }, 60_000);
 

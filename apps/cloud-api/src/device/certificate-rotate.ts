@@ -18,7 +18,7 @@ import type { DbClient } from '@fdp/database';
 import { recordAudit, withTransaction } from '@fdp/database';
 import { buildDevicePolicy } from '@fdp/aws-clients';
 import type { DataKeyProvider } from '@fdp/aws-clients';
-import { certificateFingerprintFromPem, SecurePackageService } from '@fdp/auth';
+import { CERTIFICATE_PACKAGE_RETENTION_SECONDS, certificateFingerprintFromPem, SecurePackageService } from '@fdp/auth';
 import type { DeviceAuthContext } from '@fdp/auth';
 import type { IotProvisioningPort } from '../provisioning/index.js';
 
@@ -47,8 +47,6 @@ export class CertificateRotationError extends Error {
 export interface RotationConfig {
   readonly region: string;
   readonly accountId: string;
-  /** 证书包保存时长（秒）；组合根必须按 DEC-003@1.0.0 注入 86400。 */
-  readonly packageRetentionSeconds: number;
   readonly certificateValiditySeconds: number;
   readonly policyNamePrefix?: string;
 }
@@ -117,7 +115,7 @@ export async function rotateCertificate(
     db: deps.client,
     keyProvider: deps.keyProvider,
     config: {
-      retentionSeconds: deps.config.packageRetentionSeconds,
+      retentionSeconds: CERTIFICATE_PACKAGE_RETENTION_SECONDS,
       maxClaims: 1,
       now: deps.now ?? (() => new Date()),
     },

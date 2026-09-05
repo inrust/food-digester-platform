@@ -14,8 +14,8 @@ import type { DbClient } from '@fdp/database';
 import {
   AuthError,
   createRateLimiter,
-  InMemoryRateLimitStore,
   markOnboardingTokenUsed,
+  PostgresRateLimitStore,
   SecurePackageError,
   withOnboardingAuth,
 } from '@fdp/auth';
@@ -115,15 +115,26 @@ export function createOnboardingStatusHandler(
   deps: OnboardingStatusHandlerDeps,
 ): (req: OnboardingStatusRequest) => Promise<OnboardingHttpResponse> {
   const now = deps.now ?? (() => new Date());
-  const rateLimiter =
-    deps.rateLimiter ?? createRateLimiter(new InMemoryRateLimitStore(), { limit: 30, windowSeconds: 60 });
+  const sharedStore = new PostgresRateLimitStore(deps.client);
+  const tokenRateLimiter = deps.rateLimiter ?? createRateLimiter(sharedStore, { limit: 30, windowSeconds: 60 });
+  const ipRateLimiter = deps.rateLimiter ? undefined : createRateLimiter(sharedStore, { limit: 60, windowSeconds: 60 });
 
   const guarded = withOnboardingAuth<OnboardingStatusRequest, OnboardingHttpResponse>(
     {
       client: deps.client,
       tokenOf: bearerTokenOf,
       serialNumberOf: (req) => req.query?.serialNumber,
-      rateLimiter,
+      rateLimits: [
+        { limiter: tokenRateLimiter, keyOf: (_req, fingerprint) => `onboarding:token:${fingerprint}` },
+        ...(ipRateLimiter
+          ? [
+              {
+                limiter: ipRateLimiter,
+                keyOf: (req: OnboardingStatusRequest) => `onboarding:ip:${req.sourceIp ?? 'unknown'}`,
+              },
+            ]
+          : []),
+      ],
       now,
     },
     async (req, auth) => {

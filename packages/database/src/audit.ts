@@ -14,6 +14,9 @@ import { getRequestContext } from './context.js';
 import { DbError } from './errors.js';
 import { withTransaction, type DbClient } from './transaction.js';
 import type { PrismaClient } from './generated/client.js';
+import { createRedactingLogger } from '@fdp/observability';
+
+const logger = createRedactingLogger(console);
 
 // ---------- 脱敏器 ----------
 
@@ -123,7 +126,7 @@ export async function audited<T>(client: DbClient, op: AuditedOperation, fn: (tx
       await recordAudit(client, { ...op, afterValue: undefined, result: 'FAILURE' });
     } catch (auditErr) {
       // 审计写入失败不掩盖业务错误；结构化日志由 observability 任务接入
-      console.error('audit FAILURE 记录写入失败', (auditErr as Error).message);
+      logger.error('audit FAILURE 记录写入失败', auditErr);
     }
     throw err;
   }

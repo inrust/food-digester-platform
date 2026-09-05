@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import {
+  CERTIFICATE_PACKAGE_RETENTION_SECONDS,
   createLocalTestKeyProvider,
   createRateLimiter,
   InMemoryRateLimitStore,
@@ -36,7 +37,7 @@ import { createTestDb } from './helpers.js';
 const NOW = new Date('2026-08-27T08:00:00Z');
 const now = () => NOW;
 const MQTT_ENDPOINT = 'a1b2c3d4e5-ats.iot.ap-southeast-1.amazonaws.com';
-const RETENTION_SECONDS = 3600;
+const RETENTION_SECONDS = CERTIFICATE_PACKAGE_RETENTION_SECONDS;
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -88,7 +89,6 @@ function makeProvisioning(): ProvisioningService {
     config: {
       region: 'ap-southeast-1',
       accountId: '123456789012',
-      packageRetentionSeconds: RETENTION_SECONDS,
       certificateValiditySeconds: 365 * 24 * 3600,
     },
     now,
