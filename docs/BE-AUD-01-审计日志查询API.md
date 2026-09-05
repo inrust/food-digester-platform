@@ -1,0 +1,38 @@
+# BE-AUD-01 审计日志查询 API
+
+实现：[apps/cloud-api/src/admin/audit](../apps/cloud-api/src/admin/audit)（errors/service/handler）；REST 契约 [admin-audit-api.json](../contracts/rest/admin-audit-api.json)；验收测试 [admin-audit.test.ts](../apps/cloud-api/test/admin-audit.test.ts)（6 项，PGlite）。
+
+## 1. 范围与事实源
+
+| 项 | 说明 |
+|---|---|
+| 任务 | BE-AUD-01（P1 / 管理后台后端），依赖 DOM-03（append-only 审计 + sanitizeAuditPayload 脱敏）、AUTH-01（audit:read 权限矩阵 + withAuthorization） |
+| 事实源 | DOM-03 audit_logs 表（写入时已脱敏）；DEC-012@1.0.0（V1 权限矩阵固定只读——audit:read 仅 PlatformSuperAdmin/Auditor 持有） |
+| Schema 变更 | 无（复用 DOM-03 audit_logs 及其 customerId+createdAt / objectType+objectId 索引） |
+| 功能边界 | 不查询 CloudTrail 和基础设施日志；不提供任何修改/删除路由（append-only 另由 repository 拦截器强制） |
+
+## 2. 关键设计
+
+**路由**（全部 audit:read + CognitoJwt）：`GET /api/v1/admin/audit-logs` 列表；`GET /api/v1/admin/audit-logs/{auditId}` 详情。
+
+**筛选与分页**：actorId / customerId / objectType / objectId / action / result（SUCCESS|FAILURE 封闭枚举）/ createdAt 时间范围（from/to，UTC 含端点）；排序 createdAt 倒序 + id 决胜，键集游标为复合键 `${createdAtIso}|${id}`（复用共享游标编码 decode/encodeKeysetCursor），相同时间戳翻页不重复不漏。
+
+**权限隔离**：Auditor/PlatformSuperAdmin 跨 Customer 只读；PlatformOperator 与 Customer 角色无 audit:read（DEC-012 冻结矩阵 → handler 403）。服务层对 Customer actor 仍强制 actor.customerId 租户隔离（customerId 参数不一致 → 403；详情跨 Customer → 404 不泄露存在性）作为纵深防御——若未来矩阵经版本化决策向 Customer 角色开放 audit:read，隔离语义即刻生效。
+
+**脱敏保证（敏感字段永不返回）**：列表视图字段封闭（不含 beforeValue/afterValue/ip/userAgent/reason/requestId）；详情前后值在读取时再次经 sanitizeAuditPayload 兜底脱敏（写入侧 DOM-03 已脱敏）——即使敏感材料绕过写入脱敏直接落库，响应中仍恒为 [REDACTED]。
+
+## 3. 验收基准与证据（vitest + PGlite，6 项）
+
+| 验收基准 | 测试 | 结果 |
+|---|---|---|
+| 权限隔离 | Auditor/SuperAdmin 跨 Customer 200；Operator/CustomerAdmin → 403；无 actor → 401；Customer actor 服务层强制 scope、越权筛选 FORBIDDEN、跨 Customer 详情 NOT_FOUND | ✅ |
+| 筛选正确 | actorId/customerId/objectType/objectId/action/result/from/to 各自生效；非法 result/日期 → 400 | ✅ |
+| 分页正确 | createdAt 倒序 + id 决胜；5 条相同时间戳记录 limit=2 翻页不重复不漏且与全量顺序一致 | ✅ |
+| 敏感字段永不返回 | 列表视图无 beforeValue/afterValue/ip/userAgent；详情对绕过写入脱敏落库的 password/privateKey/apiToken 读取兜底脱敏为 [REDACTED]，响应文本不含原文，非敏感字段原样 | ✅ |
+| 不存在写路由 | handler 仅导出 listAuditLogs/getAuditLogDetail；契约测试强制 OpenAPI 无 post/put/patch/delete | ✅ |
+
+## 4. 未决风险
+
+- **Customer 角色审计可见性**：V1 冻结矩阵（DEC-012）未授予 Customer 角色 audit:read，故「Customer 角色仅自身」当前以服务层强制隔离 + handler 403 落地；如需向 Customer 角色开放自身审计查询，须另立版本化决策修订矩阵（服务层隔离语义已就绪）。
+- **复合游标为模块内格式**：`${createdAtIso}|${id}` 复用共享游标编码但键结构为本模块私有；若其他模块需要时间倒序分页，可上提为共享复合游标助手。
+- **审计查询本身的审计**：查询为只读操作，按 DOM-03 口径不写审计（与既有只读端点一致）；如需审计「谁看了审计」，需另立决策。

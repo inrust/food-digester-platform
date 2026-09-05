@@ -1,0 +1,226 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Audit API",
+    "version": "0.1.0",
+    "description": "BE-AUD-01 审计日志查询 API（Cognito 认证，audit:read——V1 矩阵仅 PlatformSuperAdmin/Auditor 持有，DEC-012 固定只读）。GET /api/v1/admin/audit-logs 按 actor/Customer/对象/动作/结果/时间范围筛选 + 键集游标分页（createdAt 倒序 + id 决胜）；GET /api/v1/admin/audit-logs/{auditId} 详情含脱敏前后值。数据源为 DOM-03 append-only audit_logs（写入时已 sanitizeAuditPayload 脱敏；读取时再次脱敏兜底，敏感字段永不返回）。Auditor 可跨 Customer 只读；Customer 角色无 audit:read（403）——服务层仍强制 actor.customerId 租户隔离作为纵深防御。只读 API：不存在任何修改/删除路由。功能边界：不查询 CloudTrail 与基础设施日志。错误响应继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["DEC-012@1.0.0"],
+    "x-decision-register-version": "1.27.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/audit-logs": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listAuditLogs",
+        "summary": "审计日志列表（actor/Customer/对象/动作/结果/时间筛选 + 键集游标分页）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "actorId", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "仅平台角色可跨 Customer 筛选；Customer actor 强制 actor.customerId（传入不一致 → 403）"
+          },
+          { "name": "objectType", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "objectId", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "action", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "result",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["SUCCESS", "FAILURE"] }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date-time" },
+            "description": "createdAt 起（UTC，含）"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date-time" },
+            "description": "createdAt 止（UTC，含）"
+          },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "审计日志列表（不含前后值，详情经 GET /{auditId}）",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuditLogListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/audit-logs/{auditId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getAuditLogDetail",
+        "summary": "审计日志详情（含脱敏前后值；跨 Customer → 404）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "auditId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "审计日志详情",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuditLogDetailSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "$ref": "openapi-base.json#/components/securitySchemes/CognitoJwt" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "筛选参数非法（VALIDATION_FAILED）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无 audit:read 权限或 Customer actor 越权筛选",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "审计记录不存在或跨 Customer（NOT_FOUND）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "AuditLogView": {
+        "type": "object",
+        "required": [
+          "auditId",
+          "actorId",
+          "actorRole",
+          "customerId",
+          "objectType",
+          "objectId",
+          "action",
+          "result",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "auditId": { "type": "string", "minLength": 1 },
+          "actorId": { "type": ["string", "null"] },
+          "actorRole": { "type": ["string", "null"] },
+          "customerId": { "type": ["string", "null"] },
+          "objectType": { "type": "string", "minLength": 1 },
+          "objectId": { "type": "string", "minLength": 1 },
+          "action": { "type": "string", "minLength": 1 },
+          "result": { "type": "string", "enum": ["SUCCESS", "FAILURE"] },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        },
+        "description": "列表视图不含 beforeValue/afterValue/ip/userAgent（经详情获取）"
+      },
+      "AuditLogDetailView": {
+        "type": "object",
+        "required": [
+          "auditId",
+          "actorId",
+          "actorRole",
+          "customerId",
+          "objectType",
+          "objectId",
+          "action",
+          "reason",
+          "result",
+          "requestId",
+          "ip",
+          "userAgent",
+          "beforeValue",
+          "afterValue",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "auditId": { "type": "string", "minLength": 1 },
+          "actorId": { "type": ["string", "null"] },
+          "actorRole": { "type": ["string", "null"] },
+          "customerId": { "type": ["string", "null"] },
+          "objectType": { "type": "string", "minLength": 1 },
+          "objectId": { "type": "string", "minLength": 1 },
+          "action": { "type": "string", "minLength": 1 },
+          "reason": { "type": ["string", "null"] },
+          "result": { "type": "string", "enum": ["SUCCESS", "FAILURE"] },
+          "requestId": { "type": ["string", "null"] },
+          "ip": { "type": ["string", "null"] },
+          "userAgent": { "type": ["string", "null"] },
+          "beforeValue": {
+            "description": "脱敏后前值（DOM-03 写入时脱敏 + 读取时再次脱敏；敏感字段恒为 [REDACTED]）"
+          },
+          "afterValue": {
+            "description": "脱敏后后值（同 beforeValue 脱敏保证）"
+          },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "AuditLogListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/AuditLogView" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      },
+      "AuditLogDetailSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/AuditLogDetailView" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    },
+    "parameters": {
+      "Cursor": { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+      "Limit": { "$ref": "openapi-base.json#/components/parameters/Limit" }
+    }
+  }
+}

@@ -30,6 +30,7 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
  * BE-OTA-02 已落地：/api/v1/admin/ota/campaigns 创建/扩大批次/暂停/恢复/取消/失败重试与状态机（见 ./admin/ota-campaign）；
  * BE-OTA-03 已落地：OTA MQTT 下发（15 分钟预签名 URL + OTA_AVAILABLE）与 DEC-015 ACK 状态接收（见 ./ota）；
  * BE-RBAC-01 已落地：/api/v1/admin/users 列表/邀请/角色/Scope/停用/密码重置触发（见 ./admin/user）；
+ * BE-AUD-01 已落地：/api/v1/admin/audit-logs 审计日志只读查询（列表 + 详情，见 ./admin/audit）；
  * 其余 /api/v1/device、/admin、/customer、/internal 路由在后续 BE 任务实现。
  */
 export const SERVICE_NAME = 'cloud-api';
@@ -59,6 +60,7 @@ export * from './admin/command/index.js';
 export * from './admin/ota-package/index.js';
 export * from './admin/ota-campaign/index.js';
 export * from './admin/user/index.js';
+export * from './admin/audit/index.js';
 export * from './admin/esg/index.js';
 export * from './consumable/index.js';
 export * from './notification/index.js';
