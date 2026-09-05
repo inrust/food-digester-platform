@@ -183,7 +183,16 @@ describe('续期与重复请求', () => {
     expect(replay.idempotentReplay).toBe(true);
     expect(replay.from).toBe('Renewed');
     expect(replay.to).toBe('Renewed');
+    expect('historyEntry' in replay).toBe(false);
+    expect('auditEvent' in replay).toBe(false);
+    expect('notification' in replay).toBe(false);
     expect(() => renewLicense(renewed, new Date('2029-01-01T00:00:00Z'), ADMIN)).toThrow(/已续期/);
+  });
+
+  test('重复续期也必须先校验 actor，DEVICE/SYSTEM 不得取得管理员幂等结果', () => {
+    const renewed = license('Renewed', { validTo: new Date('2028-01-01T00:00:00Z') });
+    expect(() => renewLicense(renewed, renewed.validTo, DEVICE)).toThrow(/actorType/i);
+    expect(() => renewLicense(renewed, renewed.validTo, SYSTEM)).toThrow(/actorType/i);
   });
 
   test('续期有效时间不晚于当前被拒绝；重复撤销被拒绝（终态）', () => {

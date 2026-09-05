@@ -13,6 +13,9 @@
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import Ajv2020 from 'ajv/dist/2020.js';
+
+const metaValidator = new Ajv2020({ allErrors: true, strict: false });
 
 /** 递归收集对象中的全部 $ref 字符串。 */
 export function collectRefs(node, out = []) {
@@ -38,13 +41,16 @@ function resolvePointer(doc, pointer) {
 }
 
 /** 校验单个 JSON Schema 文件，返回错误列表。 */
-export function checkSchemaFile(filePath) {
+export function checkSchemaFile(filePath, validateMetaSchema = true) {
   const errors = [];
   let doc;
   try {
     doc = JSON.parse(readFileSync(filePath, 'utf8'));
   } catch (err) {
     return [`${filePath}: JSON 解析失败：${err.message}`];
+  }
+  if (validateMetaSchema && !metaValidator.validateSchema(doc)) {
+    errors.push(`${filePath}: JSON Schema 元 Schema 校验失败：${metaValidator.errorsText()}`);
   }
   const dir = dirname(filePath);
   for (const ref of collectRefs(doc)) {
@@ -78,7 +84,7 @@ export function checkSchemaFile(filePath) {
 
 /** 校验 OpenAPI 基座文件，返回错误列表。 */
 export function checkOpenApiFile(filePath) {
-  const errors = checkSchemaFile(filePath); // 复用 $ref 解析检查
+  const errors = checkSchemaFile(filePath, false); // OpenAPI 语义由 Redocly 校验，此处复用 $ref 解析检查
   let doc;
   try {
     doc = JSON.parse(readFileSync(filePath, 'utf8'));

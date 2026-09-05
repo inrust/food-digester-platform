@@ -126,6 +126,7 @@ describe('POST /admin/devices/{deviceId}/assignment（首次分配）', () => {
 
     const history = await prisma.deviceStateHistory.findMany({ where: { deviceId: device.id } });
     assert.equal(history.length, 1);
+    assert.equal(history[0]?.axis, 'lifecycle');
     assert.equal(history[0]?.fromStatus, 'Onboarded');
     assert.equal(history[0]?.toStatus, 'Assigned');
 

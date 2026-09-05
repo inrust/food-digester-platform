@@ -1,6 +1,6 @@
 # DOM-02 License 状态机与商业规则
 
-实现：[packages/domain/src/license.ts](../packages/domain/src/license.ts)；测试：[license.test.ts](../packages/domain/test/license.test.ts)（16 项，含 40 组非法迁移穷举）。
+实现：[packages/domain/src/license.ts](../packages/domain/src/license.ts)；测试：[license.test.ts](../packages/domain/test/license.test.ts)（17 项，含 40 组非法迁移穷举）。
 
 ## 1. 状态机（实施方案 11.3）
 
@@ -20,11 +20,11 @@ NoLicense(虚拟，不落库) → Draft → Issued → Active → ExpiringSoon �
 - `createLicenseDraft`：`ctx.noOtherValidLicense` 强制（一个设备仅一个有效 License；DB 层另有部分唯一索引兜底）；`validFrom < validTo`。
 - `assertDeviceRunnable(facts, now)`：无 Assignment 或无有效 License 时抛 `DEVICE_STATE_NOT_ALLOWED`，供 DOM-01 `Licensed → Active` 与 BE-DEV 激活路径复用。
 - `isLicenseEffective`：`Issued/Active/ExpiringSoon/Renewed` 且在 `[validFrom, validTo)` 内。
-- 每次创建/迁移产出：license_history 条目 + 审计事件 + `LICENSE_CHANGED` 通知描述符（投递由 BE-LIC-01 负责）。
+- 每次创建/真实迁移产出：license_history 条目 + 审计事件 + `LICENSE_CHANGED` 通知描述符（投递由 BE-LIC-01 负责）；幂等重放不产生副作用描述符。
 
 ## 3. 重复请求的确定结果
 
-- 续期：已 `Renewed` 且 `validTo` 相同 → 幂等回放（`idempotentReplay: true`，状态不变）；不同 → `CONFLICT`；
+- 续期：所有分支先校验 ADMIN actor 与角色；已 `Renewed` 且 `validTo` 相同 → 返回独立 `LicenseRenewalReplay`（`idempotentReplay: true`，无 history/audit/notification）；不同 → `CONFLICT`；
 - 撤销：已 `Revoked` 再撤销 → 非法迁移错误（终态）；
 - 到期派生：`evaluateLicenseAt` 纯函数，同输入同结果。
 
@@ -34,7 +34,7 @@ NoLicense(虚拟，不落库) → Draft → Issued → Active → ExpiringSoon �
 |---|---|
 | 无 Assignment 激活失败 | `assertDeviceRunnable({hasActiveAssignment:false})` 抛错 ✅ |
 | 无有效 License 激活失败 | null / Expired / Revoked / 已过有效期均抛错 ✅ |
-| 续期确定结果 | 正常续期、幂等回放、CONFLICT、validTo 倒退拒绝 ✅ |
+| 续期确定结果 | 正常续期、无副作用幂等回放、DEVICE/SYSTEM replay 越权拒绝、CONFLICT、validTo 倒退拒绝 ✅ |
 | 到期确定结果 | 窗口内 ExpiringSoon、超过 validTo Expired、窗口外不变、幂等 ✅ |
 | 撤销确定结果 | Active/Expired → Revoked 成功；重复撤销拒绝 ✅ |
 | 非法迁移 | 7×7 穷举 40 组未列出迁移全部拒绝 ✅ |

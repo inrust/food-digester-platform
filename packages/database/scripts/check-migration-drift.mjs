@@ -24,20 +24,9 @@ function readMigrations() {
 
 function expectedSql() {
   return execFileSync(
-    'pnpm',
-    [
-      '--filter',
-      '@fdp/database',
-      'exec',
-      'prisma',
-      'migrate',
-      'diff',
-      '--from-empty',
-      '--to-schema',
-      'prisma/schema.prisma',
-      '--script',
-    ],
-    { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+    join(root, 'packages', 'database', 'node_modules', '.bin', 'prisma'),
+    ['migrate', 'diff', '--from-empty', '--to-schema', 'prisma/schema.prisma', '--script'],
+    { cwd: join(root, 'packages', 'database'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   );
 }
 

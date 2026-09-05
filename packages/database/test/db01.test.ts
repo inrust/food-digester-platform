@@ -104,6 +104,24 @@ describe('空库迁移', () => {
     const present = new Set(rows.map((r) => r.table_name));
     for (const t of REQUIRED) expect(present.has(t), `${t} 缺少 customer_id`).toBe(true);
   });
+
+  test('device_state_history 持久化封闭状态轴，未知 axis 被拒绝', async () => {
+    const { rows } = await db.query<{ column_name: string }>(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'device_state_history' AND column_name = 'axis'`,
+    );
+    expect(rows).toHaveLength(1);
+    await insertDevice('dev-axis-1', 'SN-AXIS-1');
+    await db.query(
+      `INSERT INTO "device_state_history" ("id", "device_id", "axis", "from_status", "to_status", "actor_type")
+       VALUES ('hist-axis-ok', 'dev-axis-1', 'lifecycle', 'Onboarded', 'Assigned', 'ADMIN')`,
+    );
+    await expectRejected(
+      `INSERT INTO "device_state_history" ("id", "device_id", "axis", "from_status", "to_status", "actor_type")
+       VALUES ('hist-axis-bad', 'dev-axis-1', 'mixed', 'Assigned', 'Active', 'ADMIN')`,
+      '22P02',
+    );
+  });
 });
 
 describe('设备唯一性', () => {

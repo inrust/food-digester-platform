@@ -26,6 +26,9 @@ export interface AdminHttpRequest {
   readonly query?: Readonly<Record<string, string | undefined>>;
   readonly body?: unknown;
   readonly requestId: string;
+  /** 可信 HTTP/Lambda 适配层解析后的传输元数据，不得取自业务 body。 */
+  readonly sourceIp?: string;
+  readonly userAgent?: string;
 }
 
 export interface AdminHttpResponse {

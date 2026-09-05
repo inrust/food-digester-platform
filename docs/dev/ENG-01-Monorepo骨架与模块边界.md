@@ -20,8 +20,8 @@
 
 ## 2. 技术基线
 
-- Node.js >= 20（`package.json` engines、`.nvmrc` 固定 20）；TypeScript strict（`tsconfig.base.json`，`module: NodeNext`）。
-- pnpm workspace（`pnpm-workspace.yaml`）+ Turborepo（`turbo.json`，`build` 按 `^build` 拓扑排序）。
+- Node.js `>=20.19 <21`（`package.json` engines、`.nvmrc` 固定 20.19.5）；TypeScript strict（`tsconfig.base.json`，`module: NodeNext`）。
+- pnpm 10.20.0 workspace（`packageManager` 与 Node 20 兼容）+ Turborepo（`turbo.json`，`build` 按 `^build` 拓扑排序）。
 - 测试运行器：`node --test` + `tsx`（兼容 Node 20；Vitest 由 ENG-02 统一引入）。
 - ESLint flat config（`eslint.config.mjs`）；更严格的门禁规则（格式化、Schema/Migration/密钥扫描）由 ENG-02 收敛。
 
@@ -43,18 +43,20 @@
 
 ## 5. 验收命令与证据
 
-干净环境（删除全部 `node_modules`、`dist`、`.turbo`）下顺序执行：
+干净环境（新的 pnpm store，且无 `node_modules`、`dist`、`.turbo`）下顺序执行：
 
 ```bash
 pnpm install            # 通过（含 pnpm-workspace.yaml 的 esbuild allowBuilds 声明）
 pnpm lint               # eslint . 通过
 pnpm typecheck          # turbo 12 包 tsc strict 通过
-pnpm test               # 工作区 139 项 + scripts 35 项全部通过
-pnpm build              # turbo 拓扑构建 11 包通过
-pnpm check:boundaries   # 11 个包边界与循环依赖检查通过
+pnpm test               # Vitest 693 + contracts 254 + scripts 69，合计 1016 项
+pnpm build              # turbo 拓扑构建 12 包通过
+pnpm check:boundaries   # 12 个包边界与循环依赖检查通过
 ```
 
 也可单条执行 `pnpm verify` 串联以上全部检查。
+
+2026-09-05 P1 复验：macOS arm64 的独立临时副本使用官方 Node 20.19.5、pnpm 10.20.0 和全新 pnpm store 完成冻结锁文件安装；清空 Turbo 缓存后 `pnpm verify` 退出 0，typecheck 19/19 均为 cache miss，1016/1016 测试通过。
 
 ## 6. 未决风险
 

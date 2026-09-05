@@ -10,6 +10,7 @@ import { unauthenticated, forbidden } from './errors.js';
 import { hasPermission } from './permissions.js';
 import type { Permission } from './permissions.js';
 import type { ActorContext } from './roles.js';
+import { normalizeAuditIp, normalizeAuditUserAgent, runWithContext } from '@fdp/database';
 
 /** 角色越权检查：actor 任一角色持有权限点即放行，否则 403。 */
 export function requirePermission(actor: ActorContext, permission: Permission): void {
@@ -30,6 +31,10 @@ export function assertCustomerScope(actor: ActorContext, customerId: string): vo
 /** 携带可选 actor 的最小请求形状（适配层在调用前注入 actor）。 */
 export interface AuthenticatedRequest {
   readonly actor?: ActorContext | undefined;
+  /** 以下元数据由可信 HTTP/Lambda 适配层注入，禁止从业务 body 提取。 */
+  readonly requestId?: string | undefined;
+  readonly sourceIp?: string | undefined;
+  readonly userAgent?: string | undefined;
 }
 
 export interface AuthorizationRule<TReq> {
@@ -55,6 +60,18 @@ export function withAuthorization<TReq extends AuthenticatedRequest, TRes>(
       const customerId = rule.customerOf(req);
       if (customerId !== undefined) assertCustomerScope(actor, customerId);
     }
-    return handler({ ...req, actor });
+    const ip = normalizeAuditIp(req.sourceIp);
+    const userAgent = normalizeAuditUserAgent(req.userAgent);
+    return runWithContext(
+      {
+        actorId: actor.actorId,
+        ...(actor.roles[0] ? { actorRole: actor.roles[0] } : {}),
+        ...(actor.customerId ? { customerId: actor.customerId } : {}),
+        ...(req.requestId ? { requestId: req.requestId } : {}),
+        ...(ip ? { ip } : {}),
+        ...(userAgent ? { userAgent } : {}),
+      },
+      () => handler({ ...req, actor }),
+    );
   };
 }

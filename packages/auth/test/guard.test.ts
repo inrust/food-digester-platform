@@ -5,6 +5,7 @@
 import { assert, describe, test } from 'vitest';
 import { assertCustomerScope, requirePermission, withAuthorization } from '../src/index.js';
 import type { ActorContext } from '../src/index.js';
+import { getRequestContext } from '@fdp/database';
 import { expectAuthError, expectAuthErrorSync } from './helpers.js';
 
 const platformSuperAdmin: ActorContext = {
@@ -75,6 +76,9 @@ describe('withAuthorization 授权 Decorator', () => {
   interface Req {
     readonly actor?: ActorContext | undefined;
     readonly customerId?: string | undefined;
+    readonly requestId?: string | undefined;
+    readonly sourceIp?: string | undefined;
+    readonly userAgent?: string | undefined;
   }
 
   const handler = withAuthorization<Req, string>(
@@ -104,5 +108,27 @@ describe('withAuthorization 授权 Decorator', () => {
   test('无 Customer 维度路由不做 scope 校验', async () => {
     const guarded = withAuthorization<Req, string>({ permission: 'dashboard:read' }, async () => 'ok');
     assert.equal(await guarded({ actor: customerViewerB }), 'ok');
+  });
+
+  test('可信 HTTP 元数据进入 DB 审计上下文，业务 body 不能覆盖', async () => {
+    const guarded = withAuthorization<Req & { readonly body?: unknown }, ReturnType<typeof getRequestContext>>(
+      { permission: 'device:read' },
+      async () => getRequestContext(),
+    );
+    const ctx = await guarded({
+      actor: customerAdminA,
+      requestId: 'req-auth-context',
+      sourceIp: '203.0.113.20',
+      userAgent: ' Admin Console/1.0 ',
+      body: { ip: '192.0.2.66', userAgent: 'spoofed' },
+    });
+    assert.deepEqual(ctx, {
+      requestId: 'req-auth-context',
+      actorId: customerAdminA.actorId,
+      actorRole: 'CustomerAdmin',
+      customerId: 'cust-a',
+      ip: '203.0.113.20',
+      userAgent: 'Admin Console/1.0',
+    });
   });
 });

@@ -8,7 +8,7 @@
  *  3. GitHub 个人令牌（ghp_...）；
  *  4. Slack 令牌（xoxb/xoxp/xoxa/xoxr/xoxs-...）。
  *
- * 扫描范围为 git 跟踪文件（git ls-files），跳过二进制与大文件。
+ * 扫描范围为 git 跟踪、暂存及未忽略的未跟踪文件，跳过二进制与大文件。
  * 本脚本自身及测试夹具通过内容拼接避免命中规则。
  *
  * 用法：node scripts/check-secrets.mjs [rootDir]
@@ -40,16 +40,19 @@ export function scanContent(content) {
   return findings;
 }
 
-/** 列出 git 跟踪文件。 */
-export function listTrackedFiles(root) {
-  const out = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' });
+/** 列出 git 跟踪、暂存及未忽略的未跟踪文件（去重由 git 保证）。 */
+export function listRepositoryFiles(root) {
+  const out = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], {
+    cwd: root,
+    encoding: 'utf8',
+  });
   return out.split('\n').filter(Boolean);
 }
 
 /** 扫描仓库，返回 [{ file, id, line }]。 */
 export function scanRepository(root) {
   const findings = [];
-  for (const rel of listTrackedFiles(root)) {
+  for (const rel of listRepositoryFiles(root)) {
     if (BINARY_EXTENSIONS.test(rel)) continue;
     const abs = join(root, rel);
     let stat;

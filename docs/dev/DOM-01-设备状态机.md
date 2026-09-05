@@ -39,9 +39,9 @@
 | 失败时状态和历史均不变化 | 纯函数：抛错无 effects 返回，冻结入参未被修改 |
 | 执行者/前提/原因 | 角色不足（Operator 审批/分配/退役）、缺前提（6 类）、缺原因（4 类）分别拒绝 |
 
-`pnpm verify` 全绿（Vitest 137 = 97 状态机 + 43 其余，contracts 128，scripts 53）。
+2026-09-05 `pnpm verify` 全绿（Vitest 693、contracts 254、scripts 69，合计 1016）；数据库测试同时锁定 `axis` 非空封闭枚举和 lifecycle/operational 同名状态可区分。
 
 ## 5. 未决风险
 
 - DEC-001@1.0.0 已冻结：Maintenance 行为限制由矩阵统一约束；后续变更仅经新决策版本调整消费方（BE-CMD/BE-SYNC），状态机迁移表不受影响；
-- 迁移的持久化（state_history 落库 + 审计写入）在 BE-DEV-04 等任务接入 DOM-03 审计服务后完成闭环。
+- 已接入的 Cloud API 与 ingestion-worker 消费者均把 `stateHistory[].axis` 写入数据库；新增消费者仍必须通过 DB-01 的非空枚举约束和回归测试。

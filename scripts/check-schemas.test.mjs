@@ -52,6 +52,17 @@ test('失败示例：JSON 语法损坏的 Schema 被拒绝', () => {
   assert.match(errors[0], /JSON 解析失败/);
 });
 
+test('失败示例：JSON Schema 2020-12 非法 type 被元 Schema 拒绝', () => {
+  const root = fixture({
+    'contracts/invalid-type.schema.json': JSON.stringify({
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'not-a-json-schema-type',
+    }),
+  });
+  const errors = checkSchemas(root);
+  assert.ok(errors.some((e) => e.includes('元 Schema')));
+});
+
 test('失败示例：OpenAPI 基座缺少 paths 被拒绝', () => {
   const root = fixture({
     'contracts/rest/openapi-base.json': JSON.stringify({ openapi: '3.1.0', info: {} }),

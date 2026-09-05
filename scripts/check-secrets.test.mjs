@@ -5,6 +5,10 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { scanContent, scanRepository } from './check-secrets.mjs';
 
 const pemExample = ['-----BEGIN', 'PRIVATE', 'KEY-----'].join(' ');
@@ -37,6 +41,13 @@ test('正常内容不误报', () => {
     'aws_access_key_id 由 IAM Role 注入，不落盘',
   ].join('\n');
   assert.deepEqual(scanContent(benign), []);
+});
+
+test('失败示例：未跟踪且未忽略文件中的私钥也被扫描', () => {
+  const root = mkdtempSync(join(tmpdir(), 'fdp-secrets-'));
+  execFileSync('git', ['init', '--quiet'], { cwd: root });
+  writeFileSync(join(root, 'untracked-key.txt'), pemExample);
+  assert.ok(scanRepository(root).some((f) => f.file === 'untracked-key.txt' && f.id === 'pem-private-key'));
 });
 
 test('当前仓库通过敏感信息扫描', () => {

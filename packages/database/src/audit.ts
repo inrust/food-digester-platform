@@ -76,8 +76,8 @@ export async function recordAudit(client: DbClient, entry: AuditEntry): Promise<
       reason: entry.reason ?? null,
       beforeValue: sanitizeAuditPayload(entry.beforeValue ?? null) as object,
       afterValue: sanitizeAuditPayload(entry.afterValue ?? null) as object,
-      ip: entry.ip ?? null,
-      userAgent: entry.userAgent ?? null,
+      ip: entry.ip ?? ctx.ip ?? null,
+      userAgent: entry.userAgent ?? ctx.userAgent ?? null,
       result: entry.result,
       requestId: entry.requestId ?? ctx.requestId ?? null,
     },
@@ -98,6 +98,8 @@ export interface AuditedOperation {
   /** 显式 actor（优先于 AsyncLocalStorage 上下文）。 */
   readonly actorId?: string;
   readonly actorRole?: string;
+  readonly ip?: string;
+  readonly userAgent?: string;
 }
 
 /**

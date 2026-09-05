@@ -236,6 +236,7 @@ export async function retireDevice(
         await stateHistory.create({
           data: {
             deviceId: entry.deviceId,
+            axis: entry.axis,
             fromStatus: entry.fromStatus,
             toStatus: entry.toStatus,
             actorType: entry.actorType,

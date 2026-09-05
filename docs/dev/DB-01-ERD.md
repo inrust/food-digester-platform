@@ -60,6 +60,7 @@ erDiagram
 | 非法耗材类型/请求状态/百分比 | CHECK（DEC-008 封闭集合 CARBON_FILTER/BIO_ADDITIVE；状态 PENDING/PROCESSING/COMPLETED/CANCELLED；百分比 0~100，NULL=未知） |
 | 每设备仅一条 ACTIVE 分配 / 设备用户授权 | 部分唯一索引（自定义 SQL） |
 | 同序列号仅一条 PENDING Onboarding | 部分唯一索引（自定义 SQL） |
+| 双轴设备状态历史 | `device_state_history.axis` 使用封闭枚举 `lifecycle/operational` 且非空；所有状态迁移消费者持久化领域 effect 的 axis |
 | audit_logs 只追加 | 无 updated_at/触发器写入路径；UPDATE/DELETE 禁止由 DB-02 Repository 策略与 DOM-03 审计服务强制 |
 | UTC | 全部时间列 `TIMESTAMPTZ`（日期列为 `DATE`，UTC 口径） |
 | 原始 Telemetry 不建长期表 | 仅 `telemetry_hourly` / `telemetry_daily` 聚合表（测试断言） |
@@ -70,6 +71,7 @@ erDiagram
 - License.status：`Draft | Issued | Active | ExpiringSoon | Renewed | Expired | Revoked`
 - DeviceCommand.status：`CREATED | AUTHORIZED | PUBLISHED | ACKNOWLEDGED | SUCCEEDED | FAILED | TIMED_OUT | CANCELLED`
 - ConsumableRequest.status：`PENDING | PROCESSING | COMPLETED | CANCELLED`
+- DeviceStateHistory.axis：`lifecycle | operational`；2026-09-05 前无法无歧义恢复轴的旧记录由 Migration 保守回填为 `lifecycle`。
 
 ## 4. 复验命令
 

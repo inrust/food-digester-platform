@@ -203,6 +203,7 @@ model DeviceAssignment {
 model DeviceStateHistory {
   id         String   @id @default(uuid())
   deviceId   String   @map("device_id")
+  axis       DeviceStateAxis
   fromStatus String?  @map("from_status") // 初始迁移为 null
   toStatus   String   @map("to_status")
   actorType  String   @map("actor_type") // ADMIN | DEVICE | SYSTEM
@@ -214,6 +215,11 @@ model DeviceStateHistory {
 
   @@index([deviceId, createdAt])
   @@map("device_state_history")
+}
+
+enum DeviceStateAxis {
+  lifecycle
+  operational
 }
 
 // ---------- 证书与 Onboarding ----------

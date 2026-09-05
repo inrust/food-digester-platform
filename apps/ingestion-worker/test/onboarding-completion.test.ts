@@ -128,6 +128,7 @@ describe('completeOnboardingOnFirstHeartbeat', () => {
 
     const history = await prisma.deviceStateHistory.findMany({ where: { deviceId, toStatus: 'Onboarded' } });
     assert.equal(history.length, 1);
+    assert.equal(history[0]?.axis, 'lifecycle');
     assert.equal(history[0]?.fromStatus, 'OnboardingApproved');
     assert.equal(history[0]?.actorType, 'SYSTEM');
 

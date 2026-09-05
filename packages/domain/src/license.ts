@@ -54,7 +54,7 @@ export interface LicenseTransitionEffects {
   readonly from: LicenseStatus;
   readonly to: LicenseStatus;
   /** 重复请求的幂等回放：状态未变、仅返回确定结果。 */
-  readonly idempotentReplay: boolean;
+  readonly idempotentReplay: false;
   readonly historyEntry: {
     readonly licenseId: string;
     readonly fromStatus: LicenseStatus | null;
@@ -73,6 +73,14 @@ export interface LicenseTransitionEffects {
   };
   /** 状态变化须触发 LICENSE_CHANGED Notification（BE-LIC-01 投递）。 */
   readonly notification: { readonly type: 'LICENSE_CHANGED'; readonly deviceId: string };
+}
+
+/** 幂等重放不产生新的历史、审计或通知描述符。 */
+export interface LicenseRenewalReplay {
+  readonly licenseId: string;
+  readonly from: 'Renewed';
+  readonly to: 'Renewed';
+  readonly idempotentReplay: true;
 }
 
 // ---------- 迁移表 ----------
@@ -182,7 +190,7 @@ function buildEffects(
   from: LicenseStatus,
   to: LicenseStatus,
   actor: LicenseActor,
-  idempotentReplay: boolean,
+  idempotentReplay: false,
   reason: string | null,
 ): LicenseTransitionEffects {
   return {
@@ -221,10 +229,21 @@ export function renewLicense(
   license: LicenseSnapshot,
   newValidTo: Date,
   actor: LicenseActor,
-): LicenseTransitionEffects {
+): LicenseTransitionEffects | LicenseRenewalReplay {
+  if (actor.actorType !== 'ADMIN') {
+    throw new LicenseStateError('FORBIDDEN', `actorType ${actor.actorType} 不允许执行续期`);
+  }
+  if (!actor.actorRole || !ADMIN_ROLES.includes(actor.actorRole)) {
+    throw new LicenseStateError('FORBIDDEN', `角色 ${actor.actorRole ?? '(无)'} 不允许执行续期`);
+  }
   if (license.status === 'Renewed') {
     if (license.validTo.getTime() === newValidTo.getTime()) {
-      return buildEffects(license.id, license.deviceId, 'Renewed', 'Renewed', actor, true, null);
+      return {
+        licenseId: license.id,
+        from: 'Renewed',
+        to: 'Renewed',
+        idempotentReplay: true,
+      };
     }
     throw new LicenseStateError('CONFLICT', `License 已续期至 ${license.validTo.toISOString()}，与新请求不一致`);
   }

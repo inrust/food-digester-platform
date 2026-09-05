@@ -1,14 +1,14 @@
 # DOM-03 业务审计写入库
 
-实现：[packages/database/src/audit.ts](../packages/database/src/audit.ts)；测试：[db03.test.ts](../packages/database/test/db03.test.ts)（8 项）。
+实现：[packages/database/src/audit.ts](../packages/database/src/audit.ts)；测试：[db03.test.ts](../packages/database/test/db03.test.ts)（10 项）。
 
 ## 1. 组成
 
 | 能力 | 入口 | 说明 |
 |---|---|---|
 | 脱敏器 | `sanitizeAuditPayload(value)` | 递归遮蔽敏感字段名，并检查字符串值中的 PEM 私钥头；命中后替换为 `[REDACTED]`，公钥证书等正常字段保留 |
-| 审计写入 | `recordAudit(client, entry)` | 追加 `audit_logs`；actorId/actorRole/customerId/requestId 默认取 DB-02 AsyncLocalStorage 上下文，显式传参优先；前后值先脱敏 |
-| 写操作拦截器 | `audited(client, op, fn)` | 业务写入与 SUCCESS 审计同事务；业务失败整体回滚后**独立写入 FAILURE**（不伪造成功），原错误原样抛出；必须用根 `PrismaClient`（事务内嵌套抛 `DbError`） |
+| 审计写入 | `recordAudit(client, entry)` | 追加 `audit_logs`；actorId/actorRole/customerId/requestId/ip/userAgent 默认取 DB-02 AsyncLocalStorage 上下文，显式传参优先；前后值先脱敏 |
+| 写操作拦截器 | `audited(client, op, fn)` | 业务写入与 SUCCESS 审计同事务；业务失败整体回滚后**独立写入 FAILURE**（不伪造成功），两条路径均继承 IP/User-Agent；原错误原样抛出；必须用根 `PrismaClient` |
 | append-only 防线 | `APPEND_ONLY_MODELS`（repository.ts） | `auditLog`/`deviceStateHistory`/`licenseHistory`/`otaStatusHistory`/`ingestionReceipt`/`ingestionGap` 的 `updateWithVersion`/`softDelete` 抛 `AppendOnlyViolationError`（→ 400） |
 
 ## 2. 供下游使用方式
@@ -24,6 +24,7 @@
 | 审计记录不能通过业务 Repository 更新/删除 | auditLog 及三个历史表的 updateWithVersion/softDelete 均抛 `AppendOnlyViolationError` | ✅ |
 | 敏感字段 0 泄露 | 嵌套/数组中的私钥、Token、passwordHash、verifier，以及 `pem/material` 等非标准键名下的 PEM 私钥全部 `[REDACTED]`，序列化断言不含原值 | ✅ |
 | 失败记录失败结果但不伪造成功 | 业务回滚后仅存在 1 条 FAILURE；无 SUCCESS；原错误抛出 | ✅ |
+| 传输上下文完整 | 可信 HTTP 适配层注入并规范化 IP/User-Agent；成功与失败审计均记录，业务 body 不能伪造 | ✅ |
 | 附加 | 上下文传播（requestId/actor 默认注入）、成功路径业务+审计同事务、事务内嵌套 audited 拒绝 | ✅ |
 
 全仓 `pnpm verify` 通过。

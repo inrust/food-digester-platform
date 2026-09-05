@@ -117,6 +117,11 @@ describe('POST /admin/devices/{deviceId}/suspend（挂起）', () => {
       orderBy: { createdAt: 'asc' },
     });
     assert.equal(history.length, 2, 'lifecycle + operational 镜像两条状态历史');
+    assert.deepEqual(
+      history.map((entry) => entry.axis),
+      ['lifecycle', 'operational'],
+      '双轴必须持久化，不能再依赖同名状态推断',
+    );
     assert.equal(history[0]?.toStatus, 'Suspended');
     assert.equal(history[0]?.reason, '欠费停机');
     assert.equal(history[1]?.toStatus, 'Suspended');

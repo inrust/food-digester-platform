@@ -78,6 +78,7 @@ async function suspendDeviceForTamper(
     await history.create({
       data: {
         deviceId: entry.deviceId,
+        axis: entry.axis,
         fromStatus: entry.fromStatus,
         toStatus: entry.toStatus,
         actorType: entry.actorType,

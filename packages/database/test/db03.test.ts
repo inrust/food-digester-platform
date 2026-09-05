@@ -104,6 +104,28 @@ describe('recordAudit 与上下文', () => {
     expect(JSON.stringify(row.afterValue)).not.toContain('must-be-redacted');
     expect((row.afterValue as any).privateKey).toBe(REDACTED);
   });
+
+  test('IP/User-Agent 默认取可信请求上下文，显式参数仍可覆盖', async () => {
+    await runWithContext(
+      {
+        requestId: 'req-transport',
+        actorId: 'admin-transport',
+        ip: '203.0.113.10',
+        userAgent: 'FDP-Admin/1.0',
+      },
+      async () => {
+        await recordAudit(prisma, {
+          objectType: 'device',
+          objectId: 'dev-transport',
+          action: 'device.update',
+          result: 'SUCCESS',
+        });
+      },
+    );
+    const row = await prisma.auditLog.findFirstOrThrow({ where: { requestId: 'req-transport' } });
+    expect(row.ip).toBe('203.0.113.10');
+    expect(row.userAgent).toBe('FDP-Admin/1.0');
+  });
 });
 
 describe('append-only：审计/历史表不可经业务 Repository 更新删除', () => {
@@ -165,6 +187,30 @@ describe('audited 拦截器', () => {
     expect(audits[0]!.result).toBe('FAILURE');
     // 不存在伪造的 SUCCESS
     expect(audits.some((a) => a.result === 'SUCCESS')).toBe(false);
+  });
+
+  test('audited 成功与失败路径均继承 IP/User-Agent', async () => {
+    const ctx = {
+      actorId: 'admin-network',
+      ip: '2001:db8::10',
+      userAgent: 'Audit-Agent/2.0',
+    };
+    await runWithContext({ ...ctx, requestId: 'req-network-ok' }, () =>
+      audited(prisma, { objectType: 'device', objectId: 'ok', action: 'device.test' }, async () => undefined),
+    );
+    await expect(
+      runWithContext({ ...ctx, requestId: 'req-network-fail' }, () =>
+        audited(prisma, { objectType: 'device', objectId: 'fail', action: 'device.test' }, async () => {
+          throw new Error('expected failure');
+        }),
+      ),
+    ).rejects.toThrow('expected failure');
+    const rows = await prisma.auditLog.findMany({
+      where: { requestId: { in: ['req-network-ok', 'req-network-fail'] } },
+      orderBy: { requestId: 'asc' },
+    });
+    expect(rows).toHaveLength(2);
+    expect(rows.every((row) => row.ip === '2001:db8::10' && row.userAgent === 'Audit-Agent/2.0')).toBe(true);
   });
 
   test('audited 禁止在事务内嵌套调用', async () => {
