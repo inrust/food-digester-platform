@@ -1,0 +1,267 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Dashboard API",
+    "version": "0.1.0",
+    "description": "BE-DASH-01 管理后台总览聚合 API（Cognito 认证，dashboard:read——全角色持有）。GET /api/v1/admin/dashboard/overview 返回：有效 Contract 总数、设备总数及授权状态分布、在线数/在线率、今日（UTC）估算碳减排/能耗/处理量、最新业务告警（固定 5 条）与最多 10 台设备卡片摘要（固件、连接质量、耗材、允许动作）。Customer 角色强制 actor.customerId scope（汇总不串线）；平台角色返回全平台口径。连接状态、生命周期、运行状态和 License 四轴分离（DEC-010，不合并不派生单字段）；卡片动作只返回 command/allowed/denyReason，不在查询中执行命令。功能边界：不返回 AWS CPU、队列深度等运维指标。错误响应继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["DEC-010@1.0.0"],
+    "x-decision-register-version": "1.27.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/dashboard/overview": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getDashboardOverview",
+        "summary": "管理后台总览聚合（Customer scope 生效；无数据返回 0 而非错误）",
+        "security": [{ "CognitoJwt": [] }],
+        "responses": {
+          "200": {
+            "description": "总览聚合视图",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DashboardOverviewSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "$ref": "openapi-base.json#/components/securitySchemes/CognitoJwt" }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无 dashboard:read 权限",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "ContractSummary": {
+        "type": "object",
+        "required": ["effectiveTotal"],
+        "additionalProperties": false,
+        "properties": {
+          "effectiveTotal": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "有效 Contract 总数（固定定义）：status ∉ {DRAFT, TERMINATED} 且 startAt <= generatedAt < endAt（即 EFFECTIVE + EXPIRING_SOON）；分母为 actor scope 内全部 Contract"
+          }
+        }
+      },
+      "DeviceSummary": {
+        "type": "object",
+        "required": ["total", "online", "onlineRatePct", "licenseDistribution"],
+        "additionalProperties": false,
+        "properties": {
+          "total": { "type": "integer", "minimum": 0, "description": "scope 内设备总数（分母）" },
+          "online": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "在线数（固定口径）：lastHeartbeatAt 距 generatedAt ≤ 10 分钟（暂定值，BE-DEV-01 派生口径；不读取 device_latest_state.connectivity 存储字段）"
+          },
+          "onlineRatePct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "在线率 = online / total × 100，保留 1 位小数；total = 0 时为 0（无数据返回 0 而非错误）"
+          },
+          "licenseDistribution": {
+            "type": "object",
+            "additionalProperties": { "type": "integer", "minimum": 0 },
+            "description": "授权状态分布：device_latest_state.licenseStatus → 设备数；无状态行的设备计入 NONE 桶；License 轴与连接/生命周期/运行轴分离（DEC-010）"
+          }
+        }
+      },
+      "EsgTodaySummary": {
+        "type": "object",
+        "required": ["summaryDate", "carbonReductionKg", "powerConsumptionKwh", "feedingWeightKg"],
+        "additionalProperties": false,
+        "properties": {
+          "summaryDate": {
+            "type": "string",
+            "format": "date",
+            "description": "统计日（固定口径）：generatedAt 的 UTC 日历日"
+          },
+          "carbonReductionKg": {
+            "type": "number",
+            "minimum": 0,
+            "description": "今日估算碳减排（kg）：esg_daily_summary.carbonReductionKg 按 summaryDate + scope 内设备求和；无数据为 0"
+          },
+          "powerConsumptionKwh": {
+            "type": "number",
+            "minimum": 0,
+            "description": "今日能耗（kWh）：esg_daily_summary.powerConsumptionKwh 同口径求和；无数据为 0"
+          },
+          "feedingWeightKg": {
+            "type": "number",
+            "minimum": 0,
+            "description": "今日处理量（kg 投料重）：esg_daily_summary.feedingWeightKg 同口径求和；无数据为 0"
+          }
+        }
+      },
+      "AlarmSummary": {
+        "type": "object",
+        "required": ["alarmId", "deviceId", "customerId", "code", "severity", "status", "detectedTime"],
+        "additionalProperties": false,
+        "properties": {
+          "alarmId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": ["string", "null"] },
+          "code": { "type": "string", "minLength": 1 },
+          "severity": { "type": "string", "enum": ["INFO", "WARNING", "MAJOR", "CRITICAL"] },
+          "status": { "type": "string", "enum": ["ACTIVE", "ACKNOWLEDGED", "CLEARED"] },
+          "detectedTime": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "ConsumableSummary": {
+        "type": "object",
+        "required": ["consumableType", "remainingPercent", "stale"],
+        "additionalProperties": false,
+        "properties": {
+          "consumableType": { "type": "string", "enum": ["CARBON_FILTER", "BIO_ADDITIVE"] },
+          "remainingPercent": {
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 100,
+            "description": "剩余量百分比；null = 未知（DEC-008：云端不臆测）"
+          },
+          "stale": { "type": "boolean", "description": "投影是否过期（长时间未收到上报）" }
+        }
+      },
+      "CommandAction": {
+        "type": "object",
+        "required": ["command", "allowed", "denyReason"],
+        "additionalProperties": false,
+        "properties": {
+          "command": { "type": "string", "minLength": 1, "description": "CT-04 命令目录 command code" },
+          "allowed": {
+            "type": "boolean",
+            "description": "actor 持有 command:send 且设备状态门允许时为 true（与 BE-CMD-01 权限矩阵一致；仅描述不执行）"
+          },
+          "denyReason": {
+            "type": ["string", "null"],
+            "enum": [
+              "FORBIDDEN",
+              "UNKNOWN_COMMAND",
+              "DEVICE_RETIRED",
+              "DEVICE_SUSPENDED_RESTRICTED",
+              "DEVICE_MAINTENANCE_RESTRICTED",
+              null
+            ],
+            "description": "拒绝原因码：FORBIDDEN = actor 无 command:send；DEVICE_* = 设备状态门（contracts/mqtt/catalogs commandDenyReason）；allowed 时恒为 null"
+          }
+        }
+      },
+      "DeviceCard": {
+        "type": "object",
+        "required": [
+          "deviceId",
+          "serialNumber",
+          "alias",
+          "model",
+          "lifecycleStatus",
+          "operationalStatus",
+          "connectivity",
+          "licenseStatus",
+          "firmwareVersion",
+          "signalStrength",
+          "networkType",
+          "consumables",
+          "actions"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "serialNumber": { "type": "string", "minLength": 1 },
+          "alias": { "type": ["string", "null"] },
+          "model": { "type": "string", "minLength": 1 },
+          "lifecycleStatus": { "type": "string", "description": "生命周期轴（DEC-010 四轴分离）" },
+          "operationalStatus": {
+            "type": ["string", "null"],
+            "enum": ["Active", "Maintenance", "Suspended", "Retired", null],
+            "description": "运行状态轴（设备最近上报）"
+          },
+          "connectivity": {
+            "type": "string",
+            "enum": ["ONLINE", "OFFLINE"],
+            "description": "连接状态轴：lastHeartbeatAt 距 generatedAt ≤ 10 分钟派生（暂定值）"
+          },
+          "licenseStatus": {
+            "type": ["string", "null"],
+            "description": "License 轴（device_latest_state 快照；无状态行为 null）"
+          },
+          "firmwareVersion": {
+            "type": ["string", "null"],
+            "description": "固件版本：设备最近上报值（device_latest_state），缺失时回退台账值"
+          },
+          "signalStrength": { "type": ["integer", "null"], "description": "连接质量：信号强度（设备最近上报）" },
+          "networkType": { "type": ["string", "null"], "description": "连接质量：网络类型（设备最近上报）" },
+          "consumables": { "type": "array", "items": { "$ref": "#/components/schemas/ConsumableSummary" } },
+          "actions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CommandAction" },
+            "description": "允许动作描述：CT-04 全目录 × 当前设备状态门 + actor 权限；只读描述，不执行命令"
+          }
+        }
+      },
+      "DashboardOverview": {
+        "type": "object",
+        "required": ["generatedAt", "contracts", "devices", "esgToday", "latestAlarms", "deviceCards"],
+        "additionalProperties": false,
+        "properties": {
+          "generatedAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "description": "聚合时间基准（全部时间窗口/阈值的分母基准）"
+          },
+          "contracts": { "$ref": "#/components/schemas/ContractSummary" },
+          "devices": { "$ref": "#/components/schemas/DeviceSummary" },
+          "esgToday": { "$ref": "#/components/schemas/EsgTodaySummary" },
+          "latestAlarms": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AlarmSummary" },
+            "description": "最新业务告警（固定定义）：status = ACTIVE，detectedTime 倒序 + alarmId 决胜，固定 5 条；无数据为空数组"
+          },
+          "deviceCards": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DeviceCard" },
+            "description": "设备卡片摘要：scope 内按 deviceId 升序固定前 10 台；无数据为空数组"
+          }
+        }
+      },
+      "DashboardOverviewSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/DashboardOverview" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    }
+  }
+}
