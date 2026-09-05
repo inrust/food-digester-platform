@@ -63,6 +63,7 @@ export * from './admin/ota-campaign/index.js';
 export * from './admin/user/index.js';
 export * from './admin/audit/index.js';
 export * from './admin/dashboard/index.js';
+export * from './admin/settings/index.js';
 export * from './admin/esg/index.js';
 export * from './consumable/index.js';
 export * from './notification/index.js';

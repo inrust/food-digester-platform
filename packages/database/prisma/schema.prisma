@@ -959,6 +959,20 @@ model CustomerNotificationConfig {
   @@map("customer_notification_configs")
 }
 
+// ---------- 业务设置（BE-SET-01） ----------
+
+model BusinessSetting {
+  // 封闭 key 集：alarm.thresholds | command.confirmation | dictionary.displayNames | notification.business
+  key       String   @id
+  value     Json
+  version   Int      @default(1) // 乐观锁（If-Match，BE-SET-01）
+  updatedBy String?  @map("updated_by")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("business_settings")
+}
+
 model NotificationDelivery {
   id             String    @id @default(uuid())
   // 幂等键：eventId:channel:target（重复事件/重复派发只产生一条投递记录）
