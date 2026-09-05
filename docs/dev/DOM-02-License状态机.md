@@ -1,6 +1,6 @@
 # DOM-02 License 状态机与商业规则
 
-实现：[packages/domain/src/license.ts](../packages/domain/src/license.ts)；测试：[license.test.ts](../packages/domain/test/license.test.ts)（17 项，含 40 组非法迁移穷举）。
+实现：[packages/domain/src/license.ts](../../packages/domain/src/license.ts)；测试：[license.test.ts](../../packages/domain/test/license.test.ts)（包含完整非法迁移穷举）。
 
 ## 1. 状态机（实施方案 11.3）
 
@@ -39,7 +39,7 @@ NoLicense(虚拟，不落库) → Draft → Issued → Active → ExpiringSoon �
 | 撤销确定结果 | Active/Expired → Revoked 成功；重复撤销拒绝 ✅ |
 | 非法迁移 | 7×7 穷举 40 组未列出迁移全部拒绝 ✅ |
 
-全仓 `pnpm verify` 通过。
+使用全仓 `pnpm verify` 复验；精确测试数量与双环境结果见[2026-09-05 P2 整改证据报告](../audit/ENG-DB-DOM-P2证据与文档维护报告-2026-09-05.md)。
 
 ## 5. 未决风险
 

@@ -1,6 +1,6 @@
 # DOM-01 Device 与 Operational 状态机
 
-实现：[packages/domain/src/device-lifecycle.ts](../packages/domain/src/device-lifecycle.ts)；测试：[device-lifecycle.test.ts](../packages/domain/test/device-lifecycle.test.ts)（97 项）。
+实现：[packages/domain/src/device-lifecycle.ts](../../packages/domain/src/device-lifecycle.ts)；测试：[device-lifecycle.test.ts](../../packages/domain/test/device-lifecycle.test.ts)。
 
 ## 1. 模型决策（DEC-010 四轴分离）
 
@@ -39,7 +39,7 @@
 | 失败时状态和历史均不变化 | 纯函数：抛错无 effects 返回，冻结入参未被修改 |
 | 执行者/前提/原因 | 角色不足（Operator 审批/分配/退役）、缺前提（6 类）、缺原因（4 类）分别拒绝 |
 
-2026-09-05 `pnpm verify` 全绿（Vitest 693、contracts 254、scripts 69，合计 1016）；数据库测试同时锁定 `axis` 非空封闭枚举和 lifecycle/operational 同名状态可区分。
+使用 `pnpm verify` 复验；数据库测试同时锁定 `axis` 非空封闭枚举和 lifecycle/operational 同名状态可区分。精确快照见[2026-09-05 P2 整改证据报告](../audit/ENG-DB-DOM-P2证据与文档维护报告-2026-09-05.md)。
 
 ## 5. 未决风险
 

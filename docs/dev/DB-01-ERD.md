@@ -1,6 +1,6 @@
 # DB-01 核心数据库 ERD
 
-数据源：[schema.prisma](../packages/database/prisma/schema.prisma)；Migration：[20260826120000_init](../packages/database/prisma/migrations/20260826120000_init/migration.sql)；种子字典：[seed.sql](../packages/database/prisma/seed.sql)。
+数据源：[schema.prisma](../../packages/database/prisma/schema.prisma)；Migration：[20260826120000_init](../../packages/database/prisma/migrations/20260826120000_init/migration.sql)；种子字典：[seed.sql](../../packages/database/prisma/seed.sql)。
 
 ## 1. 实体关系图（核心关系）
 
@@ -82,3 +82,5 @@ pnpm exec vitest run packages/database    # 数据库约束验收（PGlite 真�
 pnpm --filter @fdp/database db:generate   # 生成 Prisma Client（输出 src/generated，不入库）
 pnpm --filter @fdp/database db:seed       # 种子字典（需 DATABASE_URL，幂等）
 ```
+
+精确测试数量与双环境复验结果见[2026-09-05 P2 整改证据报告](../audit/ENG-DB-DOM-P2证据与文档维护报告-2026-09-05.md)。

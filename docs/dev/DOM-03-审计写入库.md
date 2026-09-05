@@ -1,6 +1,6 @@
 # DOM-03 业务审计写入库
 
-实现：[packages/database/src/audit.ts](../packages/database/src/audit.ts)；测试：[db03.test.ts](../packages/database/test/db03.test.ts)（10 项）。
+实现：[packages/database/src/audit.ts](../../packages/database/src/audit.ts)；测试：[db03.test.ts](../../packages/database/test/db03.test.ts)。
 
 ## 1. 组成
 
@@ -27,7 +27,7 @@
 | 传输上下文完整 | 可信 HTTP 适配层注入并规范化 IP/User-Agent；成功与失败审计均记录，业务 body 不能伪造 | ✅ |
 | 附加 | 上下文传播（requestId/actor 默认注入）、成功路径业务+审计同事务、事务内嵌套 audited 拒绝 | ✅ |
 
-全仓 `pnpm verify` 通过。
+使用全仓 `pnpm verify` 复验；精确测试数量与双环境结果见[2026-09-05 P2 整改证据报告](../audit/ENG-DB-DOM-P2证据与文档维护报告-2026-09-05.md)。
 
 ## 4. 未决风险
 

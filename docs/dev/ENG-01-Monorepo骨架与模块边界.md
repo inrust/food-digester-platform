@@ -49,14 +49,14 @@
 pnpm install            # 通过（含 pnpm-workspace.yaml 的 esbuild allowBuilds 声明）
 pnpm lint               # eslint . 通过
 pnpm typecheck          # turbo 12 包 tsc strict 通过
-pnpm test               # Vitest 693 + contracts 254 + scripts 69，合计 1016 项
+pnpm test               # 执行全部 Vitest、contracts 与 scripts 测试
 pnpm build              # turbo 拓扑构建 12 包通过
 pnpm check:boundaries   # 12 个包边界与循环依赖检查通过
 ```
 
 也可单条执行 `pnpm verify` 串联以上全部检查。
 
-2026-09-05 P1 复验：macOS arm64 的独立临时副本使用官方 Node 20.19.5、pnpm 10.20.0 和全新 pnpm store 完成冻结锁文件安装；清空 Turbo 缓存后 `pnpm verify` 退出 0，typecheck 19/19 均为 cache miss，1016/1016 测试通过。
+2026-09-05 P2 验收的精确运行时、缓存与测试数量快照见[整改证据报告](../audit/ENG-DB-DOM-P2证据与文档维护报告-2026-09-05.md)；本文只保留可复验命令，避免总数随测试增长而失真。
 
 ## 6. 未决风险
 
