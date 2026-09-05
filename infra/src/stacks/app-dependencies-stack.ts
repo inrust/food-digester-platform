@@ -130,15 +130,7 @@ export class AppDependenciesStack extends Stack {
   // ---------- KMS 与 S3 ----------
 
   private createStorage(): StorageResources {
-    const dataKey = new kms.Key(this, 'DataKey', {
-      alias: `alias/${this.naming.name('data')}`,
-      description: '应用数据静态加密（SQS/S3/RDS/Secrets Manager）',
-      enableKeyRotation: true,
-      // 功能边界：密钥保留策略属运维决策，开发环境允许随 Stack 销毁
-      removalPolicy: RemovalPolicy.DESTROY,
-    });
-
-    // SEC-01 前置：一次性证书包信封加密专用 Key；解密权限只授予 API Lambda（见 createCompute）
+    // KMS 管理面只保留显式管理动作，避免 CDK 默认 `kms:*` KeyPolicy 绕过通配权限 Gate。
     const certPackageAdmin = new iam.PolicyStatement({
       sid: 'KeyAdministrationOnly',
       effect: iam.Effect.ALLOW,
@@ -162,6 +154,16 @@ export class AppDependenciesStack extends Stack {
       ],
       resources: ['*'],
     });
+    const dataKey = new kms.Key(this, 'DataKey', {
+      alias: `alias/${this.naming.name('data')}`,
+      description: '应用数据静态加密（SQS/S3/RDS/Secrets Manager）',
+      enableKeyRotation: true,
+      policy: new iam.PolicyDocument({ statements: [certPackageAdmin] }),
+      // 功能边界：密钥保留策略属运维决策，开发环境允许随 Stack 销毁
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
+    // SEC-01 前置：一次性证书包信封加密专用 Key；解密权限只授予 API Lambda（见 createCompute）
     // 使用确定性角色 ARN 条件，避免 Key ↔ Lambda Role 的 CloudFormation 循环依赖。
     const apiRoleArn = this.formatArn({
       service: 'iam',
@@ -401,7 +403,7 @@ export class AppDependenciesStack extends Stack {
     ): lambda.Function =>
       new lambda.Function(this, id, {
         functionName: this.naming.name(suffix),
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         architecture: lambda.Architecture.ARM_64,
         handler: 'index.handler',
         code: lambda.Code.fromInline(PLACEHOLDER_HANDLER_CODE),

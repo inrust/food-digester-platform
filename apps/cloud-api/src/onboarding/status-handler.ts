@@ -11,6 +11,7 @@
  * 认证：AUTH-02 Onboarding Token（Bearer + query.serialNumber 绑定校验）。
  */
 import type { DbClient } from '@fdp/database';
+import { withTransaction } from '@fdp/database';
 import {
   AuthError,
   createRateLimiter,
@@ -204,7 +205,6 @@ async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: Onboarding
   }
 
   if (certificate.packageExpiresAt && certificate.packageExpiresAt.getTime() <= current.getTime()) {
-    await deps.securePackage.destroyPackage(certificate.id);
     await deps.deliveryRecovery.recoverExpiredPackage(request, certificate.id);
     return { body: { status: 'PENDING', requestId: request.id } };
   }
@@ -231,8 +231,12 @@ async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: Onboarding
       heartbeatInterval: 60,
     },
     onCommitted: async () => {
-      await deps.securePackage.confirmPackageDelivery(certificate.id);
-      await markOnboardingTokenUsed(deps.client, auth.tokenId, deps.now?.() ?? new Date());
+      await withTransaction(deps.client, async (tx) => {
+        const packageConfirmed = await deps.securePackage.confirmPackageDelivery(certificate.id, tx);
+        if (!packageConfirmed) throw new Error('证书包交付确认状态已变化');
+        const tokenUsed = await markOnboardingTokenUsed(tx, auth.tokenId, deps.now?.() ?? new Date());
+        if (!tokenUsed) throw new Error('Onboarding Token 核销状态已变化');
+      });
     },
   };
 }

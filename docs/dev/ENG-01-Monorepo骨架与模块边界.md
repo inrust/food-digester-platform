@@ -20,9 +20,9 @@
 
 ## 2. 技术基线
 
-- Node.js `>=20.19 <21`（`package.json` engines、`.nvmrc` 固定 20.19.5）；TypeScript strict（`tsconfig.base.json`，`module: NodeNext`）。
-- pnpm 10.20.0 workspace（`packageManager` 与 Node 20 兼容）+ Turborepo（`turbo.json`，`build` 按 `^build` 拓扑排序）。
-- 测试运行器：`node --test` + `tsx`（兼容 Node 20；Vitest 由 ENG-02 统一引入）。
+- Node.js `>=24.12 <25`（`package.json` engines、`.nvmrc` 固定 24.12.0）；TypeScript strict（`tsconfig.base.json`，`module: NodeNext`）。
+- pnpm 10.20.0 workspace（`packageManager` 与 Node 24 兼容）+ Turborepo（`turbo.json`，`build` 按 `^build` 拓扑排序）。
+- 测试运行器：`node --test` + `tsx`（兼容 Node 24；Vitest 由 ENG-02 统一引入）。
 - ESLint flat config（`eslint.config.mjs`）；更严格的门禁规则（格式化、Schema/Migration/密钥扫描）由 ENG-02 收敛。
 
 ## 3. contracts 为源码契约包

@@ -149,7 +149,7 @@
 
 | 层面 | 选型 |
 |---|---|
-| 语言 | TypeScript 5.x、Node.js 20 LTS |
+| 语言 | TypeScript 5.x、Node.js 24 LTS |
 | Monorepo | pnpm workspaces + Turborepo |
 | API | NestJS 或轻量 Lambda Handler；统一 OpenAPI |
 | 数据校验 | Zod，JSON Schema 对外发布 |

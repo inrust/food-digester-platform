@@ -114,22 +114,82 @@ export class ProvisioningService implements ProvisioningTrigger {
     return this.provision(request);
   }
 
-  /** DEC-003 + DEC-017：截止前未领取包过期，撤销旧证书并重签；截止后由评估器终止。 */
+  /**
+   * DEC-003 + DEC-017：持久化恢复意图后再撤证；AWS 失败保留密文并进入 RECOVERY_FAILED。
+   * 只有云端撤证成功后才在事务中清空密文并标记 RECOVERY_COMPLETED。
+   */
   async recoverExpiredPackage(
     request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'>,
     certificateId: string,
   ): Promise<ProvisioningResult> {
-    await this.deps.iot.revokeCertificate(certificateId);
     const certificates = (this.db as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
-    const { count } = await certificates.updateMany({
-      where: { id: certificateId, status: 'PENDING_CLAIM' },
-      data: {
-        status: 'REVOKED',
-        revokedAt: this.now(),
-        packageCiphertext: null,
-        packageKmsKeyId: null,
-        packageExpiresAt: null,
+    const current = this.now();
+    const staleLeaseBefore = new Date(current.getTime() - 5 * 60 * 1000);
+    await certificates.updateMany({
+      where: {
+        id: certificateId,
+        status: 'PENDING_CLAIM',
+        packageCiphertext: { not: null },
+        OR: [
+          { recoveryState: null },
+          { recoveryState: 'RECOVERY_FAILED' },
+          { recoveryState: 'RECOVERY_IN_PROGRESS', recoveryLastAttemptAt: { lt: staleLeaseBefore } },
+        ],
       },
+      data: {
+        recoveryState: 'RECOVERY_REQUIRED',
+        recoveryRequestedAt: current,
+        recoveryLastError: null,
+      },
+    });
+
+    const claimed = await certificates.updateMany({
+      where: { id: certificateId, status: 'PENDING_CLAIM', recoveryState: 'RECOVERY_REQUIRED' },
+      data: {
+        recoveryState: 'RECOVERY_IN_PROGRESS',
+        recoveryAttempts: { increment: 1 },
+        recoveryLastAttemptAt: current,
+      },
+    });
+    if (claimed.count !== 1) throw new ProvisioningError('过期证书恢复正在处理或状态已变化');
+
+    try {
+      await this.deps.iot.revokeCertificate(certificateId);
+    } catch (error) {
+      await certificates.updateMany({
+        where: { id: certificateId, status: 'PENDING_CLAIM', recoveryState: 'RECOVERY_IN_PROGRESS' },
+        data: {
+          recoveryState: 'RECOVERY_FAILED',
+          recoveryLastError: error instanceof Error ? error.name : 'IOT_REVOKE_FAILED',
+        },
+      });
+      throw error;
+    }
+
+    const count = await withTransaction(this.db, async (tx) => {
+      const txCertificates = (tx as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
+      const updated = await txCertificates.updateMany({
+        where: { id: certificateId, status: 'PENDING_CLAIM', recoveryState: 'RECOVERY_IN_PROGRESS' },
+        data: {
+          status: 'REVOKED',
+          revokedAt: this.now(),
+          packageCiphertext: null,
+          packageKmsKeyId: null,
+          packageExpiresAt: null,
+          recoveryState: 'RECOVERY_COMPLETED',
+          recoveryLastError: null,
+        },
+      });
+      if (updated.count === 1) {
+        await recordAudit(tx, {
+          objectType: 'deviceCertificate',
+          objectId: certificateId,
+          action: 'CERT_PACKAGE_EXPIRED_RECOVERY',
+          result: 'SUCCESS',
+          afterValue: { requestId: request.id, recoveryState: 'RECOVERY_COMPLETED' },
+        });
+      }
+      return updated.count;
     });
     if (count !== 1) throw new ProvisioningError('过期证书状态已变化，请重试');
     return this.provision(request);

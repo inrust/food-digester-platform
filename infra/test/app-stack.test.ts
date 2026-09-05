@@ -13,6 +13,11 @@ import { Match, Template } from 'aws-cdk-lib/assertions';
 import { assert, describe, test } from 'vitest';
 import type { InfraConfig } from '../src/config.js';
 import { AppDependenciesStack } from '../src/stacks/app-dependencies-stack.js';
+import {
+  broadAllowViolations,
+  collectPolicyStatements,
+  wildcardKmsPrincipalViolations,
+} from '../src/template-security.js';
 import { UPLINK_TOPIC_TYPES } from '../src/topics.js';
 
 function synthTemplate(config: InfraConfig = { envName: 'test', allowInsecureDeviceEndpointForLocal: true }): Template {
@@ -26,28 +31,6 @@ function resourcesOfType(template: Template, type: string): Record<string, any> 
 }
 
 /** 收集模板中全部 IAM Policy 声明（独立 Policy、ManagedPolicy、Role 内联 Policies）。 */
-function collectIamStatements(template: Template): any[] {
-  const statements: any[] = [];
-  const all = template.toJSON().Resources as Record<string, any>;
-  for (const resource of Object.values(all)) {
-    if (resource.Type === 'AWS::IAM::Policy' || resource.Type === 'AWS::IAM::ManagedPolicy') {
-      statements.push(...(resource.Properties?.PolicyDocument?.Statement ?? []));
-    }
-    if (resource.Type === 'AWS::IAM::Role') {
-      for (const policy of resource.Properties?.Policies ?? []) {
-        statements.push(...(policy.PolicyDocument?.Statement ?? []));
-      }
-    }
-  }
-  return statements;
-}
-
-const isStarStar = (statement: any): boolean => {
-  const actions = Array.isArray(statement.Action) ? statement.Action : [statement.Action];
-  const resources = Array.isArray(statement.Resource) ? statement.Resource : [statement.Resource];
-  return actions.includes('*') && resources.includes('*');
-};
-
 // ---------- 资源命名与环境前缀 ----------
 
 describe('资源命名（环境前缀）', () => {
@@ -151,11 +134,10 @@ describe('验收：无公网 S3/RDS', () => {
 describe('验收：IAM 最小权限', () => {
   const template = synthTemplate();
 
-  test('所有 IAM Policy 声明不存在 Action:* 且 Resource:* 的组合', () => {
-    const statements = collectIamStatements(template);
-    assert.isAbove(statements.length, 0);
-    const violations = statements.filter(isStarStar);
-    assert.deepEqual(violations, []);
+  test('IAM/ManagedPolicy/Role/KeyPolicy 不存在 service:* + 通配 Resource', () => {
+    assert.isAbove(collectPolicyStatements(template.toJSON()).length, 0);
+    assert.deepEqual(broadAllowViolations(template.toJSON()), []);
+    assert.deepEqual(wildcardKmsPrincipalViolations(template.toJSON()), []);
   });
 
   test('证书包 KMS Key 的数据面权限仅允许确定性的 API Lambda role', () => {
@@ -180,7 +162,7 @@ describe('验收：IAM 最小权限', () => {
   });
 
   test('IoT Rule 角色仅允许向 Ingress 与 Rule Error 队列 SendMessage', () => {
-    const statements = collectIamStatements(template);
+    const statements = collectPolicyStatements(template.toJSON()).map(({ statement }) => statement);
     const ruleStatements = statements.filter((s) =>
       (Array.isArray(s.Action) ? s.Action : [s.Action]).includes('sqs:SendMessage'),
     );
@@ -195,7 +177,7 @@ describe('验收：IAM 最小权限', () => {
   });
 
   test('API Lambda 下行发布权限收敛到 3 个下行 Topic 模式', () => {
-    const statements = collectIamStatements(template);
+    const statements = collectPolicyStatements(template.toJSON()).map(({ statement }) => statement);
     const publish = statements.find((s) => (Array.isArray(s.Action) ? s.Action : [s.Action]).includes('iot:Publish'));
     assert.isDefined(publish);
     const resources = (publish.Resource as unknown[]).map((r) => JSON.stringify(r));

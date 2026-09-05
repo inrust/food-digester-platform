@@ -8,7 +8,7 @@
  * - 管理员 API/审计日志均看不到私钥。
  */
 import { afterAll, beforeAll, describe, test } from 'vitest';
-import { assert } from 'vitest';
+import { assert, expect } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import {
   CERTIFICATE_PACKAGE_RETENTION_SECONDS,
@@ -322,6 +322,41 @@ describe('GET /api/v1/device/onboarding/status', () => {
     assert.ok(newId);
     await retried.onCommitted?.();
     assert.equal((await statusHandler(statusReq(token, serial))).status, 401);
+  });
+
+  test('交付确认第一写点冲突时不核销 Token', async () => {
+    const serial = await plantDevice();
+    const { token, requestId } = await submitRequest(serial);
+    const admin = createAdminOnboardingHandlers({ client: prisma, now, provisioningTrigger: makeProvisioning() });
+    assert.equal((await adminApprove(requestId, admin)).status, 200);
+    const response = await statusHandler(statusReq(token, serial));
+    const request = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: requestId } });
+    const deviceId = (response.body as StatusPayload).data.deviceId;
+    assert.ok(deviceId);
+    const cert = await prisma.deviceCertificate.findFirstOrThrow({ where: { deviceId } });
+    await prisma.deviceCertificate.update({ where: { id: cert.id }, data: { packageCiphertext: null } });
+
+    await expect(response.onCommitted?.()).rejects.toThrow('交付确认状态已变化');
+    assert.isNull((await prisma.onboardingToken.findUniqueOrThrow({ where: { id: request.tokenId } })).usedAt);
+  });
+
+  test('Token 核销冲突会回滚同一事务内的证书包清理', async () => {
+    const serial = await plantDevice();
+    const { token, requestId } = await submitRequest(serial);
+    const admin = createAdminOnboardingHandlers({ client: prisma, now, provisioningTrigger: makeProvisioning() });
+    assert.equal((await adminApprove(requestId, admin)).status, 200);
+    const response = await statusHandler(statusReq(token, serial));
+    const request = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: requestId } });
+    const deviceId = (response.body as StatusPayload).data.deviceId;
+    assert.ok(deviceId);
+    const cert = await prisma.deviceCertificate.findFirstOrThrow({ where: { deviceId } });
+    await prisma.onboardingToken.update({ where: { id: request.tokenId }, data: { usedAt: NOW } });
+
+    await expect(response.onCommitted?.()).rejects.toThrow('Token 核销状态已变化');
+    assert.isNotNull(
+      (await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: cert.id } })).packageCiphertext,
+      '第二写点失败必须回滚证书包清理',
+    );
   });
 
   test('DEC-017：截止边界即使评估器延迟也失败关闭，不再返回证书包', async () => {

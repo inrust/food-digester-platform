@@ -5,14 +5,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { checkEngDbDomEvidence } from './check-eng-db-dom-evidence.mjs';
 
-function fixture({ document = '[source](../../source.ts)', manifest = {}, nvmrc = '20.19.5' } = {}) {
+function fixture({ document = '[source](../../source.ts)', manifest = {}, nvmrc = '24.12.0' } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'fdp-evidence-'));
   mkdirSync(join(root, 'docs/dev'), { recursive: true });
   writeFileSync(join(root, 'docs/dev/task.md'), document);
   writeFileSync(join(root, 'source.ts'), 'export {};');
   writeFileSync(
     join(root, 'package.json'),
-    JSON.stringify({ engines: { node: '>=20.19 <21' }, packageManager: 'pnpm@10.20.0', ...manifest }),
+    JSON.stringify({ engines: { node: '>=24.12 <25' }, packageManager: 'pnpm@10.20.0', ...manifest }),
   );
   writeFileSync(join(root, '.nvmrc'), nvmrc);
   return root;

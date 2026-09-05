@@ -287,6 +287,12 @@ model DeviceCertificate {
   packageKmsKeyId   String?   @map("package_kms_key_id")
   packageExpiresAt  DateTime? @map("package_expires_at") @db.Timestamptz
   claimedAt         DateTime? @map("claimed_at") @db.Timestamptz
+  // 过期包恢复状态机：RECOVERY_REQUIRED | RECOVERY_IN_PROGRESS | RECOVERY_FAILED | RECOVERY_COMPLETED
+  recoveryState         String?   @map("recovery_state")
+  recoveryAttempts      Int       @default(0) @map("recovery_attempts")
+  recoveryRequestedAt   DateTime? @map("recovery_requested_at") @db.Timestamptz
+  recoveryLastAttemptAt DateTime? @map("recovery_last_attempt_at") @db.Timestamptz
+  recoveryLastError     String?   @map("recovery_last_error")
   notBefore         DateTime  @map("not_before") @db.Timestamptz
   notAfter          DateTime  @map("not_after") @db.Timestamptz
   rotatedFromId     String?   @map("rotated_from_id")
@@ -296,6 +302,7 @@ model DeviceCertificate {
   device Device @relation(fields: [deviceId], references: [id])
 
   @@index([deviceId, status])
+  @@index([recoveryState, recoveryRequestedAt])
   @@map("device_certificates")
 }
 

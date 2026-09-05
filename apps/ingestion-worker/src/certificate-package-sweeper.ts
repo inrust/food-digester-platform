@@ -2,16 +2,19 @@ import type { SecurePackageService } from '@fdp/auth';
 
 export interface CertificatePackageSweeperDeps {
   readonly securePackage: SecurePackageService;
+  /** 组合根注入 ProvisioningService 恢复入口：持久化意图 -> AWS 撤证 -> 清包 -> 重签。 */
+  readonly recoverExpiredPackage: (certificateId: string) => Promise<void>;
   readonly batchSize?: number;
   readonly maxBatches?: number;
 }
 
 export interface CertificatePackageSweepResult {
-  readonly destroyedCertificateIds: readonly string[];
+  readonly recoveredCertificateIds: readonly string[];
+  readonly failedCertificateIds: readonly string[];
   readonly exhaustedBatchBudget: boolean;
 }
 
-/** EventBridge 定时任务核心：有界批量清除所有已过期证书包，不依赖领取请求触发。 */
+/** EventBridge 定时任务核心：有界扫描并逐项调用可重试恢复状态机。 */
 export function createCertificatePackageSweeper(deps: CertificatePackageSweeperDeps) {
   const batchSize = deps.batchSize ?? 100;
   const maxBatches = deps.maxBatches ?? 10;
@@ -23,14 +26,22 @@ export function createCertificatePackageSweeper(deps: CertificatePackageSweeperD
   }
 
   return async (): Promise<CertificatePackageSweepResult> => {
-    const destroyedCertificateIds: string[] = [];
+    const recoveredCertificateIds: string[] = [];
+    const failedCertificateIds: string[] = [];
     for (let batch = 0; batch < maxBatches; batch += 1) {
-      const destroyed = await deps.securePackage.sweepExpiredPackages(batchSize);
-      destroyedCertificateIds.push(...destroyed);
-      if (destroyed.length < batchSize) {
-        return { destroyedCertificateIds, exhaustedBatchBudget: false };
+      const expired = await deps.securePackage.findExpiredPackageIds(batchSize);
+      for (const certificateId of expired) {
+        try {
+          await deps.recoverExpiredPackage(certificateId);
+          recoveredCertificateIds.push(certificateId);
+        } catch {
+          failedCertificateIds.push(certificateId);
+        }
+      }
+      if (expired.length < batchSize) {
+        return { recoveredCertificateIds, failedCertificateIds, exhaustedBatchBudget: false };
       }
     }
-    return { destroyedCertificateIds, exhaustedBatchBudget: true };
+    return { recoveredCertificateIds, failedCertificateIds, exhaustedBatchBudget: true };
   };
 }

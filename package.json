@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@10.20.0",
   "engines": {
-    "node": ">=20.19 <21"
+    "node": ">=24.12 <25"
   },
   "scripts": {
     "build": "turbo run build",
@@ -22,15 +22,16 @@
     "check:evidence": "node scripts/check-eng-db-dom-evidence.mjs",
     "check:secrets": "node scripts/check-secrets.mjs",
     "check:sensitive-sinks": "node scripts/check-sensitive-sinks.mjs",
+    "check:cdk": "node scripts/check-cdk-synth.mjs",
     "test:aws-iot-authz": "node --import tsx scripts/verify-aws-iot-authorization.mjs",
     "openapi:bundle": "node scripts/build-openapi.mjs",
     "openapi:check": "node scripts/build-openapi.mjs --check && redocly lint contracts/rest/openapi-base.json \"contracts/rest/*-api.json\" contracts/rest/openapi.bundle.json --extends spec",
-    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks"
+    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks && pnpm check:cdk"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
     "@redocly/cli": "2.51.1",
-    "@types/node": "^20.19.0",
+    "@types/node": "^24.12.0",
     "ajv": "8.20.0",
     "eslint": "^9.35.0",
     "prettier": "^3.9.6",

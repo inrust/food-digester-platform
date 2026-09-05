@@ -144,7 +144,7 @@ export class SecurePackageService {
    */
   async preparePackageDelivery(certificateId: string, proof: ClaimProof): Promise<Uint8Array> {
     try {
-      // 预检（只读）：资格与过期；过期包销毁必须在事务外（事务内销毁会随异常回滚）
+      // 预检（只读）：过期包必须先经持久化恢复状态机撤证，禁止在此直接销毁。
       const preview = await this.certificates(this.db).findFirst({ where: { id: certificateId } });
       if (!preview) throw new SecurePackageError('NOT_FOUND', 'certificate not found');
       await this.assertClaimEligibility(this.db, preview, proof);
@@ -153,7 +153,6 @@ export class SecurePackageService {
         preview.packageExpiresAt &&
         preview.packageExpiresAt.getTime() <= this.now().getTime()
       ) {
-        await this.destroyPackage(certificateId);
         throw new SecurePackageError('CONFLICT', 'certificate package expired');
       }
 
@@ -204,13 +203,14 @@ export class SecurePackageService {
   }
 
   /** 第二阶段：HTTP 成功响应已经提交后销毁密文；幂等。 */
-  async confirmPackageDelivery(certificateId: string): Promise<boolean> {
-    const { count } = await this.certificates(this.db).updateMany({
+  async confirmPackageDelivery(certificateId: string, client?: DbClient): Promise<boolean> {
+    const db = client ?? this.db;
+    const { count } = await this.certificates(db).updateMany({
       where: { id: certificateId, claimedAt: { not: null }, packageCiphertext: { not: null } },
       data: { packageCiphertext: null, packageKmsKeyId: null, packageExpiresAt: null },
     });
     if (count === 1) {
-      await recordAudit(this.db, {
+      await recordAudit(db, {
         objectType: AUDIT_OBJECT_TYPE,
         objectId: certificateId,
         action: 'CERT_PACKAGE_DELIVERY_CONFIRM',
@@ -270,11 +270,8 @@ export class SecurePackageService {
     return count === 1;
   }
 
-  /**
-   * 定时清理超过冻结保留期且从未被领取的密文包。
-   * 每条记录复用 destroyPackage，确保物理清空密文字段并生成可追踪审计。
-   */
-  async sweepExpiredPackages(limit = 100): Promise<readonly string[]> {
+  /** 查询待恢复的过期包；调用方必须走撤证恢复状态机，禁止直接清空密文。 */
+  async findExpiredPackageIds(limit = 100): Promise<readonly string[]> {
     if (!Number.isInteger(limit) || limit < 1 || limit > 1_000) {
       throw new SecurePackageError('CONFLICT', 'sweep limit must be an integer between 1 and 1000');
     }
@@ -287,11 +284,7 @@ export class SecurePackageService {
       orderBy: { packageExpiresAt: 'asc' },
       take: limit,
     });
-    const destroyed: string[] = [];
-    for (const certificate of expired) {
-      if (await this.destroyPackage(certificate.id)) destroyed.push(certificate.id);
-    }
-    return destroyed;
+    return expired.map(({ id }) => id);
   }
 
   private async assertClaimEligibility(tx: DbClient, certificate: CertificateRow, proof: ClaimProof): Promise<void> {

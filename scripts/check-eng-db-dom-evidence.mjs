@@ -21,8 +21,8 @@ export const TASK_DOCUMENTS = [
 ];
 
 const EXPECTED_TOOLCHAIN = {
-  node: '>=20.19 <21',
-  nvmrc: '20.19.5',
+  node: '>=24.12 <25',
+  nvmrc: '24.12.0',
   packageManager: 'pnpm@10.20.0',
 };
 

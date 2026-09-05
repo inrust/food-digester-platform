@@ -9,7 +9,7 @@
  * - 私钥安全：数据库与审计日志不出现私钥明文。
  */
 import { afterAll, beforeAll, describe, test } from 'vitest';
-import { assert } from 'vitest';
+import { assert, expect } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import { createLocalTestKeyProvider } from '@fdp/auth';
 import type { IotPolicyDocument } from '@fdp/aws-clients';
@@ -47,6 +47,7 @@ interface MockIot extends IotProvisioningPort {
   readonly policies: Map<string, IotPolicyDocument>;
   readonly certs: IotCertificateResult[];
   failNextAttachPolicy: boolean;
+  failNextRevoke: boolean;
 }
 
 function mockIot(): MockIot {
@@ -57,6 +58,7 @@ function mockIot(): MockIot {
     policies: new Map(),
     certs: [],
     failNextAttachPolicy: false,
+    failNextRevoke: false,
     async ensureThing(thingName) {
       state.calls.push(`ensureThing:${thingName}`);
       state.things.add(thingName);
@@ -66,7 +68,7 @@ function mockIot(): MockIot {
       const cert: IotCertificateResult = {
         certificateId: `cert-${instance}-${n}`,
         certificateArn: `arn:aws:iot:ap-southeast-1:123456789012:cert/cert-${instance}-${n}`,
-        certificatePem: `-----BEGIN CERTIFICATE-----\nMOCKCERT${instance}${n}\n-----END CERTIFICATE-----`,
+        certificatePem: `-----BEGIN CERTIFICATE-----\n${Buffer.from(`MOCKCERT-${instance}-${n}`).toString('base64')}\n-----END CERTIFICATE-----`,
         privateKey:
           ['-----BEGIN', 'PRIVATE', 'KEY-----'].join(' ') +
           `\nMOCKKEY${instance}${n}\n` +
@@ -92,6 +94,11 @@ function mockIot(): MockIot {
       state.calls.push(`attachThingPrincipal:${thingName}->${principalArn}`);
     },
     async revokeCertificate(certificateId) {
+      if (state.failNextRevoke) {
+        state.failNextRevoke = false;
+        state.calls.push(`revokeCertificate:FAIL:${certificateId}`);
+        throw new Error('simulated revoke failure');
+      }
       state.calls.push(`revokeCertificate:${certificateId}`);
     },
   };
@@ -254,5 +261,30 @@ describe('ProvisioningService', () => {
     assert.ok(orphan?.revokedAt);
     const fresh = await prisma.deviceCertificate.findFirst({ where: { id: result.certificateId } });
     assert.ok(fresh?.packageCiphertext, '新证书必须带加密证书包');
+  });
+
+  test('过期恢复：AWS 撤证失败保留密文与 FAILED 状态，重试成功后才清包并重签', async () => {
+    const { request, deviceId } = await plantApprovedRequest();
+    const iot = mockIot();
+    const service = makeService(iot);
+    const issued = await service.provision(request);
+    iot.failNextRevoke = true;
+
+    await expect(service.recoverExpiredPackage(request, issued.certificateId)).rejects.toThrow(
+      'simulated revoke failure',
+    );
+    let old = await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: issued.certificateId } });
+    assert.equal(old.recoveryState, 'RECOVERY_FAILED');
+    assert.equal(old.recoveryAttempts, 1);
+    assert.isNotNull(old.packageCiphertext, '撤证失败时密文必须保留');
+
+    const recovered = await service.recoverExpiredPackage(request, issued.certificateId);
+    assert.notEqual(recovered.certificateId, issued.certificateId);
+    old = await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: issued.certificateId } });
+    assert.equal(old.status, 'REVOKED');
+    assert.equal(old.recoveryState, 'RECOVERY_COMPLETED');
+    assert.equal(old.recoveryAttempts, 2);
+    assert.isNull(old.packageCiphertext);
+    assert.equal(await prisma.deviceCertificate.count({ where: { deviceId, status: 'PENDING_CLAIM' } }), 1);
   });
 });

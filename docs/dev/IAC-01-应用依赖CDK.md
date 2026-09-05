@@ -21,7 +21,7 @@
 | KMS | 应用数据 Key、证书包信封加密 Key（均启用轮换） | `alias/fdp-test-data`、`alias/fdp-test-cert-package` |
 | SQS | Ingress + DLQ、Archive + DLQ、Quarantine、IoT Rule Error | `fdp-test-ingress` 等 6 队列，KMS 加密；主队列 maxReceiveCount=5 |
 | IoT | 8 个 TopicRule（8 上行 Topic → Ingress SQS，Error Action → 独立错误队列） | `fdp_test_iot_{type}`（IoT 命名仅允许 `[A-Za-z0-9_]`） |
-| Lambda | ingestion / archive / outbox-publisher / summary / api（各配独立执行角色） | `fdp-test-{name}`，Node.js 20 / ARM64，占位 Handler 由 BE 任务替换 |
+| Lambda | ingestion / archive / outbox-publisher / summary / api（各配独立执行角色） | `fdp-test-{name}`，Node.js 24 / ARM64，占位 Handler 由 BE 任务替换 |
 | 调度 | EventBridge Rule：outbox-publisher 每 1 分钟、summary 每 1 小时 | `fdp-test-outbox-publisher`、`fdp-test-summary` |
 | VPC/RDS | 2 AZ、3 类子网、单 NAT；RDS PostgreSQL 16 `db.t4g.micro` 位于隔离子网 | `fdp-test-vpc`、`fdp-test-db` |
 | Secrets Manager | RDS 凭据自动生成（KMS 加密），口令以动态引用注入实例 | `fdp-test-rds-credentials` |

@@ -19,10 +19,12 @@ import type { ClaimProof } from '../src/index.js';
 import type { OnboardingAuthContext } from '../src/onboarding/verifier.js';
 import type { DeviceAuthContext } from '../src/device/verifier.js';
 
-const MIGRATION_SQL = readFileSync(
-  new URL('../../database/prisma/migrations/20260826120000_init/migration.sql', import.meta.url),
-  'utf8',
-);
+const MIGRATION_SQL = [
+  '../../database/prisma/migrations/20260826120000_init/migration.sql',
+  '../../database/prisma/migrations/20260905210000_certificate_recovery_state/migration.sql',
+]
+  .map((path) => readFileSync(new URL(path, import.meta.url), 'utf8'))
+  .join('\n');
 
 const NOW = new Date('2026-08-27T00:00:00Z');
 const RETENTION_SECONDS = CERTIFICATE_PACKAGE_RETENTION_SECONDS;
@@ -257,7 +259,7 @@ describe('一次性领取', () => {
       409,
     );
     const row = await prisma.deviceCertificate.findFirst({ where: { id: 'cert-sec-6' } });
-    assert.isNull(row?.packageCiphertext, '过期包必须销毁');
+    assert.isNotNull(row?.packageCiphertext, '过期包须保留到恢复状态机完成云端撤证');
   });
 
   test('destroyPackage 幂等（新证书 Heartbeat 后销毁场景）', async () => {
@@ -267,7 +269,7 @@ describe('一次性领取', () => {
     assert.isFalse(await service.destroyPackage('cert-sec-7'));
   });
 
-  test('定时清理无需领取请求即可销毁过期密文包', async () => {
+  test('定时扫描只返回待恢复 ID，不会先于云端撤证销毁密文包', async () => {
     await insertDeviceWithCertificate('dev-sec-9', 'SN-SEC-9', 'cert-sec-9');
     await service.storePackage('cert-sec-9', PACKAGE_PLAINTEXT);
     const sweeper = new SecurePackageService({
@@ -279,8 +281,8 @@ describe('一次性领取', () => {
         now: () => new Date(NOW.getTime() + (RETENTION_SECONDS + 1) * 1000),
       },
     });
-    assert.include(await sweeper.sweepExpiredPackages(), 'cert-sec-9');
-    assert.isNull((await prisma.deviceCertificate.findFirst({ where: { id: 'cert-sec-9' } }))?.packageCiphertext);
+    assert.include(await sweeper.findExpiredPackageIds(), 'cert-sec-9');
+    assert.isNotNull((await prisma.deviceCertificate.findFirst({ where: { id: 'cert-sec-9' } }))?.packageCiphertext);
   });
 });
 
