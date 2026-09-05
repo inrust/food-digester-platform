@@ -1,0 +1,540 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin OTA Campaign API",
+    "version": "0.1.0",
+    "description": "BE-OTA-02 OTA Campaign API 与状态机（Cognito 认证）。POST /api/v1/admin/ota/campaigns 创建 Campaign（ota:write）：包必须 VERIFIED（坏包/未校验包不可建 Campaign → 400），首批强制恰好 1 台（>1 → 400），设备须型号匹配 + 生命周期 Active/Maintenance（DEC-001 Maintenance 允许 OTA）+ 有效 License OTA_UPDATE Entitlement；创建即 RUNNING + 首批 target PENDING。POST /{campaignId}/batches 扩大批次（仅 RUNNING；默认禁止一次选择全部合格设备 → 400；已在 Campaign 的设备幂等跳过）。pause/resume/cancel/retry 状态机：RUNNING⇄PAUSED，RUNNING/PAUSED→CANCELLED（级联未完成 target → CANCELLED），retry 将 FAILED target 重置为 PENDING 重新进入下发队列（仅 RUNNING）；暂停/取消后不得产生新下发（下发器只消费 RUNNING 的 PENDING target，BE-OTA-03）。每次 Campaign 状态变化写审计（DOM-03），每次 target 状态变化写 ota_status_history。设备回报状态经 recordTargetStatus（封闭状态集合 + 全部 SUCCEEDED 自动 COMPLETED）供 BE-OTA-03 ACK 复用。功能边界：不执行固件安装。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "DEC-001@1.0.0", "DEC-015@1.0.0"],
+    "x-decision-register-version": "1.27.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/ota/campaigns": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "createOtaCampaign",
+        "summary": "创建 OTA Campaign：VERIFIED 包 + 强制首批恰好 1 台合格设备 → RUNNING（201）",
+        "security": [{ "CognitoJwt": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtaCampaignCreate" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Campaign 已创建（RUNNING，首批 1 台 PENDING）",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtaCampaignSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listOtaCampaigns",
+        "summary": "Campaign 列表（status/targetModel/packageId 筛选 + 键集游标分页；ota:read）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "#/components/schemas/OtaCampaignStatus" }
+          },
+          { "name": "targetModel", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "packageId", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaign 列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtaCampaignListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getOtaCampaign",
+        "summary": "Campaign 详情（含各状态 target 计数看板）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "campaignId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaign 详情",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtaCampaignDetailSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}/targets": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listOtaTargets",
+        "summary": "Campaign 目标列表（status/batchNo 筛选 + 键集游标分页；ota:read）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "campaignId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "$ref": "#/components/schemas/OtaTargetStatus" }
+          },
+          { "name": "batchNo", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1 } },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Target 列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtaTargetListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}/batches": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "expandOtaCampaignBatch",
+        "summary": "扩大批次（仅 RUNNING；默认禁止一次选择全部合格设备；已在 Campaign 的设备幂等跳过）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "campaignId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtaBatchExpand" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "批次已扩大",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtaBatchExpandSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}/pause": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "pauseOtaCampaign",
+        "summary": "暂停 Campaign（RUNNING→PAUSED；幂等回放；暂停后不得产生新下发）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "campaignId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "已暂停",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtaCampaignSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}/resume": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "resumeOtaCampaign",
+        "summary": "恢复 Campaign（PAUSED→RUNNING；幂等回放）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "campaignId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "已恢复",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtaCampaignSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}/cancel": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "cancelOtaCampaign",
+        "summary": "取消 Campaign（RUNNING/PAUSED→CANCELLED；级联未完成 target → CANCELLED；幂等回放；取消后不得产生新下发）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "campaignId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "已取消",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtaCampaignSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}/retry": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "retryOtaCampaignFailures",
+        "summary": "失败重试：FAILED target 重置为 PENDING 重新进入下发队列（仅 RUNNING；可选 targetIds 子集）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "campaignId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtaRetryRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "重试结果",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtaRetrySuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "$ref": "openapi-base.json#/components/securitySchemes/CognitoJwt" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：包未 VERIFIED/首批非恰好 1 台/设备不合格/全量选择/参数非法）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（写操作缺 ota:write / 查询缺 ota:read）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "Campaign/包不存在（NOT_FOUND）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Conflict": {
+        "description": "非法状态迁移（CONFLICT：非 RUNNING 扩大批次/重试；终态再操作）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "OtaCampaignStatus": {
+        "type": "string",
+        "description": "Campaign 状态机：创建即 RUNNING；RUNNING⇄PAUSED；RUNNING/PAUSED→CANCELLED；全部 target SUCCEEDED → COMPLETED",
+        "enum": ["DRAFT", "RUNNING", "PAUSED", "COMPLETED", "CANCELLED"]
+      },
+      "OtaTargetStatus": {
+        "type": "string",
+        "description": "Target 状态机（DB-01 封闭集合）；云端维护 PENDING/CANCELLED，设备回报经 ACK（BE-OTA-03）推进 NOTIFIED→…→SUCCEEDED/FAILED/ROLLED_BACK",
+        "enum": ["PENDING", "NOTIFIED", "DOWNLOADING", "INSTALLING", "SUCCEEDED", "FAILED", "ROLLED_BACK", "CANCELLED"]
+      },
+      "OtaCampaignCreate": {
+        "type": "object",
+        "required": ["name", "packageId", "deviceIds"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "packageId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "必须为 VERIFIED 包（坏包/未校验包不可建 Campaign）"
+          },
+          "deviceIds": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "minItems": 1,
+            "maxItems": 1,
+            "description": "首批强制恰好 1 台（灰度）；超过 1 台被拒绝（400）"
+          }
+        }
+      },
+      "OtaBatchExpand": {
+        "type": "object",
+        "required": ["deviceIds"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceIds": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "minItems": 1,
+            "maxItems": 500,
+            "description": "扩大批次设备；默认禁止一次选择该型号全部合格设备（400）；已在 Campaign 的设备幂等跳过"
+          }
+        }
+      },
+      "OtaRetryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "targetIds": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "minItems": 1,
+            "maxItems": 500,
+            "description": "可选：仅重试指定 FAILED target；缺省重试 Campaign 全部 FAILED"
+          }
+        }
+      },
+      "OtaCampaignView": {
+        "type": "object",
+        "required": [
+          "campaignId",
+          "name",
+          "packageId",
+          "targetModel",
+          "strategy",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "campaignId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "packageId": { "type": "string", "minLength": 1 },
+          "targetModel": { "type": "string", "minLength": 1 },
+          "strategy": {
+            "type": "string",
+            "enum": ["CANARY", "BATCH"],
+            "description": "试运营禁止默认全量强制升级；本 API 仅产出 CANARY"
+          },
+          "status": { "$ref": "#/components/schemas/OtaCampaignStatus" },
+          "createdBy": { "type": "string", "minLength": 1, "description": "身份上下文取得（不信任客户端声明）" },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "OtaCampaignDetailView": {
+        "type": "object",
+        "required": [
+          "campaignId",
+          "name",
+          "packageId",
+          "targetModel",
+          "strategy",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt",
+          "targetCounts"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "campaignId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "packageId": { "type": "string", "minLength": 1 },
+          "targetModel": { "type": "string", "minLength": 1 },
+          "strategy": { "type": "string", "enum": ["CANARY", "BATCH"] },
+          "status": { "$ref": "#/components/schemas/OtaCampaignStatus" },
+          "createdBy": { "type": "string", "minLength": 1 },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "targetCounts": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "total",
+              "PENDING",
+              "NOTIFIED",
+              "DOWNLOADING",
+              "INSTALLING",
+              "SUCCEEDED",
+              "FAILED",
+              "ROLLED_BACK",
+              "CANCELLED"
+            ],
+            "properties": {
+              "total": { "type": "integer", "minimum": 0 },
+              "PENDING": { "type": "integer", "minimum": 0 },
+              "NOTIFIED": { "type": "integer", "minimum": 0 },
+              "DOWNLOADING": { "type": "integer", "minimum": 0 },
+              "INSTALLING": { "type": "integer", "minimum": 0 },
+              "SUCCEEDED": { "type": "integer", "minimum": 0 },
+              "FAILED": { "type": "integer", "minimum": 0 },
+              "ROLLED_BACK": { "type": "integer", "minimum": 0 },
+              "CANCELLED": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      },
+      "OtaTargetView": {
+        "type": "object",
+        "required": [
+          "targetId",
+          "campaignId",
+          "deviceId",
+          "batchNo",
+          "status",
+          "scheduledTime",
+          "completedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "targetId": { "type": "string", "minLength": 1 },
+          "campaignId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "batchNo": { "type": "integer", "minimum": 1, "description": "1 = 灰度批次" },
+          "status": { "$ref": "#/components/schemas/OtaTargetStatus" },
+          "scheduledTime": { "type": ["string", "null"], "format": "date-time" },
+          "completedAt": { "type": ["string", "null"], "format": "date-time" },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "OtaBatchExpandResult": {
+        "type": "object",
+        "required": ["campaignId", "batchNo", "addedCount", "skippedExistingCount", "addedTargets"],
+        "additionalProperties": false,
+        "properties": {
+          "campaignId": { "type": "string", "minLength": 1 },
+          "batchNo": { "type": "integer", "minimum": 2 },
+          "addedCount": { "type": "integer", "minimum": 0 },
+          "skippedExistingCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "已在 Campaign 中幂等跳过的设备数"
+          },
+          "addedTargets": { "type": "array", "items": { "$ref": "#/components/schemas/OtaTargetView" } }
+        }
+      },
+      "OtaRetryResult": {
+        "type": "object",
+        "required": ["campaignId", "retriedCount", "retriedTargetIds"],
+        "additionalProperties": false,
+        "properties": {
+          "campaignId": { "type": "string", "minLength": 1 },
+          "retriedCount": { "type": "integer", "minimum": 0 },
+          "retriedTargetIds": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "OtaCampaignSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/OtaCampaignView" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "OtaCampaignDetailSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/OtaCampaignDetailView" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "OtaCampaignListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/OtaCampaignView" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      },
+      "OtaTargetListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/OtaTargetView" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      },
+      "OtaBatchExpandSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/OtaBatchExpandResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "OtaRetrySuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/OtaRetryResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    },
+    "parameters": {
+      "Cursor": { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+      "Limit": { "$ref": "openapi-base.json#/components/parameters/Limit" }
+    }
+  }
+}
