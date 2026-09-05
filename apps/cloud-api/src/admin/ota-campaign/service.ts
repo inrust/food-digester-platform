@@ -563,6 +563,9 @@ export async function cancelOtaCampaign(
       const unfinished = (await targets(tx).findMany({
         where: { campaignId, status: { in: [...UNFINISHED_TARGET_STATUSES] } },
       })) as unknown as OtaTargetRow[];
+      const outbox = (tx as unknown as Record<string, unknown>).outboxEvent as {
+        create(args: { data: Record<string, unknown> }): Promise<unknown>;
+      };
       for (const t of unfinished) {
         const updated = await targets(tx).updateMany({
           where: { id: t.id, status: t.status },
@@ -581,6 +584,22 @@ export async function cancelOtaCampaign(
             createdAt: now,
           },
         });
+        // OTA_CANCELLED：已通知（NOTIFIED 及以后）的设备须收到取消通知（CT-04 Outbox 下行，
+        // deviceAction=CANCEL_PENDING_OTA）；PENDING 未通知过设备，无需取消通知（BE-OTA-03）
+        if (t.status !== 'PENDING') {
+          await outbox.create({
+            data: {
+              eventType: 'OTA_CANCELLED',
+              aggregateType: 'ota_target',
+              aggregateId: t.id,
+              payload: {
+                topic: `bnx/device/${t.deviceId}/notification`,
+                data: { type: 'OTA_CANCELLED', action: 'CANCEL_PENDING_OTA' },
+                otaTargetId: t.id,
+              },
+            },
+          });
+        }
       }
       return { ...toCampaignView(campaign), status: 'CANCELLED', updatedAt: now.toISOString() };
     },
