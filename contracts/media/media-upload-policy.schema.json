@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hiddenjoya.local/contracts/media/media-upload-policy.schema.json",
+  "title": "Media Upload Policy",
+  "description": "Media 上传策略的结构契约。mediaTypes/objectKey 为锁定规则；limits 数值为暂定值（provisional）。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "type": "object",
+  "required": [
+    "policyVersion",
+    "updatedAt",
+    "x-decision-versions",
+    "status",
+    "description",
+    "mediaTypes",
+    "limits",
+    "objectKey",
+    "pendingParameters",
+    "frozenUpgradePath"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "policyVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "策略自身版本。provisional 为 0.x；上传限制冻结后必须 >= 1.0.0。"
+    },
+    "updatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "UTC ISO-8601 时间戳。"
+    },
+    "x-decision-versions": {
+      "type": "array",
+      "description": "决策追溯引用，格式 决策ID@semver；上传限制当前无登记决策，冻结时补充。"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["provisional", "frozen"],
+      "description": "provisional=暂定值（上传限制未冻结）；frozen=已冻结。"
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "mediaTypes": {
+      "type": "array",
+      "description": "媒体类型集合，必须与 CT-03 media.schema.json 枚举一致（IMAGE/VIDEO）。"
+    },
+    "limits": {
+      "type": "object",
+      "required": [
+        "maxSizeKb",
+        "dailyUploadQuotaPerDevice",
+        "uploadUrlTtlSeconds",
+        "downloadUrlTtlSeconds",
+        "consumers",
+        "note"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "maxSizeKb": {
+          "type": "object",
+          "required": ["IMAGE", "VIDEO"],
+          "additionalProperties": false,
+          "properties": {
+            "IMAGE": { "type": "integer", "minimum": 1 },
+            "VIDEO": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "dailyUploadQuotaPerDevice": { "type": "integer", "minimum": 1 },
+        "uploadUrlTtlSeconds": { "type": "integer", "minimum": 60, "maximum": 3600 },
+        "downloadUrlTtlSeconds": { "type": "integer", "minimum": 60, "maximum": 3600 },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "objectKey": {
+      "type": "object",
+      "required": ["pattern", "clientProvidedKeyAllowed", "consumers", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "pattern": {
+          "type": "string",
+          "enum": ["media/{customerId}/{deviceId}/{sessionId}/{fileName}"],
+          "description": "服务端生成 Key 的固定模板（设备前缀）。"
+        },
+        "clientProvidedKeyAllowed": {
+          "type": "boolean",
+          "enum": [false],
+          "description": "禁止客户端指定 Bucket/Key，锁定为 false。"
+        },
+        "consumers": { "type": "array" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "pendingParameters": {
+      "type": "array",
+      "description": "上传限制冻结前显式标记的暂定值参数路径列表。"
+    },
+    "frozenUpgradePath": { "type": "string", "minLength": 1 }
+  }
+}

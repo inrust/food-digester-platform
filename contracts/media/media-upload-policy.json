@@ -1,0 +1,29 @@
+{
+  "policyVersion": "0.1.0",
+  "updatedAt": "2026-09-05T00:00:00Z",
+  "x-decision-versions": ["DEC-005@1.0.0"],
+  "status": "provisional",
+  "description": "Media 上传策略（暂定值的可执行扩展点）。事实源：实施方案 §11.9（校验设备权限、类型、大小和配额；短期预签名 URL；上传后校验 Object/大小/Hash）与通信设计 Media 字段表。锁定规则：mediaTypes 与 CT-03 media.schema.json 枚举一致（IMAGE/VIDEO）；objectPath 一律服务端生成（media/{customerId}/{deviceId}/{sessionId}/{fileName}），客户端不得指向任意 Bucket/Key。大小上限/日配额/预签名 TTL 为暂定值（当前无登记决策，冻结时先按 decision-change-template 登记），数值可执行但不得固化为不可迁移结构；消费方（BE-MED-01）只经 media-upload-policy.ts 访问。保留期语义属 DEC-005 media-retention-policy（已冻结），本策略不重复。",
+  "mediaTypes": ["IMAGE", "VIDEO"],
+  "limits": {
+    "maxSizeKb": { "IMAGE": 10240, "VIDEO": 204800 },
+    "dailyUploadQuotaPerDevice": 100,
+    "uploadUrlTtlSeconds": 900,
+    "downloadUrlTtlSeconds": 900,
+    "consumers": ["BE-MED-01"],
+    "note": "暂定值：IMAGE ≤ 10MiB（10240KB）、VIDEO ≤ 200MiB（204800KB）、每设备每日 100 个上传会话、上传/下载预签名 URL 均为 900s。冻结前可执行；冻结时整体替换并提升 policyVersion。"
+  },
+  "objectKey": {
+    "pattern": "media/{customerId}/{deviceId}/{sessionId}/{fileName}",
+    "clientProvidedKeyAllowed": false,
+    "consumers": ["BE-MED-01"],
+    "note": "objectPath 服务端按设备前缀生成；Media 元数据报文的 objectPath 必须与某有效会话的签发 Key 完全一致（逐字符相等），跨设备/跨会话/任意 Key 一律拒绝。"
+  },
+  "pendingParameters": [
+    "limits.maxSizeKb",
+    "limits.dailyUploadQuotaPerDevice",
+    "limits.uploadUrlTtlSeconds",
+    "limits.downloadUrlTtlSeconds"
+  ],
+  "frozenUpgradePath": "冻结时：先按 decision-change-template 登记 Media 上传限制决策（大小/配额/TTL），补充 x-decision-versions 引用，再确认本策略数值、提升 policyVersion 至 >=1.0.0、status 改 frozen。"
+}

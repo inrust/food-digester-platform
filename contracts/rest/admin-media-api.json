@@ -1,0 +1,203 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin Media API",
+    "version": "0.1.0",
+    "description": "BE-MED-01 管理端 Media 查询与下载 API（Cognito 认证，media:read）。GET /api/v1/admin/media 列表（deviceId/mediaType/status/customerId/时间范围筛选 + 键集游标分页）；GET /api/v1/admin/media/{mediaId}/download-url 签发 15 分钟预签名下载 URL（暂定值 900s）。Customer 角色强制租户隔离（actor.customerId scope；跨 Customer 详情/下载 → 404）。DELETED 元数据（DEC-005：文件到期删除、元数据保留）不提供下载（404）。V1 仅元数据 + 短期下载 URL（DEC-009：不提供实时流媒体会话）。错误响应继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "DEC-005@1.0.0", "DEC-009@1.0.0"],
+    "x-decision-register-version": "1.27.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/media": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listMedia",
+        "summary": "Media 元数据列表（筛选 + 键集游标分页；Customer 角色强制租户隔离）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceId", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "mediaType",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["IMAGE", "VIDEO"] }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["AVAILABLE", "DELETED"] }
+          },
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "仅平台角色可跨 Customer 筛选；Customer 角色强制 actor.customerId（传入不一致 → 403）"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date-time" },
+            "description": "captureTime 起（UTC）"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date-time" },
+            "description": "captureTime 止（UTC）"
+          },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Media 列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MediaListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/media/{mediaId}/download-url": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "createMediaDownloadUrl",
+        "summary": "签发 15 分钟预签名下载 URL（DELETED 不提供；跨 Customer → 404）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "mediaId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "预签名下载 URL",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MediaDownloadUrlSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "$ref": "openapi-base.json#/components/securitySchemes/CognitoJwt" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "筛选参数非法（VALIDATION_FAILED）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无 media:read 权限或 Customer 角色越权筛选",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "Media 不存在、跨 Customer 或文件已删除（NOT_FOUND）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "MediaView": {
+        "type": "object",
+        "required": [
+          "mediaId",
+          "deviceId",
+          "customerId",
+          "mediaType",
+          "captureTime",
+          "fileName",
+          "sizeKb",
+          "durationSec",
+          "status",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "mediaId": { "type": "string", "minLength": 1 },
+          "deviceId": { "type": "string", "minLength": 1 },
+          "customerId": { "type": "string", "minLength": 1 },
+          "mediaType": { "type": "string", "enum": ["IMAGE", "VIDEO"] },
+          "captureTime": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "fileName": { "type": "string", "minLength": 1 },
+          "sizeKb": { "type": "integer", "minimum": 0 },
+          "durationSec": { "type": "integer", "minimum": 0, "description": "视频时长（秒）；图片为 0" },
+          "status": {
+            "type": "string",
+            "enum": ["AVAILABLE", "DELETED"],
+            "description": "DEC-005：文件到期删除后元数据保留（DELETED 不提供下载）"
+          },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        },
+        "description": "不含 objectPath/内部存储信息；下载经短期预签名 URL"
+      },
+      "MediaDownloadUrlView": {
+        "type": "object",
+        "required": ["mediaId", "downloadUrl", "downloadUrlExpiresAt"],
+        "additionalProperties": false,
+        "properties": {
+          "mediaId": { "type": "string", "minLength": 1 },
+          "downloadUrl": { "type": "string", "pattern": "^https://" },
+          "downloadUrlExpiresAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        }
+      },
+      "MediaListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/MediaView" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      },
+      "MediaDownloadUrlSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/MediaDownloadUrlView" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    },
+    "parameters": {
+      "Cursor": { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+      "Limit": { "$ref": "openapi-base.json#/components/parameters/Limit" }
+    }
+  }
+}

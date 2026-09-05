@@ -824,6 +824,8 @@ model MediaUploadSession {
   mediaType              String    @map("media_type") // IMAGE | VIDEO
   fileName               String    @map("file_name")
   sizeKb                 Int       @map("size_kb")
+  // BE-MED-01：会话创建时设备申报的 SHA-256（hex）；上传后 Media Handler 重算比对
+  declaredSha256         String?   @map("declared_sha256")
   status                 String    @default("ISSUED") // ISSUED | COMPLETED | EXPIRED
   presignedUrlExpiresAt  DateTime  @map("presigned_url_expires_at") @db.Timestamptz
   createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz

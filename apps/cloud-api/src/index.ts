@@ -60,6 +60,7 @@ export * from './admin/ota-campaign/index.js';
 export * from './admin/esg/index.js';
 export * from './consumable/index.js';
 export * from './notification/index.js';
+export * from './media/index.js';
 export * from './ota/index.js';
 export * from './provisioning/index.js';
 export * from './device/index.js';
