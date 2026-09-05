@@ -1,0 +1,348 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Admin User/Role/Scope API",
+    "version": "0.1.0",
+    "description": "BE-RBAC-01 用户、角色和 Scope 管理 API（Cognito 认证）。角色集合封闭（AUTH-01/DEC-012：PlatformSuperAdmin/PlatformOperator/Auditor/CustomerAdmin/CustomerViewer；原型「平台管理员/运维人员」映射 PlatformSuperAdmin/PlatformOperator）；V1 权限矩阵固定只读（DEC-012）。写操作仅 user:write（=PlatformSuperAdmin）：邀请（Cognito 生成临时凭证，API 不接收永久密码）、角色分配（自我提权/CustomerAdmin 提升平台角色/最后一个 SuperAdmin 移除均拒绝）、Customer scope 变更（同步 custom:customer_id）、停用、受控密码重置触发（Cognito 发送临时凭证，响应不含密码）。列表 user:read（PlatformSuperAdmin/Auditor）。所有权限变化审计（DOM-03）。Cognito 属性同步（groups + custom:customer_id）经注入端口。功能边界：不负责 Cognito 租户运维、MFA 客服重置和人工账号恢复。错误响应继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "DEC-012@1.0.0"],
+    "x-decision-register-version": "1.27.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "admin",
+      "description": "/api/v1/admin/* 管理端 API",
+      "x-path-prefix": "/api/v1/admin",
+      "x-auth": "CognitoJwt"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/users": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listUsers",
+        "summary": "用户列表（roleType/status/customerId/q 筛选 + 键集游标分页；user:read）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          {
+            "name": "roleType",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["platform", "customer"] }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["INVITED", "ACTIVE", "DISABLED"] }
+          },
+          { "name": "customerId", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "email/displayName 模糊匹配"
+          },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "用户列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "post": {
+        "tags": ["admin"],
+        "operationId": "inviteUser",
+        "summary": "邀请用户：Cognito 生成临时凭证（API 不接收永久密码）→ 用户 INVITED（201）",
+        "security": [{ "CognitoJwt": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserInvite" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "用户已邀请（INVITED；临时凭证由 Cognito 经邮件发送，响应不含密码）",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/users/{userId}/roles": {
+      "put": {
+        "tags": ["admin"],
+        "operationId": "assignUserRoles",
+        "summary": "角色分配（整体替换；自我提权/提升平台角色越权/最后一个 SuperAdmin 移除均拒绝；同步 Cognito groups）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserRolesAssign" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "角色已更新",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/users/{userId}/scope": {
+      "put": {
+        "tags": ["admin"],
+        "operationId": "setUserScope",
+        "summary": "Customer scope 变更（仅 Customer 角色用户；同步 Cognito custom:customer_id）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserScopeSet" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Scope 已更新",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/users/{userId}/disable": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "disableUser",
+        "summary": "停用用户（DISABLED；同步 Cognito DisableUser；最后一个 SuperAdmin 不可停用；幂等回放）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "用户已停用",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/admin/users/{userId}/password-reset": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "triggerUserPasswordReset",
+        "summary": "受控密码重置触发：Cognito 生成并发送临时凭证（响应不含密码 Hash 或现有密码）",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "重置已触发（202 语义并入 200；结果仅含 userId/status）",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasswordResetSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "CognitoJwt": { "$ref": "openapi-base.json#/components/securitySchemes/CognitoJwt" }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：角色封闭集/混绑/平台角色带 Customer scope 等）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "无权限（FORBIDDEN：缺 user:write/user:read；自我提权；Customer 角色提升平台角色；跨 Customer 授权）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "用户/Customer 不存在（NOT_FOUND）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Conflict": {
+        "description": "业务约束冲突（CONFLICT：email 已存在；最后一个 PlatformSuperAdmin 不可移除/停用）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "schemas": {
+      "RoleCode": {
+        "type": "string",
+        "description": "封闭角色集（AUTH-01/DEC-012；V1 矩阵固定只读）",
+        "enum": ["PlatformSuperAdmin", "PlatformOperator", "Auditor", "CustomerAdmin", "CustomerViewer"]
+      },
+      "UserInvite": {
+        "type": "object",
+        "required": ["email", "displayName", "roles"],
+        "additionalProperties": false,
+        "properties": {
+          "email": { "type": "string", "format": "email", "maxLength": 254 },
+          "displayName": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "roles": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RoleCode" },
+            "minItems": 1,
+            "maxItems": 3,
+            "description": "平台/Customer 角色禁止混绑（单一 actorType）"
+          },
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Customer 角色必填且必须存在；平台角色必须省略（平台角色无 Customer scope）"
+          }
+        },
+        "description": "不含 password 字段：临时凭证由 Cognito 生成并发送"
+      },
+      "UserRolesAssign": {
+        "type": "object",
+        "required": ["roles"],
+        "additionalProperties": false,
+        "properties": {
+          "roles": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RoleCode" },
+            "minItems": 1,
+            "maxItems": 3,
+            "description": "整体替换目标用户角色集"
+          }
+        }
+      },
+      "UserScopeSet": {
+        "type": "object",
+        "required": ["customerId"],
+        "additionalProperties": false,
+        "properties": {
+          "customerId": { "type": "string", "minLength": 1, "description": "必须存在的 Customer（软删除/停用拒绝）" }
+        }
+      },
+      "UserView": {
+        "type": "object",
+        "required": [
+          "userId",
+          "email",
+          "displayName",
+          "status",
+          "mfaEnabled",
+          "roles",
+          "customerId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "userId": { "type": "string", "minLength": 1 },
+          "email": { "type": "string", "format": "email" },
+          "displayName": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["INVITED", "ACTIVE", "DISABLED"] },
+          "mfaEnabled": { "type": "boolean" },
+          "roles": { "type": "array", "items": { "$ref": "#/components/schemas/RoleCode" } },
+          "customerId": {
+            "type": ["string", "null"],
+            "description": "Customer 角色用户所属 Customer；平台角色恒为 null"
+          },
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+        },
+        "description": "不含 cognitoSub/密码/凭证材料"
+      },
+      "PasswordResetResult": {
+        "type": "object",
+        "required": ["userId", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "userId": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["RESET_TRIGGERED"] }
+        },
+        "description": "不含密码 Hash 或现有密码（临时凭证由 Cognito 直接发送给用户）"
+      },
+      "UserSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/UserView" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "UserListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/UserView" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+        }
+      },
+      "PasswordResetSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/PasswordResetResult" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      }
+    },
+    "parameters": {
+      "Cursor": { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+      "Limit": { "$ref": "openapi-base.json#/components/parameters/Limit" }
+    }
+  }
+}
