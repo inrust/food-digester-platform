@@ -1,6 +1,6 @@
 # AUTH-03 Device mTLS 身份映射
 
-实现：[packages/auth/src/device](../packages/auth/src/device)；测试：[device-mtls.test.ts](../packages/auth/test/device-mtls.test.ts)（PGlite 真实 PostgreSQL + 实际 migration.sql，11 项）。
+实现：[packages/auth/src/device](../../packages/auth/src/device)；测试：[device-mtls.test.ts](../../packages/auth/test/device-mtls.test.ts)（PGlite 真实 PostgreSQL + 实际 migration.sql）。
 
 ## 1. 范围与事实源
 
@@ -41,7 +41,7 @@
 | Retired 拒绝 / Suspended 放行 | 403 / 通过且上下文携带生命周期 | ✅ |
 | 中间件缺失证书 → 401 | `withDeviceAuth` 无 clientCert → 401 | ✅ |
 
-`pnpm vitest run packages/auth/test` 55/55 通过；全仓 `pnpm verify` 退出 0（2026-08-27）。
+当前证据命令：`pnpm vitest run packages/auth/test`、`pnpm verify`。精确测试快照记录在 `docs/audit`，任务文档不固化易漂移计数。
 
 ## 4. 对接说明（下游任务）
 

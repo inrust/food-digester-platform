@@ -1,13 +1,13 @@
 # AUTH-01 Cognito JWT 认证与角色授权
 
-实现：[packages/auth/src](../packages/auth/src/index.ts)；测试：[packages/auth/test](../packages/auth/test)（4 个文件、29 项）。
+实现：[packages/auth/src](../../packages/auth/src/index.ts)；测试：[packages/auth/test](../../packages/auth/test)。
 
 ## 1. 范围与事实源
 
 | 项 | 说明 |
 |---|---|
 | 任务 | AUTH-01（P0 / 管理后台后端），依赖 CT-05、DB-02、IAC-01（均已交付） |
-| 形态 | 框架无关的 `@fdp/auth` 包；Guard/Decorator 为纯函数 + HOF，NestJS/Lambda 适配在 BE 任务落地 |
+| 形态 | 框架无关的 `@fdp/auth` 包；Guard/Decorator 为纯函数 + HOF；管理 API Lambda 组合根已执行 JWT 验签并构造可信 ActorContext |
 | 角色事实源 | Cognito User Pool Group（IAC-01 创建同名 5 组）+ DEC-012 封闭映射 + 实施方案 §12.1 角色表 |
 | 错误码事实源 | CT-05 `contracts/rest/error-codes.json`（401 `UNAUTHENTICATED` / 403 `FORBIDDEN`），一致性由测试锁定 |
 | 功能边界 | 不实现 Cognito 账号运维和 MFA 策略配置页面（运维/FE 任务） |
@@ -48,7 +48,7 @@
 | 401/403 与 CT-05 一致 | `contract-parity.test.ts` 读 error-codes.json 比对 | ✅ |
 | 认证失败不泄露原因 | 断言错误消息不含 signature/issuer/expired 等内部细节 | ✅ |
 
-`pnpm --filter @fdp/auth typecheck` 退出 0；`pnpm vitest run packages/auth/test` 29/29 通过；全仓 `pnpm verify` 退出 0（2026-08-27）。
+当前证据命令：`pnpm --filter @fdp/auth typecheck`、`pnpm vitest run packages/auth/test`、`pnpm verify`。精确测试快照记录在 `docs/audit`，任务文档不固化易漂移计数。
 
 ## 5. 对接说明（下游任务）
 
@@ -61,4 +61,4 @@
 
 - JWKS 远程拉取在 Lambda 冷启动产生一次网络往返；`JWTVerifyGetKey` 带缓存，Node 进程复用后摊销，暂不引入额外缓存层；
 - Cognito `cognito:groups` 变更依赖 Token 过期刷新生效（默认 1h）；如需即时吊销，由 BE-RBAC-01 结合停用流程处理；
-- DEC-012 仍为 `pending`：角色映射若有调整，仅需改矩阵数据与测试，结构可整体替换。
+- DEC-012 已冻结为 `1.0.0`：角色映射与 V1 只读权限矩阵不得脱离正式变更流程单独调整。

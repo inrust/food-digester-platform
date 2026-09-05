@@ -1,6 +1,6 @@
 # IAC-01 应用依赖 CDK Stack
 
-数据源：[infra/src](../infra/src)；模板断言测试：[infra/test](../infra/test)；App 入口：[infra/src/app.ts](../infra/src/app.ts)；Stack：[app-dependencies-stack.ts](../infra/src/stacks/app-dependencies-stack.ts)。
+数据源：[infra/src](../../infra/src)；模板断言测试：[infra/test](../../infra/test)；App 入口：[infra/src/app.ts](../../infra/src/app.ts)；Stack：[app-dependencies-stack.ts](../../infra/src/stacks/app-dependencies-stack.ts)。
 
 ## 1. 范围与事实源
 
@@ -21,8 +21,8 @@
 | KMS | 应用数据 Key、证书包信封加密 Key（均启用轮换） | `alias/fdp-test-data`、`alias/fdp-test-cert-package` |
 | SQS | Ingress + DLQ、Archive + DLQ、Quarantine、IoT Rule Error | `fdp-test-ingress` 等 6 队列，KMS 加密；主队列 maxReceiveCount=5 |
 | IoT | 8 个 TopicRule（8 上行 Topic → Ingress SQS，Error Action → 独立错误队列） | `fdp_test_iot_{type}`（IoT 命名仅允许 `[A-Za-z0-9_]`） |
-| Lambda | ingestion / archive / outbox-publisher / summary / api（各配独立执行角色） | `fdp-test-{name}`，Node.js 24 / ARM64，占位 Handler 由 BE 任务替换 |
-| 调度 | EventBridge Rule：outbox-publisher 每 1 分钟、summary 每 1 小时 | `fdp-test-outbox-publisher`、`fdp-test-summary` |
+| Lambda | ingestion / archive / outbox-publisher / summary / cert-package-sweeper / api（各配独立执行角色） | `fdp-test-{name}`，Node.js 24 / ARM64，占位 Handler 由 BE 任务替换 |
+| 调度 | EventBridge Rule：outbox-publisher 每 1 分钟、summary 每 1 小时、证书包恢复扫描每 5 分钟 | `fdp-test-outbox-publisher`、`fdp-test-summary`、`fdp-test-cert-package-sweeper` |
 | VPC/RDS | 2 AZ、3 类子网、单 NAT；RDS PostgreSQL 16 `db.t4g.micro` 位于隔离子网 | `fdp-test-vpc`、`fdp-test-db` |
 | Secrets Manager | RDS 凭据自动生成（KMS 加密），口令以动态引用注入实例 | `fdp-test-rds-credentials` |
 | S3 | Raw / OTA / Media / Export / mTLS truststore | `fdp-test-{purpose}-{accountId}`，全部阻断公网 + TLS 强制 + Versioning + KMS |
@@ -37,7 +37,7 @@
 | Device | `fdp-{env}-device-api` | X.509 mTLS（自定义域名 truststore；AUTH-03 应用层白名单） | `/api/v1/device/*` |
 | Admin | `fdp-{env}-admin-api` | Cognito JWT（`/admin`、`/customer`）；IAM SigV4（`/internal`） | `/api/v1/{admin,customer,internal}/*` |
 
-- mTLS 自定义域名由 context 注入：`cdk synth -c deviceApiDomainName=... -c deviceApiCertificateArn=... [-c deviceApiTruststoreKey=...]`；三项成对出现，缺省时不创建域名、保留默认 execute-api 入口（供开发过渡）；提供域名后自动 `DisableExecuteApiEndpoint`。
+- mTLS 自定义域名由 context 注入：`cdk synth -c deviceApiDomainName=... -c deviceApiCertificateArn=... [-c deviceApiTruststoreKey=...]`；非 local/test 环境缺少完整配置时 synth 失败关闭，且 Device API 禁用默认 execute-api 入口。仅 local/test 可通过显式 `allowInsecureDeviceEndpointForLocal=true` 使用过渡入口。
 - truststore CA bundle 由环境流程上传到 `fdp-{env}-mtls-truststore-{accountId}` Bucket（本任务不内置任何真实 CA 材料）。
 - 三个入口共享同一 API Lambda（模块化单体原则），隔离在网关认证层。
 
@@ -53,14 +53,15 @@
 - Ingestion：读 DB Secret、写 Quarantine、消费 Ingress；Archive：写 Raw Bucket、消费 Archive；Outbox Publisher：读 DB Secret、写 Archive；Summary：读 DB Secret；
 - API：读 DB Secret、Media/OTA/Export 对象读写、Raw 只读、证书包 Key 加解密（SEC-01 要求解密权限仅此角色）、`iot:Publish` 收敛到 `bnx/device/*/{cmd,ota,notification}` 三个下行 Topic 模式；
 - 设备发放动作（`iot:CreateKeysAndCertificate` 等）不支持资源级收敛，保持动作级白名单 + `Resource: *`（Action 非 `*`，不违反 `*:*` 红线）；
-- 模板断言扫描全部 IAM Policy/ManagedPolicy/Role 内联策略，断言不存在 `Action: *` 且 `Resource: *` 的声明。
+- 模板断言扫描全部 IAM Policy/ManagedPolicy/Role 内联策略和 KMS KeyPolicy，拒绝 `*`/`service:*` 与通配 Resource 的组合，并校验 KMS 数据面 Principal。
 
-## 6. 验收命令与实测结果（2026-08-27）
+## 6. 验收命令
 
 ```bash
-pnpm --filter @fdp/infra synth     # cdk synth：成功（退出码 0，无需云凭据）
-pnpm vitest run infra/test         # 3 个测试文件、27 项断言全部通过
-pnpm verify                        # lint/format/typecheck/test/build/boundaries/schemas/migrations/secrets 全链退出 0
+pnpm --filter @fdp/infra synth
+pnpm vitest run infra/test
+pnpm check:cdk
+pnpm verify
 ```
 
 | 验收基准 | 证据 |

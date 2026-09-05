@@ -1,6 +1,6 @@
 # AUTH-04 IoT 单设备 Policy 生成器
 
-实现：[packages/aws-clients/src/iot-device-policy.ts](../packages/aws-clients/src/iot-device-policy.ts)；测试：[iot-device-policy.test.ts](../packages/aws-clients/test/iot-device-policy.test.ts)（模板 + 允许/拒绝矩阵 9 项）、[topic-parity.test.ts](../packages/aws-clients/test/topic-parity.test.ts)（CT-02 一致性）。
+实现：[packages/aws-clients/src/iot-device-policy.ts](../../packages/aws-clients/src/iot-device-policy.ts)；测试：[iot-device-policy.test.ts](../../packages/aws-clients/test/iot-device-policy.test.ts)（模板 + 允许/拒绝矩阵）、[topic-parity.test.ts](../../packages/aws-clients/test/topic-parity.test.ts)（CT-02 一致性）。
 
 ## 1. 范围与事实源
 
@@ -28,13 +28,13 @@
 
 | 验收基准 | 证据 |
 |---|---|
-| 自身允许矩阵全部通过 | 本地求值器：Connect 自身、Publish ×8 上行、Subscribe/Receive ×3 下行全允许（3 项测试） |
-| 跨设备/通配发布/错误方向全部拒绝 | 本地求值器拒绝矩阵：他机 Connect/Publish/Subscribe/Receive、`+`/`#` 通配、发布下行、订阅上行、未知类型、相邻路径（4 项测试） |
-| 模板正确性 | 恰好 4 条 Allow；资源/Action 零通配符；Connect 锁定 Client ID = Thing Name（2 项测试） |
+| 自身允许矩阵全部通过 | 本地求值器：Connect 自身、Publish 全部上行、Subscribe/Receive 全部下行 |
+| 跨设备/通配发布/错误方向全部拒绝 | 本地求值器拒绝矩阵：他机 Connect/Publish/Subscribe/Receive、`+`/`#` 通配、发布下行、订阅上行、未知类型、相邻路径 |
+| 模板正确性 | 恰好 4 条 Allow；资源/Action 零通配符；Connect 锁定 Client ID = Thing Name |
 
 **边界说明**：验收基准中「被 AWS IoT 拒绝」的端到端证明需要真实云凭据（本任务禁止执行）。本任务以本地最小 IAM 求值器做静态语义证明——策略资源全部为字面量 ARN（无通配符），精确匹配求值与 AWS IoT 授权语义等价；真实环境拒绝矩阵归 QA-04/部署冒烟验证。
 
-`pnpm vitest run packages/aws-clients` 14/14 通过；全仓 `pnpm verify` 退出 0（2026-08-27）。
+当前证据命令：`pnpm vitest run packages/aws-clients/test`、`pnpm verify`。精确测试快照记录在 `docs/audit`，任务文档不固化易漂移计数。真实 AWS IoT 允许/拒绝矩阵按已登记过渡方案延期至具备隔离测试账号的开发后期，不以本地求值器替代实网验收。
 
 ## 4. 对接说明（下游任务）
 
