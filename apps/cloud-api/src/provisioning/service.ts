@@ -86,6 +86,9 @@ interface OnboardingRequestDelegate {
 interface RecoveryCertificateDelegate {
   findFirst(args: { where: Record<string, unknown>; select: Record<string, unknown> }): Promise<{
     id: string;
+    deviceId: string;
+    status: string;
+    rotatedFromId: string | null;
     device: { serialNumber: string };
   } | null>;
 }
@@ -207,21 +210,116 @@ export class ProvisioningService implements ProvisioningTrigger {
   }
 
   /** EventBridge 组合根入口：只凭过期证书 ID 反查已批准申请并进入同一恢复状态机。 */
-  async recoverExpiredCertificate(certificateId: string): Promise<ProvisioningResult> {
+  async recoverExpiredCertificate(certificateId: string): Promise<void> {
     const certificates = (this.db as unknown as Record<string, unknown>)
       .deviceCertificate as RecoveryCertificateDelegate;
     const requests = (this.db as unknown as Record<string, unknown>).onboardingRequest as OnboardingRequestDelegate;
     const certificate = await certificates.findFirst({
-      where: { id: certificateId, status: 'PENDING_CLAIM', packageCiphertext: { not: null } },
-      select: { id: true, device: { select: { serialNumber: true } } },
+      where: { id: certificateId, packageCiphertext: { not: null }, packageExpiresAt: { lte: this.now() } },
+      select: {
+        id: true,
+        deviceId: true,
+        status: true,
+        rotatedFromId: true,
+        device: { select: { serialNumber: true } },
+      },
     });
     if (!certificate) throw new ProvisioningError('过期证书包不存在或状态已变化');
+    if (certificate.status === 'ACTIVE' && certificate.rotatedFromId) {
+      await this.recoverExpiredRotationPackage(certificate);
+      return;
+    }
+    if (certificate.status !== 'PENDING_CLAIM' || certificate.rotatedFromId) {
+      throw new ProvisioningError('过期证书包状态不支持自动恢复');
+    }
     const request = await requests.findFirst({
       where: { serialNumber: certificate.device.serialNumber, status: 'APPROVED' },
       orderBy: { reviewedAt: 'desc' },
     });
     if (!request) throw new ProvisioningError('找不到过期证书对应的已批准 Onboarding 申请');
-    return this.recoverExpiredPackage(request, certificateId);
+    await this.recoverExpiredPackage(request, certificateId);
+  }
+
+  /**
+   * BE-CERT-02 轮换包过期：先持久化恢复租约，再撤销未确认的新证书，最后事务清包。
+   * 被轮换的旧证书仍为 ACTIVE；设备下一次使用旧证重试 rotate 时会走既有签发链产生替代证书。
+   */
+  private async recoverExpiredRotationPackage(certificate: {
+    id: string;
+    deviceId: string;
+    rotatedFromId: string | null;
+  }): Promise<void> {
+    const certificates = (this.db as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
+    const current = this.now();
+    const staleLeaseBefore = new Date(current.getTime() - 5 * 60 * 1000);
+    await certificates.updateMany({
+      where: {
+        id: certificate.id,
+        status: 'ACTIVE',
+        rotatedFromId: certificate.rotatedFromId,
+        packageCiphertext: { not: null },
+        OR: [
+          { recoveryState: null },
+          { recoveryState: 'RECOVERY_FAILED' },
+          { recoveryState: 'RECOVERY_IN_PROGRESS', recoveryLastAttemptAt: { lt: staleLeaseBefore } },
+        ],
+      },
+      data: {
+        recoveryState: 'RECOVERY_REQUIRED',
+        recoveryRequestedAt: current,
+        recoveryLastError: null,
+      },
+    });
+    const claimed = await certificates.updateMany({
+      where: { id: certificate.id, status: 'ACTIVE', recoveryState: 'RECOVERY_REQUIRED' },
+      data: {
+        recoveryState: 'RECOVERY_IN_PROGRESS',
+        recoveryAttempts: { increment: 1 },
+        recoveryLastAttemptAt: current,
+      },
+    });
+    if (claimed.count !== 1) throw new ProvisioningError('过期轮换证书恢复正在处理或状态已变化');
+
+    try {
+      await this.deps.iot.revokeCertificate(certificate.id);
+    } catch (error) {
+      await certificates.updateMany({
+        where: { id: certificate.id, status: 'ACTIVE', recoveryState: 'RECOVERY_IN_PROGRESS' },
+        data: {
+          recoveryState: 'RECOVERY_FAILED',
+          recoveryLastError: error instanceof Error ? error.name : 'IOT_REVOKE_FAILED',
+        },
+      });
+      throw error;
+    }
+
+    const count = await withTransaction(this.db, async (tx) => {
+      const txCertificates = (tx as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
+      const updated = await txCertificates.updateMany({
+        where: { id: certificate.id, status: 'ACTIVE', recoveryState: 'RECOVERY_IN_PROGRESS' },
+        data: {
+          status: 'REVOKED',
+          revokedAt: this.now(),
+          packageCiphertext: null,
+          packageKmsKeyId: null,
+          packageExpiresAt: null,
+          recoveryState: 'RECOVERY_COMPLETED',
+          recoveryLastError: null,
+        },
+      });
+      if (updated.count === 1) {
+        await recordAudit(tx, {
+          objectType: 'deviceCertificate',
+          objectId: certificate.id,
+          action: 'CERT_ROTATION_PACKAGE_EXPIRED_RECOVERY',
+          result: 'SUCCESS',
+          beforeValue: { rotatedFromId: certificate.rotatedFromId },
+          afterValue: { deviceId: certificate.deviceId, recoveryState: 'RECOVERY_COMPLETED' },
+        });
+      }
+      return updated.count;
+    });
+    if (count !== 1) throw new ProvisioningError('过期轮换证书状态已变化，请重试');
   }
 
   async provision(request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'>): Promise<ProvisioningResult> {

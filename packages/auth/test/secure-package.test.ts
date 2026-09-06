@@ -282,6 +282,7 @@ describe('一次性领取', () => {
       },
     });
     assert.include(await sweeper.findExpiredPackageIds(), 'cert-sec-9');
+    assert.notInclude(await sweeper.findExpiredPackageIds(100, ['cert-sec-9']), 'cert-sec-9');
     assert.isNotNull((await prisma.deviceCertificate.findFirst({ where: { id: 'cert-sec-9' } }))?.packageCiphertext);
   });
 });

@@ -19,7 +19,8 @@ describe('SEC-01 certificate package scheduled sweeper', () => {
       exhaustedBatchBudget: false,
     });
     expect(findExpiredPackageIds).toHaveBeenCalledTimes(2);
-    expect(findExpiredPackageIds).toHaveBeenCalledWith(2);
+    expect(findExpiredPackageIds).toHaveBeenNthCalledWith(1, 2, []);
+    expect(findExpiredPackageIds).toHaveBeenNthCalledWith(2, 2, ['cert-1', 'cert-2']);
     expect(recoverExpiredPackage).toHaveBeenCalledTimes(3);
   });
 
@@ -54,5 +55,29 @@ describe('SEC-01 certificate package scheduled sweeper', () => {
       failedCertificateIds: ['cert-1'],
       exhaustedBatchBudget: false,
     });
+  });
+
+  test('满批失败不会在同次调用反复重试并阻塞后续过期包', async () => {
+    const findExpiredPackageIds = vi
+      .fn()
+      .mockResolvedValueOnce(['cert-failed'])
+      .mockResolvedValueOnce(['cert-next'])
+      .mockResolvedValueOnce([]);
+    const recoverExpiredPackage = vi.fn(async (id: string) => {
+      if (id === 'cert-failed') throw new Error('AWS unavailable');
+    });
+    const sweep = createCertificatePackageSweeper({
+      securePackage: { findExpiredPackageIds } as unknown as SecurePackageService,
+      recoverExpiredPackage,
+      batchSize: 1,
+      maxBatches: 3,
+    });
+    await expect(sweep()).resolves.toEqual({
+      recoveredCertificateIds: ['cert-next'],
+      failedCertificateIds: ['cert-failed'],
+      exhaustedBatchBudget: false,
+    });
+    expect(recoverExpiredPackage).toHaveBeenCalledTimes(2);
+    expect(findExpiredPackageIds).toHaveBeenNthCalledWith(2, 1, ['cert-failed']);
   });
 });

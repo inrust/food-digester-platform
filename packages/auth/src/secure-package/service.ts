@@ -271,12 +271,16 @@ export class SecurePackageService {
   }
 
   /** 查询待恢复的过期包；调用方必须走撤证恢复状态机，禁止直接清空密文。 */
-  async findExpiredPackageIds(limit = 100): Promise<readonly string[]> {
+  async findExpiredPackageIds(limit = 100, excludeCertificateIds: readonly string[] = []): Promise<readonly string[]> {
     if (!Number.isInteger(limit) || limit < 1 || limit > 1_000) {
       throw new SecurePackageError('CONFLICT', 'sweep limit must be an integer between 1 and 1000');
     }
+    if (excludeCertificateIds.length > 10_000) {
+      throw new SecurePackageError('CONFLICT', 'sweep exclusion list exceeds the bounded invocation budget');
+    }
     const expired = await this.certificates(this.db).findMany({
       where: {
+        ...(excludeCertificateIds.length > 0 ? { id: { notIn: [...excludeCertificateIds] } } : {}),
         packageCiphertext: { not: null },
         packageExpiresAt: { lte: this.now() },
       },

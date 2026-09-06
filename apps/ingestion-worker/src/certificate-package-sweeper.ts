@@ -28,9 +28,11 @@ export function createCertificatePackageSweeper(deps: CertificatePackageSweeperD
   return async (): Promise<CertificatePackageSweepResult> => {
     const recoveredCertificateIds: string[] = [];
     const failedCertificateIds: string[] = [];
+    const attemptedCertificateIds: string[] = [];
     for (let batch = 0; batch < maxBatches; batch += 1) {
-      const expired = await deps.securePackage.findExpiredPackageIds(batchSize);
+      const expired = await deps.securePackage.findExpiredPackageIds(batchSize, [...attemptedCertificateIds]);
       for (const certificateId of expired) {
+        attemptedCertificateIds.push(certificateId);
         try {
           await deps.recoverExpiredPackage(certificateId);
           recoveredCertificateIds.push(certificateId);

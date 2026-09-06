@@ -18,7 +18,7 @@
 | H-02 | IAC-01 / Device API | 非 local/test 环境强制完整 mTLS 配置；默认禁用 execute-api；仅 local/test 可显式开启不安全开发入口，并补失败关闭测试 | 已关闭 | AWS 部署阶段补真实 API Gateway mTLS 握手回执 |
 | H-03 | AUTH-02 / Rate Limit | 增加 PostgreSQL 原子 UPSERT 共享计数器和到期字段；request/status 共用 Token/IP 命名空间；默认同时执行 Token 指纹与可信 source IP 限频 | 已关闭 | 部署接线必须只传入 API Gateway 可信 `sourceIp`，不得信任客户端自报 Header |
 | H-04 | AUTH-04 / AWS IoT | 增加隔离账号验收脚本：创建两台 Thing、两张证书及各自 Policy，双向执行自身允许、跨设备、通配和错误方向拒绝矩阵，输出回执并清理资源 | **延期验证** | 进入 AWS 集成阶段后必须在隔离账号执行并提交 PASS 与清理回执；完成前 AUTH-04 只能维持组件级结论 |
-| H-05 | SEC-01 / Package TTL | 服务直接消费 DEC-003 冻结值并拒绝非 86400 配置；增加过期包条件清理、批量 sweeper 核心及每 5 分钟 EventBridge 调度资源 | 已关闭（本地实现） | AWS 部署阶段验证真实调度、数据库清理和撤证/重签链；异常恢复顺序仍按原报告 M-04/P1 跟踪 |
+| H-05 | SEC-01 / Package TTL | 服务直接消费 DEC-003 冻结值并拒绝非 86400 配置；增加真实 EventBridge sweeper 资产。2026-09-06 补齐 `PENDING_CLAIM` Onboarding 与 `ACTIVE + rotatedFromId` 轮换包两类过期恢复，撤证失败保留密文，成功后事务清包；同次扫描排除已尝试 ID，避免失败头部项阻塞后续包 | 已关闭（本地实现） | AWS 部署阶段验证真实调度、数据库清理和撤证/重签链；设备轮换包清理后由仍有效的旧证书重试 rotate 完成重签 |
 | H-06 | SEC-01 / Logging & Trace | 生产直接 `console.error` 接入统一 redacting logger；增加 Trace attributes 脱敏入口及生产源码 sink 静态门禁；审计/日志秘密值测试通过 | 已关闭 | 新增日志或 Trace SDK 时必须通过 `check:sensitive-sinks`，禁止直接写 sink |
 | H-07 | SEC-01 / KMS IAM | 证书包 Key 区分管理面与数据面 KeyPolicy；数据面仅允许确定性 API Lambda Role 与证书恢复 Lambda Role；模板测试按通配语义检查加解密动作 | 已关闭（模板级） | AWS 部署阶段补 IAM Policy Simulator/真实 KMS 拒绝回执 |
 
@@ -91,3 +91,13 @@ pnpm test:aws-iot-authz
 | AUTH-04 组件/本地 Policy 测试 | **PASS** |
 | AUTH-04 真实 AWS IoT 验收 | **DEFERRED / NOT VERIFIED** |
 | AWS 部署/生产验收 | **NOT ACCEPTED** |
+
+## 6. H-05 全类型证书包 TTL 补强（2026-09-06）
+
+复查发现，原 sweeper 只能把首次 Onboarding 的 `PENDING_CLAIM` 包映射到已批准申请；证书轮换产生的 `ACTIVE + rotatedFromId` 包会持续被扫描，但无法进入恢复状态机。现已补齐：
+
+- 轮换包先取得持久化恢复租约，再调用 AWS IoT 撤销未确认的新证书；撤证失败进入 `RECOVERY_FAILED` 且保留密文，供下一轮重试。
+- 撤证成功后，在同一数据库事务中将新证书标记 `REVOKED`、清除全部包字段并记录 `CERT_ROTATION_PACKAGE_EXPIRED_RECOVERY` 审计；被轮换的旧证书保持 `ACTIVE`，设备随后重试 rotate 会签发替代证书。
+- sweeper 在单次有界调用中排除已经尝试的证书 ID。一个失败的满批不会被立即重复十次，也不会阻挡下一批过期包；失败项仍会在下一次 EventBridge 调度中重试。
+
+本地验收覆盖 Onboarding 与轮换两类包、未到期拒绝、AWS 撤证失败注入、成功后清包、审计、旧证重签以及满批失败继续扫描：专项 4 files / 29 tests、CDK 模板 1 file / 28 tests、全仓串行 Vitest 95 files / 789 tests 均通过；全仓 build、format、boundaries、sensitive sinks、secrets 与 CDK 0-warning synth 通过。真实 EventBridge 时序和 AWS IoT 回执仍按既有决定留到 AWS 集成阶段，不宣称为云端验收通过。

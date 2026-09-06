@@ -11,9 +11,9 @@
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert, expect } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
-import { createLocalTestKeyProvider } from '@fdp/auth';
+import { CERTIFICATE_PACKAGE_RETENTION_SECONDS, createLocalTestKeyProvider, SecurePackageService } from '@fdp/auth';
 import type { IotPolicyDocument } from '@fdp/aws-clients';
-import { ProvisioningService } from '../src/index.js';
+import { ProvisioningService, rotateCertificate } from '../src/index.js';
 import type { IotCertificateResult, IotProvisioningPort } from '../src/index.js';
 import type { AdminOnboardingRequestRecord } from '../src/index.js';
 import { createTestDb } from './helpers.js';
@@ -270,6 +270,10 @@ describe('ProvisioningService', () => {
     const issued = await service.provision(request);
     iot.failNextRevoke = true;
 
+    await expect(service.recoverExpiredCertificate(issued.certificateId)).rejects.toThrow(
+      '过期证书包不存在或状态已变化',
+    );
+
     await expect(service.recoverExpiredPackage(request, issued.certificateId)).rejects.toThrow(
       'simulated revoke failure',
     );
@@ -279,13 +283,94 @@ describe('ProvisioningService', () => {
     assert.isNotNull(old.packageCiphertext, '撤证失败时密文必须保留');
 
     // EventBridge 生产入口只持有 certificateId，必须反查已批准申请后进入同一恢复状态机。
-    const recovered = await service.recoverExpiredCertificate(issued.certificateId);
-    assert.notEqual(recovered.certificateId, issued.certificateId);
+    const expiredRecovery = new ProvisioningService({
+      client: prisma,
+      iot,
+      keyProvider: createLocalTestKeyProvider('be-onb-03'),
+      config: CONFIG,
+      now: () => new Date(NOW.getTime() + (CERTIFICATE_PACKAGE_RETENTION_SECONDS + 1) * 1000),
+    });
+    await expiredRecovery.recoverExpiredCertificate(issued.certificateId);
     old = await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: issued.certificateId } });
     assert.equal(old.status, 'REVOKED');
     assert.equal(old.recoveryState, 'RECOVERY_COMPLETED');
     assert.equal(old.recoveryAttempts, 2);
     assert.isNull(old.packageCiphertext);
     assert.equal(await prisma.deviceCertificate.count({ where: { deviceId, status: 'PENDING_CLAIM' } }), 1);
+  });
+
+  test('H-05：轮换证书包过期时撤销新证书后清包，失败可重试且旧证仍可用于重签', async () => {
+    const { deviceId } = await plantApprovedRequest();
+    const oldCertificateId = `cert-old-rotation-${seq}`;
+    const rotationCertificateId = `cert-new-rotation-${seq}`;
+    await prisma.deviceCertificate.create({
+      data: {
+        id: oldCertificateId,
+        deviceId,
+        fingerprint: `old-rotation-fp-${seq}`,
+        status: 'ACTIVE',
+        notBefore: NOW,
+        notAfter: new Date(NOW.getTime() + 365 * 24 * 3600 * 1000),
+      },
+    });
+    await prisma.deviceCertificate.create({
+      data: {
+        id: rotationCertificateId,
+        deviceId,
+        fingerprint: `new-rotation-fp-${seq}`,
+        status: 'ACTIVE',
+        rotatedFromId: oldCertificateId,
+        notBefore: NOW,
+        notAfter: new Date(NOW.getTime() + 365 * 24 * 3600 * 1000),
+      },
+    });
+    const keyProvider = createLocalTestKeyProvider('be-onb-03');
+    const packageService = new SecurePackageService({
+      db: prisma,
+      keyProvider,
+      config: { retentionSeconds: CERTIFICATE_PACKAGE_RETENTION_SECONDS, maxClaims: 1, now },
+    });
+    await packageService.storePackage(rotationCertificateId, Buffer.from('rotation-private-material'));
+
+    const iot = mockIot();
+    iot.failNextRevoke = true;
+    const recoveryNow = () => new Date(NOW.getTime() + (CERTIFICATE_PACKAGE_RETENTION_SECONDS + 1) * 1000);
+    const service = new ProvisioningService({ client: prisma, iot, keyProvider, config: CONFIG, now: recoveryNow });
+    await expect(service.recoverExpiredCertificate(rotationCertificateId)).rejects.toThrow('simulated revoke failure');
+    let rotation = await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: rotationCertificateId } });
+    assert.equal(rotation.recoveryState, 'RECOVERY_FAILED');
+    assert.isNotNull(rotation.packageCiphertext, '撤证失败时不得提前销毁轮换密文包');
+
+    await service.recoverExpiredCertificate(rotationCertificateId);
+    rotation = await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: rotationCertificateId } });
+    assert.equal(rotation.status, 'REVOKED');
+    assert.equal(rotation.recoveryState, 'RECOVERY_COMPLETED');
+    assert.isNull(rotation.packageCiphertext);
+    assert.equal(
+      (await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: oldCertificateId } })).status,
+      'ACTIVE',
+      '旧证书必须保留，以便设备下次 rotate 请求触发重签',
+    );
+    assert.ok(
+      await prisma.auditLog.findFirst({
+        where: { objectId: rotationCertificateId, action: 'CERT_ROTATION_PACKAGE_EXPIRED_RECOVERY' },
+      }),
+    );
+
+    const replacement = await rotateCertificate(
+      { client: prisma, iot, keyProvider, config: CONFIG, now: recoveryNow },
+      {
+        deviceId,
+        certificateId: oldCertificateId,
+        certificateFingerprint: `old-rotation-fp-${seq}`,
+        customerId: null,
+        siteId: null,
+        deviceLifecycleStatus: 'Active',
+      },
+      oldCertificateId,
+    );
+    assert.notEqual(replacement.certificateId, rotationCertificateId, '设备使用旧证重试时必须签发替代证书');
+    assert.equal(replacement.rotatedFromId, oldCertificateId);
+    await replacement.confirmDelivery();
   });
 });

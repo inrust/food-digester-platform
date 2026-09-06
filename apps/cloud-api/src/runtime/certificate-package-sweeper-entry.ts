@@ -42,11 +42,13 @@ async function initialize(): Promise<() => Promise<SweepResult>> {
   return async () => {
     const recoveredCertificateIds: string[] = [];
     const failedCertificateIds: string[] = [];
+    const attemptedCertificateIds: string[] = [];
     const batchSize = 100;
     const maxBatches = 10;
     for (let batch = 0; batch < maxBatches; batch += 1) {
-      const expired = await securePackage.findExpiredPackageIds(batchSize);
+      const expired = await securePackage.findExpiredPackageIds(batchSize, [...attemptedCertificateIds]);
       for (const certificateId of expired) {
+        attemptedCertificateIds.push(certificateId);
         try {
           await provisioning.recoverExpiredCertificate(certificateId);
           recoveredCertificateIds.push(certificateId);
@@ -62,7 +64,7 @@ async function initialize(): Promise<() => Promise<SweepResult>> {
   };
 }
 
-/** SEC-01 EventBridge 生产入口：过期包持久化恢复意图后执行撤证、清包与重签。 */
+/** SEC-01 EventBridge 生产入口：过期包持久化恢复意图后撤证清包，并使后续签发重试可收敛。 */
 export async function handler(): Promise<SweepResult> {
   sweep ??= await initialize();
   return sweep();
