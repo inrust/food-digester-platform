@@ -146,3 +146,21 @@ export {
 export type { OnboardingRequestList } from './pages/onboarding/onboarding-api.js';
 export { isReviewable, ONBOARDING_STATUS_LABELS } from './pages/onboarding/onboarding-state.js';
 export type { OnboardingRequestView, OnboardingStatus } from './pages/onboarding/types.js';
+
+// ---------- FE-05 Customer / Site ----------
+export { Modal } from './components/Modal.js';
+export type { ModalProps } from './components/Modal.js';
+export { CustomersPage } from './pages/customers/CustomersPage.js';
+export type { CustomersPageProps } from './pages/customers/CustomersPage.js';
+export { createCustomer, deactivateCustomer, fetchCustomers, updateCustomer } from './pages/customers/customers-api.js';
+export type { CustomerList } from './pages/customers/customers-api.js';
+export { CUSTOMER_STATUS_LABELS } from './pages/customers/types.js';
+export type { CustomerStatus, CustomerView } from './pages/customers/types.js';
+export { SitesPage } from './pages/sites/SitesPage.js';
+export type { SiteFilters, SitesPageProps } from './pages/sites/SitesPage.js';
+export { createSite, deactivateSite, fetchSites, updateSite } from './pages/sites/sites-api.js';
+export type { SiteList, SiteListFilter } from './pages/sites/sites-api.js';
+export { isValidTimeZone, validateSiteInput } from './pages/sites/sites-state.js';
+export type { SiteFieldErrors } from './pages/sites/sites-state.js';
+export { SITE_STATUS_LABELS } from './pages/sites/types.js';
+export type { SiteInput, SiteStatus, SiteView } from './pages/sites/types.js';

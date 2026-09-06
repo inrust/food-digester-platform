@@ -14,23 +14,27 @@ export interface ScopeFilterProps {
   readonly regions: readonly FilterOption[];
   readonly subregions: readonly (FilterOption & { readonly region: string })[];
   readonly sites: readonly (FilterOption & { readonly subregion: string })[];
+  /** FE-05：可选 Device 层级（按 siteId 过滤）。 */
+  readonly devices?: readonly (FilterOption & { readonly siteId: string })[];
   readonly value: ScopeFilterValue;
   readonly onChange: (next: ScopeFilterValue) => void;
-  readonly labels?: { region: string; subregion: string; site: string };
+  readonly labels?: { region: string; subregion: string; site: string; device: string };
 }
 
-const DEFAULT_LABELS = { region: '设备区域', subregion: '设备子区域', site: '站点' } as const;
+const DEFAULT_LABELS = { region: '设备区域', subregion: '设备子区域', site: '站点', device: '设备' } as const;
 
 export function ScopeFilter({
   regions,
   subregions,
   sites,
+  devices,
   value,
   onChange,
   labels = DEFAULT_LABELS,
 }: ScopeFilterProps) {
   const visibleSubregions = value.region === null ? [] : subregions.filter((s) => s.region === value.region);
   const visibleSites = value.subregion === null ? [] : sites.filter((s) => s.subregion === value.subregion);
+  const visibleDevices = value.siteId === null ? [] : (devices ?? []).filter((d) => d.siteId === value.siteId);
 
   return (
     <div className="scope-filter" data-testid="scope-filter">
@@ -84,7 +88,26 @@ export function ScopeFilter({
         </select>
       </div>
 
-      <button type="button" onClick={() => onChange({ region: null, subregion: null, siteId: null })}>
+      {devices !== undefined ? (
+        <div className="filter-field">
+          <label htmlFor="scope-device">{labels.device}</label>
+          <select
+            id="scope-device"
+            value={value.deviceId ?? ''}
+            disabled={value.siteId === null}
+            onChange={(event) => onChange(applyScopeChange(value, 'deviceId', event.target.value || null))}
+          >
+            <option value="">全部</option>
+            {visibleDevices.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
+      <button type="button" onClick={() => onChange({ region: null, subregion: null, siteId: null, deviceId: null })}>
         重置
       </button>
     </div>

@@ -7,9 +7,11 @@ export interface ScopeFilterValue {
   readonly region: string | null;
   readonly subregion: string | null;
   readonly siteId: string | null;
+  /** FE-05：可选 Device 层级（Region→Subregion→Site→Device 联动）。 */
+  readonly deviceId?: string | null;
 }
 
-export const EMPTY_SCOPE_FILTER: ScopeFilterValue = { region: null, subregion: null, siteId: null };
+export const EMPTY_SCOPE_FILTER: ScopeFilterValue = { region: null, subregion: null, siteId: null, deviceId: null };
 
 export type ScopeFilterLevel = keyof ScopeFilterValue;
 
@@ -20,10 +22,12 @@ export function applyScopeChange(
 ): ScopeFilterValue {
   switch (level) {
     case 'region':
-      return { region: next, subregion: null, siteId: null };
+      return { region: next, subregion: null, siteId: null, deviceId: null };
     case 'subregion':
-      return { ...value, subregion: next, siteId: null };
+      return { ...value, subregion: next, siteId: null, deviceId: null };
     case 'siteId':
-      return { ...value, siteId: next };
+      return { ...value, siteId: next, deviceId: null };
+    case 'deviceId':
+      return { ...value, deviceId: next };
   }
 }

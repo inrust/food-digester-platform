@@ -35,7 +35,15 @@ test('CT-06：9 个菜单项的 routeId/label/pageState/roles 与路由注册表
   assert.equal(matrix.menus.length, 9);
 
   const menuRoutes = APP_ROUTES.filter((route) => route.menuGroup !== null);
-  assert.equal(menuRoutes.length, matrix.menus.length);
+  // FE-05 扩展路由（CT-06 矩阵外，权限与 BE-CUS-01/02 契约一致）
+  const EXTENSION_ROUTES = ['/customers', '/sites'];
+  const matrixRoutes = menuRoutes.filter((r) => !EXTENSION_ROUTES.includes(r.path));
+  assert.equal(matrixRoutes.length, matrix.menus.length);
+  // 扩展路由必须在此显式登记，防止路由表无约束膨胀
+  assert.deepEqual(
+    menuRoutes.filter((r) => EXTENSION_ROUTES.includes(r.path)).map((r) => r.path),
+    EXTENSION_ROUTES,
+  );
 
   for (const menu of matrix.menus) {
     const route = menuRoutes.find((r) => r.path === menu.routeId);

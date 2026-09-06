@@ -23,7 +23,7 @@ function sessionOf(role: Role): SessionSnapshot {
   return { username: 'user@example.com', roles: [role], customerId };
 }
 
-// 五种角色看到正确路由（验收基准）：期望集合与 CT-06 矩阵 roles 字段一致
+// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + FE-05 扩展路由（/customers、/sites）
 const EXPECTED_MENUS: Record<Role, string[]> = {
   PlatformSuperAdmin: [
     '/dashboard',
@@ -35,6 +35,8 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/devices',
     '/contracts',
     '/settings',
+    '/customers',
+    '/sites',
   ],
   PlatformOperator: [
     '/dashboard',
@@ -45,8 +47,19 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/overview',
     '/esg/devices',
     '/contracts',
+    '/customers',
+    '/sites',
   ],
-  Auditor: ['/dashboard', '/devices/view', '/devices/groups', '/esg/overview', '/esg/devices', '/contracts'],
+  Auditor: [
+    '/dashboard',
+    '/devices/view',
+    '/devices/groups',
+    '/esg/overview',
+    '/esg/devices',
+    '/contracts',
+    '/customers',
+    '/sites',
+  ],
   CustomerAdmin: [
     '/dashboard',
     '/devices/view',
@@ -56,8 +69,17 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/overview',
     '/esg/devices',
     '/settings',
+    '/sites',
   ],
-  CustomerViewer: ['/dashboard', '/devices/view', '/devices/groups', '/consumables', '/esg/overview', '/esg/devices'],
+  CustomerViewer: [
+    '/dashboard',
+    '/devices/view',
+    '/devices/groups',
+    '/consumables',
+    '/esg/overview',
+    '/esg/devices',
+    '/sites',
+  ],
 };
 
 for (const role of Object.keys(EXPECTED_MENUS) as Role[]) {
@@ -76,9 +98,9 @@ test('菜单结构：概览为顶级项，其后按 设备管理/ESG管理/合�
   assert.equal(nodes[0]?.kind, 'leaf');
   const groupIds = nodes.filter((n) => n.kind === 'group').map((n) => (n as { groupId: string }).groupId);
   assert.deepEqual(groupIds, ['device', 'esg', 'contract', 'platform']);
-  // Auditor 无 用户管理 → platform 组隐藏
-  const auditorGroups = menuForRoles(['Auditor']).filter((n) => n.kind === 'group');
-  assert.ok(!auditorGroups.some((g) => g.kind === 'group' && g.groupId === 'platform'));
+  // CustomerViewer 无合约路由 → contract 组隐藏
+  const viewerGroups = menuForRoles(['CustomerViewer']).filter((n) => n.kind === 'group');
+  assert.ok(!viewerGroups.some((g) => g.kind === 'group' && g.groupId === 'contract'));
 });
 
 test('无 Token 不能进入受保护页：重定向登录并携带 returnTo', () => {

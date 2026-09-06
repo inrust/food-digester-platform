@@ -13,9 +13,29 @@ export const FORBIDDEN_PATH = '/403';
 
 export type MenuGroupId = 'overview' | 'device' | 'esg' | 'contract' | 'platform';
 
+/** 页面状态键（见 CT-06 pages；FE-05 新增 customers/sites 为矩阵外扩展路由）。 */
+export type PageState =
+  | 'login'
+  | 'forbidden'
+  | 'dashboard'
+  | 'device-view'
+  | 'device-operate'
+  | 'device-group'
+  | 'device-consumable'
+  | 'esg-overview'
+  | 'esg-device'
+  | 'contract-modify'
+  | 'settings'
+  | 'device-manage'
+  | 'contract-new'
+  | 'contract-detail'
+  | 'ota-campaigns'
+  | 'customers'
+  | 'sites';
+
 export interface AppRoute {
   readonly path: string;
-  readonly pageState: string;
+  readonly pageState: PageState;
   readonly label: string;
   /** 允许访问的角色（CT-06 菜单角色；子页面继承父菜单角色）。 */
   readonly roles: readonly Role[];
@@ -101,6 +121,23 @@ export const APP_ROUTES: readonly AppRoute[] = [
     pageState: 'settings',
     label: '用户管理',
     roles: ['PlatformSuperAdmin', 'CustomerAdmin'],
+    menuGroup: 'platform',
+  },
+  // ---------- FE-05 扩展路由（CT-06 矩阵外；权限与 BE-CUS-01/02 契约一致） ----------
+  // customer:read 持有者 = 平台三角色；写操作 customer:write（SuperAdmin/Operator）在页面内按角色禁用
+  {
+    path: '/customers',
+    pageState: 'customers',
+    label: '客户管理',
+    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
+    menuGroup: 'platform',
+  },
+  // site:read = 全部五角色；Customer 角色 scope 由服务端强制
+  {
+    path: '/sites',
+    pageState: 'sites',
+    label: '站点管理',
+    roles: ALL_ROLES,
     menuGroup: 'platform',
   },
 

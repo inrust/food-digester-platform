@@ -208,7 +208,7 @@ test('ScopeFilter：三级联动（上游变更清空下游），标签均可用
   await user.selectOptions(site, 'site-1');
   assert.equal(
     screen.getByTestId('filter-value').textContent,
-    JSON.stringify({ region: 'cn-east', subregion: 'sh', siteId: 'site-1' }),
+    JSON.stringify({ region: 'cn-east', subregion: 'sh', siteId: 'site-1', deviceId: null }),
   );
 
   // 上游变更 → 下游清空
@@ -216,15 +216,27 @@ test('ScopeFilter：三级联动（上游变更清空下游），标签均可用
   assert.equal(screen.getByTestId('filter-value').textContent, JSON.stringify(EMPTY_SCOPE_FILTER));
 });
 
-test('filter-state 纯逻辑：region/subregion 变更清空下游；site 变更不影响上游', () => {
-  const full = { region: 'cn-east', subregion: 'sh', siteId: 'site-1' };
-  assert.deepEqual(applyScopeChange(full, 'region', 'cn-north'), { region: 'cn-north', subregion: null, siteId: null });
-  assert.deepEqual(applyScopeChange(full, 'subregion', 'hz'), { region: 'cn-east', subregion: 'hz', siteId: null });
+test('filter-state 纯逻辑：region/subregion/site 变更清空下游；device 变更不影响上游', () => {
+  const full = { region: 'cn-east', subregion: 'sh', siteId: 'site-1', deviceId: 'dev-1' };
+  assert.deepEqual(applyScopeChange(full, 'region', 'cn-north'), {
+    region: 'cn-north',
+    subregion: null,
+    siteId: null,
+    deviceId: null,
+  });
+  assert.deepEqual(applyScopeChange(full, 'subregion', 'hz'), {
+    region: 'cn-east',
+    subregion: 'hz',
+    siteId: null,
+    deviceId: null,
+  });
   assert.deepEqual(applyScopeChange(full, 'siteId', 'site-2'), {
     region: 'cn-east',
     subregion: 'sh',
     siteId: 'site-2',
+    deviceId: null,
   });
+  assert.deepEqual(applyScopeChange(full, 'deviceId', 'dev-2'), { ...full, deviceId: 'dev-2' });
 });
 
 // ---------- CustomerScope ----------
