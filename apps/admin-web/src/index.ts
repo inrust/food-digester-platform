@@ -68,3 +68,35 @@ export {
   roleDisplayName,
 } from './menu/menu.js';
 export type { MenuLeaf, MenuNode } from './menu/menu.js';
+
+// ---------- FE-02 壳层 ----------
+export { AppShell } from './shell/AppShell.js';
+export type { AppShellProps } from './shell/AppShell.js';
+export { Sidebar } from './shell/Sidebar.js';
+export type { SidebarProps } from './shell/Sidebar.js';
+export { Topbar } from './shell/Topbar.js';
+export type { TopbarProps } from './shell/Topbar.js';
+export { breadcrumbsFor } from './shell/breadcrumb.js';
+export type { Crumb } from './shell/breadcrumb.js';
+
+// ---------- FE-02 通用组件 ----------
+export { ToastHost, TOAST_AUTO_DISMISS_MS, useToastQueue } from './components/Toast.js';
+export type { ToastHostProps, ToastQueue } from './components/Toast.js';
+export { toastReducer } from './components/toast-store.js';
+export type { ToastAction, ToastItem, ToastKind } from './components/toast-store.js';
+export { ConfirmDialog } from './components/ConfirmDialog.js';
+export type { ConfirmDialogProps } from './components/ConfirmDialog.js';
+export { classifyError, ErrorNotice } from './components/ErrorNotice.js';
+export type { ErrorNoticeModel, ErrorNoticeProps, ErrorNoticeVariant } from './components/ErrorNotice.js';
+export { CursorTable } from './components/CursorTable.js';
+export type { CursorTableColumn, CursorTableProps } from './components/CursorTable.js';
+export { applyScopeChange, EMPTY_SCOPE_FILTER } from './components/filter-state.js';
+export type { ScopeFilterLevel, ScopeFilterValue } from './components/filter-state.js';
+export { ScopeFilter } from './components/ScopeFilter.js';
+export type { FilterOption, ScopeFilterProps } from './components/ScopeFilter.js';
+export { CustomerScope } from './components/CustomerScope.js';
+export type { CustomerScopeProps } from './components/CustomerScope.js';
+export { DEFAULT_TIME_ZONE, formatInTimeZone, TimeText } from './components/TimeText.js';
+export type { TimeTextProps } from './components/TimeText.js';
+export { AxisBadge, AXIS_LABELS, FourAxisBadges } from './components/FourAxisBadge.js';
+export type { FourAxisStatusValue, StatusAxis } from './components/FourAxisBadge.js';

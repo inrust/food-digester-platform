@@ -21,6 +21,8 @@ export interface AppRoute {
   readonly roles: readonly Role[];
   /** 菜单归属；null = 非菜单页面（详情/子页）或公共页。 */
   readonly menuGroup: MenuGroupId | null;
+  /** 子页面的父菜单路由（面包屑回链）。 */
+  readonly parentPath?: string;
   readonly public?: boolean;
 }
 
@@ -104,7 +106,14 @@ export const APP_ROUTES: readonly AppRoute[] = [
 
   // ---------- 子页面（非菜单入口；角色继承父菜单，见 CT-06 pages） ----------
   // FE-07/08/09/13：经“设备群管理”操作列进入
-  { path: '/devices/manage', pageState: 'device-manage', label: '设备管理', roles: ALL_ROLES, menuGroup: null },
+  {
+    path: '/devices/manage',
+    pageState: 'device-manage',
+    label: '设备管理详情',
+    roles: ALL_ROLES,
+    menuGroup: null,
+    parentPath: '/devices/groups',
+  },
   // FE-17：经“合约查询及修改”进入
   {
     path: '/contracts/new',
@@ -112,6 +121,7 @@ export const APP_ROUTES: readonly AppRoute[] = [
     label: '新建合约',
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: null,
+    parentPath: '/contracts',
   },
   {
     path: '/contracts/detail',
@@ -119,6 +129,7 @@ export const APP_ROUTES: readonly AppRoute[] = [
     label: '合约详情',
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: null,
+    parentPath: '/contracts',
   },
   // FE-13：经概览“升级”入口进入；持有 ota:read 的角色（AUTH-01 权限矩阵）
   {
@@ -127,6 +138,7 @@ export const APP_ROUTES: readonly AppRoute[] = [
     label: 'OTA 升级',
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: null,
+    parentPath: '/dashboard',
   },
 ];
 

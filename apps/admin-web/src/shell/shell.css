@@ -1,0 +1,186 @@
+/* FE-02 壳层布局：桌面侧栏常驻；≤768px 侧栏转为抽屉（.sidebar.open + .sidebar-overlay.active）。 */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: #1f2733;
+  color: #d7dee8;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar .logo {
+  padding: 16px;
+  font-weight: 600;
+}
+
+.sidebar-nav .menu-list,
+.sidebar-nav .sub-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-nav .menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  color: inherit;
+  background: none;
+  border: none;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sidebar-nav .menu-item:hover,
+.sidebar-nav .menu-item.active {
+  background: #2b3648;
+  color: #fff;
+}
+
+.sidebar-nav .menu-item:focus-visible,
+.topbar button:focus-visible {
+  outline: 2px solid #4da3ff;
+  outline-offset: -2px;
+}
+
+.sidebar-nav .sub-menu .menu-item {
+  padding-left: 36px;
+}
+
+.menu-group-toggle .arrow {
+  margin-left: auto;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  padding: 3px;
+  transform: rotate(45deg);
+}
+
+.menu-group-toggle .arrow.open {
+  transform: rotate(-135deg);
+}
+
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  height: 56px;
+  background: #fff;
+  border-bottom: 1px solid #e3e8ef;
+}
+
+.topbar-menu-button {
+  display: none;
+}
+
+.breadcrumb ol {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.breadcrumb li + li::before {
+  content: '/';
+  margin-right: 8px;
+  color: #98a2b3;
+}
+
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notification-button {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  border-radius: 8px;
+  background: #d92d20;
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.role-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #eef4ff;
+  color: #175cd3;
+  font-size: 12px;
+}
+
+.page-content {
+  flex: 1;
+  padding: 16px;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+/* 移动端（≤768px）：侧栏转为抽屉 */
+@media (max-width: 768px) {
+  .topbar-menu-button {
+    display: inline-flex;
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease-in-out;
+    z-index: 30;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+    z-index: 20;
+  }
+
+  .sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
