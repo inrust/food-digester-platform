@@ -164,3 +164,39 @@ export { isValidTimeZone, validateSiteInput } from './pages/sites/sites-state.js
 export type { SiteFieldErrors } from './pages/sites/sites-state.js';
 export { SITE_STATUS_LABELS } from './pages/sites/types.js';
 export type { SiteInput, SiteStatus, SiteView } from './pages/sites/types.js';
+
+// ---------- FE-06 设备列表与详情 ----------
+export { DeviceGroupsPage, EMPTY_DEVICE_FILTERS } from './pages/devices/DeviceGroupsPage.js';
+export type { DeviceGroupsPageProps, DeviceListFilters } from './pages/devices/DeviceGroupsPage.js';
+export { DeviceViewPage } from './pages/devices/DeviceViewPage.js';
+export type { ConsoleState, DeviceViewPageProps } from './pages/devices/DeviceViewPage.js';
+export { fetchDevice, fetchDeviceConsole, fetchDevices } from './pages/devices/devices-api.js';
+export type { DeviceList, DeviceListFilter } from './pages/devices/devices-api.js';
+export {
+  COMPONENT_HEALTH_LABELS,
+  COMPONENT_LABELS,
+  CONNECTIVITY_FILTER_OPTIONS,
+  DEVICE_GROUP_COVERAGE,
+  DEVICE_VIEW_COVERAGE,
+  LICENSE_FILTER_LABELS,
+  LICENSE_FILTER_OPTIONS,
+  LIFECYCLE_FILTER_OPTIONS,
+  OPERATIONAL_FILTER_OPTIONS,
+  SENSOR_METRICS,
+} from './pages/devices/device-state.js';
+export type { MetricDisplay } from './pages/devices/device-state.js';
+export type {
+  ComponentHealth,
+  ComponentsView,
+  ConsoleAlarmView,
+  ConsoleConsumableView,
+  ConsoleDeviceBrief,
+  DeviceConsoleView,
+  DeviceView,
+  EsgDayView,
+  LatestMediaView,
+  MetricsView,
+  MetricValueView,
+  NetworkView,
+  ObservedBlockView,
+} from './pages/devices/types.js';

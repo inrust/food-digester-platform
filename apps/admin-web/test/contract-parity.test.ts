@@ -15,6 +15,16 @@ import {
   DENY_REASON_LABELS,
   QUICK_COMMANDS,
 } from '../src/pages/dashboard/dashboard-state.js';
+import {
+  COMPONENT_LABELS,
+  CONNECTIVITY_FILTER_OPTIONS,
+  DEVICE_GROUP_COVERAGE,
+  DEVICE_VIEW_COVERAGE,
+  LICENSE_FILTER_OPTIONS,
+  LIFECYCLE_FILTER_OPTIONS,
+  OPERATIONAL_FILTER_OPTIONS,
+  SENSOR_METRICS,
+} from '../src/pages/devices/device-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -113,4 +123,63 @@ test('BE-DASH-01：denyReason 文案覆盖契约枚举全集', () => {
     (v): v is string => v !== null,
   );
   assert.deepEqual(Object.keys(DENY_REASON_LABELS).sort(), enumValues.sort());
+});
+
+test('FE-06：CT-06 device-view/device-group 的 Adopt/Adapt 元素 100% 有实现锚点', () => {
+  const matrix = readJson('contracts/prototype-traceability.yaml') as {
+    pages: { pageState: string; elements: { id: string; disposition: string }[] }[];
+  };
+  const coverage: Record<string, Readonly<Record<string, string>>> = {
+    'device-view': DEVICE_VIEW_COVERAGE,
+    'device-group': DEVICE_GROUP_COVERAGE,
+  };
+  for (const [pageState, map] of Object.entries(coverage)) {
+    const page = matrix.pages.find((p) => p.pageState === pageState);
+    assert.ok(page !== undefined, `CT-06 缺少页面 ${pageState}`);
+    const required = page.elements.filter((e) => e.disposition === 'Adopt' || e.disposition === 'Adapt');
+    for (const element of required) {
+      assert.ok(map[element.id] !== undefined, `元素 ${element.id} 无实现锚点`);
+    }
+    // 覆盖表不允许多余键（防止伪覆盖）
+    for (const key of Object.keys(map)) {
+      assert.ok(
+        required.some((e) => e.id === key),
+        `覆盖表存在 CT-06 之外的键 ${key}`,
+      );
+    }
+  }
+  // Defer 元素（录入人，无 API 来源）明确不实现：仅允许 device-group.req.column.creator
+  const deferred = matrix.pages
+    .filter((p) => p.pageState === 'device-view' || p.pageState === 'device-group')
+    .flatMap((p) => p.elements.filter((e) => e.disposition === 'Defer').map((e) => e.id));
+  assert.deepEqual(deferred, ['device-group.req.column.creator']);
+});
+
+test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {
+  const api = readJson('contracts/rest/admin-device-console-api.json') as {
+    components: {
+      schemas: {
+        MetricsBlock: { properties: { metrics: { description: string } } };
+        ComponentStatus: { properties: Record<string, unknown> };
+      };
+    };
+  };
+  const description = api.components.schemas.MetricsBlock.properties.metrics.description;
+  for (const metric of SENSOR_METRICS) {
+    assert.ok(description.includes(metric.key), `契约 MetricsBlock 未声明键 ${metric.key}`);
+  }
+  const componentKeys = Object.keys(api.components.schemas.ComponentStatus.properties).sort();
+  assert.deepEqual(Object.keys(COMPONENT_LABELS).sort(), componentKeys);
+});
+
+test('FE-06：列表筛选枚举与 listDevices 参数 enum 一致', () => {
+  const api = readJson('contracts/rest/admin-device-api.json') as {
+    paths: { '/api/v1/admin/devices': { get: { parameters: { name: string; schema?: { enum?: string[] } }[] } } };
+  };
+  const params = api.paths['/api/v1/admin/devices'].get.parameters;
+  const enumOf = (name: string) => params.find((p) => p.name === name)?.schema?.enum;
+  assert.deepEqual([...LIFECYCLE_FILTER_OPTIONS], enumOf('lifecycleStatus'));
+  assert.deepEqual([...OPERATIONAL_FILTER_OPTIONS], enumOf('operationalStatus'));
+  assert.deepEqual([...CONNECTIVITY_FILTER_OPTIONS], enumOf('connectivity'));
+  assert.deepEqual([...LICENSE_FILTER_OPTIONS], enumOf('licenseStatus'));
 });

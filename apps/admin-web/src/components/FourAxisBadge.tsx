@@ -54,6 +54,14 @@ const AXIS_VALUE_LABELS: Readonly<Record<StatusAxis, Readonly<Record<string, str
   license: LICENSE_LABELS,
 };
 
+/** 轴值展示名（筛选项等复用）。 */
+export function axisValueLabel(axis: StatusAxis, value: string): string {
+  return AXIS_VALUE_LABELS[axis][value] ?? value;
+}
+
+/** 轴值 → 展示名映射表（FE-06 筛选项复用）。 */
+export const AXIS_VALUE_LABEL_MAPS = AXIS_VALUE_LABELS;
+
 /** 单轴徽标：未知/空值显示“—”。 */
 export function AxisBadge({ axis, value }: { axis: StatusAxis; value: string | null | undefined }) {
   const label = value !== null && value !== undefined ? AXIS_VALUE_LABELS[axis][value] : undefined;
