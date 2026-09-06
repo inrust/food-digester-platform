@@ -1,0 +1,135 @@
+/**
+ * FE-01 路由注册表：正式 routeId 与角色可见性。
+ *
+ * 事实源：contracts/prototype-traceability.yaml（CT-06）的 menus.roles；
+ * 一致性由 test/contract-parity.test.ts 自动核对，禁止单边修改。
+ *
+ * 注意：前端路由守卫只是体验层，授权唯一可信来源是后端（AUTH-01）。
+ */
+import type { Role } from '@fdp/auth';
+
+export const LOGIN_PATH = '/login';
+export const FORBIDDEN_PATH = '/403';
+
+export type MenuGroupId = 'overview' | 'device' | 'esg' | 'contract' | 'platform';
+
+export interface AppRoute {
+  readonly path: string;
+  readonly pageState: string;
+  readonly label: string;
+  /** 允许访问的角色（CT-06 菜单角色；子页面继承父菜单角色）。 */
+  readonly roles: readonly Role[];
+  /** 菜单归属；null = 非菜单页面（详情/子页）或公共页。 */
+  readonly menuGroup: MenuGroupId | null;
+  readonly public?: boolean;
+}
+
+const ALL_ROLES: readonly Role[] = [
+  'PlatformSuperAdmin',
+  'PlatformOperator',
+  'Auditor',
+  'CustomerAdmin',
+  'CustomerViewer',
+];
+
+export const APP_ROUTES: readonly AppRoute[] = [
+  // ---------- 公共页 ----------
+  { path: LOGIN_PATH, pageState: 'login', label: '登录', roles: ALL_ROLES, menuGroup: null, public: true },
+  { path: FORBIDDEN_PATH, pageState: 'forbidden', label: '无权访问', roles: ALL_ROLES, menuGroup: null, public: true },
+
+  // ---------- 菜单页（roles 与 CT-06 menus 一致） ----------
+  {
+    path: '/dashboard',
+    pageState: 'dashboard',
+    label: '概览',
+    roles: ALL_ROLES,
+    menuGroup: 'overview',
+  },
+  {
+    path: '/devices/view',
+    pageState: 'device-view',
+    label: '查看设备',
+    roles: ALL_ROLES,
+    menuGroup: 'device',
+  },
+  {
+    path: '/devices/operate',
+    pageState: 'device-operate',
+    label: '操作设备',
+    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'CustomerAdmin'],
+    menuGroup: 'device',
+  },
+  {
+    path: '/devices/groups',
+    pageState: 'device-group',
+    label: '设备群管理',
+    roles: ALL_ROLES,
+    menuGroup: 'device',
+  },
+  {
+    path: '/consumables',
+    pageState: 'device-consumable',
+    label: '耗材查看',
+    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'CustomerAdmin', 'CustomerViewer'],
+    menuGroup: 'device',
+  },
+  {
+    path: '/esg/overview',
+    pageState: 'esg-overview',
+    label: 'ESG概览',
+    roles: ALL_ROLES,
+    menuGroup: 'esg',
+  },
+  {
+    path: '/esg/devices',
+    pageState: 'esg-device',
+    label: '设备ESG信息',
+    roles: ALL_ROLES,
+    menuGroup: 'esg',
+  },
+  {
+    path: '/contracts',
+    pageState: 'contract-modify',
+    label: '合约查询及修改',
+    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
+    menuGroup: 'contract',
+  },
+  {
+    path: '/settings',
+    pageState: 'settings',
+    label: '用户管理',
+    roles: ['PlatformSuperAdmin', 'CustomerAdmin'],
+    menuGroup: 'platform',
+  },
+
+  // ---------- 子页面（非菜单入口；角色继承父菜单，见 CT-06 pages） ----------
+  // FE-07/08/09/13：经“设备群管理”操作列进入
+  { path: '/devices/manage', pageState: 'device-manage', label: '设备管理', roles: ALL_ROLES, menuGroup: null },
+  // FE-17：经“合约查询及修改”进入
+  {
+    path: '/contracts/new',
+    pageState: 'contract-new',
+    label: '新建合约',
+    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
+    menuGroup: null,
+  },
+  {
+    path: '/contracts/detail',
+    pageState: 'contract-detail',
+    label: '合约详情',
+    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
+    menuGroup: null,
+  },
+  // FE-13：经概览“升级”入口进入；持有 ota:read 的角色（AUTH-01 权限矩阵）
+  {
+    path: '/ota/campaigns',
+    pageState: 'ota-campaigns',
+    label: 'OTA 升级',
+    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
+    menuGroup: null,
+  },
+];
+
+export function findRoute(path: string): AppRoute | null {
+  return APP_ROUTES.find((route) => route.path === path) ?? null;
+}
