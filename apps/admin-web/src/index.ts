@@ -133,3 +133,16 @@ export type {
   DenyReason,
   DeviceCardView,
 } from './pages/dashboard/types.js';
+
+// ---------- FE-04 Onboarding 审批 ----------
+export { OnboardingReviewPanel } from './pages/onboarding/OnboardingReviewPanel.js';
+export type { DetailState, OnboardingReviewPanelProps } from './pages/onboarding/OnboardingReviewPanel.js';
+export {
+  approveOnboardingRequest,
+  fetchOnboardingRequest,
+  fetchOnboardingRequests,
+  rejectOnboardingRequest,
+} from './pages/onboarding/onboarding-api.js';
+export type { OnboardingRequestList } from './pages/onboarding/onboarding-api.js';
+export { isReviewable, ONBOARDING_STATUS_LABELS } from './pages/onboarding/onboarding-state.js';
+export type { OnboardingRequestView, OnboardingStatus } from './pages/onboarding/types.js';
