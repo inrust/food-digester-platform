@@ -26,6 +26,7 @@ import {
   SENSOR_METRICS,
 } from '../src/pages/devices/device-state.js';
 import { DEVICE_MANAGE_COVERAGE } from '../src/pages/device-manage/device-manage-state.js';
+import { ENTITLEMENT_CODES, LICENSE_COVERAGE } from '../src/pages/licenses/license-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -46,8 +47,8 @@ test('CT-06：9 个菜单项的 routeId/label/pageState/roles 与路由注册表
   assert.equal(matrix.menus.length, 9);
 
   const menuRoutes = APP_ROUTES.filter((route) => route.menuGroup !== null);
-  // FE-05 扩展路由（CT-06 矩阵外，权限与 BE-CUS-01/02 契约一致）
-  const EXTENSION_ROUTES = ['/customers', '/sites'];
+  // 扩展路由（CT-06 矩阵外）：FE-05 /customers、/sites（BE-CUS-01/02）；FE-08 /licenses（BE-LIC-01）
+  const EXTENSION_ROUTES = ['/customers', '/sites', '/licenses'];
   const matrixRoutes = menuRoutes.filter((r) => !EXTENSION_ROUTES.includes(r.path));
   assert.equal(matrixRoutes.length, matrix.menus.length);
   // 扩展路由必须在此显式登记，防止路由表无约束膨胀
@@ -180,6 +181,38 @@ test('FE-07：CT-06 device-manage 页 FE-07 自有元素 100% 有实现锚点', 
       `覆盖表存在 FE-07 之外的键 ${key}`,
     );
   }
+});
+
+test('FE-08：CT-06 contract-detail 页 FE-08 自有元素有锚点；Entitlement 编码与契约枚举一致', () => {
+  const matrix = readJson('contracts/prototype-traceability.yaml') as {
+    pages: {
+      pageState: string;
+      elements: { id: string; disposition: string; source?: { taskId?: string } }[];
+    }[];
+  };
+  const page = matrix.pages.find((p) => p.pageState === 'contract-detail');
+  assert.ok(page !== undefined, 'CT-06 缺少页面 contract-detail');
+  // FE-08 自有元素 = License 授权摘要（source.api=getDeviceLicense；页面 feTasks 含 FE-08）
+  const owned = page.elements.filter(
+    (e) =>
+      (e.disposition === 'Adopt' || e.disposition === 'Adapt') &&
+      (e.source as { api?: string } | undefined)?.api === 'getDeviceLicense',
+  );
+  assert.ok(owned.length > 0, 'contract-detail 页应至少有一个 FE-08 授权摘要元素');
+  for (const element of owned) {
+    assert.ok(LICENSE_COVERAGE[element.id] !== undefined, `元素 ${element.id} 无实现锚点`);
+  }
+  for (const key of Object.keys(LICENSE_COVERAGE)) {
+    assert.ok(
+      owned.some((e) => e.id === key),
+      `覆盖表存在 FE-08 之外的键 ${key}`,
+    );
+  }
+  // Entitlement 编码集与 admin-license-api.json 枚举一致（OTA 不改名）
+  const api = readJson('contracts/rest/admin-license-api.json') as {
+    components: { schemas: { LicenseEntitlement: { properties: { code: { enum: string[] } } } } };
+  };
+  assert.deepEqual([...ENTITLEMENT_CODES].sort(), [...api.components.schemas.LicenseEntitlement.properties.code.enum].sort());
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {

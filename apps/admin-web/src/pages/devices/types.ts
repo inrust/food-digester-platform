@@ -32,6 +32,16 @@ export interface DeviceCertificateSummaryView {
   readonly status: 'PENDING_CLAIM' | 'ACTIVE' | 'REVOKED' | 'EXPIRED';
 }
 
+/** BE-DEV-01 Device.license：当前授权摘要（DOM-02；与 Contract 状态独立，DEC-007）。 */
+export interface DeviceLicenseSummaryView {
+  readonly licenseId: string;
+  readonly status: 'Draft' | 'Issued' | 'Active' | 'ExpiringSoon' | 'Renewed' | 'Expired' | 'Revoked';
+  readonly validFrom: string;
+  readonly validTo: string;
+  /** 已启用 Entitlement 编码。 */
+  readonly entitlements: readonly string[];
+}
+
 export interface DeviceView {
   readonly id: string;
   readonly serialNumber: string;
@@ -48,7 +58,7 @@ export interface DeviceView {
   readonly connectivity: Connectivity;
   readonly lastHeartbeatAt: string | null;
   readonly certificate: DeviceCertificateSummaryView | null;
-  readonly license: { readonly status: string } | null;
+  readonly license: DeviceLicenseSummaryView | null;
   readonly contract: DeviceContractSummaryView | null;
   readonly createdAt: string;
   readonly updatedAt: string;

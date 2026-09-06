@@ -31,7 +31,8 @@ export type PageState =
   | 'contract-detail'
   | 'ota-campaigns'
   | 'customers'
-  | 'sites';
+  | 'sites'
+  | 'licenses';
 
 export interface AppRoute {
   readonly path: string;
@@ -139,6 +140,14 @@ export const APP_ROUTES: readonly AppRoute[] = [
     label: '站点管理',
     roles: ALL_ROLES,
     menuGroup: 'platform',
+  },
+  // FE-08 扩展路由（CT-06 矩阵外）：license:read = 平台三角色（AUTH-01；Customer 角色无 license:read）
+  {
+    path: '/licenses',
+    pageState: 'licenses',
+    label: '授权管理',
+    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
+    menuGroup: 'contract',
   },
 
   // ---------- 子页面（非菜单入口；角色继承父菜单，见 CT-06 pages） ----------

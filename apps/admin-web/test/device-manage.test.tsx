@@ -47,7 +47,7 @@ function makeDevice(overrides: Partial<DeviceView> = {}): DeviceView {
     connectivity: 'ONLINE',
     lastHeartbeatAt: '2026-09-06T03:55:00Z',
     certificate: { certificateId: 'cert-001', fingerprint: 'AB:CD:EF:00:11', status: 'ACTIVE' },
-    license: { status: 'Active' },
+    license: { licenseId: 'lic-001', status: 'Active', validFrom: '2026-01-01', validTo: '2027-01-01', entitlements: ['OTA'] },
     contract: null,
     createdAt: '2026-09-01T02:00:00Z',
     updatedAt: '2026-09-05T02:00:00Z',
