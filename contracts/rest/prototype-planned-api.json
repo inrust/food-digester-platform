@@ -86,22 +86,6 @@
         }
       }
     },
-    "/api/v1/admin/media": {
-      "get": {
-        "operationId": "listMedia",
-        "x-task-id": "BE-MED-01",
-        "responses": {
-          "200": {
-            "description": "计划中的授权 Media 列表",
-            "content": {
-              "application/json": {
-                "schema": { "type": "object", "properties": { "latest": { "type": ["object", "null"] } } }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/admin/devices/{deviceId}": {
       "parameters": [{ "$ref": "#/components/parameters/DeviceId" }],
       "patch": {
@@ -168,13 +152,6 @@
             }
           }
         }
-      }
-    },
-    "/api/v1/admin/ota/campaigns": {
-      "post": {
-        "operationId": "createOtaCampaign",
-        "x-task-id": "BE-OTA-02",
-        "responses": { "201": { "description": "计划中的 OTA Campaign 创建结果" } }
       }
     },
     "/api/v1/admin/devices/{deviceId}/license": {

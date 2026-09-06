@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { bundleOpenApi, run, validateOpenApiDocuments } from './build-openapi.mjs';
@@ -28,7 +28,13 @@ test('真实 OpenAPI 片段可确定性打包且无外部引用', () => {
   assert.equal(first, second);
   const bundle = JSON.parse(first);
   assert.equal(bundle.openapi, '3.1.0');
-  assert.equal(bundle.info['x-bundle-sources'].length, 25);
+  const expectedSources = readdirSync(REST_DIR)
+    .filter((name) => name.endsWith('-api.json'))
+    .sort();
+  assert.deepEqual(
+    bundle.info['x-bundle-sources'].map(({ file }) => file),
+    expectedSources,
+  );
   assert.ok(Object.keys(bundle.paths).length > 80);
   assert.doesNotMatch(first, /openapi-base\.json#\//);
   const operations = Object.values(bundle.paths).flatMap((pathItem) =>

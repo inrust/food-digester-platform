@@ -44,4 +44,4 @@
 | Migration / Schema / boundaries / secrets / sinks | PASS |
 | Build / typecheck / CDK synth | PASS；CDK 0 warning |
 
-全仓 `pnpm verify` 的已知非 P2 阻断仍是 prototype 与正式 OpenAPI 的 `listMedia`、`createOtaCampaign` 重复。该问题在 P1 整改前的起始 HEAD 已存在，本轮没有越界修改 CT/BE 契约；应作为独立契约任务处理后重新生成 bundle。
+该轮结束时全仓 `pnpm verify` 的已知非 P2 阻断是 prototype 与正式 OpenAPI 的 `listMedia`、`createOtaCampaign` 重复。该历史限制已于 2026-09-06 在独立契约整改中关闭：删除已被正式契约接管的 planned 路由、重新生成 bundle，Scripts 80/80 PASS。

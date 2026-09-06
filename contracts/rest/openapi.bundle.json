@@ -16,6 +16,11 @@
         "status": "implemented"
       },
       {
+        "file": "admin-audit-api.json",
+        "sha256": "298d0eb129f91c841444f64fc695c4537f51713b293ff71530e978765b87e82e",
+        "status": "implemented"
+      },
+      {
         "file": "admin-certificate-rotation-api.json",
         "sha256": "103115364bf3e79e5910ba1c68170ac47465e78ce9f825c6e79ac74c843754c3",
         "status": "implemented"
@@ -56,6 +61,11 @@
         "status": "implemented"
       },
       {
+        "file": "admin-dashboard-api.json",
+        "sha256": "f86c37cd49722b3753e0691a607b625a98639a0ea589c132f3197b6fcc895919",
+        "status": "implemented"
+      },
+      {
         "file": "admin-device-api.json",
         "sha256": "f0dc04fd748be3769bcc6573aa0fd9be227a61e8551244533fd4c59eefef840d",
         "status": "implemented"
@@ -91,8 +101,18 @@
         "status": "implemented"
       },
       {
+        "file": "admin-media-api.json",
+        "sha256": "02479f467ef6b6577d36d14f9c58f1cff39784c62a621aa76934ceb868a5e93f",
+        "status": "implemented"
+      },
+      {
         "file": "admin-onboarding-api.json",
         "sha256": "ca4bc3c2c96b88f2242c682bd05b607f07e84b7271b681028f73c9dadae57885",
+        "status": "implemented"
+      },
+      {
+        "file": "admin-ota-campaign-api.json",
+        "sha256": "bfb6af8e0ccfdb465654bcbeace5522819bf3c19c54d6346df8778b3f08983ad",
         "status": "implemented"
       },
       {
@@ -106,8 +126,18 @@
         "status": "implemented"
       },
       {
+        "file": "admin-settings-api.json",
+        "sha256": "8fd887978bedfd27c87abee49600a729b27cbfb47d1c0dc3a2d49e17d41e6741",
+        "status": "implemented"
+      },
+      {
         "file": "admin-site-api.json",
         "sha256": "fc36ba1a0f846718236f7a5e4acfff27569adc84117ea53f2bca5495a6b3e9ff",
+        "status": "implemented"
+      },
+      {
+        "file": "admin-user-api.json",
+        "sha256": "ee9ce5e0868cd6d9d7fcf98cd6881e7abdf46695f19b6a3dcfc586ef71a30394",
         "status": "implemented"
       },
       {
@@ -118,6 +148,11 @@
       {
         "file": "device-deactivate-api.json",
         "sha256": "fc4cf2c2eb24af388478b92e090904f9eca96ced8ab7a1db0765265141989261",
+        "status": "implemented"
+      },
+      {
+        "file": "device-media-api.json",
+        "sha256": "299bfb7b8075a30e9249f420bc01dfecf35e82d5a9c271b4453d642138687b9a",
         "status": "implemented"
       },
       {
@@ -132,7 +167,7 @@
       },
       {
         "file": "prototype-planned-api.json",
-        "sha256": "c93c0886eb444a1b66417ebcd0b13eba3c3658eeeefc86a214f6b4678895f809",
+        "sha256": "d3c23c112b4b5d1e82cbc2471dd14877c4462177ca6baf7172bc05c254eb435b",
         "status": "planned"
       }
     ]
@@ -685,6 +720,178 @@
           }
         },
         "x-source-document": "admin-alarm-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/audit-logs": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "listAuditLogs",
+        "summary": "审计日志列表（actor/Customer/对象/动作/结果/时间筛选 + 键集游标分页）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "actorId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "仅平台角色可跨 Customer 筛选；Customer actor 强制 actor.customerId（传入不一致 → 403）"
+          },
+          {
+            "name": "objectType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "objectId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "result",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SUCCESS",
+                "FAILURE"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "createdAt 起（UTC，含）"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "createdAt 止（UTC，含）"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "审计日志列表（不含前后值，详情经 GET /{auditId}）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuditApi__AuditLogListSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminAuditApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminAuditApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminAuditApi__Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminAuditApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-audit-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/audit-logs/{auditId}": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "getAuditLogDetail",
+        "summary": "审计日志详情（含脱敏前后值；跨 Customer → 404）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "auditId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "审计日志详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuditApi__AuditLogDetailSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminAuditApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminAuditApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminAuditApi__NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminAuditApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-audit-api.json",
         "x-contract-status": "implemented"
       }
     },
@@ -3394,6 +3601,43 @@
         "x-contract-status": "implemented"
       }
     },
+    "/api/v1/admin/dashboard/overview": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "getDashboardOverview",
+        "summary": "管理后台总览聚合（Customer scope 生效；无数据返回 0 而非错误）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "总览聚合视图",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDashboardApi__DashboardOverviewSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminDashboardApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminDashboardApi__Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminDashboardApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-dashboard-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
     "/api/v1/admin/devices": {
       "get": {
         "tags": [
@@ -5715,6 +5959,166 @@
         "x-contract-status": "implemented"
       }
     },
+    "/api/v1/admin/media": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "listMedia",
+        "summary": "Media 元数据列表（筛选 + 键集游标分页；Customer 角色强制租户隔离）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mediaType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AVAILABLE",
+                "DELETED"
+              ]
+            }
+          },
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "仅平台角色可跨 Customer 筛选；Customer 角色强制 actor.customerId（传入不一致 → 403）"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "captureTime 起（UTC）"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "captureTime 止（UTC）"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Media 列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMediaApi__MediaListSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminMediaApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminMediaApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminMediaApi__Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminMediaApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-media-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/media/{mediaId}/download-url": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "createMediaDownloadUrl",
+        "summary": "签发 15 分钟预签名下载 URL（DELETED 不提供；跨 Customer → 404）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "预签名下载 URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMediaApi__MediaDownloadUrlSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminMediaApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminMediaApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminMediaApi__NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminMediaApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-media-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
     "/api/v1/admin/onboarding/requests": {
       "get": {
         "tags": [
@@ -5958,6 +6362,553 @@
           }
         },
         "x-source-document": "admin-onboarding-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/ota/campaigns": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "createOtaCampaign",
+        "summary": "创建 OTA Campaign：VERIFIED 包 + 强制首批恰好 1 台合格设备 → RUNNING（201）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Campaign 已创建（RUNNING，首批 1 台 PENDING）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-ota-campaign-api.json",
+        "x-contract-status": "implemented"
+      },
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "listOtaCampaigns",
+        "summary": "Campaign 列表（status/targetModel/packageId 筛选 + 键集游标分页；ota:read）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignStatus"
+            }
+          },
+          {
+            "name": "targetModel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaign 列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignListSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-ota-campaign-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "getOtaCampaign",
+        "summary": "Campaign 详情（含各状态 target 计数看板）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaign 详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignDetailSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-ota-campaign-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}/targets": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "listOtaTargets",
+        "summary": "Campaign 目标列表（status/batchNo 筛选 + 键集游标分页；ota:read）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaTargetStatus"
+            }
+          },
+          {
+            "name": "batchNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Target 列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaTargetListSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-ota-campaign-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}/batches": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "expandOtaCampaignBatch",
+        "summary": "扩大批次（仅 RUNNING；默认禁止一次选择全部合格设备；已在 Campaign 的设备幂等跳过）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaBatchExpand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "批次已扩大",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaBatchExpandSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-ota-campaign-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}/pause": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "pauseOtaCampaign",
+        "summary": "暂停 Campaign（RUNNING→PAUSED；幂等回放；暂停后不得产生新下发）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "已暂停",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-ota-campaign-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}/resume": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "resumeOtaCampaign",
+        "summary": "恢复 Campaign（PAUSED→RUNNING；幂等回放）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "已恢复",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-ota-campaign-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}/cancel": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "cancelOtaCampaign",
+        "summary": "取消 Campaign（RUNNING/PAUSED→CANCELLED；级联未完成 target → CANCELLED；幂等回放；取消后不得产生新下发）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "已取消",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-ota-campaign-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/ota/campaigns/{campaignId}/retry": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "retryOtaCampaignFailures",
+        "summary": "失败重试：FAILED target 重置为 PENDING 重新进入下发队列（仅 RUNNING；可选 targetIds 子集）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaRetryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "重试结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaRetrySuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminOtaCampaignApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-ota-campaign-api.json",
         "x-contract-status": "implemented"
       }
     },
@@ -6467,6 +7418,147 @@
           }
         },
         "x-source-document": "admin-replay-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/settings": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "listSettings",
+        "summary": "业务设置列表（封闭 key 集全部条目）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务设置列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSettingsApi__SettingListSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminSettingsApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminSettingsApi__Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminSettingsApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-settings-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/settings/{key}": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "getSetting",
+        "summary": "读取单项业务设置（未知 key → 404）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AdminSettingsApi__SettingKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务设置视图",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSettingsApi__SettingSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminSettingsApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminSettingsApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminSettingsApi__NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminSettingsApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-settings-api.json",
+        "x-contract-status": "implemented"
+      },
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "updateSetting",
+        "summary": "更新业务设置（乐观锁：version 不匹配 → 409；非法配置 → 400；固定枚举防护）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AdminSettingsApi__SettingKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminSettingsApi__SettingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新后的业务设置视图（version 自增）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSettingsApi__SettingSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminSettingsApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminSettingsApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminSettingsApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminSettingsApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminSettingsApi__Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminSettingsApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-settings-api.json",
         "x-contract-status": "implemented"
       }
     },
@@ -7084,6 +8176,389 @@
         "x-contract-status": "implemented"
       }
     },
+    "/api/v1/admin/users": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "listUsers",
+        "summary": "用户列表（roleType/status/customerId/q 筛选 + 键集游标分页；user:read）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "roleType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "platform",
+                "customer"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INVITED",
+                "ACTIVE",
+                "DISABLED"
+              ]
+            }
+          },
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "email/displayName 模糊匹配"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "用户列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserApi__UserListSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminUserApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminUserApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminUserApi__Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminUserApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-user-api.json",
+        "x-contract-status": "implemented"
+      },
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "inviteUser",
+        "summary": "邀请用户：Cognito 生成临时凭证（API 不接收永久密码）→ 用户 INVITED（201）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserApi__UserInvite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "用户已邀请（INVITED；临时凭证由 Cognito 经邮件发送，响应不含密码）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserApi__UserSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminUserApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminUserApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminUserApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminUserApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminUserApi__Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminUserApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-user-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/users/{userId}/roles": {
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "assignUserRoles",
+        "summary": "角色分配（整体替换；自我提权/提升平台角色越权/最后一个 SuperAdmin 移除均拒绝；同步 Cognito groups）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserApi__UserRolesAssign"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "角色已更新",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserApi__UserSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminUserApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminUserApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminUserApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminUserApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminUserApi__Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminUserApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-user-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/users/{userId}/scope": {
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "setUserScope",
+        "summary": "Customer scope 变更（仅 Customer 角色用户；同步 Cognito custom:customer_id）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserApi__UserScopeSet"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scope 已更新",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserApi__UserSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminUserApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminUserApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminUserApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminUserApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminUserApi__Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminUserApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-user-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/users/{userId}/disable": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "disableUser",
+        "summary": "停用用户（DISABLED；同步 Cognito DisableUser；最后一个 SuperAdmin 不可停用；幂等回放）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "用户已停用",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserApi__UserSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminUserApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminUserApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminUserApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminUserApi__Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminUserApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-user-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/users/{userId}/password-reset": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "triggerUserPasswordReset",
+        "summary": "受控密码重置触发：Cognito 生成并发送临时凭证（响应不含密码 Hash 或现有密码）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "重置已触发（202 语义并入 200；结果仅含 userId/status）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserApi__PasswordResetSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminUserApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminUserApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminUserApi__NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminUserApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-user-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
     "/api/v1/device/certificate/status": {
       "get": {
         "tags": [
@@ -7298,6 +8773,59 @@
           }
         },
         "x-source-document": "device-deactivate-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/device/media/upload-sessions": {
+      "post": {
+        "tags": [
+          "device"
+        ],
+        "operationId": "createMediaUploadSession",
+        "summary": "创建 Media 上传会话：类型/大小/配额校验 → 设备前缀短期预签名上传 URL（201）",
+        "security": [
+          {
+            "DeviceMtls": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceMediaApi__MediaUploadSessionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "上传会话已签发（ISSUED）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMediaApi__MediaUploadSessionSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/DeviceMediaApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/DeviceMediaApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/DeviceMediaApi__Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/DeviceMediaApi__Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/DeviceMediaApi__InternalError"
+          }
+        },
+        "x-source-document": "device-media-api.json",
         "x-contract-status": "implemented"
       }
     },
@@ -7707,34 +9235,6 @@
         "x-contract-status": "planned"
       }
     },
-    "/api/v1/admin/media": {
-      "get": {
-        "operationId": "listMedia",
-        "x-task-id": "BE-MED-01",
-        "responses": {
-          "200": {
-            "description": "计划中的授权 Media 列表",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "latest": {
-                      "type": [
-                        "object",
-                        "null"
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-source-document": "prototype-planned-api.json",
-        "x-contract-status": "planned"
-      }
-    },
     "/api/v1/admin/devices/{deviceId}/activities": {
       "parameters": [
         {
@@ -7819,19 +9319,6 @@
                 }
               }
             }
-          }
-        },
-        "x-source-document": "prototype-planned-api.json",
-        "x-contract-status": "planned"
-      }
-    },
-    "/api/v1/admin/ota/campaigns": {
-      "post": {
-        "operationId": "createOtaCampaign",
-        "x-task-id": "BE-OTA-02",
-        "responses": {
-          "201": {
-            "description": "计划中的 OTA Campaign 创建结果"
           }
         },
         "x-source-document": "prototype-planned-api.json",
@@ -8098,6 +9585,14 @@
           "$ref": "#/components/schemas/UtcTimestamp"
         },
         "description": "时间上限（含）"
+      },
+      "AdminSettingsApi__SettingKey": {
+        "name": "key",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/AdminSettingsApi__SettingKey"
+        }
       },
       "PrototypePlannedApi__DeviceId": {
         "name": "deviceId",
@@ -8780,6 +10275,200 @@
           },
           "meta": {
             "$ref": "#/components/schemas/PageMeta"
+          }
+        }
+      },
+      "AdminAuditApi__AuditLogView": {
+        "type": "object",
+        "required": [
+          "auditId",
+          "actorId",
+          "actorRole",
+          "customerId",
+          "objectType",
+          "objectId",
+          "action",
+          "result",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "auditId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actorId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actorRole": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "customerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "objectType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "objectId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "action": {
+            "type": "string",
+            "minLength": 1
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "FAILURE"
+            ]
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        },
+        "description": "列表视图不含 beforeValue/afterValue/ip/userAgent（经详情获取）"
+      },
+      "AdminAuditApi__AuditLogDetailView": {
+        "type": "object",
+        "required": [
+          "auditId",
+          "actorId",
+          "actorRole",
+          "customerId",
+          "objectType",
+          "objectId",
+          "action",
+          "reason",
+          "result",
+          "requestId",
+          "ip",
+          "userAgent",
+          "beforeValue",
+          "afterValue",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "auditId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actorId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actorRole": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "customerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "objectType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "objectId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "action": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "FAILURE"
+            ]
+          },
+          "requestId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ip": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "userAgent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "beforeValue": {
+            "description": "脱敏后前值（DOM-03 写入时脱敏 + 读取时再次脱敏；敏感字段恒为 [REDACTED]）"
+          },
+          "afterValue": {
+            "description": "脱敏后后值（同 beforeValue 脱敏保证）"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
+      "AdminAuditApi__AuditLogListSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminAuditApi__AuditLogView"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        }
+      },
+      "AdminAuditApi__AuditLogDetailSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminAuditApi__AuditLogDetailView"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
           }
         }
       },
@@ -11132,6 +12821,370 @@
           }
         }
       },
+      "AdminDashboardApi__ContractSummary": {
+        "type": "object",
+        "required": [
+          "effectiveTotal"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "effectiveTotal": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "有效 Contract 总数（固定定义）：status ∉ {DRAFT, TERMINATED} 且 startAt <= generatedAt < endAt（即 EFFECTIVE + EXPIRING_SOON）；分母为 actor scope 内全部 Contract"
+          }
+        }
+      },
+      "AdminDashboardApi__DeviceSummary": {
+        "type": "object",
+        "required": [
+          "total",
+          "online",
+          "onlineRatePct",
+          "licenseDistribution"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "scope 内设备总数（分母）"
+          },
+          "online": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "在线数（固定口径）：lastHeartbeatAt 距 generatedAt ≤ 10 分钟（暂定值，BE-DEV-01 派生口径；不读取 device_latest_state.connectivity 存储字段）"
+          },
+          "onlineRatePct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "在线率 = online / total × 100，保留 1 位小数；total = 0 时为 0（无数据返回 0 而非错误）"
+          },
+          "licenseDistribution": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "description": "授权状态分布：device_latest_state.licenseStatus → 设备数；无状态行的设备计入 NONE 桶；License 轴与连接/生命周期/运行轴分离（DEC-010）"
+          }
+        }
+      },
+      "AdminDashboardApi__EsgTodaySummary": {
+        "type": "object",
+        "required": [
+          "summaryDate",
+          "carbonReductionKg",
+          "powerConsumptionKwh",
+          "feedingWeightKg"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "summaryDate": {
+            "type": "string",
+            "format": "date",
+            "description": "统计日（固定口径）：generatedAt 的 UTC 日历日"
+          },
+          "carbonReductionKg": {
+            "type": "number",
+            "minimum": 0,
+            "description": "今日估算碳减排（kg）：esg_daily_summary.carbonReductionKg 按 summaryDate + scope 内设备求和；无数据为 0"
+          },
+          "powerConsumptionKwh": {
+            "type": "number",
+            "minimum": 0,
+            "description": "今日能耗（kWh）：esg_daily_summary.powerConsumptionKwh 同口径求和；无数据为 0"
+          },
+          "feedingWeightKg": {
+            "type": "number",
+            "minimum": 0,
+            "description": "今日处理量（kg 投料重）：esg_daily_summary.feedingWeightKg 同口径求和；无数据为 0"
+          }
+        }
+      },
+      "AdminDashboardApi__AlarmSummary": {
+        "type": "object",
+        "required": [
+          "alarmId",
+          "deviceId",
+          "customerId",
+          "code",
+          "severity",
+          "status",
+          "detectedTime"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "alarmId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "customerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "INFO",
+              "WARNING",
+              "MAJOR",
+              "CRITICAL"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "ACKNOWLEDGED",
+              "CLEARED"
+            ]
+          },
+          "detectedTime": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
+      "AdminDashboardApi__ConsumableSummary": {
+        "type": "object",
+        "required": [
+          "consumableType",
+          "remainingPercent",
+          "stale"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "consumableType": {
+            "type": "string",
+            "enum": [
+              "CARBON_FILTER",
+              "BIO_ADDITIVE"
+            ]
+          },
+          "remainingPercent": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100,
+            "description": "剩余量百分比；null = 未知（DEC-008：云端不臆测）"
+          },
+          "stale": {
+            "type": "boolean",
+            "description": "投影是否过期（长时间未收到上报）"
+          }
+        }
+      },
+      "AdminDashboardApi__CommandAction": {
+        "type": "object",
+        "required": [
+          "command",
+          "allowed",
+          "denyReason"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "description": "CT-04 命令目录 command code"
+          },
+          "allowed": {
+            "type": "boolean",
+            "description": "actor 持有 command:send 且设备状态门允许时为 true（与 BE-CMD-01 权限矩阵一致；仅描述不执行）"
+          },
+          "denyReason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "FORBIDDEN",
+              "UNKNOWN_COMMAND",
+              "DEVICE_RETIRED",
+              "DEVICE_SUSPENDED_RESTRICTED",
+              "DEVICE_MAINTENANCE_RESTRICTED",
+              null
+            ],
+            "description": "拒绝原因码：FORBIDDEN = actor 无 command:send；DEVICE_* = 设备状态门（contracts/mqtt/catalogs commandDenyReason）；allowed 时恒为 null"
+          }
+        }
+      },
+      "AdminDashboardApi__DeviceCard": {
+        "type": "object",
+        "required": [
+          "deviceId",
+          "serialNumber",
+          "alias",
+          "model",
+          "lifecycleStatus",
+          "operationalStatus",
+          "connectivity",
+          "licenseStatus",
+          "firmwareVersion",
+          "signalStrength",
+          "networkType",
+          "consumables",
+          "actions"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "serialNumber": {
+            "type": "string",
+            "minLength": 1
+          },
+          "alias": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "lifecycleStatus": {
+            "type": "string",
+            "description": "生命周期轴（DEC-010 四轴分离）"
+          },
+          "operationalStatus": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "Active",
+              "Maintenance",
+              "Suspended",
+              "Retired",
+              null
+            ],
+            "description": "运行状态轴（设备最近上报）"
+          },
+          "connectivity": {
+            "type": "string",
+            "enum": [
+              "ONLINE",
+              "OFFLINE"
+            ],
+            "description": "连接状态轴：lastHeartbeatAt 距 generatedAt ≤ 10 分钟派生（暂定值）"
+          },
+          "licenseStatus": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "License 轴（device_latest_state 快照；无状态行为 null）"
+          },
+          "firmwareVersion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "固件版本：设备最近上报值（device_latest_state），缺失时回退台账值"
+          },
+          "signalStrength": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "连接质量：信号强度（设备最近上报）"
+          },
+          "networkType": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "连接质量：网络类型（设备最近上报）"
+          },
+          "consumables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminDashboardApi__ConsumableSummary"
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminDashboardApi__CommandAction"
+            },
+            "description": "允许动作描述：CT-04 全目录 × 当前设备状态门 + actor 权限；只读描述，不执行命令"
+          }
+        }
+      },
+      "AdminDashboardApi__DashboardOverview": {
+        "type": "object",
+        "required": [
+          "generatedAt",
+          "contracts",
+          "devices",
+          "esgToday",
+          "latestAlarms",
+          "deviceCards"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "generatedAt": {
+            "$ref": "#/components/schemas/UtcTimestamp",
+            "description": "聚合时间基准（全部时间窗口/阈值的分母基准）"
+          },
+          "contracts": {
+            "$ref": "#/components/schemas/AdminDashboardApi__ContractSummary"
+          },
+          "devices": {
+            "$ref": "#/components/schemas/AdminDashboardApi__DeviceSummary"
+          },
+          "esgToday": {
+            "$ref": "#/components/schemas/AdminDashboardApi__EsgTodaySummary"
+          },
+          "latestAlarms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminDashboardApi__AlarmSummary"
+            },
+            "description": "最新业务告警（固定定义）：status = ACTIVE，detectedTime 倒序 + alarmId 决胜，固定 5 条；无数据为空数组"
+          },
+          "deviceCards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminDashboardApi__DeviceCard"
+            },
+            "description": "设备卡片摘要：scope 内按 deviceId 升序固定前 10 台；无数据为空数组"
+          }
+        }
+      },
+      "AdminDashboardApi__DashboardOverviewSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminDashboardApi__DashboardOverview"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
       "AdminDeviceApi__DeviceCertificateSummary": {
         "type": "object",
         "required": [
@@ -13319,6 +15372,128 @@
           }
         }
       },
+      "AdminMediaApi__MediaView": {
+        "type": "object",
+        "required": [
+          "mediaId",
+          "deviceId",
+          "customerId",
+          "mediaType",
+          "captureTime",
+          "fileName",
+          "sizeKb",
+          "durationSec",
+          "status",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "mediaId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "customerId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "VIDEO"
+            ]
+          },
+          "captureTime": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "fileName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sizeKb": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "durationSec": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "视频时长（秒）；图片为 0"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "DELETED"
+            ],
+            "description": "DEC-005：文件到期删除后元数据保留（DELETED 不提供下载）"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        },
+        "description": "不含 objectPath/内部存储信息；下载经短期预签名 URL"
+      },
+      "AdminMediaApi__MediaDownloadUrlView": {
+        "type": "object",
+        "required": [
+          "mediaId",
+          "downloadUrl",
+          "downloadUrlExpiresAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "mediaId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "downloadUrl": {
+            "type": "string",
+            "pattern": "^https://"
+          },
+          "downloadUrlExpiresAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
+      "AdminMediaApi__MediaListSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminMediaApi__MediaView"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        }
+      },
+      "AdminMediaApi__MediaDownloadUrlSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminMediaApi__MediaDownloadUrlView"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
       "AdminOnboardingApi__OnboardingRequest": {
         "type": "object",
         "required": [
@@ -13445,6 +15620,479 @@
             "type": "string",
             "minLength": 1,
             "description": "拒绝原因（必填）"
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaCampaignStatus": {
+        "type": "string",
+        "description": "Campaign 状态机：创建即 RUNNING；RUNNING⇄PAUSED；RUNNING/PAUSED→CANCELLED；全部 target SUCCEEDED → COMPLETED",
+        "enum": [
+          "DRAFT",
+          "RUNNING",
+          "PAUSED",
+          "COMPLETED",
+          "CANCELLED"
+        ]
+      },
+      "AdminOtaCampaignApi__OtaTargetStatus": {
+        "type": "string",
+        "description": "Target 状态机（DB-01 封闭集合）；云端维护 PENDING/CANCELLED，设备回报经 ACK（BE-OTA-03）推进 NOTIFIED→…→SUCCEEDED/FAILED/ROLLED_BACK",
+        "enum": [
+          "PENDING",
+          "NOTIFIED",
+          "DOWNLOADING",
+          "INSTALLING",
+          "SUCCEEDED",
+          "FAILED",
+          "ROLLED_BACK",
+          "CANCELLED"
+        ]
+      },
+      "AdminOtaCampaignApi__OtaCampaignCreate": {
+        "type": "object",
+        "required": [
+          "name",
+          "packageId",
+          "deviceIds"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "packageId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "必须为 VERIFIED 包（坏包/未校验包不可建 Campaign）"
+          },
+          "deviceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 1,
+            "description": "首批强制恰好 1 台（灰度）；超过 1 台被拒绝（400）"
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaBatchExpand": {
+        "type": "object",
+        "required": [
+          "deviceIds"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "deviceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 500,
+            "description": "扩大批次设备；默认禁止一次选择该型号全部合格设备（400）；已在 Campaign 的设备幂等跳过"
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaRetryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "targetIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 500,
+            "description": "可选：仅重试指定 FAILED target；缺省重试 Campaign 全部 FAILED"
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaCampaignView": {
+        "type": "object",
+        "required": [
+          "campaignId",
+          "name",
+          "packageId",
+          "targetModel",
+          "strategy",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "campaignId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "packageId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "targetModel": {
+            "type": "string",
+            "minLength": 1
+          },
+          "strategy": {
+            "type": "string",
+            "enum": [
+              "CANARY",
+              "BATCH"
+            ],
+            "description": "试运营禁止默认全量强制升级；本 API 仅产出 CANARY"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignStatus"
+          },
+          "createdBy": {
+            "type": "string",
+            "minLength": 1,
+            "description": "身份上下文取得（不信任客户端声明）"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaCampaignDetailView": {
+        "type": "object",
+        "required": [
+          "campaignId",
+          "name",
+          "packageId",
+          "targetModel",
+          "strategy",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt",
+          "targetCounts"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "campaignId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "packageId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "targetModel": {
+            "type": "string",
+            "minLength": 1
+          },
+          "strategy": {
+            "type": "string",
+            "enum": [
+              "CANARY",
+              "BATCH"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignStatus"
+          },
+          "createdBy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "targetCounts": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "total",
+              "PENDING",
+              "NOTIFIED",
+              "DOWNLOADING",
+              "INSTALLING",
+              "SUCCEEDED",
+              "FAILED",
+              "ROLLED_BACK",
+              "CANCELLED"
+            ],
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "PENDING": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "NOTIFIED": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "DOWNLOADING": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "INSTALLING": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "SUCCEEDED": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "FAILED": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "ROLLED_BACK": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "CANCELLED": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaTargetView": {
+        "type": "object",
+        "required": [
+          "targetId",
+          "campaignId",
+          "deviceId",
+          "batchNo",
+          "status",
+          "scheduledTime",
+          "completedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "targetId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "campaignId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "batchNo": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "1 = 灰度批次"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaTargetStatus"
+          },
+          "scheduledTime": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaBatchExpandResult": {
+        "type": "object",
+        "required": [
+          "campaignId",
+          "batchNo",
+          "addedCount",
+          "skippedExistingCount",
+          "addedTargets"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "campaignId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "batchNo": {
+            "type": "integer",
+            "minimum": 2
+          },
+          "addedCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "skippedExistingCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "已在 Campaign 中幂等跳过的设备数"
+          },
+          "addedTargets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaTargetView"
+            }
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaRetryResult": {
+        "type": "object",
+        "required": [
+          "campaignId",
+          "retriedCount",
+          "retriedTargetIds"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "campaignId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "retriedCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "retriedTargetIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaCampaignSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignView"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaCampaignDetailSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignDetailView"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaCampaignListSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaCampaignView"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaTargetListSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaTargetView"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaBatchExpandSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaBatchExpandResult"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "AdminOtaCampaignApi__OtaRetrySuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaRetryResult"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
           }
         }
       },
@@ -13905,6 +16553,102 @@
           }
         }
       },
+      "AdminSettingsApi__SettingKey": {
+        "type": "string",
+        "enum": [
+          "alarm.thresholds",
+          "command.confirmation",
+          "dictionary.displayNames",
+          "notification.business"
+        ],
+        "description": "封闭 key 集：业务告警阈值 / 命令二次确认策略 / 字典显示名称 / 业务通知配置"
+      },
+      "AdminSettingsApi__SettingView": {
+        "type": "object",
+        "required": [
+          "key",
+          "value",
+          "version",
+          "updatedBy",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/AdminSettingsApi__SettingKey"
+          },
+          "value": {
+            "description": "设置值（JSON；各 key 的值 Schema 见实现与测试，非法配置拒绝）"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "乐观锁版本（更新时必须在请求体回传）"
+          },
+          "updatedBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
+      "AdminSettingsApi__SettingUpdate": {
+        "type": "object",
+        "required": [
+          "value",
+          "version"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "description": "新设置值（JSON；经 key 对应的值 Schema 校验）"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "当前版本（乐观锁；不匹配 → 409）"
+          }
+        }
+      },
+      "AdminSettingsApi__SettingSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminSettingsApi__SettingView"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "AdminSettingsApi__SettingListSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminSettingsApi__SettingView"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
       "AdminSiteApi__Site": {
         "type": "object",
         "required": [
@@ -14185,6 +16929,217 @@
           }
         }
       },
+      "AdminUserApi__RoleCode": {
+        "type": "string",
+        "description": "封闭角色集（AUTH-01/DEC-012；V1 矩阵固定只读）",
+        "enum": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ]
+      },
+      "AdminUserApi__UserInvite": {
+        "type": "object",
+        "required": [
+          "email",
+          "displayName",
+          "roles"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserApi__RoleCode"
+            },
+            "minItems": 1,
+            "maxItems": 3,
+            "description": "平台/Customer 角色禁止混绑（单一 actorType）"
+          },
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Customer 角色必填且必须存在；平台角色必须省略（平台角色无 Customer scope）"
+          }
+        },
+        "description": "不含 password 字段：临时凭证由 Cognito 生成并发送"
+      },
+      "AdminUserApi__UserRolesAssign": {
+        "type": "object",
+        "required": [
+          "roles"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserApi__RoleCode"
+            },
+            "minItems": 1,
+            "maxItems": 3,
+            "description": "整体替换目标用户角色集"
+          }
+        }
+      },
+      "AdminUserApi__UserScopeSet": {
+        "type": "object",
+        "required": [
+          "customerId"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "必须存在的 Customer（软删除/停用拒绝）"
+          }
+        }
+      },
+      "AdminUserApi__UserView": {
+        "type": "object",
+        "required": [
+          "userId",
+          "email",
+          "displayName",
+          "status",
+          "mfaEnabled",
+          "roles",
+          "customerId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "INVITED",
+              "ACTIVE",
+              "DISABLED"
+            ]
+          },
+          "mfaEnabled": {
+            "type": "boolean"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserApi__RoleCode"
+            }
+          },
+          "customerId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Customer 角色用户所属 Customer；平台角色恒为 null"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        },
+        "description": "不含 cognitoSub/密码/凭证材料"
+      },
+      "AdminUserApi__PasswordResetResult": {
+        "type": "object",
+        "required": [
+          "userId",
+          "status"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RESET_TRIGGERED"
+            ]
+          }
+        },
+        "description": "不含密码 Hash 或现有密码（临时凭证由 Cognito 直接发送给用户）"
+      },
+      "AdminUserApi__UserSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminUserApi__UserView"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "AdminUserApi__UserListSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserApi__UserView"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        }
+      },
+      "AdminUserApi__PasswordResetSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminUserApi__PasswordResetResult"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
       "DeviceCertificateApi__CertificateRotateInput": {
         "type": "object",
         "required": [
@@ -14409,6 +17364,110 @@
         "properties": {
           "data": {
             "$ref": "#/components/schemas/DeviceDeactivateApi__DeactivationResult"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "DeviceMediaApi__MediaUploadSessionCreate": {
+        "type": "object",
+        "required": [
+          "mediaType",
+          "fileName",
+          "sizeKb",
+          "sha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "VIDEO"
+            ],
+            "description": "CT-03 media.schema.json 枚举"
+          },
+          "fileName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._-]+$",
+            "description": "文件名（仅安全字符；objectPath 组成部分，禁止路径分隔符/穿越）"
+          },
+          "sizeKb": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "申报大小（ceil KB；上限按类型：IMAGE 10240 / VIDEO 204800，暂定值）"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{64}$",
+            "description": "申报的 SHA-256（hex；上传后服务端重算比对）"
+          }
+        }
+      },
+      "DeviceMediaApi__MediaUploadSessionView": {
+        "type": "object",
+        "required": [
+          "sessionId",
+          "mediaType",
+          "fileName",
+          "sizeKb",
+          "objectPath",
+          "uploadUrl",
+          "uploadUrlExpiresAt",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "VIDEO"
+            ]
+          },
+          "fileName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sizeKb": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "objectPath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "服务端生成的对象 Key（media/{customerId}/{deviceId}/{sessionId}/{fileName}）；元数据报文 objectPath 必须与其逐字符相等"
+          },
+          "uploadUrl": {
+            "type": "string",
+            "pattern": "^https://",
+            "description": "15 分钟预签名上传 URL（暂定值 900s）"
+          },
+          "uploadUrlExpiresAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
+      "DeviceMediaApi__MediaUploadSessionSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DeviceMediaApi__MediaUploadSessionView"
           },
           "meta": {
             "$ref": "#/components/schemas/ResponseMeta"
@@ -15133,6 +18192,56 @@
           }
         }
       },
+      "AdminAuditApi__BadRequest": {
+        "description": "筛选参数非法（VALIDATION_FAILED）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminAuditApi__Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminAuditApi__Forbidden": {
+        "description": "无 audit:read 权限或 Customer actor 越权筛选",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminAuditApi__NotFound": {
+        "description": "审计记录不存在或跨 Customer（NOT_FOUND）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminAuditApi__InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
       "AdminCommandApi__BadRequest": {
         "description": "校验失败（VALIDATION_FAILED：未知命令/timeoutSec 越界/确认缺失或过期/confirmText 不符）",
         "content": {
@@ -15473,6 +18582,36 @@
           }
         }
       },
+      "AdminDashboardApi__Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminDashboardApi__Forbidden": {
+        "description": "无 dashboard:read 权限",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminDashboardApi__InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
       "AdminDeviceUserApi__BadRequest": {
         "description": "校验失败（VALIDATION_FAILED：明文密码字段、缺 If-Match/原因、验证材料过短）",
         "content": {
@@ -15643,6 +18782,116 @@
           }
         }
       },
+      "AdminMediaApi__BadRequest": {
+        "description": "筛选参数非法（VALIDATION_FAILED）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminMediaApi__Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminMediaApi__Forbidden": {
+        "description": "无 media:read 权限或 Customer 角色越权筛选",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminMediaApi__NotFound": {
+        "description": "Media 不存在、跨 Customer 或文件已删除（NOT_FOUND）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminMediaApi__InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminOtaCampaignApi__BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：包未 VERIFIED/首批非恰好 1 台/设备不合格/全量选择/参数非法）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminOtaCampaignApi__Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminOtaCampaignApi__Forbidden": {
+        "description": "无权限（写操作缺 ota:write / 查询缺 ota:read）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminOtaCampaignApi__NotFound": {
+        "description": "Campaign/包不存在（NOT_FOUND）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminOtaCampaignApi__Conflict": {
+        "description": "非法状态迁移（CONFLICT：非 RUNNING 扩大批次/重试；终态再操作）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminOtaCampaignApi__InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
       "AdminOtaPackageApi__BadRequest": {
         "description": "校验失败（VALIDATION_FAILED：元数据非法/对象缺失/大小或 SHA-256 不匹配/签名无效/病毒扫描拒绝）",
         "content": {
@@ -15694,6 +18943,176 @@
         }
       },
       "AdminOtaPackageApi__InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminSettingsApi__BadRequest": {
+        "description": "非法配置（VALIDATION_FAILED：值 Schema 不符或触碰固定协议枚举）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminSettingsApi__Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminSettingsApi__Forbidden": {
+        "description": "无 settings:read / settings:write 权限",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminSettingsApi__NotFound": {
+        "description": "未知设置 key（封闭集之外不可创建）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminSettingsApi__Conflict": {
+        "description": "并发修改冲突（VERSION_CONFLICT：携带的 version 已过期）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminSettingsApi__InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminUserApi__BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：角色封闭集/混绑/平台角色带 Customer scope 等）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminUserApi__Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminUserApi__Forbidden": {
+        "description": "无权限（FORBIDDEN：缺 user:write/user:read；自我提权；Customer 角色提升平台角色；跨 Customer 授权）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminUserApi__NotFound": {
+        "description": "用户/Customer 不存在（NOT_FOUND）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminUserApi__Conflict": {
+        "description": "业务约束冲突（CONFLICT：email 已存在；最后一个 PlatformSuperAdmin 不可移除/停用）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminUserApi__InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "DeviceMediaApi__BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：mediaType/fileName/sizeKb/sha256 非法或超限）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "DeviceMediaApi__Unauthorized": {
+        "description": "未认证（证书缺失/未登记/非 ACTIVE/过期）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "DeviceMediaApi__Forbidden": {
+        "description": "设备生命周期不允许（Retired/Suspended）或未分配 Customer",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "DeviceMediaApi__Conflict": {
+        "description": "每设备每日上传配额超限（CONFLICT）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "DeviceMediaApi__InternalError": {
         "description": "内部错误（不暴露细节）",
         "content": {
           "application/json": {

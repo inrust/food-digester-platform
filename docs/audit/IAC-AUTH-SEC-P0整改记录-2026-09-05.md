@@ -41,12 +41,12 @@ Sensitive log and Trace sinks：PASS
 
 环境说明：当前为 Node.js v24.12.0，而仓库声明 `>=20.19 <21`；因此通过固定 pnpm 10.20.0 执行等价底层命令。CDK 仍报告 6 条 Node.js 20 runtime warning，这是已登记的 M-01/P1 风险。
 
-全仓 OpenAPI Gate 仍被本次修改前已存在的两个重复 `operationId` 阻塞：
+该轮结束时全仓 OpenAPI Gate 被本次修改前已存在的两个重复 `operationId` 阻塞：
 
 - `listMedia`：`prototype-planned-api.json` 与 `admin-media-api.json` 重复；
 - `createOtaCampaign`：`prototype-planned-api.json` 与 `admin-ota-campaign-api.json` 重复。
 
-本次整改未修改上述 OpenAPI 文件，未将其混入 P0 提交范围。
+本次整改未修改上述 OpenAPI 文件，未将其混入 P0 提交范围。该历史限制已于 2026-09-06 在独立契约整改中关闭：两个已转正式契约的 planned 路由已移除，bundle 已重新生成，Scripts 80/80 PASS。
 
 ## 4. AUTH-04 延期验收登记
 

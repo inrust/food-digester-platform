@@ -39,13 +39,12 @@
 | boundaries / schemas / migrations / evidence / secrets / sensitive sinks | PASS |
 | CDK synth warning Gate | PASS，0 warning |
 
-完整 `pnpm verify` 仍被本轮范围外、在当前 HEAD 已存在的 OpenAPI 重复 operationId 阻断：`prototype-planned-api.json` 与正式 `admin-media-api.json`、`admin-ota-campaign-api.json` 分别重复 `listMedia`、`createOtaCampaign`。因此 scripts 为 75/78，三个失败均来自同一 OpenAPI 重复根因；本轮未擅自修改 CT/BE 契约范围。
+该轮结束时完整 `pnpm verify` 曾被 OpenAPI 重复 operationId 阻断：`prototype-planned-api.json` 与正式 `admin-media-api.json`、`admin-ota-campaign-api.json` 分别重复 `listMedia`、`createOtaCampaign`。该历史限制已于 2026-09-06 通过移除被正式契约接管的 planned 路由并重新生成 bundle 关闭；Scripts 恢复 80/80 PASS。
 
 ## 5. 后续事项
 
-1. 在独立契约整改中移除已经转正式契约的 prototype planned 路由并重新生成 bundle，使完整 `pnpm verify` 恢复通过。
-2. 部署阶段执行 Cognito/JWKS、API Gateway 与 EventBridge 真实集成验收并保存回执。
-3. 具备隔离 AWS 测试账号后执行 AUTH-04 IoT 实网允许/拒绝矩阵并保存清理回执；该项保持延期登记，不改变本轮 P1 关闭结论。
+1. 部署阶段执行 Cognito/JWKS、API Gateway 与 EventBridge 真实集成验收并保存回执。
+2. 具备隔离 AWS 测试账号后执行 AUTH-04 IoT 实网允许/拒绝矩阵并保存清理回执；该项保持延期登记，不改变本轮 P1 关闭结论。
 
 ## 6. M-03 / M-04 生产接线补强（2026-09-06）
 
@@ -57,6 +56,6 @@
 | 组合根 / Provisioning / Sweeper / AWS 适配器专项测试 | 6 files / 20 tests PASS |
 | CDK 模板与真实 ESM bundle | 1 file / 28 tests PASS；API 与 sweeper 均为 S3 asset，0 个内联占位 |
 | 全仓回归 | Vitest 95 files / 787 tests PASS；Contracts 280/280 PASS；build、format、boundaries、sensitive sinks、secrets PASS |
-| 已知范围外 Gate | Scripts 77/80；3 个失败仍仅来自既有 prototype planned OpenAPI 的 `listMedia` / `createOtaCampaign` 重复 operationId |
+| OpenAPI Gate（2026-09-06 追加复验） | 已移除正式契约已接管的两个 prototype planned 路由；bundle 已重新生成；Scripts 80/80 PASS |
 
 真实 AWS IoT 授权矩阵、API Gateway/Cognito 联调和 EventBridge 实际运行回执仍按既有授权延期至 AWS 集成阶段；本地代码与可合成部署资产已经闭环，不把延期回执表述为已完成。
