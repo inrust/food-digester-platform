@@ -12,8 +12,8 @@
 |---|---|---|---|
 | M-01 Lambda Runtime | 仓库基线升级到 Node.js 24.12；同步 `engines`、`.nvmrc`、`@types/node`、锁文件、Lambda `nodejs24.x` 与开发文档 | Node v24.12.0；pnpm 10.20.0；全仓 typecheck、build 通过；CDK synth 0 warning | CLOSED |
 | M-02 Assertion Gate | 统一收集 IAM Policy、ManagedPolicy、Role 内联 Policy、KMS KeyPolicy；识别 `*`/`service:*` 与通配 Resource；拒绝 KMS 数据面通配 Principal；新增 CDK warning Gate | 实际模板通过；Policy/ManagedPolicy/Role/KeyPolicy 与 CDK warning 负向样例通过；非本地 execute-api 配置缺失负测继续通过 | CLOSED |
-| M-03 Runtime Wiring | 新增管理 API Lambda 组合根，始终从 Authorization Bearer Token 调用 `createCognitoAuthenticator`，不读取或透传事件中的 `actor`/authorizer claims | 有效 JWT 生成 ActorContext；无 JWT 的伪造 actor/claims 返回 401；低权限签名 JWT 加伪造高权限 claims 仍返回 403 | CLOSED |
-| M-04 Expiry Recovery | 为证书增加 `RECOVERY_REQUIRED`、`RECOVERY_IN_PROGRESS`、`RECOVERY_FAILED`、`RECOVERY_COMPLETED` 状态、尝试次数与租约时间；先持久化恢复意图，AWS 撤证成功后才在事务中清密文；失败保留密文并可重试；定时器改为扫描并调用恢复入口 | AWS 撤证失败注入后为 `RECOVERY_FAILED`、密文保留；再次调用成功撤证、清包并重签；批处理单条失败不阻断后续项 | CLOSED |
+| M-03 Runtime Wiring | 管理 API 组合根始终重新验证 Authorization Bearer JWT；2026-09-06 进一步补齐真实 Onboarding 管理路由、RDS Secret 解析和 CDK `NodejsFunction` ESM 资产打包，API Lambda 不再部署 501 占位代码 | JWT 伪造/越权负测通过；方法/路径路由负测通过；模板断言 `Code.S3Bucket` 存在且 `ZipFile` 不存在；真实 bundle 与 synth 通过 | CLOSED |
+| M-04 Expiry Recovery | 恢复状态机先持久化意图，AWS 撤证成功后才事务清密文；2026-09-06 补齐 certificateId→已批准申请反查、Secrets Manager/KMS/AWS IoT 生产适配器及 EventBridge sweeper 真实资产包 | AWS 撤证失败保留密文并可重试；certificateId 组合根反查后完成撤证、清包与重签；模板证明五分钟调度目标不是 501 占位函数 | CLOSED |
 | M-05 Commit Hook | `confirmPackageDelivery` 支持外部事务客户端；证书包确认与 Onboarding Token 核销合并为同一事务，并强制检查两个条件写结果 | 第一写点冲突不核销 Token；第二写点冲突回滚证书包清理 | CLOSED |
 
 ## 3. 关键变更与风险控制
@@ -22,7 +22,9 @@
 - 恢复任务使用五分钟处理租约；进程在 `RECOVERY_IN_PROGRESS` 中断后，后续扫描可回收过期租约继续执行。
 - 过期包查询不再物理删除密文；密文只在 AWS 撤证完成后的数据库事务内清除。
 - KMS 管理面改为显式管理动作，不再依赖默认 `kms:*` KeyPolicy；证书包数据面仍只允许确定性 API Lambda role 条件。
-- Lambda 组合根已提供可执行、可测试的可信边界；IAC 当前仍使用任务清单既定的占位 Handler，实际构建打包与 AWS 部署联调属于后续部署阶段。
+- API 与证书恢复 Lambda 均由 CDK 从 TypeScript 入口构建 ESM 资产包；其余尚未完成业务实现的 Worker 仍保留显式 501 占位边界。
+- API 与 sweeper 分别使用确定性的最小权限角色；证书包 KMS Key Policy 只允许这两个部署时已知的 Principal，其他 Lambda 角色保持隔离。
+- RDS 凭据在 Lambda 冷启动时从 Secrets Manager 读取并只在内存中编码为 Prisma 连接 URL；AWS IoT 适配器覆盖建 Thing、签发、Policy/Thing 附加与撤证。
 
 ## 4. 验证结果
 
@@ -42,5 +44,19 @@
 ## 5. 后续事项
 
 1. 在独立契约整改中移除已经转正式契约的 prototype planned 路由并重新生成 bundle，使完整 `pnpm verify` 恢复通过。
-2. 部署阶段将管理组合根接入实际 Lambda 构建产物，并执行 Cognito/JWKS 与 API Gateway 集成验收。
+2. 部署阶段执行 Cognito/JWKS、API Gateway 与 EventBridge 真实集成验收并保存回执。
 3. 具备隔离 AWS 测试账号后执行 AUTH-04 IoT 实网允许/拒绝矩阵并保存清理回执；该项保持延期登记，不改变本轮 P1 关闭结论。
+
+## 6. M-03 / M-04 生产接线补强（2026-09-06）
+
+本次补强关闭了“核心逻辑存在但 CDK 仍部署 501 占位函数”的证据缺口。新增验证结果：
+
+| 验证项 | 结果 |
+|---|---|
+| AWS clients、cloud-api、infra typecheck | PASS |
+| 组合根 / Provisioning / Sweeper / AWS 适配器专项测试 | 6 files / 20 tests PASS |
+| CDK 模板与真实 ESM bundle | 1 file / 28 tests PASS；API 与 sweeper 均为 S3 asset，0 个内联占位 |
+| 全仓回归 | Vitest 95 files / 787 tests PASS；Contracts 280/280 PASS；build、format、boundaries、sensitive sinks、secrets PASS |
+| 已知范围外 Gate | Scripts 77/80；3 个失败仍仅来自既有 prototype planned OpenAPI 的 `listMedia` / `createOtaCampaign` 重复 operationId |
+
+真实 AWS IoT 授权矩阵、API Gateway/Cognito 联调和 EventBridge 实际运行回执仍按既有授权延期至 AWS 集成阶段；本地代码与可合成部署资产已经闭环，不把延期回执表述为已完成。

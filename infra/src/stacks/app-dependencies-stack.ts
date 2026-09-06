@@ -27,10 +27,13 @@ import * as iot from 'aws-cdk-lib/aws-iot';
 import * as kms from 'aws-cdk-lib/aws-kms';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import type { Construct } from 'constructs';
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 import type { InfraConfig } from '../config.js';
 import { Naming } from '../naming.js';
 import { DOWNLINK_TOPIC_TYPES, UPLINK_TOPIC_TYPES, uplinkTopicFilter } from '../topics.js';
@@ -47,6 +50,10 @@ const PLACEHOLDER_HANDLER_CODE = [
 
 const DB_MASTER_USERNAME = 'fdp_admin' as const;
 const API_ROLE_SUFFIX = 'api-role' as const;
+const CERT_SWEEPER_ROLE_SUFFIX = 'cert-package-sweeper-role' as const;
+const WORKSPACE_ROOT = fileURLToPath(new URL('../../..', import.meta.url));
+const API_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/lambda-entry.ts');
+const CERT_SWEEPER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/certificate-package-sweeper-entry.ts');
 
 interface MessagingResources {
   readonly ingress: sqs.Queue;
@@ -163,7 +170,7 @@ export class AppDependenciesStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    // SEC-01 前置：一次性证书包信封加密专用 Key；解密权限只授予 API Lambda（见 createCompute）
+    // SEC-01 前置：一次性证书包信封加密专用 Key；数据面只授予 API 与恢复 Lambda（见 createCompute）
     // 使用确定性角色 ARN 条件，避免 Key ↔ Lambda Role 的 CloudFormation 循环依赖。
     const apiRoleArn = this.formatArn({
       service: 'iam',
@@ -171,13 +178,19 @@ export class AppDependenciesStack extends Stack {
       resource: 'role',
       resourceName: this.naming.name(API_ROLE_SUFFIX),
     });
+    const certSweeperRoleArn = this.formatArn({
+      service: 'iam',
+      region: '',
+      resource: 'role',
+      resourceName: this.naming.name(CERT_SWEEPER_ROLE_SUFFIX),
+    });
     const certPackageDataPlane = new iam.PolicyStatement({
-      sid: 'ApiLambdaCertificatePackageDataPlaneOnly',
+      sid: 'CertificatePackageRuntimeDataPlaneOnly',
       effect: iam.Effect.ALLOW,
       principals: [new iam.AccountRootPrincipal()],
       actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:DescribeKey'],
       resources: ['*'],
-      conditions: { ArnEquals: { 'aws:PrincipalArn': apiRoleArn } },
+      conditions: { ArnEquals: { 'aws:PrincipalArn': [apiRoleArn, certSweeperRoleArn] } },
     });
     const certPackageKey = new kms.Key(this, 'CertPackageKey', {
       alias: `alias/${this.naming.name('cert-package')}`,
@@ -399,14 +412,18 @@ export class AppDependenciesStack extends Stack {
     const mkFunction = (
       id: string,
       suffix: string,
-      options: { timeout: Duration; memorySize?: number; environment: Record<string, string>; role?: iam.IRole },
-    ): lambda.Function =>
-      new lambda.Function(this, id, {
+      options: {
+        timeout: Duration;
+        memorySize?: number;
+        environment: Record<string, string>;
+        role?: iam.IRole;
+        entry?: string;
+      },
+    ): lambda.Function => {
+      const props = {
         functionName: this.naming.name(suffix),
         runtime: lambda.Runtime.NODEJS_24_X,
         architecture: lambda.Architecture.ARM_64,
-        handler: 'index.handler',
-        code: lambda.Code.fromInline(PLACEHOLDER_HANDLER_CODE),
         timeout: options.timeout,
         memorySize: options.memorySize ?? 256,
         environment: { ...options.environment, ENV_NAME: this.config.envName },
@@ -414,7 +431,28 @@ export class AppDependenciesStack extends Stack {
         vpc: data.vpc,
         vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
         securityGroups: [data.lambdaSecurityGroup],
+      };
+      if (options.entry) {
+        return new lambdaNodejs.NodejsFunction(this, id, {
+          ...props,
+          entry: options.entry,
+          handler: 'handler',
+          depsLockFilePath: resolve(WORKSPACE_ROOT, 'pnpm-lock.yaml'),
+          projectRoot: WORKSPACE_ROOT,
+          bundling: {
+            target: 'node24',
+            sourceMap: true,
+            format: lambdaNodejs.OutputFormat.ESM,
+            logLevel: lambdaNodejs.LogLevel.ERROR,
+          },
+        });
+      }
+      return new lambda.Function(this, id, {
+        ...props,
+        handler: 'index.handler',
+        code: lambda.Code.fromInline(PLACEHOLDER_HANDLER_CODE),
       });
+    };
 
     const dbSecret = data.dbSecretArn;
     const dbSecretGrant = (fn: lambda.IFunction): void => {
@@ -481,28 +519,66 @@ export class AppDependenciesStack extends Stack {
       targets: [new eventsTargets.LambdaFunction(summary)],
     });
 
-    // SEC-01：主动销毁到期密文包，避免仅在领取请求时被动清理
+    // API 与证书恢复使用两个确定性最小权限角色；证书包 Key Policy 只允许这两个 Principal。
+    const apiRole = new iam.Role(this, 'ApiFnServiceRole', {
+      roleName: this.naming.name(API_ROLE_SUFFIX),
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      description: 'API Lambda execution role and certificate-package KMS data-plane principal',
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
+      ],
+    });
+    const certSweeperRole = new iam.Role(this, 'CertPackageSweeperFnServiceRole', {
+      roleName: this.naming.name(CERT_SWEEPER_ROLE_SUFFIX),
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      description: 'Certificate package expiry recovery Lambda execution role',
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
+      ],
+    });
+
+    // SEC-01：真实 EventBridge 组合根，执行持久化恢复意图 -> AWS 撤证 -> 清包 -> 重签。
     const certPackageSweeper = mkFunction('CertPackageSweeperFn', 'cert-package-sweeper', {
       timeout: Duration.seconds(300),
-      environment: { DB_SECRET_ARN: dbSecret },
+      environment: {
+        DB_SECRET_ARN: dbSecret,
+        CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
+        FDP_AWS_ACCOUNT_ID: Aws.ACCOUNT_ID,
+      },
+      role: certSweeperRole,
+      entry: CERT_SWEEPER_ENTRY,
     });
     dbSecretGrant(certPackageSweeper);
+    certSweeperRole.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        sid: 'CertificatePackageKeyDataPlane',
+        actions: ['kms:Decrypt', 'kms:GenerateDataKey*', 'kms:DescribeKey'],
+        resources: [storage.certPackageKey.keyArn],
+      }),
+    );
+    certSweeperRole.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        sid: 'IotCertificateRecovery',
+        actions: [
+          'iot:CreateThing',
+          'iot:CreateKeysAndCertificate',
+          'iot:CreatePolicy',
+          'iot:AttachPolicy',
+          'iot:AttachThingPrincipal',
+          'iot:UpdateCertificate',
+        ],
+        resources: ['*'],
+      }),
+    );
     new events.Rule(this, 'CertPackageSweeperSchedule', {
       ruleName: this.naming.name('cert-package-sweeper'),
       schedule: events.Schedule.rate(Duration.minutes(5)),
       targets: [new eventsTargets.LambdaFunction(certPackageSweeper)],
     });
 
-    // API Handler：Onboarding / Device / Admin / Customer / Internal 五个分组的统一计算载体
-    const apiRole = new iam.Role(this, 'ApiFnServiceRole', {
-      roleName: this.naming.name(API_ROLE_SUFFIX),
-      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-      description: 'API Lambda execution role and sole certificate-package KMS data-plane principal',
-      managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
-        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
-      ],
-    });
+    // API Handler：AUTH-01 JWT 重新验签后路由真实 Onboarding 管理 Handler。
     const api = mkFunction('ApiFn', 'api', {
       timeout: Duration.seconds(30),
       memorySize: 512,
@@ -515,8 +591,10 @@ export class AppDependenciesStack extends Stack {
         MEDIA_BUCKET_NAME: storage.media.bucketName,
         EXPORT_BUCKET_NAME: storage.exportBucket.bucketName,
         CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
+        FDP_AWS_ACCOUNT_ID: Aws.ACCOUNT_ID,
       },
       role: apiRole,
+      entry: API_ENTRY,
     });
     dbSecretGrant(api);
     // 预签名 URL 与重放读取：仅授予业务所需 Bucket 的对象级读写

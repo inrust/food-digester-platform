@@ -76,7 +76,18 @@ interface CertificateDelegate {
 }
 
 interface OnboardingRequestDelegate {
+  findFirst(args: { where: Record<string, unknown>; orderBy: Record<string, 'asc' | 'desc'> }): Promise<{
+    id: string;
+    serialNumber: string;
+  } | null>;
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
+}
+
+interface RecoveryCertificateDelegate {
+  findFirst(args: { where: Record<string, unknown>; select: Record<string, unknown> }): Promise<{
+    id: string;
+    device: { serialNumber: string };
+  } | null>;
 }
 
 export class ProvisioningError extends Error {
@@ -193,6 +204,24 @@ export class ProvisioningService implements ProvisioningTrigger {
     });
     if (count !== 1) throw new ProvisioningError('过期证书状态已变化，请重试');
     return this.provision(request);
+  }
+
+  /** EventBridge 组合根入口：只凭过期证书 ID 反查已批准申请并进入同一恢复状态机。 */
+  async recoverExpiredCertificate(certificateId: string): Promise<ProvisioningResult> {
+    const certificates = (this.db as unknown as Record<string, unknown>)
+      .deviceCertificate as RecoveryCertificateDelegate;
+    const requests = (this.db as unknown as Record<string, unknown>).onboardingRequest as OnboardingRequestDelegate;
+    const certificate = await certificates.findFirst({
+      where: { id: certificateId, status: 'PENDING_CLAIM', packageCiphertext: { not: null } },
+      select: { id: true, device: { select: { serialNumber: true } } },
+    });
+    if (!certificate) throw new ProvisioningError('过期证书包不存在或状态已变化');
+    const request = await requests.findFirst({
+      where: { serialNumber: certificate.device.serialNumber, status: 'APPROVED' },
+      orderBy: { reviewedAt: 'desc' },
+    });
+    if (!request) throw new ProvisioningError('找不到过期证书对应的已批准 Onboarding 申请');
+    return this.recoverExpiredPackage(request, certificateId);
   }
 
   async provision(request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'>): Promise<ProvisioningResult> {

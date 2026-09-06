@@ -278,7 +278,8 @@ describe('ProvisioningService', () => {
     assert.equal(old.recoveryAttempts, 1);
     assert.isNotNull(old.packageCiphertext, '撤证失败时密文必须保留');
 
-    const recovered = await service.recoverExpiredPackage(request, issued.certificateId);
+    // EventBridge 生产入口只持有 certificateId，必须反查已批准申请后进入同一恢复状态机。
+    const recovered = await service.recoverExpiredCertificate(issued.certificateId);
     assert.notEqual(recovered.certificateId, issued.certificateId);
     old = await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: issued.certificateId } });
     assert.equal(old.status, 'REVOKED');

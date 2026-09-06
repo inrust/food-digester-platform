@@ -140,7 +140,7 @@ describe('验收：IAM 最小权限', () => {
     assert.deepEqual(wildcardKmsPrincipalViolations(template.toJSON()), []);
   });
 
-  test('证书包 KMS Key 的数据面权限仅允许确定性的 API Lambda role', () => {
+  test('证书包 KMS Key 的数据面权限仅允许确定性的 API 与恢复 Lambda role', () => {
     const keys = Object.values(resourcesOfType(template, 'AWS::KMS::Key'));
     const certKey = keys.find((key) => key.Properties.Description.includes('DEC-003'));
     assert.isDefined(certKey);
@@ -155,6 +155,10 @@ describe('验收：IAM 最小权限', () => {
     );
     assert.equal(dataPlane.length, 1, '证书包 Key 只能有一条数据面授权声明');
     assert.include(JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']), 'fdp-test-api-role');
+    assert.include(
+      JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']),
+      'fdp-test-cert-package-sweeper-role',
+    );
     const admin = statements.find((statement) => statement.Sid === 'KeyAdministrationOnly');
     assert.isDefined(admin);
     const adminActions = Array.isArray(admin.Action) ? admin.Action : [admin.Action];
@@ -197,6 +201,16 @@ describe('验收：IAM 最小权限', () => {
     assert.equal(fns.length, 6);
     const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
     assert.equal(roles.size, 6);
+  });
+
+  test('AUTH-01 API 与 SEC-01 sweeper 使用真实资产包而非内联 501 占位代码', () => {
+    const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function'));
+    for (const name of ['fdp-test-api', 'fdp-test-cert-package-sweeper']) {
+      const fn = fns.find((candidate) => candidate.Properties.FunctionName === name);
+      assert.isDefined(fn);
+      assert.isDefined(fn.Properties.Code.S3Bucket, `${name} 必须引用 CDK asset`);
+      assert.isUndefined(fn.Properties.Code.ZipFile, `${name} 禁止回退到内联占位实现`);
+    }
   });
 });
 

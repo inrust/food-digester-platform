@@ -20,7 +20,7 @@
 | H-04 | AUTH-04 / AWS IoT | 增加隔离账号验收脚本：创建两台 Thing、两张证书及各自 Policy，双向执行自身允许、跨设备、通配和错误方向拒绝矩阵，输出回执并清理资源 | **延期验证** | 进入 AWS 集成阶段后必须在隔离账号执行并提交 PASS 与清理回执；完成前 AUTH-04 只能维持组件级结论 |
 | H-05 | SEC-01 / Package TTL | 服务直接消费 DEC-003 冻结值并拒绝非 86400 配置；增加过期包条件清理、批量 sweeper 核心及每 5 分钟 EventBridge 调度资源 | 已关闭（本地实现） | AWS 部署阶段验证真实调度、数据库清理和撤证/重签链；异常恢复顺序仍按原报告 M-04/P1 跟踪 |
 | H-06 | SEC-01 / Logging & Trace | 生产直接 `console.error` 接入统一 redacting logger；增加 Trace attributes 脱敏入口及生产源码 sink 静态门禁；审计/日志秘密值测试通过 | 已关闭 | 新增日志或 Trace SDK 时必须通过 `check:sensitive-sinks`，禁止直接写 sink |
-| H-07 | SEC-01 / KMS IAM | 证书包 Key 区分管理面与数据面 KeyPolicy；数据面仅允许确定性 API Lambda Role；模板测试按通配语义检查加解密动作 | 已关闭（模板级） | AWS 部署阶段补 IAM Policy Simulator/真实 KMS 拒绝回执 |
+| H-07 | SEC-01 / KMS IAM | 证书包 Key 区分管理面与数据面 KeyPolicy；数据面仅允许确定性 API Lambda Role 与证书恢复 Lambda Role；模板测试按通配语义检查加解密动作 | 已关闭（模板级） | AWS 部署阶段补 IAM Policy Simulator/真实 KMS 拒绝回执 |
 
 本地关闭率为 **6/7（85.7%）**；另 1 项 H-04 为经明确授权的延期验收，不计作已关闭。
 

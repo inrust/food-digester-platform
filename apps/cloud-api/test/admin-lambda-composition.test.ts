@@ -1,9 +1,35 @@
 import { withAuthorization } from '@fdp/auth';
-import { assert, describe, test, vi } from 'vitest';
+import { assert, describe, expect, test, vi } from 'vitest';
 import { generateTestKeySet, signToken, testConfig } from '../../../packages/auth/test/helpers.js';
-import { createAdminLambdaHandler } from '../src/runtime/admin-lambda.js';
+import type { AdminHttpRequest } from '../src/admin/onboarding/handler.js';
+import { createAdminLambdaHandler, createAdminRoute } from '../src/runtime/admin-lambda.js';
 
 describe('AUTH-01 管理 API Lambda 组合根', () => {
+  test('真实路由表把方法和路径映射到受保护业务 Handler', async () => {
+    const approve = vi.fn(async (_request: AdminHttpRequest) => ({ status: 200, body: {} }));
+    const route = createAdminRoute(
+      { httpMethod: 'POST', path: '/api/v1/admin/onboarding/requests/request-1/approve' },
+      {
+        onboarding: {
+          list: vi.fn(),
+          detail: vi.fn(),
+          approve,
+          reject: vi.fn(),
+        },
+      },
+    );
+    await route({ headers: {}, requestId: 'trace-1' });
+    assert.equal(approve.mock.calls[0]?.[0].params?.requestId, 'request-1');
+  });
+
+  test('未知路径失败关闭为 404', async () => {
+    const route = createAdminRoute(
+      { httpMethod: 'GET', path: '/api/v1/admin/unknown' },
+      { onboarding: { list: vi.fn(), detail: vi.fn(), approve: vi.fn(), reject: vi.fn() } },
+    );
+    await expect(route({ headers: {}, requestId: 'trace-2' })).resolves.toMatchObject({ status: 404 });
+  });
+
   test('只把重新验签后的 claims 转换为可信 ActorContext', async () => {
     const keys = await generateTestKeySet();
     const token = await signToken(keys, { groups: ['PlatformOperator'], sub: 'signed-sub' });

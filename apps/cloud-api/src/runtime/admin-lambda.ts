@@ -7,6 +7,7 @@
 import { AuthError, createCognitoAuthenticator } from '@fdp/auth';
 import type { CognitoAuthenticatorConfig } from '@fdp/auth';
 import type { AdminHttpRequest, AdminHttpResponse } from '../admin/onboarding/handler.js';
+import type { AdminOnboardingHandlers } from '../admin/onboarding/handler.js';
 
 export interface ApiGatewayAdminEvent {
   readonly headers?: Readonly<Record<string, string | undefined>>;
@@ -14,10 +15,13 @@ export interface ApiGatewayAdminEvent {
   readonly queryStringParameters?: Readonly<Record<string, string | undefined>> | null;
   readonly body?: string | null;
   readonly isBase64Encoded?: boolean;
+  readonly httpMethod?: string;
+  readonly path?: string;
+  readonly rawPath?: string;
   readonly requestContext?: {
     readonly requestId?: string;
     readonly identity?: { readonly sourceIp?: string };
-    readonly http?: { readonly sourceIp?: string };
+    readonly http?: { readonly sourceIp?: string; readonly method?: string; readonly path?: string };
     /** 不可信输入：特意不读取 authorizer/claims。 */
     readonly authorizer?: unknown;
   };
@@ -32,6 +36,11 @@ export interface ApiGatewayAdminResult {
 }
 
 export type AdminRoute = (request: AdminHttpRequest) => Promise<AdminHttpResponse>;
+export type AdminRouteResolver = (event: ApiGatewayAdminEvent) => AdminRoute;
+
+export interface AdminOnboardingRouteSet {
+  readonly onboarding: AdminOnboardingHandlers;
+}
 
 const header = (headers: Readonly<Record<string, string | undefined>>, wanted: string): string | undefined => {
   const entry = Object.entries(headers).find(([name]) => name.toLowerCase() === wanted.toLowerCase());
@@ -42,7 +51,41 @@ function result(status: number, body: unknown): ApiGatewayAdminResult {
   return { statusCode: status, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }
 
+/** AUTH-01 的首个生产路由表；不匹配的接口失败关闭为 404，不回退到未鉴权 Handler。 */
+export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboardingRouteSet): AdminRoute {
+  const method = (event.requestContext?.http?.method ?? event.httpMethod ?? '').toUpperCase();
+  const path = event.rawPath ?? event.requestContext?.http?.path ?? event.path ?? '';
+  const collection = /^\/api\/v1\/admin\/onboarding\/requests\/?$/;
+  const member = /^\/api\/v1\/admin\/onboarding\/requests\/([^/]+?)(?:\/(approve|reject))?\/?$/;
+  const matched = member.exec(path);
+
+  return async (request) => {
+    if (method === 'GET' && collection.test(path)) return routes.onboarding.list(request);
+    if (matched) {
+      const [, requestId, action] = matched;
+      const routedRequest: AdminHttpRequest = {
+        ...request,
+        params: { ...(request.params ?? {}), requestId: decodeURIComponent(requestId as string) },
+      };
+      if (method === 'GET' && !action) return routes.onboarding.detail(routedRequest);
+      if (method === 'POST' && action === 'approve') return routes.onboarding.approve(routedRequest);
+      if (method === 'POST' && action === 'reject') return routes.onboarding.reject(routedRequest);
+    }
+    return {
+      status: 404,
+      body: {
+        error: { code: 'NOT_FOUND', message: 'The requested resource was not found', requestId: request.requestId },
+      },
+    };
+  };
+}
+
 export function createAdminLambdaHandler(config: CognitoAuthenticatorConfig, route: AdminRoute) {
+  return createAdminLambdaRouter(config, () => route);
+}
+
+/** 生产路由变体：认证器/JWKS 缓存按 Lambda 容器复用，路由按当前 API Gateway 事件解析。 */
+export function createAdminLambdaRouter(config: CognitoAuthenticatorConfig, resolveRoute: AdminRouteResolver) {
   const authenticator = createCognitoAuthenticator(config);
 
   return async (event: ApiGatewayAdminEvent): Promise<ApiGatewayAdminResult> => {
@@ -75,7 +118,7 @@ export function createAdminLambdaHandler(config: CognitoAuthenticatorConfig, rou
     try {
       const sourceIp = event.requestContext?.http?.sourceIp ?? event.requestContext?.identity?.sourceIp;
       const userAgent = header(headers, 'user-agent');
-      const response = await route({
+      const response = await resolveRoute(event)({
         actor,
         headers,
         ...(event.pathParameters ? { params: event.pathParameters } : {}),

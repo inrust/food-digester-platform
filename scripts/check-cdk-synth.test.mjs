@@ -8,5 +8,10 @@ test('CDK WARNING 与规则校验编号会触发 Gate', () => {
 });
 
 test('正常 synth 输出不会误报', () => {
-  assert.deepEqual(findCdkWarnings('Successfully synthesized to cdk.out'), []);
+  assert.deepEqual(
+    findCdkWarnings(
+      'Successfully synthesized to cdk.out\n...d79f8964007d101ec11e3bb1da51843a-building/index.mjs  5.5mb ⚠️',
+    ),
+    [],
+  );
 });

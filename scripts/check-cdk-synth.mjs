@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 export function findCdkWarnings(output) {
-  return output.split(/\r?\n/u).filter((line) => /(?:\bWARNING\b|\[Warning at |F\d{4})/iu.test(line));
+  return output.split(/\r?\n/u).filter((line) => /(?:\bWARNING\b|\[Warning at |\bF\d{4}\b)/iu.test(line));
 }
 
 export function checkCdkSynth(root = process.cwd()) {
