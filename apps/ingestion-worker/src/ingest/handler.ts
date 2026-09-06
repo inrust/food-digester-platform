@@ -45,7 +45,7 @@ export interface QuarantineSink {
 export interface IngestionHandlerDeps extends IngestPipelineDeps {
   readonly client: DbClient;
   readonly quarantine: QuarantineSink;
-  /** 业务分发扩展点（BE-IOT-04 等注入）；缺省 no-op。 */
+  /** 业务分发扩展点（BE-IOT-08 createBusinessDispatcher 注入）；缺省 no-op。 */
   readonly onValidated?: (message: ValidatedMessage) => Promise<void>;
 }
 

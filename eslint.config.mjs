@@ -9,6 +9,7 @@ export default tseslint.config(
       'docs/**',
       '**/coverage/**',
       '.turbo/**',
+      '**/cdk.out/**',
       'packages/database/src/generated/**',
     ],
   },

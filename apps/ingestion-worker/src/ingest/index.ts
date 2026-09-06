@@ -13,6 +13,8 @@ export type { ProcessReceiptResult, ProcessWithReceiptParams, ReceiptKey, Receip
 export { gapStatus, recordGapForNewReceipt } from './gap.js';
 export type { GapKey, GapStatusView } from './gap.js';
 export { createIngestionHandler } from './handler.js';
+export { createBusinessDispatcher } from './dispatcher.js';
+export type { BusinessDispatcherDeps } from './dispatcher.js';
 export type {
   IngestionHandlerDeps,
   QuarantineRecord,

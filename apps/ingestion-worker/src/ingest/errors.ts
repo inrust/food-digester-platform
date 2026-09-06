@@ -22,7 +22,8 @@ export type IngestErrorType =
   | 'INVALID_COMMAND_STATE'
   | 'UNKNOWN_OTA_TARGET'
   | 'OTA_TARGET_MISMATCH'
-  | 'INVALID_OTA_STATE';
+  | 'INVALID_OTA_STATE'
+  | 'NO_HANDLER';
 
 export class IngestError extends Error {
   override readonly name = 'IngestError';
