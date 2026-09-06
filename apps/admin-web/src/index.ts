@@ -100,3 +100,36 @@ export { DEFAULT_TIME_ZONE, formatInTimeZone, TimeText } from './components/Time
 export type { TimeTextProps } from './components/TimeText.js';
 export { AxisBadge, AXIS_LABELS, FourAxisBadges } from './components/FourAxisBadge.js';
 export type { FourAxisStatusValue, StatusAxis } from './components/FourAxisBadge.js';
+export { ConsumableGauge } from './components/ConsumableGauge.js';
+export { DeviceCommandActions } from './components/DeviceCommandActions.js';
+export type { CommandSubmitResult, DeviceCommandActionsProps } from './components/DeviceCommandActions.js';
+
+// ---------- FE-03 业务总览页 ----------
+export { DashboardPage } from './pages/dashboard/DashboardPage.js';
+export type { DashboardPageProps, DashboardPageState } from './pages/dashboard/DashboardPage.js';
+export {
+  createDashboardCommandSubmitter,
+  DASHBOARD_COMMAND_TIMEOUT_SEC,
+  fetchDashboardOverview,
+} from './pages/dashboard/dashboard-api.js';
+export {
+  ALARM_SEVERITY_LABELS,
+  CONSUMABLE_NAMES,
+  CONSUMABLE_THRESHOLDS,
+  consumablesOf,
+  DENY_REASON_LABELS,
+  licenseDistributionText,
+  QUICK_COMMANDS,
+  quickActionsOf,
+  signalText,
+} from './pages/dashboard/dashboard-state.js';
+export type { ConsumableDisplayModel, QuickActionModel } from './pages/dashboard/dashboard-state.js';
+export type {
+  AlarmSummaryView,
+  AlarmSeverity,
+  CommandActionView,
+  ConsumableSummaryView,
+  DashboardOverviewView,
+  DenyReason,
+  DeviceCardView,
+} from './pages/dashboard/types.js';

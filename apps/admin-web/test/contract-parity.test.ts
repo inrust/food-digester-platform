@@ -9,6 +9,12 @@ import { assert, test } from 'vitest';
 import { ROLES } from '@fdp/auth';
 import { FROZEN_ROLE_DISPLAY_NAMES } from '../src/menu/menu.js';
 import { APP_ROUTES } from '../src/router/routes.js';
+import {
+  CONSUMABLE_NAMES,
+  CONSUMABLE_THRESHOLDS,
+  DENY_REASON_LABELS,
+  QUICK_COMMANDS,
+} from '../src/pages/dashboard/dashboard-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -67,4 +73,36 @@ test('CT-05：401/403 稳定错误码存在（UNAUTHENTICATED / FORBIDDEN）', (
   const byCode = new Map(catalog.errorCodes.map((e) => [e.code, e.httpStatus]));
   assert.equal(byCode.get('UNAUTHENTICATED'), 401);
   assert.equal(byCode.get('FORBIDDEN'), 403);
+});
+
+test('DEC-008：耗材名称与阈值与冻结策略一致', () => {
+  const policy = readJson('contracts/domain/consumables-policy.json') as {
+    status: string;
+    display: { names: Record<string, string>; thresholds: Record<string, number> };
+  };
+  assert.equal(policy.status, 'frozen');
+  assert.deepEqual({ ...CONSUMABLE_NAMES }, policy.display.names);
+  assert.deepEqual({ ...CONSUMABLE_THRESHOLDS }, policy.display.thresholds);
+});
+
+test('CT-04：卡片快捷命令均在命令目录内（无协议外命令）', () => {
+  const catalog = readJson('contracts/mqtt/command-catalog.json') as {
+    commands: { command: string; highRisk: boolean }[];
+  };
+  const codes = new Set(catalog.commands.map((c) => c.command));
+  for (const quick of QUICK_COMMANDS) {
+    assert.ok(codes.has(quick.command), `快捷命令 ${quick.command} 不在 CT-04 目录`);
+    // 卡片快捷动作为非高风险（高风险命令必须走确认凭证流程，不在卡片提供）
+    assert.equal(catalog.commands.find((c) => c.command === quick.command)?.highRisk, false);
+  }
+});
+
+test('BE-DASH-01：denyReason 文案覆盖契约枚举全集', () => {
+  const api = readJson('contracts/rest/admin-dashboard-api.json') as {
+    components: { schemas: { CommandAction: { properties: { denyReason: { enum: (string | null)[] } } } } };
+  };
+  const enumValues = api.components.schemas.CommandAction.properties.denyReason.enum.filter(
+    (v): v is string => v !== null,
+  );
+  assert.deepEqual(Object.keys(DENY_REASON_LABELS).sort(), enumValues.sort());
 });
