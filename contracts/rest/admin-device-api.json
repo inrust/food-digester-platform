@@ -3,7 +3,7 @@
   "info": {
     "title": "Bio-Nexa CMP Admin Device Registry API",
     "version": "0.2.0",
-    "description": "BE-DEV-01 Device 台账查询接口（Cognito 认证，device:read，全部五角色）：列表（Customer/Site/Region/Subregion/生命周期/Operational/连接/授权/型号/关键字筛选 + 键集游标分页）与详情。连接状态由 lastHeartbeatAt 与明确阈值（默认 10 分钟）派生，不写回生命周期字段；证书仅返回 certificateId + fingerprint 摘要，不返回私钥或完整证书；Region/Subregion 只取 Site（DEC-011）；Customer 角色的可见范围由服务端身份上下文强制注入。只读接口，不修改任何状态。通用契约继承 openapi-base.json（CT-05）。",
+    "description": "BE-DEV-01 Device 台账查询接口（Cognito 认证，device:read，全部五角色）：列表（Customer/Site/Region/Subregion/生命周期/Operational/连接/授权/型号/关键字筛选 + 键集游标分页）与详情。BE-DEV-06 可编辑元数据 PATCH /devices/{deviceId}/metadata（device:write；V1 白名单仅 alias；If-Match 乐观锁；业务审计）。连接状态由 lastHeartbeatAt 与明确阈值（默认 10 分钟）派生，不写回生命周期字段；证书仅返回 certificateId + fingerprint 摘要，不返回私钥或完整证书；Region/Subregion 只取 Site（DEC-011）；Customer 角色的可见范围由服务端身份上下文强制注入。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-010@1.0.0", "DEC-011@1.0.0", "DEC-012@1.0.0"],
     "x-decision-register-version": "1.27.0"
   },
@@ -179,6 +179,87 @@
           }
         }
       }
+    },
+    "/api/v1/admin/devices/{deviceId}/metadata": {
+      "patch": {
+        "tags": ["admin"],
+        "operationId": "updateDeviceMetadata",
+        "summary": "设备可编辑元数据（BE-DEV-06：V1 白名单仅 alias；If-Match 乐观锁；业务审计）",
+        "description": "仅允许修改 alias（去首尾空格、长度 1..64、同一 Customer 内唯一——暂定规则，决策登记无已冻结规则）；deviceId/serialNumber/Customer/Site/Contract/License/生命周期/连接状态/固件/证书均不可经本接口修改（携带即 400）；不接受任意 JSON merge patch。If-Match 头必须携带设备当前 updatedAt（ISO8601，来自 GET 详情）；缺失/非法 → 400，不一致或并发漂移 → 409（VERSION_CONFLICT）；alias 同 Customer 冲突 → 409（CONFLICT）；失败请求不产生部分更新（单条条件更新）。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string", "format": "date-time" },
+            "description": "设备当前 updatedAt（ISO8601）；乐观锁基准"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeviceMetadataUpdate" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "更新后的元数据视图（updatedAt 为下次 If-Match 基准）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeviceMetadataSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "非法请求（VALIDATION_FAILED：受保护字段/空 alias/超长/If-Match 缺失或非法）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无 device:write 权限或 Customer 角色越权（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "设备不存在（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "并发冲突（VERSION_CONFLICT：If-Match 过期/漂移）或 alias 同 Customer 冲突（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -186,6 +267,41 @@
       "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
     },
     "schemas": {
+      "DeviceMetadataUpdate": {
+        "type": "object",
+        "required": ["alias"],
+        "additionalProperties": false,
+        "properties": {
+          "alias": {
+            "type": ["string", "null"],
+            "maxLength": 64,
+            "description": "设备别名（去首尾空格后 1..64 字符，同一 Customer 内唯一——暂定规则；null = 清除别名）"
+          }
+        },
+        "description": "V1 字段白名单仅 alias；携带任何其他字段（含受保护字段）→ 400；不接受任意 JSON merge patch"
+      },
+      "DeviceMetadataView": {
+        "type": "object",
+        "required": ["deviceId", "alias", "updatedAt"],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "alias": { "type": ["string", "null"] },
+          "updatedAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "description": "更新后的台账时点（下次 If-Match 基准）"
+          }
+        }
+      },
+      "DeviceMetadataSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/DeviceMetadataView" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
       "DeviceCertificateSummary": {
         "type": "object",
         "required": ["certificateId", "fingerprint", "status"],

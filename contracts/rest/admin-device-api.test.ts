@@ -108,6 +108,30 @@ test('Device 视图字段封闭（原型设备群表格字段均有来源）；�
   assert.ok(!/privateKey|certificatePem|packageCiphertext/i.test(all), '不得出现私钥/完整证书字段');
 });
 
+test('BE-DEV-06 元数据 PATCH 端点：白名单仅 alias + If-Match 乐观锁 + 409 冲突语义', () => {
+  const patch = doc.paths['/api/v1/admin/devices/{deviceId}/metadata']?.patch;
+  assert.ok(patch, '缺少 PATCH /api/v1/admin/devices/{deviceId}/metadata');
+  assert.equal(patch.operationId, 'updateDeviceMetadata');
+  assert.deepEqual(patch.security, [{ CognitoJwt: [] }]);
+
+  // If-Match 头必填
+  const ifMatch = patch.parameters.find((p: { name?: string }) => p.name === 'If-Match');
+  assert.ok(ifMatch && ifMatch.required === true && ifMatch.in === 'header', 'If-Match 头必填');
+
+  // 请求体白名单：仅 alias，禁止 merge patch（additionalProperties false）
+  const update = doc.components.schemas.DeviceMetadataUpdate;
+  assert.deepEqual(update.required, ['alias']);
+  assert.equal(update.additionalProperties, false);
+  assert.deepEqual(Object.keys(update.properties), ['alias'], 'V1 仅 alias 可编辑');
+
+  // 响应码齐备：400（受保护字段/非法值/If-Match 缺失）/403（越权）/404/409（并发与 alias 冲突）
+  for (const code of ['200', '400', '401', '403', '404', '409', '500']) {
+    assert.ok(patch.responses[code], `metadata PATCH 缺少响应码 ${code}`);
+  }
+  // 更新视图返回新 updatedAt（下次 If-Match 基准）
+  assert.ok(doc.components.schemas.DeviceMetadataView.required.includes('updatedAt'));
+});
+
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {
   const refs = collectRefs(doc);
   assert.ok(refs.length > 0);

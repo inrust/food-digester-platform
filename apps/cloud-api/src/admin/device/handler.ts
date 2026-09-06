@@ -7,7 +7,9 @@
  *                                          生命周期/Operational/连接/授权/型号/关键字筛选 +
  *                                          键集游标分页；Customer 角色强制所属 Customer scope）
  * - GET /api/v1/admin/devices/{deviceId}   详情（device:read；Customer 角色仅本 Customer 设备）
- * 只读接口：不修改任何状态；连接状态由 lastHeartbeatAt 与阈值派生，不写回生命周期字段；
+ * - PATCH /api/v1/admin/devices/{deviceId}/metadata  可编辑元数据（BE-DEV-06：device:write；
+ *                                          V1 白名单仅 alias；If-Match 乐观锁；业务审计）
+ * 查询接口不修改任何状态；连接状态由 lastHeartbeatAt 与阈值派生，不写回生命周期字段；
  * 不返回私钥或完整证书（仅 certificateId + fingerprint 摘要）。
  * 响应契约对齐 CT-05：data + meta{requestId,timestamp[,nextCursor]}。
  */
@@ -18,6 +20,7 @@ import { mapDbErrorToHttp } from '@fdp/database';
 import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.js';
 import { AdminDeviceError, deviceNotFound, deviceValidationFailed } from './errors.js';
 import { DEFAULT_CONNECTIVITY_THRESHOLD_MS, findDeviceById, listDevices, toDeviceDto } from './repository.js';
+import { updateDeviceMetadata } from './metadata-service.js';
 
 export interface AdminDeviceHandlerDeps {
   readonly client: DbClient;
@@ -29,6 +32,7 @@ export interface AdminDeviceHandlerDeps {
 export interface AdminDeviceHandlers {
   list(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   detail(req: AdminHttpRequest): Promise<AdminHttpResponse>;
+  updateMetadata(req: AdminHttpRequest): Promise<AdminHttpResponse>;
 }
 
 const SENSITIVE_LEAK_PATTERN = /(stack|sql|select |insert |update |delete from|aws|arn:aws|access ?key|secret)/i;
@@ -114,6 +118,17 @@ export function createAdminDeviceHandlers(deps: AdminDeviceHandlerDeps): AdminDe
     };
   });
 
+  const updateMetadata = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
+    { permission: 'device:write' },
+    async (req) => {
+      const view = await updateDeviceMetadata(deps, req.actor as ActorContext, requireDeviceId(req), {
+        body: (req.body ?? {}) as Record<string, unknown>,
+        ifMatch: req.headers?.['if-match'] ?? req.headers?.['If-Match'],
+      });
+      return { status: 200, body: { data: view, meta: meta(req) } };
+    },
+  );
+
   const wrap =
     (fn: (req: AdminHttpRequest) => Promise<AdminHttpResponse>) =>
     async (req: AdminHttpRequest): Promise<AdminHttpResponse> => {
@@ -124,5 +139,5 @@ export function createAdminDeviceHandlers(deps: AdminDeviceHandlerDeps): AdminDe
       }
     };
 
-  return { list: wrap(list), detail: wrap(detail) };
+  return { list: wrap(list), detail: wrap(detail), updateMetadata: wrap(updateMetadata) };
 }
