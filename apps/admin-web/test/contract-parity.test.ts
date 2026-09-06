@@ -25,6 +25,7 @@ import {
   OPERATIONAL_FILTER_OPTIONS,
   SENSOR_METRICS,
 } from '../src/pages/devices/device-state.js';
+import { DEVICE_MANAGE_COVERAGE } from '../src/pages/device-manage/device-manage-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -153,6 +154,32 @@ test('FE-06：CT-06 device-view/device-group 的 Adopt/Adapt 元素 100% 有实�
     .filter((p) => p.pageState === 'device-view' || p.pageState === 'device-group')
     .flatMap((p) => p.elements.filter((e) => e.disposition === 'Defer').map((e) => e.id));
   assert.deepEqual(deferred, ['device-group.req.column.creator']);
+});
+
+test('FE-07：CT-06 device-manage 页 FE-07 自有元素 100% 有实现锚点', () => {
+  const matrix = readJson('contracts/prototype-traceability.yaml') as {
+    pages: {
+      pageState: string;
+      elements: { id: string; disposition: string; source?: { taskId?: string } }[];
+    }[];
+  };
+  const page = matrix.pages.find((p) => p.pageState === 'device-manage');
+  assert.ok(page !== undefined, 'CT-06 缺少页面 device-manage');
+  // 仅锁定 FE-07 自有元素（其余元素属 FE-08/FE-09/FE-13，随对应任务扩展覆盖表）
+  const owned = page.elements.filter(
+    (e) => (e.disposition === 'Adopt' || e.disposition === 'Adapt') && e.source?.taskId === 'FE-07',
+  );
+  assert.ok(owned.length > 0, 'device-manage 页应至少有一个 FE-07 自有元素');
+  for (const element of owned) {
+    assert.ok(DEVICE_MANAGE_COVERAGE[element.id] !== undefined, `元素 ${element.id} 无实现锚点`);
+  }
+  // 覆盖表不允许多余键（防止伪覆盖）
+  for (const key of Object.keys(DEVICE_MANAGE_COVERAGE)) {
+    assert.ok(
+      owned.some((e) => e.id === key),
+      `覆盖表存在 FE-07 之外的键 ${key}`,
+    );
+  }
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {

@@ -25,6 +25,13 @@ export interface DeviceContractSummaryView {
   readonly endAt: string;
 }
 
+/** BE-DEV-01 Device.certificate：仅摘要（ID/指纹/状态），契约不返回完整证书/私钥。 */
+export interface DeviceCertificateSummaryView {
+  readonly certificateId: string;
+  readonly fingerprint: string;
+  readonly status: 'PENDING_CLAIM' | 'ACTIVE' | 'REVOKED' | 'EXPIRED';
+}
+
 export interface DeviceView {
   readonly id: string;
   readonly serialNumber: string;
@@ -40,6 +47,7 @@ export interface DeviceView {
   readonly operationalStatus: 'Active' | 'Maintenance' | 'Suspended' | 'Retired' | null;
   readonly connectivity: Connectivity;
   readonly lastHeartbeatAt: string | null;
+  readonly certificate: DeviceCertificateSummaryView | null;
   readonly license: { readonly status: string } | null;
   readonly contract: DeviceContractSummaryView | null;
   readonly createdAt: string;
