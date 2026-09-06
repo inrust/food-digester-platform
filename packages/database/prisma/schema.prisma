@@ -973,6 +973,29 @@ model BusinessSetting {
   @@map("business_settings")
 }
 
+// ---------- 设备活动导出（BE-DEV-05） ----------
+
+model ActivityExportJob {
+  id          String  @id @default(uuid())
+  deviceId    String  @map("device_id")
+  customerId  String? @map("customer_id")
+  requestedBy String  @map("requested_by")
+  // 冻结筛选快照（level/kind/from/to；导出与查询同源，筛选结果与 CSV 一致）
+  filters      Json
+  status       String    @default("PENDING") // PENDING | PROCESSING | COMPLETED | FAILED
+  rowCount     Int?      @map("row_count")
+  storageKey   String?   @map("storage_key")
+  downloadUrl  String?   @map("download_url")
+  urlExpiresAt DateTime? @map("url_expires_at") @db.Timestamptz
+  error        String?
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  completedAt  DateTime? @map("completed_at") @db.Timestamptz
+
+  @@index([status, createdAt])
+  @@index([customerId, createdAt])
+  @@map("device_activity_export_jobs")
+}
+
 model NotificationDelivery {
   id             String    @id @default(uuid())
   // 幂等键：eventId:channel:target（重复事件/重复派发只产生一条投递记录）

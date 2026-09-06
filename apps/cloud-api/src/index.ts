@@ -32,6 +32,7 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
  * BE-RBAC-01 已落地：/api/v1/admin/users 列表/邀请/角色/Scope/停用/密码重置触发（见 ./admin/user）；
  * BE-AUD-01 已落地：/api/v1/admin/audit-logs 审计日志只读查询（列表 + 详情，见 ./admin/audit）；
  * BE-DASH-01 已落地：/api/v1/admin/dashboard/overview 总览聚合（见 ./admin/dashboard）；
+ * BE-DEV-05 已落地：/api/v1/admin/devices/{id}/console|activities + 活动导出（见 ./admin/device-console）；
  * 其余 /api/v1/device、/admin、/customer、/internal 路由在后续 BE 任务实现。
  */
 export const SERVICE_NAME = 'cloud-api';
@@ -64,6 +65,7 @@ export * from './admin/user/index.js';
 export * from './admin/audit/index.js';
 export * from './admin/dashboard/index.js';
 export * from './admin/settings/index.js';
+export * from './admin/device-console/index.js';
 export * from './admin/esg/index.js';
 export * from './consumable/index.js';
 export * from './notification/index.js';
