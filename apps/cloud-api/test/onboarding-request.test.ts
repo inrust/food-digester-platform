@@ -21,7 +21,7 @@ import {
 import { createOnboardingRequestHandler, submitOnboardingRequest } from '../src/index.js';
 import type { OnboardingHttpRequest, OnboardingHttpResponse } from '../src/index.js';
 import { createTestDb } from './helpers.js';
-import { assertOnboardingOpenApiResponse } from './onboarding-openapi.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 const NOW = new Date('2026-08-27T08:00:00Z');
 const now = () => NOW;
@@ -135,7 +135,7 @@ describe('POST /api/v1/device/onboarding/request', () => {
     assert.equal(body.status, 'PENDING');
     assert.ok(body.requestId.length > 0);
     assert.deepEqual(Object.keys(body).sort(), ['requestId', 'status']);
-    assertOnboardingOpenApiResponse('OnboardingRequestResult', res.body);
+    assertOpenApiResponse('submitOnboardingRequest', res.status, res.body);
 
     const rows = await prisma.onboardingRequest.findMany({ where: { serialNumber: SERIALS.positive } });
     assert.equal(rows.length, 1);
@@ -151,7 +151,7 @@ describe('POST /api/v1/device/onboarding/request', () => {
     const second = await handler(makeReq(token, { ...validBody(SERIALS.idempotent), manufacturer: 'Changed' }));
 
     assert.equal(second.status, 200);
-    assertOnboardingOpenApiResponse('OnboardingRequestResult', second.body);
+    assertOpenApiResponse('submitOnboardingRequest', second.status, second.body);
     assert.equal((first.body as SuccessPayload).requestId, (second.body as SuccessPayload).requestId);
     assert.equal(await requestCount(SERIALS.idempotent), 1);
     const row = await prisma.onboardingRequest.findFirst({ where: { serialNumber: SERIALS.idempotent } });

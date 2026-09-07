@@ -57,6 +57,9 @@ export function createDeviceDeactivateHandler(
   return async (req) => {
     try {
       const identity = await verifyDeactivateIdentity(deps.client, req.identity, now());
+      if (req.body !== undefined) {
+        throw new DeviceDeactivateError('VALIDATION_FAILED', 'Request body is not allowed');
+      }
       const result = await confirmDeactivation(deps.client, identity, now);
       return {
         status: 200,

@@ -12,7 +12,9 @@ import type { PrismaClient } from '@fdp/database';
 import { certificateFingerprintFromPem } from '@fdp/auth';
 import { createCertificateStatusHandler, deriveCertificateStatus } from '../src/index.js';
 import type { CertificateStatusHandlerDeps, CertificateStatusRequest } from '../src/index.js';
+import { createDeviceApiLambdaHandler } from '../src/runtime/device-lambda.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 const NOW = new Date('2026-08-27T08:00:00Z');
 const now = () => NOW;
@@ -93,6 +95,7 @@ describe('GET /api/v1/device/certificate/status', () => {
     const res = await makeHandler()(statusReq(pem));
     assert.equal(res.status, 200);
     const body = res.body as StatusPayload;
+    assertOpenApiResponse('getCertificateStatus', res.status, res.body);
     assert.equal(body.certificateId, certificateId);
     assert.equal(body.status, 'ACTIVE');
     assert.equal(body.daysRemaining, 45);
@@ -145,6 +148,28 @@ describe('GET /api/v1/device/certificate/status', () => {
     assert.equal((await handler(statusReq(fixturePem('unregistered')))).status, 401);
     const expired = await plantActiveCert({ notAfterOffsetMs: -DAY_MS });
     assert.equal((await handler(statusReq(expired.pem))).status, 401);
+  });
+
+  test('Device API 无 Bearer JWT、仅可信且已登记的 mTLS 证书时返回契约 200', async () => {
+    const { pem } = await plantActiveCert();
+    const unused = async () => ({ status: 500, body: {} });
+    const lambda = createDeviceApiLambdaHandler({
+      certificateStatus: makeHandler(),
+      certificateRotate: unused,
+      sync: unused,
+      deactivate: unused,
+    });
+    const response = await lambda({
+      httpMethod: 'GET',
+      path: '/api/v1/device/certificate/status',
+      headers: {},
+      requestContext: {
+        requestId: 'req-mtls-only',
+        identity: { clientCert: { clientCertPem: pem } },
+      },
+    });
+    assert.equal(response.statusCode, 200);
+    assertOpenApiResponse('getCertificateStatus', response.statusCode, response.body);
   });
 });
 

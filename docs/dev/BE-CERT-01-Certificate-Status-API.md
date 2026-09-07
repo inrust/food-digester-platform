@@ -1,6 +1,6 @@
 # BE-CERT-01 Certificate Status API
 
-实现：[apps/cloud-api/src/device/certificate-status.ts](../apps/cloud-api/src/device/certificate-status.ts)；契约：[contracts/rest/device-certificate-api.json](../contracts/rest/device-certificate-api.json)；测试：[certificate-status.test.ts](../apps/cloud-api/test/certificate-status.test.ts)（PGlite 真实 PostgreSQL + 全部 migration）、[device-certificate-api.test.ts](../contracts/rest/device-certificate-api.test.ts)。
+实现：[certificate-status.ts](../../apps/cloud-api/src/device/certificate-status.ts)；契约：[device-certificate-api.json](../../contracts/rest/device-certificate-api.json)；测试：[certificate-status.test.ts](../../apps/cloud-api/test/certificate-status.test.ts)（PGlite 真实 PostgreSQL + 全部 migration）、[device-certificate-api.test.ts](../../contracts/rest/device-certificate-api.test.ts)。
 
 ## 1. 范围与事实源
 
@@ -28,14 +28,23 @@
 | 响应不包含 PEM/私钥 | 响应序列化扫描无 BEGIN CERTIFICATE/privateKey/certificatePem | ✅ |
 | 未认证 | 缺证书/未登记证书/过期证书 → 401 UNAUTHENTICATED | ✅ |
 
-`pnpm vitest run apps/cloud-api/test/certificate-status.test.ts` 7/7 通过；`pnpm --filter @fdp/contracts test` 142/142 通过；全仓 `pnpm verify` 退出 0（2026-08-27）。
+复验命令：`pnpm vitest run apps/cloud-api/test/certificate-status.test.ts apps/cloud-api/test/openapi-response.test.ts`；全仓严格 Gate：`pnpm verify`。成功响应由通用 OpenAPI response validator 直接校验完整顶层 body，不再以手工字段比对代替 Schema 验收。
 
 ## 4. 对接说明
 
-- **运行时接线**：API Gateway mTLS 自定义域名 → 适配层把 `$context.identity.clientCert` 规范化为 `identity` 后调用 `createCertificateStatusHandler({ client, expiringSoonDays?, now? })`；
+- **运行时接线**：Device API Gateway 已独占真实 `DeviceApiFn` asset；生产入口把 `$context.identity.clientCert` 规范化为 `identity` 后调用 `createCertificateStatusHandler({ client, expiringSoonDays?, now? })`，不要求 Cognito/Bearer JWT；
 - **BE-CERT-02**（轮换）：EXPIRING 阈值与轮换触发窗口建议同源配置；本接口不触发任何轮换动作。
 
 ## 5. 未决风险
 
 - EXPIRING 阈值（默认 30 天）为部署配置项，未冻结为决策；如需统一产品语义应登记决策并由契约携带；
 - EXPIRED/REVOKED 无法经 mTLS 到达本端点（认证层先行 401），设备证书失效后的自助诊断需依赖带外通道（管理端/运维查询）。
+
+## 6. 验收层级
+
+| 层级 | 当前状态 |
+|---|---|
+| 模块验证 | Handler、状态边界、AUTH-03 与完整 OpenAPI 响应校验通过 |
+| 生产接线 | Device API 真实 Lambda entry、mTLS identity 传递与唯一生产路由已接线 |
+| 本地严格验收 | `pnpm verify` 覆盖路由/OpenAPI 双向 Gate、真实 asset Gate、CDK synth |
+| 目标 AWS 运行验收 | 尚未执行；发布前需验证 mTLS 自定义域、RDS 与 API Gateway 实际响应 |

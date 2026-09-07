@@ -19,6 +19,7 @@ import { certificateFingerprintFromPem } from '@fdp/auth';
 import { DEVICE_SYNC_ERROR_HTTP_STATUS, createDeviceSyncHandler } from '../src/index.js';
 import type { DeviceSyncHandlerDeps } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 const NOW = new Date('2026-08-30T08:00:00Z');
 const now = () => NOW;
@@ -483,7 +484,6 @@ describe('契约一致性', () => {
   });
 
   test('响应字段与 OpenAPI DeviceSyncSnapshot 契约一致（含嵌套域）', async () => {
-    const api = loadJson('device-sync-api.json');
     const d = await plantDevice({
       customerName: 'Customer CONTRACT',
       operationalStatus: 'Active',
@@ -495,22 +495,7 @@ describe('契约一致性', () => {
 
     const res = await handler()({ identity: { clientCertPem: d.pem }, requestId: 'req-s19' });
     assert.equal(res.status, 200);
-    const data = dataOf(res);
-    const schemas = api.components.schemas;
-    const assertContract = (
-      value: Record<string, unknown>,
-      schema: { required: string[]; properties: Record<string, unknown> },
-    ) => {
-      assert.ok(schema.required.every((field: string) => field in value));
-      assert.ok(Object.keys(value).every((field) => field in schema.properties));
-    };
-    assertContract(data, schemas.DeviceSyncSnapshot);
-    assertContract(data.assignment, schemas.SyncAssignment);
-    assertContract(data.device, schemas.SyncDeviceMetadata);
-    assertContract(data.license, schemas.SyncLicense);
-    assertContract(data.deviceUsers[0], schemas.SyncDeviceUser);
-    assertContract(data.configuration, schemas.SyncConfiguration);
-    assertContract(data.operationalStatus, schemas.SyncOperationalStatus);
+    assertOpenApiResponse('syncDevice', res.status, res.body);
   });
 
   test('sync 模块无任何 AWS 依赖', () => {

@@ -8,6 +8,7 @@ import { AuthError, createCognitoAuthenticator } from '@fdp/auth';
 import type { CognitoAuthenticatorConfig } from '@fdp/auth';
 import type { AdminHttpRequest, AdminHttpResponse } from '../admin/onboarding/handler.js';
 import type { AdminOnboardingHandlers } from '../admin/onboarding/handler.js';
+import { matchDeliveredOperation } from './delivered-operations.js';
 
 export interface ApiGatewayAdminEvent {
   readonly headers?: Readonly<Record<string, string | undefined>>;
@@ -56,29 +57,29 @@ function result(status: number, body: unknown): ApiGatewayAdminResult {
 export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboardingRouteSet): AdminRoute {
   const method = (event.requestContext?.http?.method ?? event.httpMethod ?? '').toUpperCase();
   const path = event.rawPath ?? event.requestContext?.http?.path ?? event.path ?? '';
-  const collection = /^\/api\/v1\/admin\/onboarding\/requests\/?$/;
-  const member = /^\/api\/v1\/admin\/onboarding\/requests\/([^/]+?)(?:\/(approve|reject))?\/?$/;
-  const matched = member.exec(path);
-  const certificateRotation = /^\/api\/v1\/admin\/devices\/([^/]+?)\/certificate-rotation-requests\/?$/.exec(path);
+  const matched = matchDeliveredOperation('admin-api', method, path);
 
   return async (request) => {
-    if (method === 'GET' && collection.test(path)) return routes.onboarding.list(request);
-    if (matched) {
-      const [, requestId, action] = matched;
+    if (matched?.operation.operationId === 'listOnboardingRequests') return routes.onboarding.list(request);
+    if (
+      matched?.operation.operationId === 'getOnboardingRequest' ||
+      matched?.operation.operationId === 'approveOnboardingRequest' ||
+      matched?.operation.operationId === 'rejectOnboardingRequest'
+    ) {
       const routedRequest: AdminHttpRequest = {
         ...request,
-        params: { ...(request.params ?? {}), requestId: decodeURIComponent(requestId as string) },
+        params: { ...(request.params ?? {}), requestId: decodeURIComponent(matched.params.requestId as string) },
       };
-      if (method === 'GET' && !action) return routes.onboarding.detail(routedRequest);
-      if (method === 'POST' && action === 'approve') return routes.onboarding.approve(routedRequest);
-      if (method === 'POST' && action === 'reject') return routes.onboarding.reject(routedRequest);
+      if (matched.operation.operationId === 'getOnboardingRequest') return routes.onboarding.detail(routedRequest);
+      if (matched.operation.operationId === 'approveOnboardingRequest') return routes.onboarding.approve(routedRequest);
+      return routes.onboarding.reject(routedRequest);
     }
-    if (method === 'POST' && certificateRotation) {
+    if (matched?.operation.operationId === 'createCertificateRotationRequest') {
       return routes.certificateRotation({
         ...request,
         params: {
           ...(request.params ?? {}),
-          deviceId: decodeURIComponent(certificateRotation[1] as string),
+          deviceId: decodeURIComponent(matched.params.deviceId as string),
         },
       });
     }

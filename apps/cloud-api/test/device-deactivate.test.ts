@@ -16,6 +16,7 @@ import type { PrismaClient } from '@fdp/database';
 import { certificateFingerprintFromPem, verifyDeviceCertificate } from '@fdp/auth';
 import { DEACTIVATE_ERROR_HTTP_STATUS, createDeviceDeactivateHandler } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 const NOW = new Date('2026-08-28T17:00:00Z');
 const now = () => NOW;
@@ -212,6 +213,14 @@ describe('POST /api/v1/device/deactivate（合法确认完成退役）', () => {
     const resMissing = await handler()({ requestId: 'req-d9' });
     assert.equal(resMissing.status, 401);
   });
+
+  test.each([null, {}, { confirm: true }, 'unexpected'])('任意请求体均失败关闭为 400：%j', async (body) => {
+    const { pem, certificateId } = await plantDevice('Retired', true);
+    const res = await handler()({ identity: { clientCertPem: pem }, body, requestId: 'req-body-rejected' });
+    assert.equal(res.status, 400);
+    assert.equal((res.body as ErrorBody).error.code, 'VALIDATION_FAILED');
+    assert.equal((await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: certificateId } })).status, 'ACTIVE');
+  });
 });
 
 describe('契约一致性', () => {
@@ -231,18 +240,10 @@ describe('契约一致性', () => {
   });
 
   test('响应字段与 OpenAPI DeactivationResult 契约一致（含嵌套 retirement）', async () => {
-    const api = loadJson('device-deactivate-api.json');
-    const topRequired = [...api.components.schemas.DeactivationResult.required].sort();
-    const retirementRequired = [...api.components.schemas.RetirementView.required].sort();
     const { pem } = await plantDevice('Retired', true);
     const res = await handler()({ identity: { clientCertPem: pem }, requestId: 'req-d10' });
     assert.equal(res.status, 200);
-    const data = (res.body as DataBody).data as Record<string, any>;
-    assert.deepEqual(Object.keys(data).sort(), topRequired);
-    assert.deepEqual(Object.keys(data.retirement).sort(), retirementRequired);
-    assert.equal(data.certificates.length, 1);
-    const certRequired = [...api.components.schemas.RevokedCertificateSummary.required].sort();
-    assert.deepEqual(Object.keys(data.certificates[0]).sort(), certRequired);
+    assertOpenApiResponse('confirmDeactivation', res.status, res.body);
   });
 
   test('deactivate 模块无任何 AWS 依赖', () => {

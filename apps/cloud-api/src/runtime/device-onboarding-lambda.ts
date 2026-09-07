@@ -1,5 +1,6 @@
 /** Onboarding Token API Gateway 的可信生产适配器；不经过 Cognito 管理认证。 */
 import type { OnboardingHttpRequest, OnboardingHttpResponse, OnboardingStatusRequest } from '../onboarding/index.js';
+import { matchDeliveredOperation } from './delivered-operations.js';
 
 export interface ApiGatewayOnboardingEvent {
   readonly headers?: Readonly<Record<string, string | undefined>>;
@@ -64,10 +65,11 @@ export function createDeviceOnboardingLambdaHandler(routes: DeviceOnboardingRout
       ...(sourceIp !== undefined ? { sourceIp } : {}),
     };
 
+    const matched = matchDeliveredOperation('onboarding-api', method, path);
     let response: OnboardingHttpResponse;
-    if (method === 'POST' && /^\/api\/v1\/device\/onboarding\/request\/?$/.test(path)) {
+    if (matched?.operation.operationId === 'submitOnboardingRequest') {
       response = await routes.request(request);
-    } else if (method === 'GET' && /^\/api\/v1\/device\/onboarding\/status\/?$/.test(path)) {
+    } else if (matched?.operation.operationId === 'getOnboardingStatus') {
       response = await routes.status(request);
     } else {
       return result(404, {

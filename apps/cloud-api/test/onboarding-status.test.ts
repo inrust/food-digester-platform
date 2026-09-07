@@ -33,7 +33,7 @@ import type {
   OnboardingStatusRequest,
 } from '../src/index.js';
 import { createTestDb } from './helpers.js';
-import { assertOnboardingOpenApiResponse } from './onboarding-openapi.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 const NOW = new Date('2026-08-27T08:00:00Z');
 const now = () => NOW;
@@ -204,7 +204,7 @@ describe('GET /api/v1/device/onboarding/status', () => {
     const body = res.body as StatusPayload;
     assert.equal(body.status, 'PENDING');
     assert.deepEqual(body, { status: 'PENDING' });
-    assertOnboardingOpenApiResponse('OnboardingStatusResult', res.body);
+    assertOpenApiResponse('getOnboardingStatus', res.status, res.body);
   });
 
   test('REJECTED：返回稳定状态与拒绝原因', async () => {
@@ -225,7 +225,7 @@ describe('GET /api/v1/device/onboarding/status', () => {
     const body = res.body as StatusPayload;
     assert.equal(body.status, 'REJECTED');
     assert.equal(body.reason, '资料不完整');
-    assertOnboardingOpenApiResponse('OnboardingStatusResult', res.body);
+    assertOpenApiResponse('getOnboardingStatus', res.status, res.body);
   });
 
   test('DEC-017 TIMED_OUT：外部稳定映射为 REJECTED/ONBOARDING_TIMEOUT', async () => {
@@ -271,7 +271,7 @@ describe('GET /api/v1/device/onboarding/status', () => {
     assert.ok((body.certificate?.privateKey ?? '').includes('STATUSKEY'), '证书包私钥应来自签发材料');
     assert.equal(body.mqtt?.endpoint, MQTT_ENDPOINT);
     assert.equal(body.configuration?.heartbeatInterval, 60);
-    assertOnboardingOpenApiResponse('OnboardingStatusResult', res.body);
+    assertOpenApiResponse('getOnboardingStatus', res.status, res.body);
 
     // 返回时仅完成交付预留；适配层确认响应提交后才销毁密文并核销 Token。
     let cert = await prisma.deviceCertificate.findFirst({ where: { deviceId: body.deviceId } });

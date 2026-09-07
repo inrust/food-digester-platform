@@ -1,6 +1,6 @@
 # BE-SYNC-01 Unified Device Sync API
 
-实现：[apps/cloud-api/src/device/sync.ts](../../apps/cloud-api/src/device/sync.ts) + [sync-handler.ts](../../apps/cloud-api/src/device/sync-handler.ts)；OpenAPI：[contracts/rest/device-sync-api.json](../../contracts/rest/device-sync-api.json)；验收测试：[device-sync.test.ts](../../apps/cloud-api/test/device-sync.test.ts)（12 项，PGlite 真实 PostgreSQL）。
+实现：[sync.ts](../../apps/cloud-api/src/device/sync.ts) + [sync-handler.ts](../../apps/cloud-api/src/device/sync-handler.ts)；OpenAPI：[device-sync-api.json](../../contracts/rest/device-sync-api.json)；验收测试：[device-sync.test.ts](../../apps/cloud-api/test/device-sync.test.ts)（PGlite 真实 PostgreSQL）。
 
 ## 1. 范围与事实源
 
@@ -17,13 +17,13 @@
 
 **请求体封闭**：仅 `lastSyncTime`（UTC ISO 8601 或 null；首次同步可省略请求体）；未知字段/非法时间戳 → 400 VALIDATION_FAILED。
 
-**响应为全量事实快照**（不做增量裁剪；`lastSyncTime` 仅接收并回显），六域：
+**响应为顶层全量事实快照**（不使用 `data/meta` envelope，不做增量裁剪；`lastSyncTime` 仅接收并回显），六域：
 
 | 域 | 内容 | 空态 |
 |---|---|---|
 | `assignment` | 当前 ACTIVE 分配：customerId/customerName、siteId/siteName、Region/Subregion、授权窗口 [assignedAt, endedAt) | 未分配 → null |
 | `device` | 别名、序列号、型号、固件版本 | — |
-| `license` | 有效优先（EFFECTIVE 状态且在有效期内），否则最新一条；状态/有效期/Entitlements（仅 enabled）/签名/version/effective | 未许可 → null |
+| `license` | 有效优先（EFFECTIVE 状态且在有效期内），否则最新一条；状态映射为大写线枚举、有效期为 `YYYY-MM-DD`、内部 `OTA_UPDATE` 下发为 `OTA` | 未许可 → null |
 | `deviceUsers` | 本 Customer ACTIVE 用户中 ACTIVE 分配到本设备者；含 DEC-004 验证材料四字段（version+kdf+salt+hash）——Sync 域是唯一授权下发通道，查询 API 永不返回；停用用户不下发 | 未分配 Customer 或无授权 → [] |
 | `configuration` | 设备定向优先于型号定向；已发布且已到 effectiveAt 的最高版本（未来生效不下发） | 无有效配置 → null |
 | `operationalStatus` | lifecycleStatus + operationalStatus（设备上报值，未上报按生命周期兜底）+ connectivity（心跳阈值派生，不写回）+ syncIntervalSeconds | — |
@@ -34,7 +34,7 @@
 
 **租户隔离**：Assignment/Device Users 以证书绑定设备的 customerId 严格限定（Customer 数据不串线）；License/Configuration 按 deviceId 限定。
 
-## 3. 验收基准与证据（vitest + PGlite，9 项）
+## 3. 验收基准与证据（Vitest + PGlite）
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
@@ -48,11 +48,20 @@
 | 敏感材料不泄露 | 响应序列化不含证书包/PEM/私钥/明文密码字段 | ✅ |
 | 契约一致性 | 响应字段与 OpenAPI 封闭一致（含全部嵌套域）；错误码对齐 CT-05；sync 模块无 AWS 依赖 | ✅ |
 
-契约测试：`node --import tsx --test contracts/rest/device-sync-api.test.ts`（4 项：端点/认证/响应码、请求体封闭、六域与敏感字段、$ref 可解析）。
+复验命令：`pnpm vitest run apps/cloud-api/test/device-sync.test.ts apps/cloud-api/test/openapi-response.test.ts` 与 `node --import tsx --test contracts/rest/device-sync-api.test.ts`；完整响应由通用 OpenAPI validator 直接校验顶层和全部嵌套域。
 
 ## 4. 未决风险
 
-- `maintenanceSyncIntervalSeconds` 为依赖注入：cloud-api 不经 tsc 构建引用 contracts 源码包，组合根（Lambda 入口接线任务）必须经 `getMaintenanceSyncIntervalSeconds()` 注入；当前仅测试注入 900 验证接线语义；
+- `maintenanceSyncIntervalSeconds` 由生产组合根经 `getMaintenanceSyncIntervalSeconds()` 注入，当前冻结值为 900；变更策略必须同步决策与契约；
 - etag 为响应体字段而非 HTTP ETag 头：框架无关 Handler 不产出传输层头，Lambda 适配层如需 `ETag`/`If-None-Match` 头可直接映射 data.etag（语义等价）；
 - `lastSyncTime` 当前仅回显：增量裁剪被任务边界明确排除（不得省略必要域）；未来若引入增量，需以 lastSyncTime 与各域版本（license.version、deviceUsers[].version、configuration.version）联合判定，快照字段均已就位；
-- DEC-004 冻结前 `verifier.kdf/version` 可为 null（数据库按"字符串验证值 + 版本"设计，未固化算法列）；冻结后 BE-DUSR-02 补测试向量并收敛必填约束。
+- DEC-004@1.0.0 已冻结；设备用户 verifier 必须继续按冻结 Argon2id 参数生成并只经 Sync 下发。
+
+## 5. 验收层级
+
+| 层级 | 当前状态 |
+|---|---|
+| 模块验证 | 六域聚合、租户隔离、枚举/日期映射、ETag、72 小时认证边界及完整响应通过 |
+| 生产接线 | Device API 真实 entry 已注入数据库、AUTH-03 与 DEC-001 Maintenance 节奏 |
+| 本地严格验收 | OpenAPI 完整 body、operationId/路由、真实 asset 与 CDK Gate 纳入 `pnpm verify` |
+| 目标 AWS 运行验收 | 尚未执行；发布前补 mTLS、RDS 数据投影和实际响应验证 |

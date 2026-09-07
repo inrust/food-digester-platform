@@ -1,5 +1,6 @@
 /** Device API Gateway 的可信生产适配器：mTLS 身份只从 requestContext 注入。 */
 import type { ClientCertIdentity } from '@fdp/auth';
+import { matchDeliveredOperation } from './delivered-operations.js';
 
 export interface ApiGatewayDeviceEvent {
   readonly headers?: Readonly<Record<string, string | undefined>>;
@@ -85,15 +86,21 @@ export function createDeviceApiLambdaHandler(routes: DeviceRouteSet) {
       ...(clientCert ? { identity: clientCert } : {}),
     };
 
+    const matched = matchDeliveredOperation('device-api', method, path);
     let route: DeviceRoute | undefined;
-    if (method === 'GET' && /^\/api\/v1\/device\/certificate\/status\/?$/.test(path)) {
-      route = routes.certificateStatus;
-    } else if (method === 'POST' && /^\/api\/v1\/device\/certificate\/rotate\/?$/.test(path)) {
-      route = routes.certificateRotate;
-    } else if (method === 'POST' && /^\/api\/v1\/device\/sync\/?$/.test(path)) {
-      route = routes.sync;
-    } else if (method === 'POST' && /^\/api\/v1\/device\/deactivate\/?$/.test(path)) {
-      route = routes.deactivate;
+    switch (matched?.operation.operationId) {
+      case 'getCertificateStatus':
+        route = routes.certificateStatus;
+        break;
+      case 'rotateCertificate':
+        route = routes.certificateRotate;
+        break;
+      case 'syncDevice':
+        route = routes.sync;
+        break;
+      case 'confirmDeactivation':
+        route = routes.deactivate;
+        break;
     }
     if (!route) {
       return result(404, {

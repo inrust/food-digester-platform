@@ -1,6 +1,7 @@
 import { assert, describe, expect, test, vi } from 'vitest';
 import type { DeviceRoute, DeviceRouteSet } from '../src/runtime/device-lambda.js';
 import { createDeviceApiLambdaHandler } from '../src/runtime/device-lambda.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 function routes(overrides: Partial<DeviceRouteSet> = {}): DeviceRouteSet {
   const unused = vi.fn(async () => ({ status: 200, body: {} }));
@@ -48,6 +49,28 @@ describe('Device API Lambda 生产路由', () => {
     });
 
     assert.isUndefined(sync.mock.calls[0]?.[0].identity);
+  });
+
+  test('无 Bearer JWT 但有 API Gateway mTLS 身份时正常进入设备 Handler', async () => {
+    const certificateStatus = vi.fn<DeviceRoute>(async () => ({
+      status: 200,
+      body: { certificateId: 'cert-mtls', status: 'ACTIVE', expiryDate: '2027-01-01', daysRemaining: 116 },
+    }));
+    const response = await createDeviceApiLambdaHandler(routes({ certificateStatus }))({
+      httpMethod: 'GET',
+      path: '/api/v1/device/certificate/status',
+      headers: {},
+      requestContext: {
+        requestId: 'mtls-without-bearer',
+        identity: { clientCert: { clientCertPem: 'valid-mtls-certificate' } },
+      },
+    });
+    assert.equal(response.statusCode, 200);
+    assertOpenApiResponse('getCertificateStatus', response.statusCode, response.body);
+    assert.equal(certificateStatus.mock.calls.length, 1);
+    assert.deepEqual(certificateStatus.mock.calls[0]?.[0].identity, {
+      clientCertPem: 'valid-mtls-certificate',
+    });
   });
 
   test('未知方法或路径失败关闭为 404', async () => {

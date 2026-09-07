@@ -24,9 +24,10 @@ import { certificateFingerprintFromPem } from '@fdp/auth';
 import type { DbClient } from '@fdp/database';
 import { audited } from '@fdp/database';
 
-export type DeactivateErrorCode = 'NOT_FOUND' | 'CONFLICT' | 'DEVICE_STATE_NOT_ALLOWED';
+export type DeactivateErrorCode = 'VALIDATION_FAILED' | 'NOT_FOUND' | 'CONFLICT' | 'DEVICE_STATE_NOT_ALLOWED';
 
 export const DEACTIVATE_ERROR_HTTP_STATUS: Readonly<Record<DeactivateErrorCode, number>> = {
+  VALIDATION_FAILED: 400,
   NOT_FOUND: 404,
   CONFLICT: 409,
   DEVICE_STATE_NOT_ALLOWED: 409,

@@ -15,6 +15,7 @@ import type { IotPolicyDocument } from '@fdp/aws-clients';
 import { createCertificateRotateHandler } from '../src/index.js';
 import type { CertificateRotateHandlerDeps, IotCertificateResult, IotProvisioningPort } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 const NOW = new Date('2026-08-27T08:00:00Z');
 const now = () => NOW;
@@ -137,6 +138,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     });
     assert.equal(res.status, 200);
     const body = res.body as RotatePayload;
+    assertOpenApiResponse('rotateCertificate', res.status, res.body);
     assert.ok(body.certificateId);
     assert.match(body.certificatePem, /BEGIN CERTIFICATE/);
     assert.ok(body.privateKey.includes('ROTKEY'));
@@ -194,6 +196,19 @@ describe('POST /api/v1/device/certificate/rotate', () => {
       requestId: 'r3',
     });
     assert.equal(ok.status, 200);
+  });
+
+  test('请求体未知字段失败关闭为 400，且不创建证书', async () => {
+    const { oldPem, oldCertificateId } = await plantDeviceWithOldCert();
+    const iot = mockIot();
+    const res = await makeHandler(iot)({
+      identity: { clientCertPem: oldPem },
+      body: { currentCertificateId: oldCertificateId, deviceId: 'forged-device' },
+      requestId: 'r-unknown-field',
+    });
+    assert.equal(res.status, 400);
+    assert.equal((res.body as { error: { code: string } }).error.code, 'VALIDATION_FAILED');
+    assert.equal(iot.createCalls, 0);
   });
 
   test('旧证书撤销/过期 → 401（认证层先行拒绝）', async () => {

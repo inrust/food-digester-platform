@@ -13,6 +13,7 @@ import type { PrismaClient } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
 import { createAdminCertificateRotationHandler } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 const NOW = new Date('2026-08-27T08:00:00Z');
 const now = () => NOW;
@@ -97,6 +98,7 @@ describe('POST /api/v1/admin/devices/{deviceId}/certificate-rotation-requests', 
       requestId: 'req-rot-1',
     });
     assert.equal(res.status, 201);
+    assertOpenApiResponse('createCertificateRotationRequest', res.status, res.body);
     const view = (res.body as { data: RotationView }).data;
     assert.equal(view.deviceId, deviceId);
     assert.equal(view.certificateId, certificateId);
@@ -126,6 +128,7 @@ describe('POST /api/v1/admin/devices/{deviceId}/certificate-rotation-requests', 
 
     const second = await handler()({ actor: superAdmin, headers: {}, params: { deviceId }, requestId: 'r2' });
     assert.equal(second.status, 200);
+    assertOpenApiResponse('createCertificateRotationRequest', second.status, second.body);
     assert.equal((second.body as { data: RotationView }).data.requestId, firstId);
     assert.equal(await prisma.certificateRotationRequest.count({ where: { deviceId } }), 1);
     assert.equal(await prisma.outboxEvent.count({ where: { aggregateId: deviceId } }), 1);

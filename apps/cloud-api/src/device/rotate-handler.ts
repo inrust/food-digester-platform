@@ -25,6 +25,15 @@ export interface CertificateRotateResponse {
 
 export type CertificateRotateHandlerDeps = RotationServiceDeps;
 
+function currentCertificateIdOf(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return undefined;
+  const record = body as Record<string, unknown>;
+  if (Object.keys(record).some((key) => key !== 'currentCertificateId')) {
+    throw new CertificateRotationError('VALIDATION_FAILED', 'Request body contains unknown fields');
+  }
+  return typeof record.currentCertificateId === 'string' ? record.currentCertificateId : undefined;
+}
+
 function toErrorResponse(err: unknown, req: CertificateRotateRequest): CertificateRotateResponse {
   if (err instanceof AuthError || err instanceof CertificateRotationError) {
     return {
@@ -49,9 +58,7 @@ export function createCertificateRotateHandler(
       ...(deps.now ? { now: deps.now } : {}),
     },
     async (req, auth) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
-      const currentCertificateId =
-        typeof body.currentCertificateId === 'string' ? body.currentCertificateId : undefined;
+      const currentCertificateId = currentCertificateIdOf(req.body);
       const result: RotationResult = await rotateCertificate(deps, auth, currentCertificateId);
       return {
         status: 200,
