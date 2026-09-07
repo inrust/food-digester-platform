@@ -278,6 +278,41 @@ describe('BE-MED-01 设备上传会话', () => {
 });
 
 describe('BE-MED-01 元数据校验（Media Handler）', () => {
+  test('过期会话及校验期间到期均拒绝，且不写 MediaObject/不完成会话', async () => {
+    const store = fakeStorage();
+    const device = await plantDevice();
+    const content = Buffer.alloc(2048, 12);
+
+    const expiredResponse = await createSession(store, device, content, { fileName: 'expired.jpg' });
+    const expired = (expiredResponse.body as DataBody).data;
+    store.objects.set(expired.objectPath, content);
+    await prisma.mediaUploadSession.update({
+      where: { id: expired.sessionId },
+      data: { presignedUrlExpiresAt: new Date(NOW.getTime() - 1) },
+    });
+    assert.deepEqual(await handleMediaMetadata(mediaDeps(store), device.deviceId, metadataMessage(expired)), {
+      applied: false,
+      reason: 'SESSION_EXPIRED',
+    });
+
+    const racingResponse = await createSession(store, device, content, { fileName: 'racing.jpg' });
+    const racing = (racingResponse.body as DataBody).data;
+    store.objects.set(racing.objectPath, content);
+    let clockReads = 0;
+    const racingDeps: MediaDeps = {
+      ...mediaDeps(store),
+      now: () => (clockReads++ === 0 ? NOW : new Date(NOW.getTime() + 901_000)),
+    };
+    assert.deepEqual(await handleMediaMetadata(racingDeps, device.deviceId, metadataMessage(racing)), {
+      applied: false,
+      reason: 'SESSION_EXPIRED',
+    });
+
+    assert.equal(await prisma.mediaObject.count({ where: { deviceId: device.deviceId } }), 0);
+    assert.equal((await prisma.mediaUploadSession.findUnique({ where: { id: expired.sessionId } }))?.status, 'ISSUED');
+    assert.equal((await prisma.mediaUploadSession.findUnique({ where: { id: racing.sessionId } }))?.status, 'ISSUED');
+  });
+
   test('成功：Object/大小/Hash 匹配 → MediaObject AVAILABLE + 会话 COMPLETED + 审计；重放幂等', async () => {
     const store = fakeStorage();
     const device = await plantDevice();

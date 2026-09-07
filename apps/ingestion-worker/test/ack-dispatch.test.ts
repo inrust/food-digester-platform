@@ -9,11 +9,12 @@
  *   不进入 batchItemFailures，不误更新其他命令；
  * - DEC-015 隔离：OTA_TARGET ACK 经同一分发器只更新 OTA 状态与历史，不回改 Command；
  *   COMMAND ACK 混入 OTA 字段 → 隔离；
- * - 无注册 Handler 的类型（media）→ NO_HANDLER 隔离（确定异常路径，不静默丢弃）；
+ * - media 已注册；非法元数据进入确定的 Media 隔离原因；
  * - 路由表工作：heartbeat 经分发器落 device_latest_state。
  */
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
+import { createHash } from 'node:crypto';
 import type { PrismaClient } from '@fdp/database';
 import type { SecurePackageService } from '@fdp/auth';
 import { IngestError, createBusinessDispatcher, createIngestionHandler } from '../src/index.js';
@@ -37,6 +38,26 @@ const RECEIVED_AT = Date.parse(TS);
 
 /** Active 设备不触发安全包下载；Stub 仅满足依赖注入。 */
 const securePackageStub = {} as SecurePackageService;
+const mediaBodies = new Map<string, Buffer>();
+const mediaDispatcherDeps = {
+  mediaStorage: {
+    statObject: async (key: string) => {
+      const body = mediaBodies.get(key);
+      return body ? { sizeBytes: body.length } : null;
+    },
+    computeSha256: async (key: string) => {
+      const body = mediaBodies.get(key);
+      return body ? createHash('sha256').update(body).digest('hex') : null;
+    },
+  },
+  mediaUploadPolicy: {
+    getMediaTypes: () => ['IMAGE', 'VIDEO'],
+    getMaxSizeKb: () => 204800,
+    getDailyUploadQuotaPerDevice: () => 100,
+    getUploadUrlTtlSeconds: () => 900,
+    getDownloadUrlTtlSeconds: () => 900,
+  },
+} as const;
 
 let seq = 0;
 
@@ -122,6 +143,8 @@ function harness(): Harness {
       client: prisma,
       securePackage: securePackageStub,
       certificateRevoker: { revokeCertificate: async () => {} },
+      ...mediaDispatcherDeps,
+      now: () => new Date(TS),
     }),
   });
   return { handler, quarantined };
@@ -152,6 +175,75 @@ describe('BE-IOT-08 端到端分发：SQS → 管线 → 分发器 → ACK Handl
     assert.equal(acks.length, 1);
     assert.equal(acks[0]?.result, 'SUCCESS');
     assert.equal(acks[0]?.executeTimeMs, 420);
+  });
+
+  test('Media 生产链路：SQS → 校验 → receipt → BE-MED-01 核心 → MediaObject；过期会话稳定隔离', async () => {
+    const ctx = await plantDeviceWithCommand();
+    const content = Buffer.alloc(2048, 9);
+    const sessionId = `media-session-${seq}`;
+    const objectPath = `media/${ctx.customerId}/${ctx.deviceId}/${sessionId}/snap.jpg`;
+    mediaBodies.set(objectPath, content);
+    await prisma.mediaUploadSession.create({
+      data: {
+        id: sessionId,
+        deviceId: ctx.deviceId,
+        customerId: ctx.customerId,
+        mediaType: 'IMAGE',
+        fileName: 'snap.jpg',
+        sizeKb: 2,
+        declaredSha256: createHash('sha256').update(content).digest('hex'),
+        status: 'ISSUED',
+        presignedUrlExpiresAt: new Date(RECEIVED_AT + 900_000),
+      },
+    });
+    const payload = {
+      meta: { id: `MED-E2E-${seq}`, ts: TS, seq: 81, schemaVer: '1.0' },
+      data: { mediaType: 'IMAGE', captureTime: TS, fileName: 'snap.jpg', objectPath, sizeKb: 2, durationSec: 0 },
+    };
+    const h = harness();
+    const response = await h.handler({
+      Records: [{ messageId: 'sqs-media-ok', body: envelopeBody('media', payload, ctx) }],
+    });
+    assert.deepEqual(response.batchItemFailures, []);
+    assert.deepEqual(h.quarantined, []);
+    assert.equal((await prisma.mediaUploadSession.findUnique({ where: { id: sessionId } }))?.status, 'COMPLETED');
+    assert.equal(await prisma.mediaObject.count({ where: { uploadSessionId: sessionId } }), 1);
+    assert.equal(await prisma.ingestionReceipt.count({ where: { idempotencyKey: `${ctx.deviceId}:media:81` } }), 1);
+
+    const expiredSessionId = `media-expired-${seq}`;
+    const expiredPath = `media/${ctx.customerId}/${ctx.deviceId}/${expiredSessionId}/expired.jpg`;
+    mediaBodies.set(expiredPath, content);
+    await prisma.mediaUploadSession.create({
+      data: {
+        id: expiredSessionId,
+        deviceId: ctx.deviceId,
+        customerId: ctx.customerId,
+        mediaType: 'IMAGE',
+        fileName: 'expired.jpg',
+        sizeKb: 2,
+        declaredSha256: createHash('sha256').update(content).digest('hex'),
+        status: 'ISSUED',
+        presignedUrlExpiresAt: new Date(RECEIVED_AT - 1),
+      },
+    });
+    const expiredPayload = {
+      meta: { id: `MED-EXPIRED-${seq}`, ts: TS, seq: 82, schemaVer: '1.0' },
+      data: {
+        mediaType: 'IMAGE',
+        captureTime: TS,
+        fileName: 'expired.jpg',
+        objectPath: expiredPath,
+        sizeKb: 2,
+        durationSec: 0,
+      },
+    };
+    const expiredResponse = await h.handler({
+      Records: [{ messageId: 'sqs-media-expired', body: envelopeBody('media', expiredPayload, ctx) }],
+    });
+    assert.deepEqual(expiredResponse.batchItemFailures, []);
+    assert.equal(h.quarantined.at(-1)?.errorType, 'MEDIA_SESSION_EXPIRED');
+    assert.equal(await prisma.mediaObject.count({ where: { uploadSessionId: expiredSessionId } }), 0);
+    assert.equal(await prisma.ingestionReceipt.count({ where: { idempotencyKey: `${ctx.deviceId}:media:82` } }), 0);
   });
 
   test('重复 ACK 幂等：全链路同 seq 重放 → 隔离区无记录、command_acks 仅一行', async () => {
@@ -306,7 +398,7 @@ describe('BE-IOT-08 端到端分发：SQS → 管线 → 分发器 → ACK Handl
     assert.equal((await prisma.deviceCommand.findUnique({ where: { id: ctx.commandId } }))?.status, 'PUBLISHED');
   });
 
-  test('路由表：heartbeat 经分发器落 device_latest_state；无注册 Handler 类型 → NO_HANDLER 隔离', async () => {
+  test('路由表：heartbeat 经分发器落 device_latest_state；media 已注册并给出稳定隔离原因', async () => {
     const ctx = await plantDeviceWithCommand();
     const h = harness();
     const hb = await h.handler({
@@ -340,11 +432,13 @@ describe('BE-IOT-08 端到端分发：SQS → 管线 → 分发器 → ACK Handl
     const state = await prisma.deviceLatestState.findUnique({ where: { deviceId: ctx.deviceId } });
     assert.equal(state?.connectivity, 'ONLINE');
 
-    // media 类型无注册 Handler（上行元数据由 BE-MED-01 设备端 API 处理）→ 确定异常路径
+    // media 类型已接入；不完整元数据由 Media Handler 给出确定隔离原因。
     const dispatcher = createBusinessDispatcher({
       client: prisma,
       securePackage: securePackageStub,
       certificateRevoker: { revokeCertificate: async () => {} },
+      ...mediaDispatcherDeps,
+      now: () => new Date(TS),
     });
     const mediaMessage = {
       envelope: {
@@ -369,10 +463,10 @@ describe('BE-IOT-08 端到端分发：SQS → 管线 → 分发器 → ACK Handl
     } as unknown as ValidatedMessage;
     try {
       await dispatcher(mediaMessage);
-      assert.fail('media 应进入 NO_HANDLER 隔离');
+      assert.fail('非法 media 应进入 Media 隔离');
     } catch (err) {
       assert.ok(err instanceof IngestError);
-      assert.equal(err.errorType, 'NO_HANDLER');
+      assert.equal(err.errorType, 'MEDIA_METADATA_REJECTED');
       assert.equal(err.classification, 'QUARANTINE');
     }
   });

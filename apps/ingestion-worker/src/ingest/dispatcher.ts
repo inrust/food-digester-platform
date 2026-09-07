@@ -9,8 +9,8 @@
  *   普通 Command ACK 与 OTA Target ACK 经 objectType + 关联 ID 隔离，见 signals/ack.ts）；
  * - 各 Handler 均实现 handled 语义（非本类型返回 handled=false），分发器按序匹配首个
  *   handled=true 的 Handler；
- * - 无注册 Handler 的类型（如 media——上行元数据由 BE-MED-01 设备端 API 处理，不经本
- *   链路）→ 确定的异常路径：NO_HANDLER 隔离（Quarantine），绝不静默丢弃；
+ * - media → Media Handler（复用 BE-MED-01 核心，并与 BE-IOT-03 receipt 同事务）；
+ * - 无注册 Handler 的类型 → NO_HANDLER 隔离（Quarantine），绝不静默丢弃；
  * - Handler 抛出的 QUARANTINE IngestError 透传（由 createIngestionHandler 统一隔离）；
  *   其他异常按瞬时错误交 SQS 重试（同上）。
  *
@@ -18,10 +18,12 @@
  */
 import type { DbClient } from '@fdp/database';
 import type { SecurePackageService } from '@fdp/auth';
+import type { MediaObjectStorage, MediaUploadPolicyQuery } from '@fdp/media';
 import { createHeartbeatHandler } from '../heartbeat/handler.js';
 import { createTelemetryHandler } from '../telemetry/handler.js';
 import { createReportHandler } from '../report/handler.js';
 import { createAckHandler, createAlarmHandler, createEventHandler, createTamperHandler } from '../signals/index.js';
+import { createMediaHandler } from '../media/handler.js';
 import { quarantineError } from './errors.js';
 import type { ValidatedMessage } from './pipeline.js';
 
@@ -30,6 +32,8 @@ export interface BusinessDispatcherDeps {
   /** Heartbeat 依赖（首次心跳的 Onboarding 完成/证书轮换确认需下载安全包）。 */
   readonly securePackage: SecurePackageService;
   readonly certificateRevoker: { revokeCertificate(certificateId: string): Promise<void> };
+  readonly mediaStorage: MediaObjectStorage;
+  readonly mediaUploadPolicy: MediaUploadPolicyQuery;
   readonly now?: () => Date;
 }
 
@@ -44,6 +48,12 @@ export function createBusinessDispatcher(deps: BusinessDispatcherDeps): (message
     createEventHandler(deps),
     createTamperHandler(deps),
     createAckHandler(deps),
+    createMediaHandler({
+      client: deps.client,
+      storage: deps.mediaStorage,
+      uploadPolicy: deps.mediaUploadPolicy,
+      ...(deps.now ? { now: deps.now } : {}),
+    }),
   ];
   return async (message) => {
     for (const handler of handlers) {

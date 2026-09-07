@@ -24,3 +24,5 @@ export { createSqsJsonSender } from './sqs-json-sender.js';
 export type { JsonMessageSender, SqsJsonSenderConfig } from './sqs-json-sender.js';
 export { createS3ArchiveObjectStore } from './s3-archive-store.js';
 export type { ArchiveObjectStorePort, S3ArchiveObjectStoreConfig } from './s3-archive-store.js';
+export { createS3MediaObjectStorage } from './s3-media-object-storage.js';
+export type { MediaObjectStoragePort, S3MediaObjectStorageConfig } from './s3-media-object-storage.js';

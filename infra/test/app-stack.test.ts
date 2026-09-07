@@ -520,7 +520,13 @@ describe('Cognito 与应用配置输出', () => {
     }
     const ingestionFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-ingestion');
     assert.isDefined(ingestionFn);
-    for (const key of ['DB_SECRET_ARN', 'QUARANTINE_QUEUE_URL', 'CERT_PACKAGE_KEY_ARN', 'MQTT_SCHEMAS_DIR']) {
+    for (const key of [
+      'DB_SECRET_ARN',
+      'QUARANTINE_QUEUE_URL',
+      'CERT_PACKAGE_KEY_ARN',
+      'MEDIA_BUCKET_NAME',
+      'MQTT_SCHEMAS_DIR',
+    ]) {
       assert.isDefined(ingestionFn.Properties.Environment.Variables[key], `Ingestion Lambda 缺少环境变量 ${key}`);
     }
     const deadlineFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-onboarding-deadline');

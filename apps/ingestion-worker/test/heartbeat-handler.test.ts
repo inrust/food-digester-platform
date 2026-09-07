@@ -286,6 +286,49 @@ describe('createHeartbeatHandler（BE-IOT-04）', () => {
     assert.equal(second.stateApplied, 'updated');
   });
 
+  test('首次心跳副作用失败后，同一 receipt 重试仍可完成 Onboarding', async () => {
+    const ctx = await plantDevice({
+      lifecycleStatus: 'OnboardingApproved',
+      certificateStatus: 'PENDING_CLAIM',
+      withPackage: true,
+    });
+    let destroyAttempts = 0;
+    const flakySecurePackage = {
+      async destroyPackage(certificateId: string, client: Parameters<SecurePackageService['destroyPackage']>[1]) {
+        destroyAttempts += 1;
+        if (destroyAttempts === 1) throw new Error('simulated package store outage');
+        return securePackage.destroyPackage(certificateId, client);
+      },
+    } as SecurePackageService;
+    const handle = createHeartbeatHandler({
+      client: prisma,
+      securePackage: flakySecurePackage,
+      certificateRevoker: { revokeCertificate: async () => {} },
+      now,
+    });
+    const message = heartbeatMessage(ctx, {
+      seq: 20,
+      ts: '2026-08-28T07:57:00.000Z',
+      lifecycleStatus: 'OnboardingApproved',
+    });
+
+    try {
+      await handle(message);
+      assert.fail('首次副作用失败应向 SQS 暴露为可重试异常');
+    } catch (error) {
+      assert.match((error as Error).message, /simulated package store outage/);
+    }
+    assert.equal(
+      (await prisma.device.findUniqueOrThrow({ where: { id: ctx.deviceId } })).lifecycleStatus,
+      'OnboardingApproved',
+    );
+    const retry = await handle(message);
+    assert.equal(retry.outcome, 'DUPLICATE_SKIPPED');
+    assert.isTrue(retry.onboardingTransitioned);
+    assert.equal((await prisma.device.findUniqueOrThrow({ where: { id: ctx.deviceId } })).lifecycleStatus, 'Onboarded');
+    assert.equal(destroyAttempts, 2);
+  });
+
   test('扩展点：轮换新证书首个 Heartbeat 确认轮换（BE-CERT-02/03）', async () => {
     const ctx = await plantDevice();
     // 轮换窗口：新证书 ACTIVE + rotatedFromId=旧证 + 证书包 + PENDING 轮换请求

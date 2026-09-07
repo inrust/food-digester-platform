@@ -1,11 +1,19 @@
 import {
   createAwsIotProvisioningClient,
   createKmsDataKeyProvider,
+  createS3MediaObjectStorage,
   createSqsJsonSender,
   resolveDatabaseUrl,
 } from '@fdp/aws-clients';
 import { CERTIFICATE_PACKAGE_MAX_CLAIMS, CERTIFICATE_PACKAGE_RETENTION_SECONDS, SecurePackageService } from '@fdp/auth';
 import { createPrismaClient } from '@fdp/database';
+import {
+  getDailyUploadQuotaPerDevice,
+  getDownloadUrlTtlSeconds,
+  getMaxSizeKb,
+  getMediaTypes,
+  getUploadUrlTtlSeconds,
+} from '@fdp/contracts/media/media-upload-policy.js';
 import { createBusinessDispatcher } from '../ingest/dispatcher.js';
 import { createIngestionHandler, type SqsBatchEventLike, type SqsBatchResponseLike } from '../ingest/handler.js';
 
@@ -36,6 +44,15 @@ async function initialize() {
       client,
       securePackage,
       certificateRevoker: createAwsIotProvisioningClient({ region }),
+      mediaStorage: createS3MediaObjectStorage({ bucket: required('MEDIA_BUCKET_NAME'), region }),
+      mediaUploadPolicy: {
+        getMediaTypes,
+        getMaxSizeKb: (mediaType) =>
+          mediaType === 'IMAGE' || mediaType === 'VIDEO' ? getMaxSizeKb(mediaType) : undefined,
+        getDailyUploadQuotaPerDevice,
+        getUploadUrlTtlSeconds,
+        getDownloadUrlTtlSeconds,
+      },
     }),
   });
 }

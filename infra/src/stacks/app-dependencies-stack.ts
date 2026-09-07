@@ -527,6 +527,7 @@ export class AppDependenciesStack extends Stack {
         DB_SECRET_ARN: dbSecret,
         QUARANTINE_QUEUE_URL: messaging.quarantine.queueUrl,
         CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
+        MEDIA_BUCKET_NAME: storage.media.bucketName,
         MQTT_SCHEMAS_DIR: '/var/task/mqtt-schemas',
       },
       entry: INGESTION_ENTRY,
@@ -539,6 +540,7 @@ export class AppDependenciesStack extends Stack {
       }),
     );
     messaging.quarantine.grantSendMessages(ingestion);
+    storage.media.grantRead(ingestion);
     ingestion.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'OnboardingHeartbeatCertificateRevoke',

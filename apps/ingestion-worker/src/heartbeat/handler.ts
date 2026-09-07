@@ -114,17 +114,8 @@ export function createHeartbeatHandler(
       receivedAtMs: message.envelope.iotReceivedAt,
       business: async (tx) => applyLatestState(tx, deviceId, buildStateWrite(message, occurredAt), occurredAt),
     });
-    if (processed.outcome === 'DUPLICATE_SKIPPED') {
-      return {
-        handled: true,
-        outcome: processed.outcome,
-        stateApplied: undefined,
-        onboardingTransitioned: false,
-        rotationConfirmed: false,
-      };
-    }
-
-    // 确认扩展点（各自预检幂等；仅在相关状态下触发，避免非目标状态审计噪音）
+    // receipt 仅保护 latest state；确认扩展点在事务提交后执行且自身幂等。
+    // 重复消息仍须重试扩展点，避免首次调用在外部副作用失败后永久跳过。
     let onboardingTransitioned = false;
     if (message.device.lifecycleStatus === 'OnboardingApproved') {
       const completion = await completeOnboardingOnFirstHeartbeat(
@@ -146,7 +137,7 @@ export function createHeartbeatHandler(
     return {
       handled: true,
       outcome: processed.outcome,
-      stateApplied: processed.result,
+      stateApplied: processed.outcome === 'DUPLICATE_SKIPPED' ? undefined : processed.result,
       onboardingTransitioned,
       rotationConfirmed: rotation.confirmed,
     };

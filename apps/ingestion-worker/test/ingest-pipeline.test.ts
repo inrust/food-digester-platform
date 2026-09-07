@@ -45,6 +45,19 @@ afterAll(async () => {
 const RECEIVED_AT = Date.parse('2026-08-28T02:00:00.000Z');
 const TS = '2026-08-28T02:00:00.000Z';
 const FINGERPRINT = 'a'.repeat(64);
+const mediaDispatcherDeps = {
+  mediaStorage: {
+    statObject: async () => null,
+    computeSha256: async () => null,
+  },
+  mediaUploadPolicy: {
+    getMediaTypes: () => ['IMAGE', 'VIDEO'],
+    getMaxSizeKb: () => 204800,
+    getDailyUploadQuotaPerDevice: () => 100,
+    getUploadUrlTtlSeconds: () => 900,
+    getDownloadUrlTtlSeconds: () => 900,
+  },
+} as const;
 
 let seq = 0;
 /** 落库 Active 设备（挂客户）+ ACTIVE 证书。 */
@@ -213,6 +226,7 @@ describe('createIngestionHandler（BE-IOT-02 校验管线）', () => {
         client: prisma,
         securePackage,
         certificateRevoker: { revokeCertificate: async () => {} },
+        ...mediaDispatcherDeps,
       }),
     });
 
@@ -272,6 +286,35 @@ describe('createIngestionHandler（BE-IOT-02 校验管线）', () => {
     assert.ok(q);
     assert.equal(q.errorType, 'INVALID_JSON');
     assert.equal(q.rawBody, '{not-json', 'Quarantine 必须保存原文');
+  });
+
+  test('Quarantine 投递失败只重试当前记录，批次后续记录继续隔离', async () => {
+    const { deviceId, certificateId } = await plantDevice();
+    const quarantined: QuarantineRecord[] = [];
+    let sends = 0;
+    const handler = createIngestionHandler({
+      client: prisma,
+      quarantine: {
+        async send(record) {
+          sends += 1;
+          if (sends === 1) throw new Error('simulated quarantine outage');
+          quarantined.push(record);
+        },
+      },
+    });
+    const response = await handler({
+      Records: [
+        { messageId: 'sqs-quarantine-down', body: '{bad-first' },
+        { messageId: 'sqs-quarantine-next', body: '{bad-second' },
+        {
+          messageId: 'sqs-valid-after',
+          body: envelopeBody(heartbeatPayload('HB-AFTER-Q'), { deviceId, certificateId }),
+        },
+      ],
+    });
+    assert.deepEqual(response.batchItemFailures, [{ itemIdentifier: 'sqs-quarantine-down' }]);
+    assert.equal(quarantined.length, 1);
+    assert.equal(quarantined[0]?.rawBody, '{bad-second');
   });
 
   test('Schema 违规进 Quarantine（含错误路径）；字段范围由 Schema 覆盖', async () => {

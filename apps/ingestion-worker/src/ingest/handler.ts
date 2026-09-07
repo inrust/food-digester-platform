@@ -69,14 +69,19 @@ export function createIngestionHandler(
         await deps.onValidated?.(message);
       } catch (err) {
         if (err instanceof IngestError && err.classification === 'QUARANTINE') {
-          await deps.quarantine.send({
-            rawBody: record.body,
-            errorType: err.errorType,
-            errorPath: err.errorPath,
-            reason: err.message,
-            ...envelopeContextOf(record.body),
-          });
-          continue; // 已隔离，视为处理成功
+          try {
+            await deps.quarantine.send({
+              rawBody: record.body,
+              errorType: err.errorType,
+              errorPath: err.errorPath,
+              reason: err.message,
+              ...envelopeContextOf(record.body),
+            });
+          } catch {
+            // 隔离投递自身失败属于当前记录的瞬时错误；继续处理同批后续记录。
+            failures.push({ itemIdentifier: record.messageId });
+          }
+          continue; // 已隔离则成功；投递失败时当前记录已加入 partial failure
         }
         if (err instanceof IngestError && err.classification === 'TRANSIENT') {
           failures.push({ itemIdentifier: record.messageId });

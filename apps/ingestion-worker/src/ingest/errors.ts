@@ -23,6 +23,8 @@ export type IngestErrorType =
   | 'UNKNOWN_OTA_TARGET'
   | 'OTA_TARGET_MISMATCH'
   | 'INVALID_OTA_STATE'
+  | 'MEDIA_METADATA_REJECTED'
+  | 'MEDIA_SESSION_EXPIRED'
   | 'NO_HANDLER';
 
 export class IngestError extends Error {

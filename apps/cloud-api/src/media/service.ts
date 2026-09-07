@@ -20,19 +20,15 @@ import type { DbClient, Page } from '@fdp/database';
 import { audited, decodeKeysetCursor, encodeKeysetCursor, normalizeLimit } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
 import type { DeviceAuthContext } from '@fdp/auth';
+import { handleMediaMetadata } from '@fdp/media';
+import type { MediaUploadPolicyQuery } from '@fdp/media';
 import { mediaConflict, mediaForbidden, mediaNotFound, mediaValidationFailed } from './errors.js';
-import { buildMediaObjectKey, parseMediaObjectKey } from './storage.js';
+import { buildMediaObjectKey } from './storage.js';
 import type { MediaObjectStorage, MediaUrlSigner } from './storage.js';
 
 // ---------- 策略查询门面（组合根经 contracts/media/media-upload-policy.ts 接线；禁止复制暂定值） ----------
 
-export interface MediaUploadPolicyQuery {
-  readonly getMediaTypes: () => readonly string[];
-  readonly getMaxSizeKb: (mediaType: string) => number | undefined;
-  readonly getDailyUploadQuotaPerDevice: () => number;
-  readonly getUploadUrlTtlSeconds: () => number;
-  readonly getDownloadUrlTtlSeconds: () => number;
-}
+export type { MediaMetadataMessage, MediaMetadataResult, MediaUploadPolicyQuery } from '@fdp/media';
 
 export interface MediaDeps {
   readonly client: DbClient;
@@ -95,7 +91,6 @@ function table(client: DbClient, name: string): TableDelegate {
 
 const sessions = (c: DbClient) => table(c, 'mediaUploadSession');
 const mediaObjects = (c: DbClient) => table(c, 'mediaObject');
-const devicesOf = (c: DbClient) => table(c, 'device');
 
 // ---------- DTO ----------
 
@@ -244,180 +239,7 @@ export async function createMediaUploadSession(
   };
 }
 
-// ---------- 设备：上传后元数据（MQTT media 上行） ----------
-
-export interface MediaMetadataMessage {
-  readonly meta: { readonly id: string; readonly ts: string };
-  readonly data: Record<string, unknown>;
-}
-
-export interface MediaMetadataResult {
-  readonly applied: boolean;
-  readonly replayed?: boolean;
-  readonly mediaId?: string;
-  readonly reason?:
-    | 'INVALID_MESSAGE'
-    | 'DEVICE_NOT_FOUND'
-    | 'FORBIDDEN_PATH'
-    | 'UNKNOWN_SESSION'
-    | 'SESSION_NOT_OPEN'
-    | 'METADATA_MISMATCH'
-    | 'OBJECT_MISSING'
-    | 'SIZE_MISMATCH'
-    | 'HASH_MISMATCH';
-}
-
-function reject(reason: NonNullable<MediaMetadataResult['reason']>): MediaMetadataResult {
-  return { applied: false, reason };
-}
-
-function isValidUtcDateTime(value: unknown): value is string {
-  return typeof value === 'string' && !Number.isNaN(Date.parse(value));
-}
-
-/**
- * 处理 Media 元数据上行（bnx/device/{deviceId}/media；Envelope 已由 media.schema.json 校验）。
- * 所有业务拒绝以返回值表达（不抛出）；任何拒绝不产生写入。
- */
-export async function handleMediaMetadata(
-  deps: MediaDeps,
-  deviceId: string,
-  message: MediaMetadataMessage,
-): Promise<MediaMetadataResult> {
-  const now = deps.now?.() ?? new Date();
-  const data = message?.data;
-  if (!data || typeof data !== 'object') return reject('INVALID_MESSAGE');
-  const { mediaType, captureTime, fileName, objectPath, sizeKb, durationSec } = data as Record<string, unknown>;
-  if (typeof mediaType !== 'string' || !deps.uploadPolicy.getMediaTypes().includes(mediaType)) {
-    return reject('INVALID_MESSAGE');
-  }
-  if (!isValidUtcDateTime(captureTime)) return reject('INVALID_MESSAGE');
-  if (typeof fileName !== 'string' || !FILE_NAME_PATTERN.test(fileName)) return reject('INVALID_MESSAGE');
-  if (typeof objectPath !== 'string' || objectPath.length === 0) return reject('INVALID_MESSAGE');
-  if (typeof sizeKb !== 'number' || !Number.isFinite(sizeKb) || sizeKb < 0) return reject('INVALID_MESSAGE');
-  if (durationSec !== undefined && (typeof durationSec !== 'number' || durationSec < 0)) {
-    return reject('INVALID_MESSAGE');
-  }
-  const sourceMessageId = message.meta?.id;
-  if (typeof sourceMessageId !== 'string' || sourceMessageId.length === 0) return reject('INVALID_MESSAGE');
-
-  // 幂等：sourceMessageId 唯一（重复上报回放，不重复写入）
-  const existing = (await mediaObjects(deps.client).findFirst({
-    where: { sourceMessageId },
-  })) as unknown as MediaObjectRow | null;
-  if (existing) {
-    return existing.deviceId === deviceId
-      ? { applied: true, replayed: true, mediaId: existing.id }
-      : reject('FORBIDDEN_PATH');
-  }
-
-  const device = (await devicesOf(deps.client).findFirst({ where: { id: deviceId } })) as unknown as {
-    id: string;
-    customerId: string | null;
-  } | null;
-  if (!device) return reject('DEVICE_NOT_FOUND');
-
-  // objectPath 必须指向本设备前缀的已签发会话（客户端不得指向任意 Bucket/Key）
-  const parsed = parseMediaObjectKey(objectPath);
-  if (!parsed || parsed.deviceId !== deviceId || parsed.customerId !== device.customerId) {
-    return reject('FORBIDDEN_PATH');
-  }
-  const session = (await sessions(deps.client).findFirst({
-    where: { id: parsed.sessionId },
-  })) as unknown as MediaUploadSessionRow | null;
-  if (!session || session.deviceId !== deviceId) return reject('UNKNOWN_SESSION');
-  if (session.status === 'COMPLETED') {
-    // 会话已完成但换了 messageId 重复上报：视为幂等回放
-    const done = (await mediaObjects(deps.client).findFirst({
-      where: { uploadSessionId: session.id },
-    })) as unknown as MediaObjectRow | null;
-    return done ? { applied: true, replayed: true, mediaId: done.id } : reject('SESSION_NOT_OPEN');
-  }
-  if (session.status !== 'ISSUED') return reject('SESSION_NOT_OPEN');
-
-  // 申报一致性：objectPath 逐字符相等 + fileName/mediaType/sizeKb 与会话申报一致
-  const expectedKey = buildMediaObjectKey({
-    customerId: session.customerId,
-    deviceId: session.deviceId,
-    sessionId: session.id,
-    fileName: session.fileName,
-  });
-  if (
-    objectPath !== expectedKey ||
-    session.fileName !== fileName ||
-    session.mediaType !== mediaType ||
-    session.sizeKb !== sizeKb
-  ) {
-    return reject('METADATA_MISMATCH');
-  }
-
-  // Object 存在 + 大小匹配（ceil KB）
-  const stat = await deps.storage.statObject(objectPath);
-  if (!stat) return reject('OBJECT_MISSING');
-  if (Math.ceil(stat.sizeBytes / 1024) !== session.sizeKb) return reject('SIZE_MISMATCH');
-
-  // Hash 重算比对（会话创建时申报）
-  const actualSha256 = await deps.storage.computeSha256(objectPath);
-  const declaredSha256 = session.declaredSha256?.toLowerCase();
-  if (!declaredSha256 || !actualSha256 || actualSha256.toLowerCase() !== declaredSha256) {
-    return reject('HASH_MISMATCH');
-  }
-
-  // 保存元数据 + 会话 COMPLETED（同事务 + 审计；并发/重复由 sourceMessageId 唯一约束兜底）
-  const mediaId = randomUUID();
-  try {
-    return await audited<MediaMetadataResult>(
-      deps.client,
-      {
-        objectType: 'media_object',
-        objectId: mediaId,
-        action: 'media.object.register',
-        reason: `session=${session.id} mediaType=${session.mediaType}`,
-        actorId: deviceId,
-        customerId: session.customerId,
-        afterValue: (r: unknown) => {
-          const result = r as MediaMetadataResult;
-          return { mediaId: result.mediaId, deviceId, mediaType: session.mediaType, sizeKb: session.sizeKb };
-        },
-      },
-      async (tx) => {
-        await mediaObjects(tx).create({
-          data: {
-            id: mediaId,
-            deviceId,
-            customerId: session.customerId,
-            uploadSessionId: session.id,
-            mediaType: session.mediaType,
-            captureTime: new Date(captureTime),
-            fileName: session.fileName,
-            objectPath,
-            sizeKb: session.sizeKb,
-            durationSec: typeof durationSec === 'number' ? Math.floor(durationSec) : null,
-            sha256: declaredSha256,
-            status: 'AVAILABLE',
-            sourceMessageId,
-            createdAt: now,
-          },
-        });
-        const completed = await sessions(tx).updateMany({
-          where: { id: session.id, status: 'ISSUED' },
-          data: { status: 'COMPLETED', completedAt: now },
-        });
-        if (completed.count !== 1) return reject('SESSION_NOT_OPEN');
-        return { applied: true, replayed: false, mediaId };
-      },
-    );
-  } catch (err) {
-    // 并发重复上报：sourceMessageId/uploadSessionId 唯一约束 → 幂等回放
-    if ((err as { code?: string } | null)?.code === 'P2002') {
-      const dup = (await mediaObjects(deps.client).findFirst({
-        where: { sourceMessageId },
-      })) as unknown as MediaObjectRow | null;
-      if (dup) return { applied: true, replayed: true, mediaId: dup.id };
-    }
-    throw err;
-  }
-}
+export { handleMediaMetadata };
 
 // ---------- 管理端：列表与下载 URL ----------
 
