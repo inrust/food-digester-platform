@@ -94,12 +94,18 @@ export async function mergeHourlyAggregate(
   params: {
     readonly deviceId: string;
     readonly customerId: string | null;
+    readonly siteId: string | null;
     readonly bucketStart: Date;
     readonly samples: Partial<Record<TelemetryMetricKey, number>>;
   },
 ): Promise<{ readonly sampleCount: number }> {
   const existing = await hourly(client).findFirst({
-    where: { deviceId: params.deviceId, bucketStart: params.bucketStart },
+    where: {
+      deviceId: params.deviceId,
+      customerId: params.customerId,
+      siteId: params.siteId ?? '__UNASSIGNED__',
+      bucketStart: params.bucketStart,
+    },
   });
   if (existing) {
     const metrics = mergeMetrics((existing.metrics ?? {}) as MetricsMap, params.samples);
@@ -113,6 +119,7 @@ export async function mergeHourlyAggregate(
     data: {
       deviceId: params.deviceId,
       customerId: params.customerId,
+      siteId: params.siteId ?? '__UNASSIGNED__',
       bucketStart: params.bucketStart,
       sampleCount: 1,
       metrics: mergeMetrics({}, params.samples),

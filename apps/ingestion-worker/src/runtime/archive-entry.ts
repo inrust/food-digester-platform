@@ -1,5 +1,6 @@
 import { createS3ArchiveObjectStore } from '@fdp/aws-clients';
 import type { ArchiveEventMessage } from '@fdp/aws-clients';
+import { createRedactingLogger } from '@fdp/observability';
 import { createArchiveWorker } from '../archive/worker.js';
 
 export interface ArchiveSqsEventLike {
@@ -11,8 +12,17 @@ export interface ArchiveSqsBatchResponse {
 }
 
 interface ArchiveBatchProcessor {
-  archiveBatch(messages: ArchiveEventMessage[]): Promise<{ readonly rejectedEventIds: readonly string[] }>;
+  archiveBatch(messages: ArchiveEventMessage[]): Promise<{
+    readonly rejectedEventIds: readonly string[];
+    readonly rejected?: ReadonlyArray<{
+      readonly eventId: string;
+      readonly errorPath: string;
+      readonly reason: string;
+    }>;
+  }>;
 }
+
+const logger = createRedactingLogger(console);
 
 function parseMessage(body: string): ArchiveEventMessage {
   const value = JSON.parse(body) as Partial<ArchiveEventMessage>;
@@ -49,7 +59,15 @@ export function createArchiveSqsHandler(processor: ArchiveBatchProcessor) {
         const ids = messageIdsByEventId.get(message.eventId) ?? [];
         ids.push(messageId);
         messageIdsByEventId.set(message.eventId, ids);
-      } catch {
+      } catch (error) {
+        logger.error('archive validation rejected', {
+          kind: 'archive.validation_rejected',
+          messageId,
+          eventId: null,
+          errorPath: '$',
+          reason: error instanceof Error ? error.message : String(error),
+          rawBody: record.body ?? '',
+        });
         failures.add(messageId);
       }
     }
@@ -57,6 +75,17 @@ export function createArchiveSqsHandler(processor: ArchiveBatchProcessor) {
     if (messages.length > 0) {
       try {
         const result = await processor.archiveBatch(messages);
+        for (const rejection of result.rejected ?? []) {
+          for (const messageId of messageIdsByEventId.get(rejection.eventId) ?? []) {
+            const rawBody = (event.Records ?? []).find((record) => record.messageId === messageId)?.body ?? '';
+            logger.error('archive validation rejected', {
+              kind: 'archive.validation_rejected',
+              messageId,
+              ...rejection,
+              rawBody,
+            });
+          }
+        }
         for (const eventId of result.rejectedEventIds) {
           for (const messageId of messageIdsByEventId.get(eventId) ?? []) failures.add(messageId);
         }

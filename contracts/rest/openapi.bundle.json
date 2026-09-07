@@ -127,7 +127,7 @@
       },
       {
         "file": "admin-replay-api.json",
-        "sha256": "ddf513dad1f34edce12dbab8414d3affe192903d5ec07730bc795bdb2cc8335c",
+        "sha256": "0d9c623523605363949b225594423252b9793cd393059cd09cbde57c27566bbf",
         "status": "implemented"
       },
       {
@@ -17507,7 +17507,10 @@
           "scannedLines",
           "sent",
           "skipped",
-          "failed"
+          "failed",
+          "failedObjects",
+          "failedLines",
+          "sendFailures"
         ],
         "additionalProperties": true,
         "properties": {
@@ -17532,7 +17535,22 @@
           "failed": {
             "type": "integer",
             "minimum": 0,
-            "description": "重投失败数。"
+            "description": "全部失败数。"
+          },
+          "failedObjects": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "读取、Manifest 或解压失败的对象数。"
+          },
+          "failedLines": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "JSON 或归档行 Schema 失败数。"
+          },
+          "sendFailures": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "投入 Ingress 失败数。"
           }
         }
       },

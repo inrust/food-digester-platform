@@ -16,6 +16,7 @@ export type ReportType = (typeof REPORT_TYPES)[number];
 export interface ReportWrite {
   readonly deviceId: string;
   readonly customerId: string;
+  readonly siteId: string;
   readonly reportType: ReportType;
   readonly periodStartTime: Date;
   readonly periodEndTime: Date;
@@ -59,6 +60,7 @@ export function buildReportRow(write: ReportWrite): Record<string, unknown> {
   const row: Record<string, unknown> = {
     deviceId: write.deviceId,
     customerId: write.customerId,
+    siteId: write.siteId,
     reportType: write.reportType,
     periodStartTime: write.periodStartTime,
     periodEndTime: write.periodEndTime,
@@ -91,11 +93,20 @@ export function buildReportRow(write: ReportWrite): Record<string, unknown> {
 /** 查询同设备同类型与新期间 [start, end) 相交的既有报告（重叠判定输入）。 */
 export async function findOverlappingReport(
   client: DbClient,
-  params: { readonly deviceId: string; readonly reportType: ReportType; readonly start: Date; readonly end: Date },
+  params: {
+    readonly deviceId: string;
+    readonly customerId: string;
+    readonly siteId: string;
+    readonly reportType: ReportType;
+    readonly start: Date;
+    readonly end: Date;
+  },
 ): Promise<ReportRow | null> {
   return reports(client).findFirst({
     where: {
       deviceId: params.deviceId,
+      customerId: params.customerId,
+      siteId: params.siteId,
       reportType: params.reportType,
       periodStartTime: { lt: params.end },
       periodEndTime: { gt: params.start },

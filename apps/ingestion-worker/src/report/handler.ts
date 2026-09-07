@@ -78,9 +78,8 @@ export function createReportHandler(
     const deviceId = message.device.deviceId;
     const payloadHash = hashPayload(message.normalizedPayload);
 
-    const write: ReportWrite = {
+    const baseWrite = {
       deviceId,
-      customerId: message.device.customerId ?? '',
       reportType,
       periodStartTime: start,
       periodEndTime: end,
@@ -102,20 +101,35 @@ export function createReportHandler(
       missingRecordCount: asNumber(data.missingRecordCount),
     };
 
-    const processed = await processWithReceipt(deps.client, {
+    const processed = await processWithReceipt<{ readonly status: 'created' | 'duplicate' }>(deps.client, {
       key: { deviceId, topicType: 'report', seq },
       payloadHash,
       receivedAtMs: message.envelope.iotReceivedAt,
-      business: async (tx) => {
-        if (!message.device.customerId) {
+      occurredAt: new Date(message.occurredAt),
+      customerId: message.device.customerId,
+      siteId: message.device.siteId ?? null,
+      business: async (tx, attribution) => {
+        if (!attribution.customerId) {
           throw quarantineError(
             'UNKNOWN_DEVICE',
             'device.customerId',
             'device has no customer assignment; esg_reports requires customerId',
           );
         }
+        const write: ReportWrite = {
+          ...baseWrite,
+          customerId: attribution.customerId,
+          siteId: attribution.siteId ?? '__UNASSIGNED__',
+        };
         // 期间重叠：相同起点 = 相同报告（预检幂等跳过）；不同起点相交 = 拒绝
-        const overlapping = await findOverlappingReport(tx, { deviceId, reportType, start, end });
+        const overlapping = await findOverlappingReport(tx, {
+          deviceId,
+          customerId: write.customerId,
+          siteId: write.siteId,
+          reportType,
+          start,
+          end,
+        });
         if (overlapping && overlapping.periodStartTime.getTime() !== start.getTime()) {
           throw quarantineError(
             'INVALID_REPORT',
@@ -140,7 +154,8 @@ export function createReportHandler(
               topicType: 'report',
               columns: buildReportRow(write),
               deviceId,
-              customerId: message.device.customerId,
+              customerId: attribution.customerId,
+              siteId: attribution.siteId,
               occurredAt: message.occurredAt,
               receivedAtMs: message.envelope.iotReceivedAt,
               payloadHash,

@@ -8,6 +8,7 @@
  * - 非 PENDING 重复执行幂等 no-op。
  */
 import { gzipSync } from 'node:zlib';
+import { createHash } from 'node:crypto';
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
@@ -31,8 +32,28 @@ afterAll(async () => {
 class MemoryReader implements ReplayArchiveReader {
   readonly objects = new Map<string, Uint8Array>();
   putLines(prefix: string, partName: string, lines: Record<string, unknown>[]): string {
+    return this.putRawLines(
+      prefix,
+      partName,
+      lines.map((line) => JSON.stringify(line)),
+    );
+  }
+  putRawLines(prefix: string, partName: string, rawLines: string[]): string {
     const key = `${prefix}${partName}.json.gz`;
-    this.objects.set(key, gzipSync(Buffer.from(lines.map((l) => JSON.stringify(l)).join('\n') + '\n', 'utf8')));
+    const body = gzipSync(Buffer.from(rawLines.join('\n') + '\n', 'utf8'));
+    this.objects.set(key, body);
+    this.objects.set(
+      `${prefix}${partName}.manifest.json`,
+      Buffer.from(
+        JSON.stringify({
+          manifestVersion: '2.0',
+          archiveClass: 'MQTT_RAW',
+          key,
+          sha256: createHash('sha256').update(body).digest('hex'),
+          recordCount: rawLines.length,
+        }),
+      ),
+    );
     return key;
   }
   async listKeys(prefix: string): Promise<string[]> {
@@ -120,7 +141,16 @@ describe('createReplayWorker（BE-RPL-01）', () => {
 
     const result = await worker.executeJob(jobId);
     assert.equal(result.status, 'COMPLETED');
-    assert.deepEqual(result.summary, { scannedObjects: 1, scannedLines: 6, sent: 2, skipped: 4, failed: 0 });
+    assert.deepEqual(result.summary, {
+      scannedObjects: 1,
+      scannedLines: 6,
+      sent: 2,
+      skipped: 4,
+      failed: 0,
+      failedObjects: 0,
+      failedLines: 0,
+      sendFailures: 0,
+    });
 
     assert.equal(sink.sent.length, 2, '仅范围内记录进入队列');
     for (const record of sink.sent) {
@@ -258,5 +288,62 @@ describe('createReplayWorker（BE-RPL-01）', () => {
     const audits = await prisma.auditLog.findMany({ where: { objectId: jobId, action: 'replay.job.execute' } });
     assert.equal(audits.length, 1);
     assert.equal(audits[0]?.result, 'FAILURE');
+  });
+
+  test('过期 RUNNING 租约可回收，活动租约拒绝并发领取', async () => {
+    const reader = new MemoryReader();
+    reader.putLines(PREFIX_10H, 'part-lease', [archiveLine({ seq: 300 })]);
+    const sink = new MemorySink();
+    const fixedNow = new Date('2026-08-28T12:00:00.000Z');
+    const expiredId = await plantJob(SCOPE);
+    await prisma.replayJob.update({
+      where: { id: expiredId },
+      data: {
+        status: 'RUNNING',
+        leaseUntil: new Date('2026-08-28T11:59:00.000Z'),
+        leaseToken: 'dead-worker',
+        attemptCount: 1,
+      },
+    });
+    const reclaimed = await createReplayWorker({ client: prisma, reader, sink, now: () => fixedNow }).executeJob(
+      expiredId,
+    );
+    assert.equal(reclaimed.status, 'COMPLETED');
+    const expired = await prisma.replayJob.findUnique({ where: { id: expiredId } });
+    assert.equal(expired?.attemptCount, 2);
+
+    const activeId = await plantJob(SCOPE);
+    await prisma.replayJob.update({
+      where: { id: activeId },
+      data: {
+        status: 'RUNNING',
+        leaseUntil: new Date('2026-08-28T12:01:00.000Z'),
+        leaseToken: 'active-worker',
+        attemptCount: 1,
+      },
+    });
+    const active = await createReplayWorker({ client: prisma, reader, sink, now: () => fixedNow }).executeJob(activeId);
+    assert.equal(active.status, 'ALREADY_DONE');
+  });
+
+  test('损坏对象和非法行分别计数且不中断后续对象；发送失败单独计数', async () => {
+    const reader = new MemoryReader();
+    reader.objects.set(`${PREFIX_10H}part-a-broken.json.gz`, Buffer.from('not-gzip'));
+    reader.putRawLines(PREFIX_10H, 'part-b-lines', ['{bad-json', JSON.stringify(archiveLine({ seq: 400 }))]);
+    reader.putLines(PREFIX_10H, 'part-c-valid', [archiveLine({ seq: 401 })]);
+    const sink = new MemorySink();
+    sink.failOnSeq = 400;
+    const result = await createReplayWorker({ client: prisma, reader, sink }).executeJob(await plantJob(SCOPE));
+    assert.equal(result.status, 'COMPLETED');
+    assert.deepEqual(result.summary, {
+      scannedObjects: 3,
+      scannedLines: 3,
+      sent: 1,
+      skipped: 0,
+      failed: 3,
+      failedObjects: 1,
+      failedLines: 1,
+      sendFailures: 1,
+    });
   });
 });

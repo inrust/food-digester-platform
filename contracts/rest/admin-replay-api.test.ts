@@ -55,7 +55,16 @@ test('ReplayJob 视图七字段封闭；状态枚举与统计字段齐备；scop
   assert.equal(job.additionalProperties, false);
   assert.deepEqual(job.properties.status.enum, ['PENDING', 'RUNNING', 'COMPLETED', 'FAILED']);
   const summary = doc.components.schemas.ReplayResultSummary;
-  for (const field of ['scannedObjects', 'scannedLines', 'sent', 'skipped', 'failed']) {
+  for (const field of [
+    'scannedObjects',
+    'scannedLines',
+    'sent',
+    'skipped',
+    'failed',
+    'failedObjects',
+    'failedLines',
+    'sendFailures',
+  ]) {
     assert.ok(summary.required.includes(field), `统计缺少 ${field}`);
   }
   const scope = doc.components.schemas.ReplayScope;

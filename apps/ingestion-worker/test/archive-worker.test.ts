@@ -157,8 +157,12 @@ describe('createArchiveWorker（BE-ARC-02）', () => {
       archiveMessage('telemetry', { seq: 101, occurredAt: '2026-08-28T10:30:00.000Z', eventId: 'evt-m-3' }),
     ];
     const result = await worker(store).archiveBatch(messages);
-    const [object] = result.objects;
-    assert.equal(object.recordCount, 3);
+    assert.equal(result.objects.length, 3, '每个 eventId 使用稳定单事件对象');
+    const object = result.objects.find((item) =>
+      item.key.includes(createHash('sha256').update('evt-m-1').digest('hex').slice(0, 16)),
+    );
+    assert.ok(object);
+    assert.equal(object.recordCount, 1);
 
     const manifest = store.json(object.manifestKey);
     assert.equal(manifest.manifestVersion, '2.0');
@@ -169,14 +173,14 @@ describe('createArchiveWorker（BE-ARC-02）', () => {
     assert.equal(manifest.topicType, 'telemetry');
     assert.equal(manifest.customerId, 'cust-1');
     assert.equal(manifest.windowStartUtc, '2026-08-28T10:00:00Z');
-    assert.equal(manifest.recordCount, 3);
+    assert.equal(manifest.recordCount, 1);
     assert.equal(manifest.occurredAtMin, '2026-08-28T10:01:00.000Z', '时间范围最小值');
-    assert.equal(manifest.occurredAtMax, '2026-08-28T10:59:00.000Z', '时间范围最大值');
+    assert.equal(manifest.occurredAtMax, '2026-08-28T10:01:00.000Z', '单事件时间范围最大值');
     assert.equal(manifest.seqMin, 100, '序号范围最小值');
-    assert.equal(manifest.seqMax, 102, '序号范围最大值');
+    assert.equal(manifest.seqMax, 100, '单事件序号范围最大值');
     assert.deepEqual(manifest.schemaVersions, ['1.0'], 'Schema 版本');
     assert.equal(manifest.workerVersion, 'archive-worker@2.0.0', 'Worker 版本');
-    assert.deepEqual(manifest.eventIds, ['evt-m-1', 'evt-m-3', 'evt-m-2'], '按 occurredAt 稳定排序');
+    assert.deepEqual(manifest.eventIds, ['evt-m-1']);
     assert.equal(manifest.createdAt, FIXED_NOW.toISOString());
   });
 
@@ -200,9 +204,11 @@ describe('createArchiveWorker（BE-ARC-02）', () => {
 
     const first = await worker(store).archiveBatch(batch);
     assert.equal(first.deduplicated, 1, '批内重复投递去重');
-    const [object] = first.objects;
-    assert.equal(object.recordCount, 2);
-    assert.equal(store.ndjsonLines(object.key).length, 2, '重复事件不产生重复行');
+    assert.equal(first.objects.length, 2);
+    const object = first.objects.find((item) => store.ndjsonLines(item.key)[0]?.eventId === 'evt-dup-1');
+    assert.ok(object);
+    assert.equal(object.recordCount, 1);
+    assert.equal(store.ndjsonLines(object.key).length, 1, '重复事件不产生重复行');
     const bytesAfterFirst = Buffer.from(store.objects.get(object.key) as Uint8Array).toString('base64');
 
     // 同批次重跑（进程中断恢复）：相同 Key 相同字节覆盖写
@@ -210,7 +216,7 @@ describe('createArchiveWorker（BE-ARC-02）', () => {
     assert.equal(rerun.deduplicated, 1);
     assert.deepEqual(
       rerun.objects.map((o) => o.key),
-      [object.key],
+      first.objects.map((item) => item.key),
       '重跑派生相同 part Key（覆盖写，不生新对象）',
     );
     assert.equal(
@@ -219,7 +225,24 @@ describe('createArchiveWorker（BE-ARC-02）', () => {
       '重跑字节一致',
     );
     assert.equal(rerun.objects[0]?.sha256, object.sha256, '重跑 Hash 一致');
-    assert.equal(store.keys().filter((k) => k.endsWith('.json.gz')).length, 1, '逻辑上仍只有一个归档对象');
+    assert.equal(store.keys().filter((k) => k.endsWith('.json.gz')).length, 2, '两个 eventId 各一个稳定对象');
+  });
+
+  test('跨批与并发幂等：[A,B] 后重试 [A] 仍只保留 A/B 两个稳定对象', async () => {
+    const store = new MemoryObjectStore();
+    const a = archiveMessage('telemetry', { eventId: 'evt-cross-a' });
+    const b = archiveMessage('telemetry', { eventId: 'evt-cross-b' });
+    const first = await worker(store).archiveBatch([a, b]);
+    const [retry, concurrent] = await Promise.all([
+      worker(store).archiveBatch([a]),
+      worker(store).archiveBatch([b, a]),
+    ]);
+    assert.deepEqual(
+      retry.objects.map((item) => item.key),
+      [first.objects[0]?.key],
+    );
+    assert.deepEqual(concurrent.objects.map((item) => item.key).sort(), first.objects.map((item) => item.key).sort());
+    assert.equal(store.keys().filter((key) => key.endsWith('.json.gz')).length, 2);
   });
 
   test('跨 customer/小时/topic 正确分组为独立对象', async () => {

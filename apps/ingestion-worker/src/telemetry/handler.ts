@@ -68,14 +68,17 @@ export function createTelemetryHandler(
     const deviceId = message.device.deviceId;
     const payloadHash = hashPayload(message.normalizedPayload);
 
-    const processed = await processWithReceipt(deps.client, {
+    const processed = await processWithReceipt<{ readonly sampleCount: number }>(deps.client, {
       key: { deviceId, topicType: 'telemetry', seq },
       payloadHash,
       receivedAtMs: message.envelope.iotReceivedAt,
-      business: async (tx) => {
+      occurredAt,
+      customerId: message.device.customerId,
+      siteId: message.device.siteId ?? null,
+      business: async (tx, attribution) => {
         // 聚合输入要求 customerId（DB-01 telemetry_hourly 非空）；未分配客户的设备遥测
         // 隔离保留原文，待分配后可由 Replay 重建（不静默丢聚合）
-        if (!message.device.customerId) {
+        if (!attribution.customerId) {
           throw quarantineError(
             'UNKNOWN_DEVICE',
             'device.customerId',
@@ -84,7 +87,8 @@ export function createTelemetryHandler(
         }
         const aggregate = await mergeHourlyAggregate(tx, {
           deviceId,
-          customerId: message.device.customerId,
+          customerId: attribution.customerId,
+          siteId: attribution.siteId,
           bucketStart,
           samples: extractSamples(message.data),
         });
@@ -102,7 +106,8 @@ export function createTelemetryHandler(
               topicType: 'telemetry',
               messageId: message.messageId,
               deviceId,
-              customerId: message.device.customerId,
+              customerId: attribution.customerId,
+              siteId: attribution.siteId,
               occurredAt: message.occurredAt,
               receivedAtMs: message.envelope.iotReceivedAt,
               payloadHash,

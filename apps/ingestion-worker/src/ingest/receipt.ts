@@ -51,16 +51,33 @@ export interface ProcessWithReceiptParams<T> {
   readonly payloadHash: string;
   /** broker 接收时间（iotReceivedAt，epoch ms）；缺省当前时间。 */
   readonly receivedAtMs?: number;
+  /** 设备事件时间；完整率和历史归属均以此时间为准。 */
+  readonly occurredAt?: Date;
+  /** 当前台账归属作为无历史 assignment 时的回退；绝不取 Payload。 */
+  readonly customerId?: string | null;
+  readonly siteId?: string | null;
   readonly now?: () => Date;
   /** 业务写入（与 receipt 同事务；重复消息不会执行）。 */
-  readonly business: (tx: DbClient) => Promise<T>;
+  readonly business: (tx: DbClient, attribution: EventAttribution) => Promise<T>;
   /** Outbox 事件写入（同事务；下行通知/归档事件）。 */
   readonly outbox?: (tx: DbClient) => Promise<void>;
+}
+
+export interface EventAttribution {
+  readonly customerId: string | null;
+  readonly siteId: string | null;
 }
 
 interface ReceiptDelegate {
   create(args: { data: Record<string, unknown> }): Promise<unknown>;
   findFirst(args: { where: Record<string, unknown> }): Promise<{ payloadHash: string } | null>;
+}
+
+interface AssignmentDelegate {
+  findFirst(args: { where: Record<string, unknown>; orderBy: Record<string, unknown> }): Promise<{
+    customerId: string;
+    siteId: string;
+  } | null>;
 }
 
 function receipts(client: DbClient): ReceiptDelegate {
@@ -82,19 +99,38 @@ export async function processWithReceipt<T>(
       // 同设备同 Topic 串行化 receipt 与业务事务：同时消除 gap 漏检、Telemetry
       // 读改写丢增量和 Report 重叠检查的并发窗口。
       await acquireTransactionLock(tx, `ingestion:${params.key.deviceId}:${params.key.topicType}`);
+      const receivedAt = params.receivedAtMs !== undefined ? new Date(params.receivedAtMs) : now();
+      const occurredAt = params.occurredAt ?? receivedAt;
+      const assignment = await (
+        (tx as unknown as Record<string, unknown>).deviceAssignment as AssignmentDelegate
+      ).findFirst({
+        where: {
+          deviceId: params.key.deviceId,
+          assignedAt: { lte: occurredAt },
+          OR: [{ endedAt: null }, { endedAt: { gt: occurredAt } }],
+        },
+        orderBy: { assignedAt: 'desc' },
+      });
+      const attribution: EventAttribution = {
+        customerId: assignment?.customerId ?? params.customerId ?? null,
+        siteId: assignment?.siteId ?? params.siteId ?? null,
+      };
       await receipts(tx).create({
         data: {
           idempotencyKey: idempotencyKeyOf(params.key),
           deviceId: params.key.deviceId,
+          customerId: attribution.customerId,
+          siteId: attribution.siteId,
           topicType: params.key.topicType,
           seq: params.key.seq,
           payloadHash: params.payloadHash,
           result: 'PROCESSED',
-          receivedAt: params.receivedAtMs !== undefined ? new Date(params.receivedAtMs) : now(),
+          receivedAt,
+          occurredAt,
           processedAt: now(),
         },
       });
-      const result = await params.business(tx);
+      const result = await params.business(tx, attribution);
       if (params.outbox) await params.outbox(tx);
       // 缺口检测同事务追加（纯信息记录，不阻塞本条及后续消息）
       await recordGapForNewReceipt(tx, params.key);

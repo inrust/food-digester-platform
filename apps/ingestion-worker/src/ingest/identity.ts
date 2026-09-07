@@ -12,6 +12,8 @@ export interface DeviceContext {
   readonly deviceId: string;
   /** 台账客户归属（可空：未分配）；绝不取 Payload 自报值。 */
   readonly customerId: string | null;
+  /** 当前站点归属；历史聚合会按事件时间回查 assignment，不信任 Payload。 */
+  readonly siteId?: string | null;
   readonly lifecycleStatus: string;
   readonly certificateId: string;
   readonly certificateFingerprint: string;
@@ -28,6 +30,7 @@ interface CertificateRow {
 interface DeviceRow {
   readonly id: string;
   readonly customerId: string | null;
+  readonly siteId: string | null;
   readonly lifecycleStatus: string;
 }
 
@@ -79,6 +82,7 @@ export async function resolveDeviceContext(
   return {
     deviceId: device.id,
     customerId: device.customerId,
+    siteId: device.siteId,
     lifecycleStatus: device.lifecycleStatus,
     certificateId: certificate.id,
     certificateFingerprint: certificate.fingerprint,

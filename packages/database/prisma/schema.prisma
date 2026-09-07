@@ -528,14 +528,16 @@ model TelemetryHourly {
   id              String   @id @default(uuid())
   deviceId        String   @map("device_id")
   customerId      String   @map("customer_id")
+  siteId          String   @default("__UNASSIGNED__") @map("site_id")
   bucketStart     DateTime @map("bucket_start") @db.Timestamptz // 整点 UTC
   sampleCount     Int      @map("sample_count")
   completenessPct Decimal? @map("completeness_pct") @db.Decimal(5, 2)
+  missingRecordCount Int   @default(0) @map("missing_record_count")
   // 7.4 基线字段的聚合值（avg/min/max），键名与 Telemetry Payload 一致
   metrics         Json
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  @@unique([deviceId, bucketStart])
+  @@unique([deviceId, customerId, siteId, bucketStart])
   @@map("telemetry_hourly")
 }
 
@@ -543,13 +545,15 @@ model TelemetryDaily {
   id              String   @id @default(uuid())
   deviceId        String   @map("device_id")
   customerId      String   @map("customer_id")
+  siteId          String   @default("__UNASSIGNED__") @map("site_id")
   bucketDate      DateTime @map("bucket_date") @db.Date // UTC 日期
   sampleCount     Int      @map("sample_count")
   completenessPct Decimal? @map("completeness_pct") @db.Decimal(5, 2)
+  missingRecordCount Int   @default(0) @map("missing_record_count")
   metrics         Json
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  @@unique([deviceId, bucketDate])
+  @@unique([deviceId, customerId, siteId, bucketDate])
   @@map("telemetry_daily")
 }
 
@@ -614,6 +618,7 @@ model EsgReport {
   id                    String   @id @default(uuid())
   deviceId              String   @map("device_id")
   customerId            String   @map("customer_id")
+  siteId                String   @default("__UNASSIGNED__") @map("site_id")
   reportType            String   @map("report_type") // CYCLE | HOURLY | DAILY
   periodStartTime       DateTime @map("period_start_time") @db.Timestamptz
   periodEndTime         DateTime @map("period_end_time") @db.Timestamptz
@@ -638,7 +643,7 @@ model EsgReport {
 
   calculationVersion EsgCalculationVersion? @relation(fields: [calculationVersionId], references: [id])
 
-  @@unique([deviceId, reportType, periodStartTime])
+  @@unique([deviceId, customerId, siteId, reportType, periodStartTime], map: "esg_reports_device_id_customer_id_site_id_report_type_perio_key")
   @@map("esg_reports")
 }
 
@@ -646,6 +651,7 @@ model EsgDailySummary {
   id                   String   @id @default(uuid())
   deviceId             String   @map("device_id")
   customerId           String   @map("customer_id")
+  siteId               String   @default("__UNASSIGNED__") @map("site_id")
   summaryDate          DateTime @map("summary_date") @db.Date // UTC
   feedingWeightKg      Decimal? @map("feeding_weight_kg") @db.Decimal(12, 3)
   dischargeWeightKg    Decimal? @map("discharge_weight_kg") @db.Decimal(12, 3)
@@ -659,7 +665,7 @@ model EsgDailySummary {
 
   calculationVersion EsgCalculationVersion? @relation(fields: [calculationVersionId], references: [id])
 
-  @@unique([deviceId, summaryDate])
+  @@unique([deviceId, customerId, siteId, summaryDate], map: "esg_daily_summary_device_id_customer_id_site_id_summary_dat_key")
   @@map("esg_daily_summary")
 }
 
@@ -909,12 +915,15 @@ model IngestionReceipt {
   // 幂等键：deviceId + type + seq（实施方案 9.2）
   idempotencyKey String    @unique @map("idempotency_key")
   deviceId       String    @map("device_id")
+  customerId     String?   @map("customer_id")
+  siteId         String?   @map("site_id")
   topicType      String    @map("topic_type")
   seq            Int?
   payloadHash    String    @map("payload_hash")
   // PROCESSED | DUPLICATE | INVALID | SECURITY_VIOLATION（同键不同 Hash 标记安全异常，不覆盖原记录）
   result         String
   receivedAt     DateTime  @default(now()) @map("received_at") @db.Timestamptz
+  occurredAt     DateTime  @default(now()) @map("occurred_at") @db.Timestamptz
   processedAt    DateTime? @map("processed_at") @db.Timestamptz
 
   @@map("ingestion_receipts")
@@ -1048,9 +1057,15 @@ model ReplayJob {
   scope         Json // deviceId / 时间范围 / topicType
   status        String    @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED
   resultSummary Json?     @map("result_summary")
+  startedAt     DateTime? @map("started_at") @db.Timestamptz
+  leaseUntil    DateTime? @map("lease_until") @db.Timestamptz
+  lastHeartbeatAt DateTime? @map("last_heartbeat_at") @db.Timestamptz
+  leaseToken    String?   @map("lease_token")
+  attemptCount  Int       @default(0) @map("attempt_count")
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
   completedAt   DateTime? @map("completed_at") @db.Timestamptz
 
+  @@index([status, leaseUntil])
   @@map("replay_jobs")
 }
 

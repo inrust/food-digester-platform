@@ -9,8 +9,8 @@
  * - License 以 DOMAIN_EVENT 归档；OTA 发布/结果以 OPERATION_RECORD 归档，均不得进入 raw/；
  * - 行格式：每行 = 归档记录 JSON（{eventId, ...outbox 归档载荷}，内嵌原始上行 Payload，
  *   解压后每行是原始可验证 JSON；audit.hash 随行保留，DEC-002）；
- * - 重复事件不产生逻辑重复：批内按 eventId 去重；part Key 由去重后 eventId 集合哈希派生，
- *   同批次重跑产生相同 Key 与相同字节（GZIP 无时间戳），覆盖写不生新对象；
+ * - 重复事件不产生逻辑重复：每个 eventId 使用稳定单事件 part Key；批次拆分、部分重试和
+ *   并发批次都会覆盖同一个对象，不产生第二份逻辑记录；
  * - 对象 Hash 可复算：sha256 = GZIP 字节 SHA-256，记入 Manifest。
  */
 import { createHash } from 'node:crypto';
@@ -58,6 +58,7 @@ export interface ArchiveBatchResult {
   readonly deduplicated: number;
   /** 契约损坏或伪装来源：生产 SQS Handler 必须重试并最终进入 Archive DLQ。 */
   readonly rejectedEventIds: string[];
+  readonly rejected: Array<{ readonly eventId: string; readonly errorPath: string; readonly reason: string }>;
 }
 
 interface ArchiveRecord {
@@ -186,6 +187,7 @@ export function createArchiveWorker(deps: ArchiveWorkerDeps): {
       const skipped: Record<string, number> = {};
       let deduplicated = 0;
       const rejectedEventIds: string[] = [];
+      const rejected: Array<{ eventId: string; errorPath: string; reason: string }> = [];
 
       for (const message of messages) {
         // 批内去重（重复投递）
@@ -202,11 +204,19 @@ export function createArchiveWorker(deps: ArchiveWorkerDeps): {
           skipped[key] = (skipped[key] ?? 0) + 1;
           if (!parsed || !(NEVER_ARCHIVE_TOPIC_TYPES as readonly string[]).includes(parsed.sourceType)) {
             rejectedEventIds.push(message.eventId);
+            rejected.push({
+              eventId: message.eventId,
+              errorPath: parsed ? 'payload.topicType' : 'payload',
+              reason: parsed
+                ? `unsupported mandatory archive source: ${parsed.sourceType}`
+                : 'invalid archive envelope',
+            });
           }
           continue;
         }
         const window = hourWindowOf(parsed.record.occurredAt);
-        const groupKey = `${parsed.archiveClass}|${parsed.sourceType}|${parsed.customerId}|${window.windowStartUtc}`;
+        // 稳定单事件对象：跨批 `[A,B]` → `[A]`、部分重试和并发执行均命中同一个 Key。
+        const groupKey = `${parsed.archiveClass}|${parsed.sourceType}|${parsed.customerId}|${window.windowStartUtc}|${message.eventId}`;
         const group = groups.get(groupKey) ?? {
           archiveClass: parsed.archiveClass,
           sourceType: parsed.sourceType,
@@ -229,7 +239,7 @@ export function createArchiveWorker(deps: ArchiveWorkerDeps): {
 
         const first = records[0] as ArchiveRecord;
         const window = hourWindowOf(first.occurredAt);
-        // part Key 由去重后 eventId 集合哈希派生：同批次重跑同 Key 覆盖，不产生逻辑重复
+        // 单事件 part Key 只依赖 eventId，与批次边界无关。
         const partHash = createHash('sha256')
           .update(
             records
@@ -295,7 +305,7 @@ export function createArchiveWorker(deps: ArchiveWorkerDeps): {
         });
       }
 
-      return { objects, skipped, deduplicated, rejectedEventIds };
+      return { objects, skipped, deduplicated, rejectedEventIds, rejected };
     },
   };
 }

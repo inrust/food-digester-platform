@@ -238,14 +238,26 @@
       },
       "ReplayResultSummary": {
         "type": "object",
-        "required": ["scannedObjects", "scannedLines", "sent", "skipped", "failed"],
+        "required": [
+          "scannedObjects",
+          "scannedLines",
+          "sent",
+          "skipped",
+          "failed",
+          "failedObjects",
+          "failedLines",
+          "sendFailures"
+        ],
         "additionalProperties": true,
         "properties": {
           "scannedObjects": { "type": "integer", "minimum": 0 },
           "scannedLines": { "type": "integer", "minimum": 0 },
           "sent": { "type": "integer", "minimum": 0, "description": "成功重投 Ingress 数。" },
           "skipped": { "type": "integer", "minimum": 0, "description": "范围外/不可解析跳过数。" },
-          "failed": { "type": "integer", "minimum": 0, "description": "重投失败数。" }
+          "failed": { "type": "integer", "minimum": 0, "description": "全部失败数。" },
+          "failedObjects": { "type": "integer", "minimum": 0, "description": "读取、Manifest 或解压失败的对象数。" },
+          "failedLines": { "type": "integer", "minimum": 0, "description": "JSON 或归档行 Schema 失败数。" },
+          "sendFailures": { "type": "integer", "minimum": 0, "description": "投入 Ingress 失败数。" }
         }
       },
       "ReplayJob": {

@@ -56,17 +56,25 @@ async function ensureScopedDevice(deviceId: string): Promise<string> {
   return customerId;
 }
 
-async function plantReceipt(deviceId: string, seq: number, receivedAt: string): Promise<void> {
+async function plantReceipt(
+  deviceId: string,
+  seq: number,
+  receivedAt: string,
+  options: { occurredAt?: string; customerId?: string; siteId?: string | null } = {},
+): Promise<void> {
   receiptSeq += 1;
   await prisma.ingestionReceipt.create({
     data: {
-      idempotencyKey: `agg|${deviceId}|telemetry|${seq}`,
+      idempotencyKey: `agg|${deviceId}|telemetry|${seq}|${receiptSeq}`,
       deviceId,
       topicType: 'telemetry',
       seq,
       payloadHash: receiptSeq.toString(16).padStart(64, '0'),
       result: 'PROCESSED',
       receivedAt: new Date(receivedAt),
+      occurredAt: new Date(options.occurredAt ?? receivedAt),
+      customerId: options.customerId ?? `cust-${deviceId}`,
+      siteId: options.siteId ?? null,
     },
   });
 }
@@ -300,6 +308,62 @@ describe('createAggregationWorker（BE-ESG-01）', () => {
     assert.equal(versions.length, 1, '同一计算方法版本全局仅一行');
     const formula = versions[0]?.formula as Record<string, unknown>;
     assert.equal(formula.dailyRollup, 'weighted-avg by sample count; min-of-min; max-of-max');
-    assert.equal(formula.completeness, 'received / (max(seq) - min(seq) + 1), missing clamped >= 0');
+    assert.equal(formula.completeness, 'event-time sequence epochs with first=1 and adjacent-window boundaries');
+  });
+
+  test('按 event time 而非 received time 入桶，并保存小时/日缺失数', async () => {
+    const deviceId = 'dev-agg-event-time';
+    await plantReceipt(deviceId, 1, '2026-08-28T01:00:00.000Z', { occurredAt: '2026-08-27T10:00:00.000Z' });
+    await plantReceipt(deviceId, 3, '2026-08-28T01:01:00.000Z', { occurredAt: '2026-08-27T10:01:00.000Z' });
+    await plantHourly(deviceId, '2026-08-27T10:00:00.000Z', 2, {
+      chamberTempC: { avg: 50, min: 49, max: 51, count: 2 },
+    });
+    await createAggregationWorker({ client: prisma }).recomputeWindow(WINDOW);
+    const hourly = await prisma.telemetryHourly.findFirst({ where: { deviceId } });
+    const daily = await prisma.telemetryDaily.findFirst({ where: { deviceId } });
+    assert.equal(Number(hourly?.completenessPct), 66.67);
+    assert.equal(hourly?.missingRecordCount, 1);
+    assert.equal(Number(daily?.completenessPct), 66.67);
+    assert.equal(daily?.missingRecordCount, 1);
+  });
+
+  test('同日 Customer/Site 变更保持两个历史维度结果；并发重算使用数据库原子 upsert', async () => {
+    const deviceId = 'dev-agg-history';
+    const customerA = await ensureScopedDevice(deviceId);
+    const customerB = 'cust-dev-agg-history-b';
+    await prisma.customer.create({ data: { id: customerB, name: 'Aggregation history B' } });
+    await plantReceipt(deviceId, 1, '2026-08-27T08:00:00.000Z', { customerId: customerA, siteId: 'site-a' });
+    await plantReceipt(deviceId, 1, '2026-08-27T18:00:00.000Z', { customerId: customerB, siteId: 'site-b' });
+    await prisma.telemetryHourly.createMany({
+      data: [
+        {
+          deviceId,
+          customerId: customerA,
+          siteId: 'site-a',
+          bucketStart: new Date('2026-08-27T08:00:00Z'),
+          sampleCount: 1,
+          metrics: {},
+        },
+        {
+          deviceId,
+          customerId: customerB,
+          siteId: 'site-b',
+          bucketStart: new Date('2026-08-27T18:00:00Z'),
+          sampleCount: 1,
+          metrics: {},
+        },
+      ],
+    });
+    const worker = createAggregationWorker({ client: prisma });
+    await Promise.all([worker.recomputeWindow(WINDOW), worker.recomputeWindow(WINDOW)]);
+    const rows = await prisma.telemetryDaily.findMany({ where: { deviceId }, orderBy: { customerId: 'asc' } });
+    assert.equal(rows.length, 2);
+    assert.deepEqual(
+      rows.map((row) => [row.customerId, row.siteId]),
+      [
+        [customerA, 'site-a'],
+        [customerB, 'site-b'],
+      ],
+    );
   });
 });
