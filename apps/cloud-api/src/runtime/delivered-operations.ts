@@ -9,7 +9,7 @@ export interface DeliveredOperation {
 }
 
 /**
- * BE-ONB-01～BE-SYNC-02 已交付 REST operation 的生产路由事实表。
+ * 已交付 REST operation 的生产路由事实表。
  * 生产适配器直接使用本表匹配请求，严格 Gate 再与 OpenAPI 双向比较。
  */
 export const DELIVERED_OPERATIONS = [
@@ -67,6 +67,24 @@ export const DELIVERED_OPERATIONS = [
     operationId: 'createCertificateRotationRequest',
     method: 'POST',
     path: '/api/v1/admin/devices/{deviceId}/certificate-rotation-requests',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'createReplayJob',
+    method: 'POST',
+    path: '/api/v1/admin/replay/jobs',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'listReplayJobs',
+    method: 'GET',
+    path: '/api/v1/admin/replay/jobs',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'getReplayJob',
+    method: 'GET',
+    path: '/api/v1/admin/replay/jobs/{jobId}',
     runtime: 'admin-api',
   },
 ] as const satisfies readonly DeliveredOperation[];

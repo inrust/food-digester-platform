@@ -2,7 +2,7 @@
  * BE-ARC-02 S3 Archive ObjectStore 适配器（Archive Worker 的写入端口实现）。
  * 仅 PutObject；生命周期/Object Lock/长期归档运维归边界外。
  */
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 export interface S3ArchiveObjectStoreConfig {
   /** Archive Bucket 名（IAC-01：fdp-{env}-archive-{accountId}）。 */
@@ -14,6 +14,11 @@ export interface S3ArchiveObjectStoreConfig {
 
 export interface ArchiveObjectStorePort {
   putObject(params: { key: string; body: Uint8Array; contentType: string }): Promise<void>;
+}
+
+export interface ArchiveObjectReaderPort {
+  listKeys(prefix: string): Promise<string[]>;
+  getObject(key: string): Promise<Uint8Array>;
 }
 
 export function createS3ArchiveObjectStore(config: S3ArchiveObjectStoreConfig): ArchiveObjectStorePort {
@@ -28,6 +33,34 @@ export function createS3ArchiveObjectStore(config: S3ArchiveObjectStoreConfig): 
           ContentType: contentType,
         }),
       );
+    },
+  };
+}
+
+/** BE-RPL-01：展开 S3 分页并读取归档对象字节。 */
+export function createS3ArchiveObjectReader(config: S3ArchiveObjectStoreConfig): ArchiveObjectReaderPort {
+  const client = config.client ?? new S3Client(config.region ? { region: config.region } : {});
+  return {
+    async listKeys(prefix) {
+      const keys: string[] = [];
+      let continuationToken: string | undefined;
+      do {
+        const page = await client.send(
+          new ListObjectsV2Command({
+            Bucket: config.bucket,
+            Prefix: prefix,
+            ...(continuationToken ? { ContinuationToken: continuationToken } : {}),
+          }),
+        );
+        for (const item of page.Contents ?? []) if (item.Key) keys.push(item.Key);
+        continuationToken = page.IsTruncated ? page.NextContinuationToken : undefined;
+      } while (continuationToken);
+      return keys.sort();
+    },
+    async getObject(key) {
+      const output = await client.send(new GetObjectCommand({ Bucket: config.bucket, Key: key }));
+      if (!output.Body) throw new Error(`S3 archive object body missing: ${key}`);
+      return output.Body.transformToByteArray();
     },
   };
 }

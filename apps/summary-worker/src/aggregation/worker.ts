@@ -1,5 +1,5 @@
 /**
- * BE-ESG-01 小时/日聚合 Worker：确定性重算（给定相同输入必产生相同输出，upsert 幂等）。
+ * BE-ESG-01 小时/日聚合 Worker（summary-worker 生产实现）：确定性重算。
  *
  * - telemetry_hourly：BE-IOT-05 已在 Ingestion 路径增量维护 metrics/sampleCount；
  *   本 Worker 在重算窗口内补齐 completenessPct（完整率）：

@@ -52,7 +52,16 @@ describe('资源命名（环境前缀）', () => {
   });
 
   test('SQS 队列名带环境前缀', () => {
-    for (const suffix of ['ingress', 'ingress-dlq', 'archive', 'archive-dlq', 'quarantine', 'iot-rule-error']) {
+    for (const suffix of [
+      'ingress',
+      'ingress-dlq',
+      'archive',
+      'archive-dlq',
+      'replay',
+      'replay-dlq',
+      'quarantine',
+      'iot-rule-error',
+    ]) {
       template.hasResourceProperties('AWS::SQS::Queue', { QueueName: `fdp-test-${suffix}` });
     }
   });
@@ -80,6 +89,8 @@ describe('资源命名（环境前缀）', () => {
       'archive',
       'outbox-publisher',
       'summary',
+      'replay-trigger-publisher',
+      'replay',
       'cert-package-sweeper',
       'onboarding-deadline',
       'retirement-timeout',
@@ -238,13 +249,13 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('11 个 Lambda 使用各自独立执行角色', () => {
+  test('13 个 Lambda 使用各自独立执行角色', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
       String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),
     );
-    assert.equal(fns.length, 11);
+    assert.equal(fns.length, 13);
     const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
-    assert.equal(roles.size, 11);
+    assert.equal(roles.size, 13);
   });
 
   test('P0 生产组合根与既有 API/sweeper 使用真实资产包而非内联 501 占位代码', () => {
@@ -252,6 +263,10 @@ describe('验收：IAM 最小权限', () => {
     for (const name of [
       'fdp-test-ingestion',
       'fdp-test-outbox-publisher',
+      'fdp-test-archive',
+      'fdp-test-summary',
+      'fdp-test-replay-trigger-publisher',
+      'fdp-test-replay',
       'fdp-test-onboarding-deadline',
       'fdp-test-retirement-timeout',
       'fdp-test-onboarding-api-handler',
@@ -408,14 +423,14 @@ describe('验收：数据库凭据与消息管线', () => {
     assert.equal(dbs[0].Properties.MasterUsername, 'fdp_admin');
   });
 
-  test('Ingress/Archive 主队列配置 DLQ，全部队列 KMS 加密', () => {
+  test('Ingress/Archive/Replay 主队列配置 DLQ，全部队列 KMS 加密', () => {
     const queues = Object.values(resourcesOfType(template, 'AWS::SQS::Queue'));
-    assert.equal(queues.length, 6);
+    assert.equal(queues.length, 8);
     for (const queue of queues) {
       assert.isDefined(queue.Properties.KmsMasterKeyId, `队列 ${queue.Properties.QueueName} 未配置 KMS 加密`);
     }
     const withDlq = queues.filter((q) => q.Properties.RedrivePolicy !== undefined).map((q) => q.Properties.QueueName);
-    assert.deepEqual(withDlq.sort(), ['fdp-test-archive', 'fdp-test-ingress']);
+    assert.deepEqual(withDlq.sort(), ['fdp-test-archive', 'fdp-test-ingress', 'fdp-test-replay']);
   });
 
   test('8 个 IoT Rule 按上行 Topic 路由 Ingress，Error Action 写独立错误队列', () => {
@@ -438,13 +453,17 @@ describe('验收：数据库凭据与消息管线', () => {
     assert.notDeepEqual([...ingressQueueUrls], [...errorQueueUrls], '错误队列必须独立于业务队列');
   });
 
-  test('消费 Lambda 与队列事件源绑定，Outbox/Summary/证书包清理有调度', () => {
+  test('消费 Lambda 与队列事件源绑定，Outbox/Summary/Replay/证书包清理有调度', () => {
     const esms = Object.values(resourcesOfType(template, 'AWS::Lambda::EventSourceMapping'));
-    assert.equal(esms.length, 2);
+    assert.equal(esms.length, 3);
     for (const esm of esms) {
       assert.equal(esm.Properties.FunctionResponseTypes?.[0], 'ReportBatchItemFailures');
     }
-    template.resourceCountIs('AWS::Events::Rule', 6);
+    template.resourceCountIs('AWS::Events::Rule', 7);
+    template.hasResourceProperties('AWS::Events::Rule', {
+      Name: 'fdp-test-replay-trigger-publisher',
+      ScheduleExpression: 'rate(1 minute)',
+    });
     template.hasResourceProperties('AWS::Events::Rule', {
       Name: 'fdp-test-cert-package-sweeper',
       ScheduleExpression: 'rate(5 minutes)',
@@ -552,6 +571,7 @@ describe('Cognito 与应用配置输出', () => {
       'DbSecretArn',
       'IngressQueueUrl',
       'ArchiveQueueUrl',
+      'ReplayQueueUrl',
       'QuarantineQueueUrl',
       'RuleErrorQueueUrl',
       'RawBucketName',

@@ -11,6 +11,7 @@ const OPENAPI_FILES = [
   'device-deactivate-api.json',
   'admin-onboarding-api.json',
   'admin-certificate-rotation-api.json',
+  'admin-replay-api.json',
 ];
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
 

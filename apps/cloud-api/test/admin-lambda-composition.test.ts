@@ -5,6 +5,8 @@ import type { AdminHttpRequest } from '../src/admin/onboarding/handler.js';
 import { createAdminLambdaHandler, createAdminRoute } from '../src/runtime/admin-lambda.js';
 
 describe('AUTH-01 管理 API Lambda 组合根', () => {
+  const replay = () => ({ create: vi.fn(), list: vi.fn(), detail: vi.fn() });
+
   test('真实路由表把方法和路径映射到受保护业务 Handler', async () => {
     const approve = vi.fn(async (_request: AdminHttpRequest) => ({ status: 200, body: {} }));
     const route = createAdminRoute(
@@ -17,6 +19,7 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
           reject: vi.fn(),
         },
         certificateRotation: vi.fn(),
+        replay: replay(),
       },
     );
     await route({ headers: {}, requestId: 'trace-1' });
@@ -29,6 +32,7 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
       {
         onboarding: { list: vi.fn(), detail: vi.fn(), approve: vi.fn(), reject: vi.fn() },
         certificateRotation: vi.fn(),
+        replay: replay(),
       },
     );
     await expect(route({ headers: {}, requestId: 'trace-2' })).resolves.toMatchObject({ status: 404 });
@@ -44,12 +48,49 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
       {
         onboarding: { list: vi.fn(), detail: vi.fn(), approve: vi.fn(), reject: vi.fn() },
         certificateRotation,
+        replay: replay(),
       },
     );
     const response = await route({ headers: {}, requestId: 'trace-cert' });
 
     assert.equal(response.status, 201);
     assert.equal(certificateRotation.mock.calls[0]?.[0].params?.deviceId, 'device/encoded');
+  });
+
+  test('Replay 创建/列表/详情均路由到真实 Handler，详情注入解码后的 jobId', async () => {
+    const create = vi.fn(async (_request: AdminHttpRequest) => ({ status: 201, body: {} }));
+    const list = vi.fn(async (_request: AdminHttpRequest) => ({ status: 200, body: {} }));
+    const detail = vi.fn(async (_request: AdminHttpRequest) => ({ status: 200, body: {} }));
+    const routes = {
+      onboarding: { list: vi.fn(), detail: vi.fn(), approve: vi.fn(), reject: vi.fn() },
+      certificateRotation: vi.fn(),
+      replay: { create, list, detail },
+    };
+    await createAdminRoute(
+      { httpMethod: 'POST', path: '/api/v1/admin/replay/jobs' },
+      routes,
+    )({
+      headers: {},
+      requestId: 'trace-replay-create',
+    });
+    await createAdminRoute(
+      { httpMethod: 'GET', path: '/api/v1/admin/replay/jobs' },
+      routes,
+    )({
+      headers: {},
+      requestId: 'trace-replay-list',
+    });
+    await createAdminRoute(
+      { httpMethod: 'GET', path: '/api/v1/admin/replay/jobs/job%2F1' },
+      routes,
+    )({
+      headers: {},
+      requestId: 'trace-replay-detail',
+    });
+
+    assert.equal(create.mock.calls.length, 1);
+    assert.equal(list.mock.calls.length, 1);
+    assert.equal(detail.mock.calls[0]?.[0].params?.jobId, 'job/1');
   });
 
   test('只把重新验签后的 claims 转换为可信 ActorContext', async () => {

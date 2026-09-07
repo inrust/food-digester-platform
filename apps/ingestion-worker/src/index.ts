@@ -36,4 +36,3 @@ export * from './media/handler.js';
 export * from './outbox/index.js';
 export * from './archive/index.js';
 export * from './replay/index.js';
-export * from './aggregation/index.js';

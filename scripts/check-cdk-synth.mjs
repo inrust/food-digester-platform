@@ -6,7 +6,11 @@ import { readdirSync, readFileSync } from 'node:fs';
 
 export const DELIVERED_LAMBDA_LOGICAL_ID_PREFIXES = [
   'IngestionFn',
+  'ArchiveFn',
   'OutboxPublisherFn',
+  'SummaryFn',
+  'ReplayTriggerPublisherFn',
+  'ReplayFn',
   'CertPackageSweeperFn',
   'OnboardingDeadlineFn',
   'RetirementTimeoutFn',

@@ -65,6 +65,13 @@ const ONBOARDING_PROVISIONING_ENTRY = resolve(
 const CERT_SWEEPER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/certificate-package-sweeper-entry.ts');
 const INGESTION_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/ingestion-entry.ts');
 const OUTBOX_PUBLISHER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/outbox-publisher-entry.ts');
+const ARCHIVE_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/archive-entry.ts');
+const SUMMARY_ENTRY = resolve(WORKSPACE_ROOT, 'apps/summary-worker/src/runtime/summary-entry.ts');
+const REPLAY_TRIGGER_PUBLISHER_ENTRY = resolve(
+  WORKSPACE_ROOT,
+  'apps/ingestion-worker/src/runtime/replay-trigger-publisher-entry.ts',
+);
+const REPLAY_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/replay-entry.ts');
 const ONBOARDING_DEADLINE_ENTRY = resolve(
   WORKSPACE_ROOT,
   'apps/ingestion-worker/src/runtime/onboarding-deadline-entry.ts',
@@ -76,6 +83,8 @@ interface MessagingResources {
   readonly ingressDlq: sqs.Queue;
   readonly archive: sqs.Queue;
   readonly archiveDlq: sqs.Queue;
+  readonly replay: sqs.Queue;
+  readonly replayDlq: sqs.Queue;
   readonly quarantine: sqs.Queue;
   readonly ruleError: sqs.Queue;
 }
@@ -102,6 +111,8 @@ interface ComputeResources {
   readonly archive: lambda.Function;
   readonly outboxPublisher: lambda.Function;
   readonly summary: lambda.Function;
+  readonly replayTriggerPublisher: lambda.Function;
+  readonly replay: lambda.Function;
   readonly certPackageSweeper: lambda.Function;
   readonly onboardingDeadline: lambda.Function;
   readonly retirementTimeout: lambda.Function;
@@ -290,6 +301,7 @@ export class AppDependenciesStack extends Stack {
 
     const ingressDlq = mkDlq('IngressDlq', 'ingress-dlq');
     const archiveDlq = mkDlq('ArchiveDlq', 'archive-dlq');
+    const replayDlq = mkDlq('ReplayDlq', 'replay-dlq');
 
     // visibilityTimeout = 消费 Lambda 超时（60s/300s）的 6 倍
     const ingress = mkQueue('IngressQueue', 'ingress', {
@@ -300,13 +312,17 @@ export class AppDependenciesStack extends Stack {
       visibilityTimeout: Duration.seconds(1800),
       deadLetterQueue: { queue: archiveDlq, maxReceiveCount: 5 },
     });
+    const replay = mkQueue('ReplayQueue', 'replay', {
+      visibilityTimeout: Duration.seconds(5_400),
+      deadLetterQueue: { queue: replayDlq, maxReceiveCount: 5 },
+    });
 
     // Quarantine：不可重试的 Schema/契约错误隔离（BE-IOT-02），终态队列，无下游 DLQ
     const quarantine = mkQueue('QuarantineQueue', 'quarantine', { retentionPeriod: Duration.days(14) });
     // IoT Rule 错误动作目标（规则引擎投递失败），终态队列
     const ruleError = mkQueue('IotRuleErrorQueue', 'iot-rule-error', { retentionPeriod: Duration.days(14) });
 
-    return { ingress, ingressDlq, archive, archiveDlq, quarantine, ruleError };
+    return { ingress, ingressDlq, archive, archiveDlq, replay, replayDlq, quarantine, ruleError };
   }
 
   // ---------- IoT Rule：8 个上行 Topic → Ingress SQS ----------
@@ -554,6 +570,7 @@ export class AppDependenciesStack extends Stack {
     const archive = mkFunction('ArchiveFn', 'archive', {
       timeout: Duration.seconds(300),
       environment: { RAW_BUCKET_NAME: storage.raw.bucketName },
+      entry: ARCHIVE_ENTRY,
     });
     archive.addEventSource(
       new lambdaEventSources.SqsEventSource(messaging.archive, {
@@ -598,7 +615,8 @@ export class AppDependenciesStack extends Stack {
     // Summary Worker：小时/日聚合（BE-ESG-01）
     const summary = mkFunction('SummaryFn', 'summary', {
       timeout: Duration.seconds(300),
-      environment: { DB_SECRET_ARN: dbSecret },
+      environment: { DB_SECRET_ARN: dbSecret, SUMMARY_LOOKBACK_HOURS: '48' },
+      entry: SUMMARY_ENTRY,
     });
     dbSecretGrant(summary);
     new events.Rule(this, 'SummarySchedule', {
@@ -606,6 +624,42 @@ export class AppDependenciesStack extends Stack {
       schedule: events.Schedule.rate(Duration.hours(1)),
       targets: [new eventsTargets.LambdaFunction(summary)],
     });
+
+    // Replay：创建事务 Outbox → 专用触发队列 → S3 Raw 读取并重新投入 Ingress。
+    const replayTriggerPublisher = mkFunction('ReplayTriggerPublisherFn', 'replay-trigger-publisher', {
+      timeout: Duration.seconds(60),
+      environment: { DB_SECRET_ARN: dbSecret, REPLAY_QUEUE_URL: messaging.replay.queueUrl },
+      entry: REPLAY_TRIGGER_PUBLISHER_ENTRY,
+    });
+    dbSecretGrant(replayTriggerPublisher);
+    messaging.replay.grantSendMessages(replayTriggerPublisher);
+    new events.Rule(this, 'ReplayTriggerPublisherSchedule', {
+      ruleName: this.naming.name('replay-trigger-publisher'),
+      schedule: events.Schedule.rate(Duration.minutes(1)),
+      targets: [new eventsTargets.LambdaFunction(replayTriggerPublisher)],
+    });
+
+    const replay = mkFunction('ReplayFn', 'replay', {
+      timeout: Duration.seconds(900),
+      memorySize: 512,
+      environment: {
+        DB_SECRET_ARN: dbSecret,
+        RAW_BUCKET_NAME: storage.raw.bucketName,
+        INGRESS_QUEUE_URL: messaging.ingress.queueUrl,
+        FDP_AWS_ACCOUNT_ID: Aws.ACCOUNT_ID,
+        AWS_PARTITION: Aws.PARTITION,
+      },
+      entry: REPLAY_ENTRY,
+    });
+    replay.addEventSource(
+      new lambdaEventSources.SqsEventSource(messaging.replay, {
+        batchSize: 1,
+        reportBatchItemFailures: true,
+      }),
+    );
+    dbSecretGrant(replay);
+    storage.raw.grantRead(replay);
+    messaging.ingress.grantSendMessages(replay);
 
     // 管理 API、Device API、Onboarding API、Provisioning Worker 与证书恢复使用确定性的独立最小权限角色。
     const apiRole = new iam.Role(this, 'ApiFnServiceRole', {
@@ -884,6 +938,8 @@ export class AppDependenciesStack extends Stack {
       archive,
       outboxPublisher,
       summary,
+      replayTriggerPublisher,
+      replay,
       certPackageSweeper,
       onboardingDeadline,
       retirementTimeout,
@@ -1005,6 +1061,7 @@ export class AppDependenciesStack extends Stack {
     output('DbEndpointAddress', data.db.instanceEndpoint.hostname, 'RDS 连接地址');
     output('IngressQueueUrl', messaging.ingress.queueUrl, 'Ingress SQS');
     output('ArchiveQueueUrl', messaging.archive.queueUrl, 'Archive SQS');
+    output('ReplayQueueUrl', messaging.replay.queueUrl, 'Replay job SQS');
     output('QuarantineQueueUrl', messaging.quarantine.queueUrl, 'Quarantine SQS');
     output('RuleErrorQueueUrl', messaging.ruleError.queueUrl, 'IoT Rule Error SQS');
     output('RawBucketName', storage.raw.bucketName, 'S3 Raw 归档');

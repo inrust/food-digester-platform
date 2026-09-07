@@ -3,7 +3,7 @@
  *
  * 校验：customerId 必须存在（404）；deviceId 可选但须属于该 Customer（跨 Customer 拒绝 400）；
  * from/to 必填且 from<=to；topicType 限可归档上行类型；seqFrom<=seqTo。
- * 创建与 DOM-03 审计（replay.job.create）同一事务；执行由 BE-RPL-01 Replay Worker 异步完成。
+ * 创建、触发 Outbox 与 DOM-03 审计（replay.job.create）同一事务；执行由 BE-RPL-01 Replay Worker 异步完成。
  */
 import type { DbClient } from '@fdp/database';
 import { recordAudit, withTransaction } from '@fdp/database';
@@ -127,6 +127,17 @@ export async function createReplayJob(
     };
     const job = await jobs.create({
       data: { requestedBy: actor.actorId, scope: scope as unknown as Record<string, unknown>, status: 'PENDING' },
+    });
+    const outbox = (tx as unknown as Record<string, unknown>).outboxEvent as {
+      create(args: { data: Record<string, unknown> }): Promise<unknown>;
+    };
+    await outbox.create({
+      data: {
+        eventType: 'REPLAY_JOB_REQUESTED',
+        aggregateType: 'replayJob',
+        aggregateId: job.id,
+        payload: { jobId: job.id },
+      },
     });
     await recordAudit(tx, {
       objectType: 'replayJob',

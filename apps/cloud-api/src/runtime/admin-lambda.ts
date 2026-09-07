@@ -8,6 +8,7 @@ import { AuthError, createCognitoAuthenticator } from '@fdp/auth';
 import type { CognitoAuthenticatorConfig } from '@fdp/auth';
 import type { AdminHttpRequest, AdminHttpResponse } from '../admin/onboarding/handler.js';
 import type { AdminOnboardingHandlers } from '../admin/onboarding/handler.js';
+import type { AdminReplayHandlers } from '../admin/replay/handler.js';
 import { matchDeliveredOperation } from './delivered-operations.js';
 
 export interface ApiGatewayAdminEvent {
@@ -42,6 +43,7 @@ export type AdminRouteResolver = (event: ApiGatewayAdminEvent) => AdminRoute;
 export interface AdminOnboardingRouteSet {
   readonly onboarding: AdminOnboardingHandlers;
   readonly certificateRotation: AdminRoute;
+  readonly replay: AdminReplayHandlers;
 }
 
 const header = (headers: Readonly<Record<string, string | undefined>>, wanted: string): string | undefined => {
@@ -81,6 +83,17 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
           ...(request.params ?? {}),
           deviceId: decodeURIComponent(matched.params.deviceId as string),
         },
+      });
+    }
+    if (matched?.operation.operationId === 'createReplayJob' || matched?.operation.operationId === 'listReplayJobs') {
+      return matched.operation.operationId === 'createReplayJob'
+        ? routes.replay.create(request)
+        : routes.replay.list(request);
+    }
+    if (matched?.operation.operationId === 'getReplayJob') {
+      return routes.replay.detail({
+        ...request,
+        params: { ...(request.params ?? {}), jobId: decodeURIComponent(matched.params.jobId as string) },
       });
     }
     return {

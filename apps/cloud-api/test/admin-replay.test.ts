@@ -2,7 +2,7 @@
  * BE-RPL-01 Admin Replay API 验收（PGlite 真实 PostgreSQL）。
  *
  * 验收基准覆盖：
- * - 创建 replay job（scope 校验 + 创建审计）；
+ * - 创建 replay job（scope 校验 + 事务 Outbox + 创建审计）；
  * - 仅 PlatformOperator/SuperAdmin（CustomerAdmin/Auditor 403）；
  * - 跨 Customer 请求被拒绝（deviceId 不属于 customerId → 400；不存在 Customer → 404）；
  * - 列表键集游标分页 + customerId/status 过滤；详情含 resultSummary。
@@ -102,6 +102,11 @@ describe('POST /admin/replay/jobs（创建）', () => {
     assert.equal(audits.length, 1, '每次创建写审计');
     assert.equal(audits[0]?.result, 'SUCCESS');
     assert.equal(audits[0]?.actorId, 'op-1');
+    const triggers = await prisma.outboxEvent.findMany({
+      where: { aggregateId: data.jobId as string, eventType: 'REPLAY_JOB_REQUESTED' },
+    });
+    assert.equal(triggers.length, 1, '创建事务必须同时落 Replay 触发 Outbox');
+    assert.deepEqual(triggers[0]?.payload, { jobId: data.jobId });
   });
 
   test('CustomerAdmin/Auditor/未认证被拒绝（仅 PlatformOperator/SuperAdmin）', async () => {

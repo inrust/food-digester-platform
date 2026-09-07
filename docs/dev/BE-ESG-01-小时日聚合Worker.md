@@ -13,7 +13,7 @@
 
 | 文件 | 说明 |
 |---|---|
-| `apps/ingestion-worker/src/aggregation/worker.ts` | `createAggregationWorker({client}).recomputeWindow({from,to})` |
+| `apps/summary-worker/src/aggregation/worker.ts` | `createAggregationWorker({client}).recomputeWindow({from,to})` |
 | `apps/ingestion-worker/src/aggregation/index.ts` | 导出入口 |
 | `apps/ingestion-worker/src/index.ts` | 汇出 aggregation 模块 |
 | `apps/ingestion-worker/test/aggregation-worker.test.ts` | Fixture 验收测试（PGlite 真实 PostgreSQL） |

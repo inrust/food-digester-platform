@@ -8,3 +8,6 @@ export type {
   ReplayScopeInput,
   ReplayWorkerDeps,
 } from './worker.js';
+export { createReplayIngressSink } from './ingress-sink.js';
+export { createReplayTriggerPublisher, REPLAY_JOB_REQUESTED } from './trigger-publisher.js';
+export type { ReplayTriggerPublishResult } from './trigger-publisher.js';

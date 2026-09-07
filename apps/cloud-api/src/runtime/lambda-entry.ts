@@ -2,6 +2,7 @@ import { resolveDatabaseUrl } from '@fdp/aws-clients';
 import { createPrismaClient } from '@fdp/database';
 import { createAdminOnboardingHandlers } from '../admin/onboarding/handler.js';
 import { createAdminCertificateRotationHandler } from '../admin/certificate-rotation/handler.js';
+import { createAdminReplayHandlers } from '../admin/replay/handler.js';
 import {
   createAdminLambdaRouter,
   createAdminRoute,
@@ -24,6 +25,7 @@ async function initialize() {
   const routes = {
     onboarding: createAdminOnboardingHandlers({ client }),
     certificateRotation: createAdminCertificateRotationHandler({ client }),
+    replay: createAdminReplayHandlers({ client }),
   };
   return createAdminLambdaRouter(
     { region, userPoolId: required('USER_POOL_ID'), clientId: required('USER_POOL_CLIENT_ID') },

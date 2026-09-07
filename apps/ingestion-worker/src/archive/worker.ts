@@ -56,6 +56,8 @@ export interface ArchiveBatchResult {
   readonly skipped: Record<string, number>;
   /** 批内 eventId 重复被去重的条数。 */
   readonly deduplicated: number;
+  /** 契约损坏或伪装来源：生产 SQS Handler 必须重试并最终进入 Archive DLQ。 */
+  readonly rejectedEventIds: string[];
 }
 
 interface ArchiveRecord {
@@ -183,6 +185,7 @@ export function createArchiveWorker(deps: ArchiveWorkerDeps): {
       const seen = new Set<string>();
       const skipped: Record<string, number> = {};
       let deduplicated = 0;
+      const rejectedEventIds: string[] = [];
 
       for (const message of messages) {
         // 批内去重（重复投递）
@@ -197,6 +200,9 @@ export function createArchiveWorker(deps: ArchiveWorkerDeps): {
         if (!accepted || !parsed) {
           const key = parsed?.sourceType ?? 'unknown';
           skipped[key] = (skipped[key] ?? 0) + 1;
+          if (!parsed || !(NEVER_ARCHIVE_TOPIC_TYPES as readonly string[]).includes(parsed.sourceType)) {
+            rejectedEventIds.push(message.eventId);
+          }
           continue;
         }
         const window = hourWindowOf(parsed.record.occurredAt);
@@ -289,7 +295,7 @@ export function createArchiveWorker(deps: ArchiveWorkerDeps): {
         });
       }
 
-      return { objects, skipped, deduplicated };
+      return { objects, skipped, deduplicated, rejectedEventIds };
     },
   };
 }
