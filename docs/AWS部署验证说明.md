@@ -217,6 +217,14 @@ IoT Rule → Ingress SQS → Ingestion Lambda → RDS
 
 最终 Device 应进入 `Onboarded`。
 
+BE-IOT-01 与 QA-03 的发布证据必须按 [BE-IOT AWS 数据链路证据采集说明](audit/evidence/BE-IOT-AWS数据链路证据采集说明.md)覆盖八类 Topic、未知 Topic、Rule Error Action、partial failure、Quarantine、receipt、RDS/outbox、Archive SQS/S3 原文一致性，并执行：
+
+```bash
+pnpm check:aws-iot-evidence
+```
+
+缺少结构化目标环境回执时该命令必须失败；不得用本地 `pnpm verify` 或 CDK synth 替代。
+
 ### 权限负向验证
 
 仓库已有真实 AWS 授权矩阵脚本，会创建两台临时 Thing、测试自身/跨设备权限并清理资源：

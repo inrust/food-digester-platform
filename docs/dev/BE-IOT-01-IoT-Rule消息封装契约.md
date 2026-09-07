@@ -1,6 +1,6 @@
 # BE-IOT-01 IoT Rule 消息封装契约
 
-契约：[contracts/iot/ingress-envelope.schema.json](../contracts/iot/ingress-envelope.schema.json) + [ingress-envelope.fixtures.json](../contracts/iot/ingress-envelope.fixtures.json)；Rule SQL/Action：[app-dependencies-stack.ts](../infra/src/stacks/app-dependencies-stack.ts)（`createIotIngestionRules`）；测试：[ingress-envelope.test.mjs](../contracts/iot/ingress-envelope.test.mjs)、[iot-rule-envelope.test.ts](../infra/test/iot-rule-envelope.test.ts)。
+契约：[contracts/iot/ingress-envelope.schema.json](../../contracts/iot/ingress-envelope.schema.json) + [ingress-envelope.fixtures.json](../../contracts/iot/ingress-envelope.fixtures.json)；Rule SQL/Action：[app-dependencies-stack.ts](../../infra/src/stacks/app-dependencies-stack.ts)（`createIotIngestionRules`）；测试：[ingress-envelope.test.mjs](../../contracts/iot/ingress-envelope.test.mjs)、[iot-rule-envelope.test.ts](../../infra/test/iot-rule-envelope.test.ts)。
 
 ## 1. 范围与事实源
 
@@ -28,7 +28,9 @@
 | 契约与实现奇偶 | Schema required/enum ↔ SQL 注入字段 ↔ UPLINK_TOPIC_TYPES 三方一致断言 | ✅ |
 | 非法 Envelope 稳定拒绝 | 5 类非法 Fixture（缺字段/未知类型/空 deviceId/负时间戳）路径正确 | ✅ |
 
-`pnpm --filter @fdp/contracts test` 149/149 通过；`pnpm vitest run infra/test` 30/30 通过；全仓 `pnpm verify` 退出 0（2026-08-27）。
+当前证据命令：`pnpm --filter @fdp/contracts test`、`pnpm vitest run infra/test` 与 `pnpm verify`。精确结果及 AWS 验收边界见 [BE-IOT-01 至 BE-IOT-09 全面复盘检查报告](../audit/BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-07.md)。
+
+目标 AWS 发布验收必须另行执行 `pnpm check:aws-iot-evidence`；回执采集范围和禁止写入的敏感材料见 [BE-IOT AWS 数据链路证据采集说明](../audit/evidence/BE-IOT-AWS数据链路证据采集说明.md)。缺少真实回执时，该 Gate 失败且本任务保持 CONDITIONAL。
 
 ## 4. 对接说明
 

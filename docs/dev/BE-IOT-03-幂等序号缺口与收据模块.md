@@ -19,9 +19,9 @@
 
 | 文件 | 职责 |
 | --- | --- |
-| [receipt.ts](../apps/ingestion-worker/src/ingest/receipt.ts) | `processWithReceipt`：按 deviceId+topicType 获取 PostgreSQL 事务级 advisory lock，随后在单事务内插入 receipt(result=PROCESSED) → business(tx) → outbox(tx) → 缺口检测；P2002 唯一冲突 → 回读胜出记录：同 Hash → `DUPLICATE_SKIPPED`（不再执行业务写入）；不同 Hash → 抛 `QUARANTINE/PAYLOAD_CONFLICT` 安全异常（原 receipt 不覆盖）。`hashPayload` 是服务端对规范化后完整 Payload 的幂等比较摘要；它与 DEC-013 设备提供的 `audit.hash` 职责不同 |
-| [gap.ts](../apps/ingestion-worker/src/ingest/gap.ts) | `recordGapForNewReceipt`（receipt 同事务）：检查相邻前序与后继 receipt，追加未覆盖缺口；迟到消息使区间被 receipt 全覆盖 → 置 `resolvedAt`。同流 advisory lock 保证并发首处理可见确定顺序；`gapStatus` 查询未解除缺口（missingFromSeq/missingToSeq） |
-| [errors.ts](../apps/ingestion-worker/src/ingest/errors.ts) | `IngestErrorType` 新增 `PAYLOAD_CONFLICT`（经 BE-IOT-02 Handler 路由进 Quarantine 实现冲突隔离） |
+| [receipt.ts](../../apps/ingestion-worker/src/ingest/receipt.ts) | `processWithReceipt`：按 deviceId+topicType 获取 PostgreSQL 事务级 advisory lock，随后在单事务内插入 receipt(result=PROCESSED) → business(tx) → outbox(tx) → 缺口检测；P2002 唯一冲突 → 回读胜出记录：同 Hash → `DUPLICATE_SKIPPED`（不再执行业务写入）；不同 Hash → 抛 `QUARANTINE/PAYLOAD_CONFLICT` 安全异常（原 receipt 不覆盖）。`hashPayload` 是服务端对规范化后完整 Payload 的幂等比较摘要；它与 DEC-013 设备提供的 `audit.hash` 职责不同 |
+| [gap.ts](../../apps/ingestion-worker/src/ingest/gap.ts) | `recordGapForNewReceipt`（receipt 同事务）：检查相邻前序与后继 receipt，追加未覆盖缺口；迟到消息使区间被 receipt 全覆盖 → 置 `resolvedAt`。同流 advisory lock 保证并发首处理可见确定顺序；`gapStatus` 查询未解除缺口（missingFromSeq/missingToSeq） |
+| [errors.ts](../../apps/ingestion-worker/src/ingest/errors.ts) | `IngestErrorType` 新增 `PAYLOAD_CONFLICT`（经 BE-IOT-02 Handler 路由进 Quarantine 实现冲突隔离） |
 
 导出：`apps/ingestion-worker/src/ingest/index.ts` 并经 `src/index.ts` 汇出。
 
@@ -34,7 +34,7 @@
 
 ## 验收证据
 
-测试：[ingest-receipt.test.ts](../apps/ingestion-worker/test/ingest-receipt.test.ts)（PGlite 真实 PostgreSQL + 全量 migration），6 项：
+测试：[ingest-receipt.test.ts](../../apps/ingestion-worker/test/ingest-receipt.test.ts)（PGlite 真实 PostgreSQL + 全量 migration）：
 
 1. 首次处理：receipt + business + outbox 同事务落库，outcome=PROCESSED；
 2. 相同键相同 Hash 只处理一次：顺序重复 DUPLICATE_SKIPPED；8 并发重复恰好 1 条 receipt、business 仅 1 次、无重复业务记录；
@@ -44,12 +44,7 @@
 6. 5% 重复 + 2% 乱序模拟（200 条确定性 PRNG 流）：每个唯一 seq 恰好处理一次、200 条业务记录无重复、200 条 receipt、乱序缺口全部解除。
 7. 不同 seq 并发首处理：seq 1 与 seq 5 无论谁先获得锁，最终恰好记录缺口 `[2,4]`。
 
-命令与结果：
-
-```text
-pnpm vitest run apps/ingestion-worker   → Test Files 5 passed, Tests 21 passed
-pnpm verify                              → EXIT=0（lint/format/typecheck/test 44 文件 351 项/build/boundaries/schemas/migrations/secrets）
-```
+当前证据命令：`pnpm vitest run apps/ingestion-worker/test/ingest-receipt.test.ts` 与 `pnpm verify`。精确结果见 [BE-IOT-01 至 BE-IOT-09 全面复盘检查报告](../audit/BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-07.md)。
 
 ## 未决风险
 

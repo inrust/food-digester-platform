@@ -12,11 +12,11 @@
 
 | 文件 | 职责 |
 | --- | --- |
-| [repository.ts](../apps/ingestion-worker/src/heartbeat/repository.ts) | `applyLatestState`：条件更新 `lastHeartbeatAt < occurredAt`（或为 NULL）才覆盖 → 乱序旧消息不倒退；无记录时 create，并发首创建败方（P2002）按 stale 处理。返回 `created / updated / stale` |
-| [handler.ts](../apps/ingestion-worker/src/heartbeat/handler.ts) | `createHeartbeatHandler`：BE-IOT-03 receipt 幂等（键 `deviceId:heartbeat:seq`）→ 同事务业务写入（data → device_latest_state 全列映射）→ receipt 事务提交后触发扩展点 |
-| [index.ts](../apps/ingestion-worker/src/heartbeat/index.ts) | 导出 |
+| [repository.ts](../../apps/ingestion-worker/src/heartbeat/repository.ts) | `applyLatestState`：条件更新 `lastHeartbeatAt < occurredAt`（或为 NULL）才覆盖 → 乱序旧消息不倒退；无记录时 create，并发首创建败方（P2002）按 stale 处理。返回 `created / updated / stale` |
+| [handler.ts](../../apps/ingestion-worker/src/heartbeat/handler.ts) | `createHeartbeatHandler`：BE-IOT-03 receipt 幂等（键 `deviceId:heartbeat:seq`）→ 同事务业务写入（data → device_latest_state 全列映射）→ receipt 事务提交后触发扩展点 |
+| [index.ts](../../apps/ingestion-worker/src/heartbeat/index.ts) | 导出 |
 
-字段映射（[handler.ts](../apps/ingestion-worker/src/heartbeat/handler.ts) `buildStateWrite`）：connectivity 固定 ONLINE（收到心跳即在线；离线判定属定时任务边界外）、operationalStatus、machineRunning、machineMode、firmwareVersion、licenseStatus、licenseExpiryDate（`YYYY-MM-DD` → UTC Date）、networkType/networkStatus/signalStrength、cpu/memory/storageUsagePct、sensorStatus JSON（overall/temperature/humidity/weight/gas）、certificateStatus、tamperStatus、uptimeSeconds、customerId（台账值）、lastHeartbeatAt = meta.ts。
+字段映射（[handler.ts](../../apps/ingestion-worker/src/heartbeat/handler.ts) `buildStateWrite`）：connectivity 固定 ONLINE（收到心跳即在线；离线判定属定时任务边界外）、operationalStatus、machineRunning、machineMode、firmwareVersion、licenseStatus、licenseExpiryDate（`YYYY-MM-DD` → UTC Date）、networkType/networkStatus/signalStrength、cpu/memory/storageUsagePct、sensorStatus JSON（overall/temperature/humidity/weight/gas）、certificateStatus、tamperStatus、uptimeSeconds、customerId（台账值）、lastHeartbeatAt = meta.ts。
 
 ## 扩展点接线（技术对接要求）
 
@@ -26,7 +26,7 @@
 
 ## 验收证据
 
-测试：[heartbeat-handler.test.ts](../apps/ingestion-worker/test/heartbeat-handler.test.ts)（PGlite 真实 PostgreSQL），5 项：
+测试：[heartbeat-handler.test.ts](../../apps/ingestion-worker/test/heartbeat-handler.test.ts)（PGlite 真实 PostgreSQL）：
 
 1. 首次 Heartbeat 全字段落库（含 sensorStatus JSON、licenseExpiryDate 转换、Decimal 资源列）；
 2. 新消息覆盖旧状态；乱序旧 Heartbeat（seq 9 晚到）stateApplied=stale 不倒退；同 seq 同 Payload 重复 → DUPLICATE_SKIPPED；outbox 零事件（不进 Raw Archive，receipt 仅幂等台账）；
@@ -34,12 +34,7 @@
 4. 轮换窗口新证书首心跳确认（旧证 REVOKED + 新包销毁 + 请求 COMPLETED），后续心跳不再确认；
 5. 非 heartbeat 类型消息不处理（分发保护）。
 
-命令与结果：
-
-```text
-pnpm vitest run apps/ingestion-worker   → Test Files 6 passed, Tests 26 passed
-pnpm verify                              → EXIT=0（lint/format/typecheck/test 45 文件 356 项/build/boundaries/schemas/migrations/secrets）
-```
+当前证据命令：`pnpm vitest run apps/ingestion-worker/test/heartbeat-handler.test.ts` 与 `pnpm verify`。精确结果见 [BE-IOT-01 至 BE-IOT-09 全面复盘检查报告](../audit/BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-07.md)。
 
 ## 未决风险
 

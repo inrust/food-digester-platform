@@ -12,8 +12,8 @@
 
 | 文件 | 职责 |
 | --- | --- |
-| [repository.ts](../apps/ingestion-worker/src/telemetry/repository.ts) | `TELEMETRY_METRIC_KEYS`（13 项，键名与 Payload/聚合 JSON 一致）；`extractSamples`；`mergeHourlyAggregate`：telemetry_hourly 整点 UTC 窗口（unique(deviceId, bucketStart)）增量合并 metrics `{avg,min,max,count}` + sampleCount；同设备 telemetry 事务由 BE-IOT-03 advisory lock 串行化，读改写不丢增量 |
-| [handler.ts](../apps/ingestion-worker/src/telemetry/handler.ts) | `createTelemetryHandler`：BE-IOT-03 receipt 幂等（键 `deviceId:telemetry:seq`）→ 同事务 ① 使用 normalized Payload 做 hourly 增量合并 ② 恰好一个 ARCHIVE outbox（原始 rawBody/rawPayload + normalized payloadHash + 原始 audit.hash，DEC-002）→ S3 归档链路 |
+| [repository.ts](../../apps/ingestion-worker/src/telemetry/repository.ts) | `TELEMETRY_METRIC_KEYS`（13 项，键名与 Payload/聚合 JSON 一致）；`extractSamples`；`mergeHourlyAggregate`：telemetry_hourly 整点 UTC 窗口（unique(deviceId, bucketStart)）增量合并 metrics `{avg,min,max,count}` + sampleCount；同设备 telemetry 事务由 BE-IOT-03 advisory lock 串行化，读改写不丢增量 |
+| [handler.ts](../../apps/ingestion-worker/src/telemetry/handler.ts) | `createTelemetryHandler`：BE-IOT-03 receipt 幂等（键 `deviceId:telemetry:seq`）→ 同事务 ① 使用 normalized Payload 做 hourly 增量合并 ② 恰好一个 ARCHIVE outbox（原始 rawBody/rawPayload + normalized payloadHash + 原始 audit.hash，DEC-002）→ S3 归档链路 |
 
 ## 关键设计
 
@@ -26,7 +26,7 @@
 
 ## 验收证据
 
-测试：[telemetry-handler.test.ts](../apps/ingestion-worker/test/telemetry-handler.test.ts)（PGlite 真实 PostgreSQL + 真实 CT-03 Schema），5 项：
+测试：[telemetry-handler.test.ts](../../apps/ingestion-worker/test/telemetry-handler.test.ts)（PGlite 真实 PostgreSQL + 真实 CT-03 Schema）：
 
 1. 合法记录：hourly 聚合恰好一行（13 项指标 avg=min=max=v、count=1）+ 恰好一个 ARCHIVE 事件（载荷含原始 Payload/audit.hash/customerId）；consumableProjection 零写入；
 2. 增量摘要：同窗口两条合并（avg 15/min 10/max 20/count 2，sampleCount 2），跨窗口各自成行；
@@ -36,12 +36,7 @@
 6. 同设备同窗口并发 20 条：sampleCount=20，avg/min/max/count 精确为 10.5/1/20/20，归档事件 20 条，无丢增量。
 7. DEC-013 旧字段经 normalized 参与聚合，Raw Archive 仍保存原始字段和精确 rawBody，且原始 audit.hash 可复算。
 
-命令与结果：
-
-```text
-pnpm vitest run apps/ingestion-worker   → Test Files 7 passed, Tests 31 passed
-pnpm verify                              → EXIT=0（lint/format/typecheck/test 46 文件 361 项/build/boundaries/schemas/migrations/secrets）
-```
+当前证据命令：`pnpm vitest run apps/ingestion-worker/test/telemetry-handler.test.ts apps/ingestion-worker/test/archive-worker.test.ts` 与 `pnpm verify`。精确结果见 [BE-IOT-01 至 BE-IOT-09 全面复盘检查报告](../audit/BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-07.md)。
 
 ## 未决风险
 

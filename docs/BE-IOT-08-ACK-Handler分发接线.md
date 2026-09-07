@@ -1,13 +1,13 @@
 # BE-IOT-08 ACK Handler（分发接线）
 
-ACK 业务逻辑已在 BE-CMD-03 落地于 [signals/ack.ts](../apps/ingestion-worker/src/signals/ack.ts)（11 项单元验收）。本任务补齐**生产接线缺口**：校验管线输出的 `onValidated` 扩展点此前缺省 no-op，ACK（及全部上行信号）不会进入任何 Handler。
+ACK 业务逻辑已在 BE-CMD-03 落地于 [signals/ack.ts](../apps/ingestion-worker/src/signals/ack.ts)。本任务补齐**生产接线缺口**：校验管线输出的 `onValidated` 扩展点此前缺省 no-op，ACK（及全部上行信号）不会进入任何 Handler。
 
 ## 1. 范围与变更
 
 | 项 | 说明 |
 |---|---|
 | 任务 | BE-IOT-08（P1 / IoT 后端），依赖 BE-IOT-03（receipt 幂等/管线）、BE-CMD-03（classifyAck 状态机 + ACK Handler 实现） |
-| 新增 | [ingest/dispatcher.ts](../apps/ingestion-worker/src/ingest/dispatcher.ts)：`createBusinessDispatcher`——按 iotType 封闭路由表分发到 heartbeat/telemetry/report/alarm/event/tamper/ack 七个 Handler（均实现 `handled` 语义，首个 `handled=true` 胜出） |
+| 新增 | [ingest/dispatcher.ts](../apps/ingestion-worker/src/ingest/dispatcher.ts)：`createBusinessDispatcher`——按 iotType 封闭路由表分发到 heartbeat/telemetry/report/alarm/event/tamper/ack/media 八个 Handler（均实现 `handled` 语义，首个 `handled=true` 胜出） |
 | 接线 | `createIngestionHandler({ ..., onValidated: createBusinessDispatcher(deps) })`；[ingest/handler.ts](../apps/ingestion-worker/src/ingest/handler.ts) 扩展点注释更新；ingest/index.ts 导出 |
 | 错误类型 | `IngestErrorType` 保留 `NO_HANDLER` 作为未知类型兜底；media 已注册 Media Handler，业务拒绝使用 `MEDIA_METADATA_REJECTED` / `MEDIA_SESSION_EXPIRED` 稳定隔离原因 |
 | 工程修复 | eslint.config.mjs 忽略 `**/cdk.out/**`（CDK 构建产物，与 .gitignore 对齐） |
@@ -22,7 +22,7 @@ ACK 业务逻辑已在 BE-CMD-03 落地于 [signals/ack.ts](../apps/ingestion-wo
 - DEC-015 隔离：`objectType` + 关联 ID 判别——COMMAND 与 OTA_TARGET 字段禁止混带；OTA 分支只更新 ota_targets + ota_status_history + DEC-016 归档，不回改 Command；
 - 审计链：command.ack / ota.status.ack（actor=设备）+ 归档 Outbox。
 
-## 3. 验收基准与证据（vitest + PGlite，端到端 5 项 + 既有单元 14 项）
+## 3. 验收基准与证据（Vitest + PGlite）
 
 | 验收基准 | 测试（[ack-dispatch.test.ts](../apps/ingestion-worker/test/ack-dispatch.test.ts)，全链路 SQS→管线→分发器→Handler） | 结果 |
 |---|---|---|
@@ -32,6 +32,8 @@ ACK 业务逻辑已在 BE-CMD-03 落地于 [signals/ack.ts](../apps/ingestion-wo
 | 不得误更新其他命令或 OTA Target | OTA_TARGET ACK 仅迁移 target NOTIFIED→DOWNLOADING + 历史 1 行，command 状态/ack 不变；COMMAND 混入 otaTargetId → 隔离 | ✅ |
 | 过期 ACK | `signals-ack.test.ts` 覆盖 TIMED_OUT 后回执、PUBLISHED 但服务端当前时间已过期，以及 ACK 恰在到期边界与 timeout evaluator 并发；均保存事件且绝不迁移为 SUCCEEDED | ✅ |
 | 路由表/异常兜底 | heartbeat 经分发器落 device_latest_state（connectivity ONLINE）；media 经 BE-IOT-03 receipt 调用 BE-MED-01 共用核心 | ✅ |
+
+当前证据命令：`pnpm vitest run apps/ingestion-worker/test/ack-dispatch.test.ts apps/ingestion-worker/test/signals-ack.test.ts` 与 `pnpm verify`。精确结果见 [BE-IOT-01 至 BE-IOT-09 全面复盘检查报告](audit/BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-07.md)。
 
 ## 4. 未决风险
 

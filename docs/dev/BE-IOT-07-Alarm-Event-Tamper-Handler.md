@@ -12,20 +12,20 @@
 
 | 文件 | 职责 |
 | --- | --- |
-| [archive.ts](../apps/ingestion-worker/src/signals/archive.ts) | 共享归档 outbox 写入（原始 Payload + payloadHash + audit.hash + 映射列）；`requireCustomerId`（三表 customerId 非空，未分配隔离待 Replay） |
-| [alarm.ts](../apps/ingestion-worker/src/signals/alarm.ts) | ACTIVE：插入新 Alarm 行（每次激活独立记录）；CLEARED：条件关闭同设备同 code 全部 ACTIVE 行（status→CLEARED + clearedAt=清除消息 detectedTime）；重复 CLEAR/无 ACTIVE → `clear-noop` 幂等；两类信号各生成一个归档事件 |
-| [event.ts](../apps/ingestion-worker/src/signals/event.ts) | 仅写 device_events（occurredAt=meta.ts）+ 归档；不创建 Alarm（信号通道分离） |
-| [tamper.ts](../apps/ingestion-worker/src/signals/tamper.ts) | tamper_events 历史 + 归档（audit.hash 保留，DEC-002）；策略 `TAMPER_SUSPEND_SEVERITIES=['CRITICAL']` → DOM-01 Active→Suspended 自动挂起 |
+| [archive.ts](../../apps/ingestion-worker/src/signals/archive.ts) | 共享归档 outbox 写入（原始 Payload + payloadHash + audit.hash + 映射列）；`requireCustomerId`（三表 customerId 非空，未分配隔离待 Replay） |
+| [alarm.ts](../../apps/ingestion-worker/src/signals/alarm.ts) | ACTIVE：插入新 Alarm 行（每次激活独立记录）；CLEARED：条件关闭同设备同 code 全部 ACTIVE 行（status→CLEARED + clearedAt=清除消息 detectedTime）；重复 CLEAR/无 ACTIVE → `clear-noop` 幂等；两类信号各生成一个归档事件 |
+| [event.ts](../../apps/ingestion-worker/src/signals/event.ts) | 仅写 device_events（occurredAt=meta.ts）+ 归档；不创建 Alarm（信号通道分离） |
+| [tamper.ts](../../apps/ingestion-worker/src/signals/tamper.ts) | tamper_events 历史 + 归档（audit.hash 保留，DEC-002）；策略 `TAMPER_SUSPEND_SEVERITIES=['CRITICAL']` → DOM-01 Active→Suspended 自动挂起 |
 
 ## 策略挂起（技术对接要求）
 
-- **DOM-01 扩展**：`Active → Suspended` 新增 SYSTEM actor 规则（requiresReason；[device-lifecycle.ts](../packages/domain/src/device-lifecycle.ts)），并将规则匹配从"首条 to 匹配"修正为"actorType 优先匹配"（同 from→to 多规则并存：ADMIN 管理挂起 / SYSTEM 策略挂起）；既有"DEVICE/SYSTEM 不能执行管理迁移"锁定测试更新为"SYSTEM 仅允许策略挂起且必须填原因，其他管理迁移仍禁止"，并新增 LEGAL 锁定用例。
+- **DOM-01 扩展**：`Active → Suspended` 新增 SYSTEM actor 规则（requiresReason；[device-lifecycle.ts](../../packages/domain/src/device-lifecycle.ts)），并将规则匹配从"首条 to 匹配"修正为"actorType 优先匹配"（同 from→to 多规则并存：ADMIN 管理挂起 / SYSTEM 策略挂起）；既有"DEVICE/SYSTEM 不能执行管理迁移"锁定测试更新为"SYSTEM 仅允许策略挂起且必须填原因，其他管理迁移仍禁止"，并新增 LEGAL 锁定用例。
 - **只挂起一次**：预检 `lifecycleStatus='Active'` + 条件更新 `(id, lifecycleStatus='Active')` 并发兜底；已 Suspended/其他生命周期/第二个 Tamper → 不再迁移（事件仍保存）。
 - **策略原因与审计**：reason=`TAMPER_AUTO_SUSPEND: severity=CRITICAL, eventType=...`；stateHistory（lifecycle + operational 镜像两轴）+ `recordAudit(SUCCESS)` 与 tamper 事件、归档在同一 receipt 事务原子提交。
 
 ## 验收证据
 
-测试：[signals-handlers.test.ts](../apps/ingestion-worker/test/signals-handlers.test.ts)（PGlite 真实 PostgreSQL），6 项 + DOM-01 领域测试：
+测试：[signals-handlers.test.ts](../../apps/ingestion-worker/test/signals-handlers.test.ts)（PGlite 真实 PostgreSQL）及 DOM-01 领域测试：
 
 1. Alarm ACTIVE 建行（数值落 String 列、detectedTime 映射）→ CLEARED 正确闭合（status + clearedAt）；重复 CLEAR `clear-noop` 幂等；每次合法信号一个归档；同 seq 重放 receipt 跳过；
 2. Event 仅写 device_events + 归档，**不误创建 Alarm**（alarms 零行）；
@@ -34,12 +34,7 @@
 5. 非 Active 生命周期设备 CRITICAL Tamper 不挂起；
 6. 三个 Handler 分发保护（非本类型不处理）。
 
-命令与结果：
-
-```text
-pnpm vitest run apps/ingestion-worker packages/domain   → Test Files 12 passed, Tests 157 passed
-pnpm verify                                              → EXIT=0（lint/format/typecheck/test 48 文件 374 项/build/boundaries/schemas/migrations/secrets）
-```
+当前证据命令：`pnpm vitest run apps/ingestion-worker/test/signals-handlers.test.ts packages/domain/test` 与 `pnpm verify`。精确结果见 [BE-IOT-01 至 BE-IOT-09 全面复盘检查报告](../audit/BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-07.md)。
 
 ## 未决风险
 

@@ -12,8 +12,8 @@
 
 | 文件 | 职责 |
 | --- | --- |
-| [repository.ts](../apps/ingestion-worker/src/report/repository.ts) | `buildReportRow`：Payload data → esg_reports 列映射（processingDurationMinutes→processing_minutes 四舍五入、energyConsumptionKwh→power_consumption_kwh 等）；`findOverlappingReport`（区间相交查询）；`insertReport` |
-| [handler.ts](../apps/ingestion-worker/src/report/handler.ts) | `createReportHandler`：期间语义校验 → BE-IOT-03 receipt 幂等及同设备 report advisory lock → 同事务报告行 + 恰好一个 ARCHIVE outbox |
+| [repository.ts](../../apps/ingestion-worker/src/report/repository.ts) | `buildReportRow`：Payload data → esg_reports 列映射（processingDurationMinutes→processing_minutes 四舍五入、energyConsumptionKwh→power_consumption_kwh 等）；`findOverlappingReport`（区间相交查询）；`insertReport` |
+| [handler.ts](../../apps/ingestion-worker/src/report/handler.ts) | `createReportHandler`：期间语义校验 → BE-IOT-03 receipt 幂等及同设备 report advisory lock → 同事务报告行 + 恰好一个 ARCHIVE outbox |
 
 ## 关键设计
 
@@ -28,7 +28,7 @@
 
 ## 验收证据
 
-测试：[report-handler.test.ts](../apps/ingestion-worker/test/report-handler.test.ts)（PGlite 真实 PostgreSQL），6 项：
+测试：[report-handler.test.ts](../../apps/ingestion-worker/test/report-handler.test.ts)（PGlite 真实 PostgreSQL）：
 
 1. 合法 CYCLE 报告：RDS 18 列映射逐项断言 + 恰好一个归档事件（columns 与 RDS 逐键一致、auditHash、attestation=NONE）；
 2. 结束早于开始 → INVALID_REPORT 隔离，零写入；
@@ -38,12 +38,7 @@
 6. 非 report 消息不处理（分发保护）。
 7. 不同起点但期间重叠的两条 Report 并发处理：恰好一条成功，另一条确定进入 `INVALID_REPORT`，数据库和归档均只有一条。
 
-命令与结果：
-
-```text
-pnpm vitest run apps/ingestion-worker   → Test Files 8 passed, Tests 37 passed
-pnpm verify                              → EXIT=0（lint/format/typecheck/test 47 文件 367 项/build/boundaries/schemas/migrations/secrets）
-```
+当前证据命令：`pnpm vitest run apps/ingestion-worker/test/report-handler.test.ts` 与 `pnpm verify`。精确结果见 [BE-IOT-01 至 BE-IOT-09 全面复盘检查报告](../audit/BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-07.md)。
 
 ## 未决风险
 

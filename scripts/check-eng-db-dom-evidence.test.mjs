@@ -3,7 +3,15 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { checkEngDbDomEvidence, securityDocumentErrors } from './check-eng-db-dom-evidence.mjs';
+import {
+  checkEngDbDomEvidence,
+  IOT_STRICT_REGRESSIONS,
+  IOT_TASK_DOCUMENTS,
+  iotDocumentErrors,
+  iotRegressionEvidenceErrors,
+  securityDocumentErrors,
+  TASK_DOCUMENTS,
+} from './check-eng-db-dom-evidence.mjs';
 
 function fixture({ document = '[source](../../source.ts)', manifest = {}, nvmrc = '24.12.0' } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'fdp-evidence-'));
@@ -43,6 +51,42 @@ test('陈旧测试计数或不兼容工具链声明被拒绝', () => {
 test('当前仓库 ENG/DB/DOM 与 IAC/AUTH/SEC 任务文档证据一致', () => {
   const root = new URL('..', import.meta.url).pathname;
   assert.deepEqual(checkEngDbDomEvidence(root), []);
+});
+
+test('BE-IOT-01～08 文档全部纳入默认链接与证据门禁', () => {
+  assert.equal(IOT_TASK_DOCUMENTS.length, 8);
+  for (const document of IOT_TASK_DOCUMENTS) assert.ok(TASK_DOCUMENTS.includes(document));
+  assert.equal(IOT_STRICT_REGRESSIONS.length, 6);
+});
+
+test('BE-IOT 文档拒绝缺少审计快照、Report P2002 与 Media 另路由旧说法', () => {
+  const missingAudit = iotDocumentErrors('执行 pnpm verify。', 'docs/dev/BE-IOT-01-IoT-Rule消息封装契约.md');
+  assert.ok(missingAudit.some((error) => error.includes('审计快照')));
+
+  const staleReport = iotDocumentErrors(
+    '执行 pnpm verify；见 BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-07.md。重叠由 P2002 收敛。',
+    'docs/dev/BE-IOT-06-ESG-Report-Handler.md',
+  );
+  assert.ok(staleReport.some((error) => error.includes('P2002')));
+
+  const staleMedia = iotDocumentErrors(
+    '执行 pnpm verify；见 BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-07.md。media 另有路由。',
+    'docs/BE-IOT-08-ACK-Handler分发接线.md',
+  );
+  assert.ok(staleMedia.some((error) => error.includes('Media')));
+});
+
+test('BE-IOT 严格负向探针必须保留为可定位的永久回归', () => {
+  const root = fixture();
+  const missing = iotRegressionEvidenceErrors(root, [
+    { finding: 'H-01', file: 'missing.test.ts', anchor: 'strict regression' },
+  ]);
+  assert.ok(missing.some((error) => error.includes('永久回归测试文件不存在')));
+
+  const stale = iotRegressionEvidenceErrors(root, [
+    { finding: 'H-01', file: 'source.ts', anchor: 'strict regression' },
+  ]);
+  assert.ok(stale.some((error) => error.includes('永久回归测试锚点缺失')));
 });
 
 test('安全任务文档拒绝历史计数、缺少 verify 命令与陈旧 DEC-012 状态', () => {

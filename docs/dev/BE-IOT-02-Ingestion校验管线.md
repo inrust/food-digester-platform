@@ -12,12 +12,12 @@
 
 | 文件 | 职责 |
 | --- | --- |
-| [errors.ts](../apps/ingestion-worker/src/ingest/errors.ts) | `IngestError`：`classification` ∈ TRANSIENT / QUARANTINE；DEC-013 Hash 不匹配使用 `AUDIT_HASH_MISMATCH`，兼容格式冲突/过期使用 `SCHEMA_VIOLATION`；`errorPath` 稳定点分路径 |
-| [envelope.ts](../apps/ingestion-worker/src/ingest/envelope.ts) | Envelope 解析（契约：BE-IOT-01 `contracts/iot/ingress-envelope.schema.json`）：JSON 解析 + 五个保留字段校验（Topic 白名单正则、Topic 设备段 ↔ iotDeviceId、iotType ↔ Topic、iotReceivedAt 非负整数毫秒、iotPrincipal 非空）；仅剥离五个保留字段，其他顶层字段交由封闭 Payload Schema 失败关闭 |
-| [identity.ts](../apps/ingestion-worker/src/ingest/identity.ts) | 身份/台账解析：iotPrincipal（证书 ARN）→ `device_certificates` 台账（未登记 → UNKNOWN_DEVICE；非 ACTIVE/已撤销 → IDENTITY_VIOLATION）；证书绑定设备 ≠ Topic 设备 → IDENTITY_VIOLATION（跨设备伪装防护）；customerId 只取设备台账，不取 Payload 自报值 |
-| [schema.ts](../apps/ingestion-worker/src/ingest/schema.ts) | CT-03 零依赖校验器按 `<iotType>.schema.json` 校验 Payload（enum/minimum/maximum 等字段范围由 Schema 覆盖），首个错误路径入 Quarantine；时钟偏差：meta.ts 与 iotReceivedAt 偏差超阈值（缺省 300s）→ CLOCK_SKEW |
-| [pipeline.ts](../apps/ingestion-worker/src/ingest/pipeline.ts) | 框架无关处理链 `validateRecord`；Audited Topic 先按原始 Payload 复算 `SHA-256(RFC8785({meta,data}))`，再执行 90 天旧格式转换；输出不可变 `rawBody`、`rawPayload` 与 `normalizedPayload` 双视图，业务映射使用 normalized，Raw Archive 使用 raw |
-| [handler.ts](../apps/ingestion-worker/src/ingest/handler.ts) | SQS 批量 Handler：QUARANTINE → 写 Quarantine（原文 + errorType + errorPath + Topic 上下文）后视为已处理；TRANSIENT/未知异常 → `batchItemFailures` 部分失败重试 |
+| [errors.ts](../../apps/ingestion-worker/src/ingest/errors.ts) | `IngestError`：`classification` ∈ TRANSIENT / QUARANTINE；DEC-013 Hash 不匹配使用 `AUDIT_HASH_MISMATCH`，兼容格式冲突/过期使用 `SCHEMA_VIOLATION`；`errorPath` 稳定点分路径 |
+| [envelope.ts](../../apps/ingestion-worker/src/ingest/envelope.ts) | Envelope 解析（契约：BE-IOT-01 `contracts/iot/ingress-envelope.schema.json`）：JSON 解析 + 五个保留字段校验（Topic 白名单正则、Topic 设备段 ↔ iotDeviceId、iotType ↔ Topic、iotReceivedAt 非负整数毫秒、iotPrincipal 非空）；仅剥离五个保留字段，其他顶层字段交由封闭 Payload Schema 失败关闭 |
+| [identity.ts](../../apps/ingestion-worker/src/ingest/identity.ts) | 身份/台账解析：iotPrincipal（证书 ARN）→ `device_certificates` 台账（未登记 → UNKNOWN_DEVICE；非 ACTIVE/已撤销 → IDENTITY_VIOLATION）；证书绑定设备 ≠ Topic 设备 → IDENTITY_VIOLATION（跨设备伪装防护）；customerId 只取设备台账，不取 Payload 自报值 |
+| [schema.ts](../../apps/ingestion-worker/src/ingest/schema.ts) | CT-03 零依赖校验器按 `<iotType>.schema.json` 校验 Payload（enum/minimum/maximum 等字段范围由 Schema 覆盖），首个错误路径入 Quarantine；时钟偏差：meta.ts 与 iotReceivedAt 偏差超阈值（缺省 300s）→ CLOCK_SKEW |
+| [pipeline.ts](../../apps/ingestion-worker/src/ingest/pipeline.ts) | 框架无关处理链 `validateRecord`；Audited Topic 先按原始 Payload 复算 `SHA-256(RFC8785({meta,data}))`，再执行 90 天旧格式转换；输出不可变 `rawBody`、`rawPayload` 与 `normalizedPayload` 双视图，业务映射使用 normalized，Raw Archive 使用 raw |
+| [handler.ts](../../apps/ingestion-worker/src/ingest/handler.ts) | SQS 批量 Handler：QUARANTINE → 写 Quarantine（原文 + errorType + errorPath + Topic 上下文）后视为已处理；TRANSIENT/未知异常 → `batchItemFailures` 部分失败重试 |
 
 导出：`apps/ingestion-worker/src/ingest/index.ts`，并由 `apps/ingestion-worker/src/index.ts` 汇出。
 
@@ -29,7 +29,7 @@
 
 ## 验收证据
 
-测试：[ingest-pipeline.test.ts](../apps/ingestion-worker/test/ingest-pipeline.test.ts)（PGlite 真实 PostgreSQL + 全量 migration + 真实 CT-03 Schema），包含以下永久回归：
+测试：[ingest-pipeline.test.ts](../../apps/ingestion-worker/test/ingest-pipeline.test.ts)（PGlite 真实 PostgreSQL + 全量 migration + 真实 CT-03 Schema），包含以下永久回归：
 
 1. 合法批次全部继续处理；device/customer context 取自台账而非 Payload；
 2. 单条坏消息（非法 JSON）不导致整批重复：坏消息进 Quarantine，其余照常处理，`batchItemFailures` 为空；
@@ -42,12 +42,7 @@
 9. 兼容截止边界起旧格式进入 Quarantine；
 10. Audited Topic Hash 可按原始 Payload 复算，不匹配以 `AUDIT_HASH_MISMATCH / audit.hash` 隔离；Telemetry 业务映射使用 normalized，而归档保存原始文本/字段并可复算原始 hash。
 
-命令与结果：
-
-```text
-pnpm vitest run apps/ingestion-worker   → Test Files 4 passed, Tests 15 passed（含既有 8 项）
-pnpm verify                              → EXIT=0（lint/format/typecheck/test 43 文件 345 项/build/boundaries/schemas/migrations/secrets）
-```
+当前证据命令：`pnpm vitest run apps/ingestion-worker/test/ingest-pipeline.test.ts` 与 `pnpm verify`。精确结果见 [BE-IOT-01 至 BE-IOT-09 全面复盘检查报告](../audit/BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-07.md)。
 
 ## 未决风险
 
