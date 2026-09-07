@@ -40,6 +40,7 @@ export type AdminRouteResolver = (event: ApiGatewayAdminEvent) => AdminRoute;
 
 export interface AdminOnboardingRouteSet {
   readonly onboarding: AdminOnboardingHandlers;
+  readonly certificateRotation: AdminRoute;
 }
 
 const header = (headers: Readonly<Record<string, string | undefined>>, wanted: string): string | undefined => {
@@ -58,6 +59,7 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
   const collection = /^\/api\/v1\/admin\/onboarding\/requests\/?$/;
   const member = /^\/api\/v1\/admin\/onboarding\/requests\/([^/]+?)(?:\/(approve|reject))?\/?$/;
   const matched = member.exec(path);
+  const certificateRotation = /^\/api\/v1\/admin\/devices\/([^/]+?)\/certificate-rotation-requests\/?$/.exec(path);
 
   return async (request) => {
     if (method === 'GET' && collection.test(path)) return routes.onboarding.list(request);
@@ -70,6 +72,15 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
       if (method === 'GET' && !action) return routes.onboarding.detail(routedRequest);
       if (method === 'POST' && action === 'approve') return routes.onboarding.approve(routedRequest);
       if (method === 'POST' && action === 'reject') return routes.onboarding.reject(routedRequest);
+    }
+    if (method === 'POST' && certificateRotation) {
+      return routes.certificateRotation({
+        ...request,
+        params: {
+          ...(request.params ?? {}),
+          deviceId: decodeURIComponent(certificateRotation[1] as string),
+        },
+      });
     }
     return {
       status: 404,

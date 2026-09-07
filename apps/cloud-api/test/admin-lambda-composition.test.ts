@@ -16,6 +16,7 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
           approve,
           reject: vi.fn(),
         },
+        certificateRotation: vi.fn(),
       },
     );
     await route({ headers: {}, requestId: 'trace-1' });
@@ -25,9 +26,30 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
   test('未知路径失败关闭为 404', async () => {
     const route = createAdminRoute(
       { httpMethod: 'GET', path: '/api/v1/admin/unknown' },
-      { onboarding: { list: vi.fn(), detail: vi.fn(), approve: vi.fn(), reject: vi.fn() } },
+      {
+        onboarding: { list: vi.fn(), detail: vi.fn(), approve: vi.fn(), reject: vi.fn() },
+        certificateRotation: vi.fn(),
+      },
     );
     await expect(route({ headers: {}, requestId: 'trace-2' })).resolves.toMatchObject({ status: 404 });
+  });
+
+  test('证书轮换申请路由映射到受保护业务 Handler', async () => {
+    const certificateRotation = vi.fn(async (_request: AdminHttpRequest) => ({ status: 201, body: {} }));
+    const route = createAdminRoute(
+      {
+        httpMethod: 'POST',
+        path: '/api/v1/admin/devices/device%2Fencoded/certificate-rotation-requests',
+      },
+      {
+        onboarding: { list: vi.fn(), detail: vi.fn(), approve: vi.fn(), reject: vi.fn() },
+        certificateRotation,
+      },
+    );
+    const response = await route({ headers: {}, requestId: 'trace-cert' });
+
+    assert.equal(response.status, 201);
+    assert.equal(certificateRotation.mock.calls[0]?.[0].params?.deviceId, 'device/encoded');
   });
 
   test('只把重新验签后的 claims 转换为可信 ActorContext', async () => {

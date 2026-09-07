@@ -1,6 +1,7 @@
 import { resolveDatabaseUrl } from '@fdp/aws-clients';
 import { createPrismaClient } from '@fdp/database';
 import { createAdminOnboardingHandlers } from '../admin/onboarding/handler.js';
+import { createAdminCertificateRotationHandler } from '../admin/certificate-rotation/handler.js';
 import {
   createAdminLambdaRouter,
   createAdminRoute,
@@ -20,7 +21,10 @@ async function initialize() {
   const region = required('AWS_REGION');
   const databaseUrl = await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region });
   const client = createPrismaClient(databaseUrl);
-  const routes = { onboarding: createAdminOnboardingHandlers({ client }) };
+  const routes = {
+    onboarding: createAdminOnboardingHandlers({ client }),
+    certificateRotation: createAdminCertificateRotationHandler({ client }),
+  };
   return createAdminLambdaRouter(
     { region, userPoolId: required('USER_POOL_ID'), clientId: required('USER_POOL_CLIENT_ID') },
     (event) => createAdminRoute(event, routes),

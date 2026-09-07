@@ -1,0 +1,59 @@
+import { createAwsIotProvisioningClient, createKmsDataKeyProvider, resolveDatabaseUrl } from '@fdp/aws-clients';
+import { getMaintenanceSyncIntervalSeconds } from '@fdp/contracts/lifecycle/maintenance-behavior.js';
+import { createPrismaClient } from '@fdp/database';
+import {
+  createCertificateRotateHandler,
+  createCertificateStatusHandler,
+  createDeviceDeactivateHandler,
+  createDeviceSyncHandler,
+} from '../device/index.js';
+import {
+  createDeviceApiLambdaHandler,
+  type ApiGatewayDeviceEvent,
+  type ApiGatewayDeviceResult,
+} from './device-lambda.js';
+
+const required = (name: string): string => {
+  const value = process.env[name];
+  if (!value) throw new Error(`缺少 Lambda 环境变量 ${name}`);
+  return value;
+};
+
+const positiveNumber = (name: string, fallback: number): number => {
+  const value = Number(process.env[name] ?? fallback);
+  if (!Number.isFinite(value) || value <= 0) throw new Error(`Lambda 环境变量 ${name} 必须为正数`);
+  return value;
+};
+
+let runtimeHandler: ((event: ApiGatewayDeviceEvent) => Promise<ApiGatewayDeviceResult>) | undefined;
+
+async function initialize() {
+  const region = required('AWS_REGION');
+  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
+  const iot = createAwsIotProvisioningClient({ region });
+  const keyProvider = createKmsDataKeyProvider({ keyId: required('CERT_PACKAGE_KEY_ARN'), region });
+  return createDeviceApiLambdaHandler({
+    certificateStatus: createCertificateStatusHandler({
+      client,
+      expiringSoonDays: positiveNumber('CERTIFICATE_EXPIRING_SOON_DAYS', 30),
+    }),
+    certificateRotate: createCertificateRotateHandler({
+      client,
+      iot,
+      keyProvider,
+      config: {
+        region,
+        accountId: required('FDP_AWS_ACCOUNT_ID'),
+        certificateValiditySeconds: positiveNumber('CERTIFICATE_VALIDITY_SECONDS', 31_536_000),
+      },
+    }),
+    sync: createDeviceSyncHandler({ client, maintenanceSyncIntervalSeconds: getMaintenanceSyncIntervalSeconds() }),
+    deactivate: createDeviceDeactivateHandler({ client }),
+  });
+}
+
+/** AWS Lambda 生产入口：冷启动完成 DB、AUTH-03、IoT/KMS 与冻结策略接线。 */
+export async function handler(event: ApiGatewayDeviceEvent): Promise<ApiGatewayDeviceResult> {
+  runtimeHandler ??= await initialize();
+  return runtimeHandler(event);
+}

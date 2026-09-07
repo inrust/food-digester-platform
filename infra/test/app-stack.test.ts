@@ -84,6 +84,7 @@ describe('资源命名（环境前缀）', () => {
       'onboarding-deadline',
       'onboarding-api-handler',
       'onboarding-provisioning',
+      'device-api-handler',
       'api',
     ]) {
       template.hasResourceProperties('AWS::Lambda::Function', { FunctionName: `fdp-test-${fn}` });
@@ -150,7 +151,7 @@ describe('验收：IAM 最小权限', () => {
     assert.deepEqual(wildcardKmsPrincipalViolations(template.toJSON()), []);
   });
 
-  test('证书包 KMS Key 数据面仅允许 Onboarding API、Provisioning Worker 与恢复 Lambda role', () => {
+  test('证书包 KMS Key 数据面仅允许 Onboarding/Device API、Provisioning Worker 与恢复 Lambda role', () => {
     const keys = Object.values(resourcesOfType(template, 'AWS::KMS::Key'));
     const certKey = keys.find((key) => key.Properties.Description.includes('DEC-003'));
     assert.isDefined(certKey);
@@ -168,6 +169,7 @@ describe('验收：IAM 最小权限', () => {
       JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']),
       'fdp-test-onboarding-api-role',
     );
+    assert.include(JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']), 'fdp-test-device-api-role');
     assert.include(
       JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']),
       'fdp-test-onboarding-provisioning-role',
@@ -223,13 +225,13 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('9 个 Lambda 使用各自独立执行角色', () => {
+  test('10 个 Lambda 使用各自独立执行角色', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
       String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),
     );
-    assert.equal(fns.length, 9);
+    assert.equal(fns.length, 10);
     const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
-    assert.equal(roles.size, 9);
+    assert.equal(roles.size, 10);
   });
 
   test('P0 生产组合根与既有 API/sweeper 使用真实资产包而非内联 501 占位代码', () => {
@@ -239,6 +241,7 @@ describe('验收：IAM 最小权限', () => {
       'fdp-test-onboarding-deadline',
       'fdp-test-onboarding-api-handler',
       'fdp-test-onboarding-provisioning',
+      'fdp-test-device-api-handler',
       'fdp-test-api',
       'fdp-test-cert-package-sweeper',
     ]) {
@@ -302,6 +305,20 @@ describe('验收：三类 API 认证入口分离', () => {
       const integration = JSON.stringify(method.Properties.Integration);
       assert.include(integration, 'OnboardingApiFn');
       assert.notInclude(integration, '"ApiFn');
+    }
+  });
+
+  test('Device mTLS 入口使用独立生产 Lambda，不经过管理 API Lambda', () => {
+    const names = apiNameByLogicalId();
+    const methods = Object.values(resourcesOfType(template, 'AWS::ApiGateway::Method')).filter(
+      (method) => names.get(method.Properties.RestApiId?.Ref as string) === 'fdp-test-device-api',
+    );
+    assert.isAbove(methods.length, 0);
+    for (const method of methods) {
+      const integration = JSON.stringify(method.Properties.Integration);
+      assert.include(integration, 'DeviceApiFn');
+      assert.notInclude(integration, '"ApiFn');
+      assert.notInclude(integration, 'OnboardingApiFn');
     }
   });
 });
@@ -476,6 +493,11 @@ describe('Cognito 与应用配置输出', () => {
     assert.isDefined(onboardingFn);
     for (const key of ['DB_SECRET_ARN', 'CERT_PACKAGE_KEY_ARN', 'FDP_AWS_ACCOUNT_ID', 'ENV_NAME']) {
       assert.isDefined(onboardingFn.Properties.Environment.Variables[key], `Onboarding Lambda 缺少环境变量 ${key}`);
+    }
+    const deviceFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-device-api-handler');
+    assert.isDefined(deviceFn);
+    for (const key of ['DB_SECRET_ARN', 'CERT_PACKAGE_KEY_ARN', 'FDP_AWS_ACCOUNT_ID', 'ENV_NAME']) {
+      assert.isDefined(deviceFn.Properties.Environment.Variables[key], `Device Lambda 缺少环境变量 ${key}`);
     }
     const ingestionFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-ingestion');
     assert.isDefined(ingestionFn);

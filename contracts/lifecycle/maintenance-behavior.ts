@@ -10,7 +10,7 @@
  * 未列出的行为一律失败关闭（fallbackPolicy=deny）。
  */
 
-import { isCommandAllowed, commandDenyReason } from '../mqtt/catalogs.ts';
+import { isCommandAllowed, commandDenyReason } from '../mqtt/catalogs.js';
 
 export type MatrixStatus = 'provisional' | 'frozen';
 

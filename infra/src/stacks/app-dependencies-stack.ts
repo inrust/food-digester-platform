@@ -50,11 +50,13 @@ const PLACEHOLDER_HANDLER_CODE = [
 
 const DB_MASTER_USERNAME = 'fdp_admin' as const;
 const API_ROLE_SUFFIX = 'api-role' as const;
+const DEVICE_API_ROLE_SUFFIX = 'device-api-role' as const;
 const ONBOARDING_API_ROLE_SUFFIX = 'onboarding-api-role' as const;
 const ONBOARDING_PROVISIONING_ROLE_SUFFIX = 'onboarding-provisioning-role' as const;
 const CERT_SWEEPER_ROLE_SUFFIX = 'cert-package-sweeper-role' as const;
 const WORKSPACE_ROOT = fileURLToPath(new URL('../../..', import.meta.url));
 const API_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/lambda-entry.ts');
+const DEVICE_API_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/device-entry.ts');
 const ONBOARDING_API_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/device-onboarding-entry.ts');
 const ONBOARDING_PROVISIONING_ENTRY = resolve(
   WORKSPACE_ROOT,
@@ -102,6 +104,7 @@ interface ComputeResources {
   readonly onboardingDeadline: lambda.Function;
   readonly onboardingApi: lambda.Function;
   readonly onboardingProvisioning: lambda.Function;
+  readonly deviceApi: lambda.Function;
   readonly api: lambda.Function;
 }
 
@@ -145,7 +148,13 @@ export class AppDependenciesStack extends Stack {
     const data = this.createData(storage.dataKey);
     const identity = this.createIdentity();
     const compute = this.createCompute(storage, messaging, data, identity);
-    const apis = this.createApiGateways(compute.onboardingApi, compute.api, identity, storage.truststore);
+    const apis = this.createApiGateways(
+      compute.onboardingApi,
+      compute.deviceApi,
+      compute.api,
+      identity,
+      storage.truststore,
+    );
     this.createOutputs(storage, messaging, data, identity, apis);
   }
 
@@ -185,13 +194,19 @@ export class AppDependenciesStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    // SEC-01：证书包 Key 数据面只授予 Onboarding API、Provisioning Worker 与恢复 Lambda。
+    // SEC-01：证书包 Key 数据面只授予 Onboarding/Device API、Provisioning Worker 与恢复 Lambda。
     // 使用确定性角色 ARN 条件，避免 Key ↔ Lambda Role 的 CloudFormation 循环依赖。
     const onboardingApiRoleArn = this.formatArn({
       service: 'iam',
       region: '',
       resource: 'role',
       resourceName: this.naming.name(ONBOARDING_API_ROLE_SUFFIX),
+    });
+    const deviceApiRoleArn = this.formatArn({
+      service: 'iam',
+      region: '',
+      resource: 'role',
+      resourceName: this.naming.name(DEVICE_API_ROLE_SUFFIX),
     });
     const onboardingProvisioningRoleArn = this.formatArn({
       service: 'iam',
@@ -213,7 +228,12 @@ export class AppDependenciesStack extends Stack {
       resources: ['*'],
       conditions: {
         ArnEquals: {
-          'aws:PrincipalArn': [onboardingApiRoleArn, onboardingProvisioningRoleArn, certSweeperRoleArn],
+          'aws:PrincipalArn': [
+            onboardingApiRoleArn,
+            deviceApiRoleArn,
+            onboardingProvisioningRoleArn,
+            certSweeperRoleArn,
+          ],
         },
       },
     });
@@ -567,7 +587,7 @@ export class AppDependenciesStack extends Stack {
       targets: [new eventsTargets.LambdaFunction(summary)],
     });
 
-    // 管理 API、Onboarding API、Provisioning Worker 与证书恢复使用确定性的独立最小权限角色。
+    // 管理 API、Device API、Onboarding API、Provisioning Worker 与证书恢复使用确定性的独立最小权限角色。
     const apiRole = new iam.Role(this, 'ApiFnServiceRole', {
       roleName: this.naming.name(API_ROLE_SUFFIX),
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
@@ -581,6 +601,15 @@ export class AppDependenciesStack extends Stack {
       roleName: this.naming.name(ONBOARDING_API_ROLE_SUFFIX),
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       description: 'Onboarding Token API execution role',
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
+      ],
+    });
+    const deviceApiRole = new iam.Role(this, 'DeviceApiFnServiceRole', {
+      roleName: this.naming.name(DEVICE_API_ROLE_SUFFIX),
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      description: 'Device mTLS API execution role',
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
@@ -752,6 +781,40 @@ export class AppDependenciesStack extends Stack {
       targets: [new eventsTargets.LambdaFunction(onboardingProvisioning)],
     });
 
+    // Device API：AUTH-03 mTLS 白名单后的证书查询/轮换、同步与退役确认。
+    const deviceApi = mkFunction('DeviceApiFn', 'device-api-handler', {
+      timeout: Duration.seconds(30),
+      memorySize: 512,
+      environment: {
+        DB_SECRET_ARN: dbSecret,
+        CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
+        FDP_AWS_ACCOUNT_ID: Aws.ACCOUNT_ID,
+      },
+      role: deviceApiRole,
+      entry: DEVICE_API_ENTRY,
+    });
+    dbSecretGrant(deviceApi);
+    deviceApiRole.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        sid: 'CertificatePackageKeyDataPlane',
+        actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:DescribeKey'],
+        resources: [storage.certPackageKey.keyArn],
+      }),
+    );
+    deviceApi.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'IotCertificateRotation',
+        actions: [
+          'iot:CreateKeysAndCertificate',
+          'iot:CreatePolicy',
+          'iot:AttachPolicy',
+          'iot:AttachThingPrincipal',
+          'iot:UpdateCertificate',
+        ],
+        resources: ['*'],
+      }),
+    );
+
     // API Handler：AUTH-01 JWT 重新验签后路由真实 Onboarding 管理 Handler。
     const api = mkFunction('ApiFn', 'api', {
       timeout: Duration.seconds(30),
@@ -793,6 +856,7 @@ export class AppDependenciesStack extends Stack {
       onboardingDeadline,
       onboardingApi,
       onboardingProvisioning,
+      deviceApi,
       api,
     };
   }
@@ -801,11 +865,13 @@ export class AppDependenciesStack extends Stack {
 
   private createApiGateways(
     onboardingApiFn: lambda.IFunction,
+    deviceApiFn: lambda.IFunction,
     apiFn: lambda.IFunction,
     identity: IdentityResources,
     truststore: s3.Bucket,
   ): ApiResources {
     const onboardingIntegration = new apigw.LambdaIntegration(onboardingApiFn, { proxy: true });
+    const deviceIntegration = new apigw.LambdaIntegration(deviceApiFn, { proxy: true });
     const integration = new apigw.LambdaIntegration(apiFn, { proxy: true });
     const stageOptions: apigw.StageOptions = { stageName: this.config.envName };
 
@@ -834,7 +900,7 @@ export class AppDependenciesStack extends Stack {
       .addResource('api')
       .addResource('v1')
       .addResource('device')
-      .addProxy({ defaultIntegration: integration, anyMethod: true });
+      .addProxy({ defaultIntegration: deviceIntegration, anyMethod: true });
 
     const deviceApiDomain = this.config.deviceApiDomain;
     if (deviceApiDomain) {

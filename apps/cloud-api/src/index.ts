@@ -74,3 +74,4 @@ export * from './ota/index.js';
 export * from './provisioning/index.js';
 export * from './device/index.js';
 export * from './runtime/admin-lambda.js';
+export * from './runtime/device-lambda.js';
