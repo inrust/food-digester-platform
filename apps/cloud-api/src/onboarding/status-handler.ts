@@ -3,12 +3,12 @@
  *
  * 外部状态契约（内部 Provisioning 不暴露）：
  * - 申请 PENDING，或 APPROVED 但证书包尚未就绪 → { status: 'PENDING' }；
- * - 申请 REJECTED → { status: 'REJECTED', rejectReason }；
+ * - 申请 REJECTED → { status: 'REJECTED', reason }；
  * - APPROVED 且证书包就绪 → 一次性领取（SEC-01/DEC-003）：返回
- *   { status: 'APPROVED', deviceId, certificatePem, privateKey, mqttEndpoint, heartbeatInterval: 60 }，
+ *   { status: 'APPROVED', deviceId, certificate, mqtt, configuration }，
  *   响应提交后销毁密文并核销 Onboarding Token；提交不确定则下一次轮询撤证重签。
  *
- * 认证：AUTH-02 Onboarding Token（Bearer + query.serialNumber 绑定校验）。
+ * 认证：AUTH-02 Onboarding Token；Token 自身绑定隐式定位申请，不要求 Query。
  */
 import type { DbClient } from '@fdp/database';
 import { withTransaction } from '@fdp/database';
@@ -48,6 +48,7 @@ export interface OnboardingStatusHandlerDeps {
       request: Pick<OnboardingRequestRecord, 'id' | 'serialNumber'>,
       certificateId: string,
     ): Promise<unknown>;
+    convergeOnboardingTimeout(requestId: string, at: Date): Promise<unknown>;
   };
 }
 
@@ -100,16 +101,14 @@ function toErrorResponse(err: unknown, req: OnboardingStatusRequest): Onboarding
 }
 
 type StatusBody =
-  | { status: 'PENDING'; requestId: string }
-  | { status: 'REJECTED'; requestId: string; rejectReason: string | null }
+  | { status: 'PENDING' }
+  | { status: 'REJECTED'; reason: string }
   | {
       status: 'APPROVED';
-      requestId: string;
       deviceId: string;
-      certificatePem: string;
-      privateKey: string;
-      mqttEndpoint: string;
-      heartbeatInterval: 60;
+      certificate: { certificatePem: string; privateKey: string };
+      mqtt: { endpoint: string };
+      configuration: { heartbeatInterval: 60 };
     };
 
 export function createOnboardingStatusHandler(
@@ -124,7 +123,8 @@ export function createOnboardingStatusHandler(
     {
       client: deps.client,
       tokenOf: bearerTokenOf,
-      serialNumberOf: (req) => req.query?.serialNumber,
+      serialNumberOf: () => undefined,
+      allowImplicitSerialNumber: true,
       rateLimits: [
         { limiter: tokenRateLimiter, keyOf: (_req, fingerprint) => `onboarding:token:${fingerprint}` },
         ...(ipRateLimiter
@@ -142,7 +142,7 @@ export function createOnboardingStatusHandler(
       const resolved = await resolveStatus(deps, auth);
       return {
         status: 200,
-        body: { data: resolved.body, meta: { requestId: req.requestId, timestamp: now().toISOString() } },
+        body: resolved.body,
         ...(resolved.onCommitted ? { onCommitted: resolved.onCommitted } : {}),
       };
     },
@@ -170,25 +170,24 @@ async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: Onboarding
     return {
       body: {
         status: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalStatus,
-        requestId: request.id,
-        rejectReason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason,
+        reason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason,
       },
     };
   }
   if (request.status === 'REJECTED') {
-    return { body: { status: 'REJECTED', requestId: request.id, rejectReason: request.rejectReason } };
+    return { body: { status: 'REJECTED', reason: request.rejectReason ?? 'REJECTED' } };
   }
   if (request.status !== 'APPROVED') {
-    return { body: { status: 'PENDING', requestId: request.id } };
+    return { body: { status: 'PENDING' } };
   }
 
   const current = deps.now?.() ?? new Date();
   if (request.onboardingDeadlineAt && request.onboardingDeadlineAt.getTime() <= current.getTime()) {
+    await deps.deliveryRecovery.convergeOnboardingTimeout(request.id, current);
     return {
       body: {
         status: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalStatus,
-        requestId: request.id,
-        rejectReason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason,
+        reason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason,
       },
     };
   }
@@ -201,17 +200,17 @@ async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: Onboarding
       })
     : null;
   if (!device || !certificate) {
-    return { body: { status: 'PENDING', requestId: request.id } };
+    return { body: { status: 'PENDING' } };
   }
 
   if (certificate.packageExpiresAt && certificate.packageExpiresAt.getTime() <= current.getTime()) {
     await deps.deliveryRecovery.recoverExpiredPackage(request, certificate.id);
-    return { body: { status: 'PENDING', requestId: request.id } };
+    return { body: { status: 'PENDING' } };
   }
 
   if (certificate.claimedAt !== null) {
     await deps.deliveryRecovery.recoverUnconfirmedDelivery(request, certificate.id);
-    return { body: { status: 'PENDING', requestId: request.id } };
+    return { body: { status: 'PENDING' } };
   }
 
   // 第一阶段：预留并解密，密文保留到适配层确认 HTTP 响应已提交。
@@ -223,12 +222,10 @@ async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: Onboarding
   return {
     body: {
       status: 'APPROVED',
-      requestId: request.id,
       deviceId: device.id,
-      certificatePem: pkg.certificatePem,
-      privateKey: pkg.privateKey,
-      mqttEndpoint: deps.mqttEndpoint,
-      heartbeatInterval: 60,
+      certificate: { certificatePem: pkg.certificatePem, privateKey: pkg.privateKey },
+      mqtt: { endpoint: deps.mqttEndpoint },
+      configuration: { heartbeatInterval: 60 },
     },
     onCommitted: async () => {
       await withTransaction(deps.client, async (tx) => {

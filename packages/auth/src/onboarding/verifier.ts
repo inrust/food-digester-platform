@@ -20,6 +20,8 @@ export interface OnboardingAuthContext {
 export interface VerifyOnboardingTokenOptions {
   /** 注入时钟（测试用），默认当前时间。 */
   readonly now?: Date;
+  /** Status API 可由 Token 自身绑定隐式定位序列号；其他入口默认仍强制显式序列号。 */
+  readonly allowImplicitSerialNumber?: boolean;
 }
 
 export async function verifyOnboardingToken(
@@ -30,7 +32,7 @@ export async function verifyOnboardingToken(
 ): Promise<OnboardingAuthContext> {
   // 先验凭证再验参数：未认证请求不做业务参数校验（防探测）
   if (!presentedToken || !isWellFormedOnboardingToken(presentedToken)) throw unauthenticated();
-  if (!serialNumber) throw validationFailed('serialNumber is required');
+  if (!serialNumber && options.allowImplicitSerialNumber !== true) throw validationFailed('serialNumber is required');
 
   const tokenHash = hashOnboardingToken(presentedToken);
   const record = await findOnboardingTokenByHash(client, tokenHash);
@@ -41,7 +43,7 @@ export async function verifyOnboardingToken(
   if (record.usedAt !== null) throw unauthenticated();
   if (record.expiresAt.getTime() <= now.getTime()) throw unauthenticated();
   // Token 与设备库存序列号绑定：跨序列号使用一律拒绝
-  if (record.serialNumber !== serialNumber) throw unauthenticated();
+  if (serialNumber && record.serialNumber !== serialNumber) throw unauthenticated();
 
   return {
     tokenId: record.id,

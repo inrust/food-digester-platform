@@ -17,7 +17,7 @@ export type {
   ReviewQueuePage,
 } from './repository.js';
 export { reviewOnboardingRequest } from './service.js';
-export type { ProvisioningTrigger, ReviewDeps, ReviewInput } from './service.js';
+export type { ReviewDeps, ReviewInput } from './service.js';
 export { createAdminOnboardingHandlers } from './handler.js';
 export type {
   AdminHttpRequest,

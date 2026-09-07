@@ -7,14 +7,14 @@
  * - If-Match 防重复审批：缺 Header 400、版本不符 409 VERSION_CONFLICT、已审批 409 CONFLICT、
  *   并发审批只有一个成功；
  * - 业务审计含前后状态且不含 Token（DOM-03，append-only）；
- * - approve 触发证书发放服务端口（不返回私钥）；reject 强制原因。
+ * - approve 同事务创建持久化 Provisioning Job（不返回私钥）；reject 强制原因。
  */
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
 import { createAdminOnboardingHandlers } from '../src/index.js';
-import type { AdminHttpRequest, AdminOnboardingHandlers, ProvisioningTrigger } from '../src/index.js';
+import type { AdminHttpRequest, AdminOnboardingHandlers } from '../src/index.js';
 import { createTestDb } from './helpers.js';
 
 const NOW = new Date('2026-08-27T08:00:00Z');
@@ -181,18 +181,9 @@ describe('GET /admin/onboarding/requests/:requestId（详情）', () => {
 });
 
 describe('POST approve / reject', () => {
-  test('approve 正向：APPROVED + 设备 OnboardingApproved + 状态历史 + 触发证书发放端口', async () => {
+  test('approve 正向：APPROVED + 设备 OnboardingApproved + 状态历史 + 同事务 Provisioning Job', async () => {
     const planted = await plantRequest();
-    const triggered: string[] = [];
-    const provisioningTrigger: ProvisioningTrigger = {
-      triggerApproved: (r) => {
-        triggered.push(r.id);
-        return Promise.resolve();
-      },
-    };
-    const withTrigger = createAdminOnboardingHandlers({ client: prisma, now, provisioningTrigger });
-
-    const res = await withTrigger.approve(
+    const res = await handlers.approve(
       req(superAdmin, { params: { requestId: planted.requestId }, headers: { 'If-Match': '1' } }),
     );
     assert.equal(res.status, 200);
@@ -200,7 +191,10 @@ describe('POST approve / reject', () => {
     assert.equal(body.data.status, 'APPROVED');
     assert.equal(body.data.version, 2);
     assert.equal(body.data.reviewedBy, 'admin-1');
-    assert.deepEqual(triggered, [planted.requestId]);
+    const job = await prisma.onboardingProvisioningJob.findUniqueOrThrow({ where: { requestId: planted.requestId } });
+    assert.equal(job.status, 'PENDING');
+    assert.equal(job.attempts, 0);
+    assert.ok(job.operationId);
     // 响应不含任何私钥/密钥材料字段
     assert.ok(!/privateKey|certificatePem/i.test(JSON.stringify(res.body)));
 

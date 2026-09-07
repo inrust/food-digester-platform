@@ -16,7 +16,6 @@ import { AdminOnboardingError, validationFailed } from './errors.js';
 import { findOnboardingRequestById, listOnboardingRequests, toDto } from './repository.js';
 import type { AdminOnboardingRequestDto } from './repository.js';
 import { reviewOnboardingRequest } from './service.js';
-import type { ProvisioningTrigger } from './service.js';
 
 export interface AdminHttpRequest {
   /** Cognito 认证后的调用者（适配层注入）；缺失 → 401。 */
@@ -39,7 +38,6 @@ export interface AdminHttpResponse {
 export interface AdminOnboardingHandlerDeps {
   readonly client: DbClient;
   readonly now?: () => Date;
-  readonly provisioningTrigger?: ProvisioningTrigger;
 }
 
 export interface AdminOnboardingHandlers {
@@ -139,10 +137,7 @@ export function createAdminOnboardingHandlers(deps: AdminOnboardingHandlerDeps):
           ifMatchVersion: parseIfMatch(headerOf(req, 'If-Match')),
           ...(reason !== undefined ? { reason } : {}),
         },
-        {
-          now: deps.now ?? (() => new Date()),
-          ...(deps.provisioningTrigger ? { provisioningTrigger: deps.provisioningTrigger } : {}),
-        },
+        { now: deps.now ?? (() => new Date()) },
       );
       const dto: AdminOnboardingRequestDto = toDto(record);
       return { status: 200, body: { data: dto, meta: meta(req, now()) } };

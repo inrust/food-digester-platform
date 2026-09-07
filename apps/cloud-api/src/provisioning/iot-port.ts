@@ -19,6 +19,8 @@ export interface IotProvisioningPort {
   ensureThing(thingName: string): Promise<void>;
   /** CreateKeysAndCertificate（非幂等：每次调用产生新证书；重试孤儿证书由 Service 处置）。 */
   createKeysAndCertificate(): Promise<IotCertificateResult>;
+  /** 用持久化 request/operation 标识证书，支持 CloudTrail/AWS IoT 对账。 */
+  tagCertificate(certificateArn: string, tags: Readonly<Record<string, string>>): Promise<void>;
   /** 创建单设备最小权限 Policy（幂等：同名已存在视为成功；文档由 AUTH-04 生成）。 */
   ensurePolicy(policyName: string, policyDocument: IotPolicyDocument): Promise<void>;
   /** 附加 Policy 到证书（幂等）。 */

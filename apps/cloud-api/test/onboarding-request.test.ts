@@ -90,8 +90,8 @@ function validBody(serialNumber: string) {
 }
 
 interface SuccessPayload {
-  data: { requestId: string; status: string; serialNumber: string; createdAt: string };
-  meta: { requestId: string; timestamp: string };
+  requestId: string;
+  status: string;
 }
 
 interface ErrorPayload {
@@ -131,16 +131,13 @@ describe('POST /api/v1/device/onboarding/request', () => {
 
     assert.equal(res.status, 201);
     const body = res.body as SuccessPayload;
-    assert.equal(body.data.status, 'PENDING');
-    assert.equal(body.data.serialNumber, SERIALS.positive);
-    assert.ok(body.data.requestId.length > 0);
-    assert.equal(body.meta.requestId, 'req-positive');
-    assert.match(body.meta.timestamp, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/);
-    assert.match(body.data.createdAt, /^\d{4}-\d{2}-\d{2}T/);
+    assert.equal(body.status, 'PENDING');
+    assert.ok(body.requestId.length > 0);
+    assert.deepEqual(Object.keys(body).sort(), ['requestId', 'status']);
 
     const rows = await prisma.onboardingRequest.findMany({ where: { serialNumber: SERIALS.positive } });
     assert.equal(rows.length, 1);
-    assert.equal(rows[0]?.id, body.data.requestId);
+    assert.equal(rows[0]?.id, body.requestId);
     assert.equal(rows[0]?.status, 'PENDING');
   });
 
@@ -152,7 +149,7 @@ describe('POST /api/v1/device/onboarding/request', () => {
     const second = await handler(makeReq(token, { ...validBody(SERIALS.idempotent), manufacturer: 'Changed' }));
 
     assert.equal(second.status, 200);
-    assert.equal((first.body as SuccessPayload).data.requestId, (second.body as SuccessPayload).data.requestId);
+    assert.equal((first.body as SuccessPayload).requestId, (second.body as SuccessPayload).requestId);
     assert.equal(await requestCount(SERIALS.idempotent), 1);
     const row = await prisma.onboardingRequest.findFirst({ where: { serialNumber: SERIALS.idempotent } });
     assert.equal(row?.manufacturer, 'Hiddenjoy');
@@ -164,7 +161,7 @@ describe('POST /api/v1/device/onboarding/request', () => {
     const results = await Promise.all(
       Array.from({ length: 5 }, (_, i) => handler(makeReq(token, validBody(SERIALS.concurrent), `req-c-${i}`))),
     );
-    const ids = new Set(results.map((r: OnboardingHttpResponse) => (r.body as SuccessPayload).data.requestId));
+    const ids = new Set(results.map((r: OnboardingHttpResponse) => (r.body as SuccessPayload).requestId));
     assert.equal(ids.size, 1);
     for (const res of results) assert.ok(res.status === 200 || res.status === 201);
     assert.equal(await requestCount(SERIALS.concurrent), 1);
@@ -174,7 +171,7 @@ describe('POST /api/v1/device/onboarding/request', () => {
     const oldToken = await issueToken(SERIALS.timedOutRetry);
     const handler = makeHandler();
     const first = await handler(makeReq(oldToken, validBody(SERIALS.timedOutRetry)));
-    const firstId = (first.body as SuccessPayload).data.requestId;
+    const firstId = (first.body as SuccessPayload).requestId;
     await prisma.onboardingRequest.update({
       where: { id: firstId },
       data: { status: 'TIMED_OUT', rejectReason: 'ONBOARDING_TIMEOUT', timedOutAt: NOW },
@@ -183,7 +180,7 @@ describe('POST /api/v1/device/onboarding/request', () => {
     const newToken = await issueToken(SERIALS.timedOutRetry);
     const retry = await handler(makeReq(newToken, validBody(SERIALS.timedOutRetry)));
     assert.equal(retry.status, 201);
-    assert.notEqual((retry.body as SuccessPayload).data.requestId, firstId);
+    assert.notEqual((retry.body as SuccessPayload).requestId, firstId);
     assert.equal(await requestCount(SERIALS.timedOutRetry), 2);
     assert.equal(
       await prisma.onboardingRequest.count({ where: { serialNumber: SERIALS.timedOutRetry, status: 'PENDING' } }),

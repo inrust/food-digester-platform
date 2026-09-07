@@ -78,6 +78,9 @@ function mockIot(): MockIot {
       state.certs.push(cert);
       return cert;
     },
+    async tagCertificate(certificateArn, tags) {
+      state.calls.push(`tagCertificate:${certificateArn}:${JSON.stringify(tags)}`);
+    },
     async ensurePolicy(policyName, policyDocument) {
       state.calls.push(`ensurePolicy:${policyName}`);
       state.policies.set(policyName, policyDocument);
@@ -170,7 +173,14 @@ describe('ProvisioningService', () => {
     // IoT 调用链完整且 Thing Name = deviceId
     assert.deepEqual(
       iot.calls.map((c) => c.split(':')[0]),
-      ['ensureThing', 'createKeysAndCertificate', 'ensurePolicy', 'attachPolicy', 'attachThingPrincipal'],
+      [
+        'ensureThing',
+        'createKeysAndCertificate',
+        'tagCertificate',
+        'ensurePolicy',
+        'attachPolicy',
+        'attachThingPrincipal',
+      ],
     );
     assert.ok(iot.things.has(deviceId));
     const policy = iot.policies.get(`fdp-device-${deviceId}`);
@@ -217,7 +227,7 @@ describe('ProvisioningService', () => {
     const iot = mockIot();
     const service = makeService(iot);
 
-    // 第一次：attachPolicy 抛错（Thing 与证书已在 AWS 侧产生，DB 无证书记录）
+    // 第一次：attachPolicy 抛错；补偿立即撤销 AWS 证书并保留可对账的 REVOKED 记录。
     iot.failNextAttachPolicy = true;
     let firstError: unknown;
     try {
@@ -227,14 +237,15 @@ describe('ProvisioningService', () => {
     }
     assert.ok(firstError instanceof Error && firstError.message.includes('simulated AWS failure'));
     assert.equal(await prisma.device.count({ where: { id: deviceId } }), 1);
-    assert.equal(await prisma.deviceCertificate.count({ where: { deviceId } }), 0);
+    assert.equal(await prisma.deviceCertificate.count({ where: { deviceId, status: 'REVOKED' } }), 1);
+    assert.ok(iot.calls.some((call) => call.startsWith('revokeCertificate:')));
 
-    // 第二次：cert 落库成功但封包前崩溃由第三次重试覆盖 —— 这里直接重试至成功
+    // 第二次重试至成功。
     const retry = await service.provision(request);
     assert.isFalse(retry.replayed);
     assert.equal(await prisma.device.count({ where: { id: deviceId } }), 1, '业务 Device 不得重复创建');
     assert.equal(await prisma.deviceCertificate.count({ where: { deviceId, status: 'PENDING_CLAIM' } }), 1);
-    // 第一次产生的 AWS 证书未落库（无孤儿业务记录）；AWS 侧孤儿证书为已知风险（见文档）
+    // 第一次证书已补偿撤销，第二次产生可交付证书。
     assert.equal(iot.certs.length, 2);
   });
 
@@ -261,6 +272,54 @@ describe('ProvisioningService', () => {
     assert.ok(orphan?.revokedAt);
     const fresh = await prisma.deviceCertificate.findFirst({ where: { id: result.certificateId } });
     assert.ok(fresh?.packageCiphertext, '新证书必须带加密证书包');
+  });
+
+  test('补偿撤证失败时持久化 issuedCertificateId，下一次 Job 尝试先对账撤证再重签', async () => {
+    const { request, deviceId } = await plantApprovedRequest();
+    const job = await prisma.onboardingProvisioningJob.create({
+      data: {
+        requestId: request.id,
+        status: 'COMPLETED',
+        attempts: 1,
+        nextAttemptAt: NOW,
+        completedAt: NOW,
+      },
+    });
+    const iot = mockIot();
+    const service = makeService(iot);
+    iot.failNextAttachPolicy = true;
+    iot.failNextRevoke = true;
+    let issuedCertificateId: string | null = null;
+    const attempt = {
+      operationId: `op-${request.id}`,
+      onCertificateIssued: async (certificateId: string | null) => {
+        issuedCertificateId = certificateId;
+      },
+    };
+
+    await expect(service.provision(request, attempt)).rejects.toThrow('simulated AWS failure');
+    assert.ok(issuedCertificateId, '补偿未完成时必须保留 AWS certificateId 对账凭证');
+    assert.equal(
+      (await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: issuedCertificateId } })).status,
+      'PENDING_CLAIM',
+    );
+    const orphanCertificateId = issuedCertificateId;
+    const reopened = await prisma.onboardingProvisioningJob.findUniqueOrThrow({ where: { id: job.id } });
+    assert.equal(reopened.status, 'RETRY');
+    assert.equal(reopened.issuedCertificateId, orphanCertificateId);
+    assert.isNull(reopened.completedAt);
+
+    const retry = await service.provision(request, {
+      ...attempt,
+      priorIssuedCertificateId: orphanCertificateId,
+    });
+    assert.isFalse(retry.replayed);
+    assert.notEqual(retry.certificateId, orphanCertificateId);
+    assert.equal(await prisma.deviceCertificate.count({ where: { deviceId, status: 'REVOKED' } }), 1);
+    assert.ok(iot.calls.some((call) => call === `revokeCertificate:${orphanCertificateId}`));
+    assert.ok(
+      iot.calls.some((call) => call.startsWith('tagCertificate:') && call.includes(`fdp:provisioning-operation-id`)),
+    );
   });
 
   test('过期恢复：AWS 撤证失败保留密文与 FAILED 状态，重试成功后才清包并重签', async () => {
@@ -297,6 +356,40 @@ describe('ProvisioningService', () => {
     assert.equal(old.recoveryAttempts, 2);
     assert.isNull(old.packageCiphertext);
     assert.equal(await prisma.deviceCertificate.count({ where: { deviceId, status: 'PENDING_CLAIM' } }), 1);
+  });
+
+  test('Status 超时收敛：本地状态先原子失败关闭，AWS 撤证失败保持可审计重试状态', async () => {
+    const { request, deviceId } = await plantApprovedRequest();
+    const iot = mockIot();
+    const service = makeService(iot);
+    const issued = await service.provision(request);
+    iot.failNextRevoke = true;
+    const at = new Date(NOW.getTime() + CERTIFICATE_PACKAGE_RETENTION_SECONDS * 1000);
+
+    assert.isTrue(await service.convergeOnboardingTimeout(request.id, at));
+
+    const requestRow = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: request.id } });
+    assert.equal(requestRow.status, 'TIMED_OUT');
+    assert.equal(requestRow.rejectReason, 'ONBOARDING_TIMEOUT');
+    assert.isNull(requestRow.revocationCompletedAt);
+    assert.equal(
+      (await prisma.device.findUniqueOrThrow({ where: { id: deviceId } })).lifecycleStatus,
+      'PendingOnboarding',
+    );
+    const certificate = await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: issued.certificateId } });
+    assert.equal(certificate.status, 'REVOKED');
+    assert.isNull(certificate.packageCiphertext);
+    assert.isNull(certificate.revokedAt);
+    assert.equal(
+      await prisma.auditLog.count({
+        where: {
+          objectId: issued.certificateId,
+          action: 'onboarding.timeout.certificate_revoke',
+          result: 'FAILURE',
+        },
+      }),
+      1,
+    );
   });
 
   test('H-05：轮换证书包过期时撤销新证书后清包，失败可重试且旧证仍可用于重签', async () => {

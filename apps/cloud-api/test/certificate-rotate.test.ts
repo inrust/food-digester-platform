@@ -56,6 +56,7 @@ function mockIot(options: { failNextAttach?: boolean } = {}): IotProvisioningPor
           ['-----END', 'PRIVATE', 'KEY-----'].join(' '),
       };
     },
+    async tagCertificate() {},
     async ensurePolicy(_name: string, _doc: IotPolicyDocument) {},
     async attachPolicy() {
       if (options.failNextAttach) {

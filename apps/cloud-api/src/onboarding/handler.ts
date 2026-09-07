@@ -2,7 +2,7 @@
  * BE-ONB-01 Handler：POST /api/v1/device/onboarding/request（框架无关）。
  *
  * 接线：限频 → AUTH-02 withOnboardingAuth（Token 校验 + 序列号绑定）→ Service。
- * 响应契约对齐 CT-05：成功 { data, meta{requestId,timestamp} }；
+ * 成功响应严格保持设备源协议顶层 { requestId, status }；
  * 错误 { error{code,message,requestId} }，未知异常一律 500 通用消息（不泄露内部细节）。
  *
  * 功能边界：不审批、不签发证书、无 AWS 资源副作用（纯数据库读写 + 共享限频）。
@@ -41,13 +41,8 @@ export interface OnboardingRequestHandlerDeps {
 }
 
 interface SuccessBody {
-  readonly data: {
-    readonly requestId: string;
-    readonly status: 'PENDING';
-    readonly serialNumber: string;
-    readonly createdAt: string;
-  };
-  readonly meta: { readonly requestId: string; readonly timestamp: string };
+  readonly requestId: string;
+  readonly status: 'PENDING';
 }
 
 interface ErrorBody {
@@ -61,16 +56,8 @@ function bearerTokenOf(req: OnboardingHttpRequest): string | undefined {
   return header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : undefined;
 }
 
-function successBody(result: OnboardingRequestResult, req: OnboardingHttpRequest, now: Date): SuccessBody {
-  return {
-    data: {
-      requestId: result.requestId,
-      status: result.status,
-      serialNumber: result.serialNumber,
-      createdAt: result.createdAt.toISOString(),
-    },
-    meta: { requestId: req.requestId, timestamp: now.toISOString() },
-  };
+function successBody(result: OnboardingRequestResult): SuccessBody {
+  return { requestId: result.requestId, status: result.status };
 }
 
 function errorBody(code: string, message: string, req: OnboardingHttpRequest): ErrorBody {
@@ -123,7 +110,7 @@ export function createOnboardingRequestHandler(
     },
     async (req, auth) => {
       const result = await submitOnboardingRequest(deps.client, auth, req.body, { now });
-      return { status: result.replayed ? 200 : 201, body: successBody(result, req, now()) };
+      return { status: result.replayed ? 200 : 201, body: successBody(result) };
     },
   );
 

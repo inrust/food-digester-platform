@@ -51,10 +51,15 @@ const PLACEHOLDER_HANDLER_CODE = [
 const DB_MASTER_USERNAME = 'fdp_admin' as const;
 const API_ROLE_SUFFIX = 'api-role' as const;
 const ONBOARDING_API_ROLE_SUFFIX = 'onboarding-api-role' as const;
+const ONBOARDING_PROVISIONING_ROLE_SUFFIX = 'onboarding-provisioning-role' as const;
 const CERT_SWEEPER_ROLE_SUFFIX = 'cert-package-sweeper-role' as const;
 const WORKSPACE_ROOT = fileURLToPath(new URL('../../..', import.meta.url));
 const API_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/lambda-entry.ts');
 const ONBOARDING_API_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/device-onboarding-entry.ts');
+const ONBOARDING_PROVISIONING_ENTRY = resolve(
+  WORKSPACE_ROOT,
+  'apps/cloud-api/src/runtime/onboarding-provisioning-entry.ts',
+);
 const CERT_SWEEPER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/certificate-package-sweeper-entry.ts');
 const INGESTION_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/ingestion-entry.ts');
 const ONBOARDING_DEADLINE_ENTRY = resolve(
@@ -96,6 +101,7 @@ interface ComputeResources {
   readonly certPackageSweeper: lambda.Function;
   readonly onboardingDeadline: lambda.Function;
   readonly onboardingApi: lambda.Function;
+  readonly onboardingProvisioning: lambda.Function;
   readonly api: lambda.Function;
 }
 
@@ -179,19 +185,19 @@ export class AppDependenciesStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    // SEC-01 前置：一次性证书包信封加密专用 Key；数据面只授予管理 API、Onboarding API 与恢复 Lambda。
+    // SEC-01：证书包 Key 数据面只授予 Onboarding API、Provisioning Worker 与恢复 Lambda。
     // 使用确定性角色 ARN 条件，避免 Key ↔ Lambda Role 的 CloudFormation 循环依赖。
-    const apiRoleArn = this.formatArn({
-      service: 'iam',
-      region: '',
-      resource: 'role',
-      resourceName: this.naming.name(API_ROLE_SUFFIX),
-    });
     const onboardingApiRoleArn = this.formatArn({
       service: 'iam',
       region: '',
       resource: 'role',
       resourceName: this.naming.name(ONBOARDING_API_ROLE_SUFFIX),
+    });
+    const onboardingProvisioningRoleArn = this.formatArn({
+      service: 'iam',
+      region: '',
+      resource: 'role',
+      resourceName: this.naming.name(ONBOARDING_PROVISIONING_ROLE_SUFFIX),
     });
     const certSweeperRoleArn = this.formatArn({
       service: 'iam',
@@ -205,7 +211,11 @@ export class AppDependenciesStack extends Stack {
       principals: [new iam.AccountRootPrincipal()],
       actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:DescribeKey'],
       resources: ['*'],
-      conditions: { ArnEquals: { 'aws:PrincipalArn': [apiRoleArn, onboardingApiRoleArn, certSweeperRoleArn] } },
+      conditions: {
+        ArnEquals: {
+          'aws:PrincipalArn': [onboardingApiRoleArn, onboardingProvisioningRoleArn, certSweeperRoleArn],
+        },
+      },
     });
     const certPackageKey = new kms.Key(this, 'CertPackageKey', {
       alias: `alias/${this.naming.name('cert-package')}`,
@@ -557,11 +567,11 @@ export class AppDependenciesStack extends Stack {
       targets: [new eventsTargets.LambdaFunction(summary)],
     });
 
-    // 管理 API、Onboarding API 与证书恢复使用确定性的独立最小权限角色。
+    // 管理 API、Onboarding API、Provisioning Worker 与证书恢复使用确定性的独立最小权限角色。
     const apiRole = new iam.Role(this, 'ApiFnServiceRole', {
       roleName: this.naming.name(API_ROLE_SUFFIX),
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-      description: 'API Lambda execution role and certificate-package KMS data-plane principal',
+      description: 'Admin API Lambda execution role',
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
@@ -571,6 +581,15 @@ export class AppDependenciesStack extends Stack {
       roleName: this.naming.name(ONBOARDING_API_ROLE_SUFFIX),
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       description: 'Onboarding Token API execution role',
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
+      ],
+    });
+    const onboardingProvisioningRole = new iam.Role(this, 'OnboardingProvisioningFnServiceRole', {
+      roleName: this.naming.name(ONBOARDING_PROVISIONING_ROLE_SUFFIX),
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      description: 'Onboarding provisioning job worker execution role',
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
@@ -615,6 +634,7 @@ export class AppDependenciesStack extends Stack {
           'iot:AttachPolicy',
           'iot:AttachThingPrincipal',
           'iot:UpdateCertificate',
+          'iot:TagResource',
         ],
         resources: ['*'],
       }),
@@ -682,55 +702,31 @@ export class AppDependenciesStack extends Stack {
           'iot:AttachThingPrincipal',
           'iot:DetachThingPrincipal',
           'iot:DescribeEndpoint',
+          'iot:TagResource',
         ],
         resources: ['*'],
       }),
     );
 
-    // API Handler：AUTH-01 JWT 重新验签后路由真实 Onboarding 管理 Handler。
-    const api = mkFunction('ApiFn', 'api', {
-      timeout: Duration.seconds(30),
-      memorySize: 512,
+    const onboardingProvisioning = mkFunction('OnboardingProvisioningFn', 'onboarding-provisioning', {
+      timeout: Duration.seconds(300),
       environment: {
         DB_SECRET_ARN: dbSecret,
-        USER_POOL_ID: identity.userPool.userPoolId,
-        USER_POOL_CLIENT_ID: identity.userPoolClient.userPoolClientId,
-        RAW_BUCKET_NAME: storage.raw.bucketName,
-        OTA_BUCKET_NAME: storage.ota.bucketName,
-        MEDIA_BUCKET_NAME: storage.media.bucketName,
-        EXPORT_BUCKET_NAME: storage.exportBucket.bucketName,
         CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
         FDP_AWS_ACCOUNT_ID: Aws.ACCOUNT_ID,
       },
-      role: apiRole,
-      entry: API_ENTRY,
+      role: onboardingProvisioningRole,
+      entry: ONBOARDING_PROVISIONING_ENTRY,
     });
-    dbSecretGrant(api);
-    // 预签名 URL 与重放读取：仅授予业务所需 Bucket 的对象级读写
-    storage.media.grantReadWrite(api);
-    storage.ota.grantReadWrite(api);
-    storage.exportBucket.grantReadWrite(api);
-    storage.raw.grantRead(api);
-    // SEC-01：证书包信封加密 Key 的加解密权限仅此角色持有
-    apiRole.addToPrincipalPolicy(
+    dbSecretGrant(onboardingProvisioning);
+    onboardingProvisioningRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
         sid: 'CertificatePackageKeyDataPlane',
         actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:DescribeKey'],
         resources: [storage.certPackageKey.keyArn],
       }),
     );
-    // 下行发布（BE-CMD-02/BE-OTA-03）：仅允许 3 个下行 Topic 模式
-    api.addToRolePolicy(
-      new iam.PolicyStatement({
-        sid: 'IotDownlinkPublish',
-        actions: ['iot:Publish'],
-        resources: DOWNLINK_TOPIC_TYPES.map((type) =>
-          this.formatArn({ service: 'iot', resource: 'topic', resourceName: `bnx/device/*/${type}` }),
-        ),
-      }),
-    );
-    // 设备发放（BE-ONB-03）：CreateKeysAndCertificate 等动作不支持资源级收敛，保持动作级白名单
-    api.addToRolePolicy(
+    onboardingProvisioning.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'IotProvisioning',
         actions: [
@@ -745,13 +741,60 @@ export class AppDependenciesStack extends Stack {
           'iot:AttachPolicy',
           'iot:AttachThingPrincipal',
           'iot:DetachThingPrincipal',
-          'iot:DescribeEndpoint',
+          'iot:TagResource',
         ],
         resources: ['*'],
       }),
     );
+    new events.Rule(this, 'OnboardingProvisioningSchedule', {
+      ruleName: this.naming.name('onboarding-provisioning'),
+      schedule: events.Schedule.rate(Duration.minutes(1)),
+      targets: [new eventsTargets.LambdaFunction(onboardingProvisioning)],
+    });
 
-    return { ingestion, archive, outboxPublisher, summary, certPackageSweeper, onboardingDeadline, onboardingApi, api };
+    // API Handler：AUTH-01 JWT 重新验签后路由真实 Onboarding 管理 Handler。
+    const api = mkFunction('ApiFn', 'api', {
+      timeout: Duration.seconds(30),
+      memorySize: 512,
+      environment: {
+        DB_SECRET_ARN: dbSecret,
+        USER_POOL_ID: identity.userPool.userPoolId,
+        USER_POOL_CLIENT_ID: identity.userPoolClient.userPoolClientId,
+        RAW_BUCKET_NAME: storage.raw.bucketName,
+        OTA_BUCKET_NAME: storage.ota.bucketName,
+        MEDIA_BUCKET_NAME: storage.media.bucketName,
+        EXPORT_BUCKET_NAME: storage.exportBucket.bucketName,
+      },
+      role: apiRole,
+      entry: API_ENTRY,
+    });
+    dbSecretGrant(api);
+    // 预签名 URL 与重放读取：仅授予业务所需 Bucket 的对象级读写
+    storage.media.grantReadWrite(api);
+    storage.ota.grantReadWrite(api);
+    storage.exportBucket.grantReadWrite(api);
+    storage.raw.grantRead(api);
+    // 下行发布（BE-CMD-02/BE-OTA-03）：仅允许 3 个下行 Topic 模式
+    api.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'IotDownlinkPublish',
+        actions: ['iot:Publish'],
+        resources: DOWNLINK_TOPIC_TYPES.map((type) =>
+          this.formatArn({ service: 'iot', resource: 'topic', resourceName: `bnx/device/*/${type}` }),
+        ),
+      }),
+    );
+    return {
+      ingestion,
+      archive,
+      outboxPublisher,
+      summary,
+      certPackageSweeper,
+      onboardingDeadline,
+      onboardingApi,
+      onboardingProvisioning,
+      api,
+    };
   }
 
   // ---------- API Gateway：三类认证入口分离 ----------

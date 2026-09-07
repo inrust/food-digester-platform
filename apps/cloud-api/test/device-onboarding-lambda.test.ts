@@ -7,7 +7,7 @@ describe('Device Onboarding API Gateway 生产适配器', () => {
     const handler = createDeviceOnboardingLambdaHandler({
       request: async (request) => {
         received = request;
-        return { status: 202, body: { data: { status: 'PENDING' } } };
+        return { status: 201, body: { requestId: 'onb-1', status: 'PENDING' } };
       },
       status: async () => ({ status: 500, body: {} }),
     });
@@ -20,8 +20,8 @@ describe('Device Onboarding API Gateway 生产适配器', () => {
       requestContext: { requestId: 'req-1', identity: { sourceIp: '203.0.113.9' } },
     });
 
-    assert.equal(response.statusCode, 202);
-    assert.deepEqual(JSON.parse(response.body), { data: { status: 'PENDING' } });
+    assert.equal(response.statusCode, 201);
+    assert.deepEqual(JSON.parse(response.body), { requestId: 'onb-1', status: 'PENDING' });
     assert.deepInclude(received as Record<string, unknown>, {
       requestId: 'req-1',
       sourceIp: '203.0.113.9',
@@ -34,7 +34,7 @@ describe('Device Onboarding API Gateway 生产适配器', () => {
     const body = {
       toJSON() {
         order.push('serialized');
-        return { data: { status: 'APPROVED', privateKey: 'secret' } };
+        return { status: 'APPROVED', certificate: { privateKey: 'secret' } };
       },
     };
     const handler = createDeviceOnboardingLambdaHandler({
@@ -56,7 +56,7 @@ describe('Device Onboarding API Gateway 生产适配器', () => {
 
     assert.deepEqual(order, ['serialized', 'committed']);
     assert.equal(response.statusCode, 200);
-    assert.equal(JSON.parse(response.body).data.privateKey, 'secret');
+    assert.equal(JSON.parse(response.body).certificate.privateKey, 'secret');
   });
 
   test('交付确认失败时禁止返回含私钥的成功响应', async () => {
@@ -64,7 +64,7 @@ describe('Device Onboarding API Gateway 生产适配器', () => {
       request: async () => ({ status: 500, body: {} }),
       status: async () => ({
         status: 200,
-        body: { data: { privateKey: 'must-not-leak' } },
+        body: { status: 'APPROVED', certificate: { privateKey: 'must-not-leak' } },
         onCommitted: async () => Promise.reject(new Error('commit failed')),
       }),
     });

@@ -74,6 +74,7 @@ function mockIot(): IotProvisioningPort {
           ['-----END', 'PRIVATE', 'KEY-----'].join(' '),
       } as IotCertificateResult);
     },
+    tagCertificate: () => Promise.resolve(),
     ensurePolicy: (_name: string, _doc: IotPolicyDocument) => Promise.resolve(),
     attachPolicy: () => Promise.resolve(),
     attachThingPrincipal: () => Promise.resolve(),
@@ -159,7 +160,7 @@ async function submitRequest(serialNumber: string): Promise<{ token: string; req
     requestId: 'req-submit',
   });
   assert.equal(res.status, 201);
-  const requestId = (res.body as { data: { requestId: string } }).data.requestId;
+  const requestId = (res.body as { requestId: string }).requestId;
   return { token, requestId };
 }
 
@@ -172,38 +173,36 @@ function adminApprove(requestId: string, admin: AdminOnboardingHandlers) {
   });
 }
 
-function statusReq(token: string | undefined, serialNumber: string): OnboardingStatusRequest {
+function statusReq(token: string | undefined, _serialNumber: string): OnboardingStatusRequest {
   return {
     headers: token ? { authorization: `Bearer ${token}` } : {},
-    query: { serialNumber },
     requestId: 'req-status',
   };
 }
 
 interface StatusPayload {
-  data: {
-    status: string;
-    requestId: string;
-    rejectReason?: string | null;
-    deviceId?: string;
-    certificatePem?: string;
-    privateKey?: string;
-    mqttEndpoint?: string;
-    heartbeatInterval?: number;
-  };
-  meta: { requestId: string; timestamp: string };
+  status: string;
+  reason?: string;
+  deviceId?: string;
+  certificate?: { certificatePem: string; privateKey: string };
+  mqtt?: { endpoint: string };
+  configuration?: { heartbeatInterval: number };
+}
+
+async function provision(requestId: string, service = makeProvisioning()): Promise<void> {
+  const request = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: requestId } });
+  await service.provision(request);
 }
 
 describe('GET /api/v1/device/onboarding/status', () => {
   test('PENDING：申请待审批 → 200 PENDING，不含证书材料字段', async () => {
     const serial = await plantDevice();
-    const { token, requestId } = await submitRequest(serial);
+    const { token } = await submitRequest(serial);
     const res = await statusHandler(statusReq(token, serial));
     assert.equal(res.status, 200);
     const body = res.body as StatusPayload;
-    assert.equal(body.data.status, 'PENDING');
-    assert.equal(body.data.requestId, requestId);
-    assert.ok(!('privateKey' in body.data) && !('certificatePem' in body.data));
+    assert.equal(body.status, 'PENDING');
+    assert.deepEqual(body, { status: 'PENDING' });
   });
 
   test('REJECTED：返回稳定状态与拒绝原因', async () => {
@@ -222,8 +221,8 @@ describe('GET /api/v1/device/onboarding/status', () => {
     const res = await statusHandler(statusReq(token, serial));
     assert.equal(res.status, 200);
     const body = res.body as StatusPayload;
-    assert.equal(body.data.status, 'REJECTED');
-    assert.equal(body.data.rejectReason, '资料不完整');
+    assert.equal(body.status, 'REJECTED');
+    assert.equal(body.reason, '资料不完整');
   });
 
   test('DEC-017 TIMED_OUT：外部稳定映射为 REJECTED/ONBOARDING_TIMEOUT', async () => {
@@ -237,41 +236,41 @@ describe('GET /api/v1/device/onboarding/status', () => {
     const res = await statusHandler(statusReq(token, serial));
     assert.equal(res.status, 200);
     const body = res.body as StatusPayload;
-    assert.equal(body.data.status, 'REJECTED');
-    assert.equal(body.data.rejectReason, 'ONBOARDING_TIMEOUT');
+    assert.equal(body.status, 'REJECTED');
+    assert.equal(body.reason, 'ONBOARDING_TIMEOUT');
   });
 
   test('APPROVED 但 Provisioning 未就绪 → 对外仍为 PENDING（内部步骤不暴露）', async () => {
     const serial = await plantDevice();
     const { token, requestId } = await submitRequest(serial);
-    // 审批但不注入 provisioningTrigger：证书包未就绪
+    // 审批只落持久化 Job；Worker 尚未执行时证书包未就绪。
     const admin = createAdminOnboardingHandlers({ client: prisma, now });
     assert.equal((await adminApprove(requestId, admin)).status, 200);
 
     const res = await statusHandler(statusReq(token, serial));
     assert.equal(res.status, 200);
-    assert.equal((res.body as StatusPayload).data.status, 'PENDING');
+    assert.equal((res.body as StatusPayload).status, 'PENDING');
   });
 
   test('APPROVED 全链路：审批触发签发 → status 一次性领取证书包（全字段 + heartbeatInterval=60）', async () => {
     const serial = await plantDevice();
     const { token, requestId } = await submitRequest(serial);
-    const admin = createAdminOnboardingHandlers({ client: prisma, now, provisioningTrigger: makeProvisioning() });
+    const admin = createAdminOnboardingHandlers({ client: prisma, now });
     assert.equal((await adminApprove(requestId, admin)).status, 200);
+    await provision(requestId);
 
     const res = await statusHandler(statusReq(token, serial));
     assert.equal(res.status, 200);
     const body = res.body as StatusPayload;
-    assert.equal(body.data.status, 'APPROVED');
-    assert.equal(body.data.requestId, requestId);
-    assert.ok(body.data.deviceId);
-    assert.match(body.data.certificatePem ?? '', /BEGIN CERTIFICATE/);
-    assert.ok((body.data.privateKey ?? '').includes('STATUSKEY'), '证书包私钥应来自签发材料');
-    assert.equal(body.data.mqttEndpoint, MQTT_ENDPOINT);
-    assert.equal(body.data.heartbeatInterval, 60);
+    assert.equal(body.status, 'APPROVED');
+    assert.ok(body.deviceId);
+    assert.match(body.certificate?.certificatePem ?? '', /BEGIN CERTIFICATE/);
+    assert.ok((body.certificate?.privateKey ?? '').includes('STATUSKEY'), '证书包私钥应来自签发材料');
+    assert.equal(body.mqtt?.endpoint, MQTT_ENDPOINT);
+    assert.equal(body.configuration?.heartbeatInterval, 60);
 
     // 返回时仅完成交付预留；适配层确认响应提交后才销毁密文并核销 Token。
-    let cert = await prisma.deviceCertificate.findFirst({ where: { deviceId: body.data.deviceId } });
+    let cert = await prisma.deviceCertificate.findFirst({ where: { deviceId: body.deviceId } });
     assert.isNotNull(cert?.packageCiphertext);
     assert.isNotNull(cert?.claimedAt);
     assert.ok(res.onCommitted);
@@ -283,7 +282,7 @@ describe('GET /api/v1/device/onboarding/status', () => {
     assert.equal(again.status, 401);
 
     // 审计与管理员 API 均不含私钥明文
-    const audits = await prisma.auditLog.findMany({ where: { objectId: { in: [requestId, body.data.deviceId!] } } });
+    const audits = await prisma.auditLog.findMany({ where: { objectId: { in: [requestId, body.deviceId!] } } });
     assert.ok(!JSON.stringify(audits).includes('STATUSKEY'));
     const detail = await admin.detail({ actor: superAdmin, headers: {}, params: { requestId }, requestId: 'req-d' });
     assert.ok(!JSON.stringify(detail.body).includes('STATUSKEY'));
@@ -293,13 +292,14 @@ describe('GET /api/v1/device/onboarding/status', () => {
     const serial = await plantDevice();
     const { token, requestId } = await submitRequest(serial);
     const provisioning = makeProvisioning();
-    const admin = createAdminOnboardingHandlers({ client: prisma, now, provisioningTrigger: provisioning });
+    const admin = createAdminOnboardingHandlers({ client: prisma, now });
     assert.equal((await adminApprove(requestId, admin)).status, 200);
+    await provision(requestId, provisioning);
 
     const first = await statusHandler(statusReq(token, serial));
     assert.equal(first.status, 200);
-    assert.equal((first.body as StatusPayload).data.status, 'APPROVED');
-    const firstDeviceId = (first.body as StatusPayload).data.deviceId as string;
+    assert.equal((first.body as StatusPayload).status, 'APPROVED');
+    const firstDeviceId = (first.body as StatusPayload).deviceId as string;
     const firstCertificateId = (
       await prisma.deviceCertificate.findFirst({
         where: { deviceId: firstDeviceId, status: 'PENDING_CLAIM', packageCiphertext: { not: null } },
@@ -310,15 +310,15 @@ describe('GET /api/v1/device/onboarding/status', () => {
     // 不调用 first.onCommitted，模拟连接在成功响应确认前中断。
     const recovery = await statusHandler(statusReq(token, serial));
     assert.equal(recovery.status, 200);
-    assert.equal((recovery.body as StatusPayload).data.status, 'PENDING');
+    assert.equal((recovery.body as StatusPayload).status, 'PENDING');
     const old = await prisma.deviceCertificate.findFirst({ where: { id: firstCertificateId } });
     assert.equal(old?.status, 'REVOKED');
     assert.isNull(old?.packageCiphertext);
 
     const retried = await statusHandler(statusReq(token, serial));
     assert.equal(retried.status, 200);
-    assert.equal((retried.body as StatusPayload).data.status, 'APPROVED');
-    const newId = (retried.body as StatusPayload).data.deviceId;
+    assert.equal((retried.body as StatusPayload).status, 'APPROVED');
+    const newId = (retried.body as StatusPayload).deviceId;
     assert.ok(newId);
     await retried.onCommitted?.();
     assert.equal((await statusHandler(statusReq(token, serial))).status, 401);
@@ -327,11 +327,12 @@ describe('GET /api/v1/device/onboarding/status', () => {
   test('交付确认第一写点冲突时不核销 Token', async () => {
     const serial = await plantDevice();
     const { token, requestId } = await submitRequest(serial);
-    const admin = createAdminOnboardingHandlers({ client: prisma, now, provisioningTrigger: makeProvisioning() });
+    const admin = createAdminOnboardingHandlers({ client: prisma, now });
     assert.equal((await adminApprove(requestId, admin)).status, 200);
+    await provision(requestId);
     const response = await statusHandler(statusReq(token, serial));
     const request = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: requestId } });
-    const deviceId = (response.body as StatusPayload).data.deviceId;
+    const deviceId = (response.body as StatusPayload).deviceId;
     assert.ok(deviceId);
     const cert = await prisma.deviceCertificate.findFirstOrThrow({ where: { deviceId } });
     await prisma.deviceCertificate.update({ where: { id: cert.id }, data: { packageCiphertext: null } });
@@ -343,11 +344,12 @@ describe('GET /api/v1/device/onboarding/status', () => {
   test('Token 核销冲突会回滚同一事务内的证书包清理', async () => {
     const serial = await plantDevice();
     const { token, requestId } = await submitRequest(serial);
-    const admin = createAdminOnboardingHandlers({ client: prisma, now, provisioningTrigger: makeProvisioning() });
+    const admin = createAdminOnboardingHandlers({ client: prisma, now });
     assert.equal((await adminApprove(requestId, admin)).status, 200);
+    await provision(requestId);
     const response = await statusHandler(statusReq(token, serial));
     const request = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: requestId } });
-    const deviceId = (response.body as StatusPayload).data.deviceId;
+    const deviceId = (response.body as StatusPayload).deviceId;
     assert.ok(deviceId);
     const cert = await prisma.deviceCertificate.findFirstOrThrow({ where: { deviceId } });
     await prisma.onboardingToken.update({ where: { id: request.tokenId }, data: { usedAt: NOW } });
@@ -362,31 +364,27 @@ describe('GET /api/v1/device/onboarding/status', () => {
   test('DEC-017：截止边界即使评估器延迟也失败关闭，不再返回证书包', async () => {
     const serial = await plantDevice();
     const { token, requestId } = await submitRequest(serial);
-    const admin = createAdminOnboardingHandlers({
-      client: prisma,
-      now,
-      provisioningTrigger: makeProvisioning(),
-    });
+    const admin = createAdminOnboardingHandlers({ client: prisma, now });
     assert.equal((await adminApprove(requestId, admin)).status, 200);
+    await provision(requestId);
     await prisma.onboardingRequest.update({ where: { id: requestId }, data: { onboardingDeadlineAt: NOW } });
 
     const res = await statusHandler(statusReq(token, serial));
     assert.equal(res.status, 200);
     const body = res.body as StatusPayload;
-    assert.equal(body.data.status, 'REJECTED');
-    assert.equal(body.data.rejectReason, 'ONBOARDING_TIMEOUT');
-    assert.isUndefined(body.data.privateKey);
+    assert.equal(body.status, 'REJECTED');
+    assert.equal(body.reason, 'ONBOARDING_TIMEOUT');
+    const request = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: requestId } });
+    assert.equal(request.status, 'TIMED_OUT');
+    assert.isNotNull(request.revocationCompletedAt);
   });
 
   test('DEC-003/017：截止前证书包过期时撤销旧证书并重签，对外保持 PENDING', async () => {
     const serial = await plantDevice();
     const { token, requestId } = await submitRequest(serial);
-    const admin = createAdminOnboardingHandlers({
-      client: prisma,
-      now,
-      provisioningTrigger: makeProvisioning(),
-    });
+    const admin = createAdminOnboardingHandlers({ client: prisma, now });
     assert.equal((await adminApprove(requestId, admin)).status, 200);
+    await provision(requestId);
     const device = await prisma.device.findUniqueOrThrow({ where: { serialNumber: serial } });
     const old = await prisma.deviceCertificate.findFirstOrThrow({
       where: { deviceId: device.id, status: 'PENDING_CLAIM' },
@@ -399,12 +397,12 @@ describe('GET /api/v1/device/onboarding/status', () => {
 
     const res = await statusHandler(statusReq(token, serial));
     assert.equal(res.status, 200);
-    assert.equal((res.body as StatusPayload).data.status, 'PENDING');
+    assert.equal((res.body as StatusPayload).status, 'PENDING');
     assert.equal((await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: old.id } })).status, 'REVOKED');
     assert.equal(await prisma.deviceCertificate.count({ where: { deviceId: device.id, status: 'PENDING_CLAIM' } }), 1);
   });
 
-  test('负向：Token 无申请 → 404；缺序列号 → 400；伪造 Token → 401', async () => {
+  test('负向：Token 无申请 → 404；Status 无 Query 仍由 Token 定位；伪造 Token → 401', async () => {
     const serial = await plantDevice();
     const { token } = await issueOnboardingToken(prisma, {
       serialNumber: serial,
@@ -415,12 +413,11 @@ describe('GET /api/v1/device/onboarding/status', () => {
     assert.equal(notFound.status, 404);
     assert.equal((notFound.body as { error: { code: string } }).error.code, 'NOT_FOUND');
 
-    const badSerial = await statusHandler({
+    const withoutQuery = await statusHandler({
       headers: { authorization: `Bearer ${token}` },
-      query: {},
       requestId: 'req-x',
     });
-    assert.equal(badSerial.status, 400);
+    assert.equal(withoutQuery.status, 404);
 
     const forged = await statusHandler(statusReq(`fdp_onb_${'z'.repeat(43)}`, serial));
     assert.equal(forged.status, 401);

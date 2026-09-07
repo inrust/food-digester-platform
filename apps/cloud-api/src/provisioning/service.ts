@@ -1,5 +1,5 @@
 /**
- * BE-ONB-03 证书签发 Provisioning Service（实现 BE-ONB-02 的 ProvisioningTrigger 端口）。
+ * BE-ONB-03 证书签发 Provisioning Service（由持久化 Provisioning Job Worker 调用）。
  *
  * 签发链（approve 提交后触发）：
  * 1. 库存设备定位（deviceId = 库存行 id，不重复创建业务 Device）；
@@ -20,7 +20,7 @@ import { buildDevicePolicy } from '@fdp/aws-clients';
 import type { DataKeyProvider } from '@fdp/aws-clients';
 import { CERTIFICATE_PACKAGE_RETENTION_SECONDS, certificateFingerprintFromPem, SecurePackageService } from '@fdp/auth';
 import { onboardingDeadlineFrom } from '@fdp/contracts/lifecycle/onboarding-timeout-policy.js';
-import type { AdminOnboardingRequestRecord, ProvisioningTrigger } from '../admin/onboarding/index.js';
+import type { AdminOnboardingRequestRecord } from '../admin/onboarding/index.js';
 import type { IotProvisioningPort } from './iot-port.js';
 
 export interface ProvisioningConfig {
@@ -46,6 +46,12 @@ export interface ProvisioningResult {
   readonly replayed: boolean;
 }
 
+export interface ProvisioningAttemptContext {
+  readonly operationId: string;
+  readonly priorIssuedCertificateId?: string | null;
+  readonly onCertificateIssued?: (certificateId: string | null) => Promise<void>;
+}
+
 /** 证书包明文负载（仅内存形态；落库前由 SEC-01 信封加密）。 */
 export interface CertificatePackagePayload {
   readonly certificatePem: string;
@@ -55,6 +61,7 @@ export interface CertificatePackagePayload {
 interface DeviceRow {
   readonly id: string;
   readonly serialNumber: string;
+  readonly lifecycleStatus: string;
 }
 
 interface CertificateRow {
@@ -67,6 +74,7 @@ interface CertificateRow {
 
 interface DeviceDelegate {
   findFirst(args: { where: Record<string, unknown> }): Promise<DeviceRow | null>;
+  updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
 }
 
 interface CertificateDelegate {
@@ -76,11 +84,22 @@ interface CertificateDelegate {
 }
 
 interface OnboardingRequestDelegate {
-  findFirst(args: { where: Record<string, unknown>; orderBy: Record<string, 'asc' | 'desc'> }): Promise<{
+  findFirst(args: { where: Record<string, unknown>; orderBy?: Record<string, 'asc' | 'desc'> }): Promise<{
     id: string;
     serialNumber: string;
+    status: string;
+    onboardingDeadlineAt: Date | null;
+    revocationCompletedAt: Date | null;
   } | null>;
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
+}
+
+interface ProvisioningJobDelegate {
+  updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
+}
+
+interface StateHistoryDelegate {
+  create(args: { data: Record<string, unknown> }): Promise<unknown>;
 }
 
 interface RecoveryCertificateDelegate {
@@ -97,7 +116,7 @@ export class ProvisioningError extends Error {
   override readonly name = 'ProvisioningError';
 }
 
-export class ProvisioningService implements ProvisioningTrigger {
+export class ProvisioningService {
   private readonly db: DbClient;
   private readonly now: () => Date;
   private readonly securePackage: SecurePackageService;
@@ -112,11 +131,6 @@ export class ProvisioningService implements ProvisioningTrigger {
     });
   }
 
-  /** BE-ONB-02 approve 后触发点。 */
-  async triggerApproved(request: AdminOnboardingRequestRecord): Promise<void> {
-    await this.provision(request);
-  }
-
   /** DEC-003 响应不确定恢复：云端撤证、销毁未确认包并重签。 */
   async recoverUnconfirmedDelivery(
     request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'>,
@@ -126,6 +140,100 @@ export class ProvisioningService implements ProvisioningTrigger {
     const revoked = await this.securePackage.revokeUnconfirmedDelivery(certificateId);
     if (!revoked) throw new ProvisioningError('未确认交付状态已变化，请重试');
     return this.provision(request);
+  }
+
+  /** Status 在截止边界主动收敛本地状态；AWS 撤证失败由 deadline evaluator 按持久化状态重试。 */
+  async convergeOnboardingTimeout(requestId: string, at: Date): Promise<boolean> {
+    const certificateId = await withTransaction(this.db, async (tx) => {
+      const requests = (tx as unknown as Record<string, unknown>).onboardingRequest as OnboardingRequestDelegate;
+      const raw = tx as unknown as { $queryRawUnsafe<T>(query: string, ...values: unknown[]): Promise<T> };
+      await raw.$queryRawUnsafe(
+        `SELECT id FROM onboarding_requests WHERE id = $1 AND status = 'APPROVED' FOR UPDATE`,
+        requestId,
+      );
+      const request = await requests.findFirst({ where: { id: requestId } });
+      if (!request || request.status !== 'APPROVED' || !request.onboardingDeadlineAt) return null;
+      if (request.onboardingDeadlineAt.getTime() > at.getTime()) return null;
+      const txDevices = (tx as unknown as Record<string, unknown>).device as DeviceDelegate;
+      const device = await txDevices.findFirst({ where: { serialNumber: request.serialNumber } });
+      if (!device || device.lifecycleStatus !== 'OnboardingApproved') return null;
+      const txCertificates = (tx as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
+      const certificate = await txCertificates.findFirst({
+        where: { deviceId: device.id, status: 'PENDING_CLAIM' },
+      });
+      if (!certificate) return null;
+
+      const requestUpdated = await requests.updateMany({
+        where: { id: request.id, status: 'APPROVED', onboardingDeadlineAt: { lte: at }, timedOutAt: null },
+        data: { status: 'TIMED_OUT', rejectReason: 'ONBOARDING_TIMEOUT', timedOutAt: at, version: { increment: 1 } },
+      });
+      const deviceUpdated = await txDevices.updateMany({
+        where: { id: device.id, lifecycleStatus: 'OnboardingApproved' },
+        data: { lifecycleStatus: 'PendingOnboarding' },
+      });
+      const certificateUpdated = await txCertificates.updateMany({
+        where: { id: certificate.id, status: 'PENDING_CLAIM' },
+        data: { status: 'REVOKED' },
+      });
+      if (requestUpdated.count !== 1 || deviceUpdated.count !== 1 || certificateUpdated.count !== 1) {
+        throw new ProvisioningError('Onboarding 超时状态并发变化，请重试');
+      }
+      await this.securePackage.destroyPackage(certificate.id, tx);
+      const history = (tx as unknown as Record<string, unknown>).deviceStateHistory as StateHistoryDelegate;
+      await history.create({
+        data: {
+          deviceId: device.id,
+          axis: 'lifecycle',
+          fromStatus: 'OnboardingApproved',
+          toStatus: 'PendingOnboarding',
+          actorType: 'SYSTEM',
+          actorId: 'system:onboarding-status-timeout',
+          reason: 'ONBOARDING_TIMEOUT',
+        },
+      });
+      await recordAudit(tx, {
+        objectType: 'onboarding_request',
+        objectId: request.id,
+        action: 'onboarding.timeout',
+        result: 'SUCCESS',
+        reason: 'ONBOARDING_TIMEOUT',
+        afterValue: { deviceId: device.id, certificateId: certificate.id, detectedBy: 'status' },
+      });
+      return certificate.id;
+    });
+    if (!certificateId) return false;
+
+    try {
+      await this.deps.iot.revokeCertificate(certificateId);
+      await withTransaction(this.db, async (tx) => {
+        const requests = (tx as unknown as Record<string, unknown>).onboardingRequest as OnboardingRequestDelegate;
+        const txCertificates = (tx as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
+        await requests.updateMany({
+          where: { id: requestId, status: 'TIMED_OUT', revocationCompletedAt: null },
+          data: { revocationCompletedAt: at },
+        });
+        await txCertificates.updateMany({
+          where: { id: certificateId, status: 'REVOKED', revokedAt: null },
+          data: { revokedAt: at },
+        });
+        await recordAudit(tx, {
+          objectType: 'deviceCertificate',
+          objectId: certificateId,
+          action: 'onboarding.timeout.certificate_revoke',
+          result: 'SUCCESS',
+          reason: 'ONBOARDING_TIMEOUT',
+        });
+      });
+    } catch (error) {
+      await recordAudit(this.db, {
+        objectType: 'deviceCertificate',
+        objectId: certificateId,
+        action: 'onboarding.timeout.certificate_revoke',
+        result: 'FAILURE',
+        reason: error instanceof Error ? error.name : 'UNKNOWN',
+      });
+    }
+    return true;
   }
 
   /**
@@ -322,7 +430,10 @@ export class ProvisioningService implements ProvisioningTrigger {
     if (count !== 1) throw new ProvisioningError('过期轮换证书状态已变化，请重试');
   }
 
-  async provision(request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'>): Promise<ProvisioningResult> {
+  async provision(
+    request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'>,
+    attempt?: ProvisioningAttemptContext,
+  ): Promise<ProvisioningResult> {
     const devices = (this.db as unknown as Record<string, unknown>).device as DeviceDelegate;
     const certificates = (this.db as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
 
@@ -341,29 +452,35 @@ export class ProvisioningService implements ProvisioningTrigger {
 
     // DEC-003 丢失处置：前次签发在封包前失败（私钥材料已不可恢复）→ 旧记录标记 REVOKED 后重签
     if (existing && !existing.packageCiphertext) {
+      await this.deps.iot.revokeCertificate(existing.id);
       await certificates.updateMany({
         where: { id: existing.id, status: 'PENDING_CLAIM' },
         data: { status: 'REVOKED', revokedAt: this.now() },
       });
+      await attempt?.onCertificateIssued?.(null);
+    } else if (attempt?.priorIssuedCertificateId) {
+      // 上次进程在 AWS 发证后、业务证书落库前崩溃：凭持久化 attempt 凭证立即撤销孤儿证书。
+      await this.deps.iot.revokeCertificate(attempt.priorIssuedCertificateId);
+      await attempt.onCertificateIssued?.(null);
     }
 
     await this.deps.iot.ensureThing(device.id);
     const cert = await this.deps.iot.createKeysAndCertificate();
-    const policy = buildDevicePolicy({
-      region: this.deps.config.region,
-      accountId: this.deps.config.accountId,
-      thingName: device.id,
-      ...(this.deps.config.policyNamePrefix ? { policyNamePrefix: this.deps.config.policyNamePrefix } : {}),
-    });
-    await this.deps.iot.ensurePolicy(policy.policyName, policy.policyDocument);
-    await this.deps.iot.attachPolicy(policy.policyName, cert.certificateArn);
-    await this.deps.iot.attachThingPrincipal(device.id, cert.certificateArn);
-
     const now = this.now();
-    const notAfter = new Date(now.getTime() + this.deps.config.certificateValiditySeconds * 1000);
-    await withTransaction(this.db, async (tx) => {
-      const txCertificates = (tx as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
-      await txCertificates.create({
+    try {
+      await attempt?.onCertificateIssued?.(cert.certificateId);
+      await this.deps.iot.tagCertificate(cert.certificateArn, {
+        'fdp:onboarding-request-id': request.id,
+        'fdp:provisioning-operation-id': attempt?.operationId ?? request.id,
+      });
+      const policy = buildDevicePolicy({
+        region: this.deps.config.region,
+        accountId: this.deps.config.accountId,
+        thingName: device.id,
+        ...(this.deps.config.policyNamePrefix ? { policyNamePrefix: this.deps.config.policyNamePrefix } : {}),
+      });
+      const notAfter = new Date(now.getTime() + this.deps.config.certificateValiditySeconds * 1000);
+      await certificates.create({
         data: {
           id: cert.certificateId,
           deviceId: device.id,
@@ -374,23 +491,72 @@ export class ProvisioningService implements ProvisioningTrigger {
           notAfter,
         },
       });
-      await recordAudit(tx, {
+      await this.deps.iot.ensurePolicy(policy.policyName, policy.policyDocument);
+      await this.deps.iot.attachPolicy(policy.policyName, cert.certificateArn);
+      await this.deps.iot.attachThingPrincipal(device.id, cert.certificateArn);
+
+      // AWS 返回私钥后立即信封加密存储（明文仅内存经过；SEC-01 自记 CERT_PACKAGE_STORE 审计）
+      const payload: CertificatePackagePayload = { certificatePem: cert.certificatePem, privateKey: cert.privateKey };
+      const { expiresAt } = await this.securePackage.storePackage(
+        cert.certificateId,
+        Buffer.from(JSON.stringify(payload), 'utf8'),
+      );
+      await this.setOnboardingDeadline(request.id, this.deadlineFromPackageExpiry(expiresAt));
+      await recordAudit(this.db, {
         objectType: 'device',
         objectId: device.id,
         action: 'onboarding.provision',
         result: 'SUCCESS',
-        afterValue: { certificateId: cert.certificateId, policyName: policy.policyName, requestId: request.id },
+        afterValue: {
+          certificateId: cert.certificateId,
+          policyName: policy.policyName,
+          requestId: request.id,
+          operationId: attempt?.operationId ?? request.id,
+        },
       });
-    });
-
-    // AWS 返回私钥后立即信封加密存储（明文仅内存经过；SEC-01 自记 CERT_PACKAGE_STORE 审计）
-    const payload: CertificatePackagePayload = { certificatePem: cert.certificatePem, privateKey: cert.privateKey };
-    const { expiresAt } = await this.securePackage.storePackage(
-      cert.certificateId,
-      Buffer.from(JSON.stringify(payload), 'utf8'),
-    );
-    await this.setOnboardingDeadline(request.id, this.deadlineFromPackageExpiry(expiresAt));
-    return { deviceId: device.id, certificateId: cert.certificateId, replayed: false };
+      return { deviceId: device.id, certificateId: cert.certificateId, replayed: false };
+    } catch (error) {
+      let compensation = 'REVOKED';
+      try {
+        await this.deps.iot.revokeCertificate(cert.certificateId);
+        await this.securePackage.destroyPackage(cert.certificateId);
+        await certificates.updateMany({
+          where: { id: cert.certificateId, status: 'PENDING_CLAIM' },
+          data: { status: 'REVOKED', revokedAt: this.now() },
+        });
+        await attempt?.onCertificateIssued?.(null);
+      } catch {
+        compensation = 'REVOKE_PENDING';
+      }
+      await recordAudit(this.db, {
+        objectType: 'device',
+        objectId: device.id,
+        action: 'onboarding.provision',
+        result: 'FAILURE',
+        reason: error instanceof Error ? error.name : 'UNKNOWN',
+        afterValue: {
+          certificateId: cert.certificateId,
+          requestId: request.id,
+          operationId: attempt?.operationId ?? request.id,
+          compensation,
+        },
+      });
+      // Status 恢复路径可能在 Worker 已完成后再次触发签发。若此时失败，重新打开持久化 Job，
+      // 避免仅依赖下一次设备轮询而永久遗留无证书包/未撤销证书。
+      const provisioningJobs = (this.db as unknown as Record<string, unknown>).onboardingProvisioningJob as
+        ProvisioningJobDelegate | undefined;
+      await provisioningJobs?.updateMany({
+        where: { requestId: request.id, status: 'COMPLETED' },
+        data: {
+          status: 'RETRY',
+          issuedCertificateId: compensation === 'REVOKE_PENDING' ? cert.certificateId : null,
+          lastError: error instanceof Error ? error.name : 'UNKNOWN',
+          nextAttemptAt: this.now(),
+          completedAt: null,
+        },
+      });
+      throw error;
+    }
   }
 
   private deadlineFromPackageExpiry(packageExpiresAt: Date): Date {

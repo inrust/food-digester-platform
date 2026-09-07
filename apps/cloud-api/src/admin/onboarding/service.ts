@@ -7,8 +7,8 @@
  *    申请存在 → 设备库存资料与申请一致（审批校验设备资料）→ 设备处于 PendingOnboarding →
  *    条件更新 (status='PENDING', version=If-Match) 防重复/并发审批 →
  *    DOM-01 生命周期迁移（OnboardingApproved/Rejected）+ 状态历史落库；
- * 3. approve 提交后触发证书发放服务端口（provisioningTrigger，BE-ONB-03 实现）；
- *    触发失败不影响审批结果（BE-ONB-03 要求签发可重试），绝不向管理员返回私钥。
+ * 3. approve 在同一事务写入持久化 Provisioning Job；独立 Worker 认领并重试 AWS 副作用，
+ *    审批链绝不直接调用 AWS，也绝不向管理员返回私钥。
  *
  * 审计内容：前后状态（申请 status/version + 设备 lifecycleStatus）；DOM-03 脱敏器
  * 自动遮蔽 token 类字段，审计不含 Token。
@@ -17,12 +17,9 @@ import type { DbClient } from '@fdp/database';
 import { audited } from '@fdp/database';
 import { transitionLifecycle } from '@fdp/domain';
 import type { ActorContext } from '@fdp/auth';
-import { createRedactingLogger } from '@fdp/observability';
 import { deviceConflict, requestNotFound, validationFailed } from './errors.js';
 import { findOnboardingRequestById, reviewOnboardingRequestWithVersion } from './repository.js';
 import type { AdminOnboardingRequestRecord } from './repository.js';
-
-const logger = createRedactingLogger(console);
 
 export interface ReviewInput {
   readonly requestId: string;
@@ -32,14 +29,8 @@ export interface ReviewInput {
   readonly reason?: string | undefined;
 }
 
-/** 证书发放服务端口：BE-ONB-03 注入实现；approve 提交后触发，不返回任何密钥材料。 */
-export interface ProvisioningTrigger {
-  triggerApproved(request: AdminOnboardingRequestRecord): Promise<void>;
-}
-
 export interface ReviewDeps {
   readonly now?: () => Date;
-  readonly provisioningTrigger?: ProvisioningTrigger;
 }
 
 interface DeviceRow {
@@ -61,12 +52,20 @@ interface StateHistoryDelegate {
   create(args: { data: Record<string, unknown> }): Promise<unknown>;
 }
 
+interface ProvisioningJobDelegate {
+  create(args: { data: Record<string, unknown> }): Promise<unknown>;
+}
+
 function devices(client: DbClient): DeviceDelegate {
   return (client as unknown as Record<string, unknown>).device as DeviceDelegate;
 }
 
 function stateHistory(client: DbClient): StateHistoryDelegate {
   return (client as unknown as Record<string, unknown>).deviceStateHistory as StateHistoryDelegate;
+}
+
+function provisioningJobs(client: DbClient): ProvisioningJobDelegate {
+  return (client as unknown as Record<string, unknown>).onboardingProvisioningJob as ProvisioningJobDelegate;
 }
 
 function isoDate(date: Date): string {
@@ -159,17 +158,18 @@ export async function reviewOnboardingRequest(
           },
         });
       }
+      if (input.decision === 'approve') {
+        await provisioningJobs(tx).create({
+          data: {
+            requestId: updated.id,
+            status: 'PENDING',
+            attempts: 0,
+            nextAttemptAt: now,
+          },
+        });
+      }
       return updated;
     },
   );
-
-  // approve 只触发证书发放服务（BE-ONB-03 端口）；触发失败可重试，不回滚审批
-  if (input.decision === 'approve' && deps.provisioningTrigger) {
-    try {
-      await deps.provisioningTrigger.triggerApproved(reviewed);
-    } catch (err) {
-      logger.error('provisioning 触发失败（可重试）', err);
-    }
-  }
   return reviewed;
 }

@@ -83,6 +83,7 @@ describe('资源命名（环境前缀）', () => {
       'cert-package-sweeper',
       'onboarding-deadline',
       'onboarding-api-handler',
+      'onboarding-provisioning',
       'api',
     ]) {
       template.hasResourceProperties('AWS::Lambda::Function', { FunctionName: `fdp-test-${fn}` });
@@ -149,7 +150,7 @@ describe('验收：IAM 最小权限', () => {
     assert.deepEqual(wildcardKmsPrincipalViolations(template.toJSON()), []);
   });
 
-  test('证书包 KMS Key 的数据面权限仅允许确定性的 API 与恢复 Lambda role', () => {
+  test('证书包 KMS Key 数据面仅允许 Onboarding API、Provisioning Worker 与恢复 Lambda role', () => {
     const keys = Object.values(resourcesOfType(template, 'AWS::KMS::Key'));
     const certKey = keys.find((key) => key.Properties.Description.includes('DEC-003'));
     assert.isDefined(certKey);
@@ -163,10 +164,13 @@ describe('验收：IAM 最小权限', () => {
       (Array.isArray(statement.Action) ? statement.Action : [statement.Action]).some(grantsCrypto),
     );
     assert.equal(dataPlane.length, 1, '证书包 Key 只能有一条数据面授权声明');
-    assert.include(JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']), 'fdp-test-api-role');
     assert.include(
       JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']),
       'fdp-test-onboarding-api-role',
+    );
+    assert.include(
+      JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']),
+      'fdp-test-onboarding-provisioning-role',
     );
     assert.include(
       JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']),
@@ -219,13 +223,13 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('8 个 Lambda 使用各自独立执行角色', () => {
+  test('9 个 Lambda 使用各自独立执行角色', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
       String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),
     );
-    assert.equal(fns.length, 8);
+    assert.equal(fns.length, 9);
     const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
-    assert.equal(roles.size, 8);
+    assert.equal(roles.size, 9);
   });
 
   test('P0 生产组合根与既有 API/sweeper 使用真实资产包而非内联 501 占位代码', () => {
@@ -234,6 +238,7 @@ describe('验收：IAM 最小权限', () => {
       'fdp-test-ingestion',
       'fdp-test-onboarding-deadline',
       'fdp-test-onboarding-api-handler',
+      'fdp-test-onboarding-provisioning',
       'fdp-test-api',
       'fdp-test-cert-package-sweeper',
     ]) {
@@ -407,13 +412,17 @@ describe('验收：数据库凭据与消息管线', () => {
     for (const esm of esms) {
       assert.equal(esm.Properties.FunctionResponseTypes?.[0], 'ReportBatchItemFailures');
     }
-    template.resourceCountIs('AWS::Events::Rule', 4);
+    template.resourceCountIs('AWS::Events::Rule', 5);
     template.hasResourceProperties('AWS::Events::Rule', {
       Name: 'fdp-test-cert-package-sweeper',
       ScheduleExpression: 'rate(5 minutes)',
     });
     template.hasResourceProperties('AWS::Events::Rule', {
       Name: 'fdp-test-onboarding-deadline',
+      ScheduleExpression: 'rate(1 minute)',
+    });
+    template.hasResourceProperties('AWS::Events::Rule', {
+      Name: 'fdp-test-onboarding-provisioning',
       ScheduleExpression: 'rate(1 minute)',
     });
   });
@@ -458,7 +467,6 @@ describe('Cognito 与应用配置输出', () => {
       'OTA_BUCKET_NAME',
       'MEDIA_BUCKET_NAME',
       'EXPORT_BUCKET_NAME',
-      'CERT_PACKAGE_KEY_ARN',
       'ENV_NAME',
     ]) {
       assert.isDefined(env[key], `API Lambda 缺少环境变量 ${key}`);
@@ -477,6 +485,11 @@ describe('Cognito 与应用配置输出', () => {
     const deadlineFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-onboarding-deadline');
     assert.isDefined(deadlineFn);
     assert.isDefined(deadlineFn.Properties.Environment.Variables.DB_SECRET_ARN);
+    const provisioningFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-onboarding-provisioning');
+    assert.isDefined(provisioningFn);
+    for (const key of ['DB_SECRET_ARN', 'CERT_PACKAGE_KEY_ARN', 'FDP_AWS_ACCOUNT_ID']) {
+      assert.isDefined(provisioningFn.Properties.Environment.Variables[key], `Provisioning Lambda 缺少环境变量 ${key}`);
+    }
 
     const outputs = template.findOutputs('*');
     for (const id of [

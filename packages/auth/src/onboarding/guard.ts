@@ -22,6 +22,8 @@ export interface OnboardingGuardOptions<TReq> {
   readonly tokenOf: (req: TReq) => string | undefined;
   /** 从请求提取序列号（路径/请求体）；缺失 → 400。 */
   readonly serialNumberOf: (req: TReq) => string | undefined;
+  /** 允许仅凭已验证 Token 的库存绑定定位序列号（仅 Status API）。 */
+  readonly allowImplicitSerialNumber?: boolean;
   /** 限频器；不提供则不限频（调用方显式选择）。 */
   readonly rateLimiter?: RateLimiter;
   /** 限频键，默认 `token:{fingerprint}`；可覆盖为 `ip:{sourceIp}` 等。 */
@@ -52,12 +54,10 @@ export function withOnboardingAuth<TReq, TRes>(
       await options.rateLimiter.assertWithinLimit(key);
     }
     const now = options.now?.();
-    const auth = await verifyOnboardingToken(
-      options.client,
-      presentedToken,
-      options.serialNumberOf(req),
-      now ? { now } : {},
-    );
+    const auth = await verifyOnboardingToken(options.client, presentedToken, options.serialNumberOf(req), {
+      ...(now ? { now } : {}),
+      ...(options.allowImplicitSerialNumber ? { allowImplicitSerialNumber: true } : {}),
+    });
     return handler(req, auth);
   };
 }

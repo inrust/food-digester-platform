@@ -91,6 +91,17 @@ describe('校验链', () => {
     assert.equal(ctx.tokenFingerprint, tokenFingerprint(token));
   });
 
+  test('仅显式允许时可由 Token 绑定隐式定位序列号', async () => {
+    await insertInventoryDevice('SN-IMPLICIT-1');
+    const { token, record } = await issueOnboardingToken(prisma, {
+      serialNumber: 'SN-IMPLICIT-1',
+      expiresAt: FUTURE,
+    });
+    const ctx = await verifyOnboardingToken(prisma, token, undefined, { allowImplicitSerialNumber: true });
+    assert.equal(ctx.tokenId, record.id);
+    assert.equal(ctx.serialNumber, 'SN-IMPLICIT-1');
+  });
+
   test('错误（未签发）Token → 401', async () => {
     await expectAuthError(
       verifyOnboardingToken(prisma, 'fdp_onb_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'SN-OK-1'),
