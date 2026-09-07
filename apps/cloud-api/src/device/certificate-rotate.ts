@@ -5,6 +5,7 @@
  * 1. 资格：currentCertificateId 必须等于当前 mTLS 身份证书（错误/跨设备 → 403）；
  *    旧证书 ACTIVE 且属于设备由 AUTH-03 认证链保证（撤销/过期 → 401 先行）；
  * 2. 重试恢复：已封包但未预留则继续交付；已预留但响应未确认则撤销新证书并重签；
+ *    响应已经成功提交但尚无新证 Heartbeat 时稳定返回冲突，绝不撤销已交付证书或重签；
  * 3. 发证：CreateKeysAndCertificate → AUTH-04 单设备 Policy（按名幂等）→ attach；
  * 4. 双证书窗口：新证书 ACTIVE + rotatedFromId=旧证书（旧证书保持 ACTIVE 可用），
  *    证书包 SEC-01 信封加密短期保存；写 ROTATION_START 审计；
@@ -135,7 +136,7 @@ export async function rotateCertificate(
       certificateId: existing.id,
       certificatePem: parsed.certificatePem,
       privateKey: parsed.privateKey,
-      effectiveDate: existing.notBefore.toISOString(),
+      effectiveDate: existing.notBefore.toISOString().slice(0, 10),
       expiryDate: existing.notAfter.toISOString().slice(0, 10),
       rotatedFromId: auth.certificateId,
       confirmDelivery: async () => {
@@ -147,7 +148,13 @@ export async function rotateCertificate(
     await deps.iot.revokeCertificate(existing.id);
     await securePackage.revokeUnconfirmedDelivery(existing.id);
   }
-  if (existing && !existing.packageCiphertext) {
+  if (existing && !existing.packageCiphertext && existing.claimedAt !== null) {
+    throw new CertificateRotationError(
+      'CONFLICT',
+      'The replacement certificate was delivered and is awaiting its first heartbeat',
+    );
+  }
+  if (existing && !existing.packageCiphertext && existing.claimedAt === null) {
     // 封包前失败的遗留：DEC-003 丢失处置，REVOKED 后重签（有界替换）
     await certs.updateMany({
       where: { id: existing.id, status: 'ACTIVE' },
@@ -207,7 +214,7 @@ export async function rotateCertificate(
     certificateId: cert.certificateId,
     certificatePem: delivery.certificatePem,
     privateKey: delivery.privateKey,
-    effectiveDate: now.toISOString(),
+    effectiveDate: now.toISOString().slice(0, 10),
     expiryDate: notAfter.toISOString().slice(0, 10),
     rotatedFromId: auth.certificateId,
     confirmDelivery: async () => {

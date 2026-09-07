@@ -81,8 +81,10 @@ function statusReq(pem: string | undefined, query: Record<string, string> = {}):
 }
 
 interface StatusPayload {
-  data: { certificateId: string; status: string; expiryDate: string; daysRemaining: number };
-  meta: { requestId: string; timestamp: string };
+  certificateId: string;
+  status: string;
+  expiryDate: string;
+  daysRemaining: number;
 }
 
 describe('GET /api/v1/device/certificate/status', () => {
@@ -91,10 +93,11 @@ describe('GET /api/v1/device/certificate/status', () => {
     const res = await makeHandler()(statusReq(pem));
     assert.equal(res.status, 200);
     const body = res.body as StatusPayload;
-    assert.equal(body.data.certificateId, certificateId);
-    assert.equal(body.data.status, 'ACTIVE');
-    assert.equal(body.data.daysRemaining, 45);
-    assert.equal(body.data.expiryDate, new Date(NOW.getTime() + 45 * DAY_MS).toISOString().slice(0, 10));
+    assert.equal(body.certificateId, certificateId);
+    assert.equal(body.status, 'ACTIVE');
+    assert.equal(body.daysRemaining, 45);
+    assert.equal(body.expiryDate, new Date(NOW.getTime() + 45 * DAY_MS).toISOString().slice(0, 10));
+    assert.deepEqual(Object.keys(body).sort(), ['certificateId', 'daysRemaining', 'expiryDate', 'status']);
     // 响应不包含 PEM/私钥
     const serialized = JSON.stringify(res.body);
     assert.ok(!serialized.includes('BEGIN CERTIFICATE') && !/privateKey|certificatePem/i.test(serialized));
@@ -103,26 +106,26 @@ describe('GET /api/v1/device/certificate/status', () => {
   test('状态边界日：阈值当天（30 天）→ EXPIRING；阈值 +1 天 → ACTIVE；不足一天 → EXPIRING 且 daysRemaining=0', async () => {
     const at30 = await plantActiveCert({ notAfterOffsetMs: 30 * DAY_MS });
     const res30 = await makeHandler()(statusReq(at30.pem));
-    assert.equal((res30.body as StatusPayload).data.status, 'EXPIRING');
-    assert.equal((res30.body as StatusPayload).data.daysRemaining, 30);
+    assert.equal((res30.body as StatusPayload).status, 'EXPIRING');
+    assert.equal((res30.body as StatusPayload).daysRemaining, 30);
 
     const at31 = await plantActiveCert({ notAfterOffsetMs: 31 * DAY_MS });
     const res31 = await makeHandler()(statusReq(at31.pem));
-    assert.equal((res31.body as StatusPayload).data.status, 'ACTIVE');
-    assert.equal((res31.body as StatusPayload).data.daysRemaining, 31);
+    assert.equal((res31.body as StatusPayload).status, 'ACTIVE');
+    assert.equal((res31.body as StatusPayload).daysRemaining, 31);
 
     const underDay = await plantActiveCert({ notAfterOffsetMs: 12 * 3600_000 });
     const res12h = await makeHandler()(statusReq(underDay.pem));
-    assert.equal((res12h.body as StatusPayload).data.status, 'EXPIRING');
-    assert.equal((res12h.body as StatusPayload).data.daysRemaining, 0);
+    assert.equal((res12h.body as StatusPayload).status, 'EXPIRING');
+    assert.equal((res12h.body as StatusPayload).daysRemaining, 0);
   });
 
   test('自定义 EXPIRING 阈值生效（expiringSoonDays=7：剩 10 天 → ACTIVE）', async () => {
     const { pem } = await plantActiveCert({ notAfterOffsetMs: 10 * DAY_MS });
     const res = await makeHandler({ expiringSoonDays: 7 })(statusReq(pem));
-    assert.equal((res.body as StatusPayload).data.status, 'ACTIVE');
+    assert.equal((res.body as StatusPayload).status, 'ACTIVE');
     const res7 = await makeHandler({ expiringSoonDays: 10 })(statusReq(pem));
-    assert.equal((res7.body as StatusPayload).data.status, 'EXPIRING');
+    assert.equal((res7.body as StatusPayload).status, 'EXPIRING');
   });
 
   test('跨设备查询拒绝：query.deviceId 与 mTLS 身份不一致 → 403 FORBIDDEN；一致放行', async () => {

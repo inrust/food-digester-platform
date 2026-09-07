@@ -135,6 +135,27 @@ export interface SyncLicenseView {
   readonly effective: boolean;
 }
 
+const LICENSE_STATUS_WIRE_VALUES: Readonly<Record<string, SyncLicenseView['status']>> = {
+  Draft: 'DRAFT',
+  Issued: 'ISSUED',
+  Active: 'ACTIVE',
+  ExpiringSoon: 'EXPIRING_SOON',
+  Renewed: 'RENEWED',
+  Expired: 'EXPIRED',
+  Revoked: 'REVOKED',
+};
+
+function licenseStatusToWire(status: string): string {
+  const wire = LICENSE_STATUS_WIRE_VALUES[status];
+  if (!wire)
+    throw new DeviceSyncError('VALIDATION_FAILED', 'The license status is not supported by the device protocol');
+  return wire;
+}
+
+function entitlementToWire(code: string): string {
+  return code === 'OTA_UPDATE' ? 'OTA' : code;
+}
+
 export interface SyncDeviceUserView {
   readonly userId: string;
   readonly username: string;
@@ -272,10 +293,10 @@ function toLicenseView(row: LicenseRow, now: Date): SyncLicenseView {
   const inWindow = row.validFrom.getTime() <= now.getTime() && now.getTime() < row.validTo.getTime();
   return {
     licenseId: row.id,
-    status: row.status,
-    validFrom: row.validFrom.toISOString(),
-    validTo: row.validTo.toISOString(),
-    entitlements: row.entitlements.filter((e) => e.enabled).map((e) => e.code),
+    status: licenseStatusToWire(row.status),
+    validFrom: row.validFrom.toISOString().slice(0, 10),
+    validTo: row.validTo.toISOString().slice(0, 10),
+    entitlements: row.entitlements.filter((e) => e.enabled).map((e) => entitlementToWire(e.code)),
     signature: row.signature,
     version: row.version,
     effective: (EFFECTIVE_LICENSE_STATUSES as readonly string[]).includes(row.status) && inWindow,

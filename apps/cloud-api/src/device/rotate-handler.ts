@@ -2,7 +2,7 @@
  * BE-CERT-02 Rotate API Handler：POST /api/v1/device/certificate/rotate（框架无关）。
  *
  * 接线：AUTH-03 withDeviceAuth（mTLS 白名单，旧证书须 ACTIVE 且属于设备）→ rotateCertificate。
- * 响应：{ certificateId, certificatePem, privateKey, effectiveDate, expiryDate }（CT-05 data+meta）；
+ * 响应：源协议顶层 { certificateId, certificatePem, privateKey, effectiveDate, expiryDate }；
  * 私钥仅本响应一次性携带。错误：400 VALIDATION_FAILED / 401 UNAUTHENTICATED /
  * 403 FORBIDDEN / 409 CONFLICT（重试失败关闭），未知异常 500 通用消息。
  */
@@ -53,18 +53,14 @@ export function createCertificateRotateHandler(
       const currentCertificateId =
         typeof body.currentCertificateId === 'string' ? body.currentCertificateId : undefined;
       const result: RotationResult = await rotateCertificate(deps, auth, currentCertificateId);
-      const now = deps.now?.() ?? new Date();
       return {
         status: 200,
         body: {
-          data: {
-            certificateId: result.certificateId,
-            certificatePem: result.certificatePem,
-            privateKey: result.privateKey,
-            effectiveDate: result.effectiveDate,
-            expiryDate: result.expiryDate,
-          },
-          meta: { requestId: req.requestId, timestamp: now.toISOString() },
+          certificateId: result.certificateId,
+          certificatePem: result.certificatePem,
+          privateKey: result.privateKey,
+          effectiveDate: result.effectiveDate,
+          expiryDate: result.expiryDate,
         },
         onCommitted: result.confirmDelivery,
       };

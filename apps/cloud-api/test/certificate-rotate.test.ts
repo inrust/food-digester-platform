@@ -117,14 +117,11 @@ function makeHandler(iot: IotProvisioningPort): ReturnType<typeof createCertific
 }
 
 interface RotatePayload {
-  data: {
-    certificateId: string;
-    certificatePem: string;
-    privateKey: string;
-    effectiveDate: string;
-    expiryDate: string;
-  };
-  meta: { requestId: string; timestamp: string };
+  certificateId: string;
+  certificatePem: string;
+  privateKey: string;
+  effectiveDate: string;
+  expiryDate: string;
 }
 
 describe('POST /api/v1/device/certificate/rotate', () => {
@@ -140,14 +137,21 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     });
     assert.equal(res.status, 200);
     const body = res.body as RotatePayload;
-    assert.ok(body.data.certificateId);
-    assert.match(body.data.certificatePem, /BEGIN CERTIFICATE/);
-    assert.ok(body.data.privateKey.includes('ROTKEY'));
-    assert.equal(body.data.effectiveDate, NOW.toISOString());
-    assert.match(body.data.expiryDate, /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(body.certificateId);
+    assert.match(body.certificatePem, /BEGIN CERTIFICATE/);
+    assert.ok(body.privateKey.includes('ROTKEY'));
+    assert.equal(body.effectiveDate, '2026-08-27');
+    assert.match(body.expiryDate, /^\d{4}-\d{2}-\d{2}$/);
+    assert.deepEqual(Object.keys(body).sort(), [
+      'certificateId',
+      'certificatePem',
+      'effectiveDate',
+      'expiryDate',
+      'privateKey',
+    ]);
 
     // 双证书窗口：新证书 ACTIVE + rotatedFromId；旧证书仍 ACTIVE 可用（AUTH-03 认证通过）
-    const newCert = await prisma.deviceCertificate.findFirst({ where: { id: body.data.certificateId } });
+    const newCert = await prisma.deviceCertificate.findFirst({ where: { id: body.certificateId } });
     assert.equal(newCert?.status, 'ACTIVE');
     assert.equal(newCert?.rotatedFromId, oldCertificateId);
     assert.ok(newCert?.packageCiphertext, '证书包应信封加密保存');
@@ -158,12 +162,12 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     // 私钥不落库/审计
     const certRows = await prisma.deviceCertificate.findMany({ where: { deviceId } });
     assert.ok(!JSON.stringify(certRows.map(({ packageCiphertext: _c, ...rest }) => rest)).includes('ROTKEY'));
-    const audits = await prisma.auditLog.findMany({ where: { objectId: body.data.certificateId } });
+    const audits = await prisma.auditLog.findMany({ where: { objectId: body.certificateId } });
     assert.ok(audits.some((a) => a.action === 'CERT_ROTATION_START'));
     assert.ok(!JSON.stringify(audits).includes('ROTKEY'));
     await res.onCommitted?.();
     assert.isNull(
-      (await prisma.deviceCertificate.findFirst({ where: { id: body.data.certificateId } }))?.packageCiphertext,
+      (await prisma.deviceCertificate.findFirst({ where: { id: body.certificateId } }))?.packageCiphertext,
       '响应提交后销毁密文',
     );
   });
@@ -217,7 +221,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
       requestId: 'r5',
     });
     assert.equal(first.status, 200);
-    const firstId = (first.body as RotatePayload).data.certificateId;
+    const firstId = (first.body as RotatePayload).certificateId;
     // 不调用 first.onCommitted，模拟响应确认中断。
     const retry = await handler({
       identity: { clientCertPem: oldPem },
@@ -225,12 +229,39 @@ describe('POST /api/v1/device/certificate/rotate', () => {
       requestId: 'r6',
     });
     assert.equal(retry.status, 200);
-    const retryId = (retry.body as RotatePayload).data.certificateId;
+    const retryId = (retry.body as RotatePayload).certificateId;
     assert.notEqual(retryId, firstId);
     assert.equal(iot.createCalls, 2, '只为不确定交付执行一次替换签发');
     assert.equal((await prisma.deviceCertificate.findFirst({ where: { id: firstId } }))?.status, 'REVOKED');
     assert.equal(await prisma.deviceCertificate.count({ where: { deviceId, status: 'ACTIVE' } }), 2);
     await retry.onCommitted?.();
+  });
+
+  test('成功提交后、首个新证 Heartbeat 前重复请求稳定冲突且不撤证重签', async () => {
+    const { deviceId, oldPem, oldCertificateId } = await plantDeviceWithOldCert();
+    const iot = mockIot();
+    const handler = makeHandler(iot);
+    const first = await handler({
+      identity: { clientCertPem: oldPem },
+      body: { currentCertificateId: oldCertificateId },
+      requestId: 'r-committed-1',
+    });
+    assert.equal(first.status, 200);
+    const deliveredId = (first.body as RotatePayload).certificateId;
+    await first.onCommitted?.();
+
+    for (const requestId of ['r-committed-2', 'r-committed-3']) {
+      const replay = await handler({
+        identity: { clientCertPem: oldPem },
+        body: { currentCertificateId: oldCertificateId },
+        requestId,
+      });
+      assert.equal(replay.status, 409);
+      assert.equal((replay.body as { error: { code: string } }).error.code, 'CONFLICT');
+    }
+    assert.equal(iot.createCalls, 1, '成功交付后不得再次签发');
+    assert.equal((await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: deliveredId } })).status, 'ACTIVE');
+    assert.equal(await prisma.deviceCertificate.count({ where: { deviceId, rotatedFromId: oldCertificateId } }), 1);
   });
 
   test('部分失败（发证后 attach 失败）可重试：不建孤儿业务记录，重试成功', async () => {

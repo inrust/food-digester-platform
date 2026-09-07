@@ -82,6 +82,7 @@ describe('资源命名（环境前缀）', () => {
       'summary',
       'cert-package-sweeper',
       'onboarding-deadline',
+      'retirement-timeout',
       'onboarding-api-handler',
       'onboarding-provisioning',
       'device-api-handler',
@@ -201,7 +202,7 @@ describe('验收：IAM 最小权限', () => {
 
   test('API Lambda 下行发布权限收敛到 3 个下行 Topic 模式', () => {
     const statements = collectPolicyStatements(template.toJSON()).map(({ statement }) => statement);
-    const publish = statements.find((s) => (Array.isArray(s.Action) ? s.Action : [s.Action]).includes('iot:Publish'));
+    const publish = statements.find((candidate) => candidate.Sid === 'IotDownlinkPublish');
     assert.isDefined(publish);
     const resources = (publish.Resource as unknown[]).map((r) => JSON.stringify(r));
     assert.equal(resources.length, 3);
@@ -211,6 +212,18 @@ describe('验收：IAM 最小权限', () => {
         `iot:Publish 未收敛到下行 Topic ${type}`,
       );
     }
+  });
+
+  test('Outbox Publisher 仅可发现 IoT Endpoint 并发布设备 notification Topic', () => {
+    const statements = collectPolicyStatements(template.toJSON()).map(({ statement }) => statement);
+    const discovery = statements.find((candidate) => candidate.Sid === 'IotDataEndpointDiscovery');
+    assert.isDefined(discovery);
+    assert.deepEqual(discovery.Action, 'iot:DescribeEndpoint');
+    const publish = statements.find((candidate) => candidate.Sid === 'DeviceNotificationPublish');
+    assert.isDefined(publish);
+    assert.deepEqual(publish.Action, 'iot:Publish');
+    assert.include(JSON.stringify(publish.Resource), 'topic/bnx/device/*/notification');
+    assert.notInclude(JSON.stringify(publish.Resource), 'topic/bnx/device/*/*');
   });
 
   test('Ingestion 与 deadline 仅可撤销当前账号/区域的 IoT certificate 资源', () => {
@@ -225,20 +238,22 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('10 个 Lambda 使用各自独立执行角色', () => {
+  test('11 个 Lambda 使用各自独立执行角色', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
       String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),
     );
-    assert.equal(fns.length, 10);
+    assert.equal(fns.length, 11);
     const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
-    assert.equal(roles.size, 10);
+    assert.equal(roles.size, 11);
   });
 
   test('P0 生产组合根与既有 API/sweeper 使用真实资产包而非内联 501 占位代码', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function'));
     for (const name of [
       'fdp-test-ingestion',
+      'fdp-test-outbox-publisher',
       'fdp-test-onboarding-deadline',
+      'fdp-test-retirement-timeout',
       'fdp-test-onboarding-api-handler',
       'fdp-test-onboarding-provisioning',
       'fdp-test-device-api-handler',
@@ -429,7 +444,7 @@ describe('验收：数据库凭据与消息管线', () => {
     for (const esm of esms) {
       assert.equal(esm.Properties.FunctionResponseTypes?.[0], 'ReportBatchItemFailures');
     }
-    template.resourceCountIs('AWS::Events::Rule', 5);
+    template.resourceCountIs('AWS::Events::Rule', 6);
     template.hasResourceProperties('AWS::Events::Rule', {
       Name: 'fdp-test-cert-package-sweeper',
       ScheduleExpression: 'rate(5 minutes)',
@@ -441,6 +456,10 @@ describe('验收：数据库凭据与消息管线', () => {
     template.hasResourceProperties('AWS::Events::Rule', {
       Name: 'fdp-test-onboarding-provisioning',
       ScheduleExpression: 'rate(1 minute)',
+    });
+    template.hasResourceProperties('AWS::Events::Rule', {
+      Name: 'fdp-test-retirement-timeout',
+      ScheduleExpression: 'rate(5 minutes)',
     });
   });
 });
@@ -507,6 +526,10 @@ describe('Cognito 与应用配置输出', () => {
     const deadlineFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-onboarding-deadline');
     assert.isDefined(deadlineFn);
     assert.isDefined(deadlineFn.Properties.Environment.Variables.DB_SECRET_ARN);
+    const retirementTimeoutFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-retirement-timeout');
+    assert.isDefined(retirementTimeoutFn);
+    assert.isDefined(retirementTimeoutFn.Properties.Environment.Variables.DB_SECRET_ARN);
+    assert.equal(retirementTimeoutFn.Properties.Environment.Variables.RETIREMENT_TIMEOUT_BATCH_SIZE, '100');
     const provisioningFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-onboarding-provisioning');
     assert.isDefined(provisioningFn);
     for (const key of ['DB_SECRET_ARN', 'CERT_PACKAGE_KEY_ARN', 'FDP_AWS_ACCOUNT_ID']) {

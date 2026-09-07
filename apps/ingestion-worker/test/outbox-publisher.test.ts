@@ -10,7 +10,7 @@
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
-import type { ArchiveEventMessage, ArchiveEventSender } from '@fdp/aws-clients';
+import type { ArchiveEventMessage, ArchiveEventSender, MqttMessageSender, MqttPublishInput } from '@fdp/aws-clients';
 import { createOutboxPublisher } from '../src/index.js';
 import { createTestDb } from '../../cloud-api/test/helpers.js';
 
@@ -87,6 +87,14 @@ class RecordingSender implements ArchiveEventSender {
   }
 }
 
+class RecordingMqttSender implements MqttMessageSender {
+  readonly published: MqttPublishInput[] = [];
+
+  async publish(input: MqttPublishInput): Promise<void> {
+    this.published.push(input);
+  }
+}
+
 function publisher(sender: ArchiveEventSender, options: { maxAttempts?: number } = {}) {
   return createOutboxPublisher({ client: prisma, sender, maxAttempts: options.maxAttempts });
 }
@@ -106,6 +114,42 @@ describe('createOutboxPublisher（BE-ARC-01）', () => {
     assert.equal(result.claimed, 0);
     assert.equal(sender.sent.length, 0);
     assert.equal((await prisma.outboxEvent.findUniqueOrThrow({ where: { id: notification.id } })).status, 'PENDING');
+    await prisma.outboxEvent.update({ where: { id: notification.id }, data: { status: 'FAILED' } });
+  });
+
+  test('CERTIFICATE_ROTATION_REQUIRED 从事务 Outbox 发布到唯一设备 Notification Topic', async () => {
+    seqCounter += 1;
+    const deviceId = `dev-pub-cert-${seqCounter}`;
+    const row = await prisma.outboxEvent.create({
+      data: {
+        eventType: 'CERTIFICATE_ROTATION_REQUIRED',
+        aggregateType: 'device',
+        aggregateId: deviceId,
+        payload: {
+          topic: `bnx/device/${deviceId}/notification`,
+          data: { type: 'CERTIFICATE_ROTATION_REQUIRED' },
+          requestId: `rotation-${seqCounter}`,
+        },
+      },
+    });
+    const archive = new RecordingSender();
+    const mqtt = new RecordingMqttSender();
+    const result = await createOutboxPublisher({
+      client: prisma,
+      sender: archive,
+      notificationSender: mqtt,
+    }).publishPendingBatch();
+
+    assert.deepEqual(result, { claimed: 1, published: 1, retried: 0, failed: 0 });
+    assert.equal(archive.sent.length, 0);
+    assert.equal(mqtt.published.length, 1);
+    assert.equal(mqtt.published[0]?.topic, `bnx/device/${deviceId}/notification`);
+    assert.equal(mqtt.published[0]?.qos, 1);
+    const payload = JSON.parse(mqtt.published[0]?.payload ?? '{}') as Record<string, any>;
+    assert.equal(payload.meta.id, `NTF-${row.id.toUpperCase()}`);
+    assert.equal(payload.meta.ts, row.createdAt.toISOString());
+    assert.deepEqual(payload.data, { type: 'CERTIFICATE_ROTATION_REQUIRED' });
+    assert.equal((await prisma.outboxEvent.findUniqueOrThrow({ where: { id: row.id } })).status, 'PUBLISHED');
   });
 
   test('批量发布：稳定事件 ID + 原子记录 publishedAt；已发布不再领取', async () => {

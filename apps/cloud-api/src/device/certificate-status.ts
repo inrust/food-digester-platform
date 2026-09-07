@@ -118,10 +118,7 @@ export function createCertificateStatusHandler(
       );
       return {
         status: 200,
-        body: {
-          data: { certificateId: cert.id, ...view },
-          meta: { requestId: req.requestId, timestamp: now().toISOString() },
-        },
+        body: { certificateId: cert.id, ...view },
       };
     },
   );

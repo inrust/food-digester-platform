@@ -227,10 +227,9 @@ async function plantConfiguration(target: { deviceId?: string; model?: string },
   return config.id;
 }
 
-type DataBody = { data: Record<string, any>; meta: Record<string, unknown> };
 type ErrorBody = { error: { code: string; message: string; requestId: string } };
 
-const dataOf = (res: { body: unknown }) => (res.body as DataBody).data;
+const dataOf = (res: { body: unknown }) => res.body as Record<string, any>;
 
 describe('POST /api/v1/device/sync（完整事实快照）', () => {
   test('六域齐备：Assignment/Alias/License+签名/Device Users+验证材料/Configuration/Operational Status', async () => {
@@ -274,10 +273,12 @@ describe('POST /api/v1/device/sync（完整事实快照）', () => {
 
     // License：状态/有效期/Entitlements（仅 enabled）/签名/版本
     assert.equal(data.license.licenseId, licenseId);
-    assert.equal(data.license.status, 'Active');
+    assert.equal(data.license.status, 'ACTIVE');
+    assert.match(data.license.validFrom, /^\d{4}-\d{2}-\d{2}$/);
+    assert.match(data.license.validTo, /^\d{4}-\d{2}-\d{2}$/);
     assert.equal(data.license.signature, `sig-${deviceId}`);
     assert.equal(data.license.effective, true);
-    assert.deepEqual([...data.license.entitlements].sort(), ['OTA_UPDATE', 'REMOTE_CONTROL']);
+    assert.deepEqual([...data.license.entitlements].sort(), ['OTA', 'REMOTE_CONTROL']);
 
     // Device Users：DEC-004@1.0.0 PHC（Sync 唯一下发通道）
     assert.equal(data.deviceUsers.length, 1);
@@ -372,7 +373,7 @@ describe('POST /api/v1/device/sync（完整事实快照）', () => {
     assert.equal(res.status, 200);
     const data = dataOf(res);
     assert.equal(data.configuration, null, '未来生效版本不下发');
-    assert.equal(data.license.status, 'Expired');
+    assert.equal(data.license.status, 'EXPIRED');
     assert.equal(data.license.effective, false);
   });
 

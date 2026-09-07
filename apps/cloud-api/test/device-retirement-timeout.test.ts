@@ -2,7 +2,12 @@
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
-import { evaluateRetirementTimeouts } from '../src/index.js';
+import {
+  COMPLETION_DEVICE_CONFIRM,
+  COMPLETION_FORCE_COMPLETE,
+  completeRetirementStep,
+  evaluateRetirementTimeouts,
+} from '../src/index.js';
 import { createTestDb } from './helpers.js';
 
 const NOW = new Date('2026-09-04T12:00:00Z');
@@ -108,5 +113,29 @@ describe('evaluateRetirementTimeouts', () => {
       await prisma.auditLog.count({ where: { objectId: due.deviceId, action: 'device.retire.timeout' } }),
       1,
     );
+  });
+
+  test('并发 Deactivate/force-complete 只有一个完成方式胜出并仅撤证一次', async () => {
+    const due = await seedPending(1);
+    const results = await Promise.all([
+      completeRetirementStep(prisma, {
+        deviceId: due.deviceId,
+        at: NOW,
+        completionMethod: COMPLETION_DEVICE_CONFIRM,
+      }),
+      completeRetirementStep(prisma, {
+        deviceId: due.deviceId,
+        at: NOW,
+        completionMethod: COMPLETION_FORCE_COMPLETE,
+      }),
+    ]);
+    assert.equal(results.filter((result) => result.confirmed).length, 1);
+    assert.equal(
+      results.reduce((count, result) => count + result.revoked.length, 0),
+      1,
+    );
+    const retirement = await prisma.deviceRetirement.findUniqueOrThrow({ where: { deviceId: due.deviceId } });
+    assert.include([COMPLETION_DEVICE_CONFIRM, COMPLETION_FORCE_COMPLETE], retirement.completionMethod);
+    assert.equal(await prisma.deviceCertificate.count({ where: { deviceId: due.deviceId, status: 'REVOKED' } }), 1);
   });
 });

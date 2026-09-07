@@ -18,6 +18,8 @@ export type {
 } from './iot-provisioning-client.js';
 export { createSqsArchiveSender } from './sqs-archive-sender.js';
 export type { ArchiveEventMessage, ArchiveEventSender, SqsArchiveSenderConfig } from './sqs-archive-sender.js';
+export { createIotDataPublisher } from './iot-data-publisher.js';
+export type { IotDataPublisherConfig, MqttMessageSender, MqttPublishInput } from './iot-data-publisher.js';
 export { createSqsJsonSender } from './sqs-json-sender.js';
 export type { JsonMessageSender, SqsJsonSenderConfig } from './sqs-json-sender.js';
 export { createS3ArchiveObjectStore } from './s3-archive-store.js';

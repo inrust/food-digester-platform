@@ -19,11 +19,14 @@ export type {
 } from './rotate-handler.js';
 export {
   COMPLETION_DEVICE_CONFIRM,
+  COMPLETION_FORCE_COMPLETE,
+  COMPLETION_UNCONFIRMED_TIMEOUT,
   DEACTIVATE_ERROR_HTTP_STATUS,
   DeviceDeactivateError,
   RETIREMENT_CONFIRMED,
   RETIREMENT_PENDING,
   confirmDeactivation,
+  completeRetirementStep,
   verifyDeactivateIdentity,
 } from './deactivate.js';
 export type {

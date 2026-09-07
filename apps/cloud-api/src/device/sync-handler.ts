@@ -3,7 +3,7 @@
  *
  * 接线：AUTH-03 verifyDeviceCertificate（mTLS 白名单；DEC-014 仅放行 72 小时窗口内的
  * PENDING_CONFIRMATION Retired；Suspended 放行）→ parseSyncRequest → buildDeviceSyncSnapshot。
- * 响应：data（完整事实快照 + etag）+ meta{requestId,timestamp}（CT-05）；
+ * 响应：源协议顶层完整事实快照（含 etag），不使用 data/meta Envelope；
  * 错误：400 VALIDATION_FAILED / 401 UNAUTHENTICATED / 403 FORBIDDEN / 500 通用消息。
  * 纯读取：无写入/通知/审计；响应不含证书材料与云端凭据（Device Users 验证材料为
  * DEC-004 设备本地专用加盐验证值，是本域的授权下发内容）。
@@ -59,7 +59,7 @@ export function createDeviceSyncHandler(
       const snapshot = await buildDeviceSyncSnapshot(deps, auth, input);
       return {
         status: 200,
-        body: { data: snapshot, meta: { requestId: req.requestId, timestamp: now().toISOString() } },
+        body: snapshot,
       };
     } catch (err) {
       return toErrorResponse(err, req);

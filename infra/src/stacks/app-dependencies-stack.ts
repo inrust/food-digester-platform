@@ -64,10 +64,12 @@ const ONBOARDING_PROVISIONING_ENTRY = resolve(
 );
 const CERT_SWEEPER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/certificate-package-sweeper-entry.ts');
 const INGESTION_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/ingestion-entry.ts');
+const OUTBOX_PUBLISHER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/outbox-publisher-entry.ts');
 const ONBOARDING_DEADLINE_ENTRY = resolve(
   WORKSPACE_ROOT,
   'apps/ingestion-worker/src/runtime/onboarding-deadline-entry.ts',
 );
+const RETIREMENT_TIMEOUT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/retirement-timeout-entry.ts');
 
 interface MessagingResources {
   readonly ingress: sqs.Queue;
@@ -102,6 +104,7 @@ interface ComputeResources {
   readonly summary: lambda.Function;
   readonly certPackageSweeper: lambda.Function;
   readonly onboardingDeadline: lambda.Function;
+  readonly retirementTimeout: lambda.Function;
   readonly onboardingApi: lambda.Function;
   readonly onboardingProvisioning: lambda.Function;
   readonly deviceApi: lambda.Function;
@@ -559,16 +562,31 @@ export class AppDependenciesStack extends Stack {
     );
     storage.raw.grantWrite(archive);
 
-    // Outbox Publisher：事务性 Outbox → Archive SQS（BE-ARC-01）
+    // Outbox Publisher：事务性 Outbox → Archive SQS / 设备 Notification MQTT。
     const outboxPublisher = mkFunction('OutboxPublisherFn', 'outbox-publisher', {
       timeout: Duration.seconds(60),
       environment: {
         DB_SECRET_ARN: dbSecret,
         ARCHIVE_QUEUE_URL: messaging.archive.queueUrl,
       },
+      entry: OUTBOX_PUBLISHER_ENTRY,
     });
     messaging.archive.grantSendMessages(outboxPublisher);
     dbSecretGrant(outboxPublisher);
+    outboxPublisher.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'IotDataEndpointDiscovery',
+        actions: ['iot:DescribeEndpoint'],
+        resources: ['*'],
+      }),
+    );
+    outboxPublisher.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'DeviceNotificationPublish',
+        actions: ['iot:Publish'],
+        resources: [this.formatArn({ service: 'iot', resource: 'topic', resourceName: 'bnx/device/*/notification' })],
+      }),
+    );
     new events.Rule(this, 'OutboxPublisherSchedule', {
       ruleName: this.naming.name('outbox-publisher'),
       schedule: events.Schedule.rate(Duration.minutes(1)),
@@ -694,6 +712,18 @@ export class AppDependenciesStack extends Stack {
       ruleName: this.naming.name('onboarding-deadline'),
       schedule: events.Schedule.rate(Duration.minutes(1)),
       targets: [new eventsTargets.LambdaFunction(onboardingDeadline)],
+    });
+
+    const retirementTimeout = mkFunction('RetirementTimeoutFn', 'retirement-timeout', {
+      timeout: Duration.seconds(300),
+      environment: { DB_SECRET_ARN: dbSecret, RETIREMENT_TIMEOUT_BATCH_SIZE: '100' },
+      entry: RETIREMENT_TIMEOUT_ENTRY,
+    });
+    dbSecretGrant(retirementTimeout);
+    new events.Rule(this, 'RetirementTimeoutSchedule', {
+      ruleName: this.naming.name('retirement-timeout'),
+      schedule: events.Schedule.rate(Duration.minutes(5)),
+      targets: [new eventsTargets.LambdaFunction(retirementTimeout)],
     });
 
     const onboardingApi = mkFunction('OnboardingApiFn', 'onboarding-api-handler', {
@@ -854,6 +884,7 @@ export class AppDependenciesStack extends Stack {
       summary,
       certPackageSweeper,
       onboardingDeadline,
+      retirementTimeout,
       onboardingApi,
       onboardingProvisioning,
       deviceApi,
