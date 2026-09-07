@@ -4,6 +4,7 @@ import {
   CreateKeysAndCertificateCommand,
   CreatePolicyCommand,
   CreateThingCommand,
+  DescribeEndpointCommand,
   UpdateCertificateCommand,
 } from '@aws-sdk/client-iot';
 import type { IoTClient } from '@aws-sdk/client-iot';
@@ -24,6 +25,9 @@ describe('AWS IoT provisioning 生产适配器', () => {
             keyPair: { PrivateKey: 'private-key' },
           };
         }
+        if (command instanceof DescribeEndpointCommand) {
+          return { endpointAddress: 'example-ats.iot.ap-southeast-1.amazonaws.com' };
+        }
         return {};
       },
     } as unknown as IoTClient;
@@ -34,6 +38,7 @@ describe('AWS IoT provisioning 生产适配器', () => {
     await adapter.attachPolicy('policy-1', 'arn:cert-1');
     await adapter.attachThingPrincipal('device-1', 'arn:cert-1');
     await adapter.revokeCertificate('cert-1');
+    await expect(adapter.getDataEndpoint()).resolves.toBe('example-ats.iot.ap-southeast-1.amazonaws.com');
 
     assert.deepEqual(
       calls.map((command) => (command as { constructor: { name: string } }).constructor.name),
@@ -44,12 +49,14 @@ describe('AWS IoT provisioning 生产适配器', () => {
         AttachPolicyCommand.name,
         AttachThingPrincipalCommand.name,
         UpdateCertificateCommand.name,
+        DescribeEndpointCommand.name,
       ],
     );
-    assert.deepEqual((calls.at(-1) as UpdateCertificateCommand).input, {
+    assert.deepEqual((calls.at(-2) as UpdateCertificateCommand).input, {
       certificateId: 'cert-1',
       newStatus: 'REVOKED',
     });
+    assert.deepEqual((calls.at(-1) as DescribeEndpointCommand).input, { endpointType: 'iot:Data-ATS' });
   });
 
   test('ensure 操作仅吞掉 ResourceAlreadyExistsException', async () => {

@@ -27,6 +27,7 @@ const contractsValidator = { SchemaRegistry, validate: validateAgainstSchema } a
 
 /** 解析 contracts 包的 schemas 目录（monorepo 源码直引；打包部署时需随包携带）。 */
 function defaultSchemasDir(): string {
+  if (process.env.MQTT_SCHEMAS_DIR) return process.env.MQTT_SCHEMAS_DIR;
   const require = createRequire(import.meta.url);
   const validatorPath = require.resolve('@fdp/contracts/mqtt/validator.mjs');
   return join(dirname(validatorPath), 'schemas');

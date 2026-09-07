@@ -86,6 +86,27 @@ async function plantDevice(
     },
   });
   if (options.withPackage) await securePackage.storePackage(certificateId, Buffer.from('{}'));
+  if ((options.lifecycleStatus ?? 'Active') === 'OnboardingApproved') {
+    const token = await prisma.onboardingToken.create({
+      data: {
+        tokenHash: `token-heartbeat-${seqCounter}`,
+        serialNumber: `SN-HB-${seqCounter}`,
+        expiresAt: new Date('2027-01-01T00:00:00Z'),
+      },
+    });
+    await prisma.onboardingRequest.create({
+      data: {
+        tokenId: token.id,
+        serialNumber: `SN-HB-${seqCounter}`,
+        model: 'BNX-100',
+        hardwareVersion: 'HW1.0',
+        manufacturer: 'Hiddenjoy',
+        manufactureDate: new Date('2026-01-01T00:00:00Z'),
+        status: 'APPROVED',
+        onboardingDeadlineAt: new Date(NOW.getTime() + DAY_MS),
+      },
+    });
+  }
   return { deviceId, customerId: customer.id, certificateId, fingerprint };
 }
 
@@ -148,7 +169,12 @@ function heartbeatMessage(
 }
 
 function handler() {
-  return createHeartbeatHandler({ client: prisma, securePackage, now });
+  return createHeartbeatHandler({
+    client: prisma,
+    securePackage,
+    certificateRevoker: { revokeCertificate: async () => {} },
+    now,
+  });
 }
 
 describe('createHeartbeatHandler（BE-IOT-04）', () => {

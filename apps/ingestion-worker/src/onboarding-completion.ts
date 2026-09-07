@@ -14,7 +14,7 @@
  * 功能边界：不自动分配 Customer/Site，不自动发 License。
  */
 import type { DbClient } from '@fdp/database';
-import { audited, recordAudit, withTransaction } from '@fdp/database';
+import { recordAudit, withTransaction } from '@fdp/database';
 import { DeviceStateError, transitionLifecycle } from '@fdp/domain';
 import type { SecurePackageService } from '@fdp/auth';
 import { ONBOARDING_TIMEOUT_POLICY } from '@fdp/contracts/lifecycle/onboarding-timeout-policy.js';
@@ -31,6 +31,7 @@ export interface FirstHeartbeatInput {
 export interface OnboardingCompletionDeps {
   readonly client: DbClient;
   readonly securePackage: SecurePackageService;
+  readonly certificateRevoker: { revokeCertificate(certificateId: string): Promise<void> };
   readonly now?: () => Date;
 }
 
@@ -76,6 +77,7 @@ interface CertificateDelegate {
 
 interface OnboardingRequestDelegate {
   findMany(args: Record<string, unknown>): Promise<OnboardingRequestRow[]>;
+  findFirst(args: Record<string, unknown>): Promise<OnboardingRequestRow | null>;
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
 }
 
@@ -118,6 +120,7 @@ export async function completeOnboardingOnFirstHeartbeat(
 ): Promise<OnboardingCompletionResult> {
   const now = deps.now?.() ?? new Date();
   const occurredAt = input.occurredAt ?? now;
+  const cutoffAt = new Date(Math.max(now.getTime(), occurredAt.getTime()));
 
   // 预检（根客户端）：已完成 Onboarding 的重复 Heartbeat 直接幂等返回，不产生审计噪音
   const preview = await devices(deps.client).findFirst({ where: { id: input.deviceId } });
@@ -125,65 +128,92 @@ export async function completeOnboardingOnFirstHeartbeat(
     return { deviceId: preview.id, transitioned: false, packageDestroyed: false };
   }
 
+  type CompletionOutcome =
+    | { readonly kind: 'completed'; readonly result: OnboardingCompletionResult }
+    | { readonly kind: 'timed_out'; readonly requestId: string; readonly certificateId: string };
+
+  let outcome: CompletionOutcome;
   try {
-    return await audited(
-      deps.client,
-      {
-        objectType: 'device',
-        objectId: input.deviceId,
-        action: 'device.lifecycle.OnboardingApproved_to_Onboarded',
-        actorId: 'system:onboarding-completion',
-        beforeValue: { lifecycleStatus: 'OnboardingApproved' },
-        afterValue: (result: unknown) => ({
-          lifecycleStatus: 'Onboarded',
-          transitioned: (result as OnboardingCompletionResult).transitioned,
-        }),
-      },
-      async (tx) => {
-        const device = await devices(tx).findFirst({ where: { id: input.deviceId } });
-        if (!device) throw new DeviceStateError('VALIDATION_FAILED', `设备不存在: ${input.deviceId}`);
+    outcome = await withTransaction(deps.client, async (tx) => {
+      const device = await devices(tx).findFirst({ where: { id: input.deviceId } });
+      if (!device) throw new DeviceStateError('VALIDATION_FAILED', `设备不存在: ${input.deviceId}`);
 
-        // 幂等：已完成 Onboarding → 重放，无重复写入
-        if (device.lifecycleStatus === 'Onboarded') {
-          return { deviceId: device.id, transitioned: false, packageDestroyed: false };
-        }
-        if (device.lifecycleStatus !== 'OnboardingApproved') {
-          throw new DeviceStateError(
-            'DEVICE_STATE_NOT_ALLOWED',
-            `生命周期不允许迁移: ${device.lifecycleStatus} → Onboarded`,
-          );
-        }
+      // 幂等：已完成 Onboarding → 重放，无重复写入
+      if (device.lifecycleStatus === 'Onboarded') {
+        return {
+          kind: 'completed' as const,
+          result: { deviceId: device.id, transitioned: false, packageDestroyed: false },
+        };
+      }
+      if (device.lifecycleStatus !== 'OnboardingApproved') {
+        throw new DeviceStateError(
+          'DEVICE_STATE_NOT_ALLOWED',
+          `生命周期不允许迁移: ${device.lifecycleStatus} → Onboarded`,
+        );
+      }
 
-        // 证书必须与 Device 匹配（未撤销/未过期）
-        const certificate = await certificates(tx).findFirst({
-          where: {
-            deviceId: device.id,
-            fingerprint: input.certificateFingerprint,
-            status: { notIn: ['REVOKED', 'EXPIRED'] },
+      // 证书必须与 Device 匹配（未撤销/未过期）
+      const certificate = await certificates(tx).findFirst({
+        where: {
+          deviceId: device.id,
+          fingerprint: input.certificateFingerprint,
+          status: { notIn: ['REVOKED', 'EXPIRED'] },
+        },
+      });
+      if (!certificate) {
+        throw new DeviceStateError('FORBIDDEN', 'Heartbeat 证书与设备不匹配');
+      }
+
+      if (!device.serialNumber) throw new DeviceStateError('VALIDATION_FAILED', '设备缺少序列号');
+      const raw = tx as unknown as {
+        $queryRawUnsafe<T>(query: string, ...values: unknown[]): Promise<T>;
+      };
+      await raw.$queryRawUnsafe(
+        `SELECT id FROM onboarding_requests
+             WHERE serial_number = $1 AND status = 'APPROVED'
+             ORDER BY reviewed_at DESC NULLS LAST, created_at DESC
+             LIMIT 1 FOR UPDATE`,
+        device.serialNumber,
+      );
+      const request = await onboardingRequests(tx).findFirst({
+        where: { serialNumber: device.serialNumber, status: 'APPROVED', timedOutAt: null },
+        orderBy: [{ reviewedAt: 'desc' }, { createdAt: 'desc' }],
+      });
+      if (!request?.onboardingDeadlineAt) {
+        throw new DeviceStateError('DEVICE_STATE_NOT_ALLOWED', 'Onboarding 申请尚未建立首个 Heartbeat 截止时间');
+      }
+
+      if (request.onboardingDeadlineAt.getTime() <= cutoffAt.getTime()) {
+        const requestUpdate = await onboardingRequests(tx).updateMany({
+          where: { id: request.id, status: 'APPROVED', onboardingDeadlineAt: { lte: cutoffAt }, timedOutAt: null },
+          data: {
+            status: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.internalRequestStatus,
+            rejectReason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason,
+            timedOutAt: cutoffAt,
+            version: { increment: 1 },
           },
         });
-        if (!certificate) {
-          throw new DeviceStateError('FORBIDDEN', 'Heartbeat 证书与设备不匹配');
-        }
-
-        // DOM-01 迁移（SYSTEM actor；前置：证书已安装 + 首个 Heartbeat）
-        const effects = transitionLifecycle(
-          { id: device.id, lifecycleStatus: 'OnboardingApproved', operationalStatus: null },
-          'Onboarded',
-          { actorType: 'SYSTEM', actorId: 'system:onboarding-completion' },
-          { certificateInstalled: true, firstHeartbeatReceived: true },
-        );
-
-        // 原子条件更新：并发首个 Heartbeat 仅一个生效
-        const { count } = await devices(tx).updateMany({
+        const deviceUpdate = await devices(tx).updateMany({
           where: { id: device.id, lifecycleStatus: 'OnboardingApproved' },
-          data: { lifecycleStatus: 'Onboarded' },
+          data: { lifecycleStatus: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.deviceLifecycle },
         });
-        if (count !== 1) throw new ConcurrentCompletion();
-
-        const history = (tx as unknown as Record<string, unknown>).deviceStateHistory as StateHistoryDelegate;
-        for (const entry of effects.stateHistory) {
-          await history.create({
+        const certificateUpdate = await certificates(tx).updateMany({
+          where: { id: certificate.id, deviceId: device.id, status: 'PENDING_CLAIM' },
+          data: { status: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.certificateStatus },
+        });
+        if (requestUpdate.count !== 1 || deviceUpdate.count !== 1 || certificateUpdate.count !== 1) {
+          throw new ConcurrentDeadline();
+        }
+        await deps.securePackage.destroyPackage(certificate.id, tx);
+        const timeoutEffects = transitionLifecycle(
+          { id: device.id, lifecycleStatus: 'OnboardingApproved', operationalStatus: null },
+          ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.deviceLifecycle,
+          { actorType: 'SYSTEM', actorId: 'system:onboarding-deadline' },
+          { reason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason },
+        );
+        const timeoutHistory = (tx as unknown as Record<string, unknown>).deviceStateHistory as StateHistoryDelegate;
+        for (const entry of timeoutEffects.stateHistory) {
+          await timeoutHistory.create({
             data: {
               deviceId: entry.deviceId,
               axis: entry.axis,
@@ -195,45 +225,126 @@ export async function completeOnboardingOnFirstHeartbeat(
             },
           });
         }
-
-        // 证书确认在用：PENDING_CLAIM → ACTIVE；证书包同事务销毁（幂等）
-        await certificates(tx).updateMany({
-          where: { id: certificate.id, status: 'PENDING_CLAIM' },
-          data: { status: 'ACTIVE', claimedAt: now },
+        await recordAudit(tx, {
+          objectType: 'onboarding_request',
+          objectId: request.id,
+          action: 'onboarding.timeout',
+          result: 'SUCCESS',
+          reason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason,
+          afterValue: { deviceId: device.id, certificateId: certificate.id, timedOutAt: cutoffAt.toISOString() },
         });
-        const packageDestroyed = await deps.securePackage.destroyPackage(certificate.id, tx);
+        return { kind: 'timed_out', requestId: request.id, certificateId: certificate.id };
+      }
 
-        // 记录设备上线时间（latest state 归 BE-IOT-04 全量维护，此处仅落上线基点）
-        const latestState = (tx as unknown as Record<string, unknown>).deviceLatestState as LatestStateDelegate;
-        await latestState.upsert({
-          where: { deviceId: device.id },
-          create: {
-            deviceId: device.id,
-            customerId: device.customerId,
-            connectivity: 'ONLINE',
-            lastHeartbeatAt: occurredAt,
-          },
-          update: {
-            customerId: device.customerId,
-            connectivity: 'ONLINE',
-            lastHeartbeatAt: occurredAt,
+      // DOM-01 迁移（SYSTEM actor；前置：证书已安装 + 首个 Heartbeat）
+      const effects = transitionLifecycle(
+        { id: device.id, lifecycleStatus: 'OnboardingApproved', operationalStatus: null },
+        'Onboarded',
+        { actorType: 'SYSTEM', actorId: 'system:onboarding-completion' },
+        { certificateInstalled: true, firstHeartbeatReceived: true },
+      );
+
+      // 原子条件更新：并发首个 Heartbeat 仅一个生效
+      const { count } = await devices(tx).updateMany({
+        where: { id: device.id, lifecycleStatus: 'OnboardingApproved' },
+        data: { lifecycleStatus: 'Onboarded' },
+      });
+      if (count !== 1) throw new ConcurrentCompletion();
+
+      const history = (tx as unknown as Record<string, unknown>).deviceStateHistory as StateHistoryDelegate;
+      for (const entry of effects.stateHistory) {
+        await history.create({
+          data: {
+            deviceId: entry.deviceId,
+            axis: entry.axis,
+            fromStatus: entry.fromStatus,
+            toStatus: entry.toStatus,
+            actorType: entry.actorType,
+            actorId: entry.actorId,
+            reason: entry.reason,
           },
         });
+      }
 
-        return { deviceId: device.id, transitioned: true, packageDestroyed };
-      },
-    );
+      // 证书确认在用：PENDING_CLAIM → ACTIVE；证书包同事务销毁（幂等）
+      await certificates(tx).updateMany({
+        where: { id: certificate.id, status: 'PENDING_CLAIM' },
+        data: { status: 'ACTIVE', claimedAt: now },
+      });
+      const packageDestroyed = await deps.securePackage.destroyPackage(certificate.id, tx);
+
+      // 记录设备上线时间（latest state 归 BE-IOT-04 全量维护，此处仅落上线基点）
+      const latestState = (tx as unknown as Record<string, unknown>).deviceLatestState as LatestStateDelegate;
+      await latestState.upsert({
+        where: { deviceId: device.id },
+        create: {
+          deviceId: device.id,
+          customerId: device.customerId,
+          connectivity: 'ONLINE',
+          lastHeartbeatAt: occurredAt,
+        },
+        update: {
+          customerId: device.customerId,
+          connectivity: 'ONLINE',
+          lastHeartbeatAt: occurredAt,
+        },
+      });
+
+      const result = { deviceId: device.id, transitioned: true, packageDestroyed };
+      await recordAudit(tx, {
+        objectType: 'device',
+        objectId: input.deviceId,
+        action: 'device.lifecycle.OnboardingApproved_to_Onboarded',
+        result: 'SUCCESS',
+        actorId: 'system:onboarding-completion',
+        beforeValue: { lifecycleStatus: 'OnboardingApproved' },
+        afterValue: { lifecycleStatus: 'Onboarded', transitioned: true },
+      });
+      return { kind: 'completed', result };
+    });
   } catch (err) {
     if (err instanceof ConcurrentCompletion) {
       return { deviceId: input.deviceId, transitioned: false, packageDestroyed: false };
     }
+    await recordAudit(deps.client, {
+      objectType: 'device',
+      objectId: input.deviceId,
+      action: 'device.lifecycle.OnboardingApproved_to_Onboarded',
+      result: 'FAILURE',
+      actorId: 'system:onboarding-completion',
+      beforeValue: { lifecycleStatus: 'OnboardingApproved' },
+      reason: err instanceof Error ? err.name : 'UNKNOWN',
+    });
     throw err;
   }
+
+  if (outcome.kind === 'completed') return outcome.result;
+  try {
+    await deps.certificateRevoker.revokeCertificate(outcome.certificateId);
+    await withTransaction(deps.client, async (tx) => {
+      await onboardingRequests(tx).updateMany({
+        where: { id: outcome.requestId, status: 'TIMED_OUT', revocationCompletedAt: null },
+        data: { revocationCompletedAt: cutoffAt },
+      });
+      await certificates(tx).updateMany({
+        where: { id: outcome.certificateId, status: 'REVOKED', revokedAt: null },
+        data: { revokedAt: cutoffAt },
+      });
+      await recordAudit(tx, {
+        objectType: 'deviceCertificate',
+        objectId: outcome.certificateId,
+        action: 'onboarding.timeout.certificate_revoke',
+        result: 'SUCCESS',
+        reason: ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason,
+      });
+    });
+  } catch {
+    // 本地失败关闭已提交；revocationCompletedAt 保持 null，由 deadline evaluator 幂等重试。
+  }
+  throw new DeviceStateError('DEVICE_STATE_NOT_ALLOWED', ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.externalReason);
 }
 
-export interface OnboardingDeadlineEvaluatorDeps extends OnboardingCompletionDeps {
-  readonly certificateRevoker: { revokeCertificate(certificateId: string): Promise<void> };
-}
+export type OnboardingDeadlineEvaluatorDeps = OnboardingCompletionDeps;
 
 export interface OnboardingDeadlineBatchResult {
   readonly evaluated: number;

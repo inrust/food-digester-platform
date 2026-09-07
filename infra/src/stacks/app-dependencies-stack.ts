@@ -50,10 +50,17 @@ const PLACEHOLDER_HANDLER_CODE = [
 
 const DB_MASTER_USERNAME = 'fdp_admin' as const;
 const API_ROLE_SUFFIX = 'api-role' as const;
+const ONBOARDING_API_ROLE_SUFFIX = 'onboarding-api-role' as const;
 const CERT_SWEEPER_ROLE_SUFFIX = 'cert-package-sweeper-role' as const;
 const WORKSPACE_ROOT = fileURLToPath(new URL('../../..', import.meta.url));
 const API_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/lambda-entry.ts');
+const ONBOARDING_API_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/device-onboarding-entry.ts');
 const CERT_SWEEPER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/certificate-package-sweeper-entry.ts');
+const INGESTION_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/ingestion-entry.ts');
+const ONBOARDING_DEADLINE_ENTRY = resolve(
+  WORKSPACE_ROOT,
+  'apps/ingestion-worker/src/runtime/onboarding-deadline-entry.ts',
+);
 
 interface MessagingResources {
   readonly ingress: sqs.Queue;
@@ -87,6 +94,8 @@ interface ComputeResources {
   readonly outboxPublisher: lambda.Function;
   readonly summary: lambda.Function;
   readonly certPackageSweeper: lambda.Function;
+  readonly onboardingDeadline: lambda.Function;
+  readonly onboardingApi: lambda.Function;
   readonly api: lambda.Function;
 }
 
@@ -130,7 +139,7 @@ export class AppDependenciesStack extends Stack {
     const data = this.createData(storage.dataKey);
     const identity = this.createIdentity();
     const compute = this.createCompute(storage, messaging, data, identity);
-    const apis = this.createApiGateways(compute.api, identity, storage.truststore);
+    const apis = this.createApiGateways(compute.onboardingApi, compute.api, identity, storage.truststore);
     this.createOutputs(storage, messaging, data, identity, apis);
   }
 
@@ -170,13 +179,19 @@ export class AppDependenciesStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    // SEC-01 前置：一次性证书包信封加密专用 Key；数据面只授予 API 与恢复 Lambda（见 createCompute）
+    // SEC-01 前置：一次性证书包信封加密专用 Key；数据面只授予管理 API、Onboarding API 与恢复 Lambda。
     // 使用确定性角色 ARN 条件，避免 Key ↔ Lambda Role 的 CloudFormation 循环依赖。
     const apiRoleArn = this.formatArn({
       service: 'iam',
       region: '',
       resource: 'role',
       resourceName: this.naming.name(API_ROLE_SUFFIX),
+    });
+    const onboardingApiRoleArn = this.formatArn({
+      service: 'iam',
+      region: '',
+      resource: 'role',
+      resourceName: this.naming.name(ONBOARDING_API_ROLE_SUFFIX),
     });
     const certSweeperRoleArn = this.formatArn({
       service: 'iam',
@@ -190,7 +205,7 @@ export class AppDependenciesStack extends Stack {
       principals: [new iam.AccountRootPrincipal()],
       actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:DescribeKey'],
       resources: ['*'],
-      conditions: { ArnEquals: { 'aws:PrincipalArn': [apiRoleArn, certSweeperRoleArn] } },
+      conditions: { ArnEquals: { 'aws:PrincipalArn': [apiRoleArn, onboardingApiRoleArn, certSweeperRoleArn] } },
     });
     const certPackageKey = new kms.Key(this, 'CertPackageKey', {
       alias: `alias/${this.naming.name('cert-package')}`,
@@ -418,6 +433,7 @@ export class AppDependenciesStack extends Stack {
         environment: Record<string, string>;
         role?: iam.IRole;
         entry?: string;
+        copyMqttSchemas?: boolean;
       },
     ): lambda.Function => {
       const props = {
@@ -444,6 +460,17 @@ export class AppDependenciesStack extends Stack {
             sourceMap: true,
             format: lambdaNodejs.OutputFormat.ESM,
             logLevel: lambdaNodejs.LogLevel.ERROR,
+            ...(options.copyMqttSchemas
+              ? {
+                  commandHooks: {
+                    beforeBundling: () => [],
+                    beforeInstall: () => [],
+                    afterBundling: (inputDir: string, outputDir: string) => [
+                      `cp -R "${inputDir}/contracts/mqtt/schemas" "${outputDir}/mqtt-schemas"`,
+                    ],
+                  },
+                }
+              : {}),
           },
         });
       }
@@ -466,7 +493,11 @@ export class AppDependenciesStack extends Stack {
       environment: {
         DB_SECRET_ARN: dbSecret,
         QUARANTINE_QUEUE_URL: messaging.quarantine.queueUrl,
+        CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
+        MQTT_SCHEMAS_DIR: '/var/task/mqtt-schemas',
       },
+      entry: INGESTION_ENTRY,
+      copyMqttSchemas: true,
     });
     ingestion.addEventSource(
       new lambdaEventSources.SqsEventSource(messaging.ingress, {
@@ -475,6 +506,13 @@ export class AppDependenciesStack extends Stack {
       }),
     );
     messaging.quarantine.grantSendMessages(ingestion);
+    ingestion.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'OnboardingHeartbeatCertificateRevoke',
+        actions: ['iot:UpdateCertificate'],
+        resources: [this.formatArn({ service: 'iot', resource: 'cert', resourceName: '*' })],
+      }),
+    );
     dbSecretGrant(ingestion);
 
     // Archive Worker：消费 Archive，写 Raw Bucket（BE-ARC-02）
@@ -519,11 +557,20 @@ export class AppDependenciesStack extends Stack {
       targets: [new eventsTargets.LambdaFunction(summary)],
     });
 
-    // API 与证书恢复使用两个确定性最小权限角色；证书包 Key Policy 只允许这两个 Principal。
+    // 管理 API、Onboarding API 与证书恢复使用确定性的独立最小权限角色。
     const apiRole = new iam.Role(this, 'ApiFnServiceRole', {
       roleName: this.naming.name(API_ROLE_SUFFIX),
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       description: 'API Lambda execution role and certificate-package KMS data-plane principal',
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
+      ],
+    });
+    const onboardingApiRole = new iam.Role(this, 'OnboardingApiFnServiceRole', {
+      roleName: this.naming.name(ONBOARDING_API_ROLE_SUFFIX),
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      description: 'Onboarding Token API execution role',
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
@@ -577,6 +624,68 @@ export class AppDependenciesStack extends Stack {
       schedule: events.Schedule.rate(Duration.minutes(5)),
       targets: [new eventsTargets.LambdaFunction(certPackageSweeper)],
     });
+
+    const onboardingDeadline = mkFunction('OnboardingDeadlineFn', 'onboarding-deadline', {
+      timeout: Duration.seconds(300),
+      environment: {
+        DB_SECRET_ARN: dbSecret,
+        CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
+      },
+      entry: ONBOARDING_DEADLINE_ENTRY,
+    });
+    dbSecretGrant(onboardingDeadline);
+    onboardingDeadline.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'OnboardingDeadlineCertificateRevoke',
+        actions: ['iot:UpdateCertificate'],
+        resources: [this.formatArn({ service: 'iot', resource: 'cert', resourceName: '*' })],
+      }),
+    );
+    new events.Rule(this, 'OnboardingDeadlineSchedule', {
+      ruleName: this.naming.name('onboarding-deadline'),
+      schedule: events.Schedule.rate(Duration.minutes(1)),
+      targets: [new eventsTargets.LambdaFunction(onboardingDeadline)],
+    });
+
+    const onboardingApi = mkFunction('OnboardingApiFn', 'onboarding-api-handler', {
+      timeout: Duration.seconds(30),
+      memorySize: 512,
+      environment: {
+        DB_SECRET_ARN: dbSecret,
+        CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
+        FDP_AWS_ACCOUNT_ID: Aws.ACCOUNT_ID,
+      },
+      role: onboardingApiRole,
+      entry: ONBOARDING_API_ENTRY,
+    });
+    dbSecretGrant(onboardingApi);
+    onboardingApiRole.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        sid: 'CertificatePackageKeyDataPlane',
+        actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:DescribeKey'],
+        resources: [storage.certPackageKey.keyArn],
+      }),
+    );
+    onboardingApi.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'IotProvisioning',
+        actions: [
+          'iot:CreateThing',
+          'iot:DescribeThing',
+          'iot:DeleteThing',
+          'iot:CreateKeysAndCertificate',
+          'iot:DescribeCertificate',
+          'iot:UpdateCertificate',
+          'iot:DeleteCertificate',
+          'iot:CreatePolicy',
+          'iot:AttachPolicy',
+          'iot:AttachThingPrincipal',
+          'iot:DetachThingPrincipal',
+          'iot:DescribeEndpoint',
+        ],
+        resources: ['*'],
+      }),
+    );
 
     // API Handler：AUTH-01 JWT 重新验签后路由真实 Onboarding 管理 Handler。
     const api = mkFunction('ApiFn', 'api', {
@@ -642,12 +751,18 @@ export class AppDependenciesStack extends Stack {
       }),
     );
 
-    return { ingestion, archive, outboxPublisher, summary, certPackageSweeper, api };
+    return { ingestion, archive, outboxPublisher, summary, certPackageSweeper, onboardingDeadline, onboardingApi, api };
   }
 
   // ---------- API Gateway：三类认证入口分离 ----------
 
-  private createApiGateways(apiFn: lambda.IFunction, identity: IdentityResources, truststore: s3.Bucket): ApiResources {
+  private createApiGateways(
+    onboardingApiFn: lambda.IFunction,
+    apiFn: lambda.IFunction,
+    identity: IdentityResources,
+    truststore: s3.Bucket,
+  ): ApiResources {
+    const onboardingIntegration = new apigw.LambdaIntegration(onboardingApiFn, { proxy: true });
     const integration = new apigw.LambdaIntegration(apiFn, { proxy: true });
     const stageOptions: apigw.StageOptions = { stageName: this.config.envName };
 
@@ -662,7 +777,7 @@ export class AppDependenciesStack extends Stack {
       .addResource('api')
       .addResource('v1')
       .addResource('device')
-      .addProxy({ defaultIntegration: integration, anyMethod: true });
+      .addProxy({ defaultIntegration: onboardingIntegration, anyMethod: true });
 
     // 入口 2：Device API —— X.509 mTLS（自定义域名 truststore）；提供域名配置后禁用默认入口
     const deviceApi = new apigw.RestApi(this, 'DeviceApi', {

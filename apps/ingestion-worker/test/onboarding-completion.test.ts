@@ -48,8 +48,8 @@ interface Planted {
 
 /** 落库 OnboardingApproved 设备 + PENDING_CLAIM 证书（带真实信封密文包）。 */
 async function plantApprovedDevice(
-  options: { lifecycleStatus?: string; withPackage?: boolean } = {},
-): Promise<Planted> {
+  options: { lifecycleStatus?: string; withPackage?: boolean; deadlineAt?: Date } = {},
+): Promise<Planted & { requestId: string }> {
   seq += 1;
   const deviceId = `dev-hb-${seq}`;
   const serialNumber = `SN-HB-${seq}`;
@@ -82,38 +82,78 @@ async function plantApprovedDevice(
       Buffer.from(JSON.stringify({ certificatePem: 'p', privateKey: 'k' })),
     );
   }
-  return { deviceId, serialNumber, certificateId, fingerprint };
-}
-
-function deps(): OnboardingCompletionDeps {
-  return { client: prisma, securePackage, now };
-}
-
-async function plantDeadlineCandidate(deadlineAt: Date): Promise<Planted & { requestId: string }> {
-  const planted = await plantApprovedDevice();
   const token = await prisma.onboardingToken.create({
     data: {
-      tokenHash: `token-hash-${planted.deviceId}`,
-      serialNumber: planted.serialNumber,
+      tokenHash: `token-hash-${deviceId}`,
+      serialNumber,
       expiresAt: new Date('2027-01-01T00:00:00Z'),
     },
   });
   const request = await prisma.onboardingRequest.create({
     data: {
       tokenId: token.id,
-      serialNumber: planted.serialNumber,
+      serialNumber,
       model: 'BNX-100',
       hardwareVersion: 'HW1.0',
       manufacturer: 'Hiddenjoy',
       manufactureDate: new Date('2026-01-01T00:00:00Z'),
       status: 'APPROVED',
-      onboardingDeadlineAt: deadlineAt,
+      onboardingDeadlineAt: options.deadlineAt ?? new Date(NOW.getTime() + 86_400_000),
     },
   });
-  return { ...planted, requestId: request.id };
+  return { deviceId, serialNumber, certificateId, fingerprint, requestId: request.id };
+}
+
+function deps(): OnboardingCompletionDeps {
+  return { client: prisma, securePackage, certificateRevoker: { revokeCertificate: async () => {} }, now };
+}
+
+async function plantDeadlineCandidate(deadlineAt: Date): Promise<Planted & { requestId: string }> {
+  return plantApprovedDevice({ deadlineAt });
 }
 
 describe('completeOnboardingOnFirstHeartbeat', () => {
+  test('截止边界后 Heartbeat 先于 evaluator 到达：失败关闭并原子执行超时处置；并发仅处置一次', async () => {
+    const deadline = new Date(NOW.getTime() - 1);
+    const planted = await plantApprovedDevice({ deadlineAt: deadline });
+    const revoked: string[] = [];
+    const lateDeps: OnboardingCompletionDeps = {
+      ...deps(),
+      certificateRevoker: { revokeCertificate: async (id) => void revoked.push(id) },
+    };
+
+    const attempts = await Promise.allSettled([
+      completeOnboardingOnFirstHeartbeat(lateDeps, {
+        deviceId: planted.deviceId,
+        certificateFingerprint: planted.fingerprint,
+        occurredAt: NOW,
+      }),
+      completeOnboardingOnFirstHeartbeat(lateDeps, {
+        deviceId: planted.deviceId,
+        certificateFingerprint: planted.fingerprint,
+        occurredAt: NOW,
+      }),
+    ]);
+
+    assert.equal(attempts.filter((attempt) => attempt.status === 'rejected').length, 2);
+    for (const attempt of attempts) {
+      assert.equal(attempt.status, 'rejected');
+      if (attempt.status === 'rejected') assert.ok(attempt.reason instanceof DeviceStateError);
+    }
+    const request = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: planted.requestId } });
+    assert.equal(request.status, 'TIMED_OUT');
+    assert.equal(request.rejectReason, 'ONBOARDING_TIMEOUT');
+    assert.equal(
+      (await prisma.device.findUniqueOrThrow({ where: { id: planted.deviceId } })).lifecycleStatus,
+      'PendingOnboarding',
+    );
+    const certificate = await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: planted.certificateId } });
+    assert.equal(certificate.status, 'REVOKED');
+    assert.equal(certificate.packageCiphertext, null);
+    assert.deepEqual(revoked, [planted.certificateId]);
+    assert.equal(await prisma.deviceStateHistory.count({ where: { deviceId: planted.deviceId } }), 1);
+  });
+
   test('首个合法 Heartbeat：原子迁移 Onboarded + 状态历史 + 证书 ACTIVE + 包销毁 + 上线时间 + 审计', async () => {
     const { deviceId, certificateId, fingerprint } = await plantApprovedDevice();
     const before = await prisma.deviceCertificate.findFirst({ where: { id: certificateId } });

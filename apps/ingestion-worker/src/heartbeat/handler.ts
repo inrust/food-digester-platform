@@ -25,6 +25,7 @@ import type { LatestStateApplyResult } from './repository.js';
 export interface HeartbeatHandlerDeps {
   readonly client: DbClient;
   readonly securePackage: SecurePackageService;
+  readonly certificateRevoker: { revokeCertificate(certificateId: string): Promise<void> };
   readonly now?: () => Date;
 }
 
@@ -127,7 +128,12 @@ export function createHeartbeatHandler(
     let onboardingTransitioned = false;
     if (message.device.lifecycleStatus === 'OnboardingApproved') {
       const completion = await completeOnboardingOnFirstHeartbeat(
-        { client: deps.client, securePackage: deps.securePackage, now: deps.now ?? (() => new Date()) },
+        {
+          client: deps.client,
+          securePackage: deps.securePackage,
+          certificateRevoker: deps.certificateRevoker,
+          now: deps.now ?? (() => new Date()),
+        },
         { deviceId, certificateFingerprint: message.device.certificateFingerprint, occurredAt },
       );
       onboardingTransitioned = completion.transitioned;

@@ -55,9 +55,6 @@ export async function resolveDeviceContext(
   if (!certificate) {
     throw quarantineError('UNKNOWN_DEVICE', 'iotPrincipal', 'certificate not registered in device ledger');
   }
-  if (certificate.status !== 'ACTIVE' || certificate.revokedAt !== null) {
-    throw quarantineError('IDENTITY_VIOLATION', 'iotPrincipal', 'certificate is not ACTIVE');
-  }
   // Topic 设备与证书绑定设备必须一致（跨设备伪装防护）
   if (certificate.deviceId !== identity.iotDeviceId) {
     throw quarantineError('IDENTITY_VIOLATION', 'iotDeviceId', 'topic device does not match certificate binding');
@@ -68,6 +65,16 @@ export async function resolveDeviceContext(
   const device = await devices.findFirst({ where: { id: certificate.deviceId } });
   if (!device) {
     throw quarantineError('UNKNOWN_DEVICE', 'iotDeviceId', 'device not registered in ledger');
+  }
+  const active = certificate.status === 'ACTIVE';
+  const firstHeartbeatCandidate =
+    certificate.status === 'PENDING_CLAIM' && device.lifecycleStatus === 'OnboardingApproved';
+  if (certificate.revokedAt !== null || (!active && !firstHeartbeatCandidate)) {
+    throw quarantineError(
+      'IDENTITY_VIOLATION',
+      'iotPrincipal',
+      'certificate is neither ACTIVE nor an approved onboarding certificate',
+    );
   }
   return {
     deviceId: device.id,

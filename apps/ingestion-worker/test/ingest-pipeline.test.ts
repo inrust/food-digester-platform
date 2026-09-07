@@ -10,16 +10,31 @@
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
+import {
+  CERTIFICATE_PACKAGE_MAX_CLAIMS,
+  CERTIFICATE_PACKAGE_RETENTION_SECONDS,
+  createLocalTestKeyProvider,
+  SecurePackageService,
+} from '@fdp/auth';
 import { DEC013_LEGACY_COMPATIBILITY_ENDS_AT, computeAuditHash } from '@fdp/contracts/mqtt/payload-normalization.js';
-import { createIngestionHandler } from '../src/index.js';
+import { createBusinessDispatcher, createIngestionHandler } from '../src/index.js';
 import type { QuarantineRecord, SqsBatchResponseLike, ValidatedMessage } from '../src/index.js';
 import { createTestDb } from '../../cloud-api/test/helpers.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
+let securePackage: SecurePackageService;
 
 beforeAll(async () => {
   ({ pg, prisma } = await createTestDb());
+  securePackage = new SecurePackageService({
+    db: prisma,
+    keyProvider: createLocalTestKeyProvider('p0-ingestion-runtime'),
+    config: {
+      retentionSeconds: CERTIFICATE_PACKAGE_RETENTION_SECONDS,
+      maxClaims: CERTIFICATE_PACKAGE_MAX_CLAIMS,
+    },
+  });
 }, 60_000);
 
 afterAll(async () => {
@@ -65,6 +80,53 @@ async function plantDevice(options: { certificateStatus?: string; withCustomer?:
     },
   });
   return { deviceId, certificateId, customerId };
+}
+
+async function plantApprovedOnboardingDevice() {
+  seq += 1;
+  const deviceId = `dev-ing-onboarding-${seq}`;
+  const serialNumber = `SN-ING-ONBOARDING-${seq}`;
+  const customer = await prisma.customer.create({ data: { name: `Customer ING Onboarding ${seq}` } });
+  await prisma.device.create({
+    data: {
+      id: deviceId,
+      serialNumber,
+      model: 'BNX-100',
+      hardwareVersion: 'HW1.0',
+      manufacturer: 'Hiddenjoy',
+      manufactureDate: new Date('2026-01-01T00:00:00Z'),
+      lifecycleStatus: 'OnboardingApproved',
+      customerId: customer.id,
+    },
+  });
+  const certificateId = `cert-ing-onboarding-${seq}`;
+  await prisma.deviceCertificate.create({
+    data: {
+      id: certificateId,
+      deviceId,
+      fingerprint: `${FINGERPRINT.slice(0, 60)}${String(seq).padStart(4, '0')}`,
+      status: 'PENDING_CLAIM',
+      notBefore: new Date('2026-01-01T00:00:00Z'),
+      notAfter: new Date('2027-12-31T00:00:00Z'),
+    },
+  });
+  await securePackage.storePackage(certificateId, Buffer.from('{"privateKey":"test-only"}'));
+  const token = await prisma.onboardingToken.create({
+    data: { tokenHash: `token-ing-onboarding-${seq}`, serialNumber, expiresAt: new Date('2027-12-31T00:00:00Z') },
+  });
+  await prisma.onboardingRequest.create({
+    data: {
+      tokenId: token.id,
+      serialNumber,
+      model: 'BNX-100',
+      hardwareVersion: 'HW1.0',
+      manufacturer: 'Hiddenjoy',
+      manufactureDate: new Date('2026-01-01T00:00:00Z'),
+      status: 'APPROVED',
+      onboardingDeadlineAt: new Date('2027-12-31T00:00:00Z'),
+    },
+  });
+  return { deviceId, certificateId };
 }
 
 function heartbeatPayload(id: string, overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -137,6 +199,40 @@ function harness(onValidated?: (message: ValidatedMessage) => Promise<void>): Ha
 }
 
 describe('createIngestionHandler（BE-IOT-02 校验管线）', () => {
+  test('生产组合根闭环：SQS → 身份/Schema 校验 → Heartbeat → Onboarded', async () => {
+    const ctx = await plantApprovedOnboardingDevice();
+    const quarantined: QuarantineRecord[] = [];
+    const handler = createIngestionHandler({
+      client: prisma,
+      quarantine: {
+        async send(record) {
+          quarantined.push(record);
+        },
+      },
+      onValidated: createBusinessDispatcher({
+        client: prisma,
+        securePackage,
+        certificateRevoker: { revokeCertificate: async () => {} },
+      }),
+    });
+
+    const response = await handler({
+      Records: [
+        {
+          messageId: 'sqs-onboarding-heartbeat',
+          body: envelopeBody(heartbeatPayload('HB-ONBOARDING-FIRST'), ctx),
+        },
+      ],
+    });
+
+    assert.deepEqual(response.batchItemFailures, []);
+    assert.deepEqual(quarantined, []);
+    assert.equal((await prisma.device.findUniqueOrThrow({ where: { id: ctx.deviceId } })).lifecycleStatus, 'Onboarded');
+    const certificate = await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: ctx.certificateId } });
+    assert.equal(certificate.status, 'ACTIVE');
+    assert.equal(certificate.packageCiphertext, null);
+  });
+
   test('合法批次全部继续处理：device/customer context 取自台账而非 Payload', async () => {
     const { deviceId, certificateId, customerId } = await plantDevice();
     const h = harness();
@@ -265,10 +361,11 @@ describe('createIngestionHandler（BE-IOT-02 校验管线）', () => {
     assert.equal(h.quarantined[0]?.errorPath, 'audit.hash');
   });
 
-  test('身份违规进 Quarantine：未知证书 / 非 ACTIVE 证书 / Topic 设备与证书绑定不一致', async () => {
+  test('身份违规进 Quarantine：未知/撤销证书、非审批态 PENDING_CLAIM、Topic 绑定不一致', async () => {
     const registered = await plantDevice();
     const other = await plantDevice();
     const revoked = await plantDevice({ certificateStatus: 'REVOKED' });
+    const unapprovedPending = await plantDevice({ certificateStatus: 'PENDING_CLAIM' });
     const h = harness();
     const response = await h.handler({
       Records: [
@@ -287,6 +384,13 @@ describe('createIngestionHandler（BE-IOT-02 校验管线）', () => {
           }),
         },
         {
+          messageId: 'sqs-unapproved-pending',
+          body: envelopeBody(heartbeatPayload('HB-DEV004-PENDING'), {
+            deviceId: unapprovedPending.deviceId,
+            certificateId: unapprovedPending.certificateId,
+          }),
+        },
+        {
           messageId: 'sqs-mismatch',
           body: envelopeBody(heartbeatPayload('HB-DEV004-3'), {
             deviceId: other.deviceId,
@@ -299,9 +403,9 @@ describe('createIngestionHandler（BE-IOT-02 校验管线）', () => {
     assert.equal(h.validated.length, 0);
     assert.deepEqual(
       h.quarantined.map((q) => q.errorType),
-      ['UNKNOWN_DEVICE', 'IDENTITY_VIOLATION', 'IDENTITY_VIOLATION'],
+      ['UNKNOWN_DEVICE', 'IDENTITY_VIOLATION', 'IDENTITY_VIOLATION', 'IDENTITY_VIOLATION'],
     );
-    assert.equal(h.quarantined[2]?.errorPath, 'iotDeviceId');
+    assert.equal(h.quarantined[3]?.errorPath, 'iotDeviceId');
   });
 
   test('时钟偏差超阈值进 Quarantine（CLOCK_SKEW，路径 meta.ts）', async () => {

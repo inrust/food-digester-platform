@@ -118,7 +118,11 @@ function harness(): Harness {
         quarantined.push(record);
       },
     },
-    onValidated: createBusinessDispatcher({ client: prisma, securePackage: securePackageStub }),
+    onValidated: createBusinessDispatcher({
+      client: prisma,
+      securePackage: securePackageStub,
+      certificateRevoker: { revokeCertificate: async () => {} },
+    }),
   });
   return { handler, quarantined };
 }
@@ -337,7 +341,11 @@ describe('BE-IOT-08 端到端分发：SQS → 管线 → 分发器 → ACK Handl
     assert.equal(state?.connectivity, 'ONLINE');
 
     // media 类型无注册 Handler（上行元数据由 BE-MED-01 设备端 API 处理）→ 确定异常路径
-    const dispatcher = createBusinessDispatcher({ client: prisma, securePackage: securePackageStub });
+    const dispatcher = createBusinessDispatcher({
+      client: prisma,
+      securePackage: securePackageStub,
+      certificateRevoker: { revokeCertificate: async () => {} },
+    });
     const mediaMessage = {
       envelope: {
         iotTopic: `bnx/device/${ctx.deviceId}/media`,

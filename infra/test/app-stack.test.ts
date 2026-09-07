@@ -75,7 +75,16 @@ describe('资源命名（环境前缀）', () => {
       template.hasResourceProperties('AWS::IoT::TopicRule', { RuleName: `fdp_test_iot_${type}` });
     }
     template.hasResourceProperties('AWS::RDS::DBInstance', { DBInstanceIdentifier: 'fdp-test-db' });
-    for (const fn of ['ingestion', 'archive', 'outbox-publisher', 'summary', 'cert-package-sweeper', 'api']) {
+    for (const fn of [
+      'ingestion',
+      'archive',
+      'outbox-publisher',
+      'summary',
+      'cert-package-sweeper',
+      'onboarding-deadline',
+      'onboarding-api-handler',
+      'api',
+    ]) {
       template.hasResourceProperties('AWS::Lambda::Function', { FunctionName: `fdp-test-${fn}` });
     }
     template.hasResourceProperties('AWS::Cognito::UserPool', { UserPoolName: 'fdp-test-admin' });
@@ -157,6 +166,10 @@ describe('验收：IAM 最小权限', () => {
     assert.include(JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']), 'fdp-test-api-role');
     assert.include(
       JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']),
+      'fdp-test-onboarding-api-role',
+    );
+    assert.include(
+      JSON.stringify(dataPlane[0].Condition?.ArnEquals?.['aws:PrincipalArn']),
       'fdp-test-cert-package-sweeper-role',
     );
     const admin = statements.find((statement) => statement.Sid === 'KeyAdministrationOnly');
@@ -194,18 +207,36 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('6 个 Lambda 使用各自独立执行角色', () => {
+  test('Ingestion 与 deadline 仅可撤销当前账号/区域的 IoT certificate 资源', () => {
+    const statements = collectPolicyStatements(template.toJSON()).map(({ statement }) => statement);
+    for (const sid of ['OnboardingHeartbeatCertificateRevoke', 'OnboardingDeadlineCertificateRevoke']) {
+      const statement = statements.find((candidate) => candidate.Sid === sid);
+      assert.isDefined(statement, `缺少 ${sid}`);
+      assert.deepEqual(statement.Action, 'iot:UpdateCertificate');
+      const resource = JSON.stringify(statement.Resource);
+      assert.include(resource, ':cert/*');
+      assert.notEqual(statement.Resource, '*');
+    }
+  });
+
+  test('8 个 Lambda 使用各自独立执行角色', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
       String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),
     );
-    assert.equal(fns.length, 6);
+    assert.equal(fns.length, 8);
     const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
-    assert.equal(roles.size, 6);
+    assert.equal(roles.size, 8);
   });
 
-  test('AUTH-01 API 与 SEC-01 sweeper 使用真实资产包而非内联 501 占位代码', () => {
+  test('P0 生产组合根与既有 API/sweeper 使用真实资产包而非内联 501 占位代码', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function'));
-    for (const name of ['fdp-test-api', 'fdp-test-cert-package-sweeper']) {
+    for (const name of [
+      'fdp-test-ingestion',
+      'fdp-test-onboarding-deadline',
+      'fdp-test-onboarding-api-handler',
+      'fdp-test-api',
+      'fdp-test-cert-package-sweeper',
+    ]) {
       const fn = fns.find((candidate) => candidate.Properties.FunctionName === name);
       assert.isDefined(fn);
       assert.isDefined(fn.Properties.Code.S3Bucket, `${name} 必须引用 CDK asset`);
@@ -256,9 +287,17 @@ describe('验收：三类 API 认证入口分离', () => {
     assert.isFalse(admin.has('NONE'), 'Admin 入口不允许未认证方法');
   });
 
-  test('三类入口共享同一 API Lambda（模块化单体），入口隔离在网关层', () => {
-    const methods = Object.values(resourcesOfType(template, 'AWS::ApiGateway::Method'));
+  test('Onboarding Token 入口使用独立生产 Lambda，不经过管理 API Lambda', () => {
+    const names = apiNameByLogicalId();
+    const methods = Object.values(resourcesOfType(template, 'AWS::ApiGateway::Method')).filter(
+      (method) => names.get(method.Properties.RestApiId?.Ref as string) === 'fdp-test-onboarding-api',
+    );
     assert.isAbove(methods.length, 0);
+    for (const method of methods) {
+      const integration = JSON.stringify(method.Properties.Integration);
+      assert.include(integration, 'OnboardingApiFn');
+      assert.notInclude(integration, '"ApiFn');
+    }
   });
 });
 
@@ -368,10 +407,14 @@ describe('验收：数据库凭据与消息管线', () => {
     for (const esm of esms) {
       assert.equal(esm.Properties.FunctionResponseTypes?.[0], 'ReportBatchItemFailures');
     }
-    template.resourceCountIs('AWS::Events::Rule', 3);
+    template.resourceCountIs('AWS::Events::Rule', 4);
     template.hasResourceProperties('AWS::Events::Rule', {
       Name: 'fdp-test-cert-package-sweeper',
       ScheduleExpression: 'rate(5 minutes)',
+    });
+    template.hasResourceProperties('AWS::Events::Rule', {
+      Name: 'fdp-test-onboarding-deadline',
+      ScheduleExpression: 'rate(1 minute)',
     });
   });
 });
@@ -420,6 +463,20 @@ describe('Cognito 与应用配置输出', () => {
     ]) {
       assert.isDefined(env[key], `API Lambda 缺少环境变量 ${key}`);
     }
+
+    const onboardingFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-onboarding-api-handler');
+    assert.isDefined(onboardingFn);
+    for (const key of ['DB_SECRET_ARN', 'CERT_PACKAGE_KEY_ARN', 'FDP_AWS_ACCOUNT_ID', 'ENV_NAME']) {
+      assert.isDefined(onboardingFn.Properties.Environment.Variables[key], `Onboarding Lambda 缺少环境变量 ${key}`);
+    }
+    const ingestionFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-ingestion');
+    assert.isDefined(ingestionFn);
+    for (const key of ['DB_SECRET_ARN', 'QUARANTINE_QUEUE_URL', 'CERT_PACKAGE_KEY_ARN', 'MQTT_SCHEMAS_DIR']) {
+      assert.isDefined(ingestionFn.Properties.Environment.Variables[key], `Ingestion Lambda 缺少环境变量 ${key}`);
+    }
+    const deadlineFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-onboarding-deadline');
+    assert.isDefined(deadlineFn);
+    assert.isDefined(deadlineFn.Properties.Environment.Variables.DB_SECRET_ARN);
 
     const outputs = template.findOutputs('*');
     for (const id of [

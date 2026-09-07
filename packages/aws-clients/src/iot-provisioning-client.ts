@@ -4,6 +4,7 @@ import {
   CreateKeysAndCertificateCommand,
   CreatePolicyCommand,
   CreateThingCommand,
+  DescribeEndpointCommand,
   IoTClient,
   UpdateCertificateCommand,
 } from '@aws-sdk/client-iot';
@@ -23,6 +24,7 @@ export interface AwsIotProvisioningClient {
   attachPolicy(policyName: string, targetArn: string): Promise<void>;
   attachThingPrincipal(thingName: string, principalArn: string): Promise<void>;
   revokeCertificate(certificateId: string): Promise<void>;
+  getDataEndpoint(): Promise<string>;
 }
 
 export interface AwsIotProvisioningClientConfig {
@@ -73,6 +75,11 @@ export function createAwsIotProvisioningClient(config: AwsIotProvisioningClientC
     },
     async revokeCertificate(certificateId) {
       await client.send(new UpdateCertificateCommand({ certificateId, newStatus: 'REVOKED' }));
+    },
+    async getDataEndpoint() {
+      const response = await client.send(new DescribeEndpointCommand({ endpointType: 'iot:Data-ATS' }));
+      if (!response.endpointAddress) throw new Error('AWS IoT DescribeEndpoint 返回不完整');
+      return response.endpointAddress;
     },
   };
 }

@@ -29,6 +29,7 @@ export interface BusinessDispatcherDeps {
   readonly client: DbClient;
   /** Heartbeat 依赖（首次心跳的 Onboarding 完成/证书轮换确认需下载安全包）。 */
   readonly securePackage: SecurePackageService;
+  readonly certificateRevoker: { revokeCertificate(certificateId: string): Promise<void> };
   readonly now?: () => Date;
 }
 
