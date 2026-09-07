@@ -13,8 +13,8 @@ import type { ActorContext } from '@fdp/auth';
 import type { DbClient } from '@fdp/database';
 import { mapDbErrorToHttp } from '@fdp/database';
 import { AdminOnboardingError, validationFailed } from './errors.js';
-import { findOnboardingRequestById, listOnboardingRequests, toDto } from './repository.js';
-import type { AdminOnboardingRequestDto } from './repository.js';
+import { ADMIN_ONBOARDING_STATUSES, findOnboardingRequestById, listOnboardingRequests, toDto } from './repository.js';
+import type { AdminOnboardingRequestDto, AdminOnboardingStatus } from './repository.js';
 import { reviewOnboardingRequest } from './service.js';
 
 export interface AdminHttpRequest {
@@ -71,6 +71,24 @@ function requireRequestId(req: AdminHttpRequest): string {
   return requestId;
 }
 
+function parseStatus(value: string | undefined): AdminOnboardingStatus | undefined {
+  if (value === undefined) return undefined;
+  if (!(ADMIN_ONBOARDING_STATUSES as readonly string[]).includes(value)) {
+    throw validationFailed(`status must be one of: ${ADMIN_ONBOARDING_STATUSES.join(', ')}`);
+  }
+  return value as AdminOnboardingStatus;
+}
+
+function parseRejectBody(raw: unknown): { reason: string | undefined } {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw validationFailed('The request body must be a JSON object');
+  }
+  const body = raw as Record<string, unknown>;
+  const unknown = Object.keys(body).filter((field) => field !== 'reason');
+  if (unknown.length > 0) throw validationFailed(`Unknown request field: ${unknown.sort().join(', ')}`);
+  return { reason: typeof body.reason === 'string' ? body.reason : undefined };
+}
+
 function meta(req: AdminHttpRequest, now: Date) {
   return { requestId: req.requestId, timestamp: now.toISOString() };
 }
@@ -104,7 +122,7 @@ export function createAdminOnboardingHandlers(deps: AdminOnboardingHandlerDeps):
     { permission: 'onboarding:read' },
     async (req) => {
       const page = await listOnboardingRequests(deps.client, {
-        status: req.query?.status,
+        status: parseStatus(req.query?.status),
         cursor: req.query?.cursor,
         limit: req.query?.limit,
       });
@@ -126,8 +144,7 @@ export function createAdminOnboardingHandlers(deps: AdminOnboardingHandlerDeps):
 
   const review = (decision: 'approve' | 'reject') =>
     withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'onboarding:approve' }, async (req) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
-      const reason = typeof body.reason === 'string' ? body.reason : undefined;
+      const reason = decision === 'reject' ? parseRejectBody(req.body).reason : undefined;
       const record = await reviewOnboardingRequest(
         deps.client,
         req.actor,

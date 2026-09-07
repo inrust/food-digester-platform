@@ -3,8 +3,8 @@
   "info": {
     "title": "Bio-Nexa CMP Admin Onboarding Review API",
     "version": "0.1.0",
-    "description": "BE-ONB-02 管理员 Onboarding 审批接口：待审批列表、详情、approve、reject。认证为 Cognito JWT；列表/详情需 onboarding:read，审批需 onboarding:approve（仅 PlatformSuperAdmin）。审批采用 If-Match 乐观锁防重复/并发审批；approve 只触发证书发放服务，不返回私钥。通用响应/错误契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0"],
+    "description": "BE-ONB-02 管理员 Onboarding 审批接口：待审批列表、详情、approve、reject。认证为 Cognito JWT；列表/详情需 onboarding:read，审批需 onboarding:approve（仅 PlatformSuperAdmin）。审批采用 If-Match 乐观锁防重复/并发审批；approve 在同一事务创建持久化 Provisioning Job，不返回私钥。通用响应/错误契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-017@1.0.0"],
     "x-decision-register-version": "1.27.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
@@ -30,7 +30,11 @@
             "in": "query",
             "required": false,
             "description": "申请状态过滤，缺省 PENDING",
-            "schema": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"], "default": "PENDING" }
+            "schema": {
+              "type": "string",
+              "enum": ["PENDING", "APPROVED", "REJECTED", "TIMED_OUT"],
+              "default": "PENDING"
+            }
           },
           { "$ref": "openapi-base.json#/components/parameters/Cursor" },
           { "$ref": "openapi-base.json#/components/parameters/Limit" }
@@ -188,8 +192,11 @@
           "hardwareVersion": { "type": "string" },
           "manufacturer": { "type": "string" },
           "manufactureDate": { "type": "string", "format": "date" },
-          "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
-          "rejectReason": { "type": ["string", "null"], "description": "拒绝原因（仅 REJECTED 非空）" },
+          "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED", "TIMED_OUT"] },
+          "rejectReason": {
+            "type": ["string", "null"],
+            "description": "拒绝原因；普通拒绝为审批原因，TIMED_OUT 固定为 ONBOARDING_TIMEOUT"
+          },
           "reviewedBy": { "type": ["string", "null"] },
           "reviewedAt": {
             "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]

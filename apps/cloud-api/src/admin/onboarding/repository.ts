@@ -11,6 +11,9 @@ import type { DbClient } from '@fdp/database';
 import { decodeKeysetCursor, encodeKeysetCursor, normalizeLimit } from '@fdp/database';
 import { alreadyReviewed, requestNotFound, versionConflict } from './errors.js';
 
+export const ADMIN_ONBOARDING_STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'TIMED_OUT'] as const;
+export type AdminOnboardingStatus = (typeof ADMIN_ONBOARDING_STATUSES)[number];
+
 export interface AdminOnboardingRequestRecord {
   readonly id: string;
   readonly serialNumber: string;
@@ -34,7 +37,7 @@ export interface AdminOnboardingRequestDto {
   readonly hardwareVersion: string;
   readonly manufacturer: string;
   readonly manufactureDate: string;
-  readonly status: string;
+  readonly status: AdminOnboardingStatus;
   readonly rejectReason: string | null;
   readonly reviewedBy: string | null;
   readonly reviewedAt: string | null;
@@ -50,7 +53,7 @@ export function toDto(record: AdminOnboardingRequestRecord): AdminOnboardingRequ
     hardwareVersion: record.hardwareVersion,
     manufacturer: record.manufacturer,
     manufactureDate: record.manufactureDate.toISOString().slice(0, 10),
-    status: record.status,
+    status: record.status as AdminOnboardingStatus,
     rejectReason: record.rejectReason,
     reviewedBy: record.reviewedBy,
     reviewedAt: record.reviewedAt?.toISOString() ?? null,
@@ -70,7 +73,7 @@ function requests(client: DbClient): AdminOnboardingRequestDelegate {
 }
 
 export interface ListReviewQueueArgs {
-  readonly status?: string | undefined;
+  readonly status?: AdminOnboardingStatus | undefined;
   readonly cursor?: string | null | undefined;
   readonly limit?: number | string | null | undefined;
 }

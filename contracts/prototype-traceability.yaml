@@ -55,10 +55,10 @@
         { "id": "device-view.filter.device", "kind": "filter", "name": "设备选择", "disposition": "Adopt", "source": { "taskId": "BE-DEV-01", "api": "listDevices" } },
         { "id": "device-view.button.apply", "kind": "button", "name": "应用", "disposition": "Adopt", "source": { "taskId": "FE-06" }, "clientSide": true },
         { "id": "device-view.field.componentStates", "kind": "field", "name": "五类部件运行状态", "disposition": "Adopt", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "components" } },
-        { "id": "device-view.field.sensorReadings", "kind": "field", "name": "10 类最新传感器读数", "disposition": "Adapt", "basis": "BE-DEV-05：每个数值显示单位、observedAt 和 stale 标记", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "latestTelemetry" } },
+        { "id": "device-view.field.sensorReadings", "kind": "field", "name": "10 类最新传感器读数", "disposition": "Adapt", "basis": "BE-DEV-05：每个数值显示单位、observedAt 和 stale 标记", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "metrics" } },
         { "id": "device-view.field.consumables", "kind": "field", "name": "耗材投影", "disposition": "Adapt", "basis": "DEC-008@1.0.0：碳滤网/生物添加剂仅采用设备上报，unknown 不伪造百分比", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "consumables" } },
         { "id": "device-view.field.recentAlarms", "kind": "field", "name": "最近告警", "disposition": "Adopt", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "recentAlarms" } },
-        { "id": "device-view.field.esg7d", "kind": "field", "name": "近7日 ESG", "disposition": "Adopt", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "esgDaily" } },
+        { "id": "device-view.field.esg7d", "kind": "field", "name": "近7日 ESG", "disposition": "Adopt", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "esgLast7Days" } },
         { "id": "device-view.button.camPlay", "kind": "button", "name": "摄像头播放", "disposition": "Reject", "rejectCategory": "realtime-stream", "basis": "DEC-009：协议未定义实时流媒体；不提供播放/停止语义" },
         { "id": "device-view.button.camStop", "kind": "button", "name": "摄像头停止", "disposition": "Reject", "rejectCategory": "realtime-stream", "basis": "DEC-009：协议未定义实时流媒体；不提供播放/停止语义" },
         { "id": "device-view.field.mediaPreview", "kind": "field", "name": "最新授权 Media 预览（替代实时画面）", "disposition": "Adapt", "basis": "DEC-009：仅查看 listMedia 返回 data 中的最新授权 Media 并手动刷新，不标注实时视频", "source": { "taskId": "BE-MED-01", "api": "listMedia", "field": "data" } }
@@ -85,7 +85,7 @@
         { "id": "device-operate.button.saveAlias", "kind": "button", "name": "保存别名", "disposition": "Adapt", "basis": "BE-DEV-06：alias 白名单 + If-Match + 审计", "source": { "taskId": "BE-DEV-06", "api": "patchDeviceMetadata", "field": "alias" } },
         { "id": "device-operate.button.camPlay", "kind": "button", "name": "摄像头播放", "disposition": "Reject", "rejectCategory": "realtime-stream", "basis": "DEC-009：不提供实时流；媒体面板只显示最新 Media" },
         { "id": "device-operate.button.camStop", "kind": "button", "name": "摄像头停止", "disposition": "Reject", "rejectCategory": "realtime-stream", "basis": "DEC-009：不提供实时流" },
-        { "id": "device-operate.table.activityLog", "kind": "table-column", "name": "操作日志（时间/级别/内容）", "disposition": "Adapt", "basis": "BE-DEV-05：设备活动日志按级别和时间筛选", "source": { "taskId": "BE-DEV-05", "api": "listDeviceActivities", "field": "items" } },
+        { "id": "device-operate.table.activityLog", "kind": "table-column", "name": "操作日志（时间/级别/内容）", "disposition": "Adapt", "basis": "BE-DEV-05：设备活动日志按级别和时间筛选", "source": { "taskId": "BE-DEV-05", "api": "listDeviceActivities", "field": "data" } },
         { "id": "device-operate.button.logFilter", "kind": "button", "name": "日志筛选", "disposition": "Adopt", "source": { "taskId": "BE-DEV-05", "api": "listDeviceActivities" } },
         { "id": "device-operate.button.logExport", "kind": "button", "name": "日志导出", "disposition": "Adapt", "basis": "BE-DEV-05：异步 CSV 导出，复用 Customer scope 与审计", "source": { "taskId": "BE-DEV-05", "api": "exportDeviceActivities" } }
       ]

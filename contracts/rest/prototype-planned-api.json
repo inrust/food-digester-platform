@@ -60,32 +60,6 @@
         }
       }
     },
-    "/api/v1/admin/devices/{deviceId}/console": {
-      "parameters": [{ "$ref": "#/components/parameters/DeviceId" }],
-      "get": {
-        "operationId": "getDeviceConsole",
-        "x-task-id": "BE-DEV-05",
-        "responses": {
-          "200": {
-            "description": "计划中的设备控制台聚合视图",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "components": { "type": "array", "items": { "type": "object" } },
-                    "latestTelemetry": { "type": "object" },
-                    "consumables": { "type": "array", "items": { "type": "object" } },
-                    "recentAlarms": { "type": "array", "items": { "type": "object" } },
-                    "esgDaily": { "type": "array", "items": { "type": "object" } }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/admin/devices/{deviceId}": {
       "parameters": [{ "$ref": "#/components/parameters/DeviceId" }],
       "patch": {
@@ -97,26 +71,6 @@
             "content": {
               "application/json": {
                 "schema": { "type": "object", "properties": { "alias": { "type": ["string", "null"] } } }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/devices/{deviceId}/activities": {
-      "parameters": [{ "$ref": "#/components/parameters/DeviceId" }],
-      "get": {
-        "operationId": "listDeviceActivities",
-        "x-task-id": "BE-DEV-05",
-        "responses": {
-          "200": {
-            "description": "计划中的设备活动列表",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": { "items": { "type": "array", "items": { "type": "object" } } }
-                }
               }
             }
           }

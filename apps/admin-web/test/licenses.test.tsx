@@ -112,7 +112,10 @@ function renderPage(overrides: Partial<LicensesPageProps> = {}) {
   };
   const props: LicensesPageProps = {
     role: 'PlatformSuperAdmin',
-    list: { rows: [LICENSED_DEVICE, makeDevice({ id: 'dev-002', serialNumber: 'XJ-2026-002', alias: null })], nextCursor: null },
+    list: {
+      rows: [LICENSED_DEVICE, makeDevice({ id: 'dev-002', serialNumber: 'XJ-2026-002', alias: null })],
+      nextCursor: null,
+    },
     appliedFilter: { licenseStatus: null, keyword: null },
     onApplyFilter: (f) => calls.applied.push(f),
     onLoadMore: () => {},
@@ -148,10 +151,17 @@ function renderPage(overrides: Partial<LicensesPageProps> = {}) {
     ...overrides,
   };
   const utils = render(<LicensesPage {...props} />);
-  return { calls, rerender: (next: Partial<LicensesPageProps>) => utils.rerender(<LicensesPage {...props} {...next} />), unmount: utils.unmount };
+  return {
+    calls,
+    rerender: (next: Partial<LicensesPageProps>) => utils.rerender(<LicensesPage {...props} {...next} />),
+    unmount: utils.unmount,
+  };
 }
 
-function detailOf(license: LicenseView, history: readonly LicenseHistoryEntryView[] | null = HISTORY): LicensesPageProps['detail'] {
+function detailOf(
+  license: LicenseView,
+  history: readonly LicenseHistoryEntryView[] | null = HISTORY,
+): LicensesPageProps['detail'] {
   return { kind: 'ready', license, history };
 }
 
@@ -294,7 +304,9 @@ test('续期：ExpiringSoon → 新到期日期校验（须晚于当前）→ Re
 
 test('撤销：强制原因（空原因禁止确认）→ Revoked；操作后回源', async () => {
   const user = userEvent.setup();
-  const { calls } = renderPage({ detail: detailOf(makeLicense({ status: 'Active', signature: 'sig', effective: true })) });
+  const { calls } = renderPage({
+    detail: detailOf(makeLicense({ status: 'Active', signature: 'sig', effective: true })),
+  });
   await user.click(screen.getByTestId('license-revoke'));
   const dialog = screen.getByTestId('confirm-dialog');
   const confirm = within(dialog).getByRole('button', { name: '确认撤销' }) as HTMLButtonElement;

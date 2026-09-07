@@ -216,7 +216,12 @@ export function LicensesPage({
                   详情
                 </button>
               ) : (
-                <button type="button" disabled title="无授权设备无可查看的 License" data-testid={`license-detail-${d.id}`}>
+                <button
+                  type="button"
+                  disabled
+                  title="无授权设备无可查看的 License"
+                  data-testid={`license-detail-${d.id}`}
+                >
                   详情
                 </button>
               ),
@@ -253,7 +258,12 @@ export function LicensesPage({
         />
       ) : null}
 
-      <Modal open={createOpen} title="新建授权（Draft）" testid="license-create-dialog" onClose={() => setCreateOpen(false)}>
+      <Modal
+        open={createOpen}
+        title="新建授权（Draft）"
+        testid="license-create-dialog"
+        onClose={() => setCreateOpen(false)}
+      >
         <CreateLicenseForm
           candidates={createCandidates}
           busy={busy}
@@ -267,10 +277,7 @@ export function LicensesPage({
             validTo={license.validTo}
             busy={busy}
             onSubmit={(newValidTo) =>
-              void runAction(
-                () => onRenew(license.licenseId, newValidTo),
-                '授权已续期（Renewed，待系统结算为 Active）',
-              )
+              void runAction(() => onRenew(license.licenseId, newValidTo), '授权已续期（Renewed，待系统结算为 Active）')
             }
           />
         </Modal>

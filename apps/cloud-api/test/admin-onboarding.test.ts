@@ -161,6 +161,26 @@ describe('GET /admin/onboarding/requests（列表）', () => {
     assert.equal((await handlers.list(req(auditor, {}))).status, 200);
     assert.equal((await handlers.detail(req(auditor, { params: { requestId: planted.requestId } }))).status, 200);
   });
+
+  test('status 使用封闭枚举；非法值返回 400', async () => {
+    const res = await handlers.list(req(superAdmin, { query: { status: 'UNKNOWN' } }));
+    assert.equal(res.status, 400);
+    assert.equal((res.body as ErrorPayload).error.code, 'VALIDATION_FAILED');
+  });
+
+  test('内部 TIMED_OUT 状态可经列表和详情明确展示', async () => {
+    const planted = await plantRequest({ status: 'TIMED_OUT' });
+    await prisma.onboardingRequest.update({
+      where: { id: planted.requestId },
+      data: { rejectReason: 'ONBOARDING_TIMEOUT', timedOutAt: NOW },
+    });
+    const list = await handlers.list(req(superAdmin, { query: { status: 'TIMED_OUT' } }));
+    const row = (list.body as ListPayload).data.find((item) => item.requestId === planted.requestId);
+    assert.equal(row?.status, 'TIMED_OUT');
+    assert.equal(row?.rejectReason, 'ONBOARDING_TIMEOUT');
+    const detail = await handlers.detail(req(superAdmin, { params: { requestId: planted.requestId } }));
+    assert.equal((detail.body as DetailPayload).data.status, 'TIMED_OUT');
+  });
 });
 
 describe('GET /admin/onboarding/requests/:requestId（详情）', () => {
@@ -214,6 +234,16 @@ describe('POST approve / reject', () => {
     );
     assert.equal(noReason.status, 400);
     assert.equal((noReason.body as ErrorPayload).error.code, 'VALIDATION_FAILED');
+
+    const unknownField = await handlers.reject(
+      req(superAdmin, {
+        params: { requestId: planted.requestId },
+        headers: { 'If-Match': '1' },
+        body: { reason: '资料不完整', unexpected: true },
+      }),
+    );
+    assert.equal(unknownField.status, 400);
+    assert.equal((unknownField.body as ErrorPayload).error.code, 'VALIDATION_FAILED');
 
     const res = await handlers.reject(
       req(superAdmin, {

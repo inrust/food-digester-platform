@@ -2,14 +2,16 @@
  * FE-04 Onboarding 审批纯逻辑：状态文案与审批门控。
  * 事实源：admin-onboarding-api.json（status 枚举）+ BE-ONB-02（仅 PlatformSuperAdmin 审批）。
  */
+import type { OnboardingStatus } from './types.js';
 
-export const ONBOARDING_STATUS_LABELS: Readonly<Record<'PENDING' | 'APPROVED' | 'REJECTED', string>> = {
+export const ONBOARDING_STATUS_LABELS: Readonly<Record<OnboardingStatus, string>> = {
   PENDING: '待审批',
   APPROVED: '已通过',
   REJECTED: '已拒绝',
+  TIMED_OUT: '已超时',
 };
 
-/** 仅 PENDING 可审批（APPROVED/REJECTED 为终态，重复审批由 If-Match 兜底）。 */
-export function isReviewable(status: 'PENDING' | 'APPROVED' | 'REJECTED'): boolean {
+/** 仅 PENDING 可审批（APPROVED/REJECTED/TIMED_OUT 为终态，重复审批由 If-Match 兜底）。 */
+export function isReviewable(status: OnboardingStatus): boolean {
   return status === 'PENDING';
 }

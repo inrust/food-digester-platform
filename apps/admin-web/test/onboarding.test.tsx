@@ -62,13 +62,14 @@ function renderPanel(overrides: Partial<OnboardingReviewPanelProps> = {}) {
   return { ...calls, unmount: utils.unmount };
 }
 
-test('列表与状态筛选：PENDING/APPROVED/REJECTED 标签与状态列', () => {
+test('列表与状态筛选：PENDING/APPROVED/REJECTED/TIMED_OUT 标签与状态列', () => {
   renderPanel({
     list: {
       rows: [
         makeRequest(),
         makeRequest({ requestId: 'req-2', status: 'APPROVED' }),
         makeRequest({ requestId: 'req-3', status: 'REJECTED' }),
+        makeRequest({ requestId: 'req-4', status: 'TIMED_OUT' }),
       ],
       nextCursor: null,
     },
@@ -76,9 +77,11 @@ test('列表与状态筛选：PENDING/APPROVED/REJECTED 标签与状态列', () 
   assert.equal(screen.getByTestId('tab-PENDING').textContent, '待审批');
   assert.equal(screen.getByTestId('tab-APPROVED').textContent, '已通过');
   assert.equal(screen.getByTestId('tab-REJECTED').textContent, '已拒绝');
+  assert.equal(screen.getByTestId('tab-TIMED_OUT').textContent, '已超时');
   assert.equal(screen.getByTestId('status-req-1').textContent, '待审批');
   assert.equal(screen.getByTestId('status-req-2').textContent, '已通过');
   assert.equal(screen.getByTestId('status-req-3').textContent, '已拒绝');
+  assert.equal(screen.getByTestId('status-req-4').textContent, '已超时');
 });
 
 test('详情：设备资料与申请信息完整；REJECTED 显示拒绝原因', () => {
@@ -99,6 +102,19 @@ test('详情：设备资料与申请信息完整；REJECTED 显示拒绝原因',
   }
   assert.equal(screen.getByTestId('detail-status').textContent, '已拒绝');
   assert.equal(screen.getByTestId('detail-reject-reason').textContent, '资料不符');
+});
+
+test('详情：TIMED_OUT 显示超时状态与原因且不可审批', () => {
+  renderPanel({
+    detail: {
+      kind: 'ready',
+      request: makeRequest({ status: 'TIMED_OUT', rejectReason: '审批等待超过 30 分钟' }),
+    },
+  });
+  assert.equal(screen.getByTestId('detail-status').textContent, '已超时');
+  assert.equal(screen.getByTestId('detail-reject-reason').textContent, '审批等待超过 30 分钟');
+  assert.equal(screen.queryByTestId('approve-button'), null);
+  assert.equal(screen.queryByTestId('reject-button'), null);
 });
 
 test('权限门控：仅 canReview（SuperAdmin）且 PENDING 显示审批操作', () => {
@@ -186,4 +202,5 @@ test('isReviewable：仅 PENDING 可审批', () => {
   assert.equal(isReviewable('PENDING'), true);
   assert.equal(isReviewable('APPROVED'), false);
   assert.equal(isReviewable('REJECTED'), false);
+  assert.equal(isReviewable('TIMED_OUT'), false);
 });

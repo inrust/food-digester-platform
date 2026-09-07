@@ -19,6 +19,13 @@ export interface OnboardingRequestBody {
 
 const SERIAL_NUMBER_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const ONBOARDING_REQUEST_FIELDS = new Set([
+  'serialNumber',
+  'model',
+  'hardwareVersion',
+  'manufacturer',
+  'manufactureDate',
+]);
 
 function requireString(value: unknown, field: string, maxLength: number): string {
   if (typeof value !== 'string' || value.trim() === '') {
@@ -60,6 +67,10 @@ export function parseOnboardingRequestBody(raw: unknown, now: Date = new Date())
     throw validationFailed('The request body must be a JSON object');
   }
   const body = raw as Record<string, unknown>;
+  const unknown = Object.keys(body).filter((field) => !ONBOARDING_REQUEST_FIELDS.has(field));
+  if (unknown.length > 0) {
+    throw validationFailed(`Unknown request field: ${unknown.sort().join(', ')}`);
+  }
 
   const serialNumber = requireString(body.serialNumber, 'serialNumber', 64);
   if (!SERIAL_NUMBER_PATTERN.test(serialNumber)) {

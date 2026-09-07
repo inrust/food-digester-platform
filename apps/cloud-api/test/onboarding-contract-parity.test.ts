@@ -52,6 +52,15 @@ test('DTO 校验字段与 OpenAPI 请求体契约一致', () => {
   // 完整字段可通过校验
   const parsed = parseOnboardingRequestBody(full, new Date('2026-08-27T00:00:00Z'));
   assert.deepEqual(Object.keys(parsed).sort(), [...required].sort());
+
+  let unknownFieldCode: string | undefined;
+  try {
+    parseOnboardingRequestBody({ ...full, unexpected: true }, new Date('2026-08-27T00:00:00Z'));
+  } catch (err) {
+    unknownFieldCode = (err as { code?: string }).code;
+  }
+  assert.equal(api.components.schemas.OnboardingRequestInput.additionalProperties, false);
+  assert.equal(unknownFieldCode, 'VALIDATION_FAILED', '运行时必须实现 additionalProperties=false');
 });
 
 test('onboarding 模块无任何 AWS 依赖（无 AWS 资源副作用）', () => {

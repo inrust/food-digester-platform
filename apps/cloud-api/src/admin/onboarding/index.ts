@@ -4,6 +4,7 @@
 export { AdminOnboardingError, ADMIN_ONBOARDING_ERROR_HTTP_STATUS } from './errors.js';
 export type { AdminOnboardingErrorCode } from './errors.js';
 export {
+  ADMIN_ONBOARDING_STATUSES,
   findOnboardingRequestById,
   listOnboardingRequests,
   reviewOnboardingRequestWithVersion,
@@ -12,6 +13,7 @@ export {
 export type {
   AdminOnboardingRequestDto,
   AdminOnboardingRequestRecord,
+  AdminOnboardingStatus,
   ListReviewQueueArgs,
   ReviewPatch,
   ReviewQueuePage,

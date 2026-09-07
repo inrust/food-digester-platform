@@ -6,7 +6,7 @@
 
 | 项 | 说明 |
 |---|---|
-| 任务 | BE-ONB-04（P1 / 后端领域集成），依赖 BE-ONB-03（已交付）、BE-IOT-04（Heartbeat Handler 未交付，本任务即其规格中的「Onboarding/证书轮换确认扩展点」） |
+| 任务 | BE-ONB-04（P1 / 后端领域集成），依赖 BE-ONB-03、BE-IOT-04；当前 Heartbeat 生产调用链和 deadline 调度均已接线 |
 | 触发点 | BE-IOT-04 在消息认证（AUTH-03 提取 deviceId + 证书指纹）与 latest state 更新后调用 `completeOnboardingOnFirstHeartbeat` |
 | 生命周期 | DOM-01：OnboardingApproved → Onboarded（SYSTEM actor，前置 certificateInstalled + firstHeartbeatReceived） |
 | 证书包 | DEC-003 销毁触发点 NEW_CERTIFICATE_FIRST_HEARTBEAT：SEC-01 `destroyPackage`（幂等，本任务扩展支持事务客户端） |
@@ -37,15 +37,20 @@
 | 超时处置 | 申请 TIMED_OUT、设备 PendingOnboarding、证书 REVOKED、密文销毁、迟到 Heartbeat 拒绝 | ✅ |
 | 云端撤证恢复 | 首次失败保留 revocationCompletedAt=null，下一轮只重试撤证 | ✅ |
 
-DEC-017 聚焦测试（含本任务、BE-ONB-03 与领域状态机）128/128 通过；全仓 `pnpm verify` 退出 0：实现测试 683/683、契约测试 250/250、脚本测试 53/53（2026-09-04）。
+## 4. 交付状态（2026-09-07）
 
-## 4. 对接说明（下游任务）
+| 维度 | 状态 | 说明 |
+|---|---|---|
+| 模块验证 | PASS | 首个 Heartbeat、截止边界、迟到拒绝、并发幂等、撤证失败恢复均有 PGlite 测试 |
+| 生产接线 | PASS（代码/IaC） | 真实 Ingestion Lambda 调用 dispatcher/Heartbeat Handler；独立 deadline Lambda 由 EventBridge 分钟调度 |
+| 严格验收 | PASS（本地） | 2026-09-07 `pnpm verify` 退出 0：实现 986/986、契约 285/285、脚本 80/80；历史快照：2026-09-04 曾记录 DEC-017 聚焦 128/128、实现 683/683、契约 250/250、脚本 53/53，仅作时点证据 |
+
+## 5. 对接说明（下游任务）
 
 - **BE-IOT-04**（Heartbeat Handler）：在 AUTH-03 认证与 latest state 覆盖更新后调用本扩展点，传入 `{ deviceId, certificateFingerprint, occurredAt }`；本 Handler 的 FORBIDDEN（证书不匹配）应升级为安全事件（ingestion_receipts SECURITY_VIOLATION 由 BE-IOT-03 幂等层记录）；
 - **BE-CERT-02**（轮换）：轮换新证书的首个 Heartbeat 复用同一扩展点（设备已 Onboarded 时本 Handler 幂等短路；轮换场景的包销毁触发点由 BE-CERT-02 自行调用 destroyPackage）。
 
-## 5. 未决风险
+## 6. 未决风险
 
-- 上线基点仅写 `device_latest_state`（connectivity/lastHeartbeatAt），全量最新状态字段由 BE-IOT-04 维护；BE-IOT-04 落地前设备列表的在线展示不完整；
+- 上线基点与全量 latest state 由已接线的 BE-IOT-04 消费链共同维护；目标环境仍需用真实 SQS/IoT 事件执行部署后验收；
 - 重复 Heartbeat 的预检在事务外（根客户端），极端并发下两个请求都进入事务：由条件更新兜底，败方记一条 transitioned=false 的 SUCCESS 审计（罕见且语义正确）；
-- BE-IOT-04 未交付，本扩展点暂无生产调用方；集成接线后需补一条真实 Heartbeat → Onboarded 的端到端测试。

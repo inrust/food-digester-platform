@@ -22,10 +22,7 @@ import {
   suspendDevice,
   updateDeviceAlias,
 } from '../src/pages/device-manage/device-manage-api.js';
-import type {
-  DeviceAssignmentView,
-  RetirementRecordView,
-} from '../src/pages/device-manage/types.js';
+import type { DeviceAssignmentView, RetirementRecordView } from '../src/pages/device-manage/types.js';
 import type { DeviceView } from '../src/pages/devices/types.js';
 
 afterEach(cleanup);
@@ -47,7 +44,13 @@ function makeDevice(overrides: Partial<DeviceView> = {}): DeviceView {
     connectivity: 'ONLINE',
     lastHeartbeatAt: '2026-09-06T03:55:00Z',
     certificate: { certificateId: 'cert-001', fingerprint: 'AB:CD:EF:00:11', status: 'ACTIVE' },
-    license: { licenseId: 'lic-001', status: 'Active', validFrom: '2026-01-01', validTo: '2027-01-01', entitlements: ['OTA'] },
+    license: {
+      licenseId: 'lic-001',
+      status: 'Active',
+      validFrom: '2026-01-01',
+      validTo: '2027-01-01',
+      entitlements: ['OTA'],
+    },
     contract: null,
     createdAt: '2026-09-01T02:00:00Z',
     updatedAt: '2026-09-05T02:00:00Z',
@@ -119,15 +122,33 @@ function renderPage(overrides: Partial<DeviceManagePageProps> = {}) {
     },
     onSuspend: async (reason) => {
       calls.suspended.push(reason);
-      return { deviceId: 'dev-001', lifecycleStatus: 'Suspended', operationalStatus: 'Suspended', notification: 'DEVICE_SUSPENDED', replayed: false };
+      return {
+        deviceId: 'dev-001',
+        lifecycleStatus: 'Suspended',
+        operationalStatus: 'Suspended',
+        notification: 'DEVICE_SUSPENDED',
+        replayed: false,
+      };
     },
     onReactivate: async (reason) => {
       calls.reactivated.push(reason);
-      return { deviceId: 'dev-001', lifecycleStatus: 'Active', operationalStatus: 'Active', notification: 'STATUS_CHANGED', replayed: false };
+      return {
+        deviceId: 'dev-001',
+        lifecycleStatus: 'Active',
+        operationalStatus: 'Active',
+        notification: 'STATUS_CHANGED',
+        replayed: false,
+      };
     },
     onRetire: async (reason) => {
       calls.retired.push(reason);
-      return { deviceId: 'dev-001', lifecycleStatus: 'Retired', retirement: PENDING_RETIREMENT, notification: 'DEVICE_RETIRED', replayed: false };
+      return {
+        deviceId: 'dev-001',
+        lifecycleStatus: 'Retired',
+        retirement: PENDING_RETIREMENT,
+        notification: 'DEVICE_RETIRED',
+        replayed: false,
+      };
     },
     onForceComplete: async (reason) => {
       calls.forceCompleted.push(reason);
@@ -221,7 +242,14 @@ test('状态矩阵：Assigned 设备 Operator 可再分配；Retired 设备全�
 test('权限门：Auditor/CustomerViewer/CustomerAdmin 全部写操作禁用（无 device:write/assign）', () => {
   for (const role of ['Auditor', 'CustomerViewer', 'CustomerAdmin'] as const) {
     const { unmount } = renderPage({ role });
-    for (const testid of ['action-assign', 'action-suspend', 'action-reactivate', 'action-retire', 'alias-edit', 'cert-rotate']) {
+    for (const testid of [
+      'action-assign',
+      'action-suspend',
+      'action-reactivate',
+      'action-retire',
+      'alias-edit',
+      'cert-rotate',
+    ]) {
       assert.ok(disabled(testid), `${role} 的 ${testid} 应禁用`);
     }
     unmount();
@@ -256,7 +284,9 @@ test('挂起：原因必填；确认后提交原因并回源刷新（操作后�
 
 test('恢复：确认文案含“问题已解决”语义；提交后回源刷新', async () => {
   const user = userEvent.setup();
-  const { calls } = renderPage({ device: makeDevice({ lifecycleStatus: 'Suspended', operationalStatus: 'Suspended' }) });
+  const { calls } = renderPage({
+    device: makeDevice({ lifecycleStatus: 'Suspended', operationalStatus: 'Suspended' }),
+  });
   await user.click(screen.getByTestId('action-reactivate'));
   const dialog = screen.getByTestId('confirm-dialog');
   assert.ok(dialog.textContent?.includes('问题已解决'));
@@ -302,7 +332,12 @@ test('退役等待状态：PENDING_CONFIRMATION 展示 72 小时窗口语义；S
 test('退役记录已确认/非 SuperAdmin：强制完成禁用', () => {
   const { unmount } = renderPage({
     device: makeDevice({ lifecycleStatus: 'Retired', operationalStatus: 'Retired' }),
-    retirement: { ...PENDING_RETIREMENT, status: 'CONFIRMED', completionMethod: 'DEVICE_CONFIRM', confirmedAt: '2026-09-06T05:00:00Z' },
+    retirement: {
+      ...PENDING_RETIREMENT,
+      status: 'CONFIRMED',
+      completionMethod: 'DEVICE_CONFIRM',
+      confirmedAt: '2026-09-06T05:00:00Z',
+    },
   });
   assert.ok(disabled('retire-force-complete'));
   assert.ok(screen.queryByTestId('retirement-waiting') === null);

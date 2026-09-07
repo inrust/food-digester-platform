@@ -42,11 +42,7 @@ export async function fetchDeviceAssignments(
   return response.data;
 }
 
-export async function suspendDevice(
-  api: ApiClient,
-  deviceId: string,
-  reason: string,
-): Promise<DeviceStatusResultView> {
+export async function suspendDevice(api: ApiClient, deviceId: string, reason: string): Promise<DeviceStatusResultView> {
   const response = await api.request<{ data: DeviceStatusResultView }>(`${devicePath(deviceId)}/suspend`, {
     method: 'POST',
     body: { reason },
@@ -67,11 +63,7 @@ export async function reactivateDevice(
   return response.data;
 }
 
-export async function retireDevice(
-  api: ApiClient,
-  deviceId: string,
-  reason: string,
-): Promise<RetirementResultView> {
+export async function retireDevice(api: ApiClient, deviceId: string, reason: string): Promise<RetirementResultView> {
   const response = await api.request<{ data: RetirementResultView }>(`${devicePath(deviceId)}/retire`, {
     method: 'POST',
     // confirm 契约 enum [true]：退役不可恢复，仅确认对话框可触发本调用
@@ -110,10 +102,7 @@ export async function updateDeviceAlias(
   return response.data;
 }
 
-export async function requestCertificateRotation(
-  api: ApiClient,
-  deviceId: string,
-): Promise<RotationRequestView> {
+export async function requestCertificateRotation(api: ApiClient, deviceId: string): Promise<RotationRequestView> {
   const response = await api.request<{ data: RotationRequestView }>(
     `${devicePath(deviceId)}/certificate-rotation-requests`,
     { method: 'POST' },

@@ -212,7 +212,10 @@ test('FE-08：CT-06 contract-detail 页 FE-08 自有元素有锚点；Entitlemen
   const api = readJson('contracts/rest/admin-license-api.json') as {
     components: { schemas: { LicenseEntitlement: { properties: { code: { enum: string[] } } } } };
   };
-  assert.deepEqual([...ENTITLEMENT_CODES].sort(), [...api.components.schemas.LicenseEntitlement.properties.code.enum].sort());
+  assert.deepEqual(
+    [...ENTITLEMENT_CODES].sort(),
+    [...api.components.schemas.LicenseEntitlement.properties.code.enum].sort(),
+  );
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {

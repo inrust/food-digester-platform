@@ -3,7 +3,7 @@
  * DTO 不含 tokenId/privateKey 等敏感字段（契约显式排除）。
  */
 
-export type OnboardingStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type OnboardingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'TIMED_OUT';
 
 export interface OnboardingRequestView {
   readonly requestId: string;

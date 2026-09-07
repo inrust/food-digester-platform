@@ -67,12 +67,17 @@
       },
       {
         "file": "admin-device-api.json",
-        "sha256": "f0dc04fd748be3769bcc6573aa0fd9be227a61e8551244533fd4c59eefef840d",
+        "sha256": "d800137878bd34ba93b4169944c9650837664d99270df6966da190cb00fd0d8a",
         "status": "implemented"
       },
       {
         "file": "admin-device-assignment-api.json",
         "sha256": "7ed725c61df7d128a44bd7d4167050079975a61d9df9bb64a1528b324df36282",
+        "status": "implemented"
+      },
+      {
+        "file": "admin-device-console-api.json",
+        "sha256": "5e02487c6354333b31d0ac93dae4a95ce386b6d7bd6c944be67d6b903db4b20d",
         "status": "implemented"
       },
       {
@@ -107,7 +112,7 @@
       },
       {
         "file": "admin-onboarding-api.json",
-        "sha256": "ca4bc3c2c96b88f2242c682bd05b607f07e84b7271b681028f73c9dadae57885",
+        "sha256": "9d4a929d4e8ed90cb5f45424a196d71a018c1fe7dc567d9fba1293885098fd60",
         "status": "implemented"
       },
       {
@@ -167,7 +172,7 @@
       },
       {
         "file": "prototype-planned-api.json",
-        "sha256": "d3c23c112b4b5d1e82cbc2471dd14877c4462177ca6baf7172bc05c254eb435b",
+        "sha256": "afa36b1ae5f1ddf3c65e75bcb47cf5025b28e61cba3d9229ca50f37d62930785",
         "status": "planned"
       }
     ]
@@ -3939,6 +3944,126 @@
         "x-contract-status": "planned"
       }
     },
+    "/api/v1/admin/devices/{deviceId}/metadata": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "updateDeviceMetadata",
+        "summary": "设备可编辑元数据（BE-DEV-06：V1 白名单仅 alias；If-Match 乐观锁；业务审计）",
+        "description": "仅允许修改 alias（去首尾空格、长度 1..64、同一 Customer 内唯一——暂定规则，决策登记无已冻结规则）；deviceId/serialNumber/Customer/Site/Contract/License/生命周期/连接状态/固件/证书均不可经本接口修改（携带即 400）；不接受任意 JSON merge patch。If-Match 头必须携带设备当前 updatedAt（ISO8601，来自 GET 详情）；缺失/非法 → 400，不一致或并发漂移 → 409（VERSION_CONFLICT）；alias 同 Customer 冲突 → 409（CONFLICT）；失败请求不产生部分更新（单条条件更新）。",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "设备当前 updatedAt（ISO8601）；乐观锁基准"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminDeviceApi__DeviceMetadataUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新后的元数据视图（updatedAt 为下次 If-Match 基准）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDeviceApi__DeviceMetadataSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "非法请求（VALIDATION_FAILED：受保护字段/空 alias/超长/If-Match 缺失或非法）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "无 device:write 权限或 Customer 角色越权（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "设备不存在（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "并发冲突（VERSION_CONFLICT：If-Match 过期/漂移）或 alias 同 Customer 冲突（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-source-document": "admin-device-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
     "/api/v1/admin/devices/{deviceId}/assignment": {
       "post": {
         "tags": [
@@ -4126,6 +4251,259 @@
           }
         },
         "x-source-document": "admin-device-assignment-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}/console": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "getDeviceConsole",
+        "summary": "设备控制台组合查询（局部数据缺失返回明确空值/stale，不使整个响应失败）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AdminDeviceConsoleApi__DeviceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "设备控制台视图",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDeviceConsoleApi__DeviceConsoleSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-device-console-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}/activities": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "listDeviceActivities",
+        "summary": "设备活动日志（级别/时间筛选 + 复合键集游标分页，occurredAt 倒序 + id 决胜）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AdminDeviceConsoleApi__DeviceId"
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INFO",
+                "WARNING",
+                "MAJOR",
+                "CRITICAL"
+              ]
+            },
+            "description": "级别筛选：ALARM 条目取告警 severity；EVENT 条目固定 INFO"
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EVENT",
+                "ALARM"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "活动日志页",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDeviceConsoleApi__ActivityListSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-device-console-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/devices/{deviceId}/activities/export": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "createActivityExport",
+        "summary": "创建活动日志异步 CSV 导出（冻结筛选快照；202 入队，Worker 异步执行）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AdminDeviceConsoleApi__DeviceId"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminDeviceConsoleApi__ActivityExportCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "导出任务已入队（PENDING）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDeviceConsoleApi__ActivityExportSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-device-console-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/activity-exports/{exportId}": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "getActivityExport",
+        "summary": "导出任务状态与短期下载 URL（过期后 downloadUrl 为 null 且 urlExpired=true）",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "导出任务视图",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDeviceConsoleApi__ActivityExportSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminDeviceConsoleApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-device-console-api.json",
         "x-contract-status": "implemented"
       }
     },
@@ -6142,7 +6520,8 @@
               "enum": [
                 "PENDING",
                 "APPROVED",
-                "REJECTED"
+                "REJECTED",
+                "TIMED_OUT"
               ],
               "default": "PENDING"
             }
@@ -9181,93 +9560,6 @@
         "x-contract-status": "planned"
       }
     },
-    "/api/v1/admin/devices/{deviceId}/console": {
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/PrototypePlannedApi__DeviceId"
-        }
-      ],
-      "get": {
-        "operationId": "getDeviceConsole",
-        "x-task-id": "BE-DEV-05",
-        "responses": {
-          "200": {
-            "description": "计划中的设备控制台聚合视图",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "components": {
-                      "type": "array",
-                      "items": {
-                        "type": "object"
-                      }
-                    },
-                    "latestTelemetry": {
-                      "type": "object"
-                    },
-                    "consumables": {
-                      "type": "array",
-                      "items": {
-                        "type": "object"
-                      }
-                    },
-                    "recentAlarms": {
-                      "type": "array",
-                      "items": {
-                        "type": "object"
-                      }
-                    },
-                    "esgDaily": {
-                      "type": "array",
-                      "items": {
-                        "type": "object"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-source-document": "prototype-planned-api.json",
-        "x-contract-status": "planned"
-      }
-    },
-    "/api/v1/admin/devices/{deviceId}/activities": {
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/PrototypePlannedApi__DeviceId"
-        }
-      ],
-      "get": {
-        "operationId": "listDeviceActivities",
-        "x-task-id": "BE-DEV-05",
-        "responses": {
-          "200": {
-            "description": "计划中的设备活动列表",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-source-document": "prototype-planned-api.json",
-        "x-contract-status": "planned"
-      }
-    },
     "/api/v1/admin/devices/{deviceId}/activities/exports": {
       "parameters": [
         {
@@ -9540,6 +9832,15 @@
           "minimum": 1,
           "maximum": 100,
           "default": 50
+        }
+      },
+      "AdminDeviceConsoleApi__DeviceId": {
+        "name": "deviceId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "AdminEsgApi__CustomerId": {
@@ -13185,6 +13486,65 @@
           }
         }
       },
+      "AdminDeviceApi__DeviceMetadataUpdate": {
+        "type": "object",
+        "required": [
+          "alias"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "alias": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 64,
+            "description": "设备别名（去首尾空格后 1..64 字符，同一 Customer 内唯一——暂定规则；null = 清除别名）"
+          }
+        },
+        "description": "V1 字段白名单仅 alias；携带任何其他字段（含受保护字段）→ 400；不接受任意 JSON merge patch"
+      },
+      "AdminDeviceApi__DeviceMetadataView": {
+        "type": "object",
+        "required": [
+          "deviceId",
+          "alias",
+          "updatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "alias": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/UtcTimestamp",
+            "description": "更新后的台账时点（下次 If-Match 基准）"
+          }
+        }
+      },
+      "AdminDeviceApi__DeviceMetadataSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminDeviceApi__DeviceMetadataView"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
       "AdminDeviceApi__DeviceCertificateSummary": {
         "type": "object",
         "required": [
@@ -13693,6 +14053,713 @@
             "items": {
               "$ref": "#/components/schemas/AdminDeviceAssignmentApi__DeviceAssignment"
             }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__ObservedBlock": {
+        "type": "object",
+        "required": [
+          "observedAt",
+          "stale"
+        ],
+        "properties": {
+          "observedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "数据观测时点（无观测为 null）"
+          },
+          "stale": {
+            "type": "boolean",
+            "description": "过期标记：心跳类块 = lastHeartbeatAt 距 generatedAt 超 10 分钟（暂定值，BE-DEV-01 口径）；遥测块 = 最新整点桶早于 generatedAt 2 小时以上"
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__ComponentStatus": {
+        "type": "object",
+        "required": [
+          "overall",
+          "temperature",
+          "humidity",
+          "weight",
+          "gas"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "overall": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "NORMAL",
+              "WARNING",
+              "FAILED",
+              null
+            ]
+          },
+          "temperature": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "NORMAL",
+              "WARNING",
+              "FAILED",
+              null
+            ]
+          },
+          "humidity": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "NORMAL",
+              "WARNING",
+              "FAILED",
+              null
+            ]
+          },
+          "weight": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "NORMAL",
+              "WARNING",
+              "FAILED",
+              null
+            ]
+          },
+          "gas": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "NORMAL",
+              "WARNING",
+              "FAILED",
+              null
+            ]
+          }
+        },
+        "description": "五类部件（传感器）运行状态：device_latest_state.sensorStatus 五键（未上报为 null）"
+      },
+      "AdminDeviceConsoleApi__MetricValue": {
+        "type": "object",
+        "required": [
+          "avg",
+          "min",
+          "max",
+          "unit"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "avg": {
+            "type": "number",
+            "description": "最新整点桶均值"
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "kg",
+              "%",
+              "°C",
+              "kW",
+              "ppm",
+              "A"
+            ]
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__MetricsBlock": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AdminDeviceConsoleApi__ObservedBlock"
+          }
+        ],
+        "type": "object",
+        "required": [
+          "observedAt",
+          "stale",
+          "metrics"
+        ],
+        "properties": {
+          "metrics": {
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AdminDeviceConsoleApi__MetricValue"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "遥测指标（键为遥测字段名：powerConsumptionKw/humidityPct/ambientTempC/heatTemperatureC/siloTemperatureC/feedingWeightKg/chamberWeightKg/dischargeWeightKg/currentAmp/o2Pct/co2Ppm/ch4Ppm/n2oPpm）；来源 telemetry_hourly 最新整点桶（乱序遥测不倒退最新值：桶聚合为增量合并）；未上报指标为 null"
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__ConsoleAlarm": {
+        "type": "object",
+        "required": [
+          "alarmId",
+          "code",
+          "severity",
+          "status",
+          "detectedTime"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "alarmId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "INFO",
+              "WARNING",
+              "MAJOR",
+              "CRITICAL"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "ACKNOWLEDGED",
+              "CLEARED"
+            ]
+          },
+          "detectedTime": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__ContractBrief": {
+        "type": "object",
+        "required": [
+          "contractId",
+          "contractNumber",
+          "name",
+          "status",
+          "endAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "contractId": {
+            "type": "string"
+          },
+          "contractNumber": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "endAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__EsgDay": {
+        "type": "object",
+        "required": [
+          "summaryDate",
+          "carbonReductionKg",
+          "powerConsumptionKwh",
+          "feedingWeightKg"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "summaryDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "carbonReductionKg": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "无当日聚合行为 null（部分缺失明确空值）"
+          },
+          "powerConsumptionKwh": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "feedingWeightKg": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__LatestMedia": {
+        "type": "object",
+        "required": [
+          "mediaId",
+          "mediaType",
+          "captureTime"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "mediaId": {
+            "type": "string"
+          },
+          "mediaType": {
+            "type": "string"
+          },
+          "captureTime": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        },
+        "description": "最新一张已授权 Media 元数据（DEC-009：仅最新一张，非实时流；无数据/未启用稳定 null）"
+      },
+      "AdminDeviceConsoleApi__DeviceConsoleView": {
+        "type": "object",
+        "required": [
+          "generatedAt",
+          "device",
+          "components",
+          "metrics",
+          "network",
+          "consumables",
+          "recentAlarms",
+          "contract",
+          "esgLast7Days",
+          "latestMedia"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "generatedAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "device": {
+            "type": "object",
+            "required": [
+              "deviceId",
+              "serialNumber",
+              "alias",
+              "model",
+              "lifecycleStatus",
+              "operationalStatus",
+              "connectivity",
+              "licenseStatus",
+              "firmwareVersion"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "deviceId": {
+                "type": "string"
+              },
+              "serialNumber": {
+                "type": "string"
+              },
+              "alias": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "model": {
+                "type": "string"
+              },
+              "lifecycleStatus": {
+                "type": "string",
+                "description": "生命周期轴（DEC-010 四轴分离）"
+              },
+              "operationalStatus": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "运行状态轴（设备最近上报）"
+              },
+              "connectivity": {
+                "type": "string",
+                "enum": [
+                  "ONLINE",
+                  "OFFLINE"
+                ],
+                "description": "连接状态轴（lastHeartbeatAt ≤ 10 分钟派生，暂定值）"
+              },
+              "licenseStatus": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "授权状态轴"
+              },
+              "firmwareVersion": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "固件（最近上报优先，回退台账）"
+              }
+            }
+          },
+          "components": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminDeviceConsoleApi__ObservedBlock"
+              }
+            ],
+            "type": "object",
+            "required": [
+              "observedAt",
+              "stale",
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "$ref": "#/components/schemas/AdminDeviceConsoleApi__ComponentStatus"
+              }
+            }
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/AdminDeviceConsoleApi__MetricsBlock"
+          },
+          "network": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminDeviceConsoleApi__ObservedBlock"
+              }
+            ],
+            "type": "object",
+            "required": [
+              "observedAt",
+              "stale",
+              "signalStrength",
+              "networkType",
+              "networkStatus"
+            ],
+            "properties": {
+              "signalStrength": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "连接质量：信号强度"
+              },
+              "networkType": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "networkStatus": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "consumables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "consumableType",
+                "remainingPercent",
+                "stale",
+                "observedAt"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "consumableType": {
+                  "type": "string",
+                  "enum": [
+                    "CARBON_FILTER",
+                    "BIO_ADDITIVE"
+                  ]
+                },
+                "remainingPercent": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "description": "null = 未知（DEC-008 云端不臆测）"
+                },
+                "stale": {
+                  "type": "boolean"
+                },
+                "observedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                }
+              }
+            },
+            "description": "耗材投影（无投影行时为空数组）"
+          },
+          "recentAlarms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminDeviceConsoleApi__ConsoleAlarm"
+            },
+            "description": "最近告警：detectedTime 倒序 + id 决胜，固定 5 条"
+          },
+          "contract": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminDeviceConsoleApi__ContractBrief"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "有效 Contract 摘要（ACTIVE 关联；无关联为 null）"
+          },
+          "esgLast7Days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminDeviceConsoleApi__EsgDay"
+            },
+            "description": "近 7 日 ESG（generatedAt 的 UTC 日历日向前 7 个固定日槽，升序；无聚合行日槽指标为 null）"
+          },
+          "latestMedia": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminDeviceConsoleApi__LatestMedia"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "最新 Media（P2 可选块；无数据稳定 null，不阻塞 P1 核心查询）"
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__ActivityItem": {
+        "type": "object",
+        "required": [
+          "activityId",
+          "kind",
+          "level",
+          "occurredAt",
+          "summary",
+          "detail"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "activityId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "EVENT",
+              "ALARM"
+            ]
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "INFO",
+              "WARNING",
+              "MAJOR",
+              "CRITICAL"
+            ],
+            "description": "级别：ALARM 取 severity；EVENT 固定 INFO（事件无级别概念）"
+          },
+          "occurredAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "summary": {
+            "type": "string",
+            "description": "EVENT=eventType；ALARM=告警 code"
+          },
+          "detail": {
+            "type": "object",
+            "description": "EVENT：{eventType,source,userId,username,remarks}；ALARM：{code,severity,status,message,currentValue,threshold,unit}"
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__ActivityListSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminDeviceConsoleApi__ActivityItem"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__ActivityExportCreate": {
+        "type": "object",
+        "required": [],
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "type": "string",
+            "enum": [
+              "INFO",
+              "WARNING",
+              "MAJOR",
+              "CRITICAL"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "EVENT",
+              "ALARM"
+            ]
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "筛选快照（与列表查询同源，导出 CSV 与筛选结果一致）"
+      },
+      "AdminDeviceConsoleApi__ActivityExportView": {
+        "type": "object",
+        "required": [
+          "exportId",
+          "deviceId",
+          "status",
+          "filters",
+          "rowCount",
+          "downloadUrl",
+          "urlExpiresAt",
+          "urlExpired",
+          "error",
+          "requestedBy",
+          "createdAt",
+          "completedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "exportId": {
+            "type": "string"
+          },
+          "deviceId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PROCESSING",
+              "COMPLETED",
+              "FAILED"
+            ]
+          },
+          "filters": {
+            "type": "object"
+          },
+          "rowCount": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "downloadUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "COMPLETED 且未过期时为短期 URL（15 分钟，暂定值）"
+          },
+          "urlExpiresAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "urlExpired": {
+            "type": "boolean"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requestedBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "completedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__ActivityExportSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminDeviceConsoleApi__ActivityExportView"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__DeviceConsoleSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminDeviceConsoleApi__DeviceConsoleView"
           },
           "meta": {
             "$ref": "#/components/schemas/ResponseMeta"
@@ -15538,7 +16605,8 @@
             "enum": [
               "PENDING",
               "APPROVED",
-              "REJECTED"
+              "REJECTED",
+              "TIMED_OUT"
             ]
           },
           "rejectReason": {
@@ -15546,7 +16614,7 @@
               "string",
               "null"
             ],
-            "description": "拒绝原因（仅 REJECTED 非空）"
+            "description": "拒绝原因；普通拒绝为审批原因，TIMED_OUT 固定为 ONBOARDING_TIMEOUT"
           },
           "reviewedBy": {
             "type": [
@@ -18603,6 +19671,56 @@
         }
       },
       "AdminDashboardApi__InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__BadRequest": {
+        "description": "筛选参数非法（VALIDATION_FAILED）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__Unauthorized": {
+        "description": "未认证",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__Forbidden": {
+        "description": "无 device:read / export:create 权限",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__NotFound": {
+        "description": "设备或导出任务不存在，或跨 Customer（NOT_FOUND）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminDeviceConsoleApi__InternalError": {
         "description": "内部错误（不暴露细节）",
         "content": {
           "application/json": {

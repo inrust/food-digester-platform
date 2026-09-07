@@ -63,6 +63,16 @@ test('申请 DTO 不含 tokenId（Token 关联不暴露）', () => {
   assert.ok(schema.required.includes('version'), '详情必须携带 version 供 If-Match');
 });
 
+test('管理端明确暴露内部 TIMED_OUT，列表状态过滤为封闭枚举', () => {
+  const status = doc.components.schemas.OnboardingRequest.properties.status;
+  assert.deepEqual(status.enum, ['PENDING', 'APPROVED', 'REJECTED', 'TIMED_OUT']);
+  const parameter = doc.paths['/api/v1/admin/onboarding/requests'].get.parameters.find(
+    (item: { name?: string }) => item.name === 'status',
+  );
+  assert.deepEqual(parameter.schema.enum, status.enum);
+  assert.ok(doc.info['x-decision-versions'].includes('DEC-017@1.0.0'));
+});
+
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {
   const refs = collectRefs(doc);
   assert.ok(refs.length > 0);

@@ -1,7 +1,7 @@
 /**
  * FE-04 Onboarding 审批面板（原型“设备群管理 → 新增设备请求”区域，FE-06 嵌入 /devices/groups）。
  *
- * - 列表：状态筛选（待审批/已通过/已拒绝）+ 游标分页（CursorTable）；
+ * - 列表：状态筛选（待审批/已通过/已拒绝/已超时）+ 游标分页（CursorTable）；
  * - 详情：设备资料 + 申请信息（录入人列不展示——CT-06 Defer，API 无来源；证书包状态无 API 来源不展示）；
  * - 审批：仅 canReview（PlatformSuperAdmin）且 PENDING 可见操作；批准→确认框；拒绝→原因必填；
  *   If-Match 并发冲突经 ErrorNotice(version-conflict) 提示刷新；提交期间按钮禁用防重复点击；
@@ -46,7 +46,7 @@ export interface OnboardingReviewPanelProps {
 
 type PendingAction = { kind: 'approve' } | { kind: 'reject' };
 
-const STATUS_TABS: readonly OnboardingStatus[] = ['PENDING', 'APPROVED', 'REJECTED'];
+const STATUS_TABS: readonly OnboardingStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'TIMED_OUT'];
 
 export function OnboardingReviewPanel({
   activeStatus,
@@ -175,9 +175,9 @@ export function OnboardingReviewPanel({
             </dd>
             <dt>状态</dt>
             <dd data-testid="detail-status">{ONBOARDING_STATUS_LABELS[request.status]}</dd>
-            {request.status === 'REJECTED' && request.rejectReason !== null ? (
+            {(request.status === 'REJECTED' || request.status === 'TIMED_OUT') && request.rejectReason !== null ? (
               <>
-                <dt>拒绝原因</dt>
+                <dt>{request.status === 'TIMED_OUT' ? '超时原因' : '拒绝原因'}</dt>
                 <dd data-testid="detail-reject-reason">{request.rejectReason}</dd>
               </>
             ) : null}
