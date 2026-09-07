@@ -8,8 +8,8 @@
  * - 查询：gapStatus 返回未解除缺口（缺口状态查询）。
  *
  * 功能边界：不请求设备补发、不做人工缺口处置；缺口检测为追加式信息记录，不阻塞后续消息。
- * 已知限制：不同 seq 的并发首处理在各自事务内做检测，极端交错下可能漏记缺口（V1 接受，
- * 缺口为运维可观测信息而非正确性依赖）。
+ * 并发语义：processWithReceipt 在插入 receipt 前按 device+topic 获取事务级 advisory lock，
+ * 因而本函数观察到同一消息流的已提交前序状态，不会因不同 seq 并发首处理漏记缺口。
  */
 import type { DbClient } from '@fdp/database';
 
@@ -68,15 +68,16 @@ export async function recordGapForNewReceipt(client: DbClient, key: GapKey): Pro
     orderBy: { seq: 'desc' },
   });
   const maxSeq = previous?.seq ?? null;
-  if (maxSeq !== null && maxSeq < key.seq - 1) {
+  const ensureGap = async (expectedSeq: number, receivedSeq: number): Promise<void> => {
+    if (expectedSeq >= receivedSeq) return;
     // 去重：已有未解除缺口覆盖该缺失区间（如乱序补到触发的重叠检测）则不再追加
     const covering = await gaps(client).findMany({
       where: {
         deviceId: key.deviceId,
         topicType: key.topicType,
         resolvedAt: null,
-        expectedSeq: { lte: maxSeq + 1 },
-        receivedSeq: { gte: key.seq },
+        expectedSeq: { lte: expectedSeq },
+        receivedSeq: { gte: receivedSeq },
       },
     });
     if (covering.length === 0) {
@@ -84,11 +85,21 @@ export async function recordGapForNewReceipt(client: DbClient, key: GapKey): Pro
         data: {
           deviceId: key.deviceId,
           topicType: key.topicType,
-          expectedSeq: maxSeq + 1,
-          receivedSeq: key.seq,
+          expectedSeq,
+          receivedSeq,
         },
       });
     }
+  };
+  if (maxSeq !== null) await ensureGap(maxSeq + 1, key.seq);
+
+  // 若较大 seq 先获得锁，较小 seq 随后到达，反向检查已提交后继也能补建缺口。
+  const next = await receipts(client).findFirst({
+    where: { deviceId: key.deviceId, topicType: key.topicType, seq: { gt: key.seq } },
+    orderBy: { seq: 'asc' },
+  });
+  if (next?.seq !== null && next?.seq !== undefined) {
+    await ensureGap(key.seq + 1, next.seq);
   }
   await resolveFilledGaps(client, key);
 }

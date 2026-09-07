@@ -171,6 +171,9 @@ describe('createReplayWorker（BE-RPL-01）', () => {
           iotPrincipal: 'arn:aws:iot:ap-southeast-1:123456789012:cert/cert-rpl',
           payload,
         },
+        rawBody: JSON.stringify(payload),
+        rawPayload: payload,
+        normalizedPayload: payload,
         device: {
           deviceId: record.iotDeviceId,
           customerId: customer.id,

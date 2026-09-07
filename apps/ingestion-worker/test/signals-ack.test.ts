@@ -17,6 +17,7 @@ import type { PrismaClient } from '@fdp/database';
 import { createAckHandler } from '../src/index.js';
 import type { ValidatedMessage } from '../src/index.js';
 import { IngestError } from '../src/index.js';
+import { evaluateCommandTimeouts } from '../../cloud-api/src/index.js';
 import { createTestDb } from '../../cloud-api/test/helpers.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
@@ -35,7 +36,7 @@ const TS = '2026-08-31T11:00:00.000Z';
 
 let seqCounter = 0;
 
-async function plantCommand(options: { status: string; command?: string }): Promise<{
+async function plantCommand(options: { status: string; command?: string; expiresAt?: Date }): Promise<{
   deviceId: string;
   customerId: string;
   commandId: string;
@@ -69,7 +70,7 @@ async function plantCommand(options: { status: string; command?: string }): Prom
       requestedBy: 'op-1',
       requestTime: new Date('2026-08-31T10:59:00.000Z'),
       timeoutSec: 120,
-      expiresAt: new Date('2026-08-31T11:01:00.000Z'),
+      expiresAt: options.expiresAt ?? new Date('2027-08-31T11:01:00.000Z'),
     },
   });
   return { deviceId, customerId: customer.id, commandId, command };
@@ -94,6 +95,9 @@ function ackMessage(
       iotPrincipal: `arn:aws:iot:ap-southeast-1:123456789012:cert/cert-ack-${ctx.deviceId}`,
       payload,
     },
+    rawBody: JSON.stringify(payload),
+    rawPayload: payload,
+    normalizedPayload: payload,
     device: {
       deviceId: ctx.deviceId,
       customerId: ctx.customerId,
@@ -280,6 +284,42 @@ describe('重复/冲突/未知/迟到路径', () => {
     const ack = await prisma.commandAck.findFirst({ where: { commandId: ctx.commandId } });
     assert.ok(ack, '迟到 ACK 保存为事件');
     assert.equal(ack.result, 'SUCCESS');
+  });
+
+  test('PUBLISHED 但服务端当前时间已到期：保存迟到事件且禁止更新成功', async () => {
+    const expiresAt = new Date('2026-08-31T11:01:00.000Z');
+    const ctx = await plantCommand({ status: 'PUBLISHED', expiresAt });
+    const handle = createAckHandler({ client: prisma, now: () => new Date('2026-08-31T11:02:00.000Z') });
+    const result = await handle(
+      ackMessage(ctx, {
+        seq: 1,
+        ts: '2026-08-31T11:00:30.000Z',
+        data: { commandId: ctx.commandId, command: ctx.command, result: 'SUCCESS' },
+      }),
+    );
+    assert.equal(result.action, 'event-only');
+    assert.isUndefined(result.toStatus);
+    assert.equal((await prisma.deviceCommand.findUniqueOrThrow({ where: { id: ctx.commandId } })).status, 'PUBLISHED');
+    assert.equal(await prisma.commandAck.count({ where: { commandId: ctx.commandId } }), 1);
+  });
+
+  test('ACK 事件时间到期边界与 timeout evaluator 并发：最终 TIMED_OUT，绝不 SUCCEEDED', async () => {
+    const expiresAt = new Date('2026-08-31T11:01:00.000Z');
+    const ctx = await plantCommand({ status: 'PUBLISHED', expiresAt });
+    const handle = createAckHandler({ client: prisma, now: () => expiresAt });
+    const [ackResult] = await Promise.all([
+      handle(
+        ackMessage(ctx, {
+          seq: 1,
+          ts: expiresAt.toISOString(),
+          data: { commandId: ctx.commandId, command: ctx.command, result: 'SUCCESS' },
+        }),
+      ),
+      evaluateCommandTimeouts({ client: prisma, now: () => expiresAt }),
+    ]);
+    assert.equal(ackResult.action, 'event-only');
+    assert.equal((await prisma.deviceCommand.findUniqueOrThrow({ where: { id: ctx.commandId } })).status, 'TIMED_OUT');
+    assert.equal(await prisma.commandAck.count({ where: { commandId: ctx.commandId } }), 1);
   });
 
   test('前置状态无效：AUTHORIZED 收到 ACK → INVALID_COMMAND_STATE 隔离', async () => {

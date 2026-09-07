@@ -21,6 +21,12 @@ import { quarantineError } from './errors.js';
 
 export interface ValidatedMessage {
   readonly envelope: IngressEnvelope;
+  /** SQS 记录中的原始 JSON 文本；Raw Archive 原样保存，不参与业务字段映射。 */
+  readonly rawBody: string;
+  /** 仅剥离五个 Envelope 字段后的原始 Payload，不受 DEC-013 规范化修改。 */
+  readonly rawPayload: Readonly<Record<string, unknown>>;
+  /** 业务 Schema 校验、receipt Hash 与 Handler 映射使用的规范化 Payload。 */
+  readonly normalizedPayload: Readonly<Record<string, unknown>>;
   readonly device: DeviceContext;
   /** CT-03 meta.id（全局唯一消息 ID，BE-IOT-03 幂等键组成部分）。 */
   readonly messageId: string;
@@ -39,6 +45,14 @@ export interface IngestPipelineDeps {
 
 const DEFAULT_CLOCK_SKEW_TOLERANCE_SECONDS = 300;
 const AUDITED_TOPIC_TYPES = new Set(['telemetry', 'report', 'tamper']);
+
+function deepFreeze<T>(value: T): T {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const nested of Object.values(value as Record<string, unknown>)) deepFreeze(nested);
+  }
+  return value;
+}
 
 function normalizeContractPayload(envelope: IngressEnvelope): IngressEnvelope {
   try {
@@ -59,8 +73,10 @@ function normalizeContractPayload(envelope: IngressEnvelope): IngressEnvelope {
 
 export async function validateRecord(deps: IngestPipelineDeps, rawBody: string): Promise<ValidatedMessage> {
   const parsed = parseEnvelope(rawBody);
+  const rawPayload = deepFreeze(structuredClone(parsed.payload));
   const device = await resolveDeviceContext(deps.client, parsed);
   const envelope = normalizeContractPayload(parsed);
+  const normalizedPayload = deepFreeze(envelope.payload);
   const validator = deps.schemaValidator ?? createSchemaValidator();
   validator.validatePayload(envelope);
   assertClockSkew(envelope, deps.clockSkewToleranceSeconds ?? DEFAULT_CLOCK_SKEW_TOLERANCE_SECONDS);
@@ -68,6 +84,9 @@ export async function validateRecord(deps: IngestPipelineDeps, rawBody: string):
   const meta = envelope.payload.meta as Record<string, unknown>;
   return {
     envelope,
+    rawBody,
+    rawPayload,
+    normalizedPayload,
     device,
     messageId: String(meta.id),
     occurredAt: String(meta.ts),

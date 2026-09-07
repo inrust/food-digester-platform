@@ -13,7 +13,7 @@
 | 文件 | 职责 |
 | --- | --- |
 | [repository.ts](../apps/ingestion-worker/src/report/repository.ts) | `buildReportRow`：Payload data → esg_reports 列映射（processingDurationMinutes→processing_minutes 四舍五入、energyConsumptionKwh→power_consumption_kwh 等）；`findOverlappingReport`（区间相交查询）；`insertReport` |
-| [handler.ts](../apps/ingestion-worker/src/report/handler.ts) | `createReportHandler`：期间语义校验 → BE-IOT-03 receipt 幂等 → 同事务报告行 + 恰好一个 ARCHIVE outbox |
+| [handler.ts](../apps/ingestion-worker/src/report/handler.ts) | `createReportHandler`：期间语义校验 → BE-IOT-03 receipt 幂等及同设备 report advisory lock → 同事务报告行 + 恰好一个 ARCHIVE outbox |
 
 ## 关键设计
 
@@ -36,6 +36,7 @@
 4. 相同报告幂等：同 seq DUPLICATE_SKIPPED；同起点新 seq 重放 duplicate，仍一行一个归档；
 5. HOURLY/DAILY 类型各自入库；可选缺省列不落（NULL）；
 6. 非 report 消息不处理（分发保护）。
+7. 不同起点但期间重叠的两条 Report 并发处理：恰好一条成功，另一条确定进入 `INVALID_REPORT`，数据库和归档均只有一条。
 
 命令与结果：
 
@@ -46,6 +47,5 @@ pnpm verify                              → EXIT=0（lint/format/typecheck/test
 
 ## 未决风险
 
-- 期间重叠预检与插入非串行化隔离，极端并发下同设备同类型报告可能双双通过预检后一方 P2002 → TRANSIENT 重试收敛（最终一致，不产生重叠行）。
 - `processingDurationMinutes` 非整数值四舍五入落 Int 列（表示层转换；如协议明确保留小数需列类型调整）。
 - calculationVersionId 未解析（EsgCalculationVersion 台账关联归 ESG 领域任务）。

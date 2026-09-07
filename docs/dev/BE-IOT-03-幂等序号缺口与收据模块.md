@@ -19,8 +19,8 @@
 
 | 文件 | 职责 |
 | --- | --- |
-| [receipt.ts](../apps/ingestion-worker/src/ingest/receipt.ts) | `processWithReceipt`：单事务内 插入 receipt(result=PROCESSED) → business(tx) → outbox(tx) → 缺口检测；P2002 唯一冲突 → 回读胜出记录：同 Hash → `DUPLICATE_SKIPPED`（不再执行业务写入）；不同 Hash → 抛 `QUARANTINE/PAYLOAD_CONFLICT` 安全异常（原 receipt 不覆盖）。`hashPayload` 是服务端对规范化后完整 Payload 的幂等比较摘要；它与 DEC-013 设备提供的 `audit.hash` 职责不同 |
-| [gap.ts](../apps/ingestion-worker/src/ingest/gap.ts) | `recordGapForNewReceipt`（receipt 同事务）：已知最大 seq 与新 seq 不连续 → 追加缺口（已有覆盖缺口去重）；迟到消息使区间被 receipt 全覆盖 → 置 `resolvedAt`。`gapStatus`：未解除缺口查询（missingFromSeq/missingToSeq） |
+| [receipt.ts](../apps/ingestion-worker/src/ingest/receipt.ts) | `processWithReceipt`：按 deviceId+topicType 获取 PostgreSQL 事务级 advisory lock，随后在单事务内插入 receipt(result=PROCESSED) → business(tx) → outbox(tx) → 缺口检测；P2002 唯一冲突 → 回读胜出记录：同 Hash → `DUPLICATE_SKIPPED`（不再执行业务写入）；不同 Hash → 抛 `QUARANTINE/PAYLOAD_CONFLICT` 安全异常（原 receipt 不覆盖）。`hashPayload` 是服务端对规范化后完整 Payload 的幂等比较摘要；它与 DEC-013 设备提供的 `audit.hash` 职责不同 |
+| [gap.ts](../apps/ingestion-worker/src/ingest/gap.ts) | `recordGapForNewReceipt`（receipt 同事务）：检查相邻前序与后继 receipt，追加未覆盖缺口；迟到消息使区间被 receipt 全覆盖 → 置 `resolvedAt`。同流 advisory lock 保证并发首处理可见确定顺序；`gapStatus` 查询未解除缺口（missingFromSeq/missingToSeq） |
 | [errors.ts](../apps/ingestion-worker/src/ingest/errors.ts) | `IngestErrorType` 新增 `PAYLOAD_CONFLICT`（经 BE-IOT-02 Handler 路由进 Quarantine 实现冲突隔离） |
 
 导出：`apps/ingestion-worker/src/ingest/index.ts` 并经 `src/index.ts` 汇出。
@@ -30,6 +30,7 @@
 - **冲突隔离通道**：相同键不同 Hash 不更新原 receipt（DB-01 注释"不覆盖原记录"），安全异常经 BE-IOT-02 的 Quarantine 通道路由（原文 + PAYLOAD_CONFLICT + `meta.seq` 路径），与既有错误分类体系统一。
 - **重复跳过不改写**：重复消息仅回读比较，不写 DUPLICATE 行（唯一键也不允许第二行），原 PROCESSED 记录保持。
 - **缺口追加式**：检测/解除均为同事务追加与标记，任何缺口都不阻塞当前或后续消息处理。
+- **同流串行化**：事务锁粒度为 `{deviceId}:{topicType}`，只串行化同一设备同一上行类型；它同时封闭 gap、Telemetry 读改写和 Report 重叠预检的竞争窗口，不阻塞其他设备/类型。
 
 ## 验收证据
 
@@ -41,6 +42,7 @@
 4. 事务原子性：business 失败 receipt 与 outbox 全回滚；
 5. 缺口：seq 5 跳序正常处理且检出缺口 [3,4]，缺口期间 seq 6 照常处理；乱序补到去重（不产生重叠缺口记录），部分填充不解除、全覆盖解除；
 6. 5% 重复 + 2% 乱序模拟（200 条确定性 PRNG 流）：每个唯一 seq 恰好处理一次、200 条业务记录无重复、200 条 receipt、乱序缺口全部解除。
+7. 不同 seq 并发首处理：seq 1 与 seq 5 无论谁先获得锁，最终恰好记录缺口 `[2,4]`。
 
 命令与结果：
 
@@ -51,6 +53,5 @@ pnpm verify                              → EXIT=0（lint/format/typecheck/test
 
 ## 未决风险
 
-- 不同 seq 的并发首处理在各自事务内做缺口检测，极端交错下可能漏记缺口（V1 接受：缺口为运维可观测信息，非正确性依赖；如需精确可引入 deviceId+topicType 级别 advisory lock）。
 - `SECURITY_VIOLATION` result 值保留于 DB-01 枚举注释，本任务未写该状态（冲突走 Quarantine 通道）；如运维需要台账内可见的安全异常计数，后续任务可扩展。
 - seq 为 Int（DB-01 表结构）：按心跳分钟级频率足够；若未来高频 telemetry 超 21 亿需迁移 BigInt。

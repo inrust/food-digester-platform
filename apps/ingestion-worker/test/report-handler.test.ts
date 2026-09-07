@@ -103,6 +103,9 @@ function reportMessage(
       iotPrincipal: `arn:aws:iot:ap-southeast-1:123456789012:cert/${ctx.certificateId}`,
       payload,
     },
+    rawBody: JSON.stringify(payload),
+    rawPayload: payload,
+    normalizedPayload: payload,
     device: {
       deviceId: ctx.deviceId,
       customerId: ctx.customerId,
@@ -213,6 +216,33 @@ describe('createReportHandler（BE-IOT-06）', () => {
     );
     assert.equal(adjacent.reportStatus, 'created');
     assert.equal(await prisma.esgReport.count({ where: { deviceId: ctx.deviceId } }), 2);
+  });
+
+  test('不同起点重叠报告并发：仅一条提交，另一条确定隔离', async () => {
+    const ctx = await plantDevice();
+    const handle = createReportHandler({ client: prisma });
+    const results = await Promise.allSettled([
+      handle(
+        reportMessage(ctx, {
+          seq: 1,
+          periodStart: '2026-08-28T07:00:00.000Z',
+          periodEnd: '2026-08-28T08:00:00.000Z',
+        }),
+      ),
+      handle(
+        reportMessage(ctx, {
+          seq: 2,
+          periodStart: '2026-08-28T07:30:00.000Z',
+          periodEnd: '2026-08-28T08:30:00.000Z',
+        }),
+      ),
+    ]);
+    assert.equal(results.filter((result) => result.status === 'fulfilled').length, 1);
+    const rejected = results.find((result) => result.status === 'rejected');
+    assert.ok(rejected?.status === 'rejected' && rejected.reason instanceof IngestError);
+    assert.equal((rejected as PromiseRejectedResult).reason.errorType, 'INVALID_REPORT');
+    assert.equal(await prisma.esgReport.count({ where: { deviceId: ctx.deviceId } }), 1);
+    assert.equal(await prisma.outboxEvent.count({ where: { aggregateId: ctx.deviceId } }), 1);
   });
 
   test('相同报告幂等：同 seq 重复跳过；同期间起点新 seq 重放也跳过（仍一行一个归档）', async () => {

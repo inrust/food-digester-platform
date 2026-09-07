@@ -9,7 +9,7 @@
  */
 import { createHash } from 'node:crypto';
 import type { DbClient } from '@fdp/database';
-import { withTransaction } from '@fdp/database';
+import { acquireTransactionLock, withTransaction } from '@fdp/database';
 import { quarantineError } from './errors.js';
 import { recordGapForNewReceipt } from './gap.js';
 
@@ -79,6 +79,9 @@ export async function processWithReceipt<T>(
   const now = params.now ?? (() => new Date());
   try {
     return await withTransaction(client, async (tx) => {
+      // 同设备同 Topic 串行化 receipt 与业务事务：同时消除 gap 漏检、Telemetry
+      // 读改写丢增量和 Report 重叠检查的并发窗口。
+      await acquireTransactionLock(tx, `ingestion:${params.key.deviceId}:${params.key.topicType}`);
       await receipts(tx).create({
         data: {
           idempotencyKey: idempotencyKeyOf(params.key),

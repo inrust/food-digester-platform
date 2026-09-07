@@ -98,6 +98,9 @@ function telemetryMessage(
       iotPrincipal: `arn:aws:iot:ap-southeast-1:123456789012:cert/${ctx.certificateId}`,
       payload,
     },
+    rawBody: JSON.stringify(payload),
+    rawPayload: payload,
+    normalizedPayload: payload,
     device: {
       deviceId: ctx.deviceId,
       customerId: ctx.customerId,
@@ -204,6 +207,22 @@ describe('createTelemetryHandler（BE-IOT-05）', () => {
     });
     assert.equal(secondBucket?.sampleCount, 1);
     assert.equal(await prisma.outboxEvent.count({ where: { aggregateId: ctx.deviceId } }), 3);
+  });
+
+  test('同设备同窗口并发 20 条：sampleCount 与 metrics 原子累计不丢增量', async () => {
+    const ctx = await plantDevice();
+    const handle = createTelemetryHandler({ client: prisma });
+    await Promise.all(
+      Array.from({ length: 20 }, (_, index) =>
+        handle(telemetryMessage(ctx, index + 1, { feedingWeightKg: index + 1 })),
+      ),
+    );
+    const row = await prisma.telemetryHourly.findFirstOrThrow({ where: { deviceId: ctx.deviceId } });
+    const metric = (row.metrics as Record<string, { avg: number; min: number; max: number; count: number }>)
+      .feedingWeightKg;
+    assert.equal(row.sampleCount, 20);
+    assert.deepEqual(metric, { avg: 10.5, min: 1, max: 20, count: 20 });
+    assert.equal(await prisma.outboxEvent.count({ where: { aggregateId: ctx.deviceId } }), 20);
   });
 
   test('重复消息幂等跳过：归档事件仍恰好一个，聚合不重复累计', async () => {

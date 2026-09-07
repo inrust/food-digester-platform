@@ -194,6 +194,21 @@ describe('processWithReceipt（BE-IOT-03 幂等收据）', () => {
     assert.equal(await businessCount(deviceId), 6);
   });
 
+  test('不同 seq 并发首处理：无论锁顺序均补建完整缺口', async () => {
+    const deviceId = nextDeviceId();
+    const ingest = (seq: number) =>
+      processWithReceipt(prisma, {
+        key: { deviceId, topicType: 'telemetry', seq },
+        payloadHash: hashPayload(telemetryPayload(deviceId, seq)),
+        business: (tx) => businessWrite(tx, deviceId, seq),
+      });
+    await Promise.all([ingest(1), ingest(5)]);
+    const gaps = await gapStatus(prisma, { deviceId, topicType: 'telemetry' });
+    assert.equal(gaps.length, 1);
+    assert.equal(gaps[0]?.missingFromSeq, 2);
+    assert.equal(gaps[0]?.missingToSeq, 4);
+  });
+
   test('5% 重复 + 2% 乱序模拟：无重复业务记录，全部到达后无未解除缺口', async () => {
     const deviceId = nextDeviceId();
     const TOTAL = 200;

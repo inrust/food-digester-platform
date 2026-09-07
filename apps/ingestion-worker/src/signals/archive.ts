@@ -14,6 +14,7 @@ export interface ArchiveOutboxParams {
   readonly receivedAtMs: number;
   readonly payloadHash: string;
   readonly auditHash: string | null;
+  readonly rawBody: string;
   /** 与 RDS 行同源的映射列（可选）。 */
   readonly columns?: Record<string, unknown> | undefined;
   readonly payload: unknown;
@@ -42,6 +43,7 @@ export async function writeArchiveOutbox(client: DbClient, params: ArchiveOutbox
         receivedAtMs: params.receivedAtMs,
         payloadHash: params.payloadHash,
         auditHash: params.auditHash,
+        rawBody: params.rawBody,
         columns: params.columns ?? null,
         payload: params.payload,
       },

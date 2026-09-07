@@ -17,6 +17,7 @@ ACK 业务逻辑已在 BE-CMD-03 落地于 [signals/ack.ts](../apps/ingestion-wo
 - ACK 按 commandId 更新命令结果、执行时长（executeTimeMs）与错误（errorCode/message）；无 result → ACKNOWLEDGED（RECEIVED 落库）；
 - 未知 commandId → UNKNOWN_COMMAND 隔离；跨设备回执 / command 不符 → COMMAND_MISMATCH 隔离；CREATED/AUTHORIZED/PUBLISHING 收到 ACK → INVALID_COMMAND_STATE 隔离（设备不可能持有）；
 - 迟到 ACK（TIMED_OUT/终态）：command_acks 保存为事件，状态不回改；
+- 对 PUBLISHED 命令同时以 ACK 事件时间和服务端处理时间校验 `expiresAt`；任一时间达到边界即仅保存事件。条件更新再次要求 `expiresAt > cutoff`，与 timeout evaluator 并发时也禁止迁移为成功；
 - 幂等：receipt 键 `{deviceId}:ack:{seq}` + `command_acks.sourceMessageId` 唯一约束双保险；
 - DEC-015 隔离：`objectType` + 关联 ID 判别——COMMAND 与 OTA_TARGET 字段禁止混带；OTA 分支只更新 ota_targets + ota_status_history + DEC-016 归档，不回改 Command；
 - 审计链：command.ack / ota.status.ack（actor=设备）+ 归档 Outbox。
@@ -29,7 +30,7 @@ ACK 业务逻辑已在 BE-CMD-03 落地于 [signals/ack.ts](../apps/ingestion-wo
 | 重复 ACK 幂等 | 全链路同 seq 同 payload 重放 → command_acks 仅 1 行、隔离区无记录 | ✅ |
 | 冲突/未知进确定异常路径 | UNKNOWN_COMMAND / COMMAND_MISMATCH → Quarantine、不重试、两条命令均不被误更新、无误落 ack | ✅ |
 | 不得误更新其他命令或 OTA Target | OTA_TARGET ACK 仅迁移 target NOTIFIED→DOWNLOADING + 历史 1 行，command 状态/ack 不变；COMMAND 混入 otaTargetId → 隔离 | ✅ |
-| 过期 ACK | 由 signals-ack.test.ts 覆盖（TIMED_OUT 后 SUCCESS → 事件保存不回改） | ✅ |
+| 过期 ACK | `signals-ack.test.ts` 覆盖 TIMED_OUT 后回执、PUBLISHED 但服务端当前时间已过期，以及 ACK 恰在到期边界与 timeout evaluator 并发；均保存事件且绝不迁移为 SUCCEEDED | ✅ |
 | 路由表/异常兜底 | heartbeat 经分发器落 device_latest_state（connectivity ONLINE）；media 经 BE-IOT-03 receipt 调用 BE-MED-01 共用核心 | ✅ |
 
 ## 4. 未决风险

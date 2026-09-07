@@ -76,7 +76,7 @@ export function createReportHandler(
     const meta = message.envelope.payload.meta as Record<string, unknown>;
     const seq = Number(meta.seq);
     const deviceId = message.device.deviceId;
-    const payloadHash = hashPayload(message.envelope.payload);
+    const payloadHash = hashPayload(message.normalizedPayload);
 
     const write: ReportWrite = {
       deviceId,
@@ -146,7 +146,8 @@ export function createReportHandler(
               payloadHash,
               auditHash: (message.audit as Record<string, unknown> | null)?.hash ?? null,
               attestation: 'NONE',
-              payload: message.envelope.payload,
+              rawBody: message.rawBody,
+              payload: message.rawPayload,
             },
           },
         });

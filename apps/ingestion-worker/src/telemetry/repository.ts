@@ -5,8 +5,8 @@
  * - 最小状态：metrics JSON 每字段 {avg, min, max, count}（键名与 Payload 一致）+ sampleCount，
  *   增量合并即可重算 avg，无需保存原始明细（原始 Telemetry 不长期写 RDS）；
  * - completenessPct 口径未定（上报频率未冻结），本任务不落该列；
- * - 已知限制：同设备同窗口的并发合并为读-改-写，极端竞争下可能丢失增量；
- *   原始 Payload 已进 S3 归档链路（outbox），可由 Replay 重建窗口（V1 接受）。
+ * - 并发语义：processWithReceipt 在业务写入前按 device+topic 获取事务级 advisory lock，
+ *   同一设备 Telemetry 串行合并，不丢失 sampleCount/metrics 增量。
  */
 import type { DbClient } from '@fdp/database';
 

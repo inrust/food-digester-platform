@@ -154,6 +154,9 @@ function heartbeatMessage(
       iotPrincipal: `arn:aws:iot:ap-southeast-1:123456789012:cert/${ctx.certificateId}`,
       payload,
     },
+    rawBody: JSON.stringify(payload),
+    rawPayload: payload,
+    normalizedPayload: payload,
     device: {
       deviceId: ctx.deviceId,
       customerId: ctx.customerId,

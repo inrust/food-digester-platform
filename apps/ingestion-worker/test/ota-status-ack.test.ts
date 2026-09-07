@@ -80,6 +80,9 @@ function otaAck(
       iotPrincipal: `arn:aws:iot:ap-southeast-1:123456789012:cert/cert-${ctx.deviceId}`,
       payload,
     },
+    rawBody: JSON.stringify(payload),
+    rawPayload: payload,
+    normalizedPayload: payload,
     device: {
       deviceId: ctx.deviceId,
       customerId: ctx.customerId,

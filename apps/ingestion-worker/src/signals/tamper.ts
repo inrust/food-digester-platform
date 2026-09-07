@@ -111,7 +111,7 @@ export function createTamperHandler(
     const meta = message.envelope.payload.meta as Record<string, unknown>;
     const seq = Number(meta.seq);
     const deviceId = message.device.deviceId;
-    const payloadHash = hashPayload(message.envelope.payload);
+    const payloadHash = hashPayload(message.normalizedPayload);
     const auditHash = ((message.audit as Record<string, unknown> | null)?.hash as string | undefined) ?? null;
     const severity = asString(data.severity) ?? 'INFO';
     const eventType = asString(data.eventType) ?? 'UNKNOWN';
@@ -158,8 +158,9 @@ export function createTamperHandler(
           receivedAtMs: message.envelope.iotReceivedAt,
           payloadHash,
           auditHash,
+          rawBody: message.rawBody,
           columns,
-          payload: message.envelope.payload,
+          payload: message.rawPayload,
         });
         // 策略挂起（同事务：事件 + 归档 + 迁移 + 审计原子提交）
         const shouldSuspend = (TAMPER_SUSPEND_SEVERITIES as readonly string[]).includes(severity);

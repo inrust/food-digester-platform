@@ -50,7 +50,14 @@ const FIXED_NOW = new Date('2026-08-28T11:00:05.000Z');
 let seqCounter = 0;
 function archiveMessage(
   topicType: string,
-  options: { customerId?: string; seq?: number; occurredAt?: string; eventId?: string; withAudit?: boolean } = {},
+  options: {
+    customerId?: string;
+    seq?: number;
+    occurredAt?: string;
+    eventId?: string;
+    withAudit?: boolean;
+    rawBody?: string;
+  } = {},
 ): ArchiveEventMessage {
   seqCounter += 1;
   const seq = options.seq ?? seqCounter;
@@ -77,6 +84,7 @@ function archiveMessage(
       receivedAtMs: Date.parse(occurredAt),
       payloadHash: 'd'.repeat(64),
       auditHash: options.withAudit ? 'c'.repeat(64) : null,
+      rawBody: options.rawBody ?? JSON.stringify(payload),
       payload,
     },
     createdAt: '2026-08-28T10:30:01.000Z',
@@ -125,7 +133,8 @@ describe('createArchiveWorker（BE-ARC-02）', () => {
 
   test('解压后每行是原始可验证 JSON（原始 Payload + audit.hash 完整内嵌）', async () => {
     const store = new MemoryObjectStore();
-    const source = archiveMessage('tamper', { withAudit: true });
+    const originalBody = ' { "meta": { "id": "raw-spacing" }, "data": { "sample": true } } ';
+    const source = archiveMessage('tamper', { withAudit: true, rawBody: originalBody });
     const result = await worker(store).archiveBatch([source]);
     const [object] = result.objects;
 
@@ -137,6 +146,7 @@ describe('createArchiveWorker（BE-ARC-02）', () => {
     assert.deepEqual(raw, (source.payload as Record<string, unknown>).payload, '原始上行 Payload 完整内嵌');
     assert.equal((raw.audit as Record<string, unknown>).hash, 'c'.repeat(64), 'audit.hash 随行保留（可验证）');
     assert.equal(line.auditHash, 'c'.repeat(64));
+    assert.equal(line.rawBody, originalBody, 'S3 NDJSON 必须逐字符保留 IoT Rule 原始 Body');
   });
 
   test('Manifest 字段完整：记录数/时间范围/序号范围/SHA-256/Schema 版本/Worker 版本/eventIds', async () => {

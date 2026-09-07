@@ -110,7 +110,7 @@ export function createHeartbeatHandler(
 
     const processed = await processWithReceipt(deps.client, {
       key: { deviceId, topicType: 'heartbeat', seq },
-      payloadHash: hashPayload(message.envelope.payload),
+      payloadHash: hashPayload(message.normalizedPayload),
       receivedAtMs: message.envelope.iotReceivedAt,
       business: async (tx) => applyLatestState(tx, deviceId, buildStateWrite(message, occurredAt), occurredAt),
     });

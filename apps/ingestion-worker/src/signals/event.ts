@@ -38,7 +38,7 @@ export function createEventHandler(deps: EventHandlerDeps): (message: ValidatedM
     const meta = message.envelope.payload.meta as Record<string, unknown>;
     const seq = Number(meta.seq);
     const deviceId = message.device.deviceId;
-    const payloadHash = hashPayload(message.envelope.payload);
+    const payloadHash = hashPayload(message.normalizedPayload);
 
     const processed = await processWithReceipt(deps.client, {
       key: { deviceId, topicType: 'event', seq },
@@ -68,8 +68,9 @@ export function createEventHandler(deps: EventHandlerDeps): (message: ValidatedM
           receivedAtMs: message.envelope.iotReceivedAt,
           payloadHash,
           auditHash: ((message.audit as Record<string, unknown> | null)?.hash as string | undefined) ?? null,
+          rawBody: message.rawBody,
           columns,
-          payload: message.envelope.payload,
+          payload: message.rawPayload,
         });
       },
     });

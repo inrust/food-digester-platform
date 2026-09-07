@@ -348,14 +348,60 @@ describe('createIngestionHandler（BE-IOT-02 校验管线）', () => {
     data.machine = { running: true, currentMode: 'DISCHARING' };
     data.network = { type: '4G', status: 'CONNECTED' };
     data.sensorStatus = { overall: 'NORMAL' };
-    const response = await h.handler({
-      Records: [{ messageId: 'sqs-legacy', body: envelopeBody(payload, { deviceId, certificateId }) }],
-    });
+    const rawBody = envelopeBody(payload, { deviceId, certificateId });
+    const response = await h.handler({ Records: [{ messageId: 'sqs-legacy', body: rawBody }] });
     assert.deepEqual(response.batchItemFailures, []);
     assert.deepEqual(h.quarantined, []);
     assert.equal(h.validated[0]?.data.machineMode, 'DISCHARGING');
     assert.equal(h.validated[0]?.data.networkType, '4G');
     assert.equal(h.validated[0]?.data.sensorOverallStatus, 'NORMAL');
+    assert.equal(h.validated[0]?.rawBody, rawBody);
+    const rawData = h.validated[0]?.rawPayload.data as Record<string, unknown>;
+    assert.deepEqual(rawData.machine, { running: true, currentMode: 'DISCHARING' });
+    assert.isUndefined(rawData.machineMode);
+    assert.equal((h.validated[0]?.normalizedPayload.data as Record<string, unknown>).machineMode, 'DISCHARGING');
+    assert.isTrue(Object.isFrozen(h.validated[0]?.rawPayload));
+    assert.isTrue(Object.isFrozen(rawData));
+  });
+
+  test('Telemetry 业务使用 normalized，Raw Archive 保留未规范化 Payload 与原始 Body', async () => {
+    const ctx = await plantDevice();
+    const payload = telemetryPayload('TEL-RAW-NORMALIZED-1');
+    const data = payload.data as Record<string, unknown>;
+    const currentAmp = data.currentAmp;
+    delete data.currentAmp;
+    data.motorCurrentAmp = currentAmp;
+    (payload.audit as Record<string, unknown>).hash = computeAuditHash(payload);
+    const rawBody = envelopeBody(payload, { ...ctx, type: 'telemetry' });
+    const quarantined: QuarantineRecord[] = [];
+    const handler = createIngestionHandler({
+      client: prisma,
+      quarantine: {
+        async send(record) {
+          quarantined.push(record);
+        },
+      },
+      onValidated: createBusinessDispatcher({
+        client: prisma,
+        securePackage,
+        certificateRevoker: { revokeCertificate: async () => {} },
+        ...mediaDispatcherDeps,
+      }),
+    });
+    const response = await handler({ Records: [{ messageId: 'sqs-raw-normalized', body: rawBody }] });
+    assert.deepEqual(response.batchItemFailures, []);
+    assert.deepEqual(quarantined, []);
+    const aggregate = await prisma.telemetryHourly.findFirstOrThrow({ where: { deviceId: ctx.deviceId } });
+    assert.equal((aggregate.metrics as Record<string, { avg: number }>).currentAmp?.avg, currentAmp);
+    const outbox = await prisma.outboxEvent.findFirstOrThrow({
+      where: { aggregateId: ctx.deviceId, eventType: 'ARCHIVE' },
+    });
+    const archive = outbox.payload as Record<string, unknown>;
+    assert.equal(archive.rawBody, rawBody);
+    const archivedData = (archive.payload as Record<string, unknown>).data as Record<string, unknown>;
+    assert.equal(archivedData.motorCurrentAmp, currentAmp);
+    assert.isUndefined(archivedData.currentAmp);
+    assert.equal(archive.auditHash, computeAuditHash(payload));
   });
 
   test('DEC-013：兼容截止边界起旧格式进入 Quarantine', async () => {
@@ -485,7 +531,7 @@ describe('createIngestionHandler（BE-IOT-02 校验管线）', () => {
     assert.deepEqual(h.quarantined, []);
   });
 
-  test('Envelope 结构违规进 Quarantine：iot* 字段缺失 / Topic 与 iotType 不一致', async () => {
+  test('Envelope 失败关闭：字段缺失、Topic 上下文不一致及额外 iot* 字段均隔离', async () => {
     const { deviceId, certificateId } = await plantDevice();
     const h = harness();
     const missingField = JSON.stringify({
@@ -504,10 +550,29 @@ describe('createIngestionHandler（BE-IOT-02 校验管线）', () => {
       iotReceivedAt: RECEIVED_AT,
       iotPrincipal: `arn:aws:iot:ap-southeast-1:123456789012:cert/${certificateId}`,
     });
+    const deviceMismatch = JSON.stringify({
+      ...heartbeatPayload('HB-DEV007-3'),
+      iotTopic: `bnx/device/${deviceId}/heartbeat`,
+      iotDeviceId: 'different-device',
+      iotType: 'heartbeat',
+      iotReceivedAt: RECEIVED_AT,
+      iotPrincipal: `arn:aws:iot:ap-southeast-1:123456789012:cert/${certificateId}`,
+    });
+    const extraIotField = JSON.stringify({
+      ...heartbeatPayload('HB-DEV007-4'),
+      iotTopic: `bnx/device/${deviceId}/heartbeat`,
+      iotDeviceId: deviceId,
+      iotType: 'heartbeat',
+      iotReceivedAt: RECEIVED_AT,
+      iotPrincipal: `arn:aws:iot:ap-southeast-1:123456789012:cert/${certificateId}`,
+      iotSpoofedContext: 'must-not-be-silently-dropped',
+    });
     const response = await h.handler({
       Records: [
         { messageId: 'sqs-missing', body: missingField },
         { messageId: 'sqs-mismatch', body: topicMismatch },
+        { messageId: 'sqs-device-mismatch', body: deviceMismatch },
+        { messageId: 'sqs-extra-iot', body: extraIotField },
       ],
     });
     assert.deepEqual(response.batchItemFailures, []);
@@ -516,6 +581,8 @@ describe('createIngestionHandler（BE-IOT-02 校验管线）', () => {
       [
         ['INVALID_ENVELOPE', 'iotPrincipal'],
         ['INVALID_ENVELOPE', 'iotType'],
+        ['INVALID_ENVELOPE', 'iotDeviceId'],
+        ['SCHEMA_VIOLATION', '(root)'],
       ],
     );
   });

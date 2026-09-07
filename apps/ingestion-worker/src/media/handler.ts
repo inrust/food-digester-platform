@@ -20,7 +20,7 @@ export function createMediaHandler(deps: MediaHandlerDeps) {
     const seq = Number(meta.seq);
     await processWithReceipt(deps.client, {
       key: { deviceId: message.device.deviceId, topicType: 'media', seq },
-      payloadHash: hashPayload(message.envelope.payload),
+      payloadHash: hashPayload(message.normalizedPayload),
       receivedAtMs: message.envelope.iotReceivedAt,
       ...(deps.now ? { now: deps.now } : {}),
       business: async (tx) => {

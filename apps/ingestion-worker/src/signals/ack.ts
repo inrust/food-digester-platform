@@ -72,6 +72,7 @@ interface CommandRow {
   readonly customerId: string;
   readonly command: string;
   readonly status: string;
+  readonly expiresAt: Date | null;
 }
 
 interface CommandDelegate {
@@ -145,7 +146,7 @@ async function handleOtaTargetAck(deps: AckHandlerDeps, message: ValidatedMessag
   const meta = message.envelope.payload.meta as Record<string, unknown>;
   const seq = Number(meta.seq);
   const deviceId = message.device.deviceId;
-  const payloadHash = hashPayload(message.envelope.payload);
+  const payloadHash = hashPayload(message.normalizedPayload);
   const occurredAt = new Date(message.occurredAt);
   const now = deps.now?.() ?? new Date();
 
@@ -281,10 +282,9 @@ export function createAckHandler(deps: AckHandlerDeps): (message: ValidatedMessa
     const meta = message.envelope.payload.meta as Record<string, unknown>;
     const seq = Number(meta.seq);
     const deviceId = message.device.deviceId;
-    const payloadHash = hashPayload(message.envelope.payload);
+    const payloadHash = hashPayload(message.normalizedPayload);
     const auditHash = ((message.audit as Record<string, unknown> | null)?.hash as string | undefined) ?? null;
     const ackAt = new Date(message.occurredAt);
-    const now = deps.now?.() ?? new Date();
 
     const processed = await processWithReceipt(deps.client, {
       key: { deviceId, topicType: 'ack', seq },
@@ -307,6 +307,8 @@ export function createAckHandler(deps: AckHandlerDeps): (message: ValidatedMessa
             `ack command ${command} does not match original ${row.command}`,
           );
         }
+        const processingNow = deps.now?.() ?? new Date();
+        const freshnessCutoff = new Date(Math.max(ackAt.getTime(), processingNow.getTime()));
 
         const outcome = classifyAck(row.status, result);
         if (outcome.kind === 'INVALID_PRECONDITION') {
@@ -316,6 +318,8 @@ export function createAckHandler(deps: AckHandlerDeps): (message: ValidatedMessa
             `command ${commandId} is ${row.status}; device cannot hold it`,
           );
         }
+        // 事件时间和服务端当前时间任一达到 expiresAt，都只能保存为迟到事件，禁止成功迁移。
+        const lateOrExpired = !row.expiresAt || row.expiresAt.getTime() <= freshnessCutoff.getTime();
 
         // 保存 ACK 事件（applied 与迟到/重复均落 command_acks；sourceMessageId 唯一约束兜底并发）
         await commandAcks(tx).create({
@@ -331,10 +335,10 @@ export function createAckHandler(deps: AckHandlerDeps): (message: ValidatedMessa
         });
 
         let toStatus: string | undefined;
-        if (outcome.kind === 'APPLY') {
-          // 条件更新（并发漂移兜底：状态被并发迁移则降级为事件，不覆盖）
+        if (outcome.kind === 'APPLY' && !lateOrExpired) {
+          // 条件更新同时关闭 timeout evaluator 竞态；到期或状态漂移均降级为事件，不覆盖。
           const { count } = await commands(tx).updateMany({
-            where: { id: row.id, status: row.status },
+            where: { id: row.id, status: row.status, expiresAt: { gt: freshnessCutoff } },
             data: { status: outcome.to },
           });
           toStatus = count === 1 ? outcome.to : undefined;
@@ -349,9 +353,14 @@ export function createAckHandler(deps: AckHandlerDeps): (message: ValidatedMessa
             objectId: row.id,
             action: 'command.ack',
             beforeValue: { status: row.status },
-            afterValue: { status: toStatus ?? row.status, ackResult: ackResultForStorage(result), executeTimeMs },
+            afterValue: {
+              status: toStatus ?? row.status,
+              ackResult: ackResultForStorage(result),
+              executeTimeMs,
+              lateOrExpired,
+            },
             result: 'SUCCESS',
-            createdAt: now,
+            createdAt: processingNow,
           },
         });
         await writeArchiveOutbox(tx, {
@@ -363,14 +372,16 @@ export function createAckHandler(deps: AckHandlerDeps): (message: ValidatedMessa
           receivedAtMs: message.envelope.iotReceivedAt,
           payloadHash,
           auditHash,
+          rawBody: message.rawBody,
           columns: {
             commandId: row.id,
             command: row.command,
             statusBefore: row.status,
             statusAfter: toStatus ?? row.status,
             ackResult: ackResultForStorage(result),
+            lateOrExpired,
           },
-          payload: message.envelope.payload,
+          payload: message.rawPayload,
         });
         return { action: (toStatus ? 'applied' : 'event-only') as AckAction, toStatus };
       },

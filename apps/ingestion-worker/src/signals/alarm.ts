@@ -60,7 +60,7 @@ export function createAlarmHandler(deps: AlarmHandlerDeps): (message: ValidatedM
     const meta = message.envelope.payload.meta as Record<string, unknown>;
     const seq = Number(meta.seq);
     const deviceId = message.device.deviceId;
-    const payloadHash = hashPayload(message.envelope.payload);
+    const payloadHash = hashPayload(message.normalizedPayload);
     const auditHash = ((message.audit as Record<string, unknown> | null)?.hash as string | undefined) ?? null;
 
     const processed = await processWithReceipt(deps.client, {
@@ -130,8 +130,9 @@ export function createAlarmHandler(deps: AlarmHandlerDeps): (message: ValidatedM
           receivedAtMs: message.envelope.iotReceivedAt,
           payloadHash,
           auditHash,
+          rawBody: message.rawBody,
           columns,
-          payload: message.envelope.payload,
+          payload: message.rawPayload,
         });
         return action;
       },

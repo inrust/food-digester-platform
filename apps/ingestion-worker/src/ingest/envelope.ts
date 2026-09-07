@@ -19,6 +19,7 @@ export interface IngressEnvelope {
 }
 
 const TOPIC_PATTERN = /^bnx\/device\/[^/]+\/(heartbeat|telemetry|report|alarm|event|ack|tamper|media)$/;
+const ENVELOPE_KEYS = new Set(['iotTopic', 'iotDeviceId', 'iotType', 'iotReceivedAt', 'iotPrincipal']);
 
 export function parseEnvelope(rawBody: string): IngressEnvelope {
   let doc: unknown;
@@ -40,6 +41,9 @@ export function parseEnvelope(rawBody: string): IngressEnvelope {
   if (typeof iotDeviceId !== 'string' || iotDeviceId.length === 0 || iotDeviceId.includes('/')) {
     throw quarantineError('INVALID_ENVELOPE', 'iotDeviceId', 'iotDeviceId missing or malformed');
   }
+  if (iotTopic.split('/')[2] !== iotDeviceId) {
+    throw quarantineError('INVALID_ENVELOPE', 'iotDeviceId', 'iotDeviceId is inconsistent with iotTopic');
+  }
   const iotType = record.iotType;
   if (typeof iotType !== 'string' || iotTopic.split('/')[3] !== iotType) {
     throw quarantineError('INVALID_ENVELOPE', 'iotType', 'iotType missing or inconsistent with iotTopic');
@@ -55,7 +59,9 @@ export function parseEnvelope(rawBody: string): IngressEnvelope {
 
   const payload: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(record)) {
-    if (!key.startsWith('iot')) payload[key] = value;
+    // 仅剥离五个冻结 Envelope 字段；其他顶层字段必须交给 MQTT Schema 的
+    // additionalProperties=false 失败关闭，不能因 iot* 前缀被静默删除。
+    if (!ENVELOPE_KEYS.has(key)) payload[key] = value;
   }
   return { iotTopic, iotDeviceId, iotType, iotReceivedAt, iotPrincipal, payload };
 }

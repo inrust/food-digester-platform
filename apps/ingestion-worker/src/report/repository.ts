@@ -4,6 +4,7 @@
  * - 幂等：unique(deviceId, reportType, periodStartTime) + sourceMessageId 唯一兜底；
  *   相同报告（同期间起点）重放 → duplicate 跳过，不覆盖既有行；
  * - 期间重叠（同设备同类型、不同起点且区间相交）由 Handler 判定拒绝（本模块提供查询）；
+ *   processWithReceipt 按 device+report 串行事务，关闭“先查后插”的并发窗口；
  * - processingDurationMinutes（number）→ processing_minutes（Int）：四舍五入落列（表示层转换，
  *   不改变设备端算法口径）。
  */

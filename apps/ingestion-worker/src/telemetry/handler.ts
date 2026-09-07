@@ -66,7 +66,7 @@ export function createTelemetryHandler(
     const occurredAt = new Date(message.occurredAt);
     const bucketStart = hourlyBucketStart(occurredAt);
     const deviceId = message.device.deviceId;
-    const payloadHash = hashPayload(message.envelope.payload);
+    const payloadHash = hashPayload(message.normalizedPayload);
 
     const processed = await processWithReceipt(deps.client, {
       key: { deviceId, topicType: 'telemetry', seq },
@@ -107,7 +107,8 @@ export function createTelemetryHandler(
               receivedAtMs: message.envelope.iotReceivedAt,
               payloadHash,
               auditHash: (message.audit as Record<string, unknown> | null)?.hash ?? null,
-              payload: message.envelope.payload,
+              rawBody: message.rawBody,
+              payload: message.rawPayload,
             },
           },
         });
