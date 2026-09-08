@@ -951,10 +951,14 @@ model OutboxEvent {
   status        String    @default("PENDING") // PENDING | PUBLISHED | FAILED
   retryCount    Int       @default(0) @map("retry_count") // BE-ARC-01 发布重试计数
   lastError     String?   @map("last_error") // BE-ARC-01 最近一次发布错误（截断）
+  leaseToken    String?   @map("lease_token") // Publisher 并发领取所有权
+  leaseUntil    DateTime? @map("lease_until") @db.Timestamptz
+  lastAttemptAt DateTime? @map("last_attempt_at") @db.Timestamptz
   publishedAt   DateTime? @map("published_at") @db.Timestamptz
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   @@index([status, createdAt])
+  @@index([status, eventType, leaseUntil, createdAt])
   @@map("outbox_events")
 }
 

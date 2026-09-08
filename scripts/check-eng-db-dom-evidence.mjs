@@ -37,7 +37,14 @@ export const IOT_TASK_DOCUMENTS = [
   'docs/BE-IOT-08-ACK-Handler分发接线.md',
 ];
 
-export const TASK_DOCUMENTS = [...ENGINEERING_TASK_DOCUMENTS, ...IOT_TASK_DOCUMENTS];
+export const DATA_PROCESSING_TASK_DOCUMENTS = [
+  'docs/dev/BE-ARC-01-Transactional-Outbox-Publisher.md',
+  'docs/dev/BE-ARC-02-S3-Archive-Worker与Manifest.md',
+  'docs/dev/BE-RPL-01-消息重放服务和管理接口.md',
+  'docs/dev/BE-ESG-01-小时日聚合Worker.md',
+];
+
+export const TASK_DOCUMENTS = [...ENGINEERING_TASK_DOCUMENTS, ...IOT_TASK_DOCUMENTS, ...DATA_PROCESSING_TASK_DOCUMENTS];
 
 export const SECURITY_TASK_DOCUMENTS = [
   'docs/dev/IAC-01-应用依赖CDK.md',
@@ -49,6 +56,25 @@ export const SECURITY_TASK_DOCUMENTS = [
 ];
 
 const IOT_AUDIT_REPORT = 'BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-07.md';
+const DATA_PROCESSING_AUDIT_REPORT = 'BE-ARC-01-02-BE-RPL-01-BE-ESG-01全面复盘检查报告-2026-09-07.md';
+
+export const DATA_PROCESSING_STRICT_REGRESSIONS = [
+  {
+    finding: 'M-01',
+    file: 'apps/ingestion-worker/test/outbox-publisher.test.ts',
+    anchor: 'Archive 与 Notification Publisher 职责隔离',
+  },
+  {
+    finding: 'M-02',
+    file: 'apps/ingestion-worker/test/outbox-publisher.test.ts',
+    anchor: '双 Archive Publisher 并发时同一行只能取得一个租约并发送一次',
+  },
+  {
+    finding: 'M-02-recovery',
+    file: 'apps/ingestion-worker/test/outbox-publisher.test.ts',
+    anchor: '过期租约可恢复领取，未过期租约不会被抢占',
+  },
+];
 
 export const IOT_STRICT_REGRESSIONS = [
   {
@@ -141,6 +167,20 @@ export function iotDocumentErrors(content, relativeDocument) {
   return errors;
 }
 
+export function dataProcessingDocumentErrors(content, relativeDocument) {
+  const errors = [];
+  if (!content.includes('pnpm verify')) {
+    errors.push(`${relativeDocument}: 缺少当前全仓证据命令 pnpm verify`);
+  }
+  if (!content.includes(DATA_PROCESSING_AUDIT_REPORT)) {
+    errors.push(`${relativeDocument}: 缺少 BE-ARC/RPL/ESG 审计快照引用`);
+  }
+  if (/(?:生产接线|调度触发)[^。\n]*(?:归|属)[^。\n]*(?:边界外|IAC)/iu.test(content)) {
+    errors.push(`${relativeDocument}: 不得把已要求交付的生产接线声明为边界外`);
+  }
+  return errors;
+}
+
 export function iotRegressionEvidenceErrors(root, regressions = IOT_STRICT_REGRESSIONS) {
   const errors = [];
   for (const regression of regressions) {
@@ -202,6 +242,9 @@ export function checkEngDbDomEvidence(root, documentPaths = TASK_DOCUMENTS) {
     if (IOT_TASK_DOCUMENTS.includes(relativeDocument)) {
       errors.push(...iotDocumentErrors(content, relativeDocument));
     }
+    if (DATA_PROCESSING_TASK_DOCUMENTS.includes(relativeDocument)) {
+      errors.push(...dataProcessingDocumentErrors(content, relativeDocument));
+    }
 
     for (const match of content.matchAll(MARKDOWN_LINK)) {
       const target = match[1].trim();
@@ -216,6 +259,9 @@ export function checkEngDbDomEvidence(root, documentPaths = TASK_DOCUMENTS) {
   if (documentPaths.some((document) => IOT_TASK_DOCUMENTS.includes(document))) {
     errors.push(...iotRegressionEvidenceErrors(root));
   }
+  if (documentPaths.some((document) => DATA_PROCESSING_TASK_DOCUMENTS.includes(document))) {
+    errors.push(...iotRegressionEvidenceErrors(root, DATA_PROCESSING_STRICT_REGRESSIONS));
+  }
 
   return errors;
 }
@@ -224,7 +270,7 @@ function main() {
   const root = process.argv[2] ?? process.cwd();
   const errors = checkEngDbDomEvidence(root);
   for (const error of errors) console.error(error);
-  if (errors.length === 0) console.log('ENG/DB/DOM/IAC/AUTH/SEC/BE-IOT 证据与开发文档检查通过');
+  if (errors.length === 0) console.log('ENG/DB/DOM/IAC/AUTH/SEC/BE-IOT/BE-ARC/RPL/ESG 证据与开发文档检查通过');
   process.exitCode = errors.length === 0 ? 0 : 1;
 }
 

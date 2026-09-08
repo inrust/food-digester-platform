@@ -5,6 +5,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   checkEngDbDomEvidence,
+  DATA_PROCESSING_STRICT_REGRESSIONS,
+  DATA_PROCESSING_TASK_DOCUMENTS,
+  dataProcessingDocumentErrors,
   IOT_STRICT_REGRESSIONS,
   IOT_TASK_DOCUMENTS,
   iotDocumentErrors,
@@ -57,6 +60,26 @@ test('BE-IOT-01～08 文档全部纳入默认链接与证据门禁', () => {
   assert.equal(IOT_TASK_DOCUMENTS.length, 8);
   for (const document of IOT_TASK_DOCUMENTS) assert.ok(TASK_DOCUMENTS.includes(document));
   assert.equal(IOT_STRICT_REGRESSIONS.length, 6);
+});
+
+test('BE-ARC/RPL/ESG 四份文档及 P2 回归纳入默认证据门禁', () => {
+  assert.equal(DATA_PROCESSING_TASK_DOCUMENTS.length, 4);
+  for (const document of DATA_PROCESSING_TASK_DOCUMENTS) assert.ok(TASK_DOCUMENTS.includes(document));
+  assert.equal(DATA_PROCESSING_STRICT_REGRESSIONS.length, 3);
+});
+
+test('BE-ARC/RPL/ESG 文档拒绝缺审计快照和生产接线边界外旧说法', () => {
+  const missingAudit = dataProcessingDocumentErrors(
+    '执行 pnpm verify。',
+    'docs/dev/BE-ARC-01-Transactional-Outbox-Publisher.md',
+  );
+  assert.ok(missingAudit.some((error) => error.includes('审计快照')));
+
+  const staleBoundary = dataProcessingDocumentErrors(
+    '执行 pnpm verify；见 BE-ARC-01-02-BE-RPL-01-BE-ESG-01全面复盘检查报告-2026-09-07.md。调度触发归 IAC 边界外。',
+    'docs/dev/BE-ESG-01-小时日聚合Worker.md',
+  );
+  assert.ok(staleBoundary.some((error) => error.includes('生产接线')));
 });
 
 test('BE-IOT 文档拒绝缺少审计快照、Report P2002 与 Media 另路由旧说法', () => {

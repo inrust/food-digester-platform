@@ -11,7 +11,7 @@ import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import type { ArchiveEventMessage, ArchiveEventSender, MqttMessageSender, MqttPublishInput } from '@fdp/aws-clients';
-import { createOutboxPublisher } from '../src/index.js';
+import { createNotificationPublisher, createOutboxPublisher } from '../src/index.js';
 import { createTestDb } from '../../cloud-api/test/helpers.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
@@ -132,16 +132,13 @@ describe('createOutboxPublisher（BE-ARC-01）', () => {
         },
       },
     });
-    const archive = new RecordingSender();
     const mqtt = new RecordingMqttSender();
-    const result = await createOutboxPublisher({
+    const result = await createNotificationPublisher({
       client: prisma,
-      sender: archive,
-      notificationSender: mqtt,
+      sender: mqtt,
     }).publishPendingBatch();
 
     assert.deepEqual(result, { claimed: 1, published: 1, retried: 0, failed: 0 });
-    assert.equal(archive.sent.length, 0);
     assert.equal(mqtt.published.length, 1);
     assert.equal(mqtt.published[0]?.topic, `bnx/device/${deviceId}/notification`);
     assert.equal(mqtt.published[0]?.qos, 1);
@@ -150,6 +147,102 @@ describe('createOutboxPublisher（BE-ARC-01）', () => {
     assert.equal(payload.meta.ts, row.createdAt.toISOString());
     assert.deepEqual(payload.data, { type: 'CERTIFICATE_ROTATION_REQUIRED' });
     assert.equal((await prisma.outboxEvent.findUniqueOrThrow({ where: { id: row.id } })).status, 'PUBLISHED');
+  });
+
+  test('Archive 与 Notification Publisher 职责隔离，彼此不领取对方事件', async () => {
+    const { eventIds } = await plantCommittedBusinessWithOutbox(1);
+    seqCounter += 1;
+    const deviceId = `dev-pub-split-${seqCounter}`;
+    const notification = await prisma.outboxEvent.create({
+      data: {
+        eventType: 'CERTIFICATE_ROTATION_REQUIRED',
+        aggregateType: 'device',
+        aggregateId: deviceId,
+        payload: {
+          topic: `bnx/device/${deviceId}/notification`,
+          data: { type: 'CERTIFICATE_ROTATION_REQUIRED' },
+        },
+      },
+    });
+    const archiveSender = new RecordingSender();
+    const mqttSender = new RecordingMqttSender();
+
+    assert.deepEqual(await publisher(archiveSender).publishPendingBatch(), {
+      claimed: 1,
+      published: 1,
+      retried: 0,
+      failed: 0,
+    });
+    assert.equal(archiveSender.sent[0]?.eventId, eventIds[0]);
+    assert.equal((await prisma.outboxEvent.findUniqueOrThrow({ where: { id: notification.id } })).status, 'PENDING');
+
+    assert.deepEqual(await createNotificationPublisher({ client: prisma, sender: mqttSender }).publishPendingBatch(), {
+      claimed: 1,
+      published: 1,
+      retried: 0,
+      failed: 0,
+    });
+    assert.equal(mqttSender.published.length, 1);
+  });
+
+  test('双 Archive Publisher 并发时同一行只能取得一个租约并发送一次', async () => {
+    const { eventIds } = await plantCommittedBusinessWithOutbox(1);
+    let releaseSend!: () => void;
+    let signalClaimed!: () => void;
+    const sendReleased = new Promise<void>((resolve) => (releaseSend = resolve));
+    const claimed = new Promise<void>((resolve) => (signalClaimed = resolve));
+    const sent: string[] = [];
+    const blockingSender: ArchiveEventSender = {
+      async send(message) {
+        sent.push(message.eventId);
+        signalClaimed();
+        await sendReleased;
+      },
+    };
+
+    const first = publisher(blockingSender).publishPendingBatch();
+    await claimed;
+    const second = await publisher(blockingSender).publishPendingBatch();
+    releaseSend();
+    const firstResult = await first;
+
+    assert.equal(firstResult.claimed, 1);
+    assert.equal(second.claimed, 0);
+    assert.deepEqual(sent, [eventIds[0]]);
+    const row = await prisma.outboxEvent.findUniqueOrThrow({ where: { id: eventIds[0] } });
+    assert.equal(row.status, 'PUBLISHED');
+    assert.equal(row.retryCount, 0);
+    assert.equal(row.leaseToken, null);
+    assert.equal(row.leaseUntil, null);
+  });
+
+  test('过期租约可恢复领取，未过期租约不会被抢占', async () => {
+    const { eventIds } = await plantCommittedBusinessWithOutbox(1);
+    const rowId = eventIds[0] as string;
+    await prisma.outboxEvent.update({
+      where: { id: rowId },
+      data: { leaseToken: 'crashed-owner', leaseUntil: new Date('2026-09-08T10:05:00Z') },
+    });
+    const sender = new RecordingSender();
+
+    const blocked = await createOutboxPublisher({
+      client: prisma,
+      sender,
+      now: () => new Date('2026-09-08T10:04:59Z'),
+    }).publishPendingBatch();
+    assert.equal(blocked.claimed, 0);
+
+    const recovered = await createOutboxPublisher({
+      client: prisma,
+      sender,
+      now: () => new Date('2026-09-08T10:05:00Z'),
+      leaseToken: () => 'recovery-owner',
+    }).publishPendingBatch();
+    assert.equal(recovered.published, 1);
+    assert.deepEqual(
+      sender.sent.map((message) => message.eventId),
+      [rowId],
+    );
   });
 
   test('批量发布：稳定事件 ID + 原子记录 publishedAt；已发布不再领取', async () => {

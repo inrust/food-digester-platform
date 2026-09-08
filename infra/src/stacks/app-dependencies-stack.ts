@@ -65,6 +65,10 @@ const ONBOARDING_PROVISIONING_ENTRY = resolve(
 const CERT_SWEEPER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/certificate-package-sweeper-entry.ts');
 const INGESTION_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/ingestion-entry.ts');
 const OUTBOX_PUBLISHER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/outbox-publisher-entry.ts');
+const NOTIFICATION_PUBLISHER_ENTRY = resolve(
+  WORKSPACE_ROOT,
+  'apps/ingestion-worker/src/runtime/notification-publisher-entry.ts',
+);
 const ARCHIVE_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/archive-entry.ts');
 const SUMMARY_ENTRY = resolve(WORKSPACE_ROOT, 'apps/summary-worker/src/runtime/summary-entry.ts');
 const REPLAY_TRIGGER_PUBLISHER_ENTRY = resolve(
@@ -110,6 +114,7 @@ interface ComputeResources {
   readonly ingestion: lambda.Function;
   readonly archive: lambda.Function;
   readonly outboxPublisher: lambda.Function;
+  readonly notificationPublisher: lambda.Function;
   readonly summary: lambda.Function;
   readonly replayTriggerPublisher: lambda.Function;
   readonly replay: lambda.Function;
@@ -581,7 +586,7 @@ export class AppDependenciesStack extends Stack {
     );
     storage.raw.grantWrite(archive);
 
-    // Outbox Publisher：事务性 Outbox → Archive SQS / 设备 Notification MQTT。
+    // Archive Outbox Publisher：严格只消费 ARCHIVE，事务性 Outbox → Archive SQS。
     const outboxPublisher = mkFunction('OutboxPublisherFn', 'outbox-publisher', {
       timeout: Duration.seconds(60),
       environment: {
@@ -592,24 +597,37 @@ export class AppDependenciesStack extends Stack {
     });
     messaging.archive.grantSendMessages(outboxPublisher);
     dbSecretGrant(outboxPublisher);
-    outboxPublisher.addToRolePolicy(
+    new events.Rule(this, 'OutboxPublisherSchedule', {
+      ruleName: this.naming.name('outbox-publisher'),
+      schedule: events.Schedule.rate(Duration.minutes(1)),
+      targets: [new eventsTargets.LambdaFunction(outboxPublisher)],
+    });
+
+    // Notification Publisher：独立消费 CT-04 通知事件，仅持有 IoT Publish 权限。
+    const notificationPublisher = mkFunction('NotificationPublisherFn', 'notification-publisher', {
+      timeout: Duration.seconds(60),
+      environment: { DB_SECRET_ARN: dbSecret },
+      entry: NOTIFICATION_PUBLISHER_ENTRY,
+    });
+    dbSecretGrant(notificationPublisher);
+    notificationPublisher.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'IotDataEndpointDiscovery',
         actions: ['iot:DescribeEndpoint'],
         resources: ['*'],
       }),
     );
-    outboxPublisher.addToRolePolicy(
+    notificationPublisher.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'DeviceNotificationPublish',
         actions: ['iot:Publish'],
         resources: [this.formatArn({ service: 'iot', resource: 'topic', resourceName: 'bnx/device/*/notification' })],
       }),
     );
-    new events.Rule(this, 'OutboxPublisherSchedule', {
-      ruleName: this.naming.name('outbox-publisher'),
+    new events.Rule(this, 'NotificationPublisherSchedule', {
+      ruleName: this.naming.name('notification-publisher'),
       schedule: events.Schedule.rate(Duration.minutes(1)),
-      targets: [new eventsTargets.LambdaFunction(outboxPublisher)],
+      targets: [new eventsTargets.LambdaFunction(notificationPublisher)],
     });
 
     // Summary Worker：小时/日聚合（BE-ESG-01）
@@ -937,6 +955,7 @@ export class AppDependenciesStack extends Stack {
       ingestion,
       archive,
       outboxPublisher,
+      notificationPublisher,
       summary,
       replayTriggerPublisher,
       replay,

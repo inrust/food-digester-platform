@@ -88,6 +88,7 @@ describe('资源命名（环境前缀）', () => {
       'ingestion',
       'archive',
       'outbox-publisher',
+      'notification-publisher',
       'summary',
       'replay-trigger-publisher',
       'replay',
@@ -225,7 +226,7 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('Outbox Publisher 仅可发现 IoT Endpoint 并发布设备 notification Topic', () => {
+  test('独立 Notification Publisher 仅可发现 IoT Endpoint 并发布设备 notification Topic', () => {
     const statements = collectPolicyStatements(template.toJSON()).map(({ statement }) => statement);
     const discovery = statements.find((candidate) => candidate.Sid === 'IotDataEndpointDiscovery');
     assert.isDefined(discovery);
@@ -235,6 +236,19 @@ describe('验收：IAM 最小权限', () => {
     assert.deepEqual(publish.Action, 'iot:Publish');
     assert.include(JSON.stringify(publish.Resource), 'topic/bnx/device/*/notification');
     assert.notInclude(JSON.stringify(publish.Resource), 'topic/bnx/device/*/*');
+  });
+
+  test('Archive 与 Notification Publisher 使用独立生产函数和环境依赖', () => {
+    const functions = Object.values(resourcesOfType(template, 'AWS::Lambda::Function'));
+    const archivePublisher = functions.find((fn) => fn.Properties.FunctionName === 'fdp-test-outbox-publisher');
+    const notificationPublisher = functions.find(
+      (fn) => fn.Properties.FunctionName === 'fdp-test-notification-publisher',
+    );
+    assert.isDefined(archivePublisher);
+    assert.isDefined(notificationPublisher);
+    assert.property(archivePublisher.Properties.Environment.Variables, 'ARCHIVE_QUEUE_URL');
+    assert.notProperty(notificationPublisher.Properties.Environment.Variables, 'ARCHIVE_QUEUE_URL');
+    assert.notEqual(archivePublisher.Properties.Code.S3Key, notificationPublisher.Properties.Code.S3Key);
   });
 
   test('Ingestion 与 deadline 仅可撤销当前账号/区域的 IoT certificate 资源', () => {
@@ -249,13 +263,13 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('13 个 Lambda 使用各自独立执行角色', () => {
+  test('14 个 Lambda 使用各自独立执行角色', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
       String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),
     );
-    assert.equal(fns.length, 13);
+    assert.equal(fns.length, 14);
     const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
-    assert.equal(roles.size, 13);
+    assert.equal(roles.size, 14);
   });
 
   test('P0 生产组合根与既有 API/sweeper 使用真实资产包而非内联 501 占位代码', () => {
@@ -263,6 +277,7 @@ describe('验收：IAM 最小权限', () => {
     for (const name of [
       'fdp-test-ingestion',
       'fdp-test-outbox-publisher',
+      'fdp-test-notification-publisher',
       'fdp-test-archive',
       'fdp-test-summary',
       'fdp-test-replay-trigger-publisher',
@@ -459,7 +474,11 @@ describe('验收：数据库凭据与消息管线', () => {
     for (const esm of esms) {
       assert.equal(esm.Properties.FunctionResponseTypes?.[0], 'ReportBatchItemFailures');
     }
-    template.resourceCountIs('AWS::Events::Rule', 7);
+    template.resourceCountIs('AWS::Events::Rule', 8);
+    template.hasResourceProperties('AWS::Events::Rule', {
+      Name: 'fdp-test-notification-publisher',
+      ScheduleExpression: 'rate(1 minute)',
+    });
     template.hasResourceProperties('AWS::Events::Rule', {
       Name: 'fdp-test-replay-trigger-publisher',
       ScheduleExpression: 'rate(1 minute)',

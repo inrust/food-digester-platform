@@ -1,48 +1,35 @@
 # BE-ESG-01 小时/日聚合 Worker
 
-> 任务规格：`docs/管理后台开发任务清单.md` L551-559。优先级 P1，依赖 BE-IOT-05、DB-02。
+任务来源：[管理后台开发任务清单](../管理后台开发任务清单.md) 中 `BE-ESG-01`；依赖 BE-IOT-05、DB-02。
 
-## 范围与功能边界
+## 范围
 
-- 按窗口重算三张聚合表：`telemetry_hourly`（完整率补齐）、`telemetry_daily`（rollup）、`esg_daily_summary`（ESG 日汇总）。
-- 保存计算方法版本（`esg_calculation_versions`，ensure get-or-create ACTIVE 行），ESG 日汇总写入 `calculationVersionId`。
-- 乱序/迟到记录可在允许窗口内重算收敛；所有写入按唯一键 findFirst→update/else create，upsert 幂等。
-- 边界：不承担正式碳核证，不定义设备侧原始指标；Site 维度未建模（表结构仅 device/customer）。
+按 event time、device、历史 Customer/Site 维度重算 `telemetry_hourly`、`telemetry_daily` 和 `esg_daily_summary`，持久化完整率、缺失数与计算版本。乱序和迟到记录在回看窗口内重算收敛。不承担正式碳核证，也不重新定义设备侧指标。
 
 ## 实现
 
-| 文件 | 说明 |
-|---|---|
-| `apps/summary-worker/src/aggregation/worker.ts` | `createAggregationWorker({client}).recomputeWindow({from,to})` |
-| `apps/ingestion-worker/src/aggregation/index.ts` | 导出入口 |
-| `apps/ingestion-worker/src/index.ts` | 汇出 aggregation 模块 |
-| `apps/ingestion-worker/test/aggregation-worker.test.ts` | Fixture 验收测试（PGlite 真实 PostgreSQL） |
+| 文件 | 职责 |
+| --- | --- |
+| [worker.ts](../../apps/summary-worker/src/aggregation/worker.ts) | event-time 分桶、维度分组、完整率/缺失数、确定性 rollup 与事务内原子 upsert |
+| [summary-entry.ts](../../apps/summary-worker/src/runtime/summary-entry.ts) | EventBridge 入口，根据 UTC 当前时刻和回看窗口执行重算 |
+| [schema.prisma](../../packages/database/prisma/schema.prisma) | receipt 的 occurredAt/customerId/siteId 快照及三张聚合表的历史维度键 |
+| [correctness migration](../../packages/database/prisma/migrations/20260907143000_archive_replay_esg_correctness/migration.sql) | event time、历史维度、缺失数和唯一键迁移 |
 
-### 计算口径（计算版本 `aggregator@1.0.0`，formula 落库）
+## 计算与一致性
 
-1. **telemetry_hourly 完整率补齐**：窗口内 `topicType='telemetry'` 的 receipt 按 `deviceId + hourFloor(receivedAt)` 分桶；完整率 = 去重已收 seq 数 / `(max(seq) - min(seq) + 1)`（百分比保留 2 位），缺失数钳制 ≥ 0；按 `(deviceId, bucketStart)` updateMany 回写 `completenessPct`。
-2. **telemetry_daily**：窗口内 hourly 行按 `deviceId + utcDay(bucketStart)` 分组 rollup——`sampleCount` 求和；metrics 按 count 加权 avg、min-of-min、max-of-max（键排序 + 行按 bucketStart 排序保证确定性）；完整率取当日全部 receipt 的同口径计算。
-3. **esg_daily_summary**：窗口内 `esg_reports` 按 `deviceId + utcDay(periodStartTime)` 分组——投料/出料/减量/能耗/碳减排求和、报告完整率均值（round2）、缺失数求和，写入 `calculationVersionId`。
-
-确定性保障：分组键排序遍历、指标键排序、求和顺序固定（行按时间排序）、round2 统一取整 → 固定输入必产生固定输出。
-
-### Prisma Decimal 归一
-
-Decimal 列（报告重量/能耗等）经 Prisma 返回为 Decimal 对象而非 number，`asNumber` 统一经 `toNumber()` 归一后再参与求和/均值，避免被误判为非数值而漏计。
+- `ingestion_receipts.occurredAt` 在首次接收时保存设备消息 event time；旧记录仅在迁移时以 `receivedAt` 回填。Customer/Site 同时保存不可变历史快照，设备后续转移不会改写旧聚合归属。
+- Hourly 以 `deviceId + customerId + siteId + UTC hour(occurredAt)` 分桶；完整率为去重 seq 数除以闭区间期望数，缺失数独立持久化。
+- Daily 按相同历史维度汇总 hourly；数值指标用 count 加权平均、min-of-min、max-of-max。ESG daily 对报告字段求和、完整率求均值、缺失数求和并关联 ACTIVE 计算版本。
+- 每个逻辑键在数据库事务与 advisory lock 内执行 create/update，避免并发重算产生重复或丢更新。排序和统一取整保证固定输入得到固定输出。
+- Summary Lambda 与每小时 EventBridge 调度已进入生产组合根，当前回看窗口由 `SUMMARY_LOOKBACK_HOURS` 配置。
 
 ## 验收证据
 
-`pnpm vitest run apps/ingestion-worker/test/aggregation-worker.test.ts` — 4 项全部通过：
+[aggregation-worker.test.ts](../../apps/summary-worker/test/aggregation-worker.test.ts) 使用 PGlite 覆盖固定输出、重复执行、迟到收敛、event time 跨桶、历史 Customer/Site、缺失数、并发重算和计算版本幂等。
 
-1. **固定输入产生确定输出**：seq `{1,2,3,5,6,9,10}` → hourly 完整率 70.00%；当日 `{...,11,12}` → daily 75.00%；加权 avg（`chamberTempC` 56、`powerKw` 2.6）、min/max 合并；ESG 求和（31/24/7/30/14）、完整率均值 85、缺失 3、`calculationVersionId` 关联 ACTIVE 版本。
-2. **重复执行结果不变**：同窗口二次运行后 hourly/daily/esg 三表快照 deepEqual；行数不增（upsert 覆盖同键）。
-3. **乱序迟到收敛**：首跑 seq `{1,2,4}` → 75%；补到 seq 3 与迟到 report 后重算同窗口 → 100%、ESG 求和更新。
-4. **计算版本幂等**：重复 ensure 不产生重复版本行，formula 内容正确。
+当前本地全仓证据命令为 `pnpm verify`；精确测试快照、问题闭环和目标环境边界见 [BE-ARC/RPL/ESG 全面复盘检查报告](../audit/BE-ARC-01-02-BE-RPL-01-BE-ESG-01全面复盘检查报告-2026-09-07.md)。EventBridge 实际触发、目标 PostgreSQL 迁移和聚合表结果必须由目标 AWS 结构化回执证明。
 
-全量回归：`pnpm vitest run apps/ingestion-worker`（13 文件 63 项通过）；`pnpm verify` 全链退出 0。
+## 运维边界
 
-## 未决风险
-
-- **receipt 按 receivedAt 归桶（近似）**：`ingestion_receipts` 表无 event time 列，小时/日完整率按云端接收时间归桶；若设备长时间离线后批量补报，完整率会记入补报到达的桶而非事件发生桶。如需严格 event time 口径，需在 receipt 增加 `occurredAt` 列（Schema 变更，另起任务）。
-- **每日全量窗口重算**：当前按调用方给定窗口全量重算，未做增量游标；窗口内数据量大时由调用方控制窗口粒度（如每小时触发重算当日）。
-- **调度接入**：Worker 仅暴露 `recomputeWindow`，定时触发（EventBridge Scheduler）属 IAC 范畴，未在本任务实现。
+- 当前按配置的回看窗口重算，不维护无限期增量游标；窗口外迟到数据需受控扩大窗口补算。
+- 迁移必须先在目标环境演练、备份并观察锁表时间，本地 PGlite 通过不等同于生产 PostgreSQL 验收。

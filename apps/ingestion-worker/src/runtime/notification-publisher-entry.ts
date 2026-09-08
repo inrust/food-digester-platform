@@ -1,6 +1,6 @@
-import { createSqsArchiveSender, resolveDatabaseUrl } from '@fdp/aws-clients';
+import { createAwsIotProvisioningClient, createIotDataPublisher, resolveDatabaseUrl } from '@fdp/aws-clients';
 import { createPrismaClient } from '@fdp/database';
-import { createOutboxPublisher } from '../outbox/publisher.js';
+import { createNotificationPublisher } from '../outbox/notification-publisher.js';
 import type { PublishBatchResult } from '../outbox/publisher.js';
 
 const required = (name: string): string => {
@@ -14,13 +14,14 @@ let publishPendingBatch: (() => Promise<PublishBatchResult>) | undefined;
 async function initialize(): Promise<() => Promise<PublishBatchResult>> {
   const region = required('AWS_REGION');
   const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
-  return createOutboxPublisher({
+  const endpoint = await createAwsIotProvisioningClient({ region }).getDataEndpoint();
+  return createNotificationPublisher({
     client,
-    sender: createSqsArchiveSender({ queueUrl: required('ARCHIVE_QUEUE_URL'), region }),
+    sender: createIotDataPublisher({ endpoint, region }),
   }).publishPendingBatch;
 }
 
-/** EventBridge 生产入口：仅把 ARCHIVE 事件发送至 Archive SQS。 */
+/** EventBridge 生产入口：仅发布 CT-04 设备 Notification；不会读取 ARCHIVE。 */
 export async function handler(): Promise<PublishBatchResult> {
   publishPendingBatch ??= await initialize();
   return publishPendingBatch();
