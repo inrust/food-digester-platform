@@ -32,6 +32,8 @@ export interface CursorTableProps<T> {
   readonly onRefresh?: () => void;
   readonly emptyText?: string;
   readonly ariaLabel: string;
+  /** 行级 className（如 CRITICAL 告警显著行）。 */
+  readonly rowClassName?: (row: T) => string | undefined;
 }
 
 export function CursorTable<T>({
@@ -49,6 +51,7 @@ export function CursorTable<T>({
   onRefresh,
   emptyText = '暂无数据',
   ariaLabel,
+  rowClassName,
 }: CursorTableProps<T>) {
   if (error !== undefined && error !== null) {
     return <ErrorNotice error={error} {...(onRefresh !== undefined ? { onRefresh } : {})} />;
@@ -97,13 +100,16 @@ export function CursorTable<T>({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr key={rowKey(row)}>
-                {columns.map((column) => (
-                  <td key={column.key}>{column.render(row)}</td>
-                ))}
-              </tr>
-            ))}
+            {rows.map((row) => {
+              const extraClass = rowClassName?.(row);
+              return (
+                <tr key={rowKey(row)} {...(extraClass !== undefined ? { className: extraClass } : {})}>
+                  {columns.map((column) => (
+                    <td key={column.key}>{column.render(row)}</td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}

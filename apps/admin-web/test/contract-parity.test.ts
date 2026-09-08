@@ -29,6 +29,7 @@ import { DEVICE_MANAGE_COVERAGE } from '../src/pages/device-manage/device-manage
 import { ENTITLEMENT_CODES, LICENSE_COVERAGE } from '../src/pages/licenses/license-state.js';
 import { CONFIG_COVERAGE, CONFIG_V1_FIELDS } from '../src/pages/configuration/configuration-state.js';
 import { DEVICE_USER_COVERAGE } from '../src/pages/device-users/device-user-state.js';
+import { ALARM_ACTION_MATRIX, ALARM_SEVERITY_OPTIONS, ALARM_STATUS_OPTIONS } from '../src/pages/alarms/alarm-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -49,8 +50,8 @@ test('CT-06：9 个菜单项的 routeId/label/pageState/roles 与路由注册表
   assert.equal(matrix.menus.length, 9);
 
   const menuRoutes = APP_ROUTES.filter((route) => route.menuGroup !== null);
-  // 扩展路由（CT-06 矩阵外，按 APP_ROUTES 出现顺序）：FE-09 /configurations；FE-05 /customers、/sites；FE-08 /licenses；FE-09 /device-users
-  const EXTENSION_ROUTES = ['/configurations', '/customers', '/sites', '/licenses', '/device-users'];
+  // 扩展路由（CT-06 矩阵外，按 APP_ROUTES 出现顺序）：FE-09 /configurations；FE-10 /alarms；FE-05 /customers、/sites；FE-08 /licenses；FE-09 /device-users
+  const EXTENSION_ROUTES = ['/configurations', '/alarms', '/customers', '/sites', '/licenses', '/device-users'];
   const matrixRoutes = menuRoutes.filter((r) => !EXTENSION_ROUTES.includes(r.path));
   assert.equal(matrixRoutes.length, matrix.menus.length);
   // 扩展路由必须在此显式登记，防止路由表无约束膨胀
@@ -274,6 +275,19 @@ test('FE-09：CT-06 配置/设备用户锚点覆盖（device-manage 配置元素
   assertCoverage('device-manage', ['BE-CFG-01'], CONFIG_COVERAGE);
   // 设备用户：settings 页 BE-DUSR-01/02 元素由 /device-users 页承载（FE-16 平台用户元素不在此列）
   assertCoverage('settings', ['BE-DUSR-01', 'BE-DUSR-02'], DEVICE_USER_COVERAGE);
+});
+
+test('FE-10：Alarm severity/status 枚举与 BE-ALM-01 契约一致', () => {
+  const api = readJson('contracts/rest/admin-alarm-api.json') as {
+    components: { schemas: { Alarm: { properties: { severity: { enum: string[] }; status: { enum: string[] } } } } };
+  };
+  const { severity, status } = api.components.schemas.Alarm.properties;
+  assert.deepEqual([...ALARM_SEVERITY_OPTIONS], severity.enum);
+  assert.deepEqual([...ALARM_STATUS_OPTIONS], status.enum);
+  // 状态机矩阵不超出契约封闭校验（ACTIVE→ACKNOWLEDGED/CLEARED；ACKNOWLEDGED→CLEARED；CLEARED 终态）
+  assert.deepEqual(ALARM_ACTION_MATRIX.ACTIVE, ['acknowledge', 'clear']);
+  assert.deepEqual(ALARM_ACTION_MATRIX.ACKNOWLEDGED, ['clear']);
+  assert.deepEqual(ALARM_ACTION_MATRIX.CLEARED, []);
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {

@@ -34,7 +34,8 @@ export type PageState =
   | 'sites'
   | 'licenses'
   | 'configurations'
-  | 'device-users';
+  | 'device-users'
+  | 'alarms';
 
 export interface AppRoute {
   readonly path: string;
@@ -104,6 +105,14 @@ export const APP_ROUTES: readonly AppRoute[] = [
     pageState: 'device-consumable',
     label: '耗材查看',
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'CustomerAdmin', 'CustomerViewer'],
+    menuGroup: 'device',
+  },
+  // FE-10 扩展路由（CT-06 矩阵外）：alarm:read = 全部五角色；Customer 角色租户隔离由服务端强制
+  {
+    path: '/alarms',
+    pageState: 'alarms',
+    label: '告警与事件',
+    roles: ALL_ROLES,
     menuGroup: 'device',
   },
   {
