@@ -12,6 +12,10 @@ import type { ClientCertIdentity } from '@fdp/auth';
 import type { DbClient } from '@fdp/database';
 import { mapDbErrorToHttp } from '@fdp/database';
 import { DeviceDeactivateError, confirmDeactivation, verifyDeactivateIdentity } from './deactivate.js';
+import {
+  processRetirementIotRevocations,
+  type RetirementCertificateRevoker,
+} from '../admin/device-retirement/iot-revocation.js';
 
 export interface DeviceDeactivateRequest {
   readonly identity?: ClientCertIdentity | undefined;
@@ -26,6 +30,7 @@ export interface DeviceDeactivateResponse {
 
 export interface DeviceDeactivateHandlerDeps {
   readonly client: DbClient;
+  readonly iot: RetirementCertificateRevoker;
   readonly now?: () => Date;
 }
 
@@ -61,6 +66,12 @@ export function createDeviceDeactivateHandler(
         throw new DeviceDeactivateError('VALIDATION_FAILED', 'Request body is not allowed');
       }
       const result = await confirmDeactivation(deps.client, identity, now);
+      const revocation = await processRetirementIotRevocations(deps.client, deps.iot, {
+        deviceId: result.deviceId,
+        now: now(),
+        batchSize: 1,
+      });
+      if (revocation.failed > 0) throw new Error('IoT certificate deactivation failed');
       return {
         status: 200,
         body: { data: result, meta: { requestId: req.requestId, timestamp: now().toISOString() } },

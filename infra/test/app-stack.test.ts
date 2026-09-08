@@ -279,6 +279,21 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
+  test('退役三条执行路径仅可停用当前账号/区域的 IoT certificate 资源', () => {
+    const statements = collectPolicyStatements(template.toJSON()).map(({ statement }) => statement);
+    for (const sid of [
+      'DeviceRetirementCertificateDeactivate',
+      'AdminRetirementCertificateDeactivate',
+      'RetirementTimeoutCertificateDeactivate',
+    ]) {
+      const statement = statements.find((candidate) => candidate.Sid === sid);
+      assert.isDefined(statement, `缺少 ${sid}`);
+      assert.deepEqual(statement.Action, 'iot:UpdateCertificate');
+      assert.include(JSON.stringify(statement.Resource), ':cert/*');
+      assert.notEqual(statement.Resource, '*');
+    }
+  });
+
   test('15 个 Lambda 使用各自独立执行角色', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
       String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),

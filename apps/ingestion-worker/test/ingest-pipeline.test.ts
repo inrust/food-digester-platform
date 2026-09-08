@@ -61,7 +61,9 @@ const mediaDispatcherDeps = {
 
 let seq = 0;
 /** 落库 Active 设备（挂客户）+ ACTIVE 证书。 */
-async function plantDevice(options: { certificateStatus?: string; withCustomer?: boolean } = {}) {
+async function plantDevice(
+  options: { certificateStatus?: string; withCustomer?: boolean; lifecycleStatus?: string } = {},
+) {
   seq += 1;
   const deviceId = `dev-ing-${seq}`;
   let customerId: string | null = null;
@@ -77,7 +79,7 @@ async function plantDevice(options: { certificateStatus?: string; withCustomer?:
       hardwareVersion: 'HW1.0',
       manufacturer: 'Hiddenjoy',
       manufactureDate: new Date('2026-01-01T00:00:00Z'),
-      lifecycleStatus: 'Active',
+      lifecycleStatus: options.lifecycleStatus ?? 'Active',
       customerId,
     },
   });
@@ -495,6 +497,24 @@ describe('createIngestionHandler（BE-IOT-02 校验管线）', () => {
       ['UNKNOWN_DEVICE', 'IDENTITY_VIOLATION', 'IDENTITY_VIOLATION', 'IDENTITY_VIOLATION'],
     );
     assert.equal(h.quarantined[3]?.errorPath, 'iotDeviceId');
+  });
+
+  test('Retired 设备即使证书仍 ACTIVE，八类业务 MQTT 也全部失败关闭', async () => {
+    const retired = await plantDevice({ lifecycleStatus: 'Retired' });
+    const topicTypes = ['heartbeat', 'telemetry', 'report', 'alarm', 'event', 'ack', 'tamper', 'media'];
+    const h = harness();
+    await h.handler({
+      Records: topicTypes.map((type) => ({
+        messageId: `sqs-retired-${type}`,
+        body: envelopeBody(heartbeatPayload(`RETIRED-${type}`), { ...retired, type }),
+      })),
+    });
+    assert.equal(h.validated.length, 0);
+    assert.equal(h.quarantined.length, topicTypes.length);
+    assert.deepEqual(
+      h.quarantined.map((item) => [item.errorType, item.errorPath]),
+      topicTypes.map(() => ['IDENTITY_VIOLATION', 'iotDeviceId']),
+    );
   });
 
   test('时钟偏差超阈值进 Quarantine（CLOCK_SKEW，路径 meta.ts）', async () => {

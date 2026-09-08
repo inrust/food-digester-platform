@@ -37,6 +37,11 @@ import {
   retirementStateNotAllowed,
   retirementValidationFailed,
 } from './errors.js';
+import {
+  processRetirementIotRevocations,
+  type RetirementCertificateRevoker,
+  type RetirementIotRevocationResult,
+} from './iot-revocation.js';
 
 export const DEVICE_RETIRED_NOTIFICATION = 'DEVICE_RETIRED' as const;
 /** DOM-01：仅 Active/Suspended 可退役。 */
@@ -379,6 +384,7 @@ export interface RetirementTimeoutEvaluation {
   readonly completed: number;
   readonly skipped: number;
   readonly completedDeviceIds: readonly string[];
+  readonly iotRevocations: RetirementIotRevocationResult;
 }
 
 /**
@@ -387,7 +393,11 @@ export interface RetirementTimeoutEvaluation {
  */
 export async function evaluateRetirementTimeouts(
   rootClient: DbClient,
-  options: { readonly now?: Date; readonly batchSize?: number } = {},
+  options: {
+    readonly now?: Date;
+    readonly batchSize?: number;
+    readonly revoker?: RetirementCertificateRevoker;
+  } = {},
 ): Promise<RetirementTimeoutEvaluation> {
   const at = options.now ?? new Date();
   const batchSize = Math.max(1, Math.min(options.batchSize ?? 100, 1000));
@@ -428,10 +438,18 @@ export async function evaluateRetirementTimeouts(
     else skipped += 1;
   }
 
+  const iotRevocations = options.revoker
+    ? await processRetirementIotRevocations(rootClient, options.revoker, {
+        now: at,
+        batchSize,
+      })
+    : { examined: 0, completed: 0, failed: 0, skipped: 0 };
+
   return {
     examined: candidates.length,
     completed: completedDeviceIds.length,
     skipped,
     completedDeviceIds,
+    iotRevocations,
   };
 }

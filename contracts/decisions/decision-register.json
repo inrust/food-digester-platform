@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.27.0",
-  "updatedAt": "2026-09-04T11:12:55Z",
+  "registerVersion": "1.28.0",
+  "updatedAt": "2026-09-08T08:30:00Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -636,6 +636,27 @@
           "at": "2026-09-04T04:40:30Z",
           "by": "业务方（用户确认）",
           "note": "选择方案 018-A 并冻结 V1 四字段、单位、范围与默认值；cameraRefreshInterval 明确使用分钟。图像、旋转、电机阈值、温度上下限、语言及网络字段不属于 V1。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-019",
+      "version": "1.0.0",
+      "status": "frozen",
+      "title": "Device alias 规范化与唯一性",
+      "conflict": "设备 alias 的长度、Unicode 规范化、大小写与未分配设备唯一性域未冻结，且应用层事前查询不能抵御并发写入。",
+      "provisionalValue": "null 清除；非空值 trim 后做 NFC，长度 1～64 个 Unicode code point；区分大小写；同 Customer 唯一，customerId=null 共同属于未分配唯一性域；数据库约束为最终并发裁决。",
+      "approver": "业务方（本次 P0/P1 整改指令）",
+      "approvedAt": "2026-09-08T08:30:00Z",
+      "blockingTasks": ["BE-DEV-06", "FE-07", "QA-06"],
+      "affectedModules": ["BE-DEV", "FE", "QA", "DB"],
+      "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
+      "history": [
+        {
+          "version": "1.0.0",
+          "at": "2026-09-08T08:30:00Z",
+          "by": "业务方（本次 P0/P1 整改指令）",
+          "note": "按全面审计整改建议冻结现有兼容规则，并增加 NFC 与数据库级并发唯一性约束。"
         }
       ]
     }

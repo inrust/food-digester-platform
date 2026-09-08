@@ -1,4 +1,4 @@
-import { createS3ActivityExportPorts, resolveDatabaseUrl } from '@fdp/aws-clients';
+import { createAwsIotProvisioningClient, createS3ActivityExportPorts, resolveDatabaseUrl } from '@fdp/aws-clients';
 import { createPrismaClient } from '@fdp/database';
 import { createAdminOnboardingHandlers } from '../admin/onboarding/handler.js';
 import { createAdminCertificateRotationHandler } from '../admin/certificate-rotation/handler.js';
@@ -30,6 +30,7 @@ async function initialize() {
   const databaseUrl = await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region });
   const client = createPrismaClient(databaseUrl);
   const activityExportPorts = createS3ActivityExportPorts({ bucket: required('EXPORT_BUCKET_NAME'), region });
+  const iot = createAwsIotProvisioningClient({ region });
   const routes = {
     onboarding: createAdminOnboardingHandlers({ client }),
     certificateRotation: createAdminCertificateRotationHandler({ client }),
@@ -39,7 +40,7 @@ async function initialize() {
     devices: createAdminDeviceHandlers({ client }),
     assignments: createAdminDeviceAssignmentHandlers({ client }),
     statuses: createAdminDeviceStatusHandlers({ client }),
-    retirements: createAdminDeviceRetirementHandlers({ client }),
+    retirements: createAdminDeviceRetirementHandlers({ client, iot }),
     console: createAdminDeviceConsoleHandlers({ client, ...activityExportPorts }),
   };
   return createAdminLambdaRouter(

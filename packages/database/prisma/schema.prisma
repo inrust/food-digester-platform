@@ -176,10 +176,20 @@ model DeviceRetirement {
   confirmedAt          DateTime? @map("confirmed_at") @db.Timestamptz
   completionMethod     String?   @map("completion_method") // DEVICE_CONFIRM | FORCE_COMPLETE | UNCONFIRMED_TIMEOUT
   certificateRevokedAt DateTime? @map("certificate_revoked_at") @db.Timestamptz
+  // DEC-014：DB 完成后持久化 AWS IoT INACTIVE 外部副作用，失败可恢复重试
+  iotRevocationStatus        String?   @map("iot_revocation_status") // PENDING | IN_PROGRESS | FAILED | COMPLETED
+  iotRevocationAttempts      Int       @default(0) @map("iot_revocation_attempts")
+  iotRevocationRequestedAt   DateTime? @map("iot_revocation_requested_at") @db.Timestamptz
+  iotRevocationLastAttemptAt DateTime? @map("iot_revocation_last_attempt_at") @db.Timestamptz
+  iotRevocationCompletedAt   DateTime? @map("iot_revocation_completed_at") @db.Timestamptz
+  iotRevocationLastError     String?   @map("iot_revocation_last_error")
+  iotRevocationLeaseUntil    DateTime? @map("iot_revocation_lease_until") @db.Timestamptz
+  iotRevocationLeaseToken    String?   @map("iot_revocation_lease_token")
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   device Device @relation(fields: [deviceId], references: [id])
 
+  @@index([iotRevocationStatus, iotRevocationLeaseUntil])
   @@map("device_retirements")
 }
 

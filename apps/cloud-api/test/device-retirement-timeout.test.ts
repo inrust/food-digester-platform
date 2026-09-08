@@ -7,6 +7,7 @@ import {
   COMPLETION_FORCE_COMPLETE,
   completeRetirementStep,
   evaluateRetirementTimeouts,
+  processRetirementIotRevocations,
 } from '../src/index.js';
 import { createTestDb } from './helpers.js';
 
@@ -137,5 +138,50 @@ describe('evaluateRetirementTimeouts', () => {
     const retirement = await prisma.deviceRetirement.findUniqueOrThrow({ where: { deviceId: due.deviceId } });
     assert.include([COMPLETION_DEVICE_CONFIRM, COMPLETION_FORCE_COMPLETE], retirement.completionMethod);
     assert.equal(await prisma.deviceCertificate.count({ where: { deviceId: due.deviceId, status: 'REVOKED' } }), 1);
+  });
+
+  test('AWS IoT INACTIVE 中途失败持久化，后续调度可安全重试并记录结果', async () => {
+    const due = await seedPending(1);
+    await completeRetirementStep(prisma, {
+      deviceId: due.deviceId,
+      at: NOW,
+      completionMethod: COMPLETION_DEVICE_CONFIRM,
+    });
+    let calls = 0;
+    const revoker = {
+      async deactivateCertificate(certificateId: string) {
+        assert.equal(certificateId, due.certificateId);
+        calls += 1;
+        if (calls === 1) throw Object.assign(new Error('simulated IoT outage'), { name: 'ThrottlingException' });
+      },
+    };
+
+    const failed = await processRetirementIotRevocations(prisma, revoker, { now: NOW, deviceId: due.deviceId });
+    assert.equal(failed.failed, 1);
+    let retirement = await prisma.deviceRetirement.findUniqueOrThrow({ where: { deviceId: due.deviceId } });
+    assert.equal(retirement.iotRevocationStatus, 'FAILED');
+    assert.equal(retirement.iotRevocationAttempts, 1);
+    assert.equal(retirement.iotRevocationLastError, 'ThrottlingException');
+
+    const completed = await processRetirementIotRevocations(prisma, revoker, {
+      now: new Date(NOW.getTime() + 1000),
+      deviceId: due.deviceId,
+    });
+    assert.equal(completed.completed, 1);
+    retirement = await prisma.deviceRetirement.findUniqueOrThrow({ where: { deviceId: due.deviceId } });
+    assert.equal(retirement.iotRevocationStatus, 'COMPLETED');
+    assert.equal(retirement.iotRevocationAttempts, 2);
+    assert.equal(retirement.iotRevocationLastError, null);
+    assert.equal(calls, 2);
+
+    const replay = await processRetirementIotRevocations(prisma, revoker, { deviceId: due.deviceId });
+    assert.equal(replay.examined, 0);
+    assert.equal(calls, 2);
+    assert.equal(
+      await prisma.auditLog.count({
+        where: { objectId: due.deviceId, action: 'device.retire.iot_certificate_deactivate' },
+      }),
+      2,
+    );
   });
 });

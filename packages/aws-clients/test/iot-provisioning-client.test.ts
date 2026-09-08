@@ -40,6 +40,7 @@ describe('AWS IoT provisioning 生产适配器', () => {
     await adapter.attachPolicy('policy-1', 'arn:cert-1');
     await adapter.attachThingPrincipal('device-1', 'arn:cert-1');
     await adapter.revokeCertificate('cert-1');
+    await adapter.deactivateCertificate('cert-2');
     await expect(adapter.getDataEndpoint()).resolves.toBe('example-ats.iot.ap-southeast-1.amazonaws.com');
 
     assert.deepEqual(
@@ -52,12 +53,17 @@ describe('AWS IoT provisioning 生产适配器', () => {
         AttachPolicyCommand.name,
         AttachThingPrincipalCommand.name,
         UpdateCertificateCommand.name,
+        UpdateCertificateCommand.name,
         DescribeEndpointCommand.name,
       ],
     );
-    assert.deepEqual((calls.at(-2) as UpdateCertificateCommand).input, {
+    assert.deepEqual((calls.at(-3) as UpdateCertificateCommand).input, {
       certificateId: 'cert-1',
       newStatus: 'REVOKED',
+    });
+    assert.deepEqual((calls.at(-2) as UpdateCertificateCommand).input, {
+      certificateId: 'cert-2',
+      newStatus: 'INACTIVE',
     });
     assert.deepEqual((calls.at(-1) as DescribeEndpointCommand).input, { endpointType: 'iot:Data-ATS' });
     assert.deepEqual((calls[2] as TagResourceCommand).input, {

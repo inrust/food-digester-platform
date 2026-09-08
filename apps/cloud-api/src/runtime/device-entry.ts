@@ -48,7 +48,7 @@ async function initialize() {
       },
     }),
     sync: createDeviceSyncHandler({ client, maintenanceSyncIntervalSeconds: getMaintenanceSyncIntervalSeconds() }),
-    deactivate: createDeviceDeactivateHandler({ client }),
+    deactivate: createDeviceDeactivateHandler({ client, iot }),
   });
 }
 

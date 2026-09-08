@@ -1,4 +1,4 @@
-import { resolveDatabaseUrl } from '@fdp/aws-clients';
+import { createAwsIotProvisioningClient, resolveDatabaseUrl } from '@fdp/aws-clients';
 import { createPrismaClient } from '@fdp/database';
 import type { RetirementTimeoutEvaluation } from '../admin/device-retirement/service.js';
 import { createRetirementTimeoutLambdaHandler } from './retirement-timeout-lambda.js';
@@ -23,7 +23,10 @@ async function initialize(): Promise<() => Promise<RetirementTimeoutEvaluation>>
   const region = required('AWS_REGION');
   const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
   const limit = batchSize();
-  return createRetirementTimeoutLambdaHandler(client, { batchSize: limit });
+  return createRetirementTimeoutLambdaHandler(client, {
+    batchSize: limit,
+    revoker: createAwsIotProvisioningClient({ region }),
+  });
 }
 
 /** EventBridge 生产入口：按 DEC-014 精确 72 小时边界完成未确认退役。 */

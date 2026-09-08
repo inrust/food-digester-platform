@@ -15,10 +15,12 @@ import type { DbClient } from '@fdp/database';
 import { mapDbErrorToHttp } from '@fdp/database';
 import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.js';
 import { AdminRetirementError, retirementValidationFailed } from './errors.js';
+import { processRetirementIotRevocations, type RetirementCertificateRevoker } from './iot-revocation.js';
 import { forceCompleteRetirement, parseForceCompleteBody, parseRetireBody, retireDevice } from './service.js';
 
 export interface AdminDeviceRetirementHandlerDeps {
   readonly client: DbClient;
+  readonly iot: RetirementCertificateRevoker;
   readonly now?: () => Date;
 }
 
@@ -94,6 +96,12 @@ export function createAdminDeviceRetirementHandlers(
         { deviceId: requireDeviceId(req), reason: body.reason },
         now,
       );
+      const revocation = await processRetirementIotRevocations(deps.client, deps.iot, {
+        deviceId: view.deviceId,
+        now: now(),
+        batchSize: 1,
+      });
+      if (revocation.failed > 0) throw new Error('IoT certificate deactivation failed');
       return { status: 200, body: { data: view, meta: meta(req) } };
     },
   );

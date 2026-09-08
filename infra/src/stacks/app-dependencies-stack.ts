@@ -805,6 +805,13 @@ export class AppDependenciesStack extends Stack {
       entry: RETIREMENT_TIMEOUT_ENTRY,
     });
     dbSecretGrant(retirementTimeout);
+    retirementTimeout.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'RetirementTimeoutCertificateDeactivate',
+        actions: ['iot:UpdateCertificate'],
+        resources: [this.formatArn({ service: 'iot', resource: 'cert', resourceName: '*' })],
+      }),
+    );
     new events.Rule(this, 'RetirementTimeoutSchedule', {
       ruleName: this.naming.name('retirement-timeout'),
       schedule: events.Schedule.rate(Duration.minutes(5)),
@@ -937,14 +944,15 @@ export class AppDependenciesStack extends Stack {
     deviceApi.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'IotCertificateRotation',
-        actions: [
-          'iot:CreateKeysAndCertificate',
-          'iot:CreatePolicy',
-          'iot:AttachPolicy',
-          'iot:AttachThingPrincipal',
-          'iot:UpdateCertificate',
-        ],
+        actions: ['iot:CreateKeysAndCertificate', 'iot:CreatePolicy', 'iot:AttachPolicy', 'iot:AttachThingPrincipal'],
         resources: ['*'],
+      }),
+    );
+    deviceApi.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'DeviceRetirementCertificateDeactivate',
+        actions: ['iot:UpdateCertificate'],
+        resources: [this.formatArn({ service: 'iot', resource: 'cert', resourceName: '*' })],
       }),
     );
 
@@ -965,6 +973,13 @@ export class AppDependenciesStack extends Stack {
       entry: API_ENTRY,
     });
     dbSecretGrant(api);
+    api.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'AdminRetirementCertificateDeactivate',
+        actions: ['iot:UpdateCertificate'],
+        resources: [this.formatArn({ service: 'iot', resource: 'cert', resourceName: '*' })],
+      }),
+    );
     // 预签名 URL 与重放读取：仅授予业务所需 Bucket 的对象级读写
     storage.media.grantReadWrite(api);
     storage.ota.grantReadWrite(api);

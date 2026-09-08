@@ -35,7 +35,7 @@ afterAll(async () => {
 });
 
 function handler() {
-  return createDeviceDeactivateHandler({ client: prisma, now });
+  return createDeviceDeactivateHandler({ client: prisma, now, iot: { deactivateCertificate: async () => {} } });
 }
 
 function fixturePem(seed: string): string {

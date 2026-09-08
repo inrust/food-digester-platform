@@ -570,7 +570,7 @@ describe('BE-DEV-05 活动导出（异步 Worker）', () => {
     assert.equal(created.status, 202);
     const job = (created.body as DataBody).data;
     assert.equal(job.status, 'PENDING');
-    assert.deepEqual(job.filters, { level: 'WARNING' });
+    assert.deepEqual(job.filters, { level: 'WARNING', to: NOW.toISOString() });
 
     // Worker 处理
     const result = await processActivityExportJobs(deps());
@@ -638,6 +638,40 @@ describe('BE-DEV-05 活动导出（异步 Worker）', () => {
     const view = (detail.body as DataBody).data;
     assert.equal(view.downloadUrl, null);
     assert.equal(view.urlExpired, true);
+  });
+
+  test('导出冻结创建时截止点；设备转租户后 Worker 失败关闭且旧租户不可下载', async () => {
+    const h = createAdminDeviceConsoleHandlers(deps());
+    const snapshot = (
+      await h.createActivityExport(req(custActor(customerAId), { params: { deviceId: DEV_A2 }, body: {} }))
+    ).body as DataBody;
+    await prisma.deviceEvent.create({
+      data: {
+        deviceId: DEV_A2,
+        customerId: customerAId,
+        eventType: 'AFTER_EXPORT_CREATED',
+        occurredAt: new Date(NOW.getTime() + 1),
+      },
+    });
+    assert.equal((await processActivityExportJobs(deps())).completed, 1);
+    assert.notInclude(storedCsv.get(`activity-exports/${snapshot.data.exportId}.csv`) ?? '', 'AFTER_EXPORT_CREATED');
+
+    const transferred = (
+      await h.createActivityExport(req(custActor(customerAId), { params: { deviceId: DEV_A2 }, body: {} }))
+    ).body as DataBody;
+    await prisma.device.update({ where: { id: DEV_A2 }, data: { customerId: customerBId } });
+    try {
+      const result = await processActivityExportJobs(deps());
+      assert.equal(result.failed, 1);
+      assert.equal(storedCsv.has(`activity-exports/${transferred.data.exportId}.csv`), false);
+      assert.equal(
+        (await h.getActivityExport(req(custActor(customerAId), { params: { exportId: transferred.data.exportId } })))
+          .status,
+        404,
+      );
+    } finally {
+      await prisma.device.update({ where: { id: DEV_A2 }, data: { customerId: customerAId } });
+    }
   });
 
   test('Worker 失败路径：存储异常 → FAILED + error（不丢任务记录）', async () => {

@@ -69,6 +69,10 @@ export async function resolveDeviceContext(
   if (!device) {
     throw quarantineError('UNKNOWN_DEVICE', 'iotDeviceId', 'device not registered in ledger');
   }
+  // DEC-014：退役是不可逆安全边界。即使 AWS IoT INACTIVE 尚在重试，八类业务上行也必须失败关闭。
+  if (device.lifecycleStatus === 'Retired') {
+    throw quarantineError('IDENTITY_VIOLATION', 'iotDeviceId', 'retired device business MQTT is disabled');
+  }
   const active = certificate.status === 'ACTIVE';
   const firstHeartbeatCandidate =
     certificate.status === 'PENDING_CLAIM' && device.lifecycleStatus === 'OnboardingApproved';

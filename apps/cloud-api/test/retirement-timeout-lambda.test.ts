@@ -12,7 +12,13 @@ vi.mock('../src/admin/device-retirement/service.js', async (importOriginal) => (
 describe('DEC-014 retirement timeout Lambda', () => {
   test('EventBridge 调用映射到 evaluator 且传入受控批次上限', async () => {
     const client = {} as DbClient;
-    const expected = { examined: 2, completed: 1, skipped: 1, completedDeviceIds: ['device-1'] };
+    const expected = {
+      examined: 2,
+      completed: 1,
+      skipped: 1,
+      completedDeviceIds: ['device-1'],
+      iotRevocations: { examined: 1, completed: 1, failed: 0, skipped: 0 },
+    };
     const evaluator = vi.fn<RetirementTimeoutEvaluator>(async () => expected);
     const handler = createRetirementTimeoutLambdaHandler(client, { batchSize: 100, evaluator });
 
@@ -24,7 +30,13 @@ describe('DEC-014 retirement timeout Lambda', () => {
 
   test('缺省生产路径调用 evaluateRetirementTimeouts Service', async () => {
     const client = {} as DbClient;
-    const expected = { examined: 1, completed: 1, skipped: 0, completedDeviceIds: ['device-prod'] };
+    const expected = {
+      examined: 1,
+      completed: 1,
+      skipped: 0,
+      completedDeviceIds: ['device-prod'],
+      iotRevocations: { examined: 0, completed: 0, failed: 0, skipped: 0 },
+    };
     service.evaluateRetirementTimeouts.mockResolvedValueOnce(expected);
 
     const handler = createRetirementTimeoutLambdaHandler(client, { batchSize: 25 });

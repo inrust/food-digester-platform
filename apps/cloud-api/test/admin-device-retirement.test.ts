@@ -54,7 +54,7 @@ afterAll(async () => {
 });
 
 function handlers() {
-  return createAdminDeviceRetirementHandlers({ client: prisma, now });
+  return createAdminDeviceRetirementHandlers({ client: prisma, now, iot: { deactivateCertificate: async () => {} } });
 }
 
 function req(actor: ActorContext | undefined, options: Partial<AdminHttpRequest> = {}): AdminHttpRequest {
@@ -228,7 +228,11 @@ describe('POST /admin/devices/{deviceId}/retire（管理员退役）', () => {
     );
 
     // 设备确认退役（BE-SYNC-02）：证书仍 ACTIVE，可完成确认 → 断证
-    const deactivate = createDeviceDeactivateHandler({ client: prisma, now });
+    const deactivate = createDeviceDeactivateHandler({
+      client: prisma,
+      now,
+      iot: { deactivateCertificate: async () => {} },
+    });
     const confirm = await deactivate({ identity: { clientCertPem: d.pem }, requestId: 'req-ret-confirm' });
     assert.equal(confirm.status, 200, 'retire 后设备可确认（顺序正确：未先断证）');
     const cert = await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: d.certificateId } });
@@ -349,7 +353,11 @@ describe('POST /admin/devices/{deviceId}/retire/complete（force-complete）', (
     );
 
     // force-complete 后设备重复 deactivate → 幂等重放（证书撤销时间一致）
-    const deactivate = createDeviceDeactivateHandler({ client: prisma, now });
+    const deactivate = createDeviceDeactivateHandler({
+      client: prisma,
+      now,
+      iot: { deactivateCertificate: async () => {} },
+    });
     const devReplay = await deactivate({ identity: { clientCertPem: d.pem }, requestId: 'req-ret-fc' });
     assert.equal(devReplay.status, 200);
 

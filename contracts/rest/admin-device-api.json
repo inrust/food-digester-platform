@@ -4,8 +4,15 @@
     "title": "Bio-Nexa CMP Admin Device Registry API",
     "version": "0.2.0",
     "description": "BE-DEV-01 Device 台账查询接口（Cognito 认证，device:read，全部五角色）：列表（Customer/Site/Region/Subregion/生命周期/Operational/连接/授权/型号/关键字筛选 + 键集游标分页）与详情。BE-DEV-06 可编辑元数据 PATCH /devices/{deviceId}/metadata（device:write；V1 白名单仅 alias；If-Match 乐观锁；业务审计）。连接状态由 lastHeartbeatAt 与明确阈值（默认 10 分钟）派生，不写回生命周期字段；证书仅返回 certificateId + fingerprint 摘要，不返回私钥或完整证书；Region/Subregion 只取 Site（DEC-011）；Customer 角色的可见范围由服务端身份上下文强制注入。通用契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-010@1.0.0", "DEC-011@1.0.0", "DEC-012@1.0.0"],
-    "x-decision-register-version": "1.27.0"
+    "x-decision-versions": [
+      "PRI-001@1.0.0",
+      "ADP-001@1.0.0",
+      "DEC-010@1.0.0",
+      "DEC-011@1.0.0",
+      "DEC-012@1.0.0",
+      "DEC-019@1.0.0"
+    ],
+    "x-decision-register-version": "1.28.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
@@ -185,7 +192,7 @@
         "tags": ["admin"],
         "operationId": "updateDeviceMetadata",
         "summary": "设备可编辑元数据（BE-DEV-06：V1 白名单仅 alias；If-Match 乐观锁；业务审计）",
-        "description": "仅允许修改 alias（去首尾空格、长度 1..64、同一 Customer 内唯一——暂定规则，决策登记无已冻结规则）；deviceId/serialNumber/Customer/Site/Contract/License/生命周期/连接状态/固件/证书均不可经本接口修改（携带即 400）；不接受任意 JSON merge patch。If-Match 头必须携带设备当前 updatedAt（ISO8601，来自 GET 详情）；缺失/非法 → 400，不一致或并发漂移 → 409（VERSION_CONFLICT）；alias 同 Customer 冲突 → 409（CONFLICT）；失败请求不产生部分更新（单条条件更新）。",
+        "description": "仅允许修改 alias（DEC-019@1.0.0：去首尾空格、NFC、长度 1..64、大小写敏感、同一 Customer 含未分配域内唯一）；deviceId/serialNumber/Customer/Site/Contract/License/生命周期/连接状态/固件/证书均不可经本接口修改（携带即 400）；不接受任意 JSON merge patch。If-Match 头必须携带设备当前 updatedAt（ISO8601，来自 GET 详情）；缺失/非法 → 400，不一致或并发漂移 → 409（VERSION_CONFLICT）；alias 同 Customer 冲突 → 409（CONFLICT）；失败请求不产生部分更新（单条条件更新）。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
@@ -274,8 +281,11 @@
         "properties": {
           "alias": {
             "type": ["string", "null"],
+            "minLength": 1,
             "maxLength": 64,
-            "description": "设备别名（去首尾空格后 1..64 字符，同一 Customer 内唯一——暂定规则；null = 清除别名）"
+            "x-unicode-normalization": "NFC",
+            "x-case-sensitivity": "SENSITIVE",
+            "description": "设备别名（DEC-019@1.0.0：trim + NFC 后 1..64 Unicode code point；同一 Customer 含未分配域内大小写敏感唯一；null = 清除）"
           }
         },
         "description": "V1 字段白名单仅 alias；携带任何其他字段（含受保护字段）→ 400；不接受任意 JSON merge patch"

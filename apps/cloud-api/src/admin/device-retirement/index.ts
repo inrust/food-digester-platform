@@ -1,4 +1,6 @@
 export { createAdminDeviceRetirementHandlers } from './handler.js';
+export { processRetirementIotRevocations } from './iot-revocation.js';
+export type { RetirementCertificateRevoker, RetirementIotRevocationResult } from './iot-revocation.js';
 export type { AdminDeviceRetirementHandlerDeps, AdminDeviceRetirementHandlers } from './handler.js';
 export { ADMIN_RETIREMENT_ERROR_HTTP_STATUS, AdminRetirementError } from './errors.js';
 export type { AdminRetirementErrorCode } from './errors.js';

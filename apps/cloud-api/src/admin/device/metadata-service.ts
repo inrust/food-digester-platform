@@ -6,8 +6,7 @@
  *   Customer/Site/Contract/License/生命周期/连接状态/固件/证书等）→ 400
  *   （不接受任意 JSON merge patch）；不修改 Assignment/Configuration 或设备端
  *   本地名称（本接口仅更新台账 alias，设备端经 Sync 稳定域感知，见 BE-SYNC etag）；
- * - alias 规范化与校验（暂定值——决策登记中不存在 alias 唯一性/长度的已冻结规则，
- *   待冻结前按本规则执行并失败关闭）：去除首尾空格；null = 清除别名；非空时
+ * - alias 规范化与校验（DEC-019@1.0.0）：去除首尾空格并执行 NFC；null = 清除别名；非空时
  *   长度 1..64；同一 Customer 内唯一（trim 后精确匹配，大小写敏感；未分配设备在
  *   customerId=null 域内判重）→ 冲突 409 CONFLICT；
  * - If-Match 乐观锁：请求必须携带 If-Match 头 = 设备当前 updatedAt（ISO8601，来自
@@ -20,10 +19,11 @@ import type { DbClient } from '@fdp/database';
 import { audited } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
 import { assertCustomerScope } from '@fdp/auth';
+import { DEVICE_ALIAS_POLICY } from '@fdp/contracts/domain/device-alias-policy.js';
 import { deviceAliasConflict, deviceNotFound, deviceValidationFailed, deviceVersionConflict } from './errors.js';
 
-/** alias 长度上限（字符，暂定值——无已冻结规则，见文档未决风险）。 */
-export const DEVICE_ALIAS_MAX_LENGTH = 64;
+/** DEC-019@1.0.0 冻结长度上限（Unicode code point）。 */
+export const DEVICE_ALIAS_MAX_LENGTH = DEVICE_ALIAS_POLICY.maximumLength;
 
 interface DeviceRow {
   readonly id: string;
@@ -60,12 +60,17 @@ export function parseIfMatch(headerValue: string | undefined): Date {
 export function normalizeAlias(input: unknown): string | null {
   if (input === null) return null;
   if (typeof input !== 'string') throw deviceValidationFailed('alias must be a string or null');
-  const trimmed = input.trim();
-  if (trimmed.length === 0) throw deviceValidationFailed('alias must not be empty');
-  if (trimmed.length > DEVICE_ALIAS_MAX_LENGTH) {
+  const normalized = input.trim().normalize(DEVICE_ALIAS_POLICY.unicodeNormalization);
+  if (normalized.length === 0) throw deviceValidationFailed('alias must not be empty');
+  if ([...normalized].length > DEVICE_ALIAS_MAX_LENGTH) {
     throw deviceValidationFailed(`alias must be at most ${DEVICE_ALIAS_MAX_LENGTH} characters`);
   }
-  return trimmed;
+  return normalized;
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  const candidate = error as { code?: string; cause?: { code?: string } } | null;
+  return candidate?.code === 'P2002' || candidate?.code === '23505' || candidate?.cause?.code === '23505';
 }
 
 export async function updateDeviceMetadata(
@@ -98,27 +103,32 @@ export async function updateDeviceMetadata(
     if (conflict) throw deviceAliasConflict();
   }
 
-  return audited<DeviceMetadataView>(
-    deps.client,
-    {
-      objectType: 'device',
-      objectId: deviceId,
-      action: 'device.metadata.update',
-      reason: `alias "${device.alias ?? ''}" → "${alias ?? ''}"`,
-      actorId: actor.actorId,
-      actorRole: actor.roles[0],
-      customerId: device.customerId,
-      beforeValue: { alias: device.alias },
-      afterValue: { alias },
-    },
-    async (tx) => {
-      // 条件更新：并发漂移（updatedAt 已被其他写入改变）→ 409，不产生部分更新
-      const { count } = await devices(tx).updateMany({
-        where: { id: deviceId, updatedAt: expected },
-        data: { alias, updatedAt: now },
-      });
-      if (count !== 1) throw deviceVersionConflict();
-      return { deviceId, alias, updatedAt: now.toISOString() };
-    },
-  );
+  try {
+    return await audited<DeviceMetadataView>(
+      deps.client,
+      {
+        objectType: 'device',
+        objectId: deviceId,
+        action: 'device.metadata.update',
+        reason: `alias "${device.alias ?? ''}" → "${alias ?? ''}"`,
+        actorId: actor.actorId,
+        actorRole: actor.roles[0],
+        customerId: device.customerId,
+        beforeValue: { alias: device.alias },
+        afterValue: { alias },
+      },
+      async (tx) => {
+        // 条件更新：并发漂移（updatedAt 已被其他写入改变）→ 409，不产生部分更新
+        const { count } = await devices(tx).updateMany({
+          where: { id: deviceId, updatedAt: expected },
+          data: { alias, updatedAt: now },
+        });
+        if (count !== 1) throw deviceVersionConflict();
+        return { deviceId, alias, updatedAt: now.toISOString() };
+      },
+    );
+  } catch (error) {
+    if (isUniqueViolation(error)) throw deviceAliasConflict();
+    throw error;
+  }
 }

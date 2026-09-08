@@ -160,12 +160,18 @@ async function fetchEvents(
   parsed: ParsedFilter,
   take: number,
   cursor?: { readonly time: Date; readonly id: string },
+  customerId?: string | null,
 ): Promise<ActivityItem[]> {
   if (parsed.kind === 'ALARM') return [];
   // EVENT 固定 INFO：level 筛选非 INFO 时事件源为空
   if (parsed.level !== undefined && parsed.level !== 'INFO') return [];
   const rows = (await table(client, 'deviceEvent').findMany({
-    where: { AND: [{ deviceId }, ...timeCondition('occurredAt', parsed, cursor)] },
+    where: {
+      AND: [
+        { deviceId, ...(customerId !== undefined ? { customerId } : {}) },
+        ...timeCondition('occurredAt', parsed, cursor),
+      ],
+    },
     orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
     take,
   })) as unknown as EventRow[];
@@ -191,12 +197,13 @@ async function fetchAlarms(
   parsed: ParsedFilter,
   take: number,
   cursor?: { readonly time: Date; readonly id: string },
+  customerId?: string | null,
 ): Promise<ActivityItem[]> {
   if (parsed.kind === 'EVENT') return [];
   const rows = (await table(client, 'alarm').findMany({
     where: {
       AND: [
-        { deviceId },
+        { deviceId, ...(customerId !== undefined ? { customerId } : {}) },
         ...(parsed.level !== undefined ? [{ severity: parsed.level }] : []),
         ...timeCondition('detectedTime', parsed, cursor),
       ],
@@ -235,13 +242,13 @@ export async function listDeviceActivities(
   deviceId: string,
   filter: ActivityFilter = {},
 ): Promise<Page<ActivityItem>> {
-  await loadScopedDevice(deps, actor, deviceId);
+  const device = await loadScopedDevice(deps, actor, deviceId);
   const parsed = parseActivityFilter(filter);
   const limit = normalizeLimit(filter.limit ?? null);
 
   const [events, alarms] = await Promise.all([
-    fetchEvents(deps.client, deviceId, parsed, limit + 1),
-    fetchAlarms(deps.client, deviceId, parsed, limit + 1),
+    fetchEvents(deps.client, deviceId, parsed, limit + 1, undefined, device.customerId),
+    fetchAlarms(deps.client, deviceId, parsed, limit + 1, undefined, device.customerId),
   ]);
   const merged = mergeByOccurredAtDesc(events, alarms);
   const page = merged.slice(0, limit);
@@ -261,6 +268,7 @@ export async function fetchAllDeviceActivities(
   deviceId: string,
   filter: ActivityFilter,
   maxRows: number = ACTIVITY_EXPORT_MAX_ROWS,
+  customerId?: string | null,
 ): Promise<ActivityItem[]> {
   const parsed = parseActivityFilter(filter);
   const baseCursor =
@@ -274,8 +282,8 @@ export async function fetchAllDeviceActivities(
     const needed = maxRows - out.length;
     if (needed <= 0) break;
     const [events, alarms] = await Promise.all([
-      fetchEvents(deps.client, deviceId, parsed, batch, eventCursor),
-      fetchAlarms(deps.client, deviceId, parsed, batch, alarmCursor),
+      fetchEvents(deps.client, deviceId, parsed, batch, eventCursor, customerId),
+      fetchAlarms(deps.client, deviceId, parsed, batch, alarmCursor, customerId),
     ]);
     if (events.length === 0 && alarms.length === 0) break;
     const merged = mergeByOccurredAtDesc(events, alarms);

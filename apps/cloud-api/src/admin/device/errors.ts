@@ -36,7 +36,7 @@ export function deviceNotFound(): AdminDeviceError {
   return new AdminDeviceError('NOT_FOUND', 'The requested resource was not found');
 }
 
-/** alias 在同一 Customer 内冲突（暂定唯一性规则，见 BE-DEV-06 文档）。 */
+/** DEC-019：alias 在同一 Customer（含未分配域）内冲突。 */
 export function deviceAliasConflict(): AdminDeviceError {
   return new AdminDeviceError('CONFLICT', 'The alias is already used by another device in the same customer');
 }

@@ -71,6 +71,9 @@ export async function completeRetirementStep(
       confirmedAt: input.at,
       completionMethod: input.completionMethod,
       certificateRevokedAt: input.at,
+      iotRevocationStatus: 'PENDING',
+      iotRevocationRequestedAt: input.at,
+      iotRevocationLastError: null,
     },
   });
   if (count !== 1) return { confirmed: false, revoked: [] };

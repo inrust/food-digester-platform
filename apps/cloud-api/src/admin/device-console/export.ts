@@ -24,7 +24,7 @@ import { randomUUID } from 'node:crypto';
 import { consoleNotFound } from './errors.js';
 import { loadScopedDevice } from './service.js';
 import type { DeviceConsoleDeps } from './service.js';
-import { fetchAllDeviceActivities, parseActivityFilter } from './activity.js';
+import { ACTIVITY_EXPORT_MAX_ROWS, fetchAllDeviceActivities, parseActivityFilter } from './activity.js';
 import type { ActivityFilter, ActivityItem } from './activity.js';
 
 /** 短期下载 URL 有效期（秒，暂定值；部署层签名器应与其一致）。 */
@@ -171,13 +171,15 @@ export async function createActivityExport(
   const device = await loadScopedDevice(deps, actor, deviceId);
   // 校验并冻结筛选快照（非法配置在入队前拒绝）
   parseActivityFilter(filter);
+  const now = deps.now?.() ?? new Date();
+  const requestedTo = filter.to === undefined ? now : new Date(filter.to);
+  const frozenTo = requestedTo.getTime() > now.getTime() ? now : requestedTo;
   const frozenFilters: Record<string, unknown> = {
     ...(filter.level !== undefined ? { level: filter.level } : {}),
     ...(filter.kind !== undefined ? { kind: filter.kind } : {}),
     ...(filter.from !== undefined ? { from: filter.from } : {}),
-    ...(filter.to !== undefined ? { to: filter.to } : {}),
+    to: frozenTo.toISOString(),
   };
-  const now = deps.now?.() ?? new Date();
   const customerId = actor.actorType === 'customer' ? actor.customerId : device.customerId;
 
   return audited<ActivityExportJobView>(
@@ -219,6 +221,8 @@ export async function getActivityExport(
   const job = await exportJobs(deps.client).findFirst({ where: { id: exportId } });
   if (!job) throw consoleNotFound();
   if (actor.actorType === 'customer' && job.customerId !== actor.customerId) throw consoleNotFound();
+  const device = await loadScopedDevice(deps, actor, job.deviceId);
+  if (device.customerId !== job.customerId) throw consoleNotFound();
   const view = toJobView(job, now);
   if (view.downloadUrl !== null) {
     await recordAudit(deps.client, {
@@ -282,8 +286,27 @@ export async function processActivityExportJobs(
     });
     if (claimed.count !== 1) continue;
     try {
+      const device = await loadScopedDevice(
+        deps,
+        {
+          actorId: 'system:activity-export',
+          username: 'system:activity-export',
+          actorType: 'platform',
+          roles: ['PlatformOperator'],
+          customerId: null,
+          tokenUse: 'access',
+        },
+        job.deviceId,
+      );
+      if (device.customerId !== job.customerId) throw new Error('device ownership changed after export creation');
       const filters = job.filters as ActivityFilter;
-      const items = await fetchAllDeviceActivities(deps, job.deviceId, filters);
+      const items = await fetchAllDeviceActivities(
+        deps,
+        job.deviceId,
+        filters,
+        ACTIVITY_EXPORT_MAX_ROWS,
+        job.customerId,
+      );
       const csv = activityToCsv(items);
       const storageKey = `activity-exports/${job.id}.csv`;
       await deps.storage.put({ key: storageKey, body: csv, contentType: 'text/csv' });

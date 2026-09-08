@@ -139,6 +139,19 @@ describe('BE-DEV-06 合法修改与审计', () => {
     const cross = await patch(operator, b1, { alias: '一号机' }, await ifMatchOf(b1));
     assert.equal(cross.status, 200);
   });
+
+  test('DEC-019：NFC 规范化且长度按 Unicode code point 计算', async () => {
+    const normalized = await plantDevice(customerAId);
+    const nfc = await patch(operator, normalized, { alias: '  e\u0301  ' }, await ifMatchOf(normalized));
+    assert.equal(nfc.status, 200);
+    assert.equal(await aliasOf(normalized), 'é');
+
+    const emoji = await plantDevice(customerAId);
+    const value = '😀'.repeat(64);
+    const max = await patch(operator, emoji, { alias: value }, await ifMatchOf(emoji));
+    assert.equal(max.status, 200);
+    assert.equal(await aliasOf(emoji), value);
+  });
 });
 
 describe('BE-DEV-06 非法值与受保护字段（失败不产生部分更新）', () => {
@@ -218,6 +231,32 @@ describe('BE-DEV-06 If-Match 并发与唯一性冲突', () => {
     const a4 = await plantDevice(customerAId, null);
     assert.equal((await patch(operator, a4, { alias: 'unique-name' }, await ifMatchOf(a4))).status, 200);
     void a1;
+  });
+
+  test('数据库唯一索引裁决两设备并发同名，恰有一个成功', async () => {
+    const left = await plantDevice(customerAId, null);
+    const right = await plantDevice(customerAId, null);
+    const [leftResult, rightResult] = await Promise.all([
+      patch(operator, left, { alias: '并发唯一名' }, await ifMatchOf(left)),
+      patch(operator, right, { alias: '并发唯一名' }, await ifMatchOf(right)),
+    ]);
+    assert.deepEqual(
+      [leftResult.status, rightResult.status].sort((a, b) => a - b),
+      [200, 409],
+    );
+    const aliases = await prisma.device.findMany({
+      where: { id: { in: [left, right] }, alias: '并发唯一名' },
+    });
+    assert.equal(aliases.length, 1);
+  });
+
+  test('未分配设备共享唯一性域', async () => {
+    const first = await plantDevice(null, '未分配唯一名');
+    const second = await plantDevice(null, null);
+    const result = await patch(operator, second, { alias: '未分配唯一名' }, await ifMatchOf(second));
+    assert.equal(result.status, 409);
+    assert.equal((result.body as ErrBody).error.code, 'CONFLICT');
+    void first;
   });
 });
 
