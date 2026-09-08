@@ -23,13 +23,14 @@ function sessionOf(role: Role): SessionSnapshot {
   return { username: 'user@example.com', roles: [role], customerId };
 }
 
-// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（FE-05 /customers、/sites；FE-08 /licenses）
+// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（FE-05 /customers、/sites；FE-08 /licenses；FE-09 /configurations、/device-users）
 const EXPECTED_MENUS: Record<Role, string[]> = {
   PlatformSuperAdmin: [
     '/dashboard',
     '/devices/view',
     '/devices/operate',
     '/devices/groups',
+    '/configurations',
     '/consumables',
     '/esg/overview',
     '/esg/devices',
@@ -38,12 +39,14 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/settings',
     '/customers',
     '/sites',
+    '/device-users',
   ],
   PlatformOperator: [
     '/dashboard',
     '/devices/view',
     '/devices/operate',
     '/devices/groups',
+    '/configurations',
     '/consumables',
     '/esg/overview',
     '/esg/devices',
@@ -56,12 +59,14 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/dashboard',
     '/devices/view',
     '/devices/groups',
+    '/configurations',
     '/esg/overview',
     '/esg/devices',
     '/contracts',
     '/licenses',
     '/customers',
     '/sites',
+    '/device-users',
   ],
   CustomerAdmin: [
     '/dashboard',
@@ -73,6 +78,7 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/devices',
     '/settings',
     '/sites',
+    '/device-users',
   ],
   CustomerViewer: [
     '/dashboard',

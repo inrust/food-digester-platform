@@ -27,6 +27,8 @@ import {
 } from '../src/pages/devices/device-state.js';
 import { DEVICE_MANAGE_COVERAGE } from '../src/pages/device-manage/device-manage-state.js';
 import { ENTITLEMENT_CODES, LICENSE_COVERAGE } from '../src/pages/licenses/license-state.js';
+import { CONFIG_COVERAGE, CONFIG_V1_FIELDS } from '../src/pages/configuration/configuration-state.js';
+import { DEVICE_USER_COVERAGE } from '../src/pages/device-users/device-user-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -47,8 +49,8 @@ test('CT-06：9 个菜单项的 routeId/label/pageState/roles 与路由注册表
   assert.equal(matrix.menus.length, 9);
 
   const menuRoutes = APP_ROUTES.filter((route) => route.menuGroup !== null);
-  // 扩展路由（CT-06 矩阵外）：FE-05 /customers、/sites（BE-CUS-01/02）；FE-08 /licenses（BE-LIC-01）
-  const EXTENSION_ROUTES = ['/customers', '/sites', '/licenses'];
+  // 扩展路由（CT-06 矩阵外，按 APP_ROUTES 出现顺序）：FE-09 /configurations；FE-05 /customers、/sites；FE-08 /licenses；FE-09 /device-users
+  const EXTENSION_ROUTES = ['/configurations', '/customers', '/sites', '/licenses', '/device-users'];
   const matrixRoutes = menuRoutes.filter((r) => !EXTENSION_ROUTES.includes(r.path));
   assert.equal(matrixRoutes.length, matrix.menus.length);
   // 扩展路由必须在此显式登记，防止路由表无约束膨胀
@@ -216,6 +218,62 @@ test('FE-08：CT-06 contract-detail 页 FE-08 自有元素有锚点；Entitlemen
     [...ENTITLEMENT_CODES].sort(),
     [...api.components.schemas.LicenseEntitlement.properties.code.enum].sort(),
   );
+});
+
+test('FE-09：DEC-018@1.0.0 冻结策略与前端四字段常量一致（单位/范围/默认值）', () => {
+  const policy = readJson('contracts/configuration/configuration-v1-policy.json') as {
+    status: string;
+    fields: Record<string, { type: string; unit: string; minimum: number; maximum: number; default: number }>;
+    excludedCandidateFields: string[];
+  };
+  assert.equal(policy.status, 'frozen');
+  // 四字段集合精确一致（不允许多/缺字段）
+  assert.deepEqual(
+    CONFIG_V1_FIELDS.map((f) => f.key).sort(),
+    Object.keys(policy.fields).sort(),
+  );
+  for (const field of CONFIG_V1_FIELDS) {
+    const spec = policy.fields[field.key];
+    assert.ok(spec !== undefined, `策略缺少字段 ${field.key}`);
+    assert.equal(field.unit, spec.unit, `${field.key} 单位漂移`);
+    assert.equal(field.min, spec.minimum, `${field.key} 下限漂移`);
+    assert.equal(field.max, spec.maximum, `${field.key} 上限漂移`);
+    assert.equal(field.defaultValue, spec.default, `${field.key} 默认值漂移`);
+    assert.equal(field.integer, spec.type === 'integer', `${field.key} 整数约束漂移`);
+  }
+});
+
+test('FE-09：CT-06 配置/设备用户锚点覆盖（device-manage 配置元素 + settings 设备用户元素）', () => {
+  const matrix = readJson('contracts/prototype-traceability.yaml') as {
+    pages: {
+      pageState: string;
+      elements: { id: string; disposition: string; source?: { taskId?: string } }[];
+    }[];
+  };
+  const assertCoverage = (pageState: string, taskIds: readonly string[], coverage: Readonly<Record<string, string>>) => {
+    const page = matrix.pages.find((p) => p.pageState === pageState);
+    assert.ok(page !== undefined, `CT-06 缺少页面 ${pageState}`);
+    const owned = page.elements.filter(
+      (e) =>
+        (e.disposition === 'Adopt' || e.disposition === 'Adapt') &&
+        e.source?.taskId !== undefined &&
+        taskIds.includes(e.source.taskId),
+    );
+    assert.ok(owned.length > 0, `${pageState} 页应存在任务 ${taskIds.join('/')} 的元素`);
+    for (const element of owned) {
+      assert.ok(coverage[element.id] !== undefined, `元素 ${element.id} 无实现锚点`);
+    }
+    for (const key of Object.keys(coverage)) {
+      assert.ok(
+        owned.some((e) => e.id === key),
+        `覆盖表存在多余键 ${key}`,
+      );
+    }
+  };
+  // 配置：device-manage 页 BE-CFG-01 元素由 /configurations 页承载
+  assertCoverage('device-manage', ['BE-CFG-01'], CONFIG_COVERAGE);
+  // 设备用户：settings 页 BE-DUSR-01/02 元素由 /device-users 页承载（FE-16 平台用户元素不在此列）
+  assertCoverage('settings', ['BE-DUSR-01', 'BE-DUSR-02'], DEVICE_USER_COVERAGE);
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {

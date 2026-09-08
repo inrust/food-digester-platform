@@ -35,13 +35,14 @@ function renderShell(options: { path?: string; role?: Role; notificationCount?: 
   return { ...utils, navigated, isLoggedOut: () => loggedOut > 0 };
 }
 
-test('菜单按角色过滤：PlatformSuperAdmin 见全部 12 项；CustomerViewer 不见受限项', () => {
+test('菜单按角色过滤：PlatformSuperAdmin 见全部 14 项；CustomerViewer 不见受限项', () => {
   const { unmount } = renderShell({ role: 'PlatformSuperAdmin' });
   for (const label of [
     '概览',
     '查看设备',
     '操作设备',
     '设备群管理',
+    '配置管理',
     '耗材查看',
     'ESG概览',
     '设备ESG信息',
@@ -50,6 +51,7 @@ test('菜单按角色过滤：PlatformSuperAdmin 见全部 12 项；CustomerView
     '用户管理',
     '客户管理',
     '站点管理',
+    '设备用户',
   ]) {
     assert.ok(screen.getByRole('link', { name: label }), `缺少菜单项 ${label}`);
   }
@@ -59,7 +61,7 @@ test('菜单按角色过滤：PlatformSuperAdmin 见全部 12 项；CustomerView
   for (const label of ['概览', '查看设备', '设备群管理', '耗材查看', 'ESG概览', '设备ESG信息', '站点管理']) {
     assert.ok(screen.getByRole('link', { name: label }));
   }
-  for (const label of ['操作设备', '合约查询及修改', '授权管理', '用户管理', '客户管理']) {
+  for (const label of ['操作设备', '配置管理', '合约查询及修改', '授权管理', '用户管理', '客户管理', '设备用户']) {
     assert.equal(screen.queryByRole('link', { name: label }), null, `${label} 应对 CustomerViewer 隐藏`);
   }
   // 空分组（合约管理）整体隐藏

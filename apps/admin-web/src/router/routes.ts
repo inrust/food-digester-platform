@@ -32,7 +32,9 @@ export type PageState =
   | 'ota-campaigns'
   | 'customers'
   | 'sites'
-  | 'licenses';
+  | 'licenses'
+  | 'configurations'
+  | 'device-users';
 
 export interface AppRoute {
   readonly path: string;
@@ -87,6 +89,14 @@ export const APP_ROUTES: readonly AppRoute[] = [
     pageState: 'device-group',
     label: '设备群管理',
     roles: ALL_ROLES,
+    menuGroup: 'device',
+  },
+  // FE-09 扩展路由（CT-06 矩阵外）：config:read = 平台三角色（写操作另需 config:publish）
+  {
+    path: '/configurations',
+    pageState: 'configurations',
+    label: '配置管理',
+    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: 'device',
   },
   {
@@ -148,6 +158,14 @@ export const APP_ROUTES: readonly AppRoute[] = [
     label: '授权管理',
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: 'contract',
+  },
+  // FE-09 扩展路由：device-user:read = SuperAdmin/Auditor/CustomerAdmin（Operator 无此权限点）
+  {
+    path: '/device-users',
+    pageState: 'device-users',
+    label: '设备用户',
+    roles: ['PlatformSuperAdmin', 'Auditor', 'CustomerAdmin'],
+    menuGroup: 'platform',
   },
 
   // ---------- 子页面（非菜单入口；角色继承父菜单，见 CT-06 pages） ----------
