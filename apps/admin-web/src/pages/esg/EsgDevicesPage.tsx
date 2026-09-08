@@ -14,7 +14,7 @@ import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { ScopeFilter } from '../../components/ScopeFilter.js';
 import type { FilterOption, ScopeFilterProps } from '../../components/ScopeFilter.js';
 import type { ScopeFilterValue } from '../../components/filter-state.js';
-import { EsgExportPanel } from './EsgExportPanel.js';
+import { ExportPanel } from '../../components/ExportPanel.js';
 import type { EsgQueryFilter } from './esg-api.js';
 import {
   ESG_DISCLAIMER,
@@ -205,7 +205,7 @@ export function EsgDevicesPage({
       ) : null}
 
       {exportError !== null ? <ErrorNotice error={exportError} onRefresh={onRefresh} /> : null}
-      <EsgExportPanel
+      <ExportPanel
         testidPrefix="esg-device"
         canExport={canExport(role)}
         busy={busy}

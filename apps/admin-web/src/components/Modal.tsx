@@ -16,20 +16,23 @@ export interface ModalProps {
 export function Modal({ open, title, onClose, children, testid }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  // onClose 经 ref 持有：父级内联回调身份每次渲染变化，不触发焦点回收/重置
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement;
     dialogRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       if (previous instanceof HTMLElement) previous.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

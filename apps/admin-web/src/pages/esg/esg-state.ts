@@ -25,13 +25,6 @@ export const ESG_PERIOD_LABELS: Readonly<Record<EsgPeriod, string>> = {
 /** 核证免责声明（两页固定展示）。 */
 export const ESG_DISCLAIMER = '估算值，非第三方核证';
 
-export const EXPORT_STATUS_LABELS: Readonly<Record<string, string>> = {
-  PENDING: '排队中',
-  PROCESSING: '导出中',
-  COMPLETED: '已完成',
-  FAILED: '失败',
-};
-
 /** 导出权限：export:create = SuperAdmin/Auditor/CustomerAdmin（AUTH-01）。 */
 export function canExport(role: Role): boolean {
   return hasPermission(role, 'export:create');

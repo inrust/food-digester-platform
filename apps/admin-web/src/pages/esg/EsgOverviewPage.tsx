@@ -11,7 +11,7 @@ import { useRef, useState } from 'react';
 import type { Role } from '@fdp/auth';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import type { FilterOption } from '../../components/ScopeFilter.js';
-import { EsgExportPanel } from './EsgExportPanel.js';
+import { ExportPanel } from '../../components/ExportPanel.js';
 import type { EsgQueryFilter } from './esg-api.js';
 import {
   ESG_DISCLAIMER,
@@ -207,7 +207,7 @@ export function EsgOverviewPage({
       ) : null}
 
       {exportError !== null ? <ErrorNotice error={exportError} onRefresh={onRefresh} /> : null}
-      <EsgExportPanel
+      <ExportPanel
         testidPrefix="esg"
         canExport={canExport(role)}
         busy={busy}

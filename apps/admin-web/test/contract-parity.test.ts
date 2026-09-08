@@ -31,6 +31,7 @@ import { CONFIG_COVERAGE, CONFIG_V1_FIELDS } from '../src/pages/configuration/co
 import { DEVICE_USER_COVERAGE } from '../src/pages/device-users/device-user-state.js';
 import { ALARM_ACTION_MATRIX, ALARM_SEVERITY_OPTIONS, ALARM_STATUS_OPTIONS } from '../src/pages/alarms/alarm-state.js';
 import { ESG_DEVICE_COVERAGE, ESG_OVERVIEW_COVERAGE } from '../src/pages/esg/esg-state.js';
+import { COMMAND_CATALOG, DEVICE_OPERATE_COVERAGE, QUICK_ACTIONS } from '../src/pages/device-operate/command-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -314,6 +315,53 @@ test('FE-11：CT-06 esg-overview/esg-device 页 Adopt/Adapt 元素 100% 有实�
   };
   assertFullCoverage('esg-overview', ESG_OVERVIEW_COVERAGE);
   assertFullCoverage('esg-device', ESG_DEVICE_COVERAGE);
+});
+
+test('FE-12：CT-04 命令目录与前端镜像逐条一致；device-operate 页锚点覆盖；8 快捷动作映射有协议 code', () => {
+  const catalog = readJson('contracts/mqtt/command-catalog.json') as {
+    commands: { command: string; category: string; highRisk: boolean; allowedStatuses: string[] }[];
+  };
+  assert.equal(catalog.commands.length, 22);
+  // 逐条一致（命令名/类别/高风险/允许状态集合），防止前端漂移
+  assert.deepEqual(
+    COMMAND_CATALOG.map((c) => ({ command: c.command, category: c.category, highRisk: c.highRisk, allowedStatuses: [...c.allowedStatuses] })),
+    catalog.commands,
+  );
+  // 命令名集合与 admin-command-api.json CommandName 枚举一致
+  const api = readJson('contracts/rest/admin-command-api.json') as {
+    components: { schemas: { CommandName: { enum: string[] } } };
+  };
+  assert.deepEqual(
+    COMMAND_CATALOG.map((c) => c.command).sort(),
+    [...api.components.schemas.CommandName.enum].sort(),
+  );
+  // 8 快捷动作：直接命令或命令组均在目录内（不存在无协议 command code）
+  assert.equal(QUICK_ACTIONS.length, 8);
+  for (const action of QUICK_ACTIONS) {
+    const codes = action.command !== undefined ? [action.command] : [...(action.commandGroup ?? [])];
+    assert.ok(codes.length > 0, `${action.key} 无命令映射`);
+    for (const code of codes) {
+      assert.ok(
+        catalog.commands.some((c) => c.command === code),
+        `${action.key} 映射了目录外命令 ${code}`,
+      );
+    }
+  }
+  // CT-06 device-operate 页 Adopt/Adapt 元素 100% 锚点（camPlay/camStop 为 Reject 不入表）
+  const matrix = readJson('contracts/prototype-traceability.yaml') as {
+    pages: { pageState: string; elements: { id: string; disposition: string }[] }[];
+  };
+  const page = matrix.pages.find((p) => p.pageState === 'device-operate');
+  assert.ok(page !== undefined);
+  const required = page.elements.filter((e) => e.disposition === 'Adopt' || e.disposition === 'Adapt');
+  for (const element of required) {
+    assert.ok(DEVICE_OPERATE_COVERAGE[element.id] !== undefined, `元素 ${element.id} 无实现锚点`);
+  }
+  assert.deepEqual(
+    Object.keys(DEVICE_OPERATE_COVERAGE).sort(),
+    required.map((e) => e.id).sort(),
+    '覆盖表与 CT-06 device-operate 元素集合不一致',
+  );
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {

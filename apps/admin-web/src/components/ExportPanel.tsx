@@ -1,12 +1,28 @@
 /**
- * FE-11 ESG 导出面板（两页共享）：创建异步导出 → 状态轮询 → 短期下载 URL。
- * 过期下载链接有明确提示（urlExpired → 不渲染链接，提示重新导出）。
+ * 通用异步导出面板（FE-11 ESG 导出 / FE-12 活动日志导出共享）：
+ * 创建 → 状态刷新 → 短期下载 URL；过期链接明确提示且不渲染链接。
  */
-import { TimeText } from '../../components/TimeText.js';
-import { EXPORT_STATUS_LABELS } from './esg-state.js';
-import type { EsgExportJobView } from './types.js';
+import { TimeText } from './TimeText.js';
 
-export function EsgExportPanel({
+/** 导出任务最小结构（ESG/活动日志导出视图均兼容）。 */
+export interface ExportJobLike {
+  readonly exportId: string;
+  readonly status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  readonly rowCount: number | null;
+  readonly downloadUrl: string | null;
+  readonly urlExpiresAt: string | null;
+  readonly urlExpired: boolean;
+  readonly error: string | null;
+}
+
+export const EXPORT_STATUS_LABELS: Readonly<Record<string, string>> = {
+  PENDING: '排队中',
+  PROCESSING: '导出中',
+  COMPLETED: '已完成',
+  FAILED: '失败',
+};
+
+export function ExportPanel({
   testidPrefix,
   canExport,
   busy,
@@ -17,7 +33,7 @@ export function EsgExportPanel({
   readonly testidPrefix: string;
   readonly canExport: boolean;
   readonly busy: boolean;
-  readonly job: EsgExportJobView | null;
+  readonly job: ExportJobLike | null;
   readonly onExport: () => void;
   readonly onCheckStatus: (exportId: string) => void;
 }) {
