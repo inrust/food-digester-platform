@@ -95,6 +95,7 @@ describe('资源命名（环境前缀）', () => {
       'cert-package-sweeper',
       'onboarding-deadline',
       'retirement-timeout',
+      'activity-export',
       'onboarding-api-handler',
       'onboarding-provisioning',
       'device-api-handler',
@@ -141,6 +142,21 @@ describe('验收：无公网 S3/RDS', () => {
       const sse = bucket.Properties.BucketEncryption?.ServerSideEncryptionConfiguration?.[0];
       assert.equal(sse?.ServerSideEncryptionByDefault?.SSEAlgorithm, 'aws:kms');
     }
+  });
+
+  test('活动导出 Bucket 对 activity-exports 前缀启用 1 天自动清理', () => {
+    const exportBucket = Object.values(resourcesOfType(template, 'AWS::S3::Bucket')).find((bucket) =>
+      JSON.stringify(bucket.Properties.BucketName).includes('fdp-test-export'),
+    );
+    assert.isDefined(exportBucket);
+    assert.deepInclude(exportBucket.Properties.LifecycleConfiguration.Rules[0], {
+      Id: 'ExpireActivityExports',
+      Prefix: 'activity-exports/',
+      Status: 'Enabled',
+      ExpirationInDays: 1,
+      NoncurrentVersionExpiration: { NoncurrentDays: 1 },
+      AbortIncompleteMultipartUpload: { DaysAfterInitiation: 1 },
+    });
   });
 
   test('RDS 非公网可达且存储加密', () => {
@@ -263,13 +279,13 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('14 个 Lambda 使用各自独立执行角色', () => {
+  test('15 个 Lambda 使用各自独立执行角色', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
       String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),
     );
-    assert.equal(fns.length, 14);
+    assert.equal(fns.length, 15);
     const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
-    assert.equal(roles.size, 14);
+    assert.equal(roles.size, 15);
   });
 
   test('P0 生产组合根与既有 API/sweeper 使用真实资产包而非内联 501 占位代码', () => {
@@ -284,6 +300,7 @@ describe('验收：IAM 最小权限', () => {
       'fdp-test-replay',
       'fdp-test-onboarding-deadline',
       'fdp-test-retirement-timeout',
+      'fdp-test-activity-export',
       'fdp-test-onboarding-api-handler',
       'fdp-test-onboarding-provisioning',
       'fdp-test-device-api-handler',
@@ -474,7 +491,7 @@ describe('验收：数据库凭据与消息管线', () => {
     for (const esm of esms) {
       assert.equal(esm.Properties.FunctionResponseTypes?.[0], 'ReportBatchItemFailures');
     }
-    template.resourceCountIs('AWS::Events::Rule', 8);
+    template.resourceCountIs('AWS::Events::Rule', 9);
     template.hasResourceProperties('AWS::Events::Rule', {
       Name: 'fdp-test-notification-publisher',
       ScheduleExpression: 'rate(1 minute)',
@@ -498,6 +515,10 @@ describe('验收：数据库凭据与消息管线', () => {
     template.hasResourceProperties('AWS::Events::Rule', {
       Name: 'fdp-test-retirement-timeout',
       ScheduleExpression: 'rate(5 minutes)',
+    });
+    template.hasResourceProperties('AWS::Events::Rule', {
+      Name: 'fdp-test-activity-export',
+      ScheduleExpression: 'rate(1 minute)',
     });
   });
 });
@@ -574,6 +595,13 @@ describe('Cognito 与应用配置输出', () => {
     assert.isDefined(retirementTimeoutFn);
     assert.isDefined(retirementTimeoutFn.Properties.Environment.Variables.DB_SECRET_ARN);
     assert.equal(retirementTimeoutFn.Properties.Environment.Variables.RETIREMENT_TIMEOUT_BATCH_SIZE, '100');
+    const activityExportFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-activity-export');
+    assert.isDefined(activityExportFn);
+    for (const key of ['DB_SECRET_ARN', 'EXPORT_BUCKET_NAME']) {
+      assert.isDefined(activityExportFn.Properties.Environment.Variables[key], `Activity Export Lambda 缺少 ${key}`);
+    }
+    assert.equal(activityExportFn.Properties.Environment.Variables.ACTIVITY_EXPORT_BATCH_SIZE, '10');
+    assert.equal(activityExportFn.Properties.Environment.Variables.ACTIVITY_EXPORT_LEASE_SECONDS, '300');
     const provisioningFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-onboarding-provisioning');
     assert.isDefined(provisioningFn);
     for (const key of ['DB_SECRET_ARN', 'CERT_PACKAGE_KEY_ARN', 'FDP_AWS_ACCOUNT_ID']) {

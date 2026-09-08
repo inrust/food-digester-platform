@@ -1025,10 +1025,14 @@ model ActivityExportJob {
   downloadUrl  String?   @map("download_url")
   urlExpiresAt DateTime? @map("url_expires_at") @db.Timestamptz
   error        String?
+  claimedAt    DateTime? @map("claimed_at") @db.Timestamptz
+  leaseUntil   DateTime? @map("lease_until") @db.Timestamptz
+  leaseToken   String?   @map("lease_token")
+  attemptCount Int       @default(0) @map("attempt_count")
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
   completedAt  DateTime? @map("completed_at") @db.Timestamptz
 
-  @@index([status, createdAt])
+  @@index([status, leaseUntil, createdAt])
   @@index([customerId, createdAt])
   @@map("device_activity_export_jobs")
 }

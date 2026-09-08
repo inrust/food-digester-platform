@@ -2,7 +2,7 @@ export type DeliveredRuntime = 'onboarding-api' | 'device-api' | 'admin-api';
 
 export interface DeliveredOperation {
   readonly operationId: string;
-  readonly method: 'GET' | 'POST';
+  readonly method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   /** OpenAPI 原始路径模板；参数使用 {name}。 */
   readonly path: string;
   readonly runtime: DeliveredRuntime;
@@ -85,6 +85,116 @@ export const DELIVERED_OPERATIONS = [
     operationId: 'getReplayJob',
     method: 'GET',
     path: '/api/v1/admin/replay/jobs/{jobId}',
+    runtime: 'admin-api',
+  },
+  { operationId: 'listCustomers', method: 'GET', path: '/api/v1/admin/customers', runtime: 'admin-api' },
+  { operationId: 'createCustomer', method: 'POST', path: '/api/v1/admin/customers', runtime: 'admin-api' },
+  {
+    operationId: 'getCustomer',
+    method: 'GET',
+    path: '/api/v1/admin/customers/{customerId}',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'updateCustomer',
+    method: 'PATCH',
+    path: '/api/v1/admin/customers/{customerId}',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'deleteCustomer',
+    method: 'DELETE',
+    path: '/api/v1/admin/customers/{customerId}',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'deactivateCustomer',
+    method: 'POST',
+    path: '/api/v1/admin/customers/{customerId}/deactivate',
+    runtime: 'admin-api',
+  },
+  { operationId: 'listSites', method: 'GET', path: '/api/v1/admin/sites', runtime: 'admin-api' },
+  { operationId: 'createSite', method: 'POST', path: '/api/v1/admin/sites', runtime: 'admin-api' },
+  { operationId: 'getSite', method: 'GET', path: '/api/v1/admin/sites/{siteId}', runtime: 'admin-api' },
+  { operationId: 'updateSite', method: 'PATCH', path: '/api/v1/admin/sites/{siteId}', runtime: 'admin-api' },
+  { operationId: 'deleteSite', method: 'DELETE', path: '/api/v1/admin/sites/{siteId}', runtime: 'admin-api' },
+  {
+    operationId: 'deactivateSite',
+    method: 'POST',
+    path: '/api/v1/admin/sites/{siteId}/deactivate',
+    runtime: 'admin-api',
+  },
+  { operationId: 'listDevices', method: 'GET', path: '/api/v1/admin/devices', runtime: 'admin-api' },
+  {
+    operationId: 'getDevice',
+    method: 'GET',
+    path: '/api/v1/admin/devices/{deviceId}',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'updateDeviceMetadata',
+    method: 'PATCH',
+    path: '/api/v1/admin/devices/{deviceId}/metadata',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'assignDevice',
+    method: 'POST',
+    path: '/api/v1/admin/devices/{deviceId}/assignment',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'listDeviceAssignments',
+    method: 'GET',
+    path: '/api/v1/admin/devices/{deviceId}/assignments',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'suspendDevice',
+    method: 'POST',
+    path: '/api/v1/admin/devices/{deviceId}/suspend',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'reactivateDevice',
+    method: 'POST',
+    path: '/api/v1/admin/devices/{deviceId}/reactivate',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'retireDevice',
+    method: 'POST',
+    path: '/api/v1/admin/devices/{deviceId}/retire',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'forceCompleteRetirement',
+    method: 'POST',
+    path: '/api/v1/admin/devices/{deviceId}/retire/complete',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'getDeviceConsole',
+    method: 'GET',
+    path: '/api/v1/admin/devices/{deviceId}/console',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'listDeviceActivities',
+    method: 'GET',
+    path: '/api/v1/admin/devices/{deviceId}/activities',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'createActivityExport',
+    method: 'POST',
+    path: '/api/v1/admin/devices/{deviceId}/activities/export',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'getActivityExport',
+    method: 'GET',
+    path: '/api/v1/admin/activity-exports/{exportId}',
     runtime: 'admin-api',
   },
 ] as const satisfies readonly DeliveredOperation[];

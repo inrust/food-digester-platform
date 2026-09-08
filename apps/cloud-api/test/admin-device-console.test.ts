@@ -661,4 +661,43 @@ describe('BE-DEV-05 活动导出（异步 Worker）', () => {
     assert.equal(view.status, 'FAILED');
     assert.equal(view.error, 'storage unavailable');
   });
+
+  test('Worker 回收租约已过期的 PROCESSING 任务，但不抢占有效租约', async () => {
+    const h = createAdminDeviceConsoleHandlers(deps());
+    const expired = (
+      await h.createActivityExport(req(custActor(customerAId), { params: { deviceId: DEV_A1 }, body: {} }))
+    ).body as DataBody;
+    const active = (
+      await h.createActivityExport(req(custActor(customerAId), { params: { deviceId: DEV_A2 }, body: {} }))
+    ).body as DataBody;
+    await prisma.activityExportJob.update({
+      where: { id: expired.data.exportId },
+      data: {
+        status: 'PROCESSING',
+        claimedAt: new Date(NOW.getTime() - 10 * 60_000),
+        leaseUntil: new Date(NOW.getTime() - 60_000),
+      },
+    });
+    await prisma.activityExportJob.update({
+      where: { id: active.data.exportId },
+      data: {
+        status: 'PROCESSING',
+        claimedAt: NOW,
+        leaseUntil: new Date(NOW.getTime() + 5 * 60_000),
+      },
+    });
+
+    const result = await processActivityExportJobs(deps(), { leaseSeconds: 300 });
+    assert.deepEqual(result, { processed: 1, completed: 1, failed: 0 });
+    const [recovered, untouched] = await Promise.all([
+      prisma.activityExportJob.findUniqueOrThrow({ where: { id: expired.data.exportId } }),
+      prisma.activityExportJob.findUniqueOrThrow({ where: { id: active.data.exportId } }),
+    ]);
+    assert.equal(recovered.status, 'COMPLETED');
+    assert.equal(recovered.attemptCount, 1);
+    assert.equal(recovered.leaseUntil, null);
+    assert.equal(recovered.leaseToken, null);
+    assert.equal(untouched.status, 'PROCESSING');
+    assert.equal(untouched.attemptCount, 0);
+  });
 });

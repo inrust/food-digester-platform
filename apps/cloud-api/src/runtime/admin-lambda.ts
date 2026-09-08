@@ -9,6 +9,13 @@ import type { CognitoAuthenticatorConfig } from '@fdp/auth';
 import type { AdminHttpRequest, AdminHttpResponse } from '../admin/onboarding/handler.js';
 import type { AdminOnboardingHandlers } from '../admin/onboarding/handler.js';
 import type { AdminReplayHandlers } from '../admin/replay/handler.js';
+import type { AdminCustomerHandlers } from '../admin/customer/handler.js';
+import type { AdminSiteHandlers } from '../admin/site/handler.js';
+import type { AdminDeviceHandlers } from '../admin/device/handler.js';
+import type { AdminDeviceAssignmentHandlers } from '../admin/device-assignment/handler.js';
+import type { AdminDeviceStatusHandlers } from '../admin/device-status/handler.js';
+import type { AdminDeviceRetirementHandlers } from '../admin/device-retirement/handler.js';
+import type { AdminDeviceConsoleHandlers } from '../admin/device-console/handler.js';
 import { matchDeliveredOperation } from './delivered-operations.js';
 
 export interface ApiGatewayAdminEvent {
@@ -44,6 +51,13 @@ export interface AdminOnboardingRouteSet {
   readonly onboarding: AdminOnboardingHandlers;
   readonly certificateRotation: AdminRoute;
   readonly replay: AdminReplayHandlers;
+  readonly customers: AdminCustomerHandlers;
+  readonly sites: AdminSiteHandlers;
+  readonly devices: AdminDeviceHandlers;
+  readonly assignments: AdminDeviceAssignmentHandlers;
+  readonly statuses: AdminDeviceStatusHandlers;
+  readonly retirements: AdminDeviceRetirementHandlers;
+  readonly console: AdminDeviceConsoleHandlers;
 }
 
 const header = (headers: Readonly<Record<string, string | undefined>>, wanted: string): string | undefined => {
@@ -95,6 +109,73 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
         ...request,
         params: { ...(request.params ?? {}), jobId: decodeURIComponent(matched.params.jobId as string) },
       });
+    }
+    if (!matched) {
+      return {
+        status: 404,
+        body: {
+          error: { code: 'NOT_FOUND', message: 'The requested resource was not found', requestId: request.requestId },
+        },
+      };
+    }
+    const operationId = matched.operation.operationId;
+    if (operationId === 'listCustomers') return routes.customers.list(request);
+    if (operationId === 'createCustomer') return routes.customers.create(request);
+    if (
+      operationId === 'getCustomer' ||
+      operationId === 'updateCustomer' ||
+      operationId === 'deleteCustomer' ||
+      operationId === 'deactivateCustomer'
+    ) {
+      const routedRequest: AdminHttpRequest = {
+        ...request,
+        params: { ...(request.params ?? {}), customerId: decodeURIComponent(matched.params.customerId as string) },
+      };
+      if (operationId === 'getCustomer') return routes.customers.detail(routedRequest);
+      if (operationId === 'updateCustomer') return routes.customers.update(routedRequest);
+      if (operationId === 'deleteCustomer') return routes.customers.remove(routedRequest);
+      return routes.customers.deactivate(routedRequest);
+    }
+    if (operationId === 'listSites') return routes.sites.list(request);
+    if (operationId === 'createSite') return routes.sites.create(request);
+    if (
+      operationId === 'getSite' ||
+      operationId === 'updateSite' ||
+      operationId === 'deleteSite' ||
+      operationId === 'deactivateSite'
+    ) {
+      const routedRequest: AdminHttpRequest = {
+        ...request,
+        params: { ...(request.params ?? {}), siteId: decodeURIComponent(matched.params.siteId as string) },
+      };
+      if (operationId === 'getSite') return routes.sites.detail(routedRequest);
+      if (operationId === 'updateSite') return routes.sites.update(routedRequest);
+      if (operationId === 'deleteSite') return routes.sites.remove(routedRequest);
+      return routes.sites.deactivate(routedRequest);
+    }
+    if (operationId === 'listDevices') return routes.devices.list(request);
+    if (operationId === 'getActivityExport') {
+      return routes.console.getActivityExport({
+        ...request,
+        params: { ...(request.params ?? {}), exportId: decodeURIComponent(matched.params.exportId as string) },
+      });
+    }
+    if (matched.params.deviceId !== undefined) {
+      const routedRequest: AdminHttpRequest = {
+        ...request,
+        params: { ...(request.params ?? {}), deviceId: decodeURIComponent(matched.params.deviceId) },
+      };
+      if (operationId === 'getDevice') return routes.devices.detail(routedRequest);
+      if (operationId === 'updateDeviceMetadata') return routes.devices.updateMetadata(routedRequest);
+      if (operationId === 'assignDevice') return routes.assignments.assign(routedRequest);
+      if (operationId === 'listDeviceAssignments') return routes.assignments.history(routedRequest);
+      if (operationId === 'suspendDevice') return routes.statuses.suspend(routedRequest);
+      if (operationId === 'reactivateDevice') return routes.statuses.reactivate(routedRequest);
+      if (operationId === 'retireDevice') return routes.retirements.retire(routedRequest);
+      if (operationId === 'forceCompleteRetirement') return routes.retirements.forceComplete(routedRequest);
+      if (operationId === 'getDeviceConsole') return routes.console.getDeviceConsole(routedRequest);
+      if (operationId === 'listDeviceActivities') return routes.console.listDeviceActivities(routedRequest);
+      if (operationId === 'createActivityExport') return routes.console.createActivityExport(routedRequest);
     }
     return {
       status: 404,

@@ -81,6 +81,7 @@ const ONBOARDING_DEADLINE_ENTRY = resolve(
   'apps/ingestion-worker/src/runtime/onboarding-deadline-entry.ts',
 );
 const RETIREMENT_TIMEOUT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/retirement-timeout-entry.ts');
+const ACTIVITY_EXPORT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/activity-export-entry.ts');
 
 interface MessagingResources {
   readonly ingress: sqs.Queue;
@@ -121,6 +122,7 @@ interface ComputeResources {
   readonly certPackageSweeper: lambda.Function;
   readonly onboardingDeadline: lambda.Function;
   readonly retirementTimeout: lambda.Function;
+  readonly activityExport: lambda.Function;
   readonly onboardingApi: lambda.Function;
   readonly onboardingProvisioning: lambda.Function;
   readonly deviceApi: lambda.Function;
@@ -278,13 +280,22 @@ export class AppDependenciesStack extends Stack {
         autoDeleteObjects: false,
       });
 
+    const exportBucket = bucket('ExportBucket', 'export');
+    exportBucket.addLifecycleRule({
+      id: 'ExpireActivityExports',
+      prefix: 'activity-exports/',
+      expiration: Duration.days(1),
+      noncurrentVersionExpiration: Duration.days(1),
+      abortIncompleteMultipartUploadAfter: Duration.days(1),
+    });
+
     return {
       dataKey,
       certPackageKey,
       raw: bucket('RawBucket', 'raw'),
       ota: bucket('OtaBucket', 'ota'),
       media: bucket('MediaBucket', 'media'),
-      exportBucket: bucket('ExportBucket', 'export'),
+      exportBucket,
       truststore: bucket('TruststoreBucket', 'mtls-truststore'),
     };
   }
@@ -800,6 +811,24 @@ export class AppDependenciesStack extends Stack {
       targets: [new eventsTargets.LambdaFunction(retirementTimeout)],
     });
 
+    const activityExport = mkFunction('ActivityExportFn', 'activity-export', {
+      timeout: Duration.seconds(300),
+      environment: {
+        DB_SECRET_ARN: dbSecret,
+        EXPORT_BUCKET_NAME: storage.exportBucket.bucketName,
+        ACTIVITY_EXPORT_BATCH_SIZE: '10',
+        ACTIVITY_EXPORT_LEASE_SECONDS: '300',
+      },
+      entry: ACTIVITY_EXPORT_ENTRY,
+    });
+    dbSecretGrant(activityExport);
+    storage.exportBucket.grantReadWrite(activityExport, 'activity-exports/*');
+    new events.Rule(this, 'ActivityExportSchedule', {
+      ruleName: this.naming.name('activity-export'),
+      schedule: events.Schedule.rate(Duration.minutes(1)),
+      targets: [new eventsTargets.LambdaFunction(activityExport)],
+    });
+
     const onboardingApi = mkFunction('OnboardingApiFn', 'onboarding-api-handler', {
       timeout: Duration.seconds(30),
       memorySize: 512,
@@ -939,7 +968,7 @@ export class AppDependenciesStack extends Stack {
     // 预签名 URL 与重放读取：仅授予业务所需 Bucket 的对象级读写
     storage.media.grantReadWrite(api);
     storage.ota.grantReadWrite(api);
-    storage.exportBucket.grantReadWrite(api);
+    storage.exportBucket.grantRead(api, 'activity-exports/*');
     storage.raw.grantRead(api);
     // 下行发布（BE-CMD-02/BE-OTA-03）：仅允许 3 个下行 Topic 模式
     api.addToRolePolicy(
@@ -962,6 +991,7 @@ export class AppDependenciesStack extends Stack {
       certPackageSweeper,
       onboardingDeadline,
       retirementTimeout,
+      activityExport,
       onboardingApi,
       onboardingProvisioning,
       deviceApi,

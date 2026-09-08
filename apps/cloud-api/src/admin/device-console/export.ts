@@ -20,6 +20,7 @@
 import type { DbClient } from '@fdp/database';
 import { audited, recordAudit } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
+import { randomUUID } from 'node:crypto';
 import { consoleNotFound } from './errors.js';
 import { loadScopedDevice } from './service.js';
 import type { DeviceConsoleDeps } from './service.js';
@@ -28,6 +29,8 @@ import type { ActivityFilter, ActivityItem } from './activity.js';
 
 /** 短期下载 URL 有效期（秒，暂定值；部署层签名器应与其一致）。 */
 export const ACTIVITY_EXPORT_URL_TTL_SECONDS = 900 as const;
+/** Worker 崩溃后的认领租约；到期任务可被后续调度安全重试。 */
+export const ACTIVITY_EXPORT_LEASE_SECONDS = 300 as const;
 
 /** CSV 封闭列（与 ActivityItem DTO 字段一致；EVENT/ALARM 两源并集列）。 */
 export const ACTIVITY_CSV_COLUMNS = [
@@ -56,7 +59,7 @@ export interface ActivityExportStorage {
 }
 
 export interface ActivityExportUrlSigner {
-  sign(input: { readonly key: string; readonly expiresAt: Date }): string;
+  sign(input: { readonly key: string; readonly expiresAt: Date }): string | Promise<string>;
 }
 
 export interface ActivityExportDeps extends DeviceConsoleDeps {
@@ -79,6 +82,10 @@ interface ExportJobRow {
   readonly downloadUrl: string | null;
   readonly urlExpiresAt: Date | null;
   readonly error: string | null;
+  readonly claimedAt: Date | null;
+  readonly leaseUntil: Date | null;
+  readonly leaseToken: string | null;
+  readonly attemptCount: number;
   readonly createdAt: Date;
   readonly completedAt: Date | null;
 }
@@ -238,12 +245,16 @@ export interface ActivityExportProcessResult {
 
 export async function processActivityExportJobs(
   deps: ActivityExportDeps,
-  options: { readonly batchSize?: number } = {},
+  options: { readonly batchSize?: number; readonly leaseSeconds?: number } = {},
 ): Promise<ActivityExportProcessResult> {
   const now = () => deps.now?.() ?? new Date();
   const ttl = deps.urlTtlSeconds ?? ACTIVITY_EXPORT_URL_TTL_SECONDS;
+  const candidateAt = now();
+  const leaseSeconds = options.leaseSeconds ?? ACTIVITY_EXPORT_LEASE_SECONDS;
   const pending = (await exportJobs(deps.client).findMany({
-    where: { status: 'PENDING' },
+    where: {
+      OR: [{ status: 'PENDING' }, { status: 'PROCESSING', leaseUntil: { lte: candidateAt } }],
+    },
     orderBy: { createdAt: 'asc' },
     take: options.batchSize ?? 10,
   })) as unknown as ExportJobRow[];
@@ -251,10 +262,23 @@ export async function processActivityExportJobs(
   let completed = 0;
   let failed = 0;
   for (const job of pending) {
-    // 条件更新并发兜底：被其他 Worker 抢占则跳过
+    const claimedAt = now();
+    const leaseUntil = new Date(claimedAt.getTime() + leaseSeconds * 1000);
+    const leaseToken = randomUUID();
+    // 条件更新并发兜底：PENDING 或已过期 PROCESSING 只能被一个 Worker 认领。
     const claimed = await exportJobs(deps.client).updateMany({
-      where: { id: job.id, status: 'PENDING' },
-      data: { status: 'PROCESSING' },
+      where: {
+        id: job.id,
+        OR: [{ status: 'PENDING' }, { status: 'PROCESSING', leaseUntil: { lte: claimedAt } }],
+      },
+      data: {
+        status: 'PROCESSING',
+        claimedAt,
+        leaseUntil,
+        leaseToken,
+        attemptCount: { increment: 1 },
+        error: null,
+      },
     });
     if (claimed.count !== 1) continue;
     try {
@@ -264,9 +288,9 @@ export async function processActivityExportJobs(
       const storageKey = `activity-exports/${job.id}.csv`;
       await deps.storage.put({ key: storageKey, body: csv, contentType: 'text/csv' });
       const expiresAt = new Date(now().getTime() + ttl * 1000);
-      const downloadUrl = deps.urlSigner.sign({ key: storageKey, expiresAt });
-      await exportJobs(deps.client).updateMany({
-        where: { id: job.id, status: 'PROCESSING' },
+      const downloadUrl = await deps.urlSigner.sign({ key: storageKey, expiresAt });
+      const finished = await exportJobs(deps.client).updateMany({
+        where: { id: job.id, status: 'PROCESSING', leaseToken },
         data: {
           status: 'COMPLETED',
           rowCount: items.length,
@@ -274,16 +298,24 @@ export async function processActivityExportJobs(
           downloadUrl,
           urlExpiresAt: expiresAt,
           completedAt: now(),
+          leaseUntil: null,
+          leaseToken: null,
         },
       });
-      completed += 1;
+      completed += finished.count;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      await exportJobs(deps.client).updateMany({
-        where: { id: job.id, status: 'PROCESSING' },
-        data: { status: 'FAILED', error: message.slice(0, 500), completedAt: now() },
+      const markedFailed = await exportJobs(deps.client).updateMany({
+        where: { id: job.id, status: 'PROCESSING', leaseToken },
+        data: {
+          status: 'FAILED',
+          error: message.slice(0, 500),
+          completedAt: now(),
+          leaseUntil: null,
+          leaseToken: null,
+        },
       });
-      failed += 1;
+      failed += markedFailed.count;
     }
   }
   return { processed: pending.length, completed, failed };

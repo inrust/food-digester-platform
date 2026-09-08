@@ -30,3 +30,5 @@ export type {
 } from './s3-archive-store.js';
 export { createS3MediaObjectStorage } from './s3-media-object-storage.js';
 export type { MediaObjectStoragePort, S3MediaObjectStorageConfig } from './s3-media-object-storage.js';
+export { createS3ActivityExportPorts } from './s3-activity-export.js';
+export type { ActivityExportAwsPorts, S3ActivityExportConfig } from './s3-activity-export.js';

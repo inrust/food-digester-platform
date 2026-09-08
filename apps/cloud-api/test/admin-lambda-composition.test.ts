@@ -3,38 +3,55 @@ import { assert, describe, expect, test, vi } from 'vitest';
 import { generateTestKeySet, signToken, testConfig } from '../../../packages/auth/test/helpers.js';
 import type { AdminHttpRequest } from '../src/admin/onboarding/handler.js';
 import { createAdminLambdaHandler, createAdminRoute } from '../src/runtime/admin-lambda.js';
+import type { AdminOnboardingRouteSet } from '../src/runtime/admin-lambda.js';
+
+const handler = () => vi.fn(async (_request: AdminHttpRequest) => ({ status: 200, body: {} }));
+
+const routeSet = (): AdminOnboardingRouteSet => ({
+  onboarding: { list: handler(), detail: handler(), approve: handler(), reject: handler() },
+  certificateRotation: handler(),
+  replay: { create: handler(), list: handler(), detail: handler() },
+  customers: {
+    list: handler(),
+    create: handler(),
+    detail: handler(),
+    update: handler(),
+    deactivate: handler(),
+    remove: handler(),
+  },
+  sites: {
+    list: handler(),
+    create: handler(),
+    detail: handler(),
+    update: handler(),
+    deactivate: handler(),
+    remove: handler(),
+  },
+  devices: { list: handler(), detail: handler(), updateMetadata: handler() },
+  assignments: { assign: handler(), history: handler() },
+  statuses: { suspend: handler(), reactivate: handler() },
+  retirements: { retire: handler(), forceComplete: handler() },
+  console: {
+    getDeviceConsole: handler(),
+    listDeviceActivities: handler(),
+    createActivityExport: handler(),
+    getActivityExport: handler(),
+  },
+});
 
 describe('AUTH-01 管理 API Lambda 组合根', () => {
-  const replay = () => ({ create: vi.fn(), list: vi.fn(), detail: vi.fn() });
-
   test('真实路由表把方法和路径映射到受保护业务 Handler', async () => {
     const approve = vi.fn(async (_request: AdminHttpRequest) => ({ status: 200, body: {} }));
     const route = createAdminRoute(
       { httpMethod: 'POST', path: '/api/v1/admin/onboarding/requests/request-1/approve' },
-      {
-        onboarding: {
-          list: vi.fn(),
-          detail: vi.fn(),
-          approve,
-          reject: vi.fn(),
-        },
-        certificateRotation: vi.fn(),
-        replay: replay(),
-      },
+      { ...routeSet(), onboarding: { list: handler(), detail: handler(), approve, reject: handler() } },
     );
     await route({ headers: {}, requestId: 'trace-1' });
     assert.equal(approve.mock.calls[0]?.[0].params?.requestId, 'request-1');
   });
 
   test('未知路径失败关闭为 404', async () => {
-    const route = createAdminRoute(
-      { httpMethod: 'GET', path: '/api/v1/admin/unknown' },
-      {
-        onboarding: { list: vi.fn(), detail: vi.fn(), approve: vi.fn(), reject: vi.fn() },
-        certificateRotation: vi.fn(),
-        replay: replay(),
-      },
-    );
+    const route = createAdminRoute({ httpMethod: 'GET', path: '/api/v1/admin/unknown' }, routeSet());
     await expect(route({ headers: {}, requestId: 'trace-2' })).resolves.toMatchObject({ status: 404 });
   });
 
@@ -45,11 +62,7 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
         httpMethod: 'POST',
         path: '/api/v1/admin/devices/device%2Fencoded/certificate-rotation-requests',
       },
-      {
-        onboarding: { list: vi.fn(), detail: vi.fn(), approve: vi.fn(), reject: vi.fn() },
-        certificateRotation,
-        replay: replay(),
-      },
+      { ...routeSet(), certificateRotation },
     );
     const response = await route({ headers: {}, requestId: 'trace-cert' });
 
@@ -61,11 +74,7 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
     const create = vi.fn(async (_request: AdminHttpRequest) => ({ status: 201, body: {} }));
     const list = vi.fn(async (_request: AdminHttpRequest) => ({ status: 200, body: {} }));
     const detail = vi.fn(async (_request: AdminHttpRequest) => ({ status: 200, body: {} }));
-    const routes = {
-      onboarding: { list: vi.fn(), detail: vi.fn(), approve: vi.fn(), reject: vi.fn() },
-      certificateRotation: vi.fn(),
-      replay: { create, list, detail },
-    };
+    const routes = { ...routeSet(), replay: { create, list, detail } };
     await createAdminRoute(
       { httpMethod: 'POST', path: '/api/v1/admin/replay/jobs' },
       routes,
@@ -91,6 +100,160 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
     assert.equal(create.mock.calls.length, 1);
     assert.equal(list.mock.calls.length, 1);
     assert.equal(detail.mock.calls[0]?.[0].params?.jobId, 'job/1');
+  });
+
+  test('CUS/DEV 25 个 OpenAPI operation 全部路由到生产 Handler，并解码路径参数', async () => {
+    const cases: ReadonlyArray<{
+      method: string;
+      path: string;
+      select: (routes: AdminOnboardingRouteSet) => ReturnType<typeof handler>;
+      param?: readonly [string, string];
+    }> = [
+      { method: 'GET', path: '/api/v1/admin/customers', select: (r) => r.customers.list as ReturnType<typeof handler> },
+      {
+        method: 'POST',
+        path: '/api/v1/admin/customers',
+        select: (r) => r.customers.create as ReturnType<typeof handler>,
+      },
+      {
+        method: 'GET',
+        path: '/api/v1/admin/customers/customer%2F1',
+        select: (r) => r.customers.detail as ReturnType<typeof handler>,
+        param: ['customerId', 'customer/1'],
+      },
+      {
+        method: 'PATCH',
+        path: '/api/v1/admin/customers/customer%2F1',
+        select: (r) => r.customers.update as ReturnType<typeof handler>,
+        param: ['customerId', 'customer/1'],
+      },
+      {
+        method: 'DELETE',
+        path: '/api/v1/admin/customers/customer%2F1',
+        select: (r) => r.customers.remove as ReturnType<typeof handler>,
+        param: ['customerId', 'customer/1'],
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/admin/customers/customer%2F1/deactivate',
+        select: (r) => r.customers.deactivate as ReturnType<typeof handler>,
+        param: ['customerId', 'customer/1'],
+      },
+      { method: 'GET', path: '/api/v1/admin/sites', select: (r) => r.sites.list as ReturnType<typeof handler> },
+      { method: 'POST', path: '/api/v1/admin/sites', select: (r) => r.sites.create as ReturnType<typeof handler> },
+      {
+        method: 'GET',
+        path: '/api/v1/admin/sites/site%2F1',
+        select: (r) => r.sites.detail as ReturnType<typeof handler>,
+        param: ['siteId', 'site/1'],
+      },
+      {
+        method: 'PATCH',
+        path: '/api/v1/admin/sites/site%2F1',
+        select: (r) => r.sites.update as ReturnType<typeof handler>,
+        param: ['siteId', 'site/1'],
+      },
+      {
+        method: 'DELETE',
+        path: '/api/v1/admin/sites/site%2F1',
+        select: (r) => r.sites.remove as ReturnType<typeof handler>,
+        param: ['siteId', 'site/1'],
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/admin/sites/site%2F1/deactivate',
+        select: (r) => r.sites.deactivate as ReturnType<typeof handler>,
+        param: ['siteId', 'site/1'],
+      },
+      { method: 'GET', path: '/api/v1/admin/devices', select: (r) => r.devices.list as ReturnType<typeof handler> },
+      {
+        method: 'GET',
+        path: '/api/v1/admin/devices/device%2F1',
+        select: (r) => r.devices.detail as ReturnType<typeof handler>,
+        param: ['deviceId', 'device/1'],
+      },
+      {
+        method: 'PATCH',
+        path: '/api/v1/admin/devices/device%2F1/metadata',
+        select: (r) => r.devices.updateMetadata as ReturnType<typeof handler>,
+        param: ['deviceId', 'device/1'],
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/admin/devices/device%2F1/assignment',
+        select: (r) => r.assignments.assign as ReturnType<typeof handler>,
+        param: ['deviceId', 'device/1'],
+      },
+      {
+        method: 'GET',
+        path: '/api/v1/admin/devices/device%2F1/assignments',
+        select: (r) => r.assignments.history as ReturnType<typeof handler>,
+        param: ['deviceId', 'device/1'],
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/admin/devices/device%2F1/suspend',
+        select: (r) => r.statuses.suspend as ReturnType<typeof handler>,
+        param: ['deviceId', 'device/1'],
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/admin/devices/device%2F1/reactivate',
+        select: (r) => r.statuses.reactivate as ReturnType<typeof handler>,
+        param: ['deviceId', 'device/1'],
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/admin/devices/device%2F1/retire',
+        select: (r) => r.retirements.retire as ReturnType<typeof handler>,
+        param: ['deviceId', 'device/1'],
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/admin/devices/device%2F1/retire/complete',
+        select: (r) => r.retirements.forceComplete as ReturnType<typeof handler>,
+        param: ['deviceId', 'device/1'],
+      },
+      {
+        method: 'GET',
+        path: '/api/v1/admin/devices/device%2F1/console',
+        select: (r) => r.console.getDeviceConsole as ReturnType<typeof handler>,
+        param: ['deviceId', 'device/1'],
+      },
+      {
+        method: 'GET',
+        path: '/api/v1/admin/devices/device%2F1/activities',
+        select: (r) => r.console.listDeviceActivities as ReturnType<typeof handler>,
+        param: ['deviceId', 'device/1'],
+      },
+      {
+        method: 'POST',
+        path: '/api/v1/admin/devices/device%2F1/activities/export',
+        select: (r) => r.console.createActivityExport as ReturnType<typeof handler>,
+        param: ['deviceId', 'device/1'],
+      },
+      {
+        method: 'GET',
+        path: '/api/v1/admin/activity-exports/export%2F1',
+        select: (r) => r.console.getActivityExport as ReturnType<typeof handler>,
+        param: ['exportId', 'export/1'],
+      },
+    ];
+
+    for (const item of cases) {
+      const routes = routeSet();
+      const selected = item.select(routes);
+      const response = await createAdminRoute(
+        { httpMethod: item.method, path: item.path },
+        routes,
+      )({
+        headers: {},
+        requestId: `trace-${item.method}-${item.path}`,
+      });
+      assert.equal(response.status, 200, `${item.method} ${item.path}`);
+      assert.equal(selected.mock.calls.length, 1, `${item.method} ${item.path}`);
+      if (item.param) assert.equal(selected.mock.calls[0]?.[0].params?.[item.param[0]], item.param[1]);
+    }
   });
 
   test('只把重新验签后的 claims 转换为可信 ActorContext', async () => {
