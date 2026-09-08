@@ -225,6 +225,14 @@ pnpm check:aws-iot-evidence
 
 缺少结构化目标环境回执时该命令必须失败；不得用本地 `pnpm verify` 或 CDK synth 替代。
 
+BE-CUS-01/02、BE-DEV-01～06 的发布证据另按 [管理后台 AWS 验收证据采集说明](audit/evidence/BE-CUS-DEV-AWS验收证据采集说明.md)覆盖 25 个 API、五角色、跨租户、If-Match 竞态、IoT 退役、八类 MQTT、S3 导出与清理，并执行：
+
+```bash
+pnpm check:aws-admin-evidence
+```
+
+该命令同样在回执缺失、失败或 sourceCommit 不一致时失败关闭。
+
 ### 权限负向验证
 
 仓库已有真实 AWS 授权矩阵脚本，会创建两台临时 Thing、测试自身/跨设备权限并清理资源：

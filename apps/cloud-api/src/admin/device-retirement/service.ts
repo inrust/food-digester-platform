@@ -42,6 +42,7 @@ import {
   type RetirementCertificateRevoker,
   type RetirementIotRevocationResult,
 } from './iot-revocation.js';
+import { parseStrictObject } from '../shared/strict-object.js';
 
 export const DEVICE_RETIRED_NOTIFICATION = 'DEVICE_RETIRED' as const;
 /** DOM-01：仅 Active/Suspended 可退役。 */
@@ -138,7 +139,7 @@ function requireReason(value: unknown): string {
 
 /** 解析 retire 请求体：强制原因 + 确认标志。 */
 export function parseRetireBody(body: unknown): { reason: string; confirm: true } {
-  const input = (body ?? {}) as Record<string, unknown>;
+  const input = parseStrictObject(body, ['reason', 'confirm'], retirementValidationFailed);
   const reason = requireReason(input.reason);
   if (input.confirm !== true) {
     throw retirementValidationFailed('confirm must be true to retire a device');
@@ -148,7 +149,7 @@ export function parseRetireBody(body: unknown): { reason: string; confirm: true 
 
 /** 解析 force-complete 请求体：强制原因。 */
 export function parseForceCompleteBody(body: unknown): { reason: string } {
-  const input = (body ?? {}) as Record<string, unknown>;
+  const input = parseStrictObject(body, ['reason'], retirementValidationFailed);
   return { reason: requireReason(input.reason) };
 }
 

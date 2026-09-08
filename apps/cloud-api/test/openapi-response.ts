@@ -25,7 +25,13 @@ const pointerEscape = (value: string): string => value.replace(/~/gu, '~0').repl
 export function assertOpenApiResponse(operationId: string, status: number, body: unknown): void {
   const operation = operations.get(operationId);
   assert.ok(operation, `OpenAPI operation ${operationId} must exist`);
-  const pointer = `#/paths/${pointerEscape(operation.path)}/${operation.method}/responses/${status}/content/application~1json/schema`;
+  const response = (api.paths as Record<string, any>)[operation.path]?.[operation.method]?.responses?.[status];
+  assert.ok(response, `OpenAPI response must exist: ${operationId} ${status}`);
+  const responsePointer =
+    typeof response.$ref === 'string' && response.$ref.startsWith('#/')
+      ? response.$ref
+      : `#/paths/${pointerEscape(operation.path)}/${operation.method}/responses/${status}`;
+  const pointer = `${responsePointer}/content/application~1json/schema`;
   const validate = ajv.getSchema(`${API_ID}${pointer}`);
   assert.ok(validate, `OpenAPI response schema must compile: ${operationId} ${status}`);
   let payload = body;

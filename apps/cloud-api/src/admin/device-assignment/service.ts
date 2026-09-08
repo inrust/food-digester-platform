@@ -26,6 +26,7 @@ import {
   assignmentStateNotAllowed,
   assignmentValidationFailed,
 } from './errors.js';
+import { parseStrictObject } from '../shared/strict-object.js';
 
 export const ASSIGNMENT_CHANGED_NOTIFICATION = 'ASSIGNMENT_CHANGED' as const;
 export const ASSIGNABLE_LIFECYCLES = ['Onboarded', 'Assigned'] as const;
@@ -138,7 +139,7 @@ function toView(
 
 /** 解析并校验分配请求体（跨 Customer Site 引用在此拒绝）。 */
 export function parseAssignInput(deviceId: string, body: unknown): AssignDeviceInput {
-  const input = (body ?? {}) as Record<string, unknown>;
+  const input = parseStrictObject(body, ['customerId', 'siteId', 'reason'], assignmentValidationFailed);
   const customerId =
     typeof input.customerId === 'string' && input.customerId.trim().length > 0 ? input.customerId.trim() : null;
   if (!customerId) throw assignmentValidationFailed('customerId is required');

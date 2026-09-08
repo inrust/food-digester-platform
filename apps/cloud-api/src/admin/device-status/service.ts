@@ -23,6 +23,7 @@ import {
   deviceStatusTransitionNotAllowed,
   deviceStatusValidationFailed,
 } from './errors.js';
+import { parseStrictObject } from '../shared/strict-object.js';
 
 export const DEVICE_SUSPENDED_NOTIFICATION = 'DEVICE_SUSPENDED' as const;
 export const STATUS_CHANGED_NOTIFICATION = 'STATUS_CHANGED' as const;
@@ -247,11 +248,11 @@ export async function reactivateDevice(
 
 /** 解析 suspend/reactivate 请求体。 */
 export function parseSuspendBody(body: unknown): { reason: string } {
-  const input = (body ?? {}) as Record<string, unknown>;
+  const input = parseStrictObject(body, ['reason'], deviceStatusValidationFailed);
   return { reason: requireReason(input.reason) };
 }
 
 export function parseReactivateBody(body: unknown): { reason: string; issueResolved: boolean } {
-  const input = (body ?? {}) as Record<string, unknown>;
+  const input = parseStrictObject(body, ['reason', 'issueResolved'], deviceStatusValidationFailed);
   return { reason: requireReason(input.reason), issueResolved: input.issueResolved === true };
 }

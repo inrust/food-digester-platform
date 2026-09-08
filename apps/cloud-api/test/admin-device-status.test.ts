@@ -18,6 +18,7 @@ import type { ActorContext } from '@fdp/auth';
 import { ADMIN_DEVICE_STATUS_ERROR_HTTP_STATUS, createAdminDeviceStatusHandlers } from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -103,6 +104,7 @@ describe('POST /admin/devices/{deviceId}/suspend（挂起）', () => {
       req(operator, { params: { deviceId: device.id }, body: { reason: '欠费停机' } }),
     );
     assert.equal(res.status, 200);
+    assertOpenApiResponse('suspendDevice', res.status, res.body);
     const data = (res.body as DataBody).data;
     assert.equal(data.lifecycleStatus, 'Suspended');
     assert.equal(data.operationalStatus, 'Suspended', 'operational 镜像');
@@ -213,6 +215,7 @@ describe('POST /admin/devices/{deviceId}/reactivate（恢复）', () => {
       req(superAdmin, { params: { deviceId: device.id }, body: { reason: '欠费已补缴', issueResolved: true } }),
     );
     assert.equal(res.status, 200);
+    assertOpenApiResponse('reactivateDevice', res.status, res.body);
     const data = (res.body as DataBody).data;
     assert.equal(data.lifecycleStatus, 'Active');
     assert.equal(data.notification, 'STATUS_CHANGED');

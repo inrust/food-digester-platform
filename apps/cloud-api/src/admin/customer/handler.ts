@@ -21,6 +21,7 @@ import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.
 import { AdminCustomerError, customerNotFound, validationFailed } from './errors.js';
 import { findCustomerById, listCustomers, toCustomerDto } from './repository.js';
 import { createCustomer, deactivateCustomer, deleteCustomer, parseCustomerName, updateCustomer } from './service.js';
+import { parseStrictObject, rejectRequestBody } from '../shared/strict-object.js';
 
 export interface AdminCustomerHandlerDeps {
   readonly client: DbClient;
@@ -60,8 +61,8 @@ function requireCustomerId(req: AdminHttpRequest): string {
   return customerId;
 }
 
-function bodyOf(req: AdminHttpRequest): Record<string, unknown> {
-  return (req.body ?? {}) as Record<string, unknown>;
+function bodyOf(req: AdminHttpRequest, allowedKeys: readonly string[]): Record<string, unknown> {
+  return parseStrictObject(req.body, allowedKeys, validationFailed);
 }
 
 function toErrorResponse(err: unknown, req: AdminHttpRequest): AdminHttpResponse {
@@ -101,7 +102,7 @@ export function createAdminCustomerHandlers(deps: AdminCustomerHandlerDeps): Adm
   const create = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'customer:write' },
     async (req) => {
-      const name = parseCustomerName(bodyOf(req).name);
+      const name = parseCustomerName(bodyOf(req, ['name']).name);
       const created = await createCustomer(deps.client, req.actor as ActorContext, { name });
       return { status: 201, body: { data: toCustomerDto(created), meta: meta(req) } };
     },
@@ -122,7 +123,7 @@ export function createAdminCustomerHandlers(deps: AdminCustomerHandlerDeps): Adm
   const update = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'customer:write' },
     async (req) => {
-      const name = parseCustomerName(bodyOf(req).name);
+      const name = parseCustomerName(bodyOf(req, ['name']).name);
       const updated = await updateCustomer(deps.client, req.actor as ActorContext, {
         customerId: requireCustomerId(req),
         ifMatchVersion: parseIfMatch(headerOf(req, 'If-Match')),
@@ -135,7 +136,7 @@ export function createAdminCustomerHandlers(deps: AdminCustomerHandlerDeps): Adm
   const deactivate = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'customer:write' },
     async (req) => {
-      const reason = bodyOf(req).reason;
+      const reason = bodyOf(req, ['reason']).reason;
       const updated = await deactivateCustomer(deps.client, req.actor as ActorContext, {
         customerId: requireCustomerId(req),
         ifMatchVersion: parseIfMatch(headerOf(req, 'If-Match')),
@@ -148,6 +149,7 @@ export function createAdminCustomerHandlers(deps: AdminCustomerHandlerDeps): Adm
   const remove = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'customer:write' },
     async (req) => {
+      rejectRequestBody(req.body, validationFailed);
       const deleted = await deleteCustomer(deps.client, req.actor as ActorContext, {
         customerId: requireCustomerId(req),
         ifMatchVersion: parseIfMatch(headerOf(req, 'If-Match')),

@@ -216,8 +216,8 @@ export function toDeviceDto(
       ? {
           licenseId: license.id,
           status: license.status,
-          validFrom: license.validFrom.toISOString(),
-          validTo: license.validTo.toISOString(),
+          validFrom: license.validFrom.toISOString().slice(0, 10),
+          validTo: license.validTo.toISOString().slice(0, 10),
           entitlements: license.entitlements.filter((e) => e.enabled).map((e) => e.code),
         }
       : null,

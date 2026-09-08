@@ -18,6 +18,7 @@ import { ADMIN_SITE_ERROR_HTTP_STATUS, createAdminSiteHandlers, toSiteDto } from
 import type { AdminHttpRequest } from '../src/index.js';
 import type { SiteRecord } from '../src/admin/site/repository.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -106,6 +107,7 @@ describe('POST /admin/sites（创建）', () => {
       }),
     );
     assert.equal(res.status, 201);
+    assertOpenApiResponse('createSite', res.status, res.body);
     const { data } = res.body as DataBody;
     assert.equal(data.name, '上海总部', '名称去首尾空白');
     assert.equal(data.status, 'ACTIVE');
@@ -192,8 +194,10 @@ describe('GET /admin/sites（列表：筛选 + 游标分页 + 设备数量）', 
     await plantDevice(a.id, a1);
     await plantDevice(a.id, a1);
     const detail = await h.detail(req(operator, { params: { siteId: a1 } }));
+    assertOpenApiResponse('getSite', detail.status, detail.body);
     assert.equal((detail.body as DataBody).data.deviceCount, 2, '设备数量统计正确');
     const inList = await h.list(req(operator, { query: { customerId: a.id, region: '华东' } }));
+    assertOpenApiResponse('listSites', inList.status, inList.body);
     const row = (inList.body as { data: Array<{ id: string; deviceCount: number }> }).data.find((s) => s.id === a1);
     assert.equal(row?.deviceCount, 2, '列表同样返回设备数量（无 N+1 语义差异）');
 
@@ -293,6 +297,7 @@ describe('PATCH /admin/sites/{siteId}（更新）', () => {
       }),
     );
     assert.equal(ok.status, 200);
+    assertOpenApiResponse('updateSite', ok.status, ok.body);
     assert.equal((ok.body as DataBody).data.version, 2);
     assert.equal((ok.body as DataBody).data.region, '华北');
     assert.equal((ok.body as DataBody).data.address, null, 'null 清除可空字段');
@@ -323,6 +328,7 @@ describe('POST /admin/sites/{siteId}/deactivate（停用）', () => {
       req(operator, { params: { siteId }, headers: { 'If-Match': '1' }, body: { reason: 'site closed' } }),
     );
     assert.equal(ok.status, 200);
+    assertOpenApiResponse('deactivateSite', ok.status, ok.body);
     assert.equal((ok.body as DataBody).data.status, 'SUSPENDED');
     const audits = await prisma.auditLog.findMany({ where: { objectId: siteId, action: 'site.deactivate' } });
     assert.equal(audits[0]?.reason, 'site closed');
@@ -358,6 +364,7 @@ describe('DELETE /admin/sites/{siteId}（受约束软删除）', () => {
     assert.equal(noIfMatch.status, 400);
     const ok = await h.remove(req(operator, { params: { siteId: cleanId }, headers: { 'If-Match': '1' } }));
     assert.equal(ok.status, 200);
+    assertOpenApiResponse('deleteSite', ok.status, ok.body);
 
     const physical = await prisma.site.findFirst({ where: { id: cleanId } });
     assert.ok(physical && physical.deletedAt !== null, 'V1 不做物理删除：行保留 + deletedAt 标记');

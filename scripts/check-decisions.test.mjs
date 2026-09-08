@@ -56,7 +56,7 @@ test('真实登记文件：结构校验通过，并准确识别当前未决 DEC'
   const register = realRegister();
   const { errors, pending } = validateRegister(register, REGISTER_PATH);
   assert.deepEqual(errors, []);
-  assert.equal(register.decisions.length, 18);
+  assert.equal(register.decisions.length, 19);
   assert.equal(register.principles.length, 3);
   const expectedPendingIds = register.decisions.filter((decision) => decision.status === 'pending').map((d) => d.id);
   assert.deepEqual(

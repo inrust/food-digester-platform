@@ -18,6 +18,7 @@ import type { ActorContext } from '@fdp/auth';
 import { createAdminDeviceHandlers } from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -109,6 +110,7 @@ describe('BE-DEV-06 合法修改与审计', () => {
     const deviceId = await plantDevice(customerAId, '旧别名');
     const res = await patch(operator, deviceId, { alias: '  食堂二号机  ' }, await ifMatchOf(deviceId));
     assert.equal(res.status, 200);
+    assertOpenApiResponse('updateDeviceMetadata', res.status, res.body);
     const view = (res.body as DataBody).data;
     assert.equal(view.alias, '食堂二号机');
     assert.equal(await aliasOf(deviceId), '食堂二号机');

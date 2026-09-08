@@ -21,6 +21,7 @@ import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.
 import { AdminSiteError, siteNotFound, siteValidationFailed } from './errors.js';
 import { findSiteById, listSites, toSiteDto } from './repository.js';
 import { createSite, deactivateSite, deleteSite, parseSiteCreate, parseSiteUpdate, updateSite } from './service.js';
+import { parseStrictObject, rejectRequestBody } from '../shared/strict-object.js';
 
 export interface AdminSiteHandlerDeps {
   readonly client: DbClient;
@@ -137,7 +138,7 @@ export function createAdminSiteHandlers(deps: AdminSiteHandlerDeps): AdminSiteHa
   const deactivate = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'site:write' },
     async (req) => {
-      const reason = (req.body ?? {}) as Record<string, unknown>;
+      const reason = parseStrictObject(req.body, ['reason'], siteValidationFailed);
       const updated = await deactivateSite(deps.client, req.actor as ActorContext, {
         siteId: requireSiteId(req),
         ifMatchVersion: parseIfMatch(headerOf(req, 'If-Match')),
@@ -148,6 +149,7 @@ export function createAdminSiteHandlers(deps: AdminSiteHandlerDeps): AdminSiteHa
   );
 
   const remove = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'site:write' }, async (req) => {
+    rejectRequestBody(req.body, siteValidationFailed);
     const deleted = await deleteSite(deps.client, req.actor as ActorContext, {
       siteId: requireSiteId(req),
       ifMatchVersion: parseIfMatch(headerOf(req, 'If-Match')),

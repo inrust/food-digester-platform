@@ -20,6 +20,7 @@ import { getDeviceConsole } from './service.js';
 import { listDeviceActivities } from './activity.js';
 import { createActivityExport, getActivityExport } from './export.js';
 import type { ActivityExportDeps } from './export.js';
+import { parseStrictObject } from '../shared/strict-object.js';
 
 export type AdminDeviceConsoleHandlerDeps = ActivityExportDeps;
 
@@ -53,6 +54,13 @@ function toErrorResponse(err: unknown, req: AdminHttpRequest): AdminHttpResponse
 function requireParam(req: AdminHttpRequest, name: string): string {
   const value = req.params?.[name];
   if (!value) throw consoleValidationFailed(`${name} path parameter is required`);
+  return value;
+}
+
+function optionalString(input: Record<string, unknown>, field: string): string | undefined {
+  const value = input[field];
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') throw consoleValidationFailed(`${field} must be a string`);
   return value;
 }
 
@@ -92,12 +100,16 @@ export function createAdminDeviceConsoleHandlers(deps: AdminDeviceConsoleHandler
   const createExport = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'export:create' },
     async (req) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
+      const body = parseStrictObject(req.body ?? {}, ['level', 'kind', 'from', 'to'], consoleValidationFailed);
+      const level = optionalString(body, 'level');
+      const kind = optionalString(body, 'kind');
+      const from = optionalString(body, 'from');
+      const to = optionalString(body, 'to');
       const view = await createActivityExport(deps, actorOf(req), requireParam(req, 'deviceId'), {
-        ...(typeof body.level === 'string' ? { level: body.level } : {}),
-        ...(typeof body.kind === 'string' ? { kind: body.kind } : {}),
-        ...(typeof body.from === 'string' ? { from: body.from } : {}),
-        ...(typeof body.to === 'string' ? { to: body.to } : {}),
+        ...(level !== undefined ? { level } : {}),
+        ...(kind !== undefined ? { kind } : {}),
+        ...(from !== undefined ? { from } : {}),
+        ...(to !== undefined ? { to } : {}),
       });
       return { status: 202, body: { data: view, meta: meta(req) } };
     },

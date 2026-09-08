@@ -19,6 +19,7 @@ import { ADMIN_CUSTOMER_ERROR_HTTP_STATUS, createAdminCustomerHandlers, toCustom
 import type { AdminHttpRequest } from '../src/index.js';
 import type { CustomerRecord } from '../src/admin/customer/repository.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -108,6 +109,7 @@ describe('POST /admin/customers（创建）', () => {
   test('PlatformOperator 创建成功：201 + ACTIVE/version=1 + 创建审计', async () => {
     const res = await handlers().create(req(operator, { body: { name: '  Acme Corp  ' } }));
     assert.equal(res.status, 201);
+    assertOpenApiResponse('createCustomer', res.status, res.body);
     const { data, meta } = res.body as DataBody;
     assert.equal(data.name, 'Acme Corp', '名称去首尾空白');
     assert.equal(data.status, 'ACTIVE');
@@ -156,6 +158,7 @@ describe('GET /admin/customers（列表：游标分页 + 状态筛选）', () =>
     do {
       const page = await h.list(req(auditor, { query: { limit: '2', ...(cursor ? { cursor } : {}) } }));
       assert.equal(page.status, 200);
+      assertOpenApiResponse('listCustomers', page.status, page.body);
       const body = page.body as { data: Array<{ id: string }>; meta: { nextCursor: string | null } };
       seen.push(...body.data.map((c) => c.id));
       cursor = body.meta.nextCursor ?? undefined;
@@ -200,6 +203,7 @@ describe('GET /admin/customers/{customerId}（详情与跨 Customer 隔离）', 
     }
     const self = await h.detail(req(customerActor(a.id), { params: { customerId: a.id } }));
     assert.equal(self.status, 200, 'Customer 角色读自身放行');
+    assertOpenApiResponse('getCustomer', self.status, self.body);
     assert.equal((self.body as DataBody).data.id, a.id);
     const cross = await h.detail(req(customerActor(a.id), { params: { customerId: b.id } }));
     assert.equal(cross.status, 403, 'Customer A 不可读 Customer B');
@@ -222,6 +226,7 @@ describe('PATCH /admin/customers/{customerId}（更新：If-Match 乐观锁）',
       req(operator, { params: { customerId: c.id }, headers: { 'If-Match': '1' }, body: { name: 'N1' } }),
     );
     assert.equal(ok.status, 200);
+    assertOpenApiResponse('updateCustomer', ok.status, ok.body);
     assert.equal((ok.body as DataBody).data.name, 'N1');
     assert.equal((ok.body as DataBody).data.version, 2, '版本自增');
 
@@ -264,6 +269,7 @@ describe('POST /admin/customers/{customerId}/deactivate（停用）', () => {
       }),
     );
     assert.equal(ok.status, 200);
+    assertOpenApiResponse('deactivateCustomer', ok.status, ok.body);
     assert.equal((ok.body as DataBody).data.status, 'SUSPENDED');
     assert.equal((ok.body as DataBody).data.version, 2);
 
@@ -320,6 +326,7 @@ describe('DELETE /admin/customers/{customerId}（受约束软删除）', () => {
     const h = handlers();
     const res = await h.remove(req(operator, { params: { customerId: c.id }, headers: { 'If-Match': '1' } }));
     assert.equal(res.status, 200);
+    assertOpenApiResponse('deleteCustomer', res.status, res.body);
     assert.equal((res.body as DataBody).data.version, 2);
 
     const physical = await prisma.customer.findFirst({ where: { id: c.id } });

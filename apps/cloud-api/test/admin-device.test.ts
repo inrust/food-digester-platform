@@ -19,6 +19,7 @@ import type { ActorContext } from '@fdp/auth';
 import { ADMIN_DEVICE_ERROR_HTTP_STATUS, createAdminDeviceHandlers } from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -206,6 +207,7 @@ describe('GET /admin/devices/{deviceId}（详情：字段来源与敏感材料�
 
     const res = await handlers().detail(req(operator, { params: { deviceId: device.id } }));
     assert.equal(res.status, 200);
+    assertOpenApiResponse('getDevice', res.status, res.body);
     const d = (res.body as DataBody).data as Record<string, any>;
 
     assert.equal(d.serialNumber, device.serialNumber);
@@ -224,6 +226,8 @@ describe('GET /admin/devices/{deviceId}（详情：字段来源与敏感材料�
     assert.deepEqual(d.certificate, { certificateId: cert.id, fingerprint: cert.fingerprint, status: 'ACTIVE' });
     assert.equal(d.license.licenseId, license.id);
     assert.equal(d.license.status, 'Active');
+    assert.equal(d.license.validFrom, '2026-01-01');
+    assert.equal(d.license.validTo, '2027-01-01');
     assert.deepEqual(d.license.entitlements, ['REMOTE_CONTROL'], '仅启用中的 Entitlement');
     assert.equal(d.contract.contractId, contract.id);
     assert.equal(d.contract.contractNumber, contract.contractNumber);
@@ -299,6 +303,7 @@ describe('GET /admin/devices（列表：四轴组合筛选互不覆盖）', () =
     };
     const res = await h.list(req(operator, { query: q }));
     assert.equal(res.status, 200);
+    assertOpenApiResponse('listDevices', res.status, res.body);
     const ids = (res.body as ListBody).data.map((d) => d.id);
     assert.deepEqual(ids, [target.id], '四轴组合恰好命中目标设备');
 

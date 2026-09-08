@@ -21,6 +21,7 @@ import {
 } from './errors.js';
 import { countSiteDevices, createSiteRecord, findSiteById, updateSiteWithVersion } from './repository.js';
 import type { SiteRecord } from './repository.js';
+import { parseStrictObject } from '../shared/strict-object.js';
 
 const NAME_MAX = 200;
 const FIELD_MAX = 200;
@@ -102,7 +103,11 @@ export interface SiteCreateInput {
 
 /** 解析创建请求体（customerId 必填；错误 Customer 在事务外汇级校验前先拒绝）。 */
 export function parseSiteCreate(body: unknown): SiteCreateInput {
-  const input = (body ?? {}) as Record<string, unknown>;
+  const input = parseStrictObject(
+    body,
+    ['customerId', 'name', 'region', 'subregion', 'address', 'timezone', 'contactName', 'contactPhone', 'contactEmail'],
+    siteValidationFailed,
+  );
   const customerId =
     typeof input.customerId === 'string' && input.customerId.trim().length > 0 ? input.customerId.trim() : null;
   if (!customerId) throw siteValidationFailed('customerId is required');
@@ -132,7 +137,7 @@ const UPDATABLE_FIELDS = [
 
 /** 解析更新请求体：仅允许 UPDATABLE_FIELDS；customerId 不可变；至少一个字段。 */
 export function parseSiteUpdate(body: unknown): Record<string, unknown> {
-  const input = (body ?? {}) as Record<string, unknown>;
+  const input = parseStrictObject(body, UPDATABLE_FIELDS, siteValidationFailed);
   if ('customerId' in input) throw siteValidationFailed('customerId is immutable for a site');
   const patch: Record<string, unknown> = {};
   if (input.name !== undefined) patch.name = parseSiteName(input.name);

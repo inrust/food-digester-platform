@@ -19,6 +19,7 @@ import type { ActorContext } from '@fdp/auth';
 import { createAdminDeviceConsoleHandlers, fetchAllDeviceActivities, processActivityExportJobs } from '../src/index.js';
 import type { ActivityExportDeps, AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -315,6 +316,7 @@ describe('BE-DEV-05 控制台组合查询', () => {
     const h = createAdminDeviceConsoleHandlers(deps());
     const res = await h.getDeviceConsole(req(custActor(customerAId), { params: { deviceId: DEV_A1 } }));
     assert.equal(res.status, 200);
+    assertOpenApiResponse('getDeviceConsole', res.status, res.body);
     const view = (res.body as DataBody).data;
 
     // 四轴分离 + 固件（上报优先）
@@ -445,11 +447,11 @@ describe('BE-DEV-05 活动日志筛选', () => {
   test('级别/类型/时间筛选；EVENT 固定 INFO；排序稳定（倒序 + 同刻决胜）+ 分页不丢不重', async () => {
     const h = createAdminDeviceConsoleHandlers(deps());
     // 全量：3 事件 + 7 告警 = 10
-    const all = (
-      await h.listDeviceActivities(
-        req(custActor(customerAId), { params: { deviceId: DEV_A1 }, query: { limit: '50' } }),
-      )
-    ).body as ListBody;
+    const allResponse = await h.listDeviceActivities(
+      req(custActor(customerAId), { params: { deviceId: DEV_A1 }, query: { limit: '50' } }),
+    );
+    assertOpenApiResponse('listDeviceActivities', allResponse.status, allResponse.body);
+    const all = allResponse.body as ListBody;
     assert.equal(all.data.length, 10);
     const times = all.data.map((a) => a.occurredAt as string);
     assert.deepEqual(times, [...times].sort().reverse());
@@ -568,6 +570,7 @@ describe('BE-DEV-05 活动导出（异步 Worker）', () => {
       req(custActor(customerAId), { params: { deviceId: DEV_A1 }, body: { level: 'WARNING' } }),
     );
     assert.equal(created.status, 202);
+    assertOpenApiResponse('createActivityExport', created.status, created.body);
     const job = (created.body as DataBody).data;
     assert.equal(job.status, 'PENDING');
     assert.deepEqual(job.filters, { level: 'WARNING', to: NOW.toISOString() });
@@ -579,6 +582,7 @@ describe('BE-DEV-05 活动导出（异步 Worker）', () => {
 
     // 详情：COMPLETED + 短期 URL；Customer A 可读
     const detail = await h.getActivityExport(req(custActor(customerAId), { params: { exportId: job.exportId } }));
+    assertOpenApiResponse('getActivityExport', detail.status, detail.body);
     const done = (detail.body as DataBody).data;
     assert.equal(done.status, 'COMPLETED');
     assert.ok(done.downloadUrl?.startsWith('https://signed.local/activity-exports/'));
@@ -603,7 +607,7 @@ describe('BE-DEV-05 活动导出（异步 Worker）', () => {
     assert.ok(lines.slice(1).every((line) => line.split(',')[2] === 'WARNING'));
 
     // CSV 转义：另建全量导出验证 remarks 引号转义
-    const full = await h.createActivityExport(req(custActor(customerAId), { params: { deviceId: DEV_A1 }, body: {} }));
+    const full = await h.createActivityExport(req(custActor(customerAId), { params: { deviceId: DEV_A1 } }));
     const fullJob = (full.body as DataBody).data;
     await processActivityExportJobs(deps());
     const fullCsv = storedCsv.get(`activity-exports/${fullJob.exportId}.csv`)!;

@@ -18,6 +18,7 @@ import type { ActorContext } from '@fdp/auth';
 import { ADMIN_ASSIGNMENT_ERROR_HTTP_STATUS, createAdminDeviceAssignmentHandlers } from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -111,6 +112,7 @@ describe('POST /admin/devices/{deviceId}/assignment（首次分配）', () => {
       }),
     );
     assert.equal(res.status, 200);
+    assertOpenApiResponse('assignDevice', res.status, res.body);
     const data = (res.body as DataBody).data;
     assert.equal(data.status, 'ACTIVE');
     assert.equal(data.lifecycleStatus, 'Assigned');
@@ -312,7 +314,9 @@ describe('POST /admin/devices/{deviceId}/assignment（调整分配与角色边�
     const devB = await plantDevice('Assigned', b.id, siteB.id);
     const h = handlers();
 
-    assert.equal((await h.history(req(customerActor(a.id), { params: { deviceId: devA.id } }))).status, 200);
+    const ownHistory = await h.history(req(customerActor(a.id), { params: { deviceId: devA.id } }));
+    assert.equal(ownHistory.status, 200);
+    assertOpenApiResponse('listDeviceAssignments', ownHistory.status, ownHistory.body);
     assert.equal((await h.history(req(customerActor(a.id), { params: { deviceId: devB.id } }))).status, 403);
     assert.equal((await h.history(req(operator, { params: { deviceId: 'dev-x' } }))).status, 404);
   });

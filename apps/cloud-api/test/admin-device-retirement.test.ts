@@ -25,6 +25,7 @@ import {
 } from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -150,6 +151,7 @@ describe('POST /admin/devices/{deviceId}/retire（管理员退役）', () => {
       req(superAdmin, { params: { deviceId: d.deviceId }, body: { reason: '设备报废', confirm: true } }),
     );
     assert.equal(res.status, 200);
+    assertOpenApiResponse('retireDevice', res.status, res.body);
     const data = (res.body as DataBody).data as Record<string, any>;
     assert.equal(data.lifecycleStatus, 'Retired');
     assert.equal(data.notification, 'DEVICE_RETIRED');
@@ -325,6 +327,7 @@ describe('POST /admin/devices/{deviceId}/retire/complete（force-complete）', (
       req(operator, { params: { deviceId: d.deviceId }, body: { reason: '设备长期离线，强制完成' } }),
     );
     assert.equal(done.status, 200);
+    assertOpenApiResponse('forceCompleteRetirement', done.status, done.body);
     const data = (done.body as DataBody).data as Record<string, any>;
     assert.equal(data.retirement.status, 'CONFIRMED');
     assert.equal(data.retirement.completionMethod, 'FORCE_COMPLETE');
