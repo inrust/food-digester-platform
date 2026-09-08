@@ -8,28 +8,46 @@ describe('BE-ALM-02 业务通知生产发送端', () => {
     const client = {
       async send(command: unknown) {
         sent.push(command);
-        return {};
+        return { MessageId: 'ses-message-1' };
       },
     } as unknown as SESv2Client;
     const sender = createSesEmailSender({ fromAddress: 'alerts@example.com', client });
 
-    await sender.send({ to: 'ops@example.com', subject: 'Critical alarm', body: 'deviceId: dev-1' });
+    const providerRequestId = await sender.send({
+      to: 'ops@example.com',
+      subject: 'Critical alarm',
+      body: 'deviceId: dev-1',
+      idempotencyKey: 'event-1:EMAIL:ops@example.com',
+    });
 
     assert.instanceOf(sent[0], SendEmailCommand);
     assert.deepInclude((sent[0] as SendEmailCommand).input, {
       FromEmailAddress: 'alerts@example.com',
       Destination: { ToAddresses: ['ops@example.com'] },
     });
+    assert.equal(providerRequestId, 'ses-message-1');
   });
 
   test('Webhook 仅允许 HTTPS 精确白名单主机并禁止重定向', async () => {
-    const fetchImpl = vi.fn(async () => new Response(null, { status: 204 }));
+    const fetchImpl = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 204, headers: { 'x-request-id': 'hook-request-1' } }),
+    );
     const sender = createHttpsWebhookSender({ allowedHosts: ['hooks.example.com'], fetchImpl });
 
-    await sender.send({ url: 'https://hooks.example.com/critical', payload: { alarmId: 'alm-1' } });
+    const providerRequestId = await sender.send({
+      url: 'https://hooks.example.com/critical',
+      payload: { alarmId: 'alm-1' },
+      idempotencyKey: 'event-1:WEBHOOK:https://hooks.example.com/critical',
+    });
     assert.equal(fetchImpl.mock.calls[0]?.[1]?.redirect, 'error');
-    await expect(sender.send({ url: 'http://hooks.example.com/a', payload: {} })).rejects.toThrow(/白名单/u);
-    await expect(sender.send({ url: 'https://evil.example/a', payload: {} })).rejects.toThrow(/白名单/u);
-    await expect(sender.send({ url: 'https://user:pass@hooks.example.com/a', payload: {} })).rejects.toThrow(/白名单/u);
+    assert.equal(
+      (fetchImpl.mock.calls[0]?.[1]?.headers as Record<string, string>)['idempotency-key'],
+      'event-1:WEBHOOK:https://hooks.example.com/critical',
+    );
+    assert.equal(providerRequestId, 'hook-request-1');
+    const invalid = (url: string) => sender.send({ url, payload: {}, idempotencyKey: 'event-2:WEBHOOK:target' });
+    await expect(invalid('http://hooks.example.com/a')).rejects.toThrow(/白名单/u);
+    await expect(invalid('https://evil.example/a')).rejects.toThrow(/白名单/u);
+    await expect(invalid('https://user:pass@hooks.example.com/a')).rejects.toThrow(/白名单/u);
   });
 });

@@ -27,6 +27,7 @@ import {
   processConsumableRequest,
 } from './request-service.js';
 import type { ConsumableRequestDeps } from './request-service.js';
+import { parseStrictObject } from '../admin/shared/strict-object.js';
 
 export type AdminConsumableRequestHandlerDeps = ConsumableRequestDeps;
 
@@ -69,8 +70,8 @@ function requireRequestId(req: AdminHttpRequest): string {
   return requestId;
 }
 
-function bodyOf(req: AdminHttpRequest): Record<string, unknown> {
-  return (req.body ?? {}) as Record<string, unknown>;
+function bodyOf(req: AdminHttpRequest, allowedKeys: readonly string[]): Record<string, unknown> {
+  return parseStrictObject(req.body ?? {}, allowedKeys, consumableValidationFailed);
 }
 
 function optionalNote(value: unknown, field: string): string | undefined {
@@ -112,14 +113,14 @@ export function createAdminConsumableRequestHandlers(
   const now = deps.now ?? (() => new Date());
   const meta = (req: AdminHttpRequest) => ({ requestId: req.requestId, timestamp: now().toISOString() });
   const actorOf = (req: AdminHttpRequest) => req.actor as ActorContext;
-  const transitionInputOf = (req: AdminHttpRequest) => ({
+  const transitionInputOf = (req: AdminHttpRequest, allowedKeys: readonly string[]) => ({
     requestId: requireRequestId(req),
     ifMatchVersion: parseIfMatch(headerOf(req, 'If-Match')),
-    note: optionalNote(bodyOf(req).note, 'note'),
+    note: optionalNote(bodyOf(req, allowedKeys).note, 'note'),
   });
 
   const create = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'device:write' }, async (req) => {
-    const body = bodyOf(req);
+    const body = bodyOf(req, ['deviceId', 'consumableType', 'note']);
     if (typeof body.deviceId !== 'string' || body.deviceId.trim().length === 0) {
       throw consumableValidationFailed('deviceId is required');
     }
@@ -156,7 +157,7 @@ export function createAdminConsumableRequestHandlers(
   const process = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'device:write' },
     async (req) => {
-      const view = await processConsumableRequest(deps, actorOf(req), transitionInputOf(req));
+      const view = await processConsumableRequest(deps, actorOf(req), transitionInputOf(req, ['note']));
       return { status: 200, body: { data: view, meta: meta(req) } };
     },
   );
@@ -164,13 +165,13 @@ export function createAdminConsumableRequestHandlers(
   const complete = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'device:write' },
     async (req) => {
-      const view = await completeConsumableRequest(deps, actorOf(req), transitionInputOf(req));
+      const view = await completeConsumableRequest(deps, actorOf(req), transitionInputOf(req, ['note']));
       return { status: 200, body: { data: view, meta: meta(req) } };
     },
   );
 
   const cancel = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'device:write' }, async (req) => {
-    const view = await cancelConsumableRequest(deps, actorOf(req), transitionInputOf(req));
+    const view = await cancelConsumableRequest(deps, actorOf(req), transitionInputOf(req, ['note']));
     return { status: 200, body: { data: view, meta: meta(req) } };
   });
 

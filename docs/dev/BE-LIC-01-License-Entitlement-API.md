@@ -8,7 +8,7 @@
 |---|---|
 | 任务 | BE-LIC-01（P1 / 管理后台后端），依赖 DOM-02、AUTH-01、DOM-03（均已交付） |
 | 状态机 | DOM-02 迁移表为唯一事实源：创建 Draft → Issue（Draft→Issued，生成签名）→ Activate（Issued→Active，SYSTEM）→ Renew（ExpiringSoon→Renewed，延长 validTo 并重签）→ Revoke（Active/Expired→Revoked，强制原因）；非法跳转/越权/缺原因由领域层抛 LicenseStateError |
-| Entitlement | 创建 Draft 时配置 REMOTE_CONTROL / OTA_UPDATE / ESG_REPORTING；运行中 License 不提供 Entitlement 变更（迁移语义留给新任务） |
+| Entitlement | REST/签名使用源契约 `REMOTE_CONTROL / OTA / ESG_REPORTING`；历史 DB 码 `OTA_UPDATE` 只在服务内部映射；运行中 License 不提供 Entitlement 变更 |
 | 功能边界 | 不实现定时 ExpiringSoon/Expired 扫描；提供可测试的 evaluate 入口（DOM-02 `evaluateLicenseAt` 时间派生 + Renewed→Active 结算，SYSTEM actor） |
 
 ## 2. 端点
@@ -46,7 +46,7 @@
 
 ## 4. 未决风险
 
-- 签名机制为暂定值（HMAC-SHA256 + 部署注入 signingKey，base64url）；正式密钥管理与轮换策略需与 Sync/设备侧另行约定；
+- 签名机制已由 DEC-020@1.0.0 冻结：`v1.<HMAC-SHA256 base64url>`、固定规范载荷、环境级 Secrets Manager/KMS 密钥及 active/previous 双验轮换窗口；
 - LICENSE_CHANGED 通知的实际 MQTT 投递依赖下行分发器（Outbox 当前仅归档链路）；
 - ExpiringSoon/Expired 定时扫描按功能边界未实现，当前由调用方触发 evaluate（接入调度器即可，领域方法已可测试）；
 - DOM-02 中 Issued→Active 为 SYSTEM 迁移，管理端 activate 端点以 SYSTEM actor 执行（等价系统激活事件）；如需区分人工激活角色需调整领域迁移表。

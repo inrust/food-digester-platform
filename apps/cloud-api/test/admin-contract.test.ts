@@ -16,6 +16,7 @@ import type { ActorContext } from '@fdp/auth';
 import { ADMIN_CONTRACT_ERROR_HTTP_STATUS, createAdminContractHandlers } from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -101,6 +102,7 @@ async function createContract(
     }),
   );
   assert.equal(res.status, 201, JSON.stringify(res.body));
+  assertOpenApiResponse('createContract', 201, res.body);
   return (res.body as DataBody).data;
 }
 

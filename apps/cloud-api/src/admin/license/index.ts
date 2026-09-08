@@ -8,12 +8,15 @@ export {
   activateLicense,
   createDraftLicense,
   evaluateLicense,
+  entitlementFromWire,
+  entitlementToWire,
   getLicense,
   issueLicense,
   listLicenseHistory,
   renewLicenseById,
   revokeLicense,
   signLicensePayload,
+  verifyLicensePayloadSignature,
 } from './service.js';
 export type {
   CreateDraftInput,
@@ -21,5 +24,6 @@ export type {
   EvaluateResult,
   LicenseDeps,
   LicenseHistoryView,
+  LicenseSignaturePayload,
   LicenseView,
 } from './service.js';

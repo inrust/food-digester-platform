@@ -20,6 +20,7 @@ import { ADMIN_CONFIGURATION_ERROR_HTTP_STATUS, createAdminConfigurationHandlers
 import { resolveEffectiveConfiguration } from '../src/admin/configuration/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -109,6 +110,7 @@ type ErrorBody = { error: { code: string; message: string; requestId: string } }
 async function createDeviceConfig(h: ReturnType<typeof handlers>, deviceId: string) {
   const res = await h.create(req(operator, { body: { name: `Cfg ${deviceId}`, targetDeviceId: deviceId } }));
   assert.equal(res.status, 201);
+  assertOpenApiResponse('createConfiguration', 201, res.body);
   return (res.body as DataBody).data;
 }
 
@@ -121,6 +123,7 @@ async function createVersion(
     req(operator, { params: { configurationId }, body: { payload, changeNote: '变更' } }),
   );
   assert.equal(res.status, 201, JSON.stringify(res.body));
+  assertOpenApiResponse('createConfigurationVersion', 201, res.body);
   return (res.body as DataBody).data;
 }
 

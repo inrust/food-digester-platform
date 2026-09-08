@@ -18,3 +18,16 @@ export function parseStrictObject(
 export function rejectRequestBody(body: unknown, validationError: (message: string) => Error): void {
   if (body !== undefined && body !== null) throw validationError('request body is not allowed');
 }
+
+/** 对 OpenAPI string 可选字段执行类型检查，避免 Handler 静默忽略错误类型。 */
+export function assertOptionalStringFields(
+  input: Readonly<Record<string, unknown>>,
+  fields: readonly string[],
+  validationError: (message: string) => Error,
+): void {
+  for (const field of fields) {
+    if (input[field] !== undefined && input[field] !== null && typeof input[field] !== 'string') {
+      throw validationError(`${field} must be a string`);
+    }
+  }
+}

@@ -19,6 +19,7 @@ import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.
 import { AdminAlarmError, alarmValidationFailed } from './errors.js';
 import { acknowledgeAlarm, clearAlarm, getAlarm, listAlarms, listDeviceEvents, listTamperEvents } from './service.js';
 import type { AlarmDeps } from './service.js';
+import { parseStrictObject } from '../shared/strict-object.js';
 
 export type AdminAlarmHandlerDeps = AlarmDeps;
 
@@ -58,7 +59,7 @@ function requireAlarmId(req: AdminHttpRequest): string {
 }
 
 function requireReason(req: AdminHttpRequest): string {
-  const reason = (req.body as Record<string, unknown> | undefined)?.reason;
+  const reason = parseStrictObject(req.body, ['reason'], alarmValidationFailed).reason;
   if (typeof reason !== 'string' || reason.trim().length === 0 || reason.trim().length > 500) {
     throw alarmValidationFailed('reason is required and must be a string of 1~500 characters');
   }

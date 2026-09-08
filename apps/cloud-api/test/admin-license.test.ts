@@ -16,9 +16,15 @@ import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
-import { ADMIN_LICENSE_ERROR_HTTP_STATUS, createAdminLicenseHandlers, signLicensePayload } from '../src/index.js';
+import {
+  ADMIN_LICENSE_ERROR_HTTP_STATUS,
+  createAdminLicenseHandlers,
+  signLicensePayload,
+  verifyLicensePayloadSignature,
+} from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -101,7 +107,7 @@ async function createDraft(h: ReturnType<typeof handlers>, deviceId: string, val
         deviceId,
         validFrom: VALID_FROM.toISOString(),
         validTo: validTo.toISOString(),
-        entitlements: ['REMOTE_CONTROL', 'OTA_UPDATE'],
+        entitlements: ['REMOTE_CONTROL', 'OTA'],
         reason: '初始签发',
       },
     }),
@@ -147,7 +153,7 @@ describe('全状态路径：Draft→Issued→Active→ExpiringSoon→Renewed→A
       customerId,
       validFrom: VALID_FROM,
       validTo: new Date(NOW.getTime() + 10 * DAY_MS),
-      entitlements: ['REMOTE_CONTROL', 'OTA_UPDATE'],
+      entitlements: ['REMOTE_CONTROL', 'OTA'],
     });
     assert.equal(issuedData.signature, expectedSig, 'Issue 生成签名供 Sync');
     assert.equal(issuedData.effective, true, 'Issued 在有效期内即有效');
@@ -171,7 +177,7 @@ describe('全状态路径：Draft→Issued→Active→ExpiringSoon→Renewed→A
     assert.equal(renewed.status, 200);
     const renewedData = (renewed.body as DataBody).data;
     assert.equal(renewedData.status, 'Renewed');
-    assert.equal(renewedData.validTo, newValidTo.toISOString());
+    assert.equal(renewedData.validTo, newValidTo.toISOString().slice(0, 10));
     assert.equal(renewedData.replayed, false);
     assert.notEqual(renewedData.signature, expectedSig, 'Renew 重签');
     const expectedRenewSig = signLicensePayload(SIGNING_KEY, {
@@ -180,7 +186,7 @@ describe('全状态路径：Draft→Issued→Active→ExpiringSoon→Renewed→A
       customerId,
       validFrom: VALID_FROM,
       validTo: newValidTo,
-      entitlements: ['REMOTE_CONTROL', 'OTA_UPDATE'],
+      entitlements: ['REMOTE_CONTROL', 'OTA'],
     });
     assert.equal(renewedData.signature, expectedRenewSig);
 
@@ -474,6 +480,59 @@ describe('契约一致性', () => {
     const { deviceId } = await plantAssignedDevice();
     const draft = await createDraft(handlers(), deviceId, new Date(NOW.getTime() + 400 * DAY_MS));
     assert.deepEqual(Object.keys(draft).sort(), required);
+    assert.deepEqual((draft.entitlements as { code: string }[]).map((item) => item.code).sort(), [
+      'OTA',
+      'REMOTE_CONTROL',
+    ]);
+  });
+
+  test('OpenAPI wire 请求可执行且成功/错误响应反向通过统一 bundle；未知字段和内部码失败关闭', async () => {
+    const { deviceId } = await plantAssignedDevice();
+    const h = handlers();
+    const validBody = {
+      deviceId,
+      validFrom: VALID_FROM.toISOString(),
+      validTo: new Date(NOW.getTime() + 400 * DAY_MS).toISOString(),
+      entitlements: ['REMOTE_CONTROL', 'OTA', 'ESG_REPORTING'],
+    };
+    const success = await h.create(req(operator, { body: validBody }));
+    assert.equal(success.status, 201);
+    assertOpenApiResponse('createLicense', 201, success.body);
+
+    for (const body of [
+      { ...validBody, certificatePem: 'forbidden' },
+      { ...validBody, entitlements: ['OTA_UPDATE'] },
+      ['not-an-object'],
+    ]) {
+      const failed = await h.create(req(operator, { body }));
+      assert.equal(failed.status, 400);
+      assertOpenApiResponse('createLicense', 400, failed.body);
+    }
+  });
+
+  test('DEC-020 固定向量与 active/previous/legacy 轮换验签语义稳定', () => {
+    const payload = {
+      licenseId: 'lic-vector-1',
+      deviceId: 'dev-vector-1',
+      customerId: 'cus-vector-1',
+      validFrom: new Date('2026-01-01T00:00:00.000Z'),
+      validTo: new Date('2027-01-01T00:00:00.000Z'),
+      entitlements: ['ESG_REPORTING', 'OTA_UPDATE', 'REMOTE_CONTROL'],
+    };
+    const signature = signLicensePayload('active-test-key', payload);
+    assert.equal(signature, 'v1.9m5ypvSu2hLkU-5T3O9PpA7XhLBP42u6-FJiCZ4vhb0');
+    assert.isTrue(verifyLicensePayloadSignature({ active: 'active-test-key' }, payload, signature));
+    assert.isTrue(
+      verifyLicensePayloadSignature({ active: 'new-key', previous: 'active-test-key' }, payload, signature),
+    );
+    assert.isTrue(
+      verifyLicensePayloadSignature(
+        { active: 'new-key', previous: 'active-test-key' },
+        payload,
+        signature.slice('v1.'.length),
+      ),
+    );
+    assert.isFalse(verifyLicensePayloadSignature({ active: 'new-key' }, payload, signature.slice('v1.'.length)));
   });
 
   test('admin/license 模块无任何 AWS 依赖', () => {

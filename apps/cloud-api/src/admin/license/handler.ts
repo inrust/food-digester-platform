@@ -29,8 +29,10 @@ import {
   listLicenseHistory,
   renewLicenseById,
   revokeLicense,
+  entitlementFromWire,
 } from './service.js';
 import type { LicenseDeps } from './service.js';
+import { assertOptionalStringFields, parseStrictObject, rejectRequestBody } from '../shared/strict-object.js';
 
 export type AdminLicenseHandlerDeps = LicenseDeps;
 
@@ -101,18 +103,30 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
   const create = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'license:write' },
     async (req) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
+      const body = parseStrictObject(
+        req.body,
+        ['deviceId', 'validFrom', 'validTo', 'entitlements', 'reason'],
+        licenseValidationFailed,
+      );
       const deviceId =
         typeof body.deviceId === 'string' && body.deviceId.trim().length > 0 ? body.deviceId.trim() : null;
       if (!deviceId) throw licenseValidationFailed('deviceId is required');
       if (!Array.isArray(body.entitlements) || body.entitlements.some((e) => typeof e !== 'string')) {
         throw licenseValidationFailed('entitlements must be a string array');
       }
+      assertOptionalStringFields(body, ['reason'], licenseValidationFailed);
+      const wireEntitlements = body.entitlements as string[];
+      if (
+        wireEntitlements.some((code) => !['REMOTE_CONTROL', 'OTA', 'ESG_REPORTING'].includes(code)) ||
+        new Set(wireEntitlements).size !== wireEntitlements.length
+      ) {
+        throw licenseValidationFailed('entitlements contains an unknown or duplicate wire code');
+      }
       const view = await createDraftLicense(deps, actorOf(req), {
         deviceId,
         validFrom: requireTimestamp(body.validFrom, 'validFrom'),
         validTo: requireTimestamp(body.validTo, 'validTo'),
-        entitlements: body.entitlements as string[],
+        entitlements: wireEntitlements.map(entitlementFromWire),
         ...(typeof body.reason === 'string' ? { reason: body.reason } : {}),
       });
       return { status: 201, body: { data: view, meta: meta(req) } };
@@ -120,6 +134,7 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
   );
 
   const issue = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'license:write' }, async (req) => {
+    rejectRequestBody(req.body, licenseValidationFailed);
     const view = await issueLicense(deps, actorOf(req), { licenseId: requireLicenseId(req) });
     return { status: 200, body: { data: view, meta: meta(req) } };
   });
@@ -127,13 +142,14 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
   const activate = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'license:write' },
     async (req) => {
+      rejectRequestBody(req.body, licenseValidationFailed);
       const view = await activateLicense(deps, actorOf(req), { licenseId: requireLicenseId(req) });
       return { status: 200, body: { data: view, meta: meta(req) } };
     },
   );
 
   const renew = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'license:write' }, async (req) => {
-    const body = (req.body ?? {}) as Record<string, unknown>;
+    const body = parseStrictObject(req.body, ['newValidTo'], licenseValidationFailed);
     const view = await renewLicenseById(deps, actorOf(req), {
       licenseId: requireLicenseId(req),
       newValidTo: requireTimestamp(body.newValidTo, 'newValidTo'),
@@ -144,7 +160,7 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
   const revoke = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'license:write' },
     async (req) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
+      const body = parseStrictObject(req.body, ['reason'], licenseValidationFailed);
       const view = await revokeLicense(deps, actorOf(req), {
         licenseId: requireLicenseId(req),
         ...(typeof body.reason === 'string' ? { auditReason: body.reason } : {}),
@@ -156,7 +172,7 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
   const evaluate = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'license:write' },
     async (req) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
+      const body = parseStrictObject(req.body ?? {}, ['at'], licenseValidationFailed);
       const at = body.at === undefined ? now() : requireTimestamp(body.at, 'at');
       const result = await evaluateLicense(deps, actorOf(req), requireLicenseId(req), at);
       return { status: 200, body: { data: { ...result.view, changed: result.changed }, meta: meta(req) } };

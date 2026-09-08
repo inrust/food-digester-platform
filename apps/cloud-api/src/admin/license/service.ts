@@ -10,16 +10,17 @@
  *   一个 LICENSE_CHANGED Notification（Outbox 下行）+ 一个 DEC-016 DOMAIN_EVENT 归档；
  *   renew 同目标重放不写；
  * - License 签名字段供 Sync：Issue/Renew 时以注入签名密钥对规范载荷计算 HMAC-SHA256
- *   （base64url），Draft 无签名；签名机制为暂定值（部署方注入 signingKey）；
+ *   （base64url），Draft 无签名；签名机制由 DEC-020 冻结，密钥由 Secrets Manager/KMS 注入；
  * - 并发：licenses.version 条件更新（版本漂移 → 409）；
  * - 时间派生不实现定时扫描：evaluateLicense(licenseId, at) 可测试服务方法（SYSTEM actor：
  *   Active→ExpiringSoon/Expired、ExpiringSoon→Expired、Renewed→Active 结算）；activate 端点
  *   以 SYSTEM actor 执行 Issued→Active（要求已到 validFrom）。
  *
- * 功能边界：Entitlement 在创建 Draft 时配置（REMOTE_CONTROL/OTA_UPDATE/ESG_REPORTING）；
+ * 功能边界：Entitlement 在创建 Draft 时配置（REST/签名为 REMOTE_CONTROL/OTA/ESG_REPORTING，
+ * 历史 DB 码 OTA_UPDATE 仅在本服务边界映射）；
  * 不提供运行中 License 的 Entitlement 变更（需新任务定义迁移语义）。
  */
-import { createHmac, randomUUID } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { DbClient } from '@fdp/database';
 import { audited } from '@fdp/database';
 import {
@@ -37,11 +38,20 @@ export const LICENSE_CHANGED_NOTIFICATION = 'LICENSE_CHANGED' as const;
 /** 创建 Draft 的阻断集合：设备存在任一非终态 License 时不可再建（含 Draft，避免草稿堆积）。 */
 export const BLOCKING_LICENSE_STATUSES = ['Draft', 'Issued', 'Active', 'ExpiringSoon', 'Renewed'] as const;
 
+/** 源契约 wire code 与历史内部存储码的唯一边界映射。 */
+export function entitlementToWire(code: string): string {
+  return code === 'OTA_UPDATE' ? 'OTA' : code;
+}
+
+export function entitlementFromWire(code: string): string {
+  return code === 'OTA' ? 'OTA_UPDATE' : code;
+}
+
 const notificationTopic = (deviceId: string): string => `bnx/device/${deviceId}/notification`;
 
 export interface LicenseDeps {
   readonly client: DbClient;
-  /** License 签名密钥（部署注入；暂定 HMAC-SHA256 机制，供 Sync 下发校验）。 */
+  /** DEC-020：License HMAC-SHA256 密钥，仅由部署层 Secret 注入。 */
   readonly signingKey: string;
   readonly now?: () => Date;
 }
@@ -67,6 +77,15 @@ export interface LicenseView {
   readonly createdBy: string;
   readonly createdAt: string;
   readonly updatedAt: string;
+}
+
+export interface LicenseSignaturePayload {
+  readonly licenseId: string;
+  readonly deviceId: string;
+  readonly customerId: string;
+  readonly validFrom: Date;
+  readonly validTo: Date;
+  readonly entitlements: readonly string[];
 }
 
 export interface LicenseHistoryView {
@@ -126,27 +145,38 @@ function isUniqueViolation(err: unknown): boolean {
   return (err as { code?: string } | null)?.code === 'P2002';
 }
 
-/** License 规范载荷签名（HMAC-SHA256/base64url；供 Sync 下发校验，暂定机制）。 */
-export function signLicensePayload(
-  signingKey: string,
-  payload: {
-    readonly licenseId: string;
-    readonly deviceId: string;
-    readonly customerId: string;
-    readonly validFrom: Date;
-    readonly validTo: Date;
-    readonly entitlements: readonly string[];
-  },
-): string {
+/** DEC-020 License 规范载荷签名：固定字段顺序、UTC ISO 时间、wire entitlement 排序。 */
+export function signLicensePayload(signingKey: string, payload: LicenseSignaturePayload): string {
   const canonical = JSON.stringify({
     licenseId: payload.licenseId,
     deviceId: payload.deviceId,
     customerId: payload.customerId,
     validFrom: payload.validFrom.toISOString(),
     validTo: payload.validTo.toISOString(),
-    entitlements: [...payload.entitlements].sort(),
+    entitlements: payload.entitlements.map(entitlementToWire).sort(),
   });
-  return createHmac('sha256', signingKey).update(canonical).digest('base64url');
+  return `v1.${createHmac('sha256', signingKey).update(canonical).digest('base64url')}`;
+}
+
+function signatureMatches(expected: string, actual: string): boolean {
+  const left = Buffer.from(expected);
+  const right = Buffer.from(actual);
+  return left.length === right.length && timingSafeEqual(left, right);
+}
+
+/** DEC-020 轮换验签：v1 同时尝试 active/previous；legacy 裸 MAC 只允许 previous key。 */
+export function verifyLicensePayloadSignature(
+  keys: { readonly active: string; readonly previous?: string },
+  payload: LicenseSignaturePayload,
+  signature: string,
+): boolean {
+  if (signature.startsWith('v1.')) {
+    return [keys.active, keys.previous]
+      .filter((key): key is string => typeof key === 'string')
+      .some((key) => signatureMatches(signLicensePayload(key, payload), signature));
+  }
+  if (!keys.previous) return false;
+  return signatureMatches(signLicensePayload(keys.previous, payload).slice('v1.'.length), signature);
 }
 
 function toSnapshot(row: LicenseRow): LicenseSnapshot {
@@ -166,9 +196,9 @@ function toView(row: LicenseRow, at: Date): LicenseView {
     deviceId: row.deviceId,
     customerId: row.customerId,
     status: row.status,
-    validFrom: row.validFrom.toISOString(),
-    validTo: row.validTo.toISOString(),
-    entitlements: row.entitlements.map((e) => ({ code: e.code, enabled: e.enabled })),
+    validFrom: row.validFrom.toISOString().slice(0, 10),
+    validTo: row.validTo.toISOString().slice(0, 10),
+    entitlements: row.entitlements.map((e) => ({ code: entitlementToWire(e.code), enabled: e.enabled })),
     signature: row.signature,
     version: row.version,
     effective: isLicenseEffective(toSnapshot(row), at),

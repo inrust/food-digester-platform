@@ -18,6 +18,20 @@
 
 本次复核限制：目标 AWS 部署、SES 身份、真实 Webhook、API Gateway/Cognito/RDS/S3 运行回执仍为 **NOT RUN**；仓库级 `pnpm typecheck` 被本次范围外的未提交 Admin Web/OTA 类型错误阻断，因此不能把本地 P0 关闭表述为生产环境已验收。
 
+## P1 整改复核（2026-09-08）
+
+当前状态：报告所列 P1 跨层与并发缺陷已在本地实现并验证，`H-01`、`H-02`、`M-02`、`M-05` 关闭；检查真实 Handler 成功响应时额外发现并关闭 License 日期投影及 Consumable Request 创建结果 Schema 两处跨层漂移。原始审计正文继续作为整改前快照，P2 Gate/文档治理与目标 AWS 证据仍未完成。
+
+| 关闭项 | 修复结果 | 本地证据 |
+|---|---|---|
+| `CLOSED-P1-01` License wire 契约 | REST/签名固定使用源契约 `OTA`，API 边界与历史 DB 码 `OTA_UPDATE` 双向映射；License 日期响应按源契约输出 `YYYY-MM-DD` | OpenAPI 合法 `OTA` 请求进入真实 Handler，201 响应通过统一 bundle；内部码、未知字段、数组 body 均 400 |
+| `CLOSED-P1-02` 通知并发与崩溃窗口 | Delivery 在外部发送前以条件更新领取为 `PROCESSING`，使用 lease token/expiry；FAILED 与过期 PROCESSING 可恢复；Webhook 传递幂等键，SES/Webhook 回执写入 `providerRequestId` | PGlite 覆盖双 Worker 单领取、发送时状态、过期租约恢复、回执落库、失败上限与 SENT 终态；AWS sender 测试覆盖 SES MessageId 与 Webhook idempotency/request ID |
+| `CLOSED-P1-03` 严格写请求边界 | License/Contract/Contract Device/Configuration/Consumable Request/Device User/Alarm/ESG 的 29 个写 operation 统一拒绝未知字段；非对象和错误类型均在 DB/KDF 前失败关闭 | 新增跨模块负向测试，29/29 operation 返回 400 且响应逐项通过 OpenAPI；Poison DB 与 KDF 计数均为 0 |
+| `CLOSED-P1-04` License 签名冻结 | 新增并冻结 `DEC-020@1.0.0`：`v1.<base64url HMAC-SHA256>`、规范载荷、wire code 排序、环境级 Secrets Manager/KMS、active/previous 与 legacy 迁移边界 | 固定签名向量、active/previous/legacy 正负验签测试；生产签名端继续只读取 P0 已接线的 KMS 加密 Secret |
+| `CLOSED-P1-05` 成功响应契约漂移 | 对八个目标业务模块各选至少一个真实 PGlite 成功写响应反向校验统一 bundle；修复 Consumable Request `replayed` 与 `additionalProperties:false` 的组合冲突 | 13 files / 99 tests PASS，涵盖 8 个模块真实成功响应、全写操作错误响应及通知 sender |
+
+P1 关闭不改变以下边界：目标 AWS API/SES/Webhook/RDS/S3 运行验收仍为 **NOT RUN**；`H-03` 继续开放。全仓 `pnpm verify` 是否通过取决于 P2 范围内 Admin Web/OTA 工作区与其余全仓 Gate，本次提交不纳入或覆盖这些用户改动。
+
 ## 一、任务完成概况
 
 ### 1.1 结论

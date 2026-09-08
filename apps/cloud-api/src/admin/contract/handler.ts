@@ -31,6 +31,8 @@ import {
   updateContract,
 } from './service.js';
 import type { ContractDeps } from './service.js';
+import { parseStrictObject } from '../shared/strict-object.js';
+import { assertOptionalStringFields } from '../shared/strict-object.js';
 
 export type AdminContractHandlerDeps = ContractDeps;
 
@@ -75,8 +77,8 @@ function requireContractId(req: AdminHttpRequest): string {
   return contractId;
 }
 
-function bodyOf(req: AdminHttpRequest): Record<string, unknown> {
-  return (req.body ?? {}) as Record<string, unknown>;
+function bodyOf(req: AdminHttpRequest, allowedKeys: readonly string[]): Record<string, unknown> {
+  return parseStrictObject(req.body ?? {}, allowedKeys, contractValidationFailed);
 }
 
 function requireTimestamp(value: unknown, field: string): Date {
@@ -136,16 +138,17 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
   const meta = (req: AdminHttpRequest) => ({ requestId: req.requestId, timestamp: now().toISOString() });
   const actorOf = (req: AdminHttpRequest) => req.actor as ActorContext;
   /** 写操作公共入参：contractId + If-Match + 强制原因。 */
-  const writeInputOf = (req: AdminHttpRequest) => ({
+  const writeInputOf = (req: AdminHttpRequest, allowedKeys: readonly string[]) => ({
     contractId: requireContractId(req),
     ifMatchVersion: parseIfMatch(headerOf(req, 'If-Match')),
-    reason: requireReason(bodyOf(req)),
+    reason: requireReason(bodyOf(req, allowedKeys)),
   });
 
   const create = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'contract:write' },
     async (req) => {
-      const body = bodyOf(req);
+      const body = bodyOf(req, ['contractNumber', 'name', 'customerId', 'contact', 'startAt', 'endAt', 'reason']);
+      assertOptionalStringFields(body, ['contact', 'reason'], contractValidationFailed);
       const contractNumber = optionalString(body.contractNumber, 'contractNumber', 100);
       const name = optionalString(body.name, 'name', 200);
       if (!contractNumber || !name) throw contractValidationFailed('contractNumber and name are required');
@@ -184,12 +187,12 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
   const update = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'contract:write' },
     async (req) => {
-      const body = bodyOf(req);
+      const body = bodyOf(req, ['name', 'contact', 'startAt', 'endAt', 'reason']);
       if (body.contact !== undefined && body.contact !== null && typeof body.contact !== 'string') {
         throw contractValidationFailed('contact must be a string or null');
       }
       const view = await updateContract(deps, actorOf(req), {
-        ...writeInputOf(req),
+        ...writeInputOf(req, ['name', 'contact', 'startAt', 'endAt', 'reason']),
         ...(body.name !== undefined ? { name: optionalString(body.name, 'name', 200) } : {}),
         ...(body.contact !== undefined ? { contact: body.contact as string | null } : {}),
         ...(body.startAt !== undefined ? { startAt: requireTimestamp(body.startAt, 'startAt') } : {}),
@@ -202,7 +205,7 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
   const activate = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'contract:write' },
     async (req) => {
-      const view = await activateContract(deps, actorOf(req), writeInputOf(req));
+      const view = await activateContract(deps, actorOf(req), writeInputOf(req, ['reason']));
       return { status: 200, body: { data: view, meta: meta(req) } };
     },
   );
@@ -210,9 +213,9 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
   const renew = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'contract:write' },
     async (req) => {
-      const body = bodyOf(req);
+      const body = bodyOf(req, ['newEndAt', 'reason']);
       const view = await renewContract(deps, actorOf(req), {
-        ...writeInputOf(req),
+        ...writeInputOf(req, ['newEndAt', 'reason']),
         newEndAt: requireTimestamp(body.newEndAt, 'newEndAt'),
       });
       return { status: 200, body: { data: view, meta: meta(req) } };
@@ -222,7 +225,7 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
   const terminate = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'contract:write' },
     async (req) => {
-      const view = await terminateContract(deps, actorOf(req), writeInputOf(req));
+      const view = await terminateContract(deps, actorOf(req), writeInputOf(req, ['reason']));
       return { status: 200, body: { data: view, meta: meta(req) } };
     },
   );
@@ -230,7 +233,7 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
   const evaluate = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'contract:write' },
     async (req) => {
-      const body = bodyOf(req);
+      const body = bodyOf(req, ['at']);
       const at = optionalTimestamp(body.at, 'at') ?? now();
       const result = await evaluateContract(
         deps,

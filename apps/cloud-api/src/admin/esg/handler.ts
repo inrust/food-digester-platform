@@ -30,6 +30,7 @@ import {
 import type { EsgDeps, EsgFilter } from './service.js';
 import { createEsgExport, getEsgExport } from './export-service.js';
 import type { EsgExportDeps } from './export-service.js';
+import { assertOptionalStringFields, parseStrictObject } from '../shared/strict-object.js';
 
 export type AdminEsgHandlerDeps = EsgDeps & EsgExportDeps;
 
@@ -116,7 +117,12 @@ export function createAdminEsgHandlers(deps: AdminEsgHandlerDeps): AdminEsgHandl
   const createExport = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'export:create' },
     async (req) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
+      const body = parseStrictObject(
+        req.body,
+        ['dataset', 'customerId', 'siteId', 'deviceId', 'from', 'to'],
+        esgValidationFailed,
+      );
+      assertOptionalStringFields(body, ['customerId', 'siteId', 'deviceId', 'from', 'to'], esgValidationFailed);
       if (typeof body.dataset !== 'string') throw esgValidationFailed('dataset is required');
       const view = await createEsgExport(deps, actorOf(req), {
         dataset: body.dataset,

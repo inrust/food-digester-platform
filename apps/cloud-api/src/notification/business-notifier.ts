@@ -12,7 +12,7 @@
  * - 非 Critical 不发送：生产侧已仅对 CRITICAL 产出事件；适配器再做防御性 severity 校验
  *   （payload.severity !== 'CRITICAL' → 跳过，不产生投递记录）；
  * - 幂等键 eventId:channel:target 唯一索引：重复事件/重复派发只产生一条投递记录
- *   （P2002 → 跳过，不重发）；SENT 为终态，重试只针对 FAILED（重试不重复通知）；
+ *   （P2002 → 跳过，不重发）；外部发送前原子领取为 PROCESSING，过期租约可恢复；SENT 为终态；
  * - 通知内容白名单渲染（仅 deviceId/customerId/code/severity/时间等业务字段），并做敏感
  *   模式 fail-closed 检查——通知内容不含敏感凭据；
  * - 发送端口（EmailSender/WebhookSender）为注入接口：本模块不含任何 AWS 依赖（SES/SNS 由
@@ -48,11 +48,20 @@ export class NotificationError extends Error {
 // ---------- 发送端口（注入；部署层接 SES/HTTPS 实现） ----------
 
 export interface EmailSender {
-  send(input: { readonly to: string; readonly subject: string; readonly body: string }): Promise<void>;
+  send(input: {
+    readonly to: string;
+    readonly subject: string;
+    readonly body: string;
+    readonly idempotencyKey: string;
+  }): Promise<string | void>;
 }
 
 export interface WebhookSender {
-  send(input: { readonly url: string; readonly payload: Record<string, unknown> }): Promise<void>;
+  send(input: {
+    readonly url: string;
+    readonly payload: Record<string, unknown>;
+    readonly idempotencyKey: string;
+  }): Promise<string | void>;
 }
 
 export interface BusinessNotifierDeps {
@@ -64,7 +73,7 @@ export interface BusinessNotifierDeps {
   readonly maxAttempts?: number;
   /** 单批处理事件/投递上限；默认 50。 */
   readonly batchSize?: number;
-  /** FAILED 重试领取租约；默认 60 秒。 */
+  /** FAILED/过期 PROCESSING 重试领取租约；默认 60 秒。 */
   readonly leaseSeconds?: number;
 }
 
@@ -96,6 +105,7 @@ interface DeliveryRow {
   readonly retryCount: number;
   readonly leaseUntil?: Date | null;
   readonly leaseToken?: string | null;
+  readonly providerRequestId?: string | null;
 }
 
 interface OutboxDelegate {
@@ -234,31 +244,67 @@ function isUniqueViolation(err: unknown): boolean {
 async function attemptSend(
   deps: BusinessNotifierDeps,
   delivery: DeliveryRow,
-  leaseToken?: string,
+  leaseToken: string,
 ): Promise<'SENT' | 'FAILED'> {
   const now = deps.now?.() ?? new Date();
   try {
+    let providerRequestId: string | void;
     if (delivery.channel === 'EMAIL') {
-      await deps.emailSender.send({ to: delivery.target, subject: delivery.subject ?? '', body: delivery.body });
+      providerRequestId = await deps.emailSender.send({
+        to: delivery.target,
+        subject: delivery.subject ?? '',
+        body: delivery.body,
+        idempotencyKey: delivery.idempotencyKey,
+      });
     } else {
-      await deps.webhookSender.send({
+      providerRequestId = await deps.webhookSender.send({
         url: delivery.target,
         payload: JSON.parse(delivery.body) as Record<string, unknown>,
+        idempotencyKey: delivery.idempotencyKey,
       });
     }
     await deliveries(deps.client).updateMany({
-      where: { id: delivery.id, status: { in: ['PENDING', 'FAILED'] }, ...(leaseToken ? { leaseToken } : {}) },
-      data: { status: 'SENT', sentAt: now, lastError: null, leaseToken: null, leaseUntil: null },
+      where: { id: delivery.id, status: 'PROCESSING', leaseToken },
+      data: {
+        status: 'SENT',
+        sentAt: now,
+        lastError: null,
+        providerRequestId: typeof providerRequestId === 'string' ? providerRequestId.slice(0, 500) : null,
+        leaseToken: null,
+        leaseUntil: null,
+      },
     });
     return 'SENT';
   } catch (err) {
     const message = err instanceof Error ? err.message.slice(0, 500) : 'send failed';
     await deliveries(deps.client).updateMany({
-      where: { id: delivery.id, status: { in: ['PENDING', 'FAILED'] }, ...(leaseToken ? { leaseToken } : {}) },
+      where: { id: delivery.id, status: 'PROCESSING', leaseToken },
       data: { status: 'FAILED', retryCount: { increment: 1 }, lastError: message, leaseToken: null, leaseUntil: null },
     });
     return 'FAILED';
   }
+}
+
+async function claimAndAttemptSend(
+  deps: BusinessNotifierDeps,
+  delivery: DeliveryRow,
+  at: Date,
+): Promise<'SENT' | 'FAILED' | 'SKIPPED'> {
+  const leaseToken = randomUUID();
+  const claimed = await deliveries(deps.client).updateMany({
+    where: {
+      id: delivery.id,
+      status: { in: ['PENDING', 'FAILED', 'PROCESSING'] },
+      OR: [{ leaseUntil: null }, { leaseUntil: { lte: at } }],
+    },
+    data: {
+      status: 'PROCESSING',
+      leaseToken,
+      leaseUntil: new Date(at.getTime() + (deps.leaseSeconds ?? 60) * 1000),
+    },
+  });
+  if (claimed.count !== 1) return 'SKIPPED';
+  return attemptSend(deps, delivery, leaseToken);
 }
 
 /**
@@ -331,9 +377,9 @@ export async function dispatchPendingNotifications(deps: BusinessNotifierDeps): 
         }
         throw err;
       }
-      const outcome = await attemptSend(deps, delivery);
+      const outcome = await claimAndAttemptSend(deps, delivery, deps.now?.() ?? new Date());
       if (outcome === 'SENT') sent += 1;
-      else failed += 1;
+      else if (outcome === 'FAILED') failed += 1;
     }
   }
 
@@ -341,7 +387,7 @@ export async function dispatchPendingNotifications(deps: BusinessNotifierDeps): 
 }
 
 /**
- * 重试 FAILED 投递（不超过 maxAttempts）；SENT 为终态永不重发（重试不重复通知）。
+ * 重试 FAILED 或恢复租约已过期的 PROCESSING 投递（不超过 maxAttempts）；SENT 永不重发。
  */
 export async function retryFailedDeliveries(
   deps: BusinessNotifierDeps,
@@ -351,7 +397,7 @@ export async function retryFailedDeliveries(
   const at = deps.now?.() ?? new Date();
   const rows = await deliveries(deps.client).findMany({
     where: {
-      status: 'FAILED',
+      status: { in: ['FAILED', 'PROCESSING'] },
       retryCount: { lt: maxAttempts },
       OR: [{ leaseUntil: null }, { leaseUntil: { lte: at } }],
     },
@@ -362,19 +408,9 @@ export async function retryFailedDeliveries(
   let failed = 0;
   let retried = 0;
   for (const row of rows) {
-    const leaseToken = randomUUID();
-    const claimed = await deliveries(deps.client).updateMany({
-      where: {
-        id: row.id,
-        status: 'FAILED',
-        retryCount: { lt: maxAttempts },
-        OR: [{ leaseUntil: null }, { leaseUntil: { lte: at } }],
-      },
-      data: { leaseToken, leaseUntil: new Date(at.getTime() + (deps.leaseSeconds ?? 60) * 1000) },
-    });
-    if (claimed.count !== 1) continue;
+    const outcome = await claimAndAttemptSend(deps, row, at);
+    if (outcome === 'SKIPPED') continue;
     retried += 1;
-    const outcome = await attemptSend(deps, row, leaseToken);
     if (outcome === 'SENT') sent += 1;
     else failed += 1;
   }

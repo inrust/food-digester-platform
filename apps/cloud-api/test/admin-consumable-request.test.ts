@@ -16,6 +16,7 @@ import type { ActorContext } from '@fdp/auth';
 import { ADMIN_CONSUMABLE_ERROR_HTTP_STATUS, createAdminConsumableRequestHandlers } from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -105,6 +106,7 @@ describe('完整链路：未处理→正在处理→完成处理', () => {
     // 创建（PENDING，source=ADMIN，requestedBy/requestedAt）
     const created = await createReq(h, deviceId);
     assert.equal(created.status, 201, JSON.stringify(created.body));
+    assertOpenApiResponse('createConsumableRequest', 201, created.body);
     const c = (created.body as DataBody).data;
     assert.equal(c.status, 'PENDING');
     assert.equal(c.source, 'ADMIN');

@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-AUD-01 审计日志查询 API（Cognito 认证，audit:read——V1 矩阵仅 PlatformSuperAdmin/Auditor 持有，DEC-012 固定只读）。GET /api/v1/admin/audit-logs 按 actor/Customer/对象/动作/结果/时间范围筛选 + 键集游标分页（createdAt 倒序 + id 决胜）；GET /api/v1/admin/audit-logs/{auditId} 详情含脱敏前后值。数据源为 DOM-03 append-only audit_logs（写入时已 sanitizeAuditPayload 脱敏；读取时再次脱敏兜底，敏感字段永不返回）。Auditor 可跨 Customer 只读；Customer 角色无 audit:read（403）——服务层仍强制 actor.customerId 租户隔离作为纵深防御。只读 API：不存在任何修改/删除路由。功能边界：不查询 CloudTrail 与基础设施日志。错误响应继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["DEC-012@1.0.0"],
-    "x-decision-register-version": "1.28.0"
+    "x-decision-register-version": "1.29.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

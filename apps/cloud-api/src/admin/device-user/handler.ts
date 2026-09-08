@@ -31,6 +31,7 @@ import {
   updateDeviceUser,
 } from './service.js';
 import type { DeviceUserDeps } from './service.js';
+import { assertOptionalStringFields, parseStrictObject } from '../shared/strict-object.js';
 
 export type AdminDeviceUserHandlerDeps = DeviceUserDeps;
 
@@ -67,8 +68,8 @@ function requireUserId(req: AdminHttpRequest): string {
   return deviceUserId;
 }
 
-function bodyOf(req: AdminHttpRequest): Record<string, unknown> {
-  return (req.body ?? {}) as Record<string, unknown>;
+function bodyOf(req: AdminHttpRequest, allowedKeys: readonly string[]): Record<string, unknown> {
+  return parseStrictObject(req.body ?? {}, allowedKeys, deviceUserValidationFailed);
 }
 
 function requireReason(body: Record<string, unknown>): string {
@@ -132,16 +133,17 @@ export function createAdminDeviceUserHandlers(deps: AdminDeviceUserHandlerDeps):
   const now = deps.now ?? (() => new Date());
   const meta = (req: AdminHttpRequest) => ({ requestId: req.requestId, timestamp: now().toISOString() });
   const actorOf = (req: AdminHttpRequest) => req.actor as ActorContext;
-  const writeInputOf = (req: AdminHttpRequest) => ({
+  const writeInputOf = (req: AdminHttpRequest, allowedKeys: readonly string[]) => ({
     deviceUserId: requireUserId(req),
     ifMatchVersion: parseIfMatch(headerOf(req, 'If-Match')),
-    reason: requireReason(bodyOf(req)),
+    reason: requireReason(bodyOf(req, allowedKeys)),
   });
 
   const create = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'device-user:write' },
     async (req) => {
-      const body = bodyOf(req);
+      const body = bodyOf(req, ['customerId', 'username', 'displayName', 'password', 'reason']);
+      assertOptionalStringFields(body, ['customerId', 'displayName', 'reason'], deviceUserValidationFailed);
       rejectPrecomputedVerifier(body);
       if (typeof body.username !== 'string') throw deviceUserValidationFailed('username is required');
       if (typeof body.password !== 'string') throw deviceUserValidationFailed('password is required');
@@ -180,13 +182,13 @@ export function createAdminDeviceUserHandlers(deps: AdminDeviceUserHandlerDeps):
   const update = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'device-user:write' },
     async (req) => {
-      const body = bodyOf(req);
+      const body = bodyOf(req, ['displayName', 'password', 'reason']);
       rejectPrecomputedVerifier(body);
       if (body.password !== undefined && typeof body.password !== 'string') {
         throw deviceUserValidationFailed('password must be a string');
       }
       const view = await updateDeviceUser(deps, actorOf(req), {
-        ...writeInputOf(req),
+        ...writeInputOf(req, ['displayName', 'password', 'reason']),
         ...(body.displayName !== undefined
           ? { displayName: body.displayName === null ? null : optionalString(body.displayName, 'displayName') }
           : {}),
@@ -199,7 +201,7 @@ export function createAdminDeviceUserHandlers(deps: AdminDeviceUserHandlerDeps):
   const disable = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'device-user:write' },
     async (req) => {
-      const view = await disableDeviceUser(deps, actorOf(req), writeInputOf(req));
+      const view = await disableDeviceUser(deps, actorOf(req), writeInputOf(req, ['reason']));
       return { status: 200, body: { data: view, meta: meta(req) } };
     },
   );
@@ -208,8 +210,8 @@ export function createAdminDeviceUserHandlers(deps: AdminDeviceUserHandlerDeps):
     { permission: 'device-user:write' },
     async (req) => {
       const result = await assignDevices(deps, actorOf(req), {
-        ...writeInputOf(req),
-        deviceIds: requireDeviceIds(bodyOf(req)),
+        ...writeInputOf(req, ['deviceIds', 'reason']),
+        deviceIds: requireDeviceIds(bodyOf(req, ['deviceIds', 'reason'])),
       });
       return { status: 201, body: { data: result, meta: meta(req) } };
     },
@@ -219,8 +221,8 @@ export function createAdminDeviceUserHandlers(deps: AdminDeviceUserHandlerDeps):
     { permission: 'device-user:write' },
     async (req) => {
       const result = await revokeDevices(deps, actorOf(req), {
-        ...writeInputOf(req),
-        deviceIds: requireDeviceIds(bodyOf(req)),
+        ...writeInputOf(req, ['deviceIds', 'reason']),
+        deviceIds: requireDeviceIds(bodyOf(req, ['deviceIds', 'reason'])),
       });
       return { status: 200, body: { data: result, meta: meta(req) } };
     },

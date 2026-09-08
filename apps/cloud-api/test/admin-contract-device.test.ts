@@ -17,6 +17,7 @@ import type { ActorContext } from '@fdp/auth';
 import { createAdminContractDeviceHandlers } from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -154,6 +155,7 @@ describe('批量关联与全成或全败', () => {
 
     const res = await bind(h, ctx.contractId, [d1, d2]);
     assert.equal(res.status, 201, JSON.stringify(res.body));
+    assertOpenApiResponse('bindContractDevices', 201, res.body);
     const data = (res.body as DataBody).data as { bound: string[]; associations: { status: string }[] };
     assert.deepEqual([...data.bound].sort(), [d1, d2].sort());
     assert.equal(data.associations.length, 2);

@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-DEV-02 设备分配接口（Cognito 认证）：分配/调整 Customer 和 Site（device:assign，PlatformSuperAdmin/PlatformOperator；首次分配 Onboarded→Assigned 按 DOM-01 迁移表仅 PlatformSuperAdmin），记录 Assignment 历史与授权窗口（assignedAt/endedAt），每次真实变更恰好生成一个 ASSIGNMENT_CHANGED Notification（经 Outbox 下行，deviceAction=SYNC）。仅 Onboarded/Assigned 生命周期合法；Site 必须属于目标 Customer（跨 Customer 拒绝 400）；目标与当前 ACTIVE 分配一致的重复请求幂等（无写入、无新通知）；不自动创建 License。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-011@1.0.0"],
-    "x-decision-register-version": "1.28.0"
+    "x-decision-register-version": "1.29.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

@@ -23,6 +23,7 @@ import {
 } from '../src/index.js';
 import type { AdminEsgHandlerDeps, AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -344,6 +345,7 @@ describe('CSV 导出', () => {
 
     const created = await h.createExport(req(tenant.customerAdmin, { body: { dataset: 'DAILY_SUMMARY' } }));
     assert.equal(created.status, 202);
+    assertOpenApiResponse('createEsgExport', 202, created.body);
     const job = (created.body as DataBody).data;
     assert.equal(job.status, 'PENDING');
     assert.equal(job.downloadUrl, null);

@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.28.0",
-  "updatedAt": "2026-09-08T08:30:00Z",
+  "registerVersion": "1.29.0",
+  "updatedAt": "2026-09-08T12:45:00Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -657,6 +657,27 @@
           "at": "2026-09-08T08:30:00Z",
           "by": "业务方（本次 P0/P1 整改指令）",
           "note": "按全面审计整改建议冻结现有兼容规则，并增加 NFC 与数据库级并发唯一性约束。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-020",
+      "version": "1.0.0",
+      "status": "frozen",
+      "title": "License 签名与密钥轮换兼容策略",
+      "conflict": "License 签名算法、规范载荷、wire entitlement、密钥作用域及轮换兼容此前均为暂定值，无法形成设备验签契约。",
+      "provisionalValue": "签名格式冻结为 v1.<base64url HMAC-SHA256>；规范载荷按 licenseId/deviceId/customerId/validFrom/validTo/entitlements 固定顺序 JSON 序列化，时间使用 UTC ISO-8601，entitlements 映射为 wire code 后按字典序排序；密钥按环境隔离，由 KMS 加密的 Secrets Manager Secret 注入。轮换期间设备验签器同时接受 active/previous key；历史无 v1 前缀签名只在迁移窗口使用 previous key 验证，新签名禁止降级。",
+      "approver": "业务方（本次 P1 整改指令）",
+      "approvedAt": "2026-09-08T12:45:00Z",
+      "blockingTasks": ["BE-LIC-01", "BE-SYNC-01", "QA-02"],
+      "affectedModules": ["BE-LIC", "BE-SYNC", "SEC", "QA"],
+      "sourceRefs": ["device-cloud-communication-design", "aws-key-solutions", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "1.0.0",
+          "at": "2026-09-08T12:45:00Z",
+          "by": "业务方（本次 P1 整改指令）",
+          "note": "按全面审计 P1 整改建议冻结 HMAC-SHA256、v1 编码、规范载荷、环境级 Secret、active/previous 双验与 legacy 迁移边界。"
         }
       ]
     }

@@ -46,10 +46,12 @@ interface SentMail {
   to: string;
   subject: string;
   body: string;
+  idempotencyKey: string;
 }
 interface SentWebhook {
   url: string;
   payload: Record<string, unknown>;
+  idempotencyKey: string;
 }
 
 function fakeSenders(options: { failEmails?: string[]; failWebhooks?: string[] } = {}) {
@@ -62,12 +64,14 @@ function fakeSenders(options: { failEmails?: string[]; failWebhooks?: string[] }
       async send(input: SentMail) {
         if (options.failEmails?.includes(input.to)) throw new Error('SMTP rejected');
         mails.push(input);
+        return `mail-request-${mails.length}`;
       },
     },
     webhookSender: {
       async send(input: SentWebhook) {
         if (options.failWebhooks?.includes(input.url)) throw new Error('webhook 5xx');
         webhooks.push(input);
+        return `webhook-request-${webhooks.length}`;
       },
     },
   };
@@ -159,7 +163,7 @@ describe('Critical → 通知记录与发送', () => {
 
     const rows = await deliveriesOf(event.id);
     assert.equal(rows.length, 3);
-    assert.ok(rows.every((r) => r.status === 'SENT' && r.sentAt !== null));
+    assert.ok(rows.every((r) => r.status === 'SENT' && r.sentAt !== null && r.providerRequestId !== null));
     assert.deepEqual(
       rows.map((r) => r.idempotencyKey).sort(),
       [
@@ -241,6 +245,50 @@ describe('幂等与重试', () => {
     assert.equal(left.retried + right.retried, 1);
     assert.equal(recovered.mails.length, 1);
     assert.equal((await prisma.notificationDelivery.findFirstOrThrow({ where: { customerId } })).status, 'SENT');
+  });
+
+  test('外部发送发生时投递已原子进入 PROCESSING，且过期 PROCESSING 可恢复', async () => {
+    const customerId = await plantConfig({ emails: ['lease@f.com'] });
+    await plantEvent({ eventType: 'CRITICAL_ALERT_RAISED', customerId, code: 'LEASE' });
+    let observedStatus: string | undefined;
+    let observedLeaseToken: string | null | undefined;
+    const deps: BusinessNotifierDeps = {
+      client: prisma,
+      now,
+      emailSender: {
+        async send(input) {
+          const claimed = await prisma.notificationDelivery.findUniqueOrThrow({
+            where: { idempotencyKey: input.idempotencyKey },
+          });
+          observedStatus = claimed.status;
+          observedLeaseToken = claimed.leaseToken;
+          return 'provider-first-attempt';
+        },
+      },
+      webhookSender: { async send() {} },
+    };
+    await dispatchPendingNotifications(deps);
+    assert.equal(observedStatus, 'PROCESSING');
+    assert.ok(observedLeaseToken);
+
+    const row = await prisma.notificationDelivery.findFirstOrThrow({ where: { customerId } });
+    await prisma.notificationDelivery.update({
+      where: { id: row.id },
+      data: {
+        status: 'PROCESSING',
+        sentAt: null,
+        providerRequestId: null,
+        leaseToken: 'abandoned-worker',
+        leaseUntil: new Date(NOW.getTime() - 1_000),
+      },
+    });
+    const recovered = fakeSenders();
+    const summary = await retryFailedDeliveries(notifierDeps(recovered));
+    assert.deepEqual(summary, { retried: 1, sent: 1, failed: 0 });
+    assert.equal(recovered.mails.length, 1);
+    const restored = await prisma.notificationDelivery.findUniqueOrThrow({ where: { id: row.id } });
+    assert.equal(restored.status, 'SENT');
+    assert.equal(restored.providerRequestId, 'mail-request-1');
   });
 
   test('重复事件只有一次有效通知：重复派发 P2002 跳过，发送端口不重复调用', async () => {

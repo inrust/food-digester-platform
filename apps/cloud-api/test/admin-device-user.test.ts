@@ -21,6 +21,7 @@ import {
 } from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -111,6 +112,7 @@ async function createUser(h: ReturnType<typeof handlers>, customerId: string, us
     }),
   );
   assert.equal(res.status, 201, JSON.stringify(res.body));
+  assertOpenApiResponse('createDeviceUser', 201, res.body);
   return (res.body as DataBody).data;
 }
 

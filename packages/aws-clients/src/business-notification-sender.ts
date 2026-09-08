@@ -10,8 +10,13 @@ export interface SesEmailSenderConfig {
 export function createSesEmailSender(config: SesEmailSenderConfig) {
   const client = config.client ?? new SESv2Client(config.region ? { region: config.region } : {});
   return {
-    async send(input: { readonly to: string; readonly subject: string; readonly body: string }): Promise<void> {
-      await client.send(
+    async send(input: {
+      readonly to: string;
+      readonly subject: string;
+      readonly body: string;
+      readonly idempotencyKey: string;
+    }): Promise<string | void> {
+      const response = await client.send(
         new SendEmailCommand({
           FromEmailAddress: config.fromAddress,
           Destination: { ToAddresses: [input.to] },
@@ -23,6 +28,7 @@ export function createSesEmailSender(config: SesEmailSenderConfig) {
           },
         }),
       );
+      return response.MessageId;
     },
   };
 }
@@ -39,19 +45,24 @@ export function createHttpsWebhookSender(config: HttpsWebhookSenderConfig) {
   if (allowedHosts.size === 0) throw new Error('Webhook 主机白名单不能为空');
   const send = config.fetchImpl ?? fetch;
   return {
-    async send(input: { readonly url: string; readonly payload: Record<string, unknown> }): Promise<void> {
+    async send(input: {
+      readonly url: string;
+      readonly payload: Record<string, unknown>;
+      readonly idempotencyKey: string;
+    }): Promise<string | void> {
       const url = new URL(input.url);
       if (url.protocol !== 'https:' || url.username || url.password || !allowedHosts.has(url.hostname.toLowerCase())) {
         throw new Error('Webhook URL 不满足 HTTPS 主机白名单策略');
       }
       const response = await send(url, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', 'idempotency-key': input.idempotencyKey },
         body: JSON.stringify(input.payload),
         redirect: 'error',
         signal: AbortSignal.timeout(10_000),
       });
       if (!response.ok) throw new Error(`Webhook 返回 HTTP ${response.status}`);
+      return response.headers.get('x-request-id') ?? undefined;
     },
   };
 }

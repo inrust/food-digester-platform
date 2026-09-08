@@ -19,6 +19,7 @@ import type { ActorContext } from '@fdp/auth';
 import { ADMIN_ALARM_ERROR_HTTP_STATUS, createAdminAlarmHandlers } from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -140,6 +141,7 @@ describe('Alarm 确认/清除工作流', () => {
       req(operator, { params: { alarmId: alarm.id }, body: { reason: '已派单处理' } }),
     );
     assert.equal(res.status, 200);
+    assertOpenApiResponse('acknowledgeAlarm', 200, res.body);
     const data = (res.body as DataBody).data;
     assert.equal(data.status, 'ACKNOWLEDGED');
     assert.equal(data.replayed, false);

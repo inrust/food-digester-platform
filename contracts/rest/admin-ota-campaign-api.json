@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-OTA-02 OTA Campaign API 与状态机（Cognito 认证）。POST /api/v1/admin/ota/campaigns 创建 Campaign（ota:write）：包必须 VERIFIED（坏包/未校验包不可建 Campaign → 400），首批强制恰好 1 台（>1 → 400），设备须型号匹配 + 生命周期 Active/Maintenance（DEC-001 Maintenance 允许 OTA）+ 有效 License OTA_UPDATE Entitlement；创建即 RUNNING + 首批 target PENDING。POST /{campaignId}/batches 扩大批次（仅 RUNNING；默认禁止一次选择全部合格设备 → 400；已在 Campaign 的设备幂等跳过）。pause/resume/cancel/retry 状态机：RUNNING⇄PAUSED，RUNNING/PAUSED→CANCELLED（级联未完成 target → CANCELLED），retry 将 FAILED target 重置为 PENDING 重新进入下发队列（仅 RUNNING）；暂停/取消后不得产生新下发（下发器只消费 RUNNING 的 PENDING target，BE-OTA-03）。每次 Campaign 状态变化写审计（DOM-03），每次 target 状态变化写 ota_status_history。设备回报状态经 recordTargetStatus（封闭状态集合 + 全部 SUCCEEDED 自动 COMPLETED）供 BE-OTA-03 ACK 复用。功能边界：不执行固件安装。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "DEC-001@1.0.0", "DEC-015@1.0.0"],
-    "x-decision-register-version": "1.28.0"
+    "x-decision-register-version": "1.29.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

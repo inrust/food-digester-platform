@@ -25,6 +25,7 @@ import {
   unbindContractDevices,
 } from './service.js';
 import type { ContractDeviceDeps } from './service.js';
+import { parseStrictObject } from '../shared/strict-object.js';
 
 export type AdminContractDeviceHandlerDeps = ContractDeviceDeps;
 
@@ -129,7 +130,7 @@ export function createAdminContractDeviceHandlers(deps: AdminContractDeviceHandl
   );
 
   const bind = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'contract:write' }, async (req) => {
-    const body = (req.body ?? {}) as Record<string, unknown>;
+    const body = parseStrictObject(req.body, ['deviceIds', 'validFrom', 'validTo', 'reason'], contractValidationFailed);
     const result = await bindContractDevices(deps, actorOf(req), requireContractId(req), {
       deviceIds: requireDeviceIds(body),
       validFrom: optionalTimestamp(body.validFrom, 'validFrom'),
@@ -142,7 +143,7 @@ export function createAdminContractDeviceHandlers(deps: AdminContractDeviceHandl
   const unbind = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'contract:write' },
     async (req) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
+      const body = parseStrictObject(req.body, ['deviceIds', 'reason'], contractValidationFailed);
       const result = await unbindContractDevices(deps, actorOf(req), requireContractId(req), {
         deviceIds: requireDeviceIds(body),
         reason: requireReason(body),

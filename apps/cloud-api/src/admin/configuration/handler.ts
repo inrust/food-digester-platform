@@ -29,6 +29,7 @@ import {
   publishConfigurationVersion,
 } from './service.js';
 import type { ConfigurationDeps } from './service.js';
+import { assertOptionalStringFields, parseStrictObject } from '../shared/strict-object.js';
 
 export type AdminConfigurationHandlerDeps = ConfigurationDeps;
 
@@ -99,7 +100,12 @@ export function createAdminConfigurationHandlers(deps: AdminConfigurationHandler
   const create = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'config:publish' },
     async (req) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
+      const body = parseStrictObject(
+        req.body,
+        ['name', 'targetModel', 'targetDeviceId', 'reason'],
+        configurationValidationFailed,
+      );
+      assertOptionalStringFields(body, ['reason'], configurationValidationFailed);
       if (typeof body.name !== 'string' || body.name.trim().length === 0) {
         throw configurationValidationFailed('name is required');
       }
@@ -135,7 +141,8 @@ export function createAdminConfigurationHandlers(deps: AdminConfigurationHandler
   const createVersion = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'config:publish' },
     async (req) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
+      const body = parseStrictObject(req.body, ['payload', 'changeNote', 'reason'], configurationValidationFailed);
+      assertOptionalStringFields(body, ['changeNote', 'reason'], configurationValidationFailed);
       if (body.payload === undefined) throw configurationValidationFailed('payload is required');
       if (body.changeNote !== undefined && typeof body.changeNote !== 'string') {
         throw configurationValidationFailed('changeNote must be a string');
@@ -152,7 +159,8 @@ export function createAdminConfigurationHandlers(deps: AdminConfigurationHandler
   const publishVersion = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'config:publish' },
     async (req) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
+      const body = parseStrictObject(req.body ?? {}, ['effectiveAt', 'reason'], configurationValidationFailed);
+      assertOptionalStringFields(body, ['effectiveAt', 'reason'], configurationValidationFailed);
       const result = await publishConfigurationVersion(
         deps,
         actorOf(req),
