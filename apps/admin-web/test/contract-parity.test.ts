@@ -30,6 +30,7 @@ import { ENTITLEMENT_CODES, LICENSE_COVERAGE } from '../src/pages/licenses/licen
 import { CONFIG_COVERAGE, CONFIG_V1_FIELDS } from '../src/pages/configuration/configuration-state.js';
 import { DEVICE_USER_COVERAGE } from '../src/pages/device-users/device-user-state.js';
 import { ALARM_ACTION_MATRIX, ALARM_SEVERITY_OPTIONS, ALARM_STATUS_OPTIONS } from '../src/pages/alarms/alarm-state.js';
+import { ESG_DEVICE_COVERAGE, ESG_OVERVIEW_COVERAGE } from '../src/pages/esg/esg-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -288,6 +289,31 @@ test('FE-10：Alarm severity/status 枚举与 BE-ALM-01 契约一致', () => {
   assert.deepEqual(ALARM_ACTION_MATRIX.ACTIVE, ['acknowledge', 'clear']);
   assert.deepEqual(ALARM_ACTION_MATRIX.ACKNOWLEDGED, ['clear']);
   assert.deepEqual(ALARM_ACTION_MATRIX.CLEARED, []);
+});
+
+test('FE-11：CT-06 esg-overview/esg-device 页 Adopt/Adapt 元素 100% 有实现锚点（无 Defer）', () => {
+  const matrix = readJson('contracts/prototype-traceability.yaml') as {
+    pages: {
+      pageState: string;
+      elements: { id: string; disposition: string }[];
+    }[];
+  };
+  const assertFullCoverage = (pageState: string, coverage: Readonly<Record<string, string>>) => {
+    const page = matrix.pages.find((p) => p.pageState === pageState);
+    assert.ok(page !== undefined, `CT-06 缺少页面 ${pageState}`);
+    const required = page.elements.filter((e) => e.disposition === 'Adopt' || e.disposition === 'Adapt');
+    assert.ok(required.length > 0, `${pageState} 页应有 Adopt/Adapt 元素`);
+    for (const element of required) {
+      assert.ok(coverage[element.id] !== undefined, `元素 ${element.id} 无实现锚点`);
+    }
+    assert.deepEqual(
+      Object.keys(coverage).sort(),
+      required.map((e) => e.id).sort(),
+      `${pageState} 覆盖表与 CT-06 元素集合不一致`,
+    );
+  };
+  assertFullCoverage('esg-overview', ESG_OVERVIEW_COVERAGE);
+  assertFullCoverage('esg-device', ESG_DEVICE_COVERAGE);
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {
