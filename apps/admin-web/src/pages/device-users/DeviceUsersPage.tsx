@@ -22,7 +22,6 @@ import {
   canAssignDeviceUser,
   canWriteDeviceUser,
   validateDeviceUserCreate,
-  validateDeviceUserUpdate,
 } from './device-user-state.js';
 import type {
   AssignResultView,
@@ -383,7 +382,12 @@ export function DeviceUsersPage({
         </aside>
       ) : null}
 
-      <Modal open={modal === 'create'} title="新增设备用户" testid="device-user-create-dialog" onClose={() => setModal(null)}>
+      <Modal
+        open={modal === 'create'}
+        title="新增设备用户"
+        testid="device-user-create-dialog"
+        onClose={() => setModal(null)}
+      >
         <CreateDeviceUserForm
           fixedCustomerId={fixedCustomerId}
           customerOptions={customerOptions}
@@ -394,7 +398,12 @@ export function DeviceUsersPage({
 
       {detailView !== null ? (
         <>
-          <Modal open={modal === 'edit'} title="修改资料" testid="device-user-edit-dialog" onClose={() => setModal(null)}>
+          <Modal
+            open={modal === 'edit'}
+            title="修改资料"
+            testid="device-user-edit-dialog"
+            onClose={() => setModal(null)}
+          >
             <EditDisplayNameForm
               currentDisplayName={detailView.displayName}
               busy={busy}
@@ -421,7 +430,12 @@ export function DeviceUsersPage({
             />
           </Modal>
 
-          <Modal open={modal === 'assign'} title="分配设备" testid="device-user-assign-dialog" onClose={() => setModal(null)}>
+          <Modal
+            open={modal === 'assign'}
+            title="分配设备"
+            testid="device-user-assign-dialog"
+            onClose={() => setModal(null)}
+          >
             <DevicePickForm
               testidPrefix="assign"
               devices={assignableDevices}
@@ -434,7 +448,12 @@ export function DeviceUsersPage({
             />
           </Modal>
 
-          <Modal open={modal === 'revoke'} title="撤销分配" testid="device-user-revoke-dialog" onClose={() => setModal(null)}>
+          <Modal
+            open={modal === 'revoke'}
+            title="撤销分配"
+            testid="device-user-revoke-dialog"
+            onClose={() => setModal(null)}
+          >
             <DevicePickForm
               testidPrefix="revoke"
               devices={detailView.assignments
@@ -457,9 +476,7 @@ export function DeviceUsersPage({
             reasonLabel="停用原因"
             description={`停用后该用户不进入新 Sync（设备下次同步后失效）。用户：${detailView.username}`}
             confirmText="确认停用"
-            onConfirm={(reason) =>
-              void runAction(() => onDisable(detailView.deviceUserId, reason), '设备用户已停用')
-            }
+            onConfirm={(reason) => void runAction(() => onDisable(detailView.deviceUserId, reason), '设备用户已停用')}
             onCancel={() => setDisableOpen(false)}
           />
         </>

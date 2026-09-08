@@ -58,6 +58,9 @@ describe('窗口校验', () => {
 describe('时间派生（evaluateContractAt / deriveContractStatus）', () => {
   test('EFFECTIVE → EXPIRING_SOON（窗口内）→ EXPIRED（到期）', () => {
     assert.equal(deriveContractStatus(snap('EFFECTIVE'), NOW), 'EFFECTIVE');
+    const boundary = new Date(END.getTime() - CONTRACT_EXPIRING_SOON_WINDOW_DAYS * DAY);
+    assert.equal(deriveContractStatus(snap('EFFECTIVE'), boundary), 'EXPIRING_SOON');
+    assert.equal(deriveContractStatus(snap('EFFECTIVE'), new Date(boundary.getTime() - 1)), 'EFFECTIVE');
     const soonAt = new Date(END.getTime() - (CONTRACT_EXPIRING_SOON_WINDOW_DAYS - 1) * DAY);
     assert.equal(deriveContractStatus(snap('EFFECTIVE'), soonAt), 'EXPIRING_SOON');
     assert.equal(deriveContractStatus(snap('EXPIRING_SOON'), new Date(END.getTime())), 'EXPIRED');

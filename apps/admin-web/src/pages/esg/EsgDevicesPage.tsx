@@ -12,7 +12,7 @@ import { useRef, useState } from 'react';
 import type { Role } from '@fdp/auth';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { ScopeFilter } from '../../components/ScopeFilter.js';
-import type { FilterOption, ScopeFilterProps } from '../../components/ScopeFilter.js';
+import type { ScopeFilterProps } from '../../components/ScopeFilter.js';
 import type { ScopeFilterValue } from '../../components/filter-state.js';
 import { ExportPanel } from '../../components/ExportPanel.js';
 import type { EsgQueryFilter } from './esg-api.js';
@@ -256,7 +256,9 @@ export function EsgDevicesPage({
                 <td>{formatPpm(row.avgCh4Ppm)}</td>
                 <td>{formatPpm(row.avgN2oPpm)}</td>
                 <td>{formatKg(row.carbonReductionKg)}</td>
-                <td data-testid={`esg-device-completeness-${row.deviceId}-${row.bucket}`}>{formatPct(row.avgCompletenessPct)}</td>
+                <td data-testid={`esg-device-completeness-${row.deviceId}-${row.bucket}`}>
+                  {formatPct(row.avgCompletenessPct)}
+                </td>
                 <td>{calculationVersionText(row.versionIds, versions)}</td>
               </tr>
             ))}

@@ -1,14 +1,46 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { DELIVERED_OPERATIONS } from '../apps/cloud-api/src/runtime/delivered-operations.ts';
-import { compareDeliveredOperations, loadDeliveredOpenApiOperations } from './check-delivered-runtime.mjs';
+import {
+  compareDeliveredOperations,
+  loadDeliveredOpenApiManifest,
+  loadDeliveredOpenApiOperations,
+} from './check-delivered-runtime.mjs';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 
 test('已交付 API（含本次 P0 管理业务范围）的 95 个 OpenAPI operation 与生产路由双向一致', () => {
+  assert.equal(loadDeliveredOpenApiManifest(ROOT).length, 23);
   const openApi = loadDeliveredOpenApiOperations(ROOT);
   assert.equal(openApi.length, 95);
   assert.deepEqual(compareDeliveredOperations(openApi, DELIVERED_OPERATIONS), []);
+});
+
+test('版本化已交付清单缺失、重复或引用不存在文件时失败关闭', () => {
+  const root = mkdtempSync(join(tmpdir(), 'fdp-runtime-manifest-'));
+  const rest = join(root, 'contracts/rest');
+  mkdirSync(rest, { recursive: true });
+  assert.throws(() => loadDeliveredOpenApiManifest(root), /缺少已交付 OpenAPI 清单/u);
+
+  writeFileSync(
+    join(rest, 'delivered-openapi-manifest.json'),
+    JSON.stringify({ schemaVersion: '1.0', kind: 'delivered-openapi-manifest', openApiFiles: ['missing-api.json'] }),
+  );
+  assert.throws(() => loadDeliveredOpenApiManifest(root), /文件不存在/u);
+
+  writeFileSync(join(rest, 'sample-api.json'), JSON.stringify({ paths: {} }));
+  writeFileSync(
+    join(rest, 'delivered-openapi-manifest.json'),
+    JSON.stringify({
+      schemaVersion: '1.0',
+      kind: 'delivered-openapi-manifest',
+      openApiFiles: ['sample-api.json', 'sample-api.json'],
+    }),
+  );
+  assert.throws(() => loadDeliveredOpenApiManifest(root), /重复文件/u);
 });
 
 test('缺失、额外、重复及 method/path 漂移均失败关闭', () => {

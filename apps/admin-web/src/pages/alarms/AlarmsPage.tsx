@@ -195,7 +195,10 @@ export function AlarmsPage({
               key: 'severity',
               header: '严重度',
               render: (a) => (
-                <span className={`severity-badge severity-${a.severity.toLowerCase()}`} data-testid={`severity-${a.alarmId}`}>
+                <span
+                  className={`severity-badge severity-${a.severity.toLowerCase()}`}
+                  data-testid={`severity-${a.alarmId}`}
+                >
                   {ALARM_SEVERITY_LABELS[a.severity]}
                 </span>
               ),
@@ -209,7 +212,11 @@ export function AlarmsPage({
               key: 'actions',
               header: '操作',
               render: (a) => (
-                <button type="button" data-testid={`alarm-detail-${a.alarmId}`} onClick={() => onSelectAlarm(a.alarmId)}>
+                <button
+                  type="button"
+                  data-testid={`alarm-detail-${a.alarmId}`}
+                  onClick={() => onSelectAlarm(a.alarmId)}
+                >
                   详情
                 </button>
               ),
@@ -260,7 +267,9 @@ export function AlarmsPage({
               key: 'severity',
               header: '严重度',
               render: (t) => (
-                <span className={`severity-badge severity-${t.severity.toLowerCase()}`}>{ALARM_SEVERITY_LABELS[t.severity]}</span>
+                <span className={`severity-badge severity-${t.severity.toLowerCase()}`}>
+                  {ALARM_SEVERITY_LABELS[t.severity]}
+                </span>
               ),
             },
             { key: 'component', header: '部件', render: (t) => t.component ?? '—' },
@@ -338,9 +347,7 @@ export function AlarmsPage({
               <>
                 <dt>清除</dt>
                 <dd data-testid="detail-clear">
-                  {alarm.clearedBy ?? '设备上报'}
-                  {' '}
-                  <TimeText iso={alarm.clearedAt} />
+                  {alarm.clearedBy ?? '设备上报'} <TimeText iso={alarm.clearedAt} />
                   {alarm.clearReason !== null ? ` — ${alarm.clearReason}` : ''}
                 </dd>
               </>
@@ -398,9 +405,7 @@ export function AlarmsPage({
         danger
         requireReason
         reasonLabel="清除原因"
-        {...(alarm !== null
-          ? { description: `清除为终态（→CLEARED），原因写入审计。告警：${alarm.code}` }
-          : {})}
+        {...(alarm !== null ? { description: `清除为终态（→CLEARED），原因写入审计。告警：${alarm.code}` } : {})}
         confirmText="确认清除"
         onConfirm={(reason) => {
           if (alarm !== null) void runAction(() => onClear(alarm.alarmId, reason), '清除');
@@ -447,9 +452,19 @@ function CommonFilterFields({
   return (
     <>
       <label htmlFor="filter-site">站点</label>
-      <input id="filter-site" data-testid="filter-site" value={draft.siteId ?? ''} onChange={(e) => patch('siteId', e.target.value)} />
+      <input
+        id="filter-site"
+        data-testid="filter-site"
+        value={draft.siteId ?? ''}
+        onChange={(e) => patch('siteId', e.target.value)}
+      />
       <label htmlFor="filter-device">设备</label>
-      <input id="filter-device" data-testid="filter-device" value={draft.deviceId ?? ''} onChange={(e) => patch('deviceId', e.target.value)} />
+      <input
+        id="filter-device"
+        data-testid="filter-device"
+        value={draft.deviceId ?? ''}
+        onChange={(e) => patch('deviceId', e.target.value)}
+      />
       {tab !== 'event' ? (
         <>
           <label htmlFor="filter-severity">严重度</label>

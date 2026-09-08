@@ -1,35 +1,12 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DELIVERED_OPERATIONS } from '../apps/cloud-api/src/runtime/delivered-operations.ts';
 
-const OPENAPI_FILES = [
-  'device-onboarding-api.json',
-  'device-certificate-api.json',
-  'device-sync-api.json',
-  'device-deactivate-api.json',
-  'admin-onboarding-api.json',
-  'admin-certificate-rotation-api.json',
-  'admin-replay-api.json',
-  'admin-customer-api.json',
-  'admin-site-api.json',
-  'admin-device-api.json',
-  'admin-device-assignment-api.json',
-  'admin-device-status-api.json',
-  'admin-device-retirement-api.json',
-  'admin-device-console-api.json',
-  'admin-license-api.json',
-  'admin-contract-api.json',
-  'admin-contract-device-api.json',
-  'admin-configuration-api.json',
-  'admin-consumable-api.json',
-  'admin-consumable-request-api.json',
-  'admin-device-user-api.json',
-  'admin-alarm-api.json',
-  'admin-esg-api.json',
-];
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
+const MANIFEST_FILE = 'delivered-openapi-manifest.json';
+const OPENAPI_FILE = /^[a-z0-9-]+-api\.json$/u;
 
 const keyOf = (operation) => `${operation.operationId}|${operation.method}|${operation.path}`;
 
@@ -63,7 +40,7 @@ export function compareDeliveredOperations(openApiOperations, runtimeOperations)
 export function loadDeliveredOpenApiOperations(root) {
   const restDir = resolve(root, 'contracts/rest');
   const operations = [];
-  for (const file of OPENAPI_FILES) {
+  for (const file of loadDeliveredOpenApiManifest(root)) {
     const document = JSON.parse(readFileSync(resolve(restDir, file), 'utf8'));
     for (const [path, pathItem] of Object.entries(document.paths ?? {})) {
       for (const [method, operation] of Object.entries(pathItem)) {
@@ -73,6 +50,26 @@ export function loadDeliveredOpenApiOperations(root) {
     }
   }
   return operations;
+}
+
+export function loadDeliveredOpenApiManifest(root) {
+  const restDir = resolve(root, 'contracts/rest');
+  const manifestPath = resolve(restDir, MANIFEST_FILE);
+  if (!existsSync(manifestPath)) throw new Error(`缺少已交付 OpenAPI 清单: contracts/rest/${MANIFEST_FILE}`);
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  if (manifest?.schemaVersion !== '1.0' || manifest?.kind !== 'delivered-openapi-manifest') {
+    throw new Error('已交付 OpenAPI 清单 schemaVersion/kind 非法');
+  }
+  const files = manifest.openApiFiles;
+  if (!Array.isArray(files) || files.length === 0) throw new Error('已交付 OpenAPI 清单必须包含非空 openApiFiles');
+  if (files.some((file) => typeof file !== 'string' || !OPENAPI_FILE.test(file))) {
+    throw new Error('已交付 OpenAPI 清单仅允许仓库内 *-api.json 文件名');
+  }
+  if (new Set(files).size !== files.length) throw new Error('已交付 OpenAPI 清单存在重复文件');
+  for (const file of files) {
+    if (!existsSync(resolve(restDir, file))) throw new Error(`已交付 OpenAPI 文件不存在: ${file}`);
+  }
+  return files;
 }
 
 export function checkDeliveredRuntime(root = process.cwd()) {

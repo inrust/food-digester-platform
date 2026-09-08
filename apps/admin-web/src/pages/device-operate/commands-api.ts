@@ -38,10 +38,10 @@ export async function createDeviceCommand(
   if (input.remarks !== undefined && input.remarks !== '') body['remarks'] = input.remarks;
   if (input.commandId !== undefined) body['commandId'] = input.commandId;
   if (input.confirmation !== undefined) body['confirmation'] = input.confirmation;
-  const response = await api.request<{ data: CommandView }>(
-    `/admin/devices/${encodeURIComponent(deviceId)}/commands`,
-    { method: 'POST', body },
-  );
+  const response = await api.request<{ data: CommandView }>(`/admin/devices/${encodeURIComponent(deviceId)}/commands`, {
+    method: 'POST',
+    body,
+  });
   return response.data;
 }
 
@@ -81,9 +81,7 @@ export async function fetchCommands(
 }
 
 export async function fetchCommand(api: ApiClient, commandId: string): Promise<CommandDetailView> {
-  const response = await api.request<{ data: CommandDetailView }>(
-    `/admin/commands/${encodeURIComponent(commandId)}`,
-  );
+  const response = await api.request<{ data: CommandDetailView }>(`/admin/commands/${encodeURIComponent(commandId)}`);
   return response.data;
 }
 

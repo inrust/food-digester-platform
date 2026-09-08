@@ -32,6 +32,19 @@
 
 P1 关闭不改变以下边界：目标 AWS API/SES/Webhook/RDS/S3 运行验收仍为 **NOT RUN**；`H-03` 继续开放。全仓 `pnpm verify` 是否通过取决于 P2 范围内 Admin Web/OTA 工作区与其余全仓 Gate，本次提交不纳入或覆盖这些用户改动。
 
+## P2 整改复核（2026-09-08）
+
+当前状态：报告所列 P2 仓库内 Gate 与文档可信度问题已完成整改，`M-01`、`M-04`、`L-01`、`L-02`、`L-03` 关闭；目标 AWS 回执治理已就绪并对缺失回执失败关闭，但本次未部署或操作目标 AWS，`H-03` 仍为 **OPEN / NOT RUN**。因此仓库内实现与质量 Gate 完成率为 **11/11（100%）**，包含真实目标环境验收的严格完成率仍为 **0/11（0%）**，不得把本地绿灯表述为生产验收。
+
+| 关闭项 | 修复结果 | 当前证据 |
+|---|---|---|
+| `CLOSED-P2-01` Runtime manifest | 新增版本化 `delivered-openapi-manifest.json`，Runtime Gate 从清单装载正式片段；清单缺失、非法、重复、文件不存在，以及 operation 缺失/额外/漂移均失败关闭 | 23 份正式 OpenAPI、95 operations 与生产路由双向一致；Runtime 定向正负测试 PASS |
+| `CLOSED-P2-02` 全仓质量 Gate | 收敛 Admin Web/OTA 的 lint、类型、测试查询与格式问题，并重建 OpenAPI bundle | `pnpm verify` 全流程 PASS：Vitest 136 files / 1140 tests、Contract 287 tests、Script 108 tests，13 包 typecheck/build、OpenAPI、边界、Schema、Migration、证据、Secrets、Sensitive Sink、Runtime 与 CDK 均通过 |
+| `CLOSED-P2-03` 决策与文档 | 新增并冻结 `DEC-021@1.0.0`，将 Contract 30 天窗口固定为 UTC instant 的包含式边界；同步决策登记 `1.30.0`、OpenAPI 与领域边界测试；修正 DEC-008 当前话术及 34 个失效链接 | 11 份业务开发文档纳入默认 `check:evidence`；陈旧测试计数、决策状态、部署措辞和链接负测 PASS |
+| `READY-P2-04` 目标 AWS 回执 Gate | 新增独立 `check:aws-admin-business-evidence` 与采集说明，强制绑定 `sourceCommit`，覆盖 56 API、五角色/跨租户、If-Match 竞态、通知调度/并发/重试、ESG CSV/S3/URL/清理 | 回执结构与负向测试 PASS；当前真实回执不存在时命令按设计退出 1，目标 AWS 状态保持 `NOT RUN` |
+
+下文“一”至“五”保留为整改前审计快照，用于说明问题来源与原始完成率；判定当前状态时以 P0/P1/P2 整改复核为准。
+
 ## 一、任务完成概况
 
 ### 1.1 结论
@@ -188,4 +201,4 @@ P1 关闭不改变以下边界：目标 AWS API/SES/Webhook/RDS/S3 运行验收�
 - 全仓 `pnpm verify`：**FAIL**（lint 9 errors，未继续执行后续阶段）。
 - 目标 AWS 运行验收：**NOT RUN**。
 - 最终严格结论：**0/11，FAIL / NOT ACCEPTED**。
-- 本报告只新增审计 Markdown；未修改或覆盖工作区已有的 Admin Web/OTA 文件。
+- 整改前本报告仅新增审计 Markdown；P2 已在用户后续指令授权下收敛 Admin Web/OTA 与全仓 Gate，并将相关改动纳入本次提交。

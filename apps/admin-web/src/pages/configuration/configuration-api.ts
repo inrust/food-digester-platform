@@ -27,7 +27,8 @@ export async function fetchConfigurations(
 ): Promise<readonly ConfigurationSummaryView[]> {
   const params = new URLSearchParams();
   if (filter.targetModel !== undefined && filter.targetModel !== '') params.set('targetModel', filter.targetModel);
-  if (filter.targetDeviceId !== undefined && filter.targetDeviceId !== '') params.set('targetDeviceId', filter.targetDeviceId);
+  if (filter.targetDeviceId !== undefined && filter.targetDeviceId !== '')
+    params.set('targetDeviceId', filter.targetDeviceId);
   const query = params.toString();
   const response = await api.request<{ data: ConfigurationSummaryView[] }>(
     `/admin/configurations${query === '' ? '' : `?${query}`}`,

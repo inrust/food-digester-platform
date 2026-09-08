@@ -1,6 +1,8 @@
 # BE-LIC-01 License/Entitlement API
 
-实现：[apps/cloud-api/src/admin/license](../apps/cloud-api/src/admin/license/index.ts)；OpenAPI：[contracts/rest/admin-license-api.json](../contracts/rest/admin-license-api.json)；验收测试：[admin-license.test.ts](../apps/cloud-api/test/admin-license.test.ts)（8 项，PGlite 真实 PostgreSQL）。
+实现：[apps/cloud-api/src/admin/license](../../apps/cloud-api/src/admin/license/index.ts)；OpenAPI：[contracts/rest/admin-license-api.json](../../contracts/rest/admin-license-api.json)；验收测试：[admin-license.test.ts](../../apps/cloud-api/test/admin-license.test.ts)。
+
+> 证据治理：当前本地全仓证据命令为 `pnpm verify`；精确快照与整改闭环见 [全面复盘检查报告](../audit/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG全面复盘检查报告-2026-09-08.md)。目标 AWS 验收必须按 [证据采集说明](../audit/evidence/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md) 生成与待发布提交绑定的回执，并通过 `pnpm check:aws-admin-business-evidence`；缺失回执不得以本地测试替代。
 
 ## 1. 范围与事实源
 
@@ -30,7 +32,7 @@
 
 **并发**：`licenses.version` 条件更新，版本漂移 → 409。
 
-## 3. 验收基准与证据（vitest + PGlite，8 项）
+## 3. 验收基准与证据（vitest + PGlite）
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
@@ -42,7 +44,7 @@
 | 通知和审计各一次 | 链路测试对 audit_events / license_history / outbox_events 精确计数 | ✅ |
 | 附加 | 错误码对齐 CT-05 目录；DTO 字段与 OpenAPI License 封闭契约一致；模块无 AWS 依赖 | ✅ |
 
-契约测试：`node --import tsx --test contracts/rest/admin-license-api.test.ts`（3 项：端点封闭/Schema 封闭/$ref 可解析）。
+契约测试：`node --import tsx --test contracts/rest/admin-license-api.test.ts`（自动化契约回归）。
 
 ## 4. 未决风险
 

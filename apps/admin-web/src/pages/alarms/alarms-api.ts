@@ -64,7 +64,11 @@ export async function fetchAlarm(api: ApiClient, alarmId: string): Promise<Alarm
   return response.data;
 }
 
-export async function acknowledgeAlarm(api: ApiClient, alarmId: string, reason: string): Promise<AlarmHandleResultView> {
+export async function acknowledgeAlarm(
+  api: ApiClient,
+  alarmId: string,
+  reason: string,
+): Promise<AlarmHandleResultView> {
   const response = await api.request<{ data: AlarmHandleResultView }>(
     `/admin/alarms/${encodeURIComponent(alarmId)}/acknowledge`,
     { method: 'POST', body: { reason } },

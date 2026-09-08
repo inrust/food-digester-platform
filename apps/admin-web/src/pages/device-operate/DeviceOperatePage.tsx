@@ -14,7 +14,6 @@
 import { useRef, useState } from 'react';
 import type { Role } from '@fdp/auth';
 import { hasPermission } from '@fdp/auth';
-import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { ExportPanel } from '../../components/ExportPanel.js';
@@ -78,7 +77,10 @@ export interface DeviceOperatePageProps {
   readonly onSelectDevice: (deviceId: string | null) => void;
   /** 当前选中设备（四轴状态 + Entitlement，用于门控与运行状态展示）。 */
   readonly selectedDevice: DeviceView | null;
-  readonly onSubmitCommand: (deviceId: string, input: CommandCreateInput) => Promise<{ commandId: string; status: string; replayed: boolean; requestedBy: string }>;
+  readonly onSubmitCommand: (
+    deviceId: string,
+    input: CommandCreateInput,
+  ) => Promise<{ commandId: string; status: string; replayed: boolean; requestedBy: string }>;
   readonly commands: ListState<CommandListItemView>;
   readonly commandFilter: CommandListFilter;
   readonly onApplyCommandFilter: (filter: CommandListFilter) => void;
@@ -143,7 +145,6 @@ export function DeviceOperatePage({
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
 
-  const canSend = hasPermission(role, 'command:send');
   const detail = commandDetail.kind === 'ready' ? commandDetail.command : null;
 
   const openForm = (command: CommandName, group: readonly CommandName[] | null = null) => {
@@ -171,9 +172,7 @@ export function DeviceOperatePage({
         command: form.command,
         timeoutSec: Number(timeoutSec),
         ...(remarks.trim() !== '' ? { remarks: remarks.trim() } : {}),
-        ...(spec.highRisk
-          ? { confirmation: { confirmText, confirmedAt: new Date().toISOString() } }
-          : {}),
+        ...(spec.highRisk ? { confirmation: { confirmText, confirmedAt: new Date().toISOString() } } : {}),
       });
       setForm(null);
       setNotice(
@@ -429,7 +428,11 @@ export function DeviceOperatePage({
               key: 'actions',
               header: '操作',
               render: (c) => (
-                <button type="button" data-testid={`command-detail-${c.commandId}`} onClick={() => onSelectCommand(c.commandId)}>
+                <button
+                  type="button"
+                  data-testid={`command-detail-${c.commandId}`}
+                  onClick={() => onSelectCommand(c.commandId)}
+                >
                   详情
                 </button>
               ),

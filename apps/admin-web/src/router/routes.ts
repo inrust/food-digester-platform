@@ -30,6 +30,7 @@ export type PageState =
   | 'contract-new'
   | 'contract-detail'
   | 'ota-campaigns'
+  | 'ota-packages'
   | 'customers'
   | 'sites'
   | 'licenses'
@@ -212,6 +213,15 @@ export const APP_ROUTES: readonly AppRoute[] = [
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: null,
     parentPath: '/dashboard',
+  },
+  // FE-13 扩展路由（CT-06 矩阵外）：固件包上传/校验（BE-OTA-01），经“设备管理详情-选择固件文件”进入
+  {
+    path: '/ota/packages',
+    pageState: 'ota-packages',
+    label: '固件包管理',
+    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
+    menuGroup: null,
+    parentPath: '/ota/campaigns',
   },
 ];
 

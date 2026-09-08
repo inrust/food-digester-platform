@@ -65,7 +65,12 @@ export interface ConfigurationsPageProps {
   readonly onSelect: (configurationId: string) => void;
   readonly onCloseDetail: () => void;
   readonly onLoadSyncStatus: (version: number) => void;
-  readonly onCreate: (input: { name: string; targetModel?: string; targetDeviceId?: string; reason?: string }) => Promise<ConfigurationSummaryView>;
+  readonly onCreate: (input: {
+    name: string;
+    targetModel?: string;
+    targetDeviceId?: string;
+    reason?: string;
+  }) => Promise<ConfigurationSummaryView>;
   readonly onCreateVersion: (
     configurationId: string,
     input: { payload: ConfigurationPayloadView; changeNote?: string; reason?: string },
@@ -161,7 +166,12 @@ export function ConfigurationsPage({
           重置
         </button>
         {canWrite ? (
-          <button type="button" className="primary-button" data-testid="config-create" onClick={() => setCreateOpen(true)}>
+          <button
+            type="button"
+            className="primary-button"
+            data-testid="config-create"
+            onClick={() => setCreateOpen(true)}
+          >
             新建配置
           </button>
         ) : null}
@@ -235,7 +245,9 @@ export function ConfigurationsPage({
           <dl>
             <dt>目标</dt>
             <dd>
-              {detailView.targetModel !== null ? `型号 ${detailView.targetModel}` : `设备 ${detailView.targetDeviceId ?? ''}`}
+              {detailView.targetModel !== null
+                ? `型号 ${detailView.targetModel}`
+                : `设备 ${detailView.targetDeviceId ?? ''}`}
             </dd>
             <dt>最新已发布版本</dt>
             <dd data-testid="config-latest-published">
@@ -337,7 +349,12 @@ export function ConfigurationsPage({
       ) : null}
 
       {detailView !== null && publishTarget !== null ? (
-        <Modal open title={`发布版本 v${publishTarget}`} testid="config-publish-dialog" onClose={() => setPublishTarget(null)}>
+        <Modal
+          open
+          title={`发布版本 v${publishTarget}`}
+          testid="config-publish-dialog"
+          onClose={() => setPublishTarget(null)}
+        >
           <PublishForm
             busy={busy}
             onSubmit={(effectiveAt, reason) =>

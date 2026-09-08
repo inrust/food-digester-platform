@@ -1,6 +1,8 @@
 # BE-DUSR-02 设备本地密码验证值生成器
 
-实现：[apps/cloud-api/src/admin/device-user/verifier.ts](../../apps/cloud-api/src/admin/device-user/verifier.ts)；验收测试：[device-user-verifier.test.ts](../../apps/cloud-api/test/device-user-verifier.test.ts)（7 项）。
+实现：[apps/cloud-api/src/admin/device-user/verifier.ts](../../apps/cloud-api/src/admin/device-user/verifier.ts)；验收测试：[device-user-verifier.test.ts](../../apps/cloud-api/test/device-user-verifier.test.ts)。
+
+> 证据治理：当前本地全仓证据命令为 `pnpm verify`；精确快照与整改闭环见 [全面复盘检查报告](../audit/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG全面复盘检查报告-2026-09-08.md)。目标 AWS 验收必须按 [证据采集说明](../audit/evidence/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md) 生成与待发布提交绑定的回执，并通过 `pnpm check:aws-admin-business-evidence`；缺失回执不得以本地测试替代。
 
 ## 1. 范围与前置状态
 
@@ -21,7 +23,7 @@
 
 **下发通道**：仅 Unified Device Sync 的 Device Users 域；线路字段为 `passwordHash`，不再下发 `version/kdf/salt/hash` 或嵌套 `verifier`。
 
-## 3. 验收基准与证据（vitest，7 项）
+## 3. 验收基准与证据（vitest）
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|

@@ -39,8 +39,20 @@ const LIST_ITEM: DeviceUserListItemView = {
 const DETAIL: DeviceUserDetailView = {
   ...LIST_ITEM,
   assignments: [
-    { assignmentId: 'dua-1', deviceId: 'dev-001', status: 'ACTIVE', assignedAt: '2026-09-02T02:00:00Z', revokedAt: null },
-    { assignmentId: 'dua-2', deviceId: 'dev-002', status: 'REVOKED', assignedAt: '2026-09-01T02:00:00Z', revokedAt: '2026-09-03T02:00:00Z' },
+    {
+      assignmentId: 'dua-1',
+      deviceId: 'dev-001',
+      status: 'ACTIVE',
+      assignedAt: '2026-09-02T02:00:00Z',
+      revokedAt: null,
+    },
+    {
+      assignmentId: 'dua-2',
+      deviceId: 'dev-002',
+      status: 'REVOKED',
+      assignedAt: '2026-09-01T02:00:00Z',
+      revokedAt: '2026-09-03T02:00:00Z',
+    },
   ],
 };
 
@@ -224,7 +236,9 @@ test('分配：批量勾选 + 强制原因；撤销仅列 ACTIVE 分配', async 
   await user.type(within(assignForm).getByTestId('assign-reason'), '上线两台设备');
   await user.click(within(assignForm).getByTestId('assign-submit'));
   await screen.findByTestId('action-notice');
-  assert.deepEqual(calls.assigned, [{ deviceUserId: 'du-001', deviceIds: ['dev-003', 'dev-004'], reason: '上线两台设备' }]);
+  assert.deepEqual(calls.assigned, [
+    { deviceUserId: 'du-001', deviceIds: ['dev-003', 'dev-004'], reason: '上线两台设备' },
+  ]);
 
   await user.click(screen.getByTestId('device-user-revoke'));
   const revokeForm = screen.getByTestId('revoke-form');

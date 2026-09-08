@@ -1,6 +1,8 @@
 # BE-CNS-02 耗材更换申请工作流 API
 
-实现：[apps/cloud-api/src/consumable/request-service.ts](../apps/cloud-api/src/consumable/request-service.ts) + [request-handler.ts](../apps/cloud-api/src/consumable/request-handler.ts)；状态机领域规则：[packages/domain/src/consumable.ts](../packages/domain/src/consumable.ts)；OpenAPI：[contracts/rest/admin-consumable-request-api.json](../contracts/rest/admin-consumable-request-api.json)；验收测试：[admin-consumable-request.test.ts](../apps/cloud-api/test/admin-consumable-request.test.ts)（8 项，PGlite 真实 PostgreSQL）。
+实现：[apps/cloud-api/src/consumable/request-service.ts](../../apps/cloud-api/src/consumable/request-service.ts) + [request-handler.ts](../../apps/cloud-api/src/consumable/request-handler.ts)；状态机领域规则：[packages/domain/src/consumable.ts](../../packages/domain/src/consumable.ts)；OpenAPI：[contracts/rest/admin-consumable-request-api.json](../../contracts/rest/admin-consumable-request-api.json)；验收测试：[admin-consumable-request.test.ts](../../apps/cloud-api/test/admin-consumable-request.test.ts)。
+
+> 证据治理：当前本地全仓证据命令为 `pnpm verify`；精确快照与整改闭环见 [全面复盘检查报告](../audit/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG全面复盘检查报告-2026-09-08.md)。目标 AWS 验收必须按 [证据采集说明](../audit/evidence/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md) 生成与待发布提交绑定的回执，并通过 `pnpm check:aws-admin-business-evidence`；缺失回执不得以本地测试替代。
 
 ## 1. 范围与事实源
 
@@ -25,7 +27,7 @@
 | `POST .../{requestId}/complete` | `device:write` | PROCESSING→COMPLETED（If-Match + 强制处理备注；记录 completedAt） |
 | `POST .../{requestId}/cancel` | `device:write` | PENDING/PROCESSING→CANCELLED（If-Match + 强制原因） |
 
-## 3. 验收基准与证据（vitest + PGlite，8 项）
+## 3. 验收基准与证据（vitest + PGlite）
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
@@ -37,7 +39,7 @@
 | 完成后保留完整历史 | 终态行含全部历史字段；审计 create/process/complete/cancel 各恰好一次 | ✅ |
 | 附加 | 非法类型 400；设备不存在 404；未分配 Customer/Retired 409；DTO 与契约一致；无 AWS 依赖 | ✅ |
 
-领域单测：`packages/domain/test/consumable.test.ts`（状态机 3 项，共 9 项）。契约测试：`node --import tsx --test contracts/rest/admin-consumable-request-api.test.ts`（3 项）。
+领域单测：`packages/domain/test/consumable.test.ts`（状态机回归）。契约测试：`node --import tsx --test contracts/rest/admin-consumable-request-api.test.ts`。
 
 ## 4. 未决风险
 

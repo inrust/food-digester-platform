@@ -45,7 +45,13 @@ function makeDevice(overrides: Partial<DeviceView> = {}): DeviceView {
     connectivity: 'ONLINE',
     lastHeartbeatAt: '2026-09-06T03:55:00Z',
     certificate: { certificateId: 'cert-001', fingerprint: 'AB:CD:EF', status: 'ACTIVE' },
-    license: { licenseId: 'lic-001', status: 'Active', validFrom: '2026-01-01', validTo: '2027-01-01', entitlements: ['REMOTE_CONTROL'] },
+    license: {
+      licenseId: 'lic-001',
+      status: 'Active',
+      validFrom: '2026-01-01',
+      validTo: '2027-01-01',
+      entitlements: ['REMOTE_CONTROL'],
+    },
     contract: null,
     createdAt: '2026-09-01T02:00:00Z',
     updatedAt: '2026-09-05T02:00:00Z',
@@ -137,7 +143,11 @@ function renderPage(overrides: Partial<DeviceOperatePageProps> = {}) {
     ...overrides,
   };
   const utils = render(<DeviceOperatePage {...props} />);
-  return { calls, rerender: (next: Partial<DeviceOperatePageProps>) => utils.rerender(<DeviceOperatePage {...props} {...next} />), unmount: utils.unmount };
+  return {
+    calls,
+    rerender: (next: Partial<DeviceOperatePageProps>) => utils.rerender(<DeviceOperatePage {...props} {...next} />),
+    unmount: utils.unmount,
+  };
 }
 
 // ---------- 22 命令与 8 快捷动作映射 ----------
@@ -163,11 +173,17 @@ test('命令目录：22 个命令且每个有中文名；快捷动作 8 个且�
     assert.ok(mapped !== undefined, `未知快捷动作 ${action.key}`);
     if (action.command !== undefined) {
       assert.equal(action.command, mapped);
-      assert.ok(COMMAND_CATALOG.some((c) => c.command === action.command), `${action.command} 不在目录`);
+      assert.ok(
+        COMMAND_CATALOG.some((c) => c.command === action.command),
+        `${action.command} 不在目录`,
+      );
     } else {
       assert.deepEqual(action.commandGroup, mapped);
       for (const code of action.commandGroup ?? []) {
-        assert.ok(COMMAND_CATALOG.some((c) => c.command === code), `${code} 不在目录`);
+        assert.ok(
+          COMMAND_CATALOG.some((c) => c.command === code),
+          `${code} 不在目录`,
+        );
       }
     }
   }
@@ -244,9 +260,27 @@ test('M/N 与温度阈值跳转 Configuration 版本发布，不产生命令提�
 test('门控：Suspended/Retired/离线/无 Entitlement/无 command:send 均禁用且原因展示', () => {
   const cases: [string, Partial<DeviceView>, DeviceOperatePageProps['role'], RegExp][] = [
     ['Suspended 状态拒绝启动类命令', { operationalStatus: 'Suspended' }, 'PlatformSuperAdmin', /当前运行状态/],
-    ['Retired 拒绝全部命令', { lifecycleStatus: 'Retired', operationalStatus: 'Retired' }, 'PlatformSuperAdmin', /已退役/],
+    [
+      'Retired 拒绝全部命令',
+      { lifecycleStatus: 'Retired', operationalStatus: 'Retired' },
+      'PlatformSuperAdmin',
+      /已退役/,
+    ],
     ['离线禁止下发', { connectivity: 'OFFLINE' }, 'PlatformSuperAdmin', /离线/],
-    ['无 REMOTE_CONTROL 禁止', { license: { licenseId: 'l', status: 'Active', validFrom: '2026-01-01', validTo: '2027-01-01', entitlements: ['OTA'] } }, 'PlatformSuperAdmin', /REMOTE_CONTROL/],
+    [
+      '无 REMOTE_CONTROL 禁止',
+      {
+        license: {
+          licenseId: 'l',
+          status: 'Active',
+          validFrom: '2026-01-01',
+          validTo: '2027-01-01',
+          entitlements: ['OTA'],
+        },
+      },
+      'PlatformSuperAdmin',
+      /REMOTE_CONTROL/,
+    ],
     ['无 command:send 禁止', {}, 'Auditor', /command:send/],
   ];
   for (const [name, deviceOverrides, role, pattern] of cases) {
@@ -261,7 +295,10 @@ test('门控：Suspended/Retired/离线/无 Entitlement/无 command:send 均禁�
 test('Suspended 设备仍允许安全停止类命令（STOP/REBOOT 等 catalog allowedStatuses）', () => {
   renderPage({ selectedDevice: makeDevice({ operationalStatus: 'Suspended' }) });
   assert.ok((screen.getByTestId('quick-reboot') as HTMLButtonElement).disabled === false, 'REBOOT 在 Suspended 允许');
-  assert.ok((screen.getByTestId('quick-shutdown') as HTMLButtonElement).disabled === false, 'SHUTDOWN 在 Suspended 允许');
+  assert.ok(
+    (screen.getByTestId('quick-shutdown') as HTMLButtonElement).disabled === false,
+    'SHUTDOWN 在 Suspended 允许',
+  );
   assert.ok((screen.getByTestId('quick-agitatorForward') as HTMLButtonElement).disabled, '搅拌在 Suspended 拒绝');
 });
 
@@ -316,7 +353,14 @@ test('TIMED_OUT 展示；超时后收到的 ACK 标注“迟到 ACK”', () => {
         confirmedBy: null,
         attempts: [{ attemptNo: 1, publishedAt: '2026-09-06T04:00:05Z' }],
         acks: [
-          { result: 'RECEIVED', executeTimeMs: null, errorCode: null, message: null, ackAt: '2026-09-06T04:06:00Z', sourceMessageId: null },
+          {
+            result: 'RECEIVED',
+            executeTimeMs: null,
+            errorCode: null,
+            message: null,
+            ackAt: '2026-09-06T04:06:00Z',
+            sourceMessageId: null,
+          },
         ],
       },
     },

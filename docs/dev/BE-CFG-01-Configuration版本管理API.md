@@ -2,6 +2,8 @@
 
 实现：[apps/cloud-api/src/admin/configuration](../../apps/cloud-api/src/admin/configuration/index.ts)；领域规则：[packages/domain/src/configuration.ts](../../packages/domain/src/configuration.ts)；统一策略：[configuration-v1-policy.json](../../contracts/configuration/configuration-v1-policy.json)；OpenAPI：[admin-configuration-api.json](../../contracts/rest/admin-configuration-api.json)；验收测试：[admin-configuration.test.ts](../../apps/cloud-api/test/admin-configuration.test.ts)（PGlite 真实 PostgreSQL）+ 领域单测 [configuration.test.ts](../../packages/domain/test/configuration.test.ts)。
 
+> 证据治理：当前本地全仓证据命令为 `pnpm verify`；精确快照与整改闭环见 [全面复盘检查报告](../audit/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG全面复盘检查报告-2026-09-08.md)。目标 AWS 验收必须按 [证据采集说明](../audit/evidence/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md) 生成与待发布提交绑定的回执，并通过 `pnpm check:aws-admin-business-evidence`；缺失回执不得以本地测试替代。
+
 ## 1. 范围与事实源
 
 | 项 | 说明 |
@@ -34,7 +36,7 @@
 
 - `device_configurations` 增加 `target_device_id`（migration `20260829090000_configuration_target_device`）+ 二选一 CHECK + 索引；`ConfigurationVersion` 沿用既有模型（payload JSON 完整快照、@@unique(configurationId, version)）。
 
-## 4. 验收基准与证据（vitest + PGlite，9 项）
+## 4. 验收基准与证据（vitest + PGlite）
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|

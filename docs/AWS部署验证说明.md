@@ -233,6 +233,14 @@ pnpm check:aws-admin-evidence
 
 该命令同样在回执缺失、失败或 sourceCommit 不一致时失败关闭。
 
+BE-LIC/CON/CFG/CNS/DUSR/ALM/ESG 管理后台业务范围按 [目标 AWS 验收证据采集说明](audit/evidence/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md)覆盖 56 个正式 API、五角色与跨租户、If-Match 竞态、通知 ≤1 分钟及并发重试、ESG CSV/S3/URL 过期与清理，并执行：
+
+```bash
+pnpm check:aws-admin-business-evidence
+```
+
+该独立发布 Gate 必须绑定待发布 `sourceCommit`；真实回执缺失时保持 `NOT RUN / OPEN`，不得用本地 Gate 替代。
+
 ### 权限负向验证
 
 仓库已有真实 AWS 授权矩阵脚本，会创建两台临时 Thing、测试自身/跨设备权限并清理资源：

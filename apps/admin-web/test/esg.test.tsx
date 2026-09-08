@@ -8,7 +8,7 @@
  * - CT-06 锚点存在性。
  */
 import { afterEach, assert, test } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { EsgOverviewPage } from '../src/pages/esg/EsgOverviewPage.js';
 import type { EsgOverviewPageProps } from '../src/pages/esg/EsgOverviewPage.js';
@@ -174,10 +174,26 @@ test('概览：指标单位（kg/kWh/%）、计算版本、完整率、估算 CO
 
 test('概览：日/周/月切换聚合（加法指标求和、完整率平均、多版本标注）', () => {
   const rows = [
-    makeSummary({ summaryDate: '2026-09-01T00:00:00Z', feedingWeightKg: 100, carbonReductionKg: 40, dataCompletenessPct: 90 }),
-    makeSummary({ summaryDate: '2026-09-02T00:00:00Z', feedingWeightKg: 50, carbonReductionKg: 20, dataCompletenessPct: 100, calculationVersionId: 'esgv-2' }),
+    makeSummary({
+      summaryDate: '2026-09-01T00:00:00Z',
+      feedingWeightKg: 100,
+      carbonReductionKg: 40,
+      dataCompletenessPct: 90,
+    }),
+    makeSummary({
+      summaryDate: '2026-09-02T00:00:00Z',
+      feedingWeightKg: 50,
+      carbonReductionKg: 20,
+      dataCompletenessPct: 100,
+      calculationVersionId: 'esgv-2',
+    }),
     // 下一周
-    makeSummary({ summaryDate: '2026-09-08T00:00:00Z', feedingWeightKg: 70, carbonReductionKg: 30, dataCompletenessPct: null }),
+    makeSummary({
+      summaryDate: '2026-09-08T00:00:00Z',
+      feedingWeightKg: 70,
+      carbonReductionKg: 30,
+      dataCompletenessPct: null,
+    }),
   ];
   const weekly = aggregateDailySummaries(rows, 'week');
   assert.equal(weekly.length, 2);
@@ -294,7 +310,12 @@ test('设备页：九项指标 + 完整率 + 计算版本；ScopeFilter 联动�
   const user = userEvent.setup();
   const { calls } = renderDevices();
   // CT-06 锚点
-  for (const testid of ['esg-device-apply', 'esg-device-period-toggle', 'esg-device-export-csv', 'esg-device-metrics']) {
+  for (const testid of [
+    'esg-device-apply',
+    'esg-device-period-toggle',
+    'esg-device-export-csv',
+    'esg-device-metrics',
+  ]) {
     assert.ok(screen.getByTestId(testid), `缺少锚点 ${testid}`);
   }
   assert.ok(document.querySelector('#scope-region') !== null);
@@ -303,7 +324,19 @@ test('设备页：九项指标 + 完整率 + 计算版本；ScopeFilter 联动�
 
   // 指标行（日粒度）
   const row = screen.getByTestId('esg-device-row-dev-001-2026-09-01');
-  for (const text of ['100.0 kg', '20.0 kg', '80.0 kg', '12.50 kWh', '19.5%', '800 ppm', '12 ppm', '3 ppm', '45.2 kg', '98.5%', 'v1.2.0']) {
+  for (const text of [
+    '100.0 kg',
+    '20.0 kg',
+    '80.0 kg',
+    '12.50 kWh',
+    '19.5%',
+    '800 ppm',
+    '12 ppm',
+    '3 ppm',
+    '45.2 kg',
+    '98.5%',
+    'v1.2.0',
+  ]) {
     assert.ok(row.textContent?.includes(text), `缺少指标 ${text}`);
   }
 

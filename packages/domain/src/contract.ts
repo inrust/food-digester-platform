@@ -3,7 +3,7 @@
  *
  * 事实源：DEC-007（Contract 管商业租期和设备关联；创建 Contract 不自动激活 License）。
  * - 状态机：DRAFT → EFFECTIVE（显式 activate）；EFFECTIVE → EXPIRING_SOON → EXPIRED
- *   （时间派生 evaluateContractAt，到期窗口 30 天暂定值）；非 TERMINATED → TERMINATED
+ *   （时间派生 evaluateContractAt，DEC-021@1.0.0 冻结 30 天窗口）；非 TERMINATED → TERMINATED
  *   （显式 terminate，强制原因）；TERMINATED 为终态。
  * - 续约（renew）：EFFECTIVE/EXPIRING_SOON/EXPIRED 延长 endAt，状态按新窗口重新推导；
  *   DRAFT 直接编辑 endAt，TERMINATED 不可续约。
@@ -15,7 +15,8 @@ export const CONTRACT_STATUSES = ['DRAFT', 'EFFECTIVE', 'EXPIRING_SOON', 'EXPIRE
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
 
 /** 即将到期窗口（天；暂定值，可整体替换）。 */
-export const CONTRACT_EXPIRING_SOON_WINDOW_DAYS = 30;
+/** DEC-021@1.0.0：按 UTC instant 精确计算的 30 个自然日，窗口起点包含边界。 */
+export const CONTRACT_EXPIRING_SOON_WINDOW_DAYS = 30 as const;
 
 export class ContractStateError extends Error {
   override readonly name = 'ContractStateError';

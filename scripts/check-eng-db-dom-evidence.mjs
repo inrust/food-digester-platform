@@ -44,7 +44,26 @@ export const DATA_PROCESSING_TASK_DOCUMENTS = [
   'docs/dev/BE-ESG-01-小时日聚合Worker.md',
 ];
 
-export const TASK_DOCUMENTS = [...ENGINEERING_TASK_DOCUMENTS, ...IOT_TASK_DOCUMENTS, ...DATA_PROCESSING_TASK_DOCUMENTS];
+export const ADMIN_BUSINESS_TASK_DOCUMENTS = [
+  'docs/dev/BE-LIC-01-License-Entitlement-API.md',
+  'docs/dev/BE-CON-01-Contract-CRUD与状态API.md',
+  'docs/dev/BE-CON-02-Contract-Device关联API.md',
+  'docs/dev/BE-CFG-01-Configuration版本管理API.md',
+  'docs/dev/BE-CNS-01-耗材状态投影与查询API.md',
+  'docs/dev/BE-CNS-02-耗材更换申请工作流API.md',
+  'docs/dev/BE-DUSR-01-Device-User管理API.md',
+  'docs/dev/BE-DUSR-02-设备本地密码验证值生成器.md',
+  'docs/dev/BE-ALM-01-Alarm-Event-Tamper-API.md',
+  'docs/dev/BE-ALM-02-业务通知适配器.md',
+  'docs/dev/BE-ESG-02-ESG-查询与CSV导出API.md',
+];
+
+export const TASK_DOCUMENTS = [
+  ...ENGINEERING_TASK_DOCUMENTS,
+  ...IOT_TASK_DOCUMENTS,
+  ...DATA_PROCESSING_TASK_DOCUMENTS,
+  ...ADMIN_BUSINESS_TASK_DOCUMENTS,
+];
 
 export const SECURITY_TASK_DOCUMENTS = [
   'docs/dev/IAC-01-应用依赖CDK.md',
@@ -57,6 +76,8 @@ export const SECURITY_TASK_DOCUMENTS = [
 
 const IOT_AUDIT_REPORT = 'BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-07.md';
 const DATA_PROCESSING_AUDIT_REPORT = 'BE-ARC-01-02-BE-RPL-01-BE-ESG-01全面复盘检查报告-2026-09-07.md';
+const ADMIN_BUSINESS_AUDIT_REPORT = 'BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG全面复盘检查报告-2026-09-08.md';
+const ADMIN_BUSINESS_AWS_GUIDE = 'BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md';
 
 export const DATA_PROCESSING_STRICT_REGRESSIONS = [
   {
@@ -181,6 +202,34 @@ export function dataProcessingDocumentErrors(content, relativeDocument) {
   return errors;
 }
 
+export function adminBusinessDocumentErrors(content, relativeDocument) {
+  const errors = [];
+  if (!content.includes('pnpm verify')) errors.push(`${relativeDocument}: 缺少当前全仓证据命令 pnpm verify`);
+  if (!content.includes(ADMIN_BUSINESS_AUDIT_REPORT)) errors.push(`${relativeDocument}: 缺少管理后台业务审计快照引用`);
+  if (!content.includes(ADMIN_BUSINESS_AWS_GUIDE) || !content.includes('check:aws-admin-business-evidence')) {
+    errors.push(`${relativeDocument}: 缺少目标 AWS 管理后台业务回执 Gate 引用`);
+  }
+  if (
+    relativeDocument.endsWith('BE-CNS-01-耗材状态投影与查询API.md') &&
+    /DEC-008[^。\n]*(?:待冻结|pending)/iu.test(content)
+  ) {
+    errors.push(`${relativeDocument}: DEC-008 当前状态必须与 frozen@1.0.0 一致`);
+  }
+  if (relativeDocument.endsWith('BE-CON-01-Contract-CRUD与状态API.md')) {
+    if (!content.includes('DEC-021@1.0.0') || /30\s*天[^。\n]*(?:暂定|待冻结)/iu.test(content)) {
+      errors.push(`${relativeDocument}: 30 天窗口必须引用 DEC-021@1.0.0 且不得标记为暂定`);
+    }
+  }
+  if (
+    (relativeDocument.endsWith('BE-ALM-02-业务通知适配器.md') ||
+      relativeDocument.endsWith('BE-ESG-02-ESG-查询与CSV导出API.md')) &&
+    /(?:调度|发送端口|存储|签名)[^。\n]*(?:待部署|边界外)/iu.test(content)
+  ) {
+    errors.push(`${relativeDocument}: 不得把已完成的生产接线声明为待部署或边界外`);
+  }
+  return errors;
+}
+
 export function iotRegressionEvidenceErrors(root, regressions = IOT_STRICT_REGRESSIONS) {
   const errors = [];
   for (const regression of regressions) {
@@ -245,6 +294,9 @@ export function checkEngDbDomEvidence(root, documentPaths = TASK_DOCUMENTS) {
     if (DATA_PROCESSING_TASK_DOCUMENTS.includes(relativeDocument)) {
       errors.push(...dataProcessingDocumentErrors(content, relativeDocument));
     }
+    if (ADMIN_BUSINESS_TASK_DOCUMENTS.includes(relativeDocument)) {
+      errors.push(...adminBusinessDocumentErrors(content, relativeDocument));
+    }
 
     for (const match of content.matchAll(MARKDOWN_LINK)) {
       const target = match[1].trim();
@@ -270,7 +322,8 @@ function main() {
   const root = process.argv[2] ?? process.cwd();
   const errors = checkEngDbDomEvidence(root);
   for (const error of errors) console.error(error);
-  if (errors.length === 0) console.log('ENG/DB/DOM/IAC/AUTH/SEC/BE-IOT/BE-ARC/RPL/ESG 证据与开发文档检查通过');
+  if (errors.length === 0)
+    console.log('ENG/DB/DOM/IAC/AUTH/SEC/BE-IOT/BE-ARC/RPL/ESG/管理后台业务 证据与开发文档检查通过');
   process.exitCode = errors.length === 0 ? 0 : 1;
 }
 

@@ -318,7 +318,11 @@ function stubApi(): { api: ApiClient; calls: { path: string; options: ApiRequest
 
 test('API 装配：列表筛选查询串 + 游标；确认/清除 POST 携强制原因', async () => {
   const { api, calls } = stubApi();
-  await fetchAlarms(api, { customerId: 'c1', severity: 'CRITICAL', status: 'ACTIVE', from: '2026-09-01T00:00:00Z' }, 'cur-1');
+  await fetchAlarms(
+    api,
+    { customerId: 'c1', severity: 'CRITICAL', status: 'ACTIVE', from: '2026-09-01T00:00:00Z' },
+    'cur-1',
+  );
   assert.equal(
     calls[0]?.path,
     '/admin/alarms?customerId=c1&severity=CRITICAL&status=ACTIVE&from=2026-09-01T00%3A00%3A00Z&cursor=cur-1',

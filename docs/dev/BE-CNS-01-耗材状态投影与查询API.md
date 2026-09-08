@@ -1,6 +1,8 @@
 # BE-CNS-01 耗材状态投影与查询 API
 
-实现：[apps/cloud-api/src/consumable](../apps/cloud-api/src/consumable/index.ts)；领域规则：[packages/domain/src/consumable.ts](../packages/domain/src/consumable.ts)；OpenAPI：[contracts/rest/admin-consumable-api.json](../contracts/rest/admin-consumable-api.json)；验收测试：[admin-consumable.test.ts](../apps/cloud-api/test/admin-consumable.test.ts)（8 项，PGlite 真实 PostgreSQL）+ 领域单测 [consumable.test.ts](../packages/domain/test/consumable.test.ts)（6 项）。
+实现：[apps/cloud-api/src/consumable](../../apps/cloud-api/src/consumable/index.ts)；领域规则：[packages/domain/src/consumable.ts](../../packages/domain/src/consumable.ts)；OpenAPI：[contracts/rest/admin-consumable-api.json](../../contracts/rest/admin-consumable-api.json)；验收测试：[admin-consumable.test.ts](../../apps/cloud-api/test/admin-consumable.test.ts)+ 领域单测 [consumable.test.ts](../../packages/domain/test/consumable.test.ts)。
+
+> 证据治理：当前本地全仓证据命令为 `pnpm verify`；精确快照与整改闭环见 [全面复盘检查报告](../audit/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG全面复盘检查报告-2026-09-08.md)。目标 AWS 验收必须按 [证据采集说明](../audit/evidence/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md) 生成与待发布提交绑定的回执，并通过 `pnpm check:aws-admin-business-evidence`；缺失回执不得以本地测试替代。
 
 ## 1. 范围与事实源
 
@@ -21,7 +23,7 @@
 - 投影写路径 `recordConsumableReport`（service 导出，供采集链路调用；BE-IOT-05 的冻结 telemetry 契约无耗材字段，故投影接入点在本任务落地）：字典映射 → 百分比校验 → 乱序防护 → 落库（含来源消息 sourceMessageId 与 observedAt）。
 - DB：`consumable_projections.customer_id` 改为可空（migration `20260829100000`；设备未分配 Customer 时投影仍可保存，customerId 为冗余查询列镜像 devices 可空性）。
 
-## 3. 验收基准与证据（vitest + PGlite，8 项）
+## 3. 验收基准与证据（vitest + PGlite）
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
@@ -39,5 +41,5 @@
 
 - stale 阈值已按 DEC-008@1.0.0 冻结为 24h，由 `CONSUMABLE_STALE_AFTER_MS` 统一承载；
 - 投影写路径目前由本任务 service 提供；BE-IOT-05 冻结的 telemetry 契约不含耗材字段，设备耗材上报消息格式待协议定义后由采集链路调用 `recordConsumableReport`；
-- 正式展示名称/告警阈值为 DEC-008 待冻结参数（FE-18 冻结前显示类型代码原文）；查询 API 的 `maxRemainingPercent` 是显式入参，与待冻结的默认阈值解耦；
+- 正式展示名称与低余量阈值已按 DEC-008@1.0.0 冻结：`CARBON_FILTER`/碳滤网为 20%，`BIO_ADDITIVE`/生物添加剂为 15%；查询 API 的 `maxRemainingPercent` 仍是显式覆盖入参；
 - 联系人授权角色集合（SuperAdmin/Operator/CustomerAdmin）为暂定判定，冻结需业务方确认。

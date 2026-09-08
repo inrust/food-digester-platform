@@ -8,10 +8,12 @@
  *   Retire 展示不可恢复警告；成功后展示退役记录（PENDING_CONFIRMATION = 等待设备确认，
  *   DEC-014：72 小时窗口内证书保持 ACTIVE 且仅允许 Sync/Deactivate）；
  * - 不直接修改状态字段（无本地状态伪造，操作成功一律经 onRefresh 回源）；
- * - 证书区仅显示 ID/指纹/状态摘要，不展示/下载私钥；轮换按钮表达为“请求轮换”。
+ * - 证书区仅显示 ID/指纹/状态摘要，不展示/下载私钥；轮换按钮表达为“请求轮换”；
+ * - FE-13：固件上传/同步更新跳转受控 OTA（/ota/packages、/ota/campaigns），不直接推送单设备。
  */
 import { useRef, useState } from 'react';
 import type { Role } from '@fdp/auth';
+import { hasPermission } from '@fdp/auth';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { FourAxisBadges } from '../../components/FourAxisBadge.js';
@@ -64,6 +66,8 @@ export interface DeviceManagePageProps {
   /** alias 提交；If-Match 由父级以当前 device.updatedAt 注入。 */
   readonly onUpdateAlias: (alias: string | null) => Promise<DeviceMetadataView>;
   readonly onRequestRotation: () => Promise<RotationRequestView>;
+  /** FE-13 OTA 入口跳转（/ota/packages、/ota/campaigns）。 */
+  readonly onNavigate: (path: string) => void;
 }
 
 type PendingAction = 'suspend' | 'reactivate' | 'retire' | 'forceComplete';
@@ -88,6 +92,7 @@ export function DeviceManagePage({
   onForceComplete,
   onUpdateAlias,
   onRequestRotation,
+  onNavigate,
 }: DeviceManagePageProps) {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -224,6 +229,28 @@ export function DeviceManagePage({
             退役
           </button>
         </div>
+      </section>
+
+      <section data-testid="ota-entry" aria-label="OTA 升级">
+        <h4>OTA 升级</h4>
+        <p className="field-hint">
+          固件上传（预签名 URL + Hash/签名校验）与同步更新（受控 Campaign，首批 1 台灰度）均在 OTA 页完成；
+          不直接向单设备推送未校验文件。
+        </p>
+        {hasPermission(role, 'ota:read') ? (
+          <div className="action-row">
+            <button type="button" data-testid="goto-ota-packages" onClick={() => onNavigate('/ota/packages')}>
+              选择固件文件
+            </button>
+            <button type="button" data-testid="goto-ota-campaigns" onClick={() => onNavigate('/ota/campaigns')}>
+              同步更新
+            </button>
+          </div>
+        ) : (
+          <p className="deny-reason" data-testid="ota-entry-deny">
+            需要 OTA 读权限（ota:read）
+          </p>
+        )}
       </section>
 
       <section data-testid="alias-section" aria-label="设备别名">

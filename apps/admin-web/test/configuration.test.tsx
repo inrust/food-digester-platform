@@ -143,7 +143,19 @@ test('版本表单只渲染 V1 四字段且单位正确；候选扩展字段不�
 
   // 候选扩展字段不存在（DEC-018 excludedCandidateFields + 温度上下限）
   const pageText = screen.getByTestId('configurations-page').textContent ?? '';
-  for (const forbidden of ['图像', '上传间隔', '旋转', '电机', '过载', '加热', '语言', '云域名', 'NTP', '温度上限', '温度下限']) {
+  for (const forbidden of [
+    '图像',
+    '上传间隔',
+    '旋转',
+    '电机',
+    '过载',
+    '加热',
+    '语言',
+    '云域名',
+    'NTP',
+    '温度上限',
+    '温度下限',
+  ]) {
     assert.ok(!pageText.includes(forbidden), `候选扩展字段“${forbidden}”不得渲染`);
   }
   assert.notMatch(pageText, /cloudDomain|ntpServer|rotation|motor|\bimage\b/i);

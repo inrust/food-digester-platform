@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.29.0",
-  "updatedAt": "2026-09-08T12:45:00Z",
+  "registerVersion": "1.30.0",
+  "updatedAt": "2026-09-08T14:15:00Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -678,6 +678,27 @@
           "at": "2026-09-08T12:45:00Z",
           "by": "业务方（本次 P1 整改指令）",
           "note": "按全面审计 P1 整改建议冻结 HMAC-SHA256、v1 编码、规范载荷、环境级 Secret、active/previous 双验与 legacy 迁移边界。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-021",
+      "version": "1.0.0",
+      "status": "frozen",
+      "title": "Contract 即将到期窗口",
+      "conflict": "Contract 的 EXPIRING_SOON 派生窗口此前实现为 30 天，但契约与开发文档仍标记为暂定值，无法形成稳定的查询、筛选与续约语义。",
+      "provisionalValue": "EXPIRING_SOON 窗口冻结为 30 个自然日（精确按 30×86400 秒计算）；at >= endAt 时为 EXPIRED，否则 at >= endAt - 30 天时为 EXPIRING_SOON，窗口起点包含边界；所有时刻使用 UTC instant。该规则统一用于状态派生、列表筛选、evaluate 与 renew。",
+      "approver": "业务方（本次 P2 整改指令）",
+      "approvedAt": "2026-09-08T14:15:00Z",
+      "blockingTasks": ["BE-CON-01", "FE-17", "QA-02"],
+      "affectedModules": ["BE-CON", "FE", "QA"],
+      "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
+      "history": [
+        {
+          "version": "1.0.0",
+          "at": "2026-09-08T14:15:00Z",
+          "by": "业务方（本次 P2 整改指令）",
+          "note": "按全面审计 P2 整改建议冻结 30 天窗口、UTC instant 计算和包含式边界，并统一 Contract 的派生、筛选与续约语义。"
         }
       ]
     }

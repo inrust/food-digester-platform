@@ -1,12 +1,14 @@
 # BE-ALM-02 业务通知适配器
 
-实现：[apps/cloud-api/src/notification/business-notifier.ts](../apps/cloud-api/src/notification/business-notifier.ts)；生产侧领域事件：[apps/ingestion-worker/src/signals/archive.ts](../apps/ingestion-worker/src/signals/archive.ts)（`writeCriticalAlertOutbox`）+ alarm/tamper Handler 接线；验收测试：[business-notifier.test.ts](../apps/cloud-api/test/business-notifier.test.ts)（8 项）+ [signals-handlers.test.ts](../apps/ingestion-worker/test/signals-handlers.test.ts)（新增 2 项生产侧断言）。
+实现：[apps/cloud-api/src/notification/business-notifier.ts](../../apps/cloud-api/src/notification/business-notifier.ts)；生产侧领域事件：[apps/ingestion-worker/src/signals/archive.ts](../../apps/ingestion-worker/src/signals/archive.ts)（`writeCriticalAlertOutbox`）+ alarm/tamper Handler 接线；验收测试：[business-notifier.test.ts](../../apps/cloud-api/test/business-notifier.test.ts)+ [signals-handlers.test.ts](../../apps/ingestion-worker/test/signals-handlers.test.ts)。
+
+> 证据治理：当前本地全仓证据命令为 `pnpm verify`；精确快照与整改闭环见 [全面复盘检查报告](../audit/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG全面复盘检查报告-2026-09-08.md)。目标 AWS 验收必须按 [证据采集说明](../audit/evidence/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md) 生成与待发布提交绑定的回执，并通过 `pnpm check:aws-admin-business-evidence`；缺失回执不得以本地测试替代。
 
 ## 1. 范围与事实源
 
 | 项 | 说明 |
 |---|---|
-| 任务 | BE-ALM-02（P2 / 后端业务），依赖 BE-ALM-01（已交付）、IAC-01（SES/Webhook 发送端口与调度由部署层接线，本任务不依赖其落地） |
+| 任务 | BE-ALM-02（P2 / 后端业务），依赖 BE-ALM-01、IAC-01；生产 Composition Root 已接入 EventBridge ≤1 分钟调度、SES v2 邮件发送与 HTTPS Webhook 白名单发送 |
 | 事件来源（封闭集合） | `CRITICAL_ALERT_RAISED`（BE-IOT-07 生产侧：CRITICAL Alarm 激活 / CRITICAL Tamper，与业务行同事务落库 Outbox）；`ALARM_STATE_CHANGED`（BE-ALM-01：CRITICAL 告警确认/清除真实迁移） |
 | 功能边界 | 仅设备业务告警；不处理 SQS/RDS/Lambda 等运维告警 |
 
@@ -22,9 +24,9 @@
 
 **内容安全**：通知内容白名单渲染（kind/code/category/message/eventType/状态迁移/deviceId/customerId/occurredAt），不透传原始报文全文；渲染结果再做敏感模式（password/secret/privateKey/token/verifier 等）fail-closed 检查（`NotificationError SENSITIVE_CONTENT`）。
 
-**发送端口**：`EmailSender`/`WebhookSender` 注入接口，模块无 AWS 依赖（SES/HTTPS 实现由部署层接线）。"1 分钟内生成通知记录"由部署层定时调度（≤1min 触发 dispatch）保证；适配器本身随调随处理。
+**发送端口**：`EmailSender`/`WebhookSender` 保持注入接口；生产 Composition Root 已绑定 SES v2 与 HTTPS Webhook 白名单发送器，并由 EventBridge ≤1 分钟触发 dispatch/retry。真实时限、并发与重试效果仍由目标 AWS 回执证明。
 
-## 3. 验收基准与证据（vitest + PGlite，8 + 2 项）
+## 3. 验收基准与证据（vitest + PGlite）
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
@@ -38,7 +40,7 @@
 
 ## 4. 未决风险
 
-- 调度与发送端口接线待部署层落地（Lambda 定时 ≤1min 触发 `dispatchPendingNotifications` + `retryFailedDeliveries`；EmailSender 接 SES、WebhookSender 接 HTTPS）；
+- 生产调度与发送端口已接线；目标 AWS 中的 ≤1 分钟时限、SES/Webhook 请求 ID、并发抢占和失败恢复仍须通过独立回执 Gate；
 - 通知配置暂无管理 API（测试直接落库）；如需后台维护 Customer 通知配置，需新任务定义 CRUD 与权限；
 - FAILED 超过 maxAttempts 后无告警通道（死信观察依赖运维侧，属边界外）；
 - Outbox 扫描不按事件去重游标推进，依赖投递幂等键兜底（事件量增长后可加 lastScannedAt 水位线优化）。

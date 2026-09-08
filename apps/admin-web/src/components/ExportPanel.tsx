@@ -57,7 +57,11 @@ export function ExportPanel({
             {job.rowCount !== null ? `（${job.rowCount} 行）` : ''}
           </span>
           {job.status === 'PENDING' || job.status === 'PROCESSING' ? (
-            <button type="button" data-testid={`${testidPrefix}-export-refresh`} onClick={() => onCheckStatus(job.exportId)}>
+            <button
+              type="button"
+              data-testid={`${testidPrefix}-export-refresh`}
+              onClick={() => onCheckStatus(job.exportId)}
+            >
               刷新状态
             </button>
           ) : null}

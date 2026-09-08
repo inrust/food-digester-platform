@@ -1,6 +1,8 @@
 # BE-CON-02 Contract 与 Device 关联 API
 
-实现：[apps/cloud-api/src/admin/contract-device](../apps/cloud-api/src/admin/contract-device/index.ts)；领域规则（关联状态/窗口/重叠判定）：[packages/domain/src/contract.ts](../packages/domain/src/contract.ts)；OpenAPI：[contracts/rest/admin-contract-device-api.json](../contracts/rest/admin-contract-device-api.json)；验收测试：[admin-contract-device.test.ts](../apps/cloud-api/test/admin-contract-device.test.ts)（8 项，PGlite 真实 PostgreSQL）。
+实现：[apps/cloud-api/src/admin/contract-device](../../apps/cloud-api/src/admin/contract-device/index.ts)；领域规则（关联状态/窗口/重叠判定）：[packages/domain/src/contract.ts](../../packages/domain/src/contract.ts)；OpenAPI：[contracts/rest/admin-contract-device-api.json](../../contracts/rest/admin-contract-device-api.json)；验收测试：[admin-contract-device.test.ts](../../apps/cloud-api/test/admin-contract-device.test.ts)。
+
+> 证据治理：当前本地全仓证据命令为 `pnpm verify`；精确快照与整改闭环见 [全面复盘检查报告](../audit/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG全面复盘检查报告-2026-09-08.md)。目标 AWS 验收必须按 [证据采集说明](../audit/evidence/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md) 生成与待发布提交绑定的回执，并通过 `pnpm check:aws-admin-business-evidence`；缺失回执不得以本地测试替代。
 
 ## 1. 范围与事实源
 
@@ -23,7 +25,7 @@
 | `POST .../devices/bind` | `contract:write`（仅 SuperAdmin） | 批量关联：deviceIds 非空、强制原因；窗口缺省 = 合同窗口；201 |
 | `POST .../devices/unbind` | `contract:write` | 批量解绑：强制原因；任一设备无本合同 ACTIVE 关联 → 409 全部回滚；解绑闭合窗口（status=ENDED，validTo=max(now, validFrom)） |
 
-## 3. 验收基准与证据（vitest + PGlite，8 项）
+## 3. 验收基准与证据（vitest + PGlite）
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
@@ -35,7 +37,7 @@
 | Contract 详情设备视图 | 四轴状态（Active/RUNNING/ONLINE/Active License）、固件 FW1.2、别名、Region/Subregion/Site、租期 validFrom/validTo；无心跳 OFFLINE、无 License null | ✅ |
 | 附加 | 权限矩阵（Operator/Auditor 只读、写 403；Customer 403；未认证 401；缺原因/空数组 400；404）；DTO 与契约封闭一致；无 AWS 依赖 | ✅ |
 
-领域单测：`packages/domain/test/contract.test.ts`（关联规则 3 项，共 9 项）。契约测试：`node --import tsx --test contracts/rest/admin-contract-device-api.test.ts`（3 项）。
+领域单测：`packages/domain/test/contract.test.ts`（关联规则回归）。契约测试：`node --import tsx --test contracts/rest/admin-contract-device-api.test.ts`。
 
 ## 4. 未决风险
 

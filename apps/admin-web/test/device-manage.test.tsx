@@ -95,6 +95,7 @@ function renderPage(overrides: Partial<DeviceManagePageProps> = {}) {
     forceCompleted: [] as string[],
     aliasUpdated: [] as (string | null)[],
     rotationRequested: 0,
+    navigated: [] as string[],
   };
   const props: DeviceManagePageProps = {
     role: 'PlatformSuperAdmin',
@@ -176,6 +177,7 @@ function renderPage(overrides: Partial<DeviceManagePageProps> = {}) {
         requestedAt: '2026-09-06T04:00:00Z',
       };
     },
+    onNavigate: (path) => calls.navigated.push(path),
     ...overrides,
   };
   const utils = render(<DeviceManagePage {...props} />);
@@ -598,4 +600,21 @@ test('API 装配：assign POST 路径与体；rotation POST 无 body', async () 
   assert.equal(calls[1]?.path, '/admin/devices/dev-1/certificate-rotation-requests');
   assert.equal(calls[1]?.options.method, 'POST');
   assert.equal(calls[1]?.options.body, undefined);
+});
+
+// ---------- FE-13 OTA 入口 ----------
+
+test('FE-13：选择固件文件/同步更新跳转受控 OTA 页；无 ota:read 角色不展示入口', async () => {
+  const user = userEvent.setup();
+  const { calls, unmount } = renderPage();
+  await user.click(screen.getByTestId('goto-ota-packages'));
+  await user.click(screen.getByTestId('goto-ota-campaigns'));
+  assert.deepEqual(calls.navigated, ['/ota/packages', '/ota/campaigns']);
+  unmount();
+
+  // CustomerAdmin 无 ota:read：入口不展示且说明原因（路由守卫与后端兜底）
+  renderPage({ role: 'CustomerAdmin' });
+  assert.equal(screen.queryByTestId('goto-ota-packages'), null);
+  assert.equal(screen.queryByTestId('goto-ota-campaigns'), null);
+  assert.ok(screen.getByTestId('ota-entry-deny').textContent?.includes('ota:read'));
 });

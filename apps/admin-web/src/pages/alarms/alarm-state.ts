@@ -66,13 +66,30 @@ export const ALARM_TAB_LABELS: Readonly<Record<AlarmTab, string>> = {
 };
 
 export const EMPTY_ALARM_FILTER: Required<AlarmListFilter> = {
-  customerId: null, siteId: null, deviceId: null, severity: null, status: null, from: null, to: null,
+  customerId: null,
+  siteId: null,
+  deviceId: null,
+  severity: null,
+  status: null,
+  from: null,
+  to: null,
 };
 export const EMPTY_EVENT_FILTER: Required<EventListFilter> = {
-  customerId: null, siteId: null, deviceId: null, eventType: null, from: null, to: null,
+  customerId: null,
+  siteId: null,
+  deviceId: null,
+  eventType: null,
+  from: null,
+  to: null,
 };
 export const EMPTY_TAMPER_FILTER: Required<TamperListFilter> = {
-  customerId: null, siteId: null, deviceId: null, eventType: null, severity: null, from: null, to: null,
+  customerId: null,
+  siteId: null,
+  deviceId: null,
+  eventType: null,
+  severity: null,
+  from: null,
+  to: null,
 };
 
 /** 页面 URL 状态：当前 Tab + 各 Tab 已应用筛选。 */
@@ -138,8 +155,18 @@ export function urlStateFromSearch(search: string): AlarmPageUrlState {
   const eventType = params.get('eventType');
   return {
     tab,
-    alarm: { ...EMPTY_ALARM_FILTER, ...common, severity: tab === 'alarm' ? severity : null, status: tab === 'alarm' ? status : null },
+    alarm: {
+      ...EMPTY_ALARM_FILTER,
+      ...common,
+      severity: tab === 'alarm' ? severity : null,
+      status: tab === 'alarm' ? status : null,
+    },
     event: { ...EMPTY_EVENT_FILTER, ...common, eventType: tab === 'event' ? eventType : null },
-    tamper: { ...EMPTY_TAMPER_FILTER, ...common, severity: tab === 'tamper' ? severity : null, eventType: tab === 'tamper' ? eventType : null },
+    tamper: {
+      ...EMPTY_TAMPER_FILTER,
+      ...common,
+      severity: tab === 'tamper' ? severity : null,
+      eventType: tab === 'tamper' ? eventType : null,
+    },
   };
 }

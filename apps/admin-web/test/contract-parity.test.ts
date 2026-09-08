@@ -231,10 +231,7 @@ test('FE-09：DEC-018@1.0.0 冻结策略与前端四字段常量一致（单位/
   };
   assert.equal(policy.status, 'frozen');
   // 四字段集合精确一致（不允许多/缺字段）
-  assert.deepEqual(
-    CONFIG_V1_FIELDS.map((f) => f.key).sort(),
-    Object.keys(policy.fields).sort(),
-  );
+  assert.deepEqual(CONFIG_V1_FIELDS.map((f) => f.key).sort(), Object.keys(policy.fields).sort());
   for (const field of CONFIG_V1_FIELDS) {
     const spec = policy.fields[field.key];
     assert.ok(spec !== undefined, `策略缺少字段 ${field.key}`);
@@ -253,7 +250,11 @@ test('FE-09：CT-06 配置/设备用户锚点覆盖（device-manage 配置元素
       elements: { id: string; disposition: string; source?: { taskId?: string } }[];
     }[];
   };
-  const assertCoverage = (pageState: string, taskIds: readonly string[], coverage: Readonly<Record<string, string>>) => {
+  const assertCoverage = (
+    pageState: string,
+    taskIds: readonly string[],
+    coverage: Readonly<Record<string, string>>,
+  ) => {
     const page = matrix.pages.find((p) => p.pageState === pageState);
     assert.ok(page !== undefined, `CT-06 缺少页面 ${pageState}`);
     const owned = page.elements.filter(
@@ -324,17 +325,19 @@ test('FE-12：CT-04 命令目录与前端镜像逐条一致；device-operate 页
   assert.equal(catalog.commands.length, 22);
   // 逐条一致（命令名/类别/高风险/允许状态集合），防止前端漂移
   assert.deepEqual(
-    COMMAND_CATALOG.map((c) => ({ command: c.command, category: c.category, highRisk: c.highRisk, allowedStatuses: [...c.allowedStatuses] })),
+    COMMAND_CATALOG.map((c) => ({
+      command: c.command,
+      category: c.category,
+      highRisk: c.highRisk,
+      allowedStatuses: [...c.allowedStatuses],
+    })),
     catalog.commands,
   );
   // 命令名集合与 admin-command-api.json CommandName 枚举一致
   const api = readJson('contracts/rest/admin-command-api.json') as {
     components: { schemas: { CommandName: { enum: string[] } } };
   };
-  assert.deepEqual(
-    COMMAND_CATALOG.map((c) => c.command).sort(),
-    [...api.components.schemas.CommandName.enum].sort(),
-  );
+  assert.deepEqual(COMMAND_CATALOG.map((c) => c.command).sort(), [...api.components.schemas.CommandName.enum].sort());
   // 8 快捷动作：直接命令或命令组均在目录内（不存在无协议 command code）
   assert.equal(QUICK_ACTIONS.length, 8);
   for (const action of QUICK_ACTIONS) {

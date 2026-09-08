@@ -1,0 +1,213 @@
+/**
+ * FE-13 OTA 纯逻辑：状态机矩阵、门控、校验、文案与 CT-06 锚点。
+ *
+ * - Campaign 状态机（BE-OTA-02）：创建即 RUNNING；RUNNING⇄PAUSED；RUNNING/PAUSED→CANCELLED；
+ *   全部 target SUCCEEDED → COMPLETED；DRAFT 枚举存在但本 API 不产出；
+ * - 灰度纪律：创建首批强制恰好 1 台；扩大批次默认禁止一次选择全部合格设备；
+ *   strategy 仅 CANARY（试运营禁止默认全量强制升级）；
+ * - 包纪律（BE-OTA-01）：可发布 = status VERIFIED；UPLOADED（未完成校验）不可建 Campaign；
+ * - 写操作门控 ota:write（PlatformSuperAdmin/PlatformOperator），后端 403 兜底。
+ */
+import { hasPermission } from '@fdp/auth';
+import type { Role } from '@fdp/auth';
+import type { FirmwarePackageStatus, FirmwarePackageType, OtaCampaignStatus, OtaTargetStatus } from './types.js';
+
+// ---------- 包（BE-OTA-01） ----------
+
+export const PACKAGE_TYPE_OPTIONS: readonly FirmwarePackageType[] = ['APP', 'FIRMWARE'];
+
+export const PACKAGE_TYPE_LABELS: Readonly<Record<FirmwarePackageType, string>> = {
+  APP: '应用包（APP）',
+  FIRMWARE: '固件包（FIRMWARE）',
+};
+
+export const PACKAGE_STATUS_OPTIONS: readonly FirmwarePackageStatus[] = ['UPLOADED', 'VERIFIED', 'RETIRED'];
+
+export const PACKAGE_STATUS_LABELS: Readonly<Record<FirmwarePackageStatus, string>> = {
+  UPLOADED: '待校验',
+  VERIFIED: '可发布（已校验）',
+  RETIRED: '已退役',
+};
+
+// ---------- 上传元数据校验（契约字段约束镜像） ----------
+
+export const MODEL_VERSION_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
+export const SHA256_PATTERN = /^[0-9A-Fa-f]{64}$/;
+/** 包大小上限 512MiB（暂定值，与契约 maximum 一致）。 */
+export const MAX_PACKAGE_SIZE_BYTES = 536870912;
+export const MAX_SIGNATURE_LENGTH = 4096;
+export const MAX_CAMPAIGN_NAME_LENGTH = 128;
+export const MAX_BATCH_SIZE = 500;
+
+export interface UploadMetadataDraft {
+  readonly model: string;
+  readonly version: string;
+  readonly sizeBytes: string;
+  readonly sha256: string;
+  readonly signature: string;
+}
+
+export type UploadFieldErrors = Partial<Record<keyof UploadMetadataDraft, string>>;
+
+/** 上传会话元数据字段级校验（与契约 pattern/minimum/maximum 一致；服务端 VALIDATION_FAILED 兜底）。 */
+export function validateUploadMetadata(draft: UploadMetadataDraft): UploadFieldErrors {
+  const errors: UploadFieldErrors = {};
+  if (!MODEL_VERSION_PATTERN.test(draft.model.trim())) {
+    errors.model = '型号须为 1~64 位字母/数字/._-（禁止路径字符）';
+  }
+  if (!MODEL_VERSION_PATTERN.test(draft.version.trim())) {
+    errors.version = '版本须为 1~64 位字母/数字/._-';
+  }
+  const size = Number(draft.sizeBytes);
+  if (!Number.isInteger(size) || size < 1 || size > MAX_PACKAGE_SIZE_BYTES) {
+    errors.sizeBytes = `包大小须为 1~${MAX_PACKAGE_SIZE_BYTES} 字节整数（上限 512MiB）`;
+  }
+  if (!SHA256_PATTERN.test(draft.sha256.trim())) {
+    errors.sha256 = 'SHA-256 须为 64 位十六进制字符';
+  }
+  const signature = draft.signature.trim();
+  if (signature.length === 0 || signature.length > MAX_SIGNATURE_LENGTH) {
+    errors.signature = '签名必填且不超过 4096 字符';
+  }
+  return errors;
+}
+
+export function hasUploadErrors(errors: UploadFieldErrors): boolean {
+  return Object.keys(errors).length > 0;
+}
+
+// ---------- Campaign 状态机与门控（BE-OTA-02） ----------
+
+export const CAMPAIGN_STATUS_OPTIONS: readonly OtaCampaignStatus[] = [
+  'DRAFT',
+  'RUNNING',
+  'PAUSED',
+  'COMPLETED',
+  'CANCELLED',
+];
+
+export const CAMPAIGN_STATUS_LABELS: Readonly<Record<OtaCampaignStatus, string>> = {
+  DRAFT: '草稿',
+  RUNNING: '进行中',
+  PAUSED: '已暂停',
+  COMPLETED: '已完成',
+  CANCELLED: '已取消',
+};
+
+export const TARGET_STATUS_OPTIONS: readonly OtaTargetStatus[] = [
+  'PENDING',
+  'NOTIFIED',
+  'DOWNLOADING',
+  'INSTALLING',
+  'SUCCEEDED',
+  'FAILED',
+  'ROLLED_BACK',
+  'CANCELLED',
+];
+
+export const TARGET_STATUS_LABELS: Readonly<Record<OtaTargetStatus, string>> = {
+  PENDING: '待下发',
+  NOTIFIED: '已通知',
+  DOWNLOADING: '下载中',
+  INSTALLING: '安装中',
+  SUCCEEDED: '成功',
+  FAILED: '失败',
+  ROLLED_BACK: '已回滚',
+  CANCELLED: '已取消',
+};
+
+export type CampaignAction = 'pause' | 'resume' | 'cancel' | 'expand' | 'retry';
+
+export const CAMPAIGN_ACTION_LABELS: Readonly<Record<CampaignAction, string>> = {
+  pause: '暂停',
+  resume: '恢复',
+  cancel: '取消',
+  expand: '扩大批次',
+  retry: '失败重试',
+};
+
+/**
+ * Campaign 动作矩阵（与契约状态机一致）：
+ * - RUNNING：暂停/扩大批次/失败重试/取消；PAUSED：恢复/取消；
+ * - 终态（COMPLETED/CANCELLED）与 DRAFT（本 API 不产出）无动作。
+ */
+export const CAMPAIGN_ACTION_MATRIX: Readonly<Record<OtaCampaignStatus, readonly CampaignAction[]>> = {
+  DRAFT: [],
+  RUNNING: ['pause', 'expand', 'retry', 'cancel'],
+  PAUSED: ['resume', 'cancel'],
+  COMPLETED: [],
+  CANCELLED: [],
+};
+
+export interface CampaignActionGate {
+  readonly allowed: boolean;
+  readonly reason: string | null;
+}
+
+/** 动作可用性 = ota:write ∩ 状态机矩阵（后端 CONFLICT 兜底；pause/resume/cancel 幂等回放）。 */
+export function gateCampaignAction(action: CampaignAction, status: OtaCampaignStatus, role: Role): CampaignActionGate {
+  if (!hasPermission(role, 'ota:write')) {
+    return { allowed: false, reason: '需要 OTA 写权限（ota:write）' };
+  }
+  if (!CAMPAIGN_ACTION_MATRIX[status].includes(action)) {
+    return { allowed: false, reason: `当前状态（${CAMPAIGN_STATUS_LABELS[status]}）不允许该操作` };
+  }
+  return { allowed: true, reason: null };
+}
+
+// ---------- 创建 / 扩大批次校验 ----------
+
+export interface CampaignCreateDraft {
+  readonly name: string;
+  readonly packageId: string;
+  readonly deviceIds: readonly string[];
+}
+
+/**
+ * 创建校验：name 1~128；packageId 必须在 VERIFIED 可发布集合内（坏包/未校验包不可建 Campaign）；
+ * 首批强制恰好 1 台（灰度）。
+ */
+export function validateCampaignCreate(
+  draft: CampaignCreateDraft,
+  verifiedPackageIds: readonly string[],
+): string | null {
+  const name = draft.name.trim();
+  if (name.length === 0 || name.length > MAX_CAMPAIGN_NAME_LENGTH) {
+    return '名称必填且不超过 128 字符';
+  }
+  if (draft.packageId === '') {
+    return '请选择固件包';
+  }
+  if (!verifiedPackageIds.includes(draft.packageId)) {
+    return '仅可发布（VERIFIED）包可创建 Campaign；坏包/未校验包不可选';
+  }
+  if (draft.deviceIds.length !== 1) {
+    return '首批灰度必须恰好 1 台设备';
+  }
+  return null;
+}
+
+/**
+ * 扩大批次校验：1~500 台；默认禁止一次选择全部合格设备（保留灰度余量）。
+ * eligibleDeviceTotal = 当前尚未进入 Campaign 的合格设备总数。
+ */
+export function validateBatchExpand(deviceIds: readonly string[], eligibleDeviceTotal: number): string | null {
+  if (deviceIds.length < 1 || deviceIds.length > MAX_BATCH_SIZE) {
+    return `批次设备数须为 1~${MAX_BATCH_SIZE} 台`;
+  }
+  if (eligibleDeviceTotal > 0 && deviceIds.length >= eligibleDeviceTotal) {
+    return '禁止一次选择全部合格设备（保留灰度余量）';
+  }
+  return null;
+}
+
+// ---------- CT-06 锚点（OTA 相关元素；双向锁定见 contract-parity.test.ts） ----------
+
+export const OTA_COVERAGE: Readonly<Record<string, string>> = {
+  // dashboard 设备卡片“升级”：跳转 /ota/campaigns（FE-03 预埋入口，testid 动态含 deviceId）
+  'dashboard.button.upgrade': 'action-upgrade-<deviceId>',
+  // 设备管理“选择固件文件”：跳转固件包页上传（预签名 URL + Hash/签名校验）
+  'device-manage.button.selectFirmware': 'goto-ota-packages',
+  // 设备管理“同步更新”：跳转创建受控 Campaign（禁止直接推送单设备）
+  'device-manage.button.syncUpdate': 'goto-ota-campaigns',
+};

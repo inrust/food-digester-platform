@@ -27,24 +27,64 @@ export const COMMAND_CATALOG: readonly CommandSpec[] = [
   { command: 'STOP', category: 'MACHINE', highRisk: false, allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'] },
   { command: 'PAUSE', category: 'MACHINE', highRisk: false, allowedStatuses: ['ACTIVE'] },
   { command: 'RESUME', category: 'MACHINE', highRisk: false, allowedStatuses: ['ACTIVE'] },
-  { command: 'EMERGENCY_STOP', category: 'MACHINE', highRisk: true, allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'] },
+  {
+    command: 'EMERGENCY_STOP',
+    category: 'MACHINE',
+    highRisk: true,
+    allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'],
+  },
   { command: 'AGITATOR_FORWARD', category: 'MOTOR', highRisk: true, allowedStatuses: ['ACTIVE'] },
   { command: 'AGITATOR_REVERSE', category: 'MOTOR', highRisk: true, allowedStatuses: ['ACTIVE'] },
-  { command: 'AGITATOR_STOP', category: 'MOTOR', highRisk: true, allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'] },
+  {
+    command: 'AGITATOR_STOP',
+    category: 'MOTOR',
+    highRisk: true,
+    allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'],
+  },
   { command: 'HEATING_ON', category: 'HEATING', highRisk: true, allowedStatuses: ['ACTIVE'] },
-  { command: 'HEATING_OFF', category: 'HEATING', highRisk: true, allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'] },
+  {
+    command: 'HEATING_OFF',
+    category: 'HEATING',
+    highRisk: true,
+    allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'],
+  },
   { command: 'SET_TARGET_TEMPERATURE', category: 'HEATING', highRisk: true, allowedStatuses: ['ACTIVE'] },
   { command: 'EXHAUST_ON', category: 'VENTILATION', highRisk: false, allowedStatuses: ['ACTIVE'] },
-  { command: 'EXHAUST_OFF', category: 'VENTILATION', highRisk: false, allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'] },
+  {
+    command: 'EXHAUST_OFF',
+    category: 'VENTILATION',
+    highRisk: false,
+    allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'],
+  },
   { command: 'AIR_SUPPLY_ON', category: 'VENTILATION', highRisk: false, allowedStatuses: ['ACTIVE'] },
-  { command: 'AIR_SUPPLY_OFF', category: 'VENTILATION', highRisk: false, allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'] },
+  {
+    command: 'AIR_SUPPLY_OFF',
+    category: 'VENTILATION',
+    highRisk: false,
+    allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'],
+  },
   { command: 'DISCHARGE_START', category: 'DISCHARGE', highRisk: true, allowedStatuses: ['ACTIVE'] },
-  { command: 'DISCHARGE_STOP', category: 'DISCHARGE', highRisk: true, allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'] },
+  {
+    command: 'DISCHARGE_STOP',
+    category: 'DISCHARGE',
+    highRisk: true,
+    allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'],
+  },
   { command: 'REBOOT', category: 'DEVICE', highRisk: false, allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'] },
   { command: 'SHUTDOWN', category: 'DEVICE', highRisk: true, allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'] },
   { command: 'FACTORY_RESET', category: 'DEVICE', highRisk: true, allowedStatuses: ['ACTIVE'] },
-  { command: 'TAKE_SNAPSHOT', category: 'DEVICE', highRisk: false, allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'] },
-  { command: 'FORCE_SYNC', category: 'DEVICE', highRisk: false, allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'] },
+  {
+    command: 'TAKE_SNAPSHOT',
+    category: 'DEVICE',
+    highRisk: false,
+    allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'],
+  },
+  {
+    command: 'FORCE_SYNC',
+    category: 'DEVICE',
+    highRisk: false,
+    allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'],
+  },
 ];
 
 /** 命令中文名（文案可追溯到 command code：展示为“中文名（CODE）”）。 */
@@ -96,8 +136,16 @@ export const QUICK_ACTIONS: readonly QuickActionSpec[] = [
 
 /** M/N（搅拌间隔/时长）与温度阈值走 Configuration 版本发布，不走命令 API。 */
 export const CONFIG_REDIRECTS = [
-  { key: 'updateStrategy', label: '更新策略（旋转间隔 M/时长 N）', hint: '经 Configuration 版本发布（/configurations），不产生设备命令' },
-  { key: 'updateThreshold', label: '更新阈值（温度阈值）', hint: '经 Configuration 版本发布（/configurations），不产生设备命令' },
+  {
+    key: 'updateStrategy',
+    label: '更新策略（旋转间隔 M/时长 N）',
+    hint: '经 Configuration 版本发布（/configurations），不产生设备命令',
+  },
+  {
+    key: 'updateThreshold',
+    label: '更新阈值（温度阈值）',
+    hint: '经 Configuration 版本发布（/configurations），不产生设备命令',
+  },
 ] as const;
 
 // ---------- 门控 ----------

@@ -26,10 +26,46 @@ export interface ConfigFieldSpec {
 
 /** DEC-018@1.0.0 冻结的 V1 四字段（顺序即表单渲染顺序）。 */
 export const CONFIG_V1_FIELDS: readonly ConfigFieldSpec[] = [
-  { key: 'heartbeatInterval', label: 'Heartbeat 间隔', unit: 'seconds', unitLabel: '秒', min: 10, max: 900, defaultValue: 60, integer: true },
-  { key: 'telemetryInterval', label: 'Telemetry 间隔', unit: 'seconds', unitLabel: '秒', min: 5, max: 3600, defaultValue: 30, integer: true },
-  { key: 'cameraRefreshInterval', label: '摄像头刷新间隔', unit: 'minutes', unitLabel: '分钟', min: 1, max: 1440, defaultValue: 1, integer: true },
-  { key: 'temperatureThreshold', label: '温度阈值', unit: 'celsius', unitLabel: '°C', min: 0, max: 120, defaultValue: 80, integer: false },
+  {
+    key: 'heartbeatInterval',
+    label: 'Heartbeat 间隔',
+    unit: 'seconds',
+    unitLabel: '秒',
+    min: 10,
+    max: 900,
+    defaultValue: 60,
+    integer: true,
+  },
+  {
+    key: 'telemetryInterval',
+    label: 'Telemetry 间隔',
+    unit: 'seconds',
+    unitLabel: '秒',
+    min: 5,
+    max: 3600,
+    defaultValue: 30,
+    integer: true,
+  },
+  {
+    key: 'cameraRefreshInterval',
+    label: '摄像头刷新间隔',
+    unit: 'minutes',
+    unitLabel: '分钟',
+    min: 1,
+    max: 1440,
+    defaultValue: 1,
+    integer: true,
+  },
+  {
+    key: 'temperatureThreshold',
+    label: '温度阈值',
+    unit: 'celsius',
+    unitLabel: '°C',
+    min: 0,
+    max: 120,
+    defaultValue: 80,
+    integer: false,
+  },
 ];
 
 /** 新建版本表单默认值（DEC-018 default）。 */

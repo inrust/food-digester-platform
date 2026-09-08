@@ -4,6 +4,8 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  ADMIN_BUSINESS_TASK_DOCUMENTS,
+  adminBusinessDocumentErrors,
   checkEngDbDomEvidence,
   DATA_PROCESSING_STRICT_REGRESSIONS,
   DATA_PROCESSING_TASK_DOCUMENTS,
@@ -66,6 +68,20 @@ test('BE-ARC/RPL/ESG 四份文档及 P2 回归纳入默认证据门禁', () => {
   assert.equal(DATA_PROCESSING_TASK_DOCUMENTS.length, 4);
   for (const document of DATA_PROCESSING_TASK_DOCUMENTS) assert.ok(TASK_DOCUMENTS.includes(document));
   assert.equal(DATA_PROCESSING_STRICT_REGRESSIONS.length, 3);
+});
+
+test('11 份管理后台业务文档全部纳入默认链接与证据门禁', () => {
+  assert.equal(ADMIN_BUSINESS_TASK_DOCUMENTS.length, 11);
+  for (const document of ADMIN_BUSINESS_TASK_DOCUMENTS) assert.ok(TASK_DOCUMENTS.includes(document));
+});
+
+test('管理后台业务文档拒绝缺证据引用和陈旧决策或部署说法', () => {
+  const con = adminBusinessDocumentErrors('30 天窗口为暂定值。', 'docs/dev/BE-CON-01-Contract-CRUD与状态API.md');
+  assert.ok(con.some((error) => error.includes('DEC-021')));
+  const cns = adminBusinessDocumentErrors('DEC-008 待冻结。', 'docs/dev/BE-CNS-01-耗材状态投影与查询API.md');
+  assert.ok(cns.some((error) => error.includes('DEC-008')));
+  const alarm = adminBusinessDocumentErrors('调度待部署层落地。', 'docs/dev/BE-ALM-02-业务通知适配器.md');
+  assert.ok(alarm.some((error) => error.includes('生产接线')));
 });
 
 test('BE-ARC/RPL/ESG 文档拒绝缺审计快照和生产接线边界外旧说法', () => {

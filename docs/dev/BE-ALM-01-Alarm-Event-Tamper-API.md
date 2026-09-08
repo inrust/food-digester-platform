@@ -1,6 +1,8 @@
 # BE-ALM-01 Alarm/Event/Tamper 查询与处理 API
 
-实现：[apps/cloud-api/src/admin/alarm/](../apps/cloud-api/src/admin/alarm/index.ts)（errors/service/handler）；领域：[packages/domain/src/alarm.ts](../packages/domain/src/alarm.ts)；OpenAPI：[contracts/rest/admin-alarm-api.json](../contracts/rest/admin-alarm-api.json)；验收测试：[admin-alarm.test.ts](../apps/cloud-api/test/admin-alarm.test.ts)（10 项，PGlite 真实 PostgreSQL）。
+实现：[apps/cloud-api/src/admin/alarm/](../../apps/cloud-api/src/admin/alarm/index.ts)（errors/service/handler）；领域：[packages/domain/src/alarm.ts](../../packages/domain/src/alarm.ts)；OpenAPI：[contracts/rest/admin-alarm-api.json](../../contracts/rest/admin-alarm-api.json)；验收测试：[admin-alarm.test.ts](../../apps/cloud-api/test/admin-alarm.test.ts)。
+
+> 证据治理：当前本地全仓证据命令为 `pnpm verify`；精确快照与整改闭环见 [全面复盘检查报告](../audit/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG全面复盘检查报告-2026-09-08.md)。目标 AWS 验收必须按 [证据采集说明](../audit/evidence/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md) 生成与待发布提交绑定的回执，并通过 `pnpm check:aws-admin-business-evidence`；缺失回执不得以本地测试替代。
 
 ## 1. 范围与事实源
 
@@ -33,7 +35,7 @@
 
 **Schema 变更**：migration `20260830100000_alarm_handling_columns` 为 alarms 表补 `acknowledge_reason`/`cleared_by`/`clear_reason`（设备上报清除的 clearedBy/clearReason 为 null，与管理端清除可区分）。
 
-## 3. 验收基准与证据（vitest + PGlite，10 项）
+## 3. 验收基准与证据（vitest + PGlite）
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
@@ -46,7 +48,7 @@
 | Event/Tamper 只读 | eventType/severity/时间筛选、details 透传、租户隔离 | ✅ |
 | 契约一致性 | 响应字段与 OpenAPI 封闭一致（Alarm/AlarmHandleResult/DeviceEvent/TamperEvent）；错误码对齐 CT-05；模块无 AWS 依赖 | ✅ |
 
-契约测试：`node --import tsx --test contracts/rest/admin-alarm-api.test.ts`（4 项：六端点/认证/响应码、筛选参数、Schema 封闭与强制原因、$ref 可解析）。
+契约测试：`node --import tsx --test contracts/rest/admin-alarm-api.test.ts`（覆盖端点、认证、响应码、筛选参数、Schema 封闭与强制原因、$ref 可解析）。
 
 ## 4. 未决风险
 
