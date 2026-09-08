@@ -227,6 +227,22 @@ describe('Critical → 通知记录与发送', () => {
 });
 
 describe('幂等与重试', () => {
+  test('两个并发 Worker 只有一个能领取同一 FAILED 投递', async () => {
+    const customerId = await plantConfig({ emails: ['claim@f.com'] });
+    await plantEvent({ eventType: 'CRITICAL_ALERT_RAISED', customerId, code: 'CLAIM' });
+    await dispatchPendingNotifications(notifierDeps(fakeSenders({ failEmails: ['claim@f.com'] })));
+    const recovered = fakeSenders();
+
+    const [left, right] = await Promise.all([
+      retryFailedDeliveries(notifierDeps(recovered)),
+      retryFailedDeliveries(notifierDeps(recovered)),
+    ]);
+
+    assert.equal(left.retried + right.retried, 1);
+    assert.equal(recovered.mails.length, 1);
+    assert.equal((await prisma.notificationDelivery.findFirstOrThrow({ where: { customerId } })).status, 'SENT');
+  });
+
   test('重复事件只有一次有效通知：重复派发 P2002 跳过，发送端口不重复调用', async () => {
     const customerId = await plantConfig({ emails: ['ops@e.com'] });
     const event = await plantEvent({ eventType: 'CRITICAL_ALERT_RAISED', customerId, code: 'DUP' });

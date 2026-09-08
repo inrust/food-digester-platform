@@ -23,6 +23,8 @@ export interface InfraConfig {
   readonly deviceApiDomain?: DeviceApiDomainConfig;
   /** 仅 local/test 可显式打开的无 mTLS execute-api 开发入口。 */
   readonly allowInsecureDeviceEndpointForLocal?: true;
+  readonly businessEmailFrom?: string;
+  readonly businessWebhookAllowedHosts?: readonly string[];
 }
 
 export const ENV_NAME_PATTERN = /^[a-z][a-z0-9-]{0,14}$/;
@@ -44,6 +46,16 @@ export function resolveConfig(app: App): InfraConfig {
   const certificateArn = app.node.tryGetContext('deviceApiCertificateArn') as string | undefined;
   const truststoreKey = app.node.tryGetContext('deviceApiTruststoreKey') as string | undefined;
   const allowInsecureDeviceEndpointForLocal = app.node.tryGetContext('allowInsecureDeviceEndpointForLocal') === true;
+  const businessEmailFrom = app.node.tryGetContext('businessEmailFrom') as string | undefined;
+  const webhookHosts = app.node.tryGetContext('businessWebhookAllowedHosts') as string | undefined;
+  const businessWebhookAllowedHosts = webhookHosts
+    ?.split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (!['local', 'test'].includes(envName) && (!businessEmailFrom || !businessWebhookAllowedHosts?.length)) {
+    throw new Error('非 local/test 环境必须配置 businessEmailFrom 与 businessWebhookAllowedHosts');
+  }
 
   if (domainName === undefined && certificateArn === undefined) {
     if (!allowInsecureDeviceEndpointForLocal || !['local', 'test'].includes(envName)) {
@@ -51,7 +63,12 @@ export function resolveConfig(app: App): InfraConfig {
         'Device API 必须配置 mTLS 自定义域名；仅 local/test 可显式设置 allowInsecureDeviceEndpointForLocal=true',
       );
     }
-    return { envName, allowInsecureDeviceEndpointForLocal: true };
+    return {
+      envName,
+      allowInsecureDeviceEndpointForLocal: true,
+      ...(businessEmailFrom ? { businessEmailFrom } : {}),
+      ...(businessWebhookAllowedHosts?.length ? { businessWebhookAllowedHosts } : {}),
+    };
   }
   if (domainName === undefined || certificateArn === undefined) {
     throw new Error('deviceApiDomainName 与 deviceApiCertificateArn 必须同时提供（mTLS 自定义域名成对出现）');
@@ -59,5 +76,7 @@ export function resolveConfig(app: App): InfraConfig {
   return {
     envName,
     deviceApiDomain: { domainName, certificateArn, truststoreKey: truststoreKey ?? 'truststore/ca-bundle.pem' },
+    ...(businessEmailFrom ? { businessEmailFrom } : {}),
+    ...(businessWebhookAllowedHosts?.length ? { businessWebhookAllowedHosts } : {}),
   };
 }

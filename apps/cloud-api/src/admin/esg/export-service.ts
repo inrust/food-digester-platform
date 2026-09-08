@@ -23,6 +23,7 @@ import type { EsgExportDataset } from './csv.js';
 import { buildEsgWhere, toSummaryView, toDailyView, toHourlyView, toReportView } from './service.js';
 import type { EsgFilter } from './service.js';
 import { esgNotFound, esgValidationFailed } from './errors.js';
+import { randomUUID } from 'node:crypto';
 
 /** 短期下载 URL 有效期（秒，暂定值；部署层签名器应与其一致）。 */
 export const EXPORT_URL_TTL_SECONDS = 900 as const;
@@ -34,7 +35,7 @@ export interface ExportStorage {
 }
 
 export interface ExportUrlSigner {
-  sign(input: { readonly key: string; readonly expiresAt: Date }): string;
+  sign(input: { readonly key: string; readonly expiresAt: Date }): string | Promise<string>;
 }
 
 export interface EsgExportDeps {
@@ -43,6 +44,7 @@ export interface EsgExportDeps {
   readonly storage: ExportStorage;
   readonly urlSigner: ExportUrlSigner;
   readonly urlTtlSeconds?: number;
+  readonly leaseSeconds?: number;
 }
 
 // ---------- 行类型与 DTO ----------
@@ -61,6 +63,8 @@ interface ExportJobRow {
   readonly error: string | null;
   readonly createdAt: Date;
   readonly completedAt: Date | null;
+  readonly leaseUntil?: Date | null;
+  readonly leaseToken?: string | null;
 }
 
 interface ExportJobDelegate {
@@ -244,10 +248,15 @@ export async function processEsgExportJob(deps: EsgExportDeps, exportId: string)
   if (!job) throw esgNotFound();
   if (job.status === 'COMPLETED' || job.status === 'FAILED') return toJobView(job, at);
 
-  // PENDING → PROCESSING（并发兜底：仅一个执行者获胜）
+  // PENDING 或租约过期的 PROCESSING → PROCESSING（并发兜底：仅一个执行者获胜）
+  const leaseToken = randomUUID();
+  const leaseUntil = new Date(at.getTime() + (deps.leaseSeconds ?? 300) * 1000);
   const claimed = await exportJobs(deps.client).updateMany({
-    where: { id: job.id, status: 'PENDING' },
-    data: { status: 'PROCESSING' },
+    where: {
+      id: job.id,
+      OR: [{ status: 'PENDING' }, { status: 'PROCESSING', OR: [{ leaseUntil: null }, { leaseUntil: { lte: at } }] }],
+    },
+    data: { status: 'PROCESSING', claimedAt: at, leaseUntil, leaseToken, attemptCount: { increment: 1 }, error: null },
   });
   if (claimed.count !== 1) {
     const current = await exportJobs(deps.client).findFirst({ where: { id: job.id } });
@@ -269,10 +278,10 @@ export async function processEsgExportJob(deps: EsgExportDeps, exportId: string)
     const storageKey = `esg-exports/${job.id}.csv`;
     await deps.storage.put({ key: storageKey, body: csv, contentType: 'text/csv; charset=utf-8' });
     const expiresAt = new Date(at.getTime() + (deps.urlTtlSeconds ?? EXPORT_URL_TTL_SECONDS) * 1000);
-    const downloadUrl = deps.urlSigner.sign({ key: storageKey, expiresAt });
+    const downloadUrl = await deps.urlSigner.sign({ key: storageKey, expiresAt });
 
     await exportJobs(deps.client).updateMany({
-      where: { id: job.id, status: 'PROCESSING' },
+      where: { id: job.id, status: 'PROCESSING', leaseToken },
       data: {
         status: 'COMPLETED',
         rowCount: views.length,
@@ -280,13 +289,15 @@ export async function processEsgExportJob(deps: EsgExportDeps, exportId: string)
         downloadUrl,
         urlExpiresAt: expiresAt,
         completedAt: at,
+        leaseUntil: null,
+        leaseToken: null,
       },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message.slice(0, 500) : 'export failed';
     await exportJobs(deps.client).updateMany({
-      where: { id: job.id, status: 'PROCESSING' },
-      data: { status: 'FAILED', error: message, completedAt: at },
+      where: { id: job.id, status: 'PROCESSING', leaseToken },
+      data: { status: 'FAILED', error: message, completedAt: at, leaseUntil: null, leaseToken: null },
     });
   }
 
@@ -295,13 +306,21 @@ export async function processEsgExportJob(deps: EsgExportDeps, exportId: string)
   return toJobView(fresh, at);
 }
 
-/** 批量处理 PENDING 导出任务（部署层定时触发）。 */
+/** 批量处理 PENDING 及租约过期的 PROCESSING 导出任务（部署层定时触发）。 */
 export async function processEsgExportJobs(deps: EsgExportDeps, batchSize = 10): Promise<number> {
   const delegate = exportJobs(deps.client) as unknown as {
     findMany(args: Record<string, unknown>): Promise<{ id: string }[]>;
   };
   const pending = await delegate.findMany({
-    where: { status: 'PENDING' },
+    where: {
+      OR: [
+        { status: 'PENDING' },
+        {
+          status: 'PROCESSING',
+          OR: [{ leaseUntil: null }, { leaseUntil: { lte: deps.now?.() ?? new Date() } }],
+        },
+      ],
+    },
     orderBy: { createdAt: 'asc' },
     take: batchSize,
     select: { id: true },

@@ -290,6 +290,45 @@ describe('ESG 查询', () => {
 });
 
 describe('CSV 导出', () => {
+  test('PROCESSING 租约过期可恢复，未过期租约不会被并发接管', async () => {
+    const expired = await prisma.esgExportJob.create({
+      data: {
+        requestedBy: 'worker-test',
+        dataset: 'DAILY_SUMMARY',
+        filters: {},
+        status: 'PROCESSING',
+        claimedAt: new Date(NOW.getTime() - 120_000),
+        leaseUntil: new Date(NOW.getTime() - 60_000),
+        leaseToken: 'stale-owner',
+        attemptCount: 1,
+      },
+    });
+    const active = await prisma.esgExportJob.create({
+      data: {
+        requestedBy: 'worker-test',
+        dataset: 'DAILY_SUMMARY',
+        filters: {},
+        status: 'PROCESSING',
+        claimedAt: NOW,
+        leaseUntil: new Date(NOW.getTime() + 60_000),
+        leaseToken: 'active-owner',
+        attemptCount: 1,
+      },
+    });
+    const { deps } = handlers();
+
+    const recovered = await processEsgExportJob(deps, expired.id);
+    const untouched = await processEsgExportJob(deps, active.id);
+
+    assert.equal(recovered.status, 'COMPLETED');
+    assert.equal((await prisma.esgExportJob.findUniqueOrThrow({ where: { id: expired.id } })).attemptCount, 2);
+    assert.equal(untouched.status, 'PROCESSING');
+    assert.equal(
+      (await prisma.esgExportJob.findUniqueOrThrow({ where: { id: active.id } })).leaseToken,
+      'active-owner',
+    );
+  });
+
   test('异步导出：202 入队 → Worker 生成 → 短期 URL；过滤结果与 CSV 行数一致；审计齐备', async () => {
     const tenant = await plantTenant('ESG-EXP');
     const version = await plantCalcVersion();

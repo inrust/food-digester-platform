@@ -21,6 +21,7 @@
  * 功能边界：仅处理设备业务告警，不处理 SQS/RDS/Lambda 等运维告警。
  */
 import type { DbClient } from '@fdp/database';
+import { randomUUID } from 'node:crypto';
 
 // ---------- 领域事件类型（封闭集合） ----------
 
@@ -63,6 +64,8 @@ export interface BusinessNotifierDeps {
   readonly maxAttempts?: number;
   /** 单批处理事件/投递上限；默认 50。 */
   readonly batchSize?: number;
+  /** FAILED 重试领取租约；默认 60 秒。 */
+  readonly leaseSeconds?: number;
 }
 
 // ---------- 行类型与数据访问 ----------
@@ -91,6 +94,8 @@ interface DeliveryRow {
   readonly body: string;
   readonly status: string;
   readonly retryCount: number;
+  readonly leaseUntil?: Date | null;
+  readonly leaseToken?: string | null;
 }
 
 interface OutboxDelegate {
@@ -226,7 +231,11 @@ function isUniqueViolation(err: unknown): boolean {
   return (err as { code?: string } | null)?.code === 'P2002';
 }
 
-async function attemptSend(deps: BusinessNotifierDeps, delivery: DeliveryRow): Promise<'SENT' | 'FAILED'> {
+async function attemptSend(
+  deps: BusinessNotifierDeps,
+  delivery: DeliveryRow,
+  leaseToken?: string,
+): Promise<'SENT' | 'FAILED'> {
   const now = deps.now?.() ?? new Date();
   try {
     if (delivery.channel === 'EMAIL') {
@@ -238,15 +247,15 @@ async function attemptSend(deps: BusinessNotifierDeps, delivery: DeliveryRow): P
       });
     }
     await deliveries(deps.client).updateMany({
-      where: { id: delivery.id, status: { in: ['PENDING', 'FAILED'] } },
-      data: { status: 'SENT', sentAt: now, lastError: null },
+      where: { id: delivery.id, status: { in: ['PENDING', 'FAILED'] }, ...(leaseToken ? { leaseToken } : {}) },
+      data: { status: 'SENT', sentAt: now, lastError: null, leaseToken: null, leaseUntil: null },
     });
     return 'SENT';
   } catch (err) {
     const message = err instanceof Error ? err.message.slice(0, 500) : 'send failed';
     await deliveries(deps.client).updateMany({
-      where: { id: delivery.id, status: { in: ['PENDING', 'FAILED'] } },
-      data: { status: 'FAILED', retryCount: { increment: 1 }, lastError: message },
+      where: { id: delivery.id, status: { in: ['PENDING', 'FAILED'] }, ...(leaseToken ? { leaseToken } : {}) },
+      data: { status: 'FAILED', retryCount: { increment: 1 }, lastError: message, leaseToken: null, leaseUntil: null },
     });
     return 'FAILED';
   }
@@ -260,7 +269,7 @@ export async function dispatchPendingNotifications(deps: BusinessNotifierDeps): 
   const batchSize = deps.batchSize ?? 50;
   const events = await outbox(deps.client).findMany({
     where: { eventType: { in: [...NOTIFIABLE_EVENT_TYPES] }, status: { in: ['PENDING', 'PUBLISHED'] } },
-    orderBy: { createdAt: 'asc' },
+    orderBy: [{ createdAt: 'asc' }, { aggregateId: 'asc' }],
     take: batchSize,
   });
 
@@ -339,17 +348,35 @@ export async function retryFailedDeliveries(
 ): Promise<{ retried: number; sent: number; failed: number }> {
   const maxAttempts = deps.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
   const batchSize = deps.batchSize ?? 50;
+  const at = deps.now?.() ?? new Date();
   const rows = await deliveries(deps.client).findMany({
-    where: { status: 'FAILED', retryCount: { lt: maxAttempts } },
+    where: {
+      status: 'FAILED',
+      retryCount: { lt: maxAttempts },
+      OR: [{ leaseUntil: null }, { leaseUntil: { lte: at } }],
+    },
     orderBy: { createdAt: 'asc' },
     take: batchSize,
   });
   let sent = 0;
   let failed = 0;
+  let retried = 0;
   for (const row of rows) {
-    const outcome = await attemptSend(deps, row);
+    const leaseToken = randomUUID();
+    const claimed = await deliveries(deps.client).updateMany({
+      where: {
+        id: row.id,
+        status: 'FAILED',
+        retryCount: { lt: maxAttempts },
+        OR: [{ leaseUntil: null }, { leaseUntil: { lte: at } }],
+      },
+      data: { leaseToken, leaseUntil: new Date(at.getTime() + (deps.leaseSeconds ?? 60) * 1000) },
+    });
+    if (claimed.count !== 1) continue;
+    retried += 1;
+    const outcome = await attemptSend(deps, row, leaseToken);
     if (outcome === 'SENT') sent += 1;
     else failed += 1;
   }
-  return { retried: rows.length, sent, failed };
+  return { retried, sent, failed };
 }

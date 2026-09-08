@@ -47,3 +47,11 @@ export async function resolveDatabaseUrl(config: DatabaseSecretResolverConfig): 
   const secret = parseSecret(response.SecretString);
   return `postgresql://${encodeURIComponent(secret.username)}:${encodeURIComponent(secret.password)}@${secret.host}:${secret.port}/${encodeURIComponent(secret.dbname)}?sslmode=require`;
 }
+
+/** 读取部署注入的纯字符串 Secret；值仅停留在 Lambda 进程内存。 */
+export async function resolveSecretString(config: DatabaseSecretResolverConfig): Promise<string> {
+  const client = config.client ?? new SecretsManagerClient(config.region ? { region: config.region } : {});
+  const response = await client.send(new GetSecretValueCommand({ SecretId: config.secretArn }));
+  if (!response.SecretString) throw new Error('Secret 不包含 SecretString');
+  return response.SecretString;
+}

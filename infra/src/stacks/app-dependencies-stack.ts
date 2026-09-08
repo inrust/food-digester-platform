@@ -30,6 +30,7 @@ import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import type { Construct } from 'constructs';
 import { fileURLToPath } from 'node:url';
@@ -82,6 +83,8 @@ const ONBOARDING_DEADLINE_ENTRY = resolve(
 );
 const RETIREMENT_TIMEOUT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/retirement-timeout-entry.ts');
 const ACTIVITY_EXPORT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/activity-export-entry.ts');
+const BUSINESS_NOTIFIER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/business-notifier-entry.ts');
+const ESG_EXPORT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/esg-export-entry.ts');
 
 interface MessagingResources {
   readonly ingress: sqs.Queue;
@@ -123,6 +126,8 @@ interface ComputeResources {
   readonly onboardingDeadline: lambda.Function;
   readonly retirementTimeout: lambda.Function;
   readonly activityExport: lambda.Function;
+  readonly businessNotifier: lambda.Function;
+  readonly esgExport: lambda.Function;
   readonly onboardingApi: lambda.Function;
   readonly onboardingProvisioning: lambda.Function;
   readonly deviceApi: lambda.Function;
@@ -284,6 +289,13 @@ export class AppDependenciesStack extends Stack {
     exportBucket.addLifecycleRule({
       id: 'ExpireActivityExports',
       prefix: 'activity-exports/',
+      expiration: Duration.days(1),
+      noncurrentVersionExpiration: Duration.days(1),
+      abortIncompleteMultipartUploadAfter: Duration.days(1),
+    });
+    exportBucket.addLifecycleRule({
+      id: 'ExpireEsgExports',
+      prefix: 'esg-exports/',
       expiration: Duration.days(1),
       noncurrentVersionExpiration: Duration.days(1),
       abortIncompleteMultipartUploadAfter: Duration.days(1),
@@ -551,6 +563,11 @@ export class AppDependenciesStack extends Stack {
       // grantRead 同时授予 Secret 加密 Key 的 kms:Decrypt（仅限 dataKey）
       data.db.secret?.grantRead(fn);
     };
+    const licenseSigningKey = new secretsmanager.Secret(this, 'LicenseSigningKey', {
+      secretName: this.naming.name('license-signing-key'),
+      encryptionKey: storage.dataKey,
+      generateSecretString: { passwordLength: 64, excludePunctuation: true },
+    });
 
     // Ingestion Worker：消费 Ingress，隔离坏消息到 Quarantine（BE-IOT-02）
     const ingestion = mkFunction('IngestionFn', 'ingestion', {
@@ -836,6 +853,50 @@ export class AppDependenciesStack extends Stack {
       targets: [new eventsTargets.LambdaFunction(activityExport)],
     });
 
+    const businessNotifier = mkFunction('BusinessNotifierFn', 'business-notifier', {
+      timeout: Duration.seconds(60),
+      environment: {
+        DB_SECRET_ARN: dbSecret,
+        BUSINESS_EMAIL_FROM: this.config.businessEmailFrom ?? 'notifications@example.test',
+        BUSINESS_WEBHOOK_ALLOWED_HOSTS: (this.config.businessWebhookAllowedHosts ?? ['webhook.example.test']).join(','),
+        BUSINESS_NOTIFICATION_BATCH_SIZE: '50',
+        BUSINESS_NOTIFICATION_MAX_ATTEMPTS: '5',
+        BUSINESS_NOTIFICATION_LEASE_SECONDS: '60',
+      },
+      entry: BUSINESS_NOTIFIER_ENTRY,
+    });
+    dbSecretGrant(businessNotifier);
+    businessNotifier.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'BusinessNotificationEmailSend',
+        actions: ['ses:SendEmail'],
+        resources: [this.formatArn({ service: 'ses', resource: 'identity', resourceName: '*' })],
+      }),
+    );
+    new events.Rule(this, 'BusinessNotifierSchedule', {
+      ruleName: this.naming.name('business-notifier'),
+      schedule: events.Schedule.rate(Duration.minutes(1)),
+      targets: [new eventsTargets.LambdaFunction(businessNotifier)],
+    });
+
+    const esgExport = mkFunction('EsgExportFn', 'esg-export', {
+      timeout: Duration.seconds(300),
+      environment: {
+        DB_SECRET_ARN: dbSecret,
+        EXPORT_BUCKET_NAME: storage.exportBucket.bucketName,
+        ESG_EXPORT_BATCH_SIZE: '10',
+        ESG_EXPORT_LEASE_SECONDS: '300',
+      },
+      entry: ESG_EXPORT_ENTRY,
+    });
+    dbSecretGrant(esgExport);
+    storage.exportBucket.grantReadWrite(esgExport, 'esg-exports/*');
+    new events.Rule(this, 'EsgExportSchedule', {
+      ruleName: this.naming.name('esg-export'),
+      schedule: events.Schedule.rate(Duration.minutes(1)),
+      targets: [new eventsTargets.LambdaFunction(esgExport)],
+    });
+
     const onboardingApi = mkFunction('OnboardingApiFn', 'onboarding-api-handler', {
       timeout: Duration.seconds(30),
       memorySize: 512,
@@ -968,11 +1029,13 @@ export class AppDependenciesStack extends Stack {
         OTA_BUCKET_NAME: storage.ota.bucketName,
         MEDIA_BUCKET_NAME: storage.media.bucketName,
         EXPORT_BUCKET_NAME: storage.exportBucket.bucketName,
+        LICENSE_SIGNING_KEY_SECRET_ARN: licenseSigningKey.secretArn,
       },
       role: apiRole,
       entry: API_ENTRY,
     });
     dbSecretGrant(api);
+    licenseSigningKey.grantRead(api);
     api.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'AdminRetirementCertificateDeactivate',
@@ -1007,6 +1070,8 @@ export class AppDependenciesStack extends Stack {
       onboardingDeadline,
       retirementTimeout,
       activityExport,
+      businessNotifier,
+      esgExport,
       onboardingApi,
       onboardingProvisioning,
       deviceApi,

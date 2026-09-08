@@ -984,10 +984,14 @@ model EsgExportJob {
   downloadUrl  String?   @map("download_url")
   urlExpiresAt DateTime? @map("url_expires_at") @db.Timestamptz
   error        String?
+  claimedAt    DateTime? @map("claimed_at") @db.Timestamptz
+  leaseUntil   DateTime? @map("lease_until") @db.Timestamptz
+  leaseToken   String?   @map("lease_token")
+  attemptCount Int       @default(0) @map("attempt_count")
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
   completedAt  DateTime? @map("completed_at") @db.Timestamptz
 
-  @@index([status, createdAt])
+  @@index([status, leaseUntil, createdAt])
   @@index([customerId, createdAt])
   @@map("esg_export_jobs")
 }
@@ -1061,6 +1065,8 @@ model NotificationDelivery {
   retryCount     Int       @default(0) @map("retry_count")
   lastError      String?   @map("last_error")
   sentAt         DateTime? @map("sent_at") @db.Timestamptz
+  leaseUntil     DateTime? @map("lease_until") @db.Timestamptz
+  leaseToken     String?   @map("lease_token")
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 

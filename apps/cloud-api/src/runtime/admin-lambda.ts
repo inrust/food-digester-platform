@@ -16,6 +16,15 @@ import type { AdminDeviceAssignmentHandlers } from '../admin/device-assignment/h
 import type { AdminDeviceStatusHandlers } from '../admin/device-status/handler.js';
 import type { AdminDeviceRetirementHandlers } from '../admin/device-retirement/handler.js';
 import type { AdminDeviceConsoleHandlers } from '../admin/device-console/handler.js';
+import type { AdminLicenseHandlers } from '../admin/license/handler.js';
+import type { AdminContractHandlers } from '../admin/contract/handler.js';
+import type { AdminContractDeviceHandlers } from '../admin/contract-device/handler.js';
+import type { AdminConfigurationHandlers } from '../admin/configuration/handler.js';
+import type { AdminConsumableHandlers } from '../consumable/handler.js';
+import type { AdminConsumableRequestHandlers } from '../consumable/request-handler.js';
+import type { AdminDeviceUserHandlers } from '../admin/device-user/handler.js';
+import type { AdminAlarmHandlers } from '../admin/alarm/handler.js';
+import type { AdminEsgHandlers } from '../admin/esg/handler.js';
 import { matchDeliveredOperation } from './delivered-operations.js';
 
 export interface ApiGatewayAdminEvent {
@@ -58,6 +67,15 @@ export interface AdminOnboardingRouteSet {
   readonly statuses: AdminDeviceStatusHandlers;
   readonly retirements: AdminDeviceRetirementHandlers;
   readonly console: AdminDeviceConsoleHandlers;
+  readonly licenses: AdminLicenseHandlers;
+  readonly contracts: AdminContractHandlers;
+  readonly contractDevices: AdminContractDeviceHandlers;
+  readonly configurations: AdminConfigurationHandlers;
+  readonly consumables: AdminConsumableHandlers;
+  readonly consumableRequests: AdminConsumableRequestHandlers;
+  readonly deviceUsers: AdminDeviceUserHandlers;
+  readonly alarms: AdminAlarmHandlers;
+  readonly esg: AdminEsgHandlers;
 }
 
 const header = (headers: Readonly<Record<string, string | undefined>>, wanted: string): string | undefined => {
@@ -119,6 +137,73 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
       };
     }
     const operationId = matched.operation.operationId;
+    const routedRequest: AdminHttpRequest = {
+      ...request,
+      params: {
+        ...(request.params ?? {}),
+        ...Object.fromEntries(Object.entries(matched.params).map(([name, value]) => [name, decodeURIComponent(value)])),
+      },
+    };
+    const targetOperations: Readonly<Record<string, (req: AdminHttpRequest) => Promise<AdminHttpResponse>>> = {
+      createLicense: routes.licenses.create,
+      getLicense: routes.licenses.detail,
+      listLicenseHistory: routes.licenses.history,
+      issueLicense: routes.licenses.issue,
+      activateLicense: routes.licenses.activate,
+      renewLicense: routes.licenses.renew,
+      revokeLicense: routes.licenses.revoke,
+      evaluateLicense: routes.licenses.evaluate,
+      createContract: routes.contracts.create,
+      listContracts: routes.contracts.list,
+      getContract: routes.contracts.detail,
+      updateContract: routes.contracts.update,
+      activateContract: routes.contracts.activate,
+      renewContract: routes.contracts.renew,
+      terminateContract: routes.contracts.terminate,
+      evaluateContract: routes.contracts.evaluate,
+      listContractDevices: routes.contractDevices.listDevices,
+      listAvailableDevices: routes.contractDevices.listAvailable,
+      listContractAssociations: routes.contractDevices.listAssociations,
+      bindContractDevices: routes.contractDevices.bind,
+      unbindContractDevices: routes.contractDevices.unbind,
+      createConfiguration: routes.configurations.create,
+      listConfigurations: routes.configurations.list,
+      getConfiguration: routes.configurations.detail,
+      createConfigurationVersion: routes.configurations.createVersion,
+      publishConfigurationVersion: routes.configurations.publishVersion,
+      getConfigurationVersion: routes.configurations.getVersion,
+      getConfigurationVersionStatus: routes.configurations.versionStatus,
+      listConsumableStatus: routes.consumables.list,
+      createConsumableRequest: routes.consumableRequests.create,
+      listConsumableRequests: routes.consumableRequests.list,
+      getConsumableRequest: routes.consumableRequests.detail,
+      processConsumableRequest: routes.consumableRequests.process,
+      completeConsumableRequest: routes.consumableRequests.complete,
+      cancelConsumableRequest: routes.consumableRequests.cancel,
+      createDeviceUser: routes.deviceUsers.create,
+      listDeviceUsers: routes.deviceUsers.list,
+      getDeviceUser: routes.deviceUsers.detail,
+      updateDeviceUser: routes.deviceUsers.update,
+      disableDeviceUser: routes.deviceUsers.disable,
+      assignDeviceUser: routes.deviceUsers.assign,
+      revokeDeviceUser: routes.deviceUsers.revoke,
+      listAlarms: routes.alarms.listAlarms,
+      getAlarm: routes.alarms.alarmDetail,
+      acknowledgeAlarm: routes.alarms.acknowledge,
+      clearAlarm: routes.alarms.clear,
+      listDeviceEvents: routes.alarms.listEvents,
+      listTamperEvents: routes.alarms.listTamperEvents,
+      getEsgOverview: routes.esg.overview,
+      listEsgHourly: routes.esg.listHourly,
+      listEsgDaily: routes.esg.listDaily,
+      listEsgReports: routes.esg.listReports,
+      listEsgDailySummary: routes.esg.listDailySummary,
+      listEsgCalculationVersions: routes.esg.listCalculationVersions,
+      createEsgExport: routes.esg.createExport,
+      getEsgExport: routes.esg.exportDetail,
+    };
+    const target = targetOperations[operationId];
+    if (target) return target(routedRequest);
     if (operationId === 'listCustomers') return routes.customers.list(request);
     if (operationId === 'createCustomer') return routes.customers.create(request);
     if (

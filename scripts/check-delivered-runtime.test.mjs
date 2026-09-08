@@ -5,9 +5,9 @@ import { compareDeliveredOperations, loadDeliveredOpenApiOperations } from './ch
 
 const ROOT = new URL('..', import.meta.url).pathname;
 
-test('已交付 API（含 BE-CUS-01～02、BE-DEV-01～06）的 39 个 OpenAPI operation 与生产路由双向一致', () => {
+test('已交付 API（含本次 P0 管理业务范围）的 95 个 OpenAPI operation 与生产路由双向一致', () => {
   const openApi = loadDeliveredOpenApiOperations(ROOT);
-  assert.equal(openApi.length, 39);
+  assert.equal(openApi.length, 95);
   assert.deepEqual(compareDeliveredOperations(openApi, DELIVERED_OPERATIONS), []);
 });
 

@@ -4,6 +4,7 @@ import { generateTestKeySet, signToken, testConfig } from '../../../packages/aut
 import type { AdminHttpRequest } from '../src/admin/onboarding/handler.js';
 import { createAdminLambdaHandler, createAdminRoute } from '../src/runtime/admin-lambda.js';
 import type { AdminOnboardingRouteSet } from '../src/runtime/admin-lambda.js';
+import { DELIVERED_OPERATIONS } from '../src/runtime/delivered-operations.js';
 
 const handler = () => vi.fn(async (_request: AdminHttpRequest) => ({ status: 200, body: {} }));
 
@@ -37,9 +38,107 @@ const routeSet = (): AdminOnboardingRouteSet => ({
     createActivityExport: handler(),
     getActivityExport: handler(),
   },
+  licenses: {
+    create: handler(),
+    issue: handler(),
+    activate: handler(),
+    renew: handler(),
+    revoke: handler(),
+    evaluate: handler(),
+    detail: handler(),
+    history: handler(),
+  },
+  contracts: {
+    create: handler(),
+    list: handler(),
+    detail: handler(),
+    update: handler(),
+    activate: handler(),
+    renew: handler(),
+    terminate: handler(),
+    evaluate: handler(),
+  },
+  contractDevices: {
+    listDevices: handler(),
+    listAvailable: handler(),
+    listAssociations: handler(),
+    bind: handler(),
+    unbind: handler(),
+  },
+  configurations: {
+    create: handler(),
+    list: handler(),
+    detail: handler(),
+    createVersion: handler(),
+    publishVersion: handler(),
+    getVersion: handler(),
+    versionStatus: handler(),
+  },
+  consumables: { list: handler() },
+  consumableRequests: {
+    create: handler(),
+    list: handler(),
+    detail: handler(),
+    process: handler(),
+    complete: handler(),
+    cancel: handler(),
+  },
+  deviceUsers: {
+    create: handler(),
+    list: handler(),
+    detail: handler(),
+    update: handler(),
+    disable: handler(),
+    assign: handler(),
+    revoke: handler(),
+  },
+  alarms: {
+    listAlarms: handler(),
+    alarmDetail: handler(),
+    acknowledge: handler(),
+    clear: handler(),
+    listEvents: handler(),
+    listTamperEvents: handler(),
+  },
+  esg: {
+    overview: handler(),
+    listHourly: handler(),
+    listDaily: handler(),
+    listReports: handler(),
+    listDailySummary: handler(),
+    listCalculationVersions: handler(),
+    createExport: handler(),
+    exportDetail: handler(),
+  },
 });
 
 describe('AUTH-01 管理 API Lambda 组合根', () => {
+  test('P0 范围 56 个管理业务 operation 全部可达真实 Handler', async () => {
+    const targetIds = new Set([
+      'createLicense',
+      'createContract',
+      'createConfiguration',
+      'listConsumableStatus',
+      'createConsumableRequest',
+      'createDeviceUser',
+      'listAlarms',
+      'getEsgOverview',
+    ]);
+    const firstTargetIndex = DELIVERED_OPERATIONS.findIndex((operation) => targetIds.has(operation.operationId));
+    const operations = DELIVERED_OPERATIONS.slice(firstTargetIndex);
+    assert.equal(operations.length, 56);
+    for (const operation of operations) {
+      const path = operation.path.replaceAll(/\{[^}]+\}/gu, 'encoded%2Fid');
+      const response = await createAdminRoute(
+        { httpMethod: operation.method, path },
+        routeSet(),
+      )({
+        headers: {},
+        requestId: `trace-${operation.operationId}`,
+      });
+      assert.equal(response.status, 200, `${operation.operationId} 未路由到业务 Handler`);
+    }
+  });
   test('真实路由表把方法和路径映射到受保护业务 Handler', async () => {
     const approve = vi.fn(async (_request: AdminHttpRequest) => ({ status: 200, body: {} }));
     const route = createAdminRoute(

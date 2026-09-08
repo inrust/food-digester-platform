@@ -8,7 +8,7 @@ export { buildDevicePolicy, DOWNLINK_TOPIC_TYPES, TOPIC_PATTERN, UPLINK_TOPIC_TY
 export type { DevicePolicy, DevicePolicyInput, IotPolicyDocument, IotPolicyStatement } from './iot-device-policy.js';
 export { createKmsDataKeyProvider } from './kms-data-key-provider.js';
 export type { DataKeyProvider, GeneratedDataKey, KmsDataKeyProviderConfig } from './kms-data-key-provider.js';
-export { resolveDatabaseUrl } from './database-secret.js';
+export { resolveDatabaseUrl, resolveSecretString } from './database-secret.js';
 export type { DatabaseSecretResolverConfig } from './database-secret.js';
 export { createAwsIotProvisioningClient } from './iot-provisioning-client.js';
 export type {
@@ -32,3 +32,5 @@ export { createS3MediaObjectStorage } from './s3-media-object-storage.js';
 export type { MediaObjectStoragePort, S3MediaObjectStorageConfig } from './s3-media-object-storage.js';
 export { createS3ActivityExportPorts } from './s3-activity-export.js';
 export type { ActivityExportAwsPorts, S3ActivityExportConfig } from './s3-activity-export.js';
+export { createHttpsWebhookSender, createSesEmailSender } from './business-notification-sender.js';
+export type { HttpsWebhookSenderConfig, SesEmailSenderConfig } from './business-notification-sender.js';
