@@ -31,6 +31,7 @@ export interface ApiGatewayDeviceResult {
 
 export interface DeviceRuntimeRequest {
   readonly identity?: ClientCertIdentity;
+  readonly params?: Readonly<Record<string, string>>;
   readonly query?: Readonly<Record<string, string | undefined>>;
   readonly body?: unknown;
   readonly requestId: string;
@@ -39,6 +40,7 @@ export interface DeviceRuntimeRequest {
 export interface DeviceRuntimeResponse {
   readonly status: number;
   readonly body: unknown;
+  readonly headers?: Readonly<Record<string, string>>;
   readonly onCommitted?: (() => Promise<void>) | undefined;
 }
 
@@ -49,6 +51,7 @@ export interface DeviceRouteSet {
   readonly certificateRotate: DeviceRoute;
   readonly sync: DeviceRoute;
   readonly deactivate: DeviceRoute;
+  readonly otaDownload: DeviceRoute;
 }
 
 const JSON_HEADERS = { 'content-type': 'application/json' } as const;
@@ -78,15 +81,16 @@ export function createDeviceApiLambdaHandler(routes: DeviceRouteSet) {
       });
     }
 
+    const matched = matchDeliveredOperation('device-api', method, path);
     const clientCert = event.requestContext?.identity?.clientCert ?? event.requestContext?.authentication?.clientCert;
     const request: DeviceRuntimeRequest = {
       requestId,
+      ...(matched?.params ? { params: matched.params } : {}),
       ...(body !== undefined ? { body } : {}),
       ...(event.queryStringParameters ? { query: event.queryStringParameters } : {}),
       ...(clientCert ? { identity: clientCert } : {}),
     };
 
-    const matched = matchDeliveredOperation('device-api', method, path);
     let route: DeviceRoute | undefined;
     switch (matched?.operation.operationId) {
       case 'getCertificateStatus':
@@ -101,6 +105,9 @@ export function createDeviceApiLambdaHandler(routes: DeviceRouteSet) {
       case 'confirmDeactivation':
         route = routes.deactivate;
         break;
+      case 'redeemOtaDownloadGrant':
+        route = routes.otaDownload;
+        break;
     }
     if (!route) {
       return result(404, {
@@ -112,7 +119,7 @@ export function createDeviceApiLambdaHandler(routes: DeviceRouteSet) {
       const response = await route(request);
       const serialized = JSON.stringify(response.body);
       await response.onCommitted?.();
-      return { statusCode: response.status, headers: JSON_HEADERS, body: serialized };
+      return { statusCode: response.status, headers: { ...JSON_HEADERS, ...response.headers }, body: serialized };
     } catch {
       return result(500, {
         error: { code: 'INTERNAL_ERROR', message: 'Internal server error', requestId },

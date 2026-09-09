@@ -27,7 +27,7 @@
       },
       {
         "file": "admin-command-api.json",
-        "sha256": "d895a7aa7f0bcc7cc51859a772454c7b79a21ebd9d9e344444051ed61392984b",
+        "sha256": "f868c484d338994fd0717dad490c41d35e88688a01415e487b46bed233e1c3de",
         "status": "implemented"
       },
       {
@@ -163,6 +163,11 @@
       {
         "file": "device-onboarding-api.json",
         "sha256": "24ef9fe48ae03befaa34d190c67e91ec686d338f9b6cbdcecb09422eb2570f81",
+        "status": "implemented"
+      },
+      {
+        "file": "device-ota-api.json",
+        "sha256": "38ccbafdae6fb0b1aad91e62a9bbabeff497b95772be74214f02dde93bbca9b8",
         "status": "implemented"
       },
       {
@@ -9425,6 +9430,83 @@
         "x-contract-status": "implemented"
       }
     },
+    "/api/v1/device/ota/targets/{targetId}/download": {
+      "get": {
+        "tags": [
+          "device"
+        ],
+        "operationId": "redeemOtaDownloadGrant",
+        "summary": "兑换一次性、目标绑定的 OTA 下载授权",
+        "security": [
+          {
+            "DeviceMtls": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "targetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            },
+            "description": "仅 MQTT 目标设备获得的随机 token；服务端只持久化 SHA-256"
+          }
+        ],
+        "responses": {
+          "307": {
+            "description": "mTLS 与 grant 全部校验成功且原子消费；Location 为剩余 TTL 内的 S3 地址",
+            "headers": {
+              "Location": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              },
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "x-source-document": "device-ota-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
     "/api/v1/device/sync": {
       "post": {
         "tags": [
@@ -11153,7 +11235,11 @@
         "type": "object",
         "required": [
           "attemptNo",
-          "publishedAt"
+          "publishedAt",
+          "outcome",
+          "errorCode",
+          "providerMessageId",
+          "finishedAt"
         ],
         "additionalProperties": false,
         "properties": {
@@ -11162,6 +11248,30 @@
             "minimum": 1
           },
           "publishedAt": {
+            "$ref": "#/components/schemas/UtcTimestamp",
+            "description": "本次发布尝试开始时间"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "PUBLISHED",
+              "PUBLISH_FAILED"
+            ]
+          },
+          "errorCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "providerMessageId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "IoT 提供方请求/消息追踪 ID"
+          },
+          "finishedAt": {
             "$ref": "#/components/schemas/UtcTimestamp"
           }
         }

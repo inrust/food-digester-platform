@@ -46,12 +46,15 @@ afterAll(async () => {
 class FakeMqtt {
   calls: CommandMqttPublishInput[] = [];
   failNext = false;
-  async publish(input: CommandMqttPublishInput): Promise<void> {
+  async publish(input: CommandMqttPublishInput): Promise<{ providerMessageId: string }> {
     if (this.failNext) {
       this.failNext = false;
-      throw new Error('broker unavailable');
+      const error = new Error('broker unavailable');
+      error.name = 'ThrottlingException';
+      throw error;
     }
     this.calls.push(input);
+    return { providerMessageId: `iot-request-${this.calls.length}` };
   }
 }
 
@@ -145,6 +148,14 @@ describe('Topic / Payload / QoS', () => {
     const attempts = await prisma.commandAttempt.findMany({ where: { commandId } });
     assert.equal(attempts.length, 1);
     assert.equal(attempts[0]!.attemptNo, 1);
+    assert.equal(attempts[0]!.outcome, 'PUBLISHED');
+    assert.isNull(attempts[0]!.errorCode);
+    assert.equal(attempts[0]!.providerMessageId, 'iot-request-1');
+    assert.equal(attempts[0]!.finishedAt.toISOString(), NOW.toISOString());
+    const audit = await prisma.auditLog.findFirstOrThrow({
+      where: { objectType: 'device_command', objectId: commandId, action: 'command.publish' },
+    });
+    assert.equal(audit.result, 'SUCCESS');
   });
 
   test('buildCommandPayload：remarks 为空省略；meta.id 匹配大写模式', async () => {
@@ -225,6 +236,21 @@ describe('幂等与重试', () => {
     assert.deepEqual(
       attempts.map((a) => a.attemptNo),
       [1, 2],
+    );
+    assert.deepEqual(
+      attempts.map((a) => ({ outcome: a.outcome, errorCode: a.errorCode, providerMessageId: a.providerMessageId })),
+      [
+        { outcome: 'PUBLISH_FAILED', errorCode: 'ThrottlingException', providerMessageId: null },
+        { outcome: 'PUBLISHED', errorCode: null, providerMessageId: 'iot-request-1' },
+      ],
+    );
+    const audits = await prisma.auditLog.findMany({
+      where: { objectType: 'device_command', objectId: commandId, action: 'command.publish' },
+      orderBy: { createdAt: 'asc' },
+    });
+    assert.deepEqual(
+      audits.map((a) => a.result),
+      ['FAILURE', 'SUCCESS'],
     );
     assert.equal(await prisma.deviceCommand.count({ where: { deviceId } }), 1, '无新命令行');
   });

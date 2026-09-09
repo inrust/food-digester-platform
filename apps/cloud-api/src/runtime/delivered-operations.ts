@@ -40,6 +40,12 @@ export const DELIVERED_OPERATIONS = [
   { operationId: 'syncDevice', method: 'POST', path: '/api/v1/device/sync', runtime: 'device-api' },
   { operationId: 'confirmDeactivation', method: 'POST', path: '/api/v1/device/deactivate', runtime: 'device-api' },
   {
+    operationId: 'redeemOtaDownloadGrant',
+    method: 'GET',
+    path: '/api/v1/device/ota/targets/{targetId}/download',
+    runtime: 'device-api',
+  },
+  {
     operationId: 'listOnboardingRequests',
     method: 'GET',
     path: '/api/v1/admin/onboarding/requests',

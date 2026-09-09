@@ -1,4 +1,9 @@
-import { createAwsIotProvisioningClient, createKmsDataKeyProvider, resolveDatabaseUrl } from '@fdp/aws-clients';
+import {
+  createAwsIotProvisioningClient,
+  createKmsDataKeyProvider,
+  createOtaFirmwareS3Ports,
+  resolveDatabaseUrl,
+} from '@fdp/aws-clients';
 import { getMaintenanceSyncIntervalSeconds } from '@fdp/contracts/lifecycle/maintenance-behavior.js';
 import { createPrismaClient } from '@fdp/database';
 import {
@@ -7,6 +12,7 @@ import {
   createDeviceDeactivateHandler,
   createDeviceSyncHandler,
 } from '../device/index.js';
+import { createDeviceOtaDownloadHandler } from '../ota/download.js';
 import {
   createDeviceApiLambdaHandler,
   type ApiGatewayDeviceEvent,
@@ -32,6 +38,7 @@ async function initialize() {
   const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
   const iot = createAwsIotProvisioningClient({ region });
   const keyProvider = createKmsDataKeyProvider({ keyId: required('CERT_PACKAGE_KEY_ARN'), region });
+  const ota = createOtaFirmwareS3Ports({ bucket: required('OTA_BUCKET_NAME'), region });
   return createDeviceApiLambdaHandler({
     certificateStatus: createCertificateStatusHandler({
       client,
@@ -49,6 +56,7 @@ async function initialize() {
     }),
     sync: createDeviceSyncHandler({ client, maintenanceSyncIntervalSeconds: getMaintenanceSyncIntervalSeconds() }),
     deactivate: createDeviceDeactivateHandler({ client, iot }),
+    otaDownload: createDeviceOtaDownloadHandler({ client, objectUrlSigner: ota.downloadUrlSigner }),
   });
 }
 

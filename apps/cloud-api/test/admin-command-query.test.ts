@@ -157,7 +157,16 @@ describe('详情查询', () => {
   test('详情含 attempts/acks 时间线；跨 Customer → 404；不存在 → 404', async () => {
     const a = await plantCommand({ status: 'SUCCEEDED' });
     const b = await plantCommand({ status: 'PUBLISHED' });
-    await prisma.commandAttempt.create({ data: { commandId: a.commandId, attemptNo: 1, publishedAt: NOW } });
+    await prisma.commandAttempt.create({
+      data: {
+        commandId: a.commandId,
+        attemptNo: 1,
+        publishedAt: NOW,
+        outcome: 'PUBLISHED',
+        providerMessageId: 'iot-request-query-1',
+        finishedAt: NOW,
+      },
+    });
     await prisma.commandAck.create({
       data: {
         commandId: a.commandId,
@@ -176,6 +185,9 @@ describe('详情查询', () => {
     assert.equal(data.status, 'SUCCEEDED');
     assert.equal(data.attempts.length, 1);
     assert.equal(data.attempts[0].attemptNo, 1);
+    assert.equal(data.attempts[0].outcome, 'PUBLISHED');
+    assert.equal(data.attempts[0].providerMessageId, 'iot-request-query-1');
+    assert.equal(data.attempts[0].finishedAt, NOW.toISOString());
     assert.equal(data.acks.length, 1);
     assert.equal(data.acks[0].result, 'SUCCESS');
     assert.equal(data.acks[0].sourceMessageId, 'ACK-MSG-1');

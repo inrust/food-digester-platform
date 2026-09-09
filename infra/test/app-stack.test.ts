@@ -615,9 +615,13 @@ describe('Cognito 与应用配置输出', () => {
     }
     const deviceFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-device-api-handler');
     assert.isDefined(deviceFn);
-    for (const key of ['DB_SECRET_ARN', 'CERT_PACKAGE_KEY_ARN', 'FDP_AWS_ACCOUNT_ID', 'ENV_NAME']) {
+    for (const key of ['DB_SECRET_ARN', 'CERT_PACKAGE_KEY_ARN', 'FDP_AWS_ACCOUNT_ID', 'OTA_BUCKET_NAME', 'ENV_NAME']) {
       assert.isDefined(deviceFn.Properties.Environment.Variables[key], `Device Lambda 缺少环境变量 ${key}`);
     }
+    const otaDispatcherFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-ota-dispatcher');
+    assert.isDefined(otaDispatcherFn);
+    assert.isDefined(otaDispatcherFn.Properties.Environment.Variables.DEVICE_API_BASE_URL);
+    assert.isUndefined(otaDispatcherFn.Properties.Environment.Variables.OTA_BUCKET_NAME);
     const ingestionFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-ingestion');
     assert.isDefined(ingestionFn);
     for (const key of [

@@ -101,6 +101,11 @@ test('BE-CMD-03 查询端点齐备：列表/详情 + 状态枚举 + attempts/ack
     assert.ok(detailSchema.required.includes(field), `CommandDetail 缺少 ${field}`);
   }
   assert.deepEqual(doc.components.schemas.CommandAck.properties.result.enum, ['SUCCESS', 'FAILED', 'RECEIVED']);
+  const attempt = doc.components.schemas.CommandAttempt;
+  assert.deepEqual(attempt.properties.outcome.enum, ['PUBLISHED', 'PUBLISH_FAILED']);
+  for (const field of ['outcome', 'errorCode', 'providerMessageId', 'finishedAt']) {
+    assert.ok(attempt.required.includes(field), `CommandAttempt 缺少 ${field}`);
+  }
 });
 
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {

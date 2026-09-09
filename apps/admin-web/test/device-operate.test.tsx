@@ -324,7 +324,16 @@ test('状态 E2E：提交受理（AUTHORIZED，requestedBy 身份上下文）→
     ...makeListItem({ status: 'SUCCEEDED' }),
     remarks: '现场重启',
     confirmedBy: null,
-    attempts: [{ attemptNo: 1, publishedAt: '2026-09-06T04:00:05Z' }],
+    attempts: [
+      {
+        attemptNo: 1,
+        publishedAt: '2026-09-06T04:00:05Z',
+        outcome: 'PUBLISHED',
+        errorCode: null,
+        providerMessageId: 'iot-request-1',
+        finishedAt: '2026-09-06T04:00:06Z',
+      },
+    ],
     acks: [
       {
         result: 'SUCCESS',
@@ -339,6 +348,8 @@ test('状态 E2E：提交受理（AUTHORIZED，requestedBy 身份上下文）→
   rerender({ commandDetail: { kind: 'ready', command: detail } });
   assert.equal(screen.getByTestId('command-detail-status').textContent, '执行成功');
   assert.ok(screen.getByTestId('command-attempts').textContent?.includes('第 1 次'));
+  assert.ok(screen.getByTestId('command-attempts').textContent?.includes('发布成功'));
+  assert.ok(screen.getByTestId('command-attempts').textContent?.includes('iot-request-1'));
   assert.ok(screen.getByTestId('command-ack-0').textContent?.includes('成功'));
   assert.ok(screen.getByTestId('command-ack-0').textContent?.includes('msg-ack-1'));
 });
@@ -351,7 +362,16 @@ test('TIMED_OUT 展示；超时后收到的 ACK 标注“迟到 ACK”', () => {
         ...makeListItem({ status: 'TIMED_OUT' }),
         remarks: null,
         confirmedBy: null,
-        attempts: [{ attemptNo: 1, publishedAt: '2026-09-06T04:00:05Z' }],
+        attempts: [
+          {
+            attemptNo: 1,
+            publishedAt: '2026-09-06T04:00:05Z',
+            outcome: 'PUBLISH_FAILED',
+            errorCode: 'ThrottlingException',
+            providerMessageId: null,
+            finishedAt: '2026-09-06T04:00:06Z',
+          },
+        ],
         acks: [
           {
             result: 'RECEIVED',

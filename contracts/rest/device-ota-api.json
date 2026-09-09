@@ -1,0 +1,60 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bio-Nexa CMP Device OTA Download API",
+    "version": "1.0.0",
+    "description": "BE-OTA-03 目标绑定下载授权：设备经 mTLS 身份认证后，用 MQTT 下发的一次性 token 兑换短期 S3 下载地址。服务端同时校验 deviceId、otaTargetId、packageId、Campaign/Target/Package 状态、expiry、unused 和 revoked；数据库仅保存 token SHA-256。",
+    "x-decision-versions": ["DEC-001@1.0.0", "DEC-015@1.0.0", "DEC-016@1.0.0", "DEC-022@1.0.0"],
+    "x-decision-register-version": "1.31.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{ "url": "/" }],
+  "tags": [
+    {
+      "name": "device",
+      "description": "/api/v1/device/* 设备端 API",
+      "x-path-prefix": "/api/v1/device",
+      "x-auth": "DeviceMtls"
+    }
+  ],
+  "paths": {
+    "/api/v1/device/ota/targets/{targetId}/download": {
+      "get": {
+        "tags": ["device"],
+        "operationId": "redeemOtaDownloadGrant",
+        "summary": "兑换一次性、目标绑定的 OTA 下载授权",
+        "security": [{ "DeviceMtls": [] }],
+        "parameters": [
+          { "name": "targetId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "minLength": 32, "maxLength": 128 },
+            "description": "仅 MQTT 目标设备获得的随机 token；服务端只持久化 SHA-256"
+          }
+        ],
+        "responses": {
+          "307": {
+            "description": "mTLS 与 grant 全部校验成功且原子消费；Location 为剩余 TTL 内的 S3 地址",
+            "headers": {
+              "Location": { "required": true, "schema": { "type": "string", "format": "uri" } },
+              "Cache-Control": { "required": true, "schema": { "type": "string", "const": "no-store" } }
+            }
+          },
+          "400": { "$ref": "openapi-base.json#/components/responses/BadRequest" },
+          "401": { "$ref": "openapi-base.json#/components/responses/Unauthorized" },
+          "403": { "$ref": "openapi-base.json#/components/responses/Forbidden" },
+          "404": { "$ref": "openapi-base.json#/components/responses/NotFound" },
+          "409": { "$ref": "openapi-base.json#/components/responses/Conflict" },
+          "500": { "$ref": "openapi-base.json#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "DeviceMtls": { "$ref": "openapi-base.json#/components/securitySchemes/DeviceMtls" }
+    }
+  }
+}

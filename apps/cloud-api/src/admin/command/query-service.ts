@@ -42,6 +42,10 @@ interface CommandRow {
 interface AttemptRow {
   readonly attemptNo: number;
   readonly publishedAt: Date;
+  readonly outcome: string;
+  readonly errorCode: string | null;
+  readonly providerMessageId: string | null;
+  readonly finishedAt: Date;
 }
 
 interface AckRow {
@@ -99,6 +103,10 @@ export interface CommandListItemView {
 export interface CommandAttemptView {
   readonly attemptNo: number;
   readonly publishedAt: string;
+  readonly outcome: string;
+  readonly errorCode: string | null;
+  readonly providerMessageId: string | null;
+  readonly finishedAt: string;
 }
 
 export interface CommandAckView {
@@ -207,7 +215,14 @@ export async function getCommandDetail(
     ...toListItemView(row),
     remarks: row.remarks,
     confirmedBy: row.confirmedBy,
-    attempts: attemptRows.map((a) => ({ attemptNo: a.attemptNo, publishedAt: a.publishedAt.toISOString() })),
+    attempts: attemptRows.map((a) => ({
+      attemptNo: a.attemptNo,
+      publishedAt: a.publishedAt.toISOString(),
+      outcome: a.outcome,
+      errorCode: a.errorCode,
+      providerMessageId: a.providerMessageId,
+      finishedAt: a.finishedAt.toISOString(),
+    })),
     acks: ackRows.map((a) => ({
       result: a.result,
       executeTimeMs: a.executeTimeMs,

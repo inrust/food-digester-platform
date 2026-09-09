@@ -330,11 +330,18 @@
       },
       "CommandAttempt": {
         "type": "object",
-        "required": ["attemptNo", "publishedAt"],
+        "required": ["attemptNo", "publishedAt", "outcome", "errorCode", "providerMessageId", "finishedAt"],
         "additionalProperties": false,
         "properties": {
           "attemptNo": { "type": "integer", "minimum": 1 },
-          "publishedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+          "publishedAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
+            "description": "本次发布尝试开始时间"
+          },
+          "outcome": { "type": "string", "enum": ["PUBLISHED", "PUBLISH_FAILED"] },
+          "errorCode": { "type": ["string", "null"] },
+          "providerMessageId": { "type": ["string", "null"], "description": "IoT 提供方请求/消息追踪 ID" },
+          "finishedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
         }
       },
       "CommandAck": {

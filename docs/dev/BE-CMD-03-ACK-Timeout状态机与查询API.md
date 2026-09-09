@@ -35,7 +35,7 @@
 ## 4. 查询 API
 
 - `GET /api/v1/admin/commands`（device:read）：customerId/deviceId/status(9 态枚举）/command(22 白名单）/requestTime 范围筛选 + 键集游标；Customer 角色强制租户 scope；
-- `GET /api/v1/admin/commands/{commandId}`（device:read）：详情含 remarks/confirmedBy + attempts/acks 时间线；跨 Customer → 404；
+- `GET /api/v1/admin/commands/{commandId}`（device:read）：详情含 remarks/confirmedBy + attempts/acks 时间线；每次 attempt 展示 `outcome/errorCode/providerMessageId/finishedAt` 的真实成败；跨 Customer → 404；
 - **权限决策**：DEC-012 V1 矩阵无 command:read，查询复用 device:read（全角色可读），不扩矩阵（整体替换式演进留后续决策）。
 
 ## 5. 验收基准与证据

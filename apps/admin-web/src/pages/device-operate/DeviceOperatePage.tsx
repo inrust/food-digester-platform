@@ -501,7 +501,10 @@ export function DeviceOperatePage({
               <ol data-testid="command-attempts">
                 {detail.attempts.map((a) => (
                   <li key={a.attemptNo}>
-                    第 {a.attemptNo} 次 <TimeText iso={a.publishedAt} />
+                    第 {a.attemptNo} 次 <TimeText iso={a.publishedAt} /> →{' '}
+                    {a.outcome === 'PUBLISHED' ? '发布成功' : '发布失败'}（完成于 <TimeText iso={a.finishedAt} />）
+                    {a.errorCode !== null ? ` 错误码 ${a.errorCode}` : ''}
+                    {a.providerMessageId !== null ? `（provider ${a.providerMessageId}）` : ''}
                   </li>
                 ))}
               </ol>

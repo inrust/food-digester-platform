@@ -13,6 +13,7 @@
  * - 功能边界：不等待设备同步响应、不推测执行成功（ACK/超时扫描属 BE-CMD-03）。
  */
 import type { DbClient } from '@fdp/database';
+import { recordAudit, withTransaction } from '@fdp/database';
 import { commandConflict, commandNotFound, commandStateNotAllowed } from './errors.js';
 
 // ---------- 注入端口（部署层接 AWS IoT Data Plane） ----------
@@ -25,7 +26,7 @@ export interface CommandMqttPublishInput {
 }
 
 export interface CommandMqttPublisher {
-  publish(input: CommandMqttPublishInput): Promise<void>;
+  publish(input: CommandMqttPublishInput): Promise<void | { readonly providerMessageId?: string }>;
 }
 
 export interface CommandPublisherDeps {
@@ -77,6 +78,56 @@ function attemptsOf(client: DbClient): {
   create(args: { data: Record<string, unknown> }): Promise<unknown>;
 } {
   return (client as unknown as Record<string, unknown>).commandAttempt as never;
+}
+
+function safeProviderErrorCode(error: unknown): string {
+  const name = error instanceof Error ? error.name : '';
+  return /^[A-Za-z][A-Za-z0-9_.-]{0,127}$/u.test(name) && name !== 'Error' ? name : 'MQTT_PUBLISH_FAILED';
+}
+
+async function finishPublishAttempt(
+  deps: CommandPublisherDeps,
+  input: {
+    readonly command: CommandPublishRow;
+    readonly attemptNo: number;
+    readonly startedAt: Date;
+    readonly finishedAt: Date;
+    readonly outcome: 'PUBLISHED' | 'PUBLISH_FAILED';
+    readonly errorCode: string | null;
+    readonly providerMessageId: string | null;
+  },
+): Promise<void> {
+  await withTransaction(deps.client, async (tx) => {
+    await attemptsOf(tx).create({
+      data: {
+        commandId: input.command.id,
+        attemptNo: input.attemptNo,
+        publishedAt: input.startedAt,
+        outcome: input.outcome,
+        errorCode: input.errorCode,
+        providerMessageId: input.providerMessageId,
+        finishedAt: input.finishedAt,
+      },
+    });
+    const updated = await deviceCommands(tx).updateMany({
+      where: { id: input.command.id, status: 'PUBLISHING' },
+      data: { status: input.outcome },
+    });
+    if (updated.count !== 1) throw commandConflict('Command publish ownership was lost');
+    await recordAudit(tx, {
+      objectType: 'device_command',
+      objectId: input.command.id,
+      action: 'command.publish',
+      result: input.outcome === 'PUBLISHED' ? 'SUCCESS' : 'FAILURE',
+      actorId: 'system:command-publisher',
+      reason: input.errorCode ?? 'MQTT publish accepted',
+      afterValue: {
+        status: input.outcome,
+        attemptNo: input.attemptNo,
+        providerMessageId: input.providerMessageId,
+      },
+    });
+  });
 }
 
 // ---------- Payload 序列化（cmd.schema.json：meta+data） ----------
@@ -148,28 +199,34 @@ export async function publishCommand(deps: CommandPublisherDeps, commandId: stri
   // 执行发布（此时持有 PUBLISHING 状态）
   const attemptNo = (await attemptsOf(deps.client).count({ where: { commandId: command.id } })) + 1;
   const payload = buildCommandPayload(command, now);
+  let receipt: void | { readonly providerMessageId?: string };
   try {
-    await deps.mqtt.publish({
+    receipt = await deps.mqtt.publish({
       topic: commandTopicOf(command.deviceId),
       payload,
       qos: COMMAND_PUBLISH_QOS,
     });
-  } catch {
-    await attemptsOf(deps.client).create({
-      data: { commandId: command.id, attemptNo, publishedAt: now },
-    });
-    await commands.updateMany({
-      where: { id: command.id, status: 'PUBLISHING' },
-      data: { status: 'PUBLISH_FAILED' },
+  } catch (error) {
+    const errorCode = safeProviderErrorCode(error);
+    await finishPublishAttempt(deps, {
+      command,
+      attemptNo,
+      startedAt: now,
+      finishedAt: deps.now?.() ?? new Date(),
+      outcome: 'PUBLISH_FAILED',
+      errorCode,
+      providerMessageId: null,
     });
     return { commandId: command.id, status: 'PUBLISH_FAILED', attemptNo };
   }
-  await attemptsOf(deps.client).create({
-    data: { commandId: command.id, attemptNo, publishedAt: now },
-  });
-  await commands.updateMany({
-    where: { id: command.id, status: 'PUBLISHING' },
-    data: { status: 'PUBLISHED' },
+  await finishPublishAttempt(deps, {
+    command,
+    attemptNo,
+    startedAt: now,
+    finishedAt: deps.now?.() ?? new Date(),
+    outcome: 'PUBLISHED',
+    errorCode: null,
+    providerMessageId: receipt?.providerMessageId ?? null,
   });
   return { commandId: command.id, status: 'PUBLISHED', attemptNo };
 }

@@ -8,7 +8,7 @@ export interface MqttPublishInput {
 }
 
 export interface MqttMessageSender {
-  publish(input: MqttPublishInput): Promise<void>;
+  publish(input: MqttPublishInput): Promise<void | { readonly providerMessageId?: string }>;
 }
 
 export interface IotDataPublisherConfig {
@@ -24,13 +24,14 @@ export function createIotDataPublisher(config: IotDataPublisherConfig): MqttMess
     config.client ?? new IoTDataPlaneClient({ endpoint, ...(config.region ? { region: config.region } : {}) });
   return {
     async publish(input) {
-      await client.send(
+      const output = await client.send(
         new PublishCommand({
           topic: input.topic,
           qos: input.qos,
           payload: Buffer.from(input.payload, 'utf8'),
         }),
       );
+      return output?.$metadata?.requestId ? { providerMessageId: output.$metadata.requestId } : {};
     },
   };
 }

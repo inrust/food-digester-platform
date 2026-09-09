@@ -10,6 +10,7 @@ function routes(overrides: Partial<DeviceRouteSet> = {}): DeviceRouteSet {
     certificateRotate: unused,
     sync: unused,
     deactivate: unused,
+    otaDownload: unused,
     ...overrides,
   };
 }
@@ -20,6 +21,7 @@ describe('Device API Lambda 生产路由', () => {
     ['POST', '/api/v1/device/certificate/rotate', 'certificateRotate'],
     ['POST', '/api/v1/device/sync', 'sync'],
     ['POST', '/api/v1/device/deactivate', 'deactivate'],
+    ['GET', '/api/v1/device/ota/targets/target-1/download', 'otaDownload'],
   ] as const)('%s %s 映射到 %s Handler', async (method, path, key) => {
     const route: DeviceRoute = vi.fn(async () => ({ status: 200, body: { ok: true } }));
     const handler = createDeviceApiLambdaHandler(routes({ [key]: route }));
@@ -36,6 +38,9 @@ describe('Device API Lambda 生产路由', () => {
     assert.deepEqual((route as ReturnType<typeof vi.fn>).mock.calls[0]?.[0].identity, {
       clientCertPem: 'trusted-gateway-value',
     });
+    if (key === 'otaDownload') {
+      assert.deepEqual((route as ReturnType<typeof vi.fn>).mock.calls[0]?.[0].params, { targetId: 'target-1' });
+    }
   });
 
   test('事件顶层伪造 identity 不会成为 AUTH-03 身份', async () => {
@@ -79,6 +84,22 @@ describe('Device API Lambda 生产路由', () => {
     const response = await handler({ httpMethod: 'GET', path: '/api/v1/device/sync' });
     assert.equal(response.statusCode, 404);
     for (const route of Object.values(routeSet)) assert.equal((route as ReturnType<typeof vi.fn>).mock.calls.length, 0);
+  });
+
+  test('OTA 下载兑换透传 no-store 与 Location 响应头', async () => {
+    const otaDownload = vi.fn<DeviceRoute>(async () => ({
+      status: 307,
+      headers: { location: 'https://s3.test/object', 'cache-control': 'no-store' },
+      body: { expiresAt: '2026-09-09T00:15:00.000Z' },
+    }));
+    const response = await createDeviceApiLambdaHandler(routes({ otaDownload }))({
+      httpMethod: 'GET',
+      path: '/api/v1/device/ota/targets/target-1/download',
+      queryStringParameters: { token: 'x'.repeat(43) },
+    });
+    assert.equal(response.statusCode, 307);
+    assert.equal(response.headers.location, 'https://s3.test/object');
+    assert.equal(response.headers['cache-control'], 'no-store');
   });
 
   test('Rotate 先序列化响应再提交交付确认', async () => {

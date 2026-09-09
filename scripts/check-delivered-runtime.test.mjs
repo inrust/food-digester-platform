@@ -12,10 +12,10 @@ import {
 
 const ROOT = new URL('..', import.meta.url).pathname;
 
-test('已交付 API（含 CMD/OTA P0）的 111 个 OpenAPI operation 与生产路由双向一致', () => {
-  assert.equal(loadDeliveredOpenApiManifest(ROOT).length, 26);
+test('已交付 API（含 CMD/OTA P1）的 112 个 OpenAPI operation 与生产路由双向一致', () => {
+  assert.equal(loadDeliveredOpenApiManifest(ROOT).length, 27);
   const openApi = loadDeliveredOpenApiOperations(ROOT);
-  assert.equal(openApi.length, 111);
+  assert.equal(openApi.length, 112);
   assert.deepEqual(compareDeliveredOperations(openApi, DELIVERED_OPERATIONS), []);
 });
 

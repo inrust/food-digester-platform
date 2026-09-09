@@ -133,6 +133,7 @@ const licenses = (c: DbClient) => table(c, 'license');
 const campaigns = (c: DbClient) => table(c, 'otaCampaign');
 const targets = (c: DbClient) => table(c, 'otaTarget');
 const targetHistory = (c: DbClient) => table(c, 'otaStatusHistory');
+const downloadGrants = (c: DbClient) => table(c, 'otaDownloadGrant');
 
 export interface OtaCampaignDeps {
   readonly client: DbClient;
@@ -506,6 +507,16 @@ async function transitionCampaign(
       if (claimed.count !== 1) {
         throw otaCampaignConflict('The campaign status changed concurrently');
       }
+      if (to === 'PAUSED') {
+        await targets(tx).updateMany({
+          where: { campaignId, status: 'PENDING', dispatchLeaseToken: { not: null } },
+          data: { dispatchClaimedAt: null, dispatchLeaseUntil: null, dispatchLeaseToken: null },
+        });
+        await downloadGrants(tx).updateMany({
+          where: { target: { campaignId }, usedAt: null, revokedAt: null },
+          data: { revokedAt: now },
+        });
+      }
       return { ...toCampaignView(campaign), status: to, updatedAt: now.toISOString() };
     },
   );
@@ -569,7 +580,13 @@ export async function cancelOtaCampaign(
       for (const t of unfinished) {
         const updated = await targets(tx).updateMany({
           where: { id: t.id, status: t.status },
-          data: { status: 'CANCELLED', updatedAt: now },
+          data: {
+            status: 'CANCELLED',
+            dispatchClaimedAt: null,
+            dispatchLeaseUntil: null,
+            dispatchLeaseToken: null,
+            updatedAt: now,
+          },
         });
         if (updated.count !== 1) {
           throw otaCampaignConflict('A target status changed concurrently');
@@ -592,6 +609,7 @@ export async function cancelOtaCampaign(
               eventType: 'OTA_CANCELLED',
               aggregateType: 'ota_target',
               aggregateId: t.id,
+              idempotencyKey: `ota-target:${t.id}:cancelled`,
               payload: {
                 topic: `bnx/device/${t.deviceId}/notification`,
                 data: { type: 'OTA_CANCELLED', action: 'CANCEL_PENDING_OTA' },
@@ -601,6 +619,10 @@ export async function cancelOtaCampaign(
           });
         }
       }
+      await downloadGrants(tx).updateMany({
+        where: { target: { campaignId }, usedAt: null, revokedAt: null },
+        data: { revokedAt: now },
+      });
       return { ...toCampaignView(campaign), status: 'CANCELLED', updatedAt: now.toISOString() };
     },
   );
@@ -659,7 +681,14 @@ export async function retryOtaCampaignFailures(
       for (const t of failed) {
         const updated = await targets(tx).updateMany({
           where: { id: t.id, status: 'FAILED' },
-          data: { status: 'PENDING', completedAt: null, updatedAt: now },
+          data: {
+            status: 'PENDING',
+            completedAt: null,
+            dispatchClaimedAt: null,
+            dispatchLeaseUntil: null,
+            dispatchLeaseToken: null,
+            updatedAt: now,
+          },
         });
         if (updated.count !== 1) {
           throw otaCampaignConflict('A target status changed concurrently');

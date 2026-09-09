@@ -189,6 +189,10 @@ export class AppDependenciesStack extends Stack {
       identity,
       storage.truststore,
     );
+    compute.otaDispatcher.addEnvironment(
+      'DEVICE_API_BASE_URL',
+      this.config.deviceApiDomain ? `https://${this.config.deviceApiDomain.domainName}` : apis.deviceApi.url,
+    );
     this.createOutputs(storage, messaging, data, identity, apis);
   }
 
@@ -986,11 +990,10 @@ export class AppDependenciesStack extends Stack {
 
     const otaDispatcher = mkFunction('OtaDispatcherFn', 'ota-dispatcher', {
       timeout: Duration.seconds(300),
-      environment: { DB_SECRET_ARN: dbSecret, OTA_BUCKET_NAME: storage.ota.bucketName },
+      environment: { DB_SECRET_ARN: dbSecret },
       entry: OTA_DISPATCHER_ENTRY,
     });
     dbSecretGrant(otaDispatcher);
-    storage.ota.grantRead(otaDispatcher);
     otaDispatcher.addToRolePolicy(
       new iam.PolicyStatement({ sid: 'IotDataEndpointDiscovery', actions: ['iot:DescribeEndpoint'], resources: ['*'] }),
     );
@@ -1096,11 +1099,13 @@ export class AppDependenciesStack extends Stack {
         DB_SECRET_ARN: dbSecret,
         CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
         FDP_AWS_ACCOUNT_ID: Aws.ACCOUNT_ID,
+        OTA_BUCKET_NAME: storage.ota.bucketName,
       },
       role: deviceApiRole,
       entry: DEVICE_API_ENTRY,
     });
     dbSecretGrant(deviceApi);
+    storage.ota.grantRead(deviceApi, 'firmware-packages/*');
     deviceApiRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
         sid: 'CertificatePackageKeyDataPlane',

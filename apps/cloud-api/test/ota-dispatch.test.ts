@@ -32,6 +32,7 @@ import {
   handleOtaAck,
   otaMessageIdOf,
   otaTopicOf,
+  redeemOtaDownloadGrant,
 } from '../src/index.js';
 import type { AdminHttpRequest, OtaPublisherDeps } from '../src/index.js';
 import { createTestDb } from './helpers.js';
@@ -145,10 +146,9 @@ function fakePorts(options: { failMqtt?: boolean } = {}) {
         published.push(input);
       },
     },
-    downloadUrlSigner: {
-      signDownload: ({ key, expiresAt }) =>
-        `https://ota-download.test/${key}?expires=${encodeURIComponent(expiresAt.toISOString())}`,
-    },
+    downloadGrantBaseUrl: 'https://device-api.test',
+    newLeaseToken: () => `lease-${randomUUID()}`,
+    newDownloadToken: () => randomUUID().replaceAll('-', '') + randomUUID().replaceAll('-', ''),
   };
   return { deps, published };
 }
@@ -157,6 +157,16 @@ async function expandWith(campaignId: string, deviceId: string) {
   const h = createAdminOtaCampaignHandlers({ client: prisma, now: () => NOW });
   const res = await h.expandBatch(req(operator, { params: { campaignId }, body: { deviceIds: [deviceId] } }));
   assert.equal(res.status, 201);
+}
+
+async function rejectsWithCode(operation: () => Promise<unknown>, code: string): Promise<void> {
+  try {
+    await operation();
+  } catch (error) {
+    assert.equal((error as { code?: string }).code, code);
+    return;
+  }
+  assert.fail(`expected ${code}`);
 }
 
 describe('BE-OTA-03 OTA 下发（Publisher）', () => {
@@ -180,20 +190,26 @@ describe('BE-OTA-03 OTA 下发（Publisher）', () => {
     assert.deepEqual(validate(otaSchema, 'ota.schema.json', payload, registry), []);
     const target = await prisma.otaTarget.findFirst({ where: { campaignId, deviceId } });
     const pkg = await prisma.firmwarePackage.findUnique({ where: { id: packageId } });
-    // meta.id 由 otaTargetId 派生（幂等键，大写模式）；URL 内嵌包 objectKey（包绑定）+ 900s 过期
+    // meta.id 由 otaTargetId 派生；URL 是 mTLS Device API 一次性 grant，不暴露 S3 key
     assert.equal(payload.meta.id, otaMessageIdOf(target!.id));
     assert.equal(payload.data.version, pkg!.version);
     assert.equal(payload.data.packageType, 'FIRMWARE');
     assert.equal(payload.data.sha256, pkg!.sha256);
     assert.equal(payload.data.mandatory, false);
     assert.ok(payload.data.downloadUrl.startsWith('https://'));
-    assert.ok(payload.data.downloadUrl.includes(pkg!.s3Key));
-    assert.ok(
-      payload.data.downloadUrl.includes(
-        encodeURIComponent(new Date(NOW.getTime() + OTA_DOWNLOAD_URL_TTL_SECONDS * 1000).toISOString()),
-      ),
-      'URL 过期时点 = now + 900s（15 分钟）',
+    const grantUrl = new URL(payload.data.downloadUrl);
+    assert.equal(grantUrl.origin, 'https://device-api.test');
+    assert.equal(grantUrl.pathname, `/api/v1/device/ota/targets/${target!.id}/download`);
+    assert.ok(grantUrl.searchParams.get('token'));
+    assert.ok(!payload.data.downloadUrl.includes(pkg!.s3Key), 'MQTT 不携带普通 S3 bearer URL/object key');
+    const grant = await prisma.otaDownloadGrant.findFirstOrThrow({ where: { targetId: target!.id } });
+    assert.equal(grant.deviceId, deviceId);
+    assert.equal(grant.packageId, packageId);
+    assert.equal(
+      grant.expiresAt.toISOString(),
+      new Date(NOW.getTime() + OTA_DOWNLOAD_URL_TTL_SECONDS * 1000).toISOString(),
     );
+    assert.notEqual(grant.tokenHash, grantUrl.searchParams.get('token'), '数据库只保存 token hash');
 
     // 状态机：PENDING → NOTIFIED + 历史
     assert.equal((await prisma.otaTarget.findUnique({ where: { id: target!.id } }))?.status, 'NOTIFIED');
@@ -258,7 +274,7 @@ describe('BE-OTA-03 OTA 下发（Publisher）', () => {
     const r4 = await dispatchOtaCampaign(p4.deps, c4.campaignId);
     assert.equal(r4.publishedCount, 0);
     assert.equal(r4.skippedCount, 1);
-    assert.equal(r4.results[0]?.reason, 'DEVICE_RETIRED');
+    assert.equal(r4.results[0]?.reason, 'NOT_CLAIMED');
     assert.equal(p4.published.length, 0);
 
     // scheduledTime 未到期
@@ -337,6 +353,162 @@ describe('BE-OTA-03 OTA 下发（Publisher）', () => {
       }),
     );
     assert.ok(!('scheduledTime' in without.data));
+  });
+
+  test('并发 dispatcher 只有一个 lease owner 发布；过期 lease 可恢复', async () => {
+    const first = await plantCampaign();
+    const ports = fakePorts();
+    const [a, b] = await Promise.all([
+      dispatchOtaCampaign(ports.deps, first.campaignId),
+      dispatchOtaCampaign(ports.deps, first.campaignId),
+    ]);
+    assert.equal(a.publishedCount + b.publishedCount, 1);
+    assert.equal(ports.published.length, 1, '条件 claim 阻止两个实例重复 MQTT publish');
+
+    const stale = await plantCampaign();
+    await prisma.otaTarget.updateMany({
+      where: { campaignId: stale.campaignId },
+      data: {
+        dispatchClaimedAt: new Date(NOW.getTime() - 120_000),
+        dispatchLeaseUntil: new Date(NOW.getTime() - 60_000),
+        dispatchLeaseToken: 'crashed-worker',
+      },
+    });
+    const recovered = fakePorts();
+    assert.equal((await dispatchOtaCampaign(recovered.deps, stale.campaignId)).publishedCount, 1);
+    assert.equal(recovered.published.length, 1);
+  });
+
+  test('claim 后暂停会撤销 grant/lease，发布前重校验阻止 MQTT', async () => {
+    const { campaignId } = await plantCampaign();
+    const ports = fakePorts();
+    const handlers = createAdminOtaCampaignHandlers({ client: prisma, now: () => NOW });
+    const deps: OtaPublisherDeps = {
+      ...ports.deps,
+      afterClaim: async () => {
+        const paused = await handlers.pauseCampaign(req(operator, { params: { campaignId } }));
+        assert.equal(paused.status, 200);
+      },
+    };
+    const result = await dispatchOtaCampaign(deps, campaignId);
+    assert.equal(result.publishedCount, 0);
+    assert.equal(result.results[0]?.reason, 'STATE_CHANGED');
+    assert.equal(ports.published.length, 0);
+    const target = await prisma.otaTarget.findFirstOrThrow({ where: { campaignId } });
+    assert.isNull(target.dispatchLeaseToken);
+    const grant = await prisma.otaDownloadGrant.findFirstOrThrow({ where: { targetId: target.id } });
+    assert.equal(grant.revokedAt?.toISOString(), NOW.toISOString());
+  });
+
+  test('target/history/通知/PUBLICATION 任一写失败时整笔事务回滚', async () => {
+    const { campaignId } = await plantCampaign();
+    const target = await prisma.otaTarget.findFirstOrThrow({ where: { campaignId } });
+    await prisma.outboxEvent.create({
+      data: {
+        eventType: 'ARCHIVE',
+        aggregateType: 'ota_target',
+        aggregateId: target.id,
+        idempotencyKey: `ota-target:${target.id}:dispatch:1:publication`,
+        payload: {},
+      },
+    });
+    const ports = fakePorts();
+    let failed = false;
+    try {
+      await dispatchOtaCampaign(ports.deps, campaignId);
+    } catch {
+      // 预置幂等键触发数据库唯一约束，验证整个 finalize 事务回滚。
+      failed = true;
+    }
+    assert.equal(failed, true, 'expected atomic finalize failure');
+    const unchanged = await prisma.otaTarget.findUniqueOrThrow({ where: { id: target.id } });
+    assert.equal(unchanged.status, 'PENDING');
+    assert.ok(unchanged.dispatchLeaseToken, 'finalize 回滚后仍保留原 claim，等待 lease 到期恢复');
+    assert.equal(await prisma.otaStatusHistory.count({ where: { targetId: target.id, toStatus: 'NOTIFIED' } }), 0);
+    assert.equal(
+      await prisma.outboxEvent.count({ where: { idempotencyKey: `ota-target:${target.id}:dispatch:1:available` } }),
+      0,
+    );
+  });
+
+  test('下载 grant 同时绑定 device/target/package/expiry/unused/revoked，且只能消费一次', async () => {
+    const { campaignId, deviceId, packageId } = await plantCampaign();
+    const ports = fakePorts();
+    await dispatchOtaCampaign(ports.deps, campaignId);
+    const payload = JSON.parse(ports.published[0]!.payload) as { data: { downloadUrl: string } };
+    const url = new URL(payload.data.downloadUrl);
+    const target = await prisma.otaTarget.findFirstOrThrow({ where: { campaignId, deviceId } });
+    const token = url.searchParams.get('token')!;
+    const signed: Array<{ key: string; expiresAt: Date }> = [];
+    const deps = {
+      client: prisma,
+      now: () => NOW,
+      objectUrlSigner: {
+        signDownload(input: { key: string; expiresAt: Date }) {
+          signed.push(input);
+          return 'https://s3.test/short-lived-object';
+        },
+      },
+    };
+    const auth = {
+      deviceId,
+      certificateId: 'cert-target',
+      certificateFingerprint: 'fp-target',
+      customerId: null,
+      siteId: null,
+      deviceLifecycleStatus: 'Active',
+    };
+    await rejectsWithCode(
+      () => redeemOtaDownloadGrant(deps, { ...auth, deviceId: 'dev-non-target' }, { targetId: target.id, token }),
+      'FORBIDDEN',
+    );
+    const redeemed = await redeemOtaDownloadGrant(deps, auth, { targetId: target.id, token });
+    assert.equal(redeemed.location, 'https://s3.test/short-lived-object');
+    assert.equal(signed[0]?.key, (await prisma.firmwarePackage.findUniqueOrThrow({ where: { id: packageId } })).s3Key);
+    await rejectsWithCode(() => redeemOtaDownloadGrant(deps, auth, { targetId: target.id, token }), 'CONFLICT');
+  });
+
+  test('过期或被暂停撤销的下载 grant 均失败关闭且不签发 S3 URL', async () => {
+    const signerCalls: unknown[] = [];
+    const objectUrlSigner = {
+      signDownload(input: unknown) {
+        signerCalls.push(input);
+        return 'https://s3.test/must-not-be-returned';
+      },
+    };
+    for (const mode of ['EXPIRED', 'REVOKED'] as const) {
+      const { campaignId, deviceId } = await plantCampaign();
+      const ports = fakePorts();
+      await dispatchOtaCampaign(ports.deps, campaignId);
+      const target = await prisma.otaTarget.findFirstOrThrow({ where: { campaignId } });
+      const payload = JSON.parse(ports.published[0]!.payload) as { data: { downloadUrl: string } };
+      const token = new URL(payload.data.downloadUrl).searchParams.get('token')!;
+      if (mode === 'REVOKED') {
+        const handlers = createAdminOtaCampaignHandlers({ client: prisma, now: () => NOW });
+        await handlers.pauseCampaign(req(operator, { params: { campaignId } }));
+      }
+      await rejectsWithCode(
+        () =>
+          redeemOtaDownloadGrant(
+            {
+              client: prisma,
+              objectUrlSigner,
+              now: () => (mode === 'EXPIRED' ? new Date(NOW.getTime() + 901_000) : NOW),
+            },
+            {
+              deviceId,
+              certificateId: `cert-${mode}`,
+              certificateFingerprint: `fp-${mode}`,
+              customerId: null,
+              siteId: null,
+              deviceLifecycleStatus: 'Active',
+            },
+            { targetId: target.id, token },
+          ),
+        'CONFLICT',
+      );
+    }
+    assert.equal(signerCalls.length, 0);
   });
 });
 

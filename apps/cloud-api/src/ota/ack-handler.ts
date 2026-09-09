@@ -20,7 +20,7 @@
  */
 import type { OtaCampaignDeps } from '../admin/ota-campaign/service.js';
 import { recordTargetStatus } from '../admin/ota-campaign/service.js';
-import { resolveOtaArchiveCustomerId } from './publisher.js';
+import { resolveOtaArchiveCustomerId } from './dispatch-store.js';
 
 /** DEC-015 冻结的 OTA 上行状态集合。 */
 export const OTA_ACK_STATUSES = ['DOWNLOADING', 'INSTALLING', 'SUCCEEDED', 'FAILED', 'ROLLED_BACK'] as const;

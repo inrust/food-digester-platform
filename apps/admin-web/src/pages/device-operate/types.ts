@@ -79,6 +79,10 @@ export interface CommandListItemView {
 export interface CommandAttemptView {
   readonly attemptNo: number;
   readonly publishedAt: string;
+  readonly outcome: 'PUBLISHED' | 'PUBLISH_FAILED';
+  readonly errorCode: string | null;
+  readonly providerMessageId: string | null;
+  readonly finishedAt: string;
 }
 
 export interface CommandAckView {

@@ -20,7 +20,7 @@
 2. **幂等**：已 PUBLISHED → REPLAYED_PUBLISHED（不重复发消息、不新增 attempt）；非 AUTHORIZED/PUBLISH_FAILED 状态 → 409；设备执行终态 FAILED 永不重发；
 3. **抢占**：条件 `updateMany(status in AUTHORIZED/PUBLISH_FAILED → PUBLISHING)` 并发兜底，抢不到重读分类（并发已发布 → 重放）；
 4. **执行**：`attemptNo = count(attempts)+1` 递增；`mqtt.publish({topic, payload, qos:1})`；
-5. **结果落库**：成功 → attempts 落行 + 状态 PUBLISHED；传输异常 → attempts 落行 + 状态 PUBLISH_FAILED（未过期可重试）。
+5. **结果落库与审计**：成功/失败均在同一事务写 `CommandAttempt(outcome/errorCode/providerMessageId/finishedAt)`、更新 Command 状态并写 `command.publish` 审计；传输异常进入 PUBLISH_FAILED（未过期可重试）。
 
 **重试不创建新 commandId**：PUBLISH_FAILED 重试沿用同一 commandId（meta.id 不变），attempts 逐行记录 attemptNo 递增；`device_commands` 无新行。schema 状态注释补充 PUBLISHING/PUBLISH_FAILED 中间态。
 
@@ -31,11 +31,11 @@
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
 | 在线合法设备收到正确 Topic/Payload | Fake MqttPublisher 断言 topic=`bnx/device/{deviceId}/cmd`、qos=1；Envelope meta.id=commandId、meta.ts、data 必填键与 cmd.schema.json required 一致、remarks 空省略、无 audit 域、无 seq | ✅ |
-| 发布成功记录 Published | 状态 PUBLISHED + attempts attemptNo=1 落行 | ✅ |
+| 发布成功记录 Published | 状态 PUBLISHED + attemptNo/outcome/providerMessageId/finishedAt + SUCCESS 审计同事务落行 | ✅ |
 | 过期命令不发布 | expiresAt 已过 → 409 CONFLICT，mqtt 0 调用、0 attempt、状态不变 | ✅ |
 | Retired 命令不发布 | 409 DEVICE_STATE_NOT_ALLOWED，mqtt 0 调用、状态不变 | ✅ |
 | 非可发布状态拒绝 | ACKNOWLEDGED/TIMED_OUT/CANCELLED/CREATED → 409；不存在 → 404 | ✅ |
-| 发布重试不创建新 commandId | 首次发布异常 → PUBLISH_FAILED（attemptNo=1）；重试成功 → PUBLISHED（attemptNo=2），同 commandId、device_commands 仅 1 行；设备执行 FAILED 负向回归为 0 次发布 | ✅ |
+| 发布重试不创建新 commandId | 首次发布异常 → PUBLISH_FAILED（attemptNo=1、错误码、FAILURE 审计）；重试成功 → PUBLISHED（attemptNo=2、providerMessageId），同 commandId、device_commands 仅 1 行；设备执行 FAILED 负向回归为 0 次发布 | ✅ |
 | 超时后拒绝再次发布 | PUBLISH_FAILED 且已过期 → 409，不发消息 | ✅ |
 | PUBLISHED 幂等重放 | REPLAYED_PUBLISHED，mqtt 仍 1 调用、attempts 仍 1 行 | ✅ |
 
