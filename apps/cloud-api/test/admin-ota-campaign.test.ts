@@ -6,7 +6,7 @@
  * - 坏包/未校验包不可建 Campaign（非 VERIFIED → 400；不存在 → 404）；
  * - 设备资格门：型号不匹配/Suspended/无 License/Entitlement 停用/License 过期 → 400；
  *   Maintenance 放行（DEC-001）；
- * - 默认禁止一次选择全部合格设备（单次全量/分批合并全量 → 400）；
+ * - 最终全量扩批须既有批次全部成功 + PlatformSuperAdmin 显式批准；否则 403/409/400；
  * - 暂停/取消后不得产生新下发（PAUSED/CANCELLED 扩大批次与重试 → 409；取消级联
  *   未完成 target → CANCELLED；SUCCEEDED 不受影响）；
  * - 失败重试：FAILED → PENDING（含指定子集与非法子集 400）；
@@ -319,7 +319,7 @@ describe('BE-OTA-02 扩大批次', () => {
     assert.equal(audits.length, 1);
   });
 
-  test('默认禁止一次选择全部合格设备：单次全量 → 400；分批合并覆盖全量 → 400', async () => {
+  test('最终全量扩批：灰度成功后仅 SuperAdmin 可显式批准；无审批/过早/越权均失败关闭', async () => {
     // 型号独占：该型号恰好 2 台合格设备
     const model = `BNX-FULL-${seq}`;
     const d1 = await plantDevice({ model });
@@ -329,21 +329,76 @@ describe('BE-OTA-02 扩大批次', () => {
     const packageId = await plantPackage({ model });
     const h = handlers();
 
-    // 单次选择全部合格设备 → 400（即便作为首批 1 台之外的 expand）
     const create = await h.createCampaign(req(operator, { body: { name: 'C', packageId, deviceIds: [d1] } }));
     assert.equal(create.status, 201);
     const campaignId = (create.body as DataBody).data.campaignId;
-    const full = await h.expandBatch(req(operator, { params: { campaignId }, body: { deviceIds: [d1, d2] } }));
-    assert.equal(full.status, 400);
-    assert.match((full.body as ErrBody).error.message, /all eligible devices/i);
+    const approval = { confirmText: `APPROVE_FINAL_ROLLOUT:${campaignId}` };
 
-    // 分批合并覆盖全量 → 400
-    const merged = await h.expandBatch(req(operator, { params: { campaignId }, body: { deviceIds: [d2] } }));
-    assert.equal(merged.status, 400);
+    const premature = await h.expandBatch(
+      req(superAdmin, {
+        params: { campaignId },
+        body: { deviceIds: [d2], finalRolloutApproval: approval },
+      }),
+    );
+    assert.equal(premature.status, 409, '灰度未成功不得批准最终扩批');
+
+    const canary = await targetOf(campaignId, d1);
+    for (const status of ['NOTIFIED', 'DOWNLOADING', 'INSTALLING', 'SUCCEEDED']) {
+      await recordTargetStatus({ client: prisma }, canary!.id, status);
+    }
+    assert.equal((await prisma.otaCampaign.findUnique({ where: { id: campaignId } }))?.status, 'RUNNING');
+
+    const unauthorized = await h.expandBatch(
+      req(operator, {
+        params: { campaignId },
+        body: { deviceIds: [d2], finalRolloutApproval: approval },
+      }),
+    );
+    assert.equal(unauthorized.status, 403);
+    const missing = await h.expandBatch(req(superAdmin, { params: { campaignId }, body: { deviceIds: [d2] } }));
+    assert.equal(missing.status, 400);
+    const wrong = await h.expandBatch(
+      req(superAdmin, {
+        params: { campaignId },
+        body: { deviceIds: [d2], finalRolloutApproval: { confirmText: 'APPROVE' } },
+      }),
+    );
+    assert.equal(wrong.status, 400);
+    const clientTimestamp = await h.expandBatch(
+      req(superAdmin, {
+        params: { campaignId },
+        body: {
+          deviceIds: [d2],
+          finalRolloutApproval: { ...approval, confirmedAt: NOW.toISOString() },
+        },
+      }),
+    );
+    assert.equal(clientTimestamp.status, 400, '审批事实不接受客户端时间或其他未冻结字段');
+
+    const approved = await h.expandBatch(
+      req(superAdmin, {
+        params: { campaignId },
+        body: { deviceIds: [d2], finalRolloutApproval: approval },
+      }),
+    );
+    assert.equal(approved.status, 201);
+    assert.equal((approved.body as DataBody).data.finalRolloutApproved, true);
+    assert.equal((approved.body as DataBody).data.approvedBy, superAdmin.actorId);
     const row = await prisma.otaCampaign.findUnique({ where: { id: campaignId } });
-    assert.equal(row?.status, 'RUNNING');
-    const targetCount = await prisma.otaTarget.count({ where: { campaignId } });
-    assert.equal(targetCount, 1, '全量拒绝后不得新增 target');
+    assert.equal(row?.finalRolloutApprovedBy, superAdmin.actorId);
+    assert.equal(row?.finalRolloutEligibleCount, 2);
+    assert.equal(row?.strategy, 'BATCH');
+
+    const finalTarget = await targetOf(campaignId, d2);
+    for (const status of ['NOTIFIED', 'DOWNLOADING', 'INSTALLING', 'SUCCEEDED']) {
+      await recordTargetStatus({ client: prisma }, finalTarget!.id, status);
+    }
+    assert.equal((await prisma.otaCampaign.findUnique({ where: { id: campaignId } }))?.status, 'COMPLETED');
+    const audit = await prisma.auditLog.findFirst({
+      where: { objectId: campaignId, action: 'ota.campaign.expand', actorId: superAdmin.actorId },
+      orderBy: { createdAt: 'desc' },
+    });
+    assert.equal((audit?.afterValue as Record<string, unknown>).finalRolloutApproved, true);
   });
 });
 
@@ -501,10 +556,14 @@ describe('BE-OTA-02 recordTargetStatus（DEC-015 ACK 通道，BE-OTA-03 复用�
     assert.ok(done.completedAt, '终态写 completedAt');
     const history = await prisma.otaStatusHistory.findMany({ where: { targetId: t1!.id } });
     assert.equal(history.length, 5, '每次状态变化一条历史');
-    assert.equal((await prisma.otaCampaign.findUnique({ where: { id: campaignId } }))?.status, 'COMPLETED');
+    assert.equal(
+      (await prisma.otaCampaign.findUnique({ where: { id: campaignId } }))?.status,
+      'RUNNING',
+      '仅灰度成功不得过早完成，须保留最终扩批入口',
+    );
   });
 
-  test('全部 target SUCCEEDED → Campaign 自动 COMPLETED + 审计；含 FAILED 不完成', async () => {
+  test('未经最终全量审批时，即使当前 targets 全部 SUCCEEDED 也保持 RUNNING', async () => {
     const { campaignId, deviceId } = await plantCampaign();
     const extra = await plantDevice();
     await handlers().expandBatch(req(operator, { params: { campaignId }, body: { deviceIds: [extra] } }));
@@ -515,16 +574,14 @@ describe('BE-OTA-02 recordTargetStatus（DEC-015 ACK 通道，BE-OTA-03 复用�
     for (const s of ['NOTIFIED', 'DOWNLOADING', 'INSTALLING', 'SUCCEEDED']) await recordTargetStatus(deps, t2!.id, s);
     // t1 FAILED 未解决 → 不完成
     assert.equal((await prisma.otaCampaign.findUnique({ where: { id: campaignId } }))?.status, 'RUNNING');
-    // 重试 t1 并完成后 → COMPLETED
+    // 重试 t1 并完成后仍不得冒充最终全量完成
     await handlers().retryCampaign(req(operator, { params: { campaignId }, body: {} }));
     for (const s of ['NOTIFIED', 'DOWNLOADING', 'INSTALLING', 'SUCCEEDED']) await recordTargetStatus(deps, t1!.id, s);
-    assert.equal((await prisma.otaCampaign.findUnique({ where: { id: campaignId } }))?.status, 'COMPLETED');
+    assert.equal((await prisma.otaCampaign.findUnique({ where: { id: campaignId } }))?.status, 'RUNNING');
     const audits = await prisma.auditLog.findMany({
       where: { objectType: 'ota_campaign', objectId: campaignId, action: 'ota.campaign.complete' },
     });
-    assert.equal(audits.length, 1);
-    // COMPLETED 为终态：取消 → 409
-    assert.equal((await handlers().cancelCampaign(req(operator, { params: { campaignId } }))).status, 409);
+    assert.equal(audits.length, 0);
   });
 });
 

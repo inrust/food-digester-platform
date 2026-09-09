@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.31.0",
-  "updatedAt": "2026-09-09T02:07:15Z",
+  "registerVersion": "1.32.0",
+  "updatedAt": "2026-09-09T03:45:09Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -720,6 +720,27 @@
           "at": "2026-09-09T02:07:15Z",
           "by": "业务方（本次 P0 整改指令）",
           "note": "按 CMD/OTA 全面复盘 P0 整改建议冻结 KMS RSA-2048、RSASSA_PKCS1_V1_5_SHA_256、base64、固定规范载荷和带外信任根。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-023",
+      "version": "1.0.0",
+      "status": "frozen",
+      "title": "高风险 Command 确认与重新认证语义",
+      "conflict": "高风险 Command 此前同时信任客户端 confirmText 与 confirmedAt，无法证明确认发生在近期认证会话内，也未明确其是否代表 MFA 或双人审批。",
+      "provisionalValue": "V1 冻结为近期重新认证加显式文本确认：请求只允许 confirmation.confirmText 且必须精确等于命令 code；确认时间只使用服务端验签 Cognito JWT 的 auth_time，并受 command.confirmation 的 ttlSec/maxFutureSec 管理。缺少、过期或未来 auth_time 失败关闭为 FORBIDDEN。该机制不声明 MFA 或双人审批；如需提升必须新增决策版本和独立审批凭证。审计记录 DEC-023、确认方式、actor 与可信 authenticatedAt。",
+      "approver": "业务方（本次 P2 整改指令）",
+      "approvedAt": "2026-09-09T03:45:09Z",
+      "blockingTasks": ["BE-CMD-01", "FE-12", "QA-06"],
+      "affectedModules": ["AUTH", "BE-CMD", "BE-SET", "FE", "QA"],
+      "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
+      "history": [
+        {
+          "version": "1.0.0",
+          "at": "2026-09-09T03:45:09Z",
+          "by": "业务方（本次 P2 整改指令）",
+          "note": "按 CMD/OTA 全面复盘 P2 整改建议冻结近期重新认证与显式命令名确认，禁止客户端提供确认时间，并明确不等同 MFA 或双人审批。"
         }
       ]
     }

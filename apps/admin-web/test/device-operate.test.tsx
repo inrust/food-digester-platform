@@ -3,7 +3,7 @@
  * FE-12 操作设备页测试：
  * - 22 个命令白名单与原型 8 个快捷动作映射正确（文案可追溯到 command code）；
  * - 不存在无协议 command code 的提交（组按钮必须选定真实命令；未知 code 抛错）；
- * - 高风险命令 confirmText 完全一致才能提交，confirmation 携 confirmedAt；
+ * - DEC-023 高风险命令 confirmText 完全一致才能提交，客户端不提交确认时间；
  * - M/N 与温度阈值走 Configuration（不误走命令 API）；
  * - requestedBy 不可编辑；Suspended/Retired/离线/无 Entitlement 禁用且原因展示；
  * - 状态从创建（AUTHORIZED 受理）到最终结果 E2E；TimedOut + 迟到 ACK；
@@ -204,7 +204,7 @@ test('无协议 command code 禁止提交：未知 code 抛错；模式切换表
 
 // ---------- 高风险确认 ----------
 
-test('高风险命令：confirmText 必须与命令名完全一致才能提交；confirmation 携 confirmedAt', async () => {
+test('高风险命令：confirmText 必须与命令名完全一致；客户端不提交确认时间', async () => {
   const user = userEvent.setup();
   const { calls } = renderPage();
   await user.click(screen.getByTestId('quick-factoryReset'));
@@ -222,7 +222,7 @@ test('高风险命令：confirmText 必须与命令名完全一致才能提交�
   const input = calls.submitted[0]?.input;
   assert.equal(input?.command, 'FACTORY_RESET');
   assert.equal(input?.confirmation?.confirmText, 'FACTORY_RESET');
-  assert.ok(!Number.isNaN(Date.parse(input?.confirmation?.confirmedAt ?? '')), 'confirmedAt 须为 ISO 时间');
+  assert.deepEqual(Object.keys(input?.confirmation ?? {}), ['confirmText']);
 });
 
 test('低风险命令无需确认凭证；timeoutSec 越界禁止提交', async () => {
@@ -440,7 +440,7 @@ test('API 装配：命令创建请求体（不含 requestedBy；confirmation 仅
     command: 'SHUTDOWN',
     timeoutSec: 300,
     remarks: 'r',
-    confirmation: { confirmText: 'SHUTDOWN', confirmedAt: '2026-09-06T05:00:00Z' },
+    confirmation: { confirmText: 'SHUTDOWN' },
   });
   assert.equal(calls[0]?.path, '/admin/devices/dev-1/commands');
   assert.equal(calls[0]?.options.method, 'POST');

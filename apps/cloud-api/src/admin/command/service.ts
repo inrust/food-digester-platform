@@ -6,8 +6,8 @@
  * - 校验链：角色（Handler permission 门）→ Customer 租户（Customer 角色强制 device 归属，
  *   跨 Customer → 404）→ 设备状态门（领域层 resolveCommandGateStatus + assertCommandAllowed，
  *   云端 suspension 权威优先于设备上报）→ Entitlement（有效 License 且 REMOTE_CONTROL enabled，
- *   无 → 403）→ 命令白名单/参数/timeoutSec（领域层封闭校验）→ 高风险确认凭证（confirmText
- *   精确匹配 + confirmedAt TTL 内，过期确认 400）；
+ *   无 → 403）→ 命令白名单/参数/timeoutSec（领域层封闭校验）→ DEC-023 高风险确认
+ *   （confirmText 精确匹配 + 已验签 JWT auth_time 在策略 TTL 内，过期需重新认证并返回 403）；
  * - meta.id 即 commandId（DEC-006）：客户端可提供 commandId 做幂等；重复创建（同 commandId
  *   同 device/command/timeoutSec）→ 200 replayed=true 无新写入/审计；冲突 → 409；
  * - requestedBy 取自身份上下文（actor.actorId），不信任客户端声明；requestTime/expiresAt
@@ -25,6 +25,7 @@ import {
   assertCommandParams,
   assertHighRiskConfirmation,
   assertKnownCommand,
+  COMMAND_CONFIRMATION_DECISION,
   resolveCommandGateStatus,
 } from '@fdp/domain';
 import type { CommandConfirmation, CommandSpec } from '@fdp/domain';
@@ -87,6 +88,10 @@ interface CommandDelegate {
   create(args: { data: Record<string, unknown> }): Promise<CommandRow>;
 }
 
+interface BusinessSettingDelegate {
+  findFirst(args: { where: Record<string, unknown> }): Promise<{ value: unknown } | null>;
+}
+
 function devices(client: DbClient): DeviceDelegate {
   return (client as unknown as Record<string, unknown>).device as DeviceDelegate;
 }
@@ -101,6 +106,10 @@ function licenses(client: DbClient): LicenseDelegate {
 
 function commands(client: DbClient): CommandDelegate {
   return (client as unknown as Record<string, unknown>).deviceCommand as CommandDelegate;
+}
+
+function businessSettings(client: DbClient): BusinessSettingDelegate {
+  return (client as unknown as Record<string, unknown>).businessSetting as BusinessSettingDelegate;
 }
 
 // ---------- DTO ----------
@@ -163,9 +172,27 @@ export interface CreateCommandInput {
 function mapDomainError(err: unknown): never {
   if (err instanceof CommandError) {
     if (err.code === 'DEVICE_STATE_NOT_ALLOWED') throw commandStateNotAllowed(err.message);
+    if (err.code === 'REAUTHENTICATION_REQUIRED') throw commandForbidden(err.message);
     throw commandValidationFailed(err.message);
   }
   throw err;
+}
+
+async function loadConfirmationPolicy(client: DbClient): Promise<{ ttlMs: number; maxFutureMs: number }> {
+  const row = await businessSettings(client).findFirst({ where: { key: 'command.confirmation' } });
+  const value = row?.value as { ttlSec?: unknown; maxFutureSec?: unknown } | undefined;
+  if (
+    !value ||
+    !Number.isInteger(value.ttlSec) ||
+    !Number.isInteger(value.maxFutureSec) ||
+    (value.ttlSec as number) < 30 ||
+    (value.ttlSec as number) > 3600 ||
+    (value.maxFutureSec as number) < 0 ||
+    (value.maxFutureSec as number) > 600
+  ) {
+    throw commandForbidden('High-risk command confirmation policy is unavailable');
+  }
+  return { ttlMs: (value.ttlSec as number) * 1000, maxFutureMs: (value.maxFutureSec as number) * 1000 };
 }
 
 /** Entitlement 门：设备有效 License 且 REMOTE_CONTROL enabled（无 → 403）。 */
@@ -211,7 +238,8 @@ export async function createCommand(
   try {
     spec = assertKnownCommand(input.command);
     assertCommandParams(spec.command, input.timeoutSec, input.remarks);
-    assertHighRiskConfirmation(spec, input.confirmation, now);
+    const confirmationPolicy = spec.highRisk ? await loadConfirmationPolicy(deps.client) : undefined;
+    assertHighRiskConfirmation(spec, input.confirmation, actor.authenticatedAt, now, confirmationPolicy);
   } catch (err) {
     mapDomainError(err);
   }
@@ -275,6 +303,13 @@ export async function createCommand(
           status: result.status,
           highRisk: result.highRisk,
           confirmedBy: result.confirmedBy,
+          ...(result.highRisk
+            ? {
+                confirmationDecision: COMMAND_CONFIRMATION_DECISION,
+                confirmationMethod: 'RECENT_REAUTHENTICATION_AND_EXPLICIT_TEXT',
+                authenticatedAt: actor.authenticatedAt,
+              }
+            : {}),
           timeoutSec: result.timeoutSec,
           expiresAt: result.expiresAt,
         }),

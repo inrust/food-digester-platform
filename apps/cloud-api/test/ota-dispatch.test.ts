@@ -554,8 +554,8 @@ describe('BE-OTA-03 ACK 状态接收（DEC-015 唯一通道）', () => {
       assert.equal(r.data.source, 'DEC-015_ACK_OTA_TARGET');
       assert.ok(r.data.ackId);
     }
-    // 全部 SUCCEEDED → Campaign COMPLETED
-    assert.equal((await prisma.otaCampaign.findUnique({ where: { id: campaignId } }))?.status, 'COMPLETED');
+    // 未建立最终全量审批事实：当前 target 成功不等于整个 Campaign 完成（P2 扩批语义）。
+    assert.equal((await prisma.otaCampaign.findUnique({ where: { id: campaignId } }))?.status, 'RUNNING');
   });
 
   test('FAILED + errorCode/message 进入历史 detail；retry 后可重发并重新回报', async () => {

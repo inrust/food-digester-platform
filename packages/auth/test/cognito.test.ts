@@ -25,6 +25,7 @@ describe('Cognito JWT 认证 Guard', () => {
     assert.equal(actor.actorId, 'user-sub-1');
     assert.equal(actor.username, 'tester');
     assert.equal(actor.tokenUse, 'access');
+    assert.ok(actor.authenticatedAt);
   });
 
   test('合法 ID Token → Customer ActorContext（custom:customer_id 注入 scope）', async () => {
@@ -63,6 +64,11 @@ describe('Cognito JWT 认证 Guard', () => {
     for (const header of [undefined, null, '', 'Bearer', 'Basic abc', 'Bearer not a jwt']) {
       await expectAuthError(authenticator.authenticate(header), 'UNAUTHENTICATED');
     }
+  });
+
+  test('缺失或非法 auth_time → 401，不能伪造近期重新认证上下文', async () => {
+    const missing = await signToken(keys, { groups: ['PlatformSuperAdmin'], authenticatedAtSeconds: 0 });
+    await expectAuthError(authenticator.authenticate(`Bearer ${missing}`), 'UNAUTHENTICATED');
   });
 
   test('未知 Cognito 组 → 403 失败关闭（DEC-012）', async () => {

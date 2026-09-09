@@ -31,6 +31,7 @@ export interface CognitoAuthenticator {
 }
 
 interface CognitoClaims extends JWTPayload {
+  readonly auth_time?: unknown;
   readonly token_use?: string;
   readonly client_id?: string;
   readonly username?: string;
@@ -92,6 +93,10 @@ function actorFromClaims(claims: CognitoClaims): ActorContext {
   }
   const tokenUse = claims.token_use;
   if (tokenUse !== 'id' && tokenUse !== 'access') throw unauthenticated();
+  if (typeof claims.auth_time !== 'number' || !Number.isInteger(claims.auth_time) || claims.auth_time <= 0) {
+    throw unauthenticated();
+  }
+  const authenticatedAt = new Date(claims.auth_time * 1000).toISOString();
 
   const groups = claims['cognito:groups'];
   if (!Array.isArray(groups) || groups.some((g) => typeof g !== 'string')) {
@@ -114,8 +119,8 @@ function actorFromClaims(claims: CognitoClaims): ActorContext {
     if (typeof customerClaim !== 'string' || customerClaim === '') {
       throw forbidden('A customer role requires a customer scope claim');
     }
-    return { actorId: sub, username, actorType, roles, customerId: customerClaim, tokenUse };
+    return { actorId: sub, username, actorType, roles, customerId: customerClaim, tokenUse, authenticatedAt };
   }
   // 平台角色忽略 Token 中的 customer 声明，scope 恒为 null（服务端唯一可信来源）
-  return { actorId: sub, username, actorType, roles, customerId: null, tokenUse };
+  return { actorId: sub, username, actorType, roles, customerId: null, tokenUse, authenticatedAt };
 }

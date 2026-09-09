@@ -28,10 +28,11 @@
     "check:sensitive-sinks": "node scripts/check-sensitive-sinks.mjs",
     "check:runtime": "node --import tsx scripts/check-delivered-runtime.mjs",
     "check:cdk": "node scripts/check-cdk-synth.mjs",
+    "check:cmd-ota-delivery": "pnpm check:runtime && pnpm check:cdk",
     "test:aws-iot-authz": "node --import tsx scripts/verify-aws-iot-authorization.mjs",
     "openapi:bundle": "node scripts/build-openapi.mjs",
     "openapi:check": "node scripts/build-openapi.mjs --check && redocly lint contracts/rest/openapi-base.json \"contracts/rest/*-api.json\" contracts/rest/openapi.bundle.json --extends spec",
-    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks && pnpm check:runtime && pnpm check:cdk"
+    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks && pnpm check:cmd-ota-delivery"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

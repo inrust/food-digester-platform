@@ -54,8 +54,9 @@ test('命令枚举与 CT-04 目录 22 个白名单一致；确认凭证与 timeo
   assert.ok(create.properties.confirmation, '高风险确认凭证字段缺失');
 
   const confirmation = doc.components.schemas.CommandConfirmation;
-  assert.deepEqual(confirmation.required, ['confirmText', 'confirmedAt']);
+  assert.deepEqual(confirmation.required, ['confirmText']);
   assert.equal(confirmation.additionalProperties, false);
+  assert.ok(doc.info['x-decision-versions'].includes('DEC-023@1.0.0'));
 });
 
 test('响应 Schema 封闭且含 requestedBy/expiresAt/replayed/confirmedBy', () => {

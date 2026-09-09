@@ -16,7 +16,7 @@
 export class CommandError extends Error {
   override readonly name = 'CommandError';
   constructor(
-    readonly code: 'VALIDATION_FAILED' | 'DEVICE_STATE_NOT_ALLOWED',
+    readonly code: 'VALIDATION_FAILED' | 'DEVICE_STATE_NOT_ALLOWED' | 'REAUTHENTICATION_REQUIRED',
     message: string,
   ) {
     super(message);
@@ -140,23 +140,32 @@ export function assertCommandParams(command: string, timeoutSec: unknown, remark
 // ---------- 高风险命令确认凭证 ----------
 
 /**
- * 确认凭证有效期（暂定值，300s；确认时点距请求过远视为"过期确认"）。
- * 确认凭证语义（V1 模块级约定，DEC 未冻结）：请求体 confirmation = { confirmText, confirmedAt }，
- * confirmText 必须与命令名完全一致（防误确认），confirmedAt 必须在 TTL 内且不允许明显未来时间。
+ * DEC-023@1.0.0：高风险命令采用“近期重新认证 + 显式命令名确认”。
+ * 请求体只携带 confirmText；时间事实只能来自已验签 Cognito JWT 的 auth_time，禁止信任客户端时间戳。
  */
 export const COMMAND_CONFIRMATION_TTL_MS = 300_000 as const;
-/** confirmedAt 允许的最大未来漂移（时钟偏差，暂定 60s）。 */
+/** auth_time 允许的最大未来漂移（时钟偏差）。 */
 export const COMMAND_CONFIRMATION_MAX_FUTURE_MS = 60_000 as const;
+export const COMMAND_CONFIRMATION_DECISION = 'DEC-023@1.0.0' as const;
 
 export interface CommandConfirmation {
   readonly confirmText: string;
-  readonly confirmedAt: string;
+}
+
+export interface CommandConfirmationPolicy {
+  readonly ttlMs: number;
+  readonly maxFutureMs: number;
 }
 
 export function assertHighRiskConfirmation(
   spec: CommandSpec,
   confirmation: CommandConfirmation | undefined,
+  authenticatedAt: string | undefined,
   now: Date,
+  policy: CommandConfirmationPolicy = {
+    ttlMs: COMMAND_CONFIRMATION_TTL_MS,
+    maxFutureMs: COMMAND_CONFIRMATION_MAX_FUTURE_MS,
+  },
 ): void {
   if (!spec.highRisk) return;
   if (!confirmation) {
@@ -165,16 +174,19 @@ export function assertHighRiskConfirmation(
   if (confirmation.confirmText !== spec.command) {
     throw new CommandError('VALIDATION_FAILED', `confirmText must exactly match the command name (${spec.command})`);
   }
-  const confirmedAtMs = Date.parse(confirmation.confirmedAt);
-  if (Number.isNaN(confirmedAtMs)) {
-    throw new CommandError('VALIDATION_FAILED', 'confirmation.confirmedAt must be a valid ISO 8601 timestamp');
+  if (!authenticatedAt) {
+    throw new CommandError('REAUTHENTICATION_REQUIRED', 'High-risk commands require recent reauthentication');
+  }
+  const authenticatedAtMs = Date.parse(authenticatedAt);
+  if (Number.isNaN(authenticatedAtMs)) {
+    throw new CommandError('REAUTHENTICATION_REQUIRED', 'High-risk commands require recent reauthentication');
   }
   const nowMs = now.getTime();
-  if (confirmedAtMs > nowMs + COMMAND_CONFIRMATION_MAX_FUTURE_MS) {
-    throw new CommandError('VALIDATION_FAILED', 'confirmation.confirmedAt is in the future');
+  if (authenticatedAtMs > nowMs + policy.maxFutureMs) {
+    throw new CommandError('REAUTHENTICATION_REQUIRED', 'The authentication time is in the future');
   }
-  if (nowMs - confirmedAtMs > COMMAND_CONFIRMATION_TTL_MS) {
-    throw new CommandError('VALIDATION_FAILED', 'Confirmation credential has expired');
+  if (nowMs - authenticatedAtMs > policy.ttlMs) {
+    throw new CommandError('REAUTHENTICATION_REQUIRED', 'Recent reauthentication is required');
   }
 }
 

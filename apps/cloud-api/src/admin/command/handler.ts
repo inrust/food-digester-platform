@@ -56,6 +56,16 @@ export function createAdminCommandHandlers(deps: AdminCommandHandlerDeps): Admin
     const body = (req.body ?? {}) as Record<string, unknown>;
     if (typeof body.command !== 'string') throw commandValidationFailed('command is required');
     const confirmationRaw = body.confirmation as Record<string, unknown> | undefined;
+    if (confirmationRaw !== undefined && confirmationRaw !== null) {
+      if (
+        typeof confirmationRaw !== 'object' ||
+        Array.isArray(confirmationRaw) ||
+        Object.keys(confirmationRaw).some((key) => key !== 'confirmText') ||
+        typeof confirmationRaw.confirmText !== 'string'
+      ) {
+        throw commandValidationFailed('confirmation must contain only a string confirmText');
+      }
+    }
     const result = await createCommand(deps, req.actor as ActorContext, {
       deviceId,
       command: body.command,
@@ -66,7 +76,6 @@ export function createAdminCommandHandlers(deps: AdminCommandHandlerDeps): Admin
         ? {
             confirmation: {
               confirmText: confirmationRaw.confirmText as string,
-              confirmedAt: confirmationRaw.confirmedAt as string,
             },
           }
         : {}),

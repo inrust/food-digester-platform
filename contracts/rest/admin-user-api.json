@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-RBAC-01 用户、角色和 Scope 管理 API（Cognito 认证）。角色集合封闭（AUTH-01/DEC-012：PlatformSuperAdmin/PlatformOperator/Auditor/CustomerAdmin/CustomerViewer；原型「平台管理员/运维人员」映射 PlatformSuperAdmin/PlatformOperator）；V1 权限矩阵固定只读（DEC-012）。写操作仅 user:write（=PlatformSuperAdmin）：邀请（Cognito 生成临时凭证，API 不接收永久密码）、角色分配（自我提权/CustomerAdmin 提升平台角色/最后一个 SuperAdmin 移除均拒绝）、Customer scope 变更（同步 custom:customer_id）、停用、受控密码重置触发（Cognito 发送临时凭证，响应不含密码）。列表 user:read（PlatformSuperAdmin/Auditor）。所有权限变化审计（DOM-03）。Cognito 属性同步（groups + custom:customer_id）经注入端口。功能边界：不负责 Cognito 租户运维、MFA 客服重置和人工账号恢复。错误响应继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "DEC-012@1.0.0"],
-    "x-decision-register-version": "1.31.0"
+    "x-decision-register-version": "1.32.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

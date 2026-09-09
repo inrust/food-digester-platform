@@ -148,38 +148,39 @@ describe('高风险确认凭证', () => {
   const lowRisk = assertKnownCommand('START');
 
   test('非高风险不要求确认', () => {
-    assertHighRiskConfirmation(lowRisk, undefined, NOW);
+    assertHighRiskConfirmation(lowRisk, undefined, undefined, NOW);
   });
 
-  test('高风险缺确认 / confirmText 不符 / 时间非法 → VALIDATION_FAILED', () => {
+  test('高风险缺确认 / confirmText 不符 → VALIDATION_FAILED', () => {
     assert.equal(
-      codeOf(() => assertHighRiskConfirmation(highRisk, undefined, NOW)),
+      codeOf(() => assertHighRiskConfirmation(highRisk, undefined, NOW.toISOString(), NOW)),
       'VALIDATION_FAILED',
     );
     assert.equal(
-      codeOf(() => assertHighRiskConfirmation(highRisk, { confirmText: 'STOP', confirmedAt: NOW.toISOString() }, NOW)),
-      'VALIDATION_FAILED',
-    );
-    assert.equal(
-      codeOf(() => assertHighRiskConfirmation(highRisk, { confirmText: 'EMERGENCY_STOP', confirmedAt: 'bad' }, NOW)),
+      codeOf(() => assertHighRiskConfirmation(highRisk, { confirmText: 'STOP' }, NOW.toISOString(), NOW)),
       'VALIDATION_FAILED',
     );
   });
 
-  test('过期确认与未来确认 → VALIDATION_FAILED；TTL 内放行', () => {
+  test('缺失/过期/未来 auth_time → REAUTHENTICATION_REQUIRED；TTL 内放行', () => {
     const stale = new Date(NOW.getTime() - COMMAND_CONFIRMATION_TTL_MS - 1000).toISOString();
     assert.equal(
-      codeOf(() => assertHighRiskConfirmation(highRisk, { confirmText: 'EMERGENCY_STOP', confirmedAt: stale }, NOW)),
-      'VALIDATION_FAILED',
+      codeOf(() => assertHighRiskConfirmation(highRisk, { confirmText: 'EMERGENCY_STOP' }, undefined, NOW)),
+      'REAUTHENTICATION_REQUIRED',
+    );
+    assert.equal(
+      codeOf(() => assertHighRiskConfirmation(highRisk, { confirmText: 'EMERGENCY_STOP' }, stale, NOW)),
+      'REAUTHENTICATION_REQUIRED',
     );
     const future = new Date(NOW.getTime() + 120_000).toISOString();
     assert.equal(
-      codeOf(() => assertHighRiskConfirmation(highRisk, { confirmText: 'EMERGENCY_STOP', confirmedAt: future }, NOW)),
-      'VALIDATION_FAILED',
+      codeOf(() => assertHighRiskConfirmation(highRisk, { confirmText: 'EMERGENCY_STOP' }, future, NOW)),
+      'REAUTHENTICATION_REQUIRED',
     );
     assertHighRiskConfirmation(
       highRisk,
-      { confirmText: 'EMERGENCY_STOP', confirmedAt: new Date(NOW.getTime() - 1000).toISOString() },
+      { confirmText: 'EMERGENCY_STOP' },
+      new Date(NOW.getTime() - 1000).toISOString(),
       NOW,
     );
   });

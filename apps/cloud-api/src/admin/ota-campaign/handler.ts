@@ -7,7 +7,7 @@
  * - GET  /api/v1/admin/ota/campaigns                     列表（筛选 + 键集游标分页）
  * - GET  /api/v1/admin/ota/campaigns/{campaignId}        详情（含 target 状态计数）
  * - GET  /api/v1/admin/ota/campaigns/{campaignId}/targets 目标列表（状态看板）
- * - POST /api/v1/admin/ota/campaigns/{campaignId}/batches 扩大批次（仅 RUNNING；禁止全量）
+ * - POST /api/v1/admin/ota/campaigns/{campaignId}/batches 扩大批次（最终全量需 SuperAdmin 审批）
  * - POST /api/v1/admin/ota/campaigns/{campaignId}/pause   暂停（幂等回放）
  * - POST /api/v1/admin/ota/campaigns/{campaignId}/resume  恢复（幂等回放）
  * - POST /api/v1/admin/ota/campaigns/{campaignId}/cancel  取消（级联未完成 target → CANCELLED）
@@ -79,6 +79,14 @@ function requireString(body: Record<string, unknown>, field: string): string {
   return value;
 }
 
+function requireObject(body: Record<string, unknown>, field: string): Record<string, unknown> {
+  const value = body[field];
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw otaCampaignValidationFailed(`${field} must be an object`);
+  }
+  return value as Record<string, unknown>;
+}
+
 function requireStringArray(body: Record<string, unknown>, field: string): string[] {
   const value = body[field];
   if (!Array.isArray(value) || value.some((v) => typeof v !== 'string')) {
@@ -141,8 +149,19 @@ export function createAdminOtaCampaignHandlers(deps: AdminOtaCampaignHandlerDeps
 
   const expand = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'ota:write' }, async (req) => {
     const body = (req.body ?? {}) as Record<string, unknown>;
+    const approval = body.finalRolloutApproval === undefined ? undefined : requireObject(body, 'finalRolloutApproval');
+    if (approval !== undefined && Object.keys(approval).some((key) => key !== 'confirmText')) {
+      throw otaCampaignValidationFailed('finalRolloutApproval contains unsupported fields');
+    }
     const result = await expandOtaCampaignBatch(deps, req.actor as ActorContext, requireCampaignId(req), {
       deviceIds: requireStringArray(body, 'deviceIds'),
+      ...(approval !== undefined
+        ? {
+            finalRolloutApproval: {
+              confirmText: requireString(approval, 'confirmText'),
+            },
+          }
+        : {}),
     });
     return { status: 201, body: { data: result, meta: meta(req) } };
   });

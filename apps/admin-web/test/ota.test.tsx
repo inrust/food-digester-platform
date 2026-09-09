@@ -5,7 +5,7 @@
  *   直传 + complete 校验 → VERIFIED 可发布；可发布列表 = VERIFIED；
  * - 坏包（UPLOADED）不可建 Campaign（下拉仅 VERIFIED + 校验函数 + 装配守卫）；
  * - 首批 >1 台前端阻止且装配层拒绝（不发请求）；
- * - 扩大批次默认禁止全选合格设备（校验 + 装配守卫）；
+ * - 扩大批次支持逐步放量；最终全量须 SuperAdmin、既有 targets 全部成功及精确确认文本；
  * - 暂停/恢复/取消状态流转（幂等回放提示）；动作矩阵终态禁用；
  * - 失败重试（缺省全部 / 勾选子集）；目标状态看板渲染；ota:write 门控。
  */
@@ -80,6 +80,9 @@ function makeCampaign(overrides: Partial<OtaCampaignView> = {}): OtaCampaignView
     strategy: 'CANARY',
     status: 'RUNNING',
     createdBy: 'admin@example.com',
+    finalRolloutApprovedAt: null,
+    finalRolloutApprovedBy: null,
+    finalRolloutEligibleCount: null,
     createdAt: '2026-09-06T04:00:00Z',
     updatedAt: '2026-09-06T04:00:00Z',
     ...overrides,
@@ -232,7 +235,11 @@ test('Auditor 只读：上传入口禁用并说明 ota:write', () => {
 function renderCampaignsPage(overrides: Partial<OtaCampaignsPageProps> = {}) {
   const calls = {
     created: [] as unknown[],
-    expanded: [] as { campaignId: string; deviceIds: readonly string[] }[],
+    expanded: [] as {
+      campaignId: string;
+      deviceIds: readonly string[];
+      finalRolloutApproval?: { readonly confirmText: string };
+    }[],
     paused: [] as string[],
     resumed: [] as string[],
     cancelled: [] as string[],
@@ -260,9 +267,17 @@ function renderCampaignsPage(overrides: Partial<OtaCampaignsPageProps> = {}) {
       calls.created.push(input);
       return makeCampaign({ campaignId: 'camp-new' });
     },
-    onExpandBatch: async (campaignId, deviceIds) => {
-      calls.expanded.push({ campaignId, deviceIds });
-      return { campaignId, batchNo: 2, addedCount: deviceIds.length, skippedExistingCount: 0, addedTargets: [] };
+    onExpandBatch: async (campaignId, deviceIds, finalRolloutApproval) => {
+      calls.expanded.push({ campaignId, deviceIds, ...(finalRolloutApproval ? { finalRolloutApproval } : {}) });
+      return {
+        campaignId,
+        batchNo: 2,
+        addedCount: deviceIds.length,
+        skippedExistingCount: 0,
+        addedTargets: [],
+        finalRolloutApproved: finalRolloutApproval !== undefined,
+        approvedBy: finalRolloutApproval === undefined ? null : 'admin@example.com',
+      };
     },
     onPause: async (campaignId) => {
       calls.paused.push(campaignId);
@@ -412,16 +427,16 @@ test('动作矩阵：终态（COMPLETED/CANCELLED）全部动作禁用；Auditor
   assert.ok(screen.getByTestId('campaign-action-pause-deny').textContent?.includes('ota:write'));
 });
 
-test('扩大批次：默认禁止全选合格设备；部分选择提交并提示幂等跳过', async () => {
+test('扩大批次：普通角色不能审批最终全量；部分选择仍可提交', async () => {
   const user = userEvent.setup();
-  const { calls } = renderCampaignsPage({ detail: RUNNING_DETAIL });
+  const { calls } = renderCampaignsPage({ role: 'PlatformOperator', detail: RUNNING_DETAIL });
   await user.click(screen.getByTestId('campaign-action-expand'));
   const form = screen.getByTestId('campaign-expand-form');
 
-  // 全选（2/2 合格设备）→ 前端阻止
+  // 全选（2/2 合格设备）→ 普通角色不能审批
   await user.click(within(form).getByTestId('expand-device-dev-001'));
   await user.click(within(form).getByTestId('expand-device-dev-002'));
-  assert.ok(within(form).getByTestId('expand-error').textContent?.includes('禁止一次选择全部合格设备'));
+  assert.ok(within(form).getByTestId('expand-error').textContent?.includes('PlatformSuperAdmin'));
   assert.equal((within(form).getByTestId('expand-submit') as HTMLButtonElement).disabled, true);
 
   // 改为部分选择 → 可提交
@@ -434,15 +449,59 @@ test('扩大批次：默认禁止全选合格设备；部分选择提交并提�
   assert.ok(notice.textContent?.includes('新增 1 台'));
 });
 
-test('扩大批次：校验函数边界（0 台/超 500/全选）与 API 装配守卫', async () => {
-  assert.ok(validateBatchExpand([], 2)?.includes('1~500'));
-  assert.ok(validateBatchExpand(new Array(501).fill('d'), 600)?.includes('1~500'));
-  assert.ok(validateBatchExpand(['a', 'b'], 2)?.includes('全部合格设备'));
-  assert.equal(validateBatchExpand(['a'], 2), null);
+test('扩大批次：最终全量须既有 targets 全部成功并精确确认', async () => {
+  const user = userEvent.setup();
+  const allSucceededDetail: OtaCampaignsPageProps['detail'] = {
+    kind: 'ready',
+    campaign: makeDetail({
+      targetCounts: {
+        total: 1,
+        PENDING: 0,
+        NOTIFIED: 0,
+        DOWNLOADING: 0,
+        INSTALLING: 0,
+        SUCCEEDED: 1,
+        FAILED: 0,
+        ROLLED_BACK: 0,
+        CANCELLED: 0,
+      },
+    }),
+    targets: { rows: [makeTarget()], nextCursor: null },
+  };
+  const { calls } = renderCampaignsPage({ detail: allSucceededDetail });
+  await user.click(screen.getByTestId('campaign-action-expand'));
+  const form = screen.getByTestId('campaign-expand-form');
+  await user.click(within(form).getByTestId('expand-device-dev-001'));
+  await user.click(within(form).getByTestId('expand-device-dev-002'));
+  assert.ok(within(form).getByTestId('expand-error').textContent?.includes('APPROVE_FINAL_ROLLOUT:camp-001'));
+  await user.type(within(form).getByTestId('final-rollout-confirm'), 'APPROVE_FINAL_ROLLOUT:camp-001');
+  assert.equal(within(form).queryByTestId('expand-error'), null);
+  await user.click(within(form).getByTestId('expand-submit'));
+  assert.deepEqual(calls.expanded, [
+    {
+      campaignId: 'camp-001',
+      deviceIds: ['dev-001', 'dev-002'],
+      finalRolloutApproval: { confirmText: 'APPROVE_FINAL_ROLLOUT:camp-001' },
+    },
+  ]);
+  assert.ok((await screen.findByTestId('action-notice')).textContent?.includes('最终全量已由'));
+});
+
+test('扩大批次：校验函数 1~500 边界与 API 最终审批装配', async () => {
+  assert.ok(validateBatchExpand([])?.includes('1~500'));
+  assert.ok(validateBatchExpand(new Array(501).fill('d'))?.includes('1~500'));
+  assert.equal(validateBatchExpand(['a', 'b']), null);
 
   const { api, calls } = stubApi();
-  await expect(() => expandOtaCampaignBatch(api, 'camp-1', ['a', 'b'], 2)).rejects.toThrow(/全部合格设备/);
-  assert.equal(calls.length, 0);
+  await expect(() => expandOtaCampaignBatch(api, 'camp-1', [])).rejects.toThrow(/1~500/);
+  await expandOtaCampaignBatch(api, 'camp-1', ['a', 'b'], {
+    confirmText: 'APPROVE_FINAL_ROLLOUT:camp-1',
+  });
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0]?.options.body, {
+    deviceIds: ['a', 'b'],
+    finalRolloutApproval: { confirmText: 'APPROVE_FINAL_ROLLOUT:camp-1' },
+  });
 });
 
 test('失败重试：缺省重试全部 FAILED；勾选子集携 targetIds', async () => {

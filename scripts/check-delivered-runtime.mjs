@@ -7,6 +7,32 @@ import { DELIVERED_OPERATIONS } from '../apps/cloud-api/src/runtime/delivered-op
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
 const MANIFEST_FILE = 'delivered-openapi-manifest.json';
 const OPENAPI_FILE = /^[a-z0-9-]+-api\.json$/u;
+export const CMD_OTA_OPENAPI_FILES = [
+  'admin-command-api.json',
+  'admin-ota-package-api.json',
+  'admin-ota-campaign-api.json',
+  'device-ota-api.json',
+];
+
+export function findCmdOtaGovernanceErrors(manifest, signaturePolicy, decisions) {
+  const errors = [];
+  for (const file of CMD_OTA_OPENAPI_FILES) {
+    if (!manifest.includes(file)) errors.push(`CMD/OTA 已交付清单缺少: ${file}`);
+  }
+  if (
+    signaturePolicy.status !== 'frozen' ||
+    signaturePolicy.policyVersion !== '1.0.0' ||
+    !signaturePolicy['x-decision-versions']?.includes('DEC-022@1.0.0') ||
+    signaturePolicy.pendingParameters?.length !== 0
+  ) {
+    errors.push('CMD/OTA Gate：DEC-022 OTA 签名策略未冻结或仍有 pending 参数');
+  }
+  const commandConfirmation = decisions.decisions?.find((decision) => decision.id === 'DEC-023');
+  if (commandConfirmation?.status !== 'frozen' || commandConfirmation?.version !== '1.0.0') {
+    errors.push('CMD/OTA Gate：DEC-023 高风险 Command 确认语义未冻结');
+  }
+  return errors;
+}
 
 const keyOf = (operation) => `${operation.operationId}|${operation.method}|${operation.path}`;
 
@@ -73,6 +99,13 @@ export function loadDeliveredOpenApiManifest(root) {
 }
 
 export function checkDeliveredRuntime(root = process.cwd()) {
+  const manifest = loadDeliveredOpenApiManifest(root);
+  const signaturePolicy = JSON.parse(
+    readFileSync(resolve(root, 'contracts/security/ota-package-signature-policy.json'), 'utf8'),
+  );
+  const decisions = JSON.parse(readFileSync(resolve(root, 'contracts/decisions/decision-register.json'), 'utf8'));
+  const governanceErrors = findCmdOtaGovernanceErrors(manifest, signaturePolicy, decisions);
+  if (governanceErrors.length > 0) throw new Error(`CMD/OTA 治理 Gate 失败：\n${governanceErrors.join('\n')}`);
   const errors = compareDeliveredOperations(loadDeliveredOpenApiOperations(root), DELIVERED_OPERATIONS);
   if (errors.length > 0) throw new Error(`已交付 REST 生产路由 Gate 失败：\n${errors.join('\n')}`);
 }

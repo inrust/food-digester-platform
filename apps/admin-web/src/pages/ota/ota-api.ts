@@ -6,7 +6,7 @@
  * - completeFirmwareUpload：对象/大小/SHA-256/签名/病毒扫描全过 → VERIFIED 不可变；
  * - createOtaCampaign：首批强制恰好 1 台（装配层本地守卫 + 服务端 400 兜底）；
  *   包必须 VERIFIED（坏包/未校验包不可建 Campaign）；
- * - expandOtaCampaignBatch：默认禁止一次选择全部合格设备（装配层本地守卫 + 服务端 400 兜底）；
+ * - expandOtaCampaignBatch：普通批次最多 500 台；最终覆盖全部合格设备时传递 SuperAdmin 显式审批；
  * - pause/resume/cancel/retry 幂等回放；暂停/取消后不得产生新下发（BE-OTA-03 下发器只消费 RUNNING 的 PENDING）。
  */
 import type { ApiClient } from '../../api/http-client.js';
@@ -156,15 +156,20 @@ export async function expandOtaCampaignBatch(
   api: ApiClient,
   campaignId: string,
   deviceIds: readonly string[],
-  eligibleDeviceTotal: number,
+  finalRolloutApproval?: { readonly confirmText: string },
 ): Promise<OtaBatchExpandResult> {
-  // 前端阻止：默认禁止一次选择全部合格设备（验收基准；服务端 VALIDATION_FAILED 兜底）
-  if (deviceIds.length >= eligibleDeviceTotal && eligibleDeviceTotal > 0) {
-    throw new Error('禁止一次选择全部合格设备（保留灰度余量）');
+  if (deviceIds.length < 1 || deviceIds.length > 500) {
+    throw new Error('批次设备数须为 1~500 台');
   }
   const response = await api.request<{ data: OtaBatchExpandResult }>(
     `/admin/ota/campaigns/${encodeURIComponent(campaignId)}/batches`,
-    { method: 'POST', body: { deviceIds: [...deviceIds] } },
+    {
+      method: 'POST',
+      body: {
+        deviceIds: [...deviceIds],
+        ...(finalRolloutApproval !== undefined ? { finalRolloutApproval } : {}),
+      },
+    },
   );
   return response.data;
 }

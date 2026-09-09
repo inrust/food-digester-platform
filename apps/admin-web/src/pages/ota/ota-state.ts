@@ -2,9 +2,8 @@
  * FE-13 OTA 纯逻辑：状态机矩阵、门控、校验、文案与 CT-06 锚点。
  *
  * - Campaign 状态机（BE-OTA-02）：创建即 RUNNING；RUNNING⇄PAUSED；RUNNING/PAUSED→CANCELLED；
- *   全部 target SUCCEEDED → COMPLETED；DRAFT 枚举存在但本 API 不产出；
- * - 灰度纪律：创建首批强制恰好 1 台；扩大批次默认禁止一次选择全部合格设备；
- *   strategy 仅 CANARY（试运营禁止默认全量强制升级）；
+ *   最终全量审批存在且全部 target SUCCEEDED → COMPLETED；DRAFT 枚举存在但本 API 不产出；
+ * - 灰度纪律：创建首批强制恰好 1 台；普通扩批最多 500 台；最终全量须 SuperAdmin 显式审批；
  * - 包纪律（BE-OTA-01）：可发布 = status VERIFIED；UPLOADED（未完成校验）不可建 Campaign；
  * - 写操作门控 ota:write（PlatformSuperAdmin/PlatformOperator），后端 403 兜底。
  */
@@ -188,15 +187,11 @@ export function validateCampaignCreate(
 }
 
 /**
- * 扩大批次校验：1~500 台；默认禁止一次选择全部合格设备（保留灰度余量）。
- * eligibleDeviceTotal = 当前尚未进入 Campaign 的合格设备总数。
+ * 扩大批次通用校验：1~500 台。最终全量所需的角色、既有 target 成功状态与确认文本由页面和服务端另行校验。
  */
-export function validateBatchExpand(deviceIds: readonly string[], eligibleDeviceTotal: number): string | null {
+export function validateBatchExpand(deviceIds: readonly string[]): string | null {
   if (deviceIds.length < 1 || deviceIds.length > MAX_BATCH_SIZE) {
     return `批次设备数须为 1~${MAX_BATCH_SIZE} 台`;
-  }
-  if (eligibleDeviceTotal > 0 && deviceIds.length >= eligibleDeviceTotal) {
-    return '禁止一次选择全部合格设备（保留灰度余量）';
   }
   return null;
 }

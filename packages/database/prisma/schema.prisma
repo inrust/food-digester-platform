@@ -831,15 +831,18 @@ model FirmwarePackage {
 }
 
 model OtaCampaign {
-  id          String   @id @default(uuid())
-  name        String
-  packageId   String   @map("package_id")
-  targetModel String   @map("target_model")
-  strategy    String   @default("CANARY") // CANARY | BATCH；试运营禁止默认全量强制升级
-  status      String   @default("DRAFT") // DRAFT | RUNNING | PAUSED | COMPLETED | CANCELLED
-  createdBy   String   @map("created_by")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  id                        String    @id @default(uuid())
+  name                      String
+  packageId                 String    @map("package_id")
+  targetModel               String    @map("target_model")
+  strategy                  String    @default("CANARY") // 创建为 CANARY；最终全量审批后切换为 BATCH
+  status                    String    @default("DRAFT") // DRAFT | RUNNING | PAUSED | COMPLETED | CANCELLED
+  createdBy                 String    @map("created_by")
+  finalRolloutApprovedAt    DateTime? @map("final_rollout_approved_at") @db.Timestamptz
+  finalRolloutApprovedBy    String?   @map("final_rollout_approved_by")
+  finalRolloutEligibleCount Int?      @map("final_rollout_eligible_count")
+  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                 DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   package FirmwarePackage @relation(fields: [packageId], references: [id])
   targets OtaTarget[]

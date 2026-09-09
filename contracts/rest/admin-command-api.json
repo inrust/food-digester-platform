@@ -3,9 +3,16 @@
   "info": {
     "title": "Bio-Nexa CMP Admin Command API",
     "version": "0.1.0",
-    "description": "BE-CMD-01 Command 创建与授权接口（Cognito 认证）。POST /api/v1/admin/devices/{deviceId}/commands：校验角色（command:send = PlatformSuperAdmin/PlatformOperator/CustomerAdmin）、Customer 租户（跨 Customer → 404）、设备状态门（CT-04 command-catalog allowedStatuses；云端 suspension 权威优先；Retired 拒绝全部）、Entitlement（有效 License 且 REMOTE_CONTROL enabled，无 → 403）、命令白名单（22 个）/参数/timeoutSec（1~3600 暂定上限）；高风险命令要求确认凭证（confirmText 精确匹配命令名 + confirmedAt 300s TTL 内，过期确认 400）。创建即授权（status=AUTHORIZED）。meta.id 即 commandId（DEC-006）：客户端可提供 commandId 幂等，重复创建语义一致 → 200 replayed=true，冲突 → 409。requestedBy 从身份上下文取得（不信任客户端声明）；expiresAt 服务器内部计算（requestTime + timeoutSec）。功能边界：不发布 MQTT，不执行设备动作。审计 command.authorize（DOM-03）。通用契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-001@1.0.0", "DEC-006@1.0.0", "DEC-012@1.0.0"],
-    "x-decision-register-version": "1.31.0"
+    "description": "BE-CMD-01 Command 创建与授权接口（Cognito 认证）。POST /api/v1/admin/devices/{deviceId}/commands：校验角色（command:send = PlatformSuperAdmin/PlatformOperator/CustomerAdmin）、Customer 租户（跨 Customer → 404）、设备状态门（CT-04 command-catalog allowedStatuses；云端 suspension 权威优先；Retired 拒绝全部）、Entitlement（有效 License 且 REMOTE_CONTROL enabled，无 → 403）、命令白名单（22 个）/参数/timeoutSec（1~3600 暂定上限）。DEC-023：高风险命令要求 confirmText 精确匹配命令名，同时以服务端验签 JWT 的 auth_time 执行近期重新认证门；客户端不得提交确认时间，超出 command.confirmation TTL → 403。该规则不声明 MFA 或双人审批。创建即授权（status=AUTHORIZED）。meta.id 即 commandId（DEC-006）：客户端可提供 commandId 幂等，重复创建语义一致 → 200 replayed=true，冲突 → 409。requestedBy 从身份上下文取得（不信任客户端声明）；expiresAt 服务器内部计算（requestTime + timeoutSec）。功能边界：不发布 MQTT，不执行设备动作。审计 command.authorize 记录 DEC-023、确认方式和可信 authenticatedAt（DOM-03）。通用契约继承 openapi-base.json（CT-05）。",
+    "x-decision-versions": [
+      "PRI-001@1.0.0",
+      "ADP-001@1.0.0",
+      "DEC-001@1.0.0",
+      "DEC-006@1.0.0",
+      "DEC-012@1.0.0",
+      "DEC-023@1.0.0"
+    ],
+    "x-decision-register-version": "1.32.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
@@ -199,12 +206,11 @@
       },
       "CommandConfirmation": {
         "type": "object",
-        "required": ["confirmText", "confirmedAt"],
+        "required": ["confirmText"],
         "additionalProperties": false,
-        "description": "高风险命令确认凭证：confirmText 必须与命令名完全一致；confirmedAt 在 300s TTL 内（过期确认拒绝）",
+        "description": "DEC-023 高风险命令显式确认：confirmText 必须与命令名完全一致。近期认证时间仅取已验签 JWT auth_time，客户端时间字段因 additionalProperties=false 被拒绝。",
         "properties": {
-          "confirmText": { "type": "string", "minLength": 1 },
-          "confirmedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+          "confirmText": { "type": "string", "minLength": 1 }
         }
       },
       "CommandCreate": {

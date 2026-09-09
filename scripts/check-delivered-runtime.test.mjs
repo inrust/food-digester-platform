@@ -5,7 +5,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DELIVERED_OPERATIONS } from '../apps/cloud-api/src/runtime/delivered-operations.ts';
 import {
+  checkDeliveredRuntime,
   compareDeliveredOperations,
+  findCmdOtaGovernanceErrors,
   loadDeliveredOpenApiManifest,
   loadDeliveredOpenApiOperations,
 } from './check-delivered-runtime.mjs';
@@ -57,5 +59,25 @@ test('缺失、额外、重复及 method/path 漂移均失败关闭', () => {
   assert.match(
     compareDeliveredOperations(expected, [{ operationId: 'syncDevice', method: 'GET', path: '/wrong' }])[0],
     /不一致/u,
+  );
+});
+
+test('CMD/OTA 治理 Gate 校验四份 REST 契约及 DEC-022/023 冻结状态', () => {
+  assert.doesNotThrow(() => checkDeliveredRuntime(ROOT));
+  const manifest = ['admin-command-api.json', 'admin-ota-package-api.json', 'admin-ota-campaign-api.json'];
+  const policy = { status: 'provisional', policyVersion: '0.1.0', pendingParameters: ['signature.algorithm'] };
+  const decisions = { decisions: [{ id: 'DEC-023', version: '0.1.0', status: 'pending' }] };
+  const errors = findCmdOtaGovernanceErrors(manifest, policy, decisions);
+  assert.ok(
+    errors.some((error) => /device-ota-api/u.test(error)),
+    '缺失任一 CMD/OTA REST 契约必须失败',
+  );
+  assert.ok(
+    errors.some((error) => /DEC-022/u.test(error)),
+    '签名未冻结必须失败',
+  );
+  assert.ok(
+    errors.some((error) => /DEC-023/u.test(error)),
+    '高风险确认未冻结必须失败',
   );
 });

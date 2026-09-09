@@ -49,6 +49,8 @@ export interface TokenSpec {
   readonly clientId?: string;
   /** 相对当前时间的秒数；负数表示已过期。 */
   readonly expiresInSeconds?: number;
+  /** Cognito auth_time；缺省等于签发测试 Token 的当前秒。 */
+  readonly authenticatedAtSeconds?: number;
   /** 伪造场景：使用另一密钥对签名。 */
   readonly signingKey?: SigningKey;
 }
@@ -61,6 +63,7 @@ export async function signToken(keys: TestKeySet, spec: TokenSpec = {}): Promise
   const claims: Record<string, unknown> = {
     token_use: tokenUse,
     'cognito:username': spec.username ?? 'tester',
+    auth_time: spec.authenticatedAtSeconds ?? now,
   };
   if (spec.groups) claims['cognito:groups'] = [...spec.groups];
   if (spec.customerId) claims['custom:customer_id'] = spec.customerId;

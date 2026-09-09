@@ -26,6 +26,7 @@ export function actorTypeOf(role: Role): ActorType {
 /**
  * 请求上下文中的调用者身份（由认证 Guard 注入，后端授权的唯一可信来源）。
  * - actorId：Cognito `sub`；username：`cognito:username`；
+ * - authenticatedAt：经签名验证的 Cognito `auth_time`，供 DEC-023 高风险操作重新认证门使用；
  * - platform actor 的 customerId 恒为 null（即使 Token 携带 custom:customer_id 也忽略）；
  * - customer actor 的 customerId 必非空（缺失即 403）。
  */
@@ -36,4 +37,5 @@ export interface ActorContext {
   readonly roles: readonly Role[];
   readonly customerId: string | null;
   readonly tokenUse: 'id' | 'access';
+  readonly authenticatedAt?: string;
 }

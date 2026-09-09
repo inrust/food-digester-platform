@@ -54,12 +54,17 @@ test('端点齐备且 CognitoJwt 认证：创建/列表/详情/targets/扩大批
   }
 });
 
-test('首批强制恰好 1 台；状态机枚举封闭；strategy 不含全量强制升级', () => {
+test('首批强制恰好 1 台；最终全量审批契约封闭；状态机枚举封闭', () => {
   const create = doc.components.schemas.OtaCampaignCreate;
   assert.equal(create.additionalProperties, false);
   assert.deepEqual(create.required, ['name', 'packageId', 'deviceIds']);
   assert.equal(create.properties.deviceIds.minItems, 1);
   assert.equal(create.properties.deviceIds.maxItems, 1, '首批强制恰好 1 台');
+  const expand = doc.components.schemas.OtaBatchExpand;
+  assert.equal(expand.properties.deviceIds.maxItems, 500, '单批最多 500 台');
+  assert.equal(expand.properties.finalRolloutApproval.$ref, '#/components/schemas/FinalRolloutApproval');
+  assert.deepEqual(doc.components.schemas.FinalRolloutApproval.required, ['confirmText']);
+  assert.equal(doc.components.schemas.FinalRolloutApproval.additionalProperties, false);
 
   assert.deepEqual(doc.components.schemas.OtaCampaignStatus.enum, [
     'DRAFT',
@@ -81,7 +86,7 @@ test('首批强制恰好 1 台；状态机枚举封闭；strategy 不含全量�
   assert.deepEqual(
     doc.components.schemas.OtaCampaignView.properties.strategy.enum,
     ['CANARY', 'BATCH'],
-    '试运营禁止默认全量强制升级（无 FULL/ALL 策略）',
+    '最终扩批仍使用受控 BATCH，不引入无审批 FULL/ALL 策略',
   );
 });
 
@@ -89,6 +94,7 @@ test('视图封闭且不泄露内部字段；批次/重试结果结构稳定', (
   for (const name of [
     'OtaCampaignCreate',
     'OtaBatchExpand',
+    'FinalRolloutApproval',
     'OtaRetryRequest',
     'OtaCampaignView',
     'OtaCampaignDetailView',
@@ -103,6 +109,7 @@ test('视图封闭且不泄露内部字段；批次/重试结果结构稳定', (
   assert.equal(detail.properties.targetCounts.additionalProperties, false);
   const expand = doc.components.schemas.OtaBatchExpandResult;
   assert.ok(expand.required.includes('skippedExistingCount'), '扩大批次须报告幂等跳过数');
+  assert.ok(expand.required.includes('finalRolloutApproved'), '扩大批次须报告最终全量审批事实');
   assert.equal(expand.properties.batchNo.minimum, 2, '扩大批次 batchNo 从 2 起（1 = 灰度批次）');
 });
 

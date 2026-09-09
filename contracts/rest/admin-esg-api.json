@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-ESG-02 ESG 查询与 CSV 导出接口（Cognito 认证）：最近聚合窗口（overview）、小时/日汇总、设备提交 Report、ESG 日汇总（含完整率/计算版本引用）、计算版本查询；异步 CSV 导出（202 入队 → Export Worker 生成 → 短期下载 URL，默认 15 分钟过期后不可用，不长期托管导出文件）。筛选：customerId（平台角色）/siteId（经设备归属解析）/deviceId/日期范围；列表键集游标分页。权限：查询 report:read（全角色）；导出 export:create（PlatformSuperAdmin/Auditor/CustomerAdmin）；Customer 角色租户隔离（强制所属 Customer scope；导出详情跨 Customer → 404）。审计：esg.export.create / esg.export.download（DOM-03）。原始数据审计查询与 RDS 聚合查询分离：本 API 仅查 RDS 聚合表（BE-ESG-01 产出），原始报文归档查询属 BE-ARC 通道。不提供第三方核证结论。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-012@1.0.0"],
-    "x-decision-register-version": "1.31.0"
+    "x-decision-register-version": "1.32.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

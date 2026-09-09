@@ -3,15 +3,15 @@
  *
  * Campaign 状态机（DB-01 封闭集合）：创建即 RUNNING（首批随创建进入下发队列）；
  * RUNNING⇄PAUSED；RUNNING/PAUSED/DRAFT→CANCELLED（级联未完成 target → CANCELLED）；
- * 全部 target SUCCEEDED → 自动 COMPLETED（recordTargetStatus 内评估）。
+ * 最终全量扩批已批准且全部 target SUCCEEDED → 自动 COMPLETED（recordTargetStatus 内评估）。
  *
  * Target 状态机（DB-01 封闭集合）：PENDING → NOTIFIED → DOWNLOADING → INSTALLING →
  * SUCCEEDED/FAILED/ROLLED_BACK；FAILED →(retry)→ PENDING；CANCELLED 为终态。
  * 设备回报状态经 recordTargetStatus 推进（DEC-015：ACK 为唯一通道，BE-OTA-03 复用）。
  *
  * 规则：
- * - 首批强制恰好 1 台（灰度）；扩大批次仅 RUNNING；默认禁止一次选择该型号全部
- *   合格设备（试运营禁止默认全量强制升级，schema 注释对齐）；
+ * - 首批强制恰好 1 台（灰度）；扩大批次仅 RUNNING、单批最多 500 台；覆盖全部合格设备的
+ *   最终扩批须既有批次全部 SUCCEEDED，并由 PlatformSuperAdmin 显式批准；
  * - 设备资格：型号匹配 + 生命周期 Active/Maintenance（DEC-001 Maintenance 允许 OTA）+
  *   有效 License 且 OTA_UPDATE Entitlement enabled（沿用 BE-CMD-01 门模式）；
  * - 包必须 VERIFIED（坏包/未校验包不可建 Campaign，BE-OTA-01 保证可发布 = VERIFIED）；
@@ -25,7 +25,12 @@ import { randomUUID } from 'node:crypto';
 import type { DbClient, Page } from '@fdp/database';
 import { audited, decodeKeysetCursor, encodeKeysetCursor, normalizeLimit, recordAudit } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
-import { otaCampaignConflict, otaCampaignNotFound, otaCampaignValidationFailed } from './errors.js';
+import {
+  otaCampaignConflict,
+  otaCampaignForbidden,
+  otaCampaignNotFound,
+  otaCampaignValidationFailed,
+} from './errors.js';
 
 // ---------- 封闭集合（DB-01 注释对齐） ----------
 
@@ -100,6 +105,9 @@ interface OtaCampaignRow {
   readonly strategy: string;
   readonly status: string;
   readonly createdBy: string;
+  readonly finalRolloutApprovedAt: Date | null;
+  readonly finalRolloutApprovedBy: string | null;
+  readonly finalRolloutEligibleCount: number | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -150,6 +158,9 @@ export interface OtaCampaignView {
   readonly strategy: string;
   readonly status: string;
   readonly createdBy: string;
+  readonly finalRolloutApprovedAt: string | null;
+  readonly finalRolloutApprovedBy: string | null;
+  readonly finalRolloutEligibleCount: number | null;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -179,6 +190,9 @@ function toCampaignView(row: OtaCampaignRow): OtaCampaignView {
     strategy: row.strategy,
     status: row.status,
     createdBy: row.createdBy,
+    finalRolloutApprovedAt: row.finalRolloutApprovedAt?.toISOString() ?? null,
+    finalRolloutApprovedBy: row.finalRolloutApprovedBy,
+    finalRolloutEligibleCount: row.finalRolloutEligibleCount,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -259,7 +273,7 @@ async function assertEligibleDevices(
   }
 }
 
-/** 该型号全部合格设备（型号 + 生命周期 + Entitlement），用于"禁止全量"判定。 */
+/** 该型号全部合格设备（型号 + 生命周期 + Entitlement），用于识别需显式审批的最终全量。 */
 async function listEligibleDeviceIds(client: DbClient, targetModel: string, now: Date): Promise<Set<string>> {
   const rows = (await devices(client).findMany({
     where: { model: targetModel, lifecycleStatus: { in: [...OTA_ELIGIBLE_LIFECYCLES] } },
@@ -277,13 +291,10 @@ async function listEligibleDeviceIds(client: DbClient, targetModel: string, now:
   return new Set(licensed.map((l) => l.deviceId));
 }
 
-/** 默认禁止一次选择全部合格设备强制升级（单次选择或合并后覆盖全量均拒绝）。 */
-function assertNotFullRollout(eligibleIds: Set<string>, selectedIds: ReadonlySet<string>): void {
-  if (eligibleIds.size === 0) return;
-  const coversAll = [...eligibleIds].every((id) => selectedIds.has(id));
-  if (coversAll) {
-    throw otaCampaignValidationFailed('Selecting all eligible devices for a forced rollout is forbidden by default');
-  }
+/** 请求执行后是否覆盖当前全部合格设备。 */
+function coversFullRollout(eligibleIds: Set<string>, selectedIds: ReadonlySet<string>): boolean {
+  if (eligibleIds.size === 0) return false;
+  return [...eligibleIds].every((id) => selectedIds.has(id));
 }
 
 // ---------- 创建 Campaign（强制首批 1 台） ----------
@@ -386,6 +397,7 @@ export async function createOtaCampaign(
 
 export interface ExpandOtaBatchInput {
   readonly deviceIds: readonly string[];
+  readonly finalRolloutApproval?: { readonly confirmText: string } | undefined;
 }
 
 export interface ExpandOtaBatchResult {
@@ -394,6 +406,8 @@ export interface ExpandOtaBatchResult {
   readonly addedCount: number;
   readonly skippedExistingCount: number;
   readonly addedTargets: readonly OtaTargetView[];
+  readonly finalRolloutApproved: boolean;
+  readonly approvedBy: string | null;
 }
 
 export async function expandOtaCampaignBatch(
@@ -415,14 +429,25 @@ export async function expandOtaCampaignBatch(
     throw otaCampaignValidationFailed(`deviceIds must contain 1..${MAX_BATCH_DEVICE_COUNT} unique entries`);
   }
 
-  // 默认禁止一次选择全部合格设备（单次选择或合并已有 target 后覆盖全量均拒绝）
+  // 默认不允许无审批覆盖全部合格设备；最终扩批须既有批次全部成功 + SuperAdmin 显式确认。
   const eligible = await listEligibleDeviceIds(deps.client, campaign.targetModel, now);
   const existingTargets = (await targets(deps.client).findMany({
     where: { campaignId },
   })) as unknown as OtaTargetRow[];
   const existingDeviceIds = new Set(existingTargets.map((t) => t.deviceId));
-  assertNotFullRollout(eligible, new Set(deviceIds));
-  assertNotFullRollout(eligible, new Set([...existingDeviceIds, ...deviceIds]));
+  const isFinalRollout = coversFullRollout(eligible, new Set([...existingDeviceIds, ...deviceIds]));
+  if (isFinalRollout) {
+    if (!actor.roles.includes('PlatformSuperAdmin')) {
+      throw otaCampaignForbidden('Final full rollout approval requires PlatformSuperAdmin');
+    }
+    if (existingTargets.length === 0 || existingTargets.some((target) => target.status !== 'SUCCEEDED')) {
+      throw otaCampaignConflict('All existing canary and batch targets must SUCCEED before final rollout approval');
+    }
+    const expected = `APPROVE_FINAL_ROLLOUT:${campaignId}`;
+    if (input.finalRolloutApproval?.confirmText !== expected) {
+      throw otaCampaignValidationFailed(`finalRolloutApproval.confirmText must exactly match ${expected}`);
+    }
+  }
 
   await assertEligibleDevices(deps.client, campaign.targetModel, deviceIds, now);
 
@@ -434,10 +459,29 @@ export async function expandOtaCampaignBatch(
     deps.client,
     campaignAuditEntry(actor, campaignId, 'ota.campaign.expand', `batchNo=${batchNo} added=${toAdd.length}`, (r) => {
       const result = r as ExpandOtaBatchResult;
-      return { campaignId, batchNo: result.batchNo, addedCount: result.addedCount };
+      return {
+        campaignId,
+        batchNo: result.batchNo,
+        addedCount: result.addedCount,
+        finalRolloutApproved: result.finalRolloutApproved,
+        approvedBy: result.approvedBy,
+      };
     }),
     async (tx) => {
       const addedTargets: OtaTargetView[] = [];
+      if (isFinalRollout) {
+        const approved = await campaigns(tx).updateMany({
+          where: { id: campaignId, status: 'RUNNING', finalRolloutApprovedAt: null },
+          data: {
+            strategy: 'BATCH',
+            finalRolloutApprovedAt: now,
+            finalRolloutApprovedBy: actor.actorId,
+            finalRolloutEligibleCount: eligible.size,
+            updatedAt: now,
+          },
+        });
+        if (approved.count !== 1) throw otaCampaignConflict('Final rollout approval changed concurrently');
+      }
       for (const deviceId of toAdd) {
         const targetId = randomUUID();
         const row = (await targets(tx).create({
@@ -469,6 +513,8 @@ export async function expandOtaCampaignBatch(
         addedCount: addedTargets.length,
         skippedExistingCount,
         addedTargets,
+        finalRolloutApproved: isFinalRollout,
+        approvedBy: isFinalRollout ? actor.actorId : null,
       };
     },
   );
@@ -716,7 +762,7 @@ export async function retryOtaCampaignFailures(
  * 记录 target 状态变化（DEC-015 ACK 唯一通道，BE-OTA-03 调用）：
  * - 封闭状态集合 + 合法迁移校验；终态写 completedAt；
  * - 幂等回放：同状态重复上报返回当前视图、不重复写历史；
- * - 全部 target SUCCEEDED → Campaign 自动 COMPLETED（同事务 + 审计）。
+ * - 只有最终全量扩批已批准且全部 target SUCCEEDED，Campaign 才自动 COMPLETED（同事务 + 审计）。
  */
 export async function recordTargetStatus(
   deps: OtaCampaignDeps,
@@ -771,12 +817,15 @@ export async function recordTargetStatus(
           createdAt: now,
         },
       });
-      // 全部 SUCCEEDED → Campaign 自动 COMPLETED（仅运行中 Campaign；同事务审计）
+      // 最终全量扩批已批准且全部 SUCCEEDED → Campaign 自动 COMPLETED（同事务审计）。
       if (toStatus === 'SUCCEEDED') {
+        const campaign = (await campaigns(tx).findFirst({
+          where: { id: target.campaignId },
+        })) as unknown as OtaCampaignRow | null;
         const remaining = await targets(tx).findMany({
           where: { campaignId: target.campaignId, status: { notIn: ['SUCCEEDED'] } },
         });
-        if (remaining.length === 0) {
+        if (campaign?.finalRolloutApprovedAt && remaining.length === 0) {
           const completed = await campaigns(tx).updateMany({
             where: { id: target.campaignId, status: { in: ['RUNNING', 'PAUSED'] } },
             data: { status: 'COMPLETED', updatedAt: now },
@@ -787,7 +836,7 @@ export async function recordTargetStatus(
               objectId: target.campaignId,
               action: 'ota.campaign.complete',
               result: 'SUCCESS',
-              reason: 'all targets SUCCEEDED',
+              reason: 'approved final rollout: all targets SUCCEEDED',
               actorId: 'system:ota-ack',
               customerId: null,
             });

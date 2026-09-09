@@ -9,7 +9,7 @@
 | 任务 | FE-12（P1），依赖 FE-02、BE-CMD-01/03（admin-command-api.json）、BE-CFG-01、BE-DEV-05（admin-device-console-api.json）、DEC-009 |
 | 路由 | `/devices/operate`（CT-06 矩阵内菜单，PlatformSuperAdmin/PlatformOperator/CustomerAdmin） |
 | 命令目录 | CT-04（contracts/mqtt/command-catalog.json，22 个）前端镜像逐条 parity 锁定；命令名集合与 admin-command-api CommandName 枚举一致 |
-| 高风险确认 | confirmText 必须与命令名完全一致；confirmedAt 提交时刻生成（300s TTL 服务端校验） |
+| 高风险确认 | 请求仅提交 confirmText 且必须与命令名完全一致；服务端以已验签 JWT auth_time 校验近期重新认证（DEC-023） |
 | 幂等 | meta.id 即 commandId（DEC-006）；replayed=true 提示“幂等重放无新写入” |
 | DEC-009 | 媒体面板仅最新 Media 元数据 + 手动刷新；无播放/停止/视频元素（DOM 负向断言） |
 
@@ -37,7 +37,7 @@
 |---|---|---|
 | 22 命令与 8 快捷动作映射正确 | 目录 22 条与 CT-04 逐条一致（parity）；QUICK_ACTIONS 映射断言（直接 code/命令组均在目录内） | ✅ |
 | 不存在无协议 command code 的提交 | commandSpecOf('MODE_SWITCH') 抛错；模式切换表单下拉仅组内真实命令；提交体 command ∈ 目录 | ✅ |
-| 高风险无确认不能提交 | confirmText 不一致/为空 → 提交禁用；精确一致 → confirmation{confirmText, confirmedAt ISO} | ✅ |
+| 高风险无确认不能提交 | confirmText 不一致/为空 → 提交禁用；精确一致 → 仅提交 confirmation{confirmText}；认证时间不接受客户端声明 | ✅ |
 | 配置更新不误走命令 API | goto-config-strategy/threshold → onNavigate('/configurations') 且 submitted 为空 | ✅ |
 | 状态从创建到最终结果 E2E | 提交受理（AUTHORIZED + requestedBy 身份上下文展示）→ 详情 SUCCEEDED + attempts/acks；TIMED_OUT + 迟到 ACK 标注 | ✅ |
 | Suspended/Retired/离线/无 Entitlement | 五组门控用例（禁用 + 原因展示）；Suspended 仍允许安全停止类（STOP/SHUTDOWN/REBOOT） | ✅ |

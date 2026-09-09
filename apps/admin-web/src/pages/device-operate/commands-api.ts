@@ -2,7 +2,7 @@
  * FE-12 Remote Command API 装配（BE-CMD-01/03、BE-DEV-05）。
  *
  * - createDeviceCommand：meta.id 幂等键由装配层生成/透传（commandId 可选）；高风险命令
- *   的 confirmation.confirmText 必须等于命令名、confirmedAt 由提交时刻生成（300s TTL）；
+ *   的 confirmation.confirmText 必须等于命令名；近期认证时间由服务端从 JWT auth_time 取得；
  * - requestedBy 不信任客户端声明（请求体不含该字段）；
  * - 活动日志导出为异步任务（冻结筛选快照；过期链接 urlExpired=true 且 downloadUrl=null）。
  */
@@ -25,8 +25,8 @@ export interface CommandCreateInput {
   readonly remarks?: string;
   /** DEC-006 幂等键（缺省由服务器生成）。 */
   readonly commandId?: string;
-  /** 高风险命令确认凭证（confirmText=命令名；confirmedAt=提交时刻 ISO）。 */
-  readonly confirmation?: { confirmText: string; confirmedAt: string };
+  /** DEC-023 高风险命令显式确认（近期重新认证由服务端可信 JWT 判定）。 */
+  readonly confirmation?: { confirmText: string };
 }
 
 export async function createDeviceCommand(

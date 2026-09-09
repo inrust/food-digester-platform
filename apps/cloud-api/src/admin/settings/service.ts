@@ -9,7 +9,8 @@
  * - 值 Schema（非法配置拒绝 400）：
  *   · alarm.thresholds：{ alarmCode: { warning?, major?, critical? } }——非负数值，
  *     同级内 warning ≤ major ≤ critical；
- *   · command.confirmation：{ ttlSec: 30..3600, maxFutureSec: 0..600 }——仅确认参数；
+ *   · command.confirmation：{ ttlSec: 30..3600, maxFutureSec: 0..600 }——DEC-023
+ *     近期重新认证窗口参数，不得改写确认方式；
  *     不得携带 highRiskCommands 等重定义固定命令目录的字段（命令高风险属性为协议固定）；
  *   · dictionary.displayNames：{ namespace: { code: 显示名 } }——namespace ∈
  *     command / topicType / notificationType；code 必须属于固定封闭集（22 命令 /
@@ -143,7 +144,7 @@ function validateAlarmThresholds(value: unknown): void {
   }
 }
 
-/** command.confirmation：仅确认参数；不得重定义固定命令目录（高风险属性协议固定）。 */
+/** command.confirmation：DEC-023 窗口参数；不得重定义确认方式或固定命令目录。 */
 function validateCommandConfirmation(value: unknown): void {
   if (!isPlainObject(value)) throw settingsValidationFailed('command.confirmation must be an object');
   assertNoExtraFields(value, ['ttlSec', 'maxFutureSec'], 'command.confirmation');

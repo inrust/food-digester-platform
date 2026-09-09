@@ -7,7 +7,7 @@
  *   RETIRED 拒绝全部；离线/无 REMOTE_CONTROL Entitlement 一并禁用（与后端限制一致，
  *   后端 DEVICE_STATE_NOT_ALLOWED/FORBIDDEN 兜底）；
  * - M/N（搅拌间隔/时长）与温度阈值不走命令 API：跳转 Configuration 版本发布（FE-09）；
- * - 高风险命令：confirmText 必须与命令名完全一致，confirmedAt 由提交时刻生成（300s TTL）。
+ * - DEC-023 高风险命令：confirmText 必须与命令名完全一致；服务端另验 JWT auth_time 的近期重新认证。
  */
 import { hasPermission } from '@fdp/auth';
 import type { Role } from '@fdp/auth';

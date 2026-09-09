@@ -25,15 +25,13 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
  * BE-ALM-01 已落地：/api/v1/admin/alarms 查询/确认/清除 + /events、/tamper-events 只读查询（见 ./admin/alarm）；
  * BE-ALM-02 已落地：业务通知适配器（消费 Critical Alarm/Tamper 领域事件 → 邮件/Webhook，见 ./notification/business-notifier）；
  * BE-ESG-02 已落地：/api/v1/admin/esg 查询与 CSV 导出（含 Export Worker，见 ./admin/esg）；
- * BE-CMD-01 已落地：POST /api/v1/admin/devices/{id}/commands 创建与授权（见 ./admin/command）；
- * BE-OTA-01 已落地：/api/v1/admin/ota/packages 上传会话/complete 校验/列表/详情（见 ./admin/ota-package）；
- * BE-OTA-02 已落地：/api/v1/admin/ota/campaigns 创建/扩大批次/暂停/恢复/取消/失败重试与状态机（见 ./admin/ota-campaign）；
- * BE-OTA-03 已落地：OTA MQTT 下发（15 分钟预签名 URL + OTA_AVAILABLE）与 DEC-015 ACK 状态接收（见 ./ota）；
+ * BE-CMD-01～03 production wired：Command REST、Publisher、Timeout 与 ACK 已接生产组合根；目标 AWS 未验收；
+ * BE-OTA-01～03 production wired：Package/Campaign REST、target-bound 下载、Dispatcher 与 ACK 已接生产组合根；目标 AWS 未验收；
  * BE-RBAC-01 已落地：/api/v1/admin/users 列表/邀请/角色/Scope/停用/密码重置触发（见 ./admin/user）；
  * BE-AUD-01 已落地：/api/v1/admin/audit-logs 审计日志只读查询（列表 + 详情，见 ./admin/audit）；
  * BE-DASH-01 已落地：/api/v1/admin/dashboard/overview 总览聚合（见 ./admin/dashboard）；
  * BE-DEV-05 已落地：/api/v1/admin/devices/{id}/console|activities + 活动导出（见 ./admin/device-console）；
- * 其余 /api/v1/device、/admin、/customer、/internal 路由在后续 BE 任务实现。
+ * “production wired”仅表示仓库路由/Worker/IaC 接线并通过本地 Gate，不等于 target verified。
  */
 export const SERVICE_NAME = 'cloud-api';
 

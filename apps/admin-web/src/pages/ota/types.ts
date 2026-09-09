@@ -51,7 +51,7 @@ export interface FirmwarePackageView {
 
 // ---------- OTA Campaign（BE-OTA-02） ----------
 
-/** Campaign 状态机：创建即 RUNNING；RUNNING⇄PAUSED；RUNNING/PAUSED→CANCELLED；全部 SUCCEEDED→COMPLETED。 */
+/** Campaign 状态机：创建即 RUNNING；最终全量已审批且全部 target SUCCEEDED 后才 COMPLETED。 */
 export type OtaCampaignStatus = 'DRAFT' | 'RUNNING' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
 
 /** Target 状态机（DB-01 封闭集合）。 */
@@ -63,10 +63,13 @@ export interface OtaCampaignView {
   readonly name: string;
   readonly packageId: string;
   readonly targetModel: string;
-  /** 试运营禁止默认全量强制升级；本 API 仅产出 CANARY。 */
+  /** 创建为 CANARY；通过最终全量审批后切换为 BATCH。 */
   readonly strategy: 'CANARY' | 'BATCH';
   readonly status: OtaCampaignStatus;
   readonly createdBy: string;
+  readonly finalRolloutApprovedAt: string | null;
+  readonly finalRolloutApprovedBy: string | null;
+  readonly finalRolloutEligibleCount: number | null;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -107,6 +110,8 @@ export interface OtaBatchExpandResult {
   /** 已在 Campaign 中幂等跳过的设备数。 */
   readonly skippedExistingCount: number;
   readonly addedTargets: readonly OtaTargetView[];
+  readonly finalRolloutApproved: boolean;
+  readonly approvedBy: string | null;
 }
 
 export interface OtaRetryResult {

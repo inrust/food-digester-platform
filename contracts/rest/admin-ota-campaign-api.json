@@ -3,9 +3,9 @@
   "info": {
     "title": "Bio-Nexa CMP Admin OTA Campaign API",
     "version": "0.1.0",
-    "description": "BE-OTA-02 OTA Campaign API 与状态机（Cognito 认证）。POST /api/v1/admin/ota/campaigns 创建 Campaign（ota:write）：包必须 VERIFIED（坏包/未校验包不可建 Campaign → 400），首批强制恰好 1 台（>1 → 400），设备须型号匹配 + 生命周期 Active/Maintenance（DEC-001 Maintenance 允许 OTA）+ 有效 License OTA_UPDATE Entitlement；创建即 RUNNING + 首批 target PENDING。POST /{campaignId}/batches 扩大批次（仅 RUNNING；默认禁止一次选择全部合格设备 → 400；已在 Campaign 的设备幂等跳过）。pause/resume/cancel/retry 状态机：RUNNING⇄PAUSED，RUNNING/PAUSED→CANCELLED（级联未完成 target → CANCELLED），retry 将 FAILED target 重置为 PENDING 重新进入下发队列（仅 RUNNING）；暂停/取消后不得产生新下发（下发器只消费 RUNNING 的 PENDING target，BE-OTA-03）。每次 Campaign 状态变化写审计（DOM-03），每次 target 状态变化写 ota_status_history。设备回报状态经 recordTargetStatus（封闭状态集合 + 全部 SUCCEEDED 自动 COMPLETED）供 BE-OTA-03 ACK 复用。功能边界：不执行固件安装。通用契约继承 openapi-base.json（CT-05）。",
+    "description": "BE-OTA-02 OTA Campaign API 与状态机（Cognito 认证）。POST /api/v1/admin/ota/campaigns 创建 Campaign（ota:write）：包必须 VERIFIED（坏包/未校验包不可建 Campaign → 400），首批强制恰好 1 台（>1 → 400），设备须型号匹配 + 生命周期 Active/Maintenance（DEC-001 Maintenance 允许 OTA）+ 有效 License OTA_UPDATE Entitlement；创建即 RUNNING + 首批 target PENDING。POST /{campaignId}/batches 扩大批次（仅 RUNNING、单批最多 500 台、已在 Campaign 的设备幂等跳过）；累计覆盖全部当前合格设备的最终扩批，须既有 target 全部 SUCCEEDED，并由 PlatformSuperAdmin 以 APPROVE_FINAL_ROLLOUT:{campaignId} 显式批准。未批准不得默认全量强制升级。只有最终扩批已批准且全部 target SUCCEEDED 才自动 COMPLETED。pause/resume/cancel/retry 状态机：RUNNING⇄PAUSED，RUNNING/PAUSED→CANCELLED（级联未完成 target → CANCELLED），retry 将 FAILED target 重置为 PENDING 重新进入下发队列（仅 RUNNING）；暂停/取消后不得产生新下发（下发器只消费 RUNNING 的 PENDING target，BE-OTA-03）。每次 Campaign 状态变化写审计（DOM-03），每次 target 状态变化写 ota_status_history。功能边界：不执行固件安装。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "DEC-001@1.0.0", "DEC-015@1.0.0"],
-    "x-decision-register-version": "1.31.0"
+    "x-decision-register-version": "1.32.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
@@ -125,7 +125,7 @@
       "post": {
         "tags": ["admin"],
         "operationId": "expandOtaCampaignBatch",
-        "summary": "扩大批次（仅 RUNNING；默认禁止一次选择全部合格设备；已在 Campaign 的设备幂等跳过）",
+        "summary": "扩大批次（单批最多500；最终全量须灰度成功并由SuperAdmin批准）",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "campaignId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
@@ -287,7 +287,7 @@
     "schemas": {
       "OtaCampaignStatus": {
         "type": "string",
-        "description": "Campaign 状态机：创建即 RUNNING；RUNNING⇄PAUSED；RUNNING/PAUSED→CANCELLED；全部 target SUCCEEDED → COMPLETED",
+        "description": "Campaign 状态机：创建即 RUNNING；RUNNING⇄PAUSED；RUNNING/PAUSED→CANCELLED；最终全量扩批已批准且全部 target SUCCEEDED → COMPLETED",
         "enum": ["DRAFT", "RUNNING", "PAUSED", "COMPLETED", "CANCELLED"]
       },
       "OtaTargetStatus": {
@@ -325,7 +325,23 @@
             "items": { "type": "string", "minLength": 1 },
             "minItems": 1,
             "maxItems": 500,
-            "description": "扩大批次设备；默认禁止一次选择该型号全部合格设备（400）；已在 Campaign 的设备幂等跳过"
+            "description": "扩大批次设备；已在 Campaign 的设备幂等跳过"
+          },
+          "finalRolloutApproval": {
+            "$ref": "#/components/schemas/FinalRolloutApproval",
+            "description": "仅累计覆盖全部当前合格设备时需要；调用者必须为 PlatformSuperAdmin，且既有 targets 全部 SUCCEEDED"
+          }
+        }
+      },
+      "FinalRolloutApproval": {
+        "type": "object",
+        "required": ["confirmText"],
+        "additionalProperties": false,
+        "properties": {
+          "confirmText": {
+            "type": "string",
+            "pattern": "^APPROVE_FINAL_ROLLOUT:.+$",
+            "description": "必须精确等于 APPROVE_FINAL_ROLLOUT:{campaignId}"
           }
         }
       },
@@ -352,6 +368,9 @@
           "strategy",
           "status",
           "createdBy",
+          "finalRolloutApprovedAt",
+          "finalRolloutApprovedBy",
+          "finalRolloutEligibleCount",
           "createdAt",
           "updatedAt"
         ],
@@ -364,10 +383,13 @@
           "strategy": {
             "type": "string",
             "enum": ["CANARY", "BATCH"],
-            "description": "试运营禁止默认全量强制升级；本 API 仅产出 CANARY"
+            "description": "创建时为 CANARY；最终全量审批后切换为 BATCH"
           },
           "status": { "$ref": "#/components/schemas/OtaCampaignStatus" },
           "createdBy": { "type": "string", "minLength": 1, "description": "身份上下文取得（不信任客户端声明）" },
+          "finalRolloutApprovedAt": { "type": ["string", "null"], "format": "date-time" },
+          "finalRolloutApprovedBy": { "type": ["string", "null"] },
+          "finalRolloutEligibleCount": { "type": ["integer", "null"], "minimum": 1 },
           "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
           "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
         }
@@ -382,6 +404,9 @@
           "strategy",
           "status",
           "createdBy",
+          "finalRolloutApprovedAt",
+          "finalRolloutApprovedBy",
+          "finalRolloutEligibleCount",
           "createdAt",
           "updatedAt",
           "targetCounts"
@@ -395,6 +420,9 @@
           "strategy": { "type": "string", "enum": ["CANARY", "BATCH"] },
           "status": { "$ref": "#/components/schemas/OtaCampaignStatus" },
           "createdBy": { "type": "string", "minLength": 1 },
+          "finalRolloutApprovedAt": { "type": ["string", "null"], "format": "date-time" },
+          "finalRolloutApprovedBy": { "type": ["string", "null"] },
+          "finalRolloutEligibleCount": { "type": ["integer", "null"], "minimum": 1 },
           "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
           "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
           "targetCounts": {
@@ -453,7 +481,15 @@
       },
       "OtaBatchExpandResult": {
         "type": "object",
-        "required": ["campaignId", "batchNo", "addedCount", "skippedExistingCount", "addedTargets"],
+        "required": [
+          "campaignId",
+          "batchNo",
+          "addedCount",
+          "skippedExistingCount",
+          "addedTargets",
+          "finalRolloutApproved",
+          "approvedBy"
+        ],
         "additionalProperties": false,
         "properties": {
           "campaignId": { "type": "string", "minLength": 1 },
@@ -464,7 +500,9 @@
             "minimum": 0,
             "description": "已在 Campaign 中幂等跳过的设备数"
           },
-          "addedTargets": { "type": "array", "items": { "$ref": "#/components/schemas/OtaTargetView" } }
+          "addedTargets": { "type": "array", "items": { "$ref": "#/components/schemas/OtaTargetView" } },
+          "finalRolloutApproved": { "type": "boolean" },
+          "approvedBy": { "type": ["string", "null"] }
         }
       },
       "OtaRetryResult": {

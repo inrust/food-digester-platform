@@ -121,7 +121,7 @@ export function isEmbeddedTrustRootAllowed(): boolean {
   return OTA_PACKAGE_SIGNATURE_POLICY.trust.embeddedTrustRootAllowed;
 }
 
-/** 策略当前状态：provisional 表示签名机制未冻结，消费方不得把值固化为不可迁移结构。 */
+/** 策略当前状态；当前为 DEC-022@1.0.0 frozen，若登记异常回退则消费方必须失败关闭。 */
 export function getOtaSignaturePolicyStatus(): OtaSignaturePolicyStatus {
   return OTA_PACKAGE_SIGNATURE_POLICY.status;
 }

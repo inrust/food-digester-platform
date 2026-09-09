@@ -1,6 +1,6 @@
 /**
  * FE-13 OTA Campaign 页（/ota/campaigns）：创建（VERIFIED 包 + 首批恰好 1 台灰度）、
- * 扩大批次（默认禁止全选合格设备）、暂停/恢复/取消/失败重试、目标状态看板（targetCounts）。
+ * 扩大批次（最终全量需 SuperAdmin 显式审批）、暂停/恢复/取消/失败重试、目标状态看板（targetCounts）。
  *
  * - 原型“升级”（dashboard）/“同步更新”（设备管理）均跳转本页创建受控 Campaign，
  *   禁止直接向单设备推送未校验文件；
@@ -73,7 +73,11 @@ export interface OtaCampaignsPageProps {
   /** 合格设备（型号匹配 + Active/Maintenance + OTA_UPDATE Entitlement），由容器装配。 */
   readonly eligibleDevices: readonly EligibleDeviceOption[];
   readonly onCreateCampaign: (input: OtaCampaignCreateInput) => Promise<OtaCampaignView>;
-  readonly onExpandBatch: (campaignId: string, deviceIds: readonly string[]) => Promise<OtaBatchExpandResult>;
+  readonly onExpandBatch: (
+    campaignId: string,
+    deviceIds: readonly string[],
+    finalRolloutApproval?: { readonly confirmText: string },
+  ) => Promise<OtaBatchExpandResult>;
   readonly onPause: (campaignId: string) => Promise<OtaCampaignView>;
   readonly onResume: (campaignId: string) => Promise<OtaCampaignView>;
   readonly onCancel: (campaignId: string) => Promise<OtaCampaignView>;
@@ -111,6 +115,7 @@ export function OtaCampaignsPage({
   const [deviceId, setDeviceId] = useState('');
   const [expandOpen, setExpandOpen] = useState(false);
   const [expandSelected, setExpandSelected] = useState<readonly string[]>([]);
+  const [finalRolloutConfirmText, setFinalRolloutConfirmText] = useState('');
   const [retryOpen, setRetryOpen] = useState(false);
   const [retrySelected, setRetrySelected] = useState<readonly string[]>([]);
   const [cancelConfirm, setCancelConfirm] = useState(false);
@@ -147,7 +152,20 @@ export function OtaCampaignsPage({
     { name, packageId, deviceIds: deviceId === '' ? [] : [deviceId] },
     verifiedPackageIds,
   );
-  const expandError = validateBatchExpand(expandSelected, eligibleDevices.length);
+  const isFinalRollout = eligibleDevices.length > 0 && expandSelected.length >= eligibleDevices.length;
+  const expectedFinalRolloutText = campaign === null ? '' : `APPROVE_FINAL_ROLLOUT:${campaign.campaignId}`;
+  const expandError =
+    validateBatchExpand(expandSelected) ??
+    (isFinalRollout && role !== 'PlatformSuperAdmin'
+      ? '最终全量仅允许 PlatformSuperAdmin 审批'
+      : isFinalRollout &&
+          (campaign === null ||
+            campaign.targetCounts.total === 0 ||
+            campaign.targetCounts.SUCCEEDED !== campaign.targetCounts.total)
+        ? '最终全量前，既有灰度及批次 target 必须全部成功'
+        : isFinalRollout && finalRolloutConfirmText !== expectedFinalRolloutText
+          ? `请输入 ${expectedFinalRolloutText} 确认最终全量`
+          : null);
 
   const submitCreate = () =>
     runAction(async () => {
@@ -166,12 +184,18 @@ export function OtaCampaignsPage({
   const submitExpand = () =>
     runAction(async () => {
       if (campaign === null || expandError !== null) return;
-      const result = await onExpandBatch(campaign.campaignId, expandSelected);
+      const result = await onExpandBatch(
+        campaign.campaignId,
+        expandSelected,
+        isFinalRollout ? { confirmText: finalRolloutConfirmText } : undefined,
+      );
       setExpandOpen(false);
       setExpandSelected([]);
+      setFinalRolloutConfirmText('');
       setNotice(
         `批次 ${result.batchNo} 已扩大：新增 ${result.addedCount} 台` +
-          (result.skippedExistingCount > 0 ? `，幂等跳过已在 Campaign 的 ${result.skippedExistingCount} 台` : ''),
+          (result.skippedExistingCount > 0 ? `，幂等跳过已在 Campaign 的 ${result.skippedExistingCount} 台` : '') +
+          (result.finalRolloutApproved ? `；最终全量已由 ${result.approvedBy ?? 'SuperAdmin'} 审批` : ''),
       );
       onRefresh();
     });
@@ -238,7 +262,8 @@ export function OtaCampaignsPage({
       <section data-testid="campaign-create-section" aria-label="创建 Campaign">
         <h4>创建 Campaign（灰度）</h4>
         <p className="field-hint">
-          仅可发布（VERIFIED）包可创建；首批强制恰好 1 台灰度，验证后经“扩大批次”逐步放量（禁止全量强制升级）。
+          仅可发布（VERIFIED）包可创建；首批强制恰好 1 台灰度，验证后经“扩大批次”逐步放量；最终全量需 SuperAdmin
+          显式审批。
         </p>
         <button
           type="button"
@@ -431,7 +456,7 @@ export function OtaCampaignsPage({
               {campaign.targetModel} / {campaign.packageId}
             </dd>
             <dt>策略</dt>
-            <dd>{campaign.strategy}（灰度；禁止默认全量强制升级）</dd>
+            <dd>{campaign.strategy}（最终全量须显式审批）</dd>
             <dt>创建人 / 时间</dt>
             <dd>
               {campaign.createdBy} / <TimeText iso={campaign.createdAt} />
@@ -445,6 +470,7 @@ export function OtaCampaignsPage({
               'expand',
               () => {
                 setExpandSelected([]);
+                setFinalRolloutConfirmText('');
                 setExpandOpen(true);
               },
               'campaign-action-expand',
@@ -552,12 +578,20 @@ export function OtaCampaignsPage({
         </aside>
       ) : null}
 
-      <Modal open={expandOpen} title="扩大批次" testid="campaign-expand-form" onClose={() => setExpandOpen(false)}>
+      <Modal
+        open={expandOpen}
+        title="扩大批次"
+        testid="campaign-expand-form"
+        onClose={() => {
+          setExpandOpen(false);
+          setFinalRolloutConfirmText('');
+        }}
+      >
         {campaign !== null ? (
           <div>
             <p className="field-hint">
-              合格设备 {eligibleDevices.length} 台；默认禁止一次选择全部合格设备（保留灰度余量）； 已在 Campaign
-              的设备由服务端幂等跳过。
+              合格设备 {eligibleDevices.length} 台；普通批次可逐步放量；选中全部时仅允许 SuperAdmin 在既有 target
+              全部成功后显式审批。已在 Campaign 的设备由服务端幂等跳过。
             </p>
             <ul className="device-check-list" data-testid="expand-device-list">
               {eligibleDevices.map((d) => (
@@ -580,6 +614,17 @@ export function OtaCampaignsPage({
                 </li>
               ))}
             </ul>
+            {isFinalRollout ? (
+              <label>
+                最终全量确认
+                <input
+                  data-testid="final-rollout-confirm"
+                  value={finalRolloutConfirmText}
+                  placeholder={expectedFinalRolloutText}
+                  onChange={(event) => setFinalRolloutConfirmText(event.target.value)}
+                />
+              </label>
+            ) : null}
             {expandError !== null ? (
               <p className="field-hint" data-testid="expand-error">
                 {expandError}

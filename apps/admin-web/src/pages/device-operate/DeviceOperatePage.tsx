@@ -5,7 +5,7 @@
  * - 原型 8 快捷动作映射 CT-04 正式命令（文案附带 command code，可追溯）；
  *   M/N 与温度阈值走 Configuration 版本发布（跳转 /configurations），不误走命令 API；
  * - 只提交目录内 command code（commandGroup 按钮必须在表单内选定具体命令）；
- * - 高风险命令：confirmText 必须与命令名完全一致，confirmedAt 提交时刻生成；
+ * - DEC-023 高风险命令：confirmText 必须与命令名完全一致；服务端验证 JWT auth_time；
  * - requestedBy 不可编辑（身份上下文取得，表单无此字段）；
  * - Suspended/Retired/离线/无 REMOTE_CONTROL Entitlement → 禁用并展示原因（后端兜底）；
  * - 提交成功仅表示“已受理（AUTHORIZED），等待设备执行”，不声称执行成功；
@@ -162,7 +162,7 @@ export function DeviceOperatePage({
       return;
     }
     const spec = commandSpecOf(form.command);
-    // 高风险：confirmText 必须与命令名完全一致（confirmedAt 提交时刻生成，300s TTL 由服务端校验）
+    // DEC-023：显式文本确认；近期重新认证由服务端从已验签 JWT auth_time 校验。
     if (spec.highRisk && confirmText !== form.command) return;
     inFlight.current = true;
     setBusy(true);
@@ -172,7 +172,7 @@ export function DeviceOperatePage({
         command: form.command,
         timeoutSec: Number(timeoutSec),
         ...(remarks.trim() !== '' ? { remarks: remarks.trim() } : {}),
-        ...(spec.highRisk ? { confirmation: { confirmText, confirmedAt: new Date().toISOString() } } : {}),
+        ...(spec.highRisk ? { confirmation: { confirmText } } : {}),
       });
       setForm(null);
       setNotice(
@@ -328,7 +328,9 @@ export function DeviceOperatePage({
             </div>
             {commandSpecOf(form.command).highRisk ? (
               <div className="dialog-field danger-zone" data-testid="command-confirmation">
-                <p className="field-hint">高风险命令：请输入完整命令名 {form.command} 以确认</p>
+                <p className="field-hint">
+                  高风险命令：请输入完整命令名 {form.command}；若登录已超过策略时限，服务端将要求重新认证
+                </p>
                 <label htmlFor="command-confirm-text">确认凭证（confirmText）</label>
                 <input
                   id="command-confirm-text"

@@ -5,7 +5,7 @@
  * - 22 个命令矩阵覆盖（ACTIVE 全部放行；SUSPENDED/MAINTENANCE 仅安全停止/诊断/同步子集；
  *   RETIRED 全部拒绝）；
  * - 无 Entitlement（无 License / Entitlement 停用 / License 过期）失败（403）；
- * - 高风险命令确认凭证：缺失/confirmText 不符/过期确认均 400；合法确认放行且 confirmedBy 落库；
+ * - DEC-023 高风险命令：客户端仅提交 confirmText；可信 JWT auth_time 缺失/过期/未来均 403；
  * - 越权失败（CustomerViewer/Auditor 无 command:send → 403；跨 Customer → 404）；
  * - meta.id 幂等（重复创建 200 replayed，无新写入/审计；语义冲突 409）；
  * - requestedBy 不信任客户端；expiresAt = requestTime + timeoutSec 服务器计算；审计齐备。
@@ -37,6 +37,7 @@ const superAdmin: ActorContext = {
   roles: ['PlatformSuperAdmin'],
   customerId: null,
   tokenUse: 'access',
+  authenticatedAt: NOW.toISOString(),
 };
 const operator: ActorContext = { ...superAdmin, actorId: 'op-1', roles: ['PlatformOperator'] };
 const auditor: ActorContext = { ...superAdmin, actorId: 'au-1', roles: ['Auditor'] };
@@ -121,6 +122,7 @@ async function plantTenant(options: {
     roles: ['CustomerAdmin'],
     customerId: customer.id,
     tokenUse: 'access',
+    authenticatedAt: NOW.toISOString(),
   };
   const customerViewer: ActorContext = { ...customerAdmin, actorId: `cv-${seq}`, roles: ['CustomerViewer'] };
   return { customerId: customer.id, deviceId, customerAdmin, customerViewer };
@@ -131,7 +133,7 @@ function bodyFor(spec: { command: string; highRisk: boolean }, extra: Record<str
   return {
     command: spec.command,
     timeoutSec: 60,
-    ...(spec.highRisk ? { confirmation: { confirmText: spec.command, confirmedAt: NOW.toISOString() } } : {}),
+    ...(spec.highRisk ? { confirmation: { confirmText: spec.command } } : {}),
     ...extra,
   };
 }
@@ -218,8 +220,8 @@ describe('Entitlement 门', () => {
   });
 });
 
-describe('高风险确认凭证', () => {
-  test('缺失 / confirmText 不符 / 过期确认 / 未来确认 → 400', async () => {
+describe('DEC-023 高风险确认凭证', () => {
+  test('缺失/confirmText 不符/客户端时间字段 → 400；缺失/过期/未来可信 auth_time → 403', async () => {
     const tenant = await plantTenant({});
     const h = handlers();
     const post = (body: Record<string, unknown>) =>
@@ -231,33 +233,52 @@ describe('高风险确认凭证', () => {
         await post({
           command: 'EMERGENCY_STOP',
           timeoutSec: 60,
-          confirmation: { confirmText: 'STOP', confirmedAt: NOW.toISOString() },
+          confirmation: { confirmText: 'STOP' },
         })
       ).status,
       400,
       'confirmText 不符',
     );
-    const stale = new Date(NOW.getTime() - 301_000).toISOString();
-    const expiredRes = await post({
+    const forgedTime = await post({
       command: 'FACTORY_RESET',
       timeoutSec: 60,
-      confirmation: { confirmText: 'FACTORY_RESET', confirmedAt: stale },
+      confirmation: { confirmText: 'FACTORY_RESET', confirmedAt: NOW.toISOString() },
     });
-    assert.equal(expiredRes.status, 400, '过期确认');
-    assert.equal((expiredRes.body as ErrorBody).error.code, 'VALIDATION_FAILED');
-    const future = new Date(NOW.getTime() + 120_000).toISOString();
-    assert.equal(
-      (
-        await post({
-          command: 'SHUTDOWN',
-          timeoutSec: 60,
-          confirmation: { confirmText: 'SHUTDOWN', confirmedAt: future },
-        })
-      ).status,
-      400,
-      '未来确认',
-    );
+    assert.equal(forgedTime.status, 400, '客户端确认时间字段必须拒绝');
+    const { authenticatedAt: _ignored, ...withoutAuthenticatedAt } = tenant.customerAdmin;
+    const invalidActors: ActorContext[] = [
+      withoutAuthenticatedAt,
+      { ...tenant.customerAdmin, authenticatedAt: new Date(NOW.getTime() - 301_000).toISOString() },
+      { ...tenant.customerAdmin, authenticatedAt: new Date(NOW.getTime() + 120_000).toISOString() },
+    ];
+    for (const actor of invalidActors) {
+      const res = await h.createCommand(
+        req(actor, {
+          params: { deviceId: tenant.deviceId },
+          body: { command: 'SHUTDOWN', timeoutSec: 60, confirmation: { confirmText: 'SHUTDOWN' } },
+        }),
+      );
+      assert.equal(res.status, 403, `auth_time=${actor.authenticatedAt ?? 'missing'}`);
+      assert.equal((res.body as ErrorBody).error.code, 'FORBIDDEN');
+    }
     assert.equal(await prisma.deviceCommand.count({ where: { deviceId: tenant.deviceId } }), 0, '失败请求不落库');
+  });
+
+  test('近期重新认证放行，并在 command.authorize 审计记录 DEC-023 与可信时间', async () => {
+    const tenant = await plantTenant({});
+    const res = await handlers().createCommand(
+      req(tenant.customerAdmin, {
+        params: { deviceId: tenant.deviceId },
+        body: { command: 'FACTORY_RESET', timeoutSec: 60, confirmation: { confirmText: 'FACTORY_RESET' } },
+      }),
+    );
+    assert.equal(res.status, 201);
+    const commandId = (res.body as DataBody).data.commandId;
+    const audit = await prisma.auditLog.findFirst({ where: { objectId: commandId, action: 'command.authorize' } });
+    const after = audit?.afterValue as Record<string, unknown>;
+    assert.equal(after.confirmationDecision, 'DEC-023@1.0.0');
+    assert.equal(after.confirmationMethod, 'RECENT_REAUTHENTICATION_AND_EXPLICIT_TEXT');
+    assert.equal(after.authenticatedAt, NOW.toISOString());
   });
 });
 
