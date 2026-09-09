@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
+import { constants, verify } from 'node:crypto';
 import {
   OTA_PACKAGE_SIGNATURE_POLICY,
   getOtaSignatureAlgorithm,
@@ -18,13 +19,13 @@ import {
   isServerSideSignatureVerificationRequired,
   isSignatureVerificationFailClosed,
 } from './ota-package-signature-policy.ts';
-import { PolicyParameterPendingError } from './certificate-package-policy.ts';
 import { SchemaRegistry, validate } from '../mqtt/validator.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const read = (p: string) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf8'));
 const policyJson = read('./ota-package-signature-policy.json');
 const policySchema = read('./ota-package-signature-policy.schema.json');
+const vector = read('./fixtures/ota-signature-vector.json');
 
 const TASK_ID = /^[A-Z]{2,4}(-[A-Z]{2,4})?-\d{2}$/;
 
@@ -65,15 +66,10 @@ test('负向结构：跳过服务端验签、非失败关闭与内嵌信任根�
       (m.trust as Record<string, unknown>).rootDistribution = 'package-metadata';
     }).some((e) => e.path === 'trust.rootDistribution' && e.keyword === 'enum'),
   );
-  // 冻结参数允许填入（frozen 后合法）
-  assert.deepEqual(
+  assert.ok(
     run((m) => {
-      const sig = m.signature as Record<string, unknown>;
-      sig.algorithm = 'Ed25519';
-      sig.trustRoot = 'kms:alias/fdp-ota-signing';
-      sig.encoding = 'base64';
-    }),
-    [],
+      (m.signature as Record<string, unknown>).algorithm = 'Ed25519';
+    }).some((e) => e.path === 'signature.algorithm' && e.keyword === 'enum'),
   );
   // 缺字段与额外字段被拒绝
   assert.ok(
@@ -96,28 +92,27 @@ test('暂定值定性规则可执行：服务端验签强制、失败关闭、�
   assert.deepEqual(getOtaSignaturePayloadFields(), ['model', 'version', 'packageType', 'sha256']);
 });
 
-test('待冻结参数失败关闭：禁止臆测签名算法/信任根/编码默认值', () => {
+test('DEC-022 冻结算法、信任根类型、编码且无待定参数', () => {
   const sig = OTA_PACKAGE_SIGNATURE_POLICY.signature;
-  assert.equal(sig.algorithm, null);
-  assert.equal(sig.trustRoot, null);
-  assert.equal(sig.encoding, null);
-  const pendingCases: Array<[() => unknown, string]> = [
-    [getOtaSignatureAlgorithm, 'signature.algorithm'],
-    [getOtaSignatureTrustRoot, 'signature.trustRoot'],
-    [getOtaSignatureEncoding, 'signature.encoding'],
-  ];
-  for (const [fn, param] of pendingCases) {
-    assert.throws(
-      fn,
-      (e: unknown) =>
-        e instanceof PolicyParameterPendingError && (e as PolicyParameterPendingError).parameter === param,
-    );
-  }
-  assert.deepEqual([...OTA_PACKAGE_SIGNATURE_POLICY.pendingParameters].sort(), [
-    'signature.algorithm',
-    'signature.encoding',
-    'signature.trustRoot',
-  ]);
+  assert.equal(getOtaSignatureAlgorithm(), 'RSASSA_PKCS1_V1_5_SHA_256');
+  assert.equal(getOtaSignatureTrustRoot(), 'AWS_KMS_ASYMMETRIC_SIGNING_KEY');
+  assert.equal(getOtaSignatureEncoding(), 'base64');
+  assert.deepEqual(OTA_PACKAGE_SIGNATURE_POLICY.pendingParameters, []);
+  assert.deepEqual(policyJson['x-decision-versions'], ['DEC-022@1.0.0']);
+  assert.equal(sig.algorithm, vector.algorithm);
+  assert.equal(sig.encoding, vector.encoding);
+});
+
+test('DEC-022 固定 RSA/SHA-256 测试向量可复验', () => {
+  assert.equal(
+    verify(
+      'sha256',
+      Buffer.from(vector.payload, 'utf8'),
+      { key: vector.publicKeyPem, padding: constants.RSA_PKCS1_PADDING },
+      Buffer.from(vector.signature, 'base64'),
+    ),
+    true,
+  );
 });
 
 test('策略消费者均为合法任务 ID 且覆盖 BE-OTA-01', () => {
@@ -159,5 +154,5 @@ test('TS 常量与 ota-package-signature-policy.json 完全一致', () => {
   assert.deepEqual(policyJson.trust.consumers, [...OTA_PACKAGE_SIGNATURE_POLICY.trust.consumers]);
   assert.deepEqual(policyJson.pendingParameters, [...OTA_PACKAGE_SIGNATURE_POLICY.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, OTA_PACKAGE_SIGNATURE_POLICY.frozenUpgradePath);
-  assert.equal(getOtaSignaturePolicyStatus(), 'provisional');
+  assert.equal(getOtaSignaturePolicyStatus(), 'frozen');
 });

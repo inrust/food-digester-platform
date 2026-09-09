@@ -17,12 +17,12 @@
 `publishCommand(deps, commandId)`（`now` 可注入时钟）：
 
 1. **发布前重校验**：命令不存在 → 404；设备 Retired → 409 DEVICE_STATE_NOT_ALLOWED（不发布）；`expiresAt` 已过 → 409 CONFLICT 'Command has expired'（超时后拒绝再次发布，不发消息、不落 attempt、状态不动）；
-2. **幂等**：已 PUBLISHED → REPLAYED_PUBLISHED（不重复发消息、不新增 attempt）；非 AUTHORIZED/FAILED 状态 → 409；
-3. **抢占**：条件 `updateMany(status in AUTHORIZED/FAILED → PUBLISHING)` 并发兜底，抢不到重读分类（并发已发布 → 重放）；
+2. **幂等**：已 PUBLISHED → REPLAYED_PUBLISHED（不重复发消息、不新增 attempt）；非 AUTHORIZED/PUBLISH_FAILED 状态 → 409；设备执行终态 FAILED 永不重发；
+3. **抢占**：条件 `updateMany(status in AUTHORIZED/PUBLISH_FAILED → PUBLISHING)` 并发兜底，抢不到重读分类（并发已发布 → 重放）；
 4. **执行**：`attemptNo = count(attempts)+1` 递增；`mqtt.publish({topic, payload, qos:1})`；
-5. **结果落库**：成功 → attempts 落行 + 状态 PUBLISHED；异常 → attempts 落行 + 状态 FAILED（未过期可重试）。
+5. **结果落库**：成功 → attempts 落行 + 状态 PUBLISHED；传输异常 → attempts 落行 + 状态 PUBLISH_FAILED（未过期可重试）。
 
-**重试不创建新 commandId**：FAILED 重试沿用同一 commandId（meta.id 不变），attempts 逐行记录 attemptNo 递增；`device_commands` 无新行。schema 状态注释补充 PUBLISHING 中间态。
+**重试不创建新 commandId**：PUBLISH_FAILED 重试沿用同一 commandId（meta.id 不变），attempts 逐行记录 attemptNo 递增；`device_commands` 无新行。schema 状态注释补充 PUBLISHING/PUBLISH_FAILED 中间态。
 
 **BE-CMD-01 顺带对齐**（随本任务提交）：创建端 commandId 校验/生成对齐 DEC-006 meta.id 模式 `^[A-Z0-9][A-Z0-9-]{0,127}$`（客户端提供不符 → 400；缺省生成 `randomUUID().toUpperCase()`）；OpenAPI commandId 补 pattern 约束。
 
@@ -35,13 +35,13 @@
 | 过期命令不发布 | expiresAt 已过 → 409 CONFLICT，mqtt 0 调用、0 attempt、状态不变 | ✅ |
 | Retired 命令不发布 | 409 DEVICE_STATE_NOT_ALLOWED，mqtt 0 调用、状态不变 | ✅ |
 | 非可发布状态拒绝 | ACKNOWLEDGED/TIMED_OUT/CANCELLED/CREATED → 409；不存在 → 404 | ✅ |
-| 发布重试不创建新 commandId | 首次发布异常 → FAILED（attemptNo=1）；重试成功 → PUBLISHED（attemptNo=2），同 commandId、device_commands 仅 1 行 | ✅ |
-| 超时后拒绝再次发布 | FAILED 且已过期 → 409，不发消息 | ✅ |
+| 发布重试不创建新 commandId | 首次发布异常 → PUBLISH_FAILED（attemptNo=1）；重试成功 → PUBLISHED（attemptNo=2），同 commandId、device_commands 仅 1 行；设备执行 FAILED 负向回归为 0 次发布 | ✅ |
+| 超时后拒绝再次发布 | PUBLISH_FAILED 且已过期 → 409，不发消息 | ✅ |
 | PUBLISHED 幂等重放 | REPLAYED_PUBLISHED，mqtt 仍 1 调用、attempts 仍 1 行 | ✅ |
 
 ## 4. 未决风险
 
 - PUBLISHING 为进程内抢占中间态：进程崩溃可能滞留（BE-CMD-03 超时扫描或运维修复兜底；本任务不引入恢复任务）；
-- mqtt.publish 抛错即记 FAILED，不区分可重试错误类型（部署层重试策略待定）；
+- mqtt.publish 抛错即记 PUBLISH_FAILED；设备 ACK FAILED 与传输失败已严格分离；
 - 下行 meta.seq 未启用（downlink-policy provisional，启用后需分配器）；
 - Payload 序列化为模块内函数（cmd.schema.json 一致性由测试断言 required 键，未做完整 JSON Schema 校验）。

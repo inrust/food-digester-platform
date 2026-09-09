@@ -53,7 +53,7 @@ export interface OtaMqttPublisher {
 
 /** 预签名下载 URL 签名器端口：实现必须按传入 expiresAt 过期（过期不可用）。 */
 export interface OtaDownloadUrlSigner {
-  signDownload(input: { readonly key: string; readonly expiresAt: Date }): string;
+  signDownload(input: { readonly key: string; readonly expiresAt: Date }): Promise<string> | string;
 }
 
 export interface OtaPublisherDeps extends OtaCampaignDeps {
@@ -236,7 +236,7 @@ async function publishTarget(
   // 15 分钟预签名下载 URL：与目标设备/包绑定（仅投递目标设备 Topic + URL 内嵌包 objectKey）
   const ttl = deps.downloadUrlTtlSeconds ?? OTA_DOWNLOAD_URL_TTL_SECONDS;
   const urlExpiresAt = new Date(now.getTime() + ttl * 1000);
-  const downloadUrl = deps.downloadUrlSigner.signDownload({ key: pkg.s3Key, expiresAt: urlExpiresAt });
+  const downloadUrl = await deps.downloadUrlSigner.signDownload({ key: pkg.s3Key, expiresAt: urlExpiresAt });
   const payload = buildOtaPayload({
     targetId: target.id,
     version: pkg.version,

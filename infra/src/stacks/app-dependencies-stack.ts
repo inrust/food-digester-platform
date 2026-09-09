@@ -19,6 +19,7 @@ import type { StackProps } from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
@@ -37,7 +38,7 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import type { InfraConfig } from '../config.js';
 import { Naming } from '../naming.js';
-import { DOWNLINK_TOPIC_TYPES, UPLINK_TOPIC_TYPES, uplinkTopicFilter } from '../topics.js';
+import { UPLINK_TOPIC_TYPES, uplinkTopicFilter } from '../topics.js';
 
 export interface AppDependenciesStackProps extends StackProps {
   readonly config: InfraConfig;
@@ -85,6 +86,9 @@ const RETIREMENT_TIMEOUT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/run
 const ACTIVITY_EXPORT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/activity-export-entry.ts');
 const BUSINESS_NOTIFIER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/business-notifier-entry.ts');
 const ESG_EXPORT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/esg-export-entry.ts');
+const COMMAND_PUBLISHER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/command-publisher-entry.ts');
+const COMMAND_TIMEOUT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/command-timeout-entry.ts');
+const OTA_DISPATCHER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/ota-dispatcher-entry.ts');
 
 interface MessagingResources {
   readonly ingress: sqs.Queue;
@@ -100,6 +104,7 @@ interface MessagingResources {
 interface StorageResources {
   readonly dataKey: kms.Key;
   readonly certPackageKey: kms.Key;
+  readonly otaSigningKey: kms.Key;
   readonly raw: s3.Bucket;
   readonly ota: s3.Bucket;
   readonly media: s3.Bucket;
@@ -132,6 +137,9 @@ interface ComputeResources {
   readonly onboardingProvisioning: lambda.Function;
   readonly deviceApi: lambda.Function;
   readonly api: lambda.Function;
+  readonly commandPublisher: lambda.Function;
+  readonly commandTimeout: lambda.Function;
+  readonly otaDispatcher: lambda.Function;
 }
 
 interface IdentityResources {
@@ -246,6 +254,12 @@ export class AppDependenciesStack extends Stack {
       resource: 'role',
       resourceName: this.naming.name(CERT_SWEEPER_ROLE_SUFFIX),
     });
+    const apiRoleArn = this.formatArn({
+      service: 'iam',
+      region: '',
+      resource: 'role',
+      resourceName: this.naming.name(API_ROLE_SUFFIX),
+    });
     const certPackageDataPlane = new iam.PolicyStatement({
       sid: 'CertificatePackageRuntimeDataPlaneOnly',
       effect: iam.Effect.ALLOW,
@@ -269,6 +283,22 @@ export class AppDependenciesStack extends Stack {
       enableKeyRotation: true,
       policy: new iam.PolicyDocument({ statements: [certPackageAdmin, certPackageDataPlane] }),
       removalPolicy: RemovalPolicy.DESTROY,
+    });
+    const otaVerifyDataPlane = new iam.PolicyStatement({
+      sid: 'OtaFirmwareVerifyOnly',
+      effect: iam.Effect.ALLOW,
+      principals: [new iam.AccountRootPrincipal()],
+      actions: ['kms:Verify', 'kms:DescribeKey'],
+      resources: ['*'],
+      conditions: { ArnEquals: { 'aws:PrincipalArn': apiRoleArn } },
+    });
+    const otaSigningKey = new kms.Key(this, 'OtaSigningKey', {
+      alias: `alias/${this.naming.name('ota-signing')}`,
+      description: 'DEC-022 OTA 固件 RSA-2048 签名信任根（Admin API 仅 Verify）',
+      keySpec: kms.KeySpec.RSA_2048,
+      keyUsage: kms.KeyUsage.SIGN_VERIFY,
+      policy: new iam.PolicyDocument({ statements: [certPackageAdmin, otaVerifyDataPlane] }),
+      removalPolicy: RemovalPolicy.RETAIN,
     });
 
     const bucket = (id: string, suffix: string): s3.Bucket =>
@@ -304,6 +334,7 @@ export class AppDependenciesStack extends Stack {
     return {
       dataKey,
       certPackageKey,
+      otaSigningKey,
       raw: bucket('RawBucket', 'raw'),
       ota: bucket('OtaBucket', 'ota'),
       media: bucket('MediaBucket', 'media'),
@@ -562,6 +593,36 @@ export class AppDependenciesStack extends Stack {
     const dbSecretGrant = (fn: lambda.IFunction): void => {
       // grantRead 同时授予 Secret 加密 Key 的 kms:Decrypt（仅限 dataKey）
       data.db.secret?.grantRead(fn);
+    };
+    const scheduleWithDlq = (id: string, suffix: string, fn: lambda.Function): void => {
+      const dlq = new sqs.Queue(this, `${id}Dlq`, {
+        queueName: this.naming.name(`${suffix}-dlq`),
+        encryption: sqs.QueueEncryption.KMS_MANAGED,
+        retentionPeriod: Duration.days(14),
+      });
+      new events.Rule(this, `${id}Schedule`, {
+        ruleName: this.naming.name(suffix),
+        schedule: events.Schedule.rate(Duration.minutes(1)),
+        targets: [
+          new eventsTargets.LambdaFunction(fn, {
+            deadLetterQueue: dlq,
+            retryAttempts: 2,
+            maxEventAge: Duration.hours(1),
+          }),
+        ],
+      });
+      new cloudwatch.Alarm(this, `${id}ErrorsAlarm`, {
+        alarmName: this.naming.name(`${suffix}-errors`),
+        metric: fn.metricErrors({ period: Duration.minutes(5) }),
+        threshold: 1,
+        evaluationPeriods: 1,
+      });
+      new cloudwatch.Alarm(this, `${id}DlqAlarm`, {
+        alarmName: this.naming.name(`${suffix}-dlq-visible`),
+        metric: dlq.metricApproximateNumberOfMessagesVisible({ period: Duration.minutes(5) }),
+        threshold: 1,
+        evaluationPeriods: 1,
+      });
     };
     const licenseSigningKey = new secretsmanager.Secret(this, 'LicenseSigningKey', {
       secretName: this.naming.name('license-signing-key'),
@@ -897,6 +958,51 @@ export class AppDependenciesStack extends Stack {
       targets: [new eventsTargets.LambdaFunction(esgExport)],
     });
 
+    const commandPublisher = mkFunction('CommandPublisherFn', 'command-publisher', {
+      timeout: Duration.seconds(60),
+      environment: { DB_SECRET_ARN: dbSecret },
+      entry: COMMAND_PUBLISHER_ENTRY,
+    });
+    dbSecretGrant(commandPublisher);
+    commandPublisher.addToRolePolicy(
+      new iam.PolicyStatement({ sid: 'IotDataEndpointDiscovery', actions: ['iot:DescribeEndpoint'], resources: ['*'] }),
+    );
+    commandPublisher.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'DeviceCommandPublish',
+        actions: ['iot:Publish'],
+        resources: [this.formatArn({ service: 'iot', resource: 'topic', resourceName: 'bnx/device/*/cmd' })],
+      }),
+    );
+    scheduleWithDlq('CommandPublisher', 'command-publisher', commandPublisher);
+
+    const commandTimeout = mkFunction('CommandTimeoutFn', 'command-timeout', {
+      timeout: Duration.seconds(60),
+      environment: { DB_SECRET_ARN: dbSecret },
+      entry: COMMAND_TIMEOUT_ENTRY,
+    });
+    dbSecretGrant(commandTimeout);
+    scheduleWithDlq('CommandTimeout', 'command-timeout', commandTimeout);
+
+    const otaDispatcher = mkFunction('OtaDispatcherFn', 'ota-dispatcher', {
+      timeout: Duration.seconds(300),
+      environment: { DB_SECRET_ARN: dbSecret, OTA_BUCKET_NAME: storage.ota.bucketName },
+      entry: OTA_DISPATCHER_ENTRY,
+    });
+    dbSecretGrant(otaDispatcher);
+    storage.ota.grantRead(otaDispatcher);
+    otaDispatcher.addToRolePolicy(
+      new iam.PolicyStatement({ sid: 'IotDataEndpointDiscovery', actions: ['iot:DescribeEndpoint'], resources: ['*'] }),
+    );
+    otaDispatcher.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'DeviceOtaPublish',
+        actions: ['iot:Publish'],
+        resources: [this.formatArn({ service: 'iot', resource: 'topic', resourceName: 'bnx/device/*/ota' })],
+      }),
+    );
+    scheduleWithDlq('OtaDispatcher', 'ota-dispatcher', otaDispatcher);
+
     const onboardingApi = mkFunction('OnboardingApiFn', 'onboarding-api-handler', {
       timeout: Duration.seconds(30),
       memorySize: 512,
@@ -1027,6 +1133,7 @@ export class AppDependenciesStack extends Stack {
         USER_POOL_CLIENT_ID: identity.userPoolClient.userPoolClientId,
         RAW_BUCKET_NAME: storage.raw.bucketName,
         OTA_BUCKET_NAME: storage.ota.bucketName,
+        OTA_SIGNING_KEY_ARN: storage.otaSigningKey.keyArn,
         MEDIA_BUCKET_NAME: storage.media.bucketName,
         EXPORT_BUCKET_NAME: storage.exportBucket.bucketName,
         LICENSE_SIGNING_KEY_SECRET_ARN: licenseSigningKey.secretArn,
@@ -1046,18 +1153,15 @@ export class AppDependenciesStack extends Stack {
     // 预签名 URL 与重放读取：仅授予业务所需 Bucket 的对象级读写
     storage.media.grantReadWrite(api);
     storage.ota.grantReadWrite(api);
-    storage.exportBucket.grantRead(api, 'activity-exports/*');
-    storage.raw.grantRead(api);
-    // 下行发布（BE-CMD-02/BE-OTA-03）：仅允许 3 个下行 Topic 模式
-    api.addToRolePolicy(
+    apiRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
-        sid: 'IotDownlinkPublish',
-        actions: ['iot:Publish'],
-        resources: DOWNLINK_TOPIC_TYPES.map((type) =>
-          this.formatArn({ service: 'iot', resource: 'topic', resourceName: `bnx/device/*/${type}` }),
-        ),
+        sid: 'OtaFirmwareSignatureVerify',
+        actions: ['kms:Verify'],
+        resources: [storage.otaSigningKey.keyArn],
       }),
     );
+    storage.exportBucket.grantRead(api, 'activity-exports/*');
+    storage.raw.grantRead(api);
     return {
       ingestion,
       archive,
@@ -1076,6 +1180,9 @@ export class AppDependenciesStack extends Stack {
       onboardingProvisioning,
       deviceApi,
       api,
+      commandPublisher,
+      commandTimeout,
+      otaDispatcher,
     };
   }
 
@@ -1200,5 +1307,6 @@ export class AppDependenciesStack extends Stack {
     output('TruststoreBucketName', storage.truststore.bucketName, 'S3 mTLS truststore');
     output('DataKeyArn', storage.dataKey.keyArn, 'KMS 应用数据 Key');
     output('CertPackageKeyArn', storage.certPackageKey.keyArn, 'KMS 证书包信封加密 Key');
+    output('OtaSigningKeyArn', storage.otaSigningKey.keyArn, 'DEC-022 OTA 固件签名信任根 Key');
   }
 }

@@ -30,7 +30,7 @@
 
 ## 3. Timeout Evaluator
 
-`evaluateCommandTimeouts({client, now})`：扫描 `status IN (AUTHORIZED/PUBLISHING/PUBLISHED/ACKNOWLEDGED) AND expiresAt <= now`（PUBLISHING 滞留兜底 BE-CMD-02 未决风险），逐条条件 updateMany → TIMED_OUT，仅真实迁移成功才同事务 recordAudit（command.timeout，actor=system）；幂等（终态不再扫描）。配套 migration 补 `(status, expires_at)` 索引（Expand 阶段仅加索引）。
+`evaluateCommandTimeouts({client, now})`：扫描 `status IN (AUTHORIZED/PUBLISHING/PUBLISH_FAILED/PUBLISHED/ACKNOWLEDGED) AND expiresAt <= now`（PUBLISHING 滞留兜底），逐条条件 updateMany → TIMED_OUT，仅真实迁移成功才同事务 recordAudit（command.timeout，actor=system）；幂等（终态不再扫描）。配套 migration 补 `(status, expires_at)` 索引（Expand 阶段仅加索引）。
 
 ## 4. 查询 API
 
@@ -60,4 +60,4 @@
 - Timeout evaluator 逐条事务（V1 规模可接受；大规模积压需批量化，留待性能决策）；
 - 查询权限复用 device:read（DEC-012 矩阵无 command:read；若需独立命令读权限点需矩阵整体演进决策）；
 - ACK 无 result 的 ACKNOWLEDGED 中间态依赖设备端是否实现"两段式回执"（契约字段级弱必填所容许；若设备恒带 result 则该路径退化为直达终态）；
-- evaluator 调度由部署层负责（IaC/定时器不在本任务范围）。
+- evaluator 已由独立 Lambda + EventBridge 每分钟调度，配置失败重试、DLQ 与 CloudWatch 告警；目标 AWS 时序仍需部署回执验收。

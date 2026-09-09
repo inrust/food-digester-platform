@@ -4,7 +4,7 @@
  * 验收基准覆盖：
  * - 列表：筛选（status/command/deviceId/时间范围）、键集游标分页、租户隔离（Customer 强制 scope）；
  * - 详情：attempts/acks 时间线齐备；跨 Customer → 404；不存在 → 404；未认证 → 401；
- * - Timeout evaluator：可注入时钟；AUTHORIZED/PUBLISHING/PUBLISHED/ACKNOWLEDGED 且 expiresAt 已过 →
+ * - Timeout evaluator：可注入时钟；AUTHORIZED/PUBLISHING/PUBLISH_FAILED/PUBLISHED/ACKNOWLEDGED 且 expiresAt 已过 →
  *   TIMED_OUT + command.timeout 审计（actor=system）；未过期/终态不受影响；PUBLISHING 滞留兜底。
  */
 import { afterAll, beforeAll, describe, test } from 'vitest';
@@ -197,6 +197,10 @@ describe('Timeout evaluator', () => {
     const expiredPublished = await plantCommand({ status: 'PUBLISHED', expiresAt: new Date(NOW.getTime() - 1000) });
     const expiredAuthorized = await plantCommand({ status: 'AUTHORIZED', expiresAt: new Date(NOW.getTime() - 1) });
     const stuckPublishing = await plantCommand({ status: 'PUBLISHING', expiresAt: new Date(NOW.getTime() - 5000) });
+    const expiredPublishFailed = await plantCommand({
+      status: 'PUBLISH_FAILED',
+      expiresAt: new Date(NOW.getTime() - 2000),
+    });
     const expiredAcked = await plantCommand({ status: 'ACKNOWLEDGED', expiresAt: new Date(NOW.getTime() - 100) });
     const fresh = await plantCommand({ status: 'PUBLISHED', expiresAt: new Date(NOW.getTime() + 60_000) });
     const terminal = await plantCommand({ status: 'SUCCEEDED', expiresAt: new Date(NOW.getTime() - 1000) });
@@ -204,7 +208,7 @@ describe('Timeout evaluator', () => {
 
     const result = await evaluateCommandTimeouts({ client: prisma, now: () => NOW });
     const timedOut = new Set(result.timedOut);
-    for (const c of [expiredPublished, expiredAuthorized, stuckPublishing, expiredAcked]) {
+    for (const c of [expiredPublished, expiredAuthorized, stuckPublishing, expiredPublishFailed, expiredAcked]) {
       assert.ok(timedOut.has(c.commandId), `${c.commandId} 应超时`);
       const row = await prisma.deviceCommand.findUniqueOrThrow({ where: { id: c.commandId } });
       assert.equal(row.status, 'TIMED_OUT');
@@ -215,11 +219,11 @@ describe('Timeout evaluator', () => {
     const freshRow = await prisma.deviceCommand.findUniqueOrThrow({ where: { id: fresh.commandId } });
     assert.equal(freshRow.status, 'PUBLISHED');
 
-    // 审计：恰 4 条 command.timeout，actor=system
+    // 审计：恰 5 条 command.timeout，actor=system
     const audits = await prisma.auditLog.findMany({
       where: { action: 'command.timeout', objectId: { in: [...timedOut] } },
     });
-    assert.equal(audits.length, 4);
+    assert.equal(audits.length, 5);
     for (const audit of audits) {
       assert.equal(audit.actorId, 'system');
       assert.equal(audit.actorRole, 'system');

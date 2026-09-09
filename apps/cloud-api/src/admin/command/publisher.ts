@@ -5,8 +5,9 @@
  * - Topic：CT-03 topic-catalog `bnx/device/{deviceId}/cmd`；Payload：cmd.schema.json（Envelope meta+data，无 audit 域）；
  *   meta.id 即 commandId（DEC-006 幂等键，下行 meta.seq 可选，V1 不发送 seq）；
  * - QoS：目录 specified 2 → AWS 有效 QoS 1（ADP-002@1.0.0 决策引用：QoS 2→1 为 AWS 技术适配，不删除 ACK/超时/审计机制）；
- * - 发布前重校验：状态（AUTHORIZED 可发 / FAILED 可重试）+ expiresAt（超时后拒绝再次发布）+ 设备生命周期 Retired 拒绝；
- * - 状态机：AUTHORIZED → PUBLISHED（成功）/ FAILED（发布异常）；FAILED 未过期可重试（attempts 逐行记录，attemptNo 递增）；
+ * - 发布前重校验：状态（AUTHORIZED 可发 / PUBLISH_FAILED 可重试）+ expiresAt（超时后拒绝再次发布）+ 设备生命周期 Retired 拒绝；
+ * - 状态机：AUTHORIZED → PUBLISHED（成功）/ PUBLISH_FAILED（传输异常）；
+ *   PUBLISH_FAILED 未过期可重试，设备 ACK 终态 FAILED 绝不可重发；
  * - 发布重试不创建新 commandId（幂等键 = meta.id = commandId，DEC-006）；
  * - 超时后拒绝再次发布（expiresAt 已过 → CONFLICT，不发消息）；
  * - 功能边界：不等待设备同步响应、不推测执行成功（ACK/超时扫描属 BE-CMD-03）。
@@ -59,6 +60,7 @@ export interface CommandPublishRow {
 
 function deviceCommands(client: DbClient): {
   findFirst(args: { where: Record<string, unknown> }): Promise<CommandPublishRow | null>;
+  findMany(args: Record<string, unknown>): Promise<CommandPublishRow[]>;
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
 } {
   return (client as unknown as Record<string, unknown>).deviceCommand as never;
@@ -97,8 +99,8 @@ export function buildCommandPayload(command: CommandPublishRow, at: Date): strin
 
 export interface CommandPublishResult {
   readonly commandId: string;
-  /** PUBLISHED（本次成功）| FAILED（发布失败，可重试）| REPLAYED_PUBLISHED（此前已发布，幂等重放未重复发） */
-  readonly status: 'PUBLISHED' | 'FAILED' | 'REPLAYED_PUBLISHED';
+  /** PUBLISHED（本次成功）| PUBLISH_FAILED（传输失败，可重试）| REPLAYED_PUBLISHED */
+  readonly status: 'PUBLISHED' | 'PUBLISH_FAILED' | 'REPLAYED_PUBLISHED';
   readonly attemptNo: number;
 }
 
@@ -123,15 +125,15 @@ export async function publishCommand(deps: CommandPublisherDeps, commandId: stri
   if (command.status === 'PUBLISHED') {
     return { commandId: command.id, status: 'REPLAYED_PUBLISHED', attemptNo: 0 };
   }
-  if (command.status !== 'AUTHORIZED' && command.status !== 'FAILED') {
+  if (command.status !== 'AUTHORIZED' && command.status !== 'PUBLISH_FAILED') {
     throw commandConflict(`Command ${command.id} is not publishable from status ${command.status}`);
   }
 
-  // 抢占发布权：条件更新（仅 AUTHORIZED/FAILED 且未过期）并发兜底；超时后拒绝再次发布
+  // 抢占发布权：只允许已授权或明确的传输失败重试。
   const claimed = await commands.updateMany({
     where: {
       id: command.id,
-      status: { in: ['AUTHORIZED', 'FAILED'] },
+      status: { in: ['AUTHORIZED', 'PUBLISH_FAILED'] },
     },
     data: { status: 'PUBLISHING' },
   });
@@ -158,9 +160,9 @@ export async function publishCommand(deps: CommandPublisherDeps, commandId: stri
     });
     await commands.updateMany({
       where: { id: command.id, status: 'PUBLISHING' },
-      data: { status: 'FAILED' },
+      data: { status: 'PUBLISH_FAILED' },
     });
-    return { commandId: command.id, status: 'FAILED', attemptNo };
+    return { commandId: command.id, status: 'PUBLISH_FAILED', attemptNo };
   }
   await attemptsOf(deps.client).create({
     data: { commandId: command.id, attemptNo, publishedAt: now },
@@ -170,4 +172,34 @@ export async function publishCommand(deps: CommandPublisherDeps, commandId: stri
     data: { status: 'PUBLISHED' },
   });
   return { commandId: command.id, status: 'PUBLISHED', attemptNo };
+}
+
+export interface CommandPublishBatchResult {
+  readonly selectedCount: number;
+  readonly publishedCount: number;
+  readonly transportFailedCount: number;
+}
+
+/** EventBridge 批处理入口：只选择已授权或明确的传输失败命令，设备执行 FAILED 永不进入重试集合。 */
+export async function publishPendingCommands(
+  deps: CommandPublisherDeps,
+  limit = 50,
+): Promise<CommandPublishBatchResult> {
+  const now = deps.now?.() ?? new Date();
+  const pending = await deviceCommands(deps.client).findMany({
+    where: {
+      status: { in: ['AUTHORIZED', 'PUBLISH_FAILED'] },
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+    },
+    orderBy: [{ requestTime: 'asc' }, { id: 'asc' }],
+    take: limit,
+  });
+  let publishedCount = 0;
+  let transportFailedCount = 0;
+  for (const command of pending) {
+    const result = await publishCommand(deps, command.id);
+    if (result.status === 'PUBLISH_FAILED') transportFailedCount += 1;
+    else publishedCount += 1;
+  }
+  return { selectedCount: pending.length, publishedCount, transportFailedCount };
 }

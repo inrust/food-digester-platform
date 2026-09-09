@@ -87,6 +87,7 @@ test('BE-CMD-03 查询端点齐备：列表/详情 + 状态枚举 + attempts/ack
     'CREATED',
     'AUTHORIZED',
     'PUBLISHING',
+    'PUBLISH_FAILED',
     'PUBLISHED',
     'ACKNOWLEDGED',
     'SUCCEEDED',

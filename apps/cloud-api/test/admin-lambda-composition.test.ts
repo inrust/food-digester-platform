@@ -110,10 +110,28 @@ const routeSet = (): AdminOnboardingRouteSet => ({
     createExport: handler(),
     exportDetail: handler(),
   },
+  commands: { createCommand: handler(), listCommands: handler(), getCommand: handler() },
+  otaPackages: {
+    createUploadSession: handler(),
+    completeUpload: handler(),
+    listPackages: handler(),
+    getPackage: handler(),
+  },
+  otaCampaigns: {
+    createCampaign: handler(),
+    listCampaigns: handler(),
+    getCampaign: handler(),
+    listTargets: handler(),
+    expandBatch: handler(),
+    pauseCampaign: handler(),
+    resumeCampaign: handler(),
+    cancelCampaign: handler(),
+    retryCampaign: handler(),
+  },
 });
 
 describe('AUTH-01 管理 API Lambda 组合根', () => {
-  test('P0 范围 56 个管理业务 operation 全部可达真实 Handler', async () => {
+  test('P0 范围 72 个管理业务 operation 全部可达真实 Handler', async () => {
     const targetIds = new Set([
       'createLicense',
       'createContract',
@@ -126,7 +144,7 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
     ]);
     const firstTargetIndex = DELIVERED_OPERATIONS.findIndex((operation) => targetIds.has(operation.operationId));
     const operations = DELIVERED_OPERATIONS.slice(firstTargetIndex);
-    assert.equal(operations.length, 56);
+    assert.equal(operations.length, 72);
     for (const operation of operations) {
       const path = operation.path.replaceAll(/\{[^}]+\}/gu, 'encoded%2Fid');
       const response = await createAdminRoute(

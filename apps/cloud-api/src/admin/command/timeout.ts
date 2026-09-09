@@ -2,7 +2,7 @@
  * BE-CMD-03 Command Timeout Evaluator（可注入时钟；框架无关）。
  *
  * 规则：
- * - 扫描范围：COMMAND_UNFINISHED_STATUSES（AUTHORIZED/PUBLISHING/PUBLISHED/ACKNOWLEDGED）
+ * - 扫描范围：COMMAND_UNFINISHED_STATUSES（AUTHORIZED/PUBLISHING/PUBLISH_FAILED/PUBLISHED/ACKNOWLEDGED）
  *   且 expiresAt <= now → TIMED_OUT（expiresAt = requestTime + timeoutSec，BE-CMD-01 落库；
  *   PUBLISHING 滞留由本评估器兜底，见 BE-CMD-02 未决风险）；
  * - 每条迁移：条件 updateMany（并发漂移兜底，count!==1 跳过）+ 同事务 recordAudit 审计 command.timeout

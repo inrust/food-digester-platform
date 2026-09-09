@@ -423,6 +423,77 @@ export const DELIVERED_OPERATIONS = [
   },
   { operationId: 'createEsgExport', method: 'POST', path: '/api/v1/admin/esg/exports', runtime: 'admin-api' },
   { operationId: 'getEsgExport', method: 'GET', path: '/api/v1/admin/esg/exports/{exportId}', runtime: 'admin-api' },
+  {
+    operationId: 'createDeviceCommand',
+    method: 'POST',
+    path: '/api/v1/admin/devices/{deviceId}/commands',
+    runtime: 'admin-api',
+  },
+  { operationId: 'listCommands', method: 'GET', path: '/api/v1/admin/commands', runtime: 'admin-api' },
+  { operationId: 'getCommand', method: 'GET', path: '/api/v1/admin/commands/{commandId}', runtime: 'admin-api' },
+  {
+    operationId: 'createFirmwareUpload',
+    method: 'POST',
+    path: '/api/v1/admin/ota/packages/upload-sessions',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'completeFirmwareUpload',
+    method: 'POST',
+    path: '/api/v1/admin/ota/packages/{packageId}/complete',
+    runtime: 'admin-api',
+  },
+  { operationId: 'listFirmwarePackages', method: 'GET', path: '/api/v1/admin/ota/packages', runtime: 'admin-api' },
+  {
+    operationId: 'getFirmwarePackage',
+    method: 'GET',
+    path: '/api/v1/admin/ota/packages/{packageId}',
+    runtime: 'admin-api',
+  },
+  { operationId: 'createOtaCampaign', method: 'POST', path: '/api/v1/admin/ota/campaigns', runtime: 'admin-api' },
+  { operationId: 'listOtaCampaigns', method: 'GET', path: '/api/v1/admin/ota/campaigns', runtime: 'admin-api' },
+  {
+    operationId: 'getOtaCampaign',
+    method: 'GET',
+    path: '/api/v1/admin/ota/campaigns/{campaignId}',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'listOtaTargets',
+    method: 'GET',
+    path: '/api/v1/admin/ota/campaigns/{campaignId}/targets',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'expandOtaCampaignBatch',
+    method: 'POST',
+    path: '/api/v1/admin/ota/campaigns/{campaignId}/batches',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'pauseOtaCampaign',
+    method: 'POST',
+    path: '/api/v1/admin/ota/campaigns/{campaignId}/pause',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'resumeOtaCampaign',
+    method: 'POST',
+    path: '/api/v1/admin/ota/campaigns/{campaignId}/resume',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'cancelOtaCampaign',
+    method: 'POST',
+    path: '/api/v1/admin/ota/campaigns/{campaignId}/cancel',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'retryOtaCampaignFailures',
+    method: 'POST',
+    path: '/api/v1/admin/ota/campaigns/{campaignId}/retry',
+    runtime: 'admin-api',
+  },
 ] as const satisfies readonly DeliveredOperation[];
 
 export type DeliveredOperationId = (typeof DELIVERED_OPERATIONS)[number]['operationId'];

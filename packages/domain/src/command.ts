@@ -183,6 +183,7 @@ export function assertHighRiskConfirmation(
 /**
  * 命令状态全集（实施方案 §11.7 + BE-CMD-02 PUBLISHING 抢占中间态）：
  * CREATED → AUTHORIZED → PUBLISHING → PUBLISHED → ACKNOWLEDGED → SUCCEEDED
+ *                         └→ PUBLISH_FAILED → PUBLISHING（仅传输失败可重试）
  *                                            ├─────────────────→ FAILED
  *                                            └─────────────────→ TIMED_OUT
  * CREATED/AUTHORIZED → CANCELLED。
@@ -191,6 +192,7 @@ export const COMMAND_STATUSES = [
   'CREATED',
   'AUTHORIZED',
   'PUBLISHING',
+  'PUBLISH_FAILED',
   'PUBLISHED',
   'ACKNOWLEDGED',
   'SUCCEEDED',
@@ -204,7 +206,13 @@ export type CommandStatus = (typeof COMMAND_STATUSES)[number];
 export const COMMAND_TERMINAL_STATUSES = ['SUCCEEDED', 'FAILED', 'TIMED_OUT', 'CANCELLED'] as const;
 
 /** Timeout 扫描范围：已授权/发布但未完成的全部状态（PUBLISHING 滞留由超时兜底）。 */
-export const COMMAND_UNFINISHED_STATUSES = ['AUTHORIZED', 'PUBLISHING', 'PUBLISHED', 'ACKNOWLEDGED'] as const;
+export const COMMAND_UNFINISHED_STATUSES = [
+  'AUTHORIZED',
+  'PUBLISHING',
+  'PUBLISH_FAILED',
+  'PUBLISHED',
+  'ACKNOWLEDGED',
+] as const;
 
 /** ACK 线上 result 值（ack.schema.json data.result 枚举）。 */
 export type AckWireResult = 'SUCCESS' | 'FAILED';

@@ -27,7 +27,7 @@ export interface OtaPackageStorage {
 
 /** 预签名上传 URL 签名器端口（部署层接 S3 presigned PUT）。 */
 export interface OtaUploadUrlSigner {
-  readonly signUpload: (input: { readonly key: string; readonly expiresAt: Date }) => string;
+  readonly signUpload: (input: { readonly key: string; readonly expiresAt: Date }) => Promise<string> | string;
 }
 
 /** model/version 合法字符（objectKey 组成部分，禁止路径分隔符与穿越）。 */

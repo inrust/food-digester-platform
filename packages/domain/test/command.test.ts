@@ -222,7 +222,10 @@ describe('ACK/Timeout 状态机（BE-CMD-03）', () => {
     for (const s of COMMAND_TERMINAL_STATUSES) {
       assert.ok(!COMMAND_UNFINISHED_STATUSES.includes(s as never), `${s} 不应出现在超时扫描集`);
     }
-    assert.deepEqual([...COMMAND_UNFINISHED_STATUSES], ['AUTHORIZED', 'PUBLISHING', 'PUBLISHED', 'ACKNOWLEDGED']);
+    assert.deepEqual(
+      [...COMMAND_UNFINISHED_STATUSES],
+      ['AUTHORIZED', 'PUBLISHING', 'PUBLISH_FAILED', 'PUBLISHED', 'ACKNOWLEDGED'],
+    );
     assert.equal(ackResultForStorage('SUCCESS'), 'SUCCESS');
     assert.equal(ackResultForStorage('FAILED'), 'FAILED');
     assert.equal(ackResultForStorage(null), 'RECEIVED');

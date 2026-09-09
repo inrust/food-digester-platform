@@ -1,5 +1,7 @@
 import {
   createAwsIotProvisioningClient,
+  createKmsFirmwareSignatureVerifier,
+  createOtaFirmwareS3Ports,
   createS3ActivityExportPorts,
   resolveDatabaseUrl,
   resolveSecretString,
@@ -24,6 +26,10 @@ import { createAdminConsumableRequestHandlers } from '../consumable/request-hand
 import { createAdminDeviceUserHandlers } from '../admin/device-user/handler.js';
 import { createAdminAlarmHandlers } from '../admin/alarm/handler.js';
 import { createAdminEsgHandlers } from '../admin/esg/handler.js';
+import { createAdminCommandHandlers } from '../admin/command/handler.js';
+import { createAdminOtaPackageHandlers } from '../admin/ota-package/handler.js';
+import { createAdminOtaCampaignHandlers } from '../admin/ota-campaign/handler.js';
+import otaSignaturePolicy from '@fdp/contracts/security/ota-package-signature-policy.json' with { type: 'json' };
 import {
   createAdminLambdaRouter,
   createAdminRoute,
@@ -49,6 +55,7 @@ async function initialize() {
     region,
   });
   const iot = createAwsIotProvisioningClient({ region });
+  const ota = createOtaFirmwareS3Ports({ bucket: required('OTA_BUCKET_NAME'), region });
   const routes = {
     onboarding: createAdminOnboardingHandlers({ client }),
     certificateRotation: createAdminCertificateRotationHandler({ client }),
@@ -69,6 +76,20 @@ async function initialize() {
     deviceUsers: createAdminDeviceUserHandlers({ client }),
     alarms: createAdminAlarmHandlers({ client }),
     esg: createAdminEsgHandlers({ client, ...activityExportPorts }),
+    commands: createAdminCommandHandlers({ client }),
+    otaPackages: createAdminOtaPackageHandlers({
+      client,
+      storage: ota.storage,
+      uploadUrlSigner: ota.uploadUrlSigner,
+      signaturePolicy: {
+        getSignatureAlgorithm: () => otaSignaturePolicy.signature.algorithm,
+        getSignatureEncoding: () => otaSignaturePolicy.signature.encoding,
+        getSignaturePayloadFields: () => otaSignaturePolicy.payload.fields,
+        getSignatureTrustRoot: () => otaSignaturePolicy.signature.trustRoot,
+      },
+      signatureVerifier: createKmsFirmwareSignatureVerifier({ keyId: required('OTA_SIGNING_KEY_ARN'), region }),
+    }),
+    otaCampaigns: createAdminOtaCampaignHandlers({ client }),
   };
   return createAdminLambdaRouter(
     { region, userPoolId: required('USER_POOL_ID'), clientId: required('USER_POOL_CLIENT_ID') },

@@ -25,6 +25,9 @@ import type { AdminConsumableRequestHandlers } from '../consumable/request-handl
 import type { AdminDeviceUserHandlers } from '../admin/device-user/handler.js';
 import type { AdminAlarmHandlers } from '../admin/alarm/handler.js';
 import type { AdminEsgHandlers } from '../admin/esg/handler.js';
+import type { AdminCommandHandlers } from '../admin/command/handler.js';
+import type { AdminOtaPackageHandlers } from '../admin/ota-package/handler.js';
+import type { AdminOtaCampaignHandlers } from '../admin/ota-campaign/handler.js';
 import { matchDeliveredOperation } from './delivered-operations.js';
 
 export interface ApiGatewayAdminEvent {
@@ -76,6 +79,9 @@ export interface AdminOnboardingRouteSet {
   readonly deviceUsers: AdminDeviceUserHandlers;
   readonly alarms: AdminAlarmHandlers;
   readonly esg: AdminEsgHandlers;
+  readonly commands: AdminCommandHandlers;
+  readonly otaPackages: AdminOtaPackageHandlers;
+  readonly otaCampaigns: AdminOtaCampaignHandlers;
 }
 
 const header = (headers: Readonly<Record<string, string | undefined>>, wanted: string): string | undefined => {
@@ -201,6 +207,22 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
       listEsgCalculationVersions: routes.esg.listCalculationVersions,
       createEsgExport: routes.esg.createExport,
       getEsgExport: routes.esg.exportDetail,
+      createDeviceCommand: routes.commands.createCommand,
+      listCommands: routes.commands.listCommands,
+      getCommand: routes.commands.getCommand,
+      createFirmwareUpload: routes.otaPackages.createUploadSession,
+      completeFirmwareUpload: routes.otaPackages.completeUpload,
+      listFirmwarePackages: routes.otaPackages.listPackages,
+      getFirmwarePackage: routes.otaPackages.getPackage,
+      createOtaCampaign: routes.otaCampaigns.createCampaign,
+      listOtaCampaigns: routes.otaCampaigns.listCampaigns,
+      getOtaCampaign: routes.otaCampaigns.getCampaign,
+      listOtaTargets: routes.otaCampaigns.listTargets,
+      expandOtaCampaignBatch: routes.otaCampaigns.expandBatch,
+      pauseOtaCampaign: routes.otaCampaigns.pauseCampaign,
+      resumeOtaCampaign: routes.otaCampaigns.resumeCampaign,
+      cancelOtaCampaign: routes.otaCampaigns.cancelCampaign,
+      retryOtaCampaignFailures: routes.otaCampaigns.retryCampaign,
     };
     const target = targetOperations[operationId];
     if (target) return target(routedRequest);

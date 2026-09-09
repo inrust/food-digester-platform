@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-DEV-05 设备控制台组合查询与活动导出 API（Cognito 认证）。GET /api/v1/admin/devices/{deviceId}/console 组合查询（device:read）：五类传感器部件状态、遥测指标（功耗/湿度/温度/重量/马达电流/O2/CO2/CH4/N2O）、网络质量、固件、耗材投影、最近告警、Contract 摘要、近 7 日 ESG、最新 Media（P2 可选块，无数据稳定 null）。各数据块携带 observedAt/单位/stale；局部缺失不使整个响应失败；连接状态、生命周期、运行状态和授权状态分字段返回（DEC-010 四轴分离）。GET .../activities 按级别（kind 派生：ALARM=告警 severity，EVENT 固定 INFO）与时间筛选设备活动日志；POST .../activities/export（export:create）创建异步 CSV 导出（202 入队，Worker 处理，非数据库不限量同步查询）；GET /api/v1/admin/activity-exports/{exportId} 查询导出状态与短期下载 URL。Customer scope 生效（跨 Customer → 404）并复用 DOM-03 审计。功能边界：不提供实时视频流（DEC-009），不透传 MQTT 原始消息。错误响应继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["DEC-009@1.0.0", "DEC-010@1.0.0"],
-    "x-decision-register-version": "1.30.0"
+    "x-decision-register-version": "1.31.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

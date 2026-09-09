@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.30.0",
-  "updatedAt": "2026-09-08T14:15:00Z",
+  "registerVersion": "1.31.0",
+  "updatedAt": "2026-09-09T02:07:15Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -699,6 +699,27 @@
           "at": "2026-09-08T14:15:00Z",
           "by": "业务方（本次 P2 整改指令）",
           "note": "按全面审计 P2 整改建议冻结 30 天窗口、UTC instant 计算和包含式边界，并统一 Contract 的派生、筛选与续约语义。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-022",
+      "version": "1.0.0",
+      "status": "frozen",
+      "title": "OTA 固件包签名与信任根",
+      "conflict": "OTA 固件包签名算法、编码、信任根和规范载荷未冻结，失败关闭使任何固件包都无法进入 VERIFIED。",
+      "provisionalValue": "使用 AWS KMS 非对称 RSA-2048 SIGN_VERIFY 密钥，SigningAlgorithm=RSASSA_PKCS1_V1_5_SHA_256，签名按 base64 编码。规范载荷为 FDP-OTA-SIG-v1 版本行，依次拼接 model、version、packageType、sha256（小写 hex）。KMS Key ARN 由部署环境注入，禁止从请求或固件元数据接受信任根。",
+      "approver": "业务方（本次 P0 整改指令）",
+      "approvedAt": "2026-09-09T02:07:15Z",
+      "blockingTasks": ["BE-OTA-01", "BE-OTA-02", "BE-OTA-03", "QA-02"],
+      "affectedModules": ["BE-OTA", "SEC", "IAC", "QA"],
+      "sourceRefs": ["device-cloud-communication-design", "aws-key-solutions", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "1.0.0",
+          "at": "2026-09-09T02:07:15Z",
+          "by": "业务方（本次 P0 整改指令）",
+          "note": "按 CMD/OTA 全面复盘 P0 整改建议冻结 KMS RSA-2048、RSASSA_PKCS1_V1_5_SHA_256、base64、固定规范载荷和带外信任根。"
         }
       ]
     }

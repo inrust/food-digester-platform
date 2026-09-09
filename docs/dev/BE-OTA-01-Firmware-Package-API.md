@@ -21,7 +21,7 @@
 
 **上传后校验链**（complete，任一失败拒绝且保持 UPLOADED）：对象存在 → 大小一致 → SHA-256 服务端重算匹配 → 病毒扫描 adapter（INFECTED 拒绝）→ 数字签名验证 → 条件更新 `UPLOADED→VERIFIED`（并发兜底，仅一个完成者获胜）。
 
-**签名格式由项目冻结值驱动**：`contracts/security/ota-package-signature-policy`（provisional，对应实施方案 §20 风险表"OTA 包签名机制未确定"）。锁定定性规则：服务端验签强制 + 失败关闭；签名载荷固定覆盖 model+version+packageType+sha256（**型号不匹配即签名不匹配**）；信任根带外分发、禁止内嵌、不入响应/审计。算法/信任根/编码为待冻结参数，读取抛 `PolicyParameterPendingError` → 映射 409（**冻结前任何包不得进入 VERIFIED**）。cloud-api 侧经 `OtaSignaturePolicyQuery` 门面 + `FirmwareSignatureVerifier` 端口注入（verifier 算法标识必须等于策略算法，错配 → 409）。
+**签名格式由 DEC-022@1.0.0 冻结值驱动**：AWS KMS RSA-2048 SIGN_VERIFY，算法 `RSASSA_PKCS1_V1_5_SHA_256`，签名 base64 编码；规范载荷为 `FDP-OTA-SIG-v1` + model/version/packageType/sha256（小写 hex）固定顺序。服务端验签强制且失败关闭；信任根使用部署环境 `OTA_SIGNING_KEY_ARN` 带外注入，禁止内嵌或进入响应/审计。生产组合根接入 S3 HeadObject/流式 SHA-256/presigned PUT 与 KMS Verify adapter，verifier/策略算法错配仍以 409 失败关闭。
 
 **不可变与可发布**：VERIFIED 为终态（RETIRED 流转属 BE-OTA-02），重复完成 → 409，成功包不可覆盖；包内容字段创建后无更新路径；可发布列表 = `status=VERIFIED`，UPLOADED（未完成上传/未完成校验）不进入。
 
@@ -35,7 +35,7 @@
 | 签名不匹配拒绝 | 签名对其他型号签发（型号不匹配即签名不匹配）→ 400；大小不匹配 → 400；对象缺失 → 400 | ✅ |
 | 成功包不可覆盖 | VERIFIED 重复完成 → 409；同型号+版本+packageType / 同 sha256 重复创建 → 409 | ✅ |
 | 未完成上传不进入可发布列表 | 未完成 complete 的包不出现在 `status=VERIFIED` 列表；UPLOADED 筛选可见 | ✅ |
-| 签名格式由冻结值驱动 | provisional 策略 → complete 409 失败关闭；verifier/策略算法错配 → 409；策略契约负向测试（跳过验签/非失败关闭/内嵌信任根被 Schema 拒绝；待冻结参数读取抛错） | ✅ |
+| 签名格式由冻结值驱动 | DEC-022 冻结值、固定 RSA/SHA-256 向量与 KMS adapter 测试；verifier/策略算法错配 → 409；策略契约负向测试拒绝跳过验签、非失败关闭和内嵌信任根 | ✅ |
 | 短期预签名 URL | 会话返回 https URL + 900s 过期时点；objectKey 服务端生成 | ✅ |
 | 鉴权与输入校验负向 | 无 actor → 401；CustomerAdmin/Auditor 写 → 403、Customer 角色读 → 403；非法 packageType/sha256/sizeBytes/路径字符 model → 400；非法筛选值 → 400 | ✅ |
 | 审计链 | create/verify 各 1 条 SUCCESS 审计，actor 正确 | ✅ |
@@ -43,8 +43,7 @@
 
 ## 4. 未决风险
 
-- **签名机制未冻结**（实施方案 §20）：冻结前 complete 一律 409 失败关闭，OTA 无法实际发布——这是设计使然；冻结需先按 decision-change-template 登记决策（当前无 DEC ID），再填策略并提供固定测试向量。
 - **病毒扫描服务未选型**：仅保留 `MalwareScanner` adapter 端口，缺省不装配（不扫描）；选型后由部署层接线，Service 流程不变。
 - **预签名 URL TTL（900s）与包大小上限（512MiB）为暂定值**：部署层签名器须与 TTL 一致；冻结时随签名机制一并复核。
-- **S3 adapter 为端口定义**：HeadObject/流式 SHA-256/presigned PUT 的 AWS 实现由部署层接线（IAC-01 OTA Bucket + `OTA_BUCKET_NAME` 环境变量已备）。
+- **目标 AWS 验收未执行**：S3/KMS 生产 adapter 与最小权限已静态接线，但真实上传、验签、URL 过期和密钥策略仍需隔离 AWS 环境回执。
 - **大对象哈希**：complete 期间服务端流式重算 SHA-256，部署层需控制 Lambda 时长/内存（512MiB 包需流式实现，不得整包入内存）。

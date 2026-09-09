@@ -1,19 +1,16 @@
 /**
- * OTA 固件包签名策略（暂定值的可执行扩展点）。
+ * OTA 固件包签名策略（DEC-022@1.0.0）。
  *
  * 事实源：contracts/security/ota-package-signature-policy.json
  * （本文件常量必须与之一致，由单元测试强制）。
  * 决策追溯：实施方案 §20 风险表（OTA 包签名机制未确定，上线前冻结签名格式和
- * 信任根）；当前无登记决策 ID，冻结时先按 decision-change-template 登记。
+ * 信任根）；冻结决策登记为 DEC-022@1.0.0。
  *
  * 消费方：BE-OTA-01（Firmware Package 上传验签）；下发通道 BE-OTA-03。
  * 约束：定性规则（服务端验签强制且失败关闭、签名载荷固定覆盖
  * model+version+packageType+sha256、信任根带外分发禁止内嵌）可直接执行；
- * 签名算法/信任根/编码是待冻结内容，读取时失败关闭
- * （抛 PolicyParameterPendingError），禁止臆测默认值。
+ * 算法/信任根类型/编码已冻结，部署层使用环境 KMS Key ARN。
  */
-
-import { PolicyParameterPendingError } from './certificate-package-policy.ts';
 
 export type OtaSignaturePolicyStatus = 'provisional' | 'frozen';
 
@@ -37,10 +34,9 @@ export interface OtaPackageSignaturePolicy {
     readonly note: string;
   };
   readonly signature: {
-    /** 待冻结参数；provisional 为 null。 */
-    readonly algorithm: string | null;
-    readonly trustRoot: string | null;
-    readonly encoding: string | null;
+    readonly algorithm: string;
+    readonly trustRoot: string;
+    readonly encoding: string;
     readonly consumers: readonly string[];
     readonly note: string;
   };
@@ -56,13 +52,11 @@ export interface OtaPackageSignaturePolicy {
 }
 
 /**
- * 暂定值（签名机制未冻结，实施方案 §20 风险表）：
- * 服务端验签强制 + 失败关闭；载荷锁定 model+version+packageType+sha256；
- * 信任根带外分发；算法/信任根/编码待冻结。
+ * DEC-022 冻结值：KMS RSA-2048 + RSASSA PKCS#1 v1.5 SHA-256 + base64。
  */
 export const OTA_PACKAGE_SIGNATURE_POLICY: OtaPackageSignaturePolicy = {
-  policyVersion: '0.1.0',
-  status: 'provisional',
+  policyVersion: '1.0.0',
+  status: 'frozen',
   verification: {
     serverSide: true,
     failClosed: true,
@@ -75,11 +69,11 @@ export const OTA_PACKAGE_SIGNATURE_POLICY: OtaPackageSignaturePolicy = {
     note: '签名覆盖的规范载荷字段与顺序固定为 model+version+packageType+sha256：防型号/版本错配包被重签名混用（型号不匹配即签名不匹配）。具体序列化格式随签名算法一同冻结。',
   },
   signature: {
-    algorithm: null,
-    trustRoot: null,
-    encoding: null,
+    algorithm: 'RSASSA_PKCS1_V1_5_SHA_256',
+    trustRoot: 'AWS_KMS_ASYMMETRIC_SIGNING_KEY',
+    encoding: 'base64',
     consumers: ['BE-OTA-01'],
-    note: '待冻结参数：签名算法标识（如 Ed25519/ECDSA-P256）、信任根（公钥/KMS Key 标识）、签名编码（hex/base64 等）。provisional 期间为 null，读取失败关闭，禁止臆测默认值。',
+    note: 'DEC-022：AWS KMS RSA-2048 非对称密钥，SigningAlgorithm=RSASSA_PKCS1_V1_5_SHA_256，签名以 base64 编码；运行时使用环境绑定 KMS Key ARN 执行 Verify。',
   },
   trust: {
     rootDistribution: 'out-of-band',
@@ -87,29 +81,24 @@ export const OTA_PACKAGE_SIGNATURE_POLICY: OtaPackageSignaturePolicy = {
     consumers: ['BE-OTA-01'],
     note: '信任根带外分发（部署配置/KMS），禁止从上传请求或包内元数据获取信任根；API 响应、日志与审计不输出信任根材料。',
   },
-  pendingParameters: ['signature.algorithm', 'signature.trustRoot', 'signature.encoding'],
+  pendingParameters: [],
   frozenUpgradePath:
-    'OTA 上线前：先按 decision-change-template 登记 OTA 包签名决策（算法/信任根/编码/载荷序列化格式）并补充 x-decision-versions 引用，再填入本策略、提升 policyVersion 至 >=1.0.0、status 改 frozen；同时提供固定测试向量供 BE-OTA-01/BE-OTA-03 与设备端复验。',
+    '算法、编码、信任根类型或规范载荷变更必须提升 DEC-022 和本策略版本，同步 KMS adapter、固定测试向量、设备端验签及目标 AWS 验收。',
 } as const;
 
-function requireFrozen<T>(value: T | null, parameter: string): T {
-  if (value === null) throw new PolicyParameterPendingError(parameter);
-  return value;
-}
-
-/** 签名算法标识。签名机制冻结前调用抛 PolicyParameterPendingError。 */
+/** 签名算法标识。 */
 export function getOtaSignatureAlgorithm(): string {
-  return requireFrozen(OTA_PACKAGE_SIGNATURE_POLICY.signature.algorithm, 'signature.algorithm');
+  return OTA_PACKAGE_SIGNATURE_POLICY.signature.algorithm;
 }
 
-/** 信任根（公钥/KMS Key 标识）。签名机制冻结前调用抛 PolicyParameterPendingError。 */
+/** 冻结的信任根类型（实际 KMS Key ARN 由部署配置注入）。 */
 export function getOtaSignatureTrustRoot(): string {
-  return requireFrozen(OTA_PACKAGE_SIGNATURE_POLICY.signature.trustRoot, 'signature.trustRoot');
+  return OTA_PACKAGE_SIGNATURE_POLICY.signature.trustRoot;
 }
 
-/** 签名编码（hex/base64 等）。签名机制冻结前调用抛 PolicyParameterPendingError。 */
+/** 冻结的签名编码。 */
 export function getOtaSignatureEncoding(): string {
-  return requireFrozen(OTA_PACKAGE_SIGNATURE_POLICY.signature.encoding, 'signature.encoding');
+  return OTA_PACKAGE_SIGNATURE_POLICY.signature.encoding;
 }
 
 /** 签名覆盖的规范载荷字段与顺序（锁定规则），供验签构造载荷。 */

@@ -5,7 +5,7 @@
  * - 在线合法设备收到正确 Topic（bnx/device/{deviceId}/cmd）/ Payload（cmd.schema.json meta+data）/ QoS 1
  *   （ADP-002@1.0.0：specified 2 → AWS 有效 1）；
  * - 发布前重校验：Retired 设备 / 过期 expiresAt / 非可发布状态 → 不发布；
- * - 发布成功 → PUBLISHED + attempts 落行；发布异常 → FAILED 可重试（attemptNo 递增）；
+ * - 发布成功 → PUBLISHED + attempts 落行；发布异常 → PUBLISH_FAILED 可重试；
  * - 发布重试不创建新 commandId（meta.id 幂等键不变）；PUBLISHED 幂等重放不重复发消息；
  * - 不等待设备同步响应、不推测执行成功（ACK/超时扫描属 BE-CMD-03）。
  */
@@ -19,6 +19,7 @@ import {
   buildCommandPayload,
   commandTopicOf,
   publishCommand,
+  publishPendingCommands,
   COMMAND_PUBLISH_QOS,
 } from '../src/index.js';
 import type { CommandMqttPublishInput } from '../src/index.js';
@@ -201,15 +202,15 @@ describe('幂等与重试', () => {
     assert.equal(await prisma.commandAttempt.count({ where: { commandId } }), 1);
   });
 
-  test('发布异常 → FAILED 可重试；重试不创建新 commandId，attemptNo 递增', async () => {
+  test('发布异常 → PUBLISH_FAILED 可重试；重试不创建新 commandId，attemptNo 递增', async () => {
     const { commandId, deviceId } = await plantCommand({});
     const mqtt = new FakeMqtt();
     mqtt.failNext = true;
     const failed = await publishCommand({ client: prisma, now: () => NOW, mqtt }, commandId);
-    assert.equal(failed.status, 'FAILED');
+    assert.equal(failed.status, 'PUBLISH_FAILED');
     assert.equal(failed.attemptNo, 1);
     let row = await prisma.deviceCommand.findUniqueOrThrow({ where: { id: commandId } });
-    assert.equal(row.status, 'FAILED');
+    assert.equal(row.status, 'PUBLISH_FAILED');
 
     const retried = await publishCommand({ client: prisma, now: () => NOW, mqtt }, commandId);
     assert.equal(retried.status, 'PUBLISHED');
@@ -228,7 +229,7 @@ describe('幂等与重试', () => {
     assert.equal(await prisma.deviceCommand.count({ where: { deviceId } }), 1, '无新命令行');
   });
 
-  test('FAILED 且已过期 → 拒绝再次发布', async () => {
+  test('PUBLISH_FAILED 且已过期 → 拒绝再次发布', async () => {
     const { commandId } = await plantCommand({ expiresAt: new Date(NOW.getTime() + 5_000) });
     const mqtt = new FakeMqtt();
     mqtt.failNext = true;
@@ -236,5 +237,31 @@ describe('幂等与重试', () => {
     const later = new Date(NOW.getTime() + 10_000);
     await rejectsWith(() => publishCommand({ client: prisma, now: () => later, mqtt }, commandId), 'CONFLICT');
     assert.equal(mqtt.calls.length, 0);
+  });
+
+  test('设备执行失败终态 FAILED 不可再发布（H-01 回归）', async () => {
+    const { commandId } = await plantCommand({ status: 'FAILED' });
+    const mqtt = new FakeMqtt();
+    await rejectsWith(() => publishCommand({ client: prisma, now: () => NOW, mqtt }, commandId), 'CONFLICT');
+    assert.equal(mqtt.calls.length, 0);
+    assert.equal((await prisma.deviceCommand.findUniqueOrThrow({ where: { id: commandId } })).status, 'FAILED');
+  });
+
+  test('批处理只选择 AUTHORIZED/PUBLISH_FAILED，跳过设备执行 FAILED 与已过期命令', async () => {
+    await prisma.deviceCommand.updateMany({
+      where: { status: { in: ['AUTHORIZED', 'PUBLISH_FAILED'] } },
+      data: { status: 'CANCELLED' },
+    });
+    const authorized = await plantCommand({ status: 'AUTHORIZED' });
+    const retryable = await plantCommand({ status: 'PUBLISH_FAILED' });
+    await plantCommand({ status: 'FAILED' });
+    await plantCommand({ status: 'AUTHORIZED', expiresAt: new Date(NOW.getTime() - 1) });
+    const mqtt = new FakeMqtt();
+    const result = await publishPendingCommands({ client: prisma, now: () => NOW, mqtt });
+    assert.deepEqual(result, { selectedCount: 2, publishedCount: 2, transportFailedCount: 0 });
+    assert.deepEqual(
+      new Set(mqtt.calls.map((call) => JSON.parse(call.payload).meta.id)),
+      new Set([authorized.commandId, retryable.commandId]),
+    );
   });
 });

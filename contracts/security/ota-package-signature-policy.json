@@ -1,9 +1,9 @@
 {
-  "policyVersion": "0.1.0",
-  "updatedAt": "2026-09-02T00:00:00Z",
-  "x-decision-versions": [],
-  "status": "provisional",
-  "description": "OTA 固件包签名策略（暂定值的可执行扩展点）。事实源：实施方案 §11.8（管理员上传固件包后云端计算 SHA-256 并验证签名）与 §20 风险表（OTA 包签名机制未确定，OTA 上线前冻结签名格式和信任根；当前无登记决策 ID，x-decision-versions 为空，冻结时先登记决策）。定性规则已可执行：服务端验签强制且失败关闭、签名载荷固定覆盖 model+version+packageType+sha256、信任根带外分发且禁止内嵌。签名算法/信任根/编码为待冻结参数，以 null 显式标记，读取失败关闭。冻结时按 decision-change-template 登记决策并整体替换本文件；消费方（BE-OTA-01）只经 ota-package-signature-policy.ts 访问。",
+  "policyVersion": "1.0.0",
+  "updatedAt": "2026-09-09T02:07:15Z",
+  "x-decision-versions": ["DEC-022@1.0.0"],
+  "status": "frozen",
+  "description": "DEC-022 冻结 OTA 固件包签名策略：服务端强制使用 AWS KMS 非对称 RSA-2048 密钥执行 RSASSA_PKCS1_V1_5_SHA_256 验签，签名以 base64 编码；规范载荷固定覆盖 model+version+packageType+sha256，信任根由部署环境 KMS Key ARN 带外注入，禁止上传方指定信任根。",
   "verification": {
     "serverSide": true,
     "failClosed": true,
@@ -16,11 +16,11 @@
     "note": "签名覆盖的规范载荷字段与顺序固定为 model+version+packageType+sha256：防型号/版本错配包被重签名混用（型号不匹配即签名不匹配）。具体序列化格式随签名算法一同冻结。"
   },
   "signature": {
-    "algorithm": null,
-    "trustRoot": null,
-    "encoding": null,
+    "algorithm": "RSASSA_PKCS1_V1_5_SHA_256",
+    "trustRoot": "AWS_KMS_ASYMMETRIC_SIGNING_KEY",
+    "encoding": "base64",
     "consumers": ["BE-OTA-01"],
-    "note": "待冻结参数：签名算法标识（如 Ed25519/ECDSA-P256）、信任根（公钥/KMS Key 标识）、签名编码（hex/base64 等）。provisional 期间为 null，读取失败关闭，禁止臆测默认值。"
+    "note": "DEC-022：AWS KMS RSA-2048 非对称密钥，SigningAlgorithm=RSASSA_PKCS1_V1_5_SHA_256，签名以 base64 编码；运行时使用环境绑定 KMS Key ARN 执行 Verify。"
   },
   "trust": {
     "rootDistribution": "out-of-band",
@@ -28,6 +28,6 @@
     "consumers": ["BE-OTA-01"],
     "note": "信任根带外分发（部署配置/KMS），禁止从上传请求或包内元数据获取信任根；API 响应、日志与审计不输出信任根材料。"
   },
-  "pendingParameters": ["signature.algorithm", "signature.trustRoot", "signature.encoding"],
-  "frozenUpgradePath": "OTA 上线前：先按 decision-change-template 登记 OTA 包签名决策（算法/信任根/编码/载荷序列化格式）并补充 x-decision-versions 引用，再填入本策略、提升 policyVersion 至 >=1.0.0、status 改 frozen；同时提供固定测试向量供 BE-OTA-01/BE-OTA-03 与设备端复验。"
+  "pendingParameters": [],
+  "frozenUpgradePath": "算法、编码、信任根类型或规范载荷变更必须提升 DEC-022 和本策略版本，同步 KMS adapter、固定测试向量、设备端验签及目标 AWS 验收。"
 }

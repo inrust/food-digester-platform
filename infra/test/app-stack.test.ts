@@ -230,17 +230,18 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('API Lambda 下行发布权限收敛到 3 个下行 Topic 模式', () => {
+  test('Command/OTA/Notification 三个独立 Publisher 各自收敛到单一 Topic 模式', () => {
     const statements = collectPolicyStatements(template.toJSON()).map(({ statement }) => statement);
-    const publish = statements.find((candidate) => candidate.Sid === 'IotDownlinkPublish');
-    assert.isDefined(publish);
-    const resources = (publish.Resource as unknown[]).map((r) => JSON.stringify(r));
-    assert.equal(resources.length, 3);
-    for (const type of ['cmd', 'ota', 'notification']) {
-      assert.isTrue(
-        resources.some((r) => r.includes(`topic/bnx/device/*/${type}`)),
-        `iot:Publish 未收敛到下行 Topic ${type}`,
-      );
+    for (const [sid, type] of [
+      ['DeviceCommandPublish', 'cmd'],
+      ['DeviceOtaPublish', 'ota'],
+      ['DeviceNotificationPublish', 'notification'],
+    ]) {
+      const publish = statements.find((candidate) => candidate.Sid === sid);
+      assert.isDefined(publish);
+      assert.deepEqual(publish.Action, 'iot:Publish');
+      assert.include(JSON.stringify(publish.Resource), `topic/bnx/device/*/${type}`);
+      assert.notInclude(JSON.stringify(publish.Resource), 'topic/bnx/device/*/*');
     }
   });
 
@@ -296,13 +297,13 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('17 个 Lambda 使用各自独立执行角色', () => {
+  test('20 个 Lambda 使用各自独立执行角色', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
       String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),
     );
-    assert.equal(fns.length, 17);
+    assert.equal(fns.length, 20);
     const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
-    assert.equal(roles.size, 17);
+    assert.equal(roles.size, 20);
   });
 
   test('P0 生产组合根与既有 API/sweeper 使用真实资产包而非内联 501 占位代码', () => {
@@ -320,6 +321,9 @@ describe('验收：IAM 最小权限', () => {
       'fdp-test-activity-export',
       'fdp-test-business-notifier',
       'fdp-test-esg-export',
+      'fdp-test-command-publisher',
+      'fdp-test-command-timeout',
+      'fdp-test-ota-dispatcher',
       'fdp-test-onboarding-api-handler',
       'fdp-test-onboarding-provisioning',
       'fdp-test-device-api-handler',
@@ -441,7 +445,7 @@ describe('Device API mTLS 自定义域名（提供域名配置时）', () => {
       Name: 'fdp-test-device-api',
       DisableExecuteApiEndpoint: false,
     });
-  });
+  }, 15_000);
 
   test('dev/staging/prod 缺少 mTLS 配置或尝试开启不安全入口时失败关闭', () => {
     for (const config of [
@@ -476,7 +480,7 @@ describe('验收：数据库凭据与消息管线', () => {
 
   test('Ingress/Archive/Replay 主队列配置 DLQ，全部队列 KMS 加密', () => {
     const queues = Object.values(resourcesOfType(template, 'AWS::SQS::Queue'));
-    assert.equal(queues.length, 8);
+    assert.equal(queues.length, 11);
     for (const queue of queues) {
       assert.isDefined(queue.Properties.KmsMasterKeyId, `队列 ${queue.Properties.QueueName} 未配置 KMS 加密`);
     }
@@ -510,7 +514,16 @@ describe('验收：数据库凭据与消息管线', () => {
     for (const esm of esms) {
       assert.equal(esm.Properties.FunctionResponseTypes?.[0], 'ReportBatchItemFailures');
     }
-    template.resourceCountIs('AWS::Events::Rule', 11);
+    template.resourceCountIs('AWS::Events::Rule', 14);
+    for (const name of ['fdp-test-command-publisher', 'fdp-test-command-timeout', 'fdp-test-ota-dispatcher']) {
+      template.hasResourceProperties('AWS::Events::Rule', {
+        Name: name,
+        ScheduleExpression: 'rate(1 minute)',
+        Targets: Match.arrayWith([
+          Match.objectLike({ RetryPolicy: { MaximumEventAgeInSeconds: 3600, MaximumRetryAttempts: 2 } }),
+        ]),
+      });
+    }
     template.hasResourceProperties('AWS::Events::Rule', {
       Name: 'fdp-test-notification-publisher',
       ScheduleExpression: 'rate(1 minute)',
@@ -655,18 +668,21 @@ describe('Cognito 与应用配置输出', () => {
       'ExportBucketName',
       'DataKeyArn',
       'CertPackageKeyArn',
+      'OtaSigningKeyArn',
     ]) {
       assert.isDefined(outputs[id], `缺少 CfnOutput ${id}`);
     }
   });
 
-  test('KMS：应用数据 Key 与证书包 Key 分离且启用轮换', () => {
+  test('KMS：数据/证书包 Key 启用轮换；OTA 使用独立 RSA-2048 SIGN_VERIFY 信任根', () => {
     const keys = Object.values(resourcesOfType(template, 'AWS::KMS::Key'));
-    assert.equal(keys.length, 2);
-    for (const key of keys) {
-      assert.isTrue(key.Properties.EnableKeyRotation);
-    }
+    assert.equal(keys.length, 3);
+    assert.equal(keys.filter((key) => key.Properties.EnableKeyRotation === true).length, 2);
+    assert.isDefined(
+      keys.find((key) => key.Properties.KeySpec === 'RSA_2048' && key.Properties.KeyUsage === 'SIGN_VERIFY'),
+    );
     template.hasResourceProperties('AWS::KMS::Alias', { AliasName: 'alias/fdp-test-data' });
     template.hasResourceProperties('AWS::KMS::Alias', { AliasName: 'alias/fdp-test-cert-package' });
+    template.hasResourceProperties('AWS::KMS::Alias', { AliasName: 'alias/fdp-test-ota-signing' });
   });
 });

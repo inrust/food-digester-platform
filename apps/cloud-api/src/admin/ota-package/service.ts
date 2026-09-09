@@ -247,7 +247,7 @@ export async function createFirmwareUploadSession(
 
   const ttl = deps.uploadUrlTtlSeconds ?? OTA_UPLOAD_URL_TTL_SECONDS;
   const uploadUrlExpiresAt = new Date(now.getTime() + ttl * 1000);
-  const uploadUrl = deps.uploadUrlSigner.signUpload({ key: objectKey, expiresAt: uploadUrlExpiresAt });
+  const uploadUrl = await deps.uploadUrlSigner.signUpload({ key: objectKey, expiresAt: uploadUrlExpiresAt });
   return {
     packageId: row.id,
     status: 'UPLOADED',

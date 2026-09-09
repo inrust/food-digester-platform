@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hiddenjoya.local/contracts/security/ota-package-signature-policy.schema.json",
   "title": "OTA Package Signature Policy",
-  "description": "OTA 固件包签名策略的结构契约。signature.algorithm/trustRoot/encoding 为待冻结参数：provisional 状态必须为 null，frozen 状态必须填入。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "description": "DEC-022 OTA 固件包签名策略结构契约。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
   "type": "object",
   "required": [
     "policyVersion",
@@ -31,7 +31,7 @@
     },
     "x-decision-versions": {
       "type": "array",
-      "description": "决策追溯引用，格式 决策ID@semver；当前无登记决策（实施方案 §20 风险表），冻结时补充。"
+      "description": "决策追溯引用，格式 决策ID@semver。"
     },
     "status": {
       "type": "string",
@@ -77,19 +77,16 @@
       "additionalProperties": false,
       "properties": {
         "algorithm": {
-          "type": ["string", "null"],
-          "minLength": 1,
-          "description": "待冻结参数：签名算法标识。provisional 为 null。"
+          "type": "string",
+          "enum": ["RSASSA_PKCS1_V1_5_SHA_256"]
         },
         "trustRoot": {
-          "type": ["string", "null"],
-          "minLength": 1,
-          "description": "待冻结参数：信任根（公钥/KMS Key 标识）。provisional 为 null。"
+          "type": "string",
+          "enum": ["AWS_KMS_ASYMMETRIC_SIGNING_KEY"]
         },
         "encoding": {
-          "type": ["string", "null"],
-          "minLength": 1,
-          "description": "待冻结参数：签名编码（hex/base64 等）。provisional 为 null。"
+          "type": "string",
+          "enum": ["base64"]
         },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }
