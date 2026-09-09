@@ -43,7 +43,7 @@ test('设备端：上传会话端点齐备且 DeviceMtls 认证；输入封闭�
 
   const input = device.components.schemas.MediaUploadSessionCreate;
   assert.equal(input.additionalProperties, false);
-  assert.deepEqual(input.required, ['mediaType', 'fileName', 'sizeKb', 'sha256']);
+  assert.deepEqual(input.required, ['mediaType', 'fileName', 'sizeKb', 'sizeBytes', 'sha256']);
   // mediaType 与 CT-03 media.schema.json 枚举一致
   assert.deepEqual(input.properties.mediaType.enum, mediaMqtt.properties.data.properties.mediaType.enum);
   // 输入不得包含 objectPath/bucket（objectPath 服务端签发）

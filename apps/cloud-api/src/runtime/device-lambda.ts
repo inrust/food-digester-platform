@@ -52,6 +52,7 @@ export interface DeviceRouteSet {
   readonly sync: DeviceRoute;
   readonly deactivate: DeviceRoute;
   readonly otaDownload: DeviceRoute;
+  readonly mediaUpload: DeviceRoute;
 }
 
 const JSON_HEADERS = { 'content-type': 'application/json' } as const;
@@ -107,6 +108,9 @@ export function createDeviceApiLambdaHandler(routes: DeviceRouteSet) {
         break;
       case 'redeemOtaDownloadGrant':
         route = routes.otaDownload;
+        break;
+      case 'createMediaUploadSession':
+        route = routes.mediaUpload;
         break;
     }
     if (!route) {

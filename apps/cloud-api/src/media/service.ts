@@ -3,7 +3,7 @@
  *
  * 规则（事实源：实施方案 §11.9 + CT-03 media.schema.json + contracts/media/media-upload-policy）：
  * - 设备创建上传会话（mTLS 身份上下文）：校验 mediaType（策略=CT-03 枚举）、fileName
- *   （安全字符）、sizeKb（类型上限，暂定值）、sha256（hex64 申报）与每设备每日配额
+ *   （安全字符）、sizeKb（类型上限，暂定值）、sizeBytes（精确长度）、sha256（hex64 申报）与每设备每日配额
  *   （暂定值）；设备须 Active/Maintenance 且已分配 Customer；objectPath 服务端生成
  *   （设备前缀，客户端不得指定 Bucket/Key）；签发 15 分钟预签名上传 URL（暂定值 900s）；
  * - 上传后元数据（MQTT media 上行 → handleMediaMetadata）：objectPath 必须与有效会话的
@@ -99,6 +99,7 @@ export interface MediaUploadSessionView {
   readonly mediaType: string;
   readonly fileName: string;
   readonly sizeKb: number;
+  readonly sizeBytes: number;
   readonly objectPath: string;
   readonly uploadUrl: string;
   readonly uploadUrlExpiresAt: string;
@@ -139,6 +140,8 @@ export interface CreateMediaUploadSessionInput {
   readonly mediaType: string;
   readonly fileName: string;
   readonly sizeKb: number;
+  /** 精确字节数；用于把预签名 PUT 的 Content-Length 绑定到申报对象。 */
+  readonly sizeBytes: number;
   /** 设备申报的 SHA-256（hex64）；上传后服务端重算比对。 */
   readonly sha256: string;
 }
@@ -168,6 +171,13 @@ export async function createMediaUploadSession(
   const maxSizeKb = deps.uploadPolicy.getMaxSizeKb(input.mediaType) ?? 0;
   if (!Number.isInteger(input.sizeKb) || input.sizeKb < 1 || input.sizeKb > maxSizeKb) {
     throw mediaValidationFailed(`sizeKb must be an integer between 1 and ${maxSizeKb}`);
+  }
+  if (
+    !Number.isSafeInteger(input.sizeBytes) ||
+    input.sizeBytes < 1 ||
+    Math.ceil(input.sizeBytes / 1024) !== input.sizeKb
+  ) {
+    throw mediaValidationFailed('sizeBytes must be a positive integer consistent with sizeKb');
   }
   if (!SHA256_PATTERN.test(input.sha256)) {
     throw mediaValidationFailed('sha256 must be a 64-character hex string');
@@ -227,13 +237,20 @@ export async function createMediaUploadSession(
       }),
   );
 
+  const uploadUrl = await deps.urlSigner.signUpload({
+    key: objectPath,
+    expiresAt: uploadUrlExpiresAt,
+    contentLength: input.sizeBytes,
+    checksumSha256: input.sha256,
+  });
   return {
     sessionId: row.id,
     mediaType: row.mediaType,
     fileName: row.fileName,
     sizeKb: row.sizeKb,
+    sizeBytes: input.sizeBytes,
     objectPath,
-    uploadUrl: deps.urlSigner.signUpload({ key: objectPath, expiresAt: uploadUrlExpiresAt }),
+    uploadUrl,
     uploadUrlExpiresAt: uploadUrlExpiresAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
   };
@@ -326,7 +343,7 @@ export async function createMediaDownloadUrl(
   const downloadUrlExpiresAt = new Date(now.getTime() + ttl * 1000);
   return {
     mediaId: row.id,
-    downloadUrl: deps.urlSigner.signDownload({ key: row.objectPath, expiresAt: downloadUrlExpiresAt }),
+    downloadUrl: await deps.urlSigner.signDownload({ key: row.objectPath, expiresAt: downloadUrlExpiresAt }),
     downloadUrlExpiresAt: downloadUrlExpiresAt.toISOString(),
   };
 }

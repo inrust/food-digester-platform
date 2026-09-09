@@ -2,7 +2,7 @@ export type DeliveredRuntime = 'onboarding-api' | 'device-api' | 'admin-api';
 
 export interface DeliveredOperation {
   readonly operationId: string;
-  readonly method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  readonly method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   /** OpenAPI 原始路径模板；参数使用 {name}。 */
   readonly path: string;
   readonly runtime: DeliveredRuntime;
@@ -498,6 +498,71 @@ export const DELIVERED_OPERATIONS = [
     operationId: 'retryOtaCampaignFailures',
     method: 'POST',
     path: '/api/v1/admin/ota/campaigns/{campaignId}/retry',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'createMediaUploadSession',
+    method: 'POST',
+    path: '/api/v1/device/media/upload-sessions',
+    runtime: 'device-api',
+  },
+  { operationId: 'listMedia', method: 'GET', path: '/api/v1/admin/media', runtime: 'admin-api' },
+  {
+    operationId: 'createMediaDownloadUrl',
+    method: 'GET',
+    path: '/api/v1/admin/media/{mediaId}/download-url',
+    runtime: 'admin-api',
+  },
+  { operationId: 'listUsers', method: 'GET', path: '/api/v1/admin/users', runtime: 'admin-api' },
+  { operationId: 'inviteUser', method: 'POST', path: '/api/v1/admin/users', runtime: 'admin-api' },
+  {
+    operationId: 'assignUserRoles',
+    method: 'PUT',
+    path: '/api/v1/admin/users/{userId}/roles',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'setUserScope',
+    method: 'PUT',
+    path: '/api/v1/admin/users/{userId}/scope',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'disableUser',
+    method: 'POST',
+    path: '/api/v1/admin/users/{userId}/disable',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'triggerUserPasswordReset',
+    method: 'POST',
+    path: '/api/v1/admin/users/{userId}/password-reset',
+    runtime: 'admin-api',
+  },
+  { operationId: 'listAuditLogs', method: 'GET', path: '/api/v1/admin/audit-logs', runtime: 'admin-api' },
+  {
+    operationId: 'getAuditLogDetail',
+    method: 'GET',
+    path: '/api/v1/admin/audit-logs/{auditId}',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'getDashboardOverview',
+    method: 'GET',
+    path: '/api/v1/admin/dashboard/overview',
+    runtime: 'admin-api',
+  },
+  { operationId: 'listSettings', method: 'GET', path: '/api/v1/admin/settings', runtime: 'admin-api' },
+  {
+    operationId: 'getSetting',
+    method: 'GET',
+    path: '/api/v1/admin/settings/{key}',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'updateSetting',
+    method: 'PUT',
+    path: '/api/v1/admin/settings/{key}',
     runtime: 'admin-api',
   },
 ] as const satisfies readonly DeliveredOperation[];

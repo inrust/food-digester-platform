@@ -11,6 +11,7 @@ function routes(overrides: Partial<DeviceRouteSet> = {}): DeviceRouteSet {
     sync: unused,
     deactivate: unused,
     otaDownload: unused,
+    mediaUpload: unused,
     ...overrides,
   };
 }
@@ -22,6 +23,7 @@ describe('Device API Lambda 生产路由', () => {
     ['POST', '/api/v1/device/sync', 'sync'],
     ['POST', '/api/v1/device/deactivate', 'deactivate'],
     ['GET', '/api/v1/device/ota/targets/target-1/download', 'otaDownload'],
+    ['POST', '/api/v1/device/media/upload-sessions', 'mediaUpload'],
   ] as const)('%s %s 映射到 %s Handler', async (method, path, key) => {
     const route: DeviceRoute = vi.fn(async () => ({ status: 200, body: { ok: true } }));
     const handler = createDeviceApiLambdaHandler(routes({ [key]: route }));

@@ -1,8 +1,11 @@
 import {
   createAwsIotProvisioningClient,
+  createCognitoAdminPort,
   createKmsFirmwareSignatureVerifier,
   createOtaFirmwareS3Ports,
   createS3ActivityExportPorts,
+  createS3MediaObjectStorage,
+  createS3MediaUrlSigner,
   resolveDatabaseUrl,
   resolveSecretString,
 } from '@fdp/aws-clients';
@@ -29,6 +32,18 @@ import { createAdminEsgHandlers } from '../admin/esg/handler.js';
 import { createAdminCommandHandlers } from '../admin/command/handler.js';
 import { createAdminOtaPackageHandlers } from '../admin/ota-package/handler.js';
 import { createAdminOtaCampaignHandlers } from '../admin/ota-campaign/handler.js';
+import { createAdminMediaHandlers } from '../media/admin-handler.js';
+import { createAdminUserHandlers } from '../admin/user/handler.js';
+import { createAdminAuditHandlers } from '../admin/audit/handler.js';
+import { createAdminDashboardHandlers } from '../admin/dashboard/handler.js';
+import { createAdminSettingsHandlers } from '../admin/settings/handler.js';
+import {
+  getDailyUploadQuotaPerDevice,
+  getDownloadUrlTtlSeconds,
+  getMaxSizeKb,
+  getMediaTypes,
+  getUploadUrlTtlSeconds,
+} from '@fdp/contracts/media/media-upload-policy.js';
 import otaSignaturePolicy from '@fdp/contracts/security/ota-package-signature-policy.json' with { type: 'json' };
 import {
   createAdminLambdaRouter,
@@ -56,6 +71,22 @@ async function initialize() {
   });
   const iot = createAwsIotProvisioningClient({ region });
   const ota = createOtaFirmwareS3Ports({ bucket: required('OTA_BUCKET_NAME'), region });
+  const mediaBucket = required('MEDIA_BUCKET_NAME');
+  const mediaDeps = {
+    client,
+    storage: createS3MediaObjectStorage({ bucket: mediaBucket, region }),
+    urlSigner: createS3MediaUrlSigner({ bucket: mediaBucket, region }),
+    uploadPolicy: {
+      getMediaTypes,
+      getMaxSizeKb: (mediaType: string) =>
+        getMediaTypes().includes(mediaType as ReturnType<typeof getMediaTypes>[number])
+          ? getMaxSizeKb(mediaType as ReturnType<typeof getMediaTypes>[number])
+          : undefined,
+      getDailyUploadQuotaPerDevice,
+      getUploadUrlTtlSeconds,
+      getDownloadUrlTtlSeconds,
+    },
+  };
   const routes = {
     onboarding: createAdminOnboardingHandlers({ client }),
     certificateRotation: createAdminCertificateRotationHandler({ client }),
@@ -90,6 +121,14 @@ async function initialize() {
       signatureVerifier: createKmsFirmwareSignatureVerifier({ keyId: required('OTA_SIGNING_KEY_ARN'), region }),
     }),
     otaCampaigns: createAdminOtaCampaignHandlers({ client }),
+    media: createAdminMediaHandlers(mediaDeps),
+    users: createAdminUserHandlers({
+      client,
+      cognito: createCognitoAdminPort({ userPoolId: required('USER_POOL_ID'), region }),
+    }),
+    audit: createAdminAuditHandlers({ client }),
+    dashboard: createAdminDashboardHandlers({ client }),
+    settings: createAdminSettingsHandlers({ client }),
   };
   return createAdminLambdaRouter(
     { region, userPoolId: required('USER_POOL_ID'), clientId: required('USER_POOL_CLIENT_ID') },

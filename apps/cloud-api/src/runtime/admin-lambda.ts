@@ -28,6 +28,11 @@ import type { AdminEsgHandlers } from '../admin/esg/handler.js';
 import type { AdminCommandHandlers } from '../admin/command/handler.js';
 import type { AdminOtaPackageHandlers } from '../admin/ota-package/handler.js';
 import type { AdminOtaCampaignHandlers } from '../admin/ota-campaign/handler.js';
+import type { AdminMediaHandlers } from '../media/admin-handler.js';
+import type { AdminUserHandlers } from '../admin/user/handler.js';
+import type { AdminAuditHandlers } from '../admin/audit/handler.js';
+import type { AdminDashboardHandlers } from '../admin/dashboard/handler.js';
+import type { AdminSettingsHandlers } from '../admin/settings/handler.js';
 import { matchDeliveredOperation } from './delivered-operations.js';
 
 export interface ApiGatewayAdminEvent {
@@ -82,6 +87,11 @@ export interface AdminOnboardingRouteSet {
   readonly commands: AdminCommandHandlers;
   readonly otaPackages: AdminOtaPackageHandlers;
   readonly otaCampaigns: AdminOtaCampaignHandlers;
+  readonly media: AdminMediaHandlers;
+  readonly users: AdminUserHandlers;
+  readonly audit: AdminAuditHandlers;
+  readonly dashboard: AdminDashboardHandlers;
+  readonly settings: AdminSettingsHandlers;
 }
 
 const header = (headers: Readonly<Record<string, string | undefined>>, wanted: string): string | undefined => {
@@ -223,6 +233,20 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
       resumeOtaCampaign: routes.otaCampaigns.resumeCampaign,
       cancelOtaCampaign: routes.otaCampaigns.cancelCampaign,
       retryOtaCampaignFailures: routes.otaCampaigns.retryCampaign,
+      listMedia: routes.media.listMedia,
+      createMediaDownloadUrl: routes.media.createDownloadUrl,
+      listUsers: routes.users.listUsers,
+      inviteUser: routes.users.inviteUser,
+      assignUserRoles: routes.users.assignRoles,
+      setUserScope: routes.users.setScope,
+      disableUser: routes.users.disableUser,
+      triggerUserPasswordReset: routes.users.triggerPasswordReset,
+      listAuditLogs: routes.audit.listAuditLogs,
+      getAuditLogDetail: routes.audit.getAuditLogDetail,
+      getDashboardOverview: routes.dashboard.getOverview,
+      listSettings: routes.settings.listSettings,
+      getSetting: routes.settings.getSetting,
+      updateSetting: routes.settings.updateSetting,
     };
     const target = targetOperations[operationId];
     if (target) return target(routedRequest);

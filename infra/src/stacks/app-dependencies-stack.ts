@@ -1100,12 +1100,14 @@ export class AppDependenciesStack extends Stack {
         CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
         FDP_AWS_ACCOUNT_ID: Aws.ACCOUNT_ID,
         OTA_BUCKET_NAME: storage.ota.bucketName,
+        MEDIA_BUCKET_NAME: storage.media.bucketName,
       },
       role: deviceApiRole,
       entry: DEVICE_API_ENTRY,
     });
     dbSecretGrant(deviceApi);
     storage.ota.grantRead(deviceApi, 'firmware-packages/*');
+    storage.media.grantWrite(deviceApi, 'media/*');
     deviceApiRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
         sid: 'CertificatePackageKeyDataPlane',
@@ -1155,8 +1157,8 @@ export class AppDependenciesStack extends Stack {
         resources: [this.formatArn({ service: 'iot', resource: 'cert', resourceName: '*' })],
       }),
     );
-    // 预签名 URL 与重放读取：仅授予业务所需 Bucket 的对象级读写
-    storage.media.grantReadWrite(api);
+    // Media 管理端只签发下载 URL；上传由 mTLS Device API 独立承担。
+    storage.media.grantRead(api, 'media/*');
     storage.ota.grantReadWrite(api);
     apiRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
@@ -1167,6 +1169,23 @@ export class AppDependenciesStack extends Stack {
     );
     storage.exportBucket.grantRead(api, 'activity-exports/*');
     storage.raw.grantRead(api);
+    api.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'AdminUserManagement',
+        actions: [
+          'cognito-idp:AdminCreateUser',
+          'cognito-idp:ListUsers',
+          'cognito-idp:AdminListGroupsForUser',
+          'cognito-idp:AdminAddUserToGroup',
+          'cognito-idp:AdminRemoveUserFromGroup',
+          'cognito-idp:AdminUpdateUserAttributes',
+          'cognito-idp:AdminDeleteUserAttributes',
+          'cognito-idp:AdminDisableUser',
+          'cognito-idp:AdminResetUserPassword',
+        ],
+        resources: [identity.userPool.userPoolArn],
+      }),
+    );
     return {
       ingestion,
       archive,

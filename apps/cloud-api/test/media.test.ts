@@ -129,9 +129,9 @@ function mediaDeps(store: ReturnType<typeof fakeStorage>, policy: MediaUploadPol
     now: () => NOW,
     storage: store.storage,
     urlSigner: {
-      signUpload: ({ key, expiresAt }) =>
+      signUpload: async ({ key, expiresAt }) =>
         `https://upload.test/${key}?expires=${encodeURIComponent(expiresAt.toISOString())}`,
-      signDownload: ({ key, expiresAt }) =>
+      signDownload: async ({ key, expiresAt }) =>
         `https://download.test/${key}?expires=${encodeURIComponent(expiresAt.toISOString())}`,
     },
     uploadPolicy: policy,
@@ -155,6 +155,7 @@ async function createSession(
     mediaType: 'IMAGE',
     fileName: 'snap.jpg',
     sizeKb: Math.ceil(content.length / 1024),
+    sizeBytes: content.length,
     sha256: createHash('sha256').update(content).digest('hex'),
     ...overrides,
   };
@@ -167,6 +168,7 @@ interface SessionView {
   fileName: string;
   mediaType: string;
   sizeKb: number;
+  sizeBytes: number;
 }
 
 function metadataMessage(
@@ -251,6 +253,7 @@ describe('BE-MED-01 设备上传会话', () => {
     );
     assert.ok(view.uploadUrl.startsWith('https://'));
     assert.ok(view.uploadUrl.includes(view.objectPath));
+    assert.equal(view.sizeBytes, content.length);
     assert.equal(new Date(view.uploadUrlExpiresAt).getTime() - NOW.getTime(), 900 * 1000);
 
     const row = await prisma.mediaUploadSession.findUnique({ where: { id: view.sessionId } });

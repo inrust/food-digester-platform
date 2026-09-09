@@ -60,10 +60,12 @@ export function createDeviceMediaHandler(
       const auth = await verifyDeviceCertificate(deps.client, req.identity, { now: now() });
       const body = (req.body ?? {}) as Record<string, unknown>;
       if (typeof body.sizeKb !== 'number') throw mediaValidationFailed('sizeKb is required');
+      if (typeof body.sizeBytes !== 'number') throw mediaValidationFailed('sizeBytes is required');
       const view = await createMediaUploadSession(deps, auth, {
         mediaType: requireString(body, 'mediaType'),
         fileName: requireString(body, 'fileName'),
         sizeKb: body.sizeKb,
+        sizeBytes: body.sizeBytes,
         sha256: requireString(body, 'sha256'),
       });
       return {

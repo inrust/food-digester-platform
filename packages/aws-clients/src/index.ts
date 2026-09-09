@@ -30,6 +30,10 @@ export type {
 } from './s3-archive-store.js';
 export { createS3MediaObjectStorage } from './s3-media-object-storage.js';
 export type { MediaObjectStoragePort, S3MediaObjectStorageConfig } from './s3-media-object-storage.js';
+export { createS3MediaUrlSigner } from './s3-media-url-signer.js';
+export type { MediaUrlSignerPort, S3MediaUrlSignerConfig } from './s3-media-url-signer.js';
+export { createCognitoAdminPort } from './cognito-admin.js';
+export type { CognitoAdminConfig, CognitoAdminPort } from './cognito-admin.js';
 export { createS3ActivityExportPorts } from './s3-activity-export.js';
 export type { ActivityExportAwsPorts, S3ActivityExportConfig } from './s3-activity-export.js';
 export { createHttpsWebhookSender, createSesEmailSender } from './business-notification-sender.js';

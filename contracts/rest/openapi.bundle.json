@@ -157,7 +157,7 @@
       },
       {
         "file": "device-media-api.json",
-        "sha256": "5d2d07914b63340c7ddfb1a7f5aacfba22c4ad40d29240a49afd2045566e1f95",
+        "sha256": "44a3039ae1822065eaf4925a0b00528d9719352af01e72b50917a5e370429e9a",
         "status": "implemented"
       },
       {
@@ -18670,6 +18670,7 @@
           "mediaType",
           "fileName",
           "sizeKb",
+          "sizeBytes",
           "sha256"
         ],
         "additionalProperties": false,
@@ -18694,6 +18695,11 @@
             "minimum": 1,
             "description": "申报大小（ceil KB；上限按类型：IMAGE 10240 / VIDEO 204800，暂定值）"
           },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "精确字节数；必须满足 ceil(sizeBytes / 1024) = sizeKb，并绑定到预签名 PUT Content-Length"
+          },
           "sha256": {
             "type": "string",
             "pattern": "^[0-9A-Fa-f]{64}$",
@@ -18708,6 +18714,7 @@
           "mediaType",
           "fileName",
           "sizeKb",
+          "sizeBytes",
           "objectPath",
           "uploadUrl",
           "uploadUrlExpiresAt",
@@ -18731,6 +18738,10 @@
             "minLength": 1
           },
           "sizeKb": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sizeBytes": {
             "type": "integer",
             "minimum": 1
           },
@@ -20417,7 +20428,7 @@
         }
       },
       "DeviceMediaApi__BadRequest": {
-        "description": "校验失败（VALIDATION_FAILED：mediaType/fileName/sizeKb/sha256 非法或超限）",
+        "description": "校验失败（VALIDATION_FAILED：mediaType/fileName/sizeKb/sizeBytes/sha256 非法、不一致或超限）",
         "content": {
           "application/json": {
             "schema": {

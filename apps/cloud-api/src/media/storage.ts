@@ -16,6 +16,11 @@ export type { MediaObjectStorage } from '@fdp/media';
 
 /** 预签名 URL 签名器端口（部署层接 S3 presigned PUT/GET）。 */
 export interface MediaUrlSigner {
-  readonly signUpload: (input: { readonly key: string; readonly expiresAt: Date }) => string;
-  readonly signDownload: (input: { readonly key: string; readonly expiresAt: Date }) => string;
+  readonly signUpload: (input: {
+    readonly key: string;
+    readonly expiresAt: Date;
+    readonly contentLength: number;
+    readonly checksumSha256: string;
+  }) => Promise<string>;
+  readonly signDownload: (input: { readonly key: string; readonly expiresAt: Date }) => Promise<string>;
 }

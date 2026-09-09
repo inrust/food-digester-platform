@@ -615,7 +615,14 @@ describe('Cognito 与应用配置输出', () => {
     }
     const deviceFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-device-api-handler');
     assert.isDefined(deviceFn);
-    for (const key of ['DB_SECRET_ARN', 'CERT_PACKAGE_KEY_ARN', 'FDP_AWS_ACCOUNT_ID', 'OTA_BUCKET_NAME', 'ENV_NAME']) {
+    for (const key of [
+      'DB_SECRET_ARN',
+      'CERT_PACKAGE_KEY_ARN',
+      'FDP_AWS_ACCOUNT_ID',
+      'OTA_BUCKET_NAME',
+      'MEDIA_BUCKET_NAME',
+      'ENV_NAME',
+    ]) {
       assert.isDefined(deviceFn.Properties.Environment.Variables[key], `Device Lambda 缺少环境变量 ${key}`);
     }
     const otaDispatcherFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-ota-dispatcher');
@@ -676,6 +683,25 @@ describe('Cognito 与应用配置输出', () => {
     ]) {
       assert.isDefined(outputs[id], `缺少 CfnOutput ${id}`);
     }
+  });
+
+  test('Admin 用户管理 IAM 仅包含所需 Cognito Admin 动作并限定当前 User Pool', () => {
+    const statements = collectPolicyStatements(template.toJSON()).map(({ statement }) => statement);
+    const admin = statements.find((statement) => statement.Sid === 'AdminUserManagement');
+    assert.isDefined(admin);
+    assert.deepEqual([...(admin.Action as string[])].sort(), [
+      'cognito-idp:AdminAddUserToGroup',
+      'cognito-idp:AdminCreateUser',
+      'cognito-idp:AdminDeleteUserAttributes',
+      'cognito-idp:AdminDisableUser',
+      'cognito-idp:AdminListGroupsForUser',
+      'cognito-idp:AdminRemoveUserFromGroup',
+      'cognito-idp:AdminResetUserPassword',
+      'cognito-idp:AdminUpdateUserAttributes',
+      'cognito-idp:ListUsers',
+    ]);
+    assert.include(JSON.stringify(admin.Resource), 'AdminUserPool');
+    assert.notEqual(admin.Resource, '*');
   });
 
   test('KMS：数据/证书包 Key 启用轮换；OTA 使用独立 RSA-2048 SIGN_VERIFY 信任根', () => {

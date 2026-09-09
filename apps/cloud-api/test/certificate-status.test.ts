@@ -159,6 +159,7 @@ describe('GET /api/v1/device/certificate/status', () => {
       sync: unused,
       deactivate: unused,
       otaDownload: unused,
+      mediaUpload: unused,
     });
     const response = await lambda({
       httpMethod: 'GET',

@@ -2,6 +2,8 @@ import {
   createAwsIotProvisioningClient,
   createKmsDataKeyProvider,
   createOtaFirmwareS3Ports,
+  createS3MediaObjectStorage,
+  createS3MediaUrlSigner,
   resolveDatabaseUrl,
 } from '@fdp/aws-clients';
 import { getMaintenanceSyncIntervalSeconds } from '@fdp/contracts/lifecycle/maintenance-behavior.js';
@@ -13,6 +15,14 @@ import {
   createDeviceSyncHandler,
 } from '../device/index.js';
 import { createDeviceOtaDownloadHandler } from '../ota/download.js';
+import { createDeviceMediaHandler } from '../media/device-handler.js';
+import {
+  getDailyUploadQuotaPerDevice,
+  getDownloadUrlTtlSeconds,
+  getMaxSizeKb,
+  getMediaTypes,
+  getUploadUrlTtlSeconds,
+} from '@fdp/contracts/media/media-upload-policy.js';
 import {
   createDeviceApiLambdaHandler,
   type ApiGatewayDeviceEvent,
@@ -39,6 +49,7 @@ async function initialize() {
   const iot = createAwsIotProvisioningClient({ region });
   const keyProvider = createKmsDataKeyProvider({ keyId: required('CERT_PACKAGE_KEY_ARN'), region });
   const ota = createOtaFirmwareS3Ports({ bucket: required('OTA_BUCKET_NAME'), region });
+  const mediaBucket = required('MEDIA_BUCKET_NAME');
   return createDeviceApiLambdaHandler({
     certificateStatus: createCertificateStatusHandler({
       client,
@@ -57,6 +68,21 @@ async function initialize() {
     sync: createDeviceSyncHandler({ client, maintenanceSyncIntervalSeconds: getMaintenanceSyncIntervalSeconds() }),
     deactivate: createDeviceDeactivateHandler({ client, iot }),
     otaDownload: createDeviceOtaDownloadHandler({ client, objectUrlSigner: ota.downloadUrlSigner }),
+    mediaUpload: createDeviceMediaHandler({
+      client,
+      storage: createS3MediaObjectStorage({ bucket: mediaBucket, region }),
+      urlSigner: createS3MediaUrlSigner({ bucket: mediaBucket, region }),
+      uploadPolicy: {
+        getMediaTypes,
+        getMaxSizeKb: (mediaType: string) =>
+          getMediaTypes().includes(mediaType as ReturnType<typeof getMediaTypes>[number])
+            ? getMaxSizeKb(mediaType as ReturnType<typeof getMediaTypes>[number])
+            : undefined,
+        getDailyUploadQuotaPerDevice,
+        getUploadUrlTtlSeconds,
+        getDownloadUrlTtlSeconds,
+      },
+    }),
   });
 }
 
