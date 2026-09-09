@@ -8,7 +8,7 @@
  * - 邀请/密码重置响应不含密码或 Hash；API 不接收永久密码（契约测试强制）；
  * - PlatformOperator 无 user:write/user:read（矩阵 → 403）；无 actor → 401；
  * - 角色集校验：混绑/未知角色/空集 → 400；平台角色带 customerId → 400；
- * - Cognito 端口调用断言（invite/groups/scope/disable/reset 先行）；
+ * - Cognito 端口调用断言（invite/groups/scope/disable/reset）及 DB 失败补偿/对账意图；
  * - 审计齐备：user.invite / user.role.assign / user.scope.change / user.disable / user.password_reset.trigger；
  * - 列表筛选（roleType/status/customerId/q）+ 键集游标分页；视图不泄露 cognitoSub。
  */
@@ -16,7 +16,7 @@ import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
-import { createAdminUserHandlers, inviteUser, setUserScope } from '../src/index.js';
+import { assignUserRoles, createAdminUserHandlers, inviteUser, setUserScope } from '../src/index.js';
 import type { AdminHttpRequest, CognitoAdminPort, UserAdminDeps } from '../src/index.js';
 import { createTestDb } from './helpers.js';
 
@@ -81,6 +81,12 @@ function fakeCognito(): { port: CognitoAdminPort; calls: CognitoCall[] } {
       },
       async disableUser(input) {
         record('disableUser', { ...input });
+      },
+      async deleteUser(input) {
+        record('deleteUser', { ...input });
+      },
+      async enableUser(input) {
+        record('enableUser', { ...input });
       },
       async triggerPasswordReset(input) {
         record('triggerPasswordReset', { ...input });
@@ -157,7 +163,7 @@ function expectNoCredentialLeak(body: unknown): void {
 // ---------- 邀请 ----------
 
 describe('BE-RBAC-01 邀请用户', () => {
-  test('成功：平台角色邀请 → 201 + Cognito 先行 + 角色落库 + 审计；响应不含凭证', async () => {
+  test('成功：平台角色邀请 → 201 + Cognito 同步 + 角色落库 + 审计；响应不含凭证', async () => {
     const { port, calls } = fakeCognito();
     const h = createAdminUserHandlers(userDeps(port));
     const res = await h.inviteUser(
@@ -173,7 +179,7 @@ describe('BE-RBAC-01 邀请用户', () => {
     assert.equal(view.customerId, null);
     expectNoCredentialLeak(res.body);
 
-    // Cognito 先行：groups 去重、customerId null
+    // Cognito 同步：groups 去重、customerId null
     assert.equal(calls.length, 1);
     assert.equal(calls[0]?.method, 'inviteUser');
     assert.deepEqual(calls[0]?.input, { email: 'new.admin@example.com', groups: ['Auditor'], customerId: null });
@@ -343,6 +349,127 @@ describe('BE-RBAC-01 角色分配（整体替换）', () => {
       req(superAdmin, { params: { userId: last.userId }, body: { roles: ['PlatformOperator'] } }),
     );
     assert.equal(ok.status, 200);
+  });
+
+  test('并发不变量：两个仅存 SuperAdmin 互相降级时只允许一个成功', async () => {
+    await prisma.user.updateMany({
+      where: { roles: { some: { roleCode: 'PlatformSuperAdmin' } } },
+      data: { status: 'DISABLED' },
+    });
+    const first = await plantUser({ roles: ['PlatformSuperAdmin'], cognitoSub: `concurrent-super-a-${++seq}` });
+    const second = await plantUser({ roles: ['PlatformSuperAdmin'], cognitoSub: `concurrent-super-b-${++seq}` });
+    const firstActor: ActorContext = { ...superAdmin, actorId: first.cognitoSub };
+    const secondActor: ActorContext = { ...superAdmin, actorId: second.cognitoSub };
+    const { port, calls } = fakeCognito();
+    const h = createAdminUserHandlers(userDeps(port));
+
+    const results = await Promise.all([
+      h.assignRoles(req(firstActor, { params: { userId: second.userId }, body: { roles: ['PlatformOperator'] } })),
+      h.assignRoles(req(secondActor, { params: { userId: first.userId }, body: { roles: ['PlatformOperator'] } })),
+    ]);
+    assert.deepEqual(results.map((result) => result.status).sort(), [200, 409]);
+    assert.equal(
+      await prisma.user.count({
+        where: { status: { not: 'DISABLED' }, roles: { some: { roleCode: 'PlatformSuperAdmin' } } },
+      }),
+      1,
+    );
+    assert.equal(calls.filter((call) => call.method === 'setUserGroups').length, 1);
+  });
+
+  test('并发不变量：停用与互相降级竞争时仍保留一个有效 SuperAdmin', async () => {
+    await prisma.user.updateMany({
+      where: { roles: { some: { roleCode: 'PlatformSuperAdmin' } } },
+      data: { status: 'DISABLED' },
+    });
+    const first = await plantUser({ roles: ['PlatformSuperAdmin'], cognitoSub: `mixed-super-a-${++seq}` });
+    const second = await plantUser({ roles: ['PlatformSuperAdmin'], cognitoSub: `mixed-super-b-${++seq}` });
+    const firstActor: ActorContext = { ...superAdmin, actorId: first.cognitoSub };
+    const secondActor: ActorContext = { ...superAdmin, actorId: second.cognitoSub };
+    const { port } = fakeCognito();
+    const h = createAdminUserHandlers(userDeps(port));
+    const results = await Promise.all([
+      h.disableUser(req(firstActor, { params: { userId: second.userId } })),
+      h.assignRoles(req(secondActor, { params: { userId: first.userId }, body: { roles: ['PlatformOperator'] } })),
+    ]);
+    assert.deepEqual(results.map((result) => result.status).sort(), [200, 409]);
+    assert.equal(
+      await prisma.user.count({
+        where: { status: { not: 'DISABLED' }, roles: { some: { roleCode: 'PlatformSuperAdmin' } } },
+      }),
+      1,
+    );
+  });
+
+  test('Cognito 已生效但 DB 写失败时恢复旧 Groups，并关闭对账意图', async () => {
+    const target = await plantUser({ roles: ['Auditor'] });
+    const { port, calls } = fakeCognito();
+    const failingClient = prisma.$extends({
+      query: {
+        userRole: {
+          async createMany() {
+            throw new Error('injected user_roles write failure');
+          },
+        },
+      },
+    });
+    let failed = false;
+    try {
+      await assignUserRoles(
+        { client: failingClient as unknown as UserAdminDeps['client'], now: () => NOW, cognito: port },
+        superAdmin,
+        target.userId,
+        { roles: ['PlatformOperator'] },
+      );
+    } catch {
+      failed = true;
+    }
+    assert.isTrue(failed);
+    const groupCalls = calls.filter((call) => call.method === 'setUserGroups');
+    assert.equal(groupCalls.length, 2);
+    assert.deepEqual(groupCalls[0]?.input.groups, ['PlatformOperator']);
+    assert.deepEqual(groupCalls[1]?.input.groups, ['Auditor']);
+    assert.deepEqual(
+      (await prisma.userRole.findMany({ where: { userId: target.userId } })).map((role) => role.roleCode),
+      ['Auditor'],
+    );
+    const intent = await prisma.outboxEvent.findFirstOrThrow({
+      where: { aggregateId: target.userId, eventType: 'COGNITO_ADMIN_RECONCILIATION' },
+      orderBy: { createdAt: 'desc' },
+    });
+    assert.equal(intent.status, 'PUBLISHED');
+  });
+
+  test('Cognito 调用结果不确定时保留 PENDING 对账意图并产生告警审计', async () => {
+    const target = await plantUser({ roles: ['Auditor'] });
+    const { port, calls } = fakeCognito();
+    const uncertainPort: CognitoAdminPort = {
+      ...port,
+      async setUserGroups(input) {
+        calls.push({ method: 'setUserGroups', input: { ...input } });
+        throw new Error('injected uncertain Cognito response');
+      },
+    };
+    let failed = false;
+    try {
+      await assignUserRoles(userDeps(uncertainPort), superAdmin, target.userId, { roles: ['PlatformOperator'] });
+    } catch {
+      failed = true;
+    }
+    assert.isTrue(failed);
+    const intent = await prisma.outboxEvent.findFirstOrThrow({
+      where: { aggregateId: target.userId, eventType: 'COGNITO_ADMIN_RECONCILIATION' },
+      orderBy: { createdAt: 'desc' },
+    });
+    assert.equal(intent.status, 'PENDING');
+    assert.equal(intent.retryCount, 1);
+    assert.equal(intent.lastError, 'RECONCILIATION_REQUIRED');
+    assert.equal(
+      await prisma.auditLog.count({
+        where: { objectId: target.userId, action: 'user.cognito.reconciliation_required', result: 'FAILURE' },
+      }),
+      1,
+    );
   });
 
   test('拒绝：角色类型不可变（customer → platform 提升）；Customer actor 跨 Customer 授权', async () => {

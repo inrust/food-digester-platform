@@ -2,7 +2,9 @@ import {
   AdminAddUserToGroupCommand,
   AdminCreateUserCommand,
   AdminDeleteUserAttributesCommand,
+  AdminDeleteUserCommand,
   AdminDisableUserCommand,
+  AdminEnableUserCommand,
   AdminListGroupsForUserCommand,
   AdminRemoveUserFromGroupCommand,
   AdminResetUserPasswordCommand,
@@ -43,6 +45,8 @@ export interface CognitoAdminPort {
     readonly customerId: string | null;
   }) => Promise<void>;
   readonly disableUser: (input: { readonly cognitoSub: string }) => Promise<void>;
+  readonly deleteUser: (input: { readonly cognitoSub: string }) => Promise<void>;
+  readonly enableUser: (input: { readonly cognitoSub: string }) => Promise<void>;
   readonly triggerPasswordReset: (input: { readonly cognitoSub: string }) => Promise<void>;
 }
 
@@ -137,6 +141,22 @@ export function createCognitoAdminPort(config: CognitoAdminConfig): CognitoAdmin
     async disableUser(input) {
       await client.send(
         new AdminDisableUserCommand({
+          UserPoolId: config.userPoolId,
+          Username: await resolveUsername(input.cognitoSub),
+        }),
+      );
+    },
+    async deleteUser(input) {
+      await client.send(
+        new AdminDeleteUserCommand({
+          UserPoolId: config.userPoolId,
+          Username: await resolveUsername(input.cognitoSub),
+        }),
+      );
+    },
+    async enableUser(input) {
+      await client.send(
+        new AdminEnableUserCommand({
           UserPoolId: config.userPoolId,
           Username: await resolveUsername(input.cognitoSub),
         }),

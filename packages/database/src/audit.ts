@@ -22,10 +22,11 @@ const logger = createRedactingLogger(console);
 
 /** 命中即整体遮蔽的字段名（不区分大小写）：私钥、Token、passwordHash、验证值、密钥材料。 */
 export const SENSITIVE_KEY_PATTERN =
-  /private[_-]?key|password|passcode|secret|token|verifier|credential|api[_-]?key|access[_-]?key/i;
+  /private[_-]?key|password|passcode|secret|token|verifier|credential|api[_-]?key|access[_-]?key|authorization|cookie|session|jwt/i;
 
 /** 即使字段名未知，也不得把私钥材料写入审计 JSON。 */
-export const SENSITIVE_VALUE_PATTERN = /-----BEGIN (?:RSA |EC |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY(?: BLOCK)?-----/i;
+export const SENSITIVE_VALUE_PATTERN =
+  /-----BEGIN (?:RSA |EC |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY(?: BLOCK)?-----|\bBearer\s+\S+|\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+|(?:^|;\s*)(?:session|sessionid|sid|auth|jwt|access_token|refresh_token)=[^;\s]+/i;
 
 export const REDACTED = '[REDACTED]' as const;
 

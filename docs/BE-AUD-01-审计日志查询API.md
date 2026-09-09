@@ -19,7 +19,7 @@
 
 **权限隔离**：Auditor/PlatformSuperAdmin 跨 Customer 只读；PlatformOperator 与 Customer 角色无 audit:read（DEC-012 冻结矩阵 → handler 403）。服务层对 Customer actor 仍强制 actor.customerId 租户隔离（customerId 参数不一致 → 403；详情跨 Customer → 404 不泄露存在性）作为纵深防御——若未来矩阵经版本化决策向 Customer 角色开放 audit:read，隔离语义即刻生效。
 
-**脱敏保证（敏感字段永不返回）**：列表视图字段封闭（不含 beforeValue/afterValue/ip/userAgent/reason/requestId）；详情前后值在读取时再次经 sanitizeAuditPayload 兜底脱敏（写入侧 DOM-03 已脱敏）——即使敏感材料绕过写入脱敏直接落库，响应中仍恒为 [REDACTED]。
+**脱敏保证（敏感字段永不返回）**：写入与读取共用递归脱敏器；字段名覆盖 Authorization、Cookie/Set-Cookie、session、JWT、password、token、secret、private key 等常见大小写/分隔变体，值模式额外识别 Bearer、JWT、Session Cookie 与私钥，非标准字段名也不能绕过。
 
 ## 3. 验收基准与证据（vitest + PGlite，6 项）
 
@@ -28,7 +28,7 @@
 | 权限隔离 | Auditor/SuperAdmin 跨 Customer 200；Operator/CustomerAdmin → 403；无 actor → 401；Customer actor 服务层强制 scope、越权筛选 FORBIDDEN、跨 Customer 详情 NOT_FOUND | ✅ |
 | 筛选正确 | actorId/customerId/objectType/objectId/action/result/from/to 各自生效；非法 result/日期 → 400 | ✅ |
 | 分页正确 | createdAt 倒序 + id 决胜；5 条相同时间戳记录 limit=2 翻页不重复不漏且与全量顺序一致 | ✅ |
-| 敏感字段永不返回 | 列表视图无 beforeValue/afterValue/ip/userAgent；详情对绕过写入脱敏落库的 password/privateKey/apiToken 读取兜底脱敏为 [REDACTED]，响应文本不含原文，非敏感字段原样 | ✅ |
+| 敏感字段永不返回 | password/privateKey/apiToken、Authorization、Cookie/Set-Cookie、嵌套数组，以及非标准键下的 Bearer/JWT 值均在写入和读取侧变为 [REDACTED] | ✅ |
 | 不存在写路由 | handler 仅导出 listAuditLogs/getAuditLogDetail；契约测试强制 OpenAPI 无 post/put/patch/delete | ✅ |
 
 ## 4. 未决风险

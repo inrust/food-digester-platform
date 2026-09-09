@@ -27,6 +27,10 @@ export interface CognitoAdminPort {
   }) => Promise<void>;
   /** 停用（DISABLED 用户不可登录）。 */
   readonly disableUser: (input: { readonly cognitoSub: string }) => Promise<void>;
+  /** 邀请落库失败的确定性补偿：删除刚创建的 Cognito 用户。 */
+  readonly deleteUser: (input: { readonly cognitoSub: string }) => Promise<void>;
+  /** 停用落库失败的确定性补偿：恢复用户登录能力。 */
+  readonly enableUser: (input: { readonly cognitoSub: string }) => Promise<void>;
   /** 触发受控密码重置（Cognito 生成临时凭证并发送；无返回值材料）。 */
   readonly triggerPasswordReset: (input: { readonly cognitoSub: string }) => Promise<void>;
 }

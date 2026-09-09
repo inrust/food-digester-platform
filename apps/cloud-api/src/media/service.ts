@@ -183,14 +183,8 @@ export async function createMediaUploadSession(
     throw mediaValidationFailed('sha256 must be a 64-character hex string');
   }
 
-  // 配额：每设备每日上传会话数（UTC 自然日，暂定值）
+  // 配额窗口：UTC 自然日。领取在下方事务中锁定 device 行后执行，避免 count → create 竞态。
   const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const todayCount = await sessions(deps.client).count({
-    where: { deviceId: auth.deviceId, createdAt: { gte: dayStart } },
-  });
-  if (todayCount >= deps.uploadPolicy.getDailyUploadQuotaPerDevice()) {
-    throw mediaConflict('The daily media upload quota for this device is exceeded');
-  }
 
   const sessionId = randomUUID();
   const objectPath = buildMediaObjectKey({
@@ -220,8 +214,19 @@ export async function createMediaUploadSession(
         status: 'ISSUED',
       }),
     },
-    (tx) =>
-      sessions(tx).create({
+    async (tx) => {
+      await (
+        tx as DbClient & {
+          $queryRawUnsafe<T>(query: string, ...values: unknown[]): Promise<T>;
+        }
+      ).$queryRawUnsafe('SELECT id FROM "devices" WHERE id = $1 FOR UPDATE', auth.deviceId);
+      const todayCount = await sessions(tx).count({
+        where: { deviceId: auth.deviceId, createdAt: { gte: dayStart } },
+      });
+      if (todayCount >= deps.uploadPolicy.getDailyUploadQuotaPerDevice()) {
+        throw mediaConflict('The daily media upload quota for this device is exceeded');
+      }
+      return sessions(tx).create({
         data: {
           id: sessionId,
           deviceId: auth.deviceId,
@@ -234,7 +239,8 @@ export async function createMediaUploadSession(
           presignedUrlExpiresAt: uploadUrlExpiresAt,
           createdAt: now,
         },
-      }),
+      });
+    },
   );
 
   const uploadUrl = await deps.urlSigner.signUpload({

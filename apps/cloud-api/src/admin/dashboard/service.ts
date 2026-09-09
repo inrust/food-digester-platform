@@ -19,13 +19,11 @@
  * - Customer scope：Customer actor 强制 actor.customerId（汇总不串线）；平台角色全平台口径；
  * - 功能边界：不返回 AWS CPU、队列深度等运维指标。
  */
-import { COMMAND_CATALOG, resolveCommandGateStatus } from '@fdp/domain';
-import type { CommandGateStatus } from '@fdp/domain';
-import { commandDenyReason } from '@fdp/contracts/mqtt/catalogs.js';
-import { hasPermission } from '@fdp/auth';
-import type { ActorContext, Role } from '@fdp/auth';
+import { COMMAND_CATALOG } from '@fdp/domain';
+import type { ActorContext } from '@fdp/auth';
 import type { DbClient } from '@fdp/database';
 import { DEFAULT_CONNECTIVITY_THRESHOLD_MS, deriveConnectivity } from '../device/repository.js';
+import { commandAuthorizationDenyReason } from '../command/authorization.js';
 
 export interface DashboardDeps {
   readonly client: DbClient;
@@ -74,6 +72,10 @@ interface ConsumableRow {
   readonly consumableType: string;
   readonly remainingPercent: number | null;
   readonly stale: boolean;
+}
+
+interface LicenseRow {
+  readonly deviceId: string;
 }
 
 interface TableDelegate {
@@ -203,9 +205,23 @@ export async function getDashboardOverview(deps: DashboardDeps, actor: ActorCont
 
   // 设备卡片（固定前 10 台）+ 耗材投影
   const cardDevices = devices.slice(0, DASHBOARD_DEVICE_CARD_LIMIT);
-  const consumables = (await table(client, 'consumableProjection').findMany({
-    where: { deviceId: { in: cardDevices.map((d) => d.id) } },
-  })) as unknown as ConsumableRow[];
+  const cardDeviceIds = cardDevices.map((d) => d.id);
+  const [consumables, effectiveRemoteControlLicenses] = await Promise.all([
+    table(client, 'consumableProjection').findMany({
+      where: { deviceId: { in: cardDeviceIds } },
+    }) as unknown as Promise<ConsumableRow[]>,
+    table(client, 'license').findMany({
+      where: {
+        deviceId: { in: cardDeviceIds },
+        status: { in: ['Active', 'ExpiringSoon'] },
+        validFrom: { lte: now },
+        validTo: { gt: now },
+        entitlements: { some: { code: 'REMOTE_CONTROL', enabled: true } },
+      },
+      select: { deviceId: true },
+    }) as unknown as Promise<LicenseRow[]>,
+  ]);
+  const remotelyControllableDeviceIds = new Set(effectiveRemoteControlLicenses.map((row) => row.deviceId));
   const consumablesByDevice = new Map<string, ConsumableRow[]>();
   for (const row of consumables) {
     const list = consumablesByDevice.get(row.deviceId) ?? [];
@@ -213,15 +229,17 @@ export async function getDashboardOverview(deps: DashboardDeps, actor: ActorCont
     consumablesByDevice.set(row.deviceId, list);
   }
 
-  const actorCanSendCommand = actor.roles.some((role) => hasPermission(role as Role, 'command:send'));
   const cardViews: DeviceCardView[] = cardDevices.map((device) => {
     const state = stateByDevice.get(device.id);
-    const gateStatus: CommandGateStatus = resolveCommandGateStatus(
-      device.lifecycleStatus,
-      state?.operationalStatus ?? null,
-    );
     const actions = COMMAND_CATALOG.map((spec) => {
-      const denyReason = actorCanSendCommand ? commandDenyReason(spec.command, gateStatus as never) : 'FORBIDDEN';
+      const denyReason = commandAuthorizationDenyReason({
+        actor,
+        deviceCustomerId: device.customerId,
+        lifecycleStatus: device.lifecycleStatus,
+        operationalStatus: state?.operationalStatus ?? null,
+        command: spec.command,
+        hasRemoteControlEntitlement: remotelyControllableDeviceIds.has(device.id),
+      });
       return { command: spec.command, allowed: denyReason === null, denyReason };
     });
     return {

@@ -2,7 +2,9 @@ import {
   AdminAddUserToGroupCommand,
   AdminCreateUserCommand,
   AdminDeleteUserAttributesCommand,
+  AdminDeleteUserCommand,
   AdminDisableUserCommand,
+  AdminEnableUserCommand,
   AdminListGroupsForUserCommand,
   AdminRemoveUserFromGroupCommand,
   AdminResetUserPasswordCommand,
@@ -56,6 +58,8 @@ describe('Cognito Admin 生产适配器', () => {
     await port.setUserCustomerScope({ cognitoSub: 'sub-1', customerId: 'customer-1' });
     await port.setUserCustomerScope({ cognitoSub: 'sub-1', customerId: null });
     await port.disableUser({ cognitoSub: 'sub-1' });
+    await port.enableUser({ cognitoSub: 'sub-1' });
+    await port.deleteUser({ cognitoSub: 'sub-1' });
     await port.triggerPasswordReset({ cognitoSub: 'sub-1' });
 
     assert.ok(sent.some((item) => item instanceof AdminRemoveUserFromGroupCommand));
@@ -63,6 +67,8 @@ describe('Cognito Admin 生产适配器', () => {
     assert.ok(sent.some((item) => item instanceof AdminUpdateUserAttributesCommand));
     assert.ok(sent.some((item) => item instanceof AdminDeleteUserAttributesCommand));
     assert.ok(sent.some((item) => item instanceof AdminDisableUserCommand));
+    assert.ok(sent.some((item) => item instanceof AdminEnableUserCommand));
+    assert.ok(sent.some((item) => item instanceof AdminDeleteUserCommand));
     assert.ok(sent.some((item) => item instanceof AdminResetUserPasswordCommand));
     for (const command of sent.filter((item) => !(item instanceof ListUsersCommand))) {
       if ('input' in (command as object)) {

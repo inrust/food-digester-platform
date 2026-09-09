@@ -177,6 +177,27 @@ async function plantEsg(
   });
 }
 
+async function plantRemoteControlLicense(
+  deviceId: string,
+  customerId: string,
+  status: string,
+  options: { expired?: boolean; enabled?: boolean } = {},
+): Promise<void> {
+  const license = await prisma.license.create({
+    data: {
+      deviceId,
+      customerId,
+      status,
+      validFrom: new Date(NOW.getTime() - 86_400_000),
+      validTo: options.expired ? new Date(NOW.getTime() - 1_000) : new Date(NOW.getTime() + 86_400_000),
+      createdBy: 'dashboard-fixture',
+    },
+  });
+  await prisma.licenseEntitlement.create({
+    data: { licenseId: license.id, code: 'REMOTE_CONTROL', enabled: options.enabled ?? true },
+  });
+}
+
 beforeAll(async () => {
   const cA = await prisma.customer.create({ data: { name: 'DASH A' } });
   const cB = await prisma.customer.create({ data: { name: 'DASH B' } });
@@ -203,6 +224,11 @@ beforeAll(async () => {
     lastHeartbeatAt: new Date(NOW.getTime() - 20 * 60_000),
     licenseStatus: 'ExpiringSoon',
   });
+  await plantRemoteControlLicense(deviceIdsA[0]!, customerAId, 'Active');
+  await plantRemoteControlLicense(deviceIdsA[1]!, customerAId, 'Active');
+  await plantRemoteControlLicense(deviceIdsA[2]!, customerAId, 'Active', { expired: true });
+  await plantRemoteControlLicense(deviceIdsA[3]!, customerAId, 'Revoked');
+  await plantRemoteControlLicense(deviceIdsA[4]!, customerAId, 'Active', { enabled: false });
 
   // Contract：EFFECTIVE + EXPIRING_SOON 有效；DRAFT/EXPIRED/TERMINATED 不计
   await plantContract(
@@ -427,6 +453,11 @@ describe('BE-DASH-01 总览聚合（固定 10 设备 Fixture）', () => {
     assert.equal(cards[0].actions.length, COMMAND_CATALOG.length);
     // Active 设备：START 允许（denyReason null）
     assert.deepEqual(actionOf(cards[0], 'START'), { command: 'START', allowed: true, denyReason: null });
+    // 无有效 License：过期、吊销、Entitlement disabled 均与 BE-CMD-01 一致失败关闭
+    for (const index of [2, 3, 4]) {
+      assert.deepEqual(actionOf(cards[index], 'START'), { command: 'START', allowed: false, denyReason: 'FORBIDDEN' });
+    }
+    assert.deepEqual(actionOf(cards[5], 'START'), { command: 'START', allowed: false, denyReason: 'FORBIDDEN' });
     // Maintenance（A2 operationalStatus=Maintenance）：START 拒绝 DEVICE_MAINTENANCE_RESTRICTED；STOP 放行
     const a2 = cards.find((c: Record<string, any>) => c.deviceId === deviceIdsA[1]);
     assert.deepEqual(actionOf(a2, 'START'), {

@@ -278,6 +278,19 @@ describe('BE-MED-01 设备上传会话', () => {
     assert.equal(third.status, 409);
     assert.equal((third.body as ErrBody).error.code, 'CONFLICT');
   });
+
+  test('配额并发：quota=1 的两个同时请求只有一个领取成功', async () => {
+    const store = fakeStorage();
+    const device = await plantDevice();
+    const policy1: MediaUploadPolicyQuery = { ...realPolicy, getDailyUploadQuotaPerDevice: () => 1 };
+    const content = Buffer.alloc(1024, 4);
+    const results = await Promise.all([
+      createSession(store, device, content, { fileName: 'concurrent-a.jpg' }, policy1),
+      createSession(store, device, content, { fileName: 'concurrent-b.jpg' }, policy1),
+    ]);
+    assert.deepEqual(results.map((result) => result.status).sort(), [201, 409]);
+    assert.equal(await prisma.mediaUploadSession.count({ where: { deviceId: device.deviceId } }), 1);
+  });
 });
 
 describe('BE-MED-01 元数据校验（Media Handler）', () => {

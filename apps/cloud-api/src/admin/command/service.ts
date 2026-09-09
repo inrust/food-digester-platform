@@ -21,12 +21,10 @@ import { audited } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
 import {
   CommandError,
-  assertCommandAllowed,
   assertCommandParams,
   assertHighRiskConfirmation,
   assertKnownCommand,
   COMMAND_CONFIRMATION_DECISION,
-  resolveCommandGateStatus,
 } from '@fdp/domain';
 import type { CommandConfirmation, CommandSpec } from '@fdp/domain';
 import {
@@ -36,6 +34,7 @@ import {
   commandStateNotAllowed,
   commandValidationFailed,
 } from './errors.js';
+import { commandAuthorizationDenyReason, hasEffectiveRemoteControlEntitlement } from './authorization.js';
 
 export interface CommandDeps {
   readonly client: DbClient;
@@ -60,10 +59,6 @@ interface DeviceDelegate {
 
 interface LatestStateDelegate {
   findFirst(args: { where: Record<string, unknown> }): Promise<LatestStateRow | null>;
-}
-
-interface LicenseDelegate {
-  findFirst(args: { where: Record<string, unknown> }): Promise<{ id: string } | null>;
 }
 
 interface CommandRow {
@@ -98,10 +93,6 @@ function devices(client: DbClient): DeviceDelegate {
 
 function latestStates(client: DbClient): LatestStateDelegate {
   return (client as unknown as Record<string, unknown>).deviceLatestState as LatestStateDelegate;
-}
-
-function licenses(client: DbClient): LicenseDelegate {
-  return (client as unknown as Record<string, unknown>).license as LicenseDelegate;
 }
 
 function commands(client: DbClient): CommandDelegate {
@@ -195,22 +186,6 @@ async function loadConfirmationPolicy(client: DbClient): Promise<{ ttlMs: number
   return { ttlMs: (value.ttlSec as number) * 1000, maxFutureMs: (value.maxFutureSec as number) * 1000 };
 }
 
-/** Entitlement 门：设备有效 License 且 REMOTE_CONTROL enabled（无 → 403）。 */
-async function assertRemoteControlEntitlement(client: DbClient, deviceId: string, now: Date): Promise<void> {
-  const license = await licenses(client).findFirst({
-    where: {
-      deviceId,
-      status: { in: ['Active', 'ExpiringSoon'] },
-      validFrom: { lte: now },
-      validTo: { gt: now },
-      entitlements: { some: { code: 'REMOTE_CONTROL', enabled: true } },
-    },
-  });
-  if (!license) {
-    throw commandForbidden('Device has no effective license with REMOTE_CONTROL entitlement');
-  }
-}
-
 function isUniqueViolation(err: unknown): boolean {
   return (err as { code?: string } | null)?.code === 'P2002';
 }
@@ -262,15 +237,16 @@ export async function createCommand(
 
   // 3. 设备状态门（云端 suspension 权威优先；领域层）
   const latest = await latestStates(deps.client).findFirst({ where: { deviceId: input.deviceId } });
-  const gateStatus = resolveCommandGateStatus(device.lifecycleStatus, latest?.operationalStatus ?? null);
-  try {
-    assertCommandAllowed(spec!, gateStatus);
-  } catch (err) {
-    mapDomainError(err);
-  }
-
-  // 4. Entitlement（REMOTE_CONTROL）
-  await assertRemoteControlEntitlement(deps.client, input.deviceId, now);
+  const denyReason = commandAuthorizationDenyReason({
+    actor,
+    deviceCustomerId: device.customerId,
+    lifecycleStatus: device.lifecycleStatus,
+    operationalStatus: latest?.operationalStatus ?? null,
+    command: spec!.command,
+    hasRemoteControlEntitlement: await hasEffectiveRemoteControlEntitlement(deps.client, input.deviceId, now),
+  });
+  if (denyReason?.startsWith('DEVICE_')) throw commandStateNotAllowed(denyReason);
+  if (denyReason) throw commandForbidden('Device has no effective license with REMOTE_CONTROL entitlement');
 
   // 5. 幂等重放检查（先读后写，P2002 兜底并发）
   if (input.commandId !== undefined) {

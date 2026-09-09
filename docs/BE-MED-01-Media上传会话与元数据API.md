@@ -13,7 +13,7 @@
 
 ## 2. 关键设计
 
-**设备端上传会话**（`POST /api/v1/device/media/upload-sessions`，mTLS）：AUTH-03 证书白名单 → 生命周期 Active/Maintenance + 已分配 Customer → 策略校验（mediaType 枚举、fileName 安全字符、sizeKb 类型上限 IMAGE 10MiB/VIDEO 200MiB、sha256 hex64）→ 每设备每日配额（100，UTC 自然日）→ 服务端生成 `media/{customerId}/{deviceId}/{sessionId}/{fileName}` objectPath + 15 分钟预签名上传 URL（均为 [media-upload-policy](../contracts/media/media-upload-policy.ts) 暂定值，经策略门面注入，不复制数值）。
+**设备端上传会话**（`POST /api/v1/device/media/upload-sessions`，mTLS）：AUTH-03 证书白名单 → 生命周期 Active/Maintenance + 已分配 Customer → 策略校验（mediaType 枚举、fileName 安全字符、sizeKb 类型上限、精确 sizeBytes、sha256 hex64）→ 事务锁定设备行并原子领取每日配额 → 服务端生成受控 objectPath + 15 分钟 S3 PUT URL；签名固定 Bucket/Key/TTL，并绑定精确 Content-Length 与 SHA-256 checksum。
 
 **元数据校验**（`@fdp/media` 的 `handleMediaMetadata`，由 ingestion-worker Media Handler 消费）：BE-IOT-03 receipt → 幂等键 sourceMessageId=meta.id → objectPath 逐字符等于已签发会话 Key（跨设备/跨会话/任意 Key 拒绝）→ 原子校验 `status=ISSUED AND presignedUrlExpiresAt>now` → 申报一致性（fileName/mediaType/sizeKb）→ Object 存在 → 大小匹配（ceil KB）→ SHA-256 重算比对会话申报值 → MediaObject AVAILABLE + 会话 COMPLETED + 审计；receipt 与业务写入同事务，过期使用 `MEDIA_SESSION_EXPIRED` 隔离。
 
@@ -26,7 +26,7 @@
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
 | 跨设备 Key 拒绝 | 设备 B 冒用设备 A 会话 Key → FORBIDDEN_PATH；他人前缀/非模板 Key → FORBIDDEN_PATH；本设备前缀但未签发会话 → UNKNOWN_SESSION；均无写入 | ✅ |
-| 超限文件拒绝 | IMAGE 10241KB / VIDEO 204801KB → 400；每设备每日配额超限 → 409 | ✅ |
+| 超限文件拒绝 | IMAGE 10241KB / VIDEO 204801KB、sizeBytes 与 sizeKb 不一致 → 400；每日配额超限 → 409；quota=1 双并发仅一条成功 | ✅ |
 | 不存在 Object 拒绝 | OBJECT_MISSING（拒绝后无写入，会话保持 ISSUED） | ✅ |
 | Hash 不符拒绝 | 重算 SHA-256 与会话申报不符 → HASH_MISMATCH；大小不符 → SIZE_MISMATCH；申报不一致 → METADATA_MISMATCH | ✅ |
 | 下载遵守 Customer 权限 | 跨 Customer 下载 → 404；Customer 列表强制 scope、越权筛选 → 403；DELETED → 404（元数据保留可见）；URL 900s | ✅ |
@@ -36,6 +36,6 @@
 ## 4. 未决风险
 
 - **上传限制为暂定值**（media-upload-policy provisional，无登记决策）：大小上限/日配额/TTL 冻结前可执行，冻结时需登记决策并提升策略版本；消费方均经策略门面注入。
-- **AWS 目标环境证据仍待补充**：生产代码已接入 S3 HeadObject/流式 SHA-256、`MEDIA_BUCKET_NAME` 与最小只读 IAM，IoT Rule → Ingress → Lambda → Media Handler 本地端到端已通过；尚未在隔离 AWS 环境执行真实对象与消息投递验收。
+- **AWS 目标环境证据仍待补充**：生产代码已接入 S3 PUT/GET 预签名、HeadObject/流式 SHA-256、Device 写/Admin 读最小 IAM；尚未在隔离 AWS 环境执行真实对象、签名头与消息投递验收。
 - **会话 EXPIRED 清扫**：超时未完成的 ISSUED 会话标记 EXPIRED 的清扫器未实现（当前 EXPIRED 会话元数据拒绝 SESSION_NOT_OPEN）；如需 sweeper 另立任务。
-- **sizeKb 申报口径**：按 ceil(bytes/1024) 严格比对；设备端须按同一口径申报（已写入契约描述）。
+- **大小申报口径**：设备端同时提交精确 `sizeBytes` 与 `sizeKb=ceil(sizeBytes/1024)`；前者绑定 S3 PUT，后者与 MQTT 元数据保持兼容。

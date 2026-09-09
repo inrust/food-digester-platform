@@ -51,6 +51,11 @@ describe('脱敏器', () => {
       bundle: { apiKey: 'k', pem: 'public-cert-ok' },
       transport: { pem: privateKeyBlock },
       material: rsaPrivateKeyBlock,
+      Authorization: 'Bearer secret-access-token',
+      cookie: 'session=secret-session; theme=dark',
+      headers: [{ 'Set-Cookie': 'sid=secret-sid' }],
+      unusualField: 'Bearer hidden-under-nonstandard-key',
+      anotherField: 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.signature',
     };
     const clean = sanitizeAuditPayload(dirty) as Record<string, any>;
     expect(clean.name).toBe('正常字段');
@@ -62,6 +67,11 @@ describe('脱敏器', () => {
     expect(clean.bundle.pem).toBe('public-cert-ok');
     expect(clean.transport.pem).toBe(REDACTED);
     expect(clean.material).toBe(REDACTED);
+    expect(clean.Authorization).toBe(REDACTED);
+    expect(clean.cookie).toBe(REDACTED);
+    expect(clean.headers[0]['Set-Cookie']).toBe(REDACTED);
+    expect(clean.unusualField).toBe(REDACTED);
+    expect(clean.anotherField).toBe(REDACTED);
 
     // 0 泄露：序列化后不含任何敏感值
     const serialized = JSON.stringify(clean);
@@ -73,6 +83,10 @@ describe('脱敏器', () => {
       'device-local-verifier',
       privateKeyBlock,
       rsaPrivateKeyBlock,
+      'secret-access-token',
+      'secret-session',
+      'secret-sid',
+      'hidden-under-nonstandard-key',
     ]) {
       expect(serialized).not.toContain(sensitive);
     }

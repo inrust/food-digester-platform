@@ -692,8 +692,10 @@ describe('Cognito 与应用配置输出', () => {
     assert.deepEqual([...(admin.Action as string[])].sort(), [
       'cognito-idp:AdminAddUserToGroup',
       'cognito-idp:AdminCreateUser',
+      'cognito-idp:AdminDeleteUser',
       'cognito-idp:AdminDeleteUserAttributes',
       'cognito-idp:AdminDisableUser',
+      'cognito-idp:AdminEnableUser',
       'cognito-idp:AdminListGroupsForUser',
       'cognito-idp:AdminRemoveUserFromGroup',
       'cognito-idp:AdminResetUserPassword',

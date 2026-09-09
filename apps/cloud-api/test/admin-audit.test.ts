@@ -290,9 +290,11 @@ describe('BE-AUD-01 脱敏与详情', () => {
       beforeValue: {
         password: 'plain-secret',
         nested: { privateKey: 'key-material' },
+        authorization: 'Bearer audit-secret-token',
+        cookie: 'session=audit-secret-session',
         keep: 'v1',
       },
-      afterValue: { apiToken: 'tok-123', keep: 'v2' },
+      afterValue: { apiToken: 'tok-123', unusual: 'Bearer hidden-by-value', keep: 'v2' },
     });
 
     const detail = await h.getAuditLogDetail(req(auditor, { params: { auditId: planted.auditId } }));
@@ -301,14 +303,20 @@ describe('BE-AUD-01 脱敏与详情', () => {
     // 敏感字段命中 → [REDACTED]；非敏感字段原样
     assert.equal(view.beforeValue.password, '[REDACTED]');
     assert.equal(view.beforeValue.nested.privateKey, '[REDACTED]');
+    assert.equal(view.beforeValue.authorization, '[REDACTED]');
+    assert.equal(view.beforeValue.cookie, '[REDACTED]');
     assert.equal(view.beforeValue.keep, 'v1');
     assert.equal(view.afterValue.apiToken, '[REDACTED]');
+    assert.equal(view.afterValue.unusual, '[REDACTED]');
     assert.equal(view.afterValue.keep, 'v2');
     // 响应文本不泄露敏感原文
     const text = JSON.stringify(detail.body);
     assert.ok(!text.includes('plain-secret'));
     assert.ok(!text.includes('key-material'));
     assert.ok(!text.includes('tok-123'));
+    assert.ok(!text.includes('audit-secret-token'));
+    assert.ok(!text.includes('audit-secret-session'));
+    assert.ok(!text.includes('hidden-by-value'));
 
     // 列表视图字段封闭（无 beforeValue/afterValue/ip/userAgent）
     const listRes = await h.listAuditLogs(req(auditor, { query: { action: 'device.update', limit: '1' } }));
