@@ -16,6 +16,7 @@ import { AuthError, withAuthorization } from '@fdp/auth';
 import type { ActorContext } from '@fdp/auth';
 import { mapDbErrorToHttp } from '@fdp/database';
 import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.js';
+import { parseStrictObject, rejectRequestBody } from '../shared/strict-object.js';
 import { AdminUserError, userValidationFailed } from './errors.js';
 import {
   assignUserRoles,
@@ -100,7 +101,7 @@ export function createAdminUserHandlers(deps: AdminUserHandlerDeps): AdminUserHa
   });
 
   const invite = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'user:write' }, async (req) => {
-    const body = (req.body ?? {}) as Record<string, unknown>;
+    const body = parseStrictObject(req.body, ['email', 'displayName', 'roles', 'customerId'], userValidationFailed);
     const view = await inviteUser(deps, req.actor as ActorContext, {
       email: requireString(body, 'email'),
       displayName: requireString(body, 'displayName'),
@@ -111,14 +112,15 @@ export function createAdminUserHandlers(deps: AdminUserHandlerDeps): AdminUserHa
   });
 
   const roles = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'user:write' }, async (req) => {
+    const body = parseStrictObject(req.body, ['roles'], userValidationFailed);
     const view = await assignUserRoles(deps, req.actor as ActorContext, requireUserId(req), {
-      roles: requireRoleArray((req.body ?? {}) as Record<string, unknown>),
+      roles: requireRoleArray(body),
     });
     return { status: 200, body: { data: view, meta: meta(req) } };
   });
 
   const scope = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'user:write' }, async (req) => {
-    const body = (req.body ?? {}) as Record<string, unknown>;
+    const body = parseStrictObject(req.body, ['customerId'], userValidationFailed);
     const view = await setUserScope(deps, req.actor as ActorContext, requireUserId(req), {
       customerId: requireString(body, 'customerId'),
     });
@@ -126,11 +128,13 @@ export function createAdminUserHandlers(deps: AdminUserHandlerDeps): AdminUserHa
   });
 
   const disable = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'user:write' }, async (req) => {
+    rejectRequestBody(req.body, userValidationFailed);
     const view = await disableUser(deps, req.actor as ActorContext, requireUserId(req));
     return { status: 200, body: { data: view, meta: meta(req) } };
   });
 
   const reset = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'user:write' }, async (req) => {
+    rejectRequestBody(req.body, userValidationFailed);
     const result = await triggerUserPasswordReset(deps, req.actor as ActorContext, requireUserId(req));
     return { status: 200, body: { data: result, meta: meta(req) } };
   });

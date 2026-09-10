@@ -3,9 +3,9 @@
   "info": {
     "title": "Bio-Nexa CMP Admin Settings API",
     "version": "0.1.0",
-    "description": "BE-SET-01 业务设置与字典 API（Cognito 认证；读取 settings:read——PlatformSuperAdmin/Auditor；写入 settings:write——仅 PlatformSuperAdmin）。维护封闭 key 集四项业务设置：alarm.thresholds（业务告警阈值）、command.confirmation（DEC-023 近期重新认证的 ttlSec/maxFutureSec 参数）、dictionary.displayNames（字典显示名称）、notification.business（业务通知配置）。版本控制：PUT 必须携带当前 version（乐观锁），不匹配 → 409；全部写操作经 DOM-03 审计。技术约束：不得经本 API 改写固定协议枚举（22 命令 / 11 Topic type / 13 Notification type——字典仅允许为已知 code 维护显示名，未知 code → 400）、DEC-023 确认方式、Topic 或 AWS 运维配置。功能边界：不管理 CloudWatch 告警、资源阈值或 Budget。错误响应继承 openapi-base.json（CT-05）。",
+    "description": "BE-SET-01 业务设置与字典 API（Cognito 认证；读取 settings:read——PlatformSuperAdmin/Auditor；写入 settings:write——仅 PlatformSuperAdmin）。维护封闭 key 集四项业务设置。运行时状态显式返回：command.confirmation 已由 BE-CMD-01 消费（ACTIVE）；alarm.thresholds、dictionary.displayNames、notification.business 在本版本仅交付校验、版本控制、审计与存储（STORED_ONLY），更新成功不代表告警规则、界面字典或通知派发已生效。PUT 必须携带当前 version，不匹配 → 409；未知顶层字段或非对象 body → 400。技术约束：不得经本 API 改写固定协议枚举、Topic、DEC-023 确认方式或 AWS 运维配置。功能边界：不管理 CloudWatch 告警、资源阈值或 Budget。错误响应继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["DEC-012@1.0.0", "DEC-023@1.0.0"],
-    "x-decision-register-version": "1.32.0"
+    "x-decision-register-version": "1.33.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
@@ -136,14 +136,23 @@
       },
       "SettingView": {
         "type": "object",
-        "required": ["key", "value", "version", "updatedBy", "updatedAt"],
+        "required": ["key", "value", "version", "updatedBy", "updatedAt", "runtimeStatus", "runtimeConsumer"],
         "additionalProperties": false,
         "properties": {
           "key": { "$ref": "#/components/schemas/SettingKey" },
           "value": { "description": "设置值（JSON；各 key 的值 Schema 见实现与测试，非法配置拒绝）" },
           "version": { "type": "integer", "minimum": 1, "description": "乐观锁版本（更新时必须在请求体回传）" },
           "updatedBy": { "type": ["string", "null"] },
-          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "runtimeStatus": {
+            "type": "string",
+            "enum": ["ACTIVE", "STORED_ONLY"],
+            "description": "ACTIVE=已有唯一运行时消费方；STORED_ONLY=本版本仅校验、版本、审计与存储，更新不代表业务行为生效"
+          },
+          "runtimeConsumer": {
+            "type": ["string", "null"],
+            "description": "ACTIVE 时为任务 ID；STORED_ONLY 时为 null"
+          }
         }
       },
       "SettingUpdate": {

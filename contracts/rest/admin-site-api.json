@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-CUS-02 Site 管理接口（Cognito 认证）：列表（customerId/region/subregion/status 筛选 + 键集游标分页）、详情（含设备数量）、创建、更新、停用、软删除。Site 必须属于唯一 Customer（customerId 创建后不可变，DEC-011：Customer→Site→Device）；Region/Subregion 为 Site 可筛选属性，设备不维护地域真值；时区使用 IANA 标识。写操作（site:write，PlatformSuperAdmin/PlatformOperator）强制 If-Match 乐观锁并写审计（DOM-03）；读操作需 site:read，Customer 角色由服务端身份上下文强制限定所属 Customer。删除为软删除：有关联设备时返回 409 CONFLICT；V1 不做物理删除。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-011@1.0.0", "DEC-012@1.0.0"],
-    "x-decision-register-version": "1.32.0"
+    "x-decision-register-version": "1.33.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

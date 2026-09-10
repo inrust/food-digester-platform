@@ -58,11 +58,20 @@ export const ADMIN_BUSINESS_TASK_DOCUMENTS = [
   'docs/dev/BE-ESG-02-ESG-查询与CSV导出API.md',
 ];
 
+export const ADMIN_MED_RBAC_AUD_DASH_SET_DOCUMENTS = [
+  'docs/BE-MED-01-Media上传会话与元数据API.md',
+  'docs/BE-RBAC-01-用户角色与Scope管理API.md',
+  'docs/BE-AUD-01-审计日志查询API.md',
+  'docs/BE-DASH-01-管理后台总览聚合API.md',
+  'docs/BE-SET-01-业务设置与字典API.md',
+];
+
 export const TASK_DOCUMENTS = [
   ...ENGINEERING_TASK_DOCUMENTS,
   ...IOT_TASK_DOCUMENTS,
   ...DATA_PROCESSING_TASK_DOCUMENTS,
   ...ADMIN_BUSINESS_TASK_DOCUMENTS,
+  ...ADMIN_MED_RBAC_AUD_DASH_SET_DOCUMENTS,
 ];
 
 export const SECURITY_TASK_DOCUMENTS = [
@@ -78,6 +87,8 @@ const IOT_AUDIT_REPORT = 'BE-IOT-01至BE-IOT-09全面复盘检查报告-2026-09-
 const DATA_PROCESSING_AUDIT_REPORT = 'BE-ARC-01-02-BE-RPL-01-BE-ESG-01全面复盘检查报告-2026-09-07.md';
 const ADMIN_BUSINESS_AUDIT_REPORT = 'BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG全面复盘检查报告-2026-09-08.md';
 const ADMIN_BUSINESS_AWS_GUIDE = 'BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md';
+const ADMIN_MED_RBAC_AUD_DASH_SET_AUDIT_REPORT = 'BE-MED-RBAC-AUD-DASH-SET全面复盘检查报告-2026-09-09.md';
+const ADMIN_MED_RBAC_AUD_DASH_SET_AWS_GUIDE = 'BE-MED-RBAC-AUD-DASH-SET-AWS验收证据采集说明.md';
 
 export const DATA_PROCESSING_STRICT_REGRESSIONS = [
   {
@@ -230,6 +241,37 @@ export function adminBusinessDocumentErrors(content, relativeDocument) {
   return errors;
 }
 
+export function adminMedRbacAudDashSetDocumentErrors(content, relativeDocument) {
+  const errors = [];
+  if (!content.includes('pnpm verify')) errors.push(`${relativeDocument}: 缺少当前全仓证据命令 pnpm verify`);
+  if (!content.includes(ADMIN_MED_RBAC_AUD_DASH_SET_AUDIT_REPORT)) {
+    errors.push(`${relativeDocument}: 缺少 BE-MED/RBAC/AUD/DASH/SET 审计快照引用`);
+  }
+  if (
+    !content.includes(ADMIN_MED_RBAC_AUD_DASH_SET_AWS_GUIDE) ||
+    !content.includes('check:aws-med-rbac-aud-dash-set-evidence')
+  ) {
+    errors.push(`${relativeDocument}: 缺少本范围目标 AWS 回执 Gate 引用`);
+  }
+  for (const marker of ['module implemented', 'production wired', 'target verified']) {
+    if (!content.includes(marker)) errors.push(`${relativeDocument}: 缺少状态层 ${marker}`);
+  }
+  if (
+    (relativeDocument.endsWith('BE-MED-01-Media上传会话与元数据API.md') ||
+      relativeDocument.endsWith('BE-DASH-01-管理后台总览聚合API.md')) &&
+    (!content.includes('DEC-024@1.0.0') || /(?:上传限制|在线阈值)[^。\n]*(?:暂定|待冻结|provisional)/iu.test(content))
+  ) {
+    errors.push(`${relativeDocument}: 冻结参数必须引用 DEC-024@1.0.0 且不得保留暂定状态`);
+  }
+  if (
+    relativeDocument.endsWith('BE-SET-01-业务设置与字典API.md') &&
+    (!content.includes('STORED_ONLY') || !content.includes('ACTIVE/BE-CMD-01'))
+  ) {
+    errors.push(`${relativeDocument}: 必须明确设置的运行时消费状态`);
+  }
+  return errors;
+}
+
 export function iotRegressionEvidenceErrors(root, regressions = IOT_STRICT_REGRESSIONS) {
   const errors = [];
   for (const regression of regressions) {
@@ -296,6 +338,9 @@ export function checkEngDbDomEvidence(root, documentPaths = TASK_DOCUMENTS) {
     }
     if (ADMIN_BUSINESS_TASK_DOCUMENTS.includes(relativeDocument)) {
       errors.push(...adminBusinessDocumentErrors(content, relativeDocument));
+    }
+    if (ADMIN_MED_RBAC_AUD_DASH_SET_DOCUMENTS.includes(relativeDocument)) {
+      errors.push(...adminMedRbacAudDashSetDocumentErrors(content, relativeDocument));
     }
 
     for (const match of content.matchAll(MARKDOWN_LINK)) {

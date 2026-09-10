@@ -1,12 +1,12 @@
 # BE-DASH-01 管理后台总览聚合 API
 
-实现：[apps/cloud-api/src/admin/dashboard](../apps/cloud-api/src/admin/dashboard)（service/handler）；REST 契约 [admin-dashboard-api.json](../contracts/rest/admin-dashboard-api.json)；验收测试 [admin-dashboard.test.ts](../apps/cloud-api/test/admin-dashboard.test.ts)（6 项，PGlite，固定 10 设备 Fixture）。
+实现：[apps/cloud-api/src/admin/dashboard](../apps/cloud-api/src/admin/dashboard)（service/handler）；REST 契约 [admin-dashboard-api.json](../contracts/rest/admin-dashboard-api.json)；验收测试 [admin-dashboard.test.ts](../apps/cloud-api/test/admin-dashboard.test.ts)（PGlite，固定 10 设备 Fixture）。
 
 ## 1. 范围与事实源
 
 | 项 | 说明 |
 |---|---|
-| 任务 | BE-DASH-01（P2 / 管理后台后端），依赖 BE-DEV-01（deriveConnectivity 10 分钟暂定阈值）、BE-ALM-01（alarms）、BE-ESG-02（esg_daily_summary 预聚合）、BE-CON-01（contracts）、BE-CNS-01（consumable_projections）、BE-CMD-01（命令目录 + 状态门 + command:send 矩阵）、DEC-010（四轴分离，frozen） |
+| 任务 | BE-DASH-01（P2 / 管理后台后端），依赖 BE-DEV-01（deriveConnectivity）、BE-ALM-01、BE-ESG-02、BE-CON-01、BE-CNS-01、BE-CMD-01、DEC-010（四轴分离）、DEC-024（连接阈值 frozen@1.0.0） |
 | 事实源 | 指标定义固定并写入 [DTO 注释](../contracts/rest/admin-dashboard-api.json)；在线口径复用 [deriveConnectivity](../apps/cloud-api/src/admin/device/repository.ts)；命令允许性与 BE-CMD-01 共用 [authorization.ts](../apps/cloud-api/src/admin/command/authorization.ts) |
 | Schema 变更 | 无（全部为既有表只读聚合） |
 | 功能边界 | 不返回 AWS CPU、队列深度等运维指标；卡片动作仅描述（command/allowed/denyReason），不在查询中执行命令 |
@@ -41,7 +41,15 @@
 
 ## 4. 未决风险
 
-- **在线阈值为暂定值**（10 分钟，BE-DEV-01 口径）：冻结需登记决策；当前以 generatedAt 为唯一时间基准保证可复算。
+- **在线阈值已冻结**：DEC-024@1.0.0 固定 `now-lastHeartbeatAt <= 600 秒` 为 ONLINE（包含边界），以 generatedAt 为唯一时间基准。
 - **ESG 依赖预聚合**：今日数值来自 esg_daily_summary（BE-ESG-01 聚合管道）；当日管道延迟时总览反映最近已聚合快照，不做实时补齐（与 BE-ESG-02 只读口径一致）。
 - **卡片固定前 10 台**：scope 内 deviceId 升序选择（DTO 已声明）；若需按告警/在线优先排序，另立任务与指标定义。
 - **denyReason 粒度**：FORBIDDEN 有意合并 actor、scope、License 与 Entitlement 拒绝，避免向无权主体暴露授权细节；设备状态仍返回稳定 DEVICE_* 码。
+
+## 5. 状态边界与发布 Gate
+
+- `module implemented`：聚合、完整 Command 授权投影、契约与本地回归已实现。
+- `production wired`：Admin Router 与 Lambda 组合根已接线。
+- `target verified`：**NOT RUN**；尚无绑定当前提交的目标 AWS 聚合与租户验收回执。
+- 本地统一验证：`pnpm verify`。历史审计快照：[BE-MED-RBAC-AUD-DASH-SET 全面复盘检查报告](audit/BE-MED-RBAC-AUD-DASH-SET全面复盘检查报告-2026-09-09.md)。
+- 发布证据：[BE-MED/RBAC/AUD/DASH/SET AWS 验收证据采集说明](audit/evidence/BE-MED-RBAC-AUD-DASH-SET-AWS验收证据采集说明.md)，执行 `pnpm check:aws-med-rbac-aud-dash-set-evidence`。

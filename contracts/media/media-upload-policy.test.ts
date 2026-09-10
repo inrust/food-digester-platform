@@ -34,7 +34,7 @@ test('策略 JSON 通过自身 JSON Schema 结构校验', () => {
   assert.deepEqual(errors, []);
 });
 
-test('负向结构：客户端指定 Key、非法 TTL/配额与缺失字段被 Schema 拒绝', () => {
+test('负向结构：客户端指定 Key、篡改冻结 TTL/配额与缺失字段被 Schema 拒绝', () => {
   const registry = new SchemaRegistry(here);
   const run = (mutate: (m: Record<string, unknown>) => void) => {
     const m = JSON.parse(JSON.stringify(policyJson));
@@ -53,17 +53,22 @@ test('负向结构：客户端指定 Key、非法 TTL/配额与缺失字段被 S
       (m.objectKey as Record<string, unknown>).pattern = 'uploads/{anything}';
     }).some((e) => e.path === 'objectKey.pattern' && e.keyword === 'enum'),
   );
-  // TTL 越界（>1h）被拒绝
+  // 任意 TTL 漂移被拒绝（不仅是范围越界）
   assert.ok(
     run((m) => {
-      (m.limits as Record<string, unknown>).uploadUrlTtlSeconds = 7200;
-    }).some((e) => e.path === 'limits.uploadUrlTtlSeconds'),
+      (m.limits as Record<string, unknown>).uploadUrlTtlSeconds = 901;
+    }).some((e) => e.path === 'limits.uploadUrlTtlSeconds' && e.keyword === 'enum'),
   );
-  // 配额非正数被拒绝
+  // 任意配额漂移被拒绝
   assert.ok(
     run((m) => {
-      (m.limits as Record<string, unknown>).dailyUploadQuotaPerDevice = 0;
-    }).some((e) => e.path === 'limits.dailyUploadQuotaPerDevice' && e.keyword === 'minimum'),
+      (m.limits as Record<string, unknown>).dailyUploadQuotaPerDevice = 99;
+    }).some((e) => e.path === 'limits.dailyUploadQuotaPerDevice' && e.keyword === 'enum'),
+  );
+  assert.ok(
+    run((m) => {
+      m.status = 'provisional';
+    }).some((e) => e.path === 'status' && e.keyword === 'enum'),
   );
   // 缺字段与额外字段被拒绝
   assert.ok(
@@ -85,19 +90,15 @@ test('锁定规则：mediaTypes 与 CT-03 media.schema.json 枚举一致；客�
   assert.equal(getObjectKeyPattern(), 'media/{customerId}/{deviceId}/{sessionId}/{fileName}');
 });
 
-test('暂定值读取正常且状态为 provisional', () => {
-  assert.equal(getMediaUploadPolicyStatus(), 'provisional');
+test('DEC-024 冻结值可执行且无待定参数', () => {
+  assert.equal(getMediaUploadPolicyStatus(), 'frozen');
   assert.equal(getMaxSizeKb('IMAGE'), 10240);
   assert.equal(getMaxSizeKb('VIDEO'), 204800);
   assert.equal(getDailyUploadQuotaPerDevice(), 100);
   assert.equal(getUploadUrlTtlSeconds(), 900);
   assert.equal(getDownloadUrlTtlSeconds(), 900);
-  assert.deepEqual([...MEDIA_UPLOAD_POLICY.pendingParameters].sort(), [
-    'limits.dailyUploadQuotaPerDevice',
-    'limits.downloadUrlTtlSeconds',
-    'limits.maxSizeKb',
-    'limits.uploadUrlTtlSeconds',
-  ]);
+  assert.deepEqual(MEDIA_UPLOAD_POLICY.pendingParameters, []);
+  assert.ok(policyJson['x-decision-versions'].includes('DEC-024@1.0.0'));
 });
 
 test('TS 常量与 media-upload-policy.json 完全一致', () => {

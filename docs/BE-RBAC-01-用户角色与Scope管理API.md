@@ -1,6 +1,6 @@
 # BE-RBAC-01 用户、角色和 Scope 管理 API
 
-实现：[apps/cloud-api/src/admin/user](../apps/cloud-api/src/admin/user)（errors/cognito-port/service/handler）及 [Cognito AWS adapter](../packages/aws-clients/src/cognito-admin.ts)；REST 契约 [admin-user-api.json](../contracts/rest/admin-user-api.json)；角色种子 [migration 20260905130000](../packages/database/prisma/migrations/20260905130000_seed_rbac_roles/migration.sql)；验收测试 [admin-user.test.ts](../apps/cloud-api/test/admin-user.test.ts)（17 项，PGlite）。
+实现：[apps/cloud-api/src/admin/user](../apps/cloud-api/src/admin/user)（errors/cognito-port/service/handler）及 [Cognito AWS adapter](../packages/aws-clients/src/cognito-admin.ts)；REST 契约 [admin-user-api.json](../contracts/rest/admin-user-api.json)；角色种子 [migration 20260905130000](../packages/database/prisma/migrations/20260905130000_seed_rbac_roles/migration.sql)；验收测试 [admin-user.test.ts](../apps/cloud-api/test/admin-user.test.ts)（PGlite）。
 
 ## 1. 范围与事实源
 
@@ -23,7 +23,7 @@
 
 **审计（DOM-03）**：`user.invite` / `user.role.assign` / `user.scope.change` / `user.disable` / `user.password_reset.trigger` 经 `audited` 同事务写入（before/after 值齐备）。
 
-## 3. 验收基准与证据（vitest + PGlite，17 项）
+## 3. 验收基准与证据（vitest + PGlite）
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
@@ -45,3 +45,11 @@
 - **Cognito 与数据库不能构成单一 ACID 事务**：已用持久化意图、确定性补偿和失败审计关闭静默漂移；目标 AWS 仍需验证超时/断连后的 PENDING 对账告警流程。
 - **MFA 客服重置与人工账号恢复**：明确超出本任务功能边界，需另立任务与运营流程。
 - **Customer actor 服务层防护为纵深防御**：V1 矩阵中 Customer 角色无 user:write（DEC-012 固定只读），服务层跨 Customer/平台角色守卫在矩阵扩展前不经 HTTP 触达，由直接服务调用测试覆盖。
+
+## 5. 状态边界与发布 Gate
+
+- `module implemented`：严格请求解析、并发不变量、补偿/对账、契约与本地回归已实现。
+- `production wired`：Admin Router、Lambda、Cognito adapter 与最小 IAM 已接线。
+- `target verified`：**NOT RUN**；真实 Cognito 超时、补偿与 RDS 并发仍需目标环境回执。
+- 本地统一验证：`pnpm verify`。历史审计快照：[BE-MED-RBAC-AUD-DASH-SET 全面复盘检查报告](audit/BE-MED-RBAC-AUD-DASH-SET全面复盘检查报告-2026-09-09.md)。
+- 发布证据：[BE-MED/RBAC/AUD/DASH/SET AWS 验收证据采集说明](audit/evidence/BE-MED-RBAC-AUD-DASH-SET-AWS验收证据采集说明.md)，执行 `pnpm check:aws-med-rbac-aud-dash-set-evidence`。

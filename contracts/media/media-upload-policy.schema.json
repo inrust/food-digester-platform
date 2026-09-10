@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hiddenjoya.local/contracts/media/media-upload-policy.schema.json",
   "title": "Media Upload Policy",
-  "description": "Media 上传策略的结构契约。mediaTypes/objectKey 为锁定规则；limits 数值为暂定值（provisional）。本 Schema 使用 contracts/mqtt/validator.mjs 支持的关键字子集。",
+  "description": "Media 上传策略的结构契约。mediaTypes/objectKey/limits 均由 DEC-024@1.0.0 冻结。",
   "type": "object",
   "required": [
     "policyVersion",
@@ -20,8 +20,8 @@
   "properties": {
     "policyVersion": {
       "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "策略自身版本。provisional 为 0.x；上传限制冻结后必须 >= 1.0.0。"
+      "enum": ["1.0.0"],
+      "description": "策略自身版本；DEC-024 冻结版本为 1.0.0。"
     },
     "updatedAt": {
       "type": "string",
@@ -30,12 +30,12 @@
     },
     "x-decision-versions": {
       "type": "array",
-      "description": "决策追溯引用，格式 决策ID@semver；上传限制当前无登记决策，冻结时补充。"
+      "description": "决策追溯引用，格式 决策ID@semver；上传限制必须引用 DEC-024@1.0.0。"
     },
     "status": {
       "type": "string",
-      "enum": ["provisional", "frozen"],
-      "description": "provisional=暂定值（上传限制未冻结）；frozen=已冻结。"
+      "enum": ["frozen"],
+      "description": "当前策略必须为 frozen。"
     },
     "description": { "type": "string", "minLength": 1 },
     "mediaTypes": {
@@ -59,13 +59,13 @@
           "required": ["IMAGE", "VIDEO"],
           "additionalProperties": false,
           "properties": {
-            "IMAGE": { "type": "integer", "minimum": 1 },
-            "VIDEO": { "type": "integer", "minimum": 1 }
+            "IMAGE": { "type": "integer", "enum": [10240] },
+            "VIDEO": { "type": "integer", "enum": [204800] }
           }
         },
-        "dailyUploadQuotaPerDevice": { "type": "integer", "minimum": 1 },
-        "uploadUrlTtlSeconds": { "type": "integer", "minimum": 60, "maximum": 3600 },
-        "downloadUrlTtlSeconds": { "type": "integer", "minimum": 60, "maximum": 3600 },
+        "dailyUploadQuotaPerDevice": { "type": "integer", "enum": [100] },
+        "uploadUrlTtlSeconds": { "type": "integer", "enum": [900] },
+        "downloadUrlTtlSeconds": { "type": "integer", "enum": [900] },
         "consumers": { "type": "array" },
         "note": { "type": "string", "minLength": 1 }
       }
@@ -91,7 +91,7 @@
     },
     "pendingParameters": {
       "type": "array",
-      "description": "上传限制冻结前显式标记的暂定值参数路径列表。"
+      "description": "已冻结，无待定参数。"
     },
     "frozenUpgradePath": { "type": "string", "minLength": 1 }
   }

@@ -1,12 +1,12 @@
 # BE-MED-01 Media 上传会话与元数据 API
 
-实现：[packages/media](../packages/media)（Media 元数据共用核心）、[apps/cloud-api/src/media](../apps/cloud-api/src/media)（上传会话/管理端）、[apps/ingestion-worker/src/media](../apps/ingestion-worker/src/media)（MQTT 适配）；REST 契约 [device-media-api.json](../contracts/rest/device-media-api.json) + [admin-media-api.json](../contracts/rest/admin-media-api.json)；上传策略扩展点 [contracts/media/media-upload-policy.json](../contracts/media/media-upload-policy.json)；验收测试 [media.test.ts](../apps/cloud-api/test/media.test.ts) 与 [ack-dispatch.test.ts](../apps/ingestion-worker/test/ack-dispatch.test.ts)。
+实现：[packages/media](../packages/media)（Media 元数据共用核心）、[apps/cloud-api/src/media](../apps/cloud-api/src/media)（上传会话/管理端）、[apps/ingestion-worker/src/media](../apps/ingestion-worker/src/media)（MQTT 适配）；REST 契约 [device-media-api.json](../contracts/rest/device-media-api.json) + [admin-media-api.json](../contracts/rest/admin-media-api.json)；冻结策略 [media-upload-policy.json](../contracts/media/media-upload-policy.json)（DEC-024@1.0.0）；验收测试 [media.test.ts](../apps/cloud-api/test/media.test.ts) 与 [ack-dispatch.test.ts](../apps/ingestion-worker/test/ack-dispatch.test.ts)。
 
 ## 1. 范围与事实源
 
 | 项 | 说明 |
 |---|---|
-| 任务 | BE-MED-01（P2 / 设备及管理接口），依赖 AUTH-03（mTLS 设备认证）、AUTH-01（media:read 权限矩阵）、IAC-01（Media Bucket）、DEC-005（RDS 元数据 + S3 文件，已冻结）、DEC-009（无实时流媒体，已冻结） |
+| 任务 | BE-MED-01（P2 / 设备及管理接口），依赖 AUTH-03、AUTH-01、IAC-01、DEC-005、DEC-009、DEC-024（大小/UTC 日配额/URL TTL，frozen@1.0.0） |
 | 事实源 | 实施方案 §11.9（上传会话 → 预签名 URL → 元数据上报 → Object/大小/Hash 校验 → 短期下载 URL）；CT-03 media.schema.json（元数据字段） |
 | Schema 变更 | `media_upload_sessions` 新增 `declared_sha256`（设备会话申报 Hash，供上传后比对；[migration 20260905120000](../packages/database/prisma/migrations/20260905120000_media_upload_session_sha256/migration.sql)，可空列、无回填） |
 | 功能边界 | 不采集/转码媒体；保留期处置属 DEC-005/BE-ARC-02（本任务不实现到期删除）；不提供 RTSP/WebRTC/HLS 实时流媒体会话（DEC-009） |
@@ -17,7 +17,7 @@
 
 **元数据校验**（`@fdp/media` 的 `handleMediaMetadata`，由 ingestion-worker Media Handler 消费）：BE-IOT-03 receipt → 幂等键 sourceMessageId=meta.id → objectPath 逐字符等于已签发会话 Key（跨设备/跨会话/任意 Key 拒绝）→ 原子校验 `status=ISSUED AND presignedUrlExpiresAt>now` → 申报一致性（fileName/mediaType/sizeKb）→ Object 存在 → 大小匹配（ceil KB）→ SHA-256 重算比对会话申报值 → MediaObject AVAILABLE + 会话 COMPLETED + 审计；receipt 与业务写入同事务，过期使用 `MEDIA_SESSION_EXPIRED` 隔离。
 
-**管理端**（`GET /api/v1/admin/media`、`GET /{mediaId}/download-url`，media:read）：Customer 角色强制租户隔离（跨 Customer 列表空集/详情下载 404；customerId 参数与身份不一致 → 403）；DELETED（DEC-005 文件到期删除、元数据保留）不提供下载；下载 URL 15 分钟（暂定值 900s）。
+**管理端**（`GET /api/v1/admin/media`、`GET /{mediaId}/download-url`，media:read）：Customer 角色强制租户隔离（跨 Customer 列表空集/详情下载 404；customerId 参数与身份不一致 → 403）；DELETED（DEC-005 文件到期删除、元数据保留）不提供下载；下载 URL 为 DEC-024 冻结的 900 秒。
 
 **审计（DOM-03）**：`media.upload_session.create` 经 `audited` 写入；`media.object.register` 经 `recordAudit` 与 receipt/会话/对象同事务写入。
 
@@ -35,7 +35,15 @@
 
 ## 4. 未决风险
 
-- **上传限制为暂定值**（media-upload-policy provisional，无登记决策）：大小上限/日配额/TTL 冻结前可执行，冻结时需登记决策并提升策略版本；消费方均经策略门面注入。
+- **上传限制已冻结**：DEC-024@1.0.0 固定类型大小、UTC 自然日配额及上传/下载 900 秒 TTL；后续变更必须提升决策与策略版本。
 - **AWS 目标环境证据仍待补充**：生产代码已接入 S3 PUT/GET 预签名、HeadObject/流式 SHA-256、Device 写/Admin 读最小 IAM；尚未在隔离 AWS 环境执行真实对象、签名头与消息投递验收。
 - **会话 EXPIRED 清扫**：超时未完成的 ISSUED 会话标记 EXPIRED 的清扫器未实现（当前 EXPIRED 会话元数据拒绝 SESSION_NOT_OPEN）；如需 sweeper 另立任务。
 - **大小申报口径**：设备端同时提交精确 `sizeBytes` 与 `sizeKb=ceil(sizeBytes/1024)`；前者绑定 S3 PUT，后者与 MQTT 元数据保持兼容。
+
+## 5. 状态边界与发布 Gate
+
+- `module implemented`：服务、严格请求解析、契约与本地回归已实现。
+- `production wired`：API Router、Lambda 组合根、S3 signer 与对象级 IAM 已接线。
+- `target verified`：**NOT RUN**；本地测试、mock 与 CDK synth 不替代目标 AWS 验收。
+- 本地统一验证：`pnpm verify`。历史审计快照：[BE-MED-RBAC-AUD-DASH-SET 全面复盘检查报告](audit/BE-MED-RBAC-AUD-DASH-SET全面复盘检查报告-2026-09-09.md)。
+- 发布证据：[BE-MED/RBAC/AUD/DASH/SET AWS 验收证据采集说明](audit/evidence/BE-MED-RBAC-AUD-DASH-SET-AWS验收证据采集说明.md)，执行 `pnpm check:aws-med-rbac-aud-dash-set-evidence`；缺回执时失败关闭。

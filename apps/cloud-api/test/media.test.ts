@@ -25,7 +25,7 @@ import {
 import type { AdminHttpRequest, MediaDeps, MediaUploadPolicyQuery } from '../src/index.js';
 import { createTestDb } from './helpers.js';
 
-/** 策略门面：取值与 contracts/media/media-upload-policy.json 暂定值一致（该一致性由 contracts 侧测试强制）。 */
+/** 策略门面：取值与 contracts/media/media-upload-policy.json 冻结值一致（该一致性由 contracts 侧测试强制）。 */
 const realPolicy: MediaUploadPolicyQuery = {
   getMediaTypes: () => ['IMAGE', 'VIDEO'],
   getMaxSizeKb: (t) => ({ IMAGE: 10240, VIDEO: 204800 })[t as 'IMAGE' | 'VIDEO'],
@@ -224,7 +224,7 @@ describe('BE-MED-01 设备上传会话', () => {
       { fileName: '' },
       { sizeKb: 0 },
       { sizeKb: 1.5 },
-      { sizeKb: 10241 }, // IMAGE 上限 10240（策略暂定值）
+      { sizeKb: 10241 }, // IMAGE 上限 10240（DEC-024 冻结值）
       { mediaType: 'VIDEO', sizeKb: 204801 }, // VIDEO 上限 204800
       { sha256: 'abc' },
     ];
@@ -233,6 +233,26 @@ describe('BE-MED-01 设备上传会话', () => {
       assert.equal(res.status, 400, JSON.stringify(bad));
       assert.equal((res.body as ErrBody).error.code, 'VALIDATION_FAILED');
     }
+  });
+
+  test('严格请求：未知字段与数组 body 在配额、S3 签名及审计前返回 400', async () => {
+    const store = fakeStorage();
+    const device = await plantDevice();
+    const content = Buffer.alloc(1024, 1);
+    const unknown = await createSession(store, device, content, { objectPath: 'attacker/chosen-key' });
+    const handler = createDeviceMediaHandler(mediaDeps(store));
+    const array = await handler({
+      identity: { clientCertPem: device.pem },
+      body: [],
+      requestId: `req-strict-${seq}`,
+    });
+    assert.equal(unknown.status, 400);
+    assert.equal(array.status, 400);
+    assert.equal(await prisma.mediaUploadSession.count({ where: { deviceId: device.deviceId } }), 0);
+    assert.equal(
+      await prisma.auditLog.count({ where: { action: 'media.upload_session.create', actorId: device.deviceId } }),
+      0,
+    );
   });
 
   test('成功：201 + 设备前缀 objectPath + 15 分钟上传 URL + 申报 Hash 落库 + 审计', async () => {

@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.32.0",
-  "updatedAt": "2026-09-09T03:45:09Z",
+  "registerVersion": "1.33.0",
+  "updatedAt": "2026-09-10T00:00:00Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -741,6 +741,27 @@
           "at": "2026-09-09T03:45:09Z",
           "by": "业务方（本次 P2 整改指令）",
           "note": "按 CMD/OTA 全面复盘 P2 整改建议冻结近期重新认证与显式命令名确认，禁止客户端提供确认时间，并明确不等同 MFA 或双人审批。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-024",
+      "version": "1.0.0",
+      "status": "frozen",
+      "title": "Media 上传限制与设备连接阈值",
+      "conflict": "Media 大小、每日配额、预签名 TTL 与设备连接状态 10 分钟阈值已有实现，但仍标记为暂定值，契约、总览和设备视图可能发生口径漂移。",
+      "provisionalValue": "V1 冻结 Media IMAGE 最大 10240KB、VIDEO 最大 204800KB、每设备 UTC 自然日最多签发 100 个上传会话、上传与下载预签名 URL TTL 均为 900 秒；设备 lastHeartbeatAt 非空且 now-lastHeartbeatAt <= 600 秒时为 ONLINE，否则为 OFFLINE，边界包含且不写回生命周期。",
+      "approver": "业务方（本次 P2 整改指令）",
+      "approvedAt": "2026-09-10T00:00:00Z",
+      "blockingTasks": ["BE-MED-01", "BE-DASH-01", "BE-DEV-01", "BE-DEV-05", "FE-03", "FE-06", "QA-06"],
+      "affectedModules": ["BE-MED", "BE-DASH", "BE-DEV", "FE", "QA"],
+      "sourceRefs": ["aws-implementation-plan", "admin-prototype"],
+      "history": [
+        {
+          "version": "1.0.0",
+          "at": "2026-09-10T00:00:00Z",
+          "by": "业务方（本次 P2 整改指令）",
+          "note": "按全面复盘 P2 整改建议冻结 Media 上传限制、UTC 日配额、预签名 TTL 与设备连接状态 600 秒包含式边界。"
         }
       ]
     }

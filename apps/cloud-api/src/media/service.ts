@@ -3,9 +3,9 @@
  *
  * 规则（事实源：实施方案 §11.9 + CT-03 media.schema.json + contracts/media/media-upload-policy）：
  * - 设备创建上传会话（mTLS 身份上下文）：校验 mediaType（策略=CT-03 枚举）、fileName
- *   （安全字符）、sizeKb（类型上限，暂定值）、sizeBytes（精确长度）、sha256（hex64 申报）与每设备每日配额
- *   （暂定值）；设备须 Active/Maintenance 且已分配 Customer；objectPath 服务端生成
- *   （设备前缀，客户端不得指定 Bucket/Key）；签发 15 分钟预签名上传 URL（暂定值 900s）；
+ *   （安全字符）、sizeKb（DEC-024 冻结的类型上限）、sizeBytes（精确长度）、sha256（hex64 申报）与
+ *   每设备 UTC 自然日配额（DEC-024 冻结为 100）；设备须 Active/Maintenance 且已分配 Customer；
+ *   objectPath 服务端生成（设备前缀，客户端不得指定 Bucket/Key）；签发 15 分钟预签名上传 URL；
  * - 上传后元数据（MQTT media 上行 → handleMediaMetadata）：objectPath 必须与有效会话的
  *   签发 Key 逐字符相等（跨设备/跨会话/任意 Key 拒绝）→ 申报一致性（fileName/mediaType/
  *   sizeKb）→ Object 存在 → 大小匹配（ceil KB）→ SHA-256 重算匹配 → 保存 MediaObject +
@@ -26,7 +26,7 @@ import { mediaConflict, mediaForbidden, mediaNotFound, mediaValidationFailed } f
 import { buildMediaObjectKey } from './storage.js';
 import type { MediaObjectStorage, MediaUrlSigner } from './storage.js';
 
-// ---------- 策略查询门面（组合根经 contracts/media/media-upload-policy.ts 接线；禁止复制暂定值） ----------
+// ---------- 策略查询门面（组合根经 contracts/media/media-upload-policy.ts 接线；禁止复制冻结值） ----------
 
 export type { MediaMetadataMessage, MediaMetadataResult, MediaUploadPolicyQuery } from '@fdp/media';
 

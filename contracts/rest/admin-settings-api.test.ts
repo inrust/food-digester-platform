@@ -59,6 +59,10 @@ test('封闭 key 集与乐观锁版本控制；固定枚举不可经 API 改写'
   assert.equal(update.additionalProperties, false);
   assert.deepEqual(update.required, ['value', 'version']);
   assert.ok(doc.components.schemas.SettingView.required.includes('version'));
+  assert.ok(doc.components.schemas.SettingView.required.includes('runtimeStatus'));
+  assert.ok(doc.components.schemas.SettingView.required.includes('runtimeConsumer'));
+  assert.deepEqual(doc.components.schemas.SettingView.properties.runtimeStatus.enum, ['ACTIVE', 'STORED_ONLY']);
+  assert.ok(doc.info.description.includes('STORED_ONLY'));
 
   // 契约不含任何改写固定协议枚举/Topic/AWS 运维配置的入口
   const json = JSON.stringify(doc.paths).toLowerCase();

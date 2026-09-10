@@ -325,7 +325,7 @@ describe('GET /admin/devices（列表：四轴组合筛选互不覆盖）', () =
     const customer = await plantCustomer();
     const online = await plantDevice({ customerId: customer.id, heartbeatOffsetMs: -(THRESHOLD_MS - 1000) });
     const edge = await plantDevice({ customerId: customer.id, heartbeatOffsetMs: -THRESHOLD_MS });
-    const offline = await plantDevice({ customerId: customer.id, heartbeatOffsetMs: -(THRESHOLD_MS + 1000) });
+    const offline = await plantDevice({ customerId: customer.id, heartbeatOffsetMs: -(THRESHOLD_MS + 1) });
     const noState = await plantDevice({ customerId: customer.id });
 
     const h = handlers();

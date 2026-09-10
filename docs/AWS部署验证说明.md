@@ -241,6 +241,14 @@ pnpm check:aws-admin-business-evidence
 
 该独立发布 Gate 必须绑定待发布 `sourceCommit`；真实回执缺失时保持 `NOT RUN / OPEN`，不得用本地 Gate 替代。
 
+BE-MED/RBAC/AUD/DASH/SET 范围按 [目标 AWS 验收证据采集说明](audit/evidence/BE-MED-RBAC-AUD-DASH-SET-AWS验收证据采集说明.md)覆盖 15 个正式 API、五角色与跨租户、真实 Cognito 属性/Groups、SuperAdmin 与设置并发、S3 Key/大小/Hash/URL 过期、Media 配额、Dashboard Entitlement、审计脱敏、严格请求和清理，并执行：
+
+```bash
+pnpm check:aws-med-rbac-aud-dash-set-evidence
+```
+
+该独立发布 Gate 绑定精确 `sourceCommit`；缺少真实目标环境回执时按设计失败关闭，状态保持 `NOT RUN / OPEN`。
+
 ### 权限负向验证
 
 仓库已有真实 AWS 授权矩阵脚本，会创建两台临时 Thing、测试自身/跨设备权限并清理资源：

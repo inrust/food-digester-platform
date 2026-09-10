@@ -7,7 +7,7 @@
  * 安全约束（contracts/media/media-upload-policy 锁定规则）：
  * - objectPath 一律服务端生成（buildMediaObjectKey：media/{customerId}/{deviceId}/{sessionId}/{fileName}），
  *   客户端不得指向任意 Bucket/Key；
- * - 预签名上传/下载 URL 短期有效（策略暂定值 900s），部署层签名器按同一 TTL 实现；
+ * - 预签名上传/下载 URL 短期有效（DEC-024 冻结值 900s），部署层签名器按同一 TTL 实现；
  * - 哈希/大小重算由部署层流式实现。
  */
 

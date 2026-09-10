@@ -20,7 +20,7 @@ import type { Page } from '@fdp/database';
 import { EFFECTIVE_LICENSE_STATUSES } from '../customer/repository.js';
 import { deviceValidationFailed } from './errors.js';
 
-/** 连接状态派生阈值（暂定值）：lastHeartbeatAt 距 now 不超过 10 分钟视为 ONLINE。 */
+/** DEC-024@1.0.0：lastHeartbeatAt 距 now 不超过 10 分钟（包含边界）视为 ONLINE。 */
 export const DEFAULT_CONNECTIVITY_THRESHOLD_MS = 10 * 60 * 1000;
 
 export const CONNECTIVITY_STATUSES = ['ONLINE', 'OFFLINE'] as const;

@@ -237,6 +237,57 @@ describe('BE-RBAC-01 邀请用户', () => {
     assert.equal(calls.length, 0); // 校验失败不得触达 Cognito
   });
 
+  test('严格请求：永久密码、未知字段与数组 body 在 Cognito/DB/审计前返回 400', async () => {
+    const { port, calls } = fakeCognito();
+    const h = createAdminUserHandlers(userDeps(port));
+    const beforeUsers = await prisma.user.count();
+    const beforeAudits = await prisma.auditLog.count();
+    const valid = { email: 'strict@example.com', displayName: 'Strict', roles: ['Auditor'] };
+    for (const body of [{ ...valid, password: 'NeverAcceptThis' }, { ...valid, requestedBy: 'spoof' }, []]) {
+      const response = await h.inviteUser(req(superAdmin, { body }));
+      assert.equal(response.status, 400, JSON.stringify(body));
+      assert.equal((response.body as ErrBody).error.code, 'VALIDATION_FAILED');
+    }
+    assert.equal(calls.length, 0);
+    assert.equal(await prisma.user.count(), beforeUsers);
+    assert.equal(await prisma.auditLog.count(), beforeAudits);
+
+    const platformTarget = await plantUser({ roles: ['Auditor'] });
+    const customerId = await plantCustomer();
+    const customerTarget = await plantUser({ roles: ['CustomerViewer'], customerId });
+    assert.equal(
+      (
+        await h.assignRoles(
+          req(superAdmin, {
+            params: { userId: platformTarget.userId },
+            body: { roles: ['PlatformOperator'], ignored: true },
+          }),
+        )
+      ).status,
+      400,
+    );
+    assert.equal(
+      (
+        await h.setScope(
+          req(superAdmin, {
+            params: { userId: customerTarget.userId },
+            body: { customerId, ignored: true },
+          }),
+        )
+      ).status,
+      400,
+    );
+    assert.equal(
+      (await h.disableUser(req(superAdmin, { params: { userId: platformTarget.userId }, body: {} }))).status,
+      400,
+    );
+    assert.equal(
+      (await h.triggerPasswordReset(req(superAdmin, { params: { userId: platformTarget.userId }, body: {} }))).status,
+      400,
+    );
+    assert.equal(calls.length, 0);
+  });
+
   test('拒绝：重复 email → 409；Customer 不存在 → 404；非 ACTIVE Customer → 409', async () => {
     const { port } = fakeCognito();
     const h = createAdminUserHandlers(userDeps(port));

@@ -4,7 +4,9 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  ADMIN_MED_RBAC_AUD_DASH_SET_DOCUMENTS,
   ADMIN_BUSINESS_TASK_DOCUMENTS,
+  adminMedRbacAudDashSetDocumentErrors,
   adminBusinessDocumentErrors,
   checkEngDbDomEvidence,
   DATA_PROCESSING_STRICT_REGRESSIONS,
@@ -73,6 +75,25 @@ test('BE-ARC/RPL/ESG 四份文档及 P2 回归纳入默认证据门禁', () => {
 test('11 份管理后台业务文档全部纳入默认链接与证据门禁', () => {
   assert.equal(ADMIN_BUSINESS_TASK_DOCUMENTS.length, 11);
   for (const document of ADMIN_BUSINESS_TASK_DOCUMENTS) assert.ok(TASK_DOCUMENTS.includes(document));
+});
+
+test('BE-MED/RBAC/AUD/DASH/SET 五份文档纳入状态与 AWS 证据门禁', () => {
+  assert.equal(ADMIN_MED_RBAC_AUD_DASH_SET_DOCUMENTS.length, 5);
+  for (const document of ADMIN_MED_RBAC_AUD_DASH_SET_DOCUMENTS) assert.ok(TASK_DOCUMENTS.includes(document));
+});
+
+test('BE-MED/RBAC/AUD/DASH/SET 文档拒绝缺状态层、陈旧参数和设置生效误述', () => {
+  const media = adminMedRbacAudDashSetDocumentErrors(
+    '上传限制仍为暂定值。',
+    'docs/BE-MED-01-Media上传会话与元数据API.md',
+  );
+  assert.ok(media.some((error) => error.includes('DEC-024')));
+  assert.ok(media.some((error) => error.includes('状态层')));
+  const settings = adminMedRbacAudDashSetDocumentErrors(
+    'module implemented production wired target verified pnpm verify BE-MED-RBAC-AUD-DASH-SET全面复盘检查报告-2026-09-09.md BE-MED-RBAC-AUD-DASH-SET-AWS验收证据采集说明.md check:aws-med-rbac-aud-dash-set-evidence',
+    'docs/BE-SET-01-业务设置与字典API.md',
+  );
+  assert.ok(settings.some((error) => error.includes('运行时消费状态')));
 });
 
 test('管理后台业务文档拒绝缺证据引用和陈旧决策或部署说法', () => {

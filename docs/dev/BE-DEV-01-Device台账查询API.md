@@ -40,6 +40,6 @@ N+1 控制：列表 = 1 次 `device.findMany`（关系 include）+ 1 次 `contra
 
 ## 4. 未决风险
 
-- 连接状态阈值（10 分钟）为暂定值：设备 Heartbeat 间隔的协议取值以《Device-Cloud Communication Design》为准，阈值可通过 `connectivityThresholdMs` 注入调整，不落库；
+- 连接状态阈值由 DEC-024@1.0.0 冻结为 600 秒且包含边界；`connectivityThresholdMs` 仅保留为测试/组合根注入点，不落库；
 - "授权"筛选语义为"设备存在该状态 License"（Expired/Revoked 历史行亦可命中），展示用"当前 License"取有效状态优先；若需严格一致（筛选=展示口径），待 BE-LIC-01 落地后再收敛；
 - Contract 摘要取该设备 ACTIVE 关联的第一条（DB 排他约束保证同设备有效关联时间段不重叠，实际至多一条）。

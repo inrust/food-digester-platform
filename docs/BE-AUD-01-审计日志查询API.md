@@ -1,6 +1,6 @@
 # BE-AUD-01 审计日志查询 API
 
-实现：[apps/cloud-api/src/admin/audit](../apps/cloud-api/src/admin/audit)（errors/service/handler）；REST 契约 [admin-audit-api.json](../contracts/rest/admin-audit-api.json)；验收测试 [admin-audit.test.ts](../apps/cloud-api/test/admin-audit.test.ts)（6 项，PGlite）。
+实现：[apps/cloud-api/src/admin/audit](../apps/cloud-api/src/admin/audit)（errors/service/handler）；REST 契约 [admin-audit-api.json](../contracts/rest/admin-audit-api.json)；验收测试 [admin-audit.test.ts](../apps/cloud-api/test/admin-audit.test.ts)（PGlite）。
 
 ## 1. 范围与事实源
 
@@ -21,7 +21,7 @@
 
 **脱敏保证（敏感字段永不返回）**：写入与读取共用递归脱敏器；字段名覆盖 Authorization、Cookie/Set-Cookie、session、JWT、password、token、secret、private key 等常见大小写/分隔变体，值模式额外识别 Bearer、JWT、Session Cookie 与私钥，非标准字段名也不能绕过。
 
-## 3. 验收基准与证据（vitest + PGlite，6 项）
+## 3. 验收基准与证据（vitest + PGlite）
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
@@ -36,3 +36,11 @@
 - **Customer 角色审计可见性**：V1 冻结矩阵（DEC-012）未授予 Customer 角色 audit:read，故「Customer 角色仅自身」当前以服务层强制隔离 + handler 403 落地；如需向 Customer 角色开放自身审计查询，须另立版本化决策修订矩阵（服务层隔离语义已就绪）。
 - **复合游标为模块内格式**：`${createdAtIso}|${id}` 复用共享游标编码但键结构为本模块私有；若其他模块需要时间倒序分页，可上提为共享复合游标助手。
 - **审计查询本身的审计**：查询为只读操作，按 DOM-03 口径不写审计（与既有只读端点一致）；如需审计「谁看了审计」，需另立决策。
+
+## 5. 状态边界与发布 Gate
+
+- `module implemented`：统一写入/读取脱敏、查询契约与本地回归已实现。
+- `production wired`：Admin Router 与 Lambda 组合根已接线。
+- `target verified`：**NOT RUN**；尚无真实 Cognito 角色、跨租户与敏感值读回证据。
+- 本地统一验证：`pnpm verify`。历史审计快照：[BE-MED-RBAC-AUD-DASH-SET 全面复盘检查报告](audit/BE-MED-RBAC-AUD-DASH-SET全面复盘检查报告-2026-09-09.md)。
+- 发布证据：[BE-MED/RBAC/AUD/DASH/SET AWS 验收证据采集说明](audit/evidence/BE-MED-RBAC-AUD-DASH-SET-AWS验收证据采集说明.md)，执行 `pnpm check:aws-med-rbac-aud-dash-set-evidence`。

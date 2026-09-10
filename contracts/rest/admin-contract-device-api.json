@@ -4,8 +4,8 @@
     "title": "Bio-Nexa CMP Admin Contract-Device API",
     "version": "0.1.0",
     "description": "BE-CON-02 Contract 与 Device 关联接口（Cognito 认证；contract:write=PlatformSuperAdmin，contract:read 另含 PlatformOperator/Auditor）：查询可关联设备、批量关联、批量解绑和关联历史；Contract 详情的设备视图返回 Region/Subregion/Site、ID、别名、四轴状态（lifecycle/operational/connectivity/license）、固件和租期展示值。设备与 Contract 必须属于同一 Customer（跨 Customer → 409）；默认禁止有效期重叠的多个有效 Contract（服务预检 + DB 排他约束 contract_devices_no_overlap 兜底，重叠 → 409）；批量操作全成或全败（单事务）；关联事务不直接改变 Device lifecycle 或 License（DEC-007：解绑不联动撤销 License；Contract 关联不替代 Assignment，不代表 Entitlement）。所有变化经 DOM-03 审计（contract.devices.bind/unbind，强制原因）。通用契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-007@1.0.0", "DEC-012@1.0.0"],
-    "x-decision-register-version": "1.32.0"
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-007@1.0.0", "DEC-012@1.0.0", "DEC-024@1.0.0"],
+    "x-decision-register-version": "1.33.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

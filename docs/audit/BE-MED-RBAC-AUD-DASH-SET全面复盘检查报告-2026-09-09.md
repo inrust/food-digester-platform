@@ -1,5 +1,26 @@
 # BE-MED-01、BE-RBAC-01、BE-AUD-01、BE-DASH-01、BE-SET-01 全面复盘检查报告
 
+## 整改后状态更新（2026-09-10）
+
+本节是当前状态，后文保留 2026-09-09 初始审计快照及原始 Finding，便于追溯。
+
+| 整改阶段 | 状态 | 当前证据 |
+|---|---|---|
+| P0：生产可达性与必需适配 | **CLOSED（本地）** | 提交 `509b20f`：15 个 operation 纳入生产事实表与 Router/Lambda，补齐 Media S3 signer、Cognito adapter、IAM 和组合根回归 |
+| P1：安全、授权与并发 | **CLOSED（本地）** | 提交 `dad7c8f`：审计凭据脱敏、Dashboard/Command 共用授权、SuperAdmin 行锁、Cognito 补偿/对账、Media 原子配额 |
+| P2：契约、设置与证据可信度 | **CLOSED（本地）** | 严格请求解析；设置返回 ACTIVE/STORED_ONLY；DEC-024 冻结；新增绑定 sourceCommit 的目标 AWS 失败关闭 Gate；五份任务文档统一三层状态 |
+| 目标 AWS 运行验收 | **NOT RUN / OPEN** | 尚无 `be-med-rbac-aud-dash-set-aws-acceptance.json`；不得把本地测试、PGlite、mock 或 CDK synth 外推为目标环境 PASS |
+
+P2 关闭索引：
+
+1. **CLOSED-P2-01（M-01）**：User、Settings、Device Media 写 Handler 使用统一严格对象解析；无 requestBody 的 User disable/password-reset 拒绝实体；永久 password、未知字段和数组在副作用前返回 400。
+2. **CLOSED-P2-02（M-03）**：`command.confirmation` 标为 `ACTIVE/BE-CMD-01`；其余三项标为 `STORED_ONLY/null`，契约和文档明确更新成功不代表业务行为生效。
+3. **CLOSED-P2-03（L-02）**：新增并冻结 `DEC-024@1.0.0`，固定 Media 大小/UTC 日配额/900 秒 URL TTL 与连接状态 600 秒包含式边界；策略、OpenAPI、实现和测试同步。
+4. **CLOSED-P2-04（H-06 证据治理）**：新增 `pnpm check:aws-med-rbac-aud-dash-set-evidence`，精确覆盖 15 API、五角色/跨租户、Cognito、并发、S3、Dashboard Entitlement、审计脱敏、严格请求与清理；缺回执或 sourceCommit 不符必须非零退出。
+5. **CLOSED-P2-05（L-01）**：五份任务文档统一 `module implemented` / `production wired` / `target verified`，并纳入默认文档证据 Gate。
+
+当前分层结论：模块实现与生产组合根接线 **5/5**；本地 P0/P1/P2 整改 **15/15 CLOSED**；目标 AWS 验收 **0/5（NOT RUN）**。正式发布仍以目标 AWS 回执 Gate 为准。
+
 > 检查日期：2026-09-09
 > 检查基线：`cf2cba776ed0d8e9bcf91da660ba834629391740`
 > 检查范围：`docs/管理后台开发任务清单.md` 第 10 节中的 `BE-MED-01`、`BE-RBAC-01`、`BE-AUD-01`、`BE-DASH-01`、`BE-SET-01`
@@ -182,4 +203,4 @@
 - 目标 AWS 运行验收：**NOT RUN**。
 - **最终严格结论：0/5（0%），FAIL / NOT ACCEPTED。**
 
-本次工作仅新增本审计报告，未修改业务代码、契约、Migration、测试、基础设施或部署状态。
+以上第五节为 2026-09-09 初始审计结论；整改后的当前状态以报告顶部“整改后状态更新”为准。

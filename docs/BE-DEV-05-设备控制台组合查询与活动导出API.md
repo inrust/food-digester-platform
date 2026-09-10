@@ -15,7 +15,7 @@
 **路由**：`GET /devices/{id}/console`（组合查询，device:read）；`GET /devices/{id}/activities`（活动日志，device:read）；`POST /devices/{id}/activities/export`（202 入队，export:create）；`GET /activity-exports/{exportId}`（状态/短期 URL，device:read）。
 
 **控制台数据块（全部携带可追溯来源；局部缺失不使整个响应失败）**：
-- device：台账 + 四轴分字段（lifecycleStatus/operationalStatus/connectivity/licenseStatus，DEC-010 不派生 enabled）；connectivity 由 lastHeartbeatAt ≤ 10 分钟派生（暂定值，不写回）；固件最近上报优先、回退台账；
+- device：台账 + 四轴分字段（lifecycleStatus/operationalStatus/connectivity/licenseStatus，DEC-010 不派生 enabled）；connectivity 按 DEC-024@1.0.0 由 lastHeartbeatAt 距 generatedAt ≤ 600 秒派生（包含边界，不写回）；固件最近上报优先、回退台账；
 - components：device_latest_state.sensor_status 五键（overall/temperature/humidity/weight/gas，未上报 null）；
 - metrics：telemetry_hourly 最新整点桶（avg/min/max + 固定单位映射 kg/%/°C/kW/ppm/A；未上报指标 null；桶聚合增量合并 → 乱序遥测不倒退最新值）；
 - network/consumables/recentAlarms（固定 5 条，倒序+决胜）/contract（ACTIVE 关联摘要，无则 null）；
@@ -42,6 +42,6 @@
 
 - **EVENT 级别语义**：DeviceEvent 无级别字段，本任务固定 EVENT=INFO 并在 DTO 注释声明；若原型事件有级别枚举，需先扩展上行事件 Schema（另立契约变更）。
 - **遥测粒度**：控制台指标取最新整点桶（BE-IOT-05 聚合粒度），非实时单点；实时性需求属 MQTT 透传边界，本任务明确不做。
-- **stale 阈值暂定**（心跳 10 分钟 / 遥测 2 小时）：冻结需登记决策。
+- **stale 阈值分层**：心跳 10 分钟已由 DEC-024@1.0.0 冻结；遥测 2 小时仍为暂定值，后续冻结需另立决策。
 - **导出上限 10000 行（暂定值）**：超出截断由 rowCount 表达；如需更大导出，另立分页下载/对象生命周期决策。
 - **活动流归并**：EVENT+ALARM 双源内存归并（单设备量级可控）；若活动源扩展（如命令/耗材），需评估游标归并的可扩展性。

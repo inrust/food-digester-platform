@@ -45,6 +45,15 @@ export const SETTING_KEYS = [
 
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
+export const SETTING_RUNTIME_EFFECTS: Readonly<
+  Record<SettingKey, { readonly status: 'ACTIVE' | 'STORED_ONLY'; readonly consumer: string | null }>
+> = {
+  'alarm.thresholds': { status: 'STORED_ONLY', consumer: null },
+  'command.confirmation': { status: 'ACTIVE', consumer: 'BE-CMD-01' },
+  'dictionary.displayNames': { status: 'STORED_ONLY', consumer: null },
+  'notification.business': { status: 'STORED_ONLY', consumer: null },
+};
+
 // ---------- 固定封闭集（协议枚举，只读防护事实源） ----------
 
 const FIXED_COMMAND_CODES: ReadonlySet<string> = new Set(COMMAND_CATALOG.map((spec) => spec.command));
@@ -87,15 +96,22 @@ export interface SettingView {
   readonly version: number;
   readonly updatedBy: string | null;
   readonly updatedAt: string;
+  /** ACTIVE 表示已有唯一运行时消费方；STORED_ONLY 表示仅提供校验、版本和审计存储。 */
+  readonly runtimeStatus: 'ACTIVE' | 'STORED_ONLY';
+  readonly runtimeConsumer: string | null;
 }
 
 function toView(row: SettingRow): SettingView {
+  const runtime = SETTING_RUNTIME_EFFECTS[row.key as SettingKey];
+  if (!runtime) throw settingsValidationFailed(`unexpected stored setting key: ${row.key}`);
   return {
     key: row.key,
     value: row.value,
     version: row.version,
     updatedBy: row.updatedBy,
     updatedAt: row.updatedAt.toISOString(),
+    runtimeStatus: runtime.status,
+    runtimeConsumer: runtime.consumer,
   };
 }
 

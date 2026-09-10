@@ -13,6 +13,7 @@ import { AuthError, withAuthorization } from '@fdp/auth';
 import type { ActorContext } from '@fdp/auth';
 import { mapDbErrorToHttp } from '@fdp/database';
 import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.js';
+import { parseStrictObject } from '../shared/strict-object.js';
 import { AdminSettingsError, settingsValidationFailed } from './errors.js';
 import { getSetting, listSettings, updateSetting } from './service.js';
 import type { SettingsDeps } from './service.js';
@@ -68,7 +69,7 @@ export function createAdminSettingsHandlers(deps: AdminSettingsHandlerDeps): Adm
   const update = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'settings:write' },
     async (req) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
+      const body = parseStrictObject(req.body, ['value', 'version'], settingsValidationFailed);
       if (!('value' in body)) throw settingsValidationFailed('value is required');
       const view = await updateSetting(deps, req.actor as ActorContext, requireKey(req), {
         value: body.value,

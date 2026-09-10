@@ -82,13 +82,16 @@ test('管理端：列表/下载端点齐备且 CognitoJwt 认证；视图不泄�
   assert.equal(admin.components.schemas.MediaDownloadUrlView.properties.downloadUrl.pattern, '^https://');
 });
 
-test('Media 状态枚举封闭（AVAILABLE/DELETED）；配额/大小引用策略暂定值', () => {
+test('Media 状态枚举封闭（AVAILABLE/DELETED）；配额/大小/TTL 引用 DEC-024 冻结值', () => {
   assert.deepEqual(admin.components.schemas.MediaView.properties.status.enum, ['AVAILABLE', 'DELETED']);
   assert.deepEqual(
     admin.paths['/api/v1/admin/media'].get.parameters.find((p: { name?: string }) => p.name === 'status').schema.enum,
     ['AVAILABLE', 'DELETED'],
   );
-  // 契约描述与策略暂定值一致（TTL 900s、IMAGE/VIDEO 上限）
+  assert.ok(device.info['x-decision-versions'].includes('DEC-024@1.0.0'));
+  assert.ok(admin.info['x-decision-versions'].includes('DEC-024@1.0.0'));
+  assert.equal(uploadPolicy.status, 'frozen');
+  // 契约描述与冻结策略一致（TTL 900s、IMAGE/VIDEO 上限）
   const desc = device.info.description + JSON.stringify(device.components.schemas);
   assert.ok(desc.includes('900'), '上传 TTL 应与策略一致（900s）');
   assert.ok(desc.includes(String(uploadPolicy.limits.maxSizeKb.IMAGE)));

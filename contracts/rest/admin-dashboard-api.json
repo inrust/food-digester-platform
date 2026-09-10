@@ -4,8 +4,8 @@
     "title": "Bio-Nexa CMP Admin Dashboard API",
     "version": "0.1.0",
     "description": "BE-DASH-01 管理后台总览聚合 API（Cognito 认证，dashboard:read——全角色持有）。GET /api/v1/admin/dashboard/overview 返回：有效 Contract 总数、设备总数及授权状态分布、在线数/在线率、今日（UTC）估算碳减排/能耗/处理量、最新业务告警（固定 5 条）与最多 10 台设备卡片摘要（固件、连接质量、耗材、允许动作）。Customer 角色强制 actor.customerId scope（汇总不串线）；平台角色返回全平台口径。连接状态、生命周期、运行状态和 License 四轴分离（DEC-010，不合并不派生单字段）；卡片动作只返回 command/allowed/denyReason，不在查询中执行命令。功能边界：不返回 AWS CPU、队列深度等运维指标。错误响应继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["DEC-010@1.0.0"],
-    "x-decision-register-version": "1.32.0"
+    "x-decision-versions": ["DEC-010@1.0.0", "DEC-024@1.0.0"],
+    "x-decision-register-version": "1.33.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
@@ -82,7 +82,7 @@
           "online": {
             "type": "integer",
             "minimum": 0,
-            "description": "在线数（固定口径）：lastHeartbeatAt 距 generatedAt ≤ 10 分钟（暂定值，BE-DEV-01 派生口径；不读取 device_latest_state.connectivity 存储字段）"
+            "description": "在线数（DEC-024 固定口径）：lastHeartbeatAt 距 generatedAt ≤ 10 分钟（包含边界；不读取 device_latest_state.connectivity 存储字段）"
           },
           "onlineRatePct": {
             "type": "number",
@@ -209,7 +209,7 @@
           "connectivity": {
             "type": "string",
             "enum": ["ONLINE", "OFFLINE"],
-            "description": "连接状态轴：lastHeartbeatAt 距 generatedAt ≤ 10 分钟派生（暂定值）"
+            "description": "连接状态轴：按 DEC-024 由 lastHeartbeatAt 距 generatedAt ≤ 10 分钟派生（包含边界）"
           },
           "licenseStatus": {
             "type": ["string", "null"],

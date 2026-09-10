@@ -93,6 +93,13 @@ describe('BE-SET-01 读取与权限', () => {
       'dictionary.displayNames',
       'notification.business',
     ]);
+    const runtime = Object.fromEntries(
+      (list.body as ListBody).data.map((setting) => [setting.key, [setting.runtimeStatus, setting.runtimeConsumer]]),
+    );
+    assert.deepEqual(runtime['command.confirmation'], ['ACTIVE', 'BE-CMD-01']);
+    assert.deepEqual(runtime['alarm.thresholds'], ['STORED_ONLY', null]);
+    assert.deepEqual(runtime['dictionary.displayNames'], ['STORED_ONLY', null]);
+    assert.deepEqual(runtime['notification.business'], ['STORED_ONLY', null]);
 
     const one = await h.getSetting(req(auditor, { params: { key: 'command.confirmation' } }));
     assert.equal(one.status, 200);
@@ -269,5 +276,27 @@ describe('BE-SET-01 非法配置拒绝（400 且不落库）', () => {
     assert.equal((await put(h, 'alarm.thresholds', {}, 0)).status, 400);
     assert.equal((await put(h, 'alarm.thresholds', {}, 'v1')).status, 400);
     assert.equal((await put(h, 'topic.catalog', {}, 1)).status, 404);
+  });
+
+  test('严格请求：未知顶层字段与数组 body 在 DB/审计前返回 400', async () => {
+    const h = createAdminSettingsHandlers(deps());
+    const before = await prisma.businessSetting.findUniqueOrThrow({ where: { key: 'alarm.thresholds' } });
+    const beforeAudits = await prisma.auditLog.count();
+    const unknown = await h.updateSetting(
+      req(superAdmin, {
+        params: { key: 'alarm.thresholds' },
+        body: { value: {}, version: before.version, ignored: true },
+      }),
+    );
+    const array = await h.updateSetting(
+      req(superAdmin, { params: { key: 'alarm.thresholds' }, body: [{ value: {}, version: before.version }] }),
+    );
+    assert.equal(unknown.status, 400);
+    assert.equal(array.status, 400);
+    assert.equal(
+      (await prisma.businessSetting.findUniqueOrThrow({ where: { key: 'alarm.thresholds' } })).version,
+      before.version,
+    );
+    assert.equal(await prisma.auditLog.count(), beforeAudits);
   });
 });

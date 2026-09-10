@@ -4,7 +4,7 @@
  * 数据块事实源（原型设备查看页字段均可追溯）：
  * - device：devices 台账 + 四轴分离（DEC-010：lifecycle/operational/connectivity/license
  *   分字段返回，不派生 enabled 单字段）；connectivity 由 lastHeartbeatAt ≤ 10 分钟派生
- *   （暂定值，复用 BE-DEV-01 deriveConnectivity，不写回）；固件最近上报优先、回退台账；
+ *   （DEC-024 冻结值，复用 BE-DEV-01 deriveConnectivity，不写回）；固件最近上报优先、回退台账；
  * - components：device_latest_state.sensor_status 五键（overall/temperature/humidity/
  *   weight/gas，未上报为 null）；
  * - metrics：telemetry_hourly 最新整点桶 metrics（avg/min/max/count；乱序遥测不倒退
@@ -19,7 +19,7 @@
  *   仅最新一张，非实时流）；无数据稳定返回 null，不阻塞 P1 核心查询。
  *
  * 通用规则：
- * - 心跳类数据块 observedAt = lastHeartbeatAt，stale = 距 generatedAt 超 10 分钟（暂定值）；
+ * - 心跳类数据块 observedAt = lastHeartbeatAt，stale = 距 generatedAt 超 DEC-024 冻结的 10 分钟；
  *   遥测块 observedAt = 桶起点，stale = 桶早于 generatedAt 2 小时以上；
  * - 局部数据缺失不使整个响应失败：无 latestState/遥测/耗材/合约/Media 时对应块
  *   返回明确空值（null 字段/空数组）+ stale=true；
@@ -282,7 +282,7 @@ export async function getDeviceConsole(
     }) as unknown as Promise<MediaRow | null>,
   ]);
 
-  // 心跳类块：observedAt = lastHeartbeatAt；stale = 超连接阈值（暂定值）
+  // 心跳类块：observedAt = lastHeartbeatAt；stale = 超 DEC-024 冻结的连接阈值
   const lastHeartbeatAt = state?.lastHeartbeatAt ?? null;
   const heartbeatStale = deriveConnectivity(lastHeartbeatAt, now, DEFAULT_CONNECTIVITY_THRESHOLD_MS) === 'OFFLINE';
   const heartbeatObservedAt = lastHeartbeatAt?.toISOString() ?? null;

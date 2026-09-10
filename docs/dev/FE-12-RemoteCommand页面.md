@@ -50,5 +50,5 @@
 ## 4. 未决风险
 
 - 命令列表/活动日志的 siteId/时间范围筛选契约支持但页面 V1 仅暴露 status/command/level/kind（设备上下文已隐含 deviceId）；如验收要求完整筛选维度可补充；
-- 离线判定依赖 device.connectivity（lastHeartbeatAt ≤10 分钟派生，暂定值口径），与后端 DEVICE_STATE_NOT_ALLOWED 最终裁决一致；
+- 离线判定依赖 device.connectivity（DEC-024@1.0.0：lastHeartbeatAt 距 now ≤600 秒，包含边界），与后端 DEVICE_STATE_NOT_ALLOWED 最终裁决一致；
 - 加热/排气按钮映射为 ON/OFF 命令组（原型单按钮语义），操作者在表单内选定方向。

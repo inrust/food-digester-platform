@@ -44,6 +44,7 @@ test('端点齐备且 CognitoJwt 认证：仅 GET 总览（只读，无写路由
 });
 
 test('总览 DTO 齐备：Contract/设备分布/在线率/今日 ESG/最新告警/设备卡片；四轴分离不合并', () => {
+  assert.ok(doc.info['x-decision-versions'].includes('DEC-024@1.0.0'));
   const overview = doc.components.schemas.DashboardOverview;
   assert.equal(overview.additionalProperties, false);
   assert.deepEqual(overview.required, [
@@ -58,6 +59,7 @@ test('总览 DTO 齐备：Contract/设备分布/在线率/今日 ESG/最新告�
   // 指标定义固定：分母/时间窗口在描述中声明
   const devices = doc.components.schemas.DeviceSummary;
   assert.ok(devices.properties.online.description.includes('10 分钟'), '在线口径必须声明阈值');
+  assert.ok(devices.properties.online.description.includes('DEC-024'), '在线口径必须追溯到冻结决策');
   assert.ok(devices.properties.onlineRatePct.description.includes('online / total'), '在线率必须声明分母');
   const esg = doc.components.schemas.EsgTodaySummary;
   assert.ok(esg.properties.summaryDate.description.includes('UTC'), 'ESG 时间窗口必须声明 UTC 日');

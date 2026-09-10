@@ -5,7 +5,7 @@
  * - 有效 Contract 总数：status ∉ {DRAFT, TERMINATED} 且 startAt <= generatedAt < endAt
  *   （EFFECTIVE + EXPIRING_SOON；分母为 scope 内全部 Contract）；
  * - 设备总数：scope 内 devices 行数（分母）；在线数：lastHeartbeatAt 距 generatedAt
- *   ≤ 10 分钟（暂定值，复用 BE-DEV-01 deriveConnectivity，不读取 connectivity 存储字段）；
+ *   ≤ 10 分钟（DEC-024@1.0.0，复用 BE-DEV-01 deriveConnectivity，不读取 connectivity 存储字段）；
  *   在线率 = online/total×100 保留 1 位小数，total=0 → 0（无数据返回 0 而非错误）；
  * - 授权状态分布：device_latest_state.licenseStatus → 设备数；无状态行计入 NONE 桶；
  * - 今日 ESG：esg_daily_summary 按 summaryDate = generatedAt 的 UTC 日历日 + scope 内

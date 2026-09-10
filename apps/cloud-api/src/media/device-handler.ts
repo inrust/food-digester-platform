@@ -8,6 +8,7 @@
 import { AuthError, verifyDeviceCertificate } from '@fdp/auth';
 import type { ClientCertIdentity } from '@fdp/auth';
 import { mapDbErrorToHttp } from '@fdp/database';
+import { parseStrictObject } from '../admin/shared/strict-object.js';
 import { MediaError, mediaValidationFailed } from './errors.js';
 import { createMediaUploadSession } from './service.js';
 import type { MediaDeps } from './service.js';
@@ -57,10 +58,14 @@ export function createDeviceMediaHandler(
   const now = deps.now ?? (() => new Date());
   return async (req) => {
     try {
-      const auth = await verifyDeviceCertificate(deps.client, req.identity, { now: now() });
-      const body = (req.body ?? {}) as Record<string, unknown>;
+      const body = parseStrictObject(
+        req.body,
+        ['mediaType', 'fileName', 'sizeKb', 'sizeBytes', 'sha256'],
+        mediaValidationFailed,
+      );
       if (typeof body.sizeKb !== 'number') throw mediaValidationFailed('sizeKb is required');
       if (typeof body.sizeBytes !== 'number') throw mediaValidationFailed('sizeBytes is required');
+      const auth = await verifyDeviceCertificate(deps.client, req.identity, { now: now() });
       const view = await createMediaUploadSession(deps, auth, {
         mediaType: requireString(body, 'mediaType'),
         fileName: requireString(body, 'fileName'),
