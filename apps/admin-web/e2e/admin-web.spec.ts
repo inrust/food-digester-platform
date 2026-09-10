@@ -334,3 +334,87 @@ test('Customer/Site CRUD 关键路径：创建、非法时区、关联停用提�
   await conflictingSiteForm.getByRole('button', { name: '保存' }).click();
   await expect(page.getByText('Site already exists')).toBeVisible();
 });
+
+test('1440/768/375 响应式布局、横向表格和对话框键盘边界', async ({ page }) => {
+  await seedSession(page, 'PlatformSuperAdmin');
+  const responsiveDashboard = {
+    ...dashboard,
+    deviceCards: [
+      {
+        ...dashboard.deviceCards[0],
+        deviceId: 'dev-responsive',
+        serialNumber: 'SN-RESPONSIVE',
+        connectivity: 'ONLINE',
+        capabilities: {
+          ...dashboard.deviceCards[0].capabilities,
+          commands: dashboard.deviceCards[0].capabilities.commands.map((item) => ({
+            ...item,
+            allowed: item.command === 'START',
+            denyReason: item.command === 'START' ? null : item.denyReason,
+          })),
+        },
+      },
+    ],
+  };
+  await page.route('**/api/v1/admin/dashboard/overview', (route) =>
+    json(route, { data: responsiveDashboard, meta: {} }),
+  );
+  await page.route('**/api/v1/admin/customers**', (route) =>
+    json(route, {
+      data: [
+        {
+          id: 'responsive-customer',
+          name: '响应式布局验证客户',
+          status: 'ACTIVE',
+          version: 1,
+          createdAt: '2026-09-10T00:00:00Z',
+          updatedAt: '2026-09-10T00:00:00Z',
+        },
+      ],
+      meta: { nextCursor: null },
+    }),
+  );
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/dashboard');
+  await expect(page.getByTestId('sidebar')).toBeInViewport();
+  expect(await page.evaluate(() => document.body.scrollWidth <= window.innerWidth)).toBe(true);
+  await expect(page.getByTestId('dashboard-baseline')).toContainText('08:00:00');
+  await page.getByLabel('显示时区').selectOption('UTC');
+  await expect(page.getByTestId('dashboard-baseline')).toContainText('00:00:00');
+  expect(await page.evaluate(() => localStorage.getItem('fdp.admin.time-zone.v1'))).toBe('UTC');
+  const desktopCards = await page.locator('.stats-grid .stat-card').count();
+  expect(desktopCards).toBeGreaterThan(1);
+
+  await page.setViewportSize({ width: 768, height: 900 });
+  await expect.poll(async () => (await page.getByTestId('sidebar').boundingBox())?.x ?? 0).toBeLessThan(-200);
+  await page.getByTestId('drawer-open').click();
+  await expect(page.getByTestId('sidebar')).toHaveClass(/open/);
+  await expect
+    .poll(async () => (await page.getByTestId('sidebar').boundingBox())?.x ?? -240)
+    .toBeGreaterThanOrEqual(-1);
+  await page.getByTestId('drawer-overlay').click({ position: { x: 700, y: 400 } });
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/customers');
+  const table = page.getByTestId('cursor-table');
+  await expect(table).toBeVisible();
+  expect(await table.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.body.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await page.goto('/dashboard');
+  await page.getByTestId('action-START-dev-responsive').click();
+  const dialog = page.getByRole('dialog', { name: '确认启动' });
+  await expect(dialog).toBeVisible();
+  const bounds = await dialog.boundingBox();
+  expect(bounds?.x).toBeGreaterThanOrEqual(0);
+  expect((bounds?.x ?? 0) + (bounds?.width ?? 0)).toBeLessThanOrEqual(375);
+  expect(
+    await page.locator('#root').evaluate((root) => root.inert && root.getAttribute('aria-hidden') === 'true'),
+  ).toBe(true);
+  await expect(page.getByRole('button', { name: '取消' })).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(page.getByRole('button', { name: '确认下发' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: '取消' })).toBeFocused();
+});

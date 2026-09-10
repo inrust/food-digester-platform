@@ -2,6 +2,15 @@
 
 实现：[apps/admin-web/src/pages/customers](../../apps/admin-web/src/pages/customers/CustomersPage.tsx)、[apps/admin-web/src/pages/sites](../../apps/admin-web/src/pages/sites/SitesPage.tsx)；测试：[customers.test.tsx](../../apps/admin-web/test/customers.test.tsx)、[sites.test.tsx](../../apps/admin-web/test/sites.test.tsx)。
 
+## 交付状态（分层）
+
+| 层级 | 状态 | 当前证据与边界 |
+|---|---|---|
+| module implemented | PASS | Customer/Site CRUD、校验、权限、冲突与双向游标组件测试通过 |
+| app integrated | PASS | `/customers`、`/sites` 已接入 BrowserRouter、共享 API client、会话权限和 Toast |
+| browser verified | PASS | Chromium 覆盖 CRUD、非法时区、关联停用、409、窄屏表格和 Modal 键盘边界 |
+| target integrated | NOT RUN / NO RECEIPT | 未取得目标 Admin API 的真实数据、权限和并发联调凭据 |
+
 ## 1. 范围与事实源
 
 | 项 | 说明 |
@@ -18,7 +27,7 @@
 | `CustomersPage` | 状态筛选（全部/正常/已停用）+ 游标列表（名称/状态/创建/更新时间）+ 详情面板 + 新建/改名（Modal 表单）+ 停用（原因必填） |
 | `SitesPage` | 四维筛选（所属客户/设备区域/子区域/状态）+ 游标列表（名称/客户/区域/子区域/时区/联系人/设备数/状态）+ 详情面板（含设备数）+ 新建/编辑（customerId 创建后不可变，编辑时只读）+ 停用（弹窗展示关联设备数提示 + 原因必填） |
 | `sites-state.ts` | `isValidTimeZone`（Intl 运行时校验 IANA 标识）+ `validateSiteInput`（名称必填≤200、时区、邮箱格式） |
-| `components/Modal.tsx` | 通用表单模态框（Esc 关闭、焦点进入/回收） |
+| `components/Modal.tsx` | Portal 表单模态框：初始焦点、Tab 双向循环、Esc、焦点回收和背景 inert |
 | `ScopeFilter` 扩展 | 可选 Device 层级（Region→Subregion→Site→Device 四级联动，上游变更清空下游），供后续设备页复用 |
 | `customers-api.ts` / `sites-api.ts` | 契约装配：列表筛选 + 游标、创建、PATCH（If-Match）、停用（If-Match + reason） |
 
@@ -26,14 +35,14 @@
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
-| CRUD（E2E 属 QA；组件级覆盖） | 创建（空名禁用→提交→刷新）、编辑（携带当前 version 即 If-Match）、停用（原因必填→提交→刷新） | ✅ |
+| CRUD E2E | Playwright 真实 Chromium 覆盖 Customer/Site 创建、编辑、停用；If-Match 由 API client 装配 | ✅（本地浏览器） |
 | 非法时区 | `Mars/Olympus` 客户端拦截不提交 + 内联错误；`Asia/Shanghai` 通过；纯逻辑 `isValidTimeZone` 用例 | ✅ |
 | 有关联对象停用提示 | 停用弹窗展示“该站点当前关联设备 N 台” | ✅ |
 | 并发冲突 | 409 VERSION_CONFLICT → “数据已被他人修改” + 刷新；409 CONFLICT（重复停用）→ 展示后端 message | ✅ |
 | 按角色隐藏写操作 + 后端 403 | canWrite=false 时无新建/编辑/停用按钮；列表 403 → 无权提示 | ✅ |
-| 键盘/焦点/标签 | Modal Esc 关闭、焦点回收；表单字段均 htmlFor 关联（getByLabelText 断言） | ✅ |
+| 键盘/焦点/标签 | Modal 初始焦点、Tab 循环、背景 inert、Esc 和焦点回收；字段均由 htmlFor 关联 | ✅ |
 
-当前证据命令：`pnpm vitest run apps/admin-web/test`、`pnpm --filter @fdp/admin-web typecheck`、`pnpm verify`。任务文档不固化易漂移计数。
+当前证据命令：`pnpm vitest run apps/admin-web/test/customers.test.tsx apps/admin-web/test/sites.test.tsx`、`pnpm check:admin-web-e2e`、`pnpm verify`。HTTP mock 与目标环境联调分层记录。
 
 ## 4. 对接说明
 

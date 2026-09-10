@@ -1,4 +1,14 @@
 :root {
+  --color-bg: #f5f7fa;
+  --color-surface: #fff;
+  --color-border: #d0d5dd;
+  --color-text: #1d2939;
+  --color-muted: #667085;
+  --color-primary: #175cd3;
+  --color-danger: #b42318;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --shadow-dialog: 0 24px 48px rgb(16 24 40 / 24%);
   color: #1d2939;
   background: #f5f7fa;
   font-family:
@@ -18,6 +28,7 @@
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: hidden;
 }
 button,
 input,
@@ -31,6 +42,15 @@ button {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #84adff;
+  outline-offset: 2px;
 }
 
 .login-page,
@@ -99,7 +119,22 @@ button:disabled {
 
 .page-content {
   padding: 24px;
-  overflow-x: auto;
+  overflow-x: hidden;
+}
+.page-header,
+.console-header,
+.manage-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.page-header h1,
+.page-header h2,
+.console-header h1,
+.manage-header h1 {
+  margin-block: 0 8px;
 }
 .page-toolbar,
 .filter-bar,
@@ -116,6 +151,7 @@ button:disabled {
 .dialog-field {
   display: grid;
   gap: 4px;
+  min-width: 0;
 }
 .stats-grid,
 .device-grid {
@@ -136,6 +172,33 @@ button:disabled {
   border-radius: 8px;
   background: #fff;
 }
+.detail-panel,
+.request-detail,
+.alarm-detail,
+.campaign-detail,
+.command-detail,
+.config-detail,
+.device-user-detail,
+.license-detail {
+  overflow-wrap: anywhere;
+}
+.detail-panel dl,
+.request-detail dl,
+.device-card dl {
+  display: grid;
+  grid-template-columns: minmax(110px, max-content) minmax(0, 1fr);
+  gap: 8px 16px;
+}
+.detail-panel dt,
+.request-detail dt,
+.device-card dt {
+  color: var(--color-muted);
+}
+.detail-panel dd,
+.request-detail dd,
+.device-card dd {
+  margin: 0;
+}
 .stat-card .value {
   margin-block: 6px;
   font-size: 28px;
@@ -149,6 +212,15 @@ table {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
+}
+.cursor-table {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.cursor-table table {
+  min-width: 720px;
 }
 th,
 td {
@@ -182,11 +254,185 @@ td {
   color: #b54708;
 }
 
+.table-pagination {
+  position: sticky;
+  left: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  width: min(100%, calc(100vw - 64px));
+  padding-top: 12px;
+}
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow-y: auto;
+  background: rgb(16 24 40 / 58%);
+}
+.modal-dialog,
+.confirm-dialog {
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-dialog);
+}
+.modal-dialog h3,
+.confirm-dialog h3 {
+  margin-top: 0;
+}
+.dialog-description,
+.field-hint,
+.observed-at,
+.query-hint {
+  color: var(--color-muted);
+}
+.dialog-field + .dialog-field {
+  margin-top: 12px;
+}
+.dialog-field input,
+.dialog-field select,
+.dialog-field textarea {
+  width: 100%;
+  max-width: 100%;
+}
+.dialog-field textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+.dialog-actions {
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.filter-bar,
+.scope-filter,
+.site-filters {
+  padding: 12px;
+  border: 1px solid #e4e7ec;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.filter-field input,
+.filter-field select {
+  max-width: 260px;
+}
+.four-axis-badges,
+.status-grid,
+.sensor-grid,
+.action-buttons,
+.tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.consumable,
+.status-item,
+.sensor-item,
+.version-card,
+.export-job {
+  padding: 10px;
+  border: 1px solid #e4e7ec;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+.error-notice,
+.action-notice {
+  padding: 12px;
+  border: 1px solid #fda29b;
+  border-radius: var(--radius-md);
+  background: #fef3f2;
+  color: var(--color-danger);
+}
+
 @media (max-width: 768px) {
   .page-content {
     padding: 16px;
   }
   .login-card {
     padding: 24px;
+  }
+  .stats-grid,
+  .device-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .page-toolbar,
+  .filter-bar,
+  .scope-filter,
+  .site-filters {
+    align-items: stretch;
+  }
+  .filter-field {
+    flex: 1 1 200px;
+  }
+  .filter-field input,
+  .filter-field select {
+    width: 100%;
+    max-width: none;
+  }
+  .toast-host {
+    inset: auto 12px 12px;
+  }
+  .table-pagination {
+    width: calc(100vw - 48px);
+  }
+}
+
+@media (max-width: 480px) {
+  .page-content {
+    padding: 12px;
+  }
+  .login-page,
+  .standalone-page {
+    padding: 12px;
+  }
+  .login-card {
+    padding: 20px;
+  }
+  .page-toolbar,
+  .filter-bar,
+  .status-tabs,
+  .detail-actions,
+  .dialog-actions,
+  .actions,
+  .scope-filter,
+  .site-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .page-toolbar > *,
+  .filter-bar > *,
+  .status-tabs > *,
+  .detail-actions > *,
+  .dialog-actions > *,
+  .actions > * {
+    width: 100%;
+  }
+  .detail-panel dl,
+  .request-detail dl,
+  .device-card dl {
+    grid-template-columns: 1fr;
+  }
+  .dialog-overlay {
+    align-items: end;
+    padding: 0;
+  }
+  .modal-dialog,
+  .confirm-dialog {
+    width: 100%;
+    max-height: 92dvh;
+    padding: 20px 16px;
+    border-radius: 16px 16px 0 0;
+  }
+  .table-pagination {
+    width: calc(100vw - 40px);
   }
 }

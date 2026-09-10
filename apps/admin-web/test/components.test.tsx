@@ -11,7 +11,7 @@ import { classifyError, ErrorNotice } from '../src/components/ErrorNotice.js';
 import { applyScopeChange, EMPTY_SCOPE_FILTER } from '../src/components/filter-state.js';
 import { FourAxisBadges } from '../src/components/FourAxisBadge.js';
 import { ScopeFilter } from '../src/components/ScopeFilter.js';
-import { formatInTimeZone, TimeText } from '../src/components/TimeText.js';
+import { formatInTimeZone, TimeText, TimeZoneProvider, useUserTimeZone } from '../src/components/TimeText.js';
 import { toastReducer } from '../src/components/toast-store.js';
 import { ToastHost, useToastQueue } from '../src/components/Toast.js';
 
@@ -166,11 +166,56 @@ test('ConfirmDialog：打开时焦点进入对话框；Esc 取消并回收焦点
   const trigger = screen.getByTestId('trigger');
   trigger.focus();
   await user.click(trigger);
-  assert.equal(document.activeElement, screen.getByRole('button', { name: '确认' }));
+  assert.equal(document.activeElement, screen.getByRole('button', { name: '取消' }));
 
   await user.keyboard('{Escape}');
   assert.equal(screen.queryByRole('dialog'), null);
   assert.equal(document.activeElement, trigger);
+});
+
+test('ConfirmDialog：背景 inert，Tab/Shift+Tab 焦点在对话框内循环', async () => {
+  const user = userEvent.setup();
+  render(<DialogHarness requireReason={false} />);
+  const trigger = screen.getByTestId('trigger');
+  await user.click(trigger);
+  const cancel = screen.getByRole('button', { name: '取消' });
+  const confirm = screen.getByRole('button', { name: '确认' });
+  const background = trigger.closest<HTMLElement>('[aria-hidden="true"]');
+  assert.ok(background?.inert);
+  assert.equal(document.activeElement, cancel);
+  await user.keyboard('{Shift>}{Tab}{/Shift}');
+  assert.equal(document.activeElement, confirm);
+  await user.tab();
+  assert.equal(document.activeElement, cancel);
+});
+
+test('TimeText：用户选择的时区立即应用并持久化', async () => {
+  window.localStorage.clear();
+  const user = userEvent.setup();
+  function Harness() {
+    const { timeZone, setTimeZone } = useUserTimeZone();
+    return (
+      <>
+        <label>
+          时区
+          <select value={timeZone} onChange={(event) => setTimeZone(event.target.value)}>
+            <option>Asia/Shanghai</option>
+            <option>UTC</option>
+          </select>
+        </label>
+        <TimeText iso="2026-09-10T00:00:00Z" />
+      </>
+    );
+  }
+  render(
+    <TimeZoneProvider>
+      <Harness />
+    </TimeZoneProvider>,
+  );
+  assert.ok(screen.getByText(/2026\/09\/10 08:00:00/));
+  await user.selectOptions(screen.getByLabelText('时区'), 'UTC');
+  assert.ok(screen.getByText(/2026\/09\/10 00:00:00/));
+  assert.equal(window.localStorage.getItem('fdp.admin.time-zone.v1'), 'UTC');
 });
 
 // ---------- ScopeFilter：联动与标签 ----------

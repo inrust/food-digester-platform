@@ -2,6 +2,7 @@
  * FE-02 顶部栏：面包屑、通知徽标、用户区（角色显示名 + 登出）、移动端抽屉开关。
  */
 import { roleDisplayName } from '../menu/menu.js';
+import { SUPPORTED_TIME_ZONES, useUserTimeZone } from '../components/TimeText.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
 import { breadcrumbsFor } from './breadcrumb.js';
 import type { Ref } from 'react';
@@ -29,6 +30,7 @@ export function Topbar({
 }: TopbarProps) {
   const crumbs = breadcrumbsFor(path);
   const primaryRole = session.roles[0];
+  const { timeZone, setTimeZone } = useUserTimeZone();
 
   return (
     <header className="topbar">
@@ -66,6 +68,21 @@ export function Topbar({
       </nav>
 
       <div className="topbar-right">
+        <label className="time-zone-control">
+          <span>显示时区</span>
+          <select
+            aria-label="显示时区"
+            data-testid="time-zone-select"
+            value={timeZone}
+            onChange={(event) => setTimeZone(event.target.value)}
+          >
+            {SUPPORTED_TIME_ZONES.map((zone) => (
+              <option key={zone} value={zone}>
+                {zone}
+              </option>
+            ))}
+          </select>
+        </label>
         <button
           type="button"
           className="notification-button"

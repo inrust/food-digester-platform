@@ -7,6 +7,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import type { Role } from '@fdp/auth';
 import { AppShell } from '../src/shell/AppShell.js';
+import { TimeZoneProvider } from '../src/components/TimeText.js';
 import type { SessionSnapshot } from '../src/session/session-manager.js';
 
 afterEach(cleanup);
@@ -20,17 +21,19 @@ function renderShell(options: { path?: string; role?: Role; notificationCount?: 
   const navigated: string[] = [];
   let loggedOut = 0;
   const utils = render(
-    <AppShell
-      path={options.path ?? '/dashboard'}
-      session={sessionOf(options.role ?? 'PlatformSuperAdmin')}
-      {...(options.notificationCount !== undefined ? { notificationCount: options.notificationCount } : {})}
-      onNavigate={(path) => navigated.push(path)}
-      onLogout={() => {
-        loggedOut += 1;
-      }}
-    >
-      <div>页面内容</div>
-    </AppShell>,
+    <TimeZoneProvider>
+      <AppShell
+        path={options.path ?? '/dashboard'}
+        session={sessionOf(options.role ?? 'PlatformSuperAdmin')}
+        {...(options.notificationCount !== undefined ? { notificationCount: options.notificationCount } : {})}
+        onNavigate={(path) => navigated.push(path)}
+        onLogout={() => {
+          loggedOut += 1;
+        }}
+      >
+        <div>页面内容</div>
+      </AppShell>
+    </TimeZoneProvider>,
   );
   return { ...utils, navigated, isLoggedOut: () => loggedOut > 0 };
 }
@@ -130,6 +133,17 @@ test('通知徽标与用户区：未读数徽标、DEC-012 角色显示名、登
   assert.ok(screen.getByText('zhang@example.com'));
   await user.click(screen.getByRole('button', { name: '登出' }));
   assert.ok(isLoggedOut());
+});
+
+test('用户时区：顶部栏选择后持久化偏好', async () => {
+  window.localStorage.clear();
+  const user = userEvent.setup();
+  renderShell();
+  const selector = screen.getByLabelText('显示时区') as HTMLSelectElement;
+  assert.equal(selector.value, 'Asia/Shanghai');
+  await user.selectOptions(selector, 'UTC');
+  assert.equal(selector.value, 'UTC');
+  assert.equal(window.localStorage.getItem('fdp.admin.time-zone.v1'), 'UTC');
 });
 
 test('移动端抽屉（≤768px）：汉堡打开、遮罩关闭并回收焦点、Esc 关闭', async () => {

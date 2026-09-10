@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ToastHost, useToastQueue } from '../components/Toast.js';
+import { TimeZoneProvider } from '../components/TimeText.js';
 import { resolveRoute } from '../router/guard.js';
 import { AppShell } from '../shell/AppShell.js';
 import type { AdminWebServices } from './composition-root.js';
@@ -109,7 +110,7 @@ export function AdminWebApp({ services }: { readonly services: AdminWebServices 
   }
 
   return (
-    <>
+    <TimeZoneProvider>
       <AppShell
         path={location.pathname}
         session={session}
@@ -119,6 +120,6 @@ export function AdminWebApp({ services }: { readonly services: AdminWebServices 
         {page}
       </AppShell>
       <ToastHost toasts={toasts.toasts} onDismiss={toasts.dismiss} />
-    </>
+    </TimeZoneProvider>
   );
 }

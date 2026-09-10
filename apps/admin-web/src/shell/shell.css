@@ -83,6 +83,7 @@
   height: 56px;
   background: #fff;
   border-bottom: 1px solid #e3e8ef;
+  min-width: 0;
 }
 
 .topbar-menu-button {
@@ -108,6 +109,22 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.time-zone-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #475467;
+  font-size: 12px;
+}
+
+.time-zone-control select {
+  min-height: 36px;
+  max-width: 180px;
+  border: 1px solid #98a2b3;
+  border-radius: 6px;
+  background: #fff;
 }
 
 .notification-button {
@@ -182,5 +199,51 @@
   .sidebar-overlay.active {
     opacity: 1;
     pointer-events: auto;
+  }
+
+  .topbar {
+    gap: 10px;
+  }
+
+  .breadcrumb {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .breadcrumb ol {
+    white-space: nowrap;
+  }
+
+  .breadcrumb li:not(:last-child) {
+    display: none;
+  }
+
+  .topbar-right {
+    gap: 8px;
+  }
+
+  .time-zone-control span,
+  .notification-button,
+  .user-name,
+  .role-tag {
+    display: none;
+  }
+
+  .time-zone-control select {
+    width: 118px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar {
+    padding-inline: 10px;
+  }
+
+  .time-zone-control select {
+    width: 92px;
+  }
+
+  .logout-button {
+    padding-inline: 6px;
   }
 }

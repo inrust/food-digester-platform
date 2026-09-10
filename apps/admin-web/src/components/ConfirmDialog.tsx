@@ -5,7 +5,9 @@
  * - requireReason 时必须填写原因（默认至少 1 个非空字符），标签经 htmlFor 关联；
  * - Esc 取消；打开时焦点进入对话框，关闭后焦点回收到原聚焦元素。
  */
-import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useEffect, useId, useRef, useState } from 'react';
+import { useDialogA11y } from './dialog-a11y.js';
 
 export interface ConfirmDialogProps {
   readonly open: boolean;
@@ -33,25 +35,15 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const [reason, setReason] = useState('');
-  const confirmRef = useRef<HTMLButtonElement | null>(null);
-  const titleId = 'confirm-dialog-title';
-  const reasonId = 'confirm-dialog-reason';
-  const hintId = 'confirm-dialog-reason-hint';
-
-  // 焦点管理：打开时进对话框，关闭时回原聚焦元素；Esc 取消
-  useEffect(() => {
-    if (!open) return;
-    const previous = document.activeElement;
-    confirmRef.current?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onCancel();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      if (previous instanceof HTMLElement) previous.focus();
-    };
-  }, [open, onCancel]);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const cancelRef = useRef<HTMLButtonElement | null>(null);
+  const reasonRef = useRef<HTMLTextAreaElement | null>(null);
+  const titleId = useId();
+  const reasonId = useId();
+  const hintId = useId();
+  const initialFocusRef = requireReason ? reasonRef : cancelRef;
+  useDialogA11y(open, dialogRef, overlayRef, onCancel, initialFocusRef);
 
   // 重新打开时重置原因输入
   useEffect(() => {
@@ -62,14 +54,16 @@ export function ConfirmDialog({
 
   const reasonMissing = requireReason && reason.trim().length === 0;
 
-  return (
-    <div className="dialog-overlay" data-testid="dialog-overlay">
+  return createPortal(
+    <div className="dialog-overlay" data-testid="dialog-overlay" ref={overlayRef}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         className={`confirm-dialog${danger ? ' danger' : ''}`}
         data-testid="confirm-dialog"
+        ref={dialogRef}
+        tabIndex={-1}
       >
         <h3 id={titleId}>{title}</h3>
         {description !== undefined ? <p className="dialog-description">{description}</p> : null}
@@ -78,6 +72,7 @@ export function ConfirmDialog({
             <label htmlFor={reasonId}>{reasonLabel}</label>
             <textarea
               id={reasonId}
+              ref={reasonRef}
               value={reason}
               aria-describedby={hintId}
               onChange={(event) => setReason(event.target.value)}
@@ -88,12 +83,11 @@ export function ConfirmDialog({
           </div>
         ) : null}
         <div className="dialog-actions">
-          <button type="button" onClick={onCancel}>
+          <button type="button" ref={cancelRef} onClick={onCancel}>
             {cancelText}
           </button>
           <button
             type="button"
-            ref={confirmRef}
             className={danger ? 'danger-button' : 'primary-button'}
             disabled={reasonMissing}
             onClick={() => onConfirm(reason.trim())}
@@ -102,6 +96,7 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
