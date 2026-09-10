@@ -4,8 +4,8 @@
  * DEC-004/BE-DUSR-02：密码只进入一次受控提交，不回显、不持久化于前端状态之外；
  * 任何响应/DOM 不出现 passwordHash。
  */
-import { hasPermission } from '@fdp/auth';
-import type { Role } from '@fdp/auth';
+import { hasPermission } from '@fdp/auth/browser';
+import type { Role } from '@fdp/auth/browser';
 import type { DeviceUserStatus } from './types.js';
 
 export const DEVICE_USER_STATUS_LABELS: Readonly<Record<DeviceUserStatus, string>> = {

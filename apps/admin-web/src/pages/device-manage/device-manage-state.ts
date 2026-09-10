@@ -9,8 +9,8 @@
  * - 权限：AUTH-01 权限矩阵 + DOM-01（退役与首次分配仅 PlatformSuperAdmin）；
  * - 前端矩阵只决定按钮可用性，授权唯一可信来源是后端（AUTH-01）。
  */
-import { hasPermission } from '@fdp/auth';
-import type { Role } from '@fdp/auth';
+import { hasPermission } from '@fdp/auth/browser';
+import type { Role } from '@fdp/auth/browser';
 import type { LIFECYCLE_FILTER_OPTIONS } from '../devices/device-state.js';
 import type { DeviceView } from '../devices/types.js';
 import type { RetirementRecordView } from './types.js';

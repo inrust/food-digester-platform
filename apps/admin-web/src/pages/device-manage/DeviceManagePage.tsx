@@ -12,8 +12,8 @@
  * - FE-13：固件上传/同步更新跳转受控 OTA（/ota/packages、/ota/campaigns），不直接推送单设备。
  */
 import { useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
-import { hasPermission } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
+import { hasPermission } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { FourAxisBadges } from '../../components/FourAxisBadge.js';

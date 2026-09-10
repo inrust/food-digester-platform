@@ -9,7 +9,7 @@
  * - Customer 角色 customerId 由父级强制（页面不提供客户选择）。
  */
 import { useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';

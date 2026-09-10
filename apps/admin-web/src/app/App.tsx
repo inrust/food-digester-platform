@@ -5,6 +5,14 @@ import { resolveRoute } from '../router/guard.js';
 import { AppShell } from '../shell/AppShell.js';
 import type { AdminWebServices } from './composition-root.js';
 import { CustomersController, DashboardController, DeviceGroupsController, SitesController } from './controllers.js';
+import {
+  AlarmsController,
+  ConfigurationsController,
+  DeviceManageController,
+  DeviceUsersController,
+  DeviceViewController,
+  LicensesController,
+} from './feature-controllers.js';
 import { LoginPage } from './LoginPage.js';
 import { safeReturnPath, useBrowserRouter } from './browser-router.js';
 
@@ -15,6 +23,12 @@ export const IMPLEMENTED_PAGE_STATES = [
   'device-group',
   'customers',
   'sites',
+  'device-view',
+  'device-manage',
+  'licenses',
+  'configurations',
+  'device-users',
+  'alarms',
 ] as const;
 
 function ForbiddenPage({ onNavigate }: { onNavigate: (path: string) => void }) {
@@ -100,11 +114,31 @@ export function AdminWebApp({ services }: { readonly services: AdminWebServices 
     case 'sites':
       page = <SitesController api={services.api} session={session} toasts={toasts} />;
       break;
+    case 'device-view':
+      page = <DeviceViewController api={services.api} search={location.search} onNavigate={navigate} />;
+      break;
+    case 'device-manage':
+      page = (
+        <DeviceManageController api={services.api} session={session} search={location.search} onNavigate={navigate} />
+      );
+      break;
+    case 'licenses':
+      page = <LicensesController api={services.api} session={session} />;
+      break;
+    case 'configurations':
+      page = <ConfigurationsController api={services.api} session={session} />;
+      break;
+    case 'device-users':
+      page = <DeviceUsersController api={services.api} session={session} />;
+      break;
+    case 'alarms':
+      page = <AlarmsController api={services.api} session={session} search={location.search} onNavigate={navigate} />;
+      break;
     default:
       page = (
         <section className="scope-notice">
           <h2>{verdict.route.label}</h2>
-          <p>该页面不属于 FE-01 至 FE-05 本次组合根接入范围。</p>
+          <p>该页面尚未接入当前管理后台组合根。</p>
         </section>
       );
   }

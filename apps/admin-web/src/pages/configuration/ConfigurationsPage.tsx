@@ -11,8 +11,8 @@
  * - 前端预校验仅体验层，后端 VALIDATION_FAILED 原样呈现。
  */
 import { useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
-import { hasPermission } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
+import { hasPermission } from '@fdp/auth/browser';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';

@@ -16,6 +16,66 @@ function operationIds(value, found = new Set()) {
   return found;
 }
 
+const REQUIRED_TASKS = Array.from({ length: 10 }, (_, index) => `FE-${String(index + 1).padStart(2, '0')}`);
+const REQUIRED_P0_ROUTES = new Map([
+  ['/devices/view', { pageState: 'device-view', controller: 'DeviceViewController', testId: 'device-view-page' }],
+  [
+    '/devices/manage',
+    { pageState: 'device-manage', controller: 'DeviceManageController', testId: 'device-manage-page' },
+  ],
+  ['/licenses', { pageState: 'licenses', controller: 'LicensesController', testId: 'licenses-page' }],
+  [
+    '/configurations',
+    { pageState: 'configurations', controller: 'ConfigurationsController', testId: 'configurations-page' },
+  ],
+  ['/device-users', { pageState: 'device-users', controller: 'DeviceUsersController', testId: 'device-users-page' }],
+  ['/alarms', { pageState: 'alarms', controller: 'AlarmsController', testId: 'alarms-page' }],
+]);
+const REQUIRED_P0_OPERATIONS = [
+  'listDevices',
+  'getDevice',
+  'getDeviceConsole',
+  'listDeviceAssignments',
+  'assignDevice',
+  'suspendDevice',
+  'reactivateDevice',
+  'retireDevice',
+  'forceCompleteRetirement',
+  'updateDeviceMetadata',
+  'createCertificateRotationRequest',
+  'createLicense',
+  'getLicense',
+  'listLicenseHistory',
+  'issueLicense',
+  'activateLicense',
+  'renewLicense',
+  'revokeLicense',
+  'listConfigurations',
+  'createConfiguration',
+  'getConfiguration',
+  'createConfigurationVersion',
+  'publishConfigurationVersion',
+  'getConfigurationVersionStatus',
+  'listDeviceUsers',
+  'createDeviceUser',
+  'getDeviceUser',
+  'updateDeviceUser',
+  'disableDeviceUser',
+  'assignDeviceUser',
+  'revokeDeviceUser',
+  'listAlarms',
+  'getAlarm',
+  'acknowledgeAlarm',
+  'clearAlarm',
+  'listDeviceEvents',
+  'listTamperEvents',
+];
+
+function implementedPageStates(appSource) {
+  const match = appSource.match(/IMPLEMENTED_PAGE_STATES\s*=\s*\[([\s\S]*?)\]\s*as const/);
+  return new Set(match?.[1].match(/'([^']+)'/g)?.map((value) => value.slice(1, -1)) ?? []);
+}
+
 export function auditAdminWebDelivery(root, options = {}) {
   const errors = [];
   const appRoot = join(root, 'apps/admin-web');
@@ -26,6 +86,7 @@ export function auditAdminWebDelivery(root, options = {}) {
     'src/app/App.tsx',
     'src/app/composition-root.ts',
     'src/app/controllers.tsx',
+    'src/app/feature-controllers.tsx',
     'src/app/LoginPage.tsx',
     'src/app/app.css',
     'test/app-smoke.test.tsx',
@@ -47,20 +108,54 @@ export function auditAdminWebDelivery(root, options = {}) {
   const routesPath = join(appRoot, 'src/router/routes.ts');
   const appPath = join(appRoot, 'src/app/App.tsx');
   const openapiPath = join(root, 'contracts/rest/openapi.bundle.json');
-  if (!existsSync(manifestPath)) errors.push('缺少管理后台交付清单');
+  const manifest = existsSync(manifestPath) ? (options.manifestOverride ?? readJson(manifestPath)) : null;
+  if (manifest === null) errors.push('缺少管理后台交付清单');
   else {
-    const manifest = readJson(manifestPath);
-    const routesSource = existsSync(routesPath) ? readFileSync(routesPath, 'utf8') : '';
-    const appSource = existsSync(appPath) ? readFileSync(appPath, 'utf8') : '';
+    const routesSource =
+      options.routesSourceOverride ?? (existsSync(routesPath) ? readFileSync(routesPath, 'utf8') : '');
+    const appSource = options.appSourceOverride ?? (existsSync(appPath) ? readFileSync(appPath, 'utf8') : '');
+    const controllerSource =
+      options.controllerSourceOverride ??
+      ['src/app/controllers.tsx', 'src/app/feature-controllers.tsx']
+        .map((file) => (existsSync(join(appRoot, file)) ? readFileSync(join(appRoot, file), 'utf8') : ''))
+        .join('\n');
+    if (manifest.schemaVersion !== 2 || manifest.deliveryScope !== 'FE-01..FE-10')
+      errors.push('管理后台交付清单版本或范围不是 FE-01..FE-10/v2');
+    const tasks = new Set(manifest.tasks ?? []);
+    for (const task of REQUIRED_TASKS) if (!tasks.has(task)) errors.push(`交付清单缺少任务：${task}`);
+    const manifestRoutes = new Map((manifest.routes ?? []).map((route) => [route.path, route]));
+    for (const [path, required] of REQUIRED_P0_ROUTES) {
+      const route = manifestRoutes.get(path);
+      if (route === undefined) errors.push(`交付清单缺少 P0 路由：${path}`);
+      else
+        for (const key of ['pageState', 'controller', 'testId']) {
+          if (route[key] !== required[key]) errors.push(`P0 路由事实不匹配：${path}.${key}`);
+        }
+    }
     for (const route of manifest.routes ?? []) {
       if (!routesSource.includes(`path: '${route.path}'`) && !routesSource.includes(route.path))
         errors.push(`路由未注册：${route.path}`);
-      if (!appSource.includes(`'${route.pageState}'`)) errors.push(`路由无页面实现：${route.pageState}`);
+      if (
+        route.pageState !== 'login' &&
+        route.pageState !== 'forbidden' &&
+        !appSource.includes(`case '${route.pageState}':`)
+      )
+        errors.push(`路由无显式页面分支：${route.pageState}`);
+      if (typeof route.controller === 'string' && !controllerSource.includes(`export function ${route.controller}`))
+        errors.push(`路由控制器未交付：${route.controller}`);
     }
+    const implemented = implementedPageStates(appSource);
+    const declared = new Set((manifest.routes ?? []).map((route) => route.pageState));
+    for (const state of implemented) if (!declared.has(state)) errors.push(`已实现页面未登记交付清单：${state}`);
+    for (const state of declared)
+      if (!implemented.has(state)) errors.push(`交付清单页面未列入 IMPLEMENTED_PAGE_STATES：${state}`);
     if (!existsSync(openapiPath)) errors.push('缺少 bundled OpenAPI');
     else {
       const delivered = operationIds(readJson(openapiPath));
-      for (const id of manifest.operationIds ?? []) {
+      const declaredOperations = new Set(manifest.operationIds ?? []);
+      for (const id of REQUIRED_P0_OPERATIONS)
+        if (!declaredOperations.has(id)) errors.push(`交付清单缺少 P0 operationId：${id}`);
+      for (const id of declaredOperations) {
         if (!delivered.has(id)) errors.push(`OpenAPI operationId 未交付：${id}`);
       }
     }
@@ -86,6 +181,14 @@ export function auditAdminWebDelivery(root, options = {}) {
         if (source.includes('__vite-browser-external') || source.includes('PrismaClient')) {
           errors.push(`浏览器 bundle 混入 Node/数据库依赖：${file}`);
         }
+      }
+      const browserSource = files
+        .filter((name) => name.endsWith('.js'))
+        .map((file) => readFileSync(join(assets, file), 'utf8'))
+        .join('\n');
+      for (const route of manifest?.routes ?? []) {
+        if (typeof route.testId === 'string' && !browserSource.includes(route.testId))
+          errors.push(`浏览器构建产物缺少页面标识：${route.testId}`);
       }
     }
   }

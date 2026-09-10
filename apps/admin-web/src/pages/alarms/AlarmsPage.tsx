@@ -9,7 +9,7 @@
  * - Customer 角色租户隔离由服务端强制（跨 Customer 详情/处理 → 404 呈现）。
  */
 import { useEffect, useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';

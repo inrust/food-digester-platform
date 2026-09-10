@@ -76,6 +76,152 @@ const dashboard = {
   ],
 };
 
+const p0Device = {
+  id: 'dev-p0',
+  serialNumber: 'SN-P0',
+  model: 'FD-100',
+  hardwareVersion: 'HW-1',
+  manufacturer: 'BioNexa',
+  manufactureDate: '2026-09-01',
+  alias: 'P0 设备',
+  firmwareVersion: '1.0.0',
+  customer: { id: 'cust-a', name: '租户 A' },
+  site: { id: 'site-a', name: '上海站点', region: 'CN', subregion: 'SH' },
+  lifecycleStatus: 'Active',
+  operationalStatus: 'Active',
+  connectivity: 'ONLINE',
+  lastHeartbeatAt: '2026-09-10T00:00:00Z',
+  certificate: { certificateId: 'cert-1', fingerprint: 'AA:BB', status: 'ACTIVE' },
+  license: null,
+  contract: null,
+  createdAt: '2026-09-01T00:00:00Z',
+  updatedAt: '2026-09-10T00:00:00Z',
+};
+
+const p0Console = {
+  generatedAt: '2026-09-10T00:00:00Z',
+  device: {
+    deviceId: 'dev-p0',
+    serialNumber: 'SN-P0',
+    alias: 'P0 设备',
+    model: 'FD-100',
+    lifecycleStatus: 'Active',
+    operationalStatus: 'Active',
+    connectivity: 'ONLINE',
+    licenseStatus: null,
+    firmwareVersion: '1.0.0',
+  },
+  components: {
+    observedAt: '2026-09-10T00:00:00Z',
+    stale: false,
+    status: { overall: 'NORMAL', motor: null, heater: null, shredder: null, deodorizer: null },
+  },
+  metrics: { observedAt: '2026-09-10T00:00:00Z', stale: false, metrics: {} },
+  network: {
+    observedAt: '2026-09-10T00:00:00Z',
+    stale: false,
+    networkType: 'WIFI',
+    signalStrength: -40,
+    networkStatus: 'CONNECTED',
+  },
+  consumables: [],
+  recentAlarms: [],
+  esgLast7Days: [],
+  contract: null,
+  latestMedia: null,
+};
+
+const p0Alarm = {
+  alarmId: 'alarm-p0',
+  customerId: 'cust-a',
+  siteId: 'site-a',
+  deviceId: 'dev-p0',
+  severity: 'CRITICAL',
+  status: 'ACTIVE',
+  code: 'TEMP_HIGH',
+  category: 'TEMPERATURE',
+  message: '温度过高',
+  detectedTime: '2026-09-10T00:00:00Z',
+  component: 'heater',
+  currentValue: 91,
+  threshold: 80,
+  unit: '°C',
+  recommendedAction: '检查设备',
+  acknowledgedBy: null,
+  acknowledgedAt: null,
+  acknowledgeReason: null,
+  clearedBy: null,
+  clearedAt: null,
+  clearReason: null,
+};
+
+async function routeP0Apis(page: Page, options: { alarmRows?: boolean } = {}) {
+  await page.route('**/api/v1/admin/customers**', (route) =>
+    json(route, {
+      data: [
+        {
+          id: 'cust-a',
+          name: '租户 A',
+          status: 'ACTIVE',
+          version: 1,
+          createdAt: '2026-09-10T00:00:00Z',
+          updatedAt: '2026-09-10T00:00:00Z',
+        },
+      ],
+      meta: { nextCursor: null },
+    }),
+  );
+  await page.route('**/api/v1/admin/sites**', (route) =>
+    json(route, {
+      data: [
+        {
+          id: 'site-a',
+          customerId: 'cust-a',
+          name: '上海站点',
+          status: 'ACTIVE',
+          region: 'CN',
+          subregion: 'SH',
+          address: null,
+          timezone: 'Asia/Shanghai',
+          contactName: null,
+          contactPhone: null,
+          contactEmail: null,
+          deviceCount: 1,
+          version: 1,
+          createdAt: '2026-09-10T00:00:00Z',
+          updatedAt: '2026-09-10T00:00:00Z',
+        },
+      ],
+      meta: { nextCursor: null },
+    }),
+  );
+  await page.route('**/api/v1/admin/devices**', (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    if (path.endsWith('/console')) return json(route, { data: p0Console, meta: {} });
+    if (path.endsWith('/assignments')) return json(route, { data: [], meta: {} });
+    if (path.endsWith('/dev-p0')) return json(route, { data: p0Device, meta: {} });
+    const nextCursor = url.searchParams.get('limit') === '50' && !url.searchParams.has('cursor') ? 'p0-next' : null;
+    return json(route, {
+      data: nextCursor === null && url.searchParams.has('cursor') ? [] : [p0Device],
+      meta: { nextCursor },
+    });
+  });
+  await page.route('**/api/v1/admin/configurations**', (route) => json(route, { data: [], meta: {} }));
+  await page.route('**/api/v1/admin/device-users**', (route) => json(route, { data: [], meta: {} }));
+  await page.route('**/api/v1/admin/events**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await page.route('**/api/v1/admin/tamper-events**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await page.route('**/api/v1/admin/alarms**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/acknowledge')) {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      return json(route, { data: { alarm: { ...p0Alarm, status: 'ACKNOWLEDGED' }, replayed: false }, meta: {} });
+    }
+    if (path.endsWith('/alarm-p0')) return json(route, { data: p0Alarm, meta: {} });
+    return json(route, { data: options.alarmRows ? [p0Alarm] : [], meta: { nextCursor: null } });
+  });
+}
+
 async function json(route: Route, body: unknown, status = 200) {
   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
@@ -417,4 +563,107 @@ test('1440/768/375 响应式布局、横向表格和对话框键盘边界', asyn
   await expect(page.getByRole('button', { name: '确认下发' })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: '取消' })).toBeFocused();
+});
+
+test('FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、分页入口、时区与响应式', async ({ page }) => {
+  await seedSession(page, 'PlatformSuperAdmin');
+  await routeP0Apis(page);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/devices/view?deviceId=dev-p0');
+  await expect(page.getByTestId('device-view-page')).toBeVisible();
+  await expect(page.getByTestId('device-console')).toContainText('P0 设备');
+  await expect(page.getByTestId('device-console')).toContainText('08:00:00');
+  await page.getByLabel('显示时区').selectOption('UTC');
+  await expect(page.getByTestId('device-console')).toContainText('00:00:00');
+
+  await page.goto('/devices/manage?deviceId=dev-p0');
+  await expect(page.getByTestId('device-manage-page')).toContainText('P0 设备');
+
+  await page.setViewportSize({ width: 768, height: 900 });
+  await page.goto('/licenses');
+  await expect(page.getByTestId('licenses-page')).toBeVisible();
+  await expect(page.getByRole('button', { name: '下一页' })).toBeEnabled();
+  const nextPage = page.waitForRequest((request) => request.url().includes('cursor=p0-next'));
+  await page.getByRole('button', { name: '下一页' }).click();
+  await nextPage;
+  await expect(page.getByTestId('table-empty')).toBeVisible();
+
+  await page.goto('/configurations');
+  await expect(page.getByTestId('configurations-page')).toBeVisible();
+  await expect(page.getByTestId('config-empty')).toBeVisible();
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/device-users');
+  await expect(page.getByTestId('device-users-page')).toBeVisible();
+  await expect(page.getByText('暂无设备用户')).toBeVisible();
+  expect(await page.evaluate(() => document.body.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await page.goto('/alarms?tab=event');
+  await expect(page.getByTestId('alarms-page')).toBeVisible();
+  await expect(page.getByTestId('tab-event')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('table-empty')).toBeVisible();
+});
+
+test('FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交场景失败关闭', async ({ browser }) => {
+  const forbidden = await browser.newPage();
+  await seedSession(forbidden, 'PlatformSuperAdmin');
+  await forbidden.route('**/api/v1/admin/devices**', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/console') || path.endsWith('/dev-p0'))
+      return json(route, { error: { code: 'FORBIDDEN', message: 'denied', requestId: 'req-p0-403' } }, 403);
+    return json(route, { data: [p0Device], meta: { nextCursor: null } });
+  });
+  await forbidden.goto('/devices/view?deviceId=dev-p0');
+  await expect(forbidden.getByTestId('error-forbidden')).toContainText('无权访问');
+  await forbidden.close();
+
+  const missing = await browser.newPage();
+  await seedSession(missing, 'PlatformSuperAdmin');
+  await missing.route('**/api/v1/admin/customers**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await missing.route('**/api/v1/admin/sites**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await missing.route('**/api/v1/admin/devices/**', (route) =>
+    json(route, { error: { code: 'NOT_FOUND', message: 'device missing', requestId: 'req-p0-404' } }, 404),
+  );
+  await missing.goto('/devices/manage?deviceId=missing');
+  await expect(missing.getByText('device missing')).toBeVisible();
+  await missing.close();
+
+  const customer = await browser.newPage();
+  await seedSession(customer, 'CustomerViewer', { customerId: 'cust-a' });
+  let scopedAlarmRequest = false;
+  await routeP0Apis(customer);
+  await customer.route('**/api/v1/admin/alarms**', (route) => {
+    scopedAlarmRequest = new URL(route.request().url()).searchParams.get('customerId') === 'cust-a';
+    return json(route, { data: [], meta: { nextCursor: null } });
+  });
+  await customer.goto('/alarms');
+  await expect(customer.getByTestId('alarms-page')).toBeVisible();
+  await expect.poll(() => scopedAlarmRequest).toBe(true);
+  await expect(customer.getByTestId('filter-customer')).toHaveCount(0);
+  await customer.goto('/configurations');
+  await expect(customer.getByRole('heading', { name: '403' })).toBeVisible();
+  await customer.close();
+
+  const action = await browser.newPage();
+  await seedSession(action, 'PlatformSuperAdmin');
+  let acknowledgements = 0;
+  await routeP0Apis(action, { alarmRows: true });
+  await action.route('**/api/v1/admin/alarms/alarm-p0/acknowledge', async (route) => {
+    acknowledgements += 1;
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    return json(route, { data: { alarm: { ...p0Alarm, status: 'ACKNOWLEDGED' }, replayed: false }, meta: {} });
+  });
+  await action.goto('/alarms');
+  await action.getByTestId('alarm-detail-alarm-p0').click();
+  await action.getByTestId('alarm-acknowledge').click();
+  await expect(action.getByRole('dialog', { name: '确认告警' })).toBeVisible();
+  await expect(action.getByLabel('确认原因')).toBeFocused();
+  await action.getByLabel('确认原因').fill('P0 E2E');
+  await action.getByRole('button', { name: '确认告警' }).evaluate((button: HTMLButtonElement) => {
+    button.click();
+    button.click();
+  });
+  await expect.poll(() => acknowledgements).toBe(1);
+  await action.close();
 });

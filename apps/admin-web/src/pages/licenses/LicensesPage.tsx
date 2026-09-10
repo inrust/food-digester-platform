@@ -11,7 +11,7 @@
  * - 冲突可读：设备已有非终态 License 时创建 → 409 CONFLICT 原样呈现后端 message。
  */
 import { useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';

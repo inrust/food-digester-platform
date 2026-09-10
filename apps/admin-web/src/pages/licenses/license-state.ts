@@ -8,8 +8,8 @@
  * 吊销 Active/Expired→Revoked（强制原因）。Revoked 为终态。
  * 权限：license:write = PlatformSuperAdmin/PlatformOperator（AUTH-01）。
  */
-import { hasPermission } from '@fdp/auth';
-import type { Role } from '@fdp/auth';
+import { hasPermission } from '@fdp/auth/browser';
+import type { Role } from '@fdp/auth/browser';
 import { LICENSE_FILTER_LABELS } from '../devices/device-state.js';
 import type { EntitlementCode, LicenseStatus } from './types.js';
 

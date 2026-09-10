@@ -7,8 +7,8 @@
  * - Customer 角色租户隔离由服务端强制（跨 Customer → 404），前端不渲染客户筛选；
  * - 功能边界：本页只呈现业务告警/事件/防拆，不混入 AWS 运维告警（CloudWatch/SQS/RDS）。
  */
-import { hasPermission } from '@fdp/auth';
-import type { Role } from '@fdp/auth';
+import { hasPermission } from '@fdp/auth/browser';
+import type { Role } from '@fdp/auth/browser';
 import type { AlarmListFilter, EventListFilter, TamperListFilter } from './alarms-api.js';
 import type { AlarmSeverity, AlarmStatus } from './types.js';
 
