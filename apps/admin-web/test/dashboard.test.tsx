@@ -39,7 +39,11 @@ function makeCard(index: number, overrides: Partial<DeviceCardView> = {}): Devic
       { consumableType: 'CARBON_FILTER', remainingPercent: 90 - index, stale: false },
       { consumableType: 'BIO_ADDITIVE', remainingPercent: index === 2 ? null : 50 + index, stale: index === 2 },
     ],
-    actions: ALL_ALLOWED,
+    capabilities: {
+      schemaVersion: '1.0',
+      commands: ALL_ALLOWED,
+      ota: { allowed: true, denyReason: null },
+    },
     ...overrides,
   };
 }
@@ -47,6 +51,21 @@ function makeCard(index: number, overrides: Partial<DeviceCardView> = {}): Devic
 function makeOverview(): DashboardOverviewView {
   return {
     generatedAt: '2026-09-06T04:00:00Z',
+    sections: {
+      summary: { status: 'READY', errorCode: null, requestId: 'req-dashboard', dataUpdatedAt: '2026-09-06T04:00:00Z' },
+      latestAlarms: {
+        status: 'READY',
+        errorCode: null,
+        requestId: 'req-dashboard',
+        dataUpdatedAt: '2026-09-06T04:00:00Z',
+      },
+      deviceCards: {
+        status: 'READY',
+        errorCode: null,
+        requestId: 'req-dashboard',
+        dataUpdatedAt: '2026-09-06T04:00:00Z',
+      },
+    },
     contracts: { effectiveTotal: 3 },
     devices: {
       total: 10,
@@ -138,7 +157,9 @@ test('denyReason 展示：状态门拒绝的动作禁用且原因可见', () => 
   ];
   const modified: DashboardOverviewView = {
     ...overview,
-    deviceCards: overview.deviceCards.map((card, i) => (i === 2 ? { ...card, actions: denied } : card)),
+    deviceCards: overview.deviceCards.map((card, i) =>
+      i === 2 ? { ...card, capabilities: { ...card.capabilities, commands: denied } } : card,
+    ),
   };
   renderPage({ status: 'ready', overview: modified });
 
@@ -177,6 +198,7 @@ test('OTA 升级入口跳转 /ota/campaigns（不直接推送单设备）', asyn
 test('空数据可读：0 指标与空列表均有明确空态', () => {
   const empty: DashboardOverviewView = {
     generatedAt: '2026-09-06T04:00:00Z',
+    sections: makeOverview().sections,
     contracts: { effectiveTotal: 0 },
     devices: { total: 0, online: 0, onlineRatePct: 0, licenseDistribution: {} },
     esgToday: { summaryDate: '2026-09-06', carbonReductionKg: 0, powerConsumptionKwh: 0, feedingWeightKg: 0 },
@@ -188,6 +210,48 @@ test('空数据可读：0 指标与空列表均有明确空态', () => {
   assert.ok(screen.getByTestId('metric-devices').textContent?.includes('—'));
   assert.equal(screen.getByTestId('alarms-empty').textContent, '暂无活动告警');
   assert.equal(screen.getByTestId('devices-empty').textContent, '暂无设备');
+});
+
+test('区块部分失败独立降级，不遮蔽仍可用告警与设备卡片', () => {
+  const overview = makeOverview();
+  renderPage({
+    status: 'ready',
+    overview: {
+      ...overview,
+      sections: {
+        ...overview.sections,
+        summary: {
+          status: 'ERROR',
+          errorCode: 'DASHBOARD_SECTION_UNAVAILABLE',
+          requestId: 'req-partial',
+          dataUpdatedAt: null,
+        },
+      },
+    },
+  });
+  assert.equal(screen.queryByTestId('metric-contracts'), null);
+  assert.ok(screen.getByRole('alert').textContent?.includes('req-partial'));
+  assert.ok(screen.getByTestId('alarm-alm-1'));
+  assert.equal(document.querySelectorAll('.device-card').length, 10);
+});
+
+test('离线或无 OTA entitlement 时升级入口失败关闭', () => {
+  const overview = makeOverview();
+  const first = overview.deviceCards[0]!;
+  renderPage({
+    status: 'ready',
+    overview: {
+      ...overview,
+      deviceCards: [
+        {
+          ...first,
+          connectivity: 'OFFLINE',
+          capabilities: { ...first.capabilities, ota: { allowed: false, denyReason: 'DEVICE_OFFLINE' } },
+        },
+      ],
+    },
+  });
+  assert.ok((screen.getByTestId('action-upgrade-dev-001') as HTMLButtonElement).disabled);
 });
 
 test('加载态与错误态（403 无权）', () => {

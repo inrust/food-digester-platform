@@ -98,6 +98,7 @@ async function plantDevice(
       data: {
         tokenId: token.id,
         serialNumber: `SN-HB-${seqCounter}`,
+        submittedBy: `DEVICE:SN-HB-${seqCounter}`,
         model: 'BNX-100',
         hardwareVersion: 'HW1.0',
         manufacturer: 'Hiddenjoy',

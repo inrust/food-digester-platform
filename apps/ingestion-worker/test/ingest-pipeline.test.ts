@@ -133,6 +133,7 @@ async function plantApprovedOnboardingDevice() {
     data: {
       tokenId: token.id,
       serialNumber,
+      submittedBy: `DEVICE:${serialNumber}`,
       model: 'BNX-100',
       hardwareVersion: 'HW1.0',
       manufacturer: 'Hiddenjoy',

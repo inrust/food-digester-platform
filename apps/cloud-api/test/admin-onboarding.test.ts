@@ -87,6 +87,7 @@ async function plantRequest(overrides: { status?: string; requestModel?: string 
     data: {
       tokenId: token.id,
       serialNumber,
+      submittedBy: `DEVICE:${serialNumber}`,
       model: overrides.requestModel ?? 'BNX-100',
       hardwareVersion: 'HW1.0',
       manufacturer: 'Hiddenjoy',

@@ -171,10 +171,34 @@
               "DEVICE_RETIRED",
               "DEVICE_SUSPENDED_RESTRICTED",
               "DEVICE_MAINTENANCE_RESTRICTED",
+              "DEVICE_OFFLINE",
               null
             ],
             "description": "拒绝原因码：FORBIDDEN = actor 无 command:send、租户不匹配或设备缺少有效 REMOTE_CONTROL Entitlement；DEVICE_* = 设备状态门（与 BE-CMD-01 共用授权函数）；allowed 时恒为 null"
           }
+        }
+      },
+      "OtaAction": {
+        "type": "object",
+        "required": ["allowed", "denyReason"],
+        "additionalProperties": false,
+        "properties": {
+          "allowed": { "type": "boolean" },
+          "denyReason": {
+            "type": ["string", "null"],
+            "enum": ["FORBIDDEN", "DEVICE_OFFLINE", "DEVICE_NOT_ACTIVE", "OTA_ENTITLEMENT_REQUIRED", null],
+            "description": "OTA 拒绝原因覆盖权限、租户、连接、状态和 OTA_UPDATE Entitlement"
+          }
+        }
+      },
+      "DeviceCapabilities": {
+        "type": "object",
+        "required": ["schemaVersion", "commands", "ota"],
+        "additionalProperties": false,
+        "properties": {
+          "schemaVersion": { "type": "string", "const": "1.0" },
+          "commands": { "type": "array", "items": { "$ref": "#/components/schemas/CommandAction" } },
+          "ota": { "$ref": "#/components/schemas/OtaAction" }
         }
       },
       "DeviceCard": {
@@ -192,7 +216,7 @@
           "signalStrength",
           "networkType",
           "consumables",
-          "actions"
+          "capabilities"
         ],
         "additionalProperties": false,
         "properties": {
@@ -222,22 +246,42 @@
           "signalStrength": { "type": ["integer", "null"], "description": "连接质量：信号强度（设备最近上报）" },
           "networkType": { "type": ["string", "null"], "description": "连接质量：网络类型（设备最近上报）" },
           "consumables": { "type": "array", "items": { "$ref": "#/components/schemas/ConsumableSummary" } },
-          "actions": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/CommandAction" },
-            "description": "允许动作描述：CT-04 全目录 × 当前设备状态门 + actor 权限；只读描述，不执行命令"
+          "capabilities": { "$ref": "#/components/schemas/DeviceCapabilities" }
+        }
+      },
+      "DashboardSectionStatus": {
+        "type": "object",
+        "required": ["status", "errorCode", "requestId", "dataUpdatedAt"],
+        "additionalProperties": false,
+        "properties": {
+          "status": { "type": "string", "enum": ["READY", "ERROR"] },
+          "errorCode": { "type": ["string", "null"], "enum": ["DASHBOARD_SECTION_UNAVAILABLE", null] },
+          "requestId": { "type": "string", "minLength": 1 },
+          "dataUpdatedAt": {
+            "anyOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
           }
+        }
+      },
+      "DashboardSections": {
+        "type": "object",
+        "required": ["summary", "latestAlarms", "deviceCards"],
+        "additionalProperties": false,
+        "properties": {
+          "summary": { "$ref": "#/components/schemas/DashboardSectionStatus" },
+          "latestAlarms": { "$ref": "#/components/schemas/DashboardSectionStatus" },
+          "deviceCards": { "$ref": "#/components/schemas/DashboardSectionStatus" }
         }
       },
       "DashboardOverview": {
         "type": "object",
-        "required": ["generatedAt", "contracts", "devices", "esgToday", "latestAlarms", "deviceCards"],
+        "required": ["generatedAt", "sections", "contracts", "devices", "esgToday", "latestAlarms", "deviceCards"],
         "additionalProperties": false,
         "properties": {
           "generatedAt": {
             "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
             "description": "聚合时间基准（全部时间窗口/阈值的分母基准）"
           },
+          "sections": { "$ref": "#/components/schemas/DashboardSections" },
           "contracts": { "$ref": "#/components/schemas/ContractSummary" },
           "devices": { "$ref": "#/components/schemas/DeviceSummary" },
           "esgToday": { "$ref": "#/components/schemas/EsgTodaySummary" },

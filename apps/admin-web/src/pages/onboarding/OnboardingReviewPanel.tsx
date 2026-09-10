@@ -2,7 +2,7 @@
  * FE-04 Onboarding 审批面板（原型“设备群管理 → 新增设备请求”区域，FE-06 嵌入 /devices/groups）。
  *
  * - 列表：状态筛选（待审批/已通过/已拒绝/已超时）+ 游标分页（CursorTable）；
- * - 详情：设备资料 + 申请信息（录入人列不展示——CT-06 Defer，API 无来源；证书包状态无 API 来源不展示）；
+ * - 详情：设备资料 + 申请信息（录入来源与证书发放状态来自 BE-ONB-02；不显示私钥/Token）；
  * - 审批：仅 canReview（PlatformSuperAdmin）且 PENDING 可见操作；批准→确认框；拒绝→原因必填；
  *   If-Match 并发冲突经 ErrorNotice(version-conflict) 提示刷新；提交期间按钮禁用防重复点击；
  * - 批准成功后跳转设备详情（/devices/manage?serialNumber=…），不在前端伪造设备记录；
@@ -182,6 +182,10 @@ export function OnboardingReviewPanel({
             <dd>
               <TimeText iso={request.createdAt} />
             </dd>
+            <dt>录入人/来源</dt>
+            <dd data-testid="detail-submitted-by">{request.submittedBy}</dd>
+            <dt>证书发放状态</dt>
+            <dd data-testid="detail-certificate-status">{request.certificateProvisioningStatus}</dd>
             <dt>状态</dt>
             <dd data-testid="detail-status">{ONBOARDING_STATUS_LABELS[request.status]}</dd>
             {(request.status === 'REJECTED' || request.status === 'TIMED_OUT') && request.rejectReason !== null ? (

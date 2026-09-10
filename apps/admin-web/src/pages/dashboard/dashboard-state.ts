@@ -23,6 +23,7 @@ export const DENY_REASON_LABELS: Readonly<Record<DenyReason, string>> = {
   DEVICE_RETIRED: '设备已退役',
   DEVICE_SUSPENDED_RESTRICTED: '设备已停用（受限）',
   DEVICE_MAINTENANCE_RESTRICTED: '设备维护中（受限）',
+  DEVICE_OFFLINE: '设备离线',
 };
 
 export interface QuickActionModel {

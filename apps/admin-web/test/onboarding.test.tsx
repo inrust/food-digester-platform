@@ -14,6 +14,7 @@ function makeRequest(overrides: Partial<OnboardingRequestView> = {}): Onboarding
   return {
     requestId: 'req-1',
     serialNumber: 'SN-2026-001',
+    submittedBy: 'DEVICE:SN-2026-001',
     model: 'FD-100',
     hardwareVersion: 'HW-1.2',
     manufacturer: 'BioNexa',
@@ -24,6 +25,7 @@ function makeRequest(overrides: Partial<OnboardingRequestView> = {}): Onboarding
     reviewedAt: null,
     version: 1,
     createdAt: '2026-09-05T02:00:00Z',
+    certificateProvisioningStatus: 'NOT_STARTED',
     ...overrides,
   };
 }

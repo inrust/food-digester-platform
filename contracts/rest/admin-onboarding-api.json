@@ -172,6 +172,7 @@
         "required": [
           "requestId",
           "serialNumber",
+          "submittedBy",
           "model",
           "hardwareVersion",
           "manufacturer",
@@ -181,13 +182,19 @@
           "reviewedBy",
           "reviewedAt",
           "version",
-          "createdAt"
+          "createdAt",
+          "certificateProvisioningStatus"
         ],
         "additionalProperties": false,
         "description": "申请 DTO 不含 tokenId 或任何 Token 关联字段",
         "properties": {
           "requestId": { "type": "string", "minLength": 1 },
           "serialNumber": { "type": "string" },
+          "submittedBy": {
+            "type": "string",
+            "minLength": 1,
+            "description": "申请录入来源；设备自助申请为 DEVICE:<serialNumber>"
+          },
           "model": { "type": "string" },
           "hardwareVersion": { "type": "string" },
           "manufacturer": { "type": "string" },
@@ -202,7 +209,12 @@
             "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
           },
           "version": { "type": "integer", "minimum": 1, "description": "乐观锁版本（If-Match 携带）" },
-          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "certificateProvisioningStatus": {
+            "type": "string",
+            "enum": ["NOT_STARTED", "QUEUED", "PROCESSING", "RETRY", "COMPLETED", "FAILED", "NOT_APPLICABLE"],
+            "description": "管理员可见的证书发放进度；永不包含私钥、Token 或证书包内容"
+          }
         }
       },
       "OnboardingRequestDetail": {

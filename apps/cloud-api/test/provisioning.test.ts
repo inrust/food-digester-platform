@@ -136,6 +136,7 @@ async function plantApprovedRequest(): Promise<{ request: AdminOnboardingRequest
       id: `req-prov-${seq}`,
       tokenId: token.id,
       serialNumber,
+      submittedBy: `DEVICE:${serialNumber}`,
       model: 'BNX-100',
       hardwareVersion: 'HW1.0',
       manufacturer: 'Hiddenjoy',

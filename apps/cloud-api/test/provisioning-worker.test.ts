@@ -29,6 +29,7 @@ async function plantJob(options: { status?: string; attempts?: number; maxAttemp
     data: {
       tokenId: token.id,
       serialNumber,
+      submittedBy: `DEVICE:${serialNumber}`,
       model: 'BNX-100',
       hardwareVersion: 'HW1.0',
       manufacturer: 'Hiddenjoy',

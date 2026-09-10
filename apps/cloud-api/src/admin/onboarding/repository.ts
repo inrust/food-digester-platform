@@ -17,6 +17,7 @@ export type AdminOnboardingStatus = (typeof ADMIN_ONBOARDING_STATUSES)[number];
 export interface AdminOnboardingRequestRecord {
   readonly id: string;
   readonly serialNumber: string;
+  readonly submittedBy: string;
   readonly model: string;
   readonly hardwareVersion: string;
   readonly manufacturer: string;
@@ -27,12 +28,17 @@ export interface AdminOnboardingRequestRecord {
   readonly reviewedAt: Date | null;
   readonly version: number;
   readonly createdAt: Date;
+  readonly provisioningJob?: { readonly status: string } | null;
 }
+
+export type CertificateProvisioningStatus =
+  'NOT_STARTED' | 'QUEUED' | 'PROCESSING' | 'RETRY' | 'COMPLETED' | 'FAILED' | 'NOT_APPLICABLE';
 
 /** 对外 DTO：不含 tokenId 与任何 Token 关联字段。 */
 export interface AdminOnboardingRequestDto {
   readonly requestId: string;
   readonly serialNumber: string;
+  readonly submittedBy: string;
   readonly model: string;
   readonly hardwareVersion: string;
   readonly manufacturer: string;
@@ -43,12 +49,14 @@ export interface AdminOnboardingRequestDto {
   readonly reviewedAt: string | null;
   readonly version: number;
   readonly createdAt: string;
+  readonly certificateProvisioningStatus: CertificateProvisioningStatus;
 }
 
 export function toDto(record: AdminOnboardingRequestRecord): AdminOnboardingRequestDto {
   return {
     requestId: record.id,
     serialNumber: record.serialNumber,
+    submittedBy: record.submittedBy,
     model: record.model,
     hardwareVersion: record.hardwareVersion,
     manufacturer: record.manufacturer,
@@ -59,12 +67,21 @@ export function toDto(record: AdminOnboardingRequestRecord): AdminOnboardingRequ
     reviewedAt: record.reviewedAt?.toISOString() ?? null,
     version: record.version,
     createdAt: record.createdAt.toISOString(),
+    certificateProvisioningStatus: certificateProvisioningStatus(record),
   };
+}
+
+function certificateProvisioningStatus(record: AdminOnboardingRequestRecord): CertificateProvisioningStatus {
+  if (record.status === 'PENDING') return 'NOT_STARTED';
+  if (record.status === 'REJECTED' || record.status === 'TIMED_OUT') return 'NOT_APPLICABLE';
+  const status = record.provisioningJob?.status;
+  if (status === 'PROCESSING' || status === 'RETRY' || status === 'COMPLETED' || status === 'FAILED') return status;
+  return 'QUEUED';
 }
 
 interface AdminOnboardingRequestDelegate {
   findMany(args: Record<string, unknown>): Promise<AdminOnboardingRequestRecord[]>;
-  findFirst(args: { where: Record<string, unknown> }): Promise<AdminOnboardingRequestRecord | null>;
+  findFirst(args: Record<string, unknown>): Promise<AdminOnboardingRequestRecord | null>;
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
 }
 
@@ -92,7 +109,12 @@ export async function listOnboardingRequests(
   const after = decodeKeysetCursor(args.cursor);
   const status = args.status ?? 'PENDING';
   const where: Record<string, unknown> = after ? { status, id: { gt: after } } : { status };
-  const rows = await requests(client).findMany({ where, orderBy: { id: 'asc' }, take: limit + 1 });
+  const rows = await requests(client).findMany({
+    where,
+    orderBy: { id: 'asc' },
+    take: limit + 1,
+    include: { provisioningJob: { select: { status: true } } },
+  });
   const items = rows.slice(0, limit);
   const last = items[items.length - 1];
   return { items, nextCursor: rows.length > limit && last ? encodeKeysetCursor(last.id) : null };
@@ -102,7 +124,10 @@ export function findOnboardingRequestById(
   client: DbClient,
   requestId: string,
 ): Promise<AdminOnboardingRequestRecord | null> {
-  return requests(client).findFirst({ where: { id: requestId } });
+  return requests(client).findFirst({
+    where: { id: requestId },
+    include: { provisioningJob: { select: { status: true } } },
+  });
 }
 
 export interface ReviewPatch {

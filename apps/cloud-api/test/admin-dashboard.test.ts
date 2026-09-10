@@ -181,7 +181,7 @@ async function plantRemoteControlLicense(
   deviceId: string,
   customerId: string,
   status: string,
-  options: { expired?: boolean; enabled?: boolean } = {},
+  options: { expired?: boolean; enabled?: boolean; entitlementCode?: 'REMOTE_CONTROL' | 'OTA_UPDATE' } = {},
 ): Promise<void> {
   const license = await prisma.license.create({
     data: {
@@ -194,7 +194,11 @@ async function plantRemoteControlLicense(
     },
   });
   await prisma.licenseEntitlement.create({
-    data: { licenseId: license.id, code: 'REMOTE_CONTROL', enabled: options.enabled ?? true },
+    data: {
+      licenseId: license.id,
+      code: options.entitlementCode ?? 'REMOTE_CONTROL',
+      enabled: options.enabled ?? true,
+    },
   });
 }
 
@@ -229,6 +233,10 @@ beforeAll(async () => {
   await plantRemoteControlLicense(deviceIdsA[2]!, customerAId, 'Active', { expired: true });
   await plantRemoteControlLicense(deviceIdsA[3]!, customerAId, 'Revoked');
   await plantRemoteControlLicense(deviceIdsA[4]!, customerAId, 'Active', { enabled: false });
+  const a1License = await prisma.license.findFirstOrThrow({ where: { deviceId: deviceIdsA[0]! } });
+  await prisma.licenseEntitlement.create({
+    data: { licenseId: a1License.id, code: 'OTA_UPDATE', enabled: true },
+  });
 
   // Contract：EFFECTIVE + EXPIRING_SOON 有效；DRAFT/EXPIRED/TERMINATED 不计
   await plantContract(
@@ -309,6 +317,30 @@ beforeAll(async () => {
 });
 
 describe('BE-DASH-01 总览聚合（固定 10 设备 Fixture）', () => {
+  test('单一告警数据源失败时返回区块错误，指标与设备卡片仍独立可用', async () => {
+    const fakeClient = {
+      device: { findMany: async () => [] },
+      deviceLatestState: { findMany: async () => [] },
+      contract: { count: async () => 0 },
+      esgDailySummary: { aggregate: async () => ({ _sum: {} }) },
+      alarm: { findMany: async () => Promise.reject(new Error('alarm unavailable')) },
+      consumableProjection: { findMany: async () => [] },
+      license: { findMany: async () => [] },
+    } as unknown as PrismaClient;
+    const h = createAdminDashboardHandlers({ client: fakeClient, now: () => NOW });
+    const response = await h.getOverview({ ...req(superAdmin), requestId: 'req-partial' });
+    const view = (response.body as DataBody).data;
+    assert.equal(response.status, 200);
+    assert.equal(view.sections.summary.status, 'READY');
+    assert.deepEqual(view.sections.latestAlarms, {
+      status: 'ERROR',
+      errorCode: 'DASHBOARD_SECTION_UNAVAILABLE',
+      requestId: 'req-partial',
+      dataUpdatedAt: null,
+    });
+    assert.equal(view.sections.deviceCards.status, 'READY');
+  });
+
   test('Customer A 指标可复算：Contract/在线率/授权分布/今日 ESG', async () => {
     const h = createAdminDashboardHandlers(deps());
     const res = await h.getOverview(req(customerAdmin(customerAId)));
@@ -316,6 +348,7 @@ describe('BE-DASH-01 总览聚合（固定 10 设备 Fixture）', () => {
     const view = (res.body as DataBody).data;
 
     assert.equal(view.generatedAt, NOW.toISOString());
+    assert.equal(view.sections.summary.status, 'READY');
     // 有效 Contract = EFFECTIVE + EXPIRING_SOON = 2
     assert.equal(view.contracts.effectiveTotal, 2);
     // 设备：10 台；在线 4（A1..A4）；在线率 40.0
@@ -447,17 +480,25 @@ describe('BE-DASH-01 总览聚合（固定 10 设备 Fixture）', () => {
     const res = await h.getOverview(req(customerAdmin(customerAId)));
     const cards = (res.body as DataBody).data.deviceCards;
     const actionOf = (card: Record<string, any>, command: string) =>
-      card.actions.find((a: Record<string, any>) => a.command === command);
+      card.capabilities.commands.find((a: Record<string, any>) => a.command === command);
 
     // 全目录 22 条动作描述
-    assert.equal(cards[0].actions.length, COMMAND_CATALOG.length);
+    assert.equal(cards[0].capabilities.schemaVersion, '1.0');
+    assert.equal(cards[0].capabilities.commands.length, COMMAND_CATALOG.length);
+    assert.equal(cards[0].capabilities.ota.denyReason, 'FORBIDDEN');
     // Active 设备：START 允许（denyReason null）
     assert.deepEqual(actionOf(cards[0], 'START'), { command: 'START', allowed: true, denyReason: null });
-    // 无有效 License：过期、吊销、Entitlement disabled 均与 BE-CMD-01 一致失败关闭
-    for (const index of [2, 3, 4]) {
+    // 无有效 License：在线设备按授权原因失败关闭；离线设备优先返回 DEVICE_OFFLINE
+    for (const index of [2, 3]) {
       assert.deepEqual(actionOf(cards[index], 'START'), { command: 'START', allowed: false, denyReason: 'FORBIDDEN' });
     }
-    assert.deepEqual(actionOf(cards[5], 'START'), { command: 'START', allowed: false, denyReason: 'FORBIDDEN' });
+    for (const index of [4, 5]) {
+      assert.deepEqual(actionOf(cards[index], 'START'), {
+        command: 'START',
+        allowed: false,
+        denyReason: 'DEVICE_OFFLINE',
+      });
+    }
     // Maintenance（A2 operationalStatus=Maintenance）：START 拒绝 DEVICE_MAINTENANCE_RESTRICTED；STOP 放行
     const a2 = cards.find((c: Record<string, any>) => c.deviceId === deviceIdsA[1]);
     assert.deepEqual(actionOf(a2, 'START'), {
@@ -466,12 +507,16 @@ describe('BE-DASH-01 总览聚合（固定 10 设备 Fixture）', () => {
       denyReason: 'DEVICE_MAINTENANCE_RESTRICTED',
     });
     assert.equal(actionOf(a2, 'STOP').allowed, true);
-    // Suspended（A9 lifecycle=Suspended）：START 拒绝 DEVICE_SUSPENDED_RESTRICTED
+    // Suspended（A9）同时无心跳：离线门优先失败关闭
     const a9 = cards.find((c: Record<string, any>) => c.deviceId === deviceIdsA[8]);
-    assert.equal(actionOf(a9, 'START').denyReason, 'DEVICE_SUSPENDED_RESTRICTED');
-    // Retired（A10）：全部 DEVICE_RETIRED
+    assert.equal(actionOf(a9, 'START').denyReason, 'DEVICE_OFFLINE');
+    // Retired（A10）同时无心跳：全部 DEVICE_OFFLINE
     const a10 = cards.find((c: Record<string, any>) => c.deviceId === deviceIdsA[9]);
-    assert.ok(a10.actions.every((a: Record<string, any>) => a.allowed === false && a.denyReason === 'DEVICE_RETIRED'));
+    assert.ok(
+      a10.capabilities.commands.every(
+        (a: Record<string, any>) => a.allowed === false && a.denyReason === 'DEVICE_OFFLINE',
+      ),
+    );
 
     // CustomerViewer（无 command:send）：全部 FORBIDDEN；dashboard:read 仍 200
     const resV = await h.getOverview(req(viewer(customerAId)));
@@ -479,11 +524,26 @@ describe('BE-DASH-01 总览聚合（固定 10 设备 Fixture）', () => {
     const viewerCards = (resV.body as DataBody).data.deviceCards;
     assert.ok(
       viewerCards.every((c: Record<string, any>) =>
-        c.actions.every((a: Record<string, any>) => a.allowed === false && a.denyReason === 'FORBIDDEN'),
+        c.capabilities.commands.every(
+          (a: Record<string, any>) => a.allowed === false && ['FORBIDDEN', 'DEVICE_OFFLINE'].includes(a.denyReason),
+        ),
       ),
     );
 
     // 无 actor → 401
     assert.equal((await h.getOverview(req(undefined))).status, 401);
+  });
+
+  test('平台角色 OTA capability 同时受 permission、entitlement、connectivity 与状态约束', async () => {
+    const h = createAdminDashboardHandlers(deps());
+    const view = ((await h.getOverview(req(superAdmin))).body as DataBody).data;
+    const cards = view.deviceCards as Record<string, any>[];
+    const a1 = cards.find((card) => card.deviceId === deviceIdsA[0]);
+    const offline = cards.find((card) => card.deviceId === deviceIdsA[4]);
+    assert.ok(a1);
+    assert.ok(offline);
+    assert.deepEqual(a1.capabilities.ota, { allowed: true, denyReason: null });
+    assert.equal(offline.capabilities.ota.allowed, false);
+    assert.equal(offline.capabilities.ota.denyReason, 'DEVICE_OFFLINE');
   });
 });

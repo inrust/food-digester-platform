@@ -4,7 +4,12 @@
  */
 
 export type DenyReason =
-  'FORBIDDEN' | 'UNKNOWN_COMMAND' | 'DEVICE_RETIRED' | 'DEVICE_SUSPENDED_RESTRICTED' | 'DEVICE_MAINTENANCE_RESTRICTED';
+  | 'FORBIDDEN'
+  | 'UNKNOWN_COMMAND'
+  | 'DEVICE_RETIRED'
+  | 'DEVICE_SUSPENDED_RESTRICTED'
+  | 'DEVICE_MAINTENANCE_RESTRICTED'
+  | 'DEVICE_OFFLINE';
 
 export interface CommandActionView {
   readonly command: string;
@@ -43,11 +48,30 @@ export interface DeviceCardView {
   readonly signalStrength: number | null;
   readonly networkType: string | null;
   readonly consumables: readonly ConsumableSummaryView[];
-  readonly actions: readonly CommandActionView[];
+  readonly capabilities: {
+    readonly schemaVersion: '1.0';
+    readonly commands: readonly CommandActionView[];
+    readonly ota: {
+      readonly allowed: boolean;
+      readonly denyReason: 'FORBIDDEN' | 'DEVICE_OFFLINE' | 'DEVICE_NOT_ACTIVE' | 'OTA_ENTITLEMENT_REQUIRED' | null;
+    };
+  };
+}
+
+export interface DashboardSectionStatusView {
+  readonly status: 'READY' | 'ERROR';
+  readonly errorCode: 'DASHBOARD_SECTION_UNAVAILABLE' | null;
+  readonly requestId: string;
+  readonly dataUpdatedAt: string | null;
 }
 
 export interface DashboardOverviewView {
   readonly generatedAt: string;
+  readonly sections: {
+    readonly summary: DashboardSectionStatusView;
+    readonly latestAlarms: DashboardSectionStatusView;
+    readonly deviceCards: DashboardSectionStatusView;
+  };
   readonly contracts: { readonly effectiveTotal: number };
   readonly devices: {
     readonly total: number;

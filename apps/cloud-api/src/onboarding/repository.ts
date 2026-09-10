@@ -13,6 +13,7 @@ export interface OnboardingRequestRecord {
   readonly id: string;
   readonly tokenId: string;
   readonly serialNumber: string;
+  readonly submittedBy: string;
   readonly model: string;
   readonly hardwareVersion: string;
   readonly manufacturer: string;
@@ -58,6 +59,7 @@ export function findOnboardingRequestByTokenId(
 export interface CreateOnboardingRequestData {
   readonly tokenId: string;
   readonly serialNumber: string;
+  readonly submittedBy: string;
   readonly model: string;
   readonly hardwareVersion: string;
   readonly manufacturer: string;
@@ -73,6 +75,7 @@ export function createOnboardingRequest(
     data: {
       tokenId: data.tokenId,
       serialNumber: data.serialNumber,
+      submittedBy: data.submittedBy,
       model: data.model,
       hardwareVersion: data.hardwareVersion,
       manufacturer: data.manufacturer,

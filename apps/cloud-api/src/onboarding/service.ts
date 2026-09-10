@@ -76,6 +76,7 @@ export async function submitOnboardingRequest(
     const created = await createOnboardingRequest(client, {
       tokenId: auth.tokenId,
       serialNumber: input.serialNumber,
+      submittedBy: `DEVICE:${input.serialNumber}`,
       model: input.model,
       hardwareVersion: input.hardwareVersion,
       manufacturer: input.manufacturer,

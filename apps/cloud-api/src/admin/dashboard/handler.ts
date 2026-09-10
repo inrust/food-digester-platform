@@ -4,7 +4,7 @@
  * 接线：AUTH-01 withAuthorization（dashboard:read——全角色持有；Customer 角色租户隔离
  * 在 Service 层强制）→ Service。路由：
  * - GET /api/v1/admin/dashboard/overview  总览聚合（Contract/设备/在线率/今日 ESG/告警/设备卡片）
- * 只读：不存在写路由；不在查询中执行命令（动作仅 command/allowed/denyReason 描述）。
+ * 只读：不存在写路由；不在查询中执行命令或 OTA（只返回版本化 capability 描述）。
  * 功能边界：不返回 AWS CPU、队列深度等运维指标。
  * 响应契约对齐 CT-05：data + meta{requestId,timestamp}；错误 {error{code,message,requestId}}。
  */
@@ -47,7 +47,7 @@ export function createAdminDashboardHandlers(deps: AdminDashboardHandlerDeps): A
   const overview = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'dashboard:read' },
     async (req) => {
-      const view = await getDashboardOverview(deps, req.actor as ActorContext);
+      const view = await getDashboardOverview(deps, req.actor as ActorContext, req.requestId);
       return {
         status: 200,
         body: { data: view, meta: { requestId: req.requestId, timestamp: now().toISOString() } },

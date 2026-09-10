@@ -62,7 +62,7 @@
       },
       {
         "file": "admin-dashboard-api.json",
-        "sha256": "b7fddf59b250f59e08acc1b7762e3920cc9c88b838be452315469080c70867d2",
+        "sha256": "aa608562c13300023200e64aa8eefc96a45db0ecbfb8e0c398f0d4cedd58d9d0",
         "status": "implemented"
       },
       {
@@ -112,7 +112,7 @@
       },
       {
         "file": "admin-onboarding-api.json",
-        "sha256": "ca78b512c9240d9debb75e6d3f8a617b9eb70a7f97cb43f087586d0f2ab3f686",
+        "sha256": "a213c07a6b384247437c2835f47842a2dc675a11a239c9019a008a893c689cd4",
         "status": "implemented"
       },
       {
@@ -13447,9 +13447,61 @@
               "DEVICE_RETIRED",
               "DEVICE_SUSPENDED_RESTRICTED",
               "DEVICE_MAINTENANCE_RESTRICTED",
+              "DEVICE_OFFLINE",
               null
             ],
             "description": "拒绝原因码：FORBIDDEN = actor 无 command:send、租户不匹配或设备缺少有效 REMOTE_CONTROL Entitlement；DEVICE_* = 设备状态门（与 BE-CMD-01 共用授权函数）；allowed 时恒为 null"
+          }
+        }
+      },
+      "AdminDashboardApi__OtaAction": {
+        "type": "object",
+        "required": [
+          "allowed",
+          "denyReason"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "allowed": {
+            "type": "boolean"
+          },
+          "denyReason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "FORBIDDEN",
+              "DEVICE_OFFLINE",
+              "DEVICE_NOT_ACTIVE",
+              "OTA_ENTITLEMENT_REQUIRED",
+              null
+            ],
+            "description": "OTA 拒绝原因覆盖权限、租户、连接、状态和 OTA_UPDATE Entitlement"
+          }
+        }
+      },
+      "AdminDashboardApi__DeviceCapabilities": {
+        "type": "object",
+        "required": [
+          "schemaVersion",
+          "commands",
+          "ota"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "commands": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminDashboardApi__CommandAction"
+            }
+          },
+          "ota": {
+            "$ref": "#/components/schemas/AdminDashboardApi__OtaAction"
           }
         }
       },
@@ -13468,7 +13520,7 @@
           "signalStrength",
           "networkType",
           "consumables",
-          "actions"
+          "capabilities"
         ],
         "additionalProperties": false,
         "properties": {
@@ -13550,12 +13602,71 @@
               "$ref": "#/components/schemas/AdminDashboardApi__ConsumableSummary"
             }
           },
-          "actions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AdminDashboardApi__CommandAction"
-            },
-            "description": "允许动作描述：CT-04 全目录 × 当前设备状态门 + actor 权限；只读描述，不执行命令"
+          "capabilities": {
+            "$ref": "#/components/schemas/AdminDashboardApi__DeviceCapabilities"
+          }
+        }
+      },
+      "AdminDashboardApi__DashboardSectionStatus": {
+        "type": "object",
+        "required": [
+          "status",
+          "errorCode",
+          "requestId",
+          "dataUpdatedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "READY",
+              "ERROR"
+            ]
+          },
+          "errorCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "DASHBOARD_SECTION_UNAVAILABLE",
+              null
+            ]
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dataUpdatedAt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "AdminDashboardApi__DashboardSections": {
+        "type": "object",
+        "required": [
+          "summary",
+          "latestAlarms",
+          "deviceCards"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/AdminDashboardApi__DashboardSectionStatus"
+          },
+          "latestAlarms": {
+            "$ref": "#/components/schemas/AdminDashboardApi__DashboardSectionStatus"
+          },
+          "deviceCards": {
+            "$ref": "#/components/schemas/AdminDashboardApi__DashboardSectionStatus"
           }
         }
       },
@@ -13563,6 +13674,7 @@
         "type": "object",
         "required": [
           "generatedAt",
+          "sections",
           "contracts",
           "devices",
           "esgToday",
@@ -13574,6 +13686,9 @@
           "generatedAt": {
             "$ref": "#/components/schemas/UtcTimestamp",
             "description": "聚合时间基准（全部时间窗口/阈值的分母基准）"
+          },
+          "sections": {
+            "$ref": "#/components/schemas/AdminDashboardApi__DashboardSections"
           },
           "contracts": {
             "$ref": "#/components/schemas/AdminDashboardApi__ContractSummary"
@@ -16699,6 +16814,7 @@
         "required": [
           "requestId",
           "serialNumber",
+          "submittedBy",
           "model",
           "hardwareVersion",
           "manufacturer",
@@ -16708,7 +16824,8 @@
           "reviewedBy",
           "reviewedAt",
           "version",
-          "createdAt"
+          "createdAt",
+          "certificateProvisioningStatus"
         ],
         "additionalProperties": false,
         "description": "申请 DTO 不含 tokenId 或任何 Token 关联字段",
@@ -16719,6 +16836,11 @@
           },
           "serialNumber": {
             "type": "string"
+          },
+          "submittedBy": {
+            "type": "string",
+            "minLength": 1,
+            "description": "申请录入来源；设备自助申请为 DEVICE:<serialNumber>"
           },
           "model": {
             "type": "string"
@@ -16772,6 +16894,19 @@
           },
           "createdAt": {
             "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "certificateProvisioningStatus": {
+            "type": "string",
+            "enum": [
+              "NOT_STARTED",
+              "QUEUED",
+              "PROCESSING",
+              "RETRY",
+              "COMPLETED",
+              "FAILED",
+              "NOT_APPLICABLE"
+            ],
+            "description": "管理员可见的证书发放进度；永不包含私钥、Token 或证书包内容"
           }
         }
       },

@@ -31,6 +31,7 @@ test('DTO 字段与 OpenAPI OnboardingRequest 契约一致且不含 tokenId', ()
   const record: AdminOnboardingRequestRecord = {
     id: 'req-1',
     serialNumber: 'SN-1',
+    submittedBy: 'DEVICE:SN-1',
     model: 'BNX-100',
     hardwareVersion: 'HW1.0',
     manufacturer: 'Hiddenjoy',
@@ -41,12 +42,14 @@ test('DTO 字段与 OpenAPI OnboardingRequest 契约一致且不含 tokenId', ()
     reviewedAt: new Date('2026-08-27T08:00:00Z'),
     version: 2,
     createdAt: new Date('2026-08-26T08:00:00Z'),
+    provisioningJob: { status: 'FAILED' },
   };
   const dto = toDto(record);
   assert.deepEqual(Object.keys(dto).sort(), [...schema.required].sort());
   assert.ok(!('tokenId' in dto));
   assert.equal(dto.manufactureDate, '2026-01-01');
   assert.equal(dto.reviewedAt, '2026-08-27T08:00:00.000Z');
+  assert.equal(dto.certificateProvisioningStatus, 'NOT_APPLICABLE');
 });
 
 test('admin/onboarding 模块无任何 AWS 依赖', () => {

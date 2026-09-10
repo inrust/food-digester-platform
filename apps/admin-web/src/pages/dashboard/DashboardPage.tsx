@@ -70,15 +70,29 @@ function DeviceCard({
         <ConsumableGauge key={model.consumableType} model={model} />
       ))}
       <div className="actions">
-        <DeviceCommandActions deviceId={card.deviceId} actions={card.actions} onSubmit={onSubmitCommand} />
+        <DeviceCommandActions
+          deviceId={card.deviceId}
+          actions={card.capabilities.commands}
+          onSubmit={onSubmitCommand}
+        />
         <button
           type="button"
           data-testid={`action-upgrade-${card.deviceId}`}
+          disabled={!card.capabilities.ota.allowed}
+          title={card.capabilities.ota.denyReason ?? undefined}
           onClick={() => onNavigate('/ota/campaigns')}
         >
           升级
         </button>
       </div>
+    </div>
+  );
+}
+
+function SectionFailure({ requestId }: { requestId: string }) {
+  return (
+    <div role="alert" className="error-notice" data-testid="dashboard-section-error">
+      该区块暂不可用，请稍后刷新（requestId: {requestId}）
     </div>
   );
 }
@@ -104,48 +118,54 @@ export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }:
         （指标口径以此为基准；ESG 统计日（UTC）：{overview.esgToday.summaryDate}）
       </p>
 
-      <div className="stats-grid">
-        <MetricCard
-          testid="metric-contracts"
-          label="有效合约"
-          value={String(overview.contracts.effectiveTotal)}
-          sub="服务期内 Contract"
-        />
-        <MetricCard
-          testid="metric-devices"
-          label="设备总数"
-          value={String(overview.devices.total)}
-          sub={`授权分布：${licenseDistributionText(overview.devices.licenseDistribution)}`}
-        />
-        <MetricCard
-          testid="metric-online"
-          label="在线设备"
-          value={String(overview.devices.online)}
-          sub={`总设备 ${overview.devices.total} · 在线率 ${overview.devices.onlineRatePct}%（心跳 ≤ 10 分钟）`}
-        />
-        <MetricCard
-          testid="metric-carbon"
-          label="今日估算碳减排"
-          value={`${overview.esgToday.carbonReductionKg} kg`}
-          sub={`统计日（UTC）：${overview.esgToday.summaryDate}`}
-        />
-        <MetricCard
-          testid="metric-energy"
-          label="今日能耗"
-          value={`${overview.esgToday.powerConsumptionKwh} kWh`}
-          sub={`统计日（UTC）：${overview.esgToday.summaryDate}`}
-        />
-        <MetricCard
-          testid="metric-feeding"
-          label="今日处理量"
-          value={`${overview.esgToday.feedingWeightKg} kg`}
-          sub={`统计日（UTC）：${overview.esgToday.summaryDate}`}
-        />
-      </div>
+      {overview.sections.summary.status === 'ERROR' ? (
+        <SectionFailure requestId={overview.sections.summary.requestId} />
+      ) : (
+        <div className="stats-grid">
+          <MetricCard
+            testid="metric-contracts"
+            label="有效合约"
+            value={String(overview.contracts.effectiveTotal)}
+            sub="服务期内 Contract"
+          />
+          <MetricCard
+            testid="metric-devices"
+            label="设备总数"
+            value={String(overview.devices.total)}
+            sub={`授权分布：${licenseDistributionText(overview.devices.licenseDistribution)}`}
+          />
+          <MetricCard
+            testid="metric-online"
+            label="在线设备"
+            value={String(overview.devices.online)}
+            sub={`总设备 ${overview.devices.total} · 在线率 ${overview.devices.onlineRatePct}%（心跳 ≤ 10 分钟）`}
+          />
+          <MetricCard
+            testid="metric-carbon"
+            label="今日估算碳减排"
+            value={`${overview.esgToday.carbonReductionKg} kg`}
+            sub={`统计日（UTC）：${overview.esgToday.summaryDate}`}
+          />
+          <MetricCard
+            testid="metric-energy"
+            label="今日能耗"
+            value={`${overview.esgToday.powerConsumptionKwh} kWh`}
+            sub={`统计日（UTC）：${overview.esgToday.summaryDate}`}
+          />
+          <MetricCard
+            testid="metric-feeding"
+            label="今日处理量"
+            value={`${overview.esgToday.feedingWeightKg} kg`}
+            sub={`统计日（UTC）：${overview.esgToday.summaryDate}`}
+          />
+        </div>
+      )}
 
       <section className="latest-alarms" data-testid="latest-alarms">
         <h4>最新告警</h4>
-        {overview.latestAlarms.length === 0 ? (
+        {overview.sections.latestAlarms.status === 'ERROR' ? (
+          <SectionFailure requestId={overview.sections.latestAlarms.requestId} />
+        ) : overview.latestAlarms.length === 0 ? (
           <p className="empty-state" data-testid="alarms-empty">
             暂无活动告警
           </p>
@@ -168,7 +188,9 @@ export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }:
 
       <section className="device-cards" data-testid="device-cards">
         <h4>全部设备（最多 10 台）</h4>
-        {overview.deviceCards.length === 0 ? (
+        {overview.sections.deviceCards.status === 'ERROR' ? (
+          <SectionFailure requestId={overview.sections.deviceCards.requestId} />
+        ) : overview.deviceCards.length === 0 ? (
           <p className="empty-state" data-testid="devices-empty">
             暂无设备
           </p>

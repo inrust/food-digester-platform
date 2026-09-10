@@ -49,6 +49,7 @@ test('总览 DTO 齐备：Contract/设备分布/在线率/今日 ESG/最新告�
   assert.equal(overview.additionalProperties, false);
   assert.deepEqual(overview.required, [
     'generatedAt',
+    'sections',
     'contracts',
     'devices',
     'esgToday',
@@ -70,11 +71,18 @@ test('总览 DTO 齐备：Contract/设备分布/在线率/今日 ESG/最新告�
     assert.ok(card.required.includes(axis), `设备卡片必须携带独立 ${axis} 轴`);
   }
   assert.ok(!('enabled' in card.properties), 'DEC-010：不得合并派生 enabled 单字段');
+  assert.ok(card.required.includes('capabilities'));
+
+  const section = doc.components.schemas.DashboardSectionStatus;
+  assert.deepEqual(section.required, ['status', 'errorCode', 'requestId', 'dataUpdatedAt']);
 
   // 卡片动作：只返回 command/allowed/denyReason（不执行命令）
   const action = doc.components.schemas.CommandAction;
   assert.deepEqual(action.required, ['command', 'allowed', 'denyReason']);
   assert.ok(action.properties.denyReason.enum.includes('FORBIDDEN'), 'denyReason 必须含权限拒绝码');
+  assert.ok(action.properties.denyReason.enum.includes('DEVICE_OFFLINE'), '离线命令必须失败关闭');
+  const capabilities = doc.components.schemas.DeviceCapabilities;
+  assert.deepEqual(capabilities.required, ['schemaVersion', 'commands', 'ota']);
 
   // 运维指标边界：响应不得包含 AWS CPU/队列深度等字段
   const json = JSON.stringify(doc.components.schemas).toLowerCase();
