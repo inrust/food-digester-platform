@@ -22,7 +22,8 @@
  */
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { DbClient } from '@fdp/database';
-import { audited } from '@fdp/database';
+import { audited, decodeKeysetCursor, encodeKeysetCursor, normalizeLimit } from '@fdp/database';
+import type { Page } from '@fdp/database';
 import {
   createLicenseDraft,
   evaluateLicenseAt,
@@ -114,9 +115,52 @@ interface LicenseRow {
 
 interface LicenseDelegate {
   findFirst(args: Record<string, unknown>): Promise<LicenseRow | null>;
+  findMany(args: Record<string, unknown>): Promise<LicenseRow[]>;
   create(args: Record<string, unknown>): Promise<LicenseRow>;
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
   count(args: { where: Record<string, unknown> }): Promise<number>;
+}
+
+export interface LicenseListFilter {
+  readonly customerId?: string | undefined;
+  readonly deviceId?: string | undefined;
+  readonly status?: string | undefined;
+  readonly keyword?: string | undefined;
+  readonly cursor?: string | undefined;
+  readonly limit?: string | number | undefined;
+}
+
+/** 正式 License 实体列表：保留终态历史记录，不再以 Device 当前授权摘要代替。 */
+export async function listLicenses(
+  deps: LicenseDeps,
+  actor: ActorContext,
+  filter: LicenseListFilter = {},
+): Promise<Page<LicenseView>> {
+  const statuses = ['Draft', 'Issued', 'Active', 'ExpiringSoon', 'Renewed', 'Expired', 'Revoked'];
+  if (filter.status !== undefined && !statuses.includes(filter.status)) {
+    throw licenseValidationFailed('status is not a supported License status');
+  }
+  const customerId = actor.actorType === 'customer' ? (actor.customerId ?? '__none__') : filter.customerId;
+  const cursor = filter.cursor ? decodeKeysetCursor(filter.cursor) : null;
+  const limit = normalizeLimit(filter.limit ?? null);
+  const keyword = filter.keyword?.trim();
+  const rows = await licenses(deps.client).findMany({
+    where: {
+      ...(customerId !== undefined ? { customerId } : {}),
+      ...(filter.deviceId ? { deviceId: filter.deviceId } : {}),
+      ...(filter.status ? { status: filter.status } : {}),
+      ...(keyword ? { OR: [{ id: { contains: keyword } }, { deviceId: { contains: keyword } }] } : {}),
+      ...(cursor ? { id: { gt: cursor } } : {}),
+    },
+    include: { entitlements: true },
+    orderBy: { id: 'asc' },
+    take: limit + 1,
+  });
+  const page = rows.slice(0, limit);
+  return {
+    items: page.map((row) => toView(row, deps.now?.() ?? new Date())),
+    nextCursor: rows.length > limit && page.length > 0 ? encodeKeysetCursor(page[page.length - 1]!.id) : null,
+  };
 }
 
 interface HistoryDelegate {

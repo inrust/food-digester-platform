@@ -1,8 +1,7 @@
 /**
  * FE-08 License API 装配（BE-LIC-01）。
  *
- * - 列表无独立 API：列表视角复用 listDevices（BE-DEV-01，licenseStatus 筛选 +
- *   Device.license 摘要，见 devices-api.ts fetchDevices），本文件仅封装 License 自身接口；
+ * - 列表使用正式 License 查询接口，包含 Revoked/Expired 等终态历史记录；
  * - create：设备存在任一非终态 License → 409 CONFLICT（页面原样呈现后端 message）；
  * - issue/activate：无请求体；renew：newValidTo 必须晚于当前 validTo；revoke：强制原因；
  * - evaluate（SYSTEM 时间派生）不在管理页面暴露（见 license-state.ts 说明）。
@@ -16,6 +15,23 @@ export interface LicenseCreateInput {
   readonly validTo: string;
   readonly entitlements: readonly EntitlementCode[];
   readonly reason?: string;
+}
+
+export async function fetchLicenses(
+  api: ApiClient,
+  filter: { status?: string | null; keyword?: string | null } = {},
+  options: { cursor?: string | null; limit?: number } = {},
+): Promise<{ readonly items: readonly LicenseView[]; readonly nextCursor: string | null }> {
+  const params = new URLSearchParams();
+  if (filter.status) params.set('status', filter.status);
+  if (filter.keyword) params.set('keyword', filter.keyword);
+  if (options.cursor) params.set('cursor', options.cursor);
+  if (options.limit !== undefined) params.set('limit', String(options.limit));
+  const query = params.toString();
+  const response = await api.request<{ data: LicenseView[]; meta: { nextCursor: string | null } }>(
+    `/admin/licenses${query ? `?${query}` : ''}`,
+  );
+  return { items: response.data, nextCursor: response.meta.nextCursor };
 }
 
 function licensePath(licenseId: string): string {

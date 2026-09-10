@@ -68,6 +68,16 @@ export interface DeviceRow {
     readonly createdAt: Date;
     readonly entitlements: readonly { readonly code: string; readonly enabled: boolean }[];
   }[];
+  readonly retirement: {
+    readonly id: string;
+    readonly status: string;
+    readonly reason: string;
+    readonly initiatedBy: string;
+    readonly initiatedAt: Date;
+    readonly confirmedAt: Date | null;
+    readonly completionMethod: string | null;
+    readonly certificateRevokedAt: Date | null;
+  } | null;
 }
 
 interface ContractDeviceRow {
@@ -118,6 +128,18 @@ export const DEVICE_INCLUDE = {
     },
     orderBy: { createdAt: 'desc' },
   },
+  retirement: {
+    select: {
+      id: true,
+      status: true,
+      reason: true,
+      initiatedBy: true,
+      initiatedAt: true,
+      confirmedAt: true,
+      completionMethod: true,
+      certificateRevokedAt: true,
+    },
+  },
 } as const;
 
 // ---------- DTO ----------
@@ -160,6 +182,16 @@ export interface DeviceDto {
     readonly name: string;
     readonly status: string;
     readonly endAt: string;
+  } | null;
+  readonly retirement: {
+    readonly retirementId: string;
+    readonly status: string;
+    readonly reason: string;
+    readonly initiatedBy: string;
+    readonly initiatedAt: string;
+    readonly confirmedAt: string | null;
+    readonly completionMethod: string | null;
+    readonly certificateRevokedAt: string | null;
   } | null;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -228,6 +260,18 @@ export function toDeviceDto(
           name: contract.name,
           status: contract.status,
           endAt: contract.endAt.toISOString(),
+        }
+      : null,
+    retirement: row.retirement
+      ? {
+          retirementId: row.retirement.id,
+          status: row.retirement.status,
+          reason: row.retirement.reason,
+          initiatedBy: row.retirement.initiatedBy,
+          initiatedAt: row.retirement.initiatedAt.toISOString(),
+          confirmedAt: row.retirement.confirmedAt?.toISOString() ?? null,
+          completionMethod: row.retirement.completionMethod,
+          certificateRevokedAt: row.retirement.certificateRevokedAt?.toISOString() ?? null,
         }
       : null,
     createdAt: row.createdAt.toISOString(),

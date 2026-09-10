@@ -158,8 +158,9 @@ export function DeviceManagePage({
   const rotationGate = gate('requestRotation');
   const forceGate = canForceComplete(device, retirement, role);
 
-  const aliasTrimmed = aliasDraft.trim();
-  const aliasInvalid = aliasTrimmed.length > 64;
+  const aliasTrimmed = aliasDraft.trim().normalize('NFC');
+  const aliasLength = [...aliasTrimmed].length;
+  const aliasInvalid = aliasLength > 64;
 
   return (
     <div className="device-manage-page" data-testid="device-manage-page">
@@ -257,14 +258,16 @@ export function DeviceManagePage({
         <h4>设备别名</h4>
         {aliasEditing ? (
           <div className="alias-form" data-testid="alias-form">
-            <label htmlFor="alias-input">别名（1..64 字符，同客户内唯一）</label>
+            <label htmlFor="alias-input">别名（1..64 个 Unicode 字符，同客户内唯一；保存时执行 NFC 规范化）</label>
             <input
               id="alias-input"
               data-testid="alias-input"
               value={aliasDraft}
               onChange={(event) => setAliasDraft(event.target.value)}
             />
-            {aliasInvalid ? <p className="field-hint">别名超长（最多 64 字符）</p> : null}
+            {aliasInvalid ? (
+              <p className="field-hint">别名超长（最多 64 个 Unicode 字符，当前 {aliasLength}）</p>
+            ) : null}
             <div className="action-row">
               <button
                 type="button"

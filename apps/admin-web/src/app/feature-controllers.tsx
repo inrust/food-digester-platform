@@ -51,13 +51,20 @@ import {
 import { DeviceUsersPage, EMPTY_DEVICE_USER_FILTER } from '../pages/device-users/DeviceUsersPage.js';
 import type { DeviceUserDetailState, DeviceUserFilter } from '../pages/device-users/DeviceUsersPage.js';
 import type { DeviceUserListItemView } from '../pages/device-users/types.js';
-import { fetchDevice, fetchDeviceConsole, fetchDevices } from '../pages/devices/devices-api.js';
+import {
+  fetchDevice,
+  fetchDeviceActivities,
+  fetchDeviceConsole,
+  fetchDevices,
+  fetchMediaDownloadUrl,
+} from '../pages/devices/devices-api.js';
 import { DeviceViewPage } from '../pages/devices/DeviceViewPage.js';
-import type { ConsoleState } from '../pages/devices/DeviceViewPage.js';
+import type { ActivityState, ConsoleState, MediaState } from '../pages/devices/DeviceViewPage.js';
 import type { DeviceView } from '../pages/devices/types.js';
 import {
   activateLicense,
   createLicense,
+  fetchLicenses,
   fetchLicense,
   fetchLicenseHistory,
   issueLicense,
@@ -66,7 +73,9 @@ import {
 } from '../pages/licenses/licenses-api.js';
 import { EMPTY_LICENSE_FILTER, LicensesPage } from '../pages/licenses/LicensesPage.js';
 import type { LicenseDetailState, LicenseFilter } from '../pages/licenses/LicensesPage.js';
+import type { LicenseView } from '../pages/licenses/types.js';
 import { fetchSites } from '../pages/sites/sites-api.js';
+import type { SiteView } from '../pages/sites/types.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
 
 type Navigate = (path: string, options?: { replace?: boolean }) => void;
@@ -86,6 +95,21 @@ function option(value: string, label: string): FilterOption {
   return { value, label };
 }
 
+async function collectAll<T>(
+  load: (cursor: string | null) => Promise<{ readonly items: readonly T[]; readonly nextCursor: string | null }>,
+): Promise<readonly T[]> {
+  const items: T[] = [];
+  const seen = new Set<string>();
+  let cursor: string | null = null;
+  for (;;) {
+    const page = await load(cursor);
+    items.push(...page.items);
+    if (page.nextCursor === null || seen.has(page.nextCursor)) return items;
+    seen.add(page.nextCursor);
+    cursor = page.nextCursor;
+  }
+}
+
 export function DeviceViewController({
   api,
   search,
@@ -96,24 +120,46 @@ export function DeviceViewController({
   readonly onNavigate: Navigate;
 }) {
   const [devices, setDevices] = useState<readonly DeviceView[]>([]);
+  const [viewSites, setViewSites] = useState<readonly SiteView[]>([]);
   const [device, setDevice] = useState<DeviceView | null>(null);
   const [consoleState, setConsoleState] = useState<ConsoleState>({ status: 'idle' });
+  const [mediaState, setMediaState] = useState<MediaState>({ status: 'idle' });
+  const [activityState, setActivityState] = useState<ActivityState>({ status: 'idle' });
   const selectedId = useRef<string | null>(null);
 
   const loadConsole = useCallback(
     async (deviceId: string) => {
       selectedId.current = deviceId;
       setConsoleState({ status: 'loading' });
+      setMediaState({ status: 'loading' });
+      setActivityState({ status: 'loading' });
       try {
-        const [nextDevice, consoleView] = await Promise.all([
+        const [nextDevice, consoleView, activities] = await Promise.all([
           fetchDevice(api, deviceId),
           fetchDeviceConsole(api, deviceId),
+          fetchDeviceActivities(api, deviceId),
         ]);
         if (selectedId.current !== deviceId) return;
         setDevice(nextDevice);
         setConsoleState({ status: 'ready', console: consoleView });
+        setActivityState({ status: 'ready', items: activities.items, nextCursor: activities.nextCursor });
+        if (consoleView.latestMedia === null) setMediaState({ status: 'empty' });
+        else {
+          void fetchMediaDownloadUrl(api, consoleView.latestMedia.mediaId).then(
+            (media) => {
+              if (selectedId.current === deviceId) setMediaState({ status: 'ready', media });
+            },
+            (error: unknown) => {
+              if (selectedId.current === deviceId) setMediaState({ status: 'error', error });
+            },
+          );
+        }
       } catch (error) {
-        if (selectedId.current === deviceId) setConsoleState({ status: 'error', error });
+        if (selectedId.current === deviceId) {
+          setConsoleState({ status: 'error', error });
+          setActivityState({ status: 'error', error });
+          setMediaState({ status: 'error', error });
+        }
       }
     },
     [api],
@@ -121,9 +167,15 @@ export function DeviceViewController({
 
   useEffect(() => {
     let active = true;
-    void fetchDevices(api, undefined, { limit: 100 }).then(
-      (result) => {
-        if (active) setDevices(result.items);
+    void Promise.all([
+      collectAll((cursor) => fetchDevices(api, undefined, { cursor, limit: 100 })),
+      collectAll((cursor) => fetchSites(api, undefined, { cursor, limit: 100 })),
+    ]).then(
+      ([deviceRows, siteRows]) => {
+        if (active) {
+          setDevices(deviceRows);
+          setViewSites(siteRows);
+        }
       },
       (error: unknown) => {
         if (active) setConsoleState({ status: 'error', error });
@@ -140,17 +192,13 @@ export function DeviceViewController({
   }, [loadConsole, search]);
 
   const filterOptions = useMemo(() => {
-    const regions = [
-      ...new Set(devices.map((d) => d.site?.region).filter((v): v is string => v !== null && v !== undefined)),
-    ];
+    const regions = [...new Set(viewSites.map((site) => site.region).filter((v): v is string => v !== null))];
     const subregions = [
       ...new Set(
-        devices.flatMap((d) =>
-          d.site?.region && d.site.subregion ? [`${d.site.region}\u0000${d.site.subregion}`] : [],
-        ),
+        viewSites.flatMap((site) => (site.region && site.subregion ? [`${site.region}\u0000${site.subregion}`] : [])),
       ),
     ];
-    const sites = [...new Map(devices.flatMap((d) => (d.site ? [[d.site.id, d.site] as const] : []))).values()];
+    const sites = viewSites;
     return {
       regions: regions.map((value) => option(value, value)),
       subregions: subregions.map((value) => {
@@ -164,12 +212,14 @@ export function DeviceViewController({
         .filter((d) => d.site !== null)
         .map((d) => ({ ...option(d.id, d.alias ?? d.serialNumber), siteId: d.site?.id ?? '' })),
     };
-  }, [devices]);
+  }, [devices, viewSites]);
 
   return (
     <DeviceViewPage
       device={device}
       consoleState={consoleState}
+      mediaState={mediaState}
+      activityState={activityState}
       filterOptions={filterOptions}
       onApply={(id) => {
         onNavigate(`/devices/view?deviceId=${encodeURIComponent(id)}`, { replace: true });
@@ -177,6 +227,19 @@ export function DeviceViewController({
       }}
       onRefreshConsole={() => {
         if (selectedId.current !== null) void loadConsole(selectedId.current);
+      }}
+      onLoadMoreActivities={(cursor) => {
+        const id = selectedId.current;
+        if (id === null) return;
+        void fetchDeviceActivities(api, id, cursor).then(
+          (page) =>
+            setActivityState((old) =>
+              old.status === 'ready'
+                ? { status: 'ready', items: [...old.items, ...page.items], nextCursor: page.nextCursor }
+                : old,
+            ),
+          (error: unknown) => setActivityState({ status: 'error', error }),
+        );
       }}
     />
   );
@@ -215,8 +278,10 @@ export function DeviceManageController({
     setAssignments(null);
     setAssignmentsError(undefined);
     const results = await Promise.allSettled([fetchDevice(api, deviceId), fetchDeviceAssignments(api, deviceId)]);
-    if (results[0].status === 'fulfilled') setDevice(results[0].value);
-    else setLoadError(results[0].reason);
+    if (results[0].status === 'fulfilled') {
+      setDevice(results[0].value);
+      setRetirement(results[0].value.retirement ?? null);
+    } else setLoadError(results[0].reason);
     if (results[1].status === 'fulfilled') setAssignments(results[1].value);
     else {
       setAssignments([]);
@@ -226,7 +291,6 @@ export function DeviceManageController({
   }, [api, deviceId]);
 
   useEffect(() => {
-    setRetirement(null);
     setRotation(null);
     void load();
   }, [load]);
@@ -298,20 +362,21 @@ export function DeviceManageController({
 export function LicensesController({ api, session }: { readonly api: ApiClient; readonly session: SessionSnapshot }) {
   const [filter, setFilter] = useState<LicenseFilter>(EMPTY_LICENSE_FILTER);
   const [list, setList] = useState<{
-    rows: readonly DeviceView[] | null;
+    rows: readonly LicenseView[] | null;
     loading?: boolean;
     error?: unknown;
     nextCursor?: string | null;
   }>({ rows: null });
+  const [createCandidates, setCreateCandidates] = useState<readonly { deviceId: string; label: string }[]>([]);
   const [detail, setDetail] = useState<LicenseDetailState>({ kind: 'none' });
   const selected = useRef<string | null>(null);
   const loadList = useCallback(
     async (cursor?: string) => {
       setList((old) => ({ ...old, loading: true, error: undefined }));
       try {
-        const result = await fetchDevices(
+        const result = await fetchLicenses(
           api,
-          { licenseStatus: filter.licenseStatus, keyword: filter.keyword },
+          { status: filter.licenseStatus, keyword: filter.keyword },
           { ...(cursor ? { cursor } : {}), limit: 50 },
         );
         setList({ rows: result.items, loading: false, nextCursor: result.nextCursor });
@@ -343,11 +408,30 @@ export function LicensesController({ api, session }: { readonly api: ApiClient; 
   useEffect(() => {
     void loadList();
   }, [loadList]);
+  useEffect(() => {
+    let active = true;
+    void collectAll((cursor) => fetchDevices(api, undefined, { cursor, limit: 100 })).then(
+      (devices) => {
+        if (active) {
+          setCreateCandidates(
+            devices
+              .filter((device) => device.customer !== null && device.lifecycleStatus !== 'Retired')
+              .map((device) => ({ deviceId: device.id, label: device.alias ?? device.serialNumber })),
+          );
+        }
+      },
+      () => {
+        if (active) setCreateCandidates([]);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [api]);
   const refresh = () => {
     void loadList();
     if (selected.current !== null) void loadDetail(selected.current);
   };
-  const rows = list.rows ?? [];
   return (
     <LicensesPage
       role={roleOf(session)}
@@ -362,9 +446,7 @@ export function LicensesController({ api, session }: { readonly api: ApiClient; 
         selected.current = null;
         setDetail({ kind: 'none' });
       }}
-      createCandidates={rows
-        .filter((d) => d.customer !== null && d.lifecycleStatus !== 'Retired')
-        .map((d) => ({ deviceId: d.id, label: d.alias ?? d.serialNumber }))}
+      createCandidates={createCandidates}
       onCreate={(input) => createLicense(api, input)}
       onIssue={(id) => issueLicense(api, id)}
       onActivate={(id) => activateLicense(api, id)}
@@ -583,6 +665,10 @@ export function AlarmsController({
   const [tampers, setTampers] = useState<ListState<TamperEventView>>({ rows: null });
   const [detail, setDetail] = useState<AlarmDetailState>({ kind: 'none' });
   const [customerOptions, setCustomerOptions] = useState<readonly FilterOption[]>([]);
+  const [alarmSiteOptions, setAlarmSiteOptions] = useState<readonly (FilterOption & { customerId: string })[]>([]);
+  const [alarmDeviceOptions, setAlarmDeviceOptions] = useState<
+    readonly (FilterOption & { customerId: string; siteId: string })[]
+  >([]);
   const selected = useRef<string | null>(null);
   const load = useCallback(
     async (tab: AlarmTab, cursor?: string) => {
@@ -625,21 +711,45 @@ export function AlarmsController({
     void load(urlState.tab);
   }, [load, urlState.tab]);
   useEffect(() => {
-    if (session.customerId !== null) return;
     let active = true;
-    void fetchCustomers(api, { limit: 100 }).then(
-      (page) => {
-        if (active) setCustomerOptions(page.items.map((c) => option(c.id, c.name)));
-      },
-      () => {
-        if (active) setCustomerOptions([]);
-      },
-    );
+    void Promise.allSettled([
+      session.customerId === null
+        ? collectAll((cursor) => fetchCustomers(api, { cursor, limit: 100 }))
+        : Promise.resolve(null),
+      collectAll((cursor) =>
+        fetchSites(api, session.customerId ? { customerId: session.customerId } : undefined, { cursor, limit: 100 }),
+      ),
+      collectAll((cursor) =>
+        fetchDevices(api, session.customerId ? { customerId: session.customerId } : undefined, {
+          cursor,
+          limit: 100,
+        }),
+      ),
+    ]).then(([customers, sites, devices]) => {
+      if (!active) return;
+      setCustomerOptions(
+        customers.status === 'fulfilled' && customers.value ? customers.value.map((c) => option(c.id, c.name)) : [],
+      );
+      setAlarmSiteOptions(
+        sites.status === 'fulfilled'
+          ? sites.value.map((s) => ({ ...option(s.id, s.name), customerId: s.customerId }))
+          : [],
+      );
+      setAlarmDeviceOptions(
+        devices.status === 'fulfilled'
+          ? devices.value.flatMap((d) =>
+              d.customer && d.site
+                ? [{ ...option(d.id, d.alias ?? d.serialNumber), customerId: d.customer.id, siteId: d.site.id }]
+                : [],
+            )
+          : [],
+      );
+    });
     return () => {
       active = false;
     };
   }, [api, session.customerId]);
-  const apply = (next: AlarmPageUrlState) => onNavigate(`/alarms${urlStateToSearch(next)}`, { replace: true });
+  const apply = (next: AlarmPageUrlState) => onNavigate(`/alarms${urlStateToSearch(next)}`);
   const refresh = () => {
     void load(urlState.tab);
     if (selected.current !== null) void loadDetail(selected.current);
@@ -650,6 +760,8 @@ export function AlarmsController({
       role={roleOf(session)}
       isCustomerRole={session.customerId !== null}
       customerOptions={customerOptions}
+      siteOptions={alarmSiteOptions}
+      deviceOptions={alarmDeviceOptions}
       urlState={urlState}
       onApplyUrlState={apply}
       alarms={alarms}

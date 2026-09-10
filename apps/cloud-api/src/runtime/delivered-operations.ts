@@ -203,6 +203,7 @@ export const DELIVERED_OPERATIONS = [
     path: '/api/v1/admin/activity-exports/{exportId}',
     runtime: 'admin-api',
   },
+  { operationId: 'listLicenses', method: 'GET', path: '/api/v1/admin/licenses', runtime: 'admin-api' },
   { operationId: 'createLicense', method: 'POST', path: '/api/v1/admin/licenses', runtime: 'admin-api' },
   { operationId: 'getLicense', method: 'GET', path: '/api/v1/admin/licenses/{licenseId}', runtime: 'admin-api' },
   {

@@ -278,6 +278,31 @@ describe('全状态路径：Draft→Issued→Active→ExpiringSoon→Renewed→A
 });
 
 describe('非法路径与边界', () => {
+  test('正式列表保留终态 License，并支持状态筛选与键集分页', async () => {
+    const { deviceId } = await plantAssignedDevice();
+    const h = handlers();
+    const first = await createDraft(h, deviceId, new Date(NOW.getTime() + 400 * DAY_MS));
+    const firstId = first.licenseId as string;
+    await h.issue(req(operator, { params: { licenseId: firstId } }));
+    await h.activate(req(operator, { params: { licenseId: firstId } }));
+    await h.revoke(req(operator, { params: { licenseId: firstId }, body: { reason: '列表历史验证' } }));
+    await createDraft(h, deviceId, new Date(NOW.getTime() + 500 * DAY_MS));
+
+    const page1 = await h.list(req(auditor, { query: { deviceId, limit: '1' } }));
+    assert.equal(page1.status, 200);
+    assert.equal((page1.body as { data: unknown[] }).data.length, 1);
+    const cursor = (page1.body as { meta: { nextCursor: string | null } }).meta.nextCursor;
+    assert.ok(cursor);
+    const page2 = await h.list(req(auditor, { query: { deviceId, limit: '1', cursor } }));
+    assert.equal((page2.body as { data: unknown[] }).data.length, 1);
+
+    const revoked = await h.list(req(auditor, { query: { deviceId, status: 'Revoked' } }));
+    const revokedRows = (revoked.body as { data: { licenseId: string; status: string }[] }).data;
+    assert.equal(revokedRows.length, 1);
+    assert.equal(revokedRows[0]?.licenseId, firstId);
+    assert.equal(revokedRows[0]?.status, 'Revoked');
+  });
+
   test('非法迁移 409；缺原因/非法参数 400；evaluate 无变化无写入', async () => {
     const { deviceId } = await plantAssignedDevice();
     const h = handlers();

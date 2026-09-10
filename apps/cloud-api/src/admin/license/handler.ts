@@ -4,6 +4,7 @@
  * 接线：AUTH-01 withAuthorization（Cognito actor 由适配层注入；license:write =
  * PlatformSuperAdmin/PlatformOperator，license:read 另含 Auditor）→ Service。
  * 路由：
+ * - GET  /api/v1/admin/licenses                       正式实体列表（含终态历史）
  * - POST /api/v1/admin/licenses                     创建 Draft（配置 Entitlement）
  * - POST /api/v1/admin/licenses/{licenseId}/issue     Draft→Issued（生成签名）
  * - POST /api/v1/admin/licenses/{licenseId}/activate  Issued→Active（SYSTEM 激活，要求已到 validFrom）
@@ -26,6 +27,7 @@ import {
   evaluateLicense,
   getLicense,
   issueLicense,
+  listLicenses,
   listLicenseHistory,
   renewLicenseById,
   revokeLicense,
@@ -37,6 +39,7 @@ import { assertOptionalStringFields, parseStrictObject, rejectRequestBody } from
 export type AdminLicenseHandlerDeps = LicenseDeps;
 
 export interface AdminLicenseHandlers {
+  list(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   create(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   issue(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   activate(req: AdminHttpRequest): Promise<AdminHttpResponse>;
@@ -97,7 +100,11 @@ function toErrorResponse(err: unknown, req: AdminHttpRequest): AdminHttpResponse
 
 export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): AdminLicenseHandlers {
   const now = deps.now ?? (() => new Date());
-  const meta = (req: AdminHttpRequest) => ({ requestId: req.requestId, timestamp: now().toISOString() });
+  const meta = (req: AdminHttpRequest, nextCursor?: string | null) => ({
+    requestId: req.requestId,
+    timestamp: now().toISOString(),
+    ...(nextCursor !== undefined ? { nextCursor } : {}),
+  });
   const actorOf = (req: AdminHttpRequest) => req.actor as ActorContext;
 
   const create = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
@@ -132,6 +139,19 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
       return { status: 201, body: { data: view, meta: meta(req) } };
     },
   );
+
+  const list = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'license:read' }, async (req) => {
+    const q = req.query ?? {};
+    const page = await listLicenses(deps, actorOf(req), {
+      ...(q.customerId !== undefined ? { customerId: q.customerId } : {}),
+      ...(q.deviceId !== undefined ? { deviceId: q.deviceId } : {}),
+      ...(q.status !== undefined ? { status: q.status } : {}),
+      ...(q.keyword !== undefined ? { keyword: q.keyword } : {}),
+      ...(q.cursor !== undefined ? { cursor: q.cursor } : {}),
+      ...(q.limit !== undefined ? { limit: q.limit } : {}),
+    });
+    return { status: 200, body: { data: page.items, meta: meta(req, page.nextCursor) } };
+  });
 
   const issue = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'license:write' }, async (req) => {
     rejectRequestBody(req.body, licenseValidationFailed);
@@ -203,6 +223,7 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
     };
 
   return {
+    list: wrap(list),
     create: wrap(create),
     issue: wrap(issue),
     activate: wrap(activate),

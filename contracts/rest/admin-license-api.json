@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bio-Nexa CMP Admin License API",
-    "version": "0.2.0",
-    "description": "BE-LIC-01 License/Entitlement 管理接口（Cognito 认证；license:write=PlatformSuperAdmin/PlatformOperator，license:read 另含 Auditor）：创建 Draft（配置 REMOTE_CONTROL/OTA/ESG_REPORTING Entitlement）、Issue、Activate、Renew、Revoke、Evaluate、详情与历史。Entitlement 代码保持 Device-Cloud Communication Design 定义的 OTA，不改名为 OTA_UPDATE。每次真实变化生成历史、审计和 LICENSE_CHANGED 通知。License 返回 signature 供 Sync。通用契约继承 openapi-base.json（CT-05）。",
+    "version": "0.3.0",
+    "description": "BE-LIC-01 License/Entitlement 管理接口（Cognito 认证；license:write=PlatformSuperAdmin/PlatformOperator，license:read 另含 Auditor）：正式 License 实体列表（含终态历史）、创建 Draft（配置 REMOTE_CONTROL/OTA/ESG_REPORTING Entitlement）、Issue、Activate、Renew、Revoke、Evaluate、详情与历史。Entitlement 代码保持 Device-Cloud Communication Design 定义的 OTA，不改名为 OTA_UPDATE。每次真实变化生成历史、审计和 LICENSE_CHANGED 通知。License 返回 signature 供 Sync。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-012@1.0.0", "DEC-020@1.0.0"],
     "x-decision-register-version": "1.33.0"
   },
@@ -19,6 +19,39 @@
   ],
   "paths": {
     "/api/v1/admin/licenses": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listLicenses",
+        "summary": "查询 License 实体列表（含终态历史记录）",
+        "description": "返回正式 License 实体，不以设备当前授权摘要代替；支持状态、客户、设备和关键字筛选及键集分页。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "customerId", "in": "query", "required": false, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "deviceId", "in": "query", "required": false, "schema": { "type": "string", "minLength": 1 } },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["Draft", "Issued", "Active", "ExpiringSoon", "Renewed", "Expired", "Revoked"]
+            }
+          },
+          { "name": "keyword", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 200 } },
+          { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+          { "$ref": "openapi-base.json#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "License 列表",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LicenseListSuccess" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
       "post": {
         "tags": ["admin"],
         "operationId": "createLicense",
@@ -397,6 +430,15 @@
         "properties": {
           "data": { "$ref": "#/components/schemas/License" },
           "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
+      "LicenseListSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/License" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
         }
       },
       "LicenseRenewSuccess": {

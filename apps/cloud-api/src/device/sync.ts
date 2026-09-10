@@ -1,10 +1,10 @@
 /**
- * BE-SYNC-01 Unified Device Sync 聚合 Service（框架无关，纯读取，无写入/审计）。
+ * BE-SYNC-01 Unified Device Sync 聚合 Service（框架无关）。
  *
  * 定位：POST /api/v1/device/sync 是设备从 CMP 获取完整单一事实源快照的强制接口
  *（实施方案 8.5）。设备经 AUTH-03 verifyDeviceCertificate 认证（mTLS 白名单；
- * Retired 设备 403 不得进入快照），本服务只做聚合读取，不产生任何写入/通知/审计
- *（高频接口：Active 每 5 分钟 / Suspended 每 15 分钟，审计会淹没审计流）。
+ * Retired 设备 403 不得进入快照）。本服务不产生通知/审计；仅持久化 Device User 版本进入
+ * 快照以及后续 lastSyncTime 确认的最小状态，供管理端区分通知发布、快照交付与本地应用。
  *
  * 快照域（完整事实快照，不做增量下发）：
  * - Assignment：当前 ACTIVE 分配（customerId/customerName、siteId/siteName、Region/Subregion、
@@ -35,6 +35,15 @@ import { DEFAULT_CONNECTIVITY_THRESHOLD_MS, deriveConnectivity } from '../admin/
 import { resolveEffectiveConfiguration } from '../admin/configuration/service.js';
 import type { EffectiveConfiguration } from '../admin/configuration/service.js';
 import { listDeviceUsersForSync } from '../admin/device-user/service.js';
+
+interface DeviceUserSyncReceiptDelegate {
+  updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
+  createMany(args: { data: readonly Record<string, unknown>[]; skipDuplicates: boolean }): Promise<{ count: number }>;
+}
+
+function syncReceipts(client: DbClient): DeviceUserSyncReceiptDelegate {
+  return (client as unknown as Record<string, unknown>).deviceUserSyncReceipt as DeviceUserSyncReceiptDelegate;
+}
 
 /** 设备契约同步节奏（通信设计 8.5）：Active 每 5 分钟。 */
 export const SYNC_INTERVAL_ACTIVE_SECONDS = 300 as const;
@@ -395,6 +404,7 @@ export async function buildDeviceSyncSnapshot(
         : null;
     })
     .filter((u): u is SyncDeviceUserView => u !== null);
+  const deliveredUsers = syncUsers.filter((u) => u.assignments.some((assignment) => assignment.deviceId === device.id));
 
   const license = pickSyncLicense(licenseRows, now);
   const configuration = await resolveEffectiveConfiguration(deps, device.id, now);
@@ -428,6 +438,28 @@ export async function buildDeviceSyncSnapshot(
     configuration: configuration?.payload ?? null,
     operationalStatus: operational,
   };
+
+  // lastSyncTime 是设备声明的上次成功同步时点。只确认此前已提供且不晚于该时点的快照；
+  // 对未来时间做 now 上限保护，也不由此推断设备已经应用内容。
+  if (input.lastSyncTime) {
+    const reported = new Date(input.lastSyncTime);
+    const acknowledgedThrough = reported.getTime() <= now.getTime() ? reported : now;
+    await syncReceipts(deps.client).updateMany({
+      where: { deviceId: device.id, servedAt: { lte: acknowledgedThrough }, acknowledgedAt: null },
+      data: { acknowledgedAt: now, deviceReportedLastSyncAt: reported },
+    });
+  }
+  if (deliveredUsers.length > 0) {
+    await syncReceipts(deps.client).createMany({
+      data: deliveredUsers.map((user) => ({
+        deviceId: device.id,
+        deviceUserId: user.userId,
+        entityVersion: user.version,
+        servedAt: now,
+      })),
+      skipDuplicates: true,
+    });
+  }
 
   return {
     ...core,

@@ -66,6 +66,8 @@ function renderPage(overrides: Partial<AlarmsPageProps> = {}) {
     role: 'PlatformSuperAdmin',
     isCustomerRole: false,
     customerOptions: [{ value: 'cust-1', label: '示例客户' }],
+    siteOptions: [{ value: 'site-1', label: '一号站', customerId: 'cust-1' }],
+    deviceOptions: [{ value: 'dev-001', label: '食堂1号机', customerId: 'cust-1', siteId: 'site-1' }],
     urlState: DEFAULT_URL_STATE,
     onApplyUrlState: (s) => calls.applied.push(s),
     alarms: { rows: [makeAlarm()], nextCursor: null },
@@ -179,7 +181,7 @@ test('筛选参数与 URL 同步：应用后 replaceState；urlStateFromSearch �
   const { calls } = renderPage();
   await user.selectOptions(screen.getByTestId('filter-severity'), 'CRITICAL');
   await user.selectOptions(screen.getByTestId('filter-status'), 'ACTIVE');
-  await user.type(screen.getByTestId('filter-device'), 'dev-001');
+  await user.selectOptions(screen.getByTestId('filter-device'), 'dev-001');
   await user.click(screen.getByTestId('filter-search'));
 
   assert.equal(calls.applied.length, 1);

@@ -33,6 +33,17 @@ export interface DeviceUserAssignmentView {
 
 export interface DeviceUserDetailView extends DeviceUserView {
   readonly assignments: readonly DeviceUserAssignmentView[];
+  readonly syncStates?: readonly {
+    readonly deviceId: string;
+    readonly entityVersion: number | null;
+    readonly notificationStatus: 'PENDING' | 'PUBLISHED' | 'FAILED' | 'NOT_REQUESTED';
+    readonly notificationPublishedAt: string | null;
+    readonly deliveredEntityVersion: number | null;
+    readonly snapshotStatus: 'NOT_SERVED' | 'SERVED' | 'ACKNOWLEDGED';
+    readonly snapshotServedAt: string | null;
+    readonly deviceReportedLastSyncAt: string | null;
+    readonly deviceApplyStatus: 'NOT_REPORTED';
+  }[];
 }
 
 export interface AssignResultView {

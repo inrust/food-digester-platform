@@ -354,6 +354,39 @@
           "endAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
         }
       },
+      "DeviceRetirementSummary": {
+        "type": "object",
+        "required": [
+          "retirementId",
+          "status",
+          "reason",
+          "initiatedBy",
+          "initiatedAt",
+          "confirmedAt",
+          "completionMethod",
+          "certificateRevokedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "retirementId": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["PENDING_CONFIRMATION", "CONFIRMED"] },
+          "reason": { "type": "string", "minLength": 1 },
+          "initiatedBy": { "type": "string", "minLength": 1 },
+          "initiatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "confirmedAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "completionMethod": {
+            "oneOf": [
+              { "type": "string", "enum": ["DEVICE_CONFIRM", "FORCE_COMPLETE", "UNCONFIRMED_TIMEOUT"] },
+              { "type": "null" }
+            ]
+          },
+          "certificateRevokedAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          }
+        }
+      },
       "Device": {
         "type": "object",
         "required": [
@@ -374,6 +407,7 @@
           "certificate",
           "license",
           "contract",
+          "retirement",
           "createdAt",
           "updatedAt"
         ],
@@ -453,6 +487,9 @@
           },
           "contract": {
             "oneOf": [{ "$ref": "#/components/schemas/DeviceContractSummary" }, { "type": "null" }]
+          },
+          "retirement": {
+            "oneOf": [{ "$ref": "#/components/schemas/DeviceRetirementSummary" }, { "type": "null" }]
           },
           "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
           "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }

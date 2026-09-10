@@ -1,9 +1,10 @@
 /**
  * FE-06 设备 API 装配：listDevices（BE-DEV-01，四轴组合筛选 + 键集游标）、
- * getDevice、getDeviceConsole（BE-DEV-05）。不请求原始 Telemetry 长期表。
+ * getDevice、getDeviceConsole/listDeviceActivities（BE-DEV-05），以及最新授权 Media 的短期下载 URL。
+ * 不请求原始 Telemetry 长期表。
  */
 import type { ApiClient } from '../../api/http-client.js';
-import type { DeviceConsoleView, DeviceView } from './types.js';
+import type { DeviceActivityView, DeviceConsoleView, DeviceView, MediaDownloadUrlView } from './types.js';
 
 export interface DeviceListFilter {
   readonly customerId?: string | null;
@@ -48,6 +49,26 @@ export async function fetchDevice(api: ApiClient, deviceId: string): Promise<Dev
 export async function fetchDeviceConsole(api: ApiClient, deviceId: string): Promise<DeviceConsoleView> {
   const response = await api.request<{ data: DeviceConsoleView }>(
     `/admin/devices/${encodeURIComponent(deviceId)}/console`,
+  );
+  return response.data;
+}
+
+export async function fetchDeviceActivities(
+  api: ApiClient,
+  deviceId: string,
+  cursor?: string,
+): Promise<{ readonly items: readonly DeviceActivityView[]; readonly nextCursor: string | null }> {
+  const params = new URLSearchParams({ limit: '20' });
+  if (cursor) params.set('cursor', cursor);
+  const response = await api.request<{ data: DeviceActivityView[]; meta: { nextCursor: string | null } }>(
+    `/admin/devices/${encodeURIComponent(deviceId)}/activities?${params.toString()}`,
+  );
+  return { items: response.data, nextCursor: response.meta.nextCursor };
+}
+
+export async function fetchMediaDownloadUrl(api: ApiClient, mediaId: string): Promise<MediaDownloadUrlView> {
+  const response = await api.request<{ data: MediaDownloadUrlView }>(
+    `/admin/media/${encodeURIComponent(mediaId)}/download-url`,
   );
   return response.data;
 }

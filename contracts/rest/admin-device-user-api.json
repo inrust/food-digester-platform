@@ -366,12 +366,46 @@
           { "$ref": "#/components/schemas/DeviceUser" },
           {
             "type": "object",
-            "required": ["assignments"],
+            "required": ["assignments", "syncStates"],
             "properties": {
-              "assignments": { "type": "array", "items": { "$ref": "#/components/schemas/DeviceUserAssignment" } }
+              "assignments": { "type": "array", "items": { "$ref": "#/components/schemas/DeviceUserAssignment" } },
+              "syncStates": { "type": "array", "items": { "$ref": "#/components/schemas/DeviceUserSyncState" } }
             }
           }
         ]
+      },
+      "DeviceUserSyncState": {
+        "type": "object",
+        "required": [
+          "deviceId",
+          "entityVersion",
+          "notificationStatus",
+          "notificationPublishedAt",
+          "deliveredEntityVersion",
+          "snapshotStatus",
+          "snapshotServedAt",
+          "deviceReportedLastSyncAt",
+          "deviceApplyStatus"
+        ],
+        "additionalProperties": false,
+        "description": "分别报告实体版本、USERS_CHANGED Outbox 投递、版本化 Sync 快照交付/后续 lastSyncTime 确认和设备应用阶段。SERVED 只表示服务端已生成响应，ACKNOWLEDGED 表示后续 Sync 报告的 lastSyncTime 已覆盖该响应；当前协议没有本地应用确认回执，因此不得把 PUBLISHED/SERVED/ACKNOWLEDGED 解释为已应用。",
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "entityVersion": { "type": ["integer", "null"], "minimum": 1 },
+          "notificationStatus": { "type": "string", "enum": ["PENDING", "PUBLISHED", "FAILED", "NOT_REQUESTED"] },
+          "notificationPublishedAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "deliveredEntityVersion": { "type": ["integer", "null"], "minimum": 1 },
+          "snapshotStatus": { "type": "string", "enum": ["NOT_SERVED", "SERVED", "ACKNOWLEDGED"] },
+          "snapshotServedAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "deviceReportedLastSyncAt": {
+            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          },
+          "deviceApplyStatus": { "type": "string", "const": "NOT_REPORTED" }
+        }
       },
       "AssignResult": {
         "type": "object",

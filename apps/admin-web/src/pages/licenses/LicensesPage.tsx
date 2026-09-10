@@ -2,8 +2,7 @@
  * FE-08 授权管理页（/licenses）：License 列表/详情、Draft 创建、Issue、Activate、Renew、
  * Revoke、Entitlement 配置与历史时间线。
  *
- * - 列表视角：BE-LIC-01 无全量列表 API，复用 listDevices（BE-DEV-01）的 Device.license
- *   摘要 + licenseStatus/keyword 筛选（每设备当前授权；NoLicense 行明确显示“无授权”）；
+ * - 列表视角：使用正式 License 实体列表 API，支持状态/关键字筛选和历史终态档案枚举；
  * - 只显示当前状态允许动作（LICENSE_ACTION_MATRIX × license:write）；
  * - 撤销强制原因（ConfirmDialog requireReason）；签发/激活为明确确认（无请求体）；
  * - 续期：newValidTo 必须晚于当前 validTo（本地校验 + 服务端兜底）；
@@ -17,9 +16,7 @@ import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
-import { LICENSE_FILTER_LABELS, LICENSE_FILTER_OPTIONS } from '../devices/device-state.js';
-import type { DeviceView } from '../devices/types.js';
-import { LicenseSummary } from './LicenseSummary.js';
+import { LICENSE_FILTER_OPTIONS } from '../devices/device-state.js';
 import type { LicenseCreateInput } from './licenses-api.js';
 import {
   ENTITLEMENT_CODES,
@@ -54,7 +51,7 @@ export const EMPTY_LICENSE_FILTER: LicenseFilter = { licenseStatus: null, keywor
 export interface LicensesPageProps {
   readonly role: Role;
   readonly list: {
-    readonly rows: readonly DeviceView[] | null;
+    readonly rows: readonly LicenseView[] | null;
     readonly loading?: boolean;
     readonly error?: unknown;
     readonly nextCursor?: string | null;
@@ -142,9 +139,9 @@ export function LicensesPage({
           }
         >
           <option value="">全部</option>
-          {LICENSE_FILTER_OPTIONS.map((status) => (
+          {LICENSE_FILTER_OPTIONS.filter((status) => status !== 'None').map((status) => (
             <option key={status} value={status}>
-              {status === 'None' ? LICENSE_FILTER_LABELS.None : licenseStatusLabel(status)}
+              {licenseStatusLabel(status)}
             </option>
           ))}
         </select>
@@ -195,40 +192,30 @@ export function LicensesPage({
       <CursorTable
         ariaLabel="设备授权列表"
         columns={[
-          { key: 'serialNumber', header: '设备唯一ID', render: (d) => d.serialNumber },
-          { key: 'alias', header: '设备别名', render: (d) => d.alias ?? '—' },
-          { key: 'customer', header: '所属客户', render: (d) => d.customer?.name ?? '—' },
+          { key: 'licenseId', header: 'License ID', render: (license) => license.licenseId },
+          { key: 'deviceId', header: '设备 ID', render: (license) => license.deviceId },
+          { key: 'customerId', header: '客户 ID', render: (license) => license.customerId },
           {
-            key: 'license',
-            header: '授权摘要',
-            render: (d) => <LicenseSummary summary={d.license} {...(d.license !== null ? { onOpen: onSelect } : {})} />,
+            key: 'status',
+            header: '状态 / 有效期',
+            render: (license) => `${licenseStatusLabel(license.status)} · ${license.validFrom} ~ ${license.validTo}`,
           },
           {
             key: 'actions',
             header: '操作',
-            render: (d) =>
-              d.license !== null ? (
-                <button
-                  type="button"
-                  data-testid={`license-detail-${d.id}`}
-                  onClick={() => onSelect(d.license?.licenseId ?? '')}
-                >
-                  详情
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled
-                  title="无授权设备无可查看的 License"
-                  data-testid={`license-detail-${d.id}`}
-                >
-                  详情
-                </button>
-              ),
+            render: (license) => (
+              <button
+                type="button"
+                data-testid={`license-detail-${license.licenseId}`}
+                onClick={() => onSelect(license.licenseId)}
+              >
+                详情
+              </button>
+            ),
           },
         ]}
         rows={list.rows === null ? null : [...list.rows]}
-        rowKey={(d) => d.id}
+        rowKey={(license) => license.licenseId}
         {...(list.loading !== undefined ? { loading: list.loading } : {})}
         {...(list.error !== undefined ? { error: list.error } : {})}
         {...(list.nextCursor !== undefined ? { nextCursor: list.nextCursor } : {})}
@@ -397,45 +384,44 @@ function LicenseDetailPanel({
         <button type="button" onClick={onClose}>
           关闭
         </button>
-        <button
-          type="button"
-          className="primary-button"
-          data-testid="license-issue"
-          disabled={!issueGate.enabled || busy}
-          {...(issueGate.reason !== null ? { title: issueGate.reason } : {})}
-          onClick={() => onIntent('issue')}
-        >
-          签发
-        </button>
-        <button
-          type="button"
-          className="primary-button"
-          data-testid="license-activate"
-          disabled={!activateGate.enabled || busy}
-          {...(activateGate.reason !== null ? { title: activateGate.reason } : {})}
-          onClick={() => onIntent('activate')}
-        >
-          激活
-        </button>
-        <button
-          type="button"
-          data-testid="license-renew"
-          disabled={!renewGate.enabled || busy}
-          {...(renewGate.reason !== null ? { title: renewGate.reason } : {})}
-          onClick={onRenewIntent}
-        >
-          续期
-        </button>
-        <button
-          type="button"
-          className="danger-button"
-          data-testid="license-revoke"
-          disabled={!revokeGate.enabled || busy}
-          {...(revokeGate.reason !== null ? { title: revokeGate.reason } : {})}
-          onClick={() => onIntent('revoke')}
-        >
-          撤销
-        </button>
+        {issueGate.enabled ? (
+          <button
+            type="button"
+            className="primary-button"
+            data-testid="license-issue"
+            disabled={busy}
+            onClick={() => onIntent('issue')}
+          >
+            签发
+          </button>
+        ) : null}
+        {activateGate.enabled ? (
+          <button
+            type="button"
+            className="primary-button"
+            data-testid="license-activate"
+            disabled={busy}
+            onClick={() => onIntent('activate')}
+          >
+            激活
+          </button>
+        ) : null}
+        {renewGate.enabled ? (
+          <button type="button" data-testid="license-renew" disabled={busy} onClick={onRenewIntent}>
+            续期
+          </button>
+        ) : null}
+        {revokeGate.enabled ? (
+          <button
+            type="button"
+            className="danger-button"
+            data-testid="license-revoke"
+            disabled={busy}
+            onClick={() => onIntent('revoke')}
+          >
+            撤销
+          </button>
+        ) : null}
       </div>
 
       <section data-testid="license-history" aria-label="状态历史">

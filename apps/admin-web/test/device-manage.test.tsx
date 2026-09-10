@@ -412,7 +412,22 @@ test('别名：空输入保存禁用；超过 64 字符保存禁用', async () =
   assert.ok(disabled('alias-save'));
   await user.type(input, 'x'.repeat(65));
   assert.ok(disabled('alias-save'));
-  assert.ok(screen.getByText('别名超长（最多 64 字符）'));
+  assert.ok(screen.getByText(/别名超长（最多 64 个 Unicode 字符/));
+});
+
+test('别名按 Unicode 码点计数并在提交前执行 NFC 规范化', async () => {
+  const user = userEvent.setup();
+  const { calls } = renderPage();
+  await user.click(screen.getByTestId('alias-edit'));
+  const input = screen.getByTestId('alias-input');
+  await user.clear(input);
+  await user.type(input, '😀'.repeat(64));
+  assert.equal(disabled('alias-save'), false, '64 个非 BMP 字符不应按 UTF-16 长度误判');
+  await user.clear(input);
+  await user.type(input, 'Cafe\u0301');
+  await user.click(screen.getByTestId('alias-save'));
+  await screen.findByTestId('action-notice');
+  assert.equal(calls.aliasUpdated.at(-1), 'Café');
 });
 
 test('别名 If-Match 冲突（VERSION_CONFLICT）提示刷新', async () => {

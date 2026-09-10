@@ -15,9 +15,8 @@ import { ApiClientError, ForbiddenError } from '../src/api/errors.js';
 import type { ApiClient, ApiRequestOptions } from '../src/api/http-client.js';
 import { LicensesPage } from '../src/pages/licenses/LicensesPage.js';
 import type { LicensesPageProps } from '../src/pages/licenses/LicensesPage.js';
-import { createLicense, renewLicense, revokeLicense } from '../src/pages/licenses/licenses-api.js';
+import { createLicense, fetchLicenses, renewLicense, revokeLicense } from '../src/pages/licenses/licenses-api.js';
 import type { LicenseHistoryEntryView, LicenseView } from '../src/pages/licenses/types.js';
-import type { DeviceView } from '../src/pages/devices/types.js';
 
 afterEach(cleanup);
 
@@ -43,41 +42,6 @@ function makeLicense(overrides: Partial<LicenseView> = {}): LicenseView {
     ...overrides,
   };
 }
-
-function makeDevice(overrides: Partial<DeviceView> = {}): DeviceView {
-  return {
-    id: 'dev-001',
-    serialNumber: 'XJ-2026-001',
-    model: 'FD-100',
-    hardwareVersion: 'HW-1.0',
-    manufacturer: 'BioNexa',
-    manufactureDate: '2026-01-01',
-    alias: '食堂1号机',
-    firmwareVersion: 'v2.3.1',
-    customer: { id: 'cust-1', name: '示例客户' },
-    site: { id: 'site-1', name: '一号站', region: '华东', subregion: '上海' },
-    lifecycleStatus: 'Active',
-    operationalStatus: 'Active',
-    connectivity: 'ONLINE',
-    lastHeartbeatAt: '2026-09-06T03:55:00Z',
-    certificate: { certificateId: 'cert-001', fingerprint: 'AB:CD:EF', status: 'ACTIVE' },
-    license: null,
-    contract: null,
-    createdAt: '2026-09-01T02:00:00Z',
-    updatedAt: '2026-09-05T02:00:00Z',
-    ...overrides,
-  };
-}
-
-const LICENSED_DEVICE = makeDevice({
-  license: {
-    licenseId: 'lic-001',
-    status: 'Active',
-    validFrom: '2026-01-01',
-    validTo: '2027-01-01',
-    entitlements: ['REMOTE_CONTROL', 'OTA'],
-  },
-});
 
 const HISTORY: readonly LicenseHistoryEntryView[] = [
   {
@@ -113,7 +77,10 @@ function renderPage(overrides: Partial<LicensesPageProps> = {}) {
   const props: LicensesPageProps = {
     role: 'PlatformSuperAdmin',
     list: {
-      rows: [LICENSED_DEVICE, makeDevice({ id: 'dev-002', serialNumber: 'XJ-2026-002', alias: null })],
+      rows: [
+        makeLicense({ status: 'Active', effective: true }),
+        makeLicense({ licenseId: 'lic-002', deviceId: 'dev-002', status: 'Revoked' }),
+      ],
       nextCursor: null,
     },
     appliedFilter: { licenseStatus: null, keyword: null },
@@ -171,16 +138,11 @@ function disabled(testid: string): boolean {
 
 // ---------- 列表 ----------
 
-test('列表：设备当前授权摘要（状态/有效期/Entitlement）；NoLicense 行显示“无授权”且详情禁用', () => {
+test('列表：正式 License 实体包含有效与终态历史记录', () => {
   renderPage();
-  const summaries = screen.getAllByTestId('license-summary');
-  assert.equal(summaries.length, 2);
-  assert.ok(summaries[0]?.textContent?.includes('授权有效'));
-  assert.ok(summaries[0]?.textContent?.includes('2026-01-01 ~ 2027-01-01'));
-  assert.ok(summaries[0]?.textContent?.includes('远程控制、OTA 升级'));
-  // NoLicense 行
-  assert.equal(summaries[1]?.textContent, '无授权');
-  assert.ok(disabled('license-detail-dev-002'));
+  assert.ok(screen.getByText('lic-001'));
+  assert.ok(screen.getByText('lic-002'));
+  assert.ok(screen.getByTestId('license-detail-lic-002'));
 });
 
 test('筛选：草稿筛选经搜索应用；重置清空', async () => {
@@ -208,7 +170,7 @@ test('状态矩阵：Draft 仅签发；Issued 仅激活；Active 仅撤销；Exp
   for (const [status, enabled] of cases) {
     const { unmount } = renderPage({ detail: detailOf(makeLicense({ status })) });
     for (const testid of ['license-issue', 'license-activate', 'license-renew', 'license-revoke']) {
-      assert.equal(disabled(testid), !enabled.includes(testid), `${status} 的 ${testid} 可用性错误`);
+      assert.equal(screen.queryByTestId(testid) !== null, enabled.includes(testid), `${status} 的 ${testid} 呈现错误`);
     }
     unmount();
   }
@@ -220,9 +182,8 @@ test('权限门：Auditor 无创建按钮且全部动作禁用；到期展示（
     detail: detailOf(makeLicense({ status: 'Expired', effective: false })),
   });
   assert.equal(screen.queryByTestId('license-create'), null);
-  for (const testid of ['license-issue', 'license-activate', 'license-renew', 'license-revoke']) {
-    assert.ok(disabled(testid), `Auditor 的 ${testid} 应禁用`);
-  }
+  for (const testid of ['license-issue', 'license-activate', 'license-renew', 'license-revoke'])
+    assert.equal(screen.queryByTestId(testid), null);
   assert.equal(screen.getByTestId('license-status').textContent, '已到期');
   assert.equal(screen.getByTestId('license-effective').textContent, '未生效');
 });
@@ -392,4 +353,18 @@ test('API 装配：create/renew/revoke 路径与请求体；reason 空时不携�
   await revokeLicense(api, 'lic-1', '违约');
   assert.equal(calls[2]?.path, '/admin/licenses/lic-1/revoke');
   assert.deepEqual(calls[2]?.options.body, { reason: '违约' });
+});
+
+test('API 装配：正式 License 列表携带状态、关键字和键集游标', async () => {
+  const calls: { path: string; options: ApiRequestOptions }[] = [];
+  const api: ApiClient = {
+    request: async <T,>(path: string, options: ApiRequestOptions = {}) => {
+      calls.push({ path, options });
+      return { data: [makeLicense({ status: 'Revoked' })], meta: { nextCursor: 'next' } } as T;
+    },
+  };
+  const page = await fetchLicenses(api, { status: 'Revoked', keyword: 'dev-001' }, { cursor: 'after', limit: 20 });
+  assert.equal(page.items[0]?.status, 'Revoked');
+  assert.equal(page.nextCursor, 'next');
+  assert.equal(calls[0]?.path, '/admin/licenses?status=Revoked&keyword=dev-001&cursor=after&limit=20');
 });

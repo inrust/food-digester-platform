@@ -61,6 +61,20 @@ export interface DeviceUserAssignmentView {
 
 export interface DeviceUserDetailView extends DeviceUserView {
   readonly assignments: readonly DeviceUserAssignmentView[];
+  readonly syncStates: readonly DeviceUserSyncStateView[];
+}
+
+export interface DeviceUserSyncStateView {
+  readonly deviceId: string;
+  readonly entityVersion: number | null;
+  readonly notificationStatus: 'PENDING' | 'PUBLISHED' | 'FAILED' | 'NOT_REQUESTED';
+  readonly notificationPublishedAt: string | null;
+  readonly deliveredEntityVersion: number | null;
+  readonly snapshotStatus: 'NOT_SERVED' | 'SERVED' | 'ACKNOWLEDGED';
+  readonly snapshotServedAt: string | null;
+  readonly deviceReportedLastSyncAt: string | null;
+  /** 当前协议没有设备应用确认回执；禁止把消息发布或快照确认误报为已应用。 */
+  readonly deviceApplyStatus: 'NOT_REPORTED';
 }
 
 interface UserRow {
@@ -99,6 +113,26 @@ interface AssignmentDelegate {
 
 interface OutboxDelegate {
   create(args: { data: Record<string, unknown> }): Promise<unknown>;
+  findMany(args: Record<string, unknown>): Promise<
+    readonly {
+      status: string;
+      payload: unknown;
+      publishedAt: Date | null;
+      createdAt: Date;
+    }[]
+  >;
+}
+
+interface SyncReceiptDelegate {
+  findMany(args: Record<string, unknown>): Promise<
+    readonly {
+      deviceId: string;
+      entityVersion: number;
+      servedAt: Date;
+      deviceReportedLastSyncAt: Date | null;
+      acknowledgedAt: Date | null;
+    }[]
+  >;
 }
 
 function users(client: DbClient): DeviceUserDelegate {
@@ -145,7 +179,12 @@ function auditActor(actor: ActorContext): { actorId: string; actorRole: string }
 }
 
 /** 事务内向设备发 USERS_CHANGED（Outbox，deviceAction=SYNC）。 */
-async function enqueueUsersChanged(tx: DbClient, deviceId: string, deviceUserId: string): Promise<void> {
+async function enqueueUsersChanged(
+  tx: DbClient,
+  deviceId: string,
+  deviceUserId: string,
+  entityVersion: number,
+): Promise<void> {
   const outbox = (tx as unknown as Record<string, unknown>).outboxEvent as OutboxDelegate;
   await outbox.create({
     data: {
@@ -157,6 +196,7 @@ async function enqueueUsersChanged(tx: DbClient, deviceId: string, deviceUserId:
         data: { type: USERS_CHANGED_NOTIFICATION, action: 'SYNC' },
         deviceId,
         deviceUserId,
+        entityVersion,
       },
     },
   });
@@ -287,7 +327,7 @@ export async function updateDeviceUser(
       await bumpVersion(tx, row, input.ifMatchVersion, data);
       // 验证材料轮换/资料变更 → 通知全部已分配设备
       for (const deviceId of await activeDeviceIds(tx, row.id)) {
-        await enqueueUsersChanged(tx, deviceId, row.id);
+        await enqueueUsersChanged(tx, deviceId, row.id, row.version + 1);
       }
       const fresh = await users(tx).findFirst({ where: { id: row.id } });
       if (!fresh) throw deviceUserNotFound();
@@ -320,7 +360,7 @@ export async function disableDeviceUser(
     async (tx) => {
       await bumpVersion(tx, row, input.ifMatchVersion, { status: 'DISABLED' });
       for (const deviceId of await activeDeviceIds(tx, row.id)) {
-        await enqueueUsersChanged(tx, deviceId, row.id);
+        await enqueueUsersChanged(tx, deviceId, row.id, row.version + 1);
       }
       const fresh = await users(tx).findFirst({ where: { id: row.id } });
       if (!fresh) throw deviceUserNotFound();
@@ -386,7 +426,7 @@ export async function assignDevices(
             data: { deviceUserId: row.id, deviceId, customerId: row.customerId, status: 'ACTIVE' },
           });
           created.push(toAssignmentView(a));
-          await enqueueUsersChanged(tx, deviceId, row.id);
+          await enqueueUsersChanged(tx, deviceId, row.id, row.version + 1);
         }
         return { deviceUserId: row.id, deviceIds, assignments: created };
       },
@@ -438,7 +478,7 @@ export async function revokeDevices(
           data: { status: 'REVOKED', revokedAt: at },
         });
         if (count !== 1) throw deviceUserConflict('The assignment was changed concurrently; refresh and retry');
-        await enqueueUsersChanged(tx, deviceId, row.id);
+        await enqueueUsersChanged(tx, deviceId, row.id, row.version + 1);
       }
       return { deviceUserId: row.id, deviceIds };
     },
@@ -494,7 +534,61 @@ export async function getDeviceUser(
     where: { deviceUserId: row.id },
     orderBy: [{ assignedAt: 'desc' }, { id: 'desc' }],
   });
-  return { ...toView(row), assignments: rows.map(toAssignmentView) };
+  const outbox = (deps.client as unknown as Record<string, unknown>).outboxEvent as OutboxDelegate;
+  const events = await outbox.findMany({
+    where: { aggregateType: 'deviceUser', aggregateId: row.id, eventType: USERS_CHANGED_NOTIFICATION },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: 500,
+  });
+  const receipts = await (
+    (deps.client as unknown as Record<string, unknown>).deviceUserSyncReceipt as SyncReceiptDelegate
+  ).findMany({
+    where: { deviceUserId: row.id },
+    orderBy: [{ servedAt: 'desc' }, { id: 'desc' }],
+    take: 500,
+  });
+  const latestReceiptByDevice = new Map<string, (typeof receipts)[number]>();
+  for (const receipt of receipts) {
+    if (!latestReceiptByDevice.has(receipt.deviceId)) latestReceiptByDevice.set(receipt.deviceId, receipt);
+  }
+  const latestByDevice = new Map<string, DeviceUserSyncStateView>();
+  for (const event of events) {
+    const payload = event.payload as { deviceId?: unknown; entityVersion?: unknown } | null;
+    const deviceId = typeof payload?.deviceId === 'string' ? payload.deviceId : null;
+    if (deviceId === null || latestByDevice.has(deviceId)) continue;
+    const status = ['PENDING', 'PUBLISHED', 'FAILED'].includes(event.status)
+      ? (event.status as 'PENDING' | 'PUBLISHED' | 'FAILED')
+      : 'PENDING';
+    const receipt = latestReceiptByDevice.get(deviceId);
+    latestByDevice.set(deviceId, {
+      deviceId,
+      entityVersion: typeof payload?.entityVersion === 'number' ? payload.entityVersion : null,
+      notificationStatus: status,
+      notificationPublishedAt: event.publishedAt?.toISOString() ?? null,
+      deliveredEntityVersion: receipt?.entityVersion ?? null,
+      snapshotStatus: receipt ? (receipt.acknowledgedAt ? 'ACKNOWLEDGED' : 'SERVED') : 'NOT_SERVED',
+      snapshotServedAt: receipt?.servedAt.toISOString() ?? null,
+      deviceReportedLastSyncAt: receipt?.deviceReportedLastSyncAt?.toISOString() ?? null,
+      deviceApplyStatus: 'NOT_REPORTED',
+    });
+  }
+  for (const assignment of rows) {
+    if (!latestByDevice.has(assignment.deviceId)) {
+      const receipt = latestReceiptByDevice.get(assignment.deviceId);
+      latestByDevice.set(assignment.deviceId, {
+        deviceId: assignment.deviceId,
+        entityVersion: null,
+        notificationStatus: 'NOT_REQUESTED',
+        notificationPublishedAt: null,
+        deliveredEntityVersion: receipt?.entityVersion ?? null,
+        snapshotStatus: receipt ? (receipt.acknowledgedAt ? 'ACKNOWLEDGED' : 'SERVED') : 'NOT_SERVED',
+        snapshotServedAt: receipt?.servedAt.toISOString() ?? null,
+        deviceReportedLastSyncAt: receipt?.deviceReportedLastSyncAt?.toISOString() ?? null,
+        deviceApplyStatus: 'NOT_REPORTED',
+      });
+    }
+  }
+  return { ...toView(row), assignments: rows.map(toAssignmentView), syncStates: [...latestByDevice.values()] };
 }
 
 // ---------- Sync 读取路径（BE-SYNC-01 消费） ----------
@@ -506,6 +600,7 @@ export interface DeviceUserSyncAssignment {
 
 export interface DeviceUserSyncEntry {
   readonly userId: string;
+  readonly version: number;
   readonly username: string;
   readonly displayName: string;
   readonly passwordHash: string;
@@ -539,6 +634,7 @@ export async function listDeviceUsersForSync(deps: DeviceUserDeps, customerId: s
   })) as unknown as SyncUserRow[];
   return rows.map((r) => ({
     userId: r.id,
+    version: r.version,
     username: r.username,
     displayName: r.displayName ?? r.username,
     passwordHash: r.passwordHash,

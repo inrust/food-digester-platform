@@ -18,7 +18,13 @@ import type { ScopeFilterValue } from '../../components/filter-state.js';
 import { TimeText } from '../../components/TimeText.js';
 import { ALARM_SEVERITY_LABELS, consumablesOf } from '../dashboard/dashboard-state.js';
 import { COMPONENT_HEALTH_LABELS, COMPONENT_LABELS, SENSOR_METRICS } from './device-state.js';
-import type { DeviceConsoleView, DeviceView, ObservedBlockView } from './types.js';
+import type {
+  DeviceActivityView,
+  DeviceConsoleView,
+  DeviceView,
+  MediaDownloadUrlView,
+  ObservedBlockView,
+} from './types.js';
 
 export type ConsoleState =
   | { readonly status: 'idle' }
@@ -26,10 +32,22 @@ export type ConsoleState =
   | { readonly status: 'error'; readonly error: unknown }
   | { readonly status: 'ready'; readonly console: DeviceConsoleView };
 
+export type MediaState =
+  | { readonly status: 'idle' | 'loading' | 'empty' }
+  | { readonly status: 'error'; readonly error: unknown }
+  | { readonly status: 'ready'; readonly media: MediaDownloadUrlView };
+
+export type ActivityState =
+  | { readonly status: 'idle' | 'loading' }
+  | { readonly status: 'error'; readonly error: unknown }
+  | { readonly status: 'ready'; readonly items: readonly DeviceActivityView[]; readonly nextCursor: string | null };
+
 export interface DeviceViewPageProps {
   /** 当前选中设备（静态信息）；null = 未选择。 */
   readonly device: DeviceView | null;
   readonly consoleState: ConsoleState;
+  readonly mediaState?: MediaState;
+  readonly activityState?: ActivityState;
   readonly filterOptions: {
     readonly regions: readonly FilterOption[];
     readonly subregions: readonly (FilterOption & { region: string })[];
@@ -38,6 +56,7 @@ export interface DeviceViewPageProps {
   };
   readonly onApply: (deviceId: string) => void;
   readonly onRefreshConsole: () => void;
+  readonly onLoadMoreActivities?: (cursor: string) => void;
 }
 
 function StaleTag({ block }: { block: ObservedBlockView }) {
@@ -70,10 +89,16 @@ function ConsoleContent({
   console: view,
   device,
   onRefresh,
+  mediaState = { status: 'idle' },
+  activityState = { status: 'idle' },
+  onLoadMoreActivities = () => {},
 }: {
   console: DeviceConsoleView;
   device: DeviceView | null;
   onRefresh: () => void;
+  mediaState: MediaState;
+  activityState: ActivityState;
+  onLoadMoreActivities: (cursor: string) => void;
 }) {
   return (
     <div className="device-console" key={view.device.deviceId} data-testid="device-console">
@@ -241,6 +266,14 @@ function ConsoleContent({
               {view.latestMedia.mediaType} · 采集时间：
               <TimeText iso={view.latestMedia.captureTime} />
             </span>
+            {mediaState.status === 'loading' ? <p role="status">正在签发短期访问地址…</p> : null}
+            {mediaState.status === 'error' ? <ErrorNotice error={mediaState.error} onRefresh={onRefresh} /> : null}
+            {mediaState.status === 'ready' && view.latestMedia.mediaType === 'IMAGE' ? (
+              <img src={mediaState.media.downloadUrl} alt="设备最新授权画面" data-testid="media-image" />
+            ) : null}
+            {mediaState.status === 'ready' && view.latestMedia.mediaType === 'VIDEO' ? (
+              <video src={mediaState.media.downloadUrl} controls preload="metadata" data-testid="media-video" />
+            ) : null}
           </div>
         ) : (
           <p className="empty-state" data-testid="media-empty">
@@ -251,6 +284,30 @@ function ConsoleContent({
           刷新最新媒体
         </button>
       </section>
+
+      <section data-testid="console-activities">
+        <h5>设备活动历史</h5>
+        {activityState.status === 'loading' ? <p role="status">加载活动历史…</p> : null}
+        {activityState.status === 'error' ? <ErrorNotice error={activityState.error} onRefresh={onRefresh} /> : null}
+        {activityState.status === 'ready' && activityState.items.length === 0 ? (
+          <p className="empty-state">暂无活动</p>
+        ) : null}
+        {activityState.status === 'ready' && activityState.items.length > 0 ? (
+          <ul>
+            {activityState.items.map((activity) => (
+              <li key={activity.activityId} data-testid={`activity-${activity.activityId}`}>
+                <span className={`severity severity-${activity.level.toLowerCase()}`}>{activity.level}</span>{' '}
+                <TimeText iso={activity.occurredAt} /> · {activity.kind} · {activity.summary}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {activityState.status === 'ready' && activityState.nextCursor !== null ? (
+          <button type="button" onClick={() => onLoadMoreActivities(activityState.nextCursor ?? '')}>
+            加载更多
+          </button>
+        ) : null}
+      </section>
     </div>
   );
 }
@@ -258,9 +315,12 @@ function ConsoleContent({
 export function DeviceViewPage({
   device,
   consoleState,
+  mediaState = { status: 'idle' },
+  activityState = { status: 'idle' },
   filterOptions,
   onApply,
   onRefreshConsole,
+  onLoadMoreActivities = () => {},
 }: DeviceViewPageProps) {
   const [scope, setScope] = useState<ScopeFilterValue>(EMPTY_SCOPE_FILTER);
 
@@ -296,7 +356,14 @@ export function DeviceViewPage({
       ) : null}
       {consoleState.status === 'error' ? <ErrorNotice error={consoleState.error} onRefresh={onRefreshConsole} /> : null}
       {consoleState.status === 'ready' ? (
-        <ConsoleContent console={consoleState.console} device={device} onRefresh={onRefreshConsole} />
+        <ConsoleContent
+          console={consoleState.console}
+          device={device}
+          onRefresh={onRefreshConsole}
+          mediaState={mediaState}
+          activityState={activityState}
+          onLoadMoreActivities={onLoadMoreActivities}
+        />
       ) : null}
     </div>
   );

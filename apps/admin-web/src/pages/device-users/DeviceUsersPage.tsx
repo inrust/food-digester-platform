@@ -379,6 +379,63 @@ export function DeviceUsersPage({
               </table>
             )}
           </section>
+          <section data-testid="device-user-sync-states" aria-label="设备同步状态">
+            <h5>同步交付状态</h5>
+            <p className="field-hint">
+              实体版本、通知投递、同步快照确认与设备应用是独立阶段；当前协议尚未提供设备本地应用确认回执。
+            </p>
+            {(detailView.syncStates ?? []).length === 0 ? (
+              <p className="empty-state">尚未生成同步通知</p>
+            ) : (
+              <table aria-label="设备同步状态">
+                <thead>
+                  <tr>
+                    <th scope="col">设备</th>
+                    <th scope="col">实体版本</th>
+                    <th scope="col">通知投递</th>
+                    <th scope="col">同步快照</th>
+                    <th scope="col">设备应用</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(detailView.syncStates ?? []).map((state) => (
+                    <tr key={state.deviceId} data-testid={`user-sync-${state.deviceId}`}>
+                      <td>{state.deviceId}</td>
+                      <td>{state.entityVersion === null ? '历史通知未记录' : `v${state.entityVersion}`}</td>
+                      <td>
+                        {state.notificationStatus}
+                        {state.notificationPublishedAt ? (
+                          <>
+                            {' '}
+                            · <TimeText iso={state.notificationPublishedAt} />
+                          </>
+                        ) : null}
+                      </td>
+                      <td>
+                        {state.snapshotStatus === 'NOT_SERVED'
+                          ? '尚未提供'
+                          : `${state.snapshotStatus === 'ACKNOWLEDGED' ? '设备后续同步已确认' : '服务端已提供'} v${state.deliveredEntityVersion ?? '?'}`}
+                        {state.snapshotServedAt ? (
+                          <>
+                            {' '}
+                            · <TimeText iso={state.snapshotServedAt} />
+                          </>
+                        ) : null}
+                        {state.deviceReportedLastSyncAt ? (
+                          <>
+                            <br />
+                            设备报告上次同步：
+                            <TimeText iso={state.deviceReportedLastSyncAt} />
+                          </>
+                        ) : null}
+                      </td>
+                      <td>{state.deviceApplyStatus === 'NOT_REPORTED' ? '协议未上报' : state.deviceApplyStatus}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
         </aside>
       ) : null}
 

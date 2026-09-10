@@ -147,6 +147,37 @@ describe('完整链路：创建→修改→分配→撤销→停用', () => {
     let detail = ((await h.detail(req(auditor, { params: { deviceUserId: userId } }))).body as DataBody).data;
     assert.equal(detail.version, 2);
     assert.equal((detail.assignments as unknown[]).length, 2);
+    const syncStates = detail.syncStates as {
+      deviceId: string;
+      entityVersion: number | null;
+      notificationStatus: string;
+      deliveredEntityVersion: number | null;
+      snapshotStatus: string;
+      deviceApplyStatus: string;
+    }[];
+    assert.equal(syncStates.find((state) => state.deviceId === d1)?.entityVersion, 2);
+    assert.equal(syncStates.find((state) => state.deviceId === d1)?.notificationStatus, 'PENDING');
+    assert.equal(syncStates.find((state) => state.deviceId === d1)?.snapshotStatus, 'NOT_SERVED');
+    assert.equal(syncStates.find((state) => state.deviceId === d1)?.deviceApplyStatus, 'NOT_REPORTED');
+
+    await (
+      prisma as unknown as {
+        deviceUserSyncReceipt: { create(args: { data: Record<string, unknown> }): Promise<unknown> };
+      }
+    ).deviceUserSyncReceipt.create({
+      data: {
+        deviceId: d1,
+        deviceUserId: userId,
+        entityVersion: 2,
+        servedAt: NOW,
+        acknowledgedAt: NOW,
+        deviceReportedLastSyncAt: NOW,
+      },
+    });
+    detail = ((await h.detail(req(auditor, { params: { deviceUserId: userId } }))).body as DataBody).data;
+    const acknowledged = (detail.syncStates as typeof syncStates).find((state) => state.deviceId === d1);
+    assert.equal(acknowledged?.deliveredEntityVersion, 2);
+    assert.equal(acknowledged?.snapshotStatus, 'ACKNOWLEDGED');
 
     // 密码轮换 → version+1 + 两设备各再一条通知
     const rotated = await h.update(

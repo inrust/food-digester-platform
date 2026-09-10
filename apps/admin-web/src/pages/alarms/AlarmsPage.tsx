@@ -46,6 +46,8 @@ export interface AlarmsPageProps {
   /** Customer 角色：隐藏客户筛选（服务端强制本 Customer scope）。 */
   readonly isCustomerRole: boolean;
   readonly customerOptions: readonly FilterOption[];
+  readonly siteOptions?: readonly (FilterOption & { customerId: string })[];
+  readonly deviceOptions?: readonly (FilterOption & { customerId: string; siteId: string })[];
   /** 已应用的 URL 状态（父级由 location.search 初始化/响应）。 */
   readonly urlState: AlarmPageUrlState;
   readonly onApplyUrlState: (state: AlarmPageUrlState) => void;
@@ -65,6 +67,8 @@ export function AlarmsPage({
   role,
   isCustomerRole,
   customerOptions,
+  siteOptions = [],
+  deviceOptions = [],
   urlState,
   onApplyUrlState,
   alarms,
@@ -152,9 +156,10 @@ export function AlarmsPage({
               value={(tab === 'alarm' ? draftAlarm : tab === 'event' ? draftEvent : draftTamper).customerId ?? ''}
               onChange={(event) => {
                 const value = event.target.value === '' ? null : event.target.value;
-                if (tab === 'alarm') setDraftAlarm({ ...draftAlarm, customerId: value });
-                else if (tab === 'event') setDraftEvent({ ...draftEvent, customerId: value });
-                else setDraftTamper({ ...draftTamper, customerId: value });
+                if (tab === 'alarm') setDraftAlarm({ ...draftAlarm, customerId: value, siteId: null, deviceId: null });
+                else if (tab === 'event')
+                  setDraftEvent({ ...draftEvent, customerId: value, siteId: null, deviceId: null });
+                else setDraftTamper({ ...draftTamper, customerId: value, siteId: null, deviceId: null });
               }}
             >
               <option value="">全部</option>
@@ -174,6 +179,8 @@ export function AlarmsPage({
           onChangeAlarm={setDraftAlarm}
           onChangeEvent={setDraftEvent}
           onChangeTamper={setDraftTamper}
+          siteOptions={siteOptions}
+          deviceOptions={deviceOptions}
         />
         <button type="button" className="primary-button" data-testid="filter-search" onClick={applyFilter}>
           筛选
@@ -424,6 +431,8 @@ function CommonFilterFields({
   onChangeAlarm,
   onChangeEvent,
   onChangeTamper,
+  siteOptions,
+  deviceOptions,
 }: {
   readonly tab: AlarmTab;
   readonly draftAlarm: AlarmPageUrlState['alarm'];
@@ -432,13 +441,27 @@ function CommonFilterFields({
   readonly onChangeAlarm: (f: AlarmPageUrlState['alarm']) => void;
   readonly onChangeEvent: (f: AlarmPageUrlState['event']) => void;
   readonly onChangeTamper: (f: AlarmPageUrlState['tamper']) => void;
+  readonly siteOptions: readonly (FilterOption & { customerId: string })[];
+  readonly deviceOptions: readonly (FilterOption & { customerId: string; siteId: string })[];
 }) {
   const draft = tab === 'alarm' ? draftAlarm : tab === 'event' ? draftEvent : draftTamper;
+  const sites = siteOptions.filter((site) => !draft.customerId || site.customerId === draft.customerId);
+  const devices = deviceOptions.filter(
+    (device) =>
+      (!draft.customerId || device.customerId === draft.customerId) &&
+      (!draft.siteId || device.siteId === draft.siteId),
+  );
   const patch = (key: 'siteId' | 'deviceId' | 'from' | 'to', value: string) => {
     const v = value === '' ? null : value;
     if (tab === 'alarm') onChangeAlarm({ ...draftAlarm, [key]: v });
     else if (tab === 'event') onChangeEvent({ ...draftEvent, [key]: v });
     else onChangeTamper({ ...draftTamper, [key]: v });
+  };
+  const patchSite = (value: string) => {
+    const siteId = value === '' ? null : value;
+    if (tab === 'alarm') onChangeAlarm({ ...draftAlarm, siteId, deviceId: null });
+    else if (tab === 'event') onChangeEvent({ ...draftEvent, siteId, deviceId: null });
+    else onChangeTamper({ ...draftTamper, siteId, deviceId: null });
   };
   const patchEnum = (key: 'severity' | 'status' | 'eventType', value: string) => {
     const v = value === '' ? null : value;
@@ -452,19 +475,33 @@ function CommonFilterFields({
   return (
     <>
       <label htmlFor="filter-site">站点</label>
-      <input
+      <select
         id="filter-site"
         data-testid="filter-site"
         value={draft.siteId ?? ''}
-        onChange={(e) => patch('siteId', e.target.value)}
-      />
+        onChange={(e) => patchSite(e.target.value)}
+      >
+        <option value="">全部</option>
+        {sites.map((site) => (
+          <option key={site.value} value={site.value}>
+            {site.label}
+          </option>
+        ))}
+      </select>
       <label htmlFor="filter-device">设备</label>
-      <input
+      <select
         id="filter-device"
         data-testid="filter-device"
         value={draft.deviceId ?? ''}
         onChange={(e) => patch('deviceId', e.target.value)}
-      />
+      >
+        <option value="">全部</option>
+        {devices.map((device) => (
+          <option key={device.value} value={device.value}>
+            {device.label}
+          </option>
+        ))}
+      </select>
       {tab !== 'event' ? (
         <>
           <label htmlFor="filter-severity">严重度</label>

@@ -54,6 +54,19 @@ const DETAIL: DeviceUserDetailView = {
       revokedAt: '2026-09-03T02:00:00Z',
     },
   ],
+  syncStates: [
+    {
+      deviceId: 'dev-001',
+      entityVersion: 3,
+      notificationStatus: 'PUBLISHED',
+      notificationPublishedAt: '2026-09-05T02:01:00Z',
+      deliveredEntityVersion: 3,
+      snapshotStatus: 'ACKNOWLEDGED',
+      snapshotServedAt: '2026-09-05T02:05:00Z',
+      deviceReportedLastSyncAt: '2026-09-05T02:05:00Z',
+      deviceApplyStatus: 'NOT_REPORTED',
+    },
+  ],
 };
 
 function renderPage(overrides: Partial<DeviceUsersPageProps> = {}) {
@@ -260,6 +273,10 @@ test('修改资料：原因必填；空显示名提交 null；详情含同步版
   // 分配历史
   assert.ok(screen.getByTestId('user-assignment-dua-1').textContent?.includes('生效中'));
   assert.ok(screen.getByTestId('user-assignment-dua-2').textContent?.includes('已撤销'));
+  const syncState = screen.getByTestId('user-sync-dev-001').textContent ?? '';
+  assert.match(syncState, /PUBLISHED/);
+  assert.match(syncState, /设备后续同步已确认 v3/);
+  assert.match(syncState, /协议未上报/);
 
   await user.click(screen.getByTestId('device-user-edit'));
   const form = screen.getByTestId('device-user-edit-form');

@@ -67,7 +67,7 @@
       },
       {
         "file": "admin-device-api.json",
-        "sha256": "e9af24e5dc98e186ade6c16879c44c1b4306dffe639ba034bf2691a26ede4e34",
+        "sha256": "3999749530135559adc298b434390ec343bd6939fba9781bebb8f710f93e3f04",
         "status": "implemented"
       },
       {
@@ -92,7 +92,7 @@
       },
       {
         "file": "admin-device-user-api.json",
-        "sha256": "a82baf661fa46b1afc23ea2eda8f054e549769fbf5a1f85fe347a32b792ac44b",
+        "sha256": "06328c21ad7bc840afc41f46f4fb4c1ad985e0a0460808eaf8c4a520102de3bf",
         "status": "implemented"
       },
       {
@@ -102,7 +102,7 @@
       },
       {
         "file": "admin-license-api.json",
-        "sha256": "fa7cce3474e96d60223b7ce8ee1518079fa9705c3d005e76d06f5fa896a30d5f",
+        "sha256": "e158be112e094f437a5dbdf0bdb8838cda48a80f1cbf95297fc153e4adabdec0",
         "status": "implemented"
       },
       {
@@ -5874,6 +5874,97 @@
       }
     },
     "/api/v1/admin/licenses": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "listLicenses",
+        "summary": "查询 License 实体列表（含终态历史记录）",
+        "description": "返回正式 License 实体，不以设备当前授权摘要代替；支持状态、客户、设备和关键字筛选及键集分页。",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Draft",
+                "Issued",
+                "Active",
+                "ExpiringSoon",
+                "Renewed",
+                "Expired",
+                "Revoked"
+              ]
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "License 列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminLicenseApi__LicenseListSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminLicenseApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminLicenseApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminLicenseApi__Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminLicenseApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-license-api.json",
+        "x-contract-status": "implemented"
+      },
       "post": {
         "tags": [
           "admin"
@@ -13911,6 +14002,79 @@
           }
         }
       },
+      "AdminDeviceApi__DeviceRetirementSummary": {
+        "type": "object",
+        "required": [
+          "retirementId",
+          "status",
+          "reason",
+          "initiatedBy",
+          "initiatedAt",
+          "confirmedAt",
+          "completionMethod",
+          "certificateRevokedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "retirementId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_CONFIRMATION",
+              "CONFIRMED"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "initiatedBy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "initiatedAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "confirmedAt": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completionMethod": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DEVICE_CONFIRM",
+                  "FORCE_COMPLETE",
+                  "UNCONFIRMED_TIMEOUT"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "certificateRevokedAt": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
       "AdminDeviceApi__Device": {
         "type": "object",
         "required": [
@@ -13931,6 +14095,7 @@
           "certificate",
           "license",
           "contract",
+          "retirement",
           "createdAt",
           "updatedAt"
         ],
@@ -14108,6 +14273,16 @@
             "oneOf": [
               {
                 "$ref": "#/components/schemas/AdminDeviceApi__DeviceContractSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retirement": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AdminDeviceApi__DeviceRetirementSummary"
               },
               {
                 "type": "null"
@@ -15504,7 +15679,8 @@
           {
             "type": "object",
             "required": [
-              "assignments"
+              "assignments",
+              "syncStates"
             ],
             "properties": {
               "assignments": {
@@ -15512,10 +15688,103 @@
                 "items": {
                   "$ref": "#/components/schemas/AdminDeviceUserApi__DeviceUserAssignment"
                 }
+              },
+              "syncStates": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AdminDeviceUserApi__DeviceUserSyncState"
+                }
               }
             }
           }
         ]
+      },
+      "AdminDeviceUserApi__DeviceUserSyncState": {
+        "type": "object",
+        "required": [
+          "deviceId",
+          "entityVersion",
+          "notificationStatus",
+          "notificationPublishedAt",
+          "deliveredEntityVersion",
+          "snapshotStatus",
+          "snapshotServedAt",
+          "deviceReportedLastSyncAt",
+          "deviceApplyStatus"
+        ],
+        "additionalProperties": false,
+        "description": "分别报告实体版本、USERS_CHANGED Outbox 投递、版本化 Sync 快照交付/后续 lastSyncTime 确认和设备应用阶段。SERVED 只表示服务端已生成响应，ACKNOWLEDGED 表示后续 Sync 报告的 lastSyncTime 已覆盖该响应；当前协议没有本地应用确认回执，因此不得把 PUBLISHED/SERVED/ACKNOWLEDGED 解释为已应用。",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "entityVersion": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "notificationStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PUBLISHED",
+              "FAILED",
+              "NOT_REQUESTED"
+            ]
+          },
+          "notificationPublishedAt": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deliveredEntityVersion": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "snapshotStatus": {
+            "type": "string",
+            "enum": [
+              "NOT_SERVED",
+              "SERVED",
+              "ACKNOWLEDGED"
+            ]
+          },
+          "snapshotServedAt": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deviceReportedLastSyncAt": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deviceApplyStatus": {
+            "type": "string",
+            "const": "NOT_REPORTED"
+          }
+        }
       },
       "AdminDeviceUserApi__AssignResult": {
         "type": "object",
@@ -16601,6 +16870,25 @@
           },
           "meta": {
             "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "AdminLicenseApi__LicenseListSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminLicenseApi__License"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
           }
         }
       },

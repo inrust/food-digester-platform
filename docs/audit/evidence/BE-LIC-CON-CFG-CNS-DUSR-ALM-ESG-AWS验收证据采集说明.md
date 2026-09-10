@@ -12,7 +12,7 @@ pnpm check:aws-admin-business-evidence
 
 ## 2. 必需探针
 
-- 以真实 Cognito token 覆盖 56 个正式 API operation；每项保存成功状态、请求 ID、401 和至少一个其他负向状态。
+- 以真实 Cognito token 覆盖 57 个正式 API operation（含 `listLicenses`）；每项保存成功状态、请求 ID、401 和至少一个其他负向状态。
 - 覆盖 PlatformSuperAdmin、PlatformOperator、Auditor、CustomerAdmin、CustomerViewer 五角色，并证明跨 Customer 返回 403/404。
 - 对带 `If-Match` 的写接口发起同版本并发请求，必须恰好一项成功、一项 409。
 - EventBridge 调度间隔不超过 1 分钟；通知链路必须证明 PROCESSING 抢占、并发仅发送一次、SES v2/Webhook HTTPS allowlist 的提供商请求 ID与失败重试恢复。

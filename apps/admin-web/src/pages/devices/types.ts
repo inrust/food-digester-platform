@@ -60,6 +60,16 @@ export interface DeviceView {
   readonly certificate: DeviceCertificateSummaryView | null;
   readonly license: DeviceLicenseSummaryView | null;
   readonly contract: DeviceContractSummaryView | null;
+  readonly retirement?: {
+    readonly retirementId: string;
+    readonly status: 'PENDING_CONFIRMATION' | 'CONFIRMED';
+    readonly reason: string;
+    readonly initiatedBy: string;
+    readonly initiatedAt: string;
+    readonly confirmedAt: string | null;
+    readonly completionMethod: 'DEVICE_CONFIRM' | 'FORCE_COMPLETE' | 'UNCONFIRMED_TIMEOUT' | null;
+    readonly certificateRevokedAt: string | null;
+  } | null;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -151,4 +161,19 @@ export interface DeviceConsoleView {
   readonly contract: DeviceContractSummaryView | null;
   readonly esgLast7Days: readonly EsgDayView[];
   readonly latestMedia: LatestMediaView | null;
+}
+
+export interface DeviceActivityView {
+  readonly activityId: string;
+  readonly kind: 'EVENT' | 'ALARM';
+  readonly level: 'INFO' | 'WARNING' | 'MAJOR' | 'CRITICAL';
+  readonly occurredAt: string;
+  readonly summary: string;
+  readonly detail: Readonly<Record<string, unknown>>;
+}
+
+export interface MediaDownloadUrlView {
+  readonly mediaId: string;
+  readonly downloadUrl: string;
+  readonly downloadUrlExpiresAt: string;
 }

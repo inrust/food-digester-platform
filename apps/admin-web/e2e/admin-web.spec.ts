@@ -94,6 +94,7 @@ const p0Device = {
   certificate: { certificateId: 'cert-1', fingerprint: 'AA:BB', status: 'ACTIVE' },
   license: null,
   contract: null,
+  retirement: null,
   createdAt: '2026-09-01T00:00:00Z',
   updatedAt: '2026-09-10T00:00:00Z',
 };
@@ -128,7 +129,23 @@ const p0Console = {
   recentAlarms: [],
   esgLast7Days: [],
   contract: null,
-  latestMedia: null,
+  latestMedia: { mediaId: 'media-p1', mediaType: 'IMAGE', captureTime: '2026-09-10T00:00:00Z' },
+};
+
+const p1License = {
+  licenseId: 'license-p1',
+  deviceId: 'dev-p0',
+  customerId: 'cust-a',
+  status: 'Revoked',
+  validFrom: '2026-01-01',
+  validTo: '2026-08-31',
+  entitlements: [{ code: 'OTA', enabled: false }],
+  signature: 'v1.signature',
+  version: 4,
+  effective: false,
+  createdBy: 'admin',
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-09-01T00:00:00Z',
 };
 
 const p0Alarm = {
@@ -199,6 +216,20 @@ async function routeP0Apis(page: Page, options: { alarmRows?: boolean } = {}) {
     const url = new URL(route.request().url());
     const path = url.pathname;
     if (path.endsWith('/console')) return json(route, { data: p0Console, meta: {} });
+    if (path.endsWith('/activities'))
+      return json(route, {
+        data: [
+          {
+            activityId: 'activity-p1',
+            kind: 'EVENT',
+            level: 'INFO',
+            occurredAt: '2026-09-10T00:00:00Z',
+            summary: 'SYNC',
+            detail: {},
+          },
+        ],
+        meta: { nextCursor: null },
+      });
     if (path.endsWith('/assignments')) return json(route, { data: [], meta: {} });
     if (path.endsWith('/dev-p0')) return json(route, { data: p0Device, meta: {} });
     const nextCursor = url.searchParams.get('limit') === '50' && !url.searchParams.has('cursor') ? 'p0-next' : null;
@@ -206,6 +237,24 @@ async function routeP0Apis(page: Page, options: { alarmRows?: boolean } = {}) {
       data: nextCursor === null && url.searchParams.has('cursor') ? [] : [p0Device],
       meta: { nextCursor },
     });
+  });
+  await page.route('**/api/v1/admin/media/media-p1/download-url', (route) =>
+    json(route, {
+      data: {
+        mediaId: 'media-p1',
+        downloadUrl: 'https://media.example.test/latest.png',
+        downloadUrlExpiresAt: '2026-09-10T00:15:00Z',
+      },
+      meta: {},
+    }),
+  );
+  await page.route('https://media.example.test/latest.png', (route) =>
+    route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from('iVBORw0KGgo=', 'base64') }),
+  );
+  await page.route('**/api/v1/admin/licenses**', (route) => {
+    const url = new URL(route.request().url());
+    const nextCursor = !url.searchParams.has('cursor') ? 'p1-next' : null;
+    return json(route, { data: nextCursor ? [p1License] : [], meta: { nextCursor } });
   });
   await page.route('**/api/v1/admin/configurations**', (route) => json(route, { data: [], meta: {} }));
   await page.route('**/api/v1/admin/device-users**', (route) => json(route, { data: [], meta: {} }));
@@ -573,6 +622,8 @@ test('FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、�
   await page.goto('/devices/view?deviceId=dev-p0');
   await expect(page.getByTestId('device-view-page')).toBeVisible();
   await expect(page.getByTestId('device-console')).toContainText('P0 设备');
+  await expect(page.getByTestId('media-image')).toHaveAttribute('src', 'https://media.example.test/latest.png');
+  await expect(page.getByTestId('activity-activity-p1')).toContainText('SYNC');
   await expect(page.getByTestId('device-console')).toContainText('08:00:00');
   await page.getByLabel('显示时区').selectOption('UTC');
   await expect(page.getByTestId('device-console')).toContainText('00:00:00');
@@ -584,7 +635,7 @@ test('FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、�
   await page.goto('/licenses');
   await expect(page.getByTestId('licenses-page')).toBeVisible();
   await expect(page.getByRole('button', { name: '下一页' })).toBeEnabled();
-  const nextPage = page.waitForRequest((request) => request.url().includes('cursor=p0-next'));
+  const nextPage = page.waitForRequest((request) => request.url().includes('cursor=p1-next'));
   await page.getByRole('button', { name: '下一页' }).click();
   await nextPage;
   await expect(page.getByTestId('table-empty')).toBeVisible();
@@ -655,6 +706,18 @@ test('FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交
     return json(route, { data: { alarm: { ...p0Alarm, status: 'ACKNOWLEDGED' }, replayed: false }, meta: {} });
   });
   await action.goto('/alarms');
+  const criticalRow = action.getByTestId('severity-alarm-p0').locator('xpath=ancestor::tr');
+  await expect(criticalRow).toHaveClass(/severity-critical/);
+  expect(await criticalRow.evaluate((row) => getComputedStyle(row.querySelector('td')!).backgroundColor)).toBe(
+    'rgb(254, 243, 242)',
+  );
+  await action.getByTestId('filter-severity').selectOption('CRITICAL');
+  await action.getByTestId('filter-search').click();
+  await expect(action).toHaveURL(/severity=CRITICAL/);
+  await action.goBack();
+  await expect(action).not.toHaveURL(/severity=CRITICAL/);
+  await action.goForward();
+  await expect(action).toHaveURL(/severity=CRITICAL/);
   await action.getByTestId('alarm-detail-alarm-p0').click();
   await action.getByTestId('alarm-acknowledge').click();
   await expect(action.getByRole('dialog', { name: '确认告警' })).toBeVisible();

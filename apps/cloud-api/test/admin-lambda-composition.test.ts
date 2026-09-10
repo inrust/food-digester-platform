@@ -39,6 +39,7 @@ const routeSet = (): AdminOnboardingRouteSet => ({
     getActivityExport: handler(),
   },
   licenses: {
+    list: handler(),
     create: handler(),
     issue: handler(),
     activate: handler(),

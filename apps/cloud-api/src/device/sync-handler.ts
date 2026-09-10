@@ -5,7 +5,7 @@
  * PENDING_CONFIRMATION Retired；Suspended 放行）→ parseSyncRequest → buildDeviceSyncSnapshot。
  * 响应：源协议顶层完整事实快照（含 etag），不使用 data/meta Envelope；
  * 错误：400 VALIDATION_FAILED / 401 UNAUTHENTICATED / 403 FORBIDDEN / 500 通用消息。
- * 纯读取：无写入/通知/审计；响应不含证书材料与云端凭据（Device Users 验证材料为
+ * 除最小 Device User 快照交付/确认状态外不写入业务域、通知或审计；响应不含证书材料与云端凭据（Device Users 验证材料为
  * DEC-004 设备本地专用加盐验证值，是本域的授权下发内容）。
  */
 import { AuthError, verifyDeviceCertificate } from '@fdp/auth';

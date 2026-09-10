@@ -162,6 +162,7 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
     };
     const targetOperations: Readonly<Record<string, (req: AdminHttpRequest) => Promise<AdminHttpResponse>>> = {
       createLicense: routes.licenses.create,
+      listLicenses: routes.licenses.list,
       getLicense: routes.licenses.detail,
       listLicenseHistory: routes.licenses.history,
       issueLicense: routes.licenses.issue,

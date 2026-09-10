@@ -505,6 +505,25 @@ model DeviceUserAssignment {
   @@map("device_user_assignments")
 }
 
+/// Device User 进入设备完整 Sync 快照的可查询交付记录。
+/// servedAt 只证明服务端已生成包含该版本的响应；设备在后续请求中回报的 lastSyncTime
+/// 覆盖 servedAt 后才记 acknowledgedAt。V1 协议不提供设备本地应用回执，不得由本表推断已应用。
+model DeviceUserSyncReceipt {
+  id                       String    @id @default(uuid())
+  deviceId                 String    @map("device_id")
+  deviceUserId             String    @map("device_user_id")
+  entityVersion            Int       @map("entity_version")
+  servedAt                 DateTime  @map("served_at") @db.Timestamptz
+  deviceReportedLastSyncAt DateTime? @map("device_reported_last_sync_at") @db.Timestamptz
+  acknowledgedAt           DateTime? @map("acknowledged_at") @db.Timestamptz
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([deviceId, deviceUserId, entityVersion])
+  @@index([deviceUserId, servedAt])
+  @@index([deviceId, servedAt])
+  @@map("device_user_sync_receipts")
+}
+
 // ---------- 运行数据（不含原始 Telemetry 长期表） ----------
 
 model DeviceLatestState {

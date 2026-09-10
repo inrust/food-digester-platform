@@ -231,6 +231,18 @@ async function plantConfiguration(target: { deviceId?: string; model?: string },
 type ErrorBody = { error: { code: string; message: string; requestId: string } };
 
 const dataOf = (res: { body: unknown }) => res.body as Record<string, any>;
+const syncReceiptStore = () =>
+  (
+    prisma as unknown as {
+      deviceUserSyncReceipt: {
+        findUnique(args: Record<string, unknown>): Promise<{
+          servedAt: Date;
+          acknowledgedAt: Date | null;
+          deviceReportedLastSyncAt: Date | null;
+        } | null>;
+      };
+    }
+  ).deviceUserSyncReceipt;
 
 describe('POST /api/v1/device/sync（完整事实快照）', () => {
   test('六域齐备：Assignment/Alias/License+签名/Device Users+验证材料/Configuration/Operational Status', async () => {
@@ -289,6 +301,24 @@ describe('POST /api/v1/device/sync（完整事实快照）', () => {
     assert.equal(u.displayName, 'operator-full');
     assert.equal(u.passwordHash, DEVICE_USER_PHC);
     assert.equal(u.status, 'ACTIVE');
+
+    const offered = await syncReceiptStore().findUnique({
+      where: { deviceId_deviceUserId_entityVersion: { deviceId, deviceUserId: userId, entityVersion: 1 } },
+    });
+    assert.equal(offered?.servedAt.toISOString(), NOW.toISOString());
+    assert.equal(offered?.acknowledgedAt, null);
+
+    const acknowledged = await handler()({
+      identity: { clientCertPem: pem },
+      body: { lastSyncTime: NOW.toISOString() },
+      requestId: 'req-s1-ack',
+    });
+    assert.equal(acknowledged.status, 200);
+    const confirmed = await syncReceiptStore().findUnique({
+      where: { deviceId_deviceUserId_entityVersion: { deviceId, deviceUserId: userId, entityVersion: 1 } },
+    });
+    assert.equal(confirmed?.acknowledgedAt?.toISOString(), NOW.toISOString());
+    assert.equal(confirmed?.deviceReportedLastSyncAt?.toISOString(), NOW.toISOString());
 
     // Configuration：设备定向已生效版本
     assert.equal(data.configuration.heartbeatInterval, 60);

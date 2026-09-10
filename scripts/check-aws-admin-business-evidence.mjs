@@ -8,6 +8,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 export const REQUIRED_ADMIN_BUSINESS_OPERATIONS = [
+  'listLicenses',
   'createLicense',
   'getLicense',
   'listLicenseHistory',
