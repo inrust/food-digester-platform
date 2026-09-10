@@ -2,6 +2,17 @@
 
 实现：[configuration](../../apps/admin-web/src/pages/configuration/ConfigurationsPage.tsx)、[device-users](../../apps/admin-web/src/pages/device-users/DeviceUsersPage.tsx)；测试：[configuration.test.tsx](../../apps/admin-web/test/configuration.test.tsx)、[device-users.test.tsx](../../apps/admin-web/test/device-users.test.tsx)。
 
+## 0. 交付状态
+
+| 层级 | 当前状态 | 可复核证据 |
+|---|---|---|
+| module present | **PASS** | Configuration 与 Device User 页面、controller、API 和同步状态模块存在；`pnpm --filter @fdp/admin-web typecheck` |
+| app integrated | **PASS** | 两路由和正式 operations 已进入组合根/交付清单；`pnpm check:admin-web-delivery` |
+| browser verified | **PASS（本地）** | Chromium 覆盖两路由、角色与失败关闭；`pnpm check:admin-web-e2e` |
+| target integrated | **NOT RUN / NO RECEIPT** | 尚无当前提交对应的 Cognito、部署后配置/用户 API、设备 Sync 回执；`pnpm check:admin-web-target-evidence` 当前应失败关闭 |
+
+整改依据：[FE-06至FE-10 全面复盘检查报告](../audit/FE-06至FE-10全面复盘检查报告-2026-09-10.md)；目标回执规则：[FE-06～FE-10 目标环境验收证据采集说明](../audit/evidence/FE-06至FE-10-目标环境验收证据采集说明.md)。
+
 ## 1. 范围与事实源
 
 | 项 | 说明 |
@@ -37,31 +48,31 @@
 |---|---|
 | 列表 | customer/status/keyword 筛选（Customer 角色隐藏客户选择，fixedCustomerId 强制）；同步版本 v{n} 列；ACTIVE 分配设备数 |
 | 创建 | 用户名（同客户唯一）+ 显示名 + 设备本地密码（type=password，一次受控提交）+ 可选原因 |
-| 详情 | 分配历史（ACTIVE/REVOKED + 时间）；同步版本；修改资料（原因必填，空显示名=null） |
+| 详情 | 分配历史；实体版本；逐设备 USERS_CHANGED 状态；进入 Sync 快照的版本/提供时间/后续 lastSyncTime 确认；设备本地应用保持 `NOT_REPORTED` |
 | 密码重置 | type=password + 必填原因；提交后表单关闭不回显；提示"设备下次同步领取新验证材料" |
 | 停用 | 强制原因 + If-Match=version；确认文案明示"停用用户不进入新 Sync"；停用后停用/分配按钮禁用 |
 | 分配/撤销 | 批量勾选 + 强制原因 + If-Match；撤销仅列 ACTIVE 分配；全成或全败由后端保证 |
 
 所有写操作成功后经 onRefresh 回源；409 VERSION_CONFLICT 经 ErrorNotice 提示刷新。
 
-## 3. 验收基准与证据（vitest + jsdom，19 例 + parity 2 例）
+## 3. 验收基准与仓库内证据
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
-| 只渲染 V1 四字段且单位正确 | 表单字段集合/默认值/单位文案（秒/秒/分钟/°C）断言；parity：CONFIG_V1_FIELDS 与冻结策略 JSON 的键/单位/范围/默认值/整数约束逐项一致 | ✅ |
-| 发布后版本只读 | PUBLISHED 卡片无 input、发布禁用（title 提示）；DRAFT 可发布；历史 payload 完整只读展示 | ✅ |
-| 非法范围有字段错误 | 越界/非整数/空值的字段级错误文案 + 提交禁用；温度阈值允许小数但越界报错 | ✅ |
-| 候选扩展字段不存在 | DOM 全文负向断言（图像/上传间隔/旋转/电机/过载/加热/语言/云域名/NTP/温度上下限/cloudDomain/ntpServer 等） | ✅ |
-| 敏感字段浏览器快照为 0 | document.body 无 passwordHash；密码值提交后不出现在 DOM（textContent 与 innerHTML 双向断言）；type=password + autocomplete=new-password | ✅ |
-| 密码只进入一次受控提交 | 创建/重置提交后表单关闭不回显；API 装配测试：password 仅在 create/update 请求体，disable 请求体不含密码 | ✅ |
-| 派生字段只读 | derivedContext 渲染无输入控件 | ✅ |
-| If-Match/强制原因 | update/disable/assign/revoke 均 ifMatch=version + reason；UI 层原因必填 | ✅ |
-| CT-06 锚点 | 配置 3 元素 + 设备用户 4 元素双向锁定 | ✅ |
+| V1 四字段与只读历史 | 单位、范围、默认值和发布后不可变与冻结策略一致 | **LOCAL PASS** |
+| 非法/扩展字段失败关闭 | 字段级错误且候选扩展字段不进入 DOM | **LOCAL PASS** |
+| 敏感字段零回显 | 密码仅写一次；DOM/DTO 无 passwordHash | **LOCAL PASS** |
+| If-Match 与强制原因 | 用户更新、停用、分配、撤销均受版本和原因约束 | **LOCAL PASS** |
+| 同步阶段分离 | 实体版本、Outbox、快照版本、后续确认和本地应用未知分别展示 | **LOCAL PASS** |
+| CT-06 锚点 | 配置和设备用户元素双向锁定 | **LOCAL PASS** |
 
-当前证据命令：`pnpm exec vitest run`、`pnpm --filter @fdp/admin-web exec tsc --noEmit`、`pnpm exec vitest run apps/admin-web/test/contract-parity.test.ts`。
+仓库内证据命令：`pnpm exec vitest run apps/admin-web/test/configuration.test.tsx apps/admin-web/test/device-users.test.tsx apps/cloud-api/test/admin-device-user.test.ts apps/cloud-api/test/device-sync.test.ts`、`pnpm check:admin-web-delivery`、`pnpm check:admin-web-e2e`、`pnpm verify`。
 
-## 4. 未决风险
+## 4. 可追踪问题
 
-- 设备用户"同步状态"仅有同步版本号（version）可展示；USERS_CHANGED 投递状态无查询接口（与配置投递状态不同），如需逐设备投递可见性需后端扩展；
-- Operator 无 device-user:read（AUTH-01 矩阵），设备用户页面对其不可见——与权限矩阵一致，非缺陷；
-- 配置 effectiveAt 仅做格式校验，时序合法性（早于当前时间等）由服务端裁决。
+| ID | 状态 | Owner | 关闭条件 | 验证命令 |
+|---|---|---|---|---|
+| FE09-PROTO-01 | **OPEN / PROTOCOL GAP** | Device protocol owner | 若产品要求证明设备本地已应用 Device User，冻结带版本的应用 ACK 协议、持久化回执并更新页面；当前必须显示 `NOT_REPORTED` | `rg -n "deviceApplyStatus|NOT_REPORTED" apps/cloud-api apps/admin-web contracts/rest/admin-device-user-api.json` |
+| FE09-TARGET-01 | **NOT RUN / NO RECEIPT** | Release QA | 隔离环境证明配置发布、USERS_CHANGED、设备 Sync 确认、并发冲突和敏感字段零泄露，绑定精确 HEAD 并清理 | `pnpm check:admin-web-target-evidence` |
+
+Operator 不具备 `device-user:read`、配置时序由服务端裁决均是正式权限/校验边界，不作为未决缺陷。

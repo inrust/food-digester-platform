@@ -2,6 +2,17 @@
 
 实现：[apps/admin-web/src/pages/alarms](../../apps/admin-web/src/pages/alarms/AlarmsPage.tsx)；测试：[alarms.test.tsx](../../apps/admin-web/test/alarms.test.tsx)。
 
+## 0. 交付状态
+
+| 层级 | 当前状态 | 可复核证据 |
+|---|---|---|
+| module present | **PASS** | 三类列表、状态动作、结构化筛选和 URL 状态模块存在；`pnpm --filter @fdp/admin-web typecheck` |
+| app integrated | **PASS** | `/alarms` 已接入组合根、权威选项源和交付清单；`pnpm check:admin-web-delivery` |
+| browser verified | **PASS（本地）** | Chromium 覆盖返回/前进和 Critical 计算样式；`pnpm check:admin-web-e2e` |
+| target integrated | **NOT RUN / NO RECEIPT** | 尚无当前提交对应的真实 Cognito、部署后 Alarm API 与跨租户回执；`pnpm check:admin-web-target-evidence` 当前应失败关闭 |
+
+整改依据：[FE-06至FE-10 全面复盘检查报告](../audit/FE-06至FE-10全面复盘检查报告-2026-09-10.md)；目标回执规则：[FE-06～FE-10 目标环境验收证据采集说明](../audit/evidence/FE-06至FE-10-目标环境验收证据采集说明.md)。
+
 ## 1. 范围与事实源
 
 | 项 | 说明 |
@@ -16,29 +27,29 @@
 
 | 模块 | 内容 |
 |---|---|
-| `AlarmsPage`（/alarms） | 三 Tab（告警/事件/防拆）；告警列表（severity 徽标 + CRITICAL 行级显著样式）；详情面板（代码/类别/当前值/阈值/建议处置/确认与清除审计字段）；确认/清除（ConfirmDialog 强制原因）；Event/Tamper 只读列表（Tamper details 原样 JSON 透传）；键集游标分页 |
+| `AlarmsPage`（/alarms） | 三 Tab；结构化 Customer→Site→Device 选择；告警详情/处置；Event/Tamper 只读列表；键集分页；CRITICAL 真实视觉样式 |
 | `alarm-state.ts` | 状态机矩阵 + `gateAlarmAction`（矩阵 ∩ alarm:write）；severity/status 枚举与文案；**筛选 ⇄ URL 同步**（`urlStateToSearch`/`urlStateFromSearch`，非法枚举静默丢弃） |
 | `alarms-api.ts` | fetchAlarms/fetchAlarm/acknowledgeAlarm/clearAlarm/fetchDeviceEvents/fetchTamperEvents（筛选 + cursor 查询串） |
 | `CursorTable` 扩展 | 新增可选 `rowClassName`（CRITICAL 显著行；向后兼容） |
 
-筛选：severity/status/device/site/customer（平台角色）/时间范围（from/to，detectedTime/occurredAt 含边界）；Event 无 severity/status，Tamper 无 status。
+筛选：severity/status/device/site/customer（平台角色）/时间范围；Site/Device 选项由权威 API 全量分页并按 Customer/Site 联动。controller 以 history 导航写入 URL，并监听浏览器返回/前进后从 `location.search` 回灌页面状态。
 
-## 3. 验收基准与证据（vitest + jsdom，10 例 + parity 1 例）
+## 3. 验收基准与仓库内证据
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
-| 状态更新正确 | ACTIVE→确认（原因必填）→ACKNOWLEDGED→清除→CLEARED 无动作；每步成功后回源刷新 | ✅ |
-| 重复操作正确 | replayed=true → “重复操作已幂等忽略（无重复写入/审计）”提示 | ✅ |
-| 筛选参数与 URL 同步 | 应用筛选 → onApplyUrlState → `urlStateToSearch` 查询串 → `urlStateFromSearch` 回读一致；urlState prop 变化触发 replaceState 更新 location.search；非法参数回退默认 | ✅ |
-| 跨 Customer 不可见 | 详情 404 NOT_FOUND 呈现；Customer 角色不渲染客户筛选；无 alarm:write 角色按钮禁用 + 403 呈现 | ✅ |
-| 确认/清除原因必填 | 空原因确认按钮禁用；409 终态冲突错误可读 | ✅ |
-| Critical 显著且不混 AWS 运维告警 | severity-critical 行样式 + “严重”徽标；页面文本无 CloudWatch/SQS/RDS | ✅ |
-| 契约对齐 | severity/status 枚举与 Alarm schema 一致；矩阵 ⊆ 契约封闭状态机 | ✅ |
+| 状态与幂等 | 确认/清除状态机、原因、重复操作提示正确 | **LOCAL PASS** |
+| 结构化筛选 | Customer/Site/Device 联动且仅使用可见权威选项 | **LOCAL PASS** |
+| URL 双向同步 | 直接链接、筛选、浏览器返回/前进一致 | **LOCAL PASS** |
+| 跨 Customer 与角色 | 404/403、隐藏客户筛选和动作权限可区分 | **LOCAL PASS** |
+| Critical 显著 | class、CSS 和 Chromium computed style 均有断言 | **LOCAL PASS** |
+| 业务/运维分离 | 页面不混入 CloudWatch/SQS/RDS | **LOCAL PASS** |
 
-当前证据命令：`pnpm exec vitest run`、`pnpm --filter @fdp/admin-web exec tsc --noEmit`、`pnpm exec vitest run apps/admin-web/test/contract-parity.test.ts`。
+仓库内证据命令：`pnpm exec vitest run apps/admin-web/test/alarms.test.tsx apps/admin-web/test/contract-parity.test.ts`、`pnpm check:admin-web-delivery`、`pnpm check:admin-web-e2e`、`pnpm verify`。
 
-## 4. 未决风险
+## 4. 可追踪问题
 
-- URL 仅携带当前 Tab 的筛选（设计决策：三 Tab 共享参数名避免冲突）；切 Tab 回读时其他 Tab 筛选重置为默认；
-- siteId 筛选为自由文本输入（契约语义“经设备归属解析”）；如候选站点下拉需 sites 列表装配层注入，待应用壳层集成时接线；
-- CRITICAL 显著目前为行级 className（`severity-critical`），视觉样式待 FE-02 样式表补充类规则（当前以 data 属性/类名锁定语义，测试已锚定）。
+| ID | 状态 | Owner | 关闭条件 | 验证命令 |
+|---|---|---|---|---|
+| FE10-URL-01 | **CLOSED / ACCEPTED DESIGN** | FE-10 owner | 当前 Tab 单独序列化且切换时按 URL 回灌，浏览器返回/前进测试通过 | `pnpm check:admin-web-e2e` |
+| FE10-TARGET-01 | **NOT RUN / NO RECEIPT** | Release QA | 隔离环境证明结构化 scope、真实路由历史、Critical 样式、处置幂等与跨租户拒绝，绑定精确 HEAD 并清理 | `pnpm check:admin-web-target-evidence` |

@@ -2,6 +2,17 @@
 
 实现：[apps/admin-web/src/pages/device-manage](../../apps/admin-web/src/pages/device-manage/DeviceManagePage.tsx)；测试：[device-manage.test.tsx](../../apps/admin-web/test/device-manage.test.tsx)。
 
+## 0. 交付状态
+
+| 层级 | 当前状态 | 可复核证据 |
+|---|---|---|
+| module present | **PASS** | 生命周期、Assignment、退役、Alias 与证书轮换模块存在；`pnpm --filter @fdp/admin-web typecheck` |
+| app integrated | **PASS** | `/devices/manage` 已接入组合根和交付清单；`pnpm check:admin-web-delivery` |
+| browser verified | **PASS（本地）** | Chromium 覆盖真实路由、失败状态、详情焦点和重复提交；`pnpm check:admin-web-e2e` |
+| target integrated | **NOT RUN / NO RECEIPT** | 尚无当前提交对应的真实 Cognito/部署后 API/IoT 处置回执；`pnpm check:admin-web-target-evidence` 当前应失败关闭 |
+
+整改依据：[FE-06至FE-10 全面复盘检查报告](../audit/FE-06至FE-10全面复盘检查报告-2026-09-10.md)；目标回执规则：[FE-06～FE-10 目标环境验收证据采集说明](../audit/evidence/FE-06至FE-10-目标环境验收证据采集说明.md)。
+
 ## 1. 范围与事实源
 
 | 项 | 说明 |
@@ -29,7 +40,7 @@
 
 ### 边界说明
 
-- 退役记录无 GET 来源：页面展示的退役记录来自 retire/force-complete 响应；刷新后若设备已 Retired 但无会话内记录，仅展示“已退役（不可恢复）”，不伪造确认状态。
+- `getDevice` 返回退役摘要；页面每次加载和操作后均回源恢复 `PENDING_CONFIRMATION`/`CONFIRMED` 状态，不依赖会话内响应。
 - CT-06 device-manage 页其余元素（更新配置/查看配置/固件/同步更新属 BE-CFG-01/BE-OTA-01 → FE-09/FE-13）不在本任务范围，parity 测试仅锁定 FE-07 自有元素（返回按钮）。
 - 页面不直接修改状态字段：所有操作成功后经 `onRefresh` 回源（getDevice + assignments），无本地状态伪造。
 
@@ -37,29 +48,29 @@
 
 | 模块 | 内容 |
 |---|---|
-| `DeviceManagePage`（/devices/manage） | 设备头（别名/序列号/四轴徽标）+ 返回；生命周期操作按钮组（矩阵 ∩ 角色门控，禁用附原因 title）；分配对话框（客户→站点联动过滤、原因可选）；挂起/恢复/退役/强制完成确认框（原因必填）；退役面板（状态/窗口语义/完成方式/撤证时间）；别名编辑（1..64 校验、清除=null）；证书摘要 + 请求轮换；Assignment 历史表 |
+| `DeviceManagePage`（/devices/manage） | 生命周期动作、Assignment、可回源退役面板；Alias 按 trim/NFC 与 Unicode code point 1..64 校验；证书摘要和轮换请求 |
 | `device-manage-state.ts` | LIFECYCLE_ACTION_MATRIX、gateAction（矩阵 ∩ 角色 ∩ DOM-01 特例 ∩ 证书 ACTIVE）、canForceComplete、展示文案、CT-06 锚点表 |
 | `device-manage-api.ts` | assignDevice/fetchDeviceAssignments/suspendDevice/reactivateDevice/retireDevice/forceCompleteRetirement/updateDeviceAlias（If-Match=updatedAt）/requestCertificateRotation |
 | `types.ts` | Assignment/Retirement/Metadata/Rotation 视图类型（逐字段镜像契约） |
 
-## 3. 验收基准与证据（vitest + jsdom，26 例 + parity 1 例）
+## 3. 验收基准与仓库内证据
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
-| 状态矩阵 UI 测试通过 | Active/Suspended/Onboarded/Assigned/Retired × SuperAdmin/Operator/Auditor/Customer 角色的按钮可用性矩阵断言（含禁用原因 title） | ✅ |
-| 非法操作按钮不可用 | 状态不允许或角色无权限时按钮 disabled 且提示原因 | ✅ |
-| 后端拒绝仍正确呈现 | 409 DEVICE_STATE_NOT_ALLOWED → 错误码+message 展示；403 → 无权提示；409 VERSION_CONFLICT（alias）→ 提示刷新 | ✅ |
-| 操作后历史刷新 | 挂起/恢复/退役/分配/改名/轮换成功后均调用 onRefresh 回源 | ✅ |
-| 危险操作原因+确认 | suspend/reactivate/retire/force-complete 原因必填（空原因确认禁用）；retire 对话框含“不可恢复”与 72 小时窗口警告 | ✅ |
-| Retire 等待设备确认状态 | PENDING_CONFIRMATION → “等待设备确认”+ 72 小时窗口语义；CONFIRMED 展示完成方式/撤证时间；强制完成仅 SuperAdmin + PENDING 可用 | ✅ |
-| Alias If-Match | API 装配测试：PATCH 携 `If-Match: <updatedAt>`；reactivate 携 issueResolved=true；retire 携 confirm=true | ✅ |
-| 证书无私钥 | 页面全文负向断言 privateKey/PRIVATE KEY/下载证书；证书区仅 ID/指纹/状态；轮换按钮为“请求轮换” | ✅ |
-| CT-06 锚点 | device-manage 页 FE-07 自有元素 100% 覆盖且覆盖表无多余键 | ✅ |
+| 状态与权限矩阵 | 合法动作可见；非法或无权限动作禁用并说明原因 | **LOCAL PASS** |
+| 后端拒绝呈现 | 403、状态冲突和 Alias 版本冲突可区分 | **LOCAL PASS** |
+| 危险操作与刷新 | 原因/确认必填，成功后回源 | **LOCAL PASS** |
+| 退役跨会话恢复 | getDevice 退役摘要恢复等待和完成状态 | **LOCAL PASS** |
+| Alias 契约 | trim/NFC/code point、If-Match 与清除语义 | **LOCAL PASS** |
+| 证书零私钥 | 仅摘要与轮换请求，不出现私钥或下载入口 | **LOCAL PASS** |
 
-当前证据命令：`pnpm exec vitest run`、`pnpm --filter @fdp/admin-web exec tsc --noEmit`、`pnpm exec vitest run apps/admin-web/test/contract-parity.test.ts`。任务文档不固化易漂移计数。
+仓库内证据命令：`pnpm exec vitest run apps/admin-web/test/device-manage.test.tsx apps/admin-web/test/contract-parity.test.ts`、`pnpm check:admin-web-delivery`、`pnpm check:admin-web-e2e`、`pnpm verify`。
 
-## 4. 未决风险
+## 4. 可追踪问题
 
-- 退役记录无 GET 端点：跨会话无法回填确认状态（仅“已退役”兜底文案）；若验收要求跨会话可见，需 BE-DEV-04 增加查询接口；
-- assign 请求体 reason 为可选（契约）；分配对话框预填当前归属，重复提交由后端幂等（replayed=true）兜底；
-- 轮换结果仅展示最近一次响应（无列表查询接口）；轮换完成进度需设备侧回写后由 getDevice 证书状态反映。
+| ID | 状态 | Owner | 关闭条件 | 验证命令 |
+|---|---|---|---|---|
+| FE07-CERT-01 | **OPEN / CONTRACT GAP** | BE-CERT owner | 若要求轮换历史，增加受权查询契约和页面时间线；当前仅展示请求结果并由 getDevice 证书摘要反映最终状态 | `rg -n "rotation" contracts/rest/admin-certificate-rotation-api.json` |
+| FE07-TARGET-01 | **NOT RUN / NO RECEIPT** | Release QA | 隔离环境证明危险操作、退役窗口、IoT 处置和跨租户拒绝，绑定精确 HEAD 并清理 | `pnpm check:admin-web-target-evidence` |
+
+Assignment 的可选 reason 和幂等重放属于正式契约行为，不作为未决缺陷。

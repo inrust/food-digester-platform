@@ -66,12 +66,21 @@ export const ADMIN_MED_RBAC_AUD_DASH_SET_DOCUMENTS = [
   'docs/BE-SET-01-业务设置与字典API.md',
 ];
 
+export const ADMIN_FRONTEND_TASK_DOCUMENTS = [
+  'docs/dev/FE-06-Device列表与详情页面.md',
+  'docs/dev/FE-07-Device生命周期操作页面.md',
+  'docs/dev/FE-08-License与Entitlement页面.md',
+  'docs/dev/FE-09-Configuration与DeviceUser页面.md',
+  'docs/dev/FE-10-Alarm与Event与Tamper页面.md',
+];
+
 export const TASK_DOCUMENTS = [
   ...ENGINEERING_TASK_DOCUMENTS,
   ...IOT_TASK_DOCUMENTS,
   ...DATA_PROCESSING_TASK_DOCUMENTS,
   ...ADMIN_BUSINESS_TASK_DOCUMENTS,
   ...ADMIN_MED_RBAC_AUD_DASH_SET_DOCUMENTS,
+  ...ADMIN_FRONTEND_TASK_DOCUMENTS,
 ];
 
 export const SECURITY_TASK_DOCUMENTS = [
@@ -89,6 +98,8 @@ const ADMIN_BUSINESS_AUDIT_REPORT = 'BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG全面复盘
 const ADMIN_BUSINESS_AWS_GUIDE = 'BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md';
 const ADMIN_MED_RBAC_AUD_DASH_SET_AUDIT_REPORT = 'BE-MED-RBAC-AUD-DASH-SET全面复盘检查报告-2026-09-09.md';
 const ADMIN_MED_RBAC_AUD_DASH_SET_AWS_GUIDE = 'BE-MED-RBAC-AUD-DASH-SET-AWS验收证据采集说明.md';
+const ADMIN_FRONTEND_AUDIT_REPORT = 'FE-06至FE-10全面复盘检查报告-2026-09-10.md';
+const ADMIN_FRONTEND_TARGET_GUIDE = 'FE-06至FE-10-目标环境验收证据采集说明.md';
 
 export const DATA_PROCESSING_STRICT_REGRESSIONS = [
   {
@@ -272,6 +283,34 @@ export function adminMedRbacAudDashSetDocumentErrors(content, relativeDocument) 
   return errors;
 }
 
+export function adminFrontendDocumentErrors(content, relativeDocument) {
+  const errors = [];
+  for (const marker of ['module present', 'app integrated', 'browser verified', 'target integrated']) {
+    if (!content.includes(marker)) errors.push(`${relativeDocument}: 缺少四层状态 ${marker}`);
+  }
+  if (!content.includes(ADMIN_FRONTEND_AUDIT_REPORT)) {
+    errors.push(`${relativeDocument}: 缺少 FE-06～FE-10 审计报告引用`);
+  }
+  if (!content.includes(ADMIN_FRONTEND_TARGET_GUIDE) || !content.includes('check:admin-web-target-evidence')) {
+    errors.push(`${relativeDocument}: 缺少管理后台目标环境回执 Gate 引用`);
+  }
+  for (const marker of ['Owner', '关闭条件', '验证命令']) {
+    if (!content.includes(marker)) errors.push(`${relativeDocument}: 可追踪问题缺少 ${marker}`);
+  }
+  if (content.includes('✅')) errors.push(`${relativeDocument}: 不得以任务级勾选替代分层验收状态`);
+
+  const staleByDocument = new Map([
+    ['FE-06-Device列表与详情页面.md', /媒体区仅元数据|内容预览需.+页面集成/iu],
+    ['FE-07-Device生命周期操作页面.md', /退役记录无 GET|跨会话无法回填确认状态/iu],
+    ['FE-08-License与Entitlement页面.md', /无全量 License 列表|列表复用.+listDevices/iu],
+    ['FE-09-Configuration与DeviceUser页面.md', /同步状态.+仅有同步版本号|USERS_CHANGED 投递状态无查询接口/iu],
+    ['FE-10-Alarm与Event与Tamper页面.md', /siteId 筛选为自由文本|视觉样式待.+补充/iu],
+  ]);
+  const stale = [...staleByDocument].find(([suffix]) => relativeDocument.endsWith(suffix))?.[1];
+  if (stale?.test(content)) errors.push(`${relativeDocument}: 仍包含 P1 修复前的陈旧缺口描述`);
+  return errors;
+}
+
 export function iotRegressionEvidenceErrors(root, regressions = IOT_STRICT_REGRESSIONS) {
   const errors = [];
   for (const regression of regressions) {
@@ -342,6 +381,9 @@ export function checkEngDbDomEvidence(root, documentPaths = TASK_DOCUMENTS) {
     if (ADMIN_MED_RBAC_AUD_DASH_SET_DOCUMENTS.includes(relativeDocument)) {
       errors.push(...adminMedRbacAudDashSetDocumentErrors(content, relativeDocument));
     }
+    if (ADMIN_FRONTEND_TASK_DOCUMENTS.includes(relativeDocument)) {
+      errors.push(...adminFrontendDocumentErrors(content, relativeDocument));
+    }
 
     for (const match of content.matchAll(MARKDOWN_LINK)) {
       const target = match[1].trim();
@@ -368,7 +410,7 @@ function main() {
   const errors = checkEngDbDomEvidence(root);
   for (const error of errors) console.error(error);
   if (errors.length === 0)
-    console.log('ENG/DB/DOM/IAC/AUTH/SEC/BE-IOT/BE-ARC/RPL/ESG/管理后台业务 证据与开发文档检查通过');
+    console.log('ENG/DB/DOM/IAC/AUTH/SEC/BE-IOT/BE-ARC/RPL/ESG/管理后台业务与前端 证据与开发文档检查通过');
   process.exitCode = errors.length === 0 ? 0 : 1;
 }
 
