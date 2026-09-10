@@ -9,8 +9,6 @@
  *
  * 私钥 a 仅在内存持有，绝不持久化或进日志。
  */
-import { createHash, createHmac, randomBytes } from 'node:crypto';
-
 /** Cognito 固定的 3072-bit 群模数（RFC 3526 群变体，amazon-cognito-identity-js 内置常量）。 */
 export const SRP_N_HEX =
   'FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DD' +
@@ -33,8 +31,12 @@ export class SrpError extends Error {
   }
 }
 
-function sha256Hex(bytes: Uint8Array): string {
-  return createHash('sha256').update(bytes).digest('hex');
+async function sha256(bytes: Uint8Array): Promise<Uint8Array> {
+  return new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', Uint8Array.from(bytes).buffer));
+}
+
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  return bytesToHex(await sha256(bytes));
 }
 
 function hexToBytes(hex: string): Uint8Array {
@@ -49,7 +51,7 @@ function hexToBytes(hex: string): Uint8Array {
 }
 
 function bytesToHex(bytes: Uint8Array): string {
-  return Buffer.from(bytes).toString('hex');
+  return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 /** Cognito 十六进制规整规则：奇数长度前缀 '0'；最高位置位（首字符 8-F）前缀 '00'。 */
@@ -63,7 +65,7 @@ export function padHex(hex: string): string {
   return out;
 }
 
-function hexHash(hex: string): string {
+async function hexHash(hex: string): Promise<string> {
   return sha256Hex(hexToBytes(hex));
 }
 
@@ -81,8 +83,6 @@ function modPow(base: bigint, exponent: bigint, modulus: bigint): bigint {
 
 const N = BigInt(`0x${SRP_N_HEX}`);
 const G = 2n;
-const K = BigInt(`0x${hexHash(`00${SRP_N_HEX}0${'2'}`)}`);
-
 export interface SrpEphemeral {
   /** 客户端私钥 a（hex），仅内存持有。 */
   readonly aHex: string;
@@ -91,7 +91,13 @@ export interface SrpEphemeral {
 }
 
 /** 生成 SRP 临时密钥对（a 为 128 字节随机数 mod N，与参考实现一致）。 */
-export function generateSrpEphemeral(random: (byteLength: number) => Uint8Array = (n) => randomBytes(n)): SrpEphemeral {
+export function generateSrpEphemeral(
+  random: (byteLength: number) => Uint8Array = (byteLength) => {
+    const bytes = new Uint8Array(byteLength);
+    globalThis.crypto.getRandomValues(bytes);
+    return bytes;
+  },
+): SrpEphemeral {
   let a = BigInt(`0x${bytesToHex(random(128))}`) % N;
   if (a === 0n) a = 1n;
   const bigA = modPow(G, a, N);
@@ -136,10 +142,41 @@ export function formatCognitoTimestamp(date: Date): string {
 }
 
 /** 计算 PASSWORD_VERIFIER 应答（TIMESTAMP 与 PASSWORD_CLAIM_SIGNATURE）。 */
-export function computePasswordVerifierClaim(
+function concatBytes(...parts: readonly Uint8Array[]): Uint8Array {
+  const result = new Uint8Array(parts.reduce((length, part) => length + part.length, 0));
+  let offset = 0;
+  for (const part of parts) {
+    result.set(part, offset);
+    offset += part.length;
+  }
+  return result;
+}
+
+async function hmacSha256(key: Uint8Array, message: Uint8Array): Promise<Uint8Array> {
+  const cryptoKey = await globalThis.crypto.subtle.importKey(
+    'raw',
+    Uint8Array.from(key).buffer,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  return new Uint8Array(await globalThis.crypto.subtle.sign('HMAC', cryptoKey, Uint8Array.from(message).buffer));
+}
+
+function bytesFromBase64(value: string): Uint8Array {
+  return Uint8Array.from(globalThis.atob(value), (character) => character.charCodeAt(0));
+}
+
+function bytesToBase64(value: Uint8Array): string {
+  let binary = '';
+  for (const byte of value) binary += String.fromCharCode(byte);
+  return globalThis.btoa(binary);
+}
+
+export async function computePasswordVerifierClaim(
   ephemeral: SrpEphemeral,
   input: PasswordVerifierInput,
-): PasswordVerifierClaim {
+): Promise<PasswordVerifierClaim> {
   const poolName = userPoolNameOf(input.userPoolId);
   const bigB = BigInt(`0x${input.srpBHex}`);
   if (bigB % N === 0n) {
@@ -148,32 +185,31 @@ export function computePasswordVerifierClaim(
   const bigA = BigInt(`0x${ephemeral.srpAHex}`);
   const a = BigInt(`0x${ephemeral.aHex}`);
 
-  const u = BigInt(`0x${hexHash(padHex(bigA.toString(16)) + padHex(bigB.toString(16)))}`);
+  const u = BigInt(`0x${await hexHash(padHex(bigA.toString(16)) + padHex(bigB.toString(16)))}`);
   if (u === 0n) {
     throw new SrpError('invalid-scrambling-parameter', 'Scrambling parameter u must not be zero');
   }
 
-  const usernamePasswordHash = sha256Hex(
+  const usernamePasswordHash = await sha256Hex(
     new TextEncoder().encode(`${poolName}${input.userIdForSrp}:${input.password}`),
   );
-  const x = BigInt(`0x${hexHash(padHex(input.saltHex) + usernamePasswordHash)}`);
+  const x = BigInt(`0x${await hexHash(padHex(input.saltHex) + usernamePasswordHash)}`);
 
+  const k = BigInt(`0x${await hexHash(`00${SRP_N_HEX}02`)}`);
   const gPowX = modPow(G, x, N);
-  const base = (((bigB - ((K * gPowX) % N)) % N) + N) % N;
+  const base = (((bigB - ((k * gPowX) % N)) % N) + N) % N;
   const sharedSecret = modPow(base, a + u * x, N);
 
-  const prk = createHmac('sha256', hexToBytes(padHex(u.toString(16))))
-    .update(hexToBytes(padHex(sharedSecret.toString(16))))
-    .digest();
-  const info = Buffer.concat([Buffer.from('Caldera Derived Key', 'utf8'), Buffer.from([1])]);
-  const hkdfKey = createHmac('sha256', prk).update(info).digest().subarray(0, 16);
+  const prk = await hmacSha256(hexToBytes(padHex(u.toString(16))), hexToBytes(padHex(sharedSecret.toString(16))));
+  const info = concatBytes(new TextEncoder().encode('Caldera Derived Key'), new Uint8Array([1]));
+  const hkdfKey = (await hmacSha256(prk, info)).slice(0, 16);
 
   const timestamp = formatCognitoTimestamp(input.now?.() ?? new Date());
-  const message = Buffer.concat([
-    Buffer.from(`${poolName}${input.userIdForSrp}`, 'utf8'),
-    Buffer.from(input.secretBlockBase64, 'base64'),
-    Buffer.from(timestamp, 'utf8'),
-  ]);
-  const signature = createHmac('sha256', hkdfKey).update(message).digest('base64');
+  const message = concatBytes(
+    new TextEncoder().encode(`${poolName}${input.userIdForSrp}`),
+    bytesFromBase64(input.secretBlockBase64),
+    new TextEncoder().encode(timestamp),
+  );
+  const signature = bytesToBase64(await hmacSha256(hkdfKey, message));
   return { timestamp, passwordClaimSignature: signature };
 }

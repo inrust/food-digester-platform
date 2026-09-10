@@ -9,6 +9,7 @@ import {
   userPoolNameOf,
 } from '../src/auth/srp.js';
 import { FakeCognitoServer } from './fake-cognito.js';
+import { expectRejects } from './helpers.js';
 
 const POOL_ID = 'ap-east-1_TestPool';
 
@@ -51,7 +52,7 @@ test('SRP 全链路：正确密码通过服务端独立复算验签', async () =
   };
   assert.equal(body.ChallengeName, 'PASSWORD_VERIFIER');
 
-  const claim = computePasswordVerifierClaim(ephemeral, {
+  const claim = await computePasswordVerifierClaim(ephemeral, {
     userPoolId: POOL_ID,
     userIdForSrp: body.ChallengeParameters['USER_ID_FOR_SRP'] as string,
     password: 'Sup3r!Pass',
@@ -88,7 +89,7 @@ test('SRP 全链路：错误密码服务端验签失败（NotAuthorizedException
     AuthParameters: { USERNAME: 'zhang@example.com', SRP_A: ephemeral.srpAHex },
   });
   const body = challenge.body as { ChallengeParameters: Record<string, string>; Session: string };
-  const claim = computePasswordVerifierClaim(ephemeral, {
+  const claim = await computePasswordVerifierClaim(ephemeral, {
     userPoolId: POOL_ID,
     userIdForSrp: body.ChallengeParameters['USER_ID_FOR_SRP'] as string,
     password: 'wrong-password',
@@ -111,19 +112,18 @@ test('SRP 全链路：错误密码服务端验签失败（NotAuthorizedException
   assert.equal((verdict.body as Record<string, unknown>)['__type'], 'NotAuthorizedException');
 });
 
-test('失败关闭：服务端公钥 B ≡ 0 mod N 拒绝', () => {
+test('失败关闭：服务端公钥 B ≡ 0 mod N 拒绝', async () => {
   const ephemeral = generateSrpEphemeral(() => new Uint8Array(128).fill(3));
-  assert.throws(
-    () =>
-      computePasswordVerifierClaim(ephemeral, {
-        userPoolId: POOL_ID,
-        userIdForSrp: 'user-1',
-        password: 'x',
-        saltHex: 'aa55',
-        srpBHex: SRP_N_HEX,
-        secretBlockBase64: Buffer.from('block').toString('base64'),
-      }),
-    SrpError,
+  await expectRejects(
+    computePasswordVerifierClaim(ephemeral, {
+      userPoolId: POOL_ID,
+      userIdForSrp: 'user-1',
+      password: 'x',
+      saltHex: 'aa55',
+      srpBHex: SRP_N_HEX,
+      secretBlockBase64: Buffer.from('block').toString('base64'),
+    }),
+    (error) => assert.instanceOf(error, SrpError),
   );
 });
 

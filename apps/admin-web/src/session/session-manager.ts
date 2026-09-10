@@ -8,8 +8,8 @@
  * - 刷新成功会重新解析角色（Cognito 组变更经刷新即时生效，见 AUTH-01 未决风险条款）；
  * - logout：本地清会话为已提交操作，GlobalSignOut 失败不阻塞。
  */
-import { actorTypeOf, isRole } from '@fdp/auth';
-import type { Role } from '@fdp/auth';
+import { actorTypeOf, isRole } from '@fdp/auth/browser';
+import type { Role } from '@fdp/auth/browser';
 import { decodeJwtPayload, jwtExpiresAtMs } from './jwt.js';
 import type { SessionStore } from './session-store.js';
 import type { AuthenticationResult } from '../auth/cognito-idp.js';

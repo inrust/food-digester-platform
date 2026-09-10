@@ -20,10 +20,14 @@ export interface CustomersPageProps {
     readonly loading?: boolean;
     readonly error?: unknown;
     readonly nextCursor?: string | null;
+    readonly stale?: boolean;
+    readonly dataUpdatedAt?: string;
+    readonly hasPrevPage?: boolean;
   };
   readonly statusFilter: CustomerStatus | null;
   readonly onFilterStatus: (status: CustomerStatus | null) => void;
   readonly onLoadMore: (cursor: string) => void;
+  readonly onLoadPrevious?: () => void;
   readonly onRefresh: () => void;
   /** customer:write 持有者（PlatformSuperAdmin/PlatformOperator）。 */
   readonly canWrite: boolean;
@@ -80,6 +84,7 @@ export function CustomersPage({
   statusFilter,
   onFilterStatus,
   onLoadMore,
+  onLoadPrevious,
   onRefresh,
   canWrite,
   onCreate,
@@ -163,7 +168,11 @@ export function CustomersPage({
         {...(list.loading !== undefined ? { loading: list.loading } : {})}
         {...(list.error !== undefined ? { error: list.error } : {})}
         {...(list.nextCursor !== undefined ? { nextCursor: list.nextCursor } : {})}
+        {...(list.stale !== undefined ? { stale: list.stale } : {})}
+        {...(list.dataUpdatedAt !== undefined ? { dataUpdatedAt: list.dataUpdatedAt } : {})}
+        {...(list.hasPrevPage !== undefined ? { hasPrevPage: list.hasPrevPage } : {})}
         onNextPage={onLoadMore}
+        {...(onLoadPrevious !== undefined ? { onPrevPage: onLoadPrevious } : {})}
         onRefresh={onRefresh}
         emptyText="暂无客户"
       />

@@ -13,6 +13,7 @@ const r = (p) => fileURLToPath(new URL(p, import.meta.url));
 export default defineConfig({
   resolve: {
     alias: {
+      '@fdp/auth/browser': r('./packages/auth/src/browser.ts'),
       '@fdp/auth': r('./packages/auth/src/index.ts'),
       '@fdp/aws-clients': r('./packages/aws-clients/src/index.ts'),
       '@fdp/database': r('./packages/database/src/index.ts'),

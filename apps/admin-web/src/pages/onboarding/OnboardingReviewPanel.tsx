@@ -30,8 +30,12 @@ export interface OnboardingReviewPanelProps {
     readonly loading?: boolean;
     readonly error?: unknown;
     readonly nextCursor?: string | null;
+    readonly stale?: boolean;
+    readonly dataUpdatedAt?: string;
+    readonly hasPrevPage?: boolean;
   };
   readonly onLoadMore: (cursor: string) => void;
+  readonly onLoadPrevious?: () => void;
   readonly onRefresh: () => void;
   readonly detail: DetailState;
   readonly onSelect: (requestId: string) => void;
@@ -53,6 +57,7 @@ export function OnboardingReviewPanel({
   onFilterStatus,
   list,
   onLoadMore,
+  onLoadPrevious,
   onRefresh,
   detail,
   onSelect,
@@ -140,7 +145,11 @@ export function OnboardingReviewPanel({
         {...(list.loading !== undefined ? { loading: list.loading } : {})}
         {...(list.error !== undefined ? { error: list.error } : {})}
         {...(list.nextCursor !== undefined ? { nextCursor: list.nextCursor } : {})}
+        {...(list.stale !== undefined ? { stale: list.stale } : {})}
+        {...(list.dataUpdatedAt !== undefined ? { dataUpdatedAt: list.dataUpdatedAt } : {})}
+        {...(list.hasPrevPage !== undefined ? { hasPrevPage: list.hasPrevPage } : {})}
         onNextPage={onLoadMore}
+        {...(onLoadPrevious !== undefined ? { onPrevPage: onLoadPrevious } : {})}
         onRefresh={onRefresh}
         emptyText="暂无新增设备请求"
       />

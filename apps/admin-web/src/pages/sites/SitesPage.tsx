@@ -29,10 +29,14 @@ export interface SitesPageProps {
     readonly loading?: boolean;
     readonly error?: unknown;
     readonly nextCursor?: string | null;
+    readonly stale?: boolean;
+    readonly dataUpdatedAt?: string;
+    readonly hasPrevPage?: boolean;
   };
   readonly filters: SiteFilters;
   readonly onFilterChange: (filters: SiteFilters) => void;
   readonly onLoadMore: (cursor: string) => void;
+  readonly onLoadPrevious?: () => void;
   readonly onRefresh: () => void;
   /** 客户选项（创建 Site 时选择所属客户；选项由 BE-CUS-01 注入）。 */
   readonly customerOptions: readonly { value: string; label: string }[];
@@ -172,6 +176,7 @@ export function SitesPage({
   filters,
   onFilterChange,
   onLoadMore,
+  onLoadPrevious,
   onRefresh,
   customerOptions,
   canWrite,
@@ -285,7 +290,11 @@ export function SitesPage({
         {...(list.loading !== undefined ? { loading: list.loading } : {})}
         {...(list.error !== undefined ? { error: list.error } : {})}
         {...(list.nextCursor !== undefined ? { nextCursor: list.nextCursor } : {})}
+        {...(list.stale !== undefined ? { stale: list.stale } : {})}
+        {...(list.dataUpdatedAt !== undefined ? { dataUpdatedAt: list.dataUpdatedAt } : {})}
+        {...(list.hasPrevPage !== undefined ? { hasPrevPage: list.hasPrevPage } : {})}
         onNextPage={onLoadMore}
+        {...(onLoadPrevious !== undefined ? { onPrevPage: onLoadPrevious } : {})}
         onRefresh={onRefresh}
         emptyText="暂无站点"
       />

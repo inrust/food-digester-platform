@@ -50,11 +50,15 @@ export interface DeviceGroupsPageProps {
     readonly loading?: boolean;
     readonly error?: unknown;
     readonly nextCursor?: string | null;
+    readonly stale?: boolean;
+    readonly dataUpdatedAt?: string;
+    readonly hasPrevPage?: boolean;
   };
   /** 已应用的筛选（由集成层持有并用于请求）。 */
   readonly filters: DeviceListFilters;
   readonly onApplyFilters: (filters: DeviceListFilters) => void;
   readonly onLoadMore: (cursor: string) => void;
+  readonly onLoadPrevious?: () => void;
   readonly onRefresh: () => void;
   /** ScopeFilter 选项（由 sites/devices 列表注入）。 */
   readonly filterOptions: {
@@ -100,6 +104,7 @@ export function DeviceGroupsPage({
   filters,
   onApplyFilters,
   onLoadMore,
+  onLoadPrevious,
   onRefresh,
   filterOptions,
   onNavigate,
@@ -241,7 +246,11 @@ export function DeviceGroupsPage({
         {...(list.loading !== undefined ? { loading: list.loading } : {})}
         {...(list.error !== undefined ? { error: list.error } : {})}
         {...(list.nextCursor !== undefined ? { nextCursor: list.nextCursor } : {})}
+        {...(list.stale !== undefined ? { stale: list.stale } : {})}
+        {...(list.dataUpdatedAt !== undefined ? { dataUpdatedAt: list.dataUpdatedAt } : {})}
+        {...(list.hasPrevPage !== undefined ? { hasPrevPage: list.hasPrevPage } : {})}
         onNextPage={onLoadMore}
+        {...(onLoadPrevious !== undefined ? { onPrevPage: onLoadPrevious } : {})}
         onRefresh={onRefresh}
         emptyText="暂无设备"
       />

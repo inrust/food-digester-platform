@@ -57,7 +57,7 @@ export function CursorTable<T>({
     return <ErrorNotice error={error} {...(onRefresh !== undefined ? { onRefresh } : {})} />;
   }
 
-  if (loading || rows === null) {
+  if (rows === null) {
     return (
       <div role="status" data-testid="table-loading">
         加载中…
@@ -67,7 +67,7 @@ export function CursorTable<T>({
 
   return (
     <div className="cursor-table" data-testid="cursor-table">
-      {stale ? (
+      {stale || loading ? (
         <div className="stale-banner" role="status" data-testid="table-stale">
           数据可能已过期
           {dataUpdatedAt !== undefined ? (

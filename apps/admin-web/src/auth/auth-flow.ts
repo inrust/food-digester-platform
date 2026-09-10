@@ -73,7 +73,7 @@ export class AuthFlow {
     if (!userIdForSrp || !saltHex || !srpBHex || !secretBlock) {
       throw new CognitoIdpError('UNKNOWN', 'The password verifier challenge is incomplete');
     }
-    const claim = computePasswordVerifierClaim(ephemeral, {
+    const claim = await computePasswordVerifierClaim(ephemeral, {
       userPoolId: this.deps.userPoolId,
       userIdForSrp,
       password,
