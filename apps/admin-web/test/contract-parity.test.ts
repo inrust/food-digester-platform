@@ -58,6 +58,12 @@ import {
   CONTRACT_COVERAGE,
   CONTRACT_STATUS_OPTIONS,
 } from '../src/pages/contracts/contract-state.js';
+import {
+  CONSUMABLE_COVERAGE,
+  CONSUMABLE_TYPES,
+  REQUEST_ACTION_MATRIX,
+  REQUEST_STATUS_OPTIONS,
+} from '../src/pages/consumables/consumable-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -577,6 +583,40 @@ test('FE-17：Contract 状态枚举与 BE-CON-01 契约一致；三个合约页�
     assert.ok(CONTRACT_COVERAGE[element.id] !== undefined, `元素 ${element.id} 无实现锚点`);
   }
   assert.deepEqual(Object.keys(CONTRACT_COVERAGE).sort(), owned.map((e) => e.id).sort());
+});
+
+test('FE-18：耗材类型/申请状态枚举与 BE-CNS-01/02 契约一致；device-consumable 页锚点精确覆盖', () => {
+  const statusApi = readJson('contracts/rest/admin-consumable-api.json') as {
+    components: { schemas: { ConsumableStatus: { properties: { consumables: { required: string[] } } } } };
+  };
+  assert.deepEqual(
+    [...CONSUMABLE_TYPES].sort(),
+    [...statusApi.components.schemas.ConsumableStatus.properties.consumables.required].sort(),
+  );
+  const requestApi = readJson('contracts/rest/admin-consumable-request-api.json') as {
+    components: { schemas: { ConsumableRequest: { properties: { status: { enum: string[] } } } } };
+  };
+  assert.deepEqual([...REQUEST_STATUS_OPTIONS], requestApi.components.schemas.ConsumableRequest.properties.status.enum);
+  // 矩阵键集合 == 状态枚举；终态无动作（跳级/重复处理 → 服务端 409）
+  assert.deepEqual(
+    Object.keys(REQUEST_ACTION_MATRIX).sort(),
+    [...requestApi.components.schemas.ConsumableRequest.properties.status.enum].sort(),
+  );
+  assert.deepEqual(REQUEST_ACTION_MATRIX['COMPLETED'], []);
+  assert.deepEqual(REQUEST_ACTION_MATRIX['CANCELLED'], []);
+
+  // CT-06：device-consumable 页全部 Adopt/Adapt 元素 ⇄ 锚点精确一致
+  const matrix = readJson('contracts/prototype-traceability.yaml') as {
+    pages: { pageState: string; elements: { id: string; disposition: string }[] }[];
+  };
+  const page = matrix.pages.find((p) => p.pageState === 'device-consumable');
+  assert.ok(page !== undefined, 'CT-06 缺少页面 device-consumable');
+  const owned = page.elements.filter((e) => e.disposition === 'Adopt' || e.disposition === 'Adapt');
+  assert.ok(owned.length > 0, 'device-consumable 页应存在 Adopt/Adapt 元素');
+  for (const element of owned) {
+    assert.ok(CONSUMABLE_COVERAGE[element.id] !== undefined, `元素 ${element.id} 无实现锚点`);
+  }
+  assert.deepEqual(Object.keys(CONSUMABLE_COVERAGE).sort(), owned.map((e) => e.id).sort());
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {
