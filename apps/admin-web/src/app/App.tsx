@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ToastHost, useToastQueue } from '../components/Toast.js';
 import { TimeZoneProvider } from '../components/TimeText.js';
+import { I18nProvider } from '../i18n/i18n.js';
 import { resolveRoute } from '../router/guard.js';
 import { AppShell } from '../shell/AppShell.js';
 import type { AdminWebServices } from './composition-root.js';
@@ -52,6 +53,15 @@ function NotFoundPage({ onNavigate }: { onNavigate: (path: string) => void }) {
 }
 
 export function AdminWebApp({ services }: { readonly services: AdminWebServices }) {
+  // FE-19：i18n 顶层挂载（语言切换即时生效；localStorage 持久化，刷新/重新登录保持）
+  return (
+    <I18nProvider>
+      <AdminWebAppInner services={services} />
+    </I18nProvider>
+  );
+}
+
+function AdminWebAppInner({ services }: { readonly services: AdminWebServices }) {
   const { location, navigate } = useBrowserRouter();
   const [sessionRevision, setSessionRevision] = useState(0);
   const toasts = useToastQueue();

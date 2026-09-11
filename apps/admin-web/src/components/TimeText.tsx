@@ -1,7 +1,8 @@
-/** FE-02 UTC/本地时间显示与用户时区偏好。 */
+/** FE-02 UTC/本地时间显示与用户时区偏好。FE-19：日期按所选语言区域格式化（时间仍按用户时区）。 */
 
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
+import { localeForLanguage, useI18n } from '../i18n/i18n.js';
 
 export const DEFAULT_TIME_ZONE = 'Asia/Shanghai';
 export const SUPPORTED_TIME_ZONES = ['UTC', 'Asia/Shanghai', 'Europe/London', 'America/New_York'] as const;
@@ -40,17 +41,17 @@ export function useUserTimeZone(): TimeZoneValue {
   return useContext(TimeZoneContext);
 }
 
-/** ISO(UTC) → 指定时区可读格式；非法输入/时区回退安全值。 */
-export function formatInTimeZone(iso: string, timeZone: string = DEFAULT_TIME_ZONE): string {
+/** ISO(UTC) → 指定时区可读格式；非法输入/时区回退安全值；locale 控制日期区域格式。 */
+export function formatInTimeZone(iso: string, timeZone: string = DEFAULT_TIME_ZONE, locale: string = 'zh-CN'): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '—';
   let zone = timeZone;
   try {
-    new Intl.DateTimeFormat('zh-CN', { timeZone: zone });
+    new Intl.DateTimeFormat(locale, { timeZone: zone });
   } catch {
     zone = 'UTC';
   }
-  return new Intl.DateTimeFormat('zh-CN', {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: zone,
     year: 'numeric',
     month: '2-digit',
@@ -69,12 +70,13 @@ export interface TimeTextProps {
 
 export function TimeText({ iso, timeZone: explicitTimeZone }: TimeTextProps) {
   const { timeZone: userTimeZone } = useUserTimeZone();
+  const { language } = useI18n();
   const timeZone = explicitTimeZone ?? userTimeZone;
   const date = new Date(iso);
   const valid = !Number.isNaN(date.getTime());
   return (
     <time dateTime={valid ? date.toISOString() : undefined} title={valid ? `UTC：${date.toISOString()}` : undefined}>
-      {formatInTimeZone(iso, timeZone)}
+      {formatInTimeZone(iso, timeZone, localeForLanguage(language))}
     </time>
   );
 }

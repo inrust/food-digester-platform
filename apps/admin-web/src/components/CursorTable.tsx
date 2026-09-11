@@ -8,6 +8,7 @@
 import type { ReactNode } from 'react';
 import { ErrorNotice } from './ErrorNotice.js';
 import { TimeText } from './TimeText.js';
+import { useI18n } from '../i18n/i18n.js';
 
 export interface CursorTableColumn<T> {
   readonly key: string;
@@ -49,10 +50,12 @@ export function CursorTable<T>({
   onNextPage,
   onPrevPage,
   onRefresh,
-  emptyText = '暂无数据',
+  emptyText,
   ariaLabel,
   rowClassName,
 }: CursorTableProps<T>) {
+  const { t } = useI18n();
+  const resolvedEmptyText = emptyText ?? t('common.empty');
   if (error !== undefined && error !== null) {
     return <ErrorNotice error={error} {...(onRefresh !== undefined ? { onRefresh } : {})} />;
   }
@@ -60,7 +63,7 @@ export function CursorTable<T>({
   if (rows === null) {
     return (
       <div role="status" data-testid="table-loading">
-        加载中…
+        {t('common.loading')}
       </div>
     );
   }
@@ -69,16 +72,16 @@ export function CursorTable<T>({
     <div className="cursor-table" data-testid="cursor-table">
       {stale || loading ? (
         <div className="stale-banner" role="status" data-testid="table-stale">
-          数据可能已过期
+          {t('common.stale')}
           {dataUpdatedAt !== undefined ? (
             <>
-              （数据时间：
+              （{t('common.dataTime')}
               <TimeText iso={dataUpdatedAt} />）
             </>
           ) : null}
           {onRefresh !== undefined ? (
             <button type="button" onClick={onRefresh}>
-              刷新
+              {t('common.refresh')}
             </button>
           ) : null}
         </div>
@@ -86,7 +89,7 @@ export function CursorTable<T>({
 
       {rows.length === 0 ? (
         <div className="empty-state" data-testid="table-empty">
-          {emptyText}
+          {resolvedEmptyText}
         </div>
       ) : (
         <table aria-label={ariaLabel}>
@@ -116,7 +119,7 @@ export function CursorTable<T>({
 
       <div className="table-pagination">
         <button type="button" disabled={!hasPrevPage} onClick={onPrevPage}>
-          上一页
+          {t('common.prevPage')}
         </button>
         <button
           type="button"
@@ -125,7 +128,7 @@ export function CursorTable<T>({
             if (nextCursor !== null) onNextPage?.(nextCursor);
           }}
         >
-          下一页
+          {t('common.nextPage')}
         </button>
       </div>
     </div>

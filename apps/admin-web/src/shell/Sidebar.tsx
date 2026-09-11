@@ -6,6 +6,7 @@
  */
 import { useState } from 'react';
 import type { MenuNode } from '../menu/menu.js';
+import { menuKeyForGroup, menuKeyForPageState, useI18n } from '../i18n/i18n.js';
 
 export interface SidebarProps {
   readonly nodes: readonly MenuNode[];
@@ -14,6 +15,7 @@ export interface SidebarProps {
 }
 
 export function Sidebar({ nodes, currentPath, onNavigate }: SidebarProps) {
+  const { t } = useI18n();
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
 
   const toggleGroup = (groupId: string) => {
@@ -25,7 +27,7 @@ export function Sidebar({ nodes, currentPath, onNavigate }: SidebarProps) {
     });
   };
 
-  const renderItem = (item: { path: string; label: string }) => {
+  const renderItem = (item: { path: string; pageState: string; label: string }) => {
     const active = item.path === currentPath;
     return (
       <li key={item.path}>
@@ -39,14 +41,14 @@ export function Sidebar({ nodes, currentPath, onNavigate }: SidebarProps) {
             onNavigate(item.path);
           }}
         >
-          {item.label}
+          {t(menuKeyForPageState(item.pageState))}
         </a>
       </li>
     );
   };
 
   return (
-    <nav aria-label="主菜单" className="sidebar-nav">
+    <nav aria-label={t('common.mainMenu')} className="sidebar-nav">
       <ul className="menu-list">
         {nodes.map((node) => {
           if (node.kind === 'leaf') {
@@ -64,7 +66,7 @@ export function Sidebar({ nodes, currentPath, onNavigate }: SidebarProps) {
                 aria-controls={subMenuId}
                 onClick={() => toggleGroup(node.groupId)}
               >
-                {node.label}
+                {t(menuKeyForGroup(node.groupId))}
                 <span aria-hidden="true" className={`arrow${isCollapsed ? '' : ' open'}`} />
               </button>
               <ul id={subMenuId} className="sub-menu" hidden={isCollapsed}>

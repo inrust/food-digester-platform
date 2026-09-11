@@ -8,6 +8,7 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useDialogA11y } from './dialog-a11y.js';
+import { useI18n } from '../i18n/i18n.js';
 
 export interface ConfirmDialogProps {
   readonly open: boolean;
@@ -28,12 +29,16 @@ export function ConfirmDialog({
   description,
   danger = false,
   requireReason = false,
-  reasonLabel = '操作原因',
-  confirmText = '确认',
-  cancelText = '取消',
+  reasonLabel,
+  confirmText,
+  cancelText,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useI18n();
+  const resolvedReasonLabel = reasonLabel ?? t('common.reason');
+  const resolvedConfirmText = confirmText ?? t('common.confirm');
+  const resolvedCancelText = cancelText ?? t('common.cancel');
   const [reason, setReason] = useState('');
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -69,7 +74,7 @@ export function ConfirmDialog({
         {description !== undefined ? <p className="dialog-description">{description}</p> : null}
         {requireReason ? (
           <div className="dialog-field">
-            <label htmlFor={reasonId}>{reasonLabel}</label>
+            <label htmlFor={reasonId}>{resolvedReasonLabel}</label>
             <textarea
               id={reasonId}
               ref={reasonRef}
@@ -78,13 +83,13 @@ export function ConfirmDialog({
               onChange={(event) => setReason(event.target.value)}
             />
             <p id={hintId} className="field-hint">
-              必填，将写入审计记录
+              {t('common.reasonHint')}
             </p>
           </div>
         ) : null}
         <div className="dialog-actions">
           <button type="button" ref={cancelRef} onClick={onCancel}>
-            {cancelText}
+            {resolvedCancelText}
           </button>
           <button
             type="button"
@@ -92,7 +97,7 @@ export function ConfirmDialog({
             disabled={reasonMissing}
             onClick={() => onConfirm(reason.trim())}
           >
-            {confirmText}
+            {resolvedConfirmText}
           </button>
         </div>
       </div>
