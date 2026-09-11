@@ -318,11 +318,16 @@ const RUNNING_DETAIL: OtaCampaignsPageProps['detail'] = {
   },
 };
 
-test('坏包不可建 Campaign：包下拉仅 VERIFIED 可发布包；校验函数拒绝非 VERIFIED 包', () => {
+test('坏包不可建 Campaign：包下拉仅 VERIFIED 可发布包；校验函数拒绝非 VERIFIED 包', async () => {
+  const user = userEvent.setup();
   // 页面可选来源只有 verifiedPackages（容器仅注入 VERIFIED 列表）
   renderCampaignsPage();
   // 打开创建表单后下拉才渲染
-  assert.equal(screen.queryByTestId('campaign-create-form'), null);
+  await user.click(screen.getByTestId('campaign-create-open'));
+  const options = within(screen.getByTestId('campaign-package'))
+    .getAllByRole('option')
+    .map((o) => o.getAttribute('value'));
+  assert.deepEqual(options, ['', 'pkg-001']);
 
   // 校验函数：UPLOADED 包 id 不在 VERIFIED 集合 → 拒绝
   assert.ok(

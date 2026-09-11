@@ -32,6 +32,14 @@ import { DEVICE_USER_COVERAGE } from '../src/pages/device-users/device-user-stat
 import { ALARM_ACTION_MATRIX, ALARM_SEVERITY_OPTIONS, ALARM_STATUS_OPTIONS } from '../src/pages/alarms/alarm-state.js';
 import { ESG_DEVICE_COVERAGE, ESG_OVERVIEW_COVERAGE } from '../src/pages/esg/esg-state.js';
 import { COMMAND_CATALOG, DEVICE_OPERATE_COVERAGE, QUICK_ACTIONS } from '../src/pages/device-operate/command-state.js';
+import {
+  CAMPAIGN_ACTION_MATRIX,
+  CAMPAIGN_STATUS_OPTIONS,
+  OTA_COVERAGE,
+  PACKAGE_STATUS_OPTIONS,
+  PACKAGE_TYPE_OPTIONS,
+  TARGET_STATUS_OPTIONS,
+} from '../src/pages/ota/ota-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -365,6 +373,71 @@ test('FE-12：CT-04 命令目录与前端镜像逐条一致；device-operate 页
     required.map((e) => e.id).sort(),
     '覆盖表与 CT-06 device-operate 元素集合不一致',
   );
+});
+
+test('FE-13：OTA 枚举与 BE-OTA-01/02 契约一致；Campaign 动作矩阵与状态机一致', () => {
+  const pkgApi = readJson('contracts/rest/admin-ota-package-api.json') as {
+    components: {
+      schemas: {
+        FirmwarePackageType: { enum: string[] };
+        FirmwarePackageStatus: { enum: string[] };
+      };
+    };
+  };
+  assert.deepEqual([...PACKAGE_TYPE_OPTIONS], pkgApi.components.schemas.FirmwarePackageType.enum);
+  assert.deepEqual([...PACKAGE_STATUS_OPTIONS], pkgApi.components.schemas.FirmwarePackageStatus.enum);
+  const campaignApi = readJson('contracts/rest/admin-ota-campaign-api.json') as {
+    components: {
+      schemas: {
+        OtaCampaignStatus: { enum: string[] };
+        OtaTargetStatus: { enum: string[] };
+      };
+    };
+  };
+  assert.deepEqual([...CAMPAIGN_STATUS_OPTIONS], campaignApi.components.schemas.OtaCampaignStatus.enum);
+  assert.deepEqual([...TARGET_STATUS_OPTIONS], campaignApi.components.schemas.OtaTargetStatus.enum);
+  // 状态机：RUNNING⇄PAUSED→CANCELLED；扩大批次/失败重试仅 RUNNING；终态与 DRAFT 无动作
+  assert.deepEqual(CAMPAIGN_ACTION_MATRIX.RUNNING, ['pause', 'expand', 'retry', 'cancel']);
+  assert.deepEqual(CAMPAIGN_ACTION_MATRIX.PAUSED, ['resume', 'cancel']);
+  assert.deepEqual(CAMPAIGN_ACTION_MATRIX.COMPLETED, []);
+  assert.deepEqual(CAMPAIGN_ACTION_MATRIX.CANCELLED, []);
+  assert.deepEqual(CAMPAIGN_ACTION_MATRIX.DRAFT, []);
+});
+
+test('FE-13：CT-06 OTA 元素锚点覆盖（dashboard 升级 + device-manage 固件/同步更新）', () => {
+  const matrix = readJson('contracts/prototype-traceability.yaml') as {
+    pages: {
+      pageState: string;
+      elements: { id: string; disposition: string; source?: { taskId?: string } }[];
+    }[];
+  };
+  const owned: string[] = [];
+  // dashboard 页 FE-13 自有元素（升级按钮，跳转受控 Campaign）
+  const dashboard = matrix.pages.find((p) => p.pageState === 'dashboard');
+  assert.ok(dashboard !== undefined, 'CT-06 缺少页面 dashboard');
+  owned.push(
+    ...dashboard.elements
+      .filter((e) => (e.disposition === 'Adopt' || e.disposition === 'Adapt') && e.source?.taskId === 'FE-13')
+      .map((e) => e.id),
+  );
+  // device-manage 页 BE-OTA-01/02 元素（选择固件文件/同步更新，由 FE-13 承载）
+  const deviceManage = matrix.pages.find((p) => p.pageState === 'device-manage');
+  assert.ok(deviceManage !== undefined, 'CT-06 缺少页面 device-manage');
+  owned.push(
+    ...deviceManage.elements
+      .filter(
+        (e) =>
+          (e.disposition === 'Adopt' || e.disposition === 'Adapt') &&
+          (e.source?.taskId === 'BE-OTA-01' || e.source?.taskId === 'BE-OTA-02'),
+      )
+      .map((e) => e.id),
+  );
+  assert.ok(owned.length > 0, 'CT-06 应存在 FE-13 OTA 元素');
+  for (const id of owned) {
+    assert.ok(OTA_COVERAGE[id] !== undefined, `元素 ${id} 无实现锚点`);
+  }
+  // 覆盖表与元素集合精确一致（防止伪覆盖）
+  assert.deepEqual(Object.keys(OTA_COVERAGE).sort(), owned.sort());
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {
