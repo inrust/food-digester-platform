@@ -53,6 +53,11 @@ import {
   SETTING_KEYS,
   USER_STATUS_OPTIONS,
 } from '../src/pages/settings/settings-state.js';
+import {
+  CONTRACT_ACTION_MATRIX,
+  CONTRACT_COVERAGE,
+  CONTRACT_STATUS_OPTIONS,
+} from '../src/pages/contracts/contract-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -539,6 +544,39 @@ test('FE-16：RoleCode/SettingKey/用户状态枚举与契约一致；settings �
     assert.ok(SETTINGS_COVERAGE[element.id] !== undefined, `元素 ${element.id} 无实现锚点`);
   }
   assert.deepEqual(Object.keys(SETTINGS_COVERAGE).sort(), owned.map((e) => e.id).sort());
+});
+
+test('FE-17：Contract 状态枚举与 BE-CON-01 契约一致；三个合约页元素锚点精确覆盖', () => {
+  const api = readJson('contracts/rest/admin-contract-api.json') as {
+    components: {
+      schemas: {
+        Contract: { properties: { status: { enum: string[] }; derivedStatus: { enum: string[] } } };
+      };
+    };
+  };
+  const { status, derivedStatus } = api.components.schemas.Contract.properties;
+  assert.deepEqual([...CONTRACT_STATUS_OPTIONS], status.enum);
+  assert.deepEqual([...CONTRACT_STATUS_OPTIONS], derivedStatus.enum);
+  // 矩阵键集合 == 状态枚举；TERMINATED 为终态（无动作）
+  assert.deepEqual(Object.keys(CONTRACT_ACTION_MATRIX).sort(), [...status.enum].sort());
+  assert.deepEqual(CONTRACT_ACTION_MATRIX['TERMINATED'], []);
+
+  // CT-06：contract-modify/contract-new/contract-detail 三页全部 Adopt/Adapt 元素 ⇄ 锚点精确一致
+  const matrix = readJson('contracts/prototype-traceability.yaml') as {
+    pages: {
+      pageState: string;
+      elements: { id: string; disposition: string }[];
+    }[];
+  };
+  const owned = matrix.pages
+    .filter((p) => ['contract-modify', 'contract-new', 'contract-detail'].includes(p.pageState))
+    .flatMap((p) => p.elements)
+    .filter((e) => e.disposition === 'Adopt' || e.disposition === 'Adapt');
+  assert.ok(owned.length > 0, '合约页应存在 Adopt/Adapt 元素');
+  for (const element of owned) {
+    assert.ok(CONTRACT_COVERAGE[element.id] !== undefined, `元素 ${element.id} 无实现锚点`);
+  }
+  assert.deepEqual(Object.keys(CONTRACT_COVERAGE).sort(), owned.map((e) => e.id).sort());
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {
