@@ -38,7 +38,7 @@ function renderShell(options: { path?: string; role?: Role; notificationCount?: 
   return { ...utils, navigated, isLoggedOut: () => loggedOut > 0 };
 }
 
-test('菜单按角色过滤：PlatformSuperAdmin 见全部 15 项；CustomerViewer 不见受限项', () => {
+test('菜单按角色过滤：PlatformSuperAdmin 见全部 16 项；CustomerViewer 不见受限项', () => {
   const { unmount } = renderShell({ role: 'PlatformSuperAdmin' });
   for (const label of [
     '概览',
@@ -48,6 +48,7 @@ test('菜单按角色过滤：PlatformSuperAdmin 见全部 15 项；CustomerView
     '配置管理',
     '耗材查看',
     '告警与事件',
+    '媒体管理',
     'ESG概览',
     '设备ESG信息',
     '合约查询及修改',
@@ -68,6 +69,7 @@ test('菜单按角色过滤：PlatformSuperAdmin 见全部 15 项；CustomerView
     '设备群管理',
     '耗材查看',
     '告警与事件',
+    '媒体管理',
     'ESG概览',
     '设备ESG信息',
     '站点管理',

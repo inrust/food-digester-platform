@@ -31,6 +31,7 @@ export type PageState =
   | 'contract-detail'
   | 'ota-campaigns'
   | 'ota-packages'
+  | 'media'
   | 'customers'
   | 'sites'
   | 'licenses'
@@ -113,6 +114,14 @@ export const APP_ROUTES: readonly AppRoute[] = [
     path: '/alarms',
     pageState: 'alarms',
     label: '告警与事件',
+    roles: ALL_ROLES,
+    menuGroup: 'device',
+  },
+  // FE-14 扩展路由（CT-06 矩阵外）：media:read = 全部五角色；Customer 角色强制租户隔离（跨 Customer → 404）
+  {
+    path: '/media',
+    pageState: 'media',
+    label: '媒体管理',
     roles: ALL_ROLES,
     menuGroup: 'device',
   },

@@ -40,6 +40,11 @@ import {
   PACKAGE_TYPE_OPTIONS,
   TARGET_STATUS_OPTIONS,
 } from '../src/pages/ota/ota-state.js';
+import {
+  MEDIA_COVERAGE,
+  MEDIA_STATUS_OPTIONS,
+  MEDIA_TYPE_OPTIONS,
+} from '../src/pages/media/media-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -60,8 +65,8 @@ test('CT-06：9 个菜单项的 routeId/label/pageState/roles 与路由注册表
   assert.equal(matrix.menus.length, 9);
 
   const menuRoutes = APP_ROUTES.filter((route) => route.menuGroup !== null);
-  // 扩展路由（CT-06 矩阵外，按 APP_ROUTES 出现顺序）：FE-09 /configurations；FE-10 /alarms；FE-05 /customers、/sites；FE-08 /licenses；FE-09 /device-users
-  const EXTENSION_ROUTES = ['/configurations', '/alarms', '/customers', '/sites', '/licenses', '/device-users'];
+  // 扩展路由（CT-06 矩阵外，按 APP_ROUTES 出现顺序）：FE-09 /configurations；FE-10 /alarms；FE-14 /media；FE-05 /customers、/sites；FE-08 /licenses；FE-09 /device-users
+  const EXTENSION_ROUTES = ['/configurations', '/alarms', '/media', '/customers', '/sites', '/licenses', '/device-users'];
   const matrixRoutes = menuRoutes.filter((r) => !EXTENSION_ROUTES.includes(r.path));
   assert.equal(matrixRoutes.length, matrix.menus.length);
   // 扩展路由必须在此显式登记，防止路由表无约束膨胀
@@ -438,6 +443,37 @@ test('FE-13：CT-06 OTA 元素锚点覆盖（dashboard 升级 + device-manage �
   }
   // 覆盖表与元素集合精确一致（防止伪覆盖）
   assert.deepEqual(Object.keys(OTA_COVERAGE).sort(), owned.sort());
+});
+
+test('FE-14：Media 类型/状态枚举与 BE-MED-01 契约一致；CT-06 媒体预览锚点覆盖', () => {
+  const api = readJson('contracts/rest/admin-media-api.json') as {
+    components: {
+      schemas: {
+        MediaView: { properties: { mediaType: { enum: string[] }; status: { enum: string[] } } };
+      };
+    };
+  };
+  const { mediaType, status } = api.components.schemas.MediaView.properties;
+  assert.deepEqual([...MEDIA_TYPE_OPTIONS], mediaType.enum);
+  assert.deepEqual([...MEDIA_STATUS_OPTIONS], status.enum);
+  // CT-06 锚点：device-view 最新授权 Media 预览（BE-MED-01 Adapt 元素）由可复用 MediaPreview 承载
+  const matrix = readJson('contracts/prototype-traceability.yaml') as {
+    pages: {
+      pageState: string;
+      elements: { id: string; disposition: string; source?: { taskId?: string } }[];
+    }[];
+  };
+  const page = matrix.pages.find((p) => p.pageState === 'device-view');
+  assert.ok(page !== undefined, 'CT-06 缺少页面 device-view');
+  const owned = page.elements.filter(
+    (e) => (e.disposition === 'Adopt' || e.disposition === 'Adapt') && e.source?.taskId === 'BE-MED-01',
+  );
+  assert.ok(owned.length > 0, 'device-view 页应存在 BE-MED-01 元素');
+  for (const element of owned) {
+    assert.ok(MEDIA_COVERAGE[element.id] !== undefined, `元素 ${element.id} 无实现锚点`);
+  }
+  // 覆盖表不允许多余键（防止伪覆盖）
+  assert.deepEqual(Object.keys(MEDIA_COVERAGE).sort(), owned.map((e) => e.id).sort());
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {
