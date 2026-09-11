@@ -45,6 +45,8 @@ import {
   MEDIA_STATUS_OPTIONS,
   MEDIA_TYPE_OPTIONS,
 } from '../src/pages/media/media-state.js';
+import { AUDIT_RESULT_OPTIONS, SENSITIVE_KEY_PATTERN } from '../src/pages/audit/audit-state.js';
+import { SENSITIVE_KEY_PATTERN as OBSERVABILITY_SENSITIVE_KEY_PATTERN } from '../../../packages/observability/src/redaction.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -65,8 +67,8 @@ test('CT-06：9 个菜单项的 routeId/label/pageState/roles 与路由注册表
   assert.equal(matrix.menus.length, 9);
 
   const menuRoutes = APP_ROUTES.filter((route) => route.menuGroup !== null);
-  // 扩展路由（CT-06 矩阵外，按 APP_ROUTES 出现顺序）：FE-09 /configurations；FE-10 /alarms；FE-14 /media；FE-05 /customers、/sites；FE-08 /licenses；FE-09 /device-users
-  const EXTENSION_ROUTES = ['/configurations', '/alarms', '/media', '/customers', '/sites', '/licenses', '/device-users'];
+  // 扩展路由（CT-06 矩阵外，按 APP_ROUTES 出现顺序）：FE-09 /configurations；FE-10 /alarms；FE-14 /media；FE-05 /customers、/sites；FE-08 /licenses；FE-09 /device-users；FE-15 /audit-logs
+  const EXTENSION_ROUTES = ['/configurations', '/alarms', '/media', '/customers', '/sites', '/licenses', '/device-users', '/audit-logs'];
   const matrixRoutes = menuRoutes.filter((r) => !EXTENSION_ROUTES.includes(r.path));
   assert.equal(matrixRoutes.length, matrix.menus.length);
   // 扩展路由必须在此显式登记，防止路由表无约束膨胀
@@ -474,6 +476,26 @@ test('FE-14：Media 类型/状态枚举与 BE-MED-01 契约一致；CT-06 媒体
   }
   // 覆盖表不允许多余键（防止伪覆盖）
   assert.deepEqual(Object.keys(MEDIA_COVERAGE).sort(), owned.map((e) => e.id).sort());
+});
+
+test('FE-15：审计 result 枚举与 BE-AUD-01 契约一致；前端脱敏模式与 observability parity 锁定', () => {
+  const api = readJson('contracts/rest/admin-audit-api.json') as {
+    components: {
+      schemas: {
+        AuditLogView: { properties: { result: { enum: string[] } } };
+      };
+      // 只读：契约不存在任何写路径
+    };
+    paths: Record<string, Record<string, unknown>>;
+  };
+  assert.deepEqual([...AUDIT_RESULT_OPTIONS], api.components.schemas.AuditLogView.properties.result.enum);
+  // 契约只读断言：全部路径仅 GET（无 post/put/patch/delete）
+  for (const [path, ops] of Object.entries(api.paths)) {
+    assert.deepEqual(Object.keys(ops), ['get'], `${path} 存在非 GET 操作`);
+  }
+  // 前端兜底脱敏字段名模式与 DOM-03/SEC-01 事实源逐字符一致（禁止单边漂移）
+  assert.equal(SENSITIVE_KEY_PATTERN.source, OBSERVABILITY_SENSITIVE_KEY_PATTERN.source);
+  assert.equal(SENSITIVE_KEY_PATTERN.flags, OBSERVABILITY_SENSITIVE_KEY_PATTERN.flags);
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {

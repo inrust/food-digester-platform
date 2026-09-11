@@ -23,7 +23,7 @@ function sessionOf(role: Role): SessionSnapshot {
   return { username: 'user@example.com', roles: [role], customerId };
 }
 
-// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（FE-05 /customers、/sites；FE-08 /licenses；FE-09 /configurations、/device-users）
+// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（FE-05 /customers、/sites；FE-08 /licenses；FE-09 /configurations、/device-users；FE-14 /media；FE-15 /audit-logs 仅 SuperAdmin/Auditor）
 const EXPECTED_MENUS: Record<Role, string[]> = {
   PlatformSuperAdmin: [
     '/dashboard',
@@ -42,6 +42,7 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/customers',
     '/sites',
     '/device-users',
+    '/audit-logs',
   ],
   PlatformOperator: [
     '/dashboard',
@@ -73,6 +74,7 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/customers',
     '/sites',
     '/device-users',
+    '/audit-logs',
   ],
   CustomerAdmin: [
     '/dashboard',

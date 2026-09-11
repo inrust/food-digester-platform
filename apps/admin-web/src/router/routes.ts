@@ -32,6 +32,7 @@ export type PageState =
   | 'ota-campaigns'
   | 'ota-packages'
   | 'media'
+  | 'audit-logs'
   | 'customers'
   | 'sites'
   | 'licenses'
@@ -184,6 +185,14 @@ export const APP_ROUTES: readonly AppRoute[] = [
     pageState: 'device-users',
     label: '设备用户',
     roles: ['PlatformSuperAdmin', 'Auditor', 'CustomerAdmin'],
+    menuGroup: 'platform',
+  },
+  // FE-15 扩展路由（CT-06 矩阵外）：audit:read V1 仅 PlatformSuperAdmin/Auditor（Customer 角色 403）
+  {
+    path: '/audit-logs',
+    pageState: 'audit-logs',
+    label: '审计日志',
+    roles: ['PlatformSuperAdmin', 'Auditor'],
     menuGroup: 'platform',
   },
 
