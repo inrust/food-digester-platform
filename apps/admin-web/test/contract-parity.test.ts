@@ -47,6 +47,12 @@ import {
 } from '../src/pages/media/media-state.js';
 import { AUDIT_RESULT_OPTIONS, SENSITIVE_KEY_PATTERN } from '../src/pages/audit/audit-state.js';
 import { SENSITIVE_KEY_PATTERN as OBSERVABILITY_SENSITIVE_KEY_PATTERN } from '../../../packages/observability/src/redaction.js';
+import {
+  ROLE_OPTIONS,
+  SETTINGS_COVERAGE,
+  SETTING_KEYS,
+  USER_STATUS_OPTIONS,
+} from '../src/pages/settings/settings-state.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -496,6 +502,43 @@ test('FE-15：审计 result 枚举与 BE-AUD-01 契约一致；前端脱敏模�
   // 前端兜底脱敏字段名模式与 DOM-03/SEC-01 事实源逐字符一致（禁止单边漂移）
   assert.equal(SENSITIVE_KEY_PATTERN.source, OBSERVABILITY_SENSITIVE_KEY_PATTERN.source);
   assert.equal(SENSITIVE_KEY_PATTERN.flags, OBSERVABILITY_SENSITIVE_KEY_PATTERN.flags);
+});
+
+test('FE-16：RoleCode/SettingKey/用户状态枚举与契约一致；settings 页 FE-16 自有元素锚点覆盖', () => {
+  const userApi = readJson('contracts/rest/admin-user-api.json') as {
+    components: {
+      schemas: {
+        RoleCode: { enum: string[] };
+        UserView: { properties: { status: { enum: string[] } } };
+      };
+    };
+  };
+  assert.deepEqual([...ROLE_OPTIONS].sort(), [...userApi.components.schemas.RoleCode.enum].sort());
+  assert.deepEqual([...USER_STATUS_OPTIONS], userApi.components.schemas.UserView.properties.status.enum);
+  const settingsApi = readJson('contracts/rest/admin-settings-api.json') as {
+    components: { schemas: { SettingKey: { enum: string[] } } };
+  };
+  assert.deepEqual([...SETTING_KEYS], settingsApi.components.schemas.SettingKey.enum);
+
+  // CT-06 settings 页 FE-16 自有元素（BE-RBAC-01 平台用户三元素 + FE-16 筛选重置）⇄ 锚点精确一致
+  const matrix = readJson('contracts/prototype-traceability.yaml') as {
+    pages: {
+      pageState: string;
+      elements: { id: string; disposition: string; source?: { taskId?: string } }[];
+    }[];
+  };
+  const page = matrix.pages.find((p) => p.pageState === 'settings');
+  assert.ok(page !== undefined, 'CT-06 缺少页面 settings');
+  const owned = page.elements.filter(
+    (e) =>
+      (e.disposition === 'Adopt' || e.disposition === 'Adapt') &&
+      (e.source?.taskId === 'BE-RBAC-01' || e.source?.taskId === 'FE-16'),
+  );
+  assert.ok(owned.length > 0, 'settings 页应存在 FE-16 自有元素');
+  for (const element of owned) {
+    assert.ok(SETTINGS_COVERAGE[element.id] !== undefined, `元素 ${element.id} 无实现锚点`);
+  }
+  assert.deepEqual(Object.keys(SETTINGS_COVERAGE).sort(), owned.map((e) => e.id).sort());
 });
 
 test('FE-06：10 类传感器键属于契约 MetricsBlock 键集；部件五键与 ComponentStatus 一致', () => {
