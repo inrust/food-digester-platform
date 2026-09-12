@@ -49,8 +49,6 @@ export async function listAuditLogs(
 }
 
 export async function getAuditLogDetail(api: ApiClient, auditId: string): Promise<AuditLogDetailView> {
-  const response = await api.request<{ data: AuditLogDetailView }>(
-    `/admin/audit-logs/${encodeURIComponent(auditId)}`,
-  );
+  const response = await api.request<{ data: AuditLogDetailView }>(`/admin/audit-logs/${encodeURIComponent(auditId)}`);
   return response.data;
 }

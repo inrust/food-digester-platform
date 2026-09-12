@@ -8,7 +8,7 @@
  * - 日期按语言区域格式化（时间仍按用户时区）；
  * - 已迁移文件硬编码中文残留扫描 = 0（缺失文案/硬编码检测脚本）。
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, assert, test } from 'vitest';
@@ -18,12 +18,7 @@ import { ApiClientError } from '../src/api/errors.js';
 import { CursorTable } from '../src/components/CursorTable.js';
 import { ErrorNotice } from '../src/components/ErrorNotice.js';
 import { formatInTimeZone, TimeZoneProvider } from '../src/components/TimeText.js';
-import {
-  I18nProvider,
-  LANGUAGE_OPTIONS,
-  LANGUAGE_STORAGE_KEY,
-  localeForLanguage,
-} from '../src/i18n/i18n.js';
+import { I18nProvider, LANGUAGE_OPTIONS, LANGUAGE_STORAGE_KEY, localeForLanguage } from '../src/i18n/i18n.js';
 import { ZH_CN } from '../src/i18n/resources/zh-CN.js';
 import { EN } from '../src/i18n/resources/en.js';
 import { AppShell } from '../src/shell/AppShell.js';
@@ -42,12 +37,7 @@ function renderApp(language?: 'zh-CN' | 'en') {
   return render(
     <I18nProvider {...(language !== undefined ? { initialLanguage: language } : {})}>
       <TimeZoneProvider>
-        <AppShell
-          path="/dashboard"
-          session={SESSION}
-          onNavigate={() => {}}
-          onLogout={() => {}}
-        >
+        <AppShell path="/dashboard" session={SESSION} onNavigate={() => {}} onLogout={() => {}}>
           <CursorTable ariaLabel="示例" columns={[]} rows={[]} rowKey={() => 'x'} />
         </AppShell>
       </TimeZoneProvider>
@@ -67,11 +57,20 @@ test('语言资源 key 集完全一致（缺失 0）且全部非空；仅 en/zh-
   }
   for (const [key, value] of Object.entries(EN)) {
     assert.ok(value.trim().length > 0, `en ${key} 为空`);
+    assert.equal(CJK_PATTERN.test(value), false, `en ${key} 仍含中文`);
   }
 });
 
 test('错误码统一映射：两类语言均有明确提示', () => {
-  for (const code of ['FORBIDDEN', 'UNAUTHENTICATED', 'NOT_FOUND', 'VERSION_CONFLICT', 'CONFLICT', 'VALIDATION_FAILED', 'INTERNAL_ERROR']) {
+  for (const code of [
+    'FORBIDDEN',
+    'UNAUTHENTICATED',
+    'NOT_FOUND',
+    'VERSION_CONFLICT',
+    'CONFLICT',
+    'VALIDATION_FAILED',
+    'INTERNAL_ERROR',
+  ]) {
     assert.ok(ZH_CN[`error.code.${code}`] !== undefined, `zh-CN 缺 error.code.${code}`);
     assert.ok(EN[`error.code.${code}`] !== undefined, `en 缺 error.code.${code}`);
   }
@@ -133,43 +132,61 @@ test('日期按语言区域格式化（时间仍按用户时区）', () => {
   const en = formatInTimeZone(iso, 'Asia/Shanghai', localeForLanguage('en'));
   assert.equal(
     zh,
-    new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(iso)),
+    new Intl.DateTimeFormat('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(new Date(iso)),
   );
   assert.equal(
     en,
-    new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(iso)),
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(new Date(iso)),
   );
   assert.notEqual(zh, en);
   // 非法输入安全回退
   assert.equal(formatInTimeZone('garbage'), '—');
 });
 
-// ---------- 硬编码中文残留扫描（已迁移文件 = 0） ----------
-
-const MIGRATED_FILES = [
-  'src/shell/Topbar.tsx',
-  'src/shell/Sidebar.tsx',
-  'src/shell/breadcrumb.ts',
-  'src/components/ErrorNotice.tsx',
-  'src/components/ConfirmDialog.tsx',
-  'src/components/CursorTable.tsx',
-  'src/components/TimeText.tsx',
-];
+// ---------- 全量 UI 源码硬编码中文残留扫描 ----------
 
 const CJK_PATTERN = /[㐀-鿿豈-﫿]/;
 
 function stripComments(source: string): string {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/(^|[^:'"`])\/\/.*$/gm, '$1');
+  return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1');
 }
 
-test('已迁移文件无硬编码中文文案（检测为 0）', () => {
+function uiSourceFiles(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = resolve(directory, entry.name);
+    if (entry.isDirectory()) return entry.name === 'resources' ? [] : uiSourceFiles(path);
+    return /\.tsx?$/.test(entry.name) ? [path.slice(ROOT.length + 1)] : [];
+  });
+}
+
+test('全部 24 个页面及全量 UI 源码无硬编码中文文案（仅保留语言原生名称）', () => {
   const violations: string[] = [];
-  for (const file of MIGRATED_FILES) {
+  const pageModules = uiSourceFiles(resolve(ROOT, 'src/pages')).filter((file) => file.endsWith('.tsx'));
+  assert.equal(pageModules.length, 24, '页面扫描范围必须覆盖 24 个 TSX 模块');
+  for (const file of uiSourceFiles(resolve(ROOT, 'src'))) {
     const source = stripComments(readFileSync(resolve(ROOT, file), 'utf8'));
     const lines = source.split('\n');
     for (const [index, line] of lines.entries()) {
+      // 窄白名单：语言选择器必须以该语言的原生名称展示。
+      if (file === 'src/i18n/i18n.tsx' && line.includes("'zh-CN': '简体中文'")) continue;
       if (CJK_PATTERN.test(line)) {
         violations.push(`${file}:${index + 1}: ${line.trim()}`);
       }

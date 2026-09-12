@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-04 Onboarding 审批面板（原型“设备群管理 → 新增设备请求”区域，FE-06 嵌入 /devices/groups）。
  *
@@ -15,13 +16,21 @@ import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { TimeText } from '../../components/TimeText.js';
 import { isReviewable, ONBOARDING_STATUS_LABELS } from './onboarding-state.js';
 import type { OnboardingRequestView, OnboardingStatus } from './types.js';
-
 export type DetailState =
-  | { readonly kind: 'none' }
-  | { readonly kind: 'loading' }
-  | { readonly kind: 'error'; readonly error: unknown }
-  | { readonly kind: 'ready'; readonly request: OnboardingRequestView };
-
+  | {
+      readonly kind: 'none';
+    }
+  | {
+      readonly kind: 'loading';
+    }
+  | {
+      readonly kind: 'error';
+      readonly error: unknown;
+    }
+  | {
+      readonly kind: 'ready';
+      readonly request: OnboardingRequestView;
+    };
 export interface OnboardingReviewPanelProps {
   readonly activeStatus: OnboardingStatus;
   readonly onFilterStatus: (status: OnboardingStatus) => void;
@@ -47,11 +56,14 @@ export interface OnboardingReviewPanelProps {
   /** 批准成功后跳转设备详情。 */
   readonly onNavigate: (path: string) => void;
 }
-
-type PendingAction = { kind: 'approve' } | { kind: 'reject' };
-
+type PendingAction =
+  | {
+      kind: 'approve';
+    }
+  | {
+      kind: 'reject';
+    };
 const STATUS_TABS: readonly OnboardingStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'TIMED_OUT'];
-
 export function OnboardingReviewPanel({
   activeStatus,
   onFilterStatus,
@@ -71,9 +83,7 @@ export function OnboardingReviewPanel({
   const [actionError, setActionError] = useState<unknown>(null);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-
   const request = detail.kind === 'ready' ? detail.request : null;
-
   const runAction = async (action: PendingAction, reason: string) => {
     // 防重复点击：在途请求直接忽略（后端 If-Match 兜底）
     if (inFlight.current || request === null) return;
@@ -96,10 +106,9 @@ export function OnboardingReviewPanel({
       setBusy(false);
     }
   };
-
   return (
     <section className="onboarding-review" data-testid="onboarding-review">
-      <div className="status-tabs" role="tablist" aria-label="申请状态">
+      <div className="status-tabs" role="tablist" aria-label={translate('page.8a6d566d7686')}>
         {STATUS_TABS.map((status) => (
           <button
             key={status}
@@ -115,27 +124,27 @@ export function OnboardingReviewPanel({
       </div>
 
       <CursorTable
-        ariaLabel="新增设备请求"
+        ariaLabel={translate('page.ac8962435f91')}
         columns={[
-          { key: 'serialNumber', header: '设备唯一ID（序列号）', render: (r) => r.serialNumber },
-          { key: 'model', header: '型号', render: (r) => r.model },
-          { key: 'manufacturer', header: '厂商', render: (r) => r.manufacturer },
+          { key: 'serialNumber', header: translate('page.02a7858abc0f'), render: (r) => r.serialNumber },
+          { key: 'model', header: translate('page.0132ce7298ec'), render: (r) => r.model },
+          { key: 'manufacturer', header: translate('page.0c131e3964eb'), render: (r) => r.manufacturer },
           {
             key: 'createdAt',
-            header: '申请日期',
+            header: translate('page.2c346345746e'),
             render: (r) => <TimeText iso={r.createdAt} />,
           },
           {
             key: 'status',
-            header: '状态',
+            header: translate('page.62e951a692ff'),
             render: (r) => <span data-testid={`status-${r.requestId}`}>{ONBOARDING_STATUS_LABELS[r.status]}</span>,
           },
           {
             key: 'actions',
-            header: '操作',
+            header: translate('page.f3ea6d345e2a'),
             render: (r) => (
               <button type="button" data-testid={`detail-${r.requestId}`} onClick={() => onSelect(r.requestId)}>
-                详细信息
+                {translate('page.b6e664d7362f')}
               </button>
             ),
           },
@@ -151,58 +160,60 @@ export function OnboardingReviewPanel({
         onNextPage={onLoadMore}
         {...(onLoadPrevious !== undefined ? { onPrevPage: onLoadPrevious } : {})}
         onRefresh={onRefresh}
-        emptyText="暂无新增设备请求"
+        emptyText={translate('page.d7aaf21534d7')}
       />
 
       {detail.kind === 'loading' ? (
         <div role="status" data-testid="detail-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : null}
       {detail.kind === 'error' ? <ErrorNotice error={detail.error} onRefresh={onRefresh} /> : null}
 
       {request !== null ? (
-        <aside className="request-detail" data-testid="request-detail" aria-label="申请详情">
-          <h4>设备资料</h4>
+        <aside className="request-detail" data-testid="request-detail" aria-label={translate('page.647fd881044d')}>
+          <h4>{translate('page.1075726d7859')}</h4>
           <dl>
-            <dt>设备唯一ID（序列号）</dt>
+            <dt>{translate('page.02a7858abc0f')}</dt>
             <dd>{request.serialNumber}</dd>
-            <dt>型号</dt>
+            <dt>{translate('page.0132ce7298ec')}</dt>
             <dd>{request.model}</dd>
-            <dt>硬件版本</dt>
+            <dt>{translate('page.ebc803567778')}</dt>
             <dd>{request.hardwareVersion}</dd>
-            <dt>厂商</dt>
+            <dt>{translate('page.0c131e3964eb')}</dt>
             <dd>{request.manufacturer}</dd>
-            <dt>生产日期</dt>
+            <dt>{translate('page.8579e19406d9')}</dt>
             <dd>{request.manufactureDate}</dd>
           </dl>
-          <h4>申请信息</h4>
+          <h4>{translate('page.0822b2ec02ac')}</h4>
           <dl>
-            <dt>申请时间</dt>
+            <dt>{translate('page.e85ad6ea52fd')}</dt>
             <dd>
               <TimeText iso={request.createdAt} />
             </dd>
-            <dt>录入人/来源</dt>
+            <dt>{translate('page.09dd3737f0c0')}</dt>
             <dd data-testid="detail-submitted-by">{request.submittedBy}</dd>
-            <dt>证书发放状态</dt>
+            <dt>{translate('page.fe8993b21fdb')}</dt>
             <dd data-testid="detail-certificate-status">{request.certificateProvisioningStatus}</dd>
-            <dt>状态</dt>
+            <dt>{translate('page.62e951a692ff')}</dt>
             <dd data-testid="detail-status">{ONBOARDING_STATUS_LABELS[request.status]}</dd>
             {(request.status === 'REJECTED' || request.status === 'TIMED_OUT') && request.rejectReason !== null ? (
               <>
-                <dt>{request.status === 'TIMED_OUT' ? '超时原因' : '拒绝原因'}</dt>
+                <dt>
+                  {request.status === 'TIMED_OUT' ? translate('page.ad7273034ec1') : translate('page.30cf083a31c8')}
+                </dt>
                 <dd data-testid="detail-reject-reason">{request.rejectReason}</dd>
               </>
             ) : null}
             {request.reviewedBy !== null ? (
               <>
-                <dt>审批人</dt>
+                <dt>{translate('page.9b446de32478')}</dt>
                 <dd>{request.reviewedBy}</dd>
               </>
             ) : null}
             {request.reviewedAt !== null ? (
               <>
-                <dt>审批时间</dt>
+                <dt>{translate('page.8df1c00436b1')}</dt>
                 <dd>
                   <TimeText iso={request.reviewedAt} />
                 </dd>
@@ -214,7 +225,7 @@ export function OnboardingReviewPanel({
 
           <div className="detail-actions">
             <button type="button" onClick={onCloseDetail}>
-              关闭
+              {translate('page.6c14bd7f6f9e')}
             </button>
             {canReview && isReviewable(request.status) ? (
               <>
@@ -225,7 +236,7 @@ export function OnboardingReviewPanel({
                   disabled={busy}
                   onClick={() => setPendingAction({ kind: 'approve' })}
                 >
-                  批准
+                  {translate('page.62e26d21413f')}
                 </button>
                 <button
                   type="button"
@@ -234,7 +245,7 @@ export function OnboardingReviewPanel({
                   disabled={busy}
                   onClick={() => setPendingAction({ kind: 'reject' })}
                 >
-                  拒绝
+                  {translate('page.03e210a66d07')}
                 </button>
               </>
             ) : null}
@@ -244,23 +255,23 @@ export function OnboardingReviewPanel({
 
       <ConfirmDialog
         open={pendingAction?.kind === 'approve'}
-        title="批准新增设备申请"
+        title={translate('page.2208b8361b84')}
         {...(request !== null
           ? {
-              description: `批准后将触发证书发放流程（设备自行领取证书包，页面不展示私钥），设备：${request.serialNumber}`,
+              description: translate('page.8783a79f7155') + request.serialNumber,
             }
           : {})}
-        confirmText="确认批准"
+        confirmText={translate('page.14399a781b56')}
         onConfirm={() => void runAction({ kind: 'approve' }, '')}
         onCancel={() => setPendingAction(null)}
       />
       <ConfirmDialog
         open={pendingAction?.kind === 'reject'}
-        title="拒绝新增设备申请"
+        title={translate('page.01c92b795c11')}
         danger
         requireReason
-        reasonLabel="拒绝原因"
-        confirmText="确认拒绝"
+        reasonLabel={translate('page.30cf083a31c8')}
+        confirmText={translate('page.a25b138fcd8a')}
         onConfirm={(reason) => void runAction({ kind: 'reject' }, reason)}
         onCancel={() => setPendingAction(null)}
       />

@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-12 Remote Command 纯逻辑：CT-04 命令目录镜像、原型快捷动作映射、门控、文案、CT-06 锚点。
  *
@@ -13,14 +14,12 @@ import { hasPermission } from '@fdp/auth/browser';
 import type { Role } from '@fdp/auth/browser';
 import type { DeviceView } from '../devices/types.js';
 import type { CommandCategory, CommandName, CommandStatus } from './types.js';
-
 export interface CommandSpec {
   readonly command: CommandName;
   readonly category: CommandCategory;
   readonly highRisk: boolean;
   readonly allowedStatuses: readonly ('ACTIVE' | 'MAINTENANCE' | 'SUSPENDED' | 'RETIRED')[];
 }
-
 /** CT-04 命令目录镜像（22 个）；与 contracts/mqtt/command-catalog.json parity 锁定。 */
 export const COMMAND_CATALOG: readonly CommandSpec[] = [
   { command: 'START', category: 'MACHINE', highRisk: false, allowedStatuses: ['ACTIVE'] },
@@ -86,40 +85,80 @@ export const COMMAND_CATALOG: readonly CommandSpec[] = [
     allowedStatuses: ['ACTIVE', 'MAINTENANCE', 'SUSPENDED'],
   },
 ];
-
 /** 温度阈值由 Configuration 版本发布；保留协议目录项，但禁止管理后台命令表单提交。 */
 export const SUBMITTABLE_COMMAND_CATALOG = COMMAND_CATALOG.filter((spec) => spec.command !== 'SET_TARGET_TEMPERATURE');
-
 export function isSubmittableCommand(command: CommandName): boolean {
   return command !== 'SET_TARGET_TEMPERATURE';
 }
-
 /** 命令中文名（文案可追溯到 command code：展示为“中文名（CODE）”）。 */
 export const COMMAND_LABELS: Readonly<Record<CommandName, string>> = {
-  START: '启动',
-  STOP: '停止',
-  PAUSE: '暂停',
-  RESUME: '恢复运行',
-  EMERGENCY_STOP: '紧急停止',
-  AGITATOR_FORWARD: '搅拌器前向旋转',
-  AGITATOR_REVERSE: '搅拌器后向旋转',
-  AGITATOR_STOP: '搅拌器停止',
-  HEATING_ON: '加热开启',
-  HEATING_OFF: '加热关闭',
-  SET_TARGET_TEMPERATURE: '设置目标温度',
-  EXHAUST_ON: '排气开启',
-  EXHAUST_OFF: '排气关闭',
-  AIR_SUPPLY_ON: '送风开启',
-  AIR_SUPPLY_OFF: '送风关闭',
-  DISCHARGE_START: '排料开始',
-  DISCHARGE_STOP: '排料停止',
-  REBOOT: '重启',
-  SHUTDOWN: '关机',
-  FACTORY_RESET: '恢复出厂设置',
-  TAKE_SNAPSHOT: '抓取快照',
-  FORCE_SYNC: '强制同步',
+  get START() {
+    return translate('ui.ebd26da42171');
+  },
+  get STOP() {
+    return translate('ui.a17f70a8d3d6');
+  },
+  get PAUSE() {
+    return translate('ui.130448bce675');
+  },
+  get RESUME() {
+    return translate('ui.67be57f398c6');
+  },
+  get EMERGENCY_STOP() {
+    return translate('ui.6ec0e33e8353');
+  },
+  get AGITATOR_FORWARD() {
+    return translate('ui.a791153d7099');
+  },
+  get AGITATOR_REVERSE() {
+    return translate('ui.302db26add86');
+  },
+  get AGITATOR_STOP() {
+    return translate('ui.798423336475');
+  },
+  get HEATING_ON() {
+    return translate('ui.82f46c784997');
+  },
+  get HEATING_OFF() {
+    return translate('ui.b726e412a1ac');
+  },
+  get SET_TARGET_TEMPERATURE() {
+    return translate('ui.d874f7e0b1c2');
+  },
+  get EXHAUST_ON() {
+    return translate('ui.681915a148c7');
+  },
+  get EXHAUST_OFF() {
+    return translate('ui.83a69d28a0bb');
+  },
+  get AIR_SUPPLY_ON() {
+    return translate('ui.3c0604e30961');
+  },
+  get AIR_SUPPLY_OFF() {
+    return translate('ui.98012a55b28a');
+  },
+  get DISCHARGE_START() {
+    return translate('ui.7d693441fff7');
+  },
+  get DISCHARGE_STOP() {
+    return translate('ui.e406d173c4b6');
+  },
+  get REBOOT() {
+    return translate('ui.385c272e35c6');
+  },
+  get SHUTDOWN() {
+    return translate('ui.f96455d5274f');
+  },
+  get FACTORY_RESET() {
+    return translate('ui.b9c9edf399fe');
+  },
+  get TAKE_SNAPSHOT() {
+    return translate('ui.b2ca7defb780');
+  },
+  get FORCE_SYNC() {
+    return translate('ui.7cd5f9c88f36');
+  },
 };
-
 /** 原型 8 个快捷动作 → CT-04 正式命令映射（文案可追溯到 command code）。 */
 export interface QuickActionSpec {
   readonly key: string;
@@ -129,123 +168,211 @@ export interface QuickActionSpec {
   /** 可选命令组（模式切换 = MACHINE 类，由操作者在表单选择具体命令；不提交组名本身）。 */
   readonly commandGroup?: readonly CommandName[];
 }
-
 export const QUICK_ACTIONS: readonly QuickActionSpec[] = [
-  { key: 'agitatorForward', label: '搅拌器前向旋转', command: 'AGITATOR_FORWARD' },
-  { key: 'agitatorReverse', label: '搅拌器后向旋转', command: 'AGITATOR_REVERSE' },
-  { key: 'heating', label: '加热', commandGroup: ['HEATING_ON', 'HEATING_OFF'] },
-  { key: 'exhaust', label: '排气', commandGroup: ['EXHAUST_ON', 'EXHAUST_OFF'] },
-  { key: 'reboot', label: '重启', command: 'REBOOT' },
-  { key: 'shutdown', label: '关机', command: 'SHUTDOWN' },
-  { key: 'modeSwitch', label: '模式切换', commandGroup: ['START', 'STOP', 'PAUSE', 'RESUME', 'EMERGENCY_STOP'] },
-  { key: 'factoryReset', label: '恢复出厂设置', command: 'FACTORY_RESET' },
+  {
+    key: 'agitatorForward',
+    get label() {
+      return translate('ui.a791153d7099');
+    },
+    command: 'AGITATOR_FORWARD',
+  },
+  {
+    key: 'agitatorReverse',
+    get label() {
+      return translate('ui.302db26add86');
+    },
+    command: 'AGITATOR_REVERSE',
+  },
+  {
+    key: 'heating',
+    get label() {
+      return translate('ui.6c1dd3e618c9');
+    },
+    commandGroup: ['HEATING_ON', 'HEATING_OFF'],
+  },
+  {
+    key: 'exhaust',
+    get label() {
+      return translate('ui.d7d729612964');
+    },
+    commandGroup: ['EXHAUST_ON', 'EXHAUST_OFF'],
+  },
+  {
+    key: 'reboot',
+    get label() {
+      return translate('ui.385c272e35c6');
+    },
+    command: 'REBOOT',
+  },
+  {
+    key: 'shutdown',
+    get label() {
+      return translate('ui.f96455d5274f');
+    },
+    command: 'SHUTDOWN',
+  },
+  {
+    key: 'modeSwitch',
+    get label() {
+      return translate('ui.6e5969dc8312');
+    },
+    commandGroup: ['START', 'STOP', 'PAUSE', 'RESUME', 'EMERGENCY_STOP'],
+  },
+  {
+    key: 'factoryReset',
+    get label() {
+      return translate('ui.b9c9edf399fe');
+    },
+    command: 'FACTORY_RESET',
+  },
 ];
-
 /** M/N（搅拌间隔/时长）与温度阈值走 Configuration 版本发布，不走命令 API。 */
 export const CONFIG_REDIRECTS = [
   {
     key: 'updateStrategy',
-    label: '更新策略（旋转间隔 M/时长 N）',
-    hint: '经 Configuration 版本发布（/configurations），不产生设备命令',
+    get label() {
+      return translate('ui.1fafdf6aec03');
+    },
+    get hint() {
+      return translate('ui.c50ecad143c0');
+    },
   },
   {
     key: 'updateThreshold',
-    label: '更新阈值（温度阈值）',
-    hint: '经 Configuration 版本发布（/configurations），不产生设备命令',
+    get label() {
+      return translate('ui.09929e0c32c8');
+    },
+    get hint() {
+      return translate('ui.c50ecad143c0');
+    },
   },
 ] as const;
-
 // ---------- 门控 ----------
-
 export interface CommandGate {
   readonly allowed: boolean;
   readonly reason: string | null;
 }
-
 export function commandSpecOf(command: CommandName): CommandSpec {
   const spec = COMMAND_CATALOG.find((c) => c.command === command);
-  if (spec === undefined) throw new Error(`未知命令（无协议 command code）：${command as string}`);
+  if (spec === undefined) throw new Error(translate('ui.881a0b59fcf5') + (command as string));
   return spec;
 }
-
 /**
  * 命令可用性 = command:send ∩ Operational 状态轴（CT-04 allowedStatuses；MAINTENANCE 视同
  * SUSPENDED 由 catalog 自身表达）∩ 在线 ∩ REMOTE_CONTROL Entitlement。后端仍最终裁决。
  */
 export function gateCommand(command: CommandName, device: DeviceView | null, role: Role): CommandGate {
   if (!hasPermission(role, 'command:send')) {
-    return { allowed: false, reason: '需要命令下发权限（command:send）' };
+    return { allowed: false, reason: translate('ui.15c2ea45c817') };
   }
   if (device === null) {
-    return { allowed: false, reason: '请先选择设备' };
+    return { allowed: false, reason: translate('ui.7b372e6a09a3') };
   }
   if (device.lifecycleStatus === 'Retired') {
-    return { allowed: false, reason: '设备已退役，拒绝全部命令' };
+    return { allowed: false, reason: translate('ui.08a65f6c7ff2') };
   }
   const operational = device.operationalStatus?.toUpperCase() ?? null;
   if (operational === null) {
-    return { allowed: false, reason: '设备运行状态未知，禁止下发' };
+    return { allowed: false, reason: translate('ui.2cef9665f8db') };
   }
   const spec = commandSpecOf(command);
   if (!(spec.allowedStatuses as readonly string[]).includes(operational)) {
-    return { allowed: false, reason: `当前运行状态（${device.operationalStatus}）不允许该命令` };
+    return {
+      allowed: false,
+      reason: translate('ui.0187d9f37dc4') + device.operationalStatus + translate('ui.38a1f3f1b2d4'),
+    };
   }
   if (device.connectivity === 'OFFLINE') {
-    return { allowed: false, reason: '设备离线，禁止下发' };
+    return { allowed: false, reason: translate('ui.142e91d054f0') };
   }
   if (!(device.license?.entitlements ?? []).includes('REMOTE_CONTROL')) {
-    return { allowed: false, reason: '无远程控制授权（REMOTE_CONTROL Entitlement）' };
+    return { allowed: false, reason: translate('ui.80747f87e39d') };
   }
   return { allowed: true, reason: null };
 }
-
 /** timeoutSec 校验（契约 1..3600）。 */
 export function validateTimeoutSec(raw: string): string | null {
   const value = Number(raw);
-  if (!Number.isInteger(value) || value < 1 || value > 3600) return '超时时间须为 1~3600 秒整数';
+  if (!Number.isInteger(value) || value < 1 || value > 3600) return translate('ui.2eb284c530b8');
   return null;
 }
-
 export const COMMAND_STATUS_LABELS: Readonly<Record<CommandStatus, string>> = {
-  CREATED: '已创建',
-  AUTHORIZED: '已授权',
-  PUBLISHING: '发布中',
-  PUBLISH_FAILED: '发布失败',
-  PUBLISHED: '已下发',
-  ACKNOWLEDGED: '设备已确认',
-  SUCCEEDED: '执行成功',
-  FAILED: '执行失败',
-  TIMED_OUT: '已超时',
-  CANCELLED: '已取消',
+  get CREATED() {
+    return translate('ui.62cfc53516b6');
+  },
+  get AUTHORIZED() {
+    return translate('ui.284cc0bae14b');
+  },
+  get PUBLISHING() {
+    return translate('ui.7e4da0f6e774');
+  },
+  get PUBLISH_FAILED() {
+    return translate('page.7e7f5d44c467');
+  },
+  get PUBLISHED() {
+    return translate('ui.f96ee524b7dd');
+  },
+  get ACKNOWLEDGED() {
+    return translate('ui.ec8d53e36298');
+  },
+  get SUCCEEDED() {
+    return translate('ui.6c189aad4dfe');
+  },
+  get FAILED() {
+    return translate('ui.9746cfc7d257');
+  },
+  get TIMED_OUT() {
+    return translate('ui.411ebfdad774');
+  },
+  get CANCELLED() {
+    return translate('page.a5ffdc95eeb0');
+  },
 };
-
 export const COMMAND_STATUS_OPTIONS = Object.keys(COMMAND_STATUS_LABELS) as CommandStatus[];
-
 export const ACK_RESULT_LABELS: Readonly<Record<string, string>> = {
-  SUCCESS: '成功',
-  FAILED: '失败',
-  RECEIVED: '已收到（无执行结果）',
+  get SUCCESS() {
+    return translate('page.51991a5d111a');
+  },
+  get FAILED() {
+    return translate('ui.3e3c8068bb0e');
+  },
+  get RECEIVED() {
+    return translate('ui.10eccdc35e10');
+  },
 };
-
 export const ACTIVITY_LEVEL_OPTIONS = ['INFO', 'WARNING', 'MAJOR', 'CRITICAL'] as const;
 export const ACTIVITY_LEVEL_LABELS: Readonly<Record<string, string>> = {
-  INFO: '提示',
-  WARNING: '警告',
-  MAJOR: '重要',
-  CRITICAL: '严重',
+  get INFO() {
+    return translate('ui.ab3656a956f5');
+  },
+  get WARNING() {
+    return translate('ui.5521e368d87e');
+  },
+  get MAJOR() {
+    return translate('ui.b7f46707527b');
+  },
+  get CRITICAL() {
+    return translate('ui.81ffc6f5a47f');
+  },
 };
 export const ACTIVITY_KIND_LABELS: Readonly<Record<string, string>> = {
-  EVENT: '事件',
-  ALARM: '告警',
+  get EVENT() {
+    return translate('page.550e3280629d');
+  },
+  get ALARM() {
+    return translate('page.5078424f7e0e');
+  },
 };
-
 /** 迟到 ACK：命令已 TIMED_OUT/CANCELLED 后仍收到的 ACK。 */
-export function isLateAck(status: CommandStatus, acks: readonly { readonly ackAt: string }[]): boolean {
+export function isLateAck(
+  status: CommandStatus,
+  acks: readonly {
+    readonly ackAt: string;
+  }[],
+): boolean {
   return (status === 'TIMED_OUT' || status === 'CANCELLED') && acks.length > 0;
 }
-
 // ---------- CT-06 锚点（device-operate 页 Adopt/Adapt 元素；camPlay/camStop 为 Reject 不入表） ----------
-
 export const DEVICE_OPERATE_COVERAGE: Readonly<Record<string, string>> = {
   'device-operate.button.agitatorForward': 'quick-agitatorForward',
   'device-operate.button.agitatorReverse': 'quick-agitatorReverse',

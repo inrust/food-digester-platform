@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-17 Contract 列表页（/contracts）：客户/状态筛选、确定性设备计数、
  * 服务期限与派生状态展示；新建/详情导航。
@@ -8,7 +9,7 @@
  * - contract:write 仅 PlatformSuperAdmin（新建按钮按权限禁用）。
  */
 import { useState } from 'react';
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 import { CursorTable } from '../../components/CursorTable.js';
 import {
   CONTRACT_STATUS_LABELS,
@@ -18,12 +19,10 @@ import {
 } from './contract-state.js';
 import type { ContractListFilter } from './contracts-api.js';
 import type { ContractListState, ContractStatus, ContractView } from './types.js';
-
 export interface CustomerOption {
   readonly customerId: string;
   readonly name: string;
 }
-
 export interface ContractsPageProps {
   readonly role: Role;
   readonly contracts: ContractListState;
@@ -36,11 +35,9 @@ export interface ContractsPageProps {
   readonly onOpenDetail: (contractId: string) => void;
   readonly onRefresh: () => void;
 }
-
 export function resolveCustomerName(customerOptions: readonly CustomerOption[], customerId: string): string {
   return customerOptions.find((c) => c.customerId === customerId)?.name ?? customerId;
 }
-
 export function ContractsPage({
   role,
   contracts,
@@ -52,30 +49,32 @@ export function ContractsPage({
   onOpenDetail,
   onRefresh,
 }: ContractsPageProps) {
-  const [draft, setDraft] = useState<{ status: ContractStatus | ''; customerId: string }>({
+  const [draft, setDraft] = useState<{
+    status: ContractStatus | '';
+    customerId: string;
+  }>({
     status: filter.status ?? '',
     customerId: filter.customerId ?? '',
   });
   const canWrite = canWriteContracts(role);
-
   return (
     <div className="contracts-page" data-testid="contracts-page">
       <div className="page-header">
-        <h3>合约查询及修改</h3>
+        <h3>{translate('page.b38179cfadeb')}</h3>
         <button
           type="button"
           className="primary-button"
           data-testid="contract-new-open"
           disabled={!canWrite}
-          {...(!canWrite ? { title: '需要合约写权限（contract:write：仅平台管理员）' } : {})}
+          {...(!canWrite ? { title: translate('page.bb48fc12271b') } : {})}
           onClick={onOpenNew}
         >
-          新建合约
+          {translate('page.44c75e312909')}
         </button>
       </div>
 
       <div className="filter-bar">
-        <label htmlFor="contract-filter-status">状态</label>
+        <label htmlFor="contract-filter-status">{translate('page.62e951a692ff')}</label>
         <select
           id="contract-filter-status"
           data-testid="contract-filter-status"
@@ -84,21 +83,21 @@ export function ContractsPage({
             setDraft({ ...draft, status: event.target.value === '' ? '' : (event.target.value as ContractStatus) })
           }
         >
-          <option value="">全部</option>
+          <option value="">{translate('page.778fc8f99453')}</option>
           {CONTRACT_STATUS_OPTIONS.map((status) => (
             <option key={status} value={status}>
               {CONTRACT_STATUS_LABELS[status]}
             </option>
           ))}
         </select>
-        <label htmlFor="contract-filter-customer">客户</label>
+        <label htmlFor="contract-filter-customer">{translate('page.f20687060126')}</label>
         <select
           id="contract-filter-customer"
           data-testid="contract-filter-customer"
           value={draft.customerId}
           onChange={(event) => setDraft({ ...draft, customerId: event.target.value })}
         >
-          <option value="">全部</option>
+          <option value="">{translate('page.778fc8f99453')}</option>
           {customerOptions.map((customer) => (
             <option key={customer.customerId} value={customer.customerId}>
               {customer.name}
@@ -116,38 +115,40 @@ export function ContractsPage({
             })
           }
         >
-          筛选
+          {translate('page.dcce9a144a40')}
         </button>
       </div>
 
-      <section data-testid="contract-list" aria-label="合约列表">
+      <section data-testid="contract-list" aria-label={translate('page.5ae89a50fd74')}>
         <CursorTable
-          ariaLabel="合约列表"
+          ariaLabel={translate('page.5ae89a50fd74')}
           columns={[
-            { key: 'contractNumber', header: '合约编号', render: (c: ContractView) => c.contractNumber },
-            { key: 'name', header: '合约名称', render: (c) => c.name },
+            {
+              key: 'contractNumber',
+              header: translate('page.e732638998ba'),
+              render: (c: ContractView) => c.contractNumber,
+            },
+            { key: 'name', header: translate('page.eec5002799b1'), render: (c) => c.name },
             {
               key: 'customer',
-              header: '客户',
+              header: translate('page.f20687060126'),
               render: (c) => resolveCustomerName(customerOptions, c.customerId),
             },
             {
               key: 'deviceCount',
-              header: '设备数量',
+              header: translate('page.67e66eaaa568'),
               render: (c) => (
-                <span data-testid={`contract-device-count-${c.contractId}`}>
-                  {deviceCounts?.[c.contractId] ?? '—'}
-                </span>
+                <span data-testid={`contract-device-count-${c.contractId}`}>{deviceCounts?.[c.contractId] ?? '—'}</span>
               ),
             },
             {
               key: 'servicePeriod',
-              header: '服务期限',
+              header: translate('page.1789ad816f47'),
               render: (c) => formatServicePeriod(c.startAt, c.endAt),
             },
             {
               key: 'status',
-              header: '状态（合约）',
+              header: translate('page.f164a65c2842'),
               render: (c) => (
                 <span className="contract-status" data-testid={`contract-status-${c.contractId}`}>
                   {CONTRACT_STATUS_LABELS[c.derivedStatus]}
@@ -156,10 +157,14 @@ export function ContractsPage({
             },
             {
               key: 'actions',
-              header: '操作',
+              header: translate('page.f3ea6d345e2a'),
               render: (c) => (
-                <button type="button" data-testid={`contract-open-${c.contractId}`} onClick={() => onOpenDetail(c.contractId)}>
-                  详情（编辑/续约/解绑/关联设备）
+                <button
+                  type="button"
+                  data-testid={`contract-open-${c.contractId}`}
+                  onClick={() => onOpenDetail(c.contractId)}
+                >
+                  {translate('page.1adb997cd4ce')}
                 </button>
               ),
             },
@@ -169,7 +174,7 @@ export function ContractsPage({
           {...(contracts.loading !== undefined ? { loading: contracts.loading } : {})}
           {...(contracts.error !== undefined ? { error: contracts.error } : {})}
           onRefresh={onRefresh}
-          emptyText="暂无合约"
+          emptyText={translate('page.7c991a2b801a')}
         />
       </section>
     </div>

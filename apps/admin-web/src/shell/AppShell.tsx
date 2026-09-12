@@ -1,3 +1,4 @@
+import { translate } from '../i18n/i18n.js';
 /**
  * FE-02 管理后台壳层：侧栏 + 顶部栏 + 内容区 + 移动端抽屉（≤768px）。
  *
@@ -11,7 +12,6 @@ import { menuForRoles } from '../menu/menu.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
 import { Sidebar } from './Sidebar.js';
 import { Topbar } from './Topbar.js';
-
 export interface AppShellProps {
   readonly path: string;
   readonly session: SessionSnapshot;
@@ -20,16 +20,13 @@ export interface AppShellProps {
   readonly onLogout: () => void;
   readonly children: ReactNode;
 }
-
 export function AppShell({ path, session, notificationCount, onNavigate, onLogout, children }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerButtonRef = useRef<HTMLButtonElement | null>(null);
-
   const closeDrawer = (returnFocus: boolean) => {
     setDrawerOpen(false);
     if (returnFocus) drawerButtonRef.current?.focus();
   };
-
   useEffect(() => {
     if (!drawerOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -38,14 +35,11 @@ export function AppShell({ path, session, notificationCount, onNavigate, onLogou
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [drawerOpen]);
-
   const nodes = menuForRoles(session.roles);
-
   const navigateAndClose = (next: string) => {
     setDrawerOpen(false);
     onNavigate(next);
   };
-
   return (
     <div className="app-shell">
       <div
@@ -54,7 +48,7 @@ export function AppShell({ path, session, notificationCount, onNavigate, onLogou
         onClick={() => closeDrawer(true)}
       />
       <aside className={`sidebar${drawerOpen ? ' open' : ''}`} data-testid="sidebar">
-        <div className="logo">厨余机云平台</div>
+        <div className="logo">{translate('ui.702005aecd7f')}</div>
         <Sidebar nodes={nodes} currentPath={path} onNavigate={navigateAndClose} />
       </aside>
       <div className="main-area">

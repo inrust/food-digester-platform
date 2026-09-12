@@ -1,3 +1,4 @@
+import { translate } from '../i18n/i18n.js';
 import { hasPermission } from '@fdp/auth/browser';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ApiClient } from '../api/http-client.js';
@@ -30,12 +31,10 @@ import { SitesPage } from '../pages/sites/SitesPage.js';
 import type { SiteFilters } from '../pages/sites/SitesPage.js';
 import { createSite, deactivateSite, fetchSites, updateSite } from '../pages/sites/sites-api.js';
 import type { SiteInput, SiteView } from '../pages/sites/types.js';
-
 interface PageResult<T> {
   readonly items: readonly T[];
   readonly nextCursor: string | null;
 }
-
 function useCursorController<T>(loader: (cursor: string | null) => Promise<PageResult<T>>) {
   const [rows, setRows] = useState<readonly T[] | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -45,7 +44,6 @@ function useCursorController<T>(loader: (cursor: string | null) => Promise<PageR
   const [error, setError] = useState<unknown>(null);
   const [dataUpdatedAt, setDataUpdatedAt] = useState<string | undefined>(undefined);
   const [revision, setRevision] = useState(0);
-
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -67,7 +65,6 @@ function useCursorController<T>(loader: (cursor: string | null) => Promise<PageR
       active = false;
     };
   }, [currentCursor, loader, revision]);
-
   const reset = useCallback(() => {
     setPrevious([]);
     setCurrentCursor(null);
@@ -88,7 +85,6 @@ function useCursorController<T>(loader: (cursor: string | null) => Promise<PageR
     });
   }, []);
   const refresh = useCallback(() => setRevision((value) => value + 1), []);
-
   return {
     rows,
     nextCursor,
@@ -103,15 +99,12 @@ function useCursorController<T>(loader: (cursor: string | null) => Promise<PageR
     reset,
   };
 }
-
 function can(session: SessionSnapshot, permission: Parameters<typeof hasPermission>[1]): boolean {
   return session.roles.some((role) => hasPermission(role, permission));
 }
-
 function success(toasts: ToastQueue, message: string) {
   toasts.push('success', message);
 }
-
 export function DashboardController({ api, onNavigate }: { api: ApiClient; onNavigate: (path: string) => void }) {
   const [state, setState] = useState<DashboardPageState>({ status: 'loading' });
   const load = useCallback(() => {
@@ -125,7 +118,6 @@ export function DashboardController({ api, onNavigate }: { api: ApiClient; onNav
   const submit = useMemo(() => createDashboardCommandSubmitter(api), [api]);
   return <DashboardPage state={state} onRefresh={load} onSubmitCommand={submit} onNavigate={onNavigate} />;
 }
-
 export function CustomersController({
   api,
   session,
@@ -164,25 +156,23 @@ export function CustomersController({
       canWrite={can(session, 'customer:write')}
       onCreate={async (input) => {
         const result = await createCustomer(api, input);
-        success(toasts, '客户已创建');
+        success(toasts, translate('ui.9b6d634c0d95'));
         return result;
       }}
       onUpdate={async (customer, input) => {
         const result = await updateCustomer(api, customer.id, customer.version, input);
-        success(toasts, '客户已更新');
+        success(toasts, translate('ui.e9b29b1a7ffb'));
         return result;
       }}
       onDeactivate={async (customer, reason) => {
         const result = await deactivateCustomer(api, customer.id, customer.version, reason);
-        success(toasts, '客户已停用');
+        success(toasts, translate('ui.4dff4b91ad96'));
         return result;
       }}
     />
   );
 }
-
 const EMPTY_SITE_FILTERS: SiteFilters = { customerId: null, region: null, subregion: null, status: null };
-
 export function SitesController({
   api,
   session,
@@ -193,15 +183,17 @@ export function SitesController({
   toasts: ToastQueue;
 }) {
   const [filters, setFilters] = useState<SiteFilters>(EMPTY_SITE_FILTERS);
-  const [customerOptions, setCustomerOptions] = useState<readonly { value: string; label: string }[]>(
-    session.customerId === null ? [] : [{ value: session.customerId, label: session.customerId }],
-  );
+  const [customerOptions, setCustomerOptions] = useState<
+    readonly {
+      value: string;
+      label: string;
+    }[]
+  >(session.customerId === null ? [] : [{ value: session.customerId, label: session.customerId }]);
   useEffect(() => {
     if (!can(session, 'customer:read')) return;
     void fetchCustomers(api, { limit: 100 }).then(
       (result) => setCustomerOptions(result.items.map((customer) => ({ value: customer.id, label: customer.name }))),
-      (error: unknown) =>
-        toasts.push('error', error instanceof Error ? error.message : '客户选项加载失败，请刷新后重试'),
+      (error: unknown) => toasts.push('error', error instanceof Error ? error.message : translate('ui.9226e4104016')),
     );
   }, [api, session, toasts.push]);
   const loader = useCallback(
@@ -233,23 +225,22 @@ export function SitesController({
       canWrite={can(session, 'site:write')}
       onCreate={async (customerId: string, input: SiteInput) => {
         const result = await createSite(api, customerId, input);
-        success(toasts, '站点已创建');
+        success(toasts, translate('ui.5992e4f5d109'));
         return result;
       }}
       onUpdate={async (site: SiteView, input: SiteInput) => {
         const result = await updateSite(api, site.id, site.version, input);
-        success(toasts, '站点已更新');
+        success(toasts, translate('ui.aa0e7f450c75'));
         return result;
       }}
       onDeactivate={async (site: SiteView, reason: string) => {
         const result = await deactivateSite(api, site.id, site.version, reason);
-        success(toasts, '站点已停用');
+        success(toasts, translate('ui.6fce6628527c'));
         return result;
       }}
     />
   );
 }
-
 export function DeviceGroupsController({
   api,
   session,
@@ -274,7 +265,6 @@ export function DeviceGroupsController({
   );
   const onboarding = useCursorController<OnboardingRequestView>(onboardingLoader);
   const [detail, setDetail] = useState<DetailState>({ kind: 'none' });
-
   const select = (requestId: string) => {
     setDetail({ kind: 'loading' });
     void fetchOnboardingRequest(api, requestId).then(
@@ -310,7 +300,6 @@ export function DeviceGroupsController({
     ];
     return { regions: regions.map((value) => ({ value, label: value })), subregions, sites };
   }, [devices.rows]);
-
   return (
     <DeviceGroupsPage
       list={{
@@ -357,12 +346,12 @@ export function DeviceGroupsController({
         canReview: can(session, 'onboarding:approve'),
         onApprove: async (request) => {
           const result = await approveOnboardingRequest(api, request.requestId, request.version);
-          success(toasts, '申请已批准');
+          success(toasts, translate('ui.34d0512e6db2'));
           return result;
         },
         onReject: async (request, reason) => {
           const result = await rejectOnboardingRequest(api, request.requestId, request.version, reason);
-          success(toasts, '申请已拒绝');
+          success(toasts, translate('ui.b419c31e7173'));
           return result;
         },
         onNavigate,

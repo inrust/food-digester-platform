@@ -106,7 +106,17 @@ function renderList(overrides: Partial<ContractsPageProps> = {}) {
   const calls = { filterApplied: [] as unknown[], opened: [] as string[], newOpened: 0 };
   const props: ContractsPageProps = {
     role: 'PlatformSuperAdmin',
-    contracts: { rows: [makeContract(), makeContract({ contractId: 'con-002', contractNumber: 'HT-2026-002', customerId: 'cust-2', derivedStatus: 'EXPIRING_SOON' })] },
+    contracts: {
+      rows: [
+        makeContract(),
+        makeContract({
+          contractId: 'con-002',
+          contractNumber: 'HT-2026-002',
+          customerId: 'cust-2',
+          derivedStatus: 'EXPIRING_SOON',
+        }),
+      ],
+    },
     filter: {},
     onApplyFilter: (f) => calls.filterApplied.push(f),
     customerOptions: CUSTOMERS,
@@ -169,7 +179,12 @@ function renderNew(overrides: Partial<ContractNewPageProps> = {}) {
     customerOptions: CUSTOMERS,
     onCreate: async (input) => {
       calls.created.push(input);
-      return makeContract({ contractId: 'con-new', contractNumber: input.contractNumber, status: 'DRAFT', derivedStatus: 'DRAFT' });
+      return makeContract({
+        contractId: 'con-new',
+        contractNumber: input.contractNumber,
+        status: 'DRAFT',
+        derivedStatus: 'DRAFT',
+      });
     },
     onListAvailable: async (contractId) => {
       calls.listed.push(contractId);
@@ -198,7 +213,16 @@ test('新建：字段校验（编号必填/结束日早于开始日/Customer 必
   assert.ok(screen.getByTestId('contract-error-period'));
   assert.equal((screen.getByTestId('contract-create-submit') as HTMLButtonElement).disabled, true);
   // 结束日早于开始日
-  assert.ok(validateContractForm({ contractNumber: 'HT-1', name: 'x', customerId: 'cust-1', contact: '', startAt: '2027-01-01T00:00:00Z', endAt: '2026-01-01T00:00:00Z' })?.['period']?.includes('晚于'));
+  assert.ok(
+    validateContractForm({
+      contractNumber: 'HT-1',
+      name: 'x',
+      customerId: 'cust-1',
+      contact: '',
+      startAt: '2027-01-01T00:00:00Z',
+      endAt: '2026-01-01T00:00:00Z',
+    })?.['period']?.includes('晚于'),
+  );
 });
 
 test('新建：创建 DRAFT（不自动激活 License）→ eligible 设备两步关联', async () => {
@@ -339,8 +363,16 @@ test('详情：动作矩阵门控（DRAFT 无续约；TERMINATED 全禁；Operat
   assert.equal((screen.getByTestId('contract-renew-open') as HTMLButtonElement).disabled, true);
   unmount();
 
-  const { unmount: unmount2 } = renderDetail({ contract: makeContract({ status: 'TERMINATED', derivedStatus: 'TERMINATED' }) });
-  for (const id of ['contract-edit-open', 'contract-activate-open', 'contract-renew-open', 'contract-terminate-open', 'contract-bind-open']) {
+  const { unmount: unmount2 } = renderDetail({
+    contract: makeContract({ status: 'TERMINATED', derivedStatus: 'TERMINATED' }),
+  });
+  for (const id of [
+    'contract-edit-open',
+    'contract-activate-open',
+    'contract-renew-open',
+    'contract-terminate-open',
+    'contract-bind-open',
+  ]) {
     assert.equal((screen.getByTestId(id) as HTMLButtonElement).disabled, true, id);
   }
   unmount2();

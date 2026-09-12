@@ -26,7 +26,7 @@ function currentManifest() {
   };
 }
 
-test('FE-06 至 FE-15 任一任务或路由从事实源缺失时失败关闭', () => {
+test('FE-06 至 FE-19 任一任务或路由从事实源缺失时失败关闭', () => {
   const { root, manifest } = currentManifest();
   manifest.tasks = manifest.tasks.filter((task) => task !== 'FE-08');
   manifest.routes = manifest.routes.filter((route) => route.path !== '/alarms');
@@ -69,6 +69,25 @@ test('FE-11 至 FE-15 控制器或 operationId 缺失时失败关闭', () => {
   });
   assert.ok(errors.includes('交付清单缺少 P0 operationId：listOtaCampaigns'));
   assert.ok(errors.includes('路由控制器未交付：OtaCampaignsController'));
+});
+
+test('FE-16 至 FE-19 任一任务、路由、控制器、页面标识或 operationId 缺失时失败关闭', () => {
+  const { root, manifest } = currentManifest();
+  manifest.tasks = manifest.tasks.filter((task) => task !== 'FE-19');
+  manifest.routes = manifest.routes.filter((route) => route.path !== '/settings');
+  const contracts = manifest.routes.find((route) => route.path === '/contracts');
+  contracts.testId = 'wrong-contracts-page';
+  manifest.operationIds = manifest.operationIds.filter((id) => id !== 'listConsumableStatus');
+  const errors = auditAdminWebDelivery(root, {
+    requireBuild: false,
+    manifestOverride: manifest,
+    controllerSourceOverride: 'export function DashboardController() {}',
+  });
+  assert.ok(errors.includes('交付清单缺少任务：FE-19'));
+  assert.ok(errors.includes('交付清单缺少 P0 路由：/settings'));
+  assert.ok(errors.includes('P0 路由事实不匹配：/contracts.testId'));
+  assert.ok(errors.includes('交付清单缺少 P0 operationId：listConsumableStatus'));
+  assert.ok(errors.includes('路由控制器未交付：ContractsController'));
 });
 
 test('App 移除显式页面分支时失败关闭', () => {

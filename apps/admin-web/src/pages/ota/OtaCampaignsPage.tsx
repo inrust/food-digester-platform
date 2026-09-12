@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-13 OTA Campaign 页（/ota/campaigns）：创建（VERIFIED 包 + 首批恰好 1 台灰度）、
  * 扩大批次（最终全量需 SuperAdmin 显式审批）、暂停/恢复/取消/失败重试、目标状态看板（targetCounts）。
@@ -41,22 +42,26 @@ import type {
   OtaTargetStatus,
   OtaTargetView,
 } from './types.js';
-
 export interface EligibleDeviceOption {
   readonly deviceId: string;
   readonly label: string;
 }
-
 export type CampaignDetailState =
-  | { readonly kind: 'none' }
-  | { readonly kind: 'loading' }
-  | { readonly kind: 'error'; readonly error: unknown }
+  | {
+      readonly kind: 'none';
+    }
+  | {
+      readonly kind: 'loading';
+    }
+  | {
+      readonly kind: 'error';
+      readonly error: unknown;
+    }
   | {
       readonly kind: 'ready';
       readonly campaign: OtaCampaignDetailView;
       readonly targets: OtaListState<OtaTargetView>;
     };
-
 export interface OtaCampaignsPageProps {
   readonly role: Role;
   readonly campaigns: OtaListState<OtaCampaignView>;
@@ -76,7 +81,9 @@ export interface OtaCampaignsPageProps {
   readonly onExpandBatch: (
     campaignId: string,
     deviceIds: readonly string[],
-    finalRolloutApproval?: { readonly confirmText: string },
+    finalRolloutApproval?: {
+      readonly confirmText: string;
+    },
   ) => Promise<OtaBatchExpandResult>;
   readonly onPause: (campaignId: string) => Promise<OtaCampaignView>;
   readonly onResume: (campaignId: string) => Promise<OtaCampaignView>;
@@ -86,7 +93,6 @@ export interface OtaCampaignsPageProps {
   readonly onNavigate: (path: string) => void;
   readonly onRefresh: () => void;
 }
-
 export function OtaCampaignsPage({
   role,
   campaigns,
@@ -126,11 +132,9 @@ export function OtaCampaignsPage({
   const [draftBatchNo, setDraftBatchNo] = useState('');
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-
   const readyDetail = detail.kind === 'ready' ? detail : null;
   const campaign = readyDetail?.campaign ?? null;
   const failedTargets = readyDetail?.targets.rows?.filter((t) => t.status === 'FAILED') ?? [];
-
   const runAction = async (execute: () => Promise<void>) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -146,7 +150,6 @@ export function OtaCampaignsPage({
       setBusy(false);
     }
   };
-
   const verifiedPackageIds = verifiedPackages.map((p) => p.packageId);
   const createError = validateCampaignCreate(
     { name, packageId, deviceIds: deviceId === '' ? [] : [deviceId] },
@@ -157,16 +160,15 @@ export function OtaCampaignsPage({
   const expandError =
     validateBatchExpand(expandSelected) ??
     (isFinalRollout && role !== 'PlatformSuperAdmin'
-      ? '最终全量仅允许 PlatformSuperAdmin 审批'
+      ? translate('page.f444f6d564b9')
       : isFinalRollout &&
           (campaign === null ||
             campaign.targetCounts.total === 0 ||
             campaign.targetCounts.SUCCEEDED !== campaign.targetCounts.total)
-        ? '最终全量前，既有灰度及批次 target 必须全部成功'
+        ? translate('page.ff400c24b8e4')
         : isFinalRollout && finalRolloutConfirmText !== expectedFinalRolloutText
-          ? `请输入 ${expectedFinalRolloutText} 确认最终全量`
+          ? translate('page.601816e17037') + ' ' + expectedFinalRolloutText + (' ' + translate('page.7eaf7f83eb09'))
           : null);
-
   const submitCreate = () =>
     runAction(async () => {
       if (createError !== null) return;
@@ -176,11 +178,14 @@ export function OtaCampaignsPage({
       setPackageId('');
       setDeviceId('');
       setNotice(
-        `Campaign 已创建（${created.campaignId}，${CAMPAIGN_STATUS_LABELS[created.status]}，策略 CANARY）；首批 1 台进入灰度`,
+        translate('page.80256f1595ad') +
+          created.campaignId +
+          '\uFF0C' +
+          CAMPAIGN_STATUS_LABELS[created.status] +
+          translate('page.2143994cca67'),
       );
       onRefresh();
     });
-
   const submitExpand = () =>
     runAction(async () => {
       if (campaign === null || expandError !== null) return;
@@ -193,40 +198,51 @@ export function OtaCampaignsPage({
       setExpandSelected([]);
       setFinalRolloutConfirmText('');
       setNotice(
-        `批次 ${result.batchNo} 已扩大：新增 ${result.addedCount} 台` +
-          (result.skippedExistingCount > 0 ? `，幂等跳过已在 Campaign 的 ${result.skippedExistingCount} 台` : '') +
-          (result.finalRolloutApproved ? `；最终全量已由 ${result.approvedBy ?? 'SuperAdmin'} 审批` : ''),
+        translate('page.6b2cf249edf5') +
+          ' ' +
+          result.batchNo +
+          (' ' + translate('page.732ce0646c5b') + ' ') +
+          result.addedCount +
+          (' ' + translate('page.dda4f85fa0dc')) +
+          (result.skippedExistingCount > 0
+            ? translate('page.c1d10fa996c3') +
+              ' ' +
+              result.skippedExistingCount +
+              (' ' + translate('page.dda4f85fa0dc'))
+            : '') +
+          (result.finalRolloutApproved
+            ? translate('page.86baefe54282') +
+              ' ' +
+              (result.approvedBy ?? 'SuperAdmin') +
+              (' ' + translate('page.5ce60cb75d20'))
+            : ''),
       );
       onRefresh();
     });
-
   const submitRetry = () =>
     runAction(async () => {
       if (campaign === null) return;
       const result = await onRetry(campaign.campaignId, retrySelected.length > 0 ? retrySelected : undefined);
       setRetryOpen(false);
       setRetrySelected([]);
-      setNotice(`已重试 ${result.retriedCount} 个失败 target（重置为待下发，重新进入下发队列）`);
+      setNotice(translate('page.a3477f849226') + ' ' + result.retriedCount + (' ' + translate('page.232f482b8538')));
       onRefresh();
     });
-
   const transition = (action: 'pause' | 'resume' | 'cancel') =>
     runAction(async () => {
       if (campaign === null) return;
       const execute = action === 'pause' ? onPause : action === 'resume' ? onResume : onCancel;
       const updated = await execute(campaign.campaignId);
       const suffix =
-        action === 'cancel'
-          ? '；未完成 target 已级联取消，不再产生新下发'
-          : action === 'pause'
-            ? '；暂停后不再产生新下发'
-            : '';
+        action === 'cancel' ? translate('page.73a3c9a8c56a') : action === 'pause' ? translate('page.ed138b6a6670') : '';
       setNotice(
-        `${CAMPAIGN_ACTION_LABELS[action]}成功（幂等回放），当前状态：${CAMPAIGN_STATUS_LABELS[updated.status]}${suffix}`,
+        CAMPAIGN_ACTION_LABELS[action] +
+          translate('page.11db568919cb') +
+          CAMPAIGN_STATUS_LABELS[updated.status] +
+          suffix,
       );
       onRefresh();
     });
-
   const actionButton = (action: CampaignAction, onClick: () => void, testid: string) => {
     if (campaign === null) return null;
     const gate = gateCampaignAction(action, campaign.status, role);
@@ -249,39 +265,37 @@ export function OtaCampaignsPage({
       </span>
     );
   };
-
   return (
     <div className="ota-campaigns-page" data-testid="ota-campaigns-page">
       <div className="page-header">
-        <h3>OTA 升级</h3>
+        <h3>{translate('page.bdb9a2faeb72')}</h3>
         <button type="button" data-testid="goto-ota-packages" onClick={() => onNavigate('/ota/packages')}>
-          固件包管理
+          {translate('page.520fc0679572')}
         </button>
       </div>
 
-      <section data-testid="campaign-create-section" aria-label="创建 Campaign">
-        <h4>创建 Campaign（灰度）</h4>
-        <p className="field-hint">
-          仅可发布（VERIFIED）包可创建；首批强制恰好 1 台灰度，验证后经“扩大批次”逐步放量；最终全量需 SuperAdmin
-          显式审批。
-        </p>
+      <section data-testid="campaign-create-section" aria-label={translate('page.7a06c0b187b6')}>
+        <h4>{translate('page.9d4b6023d061')}</h4>
+        <p className="field-hint">{translate('page.fec04f09d673')}</p>
         <button
           type="button"
           className="primary-button"
           data-testid="campaign-create-open"
           disabled={busy || verifiedPackages.length === 0 || eligibleDevices.length === 0}
-          {...(verifiedPackages.length === 0 ? { title: '暂无可发布（VERIFIED）包' } : {})}
-          {...(verifiedPackages.length > 0 && eligibleDevices.length === 0 ? { title: '暂无合格设备' } : {})}
+          {...(verifiedPackages.length === 0 ? { title: translate('page.469b23266823') } : {})}
+          {...(verifiedPackages.length > 0 && eligibleDevices.length === 0
+            ? { title: translate('page.231330ea235d') }
+            : {})}
           onClick={() => {
             setCreateOpen(true);
             setActionError(null);
           }}
         >
-          创建 Campaign
+          {translate('page.7a06c0b187b6')}
         </button>
         {verifiedPackages.length === 0 ? (
           <span className="deny-reason" data-testid="create-no-package">
-            暂无可发布（VERIFIED）包，请先在固件包管理完成上传校验
+            {translate('page.0c74f236f25a')}
           </span>
         ) : null}
       </section>
@@ -295,12 +309,12 @@ export function OtaCampaignsPage({
 
       <Modal
         open={createOpen}
-        title="创建 OTA Campaign"
+        title={translate('page.fc6591c3267f')}
         testid="campaign-create-form"
         onClose={() => setCreateOpen(false)}
       >
         <div className="dialog-field">
-          <label htmlFor="campaign-name">名称（≤128 字符）</label>
+          <label htmlFor="campaign-name">{translate('page.eb465cfa598b')}</label>
           <input
             id="campaign-name"
             data-testid="campaign-name"
@@ -310,14 +324,14 @@ export function OtaCampaignsPage({
           />
         </div>
         <div className="dialog-field">
-          <label htmlFor="campaign-package">固件包（仅可发布 VERIFIED）</label>
+          <label htmlFor="campaign-package">{translate('page.e0bc4ef9d479')}</label>
           <select
             id="campaign-package"
             data-testid="campaign-package"
             value={packageId}
             onChange={(event) => setPackageId(event.target.value)}
           >
-            <option value="">请选择</option>
+            <option value="">{translate('page.382f4b5559b3')}</option>
             {verifiedPackages.map((p) => (
               <option key={p.packageId} value={p.packageId}>
                 {p.model} {p.version}（{PACKAGE_TYPE_LABELS[p.packageType]}）
@@ -326,21 +340,21 @@ export function OtaCampaignsPage({
           </select>
         </div>
         <div className="dialog-field">
-          <label htmlFor="campaign-device">首批灰度设备（恰好 1 台）</label>
+          <label htmlFor="campaign-device">{translate('page.d971bbe039b1')}</label>
           <select
             id="campaign-device"
             data-testid="campaign-device"
             value={deviceId}
             onChange={(event) => setDeviceId(event.target.value)}
           >
-            <option value="">请选择</option>
+            <option value="">{translate('page.382f4b5559b3')}</option>
             {eligibleDevices.map((d) => (
               <option key={d.deviceId} value={d.deviceId}>
                 {d.label}
               </option>
             ))}
           </select>
-          <p className="field-hint">首批恰好 1 台（灰度）；超过 1 台将被前端阻止且服务端拒绝（400）。</p>
+          <p className="field-hint">{translate('page.573b7667dd69')}</p>
         </div>
         {createError !== null ? (
           <p className="field-hint" data-testid="campaign-create-error">
@@ -355,15 +369,15 @@ export function OtaCampaignsPage({
             disabled={busy || createError !== null}
             onClick={() => void submitCreate()}
           >
-            创建（首批 1 台灰度）
+            {translate('page.0255d0eb6e95')}
           </button>
         </div>
       </Modal>
 
-      <section data-testid="campaign-list-section" aria-label="Campaign 列表">
-        <h4>Campaign 列表</h4>
+      <section data-testid="campaign-list-section" aria-label={translate('page.561c14751c14')}>
+        <h4>{translate('page.561c14751c14')}</h4>
         <div className="filter-bar">
-          <label htmlFor="campaign-filter-status">状态</label>
+          <label htmlFor="campaign-filter-status">{translate('page.62e951a692ff')}</label>
           <select
             id="campaign-filter-status"
             data-testid="campaign-filter-status"
@@ -375,14 +389,14 @@ export function OtaCampaignsPage({
               })
             }
           >
-            <option value="">全部</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
             {CAMPAIGN_STATUS_OPTIONS.map((status) => (
               <option key={status} value={status}>
                 {CAMPAIGN_STATUS_LABELS[status]}
               </option>
             ))}
           </select>
-          <label htmlFor="campaign-filter-model">目标型号</label>
+          <label htmlFor="campaign-filter-model">{translate('page.418dfc356a6d')}</label>
           <input
             id="campaign-filter-model"
             data-testid="campaign-filter-model"
@@ -395,29 +409,29 @@ export function OtaCampaignsPage({
             data-testid="campaign-filter-search"
             onClick={() => onApplyFilter(draftFilter)}
           >
-            筛选
+            {translate('page.dcce9a144a40')}
           </button>
         </div>
         <CursorTable
-          ariaLabel="Campaign 列表"
+          ariaLabel={translate('page.561c14751c14')}
           columns={[
-            { key: 'name', header: '名称', render: (c) => c.name },
-            { key: 'targetModel', header: '目标型号', render: (c) => c.targetModel },
-            { key: 'packageId', header: '包', render: (c) => c.packageId },
-            { key: 'strategy', header: '策略', render: (c) => c.strategy },
-            { key: 'status', header: '状态', render: (c) => CAMPAIGN_STATUS_LABELS[c.status] },
-            { key: 'createdBy', header: '创建人', render: (c) => c.createdBy },
-            { key: 'createdAt', header: '创建时间', render: (c) => <TimeText iso={c.createdAt} /> },
+            { key: 'name', header: translate('page.1be7ae4fc257'), render: (c) => c.name },
+            { key: 'targetModel', header: translate('page.418dfc356a6d'), render: (c) => c.targetModel },
+            { key: 'packageId', header: translate('page.7e396634c6ce'), render: (c) => c.packageId },
+            { key: 'strategy', header: translate('page.f3c49831c636'), render: (c) => c.strategy },
+            { key: 'status', header: translate('page.62e951a692ff'), render: (c) => CAMPAIGN_STATUS_LABELS[c.status] },
+            { key: 'createdBy', header: translate('page.787ad1deae49'), render: (c) => c.createdBy },
+            { key: 'createdAt', header: translate('page.84e3802f60a7'), render: (c) => <TimeText iso={c.createdAt} /> },
             {
               key: 'actions',
-              header: '操作',
+              header: translate('page.f3ea6d345e2a'),
               render: (c) => (
                 <button
                   type="button"
                   data-testid={`campaign-detail-${c.campaignId}`}
                   onClick={() => onSelectCampaign(c.campaignId)}
                 >
-                  详情
+                  {translate('page.4f55ee1e687f')}
                 </button>
               ),
             },
@@ -429,19 +443,19 @@ export function OtaCampaignsPage({
           {...(campaigns.nextCursor !== undefined ? { nextCursor: campaigns.nextCursor } : {})}
           onNextPage={onLoadMore}
           onRefresh={onRefresh}
-          emptyText="暂无 Campaign"
+          emptyText={translate('page.73d70701aa57')}
         />
       </section>
 
       {detail.kind === 'loading' ? (
         <div role="status" data-testid="campaign-detail-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : null}
       {detail.kind === 'error' ? <ErrorNotice error={detail.error} onRefresh={onRefresh} /> : null}
 
       {campaign !== null && readyDetail !== null ? (
-        <aside className="campaign-detail" data-testid="campaign-detail" aria-label="Campaign 详情">
+        <aside className="campaign-detail" data-testid="campaign-detail" aria-label={translate('page.013e5baba559')}>
           <h4>
             {campaign.name}
             <span className="campaign-status" data-testid="campaign-detail-status">
@@ -451,13 +465,16 @@ export function OtaCampaignsPage({
           <dl>
             <dt>Campaign</dt>
             <dd>{campaign.campaignId}</dd>
-            <dt>目标型号 / 包</dt>
+            <dt>{translate('page.d21541e46da5')}</dt>
             <dd>
               {campaign.targetModel} / {campaign.packageId}
             </dd>
-            <dt>策略</dt>
-            <dd>{campaign.strategy}（最终全量须显式审批）</dd>
-            <dt>创建人 / 时间</dt>
+            <dt>{translate('page.f3c49831c636')}</dt>
+            <dd>
+              {campaign.strategy}
+              {translate('page.50e2bd94f3f9')}
+            </dd>
+            <dt>{translate('page.f4d51aaca4f0')}</dt>
             <dd>
               {campaign.createdBy} / <TimeText iso={campaign.createdAt} />
             </dd>
@@ -486,25 +503,26 @@ export function OtaCampaignsPage({
             {actionButton('cancel', () => setCancelConfirm(true), 'campaign-action-cancel')}
           </div>
 
-          <section data-testid="target-counts" aria-label="目标状态看板">
-            <h5>目标状态看板</h5>
+          <section data-testid="target-counts" aria-label={translate('page.c1805c3cfa68')}>
+            <h5>{translate('page.c1805c3cfa68')}</h5>
             <ul className="target-count-board">
-              <li data-testid="count-total">总计 {campaign.targetCounts.total}</li>
+              <li data-testid="count-total">
+                {translate('page.3af1ac5b4efe') + ' '}
+                {campaign.targetCounts.total}
+              </li>
               {TARGET_STATUS_OPTIONS.map((status) => (
                 <li key={status} data-testid={`count-${status}`}>
                   {TARGET_STATUS_LABELS[status]} {campaign.targetCounts[status]}
                 </li>
               ))}
             </ul>
-            <p className="field-hint">
-              失败 target 可经“失败重试”重置为待下发；按设备的失败原因明细需契约补充（当前可经告警与事件页追溯）。
-            </p>
+            <p className="field-hint">{translate('page.956e69169055')}</p>
           </section>
 
-          <section data-testid="target-list-section" aria-label="目标列表">
-            <h5>目标列表</h5>
+          <section data-testid="target-list-section" aria-label={translate('page.ee3cdd7dc748')}>
+            <h5>{translate('page.ee3cdd7dc748')}</h5>
             <div className="filter-bar">
-              <label htmlFor="target-filter-status">状态</label>
+              <label htmlFor="target-filter-status">{translate('page.62e951a692ff')}</label>
               <select
                 id="target-filter-status"
                 data-testid="target-filter-status"
@@ -513,14 +531,14 @@ export function OtaCampaignsPage({
                   setDraftTargetStatus(event.target.value === '' ? '' : (event.target.value as OtaTargetStatus))
                 }
               >
-                <option value="">全部</option>
+                <option value="">{translate('page.778fc8f99453')}</option>
                 {TARGET_STATUS_OPTIONS.map((status) => (
                   <option key={status} value={status}>
                     {TARGET_STATUS_LABELS[status]}
                   </option>
                 ))}
               </select>
-              <label htmlFor="target-filter-batch">批次号</label>
+              <label htmlFor="target-filter-batch">{translate('page.2514034a3d8a')}</label>
               <input
                 id="target-filter-batch"
                 data-testid="target-filter-batch"
@@ -540,34 +558,46 @@ export function OtaCampaignsPage({
                   });
                 }}
               >
-                筛选
+                {translate('page.dcce9a144a40')}
               </button>
             </div>
             <CursorTable
-              ariaLabel="目标列表"
+              ariaLabel={translate('page.ee3cdd7dc748')}
               columns={[
-                { key: 'deviceId', header: '设备', render: (t) => t.deviceId },
-                { key: 'batchNo', header: '批次', render: (t) => (t.batchNo === 1 ? '1（灰度）' : String(t.batchNo)) },
-                { key: 'status', header: '状态', render: (t) => TARGET_STATUS_LABELS[t.status] },
+                { key: 'deviceId', header: translate('page.01f2c16cda65'), render: (t) => t.deviceId },
+                {
+                  key: 'batchNo',
+                  header: translate('page.6b2cf249edf5'),
+                  render: (t) => (t.batchNo === 1 ? translate('page.00ff953569d7') : String(t.batchNo)),
+                },
+                {
+                  key: 'status',
+                  header: translate('page.62e951a692ff'),
+                  render: (t) => TARGET_STATUS_LABELS[t.status],
+                },
                 {
                   key: 'failure',
-                  header: '失败原因',
+                  header: translate('page.918468e7557e'),
                   render: (t) =>
                     t.status === 'FAILED'
-                      ? `${t.failureCode ?? 'OTA_FAILED'}：${t.failureReason ?? '未提供原因'}`
+                      ? (t.failureCode ?? 'OTA_FAILED') + '\uFF1A' + (t.failureReason ?? translate('page.33306ae06ed2'))
                       : '—',
                 },
                 {
                   key: 'scheduledTime',
-                  header: '计划时间',
+                  header: translate('page.be81ea32b445'),
                   render: (t) => (t.scheduledTime !== null ? <TimeText iso={t.scheduledTime} /> : '—'),
                 },
                 {
                   key: 'completedAt',
-                  header: '完成时间',
+                  header: translate('page.754a8a2e2dba'),
                   render: (t) => (t.completedAt !== null ? <TimeText iso={t.completedAt} /> : '—'),
                 },
-                { key: 'updatedAt', header: '更新时间', render: (t) => <TimeText iso={t.updatedAt} /> },
+                {
+                  key: 'updatedAt',
+                  header: translate('page.093dea88c930'),
+                  render: (t) => <TimeText iso={t.updatedAt} />,
+                },
               ]}
               rows={readyDetail.targets.rows === null ? null : [...readyDetail.targets.rows]}
               rowKey={(t) => t.targetId}
@@ -576,19 +606,19 @@ export function OtaCampaignsPage({
               {...(readyDetail.targets.nextCursor !== undefined ? { nextCursor: readyDetail.targets.nextCursor } : {})}
               onNextPage={onLoadMoreTargets}
               onRefresh={onRefresh}
-              emptyText="暂无目标"
+              emptyText={translate('page.8476f0e11ec2')}
             />
           </section>
 
           <button type="button" data-testid="campaign-detail-close" onClick={onCloseDetail}>
-            关闭
+            {translate('page.6c14bd7f6f9e')}
           </button>
         </aside>
       ) : null}
 
       <Modal
         open={expandOpen}
-        title="扩大批次"
+        title={translate('page.0d6084de32a0')}
         testid="campaign-expand-form"
         onClose={() => {
           setExpandOpen(false);
@@ -598,8 +628,9 @@ export function OtaCampaignsPage({
         {campaign !== null ? (
           <div>
             <p className="field-hint">
-              合格设备 {eligibleDevices.length} 台；普通批次可逐步放量；选中全部时仅允许 SuperAdmin 在既有 target
-              全部成功后显式审批。已在 Campaign 的设备由服务端幂等跳过。
+              {translate('page.f2de38ce26f1') + ' '}
+              {eligibleDevices.length}
+              {' ' + translate('page.3592d5501c07')}
             </p>
             <ul className="device-check-list" data-testid="expand-device-list">
               {eligibleDevices.map((d) => (
@@ -624,7 +655,7 @@ export function OtaCampaignsPage({
             </ul>
             {isFinalRollout ? (
               <label>
-                最终全量确认
+                {translate('page.c54f84d0d887')}
                 <input
                   data-testid="final-rollout-confirm"
                   value={finalRolloutConfirmText}
@@ -646,23 +677,30 @@ export function OtaCampaignsPage({
                 disabled={busy || expandError !== null}
                 onClick={() => void submitExpand()}
               >
-                扩大批次（{expandSelected.length} 台）
+                {translate('page.b4a1dbe7c6be')}
+                {expandSelected.length}
+                {' ' + translate('page.57151561028f')}
               </button>
             </div>
           </div>
         ) : null}
       </Modal>
 
-      <Modal open={retryOpen} title="失败重试" testid="campaign-retry-form" onClose={() => setRetryOpen(false)}>
+      <Modal
+        open={retryOpen}
+        title={translate('page.794ff5f0462b')}
+        testid="campaign-retry-form"
+        onClose={() => setRetryOpen(false)}
+      >
         {campaign !== null ? (
           <div>
             {failedTargets.length === 0 ? (
               <p className="empty-state" data-testid="retry-empty">
-                当前列表无失败 target
+                {translate('page.c767ec9df263')}
               </p>
             ) : (
               <>
-                <p className="field-hint">不勾选任何项 = 重试 Campaign 全部失败 target；勾选则仅重试选中子集。</p>
+                <p className="field-hint">{translate('page.b79f45392bde')}</p>
                 <ul className="device-check-list" data-testid="retry-target-list">
                   {failedTargets.map((t) => (
                     <li key={t.targetId}>
@@ -679,7 +717,9 @@ export function OtaCampaignsPage({
                             )
                           }
                         />
-                        {t.deviceId}（批次 {t.batchNo}）
+                        {t.deviceId}
+                        {translate('page.d9182c87f366') + ' '}
+                        {t.batchNo}）
                       </label>
                     </li>
                   ))}
@@ -694,7 +734,10 @@ export function OtaCampaignsPage({
                 disabled={busy || failedTargets.length === 0}
                 onClick={() => void submitRetry()}
               >
-                重试{retrySelected.length > 0 ? `选中 ${retrySelected.length} 项` : '全部失败 target'}
+                {translate('page.e2d53a6d3a6a')}
+                {retrySelected.length > 0
+                  ? translate('page.a85b0e899cbf') + ' ' + retrySelected.length + (' ' + translate('page.64728a772742'))
+                  : translate('page.6e0a3cd678cb')}
               </button>
             </div>
           </div>
@@ -703,10 +746,10 @@ export function OtaCampaignsPage({
 
       <ConfirmDialog
         open={cancelConfirm}
-        title="取消 Campaign"
-        description="取消后未完成 target 将级联取消，不再产生新下发（幂等回放）。"
+        title={translate('page.dd15d73993f8')}
+        description={translate('page.06aec8093202')}
         danger
-        confirmText="确认取消"
+        confirmText={translate('page.c9cbe84e862b')}
         onConfirm={() => {
           setCancelConfirm(false);
           void transition('cancel');

@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-06 设备群管理页（/devices/groups）：设备台账列表 + 新增设备请求（FE-04 面板嵌入）。
  *
@@ -21,7 +22,6 @@ import {
   OPERATIONAL_FILTER_OPTIONS,
 } from './device-state.js';
 import type { DeviceView } from './types.js';
-
 export interface DeviceListFilters {
   readonly keyword: string;
   readonly region: string | null;
@@ -32,7 +32,6 @@ export interface DeviceListFilters {
   readonly connectivity: string | null;
   readonly licenseStatus: string | null;
 }
-
 export const EMPTY_DEVICE_FILTERS: DeviceListFilters = {
   keyword: '',
   region: null,
@@ -43,7 +42,6 @@ export const EMPTY_DEVICE_FILTERS: DeviceListFilters = {
   connectivity: null,
   licenseStatus: null,
 };
-
 export interface DeviceGroupsPageProps {
   readonly list: {
     readonly rows: readonly DeviceView[] | null;
@@ -63,14 +61,17 @@ export interface DeviceGroupsPageProps {
   /** ScopeFilter 选项（由 sites/devices 列表注入）。 */
   readonly filterOptions: {
     readonly regions: readonly FilterOption[];
-    readonly subregions: readonly (FilterOption & { region: string })[];
-    readonly sites: readonly (FilterOption & { subregion: string })[];
+    readonly subregions: readonly (FilterOption & {
+      region: string;
+    })[];
+    readonly sites: readonly (FilterOption & {
+      subregion: string;
+    })[];
   };
   readonly onNavigate: (path: string) => void;
   /** FE-04 审批面板（嵌入本页“新增设备请求”区域）。 */
   readonly onboarding: OnboardingReviewPanelProps;
 }
-
 function axisSelect(
   id: string,
   label: string,
@@ -88,7 +89,7 @@ function axisSelect(
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}
       >
-        <option value="">全部</option>
+        <option value="">{translate('page.778fc8f99453')}</option>
         {options.map((option) => (
           <option key={option} value={option}>
             {labels(option)}
@@ -98,7 +99,6 @@ function axisSelect(
     </span>
   );
 }
-
 export function DeviceGroupsPage({
   list,
   filters,
@@ -112,24 +112,22 @@ export function DeviceGroupsPage({
 }: DeviceGroupsPageProps) {
   // 草稿筛选：应用后才生效（device-group.button.search 语义）
   const [draft, setDraft] = useState<DeviceListFilters>(filters);
-
   const scopeValue: ScopeFilterValue = {
     region: draft.region,
     subregion: draft.subregion,
     siteId: draft.siteId,
     deviceId: null,
   };
-
   return (
     <div className="device-groups-page" data-testid="device-groups-page">
       <div className="filter-bar" data-testid="device-filter-bar">
         <span className="filter-field">
-          <label htmlFor="device-keyword">关键字</label>
+          <label htmlFor="device-keyword">{translate('page.621219ff9885')}</label>
           <input
             id="device-keyword"
             data-testid="device-keyword"
             value={draft.keyword}
-            placeholder="序列号 / 别名"
+            placeholder={translate('page.766542953317')}
             onChange={(e) => setDraft({ ...draft, keyword: e.target.value })}
           />
         </span>
@@ -144,7 +142,7 @@ export function DeviceGroupsPage({
         />
         {axisSelect(
           'filter-lifecycle',
-          '生命周期',
+          translate('page.009200773b02'),
           draft.lifecycleStatus,
           LIFECYCLE_FILTER_OPTIONS,
           (v) => axisValueLabel('lifecycle', v),
@@ -152,7 +150,7 @@ export function DeviceGroupsPage({
         )}
         {axisSelect(
           'filter-operational',
-          '运行状态',
+          translate('page.2a4080ad9f60'),
           draft.operationalStatus,
           OPERATIONAL_FILTER_OPTIONS,
           (v) => axisValueLabel('operational', v),
@@ -160,7 +158,7 @@ export function DeviceGroupsPage({
         )}
         {axisSelect(
           'filter-connectivity',
-          '连接状态',
+          translate('page.b639d60c4140'),
           draft.connectivity,
           CONNECTIVITY_FILTER_OPTIONS,
           (v) => axisValueLabel('connectivity', v),
@@ -168,7 +166,7 @@ export function DeviceGroupsPage({
         )}
         {axisSelect(
           'filter-license',
-          '授权状态',
+          translate('page.ac3cc79f9199'),
           draft.licenseStatus,
           LICENSE_FILTER_OPTIONS,
           (v) => LICENSE_FILTER_LABELS[v] ?? v,
@@ -180,7 +178,7 @@ export function DeviceGroupsPage({
           data-testid="device-search"
           onClick={() => onApplyFilters(draft)}
         >
-          搜索
+          {translate('page.f04090805c6e')}
         </button>
         <button
           type="button"
@@ -190,32 +188,33 @@ export function DeviceGroupsPage({
             onApplyFilters(EMPTY_DEVICE_FILTERS);
           }}
         >
-          重置
+          {translate('page.3d81345303ab')}
         </button>
       </div>
 
       <CursorTable
-        ariaLabel="设备群列表"
+        ariaLabel={translate('page.5a1abe45b505')}
         columns={[
           {
             key: 'seq',
-            header: '序号',
+            header: translate('page.6cd7c92cbd69'),
             render: (d) => <span data-testid={`seq-${d.id}`}>{(list.rows?.indexOf(d) ?? 0) + 1}</span>,
           },
-          { key: 'region', header: '设备区域', render: (d) => d.site?.region ?? '—' },
-          { key: 'subregion', header: '设备子区域', render: (d) => d.site?.subregion ?? '—' },
-          { key: 'deviceId', header: '设备唯一ID', render: (d) => d.serialNumber },
-          { key: 'alias', header: '设备别名', render: (d) => d.alias ?? '—' },
-          { key: 'contractName', header: '关联合约名称', render: (d) => d.contract?.name ?? '—' },
+          { key: 'region', header: translate('page.406e0f8c6852'), render: (d) => d.site?.region ?? '—' },
+          { key: 'subregion', header: translate('page.ff0beacd69e2'), render: (d) => d.site?.subregion ?? '—' },
+          { key: 'deviceId', header: translate('page.d79416b3896a'), render: (d) => d.serialNumber },
+          { key: 'alias', header: translate('page.270ec5a97320'), render: (d) => d.alias ?? '—' },
+          { key: 'contractName', header: translate('page.0bb94d970554'), render: (d) => d.contract?.name ?? '—' },
           {
             key: 'leaseTerm',
-            header: '租期期限',
-            render: (d) => (d.contract !== null ? `至 ${d.contract.endAt.slice(0, 10)}` : '—'),
+            header: translate('page.b40bd0ccd7cd'),
+            render: (d) =>
+              d.contract !== null ? translate('page.43401e739ef4') + ' ' + d.contract.endAt.slice(0, 10) : '—',
           },
-          { key: 'firmware', header: '软件版本', render: (d) => d.firmwareVersion ?? '—' },
+          { key: 'firmware', header: translate('page.d6ee5acd60f7'), render: (d) => d.firmwareVersion ?? '—' },
           {
             key: 'fourAxis',
-            header: '状态',
+            header: translate('page.62e951a692ff'),
             render: (d) => (
               <FourAxisBadges
                 status={{
@@ -229,14 +228,14 @@ export function DeviceGroupsPage({
           },
           {
             key: 'actions',
-            header: '操作',
+            header: translate('page.f3ea6d345e2a'),
             render: (d) => (
               <button
                 type="button"
                 data-testid={`manage-${d.id}`}
                 onClick={() => onNavigate(`/devices/manage?deviceId=${encodeURIComponent(d.id)}`)}
               >
-                管理
+                {translate('page.4989b5cf9483')}
               </button>
             ),
           },
@@ -252,10 +251,10 @@ export function DeviceGroupsPage({
         onNextPage={onLoadMore}
         {...(onLoadPrevious !== undefined ? { onPrevPage: onLoadPrevious } : {})}
         onRefresh={onRefresh}
-        emptyText="暂无设备"
+        emptyText={translate('page.2b9379b8f7b5')}
       />
 
-      <h4>新增设备请求</h4>
+      <h4>{translate('page.ac8962435f91')}</h4>
       <OnboardingReviewPanel {...onboarding} />
     </div>
   );

@@ -1,8 +1,11 @@
+import { PAGE_EN } from './pages.js';
+
 /**
  * FE-19 en 语言资源（与 zh-CN key 集 parity 锁定，缺失检测为 0）。
  * 纪律：requestId 原文保留；协议枚举原文与业务数据不翻译。
  */
 export const EN: Readonly<Record<string, string>> = {
+  ...PAGE_EN,
   // ---------- Common ----------
   'common.loading': 'Loading…',
   'common.refresh': 'Refresh',
@@ -59,7 +62,8 @@ export const EN: Readonly<Record<string, string>> = {
 
   // ---------- Error mapping (API error codes; requestId kept verbatim) ----------
   'error.forbidden.title': 'Access Denied',
-  'error.forbidden.detail': 'Your role cannot view or modify this data. Contact an administrator if you believe this is a mistake.',
+  'error.forbidden.detail':
+    'Your role cannot view or modify this data. Contact an administrator if you believe this is a mistake.',
   'error.versionConflict.title': 'Modified by someone else',
   'error.versionConflict.detail': 'The data on this page is out of date. Refresh and try again.',
   'error.generic.title': 'Operation failed',

@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-08 License 纯逻辑：状态→合法动作矩阵、权限门、Entitlement/状态文案。
  *
@@ -12,9 +13,7 @@ import { hasPermission } from '@fdp/auth/browser';
 import type { Role } from '@fdp/auth/browser';
 import { LICENSE_FILTER_LABELS } from '../devices/device-state.js';
 import type { EntitlementCode, LicenseStatus } from './types.js';
-
 export type LicenseAction = 'issue' | 'activate' | 'renew' | 'revoke';
-
 /** 状态 → 契约允许的管理员动作（时间派生迁移非管理员动作，不在矩阵内）。 */
 export const LICENSE_ACTION_MATRIX: Readonly<Record<LicenseStatus, readonly LicenseAction[]>> = {
   Draft: ['issue'],
@@ -25,7 +24,6 @@ export const LICENSE_ACTION_MATRIX: Readonly<Record<LicenseStatus, readonly Lice
   Expired: ['revoke'],
   Revoked: [],
 };
-
 /** 非终态：设备存在任一此类 License 时创建新 Draft 会被 409 拒绝（BE-LIC-01）。 */
 export const NON_TERMINAL_LICENSE_STATUSES: readonly LicenseStatus[] = [
   'Draft',
@@ -34,76 +32,67 @@ export const NON_TERMINAL_LICENSE_STATUSES: readonly LicenseStatus[] = [
   'ExpiringSoon',
   'Renewed',
 ];
-
 export function actionsOfStatus(status: LicenseStatus): readonly LicenseAction[] {
   return LICENSE_ACTION_MATRIX[status];
 }
-
 export interface LicenseActionGate {
   readonly enabled: boolean;
   readonly reason: string | null;
 }
-
 /** 动作可用性 = 状态矩阵 ∩ license:write（前端体验层门控；后端仍强制）。 */
 export function gateLicenseAction(action: LicenseAction, status: LicenseStatus, role: Role): LicenseActionGate {
   if (!actionsOfStatus(status).includes(action)) {
-    return { enabled: false, reason: '当前授权状态不允许该操作' };
+    return { enabled: false, reason: translate('ui.b47202f313ad') };
   }
   if (!hasPermission(role, 'license:write')) {
-    return { enabled: false, reason: '需要授权写权限（license:write）' };
+    return { enabled: false, reason: translate('ui.fa4efec1dade') };
   }
   return { enabled: true, reason: null };
 }
-
 /** 创建 Draft 的权限门（设备归属/退役/重复 License 由后端校验并返回可读错误）。 */
 export function canCreateLicense(role: Role): boolean {
   return hasPermission(role, 'license:write');
 }
-
 // ---------- 展示文案 ----------
-
 /** 状态显示名：与 FE-06 筛选枚举文案同源（LICENSE_FILTER_LABELS），防止漂移。 */
 export function licenseStatusLabel(status: LicenseStatus): string {
   return LICENSE_FILTER_LABELS[status] ?? status;
 }
-
 export const ENTITLEMENT_CODES: readonly EntitlementCode[] = ['REMOTE_CONTROL', 'OTA', 'ESG_REPORTING'];
-
 export const ENTITLEMENT_LABELS: Readonly<Record<EntitlementCode, string>> = {
-  REMOTE_CONTROL: '远程控制',
-  OTA: 'OTA 升级',
-  ESG_REPORTING: 'ESG 报表',
+  get REMOTE_CONTROL() {
+    return translate('ui.57ac2408e3fd');
+  },
+  get OTA() {
+    return translate('page.bdb9a2faeb72');
+  },
+  get ESG_REPORTING() {
+    return translate('ui.a63447d82d84');
+  },
 };
-
 // ---------- 表单校验（服务端仍最终校验） ----------
-
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
 export function isLicenseDate(value: string): boolean {
   return DATE_PATTERN.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
 }
-
 /** 创建 Draft 校验：日期格式 + validFrom ≤ validTo + 至少一个 Entitlement。 */
 export function validateLicenseDraft(input: {
   validFrom: string;
   validTo: string;
   entitlements: readonly EntitlementCode[];
 }): string | null {
-  if (!isLicenseDate(input.validFrom) || !isLicenseDate(input.validTo)) return '有效期格式须为 YYYY-MM-DD';
-  if (input.validFrom > input.validTo) return '生效日期须不晚于到期日期';
-  if (input.entitlements.length === 0) return '至少勾选一个 Entitlement';
+  if (!isLicenseDate(input.validFrom) || !isLicenseDate(input.validTo)) return translate('ui.9c3ae82f4a5f');
+  if (input.validFrom > input.validTo) return translate('ui.148176d8e99b');
+  if (input.entitlements.length === 0) return translate('ui.750eab66b3ea');
   return null;
 }
-
 /** 续期校验：newValidTo 必须晚于当前 validTo（契约约束）。 */
 export function validateRenew(validTo: string, newValidTo: string): string | null {
-  if (!isLicenseDate(newValidTo)) return '新到期日期格式须为 YYYY-MM-DD';
-  if (newValidTo <= validTo) return '新到期日期必须晚于当前到期日期';
+  if (!isLicenseDate(newValidTo)) return translate('ui.fa0a459ee78c');
+  if (newValidTo <= validTo) return translate('ui.f78cc14c4720');
   return null;
 }
-
 // ---------- CT-06 锚点（contract-detail 页 FE-08 自有元素；页面本体属 FE-17） ----------
-
 export const LICENSE_COVERAGE: Readonly<Record<string, string>> = {
   'contract-detail.field.licenseSummary': 'license-summary',
 };

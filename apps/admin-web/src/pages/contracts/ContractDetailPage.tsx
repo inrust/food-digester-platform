@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-17 合约详情页（/contracts/detail）：合约信息、动作矩阵（编辑/激活/续约/终止）、
  * 关联设备表（Region/Subregion/Site/ID/别名/四轴状态/固件 + 租期展示值）、绑定/解绑与关联历史。
@@ -9,7 +10,7 @@
  * - contact 最小权限：Auditor 视图为 null（显示“最小权限不可见”），不伪造。
  */
 import { useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { FourAxisBadges } from '../../components/FourAxisBadge.js';
@@ -33,14 +34,16 @@ import type {
   ContractDeviceDetailView,
   ContractView,
 } from './types.js';
-
 export interface ContractDetailPageProps {
   readonly role: Role;
   readonly contract: ContractView | null;
   readonly contractError?: unknown;
   /** 客户目录解析名（缺省显示 customerId）。 */
   readonly customerName?: string | null;
-  readonly devices: { readonly rows: readonly ContractDeviceDetailView[] | null; readonly error?: unknown };
+  readonly devices: {
+    readonly rows: readonly ContractDeviceDetailView[] | null;
+    readonly error?: unknown;
+  };
   readonly associations: readonly ContractDeviceAssociationView[] | null;
   /** 每设备 License 摘要（独立授权轴；DEC-007 并列展示，不联动修改）。 */
   readonly licenses?: Readonly<Record<string, DeviceLicenseSummaryView | null>>;
@@ -54,12 +57,17 @@ export interface ContractDetailPageProps {
   readonly onBack: () => void;
   readonly onRefresh: () => void;
 }
-
 type ConfirmTarget =
-  | { readonly kind: 'activate' }
-  | { readonly kind: 'terminate' }
-  | { readonly kind: 'unbind'; readonly deviceIds: readonly string[] };
-
+  | {
+      readonly kind: 'activate';
+    }
+  | {
+      readonly kind: 'terminate';
+    }
+  | {
+      readonly kind: 'unbind';
+      readonly deviceIds: readonly string[];
+    };
 export function ContractDetailPage({
   role,
   contract,
@@ -92,7 +100,6 @@ export function ContractDetailPage({
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
-
   const runAction = async (execute: () => Promise<string>) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -110,12 +117,11 @@ export function ContractDetailPage({
       setBusy(false);
     }
   };
-
   if (contractError !== undefined) {
     return (
       <div className="contract-detail-page" data-testid="contract-detail-page">
         <button type="button" data-testid="contract-detail-back" onClick={onBack}>
-          返回
+          {translate('page.11d024154013')}
         </button>
         <ErrorNotice error={contractError} onRefresh={onRefresh} />
       </div>
@@ -124,16 +130,15 @@ export function ContractDetailPage({
   if (contract === null) {
     return (
       <div className="contract-detail-page" data-testid="contract-detail-page" role="status">
-        加载中…
+        {translate('page.300ee3dee4dc')}
       </div>
     );
   }
-
   const status = contract.derivedStatus;
   const gate = (action: Parameters<typeof gateContractAction>[0]) => gateContractAction(action, status, role);
-  const editFieldErrors = editDraft !== null ? validateContractForm({ ...editDraft, customerId: contract.customerId }) : null;
+  const editFieldErrors =
+    editDraft !== null ? validateContractForm({ ...editDraft, customerId: contract.customerId }) : null;
   const renewError = renewEndAt !== null ? validateRenew(renewEndAt, contract.endAt) : null;
-
   const openBind = () => {
     setBindOpen(true);
     setAvailable(null);
@@ -143,7 +148,6 @@ export function ContractDetailPage({
       .then(setAvailable)
       .catch((err: unknown) => setActionError(err));
   };
-
   const submitEdit = () =>
     runAction(async () => {
       if (editDraft === null || editFieldErrors !== null) return '';
@@ -156,49 +160,48 @@ export function ContractDetailPage({
       await onEdit(input, contract.version);
       setEditDraft(null);
       setEditReason('');
-      return '合约已更新';
+      return translate('page.d23dcff81ad3');
     });
-
   const submitRenew = () =>
     runAction(async () => {
       if (renewEndAt === null || renewError !== null) return '';
       await onRenew(renewEndAt, renewReason.trim(), contract.version);
       setRenewEndAt(null);
       setRenewReason('');
-      return '合约已续约（状态按新窗口重推导；不自动续期 License）';
+      return translate('page.58d9c1174d71');
     });
-
   const submitConfirm = (reason: string) =>
     runAction(async () => {
       if (confirm === null) return '';
       if (confirm.kind === 'activate') {
         await onActivate(reason, contract.version);
-        return '合约已激活（DRAFT→生效中；不自动激活 License）';
+        return translate('page.fb102df42b45');
       }
       if (confirm.kind === 'terminate') {
         await onTerminate(reason, contract.version);
-        return '合约已终止（终态；不撤销 License）';
+        return translate('page.4756cd8c8d38');
       }
       const unbound = await onUnbind(confirm.deviceIds, reason);
       setUnbindSelected([]);
-      return `已解绑 ${unbound.length} 台设备（不撤销 License，授权状态不受影响）`;
+      return translate('page.5a10408b3625') + ' ' + unbound.length + (' ' + translate('page.c03d33d5de04'));
     });
-
   const submitBind = () =>
     runAction(async () => {
       if (bindSelected.length === 0) return '';
       const bound = await onBind(bindSelected, bindReason.trim());
       setBindOpen(false);
-      return `已关联 ${bound.length} 台设备（全成或全败；不代表 Entitlement）`;
+      return translate('page.1efeec44018f') + ' ' + bound.length + (' ' + translate('page.ff58c8e551d7'));
     });
-
   return (
     <div className="contract-detail-page" data-testid="contract-detail-page">
       <div className="page-header">
         <button type="button" data-testid="contract-detail-back" onClick={onBack}>
-          返回
+          {translate('page.11d024154013')}
         </button>
-        <h3>合约详情：{contract.contractNumber}</h3>
+        <h3>
+          {translate('page.d21ae30b3f47')}
+          {contract.contractNumber}
+        </h3>
       </div>
 
       {notice !== null ? (
@@ -208,27 +211,27 @@ export function ContractDetailPage({
       ) : null}
       {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
-      <section data-testid="contract-summary" aria-label="合约信息">
+      <section data-testid="contract-summary" aria-label={translate('page.82fe9340d299')}>
         <dl>
-          <dt>合约编号</dt>
+          <dt>{translate('page.e732638998ba')}</dt>
           <dd>{contract.contractNumber}</dd>
-          <dt>合约名称</dt>
+          <dt>{translate('page.eec5002799b1')}</dt>
           <dd>{contract.name}</dd>
-          <dt>客户</dt>
+          <dt>{translate('page.f20687060126')}</dt>
           <dd data-testid="contract-detail-customer">{customerName ?? contract.customerId}</dd>
-          <dt>联系方式</dt>
-          <dd data-testid="contract-detail-contact">{contract.contact ?? '（最小权限不可见）'}</dd>
-          <dt>服务期限</dt>
+          <dt>{translate('page.60beedc8f22b')}</dt>
+          <dd data-testid="contract-detail-contact">{contract.contact ?? translate('page.10e96b649498')}</dd>
+          <dt>{translate('page.1789ad816f47')}</dt>
           <dd>{formatServicePeriod(contract.startAt, contract.endAt)}</dd>
-          <dt>合约状态</dt>
+          <dt>{translate('page.b6ee2af15cf5')}</dt>
           <dd data-testid="contract-detail-status">{CONTRACT_STATUS_LABELS[status]}</dd>
-          <dt>版本（乐观锁）</dt>
+          <dt>{translate('page.20de4a0b3abc')}</dt>
           <dd data-testid="contract-detail-version">v{contract.version}</dd>
-          <dt>创建</dt>
+          <dt>{translate('page.fcbd0932929e')}</dt>
           <dd>
             {contract.createdBy} · <TimeText iso={contract.createdAt} />
           </dd>
-          <dt>更新</dt>
+          <dt>{translate('page.d9db02d07adb')}</dt>
           <dd>
             <TimeText iso={contract.updatedAt} />
           </dd>
@@ -251,7 +254,7 @@ export function ContractDetailPage({
               setEditReason('');
             }}
           >
-            编辑
+            {translate('page.a7f814c0a40d')}
           </button>
           <button
             type="button"
@@ -260,7 +263,7 @@ export function ContractDetailPage({
             {...(gate('activate') !== null ? { title: gate('activate') ?? '' } : {})}
             onClick={() => setConfirm({ kind: 'activate' })}
           >
-            激活
+            {translate('page.4c25820818d6')}
           </button>
           <button
             type="button"
@@ -272,7 +275,7 @@ export function ContractDetailPage({
               setRenewReason('');
             }}
           >
-            续约
+            {translate('page.f7d3735c18eb')}
           </button>
           <button
             type="button"
@@ -282,14 +285,14 @@ export function ContractDetailPage({
             {...(gate('terminate') !== null ? { title: gate('terminate') ?? '' } : {})}
             onClick={() => setConfirm({ kind: 'terminate' })}
           >
-            终止
+            {translate('page.2eee5759c39c')}
           </button>
         </div>
       </section>
 
-      <section data-testid="contract-devices-table" aria-label="关联设备">
+      <section data-testid="contract-devices-table" aria-label={translate('page.b113e4704c10')}>
         <div className="page-header">
-          <h4>关联设备</h4>
+          <h4>{translate('page.b113e4704c10')}</h4>
           <span className="action-row">
             <button
               type="button"
@@ -298,7 +301,7 @@ export function ContractDetailPage({
               {...(gate('bind') !== null ? { title: gate('bind') ?? '' } : {})}
               onClick={openBind}
             >
-              关联设备
+              {translate('page.b113e4704c10')}
             </button>
             <button
               type="button"
@@ -308,31 +311,31 @@ export function ContractDetailPage({
               {...(gate('unbind') !== null ? { title: gate('unbind') ?? '' } : {})}
               onClick={() => setConfirm({ kind: 'unbind', deviceIds: unbindSelected })}
             >
-              解绑所选（不撤销 License）
+              {translate('page.39bd5faf0fb5')}
             </button>
           </span>
         </div>
         {devices.error !== undefined ? <ErrorNotice error={devices.error} onRefresh={onRefresh} /> : null}
         {devices.rows === null ? (
-          <div role="status">加载中…</div>
+          <div role="status">{translate('page.300ee3dee4dc')}</div>
         ) : devices.rows.length === 0 ? (
           <p className="empty-state" data-testid="contract-devices-empty">
-            暂无关联设备
+            {translate('page.d05230204feb')}
           </p>
         ) : (
-          <table aria-label="关联设备列表">
+          <table aria-label={translate('page.c6ba0d8ee216')}>
             <thead>
               <tr>
-                <th scope="col">选择</th>
-                <th scope="col">唯一 ID</th>
-                <th scope="col">别名</th>
-                <th scope="col">区域</th>
-                <th scope="col">子区域</th>
-                <th scope="col">站点</th>
-                <th scope="col">软件版本</th>
-                <th scope="col">四轴状态</th>
-                <th scope="col">授权状态（License，独立）</th>
-                <th scope="col">租期</th>
+                <th scope="col">{translate('page.70b208202ce5')}</th>
+                <th scope="col">{translate('page.95789af4f9fc')}</th>
+                <th scope="col">{translate('page.ec537c546d90')}</th>
+                <th scope="col">{translate('page.17fc93c9cdbb')}</th>
+                <th scope="col">{translate('page.e1973949d60a')}</th>
+                <th scope="col">{translate('page.619bc67325a4')}</th>
+                <th scope="col">{translate('page.d6ee5acd60f7')}</th>
+                <th scope="col">{translate('page.257e4bf4b3df')}</th>
+                <th scope="col">{translate('page.862d3ff54bf1')}</th>
+                <th scope="col">{translate('page.87d24fa26e57')}</th>
               </tr>
             </thead>
             <tbody>
@@ -342,7 +345,7 @@ export function ContractDetailPage({
                     {association.status === 'ACTIVE' ? (
                       <input
                         type="checkbox"
-                        aria-label={`选择 ${device.deviceId}`}
+                        aria-label={translate('page.70b208202ce5') + ' ' + device.deviceId}
                         data-testid={`contract-unbind-check-${device.deviceId}`}
                         checked={unbindSelected.includes(device.deviceId)}
                         onChange={(event) =>
@@ -389,21 +392,21 @@ export function ContractDetailPage({
         )}
       </section>
 
-      <section data-testid="contract-associations" aria-label="关联历史">
-        <h4>关联历史</h4>
+      <section data-testid="contract-associations" aria-label={translate('page.79d0d3a35e71')}>
+        <h4>{translate('page.79d0d3a35e71')}</h4>
         {associations === null ? (
-          <div role="status">加载中…</div>
+          <div role="status">{translate('page.300ee3dee4dc')}</div>
         ) : associations.length === 0 ? (
-          <p className="empty-state">暂无关联历史</p>
+          <p className="empty-state">{translate('page.f4d45621b3d2')}</p>
         ) : (
-          <table aria-label="关联历史列表">
+          <table aria-label={translate('page.b7fed88bb343')}>
             <thead>
               <tr>
-                <th scope="col">设备</th>
-                <th scope="col">窗口</th>
-                <th scope="col">状态</th>
-                <th scope="col">创建</th>
-                <th scope="col">结束</th>
+                <th scope="col">{translate('page.01f2c16cda65')}</th>
+                <th scope="col">{translate('page.a70a15135c37')}</th>
+                <th scope="col">{translate('page.62e951a692ff')}</th>
+                <th scope="col">{translate('page.fcbd0932929e')}</th>
+                <th scope="col">{translate('page.76b9880829e0')}</th>
               </tr>
             </thead>
             <tbody>
@@ -425,12 +428,20 @@ export function ContractDetailPage({
         )}
       </section>
 
-      <Modal open={editDraft !== null} title="编辑合约" testid="contract-edit-form" onClose={() => setEditDraft(null)}>
+      <Modal
+        open={editDraft !== null}
+        title={translate('page.fe80a0e9972c')}
+        testid="contract-edit-form"
+        onClose={() => setEditDraft(null)}
+      >
         {editDraft !== null ? (
           <div>
-            <p className="field-hint">If-Match：v{contract.version}；startAt/endAt 仅草稿状态可改。</p>
+            <p className="field-hint">
+              If-Match：v{contract.version}
+              {translate('page.700f6ff8900c')}
+            </p>
             <div className="dialog-field">
-              <label htmlFor="contract-edit-name">合约名称</label>
+              <label htmlFor="contract-edit-name">{translate('page.eec5002799b1')}</label>
               <input
                 id="contract-edit-name"
                 data-testid="contract-edit-name"
@@ -440,7 +451,7 @@ export function ContractDetailPage({
               />
             </div>
             <div className="dialog-field">
-              <label htmlFor="contract-edit-contact">联系方式</label>
+              <label htmlFor="contract-edit-contact">{translate('page.60beedc8f22b')}</label>
               <input
                 id="contract-edit-contact"
                 data-testid="contract-edit-contact"
@@ -451,14 +462,14 @@ export function ContractDetailPage({
             </div>
             {status === 'DRAFT' ? (
               <div className="dialog-field">
-                <label htmlFor="contract-edit-start">有效期起（UTC）</label>
+                <label htmlFor="contract-edit-start">{translate('page.0ed8daddc54b')}</label>
                 <input
                   id="contract-edit-start"
                   data-testid="contract-edit-start"
                   value={editDraft.startAt}
                   onChange={(event) => setEditDraft({ ...editDraft, startAt: event.target.value })}
                 />
-                <label htmlFor="contract-edit-end">有效期止（UTC）</label>
+                <label htmlFor="contract-edit-end">{translate('page.a1bf0b770919')}</label>
                 <input
                   id="contract-edit-end"
                   data-testid="contract-edit-end"
@@ -473,7 +484,7 @@ export function ContractDetailPage({
               </p>
             ) : null}
             <div className="dialog-field">
-              <label htmlFor="contract-edit-reason">原因（强制）</label>
+              <label htmlFor="contract-edit-reason">{translate('page.c25db741afe8')}</label>
               <input
                 id="contract-edit-reason"
                 data-testid="contract-edit-reason"
@@ -490,19 +501,28 @@ export function ContractDetailPage({
                 disabled={busy || editFieldErrors !== null || editReason.trim() === ''}
                 onClick={() => void submitEdit()}
               >
-                保存
+                {translate('page.fadf24dbc5a9')}
               </button>
             </div>
           </div>
         ) : null}
       </Modal>
 
-      <Modal open={renewEndAt !== null} title="续约合约" testid="contract-renew-form" onClose={() => setRenewEndAt(null)}>
+      <Modal
+        open={renewEndAt !== null}
+        title={translate('page.71549b1a320e')}
+        testid="contract-renew-form"
+        onClose={() => setRenewEndAt(null)}
+      >
         {renewEndAt !== null ? (
           <div>
-            <p className="field-hint">If-Match：v{contract.version}；新到期时间必须晚于当前（{contract.endAt.slice(0, 10)}）。</p>
+            <p className="field-hint">
+              If-Match：v{contract.version}
+              {translate('page.8ca11a88bfcc')}
+              {contract.endAt.slice(0, 10)}）。
+            </p>
             <div className="dialog-field">
-              <label htmlFor="contract-renew-end">新到期时间（UTC）</label>
+              <label htmlFor="contract-renew-end">{translate('page.540c7d9c2407')}</label>
               <input
                 id="contract-renew-end"
                 data-testid="contract-renew-end"
@@ -516,7 +536,7 @@ export function ContractDetailPage({
               </p>
             ) : null}
             <div className="dialog-field">
-              <label htmlFor="contract-renew-reason">原因（强制）</label>
+              <label htmlFor="contract-renew-reason">{translate('page.c25db741afe8')}</label>
               <input
                 id="contract-renew-reason"
                 data-testid="contract-renew-reason"
@@ -533,25 +553,30 @@ export function ContractDetailPage({
                 disabled={busy || renewError !== null || renewReason.trim() === ''}
                 onClick={() => void submitRenew()}
               >
-                确认续约
+                {translate('page.2326e59ede1d')}
               </button>
             </div>
           </div>
         ) : null}
       </Modal>
 
-      <Modal open={bindOpen} title="关联设备（eligible 列表）" testid="contract-bind-form" onClose={() => setBindOpen(false)}>
-        <p className="field-hint">仅可关联列表内设备（同 Customer、非 Retired、无有效关联）；批量全成或全败。</p>
+      <Modal
+        open={bindOpen}
+        title={translate('page.d3ca3e6b7106')}
+        testid="contract-bind-form"
+        onClose={() => setBindOpen(false)}
+      >
+        <p className="field-hint">{translate('page.816ff488d0a0')}</p>
         {available === null ? (
           <div role="status" data-testid="contract-bind-loading">
-            加载 eligible 设备中…
+            {translate('page.d360706fdd30')}
           </div>
         ) : available.length === 0 ? (
           <p className="empty-state" data-testid="contract-bind-empty">
-            当前无可关联设备
+            {translate('page.941fc73da805')}
           </p>
         ) : (
-          <div role="group" aria-label="可关联设备" data-testid="contract-bind-list">
+          <div role="group" aria-label={translate('page.16c798774b40')} data-testid="contract-bind-list">
             {available.map((device) => (
               <label key={device.deviceId}>
                 <input
@@ -572,7 +597,7 @@ export function ContractDetailPage({
           </div>
         )}
         <div className="dialog-field">
-          <label htmlFor="contract-bind-reason">原因（强制）</label>
+          <label htmlFor="contract-bind-reason">{translate('page.c25db741afe8')}</label>
           <input
             id="contract-bind-reason"
             data-testid="contract-bind-reason"
@@ -589,7 +614,7 @@ export function ContractDetailPage({
             disabled={busy || bindSelected.length === 0 || bindReason.trim() === ''}
             onClick={() => void submitBind()}
           >
-            关联所选
+            {translate('page.1d5832409c92')}
           </button>
         </div>
       </Modal>
@@ -598,21 +623,30 @@ export function ContractDetailPage({
         open={confirm !== null}
         title={
           confirm?.kind === 'activate'
-            ? '激活合约'
+            ? translate('page.1c55a604270f')
             : confirm?.kind === 'terminate'
-              ? '终止合约'
-              : `解绑 ${confirm?.deviceIds.length ?? 0} 台设备`
+              ? translate('page.cec6d632492e')
+              : translate('page.80d59b5959b1') +
+                ' ' +
+                (confirm?.deviceIds.length ?? 0) +
+                (' ' + translate('page.e431f5fd249e'))
         }
         description={
           confirm?.kind === 'activate'
-            ? '激活后进入生效中（不自动激活 License）。'
+            ? translate('page.dea92f2f9b00')
             : confirm?.kind === 'terminate'
-              ? '终止为终态（不撤销 License）。'
-              : '解绑闭合关联窗口（不撤销 License，授权状态不受影响）。'
+              ? translate('page.f75beec79678')
+              : translate('page.42f65445dc0f')
         }
         requireReason
         {...(confirm?.kind !== 'activate' ? { danger: true } : {})}
-        confirmText={confirm?.kind === 'activate' ? '确认激活' : confirm?.kind === 'terminate' ? '确认终止' : '确认解绑'}
+        confirmText={
+          confirm?.kind === 'activate'
+            ? translate('page.427c6f9a814c')
+            : confirm?.kind === 'terminate'
+              ? translate('page.b7b8c9af1c75')
+              : translate('page.e92f73a9b9df')
+        }
         onConfirm={(reason) => void submitConfirm(reason)}
         onCancel={() => setConfirm(null)}
       />

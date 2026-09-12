@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-11 ESG 纯逻辑：日/周/月聚合、用户时区→UTC 转换、计算口径文案、权限门、CT-06 锚点。
  *
@@ -13,27 +14,28 @@ import type { Role } from '@fdp/auth/browser';
 export { zonedDateRangeToUtc } from '../../components/date-time.js';
 export type { UtcRange } from '../../components/date-time.js';
 import type { EsgCalculationVersionView, EsgDailySummaryView, EsgReportView } from './types.js';
-
 export type EsgPeriod = 'day' | 'week' | 'month';
-
 export const ESG_PERIODS: readonly EsgPeriod[] = ['day', 'week', 'month'];
-
 export const ESG_PERIOD_LABELS: Readonly<Record<EsgPeriod, string>> = {
-  day: '日',
-  week: '周',
-  month: '月',
+  get day() {
+    return translate('ui.15917f3b3261');
+  },
+  get week() {
+    return translate('ui.451b86707b5a');
+  },
+  get month() {
+    return translate('ui.d9b59879f3b8');
+  },
 };
-
 /** 核证免责声明（两页固定展示）。 */
-export const ESG_DISCLAIMER = '估算值，非第三方核证';
-
+export function esgDisclaimer(): string {
+  return translate('ui.e260f64ac186');
+}
 /** 导出权限：export:create = SuperAdmin/Auditor/CustomerAdmin（AUTH-01）。 */
 export function canExport(role: Role): boolean {
   return hasPermission(role, 'export:create');
 }
-
 // ---------- 日/周/月聚合 ----------
-
 /** ISO 8601 周键（YYYY-Www，UTC 基准）。 */
 export function isoWeekKey(iso: string): string {
   const date = new Date(iso);
@@ -44,13 +46,11 @@ export function isoWeekKey(iso: string): string {
   const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
 }
-
 export function bucketKeyOf(iso: string, period: EsgPeriod): string {
   if (period === 'day') return iso.slice(0, 10);
   if (period === 'month') return iso.slice(0, 7);
   return isoWeekKey(iso);
 }
-
 export interface AggregatedSummaryRow {
   readonly bucket: string;
   readonly feedingWeightKg: number | null;
@@ -64,17 +64,14 @@ export interface AggregatedSummaryRow {
   /** 去重计算版本 ID；多个 → 页面显示“多版本”。 */
   readonly versionIds: readonly string[];
 }
-
 function sumNullable(values: readonly (number | null)[]): number | null {
   const present = values.filter((v): v is number => v !== null);
   return present.length === 0 ? null : present.reduce((a, b) => a + b, 0);
 }
-
 function avgNullable(values: readonly (number | null)[]): number | null {
   const present = values.filter((v): v is number => v !== null);
   return present.length === 0 ? null : present.reduce((a, b) => a + b, 0) / present.length;
 }
-
 /** 日汇总按日/周/月聚合（加法指标求和；完整率算术平均；版本去重）。 */
 export function aggregateDailySummaries(
   rows: readonly EsgDailySummaryView[],
@@ -99,7 +96,6 @@ export function aggregateDailySummaries(
       versionIds: [...new Set(group.map((r) => r.calculationVersionId).filter((v): v is string => v !== null))],
     }));
 }
-
 export interface AggregatedDeviceReportRow {
   readonly deviceId: string;
   readonly bucket: string;
@@ -116,7 +112,6 @@ export interface AggregatedDeviceReportRow {
   readonly avgCompletenessPct: number | null;
   readonly versionIds: readonly string[];
 }
-
 /** 设备 Report 按设备 × 日/周/月聚合。 */
 export function aggregateDeviceReports(
   rows: readonly EsgReportView[],
@@ -148,39 +143,31 @@ export function aggregateDeviceReports(
       };
     });
 }
-
 // ---------- 展示格式化 ----------
-
 export function formatKg(value: number | null): string {
   return value === null ? '—' : `${value.toFixed(1)} kg`;
 }
-
 export function formatKwh(value: number | null): string {
   return value === null ? '—' : `${value.toFixed(2)} kWh`;
 }
-
 export function formatPct(value: number | null): string {
   return value === null ? '—' : `${value.toFixed(1)}%`;
 }
-
 export function formatPpm(value: number | null): string {
   return value === null ? '—' : `${value.toFixed(0)} ppm`;
 }
-
 /** 计算版本显示：versionId → 版本号；混合 → “多版本”；未知 → 原 ID。 */
 export function calculationVersionText(
   versionIds: readonly string[],
   versions: readonly EsgCalculationVersionView[] | null,
 ): string {
   if (versionIds.length === 0) return '—';
-  if (versionIds.length > 1) return '多版本';
+  if (versionIds.length > 1) return translate('ui.4c2961d46251');
   const id = versionIds[0];
   const found = versions?.find((v) => v.versionId === id);
   return found !== undefined ? found.version : (id ?? '—');
 }
-
 // ---------- CT-06 锚点（esg-overview / esg-device 全量 Adopt/Adapt 元素） ----------
-
 export const ESG_OVERVIEW_COVERAGE: Readonly<Record<string, string>> = {
   'esg-overview.toggle.period': 'esg-period-toggle',
   'esg-overview.button.exportCsv': 'esg-export-csv',
@@ -189,7 +176,6 @@ export const ESG_OVERVIEW_COVERAGE: Readonly<Record<string, string>> = {
   'esg-overview.column.throughput': 'esg-col-throughput',
   'esg-overview.column.energy': 'esg-col-energy',
 };
-
 export const ESG_DEVICE_COVERAGE: Readonly<Record<string, string>> = {
   'esg-device.filter.region': 'scope-region',
   'esg-device.filter.subregion': 'scope-subregion',

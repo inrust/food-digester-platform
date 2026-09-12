@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-06 查看设备页（/devices/view）：Region/Subregion/Site/Device 联动选择 + 设备控制台。
  *
@@ -25,23 +26,46 @@ import type {
   MediaDownloadUrlView,
   ObservedBlockView,
 } from './types.js';
-
 export type ConsoleState =
-  | { readonly status: 'idle' }
-  | { readonly status: 'loading' }
-  | { readonly status: 'error'; readonly error: unknown }
-  | { readonly status: 'ready'; readonly console: DeviceConsoleView };
-
+  | {
+      readonly status: 'idle';
+    }
+  | {
+      readonly status: 'loading';
+    }
+  | {
+      readonly status: 'error';
+      readonly error: unknown;
+    }
+  | {
+      readonly status: 'ready';
+      readonly console: DeviceConsoleView;
+    };
 export type MediaState =
-  | { readonly status: 'idle' | 'loading' | 'empty' }
-  | { readonly status: 'error'; readonly error: unknown }
-  | { readonly status: 'ready'; readonly media: MediaDownloadUrlView };
-
+  | {
+      readonly status: 'idle' | 'loading' | 'empty';
+    }
+  | {
+      readonly status: 'error';
+      readonly error: unknown;
+    }
+  | {
+      readonly status: 'ready';
+      readonly media: MediaDownloadUrlView;
+    };
 export type ActivityState =
-  | { readonly status: 'idle' | 'loading' }
-  | { readonly status: 'error'; readonly error: unknown }
-  | { readonly status: 'ready'; readonly items: readonly DeviceActivityView[]; readonly nextCursor: string | null };
-
+  | {
+      readonly status: 'idle' | 'loading';
+    }
+  | {
+      readonly status: 'error';
+      readonly error: unknown;
+    }
+  | {
+      readonly status: 'ready';
+      readonly items: readonly DeviceActivityView[];
+      readonly nextCursor: string | null;
+    };
 export interface DeviceViewPageProps {
   /** 当前选中设备（静态信息）；null = 未选择。 */
   readonly device: DeviceView | null;
@@ -50,41 +74,44 @@ export interface DeviceViewPageProps {
   readonly activityState?: ActivityState;
   readonly filterOptions: {
     readonly regions: readonly FilterOption[];
-    readonly subregions: readonly (FilterOption & { region: string })[];
-    readonly sites: readonly (FilterOption & { subregion: string })[];
-    readonly devices: readonly (FilterOption & { siteId: string })[];
+    readonly subregions: readonly (FilterOption & {
+      region: string;
+    })[];
+    readonly sites: readonly (FilterOption & {
+      subregion: string;
+    })[];
+    readonly devices: readonly (FilterOption & {
+      siteId: string;
+    })[];
   };
   readonly onApply: (deviceId: string) => void;
   readonly onRefreshConsole: () => void;
   readonly onLoadMoreActivities?: (cursor: string) => void;
 }
-
 function StaleTag({ block }: { block: ObservedBlockView }) {
   if (block.stale) {
     return (
       <span className="stale-tag" data-testid="stale-tag">
-        数据过期
+        {translate('page.e7ebfebaaa0f')}
       </span>
     );
   }
   return null;
 }
-
 function ObservedAt({ block }: { block: ObservedBlockView }) {
   return (
     <span className="observed-at">
       {block.observedAt !== null ? (
         <>
-          观测时间：
+          {translate('page.42eb4b882837')}
           <TimeText iso={block.observedAt} />
         </>
       ) : (
-        '无观测数据'
+        translate('page.03b75144b66f')
       )}
     </span>
   );
 }
-
 function ConsoleContent({
   console: view,
   device,
@@ -113,13 +140,13 @@ function ConsoleContent({
           }}
         />
         <span className="data-baseline">
-          数据基准：
+          {translate('page.7d0639497c7e')}
           <TimeText iso={view.generatedAt} />
         </span>
       </div>
 
       <section data-testid="console-components">
-        <h5>部件状态（传感器健康）</h5>
+        <h5>{translate('page.73d4f3b8c647')}</h5>
         <StaleTag block={view.components} />
         <ObservedAt block={view.components} />
         <div className="status-grid">
@@ -138,7 +165,7 @@ function ConsoleContent({
       </section>
 
       <section data-testid="console-sensors">
-        <h5>最新传感器读数（10 类）</h5>
+        <h5>{translate('page.6884d266470b')}</h5>
         <StaleTag block={view.metrics} />
         <ObservedAt block={view.metrics} />
         <div className="sensor-grid">
@@ -152,7 +179,10 @@ function ConsoleContent({
                 </div>
                 {metric !== null && metric !== undefined ? (
                   <div className="sub">
-                    最小 {metric.min} / 最大 {metric.max} {metric.unit}
+                    {translate('page.31793b6729a3') + ' '}
+                    {metric.min}
+                    {' ' + translate('page.ec5bc3d58c50') + ' '}
+                    {metric.max} {metric.unit}
                   </div>
                 ) : null}
               </div>
@@ -162,26 +192,27 @@ function ConsoleContent({
       </section>
 
       <section data-testid="console-network">
-        <h5>网络</h5>
+        <h5>{translate('page.0cbda6b52442')}</h5>
         <StaleTag block={view.network} />
         <ObservedAt block={view.network} />
         <span data-testid="network-summary">
-          {view.network.networkType ?? '—'} · 信号 {view.network.signalStrength ?? '—'} ·{' '}
-          {view.network.networkStatus ?? '—'}
+          {view.network.networkType ?? '—'}
+          {' ' + translate('page.494fc2b1f3b7') + ' '}
+          {view.network.signalStrength ?? '—'} · {view.network.networkStatus ?? '—'}
         </span>
       </section>
 
       <section data-testid="console-consumables">
-        <h5>耗材</h5>
+        <h5>{translate('page.6c9da0502120')}</h5>
         {consumablesOf(view.consumables).map((model) => (
           <ConsumableGauge key={model.consumableType} model={model} />
         ))}
       </section>
 
       <section data-testid="console-alarms">
-        <h5>最近告警</h5>
+        <h5>{translate('page.fbce4cc6eeb8')}</h5>
         {view.recentAlarms.length === 0 ? (
-          <p className="empty-state">暂无告警</p>
+          <p className="empty-state">{translate('page.187b55b399e6')}</p>
         ) : (
           <ul>
             {view.recentAlarms.map((alarm) => (
@@ -190,7 +221,7 @@ function ConsoleContent({
                   {ALARM_SEVERITY_LABELS[alarm.severity]}
                 </span>
                 <TimeText iso={alarm.detectedTime} /> {alarm.code}
-                {alarm.status === 'CLEARED' ? '（已恢复）' : ''}
+                {alarm.status === 'CLEARED' ? translate('page.b3cba7f993ce') : ''}
               </li>
             ))}
           </ul>
@@ -198,14 +229,14 @@ function ConsoleContent({
       </section>
 
       <section data-testid="console-esg7d">
-        <h5>近 7 日 ESG</h5>
-        <table aria-label="近7日ESG">
+        <h5>{translate('page.c30e41414b6d')}</h5>
+        <table aria-label={translate('page.4489236d2197')}>
           <thead>
             <tr>
-              <th scope="col">日期（UTC）</th>
-              <th scope="col">碳减排 (kg)</th>
-              <th scope="col">能耗 (kWh)</th>
-              <th scope="col">处理量 (kg)</th>
+              <th scope="col">{translate('page.310d525906dc')}</th>
+              <th scope="col">{translate('page.bc29ef1306a5')}</th>
+              <th scope="col">{translate('page.d309c902a7bb')}</th>
+              <th scope="col">{translate('page.e7e6464f1eab')}</th>
             </tr>
           </thead>
           <tbody>
@@ -222,54 +253,57 @@ function ConsoleContent({
       </section>
 
       <section data-testid="console-static">
-        <h5>设备静态信息</h5>
+        <h5>{translate('page.d142ca3ba571')}</h5>
         {device !== null ? (
           <dl>
-            <dt>设备名称</dt>
+            <dt>{translate('page.4433eb13beca')}</dt>
             <dd>{device.alias ?? '—'}</dd>
-            <dt>唯一ID</dt>
+            <dt>{translate('page.2b1b63de6e4a')}</dt>
             <dd>{device.serialNumber}</dd>
-            <dt>型号</dt>
+            <dt>{translate('page.0132ce7298ec')}</dt>
             <dd>{device.model}</dd>
-            <dt>硬件版本</dt>
+            <dt>{translate('page.ebc803567778')}</dt>
             <dd>{device.hardwareVersion}</dd>
-            <dt>厂商</dt>
+            <dt>{translate('page.0c131e3964eb')}</dt>
             <dd>{device.manufacturer}</dd>
-            <dt>生产日期</dt>
+            <dt>{translate('page.8579e19406d9')}</dt>
             <dd>{device.manufactureDate}</dd>
-            <dt>所属客户</dt>
+            <dt>{translate('page.467c1137f479')}</dt>
             <dd>{device.customer?.name ?? '—'}</dd>
-            <dt>所属站点</dt>
+            <dt>{translate('page.416457bd629b')}</dt>
             <dd>{device.site?.name ?? '—'}</dd>
           </dl>
         ) : (
-          <p className="empty-state">静态信息未加载</p>
+          <p className="empty-state">{translate('page.e6259fad3409')}</p>
         )}
       </section>
 
       <section data-testid="console-contract">
-        <h5>关联合约</h5>
+        <h5>{translate('page.f91182052930')}</h5>
         {view.contract !== null ? (
           <span data-testid="contract-brief">
-            {view.contract.name}（{view.contract.contractNumber}）· 至 {view.contract.endAt.slice(0, 10)}
+            {view.contract.name}（{view.contract.contractNumber}
+            {translate('page.a0c7992ea07a') + ' '}
+            {view.contract.endAt.slice(0, 10)}
           </span>
         ) : (
-          <span className="empty-state">无有效合约</span>
+          <span className="empty-state">{translate('page.b6a3cc05b4ac')}</span>
         )}
       </section>
 
       <section data-testid="console-media">
-        <h5>最新授权媒体（非实时画面）</h5>
+        <h5>{translate('page.da3f0b21a6c2')}</h5>
         {view.latestMedia !== null ? (
           <div data-testid="media-latest">
             <span>
-              {view.latestMedia.mediaType} · 采集时间：
+              {view.latestMedia.mediaType}
+              {' ' + translate('page.653834c4e946')}
               <TimeText iso={view.latestMedia.captureTime} />
             </span>
-            {mediaState.status === 'loading' ? <p role="status">正在签发短期访问地址…</p> : null}
+            {mediaState.status === 'loading' ? <p role="status">{translate('page.c312345fe133')}</p> : null}
             {mediaState.status === 'error' ? <ErrorNotice error={mediaState.error} onRefresh={onRefresh} /> : null}
             {mediaState.status === 'ready' && view.latestMedia.mediaType === 'IMAGE' ? (
-              <img src={mediaState.media.downloadUrl} alt="设备最新授权画面" data-testid="media-image" />
+              <img src={mediaState.media.downloadUrl} alt={translate('page.1c15ad1458b0')} data-testid="media-image" />
             ) : null}
             {mediaState.status === 'ready' && view.latestMedia.mediaType === 'VIDEO' ? (
               <video src={mediaState.media.downloadUrl} controls preload="metadata" data-testid="media-video" />
@@ -277,20 +311,20 @@ function ConsoleContent({
           </div>
         ) : (
           <p className="empty-state" data-testid="media-empty">
-            暂无已授权媒体
+            {translate('page.8d2a5f52dba1')}
           </p>
         )}
         <button type="button" data-testid="media-refresh" onClick={onRefresh}>
-          刷新最新媒体
+          {translate('page.dcc4d58c807c')}
         </button>
       </section>
 
       <section data-testid="console-activities">
-        <h5>设备活动历史</h5>
-        {activityState.status === 'loading' ? <p role="status">加载活动历史…</p> : null}
+        <h5>{translate('page.4843fb4e490f')}</h5>
+        {activityState.status === 'loading' ? <p role="status">{translate('page.9f4aabe409fa')}</p> : null}
         {activityState.status === 'error' ? <ErrorNotice error={activityState.error} onRefresh={onRefresh} /> : null}
         {activityState.status === 'ready' && activityState.items.length === 0 ? (
-          <p className="empty-state">暂无活动</p>
+          <p className="empty-state">{translate('page.a4a410738f67')}</p>
         ) : null}
         {activityState.status === 'ready' && activityState.items.length > 0 ? (
           <ul>
@@ -304,14 +338,13 @@ function ConsoleContent({
         ) : null}
         {activityState.status === 'ready' && activityState.nextCursor !== null ? (
           <button type="button" onClick={() => onLoadMoreActivities(activityState.nextCursor ?? '')}>
-            加载更多
+            {translate('page.3a0fab4978fb')}
           </button>
         ) : null}
       </section>
     </div>
   );
 }
-
 export function DeviceViewPage({
   device,
   consoleState,
@@ -323,7 +356,6 @@ export function DeviceViewPage({
   onLoadMoreActivities = () => {},
 }: DeviceViewPageProps) {
   const [scope, setScope] = useState<ScopeFilterValue>(EMPTY_SCOPE_FILTER);
-
   return (
     <div className="device-view-page" data-testid="device-view-page">
       <div className="filter-bar" data-testid="view-filter-bar">
@@ -344,14 +376,14 @@ export function DeviceViewPage({
             if (scope.deviceId !== null && scope.deviceId !== undefined) onApply(scope.deviceId);
           }}
         >
-          应用
+          {translate('page.4562024ddec7')}
         </button>
       </div>
 
-      {consoleState.status === 'idle' ? <p className="empty-state">请选择设备后点击“应用”</p> : null}
+      {consoleState.status === 'idle' ? <p className="empty-state">{translate('page.4bca659f8ed9')}</p> : null}
       {consoleState.status === 'loading' ? (
         <div role="status" data-testid="console-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : null}
       {consoleState.status === 'error' ? <ErrorNotice error={consoleState.error} onRefresh={onRefreshConsole} /> : null}

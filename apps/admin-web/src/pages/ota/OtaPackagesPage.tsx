@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-13 固件包页（/ota/packages）：上传会话（元数据 + 签名 → 预签名 URL）→ 浏览器直传
  * 对象存储 → complete 校验（对象/大小/SHA-256/签名/病毒扫描全过 → VERIFIED 不可变）；
@@ -34,7 +35,6 @@ import type {
   FirmwareUploadSessionView,
   OtaListState,
 } from './types.js';
-
 export interface OtaPackagesPageProps {
   readonly role: Role;
   readonly packages: OtaListState<FirmwarePackageView>;
@@ -48,8 +48,9 @@ export interface OtaPackagesPageProps {
   readonly onRefresh: () => void;
   readonly onNavigate: (path: string) => void;
 }
-
-const EMPTY_DRAFT: UploadMetadataDraft & { packageType: FirmwarePackageType } = {
+const EMPTY_DRAFT: UploadMetadataDraft & {
+  packageType: FirmwarePackageType;
+} = {
   model: '',
   version: '',
   packageType: 'FIRMWARE',
@@ -57,7 +58,6 @@ const EMPTY_DRAFT: UploadMetadataDraft & { packageType: FirmwarePackageType } = 
   sha256: '',
   signature: '',
 };
-
 export function OtaPackagesPage({
   role,
   packages,
@@ -79,10 +79,8 @@ export function OtaPackagesPage({
   const [draftFilter, setDraftFilter] = useState<PackageListFilter>(filter);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-
   const canWrite = hasPermission(role, 'ota:write');
   const fieldErrors = validateUploadMetadata(draft);
-
   const runAction = async (execute: () => Promise<void>) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -98,7 +96,6 @@ export function OtaPackagesPage({
       setBusy(false);
     }
   };
-
   const submitSession = () =>
     runAction(async () => {
       const created = await onCreateUploadSession({
@@ -112,9 +109,8 @@ export function OtaPackagesPage({
       setSession(created);
       setUploadFile(null);
       setFormOpen(false);
-      setNotice(`上传会话已创建（${created.packageId}）；请在 URL 过期前完成直传`);
+      setNotice(translate('page.81cb6f9c1a9e') + created.packageId + translate('page.2a990bdd005a'));
     });
-
   const submitComplete = () =>
     runAction(async () => {
       if (session === null || uploadFile === null) return;
@@ -123,33 +119,29 @@ export function OtaPackagesPage({
       setSession(null);
       setNotice(
         pkg.status === 'VERIFIED'
-          ? `校验通过，包 ${pkg.packageId} 已进入可发布（VERIFIED，不可变）`
-          : `校验已提交，当前状态：${PACKAGE_STATUS_LABELS[pkg.status]}`,
+          ? translate('page.2b398be8d2e2') + ' ' + pkg.packageId + (' ' + translate('page.b7259b8a3482'))
+          : translate('page.4565ac471fb6') + PACKAGE_STATUS_LABELS[pkg.status],
       );
       onRefresh();
     });
-
   return (
     <div className="ota-packages-page" data-testid="ota-packages-page">
       <div className="page-header">
-        <h3>固件包管理</h3>
+        <h3>{translate('page.520fc0679572')}</h3>
         <button type="button" data-testid="goto-ota-campaigns" onClick={() => onNavigate('/ota/campaigns')}>
-          前往 OTA 升级
+          {translate('page.3a40dc3045ce')}
         </button>
       </div>
 
-      <section data-testid="package-upload" aria-label="固件上传">
-        <h4>固件上传</h4>
-        <p className="field-hint">
-          声明元数据与签名创建上传会话 → 浏览器经预签名 URL 直传对象存储（不经管理端中转）→
-          提交校验（对象/大小/SHA-256/签名/病毒扫描全过 → VERIFIED 不可变）。
-        </p>
+      <section data-testid="package-upload" aria-label={translate('page.63395c3e01ec')}>
+        <h4>{translate('page.63395c3e01ec')}</h4>
+        <p className="field-hint">{translate('page.719057e1cc5e')}</p>
         <button
           type="button"
           className="primary-button"
           data-testid="upload-session-open"
           disabled={!canWrite || busy}
-          {...(!canWrite ? { title: '需要 OTA 写权限（ota:write）' } : {})}
+          {...(!canWrite ? { title: translate('page.89dc6cfd462e') } : {})}
           onClick={() => {
             setDraft(EMPTY_DRAFT);
             setSession(null);
@@ -158,28 +150,31 @@ export function OtaPackagesPage({
             setFormOpen(true);
           }}
         >
-          新建上传会话
+          {translate('page.4989a23c850b')}
         </button>
         {!canWrite ? (
           <span className="deny-reason" data-testid="upload-deny">
-            需要 OTA 写权限（ota:write）
+            {translate('page.89dc6cfd462e')}
           </span>
         ) : null}
 
         {session !== null ? (
           <div className="upload-session" data-testid="upload-session">
             <dl>
-              <dt>包标识</dt>
+              <dt>{translate('page.242d7f2bc2dc')}</dt>
               <dd data-testid="upload-session-id">{session.packageId}</dd>
-              <dt>对象 Key</dt>
-              <dd data-testid="upload-session-object-key">{session.objectKey}（服务端生成）</dd>
-              <dt>上传 URL 过期时间</dt>
+              <dt>{translate('page.723e28ff9711')}</dt>
+              <dd data-testid="upload-session-object-key">
+                {session.objectKey}
+                {translate('page.1a14ac10df4f')}
+              </dd>
+              <dt>{translate('page.cac6db32682b')}</dt>
               <dd>
                 <TimeText iso={session.uploadUrlExpiresAt} />
-                <span className="field-hint">（短期预签名，900s 暂定；过期需重建会话）</span>
+                <span className="field-hint">{translate('page.7da626867c1a')}</span>
               </dd>
             </dl>
-            <label htmlFor="upload-file">选择与声明元数据匹配的固件文件</label>
+            <label htmlFor="upload-file">{translate('page.2f8765ba1a63')}</label>
             <input
               id="upload-file"
               type="file"
@@ -193,7 +188,7 @@ export function OtaPackagesPage({
               disabled={busy || uploadFile === null}
               onClick={() => void submitComplete()}
             >
-              已完成直传，提交校验
+              {translate('page.04b4e141a193')}
             </button>
           </div>
         ) : null}
@@ -213,9 +208,14 @@ export function OtaPackagesPage({
       ) : null}
       {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
-      <Modal open={formOpen} title="新建固件上传会话" testid="upload-form" onClose={() => setFormOpen(false)}>
+      <Modal
+        open={formOpen}
+        title={translate('page.a285f7b5c29d')}
+        testid="upload-form"
+        onClose={() => setFormOpen(false)}
+      >
         <div className="dialog-field">
-          <label htmlFor="upload-model">目标设备型号 model</label>
+          <label htmlFor="upload-model">{translate('page.51bc54c99631')}</label>
           <input
             id="upload-model"
             data-testid="upload-model"
@@ -229,7 +229,7 @@ export function OtaPackagesPage({
           ) : null}
         </div>
         <div className="dialog-field">
-          <label htmlFor="upload-version">版本 version</label>
+          <label htmlFor="upload-version">{translate('page.85c5eb624c9b')}</label>
           <input
             id="upload-version"
             data-testid="upload-version"
@@ -243,7 +243,7 @@ export function OtaPackagesPage({
           ) : null}
         </div>
         <div className="dialog-field">
-          <label htmlFor="upload-package-type">包类型 packageType（CT-03 枚举）</label>
+          <label htmlFor="upload-package-type">{translate('page.2ccb8faceb30')}</label>
           <select
             id="upload-package-type"
             data-testid="upload-package-type"
@@ -258,7 +258,10 @@ export function OtaPackagesPage({
           </select>
         </div>
         <div className="dialog-field">
-          <label htmlFor="upload-size">包大小 sizeBytes（字节，上限 512MiB={MAX_PACKAGE_SIZE_BYTES}）</label>
+          <label htmlFor="upload-size">
+            {translate('page.39ebdcfde88f')}
+            {MAX_PACKAGE_SIZE_BYTES}）
+          </label>
           <input
             id="upload-size"
             data-testid="upload-size"
@@ -273,7 +276,7 @@ export function OtaPackagesPage({
           ) : null}
         </div>
         <div className="dialog-field">
-          <label htmlFor="upload-sha256">SHA-256（64 位 hex；complete 时服务端重算比对）</label>
+          <label htmlFor="upload-sha256">{translate('page.3011c1372cd5')}</label>
           <input
             id="upload-sha256"
             data-testid="upload-sha256"
@@ -287,7 +290,7 @@ export function OtaPackagesPage({
           ) : null}
         </div>
         <div className="dialog-field">
-          <label htmlFor="upload-signature">数字签名（对 model+version+packageType+sha256 规范载荷）</label>
+          <label htmlFor="upload-signature">{translate('page.4433ede01c71')}</label>
           <textarea
             id="upload-signature"
             data-testid="upload-signature"
@@ -308,30 +311,30 @@ export function OtaPackagesPage({
             disabled={busy || hasUploadErrors(fieldErrors)}
             onClick={() => void submitSession()}
           >
-            创建上传会话
+            {translate('page.b432cfd5e434')}
           </button>
         </div>
       </Modal>
 
-      <section data-testid="package-list-section" aria-label="包列表">
-        <h4>包列表</h4>
-        <p className="field-hint">可发布列表 = status VERIFIED；UPLOADED（未完成上传/未完成校验）不进入可发布列表。</p>
+      <section data-testid="package-list-section" aria-label={translate('page.89432be06ed2')}>
+        <h4>{translate('page.89432be06ed2')}</h4>
+        <p className="field-hint">{translate('page.c647d5faaad0')}</p>
         <div className="filter-bar">
-          <label htmlFor="pkg-filter-model">型号</label>
+          <label htmlFor="pkg-filter-model">{translate('page.0132ce7298ec')}</label>
           <input
             id="pkg-filter-model"
             data-testid="pkg-filter-model"
             value={draftFilter.model ?? ''}
             onChange={(event) => setDraftFilter({ ...draftFilter, model: event.target.value })}
           />
-          <label htmlFor="pkg-filter-version">版本</label>
+          <label htmlFor="pkg-filter-version">{translate('page.989d1affa089')}</label>
           <input
             id="pkg-filter-version"
             data-testid="pkg-filter-version"
             value={draftFilter.version ?? ''}
             onChange={(event) => setDraftFilter({ ...draftFilter, version: event.target.value })}
           />
-          <label htmlFor="pkg-filter-type">类型</label>
+          <label htmlFor="pkg-filter-type">{translate('page.e4e46c7235d1')}</label>
           <select
             id="pkg-filter-type"
             data-testid="pkg-filter-type"
@@ -343,14 +346,14 @@ export function OtaPackagesPage({
               })
             }
           >
-            <option value="">全部</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
             {PACKAGE_TYPE_OPTIONS.map((type) => (
               <option key={type} value={type}>
                 {PACKAGE_TYPE_LABELS[type]}
               </option>
             ))}
           </select>
-          <label htmlFor="pkg-filter-status">状态</label>
+          <label htmlFor="pkg-filter-status">{translate('page.62e951a692ff')}</label>
           <select
             id="pkg-filter-status"
             data-testid="pkg-filter-status"
@@ -362,7 +365,7 @@ export function OtaPackagesPage({
               })
             }
           >
-            <option value="">全部</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
             {PACKAGE_STATUS_OPTIONS.map((status) => (
               <option key={status} value={status}>
                 {PACKAGE_STATUS_LABELS[status]}
@@ -375,33 +378,37 @@ export function OtaPackagesPage({
             data-testid="pkg-filter-search"
             onClick={() => onApplyFilter(draftFilter)}
           >
-            筛选
+            {translate('page.dcce9a144a40')}
           </button>
         </div>
         <CursorTable
-          ariaLabel="固件包列表"
+          ariaLabel={translate('page.2a076b4dcce7')}
           columns={[
-            { key: 'model', header: '型号', render: (p) => p.model },
-            { key: 'version', header: '版本', render: (p) => p.version },
-            { key: 'packageType', header: '类型', render: (p) => PACKAGE_TYPE_LABELS[p.packageType] },
+            { key: 'model', header: translate('page.0132ce7298ec'), render: (p) => p.model },
+            { key: 'version', header: translate('page.989d1affa089'), render: (p) => p.version },
+            {
+              key: 'packageType',
+              header: translate('page.e4e46c7235d1'),
+              render: (p) => PACKAGE_TYPE_LABELS[p.packageType],
+            },
             {
               key: 'status',
-              header: '状态',
+              header: translate('page.62e951a692ff'),
               render: (p) => (
                 <>
                   {PACKAGE_STATUS_LABELS[p.status]}
                   {p.status === 'VERIFIED' ? (
                     <span className="verified-badge" data-testid={`publishable-${p.packageId}`}>
-                      可发布
+                      {translate('page.461a47d26851')}
                     </span>
                   ) : null}
                 </>
               ),
             },
-            { key: 'sizeBytes', header: '大小', render: (p) => `${p.sizeBytes} B` },
+            { key: 'sizeBytes', header: translate('page.fd20702c73d1'), render: (p) => `${p.sizeBytes} B` },
             { key: 'sha256', header: 'SHA-256', render: (p) => <code>{p.sha256.slice(0, 16)}…</code> },
-            { key: 'uploadedBy', header: '上传人', render: (p) => p.uploadedBy },
-            { key: 'createdAt', header: '创建时间', render: (p) => <TimeText iso={p.createdAt} /> },
+            { key: 'uploadedBy', header: translate('page.135298390b58'), render: (p) => p.uploadedBy },
+            { key: 'createdAt', header: translate('page.84e3802f60a7'), render: (p) => <TimeText iso={p.createdAt} /> },
           ]}
           rows={packages.rows === null ? null : [...packages.rows]}
           rowKey={(p) => p.packageId}
@@ -410,7 +417,7 @@ export function OtaPackagesPage({
           {...(packages.nextCursor !== undefined ? { nextCursor: packages.nextCursor } : {})}
           onNextPage={onLoadMore}
           onRefresh={onRefresh}
-          emptyText="暂无固件包"
+          emptyText={translate('page.4be8aa1aaf02')}
         />
       </section>
     </div>

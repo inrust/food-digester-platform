@@ -1,3 +1,4 @@
+import { translate } from '../i18n/i18n.js';
 /**
  * FE-01 基于角色的菜单派生与角色显示名。
  *
@@ -9,50 +10,56 @@
 import type { Role } from '@fdp/auth';
 import type { AppRoute, MenuGroupId } from '../router/routes.js';
 import { APP_ROUTES } from '../router/routes.js';
-
 /** DEC-012@1.0.0 冻结的原型角色映射显示名（一致性由 contract-parity 测试核对）。 */
 export const FROZEN_ROLE_DISPLAY_NAMES: Readonly<Partial<Record<Role, string>>> = {
-  PlatformSuperAdmin: '平台管理员',
-  PlatformOperator: '设备操作员',
+  get PlatformSuperAdmin() {
+    return translate('ui.02926dddc890');
+  },
+  get PlatformOperator() {
+    return translate('ui.a4364eb4aabf');
+  },
 } as const;
-
 export function roleDisplayName(role: Role): string {
   return FROZEN_ROLE_DISPLAY_NAMES[role] ?? role;
 }
-
 export function canAccessRoute(route: AppRoute, roles: readonly Role[]): boolean {
   return roles.some((role) => route.roles.includes(role));
 }
-
 export interface MenuLeaf {
   readonly path: string;
   readonly pageState: string;
   readonly label: string;
 }
-
 export type MenuNode =
-  | { readonly kind: 'leaf'; readonly item: MenuLeaf }
+  | {
+      readonly kind: 'leaf';
+      readonly item: MenuLeaf;
+    }
   | {
       readonly kind: 'group';
       readonly groupId: Exclude<MenuGroupId, 'overview'>;
       readonly label: string;
       readonly items: readonly MenuLeaf[];
     };
-
 export const MENU_GROUP_LABELS: Readonly<Record<Exclude<MenuGroupId, 'overview'>, string>> = {
-  device: '设备管理',
-  esg: 'ESG管理',
-  contract: '合约管理',
-  platform: '平台管理',
+  get device() {
+    return translate('ui.8ecfc737efd3');
+  },
+  get esg() {
+    return translate('ui.9cb912089020');
+  },
+  get contract() {
+    return translate('ui.fa4ff2068516');
+  },
+  get platform() {
+    return translate('ui.678b690f884e');
+  },
 } as const;
-
 const GROUP_ORDER: readonly Exclude<MenuGroupId, 'overview'>[] = ['device', 'esg', 'contract', 'platform'];
-
 /** 按会话角色派生侧栏菜单：概览顶级项在前，空分组整体隐藏。 */
 export function menuForRoles(roles: readonly Role[]): MenuNode[] {
   const nodes: MenuNode[] = [];
   const menuRoutes = APP_ROUTES.filter((route) => route.menuGroup !== null && canAccessRoute(route, roles));
-
   for (const route of menuRoutes.filter((r) => r.menuGroup === 'overview')) {
     nodes.push({ kind: 'leaf', item: { path: route.path, pageState: route.pageState, label: route.label } });
   }
@@ -66,7 +73,6 @@ export function menuForRoles(roles: readonly Role[]): MenuNode[] {
   }
   return nodes;
 }
-
 /** 会话角色的首页（首个可见菜单路由）；五角色均可见 /dashboard。 */
 export function homePathForRoles(roles: readonly Role[]): string {
   const first = APP_ROUTES.find((route) => route.menuGroup !== null && canAccessRoute(route, roles));

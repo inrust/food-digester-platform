@@ -1,3 +1,4 @@
+import { translate } from '../i18n/i18n.js';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
 import type { ApiClient } from '../api/http-client.js';
@@ -66,21 +67,25 @@ import type { AuditLogListFilter } from '../pages/audit/audit-api.js';
 import { AuditLogsPage } from '../pages/audit/AuditLogsPage.js';
 import type { AuditDetailState, AuditLogListState } from '../pages/audit/types.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
-
-type Navigate = (path: string, options?: { replace?: boolean }) => void;
-
+type Navigate = (
+  path: string,
+  options?: {
+    replace?: boolean;
+  },
+) => void;
 function roleOf(session: SessionSnapshot): Role {
   const role = session.roles[0];
-  if (role === undefined) throw new Error('已建立会话缺少角色');
+  if (role === undefined) throw new Error(translate('ui.fb2397e137f4'));
   return role;
 }
-
 function option(value: string, label: string): FilterOption {
   return { value, label };
 }
-
 export async function collectAllPages<T>(
-  load: (cursor?: string) => Promise<{ readonly rows: readonly T[]; readonly nextCursor: string | null }>,
+  load: (cursor?: string) => Promise<{
+    readonly rows: readonly T[];
+    readonly nextCursor: string | null;
+  }>,
 ) {
   const rows: T[] = [];
   const seen = new Set<string>();
@@ -93,7 +98,6 @@ export async function collectAllPages<T>(
     cursor = page.nextCursor;
   }
 }
-
 async function topology(api: ApiClient) {
   const [devices, sites] = await Promise.all([
     collectAllPages(async (cursor) => {
@@ -107,7 +111,6 @@ async function topology(api: ApiClient) {
   ]);
   return { devices, sites };
 }
-
 function scopeOptions(devices: readonly DeviceView[], sites: readonly SiteView[]) {
   const regions = [...new Set(sites.flatMap((site) => (site.region ? [site.region] : [])))];
   const regionPairs = [
@@ -126,7 +129,6 @@ function scopeOptions(devices: readonly DeviceView[], sites: readonly SiteView[]
     })),
   };
 }
-
 export function EsgOverviewController({
   api,
   session,
@@ -199,7 +201,6 @@ export function EsgOverviewController({
     />
   );
 }
-
 export function EsgDevicesController({ api, session }: { readonly api: ApiClient; readonly session: SessionSnapshot }) {
   const { timeZone } = useUserTimeZone();
   const [period, setPeriod] = useState<EsgPeriod>('day');
@@ -293,7 +294,6 @@ export function EsgDevicesController({ api, session }: { readonly api: ApiClient
     />
   );
 }
-
 export function DeviceOperateController({
   api,
   session,
@@ -410,7 +410,7 @@ export function DeviceOperateController({
       }}
       activityExport={activityExport}
       onExportActivities={async (filter) => {
-        if (!selectedId) throw new Error('请先选择设备');
+        if (!selectedId) throw new Error(translate('ui.7b372e6a09a3'));
         const job = await createActivityExport(api, selectedId, filter);
         setActivityExport(job);
         return job;
@@ -423,7 +423,6 @@ export function DeviceOperateController({
     />
   );
 }
-
 export function OtaPackagesController({
   api,
   session,
@@ -466,13 +465,13 @@ export function OtaPackagesController({
       }
       onCreateUploadSession={(input) => createFirmwareUpload(api, input)}
       onUploadAndComplete={async (upload, file) => {
-        if (file.size !== upload.sizeBytes) throw new Error('所选文件大小与上传会话声明不一致');
+        if (file.size !== upload.sizeBytes) throw new Error(translate('ui.b4f86a353327'));
         const response = await fetch(upload.uploadUrl, {
           method: 'PUT',
           headers: { 'content-type': 'application/octet-stream' },
           body: file,
         });
-        if (!response.ok) throw new Error(`对象存储上传失败（HTTP ${response.status}）`);
+        if (!response.ok) throw new Error(translate('ui.e980062592b3') + ' ' + response.status + '\uFF09');
         const result = await completeFirmwareUpload(api, upload.packageId);
         await load();
         return result;
@@ -482,7 +481,6 @@ export function OtaPackagesController({
     />
   );
 }
-
 export function OtaCampaignsController({
   api,
   session,
@@ -617,7 +615,6 @@ export function OtaCampaignsController({
     />
   );
 }
-
 export function MediaController({ api, session }: { readonly api: ApiClient; readonly session: SessionSnapshot }) {
   const [filter, setFilter] = useState<MediaListFilter>({});
   const [media, setMedia] = useState<MediaListState>({ rows: null, loading: true });
@@ -655,7 +652,6 @@ export function MediaController({ api, session }: { readonly api: ApiClient; rea
     />
   );
 }
-
 export function AuditLogsController({ api, session }: { readonly api: ApiClient; readonly session: SessionSnapshot }) {
   const [filter, setFilter] = useState<AuditLogListFilter>({});
   const [logs, setLogs] = useState<AuditLogListState>({ rows: null, loading: true });

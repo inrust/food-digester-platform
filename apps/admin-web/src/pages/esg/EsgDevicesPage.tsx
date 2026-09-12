@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-11 设备 ESG 信息页（/esg/devices）：Region/Subregion/Site/Device 联动筛选（DEC-011）、
  * 日/周/月切换、投料/出料/减量/能耗/O2/CO2/CH4/N2O/估算 CO2e、完整率与计算版本、CSV 导出。
@@ -17,12 +18,12 @@ import type { ScopeFilterValue } from '../../components/filter-state.js';
 import { ExportPanel } from '../../components/ExportPanel.js';
 import type { EsgQueryFilter } from './esg-api.js';
 import {
-  ESG_DISCLAIMER,
   ESG_PERIODS,
   ESG_PERIOD_LABELS,
   aggregateDeviceReports,
   calculationVersionText,
   canExport,
+  esgDisclaimer,
   formatKg,
   formatKwh,
   formatPct,
@@ -31,13 +32,11 @@ import {
 } from './esg-state.js';
 import type { EsgPeriod } from './esg-state.js';
 import type { EsgCalculationVersionView, EsgExportJobView, EsgReportView } from './types.js';
-
 export interface EsgDeviceAppliedQuery {
   readonly scope: ScopeFilterValue;
   readonly from: string | null;
   readonly to: string | null;
 }
-
 export interface EsgDevicesPageProps {
   readonly role: Role;
   readonly timeZone: string;
@@ -50,7 +49,15 @@ export interface EsgDevicesPageProps {
     readonly devices: NonNullable<ScopeFilterProps['devices']>;
   };
   /** 设备 → 区域归属映射（region/subregion 客户端收窄行）。 */
-  readonly deviceScope: Readonly<Record<string, { readonly region: string; readonly subregion: string }>>;
+  readonly deviceScope: Readonly<
+    Record<
+      string,
+      {
+        readonly region: string;
+        readonly subregion: string;
+      }
+    >
+  >;
   readonly applied: EsgDeviceAppliedQuery;
   readonly onApply: (next: EsgDeviceAppliedQuery) => void;
   readonly rows: readonly EsgReportView[] | null;
@@ -58,11 +65,14 @@ export interface EsgDevicesPageProps {
   readonly listError?: unknown;
   readonly versions: readonly EsgCalculationVersionView[] | null;
   readonly exportJob: EsgExportJobView | null;
-  readonly onExport: (snapshot: EsgQueryFilter & { dataset: 'REPORTS' }) => Promise<unknown>;
+  readonly onExport: (
+    snapshot: EsgQueryFilter & {
+      dataset: 'REPORTS';
+    },
+  ) => Promise<unknown>;
   readonly onCheckExport: (exportId: string) => void;
   readonly onRefresh: () => void;
 }
-
 export function EsgDevicesPage({
   role,
   timeZone,
@@ -88,7 +98,6 @@ export function EsgDevicesPage({
   const [exportError, setExportError] = useState<unknown>(null);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-
   const applyFilter = () => {
     setDateError(null);
     if (draftFrom === '' && draftTo === '') {
@@ -96,17 +105,16 @@ export function EsgDevicesPage({
       return;
     }
     if (draftFrom === '' || draftTo === '') {
-      setDateError('起止日期须同时填写');
+      setDateError(translate('page.89b179c8814c'));
       return;
     }
     const range = zonedDateRangeToUtc(draftFrom, draftTo, timeZone);
     if (range === null) {
-      setDateError('日期格式非法或起始晚于截止');
+      setDateError(translate('page.97c433594a7b'));
       return;
     }
     onApply({ scope: draftScope, from: range.from, to: range.to });
   };
-
   const handleExport = async () => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -127,7 +135,6 @@ export function EsgDevicesPage({
       setBusy(false);
     }
   };
-
   // region/subregion 客户端收窄（契约无 region 参数；siteId/deviceId 已由服务端过滤）
   const scopedRows =
     rows === null
@@ -139,13 +146,12 @@ export function EsgDevicesPage({
           if (applied.scope.subregion !== null && scope.subregion !== applied.scope.subregion) return false;
           return true;
         });
-
   const aggregated = scopedRows === null ? null : aggregateDeviceReports(scopedRows, period);
-
   return (
     <div className="esg-devices-page" data-testid="esg-devices-page">
       <p className="esg-disclaimer" data-testid="esg-disclaimer">
-        {ESG_DISCLAIMER}：气体与碳减排为带计算版本的估算值，不构成任何认证结论。
+        {esgDisclaimer()}
+        {translate('page.9ace0f4aaae7')}
       </p>
 
       <div className="filter-bar" data-testid="esg-device-filter">
@@ -156,9 +162,17 @@ export function EsgDevicesPage({
           devices={scopeOptions.devices}
           value={draftScope}
           onChange={setDraftScope}
-          labels={{ region: '区域', subregion: '子区域', site: '站点', device: '设备' }}
+          labels={{
+            region: translate('page.17fc93c9cdbb'),
+            subregion: translate('page.e1973949d60a'),
+            site: translate('page.619bc67325a4'),
+            device: translate('page.01f2c16cda65'),
+          }}
         />
-        <label htmlFor="esg-device-from">起始日期（{timeZone}）</label>
+        <label htmlFor="esg-device-from">
+          {translate('page.49f932b2f932')}
+          {timeZone}）
+        </label>
         <input
           id="esg-device-from"
           type="date"
@@ -166,7 +180,7 @@ export function EsgDevicesPage({
           value={draftFrom}
           onChange={(event) => setDraftFrom(event.target.value)}
         />
-        <label htmlFor="esg-device-to">截止日期</label>
+        <label htmlFor="esg-device-to">{translate('page.9b3177f0b700')}</label>
         <input
           id="esg-device-to"
           type="date"
@@ -174,7 +188,12 @@ export function EsgDevicesPage({
           value={draftTo}
           onChange={(event) => setDraftTo(event.target.value)}
         />
-        <div className="period-toggle" role="group" aria-label="日/周/月切换" data-testid="esg-device-period-toggle">
+        <div
+          className="period-toggle"
+          role="group"
+          aria-label={translate('page.bc3d16afc041')}
+          data-testid="esg-device-period-toggle"
+        >
           {ESG_PERIODS.map((p) => (
             <button
               key={p}
@@ -189,7 +208,7 @@ export function EsgDevicesPage({
           ))}
         </div>
         <button type="button" className="primary-button" data-testid="esg-device-apply" onClick={applyFilter}>
-          应用
+          {translate('page.4562024ddec7')}
         </button>
         {dateError !== null ? (
           <p className="field-hint" data-testid="esg-device-date-error">
@@ -200,7 +219,10 @@ export function EsgDevicesPage({
 
       {applied.from !== null && applied.to !== null ? (
         <p className="query-hint" data-testid="esg-device-query-hint">
-          按 {timeZone} 日历日转 UTC 查询：{applied.from} ~ {applied.to}
+          {translate('page.fb2ea9e2dfbf') + ' '}
+          {timeZone}
+          {' ' + translate('page.60d39b4be3b1')}
+          {applied.from} ~ {applied.to}
         </p>
       ) : null}
 
@@ -217,29 +239,35 @@ export function EsgDevicesPage({
       {listError !== undefined ? <ErrorNotice error={listError} onRefresh={onRefresh} /> : null}
       {aggregated === null || loading ? (
         <div role="status" data-testid="esg-device-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : aggregated.length === 0 ? (
         <p className="empty-state" data-testid="esg-device-empty">
-          暂无设备 ESG 数据
+          {translate('page.9af741292105')}
         </p>
       ) : (
-        <table aria-label="设备 ESG 指标" data-testid="esg-device-metrics">
+        <table aria-label={translate('page.653b40d96d6e')} data-testid="esg-device-metrics">
           <thead>
             <tr>
-              <th scope="col">设备</th>
-              <th scope="col">{ESG_PERIOD_LABELS[period]}期间</th>
-              <th scope="col">投料 (kg)</th>
-              <th scope="col">出料 (kg)</th>
-              <th scope="col">减量 (kg)</th>
-              <th scope="col">能耗 (kWh)</th>
-              <th scope="col">O2{period === 'day' ? '' : '平均'} (%)</th>
-              <th scope="col">CO2{period === 'day' ? '' : '平均'} (ppm)</th>
-              <th scope="col">CH4{period === 'day' ? '' : '平均'} (ppm)</th>
-              <th scope="col">N2O{period === 'day' ? '' : '平均'} (ppm)</th>
-              <th scope="col">估算 CO2e (kg)</th>
-              <th scope="col">完整率{period === 'day' ? '' : '（平均）'}</th>
-              <th scope="col">计算版本</th>
+              <th scope="col">{translate('page.01f2c16cda65')}</th>
+              <th scope="col">
+                {ESG_PERIOD_LABELS[period]}
+                {translate('page.24cd18eefa93')}
+              </th>
+              <th scope="col">{translate('page.3da8cb889c76')}</th>
+              <th scope="col">{translate('page.06e1915a18a1')}</th>
+              <th scope="col">{translate('page.c466d61643c6')}</th>
+              <th scope="col">{translate('page.d309c902a7bb')}</th>
+              <th scope="col">O2{period === 'day' ? '' : translate('page.d1454ec0221e')} (%)</th>
+              <th scope="col">CO2{period === 'day' ? '' : translate('page.d1454ec0221e')} (ppm)</th>
+              <th scope="col">CH4{period === 'day' ? '' : translate('page.d1454ec0221e')} (ppm)</th>
+              <th scope="col">N2O{period === 'day' ? '' : translate('page.d1454ec0221e')} (ppm)</th>
+              <th scope="col">{translate('page.efd09f0f8785')}</th>
+              <th scope="col">
+                {translate('page.8152ee3ec309')}
+                {period === 'day' ? '' : translate('page.c6546828511f')}
+              </th>
+              <th scope="col">{translate('page.9971a97635de')}</th>
             </tr>
           </thead>
           <tbody>

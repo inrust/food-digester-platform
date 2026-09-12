@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-05 Customer 管理页（/customers）：列表（状态筛选 + 游标分页）+ 详情 + 创建/改名/停用。
  *
@@ -13,7 +14,6 @@ import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
 import { CUSTOMER_STATUS_LABELS } from './types.js';
 import type { CustomerStatus, CustomerView } from './types.js';
-
 export interface CustomersPageProps {
   readonly list: {
     readonly rows: readonly CustomerView[] | null;
@@ -32,13 +32,26 @@ export interface CustomersPageProps {
   /** customer:write 持有者（PlatformSuperAdmin/PlatformOperator）。 */
   readonly canWrite: boolean;
   readonly onCreate: (input: { name: string }) => Promise<CustomerView>;
-  readonly onUpdate: (customer: CustomerView, input: { name: string }) => Promise<CustomerView>;
+  readonly onUpdate: (
+    customer: CustomerView,
+    input: {
+      name: string;
+    },
+  ) => Promise<CustomerView>;
   readonly onDeactivate: (customer: CustomerView, reason: string) => Promise<CustomerView>;
 }
-
 type Dialog =
-  { kind: 'create' } | { kind: 'edit'; customer: CustomerView } | { kind: 'deactivate'; customer: CustomerView };
-
+  | {
+      kind: 'create';
+    }
+  | {
+      kind: 'edit';
+      customer: CustomerView;
+    }
+  | {
+      kind: 'deactivate';
+      customer: CustomerView;
+    };
 function CustomerFormDialog({
   dialog,
   busy,
@@ -46,7 +59,12 @@ function CustomerFormDialog({
   onSubmit,
   onCancel,
 }: {
-  readonly dialog: Extract<Dialog, { kind: 'create' | 'edit' }>;
+  readonly dialog: Extract<
+    Dialog,
+    {
+      kind: 'create' | 'edit';
+    }
+  >;
   readonly busy: boolean;
   readonly error: unknown;
   readonly onSubmit: (name: string) => void;
@@ -56,15 +74,20 @@ function CustomerFormDialog({
   const [name, setName] = useState(editing?.name ?? '');
   const invalid = name.trim().length === 0 || name.trim().length > 200;
   return (
-    <Modal open title={editing === null ? '新建客户' : '编辑客户'} onClose={onCancel} testid="customer-form">
+    <Modal
+      open
+      title={editing === null ? translate('page.623d4cb5b1d7') : translate('page.77a9dae90d43')}
+      onClose={onCancel}
+      testid="customer-form"
+    >
       <div className="dialog-field">
-        <label htmlFor="customer-name">客户名称</label>
+        <label htmlFor="customer-name">{translate('page.e941d410f4c9')}</label>
         <input id="customer-name" value={name} maxLength={200} onChange={(e) => setName(e.target.value)} />
       </div>
       {error !== null && error !== undefined ? <ErrorNotice error={error} /> : null}
       <div className="dialog-actions">
         <button type="button" onClick={onCancel}>
-          取消
+          {translate('page.4d0b4688c787')}
         </button>
         <button
           type="button"
@@ -72,13 +95,12 @@ function CustomerFormDialog({
           disabled={invalid || busy}
           onClick={() => onSubmit(name.trim())}
         >
-          保存
+          {translate('page.fadf24dbc5a9')}
         </button>
       </div>
     </Modal>
   );
 }
-
 export function CustomersPage({
   list,
   statusFilter,
@@ -96,7 +118,6 @@ export function CustomersPage({
   const [actionError, setActionError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
-
   const runAction = async (fn: () => Promise<CustomerView>) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -116,11 +137,10 @@ export function CustomersPage({
       setBusy(false);
     }
   };
-
   return (
     <div className="customers-page" data-testid="customers-page">
       <div className="page-toolbar">
-        <div className="status-tabs" role="tablist" aria-label="客户状态">
+        <div className="status-tabs" role="tablist" aria-label={translate('page.d6ca3e50f98e')}>
           {([null, 'ACTIVE', 'SUSPENDED'] as const).map((status) => (
             <button
               key={status ?? 'all'}
@@ -130,7 +150,7 @@ export function CustomersPage({
               data-testid={`filter-${status ?? 'all'}`}
               onClick={() => onFilterStatus(status)}
             >
-              {status === null ? '全部' : CUSTOMER_STATUS_LABELS[status]}
+              {status === null ? translate('page.778fc8f99453') : CUSTOMER_STATUS_LABELS[status]}
             </button>
           ))}
         </div>
@@ -141,24 +161,24 @@ export function CustomersPage({
             data-testid="create-customer"
             onClick={() => setDialog({ kind: 'create' })}
           >
-            新建客户
+            {translate('page.623d4cb5b1d7')}
           </button>
         ) : null}
       </div>
 
       <CursorTable
-        ariaLabel="客户列表"
+        ariaLabel={translate('page.a630e0099f6a')}
         columns={[
-          { key: 'name', header: '客户名称', render: (c) => c.name },
-          { key: 'status', header: '状态', render: (c) => CUSTOMER_STATUS_LABELS[c.status] },
-          { key: 'createdAt', header: '创建时间', render: (c) => <TimeText iso={c.createdAt} /> },
-          { key: 'updatedAt', header: '更新时间', render: (c) => <TimeText iso={c.updatedAt} /> },
+          { key: 'name', header: translate('page.e941d410f4c9'), render: (c) => c.name },
+          { key: 'status', header: translate('page.62e951a692ff'), render: (c) => CUSTOMER_STATUS_LABELS[c.status] },
+          { key: 'createdAt', header: translate('page.84e3802f60a7'), render: (c) => <TimeText iso={c.createdAt} /> },
+          { key: 'updatedAt', header: translate('page.093dea88c930'), render: (c) => <TimeText iso={c.updatedAt} /> },
           {
             key: 'actions',
-            header: '操作',
+            header: translate('page.f3ea6d345e2a'),
             render: (c) => (
               <button type="button" data-testid={`detail-${c.id}`} onClick={() => setSelected(c)}>
-                详细信息
+                {translate('page.b6e664d7362f')}
               </button>
             ),
           },
@@ -174,24 +194,24 @@ export function CustomersPage({
         onNextPage={onLoadMore}
         {...(onLoadPrevious !== undefined ? { onPrevPage: onLoadPrevious } : {})}
         onRefresh={onRefresh}
-        emptyText="暂无客户"
+        emptyText={translate('page.9421c7837592')}
       />
 
       {selected !== null ? (
-        <aside className="detail-panel" data-testid="customer-detail" aria-label="客户详情">
-          <h4>客户详情</h4>
+        <aside className="detail-panel" data-testid="customer-detail" aria-label={translate('page.ccd01125a13d')}>
+          <h4>{translate('page.ccd01125a13d')}</h4>
           <dl>
-            <dt>客户ID</dt>
+            <dt>{translate('page.86df7fa3d818')}</dt>
             <dd>{selected.id}</dd>
-            <dt>客户名称</dt>
+            <dt>{translate('page.e941d410f4c9')}</dt>
             <dd>{selected.name}</dd>
-            <dt>状态</dt>
+            <dt>{translate('page.62e951a692ff')}</dt>
             <dd data-testid="customer-status">{CUSTOMER_STATUS_LABELS[selected.status]}</dd>
-            <dt>创建时间</dt>
+            <dt>{translate('page.84e3802f60a7')}</dt>
             <dd>
               <TimeText iso={selected.createdAt} />
             </dd>
-            <dt>更新时间</dt>
+            <dt>{translate('page.093dea88c930')}</dt>
             <dd>
               <TimeText iso={selected.updatedAt} />
             </dd>
@@ -199,7 +219,7 @@ export function CustomersPage({
           {actionError !== null && dialog === null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
           <div className="detail-actions">
             <button type="button" onClick={() => setSelected(null)}>
-              关闭
+              {translate('page.6c14bd7f6f9e')}
             </button>
             {canWrite ? (
               <>
@@ -212,7 +232,7 @@ export function CustomersPage({
                     setDialog({ kind: 'edit', customer: selected });
                   }}
                 >
-                  编辑
+                  {translate('page.a7f814c0a40d')}
                 </button>
                 {selected.status === 'ACTIVE' ? (
                   <button
@@ -225,7 +245,7 @@ export function CustomersPage({
                       setDialog({ kind: 'deactivate', customer: selected });
                     }}
                   >
-                    停用
+                    {translate('page.d989e55188c9')}
                   </button>
                 ) : null}
               </>
@@ -249,14 +269,14 @@ export function CustomersPage({
 
       <ConfirmDialog
         open={dialog?.kind === 'deactivate'}
-        title="停用客户"
+        title={translate('page.58ce3d697b9e')}
         {...(dialog?.kind === 'deactivate'
-          ? { description: `停用后客户「${dialog.customer.name}」状态为已停用；原因将写入审计记录。` }
+          ? { description: translate('page.4a148426207f') + dialog.customer.name + translate('page.ba8468923fe0') }
           : {})}
         danger
         requireReason
-        reasonLabel="停用原因"
-        confirmText="确认停用"
+        reasonLabel={translate('page.d599ea3c90af')}
+        confirmText={translate('page.f3abd8941903')}
         onConfirm={(reason) => {
           if (dialog?.kind === 'deactivate') void runAction(() => onDeactivate(dialog.customer, reason));
         }}

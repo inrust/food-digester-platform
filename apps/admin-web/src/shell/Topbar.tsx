@@ -4,12 +4,7 @@
  */
 import { roleDisplayName } from '../menu/menu.js';
 import { SUPPORTED_TIME_ZONES, useUserTimeZone } from '../components/TimeText.js';
-import {
-  LANGUAGE_LABELS,
-  LANGUAGE_OPTIONS,
-  isLanguage,
-  useI18n,
-} from '../i18n/i18n.js';
+import { LANGUAGE_LABELS, LANGUAGE_OPTIONS, isLanguage, useI18n } from '../i18n/i18n.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
 import { breadcrumbsFor } from './breadcrumb.js';
 import type { Ref } from 'react';

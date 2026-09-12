@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-10 Alarm/Event/Tamper 纯逻辑：状态机矩阵、权限门、文案、筛选 ⇄ URL 同步。
  *
@@ -11,60 +12,67 @@ import { hasPermission } from '@fdp/auth/browser';
 import type { Role } from '@fdp/auth/browser';
 import type { AlarmListFilter, EventListFilter, TamperListFilter } from './alarms-api.js';
 import type { AlarmSeverity, AlarmStatus } from './types.js';
-
 export const ALARM_SEVERITY_OPTIONS: readonly AlarmSeverity[] = ['INFO', 'WARNING', 'MAJOR', 'CRITICAL'];
-
 export const ALARM_SEVERITY_LABELS: Readonly<Record<AlarmSeverity, string>> = {
-  INFO: '提示',
-  WARNING: '警告',
-  MAJOR: '重要',
-  CRITICAL: '严重',
+  get INFO() {
+    return translate('ui.ab3656a956f5');
+  },
+  get WARNING() {
+    return translate('ui.5521e368d87e');
+  },
+  get MAJOR() {
+    return translate('ui.b7f46707527b');
+  },
+  get CRITICAL() {
+    return translate('ui.81ffc6f5a47f');
+  },
 };
-
 export const ALARM_STATUS_OPTIONS: readonly AlarmStatus[] = ['ACTIVE', 'ACKNOWLEDGED', 'CLEARED'];
-
 export const ALARM_STATUS_LABELS: Readonly<Record<AlarmStatus, string>> = {
-  ACTIVE: '活动',
-  ACKNOWLEDGED: '已确认',
-  CLEARED: '已清除',
+  get ACTIVE() {
+    return translate('ui.b2548636f024');
+  },
+  get ACKNOWLEDGED() {
+    return translate('ui.d9fea67ad2be');
+  },
+  get CLEARED() {
+    return translate('ui.1214e9850cfd');
+  },
 };
-
 export type AlarmAction = 'acknowledge' | 'clear';
-
 /** 状态 → 允许动作（契约领域封闭校验的镜像）。 */
 export const ALARM_ACTION_MATRIX: Readonly<Record<AlarmStatus, readonly AlarmAction[]>> = {
   ACTIVE: ['acknowledge', 'clear'],
   ACKNOWLEDGED: ['clear'],
   CLEARED: [],
 };
-
 export interface AlarmActionGate {
   readonly enabled: boolean;
   readonly reason: string | null;
 }
-
 export function gateAlarmAction(action: AlarmAction, status: AlarmStatus, role: Role): AlarmActionGate {
   if (!ALARM_ACTION_MATRIX[status].includes(action)) {
-    return { enabled: false, reason: '当前告警状态不允许该操作' };
+    return { enabled: false, reason: translate('ui.c22aac24933c') };
   }
   if (!hasPermission(role, 'alarm:write')) {
-    return { enabled: false, reason: '需要告警处理权限（alarm:write）' };
+    return { enabled: false, reason: translate('ui.65aeb526f733') };
   }
   return { enabled: true, reason: null };
 }
-
 // ---------- 筛选 ⇄ URL 同步（验收：筛选参数与 URL 同步） ----------
-
 export type AlarmTab = 'alarm' | 'event' | 'tamper';
-
 export const ALARM_TABS: readonly AlarmTab[] = ['alarm', 'event', 'tamper'];
-
 export const ALARM_TAB_LABELS: Readonly<Record<AlarmTab, string>> = {
-  alarm: '告警',
-  event: '事件',
-  tamper: '防拆',
+  get alarm() {
+    return translate('page.5078424f7e0e');
+  },
+  get event() {
+    return translate('page.550e3280629d');
+  },
+  get tamper() {
+    return translate('ui.734b3aa67bdc');
+  },
 };
-
 export const EMPTY_ALARM_FILTER: Required<AlarmListFilter> = {
   customerId: null,
   siteId: null,
@@ -91,7 +99,6 @@ export const EMPTY_TAMPER_FILTER: Required<TamperListFilter> = {
   from: null,
   to: null,
 };
-
 /** 页面 URL 状态：当前 Tab + 各 Tab 已应用筛选。 */
 export interface AlarmPageUrlState {
   readonly tab: AlarmTab;
@@ -99,20 +106,16 @@ export interface AlarmPageUrlState {
   readonly event: Required<EventListFilter>;
   readonly tamper: Required<TamperListFilter>;
 }
-
 export const DEFAULT_URL_STATE: AlarmPageUrlState = {
   tab: 'alarm',
   alarm: EMPTY_ALARM_FILTER,
   event: EMPTY_EVENT_FILTER,
   tamper: EMPTY_TAMPER_FILTER,
 };
-
 const COMMON_KEYS = ['customerId', 'siteId', 'deviceId', 'from', 'to'] as const;
-
 function readEnum<T extends string>(value: string | null, options: readonly T[]): T | null {
   return value !== null && (options as readonly string[]).includes(value) ? (value as T) : null;
 }
-
 /** 序列化为查询串（仅当前 Tab 的筛选入 URL；null 不写入）。 */
 export function urlStateToSearch(state: AlarmPageUrlState): string {
   const params = new URLSearchParams();
@@ -137,7 +140,6 @@ export function urlStateToSearch(state: AlarmPageUrlState): string {
   const query = params.toString();
   return query === '' ? '' : `?${query}`;
 }
-
 /** 从查询串解析（未知/非法枚举静默丢弃；缺省回退默认）。 */
 export function urlStateFromSearch(search: string): AlarmPageUrlState {
   const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);

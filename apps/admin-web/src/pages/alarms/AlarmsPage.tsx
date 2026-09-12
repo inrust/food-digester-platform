@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-10 告警/事件/防拆页（/alarms）：Alarm 筛选/详情/确认/清除 + Event/Tamper 只读视图。
  *
@@ -27,27 +28,39 @@ import {
   urlStateToSearch,
 } from './alarm-state.js';
 import type { AlarmPageUrlState, AlarmTab } from './alarm-state.js';
-
 export interface ListState<T> {
   readonly rows: readonly T[] | null;
   readonly loading?: boolean;
   readonly error?: unknown;
   readonly nextCursor?: string | null;
 }
-
 export type AlarmDetailState =
-  | { readonly kind: 'none' }
-  | { readonly kind: 'loading' }
-  | { readonly kind: 'error'; readonly error: unknown }
-  | { readonly kind: 'ready'; readonly alarm: AlarmView };
-
+  | {
+      readonly kind: 'none';
+    }
+  | {
+      readonly kind: 'loading';
+    }
+  | {
+      readonly kind: 'error';
+      readonly error: unknown;
+    }
+  | {
+      readonly kind: 'ready';
+      readonly alarm: AlarmView;
+    };
 export interface AlarmsPageProps {
   readonly role: Role;
   /** Customer 角色：隐藏客户筛选（服务端强制本 Customer scope）。 */
   readonly isCustomerRole: boolean;
   readonly customerOptions: readonly FilterOption[];
-  readonly siteOptions?: readonly (FilterOption & { customerId: string })[];
-  readonly deviceOptions?: readonly (FilterOption & { customerId: string; siteId: string })[];
+  readonly siteOptions?: readonly (FilterOption & {
+    customerId: string;
+  })[];
+  readonly deviceOptions?: readonly (FilterOption & {
+    customerId: string;
+    siteId: string;
+  })[];
   /** 已应用的 URL 状态（父级由 location.search 初始化/响应）。 */
   readonly urlState: AlarmPageUrlState;
   readonly onApplyUrlState: (state: AlarmPageUrlState) => void;
@@ -62,7 +75,6 @@ export interface AlarmsPageProps {
   readonly onAcknowledge: (alarmId: string, reason: string) => Promise<AlarmHandleResultView>;
   readonly onClear: (alarmId: string, reason: string) => Promise<AlarmHandleResultView>;
 }
-
 export function AlarmsPage({
   role,
   isCustomerRole,
@@ -91,7 +103,6 @@ export function AlarmsPage({
   const [notice, setNotice] = useState<string | null>(null);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-
   // 筛选参数与 URL 同步（replaceState，不产生历史记录堆积）
   useEffect(() => {
     const search = urlStateToSearch(urlState);
@@ -100,7 +111,6 @@ export function AlarmsPage({
       window.history.replaceState(null, '', `${window.location.pathname}${search}`);
     }
   }, [urlState]);
-
   const runAction = async (execute: () => Promise<AlarmHandleResultView>, verb: string) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -110,7 +120,11 @@ export function AlarmsPage({
     setNotice(null);
     try {
       const result = await execute();
-      setNotice(result.replayed ? `该告警已是目标状态，重复操作已幂等忽略（无重复写入/审计）` : `告警${verb}成功`);
+      setNotice(
+        result.replayed
+          ? translate('page.49a63f10ceb5')
+          : translate('page.5078424f7e0e') + verb + translate('page.51991a5d111a'),
+      );
       onRefresh();
     } catch (err) {
       setActionError(err);
@@ -119,15 +133,12 @@ export function AlarmsPage({
       setBusy(false);
     }
   };
-
   const applyFilter = () => {
     if (tab === 'alarm') onApplyUrlState({ ...urlState, alarm: draftAlarm });
     else if (tab === 'event') onApplyUrlState({ ...urlState, event: draftEvent });
     else onApplyUrlState({ ...urlState, tamper: draftTamper });
   };
-
   const alarm = alarmDetail.kind === 'ready' ? alarmDetail.alarm : null;
-
   return (
     <div className="alarms-page" data-testid="alarms-page">
       <div className="tab-bar" role="tablist" data-testid="alarm-tabs">
@@ -149,7 +160,7 @@ export function AlarmsPage({
       <div className="filter-bar" data-testid="alarm-filter-bar">
         {!isCustomerRole ? (
           <>
-            <label htmlFor="alarm-filter-customer">所属客户</label>
+            <label htmlFor="alarm-filter-customer">{translate('page.467c1137f479')}</label>
             <select
               id="alarm-filter-customer"
               data-testid="filter-customer"
@@ -162,7 +173,7 @@ export function AlarmsPage({
                 else setDraftTamper({ ...draftTamper, customerId: value, siteId: null, deviceId: null });
               }}
             >
-              <option value="">全部</option>
+              <option value="">{translate('page.778fc8f99453')}</option>
               {customerOptions.map((c) => (
                 <option key={c.value} value={c.value}>
                   {c.label}
@@ -183,7 +194,7 @@ export function AlarmsPage({
           deviceOptions={deviceOptions}
         />
         <button type="button" className="primary-button" data-testid="filter-search" onClick={applyFilter}>
-          筛选
+          {translate('page.dcce9a144a40')}
         </button>
       </div>
 
@@ -196,11 +207,11 @@ export function AlarmsPage({
 
       {tab === 'alarm' ? (
         <CursorTable
-          ariaLabel="告警列表"
+          ariaLabel={translate('page.9f383ec237a4')}
           columns={[
             {
               key: 'severity',
-              header: '严重度',
+              header: translate('page.9272e8abe5ad'),
               render: (a) => (
                 <span
                   className={`severity-badge severity-${a.severity.toLowerCase()}`}
@@ -210,21 +221,25 @@ export function AlarmsPage({
                 </span>
               ),
             },
-            { key: 'code', header: '代码', render: (a) => a.code },
-            { key: 'deviceId', header: '设备', render: (a) => a.deviceId },
-            { key: 'status', header: '状态', render: (a) => ALARM_STATUS_LABELS[a.status] },
-            { key: 'message', header: '内容', render: (a) => a.message ?? '—' },
-            { key: 'detectedTime', header: '发生时间', render: (a) => <TimeText iso={a.detectedTime} /> },
+            { key: 'code', header: translate('page.33246dda76cc'), render: (a) => a.code },
+            { key: 'deviceId', header: translate('page.01f2c16cda65'), render: (a) => a.deviceId },
+            { key: 'status', header: translate('page.62e951a692ff'), render: (a) => ALARM_STATUS_LABELS[a.status] },
+            { key: 'message', header: translate('page.163aec9194a1'), render: (a) => a.message ?? '—' },
+            {
+              key: 'detectedTime',
+              header: translate('page.51f85a78cac4'),
+              render: (a) => <TimeText iso={a.detectedTime} />,
+            },
             {
               key: 'actions',
-              header: '操作',
+              header: translate('page.f3ea6d345e2a'),
               render: (a) => (
                 <button
                   type="button"
                   data-testid={`alarm-detail-${a.alarmId}`}
                   onClick={() => onSelectAlarm(a.alarmId)}
                 >
-                  详情
+                  {translate('page.4f55ee1e687f')}
                 </button>
               ),
             },
@@ -237,20 +252,24 @@ export function AlarmsPage({
           {...(alarms.nextCursor !== undefined ? { nextCursor: alarms.nextCursor } : {})}
           onNextPage={(cursor) => onLoadMore('alarm', cursor)}
           onRefresh={onRefresh}
-          emptyText="暂无告警"
+          emptyText={translate('page.187b55b399e6')}
         />
       ) : null}
 
       {tab === 'event' ? (
         <CursorTable
-          ariaLabel="事件列表"
+          ariaLabel={translate('page.dea8862146d0')}
           columns={[
-            { key: 'occurredAt', header: '发生时间', render: (e) => <TimeText iso={e.occurredAt} /> },
-            { key: 'deviceId', header: '设备', render: (e) => e.deviceId },
-            { key: 'eventType', header: '事件类型', render: (e) => e.eventType },
-            { key: 'username', header: '操作员', render: (e) => e.username ?? '—' },
-            { key: 'source', header: '来源', render: (e) => e.source ?? '—' },
-            { key: 'remarks', header: '备注', render: (e) => e.remarks ?? '—' },
+            {
+              key: 'occurredAt',
+              header: translate('page.51f85a78cac4'),
+              render: (e) => <TimeText iso={e.occurredAt} />,
+            },
+            { key: 'deviceId', header: translate('page.01f2c16cda65'), render: (e) => e.deviceId },
+            { key: 'eventType', header: translate('page.5b2d75aa54d1'), render: (e) => e.eventType },
+            { key: 'username', header: translate('page.0c7c09a07e12'), render: (e) => e.username ?? '—' },
+            { key: 'source', header: translate('page.c63f79e6361e'), render: (e) => e.source ?? '—' },
+            { key: 'remarks', header: translate('page.e0361480e3a5'), render: (e) => e.remarks ?? '—' },
           ]}
           rows={events.rows === null ? null : [...events.rows]}
           rowKey={(e) => e.eventId}
@@ -259,29 +278,37 @@ export function AlarmsPage({
           {...(events.nextCursor !== undefined ? { nextCursor: events.nextCursor } : {})}
           onNextPage={(cursor) => onLoadMore('event', cursor)}
           onRefresh={onRefresh}
-          emptyText="暂无事件"
+          emptyText={translate('page.fad64b342ae1')}
         />
       ) : null}
 
       {tab === 'tamper' ? (
         <CursorTable
-          ariaLabel="防拆事件列表"
+          ariaLabel={translate('page.e1d2a8d43c11')}
           columns={[
-            { key: 'occurredAt', header: '发生时间', render: (t) => <TimeText iso={t.occurredAt} /> },
-            { key: 'deviceId', header: '设备', render: (t) => t.deviceId },
-            { key: 'eventType', header: '事件类型', render: (t) => t.eventType },
+            {
+              key: 'occurredAt',
+              header: translate('page.51f85a78cac4'),
+              render: (t) => <TimeText iso={t.occurredAt} />,
+            },
+            { key: 'deviceId', header: translate('page.01f2c16cda65'), render: (t) => t.deviceId },
+            { key: 'eventType', header: translate('page.5b2d75aa54d1'), render: (t) => t.eventType },
             {
               key: 'severity',
-              header: '严重度',
+              header: translate('page.9272e8abe5ad'),
               render: (t) => (
                 <span className={`severity-badge severity-${t.severity.toLowerCase()}`}>
                   {ALARM_SEVERITY_LABELS[t.severity]}
                 </span>
               ),
             },
-            { key: 'component', header: '部件', render: (t) => t.component ?? '—' },
-            { key: 'details', header: '细节', render: (t) => <code>{JSON.stringify(t.details)}</code> },
-            { key: 'actionTaken', header: '设备处置', render: (t) => t.actionTaken ?? '—' },
+            { key: 'component', header: translate('page.85b4a3ec4eed'), render: (t) => t.component ?? '—' },
+            {
+              key: 'details',
+              header: translate('page.70ecfa4b711b'),
+              render: (t) => <code>{JSON.stringify(t.details)}</code>,
+            },
+            { key: 'actionTaken', header: translate('page.3b1c8c512282'), render: (t) => t.actionTaken ?? '—' },
           ]}
           rows={tampers.rows === null ? null : [...tampers.rows]}
           rowKey={(t) => t.tamperEventId}
@@ -290,54 +317,59 @@ export function AlarmsPage({
           {...(tampers.nextCursor !== undefined ? { nextCursor: tampers.nextCursor } : {})}
           onNextPage={(cursor) => onLoadMore('tamper', cursor)}
           onRefresh={onRefresh}
-          emptyText="暂无防拆事件"
+          emptyText={translate('page.275bdfb11cb5')}
         />
       ) : null}
 
       {alarmDetail.kind === 'loading' ? (
         <div role="status" data-testid="alarm-detail-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : null}
       {alarmDetail.kind === 'error' ? <ErrorNotice error={alarmDetail.error} onRefresh={onRefresh} /> : null}
 
       {alarm !== null ? (
-        <aside className="alarm-detail" data-testid="alarm-detail" aria-label="告警详情" data-severity={alarm.severity}>
+        <aside
+          className="alarm-detail"
+          data-testid="alarm-detail"
+          aria-label={translate('page.775787f843fe')}
+          data-severity={alarm.severity}
+        >
           <h4>
-            告警详情
+            {translate('page.775787f843fe')}
             <span className={`severity-badge severity-${alarm.severity.toLowerCase()}`} data-testid="detail-severity">
               {ALARM_SEVERITY_LABELS[alarm.severity]}
             </span>
           </h4>
           <dl>
-            <dt>告警 ID</dt>
+            <dt>{translate('page.beae23e3dcec')}</dt>
             <dd>{alarm.alarmId}</dd>
-            <dt>代码 / 类别</dt>
+            <dt>{translate('page.c93a7d7c6a08')}</dt>
             <dd>
               {alarm.code} / {alarm.category}
             </dd>
-            <dt>设备</dt>
+            <dt>{translate('page.01f2c16cda65')}</dt>
             <dd>{alarm.deviceId}</dd>
-            <dt>状态</dt>
+            <dt>{translate('page.62e951a692ff')}</dt>
             <dd data-testid="detail-status">{ALARM_STATUS_LABELS[alarm.status]}</dd>
-            <dt>发生时间</dt>
+            <dt>{translate('page.51f85a78cac4')}</dt>
             <dd>
               <TimeText iso={alarm.detectedTime} />
             </dd>
-            <dt>部件</dt>
+            <dt>{translate('page.85b4a3ec4eed')}</dt>
             <dd>{alarm.component ?? '—'}</dd>
-            <dt>当前值 / 阈值</dt>
+            <dt>{translate('page.aaab19f0f7c0')}</dt>
             <dd>
               {alarm.currentValue ?? '—'} / {alarm.threshold ?? '—'}
               {alarm.unit !== null ? ` ${alarm.unit}` : ''}
             </dd>
-            <dt>内容</dt>
+            <dt>{translate('page.163aec9194a1')}</dt>
             <dd>{alarm.message ?? '—'}</dd>
-            <dt>建议处置</dt>
+            <dt>{translate('page.ead76f934c4e')}</dt>
             <dd>{alarm.recommendedAction ?? '—'}</dd>
             {alarm.acknowledgedBy !== null ? (
               <>
-                <dt>确认</dt>
+                <dt>{translate('page.b56d9ac6c5a0')}</dt>
                 <dd data-testid="detail-ack">
                   {alarm.acknowledgedBy}
                   {alarm.acknowledgedAt !== null ? (
@@ -352,9 +384,9 @@ export function AlarmsPage({
             ) : null}
             {alarm.clearedAt !== null ? (
               <>
-                <dt>清除</dt>
+                <dt>{translate('page.7b15e5e8e7bd')}</dt>
                 <dd data-testid="detail-clear">
-                  {alarm.clearedBy ?? '设备上报'} <TimeText iso={alarm.clearedAt} />
+                  {alarm.clearedBy ?? translate('page.32df337af2f3')} <TimeText iso={alarm.clearedAt} />
                   {alarm.clearReason !== null ? ` — ${alarm.clearReason}` : ''}
                 </dd>
               </>
@@ -362,7 +394,7 @@ export function AlarmsPage({
           </dl>
           <div className="detail-actions">
             <button type="button" onClick={onCloseAlarmDetail}>
-              关闭
+              {translate('page.6c14bd7f6f9e')}
             </button>
             <button
               type="button"
@@ -374,7 +406,7 @@ export function AlarmsPage({
                 : {})}
               onClick={() => setPendingHandle('acknowledge')}
             >
-              确认
+              {translate('page.b56d9ac6c5a0')}
             </button>
             <button
               type="button"
@@ -386,7 +418,7 @@ export function AlarmsPage({
                 : {})}
               onClick={() => setPendingHandle('clear')}
             >
-              清除
+              {translate('page.7b15e5e8e7bd')}
             </button>
           </div>
         </aside>
@@ -394,35 +426,33 @@ export function AlarmsPage({
 
       <ConfirmDialog
         open={pendingHandle === 'acknowledge'}
-        title="确认告警"
+        title={translate('page.a918b708faf6')}
         requireReason
-        reasonLabel="确认原因"
-        {...(alarm !== null
-          ? { description: `确认表示已知悉并跟进（ACTIVE→ACKNOWLEDGED），原因写入审计。告警：${alarm.code}` }
-          : {})}
-        confirmText="确认告警"
+        reasonLabel={translate('page.608cce36ba4b')}
+        {...(alarm !== null ? { description: translate('page.2433073de9a3') + alarm.code } : {})}
+        confirmText={translate('page.a918b708faf6')}
         onConfirm={(reason) => {
-          if (alarm !== null) void runAction(() => onAcknowledge(alarm.alarmId, reason), '确认');
+          if (alarm !== null)
+            void runAction(() => onAcknowledge(alarm.alarmId, reason), translate('page.b56d9ac6c5a0'));
         }}
         onCancel={() => setPendingHandle(null)}
       />
       <ConfirmDialog
         open={pendingHandle === 'clear'}
-        title="清除告警"
+        title={translate('page.53e2f828e0bd')}
         danger
         requireReason
-        reasonLabel="清除原因"
-        {...(alarm !== null ? { description: `清除为终态（→CLEARED），原因写入审计。告警：${alarm.code}` } : {})}
-        confirmText="确认清除"
+        reasonLabel={translate('page.d8817dcb836b')}
+        {...(alarm !== null ? { description: translate('page.329ee9d020a2') + alarm.code } : {})}
+        confirmText={translate('page.3bc93e7a48c1')}
         onConfirm={(reason) => {
-          if (alarm !== null) void runAction(() => onClear(alarm.alarmId, reason), '清除');
+          if (alarm !== null) void runAction(() => onClear(alarm.alarmId, reason), translate('page.7b15e5e8e7bd'));
         }}
         onCancel={() => setPendingHandle(null)}
       />
     </div>
   );
 }
-
 function CommonFilterFields({
   tab,
   draftAlarm,
@@ -441,8 +471,13 @@ function CommonFilterFields({
   readonly onChangeAlarm: (f: AlarmPageUrlState['alarm']) => void;
   readonly onChangeEvent: (f: AlarmPageUrlState['event']) => void;
   readonly onChangeTamper: (f: AlarmPageUrlState['tamper']) => void;
-  readonly siteOptions: readonly (FilterOption & { customerId: string })[];
-  readonly deviceOptions: readonly (FilterOption & { customerId: string; siteId: string })[];
+  readonly siteOptions: readonly (FilterOption & {
+    customerId: string;
+  })[];
+  readonly deviceOptions: readonly (FilterOption & {
+    customerId: string;
+    siteId: string;
+  })[];
 }) {
   const draft = tab === 'alarm' ? draftAlarm : tab === 'event' ? draftEvent : draftTamper;
   const sites = siteOptions.filter((site) => !draft.customerId || site.customerId === draft.customerId);
@@ -471,31 +506,30 @@ function CommonFilterFields({
     else if (key === 'eventType' && tab === 'event') onChangeEvent({ ...draftEvent, eventType: v });
     else if (key === 'eventType' && tab === 'tamper') onChangeTamper({ ...draftTamper, eventType: v });
   };
-
   return (
     <>
-      <label htmlFor="filter-site">站点</label>
+      <label htmlFor="filter-site">{translate('page.619bc67325a4')}</label>
       <select
         id="filter-site"
         data-testid="filter-site"
         value={draft.siteId ?? ''}
         onChange={(e) => patchSite(e.target.value)}
       >
-        <option value="">全部</option>
+        <option value="">{translate('page.778fc8f99453')}</option>
         {sites.map((site) => (
           <option key={site.value} value={site.value}>
             {site.label}
           </option>
         ))}
       </select>
-      <label htmlFor="filter-device">设备</label>
+      <label htmlFor="filter-device">{translate('page.01f2c16cda65')}</label>
       <select
         id="filter-device"
         data-testid="filter-device"
         value={draft.deviceId ?? ''}
         onChange={(e) => patch('deviceId', e.target.value)}
       >
-        <option value="">全部</option>
+        <option value="">{translate('page.778fc8f99453')}</option>
         {devices.map((device) => (
           <option key={device.value} value={device.value}>
             {device.label}
@@ -504,14 +538,20 @@ function CommonFilterFields({
       </select>
       {tab !== 'event' ? (
         <>
-          <label htmlFor="filter-severity">严重度</label>
+          <label htmlFor="filter-severity">{translate('page.9272e8abe5ad')}</label>
           <select
             id="filter-severity"
             data-testid="filter-severity"
-            value={(draft as { severity: string | null }).severity ?? ''}
+            value={
+              (
+                draft as {
+                  severity: string | null;
+                }
+              ).severity ?? ''
+            }
             onChange={(e) => patchEnum('severity', e.target.value)}
           >
-            <option value="">全部</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
             {ALARM_SEVERITY_OPTIONS.map((s) => (
               <option key={s} value={s}>
                 {ALARM_SEVERITY_LABELS[s]}
@@ -522,14 +562,14 @@ function CommonFilterFields({
       ) : null}
       {tab === 'alarm' ? (
         <>
-          <label htmlFor="filter-status">状态</label>
+          <label htmlFor="filter-status">{translate('page.62e951a692ff')}</label>
           <select
             id="filter-status"
             data-testid="filter-status"
             value={draftAlarm.status ?? ''}
             onChange={(e) => patchEnum('status', e.target.value)}
           >
-            <option value="">全部</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
             {ALARM_STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>
                 {ALARM_STATUS_LABELS[s]}
@@ -540,16 +580,22 @@ function CommonFilterFields({
       ) : null}
       {tab !== 'alarm' ? (
         <>
-          <label htmlFor="filter-event-type">事件类型</label>
+          <label htmlFor="filter-event-type">{translate('page.5b2d75aa54d1')}</label>
           <input
             id="filter-event-type"
             data-testid="filter-event-type"
-            value={(draft as { eventType: string | null }).eventType ?? ''}
+            value={
+              (
+                draft as {
+                  eventType: string | null;
+                }
+              ).eventType ?? ''
+            }
             onChange={(e) => patchEnum('eventType', e.target.value)}
           />
         </>
       ) : null}
-      <label htmlFor="filter-from">起始时间</label>
+      <label htmlFor="filter-from">{translate('page.503889d576aa')}</label>
       <input
         id="filter-from"
         data-testid="filter-from"
@@ -557,7 +603,7 @@ function CommonFilterFields({
         value={draft.from ?? ''}
         onChange={(e) => patch('from', e.target.value)}
       />
-      <label htmlFor="filter-to">截止时间</label>
+      <label htmlFor="filter-to">{translate('page.864048b32f22')}</label>
       <input
         id="filter-to"
         data-testid="filter-to"

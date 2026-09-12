@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-15 审计日志页（/audit-logs）：按 actor/Customer/对象/动作/结果/时间筛选 +
  * 键集游标分页；详情显示脱敏前后值与 requestId。
@@ -19,7 +20,6 @@ import { isUtcRangeOrdered, zonedDateTimeToUtcIso } from '../../components/date-
 import type { AuditLogListFilter } from './audit-api.js';
 import { AUDIT_RESULT_LABELS, AUDIT_RESULT_OPTIONS, formatAuditValue } from './audit-state.js';
 import type { AuditDetailState, AuditLogListState, AuditResult } from './types.js';
-
 export interface AuditLogsPageProps {
   readonly role: Role;
   readonly logs: AuditLogListState;
@@ -31,7 +31,6 @@ export interface AuditLogsPageProps {
   readonly onCloseDetail: () => void;
   readonly onRefresh: () => void;
 }
-
 interface DraftFilter {
   readonly actorId: string;
   readonly customerId: string;
@@ -42,7 +41,6 @@ interface DraftFilter {
   readonly from: string;
   readonly to: string;
 }
-
 const EMPTY_DRAFT: DraftFilter = {
   actorId: '',
   customerId: '',
@@ -53,7 +51,6 @@ const EMPTY_DRAFT: DraftFilter = {
   from: '',
   to: '',
 };
-
 export function AuditLogsPage({
   role,
   logs,
@@ -75,7 +72,6 @@ export function AuditLogsPage({
     result: filter.result ?? '',
   });
   const { timeZone } = useUserTimeZone();
-
   // 仅平台角色可跨 Customer 筛选（Auditor 跨 Customer 只读）
   const isPlatformRole = !role.startsWith('Customer');
   const fromUtc = draft.from === '' ? null : zonedDateTimeToUtcIso(draft.from, timeZone);
@@ -83,7 +79,6 @@ export function AuditLogsPage({
   const fromInvalid = draft.from !== '' && fromUtc === null;
   const toInvalid = draft.to !== '' && toUtc === null;
   const rangeInvalid = !fromInvalid && !toInvalid && !isUtcRangeOrdered(fromUtc, toUtc);
-
   const applyFilter = () => {
     if (fromInvalid || toInvalid || rangeInvalid) return;
     onApplyFilter({
@@ -97,21 +92,17 @@ export function AuditLogsPage({
       to: toUtc,
     });
   };
-
   const readyDetail = detail.kind === 'ready' ? detail.detail : null;
-
   return (
     <div className="audit-logs-page" data-testid="audit-logs-page">
       <div className="page-header">
-        <h3>审计日志</h3>
+        <h3>{translate('page.7666cd43234e')}</h3>
       </div>
-      <p className="field-hint">
-        只读视图（append-only，无编辑/删除）；敏感字段经双层脱敏，恒显示为 [REDACTED]；不含基础设施日志。
-      </p>
+      <p className="field-hint">{translate('page.0ac903fad307')}</p>
 
-      <section data-testid="audit-filter" aria-label="筛选">
+      <section data-testid="audit-filter" aria-label={translate('page.dcce9a144a40')}>
         <div className="filter-bar">
-          <label htmlFor="audit-filter-actor">操作者 actorId</label>
+          <label htmlFor="audit-filter-actor">{translate('page.6dd194b747ea')}</label>
           <input
             id="audit-filter-actor"
             data-testid="audit-filter-actor"
@@ -120,7 +111,7 @@ export function AuditLogsPage({
           />
           {isPlatformRole ? (
             <>
-              <label htmlFor="audit-filter-customer">客户 ID</label>
+              <label htmlFor="audit-filter-customer">{translate('page.a20148b7e39a')}</label>
               <input
                 id="audit-filter-customer"
                 data-testid="audit-filter-customer"
@@ -129,28 +120,28 @@ export function AuditLogsPage({
               />
             </>
           ) : null}
-          <label htmlFor="audit-filter-object-type">对象类型</label>
+          <label htmlFor="audit-filter-object-type">{translate('page.bfa3562d543a')}</label>
           <input
             id="audit-filter-object-type"
             data-testid="audit-filter-object-type"
             value={draft.objectType}
             onChange={(event) => setDraft({ ...draft, objectType: event.target.value })}
           />
-          <label htmlFor="audit-filter-object-id">对象 ID</label>
+          <label htmlFor="audit-filter-object-id">{translate('page.685ea0707c73')}</label>
           <input
             id="audit-filter-object-id"
             data-testid="audit-filter-object-id"
             value={draft.objectId}
             onChange={(event) => setDraft({ ...draft, objectId: event.target.value })}
           />
-          <label htmlFor="audit-filter-action">动作</label>
+          <label htmlFor="audit-filter-action">{translate('page.d9d9827827e1')}</label>
           <input
             id="audit-filter-action"
             data-testid="audit-filter-action"
             value={draft.action}
             onChange={(event) => setDraft({ ...draft, action: event.target.value })}
           />
-          <label htmlFor="audit-filter-result">结果</label>
+          <label htmlFor="audit-filter-result">{translate('page.0a2c91cec6c8')}</label>
           <select
             id="audit-filter-result"
             data-testid="audit-filter-result"
@@ -159,14 +150,14 @@ export function AuditLogsPage({
               setDraft({ ...draft, result: event.target.value === '' ? '' : (event.target.value as AuditResult) })
             }
           >
-            <option value="">全部</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
             {AUDIT_RESULT_OPTIONS.map((result) => (
               <option key={result} value={result}>
                 {AUDIT_RESULT_LABELS[result]}
               </option>
             ))}
           </select>
-          <label htmlFor="audit-filter-from">时间起</label>
+          <label htmlFor="audit-filter-from">{translate('page.b4e119fecbac')}</label>
           <input
             id="audit-filter-from"
             type="datetime-local"
@@ -174,7 +165,7 @@ export function AuditLogsPage({
             value={draft.from}
             onChange={(event) => setDraft({ ...draft, from: event.target.value })}
           />
-          <label htmlFor="audit-filter-to">时间止</label>
+          <label htmlFor="audit-filter-to">{translate('page.943df5fe5a8b')}</label>
           <input
             id="audit-filter-to"
             type="datetime-local"
@@ -189,33 +180,39 @@ export function AuditLogsPage({
             disabled={fromInvalid || toInvalid || rangeInvalid}
             onClick={applyFilter}
           >
-            筛选
+            {translate('page.dcce9a144a40')}
           </button>
         </div>
         {fromInvalid || toInvalid || rangeInvalid ? (
           <p className="field-hint" data-testid="audit-filter-time-error">
-            {rangeInvalid ? '起始时间不得晚于截止时间' : `时间格式非法或在 ${timeZone} 不存在`}
+            {rangeInvalid
+              ? translate('page.1c35c2baf9f1')
+              : translate('page.19cd7110c11d') + ' ' + timeZone + (' ' + translate('page.0d864b52e306'))}
           </p>
         ) : null}
       </section>
 
-      <section data-testid="audit-list-section" aria-label="审计日志列表">
+      <section data-testid="audit-list-section" aria-label={translate('page.c0aeecbe7b29')}>
         <CursorTable
-          ariaLabel="审计日志列表"
+          ariaLabel={translate('page.c0aeecbe7b29')}
           columns={[
-            { key: 'createdAt', header: '时间', render: (log) => <TimeText iso={log.createdAt} /> },
-            { key: 'actorId', header: '操作者', render: (log) => log.actorId ?? '—' },
-            { key: 'actorRole', header: '角色', render: (log) => log.actorRole ?? '—' },
-            { key: 'customerId', header: '客户', render: (log) => log.customerId ?? '—' },
+            {
+              key: 'createdAt',
+              header: translate('page.89b4aa6364ce'),
+              render: (log) => <TimeText iso={log.createdAt} />,
+            },
+            { key: 'actorId', header: translate('page.ffb50d38789e'), render: (log) => log.actorId ?? '—' },
+            { key: 'actorRole', header: translate('page.6b26695e4dce'), render: (log) => log.actorRole ?? '—' },
+            { key: 'customerId', header: translate('page.f20687060126'), render: (log) => log.customerId ?? '—' },
             {
               key: 'object',
-              header: '对象',
+              header: translate('page.539cb3b0a662'),
               render: (log) => `${log.objectType}/${log.objectId}`,
             },
-            { key: 'action', header: '动作', render: (log) => log.action },
+            { key: 'action', header: translate('page.d9d9827827e1'), render: (log) => log.action },
             {
               key: 'result',
-              header: '结果',
+              header: translate('page.0a2c91cec6c8'),
               render: (log) => (
                 <span className={log.result === 'FAILURE' ? 'severity-badge severity-major' : undefined}>
                   {AUDIT_RESULT_LABELS[log.result] ?? log.result}
@@ -224,14 +221,14 @@ export function AuditLogsPage({
             },
             {
               key: 'actions',
-              header: '操作',
+              header: translate('page.f3ea6d345e2a'),
               render: (log) => (
                 <button
                   type="button"
                   data-testid={`audit-detail-${log.auditId}`}
                   onClick={() => onSelectLog(log.auditId)}
                 >
-                  详情
+                  {translate('page.4f55ee1e687f')}
                 </button>
               ),
             },
@@ -243,19 +240,19 @@ export function AuditLogsPage({
           {...(logs.nextCursor !== undefined ? { nextCursor: logs.nextCursor } : {})}
           onNextPage={onLoadMore}
           onRefresh={onRefresh}
-          emptyText="暂无审计日志"
+          emptyText={translate('page.4e95331245ac')}
         />
       </section>
 
       {detail.kind === 'loading' ? (
         <div role="status" data-testid="audit-detail-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : null}
 
       <Modal
         open={detail.kind === 'ready' || detail.kind === 'error'}
-        title="审计详情"
+        title={translate('page.18c5e1d426e6')}
         testid="audit-detail-modal"
         onClose={onCloseDetail}
       >
@@ -263,35 +260,35 @@ export function AuditLogsPage({
         {readyDetail !== null ? (
           <div data-testid="audit-detail">
             <dl>
-              <dt>审计 ID</dt>
+              <dt>{translate('page.80532abd24d4')}</dt>
               <dd data-testid="audit-detail-id">{readyDetail.auditId}</dd>
               <dt>requestId</dt>
               <dd data-testid="audit-detail-request-id">{readyDetail.requestId ?? '—'}</dd>
-              <dt>操作者 / 角色</dt>
+              <dt>{translate('page.558f09d9d926')}</dt>
               <dd>
                 {readyDetail.actorId ?? '—'} / {readyDetail.actorRole ?? '—'}
               </dd>
-              <dt>客户</dt>
+              <dt>{translate('page.f20687060126')}</dt>
               <dd>{readyDetail.customerId ?? '—'}</dd>
-              <dt>对象 / 动作 / 结果</dt>
+              <dt>{translate('page.a426465ce19a')}</dt>
               <dd>
                 {readyDetail.objectType}/{readyDetail.objectId} · {readyDetail.action} ·{' '}
                 {AUDIT_RESULT_LABELS[readyDetail.result] ?? readyDetail.result}
               </dd>
-              <dt>原因</dt>
+              <dt>{translate('page.1ff9c3d00112')}</dt>
               <dd data-testid="audit-detail-reason">{readyDetail.reason ?? '—'}</dd>
               <dt>IP / User-Agent</dt>
               <dd>
                 {readyDetail.ip ?? '—'} / {readyDetail.userAgent ?? '—'}
               </dd>
-              <dt>时间</dt>
+              <dt>{translate('page.89b4aa6364ce')}</dt>
               <dd>
                 <TimeText iso={readyDetail.createdAt} />
               </dd>
             </dl>
-            <h5>变更前值（已脱敏）</h5>
+            <h5>{translate('page.504bbdd261f1')}</h5>
             <pre data-testid="audit-detail-before">{formatAuditValue(readyDetail.beforeValue)}</pre>
-            <h5>变更后值（已脱敏）</h5>
+            <h5>{translate('page.9430f0567db6')}</h5>
             <pre data-testid="audit-detail-after">{formatAuditValue(readyDetail.afterValue)}</pre>
           </div>
         ) : null}

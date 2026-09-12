@@ -1,3 +1,4 @@
+import { translate } from '../i18n/i18n.js';
 /**
  * FE-14 可复用媒体预览组件（Media 页与设备查看/操作页共用）。
  *
@@ -10,7 +11,6 @@
 import { ErrorNotice } from './ErrorNotice.js';
 import { TimeText } from './TimeText.js';
 import { isDownloadUrlExpired, isKnownMediaType, mediaTypeLabel } from '../pages/media/media-state.js';
-
 export interface MediaPreviewMedia {
   readonly mediaId: string;
   /** string（运行时可能越出契约枚举，组件内安全降级）。 */
@@ -19,11 +19,13 @@ export interface MediaPreviewMedia {
   readonly status: string;
   readonly captureTime: string;
 }
-
 export interface MediaPreviewProps {
   readonly media: MediaPreviewMedia;
   /** 已签发的短期下载 URL；null = 尚未申请。 */
-  readonly download: { readonly url: string; readonly expiresAt: string } | null;
+  readonly download: {
+    readonly url: string;
+    readonly expiresAt: string;
+  } | null;
   readonly loading?: boolean;
   readonly error?: unknown;
   /** 申请/重新申请下载 URL（过期重签同一回调）。 */
@@ -31,7 +33,6 @@ export interface MediaPreviewProps {
   /** 可注入时钟（过期判定；缺省实时时钟）。 */
   readonly now?: () => Date;
 }
-
 export function MediaPreview({
   media,
   download,
@@ -42,45 +43,47 @@ export function MediaPreview({
 }: MediaPreviewProps) {
   const expired = download !== null && isDownloadUrlExpired(download.expiresAt, now());
   const usable = download !== null && !expired;
-
   return (
     <div className="media-preview" data-testid="media-preview">
       <div className="media-meta">
         <span data-testid="media-preview-name">{media.fileName}</span>
         <span data-testid="media-preview-type">{mediaTypeLabel(media.mediaType)}</span>
         <span>
-          采集于 <TimeText iso={media.captureTime} />
+          {translate('page.ebd616a91fdc') + ' '}
+          <TimeText iso={media.captureTime} />
         </span>
       </div>
 
       {media.status === 'DELETED' ? (
         <p className="empty-state" data-testid="media-deleted">
-          文件已删除（元数据保留），不提供下载
+          {translate('ui.2f5857635390')}
         </p>
       ) : !isKnownMediaType(media.mediaType) ? (
         <p className="empty-state" data-testid="media-type-fallback">
-          不支持的媒体类型（{media.mediaType}），仅展示元数据
+          {translate('ui.fa71ddaf4ce1')}
+          {media.mediaType}
+          {translate('ui.dbb08f293404')}
         </p>
       ) : loading ? (
         <p role="status" data-testid="media-url-loading">
-          正在申请下载链接…
+          {translate('ui.5d7af997b52a')}
         </p>
       ) : error !== undefined && error !== null ? (
         <div data-testid="media-url-error">
           <ErrorNotice error={error} />
           <button type="button" className="primary-button" data-testid="media-url-request" onClick={onRequestUrl}>
-            重新申请
+            {translate('ui.dfae99182d6c')}
           </button>
         </div>
       ) : download === null ? (
         <button type="button" className="primary-button" data-testid="media-url-request" onClick={onRequestUrl}>
-          申请查看（签发 15 分钟短期链接）
+          {translate('ui.e8e63786d256')}
         </button>
       ) : expired ? (
         <div data-testid="media-url-expired">
-          <p className="field-hint">下载链接已过期（15 分钟有效）。</p>
+          <p className="field-hint">{translate('ui.7edf60045f5b')}</p>
           <button type="button" className="primary-button" data-testid="media-url-renew" onClick={onRequestUrl}>
-            重新申请
+            {translate('ui.dfae99182d6c')}
           </button>
         </div>
       ) : usable ? (
@@ -92,10 +95,13 @@ export function MediaPreview({
             <video data-testid="media-preview-video" controls src={download.url} />
           )}
           <p className="field-hint">
-            链接有效期至 <TimeText iso={download.expiresAt} />（短期授权，过期需重新申请）
+            {translate('ui.5e9154826b14') + ' '}
+            <TimeText iso={download.expiresAt} />
+            {translate('ui.f60e11b770dd')}
           </p>
           <a data-testid="media-download-link" href={download.url} download={media.fileName}>
-            下载 {media.fileName}
+            {translate('ui.2b9d013177da') + ' '}
+            {media.fileName}
           </a>
         </div>
       ) : null}

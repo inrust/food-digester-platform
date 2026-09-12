@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-16 用户角色和业务设置页（/settings）：平台用户、设备用户、业务设置三标签页。
  *
@@ -11,8 +12,8 @@
  * - 自我提权/越权由服务端 403 拒绝并正确呈现；不管理 IAM/CloudWatch/Budget/生产账号。
  */
 import { useRef, useState } from 'react';
-import { PERMISSIONS, permissionsOf } from '@fdp/auth';
-import type { Role } from '@fdp/auth';
+import { PERMISSIONS, permissionsOf } from '@fdp/auth/browser';
+import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
@@ -41,7 +42,6 @@ import {
 } from './settings-state.js';
 import type { InviteDraft } from './settings-state.js';
 import type { ListState, PasswordResetResult, SettingKey, SettingView, UserStatus, UserView } from './types.js';
-
 export interface SettingsPageProps {
   readonly role: Role;
   readonly users: ListState<UserView>;
@@ -53,26 +53,41 @@ export interface SettingsPageProps {
   readonly onSetScope: (userId: string, customerId: string) => Promise<UserView>;
   readonly onDisableUser: (userId: string) => Promise<UserView>;
   readonly onResetPassword: (userId: string) => Promise<PasswordResetResult>;
-  readonly settings: { readonly rows: readonly SettingView[] | null; readonly error?: unknown };
+  readonly settings: {
+    readonly rows: readonly SettingView[] | null;
+    readonly error?: unknown;
+  };
   readonly onUpdateSetting: (key: SettingKey, value: unknown, version: number) => Promise<SettingView>;
   /** 设备用户标签页内容（FE-09 页面嵌入）；null = 无 device-user:read。 */
   readonly deviceUsers: DeviceUsersPageProps | null;
   readonly onRefresh: () => void;
 }
-
 type SettingsTab = 'platform-users' | 'device-users' | 'business-settings';
-
 const TAB_LABELS: Readonly<Record<SettingsTab, string>> = {
-  'platform-users': '平台角色/用户管理',
-  'device-users': '设备用户管理',
-  'business-settings': '业务设置',
+  get 'platform-users'() {
+    return translate('page.192c9887b3e0');
+  },
+  get 'device-users'() {
+    return translate('page.7fc5eb892df6');
+  },
+  get 'business-settings'() {
+    return translate('page.60735b2edd9f');
+  },
 };
-
 type ConfirmTarget =
-  | { readonly kind: 'disable'; readonly user: UserView }
-  | { readonly kind: 'reset'; readonly user: UserView }
-  | { readonly kind: 'assignRoles'; readonly user: UserView; readonly roles: readonly Role[] };
-
+  | {
+      readonly kind: 'disable';
+      readonly user: UserView;
+    }
+  | {
+      readonly kind: 'reset';
+      readonly user: UserView;
+    }
+  | {
+      readonly kind: 'assignRoles';
+      readonly user: UserView;
+      readonly roles: readonly Role[];
+    };
 export function SettingsPage({
   role,
   users,
@@ -96,11 +111,25 @@ export function SettingsPage({
   ];
   const [tab, setTab] = useState<SettingsTab>(visibleTabs[0] ?? 'device-users');
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteDraft, setInviteDraft] = useState<InviteDraft>({ email: '', displayName: '', roles: [], customerId: '' });
-  const [assignTarget, setAssignTarget] = useState<{ user: UserView; roles: readonly Role[] } | null>(null);
-  const [scopeTarget, setScopeTarget] = useState<{ user: UserView; customerId: string } | null>(null);
+  const [inviteDraft, setInviteDraft] = useState<InviteDraft>({
+    email: '',
+    displayName: '',
+    roles: [],
+    customerId: '',
+  });
+  const [assignTarget, setAssignTarget] = useState<{
+    user: UserView;
+    roles: readonly Role[];
+  } | null>(null);
+  const [scopeTarget, setScopeTarget] = useState<{
+    user: UserView;
+    customerId: string;
+  } | null>(null);
   const [confirm, setConfirm] = useState<ConfirmTarget | null>(null);
-  const [settingEdit, setSettingEdit] = useState<{ setting: SettingView; raw: string } | null>(null);
+  const [settingEdit, setSettingEdit] = useState<{
+    setting: SettingView;
+    raw: string;
+  } | null>(null);
   const [actionError, setActionError] = useState<unknown>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [draftFilter, setDraftFilter] = useState<{
@@ -116,12 +145,10 @@ export function SettingsPage({
   });
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-
   const manageUsers = canManageUsers(role);
   const writeSettings = canWriteSettings(role);
   const inviteError = validateInvite(inviteDraft);
   const inviteHasCustomerRole = inviteDraft.roles.some((r) => !isPlatformRole(r));
-
   const runAction = async (execute: () => Promise<string>) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -142,7 +169,6 @@ export function SettingsPage({
       setBusy(false);
     }
   };
-
   const submitInvite = () =>
     runAction(async () => {
       if (inviteError !== null) throw new Error(inviteError);
@@ -155,33 +181,30 @@ export function SettingsPage({
       const created = await onInviteUser(input);
       setInviteOpen(false);
       setInviteDraft({ email: '', displayName: '', roles: [], customerId: '' });
-      return `邀请已发送（${created.email}，状态：已邀请）；临时凭证由 Cognito 经邮件发送，本页面不接触密码`;
+      return translate('page.c8e407df3590') + created.email + translate('page.9ee547c292e4');
     });
-
   const submitConfirm = () =>
     runAction(async () => {
       if (confirm === null) return '';
       if (confirm.kind === 'disable') {
         await onDisableUser(confirm.user.userId);
-        return `用户 ${confirm.user.email} 已停用（幂等回放）`;
+        return translate('page.9ba763ea3423') + ' ' + confirm.user.email + (' ' + translate('page.85d8f9c121a9'));
       }
       if (confirm.kind === 'reset') {
         await onResetPassword(confirm.user.userId);
-        return `已触发密码重置（${confirm.user.email}）；临时凭证由 Cognito 直接发送给用户，本页面不接触密码`;
+        return translate('page.801f8e1a70bc') + confirm.user.email + translate('page.507c8bd1e8d6');
       }
       const updated = await onAssignRoles(confirm.user.userId, confirm.roles);
       setAssignTarget(null);
-      return `角色已更新：${updated.roles.map(roleDisplayName).join('、')}`;
+      return translate('page.fbb8820173df') + updated.roles.map(roleDisplayName).join('、');
     });
-
   const submitScope = () =>
     runAction(async () => {
       if (scopeTarget === null) return '';
       await onSetScope(scopeTarget.user.userId, scopeTarget.customerId.trim());
       setScopeTarget(null);
-      return `Customer scope 已更新为 ${scopeTarget.customerId.trim()}`;
+      return translate('page.10981eeb16f3') + ' ' + scopeTarget.customerId.trim();
     });
-
   const submitSetting = () =>
     runAction(async () => {
       if (settingEdit === null) return '';
@@ -193,16 +216,24 @@ export function SettingsPage({
         settingEdit.setting.version,
       );
       setSettingEdit(null);
-      return `设置 ${SETTING_KEY_LABELS[updated.key]} 已更新（v${updated.version}，${RUNTIME_STATUS_LABELS[updated.runtimeStatus]}）`;
+      return (
+        translate('page.7debf9cb0372') +
+        ' ' +
+        SETTING_KEY_LABELS[updated.key] +
+        (' ' + translate('page.3395e930dfa7')) +
+        updated.version +
+        '\uFF0C' +
+        RUNTIME_STATUS_LABELS[updated.runtimeStatus] +
+        '\uFF09'
+      );
     });
-
   return (
     <div className="settings-page" data-testid="settings-page">
       <div className="page-header">
-        <h3>用户管理</h3>
+        <h3>{translate('page.baf84751a2a2')}</h3>
       </div>
 
-      <nav className="tab-bar" data-testid="settings-tabs" aria-label="设置标签页">
+      <nav className="tab-bar" data-testid="settings-tabs" aria-label={translate('page.578c6cd1c080')}>
         {visibleTabs.map((t) => (
           <button
             key={t}
@@ -225,9 +256,9 @@ export function SettingsPage({
       {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
       {tab === 'platform-users' ? (
-        <section data-testid="platform-users-tab" aria-label="平台用户">
+        <section data-testid="platform-users-tab" aria-label={translate('page.5da6c051fbdc')}>
           <div className="filter-bar">
-            <label htmlFor="user-filter-role-type">角色类型</label>
+            <label htmlFor="user-filter-role-type">{translate('page.cb23226152c7')}</label>
             <select
               id="user-filter-role-type"
               data-testid="user-filter-role-type"
@@ -236,34 +267,32 @@ export function SettingsPage({
                 setDraftFilter({ ...draftFilter, roleType: event.target.value as 'platform' | 'customer' | '' })
               }
             >
-              <option value="">全部</option>
-              <option value="platform">平台角色</option>
-              <option value="customer">Customer 角色</option>
+              <option value="">{translate('page.778fc8f99453')}</option>
+              <option value="platform">{translate('page.736a37d8b701')}</option>
+              <option value="customer">{translate('page.2f9d2e2775b9')}</option>
             </select>
-            <label htmlFor="user-filter-status">状态</label>
+            <label htmlFor="user-filter-status">{translate('page.62e951a692ff')}</label>
             <select
               id="user-filter-status"
               data-testid="user-filter-status"
               value={draftFilter.status}
-              onChange={(event) =>
-                setDraftFilter({ ...draftFilter, status: event.target.value as UserStatus | '' })
-              }
+              onChange={(event) => setDraftFilter({ ...draftFilter, status: event.target.value as UserStatus | '' })}
             >
-              <option value="">全部</option>
+              <option value="">{translate('page.778fc8f99453')}</option>
               {USER_STATUS_OPTIONS.map((status) => (
                 <option key={status} value={status}>
                   {USER_STATUS_LABELS[status]}
                 </option>
               ))}
             </select>
-            <label htmlFor="user-filter-customer">客户 ID</label>
+            <label htmlFor="user-filter-customer">{translate('page.a20148b7e39a')}</label>
             <input
               id="user-filter-customer"
               data-testid="user-filter-customer"
               value={draftFilter.customerId}
               onChange={(event) => setDraftFilter({ ...draftFilter, customerId: event.target.value })}
             />
-            <label htmlFor="user-filter-q">关键词</label>
+            <label htmlFor="user-filter-q">{translate('page.cc1b21e80080')}</label>
             <input
               id="user-filter-q"
               data-testid="user-filter-q"
@@ -283,40 +312,52 @@ export function SettingsPage({
                 })
               }
             >
-              筛选
+              {translate('page.dcce9a144a40')}
             </button>
             <button
               type="button"
               className="primary-button"
               data-testid="user-invite-open"
               disabled={!manageUsers || busy}
-              {...(!manageUsers ? { title: '需要用户写权限（user:write）' } : {})}
+              {...(!manageUsers ? { title: translate('page.47ccbd849cdf') } : {})}
               onClick={() => {
                 setInviteDraft({ email: '', displayName: '', roles: [], customerId: '' });
                 setInviteOpen(true);
               }}
             >
-              新建平台用户
+              {translate('page.d3e63cf5b87c')}
             </button>
           </div>
 
           <CursorTable
-            ariaLabel="用户列表"
+            ariaLabel={translate('page.b3d9235f9207')}
             columns={[
-              { key: 'email', header: '邮箱', render: (u) => u.email },
-              { key: 'displayName', header: '显示名', render: (u) => u.displayName },
+              { key: 'email', header: translate('page.9ed627bcf63d'), render: (u) => u.email },
+              { key: 'displayName', header: translate('page.c10bbf5ddd2d'), render: (u) => u.displayName },
               {
                 key: 'roles',
-                header: '角色',
+                header: translate('page.6b26695e4dce'),
                 render: (u) => u.roles.map(roleDisplayName).join('、'),
               },
-              { key: 'status', header: '状态', render: (u) => USER_STATUS_LABELS[u.status] },
-              { key: 'mfaEnabled', header: 'MFA', render: (u) => (u.mfaEnabled ? '已启用' : '未启用') },
-              { key: 'customerId', header: '所属客户', render: (u) => u.customerId ?? '—（平台角色）' },
-              { key: 'updatedAt', header: '更新时间', render: (u) => <TimeText iso={u.updatedAt} /> },
+              { key: 'status', header: translate('page.62e951a692ff'), render: (u) => USER_STATUS_LABELS[u.status] },
+              {
+                key: 'mfaEnabled',
+                header: 'MFA',
+                render: (u) => (u.mfaEnabled ? translate('page.25d284315063') : translate('page.8bb38ef00ccc')),
+              },
+              {
+                key: 'customerId',
+                header: translate('page.467c1137f479'),
+                render: (u) => u.customerId ?? translate('page.79dd9422df51'),
+              },
+              {
+                key: 'updatedAt',
+                header: translate('page.093dea88c930'),
+                render: (u) => <TimeText iso={u.updatedAt} />,
+              },
               {
                 key: 'actions',
-                header: '操作',
+                header: translate('page.f3ea6d345e2a'),
                 render: (u) => (
                   <span className="action-row">
                     <button
@@ -325,7 +366,7 @@ export function SettingsPage({
                       disabled={!manageUsers || busy || u.status === 'DISABLED'}
                       onClick={() => setAssignTarget({ user: u, roles: u.roles })}
                     >
-                      角色
+                      {translate('page.6b26695e4dce')}
                     </button>
                     {u.roles.every((r) => !isPlatformRole(r)) ? (
                       <button
@@ -343,7 +384,7 @@ export function SettingsPage({
                       disabled={!manageUsers || busy || u.status === 'DISABLED'}
                       onClick={() => setConfirm({ kind: 'reset', user: u })}
                     >
-                      重置密码
+                      {translate('page.7e422146dd5b')}
                     </button>
                     <button
                       type="button"
@@ -352,7 +393,7 @@ export function SettingsPage({
                       disabled={!manageUsers || busy || u.status === 'DISABLED'}
                       onClick={() => setConfirm({ kind: 'disable', user: u })}
                     >
-                      停用
+                      {translate('page.d989e55188c9')}
                     </button>
                   </span>
                 ),
@@ -365,14 +406,12 @@ export function SettingsPage({
             {...(users.nextCursor !== undefined ? { nextCursor: users.nextCursor } : {})}
             onNextPage={onLoadMoreUsers}
             onRefresh={onRefresh}
-            emptyText="暂无用户"
+            emptyText={translate('page.3d268bdd3945')}
           />
 
-          <section data-testid="rbac-matrix" aria-label="权限矩阵（只读）">
-            <h4>权限矩阵（V1 固定，只读）</h4>
-            <p className="field-hint">
-              权限复选框仅展示当前角色的固定权限点（DEC-012）；仅允许给用户分配已有角色，矩阵本身不可编辑。
-            </p>
+          <section data-testid="rbac-matrix" aria-label={translate('page.38d9705d3fe6')}>
+            <h4>{translate('page.3899d000246c')}</h4>
+            <p className="field-hint">{translate('page.af0664f3442f')}</p>
             {ROLE_OPTIONS.map((r) => (
               <div key={r} className="rbac-role" data-testid={`rbac-role-${r}`}>
                 <h5>{roleDisplayName(r)}</h5>
@@ -397,27 +436,24 @@ export function SettingsPage({
       ) : null}
 
       {tab === 'device-users' ? (
-        <section data-testid="device-users-tab" aria-label="设备用户">
+        <section data-testid="device-users-tab" aria-label={translate('page.024ebe3ff3d1')}>
           {deviceUsers !== null ? (
             <DeviceUsersPage {...deviceUsers} />
           ) : (
             <p className="empty-state" data-testid="device-users-unavailable">
-              无设备用户查看权限（device-user:read）
+              {translate('page.7ee40e932983')}
             </p>
           )}
         </section>
       ) : null}
 
       {tab === 'business-settings' ? (
-        <section data-testid="business-settings-tab" aria-label="业务设置">
-          <p className="field-hint">
-            封闭 key 集四项；固定协议枚举、Topic、DEC-023 确认方式与 AWS 运维配置不可经此编辑。
-            更新携带当前版本（乐观锁）；STORED_ONLY 项更新不代表业务行为生效。
-          </p>
+        <section data-testid="business-settings-tab" aria-label={translate('page.60735b2edd9f')}>
+          <p className="field-hint">{translate('page.dd437ec4e4ea')}</p>
           {settings.error !== undefined ? <ErrorNotice error={settings.error} onRefresh={onRefresh} /> : null}
           {settings.rows === null ? (
             <div role="status" data-testid="settings-loading">
-              加载中…
+              {translate('page.300ee3dee4dc')}
             </div>
           ) : (
             settings.rows.map((setting) => {
@@ -428,7 +464,9 @@ export function SettingsPage({
                     {SETTING_KEY_LABELS[setting.key]}
                     <span className="setting-runtime" data-testid={`setting-runtime-${setting.key}`}>
                       {RUNTIME_STATUS_LABELS[setting.runtimeStatus]}
-                      {setting.runtimeConsumer !== null ? `（消费方 ${setting.runtimeConsumer}）` : ''}
+                      {setting.runtimeConsumer !== null
+                        ? translate('page.dda8021936a5') + ' ' + setting.runtimeConsumer + '\uFF09'
+                        : ''}
                     </span>
                   </h5>
                   <p className="field-hint">
@@ -437,17 +475,17 @@ export function SettingsPage({
                   <pre data-testid={`setting-value-${setting.key}`}>{JSON.stringify(setting.value, null, 2)}</pre>
                   {readonly ? (
                     <p className="field-hint" data-testid={`setting-readonly-${setting.key}`}>
-                      确认方式由 DEC-023 固定，只读
+                      {translate('page.f2b79f39e053')}
                     </p>
                   ) : (
                     <button
                       type="button"
                       data-testid={`setting-edit-${setting.key}`}
                       disabled={!writeSettings || busy}
-                      {...(!writeSettings ? { title: '需要设置写权限（settings:write）' } : {})}
+                      {...(!writeSettings ? { title: translate('page.5a65ed446ce5') } : {})}
                       onClick={() => setSettingEdit({ setting, raw: JSON.stringify(setting.value, null, 2) })}
                     >
-                      编辑
+                      {translate('page.a7f814c0a40d')}
                     </button>
                   )}
                 </div>
@@ -457,9 +495,14 @@ export function SettingsPage({
         </section>
       ) : null}
 
-      <Modal open={inviteOpen} title="新建平台用户（邀请）" testid="user-invite-form" onClose={() => setInviteOpen(false)}>
+      <Modal
+        open={inviteOpen}
+        title={translate('page.58e3a8e0bcd4')}
+        testid="user-invite-form"
+        onClose={() => setInviteOpen(false)}
+      >
         <div className="dialog-field">
-          <label htmlFor="invite-email">邮箱</label>
+          <label htmlFor="invite-email">{translate('page.9ed627bcf63d')}</label>
           <input
             id="invite-email"
             data-testid="invite-email"
@@ -468,7 +511,7 @@ export function SettingsPage({
           />
         </div>
         <div className="dialog-field">
-          <label htmlFor="invite-display-name">显示名</label>
+          <label htmlFor="invite-display-name">{translate('page.c10bbf5ddd2d')}</label>
           <input
             id="invite-display-name"
             data-testid="invite-display-name"
@@ -478,7 +521,7 @@ export function SettingsPage({
           />
         </div>
         <div className="dialog-field">
-          <span id="invite-roles-label">角色（封闭集，平台/Customer 禁止混绑）</span>
+          <span id="invite-roles-label">{translate('page.366471e0d0c5')}</span>
           <div role="group" aria-labelledby="invite-roles-label" data-testid="invite-roles">
             {ROLE_OPTIONS.map((r) => (
               <label key={r}>
@@ -502,7 +545,7 @@ export function SettingsPage({
         </div>
         {inviteHasCustomerRole ? (
           <div className="dialog-field">
-            <label htmlFor="invite-customer">所属 Customer（Customer 角色必填）</label>
+            <label htmlFor="invite-customer">{translate('page.f0cb172c1c06')}</label>
             <input
               id="invite-customer"
               data-testid="invite-customer"
@@ -511,7 +554,7 @@ export function SettingsPage({
             />
           </div>
         ) : null}
-        <p className="field-hint">临时凭证由 Cognito 生成并经邮件发送；本表单不设置永久密码。</p>
+        <p className="field-hint">{translate('page.2428917b2703')}</p>
         {inviteError !== null ? (
           <p className="field-hint" data-testid="invite-error">
             {inviteError}
@@ -525,21 +568,25 @@ export function SettingsPage({
             disabled={busy || inviteError !== null}
             onClick={() => void submitInvite()}
           >
-            发送邀请
+            {translate('page.ac9575ddbfa8')}
           </button>
         </div>
       </Modal>
 
       <Modal
         open={assignTarget !== null}
-        title={assignTarget !== null ? `角色分配：${assignTarget.user.email}` : '角色分配'}
+        title={
+          assignTarget !== null
+            ? translate('page.aabe043f2bda') + assignTarget.user.email
+            : translate('page.77afe1b0864d')
+        }
         testid="user-roles-form"
         onClose={() => setAssignTarget(null)}
       >
         {assignTarget !== null ? (
           <div>
-            <p className="field-hint">整体替换角色集（1~3 个，平台/Customer 禁止混绑）；变更为高风险权限操作，需明确确认。</p>
-            <div role="group" aria-label="角色" data-testid="assign-roles">
+            <p className="field-hint">{translate('page.3ae0cae155b4')}</p>
+            <div role="group" aria-label={translate('page.6b26695e4dce')} data-testid="assign-roles">
               {ROLE_OPTIONS.map((r) => (
                 <label key={r}>
                   <input
@@ -572,7 +619,7 @@ export function SettingsPage({
                 disabled={busy || validateRoleAssign(assignTarget.roles) !== null}
                 onClick={() => setConfirm({ kind: 'assignRoles', user: assignTarget.user, roles: assignTarget.roles })}
               >
-                提交角色变更
+                {translate('page.2c83f1deab09')}
               </button>
             </div>
           </div>
@@ -588,7 +635,7 @@ export function SettingsPage({
         {scopeTarget !== null ? (
           <div>
             <div className="dialog-field">
-              <label htmlFor="scope-customer">所属 Customer</label>
+              <label htmlFor="scope-customer">{translate('page.2b5412405821')}</label>
               <input
                 id="scope-customer"
                 data-testid="scope-customer"
@@ -604,7 +651,7 @@ export function SettingsPage({
                 disabled={busy || scopeTarget.customerId.trim() === ''}
                 onClick={() => void submitScope()}
               >
-                保存 scope
+                {translate('page.f528cd729593')}
               </button>
             </div>
           </div>
@@ -613,18 +660,24 @@ export function SettingsPage({
 
       <Modal
         open={settingEdit !== null}
-        title={settingEdit !== null ? `编辑设置：${SETTING_KEY_LABELS[settingEdit.setting.key]}` : '编辑设置'}
+        title={
+          settingEdit !== null
+            ? translate('page.9596698bebd1') + SETTING_KEY_LABELS[settingEdit.setting.key]
+            : translate('page.5c87c6154ebd')
+        }
         testid="setting-edit-form"
         onClose={() => setSettingEdit(null)}
       >
         {settingEdit !== null ? (
           <div>
             <p className="field-hint">
-              当前版本 v{settingEdit.setting.version}（乐观锁，提交时回传；冲突 → 刷新后重试）。
+              {translate('page.0239b8ffa350')}
+              {settingEdit.setting.version}
+              {translate('page.77df378c18b2')}
               {RUNTIME_STATUS_LABELS[settingEdit.setting.runtimeStatus]}。
             </p>
             <div className="dialog-field">
-              <label htmlFor="setting-value-input">设置值（JSON）</label>
+              <label htmlFor="setting-value-input">{translate('page.9ac6be10cbd4')}</label>
               <textarea
                 id="setting-value-input"
                 data-testid="setting-value-input"
@@ -646,7 +699,7 @@ export function SettingsPage({
                 disabled={busy || validateSettingJson(settingEdit.raw) !== null}
                 onClick={() => void submitSetting()}
               >
-                保存设置
+                {translate('page.bb79ec7c152f')}
               </button>
             </div>
           </div>
@@ -657,21 +710,31 @@ export function SettingsPage({
         open={confirm !== null}
         title={
           confirm?.kind === 'disable'
-            ? `停用用户：${confirm.user.email}`
+            ? translate('page.f7f6a0cc4498') + confirm.user.email
             : confirm?.kind === 'reset'
-              ? `重置密码：${confirm.user.email}`
+              ? translate('page.09eec15af8f9') + confirm.user.email
               : confirm?.kind === 'assignRoles'
-                ? `确认角色变更：${confirm.user.email}`
+                ? translate('page.80a86c0a5e78') + confirm.user.email
                 : ''
         }
         {...(confirm?.kind === 'disable'
-          ? { description: '停用后该用户无法登录（Cognito 同步停用；最后一个平台管理员不可停用）。', danger: true }
+          ? { description: translate('page.1aa8f9fe505f'), danger: true }
           : confirm?.kind === 'reset'
-            ? { description: '触发后 Cognito 生成并发送临时凭证给用户；本操作不读取或显示密码。' }
+            ? { description: translate('page.ab5cfb10b2d5') }
             : confirm?.kind === 'assignRoles'
-              ? { description: `高风险权限变更：角色整体替换为 ${confirm.roles.map(roleDisplayName).join('、')}。`, danger: true }
+              ? {
+                  description:
+                    translate('page.72081201e4db') + ' ' + confirm.roles.map(roleDisplayName).join('、') + '\u3002',
+                  danger: true,
+                }
               : {})}
-        confirmText={confirm?.kind === 'disable' ? '确认停用' : confirm?.kind === 'reset' ? '触发重置' : '确认变更'}
+        confirmText={
+          confirm?.kind === 'disable'
+            ? translate('page.f3abd8941903')
+            : confirm?.kind === 'reset'
+              ? translate('page.3b82e1c59111')
+              : translate('page.3ced65a73925')
+        }
         onConfirm={() => void submitConfirm()}
         onCancel={() => setConfirm(null)}
       />

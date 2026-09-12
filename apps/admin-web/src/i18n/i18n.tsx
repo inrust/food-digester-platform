@@ -3,7 +3,7 @@
  *
  * - 缺省语言 zh-CN；缺省 Context 即 zh-CN（未挂 Provider 的旧测试/调用方行为不变）；
  * - 持久化：localStorage（刷新/重新登录后保持）；切换即时生效并同步 <html lang>；
- * - 缺失 key：运行时 console.warn 并回退 zh-CN → key（测试以 key parity 锁定缺失为 0）；
+ * - 缺失 key：运行时回退 zh-CN → key（测试以 key parity 锁定缺失为 0）；
  * - 纪律：仅 UI 文案入资源；协议枚举原文、角色冻结显示名（DEC-012）、后端业务数据不翻译；
  *   requestId 原文保留；新增页面/字段须两套语言同步补齐（parity 检测）。
  */
@@ -38,21 +38,40 @@ export function localeForLanguage(language: Language): string {
 
 export type Translate = (key: string, params?: Readonly<Record<string, string | number>>) => string;
 
-function makeTranslate(language: Language): Translate {
-  return (key, params) => {
-    let text: string | undefined = RESOURCES[language][key];
-    if (text === undefined) {
-      console.warn(`[i18n] missing key: ${key} (${language})`);
-      text = RESOURCES['zh-CN'][key] ?? key;
+function translateFor(language: Language, key: string, params?: Readonly<Record<string, string | number>>): string {
+  let text: string | undefined = RESOURCES[language][key];
+  if (text === undefined) {
+    text = RESOURCES['zh-CN'][key] ?? key;
+  }
+  if (params !== undefined) {
+    for (const [name, value] of Object.entries(params)) {
+      text = text.replaceAll(`{${name}}`, String(value));
     }
-    if (params !== undefined) {
-      for (const [name, value] of Object.entries(params)) {
-        text = text.replaceAll(`{${name}}`, String(value));
-      }
-    }
-    return text;
-  };
+  }
+  return text;
 }
+
+function makeTranslate(language: Language): Translate {
+  return (key, params) => translateFor(language, key, params);
+}
+
+function storedLanguageOrDefault(): Language {
+  if (typeof window === 'undefined') return 'zh-CN';
+  try {
+    const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return stored !== null && isLanguage(stored) ? stored : 'zh-CN';
+  } catch {
+    return 'zh-CN';
+  }
+}
+
+let activeLanguage: Language = storedLanguageOrDefault();
+
+/**
+ * Page-level translation helper for render callbacks and module helpers that cannot use hooks.
+ * The provider assigns the active language synchronously before rendering its descendants.
+ */
+export const translate: Translate = (key, params) => translateFor(activeLanguage, key, params);
 
 export interface I18nValue {
   readonly language: Language;
@@ -77,8 +96,7 @@ export interface I18nProviderProps {
 export function I18nProvider({ children, initialLanguage }: I18nProviderProps) {
   const [language, setLanguageState] = useState<Language>(() => {
     if (initialLanguage !== undefined) return initialLanguage;
-    const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    return stored !== null && isLanguage(stored) ? stored : 'zh-CN';
+    return storedLanguageOrDefault();
   });
 
   useEffect(() => {
@@ -89,6 +107,8 @@ export function I18nProvider({ children, initialLanguage }: I18nProviderProps) {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, value);
     setLanguageState(value);
   };
+
+  activeLanguage = language;
 
   return (
     <I18nContext.Provider value={{ language, setLanguage, t: makeTranslate(language) }}>

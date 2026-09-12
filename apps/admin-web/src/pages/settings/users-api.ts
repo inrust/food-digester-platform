@@ -7,7 +7,7 @@
  * - disableUser/triggerUserPasswordReset：无请求体；重置响应仅含 userId/status（不含密码材料）。
  */
 import type { ApiClient } from '../../api/http-client.js';
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 import type { PasswordResetResult, UserStatus, UserView } from './types.js';
 
 export interface Page<T> {
@@ -33,11 +33,7 @@ function buildQuery(filter: UserListFilter, cursor?: string): string {
   return query === '' ? '' : `?${query}`;
 }
 
-export async function listUsers(
-  api: ApiClient,
-  filter: UserListFilter,
-  cursor?: string,
-): Promise<Page<UserView>> {
+export async function listUsers(api: ApiClient, filter: UserListFilter, cursor?: string): Promise<Page<UserView>> {
   const response = await api.request<{ data: UserView[]; meta: { nextCursor: string | null } }>(
     `/admin/users${buildQuery(filter, cursor)}`,
   );
@@ -64,38 +60,30 @@ export async function inviteUser(api: ApiClient, input: InviteUserInput): Promis
   return response.data;
 }
 
-export async function assignUserRoles(
-  api: ApiClient,
-  userId: string,
-  roles: readonly Role[],
-): Promise<UserView> {
-  const response = await api.request<{ data: UserView }>(
-    `/admin/users/${encodeURIComponent(userId)}/roles`,
-    { method: 'PUT', body: { roles: [...roles] } },
-  );
+export async function assignUserRoles(api: ApiClient, userId: string, roles: readonly Role[]): Promise<UserView> {
+  const response = await api.request<{ data: UserView }>(`/admin/users/${encodeURIComponent(userId)}/roles`, {
+    method: 'PUT',
+    body: { roles: [...roles] },
+  });
   return response.data;
 }
 
 export async function setUserScope(api: ApiClient, userId: string, customerId: string): Promise<UserView> {
-  const response = await api.request<{ data: UserView }>(
-    `/admin/users/${encodeURIComponent(userId)}/scope`,
-    { method: 'PUT', body: { customerId } },
-  );
+  const response = await api.request<{ data: UserView }>(`/admin/users/${encodeURIComponent(userId)}/scope`, {
+    method: 'PUT',
+    body: { customerId },
+  });
   return response.data;
 }
 
 export async function disableUser(api: ApiClient, userId: string): Promise<UserView> {
-  const response = await api.request<{ data: UserView }>(
-    `/admin/users/${encodeURIComponent(userId)}/disable`,
-    { method: 'POST' },
-  );
+  const response = await api.request<{ data: UserView }>(`/admin/users/${encodeURIComponent(userId)}/disable`, {
+    method: 'POST',
+  });
   return response.data;
 }
 
-export async function triggerUserPasswordReset(
-  api: ApiClient,
-  userId: string,
-): Promise<PasswordResetResult> {
+export async function triggerUserPasswordReset(api: ApiClient, userId: string): Promise<PasswordResetResult> {
   const response = await api.request<{ data: PasswordResetResult }>(
     `/admin/users/${encodeURIComponent(userId)}/password-reset`,
     { method: 'POST' },

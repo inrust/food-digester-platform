@@ -1,3 +1,4 @@
+import { translate } from '../i18n/i18n.js';
 /**
  * FE-01 路由注册表：正式 routeId 与角色可见性。
  *
@@ -7,12 +8,9 @@
  * 注意：前端路由守卫只是体验层，授权唯一可信来源是后端（AUTH-01）。
  */
 import type { Role } from '@fdp/auth';
-
 export const LOGIN_PATH = '/login';
 export const FORBIDDEN_PATH = '/403';
-
 export type MenuGroupId = 'overview' | 'device' | 'esg' | 'contract' | 'platform';
-
 /** 页面状态键（见 CT-06 pages；FE-05 新增 customers/sites 为矩阵外扩展路由）。 */
 export type PageState =
   | 'login'
@@ -39,7 +37,6 @@ export type PageState =
   | 'configurations'
   | 'device-users'
   | 'alarms';
-
 export interface AppRoute {
   readonly path: string;
   readonly pageState: PageState;
@@ -52,7 +49,6 @@ export interface AppRoute {
   readonly parentPath?: string;
   readonly public?: boolean;
 }
-
 const ALL_ROLES: readonly Role[] = [
   'PlatformSuperAdmin',
   'PlatformOperator',
@@ -60,38 +56,62 @@ const ALL_ROLES: readonly Role[] = [
   'CustomerAdmin',
   'CustomerViewer',
 ];
-
 export const APP_ROUTES: readonly AppRoute[] = [
   // ---------- 公共页 ----------
-  { path: LOGIN_PATH, pageState: 'login', label: '登录', roles: ALL_ROLES, menuGroup: null, public: true },
-  { path: FORBIDDEN_PATH, pageState: 'forbidden', label: '无权访问', roles: ALL_ROLES, menuGroup: null, public: true },
-
+  {
+    path: LOGIN_PATH,
+    pageState: 'login',
+    get label() {
+      return translate('ui.21f1e88275aa');
+    },
+    roles: ALL_ROLES,
+    menuGroup: null,
+    public: true,
+  },
+  {
+    path: FORBIDDEN_PATH,
+    pageState: 'forbidden',
+    get label() {
+      return translate('ui.cb8d4d206806');
+    },
+    roles: ALL_ROLES,
+    menuGroup: null,
+    public: true,
+  },
   // ---------- 菜单页（roles 与 CT-06 menus 一致） ----------
   {
     path: '/dashboard',
     pageState: 'dashboard',
-    label: '概览',
+    get label() {
+      return translate('ui.5060421d1574');
+    },
     roles: ALL_ROLES,
     menuGroup: 'overview',
   },
   {
     path: '/devices/view',
     pageState: 'device-view',
-    label: '查看设备',
+    get label() {
+      return translate('ui.d791a9ce40d7');
+    },
     roles: ALL_ROLES,
     menuGroup: 'device',
   },
   {
     path: '/devices/operate',
     pageState: 'device-operate',
-    label: '操作设备',
+    get label() {
+      return translate('ui.cc2af6e2cf26');
+    },
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'CustomerAdmin'],
     menuGroup: 'device',
   },
   {
     path: '/devices/groups',
     pageState: 'device-group',
-    label: '设备群管理',
+    get label() {
+      return translate('ui.6668806c8a06');
+    },
     roles: ALL_ROLES,
     menuGroup: 'device',
   },
@@ -99,14 +119,18 @@ export const APP_ROUTES: readonly AppRoute[] = [
   {
     path: '/configurations',
     pageState: 'configurations',
-    label: '配置管理',
+    get label() {
+      return translate('ui.9ecf700c43d4');
+    },
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: 'device',
   },
   {
     path: '/consumables',
     pageState: 'device-consumable',
-    label: '耗材查看',
+    get label() {
+      return translate('page.737c0b5f942e');
+    },
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'CustomerAdmin', 'CustomerViewer'],
     menuGroup: 'device',
   },
@@ -114,7 +138,9 @@ export const APP_ROUTES: readonly AppRoute[] = [
   {
     path: '/alarms',
     pageState: 'alarms',
-    label: '告警与事件',
+    get label() {
+      return translate('ui.99470ca43b25');
+    },
     roles: ALL_ROLES,
     menuGroup: 'device',
   },
@@ -122,35 +148,45 @@ export const APP_ROUTES: readonly AppRoute[] = [
   {
     path: '/media',
     pageState: 'media',
-    label: '媒体管理',
+    get label() {
+      return translate('page.fd695a67e418');
+    },
     roles: ALL_ROLES,
     menuGroup: 'device',
   },
   {
     path: '/esg/overview',
     pageState: 'esg-overview',
-    label: 'ESG概览',
+    get label() {
+      return translate('ui.2ebe79bc6d95');
+    },
     roles: ALL_ROLES,
     menuGroup: 'esg',
   },
   {
     path: '/esg/devices',
     pageState: 'esg-device',
-    label: '设备ESG信息',
+    get label() {
+      return translate('ui.765884cf332f');
+    },
     roles: ALL_ROLES,
     menuGroup: 'esg',
   },
   {
     path: '/contracts',
     pageState: 'contract-modify',
-    label: '合约查询及修改',
+    get label() {
+      return translate('page.b38179cfadeb');
+    },
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: 'contract',
   },
   {
     path: '/settings',
     pageState: 'settings',
-    label: '用户管理',
+    get label() {
+      return translate('page.baf84751a2a2');
+    },
     roles: ['PlatformSuperAdmin', 'CustomerAdmin'],
     menuGroup: 'platform',
   },
@@ -159,7 +195,9 @@ export const APP_ROUTES: readonly AppRoute[] = [
   {
     path: '/customers',
     pageState: 'customers',
-    label: '客户管理',
+    get label() {
+      return translate('ui.88c9f74936f0');
+    },
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: 'platform',
   },
@@ -167,7 +205,9 @@ export const APP_ROUTES: readonly AppRoute[] = [
   {
     path: '/sites',
     pageState: 'sites',
-    label: '站点管理',
+    get label() {
+      return translate('ui.f40b79d76fd3');
+    },
     roles: ALL_ROLES,
     menuGroup: 'platform',
   },
@@ -175,7 +215,9 @@ export const APP_ROUTES: readonly AppRoute[] = [
   {
     path: '/licenses',
     pageState: 'licenses',
-    label: '授权管理',
+    get label() {
+      return translate('ui.39f08a19b655');
+    },
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: 'contract',
   },
@@ -183,7 +225,9 @@ export const APP_ROUTES: readonly AppRoute[] = [
   {
     path: '/device-users',
     pageState: 'device-users',
-    label: '设备用户',
+    get label() {
+      return translate('page.024ebe3ff3d1');
+    },
     roles: ['PlatformSuperAdmin', 'Auditor', 'CustomerAdmin'],
     menuGroup: 'platform',
   },
@@ -191,17 +235,20 @@ export const APP_ROUTES: readonly AppRoute[] = [
   {
     path: '/audit-logs',
     pageState: 'audit-logs',
-    label: '审计日志',
+    get label() {
+      return translate('page.7666cd43234e');
+    },
     roles: ['PlatformSuperAdmin', 'Auditor'],
     menuGroup: 'platform',
   },
-
   // ---------- 子页面（非菜单入口；角色继承父菜单，见 CT-06 pages） ----------
   // FE-07/08/09/13：经“设备群管理”操作列进入
   {
     path: '/devices/manage',
     pageState: 'device-manage',
-    label: '设备管理详情',
+    get label() {
+      return translate('ui.3507d67f5e20');
+    },
     roles: ALL_ROLES,
     menuGroup: null,
     parentPath: '/devices/groups',
@@ -210,7 +257,9 @@ export const APP_ROUTES: readonly AppRoute[] = [
   {
     path: '/contracts/new',
     pageState: 'contract-new',
-    label: '新建合约',
+    get label() {
+      return translate('page.44c75e312909');
+    },
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: null,
     parentPath: '/contracts',
@@ -218,7 +267,9 @@ export const APP_ROUTES: readonly AppRoute[] = [
   {
     path: '/contracts/detail',
     pageState: 'contract-detail',
-    label: '合约详情',
+    get label() {
+      return translate('ui.c84686fe7947');
+    },
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: null,
     parentPath: '/contracts',
@@ -227,7 +278,9 @@ export const APP_ROUTES: readonly AppRoute[] = [
   {
     path: '/ota/campaigns',
     pageState: 'ota-campaigns',
-    label: 'OTA 升级',
+    get label() {
+      return translate('page.bdb9a2faeb72');
+    },
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: null,
     parentPath: '/dashboard',
@@ -236,13 +289,14 @@ export const APP_ROUTES: readonly AppRoute[] = [
   {
     path: '/ota/packages',
     pageState: 'ota-packages',
-    label: '固件包管理',
+    get label() {
+      return translate('page.520fc0679572');
+    },
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: null,
     parentPath: '/ota/campaigns',
   },
 ];
-
 export function findRoute(path: string): AppRoute | null {
   return APP_ROUTES.find((route) => route.path === path) ?? null;
 }

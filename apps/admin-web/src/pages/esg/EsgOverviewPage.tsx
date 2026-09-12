@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-11 ESG 概览页（/esg/overview）：日/周/月切换、估算 CO2e（含计算版本与完整率）、
  * 投料/出料/减量/能耗、CSV 导出。
@@ -14,12 +15,12 @@ import type { FilterOption } from '../../components/ScopeFilter.js';
 import { ExportPanel } from '../../components/ExportPanel.js';
 import type { EsgQueryFilter } from './esg-api.js';
 import {
-  ESG_DISCLAIMER,
   ESG_PERIODS,
   ESG_PERIOD_LABELS,
   aggregateDailySummaries,
   calculationVersionText,
   canExport,
+  esgDisclaimer,
   formatKg,
   formatKwh,
   formatPct,
@@ -27,23 +28,19 @@ import {
 } from './esg-state.js';
 import type { EsgPeriod } from './esg-state.js';
 import type { EsgCalculationVersionView, EsgDailySummaryView, EsgExportJobView } from './types.js';
-
 export interface EsgOverviewFilter {
   readonly customerId: string | null;
   /** 用户时区日历日（YYYY-MM-DD）；空 = 不限。 */
   readonly fromDate: string;
   readonly toDate: string;
 }
-
 export const EMPTY_ESG_OVERVIEW_FILTER: EsgOverviewFilter = { customerId: null, fromDate: '', toDate: '' };
-
 /** 已应用查询（UTC ISO；由页面按用户时区换算）。 */
 export interface EsgAppliedQuery {
   readonly customerId: string | null;
   readonly from: string | null;
   readonly to: string | null;
 }
-
 export interface EsgOverviewPageProps {
   readonly role: Role;
   /** 用户时区（会话 profile；用于日历日 → UTC 换算）。 */
@@ -60,11 +57,14 @@ export interface EsgOverviewPageProps {
   readonly versions: readonly EsgCalculationVersionView[] | null;
   readonly exportJob: EsgExportJobView | null;
   /** 导出筛选快照与页面一致：dataset=DAILY_SUMMARY + 已应用筛选。 */
-  readonly onExport: (snapshot: EsgQueryFilter & { dataset: 'DAILY_SUMMARY' }) => Promise<unknown>;
+  readonly onExport: (
+    snapshot: EsgQueryFilter & {
+      dataset: 'DAILY_SUMMARY';
+    },
+  ) => Promise<unknown>;
   readonly onCheckExport: (exportId: string) => void;
   readonly onRefresh: () => void;
 }
-
 export function EsgOverviewPage({
   role,
   timeZone,
@@ -92,9 +92,7 @@ export function EsgOverviewPage({
   const [exportError, setExportError] = useState<unknown>(null);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-
   const aggregated = rows === null ? null : aggregateDailySummaries(rows, period);
-
   const applyFilter = () => {
     setDateError(null);
     if (draft.fromDate === '' && draft.toDate === '') {
@@ -102,17 +100,16 @@ export function EsgOverviewPage({
       return;
     }
     if (draft.fromDate === '' || draft.toDate === '') {
-      setDateError('起止日期须同时填写');
+      setDateError(translate('page.89b179c8814c'));
       return;
     }
     const range = zonedDateRangeToUtc(draft.fromDate, draft.toDate, timeZone);
     if (range === null) {
-      setDateError('日期格式非法或起始晚于截止');
+      setDateError(translate('page.97c433594a7b'));
       return;
     }
     onApply({ customerId: draft.customerId, from: range.from, to: range.to });
   };
-
   const handleExport = async () => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -132,15 +129,20 @@ export function EsgOverviewPage({
       setBusy(false);
     }
   };
-
   return (
     <div className="esg-overview-page" data-testid="esg-overview-page">
       <p className="esg-disclaimer" data-testid="esg-disclaimer">
-        {ESG_DISCLAIMER}：碳减排为带计算版本的估算 CO2e，不构成任何认证结论。
+        {esgDisclaimer()}
+        {translate('page.504a12fd9000')}
       </p>
 
       <div className="filter-bar" data-testid="esg-overview-filter">
-        <div className="period-toggle" role="group" aria-label="日/周/月切换" data-testid="esg-period-toggle">
+        <div
+          className="period-toggle"
+          role="group"
+          aria-label={translate('page.bc3d16afc041')}
+          data-testid="esg-period-toggle"
+        >
           {ESG_PERIODS.map((p) => (
             <button
               key={p}
@@ -156,7 +158,7 @@ export function EsgOverviewPage({
         </div>
         {!isCustomerRole ? (
           <>
-            <label htmlFor="esg-customer">所属客户</label>
+            <label htmlFor="esg-customer">{translate('page.467c1137f479')}</label>
             <select
               id="esg-customer"
               data-testid="esg-customer-filter"
@@ -165,7 +167,7 @@ export function EsgOverviewPage({
                 setDraft({ ...draft, customerId: event.target.value === '' ? null : event.target.value })
               }
             >
-              <option value="">全部</option>
+              <option value="">{translate('page.778fc8f99453')}</option>
               {customerOptions.map((c) => (
                 <option key={c.value} value={c.value}>
                   {c.label}
@@ -174,7 +176,10 @@ export function EsgOverviewPage({
             </select>
           </>
         ) : null}
-        <label htmlFor="esg-from">起始日期（{timeZone}）</label>
+        <label htmlFor="esg-from">
+          {translate('page.49f932b2f932')}
+          {timeZone}）
+        </label>
         <input
           id="esg-from"
           type="date"
@@ -182,7 +187,7 @@ export function EsgOverviewPage({
           value={draft.fromDate}
           onChange={(event) => setDraft({ ...draft, fromDate: event.target.value })}
         />
-        <label htmlFor="esg-to">截止日期</label>
+        <label htmlFor="esg-to">{translate('page.9b3177f0b700')}</label>
         <input
           id="esg-to"
           type="date"
@@ -191,7 +196,7 @@ export function EsgOverviewPage({
           onChange={(event) => setDraft({ ...draft, toDate: event.target.value })}
         />
         <button type="button" className="primary-button" data-testid="esg-apply" onClick={applyFilter}>
-          应用
+          {translate('page.4562024ddec7')}
         </button>
         {dateError !== null ? (
           <p className="field-hint" data-testid="esg-date-error">
@@ -202,7 +207,10 @@ export function EsgOverviewPage({
 
       {appliedQuery.from !== null && appliedQuery.to !== null ? (
         <p className="query-hint" data-testid="esg-query-hint">
-          按 {timeZone} 日历日转 UTC 查询：{appliedQuery.from} ~ {appliedQuery.to}
+          {translate('page.fb2ea9e2dfbf') + ' '}
+          {timeZone}
+          {' ' + translate('page.60d39b4be3b1')}
+          {appliedQuery.from} ~ {appliedQuery.to}
         </p>
       ) : null}
 
@@ -219,33 +227,37 @@ export function EsgOverviewPage({
       {listError !== undefined ? <ErrorNotice error={listError} onRefresh={onRefresh} /> : null}
       {aggregated === null || loading ? (
         <div role="status" data-testid="esg-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : aggregated.length === 0 ? (
         <p className="empty-state" data-testid="esg-empty">
-          暂无 ESG 汇总数据
+          {translate('page.b240ae6fc532')}
         </p>
       ) : (
-        <table aria-label="ESG 汇总" data-testid="esg-summary-table">
+        <table aria-label={translate('page.df73354a1658')} data-testid="esg-summary-table">
           <thead>
             <tr>
               <th scope="col" data-testid="esg-col-date">
-                {ESG_PERIOD_LABELS[period]}期间
+                {ESG_PERIOD_LABELS[period]}
+                {translate('page.24cd18eefa93')}
               </th>
               <th scope="col" data-testid="esg-col-throughput">
-                投料量 (kg)
+                {translate('page.019d8bd79329')}
               </th>
-              <th scope="col">出料量 (kg)</th>
-              <th scope="col">减量 (kg)</th>
+              <th scope="col">{translate('page.baa2a8962417')}</th>
+              <th scope="col">{translate('page.c466d61643c6')}</th>
               <th scope="col" data-testid="esg-col-energy">
-                能耗 (kWh)
+                {translate('page.d309c902a7bb')}
               </th>
               <th scope="col" data-testid="esg-col-carbon">
-                估算 CO2e (kg)
+                {translate('page.efd09f0f8785')}
               </th>
-              <th scope="col">完整率{period === 'day' ? '' : '（平均）'}</th>
-              <th scope="col">缺失记录</th>
-              <th scope="col">计算版本</th>
+              <th scope="col">
+                {translate('page.8152ee3ec309')}
+                {period === 'day' ? '' : translate('page.c6546828511f')}
+              </th>
+              <th scope="col">{translate('page.b36abcaf4f48')}</th>
+              <th scope="col">{translate('page.9971a97635de')}</th>
             </tr>
           </thead>
           <tbody>

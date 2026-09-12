@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-05 Site 管理页（/sites）：列表（customerId/region/subregion/status 筛选）+ 详情（含设备数）+ 创建/编辑/停用。
  *
@@ -15,14 +16,12 @@ import { validateSiteInput } from './sites-state.js';
 import type { SiteFieldErrors } from './sites-state.js';
 import { SITE_STATUS_LABELS } from './types.js';
 import type { SiteInput, SiteStatus, SiteView } from './types.js';
-
 export interface SiteFilters {
   readonly customerId: string | null;
   readonly region: string | null;
   readonly subregion: string | null;
   readonly status: SiteStatus | null;
 }
-
 export interface SitesPageProps {
   readonly list: {
     readonly rows: readonly SiteView[] | null;
@@ -39,15 +38,27 @@ export interface SitesPageProps {
   readonly onLoadPrevious?: () => void;
   readonly onRefresh: () => void;
   /** 客户选项（创建 Site 时选择所属客户；选项由 BE-CUS-01 注入）。 */
-  readonly customerOptions: readonly { value: string; label: string }[];
+  readonly customerOptions: readonly {
+    value: string;
+    label: string;
+  }[];
   readonly canWrite: boolean;
   readonly onCreate: (customerId: string, input: SiteInput) => Promise<SiteView>;
   readonly onUpdate: (site: SiteView, input: SiteInput) => Promise<SiteView>;
   readonly onDeactivate: (site: SiteView, reason: string) => Promise<SiteView>;
 }
-
-type Dialog = { kind: 'create' } | { kind: 'edit'; site: SiteView } | { kind: 'deactivate'; site: SiteView };
-
+type Dialog =
+  | {
+      kind: 'create';
+    }
+  | {
+      kind: 'edit';
+      site: SiteView;
+    }
+  | {
+      kind: 'deactivate';
+      site: SiteView;
+    };
 const EMPTY_INPUT: SiteInput = {
   name: '',
   region: null,
@@ -58,12 +69,10 @@ const EMPTY_INPUT: SiteInput = {
   contactPhone: null,
   contactEmail: null,
 };
-
 function textOrNull(value: string): string | null {
   const trimmed = value.trim();
   return trimmed === '' ? null : trimmed;
 }
-
 function SiteFormDialog({
   dialog,
   customerOptions,
@@ -72,7 +81,12 @@ function SiteFormDialog({
   onSubmit,
   onCancel,
 }: {
-  readonly dialog: Extract<Dialog, { kind: 'create' | 'edit' }>;
+  readonly dialog: Extract<
+    Dialog,
+    {
+      kind: 'create' | 'edit';
+    }
+  >;
   readonly customerOptions: SitesPageProps['customerOptions'];
   readonly busy: boolean;
   readonly error: unknown;
@@ -96,9 +110,7 @@ function SiteFormDialog({
       : EMPTY_INPUT,
   );
   const [fieldErrors, setFieldErrors] = useState<SiteFieldErrors>({});
-
   const set = (patch: Partial<SiteInput>) => setForm((prev) => ({ ...prev, ...patch }));
-
   const submit = () => {
     const errors = validateSiteInput(form);
     setFieldErrors(errors);
@@ -106,7 +118,6 @@ function SiteFormDialog({
     if (editing === null && customerId === '') return;
     onSubmit(editing !== null ? editing.customerId : customerId, { ...form, name: form.name.trim() });
   };
-
   const field = (
     id: string,
     label: string,
@@ -124,14 +135,18 @@ function SiteFormDialog({
       ) : null}
     </div>
   );
-
   return (
-    <Modal open title={editing === null ? '新建站点' : '编辑站点'} onClose={onCancel} testid="site-form">
+    <Modal
+      open
+      title={editing === null ? translate('page.97cf62968aef') : translate('page.8ccf593f7e72')}
+      onClose={onCancel}
+      testid="site-form"
+    >
       {editing === null ? (
         <div className="dialog-field">
-          <label htmlFor="site-customer">所属客户</label>
+          <label htmlFor="site-customer">{translate('page.467c1137f479')}</label>
           <select id="site-customer" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-            <option value="">请选择客户</option>
+            <option value="">{translate('page.6bdb05d6eeeb')}</option>
             {customerOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -141,19 +156,29 @@ function SiteFormDialog({
         </div>
       ) : (
         <p className="immutable-field" data-testid="site-customer-readonly">
-          所属客户：{editing.customerId}（创建后不可变）
+          {translate('page.fc18f5657efc')}
+          {editing.customerId}
+          {translate('page.73108099a058')}
         </p>
       )}
-      {field('site-name', '站点名称', form.name, (v) => set({ name: v }), 'name')}
-      {field('site-region', '设备区域', form.region ?? '', (v) => set({ region: textOrNull(v) }))}
-      {field('site-subregion', '设备子区域', form.subregion ?? '', (v) => set({ subregion: textOrNull(v) }))}
-      {field('site-address', '地址', form.address ?? '', (v) => set({ address: textOrNull(v) }))}
-      {field('site-timezone', '时区（IANA）', form.timezone, (v) => set({ timezone: v }), 'timezone')}
-      {field('site-contact-name', '联系人', form.contactName ?? '', (v) => set({ contactName: textOrNull(v) }))}
-      {field('site-contact-phone', '联系电话', form.contactPhone ?? '', (v) => set({ contactPhone: textOrNull(v) }))}
+      {field('site-name', translate('page.e72ec84bc978'), form.name, (v) => set({ name: v }), 'name')}
+      {field('site-region', translate('page.406e0f8c6852'), form.region ?? '', (v) => set({ region: textOrNull(v) }))}
+      {field('site-subregion', translate('page.ff0beacd69e2'), form.subregion ?? '', (v) =>
+        set({ subregion: textOrNull(v) }),
+      )}
+      {field('site-address', translate('page.67d2d7970f4a'), form.address ?? '', (v) =>
+        set({ address: textOrNull(v) }),
+      )}
+      {field('site-timezone', translate('page.21a8c183a3fa'), form.timezone, (v) => set({ timezone: v }), 'timezone')}
+      {field('site-contact-name', translate('page.2425bd4bc11b'), form.contactName ?? '', (v) =>
+        set({ contactName: textOrNull(v) }),
+      )}
+      {field('site-contact-phone', translate('page.e02f6e5760fd'), form.contactPhone ?? '', (v) =>
+        set({ contactPhone: textOrNull(v) }),
+      )}
       {field(
         'site-contact-email',
-        '联系邮箱',
+        translate('page.f0b45bf78e76'),
         form.contactEmail ?? '',
         (v) => set({ contactEmail: textOrNull(v) }),
         'contactEmail',
@@ -161,16 +186,15 @@ function SiteFormDialog({
       {error !== null && error !== undefined ? <ErrorNotice error={error} /> : null}
       <div className="dialog-actions">
         <button type="button" onClick={onCancel}>
-          取消
+          {translate('page.4d0b4688c787')}
         </button>
         <button type="button" className="primary-button" disabled={busy} onClick={submit}>
-          保存
+          {translate('page.fadf24dbc5a9')}
         </button>
       </div>
     </Modal>
   );
 }
-
 export function SitesPage({
   list,
   filters,
@@ -189,7 +213,6 @@ export function SitesPage({
   const [actionError, setActionError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
-
   const runAction = async (fn: () => Promise<SiteView>) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -209,37 +232,36 @@ export function SitesPage({
       setBusy(false);
     }
   };
-
   return (
     <div className="sites-page" data-testid="sites-page">
       <div className="page-toolbar">
         <div className="site-filters" data-testid="site-filters">
-          <label htmlFor="filter-customer">所属客户</label>
+          <label htmlFor="filter-customer">{translate('page.467c1137f479')}</label>
           <select
             id="filter-customer"
             value={filters.customerId ?? ''}
             onChange={(e) => onFilterChange({ ...filters, customerId: e.target.value === '' ? null : e.target.value })}
           >
-            <option value="">全部</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
             {customerOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
           </select>
-          <label htmlFor="filter-region">设备区域</label>
+          <label htmlFor="filter-region">{translate('page.406e0f8c6852')}</label>
           <input
             id="filter-region"
             value={filters.region ?? ''}
             onChange={(e) => onFilterChange({ ...filters, region: e.target.value === '' ? null : e.target.value })}
           />
-          <label htmlFor="filter-subregion">设备子区域</label>
+          <label htmlFor="filter-subregion">{translate('page.ff0beacd69e2')}</label>
           <input
             id="filter-subregion"
             value={filters.subregion ?? ''}
             onChange={(e) => onFilterChange({ ...filters, subregion: e.target.value === '' ? null : e.target.value })}
           />
-          <label htmlFor="filter-status">状态</label>
+          <label htmlFor="filter-status">{translate('page.62e951a692ff')}</label>
           <select
             id="filter-status"
             value={filters.status ?? ''}
@@ -247,9 +269,9 @@ export function SitesPage({
               onFilterChange({ ...filters, status: e.target.value === '' ? null : (e.target.value as SiteStatus) })
             }
           >
-            <option value="">全部</option>
-            <option value="ACTIVE">正常</option>
-            <option value="SUSPENDED">已停用</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
+            <option value="ACTIVE">{translate('page.f78d037abccd')}</option>
+            <option value="SUSPENDED">{translate('page.6c7dcbb73a59')}</option>
           </select>
         </div>
         {canWrite ? (
@@ -259,28 +281,28 @@ export function SitesPage({
             data-testid="create-site"
             onClick={() => setDialog({ kind: 'create' })}
           >
-            新建站点
+            {translate('page.97cf62968aef')}
           </button>
         ) : null}
       </div>
 
       <CursorTable
-        ariaLabel="站点列表"
+        ariaLabel={translate('page.0bfb6aec5482')}
         columns={[
-          { key: 'name', header: '站点名称', render: (s) => s.name },
-          { key: 'customerId', header: '所属客户', render: (s) => s.customerId },
-          { key: 'region', header: '设备区域', render: (s) => s.region ?? '—' },
-          { key: 'subregion', header: '设备子区域', render: (s) => s.subregion ?? '—' },
-          { key: 'timezone', header: '时区', render: (s) => s.timezone },
-          { key: 'contactName', header: '联系人', render: (s) => s.contactName ?? '—' },
-          { key: 'deviceCount', header: '设备数', render: (s) => String(s.deviceCount) },
-          { key: 'status', header: '状态', render: (s) => SITE_STATUS_LABELS[s.status] },
+          { key: 'name', header: translate('page.e72ec84bc978'), render: (s) => s.name },
+          { key: 'customerId', header: translate('page.467c1137f479'), render: (s) => s.customerId },
+          { key: 'region', header: translate('page.406e0f8c6852'), render: (s) => s.region ?? '—' },
+          { key: 'subregion', header: translate('page.ff0beacd69e2'), render: (s) => s.subregion ?? '—' },
+          { key: 'timezone', header: translate('page.fb2a23dc1601'), render: (s) => s.timezone },
+          { key: 'contactName', header: translate('page.2425bd4bc11b'), render: (s) => s.contactName ?? '—' },
+          { key: 'deviceCount', header: translate('page.7beb4b6b2974'), render: (s) => String(s.deviceCount) },
+          { key: 'status', header: translate('page.62e951a692ff'), render: (s) => SITE_STATUS_LABELS[s.status] },
           {
             key: 'actions',
-            header: '操作',
+            header: translate('page.f3ea6d345e2a'),
             render: (s) => (
               <button type="button" data-testid={`detail-${s.id}`} onClick={() => setSelected(s)}>
-                详细信息
+                {translate('page.b6e664d7362f')}
               </button>
             ),
           },
@@ -296,36 +318,36 @@ export function SitesPage({
         onNextPage={onLoadMore}
         {...(onLoadPrevious !== undefined ? { onPrevPage: onLoadPrevious } : {})}
         onRefresh={onRefresh}
-        emptyText="暂无站点"
+        emptyText={translate('page.5e494547b40c')}
       />
 
       {selected !== null ? (
-        <aside className="detail-panel" data-testid="site-detail" aria-label="站点详情">
-          <h4>站点详情</h4>
+        <aside className="detail-panel" data-testid="site-detail" aria-label={translate('page.78e70b8d9e4e')}>
+          <h4>{translate('page.78e70b8d9e4e')}</h4>
           <dl>
-            <dt>站点ID</dt>
+            <dt>{translate('page.194f9bfdf96d')}</dt>
             <dd>{selected.id}</dd>
-            <dt>所属客户</dt>
+            <dt>{translate('page.467c1137f479')}</dt>
             <dd>{selected.customerId}</dd>
-            <dt>站点名称</dt>
+            <dt>{translate('page.e72ec84bc978')}</dt>
             <dd>{selected.name}</dd>
-            <dt>设备区域 / 子区域</dt>
+            <dt>{translate('page.a7a1979e6c82')}</dt>
             <dd>
               {selected.region ?? '—'} / {selected.subregion ?? '—'}
             </dd>
-            <dt>地址</dt>
+            <dt>{translate('page.67d2d7970f4a')}</dt>
             <dd>{selected.address ?? '—'}</dd>
-            <dt>时区</dt>
+            <dt>{translate('page.fb2a23dc1601')}</dt>
             <dd>{selected.timezone}</dd>
-            <dt>联系人</dt>
+            <dt>{translate('page.2425bd4bc11b')}</dt>
             <dd>
               {selected.contactName ?? '—'} / {selected.contactPhone ?? '—'} / {selected.contactEmail ?? '—'}
             </dd>
-            <dt>设备数</dt>
+            <dt>{translate('page.7beb4b6b2974')}</dt>
             <dd data-testid="site-device-count">{selected.deviceCount}</dd>
-            <dt>状态</dt>
+            <dt>{translate('page.62e951a692ff')}</dt>
             <dd data-testid="site-status">{SITE_STATUS_LABELS[selected.status]}</dd>
-            <dt>更新时间</dt>
+            <dt>{translate('page.093dea88c930')}</dt>
             <dd>
               <TimeText iso={selected.updatedAt} />
             </dd>
@@ -333,7 +355,7 @@ export function SitesPage({
           {actionError !== null && dialog === null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
           <div className="detail-actions">
             <button type="button" onClick={() => setSelected(null)}>
-              关闭
+              {translate('page.6c14bd7f6f9e')}
             </button>
             {canWrite ? (
               <>
@@ -346,7 +368,7 @@ export function SitesPage({
                     setDialog({ kind: 'edit', site: selected });
                   }}
                 >
-                  编辑
+                  {translate('page.a7f814c0a40d')}
                 </button>
                 {selected.status === 'ACTIVE' ? (
                   <button
@@ -359,7 +381,7 @@ export function SitesPage({
                       setDialog({ kind: 'deactivate', site: selected });
                     }}
                   >
-                    停用
+                    {translate('page.d989e55188c9')}
                   </button>
                 ) : null}
               </>
@@ -384,16 +406,21 @@ export function SitesPage({
 
       <ConfirmDialog
         open={dialog?.kind === 'deactivate'}
-        title="停用站点"
+        title={translate('page.a10b67b937d5')}
         {...(dialog?.kind === 'deactivate'
           ? {
-              description: `停用后站点「${dialog.site.name}」状态为已停用；该站点当前关联设备 ${dialog.site.deviceCount} 台（停用不影响设备归属）；原因将写入审计记录。`,
+              description:
+                translate('page.e99b02d3ce06') +
+                dialog.site.name +
+                (translate('page.6d5b3a80ea3a') + ' ') +
+                dialog.site.deviceCount +
+                (' ' + translate('page.611bc78bd302')),
             }
           : {})}
         danger
         requireReason
-        reasonLabel="停用原因"
-        confirmText="确认停用"
+        reasonLabel={translate('page.d599ea3c90af')}
+        confirmText={translate('page.f3abd8941903')}
         onConfirm={(reason) => {
           if (dialog?.kind === 'deactivate') void runAction(() => onDeactivate(dialog.site, reason));
         }}

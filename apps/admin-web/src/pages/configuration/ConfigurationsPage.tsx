@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-09 Configuration 管理页（/configurations）：DEC-018@1.0.0 V1 四字段配置。
  *
@@ -31,26 +32,44 @@ import {
   validateConfigPayload,
 } from './configuration-state.js';
 import type { ConfigFieldKey } from './configuration-state.js';
-
 export type SyncStatusState =
-  | { readonly kind: 'none' }
-  | { readonly kind: 'loading'; readonly version: number }
-  | { readonly kind: 'error'; readonly version: number; readonly error: unknown }
-  | { readonly kind: 'ready'; readonly data: ConfigurationSyncStatusView };
-
+  | {
+      readonly kind: 'none';
+    }
+  | {
+      readonly kind: 'loading';
+      readonly version: number;
+    }
+  | {
+      readonly kind: 'error';
+      readonly version: number;
+      readonly error: unknown;
+    }
+  | {
+      readonly kind: 'ready';
+      readonly data: ConfigurationSyncStatusView;
+    };
 export type ConfigurationDetailState =
-  | { readonly kind: 'none' }
-  | { readonly kind: 'loading' }
-  | { readonly kind: 'error'; readonly error: unknown }
-  | { readonly kind: 'ready'; readonly detail: ConfigurationDetailView; readonly sync: SyncStatusState };
-
+  | {
+      readonly kind: 'none';
+    }
+  | {
+      readonly kind: 'loading';
+    }
+  | {
+      readonly kind: 'error';
+      readonly error: unknown;
+    }
+  | {
+      readonly kind: 'ready';
+      readonly detail: ConfigurationDetailView;
+      readonly sync: SyncStatusState;
+    };
 export interface ConfigurationFilter {
   readonly targetModel: string | null;
   readonly targetDeviceId: string | null;
 }
-
 export const EMPTY_CONFIGURATION_FILTER: ConfigurationFilter = { targetModel: null, targetDeviceId: null };
-
 export interface ConfigurationsPageProps {
   readonly role: Role;
   readonly list: {
@@ -73,15 +92,21 @@ export interface ConfigurationsPageProps {
   }) => Promise<ConfigurationSummaryView>;
   readonly onCreateVersion: (
     configurationId: string,
-    input: { payload: ConfigurationPayloadView; changeNote?: string; reason?: string },
+    input: {
+      payload: ConfigurationPayloadView;
+      changeNote?: string;
+      reason?: string;
+    },
   ) => Promise<ConfigurationVersionView>;
   readonly onPublish: (
     configurationId: string,
     version: number,
-    input: { effectiveAt?: string; reason?: string },
+    input: {
+      effectiveAt?: string;
+      reason?: string;
+    },
   ) => Promise<unknown>;
 }
-
 export function ConfigurationsPage({
   role,
   list,
@@ -104,10 +129,8 @@ export function ConfigurationsPage({
   const [notice, setNotice] = useState<string | null>(null);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-
   const canWrite = hasPermission(role, 'config:publish');
   const detailView = detail.kind === 'ready' ? detail.detail : null;
-
   const runAction = async (execute: () => Promise<unknown>, successText: string) => {
     // 防重复点击：在途请求直接忽略（后端 409/幂等兜底）
     if (inFlight.current) return;
@@ -129,18 +152,17 @@ export function ConfigurationsPage({
       setBusy(false);
     }
   };
-
   return (
     <div className="configurations-page" data-testid="configurations-page">
       <div className="filter-bar" data-testid="config-filter-bar">
-        <label htmlFor="config-filter-model">目标型号</label>
+        <label htmlFor="config-filter-model">{translate('page.418dfc356a6d')}</label>
         <input
           id="config-filter-model"
           data-testid="config-filter-model"
           value={draftFilter.targetModel ?? ''}
           onChange={(event) => setDraftFilter({ ...draftFilter, targetModel: event.target.value })}
         />
-        <label htmlFor="config-filter-device">目标设备</label>
+        <label htmlFor="config-filter-device">{translate('page.1b73f8fcde1b')}</label>
         <input
           id="config-filter-device"
           data-testid="config-filter-device"
@@ -153,7 +175,7 @@ export function ConfigurationsPage({
           data-testid="config-search"
           onClick={() => onApplyFilter(draftFilter)}
         >
-          搜索
+          {translate('page.f04090805c6e')}
         </button>
         <button
           type="button"
@@ -163,7 +185,7 @@ export function ConfigurationsPage({
             onApplyFilter(EMPTY_CONFIGURATION_FILTER);
           }}
         >
-          重置
+          {translate('page.3d81345303ab')}
         </button>
         {canWrite ? (
           <button
@@ -172,7 +194,7 @@ export function ConfigurationsPage({
             data-testid="config-create"
             onClick={() => setCreateOpen(true)}
           >
-            新建配置
+            {translate('page.31cc2c4c86f0')}
           </button>
         ) : null}
       </div>
@@ -187,30 +209,34 @@ export function ConfigurationsPage({
       {list.error !== undefined ? <ErrorNotice error={list.error} onRefresh={onRefresh} /> : null}
       {list.rows === null ? (
         <div role="status" data-testid="config-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : list.rows.length === 0 ? (
         <p className="empty-state" data-testid="config-empty">
-          暂无配置
+          {translate('page.bb7031ae5844')}
         </p>
       ) : (
-        <table aria-label="配置列表" data-testid="config-table">
+        <table aria-label={translate('page.455fb42de709')} data-testid="config-table">
           <thead>
             <tr>
-              <th scope="col">名称</th>
-              <th scope="col">目标</th>
-              <th scope="col">版本数</th>
-              <th scope="col">最新已发布</th>
-              <th scope="col">创建人</th>
-              <th scope="col">创建时间</th>
-              <th scope="col">操作</th>
+              <th scope="col">{translate('page.1be7ae4fc257')}</th>
+              <th scope="col">{translate('page.941f08313a1d')}</th>
+              <th scope="col">{translate('page.0aba1045c82b')}</th>
+              <th scope="col">{translate('page.ac7d92446ab6')}</th>
+              <th scope="col">{translate('page.787ad1deae49')}</th>
+              <th scope="col">{translate('page.84e3802f60a7')}</th>
+              <th scope="col">{translate('page.f3ea6d345e2a')}</th>
             </tr>
           </thead>
           <tbody>
             {list.rows.map((row) => (
               <tr key={row.configurationId} data-testid={`config-row-${row.configurationId}`}>
                 <td>{row.name}</td>
-                <td>{row.targetModel !== null ? `型号 ${row.targetModel}` : `设备 ${row.targetDeviceId ?? ''}`}</td>
+                <td>
+                  {row.targetModel !== null
+                    ? translate('page.0132ce7298ec') + ' ' + row.targetModel
+                    : translate('page.01f2c16cda65') + ' ' + (row.targetDeviceId ?? '')}
+                </td>
                 <td>{row.versionCount}</td>
                 <td>{row.latestPublishedVersion !== null ? `v${row.latestPublishedVersion}` : '—'}</td>
                 <td>{row.createdBy}</td>
@@ -223,7 +249,7 @@ export function ConfigurationsPage({
                     data-testid={`config-detail-open-${row.configurationId}`}
                     onClick={() => onSelect(row.configurationId)}
                   >
-                    详情
+                    {translate('page.4f55ee1e687f')}
                   </button>
                 </td>
               </tr>
@@ -234,40 +260,45 @@ export function ConfigurationsPage({
 
       {detail.kind === 'loading' ? (
         <div role="status" data-testid="config-detail-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : null}
       {detail.kind === 'error' ? <ErrorNotice error={detail.error} onRefresh={onRefresh} /> : null}
 
       {detailView !== null && detail.kind === 'ready' ? (
-        <aside className="config-detail" data-testid="config-detail" aria-label="配置详情">
-          <h4>配置详情：{detailView.name}</h4>
+        <aside className="config-detail" data-testid="config-detail" aria-label={translate('page.eefaf4d5e099')}>
+          <h4>
+            {translate('page.cd7f88e92bbd')}
+            {detailView.name}
+          </h4>
           <dl>
-            <dt>目标</dt>
+            <dt>{translate('page.941f08313a1d')}</dt>
             <dd>
               {detailView.targetModel !== null
-                ? `型号 ${detailView.targetModel}`
-                : `设备 ${detailView.targetDeviceId ?? ''}`}
+                ? translate('page.0132ce7298ec') + ' ' + detailView.targetModel
+                : translate('page.01f2c16cda65') + ' ' + (detailView.targetDeviceId ?? '')}
             </dd>
-            <dt>最新已发布版本</dt>
+            <dt>{translate('page.c7bd3aea6020')}</dt>
             <dd data-testid="config-latest-published">
-              {detailView.latestPublishedVersion !== null ? `v${detailView.latestPublishedVersion}` : '尚未发布'}
+              {detailView.latestPublishedVersion !== null
+                ? `v${detailView.latestPublishedVersion}`
+                : translate('page.ff233aab26c8')}
             </dd>
           </dl>
 
           {detailView.derivedContext !== null ? (
-            <section data-testid="config-derived-context" aria-label="设备上下文（只读）">
-              <h5>设备上下文（只读，不随配置提交）</h5>
+            <section data-testid="config-derived-context" aria-label={translate('page.8de234dc2f9d')}>
+              <h5>{translate('page.df32cbc077f5')}</h5>
               <dl>
-                <dt>设备别名</dt>
+                <dt>{translate('page.270ec5a97320')}</dt>
                 <dd>{detailView.derivedContext.alias ?? '—'}</dd>
-                <dt>站点</dt>
+                <dt>{translate('page.619bc67325a4')}</dt>
                 <dd>{detailView.derivedContext.site ?? '—'}</dd>
-                <dt>区域</dt>
+                <dt>{translate('page.17fc93c9cdbb')}</dt>
                 <dd>{detailView.derivedContext.region ?? '—'}</dd>
-                <dt>子区域</dt>
+                <dt>{translate('page.e1973949d60a')}</dt>
                 <dd>{detailView.derivedContext.subregion ?? '—'}</dd>
-                <dt>合约</dt>
+                <dt>{translate('page.72045015ab9e')}</dt>
                 <dd>
                   {detailView.derivedContext.contract !== null
                     ? `${detailView.derivedContext.contract.contractNumber} ${detailView.derivedContext.contract.name}`
@@ -277,11 +308,11 @@ export function ConfigurationsPage({
             </section>
           ) : null}
 
-          <section aria-label="版本历史">
-            <h5>版本历史（不可变，发布后只读）</h5>
+          <section aria-label={translate('page.8770418ba3a0')}>
+            <h5>{translate('page.af998514ac51')}</h5>
             {detailView.versions.length === 0 ? (
               <p className="empty-state" data-testid="config-versions-empty">
-                暂无版本
+                {translate('page.123892c99043')}
               </p>
             ) : (
               detailView.versions.map((v) => (
@@ -300,7 +331,7 @@ export function ConfigurationsPage({
 
           <div className="detail-actions">
             <button type="button" onClick={onCloseDetail}>
-              关闭
+              {translate('page.6c14bd7f6f9e')}
             </button>
             {canWrite ? (
               <button
@@ -310,24 +341,29 @@ export function ConfigurationsPage({
                 disabled={busy}
                 onClick={() => setVersionFormOpen(true)}
               >
-                新建版本
+                {translate('page.c87926d3eb9a')}
               </button>
             ) : null}
           </div>
         </aside>
       ) : null}
 
-      <Modal open={createOpen} title="新建配置" testid="config-create-dialog" onClose={() => setCreateOpen(false)}>
+      <Modal
+        open={createOpen}
+        title={translate('page.31cc2c4c86f0')}
+        testid="config-create-dialog"
+        onClose={() => setCreateOpen(false)}
+      >
         <CreateConfigurationForm
           busy={busy}
-          onSubmit={(input) => void runAction(() => onCreate(input), '配置已创建')}
+          onSubmit={(input) => void runAction(() => onCreate(input), translate('page.34c0d9de5819'))}
         />
       </Modal>
 
       {detailView !== null ? (
         <Modal
           open={versionFormOpen}
-          title="新建配置版本（DRAFT）"
+          title={translate('page.da94d8657eb9')}
           testid="config-version-dialog"
           onClose={() => setVersionFormOpen(false)}
         >
@@ -341,7 +377,7 @@ export function ConfigurationsPage({
                     ...(changeNote !== '' ? { changeNote } : {}),
                     ...(reason !== '' ? { reason } : {}),
                   }),
-                '版本已创建（DRAFT）',
+                translate('page.bf8cd5ec392e'),
               )
             }
           />
@@ -351,7 +387,7 @@ export function ConfigurationsPage({
       {detailView !== null && publishTarget !== null ? (
         <Modal
           open
-          title={`发布版本 v${publishTarget}`}
+          title={translate('page.60ad6614ebc6') + publishTarget}
           testid="config-publish-dialog"
           onClose={() => setPublishTarget(null)}
         >
@@ -364,7 +400,7 @@ export function ConfigurationsPage({
                     ...(effectiveAt !== '' ? { effectiveAt } : {}),
                     ...(reason !== '' ? { reason } : {}),
                   }),
-                `版本 v${publishTarget} 已发布，目标设备将收到 CONFIG_CHANGED 通知`,
+                translate('page.48e411134914') + publishTarget + (' ' + translate('page.86f0b8ff2d6f')),
               )
             }
           />
@@ -373,7 +409,6 @@ export function ConfigurationsPage({
     </div>
   );
 }
-
 function VersionCard({
   version,
   canWrite,
@@ -399,13 +434,20 @@ function VersionCard({
         </span>
         {version.effectiveAt !== null ? (
           <span>
-            生效于 <TimeText iso={version.effectiveAt} />
+            {translate('page.ba06f7a98566') + ' '}
+            <TimeText iso={version.effectiveAt} />
           </span>
         ) : null}
         <span>
-          创建于 <TimeText iso={version.createdAt} />
+          {translate('page.f3b01f3f1a0e') + ' '}
+          <TimeText iso={version.createdAt} />
         </span>
-        {version.changeNote !== null ? <span>说明：{version.changeNote}</span> : null}
+        {version.changeNote !== null ? (
+          <span>
+            {translate('page.a2c8f89312ec')}
+            {version.changeNote}
+          </span>
+        ) : null}
       </div>
       {/* 历史版本只读：payload 仅展示，不提供编辑入口（不可变版本） */}
       <dl className="version-payload" data-testid={`config-version-${version.version}-payload`}>
@@ -424,25 +466,25 @@ function VersionCard({
           className="primary-button"
           data-testid={`config-publish-${version.version}`}
           disabled={!publishable || !canWrite || busy}
-          {...(!publishable ? { title: '仅草稿版本可发布；历史版本不可覆盖' } : {})}
+          {...(!publishable ? { title: translate('page.956bedba1a79') } : {})}
           onClick={onPublishIntent}
         >
-          发布
+          {translate('page.94f172d02f5e')}
         </button>
         {version.status === 'PUBLISHED' ? (
           <button type="button" data-testid={`config-sync-${version.version}`} onClick={onLoadSyncStatus}>
-            同步状态
+            {translate('page.0150205d5c21')}
           </button>
         ) : null}
       </div>
       {sync.kind === 'loading' && sync.version === version.version ? (
         <div role="status" data-testid={`config-sync-loading-${version.version}`}>
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : null}
       {sync.kind === 'error' && sync.version === version.version ? (
         <p className="error-notice" data-testid={`config-sync-error-${version.version}`}>
-          同步状态加载失败
+          {translate('page.fb3bcf09c86d')}
         </p>
       ) : null}
       {sync.kind === 'ready' && sync.data.version === version.version ? (
@@ -457,7 +499,6 @@ function VersionCard({
     </div>
   );
 }
-
 function VersionPayloadForm({
   busy,
   onSubmit,
@@ -476,7 +517,6 @@ function VersionPayloadForm({
   const [reason, setReason] = useState('');
   const [touched, setTouched] = useState(false);
   const result = validateConfigPayload(raw);
-
   return (
     <div className="version-form" data-testid="config-version-form">
       {/* 仅渲染 DEC-018 V1 四字段；候选扩展/派生/网络字段不存在于表单 */}
@@ -501,7 +541,7 @@ function VersionPayloadForm({
         </div>
       ))}
       <div className="dialog-field">
-        <label htmlFor="cfg-change-note">变更说明（可选）</label>
+        <label htmlFor="cfg-change-note">{translate('page.4d7ded5e6306')}</label>
         <textarea
           id="cfg-change-note"
           data-testid="cfg-change-note"
@@ -510,7 +550,7 @@ function VersionPayloadForm({
         />
       </div>
       <div className="dialog-field">
-        <label htmlFor="cfg-reason">原因（可选，写入审计）</label>
+        <label htmlFor="cfg-reason">{translate('page.db5e8a988ba0')}</label>
         <textarea
           id="cfg-reason"
           data-testid="cfg-reason"
@@ -529,13 +569,12 @@ function VersionPayloadForm({
             if (result.payload !== null) onSubmit(result.payload, changeNote.trim(), reason.trim());
           }}
         >
-          创建版本
+          {translate('page.c2098a5e9c7c')}
         </button>
       </div>
     </div>
   );
 }
-
 function CreateConfigurationForm({
   busy,
   onSubmit,
@@ -550,11 +589,10 @@ function CreateConfigurationForm({
   const nameTrimmed = name.trim();
   const targetTrimmed = targetValue.trim();
   const reasonTrimmed = reason.trim();
-
   return (
     <div className="config-create-form" data-testid="config-create-form">
       <div className="dialog-field">
-        <label htmlFor="config-name">配置名称</label>
+        <label htmlFor="config-name">{translate('page.a5f08c1d3371')}</label>
         <input
           id="config-name"
           data-testid="config-name"
@@ -563,19 +601,21 @@ function CreateConfigurationForm({
         />
       </div>
       <div className="dialog-field">
-        <label htmlFor="config-target-kind">发布目标类型（型号 / 设备 二选一）</label>
+        <label htmlFor="config-target-kind">{translate('page.c87bdfd4ba4b')}</label>
         <select
           id="config-target-kind"
           data-testid="config-target-kind"
           value={targetKind}
           onChange={(event) => setTargetKind(event.target.value as 'model' | 'device')}
         >
-          <option value="model">按型号</option>
-          <option value="device">按设备</option>
+          <option value="model">{translate('page.eb2404a248b7')}</option>
+          <option value="device">{translate('page.b80602624134')}</option>
         </select>
       </div>
       <div className="dialog-field">
-        <label htmlFor="config-target-value">{targetKind === 'model' ? '目标型号' : '目标设备 ID'}</label>
+        <label htmlFor="config-target-value">
+          {targetKind === 'model' ? translate('page.418dfc356a6d') : translate('page.39c47009f7aa')}
+        </label>
         <input
           id="config-target-value"
           data-testid="config-target-value"
@@ -584,7 +624,7 @@ function CreateConfigurationForm({
         />
       </div>
       <div className="dialog-field">
-        <label htmlFor="config-reason">原因（可选，写入审计）</label>
+        <label htmlFor="config-reason">{translate('page.db5e8a988ba0')}</label>
         <textarea
           id="config-reason"
           data-testid="config-create-reason"
@@ -606,13 +646,12 @@ function CreateConfigurationForm({
             })
           }
         >
-          创建配置
+          {translate('page.0b002e0e99bf')}
         </button>
       </div>
     </div>
   );
 }
-
 function PublishForm({
   busy,
   onSubmit,
@@ -624,12 +663,11 @@ function PublishForm({
   const [reason, setReason] = useState('');
   const effectiveAtTrimmed = effectiveAt.trim();
   const effectiveAtInvalid = effectiveAtTrimmed !== '' && Number.isNaN(Date.parse(effectiveAtTrimmed));
-
   return (
     <div className="publish-form" data-testid="config-publish-form">
-      <p>发布为不可变已发布版本，目标设备将收到 CONFIG_CHANGED 通知；历史版本不可覆盖。</p>
+      <p>{translate('page.f18eb02bde07')}</p>
       <div className="dialog-field">
-        <label htmlFor="publish-effective-at">生效时间（可选，RFC 3339 UTC；缺省为发布时间）</label>
+        <label htmlFor="publish-effective-at">{translate('page.cdc8a1890529')}</label>
         <input
           id="publish-effective-at"
           data-testid="publish-effective-at"
@@ -637,10 +675,10 @@ function PublishForm({
           value={effectiveAt}
           onChange={(event) => setEffectiveAt(event.target.value)}
         />
-        {effectiveAtInvalid ? <p className="field-hint">生效时间格式非法</p> : null}
+        {effectiveAtInvalid ? <p className="field-hint">{translate('page.f05613710d62')}</p> : null}
       </div>
       <div className="dialog-field">
-        <label htmlFor="publish-reason">发布原因（可选，写入审计）</label>
+        <label htmlFor="publish-reason">{translate('page.f734d80c7189')}</label>
         <textarea
           id="publish-reason"
           data-testid="publish-reason"
@@ -656,7 +694,7 @@ function PublishForm({
           disabled={busy || effectiveAtInvalid}
           onClick={() => onSubmit(effectiveAtTrimmed, reason.trim())}
         >
-          确认发布
+          {translate('page.221f71a458cf')}
         </button>
       </div>
     </div>

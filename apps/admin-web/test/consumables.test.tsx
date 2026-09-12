@@ -98,14 +98,22 @@ function renderPage(overrides: Partial<ConsumablesPageProps> = {}) {
       rows: [
         makeRequest(),
         makeRequest({ requestId: 'req-002', status: 'PROCESSING', processedBy: 'op@example.com', version: 3 }),
-        makeRequest({ requestId: 'req-003', status: 'COMPLETED', completedAt: '2026-09-06T05:00:00Z', processNote: '已更换' }),
+        makeRequest({
+          requestId: 'req-003',
+          status: 'COMPLETED',
+          completedAt: '2026-09-06T05:00:00Z',
+          processNote: '已更换',
+        }),
       ],
     },
     requestFilter: {},
     onApplyRequestFilter: (f) => calls.requestFilters.push(f),
     onCreateRequest: async (deviceId, consumableType, note) => {
       calls.created.push({ deviceId, type: consumableType, ...(note !== undefined ? { note } : {}) });
-      const result: ConsumableRequestCreateResult = { request: makeRequest({ requestId: 'req-new', deviceId }), replayed: false };
+      const result: ConsumableRequestCreateResult = {
+        request: makeRequest({ requestId: 'req-new', deviceId }),
+        replayed: false,
+      };
       return result;
     },
     onProcess: async (id, note, version) => {
@@ -299,8 +307,16 @@ function stubApi(): { api: ApiClient; calls: { path: string; options: ApiRequest
 
 test('API 装配：查询串；状态迁移 If-Match 与请求体', async () => {
   const { api, calls } = stubApi();
-  await listConsumableStatus(api, { region: '华东', connectivity: 'ONLINE', maxRemainingPercent: 30, consumableType: 'CARBON_FILTER' });
-  assert.equal(calls[0]?.path, '/admin/consumables?region=%E5%8D%8E%E4%B8%9C&connectivity=ONLINE&maxRemainingPercent=30&consumableType=CARBON_FILTER');
+  await listConsumableStatus(api, {
+    region: '华东',
+    connectivity: 'ONLINE',
+    maxRemainingPercent: 30,
+    consumableType: 'CARBON_FILTER',
+  });
+  assert.equal(
+    calls[0]?.path,
+    '/admin/consumables?region=%E5%8D%8E%E4%B8%9C&connectivity=ONLINE&maxRemainingPercent=30&consumableType=CARBON_FILTER',
+  );
 
   await createConsumableRequest(api, 'dev-1', 'BIO_ADDITIVE', '备注');
   assert.equal(calls[1]?.path, '/admin/consumable-requests');

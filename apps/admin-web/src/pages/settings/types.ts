@@ -2,7 +2,7 @@
  * FE-16 用户/角色与业务设置数据类型：镜像 admin-user-api.json（BE-RBAC-01）与
  * admin-settings-api.json（BE-SET-01）。
  */
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 
 export type UserStatus = 'INVITED' | 'ACTIVE' | 'DISABLED';
 
@@ -30,10 +30,7 @@ export interface PasswordResetResult {
 
 /** 封闭 key 集（其他 key 不可创建）。 */
 export type SettingKey =
-  | 'alarm.thresholds'
-  | 'command.confirmation'
-  | 'dictionary.displayNames'
-  | 'notification.business';
+  'alarm.thresholds' | 'command.confirmation' | 'dictionary.displayNames' | 'notification.business';
 
 /** ACTIVE=已有唯一运行时消费方；STORED_ONLY=仅校验/版本/审计/存储，更新不代表业务行为生效。 */
 export type SettingRuntimeStatus = 'ACTIVE' | 'STORED_ONLY';

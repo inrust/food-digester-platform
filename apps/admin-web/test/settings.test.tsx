@@ -127,7 +127,12 @@ function renderPage(overrides: Partial<SettingsPageProps> = {}) {
     settings: {
       rows: [
         makeSetting(),
-        makeSetting({ key: 'command.confirmation', value: { mode: 'confirmText' }, runtimeStatus: 'ACTIVE', runtimeConsumer: 'BE-CMD-01' }),
+        makeSetting({
+          key: 'command.confirmation',
+          value: { mode: 'confirmText' },
+          runtimeStatus: 'ACTIVE',
+          runtimeConsumer: 'BE-CMD-01',
+        }),
         makeSetting({ key: 'dictionary.displayNames', value: {} }),
         makeSetting({ key: 'notification.business', value: { enabled: true } }),
       ],
@@ -207,9 +212,15 @@ test('邀请校验：平台/Customer 混绑拒绝；Customer 角色缺 customerI
   assert.equal((within(form).getByTestId('invite-submit') as HTMLButtonElement).disabled, true);
 
   // 纯 Customer 角色缺 customerId
-  assert.ok(validateInvite({ email: 'a@b.co', displayName: 'x', roles: ['CustomerAdmin'], customerId: '' })?.includes('Customer'));
+  assert.ok(
+    validateInvite({ email: 'a@b.co', displayName: 'x', roles: ['CustomerAdmin'], customerId: '' })?.includes(
+      'Customer',
+    ),
+  );
   // 平台角色带 customerId
-  assert.ok(validateInvite({ email: 'a@b.co', displayName: 'x', roles: ['Auditor'], customerId: 'c1' })?.includes('省略'));
+  assert.ok(
+    validateInvite({ email: 'a@b.co', displayName: 'x', roles: ['Auditor'], customerId: 'c1' })?.includes('省略'),
+  );
   assert.equal(validateInvite({ email: 'a@b.co', displayName: 'x', roles: ['CustomerAdmin'], customerId: 'c1' }), null);
 });
 
@@ -366,7 +377,12 @@ test('API 装配：invite/assignRoles/updateSetting 路径与体（invite 无 pa
   assert.deepEqual(calls[0]?.options.body, { email: 'a@b.co', displayName: 'x', roles: ['Auditor'] });
 
   await inviteUser(api, { email: 'a@b.co', displayName: 'x', roles: ['CustomerAdmin'], customerId: 'c1' });
-  assert.deepEqual(calls[1]?.options.body, { email: 'a@b.co', displayName: 'x', roles: ['CustomerAdmin'], customerId: 'c1' });
+  assert.deepEqual(calls[1]?.options.body, {
+    email: 'a@b.co',
+    displayName: 'x',
+    roles: ['CustomerAdmin'],
+    customerId: 'c1',
+  });
 
   await assignUserRoles(api, 'usr-1', ['Auditor']);
   assert.equal(calls[2]?.path, '/admin/users/usr-1/roles');

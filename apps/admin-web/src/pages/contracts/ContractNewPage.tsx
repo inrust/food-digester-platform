@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-17 新建合约页（/contracts/new）：结构化表单 + 两步设备关联。
  *
@@ -15,7 +16,6 @@ import type { ContractFormDraft } from './contract-state.js';
 import type { ContractCreateInput } from './contracts-api.js';
 import type { AvailableDeviceView, ContractView } from './types.js';
 import type { CustomerOption } from './ContractsPage.js';
-
 export interface ContractNewPageProps {
   readonly customerOptions: readonly CustomerOption[];
   readonly onCreate: (input: ContractCreateInput) => Promise<ContractView>;
@@ -27,7 +27,6 @@ export interface ContractNewPageProps {
   /** 完成（创建并可选关联后）返回列表。 */
   readonly onDone: () => void;
 }
-
 const EMPTY_DRAFT: ContractFormDraft = {
   contractNumber: '',
   name: '',
@@ -36,7 +35,6 @@ const EMPTY_DRAFT: ContractFormDraft = {
   startAt: '',
   endAt: '',
 };
-
 export function ContractNewPage({
   customerOptions,
   onCreate,
@@ -54,9 +52,7 @@ export function ContractNewPage({
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
-
   const fieldErrors = validateContractForm(draft);
-
   const runAction = async (execute: () => Promise<string>) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -71,10 +67,9 @@ export function ContractNewPage({
       setBusy(false);
     }
   };
-
   const submitCreate = () =>
     runAction(async () => {
-      if (fieldErrors !== null) throw new Error(Object.values(fieldErrors)[0] ?? '表单校验失败');
+      if (fieldErrors !== null) throw new Error(Object.values(fieldErrors)[0] ?? translate('page.0b8b9963d904'));
       const input: ContractCreateInput = {
         contractNumber: draft.contractNumber.trim(),
         name: draft.name.trim(),
@@ -86,31 +81,28 @@ export function ContractNewPage({
       const contract = await onCreate(input);
       setCreated(contract);
       setAvailable(await onListAvailable(contract.contractId));
-      return `合约 ${contract.contractNumber} 已创建（草稿；不自动激活 License）。可从 eligible 列表关联设备`;
+      return translate('page.72045015ab9e') + ' ' + contract.contractNumber + (' ' + translate('page.3eb57b0d80cc'));
     });
-
   const submitBind = () =>
     runAction(async () => {
       if (created === null || selected.length === 0) return '';
       const bound = await onBind(created.contractId, selected, bindReason.trim());
       setSelected([]);
       setAvailable(await onListAvailable(created.contractId));
-      return `已关联 ${bound.length} 台设备（全成或全败）`;
+      return translate('page.1efeec44018f') + ' ' + bound.length + (' ' + translate('page.c109982ccfd5'));
     });
-
   const fieldError = (key: string) =>
     fieldErrors !== null && fieldErrors[key] !== undefined ? (
       <span className="field-hint" data-testid={`contract-error-${key}`}>
         {fieldErrors[key]}
       </span>
     ) : null;
-
   return (
     <div className="contract-new-page" data-testid="contract-new-page">
       <div className="page-header">
-        <h3>新建合约</h3>
+        <h3>{translate('page.44c75e312909')}</h3>
         <button type="button" data-testid="contract-create-cancel" onClick={onCancel}>
-          返回
+          {translate('page.11d024154013')}
         </button>
       </div>
 
@@ -121,9 +113,9 @@ export function ContractNewPage({
       ) : null}
       {actionError !== null ? <ErrorNotice error={actionError} /> : null}
 
-      <section data-testid="contract-form" aria-label="合约信息">
+      <section data-testid="contract-form" aria-label={translate('page.82fe9340d299')}>
         <div className="dialog-field">
-          <label htmlFor="contract-number-input">合约编号</label>
+          <label htmlFor="contract-number-input">{translate('page.e732638998ba')}</label>
           <input
             id="contract-number-input"
             data-testid="contract-number-input"
@@ -135,7 +127,7 @@ export function ContractNewPage({
           {fieldError('contractNumber')}
         </div>
         <div className="dialog-field">
-          <label htmlFor="contract-name-input">合约名称</label>
+          <label htmlFor="contract-name-input">{translate('page.eec5002799b1')}</label>
           <input
             id="contract-name-input"
             data-testid="contract-name-input"
@@ -147,7 +139,7 @@ export function ContractNewPage({
           {fieldError('name')}
         </div>
         <div className="dialog-field">
-          <label htmlFor="contract-customer-select">客户（客户目录选择）</label>
+          <label htmlFor="contract-customer-select">{translate('page.ccaf386a064a')}</label>
           <select
             id="contract-customer-select"
             data-testid="contract-customer-select"
@@ -155,7 +147,7 @@ export function ContractNewPage({
             value={draft.customerId}
             onChange={(event) => setDraft({ ...draft, customerId: event.target.value })}
           >
-            <option value="">请选择</option>
+            <option value="">{translate('page.382f4b5559b3')}</option>
             {customerOptions.map((customer) => (
               <option key={customer.customerId} value={customer.customerId}>
                 {customer.name}
@@ -165,7 +157,7 @@ export function ContractNewPage({
           {fieldError('customerId')}
         </div>
         <div className="dialog-field">
-          <label htmlFor="contract-start-input">有效期起（UTC）</label>
+          <label htmlFor="contract-start-input">{translate('page.0ed8daddc54b')}</label>
           <input
             id="contract-start-input"
             type="datetime-local"
@@ -174,7 +166,7 @@ export function ContractNewPage({
             value={draft.startAt}
             onChange={(event) => setDraft({ ...draft, startAt: event.target.value })}
           />
-          <label htmlFor="contract-end-input">有效期止（UTC）</label>
+          <label htmlFor="contract-end-input">{translate('page.a1bf0b770919')}</label>
           <input
             id="contract-end-input"
             type="datetime-local"
@@ -186,7 +178,7 @@ export function ContractNewPage({
           {fieldError('period')}
         </div>
         <div className="dialog-field">
-          <label htmlFor="contract-contact-input">联系方式（可选）</label>
+          <label htmlFor="contract-contact-input">{translate('page.85e5fa1b0c95')}</label>
           <input
             id="contract-contact-input"
             data-testid="contract-contact-input"
@@ -206,23 +198,23 @@ export function ContractNewPage({
               disabled={busy || fieldErrors !== null}
               onClick={() => void submitCreate()}
             >
-              确定（创建草稿，不自动激活 License）
+              {translate('page.68b24eeb6f4e')}
             </button>
           </div>
         ) : null}
       </section>
 
       {created !== null ? (
-        <section data-testid="contract-new-devices" aria-label="关联设备选择">
-          <h4>关联设备（eligible：同 Customer、非 Retired、无有效关联）</h4>
+        <section data-testid="contract-new-devices" aria-label={translate('page.a638180058f8')}>
+          <h4>{translate('page.e70a3aa701a1')}</h4>
           {available === null ? (
-            <div role="status">加载 eligible 设备中…</div>
+            <div role="status">{translate('page.d360706fdd30')}</div>
           ) : available.length === 0 ? (
             <p className="empty-state" data-testid="contract-new-devices-empty">
-              当前无可关联设备
+              {translate('page.941fc73da805')}
             </p>
           ) : (
-            <div role="group" aria-label="可关联设备" data-testid="contract-new-device-list">
+            <div role="group" aria-label={translate('page.16c798774b40')} data-testid="contract-new-device-list">
               {available.map((device) => (
                 <label key={device.deviceId}>
                   <input
@@ -238,13 +230,16 @@ export function ContractNewPage({
                     }
                   />
                   {device.alias ?? device.serialNumber}（{device.model}
-                  {device.site !== null ? `，${device.site.region ?? '—'}/${device.site.subregion ?? '—'}/${device.site.name}` : ''}）
+                  {device.site !== null
+                    ? `，${device.site.region ?? '—'}/${device.site.subregion ?? '—'}/${device.site.name}`
+                    : ''}
+                  ）
                 </label>
               ))}
             </div>
           )}
           <div className="dialog-field">
-            <label htmlFor="contract-bind-reason">关联原因（强制）</label>
+            <label htmlFor="contract-bind-reason">{translate('page.45ec50c74ef1')}</label>
             <input
               id="contract-bind-reason"
               data-testid="contract-bind-reason"
@@ -261,10 +256,10 @@ export function ContractNewPage({
               disabled={busy || selected.length === 0 || bindReason.trim() === ''}
               onClick={() => void submitBind()}
             >
-              关联所选设备
+              {translate('page.381ba5101f1c')}
             </button>
             <button type="button" data-testid="contract-new-done" onClick={onDone}>
-              完成
+              {translate('page.33246f6a5e5b')}
             </button>
           </div>
         </section>

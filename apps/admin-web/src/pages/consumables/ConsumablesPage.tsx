@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-18 耗材状态与更换申请页（/consumables）：耗材列表 + 更换申请两区域。
  *
@@ -10,7 +11,7 @@
  * - 边界：不预测寿命、不直接联系、不做库存/派单；协议冻结前无“来自设备”入口（source=ADMIN）。
  */
 import { useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
@@ -37,13 +38,18 @@ import type {
   ConsumableType,
   ConsumableValueView,
 } from './types.js';
-
 export interface ConsumablesPageProps {
   readonly role: Role;
-  readonly status: { readonly rows: readonly ConsumableStatusView[] | null; readonly error?: unknown };
+  readonly status: {
+    readonly rows: readonly ConsumableStatusView[] | null;
+    readonly error?: unknown;
+  };
   readonly statusFilter: ConsumableStatusFilter;
   readonly onApplyStatusFilter: (filter: ConsumableStatusFilter) => void;
-  readonly requests: { readonly rows: readonly ConsumableRequestView[] | null; readonly error?: unknown };
+  readonly requests: {
+    readonly rows: readonly ConsumableRequestView[] | null;
+    readonly error?: unknown;
+  };
   readonly requestFilter: ConsumableRequestFilter;
   readonly onApplyRequestFilter: (filter: ConsumableRequestFilter) => void;
   readonly onCreateRequest: (
@@ -58,9 +64,10 @@ export interface ConsumablesPageProps {
   /** 展示阈值（字典/配置驱动；缺省暂定 10/30）。 */
   readonly thresholds?: ConsumableThresholds;
 }
-
-type ActionTarget = { readonly action: RequestAction; readonly request: ConsumableRequestView };
-
+type ActionTarget = {
+  readonly action: RequestAction;
+  readonly request: ConsumableRequestView;
+};
 const EMPTY_STATUS_DRAFT: StatusDraft = {
   region: '',
   subregion: '',
@@ -71,7 +78,6 @@ const EMPTY_STATUS_DRAFT: StatusDraft = {
   consumableType: '',
   customerId: '',
 };
-
 interface StatusDraft {
   readonly region: string;
   readonly subregion: string;
@@ -82,7 +88,6 @@ interface StatusDraft {
   readonly consumableType: ConsumableType | '';
   readonly customerId: string;
 }
-
 function ConsumableCell({
   value,
   testid,
@@ -95,8 +100,8 @@ function ConsumableCell({
   if (value === null || value.remainingPercent === null || value.remainingDisplay === 'unknown') {
     return (
       <span data-testid={testid}>
-        unknown（未上报）
-        {value?.stale === true ? <span className="stale-badge">数据过期</span> : null}
+        {translate('page.6f3e8d799474')}
+        {value?.stale === true ? <span className="stale-badge">{translate('page.e7ebfebaaa0f')}</span> : null}
       </span>
     );
   }
@@ -105,7 +110,7 @@ function ConsumableCell({
     <span data-testid={testid}>
       <span className="consumable-bar" data-level={level ?? 'ok'} style={{ width: `${value.remainingPercent}%` }} />
       {value.remainingDisplay}
-      {value.stale ? <span className="stale-badge">数据过期</span> : null}
+      {value.stale ? <span className="stale-badge">{translate('page.e7ebfebaaa0f')}</span> : null}
       {value.observedAt !== null ? (
         <span className="field-hint">
           （<TimeText iso={value.observedAt} />）
@@ -114,7 +119,6 @@ function ConsumableCell({
     </span>
   );
 }
-
 export function ConsumablesPage({
   role,
   status,
@@ -159,12 +163,10 @@ export function ConsumablesPage({
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
-
   const isPlatformRole = !role.startsWith('Customer');
   const canWrite = canWriteDevices(role);
   const noteRequired = action?.action !== 'process';
   const noteError = action !== null ? validateRequestNote(actionNote, noteRequired) : null;
-
   const runAction = async (execute: () => Promise<string>) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -182,23 +184,21 @@ export function ConsumablesPage({
       setBusy(false);
     }
   };
-
   const submitAction = () =>
     runAction(async () => {
       if (action === null) return '';
       const note = actionNote.trim();
       if (action.action === 'process') {
         await onProcess(action.request.requestId, note === '' ? null : note, action.request.version);
-        return `申请 ${action.request.requestId} 已进入处理`;
+        return translate('page.bfdd7ddce562') + ' ' + action.request.requestId + (' ' + translate('page.97930c3c7beb'));
       }
       if (action.action === 'complete') {
         await onComplete(action.request.requestId, note, action.request.version);
-        return `申请 ${action.request.requestId} 已完成`;
+        return translate('page.bfdd7ddce562') + ' ' + action.request.requestId + (' ' + translate('page.e99b48a29bdf'));
       }
       await onCancel(action.request.requestId, note, action.request.version);
-      return `申请 ${action.request.requestId} 已取消`;
+      return translate('page.bfdd7ddce562') + ' ' + action.request.requestId + (' ' + translate('page.a5ffdc95eeb0'));
     });
-
   const submitCreate = () =>
     runAction(async () => {
       const result = await onCreateRequest(
@@ -208,19 +208,15 @@ export function ConsumablesPage({
       );
       setCreateDraft({ deviceId: '', consumableType: '', note: '' });
       return result.replayed
-        ? '已存在同设备同耗材的开放申请（幂等返回现有记录，未重复创建）'
-        : `更换申请已创建（${result.request.requestId}）`;
+        ? translate('page.46c2995a52f6')
+        : translate('page.2070de48878e') + result.request.requestId + '\uFF09';
     });
-
   return (
     <div className="consumables-page" data-testid="consumables-page">
       <div className="page-header">
-        <h3>耗材查看</h3>
+        <h3>{translate('page.737c0b5f942e')}</h3>
       </div>
-      <p className="field-hint">
-        仅展示设备上报值（未上报显示 unknown，不臆测）；阈值颜色为暂定展示阈值（由字典/配置驱动）；
-        不预测寿命、不直接联系客户、不做库存/派单。
-      </p>
+      <p className="field-hint">{translate('page.a381c267e0da')}</p>
 
       {notice !== null ? (
         <p className="action-notice" role="status" data-testid="action-notice">
@@ -229,30 +225,30 @@ export function ConsumablesPage({
       ) : null}
       {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
-      <section data-testid="consumable-status-section" aria-label="耗材状态">
+      <section data-testid="consumable-status-section" aria-label={translate('page.93b5ce3195e0')}>
         <div className="filter-bar">
-          <label htmlFor="consumable-filter-region">区域</label>
+          <label htmlFor="consumable-filter-region">{translate('page.17fc93c9cdbb')}</label>
           <input
             id="consumable-filter-region"
             data-testid="consumable-filter-region"
             value={statusDraft.region}
             onChange={(event) => setStatusDraft({ ...statusDraft, region: event.target.value })}
           />
-          <label htmlFor="consumable-filter-subregion">子区域</label>
+          <label htmlFor="consumable-filter-subregion">{translate('page.e1973949d60a')}</label>
           <input
             id="consumable-filter-subregion"
             data-testid="consumable-filter-subregion"
             value={statusDraft.subregion}
             onChange={(event) => setStatusDraft({ ...statusDraft, subregion: event.target.value })}
           />
-          <label htmlFor="consumable-filter-site">站点 ID</label>
+          <label htmlFor="consumable-filter-site">{translate('page.09232c5f3b50')}</label>
           <input
             id="consumable-filter-site"
             data-testid="consumable-filter-site"
             value={statusDraft.siteId}
             onChange={(event) => setStatusDraft({ ...statusDraft, siteId: event.target.value })}
           />
-          <label htmlFor="consumable-filter-connectivity">连接状态</label>
+          <label htmlFor="consumable-filter-connectivity">{translate('page.b639d60c4140')}</label>
           <select
             id="consumable-filter-connectivity"
             data-testid="consumable-filter-connectivity"
@@ -264,18 +260,18 @@ export function ConsumablesPage({
               })
             }
           >
-            <option value="">全部</option>
-            <option value="ONLINE">在线</option>
-            <option value="OFFLINE">离线</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
+            <option value="ONLINE">{translate('page.0373ff923114')}</option>
+            <option value="OFFLINE">{translate('page.211357d22f4d')}</option>
           </select>
-          <label htmlFor="consumable-filter-keyword">ID/别名</label>
+          <label htmlFor="consumable-filter-keyword">{translate('page.7f904bb70f96')}</label>
           <input
             id="consumable-filter-keyword"
             data-testid="consumable-filter-keyword"
             value={statusDraft.keyword}
             onChange={(event) => setStatusDraft({ ...statusDraft, keyword: event.target.value })}
           />
-          <label htmlFor="consumable-filter-max">剩余 ≤</label>
+          <label htmlFor="consumable-filter-max">{translate('page.c3d2894c6fdb')}</label>
           <input
             id="consumable-filter-max"
             data-testid="consumable-filter-max"
@@ -285,7 +281,7 @@ export function ConsumablesPage({
             value={statusDraft.maxRemainingPercent}
             onChange={(event) => setStatusDraft({ ...statusDraft, maxRemainingPercent: event.target.value })}
           />
-          <label htmlFor="consumable-filter-type">耗材</label>
+          <label htmlFor="consumable-filter-type">{translate('page.6c9da0502120')}</label>
           <select
             id="consumable-filter-type"
             data-testid="consumable-filter-type"
@@ -297,7 +293,7 @@ export function ConsumablesPage({
               })
             }
           >
-            <option value="">任一</option>
+            <option value="">{translate('page.31af9a60c654')}</option>
             {CONSUMABLE_TYPES.map((type) => (
               <option key={type} value={type}>
                 {CONSUMABLE_TYPE_LABELS[type]}
@@ -306,7 +302,7 @@ export function ConsumablesPage({
           </select>
           {isPlatformRole ? (
             <>
-              <label htmlFor="consumable-filter-customer">客户 ID</label>
+              <label htmlFor="consumable-filter-customer">{translate('page.a20148b7e39a')}</label>
               <input
                 id="consumable-filter-customer"
                 data-testid="consumable-filter-customer"
@@ -326,13 +322,15 @@ export function ConsumablesPage({
                 siteId: statusDraft.siteId.trim() === '' ? null : statusDraft.siteId.trim(),
                 connectivity: statusDraft.connectivity === '' ? null : statusDraft.connectivity,
                 keyword: statusDraft.keyword.trim() === '' ? null : statusDraft.keyword.trim(),
-                maxRemainingPercent: statusDraft.maxRemainingPercent === '' ? null : Number(statusDraft.maxRemainingPercent),
+                maxRemainingPercent:
+                  statusDraft.maxRemainingPercent === '' ? null : Number(statusDraft.maxRemainingPercent),
                 consumableType: statusDraft.consumableType === '' ? null : statusDraft.consumableType,
-                customerId: isPlatformRole && statusDraft.customerId.trim() !== '' ? statusDraft.customerId.trim() : null,
+                customerId:
+                  isPlatformRole && statusDraft.customerId.trim() !== '' ? statusDraft.customerId.trim() : null,
               })
             }
           >
-            搜索
+            {translate('page.f04090805c6e')}
           </button>
           <button
             type="button"
@@ -342,27 +340,32 @@ export function ConsumablesPage({
               onApplyStatusFilter({});
             }}
           >
-            重置
+            {translate('page.3d81345303ab')}
           </button>
         </div>
 
-        <section data-testid="consumable-table" aria-label="耗材列表">
+        <section data-testid="consumable-table" aria-label={translate('page.079ec3477314')}>
           <CursorTable
-            ariaLabel="耗材列表"
+            ariaLabel={translate('page.079ec3477314')}
             columns={[
-              { key: 'region', header: '设备区域', render: (row: ConsumableStatusView) => row.site?.region ?? '—' },
-              { key: 'subregion', header: '设备子区域', render: (row) => row.site?.subregion ?? '—' },
-              { key: 'site', header: '站点', render: (row) => row.site?.name ?? '—' },
-              { key: 'deviceId', header: '设备唯一ID', render: (row) => row.deviceId },
-              { key: 'alias', header: '设备别名', render: (row) => row.alias ?? '—' },
+              {
+                key: 'region',
+                header: translate('page.406e0f8c6852'),
+                render: (row: ConsumableStatusView) => row.site?.region ?? '—',
+              },
+              { key: 'subregion', header: translate('page.ff0beacd69e2'), render: (row) => row.site?.subregion ?? '—' },
+              { key: 'site', header: translate('page.619bc67325a4'), render: (row) => row.site?.name ?? '—' },
+              { key: 'deviceId', header: translate('page.d79416b3896a'), render: (row) => row.deviceId },
+              { key: 'alias', header: translate('page.270ec5a97320'), render: (row) => row.alias ?? '—' },
               {
                 key: 'connectivity',
-                header: '连接',
-                render: (row) => (row.connectivity === 'ONLINE' ? '在线' : '离线'),
+                header: translate('page.7328deebb5bc'),
+                render: (row) =>
+                  row.connectivity === 'ONLINE' ? translate('page.0373ff923114') : translate('page.211357d22f4d'),
               },
               {
                 key: 'carbon',
-                header: '碳包预估剩余百分比',
+                header: translate('page.ad9ca1dcb7cf'),
                 render: (row) => (
                   <ConsumableCell
                     value={row.consumables.CARBON_FILTER}
@@ -373,7 +376,7 @@ export function ConsumablesPage({
               },
               {
                 key: 'bio',
-                header: '活性菌预估剩余百分比',
+                header: translate('page.413b42e8c04e'),
                 render: (row) => (
                   <ConsumableCell
                     value={row.consumables.BIO_ADDITIVE}
@@ -384,7 +387,7 @@ export function ConsumablesPage({
               },
               {
                 key: 'contact',
-                header: '联系方式',
+                header: translate('page.60beedc8f22b'),
                 render: (row) =>
                   contactOpen[row.deviceId] === true ? (
                     row.contact !== null ? (
@@ -393,7 +396,7 @@ export function ConsumablesPage({
                       </span>
                     ) : (
                       <span className="field-hint" data-testid={`consumable-contact-info-${row.deviceId}`}>
-                        无权限查看联系方式
+                        {translate('page.d64bbf53c8c5')}
                       </span>
                     )
                   ) : (
@@ -402,7 +405,7 @@ export function ConsumablesPage({
                       data-testid={`consumable-contact-${row.deviceId}`}
                       onClick={() => setContactOpen({ ...contactOpen, [row.deviceId]: true })}
                     >
-                      联系方式
+                      {translate('page.60beedc8f22b')}
                     </button>
                   ),
               },
@@ -411,27 +414,27 @@ export function ConsumablesPage({
             rowKey={(row) => row.deviceId}
             {...(status.error !== undefined ? { error: status.error } : {})}
             onRefresh={onRefresh}
-            emptyText="暂无耗材状态"
+            emptyText={translate('page.1f98c9d3bc65')}
           />
         </section>
       </section>
 
-      <section data-testid="consumable-requests-section" aria-label="更换申请">
+      <section data-testid="consumable-requests-section" aria-label={translate('page.07c43eb2dde1')}>
         <div className="page-header">
-          <h4>更换申请</h4>
+          <h4>{translate('page.07c43eb2dde1')}</h4>
           <button
             type="button"
             className="primary-button"
             data-testid="consumable-request-create-open"
             disabled={!canWrite || busy}
-            {...(!canWrite ? { title: '需要设备写权限（device:write）' } : {})}
+            {...(!canWrite ? { title: translate('page.250fd887db71') } : {})}
             onClick={() => setCreateOpen(true)}
           >
-            新建申请
+            {translate('page.d772b092f68b')}
           </button>
         </div>
         <div className="filter-bar">
-          <label htmlFor="request-filter-status">处理状态</label>
+          <label htmlFor="request-filter-status">{translate('page.8542beb99054')}</label>
           <select
             id="request-filter-status"
             data-testid="request-filter-status"
@@ -443,14 +446,14 @@ export function ConsumablesPage({
               })
             }
           >
-            <option value="">全部</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
             {REQUEST_STATUS_OPTIONS.map((statusOption) => (
               <option key={statusOption} value={statusOption}>
                 {REQUEST_STATUS_LABELS[statusOption]}
               </option>
             ))}
           </select>
-          <label htmlFor="request-filter-type">耗材</label>
+          <label htmlFor="request-filter-type">{translate('page.6c9da0502120')}</label>
           <select
             id="request-filter-type"
             data-testid="request-filter-type"
@@ -462,14 +465,14 @@ export function ConsumablesPage({
               })
             }
           >
-            <option value="">全部</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
             {CONSUMABLE_TYPES.map((type) => (
               <option key={type} value={type}>
                 {CONSUMABLE_TYPE_LABELS[type]}
               </option>
             ))}
           </select>
-          <label htmlFor="request-filter-device">设备 ID</label>
+          <label htmlFor="request-filter-device">{translate('page.9a04e46a8d92')}</label>
           <input
             id="request-filter-device"
             data-testid="request-filter-device"
@@ -488,51 +491,51 @@ export function ConsumablesPage({
               })
             }
           >
-            筛选
+            {translate('page.dcce9a144a40')}
           </button>
         </div>
 
-        <section data-testid="consumable-requests-table" aria-label="更换申请列表">
+        <section data-testid="consumable-requests-table" aria-label={translate('page.ea93d111282f')}>
           <CursorTable
-            ariaLabel="更换申请列表"
+            ariaLabel={translate('page.ea93d111282f')}
             columns={[
               {
                 key: 'requestedAt',
-                header: '用户申请时间',
+                header: translate('page.7ec0fb7045d8'),
                 render: (req: ConsumableRequestView) => <TimeText iso={req.requestedAt} />,
               },
-              { key: 'deviceId', header: '设备', render: (req) => req.deviceId },
+              { key: 'deviceId', header: translate('page.01f2c16cda65'), render: (req) => req.deviceId },
               {
                 key: 'consumableType',
-                header: '耗材',
+                header: translate('page.6c9da0502120'),
                 render: (req) => CONSUMABLE_TYPE_LABELS[req.consumableType],
               },
               {
                 key: 'status',
-                header: '处理状态',
+                header: translate('page.8542beb99054'),
                 render: (req) => (
                   <span data-testid={`consumable-request-status-${req.requestId}`}>
                     {REQUEST_STATUS_LABELS[req.status]}
                   </span>
                 ),
               },
-              { key: 'requestedBy', header: '申请人', render: (req) => req.requestedBy },
-              { key: 'processedBy', header: '处理人', render: (req) => req.processedBy ?? '—' },
-              { key: 'processNote', header: '处理备注', render: (req) => req.processNote ?? '—' },
+              { key: 'requestedBy', header: translate('page.880ab989a872'), render: (req) => req.requestedBy },
+              { key: 'processedBy', header: translate('page.3e132a2a8e75'), render: (req) => req.processedBy ?? '—' },
+              { key: 'processNote', header: translate('page.9019638102fb'), render: (req) => req.processNote ?? '—' },
               {
                 key: 'completedAt',
-                header: '完成时间',
+                header: translate('page.754a8a2e2dba'),
                 render: (req) => (req.completedAt !== null ? <TimeText iso={req.completedAt} /> : '—'),
               },
               {
                 key: 'actions',
-                header: '操作',
+                header: translate('page.f3ea6d345e2a'),
                 render: (req) => (
                   <span className="action-row">
                     {(['process', 'complete', 'cancel'] as const).map((requestAction) => {
                       const denied = gateRequestAction(requestAction, req.status, role);
                       // 仅渲染矩阵内动作（跳级动作不渲染按钮）
-                      if (denied !== null && denied.includes('不允许')) return null;
+                      if (denied !== null && denied.includes(translate('page.41cd13289ce7'))) return null;
                       return (
                         <button
                           key={requestAction}
@@ -557,25 +560,30 @@ export function ConsumablesPage({
             rowKey={(req) => req.requestId}
             {...(requests.error !== undefined ? { error: requests.error } : {})}
             onRefresh={onRefresh}
-            emptyText="暂无更换申请"
+            emptyText={translate('page.24e8533ea7aa')}
           />
         </section>
       </section>
 
       <Modal
         open={action !== null}
-        title={action !== null ? `${REQUEST_ACTION_LABELS[action.action]}申请：${action.request.requestId}` : ''}
+        title={
+          action !== null
+            ? REQUEST_ACTION_LABELS[action.action] + translate('page.41cb070d0772') + action.request.requestId
+            : ''
+        }
         testid="consumable-action-form"
         onClose={() => setAction(null)}
       >
         {action !== null ? (
           <div>
             <p className="field-hint">
-              If-Match：v{action.request.version}；{action.action === 'process' ? '处理备注可选' : '处理备注/原因强制'}；
-              状态迁移被拒绝（跳级/漂移）→ 409。
+              If-Match：v{action.request.version}；
+              {action.action === 'process' ? translate('page.4c3750f2c04b') : translate('page.3ed45d0380ff')}
+              {translate('page.ff917d9f5ac3')}
             </p>
             <div className="dialog-field">
-              <label htmlFor="consumable-action-note">处理备注</label>
+              <label htmlFor="consumable-action-note">{translate('page.9019638102fb')}</label>
               <input
                 id="consumable-action-note"
                 data-testid="consumable-action-note"
@@ -597,16 +605,22 @@ export function ConsumablesPage({
                 disabled={busy || noteError !== null}
                 onClick={() => void submitAction()}
               >
-                确认{REQUEST_ACTION_LABELS[action.action]}
+                {translate('page.b56d9ac6c5a0')}
+                {REQUEST_ACTION_LABELS[action.action]}
               </button>
             </div>
           </div>
         ) : null}
       </Modal>
 
-      <Modal open={createOpen} title="新建更换申请" testid="consumable-create-form" onClose={() => setCreateOpen(false)}>
+      <Modal
+        open={createOpen}
+        title={translate('page.42438fcdc1eb')}
+        testid="consumable-create-form"
+        onClose={() => setCreateOpen(false)}
+      >
         <div className="dialog-field">
-          <label htmlFor="consumable-create-device">设备 ID</label>
+          <label htmlFor="consumable-create-device">{translate('page.9a04e46a8d92')}</label>
           <input
             id="consumable-create-device"
             data-testid="consumable-create-device"
@@ -615,7 +629,7 @@ export function ConsumablesPage({
           />
         </div>
         <div className="dialog-field">
-          <label htmlFor="consumable-create-type">耗材</label>
+          <label htmlFor="consumable-create-type">{translate('page.6c9da0502120')}</label>
           <select
             id="consumable-create-type"
             data-testid="consumable-create-type"
@@ -624,7 +638,7 @@ export function ConsumablesPage({
               setCreateDraft({ ...createDraft, consumableType: event.target.value as ConsumableType | '' })
             }
           >
-            <option value="">请选择</option>
+            <option value="">{translate('page.382f4b5559b3')}</option>
             {CONSUMABLE_TYPES.map((type) => (
               <option key={type} value={type}>
                 {CONSUMABLE_TYPE_LABELS[type]}
@@ -633,7 +647,7 @@ export function ConsumablesPage({
           </select>
         </div>
         <div className="dialog-field">
-          <label htmlFor="consumable-create-note">申请备注（可选）</label>
+          <label htmlFor="consumable-create-note">{translate('page.bf243804ac18')}</label>
           <input
             id="consumable-create-note"
             data-testid="consumable-create-note"
@@ -650,7 +664,7 @@ export function ConsumablesPage({
             disabled={busy || createDraft.deviceId.trim() === '' || createDraft.consumableType === ''}
             onClick={() => void submitCreate()}
           >
-            创建申请
+            {translate('page.7bc5480e718b')}
           </button>
         </div>
       </Modal>

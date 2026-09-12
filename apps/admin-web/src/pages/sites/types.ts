@@ -1,9 +1,8 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-05 Site 数据类型：镜像 contracts/rest/admin-site-api.json（BE-CUS-02，DEC-011）。
  */
-
 export type SiteStatus = 'ACTIVE' | 'SUSPENDED';
-
 export interface SiteView {
   readonly id: string;
   readonly customerId: string;
@@ -23,7 +22,6 @@ export interface SiteView {
   readonly createdAt: string;
   readonly updatedAt: string;
 }
-
 export interface SiteInput {
   readonly name: string;
   readonly region: string | null;
@@ -34,8 +32,11 @@ export interface SiteInput {
   readonly contactPhone: string | null;
   readonly contactEmail: string | null;
 }
-
 export const SITE_STATUS_LABELS: Readonly<Record<SiteStatus, string>> = {
-  ACTIVE: '正常',
-  SUSPENDED: '已停用',
+  get ACTIVE() {
+    return translate('page.f78d037abccd');
+  },
+  get SUSPENDED() {
+    return translate('page.6c7dcbb73a59');
+  },
 };

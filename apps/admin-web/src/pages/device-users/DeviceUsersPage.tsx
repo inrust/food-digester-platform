@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-09 设备用户管理页（/device-users；FE-16 设置页可直接嵌入本页组件）。
  *
@@ -30,21 +31,27 @@ import type {
   DeviceUserView,
   RevokeResultView,
 } from './types.js';
-
 export type DeviceUserDetailState =
-  | { readonly kind: 'none' }
-  | { readonly kind: 'loading' }
-  | { readonly kind: 'error'; readonly error: unknown }
-  | { readonly kind: 'ready'; readonly detail: DeviceUserDetailView };
-
+  | {
+      readonly kind: 'none';
+    }
+  | {
+      readonly kind: 'loading';
+    }
+  | {
+      readonly kind: 'error';
+      readonly error: unknown;
+    }
+  | {
+      readonly kind: 'ready';
+      readonly detail: DeviceUserDetailView;
+    };
 export interface DeviceUserFilter {
   readonly customerId: string | null;
   readonly status: 'ACTIVE' | 'DISABLED' | null;
   readonly keyword: string | null;
 }
-
 export const EMPTY_DEVICE_USER_FILTER: DeviceUserFilter = { customerId: null, status: null, keyword: null };
-
 export interface DeviceUsersPageProps {
   readonly role: Role;
   /** Customer 角色父级强制传入本 Customer ID（页面隐藏客户选择）。 */
@@ -72,15 +79,17 @@ export interface DeviceUsersPageProps {
   }) => Promise<DeviceUserView>;
   readonly onUpdate: (
     deviceUserId: string,
-    input: { displayName?: string | null; password?: string; reason: string },
+    input: {
+      displayName?: string | null;
+      password?: string;
+      reason: string;
+    },
   ) => Promise<DeviceUserView>;
   readonly onDisable: (deviceUserId: string, reason: string) => Promise<DeviceUserView>;
   readonly onAssign: (deviceUserId: string, deviceIds: readonly string[], reason: string) => Promise<AssignResultView>;
   readonly onRevoke: (deviceUserId: string, deviceIds: readonly string[], reason: string) => Promise<RevokeResultView>;
 }
-
 type PendingModal = 'create' | 'edit' | 'password' | 'assign' | 'revoke' | null;
-
 export function DeviceUsersPage({
   role,
   fixedCustomerId = null,
@@ -106,11 +115,9 @@ export function DeviceUsersPage({
   const [notice, setNotice] = useState<string | null>(null);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-
   const canWrite = canWriteDeviceUser(role);
   const canAssign = canAssignDeviceUser(role);
   const detailView = detail.kind === 'ready' ? detail.detail : null;
-
   const runAction = async (execute: () => Promise<unknown>, successText: string) => {
     // 防重复点击：在途请求直接忽略（后端 If-Match/幂等兜底）
     if (inFlight.current) return;
@@ -131,13 +138,12 @@ export function DeviceUsersPage({
       setBusy(false);
     }
   };
-
   return (
     <div className="device-users-page" data-testid="device-users-page">
       <div className="filter-bar" data-testid="device-user-filter-bar">
         {fixedCustomerId === null ? (
           <>
-            <label htmlFor="device-user-customer">所属客户</label>
+            <label htmlFor="device-user-customer">{translate('page.467c1137f479')}</label>
             <select
               id="device-user-customer"
               data-testid="device-user-customer-filter"
@@ -146,7 +152,7 @@ export function DeviceUsersPage({
                 setDraftFilter({ ...draftFilter, customerId: event.target.value === '' ? null : event.target.value })
               }
             >
-              <option value="">全部</option>
+              <option value="">{translate('page.778fc8f99453')}</option>
               {customerOptions.map((c) => (
                 <option key={c.value} value={c.value}>
                   {c.label}
@@ -155,7 +161,7 @@ export function DeviceUsersPage({
             </select>
           </>
         ) : null}
-        <label htmlFor="device-user-status">状态</label>
+        <label htmlFor="device-user-status">{translate('page.62e951a692ff')}</label>
         <select
           id="device-user-status"
           data-testid="device-user-status-filter"
@@ -167,14 +173,14 @@ export function DeviceUsersPage({
             })
           }
         >
-          <option value="">全部</option>
+          <option value="">{translate('page.778fc8f99453')}</option>
           {DEVICE_USER_STATUS_OPTIONS.map((status) => (
             <option key={status} value={status}>
               {DEVICE_USER_STATUS_LABELS[status]}
             </option>
           ))}
         </select>
-        <label htmlFor="device-user-keyword">关键字</label>
+        <label htmlFor="device-user-keyword">{translate('page.621219ff9885')}</label>
         <input
           id="device-user-keyword"
           data-testid="device-user-keyword"
@@ -187,7 +193,7 @@ export function DeviceUsersPage({
           data-testid="device-user-search"
           onClick={() => onApplyFilter(draftFilter)}
         >
-          筛选
+          {translate('page.dcce9a144a40')}
         </button>
         <button
           type="button"
@@ -197,7 +203,7 @@ export function DeviceUsersPage({
             onApplyFilter(EMPTY_DEVICE_USER_FILTER);
           }}
         >
-          重置
+          {translate('page.3d81345303ab')}
         </button>
         {canWrite ? (
           <button
@@ -206,7 +212,7 @@ export function DeviceUsersPage({
             data-testid="device-user-create"
             onClick={() => setModal('create')}
           >
-            新增设备用户
+            {translate('page.6663d2d3519a')}
           </button>
         ) : null}
       </div>
@@ -221,23 +227,23 @@ export function DeviceUsersPage({
       {list.error !== undefined ? <ErrorNotice error={list.error} onRefresh={onRefresh} /> : null}
       {list.rows === null ? (
         <div role="status" data-testid="device-user-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : list.rows.length === 0 ? (
         <p className="empty-state" data-testid="device-user-empty">
-          暂无设备用户
+          {translate('page.39b4bad93c4a')}
         </p>
       ) : (
-        <table aria-label="设备用户列表" data-testid="device-user-table">
+        <table aria-label={translate('page.2993d42bd8c9')} data-testid="device-user-table">
           <thead>
             <tr>
-              <th scope="col">用户名</th>
-              <th scope="col">显示名</th>
-              <th scope="col">状态</th>
-              <th scope="col">分配设备数</th>
-              <th scope="col">同步版本</th>
-              <th scope="col">更新时间</th>
-              <th scope="col">操作</th>
+              <th scope="col">{translate('page.a1aaf352cb07')}</th>
+              <th scope="col">{translate('page.c10bbf5ddd2d')}</th>
+              <th scope="col">{translate('page.62e951a692ff')}</th>
+              <th scope="col">{translate('page.08eb0e60ad1a')}</th>
+              <th scope="col">{translate('page.928728223d5a')}</th>
+              <th scope="col">{translate('page.093dea88c930')}</th>
+              <th scope="col">{translate('page.f3ea6d345e2a')}</th>
             </tr>
           </thead>
           <tbody>
@@ -257,7 +263,7 @@ export function DeviceUsersPage({
                     data-testid={`device-user-detail-${row.deviceUserId}`}
                     onClick={() => onSelect(row.deviceUserId)}
                   >
-                    详情
+                    {translate('page.4f55ee1e687f')}
                   </button>
                 </td>
               </tr>
@@ -268,26 +274,30 @@ export function DeviceUsersPage({
 
       {detail.kind === 'loading' ? (
         <div role="status" data-testid="device-user-detail-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : null}
       {detail.kind === 'error' ? <ErrorNotice error={detail.error} onRefresh={onRefresh} /> : null}
 
       {detailView !== null ? (
-        <aside className="device-user-detail" data-testid="device-user-detail" aria-label="设备用户详情">
-          <h4>设备用户详情</h4>
+        <aside
+          className="device-user-detail"
+          data-testid="device-user-detail"
+          aria-label={translate('page.eac30b08be59')}
+        >
+          <h4>{translate('page.eac30b08be59')}</h4>
           <dl>
-            <dt>用户名</dt>
+            <dt>{translate('page.a1aaf352cb07')}</dt>
             <dd data-testid="detail-username">{detailView.username}</dd>
-            <dt>显示名</dt>
+            <dt>{translate('page.c10bbf5ddd2d')}</dt>
             <dd>{detailView.displayName ?? '—'}</dd>
-            <dt>所属客户</dt>
+            <dt>{translate('page.467c1137f479')}</dt>
             <dd>{detailView.customerId}</dd>
-            <dt>状态</dt>
+            <dt>{translate('page.62e951a692ff')}</dt>
             <dd data-testid="detail-status">{DEVICE_USER_STATUS_LABELS[detailView.status]}</dd>
-            <dt>同步版本</dt>
+            <dt>{translate('page.928728223d5a')}</dt>
             <dd data-testid="detail-version">v{detailView.version}</dd>
-            <dt>更新时间</dt>
+            <dt>{translate('page.093dea88c930')}</dt>
             <dd>
               <TimeText iso={detailView.updatedAt} />
             </dd>
@@ -295,12 +305,12 @@ export function DeviceUsersPage({
 
           <div className="detail-actions">
             <button type="button" onClick={onCloseDetail}>
-              关闭
+              {translate('page.6c14bd7f6f9e')}
             </button>
             {canWrite ? (
               <>
                 <button type="button" data-testid="device-user-edit" disabled={busy} onClick={() => setModal('edit')}>
-                  修改资料
+                  {translate('page.644d5f06bdba')}
                 </button>
                 <button
                   type="button"
@@ -308,17 +318,17 @@ export function DeviceUsersPage({
                   disabled={busy}
                   onClick={() => setModal('password')}
                 >
-                  重置密码
+                  {translate('page.7e422146dd5b')}
                 </button>
                 <button
                   type="button"
                   className="danger-button"
                   data-testid="device-user-disable"
                   disabled={busy || detailView.status === 'DISABLED'}
-                  {...(detailView.status === 'DISABLED' ? { title: '用户已停用' } : {})}
+                  {...(detailView.status === 'DISABLED' ? { title: translate('page.0b78023f2a15') } : {})}
                   onClick={() => setDisableOpen(true)}
                 >
-                  停用
+                  {translate('page.d989e55188c9')}
                 </button>
               </>
             ) : null}
@@ -328,40 +338,40 @@ export function DeviceUsersPage({
                   type="button"
                   data-testid="device-user-assign"
                   disabled={busy || detailView.status === 'DISABLED'}
-                  {...(detailView.status === 'DISABLED' ? { title: '停用用户不可新分配' } : {})}
+                  {...(detailView.status === 'DISABLED' ? { title: translate('page.70f547130bda') } : {})}
                   onClick={() => setModal('assign')}
                 >
-                  分配设备
+                  {translate('page.229546d5233e')}
                 </button>
                 <button
                   type="button"
                   data-testid="device-user-revoke"
                   disabled={busy || !detailView.assignments.some((a) => a.status === 'ACTIVE')}
                   {...(!detailView.assignments.some((a) => a.status === 'ACTIVE')
-                    ? { title: '无生效中的分配可撤销' }
+                    ? { title: translate('page.78216ecf2dfc') }
                     : {})}
                   onClick={() => setModal('revoke')}
                 >
-                  撤销分配
+                  {translate('page.38fe0730070c')}
                 </button>
               </>
             ) : null}
           </div>
 
-          <section data-testid="device-user-assignments" aria-label="分配历史">
-            <h5>分配历史</h5>
+          <section data-testid="device-user-assignments" aria-label={translate('page.c9a07e5c1fbd')}>
+            <h5>{translate('page.c9a07e5c1fbd')}</h5>
             {detailView.assignments.length === 0 ? (
               <p className="empty-state" data-testid="assignments-empty">
-                暂无分配
+                {translate('page.6364e9edd026')}
               </p>
             ) : (
-              <table aria-label="分配历史">
+              <table aria-label={translate('page.c9a07e5c1fbd')}>
                 <thead>
                   <tr>
-                    <th scope="col">设备</th>
-                    <th scope="col">状态</th>
-                    <th scope="col">分配时间</th>
-                    <th scope="col">撤销时间</th>
+                    <th scope="col">{translate('page.01f2c16cda65')}</th>
+                    <th scope="col">{translate('page.62e951a692ff')}</th>
+                    <th scope="col">{translate('page.af2cdb23eed1')}</th>
+                    <th scope="col">{translate('page.cca320a7ae9a')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -379,29 +389,29 @@ export function DeviceUsersPage({
               </table>
             )}
           </section>
-          <section data-testid="device-user-sync-states" aria-label="设备同步状态">
-            <h5>同步交付状态</h5>
-            <p className="field-hint">
-              实体版本、通知投递、同步快照确认与设备应用是独立阶段；当前协议尚未提供设备本地应用确认回执。
-            </p>
+          <section data-testid="device-user-sync-states" aria-label={translate('page.1338e028c94c')}>
+            <h5>{translate('page.969bc1b6280a')}</h5>
+            <p className="field-hint">{translate('page.5db8e7715b3a')}</p>
             {(detailView.syncStates ?? []).length === 0 ? (
-              <p className="empty-state">尚未生成同步通知</p>
+              <p className="empty-state">{translate('page.920160f6e04d')}</p>
             ) : (
-              <table aria-label="设备同步状态">
+              <table aria-label={translate('page.1338e028c94c')}>
                 <thead>
                   <tr>
-                    <th scope="col">设备</th>
-                    <th scope="col">实体版本</th>
-                    <th scope="col">通知投递</th>
-                    <th scope="col">同步快照</th>
-                    <th scope="col">设备应用</th>
+                    <th scope="col">{translate('page.01f2c16cda65')}</th>
+                    <th scope="col">{translate('page.1e6d17c65416')}</th>
+                    <th scope="col">{translate('page.590a52b9ae48')}</th>
+                    <th scope="col">{translate('page.d8ba8ff705e9')}</th>
+                    <th scope="col">{translate('page.1e3d4f2f1d00')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(detailView.syncStates ?? []).map((state) => (
                     <tr key={state.deviceId} data-testid={`user-sync-${state.deviceId}`}>
                       <td>{state.deviceId}</td>
-                      <td>{state.entityVersion === null ? '历史通知未记录' : `v${state.entityVersion}`}</td>
+                      <td>
+                        {state.entityVersion === null ? translate('page.eb89a5e85f07') : `v${state.entityVersion}`}
+                      </td>
                       <td>
                         {state.notificationStatus}
                         {state.notificationPublishedAt ? (
@@ -413,8 +423,12 @@ export function DeviceUsersPage({
                       </td>
                       <td>
                         {state.snapshotStatus === 'NOT_SERVED'
-                          ? '尚未提供'
-                          : `${state.snapshotStatus === 'ACKNOWLEDGED' ? '设备后续同步已确认' : '服务端已提供'} v${state.deliveredEntityVersion ?? '?'}`}
+                          ? translate('page.e630360276ef')
+                          : (state.snapshotStatus === 'ACKNOWLEDGED'
+                              ? translate('page.1086959ccc94')
+                              : translate('page.4f75a1dce29f')) +
+                            ' v' +
+                            (state.deliveredEntityVersion ?? '?')}
                         {state.snapshotServedAt ? (
                           <>
                             {' '}
@@ -424,12 +438,16 @@ export function DeviceUsersPage({
                         {state.deviceReportedLastSyncAt ? (
                           <>
                             <br />
-                            设备报告上次同步：
+                            {translate('page.ba2bdef874e5')}
                             <TimeText iso={state.deviceReportedLastSyncAt} />
                           </>
                         ) : null}
                       </td>
-                      <td>{state.deviceApplyStatus === 'NOT_REPORTED' ? '协议未上报' : state.deviceApplyStatus}</td>
+                      <td>
+                        {state.deviceApplyStatus === 'NOT_REPORTED'
+                          ? translate('page.7b199c696da2')
+                          : state.deviceApplyStatus}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -441,7 +459,7 @@ export function DeviceUsersPage({
 
       <Modal
         open={modal === 'create'}
-        title="新增设备用户"
+        title={translate('page.6663d2d3519a')}
         testid="device-user-create-dialog"
         onClose={() => setModal(null)}
       >
@@ -449,7 +467,7 @@ export function DeviceUsersPage({
           fixedCustomerId={fixedCustomerId}
           customerOptions={customerOptions}
           busy={busy}
-          onSubmit={(input) => void runAction(() => onCreate(input), '设备用户已创建')}
+          onSubmit={(input) => void runAction(() => onCreate(input), translate('page.7a93fc4e149c'))}
         />
       </Modal>
 
@@ -457,7 +475,7 @@ export function DeviceUsersPage({
         <>
           <Modal
             open={modal === 'edit'}
-            title="修改资料"
+            title={translate('page.644d5f06bdba')}
             testid="device-user-edit-dialog"
             onClose={() => setModal(null)}
           >
@@ -465,14 +483,17 @@ export function DeviceUsersPage({
               currentDisplayName={detailView.displayName}
               busy={busy}
               onSubmit={(displayName, reason) =>
-                void runAction(() => onUpdate(detailView.deviceUserId, { displayName, reason }), '资料已更新')
+                void runAction(
+                  () => onUpdate(detailView.deviceUserId, { displayName, reason }),
+                  translate('page.df6259d848bc'),
+                )
               }
             />
           </Modal>
 
           <Modal
             open={modal === 'password'}
-            title="重置设备本地密码"
+            title={translate('page.3073ed66a690')}
             testid="device-user-password-dialog"
             onClose={() => setModal(null)}
           >
@@ -481,7 +502,7 @@ export function DeviceUsersPage({
               onSubmit={(password, reason) =>
                 void runAction(
                   () => onUpdate(detailView.deviceUserId, { password, reason }),
-                  '密码已轮换（设备将在下次同步时领取新验证材料）',
+                  translate('page.2a4dfcd4b8bf'),
                 )
               }
             />
@@ -489,25 +510,28 @@ export function DeviceUsersPage({
 
           <Modal
             open={modal === 'assign'}
-            title="分配设备"
+            title={translate('page.229546d5233e')}
             testid="device-user-assign-dialog"
             onClose={() => setModal(null)}
           >
             <DevicePickForm
               testidPrefix="assign"
               devices={assignableDevices}
-              reasonLabel="分配原因"
-              submitText="确认分配"
+              reasonLabel={translate('page.fc530c4e70f6')}
+              submitText={translate('page.1485e5902972')}
               busy={busy}
               onSubmit={(deviceIds, reason) =>
-                void runAction(() => onAssign(detailView.deviceUserId, deviceIds, reason), '分配已完成')
+                void runAction(
+                  () => onAssign(detailView.deviceUserId, deviceIds, reason),
+                  translate('page.173f47097d59'),
+                )
               }
             />
           </Modal>
 
           <Modal
             open={modal === 'revoke'}
-            title="撤销分配"
+            title={translate('page.38fe0730070c')}
             testid="device-user-revoke-dialog"
             onClose={() => setModal(null)}
           >
@@ -516,24 +540,29 @@ export function DeviceUsersPage({
               devices={detailView.assignments
                 .filter((a) => a.status === 'ACTIVE')
                 .map((a) => ({ value: a.deviceId, label: a.deviceId }))}
-              reasonLabel="撤销原因"
-              submitText="确认撤销"
+              reasonLabel={translate('page.e28c1ecca078')}
+              submitText={translate('page.f7e81a7807cb')}
               busy={busy}
               onSubmit={(deviceIds, reason) =>
-                void runAction(() => onRevoke(detailView.deviceUserId, deviceIds, reason), '分配已撤销')
+                void runAction(
+                  () => onRevoke(detailView.deviceUserId, deviceIds, reason),
+                  translate('page.543f69929495'),
+                )
               }
             />
           </Modal>
 
           <ConfirmDialog
             open={disableOpen}
-            title="停用设备用户"
+            title={translate('page.e79e46d7d4e9')}
             danger
             requireReason
-            reasonLabel="停用原因"
-            description={`停用后该用户不进入新 Sync（设备下次同步后失效）。用户：${detailView.username}`}
-            confirmText="确认停用"
-            onConfirm={(reason) => void runAction(() => onDisable(detailView.deviceUserId, reason), '设备用户已停用')}
+            reasonLabel={translate('page.d599ea3c90af')}
+            description={translate('page.e7992b508142') + detailView.username}
+            confirmText={translate('page.f3abd8941903')}
+            onConfirm={(reason) =>
+              void runAction(() => onDisable(detailView.deviceUserId, reason), translate('page.3d95ae7025be'))
+            }
             onCancel={() => setDisableOpen(false)}
           />
         </>
@@ -541,7 +570,6 @@ export function DeviceUsersPage({
     </div>
   );
 }
-
 function CreateDeviceUserForm({
   fixedCustomerId,
   customerOptions,
@@ -565,19 +593,18 @@ function CreateDeviceUserForm({
   const [password, setPassword] = useState('');
   const [reason, setReason] = useState('');
   const validationError = validateDeviceUserCreate({ username, password });
-
   return (
     <div data-testid="device-user-create-form">
       {fixedCustomerId === null ? (
         <div className="dialog-field">
-          <label htmlFor="create-user-customer">所属客户</label>
+          <label htmlFor="create-user-customer">{translate('page.467c1137f479')}</label>
           <select
             id="create-user-customer"
             data-testid="create-user-customer"
             value={customerId}
             onChange={(event) => setCustomerId(event.target.value)}
           >
-            <option value="">请选择客户</option>
+            <option value="">{translate('page.6bdb05d6eeeb')}</option>
             {customerOptions.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.label}
@@ -587,7 +614,7 @@ function CreateDeviceUserForm({
         </div>
       ) : null}
       <div className="dialog-field">
-        <label htmlFor="create-username">用户名（同客户内唯一）</label>
+        <label htmlFor="create-username">{translate('page.ec8a1f47f74e')}</label>
         <input
           id="create-username"
           data-testid="create-username"
@@ -596,7 +623,7 @@ function CreateDeviceUserForm({
         />
       </div>
       <div className="dialog-field">
-        <label htmlFor="create-display-name">显示名（可选）</label>
+        <label htmlFor="create-display-name">{translate('page.5c87b3144de0')}</label>
         <input
           id="create-display-name"
           data-testid="create-display-name"
@@ -605,7 +632,7 @@ function CreateDeviceUserForm({
         />
       </div>
       <div className="dialog-field">
-        <label htmlFor="create-password">设备本地密码（仅本次提交，不回显）</label>
+        <label htmlFor="create-password">{translate('page.dcc2db120b45')}</label>
         <input
           id="create-password"
           type="password"
@@ -616,7 +643,7 @@ function CreateDeviceUserForm({
         />
       </div>
       <div className="dialog-field">
-        <label htmlFor="create-user-reason">原因（可选，写入审计）</label>
+        <label htmlFor="create-user-reason">{translate('page.db5e8a988ba0')}</label>
         <textarea
           id="create-user-reason"
           data-testid="create-user-reason"
@@ -651,13 +678,12 @@ function CreateDeviceUserForm({
             setPassword('');
           }}
         >
-          创建用户
+          {translate('page.315315d695e3')}
         </button>
       </div>
     </div>
   );
 }
-
 function EditDisplayNameForm({
   currentDisplayName,
   busy,
@@ -671,11 +697,10 @@ function EditDisplayNameForm({
   const [reason, setReason] = useState('');
   const trimmed = displayName.trim();
   const reasonTrimmed = reason.trim();
-
   return (
     <div data-testid="device-user-edit-form">
       <div className="dialog-field">
-        <label htmlFor="edit-display-name">显示名（留空并勾选清除 = null）</label>
+        <label htmlFor="edit-display-name">{translate('page.de534c770f8e')}</label>
         <input
           id="edit-display-name"
           data-testid="edit-display-name"
@@ -684,7 +709,7 @@ function EditDisplayNameForm({
         />
       </div>
       <div className="dialog-field">
-        <label htmlFor="edit-reason">原因（必填，写入审计）</label>
+        <label htmlFor="edit-reason">{translate('page.935f3e28f6f2')}</label>
         <textarea
           id="edit-reason"
           data-testid="edit-reason"
@@ -700,13 +725,12 @@ function EditDisplayNameForm({
           disabled={busy || reasonTrimmed === ''}
           onClick={() => onSubmit(trimmed === '' ? null : trimmed, reasonTrimmed)}
         >
-          保存
+          {translate('page.fadf24dbc5a9')}
         </button>
       </div>
     </div>
   );
 }
-
 function PasswordResetForm({
   busy,
   onSubmit,
@@ -717,14 +741,11 @@ function PasswordResetForm({
   const [password, setPassword] = useState('');
   const [reason, setReason] = useState('');
   const reasonTrimmed = reason.trim();
-
   return (
     <div data-testid="device-user-password-form">
-      <p className="field-hint">
-        新密码仅本次提交发送一次，服务端立即派生加盐验证值；本页面不回显、不存储、不可再次查看。
-      </p>
+      <p className="field-hint">{translate('page.907970494838')}</p>
       <div className="dialog-field">
-        <label htmlFor="reset-password">新密码</label>
+        <label htmlFor="reset-password">{translate('page.d22c9c008539')}</label>
         <input
           id="reset-password"
           type="password"
@@ -735,7 +756,7 @@ function PasswordResetForm({
         />
       </div>
       <div className="dialog-field">
-        <label htmlFor="reset-reason">原因（必填，写入审计）</label>
+        <label htmlFor="reset-reason">{translate('page.935f3e28f6f2')}</label>
         <textarea
           id="reset-reason"
           data-testid="reset-reason"
@@ -755,13 +776,12 @@ function PasswordResetForm({
             setPassword('');
           }}
         >
-          确认重置
+          {translate('page.30a6079ce340')}
         </button>
       </div>
     </div>
   );
 }
-
 function DevicePickForm({
   testidPrefix,
   devices,
@@ -780,16 +800,14 @@ function DevicePickForm({
   const [selected, setSelected] = useState<readonly string[]>([]);
   const [reason, setReason] = useState('');
   const reasonTrimmed = reason.trim();
-
   const toggle = (deviceId: string) => {
     setSelected((prev) => (prev.includes(deviceId) ? prev.filter((d) => d !== deviceId) : [...prev, deviceId]));
   };
-
   return (
     <div data-testid={`${testidPrefix}-form`}>
       <fieldset className="dialog-field">
-        <legend>设备（批量，全成或全败）</legend>
-        {devices.length === 0 ? <p className="empty-state">无可选设备</p> : null}
+        <legend>{translate('page.bcd7aea101ed')}</legend>
+        {devices.length === 0 ? <p className="empty-state">{translate('page.18fb8c8c906c')}</p> : null}
         {devices.map((d) => (
           <label key={d.value}>
             <input
@@ -803,7 +821,10 @@ function DevicePickForm({
         ))}
       </fieldset>
       <div className="dialog-field">
-        <label htmlFor={`${testidPrefix}-reason`}>{reasonLabel}（必填，写入审计）</label>
+        <label htmlFor={`${testidPrefix}-reason`}>
+          {reasonLabel}
+          {translate('page.7b53c3b8c677')}
+        </label>
         <textarea
           id={`${testidPrefix}-reason`}
           data-testid={`${testidPrefix}-reason`}

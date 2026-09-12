@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-08 授权摘要（可复用组件）：供授权管理列表与 FE-17 合约详情页嵌入。
  *
@@ -7,18 +8,16 @@
 import type { DeviceLicenseSummaryView } from '../devices/types.js';
 import { ENTITLEMENT_LABELS, licenseStatusLabel } from './license-state.js';
 import type { EntitlementCode } from './types.js';
-
 export interface LicenseSummaryProps {
   readonly summary: DeviceLicenseSummaryView | null;
   /** 提供时显示“查看授权”入口（跳转授权详情）。 */
   readonly onOpen?: (licenseId: string) => void;
 }
-
 export function LicenseSummary({ summary, onOpen }: LicenseSummaryProps) {
   if (summary === null) {
     return (
       <span className="license-summary empty" data-testid="license-summary">
-        无授权
+        {translate('page.4a5b140af3a0')}
       </span>
     );
   }
@@ -36,7 +35,7 @@ export function LicenseSummary({ summary, onOpen }: LicenseSummaryProps) {
       <span className="license-entitlements">{entitlements === '' ? '—' : entitlements}</span>
       {onOpen !== undefined ? (
         <button type="button" data-testid="license-summary-open" onClick={() => onOpen(summary.licenseId)}>
-          查看授权
+          {translate('page.642b717e63c6')}
         </button>
       ) : null}
     </span>

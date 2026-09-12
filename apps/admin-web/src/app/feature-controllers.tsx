@@ -1,3 +1,4 @@
+import { translate } from '../i18n/i18n.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
 import type { ApiClient } from '../api/http-client.js';
@@ -49,7 +50,11 @@ import {
   revokeDeviceUser,
 } from '../pages/device-users/device-users-api.js';
 import { DeviceUsersPage, EMPTY_DEVICE_USER_FILTER } from '../pages/device-users/DeviceUsersPage.js';
-import type { DeviceUserDetailState, DeviceUserFilter } from '../pages/device-users/DeviceUsersPage.js';
+import type {
+  DeviceUserDetailState,
+  DeviceUserFilter,
+  DeviceUsersPageProps,
+} from '../pages/device-users/DeviceUsersPage.js';
 import type { DeviceUserListItemView } from '../pages/device-users/types.js';
 import {
   fetchDevice,
@@ -77,26 +82,29 @@ import type { LicenseView } from '../pages/licenses/types.js';
 import { fetchSites } from '../pages/sites/sites-api.js';
 import type { SiteView } from '../pages/sites/types.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
-
-type Navigate = (path: string, options?: { replace?: boolean }) => void;
-
+type Navigate = (
+  path: string,
+  options?: {
+    replace?: boolean;
+  },
+) => void;
 function roleOf(session: SessionSnapshot): Role {
   const role = session.roles[0];
-  if (role === undefined) throw new Error('已建立会话缺少角色');
+  if (role === undefined) throw new Error(translate('ui.fb2397e137f4'));
   return role;
 }
-
 function queryId(search: string): string | null {
   const value = new URLSearchParams(search).get('deviceId');
   return value === null || value.trim() === '' ? null : value;
 }
-
 function option(value: string, label: string): FilterOption {
   return { value, label };
 }
-
 async function collectAll<T>(
-  load: (cursor: string | null) => Promise<{ readonly items: readonly T[]; readonly nextCursor: string | null }>,
+  load: (cursor: string | null) => Promise<{
+    readonly items: readonly T[];
+    readonly nextCursor: string | null;
+  }>,
 ): Promise<readonly T[]> {
   const items: T[] = [];
   const seen = new Set<string>();
@@ -109,7 +117,6 @@ async function collectAll<T>(
     cursor = page.nextCursor;
   }
 }
-
 export function DeviceViewController({
   api,
   search,
@@ -126,7 +133,6 @@ export function DeviceViewController({
   const [mediaState, setMediaState] = useState<MediaState>({ status: 'idle' });
   const [activityState, setActivityState] = useState<ActivityState>({ status: 'idle' });
   const selectedId = useRef<string | null>(null);
-
   const loadConsole = useCallback(
     async (deviceId: string) => {
       selectedId.current = deviceId;
@@ -164,7 +170,6 @@ export function DeviceViewController({
     },
     [api],
   );
-
   useEffect(() => {
     let active = true;
     void Promise.all([
@@ -185,12 +190,10 @@ export function DeviceViewController({
       active = false;
     };
   }, [api]);
-
   useEffect(() => {
     const initialId = queryId(search);
     if (initialId !== null && initialId !== selectedId.current) void loadConsole(initialId);
   }, [loadConsole, search]);
-
   const filterOptions = useMemo(() => {
     const regions = [...new Set(viewSites.map((site) => site.region).filter((v): v is string => v !== null))];
     const subregions = [
@@ -213,7 +216,6 @@ export function DeviceViewController({
         .map((d) => ({ ...option(d.id, d.alias ?? d.serialNumber), siteId: d.site?.id ?? '' })),
     };
   }, [devices, viewSites]);
-
   return (
     <DeviceViewPage
       device={device}
@@ -244,7 +246,6 @@ export function DeviceViewController({
     />
   );
 }
-
 export function DeviceManageController({
   api,
   session,
@@ -265,8 +266,11 @@ export function DeviceManageController({
   const [retirement, setRetirement] = useState<RetirementRecordView | null>(null);
   const [rotation, setRotation] = useState<RotationRequestView | null>(null);
   const [customers, setCustomers] = useState<readonly FilterOption[]>([]);
-  const [sites, setSites] = useState<readonly (FilterOption & { customerId: string })[]>([]);
-
+  const [sites, setSites] = useState<
+    readonly (FilterOption & {
+      customerId: string;
+    })[]
+  >([]);
   const load = useCallback(async () => {
     if (deviceId === null) {
       setDevice(null);
@@ -289,7 +293,6 @@ export function DeviceManageController({
     }
     setLoading(false);
   }, [api, deviceId]);
-
   useEffect(() => {
     setRotation(null);
     void load();
@@ -313,9 +316,8 @@ export function DeviceManageController({
       active = false;
     };
   }, [api]);
-
   const requireId = () => {
-    if (deviceId === null) throw new Error('缺少 deviceId');
+    if (deviceId === null) throw new Error(translate('ui.b05a6a2c019b'));
     return deviceId;
   };
   return (
@@ -346,7 +348,7 @@ export function DeviceManageController({
         return result;
       }}
       onUpdateAlias={(alias) => {
-        if (device === null) throw new Error('设备尚未加载');
+        if (device === null) throw new Error(translate('ui.f0438a199754'));
         return updateDeviceAlias(api, requireId(), alias, device.updatedAt);
       }}
       onRequestRotation={async () => {
@@ -358,7 +360,6 @@ export function DeviceManageController({
     />
   );
 }
-
 export function LicensesController({ api, session }: { readonly api: ApiClient; readonly session: SessionSnapshot }) {
   const [filter, setFilter] = useState<LicenseFilter>(EMPTY_LICENSE_FILTER);
   const [list, setList] = useState<{
@@ -367,7 +368,12 @@ export function LicensesController({ api, session }: { readonly api: ApiClient; 
     error?: unknown;
     nextCursor?: string | null;
   }>({ rows: null });
-  const [createCandidates, setCreateCandidates] = useState<readonly { deviceId: string; label: string }[]>([]);
+  const [createCandidates, setCreateCandidates] = useState<
+    readonly {
+      deviceId: string;
+      label: string;
+    }[]
+  >([]);
   const [detail, setDetail] = useState<LicenseDetailState>({ kind: 'none' });
   const selected = useRef<string | null>(null);
   const loadList = useCallback(
@@ -455,7 +461,6 @@ export function LicensesController({ api, session }: { readonly api: ApiClient; 
     />
   );
 }
-
 export function ConfigurationsController({
   api,
   session,
@@ -464,7 +469,10 @@ export function ConfigurationsController({
   readonly session: SessionSnapshot;
 }) {
   const [filter, setFilter] = useState<ConfigurationFilter>(EMPTY_CONFIGURATION_FILTER);
-  const [list, setList] = useState<{ rows: readonly ConfigurationSummaryView[] | null; error?: unknown }>({
+  const [list, setList] = useState<{
+    rows: readonly ConfigurationSummaryView[] | null;
+    error?: unknown;
+  }>({
     rows: null,
   });
   const [detail, setDetail] = useState<ConfigurationDetailState>({ kind: 'none' });
@@ -531,17 +539,19 @@ export function ConfigurationsController({
     />
   );
 }
-
-export function DeviceUsersController({
+export function useDeviceUsersPageProps({
   api,
   session,
 }: {
   readonly api: ApiClient;
   readonly session: SessionSnapshot;
-}) {
+}): DeviceUsersPageProps {
   const fixedCustomerId = session.customerId;
   const [filter, setFilter] = useState<DeviceUserFilter>({ ...EMPTY_DEVICE_USER_FILTER, customerId: fixedCustomerId });
-  const [list, setList] = useState<{ rows: readonly DeviceUserListItemView[] | null; error?: unknown }>({ rows: null });
+  const [list, setList] = useState<{
+    rows: readonly DeviceUserListItemView[] | null;
+    error?: unknown;
+  }>({ rows: null });
   const [detail, setDetail] = useState<DeviceUserDetailState>({ kind: 'none' });
   const [customerOptions, setCustomerOptions] = useState<readonly FilterOption[]>([]);
   const [assignableDevices, setAssignableDevices] = useState<readonly FilterOption[]>([]);
@@ -602,40 +612,45 @@ export function DeviceUsersController({
     };
   }, [api, fixedCustomerId]);
   const versionFor = (id: string) => {
-    if (detail.kind !== 'ready' || detail.detail.deviceUserId !== id) throw new Error('详情版本不可用，请刷新后重试');
+    if (detail.kind !== 'ready' || detail.detail.deviceUserId !== id) throw new Error(translate('ui.70dfcb6f13f4'));
     return detail.detail.version;
   };
   const refresh = () => {
     void loadList();
     if (selected.current !== null) void loadDetail(selected.current);
   };
-  return (
-    <DeviceUsersPage
-      role={roleOf(session)}
-      fixedCustomerId={fixedCustomerId}
-      customerOptions={customerOptions}
-      list={list}
-      appliedFilter={filter}
-      onApplyFilter={(next) => setFilter({ ...next, customerId: fixedCustomerId ?? next.customerId })}
-      onRefresh={refresh}
-      detail={detail}
-      onSelect={(id) => void loadDetail(id)}
-      onCloseDetail={() => {
-        selected.current = null;
-        setDetail({ kind: 'none' });
-      }}
-      assignableDevices={assignableDevices}
-      onCreate={(input) =>
-        createDeviceUser(api, fixedCustomerId === null ? input : { ...input, customerId: fixedCustomerId })
-      }
-      onUpdate={(id, input) => updateDeviceUser(api, id, versionFor(id), input)}
-      onDisable={(id, reason) => disableDeviceUser(api, id, versionFor(id), reason)}
-      onAssign={(id, ids, reason) => assignDeviceUser(api, id, versionFor(id), ids, reason)}
-      onRevoke={(id, ids, reason) => revokeDeviceUser(api, id, versionFor(id), ids, reason)}
-    />
-  );
+  return {
+    role: roleOf(session),
+    fixedCustomerId,
+    customerOptions,
+    list,
+    appliedFilter: filter,
+    onApplyFilter: (next) => setFilter({ ...next, customerId: fixedCustomerId ?? next.customerId }),
+    onRefresh: refresh,
+    detail,
+    onSelect: (id) => void loadDetail(id),
+    onCloseDetail: () => {
+      selected.current = null;
+      setDetail({ kind: 'none' });
+    },
+    assignableDevices,
+    onCreate: (input) =>
+      createDeviceUser(api, fixedCustomerId === null ? input : { ...input, customerId: fixedCustomerId }),
+    onUpdate: (id, input) => updateDeviceUser(api, id, versionFor(id), input),
+    onDisable: (id, reason) => disableDeviceUser(api, id, versionFor(id), reason),
+    onAssign: (id, ids, reason) => assignDeviceUser(api, id, versionFor(id), ids, reason),
+    onRevoke: (id, ids, reason) => revokeDeviceUser(api, id, versionFor(id), ids, reason),
+  };
 }
-
+export function DeviceUsersController({
+  api,
+  session,
+}: {
+  readonly api: ApiClient;
+  readonly session: SessionSnapshot;
+}) {
+  return <DeviceUsersPage {...useDeviceUsersPageProps({ api, session })} />;
+}
 export function AlarmsController({
   api,
   session,
@@ -665,9 +680,16 @@ export function AlarmsController({
   const [tampers, setTampers] = useState<ListState<TamperEventView>>({ rows: null });
   const [detail, setDetail] = useState<AlarmDetailState>({ kind: 'none' });
   const [customerOptions, setCustomerOptions] = useState<readonly FilterOption[]>([]);
-  const [alarmSiteOptions, setAlarmSiteOptions] = useState<readonly (FilterOption & { customerId: string })[]>([]);
+  const [alarmSiteOptions, setAlarmSiteOptions] = useState<
+    readonly (FilterOption & {
+      customerId: string;
+    })[]
+  >([]);
   const [alarmDeviceOptions, setAlarmDeviceOptions] = useState<
-    readonly (FilterOption & { customerId: string; siteId: string })[]
+    readonly (FilterOption & {
+      customerId: string;
+      siteId: string;
+    })[]
   >([]);
   const selected = useRef<string | null>(null);
   const load = useCallback(

@@ -36,11 +36,7 @@ function buildQuery(filter: MediaListFilter, cursor?: string): string {
   return query === '' ? '' : `?${query}`;
 }
 
-export async function listMedia(
-  api: ApiClient,
-  filter: MediaListFilter,
-  cursor?: string,
-): Promise<Page<MediaView>> {
+export async function listMedia(api: ApiClient, filter: MediaListFilter, cursor?: string): Promise<Page<MediaView>> {
   const response = await api.request<{ data: MediaView[]; meta: { nextCursor: string | null } }>(
     `/admin/media${buildQuery(filter, cursor)}`,
   );
@@ -48,10 +44,7 @@ export async function listMedia(
 }
 
 /** 签发 15 分钟预签名下载 URL（每次调用实时签发；调用方不得持久缓存）。 */
-export async function createMediaDownloadUrl(
-  api: ApiClient,
-  mediaId: string,
-): Promise<MediaDownloadUrlView> {
+export async function createMediaDownloadUrl(api: ApiClient, mediaId: string): Promise<MediaDownloadUrlView> {
   const response = await api.request<{ data: MediaDownloadUrlView }>(
     `/admin/media/${encodeURIComponent(mediaId)}/download-url`,
   );

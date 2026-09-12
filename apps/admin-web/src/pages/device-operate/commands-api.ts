@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-12 Remote Command API 装配（BE-CMD-01/03、BE-DEV-05）。
  *
@@ -19,7 +20,6 @@ import type {
   CommandView,
 } from './types.js';
 import { isSubmittableCommand } from './command-state.js';
-
 export interface CommandCreateInput {
   readonly command: CommandName;
   readonly timeoutSec: number;
@@ -27,28 +27,30 @@ export interface CommandCreateInput {
   /** DEC-006 幂等键（缺省由服务器生成）。 */
   readonly commandId?: string;
   /** DEC-023 高风险命令显式确认（近期重新认证由服务端可信 JWT 判定）。 */
-  readonly confirmation?: { confirmText: string };
+  readonly confirmation?: {
+    confirmText: string;
+  };
 }
-
 export async function createDeviceCommand(
   api: ApiClient,
   deviceId: string,
   input: CommandCreateInput,
 ): Promise<CommandView> {
   if (!isSubmittableCommand(input.command)) {
-    throw new Error('温度阈值必须通过 Configuration 版本发布，禁止直接下发命令');
+    throw new Error(translate('ui.2db03f533ab1'));
   }
   const body: Record<string, unknown> = { command: input.command, timeoutSec: input.timeoutSec };
   if (input.remarks !== undefined && input.remarks !== '') body['remarks'] = input.remarks;
   if (input.commandId !== undefined) body['commandId'] = input.commandId;
   if (input.confirmation !== undefined) body['confirmation'] = input.confirmation;
-  const response = await api.request<{ data: CommandView }>(`/admin/devices/${encodeURIComponent(deviceId)}/commands`, {
+  const response = await api.request<{
+    data: CommandView;
+  }>(`/admin/devices/${encodeURIComponent(deviceId)}/commands`, {
     method: 'POST',
     body,
   });
   return response.data;
 }
-
 export interface CommandListFilter {
   readonly customerId?: string | null;
   readonly deviceId?: string | null;
@@ -57,12 +59,10 @@ export interface CommandListFilter {
   readonly from?: string | null;
   readonly to?: string | null;
 }
-
 export interface Page<T> {
   readonly rows: readonly T[];
   readonly nextCursor: string | null;
 }
-
 function buildQuery(filter: Record<string, string | null | undefined>, cursor?: string): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filter)) {
@@ -72,44 +72,46 @@ function buildQuery(filter: Record<string, string | null | undefined>, cursor?: 
   const query = params.toString();
   return query === '' ? '' : `?${query}`;
 }
-
 export async function fetchCommands(
   api: ApiClient,
   filter: CommandListFilter,
   cursor?: string,
 ): Promise<Page<CommandListItemView>> {
-  const response = await api.request<{ data: CommandListItemView[]; meta: { nextCursor: string | null } }>(
-    `/admin/commands${buildQuery({ ...filter }, cursor)}`,
-  );
+  const response = await api.request<{
+    data: CommandListItemView[];
+    meta: {
+      nextCursor: string | null;
+    };
+  }>(`/admin/commands${buildQuery({ ...filter }, cursor)}`);
   return { rows: response.data, nextCursor: response.meta.nextCursor };
 }
-
 export async function fetchCommand(api: ApiClient, commandId: string): Promise<CommandDetailView> {
-  const response = await api.request<{ data: CommandDetailView }>(`/admin/commands/${encodeURIComponent(commandId)}`);
+  const response = await api.request<{
+    data: CommandDetailView;
+  }>(`/admin/commands/${encodeURIComponent(commandId)}`);
   return response.data;
 }
-
 // ---------- 活动日志（BE-DEV-05） ----------
-
 export interface ActivityListFilter {
   readonly level?: ActivityLevel | null;
   readonly kind?: ActivityKind | null;
   readonly from?: string | null;
   readonly to?: string | null;
 }
-
 export async function fetchDeviceActivities(
   api: ApiClient,
   deviceId: string,
   filter: ActivityListFilter,
   cursor?: string,
 ): Promise<Page<ActivityItemView>> {
-  const response = await api.request<{ data: ActivityItemView[]; meta: { nextCursor: string | null } }>(
-    `/admin/devices/${encodeURIComponent(deviceId)}/activities${buildQuery({ ...filter }, cursor)}`,
-  );
+  const response = await api.request<{
+    data: ActivityItemView[];
+    meta: {
+      nextCursor: string | null;
+    };
+  }>(`/admin/devices/${encodeURIComponent(deviceId)}/activities${buildQuery({ ...filter }, cursor)}`);
   return { rows: response.data, nextCursor: response.meta.nextCursor };
 }
-
 export async function createActivityExport(
   api: ApiClient,
   deviceId: string,
@@ -119,16 +121,14 @@ export async function createActivityExport(
   for (const [key, value] of Object.entries(filter)) {
     if (value !== undefined && value !== null && value !== '') body[key] = value;
   }
-  const response = await api.request<{ data: ActivityExportView }>(
-    `/admin/devices/${encodeURIComponent(deviceId)}/activities/export`,
-    { method: 'POST', body },
-  );
+  const response = await api.request<{
+    data: ActivityExportView;
+  }>(`/admin/devices/${encodeURIComponent(deviceId)}/activities/export`, { method: 'POST', body });
   return response.data;
 }
-
 export async function fetchActivityExport(api: ApiClient, exportId: string): Promise<ActivityExportView> {
-  const response = await api.request<{ data: ActivityExportView }>(
-    `/admin/activity-exports/${encodeURIComponent(exportId)}`,
-  );
+  const response = await api.request<{
+    data: ActivityExportView;
+  }>(`/admin/activity-exports/${encodeURIComponent(exportId)}`);
   return response.data;
 }

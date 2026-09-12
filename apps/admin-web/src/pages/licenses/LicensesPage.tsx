@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-08 授权管理页（/licenses）：License 列表/详情、Draft 创建、Issue、Activate、Renew、
  * Revoke、Entitlement 配置与历史时间线。
@@ -28,11 +29,17 @@ import {
   validateRenew,
 } from './license-state.js';
 import type { EntitlementCode, LicenseHistoryEntryView, LicenseRenewResultView, LicenseView } from './types.js';
-
 export type LicenseDetailState =
-  | { readonly kind: 'none' }
-  | { readonly kind: 'loading' }
-  | { readonly kind: 'error'; readonly error: unknown }
+  | {
+      readonly kind: 'none';
+    }
+  | {
+      readonly kind: 'loading';
+    }
+  | {
+      readonly kind: 'error';
+      readonly error: unknown;
+    }
   | {
       readonly kind: 'ready';
       readonly license: LicenseView;
@@ -40,14 +47,11 @@ export type LicenseDetailState =
       readonly history: readonly LicenseHistoryEntryView[] | null;
       readonly historyError?: unknown;
     };
-
 export interface LicenseFilter {
   readonly licenseStatus: string | null;
   readonly keyword: string | null;
 }
-
 export const EMPTY_LICENSE_FILTER: LicenseFilter = { licenseStatus: null, keyword: null };
-
 export interface LicensesPageProps {
   readonly role: Role;
   readonly list: {
@@ -64,16 +68,17 @@ export interface LicensesPageProps {
   readonly onSelect: (licenseId: string) => void;
   readonly onCloseDetail: () => void;
   /** 创建 Draft 的设备候选（父级提供已分配设备；重复创建由后端 409 拒绝并呈现）。 */
-  readonly createCandidates: readonly { readonly deviceId: string; readonly label: string }[];
+  readonly createCandidates: readonly {
+    readonly deviceId: string;
+    readonly label: string;
+  }[];
   readonly onCreate: (input: LicenseCreateInput) => Promise<LicenseView>;
   readonly onIssue: (licenseId: string) => Promise<LicenseView>;
   readonly onActivate: (licenseId: string) => Promise<LicenseView>;
   readonly onRenew: (licenseId: string, newValidTo: string) => Promise<LicenseRenewResultView>;
   readonly onRevoke: (licenseId: string, reason: string) => Promise<LicenseView>;
 }
-
 type PendingAction = 'issue' | 'activate' | 'revoke';
-
 export function LicensesPage({
   role,
   list,
@@ -99,10 +104,8 @@ export function LicensesPage({
   const [notice, setNotice] = useState<string | null>(null);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-
   const license = detail.kind === 'ready' ? detail.license : null;
   const canWrite = canCreateLicense(role);
-
   const runAction = async (execute: () => Promise<unknown>, successText: string) => {
     // 防重复点击：在途请求直接忽略（后端幂等/状态条件兜底）
     if (inFlight.current) return;
@@ -125,11 +128,10 @@ export function LicensesPage({
       setBusy(false);
     }
   };
-
   return (
     <div className="licenses-page" data-testid="licenses-page">
       <div className="filter-bar" data-testid="license-filter-bar">
-        <label htmlFor="license-status-filter">授权状态</label>
+        <label htmlFor="license-status-filter">{translate('page.ac3cc79f9199')}</label>
         <select
           id="license-status-filter"
           data-testid="license-status-filter"
@@ -138,14 +140,14 @@ export function LicensesPage({
             setDraftFilter({ ...draftFilter, licenseStatus: event.target.value === '' ? null : event.target.value })
           }
         >
-          <option value="">全部</option>
+          <option value="">{translate('page.778fc8f99453')}</option>
           {LICENSE_FILTER_OPTIONS.filter((status) => status !== 'None').map((status) => (
             <option key={status} value={status}>
               {licenseStatusLabel(status)}
             </option>
           ))}
         </select>
-        <label htmlFor="license-keyword">关键字</label>
+        <label htmlFor="license-keyword">{translate('page.621219ff9885')}</label>
         <input
           id="license-keyword"
           data-testid="license-keyword"
@@ -158,7 +160,7 @@ export function LicensesPage({
           data-testid="license-search"
           onClick={() => onApplyFilter(draftFilter)}
         >
-          搜索
+          {translate('page.f04090805c6e')}
         </button>
         <button
           type="button"
@@ -168,7 +170,7 @@ export function LicensesPage({
             onApplyFilter(EMPTY_LICENSE_FILTER);
           }}
         >
-          重置
+          {translate('page.3d81345303ab')}
         </button>
         {canWrite ? (
           <button
@@ -177,7 +179,7 @@ export function LicensesPage({
             data-testid="license-create"
             onClick={() => setCreateOpen(true)}
           >
-            新建授权（Draft）
+            {translate('page.d06cb1f9df42')}
           </button>
         ) : null}
       </div>
@@ -190,26 +192,26 @@ export function LicensesPage({
       {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
       <CursorTable
-        ariaLabel="设备授权列表"
+        ariaLabel={translate('page.559620d8d042')}
         columns={[
           { key: 'licenseId', header: 'License ID', render: (license) => license.licenseId },
-          { key: 'deviceId', header: '设备 ID', render: (license) => license.deviceId },
-          { key: 'customerId', header: '客户 ID', render: (license) => license.customerId },
+          { key: 'deviceId', header: translate('page.9a04e46a8d92'), render: (license) => license.deviceId },
+          { key: 'customerId', header: translate('page.a20148b7e39a'), render: (license) => license.customerId },
           {
             key: 'status',
-            header: '状态 / 有效期',
+            header: translate('page.135724b7acb6'),
             render: (license) => `${licenseStatusLabel(license.status)} · ${license.validFrom} ~ ${license.validTo}`,
           },
           {
             key: 'actions',
-            header: '操作',
+            header: translate('page.f3ea6d345e2a'),
             render: (license) => (
               <button
                 type="button"
                 data-testid={`license-detail-${license.licenseId}`}
                 onClick={() => onSelect(license.licenseId)}
               >
-                详情
+                {translate('page.4f55ee1e687f')}
               </button>
             ),
           },
@@ -221,12 +223,12 @@ export function LicensesPage({
         {...(list.nextCursor !== undefined ? { nextCursor: list.nextCursor } : {})}
         onNextPage={onLoadMore}
         onRefresh={onRefresh}
-        emptyText="暂无设备授权记录"
+        emptyText={translate('page.64fffdd60a8b')}
       />
 
       {detail.kind === 'loading' ? (
         <div role="status" data-testid="license-detail-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : null}
       {detail.kind === 'error' ? <ErrorNotice error={detail.error} onRefresh={onRefresh} /> : null}
@@ -247,24 +249,29 @@ export function LicensesPage({
 
       <Modal
         open={createOpen}
-        title="新建授权（Draft）"
+        title={translate('page.d06cb1f9df42')}
         testid="license-create-dialog"
         onClose={() => setCreateOpen(false)}
       >
         <CreateLicenseForm
           candidates={createCandidates}
           busy={busy}
-          onSubmit={(input) => void runAction(() => onCreate(input), '授权 Draft 已创建')}
+          onSubmit={(input) => void runAction(() => onCreate(input), translate('page.5447e7009f29'))}
         />
       </Modal>
 
       {license !== null ? (
-        <Modal open={renewOpen} title="续期授权" testid="license-renew-dialog" onClose={() => setRenewOpen(false)}>
+        <Modal
+          open={renewOpen}
+          title={translate('page.dc7711bf8fe4')}
+          testid="license-renew-dialog"
+          onClose={() => setRenewOpen(false)}
+        >
           <RenewForm
             validTo={license.validTo}
             busy={busy}
             onSubmit={(newValidTo) =>
-              void runAction(() => onRenew(license.licenseId, newValidTo), '授权已续期（Renewed，待系统结算为 Active）')
+              void runAction(() => onRenew(license.licenseId, newValidTo), translate('page.73c2f65cbe76'))
             }
           />
         </Modal>
@@ -272,49 +279,45 @@ export function LicensesPage({
 
       <ConfirmDialog
         open={pendingAction === 'issue'}
-        title="签发授权"
-        {...(license !== null
-          ? { description: `签发（Draft→Issued）将生成签名供设备同步。License：${license.licenseId}` }
-          : {})}
-        confirmText="确认签发"
+        title={translate('page.223cd10ed1c4')}
+        {...(license !== null ? { description: translate('page.415e2601fc61') + license.licenseId } : {})}
+        confirmText={translate('page.aebc0a110a42')}
         onConfirm={() => {
-          if (license !== null) void runAction(() => onIssue(license.licenseId), '授权已签发');
+          if (license !== null) void runAction(() => onIssue(license.licenseId), translate('page.49cb8f05d960'));
         }}
         onCancel={() => setPendingAction(null)}
       />
       <ConfirmDialog
         open={pendingAction === 'activate'}
-        title="激活授权"
+        title={translate('page.be978c7b9dfc')}
         {...(license !== null
           ? {
-              description: `激活（Issued→Active）要求已到达生效日期（validFrom）。License：${license.licenseId}`,
+              description: translate('page.4d6f7a909100') + license.licenseId,
             }
           : {})}
-        confirmText="确认激活"
+        confirmText={translate('page.427c6f9a814c')}
         onConfirm={() => {
-          if (license !== null) void runAction(() => onActivate(license.licenseId), '授权已激活');
+          if (license !== null) void runAction(() => onActivate(license.licenseId), translate('page.69b439cc5bc0'));
         }}
         onCancel={() => setPendingAction(null)}
       />
       <ConfirmDialog
         open={pendingAction === 'revoke'}
-        title="撤销授权"
+        title={translate('page.b31883bd2085')}
         danger
         requireReason
-        reasonLabel="撤销原因"
-        {...(license !== null
-          ? { description: `撤销后设备将立即失去授权能力（→Revoked，终态）。License：${license.licenseId}` }
-          : {})}
-        confirmText="确认撤销"
+        reasonLabel={translate('page.e28c1ecca078')}
+        {...(license !== null ? { description: translate('page.829082246f3d') + license.licenseId } : {})}
+        confirmText={translate('page.f7e81a7807cb')}
         onConfirm={(reason) => {
-          if (license !== null) void runAction(() => onRevoke(license.licenseId, reason), '授权已撤销');
+          if (license !== null)
+            void runAction(() => onRevoke(license.licenseId, reason), translate('page.5b3056cbcf22'));
         }}
         onCancel={() => setPendingAction(null)}
       />
     </div>
   );
 }
-
 function LicenseDetailPanel({
   license,
   history,
@@ -340,25 +343,26 @@ function LicenseDetailPanel({
   const activateGate = gateLicenseAction('activate', license.status, role);
   const renewGate = gateLicenseAction('renew', license.status, role);
   const revokeGate = gateLicenseAction('revoke', license.status, role);
-
   return (
-    <aside className="license-detail" data-testid="license-detail" aria-label="授权详情">
-      <h4>授权详情</h4>
+    <aside className="license-detail" data-testid="license-detail" aria-label={translate('page.93b851a5b6f2')}>
+      <h4>{translate('page.93b851a5b6f2')}</h4>
       <dl>
         <dt>License ID</dt>
         <dd data-testid="license-id">{license.licenseId}</dd>
-        <dt>设备</dt>
+        <dt>{translate('page.01f2c16cda65')}</dt>
         <dd>{license.deviceId}</dd>
-        <dt>客户</dt>
+        <dt>{translate('page.f20687060126')}</dt>
         <dd>{license.customerId}</dd>
-        <dt>状态</dt>
+        <dt>{translate('page.62e951a692ff')}</dt>
         <dd data-testid="license-status">{licenseStatusLabel(license.status)}</dd>
-        <dt>有效期</dt>
+        <dt>{translate('page.222460c095e3')}</dt>
         <dd data-testid="license-validity">
           {license.validFrom} ~ {license.validTo}
         </dd>
-        <dt>当前是否生效</dt>
-        <dd data-testid="license-effective">{license.effective ? '生效' : '未生效'}</dd>
+        <dt>{translate('page.491e18841b98')}</dt>
+        <dd data-testid="license-effective">
+          {license.effective ? translate('page.b63f91b9f291') : translate('page.2ed178b6071c')}
+        </dd>
         <dt>Entitlement</dt>
         <dd data-testid="license-entitlements">
           {license.entitlements
@@ -366,15 +370,15 @@ function LicenseDetailPanel({
             .map((e) => ENTITLEMENT_LABELS[e.code])
             .join('、') || '—'}
         </dd>
-        <dt>签名（供设备同步）</dt>
+        <dt>{translate('page.07ab7e9e7613')}</dt>
         <dd data-testid="license-signature">
-          {license.signature !== null ? <code>{license.signature}</code> : '—（Draft 未签发）'}
+          {license.signature !== null ? <code>{license.signature}</code> : translate('page.b1e93a417c61')}
         </dd>
-        <dt>版本</dt>
+        <dt>{translate('page.989d1affa089')}</dt>
         <dd>v{license.version}</dd>
-        <dt>创建人</dt>
+        <dt>{translate('page.787ad1deae49')}</dt>
         <dd>{license.createdBy}</dd>
-        <dt>更新时间</dt>
+        <dt>{translate('page.093dea88c930')}</dt>
         <dd>
           <TimeText iso={license.updatedAt} />
         </dd>
@@ -382,7 +386,7 @@ function LicenseDetailPanel({
 
       <div className="detail-actions">
         <button type="button" onClick={onClose}>
-          关闭
+          {translate('page.6c14bd7f6f9e')}
         </button>
         {issueGate.enabled ? (
           <button
@@ -392,7 +396,7 @@ function LicenseDetailPanel({
             disabled={busy}
             onClick={() => onIntent('issue')}
           >
-            签发
+            {translate('page.e48011457930')}
           </button>
         ) : null}
         {activateGate.enabled ? (
@@ -403,12 +407,12 @@ function LicenseDetailPanel({
             disabled={busy}
             onClick={() => onIntent('activate')}
           >
-            激活
+            {translate('page.4c25820818d6')}
           </button>
         ) : null}
         {renewGate.enabled ? (
           <button type="button" data-testid="license-renew" disabled={busy} onClick={onRenewIntent}>
-            续期
+            {translate('page.199d45f0cbc5')}
           </button>
         ) : null}
         {revokeGate.enabled ? (
@@ -419,21 +423,21 @@ function LicenseDetailPanel({
             disabled={busy}
             onClick={() => onIntent('revoke')}
           >
-            撤销
+            {translate('page.9fcefd8dc81e')}
           </button>
         ) : null}
       </div>
 
-      <section data-testid="license-history" aria-label="状态历史">
-        <h5>状态时间线</h5>
+      <section data-testid="license-history" aria-label={translate('page.eb46c07247da')}>
+        <h5>{translate('page.3c6baab8c09c')}</h5>
         {historyError !== undefined ? <ErrorNotice error={historyError} onRefresh={onRefresh} /> : null}
         {history === null ? (
           <div role="status" data-testid="history-loading">
-            加载中…
+            {translate('page.300ee3dee4dc')}
           </div>
         ) : history.length === 0 ? (
           <p className="empty-state" data-testid="history-empty">
-            暂无历史
+            {translate('page.482a16ecfa18')}
           </p>
         ) : (
           <ol className="history-timeline">
@@ -452,13 +456,15 @@ function LicenseDetailPanel({
     </aside>
   );
 }
-
 function CreateLicenseForm({
   candidates,
   busy,
   onSubmit,
 }: {
-  readonly candidates: readonly { readonly deviceId: string; readonly label: string }[];
+  readonly candidates: readonly {
+    readonly deviceId: string;
+    readonly label: string;
+  }[];
   readonly busy: boolean;
   readonly onSubmit: (input: LicenseCreateInput) => void;
 }) {
@@ -469,22 +475,20 @@ function CreateLicenseForm({
   const [reason, setReason] = useState('');
   const reasonTrimmed = reason.trim();
   const validationError = deviceId === '' ? null : validateLicenseDraft({ validFrom, validTo, entitlements });
-
   const toggleEntitlement = (code: EntitlementCode) => {
     setEntitlements((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
   };
-
   return (
     <div className="license-create-form" data-testid="license-create-form">
       <div className="dialog-field">
-        <label htmlFor="create-device">设备（须已分配客户且未退役）</label>
+        <label htmlFor="create-device">{translate('page.afb302dd94fc')}</label>
         <select
           id="create-device"
           data-testid="create-device"
           value={deviceId}
           onChange={(event) => setDeviceId(event.target.value)}
         >
-          <option value="">请选择设备</option>
+          <option value="">{translate('page.61f337d9709e')}</option>
           {candidates.map((c) => (
             <option key={c.deviceId} value={c.deviceId}>
               {c.label}
@@ -493,7 +497,7 @@ function CreateLicenseForm({
         </select>
       </div>
       <div className="dialog-field">
-        <label htmlFor="create-valid-from">生效日期（UTC）</label>
+        <label htmlFor="create-valid-from">{translate('page.206d975dbad5')}</label>
         <input
           id="create-valid-from"
           data-testid="create-valid-from"
@@ -503,7 +507,7 @@ function CreateLicenseForm({
         />
       </div>
       <div className="dialog-field">
-        <label htmlFor="create-valid-to">到期日期（UTC）</label>
+        <label htmlFor="create-valid-to">{translate('page.4a12d38f1810')}</label>
         <input
           id="create-valid-to"
           data-testid="create-valid-to"
@@ -513,7 +517,7 @@ function CreateLicenseForm({
         />
       </div>
       <fieldset className="dialog-field" data-testid="create-entitlements">
-        <legend>Entitlement 配置（至少一项）</legend>
+        <legend>{translate('page.83b92e730564')}</legend>
         {ENTITLEMENT_CODES.map((code) => (
           <label key={code}>
             <input
@@ -527,7 +531,7 @@ function CreateLicenseForm({
         ))}
       </fieldset>
       <div className="dialog-field">
-        <label htmlFor="create-reason">原因（可选，写入审计）</label>
+        <label htmlFor="create-reason">{translate('page.db5e8a988ba0')}</label>
         <textarea
           id="create-reason"
           data-testid="create-reason"
@@ -556,13 +560,12 @@ function CreateLicenseForm({
             })
           }
         >
-          创建 Draft
+          {translate('page.098fafafeea6')}
         </button>
       </div>
     </div>
   );
 }
-
 function RenewForm({
   validTo,
   busy,
@@ -574,14 +577,14 @@ function RenewForm({
 }) {
   const [newValidTo, setNewValidTo] = useState('');
   const validationError = newValidTo === '' ? null : validateRenew(validTo, newValidTo);
-
   return (
     <div className="license-renew-form" data-testid="license-renew-form">
       <p>
-        当前到期日期：<strong>{validTo}</strong>
+        {translate('page.a6ec02cb4b2e')}
+        <strong>{validTo}</strong>
       </p>
       <div className="dialog-field">
-        <label htmlFor="renew-valid-to">新到期日期（UTC，须晚于当前到期日期）</label>
+        <label htmlFor="renew-valid-to">{translate('page.3645af1b4193')}</label>
         <input
           id="renew-valid-to"
           data-testid="renew-valid-to"
@@ -603,7 +606,7 @@ function RenewForm({
           disabled={busy || validationError !== null || newValidTo === ''}
           onClick={() => onSubmit(newValidTo)}
         >
-          确认续期
+          {translate('page.10f61d3ddf64')}
         </button>
       </div>
     </div>

@@ -16,7 +16,7 @@ function operationIds(value, found = new Set()) {
   return found;
 }
 
-const REQUIRED_TASKS = Array.from({ length: 15 }, (_, index) => `FE-${String(index + 1).padStart(2, '0')}`);
+const REQUIRED_TASKS = Array.from({ length: 19 }, (_, index) => `FE-${String(index + 1).padStart(2, '0')}`);
 const REQUIRED_P0_ROUTES = new Map([
   ['/devices/view', { pageState: 'device-view', controller: 'DeviceViewController', testId: 'device-view-page' }],
   [
@@ -43,6 +43,14 @@ const REQUIRED_P0_ROUTES = new Map([
   ['/ota/packages', { pageState: 'ota-packages', controller: 'OtaPackagesController', testId: 'ota-packages-page' }],
   ['/media', { pageState: 'media', controller: 'MediaController', testId: 'media-page' }],
   ['/audit-logs', { pageState: 'audit-logs', controller: 'AuditLogsController', testId: 'audit-logs-page' }],
+  ['/settings', { pageState: 'settings', controller: 'SettingsController', testId: 'settings-page' }],
+  ['/contracts', { pageState: 'contract-modify', controller: 'ContractsController', testId: 'contracts-page' }],
+  ['/contracts/new', { pageState: 'contract-new', controller: 'ContractNewController', testId: 'contract-new-page' }],
+  [
+    '/contracts/detail',
+    { pageState: 'contract-detail', controller: 'ContractDetailController', testId: 'contract-detail-page' },
+  ],
+  ['/consumables', { pageState: 'device-consumable', controller: 'ConsumablesController', testId: 'consumables-page' }],
 ]);
 const REQUIRED_P0_OPERATIONS = [
   'listDevices',
@@ -109,6 +117,35 @@ const REQUIRED_P0_OPERATIONS = [
   'retryOtaCampaignFailures',
   'listAuditLogs',
   'getAuditLogDetail',
+  'listUsers',
+  'inviteUser',
+  'assignUserRoles',
+  'setUserScope',
+  'disableUser',
+  'triggerUserPasswordReset',
+  'listSettings',
+  'getSetting',
+  'updateSetting',
+  'createContract',
+  'listContracts',
+  'getContract',
+  'updateContract',
+  'activateContract',
+  'renewContract',
+  'terminateContract',
+  'evaluateContract',
+  'listContractDevices',
+  'listAvailableDevices',
+  'listContractAssociations',
+  'bindContractDevices',
+  'unbindContractDevices',
+  'listConsumableStatus',
+  'createConsumableRequest',
+  'listConsumableRequests',
+  'getConsumableRequest',
+  'processConsumableRequest',
+  'completeConsumableRequest',
+  'cancelConsumableRequest',
 ];
 
 function implementedPageStates(appSource) {
@@ -157,11 +194,16 @@ export function auditAdminWebDelivery(root, options = {}) {
     const appSource = options.appSourceOverride ?? (existsSync(appPath) ? readFileSync(appPath, 'utf8') : '');
     const controllerSource =
       options.controllerSourceOverride ??
-      ['src/app/controllers.tsx', 'src/app/feature-controllers.tsx', 'src/app/operations-controllers.tsx']
+      [
+        'src/app/controllers.tsx',
+        'src/app/feature-controllers.tsx',
+        'src/app/operations-controllers.tsx',
+        'src/app/business-controllers.tsx',
+      ]
         .map((file) => (existsSync(join(appRoot, file)) ? readFileSync(join(appRoot, file), 'utf8') : ''))
         .join('\n');
-    if (manifest.schemaVersion !== 3 || manifest.deliveryScope !== 'FE-01..FE-15')
-      errors.push('管理后台交付清单版本或范围不是 FE-01..FE-15/v3');
+    if (manifest.schemaVersion !== 4 || manifest.deliveryScope !== 'FE-01..FE-19')
+      errors.push('管理后台交付清单版本或范围不是 FE-01..FE-19/v4');
     const tasks = new Set(manifest.tasks ?? []);
     for (const task of REQUIRED_TASKS) if (!tasks.has(task)) errors.push(`交付清单缺少任务：${task}`);
     const manifestRoutes = new Map((manifest.routes ?? []).map((route) => [route.path, route]));

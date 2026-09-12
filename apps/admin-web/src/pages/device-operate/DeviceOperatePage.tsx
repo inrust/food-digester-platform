@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-12 操作设备页（/devices/operate）：联动选设备、当前运行状态、CT-04 命令白名单表单、
  * 高风险确认、命令状态/ACK 与历史日志、最新 Media 面板（DEC-009 无实时播放）。
@@ -52,20 +53,27 @@ import type {
   CommandName,
   CommandStatus,
 } from './types.js';
-
 export interface ListState<T> {
   readonly rows: readonly T[] | null;
   readonly loading?: boolean;
   readonly error?: unknown;
   readonly nextCursor?: string | null;
 }
-
 export type CommandDetailState =
-  | { readonly kind: 'none' }
-  | { readonly kind: 'loading' }
-  | { readonly kind: 'error'; readonly error: unknown }
-  | { readonly kind: 'ready'; readonly command: CommandDetailView };
-
+  | {
+      readonly kind: 'none';
+    }
+  | {
+      readonly kind: 'loading';
+    }
+  | {
+      readonly kind: 'error';
+      readonly error: unknown;
+    }
+  | {
+      readonly kind: 'ready';
+      readonly command: CommandDetailView;
+    };
 export interface DeviceOperatePageProps {
   readonly role: Role;
   readonly scopeOptions: {
@@ -81,7 +89,12 @@ export interface DeviceOperatePageProps {
   readonly onSubmitCommand: (
     deviceId: string,
     input: CommandCreateInput,
-  ) => Promise<{ commandId: string; status: string; replayed: boolean; requestedBy: string }>;
+  ) => Promise<{
+    commandId: string;
+    status: string;
+    replayed: boolean;
+    requestedBy: string;
+  }>;
   readonly commands: ListState<CommandListItemView>;
   readonly commandFilter: CommandListFilter;
   readonly onApplyCommandFilter: (filter: CommandListFilter) => void;
@@ -97,12 +110,15 @@ export interface DeviceOperatePageProps {
   readonly onExportActivities: (filter: ActivityListFilter) => Promise<unknown>;
   readonly onCheckActivityExport: (exportId: string) => void;
   /** 最新授权 Media（DEC-009：非实时画面；无数据稳定 null）。 */
-  readonly latestMedia: { readonly mediaId: string; readonly mediaType: string; readonly captureTime: string } | null;
+  readonly latestMedia: {
+    readonly mediaId: string;
+    readonly mediaType: string;
+    readonly captureTime: string;
+  } | null;
   readonly onRefreshMedia: () => void;
   readonly onNavigate: (path: string) => void;
   readonly onRefresh: () => void;
 }
-
 export function DeviceOperatePage({
   role,
   scopeOptions,
@@ -129,7 +145,10 @@ export function DeviceOperatePage({
   onNavigate,
   onRefresh,
 }: DeviceOperatePageProps) {
-  const [form, setForm] = useState<{ command: CommandName; group: readonly CommandName[] | null } | null>(null);
+  const [form, setForm] = useState<{
+    command: CommandName;
+    group: readonly CommandName[] | null;
+  } | null>(null);
   const [timeoutSec, setTimeoutSec] = useState('300');
   const [remarks, setRemarks] = useState('');
   const [confirmText, setConfirmText] = useState('');
@@ -145,16 +164,13 @@ export function DeviceOperatePage({
   });
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-
   const detail = commandDetail.kind === 'ready' ? commandDetail.command : null;
-
   const openForm = (command: CommandName, group: readonly CommandName[] | null = null) => {
     setForm({ command, group });
     setConfirmText('');
     setActionError(null);
     setNotice(null);
   };
-
   const submitCommand = async () => {
     if (form === null || selectedDeviceId === null || inFlight.current) return;
     const timeoutError = validateTimeoutSec(timeoutSec);
@@ -178,8 +194,14 @@ export function DeviceOperatePage({
       setForm(null);
       setNotice(
         result.replayed
-          ? `命令已受理（${result.commandId}，幂等重放无新写入），等待设备执行`
-          : `命令已受理（${result.commandId}），提交人 ${result.requestedBy}（身份上下文取得）；等待设备执行（${COMMAND_STATUS_LABELS[result.status as CommandStatus] ?? result.status}）`,
+          ? translate('page.97a167d1d8ec') + result.commandId + translate('page.e9ea1b6963bf')
+          : translate('page.97a167d1d8ec') +
+              result.commandId +
+              (translate('page.5a4c4c454f07') + ' ') +
+              result.requestedBy +
+              translate('page.cd3f9415a4e3') +
+              (COMMAND_STATUS_LABELS[result.status as CommandStatus] ?? result.status) +
+              '\uFF09',
       );
       onRefresh();
     } catch (err) {
@@ -189,19 +211,17 @@ export function DeviceOperatePage({
       setBusy(false);
     }
   };
-
   const gateFor = (command: CommandName) => gateCommand(command, selectedDevice, role);
   const groupGate = (group: readonly CommandName[]) => {
     const gates = group.map((c) => gateFor(c));
     return gates.some((g) => g.allowed)
       ? { allowed: true, reason: null }
-      : { allowed: false, reason: gates[0]?.reason ?? '当前状态不允许' };
+      : { allowed: false, reason: gates[0]?.reason ?? translate('page.142ee8e83959') };
   };
-
   return (
     <div className="device-operate-page" data-testid="device-operate-page">
-      <section data-testid="device-picker" aria-label="选择设备">
-        <h4>选择设备</h4>
+      <section data-testid="device-picker" aria-label={translate('page.d1f8bd836068')}>
+        <h4>{translate('page.d1f8bd836068')}</h4>
         <ScopeFilter
           regions={scopeOptions.regions}
           subregions={scopeOptions.subregions}
@@ -216,8 +236,11 @@ export function DeviceOperatePage({
       </section>
 
       {selectedDevice !== null ? (
-        <section data-testid="device-status-panel" aria-label="当前运行状态">
-          <h4>当前运行状态：{selectedDevice.alias ?? selectedDevice.serialNumber}</h4>
+        <section data-testid="device-status-panel" aria-label={translate('page.e8ba1e529354')}>
+          <h4>
+            {translate('page.56bbe5daae4d')}
+            {selectedDevice.alias ?? selectedDevice.serialNumber}
+          </h4>
           <FourAxisBadges
             status={{
               connectivity: selectedDevice.connectivity,
@@ -229,8 +252,8 @@ export function DeviceOperatePage({
         </section>
       ) : null}
 
-      <section data-testid="quick-actions" aria-label="快捷操作">
-        <h4>快捷操作</h4>
+      <section data-testid="quick-actions" aria-label={translate('page.309c0a9e6282')}>
+        <h4>{translate('page.309c0a9e6282')}</h4>
         <div className="action-row">
           {QUICK_ACTIONS.map((action) => {
             const gate = action.command !== undefined ? gateFor(action.command) : groupGate(action.commandGroup ?? []);
@@ -271,7 +294,7 @@ export function DeviceOperatePage({
             </span>
           ))}
         </div>
-        <p className="field-hint">策略（M/N）与温度阈值经 Configuration 版本发布生效，不产生设备命令。</p>
+        <p className="field-hint">{translate('page.3df4035f6d6e')}</p>
       </section>
 
       {notice !== null ? (
@@ -281,11 +304,16 @@ export function DeviceOperatePage({
       ) : null}
       {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
-      <Modal open={form !== null} title="下发命令" testid="command-form" onClose={() => setForm(null)}>
+      <Modal
+        open={form !== null}
+        title={translate('page.b69305f77d98')}
+        testid="command-form"
+        onClose={() => setForm(null)}
+      >
         {form !== null ? (
           <div>
             <div className="dialog-field">
-              <label htmlFor="command-select">命令（CT-04 白名单）</label>
+              <label htmlFor="command-select">{translate('page.a9870f07ca2d')}</label>
               <select
                 id="command-select"
                 data-testid="command-select"
@@ -303,7 +331,7 @@ export function DeviceOperatePage({
               </select>
             </div>
             <div className="dialog-field">
-              <label htmlFor="command-timeout">超时时间 timeoutSec（1~3600 秒）</label>
+              <label htmlFor="command-timeout">{translate('page.fedaa161097d')}</label>
               <input
                 id="command-timeout"
                 data-testid="command-timeout"
@@ -318,7 +346,7 @@ export function DeviceOperatePage({
               ) : null}
             </div>
             <div className="dialog-field">
-              <label htmlFor="command-remarks">备注 remarks（可选，≤500 字）</label>
+              <label htmlFor="command-remarks">{translate('page.4980379d0c45')}</label>
               <textarea
                 id="command-remarks"
                 data-testid="command-remarks"
@@ -330,9 +358,11 @@ export function DeviceOperatePage({
             {commandSpecOf(form.command).highRisk ? (
               <div className="dialog-field danger-zone" data-testid="command-confirmation">
                 <p className="field-hint">
-                  高风险命令：请输入完整命令名 {form.command}；若登录已超过策略时限，服务端将要求重新认证
+                  {translate('page.f9aa6c1eb894') + ' '}
+                  {form.command}
+                  {translate('page.7ec95f3ebb99')}
                 </p>
-                <label htmlFor="command-confirm-text">确认凭证（confirmText）</label>
+                <label htmlFor="command-confirm-text">{translate('page.a6cbec3dede2')}</label>
                 <input
                   id="command-confirm-text"
                   data-testid="command-confirm-text"
@@ -353,17 +383,17 @@ export function DeviceOperatePage({
                 }
                 onClick={() => void submitCommand()}
               >
-                提交命令
+                {translate('page.e9c7ee13638d')}
               </button>
             </div>
           </div>
         ) : null}
       </Modal>
 
-      <section data-testid="command-list-section" aria-label="命令状态列表">
-        <h4>命令状态</h4>
+      <section data-testid="command-list-section" aria-label={translate('page.d8ae01cf4ed7')}>
+        <h4>{translate('page.844c944e76d8')}</h4>
         <div className="filter-bar">
-          <label htmlFor="cmd-filter-status">状态</label>
+          <label htmlFor="cmd-filter-status">{translate('page.62e951a692ff')}</label>
           <select
             id="cmd-filter-status"
             data-testid="cmd-filter-status"
@@ -375,14 +405,14 @@ export function DeviceOperatePage({
               })
             }
           >
-            <option value="">全部</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
             {COMMAND_STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>
                 {COMMAND_STATUS_LABELS[s]}
               </option>
             ))}
           </select>
-          <label htmlFor="cmd-filter-command">命令</label>
+          <label htmlFor="cmd-filter-command">{translate('page.b114b91547d7')}</label>
           <select
             id="cmd-filter-command"
             data-testid="cmd-filter-command"
@@ -394,7 +424,7 @@ export function DeviceOperatePage({
               })
             }
           >
-            <option value="">全部</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
             {COMMAND_CATALOG.map((c) => (
               <option key={c.command} value={c.command}>
                 {COMMAND_LABELS[c.command]}（{c.command}）
@@ -407,36 +437,42 @@ export function DeviceOperatePage({
             data-testid="cmd-filter-search"
             onClick={() => onApplyCommandFilter({ ...draftCommandFilter, deviceId: selectedDeviceId })}
           >
-            筛选
+            {translate('page.dcce9a144a40')}
           </button>
         </div>
         <CursorTable
-          ariaLabel="命令列表"
+          ariaLabel={translate('page.88072264b0c8')}
           columns={[
             {
               key: 'command',
-              header: '命令',
+              header: translate('page.b114b91547d7'),
               render: (c) => (
                 <>
                   {COMMAND_LABELS[c.command]}（{c.command}）
-                  {c.highRisk ? <span className="severity-badge severity-major">高风险</span> : null}
+                  {c.highRisk ? (
+                    <span className="severity-badge severity-major">{translate('page.7a83b6c0e346')}</span>
+                  ) : null}
                 </>
               ),
             },
-            { key: 'status', header: '状态', render: (c) => COMMAND_STATUS_LABELS[c.status] },
-            { key: 'requestedBy', header: '提交人', render: (c) => c.requestedBy },
-            { key: 'requestTime', header: '请求时间', render: (c) => <TimeText iso={c.requestTime} /> },
-            { key: 'timeoutSec', header: '超时', render: (c) => `${c.timeoutSec}s` },
+            { key: 'status', header: translate('page.62e951a692ff'), render: (c) => COMMAND_STATUS_LABELS[c.status] },
+            { key: 'requestedBy', header: translate('page.3c75f3646a07'), render: (c) => c.requestedBy },
+            {
+              key: 'requestTime',
+              header: translate('page.e8b5eda03ab9'),
+              render: (c) => <TimeText iso={c.requestTime} />,
+            },
+            { key: 'timeoutSec', header: translate('page.ff06c243d727'), render: (c) => `${c.timeoutSec}s` },
             {
               key: 'actions',
-              header: '操作',
+              header: translate('page.f3ea6d345e2a'),
               render: (c) => (
                 <button
                   type="button"
                   data-testid={`command-detail-${c.commandId}`}
                   onClick={() => onSelectCommand(c.commandId)}
                 >
-                  详情
+                  {translate('page.4f55ee1e687f')}
                 </button>
               ),
             },
@@ -448,84 +484,99 @@ export function DeviceOperatePage({
           {...(commands.nextCursor !== undefined ? { nextCursor: commands.nextCursor } : {})}
           onNextPage={onLoadMoreCommands}
           onRefresh={onRefresh}
-          emptyText="暂无命令记录"
+          emptyText={translate('page.b733de451b01')}
         />
       </section>
 
       {commandDetail.kind === 'loading' ? (
         <div role="status" data-testid="command-detail-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       ) : null}
       {commandDetail.kind === 'error' ? <ErrorNotice error={commandDetail.error} onRefresh={onRefresh} /> : null}
 
       {detail !== null ? (
-        <aside className="command-detail" data-testid="command-detail" aria-label="命令详情">
+        <aside className="command-detail" data-testid="command-detail" aria-label={translate('page.70b9a43d45fa')}>
           <h4>
-            命令详情：{COMMAND_LABELS[detail.command]}（{detail.command}）
-            {detail.highRisk ? <span className="severity-badge severity-major">高风险</span> : null}
+            {translate('page.d6ba667084d6')}
+            {COMMAND_LABELS[detail.command]}（{detail.command}）
+            {detail.highRisk ? (
+              <span className="severity-badge severity-major">{translate('page.7a83b6c0e346')}</span>
+            ) : null}
           </h4>
           <dl>
-            <dt>状态</dt>
+            <dt>{translate('page.62e951a692ff')}</dt>
             <dd data-testid="command-detail-status">{COMMAND_STATUS_LABELS[detail.status]}</dd>
-            <dt>提交人</dt>
-            <dd data-testid="command-detail-requested-by">{detail.requestedBy}（身份上下文取得，不可编辑）</dd>
-            <dt>请求时间</dt>
+            <dt>{translate('page.3c75f3646a07')}</dt>
+            <dd data-testid="command-detail-requested-by">
+              {detail.requestedBy}
+              {translate('page.7a9fc0c822d1')}
+            </dd>
+            <dt>{translate('page.e8b5eda03ab9')}</dt>
             <dd>
               <TimeText iso={detail.requestTime} />
             </dd>
-            <dt>超时 / 过期</dt>
+            <dt>{translate('page.3c14b777f83f')}</dt>
             <dd>
               {detail.timeoutSec}s / {detail.expiresAt !== null ? <TimeText iso={detail.expiresAt} /> : '—'}
             </dd>
             {detail.remarks !== null ? (
               <>
-                <dt>备注</dt>
+                <dt>{translate('page.e0361480e3a5')}</dt>
                 <dd>{detail.remarks}</dd>
               </>
             ) : null}
             {detail.confirmedBy !== null ? (
               <>
-                <dt>高风险确认人</dt>
+                <dt>{translate('page.1c8290a333f7')}</dt>
                 <dd>{detail.confirmedBy}</dd>
               </>
             ) : null}
           </dl>
           {isLateAck(detail.status, detail.acks) ? (
             <p className="late-ack" role="status" data-testid="late-ack">
-              迟到 ACK：命令已{COMMAND_STATUS_LABELS[detail.status]}后仍收到设备回执（原样保留追溯链）
+              {translate('page.0afc04f45263')}
+              {COMMAND_STATUS_LABELS[detail.status]}
+              {translate('page.eb30e6736095')}
             </p>
           ) : null}
-          <section aria-label="下发尝试">
-            <h5>下发尝试</h5>
+          <section aria-label={translate('page.146c96e8d725')}>
+            <h5>{translate('page.146c96e8d725')}</h5>
             {detail.attempts.length === 0 ? (
-              <p className="empty-state">暂无</p>
+              <p className="empty-state">{translate('page.5dbd015496af')}</p>
             ) : (
               <ol data-testid="command-attempts">
                 {detail.attempts.map((a) => (
                   <li key={a.attemptNo}>
-                    第 {a.attemptNo} 次 <TimeText iso={a.publishedAt} /> →{' '}
-                    {a.outcome === 'PUBLISHED' ? '发布成功' : '发布失败'}（完成于 <TimeText iso={a.finishedAt} />）
-                    {a.errorCode !== null ? ` 错误码 ${a.errorCode}` : ''}
+                    {translate('page.dae828fe4fb7') + ' '}
+                    {a.attemptNo}
+                    {' ' + translate('page.5e5b8169eee6') + ' '}
+                    <TimeText iso={a.publishedAt} /> →{' '}
+                    {a.outcome === 'PUBLISHED' ? translate('page.ec0023361886') : translate('page.7e7f5d44c467')}
+                    {translate('page.8932ec0133f5') + ' '}
+                    <TimeText iso={a.finishedAt} />）
+                    {a.errorCode !== null ? ' ' + translate('page.e08c1d4f9ad5') + ' ' + a.errorCode : ''}
                     {a.providerMessageId !== null ? `（provider ${a.providerMessageId}）` : ''}
                   </li>
                 ))}
               </ol>
             )}
           </section>
-          <section aria-label="设备 ACK">
-            <h5>设备 ACK</h5>
+          <section aria-label={translate('page.7435adf4679c')}>
+            <h5>{translate('page.7435adf4679c')}</h5>
             {detail.acks.length === 0 ? (
               <p className="empty-state" data-testid="command-acks-empty">
-                暂无 ACK
+                {translate('page.d06b221ff39f')}
               </p>
             ) : (
               <ol data-testid="command-acks">
                 {detail.acks.map((ack, index) => (
                   <li key={index} data-testid={`command-ack-${index}`}>
                     <TimeText iso={ack.ackAt} />：{ACK_RESULT_LABELS[ack.result] ?? ack.result}
-                    {ack.executeTimeMs !== null ? `（执行 ${ack.executeTimeMs}ms）` : ''}
-                    {ack.errorCode !== null ? ` 错误码 ${ack.errorCode}` : ''}
+                    {ack.executeTimeMs !== null
+                      ? translate('page.2775b968e0d7') + ' ' + ack.executeTimeMs + 'ms\uFF09'
+                      : ''}
+                    {ack.errorCode !== null ? ' ' + translate('page.e08c1d4f9ad5') + ' ' + ack.errorCode : ''}
                     {ack.message !== null ? ` — ${ack.message}` : ''}
                     {ack.sourceMessageId !== null ? `（msg ${ack.sourceMessageId}）` : ''}
                   </li>
@@ -534,35 +585,36 @@ export function DeviceOperatePage({
             )}
           </section>
           <button type="button" onClick={onCloseCommandDetail}>
-            关闭
+            {translate('page.6c14bd7f6f9e')}
           </button>
         </aside>
       ) : null}
 
-      <section data-testid="media-panel" aria-label="最新授权媒体（非实时画面）">
-        <h4>最新授权媒体（非实时画面）</h4>
+      <section data-testid="media-panel" aria-label={translate('page.da3f0b21a6c2')}>
+        <h4>{translate('page.da3f0b21a6c2')}</h4>
         {latestMedia !== null ? (
           <div data-testid="media-latest">
             <span>{latestMedia.mediaId}</span>
             <span>{latestMedia.mediaType}</span>
             <span>
-              采集于 <TimeText iso={latestMedia.captureTime} />
+              {translate('page.ebd616a91fdc') + ' '}
+              <TimeText iso={latestMedia.captureTime} />
             </span>
           </div>
         ) : (
           <p className="empty-state" data-testid="media-empty">
-            暂无授权媒体
+            {translate('page.c61f35aadcae')}
           </p>
         )}
         <button type="button" data-testid="media-refresh" onClick={onRefreshMedia}>
-          手动刷新
+          {translate('page.7ea1129990c3')}
         </button>
       </section>
 
-      <section data-testid="activity-table" aria-label="操作日志">
-        <h4>操作日志</h4>
+      <section data-testid="activity-table" aria-label={translate('page.f4bc877cd282')}>
+        <h4>{translate('page.f4bc877cd282')}</h4>
         <div className="filter-bar">
-          <label htmlFor="activity-level">级别</label>
+          <label htmlFor="activity-level">{translate('page.2548499200e5')}</label>
           <select
             id="activity-level"
             data-testid="activity-filter-level"
@@ -574,14 +626,14 @@ export function DeviceOperatePage({
               })
             }
           >
-            <option value="">全部</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
             {ACTIVITY_LEVEL_OPTIONS.map((l) => (
               <option key={l} value={l}>
                 {ACTIVITY_LEVEL_LABELS[l]}
               </option>
             ))}
           </select>
-          <label htmlFor="activity-kind">类型</label>
+          <label htmlFor="activity-kind">{translate('page.e4e46c7235d1')}</label>
           <select
             id="activity-kind"
             data-testid="activity-filter-kind"
@@ -593,9 +645,9 @@ export function DeviceOperatePage({
               })
             }
           >
-            <option value="">全部</option>
-            <option value="EVENT">事件</option>
-            <option value="ALARM">告警</option>
+            <option value="">{translate('page.778fc8f99453')}</option>
+            <option value="EVENT">{translate('page.550e3280629d')}</option>
+            <option value="ALARM">{translate('page.5078424f7e0e')}</option>
           </select>
           <button
             type="button"
@@ -603,17 +655,25 @@ export function DeviceOperatePage({
             data-testid="activity-filter-search"
             onClick={() => onApplyActivityFilter(draftActivityFilter)}
           >
-            筛选
+            {translate('page.dcce9a144a40')}
           </button>
         </div>
         <CursorTable
-          ariaLabel="操作日志"
+          ariaLabel={translate('page.f4bc877cd282')}
           columns={[
-            { key: 'occurredAt', header: '时间', render: (a) => <TimeText iso={a.occurredAt} /> },
-            { key: 'level', header: '级别', render: (a) => ACTIVITY_LEVEL_LABELS[a.level] },
-            { key: 'kind', header: '类型', render: (a) => ACTIVITY_KIND_LABELS[a.kind] },
-            { key: 'summary', header: '内容', render: (a) => a.summary },
-            { key: 'detail', header: '详情', render: (a) => <code>{JSON.stringify(a.detail)}</code> },
+            {
+              key: 'occurredAt',
+              header: translate('page.89b4aa6364ce'),
+              render: (a) => <TimeText iso={a.occurredAt} />,
+            },
+            { key: 'level', header: translate('page.2548499200e5'), render: (a) => ACTIVITY_LEVEL_LABELS[a.level] },
+            { key: 'kind', header: translate('page.e4e46c7235d1'), render: (a) => ACTIVITY_KIND_LABELS[a.kind] },
+            { key: 'summary', header: translate('page.163aec9194a1'), render: (a) => a.summary },
+            {
+              key: 'detail',
+              header: translate('page.4f55ee1e687f'),
+              render: (a) => <code>{JSON.stringify(a.detail)}</code>,
+            },
           ]}
           rows={activities.rows === null ? null : [...activities.rows]}
           rowKey={(a) => a.activityId}
@@ -622,7 +682,7 @@ export function DeviceOperatePage({
           {...(activities.nextCursor !== undefined ? { nextCursor: activities.nextCursor } : {})}
           onNextPage={onLoadMoreActivities}
           onRefresh={onRefresh}
-          emptyText="暂无日志"
+          emptyText={translate('page.44060e77b11c')}
         />
         <div data-testid="activity-export">
           {selectedDeviceId !== null && canExportRole(role) ? (
@@ -645,7 +705,6 @@ export function DeviceOperatePage({
     </div>
   );
 }
-
 function canExportRole(role: Role): boolean {
   return hasPermission(role, 'export:create');
 }

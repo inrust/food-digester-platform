@@ -1,3 +1,5 @@
+import { PAGE_ZH_CN } from './pages.js';
+
 /**
  * FE-19 zh-CN 语言资源（缺省语言；与 en 资源 key 集 parity 锁定，缺失检测为 0）。
  *
@@ -6,6 +8,7 @@
  * requestId 原文保留。
  */
 export const ZH_CN: Readonly<Record<string, string>> = {
+  ...PAGE_ZH_CN,
   // ---------- 通用 ----------
   'common.loading': '加载中…',
   'common.refresh': '刷新',

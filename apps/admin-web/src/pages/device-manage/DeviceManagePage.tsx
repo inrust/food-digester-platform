@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-07 设备生命周期操作页（/devices/manage）：Assignment、Suspend、Reactivate、Retire、
  * 别名修改（If-Match）、证书摘要与轮换请求（BE-CERT-03）。
@@ -38,7 +39,6 @@ import type {
   RetirementResultView,
   RotationRequestView,
 } from './types.js';
-
 export interface DeviceManagePageProps {
   readonly role: Role;
   /** 当前设备；null = 未加载完成。 */
@@ -54,7 +54,9 @@ export interface DeviceManagePageProps {
   readonly rotation: RotationRequestView | null;
   /** 分配表单的 Customer/Site 选项（site 选项携带所属 customerId）。 */
   readonly customers: readonly FilterOption[];
-  readonly sites: readonly (FilterOption & { customerId: string })[];
+  readonly sites: readonly (FilterOption & {
+    customerId: string;
+  })[];
   readonly onBack: () => void;
   /** 操作成功后回源：重新加载设备详情与 Assignment 历史。 */
   readonly onRefresh: () => void;
@@ -69,9 +71,7 @@ export interface DeviceManagePageProps {
   /** FE-13 OTA 入口跳转（/ota/packages、/ota/campaigns）。 */
   readonly onNavigate: (path: string) => void;
 }
-
 type PendingAction = 'suspend' | 'reactivate' | 'retire' | 'forceComplete';
-
 export function DeviceManagePage({
   role,
   device,
@@ -102,7 +102,6 @@ export function DeviceManagePage({
   const [notice, setNotice] = useState<string | null>(null);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-
   const runAction = async (execute: () => Promise<unknown>, successText: string) => {
     // 防重复点击：在途请求直接忽略（后端幂等/条件更新兜底）
     if (inFlight.current) return;
@@ -124,12 +123,11 @@ export function DeviceManagePage({
       setBusy(false);
     }
   };
-
   if (loading) {
     return (
       <div className="device-manage-page" data-testid="device-manage-page">
         <div role="status" data-testid="manage-loading">
-          加载中…
+          {translate('page.300ee3dee4dc')}
         </div>
       </div>
     );
@@ -144,11 +142,10 @@ export function DeviceManagePage({
   if (device === null) {
     return (
       <div className="device-manage-page" data-testid="device-manage-page">
-        <p className="empty-state">未找到设备</p>
+        <p className="empty-state">{translate('page.6302de6c963f')}</p>
       </div>
     );
   }
-
   const gate = (action: Parameters<typeof gateAction>[0]) => gateAction(action, device, role);
   const assignGate = gate('assign');
   const suspendGate = gate('suspend');
@@ -157,16 +154,14 @@ export function DeviceManagePage({
   const aliasGate = gate('editAlias');
   const rotationGate = gate('requestRotation');
   const forceGate = canForceComplete(device, retirement, role);
-
   const aliasTrimmed = aliasDraft.trim().normalize('NFC');
   const aliasLength = [...aliasTrimmed].length;
   const aliasInvalid = aliasLength > 64;
-
   return (
     <div className="device-manage-page" data-testid="device-manage-page">
       <div className="manage-header">
         <button type="button" data-testid="manage-back" onClick={onBack}>
-          返回
+          {translate('page.11d024154013')}
         </button>
         <h3>
           {device.alias ?? device.serialNumber}
@@ -189,8 +184,8 @@ export function DeviceManagePage({
       ) : null}
       {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
-      <section data-testid="lifecycle-actions" aria-label="生命周期操作">
-        <h4>生命周期操作</h4>
+      <section data-testid="lifecycle-actions" aria-label={translate('page.e4c42ba44ddc')}>
+        <h4>{translate('page.e4c42ba44ddc')}</h4>
         <div className="action-row">
           <button
             type="button"
@@ -199,7 +194,7 @@ export function DeviceManagePage({
             {...(assignGate.reason !== null ? { title: assignGate.reason } : {})}
             onClick={() => setAssignOpen(true)}
           >
-            分配/调整归属
+            {translate('page.9b3626b5d30f')}
           </button>
           <button
             type="button"
@@ -208,7 +203,7 @@ export function DeviceManagePage({
             {...(suspendGate.reason !== null ? { title: suspendGate.reason } : {})}
             onClick={() => setPendingAction('suspend')}
           >
-            挂起
+            {translate('page.b16ccb7bb587')}
           </button>
           <button
             type="button"
@@ -217,7 +212,7 @@ export function DeviceManagePage({
             {...(reactivateGate.reason !== null ? { title: reactivateGate.reason } : {})}
             onClick={() => setPendingAction('reactivate')}
           >
-            恢复
+            {translate('page.79748ca1c6e5')}
           </button>
           <button
             type="button"
@@ -227,38 +222,35 @@ export function DeviceManagePage({
             {...(retireGate.reason !== null ? { title: retireGate.reason } : {})}
             onClick={() => setPendingAction('retire')}
           >
-            退役
+            {translate('page.a3a128e21ebb')}
           </button>
         </div>
       </section>
 
-      <section data-testid="ota-entry" aria-label="OTA 升级">
-        <h4>OTA 升级</h4>
-        <p className="field-hint">
-          固件上传（预签名 URL + Hash/签名校验）与同步更新（受控 Campaign，首批 1 台灰度）均在 OTA 页完成；
-          不直接向单设备推送未校验文件。
-        </p>
+      <section data-testid="ota-entry" aria-label={translate('page.bdb9a2faeb72')}>
+        <h4>{translate('page.bdb9a2faeb72')}</h4>
+        <p className="field-hint">{translate('page.cee3cff2e854')}</p>
         {hasPermission(role, 'ota:read') ? (
           <div className="action-row">
             <button type="button" data-testid="goto-ota-packages" onClick={() => onNavigate('/ota/packages')}>
-              选择固件文件
+              {translate('page.35ae8f161851')}
             </button>
             <button type="button" data-testid="goto-ota-campaigns" onClick={() => onNavigate('/ota/campaigns')}>
-              同步更新
+              {translate('page.51e6d9eba498')}
             </button>
           </div>
         ) : (
           <p className="deny-reason" data-testid="ota-entry-deny">
-            需要 OTA 读权限（ota:read）
+            {translate('page.350bcf58b643')}
           </p>
         )}
       </section>
 
-      <section data-testid="alias-section" aria-label="设备别名">
-        <h4>设备别名</h4>
+      <section data-testid="alias-section" aria-label={translate('page.270ec5a97320')}>
+        <h4>{translate('page.270ec5a97320')}</h4>
         {aliasEditing ? (
           <div className="alias-form" data-testid="alias-form">
-            <label htmlFor="alias-input">别名（1..64 个 Unicode 字符，同客户内唯一；保存时执行 NFC 规范化）</label>
+            <label htmlFor="alias-input">{translate('page.00029c8b5033')}</label>
             <input
               id="alias-input"
               data-testid="alias-input"
@@ -266,7 +258,10 @@ export function DeviceManagePage({
               onChange={(event) => setAliasDraft(event.target.value)}
             />
             {aliasInvalid ? (
-              <p className="field-hint">别名超长（最多 64 个 Unicode 字符，当前 {aliasLength}）</p>
+              <p className="field-hint">
+                {translate('page.16f069f04aeb') + ' '}
+                {aliasLength}）
+              </p>
             ) : null}
             <div className="action-row">
               <button
@@ -278,10 +273,10 @@ export function DeviceManagePage({
                   void runAction(async () => {
                     await onUpdateAlias(aliasTrimmed);
                     setAliasEditing(false);
-                  }, '别名已更新')
+                  }, translate('page.d3fbefdac5ea'))
                 }
               >
-                保存
+                {translate('page.fadf24dbc5a9')}
               </button>
               <button
                 type="button"
@@ -291,13 +286,13 @@ export function DeviceManagePage({
                   void runAction(async () => {
                     await onUpdateAlias(null);
                     setAliasEditing(false);
-                  }, '别名已清除')
+                  }, translate('page.2fd846713a4f'))
                 }
               >
-                清除别名
+                {translate('page.6b9da041716c')}
               </button>
               <button type="button" data-testid="alias-cancel" onClick={() => setAliasEditing(false)}>
-                取消
+                {translate('page.4d0b4688c787')}
               </button>
             </div>
           </div>
@@ -314,35 +309,39 @@ export function DeviceManagePage({
                 setAliasEditing(true);
               }}
             >
-              修改别名
+              {translate('page.3ea46b0c32d9')}
             </button>
           </div>
         )}
       </section>
 
-      <section data-testid="cert-summary" aria-label="证书摘要">
-        <h4>证书摘要</h4>
+      <section data-testid="cert-summary" aria-label={translate('page.4b495b5f07a2')}>
+        <h4>{translate('page.4b495b5f07a2')}</h4>
         {device.certificate !== null ? (
           <dl>
-            <dt>证书 ID</dt>
+            <dt>{translate('page.d23c1047e613')}</dt>
             <dd data-testid="cert-id">{device.certificate.certificateId}</dd>
-            <dt>指纹</dt>
+            <dt>{translate('page.3852a0ca8422')}</dt>
             <dd data-testid="cert-fingerprint">{device.certificate.fingerprint}</dd>
-            <dt>状态</dt>
+            <dt>{translate('page.62e951a692ff')}</dt>
             <dd data-testid="cert-status">
               {CERTIFICATE_STATUS_LABELS[device.certificate.status] ?? device.certificate.status}
             </dd>
           </dl>
         ) : (
           <p className="empty-state" data-testid="cert-empty">
-            未颁发证书
+            {translate('page.3f40287353ef')}
           </p>
         )}
         {rotation !== null ? (
           <p className="rotation-result" data-testid="rotation-result">
-            轮换请求已受理（{rotation.requestId}），当前状态：
+            {translate('page.0c47b7e799bb')}
+            {rotation.requestId}
+            {translate('page.d5ed0bbbb522')}
             {ROTATION_REQUEST_STATUS_LABELS[rotation.requestStatus] ?? rotation.requestStatus}
-            ；证书到期日 {rotation.expiryDate}。设备将自行完成密钥生成与领取，本页面不提供私钥。
+            {translate('page.99d48c052cc1') + ' '}
+            {rotation.expiryDate}
+            {translate('page.038d6c10a99a')}
           </p>
         ) : null}
         <button
@@ -350,29 +349,33 @@ export function DeviceManagePage({
           data-testid="cert-rotate"
           disabled={!rotationGate.enabled || busy}
           {...(rotationGate.reason !== null ? { title: rotationGate.reason } : {})}
-          onClick={() => void runAction(onRequestRotation, '证书轮换请求已提交，等待设备领取新证书')}
+          onClick={() => void runAction(onRequestRotation, translate('page.64f4faf010d5'))}
         >
-          请求轮换
+          {translate('page.c1ba7b23295a')}
         </button>
       </section>
 
       {device.lifecycleStatus === 'Retired' ? (
-        <section className="retirement-panel" data-testid="retirement-panel" aria-label="退役状态">
-          <h4>退役状态（不可恢复）</h4>
+        <section
+          className="retirement-panel"
+          data-testid="retirement-panel"
+          aria-label={translate('page.acc3e1a08536')}
+        >
+          <h4>{translate('page.fd3f7462f968')}</h4>
           {retirement !== null ? (
             <>
               <dl>
-                <dt>状态</dt>
+                <dt>{translate('page.62e951a692ff')}</dt>
                 <dd data-testid="retirement-status">{RETIREMENT_STATUS_LABELS[retirement.status]}</dd>
-                <dt>发起时间</dt>
+                <dt>{translate('page.44042ce0bc0b')}</dt>
                 <dd>
                   <TimeText iso={retirement.initiatedAt} />
                 </dd>
-                <dt>原因</dt>
+                <dt>{translate('page.1ff9c3d00112')}</dt>
                 <dd>{retirement.reason}</dd>
                 {retirement.completionMethod !== null ? (
                   <>
-                    <dt>完成方式</dt>
+                    <dt>{translate('page.4ebbeb4ef7dc')}</dt>
                     <dd data-testid="retirement-method">
                       {COMPLETION_METHOD_LABELS[retirement.completionMethod] ?? retirement.completionMethod}
                     </dd>
@@ -380,7 +383,7 @@ export function DeviceManagePage({
                 ) : null}
                 {retirement.certificateRevokedAt !== null ? (
                   <>
-                    <dt>证书撤销时间</dt>
+                    <dt>{translate('page.131d45c13e61')}</dt>
                     <dd>
                       <TimeText iso={retirement.certificateRevokedAt} />
                     </dd>
@@ -389,8 +392,7 @@ export function DeviceManagePage({
               </dl>
               {retirement.status === 'PENDING_CONFIRMATION' ? (
                 <p className="retirement-waiting" data-testid="retirement-waiting">
-                  等待设备确认：72 小时确认窗口内证书保持有效（ACTIVE），设备仅可执行同步/停用；
-                  确认、强制完成或超时后立即撤销证书。
+                  {translate('page.336a1135b5c3')}
                 </p>
               ) : null}
               <button
@@ -401,39 +403,39 @@ export function DeviceManagePage({
                 {...(forceGate.reason !== null ? { title: forceGate.reason } : {})}
                 onClick={() => setPendingAction('forceComplete')}
               >
-                强制完成退役
+                {translate('page.041739719cce')}
               </button>
             </>
           ) : (
             <p className="retirement-unknown" data-testid="retirement-unknown">
-              设备已退役（Retired，不可恢复）。
+              {translate('page.b2426c60f69f')}
             </p>
           )}
         </section>
       ) : null}
 
-      <section data-testid="assignment-history" aria-label="分配历史">
-        <h4>Assignment 历史</h4>
+      <section data-testid="assignment-history" aria-label={translate('page.c9a07e5c1fbd')}>
+        <h4>{translate('page.3ee61bf72aad')}</h4>
         {assignmentsError !== undefined ? <ErrorNotice error={assignmentsError} onRefresh={onRefresh} /> : null}
         {assignments === null ? (
           <div role="status" data-testid="assignments-loading">
-            加载中…
+            {translate('page.300ee3dee4dc')}
           </div>
         ) : assignments.length === 0 ? (
           <p className="empty-state" data-testid="assignments-empty">
-            暂无分配记录
+            {translate('page.0db96f789d1f')}
           </p>
         ) : (
-          <table aria-label="分配历史">
+          <table aria-label={translate('page.c9a07e5c1fbd')}>
             <thead>
               <tr>
-                <th scope="col">客户</th>
-                <th scope="col">站点</th>
-                <th scope="col">状态</th>
-                <th scope="col">分配时间</th>
-                <th scope="col">结束时间</th>
-                <th scope="col">操作人</th>
-                <th scope="col">原因</th>
+                <th scope="col">{translate('page.f20687060126')}</th>
+                <th scope="col">{translate('page.619bc67325a4')}</th>
+                <th scope="col">{translate('page.62e951a692ff')}</th>
+                <th scope="col">{translate('page.af2cdb23eed1')}</th>
+                <th scope="col">{translate('page.a0bb9f49abc5')}</th>
+                <th scope="col">{translate('page.06858dfbbcb4')}</th>
+                <th scope="col">{translate('page.1ff9c3d00112')}</th>
               </tr>
             </thead>
             <tbody>
@@ -455,7 +457,12 @@ export function DeviceManagePage({
         )}
       </section>
 
-      <Modal open={assignOpen} title="分配/调整设备归属" testid="assign-dialog" onClose={() => setAssignOpen(false)}>
+      <Modal
+        open={assignOpen}
+        title={translate('page.37326f4772d8')}
+        testid="assign-dialog"
+        onClose={() => setAssignOpen(false)}
+      >
         <AssignForm
           customers={customers}
           sites={sites}
@@ -465,58 +472,57 @@ export function DeviceManagePage({
           onSubmit={(input) =>
             void runAction(async () => {
               await onAssign(input);
-            }, '分配已完成')
+            }, translate('page.173f47097d59'))
           }
         />
       </Modal>
 
       <ConfirmDialog
         open={pendingAction === 'suspend'}
-        title="挂起设备"
+        title={translate('page.cb0f58a33c0f')}
         danger
         requireReason
-        reasonLabel="挂起原因"
-        description={`挂起后设备停止正常运行（Active→Suspended）。设备：${device.serialNumber}`}
-        confirmText="确认挂起"
-        onConfirm={(reason) => void runAction(() => onSuspend(reason), '设备已挂起')}
+        reasonLabel={translate('page.d17bba9b7631')}
+        description={translate('page.3977395b600e') + device.serialNumber}
+        confirmText={translate('page.ef13323b55d6')}
+        onConfirm={(reason) => void runAction(() => onSuspend(reason), translate('page.546c9c47553c'))}
         onCancel={() => setPendingAction(null)}
       />
       <ConfirmDialog
         open={pendingAction === 'reactivate'}
-        title="恢复设备"
+        title={translate('page.a52000036bec')}
         requireReason
-        reasonLabel="恢复原因"
-        description={`确认问题已解决后恢复（Suspended→Active），恢复原因与确认将写入审计。设备：${device.serialNumber}`}
-        confirmText="确认恢复"
-        onConfirm={(reason) => void runAction(() => onReactivate(reason), '设备已恢复')}
+        reasonLabel={translate('page.f567e1a0848b')}
+        description={translate('page.31bab33038cf') + device.serialNumber}
+        confirmText={translate('page.b537457e26cc')}
+        onConfirm={(reason) => void runAction(() => onReactivate(reason), translate('page.04714f3f9280'))}
         onCancel={() => setPendingAction(null)}
       />
       <ConfirmDialog
         open={pendingAction === 'retire'}
-        title="退役设备"
+        title={translate('page.e8c560c46be1')}
         danger
         requireReason
-        reasonLabel="退役原因"
-        description={`退役不可恢复：将撤销设备归属、授权与许可，并进入最长 72 小时的设备确认窗口。设备：${device.serialNumber}`}
-        confirmText="确认退役（不可恢复）"
-        onConfirm={(reason) => void runAction(() => onRetire(reason), '设备已退役，等待设备确认')}
+        reasonLabel={translate('page.023f28c06231')}
+        description={translate('page.1430cba69a22') + device.serialNumber}
+        confirmText={translate('page.f6142648d366')}
+        onConfirm={(reason) => void runAction(() => onRetire(reason), translate('page.741c15ed4519'))}
         onCancel={() => setPendingAction(null)}
       />
       <ConfirmDialog
         open={pendingAction === 'forceComplete'}
-        title="强制完成退役"
+        title={translate('page.041739719cce')}
         danger
         requireReason
-        reasonLabel="强制完成原因"
-        description="适用于离线等无法自行确认的设备：立即完成退役并撤销证书，不再等待设备确认。"
-        confirmText="确认强制完成"
-        onConfirm={(reason) => void runAction(() => onForceComplete(reason), '退役已强制完成，证书已撤销')}
+        reasonLabel={translate('page.9e8278dca2fe')}
+        description={translate('page.1668433dcb49')}
+        confirmText={translate('page.54a43c8c9b92')}
+        onConfirm={(reason) => void runAction(() => onForceComplete(reason), translate('page.4bfb33fc17ba'))}
         onCancel={() => setPendingAction(null)}
       />
     </div>
   );
 }
-
 function AssignForm({
   customers,
   sites,
@@ -526,7 +532,9 @@ function AssignForm({
   onSubmit,
 }: {
   readonly customers: readonly FilterOption[];
-  readonly sites: readonly (FilterOption & { customerId: string })[];
+  readonly sites: readonly (FilterOption & {
+    customerId: string;
+  })[];
   readonly currentCustomerId: string | null;
   readonly currentSiteId: string | null;
   readonly busy: boolean;
@@ -537,11 +545,10 @@ function AssignForm({
   const [reason, setReason] = useState('');
   const siteOptions = sites.filter((s) => s.customerId === customerId);
   const reasonTrimmed = reason.trim();
-
   return (
     <div className="assign-form" data-testid="assign-form">
       <div className="dialog-field">
-        <label htmlFor="assign-customer">所属客户</label>
+        <label htmlFor="assign-customer">{translate('page.467c1137f479')}</label>
         <select
           id="assign-customer"
           data-testid="assign-customer"
@@ -551,7 +558,7 @@ function AssignForm({
             setSiteId('');
           }}
         >
-          <option value="">请选择客户</option>
+          <option value="">{translate('page.6bdb05d6eeeb')}</option>
           {customers.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
@@ -560,7 +567,7 @@ function AssignForm({
         </select>
       </div>
       <div className="dialog-field">
-        <label htmlFor="assign-site">所属站点（须属于所选客户）</label>
+        <label htmlFor="assign-site">{translate('page.b3f43665d556')}</label>
         <select
           id="assign-site"
           data-testid="assign-site"
@@ -568,7 +575,7 @@ function AssignForm({
           disabled={customerId === ''}
           onChange={(event) => setSiteId(event.target.value)}
         >
-          <option value="">请选择站点</option>
+          <option value="">{translate('page.283600ae452c')}</option>
           {siteOptions.map((s) => (
             <option key={s.value} value={s.value}>
               {s.label}
@@ -577,7 +584,7 @@ function AssignForm({
         </select>
       </div>
       <div className="dialog-field">
-        <label htmlFor="assign-reason">分配原因（可选，写入审计）</label>
+        <label htmlFor="assign-reason">{translate('page.f4d149ac018b')}</label>
         <textarea
           id="assign-reason"
           data-testid="assign-reason"
@@ -599,7 +606,7 @@ function AssignForm({
             })
           }
         >
-          确认分配
+          {translate('page.1485e5902972')}
         </button>
       </div>
     </div>

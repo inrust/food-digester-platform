@@ -1,3 +1,4 @@
+import { translate } from '../../i18n/i18n.js';
 /**
  * FE-03 业务总览页面（/dashboard）。
  *
@@ -14,19 +15,24 @@ import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { TimeText } from '../../components/TimeText.js';
 import { ALARM_SEVERITY_LABELS, consumablesOf, licenseDistributionText, signalText } from './dashboard-state.js';
 import type { DashboardOverviewView, DeviceCardView } from './types.js';
-
 export type DashboardPageState =
-  | { readonly status: 'loading' }
-  | { readonly status: 'error'; readonly error: unknown }
-  | { readonly status: 'ready'; readonly overview: DashboardOverviewView };
-
+  | {
+      readonly status: 'loading';
+    }
+  | {
+      readonly status: 'error';
+      readonly error: unknown;
+    }
+  | {
+      readonly status: 'ready';
+      readonly overview: DashboardOverviewView;
+    };
 export interface DashboardPageProps {
   readonly state: DashboardPageState;
   readonly onRefresh: () => void;
   readonly onSubmitCommand: (deviceId: string, command: string) => Promise<CommandSubmitResult>;
   readonly onNavigate: (path: string) => void;
 }
-
 function MetricCard({ testid, label, value, sub }: { testid: string; label: string; value: string; sub: string }) {
   return (
     <div className="stat-card" data-testid={testid}>
@@ -36,7 +42,6 @@ function MetricCard({ testid, label, value, sub }: { testid: string; label: stri
     </div>
   );
 }
-
 function DeviceCard({
   card,
   onSubmitCommand,
@@ -55,7 +60,10 @@ function DeviceCard({
       <div className="info">
         <span>ID：{card.deviceId}</span>
         <span>SN：{card.serialNumber}</span>
-        <span>固件：{card.firmwareVersion ?? '—'}</span>
+        <span>
+          {translate('page.882b33c96f60')}
+          {card.firmwareVersion ?? '—'}
+        </span>
         <span data-testid={`signal-${card.deviceId}`}>{signalText(card.networkType, card.signalStrength)}</span>
       </div>
       <FourAxisBadges
@@ -82,40 +90,39 @@ function DeviceCard({
           title={card.capabilities.ota.denyReason ?? undefined}
           onClick={() => onNavigate('/ota/campaigns')}
         >
-          升级
+          {translate('page.2e8e70958c4a')}
         </button>
       </div>
     </div>
   );
 }
-
 function SectionFailure({ requestId }: { requestId: string }) {
   return (
     <div role="alert" className="error-notice" data-testid="dashboard-section-error">
-      该区块暂不可用，请稍后刷新（requestId: {requestId}）
+      {translate('page.af34343d0f0c') + ' '}
+      {requestId}）
     </div>
   );
 }
-
 export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }: DashboardPageProps) {
   if (state.status === 'loading') {
     return (
       <div role="status" data-testid="dashboard-loading">
-        加载中…
+        {translate('page.300ee3dee4dc')}
       </div>
     );
   }
   if (state.status === 'error') {
     return <ErrorNotice error={state.error} onRefresh={onRefresh} />;
   }
-
   const { overview } = state;
   return (
     <div className="dashboard-page" data-testid="dashboard-page">
       <p className="data-baseline" data-testid="dashboard-baseline">
-        数据基准：
+        {translate('page.7d0639497c7e')}
         <TimeText iso={overview.generatedAt} />
-        （指标口径以此为基准；ESG 统计日（UTC）：{overview.esgToday.summaryDate}）
+        {translate('page.5279df8b8a6c')}
+        {overview.esgToday.summaryDate}）
       </p>
 
       {overview.sections.summary.status === 'ERROR' ? (
@@ -124,50 +131,57 @@ export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }:
         <div className="stats-grid">
           <MetricCard
             testid="metric-contracts"
-            label="有效合约"
+            label={translate('page.ba53b1a55776')}
             value={String(overview.contracts.effectiveTotal)}
-            sub="服务期内 Contract"
+            sub={translate('page.8e8d12dca017')}
           />
           <MetricCard
             testid="metric-devices"
-            label="设备总数"
+            label={translate('page.11c33ae6c763')}
             value={String(overview.devices.total)}
-            sub={`授权分布：${licenseDistributionText(overview.devices.licenseDistribution)}`}
+            sub={translate('page.6137da351e51') + licenseDistributionText(overview.devices.licenseDistribution)}
           />
           <MetricCard
             testid="metric-online"
-            label="在线设备"
+            label={translate('page.9c0cfc75a915')}
             value={String(overview.devices.online)}
-            sub={`总设备 ${overview.devices.total} · 在线率 ${overview.devices.onlineRatePct}%（心跳 ≤ 10 分钟）`}
+            sub={
+              translate('page.f9e1968d4dfb') +
+              ' ' +
+              overview.devices.total +
+              (' ' + translate('page.dda32dfd5c4b') + ' ') +
+              overview.devices.onlineRatePct +
+              translate('page.715ea3342a57')
+            }
           />
           <MetricCard
             testid="metric-carbon"
-            label="今日估算碳减排"
+            label={translate('page.8ca3c592fd0c')}
             value={`${overview.esgToday.carbonReductionKg} kg`}
-            sub={`统计日（UTC）：${overview.esgToday.summaryDate}`}
+            sub={translate('page.2c118781a7fb') + overview.esgToday.summaryDate}
           />
           <MetricCard
             testid="metric-energy"
-            label="今日能耗"
+            label={translate('page.ec8eab25e340')}
             value={`${overview.esgToday.powerConsumptionKwh} kWh`}
-            sub={`统计日（UTC）：${overview.esgToday.summaryDate}`}
+            sub={translate('page.2c118781a7fb') + overview.esgToday.summaryDate}
           />
           <MetricCard
             testid="metric-feeding"
-            label="今日处理量"
+            label={translate('page.d6dfc1d2d22a')}
             value={`${overview.esgToday.feedingWeightKg} kg`}
-            sub={`统计日（UTC）：${overview.esgToday.summaryDate}`}
+            sub={translate('page.2c118781a7fb') + overview.esgToday.summaryDate}
           />
         </div>
       )}
 
       <section className="latest-alarms" data-testid="latest-alarms">
-        <h4>最新告警</h4>
+        <h4>{translate('page.d0dfdd94f6d9')}</h4>
         {overview.sections.latestAlarms.status === 'ERROR' ? (
           <SectionFailure requestId={overview.sections.latestAlarms.requestId} />
         ) : overview.latestAlarms.length === 0 ? (
           <p className="empty-state" data-testid="alarms-empty">
-            暂无活动告警
+            {translate('page.92eb15f3f33a')}
           </p>
         ) : (
           <ul>
@@ -177,7 +191,8 @@ export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }:
                   {ALARM_SEVERITY_LABELS[alarm.severity]}
                 </span>
                 <span>
-                  设备 {alarm.deviceId} · {alarm.code}
+                  {translate('page.01f2c16cda65') + ' '}
+                  {alarm.deviceId} · {alarm.code}
                 </span>
                 <TimeText iso={alarm.detectedTime} />
               </li>
@@ -187,12 +202,12 @@ export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }:
       </section>
 
       <section className="device-cards" data-testid="device-cards">
-        <h4>全部设备（最多 10 台）</h4>
+        <h4>{translate('page.6c2c68d2d64b')}</h4>
         {overview.sections.deviceCards.status === 'ERROR' ? (
           <SectionFailure requestId={overview.sections.deviceCards.requestId} />
         ) : overview.deviceCards.length === 0 ? (
           <p className="empty-state" data-testid="devices-empty">
-            暂无设备
+            {translate('page.2b9379b8f7b5')}
           </p>
         ) : (
           <div className="device-grid">

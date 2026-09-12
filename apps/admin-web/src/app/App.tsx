@@ -1,3 +1,4 @@
+import { translate } from '../i18n/i18n.js';
 import { useEffect, useState } from 'react';
 import { ToastHost, useToastQueue } from '../components/Toast.js';
 import { TimeZoneProvider } from '../components/TimeText.js';
@@ -25,7 +26,13 @@ import {
 } from './operations-controllers.js';
 import { LoginPage } from './LoginPage.js';
 import { safeReturnPath, useBrowserRouter } from './browser-router.js';
-
+import {
+  ConsumablesController,
+  ContractDetailController,
+  ContractNewController,
+  ContractsController,
+  SettingsController,
+} from './business-controllers.js';
 export const IMPLEMENTED_PAGE_STATES = [
   'login',
   'forbidden',
@@ -46,28 +53,30 @@ export const IMPLEMENTED_PAGE_STATES = [
   'ota-packages',
   'media',
   'audit-logs',
+  'settings',
+  'contract-modify',
+  'contract-new',
+  'contract-detail',
+  'device-consumable',
 ] as const;
-
 function ForbiddenPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   return (
     <main className="standalone-page">
       <h1>403</h1>
-      <p>当前账号无权访问此页面。</p>
-      <button onClick={() => onNavigate('/dashboard')}>返回概览</button>
+      <p>{translate('ui.aeed26f03ff5')}</p>
+      <button onClick={() => onNavigate('/dashboard')}>{translate('ui.13e491d46e85')}</button>
     </main>
   );
 }
-
 function NotFoundPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   return (
     <main className="standalone-page">
       <h1>404</h1>
-      <p>页面不存在。</p>
-      <button onClick={() => onNavigate('/dashboard')}>返回概览</button>
+      <p>{translate('ui.db6114c405c1')}</p>
+      <button onClick={() => onNavigate('/dashboard')}>{translate('ui.13e491d46e85')}</button>
     </main>
   );
 }
-
 export function AdminWebApp({ services }: { readonly services: AdminWebServices }) {
   // FE-19：i18n 顶层挂载（语言切换即时生效；localStorage 持久化，刷新/重新登录保持）
   return (
@@ -76,13 +85,11 @@ export function AdminWebApp({ services }: { readonly services: AdminWebServices 
     </I18nProvider>
   );
 }
-
 function AdminWebAppInner({ services }: { readonly services: AdminWebServices }) {
   const { location, navigate } = useBrowserRouter();
   const [sessionRevision, setSessionRevision] = useState(0);
   const toasts = useToastQueue();
   const session = services.session.current();
-
   useEffect(
     () =>
       services.session.onClear(() => {
@@ -91,10 +98,8 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       }),
     [navigate, services.session],
   );
-
   void sessionRevision;
   const verdict = resolveRoute(location.pathname, session);
-
   useEffect(() => {
     if (verdict.kind === 'redirect-login') {
       navigate(`/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`, { replace: true });
@@ -108,7 +113,6 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
     verdict.kind,
     verdict.kind === 'redirect-home' ? verdict.home : '',
   ]);
-
   if (verdict.kind === 'redirect-login' || verdict.kind === 'redirect-home') return null;
   if (verdict.kind === 'not-found') return <NotFoundPage onNavigate={navigate} />;
   if (verdict.kind === 'forbidden' || verdict.route.pageState === 'forbidden')
@@ -125,7 +129,6 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
     );
   }
   if (session === null) return null;
-
   let page;
   switch (verdict.route.pageState) {
     case 'dashboard':
@@ -183,15 +186,31 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
     case 'audit-logs':
       page = <AuditLogsController api={services.api} session={session} />;
       break;
+    case 'settings':
+      page = <SettingsController api={services.api} session={session} />;
+      break;
+    case 'contract-modify':
+      page = <ContractsController api={services.api} session={session} onNavigate={navigate} />;
+      break;
+    case 'contract-new':
+      page = <ContractNewController api={services.api} onNavigate={navigate} />;
+      break;
+    case 'contract-detail':
+      page = (
+        <ContractDetailController api={services.api} session={session} search={location.search} onNavigate={navigate} />
+      );
+      break;
+    case 'device-consumable':
+      page = <ConsumablesController api={services.api} session={session} />;
+      break;
     default:
       page = (
         <section className="scope-notice">
           <h2>{verdict.route.label}</h2>
-          <p>该页面尚未接入当前管理后台组合根。</p>
+          <p>{translate('ui.1a5dfd366418')}</p>
         </section>
       );
   }
-
   return (
     <TimeZoneProvider>
       <AppShell
