@@ -7,8 +7,8 @@
  * - 每设备每耗材仅最新投影：乱序倒退防护走领域 decideProjectionUpdate（旧消息不覆盖、
  *   同消息 replay 幂等），并发由 observedAt 条件更新兜底；
  * - stale 读取时点派生（observedAt 超阈值/未上报 → stale），不回写；
- * - 联系人授权摘要（Site 联系方式）：仅 PlatformSuperAdmin/PlatformOperator/CustomerAdmin 可见，
- *   Auditor/CustomerViewer 遮蔽为 null；Customer 角色租户隔离（仅本 Customer 设备）。
+ * - 状态列表不读取或返回 Site 联系人；独立按需端点仅允许
+ *   PlatformSuperAdmin/PlatformOperator/CustomerAdmin，且 Customer 角色强制租户隔离。
  */
 import type { DbClient } from '@fdp/database';
 import {
@@ -19,6 +19,7 @@ import {
   mapConsumableRawName,
 } from '@fdp/domain';
 import type { ConsumableType } from '@fdp/domain';
+import { forbidden } from '@fdp/auth';
 import type { ActorContext } from '@fdp/auth';
 import { DEFAULT_CONNECTIVITY_THRESHOLD_MS, deriveConnectivity } from '../admin/device/repository.js';
 import { consumableNotFound, consumableValidationFailed } from './errors.js';
@@ -170,8 +171,6 @@ export interface ConsumableStatusView {
   readonly connectivity: 'ONLINE' | 'OFFLINE';
   /** 两种耗材列恒在；未上报为 null。 */
   readonly consumables: Readonly<Record<ConsumableType, ConsumableValueView | null>>;
-  /** 设备联系人授权摘要（未授权角色为 null）。 */
-  readonly contact: ConsumableContactSummary | null;
 }
 
 export interface ListConsumablesFilter {
@@ -200,9 +199,6 @@ interface DeviceWithRelations {
     readonly name: string;
     readonly region: string | null;
     readonly subregion: string | null;
-    readonly contactName: string | null;
-    readonly contactPhone: string | null;
-    readonly contactEmail: string | null;
   } | null;
   readonly latestState: { readonly lastHeartbeatAt: Date | null } | null;
 }
@@ -223,12 +219,7 @@ function toValueView(row: ProjectionRow | undefined, at: Date): ConsumableValueV
   };
 }
 
-function toView(
-  row: DeviceWithRelations,
-  projectionRows: readonly ProjectionRow[],
-  at: Date,
-  actor: ActorContext,
-): ConsumableStatusView {
+function toView(row: DeviceWithRelations, projectionRows: readonly ProjectionRow[], at: Date): ConsumableStatusView {
   const byType = new Map(projectionRows.map((p) => [p.consumableType as ConsumableType, p]));
   return {
     deviceId: row.id,
@@ -244,10 +235,39 @@ function toView(
       CARBON_FILTER: toValueView(byType.get('CARBON_FILTER'), at),
       BIO_ADDITIVE: toValueView(byType.get('BIO_ADDITIVE'), at),
     },
-    contact:
-      canViewContact(actor) && row.site
-        ? { name: row.site.contactName, phone: row.site.contactPhone, email: row.site.contactEmail }
-        : null,
+  };
+}
+
+/**
+ * 联系人按需读取：列表永不预载 PII；授权角色点击后才调用本函数。
+ * 未授权角色先失败关闭为 403；跨 Customer 与不存在设备均统一 404，避免枚举。
+ */
+export async function getConsumableContact(
+  deps: ConsumableDeps,
+  actor: ActorContext,
+  deviceId: string,
+): Promise<ConsumableContactSummary> {
+  if (!canViewContact(actor)) throw forbidden('Consumable contact access is not allowed');
+  const scopedCustomerId = actor.actorType === 'customer' ? (actor.customerId ?? '__none__') : undefined;
+  const row = await (
+    (deps.client as unknown as Record<string, unknown>).device as {
+      findFirst(args: Record<string, unknown>): Promise<{
+        site: {
+          contactName: string | null;
+          contactPhone: string | null;
+          contactEmail: string | null;
+        } | null;
+      } | null>;
+    }
+  ).findFirst({
+    where: { id: deviceId, ...(scopedCustomerId !== undefined ? { customerId: scopedCustomerId } : {}) },
+    select: { site: { select: { contactName: true, contactPhone: true, contactEmail: true } } },
+  });
+  if (!row) throw consumableNotFound();
+  return {
+    name: row.site?.contactName ?? null,
+    phone: row.site?.contactPhone ?? null,
+    email: row.site?.contactEmail ?? null,
   };
 }
 
@@ -306,9 +326,6 @@ export async function listConsumableStatus(
           name: true,
           region: true,
           subregion: true,
-          contactName: true,
-          contactPhone: true,
-          contactEmail: true,
         },
       },
       latestState: { select: { lastHeartbeatAt: true } },
@@ -329,7 +346,7 @@ export async function listConsumableStatus(
   }
 
   return rows
-    .map((row) => toView(row, projectionsByDevice.get(row.id) ?? [], at, actor))
+    .map((row) => toView(row, projectionsByDevice.get(row.id) ?? [], at))
     .filter((view) => {
       if (filter.connectivity !== undefined && view.connectivity !== filter.connectivity) return false;
       if (filter.maxRemainingPercent !== undefined) {

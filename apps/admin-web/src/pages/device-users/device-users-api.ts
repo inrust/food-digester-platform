@@ -17,6 +17,9 @@ import type {
 
 export interface DeviceUserListFilter {
   readonly customerId?: string;
+  readonly region?: string;
+  readonly subregion?: string;
+  readonly deviceId?: string;
   readonly status?: 'ACTIVE' | 'DISABLED';
   readonly keyword?: string;
 }
@@ -27,6 +30,9 @@ export async function fetchDeviceUsers(
 ): Promise<readonly DeviceUserListItemView[]> {
   const params = new URLSearchParams();
   if (filter.customerId !== undefined && filter.customerId !== '') params.set('customerId', filter.customerId);
+  if (filter.region !== undefined && filter.region !== '') params.set('region', filter.region);
+  if (filter.subregion !== undefined && filter.subregion !== '') params.set('subregion', filter.subregion);
+  if (filter.deviceId !== undefined && filter.deviceId !== '') params.set('deviceId', filter.deviceId);
   if (filter.status !== undefined) params.set('status', filter.status);
   if (filter.keyword !== undefined && filter.keyword !== '') params.set('keyword', filter.keyword);
   const query = params.toString();

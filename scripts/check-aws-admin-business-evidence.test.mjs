@@ -79,12 +79,12 @@ function fixture() {
   };
 }
 
-test('完整的 57 API、五角色、并发、通知、ESG 与清理目标 AWS 回执通过', () => {
-  assert.equal(REQUIRED_ADMIN_BUSINESS_OPERATIONS.length, 57);
+test('完整的 58 API、五角色、并发、通知、ESG 与清理目标 AWS 回执通过', () => {
+  assert.equal(REQUIRED_ADMIN_BUSINESS_OPERATIONS.length, 58);
   assert.deepEqual(validateAwsAdminBusinessEvidence(fixture()), []);
 });
 
-test('57 个回执 operationId 与九份正式业务 OpenAPI 精确一致', () => {
+test('58 个回执 operationId 与九份正式业务 OpenAPI 精确一致', () => {
   const files = [
     'admin-license-api.json',
     'admin-contract-api.json',
@@ -111,7 +111,7 @@ test('57 个回执 operationId 与九份正式业务 OpenAPI 精确一致', () =
 test('API 缺项、角色缺项与跨 Customer 放行均失败关闭', () => {
   const missing = fixture();
   missing.probes.apiOperations.pop();
-  assert.ok(validateAwsAdminBusinessEvidence(missing).some((error) => error.includes('57')));
+  assert.ok(validateAwsAdminBusinessEvidence(missing).some((error) => error.includes('58')));
   const role = fixture();
   role.probes.rbac.roles.pop();
   assert.ok(validateAwsAdminBusinessEvidence(role).some((error) => error.includes('5')));

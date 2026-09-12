@@ -136,8 +136,10 @@ test('角色不符 → forbidden（403 无权界面），会话保留', () => {
   assert.equal(verdict2.kind, 'forbidden');
 });
 
-test('子页面守卫：/contracts/new 继承合约菜单角色；未知路径 not-found', () => {
-  assert.equal(resolveRoute('/contracts/new', sessionOf('Auditor')).kind, 'allow');
+test('子页面守卫：/contracts/new 仅 contract:write 角色；未知路径 not-found', () => {
+  assert.equal(resolveRoute('/contracts/new', sessionOf('PlatformSuperAdmin')).kind, 'allow');
+  assert.equal(resolveRoute('/contracts/new', sessionOf('PlatformOperator')).kind, 'forbidden');
+  assert.equal(resolveRoute('/contracts/new', sessionOf('Auditor')).kind, 'forbidden');
   assert.equal(resolveRoute('/contracts/new', sessionOf('CustomerAdmin')).kind, 'forbidden');
   assert.equal(resolveRoute('/devices/manage', sessionOf('CustomerViewer')).kind, 'allow');
   assert.equal(resolveRoute('/no/such/page', sessionOf('PlatformSuperAdmin')).kind, 'not-found');

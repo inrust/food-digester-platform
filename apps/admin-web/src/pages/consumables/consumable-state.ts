@@ -89,6 +89,41 @@ export interface ConsumableThresholds {
 }
 /** 暂定展示阈值（DEC-008/配置驱动前的缺省；由页面 prop 可覆盖）。 */
 export const DEFAULT_THRESHOLDS: ConsumableThresholds = { low: 10, mid: 30 };
+export type ConsumableThresholdSource =
+  | { readonly kind: 'loading' }
+  | { readonly kind: 'setting'; readonly version: number }
+  | { readonly kind: 'fallback'; readonly reason: 'NOT_AUTHORIZED' | 'MISSING' | 'INVALID' | 'LOAD_FAILED' };
+
+/** alarm.thresholds.CONSUMABLE_REMAINING_PERCENT 的 warning/major 映射到 low/mid。 */
+export function thresholdsFromBusinessSetting(setting: { readonly value: unknown; readonly version: number }): {
+  readonly thresholds: ConsumableThresholds;
+  readonly source: ConsumableThresholdSource;
+} {
+  const root = setting.value;
+  const entry =
+    root !== null && typeof root === 'object' && !Array.isArray(root)
+      ? (root as Record<string, unknown>)['CONSUMABLE_REMAINING_PERCENT']
+      : undefined;
+  if (entry === undefined) return { thresholds: DEFAULT_THRESHOLDS, source: { kind: 'fallback', reason: 'MISSING' } };
+  if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
+    return { thresholds: DEFAULT_THRESHOLDS, source: { kind: 'fallback', reason: 'INVALID' } };
+  }
+  const low = (entry as Record<string, unknown>)['warning'];
+  const mid = (entry as Record<string, unknown>)['major'];
+  if (
+    !Number.isFinite(low) ||
+    !Number.isFinite(mid) ||
+    (low as number) < 0 ||
+    (mid as number) > 100 ||
+    (low as number) > (mid as number)
+  ) {
+    return { thresholds: DEFAULT_THRESHOLDS, source: { kind: 'fallback', reason: 'INVALID' } };
+  }
+  return {
+    thresholds: { low: low as number, mid: mid as number },
+    source: { kind: 'setting', version: setting.version },
+  };
+}
 /** 阈值分级：unknown/null → null（不渲染进度条）。 */
 export function thresholdLevel(
   remainingPercent: number | null,

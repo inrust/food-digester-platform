@@ -140,6 +140,7 @@ const REQUIRED_P0_OPERATIONS = [
   'bindContractDevices',
   'unbindContractDevices',
   'listConsumableStatus',
+  'getConsumableContact',
   'createConsumableRequest',
   'listConsumableRequests',
   'getConsumableRequest',

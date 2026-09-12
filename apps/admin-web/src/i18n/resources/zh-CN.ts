@@ -9,6 +9,10 @@ import { PAGE_ZH_CN } from './pages.js';
  */
 export const ZH_CN: Readonly<Record<string, string>> = {
   ...PAGE_ZH_CN,
+  'ui.contractDeviceRequired': '至少关联一台符合条件的设备后才能完成；草稿已保存，可在当前步骤继续操作。',
+  'ui.consumableThresholdLoading': '正在加载耗材展示阈值来源…',
+  'ui.consumableThresholdSetting': '耗材展示阈值来自业务设置 alarm.thresholds（版本 v{version}）。',
+  'ui.consumableThresholdFallback': '耗材展示阈值使用明确回退值 10%/30%（原因：{reason}）。',
   // ---------- 通用 ----------
   'common.loading': '加载中…',
   'common.refresh': '刷新',

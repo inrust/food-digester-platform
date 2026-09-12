@@ -17,6 +17,7 @@ import type { ConsumablesPageProps } from '../src/pages/consumables/ConsumablesP
 import {
   completeConsumableRequest,
   createConsumableRequest,
+  getConsumableContact,
   listConsumableStatus,
   processConsumableRequest,
 } from '../src/pages/consumables/consumables-api.js';
@@ -54,7 +55,6 @@ function makeStatus(overrides: Partial<ConsumableStatusView> = {}): ConsumableSt
       CARBON_FILTER: makeValue({ remainingPercent: 8, remainingDisplay: '8%' }),
       BIO_ADDITIVE: makeValue({ remainingPercent: null, remainingDisplay: 'unknown', stale: true, observedAt: null }),
     },
-    contact: { name: '张经理', phone: '138****0000', email: 'zhang@example.com' },
     ...overrides,
   };
 }
@@ -94,6 +94,7 @@ function renderPage(overrides: Partial<ConsumablesPageProps> = {}) {
     status: { rows: [makeStatus()] },
     statusFilter: {},
     onApplyStatusFilter: (f) => calls.statusFilters.push(f),
+    onLoadContact: async () => ({ name: '张经理', phone: '138****0000', email: 'zhang@example.com' }),
     requests: {
       rows: [
         makeRequest(),
@@ -131,6 +132,8 @@ function renderPage(overrides: Partial<ConsumablesPageProps> = {}) {
     onRefresh: () => {
       calls.refreshed += 1;
     },
+    thresholds: { low: 10, mid: 30 },
+    thresholdSource: { kind: 'setting', version: 4 },
     ...overrides,
   };
   const utils = render(<ConsumablesPage {...props} />);
@@ -192,20 +195,54 @@ test('unknown 不画正常进度条；stale 徽标清晰；阈值分级（暂定
   assert.equal(thresholdLevel(5, { low: 3, mid: 50 }), 'mid');
 });
 
-test('联系方式：点击后按权限展示；无权限（contact=null）页面与响应均不含号码', async () => {
+test('联系方式：列表零 PII，点击后才请求独立端点；403 不显示号码', async () => {
   const user = userEvent.setup();
-  const { unmount } = renderPage();
+  const requested: string[] = [];
+  const { unmount } = renderPage({
+    onLoadContact: async (deviceId) => {
+      requested.push(deviceId);
+      return { name: '张经理', phone: '138****0000', email: 'zhang@example.com' };
+    },
+  });
   // 初始不显示号码
   assert.ok(!(document.body.textContent ?? '').includes('138****0000'));
+  assert.deepEqual(requested, []);
   await user.click(screen.getByTestId('consumable-contact-dev-001'));
-  assert.ok(screen.getByTestId('consumable-contact-info-dev-001').textContent?.includes('138****0000'));
+  assert.ok((await screen.findByTestId('consumable-contact-info-dev-001')).textContent?.includes('138****0000'));
+  assert.deepEqual(requested, ['dev-001']);
   unmount();
 
-  // 无权限角色：contact 为 null（网络响应即不含号码），点击后显示无权限提示
-  renderPage({ role: 'CustomerViewer', status: { rows: [makeStatus({ contact: null })] } });
+  renderPage({
+    role: 'CustomerViewer',
+    onLoadContact: async () => {
+      throw new ApiClientError(403, 'FORBIDDEN', 'forbidden', 'req-contact');
+    },
+  });
   await user.click(screen.getByTestId('consumable-contact-dev-001'));
-  assert.ok(screen.getByTestId('consumable-contact-info-dev-001').textContent?.includes('无权限查看'));
+  assert.ok(await screen.findByTestId('error-forbidden'));
   assert.ok(!(document.body.textContent ?? '').includes('138****0000'));
+});
+
+test('阈值来源显示设置版本或明确回退原因', () => {
+  const { unmount } = renderPage();
+  assert.ok(screen.getByTestId('consumable-threshold-source').textContent?.includes('v4'));
+  unmount();
+  renderPage({ thresholdSource: { kind: 'fallback', reason: 'LOAD_FAILED' } });
+  assert.ok(screen.getByTestId('consumable-threshold-source').textContent?.includes('10%/30%'));
+  assert.ok(screen.getByTestId('consumable-threshold-source').textContent?.includes('LOAD_FAILED'));
+});
+
+test('联系人 API 仅在显式调用时访问单设备端点', async () => {
+  const calls: string[] = [];
+  const api = {
+    request: async (path: string) => {
+      calls.push(path);
+      return { data: { name: 'N', phone: 'P', email: 'E' } };
+    },
+  } as unknown as ApiClient;
+  assert.deepEqual(calls, []);
+  assert.equal((await getConsumableContact(api, 'dev/1')).phone, 'P');
+  assert.deepEqual(calls, ['/admin/consumables/dev%2F1/contact']);
 });
 
 // ---------- 更换申请 ----------

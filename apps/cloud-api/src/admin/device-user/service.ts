@@ -489,6 +489,9 @@ export async function revokeDevices(
 
 export interface ListDeviceUsersFilter {
   readonly customerId?: string | undefined;
+  readonly region?: string | undefined;
+  readonly subregion?: string | undefined;
+  readonly deviceId?: string | undefined;
   readonly status?: string | undefined;
   readonly keyword?: string | undefined;
 }
@@ -503,9 +506,37 @@ export async function listDeviceUsers(
     throw deviceUserValidationFailed('status must be ACTIVE or DISABLED');
   }
   const scopedCustomer = actor.actorType === 'customer' ? (actor.customerId ?? '__none__') : filter.customerId;
+  const hasTopologyFilter =
+    filter.region !== undefined || filter.subregion !== undefined || filter.deviceId !== undefined;
+  let matchingDeviceIds: readonly string[] | undefined;
+  if (hasTopologyFilter) {
+    const deviceRows = await (
+      (deps.client as unknown as Record<string, unknown>).device as {
+        findMany(args: Record<string, unknown>): Promise<readonly { id: string }[]>;
+      }
+    ).findMany({
+      where: {
+        ...(scopedCustomer !== undefined ? { customerId: scopedCustomer } : {}),
+        ...(filter.deviceId !== undefined ? { id: filter.deviceId } : {}),
+        ...(filter.region !== undefined || filter.subregion !== undefined
+          ? {
+              site: {
+                ...(filter.region !== undefined ? { region: filter.region } : {}),
+                ...(filter.subregion !== undefined ? { subregion: filter.subregion } : {}),
+              },
+            }
+          : {}),
+      },
+      select: { id: true },
+    });
+    matchingDeviceIds = deviceRows.map((row) => row.id);
+  }
   const rows = await users(deps.client).findMany({
     where: {
       ...(scopedCustomer !== undefined ? { customerId: scopedCustomer } : {}),
+      ...(matchingDeviceIds !== undefined
+        ? { assignments: { some: { status: 'ACTIVE', deviceId: { in: [...matchingDeviceIds] } } } }
+        : {}),
       ...(filter.status !== undefined ? { status: filter.status } : {}),
       ...(filter.keyword !== undefined && filter.keyword.trim() !== ''
         ? {

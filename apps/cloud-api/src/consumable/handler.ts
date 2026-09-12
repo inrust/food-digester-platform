@@ -4,7 +4,7 @@
  * 接线：AUTH-01 withAuthorization（device:read）→ Service。
  * 路由：GET /api/v1/admin/consumables —— 耗材状态列表（Region/Subregion/Site、连接状态、
  * 关键字、耗材阈值筛选；两种耗材列恒在，未上报为 null 且 remainingDisplay='unknown'；
- * 联系人授权摘要仅授权角色可见；Customer 角色租户隔离）。
+ * 列表零联系人 PII，联系人由单设备按需端点独立授权；Customer 角色租户隔离）。
  * 响应契约对齐 CT-05：data + meta{requestId,timestamp}；错误 {error{code,message,requestId}}。
  */
 import { AuthError, withAuthorization } from '@fdp/auth';
@@ -12,13 +12,14 @@ import type { ActorContext } from '@fdp/auth';
 import { mapDbErrorToHttp } from '@fdp/database';
 import type { AdminHttpRequest, AdminHttpResponse } from '../admin/onboarding/handler.js';
 import { AdminConsumableError, consumableValidationFailed } from './errors.js';
-import { listConsumableStatus } from './service.js';
+import { getConsumableContact, listConsumableStatus } from './service.js';
 import type { ConsumableDeps } from './service.js';
 
 export type AdminConsumableHandlerDeps = ConsumableDeps;
 
 export interface AdminConsumableHandlers {
   list(req: AdminHttpRequest): Promise<AdminHttpResponse>;
+  contact(req: AdminHttpRequest): Promise<AdminHttpResponse>;
 }
 
 const SENSITIVE_LEAK_PATTERN = /(stack|sql|select |insert |update |delete from|aws|arn:aws|access ?key|secret)/i;
@@ -68,11 +69,24 @@ export function createAdminConsumableHandlers(deps: AdminConsumableHandlerDeps):
     });
     return { status: 200, body: { data: items, meta: meta(req) } };
   });
+  const contact = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'device:read' }, async (req) => {
+    const deviceId = req.params?.['deviceId'];
+    if (!deviceId) throw consumableValidationFailed('deviceId is required');
+    const view = await getConsumableContact(deps, req.actor as ActorContext, deviceId);
+    return { status: 200, body: { data: view, meta: meta(req) } };
+  });
 
   return {
     list: async (req) => {
       try {
         return await list(req);
+      } catch (err) {
+        return toErrorResponse(err, req);
+      }
+    },
+    contact: async (req) => {
+      try {
+        return await contact(req);
       } catch (err) {
         return toErrorResponse(err, req);
       }

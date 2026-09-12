@@ -29,6 +29,7 @@ import {
   cancelConsumableRequest,
   completeConsumableRequest,
   createConsumableRequest,
+  getConsumableContact,
   listConsumableRequests,
   listConsumableStatus,
   processConsumableRequest,
@@ -37,7 +38,7 @@ import type { ConsumableRequestFilter, ConsumableStatusFilter } from '../pages/c
 import { ConsumablesPage } from '../pages/consumables/ConsumablesPage.js';
 import type { ConsumableRequestView, ConsumableStatusView } from '../pages/consumables/types.js';
 import { fetchCustomers } from '../pages/customers/customers-api.js';
-import { listSettings, updateSetting } from '../pages/settings/settings-api.js';
+import { getSetting, listSettings, updateSetting } from '../pages/settings/settings-api.js';
 import { canReadSettings, canReadUsers } from '../pages/settings/settings-state.js';
 import { SettingsPage } from '../pages/settings/SettingsPage.js';
 import type { SettingView, UserView } from '../pages/settings/types.js';
@@ -52,6 +53,8 @@ import {
 import type { UserListFilter } from '../pages/settings/users-api.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
 import { useDeviceUsersPageProps } from './feature-controllers.js';
+import { DEFAULT_THRESHOLDS, thresholdsFromBusinessSetting } from '../pages/consumables/consumable-state.js';
+import type { ConsumableThresholdSource, ConsumableThresholds } from '../pages/consumables/consumable-state.js';
 type Navigate = (
   path: string,
   options?: {
@@ -190,7 +193,15 @@ export function ContractsController({
     />
   );
 }
-export function ContractNewController({ api, onNavigate }: { readonly api: ApiClient; readonly onNavigate: Navigate }) {
+export function ContractNewController({
+  api,
+  onNavigate,
+  onNavigationBlockedChange,
+}: {
+  readonly api: ApiClient;
+  readonly onNavigate: Navigate;
+  readonly onNavigationBlockedChange: (blocked: boolean) => void;
+}) {
   const [customers, setCustomers] = useState<
     readonly {
       customerId: string;
@@ -211,6 +222,7 @@ export function ContractNewController({ api, onNavigate }: { readonly api: ApiCl
       onBind={(contractId, deviceIds, reason) => bindContractDevices(api, contractId, deviceIds, reason)}
       onCancel={() => onNavigate('/contracts')}
       onDone={() => onNavigate('/contracts')}
+      onNavigationBlockedChange={onNavigationBlockedChange}
     />
   );
 }
@@ -287,7 +299,15 @@ export function ConsumablesController({
   readonly api: ApiClient;
   readonly session: SessionSnapshot;
 }) {
+  const role = roleOf(session);
   const fixedCustomerId = session.customerId;
+  const [thresholdConfig, setThresholdConfig] = useState<{
+    readonly thresholds: ConsumableThresholds;
+    readonly source: ConsumableThresholdSource;
+  }>(() => ({
+    thresholds: DEFAULT_THRESHOLDS,
+    source: canReadSettings(role) ? { kind: 'loading' } : { kind: 'fallback', reason: 'NOT_AUTHORIZED' },
+  }));
   const [statusFilter, setStatusFilter] = useState<ConsumableStatusFilter>(
     fixedCustomerId === null ? {} : { customerId: fixedCustomerId },
   );
@@ -327,12 +347,29 @@ export function ConsumablesController({
     );
   }, [api, requestQuery, statusQuery]);
   useEffect(() => void load(), [load]);
+  useEffect(() => {
+    if (!canReadSettings(role)) return;
+    let active = true;
+    void getSetting(api, 'alarm.thresholds').then(
+      (setting) => {
+        if (active) setThresholdConfig(thresholdsFromBusinessSetting(setting));
+      },
+      () => {
+        if (active)
+          setThresholdConfig({ thresholds: DEFAULT_THRESHOLDS, source: { kind: 'fallback', reason: 'LOAD_FAILED' } });
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [api, role]);
   return (
     <ConsumablesPage
-      role={roleOf(session)}
+      role={role}
       status={status}
       statusFilter={statusQuery}
       onApplyStatusFilter={setStatusFilter}
+      onLoadContact={(deviceId) => getConsumableContact(api, deviceId)}
       requests={requests}
       requestFilter={requestQuery}
       onApplyRequestFilter={setRequestFilter}
@@ -341,6 +378,8 @@ export function ConsumablesController({
       onComplete={(requestId, note, version) => completeConsumableRequest(api, requestId, note, version)}
       onCancel={(requestId, note, version) => cancelConsumableRequest(api, requestId, note, version)}
       onRefresh={() => void load()}
+      thresholds={thresholdConfig.thresholds}
+      thresholdSource={thresholdConfig.source}
     />
   );
 }

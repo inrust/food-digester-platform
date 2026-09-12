@@ -48,15 +48,34 @@ export type DeviceUserDetailState =
     };
 export interface DeviceUserFilter {
   readonly customerId: string | null;
+  readonly region: string | null;
+  readonly subregion: string | null;
+  readonly deviceId: string | null;
   readonly status: 'ACTIVE' | 'DISABLED' | null;
   readonly keyword: string | null;
 }
-export const EMPTY_DEVICE_USER_FILTER: DeviceUserFilter = { customerId: null, status: null, keyword: null };
+export const EMPTY_DEVICE_USER_FILTER: DeviceUserFilter = {
+  customerId: null,
+  region: null,
+  subregion: null,
+  deviceId: null,
+  status: null,
+  keyword: null,
+};
+export interface DeviceUserTopologyOption {
+  readonly deviceId: string;
+  readonly label: string;
+  readonly customerId: string | null;
+  readonly region: string | null;
+  readonly subregion: string | null;
+}
 export interface DeviceUsersPageProps {
   readonly role: Role;
   /** Customer 角色父级强制传入本 Customer ID（页面隐藏客户选择）。 */
   readonly fixedCustomerId?: string | null;
   readonly customerOptions: readonly FilterOption[];
+  /** 权威设备目录提供的完整拓扑选项，不从当前用户结果集反推。 */
+  readonly topologyOptions: readonly DeviceUserTopologyOption[];
   readonly list: {
     readonly rows: readonly DeviceUserListItemView[] | null;
     readonly loading?: boolean;
@@ -94,6 +113,7 @@ export function DeviceUsersPage({
   role,
   fixedCustomerId = null,
   customerOptions,
+  topologyOptions,
   list,
   appliedFilter,
   onApplyFilter,
@@ -117,6 +137,20 @@ export function DeviceUsersPage({
   const [busy, setBusy] = useState(false);
   const canWrite = canWriteDeviceUser(role);
   const canAssign = canAssignDeviceUser(role);
+  const scopedTopology = topologyOptions.filter(
+    (item) => draftFilter.customerId === null || item.customerId === draftFilter.customerId,
+  );
+  const regions = [
+    ...new Set(scopedTopology.map((item) => item.region).filter((value): value is string => value !== null)),
+  ];
+  const subregions = [
+    ...new Set(
+      scopedTopology
+        .filter((item) => draftFilter.region === null || item.region === draftFilter.region)
+        .map((item) => item.subregion)
+        .filter((value): value is string => value !== null),
+    ),
+  ];
   const detailView = detail.kind === 'ready' ? detail.detail : null;
   const runAction = async (execute: () => Promise<unknown>, successText: string) => {
     // 防重复点击：在途请求直接忽略（后端 If-Match/幂等兜底）
@@ -161,6 +195,63 @@ export function DeviceUsersPage({
             </select>
           </>
         ) : null}
+        <label htmlFor="device-user-region">{translate('page.406e0f8c6852')}</label>
+        <select
+          id="device-user-region"
+          data-testid="device-user-region-filter"
+          value={draftFilter.region ?? ''}
+          onChange={(event) =>
+            setDraftFilter({
+              ...draftFilter,
+              region: event.target.value || null,
+              subregion: null,
+              deviceId: null,
+            })
+          }
+        >
+          <option value="">{translate('page.778fc8f99453')}</option>
+          {regions.map((region) => (
+            <option key={region} value={region}>
+              {region}
+            </option>
+          ))}
+        </select>
+        <label htmlFor="device-user-subregion">{translate('page.ff0beacd69e2')}</label>
+        <select
+          id="device-user-subregion"
+          data-testid="device-user-subregion-filter"
+          value={draftFilter.subregion ?? ''}
+          onChange={(event) =>
+            setDraftFilter({ ...draftFilter, subregion: event.target.value || null, deviceId: null })
+          }
+        >
+          <option value="">{translate('page.778fc8f99453')}</option>
+          {subregions.map((subregion) => (
+            <option key={subregion} value={subregion}>
+              {subregion}
+            </option>
+          ))}
+        </select>
+        <label htmlFor="device-user-device">{translate('page.d79416b3896a')}</label>
+        <select
+          id="device-user-device"
+          data-testid="device-user-device-filter"
+          value={draftFilter.deviceId ?? ''}
+          onChange={(event) => setDraftFilter({ ...draftFilter, deviceId: event.target.value || null })}
+        >
+          <option value="">{translate('page.778fc8f99453')}</option>
+          {scopedTopology
+            .filter(
+              (item) =>
+                (draftFilter.region === null || item.region === draftFilter.region) &&
+                (draftFilter.subregion === null || item.subregion === draftFilter.subregion),
+            )
+            .map((item) => (
+              <option key={item.deviceId} value={item.deviceId}>
+                {item.label}
+              </option>
+            ))}
+        </select>
         <label htmlFor="device-user-status">{translate('page.62e951a692ff')}</label>
         <select
           id="device-user-status"

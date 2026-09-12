@@ -164,6 +164,9 @@ export function createAdminDeviceUserHandlers(deps: AdminDeviceUserHandlerDeps):
       const q = req.query ?? {};
       const items = await listDeviceUsers(deps, actorOf(req), {
         ...(q.customerId !== undefined ? { customerId: q.customerId } : {}),
+        ...(q.region !== undefined ? { region: q.region } : {}),
+        ...(q.subregion !== undefined ? { subregion: q.subregion } : {}),
+        ...(q.deviceId !== undefined ? { deviceId: q.deviceId } : {}),
         ...(q.status !== undefined ? { status: q.status } : {}),
         ...(q.keyword !== undefined ? { keyword: q.keyword } : {}),
       });

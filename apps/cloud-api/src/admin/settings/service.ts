@@ -24,10 +24,7 @@
 import type { DbClient } from '@fdp/database';
 import { audited } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
-import { COMMAND_CATALOG } from '@fdp/domain';
-import { NOTIFICATION_CATALOG } from '@fdp/contracts/mqtt/catalogs.js';
-import { DOWNLINK_TOPIC_TYPES, UPLINK_TOPIC_TYPES } from '@fdp/contracts/mqtt/topics.js';
-import { NOTIFIABLE_EVENT_TYPES, NOTIFICATION_CHANNELS } from '../../notification/business-notifier.js';
+import { BUSINESS_SETTING_KEYS, validateBusinessSettingValue } from '@fdp/contracts/settings/business-settings-v1.js';
 import { settingsNotFound, settingsValidationFailed, settingsVersionConflict } from './errors.js';
 
 export interface SettingsDeps {
@@ -36,35 +33,17 @@ export interface SettingsDeps {
 }
 
 /** 封闭 key 集（与契约 SettingKey 枚举一致，契约测试强制）。 */
-export const SETTING_KEYS = [
-  'alarm.thresholds',
-  'command.confirmation',
-  'dictionary.displayNames',
-  'notification.business',
-] as const;
+export const SETTING_KEYS = BUSINESS_SETTING_KEYS;
 
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
 export const SETTING_RUNTIME_EFFECTS: Readonly<
   Record<SettingKey, { readonly status: 'ACTIVE' | 'STORED_ONLY'; readonly consumer: string | null }>
 > = {
-  'alarm.thresholds': { status: 'STORED_ONLY', consumer: null },
+  'alarm.thresholds': { status: 'ACTIVE', consumer: 'FE-18' },
   'command.confirmation': { status: 'ACTIVE', consumer: 'BE-CMD-01' },
   'dictionary.displayNames': { status: 'STORED_ONLY', consumer: null },
   'notification.business': { status: 'STORED_ONLY', consumer: null },
-};
-
-// ---------- 固定封闭集（协议枚举，只读防护事实源） ----------
-
-const FIXED_COMMAND_CODES: ReadonlySet<string> = new Set(COMMAND_CATALOG.map((spec) => spec.command));
-const FIXED_TOPIC_TYPES: ReadonlySet<string> = new Set([...UPLINK_TOPIC_TYPES, ...DOWNLINK_TOPIC_TYPES]);
-const FIXED_NOTIFICATION_TYPES: ReadonlySet<string> = new Set(Object.keys(NOTIFICATION_CATALOG));
-
-const DICTIONARY_NAMESPACES = ['command', 'topicType', 'notificationType'] as const;
-const NAMESPACE_FIXED_SETS: Readonly<Record<(typeof DICTIONARY_NAMESPACES)[number], ReadonlySet<string>>> = {
-  command: FIXED_COMMAND_CODES,
-  topicType: FIXED_TOPIC_TYPES,
-  notificationType: FIXED_NOTIFICATION_TYPES,
 };
 
 // ---------- 行类型与数据访问 ----------
@@ -119,112 +98,6 @@ function assertKnownKey(key: string): asserts key is SettingKey {
   if (!(SETTING_KEYS as readonly string[]).includes(key)) throw settingsNotFound();
 }
 
-// ---------- 值 Schema 校验（非法配置拒绝） ----------
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-function assertNoExtraFields(value: Record<string, unknown>, allowed: readonly string[], scope: string): void {
-  for (const field of Object.keys(value)) {
-    if (!allowed.includes(field)) throw settingsValidationFailed(`${scope}: unknown field ${field}`);
-  }
-}
-
-function assertNonNegativeNumber(value: unknown, scope: string): void {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    throw settingsValidationFailed(`${scope} must be a non-negative number`);
-  }
-}
-
-const THRESHOLD_LEVELS = ['warning', 'major', 'critical'] as const;
-
-/** alarm.thresholds：{ alarmCode: { warning?, major?, critical? } }；同级 warning ≤ major ≤ critical。 */
-function validateAlarmThresholds(value: unknown): void {
-  if (!isPlainObject(value)) throw settingsValidationFailed('alarm.thresholds must be an object');
-  for (const [code, entry] of Object.entries(value)) {
-    if (code.length === 0 || code.length > 64) throw settingsValidationFailed('alarm code must be 1..64 characters');
-    if (!isPlainObject(entry)) throw settingsValidationFailed(`alarm.thresholds.${code} must be an object`);
-    assertNoExtraFields(entry, THRESHOLD_LEVELS, `alarm.thresholds.${code}`);
-    const present = THRESHOLD_LEVELS.filter((level) => entry[level] !== undefined);
-    if (present.length === 0) {
-      throw settingsValidationFailed(`alarm.thresholds.${code} must define at least one threshold`);
-    }
-    for (const level of present) assertNonNegativeNumber(entry[level], `alarm.thresholds.${code}.${level}`);
-    const numbers = present.map((level) => entry[level] as number);
-    for (let i = 1; i < numbers.length; i += 1) {
-      if (numbers[i]! < numbers[i - 1]!) {
-        throw settingsValidationFailed(`alarm.thresholds.${code} must satisfy warning <= major <= critical`);
-      }
-    }
-  }
-}
-
-/** command.confirmation：DEC-023 窗口参数；不得重定义确认方式或固定命令目录。 */
-function validateCommandConfirmation(value: unknown): void {
-  if (!isPlainObject(value)) throw settingsValidationFailed('command.confirmation must be an object');
-  assertNoExtraFields(value, ['ttlSec', 'maxFutureSec'], 'command.confirmation');
-  const ttl = value.ttlSec;
-  if (!Number.isInteger(ttl) || (ttl as number) < 30 || (ttl as number) > 3600) {
-    throw settingsValidationFailed('command.confirmation.ttlSec must be an integer in 30..3600');
-  }
-  const maxFuture = value.maxFutureSec;
-  if (!Number.isInteger(maxFuture) || (maxFuture as number) < 0 || (maxFuture as number) > 600) {
-    throw settingsValidationFailed('command.confirmation.maxFutureSec must be an integer in 0..600');
-  }
-}
-
-/** dictionary.displayNames：仅允许为固定封闭集 code 维护显示名（固定枚举不可删除/重命名）。 */
-function validateDictionaryDisplayNames(value: unknown): void {
-  if (!isPlainObject(value)) throw settingsValidationFailed('dictionary.displayNames must be an object');
-  assertNoExtraFields(value, DICTIONARY_NAMESPACES, 'dictionary.displayNames');
-  for (const [namespace, entries] of Object.entries(value)) {
-    if (!isPlainObject(entries)) {
-      throw settingsValidationFailed(`dictionary.displayNames.${namespace} must be an object`);
-    }
-    const fixedSet = NAMESPACE_FIXED_SETS[namespace as (typeof DICTIONARY_NAMESPACES)[number]];
-    for (const [code, displayName] of Object.entries(entries)) {
-      if (!fixedSet.has(code)) {
-        throw settingsValidationFailed(
-          `dictionary.displayNames.${namespace}: fixed protocol code set must not be changed (unknown code ${code})`,
-        );
-      }
-      if (typeof displayName !== 'string' || displayName.trim().length === 0 || displayName.length > 64) {
-        throw settingsValidationFailed(`dictionary.displayNames.${namespace}.${code} must be a 1..64 character string`);
-      }
-    }
-  }
-}
-
-/** notification.business：封闭事件/渠道子集。 */
-function validateNotificationBusiness(value: unknown): void {
-  if (!isPlainObject(value)) throw settingsValidationFailed('notification.business must be an object');
-  assertNoExtraFields(value, ['eventTypes', 'channels'], 'notification.business');
-  const assertSubset = (field: string, allowed: readonly string[]): void => {
-    const list = value[field];
-    if (!Array.isArray(list) || list.length === 0 || list.some((item) => typeof item !== 'string')) {
-      throw settingsValidationFailed(`notification.business.${field} must be a non-empty string array`);
-    }
-    for (const item of list as string[]) {
-      if (!allowed.includes(item)) {
-        throw settingsValidationFailed(`notification.business.${field}: unknown value ${item}`);
-      }
-    }
-    if (new Set(list as string[]).size !== list.length) {
-      throw settingsValidationFailed(`notification.business.${field} must not contain duplicates`);
-    }
-  };
-  assertSubset('eventTypes', NOTIFIABLE_EVENT_TYPES);
-  assertSubset('channels', NOTIFICATION_CHANNELS);
-}
-
-const VALUE_VALIDATORS: Readonly<Record<SettingKey, (value: unknown) => void>> = {
-  'alarm.thresholds': validateAlarmThresholds,
-  'command.confirmation': validateCommandConfirmation,
-  'dictionary.displayNames': validateDictionaryDisplayNames,
-  'notification.business': validateNotificationBusiness,
-};
-
 // ---------- 查询 ----------
 
 export async function listSettings(deps: SettingsDeps): Promise<SettingView[]> {
@@ -252,7 +125,11 @@ export async function updateSetting(
     throw settingsValidationFailed('version must be a positive integer');
   }
   const version = input.version as number;
-  VALUE_VALIDATORS[key](input.value);
+  const issues = validateBusinessSettingValue(key, input.value);
+  if (issues.length > 0) {
+    const first = issues[0]!;
+    throw settingsValidationFailed(`${key}${first.path}: ${first.message}`);
+  }
   const now = deps.now?.() ?? new Date();
 
   const before = (await settings(deps.client).findFirst({ where: { key } })) as SettingRow | null;

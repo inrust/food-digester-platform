@@ -81,7 +81,7 @@ async function plantCustomer() {
   return customer.id;
 }
 
-async function plantDevice(customerId: string, options: { lifecycle?: string } = {}) {
+async function plantDevice(customerId: string, options: { lifecycle?: string; siteId?: string } = {}) {
   seq += 1;
   const deviceId = `dev-du-${seq}`;
   await prisma.device.create({
@@ -94,10 +94,57 @@ async function plantDevice(customerId: string, options: { lifecycle?: string } =
       manufactureDate: new Date('2026-01-01T00:00:00Z'),
       lifecycleStatus: options.lifecycle ?? 'Active',
       customerId,
+      ...(options.siteId ? { siteId: options.siteId } : {}),
     },
   });
   return deviceId;
 }
+
+describe('Region/Subregion/Device 权威拓扑筛选', () => {
+  test('仅匹配具有目标设备 ACTIVE 分配的设备操作员', async () => {
+    const h = handlers();
+    const customerId = await plantCustomer();
+    const site = await prisma.site.create({
+      data: { customerId, name: 'DU Site', region: 'Region-DU', subregion: 'Sub-DU', timezone: 'Asia/Shanghai' },
+    });
+    const matchingDevice = await plantDevice(customerId, { siteId: site.id });
+    const otherDevice = await plantDevice(customerId);
+    const matchingUser = await createUser(h, customerId, `matching-${seq}`);
+    const otherUser = await createUser(h, customerId, `other-${seq}`);
+    await h.assign(
+      writeReq(superAdmin, 1, {
+        params: { deviceUserId: matchingUser.deviceUserId as string },
+        body: { deviceIds: [matchingDevice], reason: 'topology test' },
+      }),
+    );
+    await h.assign(
+      writeReq(superAdmin, 1, {
+        params: { deviceUserId: otherUser.deviceUserId as string },
+        body: { deviceIds: [otherDevice], reason: 'topology test' },
+      }),
+    );
+    for (const query of [
+      { region: 'Region-DU' },
+      { subregion: 'Sub-DU' },
+      { deviceId: matchingDevice },
+      { region: 'Region-DU', subregion: 'Sub-DU', deviceId: matchingDevice },
+    ]) {
+      const response = await h.list(req(superAdmin, { query }));
+      assert.equal(response.status, 200);
+      assert.deepEqual(
+        (response.body as ListBody).data.map((row) => row.deviceUserId),
+        [matchingUser.deviceUserId],
+      );
+    }
+    const conjunctiveMiss = await h.list(
+      req(superAdmin, {
+        query: { region: 'Other-Region', subregion: 'Sub-DU', deviceId: matchingDevice },
+      }),
+    );
+    assert.equal(conjunctiveMiss.status, 200);
+    assert.deepEqual((conjunctiveMiss.body as ListBody).data, []);
+  });
+});
 
 async function createUser(h: ReturnType<typeof handlers>, customerId: string, username?: string) {
   const res = await h.create(

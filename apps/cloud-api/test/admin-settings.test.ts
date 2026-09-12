@@ -97,7 +97,7 @@ describe('BE-SET-01 读取与权限', () => {
       (list.body as ListBody).data.map((setting) => [setting.key, [setting.runtimeStatus, setting.runtimeConsumer]]),
     );
     assert.deepEqual(runtime['command.confirmation'], ['ACTIVE', 'BE-CMD-01']);
-    assert.deepEqual(runtime['alarm.thresholds'], ['STORED_ONLY', null]);
+    assert.deepEqual(runtime['alarm.thresholds'], ['ACTIVE', 'FE-18']);
     assert.deepEqual(runtime['dictionary.displayNames'], ['STORED_ONLY', null]);
     assert.deepEqual(runtime['notification.business'], ['STORED_ONLY', null]);
 

@@ -37,7 +37,7 @@
       },
       {
         "file": "admin-consumable-api.json",
-        "sha256": "14973c25a58b5d18a76cd54f6a3bf195749169d4bc31e348e191384e8455c204",
+        "sha256": "eaa8c2fc776f93c5660ba825450e683caee0d0d1899ebd8a10eabe9a48f9d200",
         "status": "implemented"
       },
       {
@@ -92,7 +92,7 @@
       },
       {
         "file": "admin-device-user-api.json",
-        "sha256": "06328c21ad7bc840afc41f46f4fb4c1ad985e0a0460808eaf8c4a520102de3bf",
+        "sha256": "d97ead8072645dd7c356fcb1524096b3617ef57eee513487aa1a2c457d2725fb",
         "status": "implemented"
       },
       {
@@ -132,7 +132,7 @@
       },
       {
         "file": "admin-settings-api.json",
-        "sha256": "9a733a12a2d169899894953d3748aaf87d0df4dfcc71e34ba1d9fdec9ed9fac1",
+        "sha256": "fae96ec10629d8d5ed61f364869c88fc4ba6ecc3c1af74693030b6c1547a68ca",
         "status": "implemented"
       },
       {
@@ -1769,6 +1769,58 @@
           },
           "403": {
             "$ref": "#/components/responses/AdminConsumableApi__Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminConsumableApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-consumable-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/consumables/{deviceId}/contact": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "getConsumableContact",
+        "summary": "按需读取单台设备的 Site 联系人",
+        "description": "仅 PlatformSuperAdmin、PlatformOperator、CustomerAdmin 可用；Customer scope 越界与设备不存在统一 404；列表响应永不预载联系人。",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "联系人",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminConsumableApi__ConsumableContactSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminConsumableApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminConsumableApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminConsumableApi__NotFound"
           },
           "500": {
             "$ref": "#/components/responses/AdminConsumableApi__InternalError"
@@ -5012,7 +5064,7 @@
           "admin"
         ],
         "operationId": "listDeviceUsers",
-        "summary": "设备操作员列表（customerId/status/keyword 筛选；含 ACTIVE 分配设备数）",
+        "summary": "设备操作员列表（Customer/Region/Subregion/Device/status/keyword 筛选；含 ACTIVE 分配设备数）",
         "security": [
           {
             "CognitoJwt": []
@@ -5026,6 +5078,31 @@
             "schema": {
               "type": "string",
               "description": "平台角色可用；Customer 角色强制本 Customer"
+            }
+          },
+          {
+            "name": "region",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subregion",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "仅匹配具有该设备 ACTIVE 分配的设备操作员"
             }
           },
           {
@@ -12204,8 +12281,7 @@
           "lifecycleStatus",
           "site",
           "connectivity",
-          "consumables",
-          "contact"
+          "consumables"
         ],
         "additionalProperties": false,
         "properties": {
@@ -12277,17 +12353,22 @@
                 ]
               }
             }
+          }
+        }
+      },
+      "AdminConsumableApi__ConsumableContactSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminConsumableApi__ConsumableContact"
           },
-          "contact": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AdminConsumableApi__ConsumableContact"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "设备联系人授权摘要；未授权角色（Auditor/CustomerViewer）为 null"
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
           }
         }
       },
@@ -20150,6 +20231,16 @@
       },
       "AdminConsumableApi__Forbidden": {
         "description": "无权限（FORBIDDEN）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AdminConsumableApi__NotFound": {
+        "description": "设备不存在或跨 Customer（NOT_FOUND）",
         "content": {
           "application/json": {
             "schema": {

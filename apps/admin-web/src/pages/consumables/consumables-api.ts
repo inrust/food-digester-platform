@@ -8,6 +8,7 @@
  */
 import type { ApiClient } from '../../api/http-client.js';
 import type {
+  ConsumableContactView,
   ConsumableRequestCreateResult,
   ConsumableRequestStatus,
   ConsumableRequestView,
@@ -51,6 +52,14 @@ export async function listConsumableStatus(
 ): Promise<readonly ConsumableStatusView[]> {
   const response = await api.request<{ data: ConsumableStatusView[] }>(
     `/admin/consumables${buildQuery({ ...filter })}`,
+  );
+  return response.data;
+}
+
+/** 联系人 PII 按设备、按点击授权加载；列表响应不含该字段。 */
+export async function getConsumableContact(api: ApiClient, deviceId: string): Promise<ConsumableContactView> {
+  const response = await api.request<{ data: ConsumableContactView }>(
+    `/admin/consumables/${encodeURIComponent(deviceId)}/contact`,
   );
   return response.data;
 }

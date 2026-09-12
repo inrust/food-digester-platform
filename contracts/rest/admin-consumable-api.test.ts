@@ -29,7 +29,7 @@ function collectRefs(node: unknown, out: string[] = []): string[] {
   return out;
 }
 
-test('端点齐备且 Cognito 认证；筛选参数齐备', () => {
+test('列表与按需联系人端点齐备且 Cognito 认证；筛选参数齐备', () => {
   assert.equal(doc.openapi, '3.1.0');
   const op = doc.paths['/api/v1/admin/consumables']?.get;
   assert.ok(op, '缺少 GET /api/v1/admin/consumables');
@@ -52,12 +52,19 @@ test('端点齐备且 Cognito 认证；筛选参数齐备', () => {
   const threshold = op.parameters.find((p: { name: string }) => p.name === 'maxRemainingPercent');
   assert.equal(threshold.schema.minimum, 0);
   assert.equal(threshold.schema.maximum, 100);
+  const contact = doc.paths['/api/v1/admin/consumables/{deviceId}/contact']?.get;
+  assert.ok(contact, '缺少 GET /api/v1/admin/consumables/{deviceId}/contact');
+  assert.equal(contact.operationId, 'getConsumableContact');
+  assert.deepEqual(contact.security, [{ CognitoJwt: [] }]);
+  for (const status of ['200', '401', '403', '404', '500']) assert.ok(contact.responses[status], `缺少 ${status}`);
 });
 
-test('Schema 封闭：两种耗材列恒在；unknown 语义；联系人授权；百分比 0~100', () => {
+test('Schema 封闭：两种耗材列恒在；列表零联系人 PII；按需联系人独立；百分比 0~100', () => {
   const status = doc.components.schemas.ConsumableStatus;
   assert.equal(status.additionalProperties, false);
-  assert.ok(status.required.includes('consumables') && status.required.includes('contact'));
+  assert.ok(status.required.includes('consumables'));
+  assert.equal(status.required.includes('contact'), false);
+  assert.equal(Object.hasOwn(status.properties, 'contact'), false, '列表 Schema 不得携联系人');
   const consumables = status.properties.consumables;
   assert.deepEqual(consumables.required.sort(), ['BIO_ADDITIVE', 'CARBON_FILTER'].sort(), '两种耗材列恒在');
   assert.equal(consumables.additionalProperties, false, '封闭集合，不允许第三种耗材');
@@ -66,7 +73,9 @@ test('Schema 封闭：两种耗材列恒在；unknown 语义；联系人授权�
   assert.deepEqual(value.properties.remainingPercent.type.sort(), ['integer', 'null']);
   assert.equal(value.properties.remainingPercent.maximum, 100);
   assert.ok(value.properties.remainingDisplay.description.includes('unknown'), '未知值显示 unknown');
-  assert.ok(status.properties.contact.description.includes('授权'), '联系人授权摘要');
+  const contact = doc.components.schemas.ConsumableContact;
+  assert.deepEqual(contact.required.sort(), ['email', 'name', 'phone'].sort());
+  assert.equal(contact.additionalProperties, false);
 });
 
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {

@@ -339,6 +339,12 @@ export const DELIVERED_OPERATIONS = [
   },
   { operationId: 'listConsumableStatus', method: 'GET', path: '/api/v1/admin/consumables', runtime: 'admin-api' },
   {
+    operationId: 'getConsumableContact',
+    method: 'GET',
+    path: '/api/v1/admin/consumables/{deviceId}/contact',
+    runtime: 'admin-api',
+  },
+  {
     operationId: 'createConsumableRequest',
     method: 'POST',
     path: '/api/v1/admin/consumable-requests',

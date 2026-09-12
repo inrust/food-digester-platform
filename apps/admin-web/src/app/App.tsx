@@ -1,5 +1,5 @@
 import { translate } from '../i18n/i18n.js';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ToastHost, useToastQueue } from '../components/Toast.js';
 import { TimeZoneProvider } from '../components/TimeText.js';
 import { I18nProvider } from '../i18n/i18n.js';
@@ -88,6 +88,14 @@ export function AdminWebApp({ services }: { readonly services: AdminWebServices 
 function AdminWebAppInner({ services }: { readonly services: AdminWebServices }) {
   const { location, navigate } = useBrowserRouter();
   const [sessionRevision, setSessionRevision] = useState(0);
+  const [contractNavigationBlocked, setContractNavigationBlocked] = useState(false);
+  const navigateWithinApp = useCallback(
+    (path: string, options?: { replace?: boolean }) => {
+      if (contractNavigationBlocked) return;
+      navigate(path, options);
+    },
+    [contractNavigationBlocked, navigate],
+  );
   const toasts = useToastQueue();
   const session = services.session.current();
   useEffect(
@@ -193,7 +201,13 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       page = <ContractsController api={services.api} session={session} onNavigate={navigate} />;
       break;
     case 'contract-new':
-      page = <ContractNewController api={services.api} onNavigate={navigate} />;
+      page = (
+        <ContractNewController
+          api={services.api}
+          onNavigate={navigateWithinApp}
+          onNavigationBlockedChange={setContractNavigationBlocked}
+        />
+      );
       break;
     case 'contract-detail':
       page = (
@@ -216,7 +230,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       <AppShell
         path={location.pathname}
         session={session}
-        onNavigate={navigate}
+        onNavigate={navigateWithinApp}
         onLogout={() => void services.auth.logout()}
       >
         {page}

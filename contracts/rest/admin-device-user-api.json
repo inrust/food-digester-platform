@@ -46,7 +46,7 @@
       "get": {
         "tags": ["admin"],
         "operationId": "listDeviceUsers",
-        "summary": "设备操作员列表（customerId/status/keyword 筛选；含 ACTIVE 分配设备数）",
+        "summary": "设备操作员列表（Customer/Region/Subregion/Device/status/keyword 筛选；含 ACTIVE 分配设备数）",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           {
@@ -54,6 +54,14 @@
             "in": "query",
             "required": false,
             "schema": { "type": "string", "description": "平台角色可用；Customer 角色强制本 Customer" }
+          },
+          { "name": "region", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "subregion", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "deviceId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "description": "仅匹配具有该设备 ACTIVE 分配的设备操作员" }
           },
           {
             "name": "status",

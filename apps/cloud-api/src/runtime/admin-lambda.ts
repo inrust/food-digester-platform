@@ -191,6 +191,7 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
       getConfigurationVersion: routes.configurations.getVersion,
       getConfigurationVersionStatus: routes.configurations.versionStatus,
       listConsumableStatus: routes.consumables.list,
+      getConsumableContact: routes.consumables.contact,
       createConsumableRequest: routes.consumableRequests.create,
       listConsumableRequests: routes.consumableRequests.list,
       getConsumableRequest: routes.consumableRequests.detail,

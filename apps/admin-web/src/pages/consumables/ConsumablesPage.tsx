@@ -5,7 +5,7 @@ import { translate } from '../../i18n/i18n.js';
  * - 耗材列表：Region/Subregion/Site、连接状态、关键字（ID/序列号/别名）、阈值筛选；
  *   显示标准耗材名称、百分比（unknown 仅文本不画进度条）、observedAt/stale 徽标；
  *   阈值颜色（<10%/10~30%/>30%）为暂定展示阈值，由 prop（字典/配置）驱动；
- * - 联系方式：点击后按权限展示同一授权响应中的 contact；无权限（null）不显示号码；
+ * - 联系方式：列表不含 PII，点击后调用独立授权端点按需加载；
  * - 更换申请：PENDING→PROCESSING→COMPLETED/CANCELLED，操作携带 version + 备注
  *   （complete/cancel 强制）；重复创建幂等（replayed 提示）；跳级由矩阵禁用 + 服务端 409；
  * - 边界：不预测寿命、不直接联系、不做库存/派单；协议冻结前无“来自设备”入口（source=ADMIN）。
@@ -20,7 +20,6 @@ import type { ConsumableRequestFilter, ConsumableStatusFilter } from './consumab
 import {
   CONSUMABLE_TYPES,
   CONSUMABLE_TYPE_LABELS,
-  DEFAULT_THRESHOLDS,
   REQUEST_ACTION_LABELS,
   REQUEST_STATUS_LABELS,
   REQUEST_STATUS_OPTIONS,
@@ -29,8 +28,9 @@ import {
   thresholdLevel,
   validateRequestNote,
 } from './consumable-state.js';
-import type { ConsumableThresholds, RequestAction } from './consumable-state.js';
+import type { ConsumableThresholdSource, ConsumableThresholds, RequestAction } from './consumable-state.js';
 import type {
+  ConsumableContactView,
   ConsumableRequestCreateResult,
   ConsumableRequestStatus,
   ConsumableRequestView,
@@ -46,6 +46,7 @@ export interface ConsumablesPageProps {
   };
   readonly statusFilter: ConsumableStatusFilter;
   readonly onApplyStatusFilter: (filter: ConsumableStatusFilter) => void;
+  readonly onLoadContact: (deviceId: string) => Promise<ConsumableContactView>;
   readonly requests: {
     readonly rows: readonly ConsumableRequestView[] | null;
     readonly error?: unknown;
@@ -61,8 +62,8 @@ export interface ConsumablesPageProps {
   readonly onComplete: (requestId: string, note: string, version: number) => Promise<ConsumableRequestView>;
   readonly onCancel: (requestId: string, note: string, version: number) => Promise<ConsumableRequestView>;
   readonly onRefresh: () => void;
-  /** 展示阈值（字典/配置驱动；缺省暂定 10/30）。 */
-  readonly thresholds?: ConsumableThresholds;
+  readonly thresholds: ConsumableThresholds;
+  readonly thresholdSource: ConsumableThresholdSource;
 }
 type ActionTarget = {
   readonly action: RequestAction;
@@ -124,6 +125,7 @@ export function ConsumablesPage({
   status,
   statusFilter,
   onApplyStatusFilter,
+  onLoadContact,
   requests,
   requestFilter,
   onApplyRequestFilter,
@@ -132,7 +134,8 @@ export function ConsumablesPage({
   onComplete,
   onCancel,
   onRefresh,
-  thresholds = DEFAULT_THRESHOLDS,
+  thresholds,
+  thresholdSource,
 }: ConsumablesPageProps) {
   const [statusDraft, setStatusDraft] = useState<StatusDraft>({
     ...EMPTY_STATUS_DRAFT,
@@ -154,7 +157,16 @@ export function ConsumablesPage({
     deviceId: requestFilter.deviceId ?? '',
     customerId: requestFilter.customerId ?? '',
   });
-  const [contactOpen, setContactOpen] = useState<Readonly<Record<string, boolean>>>({});
+  const [contacts, setContacts] = useState<
+    Readonly<
+      Record<
+        string,
+        | { readonly kind: 'loading' }
+        | { readonly kind: 'ready'; readonly value: ConsumableContactView }
+        | { readonly kind: 'error'; readonly error: unknown }
+      >
+    >
+  >({});
   const [action, setAction] = useState<ActionTarget | null>(null);
   const [actionNote, setActionNote] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
@@ -167,6 +179,15 @@ export function ConsumablesPage({
   const canWrite = canWriteDevices(role);
   const noteRequired = action?.action !== 'process';
   const noteError = action !== null ? validateRequestNote(actionNote, noteRequired) : null;
+  const loadContact = async (deviceId: string) => {
+    setContacts((current) => ({ ...current, [deviceId]: { kind: 'loading' } }));
+    try {
+      const value = await onLoadContact(deviceId);
+      setContacts((current) => ({ ...current, [deviceId]: { kind: 'ready', value } }));
+    } catch (error) {
+      setContacts((current) => ({ ...current, [deviceId]: { kind: 'error', error } }));
+    }
+  };
   const runAction = async (execute: () => Promise<string>) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -226,6 +247,13 @@ export function ConsumablesPage({
       {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
       <section data-testid="consumable-status-section" aria-label={translate('page.93b5ce3195e0')}>
+        <p className="field-hint" data-testid="consumable-threshold-source">
+          {thresholdSource.kind === 'loading'
+            ? translate('ui.consumableThresholdLoading')
+            : thresholdSource.kind === 'setting'
+              ? translate('ui.consumableThresholdSetting', { version: thresholdSource.version })
+              : translate('ui.consumableThresholdFallback', { reason: thresholdSource.reason })}
+        </p>
         <div className="filter-bar">
           <label htmlFor="consumable-filter-region">{translate('page.17fc93c9cdbb')}</label>
           <input
@@ -388,26 +416,26 @@ export function ConsumablesPage({
               {
                 key: 'contact',
                 header: translate('page.60beedc8f22b'),
-                render: (row) =>
-                  contactOpen[row.deviceId] === true ? (
-                    row.contact !== null ? (
-                      <span data-testid={`consumable-contact-info-${row.deviceId}`}>
-                        {row.contact.name ?? '—'} / {row.contact.phone ?? '—'} / {row.contact.email ?? '—'}
-                      </span>
-                    ) : (
-                      <span className="field-hint" data-testid={`consumable-contact-info-${row.deviceId}`}>
-                        {translate('page.d64bbf53c8c5')}
-                      </span>
-                    )
+                render: (row) => {
+                  const contact = contacts[row.deviceId];
+                  return contact?.kind === 'ready' ? (
+                    <span data-testid={`consumable-contact-info-${row.deviceId}`}>
+                      {contact.value.name ?? '—'} / {contact.value.phone ?? '—'} / {contact.value.email ?? '—'}
+                    </span>
+                  ) : contact?.kind === 'error' ? (
+                    <ErrorNotice error={contact.error} />
+                  ) : contact?.kind === 'loading' ? (
+                    <span role="status">{translate('common.loading')}</span>
                   ) : (
                     <button
                       type="button"
                       data-testid={`consumable-contact-${row.deviceId}`}
-                      onClick={() => setContactOpen({ ...contactOpen, [row.deviceId]: true })}
+                      onClick={() => void loadContact(row.deviceId)}
                     >
                       {translate('page.60beedc8f22b')}
                     </button>
-                  ),
+                  );
+                },
               },
             ]}
             rows={status.rows === null ? null : [...status.rows]}

@@ -6,6 +6,13 @@ import { PAGE_EN } from './pages.js';
  */
 export const EN: Readonly<Record<string, string>> = {
   ...PAGE_EN,
+  'ui.contractDeviceRequired':
+    'Bind at least one eligible device before finishing. The draft is saved and recoverable in this step.',
+  'ui.consumableThresholdLoading': 'Loading the consumable display threshold source…',
+  'ui.consumableThresholdSetting':
+    'Consumable display thresholds come from alarm.thresholds setting version v{version}.',
+  'ui.consumableThresholdFallback':
+    'Consumable display thresholds use the explicit 10%/30% fallback (reason: {reason}).',
   // ---------- Common ----------
   'common.loading': 'Loading…',
   'common.refresh': 'Refresh',

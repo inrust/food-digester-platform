@@ -53,6 +53,7 @@ import { DeviceUsersPage, EMPTY_DEVICE_USER_FILTER } from '../pages/device-users
 import type {
   DeviceUserDetailState,
   DeviceUserFilter,
+  DeviceUserTopologyOption,
   DeviceUsersPageProps,
 } from '../pages/device-users/DeviceUsersPage.js';
 import type { DeviceUserListItemView } from '../pages/device-users/types.js';
@@ -554,6 +555,7 @@ export function useDeviceUsersPageProps({
   }>({ rows: null });
   const [detail, setDetail] = useState<DeviceUserDetailState>({ kind: 'none' });
   const [customerOptions, setCustomerOptions] = useState<readonly FilterOption[]>([]);
+  const [topologyOptions, setTopologyOptions] = useState<readonly DeviceUserTopologyOption[]>([]);
   const [assignableDevices, setAssignableDevices] = useState<readonly FilterOption[]>([]);
   const selected = useRef<string | null>(null);
   const loadList = useCallback(async () => {
@@ -565,6 +567,9 @@ export function useDeviceUsersPageProps({
           ...(customerId ? { customerId } : {}),
           ...(filter.status ? { status: filter.status } : {}),
           ...(filter.keyword ? { keyword: filter.keyword } : {}),
+          ...(filter.region ? { region: filter.region } : {}),
+          ...(filter.subregion ? { subregion: filter.subregion } : {}),
+          ...(filter.deviceId ? { deviceId: filter.deviceId } : {}),
         }),
       });
     } catch (error) {
@@ -592,7 +597,9 @@ export function useDeviceUsersPageProps({
     const customerRequest = fixedCustomerId === null ? fetchCustomers(api, { limit: 100 }) : null;
     void Promise.allSettled([
       customerRequest ?? Promise.resolve(null),
-      fetchDevices(api, fixedCustomerId ? { customerId: fixedCustomerId } : undefined, { limit: 100 }),
+      collectAll((cursor) =>
+        fetchDevices(api, fixedCustomerId ? { customerId: fixedCustomerId } : undefined, { cursor, limit: 100 }),
+      ),
     ]).then(([customersResult, devicesResult]) => {
       if (!active) return;
       if (customersResult.status === 'fulfilled' && customersResult.value !== null) {
@@ -600,10 +607,20 @@ export function useDeviceUsersPageProps({
       } else setCustomerOptions([]);
       if (devicesResult.status === 'fulfilled') {
         const ds = devicesResult.value;
+        setTopologyOptions(
+          ds.map((d) => ({
+            deviceId: d.id,
+            label: d.alias ?? d.serialNumber,
+            customerId: d.customer?.id ?? null,
+            region: d.site?.region ?? null,
+            subregion: d.site?.subregion ?? null,
+          })),
+        );
         setAssignableDevices(
-          ds.items.filter((d) => d.lifecycleStatus !== 'Retired').map((d) => option(d.id, d.alias ?? d.serialNumber)),
+          ds.filter((d) => d.lifecycleStatus !== 'Retired').map((d) => option(d.id, d.alias ?? d.serialNumber)),
         );
       } else {
+        setTopologyOptions([]);
         setAssignableDevices([]);
       }
     });
@@ -623,6 +640,7 @@ export function useDeviceUsersPageProps({
     role: roleOf(session),
     fixedCustomerId,
     customerOptions,
+    topologyOptions,
     list,
     appliedFilter: filter,
     onApplyFilter: (next) => setFilter({ ...next, customerId: fixedCustomerId ?? next.customerId }),

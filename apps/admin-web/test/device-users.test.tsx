@@ -11,7 +11,7 @@ import { afterEach, assert, test } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import type { ApiClient, ApiRequestOptions } from '../src/api/http-client.js';
-import { DeviceUsersPage } from '../src/pages/device-users/DeviceUsersPage.js';
+import { DeviceUsersPage, EMPTY_DEVICE_USER_FILTER } from '../src/pages/device-users/DeviceUsersPage.js';
 import type { DeviceUsersPageProps } from '../src/pages/device-users/DeviceUsersPage.js';
 import {
   assignDeviceUser,
@@ -83,8 +83,12 @@ function renderPage(overrides: Partial<DeviceUsersPageProps> = {}) {
   const props: DeviceUsersPageProps = {
     role: 'PlatformSuperAdmin',
     customerOptions: [{ value: 'cust-1', label: '示例客户' }],
+    topologyOptions: [
+      { deviceId: 'dev-003', label: 'XJ-2026-003', customerId: 'cust-1', region: '华东', subregion: '上海' },
+      { deviceId: 'dev-004', label: 'XJ-2026-004', customerId: 'cust-1', region: '华南', subregion: '深圳' },
+    ],
     list: { rows: [LIST_ITEM] },
-    appliedFilter: { customerId: null, status: null, keyword: null },
+    appliedFilter: EMPTY_DEVICE_USER_FILTER,
     onApplyFilter: (f) => calls.applied.push(f),
     onRefresh: () => {
       calls.refreshed += 1;
@@ -189,16 +193,28 @@ test('创建：username/password 必填校验；platform 角色需选客户', as
   assert.equal(calls.refreshed, 1);
 });
 
-test('筛选：customer/status/keyword 应用与重置；CustomerAdmin 固定客户且无客户选择', async () => {
+test('筛选：Customer/Region/Subregion/Device/status/keyword 使用权威拓扑并可重置', async () => {
   const user = userEvent.setup();
   const { calls, unmount } = renderPage();
   await user.selectOptions(screen.getByTestId('device-user-customer-filter'), 'cust-1');
+  await user.selectOptions(screen.getByTestId('device-user-region-filter'), '华东');
+  await user.selectOptions(screen.getByTestId('device-user-subregion-filter'), '上海');
+  await user.selectOptions(screen.getByTestId('device-user-device-filter'), 'dev-003');
   await user.selectOptions(screen.getByTestId('device-user-status-filter'), 'ACTIVE');
   await user.type(screen.getByTestId('device-user-keyword'), 'operator');
   await user.click(screen.getByTestId('device-user-search'));
-  assert.deepEqual(calls.applied, [{ customerId: 'cust-1', status: 'ACTIVE', keyword: 'operator' }]);
+  assert.deepEqual(calls.applied, [
+    {
+      customerId: 'cust-1',
+      region: '华东',
+      subregion: '上海',
+      deviceId: 'dev-003',
+      status: 'ACTIVE',
+      keyword: 'operator',
+    },
+  ]);
   await user.click(screen.getByTestId('device-user-filter-reset'));
-  assert.deepEqual(calls.applied[1], { customerId: null, status: null, keyword: null });
+  assert.deepEqual(calls.applied[1], EMPTY_DEVICE_USER_FILTER);
   unmount();
 
   const second = renderPage({ role: 'CustomerAdmin', fixedCustomerId: 'cust-1' });

@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hiddenjoy.com/schemas/business-settings-v1.schema.json",
+  "title": "Business Settings V1",
+  "version": "1.0.0",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["key", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "const": "alarm.thresholds" },
+        "value": { "$ref": "#/$defs/alarmThresholds" }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["key", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "const": "command.confirmation" },
+        "value": { "$ref": "#/$defs/commandConfirmation" }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["key", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "const": "dictionary.displayNames" },
+        "value": { "$ref": "#/$defs/dictionaryDisplayNames" }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["key", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "const": "notification.business" },
+        "value": { "$ref": "#/$defs/notificationBusiness" }
+      }
+    }
+  ],
+  "$defs": {
+    "alarmThresholds": {
+      "type": "object",
+      "propertyNames": { "minLength": 1, "maxLength": 64 },
+      "additionalProperties": {
+        "type": "object",
+        "minProperties": 1,
+        "additionalProperties": false,
+        "properties": {
+          "warning": { "type": "number", "minimum": 0 },
+          "major": { "type": "number", "minimum": 0 },
+          "critical": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "commandConfirmation": {
+      "type": "object",
+      "required": ["ttlSec", "maxFutureSec"],
+      "additionalProperties": false,
+      "properties": {
+        "ttlSec": { "type": "integer", "minimum": 30, "maximum": 3600 },
+        "maxFutureSec": { "type": "integer", "minimum": 0, "maximum": 600 }
+      }
+    },
+    "dictionaryDisplayNames": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "command": { "$ref": "#/$defs/displayNameMap" },
+        "topicType": { "$ref": "#/$defs/displayNameMap" },
+        "notificationType": { "$ref": "#/$defs/displayNameMap" }
+      }
+    },
+    "displayNameMap": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 64 }
+    },
+    "notificationBusiness": {
+      "type": "object",
+      "required": ["eventTypes", "channels"],
+      "additionalProperties": false,
+      "properties": {
+        "eventTypes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["CRITICAL_ALERT_RAISED", "ALARM_STATE_CHANGED"] }
+        },
+        "channels": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["EMAIL", "WEBHOOK"] }
+        }
+      }
+    }
+  }
+}

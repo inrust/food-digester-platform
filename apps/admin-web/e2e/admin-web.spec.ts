@@ -1022,3 +1022,74 @@ test('FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关�
   await expect(customer.getByRole('heading', { name: '403' })).toBeVisible();
   await customer.close();
 });
+
+test('FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭', async ({ browser }) => {
+  const operator = await browser.newPage();
+  await seedSession(operator, 'PlatformOperator');
+  await operator.goto('/contracts/new');
+  await expect(operator.getByRole('heading', { name: '403' })).toBeVisible();
+  await operator.close();
+
+  const admin = await browser.newPage();
+  await seedSession(admin, 'PlatformSuperAdmin');
+  await admin.route('**/api/v1/admin/customers**', (route) =>
+    json(route, {
+      data: [
+        {
+          id: 'cust-a',
+          name: '租户 A',
+          status: 'ACTIVE',
+          version: 1,
+          createdAt: '2026-09-10T00:00:00Z',
+          updatedAt: '2026-09-10T00:00:00Z',
+        },
+      ],
+      meta: { nextCursor: null },
+    }),
+  );
+  await admin.route('**/api/v1/admin/contracts**', (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    if (path.endsWith('/con-zero/available-devices')) return json(route, { data: [] });
+    if (path.endsWith('/contracts') && request.method() === 'POST') {
+      return json(
+        route,
+        {
+          data: {
+            contractId: 'con-zero',
+            contractNumber: 'HT-E2E-ZERO',
+            name: '零设备合约',
+            customerId: 'cust-a',
+            contact: null,
+            startAt: '2026-10-01T00:00:00Z',
+            endAt: '2027-10-01T00:00:00Z',
+            status: 'DRAFT',
+            derivedStatus: 'DRAFT',
+            version: 1,
+            createdBy: 'e2e-PlatformSuperAdmin',
+            createdAt: '2026-09-10T00:00:00Z',
+            updatedAt: '2026-09-10T00:00:00Z',
+          },
+        },
+        201,
+      );
+    }
+    return json(route, { data: [], meta: { nextCursor: null } });
+  });
+
+  await admin.goto('/contracts/new');
+  await admin.getByTestId('contract-number-input').fill('HT-E2E-ZERO');
+  await admin.getByTestId('contract-name-input').fill('零设备合约');
+  await admin.getByTestId('contract-customer-select').selectOption('cust-a');
+  await admin.getByTestId('contract-start-input').fill('2026-10-01T00:00');
+  await admin.getByTestId('contract-end-input').fill('2027-10-01T00:00');
+  await admin.getByTestId('contract-create-submit').click();
+
+  await expect(admin.getByTestId('contract-new-devices-empty')).toBeVisible();
+  await expect(admin.getByTestId('contract-new-device-required')).toContainText('至少关联一台');
+  await expect(admin.getByTestId('contract-new-done')).toBeDisabled();
+  await expect(admin.getByTestId('contract-create-cancel')).toBeDisabled();
+  await admin.locator('a[href="/dashboard"]').click();
+  await expect(admin).toHaveURL(/\/contracts\/new$/);
+  await admin.close();
+});

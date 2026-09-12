@@ -11,6 +11,7 @@ import { translate } from '../../i18n/i18n.js';
  */
 import { PLATFORM_ROLES, ROLES, hasPermission } from '@fdp/auth/browser';
 import type { Role } from '@fdp/auth/browser';
+import { validateBusinessSettingValue } from '@fdp/contracts/settings/business-settings-v1.js';
 import { roleDisplayName } from '../../menu/menu.js';
 import type { SettingKey, SettingRuntimeStatus, UserStatus } from './types.js';
 // ---------- 用户（BE-RBAC-01） ----------
@@ -105,12 +106,14 @@ export const RUNTIME_STATUS_LABELS: Readonly<Record<SettingRuntimeStatus, string
 };
 /** DEC-023：命令确认方式固定——该 key 在 UI 只读展示，不提供编辑入口。 */
 export const SETTING_READONLY_KEYS: readonly SettingKey[] = ['command.confirmation'];
-/** 设置值 JSON 文本校验（解析失败返回错误文案）。 */
-export function validateSettingJson(raw: string): string | null {
+/** 设置值 JSON 文本校验：前后端共享版本化 Schema，并返回精确字段路径。 */
+export function validateSettingJson(key: SettingKey, raw: string): string | null {
   if (raw.trim() === '') return translate('ui.1b1cc8a947c1');
   try {
-    JSON.parse(raw);
-    return null;
+    const issues = validateBusinessSettingValue(key, JSON.parse(raw));
+    if (issues.length === 0) return null;
+    const first = issues[0]!;
+    return `${first.path}: ${first.message}`;
   } catch {
     return translate('ui.3383f0e0c815');
   }

@@ -88,7 +88,6 @@ type StatusRow = {
       sourceMessageId: string | null;
     } | null
   >;
-  contact: { name: string | null; phone: string | null; email: string | null } | null;
 };
 
 let seq = 0;
@@ -197,8 +196,8 @@ describe('投影保存与字典映射', () => {
     const bio = row.consumables.BIO_ADDITIVE;
     assert.ok(bio);
     assert.equal(bio.remainingPercent, 80);
-    // 联系人授权摘要：SuperAdmin 可见
-    assert.deepEqual(row.contact, { name: '张三', phone: '+86-13800000000', email: 'ops@example.com' });
+    assert.ok(!Object.hasOwn(row, 'contact'), '列表 DTO 不得携带联系人字段');
+    assert.ok(!JSON.stringify(rows).includes('+86-13800000000'), '列表网络响应不得预载号码');
   });
 
   test('乱序防护：旧消息不覆盖新值；同消息同时间 replay 幂等', async () => {
@@ -301,8 +300,8 @@ describe('筛选与阈值', () => {
   });
 });
 
-describe('联系人授权与租户隔离', () => {
-  test('联系人只向授权角色返回；Customer 角色仅见本 Customer', async () => {
+describe('联系人按需授权与租户隔离', () => {
+  test('列表零 PII；独立端点覆盖授权、403、404 与跨 Customer', async () => {
     const h = createAdminConsumableHandlers({ client: prisma, now });
     const customer = await prisma.customer.create({ data: { name: 'Customer CNS 3' } });
     const site = await plantSite(customer.id);
@@ -318,22 +317,32 @@ describe('联系人授权与租户隔离', () => {
     };
     const customerViewer: ActorContext = { ...viewer, customerId: customer.id };
 
-    // CustomerAdmin：本 Customer + 联系人可见
+    // 所有列表响应均不携联系人；Customer 角色仍只见本 Customer。
     let rows = await list(h, customerAdmin);
     assert.ok(rows.some((r) => r.deviceId === own));
     assert.ok(!rows.some((r) => r.deviceId === other), '租户隔离');
-    assert.equal(rows.find((r) => r.deviceId === own)?.contact?.name, '张三');
-    // CustomerViewer：本 Customer 但联系人遮蔽
+    assert.ok(!JSON.stringify(rows).includes('+86-13800000000'));
     rows = await list(h, customerViewer);
-    assert.equal(rows.find((r) => r.deviceId === own)?.contact, null, 'CustomerViewer 联系人遮蔽');
-    // Auditor：跨 Customer 只读但联系人遮蔽
+    assert.ok(!JSON.stringify(rows).includes('+86-13800000000'));
     rows = await list(h, auditor, { customerId: customer.id });
-    assert.equal(rows.find((r) => r.deviceId === own)?.contact, null, 'Auditor 联系人遮蔽');
-    // Operator：联系人可见
+    assert.ok(!JSON.stringify(rows).includes('+86-13800000000'));
     rows = await list(h, operator, { customerId: customer.id });
-    assert.equal(rows.find((r) => r.deviceId === own)?.contact?.email, 'ops@example.com');
+    assert.ok(!JSON.stringify(rows).includes('+86-13800000000'));
+
+    const ownContact = await h.contact(req(customerAdmin, { params: { deviceId: own } }));
+    assert.equal(ownContact.status, 200);
+    assert.deepEqual((ownContact.body as DataBody).data, {
+      name: '张三',
+      phone: '+86-13800000000',
+      email: 'ops@example.com',
+    });
+    assert.equal((await h.contact(req(operator, { params: { deviceId: own } }))).status, 200);
+    assert.equal((await h.contact(req(customerViewer, { params: { deviceId: own } }))).status, 403);
+    assert.equal((await h.contact(req(auditor, { params: { deviceId: own } }))).status, 403);
+    assert.equal((await h.contact(req(customerAdmin, { params: { deviceId: other } }))).status, 404);
+    assert.equal((await h.contact(req(customerAdmin, { params: { deviceId: 'missing' } }))).status, 404);
     // 未认证 → 401
-    const unauth = await h.list(req(undefined, {}));
+    const unauth = await h.contact(req(undefined, { params: { deviceId: own } }));
     assert.equal(unauth.status, 401);
     assert.equal((unauth.body as ErrorBody).error.code, 'UNAUTHENTICATED');
   });

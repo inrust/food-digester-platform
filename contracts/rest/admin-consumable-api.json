@@ -3,7 +3,7 @@
   "info": {
     "title": "Bio-Nexa CMP Admin Consumable API",
     "version": "0.1.0",
-    "description": "BE-CNS-01 耗材状态投影与查询接口（Cognito 认证，device:read；Customer 角色租户隔离）：查询设备上报的耗材类型（CARBON_FILTER/BIO_ADDITIVE，DEC-008 封闭集合）、剩余百分比、来源消息、observedAt 与 stale 状态；支持 Region/Subregion/Site、连接状态、关键字和耗材阈值筛选（AND 组合）；返回设备联系人授权摘要（仅 PlatformSuperAdmin/PlatformOperator/CustomerAdmin，其余角色为 null）。数据来源 device-reported-only：未上报维度为 null 且 remainingDisplay='unknown'（绝不默认 50%）；每设备每耗材仅维护最新投影，乱序消息不覆盖（投影写路径 recordConsumableReport 经 DEC-008 字典映射，未知名称失败关闭）。不预测更换日期、不虚构未上报值、不自动联系客户或创建采购单。通用契约继承 openapi-base.json（CT-05）。",
+    "description": "BE-CNS-01 耗材状态投影与查询接口（Cognito 认证，device:read；Customer 角色租户隔离）：列表查询设备上报的耗材类型、剩余百分比、来源消息、observedAt 与 stale 状态，且绝不携带联系人 PII；授权角色必须点击后调用独立联系人端点。数据来源 device-reported-only：未上报维度为 null 且 remainingDisplay='unknown'（绝不默认 50%）；每设备每耗材仅维护最新投影，乱序消息不覆盖。不预测更换日期、不虚构未上报值、不自动联系客户或创建采购单。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-008@1.0.0", "DEC-012@1.0.0", "DEC-024@1.0.0"],
     "x-decision-register-version": "1.33.0"
   },
@@ -71,6 +71,28 @@
           "500": { "$ref": "#/components/responses/InternalError" }
         }
       }
+    },
+    "/api/v1/admin/consumables/{deviceId}/contact": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getConsumableContact",
+        "summary": "按需读取单台设备的 Site 联系人",
+        "description": "仅 PlatformSuperAdmin、PlatformOperator、CustomerAdmin 可用；Customer scope 越界与设备不存在统一 404；列表响应永不预载联系人。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "联系人",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConsumableContactSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
     }
   },
   "components": {
@@ -92,6 +114,12 @@
       },
       "Forbidden": {
         "description": "无权限（FORBIDDEN）",
+        "content": {
+          "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "设备不存在或跨 Customer（NOT_FOUND）",
         "content": {
           "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
         }
@@ -155,8 +183,7 @@
           "lifecycleStatus",
           "site",
           "connectivity",
-          "consumables",
-          "contact"
+          "consumables"
         ],
         "additionalProperties": false,
         "properties": {
@@ -179,11 +206,16 @@
               "CARBON_FILTER": { "anyOf": [{ "$ref": "#/components/schemas/ConsumableValue" }, { "type": "null" }] },
               "BIO_ADDITIVE": { "anyOf": [{ "$ref": "#/components/schemas/ConsumableValue" }, { "type": "null" }] }
             }
-          },
-          "contact": {
-            "anyOf": [{ "$ref": "#/components/schemas/ConsumableContact" }, { "type": "null" }],
-            "description": "设备联系人授权摘要；未授权角色（Auditor/CustomerViewer）为 null"
           }
+        }
+      },
+      "ConsumableContactSuccess": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "additionalProperties": false,
+        "properties": {
+          "data": { "$ref": "#/components/schemas/ConsumableContact" },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
         }
       },
       "ConsumableListSuccess": {

@@ -241,6 +241,9 @@ test('新建：创建 DRAFT（不自动激活 License）→ eligible 设备两�
   const notice = await screen.findByTestId('action-notice');
   assert.ok(notice.textContent?.includes('草稿'));
   assert.ok(notice.textContent?.includes('不自动激活 License'));
+  assert.ok((screen.getByTestId('contract-new-done') as HTMLButtonElement).disabled, '零设备不得完成');
+  assert.ok((screen.getByTestId('contract-create-cancel') as HTMLButtonElement).disabled, '草稿阶段不得绕过关联离开');
+  assert.ok(screen.getByTestId('contract-new-device-required').textContent?.includes('至少关联一台'));
 
   // 第二步：eligible 列表选择并关联
   assert.deepEqual(calls.listed, ['con-new']);
@@ -248,6 +251,9 @@ test('新建：创建 DRAFT（不自动激活 License）→ eligible 设备两�
   await user.type(screen.getByTestId('contract-bind-reason'), '交付安装');
   await user.click(screen.getByTestId('contract-bind-submit'));
   assert.deepEqual(calls.bound, [{ contractId: 'con-new', deviceIds: ['dev-100'], reason: '交付安装' }]);
+  assert.equal((screen.getByTestId('contract-new-done') as HTMLButtonElement).disabled, false);
+  await user.click(screen.getByTestId('contract-new-done'));
+  assert.equal(calls.done, 1);
 });
 
 test('新建：编号重复 409 → 明确错误呈现', async () => {

@@ -24,7 +24,7 @@ export interface ConsumableSiteView {
   readonly subregion: string | null;
 }
 
-/** 设备联系人授权摘要；未授权角色（Auditor/CustomerViewer）为 null。 */
+/** 设备联系人按需响应；永不嵌入耗材列表。 */
 export interface ConsumableContactView {
   readonly name: string | null;
   readonly phone: string | null;
@@ -43,7 +43,6 @@ export interface ConsumableStatusView {
     readonly CARBON_FILTER: ConsumableValueView | null;
     readonly BIO_ADDITIVE: ConsumableValueView | null;
   };
-  readonly contact: ConsumableContactView | null;
 }
 
 // ---------- 更换申请（BE-CNS-02） ----------

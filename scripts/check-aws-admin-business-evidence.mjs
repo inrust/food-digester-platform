@@ -38,6 +38,7 @@ export const REQUIRED_ADMIN_BUSINESS_OPERATIONS = [
   'getConfigurationVersion',
   'getConfigurationVersionStatus',
   'listConsumableStatus',
+  'getConsumableContact',
   'createConsumableRequest',
   'listConsumableRequests',
   'getConsumableRequest',

@@ -43,12 +43,12 @@ function makeUser(overrides: Partial<UserView> = {}): UserView {
 function makeSetting(overrides: Partial<SettingView> = {}): SettingView {
   return {
     key: 'alarm.thresholds',
-    value: { tempHigh: 80 },
+    value: { TEMPERATURE_HIGH: { warning: 60, major: 80 } },
     version: 3,
     updatedBy: 'admin@example.com',
     updatedAt: '2026-09-05T02:00:00Z',
-    runtimeStatus: 'STORED_ONLY',
-    runtimeConsumer: null,
+    runtimeStatus: 'ACTIVE',
+    runtimeConsumer: 'FE-18',
     ...overrides,
   };
 }
@@ -56,6 +56,7 @@ function makeSetting(overrides: Partial<SettingView> = {}): SettingView {
 const DEVICE_USERS_STUB: DeviceUsersPageProps = {
   role: 'PlatformSuperAdmin',
   customerOptions: [],
+  topologyOptions: [],
   list: { rows: [] },
   appliedFilter: EMPTY_DEVICE_USER_FILTER,
   onApplyFilter: () => {},
@@ -314,8 +315,8 @@ test('业务设置：封闭 key 集四项渲染；command.confirmation 只读无
   // DEC-023 固定：只读说明 + 无编辑按钮
   assert.ok(screen.getByTestId('setting-readonly-command.confirmation').textContent?.includes('DEC-023'));
   assert.equal(screen.queryByTestId('setting-edit-command.confirmation'), null);
-  // STORED_ONLY 标注
-  assert.ok(screen.getByTestId('setting-runtime-alarm.thresholds').textContent?.includes('仅存储'));
+  // FE-18 已接入 alarm.thresholds；命令确认策略仍按 DEC-023 生效。
+  assert.ok(screen.getByTestId('setting-runtime-alarm.thresholds').textContent?.includes('已生效'));
   assert.ok(screen.getByTestId('setting-runtime-command.confirmation').textContent?.includes('已生效'));
 });
 
@@ -334,9 +335,11 @@ test('设置编辑：非法 JSON 禁用提交；合法提交携 version 乐观�
   await user.clear(input);
   await user.click(input);
   // 经 paste 写入避免特殊字符逐键解析问题
-  await user.paste('{"tempHigh":90}');
+  await user.paste('{"TEMPERATURE_HIGH":{"warning":60,"major":90}}');
   await user.click(within(form).getByTestId('setting-submit'));
-  assert.deepEqual(calls.settingUpdated, [{ key: 'alarm.thresholds', value: { tempHigh: 90 }, version: 3 }]);
+  assert.deepEqual(calls.settingUpdated, [
+    { key: 'alarm.thresholds', value: { TEMPERATURE_HIGH: { warning: 60, major: 90 } }, version: 3 },
+  ]);
   const notice = await screen.findByTestId('action-notice');
   assert.ok(notice.textContent?.includes('v4'));
 });

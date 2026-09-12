@@ -208,7 +208,7 @@ export function SettingsPage({
   const submitSetting = () =>
     runAction(async () => {
       if (settingEdit === null) return '';
-      const jsonError = validateSettingJson(settingEdit.raw);
+      const jsonError = validateSettingJson(settingEdit.setting.key, settingEdit.raw);
       if (jsonError !== null) throw new Error(jsonError);
       const updated = await onUpdateSetting(
         settingEdit.setting.key,
@@ -686,9 +686,9 @@ export function SettingsPage({
                 onChange={(event) => setSettingEdit({ ...settingEdit, raw: event.target.value })}
               />
             </div>
-            {validateSettingJson(settingEdit.raw) !== null ? (
+            {validateSettingJson(settingEdit.setting.key, settingEdit.raw) !== null ? (
               <p className="field-hint" data-testid="setting-value-error">
-                {validateSettingJson(settingEdit.raw)}
+                {validateSettingJson(settingEdit.setting.key, settingEdit.raw)}
               </p>
             ) : null}
             <div className="dialog-actions">
@@ -696,7 +696,7 @@ export function SettingsPage({
                 type="button"
                 className="primary-button"
                 data-testid="setting-submit"
-                disabled={busy || validateSettingJson(settingEdit.raw) !== null}
+                disabled={busy || validateSettingJson(settingEdit.setting.key, settingEdit.raw) !== null}
                 onClick={() => void submitSetting()}
               >
                 {translate('page.bb79ec7c152f')}

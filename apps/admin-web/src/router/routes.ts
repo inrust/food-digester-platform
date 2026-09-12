@@ -41,7 +41,7 @@ export interface AppRoute {
   readonly path: string;
   readonly pageState: PageState;
   readonly label: string;
-  /** 允许访问的角色（CT-06 菜单角色；子页面继承父菜单角色）。 */
+  /** 允许访问的角色（菜单页遵循 CT-06；写子页面按对应权限收窄）。 */
   readonly roles: readonly Role[];
   /** 菜单归属；null = 非菜单页面（详情/子页）或公共页。 */
   readonly menuGroup: MenuGroupId | null;
@@ -260,7 +260,7 @@ export const APP_ROUTES: readonly AppRoute[] = [
     get label() {
       return translate('page.44c75e312909');
     },
-    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
+    roles: ['PlatformSuperAdmin'],
     menuGroup: null,
     parentPath: '/contracts',
   },
