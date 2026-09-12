@@ -30,6 +30,31 @@ async function seedSession(page: Page, role: Role, options: { expired?: boolean;
   );
 }
 
+/** FE-19：禁止由 overflow:hidden 掩盖正文裁切，同时保留 CursorTable 的显式横向滚动边界。 */
+async function layoutViolations(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const violations: string[] = [];
+    if (document.documentElement.scrollWidth > document.documentElement.clientWidth + 1) {
+      violations.push(`document:${document.documentElement.scrollWidth}>${document.documentElement.clientWidth}`);
+    }
+    for (const element of document.body.querySelectorAll<HTMLElement>('*')) {
+      const style = getComputedStyle(element);
+      if (style.display === 'none' || style.visibility === 'hidden') continue;
+      const hasDirectText = [...element.childNodes].some(
+        (node) => node.nodeType === Node.TEXT_NODE && (node.textContent?.trim().length ?? 0) > 0,
+      );
+      if (!hasDirectText) continue;
+      const clipsX = ['hidden', 'clip'].includes(style.overflowX) && element.scrollWidth > element.clientWidth + 1;
+      const clipsY = ['hidden', 'clip'].includes(style.overflowY) && element.scrollHeight > element.clientHeight + 1;
+      if (clipsX || clipsY) {
+        const identity = element.getAttribute('data-testid') ?? element.id ?? element.className ?? element.tagName;
+        violations.push(`${String(identity)}:${element.scrollWidth}x${element.scrollHeight}`);
+      }
+    }
+    return violations;
+  });
+}
+
 const section = (requestId = 'req-e2e') => ({
   status: 'READY',
   errorCode: null,
@@ -1125,6 +1150,12 @@ test('FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状
       },
     },
   };
+  const statusRowPage2 = {
+    ...statusRow,
+    deviceId: 'dev-fe18-page-2',
+    serialNumber: 'SN-FE18-2',
+    alias: 'FE18 page 2',
+  };
   const request = () => ({
     requestId: 'request-fe18',
     customerId: 'cust-a',
@@ -1145,12 +1176,15 @@ test('FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状
     json(route, { error: { code: 'FORBIDDEN', message: 'denied', requestId: 'req-settings-403' } }, 403),
   );
   await page.route('**/api/v1/admin/consumables**', (route) => {
-    const path = new URL(route.request().url()).pathname;
+    const url = new URL(route.request().url());
+    const path = url.pathname;
     if (path.endsWith('/dev-fe18/contact')) {
       contactRequests += 1;
       return json(route, { data: { name: '联系人', phone: pii, email: 'contact@example.test' } });
     }
-    return json(route, { data: [statusRow] });
+    return url.searchParams.get('cursor') === 'cursor-fe18-2'
+      ? json(route, { data: [statusRowPage2], meta: { nextCursor: null } })
+      : json(route, { data: [statusRow], meta: { nextCursor: 'cursor-fe18-2' } });
   });
   await page.route('**/api/v1/admin/consumable-requests**', async (route) => {
     const httpRequest = route.request();
@@ -1171,6 +1205,10 @@ test('FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状
   await expect(page.getByTestId('consumable-bio-dev-fe18')).toContainText('数据过期');
   expect(contactRequests).toBe(0);
   await expect(page.locator('body')).not.toContainText(pii);
+  await page.getByTestId('consumable-table').getByRole('button', { name: '下一页' }).click();
+  await expect(page.getByTestId('consumable-carbon-dev-fe18-page-2')).toBeVisible();
+  await page.getByTestId('consumable-table').getByRole('button', { name: '上一页' }).click();
+  await expect(page.getByTestId('consumable-carbon-dev-fe18')).toBeVisible();
   await page.getByTestId('consumable-contact-dev-fe18').click();
   await expect(page.getByTestId('consumable-contact-info-dev-fe18')).toContainText(pii);
   expect(contactRequests).toBe(1);
@@ -1492,10 +1530,7 @@ test('FE-19 Chromium 遍历 22 个生产路由、双语言与三档视口且刷�
         await expect(page.getByTestId('page-content')).toBeVisible();
         await expect(page.locator('html')).toHaveAttribute('lang', language);
         await expect(page.locator('body')).not.toContainText('该页面尚未接入当前管理后台组合根');
-        expect(
-          await page.evaluate(() => document.body.scrollWidth <= window.innerWidth),
-          `${language} ${width} ${path}`,
-        ).toBe(true);
+        expect(await layoutViolations(page), `${language} ${width} ${path}`).toEqual([]);
       }
     }
   }

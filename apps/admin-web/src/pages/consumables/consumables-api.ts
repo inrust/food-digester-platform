@@ -37,6 +37,11 @@ export interface ConsumableRequestFilter {
   readonly consumableType?: ConsumableType | null;
 }
 
+export interface ConsumableStatusPage {
+  readonly items: readonly ConsumableStatusView[];
+  readonly nextCursor: string | null;
+}
+
 function buildQuery(filter: Record<string, unknown>): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filter)) {
@@ -49,11 +54,12 @@ function buildQuery(filter: Record<string, unknown>): string {
 export async function listConsumableStatus(
   api: ApiClient,
   filter: ConsumableStatusFilter,
-): Promise<readonly ConsumableStatusView[]> {
-  const response = await api.request<{ data: ConsumableStatusView[] }>(
-    `/admin/consumables${buildQuery({ ...filter })}`,
+  options: { readonly cursor?: string | null; readonly limit?: number } = {},
+): Promise<ConsumableStatusPage> {
+  const response = await api.request<{ data: ConsumableStatusView[]; meta: { nextCursor: string | null } }>(
+    `/admin/consumables${buildQuery({ ...filter, cursor: options.cursor, limit: options.limit })}`,
   );
-  return response.data;
+  return { items: response.data, nextCursor: response.meta.nextCursor };
 }
 
 /** 联系人 PII 按设备、按点击授权加载；列表响应不含该字段。 */

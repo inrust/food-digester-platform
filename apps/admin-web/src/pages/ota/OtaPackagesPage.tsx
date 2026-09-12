@@ -16,6 +16,7 @@ import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
+import { NumberText, UnitValueText } from '../../components/LocaleValue.js';
 import type { PackageListFilter } from './ota-api.js';
 import {
   MAX_PACKAGE_SIZE_BYTES,
@@ -260,7 +261,7 @@ export function OtaPackagesPage({
         <div className="dialog-field">
           <label htmlFor="upload-size">
             {translate('page.39ebdcfde88f')}
-            {MAX_PACKAGE_SIZE_BYTES}）
+            <NumberText value={MAX_PACKAGE_SIZE_BYTES} />）
           </label>
           <input
             id="upload-size"
@@ -405,7 +406,11 @@ export function OtaPackagesPage({
                 </>
               ),
             },
-            { key: 'sizeBytes', header: translate('page.fd20702c73d1'), render: (p) => `${p.sizeBytes} B` },
+            {
+              key: 'sizeBytes',
+              header: translate('page.fd20702c73d1'),
+              render: (p) => <UnitValueText value={p.sizeBytes} unit="B" />,
+            },
             { key: 'sha256', header: 'SHA-256', render: (p) => <code>{p.sha256.slice(0, 16)}…</code> },
             { key: 'uploadedBy', header: translate('page.135298390b58'), render: (p) => p.uploadedBy },
             { key: 'createdAt', header: translate('page.84e3802f60a7'), render: (p) => <TimeText iso={p.createdAt} /> },

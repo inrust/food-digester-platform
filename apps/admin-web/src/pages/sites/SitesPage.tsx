@@ -12,6 +12,7 @@ import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
+import { NumberText } from '../../components/LocaleValue.js';
 import { validateSiteInput } from './sites-state.js';
 import type { SiteFieldErrors } from './sites-state.js';
 import { SITE_STATUS_LABELS } from './types.js';
@@ -295,7 +296,11 @@ export function SitesPage({
           { key: 'subregion', header: translate('page.ff0beacd69e2'), render: (s) => s.subregion ?? '—' },
           { key: 'timezone', header: translate('page.fb2a23dc1601'), render: (s) => s.timezone },
           { key: 'contactName', header: translate('page.2425bd4bc11b'), render: (s) => s.contactName ?? '—' },
-          { key: 'deviceCount', header: translate('page.7beb4b6b2974'), render: (s) => String(s.deviceCount) },
+          {
+            key: 'deviceCount',
+            header: translate('page.7beb4b6b2974'),
+            render: (s) => <NumberText value={s.deviceCount} />,
+          },
           { key: 'status', header: translate('page.62e951a692ff'), render: (s) => SITE_STATUS_LABELS[s.status] },
           {
             key: 'actions',
@@ -344,7 +349,9 @@ export function SitesPage({
               {selected.contactName ?? '—'} / {selected.contactPhone ?? '—'} / {selected.contactEmail ?? '—'}
             </dd>
             <dt>{translate('page.7beb4b6b2974')}</dt>
-            <dd data-testid="site-device-count">{selected.deviceCount}</dd>
+            <dd data-testid="site-device-count">
+              <NumberText value={selected.deviceCount} />
+            </dd>
             <dt>{translate('page.62e951a692ff')}</dt>
             <dd data-testid="site-status">{SITE_STATUS_LABELS[selected.status]}</dd>
             <dt>{translate('page.093dea88c930')}</dt>

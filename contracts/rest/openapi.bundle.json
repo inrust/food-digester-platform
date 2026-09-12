@@ -37,7 +37,7 @@
       },
       {
         "file": "admin-consumable-api.json",
-        "sha256": "eaa8c2fc776f93c5660ba825450e683caee0d0d1899ebd8a10eabe9a48f9d200",
+        "sha256": "f224624ec1938cccea24ee32edcc13243af62dc48cf81faa97cbea3c3730f6b9",
         "status": "implemented"
       },
       {
@@ -1665,14 +1665,20 @@
           "admin"
         ],
         "operationId": "listConsumableStatus",
-        "summary": "耗材状态列表（Region/Subregion/Site、连接状态、关键字、耗材阈值筛选）",
-        "description": "两种耗材列（CARBON_FILTER/BIO_ADDITIVE）恒在；未上报为 null。maxRemainingPercent 配合 consumableType（缺省任一已上报耗材）做阈值筛选。",
+        "summary": "耗材状态列表（筛选 + 键集游标分页）",
+        "description": "两种耗材列（CARBON_FILTER/BIO_ADDITIVE）恒在；未上报为 null。maxRemainingPercent 配合 consumableType（缺省任一已上报耗材）做阈值筛选；筛选后按 deviceId 升序执行键集游标分页。",
         "security": [
           {
             "CognitoJwt": []
           }
         ],
         "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
           {
             "name": "region",
             "in": "query",
@@ -12387,7 +12393,7 @@
             }
           },
           "meta": {
-            "$ref": "#/components/schemas/ResponseMeta"
+            "$ref": "#/components/schemas/PageMeta"
           }
         }
       },

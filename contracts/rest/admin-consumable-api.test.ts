@@ -37,6 +37,9 @@ test('列表与按需联系人端点齐备且 Cognito 认证；筛选参数齐�
   assert.deepEqual(op.security, [{ CognitoJwt: [] }]);
   for (const status of ['200', '400', '401', '403', '500']) assert.ok(op.responses[status], `缺少 ${status}`);
   const params = new Set((op.parameters ?? []).map((p: { name: string }) => p.name));
+  const parameterRefs = new Set((op.parameters ?? []).map((p: { $ref?: string }) => p.$ref));
+  assert.ok(parameterRefs.has('openapi-base.json#/components/parameters/Limit'), '缺少 limit 游标分页参数');
+  assert.ok(parameterRefs.has('openapi-base.json#/components/parameters/Cursor'), '缺少 cursor 游标分页参数');
   for (const name of [
     'region',
     'subregion',
@@ -49,6 +52,10 @@ test('列表与按需联系人端点齐备且 Cognito 认证；筛选参数齐�
   ]) {
     assert.ok(params.has(name), `缺少筛选参数 ${name}`);
   }
+  assert.equal(
+    doc.components.schemas.ConsumableListSuccess.properties.meta.$ref,
+    'openapi-base.json#/components/schemas/PageMeta',
+  );
   const threshold = op.parameters.find((p: { name: string }) => p.name === 'maxRemainingPercent');
   assert.equal(threshold.schema.minimum, 0);
   assert.equal(threshold.schema.maximum, 100);

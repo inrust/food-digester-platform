@@ -17,6 +17,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
+import { NumberText } from '../../components/LocaleValue.js';
 import { TimeText } from '../../components/TimeText.js';
 import type { CampaignListFilter, OtaCampaignCreateInput, TargetListFilter } from './ota-api.js';
 import {
@@ -508,11 +509,11 @@ export function OtaCampaignsPage({
             <ul className="target-count-board">
               <li data-testid="count-total">
                 {translate('page.3af1ac5b4efe') + ' '}
-                {campaign.targetCounts.total}
+                <NumberText value={campaign.targetCounts.total} />
               </li>
               {TARGET_STATUS_OPTIONS.map((status) => (
                 <li key={status} data-testid={`count-${status}`}>
-                  {TARGET_STATUS_LABELS[status]} {campaign.targetCounts[status]}
+                  {TARGET_STATUS_LABELS[status]} <NumberText value={campaign.targetCounts[status]} />
                 </li>
               ))}
             </ul>
@@ -568,7 +569,7 @@ export function OtaCampaignsPage({
                 {
                   key: 'batchNo',
                   header: translate('page.6b2cf249edf5'),
-                  render: (t) => (t.batchNo === 1 ? translate('page.00ff953569d7') : String(t.batchNo)),
+                  render: (t) => (t.batchNo === 1 ? translate('page.00ff953569d7') : <NumberText value={t.batchNo} />),
                 },
                 {
                   key: 'status',
@@ -629,7 +630,7 @@ export function OtaCampaignsPage({
           <div>
             <p className="field-hint">
               {translate('page.f2de38ce26f1') + ' '}
-              {eligibleDevices.length}
+              <NumberText value={eligibleDevices.length} />
               {' ' + translate('page.3592d5501c07')}
             </p>
             <ul className="device-check-list" data-testid="expand-device-list">
@@ -678,7 +679,7 @@ export function OtaCampaignsPage({
                 onClick={() => void submitExpand()}
               >
                 {translate('page.b4a1dbe7c6be')}
-                {expandSelected.length}
+                <NumberText value={expandSelected.length} />
                 {' ' + translate('page.57151561028f')}
               </button>
             </div>
@@ -719,7 +720,7 @@ export function OtaCampaignsPage({
                         />
                         {t.deviceId}
                         {translate('page.d9182c87f366') + ' '}
-                        {t.batchNo}）
+                        <NumberText value={t.batchNo} />）
                       </label>
                     </li>
                   ))}

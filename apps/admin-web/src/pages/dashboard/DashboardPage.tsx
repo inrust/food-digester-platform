@@ -13,6 +13,9 @@ import { DeviceCommandActions } from '../../components/DeviceCommandActions.js';
 import type { CommandSubmitResult } from '../../components/DeviceCommandActions.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { TimeText } from '../../components/TimeText.js';
+import { formatLocaleNumber, formatLocalePercent, formatLocaleUnit } from '../../components/LocaleValue.js';
+import { useI18n } from '../../i18n/i18n.js';
+import type { ReactNode } from 'react';
 import { ALARM_SEVERITY_LABELS, consumablesOf, licenseDistributionText, signalText } from './dashboard-state.js';
 import type { DashboardOverviewView, DeviceCardView } from './types.js';
 export type DashboardPageState =
@@ -33,7 +36,17 @@ export interface DashboardPageProps {
   readonly onSubmitCommand: (deviceId: string, command: string) => Promise<CommandSubmitResult>;
   readonly onNavigate: (path: string) => void;
 }
-function MetricCard({ testid, label, value, sub }: { testid: string; label: string; value: string; sub: string }) {
+function MetricCard({
+  testid,
+  label,
+  value,
+  sub,
+}: {
+  testid: string;
+  label: string;
+  value: ReactNode;
+  sub: ReactNode;
+}) {
   return (
     <div className="stat-card" data-testid={testid}>
       <div className="label">{label}</div>
@@ -51,6 +64,7 @@ function DeviceCard({
   onSubmitCommand: DashboardPageProps['onSubmitCommand'];
   onNavigate: (path: string) => void;
 }) {
+  const { language } = useI18n();
   return (
     <div className="device-card" data-testid={`device-card-${card.deviceId}`}>
       <div className="header">
@@ -64,7 +78,9 @@ function DeviceCard({
           {translate('page.882b33c96f60')}
           {card.firmwareVersion ?? '—'}
         </span>
-        <span data-testid={`signal-${card.deviceId}`}>{signalText(card.networkType, card.signalStrength)}</span>
+        <span data-testid={`signal-${card.deviceId}`}>
+          {signalText(card.networkType, card.signalStrength, language)}
+        </span>
       </div>
       <FourAxisBadges
         status={{
@@ -105,6 +121,7 @@ function SectionFailure({ requestId }: { requestId: string }) {
   );
 }
 export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }: DashboardPageProps) {
+  const { language } = useI18n();
   if (state.status === 'loading') {
     return (
       <div role="status" data-testid="dashboard-loading">
@@ -132,44 +149,45 @@ export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }:
           <MetricCard
             testid="metric-contracts"
             label={translate('page.ba53b1a55776')}
-            value={String(overview.contracts.effectiveTotal)}
+            value={formatLocaleNumber(overview.contracts.effectiveTotal, language)}
             sub={translate('page.8e8d12dca017')}
           />
           <MetricCard
             testid="metric-devices"
             label={translate('page.11c33ae6c763')}
-            value={String(overview.devices.total)}
-            sub={translate('page.6137da351e51') + licenseDistributionText(overview.devices.licenseDistribution)}
+            value={formatLocaleNumber(overview.devices.total, language)}
+            sub={
+              translate('page.6137da351e51') + licenseDistributionText(overview.devices.licenseDistribution, language)
+            }
           />
           <MetricCard
             testid="metric-online"
             label={translate('page.9c0cfc75a915')}
-            value={String(overview.devices.online)}
+            value={formatLocaleNumber(overview.devices.online, language)}
             sub={
               translate('page.f9e1968d4dfb') +
               ' ' +
-              overview.devices.total +
+              formatLocaleNumber(overview.devices.total, language) +
               (' ' + translate('page.dda32dfd5c4b') + ' ') +
-              overview.devices.onlineRatePct +
-              translate('page.715ea3342a57')
+              formatLocalePercent(overview.devices.onlineRatePct, language)
             }
           />
           <MetricCard
             testid="metric-carbon"
             label={translate('page.8ca3c592fd0c')}
-            value={`${overview.esgToday.carbonReductionKg} kg`}
+            value={formatLocaleUnit(overview.esgToday.carbonReductionKg, 'kg', language)}
             sub={translate('page.2c118781a7fb') + overview.esgToday.summaryDate}
           />
           <MetricCard
             testid="metric-energy"
             label={translate('page.ec8eab25e340')}
-            value={`${overview.esgToday.powerConsumptionKwh} kWh`}
+            value={formatLocaleUnit(overview.esgToday.powerConsumptionKwh, 'kWh', language)}
             sub={translate('page.2c118781a7fb') + overview.esgToday.summaryDate}
           />
           <MetricCard
             testid="metric-feeding"
             label={translate('page.d6dfc1d2d22a')}
-            value={`${overview.esgToday.feedingWeightKg} kg`}
+            value={formatLocaleUnit(overview.esgToday.feedingWeightKg, 'kg', language)}
             sub={translate('page.2c118781a7fb') + overview.esgToday.summaryDate}
           />
         </div>

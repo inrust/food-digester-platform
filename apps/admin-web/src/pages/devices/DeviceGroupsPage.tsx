@@ -9,6 +9,7 @@ import { translate } from '../../i18n/i18n.js';
 import { useState } from 'react';
 import { axisValueLabel, FourAxisBadges } from '../../components/FourAxisBadge.js';
 import { CursorTable } from '../../components/CursorTable.js';
+import { NumberText } from '../../components/LocaleValue.js';
 import { ScopeFilter } from '../../components/ScopeFilter.js';
 import type { FilterOption } from '../../components/ScopeFilter.js';
 import type { ScopeFilterValue } from '../../components/filter-state.js';
@@ -198,7 +199,11 @@ export function DeviceGroupsPage({
           {
             key: 'seq',
             header: translate('page.6cd7c92cbd69'),
-            render: (d) => <span data-testid={`seq-${d.id}`}>{(list.rows?.indexOf(d) ?? 0) + 1}</span>,
+            render: (d) => (
+              <span data-testid={`seq-${d.id}`}>
+                <NumberText value={(list.rows?.indexOf(d) ?? 0) + 1} />
+              </span>
+            ),
           },
           { key: 'region', header: translate('page.406e0f8c6852'), render: (d) => d.site?.region ?? '—' },
           { key: 'subregion', header: translate('page.ff0beacd69e2'), render: (d) => d.site?.subregion ?? '—' },

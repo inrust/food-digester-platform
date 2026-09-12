@@ -5,7 +5,7 @@
  * 路由：GET /api/v1/admin/consumables —— 耗材状态列表（Region/Subregion/Site、连接状态、
  * 关键字、耗材阈值筛选；两种耗材列恒在，未上报为 null 且 remainingDisplay='unknown'；
  * 列表零联系人 PII，联系人由单设备按需端点独立授权；Customer 角色租户隔离）。
- * 响应契约对齐 CT-05：data + meta{requestId,timestamp}；错误 {error{code,message,requestId}}。
+ * 响应契约对齐 CT-05：data + meta{requestId,timestamp,nextCursor}；错误 {error{code,message,requestId}}。
  */
 import { AuthError, withAuthorization } from '@fdp/auth';
 import type { ActorContext } from '@fdp/auth';
@@ -51,11 +51,17 @@ function optionalPercent(value: string | undefined, field: string): number | und
 
 export function createAdminConsumableHandlers(deps: AdminConsumableHandlerDeps): AdminConsumableHandlers {
   const now = deps.now ?? (() => new Date());
-  const meta = (req: AdminHttpRequest) => ({ requestId: req.requestId, timestamp: now().toISOString() });
+  const meta = (req: AdminHttpRequest, nextCursor?: string | null) => ({
+    requestId: req.requestId,
+    timestamp: now().toISOString(),
+    ...(nextCursor !== undefined ? { nextCursor } : {}),
+  });
 
   const list = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'device:read' }, async (req) => {
     const q = req.query ?? {};
-    const items = await listConsumableStatus(deps, req.actor as ActorContext, {
+    const page = await listConsumableStatus(deps, req.actor as ActorContext, {
+      ...(q.cursor !== undefined ? { cursor: q.cursor } : {}),
+      ...(q.limit !== undefined ? { limit: q.limit } : {}),
       ...(q.region !== undefined ? { region: q.region } : {}),
       ...(q.subregion !== undefined ? { subregion: q.subregion } : {}),
       ...(q.siteId !== undefined ? { siteId: q.siteId } : {}),
@@ -67,7 +73,7 @@ export function createAdminConsumableHandlers(deps: AdminConsumableHandlerDeps):
       ...(q.consumableType !== undefined ? { consumableType: q.consumableType } : {}),
       ...(q.customerId !== undefined ? { customerId: q.customerId } : {}),
     });
-    return { status: 200, body: { data: items, meta: meta(req) } };
+    return { status: 200, body: { data: page.items, meta: meta(req, page.nextCursor) } };
   });
   const contact = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'device:read' }, async (req) => {
     const deviceId = req.params?.['deviceId'];

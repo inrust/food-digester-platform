@@ -311,12 +311,16 @@ export function ConsumablesController({
   const [statusFilter, setStatusFilter] = useState<ConsumableStatusFilter>(
     fixedCustomerId === null ? {} : { customerId: fixedCustomerId },
   );
+  const [statusCursor, setStatusCursor] = useState<string | null>(null);
+  const [statusPrevious, setStatusPrevious] = useState<readonly (string | null)[]>([]);
   const [requestFilter, setRequestFilter] = useState<ConsumableRequestFilter>(
     fixedCustomerId === null ? {} : { customerId: fixedCustomerId },
   );
   const [status, setStatus] = useState<{
     rows: readonly ConsumableStatusView[] | null;
+    loading?: boolean;
     error?: unknown;
+    nextCursor?: string | null;
   }>({
     rows: null,
   });
@@ -335,17 +339,20 @@ export function ConsumablesController({
     [fixedCustomerId, requestFilter],
   );
   const load = useCallback(async () => {
+    setStatus((old) => ({ ...old, loading: true, error: undefined }));
     const [statusResult, requestResult] = await Promise.allSettled([
-      listConsumableStatus(api, statusQuery),
+      listConsumableStatus(api, statusQuery, { cursor: statusCursor, limit: 50 }),
       listConsumableRequests(api, requestQuery),
     ]);
     setStatus(
-      statusResult.status === 'fulfilled' ? { rows: statusResult.value } : { rows: [], error: statusResult.reason },
+      statusResult.status === 'fulfilled'
+        ? { rows: statusResult.value.items, loading: false, nextCursor: statusResult.value.nextCursor }
+        : { rows: [], loading: false, error: statusResult.reason },
     );
     setRequests(
       requestResult.status === 'fulfilled' ? { rows: requestResult.value } : { rows: [], error: requestResult.reason },
     );
-  }, [api, requestQuery, statusQuery]);
+  }, [api, requestQuery, statusCursor, statusQuery]);
   useEffect(() => void load(), [load]);
   useEffect(() => {
     if (!canReadSettings(role)) return;
@@ -366,9 +373,24 @@ export function ConsumablesController({
   return (
     <ConsumablesPage
       role={role}
-      status={status}
       statusFilter={statusQuery}
-      onApplyStatusFilter={setStatusFilter}
+      onApplyStatusFilter={(filter) => {
+        setStatusPrevious([]);
+        setStatusCursor(null);
+        setStatusFilter(filter);
+      }}
+      onNextStatusPage={(cursor) => {
+        setStatusPrevious((values) => [...values, statusCursor]);
+        setStatusCursor(cursor);
+      }}
+      onPrevStatusPage={() => {
+        setStatusPrevious((values) => {
+          if (values.length === 0) return values;
+          setStatusCursor(values.at(-1) ?? null);
+          return values.slice(0, -1);
+        });
+      }}
+      status={{ ...status, hasPrevPage: statusPrevious.length > 0 }}
       onLoadContact={(deviceId) => getConsumableContact(api, deviceId)}
       requests={requests}
       requestFilter={requestQuery}

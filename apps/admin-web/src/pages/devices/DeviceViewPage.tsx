@@ -17,6 +17,7 @@ import type { FilterOption } from '../../components/ScopeFilter.js';
 import { EMPTY_SCOPE_FILTER } from '../../components/filter-state.js';
 import type { ScopeFilterValue } from '../../components/filter-state.js';
 import { TimeText } from '../../components/TimeText.js';
+import { UnitValueText } from '../../components/LocaleValue.js';
 import { ALARM_SEVERITY_LABELS, consumablesOf } from '../dashboard/dashboard-state.js';
 import { COMPONENT_HEALTH_LABELS, COMPONENT_LABELS, SENSOR_METRICS } from './device-state.js';
 import type {
@@ -175,14 +176,18 @@ function ConsoleContent({
               <div className="sensor-item" key={key} data-testid={`sensor-${key}`}>
                 <div className="label">{label}</div>
                 <div className="value">
-                  {metric !== null && metric !== undefined ? `${metric.avg} ${metric.unit}` : '—'}
+                  {metric !== null && metric !== undefined ? (
+                    <UnitValueText value={metric.avg} unit={metric.unit} />
+                  ) : (
+                    '—'
+                  )}
                 </div>
                 {metric !== null && metric !== undefined ? (
                   <div className="sub">
                     {translate('page.31793b6729a3') + ' '}
-                    {metric.min}
+                    <UnitValueText value={metric.min} unit={metric.unit} />
                     {' ' + translate('page.ec5bc3d58c50') + ' '}
-                    {metric.max} {metric.unit}
+                    <UnitValueText value={metric.max} unit={metric.unit} />
                   </div>
                 ) : null}
               </div>
@@ -243,9 +248,17 @@ function ConsoleContent({
             {view.esgLast7Days.map((day) => (
               <tr key={day.summaryDate} data-testid={`esg-${day.summaryDate}`}>
                 <td>{day.summaryDate}</td>
-                <td>{day.carbonReductionKg ?? '—'}</td>
-                <td>{day.powerConsumptionKwh ?? '—'}</td>
-                <td>{day.feedingWeightKg ?? '—'}</td>
+                <td>
+                  {day.carbonReductionKg === null ? '—' : <UnitValueText value={day.carbonReductionKg} unit="kg" />}
+                </td>
+                <td>
+                  {day.powerConsumptionKwh === null ? (
+                    '—'
+                  ) : (
+                    <UnitValueText value={day.powerConsumptionKwh} unit="kWh" />
+                  )}
+                </td>
+                <td>{day.feedingWeightKg === null ? '—' : <UnitValueText value={day.feedingWeightKg} unit="kg" />}</td>
               </tr>
             ))}
           </tbody>

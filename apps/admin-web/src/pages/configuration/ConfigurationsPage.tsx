@@ -16,6 +16,7 @@ import type { Role } from '@fdp/auth/browser';
 import { hasPermission } from '@fdp/auth/browser';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
+import { NumberText, UnitValueText } from '../../components/LocaleValue.js';
 import { TimeText } from '../../components/TimeText.js';
 import type {
   ConfigurationDetailView,
@@ -49,6 +50,12 @@ export type SyncStatusState =
       readonly kind: 'ready';
       readonly data: ConfigurationSyncStatusView;
     };
+
+function localeUnitForConfig(unit: string): string {
+  if (unit === 'seconds') return 's';
+  if (unit === 'minutes') return 'min';
+  return '°C';
+}
 export type ConfigurationDetailState =
   | {
       readonly kind: 'none';
@@ -237,7 +244,9 @@ export function ConfigurationsPage({
                     ? translate('page.0132ce7298ec') + ' ' + row.targetModel
                     : translate('page.01f2c16cda65') + ' ' + (row.targetDeviceId ?? '')}
                 </td>
-                <td>{row.versionCount}</td>
+                <td>
+                  <NumberText value={row.versionCount} />
+                </td>
                 <td>{row.latestPublishedVersion !== null ? `v${row.latestPublishedVersion}` : '—'}</td>
                 <td>{row.createdBy}</td>
                 <td>
@@ -456,7 +465,9 @@ function VersionCard({
             <dt>
               {field.label}（{field.unitLabel}）
             </dt>
-            <dd data-testid={`config-version-${version.version}-field-${field.key}`}>{version.payload[field.key]}</dd>
+            <dd data-testid={`config-version-${version.version}-field-${field.key}`}>
+              <UnitValueText value={version.payload[field.key]} unit={localeUnitForConfig(field.unit)} />
+            </dd>
           </div>
         ))}
       </dl>
@@ -523,7 +534,7 @@ function VersionPayloadForm({
       {CONFIG_V1_FIELDS.map((field) => (
         <div className="dialog-field" key={field.key}>
           <label htmlFor={`cfg-${field.key}`}>
-            {field.label}（{field.unitLabel}，{field.min}~{field.max}）
+            {field.label}（{field.unitLabel}，<NumberText value={field.min} />~<NumberText value={field.max} />）
           </label>
           <input
             id={`cfg-${field.key}`}

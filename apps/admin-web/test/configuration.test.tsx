@@ -137,8 +137,8 @@ test('版本表单只渲染 V1 四字段且单位正确；候选扩展字段不�
   // 单位标签正确（秒/秒/分钟/°C）
   const formText = form.textContent ?? '';
   assert.ok(formText.includes('Heartbeat 间隔（秒，10~900）'));
-  assert.ok(formText.includes('Telemetry 间隔（秒，5~3600）'));
-  assert.ok(formText.includes('摄像头刷新间隔（分钟，1~1440）'));
+  assert.ok(formText.includes('Telemetry 间隔（秒，5~3,600）'));
+  assert.ok(formText.includes('摄像头刷新间隔（分钟，1~1,440）'));
   assert.ok(formText.includes('温度阈值（°C，0~120）'));
 
   // 候选扩展字段不存在（DEC-018 excludedCandidateFields + 温度上下限）
@@ -221,8 +221,8 @@ test('发布后版本只读：PUBLISHED 无编辑入口且发布禁用；DRAFT �
   assert.ok(disabled('config-publish-1'));
   assert.match(screen.getByTestId('config-publish-1').getAttribute('title') ?? '', /历史版本不可覆盖/);
   // payload 四字段展示
-  assert.equal(screen.getByTestId('config-version-1-field-heartbeatInterval').textContent, '60');
-  assert.equal(screen.getByTestId('config-version-1-field-cameraRefreshInterval').textContent, '1');
+  assert.equal(screen.getByTestId('config-version-1-field-heartbeatInterval').textContent, '60秒钟');
+  assert.equal(screen.getByTestId('config-version-1-field-cameraRefreshInterval').textContent, '1分钟');
 
   const draftCard = screen.getByTestId('config-version-2');
   assert.ok(draftCard.textContent?.includes('草稿'));

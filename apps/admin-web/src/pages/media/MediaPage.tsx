@@ -14,6 +14,7 @@ import { CursorTable } from '../../components/CursorTable.js';
 import { MediaPreview } from '../../components/MediaPreview.js';
 import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
+import { UnitValueText } from '../../components/LocaleValue.js';
 import { useUserTimeZone } from '../../components/TimeText.js';
 import { isUtcRangeOrdered } from '../../components/date-time.js';
 import type { MediaListFilter } from './media-api.js';
@@ -230,11 +231,15 @@ export function MediaPage({
               header: translate('page.f9fb10d4a84e'),
               render: (m) => <TimeText iso={m.captureTime} />,
             },
-            { key: 'sizeKb', header: translate('page.fd20702c73d1'), render: (m) => `${m.sizeKb} KB` },
+            {
+              key: 'sizeKb',
+              header: translate('page.fd20702c73d1'),
+              render: (m) => <UnitValueText value={m.sizeKb} unit="KB" />,
+            },
             {
               key: 'durationSec',
               header: translate('page.29d0552d2e4c'),
-              render: (m) => (m.mediaType === 'VIDEO' ? `${m.durationSec}s` : '—'),
+              render: (m) => (m.mediaType === 'VIDEO' ? <UnitValueText value={m.durationSec} unit="s" /> : '—'),
             },
             { key: 'status', header: translate('page.62e951a692ff'), render: (m) => MEDIA_STATUS_LABELS[m.status] },
             {

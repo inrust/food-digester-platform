@@ -15,6 +15,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
+import { NumberText } from '../../components/LocaleValue.js';
 import type { FilterOption } from '../../components/ScopeFilter.js';
 import {
   DEVICE_USER_ASSIGNMENT_STATUS_LABELS,
@@ -343,7 +344,9 @@ export function DeviceUsersPage({
                 <td>{row.username}</td>
                 <td>{row.displayName ?? '—'}</td>
                 <td>{DEVICE_USER_STATUS_LABELS[row.status]}</td>
-                <td>{row.activeDeviceCount}</td>
+                <td>
+                  <NumberText value={row.activeDeviceCount} />
+                </td>
                 <td>v{row.version}</td>
                 <td>
                   <TimeText iso={row.updatedAt} />

@@ -43,10 +43,15 @@ export interface ConsumablesPageProps {
   readonly role: Role;
   readonly status: {
     readonly rows: readonly ConsumableStatusView[] | null;
+    readonly loading?: boolean;
     readonly error?: unknown;
+    readonly nextCursor?: string | null;
+    readonly hasPrevPage?: boolean;
   };
   readonly statusFilter: ConsumableStatusFilter;
   readonly onApplyStatusFilter: (filter: ConsumableStatusFilter) => void;
+  readonly onNextStatusPage: (cursor: string) => void;
+  readonly onPrevStatusPage: () => void;
   readonly onLoadContact: (deviceId: string) => Promise<ConsumableContactView>;
   readonly requests: {
     readonly rows: readonly ConsumableRequestView[] | null;
@@ -126,6 +131,8 @@ export function ConsumablesPage({
   status,
   statusFilter,
   onApplyStatusFilter,
+  onNextStatusPage,
+  onPrevStatusPage,
   onLoadContact,
   requests,
   requestFilter,
@@ -441,6 +448,11 @@ export function ConsumablesPage({
             ]}
             rows={status.rows === null ? null : [...status.rows]}
             rowKey={(row) => row.deviceId}
+            {...(status.loading !== undefined ? { loading: status.loading } : {})}
+            {...(status.nextCursor !== undefined ? { nextCursor: status.nextCursor } : {})}
+            {...(status.hasPrevPage !== undefined ? { hasPrevPage: status.hasPrevPage } : {})}
+            onNextPage={onNextStatusPage}
+            onPrevPage={onPrevStatusPage}
             {...(status.error !== undefined ? { error: status.error } : {})}
             onRefresh={onRefresh}
             emptyText={translate('page.1f98c9d3bc65')}

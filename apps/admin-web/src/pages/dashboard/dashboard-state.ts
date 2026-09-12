@@ -1,4 +1,6 @@
 import { translate } from '../../i18n/i18n.js';
+import type { Language } from '../../i18n/i18n.js';
+import { formatLocaleNumber } from '../../components/LocaleValue.js';
 /**
  * FE-03 总览页纯逻辑：快捷命令模型、耗材展示模型、授权分布与告警文案。
  *
@@ -147,14 +149,23 @@ const LICENSE_AXIS_LABELS: Readonly<Record<string, string>> = {
   },
 };
 /** 授权分布：按 key 排序拼接；空分布返回“—”。 */
-export function licenseDistributionText(distribution: Readonly<Record<string, number>>): string {
+export function licenseDistributionText(
+  distribution: Readonly<Record<string, number>>,
+  language: Language = 'zh-CN',
+): string {
   const entries = Object.entries(distribution).sort(([a], [b]) => a.localeCompare(b));
   if (entries.length === 0) return '—';
-  return entries.map(([status, count]) => `${LICENSE_AXIS_LABELS[status] ?? status} ${count}`).join(' · ');
+  return entries
+    .map(([status, count]) => `${LICENSE_AXIS_LABELS[status] ?? status} ${formatLocaleNumber(count, language)}`)
+    .join(' · ');
 }
 /** 连接质量：网络类型 + 信号强度原始值（未冻结强弱阈值，不臆造分级）。 */
-export function signalText(networkType: string | null, signalStrength: number | null): string {
+export function signalText(
+  networkType: string | null,
+  signalStrength: number | null,
+  language: Language = 'zh-CN',
+): string {
   const network = networkType ?? '—';
-  const strength = signalStrength === null ? '—' : String(signalStrength);
+  const strength = signalStrength === null ? '—' : formatLocaleNumber(signalStrength, language);
   return network + (' ' + translate('page.494fc2b1f3b7') + ' ') + strength;
 }

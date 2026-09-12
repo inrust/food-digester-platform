@@ -12,6 +12,7 @@ import { translate } from '../../i18n/i18n.js';
 import { useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
+import { PercentText } from '../../components/LocaleValue.js';
 import { ScopeFilter } from '../../components/ScopeFilter.js';
 import type { ScopeFilterProps } from '../../components/ScopeFilter.js';
 import type { ScopeFilterValue } from '../../components/filter-state.js';
@@ -32,6 +33,7 @@ import {
 } from './esg-state.js';
 import type { EsgPeriod } from './esg-state.js';
 import type { EsgCalculationVersionView, EsgExportJobView, EsgReportView } from './types.js';
+import { useI18n } from '../../i18n/i18n.js';
 export interface EsgDeviceAppliedQuery {
   readonly scope: ScopeFilterValue;
   readonly from: string | null;
@@ -91,6 +93,7 @@ export function EsgDevicesPage({
   onCheckExport,
   onRefresh,
 }: EsgDevicesPageProps) {
+  const { language } = useI18n();
   const [draftScope, setDraftScope] = useState<ScopeFilterValue>(applied.scope);
   const [draftFrom, setDraftFrom] = useState('');
   const [draftTo, setDraftTo] = useState('');
@@ -275,17 +278,23 @@ export function EsgDevicesPage({
               <tr key={`${row.deviceId}-${row.bucket}`} data-testid={`esg-device-row-${row.deviceId}-${row.bucket}`}>
                 <td>{row.deviceId}</td>
                 <td>{row.bucket}</td>
-                <td>{formatKg(row.feedingWeightKg)}</td>
-                <td>{formatKg(row.dischargeWeightKg)}</td>
-                <td>{formatKg(row.reductionWeightKg)}</td>
-                <td>{formatKwh(row.powerConsumptionKwh)}</td>
-                <td>{row.avgO2Pct === null ? '—' : `${row.avgO2Pct.toFixed(1)}%`}</td>
-                <td>{formatPpm(row.avgCo2Ppm)}</td>
-                <td>{formatPpm(row.avgCh4Ppm)}</td>
-                <td>{formatPpm(row.avgN2oPpm)}</td>
-                <td>{formatKg(row.carbonReductionKg)}</td>
+                <td>{formatKg(row.feedingWeightKg, language)}</td>
+                <td>{formatKg(row.dischargeWeightKg, language)}</td>
+                <td>{formatKg(row.reductionWeightKg, language)}</td>
+                <td>{formatKwh(row.powerConsumptionKwh, language)}</td>
+                <td>
+                  {row.avgO2Pct === null ? (
+                    '—'
+                  ) : (
+                    <PercentText value={row.avgO2Pct} digits={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} />
+                  )}
+                </td>
+                <td>{formatPpm(row.avgCo2Ppm, language)}</td>
+                <td>{formatPpm(row.avgCh4Ppm, language)}</td>
+                <td>{formatPpm(row.avgN2oPpm, language)}</td>
+                <td>{formatKg(row.carbonReductionKg, language)}</td>
                 <td data-testid={`esg-device-completeness-${row.deviceId}-${row.bucket}`}>
-                  {formatPct(row.avgCompletenessPct)}
+                  {formatPct(row.avgCompletenessPct, language)}
                 </td>
                 <td>{calculationVersionText(row.versionIds, versions)}</td>
               </tr>

@@ -117,9 +117,9 @@ test('10 设备 Fixture：全部指标与卡片值一致', () => {
   assert.ok(devices.textContent?.includes('已到期 1'));
   assert.ok(devices.textContent?.includes('无状态 1'));
   assert.ok(screen.getByTestId('metric-online').textContent?.includes('在线率 70%'));
-  assert.ok(screen.getByTestId('metric-carbon').textContent?.includes('238.5 kg'));
+  assert.ok(screen.getByTestId('metric-carbon').textContent?.includes('238.5千克'));
   assert.ok(screen.getByTestId('metric-energy').textContent?.includes('342 kWh'));
-  assert.ok(screen.getByTestId('metric-feeding').textContent?.includes('1240 kg'));
+  assert.ok(screen.getByTestId('metric-feeding').textContent?.includes('1,240千克'));
   // 时间窗口/单位/数据时间可见
   assert.ok(screen.getByTestId('dashboard-baseline').textContent?.includes('2026-09-06'));
 

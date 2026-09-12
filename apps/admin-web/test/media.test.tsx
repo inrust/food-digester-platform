@@ -93,7 +93,7 @@ test('列表渲染元数据；类型/设备/状态/时间筛选经回调应用�
   assert.ok(screen.getByText('snapshot-001.jpg'));
   assert.ok(screen.getByText('clip-002.mp4'));
   // 视频时长展示，图片为 —
-  assert.ok(screen.getByText('12s'));
+  assert.ok(screen.getByText('12秒钟'));
 
   await user.selectOptions(screen.getByTestId('media-filter-type'), 'VIDEO');
   await user.selectOptions(screen.getByTestId('media-filter-status'), 'AVAILABLE');

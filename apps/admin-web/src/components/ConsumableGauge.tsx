@@ -4,6 +4,7 @@ import { translate } from '../i18n/i18n.js';
  * 复用方：总览设备卡片；FE-18 耗材页可复用。
  */
 import type { ConsumableDisplayModel } from '../pages/dashboard/dashboard-state.js';
+import { PercentText } from './LocaleValue.js';
 export function ConsumableGauge({ model }: { model: ConsumableDisplayModel }) {
   return (
     <div className="consumable" data-testid={`consumable-${model.consumableType}`}>
@@ -25,7 +26,7 @@ export function ConsumableGauge({ model }: { model: ConsumableDisplayModel }) {
             <div className={`fill${model.low ? ' warn' : ''}`} style={{ width: `${model.percent}%` }} />
           </div>
           <span className="consumable-value" data-testid={`consumable-value-${model.consumableType}`}>
-            {model.percent}%
+            <PercentText value={model.percent} />
           </span>
         </>
       )}

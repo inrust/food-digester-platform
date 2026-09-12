@@ -10,7 +10,8 @@
  * - 状态列表不读取或返回 Site 联系人；独立按需端点仅允许
  *   PlatformSuperAdmin/PlatformOperator/CustomerAdmin，且 Customer 角色强制租户隔离。
  */
-import type { DbClient } from '@fdp/database';
+import { decodeKeysetCursor, encodeKeysetCursor, normalizeLimit } from '@fdp/database';
+import type { DbClient, Page } from '@fdp/database';
 import {
   CONSUMABLE_TYPES,
   assertRemainingPercent,
@@ -174,6 +175,8 @@ export interface ConsumableStatusView {
 }
 
 export interface ListConsumablesFilter {
+  readonly cursor?: string | null | undefined;
+  readonly limit?: number | string | null | undefined;
   readonly region?: string | undefined;
   readonly subregion?: string | undefined;
   readonly siteId?: string | undefined;
@@ -279,8 +282,10 @@ export async function listConsumableStatus(
   deps: ConsumableDeps,
   actor: ActorContext,
   filter: ListConsumablesFilter = {},
-): Promise<ConsumableStatusView[]> {
+): Promise<Page<ConsumableStatusView>> {
   const at = deps.now?.() ?? new Date();
+  const limit = normalizeLimit(filter.limit);
+  const after = decodeKeysetCursor(filter.cursor);
   if (filter.connectivity !== undefined && !['ONLINE', 'OFFLINE'].includes(filter.connectivity)) {
     throw consumableValidationFailed('connectivity must be ONLINE or OFFLINE');
   }
@@ -302,65 +307,81 @@ export async function listConsumableStatus(
   const deviceDelegate = (deps.client as unknown as Record<string, unknown>).device as {
     findMany(args: Record<string, unknown>): Promise<DeviceWithRelations[]>;
   };
-  const rows = await deviceDelegate.findMany({
-    where: {
-      lifecycleStatus: { not: 'Retired' },
-      ...(scopedCustomerId !== undefined ? { customerId: scopedCustomerId } : {}),
-      ...(filter.siteId !== undefined ? { siteId: filter.siteId } : {}),
-      ...(filter.region !== undefined ? { site: { region: filter.region } } : {}),
-      ...(filter.subregion !== undefined ? { site: { subregion: filter.subregion } } : {}),
-      ...(filter.keyword !== undefined && filter.keyword.trim() !== ''
-        ? {
-            OR: [
-              { id: { contains: filter.keyword.trim() } },
-              { serialNumber: { contains: filter.keyword.trim() } },
-              { alias: { contains: filter.keyword.trim() } },
-            ],
-          }
-        : {}),
-    },
-    include: {
-      site: {
-        select: {
-          id: true,
-          name: true,
-          region: true,
-          subregion: true,
-        },
+  const batchSize = Math.max(100, limit * 2);
+  const matches: ConsumableStatusView[] = [];
+  let scanAfter = after;
+  while (matches.length <= limit) {
+    const rows = await deviceDelegate.findMany({
+      where: {
+        lifecycleStatus: { not: 'Retired' },
+        ...(scanAfter !== null ? { id: { gt: scanAfter } } : {}),
+        ...(scopedCustomerId !== undefined ? { customerId: scopedCustomerId } : {}),
+        ...(filter.siteId !== undefined ? { siteId: filter.siteId } : {}),
+        ...(filter.region !== undefined ? { site: { region: filter.region } } : {}),
+        ...(filter.subregion !== undefined ? { site: { subregion: filter.subregion } } : {}),
+        ...(filter.keyword !== undefined && filter.keyword.trim() !== ''
+          ? {
+              OR: [
+                { id: { contains: filter.keyword.trim() } },
+                { serialNumber: { contains: filter.keyword.trim() } },
+                { alias: { contains: filter.keyword.trim() } },
+              ],
+            }
+          : {}),
       },
-      latestState: { select: { lastHeartbeatAt: true } },
-    },
-    orderBy: { id: 'asc' },
-    take: 200,
-  });
-
-  // consumable_projections 与 devices 无 Prisma 关系（独立表），单独查询后按设备归并
-  const projectionRows = rows.length
-    ? await projections(deps.client).findMany({ where: { deviceId: { in: rows.map((r) => r.id) } } })
-    : [];
-  const projectionsByDevice = new Map<string, ProjectionRow[]>();
-  for (const p of projectionRows) {
-    const list = projectionsByDevice.get(p.deviceId) ?? [];
-    list.push(p);
-    projectionsByDevice.set(p.deviceId, list);
-  }
-
-  return rows
-    .map((row) => toView(row, projectionsByDevice.get(row.id) ?? [], at))
-    .filter((view) => {
-      if (filter.connectivity !== undefined && view.connectivity !== filter.connectivity) return false;
-      if (filter.maxRemainingPercent !== undefined) {
-        const types =
-          filter.consumableType !== undefined ? [filter.consumableType as ConsumableType] : CONSUMABLE_TYPES;
-        return types.some((type) => {
-          const value = view.consumables[type];
-          return (
-            value !== null &&
-            value.remainingPercent !== null &&
-            value.remainingPercent < (filter.maxRemainingPercent as number)
-          );
-        });
-      }
-      return true;
+      include: {
+        site: {
+          select: {
+            id: true,
+            name: true,
+            region: true,
+            subregion: true,
+          },
+        },
+        latestState: { select: { lastHeartbeatAt: true } },
+      },
+      orderBy: { id: 'asc' },
+      take: batchSize,
     });
+    if (rows.length === 0) break;
+
+    // consumable_projections 与 devices 无 Prisma 关系，按扫描批次查询，避免一次加载完整设备集。
+    const projectionRows = await projections(deps.client).findMany({
+      where: { deviceId: { in: rows.map((row) => row.id) } },
+    });
+    const projectionsByDevice = new Map<string, ProjectionRow[]>();
+    for (const projection of projectionRows) {
+      const list = projectionsByDevice.get(projection.deviceId) ?? [];
+      list.push(projection);
+      projectionsByDevice.set(projection.deviceId, list);
+    }
+    matches.push(
+      ...rows
+        .map((row) => toView(row, projectionsByDevice.get(row.id) ?? [], at))
+        .filter((view) => {
+          if (filter.connectivity !== undefined && view.connectivity !== filter.connectivity) return false;
+          if (filter.maxRemainingPercent !== undefined) {
+            const types =
+              filter.consumableType !== undefined ? [filter.consumableType as ConsumableType] : CONSUMABLE_TYPES;
+            return types.some((type) => {
+              const value = view.consumables[type];
+              return (
+                value !== null &&
+                value.remainingPercent !== null &&
+                value.remainingPercent < (filter.maxRemainingPercent as number)
+              );
+            });
+          }
+          return true;
+        }),
+    );
+    scanAfter = rows.at(-1)?.id ?? scanAfter;
+    if (rows.length < batchSize) break;
+  }
+  const page = matches.slice(0, limit);
+  const last = page.at(-1);
+  return {
+    items: page,
+    nextCursor: matches.length > limit && last !== undefined ? encodeKeysetCursor(last.deviceId) : null,
+  };
 }

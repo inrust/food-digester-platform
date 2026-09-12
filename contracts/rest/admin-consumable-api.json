@@ -22,10 +22,12 @@
       "get": {
         "tags": ["admin"],
         "operationId": "listConsumableStatus",
-        "summary": "耗材状态列表（Region/Subregion/Site、连接状态、关键字、耗材阈值筛选）",
-        "description": "两种耗材列（CARBON_FILTER/BIO_ADDITIVE）恒在；未上报为 null。maxRemainingPercent 配合 consumableType（缺省任一已上报耗材）做阈值筛选。",
+        "summary": "耗材状态列表（筛选 + 键集游标分页）",
+        "description": "两种耗材列（CARBON_FILTER/BIO_ADDITIVE）恒在；未上报为 null。maxRemainingPercent 配合 consumableType（缺省任一已上报耗材）做阈值筛选；筛选后按 deviceId 升序执行键集游标分页。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
+          { "$ref": "openapi-base.json#/components/parameters/Limit" },
+          { "$ref": "openapi-base.json#/components/parameters/Cursor" },
           { "name": "region", "in": "query", "required": false, "schema": { "type": "string" } },
           { "name": "subregion", "in": "query", "required": false, "schema": { "type": "string" } },
           { "name": "siteId", "in": "query", "required": false, "schema": { "type": "string" } },
@@ -224,7 +226,7 @@
         "additionalProperties": false,
         "properties": {
           "data": { "type": "array", "items": { "$ref": "#/components/schemas/ConsumableStatus" } },
-          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
         }
       }
     }

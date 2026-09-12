@@ -94,6 +94,8 @@ function renderPage(overrides: Partial<ConsumablesPageProps> = {}) {
     status: { rows: [makeStatus()] },
     statusFilter: {},
     onApplyStatusFilter: (f) => calls.statusFilters.push(f),
+    onNextStatusPage: () => undefined,
+    onPrevStatusPage: () => undefined,
     onLoadContact: async () => ({ name: '张经理', phone: '138****0000', email: 'zhang@example.com' }),
     requests: {
       rows: [
@@ -336,7 +338,7 @@ function stubApi(): { api: ApiClient; calls: { path: string; options: ApiRequest
   const api: ApiClient = {
     request: async <T,>(path: string, options: ApiRequestOptions = {}) => {
       calls.push({ path, options });
-      return { data: { replayed: true }, meta: {} } as T;
+      return { data: { replayed: true }, meta: { nextCursor: 'cursor-2' } } as T;
     },
   };
   return { api, calls };
@@ -344,16 +346,21 @@ function stubApi(): { api: ApiClient; calls: { path: string; options: ApiRequest
 
 test('API 装配：查询串；状态迁移 If-Match 与请求体', async () => {
   const { api, calls } = stubApi();
-  await listConsumableStatus(api, {
-    region: '华东',
-    connectivity: 'ONLINE',
-    maxRemainingPercent: 30,
-    consumableType: 'CARBON_FILTER',
-  });
+  const page = await listConsumableStatus(
+    api,
+    {
+      region: '华东',
+      connectivity: 'ONLINE',
+      maxRemainingPercent: 30,
+      consumableType: 'CARBON_FILTER',
+    },
+    { cursor: 'cursor-1', limit: 25 },
+  );
   assert.equal(
     calls[0]?.path,
-    '/admin/consumables?region=%E5%8D%8E%E4%B8%9C&connectivity=ONLINE&maxRemainingPercent=30&consumableType=CARBON_FILTER',
+    '/admin/consumables?region=%E5%8D%8E%E4%B8%9C&connectivity=ONLINE&maxRemainingPercent=30&consumableType=CARBON_FILTER&cursor=cursor-1&limit=25',
   );
+  assert.equal(page.nextCursor, 'cursor-2');
 
   await createConsumableRequest(api, 'dev-1', 'BIO_ADDITIVE', '备注');
   assert.equal(calls[1]?.path, '/admin/consumable-requests');

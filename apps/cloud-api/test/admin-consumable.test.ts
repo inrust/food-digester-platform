@@ -158,6 +158,16 @@ async function list(
   return (res.body as DataBody).data as StatusRow[];
 }
 
+async function listResponse(
+  h: ReturnType<typeof createAdminConsumableHandlers>,
+  actor: ActorContext,
+  query: Record<string, string> = {},
+) {
+  const res = await h.list(req(actor, { query }));
+  assert.equal(res.status, 200, JSON.stringify(res.body));
+  return res.body as DataBody;
+}
+
 describe('投影保存与字典映射', () => {
   test('两种耗材列稳定映射；查询返回百分比/来源消息/observedAt/stale；联系人授权摘要', async () => {
     const h = createAdminConsumableHandlers({ client: prisma, now });
@@ -238,6 +248,34 @@ describe('投影保存与字典映射', () => {
 });
 
 describe('筛选与阈值', () => {
+  test('筛选后的结果使用不透明游标分页，非法 cursor/limit 失败关闭', async () => {
+    const h = createAdminConsumableHandlers({ client: prisma, now });
+    const customer = await prisma.customer.create({ data: { name: 'Customer CNS pagination' } });
+    const ids = await Promise.all([
+      plantDevice({ customerId: customer.id, heartbeatAt: NOW }),
+      plantDevice({ customerId: customer.id, heartbeatAt: NOW }),
+      plantDevice({ customerId: customer.id, heartbeatAt: NOW }),
+    ]);
+    const first = await listResponse(h, operator, { customerId: customer.id, limit: '2' });
+    assert.deepEqual(
+      (first.data as StatusRow[]).map((row) => row.deviceId),
+      ids.slice(0, 2),
+    );
+    assert.equal(typeof first.meta['nextCursor'], 'string');
+    const second = await listResponse(h, operator, {
+      customerId: customer.id,
+      limit: '2',
+      cursor: first.meta['nextCursor'] as string,
+    });
+    assert.deepEqual(
+      (second.data as StatusRow[]).map((row) => row.deviceId),
+      ids.slice(2),
+    );
+    assert.equal(second.meta['nextCursor'], null);
+    assert.equal((await h.list(req(operator, { query: { cursor: 'not-a-cursor' } }))).status, 400);
+    assert.equal((await h.list(req(operator, { query: { limit: '101' } }))).status, 400);
+  });
+
   test('Region/Subregion/Site、连接状态、关键字、耗材阈值与多条件组合', async () => {
     const h = createAdminConsumableHandlers({ client: prisma, now });
     const customer = await prisma.customer.create({ data: { name: 'Customer CNS 2' } });

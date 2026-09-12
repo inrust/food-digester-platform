@@ -1,4 +1,6 @@
 import { translate } from '../../i18n/i18n.js';
+import type { Language } from '../../i18n/i18n.js';
+import { formatLocalePercent, formatLocaleUnit } from '../../components/LocaleValue.js';
 /**
  * FE-11 ESG 纯逻辑：日/周/月聚合、用户时区→UTC 转换、计算口径文案、权限门、CT-06 锚点。
  *
@@ -144,17 +146,23 @@ export function aggregateDeviceReports(
     });
 }
 // ---------- 展示格式化 ----------
-export function formatKg(value: number | null): string {
-  return value === null ? '—' : `${value.toFixed(1)} kg`;
+export function formatKg(value: number | null, language: Language = 'zh-CN'): string {
+  return value === null
+    ? '—'
+    : formatLocaleUnit(value, 'kg', language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
-export function formatKwh(value: number | null): string {
-  return value === null ? '—' : `${value.toFixed(2)} kWh`;
+export function formatKwh(value: number | null, language: Language = 'zh-CN'): string {
+  return value === null
+    ? '—'
+    : formatLocaleUnit(value, 'kWh', language, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-export function formatPct(value: number | null): string {
-  return value === null ? '—' : `${value.toFixed(1)}%`;
+export function formatPct(value: number | null, language: Language = 'zh-CN'): string {
+  return value === null
+    ? '—'
+    : formatLocalePercent(value, language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
-export function formatPpm(value: number | null): string {
-  return value === null ? '—' : `${value.toFixed(0)} ppm`;
+export function formatPpm(value: number | null, language: Language = 'zh-CN'): string {
+  return value === null ? '—' : formatLocaleUnit(value, 'ppm', language, { maximumFractionDigits: 0 });
 }
 /** 计算版本显示：versionId → 版本号；混合 → “多版本”；未知 → 原 ID。 */
 export function calculationVersionText(

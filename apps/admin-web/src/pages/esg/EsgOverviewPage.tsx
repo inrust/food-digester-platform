@@ -11,6 +11,7 @@ import { translate } from '../../i18n/i18n.js';
 import { useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
+import { NumberText } from '../../components/LocaleValue.js';
 import type { FilterOption } from '../../components/ScopeFilter.js';
 import { ExportPanel } from '../../components/ExportPanel.js';
 import type { EsgQueryFilter } from './esg-api.js';
@@ -28,6 +29,7 @@ import {
 } from './esg-state.js';
 import type { EsgPeriod } from './esg-state.js';
 import type { EsgCalculationVersionView, EsgDailySummaryView, EsgExportJobView } from './types.js';
+import { useI18n } from '../../i18n/i18n.js';
 export interface EsgOverviewFilter {
   readonly customerId: string | null;
   /** 用户时区日历日（YYYY-MM-DD）；空 = 不限。 */
@@ -83,6 +85,7 @@ export function EsgOverviewPage({
   onCheckExport,
   onRefresh,
 }: EsgOverviewPageProps) {
+  const { language } = useI18n();
   const [draft, setDraft] = useState<EsgOverviewFilter>({
     customerId: appliedQuery.customerId,
     fromDate: '',
@@ -264,13 +267,13 @@ export function EsgOverviewPage({
             {aggregated.map((row) => (
               <tr key={row.bucket} data-testid={`esg-row-${row.bucket}`}>
                 <td>{row.bucket}</td>
-                <td>{formatKg(row.feedingWeightKg)}</td>
-                <td>{formatKg(row.dischargeWeightKg)}</td>
-                <td>{formatKg(row.reductionWeightKg)}</td>
-                <td>{formatKwh(row.powerConsumptionKwh)}</td>
-                <td>{formatKg(row.carbonReductionKg)}</td>
-                <td data-testid={`esg-completeness-${row.bucket}`}>{formatPct(row.avgCompletenessPct)}</td>
-                <td>{row.missingRecordCount ?? '—'}</td>
+                <td>{formatKg(row.feedingWeightKg, language)}</td>
+                <td>{formatKg(row.dischargeWeightKg, language)}</td>
+                <td>{formatKg(row.reductionWeightKg, language)}</td>
+                <td>{formatKwh(row.powerConsumptionKwh, language)}</td>
+                <td>{formatKg(row.carbonReductionKg, language)}</td>
+                <td data-testid={`esg-completeness-${row.bucket}`}>{formatPct(row.avgCompletenessPct, language)}</td>
+                <td>{row.missingRecordCount === null ? '—' : <NumberText value={row.missingRecordCount} />}</td>
                 <td data-testid={`esg-version-${row.bucket}`}>{calculationVersionText(row.versionIds, versions)}</td>
               </tr>
             ))}

@@ -4,6 +4,7 @@
  */
 import { roleDisplayName } from '../menu/menu.js';
 import { SUPPORTED_TIME_ZONES, useUserTimeZone } from '../components/TimeText.js';
+import { NumberText } from '../components/LocaleValue.js';
 import { LANGUAGE_LABELS, LANGUAGE_OPTIONS, isLanguage, useI18n } from '../i18n/i18n.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
 import { breadcrumbsFor } from './breadcrumb.js';
@@ -116,7 +117,7 @@ export function Topbar({
           🔔
           {notificationCount > 0 ? (
             <span className="notification-badge" data-testid="notification-badge">
-              {notificationCount}
+              <NumberText value={notificationCount} />
             </span>
           ) : null}
         </button>

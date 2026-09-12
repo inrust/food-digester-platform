@@ -162,9 +162,9 @@ test('概览：指标单位（kg/kWh/%）、计算版本、完整率、估算 CO
   assert.equal(screen.getByTestId('esg-col-energy').textContent, '能耗 (kWh)');
   // 行数据
   const row = screen.getByTestId('esg-row-2026-09-01');
-  assert.ok(row.textContent?.includes('100.0 kg'));
+  assert.ok(row.textContent?.includes('100.0千克'));
   assert.ok(row.textContent?.includes('12.50 kWh'));
-  assert.ok(row.textContent?.includes('45.2 kg'));
+  assert.ok(row.textContent?.includes('45.2千克'));
   assert.equal(screen.getByTestId('esg-completeness-2026-09-01').textContent, '98.5%');
   assert.equal(screen.getByTestId('esg-version-2026-09-01').textContent, 'v1.2.0');
   // 核证声明
@@ -355,15 +355,15 @@ test('设备页：九项指标 + 完整率 + 计算版本；ScopeFilter 联动�
   // 指标行（日粒度）
   const row = screen.getByTestId('esg-device-row-dev-001-2026-09-01');
   for (const text of [
-    '100.0 kg',
-    '20.0 kg',
-    '80.0 kg',
+    '100.0千克',
+    '20.0千克',
+    '80.0千克',
     '12.50 kWh',
     '19.5%',
     '800 ppm',
     '12 ppm',
     '3 ppm',
-    '45.2 kg',
+    '45.2千克',
     '98.5%',
     'v1.2.0',
   ]) {
@@ -425,5 +425,5 @@ test('设备页周聚合：气体均值算术平均并标注；可加指标求�
   const weekKey = isoWeekKey('2026-09-01T00:00:00Z');
   const row = screen.getByTestId(`esg-device-row-dev-001-${weekKey}`);
   assert.ok(row.textContent?.includes('900 ppm'));
-  assert.ok(row.textContent?.includes('160.0 kg'));
+  assert.ok(row.textContent?.includes('160.0千克'));
 });

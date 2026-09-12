@@ -23,6 +23,7 @@ import { ScopeFilter } from '../../components/ScopeFilter.js';
 import type { ScopeFilterProps } from '../../components/ScopeFilter.js';
 import type { ScopeFilterValue } from '../../components/filter-state.js';
 import { TimeText } from '../../components/TimeText.js';
+import { UnitValueText } from '../../components/LocaleValue.js';
 import { FourAxisBadges } from '../../components/FourAxisBadge.js';
 import type { DeviceView } from '../devices/types.js';
 import type { CommandCreateInput, CommandListFilter, ActivityListFilter } from './commands-api.js';
@@ -462,7 +463,11 @@ export function DeviceOperatePage({
               header: translate('page.e8b5eda03ab9'),
               render: (c) => <TimeText iso={c.requestTime} />,
             },
-            { key: 'timeoutSec', header: translate('page.ff06c243d727'), render: (c) => `${c.timeoutSec}s` },
+            {
+              key: 'timeoutSec',
+              header: translate('page.ff06c243d727'),
+              render: (c) => <UnitValueText value={c.timeoutSec} unit="s" />,
+            },
             {
               key: 'actions',
               header: translate('page.f3ea6d345e2a'),
@@ -518,7 +523,8 @@ export function DeviceOperatePage({
             </dd>
             <dt>{translate('page.3c14b777f83f')}</dt>
             <dd>
-              {detail.timeoutSec}s / {detail.expiresAt !== null ? <TimeText iso={detail.expiresAt} /> : '—'}
+              <UnitValueText value={detail.timeoutSec} unit="s" /> /{' '}
+              {detail.expiresAt !== null ? <TimeText iso={detail.expiresAt} /> : '—'}
             </dd>
             {detail.remarks !== null ? (
               <>

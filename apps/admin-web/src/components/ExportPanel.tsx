@@ -4,6 +4,7 @@ import { translate } from '../i18n/i18n.js';
  * 创建 → 状态刷新 → 短期下载 URL；过期链接明确提示且不渲染链接。
  */
 import { TimeText } from './TimeText.js';
+import { NumberText } from './LocaleValue.js';
 /** 导出任务最小结构（ESG/活动日志导出视图均兼容）。 */
 export interface ExportJobLike {
   readonly exportId: string;
@@ -61,7 +62,11 @@ export function ExportPanel({
           <span>
             {translate('ui.a79849e780d0') + ' '}
             {job.exportId}：{EXPORT_STATUS_LABELS[job.status] ?? job.status}
-            {job.rowCount !== null ? '\uFF08' + job.rowCount + (' ' + translate('ui.77941f4e0b9b')) : ''}
+            {job.rowCount !== null ? (
+              <>
+                （<NumberText value={job.rowCount} /> {translate('ui.77941f4e0b9b')}）
+              </>
+            ) : null}
           </span>
           {job.status === 'PENDING' || job.status === 'PROCESSING' ? (
             <button
