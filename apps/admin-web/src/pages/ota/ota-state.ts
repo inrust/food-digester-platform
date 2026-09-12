@@ -7,8 +7,8 @@
  * - 包纪律（BE-OTA-01）：可发布 = status VERIFIED；UPLOADED（未完成校验）不可建 Campaign；
  * - 写操作门控 ota:write（PlatformSuperAdmin/PlatformOperator），后端 403 兜底。
  */
-import { hasPermission } from '@fdp/auth';
-import type { Role } from '@fdp/auth';
+import { hasPermission } from '@fdp/auth/browser';
+import type { Role } from '@fdp/auth/browser';
 import type { FirmwarePackageStatus, FirmwarePackageType, OtaCampaignStatus, OtaTargetStatus } from './types.js';
 
 // ---------- 包（BE-OTA-01） ----------

@@ -9,14 +9,14 @@
  * - 功能边界：不展示 CloudTrail/基础设施日志。
  */
 import { useState } from 'react';
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
 import type { AuditLogListFilter } from './audit-api.js';
 import { AUDIT_RESULT_LABELS, AUDIT_RESULT_OPTIONS, formatAuditValue } from './audit-state.js';
-import type { AuditDetailState, AuditLogListState, AuditLogView, AuditResult } from './types.js';
+import type { AuditDetailState, AuditLogListState, AuditResult } from './types.js';
 
 export interface AuditLogsPageProps {
   readonly role: Role;
@@ -227,7 +227,11 @@ export function AuditLogsPage({
               key: 'actions',
               header: '操作',
               render: (log) => (
-                <button type="button" data-testid={`audit-detail-${log.auditId}`} onClick={() => onSelectLog(log.auditId)}>
+                <button
+                  type="button"
+                  data-testid={`audit-detail-${log.auditId}`}
+                  onClick={() => onSelectLog(log.auditId)}
+                >
                   详情
                 </button>
               ),

@@ -1,7 +1,23 @@
 {
-  "schemaVersion": 2,
-  "deliveryScope": "FE-01..FE-10",
-  "tasks": ["FE-01", "FE-02", "FE-03", "FE-04", "FE-05", "FE-06", "FE-07", "FE-08", "FE-09", "FE-10"],
+  "schemaVersion": 3,
+  "deliveryScope": "FE-01..FE-15",
+  "tasks": [
+    "FE-01",
+    "FE-02",
+    "FE-03",
+    "FE-04",
+    "FE-05",
+    "FE-06",
+    "FE-07",
+    "FE-08",
+    "FE-09",
+    "FE-10",
+    "FE-11",
+    "FE-12",
+    "FE-13",
+    "FE-14",
+    "FE-15"
+  ],
   "routes": [
     { "path": "/login", "pageState": "login" },
     { "path": "/403", "pageState": "forbidden" },
@@ -34,7 +50,44 @@
       "controller": "DeviceUsersController",
       "testId": "device-users-page"
     },
-    { "path": "/alarms", "pageState": "alarms", "controller": "AlarmsController", "testId": "alarms-page" }
+    { "path": "/alarms", "pageState": "alarms", "controller": "AlarmsController", "testId": "alarms-page" },
+    {
+      "path": "/esg/overview",
+      "pageState": "esg-overview",
+      "controller": "EsgOverviewController",
+      "testId": "esg-overview-page"
+    },
+    {
+      "path": "/esg/devices",
+      "pageState": "esg-device",
+      "controller": "EsgDevicesController",
+      "testId": "esg-devices-page"
+    },
+    {
+      "path": "/devices/operate",
+      "pageState": "device-operate",
+      "controller": "DeviceOperateController",
+      "testId": "device-operate-page"
+    },
+    {
+      "path": "/ota/campaigns",
+      "pageState": "ota-campaigns",
+      "controller": "OtaCampaignsController",
+      "testId": "ota-campaigns-page"
+    },
+    {
+      "path": "/ota/packages",
+      "pageState": "ota-packages",
+      "controller": "OtaPackagesController",
+      "testId": "ota-packages-page"
+    },
+    { "path": "/media", "pageState": "media", "controller": "MediaController", "testId": "media-page" },
+    {
+      "path": "/audit-logs",
+      "pageState": "audit-logs",
+      "controller": "AuditLogsController",
+      "testId": "audit-logs-page"
+    }
   ],
   "operationIds": [
     "getDashboardOverview",
@@ -80,6 +133,29 @@
     "clearAlarm",
     "listDeviceEvents",
     "listTamperEvents",
+    "listEsgDailySummary",
+    "listEsgReports",
+    "listEsgCalculationVersions",
+    "createEsgExport",
+    "getEsgExport",
+    "listCommands",
+    "getCommand",
+    "createActivityExport",
+    "getActivityExport",
+    "createFirmwareUpload",
+    "completeFirmwareUpload",
+    "listFirmwarePackages",
+    "createOtaCampaign",
+    "listOtaCampaigns",
+    "getOtaCampaign",
+    "listOtaTargets",
+    "expandOtaCampaignBatch",
+    "pauseOtaCampaign",
+    "resumeOtaCampaign",
+    "cancelOtaCampaign",
+    "retryOtaCampaignFailures",
+    "listAuditLogs",
+    "getAuditLogDetail",
     "listOnboardingRequests",
     "getOnboardingRequest",
     "approveOnboardingRequest",

@@ -8,7 +8,7 @@
  *   （complete/cancel 强制）；跳级不渲染按钮；重复创建幂等（replayed 提示）。
  */
 import { afterEach, assert, test } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { ApiClientError } from '../src/api/errors.js';
 import type { ApiClient, ApiRequestOptions } from '../src/api/http-client.js';

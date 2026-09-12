@@ -132,7 +132,7 @@ const ELIGIBLE = [
 function renderPackagesPage(overrides: Partial<OtaPackagesPageProps> = {}) {
   const calls = {
     sessionCreated: [] as FirmwareUploadSessionCreate[],
-    uploadCompleted: [] as FirmwareUploadSessionView[],
+    uploadCompleted: [] as { session: FirmwareUploadSessionView; file: File }[],
     filterApplied: [] as unknown[],
     navigated: [] as string[],
     refreshed: 0,
@@ -150,8 +150,8 @@ function renderPackagesPage(overrides: Partial<OtaPackagesPageProps> = {}) {
       calls.sessionCreated.push(input);
       return makeSession();
     },
-    onUploadAndComplete: async (session) => {
-      calls.uploadCompleted.push(session);
+    onUploadAndComplete: async (session, file) => {
+      calls.uploadCompleted.push({ session, file });
       return makePackage({ packageId: session.packageId, version: session.version, status: 'VERIFIED' });
     },
     onRefresh: () => {
@@ -215,9 +215,11 @@ test('上传 E2E：创建会话 → 直传 + complete 校验 → VERIFIED 可发
   const sessionPanel = await screen.findByTestId('upload-session');
   assert.ok(within(sessionPanel).getByTestId('upload-session-object-key').textContent?.includes('服务端生成'));
 
+  await user.upload(within(sessionPanel).getByTestId('upload-file'), new File([new Uint8Array(2048)], 'firmware.bin'));
   await user.click(within(sessionPanel).getByTestId('upload-complete-submit'));
   assert.equal(calls.uploadCompleted.length, 1);
-  assert.equal(calls.uploadCompleted[0]?.packageId, 'pkg-002');
+  assert.equal(calls.uploadCompleted[0]?.session.packageId, 'pkg-002');
+  assert.equal(calls.uploadCompleted[0]?.file.name, 'firmware.bin');
   const result = await screen.findByTestId('verified-result');
   assert.ok(result.textContent?.includes('可发布'));
   assert.ok(screen.getByTestId('action-notice').textContent?.includes('VERIFIED'));

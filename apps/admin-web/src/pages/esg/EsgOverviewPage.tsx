@@ -8,7 +8,7 @@
  * - 导出筛选快照 = 页面当前已应用筛选（dataset=DAILY_SUMMARY）；过期链接明确提示。
  */
 import { useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import type { FilterOption } from '../../components/ScopeFilter.js';
 import { ExportPanel } from '../../components/ExportPanel.js';

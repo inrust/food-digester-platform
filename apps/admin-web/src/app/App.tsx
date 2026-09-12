@@ -14,6 +14,15 @@ import {
   DeviceViewController,
   LicensesController,
 } from './feature-controllers.js';
+import {
+  AuditLogsController,
+  DeviceOperateController,
+  EsgDevicesController,
+  EsgOverviewController,
+  MediaController,
+  OtaCampaignsController,
+  OtaPackagesController,
+} from './operations-controllers.js';
 import { LoginPage } from './LoginPage.js';
 import { safeReturnPath, useBrowserRouter } from './browser-router.js';
 
@@ -30,6 +39,13 @@ export const IMPLEMENTED_PAGE_STATES = [
   'configurations',
   'device-users',
   'alarms',
+  'esg-overview',
+  'esg-device',
+  'device-operate',
+  'ota-campaigns',
+  'ota-packages',
+  'media',
+  'audit-logs',
 ] as const;
 
 function ForbiddenPage({ onNavigate }: { onNavigate: (path: string) => void }) {
@@ -143,6 +159,29 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       break;
     case 'alarms':
       page = <AlarmsController api={services.api} session={session} search={location.search} onNavigate={navigate} />;
+      break;
+    case 'esg-overview':
+      page = <EsgOverviewController api={services.api} session={session} />;
+      break;
+    case 'esg-device':
+      page = <EsgDevicesController api={services.api} session={session} />;
+      break;
+    case 'device-operate':
+      page = (
+        <DeviceOperateController api={services.api} session={session} search={location.search} onNavigate={navigate} />
+      );
+      break;
+    case 'ota-campaigns':
+      page = <OtaCampaignsController api={services.api} session={session} onNavigate={navigate} />;
+      break;
+    case 'ota-packages':
+      page = <OtaPackagesController api={services.api} session={session} onNavigate={navigate} />;
+      break;
+    case 'media':
+      page = <MediaController api={services.api} session={session} />;
+      break;
+    case 'audit-logs':
+      page = <AuditLogsController api={services.api} session={session} />;
       break;
     default:
       page = (

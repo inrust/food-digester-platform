@@ -11,7 +11,7 @@
  * - 功能边界：不控制设备端安装/回滚（状态由设备回报推进）。
  */
 import { useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';

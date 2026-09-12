@@ -271,6 +271,217 @@ async function routeP0Apis(page: Page, options: { alarmRows?: boolean } = {}) {
   });
 }
 
+async function routeFe11To15Apis(page: Page) {
+  await routeP0Apis(page);
+  const operableDevice = {
+    ...p0Device,
+    license: {
+      licenseId: 'license-fe12',
+      status: 'Active',
+      validFrom: '2026-01-01',
+      validTo: '2027-01-01',
+      entitlements: ['REMOTE_CONTROL', 'OTA_UPDATE'],
+    },
+  };
+  await page.route('**/api/v1/admin/devices**', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/console')) return json(route, { data: p0Console });
+    if (path.endsWith('/dev-p0')) return json(route, { data: operableDevice });
+    return json(route, { data: [operableDevice], meta: { nextCursor: null } });
+  });
+  await page.route('**/api/v1/admin/esg/calculation-versions', (route) => json(route, { data: [] }));
+  await page.route('**/api/v1/admin/esg/daily-summary**', (route) =>
+    json(route, { data: [], meta: { nextCursor: null } }),
+  );
+  await page.route('**/api/v1/admin/esg/reports**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await page.route('**/api/v1/admin/esg/exports**', (route) =>
+    json(route, {
+      data: {
+        exportId: 'export-fe11',
+        dataset: 'DAILY_SUMMARY',
+        status: 'COMPLETED',
+        filters: {},
+        rowCount: 0,
+        downloadUrl: 'https://exports.example.test/esg.csv',
+        urlExpiresAt: '2099-09-10T00:15:00Z',
+        urlExpired: false,
+        error: null,
+        requestedBy: 'e2e-PlatformSuperAdmin',
+        createdAt: '2026-09-10T00:00:00Z',
+        completedAt: '2026-09-10T00:00:01Z',
+      },
+    }),
+  );
+  const command = {
+    commandId: 'cmd-fe12',
+    deviceId: 'dev-p0',
+    customerId: 'cust-a',
+    command: 'REBOOT',
+    category: 'DEVICE',
+    highRisk: false,
+    status: 'SUCCEEDED',
+    requestedBy: 'e2e-PlatformSuperAdmin',
+    requestTime: '2026-09-10T00:00:00Z',
+    timeoutSec: 300,
+    expiresAt: '2026-09-10T00:05:00Z',
+    createdAt: '2026-09-10T00:00:00Z',
+    updatedAt: '2026-09-10T00:00:02Z',
+  };
+  await page.route('**/api/v1/admin/commands**', (route) =>
+    json(route, { data: [command], meta: { nextCursor: null } }),
+  );
+  await page.route('**/api/v1/admin/devices/dev-p0/commands', (route) =>
+    json(route, { data: { ...command, status: 'AUTHORIZED', replayed: false } }, 201),
+  );
+  await page.route('**/api/v1/admin/devices/dev-p0/activities**', (route) =>
+    json(route, { data: [], meta: { nextCursor: null } }),
+  );
+  await page.route('**/api/v1/admin/ota/packages**', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/upload-sessions'))
+      return json(route, {
+        data: {
+          packageId: 'pkg-fe13',
+          status: 'UPLOADED',
+          model: 'FD-100',
+          version: '2.0.0',
+          packageType: 'FIRMWARE',
+          sizeBytes: 4,
+          sha256: 'a'.repeat(64),
+          objectKey: 'firmware/pkg-fe13.bin',
+          uploadUrl: 'https://uploads.example.test/pkg-fe13',
+          uploadUrlExpiresAt: '2099-09-10T00:15:00Z',
+          createdAt: '2026-09-10T00:00:00Z',
+        },
+      });
+    if (path.endsWith('/pkg-fe13/complete'))
+      return json(route, {
+        data: {
+          packageId: 'pkg-fe13',
+          model: 'FD-100',
+          version: '2.0.0',
+          packageType: 'FIRMWARE',
+          sizeBytes: 4,
+          sha256: 'a'.repeat(64),
+          status: 'VERIFIED',
+          objectKey: 'firmware/pkg-fe13.bin',
+          uploadedBy: 'e2e-PlatformSuperAdmin',
+          createdAt: '2026-09-10T00:00:00Z',
+        },
+      });
+    return json(route, {
+      data: [
+        {
+          packageId: 'pkg-verified',
+          model: 'FD-100',
+          version: '1.9.0',
+          packageType: 'FIRMWARE',
+          sizeBytes: 4,
+          sha256: 'b'.repeat(64),
+          status: 'VERIFIED',
+          objectKey: 'firmware/pkg-verified.bin',
+          uploadedBy: 'operator-1',
+          createdAt: '2026-09-09T00:00:00Z',
+        },
+      ],
+      meta: { nextCursor: null },
+    });
+  });
+  await page.route('https://uploads.example.test/pkg-fe13', (route) => route.fulfill({ status: 200, body: '' }));
+  const campaign = {
+    campaignId: 'campaign-fe13',
+    name: 'E2E 灰度',
+    packageId: 'pkg-verified',
+    targetModel: 'FD-100',
+    strategy: 'CANARY',
+    status: 'RUNNING',
+    createdBy: 'e2e-PlatformSuperAdmin',
+    finalRolloutApprovedAt: null,
+    finalRolloutApprovedBy: null,
+    finalRolloutEligibleCount: null,
+    createdAt: '2026-09-10T00:00:00Z',
+    updatedAt: '2026-09-10T00:00:00Z',
+  };
+  await page.route('**/api/v1/admin/ota/campaigns**', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/targets')) return json(route, { data: [], meta: { nextCursor: null } });
+    if (path.endsWith('/campaign-fe13'))
+      return json(route, {
+        data: {
+          ...campaign,
+          targetCounts: {
+            total: 1,
+            PENDING: 1,
+            NOTIFIED: 0,
+            DOWNLOADING: 0,
+            INSTALLING: 0,
+            SUCCEEDED: 0,
+            FAILED: 0,
+            ROLLED_BACK: 0,
+            CANCELLED: 0,
+          },
+        },
+      });
+    if (route.request().method() === 'POST') return json(route, { data: campaign }, 201);
+    return json(route, { data: [campaign], meta: { nextCursor: null } });
+  });
+  await page.route('**/api/v1/admin/media**', (route) =>
+    json(route, {
+      data: [
+        {
+          mediaId: 'media-fe14',
+          deviceId: 'dev-p0',
+          customerId: 'cust-a',
+          mediaType: 'IMAGE',
+          captureTime: '2026-09-10T00:00:00Z',
+          fileName: 'capture.png',
+          sizeKb: 12,
+          durationSec: 0,
+          status: 'AVAILABLE',
+          createdAt: '2026-09-10T00:00:00Z',
+        },
+      ],
+      meta: { nextCursor: null },
+    }),
+  );
+  await page.route('**/api/v1/admin/media/media-fe14/download-url', (route) =>
+    json(route, {
+      data: {
+        mediaId: 'media-fe14',
+        downloadUrl: 'https://media.example.test/fe14.png',
+        downloadUrlExpiresAt: '2099-09-10T00:15:00Z',
+      },
+    }),
+  );
+  const auditLog = {
+    auditId: 'audit-fe15',
+    actorId: 'operator-1',
+    actorRole: 'PlatformOperator',
+    customerId: 'cust-a',
+    objectType: 'Device',
+    objectId: 'dev-p0',
+    action: 'COMMAND_CREATED',
+    result: 'SUCCESS',
+    createdAt: '2026-09-10T00:00:00Z',
+  };
+  await page.route('**/api/v1/admin/audit-logs**', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/audit-fe15'))
+      return json(route, {
+        data: {
+          ...auditLog,
+          reason: null,
+          requestId: 'req-fe15',
+          ip: '127.0.0.1',
+          userAgent: 'playwright',
+          beforeValue: { token: 'must-redact' },
+          afterValue: { status: 'AUTHORIZED' },
+        },
+      });
+    return json(route, { data: [auditLog], meta: { nextCursor: null } });
+  });
+}
+
 async function json(route: Route, body: unknown, status = 200) {
   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
@@ -729,4 +940,85 @@ test('FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交
   });
   await expect.poll(() => acknowledgements).toBe(1);
   await action.close();
+});
+
+test('FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒体签发与审计详情', async ({ page }) => {
+  await seedSession(page, 'PlatformSuperAdmin');
+  await routeFe11To15Apis(page);
+
+  const routes = [
+    ['/esg/overview', 'esg-overview-page'],
+    ['/esg/devices', 'esg-devices-page'],
+    ['/devices/operate?deviceId=dev-p0', 'device-operate-page'],
+    ['/ota/campaigns', 'ota-campaigns-page'],
+    ['/ota/packages', 'ota-packages-page'],
+    ['/media', 'media-page'],
+    ['/audit-logs', 'audit-logs-page'],
+  ] as const;
+  for (const [path, testId] of routes) {
+    await page.goto(path);
+    await expect(page.getByTestId(testId)).toBeVisible();
+    await expect(page.locator('body')).not.toContainText('该页面尚未接入当前管理后台组合根');
+  }
+
+  await page.goto('/esg/overview');
+  await page.getByTestId('esg-export-csv').click();
+  await expect(page.getByTestId('esg-export-download')).toHaveAttribute('href', 'https://exports.example.test/esg.csv');
+
+  await page.goto('/devices/operate?deviceId=dev-p0');
+  await expect(page.getByTestId('quick-reboot')).toBeEnabled();
+  await page.getByTestId('quick-reboot').click();
+  await page.getByTestId('command-submit').click();
+  await expect(page.getByTestId('action-notice')).toContainText('已受理');
+
+  await page.goto('/ota/campaigns');
+  await expect(page.getByTestId('campaign-create-open')).toBeEnabled();
+  await page.getByTestId('campaign-create-open').click();
+  await page.getByTestId('campaign-name').fill('E2E 灰度');
+  await page.getByTestId('campaign-package').selectOption('pkg-verified');
+  await page.getByTestId('campaign-device').selectOption('dev-p0');
+  await page.getByTestId('campaign-create-submit').click();
+  await expect(page.getByTestId('action-notice')).toContainText('首批 1 台进入灰度');
+
+  await page.goto('/media');
+  await page.getByTestId('media-open-media-fe14').click();
+  await expect(page.getByTestId('media-preview-image')).toHaveAttribute('src', 'https://media.example.test/fe14.png');
+
+  await page.goto('/ota/packages');
+  await page.getByTestId('upload-session-open').click();
+  const uploadForm = page.getByTestId('upload-form');
+  await uploadForm.getByTestId('upload-model').fill('FD-100');
+  await uploadForm.getByTestId('upload-version').fill('2.0.0');
+  await uploadForm.getByTestId('upload-size').fill('4');
+  await uploadForm.getByTestId('upload-sha256').fill('a'.repeat(64));
+  await uploadForm.getByTestId('upload-signature').fill('signed-e2e');
+  await uploadForm.getByTestId('upload-session-submit').click();
+  await page
+    .getByTestId('upload-file')
+    .setInputFiles({ name: 'firmware.bin', mimeType: 'application/octet-stream', buffer: Buffer.from('FDP!') });
+  await page.getByTestId('upload-complete-submit').click();
+  await expect(page.getByTestId('verified-result')).toContainText('可发布');
+
+  await page.goto('/audit-logs');
+  await page.getByTestId('audit-detail-audit-fe15').click();
+  await expect(page.getByTestId('audit-detail-request-id')).toHaveText('req-fe15');
+  await expect(page.getByTestId('audit-detail-before')).toContainText('[REDACTED]');
+  await expect(page.locator('body')).not.toContainText('must-redact');
+});
+
+test('FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关闭', async ({ browser }) => {
+  const denied = await browser.newPage();
+  await seedSession(denied, 'PlatformSuperAdmin');
+  await denied.route('**/api/v1/admin/media**', (route) =>
+    json(route, { error: { code: 'FORBIDDEN', message: 'denied', requestId: 'req-fe14-403' } }, 403),
+  );
+  await denied.goto('/media');
+  await expect(denied.getByTestId('error-forbidden')).toContainText('无权访问');
+  await denied.close();
+
+  const customer = await browser.newPage();
+  await seedSession(customer, 'CustomerAdmin', { customerId: 'cust-a' });
+  await customer.goto('/audit-logs');
+  await expect(customer.getByRole('heading', { name: '403' })).toBeVisible();
+  await customer.close();
 });

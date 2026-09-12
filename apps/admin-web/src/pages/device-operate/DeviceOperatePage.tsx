@@ -12,8 +12,8 @@
  * - 详情展示 attempts/acks 时间线；TIMED_OUT 后收到的 ACK 标注“迟到 ACK”。
  */
 import { useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
-import { hasPermission } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
+import { hasPermission } from '@fdp/auth/browser';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { ExportPanel } from '../../components/ExportPanel.js';

@@ -9,7 +9,7 @@
  * - 固定展示“非第三方核证”声明。
  */
 import { useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { ScopeFilter } from '../../components/ScopeFilter.js';
 import type { ScopeFilterProps } from '../../components/ScopeFilter.js';

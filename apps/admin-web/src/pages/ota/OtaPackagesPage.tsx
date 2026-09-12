@@ -9,8 +9,8 @@
  * - 写操作需 ota:write（Auditor 只读）；功能边界：不实现设备端验签/安装/回滚。
  */
 import { useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
-import { hasPermission } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
+import { hasPermission } from '@fdp/auth/browser';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
@@ -44,7 +44,7 @@ export interface OtaPackagesPageProps {
   /** 创建上传会话（声明元数据 + 签名 → 短期预签名上传 URL）。 */
   readonly onCreateUploadSession: (input: FirmwareUploadSessionCreate) => Promise<FirmwareUploadSessionView>;
   /** 直传对象存储（预签名 URL）后提交 complete 校验；返回校验后的包（VERIFIED）。 */
-  readonly onUploadAndComplete: (session: FirmwareUploadSessionView) => Promise<FirmwarePackageView>;
+  readonly onUploadAndComplete: (session: FirmwareUploadSessionView, file: File) => Promise<FirmwarePackageView>;
   readonly onRefresh: () => void;
   readonly onNavigate: (path: string) => void;
 }
@@ -72,6 +72,7 @@ export function OtaPackagesPage({
   const [formOpen, setFormOpen] = useState(false);
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [session, setSession] = useState<FirmwareUploadSessionView | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [verified, setVerified] = useState<FirmwarePackageView | null>(null);
   const [actionError, setActionError] = useState<unknown>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -109,14 +110,15 @@ export function OtaPackagesPage({
         signature: draft.signature.trim(),
       });
       setSession(created);
+      setUploadFile(null);
       setFormOpen(false);
       setNotice(`上传会话已创建（${created.packageId}）；请在 URL 过期前完成直传`);
     });
 
   const submitComplete = () =>
     runAction(async () => {
-      if (session === null) return;
-      const pkg = await onUploadAndComplete(session);
+      if (session === null || uploadFile === null) return;
+      const pkg = await onUploadAndComplete(session, uploadFile);
       setVerified(pkg);
       setSession(null);
       setNotice(
@@ -177,11 +179,18 @@ export function OtaPackagesPage({
                 <span className="field-hint">（短期预签名，900s 暂定；过期需重建会话）</span>
               </dd>
             </dl>
+            <label htmlFor="upload-file">选择与声明元数据匹配的固件文件</label>
+            <input
+              id="upload-file"
+              type="file"
+              data-testid="upload-file"
+              onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)}
+            />
             <button
               type="button"
               className="primary-button"
               data-testid="upload-complete-submit"
-              disabled={busy}
+              disabled={busy || uploadFile === null}
               onClick={() => void submitComplete()}
             >
               已完成直传，提交校验

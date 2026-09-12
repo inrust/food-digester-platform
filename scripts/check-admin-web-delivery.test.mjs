@@ -26,7 +26,7 @@ function currentManifest() {
   };
 }
 
-test('FE-06 至 FE-10 任一任务或路由从事实源缺失时失败关闭', () => {
+test('FE-06 至 FE-15 任一任务或路由从事实源缺失时失败关闭', () => {
   const { root, manifest } = currentManifest();
   manifest.tasks = manifest.tasks.filter((task) => task !== 'FE-08');
   manifest.routes = manifest.routes.filter((route) => route.path !== '/alarms');
@@ -35,7 +35,19 @@ test('FE-06 至 FE-10 任一任务或路由从事实源缺失时失败关闭', (
   assert.ok(errors.includes('交付清单缺少 P0 路由：/alarms'));
 });
 
-test('FE-06 至 FE-10 任一控制器或 operationId 缺失时失败关闭', () => {
+test('FE-11 至 FE-15 任一任务、路由或页面标识缺失时失败关闭', () => {
+  const { root, manifest } = currentManifest();
+  manifest.tasks = manifest.tasks.filter((task) => task !== 'FE-13');
+  manifest.routes = manifest.routes.filter((route) => route.path !== '/ota/packages');
+  const media = manifest.routes.find((route) => route.path === '/media');
+  media.testId = 'wrong-media-page';
+  const errors = auditAdminWebDelivery(root, { requireBuild: false, manifestOverride: manifest });
+  assert.ok(errors.includes('交付清单缺少任务：FE-13'));
+  assert.ok(errors.includes('交付清单缺少 P0 路由：/ota/packages'));
+  assert.ok(errors.includes('P0 路由事实不匹配：/media.testId'));
+});
+
+test('FE-06 至 FE-15 任一控制器或 operationId 缺失时失败关闭', () => {
   const { root, manifest } = currentManifest();
   manifest.operationIds = manifest.operationIds.filter((id) => id !== 'getDeviceConsole');
   const errors = auditAdminWebDelivery(root, {
@@ -45,6 +57,18 @@ test('FE-06 至 FE-10 任一控制器或 operationId 缺失时失败关闭', () 
   });
   assert.ok(errors.includes('交付清单缺少 P0 operationId：getDeviceConsole'));
   assert.ok(errors.includes('路由控制器未交付：DeviceViewController'));
+});
+
+test('FE-11 至 FE-15 控制器或 operationId 缺失时失败关闭', () => {
+  const { root, manifest } = currentManifest();
+  manifest.operationIds = manifest.operationIds.filter((id) => id !== 'listOtaCampaigns');
+  const errors = auditAdminWebDelivery(root, {
+    requireBuild: false,
+    manifestOverride: manifest,
+    controllerSourceOverride: 'export function DashboardController() {}',
+  });
+  assert.ok(errors.includes('交付清单缺少 P0 operationId：listOtaCampaigns'));
+  assert.ok(errors.includes('路由控制器未交付：OtaCampaignsController'));
 });
 
 test('App 移除显式页面分支时失败关闭', () => {

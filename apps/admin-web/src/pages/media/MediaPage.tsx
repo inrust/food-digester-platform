@@ -8,7 +8,7 @@
  * - 未知媒体类型安全降级（仅元数据）；功能边界：不上传/不转码/不管保留期。
  */
 import { useRef, useState } from 'react';
-import type { Role } from '@fdp/auth';
+import type { Role } from '@fdp/auth/browser';
 import { CursorTable } from '../../components/CursorTable.js';
 import { MediaPreview } from '../../components/MediaPreview.js';
 import { Modal } from '../../components/Modal.js';
@@ -132,9 +132,7 @@ export function MediaPage({
           刷新最新媒体
         </button>
       </div>
-      <p className="field-hint">
-        仅元数据 + 15 分钟短期下载 URL（每次查看实时签发，不持久缓存）；不提供实时流媒体。
-      </p>
+      <p className="field-hint">仅元数据 + 15 分钟短期下载 URL（每次查看实时签发，不持久缓存）；不提供实时流媒体。</p>
 
       <section data-testid="media-filter" aria-label="筛选">
         <div className="filter-bar">

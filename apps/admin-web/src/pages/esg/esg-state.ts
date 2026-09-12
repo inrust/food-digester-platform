@@ -8,8 +8,8 @@
  *   取算术平均并标注“平均”；null（未补齐）不参与平均，全 null 显示“—”（DEC 不伪造）；
  * - 混合计算版本显示“多版本”。
  */
-import { hasPermission } from '@fdp/auth';
-import type { Role } from '@fdp/auth';
+import { hasPermission } from '@fdp/auth/browser';
+import type { Role } from '@fdp/auth/browser';
 import type { EsgCalculationVersionView, EsgDailySummaryView, EsgReportView } from './types.js';
 
 export type EsgPeriod = 'day' | 'week' | 'month';

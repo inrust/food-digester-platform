@@ -16,7 +16,7 @@ function operationIds(value, found = new Set()) {
   return found;
 }
 
-const REQUIRED_TASKS = Array.from({ length: 10 }, (_, index) => `FE-${String(index + 1).padStart(2, '0')}`);
+const REQUIRED_TASKS = Array.from({ length: 15 }, (_, index) => `FE-${String(index + 1).padStart(2, '0')}`);
 const REQUIRED_P0_ROUTES = new Map([
   ['/devices/view', { pageState: 'device-view', controller: 'DeviceViewController', testId: 'device-view-page' }],
   [
@@ -30,6 +30,19 @@ const REQUIRED_P0_ROUTES = new Map([
   ],
   ['/device-users', { pageState: 'device-users', controller: 'DeviceUsersController', testId: 'device-users-page' }],
   ['/alarms', { pageState: 'alarms', controller: 'AlarmsController', testId: 'alarms-page' }],
+  ['/esg/overview', { pageState: 'esg-overview', controller: 'EsgOverviewController', testId: 'esg-overview-page' }],
+  ['/esg/devices', { pageState: 'esg-device', controller: 'EsgDevicesController', testId: 'esg-devices-page' }],
+  [
+    '/devices/operate',
+    { pageState: 'device-operate', controller: 'DeviceOperateController', testId: 'device-operate-page' },
+  ],
+  [
+    '/ota/campaigns',
+    { pageState: 'ota-campaigns', controller: 'OtaCampaignsController', testId: 'ota-campaigns-page' },
+  ],
+  ['/ota/packages', { pageState: 'ota-packages', controller: 'OtaPackagesController', testId: 'ota-packages-page' }],
+  ['/media', { pageState: 'media', controller: 'MediaController', testId: 'media-page' }],
+  ['/audit-logs', { pageState: 'audit-logs', controller: 'AuditLogsController', testId: 'audit-logs-page' }],
 ]);
 const REQUIRED_P0_OPERATIONS = [
   'listDevices',
@@ -73,6 +86,29 @@ const REQUIRED_P0_OPERATIONS = [
   'clearAlarm',
   'listDeviceEvents',
   'listTamperEvents',
+  'listEsgDailySummary',
+  'listEsgReports',
+  'listEsgCalculationVersions',
+  'createEsgExport',
+  'getEsgExport',
+  'listCommands',
+  'getCommand',
+  'createActivityExport',
+  'getActivityExport',
+  'createFirmwareUpload',
+  'completeFirmwareUpload',
+  'listFirmwarePackages',
+  'createOtaCampaign',
+  'listOtaCampaigns',
+  'getOtaCampaign',
+  'listOtaTargets',
+  'expandOtaCampaignBatch',
+  'pauseOtaCampaign',
+  'resumeOtaCampaign',
+  'cancelOtaCampaign',
+  'retryOtaCampaignFailures',
+  'listAuditLogs',
+  'getAuditLogDetail',
 ];
 
 function implementedPageStates(appSource) {
@@ -91,6 +127,7 @@ export function auditAdminWebDelivery(root, options = {}) {
     'src/app/composition-root.ts',
     'src/app/controllers.tsx',
     'src/app/feature-controllers.tsx',
+    'src/app/operations-controllers.tsx',
     'src/app/LoginPage.tsx',
     'src/app/app.css',
     'test/app-smoke.test.tsx',
@@ -120,11 +157,11 @@ export function auditAdminWebDelivery(root, options = {}) {
     const appSource = options.appSourceOverride ?? (existsSync(appPath) ? readFileSync(appPath, 'utf8') : '');
     const controllerSource =
       options.controllerSourceOverride ??
-      ['src/app/controllers.tsx', 'src/app/feature-controllers.tsx']
+      ['src/app/controllers.tsx', 'src/app/feature-controllers.tsx', 'src/app/operations-controllers.tsx']
         .map((file) => (existsSync(join(appRoot, file)) ? readFileSync(join(appRoot, file), 'utf8') : ''))
         .join('\n');
-    if (manifest.schemaVersion !== 2 || manifest.deliveryScope !== 'FE-01..FE-10')
-      errors.push('管理后台交付清单版本或范围不是 FE-01..FE-10/v2');
+    if (manifest.schemaVersion !== 3 || manifest.deliveryScope !== 'FE-01..FE-15')
+      errors.push('管理后台交付清单版本或范围不是 FE-01..FE-15/v3');
     const tasks = new Set(manifest.tasks ?? []);
     for (const task of REQUIRED_TASKS) if (!tasks.has(task)) errors.push(`交付清单缺少任务：${task}`);
     const manifestRoutes = new Map((manifest.routes ?? []).map((route) => [route.path, route]));
