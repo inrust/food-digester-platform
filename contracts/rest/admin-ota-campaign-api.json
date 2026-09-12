@@ -461,6 +461,8 @@
           "deviceId",
           "batchNo",
           "status",
+          "failureCode",
+          "failureReason",
           "scheduledTime",
           "completedAt",
           "createdAt",
@@ -473,6 +475,19 @@
           "deviceId": { "type": "string", "minLength": 1 },
           "batchNo": { "type": "integer", "minimum": 1, "description": "1 = 灰度批次" },
           "status": { "$ref": "#/components/schemas/OtaTargetStatus" },
+          "failureCode": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "description": "结构化失败码；仅 FAILED 状态非空，未知码归一为 OTA_FAILED"
+          },
+          "failureReason": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "设备失败原因的脱敏摘要；不返回凭证、Token 或密钥材料"
+          },
           "scheduledTime": { "type": ["string", "null"], "format": "date-time" },
           "completedAt": { "type": ["string", "null"], "format": "date-time" },
           "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },

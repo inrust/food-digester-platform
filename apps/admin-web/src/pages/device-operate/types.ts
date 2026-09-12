@@ -33,6 +33,7 @@ export type CommandStatus =
   | 'CREATED'
   | 'AUTHORIZED'
   | 'PUBLISHING'
+  | 'PUBLISH_FAILED'
   | 'PUBLISHED'
   | 'ACKNOWLEDGED'
   | 'SUCCEEDED'

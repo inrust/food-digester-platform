@@ -877,6 +877,8 @@ model OtaTarget {
   batchNo              Int       @map("batch_no") // 1 = 灰度批次
   // PENDING | NOTIFIED | DOWNLOADING | INSTALLING | SUCCEEDED | FAILED | ROLLED_BACK | CANCELLED
   status               String    @default("PENDING")
+  failureCode          String?   @map("failure_code")
+  failureReason        String?   @map("failure_reason")
   scheduledTime        DateTime? @map("scheduled_time") @db.Timestamptz
   completedAt          DateTime? @map("completed_at") @db.Timestamptz
   dispatchClaimedAt    DateTime? @map("dispatch_claimed_at") @db.Timestamptz

@@ -58,7 +58,10 @@ function renderPage(overrides: Partial<AuditLogsPageProps> = {}) {
   };
   const props: AuditLogsPageProps = {
     role: 'PlatformSuperAdmin',
-    logs: { rows: [makeLog(), makeLog({ auditId: 'aud-002', result: 'FAILURE', action: 'license.issue' })], nextCursor: 'cur-2' },
+    logs: {
+      rows: [makeLog(), makeLog({ auditId: 'aud-002', result: 'FAILURE', action: 'license.issue' })],
+      nextCursor: 'cur-2',
+    },
     filter: {},
     onApplyFilter: (f) => calls.filterApplied.push(f),
     onLoadMore: (cursor) => calls.loadMore.push(cursor),
@@ -96,8 +99,19 @@ test('筛选：actor/Customer/对象/动作/结果/时间全字段回调（时�
   assert.equal(applied?.objectId, 'dev-001');
   assert.equal(applied?.action, 'device.suspend');
   assert.equal(applied?.result, 'FAILURE');
-  assert.equal(applied?.from, new Date('2026-09-01T10:00').toISOString());
-  assert.equal(applied?.to, new Date('2026-09-02T10:00').toISOString());
+  assert.equal(applied?.from, '2026-09-01T02:00:00.000Z');
+  assert.equal(applied?.to, '2026-09-02T02:00:00.000Z');
+});
+
+test('时间范围倒置时失败关闭且不发起筛选', async () => {
+  const user = userEvent.setup();
+  const { calls } = renderPage();
+  fireEvent.change(screen.getByTestId('audit-filter-from'), { target: { value: '2026-09-02T10:00' } });
+  fireEvent.change(screen.getByTestId('audit-filter-to'), { target: { value: '2026-09-01T10:00' } });
+  assert.ok(screen.getByText('起始时间不得晚于截止时间'));
+  assert.equal((screen.getByTestId('audit-filter-search') as HTMLButtonElement).disabled, true);
+  await user.click(screen.getByTestId('audit-filter-search'));
+  assert.deepEqual(calls.filterApplied, []);
 });
 
 test('分页正确：下一页携带 nextCursor', async () => {
@@ -200,7 +214,16 @@ test('API 装配：listAuditLogs 查询串；detail 路径', async () => {
   const { api, calls } = stubApi();
   await listAuditLogs(
     api,
-    { actorId: 'a1', customerId: 'c1', objectType: 'device', objectId: 'd1', action: 'device.suspend', result: 'FAILURE', from: '2026-09-01T00:00:00Z', to: null },
+    {
+      actorId: 'a1',
+      customerId: 'c1',
+      objectType: 'device',
+      objectId: 'd1',
+      action: 'device.suspend',
+      result: 'FAILURE',
+      from: '2026-09-01T00:00:00Z',
+      to: null,
+    },
     'cur-1',
   );
   assert.equal(

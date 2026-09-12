@@ -117,7 +117,7 @@
       },
       {
         "file": "admin-ota-campaign-api.json",
-        "sha256": "43a8331c1d8e57cf5b14410abb9357c724b65ba82a2c25b64bd5fff7f85724a8",
+        "sha256": "5a66f58c8d543c7ebfd3a3456f5e5a35c203d90612502d968861e33930ec08b8",
         "status": "implemented"
       },
       {
@@ -17572,6 +17572,8 @@
           "deviceId",
           "batchNo",
           "status",
+          "failureCode",
+          "failureReason",
           "scheduledTime",
           "completedAt",
           "createdAt",
@@ -17598,6 +17600,25 @@
           },
           "status": {
             "$ref": "#/components/schemas/AdminOtaCampaignApi__OtaTargetStatus"
+          },
+          "failureCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "description": "结构化失败码；仅 FAILED 状态非空，未知码归一为 OTA_FAILED"
+          },
+          "failureReason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "设备失败原因的脱敏摘要；不返回凭证、Token 或密钥材料"
           },
           "scheduledTime": {
             "type": [

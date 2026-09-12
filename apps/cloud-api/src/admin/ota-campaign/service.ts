@@ -23,7 +23,14 @@
  */
 import { randomUUID } from 'node:crypto';
 import type { DbClient, Page } from '@fdp/database';
-import { audited, decodeKeysetCursor, encodeKeysetCursor, normalizeLimit, recordAudit } from '@fdp/database';
+import {
+  audited,
+  decodeKeysetCursor,
+  encodeKeysetCursor,
+  normalizeLimit,
+  recordAudit,
+  sanitizeAuditPayload,
+} from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
 import {
   otaCampaignConflict,
@@ -118,6 +125,8 @@ interface OtaTargetRow {
   readonly deviceId: string;
   readonly batchNo: number;
   readonly status: string;
+  readonly failureCode: string | null;
+  readonly failureReason: string | null;
   readonly scheduledTime: Date | null;
   readonly completedAt: Date | null;
   readonly createdAt: Date;
@@ -175,6 +184,8 @@ export interface OtaTargetView {
   readonly deviceId: string;
   readonly batchNo: number;
   readonly status: string;
+  readonly failureCode: string | null;
+  readonly failureReason: string | null;
   readonly scheduledTime: string | null;
   readonly completedAt: string | null;
   readonly createdAt: string;
@@ -205,6 +216,8 @@ function toTargetView(row: OtaTargetRow): OtaTargetView {
     deviceId: row.deviceId,
     batchNo: row.batchNo,
     status: row.status,
+    failureCode: row.failureCode,
+    failureReason: row.failureReason,
     scheduledTime: row.scheduledTime ? row.scheduledTime.toISOString() : null,
     completedAt: row.completedAt ? row.completedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
@@ -491,6 +504,8 @@ export async function expandOtaCampaignBatch(
             deviceId,
             batchNo,
             status: 'PENDING',
+            failureCode: null,
+            failureReason: null,
             createdAt: now,
             updatedAt: now,
           },
@@ -729,6 +744,8 @@ export async function retryOtaCampaignFailures(
           where: { id: t.id, status: 'FAILED' },
           data: {
             status: 'PENDING',
+            failureCode: null,
+            failureReason: null,
             completedAt: null,
             dispatchClaimedAt: null,
             dispatchLeaseUntil: null,
@@ -781,6 +798,27 @@ export async function recordTargetStatus(
   if (!allowed.includes(toStatus as OtaTargetStatus)) {
     throw otaCampaignConflict(`Illegal target transition: ${target.status} → ${toStatus}`);
   }
+  const rawCode = typeof detail?.['errorCode'] === 'string' ? detail['errorCode'].trim() : '';
+  const failureCode = toStatus === 'FAILED' ? (/^[A-Za-z0-9_.-]{1,64}$/.test(rawCode) ? rawCode : 'OTA_FAILED') : null;
+  const rawReason = typeof detail?.['message'] === 'string' ? detail['message'].trim() : '';
+  const scrubbedReason = rawReason
+    .replace(/\bBearer\s+\S+/gi, '[REDACTED]')
+    .replace(
+      /\b(password|passcode|secret|token|credential|api[_-]?key|access[_-]?key|authorization|cookie|session|jwt)\s*[:=]\s*[^\s,;]+/gi,
+      '$1=[REDACTED]',
+    );
+  const sanitizedReason = sanitizeAuditPayload(scrubbedReason);
+  const failureReason =
+    toStatus === 'FAILED' && typeof sanitizedReason === 'string' && sanitizedReason !== ''
+      ? sanitizedReason.slice(0, 500)
+      : null;
+  const sanitizedDetail =
+    detail === undefined
+      ? null
+      : sanitizeAuditPayload({
+          ...detail,
+          ...(rawReason === '' ? {} : { message: scrubbedReason.slice(0, 500) }),
+        });
   return audited<OtaTargetView>(
     deps.client,
     {
@@ -800,6 +838,8 @@ export async function recordTargetStatus(
         where: { id: targetId, status: target.status },
         data: {
           status: toStatus,
+          failureCode,
+          failureReason,
           ...(TERMINAL_TARGET_STATUSES.includes(toStatus as OtaTargetStatus) ? { completedAt: now } : {}),
           updatedAt: now,
         },
@@ -813,7 +853,7 @@ export async function recordTargetStatus(
           targetId,
           fromStatus: target.status,
           toStatus,
-          detail: detail ?? null,
+          detail: sanitizedDetail,
           createdAt: now,
         },
       });
@@ -846,6 +886,8 @@ export async function recordTargetStatus(
       return {
         ...toTargetView(target),
         status: toStatus,
+        failureCode,
+        failureReason,
         completedAt: TERMINAL_TARGET_STATUSES.includes(toStatus as OtaTargetStatus) ? now.toISOString() : null,
         updatedAt: now.toISOString(),
       };

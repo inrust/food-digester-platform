@@ -18,6 +18,7 @@ import type {
   CommandStatus,
   CommandView,
 } from './types.js';
+import { isSubmittableCommand } from './command-state.js';
 
 export interface CommandCreateInput {
   readonly command: CommandName;
@@ -34,6 +35,9 @@ export async function createDeviceCommand(
   deviceId: string,
   input: CommandCreateInput,
 ): Promise<CommandView> {
+  if (!isSubmittableCommand(input.command)) {
+    throw new Error('温度阈值必须通过 Configuration 版本发布，禁止直接下发命令');
+  }
   const body: Record<string, unknown> = { command: input.command, timeoutSec: input.timeoutSec };
   if (input.remarks !== undefined && input.remarks !== '') body['remarks'] = input.remarks;
   if (input.commandId !== undefined) body['commandId'] = input.commandId;

@@ -79,7 +79,7 @@ function option(value: string, label: string): FilterOption {
   return { value, label };
 }
 
-async function allRows<T>(
+export async function collectAllPages<T>(
   load: (cursor?: string) => Promise<{ readonly rows: readonly T[]; readonly nextCursor: string | null }>,
 ) {
   const rows: T[] = [];
@@ -96,11 +96,11 @@ async function allRows<T>(
 
 async function topology(api: ApiClient) {
   const [devices, sites] = await Promise.all([
-    allRows(async (cursor) => {
+    collectAllPages(async (cursor) => {
       const page = await fetchDevices(api, undefined, { cursor: cursor ?? null, limit: 100 });
       return { rows: page.items, nextCursor: page.nextCursor };
     }),
-    allRows(async (cursor) => {
+    collectAllPages(async (cursor) => {
       const page = await fetchSites(api, undefined, { cursor: cursor ?? null, limit: 100 });
       return { rows: page.items, nextCursor: page.nextCursor };
     }),
@@ -150,7 +150,7 @@ export function EsgOverviewController({
       setError(undefined);
       try {
         const [nextRows, nextVersions] = await Promise.all([
-          allRows((cursor) => fetchEsgDailySummary(api, query, cursor)),
+          collectAllPages((cursor) => fetchEsgDailySummary(api, query, cursor)),
           fetchEsgCalculationVersions(api),
         ]);
         setRows(nextRows);
@@ -221,7 +221,7 @@ export function EsgDevicesController({ api, session }: { readonly api: ApiClient
       setError(undefined);
       try {
         const [nextRows, nextVersions] = await Promise.all([
-          allRows((cursor) =>
+          collectAllPages((cursor) =>
             fetchEsgReports(
               api,
               {
@@ -525,7 +525,7 @@ export function OtaCampaignsController({
   useEffect(() => {
     void load();
     void Promise.all([
-      allRows((cursor) => listFirmwarePackages(api, { status: 'VERIFIED' }, cursor)),
+      collectAllPages((cursor) => listFirmwarePackages(api, { status: 'VERIFIED' }, cursor)),
       topology(api),
     ]).then(([verified, top]) => {
       setPackages(verified);

@@ -499,14 +499,28 @@ describe('BE-OTA-02 失败重试', () => {
     for (const t of [t1!, t2!]) {
       await recordTargetStatus({ client: prisma }, t.id, 'NOTIFIED');
       await recordTargetStatus({ client: prisma }, t.id, 'DOWNLOADING');
-      await recordTargetStatus({ client: prisma }, t.id, 'FAILED');
+      await recordTargetStatus({ client: prisma }, t.id, 'FAILED', {
+        errorCode: 'DOWNLOAD_TIMEOUT',
+        message: 'download token=plain-secret expired',
+      });
     }
+
+    const failed = await prisma.otaTarget.findUnique({ where: { id: t1!.id } });
+    assert.equal(failed?.failureCode, 'DOWNLOAD_TIMEOUT');
+    assert.match(failed?.failureReason ?? '', /token=\[REDACTED\]/);
+    assert.notMatch(failed?.failureReason ?? '', /plain-secret/);
+    const failedHistory = await prisma.otaStatusHistory.findFirst({
+      where: { targetId: t1!.id, toStatus: 'FAILED' },
+    });
+    assert.notMatch(JSON.stringify(failedHistory?.detail), /plain-secret/);
 
     // 指定子集重试
     const partial = await h.retryCampaign(req(operator, { params: { campaignId }, body: { targetIds: [t1!.id] } }));
     assert.equal(partial.status, 200);
     assert.deepEqual((partial.body as DataBody).data.retriedTargetIds, [t1!.id]);
     assert.equal((await prisma.otaTarget.findUnique({ where: { id: t1!.id } }))?.status, 'PENDING');
+    assert.equal((await prisma.otaTarget.findUnique({ where: { id: t1!.id } }))?.failureCode, null);
+    assert.equal((await prisma.otaTarget.findUnique({ where: { id: t1!.id } }))?.failureReason, null);
     assert.equal((await prisma.otaTarget.findUnique({ where: { id: t2!.id } }))?.status, 'FAILED');
 
     // 非法子集：非 FAILED / 不属于本 Campaign → 400

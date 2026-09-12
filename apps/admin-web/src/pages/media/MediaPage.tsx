@@ -13,6 +13,8 @@ import { CursorTable } from '../../components/CursorTable.js';
 import { MediaPreview } from '../../components/MediaPreview.js';
 import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
+import { useUserTimeZone } from '../../components/TimeText.js';
+import { isUtcRangeOrdered } from '../../components/date-time.js';
 import type { MediaListFilter } from './media-api.js';
 import {
   MEDIA_STATUS_LABELS,
@@ -82,22 +84,26 @@ export function MediaPage({
   });
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const inFlight = useRef(false);
+  const { timeZone } = useUserTimeZone();
 
   // 仅平台角色可跨 Customer 筛选（Customer 角色由服务端强制 actor.customerId）
   const isPlatformRole = !role.startsWith('Customer');
 
-  const fromInvalid = draft.from !== '' && localDateTimeToUtcIso(draft.from) === null;
-  const toInvalid = draft.to !== '' && localDateTimeToUtcIso(draft.to) === null;
+  const fromUtc = draft.from === '' ? null : localDateTimeToUtcIso(draft.from, timeZone);
+  const toUtc = draft.to === '' ? null : localDateTimeToUtcIso(draft.to, timeZone);
+  const fromInvalid = draft.from !== '' && fromUtc === null;
+  const toInvalid = draft.to !== '' && toUtc === null;
+  const rangeInvalid = !fromInvalid && !toInvalid && !isUtcRangeOrdered(fromUtc, toUtc);
 
   const applyFilter = () => {
-    if (fromInvalid || toInvalid) return;
+    if (fromInvalid || toInvalid || rangeInvalid) return;
     onApplyFilter({
       deviceId: draft.deviceId.trim() === '' ? null : draft.deviceId.trim(),
       mediaType: draft.mediaType === '' ? null : draft.mediaType,
       status: draft.status === '' ? null : draft.status,
       customerId: isPlatformRole && draft.customerId.trim() !== '' ? draft.customerId.trim() : null,
-      from: localDateTimeToUtcIso(draft.from),
-      to: localDateTimeToUtcIso(draft.to),
+      from: fromUtc,
+      to: toUtc,
     });
   };
 
@@ -206,15 +212,15 @@ export function MediaPage({
             type="button"
             className="primary-button"
             data-testid="media-filter-search"
-            disabled={fromInvalid || toInvalid}
+            disabled={fromInvalid || toInvalid || rangeInvalid}
             onClick={applyFilter}
           >
             筛选
           </button>
         </div>
-        {fromInvalid || toInvalid ? (
+        {fromInvalid || toInvalid || rangeInvalid ? (
           <p className="field-hint" data-testid="media-filter-time-error">
-            时间格式非法
+            {rangeInvalid ? '起始时间不得晚于截止时间' : `时间格式非法或在 ${timeZone} 不存在`}
           </p>
         ) : null}
       </section>

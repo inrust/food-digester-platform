@@ -10,6 +10,8 @@
  */
 import { hasPermission } from '@fdp/auth/browser';
 import type { Role } from '@fdp/auth/browser';
+export { zonedDateRangeToUtc } from '../../components/date-time.js';
+export type { UtcRange } from '../../components/date-time.js';
 import type { EsgCalculationVersionView, EsgDailySummaryView, EsgReportView } from './types.js';
 
 export type EsgPeriod = 'day' | 'week' | 'month';
@@ -28,49 +30,6 @@ export const ESG_DISCLAIMER = '估算值，非第三方核证';
 /** 导出权限：export:create = SuperAdmin/Auditor/CustomerAdmin（AUTH-01）。 */
 export function canExport(role: Role): boolean {
   return hasPermission(role, 'export:create');
-}
-
-// ---------- 时区：用户时区日历日 → UTC 查询区间（含首尾） ----------
-
-function tzOffsetMs(timeZone: string, utcMillis: number): number {
-  const dtf = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-  const parts = dtf.formatToParts(new Date(utcMillis));
-  const get = (type: string): number => Number(parts.find((p) => p.type === type)?.value ?? '0');
-  const hour = get('hour') === 24 ? 0 : get('hour');
-  const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), hour, get('minute'), get('second'));
-  return asUtc - utcMillis;
-}
-
-export interface UtcRange {
-  readonly from: string;
-  readonly to: string;
-}
-
-/**
- * 用户时区日历日 [fromDate, toDate]（YYYY-MM-DD，含尾日）→ UTC 查询区间。
- * 非法输入返回 null（页面字段错误）。
- */
-export function zonedDateRangeToUtc(fromDate: string, toDate: string, timeZone: string): UtcRange | null {
-  const match = /^\d{4}-\d{2}-\d{2}$/;
-  if (!match.test(fromDate) || !match.test(toDate)) return null;
-  if (fromDate > toDate) return null;
-  const [fy, fm, fd] = fromDate.split('-').map(Number) as [number, number, number];
-  const [ty, tm, td] = toDate.split('-').map(Number) as [number, number, number];
-  if (Number.isNaN(Date.UTC(fy, fm - 1, fd)) || Number.isNaN(Date.UTC(ty, tm - 1, td))) return null;
-  const fromGuess = Date.UTC(fy, fm - 1, fd, 0, 0, 0);
-  const fromUtc = fromGuess - tzOffsetMs(timeZone, fromGuess);
-  const toGuess = Date.UTC(ty, tm - 1, td, 0, 0, 0);
-  const toUtc = toGuess - tzOffsetMs(timeZone, toGuess) + 24 * 3600 * 1000 - 1;
-  return { from: new Date(fromUtc).toISOString(), to: new Date(toUtc).toISOString() };
 }
 
 // ---------- 日/周/月聚合 ----------

@@ -9,7 +9,7 @@
  * - 状态从创建（AUTHORIZED 受理）到最终结果 E2E；TimedOut + 迟到 ACK；
  * - 媒体面板仅最新 Media + 手动刷新（无播放/停止）；活动日志筛选/导出。
  */
-import { afterEach, assert, test } from 'vitest';
+import { afterEach, assert, expect, test } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import type { ApiClient, ApiRequestOptions } from '../src/api/http-client.js';
@@ -20,7 +20,9 @@ import type { CommandCreateInput } from '../src/pages/device-operate/commands-ap
 import {
   COMMAND_CATALOG,
   COMMAND_LABELS,
+  COMMAND_STATUS_LABELS,
   QUICK_ACTIONS,
+  SUBMITTABLE_COMMAND_CATALOG,
   commandSpecOf,
 } from '../src/pages/device-operate/command-state.js';
 import type { CommandDetailView, CommandListItemView, CommandName } from '../src/pages/device-operate/types.js';
@@ -187,6 +189,20 @@ test('命令目录：22 个命令且每个有中文名；快捷动作 8 个且�
       }
     }
   }
+});
+
+test('PUBLISH_FAILED 可筛选展示；温度命令仅保留协议 parity、不可由后台提交', async () => {
+  assert.equal(COMMAND_STATUS_LABELS.PUBLISH_FAILED, '发布失败');
+  assert.ok(COMMAND_CATALOG.some((item) => item.command === 'SET_TARGET_TEMPERATURE'));
+  assert.ok(!SUBMITTABLE_COMMAND_CATALOG.some((item) => item.command === 'SET_TARGET_TEMPERATURE'));
+  renderPage({ commands: { rows: [makeListItem({ status: 'PUBLISH_FAILED' })], nextCursor: null } });
+  assert.ok(screen.getAllByText('发布失败').length > 0);
+
+  const { api, calls } = stubApi();
+  await expect(
+    createDeviceCommand(api, 'dev-1', { command: 'SET_TARGET_TEMPERATURE', timeoutSec: 300 }),
+  ).rejects.toThrow(/Configuration/);
+  assert.equal(calls.length, 0);
 });
 
 test('无协议 command code 禁止提交：未知 code 抛错；模式切换表单只能选组内真实命令', async () => {

@@ -14,6 +14,8 @@ import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
+import { useUserTimeZone } from '../../components/TimeText.js';
+import { isUtcRangeOrdered, zonedDateTimeToUtcIso } from '../../components/date-time.js';
 import type { AuditLogListFilter } from './audit-api.js';
 import { AUDIT_RESULT_LABELS, AUDIT_RESULT_OPTIONS, formatAuditValue } from './audit-state.js';
 import type { AuditDetailState, AuditLogListState, AuditResult } from './types.js';
@@ -52,13 +54,6 @@ const EMPTY_DRAFT: DraftFilter = {
   to: '',
 };
 
-/** datetime-local → UTC ISO（非法输入返回 null）。 */
-function toUtcIso(raw: string): string | null {
-  if (raw.trim() === '') return null;
-  const time = new Date(raw).getTime();
-  return Number.isNaN(time) ? null : new Date(time).toISOString();
-}
-
 export function AuditLogsPage({
   role,
   logs,
@@ -79,14 +74,18 @@ export function AuditLogsPage({
     action: filter.action ?? '',
     result: filter.result ?? '',
   });
+  const { timeZone } = useUserTimeZone();
 
   // 仅平台角色可跨 Customer 筛选（Auditor 跨 Customer 只读）
   const isPlatformRole = !role.startsWith('Customer');
-  const fromInvalid = draft.from !== '' && toUtcIso(draft.from) === null;
-  const toInvalid = draft.to !== '' && toUtcIso(draft.to) === null;
+  const fromUtc = draft.from === '' ? null : zonedDateTimeToUtcIso(draft.from, timeZone);
+  const toUtc = draft.to === '' ? null : zonedDateTimeToUtcIso(draft.to, timeZone);
+  const fromInvalid = draft.from !== '' && fromUtc === null;
+  const toInvalid = draft.to !== '' && toUtc === null;
+  const rangeInvalid = !fromInvalid && !toInvalid && !isUtcRangeOrdered(fromUtc, toUtc);
 
   const applyFilter = () => {
-    if (fromInvalid || toInvalid) return;
+    if (fromInvalid || toInvalid || rangeInvalid) return;
     onApplyFilter({
       actorId: draft.actorId.trim() === '' ? null : draft.actorId.trim(),
       customerId: isPlatformRole && draft.customerId.trim() !== '' ? draft.customerId.trim() : null,
@@ -94,8 +93,8 @@ export function AuditLogsPage({
       objectId: draft.objectId.trim() === '' ? null : draft.objectId.trim(),
       action: draft.action.trim() === '' ? null : draft.action.trim(),
       result: draft.result === '' ? null : draft.result,
-      from: toUtcIso(draft.from),
-      to: toUtcIso(draft.to),
+      from: fromUtc,
+      to: toUtc,
     });
   };
 
@@ -187,15 +186,15 @@ export function AuditLogsPage({
             type="button"
             className="primary-button"
             data-testid="audit-filter-search"
-            disabled={fromInvalid || toInvalid}
+            disabled={fromInvalid || toInvalid || rangeInvalid}
             onClick={applyFilter}
           >
             筛选
           </button>
         </div>
-        {fromInvalid || toInvalid ? (
+        {fromInvalid || toInvalid || rangeInvalid ? (
           <p className="field-hint" data-testid="audit-filter-time-error">
-            时间格式非法
+            {rangeInvalid ? '起始时间不得晚于截止时间' : `时间格式非法或在 ${timeZone} 不存在`}
           </p>
         ) : null}
       </section>

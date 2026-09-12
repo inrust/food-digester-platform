@@ -14,6 +14,7 @@ import { EsgOverviewPage } from '../src/pages/esg/EsgOverviewPage.js';
 import type { EsgOverviewPageProps } from '../src/pages/esg/EsgOverviewPage.js';
 import { EsgDevicesPage } from '../src/pages/esg/EsgDevicesPage.js';
 import type { EsgDevicesPageProps } from '../src/pages/esg/EsgDevicesPage.js';
+import { collectAllPages } from '../src/app/operations-controllers.js';
 import {
   aggregateDailySummaries,
   aggregateDeviceReports,
@@ -237,6 +238,35 @@ test('日期按用户时区转 UTC：Asia/Shanghai 日历日 → UTC 区间并�
 
   // 非法：起始晚于截止
   assert.equal(zonedDateRangeToUtc('2026-09-02', '2026-09-01', TZ), null);
+});
+
+test('日期严格校验且 America/New_York 的 DST 日按 23/25 小时自然日换算', () => {
+  assert.deepEqual(zonedDateRangeToUtc('2026-03-08', '2026-03-08', 'America/New_York'), {
+    from: '2026-03-08T05:00:00.000Z',
+    to: '2026-03-09T03:59:59.999Z',
+  });
+  assert.deepEqual(zonedDateRangeToUtc('2026-11-01', '2026-11-01', 'America/New_York'), {
+    from: '2026-11-01T04:00:00.000Z',
+    to: '2026-11-02T04:59:59.999Z',
+  });
+  assert.equal(zonedDateRangeToUtc('2026-02-29', '2026-02-29', TZ), null);
+  assert.equal(zonedDateRangeToUtc('2026-02-31', '2026-02-31', TZ), null);
+  assert.equal(zonedDateRangeToUtc('2026-09-01', '2026-09-01', 'Mars/Olympus'), null);
+});
+
+test('控制器完整遍历游标页，聚合与导出共用全量数据源', async () => {
+  const cursors: Array<string | undefined> = [];
+  const rows = await collectAllPages(async (cursor) => {
+    cursors.push(cursor);
+    return cursor === undefined
+      ? { rows: [makeSummary({ deviceId: 'dev-001' })], nextCursor: 'page-2' }
+      : { rows: [makeSummary({ deviceId: 'dev-002' })], nextCursor: null };
+  });
+  assert.deepEqual(cursors, [undefined, 'page-2']);
+  assert.deepEqual(
+    rows.map((row) => row.deviceId),
+    ['dev-001', 'dev-002'],
+  );
 });
 
 // ---------- 导出 ----------

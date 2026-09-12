@@ -111,6 +111,13 @@ test('视图封闭且不泄露内部字段；批次/重试结果结构稳定', (
   assert.ok(expand.required.includes('skippedExistingCount'), '扩大批次须报告幂等跳过数');
   assert.ok(expand.required.includes('finalRolloutApproved'), '扩大批次须报告最终全量审批事实');
   assert.equal(expand.properties.batchNo.minimum, 2, '扩大批次 batchNo 从 2 起（1 = 灰度批次）');
+  const target = doc.components.schemas.OtaTargetView;
+  assert.ok(target.required.includes('failureCode'));
+  assert.ok(target.required.includes('failureReason'));
+  assert.equal(target.properties.failureCode.type[1], 'null');
+  assert.equal(target.properties.failureCode.maxLength, 64);
+  assert.equal(target.properties.failureReason.type[1], 'null');
+  assert.equal(target.properties.failureReason.maxLength, 500);
 });
 
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {

@@ -550,6 +550,14 @@ export function OtaCampaignsPage({
                 { key: 'batchNo', header: '批次', render: (t) => (t.batchNo === 1 ? '1（灰度）' : String(t.batchNo)) },
                 { key: 'status', header: '状态', render: (t) => TARGET_STATUS_LABELS[t.status] },
                 {
+                  key: 'failure',
+                  header: '失败原因',
+                  render: (t) =>
+                    t.status === 'FAILED'
+                      ? `${t.failureCode ?? 'OTA_FAILED'}：${t.failureReason ?? '未提供原因'}`
+                      : '—',
+                },
+                {
                   key: 'scheduledTime',
                   header: '计划时间',
                   render: (t) => (t.scheduledTime !== null ? <TimeText iso={t.scheduledTime} /> : '—'),

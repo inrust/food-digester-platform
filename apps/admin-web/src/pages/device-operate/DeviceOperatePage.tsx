@@ -36,6 +36,7 @@ import {
   COMMAND_STATUS_OPTIONS,
   CONFIG_REDIRECTS,
   QUICK_ACTIONS,
+  SUBMITTABLE_COMMAND_CATALOG,
   commandSpecOf,
   gateCommand,
   isLateAck,
@@ -294,7 +295,7 @@ export function DeviceOperatePage({
                   setConfirmText('');
                 }}
               >
-                {(form.group ?? COMMAND_CATALOG.map((c) => c.command)).map((command) => (
+                {(form.group ?? SUBMITTABLE_COMMAND_CATALOG.map((c) => c.command)).map((command) => (
                   <option key={command} value={command}>
                     {COMMAND_LABELS[command]}（{command}）
                   </option>

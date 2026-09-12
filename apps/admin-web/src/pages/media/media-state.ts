@@ -7,6 +7,7 @@
  * - 未知媒体类型安全降级：仅展示元数据，不渲染 img/video、不提供下载入口。
  */
 import type { MediaStatus, MediaType } from './types.js';
+export { zonedDateTimeToUtcIso as localDateTimeToUtcIso } from '../../components/date-time.js';
 
 export const MEDIA_TYPE_OPTIONS: readonly MediaType[] = ['IMAGE', 'VIDEO'];
 
@@ -40,14 +41,6 @@ export function isKnownMediaType(mediaType: string): mediaType is MediaType {
 /** 媒体类型显示文案（未知类型降级为“未知类型”，不抛出）。 */
 export function mediaTypeLabel(mediaType: string): string {
   return isKnownMediaType(mediaType) ? MEDIA_TYPE_LABELS[mediaType] : '未知类型';
-}
-
-/** datetime-local 输入 → UTC ISO（非法输入返回 null，由调用方校验提示）。 */
-export function localDateTimeToUtcIso(raw: string): string | null {
-  if (raw.trim() === '') return null;
-  const time = new Date(raw).getTime();
-  if (Number.isNaN(time)) return null;
-  return new Date(time).toISOString();
 }
 
 // ---------- CT-06 锚点（FE-14 相关元素；双向锁定见 contract-parity.test.ts） ----------

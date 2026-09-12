@@ -87,6 +87,13 @@ export const COMMAND_CATALOG: readonly CommandSpec[] = [
   },
 ];
 
+/** 温度阈值由 Configuration 版本发布；保留协议目录项，但禁止管理后台命令表单提交。 */
+export const SUBMITTABLE_COMMAND_CATALOG = COMMAND_CATALOG.filter((spec) => spec.command !== 'SET_TARGET_TEMPERATURE');
+
+export function isSubmittableCommand(command: CommandName): boolean {
+  return command !== 'SET_TARGET_TEMPERATURE';
+}
+
 /** 命令中文名（文案可追溯到 command code：展示为“中文名（CODE）”）。 */
 export const COMMAND_LABELS: Readonly<Record<CommandName, string>> = {
   START: '启动',
@@ -203,6 +210,7 @@ export const COMMAND_STATUS_LABELS: Readonly<Record<CommandStatus, string>> = {
   CREATED: '已创建',
   AUTHORIZED: '已授权',
   PUBLISHING: '发布中',
+  PUBLISH_FAILED: '发布失败',
   PUBLISHED: '已下发',
   ACKNOWLEDGED: '设备已确认',
   SUCCEEDED: '执行成功',

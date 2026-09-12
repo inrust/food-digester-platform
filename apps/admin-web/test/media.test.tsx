@@ -109,8 +109,8 @@ test('列表渲染元数据；类型/设备/状态/时间筛选经回调应用�
       mediaType: 'VIDEO',
       status: 'AVAILABLE',
       customerId: 'cust-9',
-      from: localDateTimeToUtcIso('2026-09-01T10:00'),
-      to: localDateTimeToUtcIso('2026-09-02T10:00'),
+      from: localDateTimeToUtcIso('2026-09-01T10:00', 'Asia/Shanghai'),
+      to: localDateTimeToUtcIso('2026-09-02T10:00', 'Asia/Shanghai'),
     },
   ]);
 });
@@ -121,6 +121,17 @@ test('Customer 角色不暴露 customerId 筛选（服务端强制租户隔离�
   unmount();
   renderPage({ role: 'PlatformOperator' });
   assert.ok(screen.getByTestId('media-filter-customer'));
+});
+
+test('时间范围倒置时失败关闭且不发起筛选', async () => {
+  const user = userEvent.setup();
+  const { calls } = renderPage();
+  fireEvent.change(screen.getByTestId('media-filter-from'), { target: { value: '2026-09-02T10:00' } });
+  fireEvent.change(screen.getByTestId('media-filter-to'), { target: { value: '2026-09-01T10:00' } });
+  assert.ok(screen.getByText('起始时间不得晚于截止时间'));
+  assert.equal((screen.getByTestId('media-filter-search') as HTMLButtonElement).disabled, true);
+  await user.click(screen.getByTestId('media-filter-search'));
+  assert.deepEqual(calls.filterApplied, []);
 });
 
 test('手动刷新回源（获取最新设备媒体）', async () => {
@@ -254,8 +265,8 @@ test('过期判定与类型守卫边界', () => {
   assert.equal(isKnownMediaType('AUDIO'), false);
   assert.equal(mediaTypeLabel('VIDEO'), '视频');
   assert.equal(mediaTypeLabel('AUDIO'), '未知类型');
-  assert.equal(localDateTimeToUtcIso(''), null);
-  assert.equal(localDateTimeToUtcIso('garbage'), null);
+  assert.equal(localDateTimeToUtcIso('', 'Asia/Shanghai'), null);
+  assert.equal(localDateTimeToUtcIso('garbage', 'Asia/Shanghai'), null);
 });
 
 function stubApi(): { api: ApiClient; calls: { path: string; options: ApiRequestOptions }[] } {
@@ -273,7 +284,14 @@ test('API 装配：listMedia 查询串；download-url 路径', async () => {
   const { api, calls } = stubApi();
   await listMedia(
     api,
-    { deviceId: 'dev-1', mediaType: 'IMAGE', status: 'AVAILABLE', customerId: 'c1', from: '2026-09-01T00:00:00Z', to: null },
+    {
+      deviceId: 'dev-1',
+      mediaType: 'IMAGE',
+      status: 'AVAILABLE',
+      customerId: 'c1',
+      from: '2026-09-01T00:00:00Z',
+      to: null,
+    },
     'cur-1',
   );
   assert.equal(

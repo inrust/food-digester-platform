@@ -114,6 +114,8 @@ function makeTarget(overrides: Partial<OtaTargetView> = {}): OtaTargetView {
     deviceId: 'dev-001',
     batchNo: 1,
     status: 'SUCCEEDED',
+    failureCode: null,
+    failureReason: null,
     scheduledTime: null,
     completedAt: '2026-09-06T04:30:00Z',
     createdAt: '2026-09-06T04:00:00Z',
@@ -313,7 +315,15 @@ const RUNNING_DETAIL: OtaCampaignsPageProps['detail'] = {
   targets: {
     rows: [
       makeTarget(),
-      makeTarget({ targetId: 'tgt-failed', deviceId: 'dev-002', batchNo: 2, status: 'FAILED', completedAt: null }),
+      makeTarget({
+        targetId: 'tgt-failed',
+        deviceId: 'dev-002',
+        batchNo: 2,
+        status: 'FAILED',
+        failureCode: 'DOWNLOAD_TIMEOUT',
+        failureReason: '下载超时',
+        completedAt: null,
+      }),
       makeTarget({ targetId: 'tgt-pending', deviceId: 'dev-003', batchNo: 2, status: 'PENDING', completedAt: null }),
     ],
     nextCursor: null,
@@ -389,6 +399,7 @@ test('目标状态看板：total 与 8 状态计数渲染；目标列表批次/�
   assert.ok(within(targets).getByText('1（灰度）'));
   const table = within(targets).getByRole('table', { name: '目标列表' });
   assert.ok(within(table).getByText('失败'));
+  assert.ok(within(table).getByText('DOWNLOAD_TIMEOUT：下载超时'));
 });
 
 test('暂停/恢复/取消：RUNNING→已暂停（不再产生新下发）；PAUSED→恢复；取消需明确确认', async () => {

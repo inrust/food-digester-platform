@@ -97,6 +97,10 @@ export interface OtaTargetView {
   /** 1 = 灰度批次。 */
   readonly batchNo: number;
   readonly status: OtaTargetStatus;
+  /** 设备回报的结构化失败码；仅 FAILED 非空。 */
+  readonly failureCode: string | null;
+  /** 经服务端脱敏、最长 500 字符的失败原因；仅 FAILED 可能非空。 */
+  readonly failureReason: string | null;
   readonly scheduledTime: string | null;
   readonly completedAt: string | null;
   readonly createdAt: string;
