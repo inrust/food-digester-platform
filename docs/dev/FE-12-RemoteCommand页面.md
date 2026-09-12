@@ -19,6 +19,17 @@
 - **M/N（搅拌间隔/时长）与温度阈值不产生命令**：跳转 `/configurations` 版本发布（FE-09），测试断言无命令提交；
 - 未知命令 code 在类型层与运行时（commandSpecOf 抛错）双重禁止。
 
+## 当前分层状态
+
+| 层级 | 当前结论 | 证据边界 |
+|---|---|---|
+| module present | PASS | 页面、命令目录镜像、API adapter 与定向测试存在。 |
+| app integrated | PASS | `/devices/operate` 由正式 controller 接入组合根；温度命令在 adapter 层失败关闭。 |
+| browser verified | PASS | 本地 Chromium mock E2E 覆盖正式路由和命令交互；不等同真实 IoT 下发。 |
+| target integrated | NOT RUN / NO RECEIPT | 尚无真实 Cognito、已部署 API/IoT 与精确提交回执。 |
+
+当前整改依据：[FE-11 至 FE-15 全面复盘检查报告](../audit/FE-11至FE-15全面复盘检查报告-2026-09-12.md)。目标环境采集依据：[FE-11 至 FE-15 目标环境验收证据采集说明](../audit/evidence/FE-11至FE-15-目标环境验收证据采集说明.md)，发布时显式执行 `pnpm check:admin-web-fe11-15-target-evidence`。
+
 ## 2. 交付物
 
 | 模块 | 内容 |
@@ -31,24 +42,23 @@
 
 `Modal` 的 focus effect 依赖内联 `onClose` 导致每次父级渲染重新聚焦对话框、吞掉后续键盘输入（页面级表单状态时必现）。修复为 `onCloseRef` 持有 + effect 仅依赖 `open`（Esc 与焦点回收语义不变，既有测试全绿）。
 
-## 3. 验收基准与证据（vitest + jsdom，12 例 + parity 1 例）
+## 3. 验收基准与仓库内证据
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
-| 22 命令与 8 快捷动作映射正确 | 目录 22 条与 CT-04 逐条一致（parity）；QUICK_ACTIONS 映射断言（直接 code/命令组均在目录内） | ✅ |
-| 不存在无协议 command code 的提交 | commandSpecOf('MODE_SWITCH') 抛错；模式切换表单下拉仅组内真实命令；提交体 command ∈ 目录 | ✅ |
-| 高风险无确认不能提交 | confirmText 不一致/为空 → 提交禁用；精确一致 → 仅提交 confirmation{confirmText}；认证时间不接受客户端声明 | ✅ |
-| 配置更新不误走命令 API | goto-config-strategy/threshold → onNavigate('/configurations') 且 submitted 为空 | ✅ |
-| 状态从创建到最终结果 E2E | 提交受理（AUTHORIZED + requestedBy 身份上下文展示）→ 详情 SUCCEEDED + attempts/acks；TIMED_OUT + 迟到 ACK 标注 | ✅ |
-| Suspended/Retired/离线/无 Entitlement | 五组门控用例（禁用 + 原因展示）；Suspended 仍允许安全停止类（STOP/SHUTDOWN/REBOOT） | ✅ |
-| requestedBy 不可编辑 | 表单无该字段；API 装配请求体断言无 requestedBy | ✅ |
-| 媒体面板 DEC-009 | 无播放/停止按钮、无 video/audio/rtsp；手动刷新回调 | ✅ |
-| CT-06 锚点 | device-operate 页 Adopt/Adapt 元素 ⇄ 锚点集合精确一致（Reject 不入表） | ✅ |
+| 命令与快捷动作映射 | CT-04 目录逐条 parity；快捷动作只映射正式 code | 仓库内 PASS |
+| 无协议 code 与温度命令失败关闭 | 未知 code 抛错；`SET_TARGET_TEMPERATURE` 不进入可提交集合且 adapter 不发请求 | 仓库内 PASS |
+| 高风险确认 | confirmText 不匹配时禁用；请求不接受客户端认证时间 | 仓库内 PASS |
+| 状态可见性 | 包含 `PUBLISH_FAILED`、终态、attempts/acks 与迟到 ACK | 仓库内 PASS |
+| 设备与授权门控 | Suspended/Retired/离线/无 Entitlement 均有明确裁决 | 仓库内 PASS |
+| requestedBy 与媒体边界 | requestedBy 不可编辑；媒体区无实时流语义 | 仓库内 PASS |
+| CT-06 锚点 | 页面元素与覆盖矩阵 parity | 仓库内 PASS |
 
-当前证据命令：`pnpm exec vitest run`、`pnpm --filter @fdp/admin-web exec tsc --noEmit`、`pnpm exec vitest run apps/admin-web/test/contract-parity.test.ts`。
+验证命令：`pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm check:admin-web-delivery`、`pnpm check:admin-web-e2e`。结果只支持前三层；真实下发与 Cognito 权限必须由目标回执证明。
 
 ## 4. 未决风险
 
 - 命令列表/活动日志的 siteId/时间范围筛选契约支持但页面 V1 仅暴露 status/command/level/kind（设备上下文已隐含 deviceId）；如验收要求完整筛选维度可补充；
 - 离线判定依赖 device.connectivity（DEC-024@1.0.0：lastHeartbeatAt 距 now ≤600 秒，包含边界），与后端 DEVICE_STATE_NOT_ALLOWED 最终裁决一致；
 - 加热/排气按钮映射为 ON/OFF 命令组（原型单按钮语义），操作者在表单内选定方向。
+- Owner：Release Engineering；关闭条件：真实危险命令、越权拒绝、重复提交和发布失败回执通过独立 Gate；当前保持 NOT RUN / NO RECEIPT。

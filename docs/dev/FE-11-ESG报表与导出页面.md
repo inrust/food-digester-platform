@@ -16,6 +16,17 @@
 
 API 仅提供日粒度；周/月切换为客户端聚合：**可加性指标（投料/出料/减量/能耗/估算 CO2e）求和**；**气体均值与完整率取算术平均并在列头标注“平均”**；null（未补齐）不参与、全 null 显示“—”（不伪造）；混合计算版本显示“多版本”。ISO 8601 周键（UTC 基准）。
 
+## 当前分层状态
+
+| 层级 | 当前结论 | 证据边界 |
+|---|---|---|
+| module present | PASS | 页面、状态逻辑、API adapter 与定向测试存在。 |
+| app integrated | PASS | 两个路由均由正式 controller 接入组合根；controller 收集完整游标范围后聚合。 |
+| browser verified | PASS | 本地 Chromium mock E2E 覆盖正式路由与交互；不等同真实部署。 |
+| target integrated | NOT RUN / NO RECEIPT | 尚无绑定精确提交、真实 Cognito 与已部署 API 的目标回执。 |
+
+当前整改依据：[FE-11 至 FE-15 全面复盘检查报告](../audit/FE-11至FE-15全面复盘检查报告-2026-09-12.md)。目标环境采集依据：[FE-11 至 FE-15 目标环境验收证据采集说明](../audit/evidence/FE-11至FE-15-目标环境验收证据采集说明.md)，发布时显式执行 `pnpm check:admin-web-fe11-15-target-evidence`。
+
 ## 2. 交付物
 
 | 模块 | 内容 |
@@ -26,22 +37,22 @@ API 仅提供日粒度；周/月切换为客户端聚合：**可加性指标（�
 | `esg-state.ts` | 聚合/ISO 周键/`zonedDateRangeToUtc`（Intl 时区偏移）/格式化（kg/kWh/ppm/%）/权限门/CT-06 锚点表 |
 | `esg-api.ts` | fetchEsgDailySummary/fetchEsgReports/fetchEsgCalculationVersions/createEsgExport/fetchEsgExport |
 
-## 3. 验收基准与证据（vitest + jsdom，8 例 + parity 1 例）
+## 3. 验收基准与仓库内证据
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
-| 指标单位/版本/完整率显示 | 概览行 kg/kWh/% 与“估算 CO2e (kg)”列头；计算版本 ID→版本号解析（v1.2.0）；完整率 98.5%；设备页九项指标全量断言 | ✅ |
-| 导出筛选与页面一致 | onExport 快照断言 = 已应用筛选 + dataset（概览 DAILY_SUMMARY / 设备 REPORTS） | ✅ |
-| 过期下载链接有明确提示 | urlExpired → “下载链接已过期，请重新导出”且无链接；PENDING 无链接；COMPLETED 出链接含有效期 | ✅ |
-| 日/周/月切换 | 聚合纯函数测试（求和/平均/null 不伪造/多版本）+ 页面列头“平均”标注 | ✅ |
-| 日期按用户时区转 UTC | Asia/Shanghai 2026-09-01 → [2026-08-31T16:00:00Z, 2026-09-01T15:59:59.999Z]；非法区间字段错误 | ✅ |
-| 非第三方核证 | 两页固定声明；无“碳认证/已核证/碳信用”字样 | ✅ |
-| CT-06 锚点 | esg-overview 6 元素 + esg-device 7 元素 ⇄ testid 集合精确一致 | ✅ |
+| 指标单位/版本/完整率显示 | 概览行 kg/kWh/% 与“估算 CO2e (kg)”列头；计算版本映射、完整率与设备指标断言 | 仓库内 PASS |
+| 导出筛选与页面一致 | onExport 快照断言 = 已应用筛选 + dataset（概览 DAILY_SUMMARY / 设备 REPORTS） | 仓库内 PASS |
+| 过期下载链接有明确提示 | urlExpired 时提示重新导出且无链接；未完成无链接；完成后显示短链 | 仓库内 PASS |
+| 日/周/月切换 | 完整游标范围聚合；求和/平均/null 不伪造/多版本 | 仓库内 PASS |
+| 日期按用户时区转 UTC | 严格日期校验、Asia/Shanghai 及 America/New_York 春秋 DST 边界 | 仓库内 PASS |
+| 非第三方核证 | 两页固定声明；无碳认证结论 | 仓库内 PASS |
+| CT-06 锚点 | 页面 testid 与覆盖矩阵 parity | 仓库内 PASS |
 
-当前证据命令：`pnpm exec vitest run`、`pnpm --filter @fdp/admin-web exec tsc --noEmit`、`pnpm exec vitest run apps/admin-web/test/contract-parity.test.ts`。
+验证命令：`pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm check:admin-web-delivery`、`pnpm check:admin-web-e2e`。结果只支持前三层；目标层必须另跑独立回执 Gate。
 
 ## 4. 未决风险
 
-- 周/月聚合基于已加载行（游标分页内）；跨页全量聚合需装配层拉全数据（文档化的口径限制）；
 - region/subregion 收窄依赖父级注入 deviceScope 映射（设备 → 区域归属）；未覆盖设备在设置区域筛选时不显示；
 - EsgOverview（最近聚合窗口元数据）接口未在页面使用——当前以列表数据+计算版本表自足；如需“最近数据窗口”提示可后续接入。
+- Owner：Release Engineering；关闭条件：取得符合回执 Schema 且绑定待发布提交的目标环境 PASS；当前保持 NOT RUN / NO RECEIPT。

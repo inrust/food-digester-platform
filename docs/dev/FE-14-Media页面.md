@@ -13,6 +13,17 @@
 | DEC-005 | DELETED = 文件到期删除、元数据保留，不提供下载 |
 | DEC-009 | 不提供实时流媒体会话；视频仅为录制文件的受控查看（无实时播放/停止语义） |
 
+## 当前分层状态
+
+| 层级 | 当前结论 | 证据边界 |
+|---|---|---|
+| module present | PASS | 页面、预览组件、API adapter 与定向测试存在。 |
+| app integrated | PASS | `/media` 由正式 controller 接入组合根；筛选使用用户时区并拒绝倒置区间。 |
+| browser verified | PASS | 本地 Chromium mock E2E 覆盖正式路由、续签与错误态；不证明真实 S3 短链。 |
+| target integrated | NOT RUN / NO RECEIPT | 尚无真实 Cognito、已部署 API/S3 与精确提交回执。 |
+
+当前整改依据：[FE-11 至 FE-15 全面复盘检查报告](../audit/FE-11至FE-15全面复盘检查报告-2026-09-12.md)。目标环境采集依据：[FE-11 至 FE-15 目标环境验收证据采集说明](../audit/evidence/FE-11至FE-15-目标环境验收证据采集说明.md)，发布时显式执行 `pnpm check:admin-web-fe11-15-target-evidence`。
+
 ## 2. 交付物
 
 | 模块 | 内容 |
@@ -26,21 +37,21 @@
 
 授权 URL 仅存于预览组件内存状态，关闭预览（Esc）即弃用；过期（≤当前时刻）显示“重新申请”，实时重签。测试断言重开预览必重新请求。
 
-## 3. 验收基准与证据（vitest + jsdom，12 例 + parity 1 例）
+## 3. 验收基准与仓库内证据
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
-| 跨 Customer 资源不可访问 | 列表 403 → 无权界面（含 requestId）；下载 404 → 错误可读 + 可重新申请；Customer 角色无 customerId 筛选框 | ✅ |
-| 链接过期后重新申请 | 注入时钟：过期提示 → 重新申请 → 二次签发；关闭预览即弃用（重开必重签） | ✅ |
-| 未知媒体类型安全降级 | mediaType 越界（如 AUDIO）→ 仅元数据，无 img/video/下载链接，文案“未知类型” | ✅ |
-| 受控图片/视频查看 | IMAGE → img + 下载链接 + 有效期提示；VIDEO → video（controls）；页面无实时画面/直播/RTSP 字样与播放/停止按钮 | ✅ |
-| 元数据列表与筛选 | 类型/状态/设备/客户/时间筛选回调（时间转 UTC ISO）；时长列（图片 —）；DELETED 行无操作 | ✅ |
-| CT-06 锚点 | device-view.field.mediaPreview ⇄ MEDIA_COVERAGE 精确一致；枚举 parity | ✅ |
+| 跨 Customer 资源不可访问 | 列表 403、下载 404、Customer 无 customerId 筛选 | 仓库内 PASS |
+| 短链生命周期 | 过期后重新申请；关闭预览即弃用；不持久缓存 | 仓库内 PASS |
+| 类型与预览边界 | 未知类型仅元数据；图片/录制视频受控查看；无实时流语义 | 仓库内 PASS |
+| 筛选与时区 | 用户选择时区转换、倒置区间失败关闭、枚举 parity | 仓库内 PASS |
+| CT-06 锚点 | 预览入口与覆盖矩阵 parity | 仓库内 PASS |
 
-当前证据命令：`pnpm exec vitest run`、`pnpm --filter @fdp/admin-web exec tsc --noEmit`、`pnpm exec vitest run apps/admin-web/test/contract-parity.test.ts`。
+验证命令：`pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm check:admin-web-delivery`、`pnpm check:admin-web-e2e`。结果只支持前三层。
 
 ## 4. 未决风险
 
 - 设备查看/操作页的“最新授权媒体”面板（FE-06/FE-12）当前仅元数据展示；如需内联受控预览可嵌入 `MediaPreview`（锚点已锁定，升级不改变 CT-06 语义）；
 - 链接有效期 900s 为 DEC-024 冻结值；到期判定用客户端时钟，时钟漂移时以服务端 403/410 兜底；
 - 列表 customerId 筛选仅平台角色可见，Customer 角色租户隔离完全依赖服务端（前端不做安全断言）。
+- Owner：Release Engineering；关闭条件：真实跨租户拒绝、过期/续签短链、零持久化 URL 和清理回执通过独立 Gate；当前保持 NOT RUN / NO RECEIPT。

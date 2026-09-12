@@ -74,6 +74,14 @@ export const ADMIN_FRONTEND_TASK_DOCUMENTS = [
   'docs/dev/FE-10-Alarm与Event与Tamper页面.md',
 ];
 
+export const ADMIN_FRONTEND_FE11_15_TASK_DOCUMENTS = [
+  'docs/dev/FE-11-ESG报表与导出页面.md',
+  'docs/dev/FE-12-RemoteCommand页面.md',
+  'docs/dev/FE-13-OTA页面.md',
+  'docs/dev/FE-14-Media页面.md',
+  'docs/dev/FE-15-审计日志页面.md',
+];
+
 export const TASK_DOCUMENTS = [
   ...ENGINEERING_TASK_DOCUMENTS,
   ...IOT_TASK_DOCUMENTS,
@@ -81,6 +89,7 @@ export const TASK_DOCUMENTS = [
   ...ADMIN_BUSINESS_TASK_DOCUMENTS,
   ...ADMIN_MED_RBAC_AUD_DASH_SET_DOCUMENTS,
   ...ADMIN_FRONTEND_TASK_DOCUMENTS,
+  ...ADMIN_FRONTEND_FE11_15_TASK_DOCUMENTS,
 ];
 
 export const SECURITY_TASK_DOCUMENTS = [
@@ -100,6 +109,8 @@ const ADMIN_MED_RBAC_AUD_DASH_SET_AUDIT_REPORT = 'BE-MED-RBAC-AUD-DASH-SET全面
 const ADMIN_MED_RBAC_AUD_DASH_SET_AWS_GUIDE = 'BE-MED-RBAC-AUD-DASH-SET-AWS验收证据采集说明.md';
 const ADMIN_FRONTEND_AUDIT_REPORT = 'FE-06至FE-10全面复盘检查报告-2026-09-10.md';
 const ADMIN_FRONTEND_TARGET_GUIDE = 'FE-06至FE-10-目标环境验收证据采集说明.md';
+const ADMIN_FRONTEND_FE11_15_AUDIT_REPORT = 'FE-11至FE-15全面复盘检查报告-2026-09-12.md';
+const ADMIN_FRONTEND_FE11_15_TARGET_GUIDE = 'FE-11至FE-15-目标环境验收证据采集说明.md';
 
 export const DATA_PROCESSING_STRICT_REGRESSIONS = [
   {
@@ -285,13 +296,17 @@ export function adminMedRbacAudDashSetDocumentErrors(content, relativeDocument) 
 
 export function adminFrontendDocumentErrors(content, relativeDocument) {
   const errors = [];
+  const isFe11To15 = ADMIN_FRONTEND_FE11_15_TASK_DOCUMENTS.includes(relativeDocument);
+  const auditReport = isFe11To15 ? ADMIN_FRONTEND_FE11_15_AUDIT_REPORT : ADMIN_FRONTEND_AUDIT_REPORT;
+  const targetGuide = isFe11To15 ? ADMIN_FRONTEND_FE11_15_TARGET_GUIDE : ADMIN_FRONTEND_TARGET_GUIDE;
+  const targetGate = isFe11To15 ? 'check:admin-web-fe11-15-target-evidence' : 'check:admin-web-target-evidence';
   for (const marker of ['module present', 'app integrated', 'browser verified', 'target integrated']) {
     if (!content.includes(marker)) errors.push(`${relativeDocument}: 缺少四层状态 ${marker}`);
   }
-  if (!content.includes(ADMIN_FRONTEND_AUDIT_REPORT)) {
-    errors.push(`${relativeDocument}: 缺少 FE-06～FE-10 审计报告引用`);
+  if (!content.includes(auditReport)) {
+    errors.push(`${relativeDocument}: 缺少对应前端审计报告引用`);
   }
-  if (!content.includes(ADMIN_FRONTEND_TARGET_GUIDE) || !content.includes('check:admin-web-target-evidence')) {
+  if (!content.includes(targetGuide) || !content.includes(targetGate)) {
     errors.push(`${relativeDocument}: 缺少管理后台目标环境回执 Gate 引用`);
   }
   for (const marker of ['Owner', '关闭条件', '验证命令']) {
@@ -305,6 +320,8 @@ export function adminFrontendDocumentErrors(content, relativeDocument) {
     ['FE-08-License与Entitlement页面.md', /无全量 License 列表|列表复用.+listDevices/iu],
     ['FE-09-Configuration与DeviceUser页面.md', /同步状态.+仅有同步版本号|USERS_CHANGED 投递状态无查询接口/iu],
     ['FE-10-Alarm与Event与Tamper页面.md', /siteId 筛选为自由文本|视觉样式待.+补充/iu],
+    ['FE-11-ESG报表与导出页面.md', /周\/月聚合基于已加载行|跨页全量聚合需/iu],
+    ['FE-13-OTA页面.md', /失败原因按设备展示无 API 来源|operationId 重复失败/iu],
   ]);
   const stale = [...staleByDocument].find(([suffix]) => relativeDocument.endsWith(suffix))?.[1];
   if (stale?.test(content)) errors.push(`${relativeDocument}: 仍包含 P1 修复前的陈旧缺口描述`);
@@ -381,7 +398,10 @@ export function checkEngDbDomEvidence(root, documentPaths = TASK_DOCUMENTS) {
     if (ADMIN_MED_RBAC_AUD_DASH_SET_DOCUMENTS.includes(relativeDocument)) {
       errors.push(...adminMedRbacAudDashSetDocumentErrors(content, relativeDocument));
     }
-    if (ADMIN_FRONTEND_TASK_DOCUMENTS.includes(relativeDocument)) {
+    if (
+      ADMIN_FRONTEND_TASK_DOCUMENTS.includes(relativeDocument) ||
+      ADMIN_FRONTEND_FE11_15_TASK_DOCUMENTS.includes(relativeDocument)
+    ) {
       errors.push(...adminFrontendDocumentErrors(content, relativeDocument));
     }
 

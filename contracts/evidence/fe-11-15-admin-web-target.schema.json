@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://food-digester.example/contracts/evidence/fe-11-15-admin-web-target.schema.json",
+  "title": "FE-11 to FE-15 Admin Web Target Environment Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "status",
+    "sourceCommit",
+    "deploymentCommit",
+    "executedAt",
+    "environment",
+    "probes",
+    "cleanup"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "status": { "const": "PASS" },
+    "sourceCommit": { "$ref": "#/$defs/commit" },
+    "deploymentCommit": { "$ref": "#/$defs/commit" },
+    "executedAt": { "type": "string", "format": "date-time", "pattern": "Z$" },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "isolated",
+        "accountId",
+        "region",
+        "stackName",
+        "webUrl",
+        "apiBaseUrl",
+        "userPoolId",
+        "browser",
+        "deployedSourceCommit",
+        "deployedDeploymentCommit"
+      ],
+      "properties": {
+        "isolated": { "const": true },
+        "accountId": { "type": "string", "minLength": 1 },
+        "region": { "type": "string", "minLength": 1 },
+        "stackName": { "type": "string", "minLength": 1 },
+        "webUrl": { "type": "string", "format": "uri" },
+        "apiBaseUrl": { "type": "string", "format": "uri" },
+        "userPoolId": { "type": "string", "minLength": 1 },
+        "browser": { "type": "string", "minLength": 1 },
+        "deployedSourceCommit": { "$ref": "#/$defs/commit" },
+        "deployedDeploymentCommit": { "$ref": "#/$defs/commit" }
+      }
+    },
+    "probes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "routes",
+        "roles",
+        "workflows",
+        "cognito",
+        "deployedApi",
+        "crossCustomer",
+        "shortLink",
+        "dangerousAction",
+        "readonlyAudit",
+        "sensitiveData"
+      ],
+      "properties": {
+        "routes": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "passed", "evidence"],
+            "properties": {
+              "path": {
+                "enum": [
+                  "/esg/overview",
+                  "/esg/devices",
+                  "/devices/operate",
+                  "/ota/packages",
+                  "/ota/campaigns",
+                  "/media",
+                  "/audit-logs"
+                ]
+              },
+              "passed": { "const": true },
+              "evidence": { "$ref": "#/$defs/evidence" }
+            }
+          }
+        },
+        "roles": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["role", "identityProvider", "passed", "evidence"],
+            "properties": {
+              "role": {
+                "enum": ["PlatformSuperAdmin", "PlatformOperator", "Auditor", "CustomerAdmin", "CustomerViewer"]
+              },
+              "identityProvider": { "const": "COGNITO" },
+              "passed": { "const": true },
+              "evidence": { "$ref": "#/$defs/evidence" }
+            }
+          }
+        },
+        "workflows": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["workflowId", "passed", "requestIds", "evidence"],
+            "properties": {
+              "workflowId": {
+                "enum": [
+                  "FE-11-esg-pagination-export",
+                  "FE-12-command-danger-publish-failure",
+                  "FE-13-ota-package-campaign-failure",
+                  "FE-14-media-short-link-cross-customer",
+                  "FE-15-audit-readonly-redaction"
+                ]
+              },
+              "passed": { "const": true },
+              "requestIds": { "$ref": "#/$defs/evidence" },
+              "evidence": { "$ref": "#/$defs/evidence" }
+            }
+          }
+        },
+        "cognito": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "realUserCount", "tokenIssuerMatchesUserPool", "evidence"],
+          "properties": {
+            "passed": { "const": true },
+            "realUserCount": { "const": 5 },
+            "tokenIssuerMatchesUserPool": { "const": true },
+            "evidence": { "$ref": "#/$defs/evidence" }
+          }
+        },
+        "deployedApi": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "apiBaseUrlMatched", "mockedResponseCount", "requestIdCount", "evidence"],
+          "properties": {
+            "passed": { "const": true },
+            "apiBaseUrlMatched": { "const": true },
+            "mockedResponseCount": { "const": 0 },
+            "requestIdCount": { "type": "integer", "minimum": 5 },
+            "evidence": { "$ref": "#/$defs/evidence" }
+          }
+        },
+        "crossCustomer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "deniedStatus", "evidence"],
+          "properties": {
+            "passed": { "const": true },
+            "deniedStatus": { "enum": [403, 404] },
+            "evidence": { "$ref": "#/$defs/evidence" }
+          }
+        },
+        "shortLink": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "expiredStatus", "renewedUrlWorks", "persistedUrlCount", "evidence"],
+          "properties": {
+            "passed": { "const": true },
+            "expiredStatus": { "enum": [403, 410] },
+            "renewedUrlWorks": { "const": true },
+            "persistedUrlCount": { "const": 0 },
+            "evidence": { "$ref": "#/$defs/evidence" }
+          }
+        },
+        "dangerousAction": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "confirmationRequired", "unauthorizedStatus", "duplicateMutationCount", "evidence"],
+          "properties": {
+            "passed": { "const": true },
+            "confirmationRequired": { "const": true },
+            "unauthorizedStatus": { "const": 403 },
+            "duplicateMutationCount": { "const": 1 },
+            "evidence": { "$ref": "#/$defs/evidence" }
+          }
+        },
+        "readonlyAudit": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "writeRequestCount", "deniedRoles", "evidence"],
+          "properties": {
+            "passed": { "const": true },
+            "writeRequestCount": { "const": 0 },
+            "deniedRoles": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": { "enum": ["PlatformOperator", "CustomerAdmin", "CustomerViewer"] }
+            },
+            "evidence": { "$ref": "#/$defs/evidence" }
+          }
+        },
+        "sensitiveData": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "domLeakCount", "networkResponseLeakCount", "logLeakCount", "evidence"],
+          "properties": {
+            "passed": { "const": true },
+            "domLeakCount": { "const": 0 },
+            "networkResponseLeakCount": { "const": 0 },
+            "logLeakCount": { "const": 0 },
+            "evidence": { "$ref": "#/$defs/evidence" }
+          }
+        }
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "completed", "evidence"],
+      "properties": {
+        "passed": { "const": true },
+        "completed": { "const": true },
+        "evidence": { "$ref": "#/$defs/evidence" }
+      }
+    }
+  },
+  "$defs": {
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "evidence": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+  }
+}

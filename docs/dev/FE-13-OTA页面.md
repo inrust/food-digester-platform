@@ -17,6 +17,17 @@
 - 概览设备卡片“升级”（FE-03 预埋）与设备管理“同步更新”均跳转 `/ota/campaigns` 创建受控 Campaign，**禁止直接向单设备推送未校验文件**；设备管理“选择固件文件”跳转 `/ota/packages` 上传；
 - CT-06 锚点双向锁定：`dashboard.button.upgrade` / `device-manage.button.selectFirmware` / `device-manage.button.syncUpdate`（parity 精确集合比对）。
 
+## 当前分层状态
+
+| 层级 | 当前结论 | 证据边界 |
+|---|---|---|
+| module present | PASS | 页面、API adapter、OTA 状态逻辑、契约与定向测试存在。 |
+| app integrated | PASS | 两个 OTA 路由由正式 controller 接入组合根；失败码和脱敏原因已贯通数据库、服务与 OpenAPI。 |
+| browser verified | PASS | 本地 Chromium mock E2E 覆盖正式路由与 Campaign 交互；不证明真实 S3/IoT。 |
+| target integrated | NOT RUN / NO RECEIPT | 尚无真实 Cognito、S3、IoT、已部署 API 与精确提交回执。 |
+
+当前整改依据：[FE-11 至 FE-15 全面复盘检查报告](../audit/FE-11至FE-15全面复盘检查报告-2026-09-12.md)。目标环境采集依据：[FE-11 至 FE-15 目标环境验收证据采集说明](../audit/evidence/FE-11至FE-15-目标环境验收证据采集说明.md)，发布时显式执行 `pnpm check:admin-web-fe11-15-target-evidence`。
+
 ## 2. 交付物
 
 | 模块 | 内容 |
@@ -29,27 +40,22 @@
 
 ### 上传直传边界
 
-页面不持有对象存储密钥、不生成上传 URL：创建会话返回的预签名 URL（900s 暂定）由容器经 `onUploadAndComplete` 装配浏览器直传 + complete 校验；详情不展示预签名 URL/信任根材料。
+页面不持有对象存储密钥、不生成上传 URL：创建会话返回的预签名 URL（900s，DEC-024@1.0.0）由容器经 `onUploadAndComplete` 装配浏览器直传 + complete 校验；详情不展示预签名 URL/信任根材料。
 
-## 3. 验收基准与证据（vitest + jsdom，15 例 + parity 2 例）
+## 3. 验收基准与仓库内证据
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
-| 坏包不可建 Campaign | 包下拉仅 VERIFIED 选项；无可发布包时创建入口禁用；validateCampaignCreate 拒绝非 VERIFIED packageId | ✅ |
-| 首批 >1 台前端阻止且后端拒绝 | validateCampaignCreate（0/2 台均拒绝）；createOtaCampaign 装配层守卫（throw 且不发请求；服务端 400 兜底） | ✅ |
-| 暂停后状态正确 | RUNNING→暂停→“已暂停/不再产生新下发”；PAUSED→恢复；取消经危险确认 + 级联取消提示；终态全部动作禁用 | ✅ |
-| 扩大批次禁全选 | 全选 2/2 → 前端阻止 + 提交禁用；部分选择提交（addedCount/幂等跳过提示）；装配层守卫 | ✅ |
-| 失败重试 | FAILED 列表勾选子集携 targetIds；缺省重试全部（无 body） | ✅ |
-| 目标状态看板 | total + 8 状态计数渲染；目标列表批次（1=灰度）/状态/筛选回调 | ✅ |
-| 上传直传 S3 | 会话创建 → 直传+complete 回调携会话 → VERIFIED 提示 + 回源刷新；字段级校验 | ✅ |
-| 权限 | Auditor 只读（上传/动作禁用 + ota:write 原因）；CustomerAdmin 无 OTA 入口 | ✅ |
-| CT-06 锚点 | OTA 元素 ⇄ OTA_COVERAGE 精确一致；枚举与矩阵 parity | ✅ |
+| 坏包与灰度边界 | 仅 VERIFIED 包可选；首批恰好一台；非法输入前后端均拒绝 | 仓库内 PASS |
+| Campaign 状态与扩批 | 暂停/恢复/取消/扩批/重试及终态动作矩阵 | 仓库内 PASS |
+| 失败明细 | 目标结构化失败码与脱敏原因贯通数据库、服务、OpenAPI 和页面；重试清除旧值 | 仓库内 PASS |
+| 上传直传 | 会话创建、浏览器直传回调、complete 校验与回源刷新 | 仓库内 PASS |
+| 权限与锚点 | Auditor 只读、Customer 无入口；页面元素与契约 parity | 仓库内 PASS |
 
-当前证据命令：`pnpm exec vitest run`、`pnpm --filter @fdp/admin-web exec tsc --noEmit`、`pnpm exec vitest run apps/admin-web/test/contract-parity.test.ts`。
+验证命令：`pnpm lint`、`pnpm typecheck`、`pnpm openapi:check`、`pnpm test`、`pnpm check:migrations`、`pnpm check:admin-web-e2e`。结果只支持前三层。
 
 ## 4. 未决风险
 
-- **失败原因按设备展示无 API 来源**：OtaTargetView 无 failureReason 字段（BE-OTA-02 契约冻结），页面以看板计数 + 目标状态呈现失败，明细失败原因需契约补充字段（当前可经告警与事件页追溯）；建议单开契约演进任务；
-- 预签名 URL 有效期 900s 为暂定值，过期需重建会话（页面已提示）；签名格式由 ota-package-signature-policy 冻结值驱动，冻结前 complete 失败关闭（409）；
+- 预签名 URL 有效期 900s 由 DEC-024@1.0.0 冻结，过期需重建会话（页面已提示）；签名格式由 ota-package-signature-policy 驱动，complete 失败关闭（409）；
 - 合格设备集合（型号匹配 + Active/Maintenance + OTA_UPDATE Entitlement）由容器装配注入，页面不重复判定（后端 VALIDATION_FAILED 最终裁决）；
-- 既有 Gate 问题（与 FE 工作无关）：`openapi:check`/`test:scripts` 因 prototype-planned-api.json operationId 重复失败（FE-01 已报告，建议单开修复任务）。
+- Owner：Release Engineering；关闭条件：真实 S3/IoT/Cognito 闭环、失败明细脱敏与清理回执通过独立 Gate；当前保持 NOT RUN / NO RECEIPT。

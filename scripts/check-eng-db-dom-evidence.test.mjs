@@ -7,6 +7,7 @@ import {
   ADMIN_MED_RBAC_AUD_DASH_SET_DOCUMENTS,
   ADMIN_BUSINESS_TASK_DOCUMENTS,
   ADMIN_FRONTEND_TASK_DOCUMENTS,
+  ADMIN_FRONTEND_FE11_15_TASK_DOCUMENTS,
   adminFrontendDocumentErrors,
   adminMedRbacAudDashSetDocumentErrors,
   adminBusinessDocumentErrors,
@@ -89,6 +90,11 @@ test('FE-06～FE-10 五份前端文档纳入四层状态与目标回执门禁', 
   for (const document of ADMIN_FRONTEND_TASK_DOCUMENTS) assert.ok(TASK_DOCUMENTS.includes(document));
 });
 
+test('FE-11～FE-15 五份前端文档纳入四层状态与独立目标回执门禁', () => {
+  assert.equal(ADMIN_FRONTEND_FE11_15_TASK_DOCUMENTS.length, 5);
+  for (const document of ADMIN_FRONTEND_FE11_15_TASK_DOCUMENTS) assert.ok(TASK_DOCUMENTS.includes(document));
+});
+
 test('前端任务文档拒绝缺层级、问题责任字段、目标 Gate 和 P1 陈旧描述', () => {
   const errors = adminFrontendDocumentErrors(
     'module present app integrated browser verified。媒体区仅元数据。✅',
@@ -98,6 +104,17 @@ test('前端任务文档拒绝缺层级、问题责任字段、目标 Gate 和 P
   assert.ok(errors.some((error) => error.includes('审计报告')));
   assert.ok(errors.some((error) => error.includes('目标环境回执 Gate')));
   assert.ok(errors.some((error) => error.includes('Owner')));
+  assert.ok(errors.some((error) => error.includes('任务级勾选')));
+  assert.ok(errors.some((error) => error.includes('陈旧缺口')));
+});
+
+test('FE-11～FE-15 文档拒绝旧缺陷、任务级勾选及旧目标 Gate', () => {
+  const errors = adminFrontendDocumentErrors(
+    'module present app integrated browser verified target integrated Owner 关闭条件 验证命令。周/月聚合基于已加载行。✅ FE-06至FE-10全面复盘检查报告-2026-09-10.md FE-06至FE-10-目标环境验收证据采集说明.md check:admin-web-target-evidence',
+    'docs/dev/FE-11-ESG报表与导出页面.md',
+  );
+  assert.ok(errors.some((error) => error.includes('审计报告')));
+  assert.ok(errors.some((error) => error.includes('目标环境回执 Gate')));
   assert.ok(errors.some((error) => error.includes('任务级勾选')));
   assert.ok(errors.some((error) => error.includes('陈旧缺口')));
 });
