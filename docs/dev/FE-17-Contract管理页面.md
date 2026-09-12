@@ -28,7 +28,7 @@
 |---|---|
 | `ContractsPage`（/contracts） | 状态（派生）/客户筛选；客户名按目录按 ID 解析；设备数量（容器经 listContractDevices 确定性计数注入，未知 —）；服务期限；新建/详情导航 |
 | `ContractNewPage`（/contracts/new） | 仅 contract:write 角色可进入；表单字段级校验；创建 DRAFT 后进入 eligible 设备关联第二步，在成功关联至少一台设备前禁用完成/取消、阻止站内导航并保护页面离开；不自动激活 License |
-| `ContractDetailPage`（/contracts/detail） | 合约信息（contact 最小权限：Auditor null → 提示不伪造）；动作矩阵（编辑/激活/续约/终止/关联/解绑，version + 强制原因 + ConfirmDialog）；关联设备表（Region/Subregion/Site/ID/别名/固件/四轴状态/租期展示值 + LicenseSummary 独立并列）；绑定（eligible 实时加载）/解绑（不撤销 License 提示）；关联历史（ACTIVE/ENDED） |
+| `ContractDetailPage`（/contracts/detail） | 合约信息（contact 最小权限：Auditor null → 提示不伪造）；动作矩阵（编辑/激活/续约/终止/关联/解绑，version + 强制原因 + ConfirmDialog）；关联设备表（Region/Subregion/Site/ID/别名/固件/四轴状态/租期展示值 + LicenseSummary 独立并列并以 licenseId 深链授权详情）；绑定（eligible 实时加载）/解绑（不撤销 License 提示）；关联历史（ACTIVE/ENDED） |
 | `contract-state.ts` | 状态枚举/矩阵（parity 锁定）、gateContractAction、validateContractForm/validateRenew（字段级）、formatServicePeriod、CONTRACT_COVERAGE（24 锚点） |
 | `contracts-api.ts` | list/get/create/update（PATCH If-Match）/activate/renew/terminate + listContractDevices/listAvailableDevices/listContractAssociations/bind/unbind |
 
@@ -42,7 +42,7 @@
 | 无设备 | 创建 DRAFT 后零设备时完成、取消与侧栏离开均失败关闭；真实 Chromium 负向用例覆盖；重叠租期 409 呈现 | ✅ |
 | 新建权限 | `/contracts/new` 仅 PlatformSuperAdmin；PlatformOperator 浏览器直达返回 403，后端继续纵深防御 | ✅ |
 | 并发冲突 | 所有写操作 If-Match 快照断言；409 VERSION_CONFLICT 经 ErrorNotice 刷新恢复 | ✅ |
-| 解绑不改 License | 解绑后 LicenseSummary 仍显示“授权有效”；提示“不撤销 License” | ✅ |
+| License 独立边界 | LicenseSummary 独立展示并可跳转授权详情；解绑后仍显示“授权有效”且提示“不撤销 License” | ✅ |
 | Region/Site 结构化 | eligible 设备/客户均为结构化选择器，无自由文本地域入口 | ✅ |
 
 当前本地证据命令：`pnpm verify`；目标证据命令及采集边界见 [FE-16 至 FE-19 目标环境验收证据采集说明](../audit/evidence/FE-16至FE-19-目标环境验收证据采集说明.md)。

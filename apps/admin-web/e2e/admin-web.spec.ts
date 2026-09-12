@@ -1403,28 +1403,27 @@ test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License �
       meta: { nextCursor: null },
     }),
   );
-  await page.route('**/api/v1/admin/licenses**', (route) =>
-    json(route, {
-      data: [
-        {
-          licenseId: 'lic-fe17',
-          deviceId: 'dev-bound',
-          customerId: 'cust-a',
-          status: 'Active',
-          validFrom: '2026-01-01',
-          validTo: '2027-01-01',
-          entitlements: [],
-          signature: 'v1.sig',
-          version: 1,
-          effective: true,
-          createdBy: 'admin',
-          createdAt: '2026-01-01T00:00:00Z',
-          updatedAt: '2026-09-10T00:00:00Z',
-        },
-      ],
-      meta: { nextCursor: null },
-    }),
-  );
+  const license = {
+    licenseId: 'lic-fe17',
+    deviceId: 'dev-bound',
+    customerId: 'cust-a',
+    status: 'Active',
+    validFrom: '2026-01-01',
+    validTo: '2027-01-01',
+    entitlements: [{ code: 'REMOTE_CONTROL', enabled: true }],
+    signature: 'v1.sig',
+    version: 1,
+    effective: true,
+    createdBy: 'admin',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-09-10T00:00:00Z',
+  };
+  await page.route('**/api/v1/admin/licenses**', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/lic-fe17/history')) return json(route, { data: [] });
+    if (path.endsWith('/lic-fe17')) return json(route, { data: license });
+    return json(route, { data: [license], meta: { nextCursor: null } });
+  });
   await page.route('**/api/v1/admin/contracts/con-fe17**', (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
@@ -1464,6 +1463,11 @@ test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License �
 
   await page.goto('/contracts/detail?contractId=con-fe17');
   await expect(page.getByTestId('contract-detail-page')).toContainText('HT-FE17');
+  await expect(page.getByTestId('license-summary')).toContainText('授权有效');
+  await page.getByTestId('license-summary-open').click();
+  await expect(page).toHaveURL(/\/licenses\?licenseId=lic-fe17$/);
+  await expect(page.getByTestId('license-id')).toContainText('lic-fe17');
+  await page.goto('/contracts/detail?contractId=con-fe17');
   await page.getByTestId('contract-bind-open').click();
   await page.getByTestId('contract-bind-check-dev-available').check();
   await page.getByTestId('contract-bind-reason').fill('扩容');

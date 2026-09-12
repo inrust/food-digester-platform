@@ -355,7 +355,7 @@ test('API 装配：create/renew/revoke 路径与请求体；reason 空时不携�
   assert.deepEqual(calls[2]?.options.body, { reason: '违约' });
 });
 
-test('API 装配：正式 License 列表携带状态、关键字和键集游标', async () => {
+test('API 装配：正式 License 列表携带客户、设备、状态、关键字和键集游标', async () => {
   const calls: { path: string; options: ApiRequestOptions }[] = [];
   const api: ApiClient = {
     request: async <T,>(path: string, options: ApiRequestOptions = {}) => {
@@ -363,8 +363,15 @@ test('API 装配：正式 License 列表携带状态、关键字和键集游标'
       return { data: [makeLicense({ status: 'Revoked' })], meta: { nextCursor: 'next' } } as T;
     },
   };
-  const page = await fetchLicenses(api, { status: 'Revoked', keyword: 'dev-001' }, { cursor: 'after', limit: 20 });
+  const page = await fetchLicenses(
+    api,
+    { customerId: 'cust-1', deviceId: 'dev-001', status: 'Revoked', keyword: 'dev-001' },
+    { cursor: 'after', limit: 20 },
+  );
   assert.equal(page.items[0]?.status, 'Revoked');
   assert.equal(page.nextCursor, 'next');
-  assert.equal(calls[0]?.path, '/admin/licenses?status=Revoked&keyword=dev-001&cursor=after&limit=20');
+  assert.equal(
+    calls[0]?.path,
+    '/admin/licenses?customerId=cust-1&deviceId=dev-001&status=Revoked&keyword=dev-001&cursor=after&limit=20',
+  );
 });

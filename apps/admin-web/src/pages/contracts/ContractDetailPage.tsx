@@ -47,6 +47,8 @@ export interface ContractDetailPageProps {
   readonly associations: readonly ContractDeviceAssociationView[] | null;
   /** 每设备 License 摘要（独立授权轴；DEC-007 并列展示，不联动修改）。 */
   readonly licenses?: Readonly<Record<string, DeviceLicenseSummaryView | null>>;
+  readonly licenseError?: unknown;
+  readonly onOpenLicense: (licenseId: string) => void;
   readonly onListAvailable: () => Promise<readonly AvailableDeviceView[]>;
   readonly onEdit: (input: ContractUpdateInput, version: number) => Promise<ContractView>;
   readonly onActivate: (reason: string, version: number) => Promise<ContractView>;
@@ -76,6 +78,8 @@ export function ContractDetailPage({
   devices,
   associations,
   licenses,
+  licenseError,
+  onOpenLicense,
   onListAvailable,
   onEdit,
   onActivate,
@@ -316,6 +320,7 @@ export function ContractDetailPage({
           </span>
         </div>
         {devices.error !== undefined ? <ErrorNotice error={devices.error} onRefresh={onRefresh} /> : null}
+        {licenseError !== undefined ? <ErrorNotice error={licenseError} onRefresh={onRefresh} /> : null}
         {devices.rows === null ? (
           <div role="status">{translate('page.300ee3dee4dc')}</div>
         ) : devices.rows.length === 0 ? (
@@ -379,7 +384,7 @@ export function ContractDetailPage({
                     </span>
                   </td>
                   <td>
-                    <LicenseSummary summary={licenses?.[device.deviceId] ?? null} />
+                    <LicenseSummary summary={licenses?.[device.deviceId] ?? null} onOpen={onOpenLicense} />
                   </td>
                   <td>
                     {association.validFrom.slice(0, 10)} ~ {association.validTo?.slice(0, 10) ?? '—'}（

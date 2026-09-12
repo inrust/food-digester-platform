@@ -361,7 +361,17 @@ export function DeviceManageController({
     />
   );
 }
-export function LicensesController({ api, session }: { readonly api: ApiClient; readonly session: SessionSnapshot }) {
+export function LicensesController({
+  api,
+  session,
+  search,
+  onNavigate,
+}: {
+  readonly api: ApiClient;
+  readonly session: SessionSnapshot;
+  readonly search: string;
+  readonly onNavigate: Navigate;
+}) {
   const [filter, setFilter] = useState<LicenseFilter>(EMPTY_LICENSE_FILTER);
   const [list, setList] = useState<{
     rows: readonly LicenseView[] | null;
@@ -412,9 +422,13 @@ export function LicensesController({ api, session }: { readonly api: ApiClient; 
     },
     [api],
   );
+  const linkedLicenseId = useMemo(() => new URLSearchParams(search).get('licenseId')?.trim() || null, [search]);
   useEffect(() => {
     void loadList();
   }, [loadList]);
+  useEffect(() => {
+    if (linkedLicenseId !== null && selected.current !== linkedLicenseId) void loadDetail(linkedLicenseId);
+  }, [linkedLicenseId, loadDetail]);
   useEffect(() => {
     let active = true;
     void collectAll((cursor) => fetchDevices(api, undefined, { cursor, limit: 100 })).then(
@@ -448,10 +462,11 @@ export function LicensesController({ api, session }: { readonly api: ApiClient; 
       onLoadMore={(cursor) => void loadList(cursor)}
       onRefresh={refresh}
       detail={detail}
-      onSelect={(id) => void loadDetail(id)}
+      onSelect={(id) => onNavigate(`/licenses?licenseId=${encodeURIComponent(id)}`)}
       onCloseDetail={() => {
         selected.current = null;
         setDetail({ kind: 'none' });
+        onNavigate('/licenses');
       }}
       createCandidates={createCandidates}
       onCreate={(input) => createLicense(api, input)}

@@ -20,6 +20,8 @@ import type { ContractListFilter } from '../pages/contracts/contracts-api.js';
 import { ContractDetailPage } from '../pages/contracts/ContractDetailPage.js';
 import { ContractNewPage } from '../pages/contracts/ContractNewPage.js';
 import { ContractsPage } from '../pages/contracts/ContractsPage.js';
+import { fetchLicenses } from '../pages/licenses/licenses-api.js';
+import type { DeviceLicenseSummaryView } from '../pages/devices/types.js';
 import type {
   ContractDeviceAssociationView,
   ContractDeviceDetailView,
@@ -69,6 +71,19 @@ function roleOf(session: SessionSnapshot): Role {
 function queryId(search: string, name: string): string | null {
   const value = new URLSearchParams(search).get(name)?.trim();
   return value ? value : null;
+}
+async function listCustomerLicenses(api: ApiClient, customerId: string) {
+  const items = [];
+  const seen = new Set<string>();
+  let cursor: string | null = null;
+  do {
+    const page = await fetchLicenses(api, { customerId }, { cursor, limit: 100 });
+    items.push(...page.items);
+    cursor = page.nextCursor;
+    if (cursor !== null && seen.has(cursor)) throw new Error('License pagination cursor repeated');
+    if (cursor !== null) seen.add(cursor);
+  } while (cursor !== null);
+  return items;
 }
 export function SettingsController({ api, session }: { readonly api: ApiClient; readonly session: SessionSnapshot }) {
   const role = roleOf(session);
@@ -248,9 +263,12 @@ export function ContractDetailController({
   });
   const [associations, setAssociations] = useState<readonly ContractDeviceAssociationView[] | null>(null);
   const [customerName, setCustomerName] = useState<string | null>(null);
+  const [licenses, setLicenses] = useState<Readonly<Record<string, DeviceLicenseSummaryView | null>>>({});
+  const [licenseError, setLicenseError] = useState<unknown>();
   const load = useCallback(async () => {
     if (contractId === null) return setContractError(new Error(translate('ui.0eb22b066a9a')));
     setContractError(undefined);
+    setLicenseError(undefined);
     const results = await Promise.allSettled([
       getContract(api, contractId),
       listContractDevices(api, contractId),
@@ -266,6 +284,32 @@ export function ContractDetailController({
     } else setContractError(results[0].reason);
     setDevices(results[1].status === 'fulfilled' ? { rows: results[1].value } : { rows: [], error: results[1].reason });
     setAssociations(results[2].status === 'fulfilled' ? results[2].value : []);
+    if (results[0].status === 'fulfilled' && results[1].status === 'fulfilled') {
+      try {
+        const allLicenses = await listCustomerLicenses(api, results[0].value.customerId);
+        const summaries: Record<string, DeviceLicenseSummaryView | null> = {};
+        for (const { device } of results[1].value) {
+          const license = allLicenses.find(
+            (candidate) => candidate.deviceId === device.deviceId && candidate.status === device.licenseStatus,
+          );
+          summaries[device.deviceId] = license
+            ? {
+                licenseId: license.licenseId,
+                status: license.status,
+                validFrom: license.validFrom,
+                validTo: license.validTo,
+                entitlements: license.entitlements.filter((entry) => entry.enabled).map((entry) => entry.code),
+              }
+            : null;
+        }
+        setLicenses(summaries);
+      } catch (error) {
+        setLicenses({});
+        setLicenseError(error);
+      }
+    } else {
+      setLicenses({});
+    }
   }, [api, contractId]);
   useEffect(() => void load(), [load]);
   const requireId = () => {
@@ -280,6 +324,9 @@ export function ContractDetailController({
       customerName={customerName}
       devices={devices}
       associations={associations}
+      licenses={licenses}
+      {...(licenseError !== undefined ? { licenseError } : {})}
+      onOpenLicense={(licenseId) => onNavigate(`/licenses?licenseId=${encodeURIComponent(licenseId)}`)}
       onListAvailable={() => listAvailableDevices(api, requireId())}
       onEdit={(input, version) => updateContract(api, requireId(), input, version)}
       onActivate={(reason, version) => activateContract(api, requireId(), reason, version)}

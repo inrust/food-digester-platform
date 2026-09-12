@@ -160,7 +160,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       );
       break;
     case 'licenses':
-      page = <LicensesController api={services.api} session={session} />;
+      page = <LicensesController api={services.api} session={session} search={location.search} onNavigate={navigate} />;
       break;
     case 'configurations':
       page = <ConfigurationsController api={services.api} session={session} />;

@@ -19,10 +19,17 @@ export interface LicenseCreateInput {
 
 export async function fetchLicenses(
   api: ApiClient,
-  filter: { status?: string | null; keyword?: string | null } = {},
+  filter: {
+    customerId?: string | null;
+    deviceId?: string | null;
+    status?: string | null;
+    keyword?: string | null;
+  } = {},
   options: { cursor?: string | null; limit?: number } = {},
 ): Promise<{ readonly items: readonly LicenseView[]; readonly nextCursor: string | null }> {
   const params = new URLSearchParams();
+  if (filter.customerId) params.set('customerId', filter.customerId);
+  if (filter.deviceId) params.set('deviceId', filter.deviceId);
   if (filter.status) params.set('status', filter.status);
   if (filter.keyword) params.set('keyword', filter.keyword);
   if (options.cursor) params.set('cursor', options.cursor);

@@ -286,6 +286,7 @@ function renderDetail(overrides: Partial<ContractDetailPageProps> = {}) {
     unbound: [] as { deviceIds: readonly string[]; reason: string }[],
     listedAvailable: 0,
     refreshed: 0,
+    openedLicenses: [] as string[],
   };
   const contract = makeContract();
   const props: ContractDetailPageProps = {
@@ -331,6 +332,7 @@ function renderDetail(overrides: Partial<ContractDetailPageProps> = {}) {
       calls.unbound.push({ deviceIds, reason });
       return [...deviceIds];
     },
+    onOpenLicense: (licenseId) => calls.openedLicenses.push(licenseId),
     onBack: () => {},
     onRefresh: () => {
       calls.refreshed += 1;
@@ -341,8 +343,8 @@ function renderDetail(overrides: Partial<ContractDetailPageProps> = {}) {
   return { calls, contract, unmount: utils.unmount };
 }
 
-test('详情：信息渲染（contact 最小权限）、设备表四轴与 License 并列（标签不同）', () => {
-  const { unmount } = renderDetail();
+test('详情：信息渲染（contact 最小权限）、设备表四轴与 License 并列并可跳转', () => {
+  const { calls, unmount } = renderDetail();
   assert.ok(screen.getByText('绿洲酒店集团'));
   assert.ok(screen.getByText('ops@oasis.example.com'));
   assert.equal(screen.getByTestId('contract-detail-status').textContent, '生效中');
@@ -355,6 +357,8 @@ test('详情：信息渲染（contact 最小权限）、设备表四轴与 Licen
   assert.ok(screen.getByTestId('contract-device-axes-dev-001'));
   // License 独立展示（授权状态 ≠ 合约状态标签）
   assert.ok(screen.getByTestId('license-summary').textContent?.includes('授权有效'));
+  fireEvent.click(screen.getByTestId('license-summary-open'));
+  assert.deepEqual(calls.openedLicenses, ['lic-1']);
   unmount();
 
   // Auditor 视角：contact 为 null → 最小权限提示，不伪造

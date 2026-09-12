@@ -8,7 +8,7 @@
 |---|---|---|
 | module present | **PASS** | License 列表、详情、状态动作和 Entitlement 模块存在；`pnpm --filter @fdp/admin-web typecheck` |
 | app integrated | **PASS** | `/licenses`、`listLicenses` 和写操作已进入组合根/交付清单；`pnpm check:admin-web-delivery` |
-| browser verified | **PASS（本地）** | Chromium 覆盖正式 License 分页、空态和失败关闭；`pnpm check:admin-web-e2e` |
+| browser verified | **PASS（本地 + 目标环境手工验收）** | Chromium 覆盖正式 License 分页、空态、Contract 摘要深链和失败关闭；目标环境由用户于 2026-09-12 手工验收通过；`pnpm check:admin-web-e2e` |
 | target integrated | **NOT RUN / NO RECEIPT** | 尚无当前提交对应的 Cognito、部署后 License API 与并发回执；`pnpm check:admin-web-target-evidence` 当前应失败关闭 |
 
 整改依据：[FE-06至FE-10 全面复盘检查报告](../audit/FE-06至FE-10全面复盘检查报告-2026-09-10.md)；目标回执规则：[FE-06～FE-10 目标环境验收证据采集说明](../audit/evidence/FE-06至FE-10-目标环境验收证据采集说明.md)。
@@ -17,15 +17,15 @@
 
 | 项 | 说明 |
 |---|---|
-| 任务 | FE-08（P1），依赖 FE-02（已交付）、BE-LIC-01（契约 + 后端已实现）、DEC-007、FE-17（未交付，见偏差说明） |
+| 任务 | FE-08（P1），依赖 FE-02、BE-LIC-01、DEC-007、FE-17（均已交付/冻结） |
 | 路由 | `/licenses`（扩展路由，CT-06 矩阵外；license:read = 平台三角色；菜单组“合约管理”） |
 | 事实源 | admin-license-api.json：`listLicenses` 正式实体列表及 create/get/history/issue/activate/renew/revoke；终态历史 License 可枚举 |
 | DEC-007 | Contract 与 License 状态严格分离：`LicenseSummary` 组件独立展示授权状态，不消费 Contract 状态 |
 | 功能边界 | 不计算正式合同费用（页面无金额字段）；evaluate（SYSTEM 时间派生）不在管理页面暴露 |
 
-### 依赖偏差（FE-17 未交付）
+### FE-17 Contract 集成
 
-任务声明“从 Contract 详情展示独立的授权摘要与跳转”，但 FE-17（合约页面）未交付。本次以可复用组件 `LicenseSummary`（testid `license-summary`，含“查看授权”跳转回调）先行交付，FE-17 交付合约详情页时直接嵌入；CT-06 parity 测试已锁定 `contract-detail.field.licenseSummary` 锚点。
+Contract 详情按 Customer 分页读取正式 License 实体，为关联设备展示独立的 `LicenseSummary`；点击“查看授权”以 `licenseId` 跳转 `/licenses?licenseId=…` 并自动打开对应详情。摘要只消费 License 状态，不把 Contract 状态映射成授权状态；CT-06 parity、组件测试和 Chromium 深链回归共同锁定该行为。
 
 ### 正式列表 API
 
@@ -69,7 +69,7 @@
 
 | ID | 状态 | Owner | 关闭条件 | 验证命令 |
 |---|---|---|---|---|
-| FE08-DEP-01 | **OPEN / BLOCKED BY FE-17** | FE-17 owner | FE-17 Contract 详情落地后嵌入独立 LicenseSummary，并以 licenseId 跳转 `/licenses`；不得混用 Contract 状态 | `rg -n "LicenseSummary|license-summary" apps/admin-web/src apps/admin-web/test` |
+| FE08-DEP-01 | **CLOSED** | FE-08/FE-17 owner | Contract 详情嵌入独立 LicenseSummary，并以 licenseId 深链 `/licenses`；不得混用 Contract 状态 | `pnpm exec vitest run apps/admin-web/test/contracts.test.tsx apps/admin-web/test/licenses.test.tsx && pnpm check:admin-web-e2e` |
 | FE08-TARGET-01 | **NOT RUN / NO RECEIPT** | Release QA | 隔离环境证明历史终态可发现、动作矩阵、409 与角色边界，回执绑定精确 HEAD 并清理 | `pnpm check:admin-web-target-evidence` |
 
 Renewed→Active 由 SYSTEM evaluate 推进是冻结状态机行为，不是管理员页面缺陷。
