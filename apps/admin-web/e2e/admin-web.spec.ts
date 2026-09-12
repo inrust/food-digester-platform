@@ -1093,3 +1093,415 @@ test('FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭',
   await expect(admin).toHaveURL(/\/contracts\/new$/);
   await admin.close();
 });
+
+test('FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状态机', async ({ page }) => {
+  await seedSession(page, 'PlatformSuperAdmin');
+  const pii = '13800000000';
+  let contactRequests = 0;
+  let requestStatus: 'PENDING' | 'PROCESSING' = 'PENDING';
+  let duplicateMutations = 0;
+  const statusRow = {
+    deviceId: 'dev-fe18',
+    serialNumber: 'SN-FE18',
+    model: 'FD-100',
+    alias: 'FE18',
+    lifecycleStatus: 'Active',
+    site: { siteId: 'site-a', name: '上海站点', region: 'CN', subregion: 'SH' },
+    connectivity: 'ONLINE',
+    consumables: {
+      CARBON_FILTER: {
+        remainingPercent: 8,
+        remainingDisplay: '8%',
+        stale: false,
+        observedAt: '2026-09-10T00:00:00Z',
+        sourceMessageId: 'msg-1',
+      },
+      BIO_ADDITIVE: {
+        remainingPercent: null,
+        remainingDisplay: 'unknown',
+        stale: true,
+        observedAt: null,
+        sourceMessageId: 'msg-2',
+      },
+    },
+  };
+  const request = () => ({
+    requestId: 'request-fe18',
+    customerId: 'cust-a',
+    deviceId: 'dev-fe18',
+    consumableType: 'CARBON_FILTER',
+    status: requestStatus,
+    source: 'ADMIN',
+    requestedBy: 'admin',
+    requestedAt: '2026-09-10T00:00:00Z',
+    processedBy: requestStatus === 'PROCESSING' ? 'admin' : null,
+    processNote: null,
+    completedAt: null,
+    version: requestStatus === 'PROCESSING' ? 2 : 1,
+    createdAt: '2026-09-10T00:00:00Z',
+    updatedAt: '2026-09-10T00:00:00Z',
+  });
+  await page.route('**/api/v1/admin/settings/alarm.thresholds', (route) =>
+    json(route, { error: { code: 'FORBIDDEN', message: 'denied', requestId: 'req-settings-403' } }, 403),
+  );
+  await page.route('**/api/v1/admin/consumables**', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/dev-fe18/contact')) {
+      contactRequests += 1;
+      return json(route, { data: { name: '联系人', phone: pii, email: 'contact@example.test' } });
+    }
+    return json(route, { data: [statusRow] });
+  });
+  await page.route('**/api/v1/admin/consumable-requests**', async (route) => {
+    const httpRequest = route.request();
+    const path = new URL(httpRequest.url()).pathname;
+    if (path.endsWith('/request-fe18/process')) {
+      duplicateMutations += 1;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      requestStatus = 'PROCESSING';
+      return json(route, { data: request() });
+    }
+    return json(route, { data: [request()] });
+  });
+
+  await page.goto('/consumables');
+  await expect(page.getByTestId('consumables-page')).toBeVisible();
+  await expect(page.getByTestId('consumable-bio-dev-fe18')).toContainText('unknown');
+  await expect(page.getByTestId('consumable-bio-dev-fe18').locator('.consumable-bar')).toHaveCount(0);
+  await expect(page.getByTestId('consumable-bio-dev-fe18')).toContainText('数据过期');
+  expect(contactRequests).toBe(0);
+  await expect(page.locator('body')).not.toContainText(pii);
+  await page.getByTestId('consumable-contact-dev-fe18').click();
+  await expect(page.getByTestId('consumable-contact-info-dev-fe18')).toContainText(pii);
+  expect(contactRequests).toBe(1);
+
+  await page.getByTestId('consumable-process-request-fe18').click();
+  await page.getByTestId('consumable-action-submit').evaluate((button: HTMLButtonElement) => {
+    button.click();
+    button.click();
+  });
+  await expect.poll(() => duplicateMutations).toBe(1);
+  await expect(page.getByTestId('consumable-request-status-request-fe18')).toContainText('处理中');
+  await expect(page.getByTestId('consumable-complete-request-fe18')).toBeVisible();
+});
+
+test('FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源', async ({ page }) => {
+  await seedSession(page, 'PlatformSuperAdmin');
+  const calls = { invite: 0, roles: 0, scope: 0, reset: 0, refresh: 0 };
+  const user = {
+    userId: 'usr-fe16',
+    email: 'viewer@example.test',
+    displayName: 'Viewer',
+    status: 'ACTIVE',
+    mfaEnabled: true,
+    roles: ['CustomerViewer'],
+    customerId: 'cust-a',
+    createdAt: '2026-09-01T00:00:00Z',
+    updatedAt: '2026-09-10T00:00:00Z',
+  };
+  const setting = {
+    key: 'alarm.thresholds',
+    value: { CONSUMABLE_REMAINING_PERCENT: { warning: 10, major: 30 } },
+    version: 3,
+    updatedBy: 'admin',
+    updatedAt: '2026-09-10T00:00:00Z',
+    runtimeStatus: 'ACTIVE',
+    runtimeConsumer: 'FE-18',
+  };
+  await page.route('**/api/v1/admin/customers**', (route) =>
+    json(route, {
+      data: [
+        {
+          id: 'cust-a',
+          name: '租户 A',
+          status: 'ACTIVE',
+          version: 1,
+          createdAt: '2026-09-01T00:00:00Z',
+          updatedAt: '2026-09-10T00:00:00Z',
+        },
+      ],
+      meta: { nextCursor: null },
+    }),
+  );
+  await page.route('**/api/v1/admin/devices**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await page.route('**/api/v1/admin/device-users**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await page.route('**/api/v1/admin/users**', (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    if (path.endsWith('/roles')) {
+      calls.roles += 1;
+      return json(route, { data: { ...user, roles: ['CustomerAdmin'] } });
+    }
+    if (path.endsWith('/scope')) {
+      calls.scope += 1;
+      return json(route, { data: { ...user, customerId: 'cust-b' } });
+    }
+    if (path.endsWith('/password-reset')) {
+      calls.reset += 1;
+      return json(route, { data: { userId: user.userId, status: 'RESET_TRIGGERED' } });
+    }
+    if (request.method() === 'POST') {
+      calls.invite += 1;
+      const body = request.postDataJSON() as Record<string, unknown>;
+      expect('password' in body).toBe(false);
+      return json(
+        route,
+        {
+          data: {
+            ...user,
+            userId: 'usr-invited',
+            email: body['email'],
+            roles: body['roles'],
+            customerId: null,
+            status: 'INVITED',
+          },
+        },
+        201,
+      );
+    }
+    calls.refresh += 1;
+    return json(route, { data: [user], meta: { nextCursor: null } });
+  });
+  await page.route('**/api/v1/admin/settings**', (route) => {
+    if (route.request().method() === 'PUT') {
+      return json(
+        route,
+        { error: { code: 'VERSION_CONFLICT', message: 'version mismatch', requestId: 'req-fe16-409' } },
+        409,
+      );
+    }
+    return json(route, { data: [setting] });
+  });
+
+  await page.goto('/settings');
+  await expect(page.getByTestId('user-roles-usr-fe16')).toBeVisible();
+  await page.getByTestId('user-invite-open').click();
+  await page.getByTestId('invite-email').fill('new@example.test');
+  await page.getByTestId('invite-display-name').fill('New User');
+  await page.getByTestId('invite-role-PlatformOperator').check();
+  await page.getByTestId('invite-submit').click();
+  await expect.poll(() => calls.invite).toBe(1);
+
+  await page.getByTestId('user-roles-usr-fe16').click();
+  await page.getByTestId('assign-role-CustomerViewer').uncheck();
+  await page.getByTestId('assign-role-CustomerAdmin').check();
+  await page.getByTestId('assign-submit').click();
+  await page.getByTestId('confirm-dialog').getByRole('button').last().click();
+  await expect.poll(() => calls.roles).toBe(1);
+  await expect(page.getByTestId('user-roles-form')).toHaveCount(0);
+  await expect(page.getByTestId('user-scope-usr-fe16')).toBeEnabled();
+
+  await page.getByTestId('user-scope-usr-fe16').click();
+  await page.getByTestId('scope-customer').fill('cust-b');
+  await page.getByTestId('scope-submit').click();
+  await expect.poll(() => calls.scope).toBe(1);
+
+  await page.getByTestId('user-reset-usr-fe16').click();
+  await page.getByTestId('confirm-dialog').getByRole('button').last().click();
+  await expect.poll(() => calls.reset).toBe(1);
+
+  await page.getByTestId('tab-business-settings').click();
+  await page.getByTestId('setting-edit-alarm.thresholds').click();
+  await page.getByTestId('setting-submit').click();
+  await expect(page.getByTestId('error-version-conflict')).toContainText('数据已被他人修改');
+  const beforeRefresh = calls.refresh;
+  await page.getByTestId('error-version-conflict').getByRole('button', { name: '刷新' }).click();
+  await expect.poll(() => calls.refresh).toBeGreaterThan(beforeRefresh);
+});
+
+test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界', async ({ page }) => {
+  await seedSession(page, 'PlatformSuperAdmin');
+  const calls = { bind: 0, unbind: 0, renew: 0, terminate: 0 };
+  const contract = {
+    contractId: 'con-fe17',
+    contractNumber: 'HT-FE17',
+    name: 'FE17 Contract',
+    customerId: 'cust-a',
+    contact: 'ops@example.test',
+    startAt: '2026-01-01T00:00:00Z',
+    endAt: '2027-01-01T00:00:00Z',
+    status: 'EFFECTIVE',
+    derivedStatus: 'EFFECTIVE',
+    version: 3,
+    createdBy: 'admin',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-09-10T00:00:00Z',
+  };
+  const association = {
+    associationId: 'assoc-fe17',
+    deviceId: 'dev-bound',
+    customerId: 'cust-a',
+    validFrom: '2026-01-01T00:00:00Z',
+    validTo: '2027-01-01T00:00:00Z',
+    status: 'ACTIVE',
+    createdAt: '2026-01-01T00:00:00Z',
+    endedAt: null,
+  };
+  const device = {
+    deviceId: 'dev-bound',
+    serialNumber: 'SN-BOUND',
+    model: 'FD-100',
+    alias: '已绑定设备',
+    firmwareVersion: '1.2.3',
+    site: { name: '上海站点', region: 'CN', subregion: 'SH' },
+    lifecycleStatus: 'Active',
+    operationalStatus: 'Active',
+    connectivity: 'ONLINE',
+    licenseStatus: 'Active',
+    lastHeartbeatAt: '2026-09-10T00:00:00Z',
+  };
+  await page.route('**/api/v1/admin/customers**', (route) =>
+    json(route, {
+      data: [
+        {
+          id: 'cust-a',
+          name: '租户 A',
+          status: 'ACTIVE',
+          version: 1,
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-09-10T00:00:00Z',
+        },
+      ],
+      meta: { nextCursor: null },
+    }),
+  );
+  await page.route('**/api/v1/admin/licenses**', (route) =>
+    json(route, {
+      data: [
+        {
+          licenseId: 'lic-fe17',
+          deviceId: 'dev-bound',
+          customerId: 'cust-a',
+          status: 'Active',
+          validFrom: '2026-01-01',
+          validTo: '2027-01-01',
+          entitlements: [],
+          signature: 'v1.sig',
+          version: 1,
+          effective: true,
+          createdBy: 'admin',
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-09-10T00:00:00Z',
+        },
+      ],
+      meta: { nextCursor: null },
+    }),
+  );
+  await page.route('**/api/v1/admin/contracts/con-fe17**', (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    if (path.endsWith('/available-devices'))
+      return json(route, {
+        data: [
+          {
+            deviceId: 'dev-available',
+            serialNumber: 'SN-AVAILABLE',
+            model: 'FD-100',
+            alias: '可绑定设备',
+            lifecycleStatus: 'Onboarded',
+            site: { name: '上海站点', region: 'CN', subregion: 'SH' },
+          },
+        ],
+      });
+    if (path.endsWith('/devices/bind')) {
+      calls.bind += 1;
+      return json(route, { data: { bound: ['dev-available'] } });
+    }
+    if (path.endsWith('/devices/unbind')) {
+      calls.unbind += 1;
+      return json(route, { data: { unbound: ['dev-bound'] } });
+    }
+    if (path.endsWith('/devices')) return json(route, { data: [{ association, device }] });
+    if (path.endsWith('/associations')) return json(route, { data: [association] });
+    if (path.endsWith('/renew')) {
+      calls.renew += 1;
+      return json(route, { data: { ...contract, endAt: '2028-01-01T00:00:00Z', version: 4 } });
+    }
+    if (path.endsWith('/terminate')) {
+      calls.terminate += 1;
+      return json(route, { data: { ...contract, status: 'TERMINATED', derivedStatus: 'TERMINATED', version: 4 } });
+    }
+    return json(route, { data: contract });
+  });
+
+  await page.goto('/contracts/detail?contractId=con-fe17');
+  await expect(page.getByTestId('contract-detail-page')).toContainText('HT-FE17');
+  await page.getByTestId('contract-bind-open').click();
+  await page.getByTestId('contract-bind-check-dev-available').check();
+  await page.getByTestId('contract-bind-reason').fill('扩容');
+  await page.getByTestId('contract-bind-submit').click();
+  await expect.poll(() => calls.bind).toBe(1);
+
+  await page.getByTestId('contract-unbind-check-dev-bound').check();
+  await page.getByTestId('contract-unbind-open').click();
+  await page.getByTestId('confirm-dialog').getByRole('textbox').fill('设备迁移');
+  await page.getByTestId('confirm-dialog').getByRole('button').last().click();
+  await expect.poll(() => calls.unbind).toBe(1);
+  await expect(page.getByTestId('action-notice')).toContainText('不撤销 License');
+
+  await page.getByTestId('contract-renew-open').click();
+  await page.getByTestId('contract-renew-end').fill('2028-01-01T00:00:00Z');
+  await page.getByTestId('contract-renew-reason').fill('续约');
+  await page.getByTestId('contract-renew-submit').click();
+  await expect.poll(() => calls.renew).toBe(1);
+
+  await page.getByTestId('contract-terminate-open').click();
+  await page.getByTestId('confirm-dialog').getByRole('textbox').fill('合同结束');
+  await page.getByTestId('confirm-dialog').getByRole('button').last().click();
+  await expect.poll(() => calls.terminate).toBe(1);
+});
+
+test('FE-19 Chromium 遍历 22 个生产路由、双语言与三档视口且刷新保持', async ({ page }) => {
+  await seedSession(page, 'PlatformSuperAdmin');
+  await page.route('**/api/v1/admin/**', (route) =>
+    json(route, { error: { code: 'FORBIDDEN', message: 'layout probe', requestId: 'req-layout' } }, 403),
+  );
+  const routes = [
+    '/dashboard',
+    '/devices/view',
+    '/devices/operate',
+    '/devices/groups',
+    '/configurations',
+    '/consumables',
+    '/alarms',
+    '/media',
+    '/esg/overview',
+    '/esg/devices',
+    '/contracts',
+    '/settings',
+    '/customers',
+    '/sites',
+    '/licenses',
+    '/device-users',
+    '/audit-logs',
+    '/devices/manage',
+    '/contracts/new',
+    '/contracts/detail',
+    '/ota/campaigns',
+    '/ota/packages',
+  ];
+  for (const language of ['zh-CN', 'en'] as const) {
+    await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), {
+      key: 'fdp.admin.lang.v1',
+      value: language,
+    });
+    for (const width of [375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const path of routes) {
+        await page.goto(path);
+        await expect(page.getByTestId('page-content')).toBeVisible();
+        await expect(page.locator('html')).toHaveAttribute('lang', language);
+        await expect(page.locator('body')).not.toContainText('该页面尚未接入当前管理后台组合根');
+        expect(
+          await page.evaluate(() => document.body.scrollWidth <= window.innerWidth),
+          `${language} ${width} ${path}`,
+        ).toBe(true);
+      }
+    }
+  }
+  await page.goto('/dashboard');
+  await page.getByTestId('language-select').selectOption('en');
+  await page.reload();
+  await expect(page.getByTestId('language-select')).toHaveValue('en');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+});

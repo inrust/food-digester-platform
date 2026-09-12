@@ -617,7 +617,11 @@ export function SettingsPage({
                 className="primary-button"
                 data-testid="assign-submit"
                 disabled={busy || validateRoleAssign(assignTarget.roles) !== null}
-                onClick={() => setConfirm({ kind: 'assignRoles', user: assignTarget.user, roles: assignTarget.roles })}
+                onClick={() => {
+                  const target = assignTarget;
+                  setAssignTarget(null);
+                  setConfirm({ kind: 'assignRoles', user: target.user, roles: target.roles });
+                }}
               >
                 {translate('page.2c83f1deab09')}
               </button>

@@ -2,6 +2,15 @@
 
 实现：[apps/admin-web/src/pages/contracts](../../apps/admin-web/src/pages/contracts/ContractsPage.tsx)；测试：[contracts.test.tsx](../../apps/admin-web/test/contracts.test.tsx)。
 
+## 证据层级
+
+| 层级 | 当前状态 | 证据边界 |
+|---|---|---|
+| module present | PASS | 三页、controllers、API adapter、状态矩阵与组件测试存在 |
+| app integrated | PASS | 三条正式路由、生产 bundle、权限守卫、交付 Gate 与 `pnpm verify` 覆盖 |
+| browser verified | PASS（本地 mock） | Chromium 覆盖创建、零设备拒绝、绑定、解绑、续约、终止和只读角色 403 |
+| target integrated | NOT RUN / NO RECEIPT | 须以真实 Cognito/部署 API 回执通过独立 FE-16～19 Gate |
+
 ## 1. 范围与事实源
 
 | 项 | 说明 |
@@ -36,7 +45,7 @@
 | 解绑不改 License | 解绑后 LicenseSummary 仍显示“授权有效”；提示“不撤销 License” | ✅ |
 | Region/Site 结构化 | eligible 设备/客户均为结构化选择器，无自由文本地域入口 | ✅ |
 
-当前证据命令：`pnpm verify`；其中 Chromium 11/11，包含 FE-17 新建权限与零设备第二阶段负向用例。
+当前本地证据命令：`pnpm verify`；目标证据命令及采集边界见 [FE-16 至 FE-19 目标环境验收证据采集说明](../audit/evidence/FE-16至FE-19-目标环境验收证据采集说明.md)。
 
 ## 4. 未决风险
 

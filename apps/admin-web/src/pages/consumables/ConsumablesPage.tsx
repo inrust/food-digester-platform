@@ -14,6 +14,7 @@ import { useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
+import { PercentText } from '../../components/LocaleValue.js';
 import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
 import type { ConsumableRequestFilter, ConsumableStatusFilter } from './consumables-api.js';
@@ -110,7 +111,7 @@ function ConsumableCell({
   return (
     <span data-testid={testid}>
       <span className="consumable-bar" data-level={level ?? 'ok'} style={{ width: `${value.remainingPercent}%` }} />
-      {value.remainingDisplay}
+      <PercentText value={value.remainingPercent} />
       {value.stale ? <span className="stale-badge">{translate('page.e7ebfebaaa0f')}</span> : null}
       {value.observedAt !== null ? (
         <span className="field-hint">

@@ -249,6 +249,14 @@ pnpm check:aws-med-rbac-aud-dash-set-evidence
 
 该独立发布 Gate 绑定精确 `sourceCommit`；缺少真实目标环境回执时按设计失败关闭，状态保持 `NOT RUN / OPEN`。
 
+FE-16～FE-19 管理后台浏览器目标范围另按 [FE-16 至 FE-19 目标环境验收证据采集说明](audit/evidence/FE-16至FE-19-目标环境验收证据采集说明.md)覆盖真实 Cognito 五角色、五个正式页面、权限与并发、联系人按需隐私、22 路由双语言和三档视口，并执行：
+
+```bash
+pnpm check:admin-web-fe16-19-target-evidence
+```
+
+该 Gate 不进入普通 `pnpm verify`。缺少绑定当前 HEAD 与部署提交的真实隔离环境回执时必须失败并保持 `NOT RUN / NO RECEIPT`；本地 Chromium mock 结果不得替代。
+
 ### 权限负向验证
 
 仓库已有真实 AWS 授权矩阵脚本，会创建两台临时 Thing、测试自身/跨设备权限并清理资源：

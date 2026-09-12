@@ -11,6 +11,7 @@ import { translate } from '../../i18n/i18n.js';
 import { useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
 import { CursorTable } from '../../components/CursorTable.js';
+import { NumberText } from '../../components/LocaleValue.js';
 import {
   CONTRACT_STATUS_LABELS,
   CONTRACT_STATUS_OPTIONS,
@@ -138,7 +139,9 @@ export function ContractsPage({
               key: 'deviceCount',
               header: translate('page.67e66eaaa568'),
               render: (c) => (
-                <span data-testid={`contract-device-count-${c.contractId}`}>{deviceCounts?.[c.contractId] ?? '—'}</span>
+                <span data-testid={`contract-device-count-${c.contractId}`}>
+                  {deviceCounts?.[c.contractId] === undefined ? '—' : <NumberText value={deviceCounts[c.contractId]} />}
+                </span>
               ),
             },
             {

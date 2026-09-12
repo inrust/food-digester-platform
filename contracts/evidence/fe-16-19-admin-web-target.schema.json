@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://food-digester.example/contracts/evidence/fe-16-19-admin-web-target.schema.json",
+  "title": "FE-16 to FE-19 Admin Web Target Environment Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "status",
+    "sourceCommit",
+    "deploymentCommit",
+    "executedAt",
+    "environment",
+    "probes",
+    "cleanup"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "status": { "const": "PASS" },
+    "sourceCommit": { "$ref": "#/$defs/commit" },
+    "deploymentCommit": { "$ref": "#/$defs/commit" },
+    "executedAt": { "type": "string", "format": "date-time", "pattern": "Z$" },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "isolated",
+        "accountId",
+        "region",
+        "stackName",
+        "webUrl",
+        "apiBaseUrl",
+        "userPoolId",
+        "browser",
+        "deployedSourceCommit",
+        "deployedDeploymentCommit"
+      ],
+      "properties": {
+        "isolated": { "const": true },
+        "accountId": { "type": "string", "minLength": 1 },
+        "region": { "type": "string", "minLength": 1 },
+        "stackName": { "type": "string", "minLength": 1 },
+        "webUrl": { "type": "string", "format": "uri" },
+        "apiBaseUrl": { "type": "string", "format": "uri" },
+        "userPoolId": { "type": "string", "minLength": 1 },
+        "browser": { "type": "string", "pattern": "^Chromium\\s.+" },
+        "deployedSourceCommit": { "$ref": "#/$defs/commit" },
+        "deployedDeploymentCommit": { "$ref": "#/$defs/commit" }
+      }
+    },
+    "probes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "routes",
+        "roles",
+        "workflows",
+        "cognito",
+        "deployedApi",
+        "authorization",
+        "concurrency",
+        "privacy",
+        "i18nLayout"
+      ],
+      "properties": {
+        "routes": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "passed", "evidence"],
+            "properties": {
+              "path": { "enum": ["/settings", "/contracts", "/contracts/new", "/contracts/detail", "/consumables"] },
+              "passed": { "const": true },
+              "evidence": { "$ref": "#/$defs/evidence" }
+            }
+          }
+        },
+        "roles": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["role", "identityProvider", "passed", "evidence"],
+            "properties": {
+              "role": {
+                "enum": ["PlatformSuperAdmin", "PlatformOperator", "Auditor", "CustomerAdmin", "CustomerViewer"]
+              },
+              "identityProvider": { "const": "COGNITO" },
+              "passed": { "const": true },
+              "evidence": { "$ref": "#/$defs/evidence" }
+            }
+          }
+        },
+        "workflows": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["workflowId", "passed", "requestIds", "evidence"],
+            "properties": {
+              "workflowId": {
+                "enum": [
+                  "FE-16-users-settings",
+                  "FE-17-contract-lifecycle",
+                  "FE-18-consumable-privacy-workflow",
+                  "FE-19-bilingual-layout"
+                ]
+              },
+              "passed": { "const": true },
+              "requestIds": { "$ref": "#/$defs/evidence" },
+              "evidence": { "$ref": "#/$defs/evidence" }
+            }
+          }
+        },
+        "cognito": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "evidence", "realUserCount", "tokenIssuerMatchesUserPool"],
+          "properties": {
+            "passed": { "const": true },
+            "evidence": { "$ref": "#/$defs/evidence" },
+            "realUserCount": { "const": 5 },
+            "tokenIssuerMatchesUserPool": { "const": true }
+          }
+        },
+        "deployedApi": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "evidence", "apiBaseUrlMatched", "mockedResponseCount", "requestIdCount"],
+          "properties": {
+            "passed": { "const": true },
+            "evidence": { "$ref": "#/$defs/evidence" },
+            "apiBaseUrlMatched": { "const": true },
+            "mockedResponseCount": { "const": 0 },
+            "requestIdCount": { "type": "integer", "minimum": 8 }
+          }
+        },
+        "authorization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "passed",
+            "evidence",
+            "contractWriteDeniedStatuses",
+            "crossCustomerStatus",
+            "missingResourceStatus",
+            "selfElevationStatus",
+            "lastSuperAdminStatus"
+          ],
+          "properties": {
+            "passed": { "const": true },
+            "evidence": { "$ref": "#/$defs/evidence" },
+            "contractWriteDeniedStatuses": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": { "type": "integer", "const": 403 }
+            },
+            "crossCustomerStatus": { "const": 404 },
+            "missingResourceStatus": { "const": 404 },
+            "selfElevationStatus": { "const": 403 },
+            "lastSuperAdminStatus": { "const": 409 }
+          }
+        },
+        "concurrency": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "evidence", "duplicateMutationCount", "ifMatchSuccessCount", "ifMatchConflictCount"],
+          "properties": {
+            "passed": { "const": true },
+            "evidence": { "$ref": "#/$defs/evidence" },
+            "duplicateMutationCount": { "const": 1 },
+            "ifMatchSuccessCount": { "const": 1 },
+            "ifMatchConflictCount": { "const": 1 }
+          }
+        },
+        "privacy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "passed",
+            "evidence",
+            "listContactFieldCount",
+            "preClickContactRequestCount",
+            "domLeakCount",
+            "networkResponseLeakCount",
+            "logLeakCount"
+          ],
+          "properties": {
+            "passed": { "const": true },
+            "evidence": { "$ref": "#/$defs/evidence" },
+            "listContactFieldCount": { "const": 0 },
+            "preClickContactRequestCount": { "const": 0 },
+            "domLeakCount": { "const": 0 },
+            "networkResponseLeakCount": { "const": 0 },
+            "logLeakCount": { "const": 0 }
+          }
+        },
+        "i18nLayout": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "passed",
+            "evidence",
+            "locales",
+            "productionRouteCount",
+            "testedRouteCount",
+            "viewports",
+            "overflowCount",
+            "refreshPersistence",
+            "localeFormatting",
+            "timeZonePreserved"
+          ],
+          "properties": {
+            "passed": { "const": true },
+            "evidence": { "$ref": "#/$defs/evidence" },
+            "locales": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "enum": ["zh-CN", "en"] } },
+            "productionRouteCount": { "const": 22 },
+            "testedRouteCount": { "const": 22 },
+            "viewports": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": { "type": "integer", "enum": [375, 768, 1440] }
+            },
+            "overflowCount": { "const": 0 },
+            "refreshPersistence": { "const": true },
+            "localeFormatting": { "const": true },
+            "timeZonePreserved": { "const": true }
+          }
+        }
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "evidence", "completed"],
+      "properties": {
+        "passed": { "const": true },
+        "evidence": { "$ref": "#/$defs/evidence" },
+        "completed": { "const": true }
+      }
+    }
+  },
+  "$defs": {
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "evidence": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+  }
+}
