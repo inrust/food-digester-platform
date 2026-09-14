@@ -4,7 +4,7 @@
  * - 22 个命令白名单与原型 8 个快捷动作映射正确（文案可追溯到 command code）；
  * - 不存在无协议 command code 的提交（组按钮必须选定真实命令；未知 code 抛错）；
  * - DEC-023 高风险命令 confirmText 完全一致才能提交，客户端不提交确认时间；
- * - M/N 与温度阈值走 Configuration（不误走命令 API）；
+ * - DEC-018 排除 M/N；温度阈值走 Configuration（不误走命令 API）；
  * - requestedBy 不可编辑；Suspended/Retired/离线/无 Entitlement 禁用且原因展示；
  * - 状态从创建（AUTHORIZED 受理）到最终结果 E2E；TimedOut + 迟到 ACK；
  * - 媒体面板仅最新 Media + 手动刷新（无播放/停止）；活动日志筛选/导出。
@@ -262,12 +262,13 @@ test('低风险命令无需确认凭证；timeoutSec 越界禁止提交', async 
 
 // ---------- 配置更新不走命令 API ----------
 
-test('M/N 与温度阈值跳转 Configuration 版本发布，不产生命令提交', async () => {
+test('DEC-018 排除 M/N 入口；温度阈值跳转 Configuration 且不产生命令提交', async () => {
   const user = userEvent.setup();
   const { calls } = renderPage();
-  await user.click(screen.getByTestId('goto-config-strategy'));
+  assert.equal(screen.queryByTestId('goto-config-strategy'), null);
+  assert.notMatch(screen.getByTestId('device-operate-page').textContent ?? '', /更新策略|M\/N/);
   await user.click(screen.getByTestId('goto-config-threshold'));
-  assert.deepEqual(calls.navigated, ['/configurations', '/configurations']);
+  assert.deepEqual(calls.navigated, ['/configurations']);
   assert.equal(calls.submitted.length, 0, '配置更新不得走命令 API');
 });
 

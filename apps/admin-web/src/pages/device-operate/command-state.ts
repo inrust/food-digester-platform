@@ -7,7 +7,7 @@ import { translate } from '../../i18n/i18n.js';
  * - allowedStatuses 基于设备 Operational 状态轴；MAINTENANCE 按 DEC-001 视同 SUSPENDED；
  *   RETIRED 拒绝全部；离线/无 REMOTE_CONTROL Entitlement 一并禁用（与后端限制一致，
  *   后端 DEVICE_STATE_NOT_ALLOWED/FORBIDDEN 兜底）；
- * - M/N（搅拌间隔/时长）与温度阈值不走命令 API：跳转 Configuration 版本发布（FE-09）；
+ * - DEC-018 排除 M/N（搅拌间隔/时长）；温度阈值不走命令 API，跳转 Configuration（FE-09）；
  * - DEC-023 高风险命令：confirmText 必须与命令名完全一致；服务端另验 JWT auth_time 的近期重新认证。
  */
 import { hasPermission } from '@fdp/auth/browser';
@@ -226,17 +226,8 @@ export const QUICK_ACTIONS: readonly QuickActionSpec[] = [
     command: 'FACTORY_RESET',
   },
 ];
-/** M/N（搅拌间隔/时长）与温度阈值走 Configuration 版本发布，不走命令 API。 */
+/** DEC-018 V1 仅允许温度阈值从本页跳转 Configuration；被排除的 M/N 不渲染入口。 */
 export const CONFIG_REDIRECTS = [
-  {
-    key: 'updateStrategy',
-    get label() {
-      return translate('ui.1fafdf6aec03');
-    },
-    get hint() {
-      return translate('ui.c50ecad143c0');
-    },
-  },
   {
     key: 'updateThreshold',
     get label() {
@@ -382,7 +373,6 @@ export const DEVICE_OPERATE_COVERAGE: Readonly<Record<string, string>> = {
   'device-operate.button.shutdown': 'quick-shutdown',
   'device-operate.button.modeSwitch': 'quick-modeSwitch',
   'device-operate.button.factoryReset': 'quick-factoryReset',
-  'device-operate.button.updateStrategy': 'goto-config-strategy',
   'device-operate.button.updateThreshold': 'goto-config-threshold',
   'device-operate.button.saveAlias': 'alias-edit',
   'device-operate.table.activityLog': 'activity-table',

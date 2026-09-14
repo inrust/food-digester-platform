@@ -16,7 +16,7 @@
 ### 原型映射纪律
 
 - 8 快捷动作 → CT-04 正式命令：搅拌正/反转（AGITATOR_FORWARD/REVERSE）、加热（HEATING_ON/OFF 组）、排气（EXHAUST_ON/OFF 组）、重启（REBOOT）、关机（SHUTDOWN）、模式切换（MACHINE 组 START/STOP/PAUSE/RESUME/EMERGENCY_STOP，表单内选定真实命令）、恢复出厂（FACTORY_RESET）；按钮文案附带 command code（可追溯）；
-- **M/N（搅拌间隔/时长）与温度阈值不产生命令**：跳转 `/configurations` 版本发布（FE-09），测试断言无命令提交；
+- **M/N（搅拌间隔/时长）不进入 V1**：按 DEC-018 拒绝原型入口；温度阈值跳转 `/configurations` 版本发布（FE-09），两者均不产生设备命令；
 - 未知命令 code 在类型层与运行时（commandSpecOf 抛错）双重禁止。
 
 ## 当前分层状态

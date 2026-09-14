@@ -4,6 +4,8 @@
 
 ## 0. 交付状态
 
+**DEC-018 / FE-09 仓库内 Gate：CLOSED（2026-09-14）**。Configuration 与 Device User 已完成组合根接入；原型 M/N 更新入口已按 DEC-018 改为 Reject。目标环境验收仍是独立发布 Gate，不纳入本结论。
+
 | 层级 | 当前状态 | 可复核证据 |
 |---|---|---|
 | module present | **PASS** | Configuration 与 Device User 页面、controller、API 和同步状态模块存在；`pnpm --filter @fdp/admin-web typecheck` |
@@ -76,3 +78,5 @@
 | FE09-TARGET-01 | **NOT RUN / NO RECEIPT** | Release QA | 隔离环境证明配置发布、USERS_CHANGED、设备 Sync 确认、并发冲突和敏感字段零泄露，绑定精确 HEAD 并清理 | `pnpm check:admin-web-target-evidence` |
 
 Operator 不具备 `device-user:read`、配置时序由服务端裁决均是正式权限/校验边界，不作为未决缺陷。
+
+仓库内 Gate 收敛证据：[DEC-018 / FE-09 Gate 收敛记录](../audit/DEC-018-FE-09-Gate收敛记录-2026-09-14.md)。

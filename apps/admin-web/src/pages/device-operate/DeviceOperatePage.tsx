@@ -4,7 +4,7 @@ import { translate } from '../../i18n/i18n.js';
  * 高风险确认、命令状态/ACK 与历史日志、最新 Media 面板（DEC-009 无实时播放）。
  *
  * - 原型 8 快捷动作映射 CT-04 正式命令（文案附带 command code，可追溯）；
- *   M/N 与温度阈值走 Configuration 版本发布（跳转 /configurations），不误走命令 API；
+ *   DEC-018 排除 M/N；温度阈值走 Configuration 版本发布（跳转 /configurations），不误走命令 API；
  * - 只提交目录内 command code（commandGroup 按钮必须在表单内选定具体命令）；
  * - DEC-023 高风险命令：confirmText 必须与命令名完全一致；服务端验证 JWT auth_time；
  * - requestedBy 不可编辑（身份上下文取得，表单无此字段）；
@@ -286,7 +286,7 @@ export function DeviceOperatePage({
             <span key={redirect.key} className="action-item">
               <button
                 type="button"
-                data-testid={`goto-config-${redirect.key === 'updateStrategy' ? 'strategy' : 'threshold'}`}
+                data-testid="goto-config-threshold"
                 title={redirect.hint}
                 onClick={() => onNavigate('/configurations')}
               >

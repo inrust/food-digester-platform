@@ -206,7 +206,7 @@ export const PAGE_ZH_CN: Readonly<Record<string, string>> = {
   'page.3d81345303ab': '重置',
   'page.3d95ae7025be': '设备用户已停用',
   'page.3da8cb889c76': '投料 (kg)',
-  'page.3df4035f6d6e': '策略（M/N）与温度阈值经 Configuration 版本发布生效，不产生设备命令。',
+  'page.3df4035f6d6e': 'DEC-018 V1 温度阈值经 Configuration 版本发布生效；旋转间隔/时长不属于 V1。',
   'page.3e132a2a8e75': '处理人',
   'page.3ea46b0c32d9': '修改别名',
   'page.3eb57b0d80cc': '已创建（草稿；不自动激活 License）。可从 eligible 列表关联设备',
@@ -855,7 +855,6 @@ export const PAGE_ZH_CN: Readonly<Record<string, string>> = {
   'ui.1b1cc8a947c1': '设置值必填（JSON）',
   'ui.1cac8ac7f58f': '处理中…',
   'ui.1f88feb4504d': '当前状态（',
-  'ui.1fafdf6aec03': '更新策略（旋转间隔 M/时长 N）',
   'ui.20391328c89e': '已结束',
   'ui.20cfca6c90b7': '已删除（元数据保留）',
   'ui.21f1e88275aa': '登录',
@@ -1358,7 +1357,7 @@ export const PAGE_EN: Readonly<Record<string, string>> = {
   'page.3d95ae7025be': 'Device user deactivated',
   'page.3da8cb889c76': 'Feed (kg)',
   'page.3df4035f6d6e':
-    'Policy (M/N) and temperature thresholds take effect via Configuration version release; no device commands are generated.',
+    'DEC-018 V1 temperature thresholds take effect via Configuration release; rotation interval/duration are outside V1.',
   'page.3e132a2a8e75': 'Processor',
   'page.3ea46b0c32d9': 'Modify alias',
   'page.3eb57b0d80cc':
@@ -2033,7 +2032,6 @@ export const PAGE_EN: Readonly<Record<string, string>> = {
   'ui.1b1cc8a947c1': 'Setting value required (JSON)',
   'ui.1cac8ac7f58f': 'Processing…',
   'ui.1f88feb4504d': 'Current status (',
-  'ui.1fafdf6aec03': 'Update strategy (rotation interval M/duration N)',
   'ui.20391328c89e': 'Ended',
   'ui.20cfca6c90b7': 'Deleted (metadata retained)',
   'ui.21f1e88275aa': 'Login',

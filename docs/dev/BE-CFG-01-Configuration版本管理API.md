@@ -14,7 +14,7 @@
 | 派生字段 | Contract/Region/Subregion/Site/Alias 从业务实体读取（`derivedContext`，配置页只读展示）；随配置提交即 400 |
 | V1 排除字段 | 图像、旋转、电机、温度上下限、语言、云平台域名和 NTP 不属于 V1，提交即 400；未知字段同样失败关闭 |
 | 不可变性 | 版本仅 create（DRAFT）与 publish（DRAFT→PUBLISHED 条件更新）两条写路径；payload 无更新入口，历史版本不可覆盖，旧版本始终可审计读取 |
-| 功能边界 | 不实现设备端应用配置；BE-SYNC-01 已消费 `resolveEffectiveConfiguration` 下发最新有效完整快照；FE-09 页面仍依赖 FE-02 前端基座 |
+| 功能边界 | 不实现设备端应用配置；BE-SYNC-01 已消费 `resolveEffectiveConfiguration` 下发最新有效完整快照；FE-09 页面已由 FE-02 基座接入 |
 
 ## 2. 端点与 Schema
 
@@ -58,4 +58,4 @@ DEC-018 聚焦测试 29/29 通过；全仓 `pnpm verify` 退出 0：实现测试
 - 同一设备允许存在多个设备定向配置，Sync 解析取最近生效者；如需唯一可在后续加部分唯一索引；
 - Contract 派生取"当前时间窗内最新合同"（BE-CON-01/02 未实现，状态机对齐后可能需调整选择规则）；
 - CONFIG_CHANGED 实际 MQTT 投递依赖下行分发器（Outbox 当前仅归档链路）。
-- FE-09 尚未实施：当前 `admin-web` 只有构建骨架，必须先完成 FE-02；后续页面只能渲染统一策略中的四字段，不能恢复被 DEC-018 排除的原型候选字段。
+- FE-09 已实施并完成仓库内 Gate：页面只渲染统一策略四字段；被 DEC-018 排除的原型候选字段不得恢复。目标环境验收仍以精确提交绑定回执为准。

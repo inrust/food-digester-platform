@@ -19,17 +19,19 @@ DEC-018@1.0.0 将 V1 Configuration 固定为四字段完整快照：
 - 领域校验：`packages/domain/src/configuration.ts` 从统一策略派生范围，创建版本时强制四字段完整快照；
 - 管理 API：`contracts/rest/admin-configuration-api.json` 与 `apps/cloud-api/src/admin/configuration` 实现不可变版本、发布历史、同步状态和字段级失败；
 - 设备 Sync：`contracts/rest/device-sync-api.json` 与 `apps/cloud-api/src/device/sync.ts` 只下发最新有效的 V1 四字段完整快照；
+- 管理前端：`/configurations` 只渲染四字段，提供不可变版本历史、发布与同步状态；`/device-users` 完成受控密码、分配与同步状态流程；
 - 跨层一致性：契约测试逐字段比对统一策略、Admin OpenAPI 和 Sync OpenAPI，防止单位、范围或默认值漂移。
 
 ## Gate 状态
 
-- CT-03、BE-CFG-01、BE-SYNC-01、QA-02 的 DEC-018 契约与后端实施已闭环；
-- FE-09 尚未实施，因为 FE-02 前端基座尚未交付。该状态不影响 DEC-018 冻结值生效，但管理页面 Gate 仍保持未完成；后续页面只能消费统一策略中的四字段。
+- **CLOSED（2026-09-14）**：CT-03、BE-CFG-01、BE-SYNC-01、FE-09、QA-02 已全部闭环；
+- FE-09 已接入正式组合根与交付清单，Configuration 页面只消费统一策略四字段，发布版本只读；Device User 页面不显示 `passwordHash`，密码提交后不回显；
+- Device Operate 原型的 M/N 更新入口已按 DEC-018 改为 Reject，仅保留温度阈值跳转 Configuration，防止候选扩展从旁路重新进入 V1。
 
 ## 验证结果
 
-- DEC-018 聚焦测试：领域、管理 API 与 Device Sync 共 29/29 通过；
-- 全仓 `pnpm verify`：实现测试 683/683、契约测试 254/254、脚本测试 53/53，类型检查 19/19、构建 13/13；Schema、迁移、模块边界和敏感信息门禁全部通过（2026-09-04）。
+- FE-09 聚焦测试覆盖四字段/单位/范围/默认值、发布后只读、候选扩展字段缺席、设备用户受控密码与敏感字段 DOM 零回显；
+- 当前仓库验证结果以本次提交前执行的 `pnpm verify` 输出为准；目标环境仍须使用与精确提交绑定的验收回执，不以本地 Gate 替代。
 
 ## 剩余边界
 
