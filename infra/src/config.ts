@@ -15,6 +15,8 @@ export interface DeviceApiDomainConfig {
   readonly certificateArn: string;
   /** mTLS truststore CA bundle 在本 Stack truststore Bucket 中的 Key。 */
   readonly truststoreKey: string;
+  readonly truststoreBucketName?: string;
+  readonly truststoreVersion?: string;
 }
 
 export interface InfraConfig {
@@ -25,6 +27,12 @@ export interface InfraConfig {
   readonly allowInsecureDeviceEndpointForLocal?: true;
   readonly businessEmailFrom?: string;
   readonly businessWebhookAllowedHosts?: readonly string[];
+  readonly adminWebOrigin?: string;
+  readonly enableMigrationRunner?: boolean;
+  readonly deploymentAccount?: string;
+  readonly deploymentRegion?: string;
+  readonly adminApiDomain?: { readonly domainName: string; readonly certificateArn: string };
+  readonly onboardingApiDomain?: { readonly domainName: string; readonly certificateArn: string };
 }
 
 export const ENV_NAME_PATTERN = /^[a-z][a-z0-9-]{0,14}$/;
@@ -45,6 +53,66 @@ export function resolveConfig(app: App): InfraConfig {
   const domainName = app.node.tryGetContext('deviceApiDomainName') as string | undefined;
   const certificateArn = app.node.tryGetContext('deviceApiCertificateArn') as string | undefined;
   const truststoreKey = app.node.tryGetContext('deviceApiTruststoreKey') as string | undefined;
+  const truststoreBucketName = app.node.tryGetContext('deviceApiTruststoreBucketName') as string | undefined;
+  const truststoreVersion = app.node.tryGetContext('deviceApiTruststoreVersion') as string | undefined;
+  const adminWebOrigin = app.node.tryGetContext('adminWebOrigin') as string | undefined;
+  if (adminWebOrigin) {
+    const url = new URL(adminWebOrigin);
+    if (
+      url.origin !== adminWebOrigin ||
+      url.username ||
+      url.password ||
+      (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname)))
+    ) {
+      throw new Error('adminWebOrigin 必须为精确 HTTPS Origin（本地回环允许 HTTP）');
+    }
+  }
+  const enableMigrationRunner = ['true', true].includes(app.node.tryGetContext('enableMigrationRunner'));
+  const deploymentAccount = app.node.tryGetContext('deploymentAccount') as string | undefined;
+  const deploymentRegion = app.node.tryGetContext('deploymentRegion') as string | undefined;
+  if (!!deploymentAccount !== !!deploymentRegion || (deploymentAccount && !/^\d{12}$/u.test(deploymentAccount))) {
+    throw new Error('deploymentAccount（12 位）与 deploymentRegion 必须同时提供');
+  }
+  if (
+    deploymentAccount &&
+    (!domainName || !certificateArn || !truststoreBucketName || !truststoreVersion || !adminWebOrigin)
+  ) {
+    throw new Error('真实部署必须配置 mTLS 域名、证书、预置 truststore Bucket/Version 与 adminWebOrigin');
+  }
+  if (
+    deploymentAccount &&
+    !certificateArn?.startsWith(`arn:aws:acm:${deploymentRegion}:${deploymentAccount}:certificate/`)
+  ) {
+    throw new Error('Device API ACM 证书必须属于部署账号与区域');
+  }
+  if (deploymentAccount && ['true', true].includes(app.node.tryGetContext('allowInsecureDeviceEndpointForLocal'))) {
+    throw new Error('真实部署禁止不安全 Device execute-api 入口');
+  }
+  const publicApiCertificateArn = app.node.tryGetContext('publicApiCertificateArn') as string | undefined;
+  const adminApiDomainName = app.node.tryGetContext('adminApiDomainName') as string | undefined;
+  const onboardingApiDomainName = app.node.tryGetContext('onboardingApiDomainName') as string | undefined;
+  if ((adminApiDomainName || onboardingApiDomainName) && !publicApiCertificateArn) {
+    throw new Error('公共 API 自定义域名必须配置 publicApiCertificateArn');
+  }
+  if (
+    deploymentAccount &&
+    publicApiCertificateArn &&
+    !publicApiCertificateArn.startsWith(`arn:aws:acm:${deploymentRegion}:${deploymentAccount}:certificate/`)
+  ) {
+    throw new Error('公共 API ACM 证书必须属于部署账号与区域');
+  }
+  const deployment = {
+    adminWebOrigin,
+    enableMigrationRunner,
+    deploymentAccount,
+    deploymentRegion,
+    ...(adminApiDomainName && publicApiCertificateArn
+      ? { adminApiDomain: { domainName: adminApiDomainName, certificateArn: publicApiCertificateArn } }
+      : {}),
+    ...(onboardingApiDomainName && publicApiCertificateArn
+      ? { onboardingApiDomain: { domainName: onboardingApiDomainName, certificateArn: publicApiCertificateArn } }
+      : {}),
+  };
   const allowInsecureDeviceEndpointForLocal = app.node.tryGetContext('allowInsecureDeviceEndpointForLocal') === true;
   const businessEmailFrom = app.node.tryGetContext('businessEmailFrom') as string | undefined;
   const webhookHosts = app.node.tryGetContext('businessWebhookAllowedHosts') as string | undefined;
@@ -65,6 +133,7 @@ export function resolveConfig(app: App): InfraConfig {
     }
     return {
       envName,
+      ...deployment,
       allowInsecureDeviceEndpointForLocal: true,
       ...(businessEmailFrom ? { businessEmailFrom } : {}),
       ...(businessWebhookAllowedHosts?.length ? { businessWebhookAllowedHosts } : {}),
@@ -75,7 +144,14 @@ export function resolveConfig(app: App): InfraConfig {
   }
   return {
     envName,
-    deviceApiDomain: { domainName, certificateArn, truststoreKey: truststoreKey ?? 'truststore/ca-bundle.pem' },
+    ...deployment,
+    deviceApiDomain: {
+      domainName,
+      certificateArn,
+      truststoreKey: truststoreKey ?? 'truststore/ca-bundle.pem',
+      truststoreBucketName,
+      truststoreVersion,
+    },
     ...(businessEmailFrom ? { businessEmailFrom } : {}),
     ...(businessWebhookAllowedHosts?.length ? { businessWebhookAllowedHosts } : {}),
   };

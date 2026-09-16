@@ -20,6 +20,8 @@ import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as logs from 'aws-cdk-lib/aws-logs';
+import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
@@ -162,6 +164,9 @@ export class AppDependenciesStack extends Stack {
     super(scope, id, { ...props, stackName: new Naming(props.config.envName).name('app') });
     this.config = props.config;
     this.naming = new Naming(this.config.envName);
+    if (this.config.deploymentAccount && this.config.allowInsecureDeviceEndpointForLocal) {
+      throw new Error('真实部署禁止不安全 Device execute-api 入口');
+    }
 
     if (!this.config.deviceApiDomain) {
       if (
@@ -180,6 +185,7 @@ export class AppDependenciesStack extends Stack {
     const messaging = this.createMessaging(storage.dataKey);
     this.createIotIngestionRules(messaging);
     const data = this.createData(storage.dataKey);
+    if (this.config.enableMigrationRunner) this.createMigrationRunner(data);
     const identity = this.createIdentity();
     const compute = this.createCompute(storage, messaging, data, identity);
     const apis = this.createApiGateways(
@@ -197,6 +203,65 @@ export class AppDependenciesStack extends Stack {
   }
 
   // ---------- KMS 与 S3 ----------
+
+  private createMigrationRunner(data: DataResources): void {
+    const source = new s3.Bucket(this, 'MigrationSource', {
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      versioned: true,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+    const sg = new ec2.SecurityGroup(this, 'MigrationRunnerSg', {
+      vpc: data.vpc,
+      description: 'One-shot migration runner, no inbound access',
+    });
+    data.db.connections.allowFrom(sg, ec2.Port.tcp(5432), 'Migration runner to private PostgreSQL');
+    const project = new codebuild.Project(this, 'MigrationRunner', {
+      projectName: this.naming.name('migration-runner'),
+      source: codebuild.Source.s3({ bucket: source, path: 'migration/source.zip' }),
+      vpc: data.vpc,
+      subnetSelection: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      securityGroups: [sg],
+      concurrentBuildLimit: 1,
+      autoRetryLimit: 0,
+      logging: {
+        cloudWatch: {
+          logGroup: new logs.LogGroup(this, 'MigrationRunnerLogs', {
+            retention: logs.RetentionDays.TWO_WEEKS,
+            removalPolicy: RemovalPolicy.RETAIN,
+          }),
+        },
+      },
+      timeout: Duration.minutes(20),
+      environment: {
+        buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
+        computeType: codebuild.ComputeType.SMALL,
+        environmentVariables: {
+          DB_SECRET_ARN: { value: data.dbSecretArn },
+          FDP_EXPECTED_SOURCE_COMMIT: { value: 'NOT_APPROVED' },
+        },
+      },
+      buildSpec: codebuild.BuildSpec.fromObject({
+        version: '0.2',
+        phases: {
+          install: {
+            'runtime-versions': { nodejs: 24 },
+            commands: [
+              'node scripts/check-migration-source.mjs',
+              'npm install --global pnpm@10.20.0',
+              'pnpm install --frozen-lockfile',
+              'curl --fail --silent --show-error https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o rds-ca-bundle.pem',
+            ],
+          },
+          build: { commands: ['node scripts/run-database-migrations.mjs'] },
+        },
+      }),
+    });
+    data.db.secret?.grantRead(project);
+    new CfnOutput(this, 'MigrationRunnerProjectName', { value: project.projectName });
+    new CfnOutput(this, 'MigrationSourceBucketName', { value: source.bucketName });
+  }
 
   private createStorage(): StorageResources {
     // KMS 管理面只保留显式管理动作，避免 CDK 默认 `kms:*` KeyPolicy 绕过通配权限 Gate。
@@ -1135,6 +1200,7 @@ export class AppDependenciesStack extends Stack {
       timeout: Duration.seconds(30),
       memorySize: 512,
       environment: {
+        ADMIN_WEB_ORIGIN: this.config.adminWebOrigin ?? '',
         DB_SECRET_ARN: dbSecret,
         USER_POOL_ID: identity.userPool.userPoolId,
         USER_POOL_CLIENT_ID: identity.userPoolClient.userPoolClientId,
@@ -1230,6 +1296,7 @@ export class AppDependenciesStack extends Stack {
     const onboardingApi = new apigw.RestApi(this, 'OnboardingApi', {
       restApiName: this.naming.name('onboarding-api'),
       description: 'Onboarding API：一次性 Token 认证（AUTH-02），独立于 mTLS 入口',
+      disableExecuteApiEndpoint: !!this.config.onboardingApiDomain,
       endpointTypes: [apigw.EndpointType.REGIONAL],
       deployOptions: { ...stageOptions, throttlingRateLimit: 20, throttlingBurstLimit: 40 },
     });
@@ -1265,15 +1332,24 @@ export class AppDependenciesStack extends Stack {
         certificate,
         endpointType: apigw.EndpointType.REGIONAL,
         securityPolicy: apigw.SecurityPolicy.TLS_1_2,
-        mtls: { bucket: truststore, key: deviceApiDomain.truststoreKey },
+        mtls: {
+          bucket: deviceApiDomain.truststoreBucketName
+            ? s3.Bucket.fromBucketName(this, 'ExistingTruststore', deviceApiDomain.truststoreBucketName)
+            : truststore,
+          key: deviceApiDomain.truststoreKey,
+          version: deviceApiDomain.truststoreVersion,
+        },
       });
       domain.addBasePathMapping(deviceApi, { stage: deviceApi.deploymentStage });
+      new CfnOutput(this, 'DeviceApiDomainTarget', { value: domain.domainNameAliasDomainName });
+      new CfnOutput(this, 'DeviceApiDomainHostedZoneId', { value: domain.domainNameAliasHostedZoneId });
     }
 
     // 入口 3：Admin API —— Cognito JWT（/admin、/customer）与 IAM（/internal，仅限云端任务）
     const adminApi = new apigw.RestApi(this, 'AdminApi', {
       restApiName: this.naming.name('admin-api'),
       description: 'Admin/Customer/Internal API：Cognito JWT + IAM（AUTH-01）',
+      disableExecuteApiEndpoint: !!this.config.adminApiDomain,
       endpointTypes: [apigw.EndpointType.REGIONAL],
       deployOptions: stageOptions,
     });
@@ -1287,16 +1363,53 @@ export class AppDependenciesStack extends Stack {
       authorizationType: apigw.AuthorizationType.COGNITO,
       authorizer,
     };
-    v1.addResource('admin').addProxy({ defaultIntegration: integration, defaultMethodOptions: cognitoMethodOptions });
-    v1.addResource('customer').addProxy({
+    const adminProxy = v1
+      .addResource('admin')
+      .addProxy({ defaultIntegration: integration, defaultMethodOptions: cognitoMethodOptions });
+    const customerProxy = v1.addResource('customer').addProxy({
       defaultIntegration: integration,
       defaultMethodOptions: cognitoMethodOptions,
     });
+    if (this.config.adminWebOrigin) {
+      for (const resource of [adminProxy, customerProxy]) {
+        resource.addMethod('OPTIONS', integration, {
+          authorizationType: apigw.AuthorizationType.NONE,
+          authorizer: undefined,
+        });
+      }
+      for (const [id, type] of [
+        ['Cors4xx', apigw.ResponseType.DEFAULT_4XX],
+        ['Cors5xx', apigw.ResponseType.DEFAULT_5XX],
+      ] as const) {
+        adminApi.addGatewayResponse(id, {
+          type,
+          responseHeaders: {
+            'Access-Control-Allow-Origin': `'${this.config.adminWebOrigin}'`,
+            Vary: "'Origin'",
+          },
+        });
+      }
+    }
     v1.addResource('internal').addProxy({
       defaultIntegration: integration,
       defaultMethodOptions: { authorizationType: apigw.AuthorizationType.IAM },
     });
 
+    for (const [id, api, domainConfig] of [
+      ['AdminApiDomain', adminApi, this.config.adminApiDomain],
+      ['OnboardingApiDomain', onboardingApi, this.config.onboardingApiDomain],
+    ] as const) {
+      if (!domainConfig) continue;
+      const domain = new apigw.DomainName(this, id, {
+        domainName: domainConfig.domainName,
+        certificate: acm.Certificate.fromCertificateArn(this, `${id}Certificate`, domainConfig.certificateArn),
+        endpointType: apigw.EndpointType.REGIONAL,
+        securityPolicy: apigw.SecurityPolicy.TLS_1_2,
+      });
+      domain.addBasePathMapping(api, { stage: api.deploymentStage });
+      new CfnOutput(this, `${id}Target`, { value: domain.domainNameAliasDomainName });
+      new CfnOutput(this, `${id}HostedZoneId`, { value: domain.domainNameAliasHostedZoneId });
+    }
     return { onboardingApi, deviceApi, adminApi };
   }
 
@@ -1314,9 +1427,24 @@ export class AppDependenciesStack extends Stack {
     };
 
     // 默认 execute-api URL；Device API 生产入口为 mTLS 自定义域名（DeviceApiDomain 映射）
-    output('OnboardingApiUrl', apis.onboardingApi.url, 'Onboarding API 入口（Token）');
-    output('DeviceApiUrl', apis.deviceApi.url, 'Device API 入口（mTLS 自定义域名映射目标）');
-    output('AdminApiUrl', apis.adminApi.url, 'Admin/Customer/Internal API 入口（Cognito/IAM）');
+    output(
+      'OnboardingApiUrl',
+      this.config.onboardingApiDomain
+        ? `https://${this.config.onboardingApiDomain.domainName}/`
+        : apis.onboardingApi.url,
+      'Onboarding API 入口（Token）',
+    );
+    output(
+      'DeviceApiUrl',
+      this.config.deviceApiDomain ? `https://${this.config.deviceApiDomain.domainName}/` : apis.deviceApi.url,
+      'Device API 有效入口（mTLS 自定义域名）',
+    );
+    if (this.config.adminWebOrigin) output('AdminWebOrigin', this.config.adminWebOrigin, '管理 Web 精确 CORS Origin');
+    output(
+      'AdminApiUrl',
+      this.config.adminApiDomain ? `https://${this.config.adminApiDomain.domainName}/` : apis.adminApi.url,
+      'Admin/Customer/Internal API 入口（Cognito/IAM）',
+    );
     output('UserPoolId', identity.userPool.userPoolId, 'Cognito User Pool');
     output('UserPoolClientId', identity.userPoolClient.userPoolClientId, 'Cognito Admin Web Client');
     output('DbSecretArn', data.dbSecretArn, 'RDS 凭据 Secret（Secrets Manager）');

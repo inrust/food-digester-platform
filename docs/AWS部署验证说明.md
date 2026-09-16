@@ -27,6 +27,8 @@ AWS 服务通常不需要单独“购买授权”，开通 AWS 账号、绑定�
 - 域名和 DNS 如果尚未具备，需要 Route 53 或其他 DNS 提供商；AWS Private CA 不是本次验证必需品。
 - 建议先用 [AWS Pricing Calculator](https://aws.amazon.com/aws-cost-management/aws-pricing-calculator/) 按实际区域生成预算，并创建 50%、80%、100% 告警。[AWS Budgets 设置](https://docs.aws.amazon.com/cost-management/latest/userguide/create-cost-budget.html)
 
+> 2026-09-15 本地补齐更新：CORS、VPC CodeBuild Migration Runner、固定版本外部 truststore 和三个 REST 自定义域名已完成源码接线。当前账号/生产域名配置及操作边界以 [AWS测试环境部署配置与执行手册](AWS测试环境部署配置与执行手册.md) 为准。下文早期 `fdp-test`、无 mTLS 首次部署与 CloudFront/S3 前端建议不再作为本账号部署命令；AWS 实际执行仍为 NOT RUN / NO RECEIPT。
+
 ## 推荐部署方式
 
 ### 1. 使用隔离测试账号
@@ -37,7 +39,7 @@ AWS 服务通常不需要单独“购买授权”，开通 AWS 账号、绑定�
 - 单一区域，例如 `ap-southeast-1`
 - 使用 IAM Identity Center 或短期角色凭据
 - 设置预算告警
-- 不接入生产域名、真实客户数据或生产设备证书
+- 不接入真实客户数据或生产设备证书；Anray 本次批准采用生产命名域名，但仍使用隔离测试账号与独立测试 CA，DNS 切换另行批准
 
 本地工具链：
 
@@ -103,11 +105,11 @@ CDK 部署需要有效凭据、已 Bootstrap 的环境，并通过 CloudFormatio
 
 ### 5. 执行数据库 Migration
 
-这是当前仓库部署流程中的明显缺口：CDK 会创建私有 RDS，但不会自动执行 Prisma Migration。
+CDK 不会在部署过程中自动执行 Prisma Migration。已新增可选 `enableMigrationRunner` VPC CodeBuild 项目；必须另行批准、上传批准 SHA 的源码工件并手动启动，不自动改数据库。
 
 RDS 位于隔离子网，不能从开发电脑或 CloudShell 直接连接。AWS 官方也说明私有 RDS 只能由 VPC 内资源访问。[RDS PostgreSQL 连接说明](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ConnectToPostgreSQLInstance.html)
 
-推荐新增一次性 VPC CodeBuild Migration Job：
+已实现的按需 VPC CodeBuild Migration Job：
 
 1. CodeBuild 放入 Stack 的私有 egress 子网。
 2. 为它创建独立 Security Group。
@@ -122,11 +124,11 @@ pnpm --filter @fdp/database db:seed
 ```
 
 6. 验证 `_prisma_migrations` 和 `onboarding_provisioning_jobs`。
-7. Migration Job 完成后撤销临时访问权限。
+7. Migration Job 不自动重试；完成后按运行手册保存回执，并在测试环境清理阶段撤销项目及其访问权限。
 
 CodeBuild 支持加入 VPC并访问私有 RDS。[CodeBuild VPC 支持](https://docs.aws.amazon.com/codebuild/latest/userguide/vpc-support.html)
 
-在这个 Migration Runner 补齐前，当前 Stack 不能算“一键可运行部署”。
+本地 Runner 实现不等于目标数据库已初始化；实际 AWS 构建、Migration/Seed 与数据库状态验收仍待执行。
 
 ### 6. 准备验收数据
 
@@ -323,10 +325,9 @@ docs/audit/evidence/auth-04-aws-iot-authorization.json
 - RDS 为 Single-AZ、无备份、无删除保护
 - RDS、KMS、Cognito、S3 使用 `DESTROY` 策略
 - S3 非空时 Stack 删除可能失败
-- Archive、Outbox Publisher、Summary 仍有占位实现
-- 管理后台 CloudFront/S3 部署未在当前 Stack 中落地
-- 没有正式 Migration/Seed Runner
-- 生产 mTLS 首次部署存在 truststore Bucket 与对象创建顺序问题
+- 管理后台采用 Amplify；当前 Stack 不创建 Amplify App 或域名绑定
+- Migration/Seed Runner 已接线，但尚无目标 AWS 运行回执
+- 首次 mTLS 部署必须先准备外部 truststore Bucket/CA 对象版本；本地配置强制这些输入，但尚未创建或上传
 - CDK 只创建 API Gateway mTLS Domain/Mapping，不创建 DNS Alias
 
 生产前应拆分 Foundation/Data/API Stack，先创建 Truststore Bucket并上传 CA，再配置 Regional ACM Certificate、mTLS Domain 和 DNS。API Gateway mTLS 要求 Regional 自定义域名、同区域 ACM 证书以及 S3 Truststore；默认 execute-api 入口应关闭。[API Gateway mTLS 官方要求](https://docs.aws.amazon.com/apigateway/latest/developerguide/rest-api-mutual-tls.html)

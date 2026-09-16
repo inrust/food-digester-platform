@@ -1,3 +1,4 @@
+import { withAdminCors } from './admin-cors.js';
 import {
   createAwsIotProvisioningClient,
   createCognitoAdminPort,
@@ -138,6 +139,8 @@ async function initialize() {
 
 /** AWS Lambda 生产入口：冷启动完成 Secret/DB/AWS 适配器接线，热启动复用连接。 */
 export async function handler(event: ApiGatewayAdminEvent): Promise<ApiGatewayAdminResult> {
-  runtimeHandler ??= await initialize();
-  return runtimeHandler(event);
+  return withAdminCors(event, process.env.ADMIN_WEB_ORIGIN, async () => {
+    runtimeHandler ??= await initialize();
+    return runtimeHandler(event);
+  });
 }
