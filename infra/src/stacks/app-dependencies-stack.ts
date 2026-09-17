@@ -133,7 +133,6 @@ interface ComputeResources {
   readonly onboardingDeadline: lambda.Function;
   readonly retirementTimeout: lambda.Function;
   readonly activityExport: lambda.Function;
-  readonly businessNotifier: lambda.Function;
   readonly esgExport: lambda.Function;
   readonly onboardingApi: lambda.Function;
   readonly onboardingProvisioning: lambda.Function;
@@ -206,6 +205,7 @@ export class AppDependenciesStack extends Stack {
 
   private createMigrationRunner(data: DataResources): void {
     const source = new s3.Bucket(this, 'MigrationSource', {
+      bucketName: `${this.naming.name('migration-source')}-${Aws.ACCOUNT_ID}-${Aws.REGION}`,
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       enforceSSL: true,
@@ -217,7 +217,13 @@ export class AppDependenciesStack extends Stack {
       description: 'One-shot migration runner, no inbound access',
     });
     data.db.connections.allowFrom(sg, ec2.Port.tcp(5432), 'Migration runner to private PostgreSQL');
+    const runnerRole = new iam.Role(this, 'MigrationRunnerServiceRole', {
+      roleName: this.naming.name('migration-runner-role'),
+      assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
+      description: 'One-shot database migration CodeBuild service role',
+    });
     const project = new codebuild.Project(this, 'MigrationRunner', {
+      role: runnerRole,
       projectName: this.naming.name('migration-runner'),
       source: codebuild.Source.s3({ bucket: source, path: 'migration/source.zip' }),
       vpc: data.vpc,
@@ -613,6 +619,17 @@ export class AppDependenciesStack extends Stack {
         copyMqttSchemas?: boolean;
       },
     ): lambda.Function => {
+      const functionRole =
+        options.role ??
+        new iam.Role(this, `${id}ServiceRole`, {
+          roleName: this.naming.name(`${suffix}-role`),
+          assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+          description: `${this.naming.name(suffix)} Lambda execution role`,
+          managedPolicies: [
+            iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+            iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
+          ],
+        });
       const props = {
         functionName: this.naming.name(suffix),
         runtime: lambda.Runtime.NODEJS_24_X,
@@ -620,7 +637,7 @@ export class AppDependenciesStack extends Stack {
         timeout: options.timeout,
         memorySize: options.memorySize ?? 256,
         environment: { ...options.environment, ENV_NAME: this.config.envName },
-        ...(options.role ? { role: options.role } : {}),
+        role: functionRole,
         vpc: data.vpc,
         vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
         securityGroups: [data.lambdaSecurityGroup],
@@ -671,6 +688,7 @@ export class AppDependenciesStack extends Stack {
       });
       new events.Rule(this, `${id}Schedule`, {
         ruleName: this.naming.name(suffix),
+        enabled: this.config.enableScheduledWorkers === true,
         schedule: events.Schedule.rate(Duration.minutes(1)),
         targets: [
           new eventsTargets.LambdaFunction(fn, {
@@ -757,6 +775,7 @@ export class AppDependenciesStack extends Stack {
     dbSecretGrant(outboxPublisher);
     new events.Rule(this, 'OutboxPublisherSchedule', {
       ruleName: this.naming.name('outbox-publisher'),
+      enabled: this.config.enableScheduledWorkers === true,
       schedule: events.Schedule.rate(Duration.minutes(1)),
       targets: [new eventsTargets.LambdaFunction(outboxPublisher)],
     });
@@ -784,6 +803,7 @@ export class AppDependenciesStack extends Stack {
     );
     new events.Rule(this, 'NotificationPublisherSchedule', {
       ruleName: this.naming.name('notification-publisher'),
+      enabled: this.config.enableScheduledWorkers === true,
       schedule: events.Schedule.rate(Duration.minutes(1)),
       targets: [new eventsTargets.LambdaFunction(notificationPublisher)],
     });
@@ -797,6 +817,7 @@ export class AppDependenciesStack extends Stack {
     dbSecretGrant(summary);
     new events.Rule(this, 'SummarySchedule', {
       ruleName: this.naming.name('summary'),
+      enabled: this.config.enableScheduledWorkers === true,
       schedule: events.Schedule.rate(Duration.hours(1)),
       targets: [new eventsTargets.LambdaFunction(summary)],
     });
@@ -811,6 +832,7 @@ export class AppDependenciesStack extends Stack {
     messaging.replay.grantSendMessages(replayTriggerPublisher);
     new events.Rule(this, 'ReplayTriggerPublisherSchedule', {
       ruleName: this.naming.name('replay-trigger-publisher'),
+      enabled: this.config.enableScheduledWorkers === true,
       schedule: events.Schedule.rate(Duration.minutes(1)),
       targets: [new eventsTargets.LambdaFunction(replayTriggerPublisher)],
     });
@@ -920,6 +942,7 @@ export class AppDependenciesStack extends Stack {
     );
     new events.Rule(this, 'CertPackageSweeperSchedule', {
       ruleName: this.naming.name('cert-package-sweeper'),
+      enabled: this.config.enableScheduledWorkers === true,
       schedule: events.Schedule.rate(Duration.minutes(5)),
       targets: [new eventsTargets.LambdaFunction(certPackageSweeper)],
     });
@@ -942,6 +965,7 @@ export class AppDependenciesStack extends Stack {
     );
     new events.Rule(this, 'OnboardingDeadlineSchedule', {
       ruleName: this.naming.name('onboarding-deadline'),
+      enabled: this.config.enableScheduledWorkers === true,
       schedule: events.Schedule.rate(Duration.minutes(1)),
       targets: [new eventsTargets.LambdaFunction(onboardingDeadline)],
     });
@@ -961,6 +985,7 @@ export class AppDependenciesStack extends Stack {
     );
     new events.Rule(this, 'RetirementTimeoutSchedule', {
       ruleName: this.naming.name('retirement-timeout'),
+      enabled: this.config.enableScheduledWorkers === true,
       schedule: events.Schedule.rate(Duration.minutes(5)),
       targets: [new eventsTargets.LambdaFunction(retirementTimeout)],
     });
@@ -979,35 +1004,41 @@ export class AppDependenciesStack extends Stack {
     storage.exportBucket.grantReadWrite(activityExport, 'activity-exports/*');
     new events.Rule(this, 'ActivityExportSchedule', {
       ruleName: this.naming.name('activity-export'),
+      enabled: this.config.enableScheduledWorkers === true,
       schedule: events.Schedule.rate(Duration.minutes(1)),
       targets: [new eventsTargets.LambdaFunction(activityExport)],
     });
 
-    const businessNotifier = mkFunction('BusinessNotifierFn', 'business-notifier', {
-      timeout: Duration.seconds(60),
-      environment: {
-        DB_SECRET_ARN: dbSecret,
-        BUSINESS_EMAIL_FROM: this.config.businessEmailFrom ?? 'notifications@example.test',
-        BUSINESS_WEBHOOK_ALLOWED_HOSTS: (this.config.businessWebhookAllowedHosts ?? ['webhook.example.test']).join(','),
-        BUSINESS_NOTIFICATION_BATCH_SIZE: '50',
-        BUSINESS_NOTIFICATION_MAX_ATTEMPTS: '5',
-        BUSINESS_NOTIFICATION_LEASE_SECONDS: '60',
-      },
-      entry: BUSINESS_NOTIFIER_ENTRY,
-    });
-    dbSecretGrant(businessNotifier);
-    businessNotifier.addToRolePolicy(
-      new iam.PolicyStatement({
-        sid: 'BusinessNotificationEmailSend',
-        actions: ['ses:SendEmail'],
-        resources: [this.formatArn({ service: 'ses', resource: 'identity', resourceName: '*' })],
-      }),
-    );
-    new events.Rule(this, 'BusinessNotifierSchedule', {
-      ruleName: this.naming.name('business-notifier'),
-      schedule: events.Schedule.rate(Duration.minutes(1)),
-      targets: [new eventsTargets.LambdaFunction(businessNotifier)],
-    });
+    if (this.config.enableBusinessNotifications !== false) {
+      const businessNotifier = mkFunction('BusinessNotifierFn', 'business-notifier', {
+        timeout: Duration.seconds(60),
+        environment: {
+          DB_SECRET_ARN: dbSecret,
+          BUSINESS_EMAIL_FROM: this.config.businessEmailFrom ?? 'notifications@example.test',
+          BUSINESS_WEBHOOK_ALLOWED_HOSTS: (this.config.businessWebhookAllowedHosts ?? ['webhook.example.test']).join(
+            ',',
+          ),
+          BUSINESS_NOTIFICATION_BATCH_SIZE: '50',
+          BUSINESS_NOTIFICATION_MAX_ATTEMPTS: '5',
+          BUSINESS_NOTIFICATION_LEASE_SECONDS: '60',
+        },
+        entry: BUSINESS_NOTIFIER_ENTRY,
+      });
+      dbSecretGrant(businessNotifier);
+      businessNotifier.addToRolePolicy(
+        new iam.PolicyStatement({
+          sid: 'BusinessNotificationEmailSend',
+          actions: ['ses:SendEmail'],
+          resources: [this.formatArn({ service: 'ses', resource: 'identity', resourceName: '*' })],
+        }),
+      );
+      new events.Rule(this, 'BusinessNotifierSchedule', {
+        ruleName: this.naming.name('business-notifier'),
+        enabled: this.config.enableScheduledWorkers === true,
+        schedule: events.Schedule.rate(Duration.minutes(1)),
+        targets: [new eventsTargets.LambdaFunction(businessNotifier)],
+      });
+    }
 
     const esgExport = mkFunction('EsgExportFn', 'esg-export', {
       timeout: Duration.seconds(300),
@@ -1023,6 +1054,7 @@ export class AppDependenciesStack extends Stack {
     storage.exportBucket.grantReadWrite(esgExport, 'esg-exports/*');
     new events.Rule(this, 'EsgExportSchedule', {
       ruleName: this.naming.name('esg-export'),
+      enabled: this.config.enableScheduledWorkers === true,
       schedule: events.Schedule.rate(Duration.minutes(1)),
       targets: [new eventsTargets.LambdaFunction(esgExport)],
     });
@@ -1152,6 +1184,7 @@ export class AppDependenciesStack extends Stack {
     );
     new events.Rule(this, 'OnboardingProvisioningSchedule', {
       ruleName: this.naming.name('onboarding-provisioning'),
+      enabled: this.config.enableScheduledWorkers === true,
       schedule: events.Schedule.rate(Duration.minutes(1)),
       targets: [new eventsTargets.LambdaFunction(onboardingProvisioning)],
     });
@@ -1266,7 +1299,6 @@ export class AppDependenciesStack extends Stack {
       onboardingDeadline,
       retirementTimeout,
       activityExport,
-      businessNotifier,
       esgExport,
       onboardingApi,
       onboardingProvisioning,

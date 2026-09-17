@@ -14,3 +14,11 @@ export type { DeviceApiDomainConfig, InfraConfig } from './config.js';
 export { Naming, PROJECT_PREFIX } from './naming.js';
 export { DOWNLINK_TOPIC_TYPES, TOPIC_PATTERN, UPLINK_TOPIC_TYPES, uplinkTopicFilter } from './topics.js';
 export type { DownlinkTopicType, UplinkTopicType } from './topics.js';
+
+export {
+  createDeploymentSynthesizer,
+  deploymentRoleName,
+  FDP_BOOTSTRAP_QUALIFIER,
+  FDP_SERVICE_BOUNDARY_NAME,
+  serviceRoleBoundary,
+} from './deployment.js';

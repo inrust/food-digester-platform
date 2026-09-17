@@ -11,12 +11,22 @@ for (const [key, envKey] of Object.entries({
   publicApiCertificateArn: 'FDP_PUBLIC_API_CERTIFICATE_ARN',
   deviceApiTruststoreBucketName: 'FDP_TRUSTSTORE_BUCKET_NAME',
   deviceApiTruststoreVersion: 'FDP_TRUSTSTORE_VERSION',
-  businessEmailFrom: 'FDP_BUSINESS_EMAIL_FROM',
-  businessWebhookAllowedHosts: 'FDP_BUSINESS_WEBHOOK_ALLOWED_HOSTS',
 })) {
   const value = process.env[envKey];
   if (!value) throw new Error(`Missing deployment input: ${envKey}`);
   config[key] = value;
+}
+const enableBusinessNotifications = process.env.FDP_ENABLE_BUSINESS_NOTIFICATIONS === 'true';
+config.enableBusinessNotifications = enableBusinessNotifications;
+if (enableBusinessNotifications) {
+  for (const [key, envKey] of Object.entries({
+    businessEmailFrom: 'FDP_BUSINESS_EMAIL_FROM',
+    businessWebhookAllowedHosts: 'FDP_BUSINESS_WEBHOOK_ALLOWED_HOSTS',
+  })) {
+    const value = process.env[envKey];
+    if (!value) throw new Error(`Missing notification input: ${envKey}`);
+    config[key] = value;
+  }
 }
 const built = spawnSync('pnpm', ['--filter', '@fdp/infra', 'build'], { stdio: 'inherit' });
 if (built.status !== 0) process.exit(built.status ?? 1);

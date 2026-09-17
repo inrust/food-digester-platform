@@ -1,0 +1,52 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { assert, test } from 'vitest';
+import { FDP_BOOTSTRAP_QUALIFIER, FDP_SERVICE_BOUNDARY_NAME, deploymentRoleName } from '../src/deployment.js';
+
+const root = resolve(import.meta.dirname, '..');
+
+test('deployment naming matches the account-specific bootstrap contract', () => {
+  assert.equal(FDP_BOOTSTRAP_QUALIFIER, 'fdptest01');
+  assert.equal(FDP_SERVICE_BOUNDARY_NAME, 'FDP-ServiceBoundary');
+  assert.equal(deploymentRoleName('test', 'cdk-deploy-role'), 'fdp-test-cdk-deploy-role');
+  const template = readFileSync(resolve(root, 'bootstrap/fdp-test-bootstrap-template.yaml'), 'utf8');
+  for (const expected of [
+    'Default: fdptest01',
+    'Default: FDP-DeploymentBoundary',
+    'fdp-test-cdk-deploy-role',
+    'fdp-test-cloudformation-execution-role',
+    'fdp-test-cdk-file-publishing-role',
+    'fdp-test-cdk-image-publishing-role',
+    'fdp-test-cdk-lookup-role',
+    'FDP-CloudFormationExecutionPolicy',
+  ])
+    assert.include(template, expected);
+  assert.notInclude(template, 'policy/AdministratorAccess');
+  assert.equal(template.match(/^ {6}PermissionsBoundary:$/gmu)?.length, 5);
+});
+
+test('reviewed IAM documents parse and keep migration execution out of standing access', () => {
+  for (const name of [
+    'FDP-ServiceBoundary.json',
+    'FDP-DeploymentBoundary.json',
+    'FDP-CloudFormationExecutionPolicy.json',
+    'FDP-InfraSetup-bootstrap-additions.json',
+    'FDP-AppDeploy-additions.json',
+    'FDP-MigrationOperator-one-shot.json',
+  ])
+    JSON.parse(readFileSync(resolve(root, `iam/${name}`), 'utf8'));
+  const appDeploy = JSON.parse(readFileSync(resolve(root, 'iam/FDP-AppDeploy-additions.json'), 'utf8'));
+  assert.isFalse(
+    appDeploy.Statement.some((statement: { Action: string | string[] }) =>
+      (Array.isArray(statement.Action) ? statement.Action : [statement.Action]).includes('codebuild:StartBuild'),
+    ),
+  );
+  const oneShot = JSON.parse(readFileSync(resolve(root, 'iam/FDP-MigrationOperator-one-shot.json'), 'utf8'));
+  assert.isTrue(oneShot.Statement.some((statement: { Sid: string }) => statement.Sid === 'StartApprovedMigration'));
+  assert.isTrue(
+    oneShot.Statement.some((statement: { Sid: string }) => statement.Sid === 'DenyMigrationBuildspecOverride'),
+  );
+  assert.isTrue(
+    oneShot.Statement.some((statement: { Sid: string }) => statement.Sid === 'DenyUnexpectedMigrationVariables'),
+  );
+});

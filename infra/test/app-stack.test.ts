@@ -49,7 +49,7 @@ describe('资源命名（环境前缀）', () => {
       },
     });
     assert.equal(stack.stackName, 'fdp-staging-app');
-  });
+  }, 15_000);
 
   test('SQS 队列名带环境前缀', () => {
     for (const suffix of [

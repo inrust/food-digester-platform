@@ -1,6 +1,6 @@
 # AWS 测试环境部署配置与执行手册
 
-日期：2026-09-15。批准人：Anray。本次授权仅为本地 CORS、Migration Runner 和部署配置实现；不包含 Bootstrap、部署、数据库初始化、证书申请或 DNS 修改。
+更新日期：2026-09-17。批准人：Anray。当前授权已包含专用测试 CA/truststore 准备、自定义 Bootstrap、源码提交与只读 synth/diff；仍不包含应用 Stack 部署、数据库初始化或 DNS 修改。
 
 ## 1. 账号与域名
 
@@ -29,14 +29,27 @@
 | `FDP_PUBLIC_API_CERTIFICATE_ARN` | 同账号、同区域 ACM，ISSUED，SAN 同时覆盖 `api` 与 `onboard-api` |
 | `FDP_TRUSTSTORE_BUCKET_NAME` | 提前创建、版本化、私有且可被 API Gateway 读取的受控 S3 Bucket |
 | `FDP_TRUSTSTORE_VERSION` | 已上传测试 CA bundle 的非空 VersionId，非 delete marker |
-| `FDP_BUSINESS_EMAIL_FROM` | 已验证的 SES 发信地址；不得使用 example.test |
-| `FDP_BUSINESS_WEBHOOK_ALLOWED_HOSTS` | 已批准的真实测试 webhook 主机白名单（逗号分隔） |
+| `FDP_ENABLE_BUSINESS_NOTIFICATIONS` | test 初始值为 `false`；启用前须另行批准 |
+| `FDP_BUSINESS_EMAIL_FROM` | 仅在启用业务通知时必填；必须为已验证的 SES 发信地址 |
+| `FDP_BUSINESS_WEBHOOK_ALLOWED_HOSTS` | 仅在启用业务通知时必填；真实测试 webhook 主机白名单（逗号分隔） |
 
 Key 默认 `truststore/ca-bundle.pem`。先准备 Bucket/对象再创建 mTLS 域名，避免同一 Stack 新建空 Bucket 的首次部署顺序错误。现有 Stack 内 truststore Bucket 保留用于兼容本地测试，但本账号部署使用外部预置 Bucket。CA 内容/链、ACM 覆盖范围与对象存在性需要真实只读预检；本地 ARN 校验不证明其有效。
 
-`scripts/esgiot-cdk.mjs` 只允许 synth/diff，核对 STS 账号并显式绑定区域，覆盖 `cdk.json` 的 local/insecure 默认值；禁止 deploy/destroy/bootstrap。diff 已固定使用 `--no-change-set`，避免仅预检也创建 CloudFormation Change Set。真实部署必须另行批准。
+`scripts/esgiot-cdk.mjs` 只允许 synth/diff，核对 STS 账号并显式绑定区域，覆盖 `cdk.json` 的 local/insecure 默认值；禁止 deploy/destroy/bootstrap。diff 已固定使用 `--no-change-set`，避免仅预检也创建 CloudFormation Change Set。真实应用部署必须另行批准。
 
-## 3. CORS 行为与验收
+## 3. 自定义 Bootstrap
+
+Bootstrap 模板位于 `infra/bootstrap/fdp-test-bootstrap-template.yaml`，Stack 名为 `fdp-test-bootstrap`，qualifier 为 `fdptest01`。模板创建固定资产 Bucket/ECR、SSM 版本参数以及 deploy、CloudFormation execution、file publishing、image publishing、lookup 五个角色；五个角色都必须挂载 `FDP-DeploymentBoundary`，应用 Stack 创建的服务角色必须挂载 `FDP-ServiceBoundary`。
+
+部署前必须先创建：
+
+- `FDP-ServiceBoundary`
+- `FDP-DeploymentBoundary`
+- `FDP-CloudFormationExecutionPolicy`
+
+`FDP-InfraSetup` 当前权限只允许管理小写 `policy/fdp-*`，并把角色边界固定为既有 `FDP-PermissionsBoundary`，无法创建上述三份策略或使用新部署边界。IAM Identity Center 管理员须把 `infra/iam/FDP-InfraSetup-bootstrap-additions.json` 合并到该 Permission Set；该补充仅允许三个精确策略 ARN、五个精确角色 ARN及向 CloudFormation 传递 execution role。应用后须重新登录 SSO，再执行 Bootstrap。
+
+## 4. CORS 行为与验收
 
 仅 `/api/v1/admin/*`、`/api/v1/customer/*` 开放 `https://admin.bio-nexa.com`。允许 GET/POST/PUT/PATCH/DELETE/OPTIONS，以及 Authorization、Content-Type、If-Match、Idempotency-Key、X-Request-Id；不使用 `*`、不开放 cookie credentials。
 
@@ -44,7 +57,7 @@ OPTIONS 是显式未认证的 Lambda 代理方法，在冷启动 Secret/DB/认�
 
 上线前从实际 Amplify 页面验收预检、401/403/409/500 和写操作；当前仅有本地测试及模板证明，不是目标浏览器回执。
 
-## 4. Migration Runner 操作边界
+## 5. Migration Runner 操作边界
 
 CodeBuild 项目只按需运行，无自动触发、无自动重试、并发上限 1、超时 20 分钟；使用现有私有 egress 子网/NAT，独立无入站 SG，RDS 5432 单独授权。IAM 只读取当前 DB Secret/对应 KMS 和迁移源码 Bucket，不授予应用管理权限。CodeBuild 私有 VPC 访问公网依赖 NAT。[AWS CodeBuild VPC 文档](https://docs.aws.amazon.com/codebuild/latest/userguide/vpc-support.html)
 
@@ -60,12 +73,12 @@ CodeBuild 项目只按需运行，无自动触发、无自动重试、并发上�
 6. 保存 BuildId、CodeBuild 整体状态、S3 VersionId、ZIP SHA-256、源码 SHA、脱敏输出和 `_prisma_migrations` 验证结果；确认无失败/未完成迁移并检查关键表。JSON 成功输出仅代表迁移/字典步骤，不代表整套 AWS 环境验收。
 7. 测试完成后按批准清理计划移除 Runner/SG 授权和受 RETAIN 保护的迁移源码 Bucket；不自动删除数据。
 
-## 5. 前端配置及下一审批包
+## 6. 前端配置及下一审批包
 
 Amplify 使用 `apps/admin-web/dist/web`、SPA fallback，并从输出填入 Cognito region/pool/client。当前源码要求 `VITE_ADMIN_API_BASE_URL=https://api.bio-nexa.com`（不额外追加 `/api/v1`）；另填 `VITE_COGNITO_REGION`、`VITE_COGNITO_USER_POOL_ID`、`VITE_COGNITO_CLIENT_ID`。不要填写密钥/JWT。
 
-实际操作前仍需：核实生产命名 DNS 占用与所有权、预算现有支出、Bootstrap/部署权限、两个 ACM 证书和 CA 对象、SES/webhook、Amplify 来源仓库与部署分支；审批包含最终 diff、费用边界、数据初始化 SHA 和清理方案。RDS 当前为测试级 Single-AZ、无备份/删除保护，不可凭域名直接作为生产环境。
+两个 ACM 证书和版本化 CA 对象已于 2026-09-17 实时核验，真实参数 synth/diff 已通过；仍需补齐 Bootstrap 权限并在精确提交上重新运行无警告 diff。SES/webhook 保持禁用。RDS 当前为测试级 Single-AZ、无备份/删除保护，不可凭域名直接作为生产环境。
 
 Migration 使用 Prisma schema engine 的 `sslmode=require`、`sslaccept=strict` 和 CA 路径；Seed 使用 pg 的 `rejectUnauthorized=true`。不能将 libpq 的 `verify-full` 参数直接当作 Prisma 校验策略。[Prisma TLS 参数](https://docs.prisma.io/docs/orm/v6/overview/databases/postgresql)。实际证书错误/主机名不匹配负测仍须在目标执行。
 
-当前 AWS 部署、DNS/证书、Migration 与目标验收均为 **NOT RUN / NO RECEIPT**。
+当前公共 truststore 已上传；Bootstrap 因 `iam:CreatePolicy` 权限边界阻断而未部署。应用部署、Migration、DNS 切换与目标验收均为 **NOT RUN / NO RECEIPT**。

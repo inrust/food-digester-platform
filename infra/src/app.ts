@@ -15,6 +15,7 @@
  */
 import { App } from 'aws-cdk-lib';
 import { resolveConfig } from './config.js';
+import { createDeploymentSynthesizer, serviceRoleBoundary } from './deployment.js';
 import { AppDependenciesStack } from './stacks/app-dependencies-stack.js';
 
 const app = new App();
@@ -22,7 +23,13 @@ const config = resolveConfig(app);
 
 new AppDependenciesStack(app, 'AppDependencies', {
   config,
-  ...(config.deploymentAccount ? { env: { account: config.deploymentAccount, region: config.deploymentRegion } } : {}),
+  ...(config.deploymentAccount
+    ? {
+        env: { account: config.deploymentAccount, region: config.deploymentRegion },
+        synthesizer: createDeploymentSynthesizer(config),
+        permissionsBoundary: serviceRoleBoundary(),
+      }
+    : {}),
 });
 
 app.synth();

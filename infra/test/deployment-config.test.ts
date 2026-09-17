@@ -1,7 +1,8 @@
 import { App } from 'aws-cdk-lib';
-import { Template } from 'aws-cdk-lib/assertions';
+import { Match, Template } from 'aws-cdk-lib/assertions';
 import { assert, test } from 'vitest';
 import { resolveConfig } from '../src/config.js';
+import { createDeploymentSynthesizer, serviceRoleBoundary } from '../src/deployment.js';
 import { AppDependenciesStack } from '../src/stacks/app-dependencies-stack.js';
 import { broadAllowViolations, collectPolicyStatements } from '../src/template-security.js';
 
@@ -18,6 +19,8 @@ const context = {
   onboardingApiDomainName: 'onboard-api.bio-nexa.com',
   publicApiCertificateArn: 'arn:aws:acm:ap-southeast-1:065986019555:certificate/11111111-1111-1111-1111-111111111111',
   enableMigrationRunner: 'true',
+  enableScheduledWorkers: 'false',
+  enableBusinessNotifications: 'false',
   allowInsecureDeviceEndpointForLocal: 'false',
 };
 test('real deployment rejects incomplete/cross-account inputs and wildcard origin', () => {
@@ -42,6 +45,29 @@ test('real deployment rejects incomplete/cross-account inputs and wildcard origi
   assert.throws(() => resolveConfig(new App({ context: { ...context, adminWebOrigin: '*' } })));
   assert.throws(() => resolveConfig(new App({ context: { ...context, allowInsecureDeviceEndpointForLocal: true } })));
 });
+
+test('test deployment can disable deferred business notifications without placeholder inputs', () => {
+  const disabled = resolveConfig(new App({ context }));
+  assert.isFalse(disabled.enableBusinessNotifications);
+  assert.isUndefined(disabled.businessEmailFrom);
+  assert.isUndefined(disabled.businessWebhookAllowedHosts);
+
+  assert.throws(
+    () => resolveConfig(new App({ context: { ...context, enableBusinessNotifications: 'true' } })),
+    /启用业务通知时必须配置/,
+  );
+  const enabled = resolveConfig(
+    new App({
+      context: {
+        ...context,
+        enableBusinessNotifications: 'true',
+        businessEmailFrom: 'notifications@bio-nexa.com',
+        businessWebhookAllowedHosts: 'hooks.bio-nexa.com',
+      },
+    }),
+  );
+  assert.isTrue(enabled.enableBusinessNotifications);
+});
 test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned truststore and private one-shot migration', () => {
   const app = new App({ context });
   const config = resolveConfig(app);
@@ -49,8 +75,39 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
     new AppDependenciesStack(app, 'DeployTest', {
       config,
       env: { account: context.deploymentAccount, region: context.deploymentRegion },
+      synthesizer: createDeploymentSynthesizer(config),
+      permissionsBoundary: serviceRoleBoundary(),
     }),
   );
+  assert.isEmpty(
+    Object.values(template.findResources('AWS::Lambda::Function')).filter(
+      (value) => value.Properties.FunctionName === 'fdp-test-business-notifier',
+    ),
+  );
+  assert.isFalse(JSON.stringify(template.toJSON()).includes('ses:SendEmail'));
+  assert.isFalse(JSON.stringify(template.toJSON()).includes('notifications@example.test'));
+  assert.isFalse(JSON.stringify(template.toJSON()).includes('webhook.example.test'));
+  const rules = Object.values(template.findResources('AWS::Events::Rule'));
+  assert.isAbove(rules.length, 0);
+  for (const rule of rules) assert.equal(rule.Properties.State, 'DISABLED');
+  template.hasResourceProperties('AWS::RDS::DBInstance', {
+    DBInstanceClass: 'db.t4g.micro',
+    AllocatedStorage: '20',
+    BackupRetentionPeriod: 0,
+    DeletionProtection: false,
+  });
+  template.hasResourceProperties('AWS::CodeBuild::Project', {
+    Name: 'fdp-test-migration-runner',
+    ServiceRole: { 'Fn::GetAtt': [Match.stringLikeRegexp('MigrationRunnerServiceRole'), 'Arn'] },
+  });
+  template.hasResourceProperties('AWS::S3::Bucket', {
+    BucketName: { 'Fn::Join': Match.anyValue() },
+  });
+  for (const role of Object.values(template.findResources('AWS::IAM::Role'))) {
+    assert.deepEqual(role.Properties.PermissionsBoundary, {
+      'Fn::Join': ['', ['arn:', { Ref: 'AWS::Partition' }, ':iam::065986019555:policy/FDP-ServiceBoundary']],
+    });
+  }
   const methods = Object.values(template.findResources('AWS::ApiGateway::Method'));
   const options = methods.filter((value) => value.Properties.HttpMethod === 'OPTIONS');
   assert.equal(options.length, 2);

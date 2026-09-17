@@ -1,0 +1,80 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowFDPInfrastructureServices",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:*",
+        "s3:*",
+        "ecr:*",
+        "ssm:*",
+        "ec2:*",
+        "lambda:*",
+        "apigateway:*",
+        "rds:*",
+        "secretsmanager:CreateSecret",
+        "secretsmanager:DeleteSecret",
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:PutResourcePolicy",
+        "secretsmanager:TagResource",
+        "secretsmanager:UntagResource",
+        "kms:*",
+        "sqs:*",
+        "iot:*",
+        "cognito-idp:*",
+        "events:*",
+        "scheduler:*",
+        "logs:*",
+        "cloudwatch:*",
+        "sns:*",
+        "codebuild:*",
+        "acm:*",
+        "amplify:*",
+        "sts:GetCallerIdentity"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowFDPServiceRoleManagement",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:GetRole",
+        "iam:TagRole",
+        "iam:UntagRole",
+        "iam:UpdateAssumeRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:PassRole",
+        "iam:PutRolePermissionsBoundary"
+      ],
+      "Resource": "arn:aws:iam::065986019555:role/fdp-test-*"
+    },
+    {
+      "Sid": "DenySecretReadsAndHumanCredentials",
+      "Effect": "Deny",
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "iam:CreateUser",
+        "iam:CreateAccessKey",
+        "iam:DeleteRolePermissionsBoundary"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyWrongServiceBoundary",
+      "Effect": "Deny",
+      "Action": ["iam:CreateRole", "iam:PutRolePermissionsBoundary"],
+      "Resource": "arn:aws:iam::065986019555:role/fdp-test-*",
+      "Condition": {
+        "StringNotEquals": {
+          "iam:PermissionsBoundary": "arn:aws:iam::065986019555:policy/FDP-ServiceBoundary"
+        }
+      }
+    }
+  ]
+}

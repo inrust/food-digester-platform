@@ -1,0 +1,33 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "StartApprovedMigration",
+      "Effect": "Allow",
+      "Action": "codebuild:StartBuild",
+      "Resource": "arn:aws:codebuild:ap-southeast-1:065986019555:project/fdp-test-migration-runner"
+    },
+    {
+      "Sid": "DenyMigrationBuildspecOverride",
+      "Effect": "Deny",
+      "Action": "codebuild:StartBuild",
+      "Resource": "arn:aws:codebuild:ap-southeast-1:065986019555:project/fdp-test-migration-runner",
+      "Condition": {
+        "Null": {
+          "codebuild:source.buildspec": "false"
+        }
+      }
+    },
+    {
+      "Sid": "DenyUnexpectedMigrationVariables",
+      "Effect": "Deny",
+      "Action": "codebuild:StartBuild",
+      "Resource": "arn:aws:codebuild:ap-southeast-1:065986019555:project/fdp-test-migration-runner",
+      "Condition": {
+        "ForAnyValue:StringNotEquals": {
+          "codebuild:environment.environmentVariables.name": "FDP_EXPECTED_SOURCE_COMMIT"
+        }
+      }
+    }
+  ]
+}
