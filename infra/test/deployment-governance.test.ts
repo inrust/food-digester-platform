@@ -49,4 +49,16 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
   assert.isTrue(
     oneShot.Statement.some((statement: { Sid: string }) => statement.Sid === 'DenyUnexpectedMigrationVariables'),
   );
+  for (const name of ['FDP-DeploymentBoundary.json', 'FDP-CloudFormationExecutionPolicy.json']) {
+    const policy = JSON.parse(readFileSync(resolve(root, `iam/${name}`), 'utf8'));
+    const serviceLinkedRole = policy.Statement.find(
+      (statement: { Sid: string }) => statement.Sid === 'CreateApiGatewayServiceLinkedRole',
+    );
+    assert.equal(serviceLinkedRole.Action, 'iam:CreateServiceLinkedRole');
+    assert.equal(serviceLinkedRole.Condition.StringEquals['iam:AWSServiceName'], 'ops.apigateway.amazonaws.com');
+    assert.equal(
+      serviceLinkedRole.Resource,
+      'arn:aws:iam::065986019555:role/aws-service-role/ops.apigateway.amazonaws.com/AWSServiceRoleForAPIGateway',
+    );
+  }
 });
