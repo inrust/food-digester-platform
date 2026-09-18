@@ -67,10 +67,15 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
     );
     for (const action of ['secretsmanager:GetRandomPassword', 'secretsmanager:UpdateSecret'])
       assert.include(infrastructure.Action, action);
+    assert.include(infrastructure.Action, 'secretsmanager:GetSecretValue');
     const denySecretRead = policy.Statement.find(
-      (statement: { Sid: string }) => statement.Sid === 'DenySecretReadsAndHumanCredentials',
+      (statement: { Sid: string }) => statement.Sid === 'DenyNonDatabaseSecretReads',
     );
-    assert.include(denySecretRead.Action, 'secretsmanager:GetSecretValue');
+    assert.equal(denySecretRead.Action, 'secretsmanager:GetSecretValue');
+    assert.equal(
+      denySecretRead.NotResource,
+      'arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-*',
+    );
     const serviceLinkedRole = policy.Statement.find(
       (statement: { Sid: string }) => statement.Sid === 'CreateApiGatewayServiceLinkedRole',
     );

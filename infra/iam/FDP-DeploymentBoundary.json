@@ -19,6 +19,7 @@
         "secretsmanager:GetRandomPassword",
         "secretsmanager:GetResourcePolicy",
         "secretsmanager:ListSecretVersionIds",
+        "secretsmanager:GetSecretValue",
         "secretsmanager:PutResourcePolicy",
         "secretsmanager:DeleteResourcePolicy",
         "secretsmanager:PutSecretValue",
@@ -78,13 +79,14 @@
     {
       "Sid": "DenySecretReadsAndHumanCredentials",
       "Effect": "Deny",
-      "Action": [
-        "secretsmanager:GetSecretValue",
-        "iam:CreateUser",
-        "iam:CreateAccessKey",
-        "iam:DeleteRolePermissionsBoundary"
-      ],
+      "Action": ["iam:CreateUser", "iam:CreateAccessKey", "iam:DeleteRolePermissionsBoundary"],
       "Resource": "*"
+    },
+    {
+      "Sid": "DenyNonDatabaseSecretReads",
+      "Effect": "Deny",
+      "Action": "secretsmanager:GetSecretValue",
+      "NotResource": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-*"
     },
     {
       "Sid": "DenyWrongServiceBoundary",
