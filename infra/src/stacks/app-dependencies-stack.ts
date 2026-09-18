@@ -111,7 +111,7 @@ interface StorageResources {
   readonly ota: s3.Bucket;
   readonly media: s3.Bucket;
   readonly exportBucket: s3.Bucket;
-  readonly truststore: s3.Bucket;
+  readonly truststore: s3.IBucket;
 }
 
 interface DataResources {
@@ -406,6 +406,10 @@ export class AppDependenciesStack extends Stack {
       abortIncompleteMultipartUploadAfter: Duration.days(1),
     });
 
+    const truststore = this.config.deviceApiDomain?.truststoreBucketName
+      ? s3.Bucket.fromBucketName(this, 'ExistingTruststore', this.config.deviceApiDomain.truststoreBucketName)
+      : bucket('TruststoreBucket', 'mtls-truststore');
+
     return {
       dataKey,
       certPackageKey,
@@ -414,7 +418,7 @@ export class AppDependenciesStack extends Stack {
       ota: bucket('OtaBucket', 'ota'),
       media: bucket('MediaBucket', 'media'),
       exportBucket,
-      truststore: bucket('TruststoreBucket', 'mtls-truststore'),
+      truststore,
     };
   }
 
@@ -1317,7 +1321,7 @@ export class AppDependenciesStack extends Stack {
     deviceApiFn: lambda.IFunction,
     apiFn: lambda.IFunction,
     identity: IdentityResources,
-    truststore: s3.Bucket,
+    truststore: s3.IBucket,
   ): ApiResources {
     const onboardingIntegration = new apigw.LambdaIntegration(onboardingApiFn, { proxy: true });
     const deviceIntegration = new apigw.LambdaIntegration(deviceApiFn, { proxy: true });
@@ -1365,9 +1369,7 @@ export class AppDependenciesStack extends Stack {
         endpointType: apigw.EndpointType.REGIONAL,
         securityPolicy: apigw.SecurityPolicy.TLS_1_2,
         mtls: {
-          bucket: deviceApiDomain.truststoreBucketName
-            ? s3.Bucket.fromBucketName(this, 'ExistingTruststore', deviceApiDomain.truststoreBucketName)
-            : truststore,
+          bucket: truststore,
           key: deviceApiDomain.truststoreKey,
           version: deviceApiDomain.truststoreVersion,
         },

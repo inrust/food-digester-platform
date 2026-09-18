@@ -87,6 +87,12 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
   assert.isFalse(JSON.stringify(template.toJSON()).includes('ses:SendEmail'));
   assert.isFalse(JSON.stringify(template.toJSON()).includes('notifications@example.test'));
   assert.isFalse(JSON.stringify(template.toJSON()).includes('webhook.example.test'));
+  assert.isEmpty(
+    Object.values(template.findResources('AWS::S3::Bucket')).filter(
+      (value) => value.Properties.BucketName === 'example-controlled-truststore',
+    ),
+  );
+  assert.isFalse(JSON.stringify(template.toJSON()).includes('fdp-test-mtls-truststore-065986019555'));
   const rules = Object.values(template.findResources('AWS::Events::Rule'));
   assert.isAbove(rules.length, 0);
   for (const rule of rules) assert.equal(rule.Properties.State, 'DISABLED');
