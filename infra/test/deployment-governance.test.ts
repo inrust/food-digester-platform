@@ -61,6 +61,16 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
       'iam:ListAttachedRolePolicies',
     ])
       assert.include(roleManagement.Action, action);
+    const infrastructure = policy.Statement.find(
+      (statement: { Sid: string }) =>
+        statement.Sid === 'AllowFDPInfrastructureServices' || statement.Sid === 'AllowFDPStackServices',
+    );
+    for (const action of ['secretsmanager:GetRandomPassword', 'secretsmanager:UpdateSecret'])
+      assert.include(infrastructure.Action, action);
+    const denySecretRead = policy.Statement.find(
+      (statement: { Sid: string }) => statement.Sid === 'DenySecretReadsAndHumanCredentials',
+    );
+    assert.include(denySecretRead.Action, 'secretsmanager:GetSecretValue');
     const serviceLinkedRole = policy.Statement.find(
       (statement: { Sid: string }) => statement.Sid === 'CreateApiGatewayServiceLinkedRole',
     );
