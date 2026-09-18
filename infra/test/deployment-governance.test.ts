@@ -51,6 +51,16 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
   );
   for (const name of ['FDP-DeploymentBoundary.json', 'FDP-CloudFormationExecutionPolicy.json']) {
     const policy = JSON.parse(readFileSync(resolve(root, `iam/${name}`), 'utf8'));
+    const roleManagement = policy.Statement.find(
+      (statement: { Sid: string }) => statement.Sid === 'AllowFDPServiceRoleManagement',
+    );
+    for (const action of [
+      'iam:UpdateRole',
+      'iam:GetRolePolicy',
+      'iam:ListRolePolicies',
+      'iam:ListAttachedRolePolicies',
+    ])
+      assert.include(roleManagement.Action, action);
     const serviceLinkedRole = policy.Statement.find(
       (statement: { Sid: string }) => statement.Sid === 'CreateApiGatewayServiceLinkedRole',
     );
