@@ -93,6 +93,7 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
     ),
   );
   assert.isFalse(JSON.stringify(template.toJSON()).includes('fdp-test-mtls-truststore-065986019555'));
+  assert.isEmpty(template.findResources('AWS::ApiGateway::Account'));
   const rules = Object.values(template.findResources('AWS::Events::Rule'));
   assert.isAbove(rules.length, 0);
   for (const rule of rules) assert.equal(rule.Properties.State, 'DISABLED');

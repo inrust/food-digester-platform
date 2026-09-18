@@ -1332,6 +1332,7 @@ export class AppDependenciesStack extends Stack {
     const onboardingApi = new apigw.RestApi(this, 'OnboardingApi', {
       restApiName: this.naming.name('onboarding-api'),
       description: 'Onboarding API：一次性 Token 认证（AUTH-02），独立于 mTLS 入口',
+      cloudWatchRole: false,
       disableExecuteApiEndpoint: !!this.config.onboardingApiDomain,
       endpointTypes: [apigw.EndpointType.REGIONAL],
       deployOptions: { ...stageOptions, throttlingRateLimit: 20, throttlingBurstLimit: 40 },
@@ -1346,6 +1347,7 @@ export class AppDependenciesStack extends Stack {
     const deviceApi = new apigw.RestApi(this, 'DeviceApi', {
       restApiName: this.naming.name('device-api'),
       description: 'Device API：X.509 mTLS 自定义域名入口（AUTH-03 应用层白名单）',
+      cloudWatchRole: false,
       endpointTypes: [apigw.EndpointType.REGIONAL],
       disableExecuteApiEndpoint: this.config.allowInsecureDeviceEndpointForLocal !== true,
       deployOptions: stageOptions,
@@ -1383,6 +1385,7 @@ export class AppDependenciesStack extends Stack {
     const adminApi = new apigw.RestApi(this, 'AdminApi', {
       restApiName: this.naming.name('admin-api'),
       description: 'Admin/Customer/Internal API：Cognito JWT + IAM（AUTH-01）',
+      cloudWatchRole: false,
       disableExecuteApiEndpoint: !!this.config.adminApiDomain,
       endpointTypes: [apigw.EndpointType.REGIONAL],
       deployOptions: stageOptions,
