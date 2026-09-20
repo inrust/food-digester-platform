@@ -17,6 +17,7 @@ import { App } from 'aws-cdk-lib';
 import { resolveConfig } from './config.js';
 import { createDeploymentSynthesizer, serviceRoleBoundary } from './deployment.js';
 import { AppDependenciesStack } from './stacks/app-dependencies-stack.js';
+import { MigrationExecutionStack } from './stacks/migration-execution-stack.js';
 
 const app = new App();
 const config = resolveConfig(app);
@@ -31,5 +32,24 @@ new AppDependenciesStack(app, 'AppDependencies', {
       }
     : {}),
 });
+
+const migrationSourceVersion = app.node.tryGetContext('migrationSourceVersion');
+const migrationSourceCommit = app.node.tryGetContext('migrationSourceCommit');
+if (migrationSourceVersion || migrationSourceCommit) {
+  if (typeof migrationSourceVersion !== 'string' || typeof migrationSourceCommit !== 'string') {
+    throw new Error('migrationSourceVersion and migrationSourceCommit must be provided together');
+  }
+  new MigrationExecutionStack(app, 'MigrationExecution', {
+    sourceVersion: migrationSourceVersion,
+    sourceCommit: migrationSourceCommit,
+    ...(config.deploymentAccount
+      ? {
+          env: { account: config.deploymentAccount, region: config.deploymentRegion },
+          synthesizer: createDeploymentSynthesizer(config),
+          permissionsBoundary: serviceRoleBoundary(),
+        }
+      : {}),
+  });
+}
 
 app.synth();

@@ -63,6 +63,7 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
     (statement: { Sid: string }) => statement.Sid === 'AllowMigrationRunner',
   ).Action;
   for (const action of [
+    'codebuild:StartBuild',
     'ec2:CreateNetworkInterfacePermission',
     'ec2:DescribeSubnets',
     'ec2:DescribeSecurityGroups',
