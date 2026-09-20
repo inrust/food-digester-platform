@@ -38,7 +38,12 @@ test('runner without approved source fails without reporting credentials or driv
   });
   assert.equal(result.status, 1);
   assert.equal(result.stdout, '');
-  assert.equal(result.stderr.trim(), 'Database migration runner failed (details redacted)');
+  assert.deepEqual(JSON.parse(result.stderr), {
+    kind: 'fdp-database-migration-failure/v1',
+    stage: 'source-approval',
+    codes: [],
+  });
+  assert.doesNotMatch(result.stderr, /postgresql:|password|driver/iu);
 });
 test('source packager archives committed tree, includes exact SHA and refuses overwriting ZIP', () => {
   const dir = mkdtempSync(resolve(tmpdir(), 'fdp-migration-test-'));
