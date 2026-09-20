@@ -85,5 +85,14 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
       serviceLinkedRole.Resource,
       'arn:aws:iam::065986019555:role/aws-service-role/ops.apigateway.amazonaws.com/AWSServiceRoleForAPIGateway',
     );
+    const rdsServiceLinkedRole = policy.Statement.find(
+      (statement: { Sid: string }) => statement.Sid === 'CreateRdsServiceLinkedRole',
+    );
+    assert.equal(rdsServiceLinkedRole.Action, 'iam:CreateServiceLinkedRole');
+    assert.equal(rdsServiceLinkedRole.Condition.StringEquals['iam:AWSServiceName'], 'rds.amazonaws.com');
+    assert.equal(
+      rdsServiceLinkedRole.Resource,
+      'arn:aws:iam::065986019555:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS',
+    );
   }
 });

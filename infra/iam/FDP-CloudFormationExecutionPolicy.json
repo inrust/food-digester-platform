@@ -77,6 +77,17 @@
       }
     },
     {
+      "Sid": "CreateRdsServiceLinkedRole",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::065986019555:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS",
+      "Condition": {
+        "StringEquals": {
+          "iam:AWSServiceName": "rds.amazonaws.com"
+        }
+      }
+    },
+    {
       "Sid": "DenySecretReadsAndHumanCredentials",
       "Effect": "Deny",
       "Action": ["iam:CreateUser", "iam:CreateAccessKey", "iam:DeleteRolePermissionsBoundary"],
