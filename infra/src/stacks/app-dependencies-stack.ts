@@ -186,7 +186,7 @@ export class AppDependenciesStack extends Stack {
     const messaging = this.createMessaging(storage.dataKey);
     this.createIotIngestionRules(messaging);
     const data = this.createData(storage.dataKey);
-    if (this.config.enableMigrationRunner) this.createMigrationRunner(data);
+    if (this.config.enableMigrationRunner) this.createMigrationRunner(data, storage.dataKey);
     const identity = this.createIdentity();
     const compute = this.createCompute(storage, messaging, data, identity);
     const apis = this.createApiGateways(
@@ -205,7 +205,7 @@ export class AppDependenciesStack extends Stack {
 
   // ---------- KMS 与 S3 ----------
 
-  private createMigrationRunner(data: DataResources): void {
+  private createMigrationRunner(data: DataResources, dataKey: kms.IKey): void {
     const source = new s3.Bucket(this, 'MigrationSource', {
       bucketName: `${this.naming.name('migration-source')}-${Aws.ACCOUNT_ID}-${Aws.REGION}`,
       encryption: s3.BucketEncryption.S3_MANAGED,
@@ -278,6 +278,7 @@ export class AppDependenciesStack extends Stack {
       }),
     });
     data.db.secret?.grantRead(project);
+    dataKey.grantDecrypt(project);
     new CfnOutput(this, 'MigrationRunnerProjectName', { value: project.projectName });
     new CfnOutput(this, 'MigrationSourceBucketName', { value: source.bucketName });
   }

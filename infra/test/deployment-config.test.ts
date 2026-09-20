@@ -156,6 +156,14 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
     assert.include(JSON.stringify(value.statement.Resource), 'DatabaseSecret');
     assert.notEqual(value.statement.Resource, '*');
   }
+  const decrypts = statements.filter((value) =>
+    JSON.stringify(value.statement.Action).includes('kms:Decrypt'),
+  );
+  assert.isAbove(decrypts.length, 0);
+  for (const value of decrypts) {
+    assert.include(JSON.stringify(value.statement.Resource), 'DataKey');
+    assert.notEqual(value.statement.Resource, '*');
+  }
   assert.equal(project.ConcurrentBuildLimit, 1);
   assert.equal(project.AutoRetryLimit, 0);
   assert.equal(project.TimeoutInMinutes, 20);
