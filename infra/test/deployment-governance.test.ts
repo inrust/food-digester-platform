@@ -64,6 +64,7 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
   ).Action;
   for (const action of [
     'codebuild:StartBuild',
+    'kms:Decrypt',
     'ec2:CreateNetworkInterfacePermission',
     'ec2:DescribeSubnets',
     'ec2:DescribeSecurityGroups',
