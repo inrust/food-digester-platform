@@ -1273,6 +1273,7 @@ export class AppDependenciesStack extends Stack {
       },
       role: deviceApiRole,
       entry: DEVICE_API_ENTRY,
+      copyArgon2Prebuilds: true,
     });
     dbSecretGrant(deviceApi);
     storage.ota.grantRead(deviceApi, 'firmware-packages/*');
