@@ -346,7 +346,7 @@ export class AppDependenciesStack extends Stack {
     });
     const dataKey = new kms.Key(this, 'DataKey', {
       alias: `alias/${this.naming.name('data')}`,
-      description: '应用数据静态加密（SQS/S3/RDS/Secrets Manager）',
+      description: 'Application data encryption at rest for SQS, S3, RDS, and Secrets Manager',
       enableKeyRotation: true,
       policy: new iam.PolicyDocument({ statements: [certPackageAdmin] }),
       // 功能边界：密钥保留策略属运维决策，开发环境允许随 Stack 销毁
@@ -404,7 +404,7 @@ export class AppDependenciesStack extends Stack {
     });
     const certPackageKey = new kms.Key(this, 'CertPackageKey', {
       alias: `alias/${this.naming.name('cert-package')}`,
-      description: '一次性证书包信封加密（DEC-003 / SEC-01）',
+      description: 'One-time certificate package envelope encryption per DEC-003 and SEC-01',
       enableKeyRotation: true,
       policy: new iam.PolicyDocument({ statements: [certPackageAdmin, certPackageDataPlane] }),
       removalPolicy: RemovalPolicy.DESTROY,
@@ -419,7 +419,7 @@ export class AppDependenciesStack extends Stack {
     });
     const otaSigningKey = new kms.Key(this, 'OtaSigningKey', {
       alias: `alias/${this.naming.name('ota-signing')}`,
-      description: 'DEC-022 OTA 固件 RSA-2048 签名信任根（Admin API 仅 Verify）',
+      description: 'DEC-022 RSA-2048 OTA firmware signing trust root; Admin API verifies only',
       keySpec: kms.KeySpec.RSA_2048,
       keyUsage: kms.KeyUsage.SIGN_VERIFY,
       policy: new iam.PolicyDocument({ statements: [certPackageAdmin, otaVerifyDataPlane] }),
@@ -1400,7 +1400,7 @@ export class AppDependenciesStack extends Stack {
     // 入口 1：Onboarding API —— 一次性 Token（应用层校验，AUTH-02），不带 mTLS/Cognito
     const onboardingApi = new apigw.RestApi(this, 'OnboardingApi', {
       restApiName: this.naming.name('onboarding-api'),
-      description: 'Onboarding API：一次性 Token 认证（AUTH-02），独立于 mTLS 入口',
+      description: 'Onboarding API with one-time token authentication, separate from the mTLS endpoint',
       cloudWatchRole: false,
       disableExecuteApiEndpoint: !!this.config.onboardingApiDomain,
       endpointTypes: [apigw.EndpointType.REGIONAL],
@@ -1415,7 +1415,7 @@ export class AppDependenciesStack extends Stack {
     // 入口 2：Device API —— X.509 mTLS（自定义域名 truststore）；提供域名配置后禁用默认入口
     const deviceApi = new apigw.RestApi(this, 'DeviceApi', {
       restApiName: this.naming.name('device-api'),
-      description: 'Device API：X.509 mTLS 自定义域名入口（AUTH-03 应用层白名单）',
+      description: 'Device API with X.509 mTLS and the AUTH-03 application allowlist',
       cloudWatchRole: false,
       endpointTypes: [apigw.EndpointType.REGIONAL],
       disableExecuteApiEndpoint: this.config.allowInsecureDeviceEndpointForLocal !== true,
@@ -1453,7 +1453,7 @@ export class AppDependenciesStack extends Stack {
     // 入口 3：Admin API —— Cognito JWT（/admin、/customer）与 IAM（/internal，仅限云端任务）
     const adminApi = new apigw.RestApi(this, 'AdminApi', {
       restApiName: this.naming.name('admin-api'),
-      description: 'Admin/Customer/Internal API：Cognito JWT + IAM（AUTH-01）',
+      description: 'Admin, customer, and internal API with Cognito JWT and IAM authentication',
       cloudWatchRole: false,
       disableExecuteApiEndpoint: !!this.config.adminApiDomain,
       endpointTypes: [apigw.EndpointType.REGIONAL],
@@ -1538,35 +1538,36 @@ export class AppDependenciesStack extends Stack {
       this.config.onboardingApiDomain
         ? `https://${this.config.onboardingApiDomain.domainName}/`
         : apis.onboardingApi.url,
-      'Onboarding API 入口（Token）',
+      'Onboarding API endpoint with token authentication',
     );
     output(
       'DeviceApiUrl',
       this.config.deviceApiDomain ? `https://${this.config.deviceApiDomain.domainName}/` : apis.deviceApi.url,
-      'Device API 有效入口（mTLS 自定义域名）',
+      'Device API endpoint using the mTLS custom domain',
     );
-    if (this.config.adminWebOrigin) output('AdminWebOrigin', this.config.adminWebOrigin, '管理 Web 精确 CORS Origin');
+    if (this.config.adminWebOrigin)
+      output('AdminWebOrigin', this.config.adminWebOrigin, 'Exact CORS origin for the admin web application');
     output(
       'AdminApiUrl',
       this.config.adminApiDomain ? `https://${this.config.adminApiDomain.domainName}/` : apis.adminApi.url,
-      'Admin/Customer/Internal API 入口（Cognito/IAM）',
+      'Admin, customer, and internal API endpoint using Cognito and IAM',
     );
     output('UserPoolId', identity.userPool.userPoolId, 'Cognito User Pool');
     output('UserPoolClientId', identity.userPoolClient.userPoolClientId, 'Cognito Admin Web Client');
-    output('DbSecretArn', data.dbSecretArn, 'RDS 凭据 Secret（Secrets Manager）');
-    output('DbEndpointAddress', data.db.instanceEndpoint.hostname, 'RDS 连接地址');
+    output('DbSecretArn', data.dbSecretArn, 'RDS credentials secret in Secrets Manager');
+    output('DbEndpointAddress', data.db.instanceEndpoint.hostname, 'RDS endpoint address');
     output('IngressQueueUrl', messaging.ingress.queueUrl, 'Ingress SQS');
     output('ArchiveQueueUrl', messaging.archive.queueUrl, 'Archive SQS');
     output('ReplayQueueUrl', messaging.replay.queueUrl, 'Replay job SQS');
     output('QuarantineQueueUrl', messaging.quarantine.queueUrl, 'Quarantine SQS');
     output('RuleErrorQueueUrl', messaging.ruleError.queueUrl, 'IoT Rule Error SQS');
-    output('RawBucketName', storage.raw.bucketName, 'S3 Raw 归档');
-    output('OtaBucketName', storage.ota.bucketName, 'S3 OTA 包');
-    output('MediaBucketName', storage.media.bucketName, 'S3 Media 文件');
-    output('ExportBucketName', storage.exportBucket.bucketName, 'S3 导出文件');
+    output('RawBucketName', storage.raw.bucketName, 'S3 raw archive');
+    output('OtaBucketName', storage.ota.bucketName, 'S3 OTA packages');
+    output('MediaBucketName', storage.media.bucketName, 'S3 media files');
+    output('ExportBucketName', storage.exportBucket.bucketName, 'S3 export files');
     output('TruststoreBucketName', storage.truststore.bucketName, 'S3 mTLS truststore');
-    output('DataKeyArn', storage.dataKey.keyArn, 'KMS 应用数据 Key');
-    output('CertPackageKeyArn', storage.certPackageKey.keyArn, 'KMS 证书包信封加密 Key');
-    output('OtaSigningKeyArn', storage.otaSigningKey.keyArn, 'DEC-022 OTA 固件签名信任根 Key');
+    output('DataKeyArn', storage.dataKey.keyArn, 'KMS application data key');
+    output('CertPackageKeyArn', storage.certPackageKey.keyArn, 'KMS certificate package envelope key');
+    output('OtaSigningKeyArn', storage.otaSigningKey.keyArn, 'DEC-022 OTA firmware signing trust root key');
   }
 }
