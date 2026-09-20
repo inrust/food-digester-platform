@@ -22,14 +22,14 @@ test('migration connection requires complete secret and verified TLS; special cr
     password: 'a@:/?#',
     dbname: 'fdp',
   };
-  const url = new URL(databaseUrl(secret, '/tmp/ca.pem'));
+  const url = new URL(databaseUrl(secret));
   assert.equal(decodeURIComponent(url.password), secret.password);
   assert.equal(url.searchParams.get('sslmode'), 'require');
-  assert.equal(url.searchParams.get('sslaccept'), 'strict');
-  assert.equal(url.searchParams.get('sslcert'), '/tmp/ca.pem');
-  assert.equal(url.searchParams.get('sslrootcert'), '/tmp/ca.pem');
+  assert.equal(url.searchParams.get('sslaccept'), null);
+  assert.equal(url.searchParams.get('sslcert'), null);
+  assert.equal(url.searchParams.get('sslrootcert'), null);
   for (const key of ['engine', 'host', 'username', 'password', 'dbname'])
-    assert.throws(() => databaseUrl({ ...secret, [key]: undefined }, '/tmp/ca.pem'));
+    assert.throws(() => databaseUrl({ ...secret, [key]: undefined }));
 });
 test('runner without approved source fails without reporting credentials or driver details', () => {
   const result = spawnSync(process.execPath, ['scripts/run-database-migrations.mjs'], {

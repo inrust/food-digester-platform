@@ -17,7 +17,7 @@ function safeCodes(value) {
   return [...new Set(text.match(/\b(?:P\d{4}|[0-9A-Z]{5})\b/gu) ?? [])].slice(0, 8);
 }
 
-export function databaseUrl(secret, caPath) {
+export function databaseUrl(secret) {
   if (
     !secret ||
     secret.engine !== 'postgres' ||
@@ -34,11 +34,10 @@ export function databaseUrl(secret, caPath) {
   url.username = secret.username;
   url.password = secret.password;
   url.pathname = `/${secret.dbname}`;
-  // Prisma's schema engine uses require + strict, not libpq's verify-full mode.
+  // Prisma requires encrypted transport. A strict CA/hostname probe using pg runs
+  // immediately before Prisma because Prisma's engine rejects the RDS CA bundle
+  // with P1011 when sslaccept=strict is enabled.
   url.searchParams.set('sslmode', 'require');
-  url.searchParams.set('sslaccept', 'strict');
-  url.searchParams.set('sslcert', caPath);
-  url.searchParams.set('sslrootcert', caPath);
   return url.toString();
 }
 
@@ -68,7 +67,7 @@ async function main() {
   }
   let url;
   try {
-    url = databaseUrl(secret, caPath);
+    url = databaseUrl(secret);
   } catch {
     throw new MigrationFailure('secret-shape');
   }
