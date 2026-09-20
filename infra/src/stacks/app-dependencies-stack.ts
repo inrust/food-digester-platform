@@ -18,6 +18,7 @@ import { Aws, CfnOutput, Duration, RemovalPolicy, Stack, Tags } from 'aws-cdk-li
 import type { StackProps } from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
+import * as amplify from 'aws-cdk-lib/aws-amplify';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as logs from 'aws-cdk-lib/aws-logs';
@@ -196,11 +197,50 @@ export class AppDependenciesStack extends Stack {
       identity,
       storage.truststore,
     );
+    this.createAdminWebHosting(identity, apis);
     compute.otaDispatcher.addEnvironment(
       'DEVICE_API_BASE_URL',
       this.config.deviceApiDomain ? `https://${this.config.deviceApiDomain.domainName}` : apis.deviceApi.url,
     );
     this.createOutputs(storage, messaging, data, identity, apis);
+  }
+
+  private createAdminWebHosting(identity: IdentityResources, apis: ApiResources): void {
+    const adminApiBaseUrl = this.config.adminApiDomain
+      ? `https://${this.config.adminApiDomain.domainName}`
+      : apis.adminApi.url;
+    const app = new amplify.CfnApp(this, 'AdminWebApp', {
+      name: this.naming.name('admin-web'),
+      description: 'Food Digester test admin web',
+      platform: 'WEB',
+      enableBranchAutoDeletion: false,
+      environmentVariables: [
+        { name: 'VITE_ADMIN_API_BASE_URL', value: adminApiBaseUrl },
+        { name: 'VITE_COGNITO_REGION', value: this.region },
+        { name: 'VITE_COGNITO_USER_POOL_ID', value: identity.userPool.userPoolId },
+        { name: 'VITE_COGNITO_CLIENT_ID', value: identity.userPoolClient.userPoolClientId },
+      ],
+      customRules: [
+        {
+          source: '</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|ttf|map|json)$)([^.]+$)/>',
+          target: '/index.html',
+          status: '200',
+        },
+      ],
+    });
+    const branch = new amplify.CfnBranch(this, 'AdminWebMainBranch', {
+      appId: app.attrAppId,
+      branchName: 'main',
+      description: 'Test release branch; deployed from exact reviewed artifacts',
+      enableAutoBuild: false,
+      enablePullRequestPreview: false,
+      framework: 'React',
+      stage: 'DEVELOPMENT',
+    });
+    branch.addResourceDependency(app);
+    new CfnOutput(this, 'AdminWebAmplifyAppId', { value: app.attrAppId });
+    new CfnOutput(this, 'AdminWebAmplifyDefaultDomain', { value: app.attrDefaultDomain });
+    new CfnOutput(this, 'AdminWebAmplifyBranchName', { value: branch.branchName });
   }
 
   // ---------- KMS 与 S3 ----------

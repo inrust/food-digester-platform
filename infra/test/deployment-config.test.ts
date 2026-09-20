@@ -107,6 +107,21 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
     Name: 'fdp-test-migration-runner',
     ServiceRole: { 'Fn::GetAtt': [Match.stringLikeRegexp('MigrationRunnerServiceRole'), 'Arn'] },
   });
+  template.hasResourceProperties('AWS::Amplify::App', {
+    Name: 'fdp-test-admin-web',
+    Platform: 'WEB',
+    EnvironmentVariables: Match.arrayWith([
+      { Name: 'VITE_ADMIN_API_BASE_URL', Value: 'https://api.bio-nexa.com' },
+      { Name: 'VITE_COGNITO_REGION', Value: 'ap-southeast-1' },
+    ]),
+  });
+  template.hasResourceProperties('AWS::Amplify::Branch', {
+    BranchName: 'main',
+    EnableAutoBuild: false,
+    EnablePullRequestPreview: false,
+    Framework: 'React',
+    Stage: 'DEVELOPMENT',
+  });
   template.hasResourceProperties('AWS::IAM::ManagedPolicy', {
     ManagedPolicyName: 'FDP-MigrationRunnerBoundary',
   });
