@@ -45,7 +45,7 @@ export async function resolveDatabaseUrl(config: DatabaseSecretResolverConfig): 
   const response = await client.send(new GetSecretValueCommand({ SecretId: config.secretArn }));
   if (!response.SecretString) throw new Error('RDS Secret 不包含 SecretString');
   const secret = parseSecret(response.SecretString);
-  return `postgresql://${encodeURIComponent(secret.username)}:${encodeURIComponent(secret.password)}@${secret.host}:${secret.port}/${encodeURIComponent(secret.dbname)}?sslmode=require`;
+  return `postgresql://${encodeURIComponent(secret.username)}:${encodeURIComponent(secret.password)}@${secret.host}:${secret.port}/${encodeURIComponent(secret.dbname)}?sslmode=verify-full`;
 }
 
 /** 读取部署注入的纯字符串 Secret；值仅停留在 Lambda 进程内存。 */

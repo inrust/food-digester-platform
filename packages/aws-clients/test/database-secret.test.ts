@@ -21,7 +21,7 @@ describe('RDS Secrets Manager 运行时接线', () => {
       },
     } as unknown as SecretsManagerClient;
     await expect(resolveDatabaseUrl({ secretArn: 'arn:secret', client })).resolves.toBe(
-      'postgresql://fdp%20user:p%40ss%2Fword@db.internal:5432/fdp?sslmode=require',
+      'postgresql://fdp%20user:p%40ss%2Fword@db.internal:5432/fdp?sslmode=verify-full',
     );
     assert.deepEqual(calls, [{ SecretId: 'arn:secret' }]);
   });

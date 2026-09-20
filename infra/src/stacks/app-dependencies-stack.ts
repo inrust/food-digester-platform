@@ -690,7 +690,12 @@ export class AppDependenciesStack extends Stack {
         architecture: lambda.Architecture.ARM_64,
         timeout: options.timeout,
         memorySize: options.memorySize ?? 256,
-        environment: { ...options.environment, ENV_NAME: this.config.envName },
+        environment: {
+          ...options.environment,
+          ENV_NAME: this.config.envName,
+          // Node.js 20+ Lambda runtimes retain Amazon CAs here but no longer load them by default.
+          NODE_EXTRA_CA_CERTS: '/var/runtime/ca-cert.pem',
+        },
         role: functionRole,
         vpc: data.vpc,
         vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
