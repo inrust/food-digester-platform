@@ -267,14 +267,10 @@ export class AppDependenciesStack extends Stack {
     const runnerBoundary = new iam.ManagedPolicy(this, 'MigrationRunnerBoundary', {
       managedPolicyName: FDP_MIGRATION_RUNNER_BOUNDARY_NAME,
       document: iam.PolicyDocument.fromJson(
-        JSON.parse(
-          readFileSync(resolve(WORKSPACE_ROOT, 'infra/iam/FDP-MigrationRunnerBoundary.json'), 'utf8'),
-        ),
+        JSON.parse(readFileSync(resolve(WORKSPACE_ROOT, 'infra/iam/FDP-MigrationRunnerBoundary.json'), 'utf8')),
       ),
     });
-    iam.PermissionsBoundary.of(runnerRole).apply(
-      runnerBoundary,
-    );
+    iam.PermissionsBoundary.of(runnerRole).apply(runnerBoundary);
     const project = new codebuild.Project(this, 'MigrationRunner', {
       role: runnerRole,
       projectName: this.naming.name('migration-runner'),
@@ -711,6 +707,9 @@ export class AppDependenciesStack extends Stack {
             target: 'node24',
             sourceMap: true,
             format: lambdaNodejs.OutputFormat.ESM,
+            // esbuild's ESM wrapper otherwise cannot execute CommonJS packages such as pg
+            // because their dynamic requires of Node built-ins have no native require binding.
+            banner: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
             logLevel: lambdaNodejs.LogLevel.ERROR,
             ...(options.copyMqttSchemas
               ? {
