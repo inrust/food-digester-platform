@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { checkMigrationSource } from './check-migration-source.mjs';
-import { databaseUrl } from './run-database-migrations.mjs';
+import { databaseUrl, expectedTablesFromSchema } from './run-database-migrations.mjs';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 
@@ -30,6 +30,15 @@ test('migration connection requires complete secret and verified TLS; special cr
   assert.equal(url.searchParams.get('sslrootcert'), null);
   for (const key of ['engine', 'host', 'username', 'password', 'dbname'])
     assert.throws(() => databaseUrl({ ...secret, [key]: undefined }));
+});
+test('database verification derives every mapped Prisma table', () => {
+  const schema = readFileSync('packages/database/prisma/schema.prisma', 'utf8');
+  const tables = expectedTablesFromSchema(schema);
+  assert.equal(tables.length, 57);
+  assert.ok(tables.includes('customers'));
+  assert.ok(tables.includes('device_activity_export_jobs'));
+  assert.ok(tables.includes('audit_logs'));
+  assert.equal(new Set(tables).size, tables.length);
 });
 test('runner without approved source fails without reporting credentials or driver details', () => {
   const result = spawnSync(process.execPath, ['scripts/run-database-migrations.mjs'], {

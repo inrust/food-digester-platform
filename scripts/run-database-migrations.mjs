@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { checkMigrationSource } from './check-migration-source.mjs';
@@ -39,6 +39,62 @@ export function databaseUrl(secret) {
   // with P1011 when sslaccept=strict is enabled.
   url.searchParams.set('sslmode', 'require');
   return url.toString();
+}
+
+export function expectedTablesFromSchema(schema) {
+  return [...schema.matchAll(/model\s+\w+\s*\{([\s\S]*?)\n\}/gu)]
+    .map(([, body]) => body.match(/@@map\("([^"]+)"\)/u)?.[1])
+    .filter(Boolean)
+    .sort();
+}
+
+async function verifyDatabase(client) {
+  const expectedTables = expectedTablesFromSchema(readFileSync('packages/database/prisma/schema.prisma', 'utf8'));
+  const expectedMigrations = readdirSync('packages/database/prisma/migrations', { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  const tables = (
+    await client.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename")
+  ).rows.map(({ tablename }) => tablename);
+  const migrationRows = (
+    await client.query(
+      'SELECT migration_name, finished_at, rolled_back_at FROM "_prisma_migrations" ORDER BY migration_name',
+    )
+  ).rows;
+  const appliedMigrations = migrationRows
+    .filter(({ finished_at, rolled_back_at }) => finished_at && !rolled_back_at)
+    .map(({ migration_name }) => migration_name)
+    .sort();
+  const unfinishedMigrationCount = migrationRows.filter(
+    ({ finished_at, rolled_back_at }) => !finished_at && !rolled_back_at,
+  ).length;
+  const roles = (await client.query('SELECT code FROM "roles" ORDER BY code')).rows.map(({ code }) => code);
+  const esgSeed = await client.query(
+    `SELECT count(*)::int AS count FROM "esg_calculation_versions"
+     WHERE id = '00000000-0000-0000-0000-000000000001' AND version = '1.0.0' AND status = 'ACTIVE'`,
+  );
+  const expectedRoles = ['Auditor', 'CustomerAdmin', 'CustomerViewer', 'PlatformOperator', 'PlatformSuperAdmin'];
+  const missingTables = expectedTables.filter((table) => !tables.includes(table));
+  const unexpectedTables = tables.filter((table) => table !== '_prisma_migrations' && !expectedTables.includes(table));
+  if (
+    missingTables.length > 0 ||
+    unexpectedTables.length > 0 ||
+    JSON.stringify(appliedMigrations) !== JSON.stringify(expectedMigrations) ||
+    unfinishedMigrationCount > 0 ||
+    JSON.stringify(roles) !== JSON.stringify(expectedRoles) ||
+    esgSeed.rows[0]?.count !== 1
+  ) {
+    throw new MigrationFailure('database-verification');
+  }
+  return {
+    schema: 'PASS',
+    tableCount: expectedTables.length,
+    migrationCount: expectedMigrations.length,
+    unfinishedMigrationCount,
+    roleCount: roles.length,
+    esgSeedCount: esgSeed.rows[0].count,
+  };
 }
 
 async function main() {
@@ -98,14 +154,23 @@ async function main() {
   if (migrated.status !== 0)
     throw new MigrationFailure('prisma-migrate', safeCodes(`${migrated.stdout ?? ''}\n${migrated.stderr ?? ''}`));
   const client = new Client(connection);
+  let verification;
   try {
     await client.connect();
-    await client.query('BEGIN');
-    await client.query(readFileSync('packages/database/prisma/seed.sql', 'utf8'));
-    await client.query('COMMIT');
-  } catch (error) {
-    await client.query('ROLLBACK').catch(() => undefined);
-    throw new MigrationFailure('dictionary-seed', safeCodes(error?.code));
+    try {
+      await client.query('BEGIN');
+      await client.query(readFileSync('packages/database/prisma/seed.sql', 'utf8'));
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined);
+      throw new MigrationFailure('dictionary-seed', safeCodes(error?.code));
+    }
+    try {
+      verification = await verifyDatabase(client);
+    } catch (error) {
+      if (error instanceof MigrationFailure) throw error;
+      throw new MigrationFailure('database-verification', safeCodes(error?.code));
+    }
   } finally {
     await client.end().catch(() => undefined);
   }
@@ -116,6 +181,7 @@ async function main() {
       buildId: process.env.CODEBUILD_BUILD_ID,
       migrations: 'PASS',
       dictionarySeed: 'PASS',
+      verification,
     }),
   );
 }
