@@ -671,6 +671,7 @@ export class AppDependenciesStack extends Stack {
         role?: iam.IRole;
         entry?: string;
         copyMqttSchemas?: boolean;
+        copyArgon2Prebuilds?: boolean;
       },
     ): lambda.Function => {
       const functionRole =
@@ -716,13 +717,21 @@ export class AppDependenciesStack extends Stack {
             // because their dynamic requires of Node built-ins have no native require binding.
             banner: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
             logLevel: lambdaNodejs.LogLevel.ERROR,
-            ...(options.copyMqttSchemas
+            ...(options.copyMqttSchemas || options.copyArgon2Prebuilds
               ? {
                   commandHooks: {
                     beforeBundling: () => [],
                     beforeInstall: () => [],
                     afterBundling: (inputDir: string, outputDir: string) => [
-                      `cp -R "${inputDir}/contracts/mqtt/schemas" "${outputDir}/mqtt-schemas"`,
+                      ...(options.copyMqttSchemas
+                        ? [`cp -R "${inputDir}/contracts/mqtt/schemas" "${outputDir}/mqtt-schemas"`]
+                        : []),
+                      ...(options.copyArgon2Prebuilds
+                        ? [
+                            `mkdir -p "${outputDir}/prebuilds/linux-arm64"`,
+                            `cp "${inputDir}/apps/cloud-api/node_modules/argon2/prebuilds/linux-arm64/argon2.armv8.glibc.node" "${outputDir}/prebuilds/linux-arm64/"`,
+                          ]
+                        : []),
                     ],
                   },
                 }
@@ -1308,6 +1317,7 @@ export class AppDependenciesStack extends Stack {
       },
       role: apiRole,
       entry: API_ENTRY,
+      copyArgon2Prebuilds: true,
     });
     dbSecretGrant(api);
     licenseSigningKey.grantRead(api);
