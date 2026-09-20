@@ -107,13 +107,20 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
     Name: 'fdp-test-migration-runner',
     ServiceRole: { 'Fn::GetAtt': [Match.stringLikeRegexp('MigrationRunnerServiceRole'), 'Arn'] },
   });
+  template.hasResourceProperties('AWS::IAM::ManagedPolicy', {
+    ManagedPolicyName: 'FDP-MigrationRunnerBoundary',
+  });
   template.hasResourceProperties('AWS::S3::Bucket', {
     BucketName: { 'Fn::Join': Match.anyValue() },
   });
-  for (const role of Object.values(template.findResources('AWS::IAM::Role'))) {
-    assert.deepEqual(role.Properties.PermissionsBoundary, {
-      'Fn::Join': ['', ['arn:', { Ref: 'AWS::Partition' }, ':iam::065986019555:policy/FDP-ServiceBoundary']],
-    });
+  for (const [logicalId, role] of Object.entries(template.findResources('AWS::IAM::Role'))) {
+    if (logicalId.startsWith('MigrationRunnerServiceRole')) {
+      assert.match(role.Properties.PermissionsBoundary.Ref, /^MigrationRunnerBoundary/u);
+    } else {
+      assert.deepEqual(role.Properties.PermissionsBoundary, {
+        'Fn::Join': ['', ['arn:', { Ref: 'AWS::Partition' }, ':iam::065986019555:policy/FDP-ServiceBoundary']],
+      });
+    }
   }
   const methods = Object.values(template.findResources('AWS::ApiGateway::Method'));
   const options = methods.filter((value) => value.Properties.HttpMethod === 'OPTIONS');
@@ -139,7 +146,7 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
   const project = Object.values(template.findResources('AWS::CodeBuild::Project'))[0].Properties;
   assert.deepEqual(broadAllowViolations(template.toJSON()), []);
   const statements = collectPolicyStatements(template.toJSON()).filter((value) =>
-    value.logicalId.startsWith('MigrationRunner'),
+    value.logicalId.startsWith('MigrationRunner') && !value.logicalId.startsWith('MigrationRunnerBoundary'),
   );
   const secretReads = statements.filter((value) =>
     JSON.stringify(value.statement.Action).includes('secretsmanager:GetSecretValue'),

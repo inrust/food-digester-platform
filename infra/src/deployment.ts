@@ -3,6 +3,7 @@ import type { InfraConfig } from './config.js';
 
 export const FDP_BOOTSTRAP_QUALIFIER = 'fdptest01' as const;
 export const FDP_SERVICE_BOUNDARY_NAME = 'FDP-ServiceBoundary' as const;
+export const FDP_MIGRATION_RUNNER_BOUNDARY_NAME = 'FDP-MigrationRunnerBoundary' as const;
 
 function requireDeploymentTarget(config: InfraConfig): { account: string; region: string } {
   if (!config.deploymentAccount || !config.deploymentRegion) {

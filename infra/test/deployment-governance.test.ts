@@ -1,13 +1,19 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { assert, test } from 'vitest';
-import { FDP_BOOTSTRAP_QUALIFIER, FDP_SERVICE_BOUNDARY_NAME, deploymentRoleName } from '../src/deployment.js';
+import {
+  FDP_BOOTSTRAP_QUALIFIER,
+  FDP_MIGRATION_RUNNER_BOUNDARY_NAME,
+  FDP_SERVICE_BOUNDARY_NAME,
+  deploymentRoleName,
+} from '../src/deployment.js';
 
 const root = resolve(import.meta.dirname, '..');
 
 test('deployment naming matches the account-specific bootstrap contract', () => {
   assert.equal(FDP_BOOTSTRAP_QUALIFIER, 'fdptest01');
   assert.equal(FDP_SERVICE_BOUNDARY_NAME, 'FDP-ServiceBoundary');
+  assert.equal(FDP_MIGRATION_RUNNER_BOUNDARY_NAME, 'FDP-MigrationRunnerBoundary');
   assert.equal(deploymentRoleName('test', 'cdk-deploy-role'), 'fdp-test-cdk-deploy-role');
   const template = readFileSync(resolve(root, 'bootstrap/fdp-test-bootstrap-template.yaml'), 'utf8');
   for (const expected of [
@@ -28,6 +34,7 @@ test('deployment naming matches the account-specific bootstrap contract', () => 
 test('reviewed IAM documents parse and keep migration execution out of standing access', () => {
   for (const name of [
     'FDP-ServiceBoundary.json',
+    'FDP-MigrationRunnerBoundary.json',
     'FDP-DeploymentBoundary.json',
     'FDP-CloudFormationExecutionPolicy.json',
     'FDP-InfraSetup-bootstrap-additions.json',
@@ -49,6 +56,20 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
   assert.isTrue(
     oneShot.Statement.some((statement: { Sid: string }) => statement.Sid === 'DenyUnexpectedMigrationVariables'),
   );
+  const migrationBoundary = JSON.parse(
+    readFileSync(resolve(root, 'iam/FDP-MigrationRunnerBoundary.json'), 'utf8'),
+  );
+  const migrationActions = migrationBoundary.Statement.find(
+    (statement: { Sid: string }) => statement.Sid === 'AllowMigrationRunner',
+  ).Action;
+  for (const action of [
+    'ec2:CreateNetworkInterfacePermission',
+    'ec2:DescribeSubnets',
+    'ec2:DescribeSecurityGroups',
+    'ec2:DescribeDhcpOptions',
+    'ec2:DescribeVpcs',
+  ])
+    assert.include(migrationActions, action);
   for (const name of ['FDP-DeploymentBoundary.json', 'FDP-CloudFormationExecutionPolicy.json']) {
     const policy = JSON.parse(readFileSync(resolve(root, `iam/${name}`), 'utf8'));
     const roleManagement = policy.Statement.find(
@@ -68,6 +89,15 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
     for (const action of ['secretsmanager:GetRandomPassword', 'secretsmanager:UpdateSecret'])
       assert.include(infrastructure.Action, action);
     assert.include(infrastructure.Action, 'secretsmanager:GetSecretValue');
+    const migrationBoundaryManagement = policy.Statement.find(
+      (statement: { Sid: string }) => statement.Sid === 'ManageMigrationRunnerBoundary',
+    );
+    assert.include(migrationBoundaryManagement.Action, 'iam:CreatePolicy');
+    assert.include(migrationBoundaryManagement.Action, 'iam:DeletePolicy');
+    assert.equal(
+      migrationBoundaryManagement.Resource,
+      'arn:aws:iam::065986019555:policy/FDP-MigrationRunnerBoundary',
+    );
     const denySecretRead = policy.Statement.find(
       (statement: { Sid: string }) => statement.Sid === 'DenyNonDatabaseSecretReads',
     );
@@ -76,6 +106,13 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
       denySecretRead.NotResource,
       'arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-*',
     );
+    const denyWrongBoundary = policy.Statement.find(
+      (statement: { Sid: string }) => statement.Sid === 'DenyWrongServiceBoundary',
+    );
+    assert.sameMembers(denyWrongBoundary.Condition.StringNotEquals['iam:PermissionsBoundary'], [
+      'arn:aws:iam::065986019555:policy/FDP-ServiceBoundary',
+      'arn:aws:iam::065986019555:policy/FDP-MigrationRunnerBoundary',
+    ]);
     const serviceLinkedRole = policy.Statement.find(
       (statement: { Sid: string }) => statement.Sid === 'CreateApiGatewayServiceLinkedRole',
     );

@@ -36,9 +36,11 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import type { Construct } from 'constructs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import type { InfraConfig } from '../config.js';
+import { FDP_MIGRATION_RUNNER_BOUNDARY_NAME } from '../deployment.js';
 import { Naming } from '../naming.js';
 import { UPLINK_TOPIC_TYPES, uplinkTopicFilter } from '../topics.js';
 
@@ -222,6 +224,17 @@ export class AppDependenciesStack extends Stack {
       assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
       description: 'One-shot database migration CodeBuild service role',
     });
+    const runnerBoundary = new iam.ManagedPolicy(this, 'MigrationRunnerBoundary', {
+      managedPolicyName: FDP_MIGRATION_RUNNER_BOUNDARY_NAME,
+      document: iam.PolicyDocument.fromJson(
+        JSON.parse(
+          readFileSync(resolve(WORKSPACE_ROOT, 'infra/iam/FDP-MigrationRunnerBoundary.json'), 'utf8'),
+        ),
+      ),
+    });
+    iam.PermissionsBoundary.of(runnerRole).apply(
+      runnerBoundary,
+    );
     const project = new codebuild.Project(this, 'MigrationRunner', {
       role: runnerRole,
       projectName: this.naming.name('migration-runner'),

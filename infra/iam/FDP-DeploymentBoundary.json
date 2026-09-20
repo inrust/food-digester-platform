@@ -66,6 +66,23 @@
       "Resource": "arn:aws:iam::065986019555:role/fdp-test-*"
     },
     {
+      "Sid": "ManageMigrationRunnerBoundary",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreatePolicy",
+        "iam:DeletePolicy",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:CreatePolicyVersion",
+        "iam:DeletePolicyVersion",
+        "iam:SetDefaultPolicyVersion",
+        "iam:ListPolicyVersions",
+        "iam:TagPolicy",
+        "iam:UntagPolicy"
+      ],
+      "Resource": "arn:aws:iam::065986019555:policy/FDP-MigrationRunnerBoundary"
+    },
+    {
       "Sid": "CreateApiGatewayServiceLinkedRole",
       "Effect": "Allow",
       "Action": "iam:CreateServiceLinkedRole",
@@ -106,7 +123,10 @@
       "Resource": "arn:aws:iam::065986019555:role/fdp-test-*",
       "Condition": {
         "StringNotEquals": {
-          "iam:PermissionsBoundary": "arn:aws:iam::065986019555:policy/FDP-ServiceBoundary"
+          "iam:PermissionsBoundary": [
+            "arn:aws:iam::065986019555:policy/FDP-ServiceBoundary",
+            "arn:aws:iam::065986019555:policy/FDP-MigrationRunnerBoundary"
+          ]
         }
       }
     }
