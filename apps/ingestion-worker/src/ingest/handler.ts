@@ -69,6 +69,16 @@ export function createIngestionHandler(
         await deps.onValidated?.(message);
       } catch (err) {
         if (err instanceof IngestError && err.classification === 'QUARANTINE') {
+          console.warn(
+            JSON.stringify({
+              event: 'ingestion.quarantined',
+              messageId: record.messageId,
+              errorType: err.errorType,
+              errorPath: err.errorPath,
+              reason: err.message,
+              ...envelopeContextOf(record.body),
+            }),
+          );
           try {
             await deps.quarantine.send({
               rawBody: record.body,
