@@ -30,6 +30,17 @@ function loadFixture() {
   } catch {
     throw new FixtureFailure('fixture-shape');
   }
+  if (fixture.action === 'register-rest-certificate') {
+    const fields = ['deviceId', 'certificateId', 'fingerprint', 'notBefore', 'notAfter'];
+    if (fields.some((field) => typeof fixture[field] !== 'string' || fixture[field].length === 0)) {
+      throw new FixtureFailure('fixture-shape');
+    }
+    if (!/^[a-f0-9]{64}$/u.test(fixture.fingerprint)) throw new FixtureFailure('fixture-shape');
+    if (![fixture.notBefore, fixture.notAfter].every((value) => Number.isFinite(Date.parse(value)))) {
+      throw new FixtureFailure('fixture-shape');
+    }
+    return fixture;
+  }
   const fields = ['deviceId', 'serialNumber', 'model', 'hardwareVersion', 'manufacturer', 'manufactureDate', 'tokenId'];
   if (fields.some((field) => typeof fixture[field] !== 'string' || fixture[field].length === 0)) {
     throw new FixtureFailure('fixture-shape');
@@ -79,6 +90,27 @@ async function main() {
   try {
     await client.connect();
     await client.query('BEGIN');
+    if (fixture.action === 'register-rest-certificate') {
+      const device = await client.query('SELECT 1 FROM devices WHERE id = $1', [fixture.deviceId]);
+      if (device.rowCount !== 1) throw new FixtureFailure('fixture-device-missing');
+      await client.query(
+        `INSERT INTO device_certificates (id, device_id, fingerprint, status, claimed_at, not_before, not_after)
+         VALUES ($1, $2, $3, 'ACTIVE', CURRENT_TIMESTAMP, $4::timestamptz, $5::timestamptz)`,
+        [fixture.certificateId, fixture.deviceId, fixture.fingerprint, fixture.notBefore, fixture.notAfter],
+      );
+      await client.query('COMMIT');
+      console.log(
+        JSON.stringify({
+          kind: 'fdp-aws-acceptance-fixture/v1',
+          sourceCommit,
+          buildId: process.env.CODEBUILD_BUILD_ID,
+          deviceId: fixture.deviceId,
+          certificateId: fixture.certificateId,
+          status: 'REST_CERTIFICATE_REGISTERED',
+        }),
+      );
+      return;
+    }
     await client.query(
       `INSERT INTO devices
        (id, serial_number, model, hardware_version, manufacturer, manufacture_date, lifecycle_status, updated_at)

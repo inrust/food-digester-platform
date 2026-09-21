@@ -10,10 +10,13 @@
  * - 敏感字段不写日志：Quarantine 记录仅含原文与错误元数据，Handler 不输出 Payload 日志。
  */
 import type { DbClient } from '@fdp/database';
+import { createRedactingLogger } from '@fdp/observability';
 import { IngestError } from './errors.js';
 import { parseEnvelope } from './envelope.js';
 import { validateRecord } from './pipeline.js';
 import type { IngestPipelineDeps, ValidatedMessage } from './pipeline.js';
+
+const logger = createRedactingLogger(console);
 
 export interface SqsRecordLike {
   readonly messageId: string;
@@ -69,16 +72,14 @@ export function createIngestionHandler(
         await deps.onValidated?.(message);
       } catch (err) {
         if (err instanceof IngestError && err.classification === 'QUARANTINE') {
-          console.warn(
-            JSON.stringify({
-              event: 'ingestion.quarantined',
-              messageId: record.messageId,
-              errorType: err.errorType,
-              errorPath: err.errorPath,
-              reason: err.message,
-              ...envelopeContextOf(record.body),
-            }),
-          );
+          logger.warn('ingestion message quarantined', {
+            event: 'ingestion.quarantined',
+            messageId: record.messageId,
+            errorType: err.errorType,
+            errorPath: err.errorPath,
+            reason: err.message,
+            ...envelopeContextOf(record.body),
+          });
           try {
             await deps.quarantine.send({
               rawBody: record.body,
