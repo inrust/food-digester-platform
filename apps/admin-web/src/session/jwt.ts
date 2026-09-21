@@ -22,7 +22,10 @@ export function decodeJwtPayload(token: string): Record<string, unknown> {
     throw new SessionTokenError('The token is not a well-formed JWT');
   }
   try {
-    const parsed: unknown = JSON.parse(Buffer.from(parts[1] as string, 'base64url').toString('utf8'));
+    const payload = (parts[1] as string).replace(/-/gu, '+').replace(/_/gu, '/');
+    const padded = payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), '=');
+    const bytes = Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
+    const parsed: unknown = JSON.parse(new TextDecoder().decode(bytes));
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
       throw new Error('not an object');
     }
