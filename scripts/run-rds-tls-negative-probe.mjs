@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
-import { rootCertificates } from 'node:tls';
+import { checkServerIdentity, rootCertificates } from 'node:tls';
 import { checkMigrationSource } from './check-migration-source.mjs';
 
 class ProbeFailure extends Error {
@@ -117,7 +117,11 @@ async function main() {
   );
   const hostnameMismatch = await expectCertificateRejection(
     Client,
-    connection(secret, { ca, rejectUnauthorized: true, servername: 'hostname-mismatch.invalid' }),
+    connection(secret, {
+      ca,
+      rejectUnauthorized: true,
+      checkServerIdentity: (_hostname, certificate) => checkServerIdentity('hostname-mismatch.invalid', certificate),
+    }),
     'hostname-mismatch',
   );
   const plaintext = await expectPlaintextRejection(Client, connection(secret, false));
