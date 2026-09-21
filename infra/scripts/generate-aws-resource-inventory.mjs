@@ -30,7 +30,6 @@ const config = {
   adminWebOrigin: 'https://admin.bio-nexa.com',
   enableMigrationRunner: true,
   enableScheduledWorkers: false,
-  enableBusinessNotifications: false,
 };
 const app = new App();
 const stack = new AppDependenciesStack(app, 'Inventory', {

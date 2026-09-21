@@ -23,7 +23,7 @@ import { PACKAGE_NAME as OBSERVABILITY_PACKAGE } from '@fdp/observability';
  * BE-DUSR-01 已落地：/api/v1/admin/device-users 设备操作员管理（见 ./admin/device-user）；
  * BE-DUSR-02 已落地：DEC-004@1.0.0 Argon2id PHC 生成、固定向量与脱敏管线；
  * BE-ALM-01 已落地：/api/v1/admin/alarms 查询/确认/清除 + /events、/tamper-events 只读查询（见 ./admin/alarm）；
- * BE-ALM-02 已落地：业务通知适配器（消费 Critical Alarm/Tamper 领域事件 → 邮件/Webhook，见 ./notification/business-notifier）；
+ * BE-ALM-02 领域模块保留（见 ./notification/business-notifier）；SES/Webhook 发送与部署接线当前延期。
  * BE-ESG-02 已落地：/api/v1/admin/esg 查询与 CSV 导出（含 Export Worker，见 ./admin/esg）；
  * BE-CMD-01～03 production wired：Command REST、Publisher、Timeout 与 ACK 已接生产组合根；目标 AWS 未验收；
  * BE-OTA-01～03 production wired：Package/Campaign REST、target-bound 下载、Dispatcher 与 ACK 已接生产组合根；目标 AWS 未验收；

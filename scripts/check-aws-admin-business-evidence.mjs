@@ -164,18 +164,6 @@ export function validateAwsAdminBusinessEvidence(receipt) {
     errors.push('If-Match 并发必须恰好一成功、一 409 冲突');
   }
 
-  const notifier = receipt.probes?.businessNotifier;
-  passed(errors, notifier, 'probes.businessNotifier');
-  if (isRecord(notifier)) {
-    if (!(notifier.scheduleMinutes > 0 && notifier.scheduleMinutes <= 1)) errors.push('通知调度必须不超过 1 分钟');
-    if (notifier.emailProvider !== 'SES_V2' || notifier.webhookHttpsAllowlist !== true)
-      errors.push('通知必须证明 SES_V2 与 HTTPS allowlist');
-    for (const key of ['processingClaimObserved', 'providerRequestIdRecorded', 'retryRecovered']) {
-      if (notifier[key] !== true) errors.push(`probes.businessNotifier.${key} 必须为 true`);
-    }
-    if (notifier.concurrentSendCount !== 1) errors.push('并发通知必须仅发送一次');
-  }
-
   const esg = receipt.probes?.esgExport;
   passed(errors, esg, 'probes.esgExport');
   if (isRecord(esg)) {

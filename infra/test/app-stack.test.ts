@@ -96,7 +96,6 @@ describe('资源命名（环境前缀）', () => {
       'onboarding-deadline',
       'retirement-timeout',
       'activity-export',
-      'business-notifier',
       'esg-export',
       'onboarding-api-handler',
       'onboarding-provisioning',
@@ -297,13 +296,13 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('20 个 Lambda 使用各自独立执行角色', () => {
+  test('19 个 Lambda 使用各自独立执行角色', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
       String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),
     );
-    assert.equal(fns.length, 20);
+    assert.equal(fns.length, 19);
     const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
-    assert.equal(roles.size, 20);
+    assert.equal(roles.size, 19);
   });
 
   test('P0 生产组合根与既有 API/sweeper 使用真实资产包而非内联 501 占位代码', () => {
@@ -319,7 +318,6 @@ describe('验收：IAM 最小权限', () => {
       'fdp-test-onboarding-deadline',
       'fdp-test-retirement-timeout',
       'fdp-test-activity-export',
-      'fdp-test-business-notifier',
       'fdp-test-esg-export',
       'fdp-test-command-publisher',
       'fdp-test-command-timeout',
@@ -514,7 +512,7 @@ describe('验收：数据库凭据与消息管线', () => {
     for (const esm of esms) {
       assert.equal(esm.Properties.FunctionResponseTypes?.[0], 'ReportBatchItemFailures');
     }
-    template.resourceCountIs('AWS::Events::Rule', 14);
+    template.resourceCountIs('AWS::Events::Rule', 13);
     for (const name of ['fdp-test-command-publisher', 'fdp-test-command-timeout', 'fdp-test-ota-dispatcher']) {
       template.hasResourceProperties('AWS::Events::Rule', {
         Name: name,
@@ -550,10 +548,6 @@ describe('验收：数据库凭据与消息管线', () => {
     });
     template.hasResourceProperties('AWS::Events::Rule', {
       Name: 'fdp-test-activity-export',
-      ScheduleExpression: 'rate(1 minute)',
-    });
-    template.hasResourceProperties('AWS::Events::Rule', {
-      Name: 'fdp-test-business-notifier',
       ScheduleExpression: 'rate(1 minute)',
     });
     template.hasResourceProperties('AWS::Events::Rule', {

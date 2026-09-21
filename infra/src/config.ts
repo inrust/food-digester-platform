@@ -25,14 +25,10 @@ export interface InfraConfig {
   readonly deviceApiDomain?: DeviceApiDomainConfig;
   /** 仅 local/test 可显式打开的无 mTLS execute-api 开发入口。 */
   readonly allowInsecureDeviceEndpointForLocal?: true;
-  readonly businessEmailFrom?: string;
-  readonly businessWebhookAllowedHosts?: readonly string[];
   readonly adminWebOrigin?: string;
   readonly enableMigrationRunner?: boolean;
   /** EventBridge 定时任务；真实 test 初始部署默认关闭，迁移验收后再显式启用。 */
   readonly enableScheduledWorkers?: boolean;
-  /** 业务邮件/webhook 通知；test 默认关闭，非 test 默认开启。 */
-  readonly enableBusinessNotifications?: boolean;
   readonly deploymentAccount?: string;
   readonly deploymentRegion?: string;
   readonly adminApiDomain?: { readonly domainName: string; readonly certificateArn: string };
@@ -73,11 +69,6 @@ export function resolveConfig(app: App): InfraConfig {
   }
   const enableMigrationRunner = ['true', true].includes(app.node.tryGetContext('enableMigrationRunner'));
   const enableScheduledWorkers = ['true', true].includes(app.node.tryGetContext('enableScheduledWorkers'));
-  const notificationSetting = app.node.tryGetContext('enableBusinessNotifications');
-  const enableBusinessNotifications =
-    notificationSetting === undefined
-      ? !['local', 'test'].includes(envName)
-      : ['true', true].includes(notificationSetting);
   const deploymentAccount = app.node.tryGetContext('deploymentAccount') as string | undefined;
   const deploymentRegion = app.node.tryGetContext('deploymentRegion') as string | undefined;
   if (!!deploymentAccount !== !!deploymentRegion || (deploymentAccount && !/^\d{12}$/u.test(deploymentAccount))) {
@@ -115,7 +106,6 @@ export function resolveConfig(app: App): InfraConfig {
     adminWebOrigin,
     enableMigrationRunner,
     enableScheduledWorkers,
-    enableBusinessNotifications,
     deploymentAccount,
     deploymentRegion,
     ...(adminApiDomainName && publicApiCertificateArn
@@ -126,17 +116,6 @@ export function resolveConfig(app: App): InfraConfig {
       : {}),
   };
   const allowInsecureDeviceEndpointForLocal = app.node.tryGetContext('allowInsecureDeviceEndpointForLocal') === true;
-  const businessEmailFrom = app.node.tryGetContext('businessEmailFrom') as string | undefined;
-  const webhookHosts = app.node.tryGetContext('businessWebhookAllowedHosts') as string | undefined;
-  const businessWebhookAllowedHosts = webhookHosts
-    ?.split(',')
-    .map((value) => value.trim())
-    .filter(Boolean);
-
-  if (enableBusinessNotifications && (!businessEmailFrom || !businessWebhookAllowedHosts?.length)) {
-    throw new Error('启用业务通知时必须配置 businessEmailFrom 与 businessWebhookAllowedHosts');
-  }
-
   if (domainName === undefined && certificateArn === undefined) {
     if (!allowInsecureDeviceEndpointForLocal || !['local', 'test'].includes(envName)) {
       throw new Error(
@@ -147,8 +126,6 @@ export function resolveConfig(app: App): InfraConfig {
       envName,
       ...deployment,
       allowInsecureDeviceEndpointForLocal: true,
-      ...(businessEmailFrom ? { businessEmailFrom } : {}),
-      ...(businessWebhookAllowedHosts?.length ? { businessWebhookAllowedHosts } : {}),
     };
   }
   if (domainName === undefined || certificateArn === undefined) {
@@ -164,7 +141,5 @@ export function resolveConfig(app: App): InfraConfig {
       truststoreBucketName,
       truststoreVersion,
     },
-    ...(businessEmailFrom ? { businessEmailFrom } : {}),
-    ...(businessWebhookAllowedHosts?.length ? { businessWebhookAllowedHosts } : {}),
   };
 }

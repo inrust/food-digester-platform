@@ -29,9 +29,6 @@
 | `FDP_PUBLIC_API_CERTIFICATE_ARN` | 同账号、同区域 ACM，ISSUED，SAN 同时覆盖 `api` 与 `onboard-api` |
 | `FDP_TRUSTSTORE_BUCKET_NAME` | 提前创建、版本化、私有且可被 API Gateway 读取的受控 S3 Bucket |
 | `FDP_TRUSTSTORE_VERSION` | 已上传测试 CA bundle 的非空 VersionId，非 delete marker |
-| `FDP_ENABLE_BUSINESS_NOTIFICATIONS` | test 初始值为 `false`；启用前须另行批准 |
-| `FDP_BUSINESS_EMAIL_FROM` | 仅在启用业务通知时必填；必须为已验证的 SES 发信地址 |
-| `FDP_BUSINESS_WEBHOOK_ALLOWED_HOSTS` | 仅在启用业务通知时必填；真实测试 webhook 主机白名单（逗号分隔） |
 
 Key 默认 `truststore/ca-bundle.pem`。先准备 Bucket/对象再创建 mTLS 域名，避免同一 Stack 新建空 Bucket 的首次部署顺序错误。现有 Stack 内 truststore Bucket 保留用于兼容本地测试，但本账号部署使用外部预置 Bucket。CA 内容/链、ACM 覆盖范围与对象存在性需要真实只读预检；本地 ARN 校验不证明其有效。
 
@@ -77,7 +74,7 @@ CodeBuild 项目只按需运行，无自动触发、无自动重试、并发上�
 
 Amplify 使用 `apps/admin-web/dist/web`、SPA fallback，并从输出填入 Cognito region/pool/client。当前源码要求 `VITE_ADMIN_API_BASE_URL=https://api.bio-nexa.com`（不额外追加 `/api/v1`）；另填 `VITE_COGNITO_REGION`、`VITE_COGNITO_USER_POOL_ID`、`VITE_COGNITO_CLIENT_ID`。不要填写密钥/JWT。
 
-两个 ACM 证书和版本化 CA 对象已于 2026-09-17 实时核验，真实参数 synth/diff 已通过；仍需补齐 Bootstrap 权限并在精确提交上重新运行无警告 diff。SES/webhook 保持禁用。RDS 当前为测试级 Single-AZ、无备份/删除保护，不可凭域名直接作为生产环境。
+两个 ACM 证书和版本化 CA 对象已于 2026-09-17 实时核验，真实参数 synth/diff 已通过。SES/Webhook 业务通知及其配置要求已从当前部署范围移除，后续有明确需求时重新立项接入。RDS 当前为测试级 Single-AZ、无备份/删除保护，不可凭域名直接作为生产环境。
 
 Migration 使用 Prisma schema engine 的 `sslmode=require`、`sslaccept=strict` 和 CA 路径；Seed 使用 pg 的 `rejectUnauthorized=true`。不能将 libpq 的 `verify-full` 参数直接当作 Prisma 校验策略。[Prisma TLS 参数](https://docs.prisma.io/docs/orm/v6/overview/databases/postgresql)。实际证书错误/主机名不匹配负测仍须在目标执行。
 

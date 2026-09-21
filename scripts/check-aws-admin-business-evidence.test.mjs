@@ -52,16 +52,6 @@ function fixture() {
         crossCustomer: { ...evidence, deniedStatus: 404 },
       },
       ifMatchRace: { ...evidence, successCount: 1, conflictCount: 1, conflictStatus: 409 },
-      businessNotifier: {
-        ...evidence,
-        scheduleMinutes: 1,
-        emailProvider: 'SES_V2',
-        webhookHttpsAllowlist: true,
-        concurrentSendCount: 1,
-        processingClaimObserved: true,
-        providerRequestIdRecorded: true,
-        retryRecovered: true,
-      },
       esgExport: {
         ...evidence,
         scheduleMinutes: 1,
@@ -79,7 +69,7 @@ function fixture() {
   };
 }
 
-test('完整的 58 API、五角色、并发、通知、ESG 与清理目标 AWS 回执通过', () => {
+test('完整的 58 API、五角色、并发、ESG 与清理目标 AWS 回执通过', () => {
   assert.equal(REQUIRED_ADMIN_BUSINESS_OPERATIONS.length, 58);
   assert.deepEqual(validateAwsAdminBusinessEvidence(fixture()), []);
 });
@@ -120,14 +110,12 @@ test('API 缺项、角色缺项与跨 Customer 放行均失败关闭', () => {
   assert.ok(validateAwsAdminBusinessEvidence(tenant).some((error) => error.includes('跨 Customer')));
 });
 
-test('并发、通知或 ESG 证据不满足生产约束时失败关闭', () => {
+test('并发或 ESG 证据不满足生产约束时失败关闭', () => {
   const receipt = fixture();
   receipt.probes.ifMatchRace.successCount = 2;
-  receipt.probes.businessNotifier.scheduleMinutes = 2;
   receipt.probes.esgExport.csvRowCount = 1;
   const errors = validateAwsAdminBusinessEvidence(receipt);
   assert.ok(errors.some((error) => error.includes('If-Match')));
-  assert.ok(errors.some((error) => error.includes('通知调度')));
   assert.ok(errors.some((error) => error.includes('CSV 行数')));
 });
 

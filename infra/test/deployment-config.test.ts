@@ -20,7 +20,6 @@ const context = {
   publicApiCertificateArn: 'arn:aws:acm:ap-southeast-1:065986019555:certificate/11111111-1111-1111-1111-111111111111',
   enableMigrationRunner: 'true',
   enableScheduledWorkers: 'false',
-  enableBusinessNotifications: 'false',
   allowInsecureDeviceEndpointForLocal: 'false',
 };
 test('real deployment rejects incomplete/cross-account inputs and wildcard origin', () => {
@@ -46,28 +45,6 @@ test('real deployment rejects incomplete/cross-account inputs and wildcard origi
   assert.throws(() => resolveConfig(new App({ context: { ...context, allowInsecureDeviceEndpointForLocal: true } })));
 });
 
-test('test deployment can disable deferred business notifications without placeholder inputs', () => {
-  const disabled = resolveConfig(new App({ context }));
-  assert.isFalse(disabled.enableBusinessNotifications);
-  assert.isUndefined(disabled.businessEmailFrom);
-  assert.isUndefined(disabled.businessWebhookAllowedHosts);
-
-  assert.throws(
-    () => resolveConfig(new App({ context: { ...context, enableBusinessNotifications: 'true' } })),
-    /启用业务通知时必须配置/,
-  );
-  const enabled = resolveConfig(
-    new App({
-      context: {
-        ...context,
-        enableBusinessNotifications: 'true',
-        businessEmailFrom: 'notifications@bio-nexa.com',
-        businessWebhookAllowedHosts: 'hooks.bio-nexa.com',
-      },
-    }),
-  );
-  assert.isTrue(enabled.enableBusinessNotifications);
-});
 test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned truststore and private one-shot migration', () => {
   const app = new App({ context });
   const config = resolveConfig(app);
@@ -85,8 +62,8 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
     ),
   );
   assert.isFalse(JSON.stringify(template.toJSON()).includes('ses:SendEmail'));
-  assert.isFalse(JSON.stringify(template.toJSON()).includes('notifications@example.test'));
-  assert.isFalse(JSON.stringify(template.toJSON()).includes('webhook.example.test'));
+  assert.isFalse(JSON.stringify(template.toJSON()).includes('BUSINESS_EMAIL_FROM'));
+  assert.isFalse(JSON.stringify(template.toJSON()).includes('BUSINESS_WEBHOOK_ALLOWED_HOSTS'));
   assert.isEmpty(
     Object.values(template.findResources('AWS::S3::Bucket')).filter(
       (value) => value.Properties.BucketName === 'example-controlled-truststore',
@@ -160,8 +137,8 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
   });
   const project = Object.values(template.findResources('AWS::CodeBuild::Project'))[0].Properties;
   assert.deepEqual(broadAllowViolations(template.toJSON()), []);
-  const statements = collectPolicyStatements(template.toJSON()).filter((value) =>
-    value.logicalId.startsWith('MigrationRunner') && !value.logicalId.startsWith('MigrationRunnerBoundary'),
+  const statements = collectPolicyStatements(template.toJSON()).filter(
+    (value) => value.logicalId.startsWith('MigrationRunner') && !value.logicalId.startsWith('MigrationRunnerBoundary'),
   );
   const secretReads = statements.filter((value) =>
     JSON.stringify(value.statement.Action).includes('secretsmanager:GetSecretValue'),
@@ -171,9 +148,7 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
     assert.include(JSON.stringify(value.statement.Resource), 'DatabaseSecret');
     assert.notEqual(value.statement.Resource, '*');
   }
-  const decrypts = statements.filter((value) =>
-    JSON.stringify(value.statement.Action).includes('kms:Decrypt'),
-  );
+  const decrypts = statements.filter((value) => JSON.stringify(value.statement.Action).includes('kms:Decrypt'));
   assert.isAbove(decrypts.length, 0);
   for (const value of decrypts) {
     assert.include(JSON.stringify(value.statement.Resource), 'DataKey');

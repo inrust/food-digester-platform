@@ -50,16 +50,15 @@ API、设备消息处理和数据库继续采用 API Gateway + Lambda + IoT Core
 | Athena + Glue Data Catalog | 原始归档审计查询、表及分区元数据；不部署 Glue ETL | 5 | 10 台试运营验收前完成；[Athena](https://aws.amazon.com/athena/pricing/)、[Glue](https://aws.amazon.com/glue/pricing/) |
 | VPC / NAT Gateway / Endpoint / 公网 IPv4 | 私有 RDS 与 Lambda 连通；暂按 1 个 NAT、相关 IPv4、少量处理流量预留，并使用 S3 Gateway Endpoint | 80 | 必需网络，收费组件按实部署；不要同时无依据铺设大量 Interface Endpoint；[计费](https://aws.amazon.com/vpc/pricing/) |
 | Amazon Route 53 | DNS 托管及查询 | 5 | 按需配置；使用已有域名，已有外部 DNS 可继续使用；[计费](https://aws.amazon.com/route53/pricing/) |
-| Amazon SES | 业务邮件或自定义 Cognito 邮件 | 2 | 可选；需要真实邮件时开通，完成发件身份验证及所需 sandbox 限制处理；[计费](https://aws.amazon.com/ses/pricing/) |
 | AWS Certificate Manager | API 的不可导出公有 HTTPS 证书；前端证书由 Amplify 管理 | 0 | 集成服务用证书无证书费；不采购 Private CA；[计费](https://aws.amazon.com/certificate-manager/pricing/) |
 | IAM / IAM Identity Center / STS | 人员登录、临时会话、服务角色和授权 | 0 | 不单独预留身份服务费；相关运行资源按上表计费 |
 | CloudFormation / CDK 引导依赖 | 部署及更新基础设施，保留部署产物；可能包含空闲 ECR 引导仓库、SSM 引导参数 | 0 | 无单独计算采购；产物存储计入 S3，本次使用函数代码包部署 |
 | AWS Budgets / Cost Anomaly Detection / Cost Explorer | 预算告警、异常费用和成本查看 | 0 | 基础预算通知和人工成本查看；不默认启用收费预算操作或高频成本 API；[Budgets 计费](https://aws.amazon.com/aws-cost-management/aws-budgets/pricing/) |
-| **服务规划额合计** | **包括 DNS、邮件额度** | **260** | **单套测试环境** |
-| **预算内余量** | **吸收测试用量的正常波动** | **40** | **已包含在总预算内** |
+| **服务规划额合计** | **包括 DNS** | **258** | **单套测试环境** |
+| **预算内余量** | **吸收测试用量的正常波动** | **42** | **已包含在总预算内** |
 | **建议月预算** | **一套 10 台设备联调环境** | **300** | **未税；不是固定套餐或费用硬上限** |
 
-NAT 与 Interface Endpoint 的最终选择须覆盖实际 IoT 控制面/数据面、SQS、KMS、Secrets Manager、Scheduler 及外部 Webhook 等访问需求，不能仅因省钱而遗漏连通路径。VPC 本身不收取本表所列固定网络费，主要收费来自 NAT、Interface Endpoint、IPv4 和传输；S3 Gateway Endpoint 无额外费用。
+NAT 与 Interface Endpoint 的最终选择须覆盖实际 IoT 控制面/数据面、SQS、KMS、Secrets Manager 和 Scheduler 等访问需求，不能仅因省钱而遗漏连通路径。VPC 本身不收取本表所列固定网络费，主要收费来自 NAT、Interface Endpoint、IPv4 和传输；S3 Gateway Endpoint 无额外费用。
 
 ### 2.3 300 美元预算的控制措施
 

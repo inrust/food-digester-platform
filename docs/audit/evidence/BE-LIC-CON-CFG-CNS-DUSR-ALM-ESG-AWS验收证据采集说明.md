@@ -16,7 +16,7 @@ pnpm check:aws-admin-business-evidence
 - `getConsumableContact` 额外保存未授权 403、跨 Customer/不存在设备 404，以及列表响应、浏览器网络记录、DOM 和应用日志中未点击前均无联系人号码的证据。
 - 覆盖 PlatformSuperAdmin、PlatformOperator、Auditor、CustomerAdmin、CustomerViewer 五角色，并证明跨 Customer 返回 403/404。
 - 对带 `If-Match` 的写接口发起同版本并发请求，必须恰好一项成功、一项 409。
-- EventBridge 调度间隔不超过 1 分钟；通知链路必须证明 PROCESSING 抢占、并发仅发送一次、SES v2/Webhook HTTPS allowlist 的提供商请求 ID与失败重试恢复。
+- SES/Webhook 业务通知已从当前发布范围及本 Gate 移除；后续重新立项时另行定义发送配置、调度、幂等与目标 AWS 回执。
 - ESG 导出必须证明查询与 CSV 行数一致、S3 key 使用 `esg-exports/`、跨租户拒绝、短期 URL 到期不可用、生命周期不超过 1 天，以及过期 PROCESSING 任务可恢复。
 - 清理所有测试用户、设备、合同、通知、导出对象及临时配置，并保存清理证据。
 

@@ -89,7 +89,6 @@ const ONBOARDING_DEADLINE_ENTRY = resolve(
 );
 const RETIREMENT_TIMEOUT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/retirement-timeout-entry.ts');
 const ACTIVITY_EXPORT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/activity-export-entry.ts');
-const BUSINESS_NOTIFIER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/business-notifier-entry.ts');
 const ESG_EXPORT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/esg-export-entry.ts');
 const COMMAND_PUBLISHER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/command-publisher-entry.ts');
 const COMMAND_TIMEOUT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/command-timeout-entry.ts');
@@ -1079,37 +1078,6 @@ export class AppDependenciesStack extends Stack {
       schedule: events.Schedule.rate(Duration.minutes(1)),
       targets: [new eventsTargets.LambdaFunction(activityExport)],
     });
-
-    if (this.config.enableBusinessNotifications !== false) {
-      const businessNotifier = mkFunction('BusinessNotifierFn', 'business-notifier', {
-        timeout: Duration.seconds(60),
-        environment: {
-          DB_SECRET_ARN: dbSecret,
-          BUSINESS_EMAIL_FROM: this.config.businessEmailFrom ?? 'notifications@example.test',
-          BUSINESS_WEBHOOK_ALLOWED_HOSTS: (this.config.businessWebhookAllowedHosts ?? ['webhook.example.test']).join(
-            ',',
-          ),
-          BUSINESS_NOTIFICATION_BATCH_SIZE: '50',
-          BUSINESS_NOTIFICATION_MAX_ATTEMPTS: '5',
-          BUSINESS_NOTIFICATION_LEASE_SECONDS: '60',
-        },
-        entry: BUSINESS_NOTIFIER_ENTRY,
-      });
-      dbSecretGrant(businessNotifier);
-      businessNotifier.addToRolePolicy(
-        new iam.PolicyStatement({
-          sid: 'BusinessNotificationEmailSend',
-          actions: ['ses:SendEmail'],
-          resources: [this.formatArn({ service: 'ses', resource: 'identity', resourceName: '*' })],
-        }),
-      );
-      new events.Rule(this, 'BusinessNotifierSchedule', {
-        ruleName: this.naming.name('business-notifier'),
-        enabled: this.config.enableScheduledWorkers === true,
-        schedule: events.Schedule.rate(Duration.minutes(1)),
-        targets: [new eventsTargets.LambdaFunction(businessNotifier)],
-      });
-    }
 
     const esgExport = mkFunction('EsgExportFn', 'esg-export', {
       timeout: Duration.seconds(300),

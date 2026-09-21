@@ -36,8 +36,6 @@ export { createCognitoAdminPort } from './cognito-admin.js';
 export type { CognitoAdminConfig, CognitoAdminPort } from './cognito-admin.js';
 export { createS3ActivityExportPorts } from './s3-activity-export.js';
 export type { ActivityExportAwsPorts, S3ActivityExportConfig } from './s3-activity-export.js';
-export { createHttpsWebhookSender, createSesEmailSender } from './business-notification-sender.js';
-export type { HttpsWebhookSenderConfig, SesEmailSenderConfig } from './business-notification-sender.js';
 export {
   createKmsFirmwareSignatureVerifier,
   createOtaFirmwareS3Ports,
