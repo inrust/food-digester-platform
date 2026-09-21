@@ -34,7 +34,7 @@
 | 管理员 API/日志看不到私钥 | 审计（provisioning/store/claim）与 admin detail 序列化扫描无私钥明文；证书记录列无明文 | ✅ |
 | 负向 | Token 无申请 404；伪造 Token 401；Status 不接受也不要求 serialNumber Query | ✅ |
 | 持久化重试 | 并发认领最多一次、租约恢复不重复消耗 attempt、指数退避、耗尽告警与失败审计 | ✅ |
-| AWS 对账补偿 | 创建后立即保存 certificateId 并添加 request/operation tag；任一后续失败先撤证，撤证失败保留凭证供重试 | ✅ |
+| AWS 对账补偿 | 创建后立即保存 certificateId；request/operationId 写入业务审计，并结合 CloudTrail request ID 与 certificateId 对账；任一后续失败先撤证，撤证失败保留凭证供重试。AWS IoT 普通 cert 资源不支持 TagResource。 | ✅ |
 
 ## 4. 交付状态（2026-09-07）
 

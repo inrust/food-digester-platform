@@ -6,7 +6,6 @@ import {
   CreateThingCommand,
   DescribeEndpointCommand,
   IoTClient,
-  TagResourceCommand,
   UpdateCertificateCommand,
 } from '@aws-sdk/client-iot';
 import type { IotPolicyDocument } from './iot-device-policy.js';
@@ -21,7 +20,6 @@ export interface AwsIotCertificateResult {
 export interface AwsIotProvisioningClient {
   ensureThing(thingName: string): Promise<void>;
   createKeysAndCertificate(): Promise<AwsIotCertificateResult>;
-  tagCertificate(certificateArn: string, tags: Readonly<Record<string, string>>): Promise<void>;
   ensurePolicy(policyName: string, policyDocument: IotPolicyDocument): Promise<void>;
   attachPolicy(policyName: string, targetArn: string): Promise<void>;
   attachThingPrincipal(thingName: string, principalArn: string): Promise<void>;
@@ -62,14 +60,6 @@ export function createAwsIotProvisioningClient(config: AwsIotProvisioningClientC
         certificatePem: response.certificatePem,
         privateKey,
       };
-    },
-    async tagCertificate(certificateArn, tags) {
-      await client.send(
-        new TagResourceCommand({
-          resourceArn: certificateArn,
-          tags: Object.entries(tags).map(([Key, Value]) => ({ Key, Value })),
-        }),
-      );
     },
     async ensurePolicy(policyName, policyDocument) {
       try {

@@ -469,10 +469,6 @@ export class ProvisioningService {
     const now = this.now();
     try {
       await attempt?.onCertificateIssued?.(cert.certificateId);
-      await this.deps.iot.tagCertificate(cert.certificateArn, {
-        'fdp:onboarding-request-id': request.id,
-        'fdp:provisioning-operation-id': attempt?.operationId ?? request.id,
-      });
       const policy = buildDevicePolicy({
         region: this.deps.config.region,
         accountId: this.deps.config.accountId,

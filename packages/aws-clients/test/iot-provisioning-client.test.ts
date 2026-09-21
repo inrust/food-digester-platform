@@ -5,7 +5,6 @@ import {
   CreatePolicyCommand,
   CreateThingCommand,
   DescribeEndpointCommand,
-  TagResourceCommand,
   UpdateCertificateCommand,
 } from '@aws-sdk/client-iot';
 import type { IoTClient } from '@aws-sdk/client-iot';
@@ -35,7 +34,6 @@ describe('AWS IoT provisioning 生产适配器', () => {
     const adapter = createAwsIotProvisioningClient({ client });
     await adapter.ensureThing('device-1');
     await expect(adapter.createKeysAndCertificate()).resolves.toMatchObject({ certificateId: 'cert-1' });
-    await adapter.tagCertificate('arn:cert-1', { 'fdp:onboarding-request-id': 'req-1' });
     await adapter.ensurePolicy('policy-1', { Version: '2012-10-17', Statement: [] });
     await adapter.attachPolicy('policy-1', 'arn:cert-1');
     await adapter.attachThingPrincipal('device-1', 'arn:cert-1');
@@ -48,7 +46,6 @@ describe('AWS IoT provisioning 生产适配器', () => {
       [
         CreateThingCommand.name,
         CreateKeysAndCertificateCommand.name,
-        TagResourceCommand.name,
         CreatePolicyCommand.name,
         AttachPolicyCommand.name,
         AttachThingPrincipalCommand.name,
@@ -66,10 +63,6 @@ describe('AWS IoT provisioning 生产适配器', () => {
       newStatus: 'INACTIVE',
     });
     assert.deepEqual((calls.at(-1) as DescribeEndpointCommand).input, { endpointType: 'iot:Data-ATS' });
-    assert.deepEqual((calls[2] as TagResourceCommand).input, {
-      resourceArn: 'arn:cert-1',
-      tags: [{ Key: 'fdp:onboarding-request-id', Value: 'req-1' }],
-    });
   });
 
   test('ensure 操作仅吞掉 ResourceAlreadyExistsException', async () => {

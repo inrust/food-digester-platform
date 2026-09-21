@@ -78,9 +78,6 @@ function mockIot(): MockIot {
       state.certs.push(cert);
       return cert;
     },
-    async tagCertificate(certificateArn, tags) {
-      state.calls.push(`tagCertificate:${certificateArn}:${JSON.stringify(tags)}`);
-    },
     async ensurePolicy(policyName, policyDocument) {
       state.calls.push(`ensurePolicy:${policyName}`);
       state.policies.set(policyName, policyDocument);
@@ -174,14 +171,7 @@ describe('ProvisioningService', () => {
     // IoT 调用链完整且 Thing Name = deviceId
     assert.deepEqual(
       iot.calls.map((c) => c.split(':')[0]),
-      [
-        'ensureThing',
-        'createKeysAndCertificate',
-        'tagCertificate',
-        'ensurePolicy',
-        'attachPolicy',
-        'attachThingPrincipal',
-      ],
+      ['ensureThing', 'createKeysAndCertificate', 'ensurePolicy', 'attachPolicy', 'attachThingPrincipal'],
     );
     assert.ok(iot.things.has(deviceId));
     const policy = iot.policies.get(`fdp-device-${deviceId}`);
@@ -318,9 +308,6 @@ describe('ProvisioningService', () => {
     assert.notEqual(retry.certificateId, orphanCertificateId);
     assert.equal(await prisma.deviceCertificate.count({ where: { deviceId, status: 'REVOKED' } }), 1);
     assert.ok(iot.calls.some((call) => call === `revokeCertificate:${orphanCertificateId}`));
-    assert.ok(
-      iot.calls.some((call) => call.startsWith('tagCertificate:') && call.includes(`fdp:provisioning-operation-id`)),
-    );
   });
 
   test('过期恢复：AWS 撤证失败保留密文与 FAILED 状态，重试成功后才清包并重签', async () => {

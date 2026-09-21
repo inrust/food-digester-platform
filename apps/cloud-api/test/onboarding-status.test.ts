@@ -75,7 +75,6 @@ function mockIot(): IotProvisioningPort {
           ['-----END', 'PRIVATE', 'KEY-----'].join(' '),
       } as IotCertificateResult);
     },
-    tagCertificate: () => Promise.resolve(),
     ensurePolicy: (_name: string, _doc: IotPolicyDocument) => Promise.resolve(),
     attachPolicy: () => Promise.resolve(),
     attachThingPrincipal: () => Promise.resolve(),
