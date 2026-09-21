@@ -184,7 +184,7 @@ export class AppDependenciesStack extends Stack {
 
     const storage = this.createStorage();
     const messaging = this.createMessaging(storage.dataKey);
-    this.createIotIngestionRules(messaging);
+    this.createIotIngestionRules(messaging, storage.dataKey);
     const data = this.createData(storage.dataKey);
     if (this.config.enableMigrationRunner) this.createMigrationRunner(data, storage.dataKey);
     const identity = this.createIdentity();
@@ -351,6 +351,34 @@ export class AppDependenciesStack extends Stack {
       // 功能边界：密钥保留策略属运维决策，开发环境允许随 Stack 销毁
       removalPolicy: RemovalPolicy.DESTROY,
     });
+    const applicationDataPlaneRoleArns = [
+      'ingestion',
+      'archive',
+      'outbox-publisher',
+      'replay-trigger-publisher',
+      'replay',
+      API_ROLE_SUFFIX,
+      DEVICE_API_ROLE_SUFFIX,
+      'activity-export',
+      'esg-export',
+    ].map((suffix) =>
+      this.formatArn({
+        service: 'iam',
+        region: '',
+        resource: 'role',
+        resourceName: this.naming.name(suffix.endsWith('-role') ? suffix : `${suffix}-role`),
+      }),
+    );
+    dataKey.addToResourcePolicy(
+      new iam.PolicyStatement({
+        sid: 'ApplicationRuntimeDataPlane',
+        effect: iam.Effect.ALLOW,
+        principals: [new iam.AccountRootPrincipal()],
+        actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:DescribeKey'],
+        resources: ['*'],
+        conditions: { ArnEquals: { 'aws:PrincipalArn': applicationDataPlaneRoleArns } },
+      }),
+    );
 
     // SEC-01：证书包 Key 数据面只授予 Onboarding/Device API、Provisioning Worker 与恢复 Lambda。
     // 使用确定性角色 ARN 条件，避免 Key ↔ Lambda Role 的 CloudFormation 循环依赖。
@@ -514,12 +542,35 @@ export class AppDependenciesStack extends Stack {
 
   // ---------- IoT Rule：8 个上行 Topic → Ingress SQS ----------
 
-  private createIotIngestionRules(messaging: MessagingResources): void {
+  private createIotIngestionRules(messaging: MessagingResources, dataKey: kms.IKey): void {
     const ruleRole = new iam.Role(this, 'IotRuleRole', {
       roleName: this.naming.name('iot-rule'),
       assumedBy: new iam.ServicePrincipal('iot.amazonaws.com'),
       description: 'IoT Rule role: SendMessage only to ingress and rule-error queues',
     });
+    // SQS uses the customer-managed application key. The identity grant alone
+    // is insufficient because DataKey has a deliberately restricted custom
+    // key policy, so admit the deterministic rule-role ARN there as well.
+    dataKey.grantEncryptDecrypt(ruleRole);
+    dataKey.addToResourcePolicy(
+      new iam.PolicyStatement({
+        sid: 'IotRuleQueueEncryption',
+        effect: iam.Effect.ALLOW,
+        principals: [new iam.AccountRootPrincipal()],
+        actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:DescribeKey'],
+        resources: ['*'],
+        conditions: {
+          ArnEquals: {
+            'aws:PrincipalArn': this.formatArn({
+              service: 'iam',
+              region: '',
+              resource: 'role',
+              resourceName: this.naming.name('iot-rule'),
+            }),
+          },
+        },
+      }),
+    );
     messaging.ingress.grantSendMessages(ruleRole);
     messaging.ruleError.grantSendMessages(ruleRole);
 
@@ -714,27 +765,25 @@ export class AppDependenciesStack extends Stack {
             format: lambdaNodejs.OutputFormat.ESM,
             // esbuild's ESM wrapper otherwise cannot execute CommonJS packages such as pg
             // because their dynamic requires of Node built-ins have no native require binding.
-            banner: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+            banner:
+              "import { createRequire as __fdpCreateRequire } from 'node:module'; const require = __fdpCreateRequire(import.meta.url);",
             logLevel: lambdaNodejs.LogLevel.ERROR,
-            ...(options.copyMqttSchemas || options.copyArgon2Prebuilds
-              ? {
-                  commandHooks: {
-                    beforeBundling: () => [],
-                    beforeInstall: () => [],
-                    afterBundling: (inputDir: string, outputDir: string) => [
-                      ...(options.copyMqttSchemas
-                        ? [`cp -R "${inputDir}/contracts/mqtt/schemas" "${outputDir}/mqtt-schemas"`]
-                        : []),
-                      ...(options.copyArgon2Prebuilds
-                        ? [
-                            `mkdir -p "${outputDir}/prebuilds/linux-arm64"`,
-                            `cp "${inputDir}/apps/cloud-api/node_modules/argon2/prebuilds/linux-arm64/argon2.armv8.glibc.node" "${outputDir}/prebuilds/linux-arm64/"`,
-                          ]
-                        : []),
-                    ],
-                  },
-                }
-              : {}),
+            commandHooks: {
+              beforeBundling: () => [],
+              beforeInstall: () => [],
+              afterBundling: (inputDir: string, outputDir: string) => [
+                ...(options.copyMqttSchemas
+                  ? [`cp -R "${inputDir}/contracts/mqtt/schemas" "${outputDir}/mqtt-schemas"`]
+                  : []),
+                ...(options.copyArgon2Prebuilds
+                  ? [
+                      `mkdir -p "${outputDir}/prebuilds/linux-arm64"`,
+                      `cp "${inputDir}/apps/cloud-api/node_modules/argon2/prebuilds/linux-arm64/argon2.armv8.glibc.node" "${outputDir}/prebuilds/linux-arm64/"`,
+                    ]
+                  : []),
+                `node --check "${outputDir}/index.mjs"`,
+              ],
+            },
           },
         });
       }

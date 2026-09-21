@@ -229,6 +229,44 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
+  test('IoT Rule 角色可使用 Ingress 队列的 KMS 数据密钥', () => {
+    const keys = Object.values(resourcesOfType(template, 'AWS::KMS::Key'));
+    const dataKey = keys.find((key) => key.Properties.Description.includes('Application data encryption'));
+    assert.isDefined(dataKey);
+    const statements = dataKey.Properties.KeyPolicy.Statement as any[];
+    const ruleGrant = statements.find((statement) => statement.Sid === 'IotRuleQueueEncryption');
+    assert.isDefined(ruleGrant);
+    assert.include(JSON.stringify(ruleGrant.Condition?.ArnEquals?.['aws:PrincipalArn']), 'fdp-test-iot-rule');
+    const actions = Array.isArray(ruleGrant.Action) ? ruleGrant.Action : [ruleGrant.Action];
+    assert.include(actions, 'kms:Decrypt');
+    assert.include(actions, 'kms:GenerateDataKey*');
+  });
+
+  test('直接使用 SQS/S3 的运行角色被数据密钥策略逐一授权', () => {
+    const keys = Object.values(resourcesOfType(template, 'AWS::KMS::Key'));
+    const dataKey = keys.find((key) => key.Properties.Description.includes('Application data encryption'));
+    assert.isDefined(dataKey);
+    const grant = (dataKey.Properties.KeyPolicy.Statement as any[]).find(
+      (statement) => statement.Sid === 'ApplicationRuntimeDataPlane',
+    );
+    assert.isDefined(grant);
+    const principals = JSON.stringify(grant.Condition?.ArnEquals?.['aws:PrincipalArn']);
+    for (const suffix of [
+      'ingestion-role',
+      'archive-role',
+      'outbox-publisher-role',
+      'replay-trigger-publisher-role',
+      'replay-role',
+      'api-role',
+      'device-api-role',
+      'activity-export-role',
+      'esg-export-role',
+    ]) {
+      assert.include(principals, `fdp-test-${suffix}`);
+    }
+    assert.notInclude(principals, '*');
+  });
+
   test('Command/OTA/Notification 三个独立 Publisher 各自收敛到单一 Topic 模式', () => {
     const statements = collectPolicyStatements(template.toJSON()).map(({ statement }) => statement);
     for (const [sid, type] of [
