@@ -50,6 +50,9 @@ describe('项目 CA 设备证书签发器', () => {
     assert.equal(leaf.subject.getField('CN').value.toString().startsWith('fdp-device-'), true);
     assert.equal((leaf.getExtension('basicConstraints') as { cA?: boolean } | null)?.cA, false);
     assert.equal((leaf.getExtension('extKeyUsage') as { clientAuth?: boolean } | null)?.clientAuth, true);
+    const authorityKeyIdentifier = leaf.getExtension('authorityKeyIdentifier') as { value?: string } | null;
+    assert.include(authorityKeyIdentifier?.value, caCertificate.generateSubjectKeyIdentifier().getBytes());
+    assert.notInclude(authorityKeyIdentifier?.value, leaf.generateSubjectKeyIdentifier().getBytes());
     const derivedPublicKey = forge.pki.setRsaPublicKey(privateKey.n, privateKey.e);
     assert.equal(forge.pki.publicKeyToPem(derivedPublicKey), forge.pki.publicKeyToPem(leaf.publicKey));
     assert.notEqual(first.certificatePem, second.certificatePem);

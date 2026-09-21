@@ -67,12 +67,13 @@ export function createProjectCaCertificateIssuer(config: ProjectCaCertificateIss
       certificate.validity.notAfter = new Date(now.getTime() + config.validitySeconds * 1000);
       certificate.setSubject([{ name: 'commonName', value: `fdp-device-${randomUUID()}` }]);
       certificate.setIssuer(caCertificate.subject.attributes);
+      const caSubjectKeyIdentifier = caCertificate.generateSubjectKeyIdentifier().getBytes();
       certificate.setExtensions([
         { name: 'basicConstraints', cA: false, critical: true },
         { name: 'keyUsage', digitalSignature: true, keyEncipherment: true, critical: true },
         { name: 'extKeyUsage', clientAuth: true },
         { name: 'subjectKeyIdentifier' },
-        { name: 'authorityKeyIdentifier', keyIdentifier: true, authorityCertIssuer: true, serialNumber: true },
+        { name: 'authorityKeyIdentifier', keyIdentifier: caSubjectKeyIdentifier },
       ]);
       certificate.sign(caPrivateKey, forge.md.sha256.create());
 
