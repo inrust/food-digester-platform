@@ -1,7 +1,7 @@
 /**
  * BE-IOT-02 身份与设备台账解析。
  *
- * 信任边界（BE-IOT-01 契约）：Payload 内设备自报字段不可信；身份 = iotPrincipal（证书 ARN）
+ * 信任边界（BE-IOT-01 契约）：Payload 内设备自报字段不可信；身份 = IoT Rule principal() 返回的证书 ID
  * 对照 device_certificates 台账，且必须与 iotDeviceId（Topic 第三段，AUTH-04 Policy 收敛）一致。
  * customerId 只取设备台账，不取 Payload。
  */
@@ -34,8 +34,9 @@ interface DeviceRow {
   readonly lifecycleStatus: string;
 }
 
-/** 从证书 ARN 提取 certificateId（...:cert/<id>）。 */
+/** 接受 IoT Rule principal() 的 64 位证书 ID，并兼容历史 ARN Envelope。 */
 export function certificateIdFromPrincipal(principal: string): string | null {
+  if (/^[0-9a-f]{64}$/u.test(principal)) return principal;
   const marker = ':cert/';
   const idx = principal.indexOf(marker);
   if (idx < 0) return null;

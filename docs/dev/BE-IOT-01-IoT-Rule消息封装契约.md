@@ -8,14 +8,14 @@
 |---|---|
 | 任务 | BE-IOT-01（P1 / IoT 后端），依赖 CT-02、CT-03、IAC-01（均已交付） |
 | Envelope | 设备原始 Payload 全字段平铺（`SELECT *`，useBase64=false 保留 JSON 原文）+ 五个 `iot*` 保留上下文字段 |
-| 上下文字段 | `iotTopic`（topic()）、`iotDeviceId`（topic(3)）、`iotType`（topic(4)）、`iotReceivedAt`（timestamp()，epoch 毫秒）、`iotPrincipal`（principal()，证书 ARN） |
+| 上下文字段 | `iotTopic`（topic()）、`iotDeviceId`（topic(3)）、`iotType`（topic(4)）、`iotReceivedAt`（timestamp()，epoch 毫秒）、`iotPrincipal`（principal()，证书 ID） |
 | 路由 | 8 个上行 Topic 各自一条 Rule → 同一 Ingress SQS；Error Action → 独立 `iot-rule-error` 队列 |
 | 功能边界 | 不做业务入库（Schema 校验/入库归 BE-IOT-02） |
 
 ## 2. 信任边界（技术对接要求）
 
 - Payload 内设备自报的任何身份字段（customerId、meta.deviceId 等）**不可信**，仅作业务数据透传；
-- 消费端身份只能由 `iotDeviceId`（Topic 第三段；发布权限由 AUTH-04 单设备 Policy 按 Thing 收敛）与 `iotPrincipal`（证书 ARN，对照 `device_certificates` 台账）解析；
+- 消费端身份只能由 `iotDeviceId`（Topic 第三段；发布权限由 AUTH-04 单设备 Policy 按 Thing 收敛）与 `iotPrincipal`（IoT Rule `principal()` 返回的证书 ID，对照 `device_certificates` 台账）解析；
 - `iot*` 为保留前缀，由 IoT Rule 注入，设备侧无法伪造（ uplink Payload Schema 的 meta/data 均为 additionalProperties:false 封闭结构）。
 
 ## 3. 验收基准与证据

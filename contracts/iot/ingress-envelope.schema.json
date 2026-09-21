@@ -4,7 +4,7 @@
   "title": "IngressEnvelope",
   "x-typescript-name": "IngressEnvelope",
   "x-decision-versions": ["PRI-001@1.0.0", "ADP-002@1.0.0"],
-  "description": "BE-IOT-01 IoT Rule → Ingress SQS 消息封装契约。Envelope = 设备原始 Payload 全字段原样平铺（SELECT *）+ 五个保留上下文字段（iot* 前缀，由 IoT Rule SQL 注入，设备不可伪造）。信任边界：Payload 内设备自报的任何身份字段（如 customerId、deviceId）均不可信；消费端身份只能由 iotDeviceId（Topic 第三段，发布权限由 AUTH-04 单设备 Policy 收敛）与 iotPrincipal（证书 ARN）结合设备台账解析。原始 Payload 不做任何改写/校验（业务校验归 BE-IOT-02），以保留原文。",
+  "description": "BE-IOT-01 IoT Rule → Ingress SQS 消息封装契约。Envelope = 设备原始 Payload 全字段原样平铺（SELECT *）+ 五个保留上下文字段（iot* 前缀，由 IoT Rule SQL 注入，设备不可伪造）。信任边界：Payload 内设备自报的任何身份字段（如 customerId、deviceId）均不可信；消费端身份只能由 iotDeviceId（Topic 第三段，发布权限由 AUTH-04 单设备 Policy 收敛）与 iotPrincipal（principal() 返回的证书 ID）结合设备台账解析。原始 Payload 不做任何改写/校验（业务校验归 BE-IOT-02），以保留原文。",
   "type": "object",
   "required": ["iotTopic", "iotDeviceId", "iotType", "iotReceivedAt", "iotPrincipal"],
   "additionalProperties": true,
@@ -33,7 +33,7 @@
     "iotPrincipal": {
       "type": "string",
       "minLength": 1,
-      "description": "发布者证书 ARN（principal()）；用于与设备台账（device_certificates）解析身份"
+      "description": "principal() 返回的发布者证书 ID；用于与设备台账（device_certificates）解析身份"
     }
   }
 }

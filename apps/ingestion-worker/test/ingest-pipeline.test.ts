@@ -19,6 +19,7 @@ import {
 import { DEC013_LEGACY_COMPATIBILITY_ENDS_AT, computeAuditHash } from '@fdp/contracts/mqtt/payload-normalization.js';
 import { createBusinessDispatcher, createIngestionHandler } from '../src/index.js';
 import type { QuarantineRecord, SqsBatchResponseLike, ValidatedMessage } from '../src/index.js';
+import { certificateIdFromPrincipal } from '../src/ingest/identity.js';
 import { createTestDb } from '../../cloud-api/test/helpers.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
@@ -58,6 +59,13 @@ const mediaDispatcherDeps = {
     getDownloadUrlTtlSeconds: () => 900,
   },
 } as const;
+
+test('IoT Rule principal() 的原始证书 ID 与历史 ARN 均可解析', () => {
+  const id = 'a'.repeat(64);
+  assert.equal(certificateIdFromPrincipal(id), id);
+  assert.equal(certificateIdFromPrincipal(`arn:aws:iot:ap-southeast-1:123456789012:cert/${id}`), id);
+  assert.isNull(certificateIdFromPrincipal('not-a-certificate'));
+});
 
 let seq = 0;
 /** 落库 Active 设备（挂客户）+ ACTIVE 证书。 */
