@@ -1,10 +1,10 @@
 import {
   AttachPolicyCommand,
   AttachThingPrincipalCommand,
-  CreateKeysAndCertificateCommand,
   CreatePolicyCommand,
   CreateThingCommand,
   DescribeEndpointCommand,
+  RegisterCertificateWithoutCACommand,
   UpdateCertificateCommand,
 } from '@aws-sdk/client-iot';
 import type { IoTClient } from '@aws-sdk/client-iot';
@@ -17,12 +17,10 @@ describe('AWS IoT provisioning 生产适配器', () => {
     const client = {
       send: async (command: unknown) => {
         calls.push(command);
-        if (command instanceof CreateKeysAndCertificateCommand) {
+        if (command instanceof RegisterCertificateWithoutCACommand) {
           return {
             certificateId: 'cert-1',
             certificateArn: 'arn:cert-1',
-            certificatePem: 'pem',
-            keyPair: { PrivateKey: 'private-key' },
           };
         }
         if (command instanceof DescribeEndpointCommand) {
@@ -31,7 +29,10 @@ describe('AWS IoT provisioning 生产适配器', () => {
         return {};
       },
     } as unknown as IoTClient;
-    const adapter = createAwsIotProvisioningClient({ client });
+    const adapter = createAwsIotProvisioningClient({
+      client,
+      certificateIssuer: { issue: async () => ({ certificatePem: 'pem', privateKey: 'private-key' }) },
+    });
     await adapter.ensureThing('device-1');
     await expect(adapter.createKeysAndCertificate()).resolves.toMatchObject({ certificateId: 'cert-1' });
     await adapter.ensurePolicy('policy-1', { Version: '2012-10-17', Statement: [] });
@@ -45,7 +46,7 @@ describe('AWS IoT provisioning 生产适配器', () => {
       calls.map((command) => (command as { constructor: { name: string } }).constructor.name),
       [
         CreateThingCommand.name,
-        CreateKeysAndCertificateCommand.name,
+        RegisterCertificateWithoutCACommand.name,
         CreatePolicyCommand.name,
         AttachPolicyCommand.name,
         AttachThingPrincipalCommand.name,
@@ -63,6 +64,10 @@ describe('AWS IoT provisioning 生产适配器', () => {
       newStatus: 'INACTIVE',
     });
     assert.deepEqual((calls.at(-1) as DescribeEndpointCommand).input, { endpointType: 'iot:Data-ATS' });
+    assert.deepEqual((calls.at(1) as RegisterCertificateWithoutCACommand).input, {
+      certificatePem: 'pem',
+      status: 'ACTIVE',
+    });
   });
 
   test('ensure 操作仅吞掉 ResourceAlreadyExistsException', async () => {

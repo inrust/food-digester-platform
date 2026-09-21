@@ -4,13 +4,13 @@
  * 签发链（approve 提交后触发）：
  * 1. 库存设备定位（deviceId = 库存行 id，不重复创建业务 Device）；
  * 2. 幂等短路：已有带证书包的 PENDING_CLAIM 证书记录 → 直接返回（重试安全）；
- * 3. IoT：ensureThing → CreateKeysAndCertificate → AUTH-04 最小权限 Policy → 附加 Policy/Thing；
+ * 3. IoT：ensureThing → 项目 CA 签发并注册 → AUTH-04 最小权限 Policy → 附加 Policy/Thing；
  * 4. DB：device_certificates 落库（公钥证书可保存，私钥绝不落库）；
  * 5. SEC-01：证书包（certificatePem + privateKey）立即信封加密短期存储（一次性领取）。
  *
  * 部分失败重试语义（技术对接要求）：
  * - Thing/Policy 按名幂等，attach 幂等；
- * - CreateKeysAndCertificate 成功但后续失败：重试产生新证书，旧 PENDING_CLAIM 记录
+ * - 项目 CA 证书注册成功但后续失败：重试产生新证书，旧 PENDING_CLAIM 记录
  *   （无私钥包可用）按 DEC-003 丢失处置标记 REVOKED，业务 Device 不重复创建；
  * - 内部 Provisioning 进度不暴露为外部状态（Status API 只映射 PENDING/REJECTED/APPROVED）。
  */

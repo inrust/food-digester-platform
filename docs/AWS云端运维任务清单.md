@@ -833,7 +833,7 @@
 
 ### RB-02 Onboarding 发证失败
 
-1. 检查 IoT CreateKeysAndCertificate、Thing 创建、Policy 附加和 KMS 加密错误。
+1. 检查项目 CA Secret 读取、叶证书签发、IoT RegisterCertificateWithoutCA、Thing 创建、Policy 附加和 KMS 加密错误。
 2. 确认日志未记录私钥明文。
 3. 判断证书包是否仍在领取有效期。
 4. 已销毁或失效时重新签发，不尝试恢复旧私钥。

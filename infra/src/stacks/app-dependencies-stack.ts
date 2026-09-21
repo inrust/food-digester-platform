@@ -835,6 +835,11 @@ export class AppDependenciesStack extends Stack {
       encryptionKey: storage.dataKey,
       generateSecretString: { passwordLength: 64, excludePunctuation: true },
     });
+    const deviceCaSecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'DeviceCertificateAuthoritySecret',
+      this.naming.name('device-ca'),
+    );
 
     // Ingestion Worker：消费 Ingress，隔离坏消息到 Quarantine（BE-IOT-02）
     const ingestion = mkFunction('IngestionFn', 'ingestion', {
@@ -1032,6 +1037,7 @@ export class AppDependenciesStack extends Stack {
         DB_SECRET_ARN: dbSecret,
         CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
         FDP_AWS_ACCOUNT_ID: Aws.ACCOUNT_ID,
+        DEVICE_CA_SECRET_ID: deviceCaSecret.secretName,
       },
       role: certSweeperRole,
       entry: CERT_SWEEPER_ENTRY,
@@ -1049,7 +1055,7 @@ export class AppDependenciesStack extends Stack {
         sid: 'IotCertificateRecovery',
         actions: [
           'iot:CreateThing',
-          'iot:CreateKeysAndCertificate',
+          'iot:RegisterCertificateWithoutCA',
           'iot:CreatePolicy',
           'iot:AttachPolicy',
           'iot:AttachThingPrincipal',
@@ -1059,6 +1065,7 @@ export class AppDependenciesStack extends Stack {
         resources: ['*'],
       }),
     );
+    deviceCaSecret.grantRead(certPackageSweeper);
     new events.Rule(this, 'CertPackageSweeperSchedule', {
       ruleName: this.naming.name('cert-package-sweeper'),
       enabled: this.config.enableScheduledWorkers === true,
@@ -1198,6 +1205,7 @@ export class AppDependenciesStack extends Stack {
         DB_SECRET_ARN: dbSecret,
         CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
         FDP_AWS_ACCOUNT_ID: Aws.ACCOUNT_ID,
+        DEVICE_CA_SECRET_ID: deviceCaSecret.secretName,
       },
       role: onboardingApiRole,
       entry: ONBOARDING_API_ENTRY,
@@ -1217,7 +1225,7 @@ export class AppDependenciesStack extends Stack {
           'iot:CreateThing',
           'iot:DescribeThing',
           'iot:DeleteThing',
-          'iot:CreateKeysAndCertificate',
+          'iot:RegisterCertificateWithoutCA',
           'iot:DescribeCertificate',
           'iot:UpdateCertificate',
           'iot:DeleteCertificate',
@@ -1231,6 +1239,7 @@ export class AppDependenciesStack extends Stack {
         resources: ['*'],
       }),
     );
+    deviceCaSecret.grantRead(onboardingApi);
 
     const onboardingProvisioning = mkFunction('OnboardingProvisioningFn', 'onboarding-provisioning', {
       timeout: Duration.seconds(300),
@@ -1238,6 +1247,7 @@ export class AppDependenciesStack extends Stack {
         DB_SECRET_ARN: dbSecret,
         CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
         FDP_AWS_ACCOUNT_ID: Aws.ACCOUNT_ID,
+        DEVICE_CA_SECRET_ID: deviceCaSecret.secretName,
       },
       role: onboardingProvisioningRole,
       entry: ONBOARDING_PROVISIONING_ENTRY,
@@ -1257,7 +1267,7 @@ export class AppDependenciesStack extends Stack {
           'iot:CreateThing',
           'iot:DescribeThing',
           'iot:DeleteThing',
-          'iot:CreateKeysAndCertificate',
+          'iot:RegisterCertificateWithoutCA',
           'iot:DescribeCertificate',
           'iot:UpdateCertificate',
           'iot:DeleteCertificate',
@@ -1270,6 +1280,7 @@ export class AppDependenciesStack extends Stack {
         resources: ['*'],
       }),
     );
+    deviceCaSecret.grantRead(onboardingProvisioning);
     new events.Rule(this, 'OnboardingProvisioningSchedule', {
       ruleName: this.naming.name('onboarding-provisioning'),
       enabled: this.config.enableScheduledWorkers === true,
@@ -1285,6 +1296,7 @@ export class AppDependenciesStack extends Stack {
         DB_SECRET_ARN: dbSecret,
         CERT_PACKAGE_KEY_ARN: storage.certPackageKey.keyArn,
         FDP_AWS_ACCOUNT_ID: Aws.ACCOUNT_ID,
+        DEVICE_CA_SECRET_ID: deviceCaSecret.secretName,
         OTA_BUCKET_NAME: storage.ota.bucketName,
         MEDIA_BUCKET_NAME: storage.media.bucketName,
       },
@@ -1305,10 +1317,16 @@ export class AppDependenciesStack extends Stack {
     deviceApi.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'IotCertificateRotation',
-        actions: ['iot:CreateKeysAndCertificate', 'iot:CreatePolicy', 'iot:AttachPolicy', 'iot:AttachThingPrincipal'],
+        actions: [
+          'iot:RegisterCertificateWithoutCA',
+          'iot:CreatePolicy',
+          'iot:AttachPolicy',
+          'iot:AttachThingPrincipal',
+        ],
         resources: ['*'],
       }),
     );
+    deviceCaSecret.grantRead(deviceApi);
     deviceApi.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'DeviceRetirementCertificateDeactivate',

@@ -4,6 +4,8 @@
 
 > 当前状态：延期。领域事件、数据库模型和纯业务模块保留；SES/Webhook 发送适配器、Lambda 调度、部署配置及目标 AWS 通知 Gate 已移除。后续有明确需求时重新立项，并重新定义外部发送配置与验收回执。
 
+> 证据治理：当前本地全仓证据命令为 `pnpm verify`；精确快照与整改闭环见 [全面复盘检查报告](../audit/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG全面复盘检查报告-2026-09-08.md)。现有管理后台业务目标回执按 [证据采集说明](../audit/evidence/BE-LIC-CON-CFG-CNS-DUSR-ALM-ESG-AWS验收证据采集说明.md) 执行 `pnpm check:aws-admin-business-evidence`；该 Gate 已明确排除延期的 SES/Webhook 发送能力。
+
 ## 1. 范围与事实源
 
 | 项 | 说明 |

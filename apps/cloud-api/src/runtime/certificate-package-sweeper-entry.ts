@@ -1,4 +1,9 @@
-import { createAwsIotProvisioningClient, createKmsDataKeyProvider, resolveDatabaseUrl } from '@fdp/aws-clients';
+import {
+  createAwsIotProvisioningClient,
+  createKmsDataKeyProvider,
+  createProjectCaCertificateIssuer,
+  resolveDatabaseUrl,
+} from '@fdp/aws-clients';
 import { CERTIFICATE_PACKAGE_MAX_CLAIMS, CERTIFICATE_PACKAGE_RETENTION_SECONDS, SecurePackageService } from '@fdp/auth';
 import { createPrismaClient } from '@fdp/database';
 import { ProvisioningService } from '../provisioning/service.js';
@@ -29,14 +34,22 @@ async function initialize(): Promise<() => Promise<SweepResult>> {
       maxClaims: CERTIFICATE_PACKAGE_MAX_CLAIMS,
     },
   });
+  const certificateValiditySeconds = Number(process.env.CERTIFICATE_VALIDITY_SECONDS ?? 31_536_000);
   const provisioning = new ProvisioningService({
     client,
-    iot: createAwsIotProvisioningClient({ region }),
+    iot: createAwsIotProvisioningClient({
+      region,
+      certificateIssuer: createProjectCaCertificateIssuer({
+        secretId: required('DEVICE_CA_SECRET_ID'),
+        validitySeconds: certificateValiditySeconds,
+        region,
+      }),
+    }),
     keyProvider,
     config: {
       region,
       accountId: required('FDP_AWS_ACCOUNT_ID'),
-      certificateValiditySeconds: Number(process.env.CERTIFICATE_VALIDITY_SECONDS ?? 31_536_000),
+      certificateValiditySeconds,
     },
   });
   return async () => {

@@ -365,9 +365,9 @@ Token 必须一次一机、可撤销、有有效期并只保存 Hash。接口应
 3. API 返回 `requestId` 和 `PENDING`，设备每 30 秒查询状态；
 4. 管理员审批；
 5. 云端创建 Device ID 和 AWS IoT Thing；
-6. 调用 AWS IoT `CreateKeysAndCertificate` 创建证书包并附加设备专属 IoT Policy；
+6. 使用测试环境项目 CA 在内存签发设备叶证书，通过 AWS IoT `RegisterCertificateWithoutCA` 注册并附加设备专属 IoT Policy；
 7. `onboarding/status` 按通信设计返回 `deviceId`、`certificatePem`、`privateKey`、MQTT Endpoint 和初始配置；
-8. 设备安装证书并连接 MQTT；
+8. 设备安装同一证书并连接 MQTT 与 Device REST mTLS；
 9. 首次 MQTT Heartbeat 成功后标记 Onboarded。
 
 证书私钥不得写入数据库、日志、Trace 或普通审计字段。待领取证书包使用 KMS 信封加密保存不超过 86400 秒，只允许一次成功领取；服务端提交成功响应后立即销毁，响应不确定、包丢失或过期时吊销未确认新证书并重新签发，不找回旧私钥。CSR 模式只作为后续协议升级建议，不能作为 V1 默认实现。
@@ -1111,7 +1111,7 @@ Merge to main
 - [Device-Cloud Communication Design 解析与信息汇编](./Device-Cloud-Communication-Design-解析.md)
 - [厨余设备 ESG 物联网平台 AWS 架构设计与技术方案](./厨余设备ESG物联网平台AWS架构设计与技术方案.docx)
 - [AWS IoT Core MQTT 与 QoS](https://docs.aws.amazon.com/iot/latest/developerguide/mqtt.html)
-- [AWS IoT CreateKeysAndCertificate](https://docs.aws.amazon.com/iot/latest/apireference/API_CreateKeysAndCertificate.html)
+- [AWS IoT RegisterCertificateWithoutCA](https://docs.aws.amazon.com/iot/latest/apireference/API_RegisterCertificateWithoutCA.html)
 - [API Gateway Mutual TLS](https://docs.aws.amazon.com/apigateway/latest/developerguide/rest-api-mutual-tls.html)
 - [AWS IoT Core 安全最佳实践](https://docs.aws.amazon.com/iot/latest/developerguide/security-best-practices.html)
 - [Amazon Data Firehose 数据交付](https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html)

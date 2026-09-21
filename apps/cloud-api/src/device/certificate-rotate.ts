@@ -6,7 +6,7 @@
  *    旧证书 ACTIVE 且属于设备由 AUTH-03 认证链保证（撤销/过期 → 401 先行）；
  * 2. 重试恢复：已封包但未预留则继续交付；已预留但响应未确认则撤销新证书并重签；
  *    响应已经成功提交但尚无新证 Heartbeat 时稳定返回冲突，绝不撤销已交付证书或重签；
- * 3. 发证：CreateKeysAndCertificate → AUTH-04 单设备 Policy（按名幂等）→ attach；
+ * 3. 发证：项目 CA 签发并注册 AWS IoT → AUTH-04 单设备 Policy（按名幂等）→ attach；
  * 4. 双证书窗口：新证书 ACTIVE + rotatedFromId=旧证书（旧证书保持 ACTIVE 可用），
  *    证书包 SEC-01 信封加密短期保存；写 ROTATION_START 审计；
  * 5. 响应一次性返回证书包明文（私钥仅内存经过，绝不落库/日志/审计）。

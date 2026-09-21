@@ -56,9 +56,7 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
   assert.isTrue(
     oneShot.Statement.some((statement: { Sid: string }) => statement.Sid === 'DenyUnexpectedMigrationVariables'),
   );
-  const migrationBoundary = JSON.parse(
-    readFileSync(resolve(root, 'iam/FDP-MigrationRunnerBoundary.json'), 'utf8'),
-  );
+  const migrationBoundary = JSON.parse(readFileSync(resolve(root, 'iam/FDP-MigrationRunnerBoundary.json'), 'utf8'));
   const migrationActions = migrationBoundary.Statement.find(
     (statement: { Sid: string }) => statement.Sid === 'AllowMigrationRunner',
   ).Action;
@@ -96,10 +94,7 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
     );
     assert.include(migrationBoundaryManagement.Action, 'iam:CreatePolicy');
     assert.include(migrationBoundaryManagement.Action, 'iam:DeletePolicy');
-    assert.equal(
-      migrationBoundaryManagement.Resource,
-      'arn:aws:iam::065986019555:policy/FDP-MigrationRunnerBoundary',
-    );
+    assert.equal(migrationBoundaryManagement.Resource, 'arn:aws:iam::065986019555:policy/FDP-MigrationRunnerBoundary');
     const denySecretRead = policy.Statement.find(
       (statement: { Sid: string }) => statement.Sid === 'DenyNonDatabaseSecretReads',
     );

@@ -8,7 +8,8 @@
 |---|---|
 | 任务 | BE-ONB-03（P1 / 设备接口），依赖 BE-ONB-02、SEC-01、AUTH-04、DEC-003、DEC-017（均已交付） |
 | 端点 | `GET /api/v1/device/onboarding/status`（Onboarding Token 认证，由 Token 绑定隐式定位申请，无 serialNumber Query） |
-| 签发链 | approve（BE-ONB-02）同事务写 Provisioning Job → 定时 Worker 条件认领 → ensureThing → CreateKeysAndCertificate → request/operation tag → 证书记录 → AUTH-04 Policy/Thing attach → SEC-01 信封加密封包 |
+| 签发链 | approve（BE-ONB-02）同事务写 Provisioning Job → 定时 Worker 条件认领 → 从 Secrets Manager 读取项目 CA → 内存签发设备叶证书 → RegisterCertificateWithoutCA → 证书记录 → AUTH-04 Policy/Thing attach → SEC-01 信封加密封包 |
+| 测试环境证书边界 | Onboarding 返回的同一张项目 CA 叶证书同时用于 AWS IoT MQTT 客户端认证和 Device REST mTLS；不再签发或兼容第二张 AWS IoT 原生设备证书 |
 | 证书包 | DEC-003@1.0.0/SEC-01：KMS 信封加密保存 86400 秒、一次成功领取、成功响应提交后销毁；响应不确定、丢失或过期时吊销未确认新证书并重签 |
 | 功能边界 | 内部 Provisioning 不暴露为外部状态（未就绪对外一律 PENDING）；不实现 CSR |
 

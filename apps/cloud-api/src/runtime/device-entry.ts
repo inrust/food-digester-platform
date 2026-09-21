@@ -1,6 +1,7 @@
 import {
   createAwsIotProvisioningClient,
   createKmsDataKeyProvider,
+  createProjectCaCertificateIssuer,
   createOtaFirmwareS3Ports,
   createS3MediaObjectStorage,
   createS3MediaUrlSigner,
@@ -46,7 +47,15 @@ let runtimeHandler: ((event: ApiGatewayDeviceEvent) => Promise<ApiGatewayDeviceR
 async function initialize() {
   const region = required('AWS_REGION');
   const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
-  const iot = createAwsIotProvisioningClient({ region });
+  const certificateValiditySeconds = positiveNumber('CERTIFICATE_VALIDITY_SECONDS', 31_536_000);
+  const iot = createAwsIotProvisioningClient({
+    region,
+    certificateIssuer: createProjectCaCertificateIssuer({
+      secretId: required('DEVICE_CA_SECRET_ID'),
+      validitySeconds: certificateValiditySeconds,
+      region,
+    }),
+  });
   const keyProvider = createKmsDataKeyProvider({ keyId: required('CERT_PACKAGE_KEY_ARN'), region });
   const ota = createOtaFirmwareS3Ports({ bucket: required('OTA_BUCKET_NAME'), region });
   const mediaBucket = required('MEDIA_BUCKET_NAME');
@@ -62,7 +71,7 @@ async function initialize() {
       config: {
         region,
         accountId: required('FDP_AWS_ACCOUNT_ID'),
-        certificateValiditySeconds: positiveNumber('CERTIFICATE_VALIDITY_SECONDS', 31_536_000),
+        certificateValiditySeconds,
       },
     }),
     sync: createDeviceSyncHandler({ client, maintenanceSyncIntervalSeconds: getMaintenanceSyncIntervalSeconds() }),

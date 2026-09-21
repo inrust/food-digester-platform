@@ -390,6 +390,6 @@ AWS 方案只概括了设备影子和配置同步，但通信设计明确要求�
 - [Device-Cloud Communication Design](./Device-Cloud%20Communication%20Design.pdf)
 - [厨余设备 ESG 物联网平台 AWS 架构设计与技术方案](./厨余设备ESG物联网平台AWS架构设计与技术方案.docx)
 - [AWS IoT Core MQTT 与 QoS](https://docs.aws.amazon.com/iot/latest/developerguide/mqtt.html)
-- [AWS IoT CreateKeysAndCertificate](https://docs.aws.amazon.com/iot/latest/apireference/API_CreateKeysAndCertificate.html)
+- [AWS IoT RegisterCertificateWithoutCA](https://docs.aws.amazon.com/iot/latest/apireference/API_RegisterCertificateWithoutCA.html)
 - [API Gateway Mutual TLS](https://docs.aws.amazon.com/apigateway/latest/developerguide/rest-api-mutual-tls.html)
 - [Amazon Data Firehose 数据交付](https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html)

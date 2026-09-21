@@ -11,6 +11,8 @@ export type { DataKeyProvider, GeneratedDataKey, KmsDataKeyProviderConfig } from
 export { resolveDatabaseUrl, resolveSecretString } from './database-secret.js';
 export type { DatabaseSecretResolverConfig } from './database-secret.js';
 export { createAwsIotProvisioningClient } from './iot-provisioning-client.js';
+export { createProjectCaCertificateIssuer } from './project-ca-certificate-issuer.js';
+export type { DeviceCertificateIssuer, IssuedDeviceCertificate } from './project-ca-certificate-issuer.js';
 export type {
   AwsIotCertificateResult,
   AwsIotProvisioningClient,

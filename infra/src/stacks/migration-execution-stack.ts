@@ -80,11 +80,7 @@ export class MigrationExecutionStack extends Stack {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
     });
     iam.PermissionsBoundary.of(role).apply(
-      iam.ManagedPolicy.fromManagedPolicyName(
-        this,
-        'MigrationRunnerBoundary',
-        FDP_MIGRATION_RUNNER_BOUNDARY_NAME,
-      ),
+      iam.ManagedPolicy.fromManagedPolicyName(this, 'MigrationRunnerBoundary', FDP_MIGRATION_RUNNER_BOUNDARY_NAME),
     );
     role.addToPolicy(
       new iam.PolicyStatement({

@@ -1,4 +1,9 @@
-import { createAwsIotProvisioningClient, createKmsDataKeyProvider, resolveDatabaseUrl } from '@fdp/aws-clients';
+import {
+  createAwsIotProvisioningClient,
+  createKmsDataKeyProvider,
+  createProjectCaCertificateIssuer,
+  resolveDatabaseUrl,
+} from '@fdp/aws-clients';
 import { CERTIFICATE_PACKAGE_MAX_CLAIMS, CERTIFICATE_PACKAGE_RETENTION_SECONDS, SecurePackageService } from '@fdp/auth';
 import { createPrismaClient } from '@fdp/database';
 import { createOnboardingRequestHandler, createOnboardingStatusHandler } from '../onboarding/index.js';
@@ -21,7 +26,15 @@ async function initialize() {
   const region = required('AWS_REGION');
   const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
   const keyProvider = createKmsDataKeyProvider({ keyId: required('CERT_PACKAGE_KEY_ARN'), region });
-  const iot = createAwsIotProvisioningClient({ region });
+  const certificateValiditySeconds = Number(process.env.CERTIFICATE_VALIDITY_SECONDS ?? 31_536_000);
+  const iot = createAwsIotProvisioningClient({
+    region,
+    certificateIssuer: createProjectCaCertificateIssuer({
+      secretId: required('DEVICE_CA_SECRET_ID'),
+      validitySeconds: certificateValiditySeconds,
+      region,
+    }),
+  });
   const securePackage = new SecurePackageService({
     db: client,
     keyProvider,
@@ -37,7 +50,7 @@ async function initialize() {
     config: {
       region,
       accountId: required('FDP_AWS_ACCOUNT_ID'),
-      certificateValiditySeconds: Number(process.env.CERTIFICATE_VALIDITY_SECONDS ?? 31_536_000),
+      certificateValiditySeconds,
     },
   });
   return createDeviceOnboardingLambdaHandler({

@@ -1,14 +1,15 @@
 import {
   AttachPolicyCommand,
   AttachThingPrincipalCommand,
-  CreateKeysAndCertificateCommand,
   CreatePolicyCommand,
   CreateThingCommand,
   DescribeEndpointCommand,
   IoTClient,
+  RegisterCertificateWithoutCACommand,
   UpdateCertificateCommand,
 } from '@aws-sdk/client-iot';
 import type { IotPolicyDocument } from './iot-device-policy.js';
+import type { DeviceCertificateIssuer } from './project-ca-certificate-issuer.js';
 
 export interface AwsIotCertificateResult {
   readonly certificateId: string;
@@ -31,6 +32,7 @@ export interface AwsIotProvisioningClient {
 export interface AwsIotProvisioningClientConfig {
   readonly client?: IoTClient;
   readonly region?: string;
+  readonly certificateIssuer?: DeviceCertificateIssuer;
 }
 
 function isAlreadyExists(error: unknown): boolean {
@@ -49,16 +51,19 @@ export function createAwsIotProvisioningClient(config: AwsIotProvisioningClientC
       }
     },
     async createKeysAndCertificate() {
-      const response = await client.send(new CreateKeysAndCertificateCommand({ setAsActive: true }));
-      const privateKey = response.keyPair?.PrivateKey;
-      if (!response.certificateId || !response.certificateArn || !response.certificatePem || !privateKey) {
-        throw new Error('AWS IoT CreateKeysAndCertificate 返回不完整');
+      if (!config.certificateIssuer) throw new Error('缺少项目 CA 设备证书签发器');
+      const issued = await config.certificateIssuer.issue();
+      const response = await client.send(
+        new RegisterCertificateWithoutCACommand({ certificatePem: issued.certificatePem, status: 'ACTIVE' }),
+      );
+      if (!response.certificateId || !response.certificateArn) {
+        throw new Error('AWS IoT RegisterCertificateWithoutCA 返回不完整');
       }
       return {
         certificateId: response.certificateId,
         certificateArn: response.certificateArn,
-        certificatePem: response.certificatePem,
-        privateKey,
+        certificatePem: issued.certificatePem,
+        privateKey: issued.privateKey,
       };
     },
     async ensurePolicy(policyName, policyDocument) {

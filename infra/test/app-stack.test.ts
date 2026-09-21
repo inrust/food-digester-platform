@@ -642,7 +642,13 @@ describe('Cognito 与应用配置输出', () => {
 
     const onboardingFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-onboarding-api-handler');
     assert.isDefined(onboardingFn);
-    for (const key of ['DB_SECRET_ARN', 'CERT_PACKAGE_KEY_ARN', 'FDP_AWS_ACCOUNT_ID', 'ENV_NAME']) {
+    for (const key of [
+      'DB_SECRET_ARN',
+      'CERT_PACKAGE_KEY_ARN',
+      'FDP_AWS_ACCOUNT_ID',
+      'DEVICE_CA_SECRET_ID',
+      'ENV_NAME',
+    ]) {
       assert.isDefined(onboardingFn.Properties.Environment.Variables[key], `Onboarding Lambda 缺少环境变量 ${key}`);
     }
     const deviceFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-device-api-handler');
@@ -651,6 +657,7 @@ describe('Cognito 与应用配置输出', () => {
       'DB_SECRET_ARN',
       'CERT_PACKAGE_KEY_ARN',
       'FDP_AWS_ACCOUNT_ID',
+      'DEVICE_CA_SECRET_ID',
       'OTA_BUCKET_NAME',
       'MEDIA_BUCKET_NAME',
       'ENV_NAME',
@@ -688,9 +695,13 @@ describe('Cognito 与应用配置输出', () => {
     assert.equal(activityExportFn.Properties.Environment.Variables.ACTIVITY_EXPORT_LEASE_SECONDS, '300');
     const provisioningFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-onboarding-provisioning');
     assert.isDefined(provisioningFn);
-    for (const key of ['DB_SECRET_ARN', 'CERT_PACKAGE_KEY_ARN', 'FDP_AWS_ACCOUNT_ID']) {
+    for (const key of ['DB_SECRET_ARN', 'CERT_PACKAGE_KEY_ARN', 'FDP_AWS_ACCOUNT_ID', 'DEVICE_CA_SECRET_ID']) {
       assert.isDefined(provisioningFn.Properties.Environment.Variables[key], `Provisioning Lambda 缺少环境变量 ${key}`);
     }
+
+    const sweeperFn = fns.find((f) => f.Properties.FunctionName === 'fdp-test-cert-package-sweeper');
+    assert.isDefined(sweeperFn);
+    assert.isDefined(sweeperFn.Properties.Environment.Variables.DEVICE_CA_SECRET_ID);
 
     const outputs = template.findOutputs('*');
     for (const id of [
@@ -748,5 +759,13 @@ describe('Cognito 与应用配置输出', () => {
     template.hasResourceProperties('AWS::KMS::Alias', { AliasName: 'alias/fdp-test-data' });
     template.hasResourceProperties('AWS::KMS::Alias', { AliasName: 'alias/fdp-test-cert-package' });
     template.hasResourceProperties('AWS::KMS::Alias', { AliasName: 'alias/fdp-test-ota-signing' });
+  });
+
+  test('设备签发仅使用项目 CA 注册证书，并按 Secret 资源收敛读取权限', () => {
+    const json = JSON.stringify(template.toJSON());
+    assert.include(json, 'iot:RegisterCertificateWithoutCA');
+    assert.notInclude(json, 'iot:CreateKeysAndCertificate');
+    assert.include(json, 'fdp-test-device-ca');
+    assert.include(json, 'secretsmanager:GetSecretValue');
   });
 });

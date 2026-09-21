@@ -37,13 +37,13 @@
 | 错误日志/Trace/审计扫描无敏感内容 | 双层脱敏测试（字段名/PEM 块/Token/Bearer/Error message/嵌套）+ redactingLogger 全级别断言 | ✅ |
 | 解密权限仅限指定 Lambda role | IAC-01：`certPackageKey.grantEncryptDecrypt` 仅授予 API Lambda 角色（模板断言已覆盖） | ✅ |
 | 仅对应 Token/旧证书可领取 | 跨序列号/跨 deviceId → 403；绑定匹配 → 通过 | ✅ |
-| AWS 返回私钥后立即加密 | storePackage 接口契约：明文入参仅经内存，落库为信封密文（测试断言） | ✅ |
+| 项目 CA 签发私钥后立即加密 | storePackage 接口契约：明文入参仅经内存，落库为信封密文（测试断言） | ✅ |
 
 当前证据命令：`pnpm vitest run packages/auth/test packages/aws-clients/test packages/observability/test`、`pnpm verify`。精确测试快照记录在 `docs/audit`，任务文档不固化易漂移计数。
 
 ## 5. 对接说明
 
-- **BE-ONB-03**：`CreateKeysAndCertificate` 返回后立即 `storePackage`；响应组装用 `preparePackageDelivery`，提交确认用 `confirmPackageDelivery`（proof = Onboarding Token ctx）；
+- **BE-ONB-03**：项目 CA 内存签发并完成 `RegisterCertificateWithoutCA` 后立即 `storePackage`；响应组装用 `preparePackageDelivery`，提交确认用 `confirmPackageDelivery`（proof = Onboarding Token ctx）；
 - **BE-ONB-04 / BE-CERT-02**：轮换重领用 `deviceCertificate` proof；新证书首个合法 Heartbeat 后 `destroyPackage(旧证书)`；
 - **DEC-003 接线**：`retentionSeconds=86400`、`maxClaims=1` 必须从冻结策略文件读取，不得继续由部署环境指定其他值。
 

@@ -52,7 +52,7 @@
 - IoT Rule 角色：仅 `sqs:SendMessage`（+CDK 附带的队列元数据读取）到 Ingress 与 Rule Error 队列；
 - Ingestion：读 DB Secret、写 Quarantine、消费 Ingress；Archive：写 Raw Bucket、消费 Archive；Outbox Publisher：读 DB Secret、写 Archive；Summary：读 DB Secret；
 - API：读 DB Secret、Media/OTA/Export 对象读写、Raw 只读、证书包 Key 加解密（SEC-01 要求解密权限仅此角色）、`iot:Publish` 收敛到 `bnx/device/*/{cmd,ota,notification}` 三个下行 Topic 模式；
-- 设备发放动作（`iot:CreateKeysAndCertificate` 等）不支持资源级收敛，保持动作级白名单 + `Resource: *`（Action 非 `*`，不违反 `*:*` 红线）；
+- 测试环境设备发放使用 `iot:RegisterCertificateWithoutCA` 注册项目 CA 叶证书；签发/轮换 Lambda 只读 `fdp-<env>-device-ca` Secret，并移除 `iot:CreateKeysAndCertificate`，保证 MQTT 与 REST 使用同一证书；
 - 模板断言扫描全部 IAM Policy/ManagedPolicy/Role 内联策略和 KMS KeyPolicy，拒绝 `*`/`service:*` 与通配 Resource 的组合，并校验 KMS 数据面 Principal。
 
 ## 6. 验收命令

@@ -76,6 +76,8 @@ Amplify 使用 `apps/admin-web/dist/web`、SPA fallback，并从输出填入 Cog
 
 两个 ACM 证书和版本化 CA 对象已于 2026-09-17 实时核验，真实参数 synth/diff 已通过。SES/Webhook 业务通知及其配置要求已从当前部署范围移除，后续有明确需求时重新立项接入。RDS 当前为测试级 Single-AZ、无备份/删除保护，不可凭域名直接作为生产环境。
 
+测试环境设备证书采用单一项目 CA：Secrets Manager Secret `fdp-test-device-ca` 保存 `caCertificatePem` 与 `caPrivateKeyPem`，仅签发/轮换 Lambda 可读取。Onboarding 在内存生成私钥和项目 CA 叶证书，以 `RegisterCertificateWithoutCA` 注册到 AWS IoT，并将同一证书包交付设备；设备使用它连接 MQTT 和 `device-api.bio-nexa.com`。CA 私钥不得进入仓库、CloudFormation 参数、Lambda 环境变量或日志。
+
 Migration 使用 Prisma schema engine 的 `sslmode=require`、`sslaccept=strict` 和 CA 路径；Seed 使用 pg 的 `rejectUnauthorized=true`。不能将 libpq 的 `verify-full` 参数直接当作 Prisma 校验策略。[Prisma TLS 参数](https://docs.prisma.io/docs/orm/v6/overview/databases/postgresql)。实际证书错误/主机名不匹配负测仍须在目标执行。
 
 当前公共 truststore 已上传；Bootstrap 因 `iam:CreatePolicy` 权限边界阻断而未部署。应用部署、Migration、DNS 切换与目标验收均为 **NOT RUN / NO RECEIPT**。

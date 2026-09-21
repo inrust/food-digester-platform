@@ -29,10 +29,11 @@ test('migration execution is exact-version, exact-commit, and project-scoped', (
 
 test('migration execution rejects incomplete approval binding', () => {
   const app = new App();
-  assert.throws(() =>
-    new MigrationExecutionStack(app, 'InvalidMigrationExecution', {
-      sourceVersion: '',
-      sourceCommit: 'not-a-sha',
-    }),
+  assert.throws(
+    () =>
+      new MigrationExecutionStack(app, 'InvalidMigrationExecution', {
+        sourceVersion: '',
+        sourceCommit: 'not-a-sha',
+      }),
   );
 });
