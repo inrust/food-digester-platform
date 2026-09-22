@@ -88,13 +88,14 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
     Name: 'fdp-test-admin-web',
     Platform: 'WEB',
     EnvironmentVariables: Match.arrayWith([
+      { Name: 'AMPLIFY_MONOREPO_APP_ROOT', Value: 'apps/admin-web' },
       { Name: 'VITE_ADMIN_API_BASE_URL', Value: 'https://api.bio-nexa.com' },
       { Name: 'VITE_COGNITO_REGION', Value: 'ap-southeast-1' },
     ]),
   });
   template.hasResourceProperties('AWS::Amplify::Branch', {
     BranchName: 'main',
-    EnableAutoBuild: false,
+    EnableAutoBuild: true,
     EnablePullRequestPreview: false,
     Framework: 'React',
     Stage: 'DEVELOPMENT',

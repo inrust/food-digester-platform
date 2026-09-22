@@ -182,7 +182,7 @@ function loadSynthTemplates(root) {
 }
 
 export function checkCdkSynth(root = process.cwd()) {
-  const executable = resolve(root, 'infra/node_modules/.bin/cdk');
+  const executable = resolve(root, 'node_modules/.bin/cdk');
   const run = spawnSync(executable, ['synth', '--quiet'], { cwd: resolve(root, 'infra'), encoding: 'utf8' });
   const output = `${run.stdout ?? ''}\n${run.stderr ?? ''}`;
   if (run.status !== 0) throw new Error(`cdk synth 失败（exit ${run.status ?? 'unknown'}）\n${output}`);

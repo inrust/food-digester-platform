@@ -1,0 +1,25 @@
+version: 1
+
+applications:
+  - appRoot: apps/admin-web
+    frontend:
+      buildPath: /
+      phases:
+        preBuild:
+          commands:
+            - nvm install 24.12.0
+            - nvm use 24.12.0
+            - npm install -g pnpm@10.20.0
+            - pnpm install --frozen-lockfile
+        build:
+          commands:
+            - pnpm turbo run build --filter=@fdp/admin-web...
+            - pnpm check:admin-web-delivery
+      artifacts:
+        baseDirectory: apps/admin-web/dist/web
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - .pnpm-store/**/*
+          - .turbo/**/*

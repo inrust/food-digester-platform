@@ -242,6 +242,7 @@ export class AppDependenciesStack extends Stack {
       platform: 'WEB',
       enableBranchAutoDeletion: false,
       environmentVariables: [
+        { name: 'AMPLIFY_MONOREPO_APP_ROOT', value: 'apps/admin-web' },
         { name: 'VITE_ADMIN_API_BASE_URL', value: adminApiBaseUrl },
         { name: 'VITE_COGNITO_REGION', value: this.region },
         { name: 'VITE_COGNITO_USER_POOL_ID', value: identity.userPool.userPoolId },
@@ -258,8 +259,8 @@ export class AppDependenciesStack extends Stack {
     const branch = new amplify.CfnBranch(this, 'AdminWebMainBranch', {
       appId: app.attrAppId,
       branchName: 'main',
-      description: 'Test release branch; deployed from exact reviewed artifacts',
-      enableAutoBuild: false,
+      description: 'Test release branch; deployed automatically from reviewed main commits',
+      enableAutoBuild: true,
       enablePullRequestPreview: false,
       framework: 'React',
       stage: 'DEVELOPMENT',
@@ -807,7 +808,7 @@ export class AppDependenciesStack extends Stack {
                 ...(options.copyArgon2Prebuilds
                   ? [
                       `mkdir -p "${outputDir}/prebuilds/linux-arm64"`,
-                      `cp "${inputDir}/apps/cloud-api/node_modules/argon2/prebuilds/linux-arm64/argon2.armv8.glibc.node" "${outputDir}/prebuilds/linux-arm64/"`,
+                      `cp "${inputDir}/node_modules/argon2/prebuilds/linux-arm64/argon2.armv8.glibc.node" "${outputDir}/prebuilds/linux-arm64/"`,
                     ]
                   : []),
                 `node --check "${outputDir}/index.mjs"`,
