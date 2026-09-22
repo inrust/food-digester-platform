@@ -372,6 +372,43 @@ describe('验收：IAM 最小权限', () => {
       assert.isUndefined(fn.Properties.Code.ZipFile, `${name} 禁止回退到内联占位实现`);
     }
   });
+
+  test('数据库型 Lambda 使用可审查的 Reserved Concurrency，理论连接峰值不超过 62', () => {
+    const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function'));
+    const expected: Record<string, number> = {
+      'fdp-test-ingestion': 1,
+      'fdp-test-outbox-publisher': 1,
+      'fdp-test-notification-publisher': 1,
+      'fdp-test-summary': 1,
+      'fdp-test-replay-trigger-publisher': 1,
+      'fdp-test-replay': 1,
+      'fdp-test-cert-package-sweeper': 1,
+      'fdp-test-onboarding-deadline': 1,
+      'fdp-test-retirement-timeout': 1,
+      'fdp-test-activity-export': 1,
+      'fdp-test-esg-export': 1,
+      'fdp-test-command-publisher': 1,
+      'fdp-test-command-timeout': 1,
+      'fdp-test-ota-dispatcher': 1,
+      'fdp-test-onboarding-provisioning': 1,
+      'fdp-test-onboarding-api-handler': 2,
+      'fdp-test-device-api-handler': 6,
+      'fdp-test-api': 8,
+    };
+    for (const [name, concurrency] of Object.entries(expected)) {
+      const fn = fns.find((candidate) => candidate.Properties.FunctionName === name);
+      assert.isDefined(fn, `${name} 必须存在`);
+      assert.equal(fn.Properties.ReservedConcurrentExecutions, concurrency, `${name} 并发预算漂移`);
+    }
+    assert.equal(
+      Object.values(expected).reduce((sum, value) => sum + value, 0),
+      31,
+    );
+    assert.equal(31 * 2, 62);
+    const archive = fns.find((candidate) => candidate.Properties.FunctionName === 'fdp-test-archive');
+    assert.isDefined(archive);
+    assert.isUndefined(archive.Properties.ReservedConcurrentExecutions, '不访问数据库的 Archive 不占数据库并发预算');
+  });
 });
 
 // ---------- 验收：三类 API 认证入口分离 ----------

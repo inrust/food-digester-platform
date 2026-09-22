@@ -94,6 +94,34 @@ const COMMAND_PUBLISHER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runt
 const COMMAND_TIMEOUT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/command-timeout-entry.ts');
 const OTA_DISPATCHER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/ota-dispatcher-entry.ts');
 
+/**
+ * db.t4g.micro 的 Lambda 并发预算。
+ *
+ * 请求型入口按负测容量分配 8/6/2；每个数据库后台函数限制为 1，避免队列或
+ * 定时任务同时扩容。与每容器 pool max=2 配合时，31 个理论并发容器最多占用
+ * 62 条 PostgreSQL 连接，低于实例的 76 个普通连接槽位。
+ */
+const DATABASE_RESERVED_CONCURRENCY: Readonly<Record<string, number>> = Object.freeze({
+  ingestion: 1,
+  'outbox-publisher': 1,
+  'notification-publisher': 1,
+  summary: 1,
+  'replay-trigger-publisher': 1,
+  replay: 1,
+  'cert-package-sweeper': 1,
+  'onboarding-deadline': 1,
+  'retirement-timeout': 1,
+  'activity-export': 1,
+  'esg-export': 1,
+  'command-publisher': 1,
+  'command-timeout': 1,
+  'ota-dispatcher': 1,
+  'onboarding-provisioning': 1,
+  'onboarding-api-handler': 2,
+  'device-api-handler': 6,
+  api: 8,
+});
+
 interface MessagingResources {
   readonly ingress: sqs.Queue;
   readonly ingressDlq: sqs.Queue;
@@ -741,6 +769,7 @@ export class AppDependenciesStack extends Stack {
         architecture: lambda.Architecture.ARM_64,
         timeout: options.timeout,
         memorySize: options.memorySize ?? 256,
+        reservedConcurrentExecutions: DATABASE_RESERVED_CONCURRENCY[suffix],
         environment: {
           ...options.environment,
           ENV_NAME: this.config.envName,

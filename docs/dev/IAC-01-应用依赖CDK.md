@@ -22,6 +22,7 @@
 | SQS | Ingress + DLQ、Archive + DLQ、Quarantine、IoT Rule Error | `fdp-test-ingress` 等 6 队列，KMS 加密；主队列 maxReceiveCount=5 |
 | IoT | 8 个 TopicRule（8 上行 Topic → Ingress SQS，Error Action → 独立错误队列） | `fdp_test_iot_{type}`（IoT 命名仅允许 `[A-Za-z0-9_]`） |
 | Lambda | ingestion / archive / outbox-publisher / summary / cert-package-sweeper / api（各配独立执行角色） | `fdp-test-{name}`，Node.js 24 / ARM64，占位 Handler 由 BE 任务替换 |
+| Lambda 数据库并发预算 | Admin API=8、Device API=6、Onboarding API=2；其余 15 个数据库后台函数各 1；Archive 不访问数据库且不占预算 | Reserved Concurrency 预算和为 31；配合每容器 pool `max=2`，理论 PostgreSQL 连接峰值 62 |
 | 调度 | EventBridge Rule：outbox-publisher 每 1 分钟、summary 每 1 小时、证书包恢复扫描每 5 分钟 | `fdp-test-outbox-publisher`、`fdp-test-summary`、`fdp-test-cert-package-sweeper` |
 | VPC/RDS | 2 AZ、3 类子网、单 NAT；RDS PostgreSQL 16 `db.t4g.micro` 位于隔离子网 | `fdp-test-vpc`、`fdp-test-db` |
 | Secrets Manager | RDS 凭据自动生成（KMS 加密），口令以动态引用注入实例 | `fdp-test-rds-credentials` |
@@ -72,6 +73,7 @@ pnpm verify
 | 三类 API 认证入口分离 | 断言：恰好 3 个 RestApi（onboarding/device/admin）；onboarding/device 方法级 NONE，admin 仅 COGNITO_USER_POOLS + AWS_IAM；提供域名配置时 mTLS 域名 + BasePathMapping 生效且默认入口禁用 |
 | 资源名支持环境前缀 | 断言：SQS/S3/IoT Rule/RDS/Lambda/Cognito 名称均含 `fdp-{env}-` |
 | 数据库凭据通过 Secrets Manager | 断言：`fdp-{env}-rds-credentials` Secret（KMS 加密），RDS 口令为动态引用 |
+| Lambda 数据库连接预算 | 断言：18 个数据库型函数均有精确 Reserved Concurrency，总和 31；每容器池上限 2，理论峰值 62 < 76 个普通连接槽位 |
 | 不引入公网暴露与运维范围资源 | 断言：无 `AWS::CloudWatch::Alarm`、无 WAF、无备份配置；8 个 IoT Rule 与 CT-02 目录一致 |
 
 ## 7. 决策与偏差记录
