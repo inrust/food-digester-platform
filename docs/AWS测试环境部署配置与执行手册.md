@@ -72,7 +72,7 @@ CodeBuild 项目只按需运行，无自动触发、无自动重试、并发上�
 
 ## 6. 前端配置及下一审批包
 
-Amplify 使用 `apps/admin-web/dist/web`、SPA fallback，并从输出填入 Cognito region/pool/client。当前源码要求 `VITE_ADMIN_API_BASE_URL=https://api.bio-nexa.com`（不额外追加 `/api/v1`）；另填 `VITE_COGNITO_REGION`、`VITE_COGNITO_USER_POOL_ID`、`VITE_COGNITO_CLIENT_ID`。不要填写密钥/JWT。
+Amplify 使用 `apps/admin-web/dist/web`、SPA fallback，并从输出填入 Cognito region/pool/client。管理 API 的 API Gateway 资源根为 `/api/v1`，因此设置 `VITE_ADMIN_API_BASE_URL=https://api.bio-nexa.com/api/v1`；另填 `VITE_COGNITO_REGION`、`VITE_COGNITO_USER_POOL_ID`、`VITE_COGNITO_CLIENT_ID`。不要填写密钥/JWT。
 
 两个 ACM 证书和版本化 CA 对象已于 2026-09-17 实时核验，真实参数 synth/diff 已通过。SES/Webhook 业务通知及其配置要求已从当前部署范围移除，后续有明确需求时重新立项接入。RDS 当前为测试级 Single-AZ、无备份/删除保护，不可凭域名直接作为生产环境。
 

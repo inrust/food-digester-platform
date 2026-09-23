@@ -236,7 +236,7 @@ export class AppDependenciesStack extends Stack {
 
   private createAdminWebHosting(identity: IdentityResources, apis: ApiResources): void {
     const adminApiBaseUrl = this.config.adminApiDomain
-      ? `https://${this.config.adminApiDomain.domainName}`
+      ? `https://${this.config.adminApiDomain.domainName}/api/v1`
       : apis.adminApi.url;
     const app = new amplify.CfnApp(this, 'AdminWebApp', {
       name: this.naming.name('admin-web'),
@@ -1706,7 +1706,7 @@ export class AppDependenciesStack extends Stack {
       output('AdminWebOrigin', this.config.adminWebOrigin, 'Exact CORS origin for the admin web application');
     output(
       'AdminApiUrl',
-      this.config.adminApiDomain ? `https://${this.config.adminApiDomain.domainName}/` : apis.adminApi.url,
+      this.config.adminApiDomain ? `https://${this.config.adminApiDomain.domainName}/api/v1/` : apis.adminApi.url,
       'Admin, customer, and internal API endpoint using Cognito and IAM',
     );
     output('UserPoolId', identity.userPool.userPoolId, 'Cognito User Pool');

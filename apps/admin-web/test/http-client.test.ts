@@ -46,9 +46,10 @@ function setup(options: {
   return { client, calls, session, store };
 }
 
-test('请求携带 Bearer Access Token；CT-05 写头 Idempotency-Key / If-Match / JSON body', async () => {
+test('请求携带 API Gateway 所需 Bearer ID Token；CT-05 写头 Idempotency-Key / If-Match / JSON body', async () => {
+  const session = makeSession();
   const { client, calls } = setup({
-    session: makeSession(),
+    session,
     script: [{ status: 200, body: { data: { ok: true }, meta: { requestId: 'r1' } } }],
   });
   const result = await client.request<{ data: { ok: boolean } }>('/admin/devices', {
@@ -61,7 +62,8 @@ test('请求携带 Bearer Access Token；CT-05 写头 Idempotency-Key / If-Match
   const call = calls[0];
   assert.equal(call?.url, 'https://api.example.com/api/v1/admin/devices');
   assert.equal(call?.method, 'POST');
-  assert.match(call?.headers['Authorization'] ?? '', /^Bearer /);
+  assert.equal(call?.headers['Authorization'], `Bearer ${session.idToken}`);
+  assert.notEqual(call?.headers['Authorization'], `Bearer ${session.accessToken}`);
   assert.equal(call?.headers['Idempotency-Key'], 'idem-1');
   assert.equal(call?.headers['If-Match'], '3');
   assert.equal(call?.body, JSON.stringify({ alias: 'x' }));

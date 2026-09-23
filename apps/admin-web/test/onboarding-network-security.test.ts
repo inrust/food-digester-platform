@@ -38,7 +38,7 @@ test('Onboarding 四条管理链路的原始请求/响应 payload 不含私钥�
     return { status: 200, body: response };
   };
   const session = {
-    ensureFreshAccessToken: async () => 'redacted-access-credential',
+    ensureFreshIdToken: async () => 'redacted-id-credential',
     clearSession: () => {},
   } as unknown as SessionManager;
   const api = createApiClient({ baseUrl: 'https://admin.invalid/api/v1', session, fetch });

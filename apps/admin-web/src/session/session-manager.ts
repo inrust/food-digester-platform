@@ -4,6 +4,7 @@
  * - 建立会话时从 ID Token 解析角色/Customer scope（失败关闭：未知角色组、平台与
  *   Customer 角色混绑、Customer 角色缺 scope 均拒绝建会话，与 AUTH-01 后端口径一致）；
  * - ensureFreshAccessToken：过期前 refreshSkewMs 内自动走 REFRESH_TOKEN_AUTH；
+ * - ensureFreshIdToken：向 API Gateway Cognito authorizer 提供 ID Token，并复用相同刷新流程；
  *   刷新失败一律清会话并抛 SessionExpiredError（“过期 Token 可刷新或安全退出”）；
  * - 刷新成功会重新解析角色（Cognito 组变更经刷新即时生效，见 AUTH-01 未决风险条款）；
  * - logout：本地清会话为已提交操作，GlobalSignOut 失败不阻塞。
@@ -205,6 +206,39 @@ export class SessionManager {
       });
       this.establish(refreshed);
       return refreshed.accessToken;
+    } catch {
+      this.clearSession('refresh-failed');
+      throw new SessionExpiredError('refresh-failed', 'The session could not be refreshed');
+    }
+  }
+
+  /**
+   * 返回 Admin API Gateway authorizer 使用的 Cognito ID Token。
+   * REST API 方法未声明 OAuth scopes，API Gateway 会按 ID Token 校验 Bearer 凭据。
+   */
+  async ensureFreshIdToken(options?: { forceRefresh?: boolean }): Promise<string> {
+    const session = this.session;
+    if (session === null) {
+      throw new SessionExpiredError('no-session', 'No active session');
+    }
+    const now = this.clock();
+    let expiresAt = session.obtainedAtMs + session.expiresInSeconds * 1000;
+    try {
+      expiresAt = jwtExpiresAtMs(session.idToken) ?? expiresAt;
+    } catch {
+      // 退化到签发时刻 + ExpiresIn。
+    }
+    if (options?.forceRefresh !== true && now < expiresAt - this.refreshSkewMs) {
+      return session.idToken;
+    }
+    try {
+      const tokens = await this.deps.refreshTokens(session.refreshToken);
+      const refreshed = buildSessionFromTokens(tokens, {
+        refreshToken: tokens.refreshToken ?? session.refreshToken,
+        nowMs: this.clock(),
+      });
+      this.establish(refreshed);
+      return refreshed.idToken;
     } catch {
       this.clearSession('refresh-failed');
       throw new SessionExpiredError('refresh-failed', 'The session could not be refreshed');

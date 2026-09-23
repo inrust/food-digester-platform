@@ -1,5 +1,5 @@
 /**
- * FE-01 管理 API 客户端：Bearer 注入、401 刷新重试与清会话、403 无权、CT-05 错误包络解析。
+ * FE-01 管理 API 客户端：Cognito ID Token Bearer 注入、401 刷新重试与清会话、403 无权、CT-05 错误包络解析。
  *
  * 技术对接（FE-01 要求）：
  * - 401 清会话：先发前刷新；响应 401 → 强制刷新重试一次；仍 401 或刷新失败 → 清会话 + UnauthenticatedError；
@@ -75,9 +75,9 @@ export interface ApiClientDeps {
 }
 
 export function createApiClient(deps: ApiClientDeps): ApiClient {
-  async function send(path: string, options: ApiRequestOptions, accessToken: string): Promise<ApiFetchResponse> {
+  async function send(path: string, options: ApiRequestOptions, idToken: string): Promise<ApiFetchResponse> {
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${idToken}`,
       ...options.headers,
     };
     let body: string | undefined;
@@ -95,23 +95,23 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
   }
 
   async function request<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-    let accessToken: string;
+    let idToken: string;
     try {
-      accessToken = await deps.session.ensureFreshAccessToken();
+      idToken = await deps.session.ensureFreshIdToken();
     } catch {
       // 无会话或刷新失败（会话已被 SessionManager 清除）→ 安全退出到登录页
       throw new UnauthenticatedError();
     }
 
-    let response = await send(path, options, accessToken);
+    let response = await send(path, options, idToken);
     if (response.status === 401) {
       // 竞态兜底：服务端判定过期 → 强制刷新后重试一次；仍 401 → 清会话安全退出
       try {
-        accessToken = await deps.session.ensureFreshAccessToken({ forceRefresh: true });
+        idToken = await deps.session.ensureFreshIdToken({ forceRefresh: true });
       } catch {
         throw new UnauthenticatedError();
       }
-      response = await send(path, options, accessToken);
+      response = await send(path, options, idToken);
       if (response.status === 401) {
         deps.session.clearSession('unauthorized');
         throw new UnauthenticatedError();

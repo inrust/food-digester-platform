@@ -106,7 +106,7 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
     Platform: 'WEB',
     EnvironmentVariables: Match.arrayWith([
       { Name: 'AMPLIFY_MONOREPO_APP_ROOT', Value: 'apps/admin-web' },
-      { Name: 'VITE_ADMIN_API_BASE_URL', Value: 'https://api.bio-nexa.com' },
+      { Name: 'VITE_ADMIN_API_BASE_URL', Value: 'https://api.bio-nexa.com/api/v1' },
       { Name: 'VITE_COGNITO_REGION', Value: 'ap-southeast-1' },
     ]),
   });
@@ -204,6 +204,6 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
       "'https://admin.bio-nexa.com'",
     );
   assert.equal(template.findOutputs('*').DeviceApiUrl.Value, 'https://device-api.bio-nexa.com/');
-  assert.equal(template.findOutputs('*').AdminApiUrl.Value, 'https://api.bio-nexa.com/');
+  assert.equal(template.findOutputs('*').AdminApiUrl.Value, 'https://api.bio-nexa.com/api/v1/');
   assert.equal(template.findOutputs('*').OnboardingApiUrl.Value, 'https://onboard-api.bio-nexa.com/');
 }, 30000);

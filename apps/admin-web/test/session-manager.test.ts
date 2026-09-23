@@ -107,6 +107,15 @@ test('Token 未过期：不触发刷新', async () => {
   assert.ok(token.length > 0);
 });
 
+test('Admin API 凭据使用 ID Token，不暴露 Access Token', async () => {
+  const session = makeSession({});
+  const { manager, refreshCalls } = makeManager({ session });
+  const token = await manager.ensureFreshIdToken();
+  assert.equal(token, session.idToken);
+  assert.notEqual(token, session.accessToken);
+  assert.equal(refreshCalls.length, 0);
+});
+
 test('过期 Token 可刷新：换新 Access/Id Token，Refresh Token 保留旧值', async () => {
   const expired = makeSession({ accessTokenExpiresAtMs: NOW - 1000 });
   const { manager, store, refreshCalls } = makeManager({ session: expired });
