@@ -19,6 +19,7 @@ const context = {
   onboardingApiDomainName: 'onboard-api.bio-nexa.com',
   publicApiCertificateArn: 'arn:aws:acm:ap-southeast-1:065986019555:certificate/11111111-1111-1111-1111-111111111111',
   enableMigrationRunner: 'true',
+  enableAdminBootstrapRunner: 'true',
   enableScheduledWorkers: 'false',
   allowInsecureDeviceEndpointForLocal: 'false',
 };
@@ -84,6 +85,22 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
     Name: 'fdp-test-migration-runner',
     ServiceRole: { 'Fn::GetAtt': [Match.stringLikeRegexp('MigrationRunnerServiceRole'), 'Arn'] },
   });
+  template.hasResourceProperties('AWS::CodeBuild::Project', {
+    Name: 'fdp-test-admin-bootstrap-runner',
+    ServiceRole: { 'Fn::GetAtt': [Match.stringLikeRegexp('AdminBootstrapRunnerServiceRole'), 'Arn'] },
+    ConcurrentBuildLimit: 1,
+    AutoRetryLimit: 0,
+    TimeoutInMinutes: 10,
+    Source: Match.objectLike({ Type: 'S3' }),
+    Environment: Match.objectLike({
+      EnvironmentVariables: Match.arrayWith([
+        { Name: 'FDP_EXPECTED_SOURCE_COMMIT', Type: 'PLAINTEXT', Value: 'NOT_APPROVED' },
+        { Name: 'FDP_BOOTSTRAP_EMAIL', Type: 'PLAINTEXT', Value: 'NOT_APPROVED' },
+        { Name: 'FDP_BOOTSTRAP_DISPLAY_NAME', Type: 'PLAINTEXT', Value: 'NOT_APPROVED' },
+        { Name: 'FDP_BOOTSTRAP_CONFIRMATION', Type: 'PLAINTEXT', Value: 'NOT_APPROVED' },
+      ]),
+    }),
+  });
   template.hasResourceProperties('AWS::Amplify::App', {
     Name: 'fdp-test-admin-web',
     Platform: 'WEB',
@@ -109,6 +126,8 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
   for (const [logicalId, role] of Object.entries(template.findResources('AWS::IAM::Role'))) {
     if (logicalId.startsWith('MigrationRunnerServiceRole')) {
       assert.match(role.Properties.PermissionsBoundary.Ref, /^MigrationRunnerBoundary/u);
+    } else if (logicalId.startsWith('AdminBootstrapRunnerServiceRole')) {
+      assert.include(JSON.stringify(role.Properties.PermissionsBoundary), 'FDP-MigrationRunnerBoundary');
     } else {
       assert.deepEqual(role.Properties.PermissionsBoundary, {
         'Fn::Join': ['', ['arn:', { Ref: 'AWS::Partition' }, ':iam::065986019555:policy/FDP-ServiceBoundary']],
@@ -136,10 +155,20 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
     Name: 'fdp-test-device-api',
     DisableExecuteApiEndpoint: true,
   });
-  const project = Object.values(template.findResources('AWS::CodeBuild::Project'))[0].Properties;
+  const projects = Object.values(template.findResources('AWS::CodeBuild::Project'));
+  const project = projects.find((value) => value.Properties.Name === 'fdp-test-migration-runner')?.Properties;
+  const adminBootstrapProject = projects.find(
+    (value) => value.Properties.Name === 'fdp-test-admin-bootstrap-runner',
+  )?.Properties;
+  assert.isDefined(project);
+  assert.isDefined(adminBootstrapProject);
+  assert.include(JSON.stringify(adminBootstrapProject.Source.Location), 'bootstrap/source.zip');
   assert.deepEqual(broadAllowViolations(template.toJSON()), []);
   const statements = collectPolicyStatements(template.toJSON()).filter(
-    (value) => value.logicalId.startsWith('MigrationRunner') && !value.logicalId.startsWith('MigrationRunnerBoundary'),
+    (value) =>
+      (value.logicalId.startsWith('MigrationRunner') || value.logicalId.startsWith('AdminBootstrapRunner')) &&
+      !value.logicalId.startsWith('MigrationRunnerBoundary') &&
+      !value.logicalId.startsWith('AdminBootstrapRunnerBoundary'),
   );
   const secretReads = statements.filter((value) =>
     JSON.stringify(value.statement.Action).includes('secretsmanager:GetSecretValue'),
@@ -162,6 +191,12 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
   assert.isDefined(project.VpcConfig);
   assert.include(project.Source.BuildSpec, 'check-migration-source.mjs');
   assert.include(project.Source.BuildSpec, 'run-database-migrations.mjs');
+  assert.equal(adminBootstrapProject.ConcurrentBuildLimit, 1);
+  assert.equal(adminBootstrapProject.AutoRetryLimit, 0);
+  assert.equal(adminBootstrapProject.TimeoutInMinutes, 10);
+  assert.isDefined(adminBootstrapProject.VpcConfig);
+  assert.include(adminBootstrapProject.Source.BuildSpec, 'check-admin-bootstrap-source.mjs');
+  assert.include(adminBootstrapProject.Source.BuildSpec, 'run-admin-bootstrap.mjs');
   const responses = Object.values(template.findResources('AWS::ApiGateway::GatewayResponse'));
   for (const value of responses)
     assert.equal(

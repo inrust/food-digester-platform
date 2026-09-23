@@ -346,3 +346,9 @@ docs/audit/evidence/auth-04-aws-iot-authorization.json
 → staging
 → production
 ```
+
+### 首个 PlatformSuperAdmin 一次性初始化
+
+`AppDependencies` 可选创建 `fdp-test-admin-bootstrap-runner`。该项目不自动运行，只接受由 `AdminBootstrapExecution` 绑定的精确 S3 VersionId、提交 SHA、管理员邮箱、显示名和邮箱哈希确认串。执行前 Cognito 与 PostgreSQL 用户数量必须同时为零；成功后 Cognito 发送临时密码，RDS 同步建立用户、SuperAdmin 角色和审计。后续用户一律从管理后台邀请。
+
+Runner 源码、打包器和失败关闭测试分别位于 `scripts/run-admin-bootstrap.mjs`、`scripts/package-admin-bootstrap-source.mjs` 和 `scripts/admin-bootstrap-runner.test.mjs`。实际创建用户属于目标环境写操作，必须保存 CodeBuild 回执，并在首次登录后执行管理后台的真实角色验收。

@@ -27,6 +27,8 @@ export interface InfraConfig {
   readonly allowInsecureDeviceEndpointForLocal?: true;
   readonly adminWebOrigin?: string;
   readonly enableMigrationRunner?: boolean;
+  /** One-time first PlatformSuperAdmin bootstrap runner; no automatic trigger. */
+  readonly enableAdminBootstrapRunner?: boolean;
   /** EventBridge 定时任务；真实 test 初始部署默认关闭，迁移验收后再显式启用。 */
   readonly enableScheduledWorkers?: boolean;
   readonly deploymentAccount?: string;
@@ -68,6 +70,7 @@ export function resolveConfig(app: App): InfraConfig {
     }
   }
   const enableMigrationRunner = ['true', true].includes(app.node.tryGetContext('enableMigrationRunner'));
+  const enableAdminBootstrapRunner = ['true', true].includes(app.node.tryGetContext('enableAdminBootstrapRunner'));
   const enableScheduledWorkers = ['true', true].includes(app.node.tryGetContext('enableScheduledWorkers'));
   const deploymentAccount = app.node.tryGetContext('deploymentAccount') as string | undefined;
   const deploymentRegion = app.node.tryGetContext('deploymentRegion') as string | undefined;
@@ -105,6 +108,7 @@ export function resolveConfig(app: App): InfraConfig {
   const deployment = {
     adminWebOrigin,
     enableMigrationRunner,
+    enableAdminBootstrapRunner,
     enableScheduledWorkers,
     deploymentAccount,
     deploymentRegion,

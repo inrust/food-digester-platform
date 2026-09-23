@@ -214,8 +214,10 @@ export class AppDependenciesStack extends Stack {
     const messaging = this.createMessaging(storage.dataKey);
     this.createIotIngestionRules(messaging, storage.dataKey);
     const data = this.createData(storage.dataKey);
-    if (this.config.enableMigrationRunner) this.createMigrationRunner(data, storage.dataKey);
     const identity = this.createIdentity();
+    if (this.config.enableMigrationRunner || this.config.enableAdminBootstrapRunner) {
+      this.createOneShotRunners(data, storage.dataKey, identity);
+    }
     const compute = this.createCompute(storage, messaging, data, identity);
     const apis = this.createApiGateways(
       compute.onboardingApi,
@@ -273,7 +275,7 @@ export class AppDependenciesStack extends Stack {
 
   // ---------- KMS 与 S3 ----------
 
-  private createMigrationRunner(data: DataResources, dataKey: kms.IKey): void {
+  private createOneShotRunners(data: DataResources, dataKey: kms.IKey, identity: IdentityResources): void {
     const source = new s3.Bucket(this, 'MigrationSource', {
       bucketName: `${this.naming.name('migration-source')}-${Aws.ACCOUNT_ID}-${Aws.REGION}`,
       encryption: s3.BucketEncryption.S3_MANAGED,
@@ -282,6 +284,16 @@ export class AppDependenciesStack extends Stack {
       versioned: true,
       removalPolicy: RemovalPolicy.RETAIN,
     });
+    if (this.config.enableMigrationRunner) {
+      this.createMigrationRunnerProject(data, dataKey, source);
+    }
+    if (this.config.enableAdminBootstrapRunner) {
+      this.createAdminBootstrapRunnerProject(data, dataKey, identity, source);
+    }
+    new CfnOutput(this, 'MigrationSourceBucketName', { value: source.bucketName });
+  }
+
+  private createMigrationRunnerProject(data: DataResources, dataKey: kms.IKey, source: s3.Bucket): void {
     const sg = new ec2.SecurityGroup(this, 'MigrationRunnerSg', {
       vpc: data.vpc,
       description: 'One-shot migration runner, no inbound access',
@@ -344,7 +356,87 @@ export class AppDependenciesStack extends Stack {
     data.db.secret?.grantRead(project);
     dataKey.grantDecrypt(project);
     new CfnOutput(this, 'MigrationRunnerProjectName', { value: project.projectName });
-    new CfnOutput(this, 'MigrationSourceBucketName', { value: source.bucketName });
+  }
+
+  private createAdminBootstrapRunnerProject(
+    data: DataResources,
+    dataKey: kms.IKey,
+    identity: IdentityResources,
+    source: s3.Bucket,
+  ): void {
+    const sg = new ec2.SecurityGroup(this, 'AdminBootstrapRunnerSg', {
+      vpc: data.vpc,
+      description: 'One-time first administrator bootstrap runner, no inbound access',
+    });
+    data.db.connections.allowFrom(sg, ec2.Port.tcp(5432), 'Admin bootstrap runner to private PostgreSQL');
+    const runnerRole = new iam.Role(this, 'AdminBootstrapRunnerServiceRole', {
+      roleName: this.naming.name('admin-bootstrap-runner-role'),
+      assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
+      description: 'One-time first administrator bootstrap CodeBuild service role',
+    });
+    const runnerBoundary = iam.ManagedPolicy.fromManagedPolicyName(
+      this,
+      'AdminBootstrapRunnerBoundary',
+      FDP_MIGRATION_RUNNER_BOUNDARY_NAME,
+    );
+    iam.PermissionsBoundary.of(runnerRole).apply(runnerBoundary);
+    identity.userPool.grant(
+      runnerRole,
+      'cognito-idp:ListUsers',
+      'cognito-idp:GetGroup',
+      'cognito-idp:AdminCreateUser',
+      'cognito-idp:AdminAddUserToGroup',
+      'cognito-idp:AdminDeleteUser',
+    );
+    const project = new codebuild.Project(this, 'AdminBootstrapRunner', {
+      role: runnerRole,
+      projectName: this.naming.name('admin-bootstrap-runner'),
+      source: codebuild.Source.s3({ bucket: source, path: 'bootstrap/source.zip' }),
+      vpc: data.vpc,
+      subnetSelection: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      securityGroups: [sg],
+      concurrentBuildLimit: 1,
+      autoRetryLimit: 0,
+      logging: {
+        cloudWatch: {
+          logGroup: new logs.LogGroup(this, 'AdminBootstrapRunnerLogs', {
+            retention: logs.RetentionDays.TWO_WEEKS,
+            removalPolicy: RemovalPolicy.RETAIN,
+          }),
+        },
+      },
+      timeout: Duration.minutes(10),
+      environment: {
+        buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
+        computeType: codebuild.ComputeType.SMALL,
+        environmentVariables: {
+          DB_SECRET_ARN: { value: data.dbSecretArn },
+          USER_POOL_ID: { value: identity.userPool.userPoolId },
+          FDP_EXPECTED_SOURCE_COMMIT: { value: 'NOT_APPROVED' },
+          FDP_BOOTSTRAP_EMAIL: { value: 'NOT_APPROVED' },
+          FDP_BOOTSTRAP_DISPLAY_NAME: { value: 'NOT_APPROVED' },
+          FDP_BOOTSTRAP_CONFIRMATION: { value: 'NOT_APPROVED' },
+        },
+      },
+      buildSpec: codebuild.BuildSpec.fromObject({
+        version: '0.2',
+        phases: {
+          install: {
+            'runtime-versions': { nodejs: 24 },
+            commands: [
+              'node scripts/check-admin-bootstrap-source.mjs',
+              'npm install --global pnpm@10.20.0',
+              'pnpm install --frozen-lockfile',
+              'curl --fail --silent --show-error https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o rds-ca-bundle.pem',
+            ],
+          },
+          build: { commands: ['node scripts/run-admin-bootstrap.mjs'] },
+        },
+      }),
+    });
+    data.db.secret?.grantRead(project);
+    dataKey.grantDecrypt(project);
+    new CfnOutput(this, 'AdminBootstrapRunnerProjectName', { value: project.projectName });
   }
 
   private createStorage(): StorageResources {

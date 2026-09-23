@@ -48,6 +48,20 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
       (Array.isArray(statement.Action) ? statement.Action : [statement.Action]).includes('codebuild:StartBuild'),
     ),
   );
+  const sourceObjects = appDeploy.Statement.find(
+    (statement: { Sid: string }) => statement.Sid === 'OneShotSourceObjectVersions',
+  ).Resource;
+  assert.sameMembers(sourceObjects, [
+    'arn:aws:s3:::fdp-test-migration-source-065986019555-ap-southeast-1/migration/source.zip',
+    'arn:aws:s3:::fdp-test-migration-source-065986019555-ap-southeast-1/bootstrap/source.zip',
+  ]);
+  const observedProjects = appDeploy.Statement.find(
+    (statement: { Sid: string }) => statement.Sid === 'ObserveOneShotRunners',
+  ).Resource;
+  assert.include(
+    observedProjects,
+    'arn:aws:codebuild:ap-southeast-1:065986019555:project/fdp-test-admin-bootstrap-runner',
+  );
   const oneShot = JSON.parse(readFileSync(resolve(root, 'iam/FDP-MigrationOperator-one-shot.json'), 'utf8'));
   assert.isTrue(oneShot.Statement.some((statement: { Sid: string }) => statement.Sid === 'StartApprovedMigration'));
   assert.isTrue(
@@ -62,6 +76,11 @@ test('reviewed IAM documents parse and keep migration execution out of standing 
   ).Action;
   for (const action of [
     'codebuild:StartBuild',
+    'cognito-idp:ListUsers',
+    'cognito-idp:GetGroup',
+    'cognito-idp:AdminCreateUser',
+    'cognito-idp:AdminAddUserToGroup',
+    'cognito-idp:AdminDeleteUser',
     'kms:Decrypt',
     'ec2:CreateNetworkInterfacePermission',
     'ec2:DescribeSubnets',

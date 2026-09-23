@@ -81,3 +81,31 @@ Amplify 使用 `apps/admin-web/dist/web`、SPA fallback，并从输出填入 Cog
 Migration 使用 Prisma schema engine 的 `sslmode=require`、`sslaccept=strict` 和 CA 路径；Seed 使用 pg 的 `rejectUnauthorized=true`。不能将 libpq 的 `verify-full` 参数直接当作 Prisma 校验策略。[Prisma TLS 参数](https://docs.prisma.io/docs/orm/v6/overview/databases/postgresql)。实际证书错误/主机名不匹配负测仍须在目标执行。
 
 当前公共 truststore 已上传；Bootstrap 因 `iam:CreatePolicy` 权限边界阻断而未部署。应用部署、Migration、DNS 切换与目标验收均为 **NOT RUN / NO RECEIPT**。
+
+## 9. 首个平台管理员 Bootstrap Runner
+
+首个 `PlatformSuperAdmin` 不能依赖管理 API 创建，因为系统尚无可调用 `user:write` 的身份。测试环境使用独立的 `fdp-test-admin-bootstrap-runner` CodeBuild 项目执行一次性初始化；后续用户必须从管理后台邀请，不再运行该 Runner。
+
+控制边界：
+
+- Runner 位于私有 egress 子网，独立无入站安全组，仅允许连接 RDS 5432。
+- CodeBuild 并发上限 1、自动重试 0、超时 10 分钟，没有自动触发器。
+- 源码来自版本化 S3 对象 `bootstrap/source.zip`；执行时同时绑定对象 VersionId 和 40 位提交 SHA。
+- 输入只有管理员邮箱和显示名，不接收、生成或记录永久密码；Cognito 发送 7 天有效的临时密码。
+- 确认串绑定规范化邮箱的 SHA-256，格式为 `CREATE_FIRST_PLATFORM_SUPER_ADMIN:<email-sha256>`。
+- Cognito 和数据库任一侧已有用户时，Runner 在任何写入前失败；它仅允许初始化完全空的用户系统。
+- Cognito 创建成功但 Group 或数据库提交失败时删除新身份；删除失败则保留 `COGNITO_ADMIN_RECONCILIATION` PENDING 意图并写失败审计。
+- 成功时同一数据库事务创建 `users`、`user_roles(PlatformSuperAdmin)`、`user.bootstrap` 审计并关闭对账意图。输出只包含 userId、邮箱 SHA-256、BuildId 与源码 SHA，不输出密码或 Cognito `sub`。
+
+执行顺序：
+
+1. 将包含 Runner 的提交通过 GitHub Desktop 推送，并部署更新后的 `AppDependencies`。
+2. 使用精确提交创建工件：`node scripts/package-admin-bootstrap-source.mjs <FULL_SHA> /tmp/fdp-admin-bootstrap-source.zip`。
+3. 上传到 `s3://fdp-test-migration-source-065986019555-ap-southeast-1/bootstrap/source.zip`，记录返回的 VersionId 和本地 ZIP SHA-256。
+4. 使用 `adminBootstrapSourceVersion`、`adminBootstrapSourceCommit`、`adminBootstrapEmail`、`adminBootstrapDisplayName` 四个 context synth/diff `AdminBootstrapExecution`；审核后部署该一次性 Stack。
+5. 等待输出 BuildId 完成，保存 CodeBuild 状态、脱敏日志、S3 VersionId、ZIP SHA-256 和源码 SHA。
+6. 只读验证 Cognito 用户处于 `FORCE_CHANGE_PASSWORD`、属于 `PlatformSuperAdmin`，并验证 PostgreSQL 中对应 `users`、`user_roles` 和 `user.bootstrap` 审计记录。
+7. 管理员使用邮件中的临时密码登录 `https://admin.bio-nexa.com/` 并设置符合策略的永久密码。
+8. 验收完成后删除 `AdminBootstrapExecution` Stack；保留 Runner 项目用于灾难恢复审阅，但其默认环境变量保持 `NOT_APPROVED`，不得再次执行。
+
+禁止直接覆盖 CodeBuild buildspec、源码地址或数据库/Cognito 标识。任何失败重试必须先核对 Cognito、`users`、对账意图和审计状态，不能盲目重复启动。

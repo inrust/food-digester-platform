@@ -17,6 +17,7 @@ import { App } from 'aws-cdk-lib';
 import { resolveConfig } from './config.js';
 import { createDeploymentSynthesizer, serviceRoleBoundary } from './deployment.js';
 import { AppDependenciesStack } from './stacks/app-dependencies-stack.js';
+import { AdminBootstrapExecutionStack } from './stacks/admin-bootstrap-execution-stack.js';
 import { MigrationExecutionStack } from './stacks/migration-execution-stack.js';
 
 const app = new App();
@@ -42,6 +43,36 @@ if (migrationSourceVersion || migrationSourceCommit) {
   new MigrationExecutionStack(app, 'MigrationExecution', {
     sourceVersion: migrationSourceVersion,
     sourceCommit: migrationSourceCommit,
+    ...(config.deploymentAccount
+      ? {
+          env: { account: config.deploymentAccount, region: config.deploymentRegion },
+          synthesizer: createDeploymentSynthesizer(config),
+          permissionsBoundary: serviceRoleBoundary(),
+        }
+      : {}),
+  });
+}
+
+const adminBootstrapSourceVersion = app.node.tryGetContext('adminBootstrapSourceVersion');
+const adminBootstrapSourceCommit = app.node.tryGetContext('adminBootstrapSourceCommit');
+const adminBootstrapEmail = app.node.tryGetContext('adminBootstrapEmail');
+const adminBootstrapDisplayName = app.node.tryGetContext('adminBootstrapDisplayName');
+if (adminBootstrapSourceVersion || adminBootstrapSourceCommit || adminBootstrapEmail || adminBootstrapDisplayName) {
+  if (
+    typeof adminBootstrapSourceVersion !== 'string' ||
+    typeof adminBootstrapSourceCommit !== 'string' ||
+    typeof adminBootstrapEmail !== 'string' ||
+    typeof adminBootstrapDisplayName !== 'string'
+  ) {
+    throw new Error(
+      'adminBootstrapSourceVersion, adminBootstrapSourceCommit, adminBootstrapEmail and adminBootstrapDisplayName must be provided together',
+    );
+  }
+  new AdminBootstrapExecutionStack(app, 'AdminBootstrapExecution', {
+    sourceVersion: adminBootstrapSourceVersion,
+    sourceCommit: adminBootstrapSourceCommit,
+    adminEmail: adminBootstrapEmail,
+    adminDisplayName: adminBootstrapDisplayName,
     ...(config.deploymentAccount
       ? {
           env: { account: config.deploymentAccount, region: config.deploymentRegion },

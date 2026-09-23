@@ -25,16 +25,22 @@
       "Resource": "arn:aws:s3:::fdp-test-migration-source-065986019555-ap-southeast-1"
     },
     {
-      "Sid": "MigrationSourceObjectVersions",
+      "Sid": "OneShotSourceObjectVersions",
       "Effect": "Allow",
       "Action": ["s3:GetObject", "s3:GetObjectVersion", "s3:PutObject"],
-      "Resource": "arn:aws:s3:::fdp-test-migration-source-065986019555-ap-southeast-1/migration/source.zip"
+      "Resource": [
+        "arn:aws:s3:::fdp-test-migration-source-065986019555-ap-southeast-1/migration/source.zip",
+        "arn:aws:s3:::fdp-test-migration-source-065986019555-ap-southeast-1/bootstrap/source.zip"
+      ]
     },
     {
-      "Sid": "ObserveMigration",
+      "Sid": "ObserveOneShotRunners",
       "Effect": "Allow",
       "Action": "codebuild:BatchGetBuilds",
-      "Resource": "arn:aws:codebuild:ap-southeast-1:065986019555:project/fdp-test-migration-runner"
+      "Resource": [
+        "arn:aws:codebuild:ap-southeast-1:065986019555:project/fdp-test-migration-runner",
+        "arn:aws:codebuild:ap-southeast-1:065986019555:project/fdp-test-admin-bootstrap-runner"
+      ]
     }
   ]
 }
