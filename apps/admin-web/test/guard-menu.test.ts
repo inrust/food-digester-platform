@@ -129,6 +129,14 @@ test('无 Token 不能进入受保护页：重定向登录并携带 returnTo', (
   assert.deepEqual(verdict, { kind: 'redirect-login', returnTo: '/devices/operate' });
 });
 
+test('根路径作为后台入口：未登录转登录并以 dashboard 为返回页，已登录转角色首页', () => {
+  assert.deepEqual(resolveRoute('/', null), { kind: 'redirect-login', returnTo: '/dashboard' });
+  assert.deepEqual(resolveRoute('/', sessionOf('PlatformSuperAdmin')), {
+    kind: 'redirect-home',
+    home: '/dashboard',
+  });
+});
+
 test('角色不符 → forbidden（403 无权界面），会话保留', () => {
   const verdict = resolveRoute('/contracts', sessionOf('CustomerViewer'));
   assert.equal(verdict.kind, 'forbidden');

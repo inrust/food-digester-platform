@@ -110,7 +110,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
   const verdict = resolveRoute(location.pathname, session);
   useEffect(() => {
     if (verdict.kind === 'redirect-login') {
-      navigate(`/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`, { replace: true });
+      navigate(`/login?returnTo=${encodeURIComponent(`${verdict.returnTo}${location.search}`)}`, { replace: true });
     } else if (verdict.kind === 'redirect-home') {
       navigate(verdict.home, { replace: true });
     }
@@ -119,6 +119,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
     location.search,
     navigate,
     verdict.kind,
+    verdict.kind === 'redirect-login' ? verdict.returnTo : '',
     verdict.kind === 'redirect-home' ? verdict.home : '',
   ]);
   if (verdict.kind === 'redirect-login' || verdict.kind === 'redirect-home') return null;

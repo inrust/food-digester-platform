@@ -17,6 +17,11 @@ export type GuardVerdict =
   | { readonly kind: 'not-found' };
 
 export function resolveRoute(path: string, session: SessionSnapshot | null): GuardVerdict {
+  if (path === '/') {
+    if (session === null) return { kind: 'redirect-login', returnTo: '/dashboard' };
+    return { kind: 'redirect-home', home: homePathForRoles(session.roles) };
+  }
+
   const route = findRoute(path);
   if (route === null) return { kind: 'not-found' };
 

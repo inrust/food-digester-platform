@@ -50,6 +50,13 @@ afterEach(() => {
 });
 
 describe('管理后台浏览器冒烟', () => {
+  it('未登录访问根路径会进入登录页，并在登录后返回 dashboard', async () => {
+    window.history.replaceState({}, '', '/');
+    render(<AdminWebApp services={services()} />);
+    expect(await screen.findByRole('heading', { name: '厨余机云平台' })).toBeDefined();
+    expect(decodeURIComponent(window.location.search)).toBe('?returnTo=/dashboard');
+  });
+
   it('未登录访问带查询参数的受保护页会落到登录页并保留 returnTo', async () => {
     window.history.replaceState({}, '', '/sites?status=ACTIVE#list');
     render(<AdminWebApp services={services()} />);
