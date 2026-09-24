@@ -53,6 +53,18 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
       <form className="login-card" onSubmit={(event) => void submit(event)}>
         <h1>{translate('ui.702005aecd7f')}</h1>
         <p>{translate('ui.3504cf6398a8')}</p>
+        {step === 'new-password' ? (
+          <section
+            className="login-challenge-notice"
+            role="status"
+            aria-labelledby="new-password-title"
+            data-testid="new-password-notice"
+          >
+            <span className="login-step-badge">{translate('auth.newPassword.badge')}</span>
+            <h2 id="new-password-title">{translate('auth.newPassword.title')}</h2>
+            <p>{translate('auth.newPassword.description')}</p>
+          </section>
+        ) : null}
         <label htmlFor="username">{translate('page.a1aaf352cb07')}</label>
         <input
           id="username"
@@ -65,7 +77,11 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
         {step === 'credentials' || step === 'new-password' || step === 'confirm-forgot' ? (
           <>
             <label htmlFor="password">
-              {step === 'credentials' ? translate('ui.c839a8ff1788') : translate('page.d22c9c008539')}
+              {step === 'credentials'
+                ? translate('ui.c839a8ff1788')
+                : step === 'new-password'
+                  ? translate('auth.newPassword.label')
+                  : translate('page.d22c9c008539')}
             </label>
             <input
               id="password"
@@ -102,7 +118,9 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
               ? translate('ui.21f1e88275aa')
               : step === 'forgot'
                 ? translate('ui.42e8edb226ec')
-                : translate('ui.09cbc97ae2ac')}
+                : step === 'new-password'
+                  ? translate('auth.newPassword.submit')
+                  : translate('ui.09cbc97ae2ac')}
         </button>
         {step === 'credentials' ? (
           <button type="button" className="link-button" onClick={() => setStep('forgot')}>

@@ -81,7 +81,7 @@ textarea:focus-visible {
 .login-card input,
 .filter-field input,
 .filter-field select,
-.dialog-field input,
+.dialog-field input:not([type='checkbox']):not([type='radio']),
 .dialog-field select,
 .dialog-field textarea {
   min-height: 40px;
@@ -95,6 +95,32 @@ textarea:focus-visible {
   border-radius: 6px;
   background: #fff4ed;
   color: #b42318;
+}
+.login-challenge-notice {
+  padding: 16px;
+  border: 1px solid #b2ccff;
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: #eff4ff;
+  color: #1849a9;
+}
+.login-challenge-notice h2 {
+  margin: 8px 0 4px;
+  color: var(--color-text);
+  font-size: 20px;
+}
+.login-challenge-notice p {
+  margin: 0;
+  color: #344054;
+  text-align: left;
+}
+.login-step-badge {
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #d1e0ff;
+  font-size: 13px;
+  font-weight: 700;
 }
 .link-button {
   border: 0;
@@ -305,11 +331,30 @@ td {
 .dialog-field + .dialog-field {
   margin-top: 12px;
 }
-.dialog-field input,
+.dialog-field input:not([type='checkbox']):not([type='radio']),
 .dialog-field select,
 .dialog-field textarea {
   width: 100%;
   max-width: 100%;
+}
+.role-option-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+.role-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-height: 28px;
+  cursor: pointer;
+}
+.role-option input[type='checkbox'] {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 0;
 }
 .dialog-field textarea {
   min-height: 88px;

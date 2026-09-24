@@ -182,6 +182,12 @@ test('邀请：表单无永久密码字段；提交体不含 password；提示 C
   const { calls } = renderPage();
   await user.click(screen.getByTestId('user-invite-open'));
   const form = screen.getByTestId('user-invite-form');
+  const roleGroup = within(form).getByTestId('invite-roles');
+  assert.ok(roleGroup.classList.contains('role-option-list'));
+  assert.ok(
+    [...roleGroup.querySelectorAll('label')].every((label) => label.classList.contains('role-option')),
+    '角色文字与复选框应使用同一行布局',
+  );
   // 拒绝密码输入（CT-06 Reject：settings.modal.passwordInput）
   assert.equal(form.querySelector('input[type="password"]'), null);
 

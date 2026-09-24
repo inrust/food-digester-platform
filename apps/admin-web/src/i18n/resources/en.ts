@@ -6,6 +6,12 @@ import { PAGE_EN } from './pages.js';
  */
 export const EN: Readonly<Record<string, string>> = {
   ...PAGE_EN,
+  'auth.newPassword.badge': 'First sign-in',
+  'auth.newPassword.title': 'Set a new sign-in password',
+  'auth.newPassword.description':
+    'Your temporary password has been verified. Create the new password you will use for future sign-ins before continuing.',
+  'auth.newPassword.label': 'Create new password',
+  'auth.newPassword.submit': 'Set new password and sign in',
   'ui.contractDeviceRequired':
     'Bind at least one eligible device before finishing. The draft is saved and recoverable in this step.',
   'ui.consumableThresholdLoading': 'Loading the consumable display threshold source…',

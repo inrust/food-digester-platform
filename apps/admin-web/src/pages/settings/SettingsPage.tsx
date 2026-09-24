@@ -522,9 +522,14 @@ export function SettingsPage({
         </div>
         <div className="dialog-field">
           <span id="invite-roles-label">{translate('page.366471e0d0c5')}</span>
-          <div role="group" aria-labelledby="invite-roles-label" data-testid="invite-roles">
+          <div
+            role="group"
+            aria-labelledby="invite-roles-label"
+            className="role-option-list"
+            data-testid="invite-roles"
+          >
             {ROLE_OPTIONS.map((r) => (
-              <label key={r}>
+              <label key={r} className="role-option">
                 <input
                   type="checkbox"
                   data-testid={`invite-role-${r}`}
@@ -586,9 +591,14 @@ export function SettingsPage({
         {assignTarget !== null ? (
           <div>
             <p className="field-hint">{translate('page.3ae0cae155b4')}</p>
-            <div role="group" aria-label={translate('page.6b26695e4dce')} data-testid="assign-roles">
+            <div
+              role="group"
+              aria-label={translate('page.6b26695e4dce')}
+              className="role-option-list"
+              data-testid="assign-roles"
+            >
               {ROLE_OPTIONS.map((r) => (
-                <label key={r}>
+                <label key={r} className="role-option">
                   <input
                     type="checkbox"
                     data-testid={`assign-role-${r}`}

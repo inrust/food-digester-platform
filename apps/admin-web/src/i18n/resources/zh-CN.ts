@@ -9,6 +9,11 @@ import { PAGE_ZH_CN } from './pages.js';
  */
 export const ZH_CN: Readonly<Record<string, string>> = {
   ...PAGE_ZH_CN,
+  'auth.newPassword.badge': '首次登录',
+  'auth.newPassword.title': '请设置新的登录密码',
+  'auth.newPassword.description': '临时密码已验证。继续使用管理后台前，请创建今后登录时使用的新密码。',
+  'auth.newPassword.label': '创建新密码',
+  'auth.newPassword.submit': '设置新密码并登录',
   'ui.contractDeviceRequired': '至少关联一台符合条件的设备后才能完成；草稿已保存，可在当前步骤继续操作。',
   'ui.consumableThresholdLoading': '正在加载耗材展示阈值来源…',
   'ui.consumableThresholdSetting': '耗材展示阈值来自业务设置 alarm.thresholds（版本 v{version}）。',
