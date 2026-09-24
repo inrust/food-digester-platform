@@ -783,6 +783,8 @@ export class AppDependenciesStack extends Stack {
   // ---------- Cognito 身份 ----------
 
   private createIdentity(): IdentityResources {
+    // 测试环境降低首次登录/重置密码的输入负担；非测试环境保留强策略。
+    const useTestPasswordPolicy = this.config.envName === 'test';
     const userPool = new cognito.UserPool(this, 'AdminUserPool', {
       userPoolName: this.naming.name('admin'),
       selfSignUpEnabled: false,
@@ -792,11 +794,11 @@ export class AppDependenciesStack extends Stack {
       mfa: cognito.Mfa.OPTIONAL,
       mfaSecondFactor: { sms: false, otp: true },
       passwordPolicy: {
-        minLength: 12,
+        minLength: useTestPasswordPolicy ? 8 : 12,
         requireLowercase: true,
-        requireUppercase: true,
+        requireUppercase: !useTestPasswordPolicy,
         requireDigits: true,
-        requireSymbols: true,
+        requireSymbols: !useTestPasswordPolicy,
         tempPasswordValidity: Duration.days(7),
       },
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,

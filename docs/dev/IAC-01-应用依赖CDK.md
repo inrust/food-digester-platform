@@ -28,7 +28,7 @@
 | Secrets Manager | RDS 凭据自动生成（KMS 加密），口令以动态引用注入实例 | `fdp-test-rds-credentials` |
 | S3 | Raw / OTA / Media / Export / mTLS truststore | `fdp-test-{purpose}-{accountId}`，全部阻断公网 + TLS 强制 + Versioning + KMS |
 | API Gateway | Onboarding（Token，限流）、Device（mTLS 自定义域名）、Admin（Cognito JWT + Internal IAM） | `fdp-test-{onboarding,device,admin}-api` |
-| Cognito | User Pool（邮箱登录、OTP MFA OPTIONAL、12 位密码策略、`custom:customer_id`）、Admin Web Client、5 个 RBAC 组（DEC-012） | `fdp-test-admin` |
+| Cognito | User Pool（邮箱登录、OTP MFA OPTIONAL；test 环境至少 8 位且要求小写字母和数字，不强制大写/符号；其他环境保留至少 12 位及四类字符；`custom:customer_id`）、Admin Web Client、5 个 RBAC 组（DEC-012） | `fdp-test-admin` |
 
 ## 3. 三类 API 认证入口分离
 

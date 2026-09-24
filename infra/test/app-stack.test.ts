@@ -637,13 +637,22 @@ describe('验收：数据库凭据与消息管线', () => {
 describe('Cognito 与应用配置输出', () => {
   const template = synthTemplate();
 
-  test('User Pool：邮箱登录、软件令牌 MFA、customer_id 自定义属性、5 个 RBAC 组', () => {
+  test('User Pool：邮箱登录、测试环境简化密码、软件令牌 MFA、customer_id 自定义属性、5 个 RBAC 组', () => {
     template.hasResourceProperties('AWS::Cognito::UserPool', {
       UserPoolName: 'fdp-test-admin',
       AutoVerifiedAttributes: ['email'],
       MfaConfiguration: 'OPTIONAL',
       Schema: Match.arrayWith([Match.objectLike({ Name: 'customer_id', Mutable: true })]),
-      Policies: { PasswordPolicy: Match.objectLike({ MinimumLength: 12 }) },
+      Policies: {
+        PasswordPolicy: Match.objectLike({
+          MinimumLength: 8,
+          RequireLowercase: true,
+          RequireUppercase: false,
+          RequireNumbers: true,
+          RequireSymbols: false,
+          TemporaryPasswordValidityDays: 7,
+        }),
+      },
     });
     const groups = Object.values(resourcesOfType(template, 'AWS::Cognito::UserPoolGroup')).map(
       (g) => g.Properties.GroupName,
