@@ -2,7 +2,7 @@ import { withAuthorization } from '@fdp/auth';
 import { assert, describe, expect, test, vi } from 'vitest';
 import { generateTestKeySet, signToken, testConfig } from '../../../packages/auth/test/helpers.js';
 import type { AdminHttpRequest } from '../src/admin/onboarding/handler.js';
-import { createAdminLambdaHandler, createAdminRoute } from '../src/runtime/admin-lambda.js';
+import { createAdminLambdaHandler, createAdminLambdaRouter, createAdminRoute } from '../src/runtime/admin-lambda.js';
 import type { AdminOnboardingRouteSet } from '../src/runtime/admin-lambda.js';
 import { DELIVERED_OPERATIONS } from '../src/runtime/delivered-operations.js';
 
@@ -406,6 +406,51 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
     assert.equal(response.statusCode, 200);
     assert.equal(route.mock.calls[0]?.[0].actor?.actorId, 'signed-sub');
     assert.deepEqual(route.mock.calls[0]?.[0].actor?.roles, ['PlatformOperator']);
+  });
+
+  test('验签成功后先执行状态收敛 Hook，再进入业务路由', async () => {
+    const keys = await generateTestKeySet();
+    const token = await signToken(keys, { groups: ['PlatformOperator'], sub: 'activated-sub' });
+    const order: string[] = [];
+    const hook = vi.fn(async (actor, requestId) => {
+      order.push('hook');
+      assert.equal(actor.actorId, 'activated-sub');
+      assert.equal(requestId, 'req-activate');
+    });
+    const route = vi.fn(async () => {
+      order.push('route');
+      return { status: 200, body: {} };
+    });
+    const handler = createAdminLambdaRouter(testConfig(keys.jwks), () => route, { onAuthenticated: hook });
+
+    const response = await handler({
+      headers: { authorization: `Bearer ${token}` },
+      requestContext: { requestId: 'req-activate' },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(order, ['hook', 'route']);
+    assert.equal(hook.mock.calls.length, 1);
+  });
+
+  test('状态收敛失败时返回 500，且不执行业务路由', async () => {
+    const keys = await generateTestKeySet();
+    const token = await signToken(keys, { groups: ['PlatformOperator'] });
+    const route = vi.fn(async () => ({ status: 200, body: {} }));
+    const handler = createAdminLambdaRouter(testConfig(keys.jwks), () => route, {
+      onAuthenticated: vi.fn(async () => {
+        throw new Error('database unavailable');
+      }),
+    });
+
+    const response = await handler({
+      headers: { authorization: `Bearer ${token}` },
+      requestContext: { requestId: 'req-activation-failed' },
+    });
+
+    assert.equal(response.statusCode, 500);
+    assert.equal(route.mock.calls.length, 0);
+    assert.equal(JSON.parse(response.body).error.code, 'INTERNAL_ERROR');
   });
 
   test('伪造 actor/authorizer claims 不能绕过缺失 JWT', async () => {

@@ -5,7 +5,7 @@
  * 本适配器始终重新验证 Authorization Bearer JWT，再构造业务 Handler 唯一可信的 actor。
  */
 import { AuthError, createCognitoAuthenticator } from '@fdp/auth';
-import type { CognitoAuthenticatorConfig } from '@fdp/auth';
+import type { ActorContext, CognitoAuthenticatorConfig } from '@fdp/auth';
 import type { AdminHttpRequest, AdminHttpResponse } from '../admin/onboarding/handler.js';
 import type { AdminOnboardingHandlers } from '../admin/onboarding/handler.js';
 import type { AdminReplayHandlers } from '../admin/replay/handler.js';
@@ -63,6 +63,10 @@ export interface ApiGatewayAdminResult {
 
 export type AdminRoute = (request: AdminHttpRequest) => Promise<AdminHttpResponse>;
 export type AdminRouteResolver = (event: ApiGatewayAdminEvent) => AdminRoute;
+
+export interface AdminLambdaRouterHooks {
+  readonly onAuthenticated?: (actor: ActorContext, requestId: string) => Promise<void>;
+}
 
 export interface AdminOnboardingRouteSet {
   readonly onboarding: AdminOnboardingHandlers;
@@ -324,7 +328,11 @@ export function createAdminLambdaHandler(config: CognitoAuthenticatorConfig, rou
 }
 
 /** 生产路由变体：认证器/JWKS 缓存按 Lambda 容器复用，路由按当前 API Gateway 事件解析。 */
-export function createAdminLambdaRouter(config: CognitoAuthenticatorConfig, resolveRoute: AdminRouteResolver) {
+export function createAdminLambdaRouter(
+  config: CognitoAuthenticatorConfig,
+  resolveRoute: AdminRouteResolver,
+  hooks: AdminLambdaRouterHooks = {},
+) {
   const authenticator = createCognitoAuthenticator(config);
 
   return async (event: ApiGatewayAdminEvent): Promise<ApiGatewayAdminResult> => {
@@ -357,6 +365,7 @@ export function createAdminLambdaRouter(config: CognitoAuthenticatorConfig, reso
     try {
       const sourceIp = event.requestContext?.http?.sourceIp ?? event.requestContext?.identity?.sourceIp;
       const userAgent = header(headers, 'user-agent');
+      await hooks.onAuthenticated?.(actor, requestId);
       const response = await resolveRoute(event)({
         actor,
         headers,

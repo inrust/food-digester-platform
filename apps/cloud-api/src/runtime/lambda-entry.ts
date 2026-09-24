@@ -35,6 +35,7 @@ import { createAdminOtaPackageHandlers } from '../admin/ota-package/handler.js';
 import { createAdminOtaCampaignHandlers } from '../admin/ota-campaign/handler.js';
 import { createAdminMediaHandlers } from '../media/admin-handler.js';
 import { createAdminUserHandlers } from '../admin/user/handler.js';
+import { activateInvitedUserOnAuthenticatedRequest } from '../admin/user/service.js';
 import { createAdminAuditHandlers } from '../admin/audit/handler.js';
 import { createAdminDashboardHandlers } from '../admin/dashboard/handler.js';
 import { createAdminSettingsHandlers } from '../admin/settings/handler.js';
@@ -134,6 +135,10 @@ async function initialize() {
   return createAdminLambdaRouter(
     { region, userPoolId: required('USER_POOL_ID'), clientId: required('USER_POOL_CLIENT_ID') },
     (event) => createAdminRoute(event, routes),
+    {
+      onAuthenticated: (actor, requestId) =>
+        activateInvitedUserOnAuthenticatedRequest({ client }, actor, requestId).then(() => undefined),
+    },
   );
 }
 

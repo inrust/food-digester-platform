@@ -80,18 +80,14 @@ pnpm --filter @fdp/infra exec cdk bootstrap \
 
 当前 Stack 强制生产环境配置 Device API mTLS。P1 Onboarding API 本身使用一次性 Token，不依赖 Device API mTLS，因此首次实网验证可使用明确受限的 `test` 环境：
 
+使用受控包装脚本执行 synth/diff/deploy。脚本会先运行全工作区 `pnpm build`；任一依赖构建失败都会在 CDK bundling 前终止，避免把陈旧的 `packages/*/dist` 打进 Lambda：
+
 ```bash
-pnpm --filter @fdp/infra build
-
-pnpm --filter @fdp/infra exec cdk diff AppDependencies \
-  -c envName=test \
-  -c allowInsecureDeviceEndpointForLocal=true
-
-pnpm --filter @fdp/infra exec cdk deploy AppDependencies \
-  -c envName=test \
-  -c allowInsecureDeviceEndpointForLocal=true \
-  --require-approval broadening
+node scripts/esgiot-cdk.mjs diff AppDependencies
+node scripts/esgiot-cdk.mjs deploy AppDependencies
 ```
+
+脚本从 `infra/environments/esgiot-test.json` 读取固定账号、区域和环境配置，并要求证书与 truststore 四项环境变量齐备。deploy 必须显式给出 Stack 名，且固定使用 `--require-approval broadening`。
 
 部署前必须逐项检查 `cdk diff`，特别是：
 

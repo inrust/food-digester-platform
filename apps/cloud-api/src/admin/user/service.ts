@@ -12,13 +12,20 @@
  * - 外部变更前先持久化 COGNITO_ADMIN_RECONCILIATION 意图；Cognito 调用置于 audited
  *   事务内，DB 失败确定性恢复 Groups/Scope/Enabled 状态；结果不确定或补偿失败时保留
  *   PENDING 对账意图并写 reconciliation_required 失败审计，禁止静默形成权限漂移；
- * - 所有权限变化审计（DOM-03）：user.invite / user.role.assign / user.scope.change /
- *   user.disable / user.password_reset.trigger；
+ * - 所有权限变化审计（DOM-03）：user.invite / user.activate / user.role.assign /
+ *   user.scope.change / user.disable / user.password_reset.trigger；
  * - 功能边界：不负责 Cognito 租户运维、MFA 客服重置和人工账号恢复。
  */
 import { randomUUID } from 'node:crypto';
 import type { DbClient, Page } from '@fdp/database';
-import { audited, decodeKeysetCursor, encodeKeysetCursor, normalizeLimit, recordAudit } from '@fdp/database';
+import {
+  audited,
+  decodeKeysetCursor,
+  encodeKeysetCursor,
+  normalizeLimit,
+  recordAudit,
+  withTransaction,
+} from '@fdp/database';
 import type { ActorContext, Role } from '@fdp/auth';
 import { CUSTOMER_ROLES, PLATFORM_ROLES, actorTypeOf, isRole } from '@fdp/auth';
 import { userConflict, userForbidden, userNotFound, userValidationFailed } from './errors.js';
@@ -194,6 +201,52 @@ async function toUserView(client: DbClient, row: UserRow): Promise<UserView> {
 
 function isUniqueViolation(err: unknown): boolean {
   return (err as { code?: string } | null)?.code === 'P2002';
+}
+
+// ---------- 首次认证状态收敛 ----------
+
+export interface AuthenticatedUserSyncDeps {
+  readonly client: DbClient;
+  readonly now?: () => Date;
+}
+
+/**
+ * Cognito 完成首次登录后，在第一个通过验签的管理 API 请求中把对应业务用户激活。
+ * 条件更新保证并发/重复请求至多迁移一次，状态更新与 SUCCESS 审计同事务提交。
+ */
+export async function activateInvitedUserOnAuthenticatedRequest(
+  deps: AuthenticatedUserSyncDeps,
+  actor: ActorContext,
+  requestId: string,
+): Promise<boolean> {
+  const now = deps.now?.() ?? new Date();
+  const target = (await users(deps.client).findFirst({
+    where: { cognitoSub: actor.actorId },
+  })) as unknown as UserRow | null;
+  if (!target || target.status !== 'INVITED') return false;
+
+  return withTransaction(deps.client, async (tx) => {
+    const updated = await users(tx).updateMany({
+      where: { id: target.id, cognitoSub: actor.actorId, status: 'INVITED' },
+      data: { status: 'ACTIVE', updatedAt: now },
+    });
+    if (updated.count !== 1) return false;
+
+    await recordAudit(tx, {
+      objectType: 'user',
+      objectId: target.id,
+      action: 'user.activate',
+      result: 'SUCCESS',
+      reason: 'first authenticated admin API request',
+      actorId: actor.actorId,
+      actorRole: actor.roles[0],
+      customerId: actor.customerId,
+      requestId,
+      beforeValue: { status: 'INVITED' },
+      afterValue: { status: 'ACTIVE' },
+    });
+    return true;
+  });
 }
 
 // ---------- 角色集校验 ----------

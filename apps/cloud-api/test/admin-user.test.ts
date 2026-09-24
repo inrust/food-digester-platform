@@ -16,7 +16,13 @@ import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
-import { assignUserRoles, createAdminUserHandlers, inviteUser, setUserScope } from '../src/index.js';
+import {
+  activateInvitedUserOnAuthenticatedRequest,
+  assignUserRoles,
+  createAdminUserHandlers,
+  inviteUser,
+  setUserScope,
+} from '../src/index.js';
 import type { AdminHttpRequest, CognitoAdminPort, UserAdminDeps } from '../src/index.js';
 import { createTestDb } from './helpers.js';
 
@@ -159,6 +165,65 @@ function expectNoCredentialLeak(body: unknown): void {
   assert.ok(!text.includes('hash'), 'response must not contain hash material');
   assert.ok(!text.includes('cognitosub'), 'view must not leak cognitoSub');
 }
+
+// ---------- 首次认证状态收敛 ----------
+
+describe('首次认证用户状态收敛', () => {
+  test('INVITED 用户首次通过认证后转为 ACTIVE，并只记录一次审计', async () => {
+    const target = await plantUser({
+      roles: ['PlatformSuperAdmin'],
+      cognitoSub: 'first-login-sub',
+      status: 'INVITED',
+    });
+
+    const first = await activateInvitedUserOnAuthenticatedRequest(
+      { client: prisma, now: () => NOW },
+      { ...superAdmin, actorId: target.cognitoSub },
+      'req-first-login',
+    );
+    const repeated = await activateInvitedUserOnAuthenticatedRequest(
+      { client: prisma, now: () => NOW },
+      { ...superAdmin, actorId: target.cognitoSub },
+      'req-repeated',
+    );
+
+    assert.equal(first, true);
+    assert.equal(repeated, false);
+    assert.equal((await prisma.user.findUnique({ where: { id: target.userId } }))?.status, 'ACTIVE');
+    const audits = await prisma.auditLog.findMany({
+      where: { objectType: 'user', objectId: target.userId, action: 'user.activate' },
+    });
+    assert.equal(audits.length, 1);
+    assert.equal(audits[0]?.result, 'SUCCESS');
+    assert.equal(audits[0]?.actorId, target.cognitoSub);
+    assert.equal(audits[0]?.requestId, 'req-first-login');
+    assert.deepEqual(audits[0]?.beforeValue, { status: 'INVITED' });
+    assert.deepEqual(audits[0]?.afterValue, { status: 'ACTIVE' });
+  });
+
+  test('无对应业务用户或用户已 ACTIVE 时保持幂等且不写审计', async () => {
+    const target = await plantUser({ roles: ['Auditor'], status: 'ACTIVE' });
+    const before = await prisma.auditLog.count({ where: { action: 'user.activate' } });
+
+    assert.equal(
+      await activateInvitedUserOnAuthenticatedRequest(
+        { client: prisma, now: () => NOW },
+        { ...operator, actorId: target.cognitoSub },
+        'req-active',
+      ),
+      false,
+    );
+    assert.equal(
+      await activateInvitedUserOnAuthenticatedRequest(
+        { client: prisma, now: () => NOW },
+        { ...operator, actorId: 'missing-sub' },
+        'req-missing',
+      ),
+      false,
+    );
+    assert.equal(await prisma.auditLog.count({ where: { action: 'user.activate' } }), before);
+  });
+});
 
 // ---------- 邀请 ----------
 

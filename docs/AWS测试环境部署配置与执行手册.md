@@ -1,6 +1,6 @@
 # AWS 测试环境部署配置与执行手册
 
-更新日期：2026-09-17。批准人：Anray。当前授权已包含专用测试 CA/truststore 准备、自定义 Bootstrap、源码提交与只读 synth/diff；仍不包含应用 Stack 部署、数据库初始化或 DNS 修改。
+更新日期：2026-09-24。批准人：Anray。当前测试环境已完成 Bootstrap、应用 Stack、数据库初始化和域名接线；后续变更继续以精确源码提交执行 diff、deploy 与验收。
 
 ## 1. 账号与域名
 
@@ -32,7 +32,13 @@
 
 Key 默认 `truststore/ca-bundle.pem`。先准备 Bucket/对象再创建 mTLS 域名，避免同一 Stack 新建空 Bucket 的首次部署顺序错误。现有 Stack 内 truststore Bucket 保留用于兼容本地测试，但本账号部署使用外部预置 Bucket。CA 内容/链、ACM 覆盖范围与对象存在性需要真实只读预检；本地 ARN 校验不证明其有效。
 
-`scripts/esgiot-cdk.mjs` 只允许 synth/diff，核对 STS 账号并显式绑定区域，覆盖 `cdk.json` 的 local/insecure 默认值；禁止 deploy/destroy/bootstrap。diff 已固定使用 `--no-change-set`，避免仅预检也创建 CloudFormation Change Set。真实应用部署必须另行批准。
+`scripts/esgiot-cdk.mjs` 只允许 synth/diff/deploy，核对 STS 账号并显式绑定区域，覆盖 `cdk.json` 的 local/insecure 默认值；禁止 destroy/bootstrap。它会先运行全工作区 `pnpm build`，构建失败立即终止，防止 Lambda bundling 读取过期的 `packages/*/dist`。diff 固定使用 `--no-change-set`；deploy 必须显式给出 Stack 名，并固定使用 `--require-approval broadening`。
+
+```bash
+node scripts/esgiot-cdk.mjs synth AppDependencies
+node scripts/esgiot-cdk.mjs diff AppDependencies
+node scripts/esgiot-cdk.mjs deploy AppDependencies
+```
 
 ## 3. 自定义 Bootstrap
 
