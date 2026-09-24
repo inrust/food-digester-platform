@@ -12,6 +12,27 @@ export const EN: Readonly<Record<string, string>> = {
     'Your temporary password has been verified. Create the new password you will use for future sign-ins before continuing.',
   'auth.newPassword.label': 'Create new password',
   'auth.newPassword.submit': 'Set new password and sign in',
+  'auth.error.invalidCredentials': 'The username or password is incorrect. Check both and try again.',
+  'auth.error.passwordResetRequired': 'This account requires a password reset. Use “Forgot password” to continue.',
+  'auth.error.userNotConfirmed':
+    'This account is not confirmed. Check the invitation email or contact an administrator.',
+  'auth.error.codeMismatch': 'The verification code is incorrect. Check it and try again.',
+  'auth.error.codeExpired': 'The verification code has expired. Go back and request a new code.',
+  'auth.error.passwordTooShort': 'The new password is too short. Add more characters and try again.',
+  'auth.error.passwordRequiresUppercase': 'The new password must contain at least one uppercase letter (A–Z).',
+  'auth.error.passwordRequiresLowercase': 'The new password must contain at least one lowercase letter (a–z).',
+  'auth.error.passwordRequiresNumber': 'The new password must contain at least one number (0–9).',
+  'auth.error.passwordRequiresSymbol': 'The new password must contain at least one symbol, such as !, @, or #.',
+  'auth.error.passwordPolicyViolation':
+    'The new password does not meet the current password policy. Adjust its length and character mix, then try again.',
+  'auth.error.passwordReuseNotAllowed': 'This password was used recently. Choose a different new password.',
+  'auth.error.rateLimited': 'Too many attempts. Wait a while and try again.',
+  'auth.error.network': 'The identity service cannot be reached. Check your network and try again.',
+  'auth.error.newPasswordUnknown':
+    'The new password could not be set. Try a different password; contact an administrator if the problem continues.',
+  'auth.error.flowExpired': 'The sign-in flow has expired. Return to sign-in and start again.',
+  'auth.error.accountConfiguration': 'The account permissions are misconfigured. Contact an administrator.',
+  'auth.error.unknown': 'The sign-in request could not be completed. Try again or contact an administrator.',
   'ui.contractDeviceRequired':
     'Bind at least one eligible device before finishing. The draft is saved and recoverable in this step.',
   'ui.consumableThresholdLoading': 'Loading the consumable display threshold source…',

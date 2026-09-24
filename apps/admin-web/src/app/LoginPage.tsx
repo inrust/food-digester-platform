@@ -1,12 +1,45 @@
 import { translate } from '../i18n/i18n.js';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { AuthFlowError } from '../auth/auth-flow.js';
 import type { AuthFlow, LoginOutcome } from '../auth/auth-flow.js';
+import { CognitoIdpError } from '../auth/cognito-idp.js';
+import type { CognitoErrorCode } from '../auth/cognito-idp.js';
+import { SessionEstablishError } from '../session/session-manager.js';
 export interface LoginPageProps {
   readonly auth: AuthFlow;
   readonly onAuthenticated: () => void;
 }
 type LoginStep = 'credentials' | 'mfa' | 'new-password' | 'forgot' | 'confirm-forgot';
+
+const COGNITO_ERROR_MESSAGE_KEYS: Readonly<Partial<Record<CognitoErrorCode, string>>> = {
+  INVALID_CREDENTIALS: 'auth.error.invalidCredentials',
+  PASSWORD_RESET_REQUIRED: 'auth.error.passwordResetRequired',
+  USER_NOT_CONFIRMED: 'auth.error.userNotConfirmed',
+  CODE_MISMATCH: 'auth.error.codeMismatch',
+  CODE_EXPIRED: 'auth.error.codeExpired',
+  PASSWORD_TOO_SHORT: 'auth.error.passwordTooShort',
+  PASSWORD_REQUIRES_UPPERCASE: 'auth.error.passwordRequiresUppercase',
+  PASSWORD_REQUIRES_LOWERCASE: 'auth.error.passwordRequiresLowercase',
+  PASSWORD_REQUIRES_NUMBER: 'auth.error.passwordRequiresNumber',
+  PASSWORD_REQUIRES_SYMBOL: 'auth.error.passwordRequiresSymbol',
+  PASSWORD_POLICY_VIOLATION: 'auth.error.passwordPolicyViolation',
+  PASSWORD_REUSE_NOT_ALLOWED: 'auth.error.passwordReuseNotAllowed',
+  RATE_LIMITED: 'auth.error.rateLimited',
+  NETWORK: 'auth.error.network',
+};
+
+export function loginErrorMessage(error: unknown, step: LoginStep): string {
+  if (error instanceof CognitoIdpError) {
+    const key = COGNITO_ERROR_MESSAGE_KEYS[error.code];
+    if (key !== undefined) return translate(key);
+    return translate(step === 'new-password' ? 'auth.error.newPasswordUnknown' : 'auth.error.unknown');
+  }
+  if (error instanceof AuthFlowError) return translate('auth.error.flowExpired');
+  if (error instanceof SessionEstablishError) return translate('auth.error.accountConfiguration');
+  return translate('auth.error.unknown');
+}
+
 export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
   const [step, setStep] = useState<LoginStep>('credentials');
   const [username, setUsername] = useState('');
@@ -43,7 +76,7 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
       }
     } catch (error) {
       setPassword('');
-      setMessage(error instanceof Error ? error.message : translate('ui.539830fdf386'));
+      setMessage(loginErrorMessage(error, step));
     } finally {
       setBusy(false);
     }

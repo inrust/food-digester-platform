@@ -161,3 +161,33 @@ test('传输层错误映射：刷新场景的 NotAuthorized → REFRESH_TOKEN_IN
     assert.equal(err.code, 'REFRESH_TOKEN_INVALID');
   });
 });
+
+test.each([
+  ['Password did not conform with policy: Password not long enough', 'PASSWORD_TOO_SHORT'],
+  ['Password did not conform with policy: Password must have uppercase characters', 'PASSWORD_REQUIRES_UPPERCASE'],
+  ['Password did not conform with policy: Password must have lowercase characters', 'PASSWORD_REQUIRES_LOWERCASE'],
+  ['Password did not conform with policy: Password must have numeric characters', 'PASSWORD_REQUIRES_NUMBER'],
+  ['Password did not conform with policy: Password must have symbol characters', 'PASSWORD_REQUIRES_SYMBOL'],
+] as const)('新密码策略错误映射具体失败项：%s', async (message, expectedCode) => {
+  const { fetch } = scriptedIdpFetch([{ status: 400, body: { __type: 'InvalidPasswordException', message } }]);
+  const idp = createCognitoIdpClient({ region: 'ap-east-1', clientId: CLIENT_ID, fetch });
+  await expectRejects(
+    idp.respondToChallenge('NEW_PASSWORD_REQUIRED', { NEW_PASSWORD: 'invalid' }, 'session'),
+    (err) => {
+      assert.ok(err instanceof CognitoIdpError);
+      assert.equal(err.code, expectedCode);
+    },
+  );
+});
+
+test('新密码复用错误映射 PASSWORD_REUSE_NOT_ALLOWED', async () => {
+  const { fetch } = scriptedIdpFetch([{ status: 400, body: { __type: 'PasswordHistoryPolicyViolationException' } }]);
+  const idp = createCognitoIdpClient({ region: 'ap-east-1', clientId: CLIENT_ID, fetch });
+  await expectRejects(
+    idp.respondToChallenge('NEW_PASSWORD_REQUIRED', { NEW_PASSWORD: 'OldPassw0rd!' }, 'session'),
+    (err) => {
+      assert.ok(err instanceof CognitoIdpError);
+      assert.equal(err.code, 'PASSWORD_REUSE_NOT_ALLOWED');
+    },
+  );
+});

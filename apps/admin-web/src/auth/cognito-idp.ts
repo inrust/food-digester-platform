@@ -42,6 +42,13 @@ export type CognitoErrorCode =
   | 'USER_NOT_CONFIRMED'
   | 'CODE_MISMATCH'
   | 'CODE_EXPIRED'
+  | 'PASSWORD_TOO_SHORT'
+  | 'PASSWORD_REQUIRES_UPPERCASE'
+  | 'PASSWORD_REQUIRES_LOWERCASE'
+  | 'PASSWORD_REQUIRES_NUMBER'
+  | 'PASSWORD_REQUIRES_SYMBOL'
+  | 'PASSWORD_POLICY_VIOLATION'
+  | 'PASSWORD_REUSE_NOT_ALLOWED'
   | 'REFRESH_TOKEN_INVALID'
   | 'RATE_LIMITED'
   | 'NETWORK'
@@ -123,6 +130,37 @@ function cognitoErrorType(body: unknown): string | null {
   return hash >= 0 ? raw.slice(hash + 1) : raw;
 }
 
+function cognitoErrorMessage(body: unknown): string {
+  if (!isRecord(body)) return '';
+  const raw = body['message'] ?? body['Message'];
+  return typeof raw === 'string' ? raw.toLowerCase() : '';
+}
+
+function mapPasswordPolicyError(body: unknown): CognitoIdpError {
+  const message = cognitoErrorMessage(body);
+  if (
+    message.includes('not long enough') ||
+    message.includes('too short') ||
+    message.includes('minimum length') ||
+    /at least \d+ characters?/.test(message)
+  ) {
+    return new CognitoIdpError('PASSWORD_TOO_SHORT', 'The new password is too short');
+  }
+  if (message.includes('uppercase')) {
+    return new CognitoIdpError('PASSWORD_REQUIRES_UPPERCASE', 'The new password requires an uppercase letter');
+  }
+  if (message.includes('lowercase')) {
+    return new CognitoIdpError('PASSWORD_REQUIRES_LOWERCASE', 'The new password requires a lowercase letter');
+  }
+  if (message.includes('numeric') || message.includes('number') || message.includes('digit')) {
+    return new CognitoIdpError('PASSWORD_REQUIRES_NUMBER', 'The new password requires a number');
+  }
+  if (message.includes('symbol') || message.includes('special character')) {
+    return new CognitoIdpError('PASSWORD_REQUIRES_SYMBOL', 'The new password requires a symbol');
+  }
+  return new CognitoIdpError('PASSWORD_POLICY_VIOLATION', 'The new password does not meet the password policy');
+}
+
 function mapCognitoError(body: unknown, context: 'auth' | 'refresh'): CognitoIdpError {
   const type = cognitoErrorType(body);
   switch (type) {
@@ -141,6 +179,10 @@ function mapCognitoError(body: unknown, context: 'auth' | 'refresh'): CognitoIdp
       return new CognitoIdpError('CODE_MISMATCH', 'The confirmation code is incorrect');
     case 'ExpiredCodeException':
       return new CognitoIdpError('CODE_EXPIRED', 'The confirmation code has expired');
+    case 'InvalidPasswordException':
+      return mapPasswordPolicyError(body);
+    case 'PasswordHistoryPolicyViolationException':
+      return new CognitoIdpError('PASSWORD_REUSE_NOT_ALLOWED', 'The new password was used recently');
     case 'TooManyRequestsException':
     case 'LimitExceededException':
       return new CognitoIdpError('RATE_LIMITED', 'Too many attempts; try again later');
