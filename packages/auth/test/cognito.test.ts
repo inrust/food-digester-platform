@@ -60,10 +60,17 @@ describe('Cognito JWT 认证 Guard', () => {
     await expectAuthError(authenticator.authenticate(`Bearer ${accessToken}`), 'UNAUTHENTICATED');
   });
 
-  test('缺失/畸形/非 Bearer 凭证 → 401', async () => {
-    for (const header of [undefined, null, '', 'Bearer', 'Basic abc', 'Bearer not a jwt']) {
+  test('缺失/畸形凭证 → 401', async () => {
+    for (const header of [undefined, null, '', 'Bearer', 'Basic abc', 'Bearer not a jwt', 'not.a.jwt extra']) {
       await expectAuthError(authenticator.authenticate(header), 'UNAUTHENTICATED');
     }
+  });
+
+  test('API Gateway Cognito Token source 的原始 ID Token 可通过认证', async () => {
+    const token = await signToken(keys, { tokenUse: 'id', groups: ['PlatformSuperAdmin'] });
+    const actor = await authenticator.authenticate(token);
+    assert.equal(actor.tokenUse, 'id');
+    assert.deepEqual(actor.roles, ['PlatformSuperAdmin']);
   });
 
   test('缺失或非法 auth_time → 401，不能伪造近期重新认证上下文', async () => {

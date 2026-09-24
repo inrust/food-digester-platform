@@ -1,5 +1,5 @@
 /**
- * FE-01 管理 API 客户端：Cognito ID Token Bearer 注入、401 刷新重试与清会话、403 无权、CT-05 错误包络解析。
+ * FE-01 管理 API 客户端：Cognito ID Token 注入、401 刷新重试与清会话、403 无权、CT-05 错误包络解析。
  *
  * 技术对接（FE-01 要求）：
  * - 401 清会话：先发前刷新；响应 401 → 强制刷新重试一次；仍 401 或刷新失败 → 清会话 + UnauthenticatedError；
@@ -77,7 +77,9 @@ export interface ApiClientDeps {
 export function createApiClient(deps: ApiClientDeps): ApiClient {
   async function send(path: string, options: ApiRequestOptions, idToken: string): Promise<ApiFetchResponse> {
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${idToken}`,
+      // REST API 的 COGNITO_USER_POOLS authorizer 以 Authorization 为 Token source，
+      // 这里必须传 Cognito 返回的 ID Token 本体。
+      Authorization: idToken,
       ...options.headers,
     };
     let body: string | undefined;

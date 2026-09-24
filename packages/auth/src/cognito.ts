@@ -40,11 +40,11 @@ interface CognitoClaims extends JWTPayload {
   readonly 'custom:customer_id'?: unknown;
 }
 
-const BEARER_PATTERN = /^Bearer ([A-Za-z0-9\-._~+/]+=*)$/;
+const AUTHORIZATION_TOKEN_PATTERN = /^(?:Bearer )?([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/;
 
-function extractBearerToken(header: string | null | undefined): string {
+function extractAuthorizationToken(header: string | null | undefined): string {
   if (!header) throw unauthenticated();
-  const match = BEARER_PATTERN.exec(header);
+  const match = AUTHORIZATION_TOKEN_PATTERN.exec(header);
   if (!match) throw unauthenticated();
   return match[1] as string;
 }
@@ -55,7 +55,9 @@ export function createCognitoAuthenticator(config: CognitoAuthenticatorConfig): 
   const clockTolerance = config.clockToleranceSeconds ?? 60;
 
   async function authenticate(authorizationHeader: string | null | undefined): Promise<ActorContext> {
-    const token = extractBearerToken(authorizationHeader);
+    // API Gateway REST 的 Cognito authorizer 将原始 ID Token 作为 Token source；
+    // 同时保留标准 Bearer 形式，供无该 authorizer 的受控调用与现有客户端使用。
+    const token = extractAuthorizationToken(authorizationHeader);
 
     let claims: CognitoClaims;
     try {
