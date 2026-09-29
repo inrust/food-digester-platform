@@ -15,7 +15,7 @@
 5. 设备以 `requestId` 和本地私钥签名轮询 `GET /api/v1/device/onboarding/status`。签名覆盖方法、路径、申请 ID、毫秒时间戳和随机数；服务端验证五分钟时间窗与随机数唯一性。批准且发证完成后只返回公钥证书、MQTT Endpoint 与初始配置。设备安装前核对证书公钥与私钥匹配。
 6. 设备用新证书发送首个合法 Heartbeat 后完成 Onboarding。24 小时截止、一次性领取、丢包撤证重签等既有恢复规则仍沿用；超时重新申请可使用新 CSR，无需新 Token。
 
-签名详细格式、请求与响应示例以 [Onboarding API](./api/onboard-api.bio-nexa.com.md) 和 [可执行 OpenAPI](../contracts/rest/device-onboarding-api.json) 为准。旧 Token 分支仅作为迁移兼容，不能作为新设备的前置步骤。
+签名详细格式、请求与响应示例以 [Onboarding API](./api/onboard-api.bio-nexa.com.md) 和 [可执行 OpenAPI](../contracts/rest/device-onboarding-api.json) 为准。不存在既有设备迁移路径；Bearer Token 申请、轮询与数据模型均已移除。
 
 ## 已知边界和后续验收
 

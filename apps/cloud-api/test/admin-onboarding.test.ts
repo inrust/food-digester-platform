@@ -60,7 +60,7 @@ interface Planted {
   serialNumber: string;
 }
 
-/** 落库一台库存设备 + 一条申请（含 FK 需要的 Token 行）；每台设备序列号唯一。 */
+/** 落库一台库存设备 + 一条 CSR 申请；每台设备序列号唯一。 */
 async function plantRequest(overrides: { status?: string; requestModel?: string } = {}): Promise<Planted> {
   seq += 1;
   const serialNumber = `SN-ADM-${seq}`;
@@ -76,16 +76,10 @@ async function plantRequest(overrides: { status?: string; requestModel?: string 
       lifecycleStatus: 'PendingOnboarding',
     },
   });
-  const token = await prisma.onboardingToken.create({
-    data: {
-      tokenHash: `hash-${NOW.getTime()}-${seq}`,
-      serialNumber,
-      expiresAt: new Date('2027-01-01T00:00:00Z'),
-    },
-  });
   const request = await prisma.onboardingRequest.create({
     data: {
-      tokenId: token.id,
+      csrPem: 'TEST_CSR',
+      publicKeyFingerprint: 'a'.repeat(64),
       serialNumber,
       submittedBy: `DEVICE:${serialNumber}`,
       model: overrides.requestModel ?? 'BNX-100',
@@ -185,7 +179,7 @@ describe('GET /admin/onboarding/requests（列表）', () => {
 });
 
 describe('GET /admin/onboarding/requests/:requestId（详情）', () => {
-  test('返回 DTO 含 version/rejectReason，不含 tokenId；未知 id → 404', async () => {
+  test('返回 DTO 含 version/rejectReason/指纹，不含 CSR；未知 id → 404', async () => {
     const planted = await plantRequest();
     const res = await handlers.detail(req(superAdmin, { params: { requestId: planted.requestId } }));
     assert.equal(res.status, 200);
@@ -193,7 +187,7 @@ describe('GET /admin/onboarding/requests/:requestId（详情）', () => {
     assert.equal(body.data.requestId, planted.requestId);
     assert.equal(body.data.version, 1);
     assert.equal(body.data.status, 'PENDING');
-    assert.ok(!('tokenId' in body.data), '响应不得包含 tokenId');
+    assert.ok(!('csrPem' in body.data), '响应不得包含完整 CSR');
 
     const missing = await handlers.detail(req(superAdmin, { params: { requestId: 'req-missing' } }));
     assert.equal(missing.status, 404);
@@ -340,7 +334,7 @@ describe('POST approve / reject', () => {
     assert.equal(record?.status, 'PENDING');
   });
 
-  test('审计：含前后状态、rejectReason、actorRole，且不含 Token（tokenId/tokenHash 不出现）', async () => {
+  test('审计：含前后状态、rejectReason、actorRole，且不含 CSR', async () => {
     const planted = await plantRequest();
     await handlers.reject(
       req(
@@ -362,12 +356,9 @@ describe('POST approve / reject', () => {
     assert.equal(after.status, 'REJECTED');
     assert.equal(after.version, 2);
     assert.equal(after.rejectReason, '审计验证');
-    // 不含 Token：审计全文不出现 tokenId/tokenHash 值，字段名命中 token 应被 DOM-03 脱敏
-    const token = await prisma.onboardingToken.findFirst({ where: { serialNumber: planted.serialNumber } });
     const serialized = JSON.stringify(audit);
-    assert.ok(token);
-    assert.ok(!serialized.includes(token.id) && !serialized.includes(token.tokenHash));
-    assert.ok(!/"token/i.test(serialized), '审计字段名命中 token 应被 DOM-03 脱敏');
+    assert.ok(!serialized.includes('TEST_CSR'));
+    assert.ok(!/"csrPem"/i.test(serialized));
   });
 
   test('审批失败记 FAILURE 审计且不伪造成功（设备资料不符场景）', async () => {

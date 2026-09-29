@@ -17,6 +17,26 @@ import { ProvisioningService, rotateCertificate } from '../src/index.js';
 import type { IotCertificateResult, IotProvisioningPort } from '../src/index.js';
 import type { AdminOnboardingRequestRecord } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import forge from 'node-forge';
+
+const deviceKeys = forge.pki.rsa.generateKeyPair(2048);
+const deviceCsr = forge.pki.createCertificationRequest();
+deviceCsr.publicKey = deviceKeys.publicKey;
+deviceCsr.setSubject([{ name: 'commonName', value: 'test-device' }]);
+deviceCsr.sign(deviceKeys.privateKey, forge.md.sha256.create());
+const csrPem = forge.pki.certificationRequestToPem(deviceCsr);
+
+function certificatePem(serial: string): string {
+  const certificate = forge.pki.createCertificate();
+  certificate.publicKey = deviceKeys.publicKey;
+  certificate.serialNumber = Buffer.from(serial).toString('hex');
+  certificate.validity.notBefore = new Date('2026-01-01T00:00:00Z');
+  certificate.validity.notAfter = new Date('2028-01-01T00:00:00Z');
+  certificate.setSubject([{ name: 'commonName', value: serial }]);
+  certificate.setIssuer(certificate.subject.attributes);
+  certificate.sign(deviceKeys.privateKey, forge.md.sha256.create());
+  return forge.pki.certificateToPem(certificate);
+}
 
 const NOW = new Date('2026-08-27T08:00:00Z');
 const now = () => NOW;
@@ -63,16 +83,13 @@ function mockIot(): MockIot {
       state.calls.push(`ensureThing:${thingName}`);
       state.things.add(thingName);
     },
-    async createKeysAndCertificate() {
+    async createKeysAndCertificate(csr) {
       const n = state.certs.length + 1;
       const cert: IotCertificateResult = {
         certificateId: `cert-${instance}-${n}`,
         certificateArn: `arn:aws:iot:ap-southeast-1:123456789012:cert/cert-${instance}-${n}`,
-        certificatePem: `-----BEGIN CERTIFICATE-----\n${Buffer.from(`MOCKCERT-${instance}-${n}`).toString('base64')}\n-----END CERTIFICATE-----`,
-        privateKey:
-          ['-----BEGIN', 'PRIVATE', 'KEY-----'].join(' ') +
-          `\nMOCKKEY${instance}${n}\n` +
-          ['-----END', 'PRIVATE', 'KEY-----'].join(' '),
+        certificatePem: certificatePem(`MOCKCERT-${instance}-${n}`),
+        ...(csr ? {} : { privateKey: 'TEST_ROTATION_PRIVATE_KEY' }),
       };
       state.calls.push(`createKeysAndCertificate:${cert.certificateId}`);
       state.certs.push(cert);
@@ -121,17 +138,11 @@ async function plantApprovedRequest(): Promise<{ request: AdminOnboardingRequest
       lifecycleStatus: 'OnboardingApproved',
     },
   });
-  const token = await prisma.onboardingToken.create({
-    data: {
-      tokenHash: `prov-token-${seq}`,
-      serialNumber,
-      expiresAt: new Date('2027-01-01T00:00:00Z'),
-    },
-  });
   const row = await prisma.onboardingRequest.create({
     data: {
       id: `req-prov-${seq}`,
-      tokenId: token.id,
+      csrPem,
+      publicKeyFingerprint: 'a'.repeat(64),
       serialNumber,
       submittedBy: `DEVICE:${serialNumber}`,
       model: 'BNX-100',

@@ -22,12 +22,10 @@ afterAll(async () => {
 async function plantJob(options: { status?: string; attempts?: number; maxAttempts?: number; issued?: string } = {}) {
   seq += 1;
   const serialNumber = `SN-PROVISIONING-JOB-${seq}`;
-  const token = await prisma.onboardingToken.create({
-    data: { tokenHash: `job-token-${seq}`, serialNumber, expiresAt: new Date('2027-12-31T00:00:00Z') },
-  });
   const request = await prisma.onboardingRequest.create({
     data: {
-      tokenId: token.id,
+      csrPem: 'TEST_CSR',
+      publicKeyFingerprint: 'a'.repeat(64),
       serialNumber,
       submittedBy: `DEVICE:${serialNumber}`,
       model: 'BNX-100',

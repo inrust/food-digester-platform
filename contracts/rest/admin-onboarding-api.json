@@ -4,8 +4,8 @@
     "title": "Bio-Nexa CMP Admin Onboarding Review API",
     "version": "0.1.0",
     "description": "BE-ONB-02 管理员 Onboarding 审批接口：待审批列表、详情、approve、reject。认证为 Cognito JWT；列表/详情需 onboarding:read，审批需 onboarding:approve（仅 PlatformSuperAdmin）。审批采用 If-Match 乐观锁防重复/并发审批；approve 在同一事务创建持久化 Provisioning Job，不返回私钥。通用响应/错误契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-017@1.0.0", "DEC-025@1.0.0"],
-    "x-decision-register-version": "1.34.0"
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-017@1.0.0", "DEC-025@1.1.0"],
+    "x-decision-register-version": "1.35.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [
@@ -275,7 +275,7 @@
           "certificateProvisioningStatus"
         ],
         "additionalProperties": false,
-        "description": "申请 DTO 不含 tokenId 或任何 Token 关联字段",
+        "description": "申请 DTO 仅暴露 CSR 公钥指纹，不包含 CSR 或私钥",
         "properties": {
           "requestId": {
             "type": "string",

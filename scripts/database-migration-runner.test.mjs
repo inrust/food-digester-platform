@@ -34,7 +34,7 @@ test('migration connection requires complete secret and verified TLS; special cr
 test('database verification derives every mapped Prisma table', () => {
   const schema = readFileSync('packages/database/prisma/schema.prisma', 'utf8');
   const tables = expectedTablesFromSchema(schema);
-  assert.equal(tables.length, 58);
+  assert.equal(tables.length, 57);
   assert.ok(tables.includes('onboarding_proof_nonces'));
   assert.ok(tables.includes('customers'));
   assert.ok(tables.includes('device_activity_export_jobs'));

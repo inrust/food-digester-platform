@@ -1,4 +1,4 @@
-/** Onboarding Token API Gateway 的可信生产适配器；不经过 Cognito 管理认证。 */
+/** Onboarding API Gateway 的可信生产适配器；不经过 Cognito 管理认证。 */
 import type { OnboardingHttpRequest, OnboardingHttpResponse, OnboardingStatusRequest } from '../onboarding/index.js';
 import { matchDeliveredOperation } from './delivered-operations.js';
 

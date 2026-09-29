@@ -40,7 +40,7 @@ test('六个设备 Endpoint 的 Method、Path 完整且认证方式符合 DEC-02
     }
   }
   assert.deepEqual(actual.sort(), expected.sort());
-  assert.ok(onboarding.info['x-decision-versions'].includes('DEC-025@1.0.0'));
+  assert.ok(onboarding.info['x-decision-versions'].includes('DEC-025@1.1.0'));
 });
 
 test('Onboarding 成功载荷保持源稿顶层和嵌套字段，不使用 data/meta 包裹', () => {

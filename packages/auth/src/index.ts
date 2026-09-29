@@ -1,9 +1,9 @@
 /**
- * @fdp/auth（AUTH-01/02）：Cognito JWT 认证授权 + Onboarding Token 认证。
+ * @fdp/auth（AUTH-01/02）：Cognito JWT 认证授权 + Onboarding 共享限频。
  *
  * AUTH-01：认证 Guard（createCognitoAuthenticator）、授权 Decorator（withAuthorization）、
  * 集中式权限矩阵（PERMISSION_MATRIX）、角色模型与错误类型。
- * AUTH-02：Onboarding Token 签发/校验/撤销/核销、限频保护与 withOnboardingAuth 中间件。
+ * AUTH-02：Onboarding API 按来源与申请限频；设备私钥证明在 cloud-api 校验。
  * 后端授权是唯一可信来源；前端仅消费角色显示名（FE-01/FE-16）。
  */
 export {
@@ -25,28 +25,9 @@ export type { CognitoAuthenticator, CognitoAuthenticatorConfig } from './cognito
 export { assertCustomerScope, requirePermission, withAuthorization } from './guard.js';
 export type { AuthenticatedRequest, AuthorizationRule } from './guard.js';
 
-// ---------- AUTH-02 Onboarding Token ----------
-export {
-  fingerprintOfHash,
-  generateOnboardingToken,
-  hashOnboardingToken,
-  isWellFormedOnboardingToken,
-  ONBOARDING_TOKEN_PREFIX,
-  tokenFingerprint,
-} from './onboarding/token.js';
-export {
-  findOnboardingTokenByHash,
-  issueOnboardingToken,
-  markOnboardingTokenUsed,
-  revokeOnboardingToken,
-} from './onboarding/repository.js';
-export type { IssuedOnboardingToken, OnboardingTokenRecord } from './onboarding/repository.js';
-export { verifyOnboardingToken } from './onboarding/verifier.js';
-export type { OnboardingAuthContext, VerifyOnboardingTokenOptions } from './onboarding/verifier.js';
+// ---------- Onboarding 共享限频 ----------
 export { createRateLimiter, InMemoryRateLimitStore, PostgresRateLimitStore } from './onboarding/rate-limit.js';
 export type { RateLimiter, RateLimitRule, RateLimitStore } from './onboarding/rate-limit.js';
-export { withOnboardingAuth } from './onboarding/guard.js';
-export type { OnboardingGuardOptions } from './onboarding/guard.js';
 
 // ---------- AUTH-03 Device mTLS ----------
 export { certificateFingerprintFromPem } from './device/mtls-context.js';

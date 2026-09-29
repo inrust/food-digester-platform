@@ -1120,7 +1120,7 @@ export class AppDependenciesStack extends Stack {
     const onboardingApiRole = new iam.Role(this, 'OnboardingApiFnServiceRole', {
       roleName: this.naming.name(ONBOARDING_API_ROLE_SUFFIX),
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-      description: 'Onboarding Token API execution role',
+      description: 'Onboarding API execution role',
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),

@@ -234,23 +234,7 @@ enum DeviceStateAxis {
 
 // ---------- 证书与 Onboarding ----------
 
-model OnboardingToken {
-  id           String    @id @default(uuid())
-  // 一次一机、只保存 Hash（实施方案 8.2）
-  tokenHash    String    @unique @map("token_hash")
-  serialNumber String    @map("serial_number")
-  expiresAt    DateTime  @map("expires_at") @db.Timestamptz
-  usedAt       DateTime? @map("used_at") @db.Timestamptz
-  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
-
-  request OnboardingRequest?
-
-  @@map("onboarding_tokens")
-}
-
-/// AUTH-02 shared fixed-window counters. Both request/status and all Lambda instances
-/// use the same PostgreSQL row so a token or source IP cannot split its allowance.
+/// Shared fixed-window counters across all Onboarding Lambda instances.
 model AuthRateLimit {
   key         String   @map("rate_key")
   windowStart DateTime @map("window_start") @db.Timestamptz
@@ -264,9 +248,8 @@ model AuthRateLimit {
 
 model OnboardingRequest {
   id                    String    @id @default(uuid())
-  tokenId               String?   @unique @map("token_id") // 旧 Token 申请兼容；新申请不预置凭据
-  csrPem                String?   @map("csr_pem") @db.Text
-  publicKeyFingerprint  String?   @map("public_key_fingerprint")
+  csrPem                String    @map("csr_pem") @db.Text
+  publicKeyFingerprint  String    @map("public_key_fingerprint")
   serialNumber          String    @map("serial_number")
   submittedBy           String    @map("submitted_by")
   model                 String
@@ -283,7 +266,6 @@ model OnboardingRequest {
   version               Int       @default(1) // 乐观锁（If-Match，BE-ONB-02）
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
-  token           OnboardingToken?           @relation(fields: [tokenId], references: [id])
   provisioningJob OnboardingProvisioningJob?
   proofNonces     OnboardingProofNonce[]
   // 部分唯一索引（同序列号仅一条 PENDING）见 migration.sql 自定义约束

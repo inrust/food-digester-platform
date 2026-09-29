@@ -3,17 +3,10 @@
  */
 export { OnboardingApiError, ONBOARDING_API_ERROR_HTTP_STATUS } from './errors.js';
 export type { OnboardingApiErrorCode } from './errors.js';
-export { parseOnboardingRequestBody, serialNumberOfBody } from './dto.js';
+export { parseOnboardingRequestBody } from './dto.js';
 export type { OnboardingRequestBody } from './dto.js';
-export {
-  createOnboardingRequest,
-  findOnboardingRequestByTokenId,
-  findPendingOnboardingRequest,
-  isUniqueViolation,
-} from './repository.js';
-export type { CreateOnboardingRequestData, OnboardingRequestRecord } from './repository.js';
-export { submitOnboardingRequest } from './service.js';
-export type { OnboardingRequestResult, SubmitOnboardingRequestOptions } from './service.js';
+export { findPendingOnboardingRequest, isUniqueViolation } from './repository.js';
+export type { OnboardingRequestRecord } from './repository.js';
 export { createOnboardingRequestHandler } from './handler.js';
 export type { OnboardingHttpRequest, OnboardingHttpResponse, OnboardingRequestHandlerDeps } from './handler.js';
 export { createOnboardingStatusHandler } from './status-handler.js';

@@ -12,14 +12,14 @@
 | 并发控制 | `If-Match` 乐观锁：`onboarding_requests.version`（本任务新增列与 migration）；条件更新 `(id, status='PENDING', version)` 保证并发/重复审批最多一个成功 |
 | 生命周期 | DOM-01：approve → 设备 PendingOnboarding → OnboardingApproved；reject → Rejected（强制原因）；状态历史落库 |
 | 审计 | DOM-03 `audited()`：业务写入 + SUCCESS 审计同事务；失败独立记 FAILURE；前后状态入审计，token 类字段自动脱敏 |
-| 功能边界 | approve 在审批事务内创建持久化 Provisioning Job，由 BE-ONB-03 Worker 异步消费；不返回私钥，响应 DTO 不含 tokenId |
+| 功能边界 | approve 在审批事务内创建持久化 Provisioning Job，由 BE-ONB-03 Worker 异步消费；不返回私钥，响应 DTO 不含 CSR 原文 |
 
 ## 2. 模块组成
 
 | 模块 | 内容 |
 |---|---|
 | `errors.ts` | `AdminOnboardingError`：VALIDATION_FAILED(400)/NOT_FOUND(404)/CONFLICT(409)/VERSION_CONFLICT(409)/INTERNAL_ERROR(500)，与 CT-05 目录一致（parity 测试强制） |
-| `repository.ts` | 键集游标分页列表；状态过滤封闭为 PENDING/APPROVED/REJECTED/TIMED_OUT；`reviewOnboardingRequestWithVersion` 条件更新；`toDto` 序列化（不含 tokenId） |
+| `repository.ts` | 键集游标分页列表；状态过滤封闭为 PENDING/APPROVED/REJECTED/TIMED_OUT；`reviewOnboardingRequestWithVersion` 条件更新；`toDto` 序列化（不含 CSR 原文） |
 | `service.ts` | 审批链：reject 强制原因 → 事务内申请存在 → 设备资料一致性校验 → DOM-01 迁移 → 条件更新 → 设备状态/历史落库；approve 同事务创建 Provisioning Job |
 | `handler.ts` | 框架无关 Handler：`withAuthorization` 权限门禁、If-Match 解析（语义同 CT-05 `parseIfMatch`）、CT-05 响应形态、错误映射（AuthError/AdminOnboardingError/DB 游标错误 → 400，其余 500 通用消息） |
 
@@ -33,7 +33,7 @@
 | 并发审批只有一个成功 | 同版本 approve+reject 并发 → 恰一个 200、一个 409；version 仅 +1；SUCCESS 审计仅一条 | ✅ |
 | If-Match 防重复审批 | 缺 Header/非法 → 400；版本不符 → 409 VERSION_CONFLICT；重复审批 → 409 CONFLICT | ✅ |
 | Rejected 原因可查询 | reject 后详情与列表（status=REJECTED）均返回 rejectReason | ✅ |
-| 审计含前后状态且不含 Token | audit_logs：before `{status:PENDING,version:1}` / after `{status:REJECTED,version:2,rejectReason}`；actorRole=PlatformSuperAdmin；全文无 tokenId/tokenHash，token 字段名被脱敏 | ✅ |
+| 审计含前后状态且不含 CSR 私钥材料 | audit_logs：before `{status:PENDING,version:1}` / after `{status:REJECTED,version:2,rejectReason}`；actorRole=PlatformSuperAdmin；全文无 CSR 正文或私钥材料 | ✅ |
 | 审批校验设备资料 | 申请与库存不一致 → 409 CONFLICT，申请保持 PENDING；失败记 FAILURE 审计不伪造成功 | ✅ |
 | approve 不返回私钥 | 响应体扫描无 privateKey/certificatePem；审批事务只写持久化 Provisioning Job | ✅ |
 | 管理状态契约 | 非法 status → 400；TIMED_OUT 可经列表/详情查询且 OpenAPI 引用 DEC-017 | ✅ |

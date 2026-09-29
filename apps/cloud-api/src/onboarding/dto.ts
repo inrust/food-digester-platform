@@ -54,13 +54,6 @@ function parseManufactureDate(value: unknown, now: Date): Date {
   return date;
 }
 
-/** 从请求体提取序列号（供认证 Guard 绑定校验）；非对象/缺失返回 undefined。 */
-export function serialNumberOfBody(body: unknown): string | undefined {
-  if (body === null || typeof body !== 'object') return undefined;
-  const value = (body as Record<string, unknown>).serialNumber;
-  return typeof value === 'string' ? value : undefined;
-}
-
 /** 校验并解析请求体；非法输入抛 VALIDATION_FAILED（400）。 */
 export function parseOnboardingRequestBody(raw: unknown, now: Date = new Date()): OnboardingRequestBody {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {

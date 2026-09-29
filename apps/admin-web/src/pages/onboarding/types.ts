@@ -1,6 +1,6 @@
 /**
  * FE-04 Onboarding 审批数据类型：镜像 contracts/rest/admin-onboarding-api.json（BE-ONB-02）。
- * DTO 不含 tokenId/privateKey 等敏感字段（契约显式排除）。
+ * DTO 不含 CSR 原文/privateKey 等敏感字段（契约显式排除）。
  */
 
 export type OnboardingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'TIMED_OUT';

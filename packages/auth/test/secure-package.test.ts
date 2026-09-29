@@ -5,7 +5,7 @@
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { PrismaPGlite } from 'pglite-prisma-adapter';
-import { readFileSync } from 'node:fs';
+import { readAllMigrationSql } from '../../database/test/helpers.js';
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import { PrismaClient } from '@fdp/database';
@@ -16,15 +16,9 @@ import {
   SecurePackageService,
 } from '../src/index.js';
 import type { ClaimProof } from '../src/index.js';
-import type { OnboardingAuthContext } from '../src/onboarding/verifier.js';
 import type { DeviceAuthContext } from '../src/device/verifier.js';
 
-const MIGRATION_SQL = [
-  '../../database/prisma/migrations/20260826120000_init/migration.sql',
-  '../../database/prisma/migrations/20260905210000_certificate_recovery_state/migration.sql',
-]
-  .map((path) => readFileSync(new URL(path, import.meta.url), 'utf8'))
-  .join('\n');
+const MIGRATION_SQL = readAllMigrationSql();
 
 const NOW = new Date('2026-08-27T00:00:00Z');
 const RETENTION_SECONDS = CERTIFICATE_PACKAGE_RETENTION_SECONDS;
@@ -46,13 +40,9 @@ let pg: PGlite;
 let prisma: InstanceType<typeof PrismaClient>;
 let service: SecurePackageService;
 
-function onboardingProof(serialNumber: string): ClaimProof {
-  const context: OnboardingAuthContext = {
-    tokenId: 'token-1',
-    serialNumber,
-    tokenFingerprint: 'fp0123456789abcd',
-  };
-  return { kind: 'onboardingToken', context };
+const requestIds = new Map<string, string>();
+function onboardingProof(serialNumber: string, requestForSerial = serialNumber): ClaimProof {
+  return { kind: 'onboardingCsr', context: { requestId: requestIds.get(requestForSerial)!, serialNumber } };
 }
 
 function deviceCertProof(deviceId: string): ClaimProof {
@@ -83,6 +73,20 @@ async function insertDeviceWithCertificate(
       lifecycleStatus: 'Onboarded',
     },
   });
+  const request = await prisma.onboardingRequest.create({
+    data: {
+      serialNumber,
+      submittedBy: `DEVICE:${serialNumber}`,
+      model: 'BNX-100',
+      hardwareVersion: 'HW1.0',
+      manufacturer: 'Hiddenjoy',
+      manufactureDate: new Date('2026-01-01'),
+      status: 'APPROVED',
+      csrPem: 'TEST_CSR',
+      publicKeyFingerprint: 'a'.repeat(64),
+    },
+  });
+  requestIds.set(serialNumber, request.id);
   await prisma.deviceCertificate.create({
     data: {
       id: certificateId,
@@ -173,7 +177,7 @@ describe('配置与存储', () => {
 });
 
 describe('一次性领取', () => {
-  test('Onboarding Token 资格 → 预留后保留密文，响应确认后销毁', async () => {
+  test('Onboarding CSR 资格 → 预留后保留密文，响应确认后销毁', async () => {
     await insertDeviceWithCertificate('dev-sec-2', 'SN-SEC-2', 'cert-sec-2');
     await service.storePackage('cert-sec-2', PACKAGE_PLAINTEXT);
     const payload = await service.preparePackageDelivery('cert-sec-2', onboardingProof('SN-SEC-2'));
@@ -210,7 +214,7 @@ describe('一次性领取', () => {
     await insertDeviceWithCertificate('dev-sec-4', 'SN-SEC-4', 'cert-sec-4');
     await service.storePackage('cert-sec-4', PACKAGE_PLAINTEXT);
     await expectSecurePackageError(
-      service.preparePackageDelivery('cert-sec-4', onboardingProof('SN-OTHER')),
+      service.preparePackageDelivery('cert-sec-4', onboardingProof('SN-OTHER', 'SN-SEC-4')),
       'FORBIDDEN',
       403,
     );

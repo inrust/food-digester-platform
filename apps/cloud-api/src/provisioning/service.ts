@@ -6,12 +6,12 @@
  * 2. 幂等短路：已有带证书包的 PENDING_CLAIM 证书记录 → 直接返回（重试安全）；
  * 3. IoT：ensureThing → 项目 CA 签发并注册 → AUTH-04 最小权限 Policy → 附加 Policy/Thing；
  * 4. DB：device_certificates 落库（公钥证书可保存，私钥绝不落库）；
- * 5. SEC-01：证书包（certificatePem + privateKey）立即信封加密短期存储（一次性领取）。
+ * 5. SEC-01：仅含公钥证书的领取包短期存储（一次性领取）。
  *
  * 部分失败重试语义（技术对接要求）：
  * - Thing/Policy 按名幂等，attach 幂等；
  * - 项目 CA 证书注册成功但后续失败：重试产生新证书，旧 PENDING_CLAIM 记录
- *   （无私钥包可用）按 DEC-003 丢失处置标记 REVOKED，业务 Device 不重复创建；
+ *   （无证书包可用）按 DEC-003 丢失处置标记 REVOKED，业务 Device 不重复创建；
  * - 内部 Provisioning 进度不暴露为外部状态（Status API 只映射 PENDING/REJECTED/APPROVED）。
  */
 import type { DbClient } from '@fdp/database';
@@ -57,7 +57,6 @@ export interface ProvisioningAttemptContext {
 /** 证书包明文负载（仅内存形态；落库前由 SEC-01 信封加密）。 */
 export interface CertificatePackagePayload {
   readonly certificatePem: string;
-  readonly privateKey?: string;
 }
 
 interface DeviceRow {
@@ -438,6 +437,7 @@ export class ProvisioningService {
   ): Promise<ProvisioningResult> {
     const devices = (this.db as unknown as Record<string, unknown>).device as DeviceDelegate;
     const certificates = (this.db as unknown as Record<string, unknown>).deviceCertificate as CertificateDelegate;
+    if (!request.csrPem) throw new ProvisioningError('申请缺少 CSR，禁止签发设备证书');
 
     const device = await devices.findFirst({ where: { serialNumber: request.serialNumber } });
     if (!device) throw new ProvisioningError(`设备库存不存在: ${request.serialNumber}`);
@@ -467,19 +467,16 @@ export class ProvisioningService {
     }
 
     await this.deps.iot.ensureThing(device.id);
-    const cert = await this.deps.iot.createKeysAndCertificate(request.csrPem ?? undefined);
+    const cert = await this.deps.iot.createKeysAndCertificate(request.csrPem);
     const now = this.now();
     try {
       await attempt?.onCertificateIssued?.(cert.certificateId);
-      if (request.csrPem && cert.privateKey) throw new ProvisioningError('CSR 签发不得返回设备私钥');
-      if (!request.csrPem && !cert.privateKey) throw new ProvisioningError('旧版签发缺少私钥');
-      if (request.csrPem) {
-        const expected = inspectCsr(request.csrPem).fingerprint;
-        const actual = createHash('sha256')
-          .update(new X509Certificate(cert.certificatePem).publicKey.export({ type: 'spki', format: 'der' }))
-          .digest('hex');
-        if (actual !== expected) throw new ProvisioningError('签发证书公钥与申请 CSR 不匹配');
-      }
+      if (cert.privateKey) throw new ProvisioningError('CSR 签发不得返回设备私钥');
+      const expected = inspectCsr(request.csrPem).fingerprint;
+      const actual = createHash('sha256')
+        .update(new X509Certificate(cert.certificatePem).publicKey.export({ type: 'spki', format: 'der' }))
+        .digest('hex');
+      if (actual !== expected) throw new ProvisioningError('签发证书公钥与申请 CSR 不匹配');
       const policy = buildDevicePolicy({
         region: this.deps.config.region,
         accountId: this.deps.config.accountId,
@@ -502,11 +499,7 @@ export class ProvisioningService {
       await this.deps.iot.attachPolicy(policy.policyName, cert.certificateArn);
       await this.deps.iot.attachThingPrincipal(device.id, cert.certificateArn);
 
-      // AWS 返回私钥后立即信封加密存储（明文仅内存经过；SEC-01 自记 CERT_PACKAGE_STORE 审计）
-      const payload: CertificatePackagePayload = {
-        certificatePem: cert.certificatePem,
-        ...(cert.privateKey ? { privateKey: cert.privateKey } : {}),
-      };
+      const payload: CertificatePackagePayload = { certificatePem: cert.certificatePem };
       const { expiresAt } = await this.securePackage.storePackage(
         cert.certificateId,
         Buffer.from(JSON.stringify(payload), 'utf8'),
@@ -586,12 +579,9 @@ export class ProvisioningService {
 
 /** 解析证书包明文负载（Status API 领取后使用）。 */
 export function parseCertificatePackage(payload: Uint8Array): CertificatePackagePayload {
-  const parsed = JSON.parse(Buffer.from(payload).toString('utf8')) as Partial<CertificatePackagePayload>;
-  if (
-    typeof parsed.certificatePem !== 'string' ||
-    (parsed.privateKey !== undefined && typeof parsed.privateKey !== 'string')
-  ) {
+  const parsed = JSON.parse(Buffer.from(payload).toString('utf8')) as Record<string, unknown>;
+  if (typeof parsed.certificatePem !== 'string' || parsed.privateKey !== undefined) {
     throw new ProvisioningError('证书包负载结构非法');
   }
-  return { certificatePem: parsed.certificatePem, ...(parsed.privateKey ? { privateKey: parsed.privateKey } : {}) };
+  return { certificatePem: parsed.certificatePem };
 }

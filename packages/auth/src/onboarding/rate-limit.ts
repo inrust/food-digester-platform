@@ -1,7 +1,7 @@
 /**
  * AUTH-02 限频保护（固定窗口）。
  *
- * - 键维度默认 Token 指纹，可覆盖为 IP 等（实施方案 8.2「限制每个 Token/IP 的调用频率」）；
+ * - 由调用方按来源 IP、序列号和申请 ID 指定键维度；
  * - 存储抽象为 RateLimitStore：生产默认使用 PostgreSQL 原子 UPSERT，测试可使用进程内实现；
  * - 超限抛 AuthError('RATE_LIMITED') → 429（CT-05）。
  */

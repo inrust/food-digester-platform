@@ -5,7 +5,7 @@
  * - 审批采用条件更新 (id, status='PENDING', version=If-Match) + 版本自增：
  *   并发/重复审批最多一个成功，败方按当前状态区分 CONFLICT（已审批）与
  *   VERSION_CONFLICT（版本不符）；
- * - 响应序列化永不包含 tokenId（Token 关联仅内部使用）。
+ * - 响应序列化不包含 CSR 原文，只展示公钥指纹。
  */
 import type { DbClient } from '@fdp/database';
 import { decodeKeysetCursor, encodeKeysetCursor, normalizeLimit } from '@fdp/database';
@@ -36,7 +36,7 @@ export interface AdminOnboardingRequestRecord {
 export type CertificateProvisioningStatus =
   'NOT_STARTED' | 'QUEUED' | 'PROCESSING' | 'RETRY' | 'COMPLETED' | 'FAILED' | 'NOT_APPLICABLE';
 
-/** 对外 DTO：不含 tokenId 与任何 Token 关联字段。 */
+/** 对外 DTO：不含 CSR 原文与设备私钥。 */
 export interface AdminOnboardingRequestDto {
   readonly requestId: string;
   readonly serialNumber: string;

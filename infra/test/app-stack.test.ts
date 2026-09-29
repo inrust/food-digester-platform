@@ -453,7 +453,7 @@ describe('验收：三类 API 认证入口分离', () => {
     assert.isFalse(admin.has('NONE'), 'Admin 入口不允许未认证方法');
   });
 
-  test('Onboarding Token 入口使用独立生产 Lambda，不经过管理 API Lambda', () => {
+  test('Onboarding 入口使用独立生产 Lambda，不经过管理 API Lambda', () => {
     const names = apiNameByLogicalId();
     const methods = Object.values(resourcesOfType(template, 'AWS::ApiGateway::Method')).filter(
       (method) => names.get(method.Properties.RestApiId?.Ref as string) === 'fdp-test-onboarding-api',

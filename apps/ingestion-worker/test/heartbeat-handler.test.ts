@@ -87,16 +87,10 @@ async function plantDevice(
   });
   if (options.withPackage) await securePackage.storePackage(certificateId, Buffer.from('{}'));
   if ((options.lifecycleStatus ?? 'Active') === 'OnboardingApproved') {
-    const token = await prisma.onboardingToken.create({
-      data: {
-        tokenHash: `token-heartbeat-${seqCounter}`,
-        serialNumber: `SN-HB-${seqCounter}`,
-        expiresAt: new Date('2027-01-01T00:00:00Z'),
-      },
-    });
     await prisma.onboardingRequest.create({
       data: {
-        tokenId: token.id,
+        csrPem: 'TEST_CSR',
+        publicKeyFingerprint: 'a'.repeat(64),
         serialNumber: `SN-HB-${seqCounter}`,
         submittedBy: `DEVICE:SN-HB-${seqCounter}`,
         model: 'BNX-100',

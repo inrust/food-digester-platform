@@ -7,7 +7,7 @@
  *   由组合根注入；本服务强制 maxClaims=1）；
  * - 两阶段交付：preparePackageDelivery 预留并解密但保留密文；HTTP 适配层确认响应提交后
  *   调用 confirmPackageDelivery 销毁。预留后未确认的重试必须撤证重签；
- * - 领取资格：仅对应 Onboarding Token（序列号绑定）或旧设备证书（deviceId 绑定）；
+ * - 领取资格：已验证的 Onboarding CSR 私钥证明或旧设备证书（deviceId 绑定）；
  * - 销毁触发：领取成功自动销毁；新证书首个合法 Heartbeat 后由 BE-ONB-04 调用 destroyPackage；
  * - 审计：store/prepare/confirm/uncertain-revoke/destroy 写 audit_logs；
  *   所有审计负载只含指纹/ID，绝不含明文（DOM-03 脱敏器兜底）。
@@ -19,13 +19,11 @@ import type { DbClient } from '@fdp/database';
 import type { DataKeyProvider } from '@fdp/aws-clients';
 import { getMaxClaims, getRetentionSeconds } from '@fdp/contracts/security/certificate-package-policy.js';
 import type { DeviceAuthContext } from '../device/verifier.js';
-import type { OnboardingAuthContext } from '../onboarding/verifier.js';
 import { extractEncryptedKey, packEnvelope, unpackEnvelope } from './envelope.js';
 import { SecurePackageError } from './errors.js';
 
 /** 领取资格证明：调用方必须先完成 AUTH-02/AUTH-03 认证。 */
 export type ClaimProof =
-  | { readonly kind: 'onboardingToken'; readonly context: OnboardingAuthContext }
   | { readonly kind: 'onboardingCsr'; readonly context: { readonly requestId: string; readonly serialNumber: string } }
   | { readonly kind: 'deviceCertificate'; readonly context: DeviceAuthContext };
 

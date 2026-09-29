@@ -1,4 +1,5 @@
 # AWS 域名与证书架构评估
+> **2026-09-29 实施变更**：本文保留原始方案/来源记录；首次接入已统一改为无 Token 的 CSR 申请、管理员线下核验审批、CSR 私钥签名轮询及只下发公钥证书。本文关于预置 Onboarding Token、`onboarding_tokens` 表或首次下发私钥的描述不再是实施依据；以 [现行 Onboarding API](api/onboard-api.bio-nexa.com.md) 与 [可执行 OpenAPI](../contracts/rest/device-onboarding-api.json) 为准。
 
 评估日期：2026-09-15。性质：架构建议，未执行 DNS、证书申请或 AWS 部署。
 

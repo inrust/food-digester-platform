@@ -134,12 +134,10 @@ async function plantApprovedOnboardingDevice() {
     },
   });
   await securePackage.storePackage(certificateId, Buffer.from('{"privateKey":"test-only"}'));
-  const token = await prisma.onboardingToken.create({
-    data: { tokenHash: `token-ing-onboarding-${seq}`, serialNumber, expiresAt: new Date('2027-12-31T00:00:00Z') },
-  });
   await prisma.onboardingRequest.create({
     data: {
-      tokenId: token.id,
+      csrPem: 'TEST_CSR',
+      publicKeyFingerprint: 'a'.repeat(64),
       serialNumber,
       submittedBy: `DEVICE:${serialNumber}`,
       model: 'BNX-100',

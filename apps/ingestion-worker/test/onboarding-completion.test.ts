@@ -82,16 +82,10 @@ async function plantApprovedDevice(
       Buffer.from(JSON.stringify({ certificatePem: 'p', privateKey: 'k' })),
     );
   }
-  const token = await prisma.onboardingToken.create({
-    data: {
-      tokenHash: `token-hash-${deviceId}`,
-      serialNumber,
-      expiresAt: new Date('2027-01-01T00:00:00Z'),
-    },
-  });
   const request = await prisma.onboardingRequest.create({
     data: {
-      tokenId: token.id,
+      csrPem: 'TEST_CSR',
+      publicKeyFingerprint: 'a'.repeat(64),
       serialNumber,
       submittedBy: `DEVICE:${serialNumber}`,
       model: 'BNX-100',

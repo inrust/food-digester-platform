@@ -72,7 +72,7 @@ describe('无预置 Token 的 CSR Onboarding', () => {
     const conflict = await request({ headers: {}, body: { ...body, csrPem: other }, requestId: 'api-3' });
     expect(conflict.status).toBe(409);
     const stored = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: requestId } });
-    expect(stored.tokenId).toBeNull();
+    expect(stored.csrPem).toBe(csrPem);
     expect(stored.publicKeyFingerprint).toMatch(/^[0-9a-f]{64}$/);
 
     const securePackage = new SecurePackageService({
@@ -92,6 +92,19 @@ describe('无预置 Token 的 CSR Onboarding', () => {
         convergeOnboardingTimeout: async () => {},
       },
     });
+    expect((await request({ headers: { AUTHORIZATION: 'Bearer obsolete' }, body, requestId: 'api-old' })).status).toBe(
+      400,
+    );
+    expect(
+      (await status({ headers: { AUTHORIZATION: 'Bearer obsolete' }, query: { requestId }, requestId: 'api-old' }))
+        .status,
+    ).toBe(401);
+    expect(
+      (await request({ headers: {}, body: { ...body, csrPem: 'invalid' }, requestId: 'api-invalid' })).status,
+    ).toBe(400);
+    expect(
+      (await request({ headers: {}, body: { ...body, csrPem: undefined }, requestId: 'api-missing-csr' })).status,
+    ).toBe(400);
     const headers = signedHeaders(requestId, randomBytes(24).toString('base64url'));
     const poll = { headers, query: { requestId }, requestId: 'api-4' };
     expect((await status(poll)).body).toEqual({ status: 'PENDING' });

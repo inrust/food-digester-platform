@@ -2,10 +2,10 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bio-Nexa CMP Device Onboarding API",
-    "version": "0.3.0",
-    "description": "设备首次接入：无预置 Token 的 CSR 申请、管理员线下核验审批、CSR 私钥签名轮询，云端仅签发并返回公钥证书。旧 Token 路径仅供迁移兼容。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-003@1.0.0", "DEC-017@1.0.0", "DEC-025@1.0.0"],
-    "x-decision-register-version": "1.34.0"
+    "version": "0.4.0",
+    "description": "设备首次接入统一使用无预置 Token 的 CSR 申请、管理员线下核验审批、CSR 私钥签名轮询；云端仅签发并返回公钥证书。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-003@1.0.0", "DEC-017@1.0.0", "DEC-025@1.1.0"],
+    "x-decision-register-version": "1.35.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [
@@ -34,7 +34,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CsrOnboardingRequestInput"
+                "$ref": "#/components/schemas/OnboardingRequestInput"
               }
             }
           }
@@ -62,16 +62,6 @@
           },
           "400": {
             "description": "字段非法（VALIDATION_FAILED）",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "旧版 Token 路径凭据无效（新版 CSR 路径无需 Token）",
             "content": {
               "application/json": {
                 "schema": {
@@ -128,7 +118,7 @@
         "tags": ["device"],
         "operationId": "getOnboardingStatus",
         "summary": "查询 Onboarding 状态（BE-ONB-03）",
-        "description": "使用 requestId 定位申请，以 CSR 对应设备私钥签署方法、路径、requestId、毫秒时间戳和随机数；时间窗五分钟，随机数不可重用。批准后仅下发公钥证书，不下发私钥。旧 Token 轮询仅迁移兼容。",
+        "description": "使用 requestId 定位申请，以 CSR 对应设备私钥签署方法、路径、requestId、毫秒时间戳和随机数；时间窗五分钟，随机数不可重用。批准后仅下发公钥证书，不下发私钥。",
         "security": [],
         "responses": {
           "200": {
@@ -245,47 +235,7 @@
     }
   },
   "components": {
-    "securitySchemes": {
-      "OnboardingToken": {
-        "type": "http",
-        "scheme": "bearer",
-        "description": "AUTH-02 Onboarding Token（Authorization: Bearer fdp_onb_...）；一次一机、与库存序列号绑定，服务端只存 Hash"
-      }
-    },
     "schemas": {
-      "OnboardingRequestInput": {
-        "type": "object",
-        "required": ["serialNumber", "model", "hardwareVersion", "manufacturer", "manufactureDate"],
-        "additionalProperties": false,
-        "properties": {
-          "serialNumber": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9-]{1,64}$",
-            "description": "设备印刷序列号；管理员依据线下制度核对实物与申请"
-          },
-          "model": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64
-          },
-          "hardwareVersion": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 32
-          },
-          "manufacturer": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128
-          },
-          "manufactureDate": {
-            "type": "string",
-            "format": "date",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-            "description": "生产日期（UTC，YYYY-MM-DD），不得晚于当前日期"
-          }
-        }
-      },
       "OnboardingRequestResult": {
         "type": "object",
         "required": ["requestId", "status"],
@@ -332,16 +282,11 @@
         "type": "object",
         "required": ["certificatePem"],
         "additionalProperties": false,
-        "description": "新 CSR 流程仅返回公钥证书；旧 Token 流程的 privateKey 为迁移兼容字段",
+        "description": "仅返回公钥证书；设备私钥从不上传或下发。",
         "properties": {
           "certificatePem": {
             "type": "string",
             "minLength": 1
-          },
-          "privateKey": {
-            "type": "string",
-            "minLength": 1,
-            "deprecated": true
           }
         }
       },
@@ -405,7 +350,7 @@
           }
         ]
       },
-      "CsrOnboardingRequestInput": {
+      "OnboardingRequestInput": {
         "type": "object",
         "required": ["serialNumber", "model", "hardwareVersion", "manufacturer", "manufactureDate", "csrPem"],
         "additionalProperties": false,

@@ -78,7 +78,7 @@ pnpm --filter @fdp/infra exec cdk bootstrap \
 
 ### 4. 首次部署测试环境
 
-当前 Stack 强制生产环境配置 Device API mTLS。P1 Onboarding API 本身使用一次性 Token，不依赖 Device API mTLS，因此首次实网验证可使用明确受限的 `test` 环境：
+当前 Stack 强制生产环境配置 Device API mTLS。P1 Onboarding API 使用 CSR 申请和私钥签名轮询，不依赖 Device API mTLS，因此首次实网验证可使用明确受限的 `test` 环境：
 
 使用受控包装脚本执行 synth/diff/deploy。脚本会先运行全工作区 `pnpm build`；任一依赖构建失败都会在 CDK bundling 前终止，避免把陈旧的 `packages/*/dist` 打进 Lambda：
 
@@ -128,13 +128,10 @@ CodeBuild 支持加入 VPC并访问私有 RDS。[CodeBuild VPC 支持](https://d
 
 ### 6. 准备验收数据
 
-仓库当前也没有公开的 Onboarding Token 签发 API，需要使用受控的一次性运维任务：
-
-1. 在数据库创建一台 `PendingOnboarding` 库存设备。
-2. 调用 `issueOnboardingToken` 生成一次性 Token。
-3. Token 仅在终端显示一次，不写 CloudWatch、审计或普通工单。
-4. 创建 Cognito `PlatformSuperAdmin` 测试用户。
-5. 使用支持 Cognito SRP 的测试客户端取得 JWT。
+1. 在数据库创建一台 `PendingOnboarding` 库存设备，记录印刷序列号。
+2. 在测试设备本地生成 RSA 2048 位以上私钥及 PKCS#10 CSR；私钥不得上传或写入验收日志。
+3. 创建 Cognito `PlatformSuperAdmin` 测试用户，使用支持 Cognito SRP 的测试客户端取得 JWT。
+4. 按线下管理制度核对实物、安装记录与 CSR 公钥指纹。
 
 ## P1 真实闭环验证
 
@@ -144,7 +141,6 @@ CodeBuild 支持加入 VPC并访问私有 RDS。[CodeBuild VPC 支持](https://d
 
 ```http
 POST <OnboardingApiUrl>/api/v1/device/onboarding/request
-Authorization: Bearer <ONBOARDING_TOKEN>
 Content-Type: application/json
 ```
 
@@ -157,7 +153,7 @@ Content-Type: application/json
 }
 ```
 
-不得出现 `data`、`meta`、`serialNumber` 或 `createdAt`。
+请求体包含库存 `serialNumber`、型号、硬件版本、制造商、生产日期和设备本地生成的 `csrPem`；响应不得出现 `data`、`meta`、`serialNumber` 或 `createdAt`。字段格式见 [设备对接 API](api/onboard-api.bio-nexa.com.md)。
 
 2. 使用 Cognito 管理员 JWT 审批：
 
@@ -183,23 +179,20 @@ If-Match: 1
 - Certificate 带 request/operation 标签
 - CloudWatch 无 KMS、Secrets Manager、RDS 或 IoT AccessDenied
 
-4. 不带任何 Query 调用 Status：
+4. 使用申请时的私钥签名轮询 Status（每次使用新随机数）：
 
 ```http
-GET <OnboardingApiUrl>/api/v1/device/onboarding/status
-Authorization: Bearer <ONBOARDING_TOKEN>
+GET <OnboardingApiUrl>/api/v1/device/onboarding/status?requestId=<REQUEST_ID>
+X-Onboarding-Timestamp: <UNIX_MILLISECONDS>
+X-Onboarding-Nonce: <BASE64URL_NONCE>
+X-Onboarding-Signature: <BASE64_RSA_SHA256_SIGNATURE>
 ```
 
-验证 APPROVED 响应的顶层及嵌套结构，并将私钥只保存在权限为 `0600` 的临时文件中，禁止写入验收日志。
+签名原文及时间窗按 [设备对接 API](api/onboard-api.bio-nexa.com.md) 执行。验证 `APPROVED` 包含 `certificatePem`，不包含 `privateKey`；设备核对证书公钥与本地私钥匹配。
 
-5. 验证领取后状态：
+5. 验证领取后 `package_ciphertext` 已销毁；重复签名随机数返回 401；CloudWatch、审计和数据库均不含设备私钥。
 
-- Token 已核销
-- `package_ciphertext` 已销毁
-- 第二次使用 Token 被拒绝
-- CloudWatch、审计和数据库均不含私钥明文
-
-6. 使用取得的 IoT Certificate/Private Key 连接 AWS IoT Core，发布合法 Heartbeat 到：
+6. 使用取得的 IoT Certificate 和设备本地私钥 连接 AWS IoT Core，发布合法 Heartbeat 到：
 
 ```text
 bnx/device/<deviceId>/heartbeat

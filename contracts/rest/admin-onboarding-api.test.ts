@@ -55,9 +55,9 @@ test('approve/reject 强制 If-Match；reject 强制 reason', () => {
   assert.deepEqual(rejectBody.required, ['reason']);
 });
 
-test('申请 DTO 不含 tokenId（Token 关联不暴露）', () => {
+test('申请 DTO 不含 CSR 原文', () => {
   const schema = doc.components.schemas.OnboardingRequest;
-  assert.ok(!('tokenId' in schema.properties));
+  assert.ok(!('csrPem' in schema.properties));
   assert.equal(schema.additionalProperties, false);
   assert.ok(schema.required.includes('rejectReason'), 'Rejected 原因必须可查询');
   assert.ok(schema.required.includes('version'), '详情必须携带 version 供 If-Match');

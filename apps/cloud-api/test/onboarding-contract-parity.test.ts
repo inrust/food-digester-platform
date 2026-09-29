@@ -30,7 +30,9 @@ test('OnboardingApiError 错误码与 CT-05 错误码目录一致', () => {
 
 test('DTO 校验字段与 OpenAPI 请求体契约一致', () => {
   const api = loadJson('device-onboarding-api.json');
-  const required = api.components.schemas.OnboardingRequestInput.required as string[];
+  const required = (api.components.schemas.OnboardingRequestInput.required as string[]).filter(
+    (field) => field !== 'csrPem',
+  );
   // 每个契约必填字段缺失时均为 VALIDATION_FAILED
   const full: Record<string, unknown> = {
     serialNumber: 'SN-PARITY',
@@ -60,6 +62,7 @@ test('DTO 校验字段与 OpenAPI 请求体契约一致', () => {
     unknownFieldCode = (err as { code?: string }).code;
   }
   assert.equal(api.components.schemas.OnboardingRequestInput.additionalProperties, false);
+  assert.ok(api.components.schemas.OnboardingRequestInput.required.includes('csrPem'));
   assert.equal(unknownFieldCode, 'VALIDATION_FAILED', '运行时必须实现 additionalProperties=false');
 });
 

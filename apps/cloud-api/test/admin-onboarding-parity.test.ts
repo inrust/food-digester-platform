@@ -25,7 +25,7 @@ test('AdminOnboardingError 错误码与 CT-05 错误码目录一致', () => {
   }
 });
 
-test('DTO 字段与 OpenAPI OnboardingRequest 契约一致且不含 tokenId', () => {
+test('DTO 字段与 OpenAPI OnboardingRequest 契约一致且不含 CSR 原文', () => {
   const api = loadJson('admin-onboarding-api.json');
   const schema = api.components.schemas.OnboardingRequest;
   const record: AdminOnboardingRequestRecord = {
@@ -46,7 +46,7 @@ test('DTO 字段与 OpenAPI OnboardingRequest 契约一致且不含 tokenId', ()
   };
   const dto = toDto(record);
   assert.deepEqual(Object.keys(dto).sort(), [...schema.required].sort());
-  assert.ok(!('tokenId' in dto));
+  assert.ok(!('csrPem' in dto));
   assert.equal(dto.manufactureDate, '2026-01-01');
   assert.equal(dto.reviewedAt, '2026-08-27T08:00:00.000Z');
   assert.equal(dto.certificateProvisioningStatus, 'NOT_APPLICABLE');

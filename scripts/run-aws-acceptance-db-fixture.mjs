@@ -41,12 +41,10 @@ function loadFixture() {
     }
     return fixture;
   }
-  const fields = ['deviceId', 'serialNumber', 'model', 'hardwareVersion', 'manufacturer', 'manufactureDate', 'tokenId'];
+  const fields = ['deviceId', 'serialNumber', 'model', 'hardwareVersion', 'manufacturer', 'manufactureDate'];
   if (fields.some((field) => typeof fixture[field] !== 'string' || fixture[field].length === 0)) {
     throw new FixtureFailure('fixture-shape');
   }
-  if (!/^[a-f0-9]{64}$/u.test(fixture.tokenHash ?? '')) throw new FixtureFailure('fixture-shape');
-  if (!Number.isFinite(Date.parse(fixture.tokenExpiresAt ?? ''))) throw new FixtureFailure('fixture-shape');
   return fixture;
 }
 
@@ -124,11 +122,6 @@ async function main() {
         fixture.manufactureDate,
       ],
     );
-    await client.query(
-      `INSERT INTO onboarding_tokens (id, token_hash, serial_number, expires_at)
-       VALUES ($1::uuid, $2, $3, $4::timestamptz)`,
-      [fixture.tokenId, fixture.tokenHash, fixture.serialNumber, fixture.tokenExpiresAt],
-    );
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK').catch(() => undefined);
@@ -144,7 +137,6 @@ async function main() {
       buildId: process.env.CODEBUILD_BUILD_ID,
       deviceId: fixture.deviceId,
       serialNumber: fixture.serialNumber,
-      tokenId: fixture.tokenId,
       status: 'SEEDED',
     }),
   );

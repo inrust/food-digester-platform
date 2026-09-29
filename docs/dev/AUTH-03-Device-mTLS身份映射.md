@@ -7,7 +7,7 @@
 | 项 | 说明 |
 |---|---|
 | 任务 | AUTH-03（P0 / 设备接口），依赖 DB-01、IAC-01（均已交付） |
-| 落点 | `@fdp/auth` 包 `device/` 子模块（第三种认证机制，与 Cognito/Onboarding Token 并列） |
+| 落点 | `@fdp/auth` 包 `device/` 子模块（与 Cognito 管理认证、首次接入 CSR 签名认证分离） |
 | 白名单 | DB-01 `device_certificates`（`fingerprint` 唯一索引、`status`、`notBefore/notAfter`、`deviceId` 绑定） |
 | 生命周期 | DOM-01：Retired 永久退役拒绝一切接入；Suspended 允许心跳/遥测（业务级限制归 BE 任务） |
 | 功能边界 | 不负责 TLS 握手（API Gateway mTLS 域名，IAC-01）与证书签发（BE-ONB-03） |

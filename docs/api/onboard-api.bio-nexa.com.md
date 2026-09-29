@@ -1,6 +1,6 @@
 # `onboard-api.bio-nexa.com` API
 
-Base URL：`https://onboard-api.bio-nexa.com`。本文以 [可执行 OpenAPI](../../contracts/rest/device-onboarding-api.json) 为准，描述设备只有印刷序列号、没有预置 Token 时的首次接入流程。仓库同时保留旧 Bearer Token 路径供既有设备迁移；新设备无需取得或写入 Token。
+Base URL：`https://onboard-api.bio-nexa.com`。本文以 [可执行 OpenAPI](../../contracts/rest/device-onboarding-api.json) 为准，描述设备只有印刷序列号、没有预置 Token 时的首次接入流程。设备无需取得、预置或写入平台 Token。
 
 ## 联调前提与职责
 
@@ -85,4 +85,4 @@ GET
 
 统一错误体为 `{ "error": { "code": "...", "message": "...", "requestId": "<网关请求ID>" } }`。状态接口签名错误、过期、重放或申请不可定位统一返回 `401 UNAUTHENTICATED`；限流返回 `429 RATE_LIMITED`。
 
-旧版 `Authorization: Bearer fdp_onb_...` 申请/轮询仅供迁移期兼容，仍按旧 Token 签发及证书包行为处理。**新设备不要同时携带 Bearer Token 和 CSR**，避免走入旧认证路径。旧版退出时间待设备方与运维方确认。
+首次接入接口不接受 `Authorization: Bearer`；申请时携带该请求头返回 `400 VALIDATION_FAILED`，状态轮询携带该请求头返回 `401 UNAUTHENTICATED`。

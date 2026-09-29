@@ -1,52 +1,11 @@
-# AUTH-02 Onboarding Token 认证
+# AUTH-02 Onboarding 首次接入校验（CSR）
 
-实现：[packages/auth/src/onboarding](../../packages/auth/src/onboarding)；测试：[onboarding-token.test.ts](../../packages/auth/test/onboarding-token.test.ts)、[rate-limit.test.ts](../../packages/auth/test/rate-limit.test.ts)、[onboarding-guard.test.ts](../../packages/auth/test/onboarding-guard.test.ts)（PGlite 真实 PostgreSQL + 实际 migration.sql）。
+> 文件名保留历史任务编号以维持既有文档链接；当前实现**没有 Onboarding Token**。
 
-## 1. 范围与事实源
+首次申请无预置凭据。设备生成 RSA 2048 位或更强密钥和自签名 PKCS#10 CSR，`POST /api/v1/device/onboarding/request` 校验 CSR 签名、库存序列号及设备状态。管理员按线下制度确认申请对应实物后审批。`GET /api/v1/device/onboarding/status` 用申请的 CSR 公钥验证设备对方法、路径、`requestId`、时间戳和随机数的签名，五分钟时间窗与数据库唯一随机数约束阻止重放。
 
-| 项 | 说明 |
-|---|---|
-| 任务 | AUTH-02（P0 / 设备接口），依赖 DB-01、CT-05（均已交付） |
-| 落点 | `@fdp/auth` 包 `onboarding/` 子模块（与 AUTH-01 Cognito 并列的第二种认证机制） |
-| Token 规则 | 实施方案 8.2：一次一机、可撤销、有有效期、只存 Hash、限制每 Token/IP 频率 |
-| 数据模型 | DB-01 `onboarding_tokens`（tokenHash 唯一、serialNumber、expiresAt/usedAt/revokedAt） |
-| 功能边界 | 不实现管理员审批（BE-ONB-02）和证书签发（BE-ONB-03）；请求幂等返回由 BE-ONB-01 落地 |
+`packages/auth/src/onboarding/rate-limit.ts` 提供共享 PostgreSQL 限频；`apps/cloud-api/src/onboarding/` 实现 CSR 和轮询签名校验。生产按来源 IP、序列号和申请 ID 限流。数据库只保留申请 CSR、公钥指纹和轮询随机数 Hash，不存在 `onboarding_tokens` 表。申请、签名和审批的可执行字段约束见 [Onboarding OpenAPI](../../contracts/rest/device-onboarding-api.json) 与 [设备对接文档](../api/onboard-api.bio-nexa.com.md)。
 
-## 2. 模块组成
+本地测试涵盖 CSR 格式和签名、同公钥幂等、换公钥冲突、轮询签名错误与重放。线下实物核验不能由接口签名代替；目标 AWS 与真机验收仍需独立执行。
 
-| 模块 | 内容 |
-|---|---|
-| `token.ts` | 明文生成（`fdp_onb_` + 32B base64url）、SHA-256 散列、16hex 指纹（日志/审计唯一允许形态） |
-| `repository.ts` | `issueOnboardingToken`（签发，校验设备库存序列号存在）、`findOnboardingTokenByHash`、`revokeOnboardingToken`（幂等）、`markOnboardingTokenUsed`（条件更新，并发安全） |
-| `verifier.ts` | `verifyOnboardingToken` 校验链：格式 → 散列查找 → 撤销 → 核销 → 过期 → 序列号绑定；全部凭证失败 401（不区分原因防探测），缺序列号 400 |
-| `rate-limit.ts` | 固定窗口限频：`RateLimitRule` + `RateLimitStore` 抽象；生产使用 PostgreSQL 原子递增与 TTL，测试可注入进程内实现；超限 429 `RATE_LIMITED` |
-| `guard.ts` | `withOnboardingAuth` 中间件：限频（默认按 Token 指纹，先于 DB 查询）→ 校验 → Handler 注入 `OnboardingAuthContext` |
-
-配套变更：`@fdp/auth` 的 `AuthErrorCode` 扩展 `RATE_LIMITED`(429)、`VALIDATION_FAILED`(400)；`@fdp/database` 导出 `PrismaClient` 值（测试/Worker 以适配器构造客户端）。
-
-## 3. 验收基准与证据
-
-| 验收基准 | 测试 | 结果 |
-|---|---|---|
-| 错误 Token 拒绝 | 未签发/畸形/非 Bearer → 401 | ✅ |
-| 过期 Token 拒绝 | `expiresAt` 过去 + 注入时钟 → 401 | ✅ |
-| 撤销 Token 拒绝 | revoke 后 verify → 401；重复撤销幂等 false | ✅ |
-| 跨序列号拒绝 | SN-BIND-A 的 Token 用于 SN-BIND-B → 401 | ✅ |
-| 过量请求拒绝 | 限频 2 次后第 3 次 → 429，且先于 DB 校验 | ✅ |
-| 数据库不出现明文 Token | 行序列化断言无明文，仅 `tokenHash` | ✅ |
-| 日志只记录指纹 | ctx 仅暴露 16hex 指纹，断言指纹 ≠ 明文 | ✅ |
-| 一次一机 | 签发校验库存序列号（不存在 → 400）；核销后 → 401；二次核销 false | ✅ |
-
-当前证据命令：`pnpm vitest run packages/auth/test`、`pnpm verify`。精确测试快照记录在 `docs/audit`，任务文档不固化易漂移计数。
-
-## 4. 对接说明（下游任务）
-
-- **BE-ONB-01**（request/status 端点）：`withOnboardingAuth({ client, tokenOf, serialNumberOf, rateLimiter }, handler)` 接线；重复提交幂等返回原 `requestId` 由 `onboarding_requests` 部分唯一索引实现（不在本任务）；
-- **BE-ONB-03/04**：响应提交后在同一数据库事务内执行证书包确认与 `markOnboardingTokenUsed`，任一条件写失败即整体回滚；
-- **管理员侧签发**：`issueOnboardingToken` 供制造/运营流程使用（当前无对外签发端点，属后续任务或运维流程）。
-
-## 5. 未决风险
-
-- 生产限频已使用 PostgreSQL 共享原子计数；容量增长后可在保持 `RateLimitStore` 接口不变的前提下迁移至 DynamoDB/ElastiCache；
-- Token 签发无对外端点（任务边界），试运营期由运维/制造流程在受控环境调用；
-- `usedAt` 核销依赖 HTTP 适配层正确触发 `onCommitted`；响应提交不确定时走撤证重签恢复链，禁止重新解密同一证书包。
+当前全仓证据命令：`pnpm openapi:bundle` 后执行 `pnpm verify`；真实设备和目标 AWS 验收另行留存回执。
