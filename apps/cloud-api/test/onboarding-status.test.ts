@@ -335,6 +335,7 @@ describe('GET /api/v1/device/onboarding/status', () => {
     await provision(requestId);
     const response = await statusHandler(statusReq(token, serial));
     const request = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: requestId } });
+    assert.ok(request.tokenId);
     const deviceId = (response.body as StatusPayload).deviceId;
     assert.ok(deviceId);
     const cert = await prisma.deviceCertificate.findFirstOrThrow({ where: { deviceId } });
@@ -352,6 +353,7 @@ describe('GET /api/v1/device/onboarding/status', () => {
     await provision(requestId);
     const response = await statusHandler(statusReq(token, serial));
     const request = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: requestId } });
+    assert.ok(request.tokenId);
     const deviceId = (response.body as StatusPayload).deviceId;
     assert.ok(deviceId);
     const cert = await prisma.deviceCertificate.findFirstOrThrow({ where: { deviceId } });

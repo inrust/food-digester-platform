@@ -22,6 +22,8 @@ import { CERTIFICATE_PACKAGE_RETENTION_SECONDS, certificateFingerprintFromPem, S
 import { onboardingDeadlineFrom } from '@fdp/contracts/lifecycle/onboarding-timeout-policy.js';
 import type { AdminOnboardingRequestRecord } from '../admin/onboarding/index.js';
 import type { IotProvisioningPort } from './iot-port.js';
+import { createHash, X509Certificate } from 'node:crypto';
+import { inspectCsr } from '../onboarding/csr-proof.js';
 
 export interface ProvisioningConfig {
   readonly region: string;
@@ -55,7 +57,7 @@ export interface ProvisioningAttemptContext {
 /** 证书包明文负载（仅内存形态；落库前由 SEC-01 信封加密）。 */
 export interface CertificatePackagePayload {
   readonly certificatePem: string;
-  readonly privateKey: string;
+  readonly privateKey?: string;
 }
 
 interface DeviceRow {
@@ -133,7 +135,7 @@ export class ProvisioningService {
 
   /** DEC-003 响应不确定恢复：云端撤证、销毁未确认包并重签。 */
   async recoverUnconfirmedDelivery(
-    request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'>,
+    request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'> & { readonly csrPem?: string | null },
     certificateId: string,
   ): Promise<ProvisioningResult> {
     await this.deps.iot.revokeCertificate(certificateId);
@@ -431,7 +433,7 @@ export class ProvisioningService {
   }
 
   async provision(
-    request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'>,
+    request: Pick<AdminOnboardingRequestRecord, 'id' | 'serialNumber'> & { readonly csrPem?: string | null },
     attempt?: ProvisioningAttemptContext,
   ): Promise<ProvisioningResult> {
     const devices = (this.db as unknown as Record<string, unknown>).device as DeviceDelegate;
@@ -465,10 +467,19 @@ export class ProvisioningService {
     }
 
     await this.deps.iot.ensureThing(device.id);
-    const cert = await this.deps.iot.createKeysAndCertificate();
+    const cert = await this.deps.iot.createKeysAndCertificate(request.csrPem ?? undefined);
     const now = this.now();
     try {
       await attempt?.onCertificateIssued?.(cert.certificateId);
+      if (request.csrPem && cert.privateKey) throw new ProvisioningError('CSR 签发不得返回设备私钥');
+      if (!request.csrPem && !cert.privateKey) throw new ProvisioningError('旧版签发缺少私钥');
+      if (request.csrPem) {
+        const expected = inspectCsr(request.csrPem).fingerprint;
+        const actual = createHash('sha256')
+          .update(new X509Certificate(cert.certificatePem).publicKey.export({ type: 'spki', format: 'der' }))
+          .digest('hex');
+        if (actual !== expected) throw new ProvisioningError('签发证书公钥与申请 CSR 不匹配');
+      }
       const policy = buildDevicePolicy({
         region: this.deps.config.region,
         accountId: this.deps.config.accountId,
@@ -492,7 +503,10 @@ export class ProvisioningService {
       await this.deps.iot.attachThingPrincipal(device.id, cert.certificateArn);
 
       // AWS 返回私钥后立即信封加密存储（明文仅内存经过；SEC-01 自记 CERT_PACKAGE_STORE 审计）
-      const payload: CertificatePackagePayload = { certificatePem: cert.certificatePem, privateKey: cert.privateKey };
+      const payload: CertificatePackagePayload = {
+        certificatePem: cert.certificatePem,
+        ...(cert.privateKey ? { privateKey: cert.privateKey } : {}),
+      };
       const { expiresAt } = await this.securePackage.storePackage(
         cert.certificateId,
         Buffer.from(JSON.stringify(payload), 'utf8'),
@@ -573,8 +587,11 @@ export class ProvisioningService {
 /** 解析证书包明文负载（Status API 领取后使用）。 */
 export function parseCertificatePackage(payload: Uint8Array): CertificatePackagePayload {
   const parsed = JSON.parse(Buffer.from(payload).toString('utf8')) as Partial<CertificatePackagePayload>;
-  if (typeof parsed.certificatePem !== 'string' || typeof parsed.privateKey !== 'string') {
+  if (
+    typeof parsed.certificatePem !== 'string' ||
+    (parsed.privateKey !== undefined && typeof parsed.privateKey !== 'string')
+  ) {
     throw new ProvisioningError('证书包负载结构非法');
   }
-  return { certificatePem: parsed.certificatePem, privateKey: parsed.privateKey };
+  return { certificatePem: parsed.certificatePem, ...(parsed.privateKey ? { privateKey: parsed.privateKey } : {}) };
 }

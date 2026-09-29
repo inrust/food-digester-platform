@@ -106,6 +106,12 @@ test('详情：设备资料与申请信息完整；REJECTED 显示拒绝原因',
   assert.equal(screen.getByTestId('detail-reject-reason').textContent, '资料不符');
 });
 
+test('CSR 申请详情展示公钥指纹供管理员线下核验', () => {
+  const fingerprint = 'a'.repeat(64);
+  renderPanel({ detail: { kind: 'ready', request: makeRequest({ publicKeyFingerprint: fingerprint }) } });
+  assert.equal(screen.getByTestId('detail-csr-fingerprint').textContent, fingerprint);
+});
+
 test('详情：TIMED_OUT 显示超时状态与原因且不可审批', () => {
   renderPanel({
     detail: {

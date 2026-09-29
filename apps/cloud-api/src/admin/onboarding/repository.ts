@@ -17,6 +17,8 @@ export type AdminOnboardingStatus = (typeof ADMIN_ONBOARDING_STATUSES)[number];
 export interface AdminOnboardingRequestRecord {
   readonly id: string;
   readonly serialNumber: string;
+  readonly csrPem?: string | null;
+  readonly publicKeyFingerprint?: string | null;
   readonly submittedBy: string;
   readonly model: string;
   readonly hardwareVersion: string;
@@ -38,6 +40,7 @@ export type CertificateProvisioningStatus =
 export interface AdminOnboardingRequestDto {
   readonly requestId: string;
   readonly serialNumber: string;
+  readonly publicKeyFingerprint?: string | null;
   readonly submittedBy: string;
   readonly model: string;
   readonly hardwareVersion: string;
@@ -56,6 +59,7 @@ export function toDto(record: AdminOnboardingRequestRecord): AdminOnboardingRequ
   return {
     requestId: record.id,
     serialNumber: record.serialNumber,
+    ...(record.publicKeyFingerprint ? { publicKeyFingerprint: record.publicKeyFingerprint } : {}),
     submittedBy: record.submittedBy,
     model: record.model,
     hardwareVersion: record.hardwareVersion,

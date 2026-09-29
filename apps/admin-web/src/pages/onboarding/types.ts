@@ -8,6 +8,7 @@ export type OnboardingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'TIMED_OUT'
 export interface OnboardingRequestView {
   readonly requestId: string;
   readonly serialNumber: string;
+  readonly publicKeyFingerprint?: string | null;
   readonly submittedBy: string;
   readonly model: string;
   readonly hardwareVersion: string;

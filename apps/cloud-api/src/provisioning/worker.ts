@@ -12,7 +12,12 @@ export interface ProvisioningJobRow {
   readonly maxAttempts: number;
   readonly issuedCertificateId: string | null;
   readonly lastError: string | null;
-  readonly request: { readonly id: string; readonly serialNumber: string; readonly status: string };
+  readonly request: {
+    readonly id: string;
+    readonly serialNumber: string;
+    readonly csrPem?: string | null;
+    readonly status: string;
+  };
 }
 
 interface ProvisioningJobDelegate {
@@ -26,7 +31,7 @@ interface OutboxDelegate {
 
 export interface ProvisioningExecutor {
   provision(
-    request: { readonly id: string; readonly serialNumber: string },
+    request: { readonly id: string; readonly serialNumber: string; readonly csrPem?: string | null },
     attempt: ProvisioningAttemptContext,
   ): Promise<ProvisioningResult>;
 }
@@ -78,7 +83,7 @@ export async function processOnboardingProvisioningJobs(
         { status: 'PROCESSING', lastAttemptAt: { lte: staleBefore } },
       ],
     },
-    include: { request: { select: { id: true, serialNumber: true, status: true } } },
+    include: { request: { select: { id: true, serialNumber: true, csrPem: true, status: true } } },
     orderBy: [{ nextAttemptAt: 'asc' }, { createdAt: 'asc' }],
     take: batchSize,
   });
@@ -144,7 +149,11 @@ export async function processOnboardingProvisioningJobs(
     const attemptNumber = job.attempts + (recoveringLease ? 0 : 1);
     try {
       const provisioned = await deps.provisioner.provision(
-        { id: job.request.id, serialNumber: job.request.serialNumber },
+        {
+          id: job.request.id,
+          serialNumber: job.request.serialNumber,
+          ...(job.request.csrPem ? { csrPem: job.request.csrPem } : {}),
+        },
         {
           operationId: job.operationId,
           priorIssuedCertificateId: job.issuedCertificateId,

@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-SET-01 业务设置与字典 API（Cognito 认证；读取 settings:read——PlatformSuperAdmin/Auditor；写入 settings:write——仅 PlatformSuperAdmin）。维护封闭 key 集四项业务设置。运行时状态显式返回：command.confirmation 由 BE-CMD-01 消费；alarm.thresholds 中的 CONSUMABLE_REMAINING_PERCENT 由 FE-18 消费并显示版本/回退来源；dictionary.displayNames、notification.business 仍为 STORED_ONLY。四类 value 由 business-settings-v1.schema.json 与共享校验器约束。PUT 必须携带当前 version，不匹配 → 409；未知顶层字段或非对象 body → 400。技术约束：不得经本 API 改写固定协议枚举、Topic、DEC-023 确认方式或 AWS 运维配置。功能边界：不管理 CloudWatch 告警、资源阈值或 Budget。错误响应继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["DEC-012@1.0.0", "DEC-023@1.0.0"],
-    "x-decision-register-version": "1.33.0"
+    "x-decision-register-version": "1.34.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

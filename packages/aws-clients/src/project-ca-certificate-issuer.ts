@@ -4,11 +4,11 @@ import { randomBytes, randomUUID } from 'node:crypto';
 
 export interface IssuedDeviceCertificate {
   readonly certificatePem: string;
-  readonly privateKey: string;
+  readonly privateKey?: string;
 }
 
 export interface DeviceCertificateIssuer {
-  issue(): Promise<IssuedDeviceCertificate>;
+  issue(csrPem?: string): Promise<IssuedDeviceCertificate>;
 }
 
 export interface ProjectCaCertificateIssuerConfig {
@@ -53,15 +53,27 @@ export function createProjectCaCertificateIssuer(config: ProjectCaCertificateIss
   };
 
   return {
-    async issue() {
+    async issue(csrPem?: string) {
       const ca = await loadCa();
       const caCertificate = forge.pki.certificateFromPem(ca.caCertificatePem);
       const caPrivateKey = forge.pki.privateKeyFromPem(ca.caPrivateKeyPem);
-      const keyPair = forge.pki.rsa.generateKeyPair({ bits: 2048, e: 0x10001 });
+      let publicKey: forge.pki.rsa.PublicKey;
+      let privateKey: string | undefined;
+      if (csrPem) {
+        if (csrPem.length > 8192) throw new Error('CSR too large');
+        const csr = forge.pki.certificationRequestFromPem(csrPem);
+        const key = csr.publicKey as forge.pki.rsa.PublicKey | null;
+        if (!csr.verify() || !key || key.n.bitLength() < 2048) throw new Error('Invalid CSR');
+        publicKey = key;
+      } else {
+        const keyPair = forge.pki.rsa.generateKeyPair({ bits: 2048, e: 0x10001 });
+        publicKey = keyPair.publicKey;
+        privateKey = forge.pki.privateKeyToPem(keyPair.privateKey);
+      }
       const certificate = forge.pki.createCertificate();
       const now = config.now?.() ?? new Date();
 
-      certificate.publicKey = keyPair.publicKey;
+      certificate.publicKey = publicKey;
       certificate.serialNumber = positiveSerialNumber();
       certificate.validity.notBefore = new Date(now.getTime() - 5 * 60 * 1000);
       certificate.validity.notAfter = new Date(now.getTime() + config.validitySeconds * 1000);
@@ -79,7 +91,7 @@ export function createProjectCaCertificateIssuer(config: ProjectCaCertificateIss
 
       return {
         certificatePem: forge.pki.certificateToPem(certificate),
-        privateKey: forge.pki.privateKeyToPem(keyPair.privateKey),
+        ...(privateKey ? { privateKey } : {}),
       };
     },
   };

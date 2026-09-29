@@ -1,62 +1,20 @@
 # `onboard-api.bio-nexa.com` API
 
-版本基线：2026-09-24。Base URL：`https://onboard-api.bio-nexa.com`。
+Base URL：`https://onboard-api.bio-nexa.com`。本文以 [可执行 OpenAPI](../../contracts/rest/device-onboarding-api.json) 为准，描述设备只有印刷序列号、没有预置 Token 时的首次接入流程。仓库同时保留旧 Bearer Token 路径供既有设备迁移；新设备无需取得或写入 Token。
 
-该入口只负责设备首次接入申请、审批状态轮询和一次性证书包领取。管理员审批使用 `api.bio-nexa.com`，不在本入口。接口实现对应 BE-ONB-01/03；首次合法 Heartbeat 完成接入和 24 小时超时收敛由后台流程处理。
+## 联调前提与职责
 
-## 首次申请前：Token 从哪里来
+设备方负责在设备本地生成并持久保存 **RSA 2048 位或更强的私钥**，生成 PKCS#10 PEM CSR，且私钥始终留在设备；设备还须能使用该私钥作 RSA-SHA256 签名、保存 `requestId` 和安装返回的证书。设备库存须预先有印刷序列号，处于 `PendingOnboarding`。管理员按照双方认可的线下管理制度核对实物、安装记录、申请时间和 CSR 公钥指纹后审批；**序列号与 CSR 本身不证明实物身份**。
 
-设备无法通过 `/onboarding/request` 自行取得 Token，因为此接口在创建申请前就要求 Token。制造或运维方必须先完成以下独立步骤：
+审批通过后，云端对已申请的 CSR 公钥签发证书并注册 AWS IoT Core。新流程仅下发 `certificatePem`，云端不生成或返回设备私钥。设备用证书连接 IoT Core、发送首个合法 Heartbeat 后才完成接入；审批通过不等于接入完成。证书包 24 小时有效，超时按既有撤证及 `REJECTED/ONBOARDING_TIMEOUT` 规则收敛。目标 AWS 与真实设备联调：**NOT RUN / NO RECEIPT**。
 
-1. 将设备序列号登记到云端设备库存，并确认设备处于可接入状态。
-2. 在受控的制造/运维执行环境中，为该序列号设置到期时间并调用 `issueOnboardingToken(client, { serialNumber, expiresAt })`。该函数先检查库存，再生成 `fdp_onb_` 加 43 位 base64url 字符的随机 Token；数据库仅保存 SHA-256 Hash、绑定序列号和有效期。明文仅在签发结果中出现一次。
-3. 通过事先约定的安全交付方式将明文 Token 交给对应设备：例如制造阶段写入设备受保护存储，或现场由授权人员通过受控配网流程注入。若选用 QR，需定义由谁展示、谁扫描以及如何防止旁观或重复领取；本仓库尚未实现这条交付链。
-4. 设备读取已交付的完整 Token，作为 `Authorization: Bearer <ONBOARDING_TOKEN>` 调用申请和状态接口。管理员审核发生在申请创建之后，与 Token 签发是两个步骤。
+## `POST /api/v1/device/onboarding/request`
 
-当前仓库**只有签发函数，没有供制造/运维人员使用的正式签发命令、管理页面或对外签发 API，也没有设备侧 Token 交付实现**。因此不能仅凭这两份 REST 文档直接开始真实设备首次接入。联调前需由双方明确签发责任人、有效期、安全交付方式和失效/补发流程，并在测试环境准备已登记设备及与之绑定的测试 Token。不要在聊天、普通工单、日志或会议纪要中传递明文 Token。
-
-## 认证、格式与安全要求
-
-- 所有请求使用 `Authorization: Bearer fdp_onb_...`。Token 一次一机，与库存序列号绑定；服务端只保存 Hash。
-- 下文的 `<ONBOARDING_TOKEN>` 是占位符，应替换为按上一节流程交付给该设备的完整明文 Token。同一 Token 用于提交申请和轮询状态，不需要管理员审批后再更换。
-- 请求和 JSON 响应使用 `Content-Type: application/json`。未知 JSON 字段会被拒绝。
-- 默认共享限频为每 Token 每分钟 30 次、每来源 IP 每分钟 60 次；超过限制返回 `429 RATE_LIMITED`。
-- Token 缺失、非法、过期、撤销、核销或与序列号不符统一返回 `401 UNAUTHENTICATED`，客户端不能依赖详细失败原因。
-- `GET status` 由 Token 隐式定位申请，不接受 `requestId` Query 参数。
-- `APPROVED` 中的 `privateKey` 只交付一次。设备不得记录到普通日志、Telemetry、崩溃报告或审计中，应立即写入受保护 Keystore。
-- 建议设备每 30 秒轮询状态，直至 `APPROVED` 或 `REJECTED`；遇到 `429` 应尊重限频并退避。
-
-通用错误体：
-
-```json
-{
-  "error": {
-    "code": "VALIDATION_FAILED",
-    "message": "Safe message for the client",
-    "requestId": "api-gateway-request-id"
-  }
-}
-```
-
-稳定错误码集合包括 `VALIDATION_FAILED`、`UNAUTHENTICATED`、`NOT_FOUND`、`CONFLICT`、`DEVICE_STATE_NOT_ALLOWED`、`RATE_LIMITED` 和 `INTERNAL_ERROR`。
-
-## 接口总览
-
-| Method | Path | 成功状态 | operationId |
-|---|---|---:|---|
-| POST | `/api/v1/device/onboarding/request` | 201；幂等重放 200 | `submitOnboardingRequest` |
-| GET | `/api/v1/device/onboarding/status` | 200 | `getOnboardingStatus` |
-
-## POST `/api/v1/device/onboarding/request`
-
-提交设备资料并创建 `PENDING` 申请。本接口不审批、不签发证书，也不产生 AWS IoT 资源。相同设备的重复或并发提交幂等返回原 `requestId`。
-
-### 请求
+无需 `Authorization` 请求头。请求体为 JSON，未知字段拒绝；CSR 上限 8192 字符，必须是签名有效且 RSA 公钥至少 2048 位的 PEM PKCS#10 请求。
 
 ```http
 POST /api/v1/device/onboarding/request HTTP/1.1
 Host: onboard-api.bio-nexa.com
-Authorization: Bearer <ONBOARDING_TOKEN>
 Content-Type: application/json
 ```
 
@@ -66,122 +24,65 @@ Content-Type: application/json
   "model": "BNX-100",
   "hardwareVersion": "1.0",
   "manufacturer": "Bio-Nexa",
-  "manufactureDate": "2026-07-01"
+  "manufactureDate": "2026-07-01",
+  "csrPem": "-----BEGIN CERTIFICATE REQUEST-----\n...\n-----END CERTIFICATE REQUEST-----"
 }
 ```
 
-| 字段 | 必填 | 约束 |
-|---|---:|---|
-| `serialNumber` | 是 | `^[A-Za-z0-9-]{1,64}$`；必须等于 Token 绑定的库存序列号 |
-| `model` | 是 | 1～64 字符 |
-| `hardwareVersion` | 是 | 1～32 字符 |
-| `manufacturer` | 是 | 1～128 字符 |
-| `manufactureDate` | 是 | `YYYY-MM-DD`，不得晚于当前日期 |
-
-### 成功响应
-
-首次创建返回 `201`，幂等重放返回 `200`，Body 相同：
+成功新建返回 `201`，同一序列号及相同公钥的 `PENDING` 重试返回 `200`：
 
 ```json
-{
-  "requestId": "REQ001",
-  "status": "PENDING"
-}
+{ "requestId": "9cb7774e-9f10-48df-8d01-364c24023bc5", "status": "PENDING" }
 ```
 
-### 响应状态
+同序列号已有**不同公钥**的待审核申请返回 `409 CONFLICT`，不得静默替换旧申请。库存不存在返回 `404 NOT_FOUND`，设备状态不允许返回 `409 DEVICE_STATE_NOT_ALLOWED`；字段或 CSR 无效返回 `400 VALIDATION_FAILED`；限流返回 `429 RATE_LIMITED`。管理员需拒绝可疑申请，不能仅凭正确序列号审批。
 
-| HTTP | 错误码/含义 |
-|---:|---|
-| 200 | 已存在 `PENDING` 申请，幂等返回原记录 |
-| 201 | 已创建申请 |
-| 400 | `VALIDATION_FAILED`：字段、格式或未知字段非法 |
-| 401 | `UNAUTHENTICATED`：Token 认证失败 |
-| 404 | `NOT_FOUND`：库存中无此序列号 |
-| 409 | `DEVICE_STATE_NOT_ALLOWED`：设备已经接入或生命周期不允许申请 |
-| 429 | `RATE_LIMITED` |
-| 500 | `INTERNAL_ERROR` |
+## `GET /api/v1/device/onboarding/status`
 
-## GET `/api/v1/device/onboarding/status`
-
-查询 Token 对应的唯一申请。内部 Provisioning 不作为外部状态暴露：申请已批准但证书包尚未就绪时仍返回 `PENDING`。
-
-### 请求
+设备使用上述 `requestId` 定位申请，用申请 CSR 对应的本地私钥签名每次轮询。`requestId` 只是定位符，不是凭据。建议约每 30 秒轮询，`429` 时退避。
 
 ```http
-GET /api/v1/device/onboarding/status HTTP/1.1
+GET /api/v1/device/onboarding/status?requestId=9cb7774e-9f10-48df-8d01-364c24023bc5 HTTP/1.1
 Host: onboard-api.bio-nexa.com
-Authorization: Bearer <ONBOARDING_TOKEN>
+X-Onboarding-Timestamp: 1780000000000
+X-Onboarding-Nonce: <本次新生成的至少16字节随机数的base64url编码>
+X-Onboarding-Signature: <Base64编码的RSA-SHA256签名>
 ```
 
-请求不得携带正文，也不需要 Query 参数。
+签名原文为 UTF-8 字节，**不带末尾换行**，字段间为单个 LF（`\n`）：
 
-### PENDING 响应
+```text
+GET
+/api/v1/device/onboarding/status
+<requestId>
+<Unix毫秒时间戳>
+<nonce>
+```
+
+使用 RSA PKCS#1 v1.5 + SHA-256 签名，签名结果采用标准 Base64（非 URL 编码）。时间戳与服务端偏差须在 300 秒内；每次使用新随机数，已使用随机数的重放返回 `401 UNAUTHENTICATED`。客户端应有可靠时钟；设备时钟未同步时需先完成时间同步。此签名只证明轮询者持有申请时的私钥，不能替代线下实物核验。
+
+响应仅有以下三类：
 
 ```json
-{
-  "status": "PENDING"
-}
+{ "status": "PENDING" }
 ```
-
-### REJECTED 响应
 
 ```json
-{
-  "status": "REJECTED",
-  "reason": "Serial Number Not Authorized"
-}
+{ "status": "REJECTED", "reason": "REJECTED" }
 ```
-
-证书包存储后 24 小时仍没有首个合法 Heartbeat 时，外部稳定映射为：
-
-```json
-{
-  "status": "REJECTED",
-  "reason": "ONBOARDING_TIMEOUT"
-}
-```
-
-超时后重新申请必须使用新 Token。
-
-### APPROVED 响应
 
 ```json
 {
   "status": "APPROVED",
-  "deviceId": "DEV001",
-  "certificate": {
-    "certificatePem": "-----BEGIN CERTIFICATE-----...",
-    "privateKey": "-----BEGIN PRIVATE KEY-----..."
-  },
-  "mqtt": {
-    "endpoint": "xxxxx.iot.ap-southeast-1.amazonaws.com"
-  },
-  "configuration": {
-    "heartbeatInterval": 60
-  }
+  "deviceId": "device-id",
+  "certificate": { "certificatePem": "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----" },
+  "mqtt": { "endpoint": "example-ats.iot.ap-southeast-1.amazonaws.com" },
+  "configuration": { "heartbeatInterval": 60 }
 }
 ```
 
-`certificate`、`mqtt`、`configuration` 以及各自必填字段都是封闭对象，不允许额外字段。成功响应提交后，服务端销毁证书包密文并核销 Token。响应提交状态不确定时，服务端执行撤证和重签恢复；客户端不能假定重复轮询一定返回同一私钥。
+审批已通过但发证尚未完成时仍返回 `PENDING`。设备安装前必须核对证书公钥与本地私钥匹配。证书一次性领取；响应提交后服务端销毁待领包。丢包或未确认领取按既有撤证重签恢复，设备继续以新随机数签名轮询。`REJECTED` 的 `reason` 可为管理员原因或 `ONBOARDING_TIMEOUT`。
 
-设备收到批准响应后应：安全保存证书和私钥，使用返回的 MQTT Endpoint 连接 AWS IoT，随后发布首次合法 Heartbeat。首次 Heartbeat 才是 Onboarding 完成标志。
+统一错误体为 `{ "error": { "code": "...", "message": "...", "requestId": "<网关请求ID>" } }`。状态接口签名错误、过期、重放或申请不可定位统一返回 `401 UNAUTHENTICATED`；限流返回 `429 RATE_LIMITED`。
 
-### 响应状态
-
-| HTTP | 错误码/含义 |
-|---:|---|
-| 200 | 返回 `PENDING`、`REJECTED` 或 `APPROVED` |
-| 400 | `VALIDATION_FAILED` |
-| 401 | `UNAUTHENTICATED`：Token 已核销也使用此状态 |
-| 404 | `NOT_FOUND`：Token 无对应申请 |
-| 409 | `CONFLICT`：证书包已领取或已过期，一次性领取失败关闭 |
-| 429 | `RATE_LIMITED` |
-| 500 | `INTERNAL_ERROR` |
-
-## 可执行契约与实现
-
-- OpenAPI：`contracts/rest/device-onboarding-api.json`
-- Lambda 路由：`apps/cloud-api/src/runtime/device-onboarding-lambda.ts`
-- Request Handler：`apps/cloud-api/src/onboarding/handler.ts`
-- Status Handler：`apps/cloud-api/src/onboarding/status-handler.ts`
+旧版 `Authorization: Bearer fdp_onb_...` 申请/轮询仅供迁移期兼容，仍按旧 Token 签发及证书包行为处理。**新设备不要同时携带 Bearer Token 和 CSR**，避免走入旧认证路径。旧版退出时间待设备方与运维方确认。

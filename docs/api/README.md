@@ -4,8 +4,10 @@
 
 | 域名 | 认证边界 | 文档 |
 |---|---|---|
-| `onboard-api.bio-nexa.com` | Onboarding Bearer Token；接入前使用 | [Onboarding API](./onboard-api.bio-nexa.com.md) |
+| `onboard-api.bio-nexa.com` | 无需预置 Token；CSR 申请与私钥签名轮询（旧 Token 迁移兼容） | [Onboarding API](./onboard-api.bio-nexa.com.md) |
 | `device-api.bio-nexa.com` | API Gateway mTLS + 应用层设备证书白名单；接入后使用 | [Device API](./device-api.bio-nexa.com.md) |
+
+只有印刷序列号的设备使用 [无预置凭据 Onboarding 流程](./onboard-api.bio-nexa.com.md)。设备方与管理员须按线下制度核验申请与实物的对应关系。
 
 管理后台及客户业务 API 使用 `api.bio-nexa.com`，不在本目录两份文档的范围内。MQTT 使用 `iot.bio-nexa.com`，也不属于 HTTPS REST API。
 

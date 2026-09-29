@@ -26,6 +26,7 @@ import { SecurePackageError } from './errors.js';
 /** 领取资格证明：调用方必须先完成 AUTH-02/AUTH-03 认证。 */
 export type ClaimProof =
   | { readonly kind: 'onboardingToken'; readonly context: OnboardingAuthContext }
+  | { readonly kind: 'onboardingCsr'; readonly context: { readonly requestId: string; readonly serialNumber: string } }
   | { readonly kind: 'deviceCertificate'; readonly context: DeviceAuthContext };
 
 export interface SecurePackageServiceConfig {
@@ -301,6 +302,20 @@ export class SecurePackageService {
     const device = await this.devices(tx).findFirst({ where: { id: certificate.deviceId } });
     if (!device || device.serialNumber !== proof.context.serialNumber) {
       throw new SecurePackageError('FORBIDDEN', 'claim proof does not match the certificate device');
+    }
+    if (proof.kind === 'onboardingCsr') {
+      const request = await (
+        tx as unknown as {
+          onboardingRequest: {
+            findFirst(args: {
+              where: { id: string; serialNumber: string; status: string };
+            }): Promise<{ id: string } | null>;
+          };
+        }
+      ).onboardingRequest.findFirst({
+        where: { id: proof.context.requestId, serialNumber: device.serialNumber, status: 'APPROVED' },
+      });
+      if (!request) throw new SecurePackageError('FORBIDDEN', 'claim proof does not match the approved request');
     }
   }
 }

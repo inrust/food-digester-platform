@@ -88,7 +88,7 @@ curl --cert device-cert.pem --key device-private-key.pem \
 {
   "certificateId": "CERT002",
   "certificatePem": "-----BEGIN CERTIFICATE-----...",
-  "privateKey": "-----BEGIN PRIVATE KEY-----...",
+  "privateKey": "<PRIVATE_KEY_PEM>",
   "effectiveDate": "2027-01-01",
   "expiryDate": "2028-01-01"
 }

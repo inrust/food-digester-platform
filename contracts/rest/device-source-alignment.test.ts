@@ -1,6 +1,7 @@
 /**
  * Device-Cloud Communication Design §6（解析文档 line 431）跨文件一致性检查。
- * 锁定源稿定义的 6 个设备 REST Endpoint、认证方式与关键成功载荷；
+ * 锁定源稿定义的 6 个设备 REST Endpoint；Onboarding 认证与证书字段
+ * 按业务方/设备方批准的 DEC-025 偏离源稿，其余接口仍与源稿对齐。
  * 源稿未定义的管理端 API 不参与路径集合比较。
  */
 import { test } from 'node:test';
@@ -18,10 +19,10 @@ const adminLicense = load('admin-license-api.json');
 const adminDevice = load('admin-device-api.json');
 const contractVersion = JSON.parse(readFileSync(new URL('../contract-version.json', import.meta.url), 'utf8'));
 
-test('源稿六个设备 Endpoint 的 Method、Path 与认证方式完整且唯一', () => {
+test('六个设备 Endpoint 的 Method、Path 完整且认证方式符合 DEC-025', () => {
   const expected = [
-    ['POST', '/api/v1/device/onboarding/request', 'OnboardingToken'],
-    ['GET', '/api/v1/device/onboarding/status', 'OnboardingToken'],
+    ['POST', '/api/v1/device/onboarding/request', undefined],
+    ['GET', '/api/v1/device/onboarding/status', undefined],
     ['POST', '/api/v1/device/certificate/rotate', 'DeviceMtls'],
     ['GET', '/api/v1/device/certificate/status', 'DeviceMtls'],
     ['POST', '/api/v1/device/sync', 'DeviceMtls'],
@@ -39,6 +40,7 @@ test('源稿六个设备 Endpoint 的 Method、Path 与认证方式完整且唯�
     }
   }
   assert.deepEqual(actual.sort(), expected.sort());
+  assert.ok(onboarding.info['x-decision-versions'].includes('DEC-025@1.0.0'));
 });
 
 test('Onboarding 成功载荷保持源稿顶层和嵌套字段，不使用 data/meta 包裹', () => {
@@ -50,7 +52,7 @@ test('Onboarding 成功载荷保持源稿顶层和嵌套字段，不使用 data/
 
   const approved = onboarding.components.schemas.OnboardingStatusApproved;
   assert.deepEqual(approved.required, ['status', 'deviceId', 'certificate', 'mqtt', 'configuration']);
-  assert.deepEqual(onboarding.components.schemas.OnboardingCertificate.required, ['certificatePem', 'privateKey']);
+  assert.deepEqual(onboarding.components.schemas.OnboardingCertificate.required, ['certificatePem']);
   assert.deepEqual(onboarding.components.schemas.OnboardingMqtt.required, ['endpoint']);
   assert.deepEqual(onboarding.components.schemas.OnboardingInitialConfiguration.required, ['heartbeatInterval']);
 });

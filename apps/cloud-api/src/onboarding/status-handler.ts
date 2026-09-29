@@ -20,13 +20,16 @@ import {
   SecurePackageError,
   withOnboardingAuth,
 } from '@fdp/auth';
-import type { OnboardingAuthContext, RateLimiter, SecurePackageService } from '@fdp/auth';
+import type { ClaimProof, OnboardingAuthContext, RateLimiter, SecurePackageService } from '@fdp/auth';
 import { ONBOARDING_TIMEOUT_POLICY } from '@fdp/contracts/lifecycle/onboarding-timeout-policy.js';
 import { OnboardingApiError } from './errors.js';
 import type { OnboardingHttpRequest, OnboardingHttpResponse } from './handler.js';
 import { findOnboardingRequestByTokenId } from './repository.js';
 import type { OnboardingRequestRecord } from './repository.js';
 import { parseCertificatePackage } from '../provisioning/index.js';
+import { createHash } from 'node:crypto';
+import { inspectCsr, verifyStatusProof } from './csr-proof.js';
+import { isUniqueViolation } from './repository.js';
 
 export interface OnboardingStatusRequest extends OnboardingHttpRequest {
   readonly query?: Readonly<Record<string, string | undefined>>;
@@ -106,7 +109,7 @@ type StatusBody =
   | {
       status: 'APPROVED';
       deviceId: string;
-      certificate: { certificatePem: string; privateKey: string };
+      certificate: { certificatePem: string; privateKey?: string };
       mqtt: { endpoint: string };
       configuration: { heartbeatInterval: 60 };
     };
@@ -118,6 +121,7 @@ export function createOnboardingStatusHandler(
   const sharedStore = new PostgresRateLimitStore(deps.client);
   const tokenRateLimiter = deps.rateLimiter ?? createRateLimiter(sharedStore, { limit: 30, windowSeconds: 60 });
   const ipRateLimiter = deps.rateLimiter ? undefined : createRateLimiter(sharedStore, { limit: 60, windowSeconds: 60 });
+  const csrLimiter = deps.rateLimiter ?? createRateLimiter(sharedStore, { limit: 30, windowSeconds: 60 }, now);
 
   const guarded = withOnboardingAuth<OnboardingStatusRequest, OnboardingHttpResponse>(
     {
@@ -149,6 +153,53 @@ export function createOnboardingStatusHandler(
   );
 
   return async (req) => {
+    if (!bearerTokenOf(req) && req.query?.requestId) {
+      try {
+        const requestId = req.query.requestId;
+        if (!/^[0-9a-f-]{36}$/i.test(requestId)) throw new OnboardingApiError('VALIDATION_FAILED');
+        await csrLimiter.assertWithinLimit(`onboarding:status:ip:${req.sourceIp ?? 'unknown'}`);
+        await csrLimiter.assertWithinLimit(`onboarding:status:request:${requestId}`);
+        const db = deps.client as unknown as {
+          onboardingRequest: { findFirst(args: { where: { id: string } }): Promise<OnboardingRequestRecord | null> };
+          onboardingProofNonce: {
+            create(args: { data: { requestId: string; nonceHash: string; expiresAt: Date } }): Promise<unknown>;
+            deleteMany(args: { where: { expiresAt: { lt: Date } } }): Promise<unknown>;
+          };
+        };
+        const request = await db.onboardingRequest.findFirst({ where: { id: requestId } });
+        if (!request?.csrPem) throw new OnboardingApiError('UNAUTHENTICATED');
+        const proof = {
+          requestId,
+          timestamp: req.headers['x-onboarding-timestamp'] ?? req.headers['X-Onboarding-Timestamp'] ?? '',
+          nonce: req.headers['x-onboarding-nonce'] ?? req.headers['X-Onboarding-Nonce'] ?? '',
+          signature: req.headers['x-onboarding-signature'] ?? req.headers['X-Onboarding-Signature'] ?? '',
+        };
+        const inspected = inspectCsr(request.csrPem);
+        if (inspected.fingerprint !== request.publicKeyFingerprint) throw new OnboardingApiError('UNAUTHENTICATED');
+        verifyStatusProof(inspected.publicKeyPem, proof, now());
+        try {
+          await db.onboardingProofNonce.create({
+            data: {
+              requestId,
+              nonceHash: createHash('sha256').update(proof.nonce).digest('hex'),
+              expiresAt: new Date(now().getTime() + 300_000),
+            },
+          });
+        } catch (error) {
+          if (isUniqueViolation(error)) throw new OnboardingApiError('UNAUTHENTICATED');
+          throw error;
+        }
+        await db.onboardingProofNonce.deleteMany({ where: { expiresAt: { lt: now() } } });
+        const resolved = await resolveStatus(deps, request, { requestId, serialNumber: request.serialNumber });
+        return {
+          status: 200,
+          body: resolved.body,
+          ...(resolved.onCommitted ? { onCommitted: resolved.onCommitted } : {}),
+        };
+      } catch (err) {
+        return toErrorResponse(err, req);
+      }
+    }
     try {
       return await guarded(req);
     } catch (err) {
@@ -162,8 +213,15 @@ interface ResolvedStatus {
   readonly onCommitted?: () => Promise<void>;
 }
 
-async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: OnboardingAuthContext): Promise<ResolvedStatus> {
-  const request: OnboardingRequestRecord | null = await findOnboardingRequestByTokenId(deps.client, auth.tokenId);
+async function resolveStatus(
+  deps: OnboardingStatusHandlerDeps,
+  requestOrAuth: OnboardingRequestRecord | OnboardingAuthContext,
+  csrAuth?: { requestId: string; serialNumber: string },
+): Promise<ResolvedStatus> {
+  const auth = csrAuth ?? (requestOrAuth as OnboardingAuthContext);
+  const request: OnboardingRequestRecord | null = csrAuth
+    ? (requestOrAuth as OnboardingRequestRecord)
+    : await findOnboardingRequestByTokenId(deps.client, (requestOrAuth as OnboardingAuthContext).tokenId);
   if (!request) throw new OnboardingApiError('NOT_FOUND', 'The requested resource was not found');
 
   if (request.status === ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.internalRequestStatus) {
@@ -214,16 +272,19 @@ async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: Onboarding
   }
 
   // 第一阶段：预留并解密，密文保留到适配层确认 HTTP 响应已提交。
-  const payload = await deps.securePackage.preparePackageDelivery(certificate.id, {
-    kind: 'onboardingToken',
-    context: auth,
-  });
+  const proof: ClaimProof = csrAuth
+    ? { kind: 'onboardingCsr', context: csrAuth }
+    : { kind: 'onboardingToken', context: auth as OnboardingAuthContext };
+  const payload = await deps.securePackage.preparePackageDelivery(certificate.id, proof);
   const pkg = parseCertificatePackage(payload);
   return {
     body: {
       status: 'APPROVED',
       deviceId: device.id,
-      certificate: { certificatePem: pkg.certificatePem, privateKey: pkg.privateKey },
+      certificate: {
+        certificatePem: pkg.certificatePem,
+        ...(!csrAuth && pkg.privateKey ? { privateKey: pkg.privateKey } : {}),
+      },
       mqtt: { endpoint: deps.mqttEndpoint },
       configuration: { heartbeatInterval: 60 },
     },
@@ -231,8 +292,14 @@ async function resolveStatus(deps: OnboardingStatusHandlerDeps, auth: Onboarding
       await withTransaction(deps.client, async (tx) => {
         const packageConfirmed = await deps.securePackage.confirmPackageDelivery(certificate.id, tx);
         if (!packageConfirmed) throw new Error('证书包交付确认状态已变化');
-        const tokenUsed = await markOnboardingTokenUsed(tx, auth.tokenId, deps.now?.() ?? new Date());
-        if (!tokenUsed) throw new Error('Onboarding Token 核销状态已变化');
+        if (!csrAuth) {
+          const tokenUsed = await markOnboardingTokenUsed(
+            tx,
+            (auth as OnboardingAuthContext).tokenId,
+            deps.now?.() ?? new Date(),
+          );
+          if (!tokenUsed) throw new Error('Onboarding Token 核销状态已变化');
+        }
       });
     },
   };

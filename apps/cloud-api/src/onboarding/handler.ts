@@ -13,6 +13,7 @@ import type { RateLimiter } from '@fdp/auth';
 import { OnboardingApiError } from './errors.js';
 import { serialNumberOfBody } from './dto.js';
 import { submitOnboardingRequest } from './service.js';
+import { createCsrOnboardingRequestHandler } from './csr-request.js';
 import type { OnboardingRequestResult } from './service.js';
 
 /** 适配层（API Gateway/Lambda）提供的规范化请求。 */
@@ -89,6 +90,7 @@ export function createOnboardingRequestHandler(
   const sharedStore = new PostgresRateLimitStore(deps.client);
   const tokenRateLimiter = deps.rateLimiter ?? createRateLimiter(sharedStore, { limit: 30, windowSeconds: 60 });
   const ipRateLimiter = deps.rateLimiter ? undefined : createRateLimiter(sharedStore, { limit: 60, windowSeconds: 60 });
+  const csrHandler = createCsrOnboardingRequestHandler(deps);
 
   const guarded = withOnboardingAuth<OnboardingHttpRequest, OnboardingHttpResponse>(
     {
@@ -115,6 +117,9 @@ export function createOnboardingRequestHandler(
   );
 
   return async (req) => {
+    if (!bearerTokenOf(req) && req.body && typeof req.body === 'object' && 'csrPem' in req.body) {
+      return csrHandler(req);
+    }
     try {
       return await guarded(req);
     } catch (err) {

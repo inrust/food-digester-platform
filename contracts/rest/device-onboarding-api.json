@@ -2,19 +2,23 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bio-Nexa CMP Device Onboarding API",
-    "version": "0.2.0",
-    "description": "BE-ONB-01/03 设备 Onboarding 接口。认证为 AUTH-02 Onboarding Token（一次一机、只存 Hash、与库存序列号绑定）；DEC-017@1.0.0 冻结证书包存储后 24 小时首个 Heartbeat 截止，超时外部映射 REJECTED/ONBOARDING_TIMEOUT，重新申请必须使用新 Token。成功响应严格保持 Device-Cloud Communication Design 的顶层字段结构，错误响应继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-003@1.0.0", "DEC-017@1.0.0"],
-    "x-decision-register-version": "1.33.0"
+    "version": "0.3.0",
+    "description": "设备首次接入：无预置 Token 的 CSR 申请、管理员线下核验审批、CSR 私钥签名轮询，云端仅签发并返回公钥证书。旧 Token 路径仅供迁移兼容。",
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-003@1.0.0", "DEC-017@1.0.0", "DEC-025@1.0.0"],
+    "x-decision-register-version": "1.34.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
-  "servers": [{ "url": "/" }],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
   "tags": [
     {
       "name": "device",
-      "description": "/api/v1/device/* 设备 API；Onboarding 阶段设备尚无证书，使用 Onboarding Token 认证",
+      "description": "设备 Onboarding：CSR 自签名申请与签名轮询",
       "x-path-prefix": "/api/v1/device",
-      "x-auth": "OnboardingToken"
+      "x-auth": "CsrProof"
     }
   ],
   "paths": {
@@ -23,13 +27,15 @@
         "tags": ["device"],
         "operationId": "submitOnboardingRequest",
         "summary": "提交设备 Onboarding 申请",
-        "description": "校验设备资料与库存授权，创建唯一 requestId 的 PENDING 记录。同一设备正常只提交一次：重复请求幂等返回原 request（200），并发重复提交由部分唯一索引兜底同样返回原 request。",
-        "security": [{ "OnboardingToken": [] }],
+        "description": "设备自生成 RSA-2048 或更强密钥，提交已自签名 CSR 和资料；管理员线下核验后审批。相同序列号和公钥幂等重放；不同公钥返回 409。",
+        "security": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/OnboardingRequestInput" }
+              "schema": {
+                "$ref": "#/components/schemas/CsrOnboardingRequestInput"
+              }
             }
           }
         },
@@ -38,7 +44,9 @@
             "description": "幂等重放：该设备已存在 PENDING 申请，返回原 request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OnboardingRequestResult" }
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingRequestResult"
+                }
               }
             }
           },
@@ -46,7 +54,9 @@
             "description": "申请已创建（PENDING）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OnboardingRequestResult" }
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingRequestResult"
+                }
               }
             }
           },
@@ -54,15 +64,19 @@
             "description": "字段非法（VALIDATION_FAILED）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
           "401": {
-            "description": "Token 缺失/非法/过期/撤销/跨序列号（UNAUTHENTICATED，不区分原因）",
+            "description": "旧版 Token 路径凭据无效（新版 CSR 路径无需 Token）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -70,15 +84,19 @@
             "description": "序列号不存在于设备库存（NOT_FOUND）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
           "409": {
-            "description": "设备已 Onboarded 或处于其他不允许提交的状态（DEVICE_STATE_NOT_ALLOWED）",
+            "description": "设备状态不允许或已有不同 CSR 公钥的待审核申请",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -86,7 +104,9 @@
             "description": "请求频率超限（RATE_LIMITED）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -94,7 +114,9 @@
             "description": "内部错误（INTERNAL_ERROR，不暴露细节）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -106,14 +128,16 @@
         "tags": ["device"],
         "operationId": "getOnboardingStatus",
         "summary": "查询 Onboarding 状态（BE-ONB-03）",
-        "description": "三类外部状态：PENDING、REJECTED（字段名 reason；DEC-017 超时稳定原因为 ONBOARDING_TIMEOUT）和 APPROVED（deviceId + 嵌套 certificate/mqtt/configuration）。Onboarding Token 隐式绑定唯一申请，不要求源稿未定义的 Query 参数。证书包领取成功即销毁密文并核销 Token，重复领取返回 409。",
-        "security": [{ "OnboardingToken": [] }],
+        "description": "使用 requestId 定位申请，以 CSR 对应设备私钥签署方法、路径、requestId、毫秒时间戳和随机数；时间窗五分钟，随机数不可重用。批准后仅下发公钥证书，不下发私钥。旧 Token 轮询仅迁移兼容。",
+        "security": [],
         "responses": {
           "200": {
             "description": "当前 Onboarding 状态",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OnboardingStatusResult" }
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingStatusResult"
+                }
               }
             }
           },
@@ -121,31 +145,39 @@
             "description": "参数非法（VALIDATION_FAILED）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
           "401": {
-            "description": "Token 缺失/非法/过期/撤销/已核销/跨序列号（UNAUTHENTICATED）",
+            "description": "CSR 签名无效、时间窗外或随机数重放",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
           "404": {
-            "description": "该 Token 无对应申请（NOT_FOUND）",
+            "description": "申请不存在",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
           "409": {
-            "description": "证书包已被领取或已过期（CONFLICT，DEC-003 一次性领取失败关闭）",
+            "description": "证书已领取或过期",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -153,7 +185,9 @@
             "description": "请求频率超限（RATE_LIMITED）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -161,11 +195,52 @@
             "description": "内部错误（INTERNAL_ERROR，不暴露细节）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Onboarding-Timestamp",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Unix 毫秒时间戳，与服务器偏差不超过 300 秒"
+          },
+          {
+            "name": "X-Onboarding-Nonce",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{22,86}$"
+            },
+            "description": "每次轮询新生成的 base64url 随机数，至少 16 字节"
+          },
+          {
+            "name": "X-Onboarding-Signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "RSA-SHA256 PKCS#1 v1.5 签名，Base64 编码；签名原文为 GET\\n/api/v1/device/onboarding/status\\n{requestId}\\n{timestamp}\\n{nonce}"
+          }
+        ]
       }
     }
   },
@@ -186,11 +261,23 @@
           "serialNumber": {
             "type": "string",
             "pattern": "^[A-Za-z0-9-]{1,64}$",
-            "description": "设备库存序列号；必须与 Onboarding Token 绑定的序列号一致"
+            "description": "设备印刷序列号；管理员依据线下制度核对实物与申请"
           },
-          "model": { "type": "string", "minLength": 1, "maxLength": 64 },
-          "hardwareVersion": { "type": "string", "minLength": 1, "maxLength": 32 },
-          "manufacturer": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "hardwareVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "manufacturer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
           "manufactureDate": {
             "type": "string",
             "format": "date",
@@ -204,8 +291,15 @@
         "required": ["requestId", "status"],
         "additionalProperties": false,
         "properties": {
-          "requestId": { "type": "string", "minLength": 1, "description": "Onboarding 申请唯一 ID" },
-          "status": { "type": "string", "enum": ["PENDING"] }
+          "requestId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Onboarding 申请唯一 ID"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING"]
+          }
         }
       },
       "OnboardingStatusPending": {
@@ -213,7 +307,10 @@
         "required": ["status"],
         "additionalProperties": false,
         "properties": {
-          "status": { "type": "string", "enum": ["PENDING"] }
+          "status": {
+            "type": "string",
+            "enum": ["PENDING"]
+          }
         }
       },
       "OnboardingStatusRejected": {
@@ -221,18 +318,31 @@
         "required": ["status", "reason"],
         "additionalProperties": false,
         "properties": {
-          "status": { "type": "string", "enum": ["REJECTED"] },
-          "reason": { "type": "string", "minLength": 1 }
+          "status": {
+            "type": "string",
+            "enum": ["REJECTED"]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "OnboardingCertificate": {
         "type": "object",
-        "required": ["certificatePem", "privateKey"],
+        "required": ["certificatePem"],
         "additionalProperties": false,
-        "description": "源稿证书对象；privateKey 仅在一次性批准响应中返回，禁止写入日志或审计。",
+        "description": "新 CSR 流程仅返回公钥证书；旧 Token 流程的 privateKey 为迁移兼容字段",
         "properties": {
-          "certificatePem": { "type": "string", "minLength": 1 },
-          "privateKey": { "type": "string", "minLength": 1 }
+          "certificatePem": {
+            "type": "string",
+            "minLength": 1
+          },
+          "privateKey": {
+            "type": "string",
+            "minLength": 1,
+            "deprecated": true
+          }
         }
       },
       "OnboardingMqtt": {
@@ -240,7 +350,10 @@
         "required": ["endpoint"],
         "additionalProperties": false,
         "properties": {
-          "endpoint": { "type": "string", "minLength": 1 }
+          "endpoint": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "OnboardingInitialConfiguration": {
@@ -248,28 +361,89 @@
         "required": ["heartbeatInterval"],
         "additionalProperties": false,
         "properties": {
-          "heartbeatInterval": { "type": "integer", "enum": [60] }
+          "heartbeatInterval": {
+            "type": "integer",
+            "enum": [60]
+          }
         }
       },
       "OnboardingStatusApproved": {
         "type": "object",
         "required": ["status", "deviceId", "certificate", "mqtt", "configuration"],
         "additionalProperties": false,
-        "description": "与源稿批准响应同形；证书包一次性下发，服务端领取成功即销毁密文。",
+        "description": "设备须核对证书公钥与本地私钥匹配；证书一次性领取",
         "properties": {
-          "status": { "type": "string", "enum": ["APPROVED"] },
-          "deviceId": { "type": "string", "minLength": 1 },
-          "certificate": { "$ref": "#/components/schemas/OnboardingCertificate" },
-          "mqtt": { "$ref": "#/components/schemas/OnboardingMqtt" },
-          "configuration": { "$ref": "#/components/schemas/OnboardingInitialConfiguration" }
+          "status": {
+            "type": "string",
+            "enum": ["APPROVED"]
+          },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "certificate": {
+            "$ref": "#/components/schemas/OnboardingCertificate"
+          },
+          "mqtt": {
+            "$ref": "#/components/schemas/OnboardingMqtt"
+          },
+          "configuration": {
+            "$ref": "#/components/schemas/OnboardingInitialConfiguration"
+          }
         }
       },
       "OnboardingStatusResult": {
         "oneOf": [
-          { "$ref": "#/components/schemas/OnboardingStatusPending" },
-          { "$ref": "#/components/schemas/OnboardingStatusRejected" },
-          { "$ref": "#/components/schemas/OnboardingStatusApproved" }
+          {
+            "$ref": "#/components/schemas/OnboardingStatusPending"
+          },
+          {
+            "$ref": "#/components/schemas/OnboardingStatusRejected"
+          },
+          {
+            "$ref": "#/components/schemas/OnboardingStatusApproved"
+          }
         ]
+      },
+      "CsrOnboardingRequestInput": {
+        "type": "object",
+        "required": ["serialNumber", "model", "hardwareVersion", "manufacturer", "manufactureDate", "csrPem"],
+        "additionalProperties": false,
+        "properties": {
+          "serialNumber": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9-]{1,64}$",
+            "description": "设备印刷序列号；管理员依据线下制度核对实物与申请"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "hardwareVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "manufacturer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "manufactureDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "生产日期（UTC，YYYY-MM-DD），不得晚于当前日期"
+          },
+          "csrPem": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192,
+            "description": "PEM PKCS#10 CSR，自签名且 RSA 公钥至少 2048 位；私钥不离开设备"
+          }
+        },
+        "description": "无需预置 Token 的 CSR 首次申请"
       }
     }
   }

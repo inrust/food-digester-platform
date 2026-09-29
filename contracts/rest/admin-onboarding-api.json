@@ -4,11 +4,15 @@
     "title": "Bio-Nexa CMP Admin Onboarding Review API",
     "version": "0.1.0",
     "description": "BE-ONB-02 管理员 Onboarding 审批接口：待审批列表、详情、approve、reject。认证为 Cognito JWT；列表/详情需 onboarding:read，审批需 onboarding:approve（仅 PlatformSuperAdmin）。审批采用 If-Match 乐观锁防重复/并发审批；approve 在同一事务创建持久化 Provisioning Job，不返回私钥。通用响应/错误契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-017@1.0.0"],
-    "x-decision-register-version": "1.33.0"
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-017@1.0.0", "DEC-025@1.0.0"],
+    "x-decision-register-version": "1.34.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
-  "servers": [{ "url": "/" }],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
   "tags": [
     {
       "name": "admin",
@@ -23,7 +27,11 @@
         "tags": ["admin"],
         "operationId": "listOnboardingRequests",
         "summary": "Onboarding 申请列表（默认待审批 PENDING）",
-        "security": [{ "CognitoJwt": [] }],
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
         "parameters": [
           {
             "name": "status",
@@ -36,22 +44,36 @@
               "default": "PENDING"
             }
           },
-          { "$ref": "openapi-base.json#/components/parameters/Cursor" },
-          { "$ref": "openapi-base.json#/components/parameters/Limit" }
+          {
+            "$ref": "openapi-base.json#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "openapi-base.json#/components/parameters/Limit"
+          }
         ],
         "responses": {
           "200": {
             "description": "申请分页列表",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OnboardingRequestPage" }
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingRequestPage"
+                }
               }
             }
           },
-          "400": { "$ref": "openapi-base.json#/components/responses/BadRequest" },
-          "401": { "$ref": "openapi-base.json#/components/responses/Unauthorized" },
-          "403": { "$ref": "openapi-base.json#/components/responses/Forbidden" },
-          "500": { "$ref": "openapi-base.json#/components/responses/InternalError" }
+          "400": {
+            "$ref": "openapi-base.json#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "openapi-base.json#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "openapi-base.json#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "openapi-base.json#/components/responses/InternalError"
+          }
         }
       }
     },
@@ -60,13 +82,20 @@
         "tags": ["admin"],
         "operationId": "getOnboardingRequest",
         "summary": "Onboarding 申请详情（含 REJECTED 的 rejectReason）",
-        "security": [{ "CognitoJwt": [] }],
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
         "parameters": [
           {
             "name": "requestId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string", "minLength": 1 }
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         ],
         "responses": {
@@ -74,14 +103,24 @@
             "description": "申请详情",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OnboardingRequestDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingRequestDetail"
+                }
               }
             }
           },
-          "401": { "$ref": "openapi-base.json#/components/responses/Unauthorized" },
-          "403": { "$ref": "openapi-base.json#/components/responses/Forbidden" },
-          "404": { "$ref": "openapi-base.json#/components/responses/NotFound" },
-          "500": { "$ref": "openapi-base.json#/components/responses/InternalError" }
+          "401": {
+            "$ref": "openapi-base.json#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "openapi-base.json#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "openapi-base.json#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "openapi-base.json#/components/responses/InternalError"
+          }
         }
       }
     },
@@ -91,31 +130,54 @@
         "operationId": "approveOnboardingRequest",
         "summary": "批准 Onboarding 申请（仅 PlatformSuperAdmin）",
         "description": "审批校验设备库存资料与申请一致；成功后将申请置为 APPROVED、设备生命周期迁移为 OnboardingApproved，并触发证书发放服务（不返回私钥）。If-Match 乐观锁：并发/重复审批最多一个成功。",
-        "security": [{ "CognitoJwt": [] }],
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
         "parameters": [
           {
             "name": "requestId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string", "minLength": 1 }
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
           },
-          { "$ref": "openapi-base.json#/components/parameters/IfMatch" }
+          {
+            "$ref": "openapi-base.json#/components/parameters/IfMatch"
+          }
         ],
         "responses": {
           "200": {
             "description": "审批成功，返回审批后的申请",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OnboardingRequestDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingRequestDetail"
+                }
               }
             }
           },
-          "400": { "$ref": "openapi-base.json#/components/responses/BadRequest" },
-          "401": { "$ref": "openapi-base.json#/components/responses/Unauthorized" },
-          "403": { "$ref": "openapi-base.json#/components/responses/Forbidden" },
-          "404": { "$ref": "openapi-base.json#/components/responses/NotFound" },
-          "409": { "$ref": "openapi-base.json#/components/responses/Conflict" },
-          "500": { "$ref": "openapi-base.json#/components/responses/InternalError" }
+          "400": {
+            "$ref": "openapi-base.json#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "openapi-base.json#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "openapi-base.json#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "openapi-base.json#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "openapi-base.json#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "openapi-base.json#/components/responses/InternalError"
+          }
         }
       }
     },
@@ -125,21 +187,32 @@
         "operationId": "rejectOnboardingRequest",
         "summary": "拒绝 Onboarding 申请（仅 PlatformSuperAdmin，强制填写原因）",
         "description": "拒绝后申请置为 REJECTED、设备生命周期迁移为 Rejected；rejectReason 可经详情接口查询。If-Match 乐观锁：并发/重复审批最多一个成功。",
-        "security": [{ "CognitoJwt": [] }],
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
         "parameters": [
           {
             "name": "requestId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string", "minLength": 1 }
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
           },
-          { "$ref": "openapi-base.json#/components/parameters/IfMatch" }
+          {
+            "$ref": "openapi-base.json#/components/parameters/IfMatch"
+          }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/RejectOnboardingRequestInput" }
+              "schema": {
+                "$ref": "#/components/schemas/RejectOnboardingRequestInput"
+              }
             }
           }
         },
@@ -148,23 +221,39 @@
             "description": "拒绝成功，返回审批后的申请（含 rejectReason）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OnboardingRequestDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingRequestDetail"
+                }
               }
             }
           },
-          "400": { "$ref": "openapi-base.json#/components/responses/BadRequest" },
-          "401": { "$ref": "openapi-base.json#/components/responses/Unauthorized" },
-          "403": { "$ref": "openapi-base.json#/components/responses/Forbidden" },
-          "404": { "$ref": "openapi-base.json#/components/responses/NotFound" },
-          "409": { "$ref": "openapi-base.json#/components/responses/Conflict" },
-          "500": { "$ref": "openapi-base.json#/components/responses/InternalError" }
+          "400": {
+            "$ref": "openapi-base.json#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "openapi-base.json#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "openapi-base.json#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "openapi-base.json#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "openapi-base.json#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "openapi-base.json#/components/responses/InternalError"
+          }
         }
       }
     }
   },
   "components": {
     "securitySchemes": {
-      "CognitoJwt": { "$ref": "openapi-base.json#/components/securitySchemes/CognitoJwt" }
+      "CognitoJwt": {
+        "$ref": "openapi-base.json#/components/securitySchemes/CognitoJwt"
+      }
     },
     "schemas": {
       "OnboardingRequest": {
@@ -188,32 +277,69 @@
         "additionalProperties": false,
         "description": "申请 DTO 不含 tokenId 或任何 Token 关联字段",
         "properties": {
-          "requestId": { "type": "string", "minLength": 1 },
-          "serialNumber": { "type": "string" },
+          "requestId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "serialNumber": {
+            "type": "string"
+          },
           "submittedBy": {
             "type": "string",
             "minLength": 1,
             "description": "申请录入来源；设备自助申请为 DEVICE:<serialNumber>"
           },
-          "model": { "type": "string" },
-          "hardwareVersion": { "type": "string" },
-          "manufacturer": { "type": "string" },
-          "manufactureDate": { "type": "string", "format": "date" },
-          "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED", "TIMED_OUT"] },
+          "model": {
+            "type": "string"
+          },
+          "hardwareVersion": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "manufactureDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "APPROVED", "REJECTED", "TIMED_OUT"]
+          },
           "rejectReason": {
             "type": ["string", "null"],
             "description": "拒绝原因；普通拒绝为审批原因，TIMED_OUT 固定为 ONBOARDING_TIMEOUT"
           },
-          "reviewedBy": { "type": ["string", "null"] },
-          "reviewedAt": {
-            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+          "reviewedBy": {
+            "type": ["string", "null"]
           },
-          "version": { "type": "integer", "minimum": 1, "description": "乐观锁版本（If-Match 携带）" },
-          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "reviewedAt": {
+            "oneOf": [
+              {
+                "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "乐观锁版本（If-Match 携带）"
+          },
+          "createdAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+          },
           "certificateProvisioningStatus": {
             "type": "string",
             "enum": ["NOT_STARTED", "QUEUED", "PROCESSING", "RETRY", "COMPLETED", "FAILED", "NOT_APPLICABLE"],
             "description": "管理员可见的证书发放进度；永不包含私钥、Token 或证书包内容"
+          },
+          "publicKeyFingerprint": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "CSR 公钥 SHA-256 指纹；管理员线下核验申请时用于区分重试/冒领"
           }
         }
       },
@@ -222,8 +348,12 @@
         "required": ["data", "meta"],
         "additionalProperties": false,
         "properties": {
-          "data": { "$ref": "#/components/schemas/OnboardingRequest" },
-          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+          "data": {
+            "$ref": "#/components/schemas/OnboardingRequest"
+          },
+          "meta": {
+            "$ref": "openapi-base.json#/components/schemas/ResponseMeta"
+          }
         }
       },
       "OnboardingRequestPage": {
@@ -231,8 +361,15 @@
         "required": ["data", "meta"],
         "additionalProperties": false,
         "properties": {
-          "data": { "type": "array", "items": { "$ref": "#/components/schemas/OnboardingRequest" } },
-          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OnboardingRequest"
+            }
+          },
+          "meta": {
+            "$ref": "openapi-base.json#/components/schemas/PageMeta"
+          }
         }
       },
       "RejectOnboardingRequestInput": {
@@ -240,7 +377,11 @@
         "required": ["reason"],
         "additionalProperties": false,
         "properties": {
-          "reason": { "type": "string", "minLength": 1, "description": "拒绝原因（必填）" }
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "拒绝原因（必填）"
+          }
         }
       }
     }

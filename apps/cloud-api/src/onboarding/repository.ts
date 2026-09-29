@@ -11,7 +11,9 @@ import type { DbClient } from '@fdp/database';
 
 export interface OnboardingRequestRecord {
   readonly id: string;
-  readonly tokenId: string;
+  readonly tokenId: string | null;
+  readonly csrPem?: string | null;
+  readonly publicKeyFingerprint?: string | null;
   readonly serialNumber: string;
   readonly submittedBy: string;
   readonly model: string;

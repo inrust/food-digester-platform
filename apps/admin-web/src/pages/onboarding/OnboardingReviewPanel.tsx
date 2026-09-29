@@ -193,6 +193,12 @@ export function OnboardingReviewPanel({
             </dd>
             <dt>{translate('page.09dd3737f0c0')}</dt>
             <dd data-testid="detail-submitted-by">{request.submittedBy}</dd>
+            {request.publicKeyFingerprint ? (
+              <>
+                <dt>{translate('page.d35c11f5fa20')}</dt>
+                <dd data-testid="detail-csr-fingerprint">{request.publicKeyFingerprint}</dd>
+              </>
+            ) : null}
             <dt>{translate('page.fe8993b21fdb')}</dt>
             <dd data-testid="detail-certificate-status">{request.certificateProvisioningStatus}</dd>
             <dt>{translate('page.62e951a692ff')}</dt>

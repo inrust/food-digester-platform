@@ -808,6 +808,7 @@ export const PAGE_ZH_CN: Readonly<Record<string, string>> = {
   'page.fd695a67e418': '媒体管理',
   'page.fe80a0e9972c': '编辑合约',
   'page.fe8993b21fdb': '证书发放状态',
+  'page.d35c11f5fa20': 'CSR 公钥指纹',
   'page.fec04f09d673':
     '仅可发布（VERIFIED）包可创建；首批强制恰好 1 台灰度，验证后经“扩大批次”逐步放量；最终全量需 SuperAdmin 显式审批。',
   'page.fedaa161097d': '超时时间 timeoutSec（1~3600 秒）',
@@ -1983,6 +1984,7 @@ export const PAGE_EN: Readonly<Record<string, string>> = {
   'page.fd695a67e418': 'Media Management',
   'page.fe80a0e9972c': 'Edit contract',
   'page.fe8993b21fdb': 'Certificate issuance status',
+  'page.d35c11f5fa20': 'CSR public key fingerprint',
   'page.fec04f09d673':
     'Only VERIFIED packages can be created; the first batch is forced to be exactly 1 grayscale, and the volume will be gradually increased through "expanded batches" after verification; the final full volume requires explicit approval by SuperAdmin.',
   'page.fedaa161097d': 'Timeout duration (1–3600 seconds)',

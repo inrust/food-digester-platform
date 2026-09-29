@@ -6,18 +6,23 @@
  * 不携带堆栈、SQL 或 AWS 内部细节（与 contracts/rest/http-contract.ts 约定一致）。
  */
 
-export type OnboardingApiErrorCode = 'VALIDATION_FAILED' | 'NOT_FOUND' | 'DEVICE_STATE_NOT_ALLOWED' | 'INTERNAL_ERROR';
+export type OnboardingApiErrorCode =
+  'VALIDATION_FAILED' | 'UNAUTHENTICATED' | 'NOT_FOUND' | 'CONFLICT' | 'DEVICE_STATE_NOT_ALLOWED' | 'INTERNAL_ERROR';
 
 export const ONBOARDING_API_ERROR_HTTP_STATUS: Readonly<Record<OnboardingApiErrorCode, number>> = {
   VALIDATION_FAILED: 400,
+  UNAUTHENTICATED: 401,
   NOT_FOUND: 404,
+  CONFLICT: 409,
   DEVICE_STATE_NOT_ALLOWED: 409,
   INTERNAL_ERROR: 500,
 } as const;
 
 export const ONBOARDING_API_ERROR_DEFAULT_MESSAGE: Readonly<Record<OnboardingApiErrorCode, string>> = {
   VALIDATION_FAILED: 'The request failed validation',
+  UNAUTHENTICATED: 'Invalid onboarding proof',
   NOT_FOUND: 'The requested resource was not found',
+  CONFLICT: 'The onboarding request conflicts with an existing request',
   DEVICE_STATE_NOT_ALLOWED: 'The operation is not allowed in the current device state',
   INTERNAL_ERROR: 'Internal server error',
 } as const;

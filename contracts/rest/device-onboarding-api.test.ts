@@ -34,11 +34,15 @@ function collectRefs(node: unknown, out: string[] = []): string[] {
   return out;
 }
 
-test('BE-ONB-01 端点存在且使用 Onboarding Token 认证', () => {
+test('BE-ONB-01 端点存在且 CSR 首次申请无需预置 Token', () => {
   assert.equal(doc.openapi, '3.1.0');
   const post = doc.paths['/api/v1/device/onboarding/request'].post;
   assert.equal(post.operationId, 'submitOnboardingRequest');
-  assert.deepEqual(post.security, [{ OnboardingToken: [] }]);
+  assert.deepEqual(post.security, []);
+  assert.equal(
+    post.requestBody.content['application/json'].schema.$ref,
+    '#/components/schemas/CsrOnboardingRequestInput',
+  );
   assert.ok(doc.components.securitySchemes.OnboardingToken);
   // 设备无证书阶段不得声明 mTLS
   assert.equal(
@@ -52,6 +56,7 @@ test('请求体五字段齐全：serialNumber/model/hardwareVersion/manufacturer
   assert.deepEqual(input.required, ['serialNumber', 'model', 'hardwareVersion', 'manufacturer', 'manufactureDate']);
   assert.equal(input.additionalProperties, false);
   assert.ok(input.properties.manufactureDate.pattern);
+  assert.deepEqual(doc.components.schemas.CsrOnboardingRequestInput.required, [...input.required, 'csrPem']);
 });
 
 test('成功响应含 requestId 与 PENDING 状态（200 幂等重放 / 201 新建）', () => {
@@ -89,11 +94,14 @@ test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.
   }
 });
 
-test('BE-ONB-03 status 端点：Token 隐式定位，三态响应与源稿嵌套结构一致', () => {
+test('BE-ONB-03 status 端点：requestId 与 CSR 私钥签名，三态响应不含设备私钥', () => {
   const get = doc.paths['/api/v1/device/onboarding/status'].get;
   assert.equal(get.operationId, 'getOnboardingStatus');
-  assert.deepEqual(get.security, [{ OnboardingToken: [] }]);
-  assert.ok(!get.parameters, '源稿未定义 status Query 参数，不得强制 serialNumber');
+  assert.deepEqual(get.security, []);
+  assert.deepEqual(
+    get.parameters.map((item: { name: string }) => item.name),
+    ['requestId', 'X-Onboarding-Timestamp', 'X-Onboarding-Nonce', 'X-Onboarding-Signature'],
+  );
   assert.equal(
     get.responses['200'].content['application/json'].schema.$ref,
     '#/components/schemas/OnboardingStatusResult',
@@ -107,7 +115,7 @@ test('BE-ONB-03 status 端点：Token 隐式定位，三态响应与源稿嵌套
     assert.ok(approved.required.includes(field), `APPROVED 缺少 ${field}`);
   }
   assert.deepEqual(doc.components.schemas.OnboardingInitialConfiguration.properties.heartbeatInterval.enum, [60]);
-  assert.ok(doc.components.schemas.OnboardingCertificate.required.includes('privateKey'));
+  assert.deepEqual(doc.components.schemas.OnboardingCertificate.required, ['certificatePem']);
   assert.ok(doc.components.schemas.OnboardingMqtt.required.includes('endpoint'));
 
   const rejected = doc.components.schemas.OnboardingStatusRejected;

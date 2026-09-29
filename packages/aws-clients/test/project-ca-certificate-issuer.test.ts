@@ -22,6 +22,25 @@ function testCa() {
 }
 
 describe('项目 CA 设备证书签发器', () => {
+  test('对设备 CSR 公钥签发且不返回私钥', async () => {
+    const ca = testCa();
+    const pair = forge.pki.rsa.generateKeyPair(2048);
+    const csr = forge.pki.createCertificationRequest();
+    csr.publicKey = pair.publicKey;
+    csr.setSubject([{ name: 'commonName', value: 'SN-CSR-ISSUER' }]);
+    csr.sign(pair.privateKey, forge.md.sha256.create());
+    const issuer = createProjectCaCertificateIssuer({
+      secretId: 'fdp-test-device-ca',
+      validitySeconds: 31_536_000,
+      client: { send: async () => ({ SecretString: JSON.stringify(ca) }) } as unknown as SecretsManagerClient,
+      now: () => new Date('2026-09-21T00:00:00Z'),
+    });
+    const issued = await issuer.issue(forge.pki.certificationRequestToPem(csr));
+    const leaf = forge.pki.certificateFromPem(issued.certificatePem);
+    assert.isUndefined(issued.privateKey);
+    assert.equal(forge.pki.publicKeyToPem(leaf.publicKey), forge.pki.publicKeyToPem(pair.publicKey));
+    assert.isTrue(forge.pki.certificateFromPem(ca.caCertificatePem).verify(leaf));
+  });
   test('签发可由 CA 验证且包含客户端认证用途的叶证书，并缓存 Secret', async () => {
     const ca = testCa();
     const calls: unknown[] = [];
@@ -42,7 +61,8 @@ describe('项目 CA 设备证书签发器', () => {
     const second = await issuer.issue();
     const caCertificate = forge.pki.certificateFromPem(ca.caCertificatePem);
     const leaf = forge.pki.certificateFromPem(first.certificatePem);
-    const privateKey = forge.pki.privateKeyFromPem(first.privateKey);
+    assert.isString(first.privateKey);
+    const privateKey = forge.pki.privateKeyFromPem(first.privateKey!);
 
     assert.equal(calls.length, 1);
     assert.instanceOf(calls[0], GetSecretValueCommand);

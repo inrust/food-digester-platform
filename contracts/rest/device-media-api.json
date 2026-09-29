@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-MED-01 设备端 Media 上传会话 API（mTLS 认证，AUTH-03 设备自身身份）。POST /api/v1/device/media/upload-sessions：校验 mediaType（CT-03 枚举 IMAGE/VIDEO）、fileName、sizeKb（DEC-024 类型上限）、sizeBytes（精确字节数）、sha256（hex64）与每设备 UTC 自然日配额（DEC-024），返回服务端生成 objectPath（media/{customerId}/{deviceId}/{sessionId}/{fileName}，客户端不得指定 Bucket/Key）的 15 分钟预签名上传 URL；签名绑定精确 Content-Length 与 SHA-256 checksum。设备上传后经 MQTT media Topic 上报元数据，由 Media Handler 校验 Object/大小/Hash 后落库（本文件不含该上行通道）。设备须 Active/Maintenance 且已分配 Customer；Retired 拒绝（DEC-014 仅 Sync 例外）。错误响应继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "DEC-005@1.0.0", "DEC-014@1.0.0", "DEC-024@1.0.0"],
-    "x-decision-register-version": "1.33.0"
+    "x-decision-register-version": "1.34.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
