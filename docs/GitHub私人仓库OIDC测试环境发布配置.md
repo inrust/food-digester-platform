@@ -11,7 +11,7 @@
 | GitHub 仓库 | `inrust/food-digester-platform`，owner ID `8358101`，repository ID `1346783527` |
 | GitHub OIDC Provider | `https://token.actions.githubusercontent.com`，Audience `sts.amazonaws.com` |
 | 拟创建角色 | `fdp-test-github-deploy-role` |
-| 角色权限边界 | `arn:aws:iam::065986019555:policy/FDP-DeploymentBoundary` |
+| 角色权限边界 | 拟创建 `arn:aws:iam::065986019555:policy/FDP-GitHubActionsTestBoundary` |
 
 GitHub 官方文档规定，2026-07-15 后创建的仓库默认在 `sub` 中包含 owner/repository ID。信任文件 [FDP-GitHubActionsTestTrust.json](../infra/iam/FDP-GitHubActionsTestTrust.json) 只允许上述不可变仓库 ID 的 `main` push subject；没有通配符，也没有开放 PR 或其他分支。首次真实运行时仍须核对 GitHub 发出的 subject；若仓库曾使用自定义 OIDC subject，不应放宽信任条件来绕过失败。[GitHub OIDC subject 格式](https://docs.github.com/en/actions/reference/security/oidc#immutable-subject-claims)
 
@@ -19,7 +19,7 @@ GitHub 官方文档规定，2026-07-15 后创建的仓库默认在 `sub` 中包�
 
 ## 具备 IAM 管理权限的人员执行
 
-当前 `esgiot-infra` SSO 身份对 `iam:ListOpenIDConnectProviders` 和精确 Provider 的 `iam:GetOpenIDConnectProvider` 均返回 `AccessDenied`，所以未能确认 Provider 是否存在；`fdp-test-github-deploy-role` 的精确 `GetRole` 返回 `NoSuchEntity`。不要在未核对 Provider 的情况下盲目创建。IAM 管理员先确认组织 SCP、Permission Set、权限边界允许以下操作，然后在本仓库根目录执行：
+当前 `esgiot-infra` SSO 身份对 `iam:ListOpenIDConnectProviders` 和精确 Provider 的 `iam:GetOpenIDConnectProvider` 均返回 `AccessDenied`，所以未能确认 Provider 是否存在；`fdp-test-github-deploy-role` 的精确 `GetRole` 返回 `NoSuchEntity`。不要在未核对 Provider 的情况下盲目创建。现有 `FDP-DeploymentBoundary` 没有允许 `sts:AssumeRole`，不适合直接挂到 GitHub 发布角色；管理员应为它创建下方专用边界。[FDP-GitHubOIDCSetupPermissions.json](../infra/iam/FDP-GitHubOIDCSetupPermissions.json) 给出执行下列命令所需的精确 IAM 权限，可由 IAM Identity Center 管理员合并到专用 Permission Set；仍需核对该身份的边界及组织 SCP。不要覆盖权限集已有策略。随后在本仓库根目录执行：
 
 ```bash
 export AWS_PROFILE=<有权限的管理员Profile>
@@ -36,10 +36,14 @@ aws iam create-open-id-connect-provider \
   --url https://token.actions.githubusercontent.com \
   --client-id-list sts.amazonaws.com
 
+aws iam create-policy \
+  --policy-name FDP-GitHubActionsTestBoundary \
+  --policy-document file://infra/iam/FDP-GitHubActionsTestBoundary.json
+
 aws iam create-role \
   --role-name fdp-test-github-deploy-role \
   --assume-role-policy-document file://infra/iam/FDP-GitHubActionsTestTrust.json \
-  --permissions-boundary arn:aws:iam::065986019555:policy/FDP-DeploymentBoundary
+  --permissions-boundary arn:aws:iam::065986019555:policy/FDP-GitHubActionsTestBoundary
 
 aws iam put-role-policy \
   --role-name fdp-test-github-deploy-role \
@@ -47,7 +51,7 @@ aws iam put-role-policy \
   --policy-document file://infra/iam/FDP-GitHubActionsTestPermissions.json
 ```
 
-仅在 Provider 不存在时运行 `create-open-id-connect-provider`。角色创建前再次确认 `GetRole` 返回 `NoSuchEntity`；若角色已由其他人创建，核对并审阅其 trust、边界和权限，不覆盖。权限文件只允许承担现有测试 CDK 的 deploy/file/image/lookup 四个角色，并读取该测试 Bootstrap 版本参数；不授予迁移 Runner、管理员初始化、DNS 修改或长期 Access Key 权限。现有 Bootstrap 角色的信任策略允许同账号主体承担，但须在首次发布中验证完整角色链。
+仅在 Provider 不存在时运行 `create-open-id-connect-provider`；仅在专用边界不存在时运行 `create-policy`，否则先核对默认策略版本是否与仓库文件一致。角色创建前再次确认 `GetRole` 返回 `NoSuchEntity`；若角色已由其他人创建，核对并审阅其 trust、边界和权限，不覆盖。权限文件及专用边界均只允许承担现有测试 CDK 的 deploy/file/image/lookup 四个角色，并读取该测试 Bootstrap 版本参数；不授予迁移 Runner、管理员初始化、DNS 修改或长期 Access Key 权限。现有 Bootstrap 角色的信任策略允许同账号主体承担，但须在首次发布中验证完整角色链。
 
 验证命令：
 

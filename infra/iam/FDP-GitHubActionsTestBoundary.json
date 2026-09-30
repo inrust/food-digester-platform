@@ -1,0 +1,22 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AssumeOnlyTestCdkBootstrapRoles",
+      "Effect": "Allow",
+      "Action": ["sts:AssumeRole", "sts:TagSession"],
+      "Resource": [
+        "arn:aws:iam::065986019555:role/fdp-test-cdk-deploy-role",
+        "arn:aws:iam::065986019555:role/fdp-test-cdk-file-publishing-role",
+        "arn:aws:iam::065986019555:role/fdp-test-cdk-image-publishing-role",
+        "arn:aws:iam::065986019555:role/fdp-test-cdk-lookup-role"
+      ]
+    },
+    {
+      "Sid": "ReadOnlyTestCdkBootstrapVersion",
+      "Effect": "Allow",
+      "Action": ["ssm:GetParameter", "ssm:GetParameters"],
+      "Resource": "arn:aws:ssm:ap-southeast-1:065986019555:parameter/cdk-bootstrap/fdptest01/version"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListExistingOidcProviders",
+      "Effect": "Allow",
+      "Action": "iam:ListOpenIDConnectProviders",
+      "Resource": "*"
+    },
+    {
+      "Sid": "InspectOrCreateExactGitHubOidcProvider",
+      "Effect": "Allow",
+      "Action": ["iam:GetOpenIDConnectProvider", "iam:CreateOpenIDConnectProvider"],
+      "Resource": "arn:aws:iam::065986019555:oidc-provider/token.actions.githubusercontent.com"
+    },
+    {
+      "Sid": "InspectOrCreateExactGitHubDeployBoundary",
+      "Effect": "Allow",
+      "Action": ["iam:GetPolicy", "iam:GetPolicyVersion", "iam:CreatePolicy"],
+      "Resource": "arn:aws:iam::065986019555:policy/FDP-GitHubActionsTestBoundary"
+    },
+    {
+      "Sid": "CreateExactGitHubDeployRoleWithBoundary",
+      "Effect": "Allow",
+      "Action": ["iam:CreateRole", "iam:PutRolePermissionsBoundary"],
+      "Resource": "arn:aws:iam::065986019555:role/fdp-test-github-deploy-role",
+      "Condition": {
+        "StringEquals": {
+          "iam:PermissionsBoundary": "arn:aws:iam::065986019555:policy/FDP-GitHubActionsTestBoundary"
+        }
+      }
+    },
+    {
+      "Sid": "InspectAndSetExactGitHubDeployRolePolicy",
+      "Effect": "Allow",
+      "Action": ["iam:GetRole", "iam:GetRolePolicy", "iam:PutRolePolicy"],
+      "Resource": "arn:aws:iam::065986019555:role/fdp-test-github-deploy-role"
+    }
+  ]
+}
