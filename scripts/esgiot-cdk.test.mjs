@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseOperationArgs, runWorkspaceBuild, WORKSPACE_BUILD_ARGS } from './esgiot-cdk.mjs';
+import { deploymentAuthArgs, parseOperationArgs, runWorkspaceBuild, WORKSPACE_BUILD_ARGS } from './esgiot-cdk.mjs';
 
 test('CDK wrapper accepts synth/diff and requires explicit deploy stack', () => {
   assert.deepEqual(parseOperationArgs([]), { operation: 'synth', stacks: [] });
@@ -27,4 +27,10 @@ test('CDK wrapper builds the whole workspace and fails closed on build errors', 
   assert.deepEqual(calls, [{ command: 'pnpm', args: ['build'], options: { stdio: 'inherit' } }]);
   assert.throws(() => runWorkspaceBuild(() => ({ status: 2 })), /Workspace build failed/u);
   assert.throws(() => runWorkspaceBuild(() => ({ status: null })), /Workspace build failed/u);
+});
+
+test('CDK wrapper uses local SSO but requires OIDC credentials in GitHub Actions', () => {
+  assert.deepEqual(deploymentAuthArgs({}), ['--profile', 'esgiot-infra']);
+  assert.deepEqual(deploymentAuthArgs({ GITHUB_ACTIONS: 'true' }), []);
+  assert.throws(() => deploymentAuthArgs({ GITHUB_ACTIONS: 'true', AWS_PROFILE: 'esgiot-infra' }), /OIDC/u);
 });

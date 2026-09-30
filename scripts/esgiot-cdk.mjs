@@ -25,6 +25,14 @@ export function runWorkspaceBuild(run = spawnSync) {
   if (built.status !== 0) throw new Error(`Workspace build failed (exit ${built.status ?? 'unknown'})`);
 }
 
+export function deploymentAuthArgs(env = process.env) {
+  if (env.GITHUB_ACTIONS === 'true') {
+    if (env.AWS_PROFILE) throw new Error('GitHub Actions deployment must use OIDC credentials, not AWS_PROFILE');
+    return [];
+  }
+  return ['--profile', 'esgiot-infra'];
+}
+
 export function main(argv = process.argv.slice(2)) {
   const { operation, stacks } = parseOperationArgs(argv);
   const config = JSON.parse(readFileSync(new URL('../infra/environments/esgiot-test.json', import.meta.url), 'utf8'));
@@ -42,26 +50,19 @@ export function main(argv = process.argv.slice(2)) {
   // Lambda bundle 会解析工作区 package exports 到 dist；只构建 infra 会打入陈旧运行时代码。
   runWorkspaceBuild();
 
+  const authArgs = deploymentAuthArgs();
+
   const identity = spawnSync(
     'aws',
-    [
-      'sts',
-      'get-caller-identity',
-      '--profile',
-      'esgiot-infra',
-      '--region',
-      config.deploymentRegion,
-      '--output',
-      'json',
-    ],
+    ['sts', 'get-caller-identity', ...authArgs, '--region', config.deploymentRegion, '--output', 'json'],
     { encoding: 'utf8' },
   );
   if (identity.status !== 0 || JSON.parse(identity.stdout).Account !== config.deploymentAccount) {
-    throw new Error('AWS account identity mismatch or SSO unavailable');
+    throw new Error('AWS account identity mismatch or deployment credentials unavailable');
   }
-  const args = ['--filter', '@fdp/infra', 'exec', 'cdk', operation, ...stacks, '--profile', 'esgiot-infra'];
+  const args = ['--filter', '@fdp/infra', 'exec', 'cdk', operation, ...stacks, ...authArgs];
   if (operation === 'diff') args.push('--no-change-set');
-  if (operation === 'deploy') args.push('--require-approval', 'broadening');
+  if (operation === 'deploy') args.push('--require-approval', authArgs.length ? 'broadening' : 'never');
   for (const [key, value] of Object.entries(config)) args.push('-c', `${key}=${value}`);
   const result = spawnSync('pnpm', args, {
     stdio: 'inherit',

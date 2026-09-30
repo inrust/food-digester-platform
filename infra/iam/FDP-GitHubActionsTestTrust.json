@@ -1,0 +1,19 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OnlyFoodDigesterMain",
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::065986019555:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+          "token.actions.githubusercontent.com:sub": "repo:inrust@8358101/food-digester-platform@1346783527:ref:refs/heads/main"
+        }
+      }
+    }
+  ]
+}

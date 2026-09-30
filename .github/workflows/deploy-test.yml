@@ -1,0 +1,51 @@
+name: Deploy test API
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: fdp-test-app
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy-test
+    if: vars.FDP_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      FDP_DEVICE_API_CERTIFICATE_ARN: ${{ vars.FDP_DEVICE_API_CERTIFICATE_ARN }}
+      FDP_PUBLIC_API_CERTIFICATE_ARN: ${{ vars.FDP_PUBLIC_API_CERTIFICATE_ARN }}
+      FDP_TRUSTSTORE_BUCKET_NAME: ${{ vars.FDP_TRUSTSTORE_BUCKET_NAME }}
+      FDP_TRUSTSTORE_VERSION: ${{ vars.FDP_TRUSTSTORE_VERSION }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.20.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm verify
+      - uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.FDP_TEST_DEPLOY_ROLE_ARN }}
+          aws-region: ap-southeast-1
+          allowed-account-ids: '065986019555'
+          role-session-name: fdp-test-${{ github.run_id }}
+      - name: Verify target account and exact commit
+        run: |
+          test "$(aws sts get-caller-identity --query Account --output text)" = '065986019555'
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - run: node scripts/esgiot-cdk.mjs diff AppDependencies
+      - run: node scripts/esgiot-cdk.mjs deploy AppDependencies
