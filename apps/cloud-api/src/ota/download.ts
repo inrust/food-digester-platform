@@ -125,7 +125,7 @@ export function createDeviceOtaDownloadHandler(deps: {
       return {
         status: 307,
         headers: { location: result.location, 'cache-control': 'no-store' },
-        body: { expiresAt: result.expiresAt },
+        body: undefined,
       };
     } catch (error) {
       if (error instanceof AuthError || error instanceof OtaDownloadError) {

@@ -121,7 +121,7 @@ export function createDeviceApiLambdaHandler(routes: DeviceRouteSet) {
 
     try {
       const response = await route(request);
-      const serialized = JSON.stringify(response.body);
+      const serialized = response.body === undefined ? '' : JSON.stringify(response.body);
       await response.onCommitted?.();
       return { statusCode: response.status, headers: { ...JSON_HEADERS, ...response.headers }, body: serialized };
     } catch {

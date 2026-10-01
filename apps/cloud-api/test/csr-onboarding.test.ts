@@ -1,3 +1,4 @@
+import { contractHandler } from '../../../contracts/testing/device-contract.js';
 import forge from 'node-forge';
 import { createSign, randomBytes } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
@@ -8,6 +9,7 @@ import {
   createRateLimiter,
   InMemoryRateLimitStore,
   SecurePackageService,
+  SecurePackageError,
 } from '@fdp/auth';
 import { createOnboardingRequestHandler, createOnboardingStatusHandler } from '../src/index.js';
 import { createTestDb } from './helpers.js';
@@ -63,7 +65,7 @@ function signedHeaders(requestId: string, nonce: string) {
 
 describe('无预置 Token 的 CSR Onboarding', () => {
   test('匿名申请、相同公钥幂等、换钥冲突；签名轮询拒绝重放', async () => {
-    const request = createOnboardingRequestHandler({ client: prisma, rateLimiter: limiter, now: () => NOW });
+    const request = checkedCreateOnboardingRequestHandler({ client: prisma, rateLimiter: limiter, now: () => NOW });
     const first = await request({ headers: {}, body, requestId: 'api-1' });
     expect(first.status).toBe(201);
     const requestId = (first.body as { requestId: string }).requestId;
@@ -80,7 +82,7 @@ describe('无预置 Token 的 CSR Onboarding', () => {
       keyProvider: createLocalTestKeyProvider('csr-test'),
       config: { retentionSeconds: CERTIFICATE_PACKAGE_RETENTION_SECONDS, maxClaims: 1, now: () => NOW },
     });
-    const status = createOnboardingStatusHandler({
+    const status = checkedCreateOnboardingStatusHandler({
       client: prisma,
       securePackage,
       mqttEndpoint: 'example.iot',
@@ -117,6 +119,19 @@ describe('无预置 Token 的 CSR Onboarding', () => {
     });
     expect(wrong.status).toBe(401);
 
+    await prisma.onboardingRequest.update({
+      where: { id: requestId },
+      data: { status: 'REJECTED', rejectReason: 'QA-02 rejected fixture' },
+    });
+    expect(
+      (
+        await status({
+          headers: signedHeaders(requestId, randomBytes(24).toString('base64url')),
+          query: { requestId },
+          requestId: 'qa02-rejected',
+        })
+      ).body,
+    ).toEqual({ status: 'REJECTED', reason: 'QA-02 rejected fixture' });
     await prisma.onboardingRequest.update({ where: { id: requestId }, data: { status: 'APPROVED' } });
     await prisma.deviceCertificate.create({
       data: {
@@ -133,6 +148,31 @@ describe('无预置 Token 的 CSR Onboarding', () => {
       'cert-csr-1',
       Buffer.from(JSON.stringify({ certificatePem: 'PUBLIC-CERTIFICATE', certificateChain: 'PUBLIC-CA' })),
     );
+    for (const code of ['NOT_FOUND', 'CONFLICT'] as const) {
+      const failingStatus = checkedCreateOnboardingStatusHandler({
+        client: prisma,
+        now: () => NOW,
+        rateLimiter: limiter,
+        securePackage: {
+          preparePackageDelivery: async () => {
+            throw new SecurePackageError(code);
+          },
+        } as unknown as SecurePackageService,
+        mqttEndpoint: 'example.iot',
+        restEndpoint: 'https://device-api.test',
+        deliveryRecovery: {
+          recoverUnconfirmedDelivery: async () => {},
+          recoverExpiredPackage: async () => {},
+          convergeOnboardingTimeout: async () => {},
+        },
+      });
+      const failure = await failingStatus({
+        headers: signedHeaders(requestId, randomBytes(24).toString('base64url')),
+        query: { requestId },
+        requestId: `qa02-package-${code}`,
+      });
+      expect(failure.status).toBe(code === 'NOT_FOUND' ? 404 : 409);
+    }
     const approved = await status({
       headers: signedHeaders(requestId, randomBytes(24).toString('base64url')),
       query: { requestId },
@@ -145,5 +185,50 @@ describe('无预置 Token 的 CSR Onboarding', () => {
     expect(
       (await prisma.deviceCertificate.findUniqueOrThrow({ where: { id: 'cert-csr-1' } })).packageCiphertext,
     ).toBeNull();
+    expect(
+      (
+        await request({
+          headers: {},
+          body: { ...body, serialNumber: 'SN-QA02-NOT-FOUND' },
+          requestId: 'qa02-serial-not-found',
+        })
+      ).status,
+    ).toBe(404);
+    expect((await status({ headers: {}, query: {}, requestId: 'qa02-missing-query' })).status).toBe(400);
+    const limited = createRateLimiter(new InMemoryRateLimitStore(), { limit: 1, windowSeconds: 60 }, () => NOW);
+    const limitedRequest = checkedCreateOnboardingRequestHandler({
+      client: prisma,
+      now: () => NOW,
+      rateLimiter: limited,
+    });
+    const limitedInput = { headers: {}, body: { ...body, serialNumber: 'SN-QA02-RATE' }, requestId: 'qa02-rate' };
+    expect((await limitedRequest(limitedInput)).status).toBe(404);
+    expect((await limitedRequest(limitedInput)).status).toBe(429);
+    const limitedStatus = checkedCreateOnboardingStatusHandler({
+      client: prisma,
+      now: () => NOW,
+      rateLimiter: createRateLimiter(new InMemoryRateLimitStore(), { limit: 1, windowSeconds: 60 }, () => NOW),
+      securePackage,
+      mqttEndpoint: 'example.iot',
+      restEndpoint: 'https://device-api.test',
+      deliveryRecovery: {
+        recoverUnconfirmedDelivery: async () => {},
+        recoverExpiredPackage: async () => {},
+        convergeOnboardingTimeout: async () => {},
+      },
+    });
+    const limitedPoll = {
+      headers: signedHeaders(requestId, randomBytes(24).toString('base64url')),
+      query: { requestId },
+      requestId: 'qa02-rate-status',
+    };
+    expect((await limitedStatus(limitedPoll)).status).toBe(200);
+    expect((await limitedStatus(limitedPoll)).status).toBe(429);
   });
 });
+
+const checkedCreateOnboardingRequestHandler: typeof createOnboardingRequestHandler = (deps) =>
+  contractHandler('submitOnboardingRequest', createOnboardingRequestHandler(deps));
+
+const checkedCreateOnboardingStatusHandler: typeof createOnboardingStatusHandler = (deps) =>
+  contractHandler('getOnboardingStatus', createOnboardingStatusHandler(deps));

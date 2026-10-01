@@ -1,3 +1,7 @@
+import { contractHandler, deviceContract } from '../../../contracts/testing/device-contract.js';
+import { certificateFingerprintFromPem } from '@fdp/auth';
+import { createDeviceOtaDownloadHandler } from '../src/ota/download.js';
+import { createDeviceApiLambdaHandler } from '../src/runtime/device-lambda.js';
 /**
  * BE-OTA-03 OTA MQTT 下发与状态接收验收（PGlite 真实 PostgreSQL + 全部 migration）。
  *
@@ -712,3 +716,82 @@ async function assertRejectsNotFound(p: Promise<unknown>): Promise<void> {
   }
   assert.fail('expected rejection');
 }
+
+describe('QA-02 OTA REST full contract through real Handler and Lambda', () => {
+  test('307 has required redirect headers and no undocumented JSON body; all error statuses match CT-05', async () => {
+    const { campaignId, deviceId } = await plantCampaign();
+    const ports = fakePorts();
+    await dispatchOtaCampaign(ports.deps, campaignId);
+    const url = new URL(JSON.parse(ports.published[0]!.payload).data.downloadUrl);
+    const target = await prisma.otaTarget.findFirstOrThrow({ where: { campaignId } });
+    const pem = `-----BEGIN CERTIFICATE-----\n${Buffer.from(deviceId).toString('base64')}\n-----END CERTIFICATE-----`;
+    await prisma.deviceCertificate.create({
+      data: {
+        id: `qa02-cert-${deviceId}`,
+        deviceId,
+        fingerprint: certificateFingerprintFromPem(pem),
+        status: 'ACTIVE',
+        certificatePem: pem,
+        notBefore: NOW,
+        notAfter: new Date(NOW.getTime() + 86400_000),
+      },
+    });
+    const deps = {
+      client: prisma,
+      now: () => NOW,
+      objectUrlSigner: { signDownload: () => 'https://s3.test/download' },
+    };
+    const handler = contractHandler('redeemOtaDownloadGrant', createDeviceOtaDownloadHandler(deps));
+    const request = {
+      requestId: 'qa02-ota',
+      identity: { clientCertPem: pem },
+      params: { targetId: target.id },
+      query: { token: url.searchParams.get('token')! },
+    };
+    assert.equal((await handler({ ...request, identity: undefined } as unknown as typeof request)).status, 401);
+    assert.equal((await handler({ ...request, query: {} })).status, 400);
+    assert.equal((await handler({ ...request, query: { token: 'x'.repeat(43) } })).status, 404);
+    await prisma.otaTarget.update({ where: { id: target.id }, data: { status: 'CANCELLED' } });
+    assert.equal((await handler(request)).status, 403);
+    await prisma.otaTarget.update({ where: { id: target.id }, data: { status: 'NOTIFIED' } });
+    const unused = async () => {
+      throw new Error('unexpected route');
+    };
+    const lambda = createDeviceApiLambdaHandler({
+      certificateStatus: unused,
+      certificateRotate: unused,
+      sync: unused,
+      deactivate: unused,
+      mediaUpload: unused,
+      otaDownload: handler,
+    });
+    const result = await lambda({
+      httpMethod: 'GET',
+      path: `/api/v1/device/ota/targets/${target.id}/download`,
+      queryStringParameters: request.query,
+      requestContext: { requestId: request.requestId, identity: { clientCert: request.identity } },
+    });
+    assert.equal(result.statusCode, 307);
+    assert.equal(result.body, '');
+    deviceContract.assertResponse('redeemOtaDownloadGrant', {
+      status: result.statusCode,
+      body: result.body,
+      headers: result.headers,
+    });
+    assert.equal((await handler(request)).status, 409);
+    const broken = contractHandler(
+      'redeemOtaDownloadGrant',
+      createDeviceOtaDownloadHandler({
+        ...deps,
+        client: {
+          deviceCertificate: {
+            findUnique: async () => {
+              throw new Error('database outage');
+            },
+          },
+        } as unknown as typeof prisma,
+      }),
+    );
+    assert.equal((await broken(request)).status, 500);
+  });
+});

@@ -1,3 +1,4 @@
+import { contractHandler } from '../../../contracts/testing/device-contract.js';
 /**
  * BE-MED-01 Media 上传会话与元数据 API 验收（PGlite 真实 PostgreSQL + 全部 migration）。
  *
@@ -150,7 +151,7 @@ async function createSession(
   overrides: Record<string, unknown> = {},
   policy?: MediaUploadPolicyQuery,
 ) {
-  const handler = createDeviceMediaHandler(mediaDeps(store, policy));
+  const handler = checkedCreateDeviceMediaHandler(mediaDeps(store, policy));
   const body = {
     mediaType: 'IMAGE',
     fileName: 'snap.jpg',
@@ -240,7 +241,7 @@ describe('BE-MED-01 设备上传会话', () => {
     const device = await plantDevice();
     const content = Buffer.alloc(1024, 1);
     const unknown = await createSession(store, device, content, { objectPath: 'attacker/chosen-key' });
-    const handler = createDeviceMediaHandler(mediaDeps(store));
+    const handler = checkedCreateDeviceMediaHandler(mediaDeps(store));
     const array = await handler({
       identity: { clientCertPem: device.pem },
       body: [],
@@ -586,3 +587,6 @@ describe('BE-MED-01 管理端列表与下载', () => {
     assert.ok((deletedList.body as ListBody).data.some((m) => m.mediaId === m2));
   });
 });
+
+const checkedCreateDeviceMediaHandler: typeof createDeviceMediaHandler = (deps) =>
+  contractHandler('createMediaUploadSession', createDeviceMediaHandler(deps));

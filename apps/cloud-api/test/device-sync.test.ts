@@ -1,3 +1,4 @@
+import { contractHandler } from '../../../contracts/testing/device-contract.js';
 /**
  * BE-SYNC-01 Unified Device Sync API 验收（PGlite 真实 PostgreSQL + 全部 migration）。
  *
@@ -47,7 +48,7 @@ function handler(): ReturnType<typeof createDeviceSyncHandler> {
     now,
     maintenanceSyncIntervalSeconds: MAINTENANCE_SYNC_SECONDS,
   };
-  return createDeviceSyncHandler(deps);
+  return checkedCreateDeviceSyncHandler(deps);
 }
 
 function fixturePem(seed: string): string {
@@ -558,3 +559,6 @@ describe('契约一致性', () => {
     }
   });
 });
+
+const checkedCreateDeviceSyncHandler: typeof createDeviceSyncHandler = (deps) =>
+  contractHandler('syncDevice', createDeviceSyncHandler(deps));

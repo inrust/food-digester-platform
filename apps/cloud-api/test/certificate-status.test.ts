@@ -1,3 +1,4 @@
+import { contractHandler } from '../../../contracts/testing/device-contract.js';
 /**
  * BE-CERT-01 Certificate Status API 验收（PGlite 真实 PostgreSQL + 全部 migration）。
  *
@@ -71,7 +72,7 @@ async function plantActiveCert(options: { notAfterOffsetMs?: number; deviceId?: 
 }
 
 function makeHandler(overrides: Partial<CertificateStatusHandlerDeps> = {}) {
-  return createCertificateStatusHandler({ client: prisma, now, ...overrides });
+  return checkedCreateCertificateStatusHandler({ client: prisma, now, ...overrides });
 }
 
 function statusReq(pem: string | undefined, query: Record<string, string> = {}): CertificateStatusRequest {
@@ -202,3 +203,6 @@ describe('deriveCertificateStatus 纯函数边界', () => {
     assert.equal(dayBefore.daysRemaining, 1);
   });
 });
+
+const checkedCreateCertificateStatusHandler: typeof createCertificateStatusHandler = (deps) =>
+  contractHandler('getCertificateStatus', createCertificateStatusHandler(deps));

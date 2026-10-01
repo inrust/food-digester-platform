@@ -1,3 +1,4 @@
+import { contractHandler } from '../../../contracts/testing/device-contract.js';
 /**
  * BE-SYNC-02 Device Deactivate API 验收（PGlite 真实 PostgreSQL + 全部 migration）。
  *
@@ -35,7 +36,7 @@ afterAll(async () => {
 });
 
 function handler() {
-  return createDeviceDeactivateHandler({ client: prisma, now, iot: { deactivateCertificate: async () => {} } });
+  return checkedCreateDeviceDeactivateHandler({ client: prisma, now, iot: { deactivateCertificate: async () => {} } });
 }
 
 function fixturePem(seed: string): string {
@@ -254,3 +255,6 @@ describe('契约一致性', () => {
     }
   });
 });
+
+const checkedCreateDeviceDeactivateHandler: typeof createDeviceDeactivateHandler = (deps) =>
+  contractHandler('confirmDeactivation', createDeviceDeactivateHandler(deps));

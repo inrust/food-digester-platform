@@ -1,3 +1,4 @@
+import { contractHandler } from '../../../contracts/testing/device-contract.js';
 /**
  * BE-CERT-02 Certificate Rotate API 验收（PGlite 真实 PostgreSQL + 全部 migration + mock IoT）。
  *
@@ -109,7 +110,7 @@ function makeHandler(iot: IotProvisioningPort): ReturnType<typeof createCertific
     },
     now,
   };
-  return createCertificateRotateHandler(deps);
+  return checkedCreateCertificateRotateHandler(deps);
 }
 
 interface RotatePayload {
@@ -322,3 +323,6 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     assert.equal(await prisma.deviceCertificate.count({ where: { deviceId, rotatedFromId: oldCertificateId } }), 1);
   });
 });
+
+const checkedCreateCertificateRotateHandler: typeof createCertificateRotateHandler = (deps) =>
+  contractHandler('rotateCertificate', createCertificateRotateHandler(deps));

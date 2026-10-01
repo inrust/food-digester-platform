@@ -38,9 +38,10 @@
     "test:aws-iot-authz": "node --import tsx scripts/verify-aws-iot-authorization.mjs",
     "openapi:bundle": "node scripts/build-openapi.mjs",
     "openapi:check": "node scripts/build-openapi.mjs --check && redocly lint contracts/rest/openapi-base.json \"contracts/rest/*-api.json\" contracts/rest/openapi.bundle.json --extends spec",
-    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks && pnpm check:admin-web-delivery && pnpm check:admin-web-e2e && pnpm check:cmd-ota-delivery",
+    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks && pnpm check:admin-web-delivery && pnpm check:admin-web-e2e && pnpm check:cmd-ota-delivery && pnpm test:device-contracts /tmp/fdp-device-contracts-gate.json",
     "qa:simulator": "node --import tsx scripts/run-device-simulator.mjs",
-    "test:simulator": "node --import tsx --test scripts/device-simulator*.test.mjs"
+    "test:simulator": "node --import tsx --test scripts/device-simulator*.test.mjs",
+    "test:device-contracts": "node --import tsx scripts/run-contract-suite.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

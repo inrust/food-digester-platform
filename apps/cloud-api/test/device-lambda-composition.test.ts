@@ -101,7 +101,7 @@ describe('Device API Lambda 生产路由', () => {
     const otaDownload = vi.fn<DeviceRoute>(async () => ({
       status: 307,
       headers: { location: 'https://s3.test/object', 'cache-control': 'no-store' },
-      body: { expiresAt: '2026-09-09T00:15:00.000Z' },
+      body: undefined,
     }));
     const response = await createDeviceApiLambdaHandler(routes({ otaDownload }))({
       httpMethod: 'GET',
@@ -111,6 +111,7 @@ describe('Device API Lambda 生产路由', () => {
     assert.equal(response.statusCode, 307);
     assert.equal(response.headers.location, 'https://s3.test/object');
     assert.equal(response.headers['cache-control'], 'no-store');
+    assert.equal(response.body, '');
   });
 
   test('Rotate 先序列化响应再提交交付确认', async () => {
