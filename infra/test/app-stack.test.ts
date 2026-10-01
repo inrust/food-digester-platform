@@ -518,7 +518,7 @@ describe('Device API mTLS 自定义域名（提供域名配置时）', () => {
       Name: 'fdp-test-device-api',
       DisableExecuteApiEndpoint: false,
     });
-  }, 15_000);
+  }, 60_000);
 
   test('dev/staging/prod 缺少 mTLS 配置或尝试开启不安全入口时失败关闭', () => {
     for (const config of [

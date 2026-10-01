@@ -1493,51 +1493,60 @@ test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License �
   await expect.poll(() => calls.terminate).toBe(1);
 });
 
-test('FE-19 Chromium 遍历 22 个生产路由、双语言与三档视口且刷新保持', async ({ page }) => {
-  await seedSession(page, 'PlatformSuperAdmin');
-  await page.route('**/api/v1/admin/**', (route) =>
-    json(route, { error: { code: 'FORBIDDEN', message: 'layout probe', requestId: 'req-layout' } }, 403),
-  );
-  const routes = [
-    '/dashboard',
-    '/devices/view',
-    '/devices/operate',
-    '/devices/groups',
-    '/configurations',
-    '/consumables',
-    '/alarms',
-    '/media',
-    '/esg/overview',
-    '/esg/devices',
-    '/contracts',
-    '/settings',
-    '/customers',
-    '/sites',
-    '/licenses',
-    '/device-users',
-    '/audit-logs',
-    '/devices/manage',
-    '/contracts/new',
-    '/contracts/detail',
-    '/ota/campaigns',
-    '/ota/packages',
-  ];
-  for (const language of ['zh-CN', 'en'] as const) {
-    await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), {
-      key: 'fdp.admin.lang.v1',
-      value: language,
-    });
-    for (const width of [375, 768, 1440]) {
+const layoutRoutes = [
+  '/dashboard',
+  '/devices/view',
+  '/devices/operate',
+  '/devices/groups',
+  '/configurations',
+  '/consumables',
+  '/alarms',
+  '/media',
+  '/esg/overview',
+  '/esg/devices',
+  '/contracts',
+  '/settings',
+  '/customers',
+  '/sites',
+  '/licenses',
+  '/device-users',
+  '/audit-logs',
+  '/devices/manage',
+  '/contracts/new',
+  '/contracts/detail',
+  '/ota/campaigns',
+  '/ota/packages',
+];
+
+// Each language/viewport gets a fresh page and its own time budget for 22 navigations.
+for (const language of ['zh-CN', 'en'] as const) {
+  for (const width of [375, 768, 1440]) {
+    test(`FE-19 Chromium 22 个生产路由：${language} / ${width}px`, async ({ page }) => {
+      await seedSession(page, 'PlatformSuperAdmin');
+      await page.route('**/api/v1/admin/**', (route) =>
+        json(route, { error: { code: 'FORBIDDEN', message: 'layout probe', requestId: 'req-layout' } }, 403),
+      );
+      await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), {
+        key: 'fdp.admin.lang.v1',
+        value: language,
+      });
       await page.setViewportSize({ width, height: 900 });
-      for (const path of routes) {
+      for (const path of layoutRoutes) {
         await page.goto(path);
         await expect(page.getByTestId('page-content')).toBeVisible();
         await expect(page.locator('html')).toHaveAttribute('lang', language);
         await expect(page.locator('body')).not.toContainText('该页面尚未接入当前管理后台组合根');
         expect(await layoutViolations(page), `${language} ${width} ${path}`).toEqual([]);
       }
-    }
+    });
   }
+}
+
+test('FE-19 语言选择在刷新后保持', async ({ page }) => {
+  await seedSession(page, 'PlatformSuperAdmin');
+  await page.route('**/api/v1/admin/**', (route) =>
+    json(route, { error: { code: 'FORBIDDEN', message: 'layout probe', requestId: 'req-layout' } }, 403),
+  );
   await page.goto('/dashboard');
   await page.getByTestId('language-select').selectOption('en');
   await page.reload();
