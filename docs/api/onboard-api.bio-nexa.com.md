@@ -2,6 +2,8 @@
 
 Base URL：`https://onboard-api.bio-nexa.com`。本文以 [可执行 OpenAPI](../../contracts/rest/device-onboarding-api.json) 为准，描述设备只有印刷序列号、没有预置 Token 时的首次接入流程。设备无需取得、预置或写入平台 Token。
 
+审批后连接返回的 MQTT endpoint、发布首个 Heartbeat 及后续数据上报，见 [设备 MQTT 联调说明](./iot.bio-nexa.com.md)。
+
 ## 联调前提与职责
 
 设备方负责在设备本地生成并持久保存 **RSA 2048 位或更强的私钥**，生成 PKCS#10 PEM CSR，且私钥始终留在设备；设备还须能使用该私钥作 RSA-SHA256 签名、保存 `requestId` 和安装返回的证书。设备库存须预先有印刷序列号，处于 `PendingOnboarding`。管理员按照双方认可的线下管理制度核对实物、安装记录、申请时间和 CSR 公钥指纹后审批；**序列号与 CSR 本身不证明实物身份**。

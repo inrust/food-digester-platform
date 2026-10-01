@@ -1,15 +1,16 @@
 # 设备入口 API 文档
 
-本文档目录描述设备使用的两个独立 HTTPS 入口：
+本文档目录描述设备首次接入、运行数据通信和生命周期操作：
 
 | 域名 | 认证边界 | 文档 |
 |---|---|---|
 | `onboard-api.bio-nexa.com` | 无需预置 Token；CSR 申请与私钥签名轮询 | [Onboarding API](./onboard-api.bio-nexa.com.md) |
 | `device-api.bio-nexa.com` | API Gateway mTLS + 应用层设备证书白名单；接入后使用 | [Device API](./device-api.bio-nexa.com.md) |
+| `iot.bio-nexa.com`（规划域名；实际使用 Onboarding 返回的 MQTT endpoint） | MQTT over TLS + 设备 X.509；8 类上行、3 类下行 | [设备 MQTT 联调说明](./iot.bio-nexa.com.md) |
 
 只有印刷序列号的设备使用 [无预置凭据 Onboarding 流程](./onboard-api.bio-nexa.com.md)。设备方与管理员须按线下制度核验申请与实物的对应关系。
 
-管理后台及客户业务 API 使用 `api.bio-nexa.com`，不在本目录两份文档的范围内。MQTT 使用 `iot.bio-nexa.com`，也不属于 HTTPS REST API。
+管理后台及客户业务 API 使用 `api.bio-nexa.com`，不在本目录设备文档的范围内。持续上报心跳、传感器数据、报告和告警，以及接收命令/OTA/通知，请查阅 MQTT 联调说明；证书、同步、下载授权和媒体上传会话请查阅 Device REST API。
 
 ## 契约来源与优先级
 
@@ -19,6 +20,8 @@
 4. `docs/管理后台开发任务清单.md`：任务边界、认证和验收要求。
 
 字段、状态码或枚举发生冲突时，以仓库中通过契约检查的 OpenAPI 为集成基准；不得只依据本文示例放宽请求。正文未重复列出的全部 JSON Schema 约束可在相应 `contracts/rest` 文件中查询。
+
+MQTT 以 `contracts/mqtt/topic-catalog.json`、各 Topic JSON Schema、冻结策略及业务处理器为准。新文档列明 Schema 之外的业务必填条件、序号幂等、Hash 算法和联调验收项目。
 
 ## 当前交付边界
 

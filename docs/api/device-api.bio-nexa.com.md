@@ -4,6 +4,8 @@
 
 该入口供完成接入后的设备使用。通信设计原始六接口中，证书、同步和退役确认 4 个接口位于本域名；另外，当前生产路由已加入 OTA 下载授权和 Media 上传会话，共 6 个操作。Onboarding 的 2 个接口位于 `onboard-api.bio-nexa.com`。
 
+设备持续上报 Heartbeat、Telemetry、ESG Report、Alarm 等数据，以及接收命令、OTA 和通知，使用 MQTT。完整 Topic、字段、报文示例与联调要求见 [设备 MQTT 联调说明](./iot.bio-nexa.com.md)。
+
 ## 认证、请求与错误
 
 - API Gateway Regional 自定义域名启用 mTLS。客户端在 TLS 握手中提供设备 X.509 证书。
