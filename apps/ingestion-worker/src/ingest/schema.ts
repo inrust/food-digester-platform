@@ -5,6 +5,7 @@
  *   首个错误路径写入 Quarantine 记录；字段范围（minimum/maximum/enum）由 Schema 覆盖；
  * - 时钟偏差：meta.ts（设备自报时间）与 iotReceivedAt（broker 时间）偏差超阈值 → 不可重试隔离。
  */
+import { messageTimeWithinWindow, TELEMETRY_BACKFILL_POLICY } from '@fdp/contracts/mqtt/telemetry-backfill-policy.js';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { quarantineError } from './errors.js';
@@ -71,11 +72,11 @@ export function assertClockSkew(envelope: IngressEnvelope, toleranceSeconds: num
   const deviceTs = Date.parse(ts);
   if (Number.isNaN(deviceTs)) return; // 格式错误由 Schema 校验判定
   const skewSeconds = Math.abs(deviceTs - envelope.iotReceivedAt) / 1000;
-  if (skewSeconds > toleranceSeconds) {
+  if (!messageTimeWithinWindow(envelope.iotType, deviceTs, envelope.iotReceivedAt, toleranceSeconds)) {
     throw quarantineError(
       'CLOCK_SKEW',
       'meta.ts',
-      `device clock skew ${Math.round(skewSeconds)}s exceeds tolerance ${toleranceSeconds}s`,
+      `device timestamp outside allowed window: skew ${Math.round(skewSeconds)}s, past ${envelope.iotType === 'telemetry' ? TELEMETRY_BACKFILL_POLICY.maxPastAgeSeconds : toleranceSeconds}s, future ${toleranceSeconds}s`,
     );
   }
 }

@@ -15,7 +15,7 @@
 | [errors.ts](../../apps/ingestion-worker/src/ingest/errors.ts) | `IngestError`：`classification` ∈ TRANSIENT / QUARANTINE；DEC-013 Hash 不匹配使用 `AUDIT_HASH_MISMATCH`，兼容格式冲突/过期使用 `SCHEMA_VIOLATION`；`errorPath` 稳定点分路径 |
 | [envelope.ts](../../apps/ingestion-worker/src/ingest/envelope.ts) | Envelope 解析（契约：BE-IOT-01 `contracts/iot/ingress-envelope.schema.json`）：JSON 解析 + 五个保留字段校验（Topic 白名单正则、Topic 设备段 ↔ iotDeviceId、iotType ↔ Topic、iotReceivedAt 非负整数毫秒、iotPrincipal 非空）；仅剥离五个保留字段，其他顶层字段交由封闭 Payload Schema 失败关闭 |
 | [identity.ts](../../apps/ingestion-worker/src/ingest/identity.ts) | 身份/台账解析：iotPrincipal（IoT Rule `principal()` 返回的 64 位证书 ID；兼容历史 ARN Envelope）→ `device_certificates` 台账（未登记 → UNKNOWN_DEVICE；非 ACTIVE/已撤销 → IDENTITY_VIOLATION）；证书绑定设备 ≠ Topic 设备 → IDENTITY_VIOLATION（跨设备伪装防护）；customerId 只取设备台账，不取 Payload 自报值 |
-| [schema.ts](../../apps/ingestion-worker/src/ingest/schema.ts) | CT-03 零依赖校验器按 `<iotType>.schema.json` 校验 Payload（enum/minimum/maximum 等字段范围由 Schema 覆盖），首个错误路径入 Quarantine；时钟偏差：meta.ts 与 iotReceivedAt 偏差超阈值（缺省 300s）→ CLOCK_SKEW |
+| [schema.ts](../../apps/ingestion-worker/src/ingest/schema.ts) | CT-03 零依赖校验器按 `<iotType>.schema.json` 校验 Payload（enum/minimum/maximum 等字段范围由 Schema 覆盖），首个错误路径入 Quarantine；时间窗口：QA-07 补报策略1.0.0允许 Telemetry 过去24小时（含边界）；未来及其他 Topic 保持配置容差（默认300s）。超窗→CLOCK_SKEW |
 | [pipeline.ts](../../apps/ingestion-worker/src/ingest/pipeline.ts) | 框架无关处理链 `validateRecord`；Audited Topic 先按原始 Payload 复算 `SHA-256(RFC8785({meta,data}))`，再执行 90 天旧格式转换；输出不可变 `rawBody`、`rawPayload` 与 `normalizedPayload` 双视图，业务映射使用 normalized，Raw Archive 使用 raw |
 | [handler.ts](../../apps/ingestion-worker/src/ingest/handler.ts) | SQS 批量 Handler：QUARANTINE → 写 Quarantine（原文 + errorType + errorPath + Topic 上下文）后视为已处理；TRANSIENT/未知异常 → `batchItemFailures` 部分失败重试 |
 
@@ -35,7 +35,7 @@
 2. 单条坏消息（非法 JSON）不导致整批重复：坏消息进 Quarantine，其余照常处理，`batchItemFailures` 为空；
 3. Schema 违规（enum 越界）进 Quarantine，`errorPath` 含 `deviceStatus`，附 Topic 上下文；
 4. 身份违规进 Quarantine：未知证书 UNKNOWN_DEVICE / 非 ACTIVE 证书 IDENTITY_VIOLATION / Topic 设备与证书绑定不一致 IDENTITY_VIOLATION（路径 `iotDeviceId`）；
-5. 时钟偏差 3600s > 300s 阈值 → CLOCK_SKEW（路径 `meta.ts`）；
+5. Heartbeat 时钟偏差 3600s > 300s 阈值 → CLOCK_SKEW（路径 `meta.ts`）；
 6. 瞬时错误（业务分发抛非 IngestError）：仅该条进 `batchItemFailures`，其余正常处理；
 7. Envelope 结构违规：iotPrincipal 缺失、Topic 与 iotType 不一致、Topic 设备段与 iotDeviceId 不一致 → INVALID_ENVELOPE；额外顶层 `iot*` 字段不被静默删除，进入 Schema 拒绝；
 8. 兼容期内嵌套 Heartbeat 与 `DISCHARING` 转换为正式扁平字段和 `DISCHARGING`，同时保留冻结的原始 Payload；
@@ -49,3 +49,7 @@
 - `defaultSchemasDir` 依赖 monorepo 源码直引（`createRequire` 解析 `@fdp/contracts/mqtt/validator.mjs`）；容器化部署（INFRA 系列）需确保 contracts 的 schemas 随包携带，部署任务落地时验证。
 - QuarantineSink 当前为端口接口，实际 SQS 实现随部署接线（BE-IOT-04 / INFRA 任务）。
 - TRANSIENT 分类目前由"非 IngestError 异常"兜底触发；如需将特定 AWS SDK 错误显式映射为 TRANSIENT，可在后续任务补充。
+
+## QA-07 历史补报更新（2026-10-01）
+
+用户明确确认 Telemetry 24小时补报边界，策略事实源为 [telemetry-backfill-policy.ts](../../contracts/mqtt/telemetry-backfill-policy.ts)。使用可信 Envelope `iotReceivedAt` 比对 `meta.ts`，过去86400秒与未来配置容差均含边界；过去86400秒+1毫秒、未来300秒+1毫秒拒绝。其他 Topic 不放宽，身份、Schema、audit.hash、receipt 幂等和历史归属解析仍按原管线执行。原始 `meta.ts` 不改写，聚合仍归入历史小时桶。范围、边界及真实管线证据见 [QA-07 开发说明](QA-07-试运营负载与可靠性自动化测试.md)。

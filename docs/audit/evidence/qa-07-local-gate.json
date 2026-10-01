@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-07",
+  "status": "PASS",
+  "scope": "LOCAL_LOAD_RELIABILITY",
+  "baselineCommit": "06e2456f7513a221b5d6974a58abe0fdc5cbc560",
+  "recordedAt": "2026-10-01T14:02:18.967381+00:00",
+  "commands": [
+    {
+      "command": "pnpm verify",
+      "exitCode": 0,
+      "result": {
+        "typecheckTasks": 21,
+        "buildTasks": 14,
+        "vitestFiles": 159,
+        "vitestTests": 1306,
+        "contractTests": 301,
+        "scriptTests": 278,
+        "browserRegressionTests": 30,
+        "qa05BrowserExecutions": 90,
+        "qa02Tests": 106,
+        "qa03Tests": 5,
+        "qa04Tests": 127,
+        "qa06Tests": 202,
+        "qa07Tests": 2
+      },
+      "logPath": "/tmp/qa07-verify.log",
+      "logSha256": "78df95ded4195da62b316eb91bca1546aa68ea89c6a9b58d58682b70704f8ba7"
+    },
+    {
+      "command": "node --import tsx --test scripts/reliability-suite.test.mjs contracts/mqtt/telemetry-backfill-policy.test.ts",
+      "exitCode": 0,
+      "passed": 40,
+      "logPath": "/tmp/qa07-gate-tests.log",
+      "logSha256": "6799ec61815da6842560bb6fcd7c4bd8b7f8713926e49cf5b118dffcaad3a7c2"
+    }
+  ],
+  "reliabilityReceipt": {
+    "path": "docs/audit/evidence/qa-07-local-reliability.json",
+    "sha256": "7bd02aa6f04bdc1bce3f1d1b1b1820514948d39daf0617cdb43803b67a50f379",
+    "passed": 2,
+    "profile": "quick",
+    "uniqueTelemetry": 900,
+    "uniqueHeartbeat": 20,
+    "duplicatesInjected": 45,
+    "reorderedInjected": 18,
+    "duplicateBusinessRows": 0,
+    "untrackedMissing": 0,
+    "telemetryP95Ms": 82.51091700000052,
+    "commandP95Ms": 3.8002080000005662,
+    "historyHoursCovered": 24,
+    "historyExecutedSeconds": 480,
+    "continuousFullDayExecuted": false,
+    "cleanup": "PASS"
+  },
+  "fullProfile": {
+    "status": "NOT_RUN",
+    "continuousHistorySeconds": 86400,
+    "historyTelemetryPlanCount": 86400,
+    "planGenerationTest": "PASS"
+  },
+  "telemetryBackfillPolicy": {
+    "version": "1.0.0",
+    "userApproved": "2026-10-01",
+    "maxPastAgeSeconds": 86400,
+    "futureToleranceSeconds": 300,
+    "boundary": "inclusive",
+    "otherTopicToleranceUnchanged": true,
+    "deployed": false
+  },
+  "awsTargetGate": "DEFERRED TO QA-09 / NOT RUN / NO RECEIPT",
+  "plannedTargetPhase": "QA-09",
+  "productionCredentialsUsed": false,
+  "deployed": false,
+  "remotePushed": false
+}

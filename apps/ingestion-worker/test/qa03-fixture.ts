@@ -46,9 +46,9 @@ export interface Qa03Fixture {
   faults: { ingestionId: string; quarantine: boolean; send: boolean; manifest: boolean };
   cleanup(): Promise<void>;
 }
-export async function createQa03Fixture(): Promise<Qa03Fixture> {
+export async function createQa03Fixture(namespace: 'QA03' | 'QA07' = 'QA03'): Promise<Qa03Fixture> {
   const { pg, prisma } = await createTestDb();
-  const prefix = `QA03-${randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase()}`;
+  const prefix = `${namespace}-${randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase()}`;
   const now = new Date('2026-10-01T02:00:00.000Z');
   const quarantine: QuarantineRecord[] = [];
   const archiveQueue: RecordLike[] = [];
