@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-06",
+  "status": "PASS",
+  "scope": "LOCAL_APPLICATION_SECURITY",
+  "baselineCommit": "f5953e5be5baa2559b2547ba1f56d643fb4acccc",
+  "recordedAt": "2026-10-01T13:28:58.314402+00:00",
+  "commands": [
+    {
+      "command": "pnpm verify",
+      "exitCode": 0,
+      "result": {
+        "typecheckTasks": 21,
+        "buildTasks": 14,
+        "vitestFiles": 158,
+        "vitestTests": 1304,
+        "contractTests": 291,
+        "scriptTests": 248,
+        "browserRegressionTests": 30,
+        "qa05BrowserExecutions": 90,
+        "qa02Tests": 106,
+        "qa03Tests": 5,
+        "qa04Tests": 127,
+        "qa06Tests": 202
+      },
+      "logPath": "/tmp/qa06-verify.log",
+      "logSha256": "3ad729c3ed2792f1930095ae3a65fa34499fdc2dcd8201b23b5672695299c11e"
+    },
+    {
+      "command": "node --import tsx --test scripts/security-suite.test.mjs",
+      "exitCode": 0,
+      "passed": 23,
+      "logPath": "/tmp/qa06-gate-tests.log",
+      "logSha256": "5196d59bf5433599f9c5323c890bef9e88aa8af3c30f261774de4e0f271ec197"
+    }
+  ],
+  "securityReceipt": {
+    "path": "docs/audit/evidence/qa-06-local-security.json",
+    "sha256": "7754a72413425fae5a6bd34049620934279e358e16569e4ff1bc388ca26d7ac5",
+    "testFiles": 20,
+    "passed": 202,
+    "adminWriteOperations": 63,
+    "authenticationRejections": 189,
+    "sensitiveFindings": 0,
+    "artifactScans": [
+      {
+        "channel": "response",
+        "samples": 218,
+        "inspectedNodes": 1084,
+        "findings": 0
+      },
+      {
+        "channel": "log",
+        "samples": 4,
+        "inspectedNodes": 80,
+        "findings": 0
+      },
+      {
+        "channel": "audit",
+        "samples": 1,
+        "inspectedNodes": 29,
+        "findings": 0
+      },
+      {
+        "channel": "snapshot",
+        "samples": 1,
+        "inspectedNodes": 14,
+        "findings": 0
+      }
+    ],
+    "cleanup": "PASS"
+  },
+  "awsTargetGate": "DEFERRED TO QA-09 / NOT RUN / NO RECEIPT",
+  "plannedTargetPhase": "QA-09",
+  "productionCredentialsUsed": false,
+  "deployed": false,
+  "remotePushed": false
+}

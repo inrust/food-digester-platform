@@ -64,6 +64,7 @@ export function createCognitoAuthenticator(config: CognitoAuthenticatorConfig): 
       const { payload } = await jwtVerify(token, jwks, {
         issuer,
         algorithms: ['RS256'],
+        requiredClaims: ['exp'],
         clockTolerance,
       });
       claims = payload as CognitoClaims;
@@ -81,13 +82,13 @@ export function createCognitoAuthenticator(config: CognitoAuthenticatorConfig): 
       throw unauthenticated();
     }
 
-    return actorFromClaims(claims);
+    return actorFromClaims(claims, clockTolerance);
   }
 
   return { authenticate };
 }
 
-function actorFromClaims(claims: CognitoClaims): ActorContext {
+function actorFromClaims(claims: CognitoClaims, clockToleranceSeconds: number): ActorContext {
   const sub = claims.sub;
   const username = claims['cognito:username'] ?? claims.username;
   if (typeof sub !== 'string' || sub === '' || typeof username !== 'string' || username === '') {
@@ -95,7 +96,12 @@ function actorFromClaims(claims: CognitoClaims): ActorContext {
   }
   const tokenUse = claims.token_use;
   if (tokenUse !== 'id' && tokenUse !== 'access') throw unauthenticated();
-  if (typeof claims.auth_time !== 'number' || !Number.isInteger(claims.auth_time) || claims.auth_time <= 0) {
+  if (
+    typeof claims.auth_time !== 'number' ||
+    !Number.isSafeInteger(claims.auth_time) ||
+    claims.auth_time <= 0 ||
+    claims.auth_time > Math.floor(Date.now() / 1000) + clockToleranceSeconds
+  ) {
     throw unauthenticated();
   }
   const authenticatedAt = new Date(claims.auth_time * 1000).toISOString();

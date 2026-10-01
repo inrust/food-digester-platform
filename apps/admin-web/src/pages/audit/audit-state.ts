@@ -20,7 +20,7 @@ export const AUDIT_RESULT_LABELS: Readonly<Record<string, string>> = {
 export const REDACTED = '[REDACTED]' as const;
 /** 命中即整体遮蔽的字段名（镜像 packages/observability SENSITIVE_KEY_PATTERN，parity 锁定）。 */
 export const SENSITIVE_KEY_PATTERN =
-  /private[_-]?key|password|passcode|secret|token|verifier|credential|api[_-]?key|access[_-]?key/i;
+  /private[_-]?key|password|passcode|secret|token|verifier|credential|api[_-]?key|access[_-]?key|authorization|cookie|session|jwt/i;
 /**
  * 前端兜底脱敏：递归遍历，字段名命中 → 整体替换为 [REDACTED]。
  * （值形态脱敏——PEM/Bearer/Onboarding Token——由服务端保证，前端不重复实现。）

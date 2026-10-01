@@ -26,7 +26,7 @@ export const SENSITIVE_KEY_PATTERN =
 
 /** 即使字段名未知，也不得把私钥材料写入审计 JSON。 */
 export const SENSITIVE_VALUE_PATTERN =
-  /-----BEGIN (?:RSA |EC |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY(?: BLOCK)?-----|\bBearer\s+\S+|\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+|(?:^|;\s*)(?:session|sessionid|sid|auth|jwt|access_token|refresh_token)=[^;\s]+/i;
+  /-----BEGIN (?:RSA |EC |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY(?: BLOCK)?-----|\bBearer\s+\S+|\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+|(?:^|;\s*)(?:session|sessionid|sid|auth|jwt|access_token|refresh_token)=[^;\s]+|https?:\/\/[^\s"'<>]*(?:X-Amz-(?:Signature|Credential|Security-Token)|[?&]token)=[^\s"'<>]+/i;
 
 export const REDACTED = '[REDACTED]' as const;
 

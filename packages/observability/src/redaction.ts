@@ -12,12 +12,15 @@ export const REDACTED = '[REDACTED]' as const;
 
 /** 命中即整体遮蔽的字段名（与 DOM-03 对齐）。 */
 export const SENSITIVE_KEY_PATTERN =
-  /private[_-]?key|password|passcode|secret|token|verifier|credential|api[_-]?key|access[_-]?key/i;
+  /private[_-]?key|password|passcode|secret|token|verifier|credential|api[_-]?key|access[_-]?key|authorization|cookie|session|jwt/i;
 
 /** 值形态检测：命中片段替换为 [REDACTED]。 */
 const SENSITIVE_VALUE_PATTERNS: readonly RegExp[] = [
   // PEM 私钥块（含 EC/RSA/ENCRYPTED 变体）
   /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/g,
+  // Bare JWT and signed URLs must not bypass redaction through unknown fields.
+  /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,
+  /https?:\/\/[^\s"'<>]*(?:X-Amz-(?:Signature|Credential|Security-Token)|[?&]token)=[^\s"'<>]+/gi,
   // Onboarding Token 明文形态（AUTH-02）
   /\bfdp_onb_[A-Za-z0-9_-]{43}\b/g,
   // Authorization Bearer 凭证
