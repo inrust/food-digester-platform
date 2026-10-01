@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-03",
+  "scope": "LOCAL_INTEGRATION",
+  "status": "PASS",
+  "executedAt": "2026-10-01T11:17:10.481065Z",
+  "baselineCommit": "4c33a5ba100376fa633e754e5620ffe30f7d386c",
+  "checks": [
+    {
+      "command": "pnpm verify",
+      "exitCode": 0,
+      "vitestFiles": 155,
+      "vitestTests": 1295,
+      "contractTests": 291,
+      "scriptTests": 192,
+      "browserTests": 21,
+      "typecheckTasks": 21,
+      "buildTasks": 14,
+      "qa02Tests": 106,
+      "qa03Scenarios": 5
+    },
+    {
+      "command": "node --import tsx scripts/run-iot-integration.mjs docs/audit/evidence/qa-03-local-integration.json",
+      "exitCode": 0,
+      "scenarios": 5,
+      "legalMessages": 86,
+      "receipts": 86,
+      "duplicateBusinessRows": 0,
+      "rawArchiveRecords": 62,
+      "traceablePending": 4
+    },
+    {
+      "command": "node --test scripts/iot-integration.test.mjs",
+      "exitCode": 0,
+      "tests": 8
+    },
+    {
+      "command": "ESLint / Prettier / TypeScript / documentation links / git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "logs": {
+    "fullVerify": {
+      "path": "/tmp/qa03-verify.log",
+      "sha256": "f9072d9cf3d46ec2105f2da249ddf8ef9cb94911d5311402eae7c8de9fe697b6"
+    },
+    "integration": {
+      "path": "/tmp/qa03-final-suite.log",
+      "sha256": "4e25a7b7f3ec5aafc0c4d43318762a1d2fc1f6c3da6436fa5dcf01506f984d47"
+    },
+    "awsGate": {
+      "path": "/tmp/qa03-aws-gate.log",
+      "sha256": "3fa22a56844e5902cb6ce80829d1aea1dafc3bbee4000f5a3ab51cac93b2e1fc"
+    }
+  },
+  "awsTargetGate": {
+    "status": "NOT RUN / NO RECEIPT",
+    "command": "node scripts/check-aws-iot-data-path-evidence.mjs",
+    "exitCode": 1,
+    "reason": "Missing docs/audit/evidence/be-iot-aws-data-path.json"
+  },
+  "overallTargetAcceptance": "CONDITIONAL / NOT ACCEPTED",
+  "productionCredentialsUsed": false,
+  "deployed": false,
+  "remotePushed": false
+}
