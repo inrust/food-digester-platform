@@ -12,7 +12,7 @@
     "typecheck": "turbo run typecheck",
     "test": "vitest run && pnpm test:contracts && pnpm test:scripts",
     "test:contracts": "pnpm --filter @fdp/contracts test",
-    "test:scripts": "node --test scripts/*.test.mjs",
+    "test:scripts": "node --import tsx --test scripts/*.test.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -38,7 +38,9 @@
     "test:aws-iot-authz": "node --import tsx scripts/verify-aws-iot-authorization.mjs",
     "openapi:bundle": "node scripts/build-openapi.mjs",
     "openapi:check": "node scripts/build-openapi.mjs --check && redocly lint contracts/rest/openapi-base.json \"contracts/rest/*-api.json\" contracts/rest/openapi.bundle.json --extends spec",
-    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks && pnpm check:admin-web-delivery && pnpm check:admin-web-e2e && pnpm check:cmd-ota-delivery"
+    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks && pnpm check:admin-web-delivery && pnpm check:admin-web-e2e && pnpm check:cmd-ota-delivery",
+    "qa:simulator": "node --import tsx scripts/run-device-simulator.mjs",
+    "test:simulator": "node --import tsx --test scripts/device-simulator*.test.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
@@ -48,6 +50,7 @@
     "esbuild": "^0.28.0",
     "eslint": "^9.35.0",
     "jsdom": "^27.4.0",
+    "mqtt": "5.14.1",
     "prettier": "^3.9.6",
     "tsx": "^4.20.5",
     "turbo": "^2.5.6",

@@ -1,0 +1,103 @@
+{
+  "mode": "offline",
+  "rounds": 100,
+  "telemetrySeconds": 10,
+  "injectFaults": true,
+  "disconnectRound": 10,
+  "badMessage": {
+    "round": 30,
+    "type": "telemetry"
+  },
+  "commandResult": "SUCCESS",
+  "otaStatuses": [
+    "DOWNLOADING",
+    "INSTALLING",
+    "SUCCEEDED"
+  ],
+  "otaTargets": {
+    "OTA-TARGET-001": "target-001"
+  },
+  "devices": [
+    {
+      "deviceId": "QA01-DEV01"
+    },
+    {
+      "deviceId": "QA01-DEV02"
+    },
+    {
+      "deviceId": "QA01-DEV03"
+    },
+    {
+      "deviceId": "QA01-DEV04"
+    },
+    {
+      "deviceId": "QA01-DEV05"
+    },
+    {
+      "deviceId": "QA01-DEV06"
+    },
+    {
+      "deviceId": "QA01-DEV07"
+    },
+    {
+      "deviceId": "QA01-DEV08"
+    },
+    {
+      "deviceId": "QA01-DEV09"
+    },
+    {
+      "deviceId": "QA01-DEV10"
+    }
+  ],
+  "downlinks": [
+    {
+      "type": "cmd",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6001",
+          "ts": "2026-08-01T10:00:00Z"
+        },
+        "data": {
+          "command": "START",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-08-01T10:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Start processing batch"
+        }
+      }
+    },
+    {
+      "type": "ota",
+      "payload": {
+        "meta": {
+          "id": "OTA-TARGET-001",
+          "ts": "2026-08-01T22:00:00Z"
+        },
+        "data": {
+          "version": "2.1.0",
+          "packageType": "FIRMWARE",
+          "downloadUrl": "https://example.s3.amazonaws.com/pkg.bin?sig=abc",
+          "sha256": "ABC123DEF4567890ABC123DEF4567890ABC123DEF4567890ABC123DEF4567890",
+          "mandatory": false,
+          "scheduledTime": "2026-08-01T23:00:00Z"
+        }
+      }
+    },
+    {
+      "type": "notification",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90001",
+          "ts": "2026-08-01T09:00:00Z"
+        },
+        "data": {
+          "type": "LICENSE_CHANGED",
+          "priority": "NORMAL",
+          "title": "License Updated",
+          "message": "New license is available",
+          "action": "SYNC"
+        }
+      }
+    }
+  ]
+}
