@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-04",
+  "status": "PASS",
+  "scope": "LOCAL_API_INTEGRATION",
+  "baselineCommit": "90fc38157b8eba634b833a5ca388204f5d8fc8cb",
+  "executedAt": "2026-10-01T11:51:36.186464Z",
+  "checks": [
+    {
+      "command": "pnpm verify",
+      "exitCode": 0,
+      "vitestFiles": 156,
+      "vitestTests": 1298,
+      "contractTests": 291,
+      "scriptTests": 207,
+      "browserTests": 21,
+      "typecheckTasks": 21,
+      "buildTasks": 14,
+      "qa02Tests": 106,
+      "qa03Scenarios": 5,
+      "qa04Tests": 127
+    },
+    {
+      "command": "node --import tsx scripts/run-core-api-integration.mjs docs/audit/evidence/qa-04-local-api-integration.json",
+      "exitCode": 0,
+      "testFiles": 14,
+      "tests": 127,
+      "observedResponses": 542,
+      "domains": 14,
+      "requiredAcceptanceCases": 18
+    },
+    {
+      "command": "node --test scripts/core-api-integration.test.mjs",
+      "exitCode": 0,
+      "tests": 15
+    },
+    {
+      "command": "ESLint / Prettier / TypeScript / documentation links / git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "localReceiptSha256": "40a7d1e7b53045a9a4ac68190e88a1e966b0e210697dec2ec26818c5a56b4b5a",
+  "logs": {
+    "fullVerify": {
+      "path": "/tmp/qa04-verify.log",
+      "sha256": "b36c1337183aeb2d884bfac396e64cd2b3e9e5f39094c7bb2447a724696a5cb2"
+    },
+    "integration": {
+      "path": "/tmp/qa04-final-suite.log",
+      "sha256": "8a161cc7eba33c840ab0841bd7811183f7ff0a8421a7d39fae1b41053786378c"
+    }
+  },
+  "awsTargetGate": {
+    "status": "NOT RUN / NO RECEIPT",
+    "checks": [
+      {
+        "command": "node scripts/check-aws-admin-cus-dev-evidence.mjs",
+        "exitCode": 1,
+        "logSha256": "e95145fdfac39ae18e5f632971d984f78eeccfb6a7d6609474c841d7e3ce343a"
+      },
+      {
+        "command": "node scripts/check-aws-admin-business-evidence.mjs",
+        "exitCode": 1,
+        "logSha256": "82467fde0c55ef6839810dd07009ca2187f85e24b540d190be7c46d8acbceca5"
+      },
+      {
+        "command": "node scripts/check-aws-med-rbac-aud-dash-set-evidence.mjs",
+        "exitCode": 1,
+        "logSha256": "2a80c242aed53e37c892e9e10a86a26fd68a9e74409492a5878c138e3deec597"
+      }
+    ]
+  },
+  "overallTargetAcceptance": "CONDITIONAL / NOT ACCEPTED",
+  "productionCredentialsUsed": false,
+  "deployed": false,
+  "remotePushed": false
+}
