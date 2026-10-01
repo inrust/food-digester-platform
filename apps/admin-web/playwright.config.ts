@@ -2,11 +2,17 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
+  ...(process.env.QA08_RUN ? { testMatch: 'qa08-prototype.spec.ts' } : { testIgnore: 'qa08-prototype.spec.ts' }),
   fullyParallel: process.env.QA05_PHASE === 'parallel-repeat',
   workers: process.env.QA05_PHASE === 'parallel-repeat' ? 2 : 1,
   repeatEach: process.env.QA05_PHASE === 'parallel-repeat' ? 2 : 1,
   retries: 0,
-  reporter: process.env.QA05_REPORT ? [['line'], ['json', { outputFile: process.env.QA05_REPORT }]] : 'line',
+  reporter: process.env.QA08_REPORT
+    ? [['line'], ['json', { outputFile: process.env.QA08_REPORT }]]
+    : process.env.QA05_REPORT
+      ? [['line'], ['json', { outputFile: process.env.QA05_REPORT }]]
+      : 'line',
+  ...(process.env.QA08_OUTPUT_DIR ? { outputDir: process.env.QA08_OUTPUT_DIR } : {}),
   ...(process.env.QA05_OUTPUT_DIR ? { outputDir: process.env.QA05_OUTPUT_DIR } : {}),
   use: {
     headless: true,

@@ -298,6 +298,16 @@ export function DeviceOperatePage({
         <p className="field-hint">{translate('page.3df4035f6d6e')}</p>
       </section>
 
+      {selectedDevice && hasPermission(role, 'device:write') ? (
+        <button
+          type="button"
+          data-testid="goto-alias"
+          onClick={() => onNavigate(`/devices/manage?deviceId=${encodeURIComponent(selectedDevice.id)}`)}
+        >
+          {translate('qa08.manageAlias')}
+        </button>
+      ) : null}
+
       {notice !== null ? (
         <p className="action-notice" role="status" data-testid="action-notice">
           {notice}

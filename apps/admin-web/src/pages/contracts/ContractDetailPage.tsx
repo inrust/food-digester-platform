@@ -328,72 +328,74 @@ export function ContractDetailPage({
             {translate('page.d05230204feb')}
           </p>
         ) : (
-          <table aria-label={translate('page.c6ba0d8ee216')}>
-            <thead>
-              <tr>
-                <th scope="col">{translate('page.70b208202ce5')}</th>
-                <th scope="col">{translate('page.95789af4f9fc')}</th>
-                <th scope="col">{translate('page.ec537c546d90')}</th>
-                <th scope="col">{translate('page.17fc93c9cdbb')}</th>
-                <th scope="col">{translate('page.e1973949d60a')}</th>
-                <th scope="col">{translate('page.619bc67325a4')}</th>
-                <th scope="col">{translate('page.d6ee5acd60f7')}</th>
-                <th scope="col">{translate('page.257e4bf4b3df')}</th>
-                <th scope="col">{translate('page.862d3ff54bf1')}</th>
-                <th scope="col">{translate('page.87d24fa26e57')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {devices.rows.map(({ association, device }) => (
-                <tr key={device.deviceId}>
-                  <td>
-                    {association.status === 'ACTIVE' ? (
-                      <input
-                        type="checkbox"
-                        aria-label={translate('page.70b208202ce5') + ' ' + device.deviceId}
-                        data-testid={`contract-unbind-check-${device.deviceId}`}
-                        checked={unbindSelected.includes(device.deviceId)}
-                        onChange={(event) =>
-                          setUnbindSelected(
-                            event.target.checked
-                              ? [...unbindSelected, device.deviceId]
-                              : unbindSelected.filter((id) => id !== device.deviceId),
-                          )
-                        }
-                      />
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td>{device.deviceId}</td>
-                  <td>{device.alias ?? '—'}</td>
-                  <td>{device.site?.region ?? '—'}</td>
-                  <td>{device.site?.subregion ?? '—'}</td>
-                  <td>{device.site?.name ?? '—'}</td>
-                  <td>{device.firmwareVersion ?? '—'}</td>
-                  <td>
-                    <span data-testid={`contract-device-axes-${device.deviceId}`}>
-                      <FourAxisBadges
-                        status={{
-                          connectivity: device.connectivity,
-                          lifecycle: device.lifecycleStatus,
-                          operational: device.operationalStatus,
-                          license: device.licenseStatus,
-                        }}
-                      />
-                    </span>
-                  </td>
-                  <td>
-                    <LicenseSummary summary={licenses?.[device.deviceId] ?? null} onOpen={onOpenLicense} />
-                  </td>
-                  <td>
-                    {association.validFrom.slice(0, 10)} ~ {association.validTo?.slice(0, 10) ?? '—'}（
-                    {ASSOCIATION_STATUS_LABELS[association.status] ?? association.status}）
-                  </td>
+          <div className="cursor-table">
+            <table aria-label={translate('page.c6ba0d8ee216')}>
+              <thead>
+                <tr>
+                  <th scope="col">{translate('page.70b208202ce5')}</th>
+                  <th scope="col">{translate('page.95789af4f9fc')}</th>
+                  <th scope="col">{translate('page.ec537c546d90')}</th>
+                  <th scope="col">{translate('page.17fc93c9cdbb')}</th>
+                  <th scope="col">{translate('page.e1973949d60a')}</th>
+                  <th scope="col">{translate('page.619bc67325a4')}</th>
+                  <th scope="col">{translate('page.d6ee5acd60f7')}</th>
+                  <th scope="col">{translate('page.257e4bf4b3df')}</th>
+                  <th scope="col">{translate('page.862d3ff54bf1')}</th>
+                  <th scope="col">{translate('page.87d24fa26e57')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {devices.rows.map(({ association, device }) => (
+                  <tr key={device.deviceId}>
+                    <td>
+                      {association.status === 'ACTIVE' ? (
+                        <input
+                          type="checkbox"
+                          aria-label={translate('page.70b208202ce5') + ' ' + device.deviceId}
+                          data-testid={`contract-unbind-check-${device.deviceId}`}
+                          checked={unbindSelected.includes(device.deviceId)}
+                          onChange={(event) =>
+                            setUnbindSelected(
+                              event.target.checked
+                                ? [...unbindSelected, device.deviceId]
+                                : unbindSelected.filter((id) => id !== device.deviceId),
+                            )
+                          }
+                        />
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td>{device.deviceId}</td>
+                    <td>{device.alias ?? '—'}</td>
+                    <td>{device.site?.region ?? '—'}</td>
+                    <td>{device.site?.subregion ?? '—'}</td>
+                    <td>{device.site?.name ?? '—'}</td>
+                    <td>{device.firmwareVersion ?? '—'}</td>
+                    <td>
+                      <span data-testid={`contract-device-axes-${device.deviceId}`}>
+                        <FourAxisBadges
+                          status={{
+                            connectivity: device.connectivity,
+                            lifecycle: device.lifecycleStatus,
+                            operational: device.operationalStatus,
+                            license: device.licenseStatus,
+                          }}
+                        />
+                      </span>
+                    </td>
+                    <td>
+                      <LicenseSummary summary={licenses?.[device.deviceId] ?? null} onOpen={onOpenLicense} />
+                    </td>
+                    <td>
+                      {association.validFrom.slice(0, 10)} ~ {association.validTo?.slice(0, 10) ?? '—'}（
+                      {ASSOCIATION_STATUS_LABELS[association.status] ?? association.status}）
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
@@ -404,32 +406,34 @@ export function ContractDetailPage({
         ) : associations.length === 0 ? (
           <p className="empty-state">{translate('page.f4d45621b3d2')}</p>
         ) : (
-          <table aria-label={translate('page.b7fed88bb343')}>
-            <thead>
-              <tr>
-                <th scope="col">{translate('page.01f2c16cda65')}</th>
-                <th scope="col">{translate('page.a70a15135c37')}</th>
-                <th scope="col">{translate('page.62e951a692ff')}</th>
-                <th scope="col">{translate('page.fcbd0932929e')}</th>
-                <th scope="col">{translate('page.76b9880829e0')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {associations.map((association) => (
-                <tr key={association.associationId}>
-                  <td>{association.deviceId}</td>
-                  <td>
-                    {association.validFrom.slice(0, 10)} ~ {association.validTo?.slice(0, 10) ?? '—'}
-                  </td>
-                  <td>{ASSOCIATION_STATUS_LABELS[association.status] ?? association.status}</td>
-                  <td>
-                    <TimeText iso={association.createdAt} />
-                  </td>
-                  <td>{association.endedAt !== null ? <TimeText iso={association.endedAt} /> : '—'}</td>
+          <div className="cursor-table">
+            <table aria-label={translate('page.b7fed88bb343')}>
+              <thead>
+                <tr>
+                  <th scope="col">{translate('page.01f2c16cda65')}</th>
+                  <th scope="col">{translate('page.a70a15135c37')}</th>
+                  <th scope="col">{translate('page.62e951a692ff')}</th>
+                  <th scope="col">{translate('page.fcbd0932929e')}</th>
+                  <th scope="col">{translate('page.76b9880829e0')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {associations.map((association) => (
+                  <tr key={association.associationId}>
+                    <td>{association.deviceId}</td>
+                    <td>
+                      {association.validFrom.slice(0, 10)} ~ {association.validTo?.slice(0, 10) ?? '—'}
+                    </td>
+                    <td>{ASSOCIATION_STATUS_LABELS[association.status] ?? association.status}</td>
+                    <td>
+                      <TimeText iso={association.createdAt} />
+                    </td>
+                    <td>{association.endedAt !== null ? <TimeText iso={association.endedAt} /> : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 

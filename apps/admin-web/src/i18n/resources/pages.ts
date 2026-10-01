@@ -1,5 +1,9 @@
 /** Generated FE-19 zh-CN UI resources. Keep key parity with the companion locale. */
 export const PAGE_ZH_CN: Readonly<Record<string, string>> = {
+  'qa08.configurationEntry': '配置版本',
+  'qa08.viewConfiguration': '查看当前配置',
+  'qa08.updateConfiguration': '更新与确认配置',
+  'qa08.manageAlias': '维护设备别名',
   'certificate.mqttVerifiedAt': 'MQTT 首次验证',
   'certificate.restVerifiedAt': 'REST 首次验证',
   'certificate.rotationDeadlineAt': '轮换确认截止',
@@ -1143,6 +1147,10 @@ export const PAGE_ZH_CN: Readonly<Record<string, string>> = {
 
 /** Generated FE-19 English UI resources. Keep key parity with the companion locale. */
 export const PAGE_EN: Readonly<Record<string, string>> = {
+  'qa08.configurationEntry': 'Configuration versions',
+  'qa08.viewConfiguration': 'View current configuration',
+  'qa08.updateConfiguration': 'Update and confirm configuration',
+  'qa08.manageAlias': 'Manage device alias',
   'certificate.mqttVerifiedAt': 'MQTT first verified',
   'certificate.restVerifiedAt': 'REST first verified',
   'certificate.rotationDeadlineAt': 'Rotation verification deadline',

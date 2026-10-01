@@ -249,58 +249,63 @@ export function EsgDevicesPage({
           {translate('page.9af741292105')}
         </p>
       ) : (
-        <table aria-label={translate('page.653b40d96d6e')} data-testid="esg-device-metrics">
-          <thead>
-            <tr>
-              <th scope="col">{translate('page.01f2c16cda65')}</th>
-              <th scope="col">
-                {ESG_PERIOD_LABELS[period]}
-                {translate('page.24cd18eefa93')}
-              </th>
-              <th scope="col">{translate('page.3da8cb889c76')}</th>
-              <th scope="col">{translate('page.06e1915a18a1')}</th>
-              <th scope="col">{translate('page.c466d61643c6')}</th>
-              <th scope="col">{translate('page.d309c902a7bb')}</th>
-              <th scope="col">O2{period === 'day' ? '' : translate('page.d1454ec0221e')} (%)</th>
-              <th scope="col">CO2{period === 'day' ? '' : translate('page.d1454ec0221e')} (ppm)</th>
-              <th scope="col">CH4{period === 'day' ? '' : translate('page.d1454ec0221e')} (ppm)</th>
-              <th scope="col">N2O{period === 'day' ? '' : translate('page.d1454ec0221e')} (ppm)</th>
-              <th scope="col">{translate('page.efd09f0f8785')}</th>
-              <th scope="col">
-                {translate('page.8152ee3ec309')}
-                {period === 'day' ? '' : translate('page.c6546828511f')}
-              </th>
-              <th scope="col">{translate('page.9971a97635de')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {aggregated.map((row) => (
-              <tr key={`${row.deviceId}-${row.bucket}`} data-testid={`esg-device-row-${row.deviceId}-${row.bucket}`}>
-                <td>{row.deviceId}</td>
-                <td>{row.bucket}</td>
-                <td>{formatKg(row.feedingWeightKg, language)}</td>
-                <td>{formatKg(row.dischargeWeightKg, language)}</td>
-                <td>{formatKg(row.reductionWeightKg, language)}</td>
-                <td>{formatKwh(row.powerConsumptionKwh, language)}</td>
-                <td>
-                  {row.avgO2Pct === null ? (
-                    '—'
-                  ) : (
-                    <PercentText value={row.avgO2Pct} digits={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} />
-                  )}
-                </td>
-                <td>{formatPpm(row.avgCo2Ppm, language)}</td>
-                <td>{formatPpm(row.avgCh4Ppm, language)}</td>
-                <td>{formatPpm(row.avgN2oPpm, language)}</td>
-                <td>{formatKg(row.carbonReductionKg, language)}</td>
-                <td data-testid={`esg-device-completeness-${row.deviceId}-${row.bucket}`}>
-                  {formatPct(row.avgCompletenessPct, language)}
-                </td>
-                <td>{calculationVersionText(row.versionIds, versions)}</td>
+        <div className="cursor-table">
+          <table aria-label={translate('page.653b40d96d6e')} data-testid="esg-device-metrics">
+            <thead>
+              <tr>
+                <th scope="col">{translate('page.01f2c16cda65')}</th>
+                <th scope="col">
+                  {ESG_PERIOD_LABELS[period]}
+                  {translate('page.24cd18eefa93')}
+                </th>
+                <th scope="col">{translate('page.3da8cb889c76')}</th>
+                <th scope="col">{translate('page.06e1915a18a1')}</th>
+                <th scope="col">{translate('page.c466d61643c6')}</th>
+                <th scope="col">{translate('page.d309c902a7bb')}</th>
+                <th scope="col">O2{period === 'day' ? '' : translate('page.d1454ec0221e')} (%)</th>
+                <th scope="col">CO2{period === 'day' ? '' : translate('page.d1454ec0221e')} (ppm)</th>
+                <th scope="col">CH4{period === 'day' ? '' : translate('page.d1454ec0221e')} (ppm)</th>
+                <th scope="col">N2O{period === 'day' ? '' : translate('page.d1454ec0221e')} (ppm)</th>
+                <th scope="col">{translate('page.efd09f0f8785')}</th>
+                <th scope="col">
+                  {translate('page.8152ee3ec309')}
+                  {period === 'day' ? '' : translate('page.c6546828511f')}
+                </th>
+                <th scope="col">{translate('page.9971a97635de')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {aggregated.map((row) => (
+                <tr key={`${row.deviceId}-${row.bucket}`} data-testid={`esg-device-row-${row.deviceId}-${row.bucket}`}>
+                  <td>{row.deviceId}</td>
+                  <td>{row.bucket}</td>
+                  <td>{formatKg(row.feedingWeightKg, language)}</td>
+                  <td>{formatKg(row.dischargeWeightKg, language)}</td>
+                  <td>{formatKg(row.reductionWeightKg, language)}</td>
+                  <td>{formatKwh(row.powerConsumptionKwh, language)}</td>
+                  <td>
+                    {row.avgO2Pct === null ? (
+                      '—'
+                    ) : (
+                      <PercentText
+                        value={row.avgO2Pct}
+                        digits={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }}
+                      />
+                    )}
+                  </td>
+                  <td>{formatPpm(row.avgCo2Ppm, language)}</td>
+                  <td>{formatPpm(row.avgCh4Ppm, language)}</td>
+                  <td>{formatPpm(row.avgN2oPpm, language)}</td>
+                  <td>{formatKg(row.carbonReductionKg, language)}</td>
+                  <td data-testid={`esg-device-completeness-${row.deviceId}-${row.bucket}`}>
+                    {formatPct(row.avgCompletenessPct, language)}
+                  </td>
+                  <td>{calculationVersionText(row.versionIds, versions)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

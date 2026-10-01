@@ -237,48 +237,50 @@ export function EsgOverviewPage({
           {translate('page.b240ae6fc532')}
         </p>
       ) : (
-        <table aria-label={translate('page.df73354a1658')} data-testid="esg-summary-table">
-          <thead>
-            <tr>
-              <th scope="col" data-testid="esg-col-date">
-                {ESG_PERIOD_LABELS[period]}
-                {translate('page.24cd18eefa93')}
-              </th>
-              <th scope="col" data-testid="esg-col-throughput">
-                {translate('page.019d8bd79329')}
-              </th>
-              <th scope="col">{translate('page.baa2a8962417')}</th>
-              <th scope="col">{translate('page.c466d61643c6')}</th>
-              <th scope="col" data-testid="esg-col-energy">
-                {translate('page.d309c902a7bb')}
-              </th>
-              <th scope="col" data-testid="esg-col-carbon">
-                {translate('page.efd09f0f8785')}
-              </th>
-              <th scope="col">
-                {translate('page.8152ee3ec309')}
-                {period === 'day' ? '' : translate('page.c6546828511f')}
-              </th>
-              <th scope="col">{translate('page.b36abcaf4f48')}</th>
-              <th scope="col">{translate('page.9971a97635de')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {aggregated.map((row) => (
-              <tr key={row.bucket} data-testid={`esg-row-${row.bucket}`}>
-                <td>{row.bucket}</td>
-                <td>{formatKg(row.feedingWeightKg, language)}</td>
-                <td>{formatKg(row.dischargeWeightKg, language)}</td>
-                <td>{formatKg(row.reductionWeightKg, language)}</td>
-                <td>{formatKwh(row.powerConsumptionKwh, language)}</td>
-                <td>{formatKg(row.carbonReductionKg, language)}</td>
-                <td data-testid={`esg-completeness-${row.bucket}`}>{formatPct(row.avgCompletenessPct, language)}</td>
-                <td>{row.missingRecordCount === null ? '—' : <NumberText value={row.missingRecordCount} />}</td>
-                <td data-testid={`esg-version-${row.bucket}`}>{calculationVersionText(row.versionIds, versions)}</td>
+        <div className="cursor-table">
+          <table aria-label={translate('page.df73354a1658')} data-testid="esg-summary-table">
+            <thead>
+              <tr>
+                <th scope="col" data-testid="esg-col-date">
+                  {ESG_PERIOD_LABELS[period]}
+                  {translate('page.24cd18eefa93')}
+                </th>
+                <th scope="col" data-testid="esg-col-throughput">
+                  {translate('page.019d8bd79329')}
+                </th>
+                <th scope="col">{translate('page.baa2a8962417')}</th>
+                <th scope="col">{translate('page.c466d61643c6')}</th>
+                <th scope="col" data-testid="esg-col-energy">
+                  {translate('page.d309c902a7bb')}
+                </th>
+                <th scope="col" data-testid="esg-col-carbon">
+                  {translate('page.efd09f0f8785')}
+                </th>
+                <th scope="col">
+                  {translate('page.8152ee3ec309')}
+                  {period === 'day' ? '' : translate('page.c6546828511f')}
+                </th>
+                <th scope="col">{translate('page.b36abcaf4f48')}</th>
+                <th scope="col">{translate('page.9971a97635de')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {aggregated.map((row) => (
+                <tr key={row.bucket} data-testid={`esg-row-${row.bucket}`}>
+                  <td>{row.bucket}</td>
+                  <td>{formatKg(row.feedingWeightKg, language)}</td>
+                  <td>{formatKg(row.dischargeWeightKg, language)}</td>
+                  <td>{formatKg(row.reductionWeightKg, language)}</td>
+                  <td>{formatKwh(row.powerConsumptionKwh, language)}</td>
+                  <td>{formatKg(row.carbonReductionKg, language)}</td>
+                  <td data-testid={`esg-completeness-${row.bucket}`}>{formatPct(row.avgCompletenessPct, language)}</td>
+                  <td>{row.missingRecordCount === null ? '—' : <NumberText value={row.missingRecordCount} />}</td>
+                  <td data-testid={`esg-version-${row.bucket}`}>{calculationVersionText(row.versionIds, versions)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

@@ -227,6 +227,19 @@ export function DeviceManagePage({
         </div>
       </section>
 
+      {hasPermission(role, 'config:read') ? (
+        <section data-testid="configuration-entry" aria-label={translate('qa08.configurationEntry')}>
+          <h4>{translate('qa08.configurationEntry')}</h4>
+          <button type="button" data-testid="goto-current-config" onClick={() => onNavigate('/configurations')}>
+            {translate('qa08.viewConfiguration')}
+          </button>
+          {hasPermission(role, 'config:publish') ? (
+            <button type="button" data-testid="goto-publish-config" onClick={() => onNavigate('/configurations')}>
+              {translate('qa08.updateConfiguration')}
+            </button>
+          ) : null}
+        </section>
+      ) : null}
       <section data-testid="ota-entry" aria-label={translate('page.bdb9a2faeb72')}>
         <h4>{translate('page.bdb9a2faeb72')}</h4>
         <p className="field-hint">{translate('page.cee3cff2e854')}</p>

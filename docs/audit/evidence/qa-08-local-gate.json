@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-08",
+  "status": "PASS",
+  "scope": "LOCAL_PROTOTYPE_BROWSER_REGRESSION",
+  "baselineCommit": "39f856bb4ec3ec165700ab5067d73e01fa0e7e9a",
+  "recordedAt": "2026-10-01T14:51:38.238Z",
+  "commands": [
+    {
+      "command": "pnpm verify",
+      "exitCode": 0,
+      "result": {
+        "typecheckTasks": 21,
+        "buildTasks": 14,
+        "vitestFiles": 159,
+        "vitestTests": 1306,
+        "contractTests": 301,
+        "scriptTests": 295,
+        "browserRegressionTests": 30,
+        "qa05BrowserExecutions": 90,
+        "qa02Tests": 106,
+        "qa03Tests": 5,
+        "qa04Tests": 127,
+        "qa06Tests": 202,
+        "qa07Tests": 2,
+        "qa08Tests": 24
+      },
+      "logPath": "/tmp/qa08-verify.log",
+      "logSha256": "af38b55fb8581ba24d614e10e8907d9c3746663413ac93d2e6fcbe809a9ea317"
+    },
+    {
+      "command": "pnpm test:prototype-regression /tmp/qa08-local-prototype.json",
+      "exitCode": 0,
+      "passed": 24,
+      "logPath": "/tmp/qa08-regression.log",
+      "logSha256": "7c9d8cfb5a7faa748e326b2f7cb02479ecb28a23fc96f52a027a9161378265d5"
+    },
+    {
+      "command": "node --test scripts/check-prototype-traceability.test.mjs scripts/prototype-regression.test.mjs",
+      "exitCode": 0,
+      "passed": 35,
+      "logPath": "/tmp/qa08-unit.log",
+      "logSha256": "056d467039da151c48496c80308864666a97fce15f2be01fd04230f5c336dcb3"
+    },
+    {
+      "command": "node scripts/check-prototype-traceability.mjs --json",
+      "exitCode": 0,
+      "result": {
+        "ok": true,
+        "errors": [],
+        "stats": {
+          "menus": 9,
+          "pages": 12,
+          "elements": 128,
+          "byDisposition": {
+            "Adopt": 44,
+            "Adapt": 73,
+            "Reject": 9,
+            "Defer": 2
+          },
+          "referencedOperations": 41,
+          "registeredRoutes": 13,
+          "sourceElements": 128
+        }
+      }
+    },
+    {
+      "command": "node_modules/.bin/eslint .",
+      "exitCode": 0,
+      "logPath": "/tmp/qa08-lint.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "node_modules/.bin/prettier --check .",
+      "exitCode": 0,
+      "logPath": "/tmp/qa08-format.log",
+      "logSha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "command": "node_modules/.bin/tsc --noEmit -p apps/admin-web/tsconfig.json",
+      "exitCode": 0
+    },
+    {
+      "command": "node_modules/.bin/tsc --noEmit -p apps/admin-web/tsconfig.e2e.json",
+      "exitCode": 0
+    }
+  ],
+  "verificationOrder": "Full verify passed before final deterministic role-session fixture refinement. Final source-bound QA08 run, full lint/format, admin/e2e typechecks and 35 traceability/receipt tests passed after refinement.",
+  "prototypeReceipt": {
+    "path": "docs/audit/evidence/qa-08-local-prototype.json",
+    "sha256": "0ff3a8ea9491ba9b894ddbce477bb8f7faa4123b392b1a1774fc57d59ff5323c",
+    "coverage": {
+      "menus": 9,
+      "pages": 12,
+      "positive": 117,
+      "negative": 11,
+      "groups": 40,
+      "executions": 24,
+      "viewports": [
+        375,
+        1440
+      ],
+      "positiveAssertions": 234,
+      "absenceAssertions": 22,
+      "snapshots": 24,
+      "menuExecutions": 18
+    },
+    "elementCoverage": 128,
+    "cleanup": "PASS"
+  },
+  "boundaries": {
+    "productionCredentialsUsed": false,
+    "externalPublication": false,
+    "remotePush": false,
+    "pixelComparison": false,
+    "awsTargetGate": "NOT RUN / NO RECEIPT",
+    "nextTask": "QA-09 AWS isolated test environment acceptance"
+  }
+}
