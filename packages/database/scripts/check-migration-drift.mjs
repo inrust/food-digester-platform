@@ -7,6 +7,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { createRequire } from 'node:module';
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 
@@ -23,9 +24,12 @@ function readMigrations() {
 }
 
 function expectedSql() {
+  // Resolve the package entry so both hoisted and isolated workspace installs work.
+  const require = createRequire(import.meta.url);
+  const prismaCli = require.resolve('prisma/build/index.js');
   return execFileSync(
-    join(root, 'packages', 'database', 'node_modules', '.bin', 'prisma'),
-    ['migrate', 'diff', '--from-empty', '--to-schema', 'prisma/schema.prisma', '--script'],
+    process.execPath,
+    [prismaCli, 'migrate', 'diff', '--from-empty', '--to-schema', 'prisma/schema.prisma', '--script'],
     { cwd: join(root, 'packages', 'database'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   );
 }
