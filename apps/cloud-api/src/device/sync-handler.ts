@@ -5,10 +5,10 @@
  * PENDING_CONFIRMATION Retired；Suspended 放行）→ parseSyncRequest → buildDeviceSyncSnapshot。
  * 响应：源协议顶层完整事实快照（含 etag），不使用 data/meta Envelope；
  * 错误：400 VALIDATION_FAILED / 401 UNAUTHENTICATED / 403 FORBIDDEN / 500 通用消息。
- * 除最小 Device User 快照交付/确认状态外不写入业务域、通知或审计；响应不含证书材料与云端凭据（Device Users 验证材料为
+ * 写入最小 Device User 快照交付/确认状态及证书 REST 验证时间；双通道轮换确认可撤销旧证并审计；响应不含证书材料与云端凭据（Device Users 验证材料为
  * DEC-004 设备本地专用加盐验证值，是本域的授权下发内容）。
  */
-import { AuthError, verifyDeviceCertificate } from '@fdp/auth';
+import { AuthError, verifyDeviceCertificate, recordCertificateVerification } from '@fdp/auth';
 import type { ClientCertIdentity } from '@fdp/auth';
 import { mapDbErrorToHttp } from '@fdp/database';
 import { DeviceSyncError, buildDeviceSyncSnapshot, parseSyncRequest } from './sync.js';
@@ -23,6 +23,7 @@ export interface DeviceSyncRequest {
 export interface DeviceSyncResponse {
   readonly status: number;
   readonly body: unknown;
+  readonly onCommitted?: () => Promise<void>;
 }
 
 export type DeviceSyncHandlerDeps = DeviceSyncDeps;
@@ -60,6 +61,13 @@ export function createDeviceSyncHandler(
       return {
         status: 200,
         body: snapshot,
+        onCommitted: async () => {
+          await recordCertificateVerification(
+            deps.client,
+            { deviceId: auth.deviceId, certificateFingerprint: auth.certificateFingerprint, channel: 'rest' },
+            now(),
+          );
+        },
       };
     } catch (err) {
       return toErrorResponse(err, req);

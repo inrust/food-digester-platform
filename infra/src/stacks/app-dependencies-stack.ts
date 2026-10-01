@@ -231,6 +231,10 @@ export class AppDependenciesStack extends Stack {
       'DEVICE_API_BASE_URL',
       this.config.deviceApiDomain ? `https://${this.config.deviceApiDomain.domainName}` : apis.deviceApi.url,
     );
+    compute.onboardingApi.addEnvironment(
+      'DEVICE_API_BASE_URL',
+      this.config.deviceApiDomain ? `https://${this.config.deviceApiDomain.domainName}` : apis.deviceApi.url,
+    );
     this.createOutputs(storage, messaging, data, identity, apis);
   }
 

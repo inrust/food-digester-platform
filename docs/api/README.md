@@ -26,3 +26,9 @@ MQTT 以 `contracts/mqtt/topic-catalog.json`、各 Topic JSON Schema、冻结策
 ## 当前交付边界
 
 仓库已将测试环境域名参数配置为上述两个生产式主机名，并具备 API Gateway、Lambda 路由及认证代码。本文仅证明仓库契约和代码接线，不证明 DNS、ACM、API Gateway mTLS、Truststore、数据库、IoT、KMS 或 S3 已在目标 AWS 环境成功部署。目标 AWS 运行验收：**NOT RUN / NO RECEIPT**。
+
+## 2026-10-01 证书契约升级
+
+按 DEC-003@1.1.0 与 DEC-026@1.0.0，Onboarding `certificate` 增加必填 `certificateChain`，顶层增加 `rest.endpoint`；Rotate 必填 `csrPem`，返回 `certificateChain`，删除 `privateKey`。设备证书状态和管理端证书摘要增加 `mqttVerifiedAt`、`restVerifiedAt`、`rotationDeadlineAt`、`rotationConfirmedAt`，未知值为 `null`。这次轮换请求/响应是破坏性升级，固件与云端须一起切换；不保留云端生成设备私钥的兼容分支。
+
+同一项目 CA 叶证书在 MQTT 和 Device REST 使用；首次接入保留首 Heartbeat 激活，轮换使用 24 小时双通道确认与超时回退。迁移步骤、旧记录处理和未执行的目标 Gate 见 [实施验收](../audit/设备证书CSR轮换与双通道确认实施验收-2026-10-01.md)。

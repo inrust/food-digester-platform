@@ -8,11 +8,11 @@ Base URL：`https://onboard-api.bio-nexa.com`。本文以 [可执行 OpenAPI](..
 
 设备方负责在设备本地生成并持久保存 **RSA 2048 位或更强的私钥**，生成 PKCS#10 PEM CSR，且私钥始终留在设备；设备还须能使用该私钥作 RSA-SHA256 签名、保存 `requestId` 和安装返回的证书。设备库存须预先有印刷序列号，处于 `PendingOnboarding`。管理员按照双方认可的线下管理制度核对实物、安装记录、申请时间和 CSR 公钥指纹后审批；**序列号与 CSR 本身不证明实物身份**。
 
-审批通过后，云端对已申请的 CSR 公钥签发证书并注册 AWS IoT Core。新流程仅下发 `certificatePem`，云端不生成或返回设备私钥。设备用证书连接 IoT Core、发送首个合法 Heartbeat 后才完成接入；审批通过不等于接入完成。证书包 24 小时有效，超时按既有撤证及 `REJECTED/ONBOARDING_TIMEOUT` 规则收敛。目标 AWS 与真实设备联调：**NOT RUN / NO RECEIPT**。
+审批通过后，云端对已申请的 CSR 公钥签发证书并注册 AWS IoT Core。新流程下发 `certificatePem` 与 `certificateChain`，云端不生成或返回设备私钥。设备用证书连接 IoT Core、发送首个合法 Heartbeat 后才完成接入；审批通过不等于接入完成。证书包 24 小时有效，超时按既有撤证及 `REJECTED/ONBOARDING_TIMEOUT` 规则收敛。目标 AWS 与真实设备联调：**NOT RUN / NO RECEIPT**。
 
 ## `POST /api/v1/device/onboarding/request`
 
-无需 `Authorization` 请求头。请求体为 JSON，未知字段拒绝；CSR 上限 8192 字符，必须是签名有效且 RSA 公钥至少 2048 位的 PEM PKCS#10 请求。
+无需 `Authorization` 请求头。请求体为 JSON，未知字段拒绝；CSR 上限 8192 字符，必须是签名有效且 RSA 公钥至少 2048 位的 PEM PKCS#10 请求；CSR 签名仅允许 RSA-SHA256/384/512。Subject 属性不得包含控制字符，单项不超过 128 字符。跨设备复用公钥返回 `409 CONFLICT`，同一设备的申请重试允许复用该申请公钥。最终证书 CN 与 URI SAN 由服务器按库存 `deviceId` 设置，不复制 CSR 自报身份。
 
 ```http
 POST /api/v1/device/onboarding/request HTTP/1.1
@@ -77,8 +77,12 @@ GET
 {
   "status": "APPROVED",
   "deviceId": "device-id",
-  "certificate": { "certificatePem": "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----" },
+  "certificate": {
+    "certificatePem": "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----",
+    "certificateChain": "-----BEGIN CERTIFICATE-----\n<issuing CA>\n-----END CERTIFICATE-----\n<remaining CA chain>"
+  },
   "mqtt": { "endpoint": "example-ats.iot.ap-southeast-1.amazonaws.com" },
+  "rest": { "endpoint": "https://device-api.bio-nexa.com" },
   "configuration": { "heartbeatInterval": 60 }
 }
 ```
@@ -88,3 +92,11 @@ GET
 统一错误体为 `{ "error": { "code": "...", "message": "...", "requestId": "<网关请求ID>" } }`。状态接口签名错误、过期、重放或申请不可定位统一返回 `401 UNAUTHENTICATED`；限流返回 `429 RATE_LIMITED`。
 
 首次接入接口不接受 `Authorization: Bearer`；申请时携带该请求头返回 `400 VALIDATION_FAILED`，状态轮询携带该请求头返回 `401 UNAUTHENTICATED`。
+
+## 同一证书用于 MQTT 和 REST
+
+`certificatePem` 是项目 CA 签发的叶证书，包含 `digitalSignature`、`clientAuth`、CN=`deviceId` 和 URI SAN=`urn:fdp:device:<deviceId>`。`certificateChain` 是 PEM 字符串，按签发 CA → 上级 CA → 自签根 CA 顺序排列，不包含叶证书。设备安装叶证书、客户端 CA chain 和原本地私钥；同一张叶证书用于 AWS IoT MQTT 和 Device REST mTLS。
+
+AWS IoT 使用 `RegisterCertificateWithoutCA` 注册该叶证书，设备必须向实际 MQTT Host 发送 TLS SNI。此路径不要求在 AWS IoT 注册项目 CA；REST Truststore 必须信任项目 CA。客户端 CA chain 不能代替用于验证 MQTT/REST 服务端主机名和服务端证书的信任根。
+
+首次领取后先用新证书发送合法 Heartbeat，按 DEC-017 完成 Onboarding；随后向 `rest.endpoint` 调用 `POST /api/v1/device/sync`。平台分别记录 `mqttVerifiedAt` 与 `restVerifiedAt`，首次接入不等待 REST 验证才激活。轮换的双通道确认要求见 [Device API](./device-api.bio-nexa.com.md)。

@@ -3,7 +3,7 @@
  *
  * 事实源：contracts/security/certificate-package-policy.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-003@1.0.0（status=frozen）。
+ * 决策追溯：DEC-003@1.1.0（status=frozen）。
  *
  * 消费方：SEC-01（secure package service）、BE-ONB-03（签发与 Status API）、
  * BE-CERT-02（轮换）。
@@ -13,7 +13,8 @@
 
 export type PolicyStatus = 'provisional' | 'frozen';
 
-export type DestructionTrigger = 'SUCCESSFUL_CLAIM' | 'NEW_CERTIFICATE_FIRST_HEARTBEAT';
+export type DestructionTrigger =
+  'SUCCESSFUL_CLAIM' | 'NEW_CERTIFICATE_FIRST_HEARTBEAT' | 'NEW_CERTIFICATE_DUAL_CHANNEL_VERIFIED';
 
 export interface CertificatePackagePolicy {
   readonly policyVersion: string;
@@ -50,17 +51,17 @@ export interface CertificatePackagePolicy {
 }
 
 /**
- * 冻结值（DEC-003 v1.0.0）。
+ * 冻结值（DEC-003 v1.1.0）。
  */
 export const CERTIFICATE_PACKAGE_POLICY: CertificatePackagePolicy = {
-  policyVersion: '1.0.0',
+  policyVersion: '1.1.0',
   status: 'frozen',
   storage: {
     encryption: 'kms-envelope',
     retention: 'short-term',
     retentionSeconds: 86400,
     consumers: ['SEC-01', 'BE-ONB-03', 'BE-CERT-02'],
-    note: 'AWS 返回私钥后立即 KMS 信封加密，密文包最多保存 86400 秒。明文私钥永不落库；日志/审计只记录证书包指纹。',
+    note: '设备私钥始终留在设备；叶证书与完整 CA chain 的领取包采用 KMS 信封加密，密文包最多保存 86400 秒，日志/审计不含证书包原文。',
   },
   claim: {
     oneTime: true,
@@ -75,12 +76,13 @@ export const CERTIFICATE_PACKAGE_POLICY: CertificatePackagePolicy = {
     note: '响应不确定、证书包丢失或过期后不恢复旧包明文；吊销未确认的新证书，再按首次签发约束重签。',
   },
   destructionTriggers: {
-    triggers: ['SUCCESSFUL_CLAIM', 'NEW_CERTIFICATE_FIRST_HEARTBEAT'],
+    triggers: ['SUCCESSFUL_CLAIM', 'NEW_CERTIFICATE_FIRST_HEARTBEAT', 'NEW_CERTIFICATE_DUAL_CHANNEL_VERIFIED'],
     consumers: ['SEC-01', 'BE-ONB-03', 'BE-ONB-04', 'BE-CERT-02'],
-    note: '销毁触发点：成功领取；或新证书首个合法 Heartbeat（轮换场景确认后停用旧证并销毁新证书包）。销毁为不可逆删除密文材料并写业务审计。',
+    note: '成功领取销毁密文；首次接入首个合法 Heartbeat 保留兜底销包；轮换只有新证 MQTT Heartbeat 和 REST Sync 均成功才确认停用旧证（DEC-026），不以单通道成功撤销旧证。',
   },
   pendingParameters: [],
-  frozenUpgradePath: '策略已按 DEC-003@1.0.0 冻结；后续修改必须新增决策版本、同步消费方并提供迁移与回滚说明。',
+  frozenUpgradePath:
+    '策略按 DEC-003@1.1.0 与 DEC-026@1.0.0 冻结；后续修改须新增决策版本、同步消费方并提供迁移与回滚说明。',
 } as const;
 
 export class PolicyParameterPendingError extends Error {
@@ -131,7 +133,7 @@ export function isDestructionTrigger(value: string): value is DestructionTrigger
   return (CERTIFICATE_PACKAGE_POLICY.destructionTriggers.triggers as readonly string[]).includes(value);
 }
 
-/** 是否允许重复成功领取。DEC-003@1.0.0 恒为 false。 */
+/** 是否允许重复成功领取。DEC-003@1.1.0 恒为 false。 */
 export function isRepeatClaimAllowed(): boolean {
   if (CERTIFICATE_PACKAGE_POLICY.claim.maxClaims === null) return false;
   return CERTIFICATE_PACKAGE_POLICY.claim.maxClaims > 1;

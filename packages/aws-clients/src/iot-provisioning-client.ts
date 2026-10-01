@@ -15,12 +15,12 @@ export interface AwsIotCertificateResult {
   readonly certificateId: string;
   readonly certificateArn: string;
   readonly certificatePem: string;
-  readonly privateKey?: string;
+  readonly certificateChain: string;
 }
 
 export interface AwsIotProvisioningClient {
   ensureThing(thingName: string): Promise<void>;
-  createKeysAndCertificate(csrPem?: string): Promise<AwsIotCertificateResult>;
+  issueAndRegisterCertificateFromCsr(csrPem: string, deviceId: string): Promise<AwsIotCertificateResult>;
   ensurePolicy(policyName: string, policyDocument: IotPolicyDocument): Promise<void>;
   attachPolicy(policyName: string, targetArn: string): Promise<void>;
   attachThingPrincipal(thingName: string, principalArn: string): Promise<void>;
@@ -50,9 +50,9 @@ export function createAwsIotProvisioningClient(config: AwsIotProvisioningClientC
         if (!isAlreadyExists(error)) throw error;
       }
     },
-    async createKeysAndCertificate(csrPem) {
+    async issueAndRegisterCertificateFromCsr(csrPem, deviceId) {
       if (!config.certificateIssuer) throw new Error('缺少项目 CA 设备证书签发器');
-      const issued = await config.certificateIssuer.issue(csrPem);
+      const issued = await config.certificateIssuer.issue(csrPem, deviceId);
       const response = await client.send(
         new RegisterCertificateWithoutCACommand({ certificatePem: issued.certificatePem, status: 'ACTIVE' }),
       );
@@ -63,7 +63,7 @@ export function createAwsIotProvisioningClient(config: AwsIotProvisioningClientC
         certificateId: response.certificateId,
         certificateArn: response.certificateArn,
         certificatePem: issued.certificatePem,
-        ...(issued.privateKey ? { privateKey: issued.privateKey } : {}),
+        certificateChain: issued.certificateChain,
       };
     },
     async ensurePolicy(policyName, policyDocument) {

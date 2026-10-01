@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-ALM-01 告警/事件/防拆查询与处理接口（Cognito 认证）：Alarm 列表/详情/确认/清除 + Event 与 Tamper 只读查询；支持 severity、status、deviceId、siteId（经设备归属解析）、customerId 与时间范围筛选 + 键集游标分页（id ASC）。确认/清除仅 alarm:write（PlatformSuperAdmin/PlatformOperator），强制原因，记录操作者/原因/时间（落库 + DOM-03 审计 alarm.acknowledge/alarm.clear）；状态机 ACTIVE→ACKNOWLEDGED→CLEARED、ACTIVE→CLEARED（领域层封闭校验）；重复确认/重复清除幂等（replayed=true，无写入/审计/领域事件）；CRITICAL 告警真实状态迁移时恰好发布一个领域事件 ALARM_STATE_CHANGED（Outbox，通知适配器消费），非 CRITICAL 迁移与重放均不产生。Customer 角色租户隔离（强制所属 Customer scope；跨 Customer 详情/处理 → 404）。不实现 AWS 资源运维告警和人工值守。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-012@1.0.0"],
-    "x-decision-register-version": "1.35.0"
+    "x-decision-register-version": "1.36.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],

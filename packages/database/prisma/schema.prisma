@@ -143,6 +143,7 @@ model Device {
   licenses         License[]
   latestState      DeviceLatestState?
   retirement       DeviceRetirement?
+  publicKeys       DevicePublicKey[]
 
   @@map("devices")
 }
@@ -275,9 +276,9 @@ model OnboardingRequest {
 
 /// 新版 Onboarding 状态轮询的请求随机数；唯一约束阻止签名重放。
 model OnboardingProofNonce {
-  requestId String   @map("request_id")
-  nonceHash String   @map("nonce_hash")
-  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  requestId String            @map("request_id")
+  nonceHash String            @map("nonce_hash")
+  expiresAt DateTime          @map("expires_at") @db.Timestamptz
   request   OnboardingRequest @relation(fields: [requestId], references: [id])
 
   @@id([requestId, nonceHash])
@@ -309,11 +310,24 @@ model OnboardingProvisioningJob {
 }
 
 model DeviceCertificate {
-  id                    String    @id // certificateId
-  deviceId              String    @map("device_id")
-  fingerprint           String    @unique
-  status                String    @default("PENDING_CLAIM") // PENDING_CLAIM | ACTIVE | REVOKED | EXPIRED
-  certificatePem        String?   @map("certificate_pem") // 公钥证书可保存
+  id                      String    @id // certificateId
+  deviceId                String    @map("device_id")
+  fingerprint             String    @unique
+  status                  String    @default("PENDING_CLAIM") // PENDING_CLAIM | ACTIVE | REVOKED | EXPIRED
+  certificatePem          String?   @map("certificate_pem") // 公钥证书可保存
+  certificateArn          String?   @map("certificate_arn")
+  certificateChain        String?   @map("certificate_chain")
+  publicKeyFingerprint    String?   @map("public_key_fingerprint")
+  serialNumber            String?   @map("serial_number")
+  issuer                  String?
+  mqttVerifiedAt          DateTime? @map("mqtt_verified_at") @db.Timestamptz
+  restVerifiedAt          DateTime? @map("rest_verified_at") @db.Timestamptz
+  rotationDeadlineAt      DateTime? @map("rotation_deadline_at") @db.Timestamptz
+  rotationConfirmedAt     DateTime? @map("rotation_confirmed_at") @db.Timestamptz
+  iotDeactivationPending  Boolean   @default(false) @map("iot_deactivation_pending")
+  iotDeactivationAttempts Int       @default(0) @map("iot_deactivation_attempts")
+  iotDeactivatedAt        DateTime? @map("iot_deactivated_at") @db.Timestamptz
+
   // 证书包：KMS 信封加密短期保存，领取成功或新证书 Heartbeat 后销毁（DEC-003）；私钥明文绝不落库
   packageCiphertext     Bytes?    @map("package_ciphertext")
   packageKmsKeyId       String?   @map("package_kms_key_id")
@@ -334,6 +348,9 @@ model DeviceCertificate {
   device Device @relation(fields: [deviceId], references: [id])
 
   @@index([deviceId, status])
+  @@index([publicKeyFingerprint])
+  @@index([iotDeactivationPending, revokedAt])
+  @@index([rotationConfirmedAt, rotationDeadlineAt])
   @@index([recoveryState, recoveryRequestedAt])
   @@map("device_certificates")
 }
@@ -1169,4 +1186,15 @@ model AuditLog {
   @@index([customerId, createdAt])
   @@index([objectType, objectId])
   @@map("audit_logs")
+}
+
+// Persistent ownership of a CSR public key, including rejected/rotated keys; no private material.
+model DevicePublicKey {
+  fingerprint String   @id
+  deviceId    String   @map("device_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  device      Device   @relation(fields: [deviceId], references: [id])
+
+  @@index([deviceId])
+  @@map("device_public_keys")
 }

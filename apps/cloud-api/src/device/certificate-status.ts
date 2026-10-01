@@ -73,6 +73,10 @@ interface CertificateRow {
   readonly status: string;
   readonly revokedAt: Date | null;
   readonly notAfter: Date;
+  readonly mqttVerifiedAt?: Date | null;
+  readonly restVerifiedAt?: Date | null;
+  readonly rotationDeadlineAt?: Date | null;
+  readonly rotationConfirmedAt?: Date | null;
 }
 
 const DEFAULT_EXPIRING_SOON_DAYS = 30;
@@ -118,7 +122,14 @@ export function createCertificateStatusHandler(
       );
       return {
         status: 200,
-        body: { certificateId: cert.id, ...view },
+        body: {
+          certificateId: cert.id,
+          ...view,
+          mqttVerifiedAt: cert.mqttVerifiedAt?.toISOString() ?? null,
+          restVerifiedAt: cert.restVerifiedAt?.toISOString() ?? null,
+          rotationDeadlineAt: cert.rotationDeadlineAt?.toISOString() ?? null,
+          rotationConfirmedAt: cert.rotationConfirmedAt?.toISOString() ?? null,
+        },
       };
     },
   );

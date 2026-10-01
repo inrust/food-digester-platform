@@ -21,6 +21,7 @@ export interface OnboardingStatusHandlerDeps {
   readonly client: DbClient;
   readonly securePackage: SecurePackageService;
   readonly mqttEndpoint: string;
+  readonly restEndpoint: string;
   readonly rateLimiter?: RateLimiter;
   readonly now?: () => Date;
   readonly deliveryRecovery: {
@@ -67,7 +68,8 @@ type StatusBody =
   | {
       status: 'APPROVED';
       deviceId: string;
-      certificate: { certificatePem: string };
+      certificate: { certificatePem: string; certificateChain: string };
+      rest: { endpoint: string };
       mqtt: { endpoint: string };
       configuration: { heartbeatInterval: 60 };
     };
@@ -189,7 +191,8 @@ async function resolveStatus(
     body: {
       status: 'APPROVED',
       deviceId: device.id,
-      certificate: { certificatePem: pkg.certificatePem },
+      certificate: { certificatePem: pkg.certificatePem, certificateChain: pkg.certificateChain },
+      rest: { endpoint: deps.restEndpoint },
       mqtt: { endpoint: deps.mqttEndpoint },
       configuration: { heartbeatInterval: 60 },
     },

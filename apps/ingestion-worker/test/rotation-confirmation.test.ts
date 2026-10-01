@@ -1,192 +1,190 @@
-/**
- * BE-CERT-02 轮换确认扩展点验收（PGlite）：新证书首个 Heartbeat 后停用旧证并销毁新证书包。
- *
- * 验收基准覆盖：
- * - 切换前旧证可用，确认后旧证禁用（AUTH-03 白名单验证 401）；
- * - 确认原子性：旧证 REVOKED + 新包销毁 + 审计；
- * - 幂等：重复确认/非轮换证书 Heartbeat 不产生副作用；并发确认仅一个生效。
- */
-import { afterAll, beforeAll, describe, test } from 'vitest';
-import { assert } from 'vitest';
-import type { PrismaClient } from '@fdp/database';
+import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 import {
-  CERTIFICATE_PACKAGE_RETENTION_SECONDS,
   certificateFingerprintFromPem,
-  createLocalTestKeyProvider,
-  SecurePackageService,
+  recordCertificateVerification,
+  sweepCertificateLifecycle,
+  claimDevicePublicKey,
   verifyDeviceCertificate,
+  SecurePackageService,
+  createLocalTestKeyProvider,
+  CERTIFICATE_PACKAGE_RETENTION_SECONDS,
 } from '@fdp/auth';
 import { confirmCertificateRotationOnFirstHeartbeat } from '../src/index.js';
-import type { RotationConfirmationDeps } from '../src/index.js';
 import { createTestDb } from '../../cloud-api/test/helpers.js';
-
-const NOW = new Date('2026-08-27T08:00:00Z');
-const now = () => NOW;
-const DAY_MS = 86_400_000;
-
-let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
-let prisma: InstanceType<typeof PrismaClient>;
+import { resolveDeviceContext } from '../src/ingest/identity.js';
+const NOW = new Date('2026-10-01T00:00:00Z');
+const DEADLINE = new Date(NOW.getTime() + 86400000);
+let db: Awaited<ReturnType<typeof createTestDb>>;
 let securePackage: SecurePackageService;
-
+let counter = 0;
 beforeAll(async () => {
-  ({ pg, prisma } = await createTestDb());
+  db = await createTestDb();
   securePackage = new SecurePackageService({
-    db: prisma,
-    keyProvider: createLocalTestKeyProvider('be-cert-02-confirm'),
-    config: { retentionSeconds: CERTIFICATE_PACKAGE_RETENTION_SECONDS, maxClaims: 1, now },
+    db: db.prisma,
+    keyProvider: createLocalTestKeyProvider('dual-channel'),
+    config: { retentionSeconds: CERTIFICATE_PACKAGE_RETENTION_SECONDS, maxClaims: 1, now: () => NOW },
   });
-}, 60_000);
-
+}, 60000);
 afterAll(async () => {
-  await prisma.$disconnect();
-  await pg.close();
+  await db.prisma.$disconnect();
+  await db.pg.close();
 });
-
-function fixturePem(seed: string): string {
-  const body = Buffer.from(`confirm-cert-${seed}`, 'utf8').toString('base64');
-  return `-----BEGIN CERTIFICATE-----\n${body}\n-----END CERTIFICATE-----`;
-}
-
-let seq = 0;
-/** 落库 Active 设备 + 旧证书 ACTIVE + 轮换新证书 ACTIVE（rotatedFromId=旧，带证书包）。 */
-async function plantRotationWindow() {
-  seq += 1;
-  const deviceId = `dev-rotc-${seq}`;
-  await prisma.device.create({
+async function window() {
+  const suffix = ++counter;
+  const deviceId = `dual-${suffix}`;
+  const oldId = `old-${suffix}`;
+  const newId = `new-${suffix}`;
+  await db.prisma.device.create({
     data: {
       id: deviceId,
-      serialNumber: `SN-ROTC-${seq}`,
-      model: 'BNX-100',
-      hardwareVersion: 'HW1.0',
-      manufacturer: 'Hiddenjoy',
-      manufactureDate: new Date('2026-01-01T00:00:00Z'),
+      serialNumber: `SN-DUAL-${suffix}`,
+      model: 'BNX',
+      hardwareVersion: '1',
+      manufacturer: 'test',
+      manufactureDate: NOW,
       lifecycleStatus: 'Active',
     },
   });
-  const oldPem = fixturePem(`old-${seq}`);
-  const newPem = fixturePem(`new-${seq}`);
-  const oldCertificateId = `cert-rotc-old-${seq}`;
-  const newCertificateId = `cert-rotc-new-${seq}`;
-  await prisma.deviceCertificate.create({
-    data: {
-      id: oldCertificateId,
-      deviceId,
-      fingerprint: certificateFingerprintFromPem(oldPem),
-      status: 'ACTIVE',
-      notBefore: new Date(NOW.getTime() - 30 * DAY_MS),
-      notAfter: new Date(NOW.getTime() + 200 * DAY_MS),
-    },
-  });
-  await prisma.deviceCertificate.create({
-    data: {
-      id: newCertificateId,
-      deviceId,
-      fingerprint: certificateFingerprintFromPem(newPem),
-      status: 'ACTIVE',
-      rotatedFromId: oldCertificateId,
-      notBefore: NOW,
-      notAfter: new Date(NOW.getTime() + 365 * DAY_MS),
-    },
-  });
-  await securePackage.storePackage(newCertificateId, Buffer.from('{}'));
-  return { deviceId, oldPem, newPem, oldCertificateId, newCertificateId };
-}
-
-function deps(): RotationConfirmationDeps {
-  return { client: prisma, securePackage, now };
-}
-
-describe('confirmCertificateRotationOnFirstHeartbeat', () => {
-  test('新证书首个 Heartbeat：旧证 REVOKED + 新包销毁 + 审计；确认后旧证认证 401', async () => {
-    const { deviceId, oldPem, newPem, oldCertificateId, newCertificateId } = await plantRotationWindow();
-
-    // BE-CERT-03：管理端发起的 PENDING 轮换请求在确认时完成
-    await prisma.certificateRotationRequest.create({
+  const oldPem = `-----BEGIN CERTIFICATE-----\n${Buffer.from(oldId).toString('base64')}\n-----END CERTIFICATE-----`;
+  const newPem = `-----BEGIN CERTIFICATE-----\n${Buffer.from(newId).toString('base64')}\n-----END CERTIFICATE-----`;
+  for (const [id, pem] of [
+    [oldId, oldPem],
+    [newId, newPem],
+  ])
+    await db.prisma.deviceCertificate.create({
       data: {
+        id: id!,
         deviceId,
-        certificateId: oldCertificateId,
-        status: 'PENDING',
-        requestedBy: 'admin-1',
-        notifiedAt: NOW,
+        fingerprint: certificateFingerprintFromPem(pem!),
+        status: 'ACTIVE',
+        notBefore: NOW,
+        notAfter: new Date('2028-01-01T00:00:00Z'),
+        ...(id === newId ? { rotatedFromId: oldId, rotationDeadlineAt: DEADLINE } : {}),
       },
     });
-
-    // 切换前旧证可用
-    const before = await verifyDeviceCertificate(prisma, { clientCertPem: oldPem }, { now: now() });
-    assert.equal(before.deviceId, deviceId);
-
-    const result = await confirmCertificateRotationOnFirstHeartbeat(deps(), {
-      deviceId,
-      certificateFingerprint: certificateFingerprintFromPem(newPem),
+  await securePackage.storePackage(newId, Buffer.from('{}'));
+  const input = { deviceId, certificateFingerprint: certificateFingerprintFromPem(newPem) };
+  const mqtt = () =>
+    confirmCertificateRotationOnFirstHeartbeat({ client: db.prisma, securePackage, now: () => NOW }, input);
+  const rest = () => recordCertificateVerification(db.prisma, { ...input, channel: 'rest' }, NOW);
+  return { deviceId, oldId, newId, oldPem, newPem, input, mqtt, rest };
+}
+const certificate = (id: string) => db.prisma.deviceCertificate.findUniqueOrThrow({ where: { id } });
+describe('certificate dual-channel lifecycle', () => {
+  test('MQTT first: old certificate remains valid until REST, then durable AWS intent and admin completion', async () => {
+    const f = await window();
+    await db.prisma.certificateRotationRequest.create({
+      data: { deviceId: f.deviceId, certificateId: f.oldId, status: 'PENDING', requestedBy: 'admin', notifiedAt: NOW },
     });
-    assert.isTrue(result.confirmed);
-    assert.equal(result.revokedCertificateId, oldCertificateId);
-
-    const oldCert = await prisma.deviceCertificate.findFirst({ where: { id: oldCertificateId } });
-    assert.equal(oldCert?.status, 'REVOKED');
-    assert.ok(oldCert?.revokedAt);
-    const newCert = await prisma.deviceCertificate.findFirst({ where: { id: newCertificateId } });
-    assert.equal(newCert?.status, 'ACTIVE');
-    assert.equal(newCert?.packageCiphertext, null, '新证书包必须销毁');
-
-    // 确认后旧证禁用
-    let revokedAuthError: unknown;
-    try {
-      await verifyDeviceCertificate(prisma, { clientCertPem: oldPem }, { now: now() });
-    } catch (err) {
-      revokedAuthError = err;
-    }
-    assert.ok(revokedAuthError instanceof Error, '确认后旧证必须被 AUTH-03 拒绝');
-
-    const audits = await prisma.auditLog.findMany({ where: { objectId: newCertificateId } });
-    assert.ok(audits.some((a) => a.action === 'CERT_ROTATION_CONFIRM' && a.result === 'SUCCESS'));
-    assert.ok(!JSON.stringify(audits).includes('PRIVATE KEY'));
-
-    // BE-CERT-03：PENDING 轮换请求已完成
-    const request = await prisma.certificateRotationRequest.findFirst({ where: { deviceId } });
-    assert.equal(request?.status, 'COMPLETED');
-    assert.ok(request?.completedAt);
-  });
-
-  test('幂等：重复确认无副作用；旧证书 Heartbeat（非轮换）不触发确认；并发仅一个生效', async () => {
-    const { deviceId, newPem, oldCertificateId } = await plantRotationWindow();
-    const fp = certificateFingerprintFromPem(newPem);
-
-    const [a, b] = await Promise.all([
-      confirmCertificateRotationOnFirstHeartbeat(deps(), { deviceId, certificateFingerprint: fp }),
-      confirmCertificateRotationOnFirstHeartbeat(deps(), { deviceId, certificateFingerprint: fp }),
-    ]);
-    assert.deepEqual([a.confirmed, b.confirmed].sort(), [false, true]);
-
-    const again = await confirmCertificateRotationOnFirstHeartbeat(deps(), {
-      deviceId,
-      certificateFingerprint: fp,
-    });
-    assert.isFalse(again.confirmed);
-    // 幂等无副作用 = 状态不重复变更（旧证 revokedAt 唯一、新包已销毁）；
-    // audited() 对进入事务的调用诚实留痕（并发败方一条），确认后的重放由预检静默短路（无审计）
-    const newCertRow = await prisma.deviceCertificate.findFirst({ where: { fingerprint: fp } });
-    assert.ok(newCertRow);
-    assert.equal(
-      await prisma.auditLog.count({
-        where: { objectId: newCertRow.id, action: 'CERT_ROTATION_CONFIRM', result: 'SUCCESS' },
-      }),
-      2,
+    expect((await f.mqtt()).confirmed).toBe(false);
+    expect((await certificate(f.oldId)).status).toBe('ACTIVE');
+    expect((await certificate(f.newId)).mqttVerifiedAt).toEqual(NOW);
+    expect((await f.rest()).confirmed).toBe(true);
+    expect((await certificate(f.oldId)).iotDeactivationPending).toBe(true);
+    expect((await certificate(f.newId)).packageCiphertext).toBeNull();
+    expect((await db.prisma.certificateRotationRequest.findFirst({ where: { deviceId: f.deviceId } }))?.status).toBe(
+      'COMPLETED',
     );
-
-    // 非轮换证书 Heartbeat（普通单证书设备）
-    const plain = await plantRotationWindow();
-    const nonRotation = await confirmCertificateRotationOnFirstHeartbeat(deps(), {
-      deviceId: plain.deviceId,
-      certificateFingerprint: certificateFingerprintFromPem(plain.oldPem),
+    await expect(verifyDeviceCertificate(db.prisma, { clientCertPem: f.oldPem }, { now: NOW })).rejects.toMatchObject({
+      code: 'UNAUTHENTICATED',
     });
-    assert.isFalse(nonRotation.confirmed);
-    const oldStillActive = await prisma.deviceCertificate.findFirst({
-      where: { id: plain.oldCertificateId },
-    });
-    assert.equal(oldStillActive?.status, 'ACTIVE');
-    // 未被确认的轮换窗口旧证仍可用
-    const windowOld = await prisma.deviceCertificate.findFirst({ where: { id: oldCertificateId } });
-    assert.equal(windowOld?.status, 'REVOKED'); // 已确认窗口的旧证保持禁用
+  });
+  test('REST first and repeated Heartbeat: one confirmation and first timestamps retained', async () => {
+    const f = await window();
+    expect((await f.rest()).confirmed).toBe(false);
+    expect((await f.mqtt()).confirmed).toBe(true);
+    expect((await f.mqtt()).confirmed).toBe(false);
+    expect((await f.rest()).confirmed).toBe(false);
+    const audits = await db.prisma.auditLog.findMany({ where: { objectId: f.newId, action: 'CERT_ROTATION_CONFIRM' } });
+    expect(audits).toHaveLength(1);
+  });
+  test('concurrent channels and repetitions complete exactly once', async () => {
+    const f = await window();
+    const results = await Promise.all([f.mqtt(), f.rest(), f.mqtt(), f.rest()]);
+    expect(results.filter((result) => result.confirmed)).toHaveLength(1);
+  });
+  test('cross-device fingerprint cannot record evidence or revoke any certificate', async () => {
+    const f = await window();
+    const other = await window();
+    const result = await recordCertificateVerification(
+      db.prisma,
+      { deviceId: other.deviceId, certificateFingerprint: f.input.certificateFingerprint, channel: 'rest' },
+      NOW,
+    );
+    expect(result.confirmed).toBe(false);
+    expect((await certificate(f.newId)).restVerifiedAt).toBeNull();
+    expect((await certificate(f.oldId)).status).toBe('ACTIVE');
+  });
+  test('ordinary onboarding certificate records channel health without requiring rotation', async () => {
+    const f = await window();
+    const result = await recordCertificateVerification(
+      db.prisma,
+      { deviceId: f.deviceId, certificateFingerprint: certificateFingerprintFromPem(f.oldPem), channel: 'rest' },
+      NOW,
+    );
+    expect(result.confirmed).toBe(false);
+    expect((await certificate(f.oldId)).restVerifiedAt).toEqual(NOW);
+  });
+  test('failed AWS deactivation remains pending, next sweep succeeds and duplicate sweep is harmless', async () => {
+    const f = await window();
+    await f.mqtt();
+    await f.rest();
+    const first = await sweepCertificateLifecycle(
+      db.prisma,
+      async (id) => {
+        if (id === f.oldId) throw new Error('AWS unavailable');
+      },
+      NOW,
+    );
+    expect(first.failed).toContain(f.oldId);
+    expect((await certificate(f.oldId)).iotDeactivationPending).toBe(true);
+    expect((await certificate(f.oldId)).status).toBe('REVOKED');
+    const retried = await sweepCertificateLifecycle(db.prisma, async () => {}, NOW);
+    expect(retried.deactivated).toContain(f.oldId);
+    const row = await certificate(f.oldId);
+    expect(row.iotDeactivationAttempts).toBe(2);
+    expect(row.iotDeactivatedAt).toEqual(NOW);
+    expect(
+      (
+        await sweepCertificateLifecycle(
+          db.prisma,
+          async () => {
+            throw new Error('must not repeat');
+          },
+          NOW,
+        )
+      ).deactivated,
+    ).not.toContain(f.oldId);
+  });
+  test('24h boundary rejects new REST/MQTT even before sweep; timeout revokes new and keeps old', async () => {
+    const f = await window();
+    await f.mqtt();
+    await expect(
+      verifyDeviceCertificate(db.prisma, { clientCertPem: f.newPem }, { now: DEADLINE }),
+    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
+    await expect(
+      resolveDeviceContext(
+        db.prisma,
+        { iotPrincipal: `arn:aws:iot:r:a:cert/${f.newId}`, iotDeviceId: f.deviceId },
+        DEADLINE,
+      ),
+    ).rejects.toThrow();
+    expect((await recordCertificateVerification(db.prisma, { ...f.input, channel: 'rest' }, DEADLINE)).confirmed).toBe(
+      false,
+    );
+    const swept = await sweepCertificateLifecycle(db.prisma, async () => {}, DEADLINE);
+    expect(swept.expired).toContain(f.newId);
+    expect((await certificate(f.newId)).status).toBe('REVOKED');
+    expect((await certificate(f.oldId)).status).toBe('ACTIVE');
+  });
+  test('concurrent public-key reuse is permanently owned by one device; same-device retry allowed', async () => {
+    const a = await window();
+    const b = await window();
+    const results = await Promise.all([
+      claimDevicePublicKey(db.prisma, a.deviceId, 'shared-key'),
+      claimDevicePublicKey(db.prisma, b.deviceId, 'shared-key'),
+    ]);
+    expect(results.filter(Boolean)).toHaveLength(1);
+    expect(await claimDevicePublicKey(db.prisma, a.deviceId, 'shared-key')).toBe(results[0]);
   });
 });

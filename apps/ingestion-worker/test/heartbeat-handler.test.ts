@@ -327,7 +327,7 @@ describe('createHeartbeatHandler（BE-IOT-04）', () => {
     assert.equal(destroyAttempts, 2);
   });
 
-  test('扩展点：轮换新证书首个 Heartbeat 确认轮换（BE-CERT-02/03）', async () => {
+  test('扩展点：已完成 REST 验证的新证书由 Heartbeat 完成双通道轮换（BE-CERT-02/03）', async () => {
     const ctx = await plantDevice();
     // 轮换窗口：新证书 ACTIVE + rotatedFromId=旧证 + 证书包 + PENDING 轮换请求
     const newCertificateId = `cert-hb-new-${ctx.deviceId}`;
@@ -340,6 +340,8 @@ describe('createHeartbeatHandler（BE-IOT-04）', () => {
         fingerprint: newFingerprint,
         status: 'ACTIVE',
         rotatedFromId: ctx.certificateId,
+        rotationDeadlineAt: new Date(NOW.getTime() + DAY_MS),
+        restVerifiedAt: NOW,
         notBefore: NOW,
         notAfter: new Date(NOW.getTime() + 365 * DAY_MS),
       },

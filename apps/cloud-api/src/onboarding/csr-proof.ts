@@ -10,7 +10,19 @@ export function inspectCsr(csrPem: string): { fingerprint: string; publicKeyPem:
   try {
     const csr = forge.pki.certificationRequestFromPem(csrPem);
     const key = csr.publicKey as forge.pki.rsa.PublicKey | null;
-    if (!csr.verify() || !key || key.n.bitLength() < 2048) throw new Error('invalid CSR');
+    if (
+      !csr.verify() ||
+      !key ||
+      key.n.bitLength() < 2048 ||
+      !['1.2.840.113549.1.1.11', '1.2.840.113549.1.1.12', '1.2.840.113549.1.1.13'].includes(csr.signatureOid ?? '') ||
+      csr.subject.attributes.some(
+        (attribute) =>
+          typeof attribute.value !== 'string' ||
+          attribute.value.length > 128 ||
+          Array.from(attribute.value).some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127),
+      )
+    )
+      throw new Error('invalid CSR');
     const publicKeyPem = forge.pki.publicKeyToPem(key);
     const spki = createPublicKey(publicKeyPem).export({ type: 'spki', format: 'der' });
     return { fingerprint: createHash('sha256').update(spki).digest('hex'), publicKeyPem };

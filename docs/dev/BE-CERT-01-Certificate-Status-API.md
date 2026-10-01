@@ -1,5 +1,7 @@
 # BE-CERT-01 Certificate Status API
 
+> 2026-10-01 实施更新：证书状态响应增加四项可空 UTC 时间：`mqttVerifiedAt`、`restVerifiedAt`、`rotationDeadlineAt`、`rotationConfirmedAt`；仍不返回证书材料。管理端证书摘要及页面同步显示这些时间。 当前协议见 [设备 API 文档](../api/README.md)；下文较早验收记录保留历史，发生冲突时以本次更新和当前契约为准。
+
 实现：[certificate-status.ts](../../apps/cloud-api/src/device/certificate-status.ts)；契约：[device-certificate-api.json](../../contracts/rest/device-certificate-api.json)；测试：[certificate-status.test.ts](../../apps/cloud-api/test/certificate-status.test.ts)（PGlite 真实 PostgreSQL + 全部 migration）、[device-certificate-api.test.ts](../../contracts/rest/device-certificate-api.test.ts)。
 
 ## 1. 范围与事实源

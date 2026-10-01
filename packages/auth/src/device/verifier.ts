@@ -39,6 +39,8 @@ interface DeviceCertificateDelegate {
     revokedAt: Date | null;
     notBefore: Date;
     notAfter: Date;
+    rotationDeadlineAt?: Date | null;
+    rotationConfirmedAt?: Date | null;
   } | null>;
 }
 
@@ -88,6 +90,8 @@ export async function verifyDeviceCertificate(
   if (now.getTime() < certificate.notBefore.getTime() || now.getTime() >= certificate.notAfter.getTime()) {
     throw unauthenticated();
   }
+  if (certificate.rotationDeadlineAt && !certificate.rotationConfirmedAt && now >= certificate.rotationDeadlineAt)
+    throw unauthenticated();
 
   // Device 归属：请求其他 deviceId → 403（身份有效但无权代表该设备）
   if (options.requestedDeviceId !== undefined && options.requestedDeviceId !== certificate.deviceId) {

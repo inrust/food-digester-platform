@@ -31,10 +31,12 @@ describe('AWS IoT provisioning 生产适配器', () => {
     } as unknown as IoTClient;
     const adapter = createAwsIotProvisioningClient({
       client,
-      certificateIssuer: { issue: async () => ({ certificatePem: 'pem', privateKey: 'private-key' }) },
+      certificateIssuer: { issue: async () => ({ certificatePem: 'pem', certificateChain: 'chain' }) },
     });
     await adapter.ensureThing('device-1');
-    await expect(adapter.createKeysAndCertificate()).resolves.toMatchObject({ certificateId: 'cert-1' });
+    await expect(adapter.issueAndRegisterCertificateFromCsr('csr', 'device-1')).resolves.toMatchObject({
+      certificateId: 'cert-1',
+    });
     await adapter.ensurePolicy('policy-1', { Version: '2012-10-17', Statement: [] });
     await adapter.attachPolicy('policy-1', 'arn:cert-1');
     await adapter.attachThingPrincipal('device-1', 'arn:cert-1');

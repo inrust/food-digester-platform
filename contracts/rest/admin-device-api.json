@@ -13,10 +13,14 @@
       "DEC-019@1.0.0",
       "DEC-024@1.0.0"
     ],
-    "x-decision-register-version": "1.35.0"
+    "x-decision-register-version": "1.36.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
-  "servers": [{ "url": "/" }],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
   "tags": [
     {
       "name": "admin",
@@ -32,14 +36,50 @@
         "operationId": "listDevices",
         "summary": "设备台账列表（四轴状态组合筛选 + 键集游标分页）",
         "description": "四轴（lifecycleStatus/operationalStatus/connectivity/licenseStatus）与 Customer/Site/Region/Subregion/型号/关键字以 AND 组合、互不覆盖；Customer 角色强制本 Customer scope（query 指定他人 customerId → 403）；按 id 升序键集分页。",
-        "security": [{ "CognitoJwt": [] }],
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
         "parameters": [
-          { "$ref": "openapi-base.json#/components/parameters/Limit" },
-          { "$ref": "openapi-base.json#/components/parameters/Cursor" },
-          { "name": "customerId", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "siteId", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "region", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "subregion", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "$ref": "openapi-base.json#/components/parameters/Limit"
+          },
+          {
+            "$ref": "openapi-base.json#/components/parameters/Cursor"
+          },
+          {
+            "name": "customerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "region",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subregion",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "lifecycleStatus",
             "in": "query",
@@ -63,13 +103,19 @@
             "name": "operationalStatus",
             "in": "query",
             "required": false,
-            "schema": { "type": "string", "enum": ["Active", "Maintenance", "Suspended", "Retired"] }
+            "schema": {
+              "type": "string",
+              "enum": ["Active", "Maintenance", "Suspended", "Retired"]
+            }
           },
           {
             "name": "connectivity",
             "in": "query",
             "required": false,
-            "schema": { "type": "string", "enum": ["ONLINE", "OFFLINE"] },
+            "schema": {
+              "type": "string",
+              "enum": ["ONLINE", "OFFLINE"]
+            },
             "description": "由 lastHeartbeatAt 与阈值派生（OFFLINE 含无心跳/无 latestState 设备）"
           },
           {
@@ -82,12 +128,21 @@
             },
             "description": "授权轴：设备存在该状态 License；None = 无任何 License"
           },
-          { "name": "model", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "keyword",
             "in": "query",
             "required": false,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "关键字（序列号/别名/设备 id，大小写不敏感包含匹配）"
           }
         ],
@@ -96,7 +151,9 @@
             "description": "设备列表（meta.nextCursor 续页）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/DeviceListSuccess" }
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceListSuccess"
+                }
               }
             }
           },
@@ -104,7 +161,9 @@
             "description": "校验失败（VALIDATION_FAILED：非法筛选枚举/limit；CURSOR_INVALID：非法游标）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -112,7 +171,9 @@
             "description": "未认证（UNAUTHENTICATED）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -120,7 +181,9 @@
             "description": "无权限（FORBIDDEN：Customer 角色指定他人 customerId）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -128,7 +191,9 @@
             "description": "服务器内部错误（INTERNAL_ERROR）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -140,16 +205,30 @@
         "tags": ["admin"],
         "operationId": "getDevice",
         "summary": "设备台账详情（Customer 角色仅本 Customer 设备）",
-        "security": [{ "CognitoJwt": [] }],
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
         "parameters": [
-          { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "设备详情",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/DeviceSuccess" }
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceSuccess"
+                }
               }
             }
           },
@@ -157,7 +236,9 @@
             "description": "未认证（UNAUTHENTICATED）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -165,7 +246,9 @@
             "description": "无权限（FORBIDDEN：Customer 角色访问其他 Customer 或未分配设备）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -173,7 +256,9 @@
             "description": "设备不存在（NOT_FOUND）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -181,7 +266,9 @@
             "description": "服务器内部错误（INTERNAL_ERROR）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -194,27 +281,50 @@
         "operationId": "updateDeviceMetadata",
         "summary": "设备可编辑元数据（BE-DEV-06：V1 白名单仅 alias；If-Match 乐观锁；业务审计）",
         "description": "仅允许修改 alias（DEC-019@1.0.0：去首尾空格、NFC、长度 1..64、大小写敏感、同一 Customer 含未分配域内唯一）；deviceId/serialNumber/Customer/Site/Contract/License/生命周期/连接状态/固件/证书均不可经本接口修改（携带即 400）；不接受任意 JSON merge patch。If-Match 头必须携带设备当前 updatedAt（ISO8601，来自 GET 详情）；缺失/非法 → 400，不一致或并发漂移 → 409（VERSION_CONFLICT）；alias 同 Customer 冲突 → 409（CONFLICT）；失败请求不产生部分更新（单条条件更新）。",
-        "security": [{ "CognitoJwt": [] }],
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
         "parameters": [
-          { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
           {
             "name": "If-Match",
             "in": "header",
             "required": true,
-            "schema": { "type": "string", "format": "date-time" },
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
             "description": "设备当前 updatedAt（ISO8601）；乐观锁基准"
           }
         ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeviceMetadataUpdate" } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceMetadataUpdate"
+              }
+            }
+          }
         },
         "responses": {
           "200": {
             "description": "更新后的元数据视图（updatedAt 为下次 If-Match 基准）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/DeviceMetadataSuccess" }
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceMetadataSuccess"
+                }
               }
             }
           },
@@ -222,7 +332,9 @@
             "description": "非法请求（VALIDATION_FAILED：受保护字段/空 alias/超长/If-Match 缺失或非法）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -230,7 +342,9 @@
             "description": "未认证（UNAUTHENTICATED）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -238,7 +352,9 @@
             "description": "无 device:write 权限或 Customer 角色越权（FORBIDDEN）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -246,7 +362,9 @@
             "description": "设备不存在（NOT_FOUND）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -254,7 +372,9 @@
             "description": "并发冲突（VERSION_CONFLICT：If-Match 过期/漂移）或 alias 同 Customer 冲突（CONFLICT）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -262,7 +382,9 @@
             "description": "服务器内部错误（INTERNAL_ERROR）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -272,7 +394,11 @@
   },
   "components": {
     "securitySchemes": {
-      "CognitoJwt": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+      "CognitoJwt": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
     },
     "schemas": {
       "DeviceMetadataUpdate": {
@@ -296,8 +422,13 @@
         "required": ["deviceId", "alias", "updatedAt"],
         "additionalProperties": false,
         "properties": {
-          "deviceId": { "type": "string", "minLength": 1 },
-          "alias": { "type": ["string", "null"] },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "alias": {
+            "type": ["string", "null"]
+          },
           "updatedAt": {
             "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
             "description": "更新后的台账时点（下次 If-Match 基准）"
@@ -309,18 +440,56 @@
         "required": ["data", "meta"],
         "additionalProperties": false,
         "properties": {
-          "data": { "$ref": "#/components/schemas/DeviceMetadataView" },
-          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+          "data": {
+            "$ref": "#/components/schemas/DeviceMetadataView"
+          },
+          "meta": {
+            "$ref": "openapi-base.json#/components/schemas/ResponseMeta"
+          }
         }
       },
       "DeviceCertificateSummary": {
         "type": "object",
-        "required": ["certificateId", "fingerprint", "status"],
+        "required": [
+          "certificateId",
+          "fingerprint",
+          "status",
+          "mqttVerifiedAt",
+          "restVerifiedAt",
+          "rotationDeadlineAt",
+          "rotationConfirmedAt"
+        ],
         "additionalProperties": false,
         "properties": {
-          "certificateId": { "type": "string", "minLength": 1 },
-          "fingerprint": { "type": "string", "minLength": 1, "description": "证书指纹摘要（不返回完整证书/私钥）" },
-          "status": { "type": "string", "enum": ["PENDING_CLAIM", "ACTIVE", "REVOKED", "EXPIRED"] }
+          "certificateId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fingerprint": {
+            "type": "string",
+            "minLength": 1,
+            "description": "证书指纹摘要（不返回完整证书/私钥）"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING_CLAIM", "ACTIVE", "REVOKED", "EXPIRED"]
+          },
+          "mqttVerifiedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "restVerifiedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "rotationDeadlineAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "rotationConfirmedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
         }
       },
       "DeviceLicenseSummary": {
@@ -328,16 +497,30 @@
         "required": ["licenseId", "status", "validFrom", "validTo", "entitlements"],
         "additionalProperties": false,
         "properties": {
-          "licenseId": { "type": "string", "minLength": 1 },
+          "licenseId": {
+            "type": "string",
+            "minLength": 1
+          },
           "status": {
             "type": "string",
             "enum": ["Draft", "Issued", "Active", "ExpiringSoon", "Renewed", "Expired", "Revoked"]
           },
-          "validFrom": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-          "validTo": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
           "entitlements": {
             "type": "array",
-            "items": { "type": "string", "enum": ["REMOTE_CONTROL", "OTA", "ESG_REPORTING"] },
+            "items": {
+              "type": "string",
+              "enum": ["REMOTE_CONTROL", "OTA", "ESG_REPORTING"]
+            },
             "description": "已启用 Entitlement 编码"
           }
         }
@@ -347,11 +530,25 @@
         "required": ["contractId", "contractNumber", "name", "status", "endAt"],
         "additionalProperties": false,
         "properties": {
-          "contractId": { "type": "string", "minLength": 1 },
-          "contractNumber": { "type": "string", "minLength": 1 },
-          "name": { "type": "string", "minLength": 1 },
-          "status": { "type": "string", "enum": ["DRAFT", "EFFECTIVE", "EXPIRING_SOON", "EXPIRED", "TERMINATED"] },
-          "endAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+          "contractId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "contractNumber": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": ["DRAFT", "EFFECTIVE", "EXPIRING_SOON", "EXPIRED", "TERMINATED"]
+          },
+          "endAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+          }
         }
       },
       "DeviceRetirementSummary": {
@@ -368,22 +565,55 @@
         ],
         "additionalProperties": false,
         "properties": {
-          "retirementId": { "type": "string", "minLength": 1 },
-          "status": { "type": "string", "enum": ["PENDING_CONFIRMATION", "CONFIRMED"] },
-          "reason": { "type": "string", "minLength": 1 },
-          "initiatedBy": { "type": "string", "minLength": 1 },
-          "initiatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "retirementId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING_CONFIRMATION", "CONFIRMED"]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "initiatedBy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "initiatedAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+          },
           "confirmedAt": {
-            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+            "oneOf": [
+              {
+                "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "completionMethod": {
             "oneOf": [
-              { "type": "string", "enum": ["DEVICE_CONFIRM", "FORCE_COMPLETE", "UNCONFIRMED_TIMEOUT"] },
-              { "type": "null" }
+              {
+                "type": "string",
+                "enum": ["DEVICE_CONFIRM", "FORCE_COMPLETE", "UNCONFIRMED_TIMEOUT"]
+              },
+              {
+                "type": "null"
+              }
             ]
           },
           "certificateRevokedAt": {
-            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+            "oneOf": [
+              {
+                "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -413,14 +643,36 @@
         ],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "serialNumber": { "type": "string", "minLength": 1 },
-          "model": { "type": "string", "minLength": 1 },
-          "hardwareVersion": { "type": "string", "minLength": 1 },
-          "manufacturer": { "type": "string", "minLength": 1 },
-          "manufactureDate": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-          "alias": { "type": ["string", "null"] },
-          "firmwareVersion": { "type": ["string", "null"] },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "serialNumber": {
+            "type": "string",
+            "minLength": 1
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "hardwareVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "manufacturer": {
+            "type": "string",
+            "minLength": 1
+          },
+          "manufactureDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "alias": {
+            "type": ["string", "null"]
+          },
+          "firmwareVersion": {
+            "type": ["string", "null"]
+          },
           "customer": {
             "oneOf": [
               {
@@ -428,11 +680,19 @@
                 "required": ["id", "name"],
                 "additionalProperties": false,
                 "properties": {
-                  "id": { "type": "string", "minLength": 1 },
-                  "name": { "type": "string", "minLength": 1 }
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  }
                 }
               },
-              { "type": "null" }
+              {
+                "type": "null"
+              }
             ]
           },
           "site": {
@@ -442,13 +702,25 @@
                 "required": ["id", "name", "region", "subregion"],
                 "additionalProperties": false,
                 "properties": {
-                  "id": { "type": "string", "minLength": 1 },
-                  "name": { "type": "string", "minLength": 1 },
-                  "region": { "type": ["string", "null"] },
-                  "subregion": { "type": ["string", "null"] }
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "region": {
+                    "type": ["string", "null"]
+                  },
+                  "subregion": {
+                    "type": ["string", "null"]
+                  }
                 }
               },
-              { "type": "null" }
+              {
+                "type": "null"
+              }
             ]
           },
           "lifecycleStatus": {
@@ -467,8 +739,13 @@
           },
           "operationalStatus": {
             "oneOf": [
-              { "type": "string", "enum": ["Active", "Maintenance", "Suspended", "Retired"] },
-              { "type": "null" }
+              {
+                "type": "string",
+                "enum": ["Active", "Maintenance", "Suspended", "Retired"]
+              },
+              {
+                "type": "null"
+              }
             ]
           },
           "connectivity": {
@@ -477,22 +754,61 @@
             "description": "由 lastHeartbeatAt 与阈值派生，不写回生命周期字段"
           },
           "lastHeartbeatAt": {
-            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+            "oneOf": [
+              {
+                "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "certificate": {
-            "oneOf": [{ "$ref": "#/components/schemas/DeviceCertificateSummary" }, { "type": "null" }]
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DeviceCertificateSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "license": {
-            "oneOf": [{ "$ref": "#/components/schemas/DeviceLicenseSummary" }, { "type": "null" }]
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DeviceLicenseSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "contract": {
-            "oneOf": [{ "$ref": "#/components/schemas/DeviceContractSummary" }, { "type": "null" }]
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DeviceContractSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "retirement": {
-            "oneOf": [{ "$ref": "#/components/schemas/DeviceRetirementSummary" }, { "type": "null" }]
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DeviceRetirementSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
-          "createdAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
-          "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
+          "createdAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+          },
+          "updatedAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+          }
         }
       },
       "DeviceSuccess": {
@@ -500,8 +816,12 @@
         "required": ["data", "meta"],
         "additionalProperties": false,
         "properties": {
-          "data": { "$ref": "#/components/schemas/Device" },
-          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+          "data": {
+            "$ref": "#/components/schemas/Device"
+          },
+          "meta": {
+            "$ref": "openapi-base.json#/components/schemas/ResponseMeta"
+          }
         }
       },
       "DeviceListSuccess": {
@@ -509,8 +829,15 @@
         "required": ["data", "meta"],
         "additionalProperties": false,
         "properties": {
-          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Device" } },
-          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Device"
+            }
+          },
+          "meta": {
+            "$ref": "openapi-base.json#/components/schemas/PageMeta"
+          }
         }
       }
     }

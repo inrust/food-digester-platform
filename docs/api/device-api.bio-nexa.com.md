@@ -1,6 +1,6 @@
 # `device-api.bio-nexa.com` API
 
-版本基线：2026-09-24。Base URL：`https://device-api.bio-nexa.com`。
+版本基线：2026-10-01。Base URL：`https://device-api.bio-nexa.com`。
 
 该入口供完成接入后的设备使用。通信设计原始六接口中，证书、同步和退役确认 4 个接口位于本域名；另外，当前生产路由已加入 OTA 下载授权和 Media 上传会话，共 6 个操作。Onboarding 的 2 个接口位于 `onboard-api.bio-nexa.com`。
 
@@ -57,7 +57,11 @@ curl --cert device-cert.pem --key device-private-key.pem \
   "certificateId": "CERT002",
   "status": "ACTIVE",
   "expiryDate": "2028-01-01",
-  "daysRemaining": 365
+  "daysRemaining": 365,
+  "mqttVerifiedAt": "2026-10-01T03:00:00Z",
+  "restVerifiedAt": "2026-10-01T03:00:10Z",
+  "rotationDeadlineAt": null,
+  "rotationConfirmedAt": null
 }
 ```
 
@@ -67,6 +71,9 @@ curl --cert device-cert.pem --key device-private-key.pem \
 | `status` | `ACTIVE`、`EXPIRING`、`EXPIRED`、`REVOKED` |
 | `expiryDate` | UTC `YYYY-MM-DD` |
 | `daysRemaining` | 非负 UTC 整日差；过期或撤销时为 0 |
+| `mqttVerifiedAt` / `restVerifiedAt` | 当前证书首次合法 Heartbeat / 成功 Sync 的服务器验证时间；未知为 `null` |
+| `rotationDeadlineAt` | 新轮换证书双通道确认截止时间；普通证书为 `null` |
+| `rotationConfirmedAt` | 双通道确认提交时间；未完成为 `null` |
 
 `EXPIRING` 阈值由部署参数控制，默认 30 天。响应状态：`200`、`401 UNAUTHENTICATED`、`403 FORBIDDEN`、`500 INTERNAL_ERROR`。
 
@@ -78,11 +85,12 @@ curl --cert device-cert.pem --key device-private-key.pem \
 
 ```json
 {
-  "currentCertificateId": "CERT001"
+  "currentCertificateId": "CERT001",
+  "csrPem": "-----BEGIN CERTIFICATE REQUEST-----\n...\n-----END CERTIFICATE REQUEST-----"
 }
 ```
 
-`currentCertificateId` 必须等于当前 mTLS 身份证书 ID。
+`currentCertificateId` 必须等于当前 mTLS 身份证书 ID。设备先在本地安全存储生成新的 RSA 2048 位或更强密钥并提交签名有效的 PKCS#10 `csrPem`（最多 8192 字符，RSA-SHA256/384/512）。私钥始终留在设备。拒绝与当前证书相同的公钥；跨设备复用公钥返回 `409 CONFLICT`。未知字段或缺失 CSR 返回 `400 VALIDATION_FAILED`。
 
 成功响应：
 
@@ -90,19 +98,27 @@ curl --cert device-cert.pem --key device-private-key.pem \
 {
   "certificateId": "CERT002",
   "certificatePem": "-----BEGIN CERTIFICATE-----...",
-  "privateKey": "<PRIVATE_KEY_PEM>",
+  "certificateChain": "-----BEGIN CERTIFICATE-----\n<issuing CA and remaining chain>\n-----END CERTIFICATE-----",
   "effectiveDate": "2027-01-01",
   "expiryDate": "2028-01-01"
 }
 ```
 
-新私钥只在本响应出现一次。设备应将新材料写入 Keystore，使用新证书重新连接 AWS IoT，并发布合法 Heartbeat。Heartbeat 确认后旧证书停用并销毁新证书包。切换确认前处于双证书窗口；同一旧证书存在未确认轮换时，重复请求返回 `409 CONFLICT`，不会无限创建新证书。
+响应只包含公开证书，不返回私钥。`certificateChain` 顺序为签发 CA → 上级 CA → 根 CA，不含叶证书。证书 CN/SAN 由服务端绑定 `deviceId`。设备核对新证书公钥与本地新私钥匹配，保存完整链，再用同一张新叶证书执行：
 
+1. 连接 AWS IoT（设置正确 SNI）并发布合法 Heartbeat。
+2. 向本 REST 域名调用 `POST /api/v1/device/sync` 并成功取得快照。
+
+两项可任意顺序到达。新旧证书在原证书各自有效期内并行，新证书从签发记录创建时起最多有 24 小时确认窗口；截止时间可用新证调用证书状态接口查询。仅一项成功不会撤销旧证。两项服务器验证完成且在截止前，事务撤销旧证、完成管理员轮换请求并登记 AWS `INACTIVE` 意图；Sweeper 持续重试 AWS 停用，状态摘要显示确认时间。数据库撤销立即阻止旧证的应用请求，AWS 停用存在异步延迟。
+
+恰好到达截止时间时，未确认的新证即在 REST 和 MQTT 应用认证层被拒绝；Sweeper 撤销新证并重试 AWS 停用，旧证保留原状态与原有效期。设备应保留旧密钥直到确认成功；超时后用旧证及另一份新 CSR 重试，旧证本已过期或被撤销时需运维恢复。
+
+相同 CSR 在尚未交付的请求中可恢复一次性公开证书包；交付结果不确定时撤销替换证并有界重签。已提交交付且双通道未完成时，重复 Rotate 返回 `409 CONFLICT`，不同 CSR 也不能覆盖进行中的轮换。服务端提交响应代表完成序列化和状态提交，无法证明客户端已收到网络响应；丢失已提交响应需运维恢复。未知、不确定或过期包不重新下载。
 响应状态：`200`、`400 VALIDATION_FAILED`、`401 UNAUTHENTICATED`、`403 FORBIDDEN`、`409 CONFLICT`、`500 INTERNAL_ERROR`。
 
 ## POST `/api/v1/device/sync`
 
-返回 Assignment、Device、License、Device Users、Configuration 和 Operational Status 的完整事实快照。V1 不做增量裁剪，不返回 `304`；`lastSyncTime` 只作为请求回显和兼容信息。
+返回 Assignment、Device、License、Device Users、Configuration 和 Operational Status 的完整事实快照。成功响应完成序列化后，服务器按当前 mTLS 证书记录 `restVerifiedAt`；认证、参数校验或快照构建失败不记录。该时间证明服务器成功处理此证书请求，不是设备收包 ACK。若新证已有 MQTT 验证且仍在轮换窗口内，本次 Sync 同时触发轮换确认。V1 不做增量裁剪，不返回 `304`；`lastSyncTime` 只作为请求回显和兼容信息。
 
 请求体可省略。存在时只能包含：
 

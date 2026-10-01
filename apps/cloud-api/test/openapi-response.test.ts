@@ -7,6 +7,10 @@ describe('完整 OpenAPI response validator', () => {
     status: 'ACTIVE',
     expiryDate: '2027-01-01',
     daysRemaining: 116,
+    mqttVerifiedAt: null,
+    restVerifiedAt: null,
+    rotationDeadlineAt: null,
+    rotationConfirmedAt: null,
   };
 
   test('接受完整 Handler body 与 Lambda JSON body', () => {

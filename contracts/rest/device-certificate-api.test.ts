@@ -43,10 +43,17 @@ test('端点存在且使用 Device mTLS 认证', () => {
 test('轮换契约：请求强制 currentCertificateId；响应五字段；409/403/400/401 齐整', () => {
   const post = doc.paths['/api/v1/device/certificate/rotate'].post;
   const input = doc.components.schemas.CertificateRotateInput;
-  assert.deepEqual(input.required, ['currentCertificateId']);
+  assert.deepEqual(input.required, ['currentCertificateId', 'csrPem']);
   assert.equal(input.additionalProperties, false);
   const result = doc.components.schemas.CertificateRotateResult;
-  assert.deepEqual(result.required, ['certificateId', 'certificatePem', 'privateKey', 'effectiveDate', 'expiryDate']);
+  assert.deepEqual(result.required, [
+    'certificateId',
+    'certificatePem',
+    'effectiveDate',
+    'expiryDate',
+    'certificateChain',
+  ]);
+  assert.ok(!('privateKey' in result.properties));
   assert.equal(result.properties.effectiveDate.format, 'date');
   assert.ok(result.properties.effectiveDate.pattern);
   assert.equal(

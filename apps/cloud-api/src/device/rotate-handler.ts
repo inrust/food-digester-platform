@@ -1,11 +1,3 @@
-/**
- * BE-CERT-02 Rotate API Handler：POST /api/v1/device/certificate/rotate（框架无关）。
- *
- * 接线：AUTH-03 withDeviceAuth（mTLS 白名单，旧证书须 ACTIVE 且属于设备）→ rotateCertificate。
- * 响应：源协议顶层 { certificateId, certificatePem, privateKey, effectiveDate, expiryDate }；
- * 私钥仅本响应一次性携带。错误：400 VALIDATION_FAILED / 401 UNAUTHENTICATED /
- * 403 FORBIDDEN / 409 CONFLICT（重试失败关闭），未知异常 500 通用消息。
- */
 import { AuthError, withDeviceAuth } from '@fdp/auth';
 import type { ClientCertIdentity } from '@fdp/auth';
 import { CertificateRotationError, rotateCertificate } from './certificate-rotate.js';
@@ -25,13 +17,17 @@ export interface CertificateRotateResponse {
 
 export type CertificateRotateHandlerDeps = RotationServiceDeps;
 
-function currentCertificateIdOf(body: unknown): string | undefined {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return undefined;
+function rotationInputOf(body: unknown): { currentCertificateId: string | undefined; csrPem: string | undefined } {
+  if (!body || typeof body !== 'object' || Array.isArray(body))
+    return { currentCertificateId: undefined, csrPem: undefined };
   const record = body as Record<string, unknown>;
-  if (Object.keys(record).some((key) => key !== 'currentCertificateId')) {
+  if (Object.keys(record).some((key) => !['currentCertificateId', 'csrPem'].includes(key))) {
     throw new CertificateRotationError('VALIDATION_FAILED', 'Request body contains unknown fields');
   }
-  return typeof record.currentCertificateId === 'string' ? record.currentCertificateId : undefined;
+  return {
+    currentCertificateId: typeof record.currentCertificateId === 'string' ? record.currentCertificateId : undefined,
+    csrPem: typeof record.csrPem === 'string' ? record.csrPem : undefined,
+  };
 }
 
 function toErrorResponse(err: unknown, req: CertificateRotateRequest): CertificateRotateResponse {
@@ -58,14 +54,14 @@ export function createCertificateRotateHandler(
       ...(deps.now ? { now: deps.now } : {}),
     },
     async (req, auth) => {
-      const currentCertificateId = currentCertificateIdOf(req.body);
-      const result: RotationResult = await rotateCertificate(deps, auth, currentCertificateId);
+      const { currentCertificateId, csrPem } = rotationInputOf(req.body);
+      const result: RotationResult = await rotateCertificate(deps, auth, currentCertificateId, csrPem);
       return {
         status: 200,
         body: {
           certificateId: result.certificateId,
           certificatePem: result.certificatePem,
-          privateKey: result.privateKey,
+          certificateChain: result.certificateChain,
           effectiveDate: result.effectiveDate,
           expiryDate: result.expiryDate,
         },

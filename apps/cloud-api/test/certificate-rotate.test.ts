@@ -14,6 +14,7 @@ import { certificateFingerprintFromPem, createLocalTestKeyProvider, verifyDevice
 import type { IotPolicyDocument } from '@fdp/aws-clients';
 import { createCertificateRotateHandler } from '../src/index.js';
 import type { CertificateRotateHandlerDeps, IotCertificateResult, IotProvisioningPort } from '../src/index.js';
+import { csrFixture, certificateForCsr } from './certificate-fixtures.js';
 import { createTestDb } from './helpers.js';
 import { assertOpenApiResponse } from './openapi-response.js';
 
@@ -33,28 +34,19 @@ afterAll(async () => {
   await pg.close();
 });
 
-function fixturePem(seed: string): string {
-  const body = Buffer.from(`rotate-cert-${seed}`, 'utf8').toString('base64');
-  return `-----BEGIN CERTIFICATE-----\n${body}\n-----END CERTIFICATE-----`;
-}
-
 let iotSeq = 0;
 function mockIot(options: { failNextAttach?: boolean } = {}): IotProvisioningPort & { createCalls: number } {
   const state = {
     createCalls: 0,
     async ensureThing() {},
-    async createKeysAndCertificate(): Promise<IotCertificateResult> {
+    async issueAndRegisterCertificateFromCsr(csrPem: string, deviceId: string): Promise<IotCertificateResult> {
       state.createCalls += 1;
       iotSeq += 1;
       const id = `cert-rot-${iotSeq}`;
       return {
         certificateId: id,
         certificateArn: `arn:aws:iot:ap-southeast-1:123456789012:cert/${id}`,
-        certificatePem: fixturePem(`new-${iotSeq}`),
-        privateKey:
-          ['-----BEGIN', 'PRIVATE', 'KEY-----'].join(' ') +
-          `\nROTKEY${iotSeq}\n` +
-          ['-----END', 'PRIVATE', 'KEY-----'].join(' '),
+        ...certificateForCsr(csrPem, deviceId),
       };
     },
     async ensurePolicy(_name: string, _doc: IotPolicyDocument) {},
@@ -71,6 +63,7 @@ function mockIot(options: { failNextAttach?: boolean } = {}): IotProvisioningPor
 }
 
 let seq = 0;
+const csrs = new Map<string, string>();
 /** 落库 Active 设备 + ACTIVE 旧证书；返回旧证书信息。 */
 async function plantDeviceWithOldCert() {
   seq += 1;
@@ -86,13 +79,16 @@ async function plantDeviceWithOldCert() {
       lifecycleStatus: 'Active',
     },
   });
-  const oldPem = fixturePem(`old-${seq}`);
+  const old = csrFixture();
+  const oldPem = certificateForCsr(old.csrPem, deviceId).certificatePem;
   const oldCertificateId = `cert-old-${seq}`;
+  csrs.set(oldCertificateId, csrFixture().csrPem);
   await prisma.deviceCertificate.create({
     data: {
       id: oldCertificateId,
       deviceId,
       fingerprint: certificateFingerprintFromPem(oldPem),
+      certificatePem: oldPem,
       status: 'ACTIVE',
       notBefore: new Date(NOW.getTime() - 30 * DAY_MS),
       notAfter: new Date(NOW.getTime() + 200 * DAY_MS),
@@ -119,12 +115,37 @@ function makeHandler(iot: IotProvisioningPort): ReturnType<typeof createCertific
 interface RotatePayload {
   certificateId: string;
   certificatePem: string;
-  privateKey: string;
+  certificateChain: string;
   effectiveDate: string;
   expiryDate: string;
 }
 
 describe('POST /api/v1/device/certificate/rotate', () => {
+  test('缺失 CSR 不签发；AWS attach 失败保留可重试停用记录并保留旧证', async () => {
+    const d = await plantDeviceWithOldCert();
+    const iot = mockIot({ failNextAttach: true });
+    const handler = makeHandler(iot);
+    const missing = await handler({
+      identity: { clientCertPem: d.oldPem },
+      body: { currentCertificateId: d.oldCertificateId },
+      requestId: 'missing-csr',
+    });
+    assert.equal(missing.status, 400);
+    assert.equal(iot.createCalls, 0);
+    const failed = await handler({
+      identity: { clientCertPem: d.oldPem },
+      body: { currentCertificateId: d.oldCertificateId, csrPem: csrs.get(d.oldCertificateId) },
+      requestId: 'attach-fail',
+    });
+    assert.equal(failed.status, 500);
+    assert.equal(iot.createCalls, 1);
+    const orphan = await prisma.deviceCertificate.findFirst({
+      where: { deviceId: d.deviceId, iotDeactivationPending: true },
+    });
+    assert.equal(orphan?.status, 'REVOKED');
+    assert.equal((await prisma.deviceCertificate.findUnique({ where: { id: d.oldCertificateId } }))?.status, 'ACTIVE');
+  });
+
   test('正向：返回五字段证书包；双证书窗口（旧证仍可用）；私钥不落库/审计', async () => {
     const { deviceId, oldPem, oldCertificateId } = await plantDeviceWithOldCert();
     const iot = mockIot();
@@ -132,7 +153,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
 
     const res = await handler({
       identity: { clientCertPem: oldPem },
-      body: { currentCertificateId: oldCertificateId },
+      body: { currentCertificateId: oldCertificateId, csrPem: csrs.get(oldCertificateId) },
       requestId: 'req-rotate',
     });
     assert.equal(res.status, 200);
@@ -140,15 +161,16 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     assertOpenApiResponse('rotateCertificate', res.status, res.body);
     assert.ok(body.certificateId);
     assert.match(body.certificatePem, /BEGIN CERTIFICATE/);
-    assert.ok(body.privateKey.includes('ROTKEY'));
+    assert.match(body.certificateChain, /BEGIN CERTIFICATE/);
+    assert.notProperty(body, 'privateKey');
     assert.equal(body.effectiveDate, '2026-08-27');
     assert.match(body.expiryDate, /^\d{4}-\d{2}-\d{2}$/);
     assert.deepEqual(Object.keys(body).sort(), [
+      'certificateChain',
       'certificateId',
       'certificatePem',
       'effectiveDate',
       'expiryDate',
-      'privateKey',
     ]);
 
     // 双证书窗口：新证书 ACTIVE + rotatedFromId；旧证书仍 ACTIVE 可用（AUTH-03 认证通过）
@@ -183,7 +205,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
 
     const mismatched = await handler({
       identity: { clientCertPem: oldPem },
-      body: { currentCertificateId: other.oldCertificateId },
+      body: { currentCertificateId: other.oldCertificateId, csrPem: csrs.get(other.oldCertificateId) },
       requestId: 'r2',
     });
     assert.equal(mismatched.status, 403);
@@ -191,7 +213,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
 
     const ok = await handler({
       identity: { clientCertPem: oldPem },
-      body: { currentCertificateId: oldCertificateId },
+      body: { currentCertificateId: oldCertificateId, csrPem: csrs.get(oldCertificateId) },
       requestId: 'r3',
     });
     assert.equal(ok.status, 200);
@@ -202,7 +224,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     const iot = mockIot();
     const res = await makeHandler(iot)({
       identity: { clientCertPem: oldPem },
-      body: { currentCertificateId: oldCertificateId, deviceId: 'forged-device' },
+      body: { currentCertificateId: oldCertificateId, csrPem: csrs.get(oldCertificateId), deviceId: 'forged-device' },
       requestId: 'r-unknown-field',
     });
     assert.equal(res.status, 400);
@@ -218,7 +240,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     });
     const res = await makeHandler(mockIot())({
       identity: { clientCertPem: oldPem },
-      body: { currentCertificateId: oldCertificateId },
+      body: { currentCertificateId: oldCertificateId, csrPem: csrs.get(oldCertificateId) },
       requestId: 'r4',
     });
     assert.equal(res.status, 401);
@@ -231,7 +253,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
 
     const first = await handler({
       identity: { clientCertPem: oldPem },
-      body: { currentCertificateId: oldCertificateId },
+      body: { currentCertificateId: oldCertificateId, csrPem: csrs.get(oldCertificateId) },
       requestId: 'r5',
     });
     assert.equal(first.status, 200);
@@ -239,7 +261,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     // 不调用 first.onCommitted，模拟响应确认中断。
     const retry = await handler({
       identity: { clientCertPem: oldPem },
-      body: { currentCertificateId: oldCertificateId },
+      body: { currentCertificateId: oldCertificateId, csrPem: csrs.get(oldCertificateId) },
       requestId: 'r6',
     });
     assert.equal(retry.status, 200);
@@ -257,7 +279,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     const handler = makeHandler(iot);
     const first = await handler({
       identity: { clientCertPem: oldPem },
-      body: { currentCertificateId: oldCertificateId },
+      body: { currentCertificateId: oldCertificateId, csrPem: csrs.get(oldCertificateId) },
       requestId: 'r-committed-1',
     });
     assert.equal(first.status, 200);
@@ -267,7 +289,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
     for (const requestId of ['r-committed-2', 'r-committed-3']) {
       const replay = await handler({
         identity: { clientCertPem: oldPem },
-        body: { currentCertificateId: oldCertificateId },
+        body: { currentCertificateId: oldCertificateId, csrPem: csrs.get(oldCertificateId) },
         requestId,
       });
       assert.equal(replay.status, 409);
@@ -285,7 +307,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
 
     const first = await handler({
       identity: { clientCertPem: oldPem },
-      body: { currentCertificateId: oldCertificateId },
+      body: { currentCertificateId: oldCertificateId, csrPem: csrs.get(oldCertificateId) },
       requestId: 'r7',
     });
     assert.equal(first.status, 500);
@@ -293,7 +315,7 @@ describe('POST /api/v1/device/certificate/rotate', () => {
 
     const retry = await handler({
       identity: { clientCertPem: oldPem },
-      body: { currentCertificateId: oldCertificateId },
+      body: { currentCertificateId: oldCertificateId, csrPem: csrs.get(oldCertificateId) },
       requestId: 'r8',
     });
     assert.equal(retry.status, 200);

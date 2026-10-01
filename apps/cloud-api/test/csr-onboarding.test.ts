@@ -84,6 +84,7 @@ describe('无预置 Token 的 CSR Onboarding', () => {
       client: prisma,
       securePackage,
       mqttEndpoint: 'example.iot',
+      restEndpoint: 'https://device-api.test',
       rateLimiter: limiter,
       now: () => NOW,
       deliveryRecovery: {
@@ -130,7 +131,7 @@ describe('无预置 Token 的 CSR Onboarding', () => {
     });
     await securePackage.storePackage(
       'cert-csr-1',
-      Buffer.from(JSON.stringify({ certificatePem: 'PUBLIC-CERTIFICATE' })),
+      Buffer.from(JSON.stringify({ certificatePem: 'PUBLIC-CERTIFICATE', certificateChain: 'PUBLIC-CA' })),
     );
     const approved = await status({
       headers: signedHeaders(requestId, randomBytes(24).toString('base64url')),

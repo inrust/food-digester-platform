@@ -1,5 +1,7 @@
 # BE-CERT-03 管理员证书轮换发起 API
 
+> 2026-10-01 实施更新：管理员请求保持原路由、授权和幂等；PENDING 请求现在仅在新证完成 MQTT Heartbeat 与 REST Sync 双通道验证后，与撤销旧证同事务变为 COMPLETED，单个 Heartbeat 不再完成请求。 当前协议见 [设备 API 文档](../api/README.md)；下文较早验收记录保留历史，发生冲突时以本次更新和当前契约为准。
+
 实现：[certificate-rotation](../../apps/cloud-api/src/admin/certificate-rotation)；契约：[admin-certificate-rotation-api.json](../../contracts/rest/admin-certificate-rotation-api.json)；测试：[admin-certificate-rotation.test.ts](../../apps/cloud-api/test/admin-certificate-rotation.test.ts)（PGlite）、[outbox-publisher.test.ts](../../apps/ingestion-worker/test/outbox-publisher.test.ts)（设备 Topic 下发）、[rotation-confirmation.test.ts](../../apps/ingestion-worker/test/rotation-confirmation.test.ts)（完成联动）。
 
 ## 1. 范围与事实源
@@ -18,7 +20,7 @@
 1. 资格校验：设备存在（404）；生命周期 ∈ {Onboarded, Active, Suspended}（Retired/Onboarding 中 → 409 DEVICE_STATE_NOT_ALLOWED）；须有 ACTIVE 证书（全撤销/无证书 → 409 CONFLICT）；
 2. 幂等：已有 PENDING 请求 → 200 重放原请求，不重复创建/通知；并发发起由部分唯一索引兜底（P2002 → 回读胜出记录）；
 3. 单事务：创建请求（notifiedAt）+ Outbox 事件 + `CERT_ROTATION_REQUEST` 审计（actorId/actorRole/afterValue）；
-4. 完成联动：BE-CERT-02 首 Heartbeat 确认（ingestion-worker）同事务将 PENDING 请求置 COMPLETED。
+4. 完成联动：BE-CERT-02 MQTT Heartbeat 与 REST Sync 双通道确认同事务将 PENDING 请求置 COMPLETED。
 
 ## 3. 验收基准与证据
 

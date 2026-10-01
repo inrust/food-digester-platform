@@ -4,11 +4,15 @@
     "title": "Bio-Nexa CMP Device Certificate API",
     "version": "0.2.0",
     "description": "BE-CERT-01/02 设备证书接口。认证为 Device mTLS；成功响应严格保持 Device-Cloud Communication Design 的顶层字段和日期结构，错误响应继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-003@1.0.0"],
-    "x-decision-register-version": "1.35.0"
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-003@1.1.0", "DEC-026@1.0.0"],
+    "x-decision-register-version": "1.36.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
-  "servers": [{ "url": "/" }],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
   "tags": [
     {
       "name": "device",
@@ -24,13 +28,19 @@
         "operationId": "getCertificateStatus",
         "summary": "查询当前设备证书状态（BE-CERT-01）",
         "description": "返回当前 mTLS 身份对应证书的 certificateId、状态（ACTIVE/EXPIRING/EXPIRED/REVOKED）、expiryDate（UTC YYYY-MM-DD）与 daysRemaining（UTC 整日差）。EXPIRING 阈值由部署配置注入（默认 30 天）。不自动轮换、不发送到期告警。",
-        "security": [{ "DeviceMtls": [] }],
+        "security": [
+          {
+            "DeviceMtls": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "证书状态",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CertificateStatus" }
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateStatus"
+                }
               }
             }
           },
@@ -38,7 +48,9 @@
             "description": "证书缺失/未登记/非 ACTIVE/过期（UNAUTHENTICATED，不区分原因）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -46,7 +58,9 @@
             "description": "当前证书绑定设备无权查询状态（FORBIDDEN）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -54,7 +68,9 @@
             "description": "内部错误（INTERNAL_ERROR，不暴露细节）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -66,22 +82,30 @@
         "tags": ["device"],
         "operationId": "rotateCertificate",
         "summary": "轮换设备证书（BE-CERT-02）",
-        "description": "校验 currentCertificateId 必须等于当前 mTLS 身份证书（旧证书 ACTIVE 且属于设备由认证链保证）；创建新证书并一次性返回证书包（certificateId/certificatePem/privateKey/effectiveDate/expiryDate），进入双证书窗口（旧证保持可用）；新证书首个合法 Heartbeat 后停用旧证并销毁新证书包。同旧证书的未确认轮换重复请求 → 409 CONFLICT（重试不产生新证书）。",
-        "security": [{ "DeviceMtls": [] }],
+        "description": "CSR 签发的新证书与完整 CA chain；新旧证并行最长24小时，新证 MQTT Heartbeat 和 REST Sync 均确认后停用旧证。",
+        "security": [
+          {
+            "DeviceMtls": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CertificateRotateInput" }
+              "schema": {
+                "$ref": "#/components/schemas/CertificateRotateInput"
+              }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "轮换成功，返回新证书包（仅本响应携带 privateKey 明文）",
+            "description": "一次返回新证书及 CA chain，不返回私钥",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CertificateRotateResult" }
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateRotateResult"
+                }
               }
             }
           },
@@ -89,7 +113,9 @@
             "description": "缺少/非法 currentCertificateId（VALIDATION_FAILED）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -97,7 +123,9 @@
             "description": "证书缺失/未登记/撤销/过期（UNAUTHENTICATED）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -105,7 +133,9 @@
             "description": "currentCertificateId 与 mTLS 身份不符（跨设备/错误声明，FORBIDDEN）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -113,7 +143,9 @@
             "description": "同旧证书的轮换已在进行中（CONFLICT，DEC-003 重复领取失败关闭）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -121,7 +153,9 @@
             "description": "内部错误（INTERNAL_ERROR，不暴露细节）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -131,30 +165,43 @@
   },
   "components": {
     "securitySchemes": {
-      "DeviceMtls": { "$ref": "openapi-base.json#/components/securitySchemes/DeviceMtls" }
+      "DeviceMtls": {
+        "$ref": "openapi-base.json#/components/securitySchemes/DeviceMtls"
+      }
     },
     "schemas": {
       "CertificateRotateInput": {
         "type": "object",
-        "required": ["currentCertificateId"],
+        "required": ["currentCertificateId", "csrPem"],
         "additionalProperties": false,
         "properties": {
           "currentCertificateId": {
             "type": "string",
             "minLength": 1,
             "description": "当前在用（旧）证书 ID；必须等于 mTLS 身份证书"
+          },
+          "csrPem": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192,
+            "description": "RSA-2048+ PKCS#10 CSR，使用设备新私钥签名；私钥不得上传。"
           }
         }
       },
       "CertificateRotateResult": {
         "type": "object",
-        "required": ["certificateId", "certificatePem", "privateKey", "effectiveDate", "expiryDate"],
+        "required": ["certificateId", "certificatePem", "effectiveDate", "expiryDate", "certificateChain"],
         "additionalProperties": false,
-        "description": "新证书包；privateKey 仅本响应携带一次，任何存储/日志/审计不得包含",
+        "description": "CSR 签发的新证书与完整 CA chain；新旧证并行最长24小时，新证 MQTT Heartbeat 和 REST Sync 均确认后停用旧证。",
         "properties": {
-          "certificateId": { "type": "string", "minLength": 1 },
-          "certificatePem": { "type": "string", "minLength": 1 },
-          "privateKey": { "type": "string", "minLength": 1 },
+          "certificateId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "certificatePem": {
+            "type": "string",
+            "minLength": 1
+          },
           "effectiveDate": {
             "type": "string",
             "format": "date",
@@ -166,24 +213,64 @@
             "format": "date",
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "description": "UTC 到期日"
+          },
+          "certificateChain": {
+            "type": "string",
+            "minLength": 1,
+            "description": "签发 CA 至根 CA 的 PEM 链，不含叶证书和私钥。"
           }
         }
       },
       "CertificateStatus": {
         "type": "object",
-        "required": ["certificateId", "status", "expiryDate", "daysRemaining"],
+        "required": [
+          "certificateId",
+          "status",
+          "expiryDate",
+          "daysRemaining",
+          "mqttVerifiedAt",
+          "restVerifiedAt",
+          "rotationDeadlineAt",
+          "rotationConfirmedAt"
+        ],
         "additionalProperties": false,
         "description": "证书状态视图；不含 certificatePem/privateKey 等密钥材料",
         "properties": {
-          "certificateId": { "type": "string", "minLength": 1 },
-          "status": { "type": "string", "enum": ["ACTIVE", "EXPIRING", "EXPIRED", "REVOKED"] },
+          "certificateId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "EXPIRING", "EXPIRED", "REVOKED"]
+          },
           "expiryDate": {
             "type": "string",
             "format": "date",
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "description": "UTC 到期日"
           },
-          "daysRemaining": { "type": "integer", "minimum": 0, "description": "UTC 整日剩余天数" }
+          "daysRemaining": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "UTC 整日剩余天数"
+          },
+          "mqttVerifiedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "restVerifiedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "rotationDeadlineAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "rotationConfirmedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
         }
       }
     }

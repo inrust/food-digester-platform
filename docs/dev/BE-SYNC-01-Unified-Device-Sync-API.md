@@ -1,5 +1,7 @@
 # BE-SYNC-01 Unified Device Sync API
 
+> 2026-10-01 实施更新：成功 Sync 完成响应序列化后记录当前证书 restVerifiedAt，并可与 MQTT 验证一起触发双通道轮换确认；允许该证书状态写入及轮换审计。失败 Sync 不记录验证。验证时间不是客户端收包 ACK。 当前协议见 [设备 API 文档](../api/README.md)；下文较早验收记录保留历史，发生冲突时以本次更新和当前契约为准。
+
 实现：[sync.ts](../../apps/cloud-api/src/device/sync.ts) + [sync-handler.ts](../../apps/cloud-api/src/device/sync-handler.ts)；OpenAPI：[device-sync-api.json](../../contracts/rest/device-sync-api.json)；验收测试：[device-sync.test.ts](../../apps/cloud-api/test/device-sync.test.ts)（PGlite 真实 PostgreSQL）。
 
 ## 1. 范围与事实源

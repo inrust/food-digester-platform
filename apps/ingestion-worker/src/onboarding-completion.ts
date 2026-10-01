@@ -269,7 +269,7 @@ export async function completeOnboardingOnFirstHeartbeat(
       // 证书确认在用：PENDING_CLAIM → ACTIVE；证书包同事务销毁（幂等）
       await certificates(tx).updateMany({
         where: { id: certificate.id, status: 'PENDING_CLAIM' },
-        data: { status: 'ACTIVE', claimedAt: now },
+        data: { status: 'ACTIVE', claimedAt: now, mqttVerifiedAt: now },
       });
       const packageDestroyed = await deps.securePackage.destroyPackage(certificate.id, tx);
 

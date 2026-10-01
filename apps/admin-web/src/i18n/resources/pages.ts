@@ -1,5 +1,10 @@
 /** Generated FE-19 zh-CN UI resources. Keep key parity with the companion locale. */
 export const PAGE_ZH_CN: Readonly<Record<string, string>> = {
+  'certificate.mqttVerifiedAt': 'MQTT 首次验证',
+  'certificate.restVerifiedAt': 'REST 首次验证',
+  'certificate.rotationDeadlineAt': '轮换确认截止',
+  'certificate.rotationConfirmedAt': '双通道确认时间',
+
   'page.00029c8b5033': '别名（1..64 个 Unicode 字符，同客户内唯一；保存时执行 NFC 规范化）',
   'page.009200773b02': '生命周期',
   'page.00ff953569d7': '1（灰度）',
@@ -1138,6 +1143,11 @@ export const PAGE_ZH_CN: Readonly<Record<string, string>> = {
 
 /** Generated FE-19 English UI resources. Keep key parity with the companion locale. */
 export const PAGE_EN: Readonly<Record<string, string>> = {
+  'certificate.mqttVerifiedAt': 'MQTT first verified',
+  'certificate.restVerifiedAt': 'REST first verified',
+  'certificate.rotationDeadlineAt': 'Rotation verification deadline',
+  'certificate.rotationConfirmedAt': 'Both channels confirmed',
+
   'page.00029c8b5033':
     'Alias (1–64 Unicode characters; unique within the customer scope; NFC normalization applied upon saving)',
   'page.009200773b02': 'Life cycle',

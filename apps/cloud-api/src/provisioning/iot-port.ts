@@ -10,15 +10,15 @@ export interface IotCertificateResult {
   readonly certificateId: string;
   readonly certificateArn: string;
   readonly certificatePem: string;
-  /** 私钥明文：仅内存经过，立即经 SEC-01 信封加密落库；禁止日志/审计。 */
-  readonly privateKey?: string;
+  /** 签发 CA 至根 CA 的公共 PEM 链；没有设备私钥字段。 */
+  readonly certificateChain: string;
 }
 
 export interface IotProvisioningPort {
   /** 创建 IoT Thing（幂等：同名已存在视为成功）。Thing Name = deviceId。 */
   ensureThing(thingName: string): Promise<void>;
   /** 项目 CA 签发并注册到 AWS IoT（非幂等；重试孤儿证书由 Service 处置）。 */
-  createKeysAndCertificate(csrPem?: string): Promise<IotCertificateResult>;
+  issueAndRegisterCertificateFromCsr(csrPem: string, deviceId: string): Promise<IotCertificateResult>;
   /** 创建单设备最小权限 Policy（幂等：同名已存在视为成功；文档由 AUTH-04 生成）。 */
   ensurePolicy(policyName: string, policyDocument: IotPolicyDocument): Promise<void>;
   /** 附加 Policy 到证书（幂等）。 */

@@ -98,7 +98,19 @@ test('Device 视图字段封闭（原型设备群表格字段均有来源）；�
   }
   assert.equal(device.additionalProperties, false);
   const cert = doc.components.schemas.DeviceCertificateSummary;
-  assert.deepEqual(cert.required.sort(), ['certificateId', 'fingerprint', 'status'].sort(), '证书仅摘要字段');
+  assert.deepEqual(
+    cert.required.sort(),
+    [
+      'certificateId',
+      'fingerprint',
+      'status',
+      'mqttVerifiedAt',
+      'restVerifiedAt',
+      'rotationDeadlineAt',
+      'rotationConfirmedAt',
+    ].sort(),
+    '证书仅摘要字段',
+  );
   const lic = doc.components.schemas.DeviceLicenseSummary;
   assert.ok(lic.required.includes('entitlements'), 'License 摘要含 Entitlement');
   const contract = doc.components.schemas.DeviceContractSummary;

@@ -2,7 +2,7 @@
  * SEC-01 证书包安全服务（KMS 信封加密短期存储 + 一次性领取 + 销毁）。
  *
  * 规则（DEC-003 / 技术对接要求）：
- * - AWS 返回私钥后立即加密：storePackage 入参明文只经内存，落库为信封密文；
+ * - 公钥证书与 CA chain 领取包立即加密：storePackage 入参明文只经内存，落库为信封密文；
  * - 短期保存：packageExpiresAt = now + retentionSeconds（DEC-003@1.0.0 固定为 86400 秒，
  *   由组合根注入；本服务强制 maxClaims=1）；
  * - 两阶段交付：preparePackageDelivery 预留并解密但保留密文；HTTP 适配层确认响应提交后
@@ -105,7 +105,7 @@ export class SecurePackageService {
   }
 
   /**
-   * 发证后立即存储：AWS 返回私钥/证书包明文 → 信封加密 → 落库。
+   * 发证后立即存储：公钥证书/CA chain 包明文 → 信封加密 → 落库。
    * 明文仅在内存中经过本方法；返回过期时间。
    */
   async storePackage(certificateId: string, packagePayload: Uint8Array): Promise<{ expiresAt: Date }> {

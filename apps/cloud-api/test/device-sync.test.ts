@@ -433,6 +433,28 @@ describe('POST /api/v1/device/sync（完整事实快照）', () => {
   });
 });
 
+describe('证书 REST 验证提交', () => {
+  test('仅成功快照的提交回调记录验证时间；错误响应不提供回调', async () => {
+    const d = await plantDevice({ withAssignment: false });
+    const where = { fingerprint: certificateFingerprintFromPem(d.pem) };
+    const result = await handler()({ identity: { clientCertPem: d.pem }, requestId: 'rest-proof' });
+    assert.equal(result.status, 200);
+    assert.isNull((await prisma.deviceCertificate.findUnique({ where }))?.restVerifiedAt);
+    await result.onCommitted?.();
+    await result.onCommitted?.();
+    const row = await prisma.deviceCertificate.findUnique({ where });
+    assert.equal(row?.restVerifiedAt?.toISOString(), NOW.toISOString());
+    assert.isNull(row?.mqttVerifiedAt);
+    const bad = await handler()({
+      identity: { clientCertPem: d.pem },
+      body: { unknown: true },
+      requestId: 'bad-proof',
+    });
+    assert.equal(bad.status, 400);
+    assert.isUndefined(bad.onCommitted);
+  });
+});
+
 describe('认证与请求校验', () => {
   test('DEC-014：Retired 待确认在 72h 内可 Sync，到达边界即 → 403', async () => {
     const retired = await plantDevice({ lifecycleStatus: 'Retired', customerName: 'Customer RET' });

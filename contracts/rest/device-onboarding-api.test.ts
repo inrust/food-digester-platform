@@ -115,11 +115,11 @@ test('BE-ONB-03 status 端点：requestId 与 CSR 私钥签名，三态响应不
   assert.equal(result.oneOf.length, 3, 'PENDING/REJECTED/APPROVED 三态');
 
   const approved = doc.components.schemas.OnboardingStatusApproved;
-  for (const field of ['status', 'deviceId', 'certificate', 'mqtt', 'configuration']) {
+  for (const field of ['status', 'deviceId', 'certificate', 'mqtt', 'configuration', 'rest']) {
     assert.ok(approved.required.includes(field), `APPROVED 缺少 ${field}`);
   }
   assert.deepEqual(doc.components.schemas.OnboardingInitialConfiguration.properties.heartbeatInterval.enum, [60]);
-  assert.deepEqual(doc.components.schemas.OnboardingCertificate.required, ['certificatePem']);
+  assert.deepEqual(doc.components.schemas.OnboardingCertificate.required, ['certificatePem', 'certificateChain']);
   assert.ok(doc.components.schemas.OnboardingMqtt.required.includes('endpoint'));
 
   const rejected = doc.components.schemas.OnboardingStatusRejected;

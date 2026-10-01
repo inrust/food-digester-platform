@@ -16,9 +16,9 @@
  */
 import type { DbClient } from '@fdp/database';
 import { recordAudit, withTransaction } from '@fdp/database';
-import { buildDevicePolicy } from '@fdp/aws-clients';
+import { deviceCertificateMetadata, buildDevicePolicy } from '@fdp/aws-clients';
 import type { DataKeyProvider } from '@fdp/aws-clients';
-import { CERTIFICATE_PACKAGE_RETENTION_SECONDS, certificateFingerprintFromPem, SecurePackageService } from '@fdp/auth';
+import { CERTIFICATE_PACKAGE_RETENTION_SECONDS, SecurePackageService } from '@fdp/auth';
 import { onboardingDeadlineFrom } from '@fdp/contracts/lifecycle/onboarding-timeout-policy.js';
 import type { AdminOnboardingRequestRecord } from '../admin/onboarding/index.js';
 import type { IotProvisioningPort } from './iot-port.js';
@@ -57,6 +57,7 @@ export interface ProvisioningAttemptContext {
 /** 证书包明文负载（仅内存形态；落库前由 SEC-01 信封加密）。 */
 export interface CertificatePackagePayload {
   readonly certificatePem: string;
+  readonly certificateChain: string;
 }
 
 interface DeviceRow {
@@ -467,11 +468,10 @@ export class ProvisioningService {
     }
 
     await this.deps.iot.ensureThing(device.id);
-    const cert = await this.deps.iot.createKeysAndCertificate(request.csrPem);
-    const now = this.now();
+    const cert = await this.deps.iot.issueAndRegisterCertificateFromCsr(request.csrPem, device.id);
     try {
       await attempt?.onCertificateIssued?.(cert.certificateId);
-      if (cert.privateKey) throw new ProvisioningError('CSR 签发不得返回设备私钥');
+      if ('privateKey' in cert) throw new ProvisioningError('CSR 签发不得返回设备私钥');
       const expected = inspectCsr(request.csrPem).fingerprint;
       const actual = createHash('sha256')
         .update(new X509Certificate(cert.certificatePem).publicKey.export({ type: 'spki', format: 'der' }))
@@ -483,23 +483,26 @@ export class ProvisioningService {
         thingName: device.id,
         ...(this.deps.config.policyNamePrefix ? { policyNamePrefix: this.deps.config.policyNamePrefix } : {}),
       });
-      const notAfter = new Date(now.getTime() + this.deps.config.certificateValiditySeconds * 1000);
+      const metadata = deviceCertificateMetadata(cert.certificatePem);
       await certificates.create({
         data: {
           id: cert.certificateId,
           deviceId: device.id,
-          fingerprint: certificateFingerprintFromPem(cert.certificatePem),
           status: 'PENDING_CLAIM',
           certificatePem: cert.certificatePem,
-          notBefore: now,
-          notAfter,
+          ...metadata,
+          certificateArn: cert.certificateArn,
+          certificateChain: cert.certificateChain,
         },
       });
       await this.deps.iot.ensurePolicy(policy.policyName, policy.policyDocument);
       await this.deps.iot.attachPolicy(policy.policyName, cert.certificateArn);
       await this.deps.iot.attachThingPrincipal(device.id, cert.certificateArn);
 
-      const payload: CertificatePackagePayload = { certificatePem: cert.certificatePem };
+      const payload: CertificatePackagePayload = {
+        certificatePem: cert.certificatePem,
+        certificateChain: cert.certificateChain,
+      };
       const { expiresAt } = await this.securePackage.storePackage(
         cert.certificateId,
         Buffer.from(JSON.stringify(payload), 'utf8'),
@@ -580,8 +583,12 @@ export class ProvisioningService {
 /** 解析证书包明文负载（Status API 领取后使用）。 */
 export function parseCertificatePackage(payload: Uint8Array): CertificatePackagePayload {
   const parsed = JSON.parse(Buffer.from(payload).toString('utf8')) as Record<string, unknown>;
-  if (typeof parsed.certificatePem !== 'string' || parsed.privateKey !== undefined) {
+  if (
+    typeof parsed.certificatePem !== 'string' ||
+    typeof parsed.certificateChain !== 'string' ||
+    parsed.privateKey !== undefined
+  ) {
     throw new ProvisioningError('证书包负载结构非法');
   }
-  return { certificatePem: parsed.certificatePem };
+  return { certificatePem: parsed.certificatePem, certificateChain: parsed.certificateChain };
 }

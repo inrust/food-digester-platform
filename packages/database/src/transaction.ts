@@ -16,7 +16,8 @@ function isTransactionClient(client: DbClient): client is Prisma.TransactionClie
 export async function withTransaction<T>(
   client: DbClient,
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  options?: { timeout?: number; maxWait?: number },
 ): Promise<T> {
   if (isTransactionClient(client)) return fn(client);
-  return (client as PrismaClient).$transaction(fn);
+  return (client as PrismaClient).$transaction(fn, options);
 }

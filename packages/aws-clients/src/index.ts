@@ -45,3 +45,5 @@ export {
   OTA_FIRMWARE_TRUST_ROOT,
 } from './ota-firmware.js';
 export type { KmsFirmwareSignatureVerifierConfig, OtaFirmwareS3Config, OtaFirmwareS3Ports } from './ota-firmware.js';
+
+export { deviceCertificateMetadata } from './device-certificate-metadata.js';

@@ -59,6 +59,7 @@ async function initialize() {
       client,
       securePackage,
       mqttEndpoint: await iot.getDataEndpoint(),
+      restEndpoint: required('DEVICE_API_BASE_URL'),
       deliveryRecovery: provisioning,
     }),
   });

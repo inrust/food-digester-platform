@@ -1,27 +1,18 @@
-/**
- * BE-CERT-02 证书轮换 Service（业务核心，框架无关）。
- *
- * 轮换链（POST /api/v1/device/certificate/rotate，mTLS 认证后调用）：
- * 1. 资格：currentCertificateId 必须等于当前 mTLS 身份证书（错误/跨设备 → 403）；
- *    旧证书 ACTIVE 且属于设备由 AUTH-03 认证链保证（撤销/过期 → 401 先行）；
- * 2. 重试恢复：已封包但未预留则继续交付；已预留但响应未确认则撤销新证书并重签；
- *    响应已经成功提交但尚无新证 Heartbeat 时稳定返回冲突，绝不撤销已交付证书或重签；
- * 3. 发证：项目 CA 签发并注册 AWS IoT → AUTH-04 单设备 Policy（按名幂等）→ attach；
- * 4. 双证书窗口：新证书 ACTIVE + rotatedFromId=旧证书（旧证书保持 ACTIVE 可用），
- *    证书包 SEC-01 信封加密短期保存；写 ROTATION_START 审计；
- * 5. 响应一次性返回证书包明文（私钥仅内存经过，绝不落库/日志/审计）。
- *
- * 封包前失败的重试：按 DEC-003 丢失处置，遗留记录 REVOKED 后重签（有界替换，非无限）。
- * 确认：新证书首个合法 Heartbeat 后由 confirmCertificateRotationOnFirstHeartbeat
- * 停用旧证书并销毁新证书包（DEC-003 销毁触发点 NEW_CERTIFICATE_FIRST_HEARTBEAT）。
- */
+/** CSR-only rotation. New and old identities overlap until both channels confirm or the 24h window expires. */
 import type { DbClient } from '@fdp/database';
-import { recordAudit, withTransaction } from '@fdp/database';
-import { buildDevicePolicy } from '@fdp/aws-clients';
+import { recordAudit, withTransaction, acquireTransactionLock } from '@fdp/database';
+import { deviceCertificateMetadata, buildDevicePolicy } from '@fdp/aws-clients';
 import type { DataKeyProvider } from '@fdp/aws-clients';
-import { CERTIFICATE_PACKAGE_RETENTION_SECONDS, certificateFingerprintFromPem, SecurePackageService } from '@fdp/auth';
+import {
+  CERTIFICATE_PACKAGE_RETENTION_SECONDS,
+  CERTIFICATE_ROTATION_WINDOW_MS,
+  claimDevicePublicKey,
+  certificateFingerprintFromPem,
+  SecurePackageService,
+} from '@fdp/auth';
 import type { DeviceAuthContext } from '@fdp/auth';
-import type { IotProvisioningPort } from '../provisioning/index.js';
+import { inspectCsr } from '../onboarding/csr-proof.js';
+import type { IotCertificateResult, IotProvisioningPort } from '../provisioning/index.js';
 
 export type RotationErrorCode = 'VALIDATION_FAILED' | 'FORBIDDEN' | 'CONFLICT';
 
@@ -63,7 +54,7 @@ export interface RotationServiceDeps {
 export interface RotationResult {
   readonly certificateId: string;
   readonly certificatePem: string;
-  readonly privateKey: string;
+  readonly certificateChain: string;
   /** 新证书生效时间（UTC ISO 时间戳，双证书窗口起点）。 */
   readonly effectiveDate: string;
   /** UTC 到期日（YYYY-MM-DD）。 */
@@ -82,6 +73,8 @@ interface CertificateRow {
   readonly packageCiphertext: Uint8Array | null;
   readonly claimedAt: Date | null;
   readonly certificatePem: string | null;
+  readonly publicKeyFingerprint: string | null;
+  readonly rotationConfirmedAt: Date | null;
   readonly notBefore: Date;
   readonly notAfter: Date;
 }
@@ -98,6 +91,7 @@ export async function rotateCertificate(
   deps: RotationServiceDeps,
   auth: DeviceAuthContext,
   currentCertificateId: string | undefined,
+  csrPem: string | undefined,
 ): Promise<RotationResult> {
   if (!currentCertificateId) {
     throw new CertificateRotationError('VALIDATION_FAILED', 'currentCertificateId is required');
@@ -110,8 +104,119 @@ export async function rotateCertificate(
     );
   }
 
+  if (!csrPem) throw new CertificateRotationError('VALIDATION_FAILED', 'csrPem is required');
+  let fingerprint: string;
+  try {
+    fingerprint = inspectCsr(csrPem).fingerprint;
+  } catch {
+    throw new CertificateRotationError('VALIDATION_FAILED', 'Invalid CSR');
+  }
+  const current = await certificates(deps.client).findFirst({
+    where: { id: auth.certificateId, deviceId: auth.deviceId, status: 'ACTIVE' },
+  });
+  if (!current || (current.rotatedFromId && !current.rotationConfirmedAt))
+    throw new CertificateRotationError('CONFLICT', 'The current certificate is awaiting rotation verification');
+  const oldKeyFingerprint =
+    current.publicKeyFingerprint ??
+    (current.certificatePem ? deviceCertificateMetadata(current.certificatePem).publicKeyFingerprint : null);
+  if (!oldKeyFingerprint)
+    throw new CertificateRotationError('CONFLICT', 'Current certificate key metadata is unavailable');
+  if (oldKeyFingerprint === fingerprint)
+    throw new CertificateRotationError('VALIDATION_FAILED', 'Rotation requires a new device key');
+  if (!(await claimDevicePublicKey(deps.client, auth.deviceId, fingerprint)))
+    throw new CertificateRotationError('CONFLICT', 'CSR key is bound to another device');
+  let registered: IotCertificateResult | undefined;
+  try {
+    return await withTransaction(
+      deps.client,
+      async (tx) => {
+        await acquireTransactionLock(tx, `certificate-rotation:${auth.deviceId}`);
+        const result = await rotateUnderLock(
+          {
+            ...deps,
+            client: tx,
+            iot: {
+              ...deps.iot,
+              issueAndRegisterCertificateFromCsr: async (csr, deviceId) => {
+                registered = await deps.iot.issueAndRegisterCertificateFromCsr(csr, deviceId);
+                return registered;
+              },
+            },
+          },
+          auth,
+          fingerprint,
+          csrPem,
+        );
+        // Callback must use the committed root client, never the transaction-scoped client.
+        return {
+          ...result,
+          confirmDelivery: async () => {
+            const secure = new SecurePackageService({
+              db: deps.client,
+              keyProvider: deps.keyProvider,
+              config: {
+                retentionSeconds: CERTIFICATE_PACKAGE_RETENTION_SECONDS,
+                maxClaims: 1,
+                now: deps.now ?? (() => new Date()),
+              },
+            });
+            await secure.confirmPackageDelivery(result.certificateId);
+          },
+        };
+      },
+      { timeout: 30000 },
+    );
+  } catch (error) {
+    if (registered) {
+      const at = deps.now?.() ?? new Date();
+      await (deps.client as any).deviceCertificate.upsert({
+        where: { id: registered.certificateId },
+        create: {
+          id: registered.certificateId,
+          deviceId: auth.deviceId,
+          fingerprint: certificateFingerprintFromPem(registered.certificatePem),
+          certificateArn: registered.certificateArn,
+          certificatePem: registered.certificatePem,
+          status: 'REVOKED',
+          revokedAt: at,
+          notBefore: at,
+          notAfter: at,
+          iotDeactivationPending: true,
+        },
+        update: { status: 'REVOKED', revokedAt: at, iotDeactivationPending: true },
+      });
+      await recordAudit(deps.client, {
+        objectType: 'deviceCertificate',
+        objectId: registered.certificateId,
+        action: 'CERT_ROTATION_ISSUANCE_FAILED',
+        result: 'FAILURE',
+        afterValue: { iotDeactivationPending: true },
+      });
+    }
+    throw error;
+  }
+}
+
+async function rotateUnderLock(
+  deps: RotationServiceDeps,
+  auth: DeviceAuthContext,
+  fingerprint: string,
+  csrPem: string,
+): Promise<RotationResult> {
   const now = deps.now?.() ?? new Date();
   const certs = certificates(deps.client);
+  const stillActive = await certs.findFirst({
+    where: {
+      id: auth.certificateId,
+      deviceId: auth.deviceId,
+      status: 'ACTIVE',
+      revokedAt: null,
+      notBefore: { lte: now },
+      notAfter: { gt: now },
+    },
+  });
+  if (!stillActive) throw new CertificateRotationError('FORBIDDEN', 'Current certificate is no longer active');
+
   const securePackage = new SecurePackageService({
     db: deps.client,
     keyProvider: deps.keyProvider,
@@ -124,8 +229,13 @@ export async function rotateCertificate(
 
   // 重试短路：同旧证书的未确认轮换已存在
   const existing = await certs.findFirst({
-    where: { deviceId: auth.deviceId, rotatedFromId: auth.certificateId, status: 'ACTIVE' },
+    where: { deviceId: auth.deviceId, rotatedFromId: auth.certificateId, status: 'ACTIVE', rotationConfirmedAt: null },
   });
+  if (existing && existing.publicKeyFingerprint !== fingerprint)
+    throw new CertificateRotationError(
+      'CONFLICT',
+      'Use the same pending CSR until replacement is revoked or confirmed',
+    );
   if (existing?.packageCiphertext && existing.claimedAt === null) {
     const payload = await securePackage.preparePackageDelivery(existing.id, {
       kind: 'deviceCertificate',
@@ -135,7 +245,7 @@ export async function rotateCertificate(
     return {
       certificateId: existing.id,
       certificatePem: parsed.certificatePem,
-      privateKey: parsed.privateKey,
+      certificateChain: parsed.certificateChain,
       effectiveDate: existing.notBefore.toISOString().slice(0, 10),
       expiryDate: existing.notAfter.toISOString().slice(0, 10),
       rotatedFromId: auth.certificateId,
@@ -145,24 +255,32 @@ export async function rotateCertificate(
     };
   }
   if (existing?.packageCiphertext && existing.claimedAt !== null) {
-    await deps.iot.revokeCertificate(existing.id);
     await securePackage.revokeUnconfirmedDelivery(existing.id);
+    await certs.updateMany({ where: { id: existing.id }, data: { iotDeactivationPending: true } });
   }
   if (existing && !existing.packageCiphertext && existing.claimedAt !== null) {
     throw new CertificateRotationError(
       'CONFLICT',
-      'The replacement certificate was delivered and is awaiting its first heartbeat',
+      'The replacement certificate was delivered and is awaiting MQTT and REST verification',
     );
   }
   if (existing && !existing.packageCiphertext && existing.claimedAt === null) {
     // 封包前失败的遗留：DEC-003 丢失处置，REVOKED 后重签（有界替换）
     await certs.updateMany({
       where: { id: existing.id, status: 'ACTIVE' },
-      data: { status: 'REVOKED', revokedAt: now },
+      data: { status: 'REVOKED', revokedAt: now, iotDeactivationPending: true },
     });
   }
 
-  const cert = await deps.iot.createKeysAndCertificate();
+  const reused = await certs.findFirst({
+    where: { publicKeyFingerprint: fingerprint, deviceId: { not: auth.deviceId } },
+  });
+  if (reused) throw new CertificateRotationError('CONFLICT', 'The CSR key belongs to another device');
+  const cert = await deps.iot.issueAndRegisterCertificateFromCsr(csrPem, auth.deviceId);
+  if ('privateKey' in cert) throw new CertificateRotationError('CONFLICT', 'Issuer returned a device private key');
+  const metadata = deviceCertificateMetadata(cert.certificatePem);
+  if (metadata.publicKeyFingerprint !== fingerprint)
+    throw new CertificateRotationError('CONFLICT', 'Certificate does not match CSR');
   const policy = buildDevicePolicy({
     region: deps.config.region,
     accountId: deps.config.accountId,
@@ -173,18 +291,19 @@ export async function rotateCertificate(
   await deps.iot.attachPolicy(policy.policyName, cert.certificateArn);
   await deps.iot.attachThingPrincipal(auth.deviceId, cert.certificateArn);
 
-  const notAfter = new Date(now.getTime() + deps.config.certificateValiditySeconds * 1000);
+  const notAfter = metadata.notAfter;
   await withTransaction(deps.client, async (tx) => {
     await certificates(tx).create({
       data: {
         id: cert.certificateId,
         deviceId: auth.deviceId,
-        fingerprint: certificateFingerprintFromPem(cert.certificatePem),
         status: 'ACTIVE',
         certificatePem: cert.certificatePem,
         rotatedFromId: auth.certificateId,
-        notBefore: now,
-        notAfter,
+        ...metadata,
+        certificateArn: cert.certificateArn,
+        certificateChain: cert.certificateChain,
+        rotationDeadlineAt: new Date(now.getTime() + CERTIFICATE_ROTATION_WINDOW_MS),
       },
     });
     await recordAudit(tx, {
@@ -197,10 +316,13 @@ export async function rotateCertificate(
     });
   });
 
-  // AWS 返回私钥后立即信封加密短期保存（窗口期内供确认前重试对账；明文仅内存经过）
+  // 一次领取包只含公钥证书与 CA chain，设备私钥始终留在本地。
   await securePackage.storePackage(
     cert.certificateId,
-    Buffer.from(JSON.stringify({ certificatePem: cert.certificatePem, privateKey: cert.privateKey }), 'utf8'),
+    Buffer.from(
+      JSON.stringify({ certificatePem: cert.certificatePem, certificateChain: cert.certificateChain }),
+      'utf8',
+    ),
   );
 
   const delivery = parseRotationPackage(
@@ -213,8 +335,8 @@ export async function rotateCertificate(
   return {
     certificateId: cert.certificateId,
     certificatePem: delivery.certificatePem,
-    privateKey: delivery.privateKey,
-    effectiveDate: now.toISOString().slice(0, 10),
+    certificateChain: delivery.certificateChain,
+    effectiveDate: metadata.notBefore.toISOString().slice(0, 10),
     expiryDate: notAfter.toISOString().slice(0, 10),
     rotatedFromId: auth.certificateId,
     confirmDelivery: async () => {
@@ -223,10 +345,14 @@ export async function rotateCertificate(
   };
 }
 
-function parseRotationPackage(payload: Uint8Array): { certificatePem: string; privateKey: string } {
+function parseRotationPackage(payload: Uint8Array): { certificatePem: string; certificateChain: string } {
   const parsed = JSON.parse(Buffer.from(payload).toString('utf8')) as Record<string, unknown>;
-  if (typeof parsed.certificatePem !== 'string' || typeof parsed.privateKey !== 'string') {
+  if (
+    typeof parsed.certificatePem !== 'string' ||
+    typeof parsed.certificateChain !== 'string' ||
+    'privateKey' in parsed
+  ) {
     throw new CertificateRotationError('CONFLICT', 'The certificate package is invalid');
   }
-  return { certificatePem: parsed.certificatePem, privateKey: parsed.privateKey };
+  return { certificatePem: parsed.certificatePem, certificateChain: parsed.certificateChain };
 }

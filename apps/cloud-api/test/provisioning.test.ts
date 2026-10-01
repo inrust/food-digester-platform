@@ -18,6 +18,7 @@ import type { IotCertificateResult, IotProvisioningPort } from '../src/index.js'
 import type { AdminOnboardingRequestRecord } from '../src/index.js';
 import { createTestDb } from './helpers.js';
 import forge from 'node-forge';
+import { csrFixture, certificateForCsr } from './certificate-fixtures.js';
 
 const deviceKeys = forge.pki.rsa.generateKeyPair(2048);
 const deviceCsr = forge.pki.createCertificationRequest();
@@ -25,18 +26,6 @@ deviceCsr.publicKey = deviceKeys.publicKey;
 deviceCsr.setSubject([{ name: 'commonName', value: 'test-device' }]);
 deviceCsr.sign(deviceKeys.privateKey, forge.md.sha256.create());
 const csrPem = forge.pki.certificationRequestToPem(deviceCsr);
-
-function certificatePem(serial: string): string {
-  const certificate = forge.pki.createCertificate();
-  certificate.publicKey = deviceKeys.publicKey;
-  certificate.serialNumber = Buffer.from(serial).toString('hex');
-  certificate.validity.notBefore = new Date('2026-01-01T00:00:00Z');
-  certificate.validity.notAfter = new Date('2028-01-01T00:00:00Z');
-  certificate.setSubject([{ name: 'commonName', value: serial }]);
-  certificate.setIssuer(certificate.subject.attributes);
-  certificate.sign(deviceKeys.privateKey, forge.md.sha256.create());
-  return forge.pki.certificateToPem(certificate);
-}
 
 const NOW = new Date('2026-08-27T08:00:00Z');
 const now = () => NOW;
@@ -83,15 +72,14 @@ function mockIot(): MockIot {
       state.calls.push(`ensureThing:${thingName}`);
       state.things.add(thingName);
     },
-    async createKeysAndCertificate(csr) {
+    async issueAndRegisterCertificateFromCsr(csr, deviceId) {
       const n = state.certs.length + 1;
       const cert: IotCertificateResult = {
         certificateId: `cert-${instance}-${n}`,
         certificateArn: `arn:aws:iot:ap-southeast-1:123456789012:cert/cert-${instance}-${n}`,
-        certificatePem: certificatePem(`MOCKCERT-${instance}-${n}`),
-        ...(csr ? {} : { privateKey: 'TEST_ROTATION_PRIVATE_KEY' }),
+        ...certificateForCsr(csr, deviceId),
       };
-      state.calls.push(`createKeysAndCertificate:${cert.certificateId}`);
+      state.calls.push(`issueAndRegisterCertificateFromCsr:${cert.certificateId}`);
       state.certs.push(cert);
       return cert;
     },
@@ -182,7 +170,7 @@ describe('ProvisioningService', () => {
     // IoT 调用链完整且 Thing Name = deviceId
     assert.deepEqual(
       iot.calls.map((c) => c.split(':')[0]),
-      ['ensureThing', 'createKeysAndCertificate', 'ensurePolicy', 'attachPolicy', 'attachThingPrincipal'],
+      ['ensureThing', 'issueAndRegisterCertificateFromCsr', 'ensurePolicy', 'attachPolicy', 'attachThingPrincipal'],
     );
     assert.ok(iot.things.has(deviceId));
     const policy = iot.policies.get(`fdp-device-${deviceId}`);
@@ -219,7 +207,7 @@ describe('ProvisioningService', () => {
     await service.provision(request);
     const replay = await service.provision(request);
     assert.isTrue(replay.replayed);
-    assert.equal(iot.calls.filter((c) => c.startsWith('createKeysAndCertificate')).length, 1);
+    assert.equal(iot.calls.filter((c) => c.startsWith('issueAndRegisterCertificateFromCsr')).length, 1);
     assert.equal(await prisma.device.count({ where: { id: deviceId } }), 1);
     assert.equal(await prisma.deviceCertificate.count({ where: { deviceId, status: 'PENDING_CLAIM' } }), 1);
   });
@@ -399,6 +387,7 @@ describe('ProvisioningService', () => {
       data: {
         id: oldCertificateId,
         deviceId,
+        publicKeyFingerprint: 'old-key',
         fingerprint: `old-rotation-fp-${seq}`,
         status: 'ACTIVE',
         notBefore: NOW,
@@ -460,6 +449,7 @@ describe('ProvisioningService', () => {
         deviceLifecycleStatus: 'Active',
       },
       oldCertificateId,
+      csrFixture().csrPem,
     );
     assert.notEqual(replacement.certificateId, rotationCertificateId, '设备使用旧证重试时必须签发替代证书');
     assert.equal(replacement.rotatedFromId, oldCertificateId);

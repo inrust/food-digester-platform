@@ -38,21 +38,35 @@
       "enum": ["provisional", "frozen"],
       "description": "provisional=暂定值（DEC-003 pending/proposed）；frozen=已冻结。"
     },
-    "description": { "type": "string", "minLength": 1 },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
     "storage": {
       "type": "object",
       "required": ["encryption", "retention", "retentionSeconds", "consumers", "note"],
       "additionalProperties": false,
       "properties": {
-        "encryption": { "type": "string", "enum": ["kms-envelope"] },
-        "retention": { "type": "string", "enum": ["short-term"] },
+        "encryption": {
+          "type": "string",
+          "enum": ["kms-envelope"]
+        },
+        "retention": {
+          "type": "string",
+          "enum": ["short-term"]
+        },
         "retentionSeconds": {
           "type": ["integer", "null"],
           "minimum": 1,
           "description": "DEC-003 待冻结参数：证书包短期保存时长（秒）。provisional 为 null。"
         },
-        "consumers": { "type": "array" },
-        "note": { "type": "string", "minLength": 1 }
+        "consumers": {
+          "type": "array"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "claim": {
@@ -60,15 +74,26 @@
       "required": ["oneTime", "maxClaims", "destroyOnSuccessfulClaim", "consumers", "note"],
       "additionalProperties": false,
       "properties": {
-        "oneTime": { "type": "boolean", "enum": [true] },
+        "oneTime": {
+          "type": "boolean",
+          "enum": [true]
+        },
         "maxClaims": {
           "type": ["integer", "null"],
           "minimum": 1,
           "description": "DEC-003 待冻结参数：允许领取次数。provisional 为 null。"
         },
-        "destroyOnSuccessfulClaim": { "type": "boolean", "enum": [true] },
-        "consumers": { "type": "array" },
-        "note": { "type": "string", "minLength": 1 }
+        "destroyOnSuccessfulClaim": {
+          "type": "boolean",
+          "enum": [true]
+        },
+        "consumers": {
+          "type": "array"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "lossHandling": {
@@ -76,9 +101,17 @@
       "required": ["mode", "consumers", "note"],
       "additionalProperties": false,
       "properties": {
-        "mode": { "type": "string", "enum": ["reissue"] },
-        "consumers": { "type": "array" },
-        "note": { "type": "string", "minLength": 1 }
+        "mode": {
+          "type": "string",
+          "enum": ["reissue"]
+        },
+        "consumers": {
+          "type": "array"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "destructionTriggers": {
@@ -88,16 +121,24 @@
       "properties": {
         "triggers": {
           "type": "array",
-          "description": "销毁触发点枚举：SUCCESSFUL_CLAIM、NEW_CERTIFICATE_FIRST_HEARTBEAT。"
+          "description": "SUCCESSFUL_CLAIM、NEW_CERTIFICATE_FIRST_HEARTBEAT（首次接入）、NEW_CERTIFICATE_DUAL_CHANNEL_VERIFIED（轮换）。"
         },
-        "consumers": { "type": "array" },
-        "note": { "type": "string", "minLength": 1 }
+        "consumers": {
+          "type": "array"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "pendingParameters": {
       "type": "array",
       "description": "DEC-003 冻结前必须显式给出数值的参数路径列表。"
     },
-    "frozenUpgradePath": { "type": "string", "minLength": 1 }
+    "frozenUpgradePath": {
+      "type": "string",
+      "minLength": 1
+    }
   }
 }

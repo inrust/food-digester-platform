@@ -6,7 +6,7 @@
 
 ## 1. 联调前准备与首次连接
 
-设备方完成无 Token 的 CSR 申请；管理员核验并批准后，设备取得 `deviceId`、`certificate.certificatePem`、`mqtt.endpoint` 和 `configuration.heartbeatInterval`。设备私钥为生成 CSR 时保存在本地的私钥，首次接入云端不下发私钥。设备安装前确认公钥匹配。
+设备方完成无 Token 的 CSR 申请；管理员核验并批准后，设备取得 `deviceId`、`certificate.certificatePem`、`certificate.certificateChain`、`mqtt.endpoint`、`rest.endpoint` 和 `configuration.heartbeatInterval`。设备私钥为生成 CSR 时保存在本地的私钥，首次接入云端不下发私钥。设备安装前确认公钥匹配。项目 CA 签发的同一叶证书同时用于 MQTT 与 REST；客户端链按签发 CA 到根 CA 顺序安装，服务端信任根另行配置。IoT 注册使用 `RegisterCertificateWithoutCA`，必须发送正确 SNI。
 
 | 项目 | 设备端填写/准备 | 说明 |
 |---|---|---|
@@ -750,3 +750,9 @@ MQTT 上行没有 HTTP 状态码。Broker/TLS 错误由客户端错误回调、C
 - Heartbeat 与 Sync 的状态值、未许可首次接入和 Maintenance 状态的映射见第 4.1 节；本页没有通过新增枚举或伪造值绕过这些现有协议边界。
 
 本页示例设备 `DEV001`、任务 ID、对象路径和时间均为演示值。修改审计报文后必须重算 Hash；实际发送时换成当前时间、真实 ID/路径及持久序号，不得照抄静态样例到生产。
+
+## 证书轮换验证
+
+收到 `CERTIFICATE_ROTATION_REQUIRED` 后，设备本地生成新密钥和 CSR，使用旧证调用 [Rotate API](./device-api.bio-nexa.com.md)。云端只返回叶证书及 CA chain。新证在最长 24 小时并行窗口内需要发送合法 Heartbeat，并用同一新证完成 REST Sync；两者可任意顺序到达。Heartbeat 只记录 MQTT 验证，单独发送不能停用旧证。双通道确认后数据库撤销旧证，Sweeper 重试将 AWS IoT 旧证设为 `INACTIVE`。截止仍未确认则撤销新证并保留旧证。应用拒绝先于 AWS 停用完成，设备不得将 Broker 仍可连接当作有效业务身份。
+
+首次 Onboarding 仍由截止前首个合法 Heartbeat 激活，REST 验证仅作接入健康记录；没有增加新的 MQTT Topic、消息字段或 ACK。

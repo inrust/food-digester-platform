@@ -61,7 +61,16 @@ describe('Device API Lambda 生产路由', () => {
   test('无 Bearer JWT 但有 API Gateway mTLS 身份时正常进入设备 Handler', async () => {
     const certificateStatus = vi.fn<DeviceRoute>(async () => ({
       status: 200,
-      body: { certificateId: 'cert-mtls', status: 'ACTIVE', expiryDate: '2027-01-01', daysRemaining: 116 },
+      body: {
+        certificateId: 'cert-mtls',
+        status: 'ACTIVE',
+        expiryDate: '2027-01-01',
+        daysRemaining: 116,
+        mqttVerifiedAt: null,
+        restVerifiedAt: null,
+        rotationDeadlineAt: null,
+        rotationConfirmedAt: null,
+      },
     }));
     const response = await createDeviceApiLambdaHandler(routes({ certificateStatus }))({
       httpMethod: 'GET',
@@ -109,7 +118,7 @@ describe('Device API Lambda 生产路由', () => {
     const body = {
       toJSON() {
         order.push('serialize');
-        return { privateKey: 'one-time-key' };
+        return { certificatePem: 'public-leaf', certificateChain: 'public-chain' };
       },
     };
     const certificateRotate = vi.fn(async () => ({

@@ -223,7 +223,15 @@ describe('GET /admin/devices/{deviceId}（详情：字段来源与敏感材料�
     assert.equal(d.operationalStatus, 'Active');
     assert.equal(d.connectivity, 'ONLINE');
     assert.equal(d.lastHeartbeatAt, new Date(NOW.getTime() - 60_000).toISOString());
-    assert.deepEqual(d.certificate, { certificateId: cert.id, fingerprint: cert.fingerprint, status: 'ACTIVE' });
+    assert.deepEqual(d.certificate, {
+      certificateId: cert.id,
+      fingerprint: cert.fingerprint,
+      status: 'ACTIVE',
+      mqttVerifiedAt: null,
+      restVerifiedAt: null,
+      rotationDeadlineAt: null,
+      rotationConfirmedAt: null,
+    });
     assert.equal(d.license.licenseId, license.id);
     assert.equal(d.license.status, 'Active');
     assert.equal(d.license.validFrom, '2026-01-01');

@@ -323,6 +323,23 @@ export function DeviceManagePage({
             <dd data-testid="cert-id">{device.certificate.certificateId}</dd>
             <dt>{translate('page.3852a0ca8422')}</dt>
             <dd data-testid="cert-fingerprint">{device.certificate.fingerprint}</dd>
+            <dt>{translate('certificate.mqttVerifiedAt')}</dt>
+            <dd data-testid="cert-mqttVerifiedAt">
+              {device.certificate.mqttVerifiedAt ? <TimeText iso={device.certificate.mqttVerifiedAt} /> : '—'}
+            </dd>
+            <dt>{translate('certificate.restVerifiedAt')}</dt>
+            <dd data-testid="cert-restVerifiedAt">
+              {device.certificate.restVerifiedAt ? <TimeText iso={device.certificate.restVerifiedAt} /> : '—'}
+            </dd>
+            <dt>{translate('certificate.rotationDeadlineAt')}</dt>
+            <dd data-testid="cert-rotationDeadlineAt">
+              {device.certificate.rotationDeadlineAt ? <TimeText iso={device.certificate.rotationDeadlineAt} /> : '—'}
+            </dd>
+            <dt>{translate('certificate.rotationConfirmedAt')}</dt>
+            <dd data-testid="cert-rotationConfirmedAt">
+              {device.certificate.rotationConfirmedAt ? <TimeText iso={device.certificate.rotationConfirmedAt} /> : '—'}
+            </dd>
+
             <dt>{translate('page.62e951a692ff')}</dt>
             <dd data-testid="cert-status">
               {CERTIFICATE_STATUS_LABELS[device.certificate.status] ?? device.certificate.status}

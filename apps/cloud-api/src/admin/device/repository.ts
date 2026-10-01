@@ -58,6 +58,11 @@ export interface DeviceRow {
     readonly id: string;
     readonly fingerprint: string;
     readonly status: string;
+    readonly mqttVerifiedAt?: Date | null;
+    readonly restVerifiedAt?: Date | null;
+    readonly rotationDeadlineAt?: Date | null;
+    readonly rotationConfirmedAt?: Date | null;
+
     readonly createdAt: Date;
   }[];
   readonly licenses: readonly {
@@ -114,7 +119,16 @@ export const DEVICE_INCLUDE = {
   site: { select: { id: true, name: true, region: true, subregion: true } },
   latestState: { select: { lastHeartbeatAt: true, operationalStatus: true } },
   certificates: {
-    select: { id: true, fingerprint: true, status: true, createdAt: true },
+    select: {
+      id: true,
+      fingerprint: true,
+      status: true,
+      createdAt: true,
+      mqttVerifiedAt: true,
+      restVerifiedAt: true,
+      rotationDeadlineAt: true,
+      rotationConfirmedAt: true,
+    },
     orderBy: { createdAt: 'desc' },
   },
   licenses: {
@@ -168,6 +182,10 @@ export interface DeviceDto {
     readonly certificateId: string;
     readonly fingerprint: string;
     readonly status: string;
+    readonly mqttVerifiedAt: string | null;
+    readonly restVerifiedAt: string | null;
+    readonly rotationDeadlineAt: string | null;
+    readonly rotationConfirmedAt: string | null;
   } | null;
   readonly license: {
     readonly licenseId: string;
@@ -242,7 +260,15 @@ export function toDeviceDto(
     connectivity: deriveConnectivity(row.latestState?.lastHeartbeatAt ?? null, now, thresholdMs),
     lastHeartbeatAt: row.latestState?.lastHeartbeatAt?.toISOString() ?? null,
     certificate: certificate
-      ? { certificateId: certificate.id, fingerprint: certificate.fingerprint, status: certificate.status }
+      ? {
+          certificateId: certificate.id,
+          fingerprint: certificate.fingerprint,
+          status: certificate.status,
+          mqttVerifiedAt: certificate.mqttVerifiedAt?.toISOString() ?? null,
+          restVerifiedAt: certificate.restVerifiedAt?.toISOString() ?? null,
+          rotationDeadlineAt: certificate.rotationDeadlineAt?.toISOString() ?? null,
+          rotationConfirmedAt: certificate.rotationConfirmedAt?.toISOString() ?? null,
+        }
       : null,
     license: license
       ? {

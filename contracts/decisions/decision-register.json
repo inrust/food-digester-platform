@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.35.0",
-  "updatedAt": "2026-09-29T08:00:00Z",
+  "registerVersion": "1.36.0",
+  "updatedAt": "2026-10-01T00:00:00Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -149,11 +149,11 @@
     },
     {
       "id": "DEC-003",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "status": "frozen",
       "title": "一次性证书包领取有效期和次数",
       "conflict": "证书包一次性领取的有效期、允许领取次数与丢失后的处置策略未冻结。",
-      "provisionalValue": "证书包使用 KMS 信封加密保存 24 小时（retentionSeconds=86400）；最多一次成功领取（maxClaims=1），服务端提交成功响应后立即销毁密文；响应丢失、包丢失或过期时吊销未确认新证书并重新签发。",
+      "provisionalValue": "证书包使用 KMS 信封加密保存 24 小时（retentionSeconds=86400）；最多一次成功领取（maxClaims=1），服务端提交成功响应后立即销毁密文；响应丢失、包丢失或过期时吊销未确认新证书并重新签发。 2026-10-01：证书包统一只含叶证书与 CA chain，无设备私钥；首次接入保留首 Heartbeat 销包，轮换确认改为新证 MQTT Heartbeat 与 REST Sync 双通道确认，最长24小时窗口。",
       "approver": "业务方（用户确认）",
       "approvedAt": "2026-09-04T04:40:30Z",
       "blockingTasks": ["BE-ONB-03", "BE-CERT-02"],
@@ -177,6 +177,12 @@
           "at": "2026-09-04T04:40:30Z",
           "by": "业务方（用户确认）",
           "note": "选择方案 003-A 并冻结：KMS 信封加密保存 86400 秒、仅一次成功领取、成功响应提交后立即销毁；网络响应不确定、包丢失或过期均不恢复旧包，吊销未确认新证书后重签。"
+        },
+        {
+          "version": "1.1.0",
+          "at": "2026-10-01T00:00:00Z",
+          "by": "业务方（本次方案实施授权）",
+          "note": "批准 CSR-only 轮换、完整证书链交付与双通道确认；保留一次领取、24小时保存和既有Onboarding语义。"
         }
       ]
     },
@@ -789,6 +795,27 @@
           "at": "2026-09-29T08:00:00Z",
           "by": "业务方（本次开发阶段澄清）",
           "note": "开发阶段无既有设备，不保留 Bearer Token 路径、签发模块与数据表；Onboarding 统一使用 CSR。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-026",
+      "version": "1.0.0",
+      "status": "frozen",
+      "title": "设备证书 CSR 轮换与双通道确认",
+      "conflict": "首次接入保留设备私钥，但旧轮换返回云端私钥并仅以 Heartbeat 停用旧证，无法确认 REST 连通性。",
+      "provisionalValue": "统一设备生成密钥与新CSR；项目CA设置受控Device ID Subject/SAN，返回叶证书和完整CA chain；保留RegisterCertificateWithoutCA和首Heartbeat完成Onboarding；记录mqttVerifiedAt/restVerifiedAt。轮换新旧证并行最长24小时，双通道确认同事务撤销旧证并登记AWS INACTIVE意图，由现有Sweeper幂等重试。超时撤销新证并保留旧证；截止边界应用侧先行拒绝。跨设备复用公钥拒绝，同设备申请重试幂等。",
+      "approver": "业务方（本次方案实施授权）",
+      "approvedAt": "2026-10-01T00:00:00Z",
+      "blockingTasks": ["BE-ONB-03", "BE-CERT-02", "BE-SYNC-01", "QA-02"],
+      "affectedModules": ["AUTH", "BE-ONB", "BE-CERT", "BE-SYNC", "SEC", "DB", "IAC", "QA"],
+      "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "1.0.0",
+          "at": "2026-10-01T00:00:00Z",
+          "by": "业务方",
+          "note": "按已确认的分层接入与CSR轮换方案实施，数字窗口沿用24小时证书交付周期，不改变DEC-017。"
         }
       ]
     }

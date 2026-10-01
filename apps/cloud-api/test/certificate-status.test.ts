@@ -100,7 +100,16 @@ describe('GET /api/v1/device/certificate/status', () => {
     assert.equal(body.status, 'ACTIVE');
     assert.equal(body.daysRemaining, 45);
     assert.equal(body.expiryDate, new Date(NOW.getTime() + 45 * DAY_MS).toISOString().slice(0, 10));
-    assert.deepEqual(Object.keys(body).sort(), ['certificateId', 'daysRemaining', 'expiryDate', 'status']);
+    assert.deepEqual(Object.keys(body).sort(), [
+      'certificateId',
+      'daysRemaining',
+      'expiryDate',
+      'mqttVerifiedAt',
+      'restVerifiedAt',
+      'rotationConfirmedAt',
+      'rotationDeadlineAt',
+      'status',
+    ]);
     // 响应不包含 PEM/私钥
     const serialized = JSON.stringify(res.body);
     assert.ok(!serialized.includes('BEGIN CERTIFICATE') && !/privateKey|certificatePem/i.test(serialized));

@@ -52,3 +52,10 @@ export type { ClaimProof, SecurePackageServiceConfig } from './secure-package/se
 export { SecurePackageError } from './secure-package/errors.js';
 export type { SecurePackageErrorCode } from './secure-package/errors.js';
 export { createLocalTestKeyProvider } from './secure-package/local-test-key-provider.js';
+
+export {
+  recordCertificateVerification,
+  sweepCertificateLifecycle,
+  claimDevicePublicKey,
+  CERTIFICATE_ROTATION_WINDOW_MS,
+} from './device/certificate-lifecycle.js';

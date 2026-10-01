@@ -1,5 +1,5 @@
 import { GetObjectCommand, PutObjectCommand, type S3Client } from '@aws-sdk/client-s3';
-import { assert, describe, expect, test } from 'vitest';
+import { assert, describe, expect, test, vi } from 'vitest';
 import { createS3MediaUrlSigner } from '../src/s3-media-url-signer.js';
 
 describe('Media S3 URL 生产适配器', () => {
@@ -32,16 +32,24 @@ describe('Media S3 URL 生产适配器', () => {
   });
 
   test('任意 Key、非法长度、非法 checksum 与超长 TTL 均失败关闭', async () => {
-    const signer = createS3MediaUrlSigner({ bucket: 'fdp-media', client: {} as S3Client, presign: async () => '' });
-    const valid = {
-      key: 'media/c/d/s/f.jpg',
-      expiresAt: new Date(Date.now() + 900_000),
-      contentLength: 1,
-      checksumSha256: '00'.repeat(32),
-    };
-    await expect(signer.signUpload({ ...valid, key: '../escape' })).rejects.toThrow(/outside/u);
-    await expect(signer.signUpload({ ...valid, contentLength: 0 })).rejects.toThrow(/length/u);
-    await expect(signer.signUpload({ ...valid, checksumSha256: 'bad' })).rejects.toThrow(/checksum/u);
-    await expect(signer.signUpload({ ...valid, expiresAt: new Date(Date.now() + 3_601_000) })).rejects.toThrow(/TTL/u);
+    // 固定 TTL 边界时钟，避免计算期间跨毫秒被向下取整为 3600。
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 9, 1));
+    try {
+      const signer = createS3MediaUrlSigner({ bucket: 'fdp-media', client: {} as S3Client, presign: async () => '' });
+      const valid = {
+        key: 'media/c/d/s/f.jpg',
+        expiresAt: new Date(Date.now() + 900_000),
+        contentLength: 1,
+        checksumSha256: '00'.repeat(32),
+      };
+      await expect(signer.signUpload({ ...valid, key: '../escape' })).rejects.toThrow(/outside/u);
+      await expect(signer.signUpload({ ...valid, contentLength: 0 })).rejects.toThrow(/length/u);
+      await expect(signer.signUpload({ ...valid, checksumSha256: 'bad' })).rejects.toThrow(/checksum/u);
+      await expect(signer.signUpload({ ...valid, expiresAt: new Date(Date.now() + 3_601_000) })).rejects.toThrow(
+        /TTL/u,
+      );
+    } finally {
+      clock.mockRestore();
+    }
   });
 });

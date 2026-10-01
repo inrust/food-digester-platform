@@ -4,7 +4,12 @@ import {
   createProjectCaCertificateIssuer,
   resolveDatabaseUrl,
 } from '@fdp/aws-clients';
-import { CERTIFICATE_PACKAGE_MAX_CLAIMS, CERTIFICATE_PACKAGE_RETENTION_SECONDS, SecurePackageService } from '@fdp/auth';
+import {
+  CERTIFICATE_PACKAGE_MAX_CLAIMS,
+  CERTIFICATE_PACKAGE_RETENTION_SECONDS,
+  SecurePackageService,
+  sweepCertificateLifecycle,
+} from '@fdp/auth';
 import { createPrismaClient } from '@fdp/database';
 import { ProvisioningService } from '../provisioning/service.js';
 
@@ -20,6 +25,7 @@ interface SweepResult {
   readonly recoveredCertificateIds: readonly string[];
   readonly failedCertificateIds: readonly string[];
   readonly exhaustedBatchBudget: boolean;
+  readonly lifecycle: Awaited<ReturnType<typeof sweepCertificateLifecycle>>;
 }
 
 async function initialize(): Promise<() => Promise<SweepResult>> {
@@ -35,16 +41,17 @@ async function initialize(): Promise<() => Promise<SweepResult>> {
     },
   });
   const certificateValiditySeconds = Number(process.env.CERTIFICATE_VALIDITY_SECONDS ?? 31_536_000);
+  const iot = createAwsIotProvisioningClient({
+    region,
+    certificateIssuer: createProjectCaCertificateIssuer({
+      secretId: required('DEVICE_CA_SECRET_ID'),
+      validitySeconds: certificateValiditySeconds,
+      region,
+    }),
+  });
   const provisioning = new ProvisioningService({
     client,
-    iot: createAwsIotProvisioningClient({
-      region,
-      certificateIssuer: createProjectCaCertificateIssuer({
-        secretId: required('DEVICE_CA_SECRET_ID'),
-        validitySeconds: certificateValiditySeconds,
-        region,
-      }),
-    }),
+    iot,
     keyProvider,
     config: {
       region,
@@ -53,6 +60,7 @@ async function initialize(): Promise<() => Promise<SweepResult>> {
     },
   });
   return async () => {
+    const lifecycle = await sweepCertificateLifecycle(client, (id) => iot.deactivateCertificate(id));
     const recoveredCertificateIds: string[] = [];
     const failedCertificateIds: string[] = [];
     const attemptedCertificateIds: string[] = [];
@@ -70,10 +78,10 @@ async function initialize(): Promise<() => Promise<SweepResult>> {
         }
       }
       if (expired.length < batchSize) {
-        return { recoveredCertificateIds, failedCertificateIds, exhaustedBatchBudget: false };
+        return { lifecycle, recoveredCertificateIds, failedCertificateIds, exhaustedBatchBudget: false };
       }
     }
-    return { recoveredCertificateIds, failedCertificateIds, exhaustedBatchBudget: true };
+    return { lifecycle, recoveredCertificateIds, failedCertificateIds, exhaustedBatchBudget: true };
   };
 }
 

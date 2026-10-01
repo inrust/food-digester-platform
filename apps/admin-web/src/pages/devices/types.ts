@@ -30,6 +30,10 @@ export interface DeviceCertificateSummaryView {
   readonly certificateId: string;
   readonly fingerprint: string;
   readonly status: 'PENDING_CLAIM' | 'ACTIVE' | 'REVOKED' | 'EXPIRED';
+  readonly mqttVerifiedAt?: string | null;
+  readonly restVerifiedAt?: string | null;
+  readonly rotationDeadlineAt?: string | null;
+  readonly rotationConfirmedAt?: string | null;
 }
 
 /** BE-DEV-01 Device.license：当前授权摘要（DOM-02；与 Contract 状态独立，DEC-007）。 */

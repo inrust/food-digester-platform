@@ -25,6 +25,8 @@ interface CertificateRow {
   readonly fingerprint: string;
   readonly status: string;
   readonly revokedAt: Date | null;
+  readonly rotationDeadlineAt?: Date | null;
+  readonly rotationConfirmedAt?: Date | null;
 }
 
 interface DeviceRow {
@@ -47,6 +49,7 @@ export function certificateIdFromPrincipal(principal: string): string | null {
 export async function resolveDeviceContext(
   client: DbClient,
   identity: { readonly iotPrincipal: string; readonly iotDeviceId: string },
+  now = new Date(),
 ): Promise<DeviceContext> {
   const certificateId = certificateIdFromPrincipal(identity.iotPrincipal);
   if (!certificateId) {
@@ -77,7 +80,11 @@ export async function resolveDeviceContext(
   const active = certificate.status === 'ACTIVE';
   const firstHeartbeatCandidate =
     certificate.status === 'PENDING_CLAIM' && device.lifecycleStatus === 'OnboardingApproved';
-  if (certificate.revokedAt !== null || (!active && !firstHeartbeatCandidate)) {
+  if (
+    certificate.revokedAt !== null ||
+    (certificate.rotationDeadlineAt && !certificate.rotationConfirmedAt && now >= certificate.rotationDeadlineAt) ||
+    (!active && !firstHeartbeatCandidate)
+  ) {
     throw quarantineError(
       'IDENTITY_VIOLATION',
       'iotPrincipal',

@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "description": "BE-RBAC-01 用户、角色和 Scope 管理 API（Cognito 认证）。角色集合封闭（AUTH-01/DEC-012）；V1 权限矩阵固定只读。写操作仅 user:write：邀请、角色分配、Customer scope 变更、停用和受控密码重置。所有带 body 的写请求使用 additionalProperties=false 对应的严格运行时解析，未知字段、数组和永久 password 在 Cognito/DB/审计前返回 400；无 requestBody 的停用/重置拒绝任何实体。列表 user:read（PlatformSuperAdmin/Auditor）。所有权限变化审计（DOM-03）；Cognito 双写使用持久化意图、确定性补偿与失败对账。功能边界：不负责 Cognito 租户运维、MFA 客服重置和人工账号恢复。错误响应继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "DEC-012@1.0.0"],
-    "x-decision-register-version": "1.35.0"
+    "x-decision-register-version": "1.36.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [{ "url": "/" }],
