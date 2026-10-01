@@ -2,10 +2,15 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: false,
-  workers: 1,
-  reporter: 'line',
+  fullyParallel: process.env.QA05_PHASE === 'parallel-repeat',
+  workers: process.env.QA05_PHASE === 'parallel-repeat' ? 2 : 1,
+  repeatEach: process.env.QA05_PHASE === 'parallel-repeat' ? 2 : 1,
+  retries: 0,
+  reporter: process.env.QA05_REPORT ? [['line'], ['json', { outputFile: process.env.QA05_REPORT }]] : 'line',
+  ...(process.env.QA05_OUTPUT_DIR ? { outputDir: process.env.QA05_OUTPUT_DIR } : {}),
   use: {
+    headless: true,
+    serviceWorkers: 'block',
     baseURL: 'http://127.0.0.1:4173',
     trace: 'retain-on-failure',
   },

@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-05",
+  "status": "PASS",
+  "scope": "LOCAL_BROWSER_E2E",
+  "baselineCommit": "5382cac07f85b37529366cbb8f54c9b85aa39858",
+  "executedAt": "2026-10-01T12:36:05.928993+00:00",
+  "checks": [
+    {
+      "command": "pnpm verify",
+      "exitCode": 0,
+      "vitestFiles": 156,
+      "vitestTests": 1299,
+      "contractTests": 291,
+      "scriptTests": 225,
+      "browserRegressionTests": 30,
+      "qa05BrowserExecutions": 90,
+      "typecheckTasks": 21,
+      "buildTasks": 14,
+      "qa02Tests": 106,
+      "qa03Scenarios": 5,
+      "qa04Tests": 127
+    },
+    {
+      "command": "pnpm test:admin-e2e-suite /tmp/fdp-admin-e2e-gate.json (within pnpm verify)",
+      "exitCode": 0,
+      "distinctCases": 30,
+      "executions": 90,
+      "serial": 30,
+      "parallelRepeat": 60,
+      "roleRouteAssertionsPerRepeat": 110,
+      "buttonAssertionsPerRepeat": 32
+    },
+    {
+      "command": "node --test scripts/admin-e2e.test.mjs",
+      "exitCode": 0,
+      "tests": 18
+    },
+    {
+      "command": "ESLint / Prettier / application and E2E TypeScript / documentation links / git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "localReceiptSha256": "2843942f11a8d60cd9b155488ba4ce155436e8d842b9db16a10c26ab8a089974",
+  "logs": {
+    "fullVerify": {
+      "path": "/tmp/qa05-verify.log",
+      "sha256": "c8fa01eb181d4e4e9327b333f9b503eea1c7c4762947a39d0c6af4b8b3f3d6d5"
+    },
+    "gateUnitTests": {
+      "path": "/tmp/qa05-gate-tests.log",
+      "sha256": "4d8afdb817962dd03ec97e1a76db25aea0d12a1a52a0ee338902bdf6af75776e"
+    }
+  },
+  "awsTargetGate": {
+    "status": "NOT RUN / NO RECEIPT",
+    "checks": [
+      {
+        "command": "node scripts/check-admin-web-target-evidence.mjs",
+        "exitCode": 1,
+        "logSha256": "eb4794bd4a33804b144a319b5b6c30ee9b018fd1589c91c584b4854cacc8c0c8"
+      },
+      {
+        "command": "node scripts/check-admin-web-fe11-15-target-evidence.mjs",
+        "exitCode": 1,
+        "logSha256": "f86d30f8b6f3d76749660549e43cadd24af1f3cd8b148544274d5953c62d8849"
+      },
+      {
+        "command": "node scripts/check-admin-web-fe16-19-target-evidence.mjs",
+        "exitCode": 1,
+        "logSha256": "0a1cc574e9726403ee5420ff21bbbbac285fb846ef73076337131195fc5c071e"
+      }
+    ]
+  },
+  "overallTargetAcceptance": "CONDITIONAL / NOT ACCEPTED",
+  "productionCredentialsUsed": false,
+  "deployed": false,
+  "remotePushed": false
+}

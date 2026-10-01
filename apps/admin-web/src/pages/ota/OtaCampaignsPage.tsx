@@ -1,3 +1,4 @@
+import { hasPermission } from '@fdp/auth/browser';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-13 OTA Campaign 页（/ota/campaigns）：创建（VERIFIED 包 + 首批恰好 1 台灰度）、
@@ -116,6 +117,7 @@ export function OtaCampaignsPage({
   onNavigate,
   onRefresh,
 }: OtaCampaignsPageProps) {
+  const canCreate = hasPermission(role, 'ota:write');
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState('');
   const [packageId, setPackageId] = useState('');
@@ -172,7 +174,7 @@ export function OtaCampaignsPage({
           : null);
   const submitCreate = () =>
     runAction(async () => {
-      if (createError !== null) return;
+      if (!canCreate || createError !== null) return;
       const created = await onCreateCampaign({ name: name.trim(), packageId, deviceIds: [deviceId] });
       setCreateOpen(false);
       setName('');
@@ -282,12 +284,13 @@ export function OtaCampaignsPage({
           type="button"
           className="primary-button"
           data-testid="campaign-create-open"
-          disabled={busy || verifiedPackages.length === 0 || eligibleDevices.length === 0}
+          disabled={!canCreate || busy || verifiedPackages.length === 0 || eligibleDevices.length === 0}
           {...(verifiedPackages.length === 0 ? { title: translate('page.469b23266823') } : {})}
           {...(verifiedPackages.length > 0 && eligibleDevices.length === 0
             ? { title: translate('page.231330ea235d') }
             : {})}
           onClick={() => {
+            if (!canCreate) return;
             setCreateOpen(true);
             setActionError(null);
           }}
@@ -367,7 +370,7 @@ export function OtaCampaignsPage({
             type="button"
             className="primary-button"
             data-testid="campaign-create-submit"
-            disabled={busy || createError !== null}
+            disabled={!canCreate || busy || createError !== null}
             onClick={() => void submitCreate()}
           >
             {translate('page.0255d0eb6e95')}

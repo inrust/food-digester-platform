@@ -603,3 +603,13 @@ test('API 装配：重试缺省无 body（全部 FAILED）；子集携 targetIds
   await retryOtaCampaignFailures(api, 'camp-1', ['t1', 't2']);
   assert.deepEqual(calls[1]?.options.body, { targetIds: ['t1', 't2'] });
 });
+
+test('Auditor 即使存在 VERIFIED 包和可用设备也不能创建 Campaign', async () => {
+  const user = userEvent.setup();
+  const { calls } = renderCampaignsPage({ role: 'Auditor' });
+  const button = screen.getByTestId('campaign-create-open') as HTMLButtonElement;
+  expect(button.disabled).toBe(true);
+  await user.click(button);
+  expect(screen.queryByTestId('campaign-create-submit')).toBeNull();
+  expect(calls.created).toEqual([]);
+});
