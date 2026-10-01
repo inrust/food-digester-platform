@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0",
+  "status": "NOT_APPROVED",
+  "task": "QA-09",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1",
+    "stackName": "fdp-test-app",
+    "environment": "test"
+  },
+  "acceptanceSourceCommit": "255e7e6d1551b01b40e7ad586af7032d9f6434b7",
+  "exactBackendArtifactProvenance": "REQUIRED",
+  "currentReadonlyDatabaseEvidence": "REQUIRED",
+  "migrationUpgrade": {
+    "authorized": false,
+    "sourceCommit": null,
+    "zipSha256": null,
+    "s3VersionId": null,
+    "requiresCurrentMigrationTableReadback": true,
+    "automaticRetryOrRollback": false
+  },
+  "identityPreparation": {
+    "authorized": false,
+    "useExistingPlatformAdministrator": true,
+    "runFirstAdministratorBootstrap": false,
+    "missingRoles": ["Auditor", "CustomerAdmin", "CustomerViewer"],
+    "approvedIdentityReferences": [],
+    "customerScopes": []
+  },
+  "devicePreparation": {
+    "authorized": false,
+    "requiredControlledDevices": 10,
+    "approvedDeviceReferences": [],
+    "privateCredentialsLocation": "CONTROLLED_LOCAL_STORE_ONLY",
+    "neverArchivePrivateCredentials": true
+  },
+  "testData": {
+    "authorized": false,
+    "runPrefix": null,
+    "customersRequired": 2,
+    "allowedWrites": [],
+    "cleanupOwner": null,
+    "cleanupScope": "EXACT_RUN_PREFIX_AND_CREATED_ID_LEDGER_ONLY",
+    "purgeExistingQueues": false,
+    "touchExistingCustomersOrDevices": false
+  },
+  "budget": {
+    "approvedIncrementalLimitUSD": null,
+    "approvedTimeWindow": null,
+    "costOwner": null,
+    "existingMonthlyBudgetIsNotTaskAuthorization": true
+  },
+  "faultInjection": {
+    "authorized": false,
+    "allowedFaults": [],
+    "recordOriginalConfigurationBeforeChange": true,
+    "recoverySteps": [],
+    "restoreOwner": null,
+    "requiresVerifiedBackupAndRestorePlan": true
+  },
+  "evidence": {
+    "approvedDestination": null,
+    "retentionDays": null,
+    "forbidden": ["tokens", "passwords", "privateKeys", "signedUrls"],
+    "requiredCleanupAndRecoveryReceipt": true
+  },
+  "approval": { "approver": null, "approvedAt": null },
+  "productionActionsAuthorized": false,
+  "remotePushAuthorized": false
+}

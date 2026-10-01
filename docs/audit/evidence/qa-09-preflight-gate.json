@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-09",
+  "phase": "READ_ONLY_PREFLIGHT",
+  "status": "READ_ONLY_PHASE_COMPLETED",
+  "sourceCommit": "255e7e6d1551b01b40e7ad586af7032d9f6434b7",
+  "recordedAt": "2026-10-01T15:52:02.366Z",
+  "readinessGate": "BLOCKED",
+  "awsAcceptanceGate": "NOT RUN / NO RECEIPT",
+  "checks": [
+    {
+      "command": "node --test scripts/qa09-readonly-preflight.test.mjs",
+      "exitCode": 0,
+      "passed": 6,
+      "logSha256": "036f7c296471399f4a3b87095c354b0eb0ae668958c2f07af2a54d66691e172f"
+    },
+    {
+      "command": "node --import tsx --test scripts/*.test.mjs",
+      "exitCode": 0,
+      "passed": 301,
+      "logSha256": "009cd1c990da02c2eb892488fda496816f869ed58aacd938018b9ff6b4516392",
+      "sandboxRetry": "Local TLS broker listen EPERM; passed after granting localhost test permission"
+    },
+    {
+      "command": "node scripts/run-qa09-readonly-preflight.mjs /tmp/qa09-readonly-preflight-final.json",
+      "exitCode": 0,
+      "observations": 71,
+      "readiness": "BLOCKED",
+      "logSha256": "6181ca4b60befd4b188da53e6ed6fceff5d810e0445be9ba4245393905ef44c4"
+    },
+    {
+      "command": "node_modules/.bin/eslint .",
+      "exitCode": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "node_modules/.bin/prettier --check .",
+      "exitCode": 0,
+      "logSha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "docs/audit/evidence/qa-09-readonly-preflight.json",
+      "sha256": "be92769be7eade75adec8c471ec081442ce6c7fc64107d6c042720150f745cc2"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-template-assets-retry.json",
+      "sha256": "b51f1a92f5aabe1d674b70bd10aa79605d376e698e796b358e8bb0cde4f0e20f",
+      "note": "Retried template read observed 19 assets; original failed observation retained"
+    }
+  ],
+  "existingTargetGates": [
+    {
+      "id": "gate-check-aws-iot-data-path-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-aws-data-processing-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-aws-admin-cus-dev-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-aws-admin-business-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-aws-med-rbac-aud-dash-set-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-admin-web-target-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-admin-web-fe11-15-target-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-admin-web-fe16-19-target-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    }
+  ],
+  "unverifiedMigrationFiles": [
+    "20260929120000_csr_onboarding",
+    "20260929130000_remove_onboarding_tokens",
+    "20261001090000_csr_dual_channel_certificates"
+  ],
+  "authority": {
+    "onlyReadonlyAuthorized": true,
+    "cloudMutations": false,
+    "secretValuesRead": false,
+    "deploymentsStarted": false,
+    "remotePush": false
+  },
+  "remainingPhase": "QA-09 identity/device/database/version preparation and fully authorized target execution"
+}
