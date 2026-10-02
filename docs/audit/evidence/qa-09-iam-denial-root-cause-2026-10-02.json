@@ -1,0 +1,178 @@
+{
+  "task": "QA-09",
+  "recordedAt": "2026-10-02T11:04:39.867817+00:00",
+  "principalArn": "arn:aws:iam::065986019555:role/aws-reserved/sso.amazonaws.com/ap-southeast-1/AWSReservedSSO_FDP-InfraSetup_4e338f95abb20e55",
+  "principalBoundary": null,
+  "targetRoleArn": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+  "targetBoundary": {
+    "PermissionsBoundaryType": "Policy",
+    "PermissionsBoundaryArn": "arn:aws:iam::065986019555:policy/FDP-ServiceBoundary"
+  },
+  "allowStatement": [
+    {
+      "Sid": "AllowCreateAndManageOnlyFDPProjectRolesWithBoundary",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:UpdateRole",
+        "iam:DeleteRole",
+        "iam:GetRole",
+        "iam:ListRoles",
+        "iam:TagRole",
+        "iam:UntagRole",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy",
+        "iam:GetRolePolicy",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies",
+        "iam:PutRolePermissionsBoundary",
+        "iam:CreatePolicy",
+        "iam:DeletePolicy",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:CreatePolicyVersion",
+        "iam:DeletePolicyVersion",
+        "iam:ListPolicyVersions",
+        "iam:TagPolicy",
+        "iam:UntagPolicy"
+      ],
+      "Resource": [
+        "arn:aws:iam::065986019555:role/fdp-*",
+        "arn:aws:iam::065986019555:policy/fdp-*"
+      ],
+      "Condition": {
+        "StringEqualsIfExists": {
+          "iam:PermissionsBoundary": "arn:aws:iam::065986019555:policy/FDP-PermissionsBoundary"
+        }
+      }
+    }
+  ],
+  "simulationMatrix": [
+    {
+      "boundaryContext": null,
+      "evaluations": [
+        {
+          "EvalActionName": "iam:PutRolePolicy",
+          "EvalResourceName": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+          "EvalDecision": "allowed",
+          "MissingContextValues": []
+        },
+        {
+          "EvalActionName": "iam:GetRole",
+          "EvalResourceName": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+          "EvalDecision": "allowed",
+          "MissingContextValues": []
+        }
+      ]
+    },
+    {
+      "boundaryContext": "FDP-ServiceBoundary",
+      "evaluations": [
+        {
+          "EvalActionName": "iam:PutRolePolicy",
+          "EvalResourceName": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+          "EvalDecision": "implicitDeny",
+          "MissingContextValues": [
+            "iam:AWSServiceName",
+            "iam:PassedToService"
+          ]
+        },
+        {
+          "EvalActionName": "iam:GetRole",
+          "EvalResourceName": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+          "EvalDecision": "implicitDeny",
+          "MissingContextValues": [
+            "iam:AWSServiceName",
+            "iam:PassedToService"
+          ]
+        }
+      ]
+    },
+    {
+      "boundaryContext": "FDP-PermissionsBoundary",
+      "evaluations": [
+        {
+          "EvalActionName": "iam:PutRolePolicy",
+          "EvalResourceName": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+          "EvalDecision": "allowed",
+          "MissingContextValues": []
+        },
+        {
+          "EvalActionName": "iam:GetRole",
+          "EvalResourceName": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+          "EvalDecision": "allowed",
+          "MissingContextValues": []
+        }
+      ]
+    }
+  ],
+  "actualReadonlyDenial": {
+    "authorizationId": "4qfufo9l6lodk8555flyphs00",
+    "evaluations": [
+      {
+        "action": "iam:GetRole",
+        "resource": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+        "context": {},
+        "evaluatedEffect": "IMPLICIT_DENY",
+        "matchedPolicies": [
+          {
+            "uri": "inline:05ae2da3a9c2e8a1",
+            "matchedStatements": [
+              {
+                "sid": "<Statement1>",
+                "evaluatedEffect": "ALLOW"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "relevantRequestContext": {
+      "iam:PermissionsBoundary": "arn:aws:iam::065986019555:policy/FDP-ServiceBoundary",
+      "aws:PrincipalARN": "arn:aws:iam::065986019555:role/aws-reserved/sso.amazonaws.com/ap-southeast-1/AWSReservedSSO_FDP-InfraSetup_4e338f95abb20e55",
+      "aws:CurrentTime": "2026-10-02T11:03:14Z"
+    },
+    "evaluatedPolicyTypes": [
+      "IDENTITY_BASED_POLICY",
+      "IDENTITY_BASED_POLICY",
+      "SESSION_POLICY"
+    ]
+  },
+  "rootCause": "TARGET_BOUNDARY_CONDITION_MISMATCH",
+  "mutationPerformed": false,
+  "actualPutRolePolicyDenial": {
+    "authorizationId": "bv2653fif43g3n4sqy0teytt2",
+    "cloudTrailEventId": "ed9b6b84-ce7d-4a04-8b52-40ec29b49714",
+    "evaluations": [
+      {
+        "action": "iam:PutRolePolicy",
+        "resource": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+        "context": {},
+        "evaluatedEffect": "IMPLICIT_DENY",
+        "matchedPolicies": [
+          {
+            "uri": "inline:ceaaf6c262c08baf",
+            "matchedStatements": [
+              {
+                "sid": "<Statement1>",
+                "evaluatedEffect": "ALLOW"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "relevantRequestContext": {
+      "iam:PermissionsBoundary": "arn:aws:iam::065986019555:policy/FDP-ServiceBoundary",
+      "aws:PrincipalARN": "arn:aws:iam::065986019555:role/aws-reserved/sso.amazonaws.com/ap-southeast-1/AWSReservedSSO_FDP-InfraSetup_4e338f95abb20e55",
+      "aws:CurrentTime": "2026-10-02T10:45:39Z"
+    },
+    "evaluatedPolicyTypes": [
+      "IDENTITY_BASED_POLICY",
+      "IDENTITY_BASED_POLICY",
+      "SESSION_POLICY"
+    ]
+  }
+}
