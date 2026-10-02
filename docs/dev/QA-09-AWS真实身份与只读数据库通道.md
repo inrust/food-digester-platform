@@ -8,7 +8,7 @@
 
 固定`NO_SOURCE` buildspec携带探针字节、SHA256、源码基线和Migration/Schema清单。启动只传项目名，不接受SQL、buildspec、角色、源码或环境变量override。Node24容器安装锁定`pg@8.23.0`，使用RDS CA严格验证TLS。Secret仅在AWS容器内存解码，不进入日志、回执或本机；探针核对账号、Runner角色、BuildId、DB Secret ARN、主机/库名与探针Hash。
 
-事务固定`REPEATABLE READ READ ONLY`，语句超时10秒、锁超时2秒，finally始终ROLLBACK。只执行迁移校验、固定表计数、角色/Scope聚合、Onboarding列存在性及旧记录缺CSR计数；可选清理前缀只接受`qa09-`加16位十六进制，绑定参数核对Customer/Site可见记录与业务用户数量。没有动态SQL入口。项目最长5分钟、排队最长5分钟、并发1、自动重试0。
+事务固定`REPEATABLE READ READ ONLY`，语句超时10秒、锁超时2秒，finally始终ROLLBACK。只执行迁移校验、固定表计数、角色/Scope聚合、Onboarding列存在性及旧记录缺CSR计数；2026-10-02增加当前public表的行数/排序规范JSON摘要，以及证书id/device_id/fingerprint/status投影，表名来自数据库目录并严格校验，不接收调用方SQL；可选清理前缀只接受`qa09-`加16位十六进制，绑定参数核对Customer/Site可见记录与业务用户数量。没有动态SQL入口。项目最长5分钟、排队最长5分钟、并发1、自动重试0。
 
 该通道复用现有数据库主账号权限，**只读由固定探针与数据库事务强制执行，不是独立SELECT-only数据库账户**。不要将项目或服务角色开放为通用执行入口。后续改动须重新检查固定源码/Hash与查询范围。元数据查询成功和Build SUCCEEDED不代表Migration或业务Gate通过。
 
@@ -41,6 +41,22 @@ Gate仅认证五角色与Customer/Site Smoke子范围，要求完成时间、全
 
 ## 完整QA-09的边界
 
-缺少Migration时不启动Migration Runner，不伪造CSR填补旧记录，也不删除历史数据。第三次只读查询确认两条旧Request均APPROVED，关联Job均COMPLETED，关联现存Onboarded设备；当前旧Onboarding记录的CSR列不存在且有2条记录，自动应用移除Token迁移会在NOT NULL前置条件失败。后续需要先只读定位关联、制定历史记录保留/处置方案，再绑定批准源码、工件Hash/S3 VersionId执行Migration。设备CSR/mTLS/证书生命周期、10设备IoT链路、全部业务领域、真实浏览器、安全/负载及八项原目标Gate继续逐项验收。
+未经专门授权时，缺少Migration不启动Migration Runner，不伪造CSR填补旧记录，也不删除历史数据。第三次只读查询确认两条旧Request均APPROVED，关联Job均COMPLETED，关联现存Onboarded设备；当前旧Onboarding记录的CSR列不存在且有2条记录，自动应用移除Token迁移会在NOT NULL前置条件失败。后续需要先只读定位关联、制定历史记录保留/处置方案，再绑定批准源码、工件Hash/S3 VersionId执行Migration。设备CSR/mTLS/证书生命周期、10设备IoT链路、全部业务领域、真实浏览器、安全/负载及八项原目标Gate继续逐项验收。
 
 具体历史白名单、备份和版本工件范围见[待确认方案](../audit/QA-09-CSR迁移与历史数据处置待确认方案-2026-10-02.md)。本轮身份是可重复创建/清理的夹具，清理后Group恢复没有专用成员是正常状态，不代表本轮真实登录未执行。
+
+
+## 已授权历史处置与迁移
+
+2026-10-02正式授权后的执行见[执行记录](../audit/QA-09-授权历史退休与CSR迁移执行记录-2026-10-02.md)。先核验当前测试RDS的加密手动快照AVAILABLE，再以专用固定项目`fdp-test-qa09-legacy-retirement`执行精确两Request/两Job退休。执行器校验审批清单、目标身份、源码Hash、固定白名单及APPROVED/COMPLETED状态，以SERIALIZABLE事务和表锁执行参数化DELETE。其他public表逐表摘要若变化即ROLLBACK；提交后不能重复执行，任何后续恢复需另行评估，不能自动覆盖数据库。
+
+准备器和采集器使用以下命令；批准清单必须引用已可用快照，不接受追加白名单或任意SQL。专用退休项目仅用于本次处置，回执归档后删除；快照、原Migration Runner和只读查询项目继续保留。
+
+```sh
+node scripts/prepare-qa09-legacy-retirement.mjs <批准清单.json> <准备包.json>
+node scripts/collect-qa09-legacy-retirement.mjs <准备包.json> <退休BuildId> <退休回执.json>
+node scripts/check-qa09-migration-recovery.mjs <退休回执.json> <迁移后只读回执.json> <迁移执行回执.json> <上传回执.json> <S3读回回执.json>
+node --import tsx --test scripts/qa09-*.test.mjs
+```
+
+原Migration Runner使用批准源码`f63b56ed39ce99deb4b0177df9afcde386dd30df`的40份迁移工件，绑定固定S3地址、ZIP SHA256、VersionId和`FDP_EXPECTED_SOURCE_COMMIT`，不覆盖buildspec、服务角色或源码地址。仅补齐三份缺失迁移；原脚本按`ON CONFLICT DO NOTHING`补种字典，迁移后验证已有字典未变化。证书新增列/轮换时间属于已批准迁移，证书身份四字段必须保持一致；其余53张保留表逐表行数与摘要相等。此Gate只覆盖授权处置与迁移，`fullQa09Accepted=false`。

@@ -119,6 +119,21 @@ export async function collectSnapshot(client, manifest) {
           )
         ).rows;
     const cleanupCounts = {};
+    const preservationFingerprints = {};
+    const preservedTableNames = (
+      await client.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename")
+    ).rows.map((r) => r.tablename);
+    for (const table of preservedTableNames) {
+      if (!/^[_a-z][_a-z0-9]*$/.test(table)) throw Error('UNSAFE_TABLE');
+      preservationFingerprints[table] = (
+        await client.query(
+          `SELECT count(*)::text AS count, md5(coalesce(string_agg(to_jsonb(t)::text, '' ORDER BY to_jsonb(t)::text),'')) AS digest FROM public."${table}" t`,
+        )
+      ).rows[0];
+    }
+    const certificateIdentityRows = (
+      await client.query('SELECT id, device_id, fingerprint, status FROM public.device_certificates ORDER BY id')
+    ).rows;
     if (manifest.cleanupPrefix) {
       for (const table of ['customers', 'sites']) {
         cleanupCounts[table] = (
@@ -138,6 +153,8 @@ export async function collectSnapshot(client, manifest) {
       onboardingMigrationPrecheck,
       legacyOnboardingAssociations,
       cleanupCounts,
+      preservationFingerprints,
+      certificateIdentityRows,
       identity,
       migrations,
       migrationComparison: compareMigrations(manifest.migrations, migrations),
