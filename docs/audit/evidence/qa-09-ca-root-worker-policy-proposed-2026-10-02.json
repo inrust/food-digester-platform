@@ -1,0 +1,40 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ExactCaSecretVersionRepair",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:PutSecretValue",
+        "secretsmanager:UpdateSecretVersionStage"
+      ],
+      "Resource": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-device-ca-mecYC7",
+      "Condition": {
+        "DateLessThan": {
+          "aws:CurrentTime": "2026-10-03T00:00:00Z"
+        }
+      }
+    },
+    {
+      "Sid": "ExactCaKeyThroughSecretsManager",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:Encrypt",
+        "kms:GenerateDataKey"
+      ],
+      "Resource": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c",
+      "Condition": {
+        "DateLessThan": {
+          "aws:CurrentTime": "2026-10-03T00:00:00Z"
+        },
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com",
+          "kms:EncryptionContext:SecretARN": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-device-ca-mecYC7"
+        }
+      }
+    }
+  ]
+}
