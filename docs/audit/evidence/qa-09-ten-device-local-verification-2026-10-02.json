@@ -1,0 +1,48 @@
+{
+  "task": "QA-09",
+  "execution": "LOCAL_ONLY",
+  "fullQa09Accepted": false,
+  "commands": [
+    {
+      "command": "node --import tsx --test scripts/qa09-ten-device*.test.mjs",
+      "pass": 7,
+      "fail": 0
+    },
+    {
+      "command": "node --import tsx --test scripts/*.test.mjs",
+      "pass": 332,
+      "fail": 0
+    },
+    {
+      "command": "eslint added QA09 scripts",
+      "result": "PASS"
+    },
+    {
+      "command": "prettier --check added QA09 scripts",
+      "result": "PASS"
+    },
+    {
+      "command": "node scripts/check-secrets.mjs",
+      "result": "PASS"
+    },
+    {
+      "command": "node scripts/check-sensitive-sinks.mjs",
+      "result": "PASS"
+    },
+    {
+      "command": "node scripts/check-qa09-ten-device-acceptance.mjs <first-attempt> <gate>",
+      "exitCode": 1,
+      "reason": "EXECUTION_NOT_VERIFIED",
+      "expectedRejection": true
+    }
+  ],
+  "sourceSha256": {
+    "scripts/qa09-ten-device.test.mjs": "e25813d73ed3281c055317240a4a630debac01168dae698a18964e5314d83346",
+    "scripts/qa09-ten-device-bridge.mjs": "061e51a7fd924ac121d75b90cf12ae95186a957e58a264bf473aa68d20c003fd",
+    "scripts/qa09-ten-device-db.mjs": "364625099a7deecf3546443acb54742d9adc89b6099aa92a00a6b1f76777a2a8",
+    "scripts/run-qa09-ten-device-acceptance.mjs": "2f84b6d47488745e4b562a66085a9cea9f620088db3462786be003b9bee0ba61",
+    "scripts/qa09-ten-device-gate.test.mjs": "79afe909b37fbbd4c196f55a98d1bb1dcfbdcfb5b83ea5c5732f5bf2cb6eb9e1",
+    "scripts/check-qa09-ten-device-acceptance.mjs": "b93159e16d7a90150d08751eaf0543ed2ad3658a6f4a75e2d122c3afdef86557",
+    "scripts/collect-qa09-application-version.mjs": "7b4e56a9d576e9aaa22afee144f75513d5a16d2822a186e78336e70ca7da0154"
+  }
+}

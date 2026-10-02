@@ -1,0 +1,151 @@
+{
+  "task": "QA-09",
+  "scope": "TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1",
+    "stackName": "fdp-test-app"
+  },
+  "sourceCommit": "00ec272f1c5ae73a8b4a990cd744f4b992fd67f3",
+  "executorSha256": "2f84b6d47488745e4b562a66085a9cea9f620088db3462786be003b9bee0ba61",
+  "versionReceipt": "docs/audit/evidence/qa-09-application-runtime-version-2026-10-02.json",
+  "artifactByteReceipt": "docs/audit/evidence/qa-09-application-version-2026-10-02.json",
+  "startedAt": "2026-10-02T03:49:54.667Z",
+  "prefix": "qa09-d72ef62a6b59b981",
+  "devices": [
+    "qa09-d72ef62a6b59b981-01",
+    "qa09-d72ef62a6b59b981-02",
+    "qa09-d72ef62a6b59b981-03",
+    "qa09-d72ef62a6b59b981-04",
+    "qa09-d72ef62a6b59b981-05",
+    "qa09-d72ef62a6b59b981-06",
+    "qa09-d72ef62a6b59b981-07",
+    "qa09-d72ef62a6b59b981-08",
+    "qa09-d72ef62a6b59b981-09",
+    "qa09-d72ef62a6b59b981-10"
+  ],
+  "customers": [
+    {
+      "id": "2aad7807-b057-4601-a165-6b204d49c2ab",
+      "name": "qa09-d72ef62a6b59b981-a",
+      "suffix": "a",
+      "version": 1
+    },
+    {
+      "id": "524f2c72-9d8e-4866-9712-ce108c6aea3c",
+      "name": "qa09-d72ef62a6b59b981-b",
+      "suffix": "b",
+      "version": 1
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "636c29ae-5582-45e2-b67b-38050b30ff84",
+      "errorCode": null
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "69d7e0da-effa-438a-aa98-8130e7ac5a56",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "6208c1e2-ee02-4c56-b533-65ff678acd74",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "64913552-97e9-4b5e-be2e-c4d7df871d9c",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-b",
+      "result": "PASS",
+      "status": 404,
+      "expected": 404,
+      "requestId": "6f2ddf21-7c57-467a-bd5b-9c30c4ac24e8",
+      "errorCode": "NOT_FOUND"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "11c8e153-e129-4cda-b5f2-7357e8393280",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "385a6597-697e-48c7-9a58-56272aa85f4a",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-a",
+      "result": "PASS",
+      "status": 404,
+      "expected": 404,
+      "requestId": "e772354f-2a07-4a28-a767-97d25b1be53d",
+      "errorCode": "NOT_FOUND"
+    }
+  ],
+  "published": [],
+  "databaseBuilds": [],
+  "archiveObjects": [],
+  "cleanup": [
+    {
+      "type": "cloud-and-database-fixtures",
+      "result": "FAIL"
+    },
+    {
+      "type": "customer",
+      "id": "524f2c72-9d8e-4866-9712-ce108c6aea3c",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "2aad7807-b057-4601-a165-6b204d49c2ab",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-d72ef62a6b59b981-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "gate": "FAIL",
+  "fullQa09Accepted": false,
+  "identity": {
+    "username": "qa09-d72ef62a6b59b981-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "failure": {
+    "code": "TEN_DEVICE_EXECUTION_FAILED",
+    "errorClass": "Error"
+  },
+  "finishedAt": "2026-10-02T03:50:41.002Z"
+}
