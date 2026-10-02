@@ -85,7 +85,7 @@ function setup(options = {}) {
   };
   const run = (extra = {}) =>
     repairCaRoot({ store, baselineVersion, token, truststorePem: trust, rootFingerprint, now, ...extra });
-  return { run, values, stages, writes, original };
+  return { run, values, stages, writes, original, store };
 }
 test('only root field changes, original version remains immutable and AWSPREVIOUS', async () => {
   const f = setup();
@@ -171,4 +171,49 @@ test('unknown AWS errors are returned as fixed codes without secret exception te
   });
   assert.equal(r.errorCode, 'AWS_REPAIR_FAILED');
   assert.ok(!JSON.stringify(r).includes('never-export-canary'));
+});
+
+test('successful promotion waits for metadata visibility without repeating stage writes', async () => {
+  const f = setup();
+  const describe = f.store.describe;
+  let staleReads = 0,
+    waits = 0;
+  f.store.describe = async () => {
+    if (f.writes.includes('move') && staleReads++ < 2)
+      return { VersionIdsToStages: { [baselineVersion]: ['AWSCURRENT'], [token]: ['CANDIDATE'] } };
+    return describe();
+  };
+  const r = await f.run({
+    pause: async () => {
+      waits++;
+    },
+  });
+  assert.equal(r.completed, true);
+  assert.equal(waits, 2);
+  assert.deepEqual(f.writes, ['put', 'move']);
+});
+test('existing current candidate is verified using read-only store without new versions or stage writes', async () => {
+  const f = setup();
+  f.values.set(token, JSON.stringify({ ...f.original, caCertificateChainPem: root.pem.trim() + '\n' }));
+  f.stages[baselineVersion] = ['AWSPREVIOUS'];
+  f.stages[token] = ['AWSCURRENT'];
+  const r = await f.run({ store: { describe: f.store.describe, get: f.store.get } });
+  assert.equal(r.completed, true);
+  assert.equal(r.resumedCurrentVersion, true);
+  assert.deepEqual(f.writes, []);
+  assert.equal(f.values.size, 2);
+});
+test('read-only recovery rejects changed fields without rolling back an existing current version', async () => {
+  const f = setup();
+  f.values.set(
+    token,
+    JSON.stringify({ ...f.original, opaque: 'changed', caCertificateChainPem: root.pem.trim() + '\n' }),
+  );
+  f.stages[baselineVersion] = ['AWSPREVIOUS'];
+  f.stages[token] = ['AWSCURRENT'];
+  const r = await f.run({ store: { describe: f.store.describe, get: f.store.get } });
+  assert.equal(r.errorCode, 'OTHER_FIELDS_CHANGED');
+  assert.equal(r.completed, false);
+  assert.deepEqual(f.writes, []);
+  assert.deepEqual(f.stages[token], ['AWSCURRENT']);
 });

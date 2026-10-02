@@ -1,0 +1,42 @@
+{
+  "context": [
+    {
+      "ContextKeyName": "aws:PrincipalArn",
+      "ContextKeyValues": [
+        "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role"
+      ],
+      "ContextKeyType": "string"
+    },
+    {
+      "ContextKeyName": "aws:CurrentTime",
+      "ContextKeyValues": [
+        "2026-10-03T00:00:01Z"
+      ],
+      "ContextKeyType": "date"
+    }
+  ],
+  "results": [
+    {
+      "Action": "secretsmanager:PutSecretValue",
+      "Decision": "implicitDeny",
+      "Boundary": {
+        "AllowedByPermissionsBoundary": false
+      },
+      "Missing": [
+        "kms:ViaService",
+        "kms:EncryptionContext:SecretARN"
+      ]
+    },
+    {
+      "Action": "secretsmanager:UpdateSecretVersionStage",
+      "Decision": "implicitDeny",
+      "Boundary": {
+        "AllowedByPermissionsBoundary": false
+      },
+      "Missing": [
+        "kms:ViaService",
+        "kms:EncryptionContext:SecretARN"
+      ]
+    }
+  ]
+}

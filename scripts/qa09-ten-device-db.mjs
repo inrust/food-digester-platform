@@ -13,7 +13,7 @@ export function assertOwnCloudDevice(id, prefix) {
 export function validatePlan(plan) {
   if (
     !/^qa09-[a-f0-9]{16}$/.test(plan.prefix ?? '') ||
-    !['seed', 'observe', 'cleanup', 'audit-closed', 'cleanup-closed'].includes(plan.action)
+    !['seed', 'observe', 'cleanup', 'audit-closed', 'cleanup-closed', 'audit-empty'].includes(plan.action)
   )
     throw Error('INVALID_FIXTURE_PLAN');
   const ids = Array.from({ length: 10 }, (_, i) => `${plan.prefix}-${String(i + 1).padStart(2, '0')}`);
@@ -53,7 +53,7 @@ export async function executeFixture(client, plan) {
   let committed = false;
   try {
     await client.query(
-      ['observe', 'audit-closed'].includes(plan.action)
+      ['observe', 'audit-closed', 'audit-empty'].includes(plan.action)
         ? 'BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY'
         : 'BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE',
     );
@@ -62,6 +62,30 @@ export async function executeFixture(client, plan) {
     if ((await client.query('SELECT current_database() AS database')).rows[0].database !== 'fdp')
       throw Error('WRONG_DATABASE');
     const before = await original(client, ids);
+    if (plan.action === 'audit-empty') {
+      if (!Array.isArray(plan.baseline)) throw Error('ORIGINAL_BASELINE_REQUIRED');
+      for (const c of plan.customers)
+        if (
+          (
+            await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2 AND deleted_at IS NOT NULL', [
+              c.id,
+              c.name,
+            ])
+          ).rowCount !== 1
+        )
+          throw Error('CLOSED_CUSTOMER_NOT_VERIFIED');
+      for (const [table, column] of [
+        ['devices', 'id'],
+        ['device_certificates', 'device_id'],
+        ['onboarding_requests', 'serial_number'],
+      ])
+        if ((await client.query(`SELECT 1 FROM ${table} WHERE ${column}=ANY($1::text[])`, [ids])).rowCount)
+          throw Error('FIXTURE_NOT_EMPTY');
+      if (JSON.stringify(before) !== JSON.stringify(plan.baseline)) throw Error('ORIGINAL_BASELINE_DRIFT');
+      await client.query('ROLLBACK');
+      committed = true;
+      return { empty: true, devices: [], certificates: [], onboardingRequests: [], originalFingerprints: before };
+    }
     if (plan.action.endsWith('-closed')) {
       for (const c of plan.customers)
         if (

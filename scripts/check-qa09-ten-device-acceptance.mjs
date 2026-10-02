@@ -73,6 +73,27 @@ export function validateTenDevice(receipt, version, dbReceipts, executor) {
     )
   )
     throw Error('PUBLISH_LEDGER_NOT_VERIFIED');
+  const archiveReader = receipt.archiveReaderEvidence;
+  if (executor.toString().includes('readOwnArchives') && !archiveReader) throw Error('MISSING_CLOUD_ARCHIVE_READER');
+  if (
+    archiveReader &&
+    (archiveReader.gate !== 'PASS' ||
+      archiveReader.prefix !== receipt.prefix ||
+      archiveReader.roleArn !== 'arn:aws:iam::065986019555:role/fdp-test-replay-role' ||
+      archiveReader.iamWrites !== false ||
+      archiveReader.secretValuesExported !== false ||
+      archiveReader.invocation?.ExecutedVersion !== '1' ||
+      archiveReader.invocation?.FunctionError ||
+      archiveReader.result?.requestNonce !== archiveReader.requestNonce ||
+      archiveReader.result?.sourceHash !== archiveReader.sourceHash ||
+      archiveReader.result?.planHash !== archiveReader.planHash ||
+      archiveReader.result?.allTelemetryArchived !== true ||
+      archiveReader.cleanup?.length !== 2 ||
+      archiveReader.cleanup.some((c) => c.result !== 'PASS') ||
+      createHash('sha256').update(Buffer.from(archiveReader.sourceBase64, 'base64')).digest('hex') !==
+        archiveReader.sourceHash)
+  )
+    throw Error('CLOUD_ARCHIVE_READER_NOT_VERIFIED');
   const complete = dbReceipts.filter((r) => r.result?.action === 'observe').at(-1)?.result;
   if (
     !complete ||

@@ -17,6 +17,7 @@ export async function repairCaRoot({
   truststorePem,
   rootFingerprint,
   now = new Date(),
+  pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
   requireThat(
     /^[a-f0-9-]{36}$/.test(baselineVersion) && /^[a-f0-9-]{36}$/.test(token) && token !== baselineVersion,
@@ -35,13 +36,24 @@ export async function repairCaRoot({
     otherFieldsUnchanged: false,
     originalVersionRetained: false,
   };
-  let original, candidate;
+  let original,
+    candidate,
+    resumedCurrent = false;
   const current = async () => {
     const metadata = await store.describe();
     const versions = Object.entries(metadata.VersionIdsToStages ?? {});
     const selected = versions.filter(([, stages]) => stages.includes('AWSCURRENT'));
     requireThat(selected.length === 1, 'CURRENT_STAGE_AMBIGUOUS');
     return { id: selected[0][0], versions: metadata.VersionIdsToStages };
+  };
+  const waitForCurrent = async (expected, previous) => {
+    for (let attempt = 0; attempt < 12; attempt++) {
+      const metadata = await current();
+      if (metadata.id === expected) return metadata;
+      requireThat(metadata.id === previous, 'PROMOTION_NOT_CONFIRMED');
+      if (attempt < 11) await pause(1000);
+    }
+    throw Error('PROMOTION_NOT_CONFIRMED');
   };
   const validate = (response) => {
     requireThat(response.VersionId === token, 'CANDIDATE_VERSION_MISMATCH');
@@ -61,7 +73,9 @@ export async function repairCaRoot({
     report.otherFieldsUnchanged = true;
   };
   try {
-    requireThat((await current()).id === baselineVersion, 'BASELINE_DRIFT');
+    const initial = await current();
+    requireThat(initial.id === baselineVersion || initial.id === token, 'BASELINE_DRIFT');
+    resumedCurrent = initial.id === token;
     const response = await store.get(baselineVersion);
     requireThat(response.VersionId === baselineVersion, 'BASELINE_VERSION_MISMATCH');
     const before = diagnoseCaChain(response.SecretString, truststorePem, now);
@@ -81,21 +95,27 @@ export async function repairCaRoot({
     requireThat(blocks.length === 2 && before.truststoreChain[1].fingerprint256 === rootFingerprint, 'ROOT_DRIFT');
     candidate = structuredClone(original);
     candidate.caCertificateChainPem = blocks[1] + '\n';
-    requireThat((await current()).id === baselineVersion, 'BASELINE_DRIFT');
-    // An unknown outcome is recovered using the same immutable token; never mint another version.
-    try {
-      await store.put({ ClientRequestToken: token, VersionStages: [stage], SecretString: JSON.stringify(candidate) });
-    } catch {
+    if (!resumedCurrent) {
+      requireThat((await current()).id === baselineVersion, 'BASELINE_DRIFT');
+      try {
+        await store.put({ ClientRequestToken: token, VersionStages: [stage], SecretString: JSON.stringify(candidate) });
+      } catch {
+        validate(await store.get(token));
+      }
       validate(await store.get(token));
+      requireThat((await current()).id === baselineVersion, 'BASELINE_DRIFT');
+      try {
+        await store.move({ VersionStage: 'AWSCURRENT', MoveToVersionId: token, RemoveFromVersionId: baselineVersion });
+      } catch {
+        await waitForCurrent(token, baselineVersion);
+      }
+      await waitForCurrent(token, baselineVersion);
+    } else {
+      // Recovery from a successful promotion whose metadata/response was not yet visible. No writes.
+      requireThat((await current()).id === token, 'BASELINE_DRIFT');
+      validate(await store.get(token));
+      report.resumedCurrentVersion = true;
     }
-    validate(await store.get(token));
-    requireThat((await current()).id === baselineVersion, 'BASELINE_DRIFT');
-    try {
-      await store.move({ VersionStage: 'AWSCURRENT', MoveToVersionId: token, RemoveFromVersionId: baselineVersion });
-    } catch {
-      requireThat((await current()).id === token, 'PROMOTION_NOT_CONFIRMED');
-    }
-    requireThat((await current()).id === token, 'PROMOTION_NOT_CONFIRMED');
     report.promoted = true;
     validate(await store.get(token));
     // Re-read the immutable original as well as stages to prove retained data and rollback availability.
@@ -127,7 +147,7 @@ export async function repairCaRoot({
       'ORIGINAL_STAGE_NOT_RETAINED',
     ];
     report.errorCode = allowed.includes(error.message) ? error.message : 'AWS_REPAIR_FAILED';
-    if (report.promoted) {
+    if (report.promoted && !resumedCurrent) {
       try {
         requireThat((await current()).id === token, 'ROLLBACK_CURRENT_DRIFT');
         await store.move({ VersionStage: 'AWSCURRENT', MoveToVersionId: baselineVersion, RemoveFromVersionId: token });

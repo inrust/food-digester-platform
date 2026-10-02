@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { request } from 'node:https';
-import { gunzipSync } from 'node:zlib';
+import { readOwnArchives } from './qa09-archive-reader.mjs';
 import forge from 'node-forge';
 import { canonicalizeJson } from '../contracts/mqtt/payload-normalization.ts';
 import { assertOwnCloudDevice } from './qa09-ten-device-db.mjs';
@@ -99,7 +99,7 @@ export async function main(output, versionPath) {
   const version = JSON.parse(readFileSync(versionPath));
   if (
     (version.gate !== 'PASS' && version.applicationVersionGate !== 'PASS') ||
-    version.sourceCommit !== '46b632d66c9f6615b037790934eff434d22e4542'
+    version.sourceCommit !== '661ccd6680412ada2762eb8f98edaa8aa2f1210d'
   )
     throw Error('DEPLOYED_VERSION_NOT_VERIFIED');
   const sts = spawnSync(
@@ -566,51 +566,16 @@ export async function main(output, versionPath) {
           .filter((o) => o.event_type === 'ARCHIVE' && o.topicType === 'telemetry')
           .every((o) => o.status === 'PUBLISHED'),
     );
-    const objects = [];
-    for (const c of receipt.customers) {
-      for (const type of ['heartbeat', 'telemetry']) {
-        let continuation;
-        do {
-          const listed = await call(s3, s3Sdk.ListObjectsV2Command, {
-            Bucket: 'fdp-test-raw-065986019555',
-            Prefix: `raw/topic_type=${type}/customer_id=${c.id}/`,
-            ContinuationToken: continuation,
-          });
-          for (const item of listed.Contents ?? []) objects.push(item.Key);
-          continuation = listed.NextContinuationToken;
-        } while (continuation);
-      }
-    }
-    receipt.archiveKeys = objects;
+    const archiveRead = await readOwnArchives(receipt, observation, output + '.archive-read.json');
+    receipt.archiveReaderEvidence = archiveRead;
+    receipt.archiveReaderReceipt = output + '.archive-read.json';
+    receipt.archiveKeys = archiveRead.result.archiveKeys;
+    receipt.archiveObjects = archiveRead.result.archiveObjects;
+    for (const proof of archiveRead.result.checks) check(proof.id, proof.result === 'PASS', proof);
+    check('all-twenty-telemetry-archived', archiveRead.result.allTelemetryArchived === true, {
+      archivedMessages: archiveRead.result.archivedMessages,
+    });
     save();
-    const found = new Set();
-    for (const key of objects.filter((k) => k.endsWith('.json.gz'))) {
-      const data = await call(s3, s3Sdk.GetObjectCommand, { Bucket: 'fdp-test-raw-065986019555', Key: key });
-      const bytes = await data.Body.transformToByteArray();
-      const lines = gunzipSync(bytes).toString().trim().split('\n').map(JSON.parse);
-      for (const line of lines) {
-        assertOwnCloudDevice(line.deviceId, prefix);
-        const row = observation.outbox.find((o) => o.id === line.eventId);
-        check(
-          'archive-original-' + line.eventId,
-          row?.rawBodySha256 === hash(line.rawBody) &&
-            receipt.published.find((p) => p.deviceId === line.deviceId && p.messageId === line.messageId)
-              ?.payloadSha256 === hash(canonicalizeJson(line.payload)) &&
-            JSON.stringify(JSON.parse(line.rawBody).meta) === JSON.stringify(line.payload.meta),
-          { objectKey: key, eventId: line.eventId, rawBodySha256: hash(line.rawBody) },
-        );
-        found.add(line.messageId);
-      }
-      receipt.archiveObjects.push({ key, compressedSha256: hash(bytes), records: lines.length });
-      save();
-    }
-    receipt.archiveKeys = objects;
-    save();
-    check(
-      'all-twenty-telemetry-archived',
-      receipt.published.filter((p) => p.type === 'telemetry').every((p) => found.has(p.messageId)),
-      { archivedMessages: found.size },
-    );
     receipt.gate = 'PASS';
   } catch (e) {
     receipt.gate = 'FAIL';

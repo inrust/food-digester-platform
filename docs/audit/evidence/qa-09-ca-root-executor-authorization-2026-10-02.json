@@ -1,0 +1,38 @@
+[
+    {
+        "Sid": "TemporaryQA09ManageExactProvisioningWorker",
+        "Effect": "Allow",
+        "Action": [
+            "iam:GetRole",
+            "iam:PutRolePolicy",
+            "iam:DeleteRolePolicy"
+        ],
+        "Resource": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+        "Condition": {
+            "DateLessThan": {
+                "aws:CurrentTime": "2026-10-03T00:00:00Z"
+            }
+        }
+    },
+    {
+        "Sid": "ManageExactFDPBootstrapPolicies",
+        "Effect": "Allow",
+        "Action": [
+            "iam:CreatePolicy",
+            "iam:DeletePolicy",
+            "iam:GetPolicy",
+            "iam:GetPolicyVersion",
+            "iam:CreatePolicyVersion",
+            "iam:DeletePolicyVersion",
+            "iam:SetDefaultPolicyVersion",
+            "iam:ListPolicyVersions",
+            "iam:TagPolicy",
+            "iam:UntagPolicy"
+        ],
+        "Resource": [
+            "arn:aws:iam::065986019555:policy/FDP-ServiceBoundary",
+            "arn:aws:iam::065986019555:policy/FDP-DeploymentBoundary",
+            "arn:aws:iam::065986019555:policy/FDP-CloudFormationExecutionPolicy"
+        ]
+    }
+]

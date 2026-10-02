@@ -1,0 +1,1266 @@
+{
+  "task": "QA-09",
+  "scope": "TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1",
+    "stackName": "fdp-test-app"
+  },
+  "sourceCommit": "661ccd6680412ada2762eb8f98edaa8aa2f1210d",
+  "executorSha256": "f375c07da1972c5612966a0078e2adf049e84313c5e06ca31b83469020d67c84",
+  "versionReceipt": "docs/audit/evidence/qa-09-ca-root-application-version-2026-10-02.json",
+  "artifactByteReceipt": "docs/audit/evidence/qa-09-ca-root-application-version-2026-10-02.json",
+  "startedAt": "2026-10-02T15:34:17.349Z",
+  "prefix": "qa09-be722e88bf9ababa",
+  "devices": [
+    "qa09-be722e88bf9ababa-01",
+    "qa09-be722e88bf9ababa-02",
+    "qa09-be722e88bf9ababa-03",
+    "qa09-be722e88bf9ababa-04",
+    "qa09-be722e88bf9ababa-05",
+    "qa09-be722e88bf9ababa-06",
+    "qa09-be722e88bf9ababa-07",
+    "qa09-be722e88bf9ababa-08",
+    "qa09-be722e88bf9ababa-09",
+    "qa09-be722e88bf9ababa-10"
+  ],
+  "customers": [
+    {
+      "id": "a3728e98-c195-42aa-bcc2-52d440ee0ed1",
+      "name": "qa09-be722e88bf9ababa-a",
+      "suffix": "a",
+      "version": 1
+    },
+    {
+      "id": "454b114e-7c6a-4d6a-9152-1626c83e5392",
+      "name": "qa09-be722e88bf9ababa-b",
+      "suffix": "b",
+      "version": 1
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "0468b126-643c-470e-a79b-65d77fefd0ae",
+      "errorCode": null
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "32bd60fb-60eb-44db-abd7-6ce26180351a",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-01:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "e754b4cd-6105-4874-89af-d82cde065210",
+      "errorCode": null,
+      "businessRequestId": "8af5c556-9a8a-4124-9665-f2977df236df"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-01:same-csr-idempotent",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "bd42c25b-93b3-4a93-8445-51cc66930db2",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-01:different-key-conflict",
+      "result": "PASS",
+      "status": 409,
+      "expected": 409,
+      "requestId": "63770c71-c559-4d58-b594-7420d30a50a0",
+      "errorCode": "CONFLICT"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-01:signed-pending",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "08e282f0-61e6-4ed8-993e-841138b436c7",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-01:nonce-replay-denied",
+      "result": "PASS",
+      "status": 401,
+      "expected": 401,
+      "requestId": "707d86e7-83ca-44f2-874d-9839f65f1bd1",
+      "errorCode": "UNAUTHENTICATED"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-01:wrong-key-denied",
+      "result": "PASS",
+      "status": 401,
+      "expected": 401,
+      "requestId": "c327f2d8-6f0a-4c9c-92ce-4e8d2bcdf717",
+      "errorCode": "UNAUTHENTICATED"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-01:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "1b605809-1dfd-4d56-bed3-b200d513130a",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-01:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "2a47ae6a-aaad-4908-9fb7-1efe1778537e",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-02:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "93a07f2b-4982-4c17-b6ce-787393e8348b",
+      "errorCode": null,
+      "businessRequestId": "57c3db4b-da39-412b-bd52-a68b02d9b238"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-02:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "b742a809-7800-4088-a8ac-cd55eb41d5ac",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-02:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "6aa2e688-db71-4883-8380-a672a0a067d0",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-03:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "472e4024-475b-478d-9811-70dabb7fa563",
+      "errorCode": null,
+      "businessRequestId": "88062bad-a5d9-46ab-9bc9-bcd4835604b5"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-03:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "4ff96481-8248-42c5-8d76-4d692e5d4677",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-03:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "f3363246-1926-4f47-8a99-f7d50a3d592f",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-04:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "96cfa7cd-f84b-4b55-a676-aca4126e8cce",
+      "errorCode": null,
+      "businessRequestId": "33514a64-534c-4daa-b20e-12604d02bf55"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-04:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "19563026-e14e-4cd3-9d53-6f5565847ebf",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-04:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "08eb3195-6430-470a-89c8-47c80c29d323",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-05:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "2bc4a65b-45df-4e58-942a-b731bd8de63c",
+      "errorCode": null,
+      "businessRequestId": "6551574e-ca4b-49d7-9f91-141242f7f4ae"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-05:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "0a47540f-3da7-4554-9fe1-4321d89e6448",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-05:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "f524d414-c302-44a7-b9bb-9ca61b7ed2af",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-06:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "cebc8163-b148-4b26-b594-333dd3a2da24",
+      "errorCode": null,
+      "businessRequestId": "9211e90a-a855-40d4-9a18-f560eed3d24c"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-06:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "ed836c89-65d6-4245-9781-b452d470f5d1",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-06:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "6cbeb7b8-4355-425e-8c28-4d5e9bedb1f1",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-07:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "2fef58a5-6a0e-49f4-b422-955a22b7579e",
+      "errorCode": null,
+      "businessRequestId": "527b4b50-2a8f-4418-881d-6ef06f10bc21"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-07:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "aac022a6-3487-4936-b1bf-0b7dc295ae20",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-07:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "029a2355-3e57-47e3-b133-554cc7a9d969",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-08:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "cbd510e0-374c-4d0c-884f-df15c9b9003e",
+      "errorCode": null,
+      "businessRequestId": "ef803778-05eb-47f9-8ec2-a1b0eaa3c7a1"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-08:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "46be9e86-354b-4003-b982-9cacb7b0c26a",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-08:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "a8af05f9-ea70-4ae7-99a2-5830646f311e",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-09:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "e5cea476-01a3-4161-a112-835ed381ef26",
+      "errorCode": null,
+      "businessRequestId": "42c8bb5e-f2ac-4f10-9370-e79b5d41f326"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-09:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "584c1760-28e7-4f49-b682-72efff287096",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-09:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "eef849b8-a8a8-4230-a210-8b6fe86f5841",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-10:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "e3701d75-9923-470d-80ab-2b2ae5794a94",
+      "errorCode": null,
+      "businessRequestId": "02fc7ce9-ed3a-4c46-8c6e-159f6ee19d5c"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-10:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "56ed85b4-2e16-4d37-b9e4-13fe9cecd691",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-10:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "194f3184-29cc-441b-844f-25e61326c0a5",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-01:signed-status-39",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-01:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-01:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-02:signed-status-42",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-02:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-02:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-03:signed-status-45",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-03:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-03:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-04:signed-status-48",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-04:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-04:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-05:signed-status-51",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-05:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-05:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-06:signed-status-54",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-06:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-06:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-07:signed-status-57",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-07:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-07:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-08:signed-status-60",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-09:signed-status-61",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-09:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-09:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-10:signed-status-64",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-10:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-10:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-08:signed-status-67",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-08:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-08:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "ten-concurrent-independent-mqtt-sessions",
+      "result": "PASS",
+      "count": 10,
+      "keyFingerprints": [
+        "cf500a102d5fc0ac5da204760d08c006bdaed881fa23e02f5bc02c4bdf1679c9",
+        "0d6732715cc2a2eb3c0c0e52ef899e16d96a80c1ff1d4f627059b0628089d755",
+        "7c32f1ce203a87ad3176a4e7653231550ff491022a574073a2460e53e84fdf82",
+        "50f6c33c94afe57fd43a7952ef9122244cbb0876b7c3a9f419ae863c156bd630",
+        "1110da9856d01ab094db33430097808e551d6ad69adca59fcb8f659c22678800",
+        "dc1fc74692514c8a8cad71cd3154f6bc9ebf9a40bbe33247cdd45baaeb0cbc78",
+        "fd8b8f5f1b1158420fb9fa223bcd9818f50200e316aa304893bde64fa38d3d03",
+        "3a7dbaf137059e3a864b1c307b5fb37300a881aff7eac62fe49006224b70886e",
+        "c8fee8232bed0759513be980597d58e3dba7dc84bee3024cea4a857fffb4a679",
+        "0d3d28bd78bbdaa4ca578c93203abfda1fc3a2b35004f6ea829f61a12dea8665"
+      ]
+    },
+    {
+      "id": "first-heartbeat-completes-ten-onboardings",
+      "result": "PASS"
+    },
+    {
+      "id": "claimed-certificate-identities-match-rds",
+      "result": "PASS"
+    },
+    {
+      "id": "ten-active-packages-destroyed",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-01:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "5b42b44a-e1af-412a-b1f5-30f85fc94f95"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-02:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "b70cc5b4-1aba-4aba-ae9e-edb1d72b9756"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-03:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "40261b83-97dc-4b2f-bf53-7c2e668d9b7c"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-04:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "8f4f7d81-5cc4-4c6b-bf64-662e3dd771e4"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-05:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "7fac15c4-6f31-4ef0-8688-8e452e8118b8"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-06:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "04c51a19-4571-4010-b1ae-986c91a0d92d"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-07:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "23588865-711f-4d21-bed0-c2b8e09066e3"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-08:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "1df447f4-ea00-40af-a0f8-34789bee5266"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-09:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "79444e49-a325-44c1-8a31-b04653c35b0c"
+    },
+    {
+      "id": "qa09-be722e88bf9ababa-10:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "5115a60a-c8c8-483c-b117-6d1597737ee5"
+    },
+    {
+      "id": "rest-no-client-certificate-denied",
+      "result": "PASS",
+      "status": 0,
+      "errorCode": "ECONNRESET"
+    },
+    {
+      "id": "rest-untrusted-client-certificate-denied",
+      "result": "PASS",
+      "status": 403,
+      "errorCode": null
+    },
+    {
+      "id": "aws-cross-device-subscription-denied",
+      "result": "PASS",
+      "brokerClosed": true,
+      "subackDenied": false
+    },
+    {
+      "id": "aws-cross-device-publish-denied",
+      "result": "PASS",
+      "brokerClosed": true,
+      "puback": false
+    },
+    {
+      "id": "exactly-two-business-samples-per-device",
+      "result": "PASS"
+    },
+    {
+      "id": "exactly-thirty-unique-ingestion-receipts",
+      "result": "PASS",
+      "count": 30
+    },
+    {
+      "id": "all-mqtt-and-rest-proofs-recorded",
+      "result": "PASS"
+    },
+    {
+      "id": "telemetry-outbox-published",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "91ac4995-6b43-415e-bee1-bc0295554650",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "a839b100-a847-4564-a695-178c53985319",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-b",
+      "result": "PASS",
+      "status": 404,
+      "expected": 404,
+      "requestId": "caa7477e-6f96-4f5a-be01-609b8b7261b7",
+      "errorCode": "NOT_FOUND"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "19646b27-d3b2-42ea-8603-713616edf216",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "07baee15-ea49-4d9e-9e0a-68e47c027f96",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-a",
+      "result": "PASS",
+      "status": 404,
+      "expected": 404,
+      "requestId": "61ee955c-1497-48b1-9d94-09e694d33c8e",
+      "errorCode": "NOT_FOUND"
+    }
+  ],
+  "published": [
+    {
+      "deviceId": "qa09-be722e88bf9ababa-09",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-B161C3F8-1",
+      "bodySha256": "daed5d68a474fc74e1a85c46f21d14a756b7b389ef68052bf3b4a37ff2c2a948",
+      "payloadSha256": "dd7fd4cbaa5e8e3fbe6b84e3e72603c99de937d75e8b4f7d16541063f8bfb962"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-02",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-33AAE3B1-1",
+      "bodySha256": "4c437908889a6a87fa9d81e2106aa18b1e364d317fc7f9e0507de0fd7ff4503e",
+      "payloadSha256": "0158630d72966f91e03c2d99e49c9e68b5b73bc8da1f387f5ad4f2c0f1c93c07"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-07",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-F36CE201-1",
+      "bodySha256": "3b68b9c4d45e65e88bdcce6778250852d8199e6f96667456296f78147ca66023",
+      "payloadSha256": "72b8536e9b75cba3d8da0728bcdf6f1563f51c49efb8b069aa838cd8fe0dd66d"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-10",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-ED734EF6-1",
+      "bodySha256": "35e96a883b40cfb685e1da8507da0502aaa35d76cd9a927c4eb93d44896388cf",
+      "payloadSha256": "d169b89461fe01adef233dbca4e361c55e89e881ae21d557af685617d99482ba"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-05",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-3FD358A2-1",
+      "bodySha256": "eb4f2c85dd0cb7c0ce39999de8738e82aee58c3e0bab93ddf3d5867c1c9ddb69",
+      "payloadSha256": "f1eb51b99e280daab20843e1a005d56bdcd4adfb6df79fb7af580aa1176c44e3"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-06",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-8F2BAFDC-1",
+      "bodySha256": "d04d8966cf574ff04f42ea5642343cfb006c819a5a6291cbc06cb9352794f9ed",
+      "payloadSha256": "97d32f5863a3415a004dd66029a3001aae47d5398030cf79fb63dbfbe94612b0"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-04",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-8AA832D2-1",
+      "bodySha256": "ab3c4e1e673c9168485c3a37adf7526d84b4fb423e0aa21fdf78b3d2a6bc35ee",
+      "payloadSha256": "5757b858dd3a58f94585db041cc8211439b06b434a99646fc69f1a088fa934b3"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-01",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-0FF2CD8B-1",
+      "bodySha256": "a378efde8a2ce6c67bf8dd525873ae919645bccba5d30c2012e0806ccb66a117",
+      "payloadSha256": "065ea916037272f04647c5f7ba229711a6be938a3bdeb5cb4a776e840468d271"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-03",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-89DF142C-1",
+      "bodySha256": "d615e4b233bbdb95f6aa37bd561712b324de6d7fb8a4e32753a2688f178157bd",
+      "payloadSha256": "4209a1797cb0921f292ea9d20216401d9c92d65d4a97ff2c49ff90f96147bf55"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-08",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-E9B459C3-1",
+      "bodySha256": "5cfb60048b20ac83d9005af613c612a3fffd93489d262d475a856eaa6d89def5",
+      "payloadSha256": "8672667927efff202f68b25cf0f1f111fdc269a110177e4ca049f5274818a420"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-01",
+      "type": "telemetry",
+      "seq": 1,
+      "messageId": "TELEMETRY-0FF2CD8B-1",
+      "bodySha256": "9beed337d3b6e5e2e4e6ab267127fe665f58d793741df577ec4396d02808fc13",
+      "payloadSha256": "673191a3820c5c146f08919996edc979b1dd95e8ec40bf4889ffee982ce0b4e2"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-01",
+      "type": "telemetry",
+      "seq": 2,
+      "messageId": "TELEMETRY-0FF2CD8B-2",
+      "bodySha256": "6a931fe9152b08e7c9759246e2883a22c262d0c1198c10d07e8bda05aff3627f",
+      "payloadSha256": "51edb1ded3ad6795db5eb0bef0b21a2472dea5504b306091c9bdb233aae14a29"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-02",
+      "type": "telemetry",
+      "seq": 1,
+      "messageId": "TELEMETRY-33AAE3B1-1",
+      "bodySha256": "8c56360332b77bdee802b9a6e969b307a6446d8d7072106f003c453149db2ca9",
+      "payloadSha256": "3ac81951df6a988468661d15237933020a3cb1347d9c9d9b8aebc23c393730a4"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-02",
+      "type": "telemetry",
+      "seq": 2,
+      "messageId": "TELEMETRY-33AAE3B1-2",
+      "bodySha256": "4543f166ac9a471b4e6420239fb64b312a158d04a4e72aab367d7bf415176e63",
+      "payloadSha256": "50166563c5d3aecb5f87faf924c67890bf8cec0a8d6147e28418ff1e1992a3b1"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-03",
+      "type": "telemetry",
+      "seq": 1,
+      "messageId": "TELEMETRY-89DF142C-1",
+      "bodySha256": "067162d4b89d4373fca425a5915894c0cda4466cb2bc9aea2ca91f925600f9d2",
+      "payloadSha256": "6a6a4872e0cc94a784004f9a57fe4f43bb5885b9f888d9b85727ff2127914c92"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-03",
+      "type": "telemetry",
+      "seq": 2,
+      "messageId": "TELEMETRY-89DF142C-2",
+      "bodySha256": "7a42edad6da881c2e8c14b82fe6db3435192531c3c14c231887677f9c987c7bc",
+      "payloadSha256": "a74ccbd9c04858c3c3446fec9863931bcdfe24252bfe415376d92e5878289ca4"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-04",
+      "type": "telemetry",
+      "seq": 1,
+      "messageId": "TELEMETRY-8AA832D2-1",
+      "bodySha256": "b60b4881694e3cc22ceec2bdc8efe3188205ca666c4037aaf9c0b648ad2f84d9",
+      "payloadSha256": "c61a90b096254a2aca011fc8c3d9cb6ad3b1535aa0c6e7704fbfc0e47cecd21c"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-04",
+      "type": "telemetry",
+      "seq": 2,
+      "messageId": "TELEMETRY-8AA832D2-2",
+      "bodySha256": "a9b995d27d8fcad062144287a24713e7309a0a3da37cf510384e155b61aa43e5",
+      "payloadSha256": "cb3beb7acd0bdea911b96f4fad3698345b31294733a1260241b93e72abec4716"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-05",
+      "type": "telemetry",
+      "seq": 1,
+      "messageId": "TELEMETRY-3FD358A2-1",
+      "bodySha256": "a1dd5b6a0d73a25b4e1d516e29634ba93fc89871861276b42d51047030243427",
+      "payloadSha256": "7057f954018a1ae3ccf1b20f4943822982bec5461680454f52473c1cbe164bac"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-05",
+      "type": "telemetry",
+      "seq": 2,
+      "messageId": "TELEMETRY-3FD358A2-2",
+      "bodySha256": "f871820a58f557b9cd1e1a576dc8660994542da2b48875bfa120b63d22398dff",
+      "payloadSha256": "61249a77b6b802b355269b0d5b7f762079b312fdbcedbc525a2c7741f5b89c85"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-06",
+      "type": "telemetry",
+      "seq": 1,
+      "messageId": "TELEMETRY-8F2BAFDC-1",
+      "bodySha256": "e6091c89458bc364d11b8399d3894e0c94db9b0726ad89b47c0552d1157c9f80",
+      "payloadSha256": "0883d1438bdbc2841da1f3b6f0c896fde66ef9705dc91a725fd247f1fd2600fc"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-06",
+      "type": "telemetry",
+      "seq": 2,
+      "messageId": "TELEMETRY-8F2BAFDC-2",
+      "bodySha256": "d21418918a65c87678ca104134674049ae82c7574fc9dafa8021fd4f6a929320",
+      "payloadSha256": "ffcd177fb7ad66ca49d0c43b3ffcab94a8c18b974cea4c31d5a734efdfc2b40c"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-07",
+      "type": "telemetry",
+      "seq": 1,
+      "messageId": "TELEMETRY-F36CE201-1",
+      "bodySha256": "21eada5ef56d3ce6801e941a7966b0b694d40c7445bb5e17c427b6aed8bea7fb",
+      "payloadSha256": "1e4e16e0e64ba484aea43845dd37adb00847fd7238ac608d9f46ad43bb3da16e"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-07",
+      "type": "telemetry",
+      "seq": 2,
+      "messageId": "TELEMETRY-F36CE201-2",
+      "bodySha256": "848bae1a0df776f59209497d84b76762d3d60c0f66d13a9c8861579a9ebc6772",
+      "payloadSha256": "27dbbb98b2070ce00ab061e40bab112608f4e075a107987d51053ed68e290abc"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-08",
+      "type": "telemetry",
+      "seq": 1,
+      "messageId": "TELEMETRY-E9B459C3-1",
+      "bodySha256": "dbcca2c82f92ee9ce57e7c29a716b948ee6ec79af8eb5a86a96166993c34c342",
+      "payloadSha256": "1ea4f94e6dd4fe0dabff165af30eb16f0658826b99cf1ba1cffbd35a69450178"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-08",
+      "type": "telemetry",
+      "seq": 2,
+      "messageId": "TELEMETRY-E9B459C3-2",
+      "bodySha256": "535ac73ef57ac858c3131f6b135e7dde3d094cbc83542cefa2f8024f5065798e",
+      "payloadSha256": "98212c729ea805d0df367dc54529292b496d5addaba3d70855c3f785c851b1e2"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-09",
+      "type": "telemetry",
+      "seq": 1,
+      "messageId": "TELEMETRY-B161C3F8-1",
+      "bodySha256": "070053f3259e7c9124365f516ed66d196257f889c68dc85c69ce762fb7ac37b7",
+      "payloadSha256": "c65b6b77938a724b80704f89c34f164a89d1043424385ec47d13f9214dda1a9c"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-09",
+      "type": "telemetry",
+      "seq": 2,
+      "messageId": "TELEMETRY-B161C3F8-2",
+      "bodySha256": "abb1d0812aa6e6aae8d21dc6f9e8dadcf50edba54f7762edb33dd5e9584d1647",
+      "payloadSha256": "70cc95197be01cffcf380aba3da7071699f4d40cb3e99dc791de97862ec36e22"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-10",
+      "type": "telemetry",
+      "seq": 1,
+      "messageId": "TELEMETRY-ED734EF6-1",
+      "bodySha256": "6b96a723832fef8be4d7ae0ae6b026bb30562893a2c5d1447ec5e253cee83172",
+      "payloadSha256": "9941b6c27362c7599897c7b371adab43157e08a4bdafad13a9194b3f09c273c0"
+    },
+    {
+      "deviceId": "qa09-be722e88bf9ababa-10",
+      "type": "telemetry",
+      "seq": 2,
+      "messageId": "TELEMETRY-ED734EF6-2",
+      "bodySha256": "9a335b233c1881302ff2d3ebd032518145317de787cccea7ccc221f29efe446d",
+      "payloadSha256": "6b0462518357d8422427574c733468d6dcaca69e4f87acc55d11aba56cb2dd21"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "seed",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:4f83816b-3465-400f-a010-fddd8929bdcb",
+      "receipt": "docs/audit/evidence/qa-09-ca-root-ten-device-2026-10-02.json.seed-0.json"
+    },
+    {
+      "action": "observe",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:edc7c3a8-7e80-4149-9013-25dfe6243171",
+      "receipt": "docs/audit/evidence/qa-09-ca-root-ten-device-2026-10-02.json.observe-1.json"
+    },
+    {
+      "action": "observe",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:c2294822-b4f5-409e-ad79-3fd92d2c7b0e",
+      "receipt": "docs/audit/evidence/qa-09-ca-root-ten-device-2026-10-02.json.observe-2.json"
+    },
+    {
+      "action": "observe",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:daf34024-3344-474b-9023-a2ace181da5c",
+      "receipt": "docs/audit/evidence/qa-09-ca-root-ten-device-2026-10-02.json.observe-3.json"
+    },
+    {
+      "action": "cleanup",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:79c4704e-f7a5-4a51-8eff-e0158c8c7d73",
+      "receipt": "docs/audit/evidence/qa-09-ca-root-ten-device-2026-10-02.json.cleanup-4.json"
+    }
+  ],
+  "archiveObjects": [],
+  "cleanup": [
+    {
+      "type": "iot-certificate",
+      "id": "cd73b8d41fdc758a57c0bf277a14feae0e9bc781cd04a55fd8139a60c33a973f",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "b906bd7bbe6f96622fac7a20f11c9c7ba49cb26e18fdf98a951d7882807c5a17",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "2c5075613c3ff618e7d188af3be481dbf483634818072ca82d7826bb72d252d4",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "e68284f1539349224981fe275159ae880a0769ceb7e7d895e963c7f090c22301",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "6b780aa16d4f22920387011917df51def1565f8f37ca8924ed16246592a9eb1f",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "e08111d005418cf58aac606c69494e849bf132fa2d2529046b11ca3d2db32351",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "c924ee67c83fb70d1eba39bb54746ed1381d614e8d6ed4018c34afb5b6ea1f41",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "6d6be1b2252b922773ae964c5b6f912a30d5db29d55d6a607e3db2bb46d1c4b5",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "0be0de761c87bc82ad9a2e677dd28580c0483ce119f333ea33b94604754015e4",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "db352afba6d85e08987433a17893630658c6473209a16d8247995d34c632a2fc",
+      "result": "PASS"
+    },
+    {
+      "type": "database-fixtures",
+      "count": 10,
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-186c1f4152c7f287.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-186c1f4152c7f287.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-28e1a09b65a4f92f.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-28e1a09b65a4f92f.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-4d41e3a48b994a2f.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-4d41e3a48b994a2f.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-6893b63202b6fbc2.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-6893b63202b6fbc2.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-69a5fdaf4e23e833.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-69a5fdaf4e23e833.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-731ebc313ff7e8c4.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-731ebc313ff7e8c4.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-9530a1b87a1a5b53.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-9530a1b87a1a5b53.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-95c46a84d6206eb2.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-95c46a84d6206eb2.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-a97ba2ace0192b5f.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-a97ba2ace0192b5f.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-af634f9b95af29ea.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-af634f9b95af29ea.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-287621aa05f85a3d.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-287621aa05f85a3d.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-3a396c027312d1ae.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-3a396c027312d1ae.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-4e279bd3bafded23.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-4e279bd3bafded23.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-605f001a73b3cd9c.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-605f001a73b3cd9c.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-6dd5c5aa433cba37.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-6dd5c5aa433cba37.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-83e7682e48e02da4.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-83e7682e48e02da4.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-866260b782250d90.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-866260b782250d90.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-a1557e8e8c28cab3.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-a1557e8e8c28cab3.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-b01459f3502fe50c.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-b01459f3502fe50c.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-e50fa354cf8188a9.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-e50fa354cf8188a9.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "454b114e-7c6a-4d6a-9152-1626c83e5392",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "a3728e98-c195-42aa-bcc2-52d440ee0ed1",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-be722e88bf9ababa-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "gate": "FAIL",
+  "fullQa09Accepted": false,
+  "identity": {
+    "username": "qa09-be722e88bf9ababa-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "archiveKeys": [
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-186c1f4152c7f287.json.gz",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-186c1f4152c7f287.manifest.json",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-28e1a09b65a4f92f.json.gz",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-28e1a09b65a4f92f.manifest.json",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-4d41e3a48b994a2f.json.gz",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-4d41e3a48b994a2f.manifest.json",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-6893b63202b6fbc2.json.gz",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-6893b63202b6fbc2.manifest.json",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-69a5fdaf4e23e833.json.gz",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-69a5fdaf4e23e833.manifest.json",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-731ebc313ff7e8c4.json.gz",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-731ebc313ff7e8c4.manifest.json",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-9530a1b87a1a5b53.json.gz",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-9530a1b87a1a5b53.manifest.json",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-95c46a84d6206eb2.json.gz",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-95c46a84d6206eb2.manifest.json",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-a97ba2ace0192b5f.json.gz",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-a97ba2ace0192b5f.manifest.json",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-af634f9b95af29ea.json.gz",
+    "raw/topic_type=telemetry/customer_id=a3728e98-c195-42aa-bcc2-52d440ee0ed1/year=2026/month=10/day=02/hour=15/part-af634f9b95af29ea.manifest.json",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-287621aa05f85a3d.json.gz",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-287621aa05f85a3d.manifest.json",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-3a396c027312d1ae.json.gz",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-3a396c027312d1ae.manifest.json",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-4e279bd3bafded23.json.gz",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-4e279bd3bafded23.manifest.json",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-605f001a73b3cd9c.json.gz",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-605f001a73b3cd9c.manifest.json",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-6dd5c5aa433cba37.json.gz",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-6dd5c5aa433cba37.manifest.json",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-83e7682e48e02da4.json.gz",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-83e7682e48e02da4.manifest.json",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-866260b782250d90.json.gz",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-866260b782250d90.manifest.json",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-a1557e8e8c28cab3.json.gz",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-a1557e8e8c28cab3.manifest.json",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-b01459f3502fe50c.json.gz",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-b01459f3502fe50c.manifest.json",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-e50fa354cf8188a9.json.gz",
+    "raw/topic_type=telemetry/customer_id=454b114e-7c6a-4d6a-9152-1626c83e5392/year=2026/month=10/day=02/hour=15/part-e50fa354cf8188a9.manifest.json"
+  ],
+  "failure": {
+    "code": "TEN_DEVICE_EXECUTION_FAILED",
+    "errorClass": "AccessDenied"
+  },
+  "finishedAt": "2026-10-02T15:53:33.553Z"
+}

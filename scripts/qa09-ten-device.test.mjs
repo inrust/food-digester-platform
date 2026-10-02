@@ -189,3 +189,25 @@ test('closed-fixture access rejects missing approval audit and live customer', a
     await pg.close();
   }
 });
+
+test('unseeded capacity attempt has read-only empty audit with deleted customers and fixed original baseline', async () => {
+  const { pg, client } = await db();
+  try {
+    const before = await executeFixture(client, plan('observe'));
+    await pg.exec('UPDATE customers SET deleted_at=now()');
+    const empty = { ...plan('audit-empty'), baseline: before.originalFingerprints };
+    assert.equal((await executeFixture(client, empty)).empty, true);
+    await assert.rejects(executeFixture(client, { ...empty, baseline: undefined }), /BASELINE_REQUIRED/);
+    await pg.query('INSERT INTO devices(id,serial_number,customer_id) VALUES($1,$1,$2)', [
+      plan().devices[0],
+      plan().customers[0].id,
+    ]);
+    await assert.rejects(executeFixture(client, empty), /FIXTURE_NOT_EMPTY/);
+    assert.equal(
+      (await pg.query("SELECT status FROM device_certificates WHERE id='original-cert'")).rows[0].status,
+      'ACTIVE',
+    );
+  } finally {
+    await pg.close();
+  }
+});

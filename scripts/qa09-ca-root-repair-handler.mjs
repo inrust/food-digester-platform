@@ -10,6 +10,7 @@ import {
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { repairCaRoot } from './qa09-ca-root-repair.mjs';
+import { diagnoseCaChain } from './qa09-ca-chain-diagnostic.mjs';
 const secretArn = 'arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-device-ca-mecYC7';
 const baselineVersion = 'c10bbb97-033c-4758-9bcb-e75bb6bd5fa9';
 const keyArn = 'arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c';
@@ -19,7 +20,7 @@ const truststoreSha256 = '447dfa9a580c6bfd3126c7661519e46820f3e4919b1862f39e2d16
 const client = new SecretsManagerClient({ region: 'ap-southeast-1', maxAttempts: 1 });
 export const handler = async (event) => {
   if (
-    event?.operation !== 'REPAIR_CA_ROOT_ONLY' ||
+    !['REPAIR_CA_ROOT_ONLY', 'VERIFY_CURRENT_CA_CHAIN', 'VERIFY_EXISTING_ROOT_VERSION'].includes(event?.operation) ||
     !/^[a-f0-9]{32}$/.test(event?.requestNonce ?? '') ||
     !/^[a-f0-9-]{36}$/.test(event?.candidateToken ?? '')
   )
@@ -30,6 +31,22 @@ export const handler = async (event) => {
     const truststorePem = readFileSync(new URL('./truststore.pem', import.meta.url), 'utf8');
     if (createHash('sha256').update(truststorePem).digest('hex') !== truststoreSha256)
       return { completed: false, errorCode: 'TRUSTSTORE_DRIFT' };
+    if (event.operation === 'VERIFY_CURRENT_CA_CHAIN') {
+      let response;
+      try {
+        response = await send(new GetSecretValueCommand({ SecretId: secretArn, VersionStage: 'AWSCURRENT' }));
+        return {
+          ...diagnoseCaChain(response.SecretString, truststorePem),
+          secretVersionId: response.VersionId,
+          requestNonce: event.requestNonce,
+        };
+      } finally {
+        if (response) {
+          response.SecretString = undefined;
+          response.SecretBinary = undefined;
+        }
+      }
+    }
     const store = {
       async describe() {
         const meta = await send(new DescribeSecretCommand({ SecretId: secretArn }));
@@ -40,6 +57,13 @@ export const handler = async (event) => {
       put: (input) => send(new PutSecretValueCommand({ ...input, SecretId: secretArn })),
       move: (input) => send(new UpdateSecretVersionStageCommand({ ...input, SecretId: secretArn })),
     };
+    if (event.operation === 'VERIFY_EXISTING_ROOT_VERSION') {
+      const current = await store.describe();
+      if (!current.VersionIdsToStages?.[event.candidateToken]?.includes('AWSCURRENT'))
+        return { completed: false, errorCode: 'RECOVERY_VERSION_DRIFT' };
+      delete store.put;
+      delete store.move;
+    }
     const result = await repairCaRoot({
       store,
       baselineVersion,
