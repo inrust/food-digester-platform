@@ -1,6 +1,6 @@
 # QA-09 十设备 CSR / mTLS / IoT 真实验收
 
-目标为现有测试账号065986019555、ap-southeast-1、fdp-test-app；当前成功后端部署、CI与Amplify提交均为`00ec272f1c5ae73a8b4a990cd744f4b992fd67f3`。执行器工作区源码按字节SHA256另行绑定，不能把本地新执行器提交等同于已部署应用版本。
+目标为现有测试账号065986019555、ap-southeast-1、fdp-test-app；当前成功后端部署、CI与Amplify提交均为`56f74f6377ff7183207372c0079f5a509abbdf10`。执行器工作区源码按字节SHA256另行绑定，不能把本地新执行器提交等同于已部署应用版本。
 
 ## 版本前置与命令
 
@@ -21,10 +21,10 @@ node --import tsx --test scripts/qa09-ten-device*.test.mjs
 
 10个真实MQTT mTLS会话使用返回endpoint和deviceId Client ID同时连接，各发送Heartbeat；AWS内只读查询核验Onboarded、ACTIVE、包销毁、MQTT验证时间。逐台真实REST mTLS Sync核对自身设备，验证缺失证书和不受信任证书拒绝。每台发送两条Telemetry并重发第一条完全相同原文，间隔10秒；复核30条唯一IngestionReceipt、每设备业务sampleCount=2、20条Telemetry ARCHIVE Outbox PUBLISHED。实际尝试跨设备Subscribe/Publish，要求Broker明确拒绝/关闭且无PUBACK，不能用本地authorize函数的抛错替代AWS权限验收。
 
-S3按两Customer精确前缀读取gzip归档，只保存Key、压缩字节SHA256、原文SHA256、消息/事件ID和计数。核对已发布Payload规范化Hash、IngestionReceipt、Outbox原文Hash及归档原文Hash；原文、证书、私钥、密码、Token和签名URL不落回执。
+S3按两Customer精确前缀读取gzip归档，只保存Key、压缩字节SHA256、原文SHA256、消息/事件ID和计数。核对已发布Payload规范化Hash、IngestionReceipt、Outbox原文Hash及归档原文Hash；原文、证书、私钥、密码、Token和签名URL不落回执。固定执行源码以gzip内嵌，buildspec必须小于等于25600字节；本地测试保证解压源码字节与审核文件一致。
 
 ## 清理与边界
 
 创建ID即时记账，finally关闭MQTT，AWS内精确发现本轮10设备证书，停用、解除自身Thing/Policy附着并删除；移除自身Thing，再事务删除精确设备关联的本轮Request/Nonce/Job、状态/收据/聚合/Outbox/证书/设备。PROCESSING Job拒绝删除；非本轮名称或关联立即停止。保留原设备/证书摘要，未知FK或并发漂移失败关闭，不TRUNCATE，不消费、清空或改动历史队列。S3仅删除本轮两Customer前缀发现的精确Key及其版本，复核不存在；Customer通过API软删除并GET404，专用Cognito身份登出、删除并核验不存在。审计和软删除Customer行按业务规则保留。
 
-专用项目创建需要 esgiot-infra 对现有执行角色的限定 `iam:PassRole`；当前AWS拒绝该权限，尚未创建项目和设备库存。最小权限待确认方案见 [权限方案](../audit/QA-09-十设备夹具项目最小权限待确认方案-2026-10-02.md)。已有项目更新保留原serviceRole，先核验角色一致；不自动提升IAM权限。临时夹具项目在全部回执归档后清理。加密RDS历史快照继续保留。本轮只证明10设备CSR、mTLS及Heartbeat/Telemetry归档子范围；剩余6类上行、Command/OTA/Media全业务、完整前端、安全与负载，以及原IoT Gate的errorAction/partialFailure等探针仍需后续执行，不填造`environment.isolated=true`或故障注入PASS。完整QA09始终由全部适用目标回执共同决定，当前子Gate的`fullQa09Accepted=false`。
+专用项目创建需要 esgiot-infra 对现有执行角色的限定 `iam:PassRole`；运营人员已按用户确认临时授予，专用项目已创建；库存写入与真实设备结果仍以本轮Build和业务回执为准。最小权限待确认方案见 [权限方案](../audit/QA-09-十设备夹具项目最小权限待确认方案-2026-10-02.md)。已有项目更新保留原serviceRole，先核验角色一致；不自动提升IAM权限。Build预算15分钟，执行器等待17分钟；原错误回执保留，每轮使用新前缀和独立回执。已关闭夹具可按10条CSR/RDS账本执行固定audit-closed（READ ONLY），核验软删除Customer、审批审计和精确请求失败Outbox；cleanup-closed只允许删除该账本的ONBOARDING_PROVISIONING_FAILED事件，并核验原设备/证书摘要。所有普通cleanup也删除本轮请求型失败Outbox，Job错误仅输出脱敏摘要。临时夹具项目在全部目标验收完成后清理。加密RDS历史快照继续保留。本轮只证明10设备CSR、mTLS及Heartbeat/Telemetry归档子范围；剩余6类上行、Command/OTA/Media全业务、完整前端、安全与负载，以及原IoT Gate的errorAction/partialFailure等探针仍需后续执行，不填造`environment.isolated=true`或故障注入PASS。完整QA09始终由全部适用目标回执共同决定，当前子Gate的`fullQa09Accepted=false`。

@@ -1,0 +1,151 @@
+{
+  "task": "QA-09",
+  "scope": "TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1",
+    "stackName": "fdp-test-app"
+  },
+  "sourceCommit": "56f74f6377ff7183207372c0079f5a509abbdf10",
+  "executorSha256": "5229bdf90d2acc1aca820b230dd420f2a33ebd0201a03f35324aeaab23a5bd2f",
+  "versionReceipt": "docs/audit/evidence/qa-09-application-runtime-version-rerun-2026-10-02.json",
+  "artifactByteReceipt": "docs/audit/evidence/qa-09-application-version-rerun-2026-10-02.json",
+  "startedAt": "2026-10-02T09:30:16.606Z",
+  "prefix": "qa09-9f8c20c7b7209933",
+  "devices": [
+    "qa09-9f8c20c7b7209933-01",
+    "qa09-9f8c20c7b7209933-02",
+    "qa09-9f8c20c7b7209933-03",
+    "qa09-9f8c20c7b7209933-04",
+    "qa09-9f8c20c7b7209933-05",
+    "qa09-9f8c20c7b7209933-06",
+    "qa09-9f8c20c7b7209933-07",
+    "qa09-9f8c20c7b7209933-08",
+    "qa09-9f8c20c7b7209933-09",
+    "qa09-9f8c20c7b7209933-10"
+  ],
+  "customers": [
+    {
+      "id": "e1fa6d28-765d-4963-8414-930497604490",
+      "name": "qa09-9f8c20c7b7209933-a",
+      "suffix": "a",
+      "version": 1
+    },
+    {
+      "id": "b7d44fc8-69ae-4316-9bcc-79dfe66f97c1",
+      "name": "qa09-9f8c20c7b7209933-b",
+      "suffix": "b",
+      "version": 1
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "f30e04b6-5105-41f9-8fa9-4c4b1deda06a",
+      "errorCode": null
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "df827f8f-b77f-48c7-8d8a-847b191a8202",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "344172cd-1664-4716-a32b-a6c085b5782f",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "25552fa6-2f30-4502-8c9f-4efb9d7b5e1c",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-b",
+      "result": "PASS",
+      "status": 404,
+      "expected": 404,
+      "requestId": "132a6627-65d5-4f47-9c6c-7a313f85e52a",
+      "errorCode": "NOT_FOUND"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "5a969093-86fe-4d0b-a374-01264a8befab",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "cccf21d9-1adc-43d3-96d3-460218d1ad00",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-a",
+      "result": "PASS",
+      "status": 404,
+      "expected": 404,
+      "requestId": "02fe5a10-0a1a-4b81-aba0-0828ceee50c6",
+      "errorCode": "NOT_FOUND"
+    }
+  ],
+  "published": [],
+  "databaseBuilds": [],
+  "archiveObjects": [],
+  "cleanup": [
+    {
+      "type": "cloud-and-database-fixtures",
+      "result": "FAIL"
+    },
+    {
+      "type": "customer",
+      "id": "b7d44fc8-69ae-4316-9bcc-79dfe66f97c1",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "e1fa6d28-765d-4963-8414-930497604490",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-9f8c20c7b7209933-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "gate": "FAIL",
+  "fullQa09Accepted": false,
+  "identity": {
+    "username": "qa09-9f8c20c7b7209933-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "failure": {
+    "code": "AWS_create-project_InvalidInputException",
+    "errorClass": "Error"
+  },
+  "finishedAt": "2026-10-02T09:31:07.350Z"
+}

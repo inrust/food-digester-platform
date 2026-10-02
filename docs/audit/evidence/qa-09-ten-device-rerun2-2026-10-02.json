@@ -1,0 +1,157 @@
+{
+  "task": "QA-09",
+  "scope": "TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1",
+    "stackName": "fdp-test-app"
+  },
+  "sourceCommit": "56f74f6377ff7183207372c0079f5a509abbdf10",
+  "executorSha256": "5229bdf90d2acc1aca820b230dd420f2a33ebd0201a03f35324aeaab23a5bd2f",
+  "versionReceipt": "docs/audit/evidence/qa-09-application-runtime-version-rerun-2026-10-02.json",
+  "artifactByteReceipt": "docs/audit/evidence/qa-09-application-version-rerun-2026-10-02.json",
+  "startedAt": "2026-10-02T09:33:25.349Z",
+  "prefix": "qa09-4bd0dbc19176515b",
+  "devices": [
+    "qa09-4bd0dbc19176515b-01",
+    "qa09-4bd0dbc19176515b-02",
+    "qa09-4bd0dbc19176515b-03",
+    "qa09-4bd0dbc19176515b-04",
+    "qa09-4bd0dbc19176515b-05",
+    "qa09-4bd0dbc19176515b-06",
+    "qa09-4bd0dbc19176515b-07",
+    "qa09-4bd0dbc19176515b-08",
+    "qa09-4bd0dbc19176515b-09",
+    "qa09-4bd0dbc19176515b-10"
+  ],
+  "customers": [
+    {
+      "id": "51361ad8-f44e-49b7-96f5-b717136b198c",
+      "name": "qa09-4bd0dbc19176515b-a",
+      "suffix": "a",
+      "version": 1
+    },
+    {
+      "id": "fedfa6d4-d51e-4f0f-ac7b-f3a73fb4cf16",
+      "name": "qa09-4bd0dbc19176515b-b",
+      "suffix": "b",
+      "version": 1
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "d2339a84-efc1-48b0-aa79-1301264ab078",
+      "errorCode": null
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "2380b6cb-1e12-4650-8f6b-380c05f2723d",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "cd83c3db-3bdc-4b70-b30a-3c78143265f5",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "d24af0cb-9e14-4af4-a690-79680ae375dc",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-b",
+      "result": "PASS",
+      "status": 404,
+      "expected": 404,
+      "requestId": "26f4fb56-63ea-46f5-b5d9-6687a2fb7495",
+      "errorCode": "NOT_FOUND"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "f4d6859d-6087-4ee0-8a4e-b87654ec90ba",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "f786b421-0c0d-4037-a3cb-a5c045d2834b",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-a",
+      "result": "PASS",
+      "status": 404,
+      "expected": 404,
+      "requestId": "fd90f6e2-1a8d-444c-8d05-c59945049f17",
+      "errorCode": "NOT_FOUND"
+    }
+  ],
+  "published": [],
+  "databaseBuilds": [
+    {
+      "action": "observe",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:3c45b315-8850-4713-b023-c9dad5bf0627",
+      "receipt": "docs/audit/evidence/qa-09-ten-device-rerun2-2026-10-02.json.observe-0.json"
+    }
+  ],
+  "archiveObjects": [],
+  "cleanup": [
+    {
+      "type": "cloud-and-database-fixtures",
+      "result": "FAIL"
+    },
+    {
+      "type": "customer",
+      "id": "fedfa6d4-d51e-4f0f-ac7b-f3a73fb4cf16",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "51361ad8-f44e-49b7-96f5-b717136b198c",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-4bd0dbc19176515b-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "gate": "FAIL",
+  "fullQa09Accepted": false,
+  "identity": {
+    "username": "qa09-4bd0dbc19176515b-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "failure": {
+    "code": "TEN_DEVICE_EXECUTION_FAILED",
+    "errorClass": "Error"
+  },
+  "finishedAt": "2026-10-02T09:46:24.876Z"
+}

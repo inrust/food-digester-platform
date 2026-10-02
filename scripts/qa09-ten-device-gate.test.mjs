@@ -111,7 +111,7 @@ function fixture() {
     gate: 'PASS',
     finishedAt: '2026-10-02',
     mode: 'REAL_EXISTING_TEST_ENVIRONMENT',
-    sourceCommit: '00ec272f1c5ae73a8b4a990cd744f4b992fd67f3',
+    sourceCommit: '56f74f6377ff7183207372c0079f5a509abbdf10',
     executorSha256: createHash('sha256').update(source).digest('hex'),
     fullQa09Accepted: false,
     scope: 'TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE',

@@ -11,7 +11,10 @@ export function assertOwnCloudDevice(id, prefix) {
     throw Error('NOT_OWN_DEVICE');
 }
 export function validatePlan(plan) {
-  if (!/^qa09-[a-f0-9]{16}$/.test(plan.prefix ?? '') || !['seed', 'observe', 'cleanup'].includes(plan.action))
+  if (
+    !/^qa09-[a-f0-9]{16}$/.test(plan.prefix ?? '') ||
+    !['seed', 'observe', 'cleanup', 'audit-closed', 'cleanup-closed'].includes(plan.action)
+  )
     throw Error('INVALID_FIXTURE_PLAN');
   const ids = Array.from({ length: 10 }, (_, i) => `${plan.prefix}-${String(i + 1).padStart(2, '0')}`);
   if (JSON.stringify(plan.devices) !== JSON.stringify(ids)) throw Error('EXACT_TEN_REQUIRED');
@@ -24,6 +27,17 @@ export function validatePlan(plan) {
     plan.customers[0].id === plan.customers[1].id
   )
     throw Error('OWN_CUSTOMERS_REQUIRED');
+  if (
+    plan.action.endsWith('-closed') &&
+    (!Array.isArray(plan.requestLedger) ||
+      plan.requestLedger.length !== 10 ||
+      new Set(plan.requestLedger.map((r) => r.requestId)).size !== 10 ||
+      plan.requestLedger.some(
+        (r, i) =>
+          r.deviceId !== ids[i] || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(r.requestId),
+      ))
+  )
+    throw Error('OWN_REQUEST_LEDGER_REQUIRED');
   return ids;
 }
 async function original(client, ids) {
@@ -39,7 +53,7 @@ export async function executeFixture(client, plan) {
   let committed = false;
   try {
     await client.query(
-      plan.action === 'observe'
+      ['observe', 'audit-closed'].includes(plan.action)
         ? 'BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY'
         : 'BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE',
     );
@@ -48,6 +62,67 @@ export async function executeFixture(client, plan) {
     if ((await client.query('SELECT current_database() AS database')).rows[0].database !== 'fdp')
       throw Error('WRONG_DATABASE');
     const before = await original(client, ids);
+    if (plan.action.endsWith('-closed')) {
+      for (const c of plan.customers)
+        if (
+          (
+            await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2 AND deleted_at IS NOT NULL', [
+              c.id,
+              c.name,
+            ])
+          ).rowCount !== 1
+        )
+          throw Error('CLOSED_CUSTOMER_NOT_VERIFIED');
+      for (const [table, column] of [
+        ['devices', 'id'],
+        ['device_certificates', 'device_id'],
+        ['onboarding_requests', 'serial_number'],
+      ])
+        if ((await client.query(`SELECT 1 FROM ${table} WHERE ${column}=ANY($1::text[])`, [ids])).rowCount)
+          throw Error('FIXTURE_NOT_CLOSED');
+      const requestIds = plan.requestLedger.map((r) => r.requestId);
+      const audit = (
+        await client.query(
+          "SELECT object_id,action,result,CASE WHEN reason ~* '(private|secret|password|token|BEGIN|arn:aws|access.?key|certificatepem)' THEN 'REDACTED' ELSE left(reason,500) END AS reason FROM audit_logs WHERE object_type='onboarding_request' AND object_id=ANY($1::text[]) ORDER BY created_at LIMIT 200",
+          [requestIds],
+        )
+      ).rows;
+      if (
+        requestIds.some(
+          (id) =>
+            !audit.some(
+              (a) => a.object_id === id && a.action === 'onboarding.request.approve' && a.result === 'SUCCESS',
+            ),
+        )
+      )
+        throw Error('REQUEST_APPROVAL_AUDIT_MISSING');
+      const outbox = (
+        await client.query(
+          "SELECT id,event_type,aggregate_id,status FROM outbox_events WHERE aggregate_type='onboarding_request' AND aggregate_id=ANY($1::text[]) AND payload->>'requestId'=aggregate_id ORDER BY id",
+          [requestIds],
+        )
+      ).rows;
+      if (outbox.some((o) => o.event_type !== 'ONBOARDING_PROVISIONING_FAILED'))
+        throw Error('UNEXPECTED_REQUEST_OUTBOX');
+      let deleted = 0;
+      if (plan.action === 'cleanup-closed')
+        deleted = (
+          await client.query(
+            "DELETE FROM outbox_events WHERE event_type='ONBOARDING_PROVISIONING_FAILED' AND aggregate_type='onboarding_request' AND aggregate_id=ANY($1::text[]) AND payload->>'requestId'=aggregate_id",
+            [requestIds],
+          )
+        ).rowCount;
+      const after = await original(client, ids);
+      if (
+        JSON.stringify(before) !== JSON.stringify(after) ||
+        (plan.baseline && JSON.stringify(after) !== JSON.stringify(plan.baseline))
+      )
+        throw Error('ORIGINAL_BASELINE_DRIFT');
+      if (plan.action === 'audit-closed') await client.query('ROLLBACK');
+      else await client.query('COMMIT');
+      committed = true;
+      return { audit, outbox, deletedRequestOutbox: deleted, originalFingerprints: after };
+    }
     for (const c of plan.customers)
       if (
         (await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2 AND deleted_at IS NULL', [c.id, c.name]))
@@ -93,7 +168,7 @@ export async function executeFixture(client, plan) {
     ).rows;
     const jobs = (
       await client.query(
-        'SELECT j.id,j.status,j.attempts,j.issued_certificate_id FROM onboarding_provisioning_jobs j JOIN onboarding_requests r ON r.id=j.request_id WHERE r.serial_number=ANY($1::text[]) ORDER BY r.serial_number',
+        "SELECT j.id,j.status,j.attempts,j.issued_certificate_id,CASE WHEN j.last_error ~* '(private|secret|password|token|BEGIN|arn:aws|access.?key|certificatepem)' THEN split_part(j.last_error,':',1)||': REDACTED' ELSE left(j.last_error,500) END AS failure_reason FROM onboarding_provisioning_jobs j JOIN onboarding_requests r ON r.id=j.request_id WHERE r.serial_number=ANY($1::text[]) ORDER BY r.serial_number",
         [ids],
       )
     ).rows;
@@ -141,6 +216,12 @@ export async function executeFixture(client, plan) {
         ).rowCount
       )
         throw Error('JOB_STILL_PROCESSING');
+      deleted.request_outbox = (
+        await client.query(
+          "DELETE FROM outbox_events WHERE event_type='ONBOARDING_PROVISIONING_FAILED' AND aggregate_type='onboarding_request' AND aggregate_id IN(SELECT id FROM onboarding_requests WHERE serial_number=ANY($1::text[])) AND payload->>'requestId'=aggregate_id",
+          [ids],
+        )
+      ).rowCount;
       await client.query(
         'DELETE FROM onboarding_proof_nonces WHERE request_id IN(SELECT id FROM onboarding_requests WHERE serial_number=ANY($1::text[]))',
         [ids],

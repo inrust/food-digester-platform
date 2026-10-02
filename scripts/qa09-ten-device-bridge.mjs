@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { gzipSync } from 'node:zlib';
 import { prepareProbe } from './prepare-qa09-db-readonly-probe.mjs';
 import { PROJECT, validatePlan } from './qa09-ten-device-db.mjs';
 const hash = (v) => createHash('sha256').update(v).digest('hex');
@@ -25,6 +26,7 @@ export function prepareFixture(plan) {
   const helper = readFileSync(new URL('./qa09-db-readonly-probe.mjs', import.meta.url));
   project.name = PROJECT;
   project.description = 'QA09 exact ten own test fixtures; fixed seed/read-only observation/cleanup';
+  project.timeoutInMinutes = 15;
   project.logsConfig.cloudWatchLogs.streamName = 'qa09-ten-device';
   const spec = JSON.parse(project.source.buildspec);
   spec.phases.install.commands = spec.phases.install.commands.filter((c) => !c.startsWith('node -e'));
@@ -33,10 +35,11 @@ export function prepareFixture(plan) {
     ['qa09-db-readonly-probe.mjs', helper],
   ])
     spec.phases.install.commands.push(
-      `node -e "require('node:fs').writeFileSync('${name}',Buffer.from('${code.toString('base64')}','base64'))"`,
+      `node -e "require('node:fs').writeFileSync('${name}',require('node:zlib').gunzipSync(Buffer.from('${gzipSync(code).toString('base64')}','base64')))"`,
     );
   spec.phases.build.commands = ['cd /tmp/qa09-db-probe', 'node fixture.mjs'];
   project.source.buildspec = JSON.stringify(spec);
+  if (Buffer.byteLength(project.source.buildspec) > 25600) throw Error('FIXTURE_BUILDSPEC_TOO_LARGE');
   project.environment.environmentVariables = [
     project.environment.environmentVariables[0],
     { name: 'QA09_FIXTURE_HASH', value: hash(source), type: 'PLAINTEXT' },
@@ -78,7 +81,7 @@ export async function runFixture(plan, evidencePath, onProgress = () => {}) {
   writeFileSync(evidencePath, JSON.stringify({ gate: 'RUNNING', build: start }, null, 2) + '\n');
   let build;
   let phase;
-  const deadline = Date.now() + 420000;
+  const deadline = Date.now() + 1020000;
   do {
     build = aws([
       'codebuild',

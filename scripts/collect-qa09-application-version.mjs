@@ -7,12 +7,14 @@ import { writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-export const ACCEPTANCE_COMMIT = '00ec272f1c5ae73a8b4a990cd744f4b992fd67f3';
-export const EXECUTOR_BASELINE = '00ec272f1c5ae73a8b4a990cd744f4b992fd67f3';
+export const ACCEPTANCE_COMMIT = '56f74f6377ff7183207372c0079f5a509abbdf10';
+export const EXECUTOR_BASELINE = '56f74f6377ff7183207372c0079f5a509abbdf10';
 function command(name, args) {
-  const r = spawnSync(name, args, { encoding: 'utf8', timeout: 45000, maxBuffer: 16 * 1024 * 1024 });
-  if (r.status !== 0) throw Error('VERSION_READ_FAILED');
-  return JSON.parse(r.stdout);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const r = spawnSync(name, args, { encoding: 'utf8', timeout: 45000, maxBuffer: 16 * 1024 * 1024 });
+    if (r.status === 0) return JSON.parse(r.stdout);
+  }
+  throw Error('VERSION_READ_FAILED');
 }
 const aws = (args) =>
   command('aws', [
@@ -41,7 +43,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
   };
   const save = () => writeFileSync(output, JSON.stringify(receipt, null, 2) + '\n');
   if (aws(['sts', 'get-caller-identity']).Account !== receipt.accountId) throw Error('WRONG_ACCOUNT');
-  receipt.pendingDeployment = command('gh', ['run', 'view', '36956717328', '--json', 'status,conclusion,headSha,url']);
+  receipt.pendingDeployment = command('gh', ['run', 'view', '36964129333', '--json', 'status,conclusion,headSha,url']);
   const paths = [
     'apps',
     'packages',
@@ -64,7 +66,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
   if (receipt.applicationTreeHashes.some((t) => !t.matches))
     receipt.blockers.push('CURRENT_AND_REQUESTED_APPLICATION_TREES_DIFFER');
   receipt.executorBaseline = EXECUTOR_BASELINE;
-  receipt.github = command('gh', ['run', 'view', '36956717328', '--json', 'status,conclusion,headSha,url,jobs']);
+  receipt.github = command('gh', ['run', 'view', '36964129333', '--json', 'status,conclusion,headSha,url,jobs']);
   receipt.ci = command('gh', [
     'run',
     'list',
@@ -201,7 +203,15 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
             ...(head.VersionId ? ['--version-id', head.VersionId] : []),
             path,
           ];
-          const metadata = await awsAsync(args);
+          let metadata;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              metadata = await awsAsync(args);
+              break;
+            } catch (error) {
+              if (attempt === 2) throw error;
+            }
+          }
           const bytes = readFileSync(path);
           if (
             metadata.ContentRange !== `bytes ${start}-${end}/${head.ContentLength}` ||
@@ -226,7 +236,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
         : 'BLOCKED';
     receipt.artifactByteGate = 'RUNNING';
     receipt.gate = 'PARTIAL';
-    receipt.byteReceipt = 'docs/audit/evidence/qa-09-application-version-2026-10-02.json';
+    receipt.byteReceipt = output.replace('application-runtime-version', 'application-version');
     save();
     return receipt;
   }

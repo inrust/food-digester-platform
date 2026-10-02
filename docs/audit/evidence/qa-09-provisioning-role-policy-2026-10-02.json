@@ -1,0 +1,52 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret"
+            ],
+            "Resource": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK",
+            "Effect": "Allow"
+        },
+        {
+            "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:ReEncrypt*",
+                "kms:GenerateDataKey*",
+                "kms:DescribeKey"
+            ],
+            "Resource": "arn:aws:kms:ap-southeast-1:065986019555:key/92a4f862-7dc0-4260-8132-5d2b1953c31b",
+            "Effect": "Allow",
+            "Sid": "CertificatePackageKeyDataPlane"
+        },
+        {
+            "Action": [
+                "iot:CreateThing",
+                "iot:DescribeThing",
+                "iot:DeleteThing",
+                "iot:RegisterCertificateWithoutCA",
+                "iot:DescribeCertificate",
+                "iot:UpdateCertificate",
+                "iot:DeleteCertificate",
+                "iot:CreatePolicy",
+                "iot:AttachPolicy",
+                "iot:AttachThingPrincipal",
+                "iot:DetachThingPrincipal",
+                "iot:TagResource"
+            ],
+            "Resource": "*",
+            "Effect": "Allow",
+            "Sid": "IotProvisioning"
+        },
+        {
+            "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret"
+            ],
+            "Resource": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-device-ca-??????",
+            "Effect": "Allow"
+        }
+    ]
+}

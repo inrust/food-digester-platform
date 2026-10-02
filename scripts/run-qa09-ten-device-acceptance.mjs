@@ -99,7 +99,7 @@ export async function main(output, versionPath) {
   const version = JSON.parse(readFileSync(versionPath));
   if (
     (version.gate !== 'PASS' && version.applicationVersionGate !== 'PASS') ||
-    version.sourceCommit !== '00ec272f1c5ae73a8b4a990cd744f4b992fd67f3'
+    version.sourceCommit !== '56f74f6377ff7183207372c0079f5a509abbdf10'
   )
     throw Error('DEPLOYED_VERSION_NOT_VERIFIED');
   const sts = spawnSync(
@@ -614,8 +614,10 @@ export async function main(output, versionPath) {
     receipt.gate = 'PASS';
   } catch (e) {
     receipt.gate = 'FAIL';
+    const failureCode =
+      e.code ?? (/^[A-Z][A-Z0-9_]{1,80}$/.test(e.message ?? '') ? e.message : 'TEN_DEVICE_EXECUTION_FAILED');
     receipt.failure = {
-      code: /^[A-Za-z0-9:_-]+$/.test(e.code ?? '') ? e.code : 'TEN_DEVICE_EXECUTION_FAILED',
+      code: /^[A-Za-z0-9:_-]+$/.test(failureCode) ? failureCode : 'TEN_DEVICE_EXECUTION_FAILED',
       errorClass: /^[A-Za-z0-9]+$/.test(e.name ?? '') ? e.name : 'Error',
     };
     save();

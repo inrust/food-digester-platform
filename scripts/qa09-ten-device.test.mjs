@@ -1,11 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes, verify, createPublicKey } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
 import { PGlite } from '@electric-sql/pglite';
 import { validatePlan, executeFixture } from './qa09-ten-device-db.mjs';
 import { prepareFixture } from './qa09-ten-device-bridge.mjs';
 import { proofHeaders, createCsr, assertOwnCloudDevice } from './run-qa09-ten-device-acceptance.mjs';
 const prefix = 'qa09-1234567890abcdef';
+test('CodeBuild inline source fits service limit and decompresses to exact reviewed bytes', () => {
+  const prep = prepareFixture(plan());
+  assert.ok(Buffer.byteLength(prep.project.source.buildspec) <= 25600);
+  const commands = JSON.parse(prep.project.source.buildspec).phases.install.commands;
+  for (const [name, path] of [
+    ['fixture.mjs', './qa09-ten-device-db.mjs'],
+    ['qa09-db-readonly-probe.mjs', './qa09-db-readonly-probe.mjs'],
+  ]) {
+    const command = commands.find((c) => c.includes(`writeFileSync('${name}'`));
+    const encoded = command.match(/Buffer.from\('([A-Za-z0-9+/=]+)','base64'\)/)[1];
+    assert.deepEqual(gunzipSync(Buffer.from(encoded, 'base64')), readFileSync(new URL(path, import.meta.url)));
+  }
+});
 function plan(action = 'seed') {
   return {
     prefix,
@@ -25,10 +40,11 @@ CREATE TABLE devices(id text PRIMARY KEY,serial_number text UNIQUE,model text,ha
 CREATE TABLE device_certificates(id text PRIMARY KEY,device_id text REFERENCES devices(id),status text,fingerprint text,mqtt_verified_at timestamptz,rest_verified_at timestamptz,claimed_at timestamptz,package_ciphertext bytea);
 CREATE TABLE onboarding_requests(id text PRIMARY KEY,serial_number text,status text);
 CREATE TABLE onboarding_proof_nonces(request_id text REFERENCES onboarding_requests(id));
-CREATE TABLE onboarding_provisioning_jobs(id text,request_id text REFERENCES onboarding_requests(id),status text,attempts int,issued_certificate_id text);
+CREATE TABLE onboarding_provisioning_jobs(id text,request_id text REFERENCES onboarding_requests(id),status text,attempts int,issued_certificate_id text,last_error text);
 CREATE TABLE ingestion_receipts(id text,device_id text,topic_type text,seq int,payload_hash text,result text,occurred_at timestamptz,processed_at timestamptz);
 CREATE TABLE device_latest_state(device_id text REFERENCES devices(id),last_heartbeat_at timestamptz);
-CREATE TABLE outbox_events(id text,event_type text,aggregate_id text,status text,payload jsonb);
+CREATE TABLE outbox_events(id text,event_type text,aggregate_type text,aggregate_id text,status text,payload jsonb);
+CREATE TABLE audit_logs(object_type text,object_id text,action text,result text,reason text,created_at timestamptz default now());
 INSERT INTO devices(id,serial_number)VALUES('original','original');
 INSERT INTO device_certificates(id,device_id,status)VALUES('original-cert','original','ACTIVE');
 `);
@@ -119,4 +135,57 @@ test('CSR proofs bind method, path, request ID, timestamp, nonce and independent
   assert.equal(verify('sha256', body, createPublicKey(a.key), signature), true);
   assert.equal(verify('sha256', body, createPublicKey(b.key), signature), false);
   assert.equal(verify('sha256', Buffer.from(body + 'changed'), createPublicKey(a.key), signature), false);
+});
+test('closed-fixture audit and request outbox cleanup require ledger and preserve unrelated events', async () => {
+  const { pg, client } = await db();
+  try {
+    const closed = {
+      ...plan('audit-closed'),
+      requestLedger: plan().devices.map((deviceId, i) => ({
+        deviceId,
+        requestId: `33333333-3333-4333-8333-${String(i + 1).padStart(12, '0')}`,
+      })),
+    };
+    assert.throws(() => validatePlan({ ...closed, requestLedger: closed.requestLedger.slice(1) }));
+    await pg.exec('UPDATE customers SET deleted_at=now()');
+    for (const r of closed.requestLedger)
+      await pg.query(
+        "INSERT INTO audit_logs(object_type,object_id,action,result)VALUES('onboarding_request',$1,'onboarding.request.approve','SUCCESS')",
+        [r.requestId],
+      );
+    const id = closed.requestLedger[0].requestId;
+    await pg.query(
+      "INSERT INTO outbox_events VALUES('own','ONBOARDING_PROVISIONING_FAILED','onboarding_request',$1,'PENDING',$2::jsonb)",
+      [id, JSON.stringify({ requestId: id, error: 'opaque' })],
+    );
+    await pg.exec(
+      "INSERT INTO outbox_events VALUES('old','ONBOARDING_PROVISIONING_FAILED','onboarding_request','historical','PENDING','{\"requestId\":\"historical\"}')",
+    );
+    const audit = await executeFixture(client, closed);
+    assert.equal(audit.outbox.length, 1);
+    assert.equal((await pg.query('SELECT * FROM outbox_events')).rows.length, 2);
+    const cleaned = await executeFixture(client, { ...closed, action: 'cleanup-closed' });
+    assert.equal(cleaned.deletedRequestOutbox, 1);
+    assert.deepEqual((await pg.query('SELECT id FROM outbox_events')).rows, [{ id: 'old' }]);
+    assert.equal((await pg.query('SELECT id FROM device_certificates')).rows[0].id, 'original-cert');
+  } finally {
+    await pg.close();
+  }
+});
+test('closed-fixture access rejects missing approval audit and live customer', async () => {
+  const { pg, client } = await db();
+  try {
+    const closed = {
+      ...plan('audit-closed'),
+      requestLedger: plan().devices.map((deviceId, i) => ({
+        deviceId,
+        requestId: `33333333-3333-4333-8333-${String(i + 1).padStart(12, '0')}`,
+      })),
+    };
+    await assert.rejects(executeFixture(client, closed), /CLOSED_CUSTOMER_NOT_VERIFIED/);
+    await pg.exec('UPDATE customers SET deleted_at=now()');
+    await assert.rejects(executeFixture(client, closed), /REQUEST_APPROVAL_AUDIT_MISSING/);
+  } finally {
+    await pg.close();
+  }
 });
