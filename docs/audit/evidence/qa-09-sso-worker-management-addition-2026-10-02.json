@@ -1,0 +1,23 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TemporaryQA09ManageExactProvisioningWorker",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRole",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy"
+      ],
+      "Resource": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+      "Condition": {
+        "StringEquals": {
+          "iam:PermissionsBoundary": "arn:aws:iam::065986019555:policy/FDP-ServiceBoundary"
+        },
+        "DateLessThan": {
+          "aws:CurrentTime": "2026-10-03T00:00:00Z"
+        }
+      }
+    }
+  ]
+}

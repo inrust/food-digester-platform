@@ -1,0 +1,68 @@
+{
+  "scope": "ADDITIONAL_STATEMENT_ONLY",
+  "actualPermissionProvisioned": false,
+  "recordedAt": "2026-10-02T11:16:52.982019+00:00",
+  "cases": [
+    {
+      "case": "approvedWorker",
+      "evaluations": [
+        {
+          "action": "iam:GetRole",
+          "decision": "allowed",
+          "missingContext": []
+        },
+        {
+          "action": "iam:PutRolePolicy",
+          "decision": "allowed",
+          "missingContext": []
+        },
+        {
+          "action": "iam:DeleteRolePolicy",
+          "decision": "allowed",
+          "missingContext": []
+        }
+      ]
+    },
+    {
+      "case": "otherServiceRole",
+      "evaluations": [
+        {
+          "action": "iam:GetRole",
+          "decision": "implicitDeny",
+          "missingContext": []
+        },
+        {
+          "action": "iam:PutRolePolicy",
+          "decision": "implicitDeny",
+          "missingContext": []
+        },
+        {
+          "action": "iam:DeleteRolePolicy",
+          "decision": "implicitDeny",
+          "missingContext": []
+        }
+      ]
+    },
+    {
+      "case": "expiredWorker",
+      "evaluations": [
+        {
+          "action": "iam:GetRole",
+          "decision": "implicitDeny",
+          "missingContext": []
+        },
+        {
+          "action": "iam:PutRolePolicy",
+          "decision": "implicitDeny",
+          "missingContext": []
+        },
+        {
+          "action": "iam:DeleteRolePolicy",
+          "decision": "implicitDeny",
+          "missingContext": []
+        }
+      ]
+    }
+  ],
+  "gate": "PASS"
+}
