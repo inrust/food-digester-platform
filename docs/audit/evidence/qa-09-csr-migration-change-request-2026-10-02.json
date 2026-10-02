@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-09",
+  "scope": "HISTORICAL_ONBOARDING_RETIREMENT_AND_THREE_MIGRATIONS",
+  "status": "NOT_APPROVED",
+  "accountId": "065986019555",
+  "region": "ap-southeast-1",
+  "database": "fdp",
+  "evidence": "qa-09-db-legacy-associations-2026-10-02.json",
+  "requestAndJobWhitelist": [
+    {
+      "request_id": "7770dfbb-84f1-4a07-b37a-d45e1d752e65",
+      "request_status": "APPROVED",
+      "job_id": "9fe0a5c6-fb65-410d-8e3a-be7b8021935d",
+      "job_status": "COMPLETED",
+      "device_id": "fdp-e2e-mub39wna",
+      "device_status": "Onboarded",
+      "issued_certificate_id": "eca914431b0db2d444d850cc71c60036ea9096342fd6d301f6f4ab44fa5f9de5"
+    },
+    {
+      "request_id": "a7702a52-1fab-4aed-ab8e-022a8135f769",
+      "request_status": "APPROVED",
+      "job_id": "fb159fec-d372-42b4-a65d-290b5b609cbe",
+      "job_status": "COMPLETED",
+      "device_id": "fdp-singleca-5672423e",
+      "device_status": "Onboarded",
+      "issued_certificate_id": "2b0ef8b2675da8741dad1167d5e4c803de8391af59511adc3d78eb5b63799cc0"
+    }
+  ],
+  "preserve": [
+    "all devices",
+    "all device certificates",
+    "state and history",
+    "audit logs",
+    "existing business users"
+  ],
+  "backupRequired": "ENCRYPTED_RDS_MANUAL_SNAPSHOT_AVAILABLE_BEFORE_HISTORY_CHANGE",
+  "sourceCommit": "f63b56ed39ce99deb4b0177df9afcde386dd30df",
+  "artifact": {
+    "localPath": "/tmp/qa09-migration-source-f63b56e.zip",
+    "zipSha256": "95773c88cb17c0de4b3bb1adea3dba74151f132887e0f2fbe9739c20da03fe55",
+    "uploaded": false,
+    "s3VersionId": null
+  },
+  "missingMigrations": [
+    {
+      "name": "20260929120000_csr_onboarding",
+      "checksum": "0878bc92881914294bc13141134a0d7c1d04b0f698df2e93ae0dcc9113642c77"
+    },
+    {
+      "name": "20260929130000_remove_onboarding_tokens",
+      "checksum": "3cc347ec67b0184c5b82a40e6fc6155a280bd93287ddeb85406307918df1b4dc"
+    },
+    {
+      "name": "20261001090000_csr_dual_channel_certificates",
+      "checksum": "46668f7f03104a50adbfc2cf327db6f1f6cc585b1d44310beaca245b97fc27ac"
+    }
+  ],
+  "historicalDataMutationsExecuted": false,
+  "migrationStarted": false,
+  "applicationDeployment": false,
+  "remotePush": false
+}

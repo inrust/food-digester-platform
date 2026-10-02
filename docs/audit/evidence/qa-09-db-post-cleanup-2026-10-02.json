@@ -1,0 +1,892 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-09",
+  "execution": "REAL_AWS_VPC_READ_ONLY",
+  "queryGate": "PASS",
+  "migrationGate": "BLOCKED",
+  "schemaGate": "BLOCKED",
+  "channel": {
+    "projectName": "fdp-test-qa09-readonly-runner",
+    "serviceRole": "arn:aws:iam::065986019555:role/fdp-test-migration-runner-role",
+    "vpcConfig": {
+      "vpcId": "vpc-0d287fdfa0a4a06bd",
+      "subnets": [
+        "subnet-0f52dca7a7253f7d1",
+        "subnet-0c1584eea5495f25a"
+      ],
+      "securityGroupIds": [
+        "sg-081d9a3ee5f6011e9"
+      ]
+    },
+    "buildspecSha256": "aad5f5b7959c371e625b0a3743c6a770fc3c5656947d0408e7a9922247fbecc3",
+    "startBuildOverrides": false,
+    "applicationDeployment": false,
+    "databaseMigrationStarted": false
+  },
+  "build": {
+    "id": "fdp-test-qa09-readonly-runner:3a0985f0-ed17-4e72-8d7d-0a0bf247a20e",
+    "status": "SUCCEEDED",
+    "startTime": "2026-10-02T09:28:29.368000+08:00",
+    "endTime": "2026-10-02T09:30:15.226000+08:00",
+    "serviceRole": "arn:aws:iam::065986019555:role/fdp-test-migration-runner-role",
+    "vpcConfig": {
+      "vpcId": "vpc-0d287fdfa0a4a06bd",
+      "subnets": [
+        "subnet-0f52dca7a7253f7d1",
+        "subnet-0c1584eea5495f25a"
+      ],
+      "securityGroupIds": [
+        "sg-081d9a3ee5f6011e9"
+      ]
+    },
+    "logs": {
+      "groupName": "fdp-test-app-MigrationRunnerLogsAA30B0B4-lzkIrNBXjMWf",
+      "streamName": "qa09-readonly/3a0985f0-ed17-4e72-8d7d-0a0bf247a20e",
+      "deepLink": "https://console.aws.amazon.com/cloudwatch/home?region=ap-southeast-1#logsV2:log-groups/log-group/fdp-test-app-MigrationRunnerLogsAA30B0B4-lzkIrNBXjMWf/log-events/qa09-readonly$252F3a0985f0-ed17-4e72-8d7d-0a0bf247a20e",
+      "cloudWatchLogsArn": "arn:aws:logs:ap-southeast-1:065986019555:log-group:fdp-test-app-MigrationRunnerLogsAA30B0B4-lzkIrNBXjMWf:log-stream:qa09-readonly/3a0985f0-ed17-4e72-8d7d-0a0bf247a20e",
+      "cloudWatchLogs": {
+        "status": "ENABLED",
+        "groupName": "fdp-test-app-MigrationRunnerLogsAA30B0B4-lzkIrNBXjMWf",
+        "streamName": "qa09-readonly"
+      }
+    },
+    "sourceType": "NO_SOURCE",
+    "buildspecSha256": "aad5f5b7959c371e625b0a3743c6a770fc3c5656947d0408e7a9922247fbecc3"
+  },
+  "manifest": {
+    "sourceCommit": "f63b56ed39ce99deb4b0177df9afcde386dd30df",
+    "schemaSha256": "fd3e5b59670fe300db0406e295eaf9d9022bb5108210d24cd22c19dcf1c19d73",
+    "tables": [
+      "alarms",
+      "audit_logs",
+      "auth_rate_limits",
+      "business_settings",
+      "certificate_rotation_requests",
+      "command_acks",
+      "command_attempts",
+      "configuration_versions",
+      "consumable_projections",
+      "consumable_requests",
+      "contract_devices",
+      "contracts",
+      "customer_notification_configs",
+      "customers",
+      "device_activity_export_jobs",
+      "device_assignments",
+      "device_certificates",
+      "device_commands",
+      "device_configurations",
+      "device_events",
+      "device_latest_state",
+      "device_public_keys",
+      "device_retirements",
+      "device_state_history",
+      "device_user_assignments",
+      "device_user_sync_receipts",
+      "device_users",
+      "devices",
+      "esg_calculation_versions",
+      "esg_daily_summary",
+      "esg_export_jobs",
+      "esg_reports",
+      "firmware_packages",
+      "ingestion_gaps",
+      "ingestion_receipts",
+      "license_entitlements",
+      "license_history",
+      "licenses",
+      "media_objects",
+      "media_upload_sessions",
+      "notification_deliveries",
+      "onboarding_proof_nonces",
+      "onboarding_provisioning_jobs",
+      "onboarding_requests",
+      "ota_campaigns",
+      "ota_download_grants",
+      "ota_status_history",
+      "ota_targets",
+      "outbox_events",
+      "replay_jobs",
+      "roles",
+      "sites",
+      "tamper_events",
+      "telemetry_daily",
+      "telemetry_hourly",
+      "user_roles",
+      "user_scopes",
+      "users"
+    ],
+    "migrations": [
+      {
+        "name": "20260826120000_init",
+        "checksum": "b269a9985a42ada6e592200bee1aa6f341930d3bfd08d22f9910907068349287"
+      },
+      {
+        "name": "20260827160000_onboarding_request_review_version",
+        "checksum": "e10a34e25d6f9c63fe443b3a0fceb9235837d903be05c33b491451ce9bdac2bb"
+      },
+      {
+        "name": "20260827170000_certificate_rotation_requests",
+        "checksum": "4ef7dce77b3371eacc05db75cb4d7c47502e1e8d4890a29dbedc60d4feae252c"
+      },
+      {
+        "name": "20260828090000_outbox_event_retry",
+        "checksum": "2a93d35849330ed2ef30cf0b84d1c8dfab1ae7e82abb9064840cc228dba5aa1e"
+      },
+      {
+        "name": "20260828120000_customer_version",
+        "checksum": "7e1eff395204b543bb6f7a105ed5d5c7dcda23ee3517eb149779b35863b23de7"
+      },
+      {
+        "name": "20260828130000_site_status_version",
+        "checksum": "6a72001e2b3b96eb7e17ef7ff634ff4717dbb9df6ed675a0a17e3fd1e9d32051"
+      },
+      {
+        "name": "20260828140000_device_retirements",
+        "checksum": "1f570f0d0770be4fe0d2ea849521d4b739d475f13d0228a6d0984d41b02f4f83"
+      },
+      {
+        "name": "20260829090000_configuration_target_device",
+        "checksum": "b43106f21101aef80b587d0a7203be2c82dc01ded7a6014b7411393402865a0f"
+      },
+      {
+        "name": "20260829100000_consumable_projection_nullable_customer",
+        "checksum": "735bb862f59287528d067e6a55b95d329e0a6f532b07df5161c41181b50a7b66"
+      },
+      {
+        "name": "20260829110000_consumable_requests_open_unique",
+        "checksum": "2fc05764646fe6ccb6e7eefc7b7e4498235f11a073f854d8a7e3bd6124ca8358"
+      },
+      {
+        "name": "20260829120000_device_users_version",
+        "checksum": "4d3d9e234ad563e86ddfd149b3ce67fc888950a1ddf9061a106209db3438744b"
+      },
+      {
+        "name": "20260830100000_alarm_handling_columns",
+        "checksum": "22694934f33b86e9d602c3c5141cef3f245762da4ad7c3ea3120064eb2370162"
+      },
+      {
+        "name": "20260830110000_business_notifications",
+        "checksum": "8a681ed016e94d462f8bb1f69abc78755c6e0d18da7f112efb77b7318cd5e711"
+      },
+      {
+        "name": "20260830120000_esg_export_jobs",
+        "checksum": "d710909b8307f783542a11aaaa8753943fa6cbc7dec371c405065947a259dcf7"
+      },
+      {
+        "name": "20260831100000_command_timeout_scan_index",
+        "checksum": "1ec1293d9d7fb17fe2b4233f220facfe9657446a541f5471620cd872a38cc61d"
+      },
+      {
+        "name": "20260904111500_dec017_onboarding_deadline",
+        "checksum": "6e523b14085a5646621ee15540982313969ada5bf5446af402111418e3b48e11"
+      },
+      {
+        "name": "20260904160000_device_user_argon2_phc",
+        "checksum": "394599d5bb59fa6487fdf5f4b1edf2927b85d89113d991ccac910f563e933280"
+      },
+      {
+        "name": "20260905093000_p0_data_integrity",
+        "checksum": "a9145c0e709ceaf2814c9c3f74e6e07b858fb7a6507a9ab3b7c26b195c299aae"
+      },
+      {
+        "name": "20260905110000_p1_state_history_axis",
+        "checksum": "539e3b5fc0816fee067d395a83cb0e7c3da10fe3db28d6c1329f938b92f67a4f"
+      },
+      {
+        "name": "20260905120000_media_upload_session_sha256",
+        "checksum": "2ee34f61d107589417fd815550aed8138ed66348fedb1e405b100f16a1299232"
+      },
+      {
+        "name": "20260905130000_seed_rbac_roles",
+        "checksum": "5e34e33f38ffdff8e13fa34da533ca2333da2cf758dde2e0d5409045659b9aad"
+      },
+      {
+        "name": "20260905193000_auth_rate_limits",
+        "checksum": "48415043e108cab7552a7e5955c45bba0a9a2d118f745274ff38afaa1d3d8e8e"
+      },
+      {
+        "name": "20260905210000_certificate_recovery_state",
+        "checksum": "3b54f3580a439f4f20283d31f2f3914c73cc4263dbb4700141fccaebc77886a3"
+      },
+      {
+        "name": "20260905220000_business_settings",
+        "checksum": "541dcb09e8e77d947aa55a381ab0ba11325dca3bc651eb422f136a0ae0479628"
+      },
+      {
+        "name": "20260905230000_device_activity_export_jobs",
+        "checksum": "4bba5a82df6d0a0b3a5ff89ae250560bb0f8246e7011d28b44b3b6e6310eaabb"
+      },
+      {
+        "name": "20260907100000_onboarding_provisioning_jobs",
+        "checksum": "971d33c9610ca740c910b936c79d4cf1989b470fb6b4b39b0e1d81d9a2575ed3"
+      },
+      {
+        "name": "20260907143000_archive_replay_esg_correctness",
+        "checksum": "0b098050cb27d72dc4603b62cee869690e3c8a9bb4f2b0649f33570a1bb9720c"
+      },
+      {
+        "name": "20260908100000_outbox_publisher_leases",
+        "checksum": "2074b283bd0ecd74143eeb70077e3b4445311b4d9fb217ea232f67d40b6e7977"
+      },
+      {
+        "name": "20260908160000_activity_export_leases",
+        "checksum": "afb66392f6606bcd4e6843ca37a7ceac1697eded1eebf143bff7051ca892e530"
+      },
+      {
+        "name": "20260908173000_close_security_concurrency_gaps",
+        "checksum": "bc21ff765e8f356dcd3de11959f06f8ccf121ce055c1f4cacebdcb6e79c0772a"
+      },
+      {
+        "name": "20260908200000_admin_p0_runtime_workers",
+        "checksum": "7917731f4efa1bd05c515191f4205a13fda03bf2ab9713582549def9c34e77fe"
+      },
+      {
+        "name": "20260908210000_admin_p1_cross_layer",
+        "checksum": "8e49313f6f198524d498b5e26f0242d514ee5498315425a3858d055dc54062fc"
+      },
+      {
+        "name": "20260909100000_cmd_ota_p1_security_concurrency",
+        "checksum": "07a9e86cf36b4525257c38d3544ca1498a416e2b2c57491457e46c0e4885026f"
+      },
+      {
+        "name": "20260909150000_cmd_ota_p2_semantics_governance",
+        "checksum": "5d9c5562c68ad70050ecc6e07b843a11bec7676d30f14e739347a000af4bcfc2"
+      },
+      {
+        "name": "20260910110000_admin_onboarding_submitter_status",
+        "checksum": "5db52ad299e3300e1e1c049b712a543e08145081ed0596f47a86837ec2b386b8"
+      },
+      {
+        "name": "20260910170000_device_user_sync_receipts",
+        "checksum": "22e1efe0bf41fd08903288647ad122fdd00d65c57781995d478e1b8af392f221"
+      },
+      {
+        "name": "20260912123000_ota_target_failure_detail",
+        "checksum": "70115386648c4905e6e642e64d801b3f9547a34e65758069cb10f3ecfbd99f71"
+      },
+      {
+        "name": "20260929120000_csr_onboarding",
+        "checksum": "0878bc92881914294bc13141134a0d7c1d04b0f698df2e93ae0dcc9113642c77"
+      },
+      {
+        "name": "20260929130000_remove_onboarding_tokens",
+        "checksum": "3cc347ec67b0184c5b82a40e6fc6155a280bd93287ddeb85406307918df1b4dc"
+      },
+      {
+        "name": "20261001090000_csr_dual_channel_certificates",
+        "checksum": "46668f7f03104a50adbfc2cf327db6f1f6cc585b1d44310beaca245b97fc27ac"
+      }
+    ],
+    "cleanupPrefix": "qa09-020edef370984d42"
+  },
+  "snapshot": {
+    "kind": "fdp-qa09-db-readonly/v1",
+    "executedAt": "2026-10-02T01:30:14.706Z",
+    "sourceCommit": "f63b56ed39ce99deb4b0177df9afcde386dd30df",
+    "probeSha256": "7394ad7d099be9270d1fb5043b59454677ceab31aac7acd842a67b7a2bf3fffd",
+    "buildId": "fdp-test-qa09-readonly-runner:3a0985f0-ed17-4e72-8d7d-0a0bf247a20e",
+    "target": {
+      "accountId": "065986019555",
+      "region": "ap-southeast-1",
+      "host": "fdp-test-db.c30ie84saulu.ap-southeast-1.rds.amazonaws.com",
+      "database": "fdp",
+      "project": "fdp-test-qa09-readonly-runner",
+      "secretArn": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK"
+    },
+    "businessDataWrites": false,
+    "onboardingMigrationPrecheck": {
+      "csrColumnsPresent": false,
+      "legacyRequestsWithoutCsr": "2",
+      "status": "RECONCILIATION_REQUIRED"
+    },
+    "cleanupCounts": {
+      "customers": {
+        "total": "2",
+        "visible": "0"
+      },
+      "sites": {
+        "total": "2",
+        "visible": "0"
+      },
+      "users": {
+        "total": "0"
+      }
+    },
+    "identity": {
+      "database": "fdp",
+      "read_only": "on",
+      "snapshot_at": "2026-10-02T01:30:14.510Z"
+    },
+    "migrations": [
+      {
+        "migration_name": "20260826120000_init",
+        "checksum": "b269a9985a42ada6e592200bee1aa6f341930d3bfd08d22f9910907068349287",
+        "started_at": "2026-09-20T03:00:23.853Z",
+        "finished_at": "2026-09-20T03:00:24.026Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260827160000_onboarding_request_review_version",
+        "checksum": "e10a34e25d6f9c63fe443b3a0fceb9235837d903be05c33b491451ce9bdac2bb",
+        "started_at": "2026-09-20T03:00:24.027Z",
+        "finished_at": "2026-09-20T03:00:24.033Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260827170000_certificate_rotation_requests",
+        "checksum": "4ef7dce77b3371eacc05db75cb4d7c47502e1e8d4890a29dbedc60d4feae252c",
+        "started_at": "2026-09-20T03:00:24.034Z",
+        "finished_at": "2026-09-20T03:00:24.043Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260828090000_outbox_event_retry",
+        "checksum": "2a93d35849330ed2ef30cf0b84d1c8dfab1ae7e82abb9064840cc228dba5aa1e",
+        "started_at": "2026-09-20T03:00:24.044Z",
+        "finished_at": "2026-09-20T03:00:24.047Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260828120000_customer_version",
+        "checksum": "7e1eff395204b543bb6f7a105ed5d5c7dcda23ee3517eb149779b35863b23de7",
+        "started_at": "2026-09-20T03:00:24.048Z",
+        "finished_at": "2026-09-20T03:00:24.051Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260828130000_site_status_version",
+        "checksum": "6a72001e2b3b96eb7e17ef7ff634ff4717dbb9df6ed675a0a17e3fd1e9d32051",
+        "started_at": "2026-09-20T03:00:24.052Z",
+        "finished_at": "2026-09-20T03:00:24.056Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260828140000_device_retirements",
+        "checksum": "1f570f0d0770be4fe0d2ea849521d4b739d475f13d0228a6d0984d41b02f4f83",
+        "started_at": "2026-09-20T03:00:24.057Z",
+        "finished_at": "2026-09-20T03:00:24.064Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260829090000_configuration_target_device",
+        "checksum": "b43106f21101aef80b587d0a7203be2c82dc01ded7a6014b7411393402865a0f",
+        "started_at": "2026-09-20T03:00:24.065Z",
+        "finished_at": "2026-09-20T03:00:24.070Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260829100000_consumable_projection_nullable_customer",
+        "checksum": "735bb862f59287528d067e6a55b95d329e0a6f532b07df5161c41181b50a7b66",
+        "started_at": "2026-09-20T03:00:24.071Z",
+        "finished_at": "2026-09-20T03:00:24.074Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260829110000_consumable_requests_open_unique",
+        "checksum": "2fc05764646fe6ccb6e7eefc7b7e4498235f11a073f854d8a7e3bd6124ca8358",
+        "started_at": "2026-09-20T03:00:24.075Z",
+        "finished_at": "2026-09-20T03:00:24.078Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260829120000_device_users_version",
+        "checksum": "4d3d9e234ad563e86ddfd149b3ce67fc888950a1ddf9061a106209db3438744b",
+        "started_at": "2026-09-20T03:00:24.079Z",
+        "finished_at": "2026-09-20T03:00:24.082Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260830100000_alarm_handling_columns",
+        "checksum": "22694934f33b86e9d602c3c5141cef3f245762da4ad7c3ea3120064eb2370162",
+        "started_at": "2026-09-20T03:00:24.084Z",
+        "finished_at": "2026-09-20T03:00:24.088Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260830110000_business_notifications",
+        "checksum": "8a681ed016e94d462f8bb1f69abc78755c6e0d18da7f112efb77b7318cd5e711",
+        "started_at": "2026-09-20T03:00:24.090Z",
+        "finished_at": "2026-09-20T03:00:24.103Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260830120000_esg_export_jobs",
+        "checksum": "d710909b8307f783542a11aaaa8753943fa6cbc7dec371c405065947a259dcf7",
+        "started_at": "2026-09-20T03:00:24.104Z",
+        "finished_at": "2026-09-20T03:00:24.111Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260831100000_command_timeout_scan_index",
+        "checksum": "1ec1293d9d7fb17fe2b4233f220facfe9657446a541f5471620cd872a38cc61d",
+        "started_at": "2026-09-20T03:00:24.112Z",
+        "finished_at": "2026-09-20T03:00:24.116Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260904111500_dec017_onboarding_deadline",
+        "checksum": "6e523b14085a5646621ee15540982313969ada5bf5446af402111418e3b48e11",
+        "started_at": "2026-09-20T03:00:24.118Z",
+        "finished_at": "2026-09-20T03:00:24.123Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260904160000_device_user_argon2_phc",
+        "checksum": "394599d5bb59fa6487fdf5f4b1edf2927b85d89113d991ccac910f563e933280",
+        "started_at": "2026-09-20T03:00:24.124Z",
+        "finished_at": "2026-09-20T03:00:24.129Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260905093000_p0_data_integrity",
+        "checksum": "a9145c0e709ceaf2814c9c3f74e6e07b858fb7a6507a9ab3b7c26b195c299aae",
+        "started_at": "2026-09-20T03:00:24.131Z",
+        "finished_at": "2026-09-20T03:00:24.169Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260905110000_p1_state_history_axis",
+        "checksum": "539e3b5fc0816fee067d395a83cb0e7c3da10fe3db28d6c1329f938b92f67a4f",
+        "started_at": "2026-09-20T03:00:24.170Z",
+        "finished_at": "2026-09-20T03:00:24.175Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260905120000_media_upload_session_sha256",
+        "checksum": "2ee34f61d107589417fd815550aed8138ed66348fedb1e405b100f16a1299232",
+        "started_at": "2026-09-20T03:00:24.176Z",
+        "finished_at": "2026-09-20T03:00:24.178Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260905130000_seed_rbac_roles",
+        "checksum": "5e34e33f38ffdff8e13fa34da533ca2333da2cf758dde2e0d5409045659b9aad",
+        "started_at": "2026-09-20T03:00:24.179Z",
+        "finished_at": "2026-09-20T03:00:24.182Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260905193000_auth_rate_limits",
+        "checksum": "48415043e108cab7552a7e5955c45bba0a9a2d118f745274ff38afaa1d3d8e8e",
+        "started_at": "2026-09-20T03:00:24.183Z",
+        "finished_at": "2026-09-20T03:00:24.188Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260905210000_certificate_recovery_state",
+        "checksum": "3b54f3580a439f4f20283d31f2f3914c73cc4263dbb4700141fccaebc77886a3",
+        "started_at": "2026-09-20T03:00:24.189Z",
+        "finished_at": "2026-09-20T03:00:24.194Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260905220000_business_settings",
+        "checksum": "541dcb09e8e77d947aa55a381ab0ba11325dca3bc651eb422f136a0ae0479628",
+        "started_at": "2026-09-20T03:00:24.195Z",
+        "finished_at": "2026-09-20T03:00:24.200Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260905230000_device_activity_export_jobs",
+        "checksum": "4bba5a82df6d0a0b3a5ff89ae250560bb0f8246e7011d28b44b3b6e6310eaabb",
+        "started_at": "2026-09-20T03:00:24.201Z",
+        "finished_at": "2026-09-20T03:00:24.207Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260907100000_onboarding_provisioning_jobs",
+        "checksum": "971d33c9610ca740c910b936c79d4cf1989b470fb6b4b39b0e1d81d9a2575ed3",
+        "started_at": "2026-09-20T03:00:24.208Z",
+        "finished_at": "2026-09-20T03:00:24.218Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260907143000_archive_replay_esg_correctness",
+        "checksum": "0b098050cb27d72dc4603b62cee869690e3c8a9bb4f2b0649f33570a1bb9720c",
+        "started_at": "2026-09-20T03:00:24.219Z",
+        "finished_at": "2026-09-20T03:00:24.242Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260908100000_outbox_publisher_leases",
+        "checksum": "2074b283bd0ecd74143eeb70077e3b4445311b4d9fb217ea232f67d40b6e7977",
+        "started_at": "2026-09-20T03:00:24.243Z",
+        "finished_at": "2026-09-20T03:00:24.247Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260908160000_activity_export_leases",
+        "checksum": "afb66392f6606bcd4e6843ca37a7ceac1697eded1eebf143bff7051ca892e530",
+        "started_at": "2026-09-20T03:00:24.249Z",
+        "finished_at": "2026-09-20T03:00:24.254Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260908173000_close_security_concurrency_gaps",
+        "checksum": "bc21ff765e8f356dcd3de11959f06f8ccf121ce055c1f4cacebdcb6e79c0772a",
+        "started_at": "2026-09-20T03:00:24.255Z",
+        "finished_at": "2026-09-20T03:00:24.263Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260908200000_admin_p0_runtime_workers",
+        "checksum": "7917731f4efa1bd05c515191f4205a13fda03bf2ab9713582549def9c34e77fe",
+        "started_at": "2026-09-20T03:00:24.264Z",
+        "finished_at": "2026-09-20T03:00:24.271Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260908210000_admin_p1_cross_layer",
+        "checksum": "8e49313f6f198524d498b5e26f0242d514ee5498315425a3858d055dc54062fc",
+        "started_at": "2026-09-20T03:00:24.272Z",
+        "finished_at": "2026-09-20T03:00:24.275Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260909100000_cmd_ota_p1_security_concurrency",
+        "checksum": "07a9e86cf36b4525257c38d3544ca1498a416e2b2c57491457e46c0e4885026f",
+        "started_at": "2026-09-20T03:00:24.276Z",
+        "finished_at": "2026-09-20T03:00:24.290Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260909150000_cmd_ota_p2_semantics_governance",
+        "checksum": "5d9c5562c68ad70050ecc6e07b843a11bec7676d30f14e739347a000af4bcfc2",
+        "started_at": "2026-09-20T03:00:24.291Z",
+        "finished_at": "2026-09-20T03:00:24.295Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260910110000_admin_onboarding_submitter_status",
+        "checksum": "5db52ad299e3300e1e1c049b712a543e08145081ed0596f47a86837ec2b386b8",
+        "started_at": "2026-09-20T03:00:24.296Z",
+        "finished_at": "2026-09-20T03:00:24.300Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260910170000_device_user_sync_receipts",
+        "checksum": "22e1efe0bf41fd08903288647ad122fdd00d65c57781995d478e1b8af392f221",
+        "started_at": "2026-09-20T03:00:24.301Z",
+        "finished_at": "2026-09-20T03:00:24.309Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      },
+      {
+        "migration_name": "20260912123000_ota_target_failure_detail",
+        "checksum": "70115386648c4905e6e642e64d801b3f9547a34e65758069cb10f3ecfbd99f71",
+        "started_at": "2026-09-20T03:00:24.310Z",
+        "finished_at": "2026-09-20T03:00:24.313Z",
+        "rolled_back_at": null,
+        "applied_steps_count": 1
+      }
+    ],
+    "migrationComparison": {
+      "status": "BLOCKED",
+      "missing": [
+        "20260929120000_csr_onboarding",
+        "20260929130000_remove_onboarding_tokens",
+        "20261001090000_csr_dual_channel_certificates"
+      ],
+      "mismatched": [],
+      "unresolved": [],
+      "unexpected": []
+    },
+    "counts": {
+      "alarms": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "audit_logs": {
+        "status": "OBSERVED",
+        "count": "54"
+      },
+      "auth_rate_limits": {
+        "status": "OBSERVED",
+        "count": "2"
+      },
+      "business_settings": {
+        "status": "OBSERVED",
+        "count": "4"
+      },
+      "certificate_rotation_requests": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "command_acks": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "command_attempts": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "configuration_versions": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "consumable_projections": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "consumable_requests": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "contract_devices": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "contracts": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "customer_notification_configs": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "customers": {
+        "status": "OBSERVED",
+        "count": "2"
+      },
+      "device_activity_export_jobs": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "device_assignments": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "device_certificates": {
+        "status": "OBSERVED",
+        "count": "3"
+      },
+      "device_commands": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "device_configurations": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "device_events": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "device_latest_state": {
+        "status": "OBSERVED",
+        "count": "2"
+      },
+      "device_public_keys": {
+        "status": "MISSING",
+        "count": null
+      },
+      "device_retirements": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "device_state_history": {
+        "status": "OBSERVED",
+        "count": "4"
+      },
+      "device_user_assignments": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "device_user_sync_receipts": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "device_users": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "devices": {
+        "status": "OBSERVED",
+        "count": "2"
+      },
+      "esg_calculation_versions": {
+        "status": "OBSERVED",
+        "count": "2"
+      },
+      "esg_daily_summary": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "esg_export_jobs": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "esg_reports": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "firmware_packages": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "ingestion_gaps": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "ingestion_receipts": {
+        "status": "OBSERVED",
+        "count": "2"
+      },
+      "license_entitlements": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "license_history": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "licenses": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "media_objects": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "media_upload_sessions": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "notification_deliveries": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "onboarding_proof_nonces": {
+        "status": "MISSING",
+        "count": null
+      },
+      "onboarding_provisioning_jobs": {
+        "status": "OBSERVED",
+        "count": "2"
+      },
+      "onboarding_requests": {
+        "status": "OBSERVED",
+        "count": "2"
+      },
+      "ota_campaigns": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "ota_download_grants": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "ota_status_history": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "ota_targets": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "outbox_events": {
+        "status": "OBSERVED",
+        "count": "5"
+      },
+      "replay_jobs": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "roles": {
+        "status": "OBSERVED",
+        "count": "5"
+      },
+      "sites": {
+        "status": "OBSERVED",
+        "count": "2"
+      },
+      "tamper_events": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "telemetry_daily": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "telemetry_hourly": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "user_roles": {
+        "status": "OBSERVED",
+        "count": "2"
+      },
+      "user_scopes": {
+        "status": "OBSERVED",
+        "count": "0"
+      },
+      "users": {
+        "status": "OBSERVED",
+        "count": "2"
+      }
+    },
+    "roles": [
+      {
+        "code": "Auditor",
+        "members": "0"
+      },
+      {
+        "code": "CustomerAdmin",
+        "members": "0"
+      },
+      {
+        "code": "CustomerViewer",
+        "members": "0"
+      },
+      {
+        "code": "PlatformOperator",
+        "members": "1"
+      },
+      {
+        "code": "PlatformSuperAdmin",
+        "members": "1"
+      }
+    ],
+    "scopeCounts": {
+      "total": "0",
+      "distinct_customers": "0",
+      "platform_scopes": "0"
+    }
+  }
+}

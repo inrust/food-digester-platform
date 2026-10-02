@@ -1,0 +1,490 @@
+{
+  "task": "QA-09",
+  "scope": "FIVE_ROLE_SRP_AND_CUSTOMER_SITE_SMOKE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "schemaVersion": "1.0",
+    "task": "QA-09",
+    "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+    "accountId": "065986019555",
+    "region": "ap-southeast-1",
+    "stackName": "fdp-test-app",
+    "environment": "test",
+    "reuseExistingEnvironment": true,
+    "createSeparateEnvironment": false,
+    "syntheticResponsesAllowed": false,
+    "dataSeparation": "UNIQUE_RUN_PREFIX_AND_CREATED_ID_LEDGER",
+    "authorization": {
+      "source": "User directive on 2026-10-02: run real tests directly in the existing test environment",
+      "realBusinessTests": true,
+      "ownTestDataWritesAndCleanup": true,
+      "cloudDeployment": false,
+      "databaseMigration": false,
+      "faultInjection": false,
+      "remotePush": false
+    }
+  },
+  "sourceCommit": "f63b56ed39ce99deb4b0177df9afcde386dd30df",
+  "startedAt": "2026-10-02T01:23:09.823Z",
+  "prefix": "qa09-020edef370984d42",
+  "sourceHashes": {
+    "scripts/run-qa09-real-business-smoke.mjs": "2214d237d5e9f1962c7fc4731a08442072ef854513169cd2c7b5991b416a05ca",
+    "infra/environments/qa09-current-test.json": "21bf8c91398482840aa2717a7f75e3bdc9e2dfa67e6552b33446dfae1b4bb357",
+    "apps/admin-web/src/auth/auth-flow.ts": "27d3335f737c9195ca38762d224a99f5ce67d6d62cdfee855761c70bd1651638",
+    "apps/admin-web/src/auth/cognito-idp.ts": "226b76d7bcf4f968223054b2771329176531b6d5bff67c8281c6df52942c423d",
+    "apps/admin-web/src/auth/srp.ts": "e4b12e2d9cfc127cbb2a6824c7d89872a508210f6fc22b114429a31a6e801bac"
+  },
+  "checks": [
+    {
+      "id": "PlatformSuperAdmin:first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformSuperAdmin:srp-login",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformSuperAdmin:role-scope",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformSuperAdmin:refresh",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformSuperAdmin:wrong-password",
+      "result": "PASS"
+    },
+    {
+      "id": "customer-create-a",
+      "result": "PASS",
+      "httpStatus": 201,
+      "expectedStatus": 201,
+      "requestId": "3d949ce3-6f6c-40c9-bb81-423fa74b6d04",
+      "errorCode": null
+    },
+    {
+      "id": "customer-create-b",
+      "result": "PASS",
+      "httpStatus": 201,
+      "expectedStatus": 201,
+      "requestId": "f9b092fa-4b20-417d-baa1-fec5d9b1ac5a",
+      "errorCode": null
+    },
+    {
+      "id": "PlatformOperator:first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:srp-login",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:role-scope",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:refresh",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:wrong-password",
+      "result": "PASS"
+    },
+    {
+      "id": "Auditor:first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "Auditor:srp-login",
+      "result": "PASS"
+    },
+    {
+      "id": "Auditor:role-scope",
+      "result": "PASS"
+    },
+    {
+      "id": "Auditor:refresh",
+      "result": "PASS"
+    },
+    {
+      "id": "Auditor:wrong-password",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:srp-login",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:role-scope",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:refresh",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:wrong-password",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:srp-login",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:role-scope",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:refresh",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:wrong-password",
+      "result": "PASS"
+    },
+    {
+      "id": "site-create-0",
+      "result": "PASS",
+      "httpStatus": 201,
+      "expectedStatus": 201,
+      "requestId": "2103e522-9c40-463c-9dad-3f05973babd9",
+      "errorCode": null
+    },
+    {
+      "id": "site-create-1",
+      "result": "PASS",
+      "httpStatus": 201,
+      "expectedStatus": 201,
+      "requestId": "e6c526c2-f696-4ee2-ab77-2744ecd995de",
+      "errorCode": null
+    },
+    {
+      "id": "PlatformSuperAdmin:site-read-own",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "7ca4324a-57a1-42c2-aa15-b02f36e34150",
+      "errorCode": null
+    },
+    {
+      "id": "PlatformOperator:site-read-own",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "8592b92e-0ae6-47a8-bf90-339e9aeb9b39",
+      "errorCode": null
+    },
+    {
+      "id": "Auditor:site-read-own",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "7e083e57-365b-4a12-9129-4c730344425a",
+      "errorCode": null
+    },
+    {
+      "id": "Auditor:site-write-denied",
+      "result": "PASS",
+      "httpStatus": 403,
+      "expectedStatus": 403,
+      "requestId": "bd899cd0-f705-47dd-888d-d7deb36f123e",
+      "errorCode": "FORBIDDEN"
+    },
+    {
+      "id": "CustomerAdmin:site-read-own",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "8f2ace28-5cbf-46a6-927e-c2b75072860b",
+      "errorCode": null
+    },
+    {
+      "id": "CustomerAdmin:cross-customer-denied",
+      "result": "PASS",
+      "httpStatus": 403,
+      "expectedStatus": 403,
+      "requestId": "0b492fd9-58e9-472d-ba03-6a71e71bc821",
+      "errorCode": "FORBIDDEN"
+    },
+    {
+      "id": "CustomerAdmin:site-write-denied",
+      "result": "PASS",
+      "httpStatus": 403,
+      "expectedStatus": 403,
+      "requestId": "deb16422-e5aa-41c7-9f00-627d40b2abd3",
+      "errorCode": "FORBIDDEN"
+    },
+    {
+      "id": "CustomerViewer:site-read-own",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "134e2e93-d7be-47de-882a-4c11e0af9d64",
+      "errorCode": null
+    },
+    {
+      "id": "CustomerViewer:cross-customer-denied",
+      "result": "PASS",
+      "httpStatus": 403,
+      "expectedStatus": 403,
+      "requestId": "2ac3c9d4-8538-49e5-812c-df5d155fda28",
+      "errorCode": "FORBIDDEN"
+    },
+    {
+      "id": "CustomerViewer:site-write-denied",
+      "result": "PASS",
+      "httpStatus": 403,
+      "expectedStatus": 403,
+      "requestId": "456d545c-0b41-402f-bc37-28278a6703dd",
+      "errorCode": "FORBIDDEN"
+    },
+    {
+      "id": "PlatformSuperAdmin:users-read",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "4be1a271-5a2c-4821-aff0-27d3273d94c9",
+      "errorCode": null
+    },
+    {
+      "id": "Auditor:users-read",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "c83e39d2-45a1-4da3-ac96-1648c6923a89",
+      "errorCode": null
+    },
+    {
+      "id": "PlatformOperator:users-read-denied",
+      "result": "PASS",
+      "httpStatus": 403,
+      "expectedStatus": 403,
+      "requestId": "a3a74525-0c5f-4686-ae51-a1bab00bff08",
+      "errorCode": "FORBIDDEN"
+    },
+    {
+      "id": "customer-update",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "996bff9c-85e9-4e92-89cd-f6379bde619e",
+      "errorCode": null
+    },
+    {
+      "id": "customer-stale-version",
+      "result": "PASS",
+      "httpStatus": 409,
+      "expectedStatus": 409,
+      "requestId": "4d1e6d9c-d583-4516-bbbc-625f2c330975",
+      "errorCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "cleanup-read-sites-fb368c09-4ad5-4915-af6e-5d8700ea32c8",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "37e32e25-0f78-460c-82cf-a506eb0ccb31",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-delete-sites-fb368c09-4ad5-4915-af6e-5d8700ea32c8",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "99665fa0-c8d5-4e2f-a6ff-a0f5ad75ef2f",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-verify-sites-fb368c09-4ad5-4915-af6e-5d8700ea32c8",
+      "result": "PASS",
+      "httpStatus": 404,
+      "expectedStatus": 404,
+      "requestId": "13dbf637-c9ba-4865-8bbc-b41b0b9c7b47",
+      "errorCode": "NOT_FOUND"
+    },
+    {
+      "id": "cleanup-read-sites-0bbd1d2e-9762-456c-9836-07db5de0233f",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "78f89f19-6e59-44db-9dec-c7636842131b",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-delete-sites-0bbd1d2e-9762-456c-9836-07db5de0233f",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "f5240eac-7126-4a21-9a43-ad629cff825b",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-verify-sites-0bbd1d2e-9762-456c-9836-07db5de0233f",
+      "result": "PASS",
+      "httpStatus": 404,
+      "expectedStatus": 404,
+      "requestId": "3536cae8-bc2c-43cd-bfe4-fffac69ab369",
+      "errorCode": "NOT_FOUND"
+    },
+    {
+      "id": "cleanup-read-customers-da73ee81-32ac-48c1-9237-7cf9aafdf41f",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "5b0b062a-6d1e-4f5d-90f7-a08d14bd6787",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-delete-customers-da73ee81-32ac-48c1-9237-7cf9aafdf41f",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "9c64b07a-3fe5-42e9-ba77-733e24637b60",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-verify-customers-da73ee81-32ac-48c1-9237-7cf9aafdf41f",
+      "result": "PASS",
+      "httpStatus": 404,
+      "expectedStatus": 404,
+      "requestId": "10b96922-1448-43f6-8199-e5abd4a3ef5e",
+      "errorCode": "NOT_FOUND"
+    },
+    {
+      "id": "cleanup-read-customers-db510e7e-3602-4142-b9d6-2ab47e5f9031",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "2bc39dd1-a4b0-41d8-9cc4-61934c9e8a24",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-delete-customers-db510e7e-3602-4142-b9d6-2ab47e5f9031",
+      "result": "PASS",
+      "httpStatus": 200,
+      "expectedStatus": 200,
+      "requestId": "a63950e2-55e1-49bf-bc1e-affee10639b3",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-verify-customers-db510e7e-3602-4142-b9d6-2ab47e5f9031",
+      "result": "PASS",
+      "httpStatus": 404,
+      "expectedStatus": 404,
+      "requestId": "753954ae-84a7-46d4-999e-574b7671b5eb",
+      "errorCode": "NOT_FOUND"
+    }
+  ],
+  "createdIdentities": [
+    {
+      "username": "qa09-020edef370984d42-platformsuperadmin@example.invalid",
+      "role": "PlatformSuperAdmin",
+      "customerId": null
+    },
+    {
+      "username": "qa09-020edef370984d42-platformoperator@example.invalid",
+      "role": "PlatformOperator",
+      "customerId": null
+    },
+    {
+      "username": "qa09-020edef370984d42-auditor@example.invalid",
+      "role": "Auditor",
+      "customerId": null
+    },
+    {
+      "username": "qa09-020edef370984d42-customeradmin@example.invalid",
+      "role": "CustomerAdmin",
+      "customerId": "db510e7e-3602-4142-b9d6-2ab47e5f9031"
+    },
+    {
+      "username": "qa09-020edef370984d42-customerviewer@example.invalid",
+      "role": "CustomerViewer",
+      "customerId": "db510e7e-3602-4142-b9d6-2ab47e5f9031"
+    }
+  ],
+  "createdRecords": [
+    {
+      "type": "customers",
+      "id": "db510e7e-3602-4142-b9d6-2ab47e5f9031",
+      "name": "qa09-020edef370984d42-updated",
+      "version": 2
+    },
+    {
+      "type": "customers",
+      "id": "da73ee81-32ac-48c1-9237-7cf9aafdf41f",
+      "name": "qa09-020edef370984d42-b",
+      "version": 1
+    },
+    {
+      "type": "sites",
+      "id": "0bbd1d2e-9762-456c-9836-07db5de0233f",
+      "name": "qa09-020edef370984d42-site-0",
+      "version": 1
+    },
+    {
+      "type": "sites",
+      "id": "fb368c09-4ad5-4915-af6e-5d8700ea32c8",
+      "name": "qa09-020edef370984d42-site-1",
+      "version": 1
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "sites",
+      "id": "fb368c09-4ad5-4915-af6e-5d8700ea32c8",
+      "status": "SOFT_DELETED_AND_NOT_VISIBLE"
+    },
+    {
+      "type": "sites",
+      "id": "0bbd1d2e-9762-456c-9836-07db5de0233f",
+      "status": "SOFT_DELETED_AND_NOT_VISIBLE"
+    },
+    {
+      "type": "customers",
+      "id": "da73ee81-32ac-48c1-9237-7cf9aafdf41f",
+      "status": "SOFT_DELETED_AND_NOT_VISIBLE"
+    },
+    {
+      "type": "customers",
+      "id": "db510e7e-3602-4142-b9d6-2ab47e5f9031",
+      "status": "SOFT_DELETED_AND_NOT_VISIBLE"
+    },
+    {
+      "type": "cognito-user",
+      "username": "qa09-020edef370984d42-customerviewer@example.invalid",
+      "status": "DELETED"
+    },
+    {
+      "type": "cognito-user",
+      "username": "qa09-020edef370984d42-customeradmin@example.invalid",
+      "status": "DELETED"
+    },
+    {
+      "type": "cognito-user",
+      "username": "qa09-020edef370984d42-auditor@example.invalid",
+      "status": "DELETED"
+    },
+    {
+      "type": "cognito-user",
+      "username": "qa09-020edef370984d42-platformoperator@example.invalid",
+      "status": "DELETED"
+    },
+    {
+      "type": "cognito-user",
+      "username": "qa09-020edef370984d42-platformsuperadmin@example.invalid",
+      "status": "DELETED"
+    }
+  ],
+  "gate": "PASS",
+  "fullQa09Gate": "NOT RUN / NO RECEIPT",
+  "finishedAt": "2026-10-02T01:24:27.552Z"
+}
