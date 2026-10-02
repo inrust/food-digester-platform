@@ -1,0 +1,40 @@
+{
+  "task": "QA-09",
+  "recordedAt": "2026-10-02T13:15:43.402708+00:00",
+  "commands": [
+    {
+      "command": "node --import tsx --test scripts/*.test.mjs",
+      "result": "PASS",
+      "passed": 335,
+      "failed": 0
+    },
+    {
+      "command": "eslint scripts/collect-qa09-application-version.mjs scripts/run-qa09-ten-device-acceptance.mjs scripts/qa09-ten-device-gate.test.mjs",
+      "result": "PASS"
+    },
+    {
+      "command": "prettier --check <three changed scripts>",
+      "result": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS"
+    },
+    {
+      "command": "prettier --check <all changed docs/evidence and three scripts>",
+      "result": "PASS"
+    },
+    {
+      "command": "node scripts/check-secrets.mjs",
+      "result": "PASS"
+    },
+    {
+      "command": "node scripts/check-sensitive-sinks.mjs",
+      "result": "PASS"
+    },
+    {
+      "command": "source archive and Gate summary assertions",
+      "result": "PASS"
+    }
+  ]
+}

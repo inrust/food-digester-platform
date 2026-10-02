@@ -7,8 +7,8 @@ import { writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-export const ACCEPTANCE_COMMIT = '56f74f6377ff7183207372c0079f5a509abbdf10';
-export const EXECUTOR_BASELINE = '56f74f6377ff7183207372c0079f5a509abbdf10';
+export const ACCEPTANCE_COMMIT = '46b632d66c9f6615b037790934eff434d22e4542';
+export const EXECUTOR_BASELINE = '46b632d66c9f6615b037790934eff434d22e4542';
 function command(name, args) {
   for (let attempt = 0; attempt < 3; attempt++) {
     const r = spawnSync(name, args, { encoding: 'utf8', timeout: 45000, maxBuffer: 16 * 1024 * 1024 });
@@ -43,7 +43,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
   };
   const save = () => writeFileSync(output, JSON.stringify(receipt, null, 2) + '\n');
   if (aws(['sts', 'get-caller-identity']).Account !== receipt.accountId) throw Error('WRONG_ACCOUNT');
-  receipt.pendingDeployment = command('gh', ['run', 'view', '36964129333', '--json', 'status,conclusion,headSha,url']);
+  receipt.pendingDeployment = command('gh', ['run', 'view', '37000424644', '--json', 'status,conclusion,headSha,url']);
   const paths = [
     'apps',
     'packages',
@@ -66,7 +66,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
   if (receipt.applicationTreeHashes.some((t) => !t.matches))
     receipt.blockers.push('CURRENT_AND_REQUESTED_APPLICATION_TREES_DIFFER');
   receipt.executorBaseline = EXECUTOR_BASELINE;
-  receipt.github = command('gh', ['run', 'view', '36964129333', '--json', 'status,conclusion,headSha,url,jobs']);
+  receipt.github = command('gh', ['run', 'view', '37000424644', '--json', 'status,conclusion,headSha,url,jobs']);
   receipt.ci = command('gh', [
     'run',
     'list',

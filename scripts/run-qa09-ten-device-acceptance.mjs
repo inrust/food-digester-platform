@@ -99,7 +99,7 @@ export async function main(output, versionPath) {
   const version = JSON.parse(readFileSync(versionPath));
   if (
     (version.gate !== 'PASS' && version.applicationVersionGate !== 'PASS') ||
-    version.sourceCommit !== '56f74f6377ff7183207372c0079f5a509abbdf10'
+    version.sourceCommit !== '46b632d66c9f6615b037790934eff434d22e4542'
   )
     throw Error('DEPLOYED_VERSION_NOT_VERIFIED');
   const sts = spawnSync(

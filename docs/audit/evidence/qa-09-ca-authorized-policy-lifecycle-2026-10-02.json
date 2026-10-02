@@ -1,0 +1,105 @@
+{
+  "task": "QA-09",
+  "scope": "APPROVED_CA_POLICY_APPLY_AND_REVOKE",
+  "applied": true,
+  "appliedAt": "2026-10-02T13:12:17.833265+00:00",
+  "revoked": true,
+  "roleArn": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+  "policyName": "QA09DeviceCaDecrypt",
+  "policySha256": "518be0a8e11e8f95a1b186804483488c19f34621b7218958c74bf38d723c6c3a",
+  "ssoAdditionalStatement": {
+    "Sid": "TemporaryQA09ManageExactProvisioningWorker",
+    "Effect": "Allow",
+    "Action": [
+      "iam:GetRole",
+      "iam:PutRolePolicy",
+      "iam:DeleteRolePolicy"
+    ],
+    "Resource": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role",
+    "Condition": {
+      "DateLessThan": {
+        "aws:CurrentTime": "2026-10-03T00:00:00Z"
+      }
+    }
+  },
+  "ssoBoundaryConditionOmittedByAdministrator": true,
+  "actualWorkerBoundaryVerified": "FDP-ServiceBoundary",
+  "secretValuesRead": false,
+  "simulation": [
+    {
+      "EvalActionName": "kms:Decrypt",
+      "EvalResourceName": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c",
+      "EvalDecision": "allowed",
+      "MatchedStatements": [
+        {
+          "SourcePolicyId": "role_fdp-test-onboarding-provisioning-role_QA09DeviceCaDecrypt",
+          "SourcePolicyType": "IAM Policy",
+          "StartPosition": {
+            "Line": 3,
+            "Column": 17
+          },
+          "EndPosition": {
+            "Line": 18,
+            "Column": 6
+          }
+        }
+      ],
+      "MissingContextValues": [],
+      "PermissionsBoundaryDecisionDetail": {
+        "AllowedByPermissionsBoundary": true
+      },
+      "EvalDecisionDetails": {},
+      "ResourceSpecificResults": [
+        {
+          "EvalResourceName": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c",
+          "EvalResourceDecision": "allowed",
+          "MatchedStatements": [
+            {
+              "SourcePolicyId": "role_fdp-test-onboarding-provisioning-role_QA09DeviceCaDecrypt",
+              "SourcePolicyType": "IAM Policy",
+              "StartPosition": {
+                "Line": 3,
+                "Column": 17
+              },
+              "EndPosition": {
+                "Line": 18,
+                "Column": 6
+              }
+            }
+          ],
+          "PermissionsBoundaryDecisionDetail": {
+            "AllowedByPermissionsBoundary": true
+          }
+        }
+      ]
+    }
+  ],
+  "revokedAt": "2026-10-02T13:29:16.484208+00:00",
+  "revocationReadback": "NoSuchEntity",
+  "originalRolePolicyUnchanged": true,
+  "workerBoundaryUnchanged": true,
+  "afterRevocationSimulation": [
+    {
+      "EvalActionName": "kms:Decrypt",
+      "EvalResourceName": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c",
+      "EvalDecision": "implicitDeny",
+      "MatchedStatements": [],
+      "MissingContextValues": [],
+      "PermissionsBoundaryDecisionDetail": {
+        "AllowedByPermissionsBoundary": true
+      },
+      "EvalDecisionDetails": {},
+      "ResourceSpecificResults": [
+        {
+          "EvalResourceName": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c",
+          "EvalResourceDecision": "implicitDeny",
+          "PermissionsBoundaryDecisionDetail": {
+            "AllowedByPermissionsBoundary": true
+          }
+        }
+      ]
+    }
+  ],
+  "ssoTemporaryStatementCleanup": "OPERATOR_REQUIRED_PERMISSION_SET_PROVISIONING",
+  "cleanupFinishedAt": "2026-10-02T13:27:54.850Z"
+}

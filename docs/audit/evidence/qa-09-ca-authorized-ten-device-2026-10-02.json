@@ -1,0 +1,828 @@
+{
+  "task": "QA-09",
+  "scope": "TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1",
+    "stackName": "fdp-test-app"
+  },
+  "sourceCommit": "46b632d66c9f6615b037790934eff434d22e4542",
+  "executorSha256": "970a1f017a6402679ff11105e356f3bc5ac3e418aa7401371d818ae72cc00ba1",
+  "versionReceipt": "docs/audit/evidence/qa-09-ca-authorized-application-version-2026-10-02.json",
+  "artifactByteReceipt": "docs/audit/evidence/qa-09-ca-authorized-application-version-2026-10-02.json",
+  "startedAt": "2026-10-02T13:14:56.556Z",
+  "prefix": "qa09-26265cb871795a9e",
+  "devices": [
+    "qa09-26265cb871795a9e-01",
+    "qa09-26265cb871795a9e-02",
+    "qa09-26265cb871795a9e-03",
+    "qa09-26265cb871795a9e-04",
+    "qa09-26265cb871795a9e-05",
+    "qa09-26265cb871795a9e-06",
+    "qa09-26265cb871795a9e-07",
+    "qa09-26265cb871795a9e-08",
+    "qa09-26265cb871795a9e-09",
+    "qa09-26265cb871795a9e-10"
+  ],
+  "customers": [
+    {
+      "id": "ea7051da-be84-41d9-bfad-1b91e09ae9a6",
+      "name": "qa09-26265cb871795a9e-a",
+      "suffix": "a",
+      "version": 1
+    },
+    {
+      "id": "42f8c850-f65e-4dc3-ab19-9967ec944324",
+      "name": "qa09-26265cb871795a9e-b",
+      "suffix": "b",
+      "version": 1
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "f30806c5-aaae-4c42-8b01-6dd19442a061",
+      "errorCode": null
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "6917616b-ca9c-423d-8f26-b0859c9c0f7d",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "803dbac3-9b36-4c47-9a8f-e5b1a17aa125",
+      "errorCode": null,
+      "businessRequestId": "252778ef-a9bd-49ab-bcd3-d6540ecf08d0"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:same-csr-idempotent",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "a52e89d0-4bee-491f-97b1-56ae14c00af3",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:different-key-conflict",
+      "result": "PASS",
+      "status": 409,
+      "expected": 409,
+      "requestId": "c874d310-82c3-4115-b15e-0bbd3c156ef5",
+      "errorCode": "CONFLICT"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:signed-pending",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "15ea441e-4ead-4054-a29a-5969cd9004e7",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:nonce-replay-denied",
+      "result": "PASS",
+      "status": 401,
+      "expected": 401,
+      "requestId": "849ec379-5ea3-4474-94d7-d59f180ebfdf",
+      "errorCode": "UNAUTHENTICATED"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:wrong-key-denied",
+      "result": "PASS",
+      "status": 401,
+      "expected": 401,
+      "requestId": "91204d75-bb3a-4173-82ec-205d25fb50b4",
+      "errorCode": "UNAUTHENTICATED"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "d2b21397-f0e7-4c30-aec8-1525def334bb",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "8a7e03ff-2806-49fd-a1b2-efed4bc46367",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-02:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "9b58838e-852b-4568-910f-96cd317a0525",
+      "errorCode": null,
+      "businessRequestId": "9c4255be-e453-4397-be35-fa85393b6195"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-02:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "0d72556e-5a36-4460-bb63-63bda65de69b",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-02:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "5ec0d4ee-9f1c-4b85-a419-8e5f1f38778e",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-03:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "8efc112d-2950-4715-9b31-5baa20832a3b",
+      "errorCode": null,
+      "businessRequestId": "993be3f1-a123-46a0-b75c-77d6ed50a1f5"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-03:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "b953c5b2-2b90-4241-850c-1e8ff17a03cc",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-03:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "2367195e-06d9-4cda-856f-bce94d61cf8a",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-04:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "813a5c67-7c9a-4c5e-b009-ed01ce449ea1",
+      "errorCode": null,
+      "businessRequestId": "dd5ee5cb-415c-4d86-ac14-6bf3c37a68ec"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-04:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "ec276790-dd25-4a67-9ca3-f1aefbfe05c9",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-04:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "802b6738-0c73-4bf7-b572-9aea6018934c",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-05:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "65e32554-4c74-41b9-8488-08b099baf261",
+      "errorCode": null,
+      "businessRequestId": "86c94076-d0db-40e5-a807-3fb26ab764e5"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-05:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "b89f5090-92d0-46a2-971f-f9caffe194b5",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-05:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "f6abaf70-030c-4b6b-b938-52fa078f01d6",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-06:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "a7e31264-fdd0-4a02-ad34-9c8b9db09397",
+      "errorCode": null,
+      "businessRequestId": "0bea5531-dca3-4e33-befd-79f05732775f"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-06:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "d1c0220f-8796-4d15-b2be-972bb579e165",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-06:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "bcde03a5-452d-4a36-990e-7fdb5dec488e",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-07:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "a6d17946-7b57-45f3-9312-e9dd94d166c9",
+      "errorCode": null,
+      "businessRequestId": "05c731d5-9916-4b18-b3e0-b4db21450b12"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-07:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "159bf1b3-c026-4a63-8916-6255888b91e2",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-07:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "105bc235-f0ad-4d82-8877-904b7aa744d8",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-08:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "770610e1-ecf0-4096-aa71-c0a32d014ca2",
+      "errorCode": null,
+      "businessRequestId": "caca66a7-04ad-4578-b87e-f4785ccd5b1c"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-08:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "f936a329-21b9-4243-971c-efdfe4a977ba",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-08:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "33926d41-6b42-4133-9fd5-e7386f818d77",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-09:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "3086fd7a-7e3b-4b2f-9d8b-a780c01aff40",
+      "errorCode": null,
+      "businessRequestId": "a326f9cf-d215-494b-b23f-157bde805006"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-09:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "b4dc6afc-8445-4137-91e8-971206d469c0",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-09:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "dd5990cd-df2e-46dc-8669-d0b82f61380f",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-10:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "requestId": "b264e8be-22e8-4db4-9bbc-2b1d187fb97c",
+      "errorCode": null,
+      "businessRequestId": "03400e36-cff0-493a-819b-e8a64fc65b79"
+    },
+    {
+      "id": "qa09-26265cb871795a9e-10:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "a6c31dd3-8666-4e02-bff1-ae5e8ac47fb4",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-10:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "fecf09e9-ae1e-4042-9e99-547c843e2fef",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:signed-status-39",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-02:signed-status-40",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-03:signed-status-41",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-04:signed-status-42",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-05:signed-status-43",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-06:signed-status-44",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-07:signed-status-45",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-08:signed-status-46",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-09:signed-status-47",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-10:signed-status-48",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:signed-status-49",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-02:signed-status-50",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-03:signed-status-51",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-04:signed-status-52",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-05:signed-status-53",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-06:signed-status-54",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-07:signed-status-55",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-08:signed-status-56",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-09:signed-status-57",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-10:signed-status-58",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:signed-status-59",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-02:signed-status-60",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-03:signed-status-61",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-04:signed-status-62",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-05:signed-status-63",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-06:signed-status-64",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-07:signed-status-65",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-08:signed-status-66",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-09:signed-status-67",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-10:signed-status-68",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:signed-status-69",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-02:signed-status-70",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-03:signed-status-71",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-04:signed-status-72",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-05:signed-status-73",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-06:signed-status-74",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-07:signed-status-75",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-08:signed-status-76",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-09:signed-status-77",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-10:signed-status-78",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:signed-status-79",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-02:signed-status-80",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-03:signed-status-81",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-04:signed-status-82",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-05:signed-status-83",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-06:signed-status-84",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-07:signed-status-85",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-08:signed-status-86",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-09:signed-status-87",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-10:signed-status-88",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:signed-status-89",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-02:signed-status-90",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-03:signed-status-91",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-04:signed-status-92",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-05:signed-status-93",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-06:signed-status-94",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-07:signed-status-95",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-08:signed-status-96",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-09:signed-status-97",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-10:signed-status-98",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:signed-status-99",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-02:signed-status-100",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-03:signed-status-101",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-04:signed-status-102",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-05:signed-status-103",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-06:signed-status-104",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-07:signed-status-105",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-08:signed-status-106",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-09:signed-status-107",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-10:signed-status-108",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-01:signed-status-109",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-02:signed-status-110",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-03:signed-status-111",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-26265cb871795a9e-04:signed-status-112",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "5af71bc6-a27d-4b02-aa03-d0f15504ef1b",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "ffe2d13f-91de-412f-ab69-6a39933eb7e0",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-b",
+      "result": "PASS",
+      "status": 404,
+      "expected": 404,
+      "requestId": "e2f9d850-acff-4d82-8e4c-4350f9537b4f",
+      "errorCode": "NOT_FOUND"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "d6f58735-eb25-49ca-a666-c2b1e4942647",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "requestId": "fba36171-8a79-4261-879f-377a00aa3bac",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-a",
+      "result": "PASS",
+      "status": 404,
+      "expected": 404,
+      "requestId": "b0a835b6-b311-469d-a40a-a17ce818d5ac",
+      "errorCode": "NOT_FOUND"
+    }
+  ],
+  "published": [],
+  "databaseBuilds": [
+    {
+      "action": "seed",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:8aecbde4-43c5-442e-9f9f-976fe43f1f6b",
+      "receipt": "docs/audit/evidence/qa-09-ca-authorized-ten-device-2026-10-02.json.seed-0.json"
+    },
+    {
+      "action": "observe",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:6edafa91-8052-47fe-bbf1-02cf8967a07b",
+      "receipt": "docs/audit/evidence/qa-09-ca-authorized-ten-device-2026-10-02.json.observe-1.json"
+    },
+    {
+      "action": "cleanup",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:516c8698-a731-47ed-842e-e38c74b5447c",
+      "receipt": "docs/audit/evidence/qa-09-ca-authorized-ten-device-2026-10-02.json.cleanup-2.json"
+    }
+  ],
+  "archiveObjects": [],
+  "cleanup": [
+    {
+      "type": "database-fixtures",
+      "count": 10,
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "42f8c850-f65e-4dc3-ab19-9967ec944324",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "ea7051da-be84-41d9-bfad-1b91e09ae9a6",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-26265cb871795a9e-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "gate": "FAIL",
+  "fullQa09Accepted": false,
+  "identity": {
+    "username": "qa09-26265cb871795a9e-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "failure": {
+    "code": "PROVISIONING_TIMEOUT",
+    "errorClass": "Error"
+  },
+  "finishedAt": "2026-10-02T13:27:54.850Z"
+}
