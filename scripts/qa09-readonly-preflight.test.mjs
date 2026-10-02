@@ -84,3 +84,22 @@ test('missing target receipts and version mismatch remain blockers', () => {
   assert.ok(result.blockers.some((x) => x.includes('gate-example')));
   assert.ok(result.blockers.some((x) => x.includes('Amplify')));
 });
+
+test('existing test environment requires neither new account nor stack and retains real-response/cleanup boundaries', async () => {
+  const { CURRENT_TEST_CONFIG, validateCurrentEnvironment } = await import('./qa09-current-environment.mjs');
+  validateCurrentEnvironment(CURRENT_TEST_CONFIG);
+  for (const change of [
+    { createSeparateEnvironment: true },
+    { accountId: '999999999999' },
+    { syntheticResponsesAllowed: true },
+    { dataSeparation: 'NONE' },
+    { environment: 'production' },
+  ])
+    assert.throws(() => validateCurrentEnvironment({ ...CURRENT_TEST_CONFIG, ...change }));
+  assert.throws(() =>
+    validateCurrentEnvironment({
+      ...CURRENT_TEST_CONFIG,
+      authorization: { ...CURRENT_TEST_CONFIG.authorization, cloudDeployment: true },
+    }),
+  );
+});

@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { CURRENT_TEST_CONFIG } from './qa09-current-environment.mjs';
 const execute = promisify(execFile);
 export const TARGET = {
   accountId: '065986019555',
@@ -102,7 +103,7 @@ export function assess(observations, sourceCommit) {
   const blockers = [
     'Current database migration state and two Customer scopes are NOT VERIFIED: no direct read-only database channel was used.',
     'Ten QA09-controlled devices with usable private credentials, tenant ownership and cleanup capability are NOT VERIFIED; IoT inventory counts cannot prove this.',
-    'Test-write/cleanup permissions, budget, artifact destination and fault-injection recovery scope require a concrete authorization package.',
+    'Existing-test-environment business tests and own test data cleanup are authorized. Usable credentials, run ledger and execution quota/artifact configuration still need preparation; deployments/migrations/fault injection remain separately scoped.',
     'Device-auth/Command/OTA/FE01-05/security/load target receipt schemas and collectors require gap review before full acceptance.',
   ];
   const byId = Object.fromEntries(observations.map((o) => [o.id, o]));
@@ -487,6 +488,8 @@ export async function main(args) {
     [
       'infra/environments/esgiot-test.json',
       'package.json',
+      'infra/environments/qa09-current-test.json',
+      'scripts/qa09-current-environment.mjs',
       'scripts/run-qa09-readonly-preflight.mjs',
       'scripts/qa09-readonly-preflight.test.mjs',
       ...migrationFiles.map((f) => `packages/database/prisma/migrations/${f}/migration.sql`),
@@ -496,6 +499,9 @@ export async function main(args) {
     schemaVersion: '1.0',
     task: 'QA-09',
     phase: 'READ_ONLY_PREFLIGHT',
+    testEnvironmentMode: CURRENT_TEST_CONFIG.mode,
+    separateEnvironmentRequired: false,
+    ordinaryTestDataOperationsAuthorized: CURRENT_TEST_CONFIG.authorization.ownTestDataWritesAndCleanup,
     executedAt: new Date().toISOString(),
     sourceCommit,
     target: TARGET,

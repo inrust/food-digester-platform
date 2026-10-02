@@ -1,0 +1,2553 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-09",
+  "phase": "READ_ONLY_PREFLIGHT",
+  "testEnvironmentMode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "separateEnvironmentRequired": false,
+  "ordinaryTestDataOperationsAuthorized": true,
+  "executedAt": "2026-10-02T01:05:25.664Z",
+  "sourceCommit": "e59d9afad3c05b06d3d5bc646b66de1deb1ecdb0",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1",
+    "stackName": "fdp-test-app",
+    "profile": "esgiot-readonly"
+  },
+  "execution": {
+    "mode": "REAL_AWS_READ_ONLY",
+    "secretValuesRead": false,
+    "cloudMutations": false,
+    "businessDataWrites": false,
+    "faultInjection": false,
+    "deploymentOrMigrationStarted": false,
+    "remotePush": false
+  },
+  "sourceHashes": {
+    "infra/environments/esgiot-test.json": "50f9f896d3dfec6ef2e4797a2ba62771add46c034a29e6e58839bed6cd652ec1",
+    "package.json": "c3cfe21a44d824a698c5ee2f29a9214a5d018b8fe30207ac26807c8da7e47332",
+    "infra/environments/qa09-current-test.json": "21bf8c91398482840aa2717a7f75e3bdc9e2dfa67e6552b33446dfae1b4bb357",
+    "scripts/qa09-current-environment.mjs": "90db0615dd8cbff26e30f88456b0f5477e5638830248e70ae4b8b96d5c5c107a",
+    "scripts/run-qa09-readonly-preflight.mjs": "9b223bb9ce1d299a40876a001ac1b8e8abd138dd1837bc10fc34f1128d5f19ce",
+    "scripts/qa09-readonly-preflight.test.mjs": "2179d802f8d52cef7f1fbf5551398b8a94d52d55e3c59c3106cb8eddbb87c9ed",
+    "packages/database/prisma/migrations/20260826120000_init/migration.sql": "b269a9985a42ada6e592200bee1aa6f341930d3bfd08d22f9910907068349287",
+    "packages/database/prisma/migrations/20260827160000_onboarding_request_review_version/migration.sql": "e10a34e25d6f9c63fe443b3a0fceb9235837d903be05c33b491451ce9bdac2bb",
+    "packages/database/prisma/migrations/20260827170000_certificate_rotation_requests/migration.sql": "4ef7dce77b3371eacc05db75cb4d7c47502e1e8d4890a29dbedc60d4feae252c",
+    "packages/database/prisma/migrations/20260828090000_outbox_event_retry/migration.sql": "2a93d35849330ed2ef30cf0b84d1c8dfab1ae7e82abb9064840cc228dba5aa1e",
+    "packages/database/prisma/migrations/20260828120000_customer_version/migration.sql": "7e1eff395204b543bb6f7a105ed5d5c7dcda23ee3517eb149779b35863b23de7",
+    "packages/database/prisma/migrations/20260828130000_site_status_version/migration.sql": "6a72001e2b3b96eb7e17ef7ff634ff4717dbb9df6ed675a0a17e3fd1e9d32051",
+    "packages/database/prisma/migrations/20260828140000_device_retirements/migration.sql": "1f570f0d0770be4fe0d2ea849521d4b739d475f13d0228a6d0984d41b02f4f83",
+    "packages/database/prisma/migrations/20260829090000_configuration_target_device/migration.sql": "b43106f21101aef80b587d0a7203be2c82dc01ded7a6014b7411393402865a0f",
+    "packages/database/prisma/migrations/20260829100000_consumable_projection_nullable_customer/migration.sql": "735bb862f59287528d067e6a55b95d329e0a6f532b07df5161c41181b50a7b66",
+    "packages/database/prisma/migrations/20260829110000_consumable_requests_open_unique/migration.sql": "2fc05764646fe6ccb6e7eefc7b7e4498235f11a073f854d8a7e3bd6124ca8358",
+    "packages/database/prisma/migrations/20260829120000_device_users_version/migration.sql": "4d3d9e234ad563e86ddfd149b3ce67fc888950a1ddf9061a106209db3438744b",
+    "packages/database/prisma/migrations/20260830100000_alarm_handling_columns/migration.sql": "22694934f33b86e9d602c3c5141cef3f245762da4ad7c3ea3120064eb2370162",
+    "packages/database/prisma/migrations/20260830110000_business_notifications/migration.sql": "8a681ed016e94d462f8bb1f69abc78755c6e0d18da7f112efb77b7318cd5e711",
+    "packages/database/prisma/migrations/20260830120000_esg_export_jobs/migration.sql": "d710909b8307f783542a11aaaa8753943fa6cbc7dec371c405065947a259dcf7",
+    "packages/database/prisma/migrations/20260831100000_command_timeout_scan_index/migration.sql": "1ec1293d9d7fb17fe2b4233f220facfe9657446a541f5471620cd872a38cc61d",
+    "packages/database/prisma/migrations/20260904111500_dec017_onboarding_deadline/migration.sql": "6e523b14085a5646621ee15540982313969ada5bf5446af402111418e3b48e11",
+    "packages/database/prisma/migrations/20260904160000_device_user_argon2_phc/migration.sql": "394599d5bb59fa6487fdf5f4b1edf2927b85d89113d991ccac910f563e933280",
+    "packages/database/prisma/migrations/20260905093000_p0_data_integrity/migration.sql": "a9145c0e709ceaf2814c9c3f74e6e07b858fb7a6507a9ab3b7c26b195c299aae",
+    "packages/database/prisma/migrations/20260905110000_p1_state_history_axis/migration.sql": "539e3b5fc0816fee067d395a83cb0e7c3da10fe3db28d6c1329f938b92f67a4f",
+    "packages/database/prisma/migrations/20260905120000_media_upload_session_sha256/migration.sql": "2ee34f61d107589417fd815550aed8138ed66348fedb1e405b100f16a1299232",
+    "packages/database/prisma/migrations/20260905130000_seed_rbac_roles/migration.sql": "5e34e33f38ffdff8e13fa34da533ca2333da2cf758dde2e0d5409045659b9aad",
+    "packages/database/prisma/migrations/20260905193000_auth_rate_limits/migration.sql": "48415043e108cab7552a7e5955c45bba0a9a2d118f745274ff38afaa1d3d8e8e",
+    "packages/database/prisma/migrations/20260905210000_certificate_recovery_state/migration.sql": "3b54f3580a439f4f20283d31f2f3914c73cc4263dbb4700141fccaebc77886a3",
+    "packages/database/prisma/migrations/20260905220000_business_settings/migration.sql": "541dcb09e8e77d947aa55a381ab0ba11325dca3bc651eb422f136a0ae0479628",
+    "packages/database/prisma/migrations/20260905230000_device_activity_export_jobs/migration.sql": "4bba5a82df6d0a0b3a5ff89ae250560bb0f8246e7011d28b44b3b6e6310eaabb",
+    "packages/database/prisma/migrations/20260907100000_onboarding_provisioning_jobs/migration.sql": "971d33c9610ca740c910b936c79d4cf1989b470fb6b4b39b0e1d81d9a2575ed3",
+    "packages/database/prisma/migrations/20260907143000_archive_replay_esg_correctness/migration.sql": "0b098050cb27d72dc4603b62cee869690e3c8a9bb4f2b0649f33570a1bb9720c",
+    "packages/database/prisma/migrations/20260908100000_outbox_publisher_leases/migration.sql": "2074b283bd0ecd74143eeb70077e3b4445311b4d9fb217ea232f67d40b6e7977",
+    "packages/database/prisma/migrations/20260908160000_activity_export_leases/migration.sql": "afb66392f6606bcd4e6843ca37a7ceac1697eded1eebf143bff7051ca892e530",
+    "packages/database/prisma/migrations/20260908173000_close_security_concurrency_gaps/migration.sql": "bc21ff765e8f356dcd3de11959f06f8ccf121ce055c1f4cacebdcb6e79c0772a",
+    "packages/database/prisma/migrations/20260908200000_admin_p0_runtime_workers/migration.sql": "7917731f4efa1bd05c515191f4205a13fda03bf2ab9713582549def9c34e77fe",
+    "packages/database/prisma/migrations/20260908210000_admin_p1_cross_layer/migration.sql": "8e49313f6f198524d498b5e26f0242d514ee5498315425a3858d055dc54062fc",
+    "packages/database/prisma/migrations/20260909100000_cmd_ota_p1_security_concurrency/migration.sql": "07a9e86cf36b4525257c38d3544ca1498a416e2b2c57491457e46c0e4885026f",
+    "packages/database/prisma/migrations/20260909150000_cmd_ota_p2_semantics_governance/migration.sql": "5d9c5562c68ad70050ecc6e07b843a11bec7676d30f14e739347a000af4bcfc2",
+    "packages/database/prisma/migrations/20260910110000_admin_onboarding_submitter_status/migration.sql": "5db52ad299e3300e1e1c049b712a543e08145081ed0596f47a86837ec2b386b8",
+    "packages/database/prisma/migrations/20260910170000_device_user_sync_receipts/migration.sql": "22e1efe0bf41fd08903288647ad122fdd00d65c57781995d478e1b8af392f221",
+    "packages/database/prisma/migrations/20260912123000_ota_target_failure_detail/migration.sql": "70115386648c4905e6e642e64d801b3f9547a34e65758069cb10f3ecfbd99f71",
+    "packages/database/prisma/migrations/20260929120000_csr_onboarding/migration.sql": "0878bc92881914294bc13141134a0d7c1d04b0f698df2e93ae0dcc9113642c77",
+    "packages/database/prisma/migrations/20260929130000_remove_onboarding_tokens/migration.sql": "3cc347ec67b0184c5b82a40e6fc6155a280bd93287ddeb85406307918df1b4dc",
+    "packages/database/prisma/migrations/20261001090000_csr_dual_channel_certificates/migration.sql": "46668f7f03104a50adbfc2cf327db6f1f6cc585b1d44310beaca245b97fc27ac"
+  },
+  "localMigrationInventory": [
+    "20260826120000_init",
+    "20260827160000_onboarding_request_review_version",
+    "20260827170000_certificate_rotation_requests",
+    "20260828090000_outbox_event_retry",
+    "20260828120000_customer_version",
+    "20260828130000_site_status_version",
+    "20260828140000_device_retirements",
+    "20260829090000_configuration_target_device",
+    "20260829100000_consumable_projection_nullable_customer",
+    "20260829110000_consumable_requests_open_unique",
+    "20260829120000_device_users_version",
+    "20260830100000_alarm_handling_columns",
+    "20260830110000_business_notifications",
+    "20260830120000_esg_export_jobs",
+    "20260831100000_command_timeout_scan_index",
+    "20260904111500_dec017_onboarding_deadline",
+    "20260904160000_device_user_argon2_phc",
+    "20260905093000_p0_data_integrity",
+    "20260905110000_p1_state_history_axis",
+    "20260905120000_media_upload_session_sha256",
+    "20260905130000_seed_rbac_roles",
+    "20260905193000_auth_rate_limits",
+    "20260905210000_certificate_recovery_state",
+    "20260905220000_business_settings",
+    "20260905230000_device_activity_export_jobs",
+    "20260907100000_onboarding_provisioning_jobs",
+    "20260907143000_archive_replay_esg_correctness",
+    "20260908100000_outbox_publisher_leases",
+    "20260908160000_activity_export_leases",
+    "20260908173000_close_security_concurrency_gaps",
+    "20260908200000_admin_p0_runtime_workers",
+    "20260908210000_admin_p1_cross_layer",
+    "20260909100000_cmd_ota_p1_security_concurrency",
+    "20260909150000_cmd_ota_p2_semantics_governance",
+    "20260910110000_admin_onboarding_submitter_status",
+    "20260910170000_device_user_sync_receipts",
+    "20260912123000_ota_target_failure_detail",
+    "20260929120000_csr_onboarding",
+    "20260929130000_remove_onboarding_tokens",
+    "20261001090000_csr_dual_channel_certificates"
+  ],
+  "observations": [
+    {
+      "id": "identity",
+      "status": "OBSERVED",
+      "data": {
+        "accountId": "065986019555",
+        "role": "AWSReservedSSO_FDP-ReadOnlyOps_9f887a207bba8966"
+      }
+    },
+    {
+      "id": "stack",
+      "status": "OBSERVED",
+      "data": {
+        "StackName": "fdp-test-app",
+        "StackId": "arn:aws:cloudformation:ap-southeast-1:065986019555:stack/fdp-test-app/f6ae9780-b495-11f1-9a00-02ffeb9f5f63",
+        "Status": "UPDATE_COMPLETE",
+        "Updated": "2026-10-01T14:33:38.845000+00:00",
+        "Tags": [
+          {
+            "Key": "fdp:env",
+            "Value": "test"
+          },
+          {
+            "Key": "fdp:project",
+            "Value": "food-digester-platform"
+          },
+          {
+            "Key": "fdp:managed-by",
+            "Value": "cdk"
+          }
+        ],
+        "Outputs": [
+          {
+            "OutputKey": "MigrationRunnerProjectName",
+            "OutputValue": "fdp-test-migration-runner"
+          },
+          {
+            "OutputKey": "RawBucketName",
+            "OutputValue": "fdp-test-raw-065986019555",
+            "Description": "S3 raw archive"
+          },
+          {
+            "OutputKey": "AdminApiDomainHostedZoneId",
+            "OutputValue": "ZL327KTPIQFUL"
+          },
+          {
+            "OutputKey": "OnboardingApiUrl",
+            "OutputValue": "https://onboard-api.bio-nexa.com/",
+            "Description": "Onboarding API endpoint with token authentication"
+          },
+          {
+            "OutputKey": "AdminWebAmplifyAppId",
+            "OutputValue": "d29sdr89i4zl0"
+          },
+          {
+            "OutputKey": "ReplayQueueUrl",
+            "OutputValue": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-replay",
+            "Description": "Replay job SQS"
+          },
+          {
+            "OutputKey": "ArchiveQueueUrl",
+            "OutputValue": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-archive",
+            "Description": "Archive SQS"
+          },
+          {
+            "OutputKey": "IngressQueueUrl",
+            "OutputValue": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-ingress",
+            "Description": "Ingress SQS"
+          },
+          {
+            "OutputKey": "OtaBucketName",
+            "OutputValue": "fdp-test-ota-065986019555",
+            "Description": "S3 OTA packages"
+          },
+          {
+            "OutputKey": "AdminApiEndpointACFD5967",
+            "OutputValue": "https://ldark4ozek.execute-api.ap-southeast-1.amazonaws.com/test/"
+          },
+          {
+            "OutputKey": "DeviceApiUrl",
+            "OutputValue": "https://device-api.bio-nexa.com/",
+            "Description": "Device API endpoint using the mTLS custom domain"
+          },
+          {
+            "OutputKey": "DeviceApiDomainHostedZoneId",
+            "OutputValue": "ZL327KTPIQFUL"
+          },
+          {
+            "OutputKey": "MigrationSourceBucketName",
+            "OutputValue": "fdp-test-migration-source-065986019555-ap-southeast-1"
+          },
+          {
+            "OutputKey": "DeviceApiEndpoint6E8144A4",
+            "OutputValue": "https://t363q8o51b.execute-api.ap-southeast-1.amazonaws.com/test/"
+          },
+          {
+            "OutputKey": "AdminApiDomainTarget",
+            "OutputValue": "d-wch0foz7b3.execute-api.ap-southeast-1.amazonaws.com"
+          },
+          {
+            "OutputKey": "DeviceApiDomainTarget",
+            "OutputValue": "d-o3ijadoene.execute-api.ap-southeast-1.amazonaws.com"
+          },
+          {
+            "OutputKey": "AdminWebOrigin",
+            "OutputValue": "https://admin.bio-nexa.com",
+            "Description": "Exact CORS origin for the admin web application"
+          },
+          {
+            "OutputKey": "AdminBootstrapRunnerProjectName",
+            "OutputValue": "fdp-test-admin-bootstrap-runner"
+          },
+          {
+            "OutputKey": "OtaSigningKeyArn",
+            "OutputValue": "arn:aws:kms:ap-southeast-1:065986019555:key/2f3b0c18-1618-4547-8188-59cd4be554f9",
+            "Description": "DEC-022 OTA firmware signing trust root key"
+          },
+          {
+            "OutputKey": "AdminWebAmplifyBranchName",
+            "OutputValue": "main"
+          },
+          {
+            "OutputKey": "AdminWebAmplifyDefaultDomain",
+            "OutputValue": "d29sdr89i4zl0.amplifyapp.com"
+          },
+          {
+            "OutputKey": "DataKeyArn",
+            "OutputValue": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c",
+            "Description": "KMS application data key"
+          },
+          {
+            "OutputKey": "MediaBucketName",
+            "OutputValue": "fdp-test-media-065986019555",
+            "Description": "S3 media files"
+          },
+          {
+            "OutputKey": "OnboardingApiDomainHostedZoneId",
+            "OutputValue": "ZL327KTPIQFUL"
+          },
+          {
+            "OutputKey": "RuleErrorQueueUrl",
+            "OutputValue": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-iot-rule-error",
+            "Description": "IoT Rule Error SQS"
+          },
+          {
+            "OutputKey": "OnboardingApiEndpointFDF673B9",
+            "OutputValue": "https://wxeml7cc33.execute-api.ap-southeast-1.amazonaws.com/test/"
+          },
+          {
+            "OutputKey": "QuarantineQueueUrl",
+            "OutputValue": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-quarantine",
+            "Description": "Quarantine SQS"
+          },
+          {
+            "OutputKey": "OnboardingApiDomainTarget",
+            "OutputValue": "d-w75verkd54.execute-api.ap-southeast-1.amazonaws.com"
+          },
+          {
+            "OutputKey": "ExportBucketName",
+            "OutputValue": "fdp-test-export-065986019555",
+            "Description": "S3 export files"
+          },
+          {
+            "OutputKey": "AdminApiUrl",
+            "OutputValue": "https://api.bio-nexa.com/api/v1/",
+            "Description": "Admin, customer, and internal API endpoint using Cognito and IAM"
+          },
+          {
+            "OutputKey": "UserPoolClientId",
+            "OutputValue": "5ljdjsf9g563mc1vdc7vjdjm09",
+            "Description": "Cognito Admin Web Client"
+          },
+          {
+            "OutputKey": "UserPoolId",
+            "OutputValue": "ap-southeast-1_hZMX8LpFo",
+            "Description": "Cognito User Pool"
+          },
+          {
+            "OutputKey": "DbSecretArn",
+            "OutputValue": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK",
+            "Description": "RDS credentials secret in Secrets Manager"
+          },
+          {
+            "OutputKey": "DbEndpointAddress",
+            "OutputValue": "fdp-test-db.c30ie84saulu.ap-southeast-1.rds.amazonaws.com",
+            "Description": "RDS endpoint address"
+          },
+          {
+            "OutputKey": "TruststoreBucketName",
+            "OutputValue": "fdp-test-mtls-truststore-065986019555",
+            "Description": "S3 mTLS truststore"
+          },
+          {
+            "OutputKey": "CertPackageKeyArn",
+            "OutputValue": "arn:aws:kms:ap-southeast-1:065986019555:key/92a4f862-7dc0-4260-8132-5d2b1953c31b",
+            "Description": "KMS certificate package envelope key"
+          }
+        ]
+      }
+    },
+    {
+      "id": "budget",
+      "status": "OBSERVED",
+      "data": {
+        "name": "BioNexa-FDP-Test-Budget",
+        "limit": {
+          "Amount": "300.0",
+          "Unit": "USD"
+        },
+        "unit": "MONTHLY",
+        "type": "COST",
+        "filters": null,
+        "spend": {
+          "ActualSpend": {
+            "Amount": "23.948",
+            "Unit": "USD"
+          }
+        }
+      }
+    },
+    {
+      "id": "resources",
+      "status": "OBSERVED",
+      "data": [
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-activity-export",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-activity-export-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Activ-q77RDYThFSzS",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-activity-export",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-ActivityExportScheduleAllowEventRuleAppDependenciesActivityExportFn369DDD9-at3xCyYFeg0e",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::RestApi",
+          "id": "ldark4ozek",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Authorizer",
+          "id": "g1ij4k",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::GatewayResponse",
+          "id": "ldark4ozek:DEFAULT_4XX",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::GatewayResponse",
+          "id": "ldark4ozek:DEFAULT_5XX",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Deployment",
+          "id": "qvt8rj",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Stage",
+          "id": "test",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::DomainName",
+          "id": "api.bio-nexa.com",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::BasePathMapping",
+          "id": "api.bio-nexa.com|(none)",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "w8nzbr",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "g15ag3",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "xldqmg",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Method",
+          "id": "ldark4ozek|gp3nxr|ANY",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-AdminApiapiv1adminproxyANYApiPermissionAppDependenciesAdminApiE08961C2ANYa-5SuafGNdXcfV",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-AdminApiapiv1adminproxyANYApiPermissionTestAppDependenciesAdminApiE08961C2-8q1MuM8IduJ2",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "gp3nxr",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-AdminApiapiv1adminproxyOPTIONSApiPermissionAppDependenciesAdminApiE08961C2-svHijZWlnhW9",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-AdminApiapiv1adminproxyOPTIONSApiPermissionTestAppDependenciesAdminApiE089-A2Mzykk5IWNV",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Method",
+          "id": "ldark4ozek|gp3nxr|OPTIONS",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "dwl05o",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "ut5fnu",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Method",
+          "id": "ldark4ozek|ut5fnu|ANY",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-AdminApiapiv1customerproxyANYApiPermissionAppDependenciesAdminApiE08961C2A-YT4bxRPjJBSZ",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-AdminApiapiv1customerproxyANYApiPermissionTestAppDependenciesAdminApiE0896-HUWJuOGdA2Fs",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Method",
+          "id": "ldark4ozek|ut5fnu|OPTIONS",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-AdminApiapiv1customerproxyOPTIONSApiPermissionAppDependenciesAdminApiE0896-A17lvNULhWE7",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-AdminApiapiv1customerproxyOPTIONSApiPermissionTestAppDependenciesAdminApiE-j8WFwZi0aCNd",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "kkxdvh",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "184qf3",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Method",
+          "id": "ldark4ozek|184qf3|ANY",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-AdminApiapiv1internalproxyANYApiPermissionAppDependenciesAdminApiE08961C2A-dYnhN8pZrfZ3",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-AdminApiapiv1internalproxyANYApiPermissionTestAppDependenciesAdminApiE0896-OaLHrPlzGgGJ",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::CodeBuild::Project",
+          "id": "fdp-test-admin-bootstrap-runner",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Logs::LogGroup",
+          "id": "fdp-test-app-AdminBootstrapRunnerLogs55C85376-dsN2d4pmGPVh",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Admin-tMyjkRzG2Olr",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-admin-bootstrap-runner-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Admin-80CHw0r6vpW0",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SecurityGroup",
+          "id": "sg-056df8dcb3fe75dcb",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Cognito::UserPoolClient",
+          "id": "5ljdjsf9g563mc1vdc7vjdjm09",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Cognito::UserPool",
+          "id": "ap-southeast-1_hZMX8LpFo",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Amplify::App",
+          "id": "arn:aws:amplify:ap-southeast-1:065986019555:apps/d29sdr89i4zl0",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Amplify::Branch",
+          "id": "arn:aws:amplify:ap-southeast-1:065986019555:apps/d29sdr89i4zl0/branches/main",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-api",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-ApiFn-QP1CccWnlZMX",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-api-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SecretsManager::Secret",
+          "id": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::Queue",
+          "id": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-archive-dlq",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-archive",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-archive-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Archi-Zw02AkP7nOFL",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::EventSourceMapping",
+          "id": "9ad22378-5e58-4f46-bf30-df9fdbc75d41",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::Queue",
+          "id": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-archive",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::CDK::Metadata",
+          "id": "f6ae9780-b495-11f1-9a00-02ffeb9f5f63",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::KMS::Key",
+          "id": "92a4f862-7dc0-4260-8132-5d2b1953c31b",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::KMS::Alias",
+          "id": "alias/fdp-test-cert-package",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-cert-package-sweeper",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-cert-package-sweeper-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-CertP-D3wtlw5iIuYZ",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-CertPackageSweeperScheduleAllowEventRuleAppDependenciesCertPackageSweeperF-HV1JRCMOxqFi",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-cert-package-sweeper",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::CloudWatch::Alarm",
+          "id": "fdp-test-command-publisher-dlq-visible",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::Queue",
+          "id": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-command-publisher-dlq",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::QueuePolicy",
+          "id": "fdp-test-app-CommandPublisherDlqPolicy6589C585-Kpc6126qbxbv",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::CloudWatch::Alarm",
+          "id": "fdp-test-command-publisher-errors",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-command-publisher",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-command-publisher-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Comma-hJwxwzOEhmVo",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-command-publisher",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-CommandPublisherScheduleAllowEventRuleAppDependenciesCommandPublisherFn847-GLAIEGStFRQL",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::Queue",
+          "id": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-command-timeout-dlq",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::CloudWatch::Alarm",
+          "id": "fdp-test-command-timeout-dlq-visible",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::QueuePolicy",
+          "id": "fdp-test-app-CommandTimeoutDlqPolicyE0F7FCD4-vMefImxcCMY8",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::CloudWatch::Alarm",
+          "id": "fdp-test-command-timeout-errors",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-command-timeout",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Comma-RjUn3rEdZM4N",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-command-timeout-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-command-timeout",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-CommandTimeoutScheduleAllowEventRuleAppDependenciesCommandTimeoutFnF3E0AEA-P9HcJT0KzcjN",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::KMS::Key",
+          "id": "22af85c4-76d3-40c9-a849-0621740afe6c",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::KMS::Alias",
+          "id": "alias/fdp-test-data",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::RDS::DBInstance",
+          "id": "fdp-test-db",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SecretsManager::SecretTargetAttachment",
+          "id": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::RDS::DBSubnetGroup",
+          "id": "fdp-test-app-databasesubnetgroup7d60f180-dg5ekm9dlilw",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SecurityGroup",
+          "id": "sg-01091cb783b8039e4",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SecurityGroupIngress",
+          "id": "sgr-0af5381ee5729d3a9",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SecurityGroupIngress",
+          "id": "sgr-0e19f1209340a1965",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SecurityGroupIngress",
+          "id": "sgr-036b87e5c15d2cce7",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::RestApi",
+          "id": "t363q8o51b",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Deployment",
+          "id": "a43e6u",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Stage",
+          "id": "test",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::DomainName",
+          "id": "device-api.bio-nexa.com",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::BasePathMapping",
+          "id": "device-api.bio-nexa.com|(none)",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-device-api-handler",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-device-api-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Devic-SdZg5rhiBUOX",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "ay4acw",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "7au97f",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "9q4mqm",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "h4rho7",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Method",
+          "id": "t363q8o51b|h4rho7|ANY",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-DeviceApiapiv1deviceproxyANYApiPermissionAppDependenciesDeviceApi10C35EECA-hS7XtX1QcuDs",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-DeviceApiapiv1deviceproxyANYApiPermissionTestAppDependenciesDeviceApi10C35-oCzRbz22GG4P",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-esg-export",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-esg-export-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-EsgEx-1h9n7LnmVtr9",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-EsgExportScheduleAllowEventRuleAppDependenciesEsgExportFn947707542E720329-QZVOloqc0bcT",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-esg-export",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::S3::Bucket",
+          "id": "fdp-test-export-065986019555",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::S3::BucketPolicy",
+          "id": "fdp-test-export-065986019555",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-ingestion",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-ingestion-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Inges-3iXqTFxYUEsm",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::EventSourceMapping",
+          "id": "08a19b0c-7ebd-4fc2-bcd6-f729d3312b14",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::Queue",
+          "id": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-ingress-dlq",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::Queue",
+          "id": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-ingress",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IoT::TopicRule",
+          "id": "fdp_test_iot_ack",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IoT::TopicRule",
+          "id": "fdp_test_iot_alarm",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::Queue",
+          "id": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-iot-rule-error",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IoT::TopicRule",
+          "id": "fdp_test_iot_event",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IoT::TopicRule",
+          "id": "fdp_test_iot_heartbeat",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IoT::TopicRule",
+          "id": "fdp_test_iot_media",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IoT::TopicRule",
+          "id": "fdp_test_iot_report",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-IotRu-HOttvktsFIoR",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-iot-rule",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IoT::TopicRule",
+          "id": "fdp_test_iot_tamper",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IoT::TopicRule",
+          "id": "fdp_test_iot_telemetry",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SecurityGroup",
+          "id": "sg-0965135e77a85fd1a",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SecretsManager::Secret",
+          "id": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-license-signing-key-OVgupB",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::S3::Bucket",
+          "id": "fdp-test-media-065986019555",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::S3::BucketPolicy",
+          "id": "fdp-test-media-065986019555",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::CodeBuild::Project",
+          "id": "fdp-test-migration-runner",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::ManagedPolicy",
+          "id": "arn:aws:iam::065986019555:policy/FDP-MigrationRunnerBoundary",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Logs::LogGroup",
+          "id": "fdp-test-app-MigrationRunnerLogsAA30B0B4-lzkIrNBXjMWf",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Migra-3Dov5RhL0Nto",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-migration-runner-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Migra-sCCiJxJHGaSk",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SecurityGroup",
+          "id": "sg-081d9a3ee5f6011e9",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::S3::Bucket",
+          "id": "fdp-test-migration-source-065986019555-ap-southeast-1",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::S3::BucketPolicy",
+          "id": "fdp-test-migration-source-065986019555-ap-southeast-1",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-notification-publisher",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-notification-publisher-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Notif-mF0DkwH1ys9i",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-NotificationPublisherScheduleAllowEventRuleAppDependenciesNotificationPubl-jcYyPwkyXY35",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-notification-publisher",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::RestApi",
+          "id": "wxeml7cc33",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Deployment",
+          "id": "5me6if",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Stage",
+          "id": "test",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::DomainName",
+          "id": "onboard-api.bio-nexa.com",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::BasePathMapping",
+          "id": "onboard-api.bio-nexa.com|(none)",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-onboarding-api-handler",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-onboarding-api-role",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Onboa-CKsmfHKfsyr6",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "y2w7n9",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "c8cx4g",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "36apmw",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Method",
+          "id": "wxeml7cc33|wd7dy3|ANY",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-OnboardingApiapiv1deviceproxyANYApiPermissionAppDependenciesOnboardingApi2-JosCbEzUKJtb",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-OnboardingApiapiv1deviceproxyANYApiPermissionTestAppDependenciesOnboarding-0tBcfHLh1AvU",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::ApiGateway::Resource",
+          "id": "wd7dy3",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-onboarding-deadline",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-onboarding-deadline-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Onboa-at4LFcCrDVEd",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-OnboardingDeadlineScheduleAllowEventRuleAppDependenciesOnboardingDeadlineF-cK3EGtSTN22j",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-onboarding-deadline",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-onboarding-provisioning",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-onboarding-provisioning-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Onboa-vaAd9EOZf59I",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-OnboardingProvisioningScheduleAllowEventRuleAppDependenciesOnboardingProvi-IekRIc3P4MXw",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-onboarding-provisioning",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::S3::Bucket",
+          "id": "fdp-test-ota-065986019555",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::S3::BucketPolicy",
+          "id": "fdp-test-ota-065986019555",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::Queue",
+          "id": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-ota-dispatcher-dlq",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::CloudWatch::Alarm",
+          "id": "fdp-test-ota-dispatcher-dlq-visible",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::QueuePolicy",
+          "id": "fdp-test-app-OtaDispatcherDlqPolicyB9811C59-bg65DiO6aESR",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::CloudWatch::Alarm",
+          "id": "fdp-test-ota-dispatcher-errors",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-ota-dispatcher",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-ota-dispatcher-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-OtaDi-4WCc5LftpNhR",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-ota-dispatcher",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-OtaDispatcherScheduleAllowEventRuleAppDependenciesOtaDispatcherFn1A639C10A-EsA5OZtVuz2s",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::KMS::Alias",
+          "id": "alias/fdp-test-ota-signing",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::KMS::Key",
+          "id": "2f3b0c18-1618-4547-8188-59cd4be554f9",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-outbox-publisher",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-outbox-publisher-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Outbo-QpDeWFJoD6Tk",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-outbox-publisher",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-OutboxPublisherScheduleAllowEventRuleAppDependenciesOutboxPublisherFnFB448-LJHR9nMkpS8S",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::Queue",
+          "id": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-quarantine",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::S3::Bucket",
+          "id": "fdp-test-raw-065986019555",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::S3::BucketPolicy",
+          "id": "fdp-test-raw-065986019555",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::Queue",
+          "id": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-replay-dlq",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-replay",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-replay-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Repla-61iYCqmfw0YN",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::EventSourceMapping",
+          "id": "d95a74d9-2373-40f3-8051-065258bb78ac",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::SQS::Queue",
+          "id": "https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-replay",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-replay-trigger-publisher",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Repla-v6AF9ODHH2oG",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-replay-trigger-publisher-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-replay-trigger-publisher",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-ReplayTriggerPublisherScheduleAllowEventRuleAppDependenciesReplayTriggerPu-0xwO6T6XV5Z6",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-retirement-timeout",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-retirement-timeout-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Retir-wyeePuOr7v2T",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-retirement-timeout",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-RetirementTimeoutScheduleAllowEventRuleAppDependenciesRetirementTimeoutFn0-gnovwaXOowq7",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "id": "fdp-test-summary",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "id": "fdp-test-summary-role",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "id": "fdp-t-Summa-ZyWfQuGntjil",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Events::Rule",
+          "id": "fdp-test-summary",
+          "status": "UPDATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "id": "fdp-test-app-SummaryScheduleAllowEventRuleAppDependenciesSummaryFnD4B95BA6B918D2E5-SbtvkD3s57oc",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Cognito::UserPoolGroup",
+          "id": "Auditor",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Cognito::UserPoolGroup",
+          "id": "CustomerAdmin",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Cognito::UserPoolGroup",
+          "id": "CustomerViewer",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Cognito::UserPoolGroup",
+          "id": "PlatformOperator",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::Cognito::UserPoolGroup",
+          "id": "PlatformSuperAdmin",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::VPC",
+          "id": "vpc-0d287fdfa0a4a06bd",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::InternetGateway",
+          "id": "igw-0c8dcb8e449249347",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::VPCGatewayAttachment",
+          "id": "IGW|vpc-0d287fdfa0a4a06bd",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::Route",
+          "id": "rtb-06b2ef9ed5c9bba7a|0.0.0.0/0",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::RouteTable",
+          "id": "rtb-06b2ef9ed5c9bba7a",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SubnetRouteTableAssociation",
+          "id": "rtbassoc-02301c7d776cdab5e",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::Subnet",
+          "id": "subnet-0c1584eea5495f25a",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::Route",
+          "id": "rtb-09286ed7ba9e26131|0.0.0.0/0",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SubnetRouteTableAssociation",
+          "id": "rtbassoc-05264cf75abaa9a9d",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::RouteTable",
+          "id": "rtb-09286ed7ba9e26131",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::Subnet",
+          "id": "subnet-0f52dca7a7253f7d1",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SubnetRouteTableAssociation",
+          "id": "rtbassoc-0c5670e08127f4a53",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::RouteTable",
+          "id": "rtb-078c574b6fb5ec567",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::Subnet",
+          "id": "subnet-06ea2c98185ee9970",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::RouteTable",
+          "id": "rtb-0e9810604d145fd13",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SubnetRouteTableAssociation",
+          "id": "rtbassoc-0ed8a71e02184eead",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::Subnet",
+          "id": "subnet-0e134a1fd834c46e8",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::Route",
+          "id": "rtb-06b153095b00fdd97|0.0.0.0/0",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::EIP",
+          "id": "18.143.40.147",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::NatGateway",
+          "id": "nat-00aba4348ba013c56",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::RouteTable",
+          "id": "rtb-06b153095b00fdd97",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SubnetRouteTableAssociation",
+          "id": "rtbassoc-0196cce707a6a131b",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::Subnet",
+          "id": "subnet-08f423d067919cf4f",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::Route",
+          "id": "rtb-0f1c26dd38984e5c5|0.0.0.0/0",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::SubnetRouteTableAssociation",
+          "id": "rtbassoc-0872495d8e8ff8cc9",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::RouteTable",
+          "id": "rtb-0f1c26dd38984e5c5",
+          "status": "CREATE_COMPLETE"
+        },
+        {
+          "type": "AWS::EC2::Subnet",
+          "id": "subnet-03cf726500065a372",
+          "status": "CREATE_COMPLETE"
+        }
+      ]
+    },
+    {
+      "id": "rds",
+      "status": "OBSERVED",
+      "data": [
+        {
+          "identifier": "fdp-test-db",
+          "status": "available",
+          "engine": "postgres",
+          "version": "16.13",
+          "encrypted": true,
+          "public": false,
+          "multiAZ": false,
+          "backupRetentionDays": 0,
+          "endpoint": "fdp-test-db.c30ie84saulu.ap-southeast-1.rds.amazonaws.com"
+        }
+      ]
+    },
+    {
+      "id": "cognito-pool",
+      "status": "OBSERVED",
+      "data": {
+        "id": "ap-southeast-1_hZMX8LpFo",
+        "name": "fdp-test-admin",
+        "estimatedUsers": 2,
+        "mfa": "OPTIONAL",
+        "passwordPolicy": {
+          "MinimumLength": 8,
+          "RequireUppercase": false,
+          "RequireLowercase": true,
+          "RequireNumbers": true,
+          "RequireSymbols": false,
+          "TemporaryPasswordValidityDays": 7
+        }
+      }
+    },
+    {
+      "id": "cognito-client",
+      "status": "OBSERVED",
+      "data": {
+        "id": "5ljdjsf9g563mc1vdc7vjdjm09",
+        "authFlows": [
+          "ALLOW_REFRESH_TOKEN_AUTH",
+          "ALLOW_USER_SRP_AUTH"
+        ],
+        "preventUserExistenceErrors": "ENABLED"
+      }
+    },
+    {
+      "id": "cognito-groups",
+      "status": "OBSERVED",
+      "data": [
+        {
+          "name": "PlatformOperator",
+          "precedence": null
+        },
+        {
+          "name": "CustomerViewer",
+          "precedence": null
+        },
+        {
+          "name": "CustomerAdmin",
+          "precedence": null
+        },
+        {
+          "name": "Auditor",
+          "precedence": null
+        },
+        {
+          "name": "PlatformSuperAdmin",
+          "precedence": null
+        }
+      ]
+    },
+    {
+      "id": "cognito-users",
+      "status": "OBSERVED",
+      "data": [
+        {
+          "status": "CONFIRMED",
+          "enabled": true
+        },
+        {
+          "status": "CONFIRMED",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "members-PlatformSuperAdmin",
+      "status": "OBSERVED",
+      "data": [
+        {
+          "status": "CONFIRMED",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "members-PlatformOperator",
+      "status": "OBSERVED",
+      "data": [
+        {
+          "status": "CONFIRMED",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "members-Auditor",
+      "status": "OBSERVED",
+      "data": []
+    },
+    {
+      "id": "members-CustomerAdmin",
+      "status": "OBSERVED",
+      "data": []
+    },
+    {
+      "id": "members-CustomerViewer",
+      "status": "OBSERVED",
+      "data": []
+    },
+    {
+      "id": "iot-endpoint",
+      "status": "OBSERVED",
+      "data": {
+        "endpoint": "a323xp2aswsptd-ats.iot.ap-southeast-1.amazonaws.com"
+      }
+    },
+    {
+      "id": "iot-things-count",
+      "status": "OBSERVED",
+      "data": {
+        "count": 1
+      }
+    },
+    {
+      "id": "iot-certificates-count",
+      "status": "OBSERVED",
+      "data": {
+        "count": 5,
+        "active": 1
+      }
+    },
+    {
+      "id": "migration-build-ids",
+      "status": "OBSERVED",
+      "data": [
+        "fdp-test-migration-runner:1cbcdc6e-b55a-4df2-9684-acf20199000b",
+        "fdp-test-migration-runner:64e7df4e-1c75-4ed1-b9b1-8924cf6c90f7",
+        "fdp-test-migration-runner:544df7ed-4d04-451c-a2a9-5f521dd85485",
+        "fdp-test-migration-runner:ff42a1dc-7bb2-4710-96fd-41b5d7c76f68",
+        "fdp-test-migration-runner:4901a3d6-cbb0-4e40-8eb9-6a2c44317c97"
+      ]
+    },
+    {
+      "id": "bootstrap-build-ids",
+      "status": "OBSERVED",
+      "data": [
+        "fdp-test-admin-bootstrap-runner:f56b91e3-bc68-42dd-863b-129832aaf3a1"
+      ]
+    },
+    {
+      "id": "amplify-jobs",
+      "status": "OBSERVED",
+      "data": [
+        {
+          "jobId": "32",
+          "commitId": "e59d9afad3c05b06d3d5bc646b66de1deb1ecdb0",
+          "status": "SUCCEED",
+          "startTime": "2026-10-01T23:56:52.659000+08:00",
+          "endTime": "2026-10-01T23:59:54.629000+08:00"
+        },
+        {
+          "jobId": "31",
+          "commitId": "255e7e6d1551b01b40e7ad586af7032d9f6434b7",
+          "status": "SUCCEED",
+          "startTime": "2026-10-01T22:53:38.599000+08:00",
+          "endTime": "2026-10-01T22:56:53.797000+08:00"
+        },
+        {
+          "jobId": "30",
+          "commitId": "39f856bb4ec3ec165700ab5067d73e01fa0e7e9a",
+          "status": "SUCCEED",
+          "startTime": "2026-10-01T22:07:27.340000+08:00",
+          "endTime": "2026-10-01T22:10:51.172000+08:00"
+        },
+        {
+          "jobId": "29",
+          "commitId": "06e2456f7513a221b5d6974a58abe0fdc5cbc560",
+          "status": "SUCCEED",
+          "startTime": "2026-10-01T21:31:34.697000+08:00",
+          "endTime": "2026-10-01T21:35:46.614000+08:00"
+        },
+        {
+          "jobId": "28",
+          "commitId": "f5953e5be5baa2559b2547ba1f56d643fb4acccc",
+          "status": "SUCCEED",
+          "startTime": "2026-10-01T20:49:26.703000+08:00",
+          "endTime": "2026-10-01T20:52:28.328000+08:00"
+        }
+      ]
+    },
+    {
+      "id": "queue-Ingress",
+      "status": "OBSERVED",
+      "data": {
+        "QueueArn": "arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-ingress",
+        "ApproximateNumberOfMessages": "0",
+        "ApproximateNumberOfMessagesNotVisible": "0",
+        "ApproximateNumberOfMessagesDelayed": "0",
+        "RedrivePolicy": "{\"deadLetterTargetArn\":\"arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-ingress-dlq\",\"maxReceiveCount\":5}"
+      }
+    },
+    {
+      "id": "queue-Archive",
+      "status": "OBSERVED",
+      "data": {
+        "QueueArn": "arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-archive",
+        "ApproximateNumberOfMessages": "0",
+        "ApproximateNumberOfMessagesNotVisible": "0",
+        "ApproximateNumberOfMessagesDelayed": "0",
+        "RedrivePolicy": "{\"deadLetterTargetArn\":\"arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-archive-dlq\",\"maxReceiveCount\":5}"
+      }
+    },
+    {
+      "id": "queue-Replay",
+      "status": "OBSERVED",
+      "data": {
+        "QueueArn": "arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-replay",
+        "ApproximateNumberOfMessages": "0",
+        "ApproximateNumberOfMessagesNotVisible": "0",
+        "ApproximateNumberOfMessagesDelayed": "0",
+        "RedrivePolicy": "{\"deadLetterTargetArn\":\"arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-replay-dlq\",\"maxReceiveCount\":5}"
+      }
+    },
+    {
+      "id": "queue-Quarantine",
+      "status": "OBSERVED",
+      "data": {
+        "QueueArn": "arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-quarantine",
+        "ApproximateNumberOfMessages": "18",
+        "ApproximateNumberOfMessagesNotVisible": "0",
+        "ApproximateNumberOfMessagesDelayed": "0"
+      }
+    },
+    {
+      "id": "queue-RuleError",
+      "status": "OBSERVED",
+      "data": {
+        "QueueArn": "arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-iot-rule-error",
+        "ApproximateNumberOfMessages": "0",
+        "ApproximateNumberOfMessagesNotVisible": "0",
+        "ApproximateNumberOfMessagesDelayed": "0"
+      }
+    },
+    {
+      "id": "bucket-Raw",
+      "status": "OBSERVED",
+      "data": {
+        "versioning": "Enabled"
+      }
+    },
+    {
+      "id": "bucket-Media",
+      "status": "OBSERVED",
+      "data": {
+        "versioning": "Enabled"
+      }
+    },
+    {
+      "id": "bucket-Ota",
+      "status": "OBSERVED",
+      "data": {
+        "versioning": "Enabled"
+      }
+    },
+    {
+      "id": "bucket-Export",
+      "status": "OBSERVED",
+      "data": {
+        "versioning": "Enabled"
+      }
+    },
+    {
+      "id": "bucket-MigrationSource",
+      "status": "OBSERVED",
+      "data": {
+        "versioning": "Enabled"
+      }
+    },
+    {
+      "id": "domain-device-api.bio-nexa.com",
+      "status": "OBSERVED",
+      "data": {
+        "domain": "device-api.bio-nexa.com",
+        "status": "AVAILABLE",
+        "certificate": "arn:aws:acm:ap-southeast-1:065986019555:certificate/db3daf4f-de27-4cb3-8813-5f1f068478e0",
+        "mtls": {
+          "truststoreUri": "s3://fdp-test-mtls-truststore-065986019555/truststore/ca-bundle.pem",
+          "truststoreVersion": "FtN.3H5AydTqt6cgxf0wzeOcNQHFxCOx"
+        }
+      }
+    },
+    {
+      "id": "domain-api.bio-nexa.com",
+      "status": "OBSERVED",
+      "data": {
+        "domain": "api.bio-nexa.com",
+        "status": "AVAILABLE",
+        "certificate": "arn:aws:acm:ap-southeast-1:065986019555:certificate/2777e55f-df6e-4e7d-8ce8-22cd3cf2babb",
+        "mtls": null
+      }
+    },
+    {
+      "id": "domain-onboard-api.bio-nexa.com",
+      "status": "OBSERVED",
+      "data": {
+        "domain": "onboard-api.bio-nexa.com",
+        "status": "AVAILABLE",
+        "certificate": "arn:aws:acm:ap-southeast-1:065986019555:certificate/2777e55f-df6e-4e7d-8ce8-22cd3cf2babb",
+        "mtls": null
+      }
+    },
+    {
+      "id": "deployed-template-assets",
+      "status": "OBSERVED",
+      "data": [
+        {
+          "logicalId": "IngestionFn233E043F",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "89fdc51f98c091732e91fe24ed612ee12b967f7119c129bd9566e573d7ac39a5.zip"
+          }
+        },
+        {
+          "logicalId": "ArchiveFn5585D223",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "fa3c6eba53c47f1ef3baf10e91df3370b79820f608e3db68354ca9349a86c356.zip"
+          }
+        },
+        {
+          "logicalId": "OutboxPublisherFn5402D4AC",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "5ce49c572532bf3970e4d2c48858ddc113999ad2d73e8b0fda7644759401aaf8.zip"
+          }
+        },
+        {
+          "logicalId": "NotificationPublisherFn73516682",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "3ae293f811b0d87f283f37d69167978135f8235768f96920ec3c241c746b990d.zip"
+          }
+        },
+        {
+          "logicalId": "SummaryFnDB90B184",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "9e041654d1f79aacf97b0cf237faff8e07e4bb745ce45b7b585ab3b28c6991fa.zip"
+          }
+        },
+        {
+          "logicalId": "ReplayTriggerPublisherFnDB45C8BB",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "4a580cb28b143afa51600e777fa0006ac11d14902f7aa63960140794b1e4b050.zip"
+          }
+        },
+        {
+          "logicalId": "ReplayFn6908A346",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "7c1885984251ff589717f8ba91195b9be5b5a5df0e58a38c9a4cefab529c57fd.zip"
+          }
+        },
+        {
+          "logicalId": "CertPackageSweeperFnA3144633",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "41e0f3ea82e7b1acc8988da9bcaf230928964d362713712c6aa15424d8cf01e5.zip"
+          }
+        },
+        {
+          "logicalId": "OnboardingDeadlineFn980E8722",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "c255ae9afb02fdf68b0944b375fe992f3e5233617b167cd60bb9c9abdd669bdf.zip"
+          }
+        },
+        {
+          "logicalId": "RetirementTimeoutFn5FA89DC8",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "fe687ab99b74914b27f7752646e0731c80cbe56886c0ac5bfbc6fc847d45f66b.zip"
+          }
+        },
+        {
+          "logicalId": "ActivityExportFn2D54E851",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "6a55cccdc8f809079291dff214d97148ab17cd3ac8d88e3dd419a2711d5bec96.zip"
+          }
+        },
+        {
+          "logicalId": "EsgExportFn4FB12684",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "cca17e0b94eb88cfaa0566ab3da035bedcf9dcaad35b2b75cdff0a3ef50b0160.zip"
+          }
+        },
+        {
+          "logicalId": "CommandPublisherFn2C3A62E3",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "46d40a149e064e900c738ce8b01e326f1076b898249d1fb5de4cbf6bf2b695ca.zip"
+          }
+        },
+        {
+          "logicalId": "CommandTimeoutFnDCC08544",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "1ff0f98078f2725861c94425c3d5c6e5fc904a6ad2cfa9416a6ad45ccd401058.zip"
+          }
+        },
+        {
+          "logicalId": "OtaDispatcherFn60AC5176",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "479988d0d072df52aaa53f1c0a3bd68d1744c0f79a0f254def9a0f3094b7e6c2.zip"
+          }
+        },
+        {
+          "logicalId": "OnboardingApiFn75D76C9A",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "e9832f9ce081e9a6f07d4d6101854b13555b80d95eaf407633aa1b42c5113f64.zip"
+          }
+        },
+        {
+          "logicalId": "OnboardingProvisioningFnE4A4C012",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "ead8e9bcf93daece7035bdf77f84d01bfb1f393cd38c163b870111a7fdb206d1.zip"
+          }
+        },
+        {
+          "logicalId": "DeviceApiFn860282C7",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "caf71b9bbb568bfe97e63f23f699f6597536ee5f71fc19b5168f10984fb25a75.zip"
+          }
+        },
+        {
+          "logicalId": "ApiFnE0725F78",
+          "code": {
+            "S3Bucket": "fdp-test-cdk-assets-065986019555-ap-southeast-1",
+            "S3Key": "8ec0357c833288a5b5e283cd260aa93585565aea68e8355a55a73e416c19ea11.zip"
+          }
+        }
+      ]
+    },
+    {
+      "id": "lambda-fdp-test-activity-export",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-activity-export",
+        "CodeSha256": "mlTWu7FRpiCG57OaZTjASMna+6LRH5n/lR3Qd7dOy0U=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "a0270af7-a3b2-4faf-a3fc-2e68b7f26ebb"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-api",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-api",
+        "CodeSha256": "ZsEhrJkCuTOrd0dU13o7DGZ3L7aVsb2+F3pKqufKCpo=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "c87196e4-ccde-4f67-a027-6bfe9c8fcad1"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-archive",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-archive",
+        "CodeSha256": "edqPerxPs6jw++2f89eoWpdWVTHuWSgNFLM0ccYTD4o=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "82f90035-efda-45f4-9a18-21b077660482"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-cert-package-sweeper",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-cert-package-sweeper",
+        "CodeSha256": "racq3udid0P5sGpnDCQI1lPGYxZ1vQhkaJILzOqPYiQ=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "6d5c5206-975f-4de4-af15-97ea8fd1d9c7"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-command-publisher",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-command-publisher",
+        "CodeSha256": "lEouzgKbExgBOWebB3LelwCr25WL2bsmQHtJVwZJyJY=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "a2f4ea7b-ab2c-48a3-9b8d-0d56003cdc03"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-command-timeout",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-command-timeout",
+        "CodeSha256": "d9ECc0LN9Nuaq2yNg7lR4f3q9/kjVuAM23Dg9nj7OxA=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "687b825a-c37d-4ede-8149-df024a4dc989"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-device-api-handler",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-device-api-handler",
+        "CodeSha256": "yNyjyBVd4EcMulTUYVn1xvJlGy7OZUnMK79rarY0qaU=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "ce6bf962-7cfd-4b53-ad92-e27ec3c2f218"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-esg-export",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-esg-export",
+        "CodeSha256": "oJgs4KZrKWEfvhmsuu3yp4ghhyZcxHmbpkZIZdmIdnI=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "a00eba02-6089-49d9-8906-c681fb27fb34"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-ingestion",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-ingestion",
+        "CodeSha256": "G8+fmFYuJlanF8zfmwnr9Rensl1KV6540Tjr7BdhQjg=",
+        "LastModified": "2026-10-01T14:33:46.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "bd8fd346-5852-4452-bf59-1bc7226fe963"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-notification-publisher",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-notification-publisher",
+        "CodeSha256": "5qGQTz7H8Ky21yuCtU7m5gFsLCVgVdv03NhgSvfq4bI=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "94a2f554-1b88-4d3f-b2ca-10aff9ec210c"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-onboarding-api-handler",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-onboarding-api-handler",
+        "CodeSha256": "TK8K/XMaCBOF1HudgW3PT5rxOiuqnpLMdkykkUbVFPE=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "a2bb351e-e3e7-4075-89c7-c36527c3e982"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-onboarding-deadline",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-onboarding-deadline",
+        "CodeSha256": "DT4ZeMoRBt+KyX6vxnY8OAC+ayXr/FFYRqMyZ8RyDpE=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "275d3ffa-9c01-4669-827e-4b6f6c337ddc"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-onboarding-provisioning",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-onboarding-provisioning",
+        "CodeSha256": "gNy3Ylmb/YDPqPJYdT5sMQLXhtV8HMoc/rzjlcNXJek=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "996d11a7-686c-4d1e-be9d-834c0232399a"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-ota-dispatcher",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-ota-dispatcher",
+        "CodeSha256": "36zecoil2M1aZQqUTxY5kLCSBk5POqaxYRlJecwnxiA=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "1677c4b2-e46d-44a9-92ab-2493781735cc"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-outbox-publisher",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-outbox-publisher",
+        "CodeSha256": "zwBlmARiBPUPHkH878g73MTclirIDgKcaLqAzHzx2HY=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "610a0e1c-f7d2-4cc7-8be8-ba90d766fc5b"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-replay",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-replay",
+        "CodeSha256": "PB7ZDcZLMXMz22T8bv9T0ujr3vBnbNixYZ0GmzbD+y4=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "ce314eca-c061-47ac-9fc5-0ee751909f6e"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-replay-trigger-publisher",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-replay-trigger-publisher",
+        "CodeSha256": "yPYODlX3EUq3m3ueoMgYQqhRBFZxOsxXQPiEqNqlZr4=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "d942b02f-a87e-4861-8522-96839fc191c7"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-retirement-timeout",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-retirement-timeout",
+        "CodeSha256": "66D5b6y5N3iTWyKG0REdwDXQspiWvtg/Y3CvlU1J77M=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "443522a3-1e97-4940-91d4-1b915c9c2985"
+      }
+    },
+    {
+      "id": "lambda-fdp-test-summary",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-summary",
+        "CodeSha256": "8HLu3aGDikja9NVN4UAGzWDbKfdjO+vlYsY0YBq0BZ0=",
+        "LastModified": "2026-10-01T13:57:34.000+0000",
+        "Runtime": "nodejs24.x",
+        "State": "Active",
+        "LastUpdateStatus": "Successful",
+        "RevisionId": "f2784802-eb32-458e-bdac-26cddbdb168c"
+      }
+    },
+    {
+      "id": "migration-builds",
+      "status": "OBSERVED",
+      "data": {
+        "builds": [
+          {
+            "id": "fdp-test-migration-runner:1cbcdc6e-b55a-4df2-9684-acf20199000b",
+            "status": "SUCCEEDED",
+            "start": "2026-09-22T13:28:33.784000+08:00",
+            "end": "2026-09-22T13:33:09.306000+08:00",
+            "sourceVersion": "NqRNRetw3ekGwymoSZAsDaQWoPtyeZHL",
+            "resolvedSourceVersion": null,
+            "sourceCommit": [
+              "2d2334d825ad51662ef4c60ba7f959a6217dff7f"
+            ]
+          },
+          {
+            "id": "fdp-test-migration-runner:64e7df4e-1c75-4ed1-b9b1-8924cf6c90f7",
+            "status": "FAILED",
+            "start": "2026-09-22T13:25:09.501000+08:00",
+            "end": "2026-09-22T13:27:17.346000+08:00",
+            "sourceVersion": "MsW950aQEjio4mRVWkdA4DXJuhgNpvVK",
+            "resolvedSourceVersion": null,
+            "sourceCommit": [
+              "2d2334d825ad51662ef4c60ba7f959a6217dff7f"
+            ]
+          },
+          {
+            "id": "fdp-test-migration-runner:544df7ed-4d04-451c-a2a9-5f521dd85485",
+            "status": "SUCCEEDED",
+            "start": "2026-09-22T12:33:47.346000+08:00",
+            "end": "2026-09-22T12:39:27.280000+08:00",
+            "sourceVersion": "__wjE0fONN3tB8wGxTJdLQ8TiMsZ52qE",
+            "resolvedSourceVersion": null,
+            "sourceCommit": [
+              "8e89127e274afd822cd99a6dcbb41d4098d1d7bc"
+            ]
+          },
+          {
+            "id": "fdp-test-migration-runner:ff42a1dc-7bb2-4710-96fd-41b5d7c76f68",
+            "status": "SUCCEEDED",
+            "start": "2026-09-22T12:03:45.104000+08:00",
+            "end": "2026-09-22T12:05:56.077000+08:00",
+            "sourceVersion": null,
+            "resolvedSourceVersion": null,
+            "sourceCommit": [
+              "8e89127e274afd822cd99a6dcbb41d4098d1d7bc"
+            ]
+          },
+          {
+            "id": "fdp-test-migration-runner:4901a3d6-cbb0-4e40-8eb9-6a2c44317c97",
+            "status": "SUCCEEDED",
+            "start": "2026-09-22T11:49:42.096000+08:00",
+            "end": "2026-09-22T11:51:47.049000+08:00",
+            "sourceVersion": null,
+            "resolvedSourceVersion": null,
+            "sourceCommit": [
+              "8e89127e274afd822cd99a6dcbb41d4098d1d7bc"
+            ]
+          }
+        ],
+        "missing": []
+      }
+    },
+    {
+      "id": "bootstrap-builds",
+      "status": "OBSERVED",
+      "data": {
+        "builds": [
+          {
+            "id": "fdp-test-admin-bootstrap-runner:f56b91e3-bc68-42dd-863b-129832aaf3a1",
+            "status": "SUCCEEDED",
+            "start": "2026-09-23T22:39:19.500000+08:00",
+            "end": "2026-09-23T22:41:15.737000+08:00",
+            "sourceVersion": "wyNNQD7nFbOO12igfD5BsI6SKkGXgqa3",
+            "resolvedSourceVersion": null,
+            "sourceCommit": [
+              "622d03ae065ccf4006a2b6e94bf60ce5cfe0bbc1"
+            ]
+          }
+        ],
+        "missing": []
+      }
+    },
+    {
+      "id": "github-main",
+      "status": "OBSERVED",
+      "data": {
+        "sha": "e59d9afad3c05b06d3d5bc646b66de1deb1ecdb0"
+      }
+    },
+    {
+      "id": "github-deploy-runs",
+      "status": "OBSERVED",
+      "data": [
+        {
+          "conclusion": "success",
+          "createdAt": "2026-10-01T15:56:53Z",
+          "databaseId": 36888227860,
+          "event": "push",
+          "headSha": "e59d9afad3c05b06d3d5bc646b66de1deb1ecdb0",
+          "status": "completed",
+          "updatedAt": "2026-10-01T16:20:32Z",
+          "url": "https://github.com/inrust/food-digester-platform/actions/runs/36888227860"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-10-01T14:53:39Z",
+          "databaseId": 36879952115,
+          "event": "push",
+          "headSha": "255e7e6d1551b01b40e7ad586af7032d9f6434b7",
+          "status": "completed",
+          "updatedAt": "2026-10-01T15:22:56Z",
+          "url": "https://github.com/inrust/food-digester-platform/actions/runs/36879952115"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-10-01T14:07:27Z",
+          "databaseId": 36873875645,
+          "event": "push",
+          "headSha": "39f856bb4ec3ec165700ab5067d73e01fa0e7e9a",
+          "status": "completed",
+          "updatedAt": "2026-10-01T14:34:31Z",
+          "url": "https://github.com/inrust/food-digester-platform/actions/runs/36873875645"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-10-01T13:31:35Z",
+          "databaseId": 36869317968,
+          "event": "push",
+          "headSha": "06e2456f7513a221b5d6974a58abe0fdc5cbc560",
+          "status": "completed",
+          "updatedAt": "2026-10-01T13:58:20Z",
+          "url": "https://github.com/inrust/food-digester-platform/actions/runs/36869317968"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-10-01T12:49:27Z",
+          "databaseId": 36864359525,
+          "event": "push",
+          "headSha": "f5953e5be5baa2559b2547ba1f56d643fb4acccc",
+          "status": "completed",
+          "updatedAt": "2026-10-01T13:06:57Z",
+          "url": "https://github.com/inrust/food-digester-platform/actions/runs/36864359525"
+        }
+      ]
+    },
+    {
+      "id": "http-admin-login",
+      "status": "OBSERVED",
+      "data": {
+        "httpStatus": 200,
+        "allowOrigin": null,
+        "requestId": null
+      }
+    },
+    {
+      "id": "http-admin-no-token",
+      "status": "OBSERVED",
+      "data": {
+        "httpStatus": 401,
+        "allowOrigin": "https://admin.bio-nexa.com",
+        "requestId": "5bc32b0b-3ed9-480a-a50b-3c8521ffdff4"
+      }
+    },
+    {
+      "id": "http-device-no-cert",
+      "status": "TRANSPORT_REJECTED",
+      "error": "ECONNRESET"
+    },
+    {
+      "id": "http-cors-allowed",
+      "status": "OBSERVED",
+      "data": {
+        "httpStatus": 204,
+        "allowOrigin": "https://admin.bio-nexa.com",
+        "requestId": "84dc2c61-898f-48a5-8f28-f7db0279a177"
+      }
+    },
+    {
+      "id": "http-cors-rejected",
+      "status": "OBSERVED",
+      "data": {
+        "httpStatus": 403,
+        "allowOrigin": null,
+        "requestId": "1a2734bf-8343-49bc-a192-e1a2dbd1c0fb"
+      }
+    },
+    {
+      "id": "gate-check-aws-iot-data-path-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-aws-data-processing-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-aws-admin-cus-dev-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-aws-admin-business-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-aws-med-rbac-aud-dash-set-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-admin-web-target-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-admin-web-fe11-15-target-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "gate-check-admin-web-fe16-19-target-evidence",
+      "status": "NOT RUN / NO RECEIPT",
+      "exitCode": 1
+    },
+    {
+      "id": "migration-source-comparison",
+      "status": "OBSERVED",
+      "data": {
+        "historicalBuildId": "fdp-test-migration-runner:1cbcdc6e-b55a-4df2-9684-acf20199000b",
+        "historicalCommit": "2d2334d825ad51662ef4c60ba7f959a6217dff7f",
+        "currentMigrationFiles": 40,
+        "changedOrMissing": [
+          "20260929120000_csr_onboarding",
+          "20260929130000_remove_onboarding_tokens",
+          "20261001090000_csr_dual_channel_certificates"
+        ],
+        "currentDatabaseState": "NOT VERIFIED"
+      }
+    }
+  ],
+  "readinessGate": "BLOCKED",
+  "awsAcceptanceGate": "NOT RUN / NO RECEIPT",
+  "blockers": [
+    "Current database migration state and two Customer scopes are NOT VERIFIED: no direct read-only database channel was used.",
+    "Ten QA09-controlled devices with usable private credentials, tenant ownership and cleanup capability are NOT VERIFIED; IoT inventory counts cannot prove this.",
+    "Existing-test-environment business tests and own test data cleanup are authorized. Usable credentials, run ledger and execution quota/artifact configuration still need preparation; deployments/migrations/fault injection remain separately scoped.",
+    "Device-auth/Command/OTA/FE01-05/security/load target receipt schemas and collectors require gap review before full acceptance.",
+    "No enabled CONFIRMED Cognito identity in Auditor",
+    "No enabled CONFIRMED Cognito identity in CustomerAdmin",
+    "No enabled CONFIRMED Cognito identity in CustomerViewer",
+    "3 migration SQL files differ from the latest successful runner source; live application is NOT VERIFIED.",
+    "IoT inventory has fewer than ten Things or ACTIVE certificates.",
+    "Quarantine baseline is nonempty or unverified; preserve existing messages and define prefix-scoped cleanup.",
+    "Backend CodeSha256 and deployed template assets are inventoried; source-to-artifact byte provenance is not yet fully verified.",
+    "gate-check-aws-iot-data-path-evidence: NOT RUN / NO RECEIPT",
+    "gate-check-aws-data-processing-evidence: NOT RUN / NO RECEIPT",
+    "gate-check-aws-admin-cus-dev-evidence: NOT RUN / NO RECEIPT",
+    "gate-check-aws-admin-business-evidence: NOT RUN / NO RECEIPT",
+    "gate-check-aws-med-rbac-aud-dash-set-evidence: NOT RUN / NO RECEIPT",
+    "gate-check-admin-web-target-evidence: NOT RUN / NO RECEIPT",
+    "gate-check-admin-web-fe11-15-target-evidence: NOT RUN / NO RECEIPT",
+    "gate-check-admin-web-fe16-19-target-evidence: NOT RUN / NO RECEIPT"
+  ]
+}
