@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { gzipSync } from 'node:zlib';
 import { prepareProbe } from './prepare-qa09-db-readonly-probe.mjs';
 import { PROJECT, validatePlan } from './qa09-ten-device-db.mjs';
+import { readVerifiedFixtureFrame } from './qa09-db-frame-wait.mjs';
 const hash = (v) => createHash('sha256').update(v).digest('hex');
 function aws(args, profile = 'esgiot-infra') {
   const r = spawnSync(
@@ -108,42 +109,55 @@ export async function runFixture(plan, evidencePath, onProgress = () => {}) {
     JSON.stringify(build.vpcConfig) !== JSON.stringify(prep.project.vpcConfig)
   )
     throw Error('FIXTURE_BUILD_NOT_VERIFIED');
-  const log = aws(
-    [
-      'logs',
-      'get-log-events',
-      '--log-group-name',
-      build.logs.groupName,
-      '--log-stream-name',
-      build.logs.streamName,
-      '--start-from-head',
-    ],
-    'esgiot-readonly',
-  );
-  const frames = log.events.flatMap((e) => {
-    try {
-      const v = JSON.parse(e.message);
-      return v.kind === 'fdp-qa09-ten-device-db/v1' ? [v] : [];
-    } catch {
-      return [];
-    }
-  });
-  if (
-    frames.length !== 1 ||
-    frames[0].buildId !== start.id ||
-    frames[0].sourceHash !== prep.sourceHash ||
-    frames[0].prefix !== plan.prefix ||
-    frames[0].action !== plan.action ||
-    frames[0].gate !== 'PASS'
-  )
-    throw Error('FIXTURE_RESULT_NOT_VERIFIED');
+  let verified;
+  try {
+    verified = await readVerifiedFixtureFrame(
+      () =>
+        aws(
+          [
+            'logs',
+            'get-log-events',
+            '--log-group-name',
+            build.logs.groupName,
+            '--log-stream-name',
+            build.logs.streamName,
+            '--start-from-head',
+          ],
+          'esgiot-readonly',
+        ),
+      { buildId: start.id, sourceHash: prep.sourceHash, prefix: plan.prefix, action: plan.action },
+    );
+  } catch (e) {
+    delete build.buildspec;
+    writeFileSync(
+      evidencePath,
+      JSON.stringify(
+        {
+          gate: 'FAIL',
+          build,
+          sourceHash: prep.sourceHash,
+          buildspecHash: prep.buildspecHash,
+          finishedAt: new Date().toISOString(),
+          failure: {
+            code: e.code ?? e.message,
+            kind: 'CLIENT_RESULT_READ_OR_VERIFICATION',
+            observations: e.observations ?? [],
+          },
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+    throw e;
+  }
   delete build.buildspec;
   const receipt = {
     gate: 'PASS',
     build,
     sourceHash: prep.sourceHash,
     buildspecHash: prep.buildspecHash,
-    result: frames[0],
+    result: verified.frame,
+    resultReadObservations: verified.observations,
   };
   writeFileSync(evidencePath, JSON.stringify(receipt, null, 2) + '\n');
   return receipt;

@@ -211,3 +211,39 @@ test('unseeded capacity attempt has read-only empty audit with deleted customers
     await pg.close();
   }
 });
+
+test('business-only Onboarded fixtures preserve original rows, refuse reuse and make no certificate/authentication claim', async () => {
+  const { pg, client } = await db();
+  try {
+    const seed = await executeFixture(client, plan('business-seed-devices'));
+    assert.equal(seed.fixtureMode, 'REAL_RDS_ONBOARDED_STATE_FOR_BUSINESS_APIS_NO_DEVICE_AUTH_CLAIM');
+    assert.equal(seed.devices.length, 10);
+    assert.ok(seed.devices.every((d) => d.lifecycle_status === 'Onboarded'));
+    assert.equal((await pg.query('SELECT count(*)::int n FROM device_certificates')).rows[0].n, 1);
+    await assert.rejects(executeFixture(client, plan('business-seed-devices')), /FIXTURES_ALREADY_EXIST/);
+    await executeFixture(client, { ...plan('cleanup'), baseline: seed.originalFingerprints });
+    assert.deepEqual((await pg.query('SELECT id FROM devices')).rows, [{ id: 'original' }]);
+    await pg.query('UPDATE customers SET deleted_at=now() WHERE id=$1', [plan().customers[0].id]);
+    await assert.rejects(executeFixture(client, plan('business-seed-devices')), /CUSTOMER_SCOPE_DRIFT/);
+    assert.deepEqual((await pg.query('SELECT id FROM devices')).rows, [{ id: 'original' }]);
+  } finally {
+    await pg.close();
+  }
+});
+
+test('unseeded timeout audit reads only exact prefix and cannot mutate original or retry customer creation', async () => {
+  const { pg, client } = await db();
+  try {
+    await pg.exec("ALTER TABLE customers ADD COLUMN status text DEFAULT 'ACTIVE'");
+    const before = await pg.query('SELECT id FROM devices ORDER BY id');
+    const result = await executeFixture(client, { ...plan('audit-unseeded-prefix'), customers: [] });
+    assert.equal(result.writes, 0);
+    assert.equal(result.devices.length, 0);
+    assert.equal(result.customers.length, 2);
+    assert.ok(result.customers.every((c) => c.name.startsWith(prefix + '-')));
+    assert.deepEqual((await pg.query('SELECT id FROM devices ORDER BY id')).rows, before.rows);
+    assert.throws(() => validatePlan({ ...plan('audit-unseeded-prefix') }), /EMPTY_CUSTOMER_LEDGER/);
+  } finally {
+    await pg.close();
+  }
+});

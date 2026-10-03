@@ -13,18 +13,36 @@ export function assertOwnCloudDevice(id, prefix) {
 export function validatePlan(plan) {
   if (
     !/^qa09-[a-f0-9]{16}$/.test(plan.prefix ?? '') ||
-    !['seed', 'observe', 'cleanup', 'audit-closed', 'cleanup-closed', 'audit-empty'].includes(plan.action)
+    ![
+      'seed',
+      'observe',
+      'cleanup',
+      'audit-closed',
+      'cleanup-closed',
+      'audit-empty',
+      'audit-unseeded-prefix',
+      'business-baseline',
+      'business-cleanup',
+      'business-audit',
+      'business-seed-alarm',
+      'business-seed-devices',
+      'business-inject-export-lease',
+    ].includes(plan.action)
   )
     throw Error('INVALID_FIXTURE_PLAN');
+  if (plan.action === 'audit-unseeded-prefix' && (!Array.isArray(plan.customers) || plan.customers.length !== 0))
+    throw Error('UNSEEDED_AUDIT_REQUIRES_EMPTY_CUSTOMER_LEDGER');
   const ids = Array.from({ length: 10 }, (_, i) => `${plan.prefix}-${String(i + 1).padStart(2, '0')}`);
   if (JSON.stringify(plan.devices) !== JSON.stringify(ids)) throw Error('EXACT_TEN_REQUIRED');
   if (
-    !Array.isArray(plan.customers) ||
-    plan.customers.length !== 2 ||
-    plan.customers.some(
-      (c) => !/^[a-f0-9-]{36}$/.test(c.id) || c.name !== `${plan.prefix}-${c.suffix}` || !['a', 'b'].includes(c.suffix),
-    ) ||
-    plan.customers[0].id === plan.customers[1].id
+    plan.action !== 'audit-unseeded-prefix' &&
+    (!Array.isArray(plan.customers) ||
+      plan.customers.length !== 2 ||
+      plan.customers.some(
+        (c) =>
+          !/^[a-f0-9-]{36}$/.test(c.id) || c.name !== `${plan.prefix}-${c.suffix}` || !['a', 'b'].includes(c.suffix),
+      ) ||
+      plan.customers[0].id === plan.customers[1].id)
   )
     throw Error('OWN_CUSTOMERS_REQUIRED');
   if (
@@ -53,7 +71,14 @@ export async function executeFixture(client, plan) {
   let committed = false;
   try {
     await client.query(
-      ['observe', 'audit-closed', 'audit-empty'].includes(plan.action)
+      [
+        'observe',
+        'audit-closed',
+        'audit-empty',
+        'audit-unseeded-prefix',
+        'business-baseline',
+        'business-audit',
+      ].includes(plan.action)
         ? 'BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY'
         : 'BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE',
     );
@@ -62,6 +87,178 @@ export async function executeFixture(client, plan) {
     if ((await client.query('SELECT current_database() AS database')).rows[0].database !== 'fdp')
       throw Error('WRONG_DATABASE');
     const before = await original(client, ids);
+    if (plan.action === 'audit-unseeded-prefix') {
+      const customers = (
+        await client.query(
+          'SELECT id,name,status,deleted_at FROM customers WHERE name=ANY($1::text[]) ORDER BY name,id',
+          [[plan.prefix + '-a', plan.prefix + '-b']],
+        )
+      ).rows;
+      const devices = (
+        await client.query(
+          'SELECT id,serial_number,customer_id FROM devices WHERE id=ANY($1::text[]) OR serial_number=ANY($1::text[]) ORDER BY id',
+          [ids],
+        )
+      ).rows;
+      await client.query('ROLLBACK');
+      committed = true;
+      return { customers, devices, originalFingerprints: before, writes: 0 };
+    }
+    if (plan.action === 'business-seed-devices') {
+      for (const c of plan.customers)
+        if (
+          (
+            await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2 AND deleted_at IS NULL', [
+              c.id,
+              c.name,
+            ])
+          ).rowCount !== 1
+        )
+          throw Error('CUSTOMER_SCOPE_DRIFT');
+      if (
+        (await client.query('SELECT id FROM devices WHERE id=ANY($1::text[]) OR serial_number=ANY($1::text[])', [ids]))
+          .rowCount
+      )
+        throw Error('FIXTURES_ALREADY_EXIST');
+      for (const [i, id] of ids.entries())
+        await client.query(
+          "INSERT INTO devices(id,serial_number,model,hardware_version,manufacturer,manufacture_date,lifecycle_status,customer_id,updated_at) VALUES($1,$1,'BNX-100','1','Bio-Nexa','2026-01-01','Onboarded',$2,now())",
+          [id, plan.customers[i < 5 ? 0 : 1].id],
+        );
+      const devices = (
+        await client.query(
+          'SELECT id,serial_number,customer_id,lifecycle_status FROM devices WHERE id=ANY($1::text[]) ORDER BY id',
+          [ids],
+        )
+      ).rows;
+      if (devices.length !== 10 || JSON.stringify(before) !== JSON.stringify(await original(client, ids)))
+        throw Error('ORIGINAL_DEVICE_OR_CERTIFICATE_CHANGED');
+      await client.query('COMMIT');
+      committed = true;
+      return {
+        devices,
+        originalFingerprints: before,
+        fixtureMode: 'REAL_RDS_ONBOARDED_STATE_FOR_BUSINESS_APIS_NO_DEVICE_AUTH_CLAIM',
+      };
+    }
+    if (plan.action === 'business-seed-alarm') {
+      const c = plan.customers[0];
+      if (
+        (await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2 AND deleted_at IS NULL', [c.id, c.name]))
+          .rowCount !== 1 ||
+        (await client.query('SELECT id FROM devices WHERE id=$1 AND customer_id=$2', [ids[0], c.id])).rowCount !== 1
+      )
+        throw Error('OWN_ALARM_SCOPE_DRIFT');
+      if (!/^[a-f0-9-]{36}$/.test(plan.alarmId ?? '')) throw Error('OWN_ALARM_LEDGER_REQUIRED');
+      await client.query(
+        "INSERT INTO alarms(id,device_id,customer_id,code,category,severity,detected_time,updated_at) VALUES($1,$2,$3,'QA09_TEST','SYSTEM','WARNING',now(),now())",
+        [plan.alarmId, ids[0], c.id],
+      );
+      await client.query('COMMIT');
+      committed = true;
+      return { alarmId: plan.alarmId };
+    }
+    if (plan.action === 'business-inject-export-lease') {
+      if (
+        plan.faultAuthorization !== 'USER_CONFIRMED_OWN_FIXTURE_ONLY_2026_10_03' ||
+        !/^[a-f0-9-]{36}$/.test(plan.exportId ?? '')
+      )
+        throw Error('OWN_FAULT_AUTHORIZATION_REQUIRED');
+      const c = plan.customers[0];
+      const changed = await client.query(
+        "UPDATE esg_export_jobs SET status='PROCESSING',lease_until=now()-interval '1 second',lease_token=$4 WHERE id=$1 AND customer_id=$2 AND filters->>'deviceId'=$3 AND status IN('PENDING','COMPLETED','FAILED') RETURNING id,status,lease_until<now() AS expired",
+        [plan.exportId, c.id, ids[0], plan.exportId],
+      );
+      if (changed.rowCount !== 1) throw Error('OWN_EXPORT_NOT_READY_FOR_INJECTION');
+      await client.query('COMMIT');
+      committed = true;
+      return { exportLease: changed.rows[0], originalFingerprints: before };
+    }
+    if (plan.action.startsWith('business-')) {
+      const customers = plan.customers.map((c) => c.id);
+      for (const c of plan.customers)
+        if ((await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2', [c.id, c.name])).rowCount !== 1)
+          throw Error('CUSTOMER_SCOPE_DRIFT');
+      const scopes = [
+        ['device_user_sync_receipts', 'device_id=ANY($1::text[])', ids],
+        ['device_user_assignments', 'customer_id=ANY($1::text[])', customers],
+        ['device_users', 'customer_id=ANY($1::text[])', customers],
+        ['license_history', 'license_id IN(SELECT id FROM licenses WHERE customer_id=ANY($1::text[]))', customers],
+        ['license_entitlements', 'license_id IN(SELECT id FROM licenses WHERE customer_id=ANY($1::text[]))', customers],
+        ['contract_devices', 'customer_id=ANY($1::text[])', customers],
+        ['licenses', 'customer_id=ANY($1::text[])', customers],
+        ['contracts', 'customer_id=ANY($1::text[])', customers],
+        [
+          'configuration_versions',
+          'configuration_id IN(SELECT id FROM device_configurations WHERE target_device_id=ANY($1::text[]))',
+          ids,
+        ],
+        ['device_configurations', 'target_device_id=ANY($1::text[])', ids],
+        ['consumable_requests', 'customer_id=ANY($1::text[])', customers],
+        ['esg_export_jobs', 'customer_id=ANY($1::text[])', customers],
+        ['device_assignments', 'device_id=ANY($1::text[])', ids],
+        ['device_user_sync_receipts', 'device_id=ANY($1::text[])', ids],
+      ];
+      const outside = async () =>
+        Promise.all(
+          scopes
+            .filter((s, i, a) => a.findIndex((x) => x[0] === s[0]) === i)
+            .map(async ([table, predicate, args]) => ({
+              table,
+              ...(
+                await client.query(
+                  `SELECT count(*)::text,md5(coalesce(string_agg(to_jsonb(t)::text,'' ORDER BY to_jsonb(t)::text),'')) AS digest FROM public."${table}" t WHERE NOT COALESCE((${predicate}),false)`,
+                  [args],
+                )
+              ).rows[0],
+            })),
+        );
+      const fingerprint = await outside();
+      const counts = {};
+      const deleted = {};
+      if (plan.action === 'business-cleanup') {
+        if (
+          !Array.isArray(plan.businessBaseline) ||
+          JSON.stringify(fingerprint) !== JSON.stringify(plan.businessBaseline)
+        )
+          throw Error('BUSINESS_BASELINE_DRIFT');
+        const objects = (
+          await client.query(
+            'SELECT id FROM licenses WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM contracts WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM device_users WHERE customer_id=ANY($1::text[])',
+            [customers],
+          )
+        ).rows.map((r) => r.id);
+        await client.query('UPDATE devices SET site_id=NULL WHERE id=ANY($1::text[]) AND customer_id=ANY($2::text[])', [
+          ids,
+          customers,
+        ]);
+        deleted.business_outbox = (
+          await client.query('DELETE FROM outbox_events WHERE aggregate_id=ANY($1::text[])', [objects])
+        ).rowCount;
+        for (const [table, predicate, args] of scopes)
+          deleted[table] =
+            (deleted[table] ?? 0) +
+            (await client.query(`DELETE FROM public."${table}" WHERE ${predicate}`, [args])).rowCount;
+      }
+      for (const [table, predicate, args] of scopes)
+        counts[table] = Number(
+          (await client.query(`SELECT count(*)::text AS count FROM public."${table}" WHERE ${predicate}`, [args]))
+            .rows[0].count,
+        );
+      const after = await outside();
+      if (JSON.stringify(fingerprint) !== JSON.stringify(after)) throw Error('OUTSIDE_BUSINESS_DATA_CHANGED');
+      if (
+        plan.action === 'business-audit' &&
+        (!Array.isArray(plan.businessBaseline) ||
+          JSON.stringify(after) !== JSON.stringify(plan.businessBaseline) ||
+          Object.values(counts).some((n) => n !== 0))
+      )
+        throw Error('BUSINESS_CLEANUP_NOT_VERIFIED');
+      if (plan.action === 'business-cleanup') await client.query('COMMIT');
+      else await client.query('ROLLBACK');
+      committed = true;
+      return { businessFingerprints: after, counts, deleted, originalFingerprints: before };
+    }
     if (plan.action === 'audit-empty') {
       if (!Array.isArray(plan.baseline)) throw Error('ORIGINAL_BASELINE_REQUIRED');
       for (const c of plan.customers)

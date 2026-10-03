@@ -1,0 +1,60 @@
+{
+  "task": "QA-09",
+  "scope": "CORE_BUSINESS_REAL_RDS_STATE_FIXTURE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1"
+  },
+  "fixtureMode": "REAL_RDS_ONBOARDED_STATE_FOR_BUSINESS_APIS_NO_DEVICE_AUTH_CLAIM",
+  "prefix": "qa09-5be611f88285b8f6",
+  "devices": [
+    "qa09-5be611f88285b8f6-01",
+    "qa09-5be611f88285b8f6-02",
+    "qa09-5be611f88285b8f6-03",
+    "qa09-5be611f88285b8f6-04",
+    "qa09-5be611f88285b8f6-05",
+    "qa09-5be611f88285b8f6-06",
+    "qa09-5be611f88285b8f6-07",
+    "qa09-5be611f88285b8f6-08",
+    "qa09-5be611f88285b8f6-09",
+    "qa09-5be611f88285b8f6-10"
+  ],
+  "customers": [],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "identity-renewal",
+      "result": "FAIL"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-5be611f88285b8f6-platformsuperadmin@example.invalid",
+      "result": "FAIL"
+    }
+  ],
+  "databaseBuilds": [],
+  "sourceCommit": "e759626a3e965cd9c0330b8e73bc713c0386d7de",
+  "versionReceipt": "docs/audit/evidence/qa-09-core-workflows-attempt2-application-version-2026-10-03.json",
+  "startedAt": "2026-10-03T02:19:28.851Z",
+  "gate": "FAIL",
+  "fullQa09Accepted": false,
+  "credentialsExported": false,
+  "identity": {
+    "username": "qa09-5be611f88285b8f6-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "failure": {
+    "code": "CORE_TARGET_FAILED"
+  },
+  "finishedAt": "2026-10-03T02:20:09.887Z"
+}

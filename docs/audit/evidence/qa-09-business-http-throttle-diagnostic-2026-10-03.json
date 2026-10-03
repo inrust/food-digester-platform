@@ -1,0 +1,50 @@
+{
+  "task": "QA-09",
+  "mode": "READ_ONLY_DIAGNOSTIC",
+  "collectedAt": "2026-10-03T00:39:21.557Z",
+  "accountId": "065986019555",
+  "region": "ap-southeast-1",
+  "functionName": "fdp-test-api",
+  "logGroup": "/aws/lambda/fdp-test-api",
+  "query": {
+    "namespace": "AWS/Lambda",
+    "metric": "Throttles",
+    "startTime": "2026-10-03T00:32:00Z",
+    "endTime": "2026-10-03T00:38:00Z",
+    "period": 60,
+    "statistic": "Sum"
+  },
+  "reservedConcurrentExecutions": 8,
+  "metric": {
+    "Label": "Throttles",
+    "Datapoints": [
+      {
+        "Timestamp": "2026-10-03T08:32:00+08:00",
+        "Sum": 0,
+        "Unit": "Count"
+      },
+      {
+        "Timestamp": "2026-10-03T08:36:00+08:00",
+        "Sum": 2,
+        "Unit": "Count"
+      },
+      {
+        "Timestamp": "2026-10-03T08:35:00+08:00",
+        "Sum": 0,
+        "Unit": "Count"
+      },
+      {
+        "Timestamp": "2026-10-03T08:34:00+08:00",
+        "Sum": 0,
+        "Unit": "Count"
+      }
+    ]
+  },
+  "matchingErrorLogCount": 0,
+  "requestIds": [
+    "585c5f2b-47ef-4b5b-88ab-3a29611e0aaf",
+    "2bbadf92-9a09-4476-9e9f-669561231e1a"
+  ],
+  "inference": "Two API500 responses coincided with two Lambda throttles; 10 concurrent clients exceed reserved concurrency8. No per-request integration log links obtained.",
+  "sharedConfigurationChanged": false
+}

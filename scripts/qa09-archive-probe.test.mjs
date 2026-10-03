@@ -77,3 +77,23 @@ test('IoT normalized raw body binds outbox bytes while original publication bind
   );
   assert.equal(verifyArchiveObjects(f.plan, f.objects).allTelemetryArchived, true);
 });
+
+test('quick MQTT profile requires exact additional telemetry ledger and cannot waive missing archives', () => {
+  const { plan, objects } = fixture();
+  const enlarged = {
+    ...plan,
+    profile: 'QA07_QUICK_REAL_MQTT',
+    published: [...plan.published],
+    outbox: [...plan.outbox],
+  };
+  for (let i = 0; i < 920; i++) {
+    const template = plan.published[i < 900 ? 10 : 0];
+    enlarged.published.push({ ...template, type: i < 900 ? 'telemetry' : 'heartbeat', messageId: 'load-' + i });
+  }
+  for (let i = 0; i < 900; i++)
+    enlarged.outbox.push({ ...plan.outbox[0], id: `${String(i).padStart(8, '0')}-0000-0000-0000-000000000000` });
+  validateArchivePlan(enlarged);
+  assert.throws(() => verifyArchiveObjects(enlarged, objects), /ARCHIVE_MISSING/);
+  assert.throws(() => validateArchivePlan({ ...enlarged, profile: 'UNBOUNDED' }), /PROFILE/);
+  assert.throws(() => validateArchivePlan({ ...enlarged, published: enlarged.published.slice(1) }), /PUBLISH_LEDGER/);
+});

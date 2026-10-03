@@ -1,0 +1,35 @@
+{
+  "task": "QA-09",
+  "scope": "REAL_MQTT_DELIVERY_WINDOW_AND_DB_INGESTION_DIAGNOSTIC",
+  "collectedAt": "2026-10-03T01:44:50.692Z",
+  "sourceReceipt": "docs/audit/evidence/qa-09-business-target-attempt2-2026-10-03.json.observe-4.json.recovered.json",
+  "sourceBuildId": "fdp-test-qa09-ten-device-fixtures:1f836bb3-d524-4991-a93e-079879429805",
+  "prefix": "qa09-096e91ce47af96b1",
+  "burst": {
+    "messages": 300,
+    "deviceCount": 10,
+    "seqInclusive": [
+      63,
+      92
+    ],
+    "publishStartSpanSeconds": 160.57,
+    "plannedWindowSeconds": 10,
+    "plannedAggregateMessagesPerSecond": 30,
+    "observedUpperBoundMessagesPerSecond": 1.8683440244130287,
+    "gate": "FAIL",
+    "proof": "Client timestamps generated immediately before serial publish, bound to real processed RDS rows; lower bound on publication window, not PUBACK latency"
+  },
+  "normal": {
+    "samples": 120,
+    "seqInclusive": [
+      3,
+      14
+    ],
+    "dbProcessedP95Ms": 11980,
+    "dbProcessedMaxMs": 17434,
+    "proof": "Client occurrence to database processed time only; includes clock skew"
+  },
+  "apiVisibilitySlo": "NOT_MEASURED",
+  "commandPublishSlo": "NOT_MEASURED",
+  "fullQa09Accepted": false
+}

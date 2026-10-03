@@ -23,6 +23,17 @@ export function validateCurrentEnvironment(config) {
     )
   )
     throw Error('INVALID_QA09_TEST_SCOPE');
+  const faults = config.authorization.ownFixtureFaults;
+  if (
+    faults &&
+    (faults.scope !== 'OWN_CREATED_IDS_ONLY' ||
+      faults.sharedResourceChanges !== false ||
+      faults.restoreAndAuditRequired !== true ||
+      !Array.isArray(faults.actions) ||
+      !faults.actions.length ||
+      faults.actions.some((action) => !['EXPIRED_ESG_EXPORT_LEASE', 'OWN_QUEUE_REDELIVERY'].includes(action)))
+  )
+    throw Error('INVALID_OWN_FIXTURE_FAULT_SCOPE');
   return config;
 }
 validateCurrentEnvironment(CURRENT_TEST_CONFIG);

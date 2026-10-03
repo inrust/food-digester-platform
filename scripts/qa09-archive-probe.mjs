@@ -28,10 +28,13 @@ export function validateArchivePlan(p) {
     p.customers?.length === 2 && new Set(p.customers).size === 2 && p.customers.every((c) => /^[a-f0-9-]{36}$/.test(c)),
     'INVALID_ARCHIVE_CUSTOMERS',
   );
+  const total = p.profile === 'QA07_QUICK_REAL_MQTT' ? 950 : 30;
+  const telemetry = p.profile === 'QA07_QUICK_REAL_MQTT' ? 920 : 20;
+  demand(p.profile === undefined || p.profile === 'QA07_QUICK_REAL_MQTT', 'INVALID_ARCHIVE_PROFILE');
   demand(
-    p.published?.length === 30 &&
-      new Set(p.published.map((p) => p.messageId)).size === 30 &&
-      p.published.filter((m) => m.type === 'telemetry').length === 20 &&
+    p.published?.length === total &&
+      new Set(p.published.map((p) => p.messageId)).size === total &&
+      p.published.filter((m) => m.type === 'telemetry').length === telemetry &&
       p.published.every(
         (m) =>
           p.devices.includes(m.deviceId) &&
@@ -41,14 +44,14 @@ export function validateArchivePlan(p) {
     'INVALID_PUBLISH_LEDGER',
   );
   demand(
-    p.outbox?.length >= 20 &&
+    p.outbox?.length >= telemetry &&
       p.outbox.every((r) => /^[a-f0-9-]{36}$/.test(r.id) && /^[a-f0-9]{64}$/.test(r.rawBodySha256)),
     'INVALID_OUTBOX_LEDGER',
   );
 }
 export function verifyArchiveObjects(plan, objects) {
   validateArchivePlan(plan);
-  demand(objects.length <= 200, 'ARCHIVE_LIMIT_EXCEEDED');
+  demand(objects.length <= (plan.profile === 'QA07_QUICK_REAL_MQTT' ? 2000 : 200), 'ARCHIVE_LIMIT_EXCEEDED');
   const checks = [],
     archiveObjects = [],
     found = new Set();

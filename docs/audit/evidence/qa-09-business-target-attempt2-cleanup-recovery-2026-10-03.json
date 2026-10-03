@@ -1,0 +1,267 @@
+{
+  "task": "QA-09",
+  "scope": "RECOVER_EXACT_FAILED_RUN_OWN_FIXTURES",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1",
+    "stackName": "fdp-test-app"
+  },
+  "prefix": "qa09-096e91ce47af96b1",
+  "devices": [
+    "qa09-096e91ce47af96b1-01",
+    "qa09-096e91ce47af96b1-02",
+    "qa09-096e91ce47af96b1-03",
+    "qa09-096e91ce47af96b1-04",
+    "qa09-096e91ce47af96b1-05",
+    "qa09-096e91ce47af96b1-06",
+    "qa09-096e91ce47af96b1-07",
+    "qa09-096e91ce47af96b1-08",
+    "qa09-096e91ce47af96b1-09",
+    "qa09-096e91ce47af96b1-10"
+  ],
+  "customers": [
+    {
+      "id": "a16890ae-9915-441e-b415-ade36417f105",
+      "name": "qa09-096e91ce47af96b1-a",
+      "suffix": "a",
+      "version": 1
+    },
+    {
+      "id": "a4caefbf-8de3-467b-9014-0683b05f5492",
+      "name": "qa09-096e91ce47af96b1-b",
+      "suffix": "b",
+      "version": 1
+    }
+  ],
+  "parentReceipt": "docs/audit/evidence/qa-09-business-target-attempt2-2026-10-03.json.devices.json",
+  "parentReceiptSha256": "222ebf19037c4bc775e300350d55bee2ef60894db7e400cf99a5abee2ab8c80c",
+  "startedAt": "2026-10-03T01:53:44.516Z",
+  "gate": "PASS",
+  "checks": [
+    {
+      "id": "exact-ten-records-and-certificates",
+      "result": "PASS"
+    },
+    {
+      "id": "original-device-certificate-baseline-preserved",
+      "result": "PASS"
+    },
+    {
+      "id": "recovery-first-login",
+      "result": "PASS"
+    },
+    {
+      "id": "recovery-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "scope-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/a4caefbf-8de3-467b-9014-0683b05f5492",
+      "status": 200,
+      "requestId": "2021262d-9a67-42bb-889f-02f838311a67"
+    },
+    {
+      "id": "own-name-b",
+      "result": "PASS"
+    },
+    {
+      "id": "delete-b",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/a4caefbf-8de3-467b-9014-0683b05f5492",
+      "status": 200,
+      "requestId": "8daf4b05-fe9c-4c59-b2ea-c26c63827578"
+    },
+    {
+      "id": "absent-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/a4caefbf-8de3-467b-9014-0683b05f5492",
+      "status": 404,
+      "requestId": "6e0ce317-fff0-40db-97eb-9c4a15ed73c0"
+    },
+    {
+      "id": "scope-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/a16890ae-9915-441e-b415-ade36417f105",
+      "status": 200,
+      "requestId": "cc1039a4-8cf1-49de-92aa-60c015cdfb19"
+    },
+    {
+      "id": "own-name-a",
+      "result": "PASS"
+    },
+    {
+      "id": "delete-a",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/a16890ae-9915-441e-b415-ade36417f105",
+      "status": 200,
+      "requestId": "0a8acc17-ad4c-405e-a833-d5ddd95f3cb4"
+    },
+    {
+      "id": "absent-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/a16890ae-9915-441e-b415-ade36417f105",
+      "status": 404,
+      "requestId": "10434cfe-19cd-4650-93d2-d48c9b12463b"
+    },
+    {
+      "id": "recovery-identity-absent",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "iot-certificate",
+      "id": "780a1a52940b0696bd386ca2103e1d588a09beebf95f09f206876783106f2a43",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "9d5c1510f812bd5eaa019364102dac7e9e3b3f4b4d4a92934e93d304283c7f49",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "7dda89b3e3f5a2dec0b5425c8beec9d38f48b8980953cd9dd268bcbbe1ae007a",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "3442061e30e28e75a94bd870f32542af1121e6782477e5f39f0c59fd25bd0295",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "9aef37d378a592514143dbbe16b2b297f913d4288b62627d412aa31af102dd64",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "3cdce4eba2148f60e94e1f55ee62574838925f50305f1f0a058d654fe72400cb",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "fbd9e13264be1cd856eea56adf553d3663355529ab56039c264786047c79defe",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "1418d39e431a64b985a1c5fbb903f08ec065545708a6b5df45e0a3d03ebec4f9",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "a92f804858b657cfa9b38f0c86c382e3aa89d14987933550ac1c1b0cce243650",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "9cb6243961e5e01c06f90941089bbcf769079922c24e47939ce5290141f8dd87",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-thing",
+      "id": "qa09-096e91ce47af96b1-01",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-thing",
+      "id": "qa09-096e91ce47af96b1-02",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-thing",
+      "id": "qa09-096e91ce47af96b1-03",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-thing",
+      "id": "qa09-096e91ce47af96b1-04",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-thing",
+      "id": "qa09-096e91ce47af96b1-05",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-thing",
+      "id": "qa09-096e91ce47af96b1-06",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-thing",
+      "id": "qa09-096e91ce47af96b1-07",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-thing",
+      "id": "qa09-096e91ce47af96b1-08",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-thing",
+      "id": "qa09-096e91ce47af96b1-09",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-thing",
+      "id": "qa09-096e91ce47af96b1-10",
+      "result": "PASS"
+    },
+    {
+      "type": "database-fixtures",
+      "count": 10,
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "a4caefbf-8de3-467b-9014-0683b05f5492",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "a16890ae-9915-441e-b415-ade36417f105",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-5035205133af341b-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "observe",
+      "receipt": "docs/audit/evidence/qa-09-business-target-attempt2-cleanup-recovery-2026-10-03.json.observe.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:b9cba7db-83bf-4391-ba97-b1b6b99e58dd"
+    },
+    {
+      "action": "cleanup",
+      "receipt": "docs/audit/evidence/qa-09-business-target-attempt2-cleanup-recovery-2026-10-03.json.cleanup.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:a3249f66-6288-46cb-a31a-10d60ff3c88a"
+    }
+  ],
+  "recoveryIdentity": {
+    "username": "qa09-5035205133af341b-platformsuperadmin@example.invalid",
+    "authPrefix": "qa09-5035205133af341b"
+  },
+  "sourceHashes": {
+    "scripts/recover-qa09-owned-fixtures.mjs": "5bf24ffc745749cd0a600490a18818bd104e266ca90817748a0a4a44ea7d5122",
+    "scripts/qa09-ten-device-bridge.mjs": "02c2c69d1661d839b00e79af7bd3928777543f8b0f4f7e564a8f68e97c9e73a0",
+    "scripts/qa09-ten-device-db.mjs": "6c8d95711bee80699009cc8465e5233a56832ade05a6070976e0000fe490a09a",
+    "scripts/qa09-db-log-frames.mjs": "d127210820bfa8bf5b25ba284cb22a4081a4ece7e1e3ec1039f8652bdcdd1c86"
+  },
+  "credentialsExported": false,
+  "fullQa09Accepted": false,
+  "finishedAt": "2026-10-03T01:59:42.774Z",
+  "domainCleanupReceipt": "docs/audit/evidence/qa-09-business-target-attempt2-cleanup-recovery-2026-10-03.json.domain-cleanup.json"
+}
