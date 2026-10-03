@@ -1,3 +1,4 @@
+import nodeAssert from 'node:assert/strict';
 /**
  * BE-DEV-05 设备控制台组合查询与活动导出 API 验收（PGlite 真实 PostgreSQL + 全部 migration）。
  *
@@ -312,6 +313,53 @@ beforeAll(async () => {
 });
 
 describe('BE-DEV-05 控制台组合查询', () => {
+  test('同小时跨站点桶按指标count加权合并，不漏掉新站点或回退旧小时', async () => {
+    const deviceId = 'con-multi-site';
+    await plantDevice(deviceId, customerAId, 'FW1');
+    await prisma.telemetryHourly.createMany({
+      data: [
+        {
+          deviceId,
+          customerId: customerAId,
+          siteId: 'old-site',
+          bucketStart: new Date('2026-09-05T12:00:00Z'),
+          sampleCount: 9,
+          metrics: {
+            chamberWeightKg: { avg: 10, min: 5, max: 20, count: 9 },
+            currentAmp: { avg: 2, min: 2, max: 2, count: 1 },
+          },
+        },
+        {
+          deviceId,
+          customerId: customerAId,
+          siteId: 'new-site',
+          bucketStart: new Date('2026-09-05T12:00:00Z'),
+          sampleCount: 1,
+          metrics: {
+            chamberWeightKg: { avg: 100, min: 100, max: 100, count: 1 },
+            currentAmp: { avg: 4, min: 4, max: 4, count: 3 },
+          },
+        },
+        {
+          deviceId,
+          customerId: customerAId,
+          siteId: 'old-site',
+          bucketStart: new Date('2026-09-05T11:00:00Z'),
+          sampleCount: 1,
+          metrics: { chamberWeightKg: { avg: 999, min: 999, max: 999, count: 1 } },
+        },
+      ],
+    });
+    const { getDeviceConsole } = await import('../src/admin/device-console/service.js');
+    const view = await getDeviceConsole(deps(), custActor(customerAId), deviceId);
+    const encoded = JSON.stringify(view);
+    assert.include(encoded, '"avg":19');
+    assert.include(encoded, '"max":100');
+    assert.include(encoded, '"avg":3.5');
+    assert.notInclude(encoded, '999');
+    await nodeAssert.rejects(getDeviceConsole(deps(), custActor(customerBId), deviceId));
+  });
+
   test('全部数据块可追溯：四轴/部件/遥测/网络/固件/耗材/告警/合约/近7日ESG/最新Media', async () => {
     const h = createAdminDeviceConsoleHandlers(deps());
     const res = await h.getDeviceConsole(req(custActor(customerAId), { params: { deviceId: DEV_A1 } }));

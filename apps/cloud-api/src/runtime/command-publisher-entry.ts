@@ -1,3 +1,4 @@
+import { createCommandPhaseObserver, type CommandPhaseObserver } from '../admin/command/phase-observer.js';
 import { createRedactingLogger } from '@fdp/observability';
 import { consumeCommandNotifications, type CommandQueueEvent } from '../admin/command/queue-consumer.js';
 import type { CommandPublisherDeps } from '../admin/command/publisher.js';
@@ -16,10 +17,12 @@ const required = (name: string): string => {
 
 let runtimeDeps: CommandPublisherDeps | undefined;
 
-async function initialize(): Promise<CommandPublisherDeps> {
+async function initialize(observe: CommandPhaseObserver): Promise<CommandPublisherDeps> {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
-  const endpoint = await createAwsIotProvisioningClient({ region }).getDataEndpoint();
+  const client = createPrismaClient(
+    await observe('db-secret', () => resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region })),
+  );
+  const endpoint = await observe('iot-endpoint', () => createAwsIotProvisioningClient({ region }).getDataEndpoint());
   const mqtt = createIotDataPublisher({ endpoint, region });
   return { client, mqtt };
 }
@@ -29,15 +32,41 @@ export async function handler(
   event: CommandQueueEvent = {},
   context?: { readonly awsRequestId?: string },
 ): Promise<CommandPublishBatchResult | { batchItemFailures: { itemIdentifier: string }[] }> {
-  runtimeDeps ??= await initialize();
+  const workerStartedAt = Date.now();
+  const coldStart = runtimeDeps === undefined;
+  const observe = createCommandPhaseObserver(
+    (row) => logger.info(JSON.stringify(row)),
+    context?.awsRequestId ?? 'unknown',
+    coldStart,
+  );
+  runtimeDeps ??= await initialize(observe);
+  const deps = { ...runtimeDeps, observePhase: observe };
+  for (const record of event.Records ?? []) {
+    const sent = record.attributes?.SentTimestamp;
+    logger.info(
+      JSON.stringify({
+        event: 'command.notification.received',
+        lambdaRequestId: /^[a-f0-9-]{36}$/.test(context?.awsRequestId ?? '') ? context?.awsRequestId : 'unknown',
+        sqsMessageId: /^[a-f0-9-]{36}$/.test(record.messageId) ? record.messageId : 'unknown',
+        ageAtWorkerStartMs: sent && /^\d{13}$/.test(sent) ? Math.max(0, workerStartedAt - Number(sent)) : null,
+        clock: 'SQS_SENT_TIMESTAMP_TO_WORKER_WALL_CLOCK_APPROXIMATE',
+        coldStart,
+      }),
+    );
+  }
+  logger.info(
+    JSON.stringify({ event: 'command.invocation.started', source: event.Records ? 'SQS' : 'SCHEDULE', coldStart }),
+  );
   if (event.Records)
-    return consumeCommandNotifications(runtimeDeps, event, (row) =>
-      logger.info(
-        JSON.stringify({
-          ...row,
-          lambdaRequestId: /^[a-f0-9-]{36}$/.test(context?.awsRequestId ?? '') ? context?.awsRequestId : 'unknown',
-        }),
+    return observe('sqs-consumption', () =>
+      consumeCommandNotifications(deps, event, (row) =>
+        logger.info(
+          JSON.stringify({
+            ...row,
+            lambdaRequestId: /^[a-f0-9-]{36}$/.test(context?.awsRequestId ?? '') ? context?.awsRequestId : 'unknown',
+          }),
+        ),
       ),
     );
-  return publishPendingCommands(runtimeDeps);
+  return observe('scheduled-scan', () => publishPendingCommands(deps));
 }

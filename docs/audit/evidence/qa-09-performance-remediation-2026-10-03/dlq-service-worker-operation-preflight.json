@@ -1,0 +1,48 @@
+{
+  "principalArn": "arn:aws:iam::065986019555:role/aws-reserved/sso.amazonaws.com/ap-southeast-1/AWSReservedSSO_FDP-InfraSetup_4e338f95abb20e55",
+  "scope": "READ_ONLY_OPERATION_PREFLIGHT_NOT_RESOURCE_POLICY_PROOF",
+  "results": [
+    {
+      "action": "iam:PutRolePolicy",
+      "resource": "arn:aws:iam::065986019555:role/fdp-test-command-publisher-role",
+      "decision": "allowed",
+      "missingContextValues": []
+    },
+    {
+      "action": "iam:DeleteRolePolicy",
+      "resource": "arn:aws:iam::065986019555:role/fdp-test-command-publisher-role",
+      "decision": "allowed",
+      "missingContextValues": []
+    },
+    {
+      "action": "iam:PassRole",
+      "resource": "arn:aws:iam::065986019555:role/fdp-test-command-publisher-role",
+      "decision": "allowed",
+      "missingContextValues": []
+    },
+    {
+      "action": "kms:PutKeyPolicy",
+      "resource": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c",
+      "decision": "explicitDeny",
+      "missingContextValues": []
+    },
+    {
+      "action": "lambda:CreateFunction",
+      "resource": "arn:aws:lambda:ap-southeast-1:065986019555:function:fdp-test-qa09-command-dlq-diagnostic",
+      "decision": "allowed",
+      "missingContextValues": []
+    },
+    {
+      "action": "lambda:InvokeFunction",
+      "resource": "arn:aws:lambda:ap-southeast-1:065986019555:function:fdp-test-qa09-command-dlq-diagnostic",
+      "decision": "allowed",
+      "missingContextValues": []
+    },
+    {
+      "action": "lambda:DeleteFunction",
+      "resource": "arn:aws:lambda:ap-southeast-1:065986019555:function:fdp-test-qa09-command-dlq-diagnostic",
+      "decision": "allowed",
+      "missingContextValues": []
+    }
+  ]
+}

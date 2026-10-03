@@ -29,10 +29,17 @@ export interface SqsArchiveSenderConfig {
   /** 注入的 SQS 客户端（测试可 mock）；缺省按 region 创建。 */
   readonly client?: SQSClient;
   readonly region?: string;
+  readonly sendTimeoutMs?: number;
+  readonly maxAttempts?: number;
 }
 
 export function createSqsArchiveSender(config: SqsArchiveSenderConfig): ArchiveEventSender {
-  const client = config.client ?? new SQSClient(config.region ? { region: config.region } : {});
+  const client =
+    config.client ??
+    new SQSClient({
+      ...(config.region ? { region: config.region } : {}),
+      ...(config.maxAttempts ? { maxAttempts: config.maxAttempts } : {}),
+    });
   const isFifo = config.queueUrl.endsWith('.fifo');
   return {
     async send(message) {
@@ -46,6 +53,7 @@ export function createSqsArchiveSender(config: SqsArchiveSenderConfig): ArchiveE
           },
           ...(isFifo ? { MessageDeduplicationId: message.eventId, MessageGroupId: message.aggregateId } : {}),
         }),
+        config.sendTimeoutMs ? { abortSignal: AbortSignal.timeout(config.sendTimeoutMs) } : undefined,
       );
     },
   };

@@ -1,3 +1,4 @@
+import type { CommandPhaseObserver } from './phase-observer.js';
 import { randomUUID } from 'node:crypto';
 import { COMMAND_PUBLISH_EVENT, commandPublishKey } from './immediate.js';
 import { AdminCommandError } from './errors.js';
@@ -36,6 +37,7 @@ export interface CommandPublisherDeps {
   readonly client: DbClient;
   readonly now?: () => Date;
   readonly mqtt: CommandMqttPublisher;
+  readonly observePhase?: CommandPhaseObserver;
 }
 
 // ---------- CT-03 常量 ----------
@@ -176,10 +178,11 @@ export interface CommandPublishResult {
 }
 
 export async function publishCommand(deps: CommandPublisherDeps, commandId: string): Promise<CommandPublishResult> {
+  const observe: CommandPhaseObserver = deps.observePhase ?? ((_phase, work) => work());
   const now = deps.now?.() ?? new Date();
   const commands = deviceCommands(deps.client);
 
-  const command = await commands.findFirst({ where: { id: commandId } });
+  const command = await observe('db-validation', () => commands.findFirst({ where: { id: commandId } }), commandId);
   if (!command) throw commandNotFound();
 
   // 发布前重新校验：设备生命周期（Retired 不发布）
@@ -202,75 +205,100 @@ export async function publishCommand(deps: CommandPublisherDeps, commandId: stri
 
   // Outbox lease and command claim commit together; no DB connection is held during MQTT I/O.
   const leaseToken = randomUUID();
-  await withTransaction(deps.client, async (tx) => {
-    await tx.outboxEvent.upsert({
-      where: { idempotencyKey: commandPublishKey(command.id) },
-      create: {
-        eventType: COMMAND_PUBLISH_EVENT,
-        aggregateType: 'device_command',
-        aggregateId: command.id,
-        idempotencyKey: commandPublishKey(command.id),
-        payload: { commandId: command.id },
-        status: 'PENDING',
-      },
-      update: {},
-    });
-    const claimed = await tx.outboxEvent.updateMany({
-      where: {
-        idempotencyKey: commandPublishKey(command.id),
-        eventType: COMMAND_PUBLISH_EVENT,
-        status: { in: ['PENDING', 'FAILED'] },
-        OR: [{ leaseUntil: null }, { leaseUntil: { lte: now } }],
-      },
-      data: {
-        leaseToken,
-        leaseUntil: new Date(now.getTime() + 120000),
-        lastAttemptAt: now,
-        retryCount: { increment: 1 },
-      },
-    });
-    if (claimed.count !== 1) throw commandConflict('Command publish lease is busy');
-    const changed = await deviceCommands(tx).updateMany({
-      where: { id: command.id, status: { in: ['AUTHORIZED', 'PUBLISH_FAILED', 'PUBLISHING'] } },
-      data: { status: 'PUBLISHING' },
-    });
-    if (changed.count !== 1) throw commandConflict('Command publish status changed');
-  });
+  await observe(
+    'db-lease',
+    () =>
+      withTransaction(deps.client, async (tx) => {
+        await tx.outboxEvent.upsert({
+          where: { idempotencyKey: commandPublishKey(command.id) },
+          create: {
+            eventType: COMMAND_PUBLISH_EVENT,
+            aggregateType: 'device_command',
+            aggregateId: command.id,
+            idempotencyKey: commandPublishKey(command.id),
+            payload: { commandId: command.id },
+            status: 'PENDING',
+          },
+          update: {},
+        });
+        const claimed = await tx.outboxEvent.updateMany({
+          where: {
+            idempotencyKey: commandPublishKey(command.id),
+            eventType: COMMAND_PUBLISH_EVENT,
+            status: { in: ['PENDING', 'FAILED'] },
+            OR: [{ leaseUntil: null }, { leaseUntil: { lte: now } }],
+          },
+          data: {
+            leaseToken,
+            leaseUntil: new Date(now.getTime() + 120000),
+            lastAttemptAt: now,
+            retryCount: { increment: 1 },
+          },
+        });
+        if (claimed.count !== 1) throw commandConflict('Command publish lease is busy');
+        const changed = await deviceCommands(tx).updateMany({
+          where: { id: command.id, status: { in: ['AUTHORIZED', 'PUBLISH_FAILED', 'PUBLISHING'] } },
+          data: { status: 'PUBLISHING' },
+        });
+        if (changed.count !== 1) throw commandConflict('Command publish status changed');
+      }),
+    commandId,
+  );
 
   // 执行发布（此时持有 PUBLISHING 状态）
-  const attemptNo = (await attemptsOf(deps.client).count({ where: { commandId: command.id } })) + 1;
+  const attemptNo =
+    (await observe(
+      'db-attempt',
+      () => attemptsOf(deps.client).count({ where: { commandId: command.id } }),
+      commandId,
+    )) + 1;
   const payload = buildCommandPayload(command, now);
   let receipt: void | { readonly providerMessageId?: string };
   try {
-    receipt = await deps.mqtt.publish({
-      topic: commandTopicOf(command.deviceId),
-      payload,
-      qos: COMMAND_PUBLISH_QOS,
-    });
+    receipt = await observe(
+      'iot-publish',
+      () =>
+        deps.mqtt.publish({
+          topic: commandTopicOf(command.deviceId),
+          payload,
+          qos: COMMAND_PUBLISH_QOS,
+        }),
+      commandId,
+    );
   } catch (error) {
     const errorCode = safeProviderErrorCode(error);
-    await finishPublishAttempt(deps, {
-      command,
-      attemptNo,
-      leaseToken,
-      startedAt: now,
-      finishedAt: deps.now?.() ?? new Date(),
-      outcome: 'PUBLISH_FAILED',
-      errorCode,
-      providerMessageId: null,
-    });
+    await observe(
+      'db-finalize',
+      () =>
+        finishPublishAttempt(deps, {
+          command,
+          attemptNo,
+          leaseToken,
+          startedAt: now,
+          finishedAt: deps.now?.() ?? new Date(),
+          outcome: 'PUBLISH_FAILED',
+          errorCode,
+          providerMessageId: null,
+        }),
+      commandId,
+    );
     return { commandId: command.id, status: 'PUBLISH_FAILED', attemptNo };
   }
-  await finishPublishAttempt(deps, {
-    command,
-    attemptNo,
-    leaseToken,
-    startedAt: now,
-    finishedAt: deps.now?.() ?? new Date(),
-    outcome: 'PUBLISHED',
-    errorCode: null,
-    providerMessageId: receipt?.providerMessageId ?? null,
-  });
+  await observe(
+    'db-finalize',
+    () =>
+      finishPublishAttempt(deps, {
+        command,
+        attemptNo,
+        leaseToken,
+        startedAt: now,
+        finishedAt: deps.now?.() ?? new Date(),
+        outcome: 'PUBLISHED',
+        errorCode: null,
+        providerMessageId: receipt?.providerMessageId ?? null,
+      }),
+    commandId,
+  );
   return { commandId: command.id, status: 'PUBLISHED', attemptNo };
 }
 

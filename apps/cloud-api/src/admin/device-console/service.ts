@@ -230,6 +230,44 @@ function utcDateOnly(day: Date): Date {
   return new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()));
 }
 
+/** Latest device hour spans all sites; per-metric counts weight partial/missing samples correctly. */
+async function latestDeviceTelemetry(client: DbClient, device: DeviceRow): Promise<TelemetryHourlyRow | null> {
+  const where = { deviceId: device.id, ...(device.customerId ? { customerId: device.customerId } : {}) };
+  const latest = (await table(client, 'telemetryHourly').findFirst({
+    where,
+    orderBy: { bucketStart: 'desc' },
+    select: { bucketStart: true },
+  })) as TelemetryHourlyRow | null;
+  if (!latest) return null;
+  const rows = (await table(client, 'telemetryHourly').findMany({
+    where: { ...where, bucketStart: latest.bucketStart },
+    orderBy: { siteId: 'asc' },
+    select: { bucketStart: true, metrics: true },
+  })) as TelemetryHourlyRow[];
+  const merged: Record<string, { avg: number; min: number; max: number; count: number }> = {};
+  for (const row of rows) {
+    for (const [key, raw] of Object.entries((row.metrics ?? {}) as Record<string, unknown>)) {
+      if (!Object.hasOwn(METRIC_UNITS, key) || !raw || typeof raw !== 'object') continue;
+      const metric = raw as Record<string, unknown>;
+      const avg = decimalToNumber(metric.avg),
+        min = decimalToNumber(metric.min),
+        max = decimalToNumber(metric.max),
+        count = decimalToNumber(metric.count);
+      if ([avg, min, max, count].some((v) => v === null || !Number.isFinite(v)) || count! <= 0) continue;
+      const previous = merged[key];
+      merged[key] = previous
+        ? {
+            avg: (previous.avg * previous.count + avg! * count!) / (previous.count + count!),
+            min: Math.min(previous.min, min!),
+            max: Math.max(previous.max, max!),
+            count: previous.count + count!,
+          }
+        : { avg: avg!, min: min!, max: max!, count: count! };
+    }
+  }
+  return { bucketStart: latest.bucketStart, metrics: merged };
+}
+
 /** 加载设备并强制租户隔离（跨 Customer → 404 不泄露存在性）。 */
 export async function loadScopedDevice(
   deps: DeviceConsoleDeps,
@@ -258,10 +296,7 @@ export async function getDeviceConsole(
 
   const [state, telemetry, consumableRows, alarmRows, contractAssoc, esgRows, mediaRow] = await Promise.all([
     table(client, 'deviceLatestState').findFirst({ where: { deviceId } }) as unknown as Promise<LatestStateRow | null>,
-    table(client, 'telemetryHourly').findFirst({
-      where: { deviceId },
-      orderBy: { bucketStart: 'desc' },
-    }) as unknown as Promise<TelemetryHourlyRow | null>,
+    latestDeviceTelemetry(client, device),
     table(client, 'consumableProjection').findMany({ where: { deviceId } }) as unknown as Promise<ConsumableRow[]>,
     table(client, 'alarm').findMany({
       where: { deviceId },

@@ -97,3 +97,15 @@ test('quick MQTT profile requires exact additional telemetry ledger and cannot w
   assert.throws(() => validateArchivePlan({ ...enlarged, profile: 'UNBOUNDED' }), /PROFILE/);
   assert.throws(() => validateArchivePlan({ ...enlarged, published: enlarged.published.slice(1) }), /PUBLISH_LEDGER/);
 });
+
+test('archive deadline uses actual S3 modification times and cannot green an eventual late archive', () => {
+  const { plan, objects } = fixture();
+  plan.archiveDeadlineAt = '2026-10-03T13:05:00Z';
+  const timely = objects.map((o) => ({ ...o, lastModified: '2026-10-03T13:04:59Z' }));
+  assert.equal(verifyArchiveObjects(plan, timely).archivedMessages, 20);
+  assert.throws(() => verifyArchiveObjects(plan, objects), /DEADLINE_MISSED/);
+  assert.throws(
+    () => verifyArchiveObjects(plan, [{ ...timely[0], lastModified: '2026-10-03T13:05:01Z' }, ...timely.slice(1)]),
+    /DEADLINE_MISSED/,
+  );
+});

@@ -124,7 +124,55 @@ export async function runMqttQuickTarget(ctx, db, check, output) {
       oldestHistoryAgeSeconds: 86395,
       fullProfileExecuted: false,
     });
-    const observed = await db('observe');
+    const archiveDeadlineAt = new Date(Date.now() + 300000).toISOString();
+    const drainDeadline = performance.now() + 300000;
+    let observed = await db('observe');
+    const drainObservations = [];
+    while (true) {
+      const archiveRows = observed.outbox.filter((r) => r.event_type === 'ARCHIVE');
+      const pending = archiveRows.filter((r) => r.status !== 'PUBLISHED').map((r) => ({ id: r.id, status: r.status }));
+      drainObservations.push({ observedAt: new Date().toISOString(), total: archiveRows.length, pending });
+      writeFileSync(
+        output + '.archive-drain.json',
+        JSON.stringify(
+          {
+            scope: 'OWN_PREFIX_DRAIN_BEFORE_CLEANUP',
+            archiveDeadlineAt,
+            maxPollingStartWindowMs: 300000,
+            databaseObservationMayFinishAfterDeadline: true,
+            observations: drainObservations,
+            gate: pending.length ? 'RUNNING' : 'PASS',
+          },
+          null,
+          2,
+        ) + '\n',
+      );
+      if (!pending.length || performance.now() >= drainDeadline) break;
+      await new Promise((r) => setTimeout(r, 10000));
+      observed = await db('observe');
+    }
+    const finalPending = drainObservations.at(-1).pending;
+    writeFileSync(
+      output + '.archive-drain.json',
+      JSON.stringify(
+        {
+          scope: 'OWN_PREFIX_DRAIN_BEFORE_CLEANUP',
+          archiveDeadlineAt,
+          maxPollingStartWindowMs: 300000,
+          databaseObservationMayFinishAfterDeadline: true,
+          observations: drainObservations,
+          gate: finalPending.length ? 'FAIL' : 'PASS',
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+    check('quick-archive-drain-before-cleanup', finalPending.length === 0, {
+      pending: finalPending.length,
+      archiveDeadlineAt,
+      maxPollingStartWindowMs: 300000,
+      databaseObservationMayFinishAfterDeadline: true,
+    });
     check(
       'quick-mqtt-no-extra-business-samples',
       observed.telemetrySamples.length === 10 && observed.telemetrySamples.every((t) => t.samples === '92'),
@@ -134,7 +182,12 @@ export async function runMqttQuickTarget(ctx, db, check, output) {
       observed.receipts.length === 950 && observed.receipts.every((t) => t.result === 'PROCESSED'),
     );
     const archives = await readOwnArchives(
-      { ...ctx.receipt, published: [...ctx.receipt.published, ...ledger], archiveProfile: 'QA07_QUICK_REAL_MQTT' },
+      {
+        ...ctx.receipt,
+        published: [...ctx.receipt.published, ...ledger],
+        archiveProfile: 'QA07_QUICK_REAL_MQTT',
+        archiveDeadlineAt,
+      },
       observed,
       output + '.mqtt-archives.json',
     );

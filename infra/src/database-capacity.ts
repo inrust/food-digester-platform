@@ -25,7 +25,7 @@ export function databaseCapacity(enabled: boolean, immediate: boolean) {
   const functions = Object.entries(DATABASE_FUNCTION_CONCURRENCY).map(([name, reservedConcurrency]) => ({
     name,
     reservedConcurrency:
-      enabled && name === 'api' ? 12 : immediate && name === 'command-publisher' ? 2 : reservedConcurrency,
+      enabled && name === 'api' ? 12 : immediate && name === 'command-publisher' ? 3 : reservedConcurrency,
     poolMax: enabled && !['device-api-handler', 'onboarding-api-handler'].includes(name) ? 1 : 2,
   }));
   const steadyConnections = functions.reduce((n, f) => n + f.reservedConcurrency * f.poolMax, 0);

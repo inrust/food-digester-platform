@@ -12,6 +12,7 @@ export interface OutboxPublisherDeps {
   readonly leaseMs?: number | undefined;
   readonly now?: (() => Date) | undefined;
   readonly leaseToken?: (() => string) | undefined;
+  readonly shouldContinue?: (() => boolean) | undefined;
 }
 
 export function createOutboxPublisher(deps: OutboxPublisherDeps): {

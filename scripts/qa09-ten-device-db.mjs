@@ -21,6 +21,7 @@ export function validatePlan(plan) {
       'cleanup-closed',
       'audit-empty',
       'audit-unseeded-prefix',
+      'command-dlq-readonly',
       'capacity-readonly',
       'capacity-pool-readonly',
       'business-baseline',
@@ -80,6 +81,7 @@ export async function executeFixture(client, plan) {
         'audit-closed',
         'audit-empty',
         'audit-unseeded-prefix',
+        'command-dlq-readonly',
         'capacity-readonly',
         'capacity-pool-readonly',
         'business-baseline',
@@ -109,6 +111,28 @@ export async function executeFixture(client, plan) {
       await client.query('ROLLBACK');
       committed = true;
       return { customers, devices, originalFingerprints: before, writes: 0 };
+    }
+    if (plan.action === 'command-dlq-readonly') {
+      const commandIds = Array.from({ length: 20 }, (_, i) => `${plan.prefix.toUpperCase()}-CMD-${i}`);
+      const remaining = (
+        await client.query('SELECT id FROM device_commands WHERE id=ANY($1::text[]) ORDER BY id', [commandIds])
+      ).rows;
+      const outboxRemaining = (
+        await client.query(
+          "SELECT id,aggregate_id FROM outbox_events WHERE event_type='COMMAND_PUBLISH_REQUESTED' AND aggregate_id=ANY($1::text[]) ORDER BY id",
+          [commandIds],
+        )
+      ).rows;
+      await client.query('ROLLBACK');
+      committed = true;
+      return {
+        scope: 'EXACT_RETIRED_COMMAND_POINTER_READ_ONLY',
+        commandIds,
+        remaining,
+        outboxRemaining,
+        writes: 0,
+        originalFingerprints: before,
+      };
     }
     if (plan.action === 'capacity-readonly') {
       const settings = (

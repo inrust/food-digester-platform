@@ -33,6 +33,7 @@ export interface LeasedPublisherDeps {
   readonly leaseMs?: number | undefined;
   readonly now?: (() => Date) | undefined;
   readonly leaseToken?: (() => string) | undefined;
+  readonly shouldContinue?: (() => boolean) | undefined;
 }
 
 const MAX_ERROR_LENGTH = 500;
@@ -78,6 +79,7 @@ export function createLeasedOutboxPublisher(deps: LeasedPublisherDeps): {
       let retried = 0;
       let failed = 0;
       for (const candidate of candidates) {
+        if (deps.shouldContinue?.() === false) break;
         const token = newLeaseToken();
         const claim = await outbox.updateMany({
           where: {

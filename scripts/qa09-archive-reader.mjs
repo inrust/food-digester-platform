@@ -25,6 +25,7 @@ export async function readOwnArchives(receipt, observation, output) {
   const plan = {
     prefix: receipt.prefix,
     ...(receipt.archiveProfile ? { profile: receipt.archiveProfile } : {}),
+    ...(receipt.archiveDeadlineAt ? { archiveDeadlineAt: receipt.archiveDeadlineAt } : {}),
     devices: receipt.devices,
     customers: receipt.customers.map((c) => c.id),
     published: receipt.published,
@@ -83,7 +84,7 @@ const client=new S3Client({region:'ap-southeast-1',maxAttempts:1});
 export const handler=async event=>{if(event?.requestNonce!=='${nonce}')return {completed:false,errorCode:'INVALID_REQUEST'};
 try{const bytes=readFileSync(new URL('./scope.json',import.meta.url));if(createHash('sha256').update(bytes).digest('hex')!=='${r.planHash}')throw Error('INVALID_SCOPE');const plan=JSON.parse(bytes);validateArchivePlan(plan);const objects=[],keys=[];
 for(const customer of plan.customers)for(const type of ['heartbeat','telemetry']){let token;do{const response=await client.send(new ListObjectsV2Command({Bucket:'fdp-test-raw-065986019555',Prefix:'raw/topic_type='+type+'/customer_id='+customer+'/',ContinuationToken:token}),{abortSignal:AbortSignal.timeout(10000)});for(const item of response.Contents??[])keys.push(item.Key);if(keys.length>(plan.profile==='QA07_QUICK_REAL_MQTT'?4000:200))throw Error('LIMIT');token=response.NextContinuationToken;}while(token);}
-for(const key of keys.filter(k=>k.endsWith('.json.gz'))){const response=await client.send(new GetObjectCommand({Bucket:'fdp-test-raw-065986019555',Key:key}),{abortSignal:AbortSignal.timeout(10000)});if(response.ContentLength>1048576)throw Error('LIMIT');objects.push({key,bytes:Buffer.from(await response.Body.transformToByteArray())});}
+for(const key of keys.filter(k=>k.endsWith('.json.gz'))){const response=await client.send(new GetObjectCommand({Bucket:'fdp-test-raw-065986019555',Key:key}),{abortSignal:AbortSignal.timeout(10000)});if(response.ContentLength>1048576)throw Error('LIMIT');objects.push({key,lastModified:response.LastModified?.toISOString(),bytes:Buffer.from(await response.Body.transformToByteArray())});}
 return {...verifyArchiveObjects(plan,objects),archiveKeys:keys,requestNonce:'${nonce}',sourceHash:'${r.sourceHash}',planHash:'${r.planHash}'};
 }catch(error){return {completed:false,errorCode:/^[A-Z_]+$/.test(error.message??'')?error.message:'AWS_ARCHIVE_READ_FAILED',requestNonce:'${nonce}'};}};
 `;

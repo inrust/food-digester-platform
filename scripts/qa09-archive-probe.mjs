@@ -52,6 +52,8 @@ export function validateArchivePlan(p) {
 export function verifyArchiveObjects(plan, objects) {
   validateArchivePlan(plan);
   demand(objects.length <= (plan.profile === 'QA07_QUICK_REAL_MQTT' ? 2000 : 200), 'ARCHIVE_LIMIT_EXCEEDED');
+  if (plan.archiveDeadlineAt !== undefined)
+    demand(Number.isFinite(Date.parse(plan.archiveDeadlineAt)), 'INVALID_ARCHIVE_DEADLINE');
   const checks = [],
     archiveObjects = [],
     found = new Set();
@@ -62,6 +64,12 @@ export function verifyArchiveObjects(plan, objects) {
       ) && object.key.endsWith('.json.gz'),
       'OBJECT_SCOPE_MISMATCH',
     );
+    if (plan.archiveDeadlineAt)
+      demand(
+        Number.isFinite(Date.parse(object.lastModified ?? '')) &&
+          Date.parse(object.lastModified) <= Date.parse(plan.archiveDeadlineAt),
+        'ARCHIVE_DRAIN_DEADLINE_MISSED',
+      );
     demand(object.bytes.length <= 1048576, 'ARCHIVE_SIZE_EXCEEDED');
     const lines = gunzipSync(object.bytes, { maxOutputLength: 4194304 }).toString().trim().split('\n').map(JSON.parse);
     for (const line of lines) {
@@ -87,7 +95,12 @@ export function verifyArchiveObjects(plan, objects) {
         payloadSha256: hash(canonical(line.payload)),
       });
     }
-    archiveObjects.push({ key: object.key, compressedSha256: hash(object.bytes), records: lines.length });
+    archiveObjects.push({
+      key: object.key,
+      ...(object.lastModified ? { lastModified: object.lastModified } : {}),
+      compressedSha256: hash(object.bytes),
+      records: lines.length,
+    });
   }
   demand(
     plan.published.filter((p) => p.type === 'telemetry').every((p) => found.has(p.messageId)),

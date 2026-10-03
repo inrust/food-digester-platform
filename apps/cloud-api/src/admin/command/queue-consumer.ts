@@ -2,7 +2,11 @@ import type { CommandPublisherDeps } from './publisher.js';
 import { publishCommand } from './publisher.js';
 import { commandPublishKey, COMMAND_PUBLISH_EVENT } from './immediate.js';
 export interface CommandQueueEvent {
-  readonly Records?: readonly { readonly messageId: string; readonly body: string }[];
+  readonly Records?: readonly {
+    readonly messageId: string;
+    readonly body: string;
+    readonly attributes?: { readonly SentTimestamp?: string; readonly ApproximateReceiveCount?: string };
+  }[];
 }
 /** Duplicate notifications share the same durable lease; transport/active-lease failures remain retryable. */
 export async function consumeCommandNotifications(

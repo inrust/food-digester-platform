@@ -1315,6 +1315,7 @@ export class AppDependenciesStack extends Stack {
     });
 
     const commandPublisher = mkFunction('CommandPublisherFn', 'command-publisher', {
+      memorySize: this.config.enableImmediateCommandPublish ? 512 : 256,
       timeout: Duration.seconds(60),
       environment: { DB_SECRET_ARN: dbSecret },
       entry: COMMAND_PUBLISHER_ENTRY,
@@ -1335,6 +1336,7 @@ export class AppDependenciesStack extends Stack {
       commandPublisher.addEventSource(
         new lambdaEventSources.SqsEventSource(messaging.commandPublish, {
           batchSize: 1,
+          maxConcurrency: 2,
           reportBatchItemFailures: true,
         }),
       );
