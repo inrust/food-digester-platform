@@ -1,3 +1,4 @@
+import { databaseCapacity } from '../database-capacity.js';
 /**
  * IAC-01 应用依赖 CDK Stack。
  *
@@ -14,7 +15,7 @@
  * 功能边界（本 Stack 明确不做）：生产 Multi-AZ、备份、告警、Dashboard、Budget、
  * WAF、扩缩容和发布流水线。
  */
-import { Aws, CfnOutput, Duration, RemovalPolicy, Stack, Tags } from 'aws-cdk-lib';
+import { ArnFormat, Aws, CfnOutput, Duration, RemovalPolicy, Stack, Tags } from 'aws-cdk-lib';
 import type { StackProps } from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
@@ -94,35 +95,8 @@ const COMMAND_PUBLISHER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runt
 const COMMAND_TIMEOUT_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/command-timeout-entry.ts');
 const OTA_DISPATCHER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/ota-dispatcher-entry.ts');
 
-/**
- * db.t4g.micro 的 Lambda 并发预算。
- *
- * 请求型入口按负测容量分配 8/6/2；每个数据库后台函数限制为 1，避免队列或
- * 定时任务同时扩容。与每容器 pool max=2 配合时，31 个理论并发容器最多占用
- * 62 条 PostgreSQL 连接，低于实例的 76 个普通连接槽位。
- */
-const DATABASE_RESERVED_CONCURRENCY: Readonly<Record<string, number>> = Object.freeze({
-  ingestion: 1,
-  'outbox-publisher': 1,
-  'notification-publisher': 1,
-  summary: 1,
-  'replay-trigger-publisher': 1,
-  replay: 1,
-  'cert-package-sweeper': 1,
-  'onboarding-deadline': 1,
-  'retirement-timeout': 1,
-  'activity-export': 1,
-  'esg-export': 1,
-  'command-publisher': 1,
-  'command-timeout': 1,
-  'ota-dispatcher': 1,
-  'onboarding-provisioning': 1,
-  'onboarding-api-handler': 2,
-  'device-api-handler': 6,
-  api: 8,
-});
-
 interface MessagingResources {
+  readonly commandPublish?: sqs.Queue;
   readonly ingress: sqs.Queue;
   readonly ingressDlq: sqs.Queue;
   readonly archive: sqs.Queue;
@@ -192,6 +166,11 @@ export class AppDependenciesStack extends Stack {
   constructor(scope: Construct, id: string, props: AppDependenciesStackProps) {
     super(scope, id, { ...props, stackName: new Naming(props.config.envName).name('app') });
     this.config = props.config;
+    if (
+      (this.config.enableQa09Capacity && !this.config.enableRequestObservability) ||
+      (this.config.enableImmediateCommandPublish && !this.config.enableQa09Capacity)
+    )
+      throw new Error('INVALID_QA09_ROLLOUT_PHASE');
     this.naming = new Naming(this.config.envName);
     if (this.config.deploymentAccount && this.config.allowInsecureDeviceEndpointForLocal) {
       throw new Error('真实部署禁止不安全 Device execute-api 入口');
@@ -662,7 +641,24 @@ export class AppDependenciesStack extends Stack {
     // IoT Rule 错误动作目标（规则引擎投递失败），终态队列
     const ruleError = mkQueue('IotRuleErrorQueue', 'iot-rule-error', { retentionPeriod: Duration.days(14) });
 
-    return { ingress, ingressDlq, archive, archiveDlq, replay, replayDlq, quarantine, ruleError };
+    const commandPublish = this.config.enableImmediateCommandPublish
+      ? mkQueue('CommandPublishQueue', 'command-publish', {
+          visibilityTimeout: Duration.seconds(360),
+          removalPolicy: RemovalPolicy.RETAIN,
+          deadLetterQueue: { queue: mkDlq('CommandPublishDlq', 'command-publish-dlq'), maxReceiveCount: 5 },
+        })
+      : undefined;
+    return {
+      ingress,
+      ingressDlq,
+      archive,
+      archiveDlq,
+      replay,
+      replayDlq,
+      quarantine,
+      ruleError,
+      ...(commandPublish ? { commandPublish } : {}),
+    };
   }
 
   // ---------- IoT Rule：8 个上行 Topic → Ingress SQS ----------
@@ -862,15 +858,22 @@ export class AppDependenciesStack extends Stack {
             iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
           ],
         });
+      const capacity = databaseCapacity(
+        this.config.enableQa09Capacity === true,
+        this.config.enableImmediateCommandPublish === true,
+      );
+      const allocation = capacity.functions.find((f) => f.name === suffix);
+      if (options.environment.DB_SECRET_ARN && !allocation) throw new Error('UNBUDGETED_DATABASE_FUNCTION');
       const props = {
         functionName: this.naming.name(suffix),
         runtime: lambda.Runtime.NODEJS_24_X,
         architecture: lambda.Architecture.ARM_64,
         timeout: options.timeout,
         memorySize: options.memorySize ?? 256,
-        reservedConcurrentExecutions: DATABASE_RESERVED_CONCURRENCY[suffix],
+        reservedConcurrentExecutions: allocation?.reservedConcurrency,
         environment: {
           ...options.environment,
+          ...(allocation ? { FDP_DB_POOL_MAX: String(allocation.poolMax) } : {}),
           ENV_NAME: this.config.envName,
           // Node.js 20+ Lambda runtimes retain Amazon CAs here but no longer load them by default.
           NODE_EXTRA_CA_CERTS: '/var/runtime/ca-cert.pem',
@@ -1299,6 +1302,14 @@ export class AppDependenciesStack extends Stack {
       }),
     );
     scheduleWithDlq('CommandPublisher', 'command-publisher', commandPublisher);
+    if (messaging.commandPublish) {
+      commandPublisher.addEventSource(
+        new lambdaEventSources.SqsEventSource(messaging.commandPublish, {
+          batchSize: 1,
+          reportBatchItemFailures: true,
+        }),
+      );
+    }
 
     const commandTimeout = mkFunction('CommandTimeoutFn', 'command-timeout', {
       timeout: Duration.seconds(60),
@@ -1484,6 +1495,10 @@ export class AppDependenciesStack extends Stack {
       copyArgon2Prebuilds: true,
     });
     dbSecretGrant(api);
+    if (messaging.commandPublish) {
+      api.addEnvironment('COMMAND_PUBLISH_QUEUE_URL', messaging.commandPublish.queueUrl);
+      messaging.commandPublish.grantSendMessages(api);
+    }
     licenseSigningKey.grantRead(api);
     api.addToRolePolicy(
       new iam.PolicyStatement({
@@ -1613,6 +1628,71 @@ export class AppDependenciesStack extends Stack {
       new CfnOutput(this, 'DeviceApiDomainHostedZoneId', { value: domain.domainNameAliasHostedZoneId });
     }
 
+    let adminLoggingOptions: apigw.StageOptions = {};
+    let loggingAccount: apigw.CfnAccount | undefined;
+    if (this.config.enableRequestObservability) {
+      const key = new kms.Key(this, 'AdminAccessLogKey', {
+        enableKeyRotation: true,
+        removalPolicy: RemovalPolicy.RETAIN,
+      });
+      key.addToResourcePolicy(
+        new iam.PolicyStatement({
+          principals: [new iam.ServicePrincipal(`logs.${this.region}.amazonaws.com`)],
+          actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:DescribeKey'],
+          resources: ['*'],
+          conditions: {
+            ArnEquals: {
+              'kms:EncryptionContext:aws:logs:arn': this.formatArn({
+                service: 'logs',
+                resource: 'log-group',
+                resourceName: `/aws/apigateway/${this.naming.name('admin-api-access')}`,
+                arnFormat: ArnFormat.COLON_RESOURCE_NAME,
+              }),
+            },
+          },
+        }),
+      );
+      const logGroup = new logs.LogGroup(this, 'AdminAccessLogs', {
+        logGroupName: `/aws/apigateway/${this.naming.name('admin-api-access')}`,
+        retention: logs.RetentionDays.ONE_WEEK,
+        encryptionKey: key,
+        removalPolicy: RemovalPolicy.RETAIN,
+      });
+      const role = new iam.Role(this, 'AdminGatewayLogsRole', {
+        roleName: this.naming.name('admin-gateway-logs-role'),
+        assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com'),
+      });
+      role.addToPolicy(
+        new iam.PolicyStatement({
+          actions: ['logs:CreateLogStream', 'logs:DescribeLogStreams', 'logs:PutLogEvents'],
+          resources: [logGroup.logGroupArn],
+        }),
+      );
+      role.addToPolicy(new iam.PolicyStatement({ actions: ['logs:DescribeLogGroups'], resources: ['*'] }));
+      loggingAccount = new apigw.CfnAccount(this, 'AdminGatewayLoggingAccount', { cloudWatchRoleArn: role.roleArn });
+      loggingAccount.node.addDependency(role);
+      adminLoggingOptions = {
+        accessLogDestination: new apigw.LogGroupLogDestination(logGroup),
+        accessLogFormat: apigw.AccessLogFormat.custom(
+          JSON.stringify({
+            requestId: '$context.requestId',
+            extendedRequestId: '$context.extendedRequestId',
+            requestTimeEpoch: '$context.requestTimeEpoch',
+            resourcePath: '$context.resourcePath',
+            httpMethod: '$context.httpMethod',
+            status: '$context.status',
+            integrationStatus: '$context.integration.integrationStatus',
+            functionStatus: '$context.integration.status',
+            integrationRequestId: '$context.integration.requestId',
+            integrationLatency: '$context.integration.latency',
+            responseLatency: '$context.responseLatency',
+            errorResponseType: '$context.error.responseType',
+          }),
+        ),
+        dataTraceEnabled: false,
+        loggingLevel: apigw.MethodLoggingLevel.OFF,
+      };
+    }
     // 入口 3：Admin API —— Cognito JWT（/admin、/customer）与 IAM（/internal，仅限云端任务）
     const adminApi = new apigw.RestApi(this, 'AdminApi', {
       restApiName: this.naming.name('admin-api'),
@@ -1620,8 +1700,9 @@ export class AppDependenciesStack extends Stack {
       cloudWatchRole: false,
       disableExecuteApiEndpoint: !!this.config.adminApiDomain,
       endpointTypes: [apigw.EndpointType.REGIONAL],
-      deployOptions: stageOptions,
+      deployOptions: { ...stageOptions, ...adminLoggingOptions },
     });
+    if (loggingAccount) adminApi.deploymentStage.node.addDependency(loggingAccount);
     const authorizer = new apigw.CognitoUserPoolsAuthorizer(this, 'AdminApiAuthorizer', {
       authorizerName: this.naming.name('cognito'),
       cognitoUserPools: [identity.userPool],

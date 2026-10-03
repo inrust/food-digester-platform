@@ -22,6 +22,7 @@ export function validatePlan(plan) {
       'audit-empty',
       'audit-unseeded-prefix',
       'capacity-readonly',
+      'capacity-pool-readonly',
       'business-baseline',
       'business-cleanup',
       'business-audit',
@@ -70,6 +71,7 @@ async function original(client, ids) {
 }
 export async function executeFixture(client, plan) {
   const ids = validatePlan(plan);
+  if (plan.action === 'capacity-pool-readonly') throw Error('POOL_PROBE_REQUIRES_FIXED_RUNNER_POOL');
   let committed = false;
   try {
     await client.query(
@@ -79,6 +81,7 @@ export async function executeFixture(client, plan) {
         'audit-empty',
         'audit-unseeded-prefix',
         'capacity-readonly',
+        'capacity-pool-readonly',
         'business-baseline',
         'business-audit',
       ].includes(plan.action)
@@ -242,6 +245,11 @@ export async function executeFixture(client, plan) {
         if ((await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2', [c.id, c.name])).rowCount !== 1)
           throw Error('CUSTOMER_SCOPE_DRIFT');
       const scopes = [
+        [
+          'outbox_events',
+          'aggregate_id=ANY($1::text[]) OR aggregate_id IN(SELECT id FROM device_commands WHERE device_id=ANY($1::text[])) OR aggregate_id IN(SELECT id FROM licenses WHERE customer_id=ANY($2::text[]) UNION ALL SELECT id FROM contracts WHERE customer_id=ANY($2::text[]) UNION ALL SELECT id FROM device_users WHERE customer_id=ANY($2::text[]))',
+          [ids, customers],
+        ],
         ['command_acks', 'command_id IN(SELECT id FROM device_commands WHERE device_id=ANY($1::text[]))', ids],
         ['command_attempts', 'command_id IN(SELECT id FROM device_commands WHERE device_id=ANY($1::text[]))', ids],
         ['device_commands', 'device_id=ANY($1::text[])', ids],
@@ -274,7 +282,7 @@ export async function executeFixture(client, plan) {
               ...(
                 await client.query(
                   `SELECT count(*)::text,md5(coalesce(string_agg(to_jsonb(t)::text,'' ORDER BY to_jsonb(t)::text),'')) AS digest FROM public."${table}" t WHERE NOT COALESCE((${predicate}),false)`,
-                  [args],
+                  table === 'outbox_events' ? args : [args],
                 )
               ).rows[0],
             })),
@@ -304,12 +312,21 @@ export async function executeFixture(client, plan) {
         for (const [table, predicate, args] of scopes)
           deleted[table] =
             (deleted[table] ?? 0) +
-            (await client.query(`DELETE FROM public."${table}" WHERE ${predicate}`, [args])).rowCount;
+            (
+              await client.query(
+                `DELETE FROM public."${table}" WHERE ${predicate}`,
+                table === 'outbox_events' ? args : [args],
+              )
+            ).rowCount;
       }
       for (const [table, predicate, args] of scopes)
         counts[table] = Number(
-          (await client.query(`SELECT count(*)::text AS count FROM public."${table}" WHERE ${predicate}`, [args]))
-            .rows[0].count,
+          (
+            await client.query(
+              `SELECT count(*)::text AS count FROM public."${table}" WHERE ${predicate}`,
+              table === 'outbox_events' ? args : [args],
+            )
+          ).rows[0].count,
         );
       const after = await outside();
       if (JSON.stringify(fingerprint) !== JSON.stringify(after)) throw Error('OUTSIDE_BUSINESS_DATA_CHANGED');
@@ -577,6 +594,85 @@ function aws(args) {
   if (r.status !== 0) throw Error('AWS_READ_FAILED');
   return JSON.parse(r.stdout);
 }
+export async function executePoolReadOnly(pool, applicationName) {
+  if (!/^qa09-pool-[a-f0-9]{16}$/.test(applicationName)) throw Error('INVALID_POOL_PROBE_SCOPE');
+  const params = (
+    await pool.query(
+      "SELECT current_setting('max_connections')::int AS max_connections,current_setting('superuser_reserved_connections')::int AS superuser_reserved_connections,current_setting('reserved_connections')::int AS reserved_connections,current_setting('rds.rds_reserved_connections')::int AS rds_reserved_connections",
+    )
+  ).rows[0];
+  const ordinarySlots =
+    params.max_connections -
+    params.superuser_reserved_connections -
+    params.reserved_connections -
+    params.rds_reserved_connections;
+  if (ordinarySlots < 62) throw Error('LIVE_CONNECTION_BUDGET_INSUFFICIENT');
+  const pids = new Set();
+  let maxObservedOwnConnections = 0;
+  const observe = async (connection) => {
+    const row = (
+      await connection.query(
+        "SELECT pg_backend_pid() AS pid,(SELECT count(*)::int FROM pg_stat_activity WHERE application_name=$1 AND backend_type='client backend') AS own_connections",
+        [applicationName],
+      )
+    ).rows[0];
+    pids.add(row.pid);
+    maxObservedOwnConnections = Math.max(maxObservedOwnConnections, row.own_connections);
+  };
+  const results = await Promise.all(
+    Array.from({ length: 24 }, async (_, i) => {
+      if (i % 2 === 0) {
+        await Promise.all(Array.from({ length: 7 }, () => observe(pool)));
+        return 'READ_BATCH';
+      }
+      const connection = await pool.connect();
+      try {
+        await connection.query('BEGIN READ ONLY');
+        await connection.query("SET LOCAL statement_timeout='3000ms'");
+        await observe(connection);
+        if (i === 1) {
+          try {
+            await connection.query('SELECT 1/0');
+            throw Error('EXPECTED_READ_ERROR_MISSING');
+          } catch (e) {
+            if (e.code !== '22012') throw e;
+          }
+          return 'ROLLED_BACK_READ_ERROR';
+        }
+        await connection.query('SELECT pg_sleep(0.01)');
+        return 'READ_TRANSACTION';
+      } finally {
+        await connection.query('ROLLBACK');
+        connection.release();
+      }
+    }),
+  );
+  await pool.query('SELECT 1');
+  if (
+    pids.size !== 1 ||
+    maxObservedOwnConnections !== 1 ||
+    pool.totalCount !== 1 ||
+    pool.waitingCount !== 0 ||
+    results.filter((r) => r === 'ROLLED_BACK_READ_ERROR').length !== 1
+  )
+    throw Error('POOL_ONE_BOUNDARY_NOT_PROVED');
+  return {
+    scope: 'REAL_POSTGRES_TCP_READ_ONLY_POOL1_NOT_PRISMA_OR_HTTP_CAPACITY_ACCEPTANCE',
+    databaseParameters: params,
+    ordinarySlots,
+    poolMax: 1,
+    parallelTasks: 24,
+    concurrentReadBatches: 12,
+    readQueriesPerBatch: 7,
+    readTransactions: 12,
+    expectedReadErrorsRolledBack: 1,
+    maxObservedOwnConnections,
+    backendPidCount: pids.size,
+    waitingAtEnd: pool.waitingCount,
+    databaseWrites: 0,
+    gate: 'PASS',
+  };
+}
 async function main() {
   const id = aws(['sts', 'get-caller-identity']);
   if (
@@ -597,8 +693,8 @@ async function main() {
     aws(['secretsmanager', 'get-secret-value', '--secret-id', DB_TARGET.secretArn]).SecretString,
   );
   if (secret.host !== DB_TARGET.host || secret.dbname !== 'fdp') throw Error('WRONG_DATABASE');
-  const { Client } = createRequire(resolve('package.json'))('pg');
-  const client = new Client({
+  const { Client, Pool } = createRequire(resolve('package.json'))('pg');
+  const connectionConfig = {
     host: secret.host,
     port: 5432,
     user: secret.username,
@@ -606,7 +702,35 @@ async function main() {
     database: 'fdp',
     connectionTimeoutMillis: 10000,
     ssl: { ca: readFileSync('rds-ca-bundle.pem', 'utf8'), rejectUnauthorized: true },
-  });
+  };
+  if (plan.action === 'capacity-pool-readonly') {
+    const applicationName = 'qa09-pool-' + plan.prefix.slice(5);
+    const pool = new Pool({
+      ...connectionConfig,
+      max: 1,
+      options: '-c default_transaction_read_only=on',
+      idleTimeoutMillis: 10000,
+      application_name: applicationName,
+    });
+    try {
+      const result = await executePoolReadOnly(pool, applicationName);
+      console.log(
+        JSON.stringify({
+          kind: 'fdp-qa09-ten-device-db/v1',
+          gate: 'PASS',
+          action: plan.action,
+          prefix: plan.prefix,
+          sourceHash: process.env.QA09_FIXTURE_HASH,
+          buildId: process.env.CODEBUILD_BUILD_ID,
+          ...result,
+        }),
+      );
+    } finally {
+      await pool.end();
+    }
+    return;
+  }
+  const client = new Client(connectionConfig);
   try {
     await client.connect();
     const result = await executeFixture(client, plan);

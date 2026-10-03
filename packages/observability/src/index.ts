@@ -13,3 +13,5 @@ export {
   SENSITIVE_KEY_PATTERN,
 } from './redaction.js';
 export type { Logger } from './redaction.js';
+
+export * from './request-correlation.js';

@@ -1,0 +1,174 @@
+{
+  "kind": "fdp-qa09-performance-implementation/v1",
+  "baselineCommit": "818faa0e949c247b13a97eeffd08bf0bdbdb5876",
+  "checkedAt": "2026-10-03T08:10:39.020912+00:00",
+  "implementationGate": "PASS",
+  "fullQa09Gate": "PARTIAL",
+  "sharedApplicationDeployed": false,
+  "iamChanged": false,
+  "budget": {
+    "ordinarySlotsVerified": 70,
+    "steady": 44,
+    "operationalReserve": 8,
+    "idleOverlapReserve": 10,
+    "required": 62,
+    "headroom": 8
+  },
+  "verify": {
+    "command": "pnpm verify",
+    "exitCode": 0,
+    "vitestFiles": 161,
+    "vitestTests": 1319,
+    "scriptTests": 396,
+    "chromiumE2eTests": 30,
+    "logSha256": "e57eab4ae65ac20026187b2554d12ac65c261f18ebbf82677b23eaf114d1ca16"
+  },
+  "previousVerify": {
+    "status": "FAIL_PRESERVED",
+    "reason": "three direct console sinks rejected by security scan; replaced with redacting logger",
+    "logSha256": "ecdf00f3df38c771a10af1089d8e52ca38376067a4bda5e2d0e27941270661c6"
+  },
+  "localReceipts": [
+    {
+      "command": "pnpm test:device-contracts",
+      "status": "PASS",
+      "scope": "LOCAL_CONTRACT_AND_REAL_HANDLER",
+      "receipt": "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/device-contracts.json",
+      "sha256": "05d92deb263a32217e21ac5b1adc8de5e2eaa7883a1a0b46520534cd2beea816"
+    },
+    {
+      "command": "pnpm test:iot-integration",
+      "status": "PASS",
+      "scope": "LOCAL_INTEGRATION",
+      "receipt": "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/iot-integration.json",
+      "sha256": "d125d59ed4b09e4059bc7e0e47973d97b6e5a90a6ab0f83deeaf42c3fa541a6b"
+    },
+    {
+      "command": "pnpm test:core-api-integration",
+      "status": "PASS",
+      "scope": "LOCAL_API_INTEGRATION",
+      "receipt": "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/core-api-integration.json",
+      "sha256": "1930828c0b6ec0fbe038dbb3b5dd9053fbb6d360334cbe73f682bc19a9e869f8"
+    },
+    {
+      "command": "pnpm test:admin-e2e-suite",
+      "status": "PASS",
+      "scope": "LOCAL_BROWSER_E2E",
+      "receipt": "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/admin-e2e.json",
+      "sha256": "f7c316201c1a57729ed3ebff0b6a9770fb9c8250174e6e4d745eda4ffac5c406"
+    },
+    {
+      "command": "pnpm test:security-suite",
+      "status": "PASS",
+      "scope": "LOCAL_APPLICATION_SECURITY",
+      "receipt": "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/security.json",
+      "sha256": "e77411f3610a1fd979f693dd0f4abecbfbef91d80768e56158376035c57f8b86"
+    },
+    {
+      "command": "pnpm test:reliability-suite",
+      "status": "PASS",
+      "scope": "LOCAL_LOAD_RELIABILITY",
+      "receipt": "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/reliability.json",
+      "sha256": "faab64d953d210159799a2a46a55f163909473441898d4f96ad9bf78b7e5d234"
+    },
+    {
+      "command": "pnpm test:prototype-regression",
+      "status": "PASS",
+      "scope": "LOCAL_PROTOTYPE_BROWSER_REGRESSION",
+      "receipt": "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/prototype-regression.json",
+      "sha256": "864271bdce3f286cc3f345b02f8436d09cea2ea84902d7e8f0090978dcfcaee6"
+    }
+  ],
+  "realPoolReceipt": "docs/audit/evidence/qa-09-immediate-real-postgres-pool-readonly-attempt2-2026-10-03.json",
+  "realPoolScope": "POSTGRES_TCP_READ_ONLY_NOT_PRISMA_OR_HTTP_CAPACITY",
+  "awsOperations": [
+    "updated reviewed fixed-source existing fixture CodeBuild project",
+    "one successful readonly Build"
+  ],
+  "remaining": [
+    "shared phased deployment",
+    "HTTP500/throttle exact correlation",
+    "real Prisma and rolling-connection capacity",
+    "online Command P95 <= 3000ms",
+    "remaining lifecycle/write/E2E117/security/replay full QA09 receipts"
+  ],
+  "changedFiles": [
+    ".github/workflows/deploy-test.yml",
+    "apps/cloud-api/src/admin/command/immediate.ts",
+    "apps/cloud-api/src/admin/command/publisher.ts",
+    "apps/cloud-api/src/admin/command/queue-consumer.ts",
+    "apps/cloud-api/src/admin/command/service.ts",
+    "apps/cloud-api/src/runtime/admin-lambda.ts",
+    "apps/cloud-api/src/runtime/command-publisher-entry.ts",
+    "apps/cloud-api/src/runtime/lambda-entry.ts",
+    "apps/cloud-api/test/admin-command.test.ts",
+    "apps/cloud-api/test/command-publisher.test.ts",
+    "docs/audit/QA-09-性能容量与请求可观测性修复方案-2026-10-03.md",
+    "docs/audit/QA-09-请求可观测性容量与Command即时发布实现记录-2026-10-03.md",
+    "docs/audit/evidence/qa-09-immediate-implementation-summary-2026-10-03.json",
+    "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/admin-e2e.json",
+    "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/core-api-integration.json",
+    "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/device-contracts.json",
+    "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/iot-integration.json",
+    "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/prototype-regression.json",
+    "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/reliability.json",
+    "docs/audit/evidence/qa-09-immediate-local-gates-2026-10-03/security.json",
+    "docs/audit/evidence/qa-09-immediate-real-postgres-pool-readonly-2026-10-03.json",
+    "docs/audit/evidence/qa-09-immediate-real-postgres-pool-readonly-2026-10-03.json.preparation.json",
+    "docs/audit/evidence/qa-09-immediate-real-postgres-pool-readonly-attempt2-2026-10-03.json",
+    "docs/audit/evidence/qa-09-immediate-real-postgres-pool-readonly-attempt2-2026-10-03.json.preparation.json",
+    "docs/dev/QA-09-性能修复分阶段部署与回滚.md",
+    "docs/管理后台开发任务清单.md",
+    "infra/iam/QA09-AdminGatewayLogsBoundary-additions.json",
+    "infra/src/config.ts",
+    "infra/src/database-capacity.ts",
+    "infra/src/stacks/app-dependencies-stack.ts",
+    "infra/test/qa09-performance.test.ts",
+    "packages/aws-clients/src/sqs-json-sender.ts",
+    "packages/database/src/client.ts",
+    "packages/database/test/index.test.ts",
+    "packages/observability/src/index.ts",
+    "packages/observability/src/request-correlation.ts",
+    "packages/observability/test/request-correlation.test.ts",
+    "scripts/esgiot-cdk.mjs",
+    "scripts/qa09-business-target.test.mjs",
+    "scripts/qa09-pool-readonly.test.mjs",
+    "scripts/qa09-rollout-phase.test.mjs",
+    "scripts/qa09-ten-device-db.mjs",
+    "scripts/run-qa09-pool-readonly.mjs"
+  ],
+  "implementationSourceHashes": {
+    ".github/workflows/deploy-test.yml": "e6427ea5dd060d1ce94fae812451765626acdee8267a859e7b10da5cecc8a0da",
+    "apps/cloud-api/src/admin/command/immediate.ts": "60c4e03ceaea66642f759c1e20a923d0c1e343c98d1c217227fce54fca061a48",
+    "apps/cloud-api/src/admin/command/publisher.ts": "720da989616971bc288bbb74adcb2b8c84b895e1231c53de4149756d64f90454",
+    "apps/cloud-api/src/admin/command/queue-consumer.ts": "862d4f51b98f1ab7581283ddd919e30c0aa6d0294bd895b59f395768b6da678e",
+    "apps/cloud-api/src/admin/command/service.ts": "00833f06f91d95f0a1bde579b670076b003cf23dbdaabeb8fd6b897f2c43fead",
+    "apps/cloud-api/src/runtime/admin-lambda.ts": "1ad374155023ecc2662c40281c51c4810a911735192a224dc7dfe5d7a415e5a2",
+    "apps/cloud-api/src/runtime/command-publisher-entry.ts": "4a41705b6f6e32b9400496a1d2bfa727b5a848e8e10a0c9b782aff0858177139",
+    "apps/cloud-api/src/runtime/lambda-entry.ts": "4daec056cc10fb3e62b078929fafc2bc356ed90377dfdd08a7e34b1a48647485",
+    "apps/cloud-api/test/admin-command.test.ts": "3d01c4a80b63cedaad3cdfdff1fb22b6c95d7d8809828b750fcfa144e7446e15",
+    "apps/cloud-api/test/command-publisher.test.ts": "bd21330577f147c1d4b6da12320de4c2e6d9db91e09087d6c3ee806fa33bb154",
+    "infra/iam/QA09-AdminGatewayLogsBoundary-additions.json": "2e49cc9d17ff269749683abedb9d18a1159ff41440688ffe2197c86ea2c92bb9",
+    "infra/src/config.ts": "7a9b0cd795100236ea5b4678f2f280a06ed1c7aceae59f374eb16cfd9c8363ee",
+    "infra/src/database-capacity.ts": "a2217df77c7526f5bc26f10f952838e3716144a23431460626b688b14a9e50cb",
+    "infra/src/stacks/app-dependencies-stack.ts": "3edc56bba67355ba5b02c6efdd8adf6ee653a41b4b182d52cb24216a9f3f058c",
+    "infra/test/qa09-performance.test.ts": "ea1aa2c66dc7c9dd41e0c8c9c5e80759fc540bc925f9cde1c5279d885297c68f",
+    "packages/aws-clients/src/sqs-json-sender.ts": "a4a32fa0c2ae47f1fd0ebe75ebe1ba49af6a6a717432c6b1696544a37f5d6818",
+    "packages/database/src/client.ts": "c8ac8cdf45f7fc4220a475a0d18c5fd39aee0677e3d74d69a432ddc0ae797975",
+    "packages/database/test/index.test.ts": "1caf6b801c4e7a81b63312eda333a540d62701d3545a9e13728cf69d669f7aad",
+    "packages/observability/src/index.ts": "a7a73f6522f05dc8a9f75d225200aeb717aeac2b29b739754a9647c2ba27598f",
+    "packages/observability/src/request-correlation.ts": "fc20fe88d19e60e6afbab1687d1a2684341f202330053e6902fcc585a09a4801",
+    "packages/observability/test/request-correlation.test.ts": "d8e55eacd063169b15580f8d15c7619229813b64faa08f7d4397c29b702e48f1",
+    "scripts/esgiot-cdk.mjs": "a932ae88b07192c8ea1e86105f23bbaeb7245a04a35db975b57807c3d3fec58b",
+    "scripts/qa09-business-target.test.mjs": "754386162bcfb0c7c146d16a678765554d07c62aec25df50bd8532b461141453",
+    "scripts/qa09-pool-readonly.test.mjs": "69c0784d9eb74fe7d03b8f17ab6192affe26d23f3361b9146ec2044a536ed253",
+    "scripts/qa09-rollout-phase.test.mjs": "17db19af23c3dc3ebd93769cbd608661c7fd8071299307cf0444ac709beb6bad",
+    "scripts/qa09-ten-device-db.mjs": "e61673c17ddecf131bd50294aaed71212a5130ecf603a4983c37d274eca09922",
+    "scripts/run-qa09-pool-readonly.mjs": "a1015e797445cb8ecf6c3e6bad9c0d628ce3b2f1498420781a718f42e83eafe8"
+  },
+  "finalDocumentChecks": {
+    "format": "PASS",
+    "secrets": "PASS",
+    "diffWhitespace": "PASS"
+  }
+}

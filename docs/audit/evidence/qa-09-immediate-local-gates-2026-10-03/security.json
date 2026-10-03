@@ -1,0 +1,2385 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-06",
+  "status": "PASS",
+  "scope": "LOCAL_APPLICATION_SECURITY",
+  "baselineCommit": "818faa0e949c247b13a97eeffd08bf0bdbdb5876",
+  "executedAt": "2026-10-03T08:06:54.431Z",
+  "environment": {
+    "database": "isolated PGlite with all migrations",
+    "identity": "local RS256/JWKS; no real Cognito or TLS handshake",
+    "topic": "literal IoT Policy evaluation; no AWS broker",
+    "externalPorts": "injected local ports",
+    "productionCredentialsUsed": false
+  },
+  "sourceHashes": {
+    "apps/admin-web/src/pages/audit/audit-state.ts": "75556c7c6505b70539b641faf0857eb4fbbbfe98fd9dc9f8888947dd1caa9acc",
+    "apps/admin-web/test/contract-parity.test.ts": "e6d2370747106a95f6d8006b59d775eda39250f1119c6897af2b8150f636b26e",
+    "apps/cloud-api/src/admin/alarm/errors.ts": "8f5809b36bfa27ae0b2a9754a1a8132b97cd12a2def075c176e9b0cd27ee7554",
+    "apps/cloud-api/src/admin/alarm/handler.ts": "8851aff8b6805bcd8cca5df626af21cf90b8229278d650322e12721ecb5aa8e0",
+    "apps/cloud-api/src/admin/alarm/index.ts": "0e95ed739de48f50be71537334ae93963c0fcb8395037a81c5c40aef8d0366f0",
+    "apps/cloud-api/src/admin/alarm/service.ts": "6fc6e168ce905a38fc5d474d6dbb1b6dbafc3d3f6ddc12e80b30f8d5c4384ec1",
+    "apps/cloud-api/src/admin/audit/errors.ts": "13d8cd85d5f8e3d877d5ab47c0601cfdcb6650ecd7d7bd8d4d8e881370fd609b",
+    "apps/cloud-api/src/admin/audit/handler.ts": "06ee4959535d32b470de49ec918657e39f5346347f1ed4ec22be4a3cab61ae4c",
+    "apps/cloud-api/src/admin/audit/index.ts": "0e95ed739de48f50be71537334ae93963c0fcb8395037a81c5c40aef8d0366f0",
+    "apps/cloud-api/src/admin/audit/service.ts": "ea997c99f29baeca92679885b2425b38304c70dad8afaa73f650de1ba3164b7b",
+    "apps/cloud-api/src/admin/certificate-rotation/handler.ts": "4217191759fd6ea514bd57c03985c4ed461a6c26f8e60cade0a74b2904a41717",
+    "apps/cloud-api/src/admin/certificate-rotation/index.ts": "82e6bcbdc609495a35c6d8dea77b0bfb461d199079d1f740e2c8c43e0991140c",
+    "apps/cloud-api/src/admin/certificate-rotation/service.ts": "577531582d72de763a7bf0602c67de7d626c260502cb2bfd9e146d8c6b4c03ba",
+    "apps/cloud-api/src/admin/command/authorization.ts": "adc4cc149972f87ceacee687f0d83c985750dfeb1d87ce6f62d803a802aaa69d",
+    "apps/cloud-api/src/admin/command/errors.ts": "7d6119c9370893ff50d0b25be314a6c7a44568751cf0510a493cd3ed4efb3f23",
+    "apps/cloud-api/src/admin/command/handler.ts": "1b6307c7f5cc324bf5c6ee400ad689c6478917e74beb41bf33fc802bcbe51e8c",
+    "apps/cloud-api/src/admin/command/index.ts": "b3fef82262afac0875120e452405e3c662c1a6e891ca83427e57f4942605373f",
+    "apps/cloud-api/src/admin/command/publisher.ts": "720da989616971bc288bbb74adcb2b8c84b895e1231c53de4149756d64f90454",
+    "apps/cloud-api/src/admin/command/query-service.ts": "5ccd23495f6f2fc00631c51e1da1075dd88af6ec50f0febf0e9ba52a694c9043",
+    "apps/cloud-api/src/admin/command/service.ts": "00833f06f91d95f0a1bde579b670076b003cf23dbdaabeb8fd6b897f2c43fead",
+    "apps/cloud-api/src/admin/command/timeout.ts": "9c511821e6adeeddada482d980fd09ece17c6ce9a974b46ff5d0278ad8177cb5",
+    "apps/cloud-api/src/admin/configuration/errors.ts": "3cccc7f1ec26d870fd3b2a26eaa0cc46a36f7eb715418dc045140b64e2369d74",
+    "apps/cloud-api/src/admin/configuration/handler.ts": "82612dacc7fec140de9cd99ffda7fa309e55df6452948d72e301afc8db9a3715",
+    "apps/cloud-api/src/admin/configuration/index.ts": "0e95ed739de48f50be71537334ae93963c0fcb8395037a81c5c40aef8d0366f0",
+    "apps/cloud-api/src/admin/configuration/service.ts": "38f8fafd3496906e0cdad7d1814ec720fd790737d083a211d2e9342cac5133b5",
+    "apps/cloud-api/src/admin/contract-device/handler.ts": "fc448159f6f491dfff0f38d9acb5b37dfca66bfac191ee7eb9f340d6c807a527",
+    "apps/cloud-api/src/admin/contract-device/index.ts": "dc954ff7fd43caa51c55ea502593e27f1b0ef54c9b2a9c89ad1e1b6913b00d44",
+    "apps/cloud-api/src/admin/contract-device/service.ts": "d0a2c0683196c2ca371bd9f89e61ed41cd7ee3314c1ca377065c8f8781e2126f",
+    "apps/cloud-api/src/admin/contract/errors.ts": "f67d95fac30f9b5b12d1e965b11094bde470676d1a2e576dd3fbb211afe88f81",
+    "apps/cloud-api/src/admin/contract/handler.ts": "23d8851d46274bd0ba56f50279e3c87a695cc50999c777c2d44151a97c086d01",
+    "apps/cloud-api/src/admin/contract/index.ts": "0e95ed739de48f50be71537334ae93963c0fcb8395037a81c5c40aef8d0366f0",
+    "apps/cloud-api/src/admin/contract/service.ts": "615d07e4044bdc350596fa776f6f6062ddef1608e442ffc2d9501320749d4279",
+    "apps/cloud-api/src/admin/customer/errors.ts": "07f41b4f24bb9b420580b94f91de642ae50d32aeb847beb7f7f570b63ae00f94",
+    "apps/cloud-api/src/admin/customer/handler.ts": "c2bf07669a43d6f371b81d536f3ec46fb92b12ffe12fd788fcc42e43f72fff48",
+    "apps/cloud-api/src/admin/customer/index.ts": "2564b5656129ca031aee7893c82f5ee32044ffd7191d17c28ae88cac30238034",
+    "apps/cloud-api/src/admin/customer/repository.ts": "d26484bfba0b72e06cf5645f9b623960c62449585245cda5f66b8e64d5ab7cb1",
+    "apps/cloud-api/src/admin/customer/service.ts": "d8efe9369eb77c4d9b3c9360553460c4b8d440b415f77d969d17a805575f79a4",
+    "apps/cloud-api/src/admin/dashboard/handler.ts": "940af96d6a5b247e11147a4a9f4c33be9042f30ce92e1c206c3697ebaf658646",
+    "apps/cloud-api/src/admin/dashboard/index.ts": "dc954ff7fd43caa51c55ea502593e27f1b0ef54c9b2a9c89ad1e1b6913b00d44",
+    "apps/cloud-api/src/admin/dashboard/service.ts": "094bed52f99df6acaaa3569e56d81ba0b694a6b86e0fefded5592f402a48ce83",
+    "apps/cloud-api/src/admin/device-assignment/errors.ts": "ce5b59e46ae7a8b5ca72cb7b90628e0f352348eaf64b8406a383489982516d6b",
+    "apps/cloud-api/src/admin/device-assignment/handler.ts": "cda6939390d24ea8153966b4e79147af9f28b8ab7d1898550d2f2514cd055b64",
+    "apps/cloud-api/src/admin/device-assignment/index.ts": "1bcb725aecf4a591a67230c06b860b6f08e9ef90bec7213d71d911b1a30a162b",
+    "apps/cloud-api/src/admin/device-assignment/service.ts": "a1b7de95bc699a151733821b97164234798a0f718d932dbcb71927a0b2e4bf57",
+    "apps/cloud-api/src/admin/device-console/activity.ts": "d91f33cc21faae62a4388d544cfb65d27032b641a17d1d2b421c76d4acd1c142",
+    "apps/cloud-api/src/admin/device-console/errors.ts": "b50ccdfb723819b2d2c193826436b4d20f090e8a6cf6fed1ff16faf722f991b6",
+    "apps/cloud-api/src/admin/device-console/export.ts": "ed22de85ec225508719d8ab49a571c88e271635f887801fe12a84d195bf5241a",
+    "apps/cloud-api/src/admin/device-console/handler.ts": "7ac4bfc1db24d97725f2e4d6de8393f7b01921a9d40689a3635c8887403d23cb",
+    "apps/cloud-api/src/admin/device-console/index.ts": "20d12e1d7fefbc1ceffaf9249062dfd0eb8fbce0e898d31099e726484f220328",
+    "apps/cloud-api/src/admin/device-console/service.ts": "0266480feb917e0afe92ce97ece1000fb3ee83b010e869016f745435fe959787",
+    "apps/cloud-api/src/admin/device-retirement/errors.ts": "0877ed478304102272c6e3af9b8f15264cec44db7c5899bb65a7846a19ce5408",
+    "apps/cloud-api/src/admin/device-retirement/handler.ts": "337f2d6eddf7c066e6a490f935e958ff1cbbbd469fe6be490820685dcaac18da",
+    "apps/cloud-api/src/admin/device-retirement/index.ts": "0e423f8e53dabe5bc623acb1ebc474b914eb89869cf85b3f13cde76919ef9429",
+    "apps/cloud-api/src/admin/device-retirement/iot-revocation.ts": "2f4327d6f5db04823097c3e2c60c42880441b265fedb86a41d1b6bbd1275f890",
+    "apps/cloud-api/src/admin/device-retirement/service.ts": "64658d22c79b137cfa6ba7709a34bbd14e0f7d5771f0d2720a5e8f89a758d7f5",
+    "apps/cloud-api/src/admin/device-status/errors.ts": "476f3c24538bfb547e24dc65ceae603011e6e7037cbe1ed4cb0e30fdea1ca774",
+    "apps/cloud-api/src/admin/device-status/handler.ts": "4e43be3821b7ed9420d23d25096dbcf977062a5633568e4fd8bc7c9a0a59aab4",
+    "apps/cloud-api/src/admin/device-status/index.ts": "4fb94bfd77b181f1513aac22d28adcc88559a60196d715ecc93429d72ae09476",
+    "apps/cloud-api/src/admin/device-status/service.ts": "1f0eab19e543ac2e3d8a935297667d8a7c3ed9ce7899806283a5e52f6ddc2545",
+    "apps/cloud-api/src/admin/device-user/errors.ts": "fe4828eb653c1e39305bcee63d441189849b58c0d6c113e22c1ac3c6072c36b9",
+    "apps/cloud-api/src/admin/device-user/handler.ts": "23b47863172367e452879ee91f0e663fb8dd30da1a0340207458df31f9080715",
+    "apps/cloud-api/src/admin/device-user/index.ts": "39cc5f60a8e205c4d34fc132fff6844ea1ada002b9aa8aca588e2b638bac0239",
+    "apps/cloud-api/src/admin/device-user/service.ts": "369b6da86b8826d32725fe0b258eff84c403aaeb7be05e970fd8313f53513543",
+    "apps/cloud-api/src/admin/device-user/verifier.ts": "3244039bedbe3dc49f548f9b24b1905fe1351740c987dd6b2612add7d956f92b",
+    "apps/cloud-api/src/admin/device/errors.ts": "38370ddb76c680c7d607606c0fec5e98ecfdc65a142292643f69508597b0ddb4",
+    "apps/cloud-api/src/admin/device/handler.ts": "9f52102c640fc5360b380f17ce29e9f7b044948d38b1244c964b02528c5cb660",
+    "apps/cloud-api/src/admin/device/index.ts": "545fd9f5e7f7034aa04103c3ef7f36853d5ab528a3976179acbec8d265ab1be8",
+    "apps/cloud-api/src/admin/device/metadata-service.ts": "61e41d5ce63e755c1890068a82714c8a7b89bf82eeada731a91db0cc7ce49027",
+    "apps/cloud-api/src/admin/device/repository.ts": "dac286adf55b644009dab06b403b0a6606e33c1edb3c504ffd843bc9600d1b21",
+    "apps/cloud-api/src/admin/esg/csv.ts": "d098615c9c71456b7e8e398c232c7bcc1f0911b9c39b67f50ad7b54f6b906319",
+    "apps/cloud-api/src/admin/esg/errors.ts": "b185371f05963c5e23b9bf6b3d32e8b0576c3f71d677dfd0928fafda9ea2358b",
+    "apps/cloud-api/src/admin/esg/export-service.ts": "c713aeba6e82f91d9f1b5d358540cf630b78b941f81b888ab0ea1d57ce5ea1c6",
+    "apps/cloud-api/src/admin/esg/handler.ts": "b0f554919eb34ea131e244e59259c41b346de487e6279b0174546fa070dfd7b1",
+    "apps/cloud-api/src/admin/esg/index.ts": "dec4860630c36ade0bad124d61346b08867126de185bb2c9b03786209dc72eeb",
+    "apps/cloud-api/src/admin/esg/service.ts": "0f8a7172d3eab1e274a073624be45ac2e09faa20651b6d0e0750bf3418cb9046",
+    "apps/cloud-api/src/admin/license/errors.ts": "345ac0dd23599a663c24e1d06215ee6c07fc749e26ab8b1ec7d61cc787632f25",
+    "apps/cloud-api/src/admin/license/handler.ts": "dee9107e3d2fea9165f46602cfbd7ac3f68df39fb39e6b9a1e73c950c8aee708",
+    "apps/cloud-api/src/admin/license/index.ts": "bb097027dc10cdebac2feb3214d9489d91390e42224931cc438cdca048b0b760",
+    "apps/cloud-api/src/admin/license/service.ts": "364057f80779fdff2c918110277b931410a6d226ba61240380c6d647adb6503e",
+    "apps/cloud-api/src/admin/onboarding/errors.ts": "d1396d3aa7a187c5af789766899801aa492fe7095ba8183f943ce44693d23e9b",
+    "apps/cloud-api/src/admin/onboarding/handler.ts": "8b015e41b94d68612e0c681061ade0a868b826a4581f35601e66eacbcbdf6590",
+    "apps/cloud-api/src/admin/onboarding/index.ts": "ab41a712337148498471030e011dee4706ad0b250420a9653b6eb99378b8c729",
+    "apps/cloud-api/src/admin/onboarding/repository.ts": "550d9bea163cc0c9d24ad6478953f8d63aa918da6213e73515f6efc024ba528e",
+    "apps/cloud-api/src/admin/onboarding/service.ts": "ec9c0eb801ee91a682e95738ebdb1750ff204476931f76d19ebac49b9481576c",
+    "apps/cloud-api/src/admin/ota-campaign/errors.ts": "b45d992e502e4edd09e401d31242c286054bfc0375fbfd2b81bd7994d67cc7ed",
+    "apps/cloud-api/src/admin/ota-campaign/handler.ts": "3739ba258d6396aa5771fa09eb297b91b9263ead71afd6203061d5e9f64b9a99",
+    "apps/cloud-api/src/admin/ota-campaign/index.ts": "0e95ed739de48f50be71537334ae93963c0fcb8395037a81c5c40aef8d0366f0",
+    "apps/cloud-api/src/admin/ota-campaign/service.ts": "e0625bcfdd041fb4a02e988a5c74607d6806d8e6ceaf2f8f18c5c9d0a9c1dfc9",
+    "apps/cloud-api/src/admin/ota-package/errors.ts": "b90d812a8d055deb89b446e0f1fb2175d45ee23081d418361cf0448aba8694a2",
+    "apps/cloud-api/src/admin/ota-package/handler.ts": "570f7561b58aa795b6f2bc52a77437ce4c63375ccf76c42ada50710ae71c1b0d",
+    "apps/cloud-api/src/admin/ota-package/index.ts": "63120c9e82123bf773ea3e7684739da57109c648495b72a3a2d6bb36d96aeb50",
+    "apps/cloud-api/src/admin/ota-package/service.ts": "e980978cdbfd254ddc22ce2f1353cf9ec108bff41d8df10b59f34527668e1d06",
+    "apps/cloud-api/src/admin/ota-package/signature.ts": "b26a3f527837f61dfb20643f8c5e29d89f6caab9f57dd436ef20dd8cb54f8d9c",
+    "apps/cloud-api/src/admin/ota-package/storage.ts": "1a3efc71a984b98ae5b92c9f78b7bd7af56bb1f3b6f4f4908d39bf0927b1a08e",
+    "apps/cloud-api/src/admin/replay/handler.ts": "3dadcaac364eb576a761dd9b9bab0e52504533e5ece2ae92bfea8e26706be4cf",
+    "apps/cloud-api/src/admin/replay/index.ts": "b01afb84eb7eccc3a1dc03b3bd157793d24dfb5dc59628ab65d64b250eb38afb",
+    "apps/cloud-api/src/admin/replay/repository.ts": "195f9add1fa2402f2a34aa6593b61cbdd5176dfb5d659a9fea9e941d580567f1",
+    "apps/cloud-api/src/admin/replay/service.ts": "63584a794f176bb906330012a61ac0a76592ed94788bc41a298acd918b4b556c",
+    "apps/cloud-api/src/admin/settings/errors.ts": "141796cb041858e1094632df5efb41efc90e78cab0ad81d8edd517c5d895d8d0",
+    "apps/cloud-api/src/admin/settings/handler.ts": "9a7bbee8bf26731bbaf3b79d66af9216ddfed4756fce483c3dcc7233d9fd760f",
+    "apps/cloud-api/src/admin/settings/index.ts": "0e95ed739de48f50be71537334ae93963c0fcb8395037a81c5c40aef8d0366f0",
+    "apps/cloud-api/src/admin/settings/service.ts": "ccfcb34e23bbdbd18a2e1bf83b4633a4ac0bb453de8ff113fe7f6a18811279af",
+    "apps/cloud-api/src/admin/shared/strict-object.ts": "b72657d6f935ab1d6b7e957093c4784cdec8c96936ac10e686e23ccac851f4c3",
+    "apps/cloud-api/src/admin/site/errors.ts": "e5fa0fbe919d64cc71d0d1d0b0e0db551e3817ff6ffda632f38f37512d60c1eb",
+    "apps/cloud-api/src/admin/site/handler.ts": "abaf3a9a7dc78ac948a6537da9c1ffba3dce5e1aa17e923ee8cb6914bae8ff4f",
+    "apps/cloud-api/src/admin/site/index.ts": "ab72af4fb98315532ac627d7dc6eda16a8408187df306b791ca62ca901f036f1",
+    "apps/cloud-api/src/admin/site/repository.ts": "581fe0e9291524b3613c692e0c737c8bf106ad1af97c652bf13b58d315cee6fb",
+    "apps/cloud-api/src/admin/site/service.ts": "f0ed832c8dc6f357d7ad0e9b1887505fc29aaa4d76a3fad3d67204145bba300e",
+    "apps/cloud-api/src/admin/user/cognito-port.ts": "42adf767b03c1f6bae0d7180de8facfcd4f03018a363f5ba5843101504d0ba1e",
+    "apps/cloud-api/src/admin/user/errors.ts": "6c5f6fae0768c385e78459fbaa2e5cf85af251469c4397fa08ff888b0c7d6240",
+    "apps/cloud-api/src/admin/user/handler.ts": "18bf93b6aa9d8a2933ff439eff5de875eea9d66a3dd0ed709e7aeb0fec498cf8",
+    "apps/cloud-api/src/admin/user/index.ts": "2439edd5eee31efc139c7304c368c2e4dba0c3b67ee3ed1e59fa65fc2e99ee3f",
+    "apps/cloud-api/src/admin/user/service.ts": "1f4ddf1ce05175060eeb1e5e5f38a6d05830603dddfa7ee0797f0668990215ba",
+    "apps/cloud-api/src/consumable/errors.ts": "2fc59c276c4ac618107a58672f5d46bbf4b3df79374c5022fd6f6aa53803ea7f",
+    "apps/cloud-api/src/consumable/handler.ts": "1426e4ef50ad0acd90d6adc710837c0e6b7d2e300a1b35418a7af864ba343025",
+    "apps/cloud-api/src/consumable/index.ts": "faf45965143cb690bed4eb9b05d7f9396ef618403fe88008171e573d63442f73",
+    "apps/cloud-api/src/consumable/request-handler.ts": "0af6f69785289fb2bf3c73309528792c156bcbaa2f5418c94a07a5936c3bdad5",
+    "apps/cloud-api/src/consumable/request-service.ts": "87dcfbb730a70a58b27164b0b1ee96dbb9bb1186c72e151335c7a536746774e9",
+    "apps/cloud-api/src/consumable/service.ts": "12c72b36b6b47a98cd9e06a0fc87ae1945289c855e083cbeeb8c1b20bc6e7a1d",
+    "apps/cloud-api/src/device/certificate-rotate.ts": "aceea051f5632e5e088636c7a46a47f9602435e3c6027cf4f908a070a0c3127e",
+    "apps/cloud-api/src/device/certificate-status.ts": "bf10c6629c54686734a4fbfa4ebb168425d774a7940ea14835746b43a2c375f7",
+    "apps/cloud-api/src/device/deactivate-handler.ts": "a67d0efc8513861c8152e9e8bd6cd697bfc131d5946a64d499f7dd817cd9ace4",
+    "apps/cloud-api/src/device/deactivate.ts": "23a11a4a544afb61e63d26c13fcd18c22e61d6a8aeee9409af8012eca12a20cb",
+    "apps/cloud-api/src/device/index.ts": "e3cd779659ce61d45e39a6302334580006526dede27e6a8f09daeff7f759e124",
+    "apps/cloud-api/src/device/rotate-handler.ts": "81dab87e6212f7260c7226c6f75521a838a94caeae3746d491559e8b6e182ecd",
+    "apps/cloud-api/src/device/sync-handler.ts": "6cf8b27929ad342e9e3bb60d98722393bd3b9b09607449fcbf8ea8c13203fe96",
+    "apps/cloud-api/src/device/sync.ts": "54d0a84f0ccff8023beb0b0ef5ce0665734e0c827df6a0084757de3d7dbd7618",
+    "apps/cloud-api/src/index.ts": "4ca39d23caf12b5cddc724df43d607d026ae3264865caaabce1ca2cd49ef6860",
+    "apps/cloud-api/src/media/admin-handler.ts": "0163438d4cb160cf76b2660a0df2f1b8c4e9604a738abb652c1606a5a940d586",
+    "apps/cloud-api/src/media/device-handler.ts": "5d5bb2d04c5af075190c9d61cc8905e8aa3ce9fe4035dada9b2966c44672d205",
+    "apps/cloud-api/src/media/errors.ts": "e94a7b2a0b4279f9ce2dd983490b0a6e9aab469c78a86dc582f0539360605580",
+    "apps/cloud-api/src/media/index.ts": "d2d5b2fe67614f5212ef652d2b1bc9cb40f017958332cb779da14174a9c8ff35",
+    "apps/cloud-api/src/media/service.ts": "8127f92ea8e906676f6515523c9f250078760a2d5a9c9fd8097d520d9090c650",
+    "apps/cloud-api/src/media/storage.ts": "1f94eb6d4dc5c4f0cd4f5a661a5190e4f8a30375e3e671f97019df1ad0b31bd6",
+    "apps/cloud-api/src/notification/business-notifier.ts": "06b388be3ad87e4876e6e8322393d78092f450765320c371b8b30096620bbd28",
+    "apps/cloud-api/src/notification/index.ts": "acf0eac1c6520b78c4780a6df352043b453b914bfe2e2a8b75775eba4d3c1cb6",
+    "apps/cloud-api/src/onboarding/csr-proof.ts": "9ac981e909219aa09522054dee36af8b916d6002d6dc6f16e7241f293a066b3f",
+    "apps/cloud-api/src/onboarding/dto.ts": "c95cc3be988df3c088b1b6147ba4fc99e967f237946561cf79632c3366779a9d",
+    "apps/cloud-api/src/onboarding/errors.ts": "ab90735b59834ad7b729906fc2d2ec7de0f581bc7bdce36f07723f1505ca71cb",
+    "apps/cloud-api/src/onboarding/handler.ts": "462f5de0f2d3bf48de2a04bf8e683cbf44c2c233979d42d05e928063ebb98dfe",
+    "apps/cloud-api/src/onboarding/index.ts": "13f90b0fa198ac6e028dda52465d388fa211a304430bb06142b2d551315804c3",
+    "apps/cloud-api/src/onboarding/repository.ts": "fb716d632b4215b8e8ddcddbd3660d6753c6033a67f6a0d6a1d14b6bbebdb0cd",
+    "apps/cloud-api/src/onboarding/status-handler.ts": "32d8468c958e10250be65ea9ba50c5ea92db57d4229d69b75fb483fe4e593f6b",
+    "apps/cloud-api/src/ota/ack-handler.ts": "a7221639f591d4dcb34f5fc854fbecc5f0521229a8ee1d8919fd0bb5afeadc19",
+    "apps/cloud-api/src/ota/dispatch-store.ts": "856f6de84b6fde514006f42defb1c8a2ae09f1b250a3578c8030775ecc2cb52a",
+    "apps/cloud-api/src/ota/download.ts": "311908a39025c8a73fda64f53a29e690012f80bbc1453b22805afc9b4c0ea553",
+    "apps/cloud-api/src/ota/index.ts": "34265b24b783a719434083f6a656e87121c73425359a525d7235f2b432321490",
+    "apps/cloud-api/src/ota/publisher.ts": "d04d5d21e657809f4119ab85dbaf97fb94d63a0ba7f547b69539d07ad69f1bcb",
+    "apps/cloud-api/src/provisioning/index.ts": "284b1dd6a01dd8125e9ad8f094e81616bdc219a21926c8d1fbd1bc3710d15be2",
+    "apps/cloud-api/src/provisioning/iot-port.ts": "70d59aa034f1ddd30ab893c079d50a6948e9faee24b3422e89f6bbe60ce810eb",
+    "apps/cloud-api/src/provisioning/service.ts": "9a6c308ea02707d474bea01111468b2934483a3892a9c18fff64d9d970756ec7",
+    "apps/cloud-api/src/provisioning/worker.ts": "f5fc344eff63ca6c1147a719ec3d2379b9467ae2acb291ad1be845e19a07f738",
+    "apps/cloud-api/src/runtime/activity-export-entry.ts": "a1310bdb0f0523c4110c7f6182092eec6d96956ab537c34a8b830b95df5b2aad",
+    "apps/cloud-api/src/runtime/admin-cors.ts": "da2c9180217cd491a3897428163391df7f3b7f58f66a93a299b082b1c3e57bb9",
+    "apps/cloud-api/src/runtime/admin-lambda.ts": "1ad374155023ecc2662c40281c51c4810a911735192a224dc7dfe5d7a415e5a2",
+    "apps/cloud-api/src/runtime/certificate-package-sweeper-entry.ts": "bcd193e1da4c51bfe7f9abcc116d2242bfbd49c343650daba1a013420d4b3664",
+    "apps/cloud-api/src/runtime/command-publisher-entry.ts": "4a41705b6f6e32b9400496a1d2bfa727b5a848e8e10a0c9b782aff0858177139",
+    "apps/cloud-api/src/runtime/command-timeout-entry.ts": "a4a3805c9450cac181d557e54a74a1ad6fbd6c883b2a63c2d8943c965ba52633",
+    "apps/cloud-api/src/runtime/delivered-operations.ts": "646af26d4fdb4ab1f2a05d85638af05079c50ce5449adfd9ce3ea4b7a5270199",
+    "apps/cloud-api/src/runtime/device-entry.ts": "f539a852809bd9ee837109e445a218cf0716ce9967385924b635d9701d9eb421",
+    "apps/cloud-api/src/runtime/device-lambda.ts": "c9350c1c43cc7f8e7fd3e7988bb6dde589defead69322cc3ebfa5feeec8b13d9",
+    "apps/cloud-api/src/runtime/device-onboarding-entry.ts": "4d20c22486a321713c6a8130944c7a95ac8b604ae7c906cee3b7fc2633d565e3",
+    "apps/cloud-api/src/runtime/device-onboarding-lambda.ts": "ef5bb7e965328b168b280561a9026c7e80fca507d347943a30c5162766458f4e",
+    "apps/cloud-api/src/runtime/esg-export-entry.ts": "bb136e6e85a292f6052b623a05b0f21223cf32df7ea983060be9c35993bf879d",
+    "apps/cloud-api/src/runtime/lambda-entry.ts": "4daec056cc10fb3e62b078929fafc2bc356ed90377dfdd08a7e34b1a48647485",
+    "apps/cloud-api/src/runtime/onboarding-provisioning-entry.ts": "f494503eecb316861f271610828a6de510ced450c0a252d20c32ba0605ea058f",
+    "apps/cloud-api/src/runtime/ota-dispatcher-entry.ts": "ea499c260f222440f19b2221ca8d6f13ecca18bfaec4baa2fce14b20a7306d67",
+    "apps/cloud-api/src/runtime/retirement-timeout-entry.ts": "fb416cc05a047f43a8b511f95d2c1b57234c9d9e9880b08562959fe871851888",
+    "apps/cloud-api/src/runtime/retirement-timeout-lambda.ts": "7c70339883db2ab0df7bc510c8eec16bb6db37ed6f54be6930339492ec8377f4",
+    "apps/cloud-api/test/admin-audit.test.ts": "55f913a95e1887e89a397f17f05a73d220b7e8d412f9bd9d48f122e69ba6a2e0",
+    "apps/cloud-api/test/admin-command.test.ts": "3d01c4a80b63cedaad3cdfdff1fb22b6c95d7d8809828b750fcfa144e7446e15",
+    "apps/cloud-api/test/admin-device-user.test.ts": "44c53752a8980b55521e3debdfc0146daef41a908688b0797f778fb70c9641d7",
+    "apps/cloud-api/test/admin-lambda-composition.test.ts": "9cb048f528d8125c784ccc9a78709d53ab70bbc67671767db72f4c613ea88a1b",
+    "apps/cloud-api/test/admin-settings.test.ts": "a1ca07177cd208398ec8a83d94a5dd68dd1e8f349b3bb68164a31b941bfb9786",
+    "apps/cloud-api/test/admin-user.test.ts": "d964e30a933d0483955cc80f0b1a6bb54c79d61d2d14a9049848b04a820461a0",
+    "apps/cloud-api/test/certificate-rotate.test.ts": "37f4ce372405be7dba738b2b429195c926a069594666faae259490a35f5e77db",
+    "apps/cloud-api/test/csr-onboarding.test.ts": "14ba443ceecd2f2b6fb218fdb0f73005fe473ede590230d45024f3ec4ca93d66",
+    "apps/cloud-api/test/device-lambda-composition.test.ts": "167dac492561ba573ebdad3325603674e8ca42343a69753d59dd2cd7787a23ab",
+    "apps/cloud-api/test/helpers.ts": "29631777b4947474e08c03ec01b42f061555b085a8c27f478263bbef87190dc5",
+    "apps/cloud-api/test/media.test.ts": "d4660aeb795669cefc7930525caa4cd8cb2f909925348a71552bdcc078bfc57a",
+    "apps/cloud-api/test/ota-dispatch.test.ts": "145dd33bc96f4bb91d3151c767f317612b36768a970327466d430556e3965cfa",
+    "apps/cloud-api/test/qa06-evidence.ts": "b13cad0f0734f17b03e5374e0b8013e80a7a62580030f9d4e06f659c81657675",
+    "apps/cloud-api/test/qa06-security.test.ts": "f2e813d8a3893a5bfdad5a80f7d9ca596760143a980efb83d5448e9067f6b3a6",
+    "contracts/archive/archive-envelope.schema.json": "561185f5a0bfb8e50af3fb5ae4a14847e66cc99c72bce1229fdbb1860b0f66e5",
+    "contracts/archive/archive-manifest.fixtures.json": "8f89b617d093209b42703da07a0bd0b96204516069e4001277d4663fbfc1ba58",
+    "contracts/archive/archive-manifest.schema.json": "7a1745f7ae03d492aa7117b6da4b10c863af69540ce9c58e2ce4150a77b68a75",
+    "contracts/archive/archive-manifest.test.mjs": "73938dd55b70d166d523cf6cd5541ec0141b0365a4720474ba9bb585cc49c68b",
+    "contracts/archive/archive-source-policy.json": "8d18f4aa30a84065b74c73383427695bf15651564457c5e9f93bc947eaf91b9d",
+    "contracts/archive/archive-source-policy.test.mjs": "65d42ed787a9c0e4dc6d9aa08cb63d6385fa89d47d6e4695c3dd23c64674e21f",
+    "contracts/configuration/configuration-v1-policy.json": "b090210f990430b4a4d1efdbc7365b24760f5dea6ef611c9dde1201cba4a9554",
+    "contracts/configuration/configuration-v1-policy.schema.json": "11d0ea5fbecabb866df27595f8dc0ef0a6f1b021fe1ee90c400056e3abfd2004",
+    "contracts/configuration/configuration-v1-policy.test.ts": "618d8492d5e549cb399dd2d2aaaacdc08898c046904d99fa4f5516ae0a765100",
+    "contracts/configuration/configuration-v1-policy.ts": "e49e66fa52b21001eb5f9d90507259dfd2b15a4283eb146ebf241cd2605d0a21",
+    "contracts/contract-version.json": "f0275b44f867915826b13ada0261f487ea9439ce511fa695efbe55a50339f9f2",
+    "contracts/decisions/changes/DEC-001-freeze-1.0.0.md": "67ba82486896e37ee2baea64dce097fffb5d28a62086da529119a6a608c65346",
+    "contracts/decisions/changes/DEC-002-freeze-1.0.0.md": "8317ee2585be2fe57027f6bcdd87f1316dd866d2fbfba658c1ead697f34d2c3f",
+    "contracts/decisions/changes/DEC-003-freeze-1.0.0.md": "64ed3c4a779fbf885ebb381c39746243fa517b9b1f9c19f81e13a1a264d8ccd5",
+    "contracts/decisions/changes/DEC-003-upgrade-1.1.0.md": "da8063d2dcd0eccb0210c4e01126746a8c63676f7a7b1bca0353a62a94c18dce",
+    "contracts/decisions/changes/DEC-004-freeze-1.0.0.md": "cfdebd96bf6d3cc6930121c910f5893234d924df1350bf1c464c00513e9938a4",
+    "contracts/decisions/changes/DEC-005-freeze-1.0.0.md": "e37f89f5d681c47ee8d096159098386a1341064e3013fd54155662ddf1760f9b",
+    "contracts/decisions/changes/DEC-006-freeze-1.0.0.md": "4bccac72113721f1e3e073ea9ed9ac4bb6acb3401827b85cc5660aaf4765338e",
+    "contracts/decisions/changes/DEC-007-freeze-1.0.0.md": "408f285ac7abd42febb6168f009779011314ad66b21f070ecd40a6c770bb20e1",
+    "contracts/decisions/changes/DEC-008-freeze-1.0.0.md": "921b96af82570c0fa46177f592eb8330260c859d486897d33b18b8458a57bf0c",
+    "contracts/decisions/changes/DEC-009-freeze-1.0.0.md": "48937c9a83b563e75df34dd9e204de4220a2a727db45ffeef55e62f9cf488eb3",
+    "contracts/decisions/changes/DEC-010-freeze-1.0.0.md": "fc4bdaba118b806688d80191a2c33ce9b271748bb8170e15f2caf6a448e7c195",
+    "contracts/decisions/changes/DEC-011-freeze-1.0.0.md": "41dac011aa01bc4825d7cb99b36d83dbe5f875a2d09c5e9123716f60bd392539",
+    "contracts/decisions/changes/DEC-012-freeze-1.0.0.md": "ffd0e24ba5a1839055e11d5263f955b44b7208dc57b07713013eca6291200399",
+    "contracts/decisions/changes/DEC-013-freeze-1.0.0.md": "da1140face49eeb0a31f433a70d0f45386f9029c4c03556bead6e622e1dbb333",
+    "contracts/decisions/changes/DEC-013-register.md": "bd1318d7f79fbdfe5b7bc6c15795876962134db546fd50399f53cb20931838e2",
+    "contracts/decisions/changes/DEC-014-freeze-1.0.0.md": "b1a709541a30e514c60b367b5e9786c3dc4f9407bee0a3f0ed00ed0eb688fe8b",
+    "contracts/decisions/changes/DEC-014-register.md": "f22ea85f72eea9db08eee5ac179728e53ce15eb64c7d83ebeff0f6afa3aec3d0",
+    "contracts/decisions/changes/DEC-015-freeze-1.0.0.md": "567717a7193473613a918c8be9380ab5ed85d0beaa332ae211dc88351e829d03",
+    "contracts/decisions/changes/DEC-015-register.md": "8ba6d2efc00e589128699ce5222ede593150c009c8329852cdef3c80b31defe5",
+    "contracts/decisions/changes/DEC-016-freeze-1.0.0.md": "b91eeb0a2e2c1a4e3fd572d107d85c367d428ef43401485b9c9da9a7c30bbab9",
+    "contracts/decisions/changes/DEC-016-register.md": "7b3a3c67af76d98c89c158ba7484070c407eccda66b74fd9e58265ad31d5696c",
+    "contracts/decisions/changes/DEC-017-freeze-1.0.0.md": "b60f9b499838d459e04270c91d9ea757875c573fa7b5fd647ece555cdf0d948c",
+    "contracts/decisions/changes/DEC-017-register.md": "06553f795331ff56760fee99cbc09863166265fc5ece2723ac4ade25b715f0d3",
+    "contracts/decisions/changes/DEC-018-freeze-1.0.0.md": "879e388319e5550d357a676bab7bed731bd204a6507d790e4cb3f24a130a21f0",
+    "contracts/decisions/changes/DEC-018-register.md": "5ee230f353d64e02db85c35bb10887d5f7ef4a24f26bfc0531322aa171cc90c3",
+    "contracts/decisions/changes/DEC-019-freeze-1.0.0.md": "4f3f5dded2e4e3f0f6d8605f226df5e1d79c09f94ca80208c7f9c55659564791",
+    "contracts/decisions/changes/DEC-020-freeze-1.0.0.md": "09c778c425acb21f95f5c266d5b9d3ff59d77f6f3658a156e6a2a1429e9db519",
+    "contracts/decisions/changes/DEC-021-freeze-1.0.0.md": "24dc24bf879f091fab5e592ebed3d51117867b8e90b8b3ecf3bab3c6126ce1f3",
+    "contracts/decisions/changes/DEC-022-freeze-1.0.0.md": "fb99ed63f86d65a6d0db9fce3db63f53e3ddf527bbc691c0499d61d442c6d700",
+    "contracts/decisions/changes/DEC-023-freeze-1.0.0.md": "04248b8a750400100c3a1d3e5c57001ae14024fd6b5982f1ff10f3c2b43e92e7",
+    "contracts/decisions/changes/DEC-024-freeze-1.0.0.md": "a62bcdc01fbc710f4f4fc03abbb3b1abcc39ce303a9c9aec5283612cdeb7df4e",
+    "contracts/decisions/changes/DEC-026-freeze-1.0.0.md": "a9ba4d5c2bf49ff09fb534f84916620820ee12cc95b4bf4d3540e7d7a46a95ed",
+    "contracts/decisions/decision-change-template.md": "71b788edc0f2e5bf417c1739d0409cd5e88597d4359a06b3bf43f4542450ad2d",
+    "contracts/decisions/decision-register.json": "8debf631b658c4db4f7facd72fa0e025d77d266dd4b229fa307ccbe211751a73",
+    "contracts/decisions/decision-register.schema.json": "42a96949611eb1d4f6190617ff09bdb69000ed36d4c1830ec4aac62a9079c899",
+    "contracts/domain/camera-interaction-policy.json": "ff27778a7ac52e6fac864bf3521001ce17b1a856a2c7d9fbc02896491d291c34",
+    "contracts/domain/camera-interaction-policy.schema.json": "f2a93d79b0bf73e88fc9b3e6a5b3d0b66e7c6caae9af9c7792d366168e01d896",
+    "contracts/domain/camera-interaction-policy.test.ts": "1e6db02555111f0b7aaf2b00bfa14107c0c1ad1e2503fe51b4b8a3a7d62aaf4f",
+    "contracts/domain/camera-interaction-policy.ts": "8b392f5bc4765bfd8b12fd4aae883621246bf9d57c3a1250942389f4882c239f",
+    "contracts/domain/consumables-policy.json": "55c227fd2b35a0a7fa1a1021712b212fc0bda483f26ff8c7d07079d64744d327",
+    "contracts/domain/consumables-policy.schema.json": "97cf468530615e208ca07b471aa37a53d51b1402134d4a85a2954167df677344",
+    "contracts/domain/consumables-policy.test.ts": "04c4045dd31502dd7a9d1d29910e8c715d36d3544821110ffafe1c5311811e0e",
+    "contracts/domain/consumables-policy.ts": "5e42ffbefb960359b045adc3948aa72a040aacbd28f16b4638a69e908caa07c3",
+    "contracts/domain/contract-license-relation.json": "4cf9442790240cf3bc337e2282ebe4c4965c9ed49c88f4b2adbf180c1d6bdeba",
+    "contracts/domain/contract-license-relation.schema.json": "d0a33cc92dba4536322da23c67250c835e4ab4bf395e94332b70c75f1d33b153",
+    "contracts/domain/contract-license-relation.test.ts": "2a6f177e413999aeed2dc5ec3b933ad46f65cac1286d245dca410b66ff93d317",
+    "contracts/domain/contract-license-relation.ts": "8d152381f42f7a1680c80a7afc114b9116750bc4bfa15b50a37174a825f2f8a2",
+    "contracts/domain/device-alias-policy.json": "9175bea2be3c466d04076b627b11dcfabd6b2a67100722d1402f38b407d85538",
+    "contracts/domain/device-alias-policy.test.ts": "1c1c8a14ac57736a1fdac093db03e11b1be683e5938d2958849b4016a1795c60",
+    "contracts/domain/device-alias-policy.ts": "0a78c3fb414b32a9fcbe11e70a5f6b7c50460be9dc4269d3d5623952e0e54c98",
+    "contracts/domain/device-status-axes-policy.json": "3bd5cadf64a8148ff288498d590a5cb093787594f581731cb48c21e1ec305ee8",
+    "contracts/domain/device-status-axes-policy.schema.json": "fb0c1ff76404e1c4d6b89fc0b1c85311ba827f592573e46351afd2e005315c94",
+    "contracts/domain/device-status-axes-policy.test.ts": "e6ff03b37887e8abf24f86b84f9d24d9efcb3ea8f4f288a79893e97a7ab452dc",
+    "contracts/domain/device-status-axes-policy.ts": "609f16aee2098203a439e657d197101b08fe00277c0c8771b7bb260e1f375b65",
+    "contracts/domain/geo-model-policy.json": "ab42f510594842f3bb4eb601a9acef666ef45126f6cf87ce097eae4c68d5fc8c",
+    "contracts/domain/geo-model-policy.schema.json": "3b02dcc5bd7aa11e98ee59d2e8ea608621ac2142a7d79b6c716623c8ac6b23d4",
+    "contracts/domain/geo-model-policy.test.ts": "975b7eb604f03ae00c104544d826c9247248617b7844c4ed015027b5a0e90004",
+    "contracts/domain/geo-model-policy.ts": "6d69c4d2cd88355e240d64bbc15831bbb28171f26e724c3bedbf33f65b25b113",
+    "contracts/domain/role-mapping-policy.json": "80798a46361909d9a8038d0eb189c2f13cc62cda9a25c71f39c6a2ed50ce4875",
+    "contracts/domain/role-mapping-policy.schema.json": "2877621e6e995526dc200d4af23f900f0896682a927b1d3b18de85fdc6c75640",
+    "contracts/domain/role-mapping-policy.test.ts": "65a644f33b90d659adf2cbd9dcaa74ad9ed64277a298a68471aac2321d11bc84",
+    "contracts/domain/role-mapping-policy.ts": "6f09fb587b10e7ec3fd91ff3c6a445fa77bc239bf1c59b56365ed2470cca3ff3",
+    "contracts/evidence/fe-11-15-admin-web-target.schema.json": "69fb8368f4ce86c884004dd9fe18f6e4c8ab8f39ce7db4fd15eca611e17d9329",
+    "contracts/evidence/fe-16-19-admin-web-target.schema.json": "86d0edbec1f3f6f05d6cbd4bf808284fe06942a7cc77294eb4f21c8019e0ad58",
+    "contracts/iot/ingress-envelope.fixtures.json": "f65df1e345e3d0fc45d9998f1653b464fd8db1abb4cffa839243ef22a0ded2f6",
+    "contracts/iot/ingress-envelope.schema.json": "5a3ad2394f52daea0d449ba630d33b5949aef218914b9600b833286b2afa27dc",
+    "contracts/iot/ingress-envelope.test.mjs": "ca6760a50b54d2d4db18f533ea208de0a1adbafdb76249547e6ee2732d9a476f",
+    "contracts/lifecycle/maintenance-behavior-matrix.json": "e2da3e8fad26c5251a6fde7c89ff3b60a819f5b13a96b1b82e6993721cc9d3b3",
+    "contracts/lifecycle/maintenance-behavior-matrix.schema.json": "597f6c3ca6e035e5d338c9876f96765c0bbc98f64b360253aa74db70415e3bb2",
+    "contracts/lifecycle/maintenance-behavior.test.ts": "f8615ce23c50a5b3e0fe5d17de4e6f96a5e2b2e58a811e5d999c77bbfba9055c",
+    "contracts/lifecycle/maintenance-behavior.ts": "f531a1f42da69adaead8f771510c6b4852179b971e32160d97d32a167fe64f31",
+    "contracts/lifecycle/onboarding-timeout-policy.json": "6b31c45598e1cca2c4736f3ccc59ed754abf038d011d66a5d5f801c3baf1362b",
+    "contracts/lifecycle/onboarding-timeout-policy.schema.json": "9634f1637fb051302e6f6ab4a01b78d4fda586731afc08f7f814c0db8862bfa8",
+    "contracts/lifecycle/onboarding-timeout-policy.test.ts": "b0df90937a44d544299d705fc9a8c51de6ab8e8755d4d05910a3bbe361026286",
+    "contracts/lifecycle/onboarding-timeout-policy.ts": "0776bf7bca06bcbbe21769c86d43a17c7745b78f86b004644669ff34e12a782f",
+    "contracts/media/media-retention-policy.json": "0a6383e13ff0d523edef9003d9a9451cacf83a2bc91a1b3360180389a072118e",
+    "contracts/media/media-retention-policy.schema.json": "3731f99c14c8562e66d0fecaaa537c50795095b9d401854a1eddc8a14fe042e3",
+    "contracts/media/media-retention-policy.test.ts": "ea2ecaa13b829f8bd2dd7d633a16fb790257d5af97f64eef1e42bf14724df88e",
+    "contracts/media/media-retention-policy.ts": "718729f55ecf096b9952b4995523389efcaa7ffa19600f1ef548670d2d42bb7f",
+    "contracts/media/media-upload-policy.json": "2f46a43a6e796bcb3204f949418c778a1a6cab2b7fed45e6c77a89cb7b744e02",
+    "contracts/media/media-upload-policy.schema.json": "c47a332e4788e699429673efdfb95d33f9a26578379ed87c019f2ab6edc2396d",
+    "contracts/media/media-upload-policy.test.ts": "2d17b15fea1111ce9f0bc5d7cbb5cdcf97599f8d614417a2774e5d6e737e30cb",
+    "contracts/media/media-upload-policy.ts": "8f3bb7e7d32861cf6c9eec7cc93f6bfeade3236043773699ce580f69a68c5b0b",
+    "contracts/mqtt/catalogs.test.ts": "bb558998cebe1b89fe99ffde7c9e7979d3ef2517eccdb9e442571c7f1b16fb3c",
+    "contracts/mqtt/catalogs.ts": "da4fc4f37e8b85df91e7a427a06d21457d99e2e3fd184f7e067216c8d06c4081",
+    "contracts/mqtt/command-catalog.json": "57f3f67fdc2b76c91b0b6025e2289efbae892611f7652fce00e87e1de7b6339e",
+    "contracts/mqtt/downlink-policy.json": "3cc9e67ca9ae7e31b1e3a495c183481f626d2873c8bbce65c81d244dd49cbfb5",
+    "contracts/mqtt/downlink-policy.schema.json": "a4f248ae412b20e326d043189c09ce2ce217b60e56b59a3a5908bab8cfef496f",
+    "contracts/mqtt/downlink-policy.test.ts": "b6d9acda32173a9b700930995337a437942d123485dfc56bbf650ca6095accf8",
+    "contracts/mqtt/downlink-policy.ts": "5b757c6e00a7c4bf3045b32d53a0ab0f79bf5fb9cf58f2afd2343c956ed82e97",
+    "contracts/mqtt/fixtures/ack.fixtures.json": "0ffa8f0a1214f319ac4d6e571157d80d60696415f33e23dde661f5ec87f754c0",
+    "contracts/mqtt/fixtures/alarm.fixtures.json": "ea014dca32f9a8c8100cc994c2e6d757303741166c476d153f3ba1f54c227622",
+    "contracts/mqtt/fixtures/cmd.fixtures.json": "b4c6ea7d60fa0a00bc7f581fde08977f1e274d03c70e6a4e2613434dda9be445",
+    "contracts/mqtt/fixtures/event.fixtures.json": "a1de9eb911d1d9d927cbf158f2819fdbe8ad435a0c4f9373545d2495c4ba52f7",
+    "contracts/mqtt/fixtures/heartbeat.fixtures.json": "22fe5d5ecd789c41b5073508c9bc304a88f1c30a12a85b12a137c19069d7c226",
+    "contracts/mqtt/fixtures/media.fixtures.json": "244a091d49c436cdd59ac8a3d19be5f4548a211a9472c1d5d667a920cd2815aa",
+    "contracts/mqtt/fixtures/notification.fixtures.json": "c95bdf4a3c35075b2141b5d2bbfc631664335459c536897828edf5a2c3fd405d",
+    "contracts/mqtt/fixtures/ota.fixtures.json": "612d64d1e1b6fe7156f3e0a156dda37d2a43943acd41af91842aa0e68df510ae",
+    "contracts/mqtt/fixtures/report.fixtures.json": "554b4758009e63d418da433b329657c5616b088379fc4a6bd62530ae0fc68d0a",
+    "contracts/mqtt/fixtures/tamper.fixtures.json": "b9af2b4cf85f4a4b4dd344a63f34c4d29a6d0dd50b50789ee6d1f900f70ce36c",
+    "contracts/mqtt/fixtures/telemetry.fixtures.json": "fcdb8fe5b67035e96869ff853798894c8403c941a37430a10dbb6d495b776499",
+    "contracts/mqtt/notification-catalog.json": "f451d08b53e81a9e2d5ef2a31a68bfab6bc0d1db3b60cad0b9e922adc2e7d8b9",
+    "contracts/mqtt/ota-status-channel-policy.json": "65d5ac92cf3a4ebdd94a417ad2d8c108ee1e8225b0e3ed8a6159df80542ec39d",
+    "contracts/mqtt/ota-status-channel-policy.test.ts": "f1feb75d13318ac2533ee8d79d25d6de98083b238c0e803bc3c0eb2ab3e5b0da",
+    "contracts/mqtt/ota-status-channel-policy.ts": "c79e1f76dbdc22655c58ad7586117313f5ef401d7e7d473f706874e10be4f7b5",
+    "contracts/mqtt/payload-normalization-policy.json": "ad6b282050dbe854064f3490dcffc79c7386ebae0187a5feb7463846a0a19905",
+    "contracts/mqtt/payload-normalization-policy.schema.json": "da0d9e46cb225c4cae74b094a60ac56573c18db99454a8ff4b41e5363047af3c",
+    "contracts/mqtt/payload-normalization.test.ts": "dbb023dde2918938ab180b160cd2368210b36dbd309f7c209414dbc371374faf",
+    "contracts/mqtt/payload-normalization.ts": "77acf174e6ea6b45bb2bf934f68263dc31b1236246342502cf6e4697ca568001",
+    "contracts/mqtt/payloads.ts": "659b945128bdd273e73bc86270f9c8a0e42b260e1ca074e3f441c945e819c95e",
+    "contracts/mqtt/schemas.test.mjs": "91f4e6a9f09295abd289f577e36ac046f8082a10c839148601e3d8d3162dea36",
+    "contracts/mqtt/schemas/ack.schema.json": "2682c0778f366cb4aafe93b84f2f0691f272bfda41d89e42fd4d4e19f7772be9",
+    "contracts/mqtt/schemas/alarm.schema.json": "f9c4c4713d9fd45556e4f7a7910b027b503767026f4c9d57a474d2b744948b36",
+    "contracts/mqtt/schemas/cmd.schema.json": "ce4eb67124b76caffb3561a5c20507b8c5dba27404388d1554a68b22f1161fb2",
+    "contracts/mqtt/schemas/common.schema.json": "e3a8460367224037767eea328bdd27ca333cd019069e2877345e75498a60bc2e",
+    "contracts/mqtt/schemas/event.schema.json": "30de32041122ce471e1e2de22147af545c12786c50325285eef136cef7b39e98",
+    "contracts/mqtt/schemas/heartbeat.schema.json": "38ccdd930da9eb4b8fa4d49627ad8e61d20de532abc53cdf275e13bc98b481bb",
+    "contracts/mqtt/schemas/media.schema.json": "ac4db3e1e1b7c4ba858da392e20e3667b6e2ed41cca15ee10454edbc62cff404",
+    "contracts/mqtt/schemas/notification.schema.json": "fba4f7df45257e53970cf91a43b9532120f9080fa382166432fb9e6708d9ce22",
+    "contracts/mqtt/schemas/ota.schema.json": "236ffd701c350ff148efea2eb79000595ff9f9e025289350c7ef7e9539d56aa2",
+    "contracts/mqtt/schemas/report.schema.json": "f8635836262edbac3f3bb8d3a0dfd072b4eab3dce0c995b0c97a43f062dd3743",
+    "contracts/mqtt/schemas/tamper.schema.json": "6e0e57807d697adbd4c3e8d202b1594568dba40f34def5b7808b3dd66a7e8227",
+    "contracts/mqtt/schemas/telemetry.schema.json": "df2deb185c387fed65d43b83abadcc70d205f08a503525de08e12517010efe00",
+    "contracts/mqtt/telemetry-backfill-policy.test.ts": "98265540eeac317ca9a87aff125a4f00e91e614b18f7252d1f1e020501ba79a5",
+    "contracts/mqtt/telemetry-backfill-policy.ts": "330d299a6bb4de6f54ffa896d060d2fae284ff10c1797eb3cc8293b89fd6d771",
+    "contracts/mqtt/topic-catalog.json": "0fe89d50927ae49ad2df5083ed305e8ff0ea8a0eefafa993d3e507302fe7d2e3",
+    "contracts/mqtt/topic-tier.json": "db1ce43735aa568521cdc259cfb0bd2f4eed200e71a008c1059e90f424dceade",
+    "contracts/mqtt/topic-tier.schema.json": "c6fb26194852480ff16aa018e575d9013a3578e7b50d96843f309cb33ce2daca",
+    "contracts/mqtt/topic-tier.test.ts": "1cf64c689e6829dced34b6ac4de7246e1ca9547653a49ef0e646aac93ae07210",
+    "contracts/mqtt/topic-tier.ts": "c7b2b2820c65071effc3c6425037ec00de758db034396f38e9468276f8a6168c",
+    "contracts/mqtt/topics.test.ts": "ff386bc6a7cd387b2159f91c4d1cf11bc0cd4843dddc5c4d742e14ab9e5cb1e4",
+    "contracts/mqtt/topics.ts": "e1be9e6b0c01ce21a9420b05d0e97a5f3485f71a435b676dac979dbdbf75508b",
+    "contracts/mqtt/validator.mjs": "6f676ec053ec1cb9ecf7304afb387adcba6e8c9cfcaad79051a3e25a4827f890",
+    "contracts/package.json": "aa018f50ed1aee2cacd738f9bba5500e2b06b4dad23acd7f78cbb2b9ea3db2b3",
+    "contracts/prototype-route-registry.json": "c53948c4d1d6af32b3a69680237e8d73bf9fe80bc80cb725630ad87b4df90d86",
+    "contracts/prototype-source-elements.json": "465ebe83b2a32705f8345ac403f4a3eebb4514f1fc6133e66f0b8b0ac4954c02",
+    "contracts/prototype-traceability.yaml": "86c763be5ba3cbec3359142d67d3007420e0867791e19d16556c2f266856d260",
+    "contracts/rest/admin-alarm-api.json": "e5a38948a23f8c26474b942164055e5e1ddf5bd20e31934e3f2e40c33beacd1c",
+    "contracts/rest/admin-alarm-api.test.ts": "d486941c551ea4afef1c41841f65c4a6cec132500256ec0de3016695d5eaf675",
+    "contracts/rest/admin-audit-api.json": "4e909555e2bd23d5877cf2334987c14692be186a29070b0b2cbc3d8a6c372d11",
+    "contracts/rest/admin-audit-api.test.ts": "ddce9aa000825b0432f77bf60c2a8714f8dd8e5c5fa7318c731358910b3a795d",
+    "contracts/rest/admin-certificate-rotation-api.json": "5373f3c76a6d6d48b76201d51ba8cc4113f4b0a9c211378ca2ca6f76d0ad3a7d",
+    "contracts/rest/admin-certificate-rotation-api.test.ts": "87333efa11a151e4c4f0b7d8a3671e8dd112c16969b3b448e2311e31e34dc08d",
+    "contracts/rest/admin-command-api.json": "02ebd69c1554e63afb1665b0daf637bd191fd22460f10145528e01c1918170b1",
+    "contracts/rest/admin-command-api.test.ts": "37dd7852a297c56f2b826968e7eaa29b98862412858977ee092950bfd16abc2c",
+    "contracts/rest/admin-configuration-api.json": "f007393aff01b2654ef999196d7867034ea98e0e261b57eac9ae5ae968567950",
+    "contracts/rest/admin-configuration-api.test.ts": "72b6fd2e909db63ee507306fe1eee78b3147ef36a8a4fee0149c61b6bea1b9b9",
+    "contracts/rest/admin-consumable-api.json": "9f5a03e7830585b558c3872a133a4ef4f4a3c501eae18c20ee736fd051cbc1bf",
+    "contracts/rest/admin-consumable-api.test.ts": "d00472955a52346eb1112debb68ccc1101cf9d9e3306c2a7cd162cf365e5ba7e",
+    "contracts/rest/admin-consumable-request-api.json": "2d5f87127788057a07318038f401b5054f369ea272ad0d1033c1b3446499c058",
+    "contracts/rest/admin-consumable-request-api.test.ts": "651d84660429ffe1bd097468a4f72eaf4b1bb6bd518f31e725aea4ef8d570ca4",
+    "contracts/rest/admin-contract-api.json": "c6909f470545dbf322f009bfd9cdba2e2db99b0bb6503f391bd6ae3d260b4c2a",
+    "contracts/rest/admin-contract-api.test.ts": "0c9daa126d3eec47397f44b0bdec5f6806b6c74271997295c77936a224b8f552",
+    "contracts/rest/admin-contract-device-api.json": "a2aed6bf44b097e3838ed194f233aaf976dfaa5ca385dc3f2d743483a688734f",
+    "contracts/rest/admin-contract-device-api.test.ts": "5cd60aa53c458f4f171d2cbfb1588b7fdd3377d26470452899dced8389f5907c",
+    "contracts/rest/admin-customer-api.json": "2e6a36762ba0d0b2669eb75b54553919934762b20f1f4cee2c89f3f7836080f2",
+    "contracts/rest/admin-customer-api.test.ts": "15e5c9848f2f55d81b381f95ddd3bfcfc962d222811d926f7d3f11427b4648a2",
+    "contracts/rest/admin-dashboard-api.json": "049197506386709008dc2c236747132a855a0d4f35c571ace9f2269bef497350",
+    "contracts/rest/admin-dashboard-api.test.ts": "7ac350dff20fe1b91fbe72bdc0822fe9a7209b31806d40894c21e7f99346f9c2",
+    "contracts/rest/admin-device-api.json": "0d7dd60f87e090d2687397ecf29107fc721e67636ab5e5c0a296c94d2752bd44",
+    "contracts/rest/admin-device-api.test.ts": "fa61c353b0d219126110b0ff897e2368ace8405a5744bee004515360c8e30ce6",
+    "contracts/rest/admin-device-assignment-api.json": "8f813cb690286f6d2c1e9dd11c0ee5ca09cf59aecd34f01a2d52f02510135f7e",
+    "contracts/rest/admin-device-assignment-api.test.ts": "374228ec7abff087f824a660d988544cdbd0f68408594cee5153ed141766adf3",
+    "contracts/rest/admin-device-console-api.json": "74010a4cb938e1edd54516900ebe4b982379e29e92ef66f038f8881c76d3f524",
+    "contracts/rest/admin-device-console-api.test.ts": "d7c629375e6c27254c45b715ff4ce4ab28c085927ef92b3eb7170e329051f34f",
+    "contracts/rest/admin-device-retirement-api.json": "82106e630a9300b44ccdb411e6d1e25c3f0994bffc5cfbf041b89daf3b7dab31",
+    "contracts/rest/admin-device-retirement-api.test.ts": "0f30275a526c93f4c15932ccbddb5503c3cc686312e19ab51e6e277a3e28ce84",
+    "contracts/rest/admin-device-status-api.json": "04150d12ec48b641de225d80cfe8d2dd3a277f1b7a29cccab443ec0b983bdd6a",
+    "contracts/rest/admin-device-status-api.test.ts": "e83d066013d068b7d77511909a8f54c14c7a3509ff73dbdf47f4c36e4854a430",
+    "contracts/rest/admin-device-user-api.json": "2f3b6bbb08a0915145c1f1fb14acdecd9fdf5bf003219360d7d04d347ac6c502",
+    "contracts/rest/admin-device-user-api.test.ts": "54db3a160c60e76ee175b69500e4016e6b47e4cff192895193f9e768cb4fde4f",
+    "contracts/rest/admin-esg-api.json": "5dadd0885e6a775377fcc7f6f16f5b3882f1912c06c77de2e5eb43890994873a",
+    "contracts/rest/admin-esg-api.test.ts": "e72972f1dd3fd1ccc772259d6fa49bf0a2a8dfb3278b012777f648da42e57e44",
+    "contracts/rest/admin-license-api.json": "49ee6ec477e90ee13d3c18dfac0d47eb6d85a29889648a14cf186c653ecaf9f8",
+    "contracts/rest/admin-license-api.test.ts": "3f0196e55cf8e5d98b913d446e841f445261bb86a89398f38eb00fa4a2790668",
+    "contracts/rest/admin-media-api.json": "86ca3f1496bc1ce7aafce7847429b8bb6f027a075d38f02e4fed98c594329258",
+    "contracts/rest/admin-onboarding-api.json": "fe1e65b3beb05d8b97ead75f9943cc5124d036fc7ecf6acc48a0fbb0df6d989f",
+    "contracts/rest/admin-onboarding-api.test.ts": "0cfe48164d3f29769a03e14c4ff160a9111f09ec96d7003f7ff1515a2eedbaa2",
+    "contracts/rest/admin-ota-campaign-api.json": "d6bbc80b31f94c4c2d0549b613dba15c985abd24c06ec92db8d9e95a3a86d3fe",
+    "contracts/rest/admin-ota-campaign-api.test.ts": "488019db8858d2f9b0125a6a674eb855eefd8f4fbdbff90619234118960f6e69",
+    "contracts/rest/admin-ota-package-api.json": "7840a8e47ebc94075ae826f370a3786ba9238055658127efb72a1733dba2452c",
+    "contracts/rest/admin-ota-package-api.test.ts": "d5a81126b926725f445eedf17cf88343cde241651d6f9fd08dd399dced069f96",
+    "contracts/rest/admin-replay-api.json": "26fdff9e767ec919606a38f39dc004c25e87c00d9621267a1f7e2ae6a2624d8c",
+    "contracts/rest/admin-replay-api.test.ts": "3357ca1a418156e467bb406d55ab7b4195011ffd04106f5809d9669da40510f5",
+    "contracts/rest/admin-settings-api.json": "f52f024f94147e059dcc7393152c656085d47e3c3b4e574b887fc26d1d39c9c7",
+    "contracts/rest/admin-settings-api.test.ts": "60abc1b21ee5f31ef52e228e2190ef09d61274a7b780ef760a8cb9de2304b5ef",
+    "contracts/rest/admin-site-api.json": "5cce0ade76ed2cb6d8b1ab5d15ffa2b87d652841bf3f39aa696dae6d12977c95",
+    "contracts/rest/admin-site-api.test.ts": "8eb9f01154ebc1f346c5a6af7c3d1d4f62258cada6627fe4b309c01d9772f654",
+    "contracts/rest/admin-user-api.json": "84dbafeeb1807d6d9f88e11815d58dbfb436ea71a85afaf8824c5b4dfdbbfcfd",
+    "contracts/rest/admin-user-api.test.ts": "4132a2a3a5075f1ac1275dda73adee18cd6535bf07bf7d83b79d8d8c450f1c3d",
+    "contracts/rest/delivered-openapi-manifest.json": "5b47da43b0a1555bfef00053877ea3e8b26dae5bec907cacf51848295c3ab692",
+    "contracts/rest/device-certificate-api.json": "09301e426aa06dcdc6bd03bd91e23b794b57b026ee040a0b02c37ce938a57805",
+    "contracts/rest/device-certificate-api.test.ts": "7f288c463db45ba3799127d68c73146d8aa135687cc1541548bcb2fc32967062",
+    "contracts/rest/device-deactivate-api.json": "6219f9345a40c490ae1ce34f5ba30c51350b6d1a47fd3e418ab4fb9260637644",
+    "contracts/rest/device-deactivate-api.test.ts": "d12b83cf89186e7876e32a3e28b1e71fa707a10d44be755c959717c6f057d871",
+    "contracts/rest/device-media-api.json": "e3bb7248c1b77eb2336f1663baa0053d00977e4954ced80e10aa014386a4bc1e",
+    "contracts/rest/device-onboarding-api.json": "2823630e09d9cf9610bff7019d6cc97301d1eed341ae3c07bfc683aed42af8b9",
+    "contracts/rest/device-onboarding-api.test.ts": "53e8a3e83f7365e1bd9e56e8b6b372b49290c95f985e9b4a3db760ef35167166",
+    "contracts/rest/device-ota-api.json": "30746025a116aeaa350b8bda27396ffcf6e8dc97ae746b72fea95017f8ec5020",
+    "contracts/rest/device-ota-api.test.ts": "6f6121dd87af4f32c2f8bd11c042b87a67afb85fd6241d6a2dc18f6cdc0108be",
+    "contracts/rest/device-source-alignment.test.ts": "237b9ba1f014c942f885ba32fba804dba8b2605554a4a6c5b2a42a997a6ea4d5",
+    "contracts/rest/device-sync-api.json": "646726c056d87b8223942b5af0b6cdda5d3532d91ff663bf6c872747ce1aeb8a",
+    "contracts/rest/device-sync-api.test.ts": "aa506029efa6f7767b606039c83bcca02fa6314fe70429de203eec22070582e5",
+    "contracts/rest/error-codes.json": "320aa1369abc0b7000be640899a94cf64d6703918342ae080e740b605be07ac6",
+    "contracts/rest/http-contract.test.ts": "e36dcf9fca009d5316da0815ecd3fbac8242a6540aa07eb2ff0c6ce3e8848a1d",
+    "contracts/rest/http-contract.ts": "b73c51e07f8ae130814356fa3e19429de77b42fb0d7b7a1126f89efaef326d0f",
+    "contracts/rest/media-api.test.ts": "a0ff4bfd0ec5ce12a1fdc0d3dff44d89a0b50c02a07b4e4db845d721516b1620",
+    "contracts/rest/openapi-base.json": "dbaeb8c40250d3ce38e023dc3ab08605d64a6cf3542dd24e30e081a2aa4fbf71",
+    "contracts/rest/openapi.bundle.json": "04fec5d6222c645c5d21aa2aee1d4f13604a93c8208253ac0272646929624db5",
+    "contracts/rest/prototype-planned-api.json": "4f117296338261fe916afc80cb1ba2d4e67853ce6e188aa99243d59d881b3407",
+    "contracts/security/certificate-package-policy.json": "116841c0404a111c8780becbf8e1c73747af10238bcea1dd763b80b461922ec6",
+    "contracts/security/certificate-package-policy.schema.json": "17789a0eb44ecb75f9265ea69e2f2368bef0ca7d138a0e44d847c0d31d823686",
+    "contracts/security/certificate-package-policy.test.ts": "6f9ad9a40d4cef94e327f56a641acf25d8cc277b07b661389e318d45c31173b4",
+    "contracts/security/certificate-package-policy.ts": "4fbbb9537be37b0a89fb6f4cd37eb837b49643485cebe90716c49e686edb353e",
+    "contracts/security/device-user-verifier-policy.json": "337d0dc00c3facbeed2309665e371bb03637e1e61be820020d9b5f2239a1e127",
+    "contracts/security/device-user-verifier-policy.schema.json": "2514824fa6a732f5764228a13a2657d52f778cee45b4d1c03c73dc989571265d",
+    "contracts/security/device-user-verifier-policy.test.ts": "257d0cf34cb3e0febef08caa3a4fc897391c80b5bac86ba36148ae4744eeaa6b",
+    "contracts/security/device-user-verifier-policy.ts": "2a3fd91785a7e8c10d106d0306789c7af792b77d3122f60306bfbc263b9d75ea",
+    "contracts/security/fixtures/ota-signature-vector.json": "74b127fbf62693e9d09d813e11c44cad35064bd3a52895563f24ab58c8de5adc",
+    "contracts/security/ota-package-signature-policy.json": "107fd3f14f5ced6884c840c75a2d1e0b339b9b419bd2ef31e2c6a9ec58ab6955",
+    "contracts/security/ota-package-signature-policy.schema.json": "1fb1bfcf4bbbbba0d4522b8344c75f6d9f89e0777e75190acdfa777ea867a3ac",
+    "contracts/security/ota-package-signature-policy.test.ts": "6d02bdaa6685c6bed874d834b4a96d152db323a2b6582df348f8fdb66af97a1a",
+    "contracts/security/ota-package-signature-policy.ts": "4f0ce2259f02d2cd4e761bf6783455b904ae8773f9f3e198ad11c328dbf37549",
+    "contracts/settings/business-settings-v1.schema.json": "3feb60cad61e031884087a75513c5ab101a817c5c636e81ec58df150e31fa695",
+    "contracts/settings/business-settings-v1.test.ts": "11917ef949721d34ddb828381de2e670fcd6ae3fed4a0d16bc7709bb1b2fa2ed",
+    "contracts/settings/business-settings-v1.ts": "7d43882c8047a6a85d9cb7f31cbc664904556a0465055b6896cfa1c5677c9374",
+    "contracts/testing/baselines/0.11.0.json": "0f8e0037df372f2624b2cbc428e8ff6192ebcff018d1c9e95e1b068d5dfa3ab2",
+    "contracts/testing/baselines/0.12.0.json": "15e9c416a6701c651b893f36d78cb84851b161d73e0066071cbe33f83f704cbe",
+    "contracts/testing/compatibility-approvals.json": "93c57d3ca979b0580bb05967b0f7751ad75f96ca80042206cd8418f0cf97ef3b",
+    "contracts/testing/device-contract.ts": "1e2342d6cbfebbecf46efa8a1ac91d7d2f92d3e41ae63c9b5bb149ac98c293ed",
+    "contracts/testing/mqtt-contract.ts": "2cc93ae3bdf3573dff54f87969767e8e135be256bb2b4e1d40faf26e51e9fe6f",
+    "contracts/tsconfig.json": "6a042f08b9212e7fa38b525322924088fb58eab5f8c95cdc2582785f6343303b",
+    "package.json": "c3cfe21a44d824a698c5ee2f29a9214a5d018b8fe30207ac26807c8da7e47332",
+    "packages/auth/src/browser.ts": "30a0106d9878e94ecf5bfce0e6887f7db9f75a87ff2d52ecb2c7e2c6c9f4102e",
+    "packages/auth/src/cognito.ts": "311fb42a98268399d2b090e887728f22acf925d56feea9fd1fd5969f7c672816",
+    "packages/auth/src/device/certificate-lifecycle.ts": "75940bb9dce6531c4f5ce7f72636cfdb0eb0eb8d2bf28cf2df7d4a65ec73ca21",
+    "packages/auth/src/device/guard.ts": "caab366f263d38277a1ee79449de4986e4138e0ba106a505d8b6c611ae7ac0f9",
+    "packages/auth/src/device/mtls-context.ts": "73d69e0f18312649ac6a2830671fa350d0a9224f7dcad2661589b0af7ffd564e",
+    "packages/auth/src/device/verifier.ts": "3b5ab8eb838d676a0c1cd9f2d52173721dc43032761758fd82cb843109866e1a",
+    "packages/auth/src/errors.ts": "0f5008d348c424b5821f15adde53be6a4f9f5c640ac07f9d71c38c652d547e57",
+    "packages/auth/src/guard.ts": "781871701c83dab69f7387967c2efe2d81934baee856b57ddce09e6a4e1e6d68",
+    "packages/auth/src/index.ts": "d95043be4ccc89d0cb617c27de264477eb8f38dfc198bb46a782b1fdd59ea187",
+    "packages/auth/src/onboarding/rate-limit.ts": "2f2eee6c58f12f066f18bdfb2a0b0aa4895d146e411c7dcf135a47fa4b969556",
+    "packages/auth/src/permissions.ts": "61b5c2097a49258b11db68781f19723dd3f1e18895c110151aeaf7ad8816344b",
+    "packages/auth/src/roles.ts": "46b793ce36bd10fe1867fe8371d0a38866578af8d30b353deb2e5a0ab9e6a0a5",
+    "packages/auth/src/secure-package/envelope.ts": "3bfb66a816e7aaf17ee9f9376f234b3081825e6d2f785f10e76db19593bae7df",
+    "packages/auth/src/secure-package/errors.ts": "93dfece6a45c1ce7fa6e6e2fbf217a5d6a0ae5f63eaa41e68cd35a502286da83",
+    "packages/auth/src/secure-package/local-test-key-provider.ts": "aeb6af52ca50abd07114af0d487ea4221fbbfc4f105fa5b691ee43575e5d78ca",
+    "packages/auth/src/secure-package/service.ts": "fb15b9a3858671a3fd9cb8e1912555163dc78fae56e4b9153f5ff56c63023bc8",
+    "packages/auth/test/cognito.test.ts": "7f931c5989cf774571e8f82e9076928112fc0b729ce28826b74a373df5ebbdab",
+    "packages/auth/test/device-mtls.test.ts": "60c648abdbb4da033a502f4944c33c9c080abf98ebb36d6f0d34a33fe33dcc4e",
+    "packages/auth/test/guard.test.ts": "de021725f230a7a2999040aa6b8ea68b82d906ef5b2eddb0c198063cd7bb2ab6",
+    "packages/auth/test/helpers.ts": "02dc53176ae0eb20f679330bb430697f9581c2d68a972985b06819921cc933fb",
+    "packages/auth/test/qa06-jwt-security.test.ts": "8c858b5b25706121a9d9e0b1cb390fb37908164a0ec8e5d4f070299de7a297e2",
+    "packages/auth/test/secure-package.test.ts": "24306daab2515cfa0e23d3eda75d761ce5429235cc63cf981cf287c2062b13f7",
+    "packages/aws-clients/src/cognito-admin.ts": "87487ed90d2b0434e37535050f3689ccd7a7db9c6d41a6b98e264ef1dc7c80f9",
+    "packages/aws-clients/src/database-secret.ts": "ca8a7acb8c6352f0e3069752c30858e286e604e5af12ae56a79b68882066f710",
+    "packages/aws-clients/src/device-certificate-metadata.ts": "baf344fb1193bff6622749d6ea26b4e52d1782e06adc0521d72e5315c934c7a6",
+    "packages/aws-clients/src/index.ts": "f69dd17ffd97bb0cadd43157a47c596733ed664bda59036b8e1f22345aea97e5",
+    "packages/aws-clients/src/iot-data-publisher.ts": "8e8f8e885e5f596380b25465cf86ac4c469e97a36e0678b6922932047313c543",
+    "packages/aws-clients/src/iot-device-policy.ts": "9e7d1c2ae9ebee5db12a9cbd9e2cfd2636f11a1d79902f3131789b0791109fdd",
+    "packages/aws-clients/src/iot-provisioning-client.ts": "5f4cd5790b2fd46169f1f2606ea77b5c4526a702330a0402c0ca9d00d746e956",
+    "packages/aws-clients/src/kms-data-key-provider.ts": "ec629ab04618ffdade13f7a119e2d8f04b4be6926223ec0b1f271b479423edb7",
+    "packages/aws-clients/src/ota-firmware.ts": "7f334c44ffa3bcaa2fb7301a893cf826833f92501c63fd0e73d6bda588ecf13a",
+    "packages/aws-clients/src/project-ca-certificate-issuer.ts": "fb295fcfc623f4b8c3d2ceda3becac7a4a63b201ea88570921fce5e5023efba8",
+    "packages/aws-clients/src/s3-activity-export.ts": "2176dd664da7fd3ec71b679b95a2f3b4e1e4b2ad6a78b08c26cd2e9fb91ef0a6",
+    "packages/aws-clients/src/s3-archive-store.ts": "e43944959b218ea81af1c574d79dc0d05cdc626b4f219020b39d4bf8a9e597f5",
+    "packages/aws-clients/src/s3-media-object-storage.ts": "67a34926650b1703564fbdc7c916262d10ec0136c3b199e4c577eb25af8ee98d",
+    "packages/aws-clients/src/s3-media-url-signer.ts": "5074acb2f955cce0378a9b3807509b2fddd45136f67c7fa3fe82f256de26d682",
+    "packages/aws-clients/src/sqs-archive-sender.ts": "605ac6c22d5e4d2b491c492208697c7c5470c4172b9748a0adc921dde79cce32",
+    "packages/aws-clients/src/sqs-json-sender.ts": "a4a32fa0c2ae47f1fd0ebe75ebe1ba49af6a6a717432c6b1696544a37f5d6818",
+    "packages/aws-clients/test/iot-device-policy.test.ts": "f6dd4eba1d58c38d46e6d72b7ccbe6a163bb9bd4bc4c8f4a5b0fd563dcf6c558",
+    "packages/database/package.json": "45fe7c3f6073bb6a1997d0379c415f978870cc624da3e61fadc7ae676d5178f8",
+    "packages/database/prisma.config.ts": "4ec1e1ea9c25c992a3b8f70cb0243d27f4456814bae8a1d7ce4daa6ff933e72b",
+    "packages/database/prisma/migrations/20260826120000_init/migration.sql": "b269a9985a42ada6e592200bee1aa6f341930d3bfd08d22f9910907068349287",
+    "packages/database/prisma/migrations/20260827160000_onboarding_request_review_version/migration.sql": "e10a34e25d6f9c63fe443b3a0fceb9235837d903be05c33b491451ce9bdac2bb",
+    "packages/database/prisma/migrations/20260827170000_certificate_rotation_requests/migration.sql": "4ef7dce77b3371eacc05db75cb4d7c47502e1e8d4890a29dbedc60d4feae252c",
+    "packages/database/prisma/migrations/20260828090000_outbox_event_retry/migration.sql": "2a93d35849330ed2ef30cf0b84d1c8dfab1ae7e82abb9064840cc228dba5aa1e",
+    "packages/database/prisma/migrations/20260828120000_customer_version/migration.sql": "7e1eff395204b543bb6f7a105ed5d5c7dcda23ee3517eb149779b35863b23de7",
+    "packages/database/prisma/migrations/20260828130000_site_status_version/migration.sql": "6a72001e2b3b96eb7e17ef7ff634ff4717dbb9df6ed675a0a17e3fd1e9d32051",
+    "packages/database/prisma/migrations/20260828140000_device_retirements/migration.sql": "1f570f0d0770be4fe0d2ea849521d4b739d475f13d0228a6d0984d41b02f4f83",
+    "packages/database/prisma/migrations/20260829090000_configuration_target_device/migration.sql": "b43106f21101aef80b587d0a7203be2c82dc01ded7a6014b7411393402865a0f",
+    "packages/database/prisma/migrations/20260829100000_consumable_projection_nullable_customer/migration.sql": "735bb862f59287528d067e6a55b95d329e0a6f532b07df5161c41181b50a7b66",
+    "packages/database/prisma/migrations/20260829110000_consumable_requests_open_unique/migration.sql": "2fc05764646fe6ccb6e7eefc7b7e4498235f11a073f854d8a7e3bd6124ca8358",
+    "packages/database/prisma/migrations/20260829120000_device_users_version/migration.sql": "4d3d9e234ad563e86ddfd149b3ce67fc888950a1ddf9061a106209db3438744b",
+    "packages/database/prisma/migrations/20260830100000_alarm_handling_columns/migration.sql": "22694934f33b86e9d602c3c5141cef3f245762da4ad7c3ea3120064eb2370162",
+    "packages/database/prisma/migrations/20260830110000_business_notifications/migration.sql": "8a681ed016e94d462f8bb1f69abc78755c6e0d18da7f112efb77b7318cd5e711",
+    "packages/database/prisma/migrations/20260830120000_esg_export_jobs/migration.sql": "d710909b8307f783542a11aaaa8753943fa6cbc7dec371c405065947a259dcf7",
+    "packages/database/prisma/migrations/20260831100000_command_timeout_scan_index/migration.sql": "1ec1293d9d7fb17fe2b4233f220facfe9657446a541f5471620cd872a38cc61d",
+    "packages/database/prisma/migrations/20260904111500_dec017_onboarding_deadline/migration.sql": "6e523b14085a5646621ee15540982313969ada5bf5446af402111418e3b48e11",
+    "packages/database/prisma/migrations/20260904160000_device_user_argon2_phc/migration.sql": "394599d5bb59fa6487fdf5f4b1edf2927b85d89113d991ccac910f563e933280",
+    "packages/database/prisma/migrations/20260905093000_p0_data_integrity/migration.sql": "a9145c0e709ceaf2814c9c3f74e6e07b858fb7a6507a9ab3b7c26b195c299aae",
+    "packages/database/prisma/migrations/20260905093000_p0_data_integrity/schema.sha256": "dde0991713cd873db3e67db27a1b014efa71d1d4506ddb1aed903f125fa54e4f",
+    "packages/database/prisma/migrations/20260905110000_p1_state_history_axis/migration.sql": "539e3b5fc0816fee067d395a83cb0e7c3da10fe3db28d6c1329f938b92f67a4f",
+    "packages/database/prisma/migrations/20260905110000_p1_state_history_axis/schema.sha256": "5247d6b84fe324d3d3d4a247a097a5958f9fe6f79c171b22d545c1520374020e",
+    "packages/database/prisma/migrations/20260905120000_media_upload_session_sha256/migration.sql": "2ee34f61d107589417fd815550aed8138ed66348fedb1e405b100f16a1299232",
+    "packages/database/prisma/migrations/20260905120000_media_upload_session_sha256/schema.sha256": "c03ecfcad62d241a075f1d7ad9a9c3b9c7135471390397f170907688876c9a00",
+    "packages/database/prisma/migrations/20260905130000_seed_rbac_roles/migration.sql": "5e34e33f38ffdff8e13fa34da533ca2333da2cf758dde2e0d5409045659b9aad",
+    "packages/database/prisma/migrations/20260905130000_seed_rbac_roles/schema.sha256": "c03ecfcad62d241a075f1d7ad9a9c3b9c7135471390397f170907688876c9a00",
+    "packages/database/prisma/migrations/20260905193000_auth_rate_limits/migration.sql": "48415043e108cab7552a7e5955c45bba0a9a2d118f745274ff38afaa1d3d8e8e",
+    "packages/database/prisma/migrations/20260905193000_auth_rate_limits/schema.sha256": "e785a49576fa01a63ae7e4b4bc140344771f62ae7a2c8b5147ab5bcaa4f900b4",
+    "packages/database/prisma/migrations/20260905210000_certificate_recovery_state/migration.sql": "3b54f3580a439f4f20283d31f2f3914c73cc4263dbb4700141fccaebc77886a3",
+    "packages/database/prisma/migrations/20260905210000_certificate_recovery_state/schema.sha256": "5c6afcbefc0c332f005c85b1129a6cd831c50d01147dc3b6d7a9fef014a3d869",
+    "packages/database/prisma/migrations/20260905220000_business_settings/migration.sql": "541dcb09e8e77d947aa55a381ab0ba11325dca3bc651eb422f136a0ae0479628",
+    "packages/database/prisma/migrations/20260905220000_business_settings/schema.sha256": "946ce971a7b90418e189a85ddf073ec7631b18a2c584a0335acf0012a504e82f",
+    "packages/database/prisma/migrations/20260905230000_device_activity_export_jobs/migration.sql": "4bba5a82df6d0a0b3a5ff89ae250560bb0f8246e7011d28b44b3b6e6310eaabb",
+    "packages/database/prisma/migrations/20260905230000_device_activity_export_jobs/schema.sha256": "7ce21b7564e148b73bcb4bba1afe8a8f996a2b6b1bf99f96306b4793ebf15db7",
+    "packages/database/prisma/migrations/20260907100000_onboarding_provisioning_jobs/migration.sql": "971d33c9610ca740c910b936c79d4cf1989b470fb6b4b39b0e1d81d9a2575ed3",
+    "packages/database/prisma/migrations/20260907100000_onboarding_provisioning_jobs/schema.sha256": "a22afb6f0a6c5ee2bbf0ab65210aa5570c68d3a3b941338849a65bcfa93a65c3",
+    "packages/database/prisma/migrations/20260907143000_archive_replay_esg_correctness/migration.sql": "0b098050cb27d72dc4603b62cee869690e3c8a9bb4f2b0649f33570a1bb9720c",
+    "packages/database/prisma/migrations/20260907143000_archive_replay_esg_correctness/schema.sha256": "b807c427c93b5217c8150ab80c370e123ceeca55839f8855d657f8007a600893",
+    "packages/database/prisma/migrations/20260908100000_outbox_publisher_leases/migration.sql": "2074b283bd0ecd74143eeb70077e3b4445311b4d9fb217ea232f67d40b6e7977",
+    "packages/database/prisma/migrations/20260908100000_outbox_publisher_leases/schema.sha256": "0fa2676d868cba01121eb2259537b9cc9db0066434046bc0f98c196d30726f79",
+    "packages/database/prisma/migrations/20260908160000_activity_export_leases/migration.sql": "afb66392f6606bcd4e6843ca37a7ceac1697eded1eebf143bff7051ca892e530",
+    "packages/database/prisma/migrations/20260908160000_activity_export_leases/schema.sha256": "78bab7e5654afb23a499933e7374cb29bb8cd7a79b0b447a31339e1e993e670f",
+    "packages/database/prisma/migrations/20260908173000_close_security_concurrency_gaps/migration.sql": "bc21ff765e8f356dcd3de11959f06f8ccf121ce055c1f4cacebdcb6e79c0772a",
+    "packages/database/prisma/migrations/20260908173000_close_security_concurrency_gaps/schema.sha256": "07f7baa56fa9d0b8a6c9ab4cef8c44f64fc508413d153f637210a85781ff445a",
+    "packages/database/prisma/migrations/20260908200000_admin_p0_runtime_workers/migration.sql": "7917731f4efa1bd05c515191f4205a13fda03bf2ab9713582549def9c34e77fe",
+    "packages/database/prisma/migrations/20260908200000_admin_p0_runtime_workers/schema.sha256": "51ea09ae40a6a98fe82c2d2e50913b10e69b81a1fb367802bbff0f50d6b58d5b",
+    "packages/database/prisma/migrations/20260908210000_admin_p1_cross_layer/migration.sql": "8e49313f6f198524d498b5e26f0242d514ee5498315425a3858d055dc54062fc",
+    "packages/database/prisma/migrations/20260908210000_admin_p1_cross_layer/schema.sha256": "a90aeb76f789d49bd373f3ef9eeeb0fd2979ecf345dad4a86b39c494a23b93ba",
+    "packages/database/prisma/migrations/20260909100000_cmd_ota_p1_security_concurrency/migration.sql": "07a9e86cf36b4525257c38d3544ca1498a416e2b2c57491457e46c0e4885026f",
+    "packages/database/prisma/migrations/20260909100000_cmd_ota_p1_security_concurrency/schema.sha256": "4adfc202b896ad15a2ec3859804defac868e8573b40a510e8d791fabe4721c6e",
+    "packages/database/prisma/migrations/20260909150000_cmd_ota_p2_semantics_governance/migration.sql": "5d9c5562c68ad70050ecc6e07b843a11bec7676d30f14e739347a000af4bcfc2",
+    "packages/database/prisma/migrations/20260909150000_cmd_ota_p2_semantics_governance/schema.sha256": "da6e074dd764bad6c829a4f5ae6fc71ec773c6d6dcec2ca531336813727eb6ea",
+    "packages/database/prisma/migrations/20260910110000_admin_onboarding_submitter_status/migration.sql": "5db52ad299e3300e1e1c049b712a543e08145081ed0596f47a86837ec2b386b8",
+    "packages/database/prisma/migrations/20260910110000_admin_onboarding_submitter_status/schema.sha256": "640120803af5306e73d664d22bfaeb97de2704ac4da602319d1f0e5f1a3d5e63",
+    "packages/database/prisma/migrations/20260910170000_device_user_sync_receipts/migration.sql": "22e1efe0bf41fd08903288647ad122fdd00d65c57781995d478e1b8af392f221",
+    "packages/database/prisma/migrations/20260910170000_device_user_sync_receipts/schema.sha256": "cfcfcd349f681389a9310f58ef4e32376f7f54b8b908032f0b8533238bcfc741",
+    "packages/database/prisma/migrations/20260912123000_ota_target_failure_detail/migration.sql": "70115386648c4905e6e642e64d801b3f9547a34e65758069cb10f3ecfbd99f71",
+    "packages/database/prisma/migrations/20260912123000_ota_target_failure_detail/schema.sha256": "9a66039db1c68e7640c2cf8bd977731a98a10fe64af3ab2d2802d0738028535f",
+    "packages/database/prisma/migrations/20260929120000_csr_onboarding/migration.sql": "0878bc92881914294bc13141134a0d7c1d04b0f698df2e93ae0dcc9113642c77",
+    "packages/database/prisma/migrations/20260929120000_csr_onboarding/schema.sha256": "3d575cb8820bd26e7a7a1ecc1742387693c09810f1ec8a3d57c4d8fb65ea2f10",
+    "packages/database/prisma/migrations/20260929130000_remove_onboarding_tokens/migration.sql": "3cc347ec67b0184c5b82a40e6fc6155a280bd93287ddeb85406307918df1b4dc",
+    "packages/database/prisma/migrations/20260929130000_remove_onboarding_tokens/schema.sha256": "71ed8060f48ace96186beac119a746ca818405173f8d027782312b4ddff0b416",
+    "packages/database/prisma/migrations/20261001090000_csr_dual_channel_certificates/migration.sql": "46668f7f03104a50adbfc2cf327db6f1f6cc585b1d44310beaca245b97fc27ac",
+    "packages/database/prisma/migrations/20261001090000_csr_dual_channel_certificates/schema.sha256": "6832ff5d3e70ccb7f1aaafef4a2f8c30d942269f0562ef9123ad953dea812f71",
+    "packages/database/prisma/migrations/migration_lock.toml": "99836963713b4f5b269ad49af0ed3d7b0b2e336115c2f92dc9ac683d139d0900",
+    "packages/database/prisma/schema.prisma": "fd3e5b59670fe300db0406e295eaf9d9022bb5108210d24cd22c19dcf1c19d73",
+    "packages/database/prisma/seed.sql": "601da74d696518a3b013db647734fcc0e92a60b08d88c096ee617ef629224976",
+    "packages/database/scripts/check-migration-drift.mjs": "05ba6df84b5996d8adf6bd1ff7bf87193ac683c2ae220fed7bbfe095df1e7ec1",
+    "packages/database/src/advisory-lock.ts": "060d9ee7e9fdee0d5706a87029464c47e3ea4a27c7679a3de83c98089c304b04",
+    "packages/database/src/audit.ts": "384654bdd8044a28bbb944f4165cd21f27e346bc2c5baefb6155b75c298f8d83",
+    "packages/database/src/client.ts": "c8ac8cdf45f7fc4220a475a0d18c5fd39aee0677e3d74d69a432ddc0ae797975",
+    "packages/database/src/context.ts": "d510a89caa5ec482909f280f4ed4fe5e3bb5bc65fff35c821070dc3b15e69ec5",
+    "packages/database/src/errors.ts": "198ba46c44f053bc1f5928bc8ef73d5b7b0a1141c316f0592c04739ba0096321",
+    "packages/database/src/index.ts": "0f7d711f4111605972b1cc945b5aa05dac72d72f8b0fce74304ad681f1400a51",
+    "packages/database/src/pagination.ts": "e450dbb6f2d40d75ea035f38034cf60c8aa9aee50d91eaf720cacf840fe3215b",
+    "packages/database/src/repository.ts": "514a0984bf1af075421c0dbfd7f7698cc2e761a646955d27f724c5d374448a3a",
+    "packages/database/src/transaction.ts": "17d7b5bf8b5e4a279b73488eb8016f6194366dfc7d63c3cc281e169689d6cc5f",
+    "packages/database/test/db01.test.ts": "74f7b314477dfdaa7e135f53d33bec1ad85e59718a9ebffa1cb392fdebbd4353",
+    "packages/database/test/db02.test.ts": "78d4ef8e73b98041a702796317b520623b303e8224fcba4932fe714685eca619",
+    "packages/database/test/db03.test.ts": "5f4d65aebc00565fff70002bbf79c2acd1669ebefec1180e3023b08b90559342",
+    "packages/database/test/helpers.ts": "cc370e6508116a51c941cb2083d9d1ed819e99ace09744347295e83e35cc2614",
+    "packages/database/test/index.test.ts": "1caf6b801c4e7a81b63312eda333a540d62701d3545a9e13728cf69d669f7aad",
+    "packages/database/tsconfig.build.json": "5c4b2def96b4bdd29cde82fde0f2bee2973a9b5aaa40f75dec959b8db8f71978",
+    "packages/database/tsconfig.json": "4b38b08c19c5f05ac530df7f10a1c3563dea21e37e8763c9173eddd847f32c71",
+    "packages/observability/src/index.ts": "a7a73f6522f05dc8a9f75d225200aeb717aeac2b29b739754a9647c2ba27598f",
+    "packages/observability/src/redaction.ts": "0c7a0f9ce32f0ffd4ef818a964be408cfcb8ced91589225c073f092961b17e8f",
+    "packages/observability/test/redaction.test.ts": "cfc70abc795ded8173f2c6c8be23ea20ded7721e3c85b605b1f8b8531f07acb4",
+    "pnpm-lock.yaml": "77b5424565c3758964e2fdbff88e0fd609bfb607772d78eb73a84be47d44dea7",
+    "qa06-vitest.config.mjs": "99140c9bcf31d3a72b740819a96537739a050eb69f878f709c1005cb5e1d2aae",
+    "scripts/qa06-manifest.mjs": "4865871ed7ac1f1a39a2d4bd4f5a85265efb999256d374cb30a7979f688c08e0",
+    "scripts/run-security-suite.mjs": "32f805686ec7afdad45a4bc1eb0f2dd02681eba7b6b8f79a1cacc64c1e4af067",
+    "scripts/security-leak-scan.d.mts": "a40885428b45fddeff7309691f9e3c952fdb77f8d003dec94bf41f5bdf76d68d",
+    "scripts/security-leak-scan.mjs": "e220d364f52fc416ebb5a1b2661aac6a83953ec4c87fb47dee761b071f8658ac",
+    "scripts/security-suite.test.mjs": "e482d24a84ee6072b4ad5a4c26f56a32264f5b6cf5f320748863c8e06e7061cc",
+    "vitest.config.mjs": "a78baa30e0c256d7d506076f80074adecc8a6694e0dcb812eea87af52234a2c3"
+  },
+  "testCount": 204,
+  "testFiles": [
+    "packages/auth/test/cognito.test.ts",
+    "packages/auth/test/guard.test.ts",
+    "packages/auth/test/device-mtls.test.ts",
+    "packages/auth/test/secure-package.test.ts",
+    "packages/auth/test/qa06-jwt-security.test.ts",
+    "packages/aws-clients/test/iot-device-policy.test.ts",
+    "packages/observability/test/redaction.test.ts",
+    "packages/database/test/db03.test.ts",
+    "apps/cloud-api/test/admin-lambda-composition.test.ts",
+    "apps/cloud-api/test/device-lambda-composition.test.ts",
+    "apps/cloud-api/test/csr-onboarding.test.ts",
+    "apps/cloud-api/test/certificate-rotate.test.ts",
+    "apps/cloud-api/test/media.test.ts",
+    "apps/cloud-api/test/ota-dispatch.test.ts",
+    "apps/cloud-api/test/admin-command.test.ts",
+    "apps/cloud-api/test/admin-user.test.ts",
+    "apps/cloud-api/test/admin-device-user.test.ts",
+    "apps/cloud-api/test/admin-audit.test.ts",
+    "apps/cloud-api/test/admin-settings.test.ts",
+    "apps/cloud-api/test/qa06-security.test.ts"
+  ],
+  "testCases": [
+    {
+      "file": "apps/cloud-api/test/admin-audit.test.ts",
+      "name": "BE-AUD-01 权限隔离 Auditor/SuperAdmin 可跨 Customer 只读；Operator/Customer 角色 → 403；无 actor → 401",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-audit.test.ts",
+      "name": "BE-AUD-01 权限隔离 Customer actor 服务层租户隔离（纵深防御）：强制 scope、越权筛选 403、跨 Customer 详情 404",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-audit.test.ts",
+      "name": "BE-AUD-01 筛选与分页 actorId/objectType/objectId/action/result/时间范围筛选各自生效；非法值 → 400",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-audit.test.ts",
+      "name": "BE-AUD-01 筛选与分页 分页：createdAt 倒序 + id 决胜；相同 createdAt 翻页不重复不漏",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-audit.test.ts",
+      "name": "BE-AUD-01 脱敏与详情 列表视图不含前后值/ip/userAgent；详情含脱敏前后值（读取兜底脱敏）",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-audit.test.ts",
+      "name": "BE-AUD-01 脱敏与详情 只读：handler 仅暴露列表与详情两个查询入口（无写路由）",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "22 命令矩阵 ACTIVE 设备：22 个命令全部创建成功并进入 AUTHORIZED",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "22 命令矩阵 SUSPENDED（云端 lifecycle）：仅 allowedStatuses 子集放行；启动处理类 DEVICE_STATE_NOT_ALLOWED",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "22 命令矩阵 MAINTENANCE（设备上报 operationalStatus）：限制与 Suspended 相同",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "22 命令矩阵 RETIRED：22 个命令全部拒绝",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "Entitlement 门 无 License / Entitlement 停用 / License 过期 → 403 FORBIDDEN",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "DEC-023 高风险确认凭证 缺失/confirmText 不符/客户端时间字段 → 400；缺失/过期/未来可信 auth_time → 403",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "DEC-023 高风险确认凭证 近期重新认证放行，并在 command.authorize 审计记录 DEC-023 与可信时间",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "越权与租户隔离 CustomerViewer/Auditor 无 command:send → 403；跨 Customer → 404；未认证 → 401",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "meta.id 幂等与服务器计算字段 重复创建（同 commandId 同语义）→ 200 replayed 无新写入/审计；冲突 → 409",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "meta.id 幂等与服务器计算字段 requestedBy 不信任客户端；expiresAt=requestTime+timeoutSec；审计落库",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "meta.id 幂等与服务器计算字段 校验：未知命令 / timeoutSec 越界 → 400；设备不存在 → 404",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "契约一致性 AdminCommandError 错误码与 CT-05 错误码目录一致",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "契约一致性 响应字段与 OpenAPI 契约一致；模块无 AWS 依赖",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "QA-09 committed command notification notification observes committed command/outbox and failed delivery preserves durable authorization",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-command.test.ts",
+      "name": "QA-09 committed command notification outbox failure rolls back command authorization and emits no notification",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-device-user.test.ts",
+      "name": "Region/Subregion/Device 权威拓扑筛选 仅匹配具有目标设备 ACTIVE 分配的设备操作员",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-device-user.test.ts",
+      "name": "完整链路：创建→修改→分配→撤销→停用 每步 version+1、审计各一次、USERS_CHANGED 每设备一条",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-device-user.test.ts",
+      "name": "完整链路：创建→修改→分配→撤销→停用 停用用户不进入新 Sync；停用后不可更新/新分配",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-device-user.test.ts",
+      "name": "安全与冲突 受控 password 可用；预计算 Hash/冻结前四组件被拒；空密码 400；用户名唯一 409",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-device-user.test.ts",
+      "name": "安全与冲突 跨 Customer 分配失败且全成或全败；部分撤销无 ACTIVE → 409 回滚；If-Match 漂移 409",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-device-user.test.ts",
+      "name": "租户隔离与权限 CustomerAdmin 只能管理自身 Customer；跨 Customer 404；未认证 401；Viewer 写 403",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-device-user.test.ts",
+      "name": "契约一致性 错误码与 CT-05 目录一致；DTO 与 OpenAPI 契约一致且脱敏",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-device-user.test.ts",
+      "name": "契约一致性 admin/device-user 模块无任何 AWS 依赖",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-lambda-composition.test.ts",
+      "name": "AUTH-01 管理 API Lambda 组合根 P0 范围 86 个管理业务 operation 全部可达真实 Handler",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-lambda-composition.test.ts",
+      "name": "AUTH-01 管理 API Lambda 组合根 真实路由表把方法和路径映射到受保护业务 Handler",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-lambda-composition.test.ts",
+      "name": "AUTH-01 管理 API Lambda 组合根 未知路径失败关闭为 404",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-lambda-composition.test.ts",
+      "name": "AUTH-01 管理 API Lambda 组合根 证书轮换申请路由映射到受保护业务 Handler",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-lambda-composition.test.ts",
+      "name": "AUTH-01 管理 API Lambda 组合根 Replay 创建/列表/详情均路由到真实 Handler，详情注入解码后的 jobId",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-lambda-composition.test.ts",
+      "name": "AUTH-01 管理 API Lambda 组合根 CUS/DEV 25 个 OpenAPI operation 全部路由到生产 Handler，并解码路径参数",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-lambda-composition.test.ts",
+      "name": "AUTH-01 管理 API Lambda 组合根 只把重新验签后的 claims 转换为可信 ActorContext",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-lambda-composition.test.ts",
+      "name": "AUTH-01 管理 API Lambda 组合根 验签成功后先执行状态收敛 Hook，再进入业务路由",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-lambda-composition.test.ts",
+      "name": "AUTH-01 管理 API Lambda 组合根 状态收敛失败时返回 500，且不执行业务路由",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-lambda-composition.test.ts",
+      "name": "AUTH-01 管理 API Lambda 组合根 伪造 actor/authorizer claims 不能绕过缺失 JWT",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-lambda-composition.test.ts",
+      "name": "AUTH-01 管理 API Lambda 组合根 低权限签名 JWT 不能借伪造 claims 绕过业务授权",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-settings.test.ts",
+      "name": "BE-SET-01 读取与权限 列表返回封闭 key 集种子；单项读取；未知 key → 404；Auditor 可读",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-settings.test.ts",
+      "name": "BE-SET-01 读取与权限 settings:write 仅 PlatformSuperAdmin；Operator 无 settings:read；无 actor → 401",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-settings.test.ts",
+      "name": "BE-SET-01 更新与版本控制 成功：version 自增 + updatedBy + 审计（before/after）",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-settings.test.ts",
+      "name": "BE-SET-01 更新与版本控制 并发修改冲突：过期 version → 409 VERSION_CONFLICT 且不落库",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-settings.test.ts",
+      "name": "BE-SET-01 非法配置拒绝（400 且不落库） alarm.thresholds：层级倒置/负值/未知字段/空条目/非对象",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-settings.test.ts",
+      "name": "BE-SET-01 非法配置拒绝（400 且不落库） command.confirmation：越界/非整数/缺字段/重定义固定命令目录字段",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-settings.test.ts",
+      "name": "BE-SET-01 非法配置拒绝（400 且不落库） 固定命令/Topic 不可被删除或重命名：未知 code/namespace → 400；已知 code 显示名放行",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-settings.test.ts",
+      "name": "BE-SET-01 非法配置拒绝（400 且不落库） notification.business：未知事件/渠道/空数组/重复 → 400",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-settings.test.ts",
+      "name": "BE-SET-01 非法配置拒绝（400 且不落库） 版本字段校验：version 缺失/非正整数 → 400；未知 key 写入 → 404",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-settings.test.ts",
+      "name": "BE-SET-01 非法配置拒绝（400 且不落库） 严格请求：未知顶层字段与数组 body 在 DB/审计前返回 400",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "首次认证用户状态收敛 INVITED 用户首次通过认证后转为 ACTIVE，并只记录一次审计",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "首次认证用户状态收敛 无对应业务用户或用户已 ACTIVE 时保持幂等且不写审计",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 邀请用户 成功：平台角色邀请 → 201 + Cognito 同步 + 角色落库 + 审计；响应不含凭证",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 邀请用户 成功：Customer 角色邀请 → scope 落库 + Cognito 携带 customerId",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 邀请用户 拒绝：混绑/未知/空角色、平台角色带 customerId、Customer 角色缺 customerId → 400",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 邀请用户 严格请求：永久密码、未知字段与数组 body 在 Cognito/DB/审计前返回 400",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 邀请用户 拒绝：重复 email → 409；Customer 不存在 → 404；非 ACTIVE Customer → 409",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 邀请用户 权限：PlatformOperator/CustomerAdmin 无 user:write → 403；无 actor → 401",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 角色分配（整体替换） 成功：Cognito groups 先行 + 落库 + 审计（before/after）",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 角色分配（整体替换） 拒绝：自我角色变更（目标 cognitoSub === actor.actorId）→ 403",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 角色分配（整体替换） 拒绝：最后一个非停用 PlatformSuperAdmin 不可被移除角色 → 409",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 角色分配（整体替换） 并发不变量：两个仅存 SuperAdmin 互相降级时只允许一个成功",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 角色分配（整体替换） 并发不变量：停用与互相降级竞争时仍保留一个有效 SuperAdmin",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 角色分配（整体替换） Cognito 已生效但 DB 写失败时恢复旧 Groups，并关闭对账意图",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 角色分配（整体替换） Cognito 调用结果不确定时保留 PENDING 对账意图并产生告警审计",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 角色分配（整体替换） 拒绝：角色类型不可变（customer → platform 提升）；Customer actor 跨 Customer 授权",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 Scope 变更、停用与密码重置 Scope 变更：成功（Cognito custom:customer_id 先行 + 审计）；平台角色用户 → 400",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 Scope 变更、停用与密码重置 停用：成功 + Cognito disable 先行 + 审计；幂等回放；自我停用 → 403；最后 SuperAdmin → 409",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 Scope 变更、停用与密码重置 密码重置触发：响应仅 {userId,status} 不含凭证；DISABLED 用户 → 409；审计齐备",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/admin-user.test.ts",
+      "name": "BE-RBAC-01 用户列表 筛选（roleType/status/customerId/q）+ 键集游标分页；视图不泄露 cognitoSub；非法筛选 → 400",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/certificate-rotate.test.ts",
+      "name": "POST /api/v1/device/certificate/rotate 缺失 CSR 不签发；AWS attach 失败保留可重试停用记录并保留旧证",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/certificate-rotate.test.ts",
+      "name": "POST /api/v1/device/certificate/rotate 正向：返回五字段证书包；双证书窗口（旧证仍可用）；私钥不落库/审计",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/certificate-rotate.test.ts",
+      "name": "POST /api/v1/device/certificate/rotate 旧证书错误/跨设备拒绝：缺字段 400；与身份不符 403（含他设备证书）",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/certificate-rotate.test.ts",
+      "name": "POST /api/v1/device/certificate/rotate 请求体未知字段失败关闭为 400，且不创建证书",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/certificate-rotate.test.ts",
+      "name": "POST /api/v1/device/certificate/rotate 旧证书撤销/过期 → 401（认证层先行拒绝）",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/certificate-rotate.test.ts",
+      "name": "POST /api/v1/device/certificate/rotate 响应不确定重试：撤销未确认证书并重签，不重复下发同一私钥",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/certificate-rotate.test.ts",
+      "name": "POST /api/v1/device/certificate/rotate 成功提交后、首个新证 Heartbeat 前重复请求稳定冲突且不撤证重签",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/certificate-rotate.test.ts",
+      "name": "POST /api/v1/device/certificate/rotate 部分失败（发证后 attach 失败）可重试：不建孤儿业务记录，重试成功",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/csr-onboarding.test.ts",
+      "name": "无预置 Token 的 CSR Onboarding 匿名申请、相同公钥幂等、换钥冲突；签名轮询拒绝重放",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 GET /api/v1/device/certificate/status 映射到 certificateStatus Handler",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 POST /api/v1/device/certificate/rotate 映射到 certificateRotate Handler",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 POST /api/v1/device/sync 映射到 sync Handler",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 POST /api/v1/device/deactivate 映射到 deactivate Handler",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 GET /api/v1/device/ota/targets/target-1/download 映射到 otaDownload Handler",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 POST /api/v1/device/media/upload-sessions 映射到 mediaUpload Handler",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 事件顶层伪造 identity 不会成为 AUTH-03 身份",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 无 Bearer JWT 但有 API Gateway mTLS 身份时正常进入设备 Handler",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 未知方法或路径失败关闭为 404",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 OTA 下载兑换透传 no-store 与 Location 响应头",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 Rotate 先序列化响应再提交交付确认",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 Rotate 提交回调失败时不返回含私钥的成功响应",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/device-lambda-composition.test.ts",
+      "name": "Device API Lambda 生产路由 Rotate 序列化失败时不执行提交回调",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "name": "BE-MED-01 设备上传会话 认证与生命周期：无证书/未知证书 → 401；Suspended/Retired/未分配 Customer → 403",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "name": "BE-MED-01 设备上传会话 字段校验：非法 mediaType/fileName/超限 sizeKb/非法 sha256 → 400",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "name": "BE-MED-01 设备上传会话 严格请求：未知字段与数组 body 在配额、S3 签名及审计前返回 400",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "name": "BE-MED-01 设备上传会话 成功：201 + 设备前缀 objectPath + 15 分钟上传 URL + 申报 Hash 落库 + 审计",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "name": "BE-MED-01 设备上传会话 配额：每设备每日上传会话超限 → 409",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "name": "BE-MED-01 设备上传会话 配额并发：quota=1 的两个同时请求只有一个领取成功",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "name": "BE-MED-01 元数据校验（Media Handler） 过期会话及校验期间到期均拒绝，且不写 MediaObject/不完成会话",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "name": "BE-MED-01 元数据校验（Media Handler） 成功：Object/大小/Hash 匹配 → MediaObject AVAILABLE + 会话 COMPLETED + 审计；重放幂等",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "name": "BE-MED-01 元数据校验（Media Handler） 跨设备 Key / 任意 Key / 未知会话拒绝且无写入",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "name": "BE-MED-01 元数据校验（Media Handler） 不存在 Object / 大小不符 / Hash 不符 / 申报不一致均拒绝",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "name": "BE-MED-01 元数据校验（Media Handler） 非法报文字段 / 未知设备拒绝",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "name": "BE-MED-01 管理端列表与下载 列表：筛选/分页/租户隔离；下载：15 分钟 URL；跨 Customer → 404；DELETED → 404；无 actor → 401",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 OTA 下发（Publisher） 成功下发：OTA Topic + CT-03 载荷（schema 校验）+ 15 分钟 URL + NOTIFIED + 历史 + OTA_AVAILABLE + PUBLICATION 归档",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 OTA 下发（Publisher） 暂停/取消/包非 VERIFIED/Retired 设备/未到期 → 不产生新下发",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 OTA 下发（Publisher） MQTT 失败保持 PENDING；重投成功且 meta.id 稳定（幂等键不变）",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 OTA 下发（Publisher） 多批次：首批 NOTIFIED 后扩大批次，仅新 PENDING 被下发；不存在 Campaign → 404",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 OTA 下发（Publisher） buildOtaPayload：scheduledTime 为空时省略该字段（schema additionalProperties=false）",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 OTA 下发（Publisher） 并发 dispatcher 只有一个 lease owner 发布；过期 lease 可恢复",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 OTA 下发（Publisher） claim 后暂停会撤销 grant/lease，发布前重校验阻止 MQTT",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 OTA 下发（Publisher） target/history/通知/PUBLICATION 任一写失败时整笔事务回滚",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 OTA 下发（Publisher） 下载 grant 同时绑定 device/target/package/expiry/unused/revoked，且只能消费一次",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 OTA 下发（Publisher） 过期或被暂停撤销的下载 grant 均失败关闭且不签发 S3 URL",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 ACK 状态接收（DEC-015 唯一通道） 合法状态链推进 + 每步历史 + 每步 RESULT 归档；重复上报幂等（不重复历史/归档）",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 ACK 状态接收（DEC-015 唯一通道） FAILED + errorCode/message 进入历史 detail；retry 后可重发并重新回报",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 ACK 状态接收（DEC-015 唯一通道） 通道隔离与防御：COMMAND 移交；混带 COMMAND 字段/缺关联键/未知状态/未知 target → 拒绝且无副作用",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 ACK 状态接收（DEC-015 唯一通道） 取消后设备获得正确 Notification：已通知设备收 OTA_CANCELLED；PENDING 设备不发",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "BE-OTA-03 ACK 状态接收（DEC-015 唯一通道） 不存在第二条未登记回传通道：topic-catalog 中 ota 仅下行，无 ota 上行/status Topic",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+      "name": "QA-02 OTA REST full contract through real Handler and Lambda 307 has required redirect headers and no undocumented JSON body; all error statuses match CT-05",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/qa06-security.test.ts",
+      "name": "QA06 all admin write routes reject forged actor and missing expired tampered JWT before resolution",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/qa06-security.test.ts",
+      "name": "QA06 signed tenant scope and SQL JSON injection cannot cross boundaries or corrupt business state",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/qa06-security.test.ts",
+      "name": "QA06 malicious media filenames and metadata reject before signing or persistence",
+      "status": "passed"
+    },
+    {
+      "file": "apps/cloud-api/test/qa06-security.test.ts",
+      "name": "QA06 raw canaries are absent from actual logger trace audit and snapshot artifacts",
+      "status": "passed"
+    },
+    {
+      "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+      "name": "Policy 模板结构 策略名带设备前缀，Version 2012-10-17，恰好 4 条 Allow 声明",
+      "status": "passed"
+    },
+    {
+      "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+      "name": "Policy 模板结构 任何资源不含通配符（* + #），Action 不含通配符",
+      "status": "passed"
+    },
+    {
+      "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+      "name": "Policy 模板结构 Connect 仅允许 Client ID = Thing Name",
+      "status": "passed"
+    },
+    {
+      "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+      "name": "Policy 模板结构 Publish 仅 8 个上行 Topic；Subscribe/Receive 仅 3 个下行 Topic",
+      "status": "passed"
+    },
+    {
+      "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+      "name": "Policy 模板结构 非法输入拒绝：含通配符的 Thing Name、非法 Region/Account",
+      "status": "passed"
+    },
+    {
+      "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+      "name": "允许矩阵（自身操作全部通过） Connect 自身",
+      "status": "passed"
+    },
+    {
+      "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+      "name": "允许矩阵（自身操作全部通过） Publish 全部 8 个上行 Topic",
+      "status": "passed"
+    },
+    {
+      "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+      "name": "允许矩阵（自身操作全部通过） Subscribe/Receive 全部 3 个下行 Topic",
+      "status": "passed"
+    },
+    {
+      "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+      "name": "拒绝矩阵（跨设备/通配/错误方向/未知类型全部拒绝） 跨设备：以他机 Client ID 连接、发布他机上行、订阅他机下行",
+      "status": "passed"
+    },
+    {
+      "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+      "name": "拒绝矩阵（跨设备/通配/错误方向/未知类型全部拒绝） 通配订阅/发布：多级与单级通配均无授权",
+      "status": "passed"
+    },
+    {
+      "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+      "name": "拒绝矩阵（跨设备/通配/错误方向/未知类型全部拒绝） 错误方向：发布下行 Topic、订阅上行 Topic、接收上行 Topic",
+      "status": "passed"
+    },
+    {
+      "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+      "name": "拒绝矩阵（跨设备/通配/错误方向/未知类型全部拒绝） 未知 Topic 类型与相邻路径无授权",
+      "status": "passed"
+    },
+    {
+      "file": "packages/database/test/db03.test.ts",
+      "name": "脱敏器 私钥、Token、passwordHash、verifier 等字段被遮蔽（含嵌套与数组）",
+      "status": "passed"
+    },
+    {
+      "file": "packages/database/test/db03.test.ts",
+      "name": "脱敏器 标量与 null 原样返回",
+      "status": "passed"
+    },
+    {
+      "file": "packages/database/test/db03.test.ts",
+      "name": "recordAudit 与上下文 actor/requestId 默认取 AsyncLocalStorage 上下文，显式传参优先",
+      "status": "passed"
+    },
+    {
+      "file": "packages/database/test/db03.test.ts",
+      "name": "recordAudit 与上下文 IP/User-Agent 默认取可信请求上下文，显式参数仍可覆盖",
+      "status": "passed"
+    },
+    {
+      "file": "packages/database/test/db03.test.ts",
+      "name": "append-only：审计/历史表不可经业务 Repository 更新删除 auditLog 的 updateWithVersion / softDelete 被拒绝",
+      "status": "passed"
+    },
+    {
+      "file": "packages/database/test/db03.test.ts",
+      "name": "append-only：审计/历史表不可经业务 Repository 更新删除 deviceStateHistory / licenseHistory / otaStatusHistory 同样拦截",
+      "status": "passed"
+    },
+    {
+      "file": "packages/database/test/db03.test.ts",
+      "name": "audited 拦截器 成功路径：业务写入与 SUCCESS 审计同事务提交",
+      "status": "passed"
+    },
+    {
+      "file": "packages/database/test/db03.test.ts",
+      "name": "audited 拦截器 失败路径：业务回滚 + FAILURE 审计留存，不伪造成功；原错误抛出",
+      "status": "passed"
+    },
+    {
+      "file": "packages/database/test/db03.test.ts",
+      "name": "audited 拦截器 audited 成功与失败路径均继承 IP/User-Agent",
+      "status": "passed"
+    },
+    {
+      "file": "packages/database/test/db03.test.ts",
+      "name": "audited 拦截器 audited 禁止在事务内嵌套调用",
+      "status": "passed"
+    },
+    {
+      "file": "packages/observability/test/redaction.test.ts",
+      "name": "redactSensitive 双层脱敏 字段名命中整体遮蔽（不区分大小写）",
+      "status": "passed"
+    },
+    {
+      "file": "packages/observability/test/redaction.test.ts",
+      "name": "redactSensitive 双层脱敏 值形态脱敏：私钥块在任意字段名下都被遮蔽",
+      "status": "passed"
+    },
+    {
+      "file": "packages/observability/test/redaction.test.ts",
+      "name": "redactSensitive 双层脱敏 Onboarding Token 明文与 Bearer 凭证被遮蔽",
+      "status": "passed"
+    },
+    {
+      "file": "packages/observability/test/redaction.test.ts",
+      "name": "redactSensitive 双层脱敏 公钥证书 PEM 不误遮蔽",
+      "status": "passed"
+    },
+    {
+      "file": "packages/observability/test/redaction.test.ts",
+      "name": "redactSensitive 双层脱敏 Error message 脱敏且保留错误类型",
+      "status": "passed"
+    },
+    {
+      "file": "packages/observability/test/redaction.test.ts",
+      "name": "redactSensitive 双层脱敏 数组与嵌套对象递归处理",
+      "status": "passed"
+    },
+    {
+      "file": "packages/observability/test/redaction.test.ts",
+      "name": "createRedactingLogger 所有级别输出均脱敏",
+      "status": "passed"
+    },
+    {
+      "file": "packages/observability/test/redaction.test.ts",
+      "name": "trace 属性脱敏 字段名与嵌套秘密值均不可进入 span attributes",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard 合法 Access Token → 平台 ActorContext",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard 合法 ID Token → Customer ActorContext（custom:customer_id 注入 scope）",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard 过期 Token → 401",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard 伪造签名（另一密钥对）→ 401",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard 错误 issuer → 401",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard client 绑定不符（ID Token 错误 aud / Access Token 错误 client_id）→ 401",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard 缺失/畸形凭证 → 401",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard API Gateway Cognito Token source 的原始 ID Token 可通过认证",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard 缺失或非法 auth_time → 401，不能伪造近期重新认证上下文",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard 未知 Cognito 组 → 403 失败关闭（DEC-012）",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard 无角色组 → 403",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard 平台与 Customer 角色混绑 → 403",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard Customer 角色缺少 custom:customer_id → 403",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/cognito.test.ts",
+      "name": "Cognito JWT 认证 Guard 平台角色 Token 携带 custom:customer_id 时 scope 恒为 null",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/device-mtls.test.ts",
+      "name": "verifyDeviceCertificate 白名单校验 有效证书通过并注入 device/customer context",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/device-mtls.test.ts",
+      "name": "verifyDeviceCertificate 白名单校验 同 CA 未登记证书（指纹不在白名单）→ 401",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/device-mtls.test.ts",
+      "name": "verifyDeviceCertificate 白名单校验 REVOKED / EXPIRED / PENDING_CLAIM 状态均 → 401",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/device-mtls.test.ts",
+      "name": "verifyDeviceCertificate 白名单校验 状态 ACTIVE 但有效期外（过期/未生效）→ 401",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/device-mtls.test.ts",
+      "name": "verifyDeviceCertificate 白名单校验 数据不一致防线：revokedAt 置位即使状态 ACTIVE 也 → 401",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/device-mtls.test.ts",
+      "name": "verifyDeviceCertificate 白名单校验 请求其他 deviceId → 403",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/device-mtls.test.ts",
+      "name": "verifyDeviceCertificate 白名单校验 Retired 默认 → 403；仅窗口内 PENDING_CONFIRMATION 可显式申请 Sync 能力",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/device-mtls.test.ts",
+      "name": "verifyDeviceCertificate 白名单校验 缺失/畸形证书上下文 → 401",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/device-mtls.test.ts",
+      "name": "withDeviceAuth 中间件 有效证书 + 匹配 deviceId → Handler 收到上下文",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/device-mtls.test.ts",
+      "name": "withDeviceAuth 中间件 deviceId 不匹配 → 403，不进入 Handler",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/device-mtls.test.ts",
+      "name": "withDeviceAuth 中间件 缺失证书上下文 → 401",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/guard.test.ts",
+      "name": "requirePermission：角色越权 → 403 持有权限点放行",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/guard.test.ts",
+      "name": "requirePermission：角色越权 → 403 Auditor 发起写操作 → 403；Customer 角色使用平台域权限 → 403",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/guard.test.ts",
+      "name": "assertCustomerScope：跨 Customer 访问 → 403 platform actor 跨 Customer 放行（审计场景）",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/guard.test.ts",
+      "name": "assertCustomerScope：跨 Customer 访问 → 403 Customer A 访问自身数据放行",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/guard.test.ts",
+      "name": "assertCustomerScope：跨 Customer 访问 → 403 Customer A 无法读取或修改 Customer B 数据",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/guard.test.ts",
+      "name": "withAuthorization 授权 Decorator 未注入 actor（未认证）→ 401",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/guard.test.ts",
+      "name": "withAuthorization 授权 Decorator 权限不足 → 403，不进入业务 Handler",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/guard.test.ts",
+      "name": "withAuthorization 授权 Decorator Customer A 请求 Customer B 资源 → 403；自身资源 → 通过",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/guard.test.ts",
+      "name": "withAuthorization 授权 Decorator 无 Customer 维度路由不做 scope 校验",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/guard.test.ts",
+      "name": "withAuthorization 授权 Decorator 可信 HTTP 元数据进入 DB 审计上下文，业务 body 不能覆盖",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/qa06-jwt-security.test.ts",
+      "name": "QA06 JWT time claims fail closed and valid bearer reuse preserves identity",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "配置与存储 DEC-003 失败关闭：retentionSeconds 偏离冻结值即拒绝构造",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "配置与存储 DEC-003 失败关闭：maxClaims !== 1 拒绝构造",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "配置与存储 存储即加密：库中无明文，有效期按 retentionSeconds 推导",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "配置与存储 不存在证书存储 → 404",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "一次性领取 Onboarding CSR 资格 → 预留后保留密文，响应确认后销毁",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "一次性领取 确认交付后重复领取失败关闭（密文已销毁 → 404）",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "一次性领取 已锁定未销毁（并发部分失败场景）→ 409",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "一次性领取 资格不符（跨序列号 / 跨设备证书）→ 403，密文保留",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "一次性领取 旧设备证书资格（轮换场景，deviceId 绑定）→ 领取成功",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "一次性领取 响应不确定 → 撤销证书并销毁未确认包",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "一次性领取 过期包 → 409 且密文销毁",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "一次性领取 destroyPackage 幂等（新证书 Heartbeat 后销毁场景）",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "一次性领取 定时扫描只返回待恢复 ID，不会先于云端撤证销毁密文包",
+      "status": "passed"
+    },
+    {
+      "file": "packages/auth/test/secure-package.test.ts",
+      "name": "审计与脱敏 store/prepare/confirm/revoke/destroy 写审计；审计负载无敏感材料",
+      "status": "passed"
+    }
+  ],
+  "coverage": [
+    {
+      "area": "JWT",
+      "requiredCases": [
+        {
+          "area": "JWT",
+          "file": "packages/auth/test/cognito.test.ts",
+          "name": "伪造签名"
+        },
+        {
+          "area": "JWT",
+          "file": "packages/auth/test/qa06-jwt-security.test.ts",
+          "name": "QA06 JWT time claims"
+        },
+        {
+          "area": "JWT",
+          "file": "apps/cloud-api/test/qa06-security.test.ts",
+          "name": "QA06 all admin write routes"
+        }
+      ]
+    },
+    {
+      "area": "Replay",
+      "requiredCases": [
+        {
+          "area": "Replay",
+          "file": "apps/cloud-api/test/csr-onboarding.test.ts",
+          "name": "签名轮询拒绝重放"
+        },
+        {
+          "area": "Replay",
+          "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+          "name": "且只能消费一次"
+        }
+      ]
+    },
+    {
+      "area": "CustomerScope",
+      "requiredCases": [
+        {
+          "area": "CustomerScope",
+          "file": "apps/cloud-api/test/qa06-security.test.ts",
+          "name": "QA06 signed tenant scope"
+        }
+      ]
+    },
+    {
+      "area": "TopicScope",
+      "requiredCases": [
+        {
+          "area": "TopicScope",
+          "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+          "name": "跨设备："
+        },
+        {
+          "area": "TopicScope",
+          "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+          "name": "通配订阅/发布"
+        },
+        {
+          "area": "TopicScope",
+          "file": "packages/aws-clients/test/iot-device-policy.test.ts",
+          "name": "错误方向："
+        }
+      ]
+    },
+    {
+      "area": "MtlsWhitelist",
+      "requiredCases": [
+        {
+          "area": "MtlsWhitelist",
+          "file": "packages/auth/test/device-mtls.test.ts",
+          "name": "同 CA 未登记证书"
+        },
+        {
+          "area": "MtlsWhitelist",
+          "file": "packages/auth/test/device-mtls.test.ts",
+          "name": "REVOKED / EXPIRED / PENDING_CLAIM"
+        },
+        {
+          "area": "MtlsWhitelist",
+          "file": "packages/auth/test/device-mtls.test.ts",
+          "name": "请求其他 deviceId"
+        }
+      ]
+    },
+    {
+      "area": "Injection",
+      "requiredCases": [
+        {
+          "area": "Injection",
+          "file": "apps/cloud-api/test/qa06-security.test.ts",
+          "name": "QA06 signed tenant scope"
+        }
+      ]
+    },
+    {
+      "area": "MaliciousMedia",
+      "requiredCases": [
+        {
+          "area": "MaliciousMedia",
+          "file": "apps/cloud-api/test/qa06-security.test.ts",
+          "name": "QA06 malicious media"
+        }
+      ]
+    },
+    {
+      "area": "SignedUrlScope",
+      "requiredCases": [
+        {
+          "area": "SignedUrlScope",
+          "file": "apps/cloud-api/test/media.test.ts",
+          "name": "跨设备 Key / 任意 Key / 未知会话"
+        },
+        {
+          "area": "SignedUrlScope",
+          "file": "apps/cloud-api/test/media.test.ts",
+          "name": "跨 Customer → 404"
+        },
+        {
+          "area": "SignedUrlScope",
+          "file": "apps/cloud-api/test/ota-dispatch.test.ts",
+          "name": "过期或被暂停撤销"
+        }
+      ]
+    },
+    {
+      "area": "SensitiveArtifacts",
+      "requiredCases": [
+        {
+          "area": "SensitiveArtifacts",
+          "file": "apps/cloud-api/test/qa06-security.test.ts",
+          "name": "QA06 raw canaries"
+        }
+      ]
+    },
+    {
+      "area": "RecentAuthentication",
+      "requiredCases": [
+        {
+          "area": "RecentAuthentication",
+          "file": "apps/cloud-api/test/admin-command.test.ts",
+          "name": "缺失/过期/未来可信 auth_time"
+        }
+      ]
+    }
+  ],
+  "adminWriteOperations": 63,
+  "authenticationRejections": 189,
+  "acceptanceProofs": [
+    {
+      "kind": "proof",
+      "name": "all-admin-write-auth",
+      "status": "PASS",
+      "prefix": "QA06-C811C25DEA8E",
+      "cleanup": "PASS",
+      "matrix": [
+        {
+          "operationId": "approveOnboardingRequest",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "rejectOnboardingRequest",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createCertificateRotationRequest",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createReplayJob",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createCustomer",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "updateCustomer",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "deleteCustomer",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "deactivateCustomer",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createSite",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "updateSite",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "deleteSite",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "deactivateSite",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "updateDeviceMetadata",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "assignDevice",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "suspendDevice",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "reactivateDevice",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "retireDevice",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "forceCompleteRetirement",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createActivityExport",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createLicense",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "issueLicense",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "activateLicense",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "renewLicense",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "revokeLicense",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "evaluateLicense",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createContract",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "updateContract",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "activateContract",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "renewContract",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "terminateContract",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "evaluateContract",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "bindContractDevices",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "unbindContractDevices",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createConfiguration",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createConfigurationVersion",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "publishConfigurationVersion",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createConsumableRequest",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "processConsumableRequest",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "completeConsumableRequest",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "cancelConsumableRequest",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createDeviceUser",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "updateDeviceUser",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "disableDeviceUser",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "assignDeviceUser",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "revokeDeviceUser",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "acknowledgeAlarm",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "clearAlarm",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createEsgExport",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createDeviceCommand",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createFirmwareUpload",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "completeFirmwareUpload",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "createOtaCampaign",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "expandOtaCampaignBatch",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "pauseOtaCampaign",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "resumeOtaCampaign",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "cancelOtaCampaign",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "retryOtaCampaignFailures",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "inviteUser",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "assignUserRoles",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "setUserScope",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "disableUser",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "triggerUserPasswordReset",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        },
+        {
+          "operationId": "updateSetting",
+          "statuses": [
+            401,
+            401,
+            401
+          ]
+        }
+      ],
+      "resolverCalls": 0
+    },
+    {
+      "kind": "proof",
+      "name": "jwt-integrity-time-replay",
+      "status": "PASS",
+      "prefix": "QA06-0249718F630E",
+      "cleanup": "PASS",
+      "invalidClaimsRejected": 6,
+      "tamperedRejected": true,
+      "validReuse": true,
+      "unauthorizedStatuses": [
+        401
+      ]
+    },
+    {
+      "kind": "proof",
+      "name": "tenant-sql-json",
+      "status": "PASS",
+      "prefix": "QA06-9B817BBC7923",
+      "cleanup": "PASS",
+      "crossTenantStatus": 403,
+      "writeDenied": 403,
+      "noUnauthorizedWrites": true,
+      "jsonRejected": 7,
+      "sqlLiteralStored": true,
+      "sqlNoCrossScope": true,
+      "prototypeUnchanged": true
+    },
+    {
+      "kind": "proof",
+      "name": "malicious-media",
+      "status": "PASS",
+      "prefix": "QA06-7B28C05434FD",
+      "cleanup": "PASS",
+      "attacksRejected": 12,
+      "statuses": [
+        400
+      ],
+      "signedUrls": 0,
+      "businessWrites": 0
+    },
+    {
+      "kind": "proof",
+      "name": "sensitive-artifacts",
+      "status": "PASS",
+      "prefix": "QA06-2CA5CF05DCFC",
+      "cleanup": "PASS",
+      "logLevels": 4,
+      "traceScanned": true,
+      "auditScanned": true,
+      "snapshotScanned": true,
+      "sensitiveFindings": 0
+    }
+  ],
+  "artifactScans": [
+    {
+      "channel": "response",
+      "samples": 218,
+      "inspectedNodes": 1084,
+      "findings": 0
+    },
+    {
+      "channel": "log",
+      "samples": 4,
+      "inspectedNodes": 80,
+      "findings": 0
+    },
+    {
+      "channel": "audit",
+      "samples": 1,
+      "inspectedNodes": 29,
+      "findings": 0
+    },
+    {
+      "channel": "snapshot",
+      "samples": 1,
+      "inspectedNodes": 14,
+      "findings": 0
+    }
+  ],
+  "sensitiveFindings": 0,
+  "runArtifactScans": {
+    "outputScan": {
+      "inspectedNodes": 1,
+      "findings": 0
+    },
+    "reportScan": {
+      "inspectedNodes": 2838,
+      "findings": 0
+    },
+    "traceScan": {
+      "inspectedNodes": 1844,
+      "findings": 0
+    },
+    "snapshots": []
+  },
+  "cleanup": "PASS",
+  "awsTargetGate": "DEFERRED TO QA-09 / NOT RUN / NO RECEIPT"
+}

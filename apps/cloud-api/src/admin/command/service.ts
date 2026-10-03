@@ -1,3 +1,4 @@
+import { persistCommandPublishRequest, notifyCommittedCommand, type ImmediateCommandNotifier } from './immediate.js';
 /**
  * BE-CMD-01 Command 创建与授权 Service（框架无关）。
  *
@@ -36,7 +37,7 @@ import {
 } from './errors.js';
 import { commandAuthorizationDenyReason, hasEffectiveRemoteControlEntitlement } from './authorization.js';
 
-export interface CommandDeps {
+export interface CommandDeps extends ImmediateCommandNotifier {
   readonly client: DbClient;
   readonly now?: () => Date;
 }
@@ -254,6 +255,7 @@ export async function createCommand(
     if (existing) {
       const view = toView(existing);
       assertReplayCompatible(view, spec!, input);
+      await notifyCommittedCommand(deps, view.commandId, view.status);
       return { ...view, replayed: true };
     }
   }
@@ -263,7 +265,7 @@ export async function createCommand(
   const commandId = input.commandId ?? randomUUID().toUpperCase();
   const expiresAt = new Date(now.getTime() + input.timeoutSec * 1000);
   try {
-    return await audited<CommandCreateResult>(
+    const created = await audited<CommandCreateResult>(
       deps.client,
       {
         objectType: 'device_command',
@@ -308,9 +310,12 @@ export async function createCommand(
             confirmedBy: spec!.highRisk ? actor.actorId : null,
           },
         });
+        await persistCommandPublishRequest(tx, commandId);
         return { ...toView(row), replayed: false };
       },
     );
+    await notifyCommittedCommand(deps, created.commandId, created.status);
+    return created;
   } catch (err) {
     // 并发兜底：P2002 → 重读分类（语义一致 → 重放；冲突 → 409）
     if (isUniqueViolation(err) && input.commandId !== undefined) {
@@ -318,6 +323,7 @@ export async function createCommand(
       if (existing) {
         const view = toView(existing);
         assertReplayCompatible(view, spec!, input);
+        await notifyCommittedCommand(deps, view.commandId, view.status);
         return { ...view, replayed: true };
       }
     }

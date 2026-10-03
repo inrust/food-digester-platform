@@ -291,3 +291,138 @@ describe('幂等与重试', () => {
     );
   });
 });
+
+describe('QA-09 recoverable command lease', () => {
+  test('duplicate simultaneous triggers share one MQTT publish', async () => {
+    const { commandId } = await plantCommand({});
+    let release!: () => void, entered!: () => void;
+    const started = new Promise<void>((r) => {
+      entered = r;
+    });
+    const block = new Promise<void>((r) => {
+      release = r;
+    });
+    let count = 0;
+    const mqtt = {
+      publish: async () => {
+        count++;
+        entered();
+        await block;
+      },
+    };
+    const first = publishCommand({ client: prisma, now: () => NOW, mqtt }, commandId);
+    await started;
+    await rejectsWith(() => publishCommand({ client: prisma, now: () => NOW, mqtt }, commandId), 'CONFLICT');
+    release();
+    await first;
+    assert.equal(count, 1);
+    assert.equal(await prisma.commandAttempt.count({ where: { commandId } }), 1);
+  });
+  test('expired lease recovers same command ID and stale holder cannot overwrite new owner', async () => {
+    const { commandId } = await plantCommand({ expiresAt: new Date(NOW.getTime() + 600000) });
+    let release!: () => void, entered!: () => void;
+    const started = new Promise<void>((r) => {
+      entered = r;
+    });
+    const block = new Promise<void>((r) => {
+      release = r;
+    });
+    const stale = publishCommand(
+      {
+        client: prisma,
+        now: () => NOW,
+        mqtt: {
+          publish: async () => {
+            entered();
+            await block;
+          },
+        },
+      },
+      commandId,
+    );
+    const failed = stale.catch((e) => e);
+    await started;
+    const mqtt = new FakeMqtt();
+    await publishCommand({ client: prisma, now: () => new Date(NOW.getTime() + 120001), mqtt }, commandId);
+    release();
+    assert.instanceOf(await failed, AdminCommandError);
+    assert.equal(JSON.parse(mqtt.calls[0]!.payload).meta.id, commandId);
+    assert.equal((await prisma.deviceCommand.findUniqueOrThrow({ where: { id: commandId } })).status, 'PUBLISHED');
+    assert.equal(await prisma.commandAttempt.count({ where: { commandId } }), 1);
+  });
+  test('ACK terminal status during MQTT delivery is preserved', async () => {
+    const { commandId } = await plantCommand({});
+    await publishCommand(
+      {
+        client: prisma,
+        now: () => NOW,
+        mqtt: {
+          publish: async () => {
+            await prisma.deviceCommand.update({ where: { id: commandId }, data: { status: 'SUCCEEDED' } });
+          },
+        },
+      },
+      commandId,
+    );
+    assert.equal((await prisma.deviceCommand.findUniqueOrThrow({ where: { id: commandId } })).status, 'SUCCEEDED');
+    assert.equal(await prisma.commandAttempt.count({ where: { commandId } }), 1);
+  });
+});
+
+test('SQS consumer retries failed transport and consumes terminal/invalid duplicates without publishing', async () => {
+  const { consumeCommandNotifications } = await import('../src/admin/command/queue-consumer.js');
+  const { commandId } = await plantCommand({});
+  const mqtt = new FakeMqtt();
+  mqtt.failNext = true;
+  const event = {
+    Records: [{ messageId: '00000000-0000-4000-8000-000000000001', body: JSON.stringify({ commandId }) }],
+  };
+  const first = await consumeCommandNotifications({ client: prisma, now: () => NOW, mqtt }, event);
+  assert.equal(first.batchItemFailures.length, 1);
+  const retry = await consumeCommandNotifications({ client: prisma, now: () => NOW, mqtt }, event);
+  assert.equal(retry.batchItemFailures.length, 0);
+  assert.equal(mqtt.calls.length, 1);
+  await prisma.deviceCommand.update({ where: { id: commandId }, data: { status: 'FAILED' } });
+  assert.equal(
+    (await consumeCommandNotifications({ client: prisma, now: () => NOW, mqtt }, event)).batchItemFailures.length,
+    0,
+  );
+  assert.equal(mqtt.calls.length, 1);
+  const logs: unknown[] = [];
+  assert.equal(
+    (
+      await consumeCommandNotifications(
+        { client: prisma, mqtt },
+        {
+          Records: [{ messageId: 'invalid-canary', body: '{"commandId":"secret-canary","password":"secret-canary"}' }],
+        },
+        (row) => logs.push(row),
+      )
+    ).batchItemFailures.length,
+    0,
+  );
+  assert.notInclude(JSON.stringify(logs), 'secret-canary');
+});
+
+test('terminal notification clears expired leases but preserves a live publisher lease', async () => {
+  const { consumeCommandNotifications } = await import('../src/admin/command/queue-consumer.js');
+  const { commandPublishKey } = await import('../src/admin/command/immediate.js');
+  const { commandId } = await plantCommand({});
+  const mqtt = new FakeMqtt();
+  await publishCommand({ client: prisma, now: () => NOW, mqtt }, commandId);
+  await prisma.deviceCommand.update({ where: { id: commandId }, data: { status: 'SUCCEEDED' } });
+  const where = { idempotencyKey: commandPublishKey(commandId) };
+  await prisma.outboxEvent.update({
+    where,
+    data: { status: 'PENDING', leaseToken: 'live', leaseUntil: new Date(NOW.getTime() + 1000) },
+  });
+  const event = {
+    Records: [{ messageId: '00000000-0000-4000-8000-000000000001', body: JSON.stringify({ commandId }) }],
+  };
+  await consumeCommandNotifications({ client: prisma, now: () => NOW, mqtt }, event);
+  assert.equal((await prisma.outboxEvent.findUniqueOrThrow({ where })).leaseToken, 'live');
+  await prisma.outboxEvent.update({ where, data: { leaseUntil: new Date(NOW.getTime() - 1) } });
+  await consumeCommandNotifications({ client: prisma, now: () => NOW, mqtt }, event);
+  assert.equal((await prisma.outboxEvent.findUniqueOrThrow({ where })).leaseToken, null);
+  assert.equal(mqtt.calls.length, 1);
+});

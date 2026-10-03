@@ -33,6 +33,17 @@ export function deploymentAuthArgs(env = process.env) {
   return ['--profile', 'esgiot-infra'];
 }
 
+export function qa09RolloutContext(env = process.env) {
+  const phase = env.FDP_QA09_ROLLOUT_PHASE ?? 'baseline';
+  if (!['baseline', 'observability', 'capacity', 'immediate'].includes(phase))
+    throw Error('INVALID_QA09_ROLLOUT_PHASE');
+  return {
+    enableRequestObservability: phase !== 'baseline',
+    enableQa09Capacity: ['capacity', 'immediate'].includes(phase),
+    enableImmediateCommandPublish: phase === 'immediate',
+  };
+}
+
 export function main(argv = process.argv.slice(2)) {
   const { operation, stacks } = parseOperationArgs(argv);
   const config = JSON.parse(readFileSync(new URL('../infra/environments/esgiot-test.json', import.meta.url), 'utf8'));
@@ -46,6 +57,8 @@ export function main(argv = process.argv.slice(2)) {
     if (!value) throw new Error(`Missing deployment input: ${envKey}`);
     config[key] = value;
   }
+
+  Object.assign(config, qa09RolloutContext());
 
   // Lambda bundle 会解析工作区 package exports 到 dist；只构建 infra 会打入陈旧运行时代码。
   runWorkspaceBuild();

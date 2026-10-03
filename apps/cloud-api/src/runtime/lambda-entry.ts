@@ -1,7 +1,11 @@
+import { createRedactingLogger } from '@fdp/observability';
+import { observeRequest } from '@fdp/observability';
+import { matchDeliveredOperation } from './delivered-operations.js';
 import { withAdminCors } from './admin-cors.js';
 import {
   createAwsIotProvisioningClient,
   createCognitoAdminPort,
+  createSqsJsonSender,
   createKmsFirmwareSignatureVerifier,
   createOtaFirmwareS3Ports,
   createS3ActivityExportPorts,
@@ -54,6 +58,8 @@ import {
   type ApiGatewayAdminResult,
 } from './admin-lambda.js';
 
+const logger = createRedactingLogger(console);
+
 const required = (name: string): string => {
   const value = process.env[name];
   if (!value) throw new Error(`缺少 Lambda 环境变量 ${name}`);
@@ -89,6 +95,9 @@ async function initialize() {
       getDownloadUrlTtlSeconds,
     },
   };
+  const commandNotifier = process.env.COMMAND_PUBLISH_QUEUE_URL
+    ? createSqsJsonSender({ queueUrl: required('COMMAND_PUBLISH_QUEUE_URL'), region, maxAttempts: 1, timeoutMs: 1000 })
+    : undefined;
   const routes = {
     onboarding: createAdminOnboardingHandlers({ client }),
     certificateRotation: createAdminCertificateRotationHandler({ client }),
@@ -109,7 +118,16 @@ async function initialize() {
     deviceUsers: createAdminDeviceUserHandlers({ client }),
     alarms: createAdminAlarmHandlers({ client }),
     esg: createAdminEsgHandlers({ client, ...activityExportPorts }),
-    commands: createAdminCommandHandlers({ client }),
+    commands: createAdminCommandHandlers({
+      client,
+      ...(commandNotifier
+        ? {
+            notifyAuthorizedCommand: (commandId: string) => commandNotifier.send({ commandId }),
+            onImmediatePublishFailure: (commandId: string) =>
+              logger.info(JSON.stringify({ event: 'command.notification.failed', commandId, code: 'SEND_FAILED' })),
+          }
+        : {}),
+    }),
     otaPackages: createAdminOtaPackageHandlers({
       client,
       storage: ota.storage,
@@ -143,9 +161,25 @@ async function initialize() {
 }
 
 /** AWS Lambda 生产入口：冷启动完成 Secret/DB/AWS 适配器接线，热启动复用连接。 */
-export async function handler(event: ApiGatewayAdminEvent): Promise<ApiGatewayAdminResult> {
-  return withAdminCors(event, process.env.ADMIN_WEB_ORIGIN, async () => {
-    runtimeHandler ??= await initialize();
-    return runtimeHandler(event);
-  });
+export async function handler(
+  event: ApiGatewayAdminEvent,
+  context?: { readonly awsRequestId?: string },
+): Promise<ApiGatewayAdminResult> {
+  const method = event.requestContext?.http?.method ?? event.httpMethod ?? '';
+  const path = event.rawPath ?? event.requestContext?.http?.path ?? event.path ?? '';
+  const operationId = matchDeliveredOperation('admin-api', method, path)?.operation.operationId ?? 'unknown';
+  return observeRequest(
+    {
+      gatewayRequestId: event.requestContext?.requestId,
+      gatewayExtendedRequestId: event.requestContext?.extendedRequestId,
+      lambdaRequestId: context?.awsRequestId,
+      operationId,
+    },
+    () =>
+      withAdminCors(event, process.env.ADMIN_WEB_ORIGIN, async () => {
+        runtimeHandler ??= await initialize();
+        return runtimeHandler(event);
+      }),
+    (entry) => logger.info(JSON.stringify(entry)),
+  );
 }

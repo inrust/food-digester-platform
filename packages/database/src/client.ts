@@ -6,23 +6,26 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from './generated/client.js';
 
-/**
- * Lambda 每执行环境的数据库连接预算。
- *
- * db.t4g.micro 实测只有 76 个普通连接槽位；全部数据库型 Lambda 的 CDK
- * Reserved Concurrency 合计为 31，因此每容器最多 2 条连接可把理论峰值压在 62。
- */
+/** Defaults remain compatible; deployment sets an explicit per-function pool budget. */
 export const DATABASE_POOL_CONFIG = Object.freeze({
   max: 2,
   connectionTimeoutMillis: 5_000,
   idleTimeoutMillis: 10_000,
 });
 
+export function resolveDatabasePoolMax(value = process.env.FDP_DB_POOL_MAX): 1 | 2 {
+  if (value === undefined) return 2;
+  if (value === '1') return 1;
+  if (value === '2') return 2;
+  throw new Error('INVALID_DATABASE_POOL_MAX');
+}
+
 export function createPrismaClient(databaseUrl: string): PrismaClient {
   return new PrismaClient({
     adapter: new PrismaPg({
       connectionString: databaseUrl,
       ...DATABASE_POOL_CONFIG,
+      max: resolveDatabasePoolMax(),
     }),
   });
 }

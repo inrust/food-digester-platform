@@ -17,3 +17,11 @@ test('Lambda PostgreSQL 连接池使用小规格 RDS 的显式连接预算', () 
   });
   assert.isTrue(Object.isFrozen(DATABASE_POOL_CONFIG));
 });
+
+test('per-function pool setting rejects unsafe expansion instead of silently falling back', async () => {
+  const { resolveDatabasePoolMax } = await import('../src/client.js');
+  assert.equal(resolveDatabasePoolMax('1'), 1);
+  assert.equal(resolveDatabasePoolMax('2'), 2);
+  for (const v of ['0', '3', '20', 'NaN', '1.5', ''])
+    assert.throws(() => resolveDatabasePoolMax(v), 'INVALID_DATABASE_POOL_MAX');
+});

@@ -408,3 +408,70 @@ describe('契约一致性', () => {
     }
   });
 });
+
+describe('QA-09 committed command notification', () => {
+  test('notification observes committed command/outbox and failed delivery preserves durable authorization', async () => {
+    const f = await plantTenant({});
+    let notices = 0,
+      failures = 0;
+    const commandId = 'QA09-COMMITTED-NOTIFY';
+    const h = createAdminCommandHandlers({
+      client: prisma,
+      now: () => NOW,
+      notifyAuthorizedCommand: async (id) => {
+        notices++;
+        assert.equal(id, commandId);
+        assert.isNotNull(await prisma.deviceCommand.findUnique({ where: { id } }));
+        assert.equal(
+          await prisma.outboxEvent.count({ where: { aggregateId: id, eventType: 'COMMAND_PUBLISH_REQUESTED' } }),
+          1,
+        );
+        throw Error('synthetic queue unavailable');
+      },
+      onImmediatePublishFailure: () => {
+        failures++;
+      },
+    });
+    for (let i = 0; i < 2; i++) {
+      const response = await h.createCommand(
+        req(operator, {
+          params: { deviceId: f.deviceId },
+          body: { commandId, command: 'FORCE_SYNC', timeoutSec: 120 },
+        }),
+      );
+      assert.equal(response.status, i === 0 ? 201 : 200);
+    }
+    assert.equal(notices, 2);
+    assert.equal(failures, 2);
+    const command = await prisma.deviceCommand.findUniqueOrThrow({ where: { id: commandId } });
+    assert.equal(command.status, 'AUTHORIZED');
+    assert.equal(await prisma.outboxEvent.count({ where: { aggregateId: commandId } }), 1);
+  });
+  test('outbox failure rolls back command authorization and emits no notification', async () => {
+    const f = await plantTenant({});
+    const commandId = 'QA09-ROLLBACK-NOTIFY';
+    let notices = 0;
+    await prisma.outboxEvent.create({
+      data: {
+        eventType: 'COMMAND_PUBLISH_REQUESTED',
+        aggregateType: 'device_command',
+        aggregateId: commandId,
+        idempotencyKey: 'COMMAND_PUBLISH_REQUESTED:' + commandId,
+        payload: { commandId },
+      },
+    });
+    const h = createAdminCommandHandlers({
+      client: prisma,
+      now: () => NOW,
+      notifyAuthorizedCommand: async () => {
+        notices++;
+      },
+    });
+    const response = await h.createCommand(
+      req(operator, { params: { deviceId: f.deviceId }, body: { commandId, command: 'FORCE_SYNC', timeoutSec: 120 } }),
+    );
+    assert.equal(response.status, 500);
+    assert.isNull(await prisma.deviceCommand.findUnique({ where: { id: commandId } }));
+    assert.equal(notices, 0);
+  });
+});

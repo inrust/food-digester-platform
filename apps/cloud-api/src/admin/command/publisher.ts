@@ -1,3 +1,6 @@
+import { randomUUID } from 'node:crypto';
+import { COMMAND_PUBLISH_EVENT, commandPublishKey } from './immediate.js';
+import { AdminCommandError } from './errors.js';
 /**
  * BE-CMD-02 Command MQTT 发布器（框架无关；注入式 MqttPublisher 端口，无 AWS 依赖——部署层接 IoT Data Plane 实现）。
  *
@@ -90,6 +93,7 @@ async function finishPublishAttempt(
   input: {
     readonly command: CommandPublishRow;
     readonly attemptNo: number;
+    readonly leaseToken: string;
     readonly startedAt: Date;
     readonly finishedAt: Date;
     readonly outcome: 'PUBLISHED' | 'PUBLISH_FAILED';
@@ -98,6 +102,17 @@ async function finishPublishAttempt(
   },
 ): Promise<void> {
   await withTransaction(deps.client, async (tx) => {
+    const owned = await tx.outboxEvent.updateMany({
+      where: { idempotencyKey: commandPublishKey(input.command.id), leaseToken: input.leaseToken },
+      data: {
+        status: input.outcome === 'PUBLISHED' ? 'PUBLISHED' : 'FAILED',
+        leaseToken: null,
+        leaseUntil: null,
+        publishedAt: input.outcome === 'PUBLISHED' ? input.finishedAt : null,
+        lastError: input.errorCode,
+      },
+    });
+    if (owned.count !== 1) throw commandConflict('Command publish lease was lost');
     await attemptsOf(tx).create({
       data: {
         commandId: input.command.id,
@@ -113,7 +128,12 @@ async function finishPublishAttempt(
       where: { id: input.command.id, status: 'PUBLISHING' },
       data: { status: input.outcome },
     });
-    if (updated.count !== 1) throw commandConflict('Command publish ownership was lost');
+    if (updated.count !== 1) {
+      const current = await deviceCommands(tx).findFirst({ where: { id: input.command.id } });
+      // A real ACK or timeout may settle the command while MQTT is in flight; never overwrite it.
+      if (!current || !['ACKNOWLEDGED', 'SUCCEEDED', 'FAILED', 'TIMED_OUT', 'CANCELLED'].includes(current.status))
+        throw commandConflict('Command publish ownership was lost');
+    }
     await recordAudit(tx, {
       objectType: 'device_command',
       objectId: input.command.id,
@@ -176,25 +196,46 @@ export async function publishCommand(deps: CommandPublisherDeps, commandId: stri
   if (command.status === 'PUBLISHED') {
     return { commandId: command.id, status: 'REPLAYED_PUBLISHED', attemptNo: 0 };
   }
-  if (command.status !== 'AUTHORIZED' && command.status !== 'PUBLISH_FAILED') {
+  if (!['AUTHORIZED', 'PUBLISH_FAILED', 'PUBLISHING'].includes(command.status)) {
     throw commandConflict(`Command ${command.id} is not publishable from status ${command.status}`);
   }
 
-  // 抢占发布权：只允许已授权或明确的传输失败重试。
-  const claimed = await commands.updateMany({
-    where: {
-      id: command.id,
-      status: { in: ['AUTHORIZED', 'PUBLISH_FAILED'] },
-    },
-    data: { status: 'PUBLISHING' },
+  // Outbox lease and command claim commit together; no DB connection is held during MQTT I/O.
+  const leaseToken = randomUUID();
+  await withTransaction(deps.client, async (tx) => {
+    await tx.outboxEvent.upsert({
+      where: { idempotencyKey: commandPublishKey(command.id) },
+      create: {
+        eventType: COMMAND_PUBLISH_EVENT,
+        aggregateType: 'device_command',
+        aggregateId: command.id,
+        idempotencyKey: commandPublishKey(command.id),
+        payload: { commandId: command.id },
+        status: 'PENDING',
+      },
+      update: {},
+    });
+    const claimed = await tx.outboxEvent.updateMany({
+      where: {
+        idempotencyKey: commandPublishKey(command.id),
+        eventType: COMMAND_PUBLISH_EVENT,
+        status: { in: ['PENDING', 'FAILED'] },
+        OR: [{ leaseUntil: null }, { leaseUntil: { lte: now } }],
+      },
+      data: {
+        leaseToken,
+        leaseUntil: new Date(now.getTime() + 120000),
+        lastAttemptAt: now,
+        retryCount: { increment: 1 },
+      },
+    });
+    if (claimed.count !== 1) throw commandConflict('Command publish lease is busy');
+    const changed = await deviceCommands(tx).updateMany({
+      where: { id: command.id, status: { in: ['AUTHORIZED', 'PUBLISH_FAILED', 'PUBLISHING'] } },
+      data: { status: 'PUBLISHING' },
+    });
+    if (changed.count !== 1) throw commandConflict('Command publish status changed');
   });
-  if (claimed.count !== 1) {
-    const current = await commands.findFirst({ where: { id: command.id } });
-    if (current?.status === 'PUBLISHED') {
-      return { commandId: command.id, status: 'REPLAYED_PUBLISHED', attemptNo: 0 };
-    }
-    throw commandConflict(`Command ${command.id} is not publishable from status ${current?.status ?? command.status}`);
-  }
 
   // 执行发布（此时持有 PUBLISHING 状态）
   const attemptNo = (await attemptsOf(deps.client).count({ where: { commandId: command.id } })) + 1;
@@ -211,6 +252,7 @@ export async function publishCommand(deps: CommandPublisherDeps, commandId: stri
     await finishPublishAttempt(deps, {
       command,
       attemptNo,
+      leaseToken,
       startedAt: now,
       finishedAt: deps.now?.() ?? new Date(),
       outcome: 'PUBLISH_FAILED',
@@ -222,6 +264,7 @@ export async function publishCommand(deps: CommandPublisherDeps, commandId: stri
   await finishPublishAttempt(deps, {
     command,
     attemptNo,
+    leaseToken,
     startedAt: now,
     finishedAt: deps.now?.() ?? new Date(),
     outcome: 'PUBLISHED',
@@ -245,7 +288,7 @@ export async function publishPendingCommands(
   const now = deps.now?.() ?? new Date();
   const pending = await deviceCommands(deps.client).findMany({
     where: {
-      status: { in: ['AUTHORIZED', 'PUBLISH_FAILED'] },
+      status: { in: ['AUTHORIZED', 'PUBLISH_FAILED', 'PUBLISHING'] },
       OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
     },
     orderBy: [{ requestTime: 'asc' }, { id: 'asc' }],
@@ -254,7 +297,13 @@ export async function publishPendingCommands(
   let publishedCount = 0;
   let transportFailedCount = 0;
   for (const command of pending) {
-    const result = await publishCommand(deps, command.id);
+    let result;
+    try {
+      result = await publishCommand(deps, command.id);
+    } catch (error) {
+      if (error instanceof AdminCommandError && [404, 409].includes(error.httpStatus)) continue;
+      throw error;
+    }
     if (result.status === 'PUBLISH_FAILED') transportFailedCount += 1;
     else publishedCount += 1;
   }

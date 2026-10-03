@@ -46,6 +46,7 @@ export interface ApiGatewayAdminEvent {
   readonly rawPath?: string;
   readonly requestContext?: {
     readonly requestId?: string;
+    readonly extendedRequestId?: string;
     readonly identity?: { readonly sourceIp?: string };
     readonly http?: { readonly sourceIp?: string; readonly method?: string; readonly path?: string };
     /** 不可信输入：特意不读取 authorizer/claims。 */

@@ -22,6 +22,9 @@ export interface DeviceApiDomainConfig {
 export interface InfraConfig {
   /** 环境名，全部资源名前缀的一部分。 */
   readonly envName: string;
+  readonly enableRequestObservability?: boolean;
+  readonly enableQa09Capacity?: boolean;
+  readonly enableImmediateCommandPublish?: boolean;
   readonly deviceApiDomain?: DeviceApiDomainConfig;
   /** 仅 local/test 可显式打开的无 mTLS execute-api 开发入口。 */
   readonly allowInsecureDeviceEndpointForLocal?: true;
@@ -69,6 +72,13 @@ export function resolveConfig(app: App): InfraConfig {
       throw new Error('adminWebOrigin 必须为精确 HTTPS Origin（本地回环允许 HTTP）');
     }
   }
+  const enableRequestObservability = ['true', true].includes(app.node.tryGetContext('enableRequestObservability'));
+  const enableQa09Capacity = ['true', true].includes(app.node.tryGetContext('enableQa09Capacity'));
+  const enableImmediateCommandPublish = ['true', true].includes(
+    app.node.tryGetContext('enableImmediateCommandPublish'),
+  );
+  if ((enableQa09Capacity && !enableRequestObservability) || (enableImmediateCommandPublish && !enableQa09Capacity))
+    throw new Error('QA09 rollout requires observability before capacity and capacity before immediate publication');
   const enableMigrationRunner = ['true', true].includes(app.node.tryGetContext('enableMigrationRunner'));
   const enableAdminBootstrapRunner = ['true', true].includes(app.node.tryGetContext('enableAdminBootstrapRunner'));
   const enableScheduledWorkers = ['true', true].includes(app.node.tryGetContext('enableScheduledWorkers'));
@@ -128,6 +138,9 @@ export function resolveConfig(app: App): InfraConfig {
     }
     return {
       envName,
+      enableRequestObservability,
+      enableQa09Capacity,
+      enableImmediateCommandPublish,
       ...deployment,
       allowInsecureDeviceEndpointForLocal: true,
     };
@@ -137,6 +150,9 @@ export function resolveConfig(app: App): InfraConfig {
   }
   return {
     envName,
+    enableRequestObservability,
+    enableQa09Capacity,
+    enableImmediateCommandPublish,
     ...deployment,
     deviceApiDomain: {
       domainName,
