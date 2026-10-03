@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { decodeFixtureFrames } from './qa09-db-log-frames.mjs';
 import { validatePlan } from './qa09-ten-device-db.mjs';
-const [originalFile, output] = process.argv.slice(2);
+const [originalFile, output, capturedLogFile] = process.argv.slice(2);
 const originalBytes = readFileSync(originalFile),
   original = JSON.parse(originalBytes),
   prepBytes = readFileSync(originalFile + '.preparation.json'),
@@ -70,15 +70,23 @@ try {
     JSON.stringify(build.vpcConfig) !== JSON.stringify(prep.project.vpcConfig)
   )
     throw Error('COMPLETED_BUILD_NOT_BOUND');
-  const log = aws([
-    'logs',
-    'get-log-events',
-    '--log-group-name',
-    build.logs.groupName,
-    '--log-stream-name',
-    build.logs.streamName,
-    '--start-from-head',
-  ]);
+  const log = capturedLogFile
+    ? JSON.parse(readFileSync(capturedLogFile))
+    : aws([
+        'logs',
+        'get-log-events',
+        '--log-group-name',
+        build.logs.groupName,
+        '--log-stream-name',
+        build.logs.streamName,
+        '--start-from-head',
+      ]);
+  if (capturedLogFile)
+    r.capturedLogResponse = {
+      path: capturedLogFile,
+      sha256: sha(readFileSync(capturedLogFile)),
+      scope: 'PRIOR_SUCCESSFUL_AWS_GET_LOG_EVENTS_RESPONSE_NOT_AN_INDEPENDENT_FRESH_READ',
+    };
   const frames = decodeFixtureFrames(log.events);
   if (
     frames.length !== 1 ||

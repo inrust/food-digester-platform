@@ -1,0 +1,2131 @@
+{
+  "task": "QA-09",
+  "scope": "BOUND_REAL_DIAGNOSTIC_RATE_SLO_AND_PARTIAL_COVERAGE",
+  "collectedAt": "2026-10-03T06:41:34.586765+00:00",
+  "sourceCommit": "e759626a3e965cd9c0330b8e73bc713c0386d7de",
+  "gate": "PARTIAL",
+  "fullQa09Accepted": false,
+  "stages": {
+    "httpLoad": {
+      "gate": "FAIL",
+      "requests": 20,
+      "http500": 2,
+      "requestIds": [
+        "45b8b5bf-a20b-4061-9c46-76413d610ffe",
+        "0f1a519d-a1f3-468c-965e-ef30b91f20d7"
+      ],
+      "planned300RequestsCompleted": false
+    },
+    "perRequestThrottleCorrelation": {
+      "gate": "NOT_PROVABLE_WITH_EXISTING_LOGS",
+      "sharedLoggingApplied": false
+    },
+    "mqttActualRate": {
+      "gate": "PASS",
+      "uniqueBurst": 300,
+      "burstAttempts": 315,
+      "burstPublishSpanSeconds": 9.687,
+      "burstLimitSeconds": 10,
+      "stageActualPublishSpans": {
+        "normal": {
+          "attempts": 146,
+          "uniqueMessages": 140,
+          "spanSeconds": 110.012
+        },
+        "history": {
+          "attempts": 504,
+          "uniqueMessages": 480,
+          "spanSeconds": 467.325
+        },
+        "burst": {
+          "attempts": 315,
+          "uniqueMessages": 300,
+          "spanSeconds": 9.687
+        }
+      },
+      "attempts": 965,
+      "pubacks": 965,
+      "uniqueProcessedReceipts": 950,
+      "samplesPerDevice": 92,
+      "fullProfileExecuted": false,
+      "newRateArchiveOriginalBytesGate": "NOT_RUN"
+    },
+    "telemetryApiVisibility": {
+      "gate": "FAIL",
+      "samples": 20,
+      "completedSamples": 12,
+      "p95Ms": null,
+      "limitMs": 5000,
+      "fullBusinessClaimed": false
+    },
+    "onlineCommandBrokerReceipt": {
+      "gate": "FAIL",
+      "samples": 20,
+      "completedSamples": 20,
+      "p95Ms": 36408,
+      "limitMs": 3000,
+      "fullBusinessClaimed": false
+    },
+    "writePermissionBoundaries": {
+      "originalRows": 378,
+      "originalFailedRows": [
+        {
+          "operationId": "activateContract",
+          "role": "Auditor",
+          "permission": "contract:write",
+          "result": "FAIL",
+          "failure": "REQUEST_FAILED"
+        },
+        {
+          "operationId": "processConsumableRequest",
+          "role": "CustomerViewer",
+          "permission": "device:write",
+          "result": "FAIL",
+          "failure": "REQUEST_FAILED"
+        }
+      ],
+      "freshDenialRepro": [
+        {
+          "id": "auditor-activate-contract-denial",
+          "startedAt": "2026-10-03T06:13:24.696Z",
+          "status": 403,
+          "requestId": "ef770a4b-4de1-4bb0-9089-962195894abe",
+          "extendedRequestId": "Ep15KHCEyQ0EISw=",
+          "gatewayErrorType": null,
+          "latencyMs": 6146,
+          "role": "Auditor",
+          "operationId": "activateContract",
+          "expected": 403,
+          "result": "PASS"
+        },
+        {
+          "id": "viewer-process-consumable-denial",
+          "startedAt": "2026-10-03T06:13:30.842Z",
+          "status": 403,
+          "requestId": "df2878bf-82c1-45c9-bba4-23b65ee0de45",
+          "extendedRequestId": "Ep16AHpyyQ0EHxg=",
+          "gatewayErrorType": null,
+          "latencyMs": 3372,
+          "role": "CustomerViewer",
+          "operationId": "processConsumableRequest",
+          "expected": 403,
+          "result": "PASS"
+        }
+      ],
+      "validWritesAllExecuted": false
+    },
+    "forgedClaimsDenial": {
+      "gate": "PASS",
+      "strict401ContractGate": "FAIL",
+      "correctlySignedClaimValidationProved": false
+    },
+    "lifecycle": {
+      "deviceConfirmationGate": "PASS",
+      "preconditionMode": "EXACT_TWO_ACTIVE_PRECONDITION_ONLY_NOT_NATURAL_LIFECYCLE_ACCEPTANCE",
+      "naturalJourneyGate": "BLOCKED_ASSIGNED_TO_LICENSED_TO_ACTIVE_RUNTIME_PATH_MISSING",
+      "actualChecks": [
+        {
+          "id": "device-confirmation-lifecycle",
+          "result": "PASS"
+        },
+        {
+          "id": "lifecycle-suspended",
+          "result": "PASS"
+        },
+        {
+          "id": "lifecycle-suspend-idempotent",
+          "result": "PASS"
+        },
+        {
+          "id": "lifecycle-reactivated",
+          "result": "PASS"
+        },
+        {
+          "id": "post-update-real-mtls-sync",
+          "result": "PASS",
+          "status": 200,
+          "requestId": "0a5fd1a0-97d4-4445-83f9-1d11a624863c",
+          "topLevelKeys": [
+            "deviceId",
+            "assignment",
+            "device",
+            "license",
+            "deviceUsers",
+            "configuration",
+            "operationalStatus",
+            "snapshotAt",
+            "lastSyncTime",
+            "etag"
+          ]
+        },
+        {
+          "id": "retired-pending-confirmation-sync",
+          "result": "PASS",
+          "status": 200
+        },
+        {
+          "id": "revoked-device-real-mtls-sync-denied",
+          "result": "PASS",
+          "status": 401,
+          "requestId": "0b091a41-36c3-4681-8464-fd7cba7709da"
+        }
+      ]
+    },
+    "browser": {
+      "guardGate": "FAIL",
+      "cases": 24,
+      "positiveBindings": 117,
+      "coveredGuardBindings": 6,
+      "full117BehaviorGate": "NOT_PROVEN",
+      "inventory": [
+        {
+          "id": "dashboard.field.validContracts",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "dashboard.field.deviceStats",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "dashboard.field.onlineRate",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "dashboard.field.carbonToday",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "dashboard.field.latestAlarms",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "dashboard.field.deviceCards",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "dashboard.button.start",
+          "guardSubscopeGate": "PASS",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "dashboard.button.stop",
+          "guardSubscopeGate": "PASS",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "dashboard.button.upgrade",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "dashboard.button.reboot",
+          "guardSubscopeGate": "PASS",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-view.filter.region",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-view.filter.subregion",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-view.filter.device",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-view.button.apply",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-view.field.componentStates",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-view.field.sensorReadings",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-view.field.consumables",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-view.field.recentAlarms",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-view.field.esg7d",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-view.field.mediaPreview",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.button.agitatorForward",
+          "guardSubscopeGate": "PASS",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.button.agitatorReverse",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.button.heating",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.button.exhaust",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.button.reboot",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.button.shutdown",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.button.modeSwitch",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.button.factoryReset",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.button.updateThreshold",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.button.saveAlias",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.table.activityLog",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.button.logFilter",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-operate.button.logExport",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.button.search",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.button.reset",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.column.seq",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.column.region",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.column.subregion",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.column.deviceId",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.column.alias",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.column.contractName",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.column.leaseTerm",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.column.firmware",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.field.fourAxisStatus",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.column.actions",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.req.column.deviceId",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.req.column.requestDate",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.req.button.detail",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.req.button.accept",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-group.req.button.reject",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-manage.button.updateConfig",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-manage.button.viewConfig",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-manage.button.selectFirmware",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-manage.button.syncUpdate",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-manage.button.certDetail",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-manage.button.issueCert",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-manage.button.confirm",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-manage.button.back",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.button.search",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.button.reset",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.column.region",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.column.subregion",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.column.deviceId",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.column.alias",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.column.carbonFilterPct",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.column.bioAdditivePct",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.button.contact",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.req.column.requestTime",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.req.column.status",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.req.button.process",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "device-consumable.req.button.complete",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-modify.button.new",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-modify.column.contractNumber",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-modify.column.customer",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-modify.column.deviceCount",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-modify.column.servicePeriod",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-modify.column.status",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-modify.button.edit",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-modify.button.renewOrUnbind",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-modify.button.queryDevices",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-new.field.number",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-new.field.name",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-new.field.customer",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-new.field.period",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-new.field.devices",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-new.button.submit",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-new.button.cancel",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-detail.button.back",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-detail.column.region",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-detail.column.subregion",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-detail.column.deviceId",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-detail.column.alias",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-detail.field.fourAxisStatus",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-detail.column.firmware",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "contract-detail.field.licenseSummary",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-overview.toggle.period",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-overview.button.exportCsv",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-overview.column.date",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-overview.column.carbon",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-overview.column.throughput",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-overview.column.energy",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-device.filter.region",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-device.filter.subregion",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-device.filter.device",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-device.button.apply",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-device.toggle.period",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-device.button.exportCsv",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "esg-device.field.metrics",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "settings.button.addPlatformUser",
+          "guardSubscopeGate": "PASS",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "settings.button.resetPlatformUserPassword",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "settings.button.deletePlatformUser",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "settings.button.addDeviceUser",
+          "guardSubscopeGate": "PASS",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "settings.button.deviceUserFilter",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "settings.button.deviceUserFilterReset",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "settings.button.resetDeviceUserPassword",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "settings.button.deleteDeviceUser",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        },
+        {
+          "id": "settings.modal.confirm",
+          "guardSubscopeGate": "NOT_RUN",
+          "fullSuccessFailureRecoveryBusinessJourneyGate": "NOT_PROVEN"
+        }
+      ]
+    },
+    "queueRedelivery": {
+      "primaryProbe": {
+        "gate": "NOT_RUN_FIRST_MARKER_NOT_VISIBLE"
+      },
+      "localArchiveAttempt": {
+        "scope": "OWN_ARCHIVED_PROCESSED_TELEMETRY_REDELIVERY",
+        "prefix": "qa09-bfec7eddec2fcc1b",
+        "deviceId": "qa09-bfec7eddec2fcc1b-03",
+        "messageId": "TELEMETRY-30546E3F-1",
+        "mqttPublishBodySha256": "89c4290bb71c9229277ff0c669391b8922f089fa68d54c4d4c777b18ca5780cc",
+        "archivedRawBodySha256": "151016f746d6afde71c160166c1ee492f53b4cfb96bb479e981c0fbfaafc0d10",
+        "archiveObjectKey": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-0e5ccf11b027fb6b.json.gz",
+        "gate": "BLOCKED",
+        "consumptionProven": false,
+        "queueReadOrPurge": false,
+        "sharedConfigurationChanged": false,
+        "fullQa09Accepted": false,
+        "startedAt": "2026-10-03T06:27:15.958261+00:00",
+        "sourceSha256": "2000a8d951afc2bf1728995641fa615f822e2237c90970755f5b356a8ed34fe9",
+        "errorName": "RuntimeError",
+        "errorCode": "AccessDenied",
+        "finishedAt": "2026-10-03T06:27:19.113510+00:00"
+      },
+      "awsOwnedArchiveAttempt": {
+        "task": "QA-09",
+        "scope": "AWS_OWN_ARCHIVE_SINGLE_MESSAGE_REDELIVERY",
+        "prefix": "qa09-bfec7eddec2fcc1b",
+        "roleArn": "arn:aws:iam::065986019555:role/fdp-test-replay-role",
+        "functionName": "fdp-test-qa09-archive-4cea1563dd815596",
+        "requestNonce": "4cea1563dd81559639db7aee45082b3f",
+        "startedAt": "2026-10-03T06:29:45.509Z",
+        "gate": "PASS",
+        "sourceHash": "d7cdaf7b3c45b9f9af855d424c6f5d02546ac774feded551e63667cdb6800b87",
+        "sourceBase64": "aW1wb3J0IHsgY3JlYXRlSGFzaCB9IGZyb20gJ25vZGU6Y3J5cHRvJzsKaW1wb3J0IHsgZ3VuemlwU3luYyB9IGZyb20gJ25vZGU6emxpYic7CmNvbnN0IGhhc2ggPSAoYikgPT4gY3JlYXRlSGFzaCgnc2hhMjU2JykudXBkYXRlKGIpLmRpZ2VzdCgnaGV4Jyk7CmZ1bmN0aW9uIGRlbWFuZChvaywgY29kZSkgewogIGlmICghb2spIHRocm93IEVycm9yKGNvZGUpOwp9CmV4cG9ydCBmdW5jdGlvbiBjYW5vbmljYWwodmFsdWUpIHsKICBpZiAodmFsdWUgPT09IG51bGwgfHwgdHlwZW9mIHZhbHVlICE9PSAnb2JqZWN0JykgcmV0dXJuIEpTT04uc3RyaW5naWZ5KHZhbHVlKTsKICBpZiAoQXJyYXkuaXNBcnJheSh2YWx1ZSkpIHJldHVybiAnWycgKyB2YWx1ZS5tYXAoY2Fub25pY2FsKS5qb2luKCcsJykgKyAnXSc7CiAgcmV0dXJuICgKICAgICd7JyArCiAgICBPYmplY3Qua2V5cyh2YWx1ZSkKICAgICAgLnNvcnQoKQogICAgICAubWFwKChrKSA9PiBKU09OLnN0cmluZ2lmeShrKSArICc6JyArIGNhbm9uaWNhbCh2YWx1ZVtrXSkpCiAgICAgIC5qb2luKCcsJykgKwogICAgJ30nCiAgKTsKfQpleHBvcnQgZnVuY3Rpb24gdmFsaWRhdGVBcmNoaXZlUGxhbihwKSB7CiAgZGVtYW5kKAogICAgL15xYTA5LVthLWYwLTldezE2fSQvLnRlc3QocC5wcmVmaXgpICYmCiAgICAgIHAuZGV2aWNlcz8ubGVuZ3RoID09PSAxMCAmJgogICAgICBuZXcgU2V0KHAuZGV2aWNlcykuc2l6ZSA9PT0gMTAgJiYKICAgICAgcC5kZXZpY2VzLmV2ZXJ5KChkKSA9PiBuZXcgUmVnRXhwKCdeJyArIHAucHJlZml4ICsgJy1bMC05XXsyfSQnKS50ZXN0KGQpKSwKICAgICdJTlZBTElEX0FSQ0hJVkVfU0NPUEUnLAogICk7CiAgZGVtYW5kKAogICAgcC5jdXN0b21lcnM/Lmxlbmd0aCA9PT0gMiAmJiBuZXcgU2V0KHAuY3VzdG9tZXJzKS5zaXplID09PSAyICYmIHAuY3VzdG9tZXJzLmV2ZXJ5KChjKSA9PiAvXlthLWYwLTktXXszNn0kLy50ZXN0KGMpKSwKICAgICdJTlZBTElEX0FSQ0hJVkVfQ1VTVE9NRVJTJywKICApOwogIGNvbnN0IHRvdGFsID0gcC5wcm9maWxlID09PSAnUUEwN19RVUlDS19SRUFMX01RVFQnID8gOTUwIDogMzA7CiAgY29uc3QgdGVsZW1ldHJ5ID0gcC5wcm9maWxlID09PSAnUUEwN19RVUlDS19SRUFMX01RVFQnID8gOTIwIDogMjA7CiAgZGVtYW5kKHAucHJvZmlsZSA9PT0gdW5kZWZpbmVkIHx8IHAucHJvZmlsZSA9PT0gJ1FBMDdfUVVJQ0tfUkVBTF9NUVRUJywgJ0lOVkFMSURfQVJDSElWRV9QUk9GSUxFJyk7CiAgZGVtYW5kKAogICAgcC5wdWJsaXNoZWQ/Lmxlbmd0aCA9PT0gdG90YWwgJiYKICAgICAgbmV3IFNldChwLnB1Ymxpc2hlZC5tYXAoKHApID0+IHAubWVzc2FnZUlkKSkuc2l6ZSA9PT0gdG90YWwgJiYKICAgICAgcC5wdWJsaXNoZWQuZmlsdGVyKChtKSA9PiBtLnR5cGUgPT09ICd0ZWxlbWV0cnknKS5sZW5ndGggPT09IHRlbGVtZXRyeSAmJgogICAgICBwLnB1Ymxpc2hlZC5ldmVyeSgKICAgICAgICAobSkgPT4KICAgICAgICAgIHAuZGV2aWNlcy5pbmNsdWRlcyhtLmRldmljZUlkKSAmJgogICAgICAgICAgL15bYS1mMC05XXs2NH0kLy50ZXN0KG0ucGF5bG9hZFNoYTI1NikgJiYKICAgICAgICAgIC9eW2EtZjAtOV17NjR9JC8udGVzdChtLmJvZHlTaGEyNTYpLAogICAgICApLAogICAgJ0lOVkFMSURfUFVCTElTSF9MRURHRVInLAogICk7CiAgZGVtYW5kKAogICAgcC5vdXRib3g/Lmxlbmd0aCA+PSB0ZWxlbWV0cnkgJiYKICAgICAgcC5vdXRib3guZXZlcnkoKHIpID0+IC9eW2EtZjAtOS1dezM2fSQvLnRlc3Qoci5pZCkgJiYgL15bYS1mMC05XXs2NH0kLy50ZXN0KHIucmF3Qm9keVNoYTI1NikpLAogICAgJ0lOVkFMSURfT1VUQk9YX0xFREdFUicsCiAgKTsKfQpleHBvcnQgZnVuY3Rpb24gdmVyaWZ5QXJjaGl2ZU9iamVjdHMocGxhbiwgb2JqZWN0cykgewogIHZhbGlkYXRlQXJjaGl2ZVBsYW4ocGxhbik7CiAgZGVtYW5kKG9iamVjdHMubGVuZ3RoIDw9IChwbGFuLnByb2ZpbGUgPT09ICdRQTA3X1FVSUNLX1JFQUxfTVFUVCcgPyAyMDAwIDogMjAwKSwgJ0FSQ0hJVkVfTElNSVRfRVhDRUVERUQnKTsKICBjb25zdCBjaGVja3MgPSBbXSwKICAgIGFyY2hpdmVPYmplY3RzID0gW10sCiAgICBmb3VuZCA9IG5ldyBTZXQoKTsKICBmb3IgKGNvbnN0IG9iamVjdCBvZiBvYmplY3RzKSB7CiAgICBkZW1hbmQoCiAgICAgIHBsYW4uY3VzdG9tZXJzLnNvbWUoKGMpID0+CiAgICAgICAgWydoZWFydGJlYXQnLCAndGVsZW1ldHJ5J10uc29tZSgodCkgPT4gb2JqZWN0LmtleS5zdGFydHNXaXRoKGByYXcvdG9waWNfdHlwZT0ke3R9L2N1c3RvbWVyX2lkPSR7Y30vYCkpLAogICAgICApICYmIG9iamVjdC5rZXkuZW5kc1dpdGgoJy5qc29uLmd6JyksCiAgICAgICdPQkpFQ1RfU0NPUEVfTUlTTUFUQ0gnLAogICAgKTsKICAgIGRlbWFuZChvYmplY3QuYnl0ZXMubGVuZ3RoIDw9IDEwNDg1NzYsICdBUkNISVZFX1NJWkVfRVhDRUVERUQnKTsKICAgIGNvbnN0IGxpbmVzID0gZ3VuemlwU3luYyhvYmplY3QuYnl0ZXMsIHsgbWF4T3V0cHV0TGVuZ3RoOiA0MTk0MzA0IH0pLnRvU3RyaW5nKCkudHJpbSgpLnNwbGl0KCdcbicpLm1hcChKU09OLnBhcnNlKTsKICAgIGZvciAoY29uc3QgbGluZSBvZiBsaW5lcykgewogICAgICBkZW1hbmQocGxhbi5kZXZpY2VzLmluY2x1ZGVzKGxpbmUuZGV2aWNlSWQpLCAnQVJDSElWRV9ERVZJQ0VfU0NPUEVfTUlTTUFUQ0gnKTsKICAgICAgY29uc3Qgcm93ID0gcGxhbi5vdXRib3guZmluZCgocikgPT4gci5pZCA9PT0gbGluZS5ldmVudElkKSwKICAgICAgICBwdWJsaXNoZWQgPSBwbGFuLnB1Ymxpc2hlZC5maW5kKChyKSA9PiByLmRldmljZUlkID09PSBsaW5lLmRldmljZUlkICYmIHIubWVzc2FnZUlkID09PSBsaW5lLm1lc3NhZ2VJZCk7CiAgICAgIGRlbWFuZCgKICAgICAgICByb3cgJiYKICAgICAgICAgIHB1Ymxpc2hlZCAmJgogICAgICAgICAgcm93LnJhd0JvZHlTaGEyNTYgPT09IGhhc2gobGluZS5yYXdCb2R5KSAmJgogICAgICAgICAgcHVibGlzaGVkLnBheWxvYWRTaGEyNTYgPT09IGhhc2goY2Fub25pY2FsKGxpbmUucGF5bG9hZCkpICYmCiAgICAgICAgICBKU09OLnN0cmluZ2lmeShKU09OLnBhcnNlKGxpbmUucmF3Qm9keSkubWV0YSkgPT09IEpTT04uc3RyaW5naWZ5KGxpbmUucGF5bG9hZC5tZXRhKSwKICAgICAgICAnQVJDSElWRV9PUklHSU5BTF9CWVRFU19NSVNNQVRDSCcsCiAgICAgICk7CiAgICAgIGRlbWFuZCghZm91bmQuaGFzKGxpbmUubWVzc2FnZUlkKSwgJ0RVUExJQ0FURV9BUkNISVZFX01FU1NBR0UnKTsKICAgICAgZm91bmQuYWRkKGxpbmUubWVzc2FnZUlkKTsKICAgICAgY2hlY2tzLnB1c2goewogICAgICAgIGlkOiAnYXJjaGl2ZS1vcmlnaW5hbC0nICsgbGluZS5ldmVudElkLAogICAgICAgIHJlc3VsdDogJ1BBU1MnLAogICAgICAgIG9iamVjdEtleTogb2JqZWN0LmtleSwKICAgICAgICBldmVudElkOiBsaW5lLmV2ZW50SWQsCiAgICAgICAgcmF3Qm9keVNoYTI1NjogaGFzaChsaW5lLnJhd0JvZHkpLAogICAgICAgIHBheWxvYWRTaGEyNTY6IGhhc2goY2Fub25pY2FsKGxpbmUucGF5bG9hZCkpLAogICAgICB9KTsKICAgIH0KICAgIGFyY2hpdmVPYmplY3RzLnB1c2goeyBrZXk6IG9iamVjdC5rZXksIGNvbXByZXNzZWRTaGEyNTY6IGhhc2gob2JqZWN0LmJ5dGVzKSwgcmVjb3JkczogbGluZXMubGVuZ3RoIH0pOwogIH0KICBkZW1hbmQoCiAgICBwbGFuLnB1Ymxpc2hlZC5maWx0ZXIoKHApID0+IHAudHlwZSA9PT0gJ3RlbGVtZXRyeScpLmV2ZXJ5KChwKSA9PiBmb3VuZC5oYXMocC5tZXNzYWdlSWQpKSwKICAgICdURUxFTUVUUllfQVJDSElWRV9NSVNTSU5HJywKICApOwogIHJldHVybiB7CiAgICBzY2hlbWE6ICdmZHAtcWEwOS1hcmNoaXZlLXByb2JlL3YxJywKICAgIGNvbXBsZXRlZDogdHJ1ZSwKICAgIGNoZWNrcywKICAgIGFyY2hpdmVPYmplY3RzLAogICAgYXJjaGl2ZWRNZXNzYWdlczogZm91bmQuc2l6ZSwKICAgIGFsbFRlbGVtZXRyeUFyY2hpdmVkOiB0cnVlLAogIH07Cn0K",
+        "planHash": "0f67ed157d3fc14fa7bd063baeb1ebb5c31b599d96c2ca1eb76646298f600c75",
+        "plan": {
+          "prefix": "qa09-bfec7eddec2fcc1b",
+          "devices": [
+            "qa09-bfec7eddec2fcc1b-01",
+            "qa09-bfec7eddec2fcc1b-02",
+            "qa09-bfec7eddec2fcc1b-03",
+            "qa09-bfec7eddec2fcc1b-04",
+            "qa09-bfec7eddec2fcc1b-05",
+            "qa09-bfec7eddec2fcc1b-06",
+            "qa09-bfec7eddec2fcc1b-07",
+            "qa09-bfec7eddec2fcc1b-08",
+            "qa09-bfec7eddec2fcc1b-09",
+            "qa09-bfec7eddec2fcc1b-10"
+          ],
+          "customers": [
+            "187ce1fc-9017-4c60-85f3-baba876b7db4",
+            "eacecde5-f0f1-4d3a-a2fb-6e725778a8bf"
+          ],
+          "published": [
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-06",
+              "type": "heartbeat",
+              "seq": 1,
+              "messageId": "HEARTBEAT-55B366B7-1",
+              "bodySha256": "0da7e29951de1ef801a182302313519191a8a4e2c97b5ba345ff96f1cff306e1",
+              "payloadSha256": "d9778d0d8e93d94415f7e1b13912500cf0b876ebed8e657641e174b813b64989"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-07",
+              "type": "heartbeat",
+              "seq": 1,
+              "messageId": "HEARTBEAT-A60D11F2-1",
+              "bodySha256": "78e293202806a29d60f747ad87285163182bd9eca9db1c919cea35c7f6042ad9",
+              "payloadSha256": "69c7f70dd4ad01e188b826b78d12f0ee3cdb30e4b82f63bb044b537a1997672d"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-02",
+              "type": "heartbeat",
+              "seq": 1,
+              "messageId": "HEARTBEAT-2F0B7F01-1",
+              "bodySha256": "87adde4d7c1b9c9f98b7aa64bf1955215490725b658af2e6ab935ec513f9ac1e",
+              "payloadSha256": "b3ef4c30fd546968125268890d0a36c8545f6a657af1b3e01adc6a3ecf1e0ed3"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-10",
+              "type": "heartbeat",
+              "seq": 1,
+              "messageId": "HEARTBEAT-36D0C773-1",
+              "bodySha256": "74629a4f44753302c237d57ad9e6adeba6dbd9df0b5c54c27642196e04abcd0c",
+              "payloadSha256": "88ca4c97a402b7e376579861e46e3ade96adec138cc8d0c821e0f8b45708daa4"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-03",
+              "type": "heartbeat",
+              "seq": 1,
+              "messageId": "HEARTBEAT-30546E3F-1",
+              "bodySha256": "dd069baa8b12ef1d1478f6aa6acb8398c581403c9583283743d5242beff8214c",
+              "payloadSha256": "3134afeffe5e262a65999a6fb2c4e4317835ab8d03a372687f6790cf9c5e9f63"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-08",
+              "type": "heartbeat",
+              "seq": 1,
+              "messageId": "HEARTBEAT-FD7C1214-1",
+              "bodySha256": "b1f5c5f6e3f98f72fb8a6322256823775eead4680c67b667008d01ff3a20c722",
+              "payloadSha256": "a35f77d79548cf5ed3eb05ae6b5bfee7b5528af244f6634f3e05e7d865995ca3"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-05",
+              "type": "heartbeat",
+              "seq": 1,
+              "messageId": "HEARTBEAT-C1BE9EF7-1",
+              "bodySha256": "9cbee3155056becb600b610c8e19f34e5e95b1e0091f48b44646c965829c65b1",
+              "payloadSha256": "8011257c6e156a7b5e5552c0580e87f3f0e8c56d3adb85a56ac3cc3bcf3dbb66"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-04",
+              "type": "heartbeat",
+              "seq": 1,
+              "messageId": "HEARTBEAT-B4D2672E-1",
+              "bodySha256": "7fc3ef5cf8d956e3517e286c18adf1c7b1addd2b3406a98eeeb9cbc91f1085d4",
+              "payloadSha256": "59b6ace03abdcc1446d86315cd4750f41f5551b38f8f65cc8f6d75cb883aea67"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-09",
+              "type": "heartbeat",
+              "seq": 1,
+              "messageId": "HEARTBEAT-63B9CACD-1",
+              "bodySha256": "393298b6d62a152d856d65c6488ba80365576d293f7809794104be8b9abe79b4",
+              "payloadSha256": "b95a1eb4b5e6b47984e51d38c9c2a8da2556ac0f4539a3af1d2b5be54c318065"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-01",
+              "type": "heartbeat",
+              "seq": 1,
+              "messageId": "HEARTBEAT-CB47B304-1",
+              "bodySha256": "a631a69640610faff6e679451ed378f42160627c340a10af4aaa42be7f2be999",
+              "payloadSha256": "56928b3b1fdd74283862651b4f0b73816040ec6901d5f954415403809b73463b"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-01",
+              "type": "telemetry",
+              "seq": 1,
+              "messageId": "TELEMETRY-CB47B304-1",
+              "bodySha256": "fe6139dd1fea565414d37651612de20a6ffe2117140cfa7aabccb6a532f297d8",
+              "payloadSha256": "26f5d36ade126b734c3920d330d0aaf020f8d1c7475215ce82fbf7becbfff7ad"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-01",
+              "type": "telemetry",
+              "seq": 2,
+              "messageId": "TELEMETRY-CB47B304-2",
+              "bodySha256": "33d61cbbb272ac9475f8ea8f0b67cde075a093cba18b8ceddd972049f6992f46",
+              "payloadSha256": "3dc30a1d9fbf4ccf34f2fa738b43ebfd7d76b5c772f73648f28a9a49c3643e0d"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-02",
+              "type": "telemetry",
+              "seq": 1,
+              "messageId": "TELEMETRY-2F0B7F01-1",
+              "bodySha256": "cf74d8c2fa677623ef3b4710e4cf14bc1b84ea02969e2c12cd83af46bd7b29ac",
+              "payloadSha256": "50e35e01b7bad92f78b6f4eb2fde923122a54c0311d2ef0215dad159e3bd84ca"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-02",
+              "type": "telemetry",
+              "seq": 2,
+              "messageId": "TELEMETRY-2F0B7F01-2",
+              "bodySha256": "d89f9a49d1cf2dd0c59c4f142b9aadf4a76b2f906769f0ff0f6e13c799927f01",
+              "payloadSha256": "20f5435d0c40dbcaf80bce20191869df6bf255e80d1a2196283df3cd296b4910"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-03",
+              "type": "telemetry",
+              "seq": 1,
+              "messageId": "TELEMETRY-30546E3F-1",
+              "bodySha256": "89c4290bb71c9229277ff0c669391b8922f089fa68d54c4d4c777b18ca5780cc",
+              "payloadSha256": "040ac4555f2ac4c3e8ab4c2f669747ab93123522589ce1cc37c390a1b4ffa7e8"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-03",
+              "type": "telemetry",
+              "seq": 2,
+              "messageId": "TELEMETRY-30546E3F-2",
+              "bodySha256": "a2b97b03bc83dd4008d0ba1936ef38e577df81563f75f64c07dca53f1a4f4b71",
+              "payloadSha256": "3fd76a13f7afebaf3b0a9601e7bffaf8d48be41e5fadabec2c1ceda695aeb8c3"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-04",
+              "type": "telemetry",
+              "seq": 1,
+              "messageId": "TELEMETRY-B4D2672E-1",
+              "bodySha256": "ac77a5d773bc007d9fc27dd428e49cf4e389ee85df37f655fa80f058428e6ac7",
+              "payloadSha256": "f8742dff3abb71a3e83e0cc6647f230ccbd76712c323534efff34b6ed1f2c425"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-04",
+              "type": "telemetry",
+              "seq": 2,
+              "messageId": "TELEMETRY-B4D2672E-2",
+              "bodySha256": "425af79b0b47649dd4cca92e20e5feb29dfcf58bb061203d13928c3e96a8fd8d",
+              "payloadSha256": "92077be9b29733acc53a8ab44d716abde39a0fdad8e7cbca0c2e3a6fde90c090"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-05",
+              "type": "telemetry",
+              "seq": 1,
+              "messageId": "TELEMETRY-C1BE9EF7-1",
+              "bodySha256": "caee1aeb7d89f15f57e37fb2d4be296ced564cf595241173d4e2aa5e1bf45411",
+              "payloadSha256": "5df62ace0e3a2365bd590a0dcd2b9b61b60cb92666b53872019350e22b527e9f"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-05",
+              "type": "telemetry",
+              "seq": 2,
+              "messageId": "TELEMETRY-C1BE9EF7-2",
+              "bodySha256": "04c66028a41950c10e0052eb34d8c8ad07d21b763a2523cc8b341feea9d52472",
+              "payloadSha256": "34908f8d49f0c8e0f67f545eacbf5998da281ff7b604adb3beda617fc3dace39"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-06",
+              "type": "telemetry",
+              "seq": 1,
+              "messageId": "TELEMETRY-55B366B7-1",
+              "bodySha256": "92a45551589b2ba374bda5f24907d740a1ad9e855e01a880d3b971561170a689",
+              "payloadSha256": "42b10cac967cb9222a7adc6ba8ef0b50a89722c6ce14382bffcd259a22fc59f8"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-06",
+              "type": "telemetry",
+              "seq": 2,
+              "messageId": "TELEMETRY-55B366B7-2",
+              "bodySha256": "95167c9d1694acc1a51daccd58b681e5aa792a9a96d4fe5c9455926fcafe5345",
+              "payloadSha256": "74653374da853a7eeeb2a9c67bc84b274bb98562f1308252ace6cc4c264cc556"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-07",
+              "type": "telemetry",
+              "seq": 1,
+              "messageId": "TELEMETRY-A60D11F2-1",
+              "bodySha256": "31f911a8affc7e49063a19faab52421c41ec02d587335cbb07eb439209fcabb1",
+              "payloadSha256": "3b63b94e6942574a4a73b414eabe37fee9ab82345df777ab019d0c377d09298f"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-07",
+              "type": "telemetry",
+              "seq": 2,
+              "messageId": "TELEMETRY-A60D11F2-2",
+              "bodySha256": "939646dc4ac6a54eab54ba09a6135cc8fb8c5d6a5d46a856d6666383608da666",
+              "payloadSha256": "b7e81c1ab19d7573be10e432c9c773e41c581e59d14ef4509fef1a7f5690ccdf"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-08",
+              "type": "telemetry",
+              "seq": 1,
+              "messageId": "TELEMETRY-FD7C1214-1",
+              "bodySha256": "b4844a2e15c7c9f8d5645d963e7d52bc29567d17f137fc010e3b08f34f26e7c7",
+              "payloadSha256": "f0c155aff9796c1fd34f5fb68d5f128a211c4b07fccc7f98ea58c1a5a959d875"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-08",
+              "type": "telemetry",
+              "seq": 2,
+              "messageId": "TELEMETRY-FD7C1214-2",
+              "bodySha256": "1a7fac9cdbc2df453463910b491d15be4d89ba2062de40b687b2b80b3df474b0",
+              "payloadSha256": "9f8d53cd110a128ae21b3c180dfaa034b8eccec9e19623cb83fcaa5a5f866008"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-09",
+              "type": "telemetry",
+              "seq": 1,
+              "messageId": "TELEMETRY-63B9CACD-1",
+              "bodySha256": "170e5a5f14936e5be758282f802841ec26991d0f09a1d6d398b6001f3bd0e7d3",
+              "payloadSha256": "e6b0030dc03944bdbd694f06dc2c450d586426a207d0e1bb7baa8a6e4045ab4a"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-09",
+              "type": "telemetry",
+              "seq": 2,
+              "messageId": "TELEMETRY-63B9CACD-2",
+              "bodySha256": "5a13238814217f3241febbfd3d83a1b818f4b8a6e58422b7da571c9458758684",
+              "payloadSha256": "1fd560d5be552140adaca3bb9ccf259ff648a8c0e4742b856b5f57a253313a1d"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-10",
+              "type": "telemetry",
+              "seq": 1,
+              "messageId": "TELEMETRY-36D0C773-1",
+              "bodySha256": "2517fcc5d018bcadc8e524f072dfdd9f786d1c9340fa9e6055ccfa82361f9cad",
+              "payloadSha256": "7e44c27a355e04192be76a1e6f525aa7d5b687422d8f8130726a640b63302e03"
+            },
+            {
+              "deviceId": "qa09-bfec7eddec2fcc1b-10",
+              "type": "telemetry",
+              "seq": 2,
+              "messageId": "TELEMETRY-36D0C773-2",
+              "bodySha256": "6c92cf2601dbd04fcec73cdeb84f1fcb1bcd6d99b463bee21308b6cdd7d33c51",
+              "payloadSha256": "416c67c6ae4cd63781d14be53b83a3995cbbb83c799074dca68a42ce21aa4c3d"
+            }
+          ],
+          "archivedKeys": [
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-0e5ccf11b027fb6b.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-1d38f20cc960237f.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-20888804f497e574.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-3f41da0413f2bfe1.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-3f9a4cb8bf63916a.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-828d58558b4c1269.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-b70c276a6e3382be.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-bbcc5ce77709c932.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-cfd2511ca48ad89e.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-db73e0eb7faf7e1e.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-109ba9f154d124a2.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-1113f571c0431eae.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-2302ee618e66304f.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-278d22987d833949.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-2ebf9fa3e68660b9.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-360244cda8bfa477.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-5c68c0e306eaac0e.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-62472047bd5ab002.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-71dd2cf63ad3b8bf.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-8f43cd5a15a9766c.json.gz"
+          ],
+          "certificateId": "ad11d02d4e711dbfbcd30953bd293b4867b5ef60181ca91f8183bf97112344a5",
+          "outbox": [
+            {
+              "id": "12af53bb-10c4-4727-b047-7d0f24f40dc0",
+              "rawBodySha256": "f21c9d6a8fbeda0917bc25afe001154f694bfc4e3f55c2a56b7828d59c99dac9"
+            },
+            {
+              "id": "193dc128-0d33-4133-ae28-b559003ff8b0",
+              "rawBodySha256": "265314ead0ba3abeed561338d953f4c12b4f3756000e8f36e195c1b8fa83b2c5"
+            },
+            {
+              "id": "358dfe8a-7c53-4f10-9822-6182e9dc2608",
+              "rawBodySha256": "dacc224187956458523ff456ee6b1fd183e5d584922259bf4c9e5f727cc47363"
+            },
+            {
+              "id": "36fd68ee-965b-4680-9d77-33133f6a3761",
+              "rawBodySha256": "a0ce21fcfa0befbb77053605fa54e7e2f4e29cc6752bfc5251a982c77470b415"
+            },
+            {
+              "id": "468877a8-fad9-4e3e-83cd-11cd55b6f6b2",
+              "rawBodySha256": "340ea0edc6112ef4bfc86111641345e1033f69e99b8aca79e4acfa23e6c26121"
+            },
+            {
+              "id": "4a234016-bfa5-460d-863e-a03bb57398b3",
+              "rawBodySha256": "979170d3eb5d0da8252b0bc62f944ac383d27184d58116cdfca3c5ceb80a83a3"
+            },
+            {
+              "id": "754d9f69-7492-4e70-a5ea-7f77d80a2031",
+              "rawBodySha256": "9efc9a981d6ea11be29961ea6dee59e69db6e7fd1dfd614f92787fa6328537ec"
+            },
+            {
+              "id": "79c64431-4b9c-40bc-83d5-225d493a330d",
+              "rawBodySha256": "32d58600503ebc1a68e49a526f3c615d5d1c5c3bc35c497642ec7d8916336a4f"
+            },
+            {
+              "id": "866bd216-d76f-436e-927d-cb710e40f3cc",
+              "rawBodySha256": "595f73351a6f2344ec03d9ada88901fa86c3636fbcc965992da1999b445943b9"
+            },
+            {
+              "id": "88246d00-a7da-409d-8829-e5f862714ab1",
+              "rawBodySha256": "e0b711314f2d31f557eef903507c2b2fc2b9fc4150d918eac24d6dfd150f23b4"
+            },
+            {
+              "id": "899cfaa2-7787-4636-9438-6931d83605df",
+              "rawBodySha256": "151016f746d6afde71c160166c1ee492f53b4cfb96bb479e981c0fbfaafc0d10"
+            },
+            {
+              "id": "958e385f-e3b2-4be3-ae80-091a9943f287",
+              "rawBodySha256": "7e7275937e8cf13445c6cf50ae23f0ebfbf700e2889623b3e0633ae59e5343bd"
+            },
+            {
+              "id": "b1b005a4-a9c9-41a2-b909-8c0b60e70a0a",
+              "rawBodySha256": "d1297df719650b4bc922344dc38dba35a5cd02d640e8fd694fe1c31557c536fe"
+            },
+            {
+              "id": "c2813446-930b-40af-8424-65f388818ac5",
+              "rawBodySha256": "1f96f28e251f0c11a33c8532038c7b7a50c8d6029330fa18576ee20680f0dd4d"
+            },
+            {
+              "id": "d07a5845-2778-4586-9415-461feed4fa75",
+              "rawBodySha256": "88bc664941c4adc6f4b90fdd1c77621a34fa0fad33fbed2875af9c0be791ebc2"
+            },
+            {
+              "id": "e53d4f03-0d6e-4fc3-a311-00db6f559de0",
+              "rawBodySha256": "a5dcaf76962ded0af35401b485f19a68614f7de870152c01f2506696f16a6ffd"
+            },
+            {
+              "id": "e8e32648-533d-4c39-8ead-680fa2d0bf43",
+              "rawBodySha256": "6b4bce6123584119441ade9d5fabeee0501e855e67255543fe6d2881f8501d14"
+            },
+            {
+              "id": "fa6ddfa0-e66d-431d-9484-3ed78870f9c2",
+              "rawBodySha256": "aa9437fc01fa0730e226c280ee6da869dd8e1a5f6b2bf4737f06ac832a2a9ba5"
+            },
+            {
+              "id": "fb7bd8c6-00c9-4f33-bce1-7588b9cc0f71",
+              "rawBodySha256": "63e1b1117b9ddc5e3909cf939abae4921675bc0dda8b5b3fea8c3444240580dc"
+            },
+            {
+              "id": "fee5a37d-73f9-4d2c-b101-87db39024293",
+              "rawBodySha256": "9a49a5908969c043c738f9a6461f1fc6319411b615676709c07ac6d09fdc6a9f"
+            }
+          ]
+        },
+        "secretValuesExported": false,
+        "iamWrites": false,
+        "cleanup": [
+          {
+            "type": "archive-reader-function-deleted",
+            "result": "PASS"
+          },
+          {
+            "type": "original-replay-role-policy-preserved",
+            "result": "PASS"
+          }
+        ],
+        "originalRolePolicyHash": "258141383af155112115056dc3bb6fc5a8cc28a480a847e5f6fcc2b37bab56d6",
+        "handlerHash": "5cc940775d7bcfcc96096de3f77f0f52f5d5b0f44569dab415053e65c6930133",
+        "handlerSourceBase64": "aW1wb3J0IHtTUVNDbGllbnQsU2VuZE1lc3NhZ2VDb21tYW5kfSBmcm9tICdAYXdzLXNkay9jbGllbnQtc3FzJzsKaW1wb3J0IHtTM0NsaWVudCxMaXN0T2JqZWN0c1YyQ29tbWFuZCxHZXRPYmplY3RDb21tYW5kfSBmcm9tICdAYXdzLXNkay9jbGllbnQtczMnOwppbXBvcnQge3JlYWRGaWxlU3luY30gZnJvbSAnbm9kZTpmcyc7IGltcG9ydCB7Y3JlYXRlSGFzaH0gZnJvbSAnbm9kZTpjcnlwdG8nOyBpbXBvcnQge3ZlcmlmeUFyY2hpdmVPYmplY3RzLHZhbGlkYXRlQXJjaGl2ZVBsYW59IGZyb20gJy4vcHJvYmUubWpzJzsKY29uc3QgY2xpZW50PW5ldyBTM0NsaWVudCh7cmVnaW9uOidhcC1zb3V0aGVhc3QtMScsbWF4QXR0ZW1wdHM6MX0pOwpleHBvcnQgY29uc3QgaGFuZGxlcj1hc3luYyBldmVudD0+e2lmKGV2ZW50Py5yZXF1ZXN0Tm9uY2UhPT0nNGNlYTE1NjNkZDgxNTU5NjM5ZGI3YWVlNDUwODJiM2YnKXJldHVybiB7Y29tcGxldGVkOmZhbHNlLGVycm9yQ29kZTonSU5WQUxJRF9SRVFVRVNUJ307CnRyeXtjb25zdCBieXRlcz1yZWFkRmlsZVN5bmMobmV3IFVSTCgnLi9zY29wZS5qc29uJyxpbXBvcnQubWV0YS51cmwpKTtpZihjcmVhdGVIYXNoKCdzaGEyNTYnKS51cGRhdGUoYnl0ZXMpLmRpZ2VzdCgnaGV4JykhPT0nMGY2N2VkMTU3ZDNmYzE0ZmE3YmQwNjNiYWViMWViYjVjMzFiNTk5ZDk2YzJjYTFlYjc2NjQ2Mjk4ZjYwMGM3NScpdGhyb3cgRXJyb3IoJ0lOVkFMSURfU0NPUEUnKTtjb25zdCBwbGFuPUpTT04ucGFyc2UoYnl0ZXMpO3ZhbGlkYXRlQXJjaGl2ZVBsYW4ocGxhbik7Y29uc3Qgb2JqZWN0cz1bXSxrZXlzPVtdOwpmb3IoY29uc3QgY3VzdG9tZXIgb2YgcGxhbi5jdXN0b21lcnMpZm9yKGNvbnN0IHR5cGUgb2YgWydoZWFydGJlYXQnLCd0ZWxlbWV0cnknXSl7bGV0IHRva2VuO2Rve2NvbnN0IHJlc3BvbnNlPWF3YWl0IGNsaWVudC5zZW5kKG5ldyBMaXN0T2JqZWN0c1YyQ29tbWFuZCh7QnVja2V0OidmZHAtdGVzdC1yYXctMDY1OTg2MDE5NTU1JyxQcmVmaXg6J3Jhdy90b3BpY190eXBlPScrdHlwZSsnL2N1c3RvbWVyX2lkPScrY3VzdG9tZXIrJy8nLENvbnRpbnVhdGlvblRva2VuOnRva2VufSkse2Fib3J0U2lnbmFsOkFib3J0U2lnbmFsLnRpbWVvdXQoMTAwMDApfSk7Zm9yKGNvbnN0IGl0ZW0gb2YgcmVzcG9uc2UuQ29udGVudHM/P1tdKWtleXMucHVzaChpdGVtLktleSk7aWYoa2V5cy5sZW5ndGg+KHBsYW4ucHJvZmlsZT09PSdRQTA3X1FVSUNLX1JFQUxfTVFUVCc/NDAwMDoyMDApKXRocm93IEVycm9yKCdMSU1JVCcpO3Rva2VuPXJlc3BvbnNlLk5leHRDb250aW51YXRpb25Ub2tlbjt9d2hpbGUodG9rZW4pO30KZm9yKGNvbnN0IGtleSBvZiBrZXlzLmZpbHRlcihrPT5wbGFuLmFyY2hpdmVkS2V5cy5pbmNsdWRlcyhrKSYmay5lbmRzV2l0aCgnLmpzb24uZ3onKSkpe2NvbnN0IHJlc3BvbnNlPWF3YWl0IGNsaWVudC5zZW5kKG5ldyBHZXRPYmplY3RDb21tYW5kKHtCdWNrZXQ6J2ZkcC10ZXN0LXJhdy0wNjU5ODYwMTk1NTUnLEtleTprZXl9KSx7YWJvcnRTaWduYWw6QWJvcnRTaWduYWwudGltZW91dCgxMDAwMCl9KTtpZihyZXNwb25zZS5Db250ZW50TGVuZ3RoPjEwNDg1NzYpdGhyb3cgRXJyb3IoJ0xJTUlUJyk7b2JqZWN0cy5wdXNoKHtrZXksYnl0ZXM6QnVmZmVyLmZyb20oYXdhaXQgcmVzcG9uc2UuQm9keS50cmFuc2Zvcm1Ub0J5dGVBcnJheSgpKX0pO30KY29uc3QgdmVyaWZpZWQ9dmVyaWZ5QXJjaGl2ZU9iamVjdHMocGxhbixvYmplY3RzKTtjb25zdCB7Z3VuemlwU3luY309YXdhaXQgaW1wb3J0KCdub2RlOnpsaWInKTtjb25zdCBwdWI9cGxhbi5wdWJsaXNoZWQuZmluZChwPT5wLmRldmljZUlkPT09cGxhbi5kZXZpY2VzWzJdJiZwLnR5cGU9PT0ndGVsZW1ldHJ5Jyk7bGV0IHJvdztmb3IoY29uc3QgbyBvZiBvYmplY3RzKWZvcihjb25zdCBsaW5lIG9mIGd1bnppcFN5bmMoby5ieXRlcykudG9TdHJpbmcoKS50cmltKCkuc3BsaXQoJ1xuJykubWFwKEpTT04ucGFyc2UpKWlmKGxpbmUuZGV2aWNlSWQ9PT1wbGFuLmRldmljZXNbMl0mJmxpbmUubWVzc2FnZUlkPT09cHViLm1lc3NhZ2VJZClyb3c9bGluZTtpZighcm93KXRocm93IEVycm9yKCdPV05fQVJDSElWRV9NRVNTQUdFX01JU1NJTkcnKTtjb25zdCBib2R5PUpTT04ucGFyc2Uocm93LnJhd0JvZHkpO2lmKGJvZHkuaW90RGV2aWNlSWQhPT1wbGFuLmRldmljZXNbMl18fGJvZHkuaW90UHJpbmNpcGFsIT09cGxhbi5jZXJ0aWZpY2F0ZUlkfHxib2R5LmlvdFR5cGUhPT0ndGVsZW1ldHJ5J3x8Ym9keS5tZXRhLmlkIT09cHViLm1lc3NhZ2VJZCl0aHJvdyBFcnJvcignT1dOX0VOVkVMT1BFX0JJTkRJTkdfRkFJTEVEJyk7Y29uc3Qgc3FzPW5ldyBTUVNDbGllbnQoe3JlZ2lvbjonYXAtc291dGhlYXN0LTEnLG1heEF0dGVtcHRzOjF9KTtjb25zdCBzZW50PWF3YWl0IHNxcy5zZW5kKG5ldyBTZW5kTWVzc2FnZUNvbW1hbmQoe1F1ZXVlVXJsOidodHRwczovL3Nxcy5hcC1zb3V0aGVhc3QtMS5hbWF6b25hd3MuY29tLzA2NTk4NjAxOTU1NS9mZHAtdGVzdC1pbmdyZXNzJyxNZXNzYWdlQm9keTpyb3cucmF3Qm9keX0pLHthYm9ydFNpZ25hbDpBYm9ydFNpZ25hbC50aW1lb3V0KDE1MDAwKX0pO3JldHVybiB7Li4udmVyaWZpZWQscXVldWVSZWRlbGl2ZXJ5OntnYXRlOidTVUJNSVRURURfQ09OU1VNUFRJT05fTk9UX1BST1ZFTicsbWVzc2FnZUlkOnB1Yi5tZXNzYWdlSWQsc3FzTWVzc2FnZUlkOnNlbnQuTWVzc2FnZUlkLHJlcXVlc3RJZDpzZW50LiRtZXRhZGF0YS5yZXF1ZXN0SWQsY29uc3VtcHRpb25Qcm92ZW46ZmFsc2V9LGFyY2hpdmVLZXlzOmtleXMscmVxdWVzdE5vbmNlOic0Y2VhMTU2M2RkODE1NTk2MzlkYjdhZWU0NTA4MmIzZicsc291cmNlSGFzaDonZDdjZGFmN2IzYzQ1YjlmOWFmODU1ZDQyNGM2ZjVkMDI1NDZhYzc3NGZlZGVkNTUxZTYzNjY3Y2RiNjgwMGI4NycscGxhbkhhc2g6JzBmNjdlZDE1N2QzZmMxNGZhN2JkMDYzYmFlYjFlYmI1YzMxYjU5OWQ5NmMyY2ExZWI3NjY0NjI5OGY2MDBjNzUnfTsKfWNhdGNoKGVycm9yKXtyZXR1cm4ge2NvbXBsZXRlZDpmYWxzZSxlcnJvckNvZGU6L15bQS1aX10rJC8udGVzdChlcnJvci5tZXNzYWdlPz8nJyk/ZXJyb3IubWVzc2FnZTonQVdTX0FSQ0hJVkVfUkVBRF9GQUlMRUQnLHJlcXVlc3ROb25jZTonNGNlYTE1NjNkZDgxNTU5NjM5ZGI3YWVlNDUwODJiM2YnfTt9fTsK",
+        "codeSha256": "MVu3iUwN7SzuQAVtq5OFwmMNaNbInhdFBO2a0tQnLyg=",
+        "invocation": {
+          "StatusCode": 200,
+          "ExecutedVersion": "1"
+        },
+        "result": {
+          "schema": "fdp-qa09-archive-probe/v1",
+          "completed": true,
+          "checks": [
+            {
+              "id": "archive-original-899cfaa2-7787-4636-9438-6931d83605df",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-0e5ccf11b027fb6b.json.gz",
+              "eventId": "899cfaa2-7787-4636-9438-6931d83605df",
+              "rawBodySha256": "151016f746d6afde71c160166c1ee492f53b4cfb96bb479e981c0fbfaafc0d10",
+              "payloadSha256": "040ac4555f2ac4c3e8ab4c2f669747ab93123522589ce1cc37c390a1b4ffa7e8"
+            },
+            {
+              "id": "archive-original-88246d00-a7da-409d-8829-e5f862714ab1",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-1d38f20cc960237f.json.gz",
+              "eventId": "88246d00-a7da-409d-8829-e5f862714ab1",
+              "rawBodySha256": "e0b711314f2d31f557eef903507c2b2fc2b9fc4150d918eac24d6dfd150f23b4",
+              "payloadSha256": "26f5d36ade126b734c3920d330d0aaf020f8d1c7475215ce82fbf7becbfff7ad"
+            },
+            {
+              "id": "archive-original-fee5a37d-73f9-4d2c-b101-87db39024293",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-20888804f497e574.json.gz",
+              "eventId": "fee5a37d-73f9-4d2c-b101-87db39024293",
+              "rawBodySha256": "9a49a5908969c043c738f9a6461f1fc6319411b615676709c07ac6d09fdc6a9f",
+              "payloadSha256": "3dc30a1d9fbf4ccf34f2fa738b43ebfd7d76b5c772f73648f28a9a49c3643e0d"
+            },
+            {
+              "id": "archive-original-36fd68ee-965b-4680-9d77-33133f6a3761",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-3f41da0413f2bfe1.json.gz",
+              "eventId": "36fd68ee-965b-4680-9d77-33133f6a3761",
+              "rawBodySha256": "a0ce21fcfa0befbb77053605fa54e7e2f4e29cc6752bfc5251a982c77470b415",
+              "payloadSha256": "5df62ace0e3a2365bd590a0dcd2b9b61b60cb92666b53872019350e22b527e9f"
+            },
+            {
+              "id": "archive-original-c2813446-930b-40af-8424-65f388818ac5",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-3f9a4cb8bf63916a.json.gz",
+              "eventId": "c2813446-930b-40af-8424-65f388818ac5",
+              "rawBodySha256": "1f96f28e251f0c11a33c8532038c7b7a50c8d6029330fa18576ee20680f0dd4d",
+              "payloadSha256": "3fd76a13f7afebaf3b0a9601e7bffaf8d48be41e5fadabec2c1ceda695aeb8c3"
+            },
+            {
+              "id": "archive-original-79c64431-4b9c-40bc-83d5-225d493a330d",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-828d58558b4c1269.json.gz",
+              "eventId": "79c64431-4b9c-40bc-83d5-225d493a330d",
+              "rawBodySha256": "32d58600503ebc1a68e49a526f3c615d5d1c5c3bc35c497642ec7d8916336a4f",
+              "payloadSha256": "50e35e01b7bad92f78b6f4eb2fde923122a54c0311d2ef0215dad159e3bd84ca"
+            },
+            {
+              "id": "archive-original-e8e32648-533d-4c39-8ead-680fa2d0bf43",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-b70c276a6e3382be.json.gz",
+              "eventId": "e8e32648-533d-4c39-8ead-680fa2d0bf43",
+              "rawBodySha256": "6b4bce6123584119441ade9d5fabeee0501e855e67255543fe6d2881f8501d14",
+              "payloadSha256": "34908f8d49f0c8e0f67f545eacbf5998da281ff7b604adb3beda617fc3dace39"
+            },
+            {
+              "id": "archive-original-358dfe8a-7c53-4f10-9822-6182e9dc2608",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-bbcc5ce77709c932.json.gz",
+              "eventId": "358dfe8a-7c53-4f10-9822-6182e9dc2608",
+              "rawBodySha256": "dacc224187956458523ff456ee6b1fd183e5d584922259bf4c9e5f727cc47363",
+              "payloadSha256": "92077be9b29733acc53a8ab44d716abde39a0fdad8e7cbca0c2e3a6fde90c090"
+            },
+            {
+              "id": "archive-original-4a234016-bfa5-460d-863e-a03bb57398b3",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-cfd2511ca48ad89e.json.gz",
+              "eventId": "4a234016-bfa5-460d-863e-a03bb57398b3",
+              "rawBodySha256": "979170d3eb5d0da8252b0bc62f944ac383d27184d58116cdfca3c5ceb80a83a3",
+              "payloadSha256": "f8742dff3abb71a3e83e0cc6647f230ccbd76712c323534efff34b6ed1f2c425"
+            },
+            {
+              "id": "archive-original-d07a5845-2778-4586-9415-461feed4fa75",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-db73e0eb7faf7e1e.json.gz",
+              "eventId": "d07a5845-2778-4586-9415-461feed4fa75",
+              "rawBodySha256": "88bc664941c4adc6f4b90fdd1c77621a34fa0fad33fbed2875af9c0be791ebc2",
+              "payloadSha256": "20f5435d0c40dbcaf80bce20191869df6bf255e80d1a2196283df3cd296b4910"
+            },
+            {
+              "id": "archive-original-12af53bb-10c4-4727-b047-7d0f24f40dc0",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-109ba9f154d124a2.json.gz",
+              "eventId": "12af53bb-10c4-4727-b047-7d0f24f40dc0",
+              "rawBodySha256": "f21c9d6a8fbeda0917bc25afe001154f694bfc4e3f55c2a56b7828d59c99dac9",
+              "payloadSha256": "3b63b94e6942574a4a73b414eabe37fee9ab82345df777ab019d0c377d09298f"
+            },
+            {
+              "id": "archive-original-866bd216-d76f-436e-927d-cb710e40f3cc",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-1113f571c0431eae.json.gz",
+              "eventId": "866bd216-d76f-436e-927d-cb710e40f3cc",
+              "rawBodySha256": "595f73351a6f2344ec03d9ada88901fa86c3636fbcc965992da1999b445943b9",
+              "payloadSha256": "416c67c6ae4cd63781d14be53b83a3995cbbb83c799074dca68a42ce21aa4c3d"
+            },
+            {
+              "id": "archive-original-b1b005a4-a9c9-41a2-b909-8c0b60e70a0a",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-2302ee618e66304f.json.gz",
+              "eventId": "b1b005a4-a9c9-41a2-b909-8c0b60e70a0a",
+              "rawBodySha256": "d1297df719650b4bc922344dc38dba35a5cd02d640e8fd694fe1c31557c536fe",
+              "payloadSha256": "1fd560d5be552140adaca3bb9ccf259ff648a8c0e4742b856b5f57a253313a1d"
+            },
+            {
+              "id": "archive-original-193dc128-0d33-4133-ae28-b559003ff8b0",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-278d22987d833949.json.gz",
+              "eventId": "193dc128-0d33-4133-ae28-b559003ff8b0",
+              "rawBodySha256": "265314ead0ba3abeed561338d953f4c12b4f3756000e8f36e195c1b8fa83b2c5",
+              "payloadSha256": "9f8d53cd110a128ae21b3c180dfaa034b8eccec9e19623cb83fcaa5a5f866008"
+            },
+            {
+              "id": "archive-original-754d9f69-7492-4e70-a5ea-7f77d80a2031",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-2ebf9fa3e68660b9.json.gz",
+              "eventId": "754d9f69-7492-4e70-a5ea-7f77d80a2031",
+              "rawBodySha256": "9efc9a981d6ea11be29961ea6dee59e69db6e7fd1dfd614f92787fa6328537ec",
+              "payloadSha256": "b7e81c1ab19d7573be10e432c9c773e41c581e59d14ef4509fef1a7f5690ccdf"
+            },
+            {
+              "id": "archive-original-468877a8-fad9-4e3e-83cd-11cd55b6f6b2",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-360244cda8bfa477.json.gz",
+              "eventId": "468877a8-fad9-4e3e-83cd-11cd55b6f6b2",
+              "rawBodySha256": "340ea0edc6112ef4bfc86111641345e1033f69e99b8aca79e4acfa23e6c26121",
+              "payloadSha256": "f0c155aff9796c1fd34f5fb68d5f128a211c4b07fccc7f98ea58c1a5a959d875"
+            },
+            {
+              "id": "archive-original-958e385f-e3b2-4be3-ae80-091a9943f287",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-5c68c0e306eaac0e.json.gz",
+              "eventId": "958e385f-e3b2-4be3-ae80-091a9943f287",
+              "rawBodySha256": "7e7275937e8cf13445c6cf50ae23f0ebfbf700e2889623b3e0633ae59e5343bd",
+              "payloadSha256": "e6b0030dc03944bdbd694f06dc2c450d586426a207d0e1bb7baa8a6e4045ab4a"
+            },
+            {
+              "id": "archive-original-fa6ddfa0-e66d-431d-9484-3ed78870f9c2",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-62472047bd5ab002.json.gz",
+              "eventId": "fa6ddfa0-e66d-431d-9484-3ed78870f9c2",
+              "rawBodySha256": "aa9437fc01fa0730e226c280ee6da869dd8e1a5f6b2bf4737f06ac832a2a9ba5",
+              "payloadSha256": "42b10cac967cb9222a7adc6ba8ef0b50a89722c6ce14382bffcd259a22fc59f8"
+            },
+            {
+              "id": "archive-original-e53d4f03-0d6e-4fc3-a311-00db6f559de0",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-71dd2cf63ad3b8bf.json.gz",
+              "eventId": "e53d4f03-0d6e-4fc3-a311-00db6f559de0",
+              "rawBodySha256": "a5dcaf76962ded0af35401b485f19a68614f7de870152c01f2506696f16a6ffd",
+              "payloadSha256": "74653374da853a7eeeb2a9c67bc84b274bb98562f1308252ace6cc4c264cc556"
+            },
+            {
+              "id": "archive-original-fb7bd8c6-00c9-4f33-bce1-7588b9cc0f71",
+              "result": "PASS",
+              "objectKey": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-8f43cd5a15a9766c.json.gz",
+              "eventId": "fb7bd8c6-00c9-4f33-bce1-7588b9cc0f71",
+              "rawBodySha256": "63e1b1117b9ddc5e3909cf939abae4921675bc0dda8b5b3fea8c3444240580dc",
+              "payloadSha256": "7e44c27a355e04192be76a1e6f525aa7d5b687422d8f8130726a640b63302e03"
+            }
+          ],
+          "archiveObjects": [
+            {
+              "key": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-0e5ccf11b027fb6b.json.gz",
+              "compressedSha256": "3ef3c4d060b921756106ebddb680e5ebf9781c4c80c3aed3c71a501ea008c03b",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-1d38f20cc960237f.json.gz",
+              "compressedSha256": "fbaa5c01749451e0a200a15ca7e83e96f1014da0e7f0a3ea52a53cead20dbaf1",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-20888804f497e574.json.gz",
+              "compressedSha256": "33b25688f2cf3ff4fd4c487da9ed90ccb0b87a850042bd5b0531998c2b2b71e3",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-3f41da0413f2bfe1.json.gz",
+              "compressedSha256": "95111dbd2e6f6710892ebdb08691be65464efd0b52e10285983015bc0ab4ad3c",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-3f9a4cb8bf63916a.json.gz",
+              "compressedSha256": "fd5aaa779169a6fa3c944c353b62389845c2d76a9612ff3b95084fe0b86d2242",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-828d58558b4c1269.json.gz",
+              "compressedSha256": "0c2200c3e3ed1a4b4495c49d821367fbd7d2f5d26cdda7238605ff2d3b91db75",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-b70c276a6e3382be.json.gz",
+              "compressedSha256": "9ba6cb65455a2c52dca7272d2111d3204a66b29f996bfdbd552a974dfcea7665",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-bbcc5ce77709c932.json.gz",
+              "compressedSha256": "b693c068bb3913c09bd2cb7f43a1e766d9796fbfd6fc98e302ce05fc89330299",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-cfd2511ca48ad89e.json.gz",
+              "compressedSha256": "2a0d943fb79ba7f07cf355fd26c0615ea600422913bc18fdc45fa52bc4d2227c",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-db73e0eb7faf7e1e.json.gz",
+              "compressedSha256": "a7490afc00b5fd4aa41f0e5db4ab35bd5818503bda99ba0fefd1690f32f14be8",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-109ba9f154d124a2.json.gz",
+              "compressedSha256": "45ae546b3f2d88ce9c152d916947d2b573d3afc7ea195b59bba7a460fb215036",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-1113f571c0431eae.json.gz",
+              "compressedSha256": "b3b22e177bc385a1b13092afc0e37474e586e1dd498a6550afcdfda24d4afa0d",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-2302ee618e66304f.json.gz",
+              "compressedSha256": "822b665362f9a6159c0682c6737b9ba7f678c5a6b36abbd9078a6a93ef9abf23",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-278d22987d833949.json.gz",
+              "compressedSha256": "04824a1647bd27d48849d6359f602ca15d5cfdf62561b16e9dd83320b6486ecb",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-2ebf9fa3e68660b9.json.gz",
+              "compressedSha256": "aa9e6877c37701952bcbec18e179d06ea84c5ff1f1b4939dd426c682fbd9ec51",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-360244cda8bfa477.json.gz",
+              "compressedSha256": "d33fcae97074136bf615907a44be0d50e5cb2cb377323014843219d874d48bbe",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-5c68c0e306eaac0e.json.gz",
+              "compressedSha256": "284d500ad30a8afbc62f29d5edebacf750785b5a3b2379b8e18e110db6dd4b7f",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-62472047bd5ab002.json.gz",
+              "compressedSha256": "b3363b0a10e726fe9259cb14fd35655f403d1cb9187fb8b6e7cd60d84e62b875",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-71dd2cf63ad3b8bf.json.gz",
+              "compressedSha256": "0a6e628322102686103ceaf53eb8bd7034b06b11970a2009fbd042abf56328ea",
+              "records": 1
+            },
+            {
+              "key": "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-8f43cd5a15a9766c.json.gz",
+              "compressedSha256": "13d09be8802411e566515dfddca67f2b42483a1288c0449dce198c5d942cfaf8",
+              "records": 1
+            }
+          ],
+          "archivedMessages": 20,
+          "allTelemetryArchived": true,
+          "queueRedelivery": {
+            "gate": "SUBMITTED_CONSUMPTION_NOT_PROVEN",
+            "messageId": "TELEMETRY-30546E3F-1",
+            "sqsMessageId": "70d8b425-0955-41e6-8f69-55dd7aa86631",
+            "requestId": "0f3c74d7-f078-5c17-b7eb-17ed5350bbbc",
+            "consumptionProven": false
+          },
+          "archiveKeys": [
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-0128b443a46b3e8e.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-0128b443a46b3e8e.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-0caa7b44fcbd1476.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-0caa7b44fcbd1476.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-0e5ccf11b027fb6b.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-0e5ccf11b027fb6b.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-112905004165dd91.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-112905004165dd91.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-14f09d5a5513e411.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-14f09d5a5513e411.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-1d38f20cc960237f.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-1d38f20cc960237f.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-1e8ce18143909a1a.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-1e8ce18143909a1a.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-20888804f497e574.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-20888804f497e574.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-260a2f96bad84e64.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-260a2f96bad84e64.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-270398512390b214.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-270398512390b214.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-3311eb57a6f058cc.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-3311eb57a6f058cc.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-3f41da0413f2bfe1.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-3f41da0413f2bfe1.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-3f9a4cb8bf63916a.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-3f9a4cb8bf63916a.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-4b10f251cac1d4c2.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-4b10f251cac1d4c2.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-4ca3f7cab9b76903.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-4ca3f7cab9b76903.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-56043d5bc0dcede3.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-56043d5bc0dcede3.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-79fb2da1def29ebb.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-79fb2da1def29ebb.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-7a7b68655cd4a240.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-7a7b68655cd4a240.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-7c1470230bdb19e8.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-7c1470230bdb19e8.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-828d58558b4c1269.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-828d58558b4c1269.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-a5ad2d37f9364f3d.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-a5ad2d37f9364f3d.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-b70c276a6e3382be.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-b70c276a6e3382be.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-bbcc5ce77709c932.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-bbcc5ce77709c932.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-bdb4f9f84b60b52b.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-bdb4f9f84b60b52b.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-c12de8ad7bb7404a.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-c12de8ad7bb7404a.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-c7128e9dbe49f436.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-c7128e9dbe49f436.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-cfd2511ca48ad89e.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-cfd2511ca48ad89e.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-db73e0eb7faf7e1e.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-db73e0eb7faf7e1e.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-e49e7bebd6927d25.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-e49e7bebd6927d25.manifest.json",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-ee61a324757b650d.json.gz",
+            "raw/topic_type=telemetry/customer_id=187ce1fc-9017-4c60-85f3-baba876b7db4/year=2026/month=10/day=03/hour=06/part-ee61a324757b650d.manifest.json",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-109ba9f154d124a2.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-109ba9f154d124a2.manifest.json",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-1113f571c0431eae.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-1113f571c0431eae.manifest.json",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-2302ee618e66304f.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-2302ee618e66304f.manifest.json",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-278d22987d833949.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-278d22987d833949.manifest.json",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-2ebf9fa3e68660b9.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-2ebf9fa3e68660b9.manifest.json",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-360244cda8bfa477.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-360244cda8bfa477.manifest.json",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-5c68c0e306eaac0e.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-5c68c0e306eaac0e.manifest.json",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-62472047bd5ab002.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-62472047bd5ab002.manifest.json",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-71dd2cf63ad3b8bf.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-71dd2cf63ad3b8bf.manifest.json",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-8f43cd5a15a9766c.json.gz",
+            "raw/topic_type=telemetry/customer_id=eacecde5-f0f1-4d3a-a2fb-6e725778a8bf/year=2026/month=10/day=03/hour=06/part-8f43cd5a15a9766c.manifest.json"
+          ],
+          "requestNonce": "4cea1563dd81559639db7aee45082b3f",
+          "sourceHash": "d7cdaf7b3c45b9f9af855d424c6f5d02546ac774feded551e63667cdb6800b87",
+          "planHash": "0f67ed157d3fc14fa7bd063baeb1ebb5c31b599d96c2ca1eb76646298f600c75"
+        },
+        "finishedAt": "2026-10-03T06:30:12.729Z"
+      }
+    },
+    "capacityPlanning": [
+      {
+        "name": "current",
+        "gate": "FAIL",
+        "ordinarySlots": 70,
+        "steadyConnections": 62,
+        "operationalReserve": 8,
+        "idleOverlapReserve": 10,
+        "requiredSlots": 80,
+        "headroom": -10,
+        "scope": "PLANNING_ARITHMETIC_NOT_RUNTIME_CAPACITY_ACCEPTANCE",
+        "functions": [
+          {
+            "name": "fdp-test-activity-export",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-api",
+            "concurrency": 8,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-cert-package-sweeper",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-command-publisher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-command-timeout",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-device-api-handler",
+            "concurrency": 6,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-esg-export",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-ingestion",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-notification-publisher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-onboarding-api-handler",
+            "concurrency": 2,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-onboarding-deadline",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-onboarding-provisioning",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-ota-dispatcher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-outbox-publisher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-replay",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-replay-trigger-publisher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-retirement-timeout",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-summary",
+            "concurrency": 1,
+            "poolMax": 2
+          }
+        ]
+      },
+      {
+        "name": "naive-admin12-pool2",
+        "gate": "FAIL",
+        "ordinarySlots": 70,
+        "steadyConnections": 70,
+        "operationalReserve": 8,
+        "idleOverlapReserve": 10,
+        "requiredSlots": 88,
+        "headroom": -18,
+        "scope": "PLANNING_ARITHMETIC_NOT_RUNTIME_CAPACITY_ACCEPTANCE",
+        "functions": [
+          {
+            "name": "fdp-test-activity-export",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-api",
+            "concurrency": 12,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-cert-package-sweeper",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-command-publisher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-command-timeout",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-device-api-handler",
+            "concurrency": 6,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-esg-export",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-ingestion",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-notification-publisher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-onboarding-api-handler",
+            "concurrency": 2,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-onboarding-deadline",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-onboarding-provisioning",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-ota-dispatcher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-outbox-publisher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-replay",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-replay-trigger-publisher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-retirement-timeout",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-summary",
+            "concurrency": 1,
+            "poolMax": 2
+          }
+        ]
+      },
+      {
+        "name": "admin12-pool1-only",
+        "gate": "FAIL",
+        "ordinarySlots": 70,
+        "steadyConnections": 58,
+        "operationalReserve": 8,
+        "idleOverlapReserve": 10,
+        "requiredSlots": 76,
+        "headroom": -6,
+        "scope": "PLANNING_ARITHMETIC_NOT_RUNTIME_CAPACITY_ACCEPTANCE",
+        "functions": [
+          {
+            "name": "fdp-test-activity-export",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-api",
+            "concurrency": 12,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-cert-package-sweeper",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-command-publisher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-command-timeout",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-device-api-handler",
+            "concurrency": 6,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-esg-export",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-ingestion",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-notification-publisher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-onboarding-api-handler",
+            "concurrency": 2,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-onboarding-deadline",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-onboarding-provisioning",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-ota-dispatcher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-outbox-publisher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-replay",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-replay-trigger-publisher",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-retirement-timeout",
+            "concurrency": 1,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-summary",
+            "concurrency": 1,
+            "poolMax": 2
+          }
+        ]
+      },
+      {
+        "name": "admin12-pool1-and15dbworkers-pool1",
+        "gate": "PASS",
+        "ordinarySlots": 70,
+        "steadyConnections": 43,
+        "operationalReserve": 8,
+        "idleOverlapReserve": 10,
+        "requiredSlots": 61,
+        "headroom": 9,
+        "scope": "PLANNING_ARITHMETIC_NOT_RUNTIME_CAPACITY_ACCEPTANCE",
+        "functions": [
+          {
+            "name": "fdp-test-activity-export",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-api",
+            "concurrency": 12,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-cert-package-sweeper",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-command-publisher",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-command-timeout",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-device-api-handler",
+            "concurrency": 6,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-esg-export",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-ingestion",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-notification-publisher",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-onboarding-api-handler",
+            "concurrency": 2,
+            "poolMax": 2
+          },
+          {
+            "name": "fdp-test-onboarding-deadline",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-onboarding-provisioning",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-ota-dispatcher",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-outbox-publisher",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-replay",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-replay-trigger-publisher",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-retirement-timeout",
+            "concurrency": 1,
+            "poolMax": 1
+          },
+          {
+            "name": "fdp-test-summary",
+            "concurrency": 1,
+            "poolMax": 1
+          }
+        ]
+      }
+    ]
+  },
+  "cleanup": {
+    "gate": "PASS",
+    "oldOriginalParentGatePreserved": "FAIL",
+    "oldOriginalRecoveryGatePreserved": "FAIL",
+    "oldPrefix": "qa09-babf565d76d14d68",
+    "oldRawVersionsDeleted": 1920,
+    "oldDomainVersionsDeleted": 14,
+    "newPrefix": "qa09-bfec7eddec2fcc1b",
+    "newParentGate": "PASS",
+    "newScopeGate": "FAIL",
+    "newIndependentCloudAbsenceGate": "PASS",
+    "newDomainVersionsDeleted": 6
+  },
+  "formalTargetGates": "NOT_RUN_NO_RECEIPT",
+  "remainingCoverage": [
+    "Per-request Gateway integration linkage and authorized shared observability deployment",
+    "HTTP300/10-concurrency capacity acceptance",
+    "Natural Assigned to Licensed to Active runtime path and72h timeout",
+    "All valid writes and full business browser success/failure/recovery journeys",
+    "117 complete semantic behavior acceptance and narrow viewport overflow remediation",
+    "Complete security cases including correctly signed claims and media/OTA",
+    "Exact queue consumption/redelivery linkage and full reliability profile"
+  ],
+  "collectorSourceSha256": "e92b98efea0a2fff8d71534c6bf4c7d8dbe15bb6ce1ef79590a08a398231696a",
+  "bindings": [
+    {
+      "path": "docs/audit/evidence/qa-09-performance-target-2026-10-03.json",
+      "sha256": "cd3aa659ba86d5598345472a4866f49b79f924bc4f333734b9d4627eaa4f0083"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-target-2026-10-03.json.devices.json",
+      "sha256": "fdca019b8fabff71b33dd2cbf80640dc1aef5f6d614be6a935d1edad0ebb28f5"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-target-2026-10-03.json.sources.json",
+      "sha256": "8555a2155a447bd90cbb1f21f6fed28880d8ae10d411221574cffa469d189d0b"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-source-provenance-2026-10-03.json",
+      "sha256": "1d386d426246d03a740c69ee6054cc2352683de2b6e74b96302dfe96f2f2a1e9"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-target-2026-10-03.json.observe-7.recovered.json",
+      "sha256": "42916266bee1c6dec74e5b8162c3a9eb5705e87fda78d575e216ce5a6bb520c6"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-target-2026-10-03.json.mqtt-publisher.ndjson",
+      "sha256": "191f9e5385c33fbf28f10cc05baebb83cdf2631c933cc5f3982017ca1193a35a"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-cleanup-recovery-attempt5-2026-10-03.json",
+      "sha256": "5fb99e005e4601c20dda80c168962b1600d9ae1bc04796a63410d3147e52da81"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-audit-empty-2026-10-03.json",
+      "sha256": "18de9478f4870f953fb7dccdafd2062097ed4dc6554f7fc9e5b089fa82c0da8d"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-domain-cleanup-2026-10-03.json",
+      "sha256": "b0ef07808a3260261ab0f2b05e92c57f6b8d1b1ca4da037d442c97c67f5cd6bb"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json",
+      "sha256": "0c19e4758c212c4944ab25f44c347fb494e2f9519105803311e24870e7cfeb97"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.devices.json",
+      "sha256": "61504fa1fff5bfa8b16e29ae7b1148d696b2ea54f4274f190ce97c9750d16fa9"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.sources.json",
+      "sha256": "4d92dae66863bcb39f358d041f17c0fc0b50001804b920614f9df9e580f5058b"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-application-version-refresh-2026-10-03.json",
+      "sha256": "ae05992493ca0708bb11b8c2cff66ec026a384e014e92401a07470b3c149fa71"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.business-baseline.json",
+      "sha256": "b8e864b81f34a451378670f30b74341db91f1bc5fbcbf746257e1cd909df5a56"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.business-seed-active-lifecycle.json",
+      "sha256": "0894ae2ea0429ce2bfbaf78b68fd7b3d89100114bda71d045bf6bc4b163f40c1"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.business-cleanup.json",
+      "sha256": "7f31b7117058d1b19ae53680c6cc9df147249211040ffc4788ae57e2b7f398cc"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.business-audit.json",
+      "sha256": "6e4411a8641c5a3254e416b3b96b18caadaf81a57a514f17517ef4c630f27bd2"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.devices.json.seed-0.json",
+      "sha256": "7b8e372227c8ca5d14f609dc3c60a0ad684d8c172f6da8a50dbc585927a954b2"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.devices.json.observe-1.json",
+      "sha256": "0862bad2a5c063b70b1c715f2e989b49bdde3286be6952d3dc5de11773f1d50c"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.devices.json.observe-2.json",
+      "sha256": "ebcbc734561cb5a60acedbdba037674372c3e759b7f6e8a2ad935f7e562efd85"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.devices.json.observe-3.json",
+      "sha256": "ffba230b41cf17648dbb9f5b75ec2c58e67b32286465e0c717b535d1b48ec06a"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.devices.json.cleanup-4.json",
+      "sha256": "49154f72d3cd0c0c96ea18b3dc910df4c5218b7254b4ddd187c80ce7bd80aa4e"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.domain-cleanup.json",
+      "sha256": "6e4631a71b966928b583f90e8e244d0fc9baedda7455632508ddf6b25799d553"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-cloud-cleanup-verification-2026-10-03.json",
+      "sha256": "966cb5b88bd213dcacdc60a51778413ea65b86e969f403bde72d319b410e0f5d"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.slo.json",
+      "sha256": "eae3cf432966035e84ed29f71f58e456fd9e0c0d254606cf846e152027bbfdcd"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.auth-repro.json",
+      "sha256": "0a9cf4388a5744fd95808c2a1d5ed16f3d5e7c5f53dadebc20e23b27a3faa169"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.online-browser.json",
+      "sha256": "1bd9f90cf25fbcc7c430145113b0afb71e718a9d86844d07384c077fdac71c1e"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-target-2026-10-03.json.device-confirmation.json",
+      "sha256": "279694ca27670c88e06ccbe9063bebd60c93276c254e7afe15fb96aa2e07f98e"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-prototype-survey-attempt3-2026-10-03.json",
+      "sha256": "9e6349451ab2bbf670bb54d89ca70ac04ebda53eefa438c4c6773f26f8bc64b9"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-current-http-diagnostic-2026-10-03.json",
+      "sha256": "0be5dbdd6861b14b0e32a985cc7f6f7a4ca21624078863640496b68ed9bcff48"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-capacity-evaluation-2026-10-03.json",
+      "sha256": "e8a1d01f38f15db0143f8c56e78f29345a59be690f321085f1d186166eeb9dd9"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-formal-gates-2026-10-03.json",
+      "sha256": "8ffaf5d90964af705811b9cff35a89923ed21b25290003e1a1e434e70e41dcb9"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-owned-archive-redelivery-2026-10-03.json",
+      "sha256": "4d839fe5dd9783dd2b2b86f2dbe5bbf23f154340ca1f82b18a05c7e5e3f96908"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-slo-aws-archive-redelivery-2026-10-03.json",
+      "sha256": "def480b3e97120fa37ea6cb333fe57b4d55d126e675e78fd1ce8e9afd2695fcb"
+    }
+  ]
+}

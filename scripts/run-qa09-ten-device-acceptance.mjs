@@ -1,3 +1,4 @@
+import { callOwnS3Cli } from './qa09-own-s3-cli.mjs';
 import { randomBytes, createHash, X509Certificate, createPrivateKey, createPublicKey, sign } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -175,6 +176,8 @@ export async function main(output, versionPath, extension) {
     clients = [];
   let observation;
   async function api(id, method, path, expected, body, headers = {}, host = 'api.bio-nexa.com') {
+    const startedAt = new Date().toISOString(),
+      start = performance.now();
     const res = await fetch(`https://${host}${path}`, {
       method,
       headers: {
@@ -189,6 +192,11 @@ export async function main(output, versionPath, extension) {
     check(id, res.status === expected, {
       status: res.status,
       expected,
+      startedAt,
+      latencyMs: Math.round(performance.now() - start),
+      gatewayRequestId: res.headers.get('x-amzn-requestid'),
+      gatewayExtendedRequestId: res.headers.get('x-amz-apigw-id'),
+      gatewayErrorType: res.headers.get('x-amzn-errortype'),
       requestId: parsed?.meta?.requestId ?? parsed?.error?.requestId ?? res.headers.get('x-amzn-requestid'),
       errorCode: parsed?.error?.code ?? null,
     });
@@ -207,7 +215,22 @@ export async function main(output, versionPath, extension) {
     save();
     return result.result;
   }
-  const call = (client, command, input) => client.send(new command(input), { abortSignal: AbortSignal.timeout(30000) });
+  const call = (client, command, input) => {
+    if (client === s3) {
+      const actions = new Map([
+        [s3Sdk.ListObjectsV2Command, 'list-objects-v2'],
+        [s3Sdk.ListObjectVersionsCommand, 'list-object-versions'],
+        [s3Sdk.DeleteObjectsCommand, 'delete-objects'],
+        [s3Sdk.DeleteObjectCommand, 'delete-object'],
+      ]);
+      return callOwnS3Cli(
+        actions.get(command),
+        input,
+        receipt.customers.map((x) => x.id),
+      );
+    }
+    return client.send(new command(input), { abortSignal: AbortSignal.timeout(30000) });
+  };
   const refreshIdentity = async () => {
     if (!createdIdentity || browserLogin?.username !== username) throw Error('OWN_IDENTITY_REQUIRED');
     const flow = new AuthFlow({
@@ -618,6 +641,14 @@ export async function main(output, versionPath, extension) {
     console.log('Ten-device acceptance failed; cleaning exact own fixtures.');
   } finally {
     for (const c of clients) await c.endAsync(true).catch(() => {});
+    if (createdIdentity)
+      try {
+        await refreshIdentity();
+      } catch (e) {
+        receipt.cleanup.push({ type: 'identity-refresh-before-cleanup', result: 'FAIL', errorName: e.name });
+        receipt.gate = 'FAIL';
+        save();
+      }
     // Discover only certificates linked to the exact ten ledger devices, including partially-provisioned fixtures.
     if (seeded) {
       try {
@@ -660,7 +691,7 @@ export async function main(output, versionPath, extension) {
       receipt.archiveKeys = [];
       try {
         for (const c of receipt.customers) {
-          for (const type of ['heartbeat', 'telemetry']) {
+          for (const type of ['heartbeat', 'telemetry', 'ack']) {
             let continuation;
             do {
               const page = await call(s3, s3Sdk.ListObjectsV2Command, {
@@ -683,7 +714,7 @@ export async function main(output, versionPath, extension) {
       try {
         const owned = [];
         for (const c of receipt.customers)
-          for (const type of ['heartbeat', 'telemetry']) {
+          for (const type of ['heartbeat', 'telemetry', 'ack']) {
             const prefix = `raw/topic_type=${type}/customer_id=${c.id}/`;
             let marker, versionMarker;
             do {
@@ -709,7 +740,7 @@ export async function main(output, versionPath, extension) {
           demand(!result.Errors?.length, 'ARCHIVE_DELETE_PARTIAL_FAILURE');
         }
         for (const c of receipt.customers)
-          for (const type of ['heartbeat', 'telemetry']) {
+          for (const type of ['heartbeat', 'telemetry', 'ack']) {
             const result = await call(s3, s3Sdk.ListObjectVersionsCommand, {
               Bucket: 'fdp-test-raw-065986019555',
               Prefix: `raw/topic_type=${type}/customer_id=${c.id}/`,

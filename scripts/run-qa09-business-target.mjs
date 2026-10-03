@@ -8,6 +8,8 @@ if (!output || !version || origin !== 'https://admin.bio-nexa.com') throw Error(
 const paths = [
   'scripts/run-qa09-business-target.mjs',
   'scripts/qa09-business-target.mjs',
+  'scripts/qa09-performance-probes.mjs',
+  'scripts/qa09-write-boundary-probes.mjs',
   'scripts/qa09-license-lifecycle.mjs',
   'scripts/qa09-publish-scheduler.mjs',
   'scripts/qa09-db-log-frames.mjs',
@@ -19,6 +21,7 @@ const paths = [
   'scripts/run-qa09-ten-device-acceptance.mjs',
   'scripts/qa09-ten-device-db.mjs',
   'scripts/qa09-ten-device-bridge.mjs',
+  'scripts/qa09-own-s3-cli.mjs',
   'scripts/qa09-current-environment.mjs',
   'infra/environments/qa09-current-test.json',
 ];
@@ -38,7 +41,7 @@ writeFileSync(
   ) + '\n',
 );
 const parent = await main(output + '.devices.json', version, async (ctx) => {
-  await runBusinessTarget(ctx, output, { browserOrigin: origin });
+  await runBusinessTarget(ctx, output, { browserOrigin: origin, performanceProbes: true });
 });
 
 let domain;

@@ -7,7 +7,9 @@ const [parentFile, output] = process.argv.slice(2);
 const bytes = readFileSync(parentFile),
   parent = JSON.parse(bytes);
 const certificates = parent.cleanup.filter((c) => c.type === 'iot-certificate'),
-  things = parent.cleanup.filter((c) => c.type === 'iot-thing');
+  thingLedger = parent.cleanup.filter((c) => c.type === 'iot-thing'),
+  things =
+    thingLedger.length === 0 && parent.devices?.length === 10 ? parent.devices.map((id) => ({ id })) : thingLedger;
 if (
   parent.gate !== 'PASS' ||
   !parent.finishedAt ||
@@ -32,6 +34,8 @@ const r = {
   checks: [],
   gate: 'RUNNING',
   credentialsExported: false,
+  thingInventorySource: thingLedger.length ? 'DELETE_LEDGER' : 'OWN_PARENT_DEVICE_INVENTORY',
+  deleteThingLedgerClaimed: thingLedger.length === 10,
 };
 const execute = promisify(execFile);
 const aws = (args) =>

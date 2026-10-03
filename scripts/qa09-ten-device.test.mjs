@@ -247,3 +247,48 @@ test('unseeded timeout audit reads only exact prefix and cannot mutate original 
     await pg.close();
   }
 });
+
+test('active lifecycle fixture changes exactly two own states and never claims a natural path', async () => {
+  const { pg, client } = await db();
+  try {
+    await executeFixture(client, plan('business-seed-devices'));
+    const result = await executeFixture(client, plan('business-seed-active-lifecycle'));
+    assert.deepEqual(result.changedDeviceIds, plan().devices.slice(0, 2));
+    assert.match(result.fixtureMode, /NOT_NATURAL/);
+    assert.deepEqual(
+      (
+        await pg.query(
+          'SELECT lifecycle_status,count(*)::int AS n FROM devices WHERE id=ANY($1) GROUP BY lifecycle_status ORDER BY lifecycle_status',
+          [plan().devices],
+        )
+      ).rows,
+      [
+        { lifecycle_status: 'Active', n: 2 },
+        { lifecycle_status: 'Onboarded', n: 8 },
+      ],
+    );
+    assert.equal(
+      (await pg.query("SELECT lifecycle_status FROM devices WHERE id='original'")).rows[0].lifecycle_status,
+      null,
+    );
+    await assert.rejects(
+      executeFixture(client, plan('business-seed-active-lifecycle')),
+      /ACTIVE_FIXTURE_PRECONDITION_DRIFT/,
+    );
+  } finally {
+    await pg.close();
+  }
+});
+test('capacity probe executes a read-only transaction and leaves fixture and original rows unchanged', async () => {
+  const { pg, client } = await db();
+  try {
+    const before = (await pg.query('SELECT id FROM devices ORDER BY id')).rows;
+    const result = await executeFixture(client, plan('capacity-readonly'));
+    assert.equal(result.transactionReadOnly, true);
+    assert.equal(result.writes, 0);
+    assert.ok(result.settings.some((x) => x.name === 'max_connections'));
+    assert.deepEqual((await pg.query('SELECT id FROM devices ORDER BY id')).rows, before);
+  } finally {
+    await pg.close();
+  }
+});

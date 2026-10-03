@@ -1,3 +1,4 @@
+import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 import { appendFileSync, writeFileSync, readFileSync } from 'node:fs';
 import { publishScheduled } from './qa09-publish-scheduler.mjs';
 import { connectAsync } from 'mqtt';
@@ -140,11 +141,52 @@ export async function runMqttQuickTarget(ctx, db, check, output) {
     check('quick-mqtt-archives-consistent', archives.gate === 'PASS' && archives.result.archivedMessages === 920, {
       archivedMessages: archives.result.archivedMessages,
     });
+    const queueRedelivery = {
+      scope: 'OWN_PROCESSED_MESSAGE_ONLY',
+      gate: 'NOT_RUN',
+      sharedQueueConfigurationChanged: false,
+    };
+    const own = ledger.find((row) => row.type === 'telemetry' && row.deviceId === ctx.receipt.devices[0]);
+    const certificate = observed.certificates.find((row) => row.device_id === own?.deviceId);
+    try {
+      if (!own || !/^[a-f0-9]{64}$/.test(certificate?.id ?? ''))
+        throw Error('OWN_QUEUE_MESSAGE_CERTIFICATE_SCOPE_REQUIRED');
+      const body = payloads.get(
+        [...payloads.keys()].find((key) => JSON.parse(payloads.get(key)).meta.id === own.messageId),
+      );
+      if (!body || sha(body) !== own.bodySha256) throw Error('OWN_QUEUE_RAW_HASH_MISMATCH');
+      const envelope = {
+        ...JSON.parse(body),
+        iotTopic: `bnx/device/${own.deviceId}/telemetry`,
+        iotDeviceId: own.deviceId,
+        iotType: 'telemetry',
+        iotReceivedAt: Date.now(),
+        iotPrincipal: certificate.id,
+      };
+      const sqs = new SQSClient({ region: 'ap-southeast-1', credentials: ctx.credentials, maxAttempts: 1 });
+      const sent = await sqs.send(
+        new SendMessageCommand({
+          QueueUrl: 'https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-ingress',
+          MessageBody: JSON.stringify(envelope),
+        }),
+      );
+      queueRedelivery.gate = 'SUBMITTED_CONSUMPTION_NOT_PROVEN';
+      queueRedelivery.messageId = own.messageId;
+      queueRedelivery.sqsMessageId = sent.MessageId;
+      queueRedelivery.requestId = sent.$metadata.requestId;
+      queueRedelivery.payloadSha256 = own.payloadSha256;
+    } catch (e) {
+      queueRedelivery.gate = 'BLOCKED';
+      queueRedelivery.errorName = e.name;
+      queueRedelivery.errorCode = e.Code ?? e.code ?? e.name;
+    }
+    writeFileSync(output + '.queue-redelivery.json', JSON.stringify(queueRedelivery, null, 2) + '\n');
     // Full own-prefix discovery in parent finally includes every new object and version.
     ctx.receipt.archiveKeys = archives.result.archiveKeys;
     ctx.receipt.batchArchiveCleanup = true;
     return {
       profile: 'QA07_QUICK_REAL_MQTT',
+      queueRedelivery,
       plan: {
         normalSeconds: 120,
         historyExecutedSeconds: 480,

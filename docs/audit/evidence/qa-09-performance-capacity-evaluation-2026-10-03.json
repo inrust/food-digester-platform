@@ -1,0 +1,466 @@
+{
+  "task": "QA-09",
+  "scope": "FRESH_MEASURED_SETTINGS_CONSERVATIVE_CONNECTION_PLANNING",
+  "measuredSettings": [
+    {
+      "name": "max_connections",
+      "setting": "79"
+    },
+    {
+      "name": "rds.rds_reserved_connections",
+      "setting": "4"
+    },
+    {
+      "name": "reserved_connections",
+      "setting": "2"
+    },
+    {
+      "name": "superuser_reserved_connections",
+      "setting": "3"
+    }
+  ],
+  "budgetAssumesNoReservedSlotUse": true,
+  "ordinaryAdmissionLimitExperimentPerformed": false,
+  "archiveExcluded": {
+    "name": "fdp-test-archive",
+    "databaseSecretReference": null,
+    "source": "apps/ingestion-worker/src/runtime/archive-entry.ts",
+    "sourceSha256": "802e8f797d62a5de178b743515731c90927c7668b67d19f728f166d37183ee0d",
+    "configurationReadOnlyVerified": true
+  },
+  "bindings": [
+    {
+      "path": "docs/audit/evidence/qa-09-performance-capacity-readonly-2026-10-03.json",
+      "sha256": "463ff28c0f168cba4e59f5f26427b66a032589745869b578c85af0dcbdbf30d6"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-performance-current-http-diagnostic-2026-10-03.json",
+      "sha256": "0be5dbdd6861b14b0e32a985cc7f6f7a4ca21624078863640496b68ed9bcff48"
+    }
+  ],
+  "candidates": [
+    {
+      "name": "current",
+      "gate": "FAIL",
+      "ordinarySlots": 70,
+      "steadyConnections": 62,
+      "operationalReserve": 8,
+      "idleOverlapReserve": 10,
+      "requiredSlots": 80,
+      "headroom": -10,
+      "scope": "PLANNING_ARITHMETIC_NOT_RUNTIME_CAPACITY_ACCEPTANCE",
+      "functions": [
+        {
+          "name": "fdp-test-activity-export",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-api",
+          "concurrency": 8,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-cert-package-sweeper",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-command-publisher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-command-timeout",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-device-api-handler",
+          "concurrency": 6,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-esg-export",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-ingestion",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-notification-publisher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-onboarding-api-handler",
+          "concurrency": 2,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-onboarding-deadline",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-onboarding-provisioning",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-ota-dispatcher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-outbox-publisher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-replay",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-replay-trigger-publisher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-retirement-timeout",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-summary",
+          "concurrency": 1,
+          "poolMax": 2
+        }
+      ]
+    },
+    {
+      "name": "naive-admin12-pool2",
+      "gate": "FAIL",
+      "ordinarySlots": 70,
+      "steadyConnections": 70,
+      "operationalReserve": 8,
+      "idleOverlapReserve": 10,
+      "requiredSlots": 88,
+      "headroom": -18,
+      "scope": "PLANNING_ARITHMETIC_NOT_RUNTIME_CAPACITY_ACCEPTANCE",
+      "functions": [
+        {
+          "name": "fdp-test-activity-export",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-api",
+          "concurrency": 12,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-cert-package-sweeper",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-command-publisher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-command-timeout",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-device-api-handler",
+          "concurrency": 6,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-esg-export",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-ingestion",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-notification-publisher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-onboarding-api-handler",
+          "concurrency": 2,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-onboarding-deadline",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-onboarding-provisioning",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-ota-dispatcher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-outbox-publisher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-replay",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-replay-trigger-publisher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-retirement-timeout",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-summary",
+          "concurrency": 1,
+          "poolMax": 2
+        }
+      ]
+    },
+    {
+      "name": "admin12-pool1-only",
+      "gate": "FAIL",
+      "ordinarySlots": 70,
+      "steadyConnections": 58,
+      "operationalReserve": 8,
+      "idleOverlapReserve": 10,
+      "requiredSlots": 76,
+      "headroom": -6,
+      "scope": "PLANNING_ARITHMETIC_NOT_RUNTIME_CAPACITY_ACCEPTANCE",
+      "functions": [
+        {
+          "name": "fdp-test-activity-export",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-api",
+          "concurrency": 12,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-cert-package-sweeper",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-command-publisher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-command-timeout",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-device-api-handler",
+          "concurrency": 6,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-esg-export",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-ingestion",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-notification-publisher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-onboarding-api-handler",
+          "concurrency": 2,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-onboarding-deadline",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-onboarding-provisioning",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-ota-dispatcher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-outbox-publisher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-replay",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-replay-trigger-publisher",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-retirement-timeout",
+          "concurrency": 1,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-summary",
+          "concurrency": 1,
+          "poolMax": 2
+        }
+      ]
+    },
+    {
+      "name": "admin12-pool1-and15dbworkers-pool1",
+      "gate": "PASS",
+      "ordinarySlots": 70,
+      "steadyConnections": 43,
+      "operationalReserve": 8,
+      "idleOverlapReserve": 10,
+      "requiredSlots": 61,
+      "headroom": 9,
+      "scope": "PLANNING_ARITHMETIC_NOT_RUNTIME_CAPACITY_ACCEPTANCE",
+      "functions": [
+        {
+          "name": "fdp-test-activity-export",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-api",
+          "concurrency": 12,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-cert-package-sweeper",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-command-publisher",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-command-timeout",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-device-api-handler",
+          "concurrency": 6,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-esg-export",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-ingestion",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-notification-publisher",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-onboarding-api-handler",
+          "concurrency": 2,
+          "poolMax": 2
+        },
+        {
+          "name": "fdp-test-onboarding-deadline",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-onboarding-provisioning",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-ota-dispatcher",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-outbox-publisher",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-replay",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-replay-trigger-publisher",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-retirement-timeout",
+          "concurrency": 1,
+          "poolMax": 1
+        },
+        {
+          "name": "fdp-test-summary",
+          "concurrency": 1,
+          "poolMax": 1
+        }
+      ]
+    }
+  ],
+  "deploymentPerformed": false,
+  "fullQa09Accepted": false,
+  "commandEventCandidate": {
+    "publisherReservedConcurrency": 2,
+    "batchSize": 1,
+    "maxBatchingWindowSeconds": 0,
+    "additionalPool1Connection": 1,
+    "requiredSlotsIncludingReserves": 62,
+    "planningHeadroom": 8,
+    "deploymentPerformed": false
+  }
+}

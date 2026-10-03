@@ -1,0 +1,45 @@
+{
+  "scope": "QA09_PERFORMANCE_LOCAL_VALIDATION",
+  "gate": "PASS",
+  "validatedAt": "2026-10-03T06:44:49.220510+00:00",
+  "sourceHeadBeforeCommit": "fa4219a4bef99408b6168ebbe9ee2ee62e4451f5",
+  "checks": [
+    {
+      "command": "pnpm test:scripts",
+      "exitCode": 0,
+      "passed": 392,
+      "failed": 0,
+      "logSha256": "e26ce47bca96af24d01269bd050e9b1f7805db337418f4401c183018651064b3"
+    },
+    {
+      "command": "pnpm exec eslint <all changed .mjs files>",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm exec prettier --check <all changed .mjs files>",
+      "exitCode": 0
+    },
+    {
+      "command": "python3 AST parse of QA09 collectors",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm check:secrets",
+      "exitCode": 0
+    },
+    {
+      "command": "node scripts/scan-qa09-performance-evidence.mjs",
+      "exitCode": 0,
+      "files": 99,
+      "decodedSources": 74,
+      "findings": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "awsSloGate": "FAIL",
+  "fullQa09Accepted": false,
+  "formalTargetReceiptGate": "NOT_RUN_NO_RECEIPT"
+}

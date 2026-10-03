@@ -1,0 +1,29 @@
+{
+  "task": "QA-09",
+  "scope": "REVIEWABLE_PROPOSAL_NOT_APPLIED",
+  "restApiId": "ldark4ozek",
+  "stage": "test",
+  "logGroupName": "/aws/apigateway/fdp-test-admin-api-access",
+  "retentionDays": 7,
+  "requiresRegionalApiGatewayCloudWatchRole": true,
+  "observedCloudWatchRoleArn": null,
+  "authorizationRequiredForSharedChanges": true,
+  "dataTraceEnabled": false,
+  "rawBodyHeadersQueryClaimsAndFreeFormErrorsLogged": false,
+  "fields": {
+    "requestId": "$context.requestId",
+    "extendedRequestId": "$context.extendedRequestId",
+    "requestTimeEpoch": "$context.requestTimeEpoch",
+    "resourcePath": "$context.resourcePath",
+    "httpMethod": "$context.httpMethod",
+    "status": "$context.status",
+    "integrationStatus": "$context.integration.integrationStatus",
+    "functionResponseStatus": "$context.integration.status",
+    "integrationRequestId": "$context.integration.requestId",
+    "integrationLatency": "$context.integration.latency",
+    "responseLatency": "$context.responseLatency",
+    "responseType": "$context.error.responseType"
+  },
+  "correlationRequires": ["CLIENT_GATEWAY_EXTENDED_REQUEST_ID", "EXACT_ACCESS_ROW", "INTEGRATION_SERVICE_STATUS_CLASSIFICATION"],
+  "deploymentPerformed": false
+}

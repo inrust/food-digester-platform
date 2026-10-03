@@ -21,11 +21,13 @@ export function validatePlan(plan) {
       'cleanup-closed',
       'audit-empty',
       'audit-unseeded-prefix',
+      'capacity-readonly',
       'business-baseline',
       'business-cleanup',
       'business-audit',
       'business-seed-alarm',
       'business-seed-devices',
+      'business-seed-active-lifecycle',
       'business-inject-export-lease',
     ].includes(plan.action)
   )
@@ -76,6 +78,7 @@ export async function executeFixture(client, plan) {
         'audit-closed',
         'audit-empty',
         'audit-unseeded-prefix',
+        'capacity-readonly',
         'business-baseline',
         'business-audit',
       ].includes(plan.action)
@@ -103,6 +106,65 @@ export async function executeFixture(client, plan) {
       await client.query('ROLLBACK');
       committed = true;
       return { customers, devices, originalFingerprints: before, writes: 0 };
+    }
+    if (plan.action === 'capacity-readonly') {
+      const settings = (
+        await client.query(
+          "SELECT name,setting FROM pg_settings WHERE name IN('max_connections','superuser_reserved_connections','reserved_connections','rds.rds_superuser_reserved_connections','rds.rds_reserved_connections') ORDER BY name",
+        )
+      ).rows;
+      const sessions = (
+        await client.query(
+          'SELECT backend_type,state,count(*)::int AS connections FROM pg_stat_activity GROUP BY backend_type,state ORDER BY backend_type,state',
+        )
+      ).rows;
+      const readOnly = (await client.query("SELECT current_setting('transaction_read_only') AS read_only")).rows[0]
+        .read_only;
+      if (readOnly !== 'on') throw Error('CAPACITY_PROBE_NOT_READ_ONLY');
+      await client.query('ROLLBACK');
+      committed = true;
+      return {
+        scope: 'LIVE_DATABASE_CONNECTION_CAPACITY_READ_ONLY',
+        settings,
+        sessions,
+        transactionReadOnly: true,
+        writes: 0,
+        originalFingerprints: before,
+      };
+    }
+    if (plan.action === 'business-seed-active-lifecycle') {
+      for (const c of plan.customers)
+        if (
+          (
+            await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2 AND deleted_at IS NULL', [
+              c.id,
+              c.name,
+            ])
+          ).rowCount !== 1
+        )
+          throw Error('CUSTOMER_SCOPE_DRIFT');
+      const target = ids.slice(0, 2);
+      const states = (
+        await client.query('SELECT id,lifecycle_status FROM devices WHERE id=ANY($1::text[]) ORDER BY id FOR UPDATE', [
+          target,
+        ])
+      ).rows;
+      if (states.length !== 2 || states.some((x) => !['Onboarded', 'Assigned'].includes(x.lifecycle_status)))
+        throw Error('ACTIVE_FIXTURE_PRECONDITION_DRIFT');
+      const changed = await client.query(
+        "UPDATE devices SET lifecycle_status='Active',updated_at=now() WHERE id=ANY($1::text[]) AND lifecycle_status IN('Onboarded','Assigned')",
+        [target],
+      );
+      if (changed.rowCount !== 2 || JSON.stringify(before) !== JSON.stringify(await original(client, ids)))
+        throw Error('ACTIVE_FIXTURE_SCOPE_DRIFT');
+      await client.query('COMMIT');
+      committed = true;
+      return {
+        fixtureMode: 'EXACT_TWO_ACTIVE_PRECONDITION_ONLY_NOT_NATURAL_LIFECYCLE_ACCEPTANCE',
+        beforeStates: states,
+        changedDeviceIds: target,
+        originalFingerprints: before,
+      };
     }
     if (plan.action === 'business-seed-devices') {
       for (const c of plan.customers)
@@ -180,6 +242,10 @@ export async function executeFixture(client, plan) {
         if ((await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2', [c.id, c.name])).rowCount !== 1)
           throw Error('CUSTOMER_SCOPE_DRIFT');
       const scopes = [
+        ['command_acks', 'command_id IN(SELECT id FROM device_commands WHERE device_id=ANY($1::text[]))', ids],
+        ['command_attempts', 'command_id IN(SELECT id FROM device_commands WHERE device_id=ANY($1::text[]))', ids],
+        ['device_commands', 'device_id=ANY($1::text[])', ids],
+        ['device_retirements', 'device_id=ANY($1::text[])', ids],
         ['device_user_sync_receipts', 'device_id=ANY($1::text[])', ids],
         ['device_user_assignments', 'customer_id=ANY($1::text[])', customers],
         ['device_users', 'customer_id=ANY($1::text[])', customers],
@@ -489,9 +555,12 @@ export async function executeFixture(client, plan) {
       certificates,
       requests,
       jobs,
-      receipts,
+      receipts: plan.action === 'cleanup' ? [] : receipts,
       latest,
-      outbox,
+      outbox: plan.action === 'cleanup' ? [] : outbox,
+      ...(plan.action === 'cleanup'
+        ? { observedBeforeCleanupCounts: { receipts: receipts.length, outbox: outbox.length } }
+        : {}),
       telemetrySamples,
       deleted,
       originalFingerprints: after,

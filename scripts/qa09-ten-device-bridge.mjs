@@ -12,7 +12,12 @@ function aws(args, profile = 'esgiot-infra') {
   const r = spawnSync(
     'aws',
     [...args, '--profile', profile, '--region', 'ap-southeast-1', '--output', 'json', '--no-cli-pager'],
-    { encoding: 'utf8', timeout: 30000, maxBuffer: 16 * 1024 * 1024 },
+    {
+      encoding: 'utf8',
+      timeout: args[1] === 'get-log-events' ? 150000 : 30000,
+      maxBuffer: 16 * 1024 * 1024,
+      env: { ...process.env, AWS_MAX_ATTEMPTS: '1' },
+    },
   );
   if (r.status !== 0) {
     const code = r.stderr?.match(/An error occurred \(([A-Za-z0-9]+)\)/)?.[1] ?? 'CLI_FAILED';
@@ -56,18 +61,20 @@ export async function runFixture(plan, evidencePath, onProgress = () => {}) {
   const existing = aws(['codebuild', 'batch-get-projects', '--names', PROJECT]);
   if (existing.projects.length && existing.projects[0].serviceRole !== prep.project.serviceRole)
     throw Error('FIXTURE_PROJECT_ROLE_MISMATCH');
+  const reuseReviewedBuildspec = existing.projects[0]?.source?.buildspec === prep.project.source.buildspec;
   const temp = mkdtempSync(join(tmpdir(), 'qa09-fixture-'));
   try {
     const file = join(temp, 'project.json');
     const projectInput = { ...prep.project };
     if (existing.projects.length) delete projectInput.serviceRole;
     writeFileSync(file, JSON.stringify(projectInput));
-    aws([
-      'codebuild',
-      existing.projects.length ? 'update-project' : 'create-project',
-      '--cli-input-json',
-      'file://' + file,
-    ]);
+    if (!reuseReviewedBuildspec)
+      aws([
+        'codebuild',
+        existing.projects.length ? 'update-project' : 'create-project',
+        '--cli-input-json',
+        'file://' + file,
+      ]);
   } finally {
     rmSync(temp, { recursive: true });
   }
@@ -76,6 +83,16 @@ export async function runFixture(plan, evidencePath, onProgress = () => {}) {
     'start-build',
     '--project-name',
     PROJECT,
+    ...(reuseReviewedBuildspec
+      ? [
+          '--environment-variables-override',
+          JSON.stringify(
+            prep.project.environment.environmentVariables.filter((x) =>
+              ['QA09_FIXTURE_HASH', 'QA09_FIXTURE_PLAN_B64'].includes(x.name),
+            ),
+          ),
+        ]
+      : []),
     '--query',
     'build.{id:id,status:buildStatus,startTime:startTime}',
   ]);

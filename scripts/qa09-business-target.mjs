@@ -1,3 +1,5 @@
+import { runWriteBoundaryProbes } from './qa09-write-boundary-probes.mjs';
+import { runPerformanceProbes } from './qa09-performance-probes.mjs';
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -44,10 +46,27 @@ export function validateTargetStage(r, stage, required) {
   if (!r.cleanupComplete) throw Error('TARGET_EXECUTION_OR_CLEANUP_MISSING');
   return { ...validateTargetAssertions(r, stage, required), gate: 'PASS', cleanupVerified: true };
 }
+const EXECUTED_BUSINESS_SOURCES = [
+  'scripts/qa09-business-target.mjs',
+  'scripts/qa09-license-lifecycle.mjs',
+  'scripts/qa09-ten-device-db.mjs',
+  'apps/admin-web/src/router/routes.ts',
+  'packages/auth/src/permissions.ts',
+  'scripts/qa09-current-environment.mjs',
+  'infra/environments/qa09-current-test.json',
+].map((path) => {
+  const source = readFileSync(path);
+  return { path, sha256: sha(source), sourceBase64: source.toString('base64') };
+});
 export async function runBusinessTarget(
   ctx,
   output,
-  { browserOrigin = 'https://admin.bio-nexa.com', coreOnly = false, readDomains = true } = {},
+  {
+    browserOrigin = 'https://admin.bio-nexa.com',
+    coreOnly = false,
+    readDomains = true,
+    performanceProbes = false,
+  } = {},
 ) {
   assertBusinessContext(ctx.receipt);
   const { prefix, devices, customers, sourceCommit } = ctx.receipt;
@@ -80,18 +99,9 @@ export async function runBusinessTarget(
     sourceHashes: {},
     sources: [],
   };
-  for (const path of [
-    'scripts/qa09-business-target.mjs',
-    'scripts/qa09-license-lifecycle.mjs',
-    'scripts/qa09-ten-device-db.mjs',
-    'apps/admin-web/src/router/routes.ts',
-    'packages/auth/src/permissions.ts',
-    'scripts/qa09-current-environment.mjs',
-    'infra/environments/qa09-current-test.json',
-  ]) {
-    const source = readFileSync(path);
-    r.sourceHashes[path] = sha(source);
-    r.sources.push({ path, sha256: sha(source), sourceBase64: source.toString('base64') });
+  for (const source of EXECUTED_BUSINESS_SOURCES) {
+    r.sourceHashes[source.path] = source.sha256;
+    r.sources.push({ ...source });
   }
   const save = () => writeFileSync(output, JSON.stringify(r, null, 2) + '\n');
   save();
@@ -133,6 +143,7 @@ export async function runBusinessTarget(
   }
   async function api(id, role, method, path, expected, body, headers = {}) {
     await ensureSession(role);
+    const startedAt = new Date().toISOString();
     const start = performance.now();
     const res = await fetch(host + path, {
       method,
@@ -147,6 +158,10 @@ export async function runBusinessTarget(
     const data = await res.json().catch(() => null);
     check(id, (Array.isArray(expected) ? expected : [expected]).includes(res.status), {
       method,
+      startedAt,
+      gatewayRequestId: res.headers.get('x-amzn-requestid'),
+      gatewayExtendedRequestId: res.headers.get('x-amz-apigw-id'),
+      gatewayErrorType: res.headers.get('x-amzn-errortype'),
       path: path.split('?')[0],
       role: role ?? 'anonymous',
       status: res.status,
@@ -552,6 +567,33 @@ export async function runBusinessTarget(
     save();
   }
   if (!coreOnly) {
+    if (performanceProbes) {
+      stage = 'writeBoundaries';
+      const measure = (id, ok, data = {}) => {
+        r.checks.push({ id, stage, result: ok ? 'PASS' : 'FAIL', ...data });
+        save();
+      };
+      try {
+        const before = await db('business-baseline');
+        r.writeBoundaries = await runWriteBoundaryProbes(ctx, api, sessions, measure);
+        const after = await db('business-baseline');
+        measure(
+          'write-probe-no-business-side-effects',
+          JSON.stringify(before.counts) === JSON.stringify(after.counts) &&
+            JSON.stringify(before.businessFingerprints) === JSON.stringify(after.businessFingerprints),
+        );
+        r.stages.writeBoundaries =
+          r.checks.filter((x) => x.stage === stage).every((x) => x.result === 'PASS') &&
+          r.writeBoundaries.rows.every((x) => x.result === 'PASS') &&
+          r.writeBoundaries.jwt.every((x) => x.result === 'PASS')
+            ? 'PASS'
+            : 'FAIL';
+      } catch (e) {
+        r.stages.writeBoundaries = 'FAIL';
+        r.writeBoundaryFailure = { code: e.code ?? 'WRITE_PROBE_FAILED', errorName: e.name };
+        save();
+      }
+    }
     try {
       stage = 'recovery';
       const exp = (
@@ -806,6 +848,27 @@ export async function runBusinessTarget(
       r.stages.load = 'FAIL';
       r.stages.mqttLoad = 'FAIL';
       r.loadFailure = /^[\w:-]{1,150}$/.test(e.code ?? e.message) ? (e.code ?? e.message) : 'LOAD_TARGET_FAILED';
+      save();
+    }
+  }
+  if (performanceProbes && !coreOnly) {
+    stage = 'performance';
+    const measure = (id, ok, data = {}) => {
+      r.checks.push({ id, stage, result: ok ? 'PASS' : 'FAIL', ...data });
+      save();
+    };
+    try {
+      r.performance = await runPerformanceProbes(ctx, api, measure, output);
+      r.stages.performance = r.checks.filter((x) => x.stage === stage).every((x) => x.result === 'PASS')
+        ? 'PASS'
+        : 'FAIL';
+    } catch (e) {
+      r.stages.performance = 'FAIL';
+      r.performanceFailure = {
+        code: e.code ?? 'PERFORMANCE_PROBE_FAILED',
+        errorName: e.name,
+        causeCode: e.cause?.code,
+      };
       save();
     }
   }
