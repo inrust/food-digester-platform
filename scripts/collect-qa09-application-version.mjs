@@ -7,8 +7,10 @@ import { writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-export const ACCEPTANCE_COMMIT = 'e759626a3e965cd9c0330b8e73bc713c0386d7de';
-export const EXECUTOR_BASELINE = 'e759626a3e965cd9c0330b8e73bc713c0386d7de';
+import { qa09VersionInputs } from './qa09-version-inputs.mjs';
+const versionInputs = qa09VersionInputs();
+export const ACCEPTANCE_COMMIT = versionInputs.commit;
+export const EXECUTOR_BASELINE = versionInputs.commit;
 function command(name, args) {
   for (let attempt = 0; attempt < 3; attempt++) {
     const r = spawnSync(name, args, { encoding: 'utf8', timeout: 45000, maxBuffer: 16 * 1024 * 1024 });
@@ -33,6 +35,12 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
     task: 'QA-09',
     scope: 'CURRENT_APPLICATION_VERSION',
     sourceCommit: ACCEPTANCE_COMMIT,
+    executorSha256: createHash('sha256')
+      .update(readFileSync(new URL(import.meta.url)))
+      .digest('hex'),
+    versionInputsSha256: createHash('sha256')
+      .update(readFileSync(new URL('./qa09-version-inputs.mjs', import.meta.url)))
+      .digest('hex'),
     accountId: '065986019555',
     region: 'ap-southeast-1',
     stackName: 'fdp-test-app',
@@ -40,10 +48,17 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
     gate: 'BLOCKED',
     blockers: [],
     lambdaArtifacts: [],
+    rangeTransport: process.env.QA09_CODE_RANGE_TRANSPORT ?? 'cli',
   };
   const save = () => writeFileSync(output, JSON.stringify(receipt, null, 2) + '\n');
   if (aws(['sts', 'get-caller-identity']).Account !== receipt.accountId) throw Error('WRONG_ACCOUNT');
-  receipt.pendingDeployment = command('gh', ['run', 'view', '37078759214', '--json', 'status,conclusion,headSha,url']);
+  receipt.pendingDeployment = command('gh', [
+    'run',
+    'view',
+    versionInputs.deployRunId,
+    '--json',
+    'status,conclusion,headSha,url',
+  ]);
   const paths = [
     'apps',
     'packages',
@@ -66,7 +81,13 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
   if (receipt.applicationTreeHashes.some((t) => !t.matches))
     receipt.blockers.push('CURRENT_AND_REQUESTED_APPLICATION_TREES_DIFFER');
   receipt.executorBaseline = EXECUTOR_BASELINE;
-  receipt.github = command('gh', ['run', 'view', '37078759214', '--json', 'status,conclusion,headSha,url,jobs']);
+  receipt.github = command('gh', [
+    'run',
+    'view',
+    versionInputs.deployRunId,
+    '--json',
+    'status,conclusion,headSha,url,jobs',
+  ]);
   receipt.ci = command('gh', [
     'run',
     'list',
@@ -122,8 +143,47 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
     receipt.stackName,
   ]).StackResourceSummaries;
   const execute = promisify(execFile);
-  const awsAsync = async (args) =>
-    JSON.parse(
+  const transport = process.env.QA09_CODE_RANGE_TRANSPORT ?? 'cli';
+  if (!['cli', 'sdk'].includes(transport)) throw Error('INVALID_CODE_RANGE_TRANSPORT');
+  let s3, GetObjectCommand;
+  if (transport === 'sdk') {
+    const exported = spawnSync(
+      'aws',
+      ['configure', 'export-credentials', '--profile', 'esgiot-readonly', '--format', 'process'],
+      { encoding: 'utf8', timeout: 30000 },
+    );
+    if (exported.status !== 0) throw Error('READONLY_CREDENTIALS_UNAVAILABLE');
+    const credentials = JSON.parse(exported.stdout);
+    const sdk = await import('@aws-sdk/client-s3');
+    GetObjectCommand = sdk.GetObjectCommand;
+    s3 = new sdk.S3Client({
+      region: receipt.region,
+      maxAttempts: 1,
+      credentials: {
+        accessKeyId: credentials.AccessKeyId,
+        secretAccessKey: credentials.SecretAccessKey,
+        sessionToken: credentials.SessionToken,
+      },
+    });
+  }
+  const awsAsync = async (args) => {
+    if (s3 && args[0] === 's3api' && args[1] === 'get-object') {
+      const value = (key) => (args.indexOf(key) < 0 ? undefined : args[args.indexOf(key) + 1]);
+      const response = await s3.send(
+        new GetObjectCommand({
+          Bucket: value('--bucket'),
+          Key: value('--key'),
+          Range: value('--range'),
+          VersionId: value('--version-id'),
+        }),
+        { abortSignal: AbortSignal.timeout(45000) },
+      );
+      const bytes = await response.Body.transformToByteArray();
+      if (bytes.length > 262144) throw Error('CODE_RANGE_SIZE_EXCEEDED');
+      writeFileSync(args.at(-1), bytes);
+      return { ContentRange: response.ContentRange, VersionId: response.VersionId };
+    }
+    return JSON.parse(
       (
         await execute(
           'aws',
@@ -132,6 +192,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
         )
       ).stdout,
     );
+  };
   const functions = resources.filter((r) => r.ResourceType === 'AWS::Lambda::Function');
   const tasks = [];
   for (const resource of functions) {
@@ -252,6 +313,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
       }
     }),
   );
+  s3?.destroy();
   for (const item of receipt.lambdaArtifacts) {
     if (item.reusedVerifiedBytes) continue;
     const chunks = item.chunks.sort((a, b) => a.start - b.start);

@@ -1,3 +1,4 @@
+import { runMqttQuickTarget } from './qa09-mqtt-load-target.mjs';
 import { runDeviceConfirmationProbes } from './qa09-device-confirmation-probes.mjs';
 import { runAuthRepro } from './qa09-auth-repro.mjs';
 import { runOnlineBrowserGuards } from './qa09-online-browser-guards.mjs';
@@ -9,8 +10,12 @@ import { runFixture } from './qa09-ten-device-bridge.mjs';
 import { cleanupOwnedDomain } from './qa09-owned-domain-cleanup.mjs';
 const [output, version] = process.argv.slice(2);
 if (!output || !version) throw Error('OUTPUT_AND_VERSION_REQUIRED');
+const commandOnly = process.env.QA09_COMMAND_ONLY === 'true';
 const paths = [
   'scripts/run-qa09-slo-target.mjs',
+  'scripts/qa09-mqtt-load-target.mjs',
+  'scripts/qa09-publish-scheduler.mjs',
+  'scripts/reliability-plan.mjs',
   'scripts/qa09-performance-probes.mjs',
   'scripts/qa09-own-queue-redelivery.mjs',
   'scripts/qa09-online-browser-guards.mjs',
@@ -18,6 +23,7 @@ const paths = [
   'scripts/qa09-device-confirmation-probes.mjs',
   'scripts/qa09-write-boundary-probes.mjs',
   'scripts/run-qa09-ten-device-acceptance.mjs',
+  'scripts/qa09-version-inputs.mjs',
   'scripts/qa09-ten-device-db.mjs',
   'scripts/qa09-ten-device-bridge.mjs',
   'scripts/qa09-own-s3-cli.mjs',
@@ -36,6 +42,7 @@ writeFileSync(
       scope: 'EXECUTED_SOURCE_BYTES',
       frozenAt: new Date().toISOString(),
       nodeVersion: process.version,
+      commandOnly,
       sources: paths.map((path) => {
         const bytes = readFileSync(path);
         return {
@@ -65,6 +72,7 @@ const parent = await main(output + '.devices.json', version, async (ctx) => {
     createdSites: [],
     gate: 'RUNNING',
     fullQa09Accepted: false,
+    commandOnly,
   };
   const save = () => writeFileSync(output, JSON.stringify(r, null, 2) + '\n');
   save();
@@ -120,10 +128,24 @@ const parent = await main(output + '.devices.json', version, async (ctx) => {
     );
     ctx.receipt.batchArchiveCleanup = true;
     delete ctx.receipt.archiveKeys;
+    if (process.env.QA09_RUN_MQTT_QUICK === 'true') {
+      try {
+        r.mqttQuick = await runMqttQuickTarget(ctx, db, record, output);
+        record('mqtt-quick-load-completed', true);
+      } catch (error) {
+        r.mqttQuickFailure = {
+          errorName: error.name,
+          code: /^[A-Z_]+$/.test(error.message ?? '') ? error.message : 'MQTT_QUICK_FAILED',
+        };
+        record('mqtt-quick-load-completed', false);
+      }
+    }
     r.result = await runPerformanceProbes(ctx, api, record, output, {
+      commandOnly,
       afterActivation: async () => {
         r.lifecycleFixture = await db('business-seed-active-lifecycle');
         r.naturalLifecycleGate = 'BLOCKED_ASSIGNED_TO_LICENSED_TO_ACTIVE_RUNTIME_PATH_MISSING';
+        if (commandOnly) return;
         r.deviceConfirmation = await runDeviceConfirmationProbes(
           ctx,
           api,

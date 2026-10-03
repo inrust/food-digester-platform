@@ -1,0 +1,26 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "Qa09GatewayValidationWelcome",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents",
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents"
+      ],
+      "Resource": [
+        "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/welcome",
+        "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/welcome:*"
+      ],
+      "Condition": {
+        "DateLessThan": {
+          "aws:CurrentTime": "2026-10-03T13:00:00Z"
+        }
+      }
+    }
+  ]
+}

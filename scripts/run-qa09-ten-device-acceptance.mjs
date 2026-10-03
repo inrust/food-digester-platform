@@ -1,3 +1,4 @@
+import { qa09VersionInputs } from './qa09-version-inputs.mjs';
 import { callOwnS3Cli } from './qa09-own-s3-cli.mjs';
 import { randomBytes, createHash, X509Certificate, createPrivateKey, createPublicKey, sign } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -101,7 +102,7 @@ export async function main(output, versionPath, extension) {
   const version = JSON.parse(readFileSync(versionPath));
   if (
     (version.gate !== 'PASS' && version.applicationVersionGate !== 'PASS') ||
-    version.sourceCommit !== 'e759626a3e965cd9c0330b8e73bc713c0386d7de'
+    version.sourceCommit !== qa09VersionInputs().commit
   )
     throw Error('DEPLOYED_VERSION_NOT_VERIFIED');
   const sts = spawnSync(
@@ -146,6 +147,7 @@ export async function main(output, versionPath, extension) {
     mode: 'REAL_EXISTING_TEST_ENVIRONMENT',
     target: { accountId: identity.Account, region: 'ap-southeast-1', stackName: 'fdp-test-app' },
     sourceCommit: version.sourceCommit,
+    versionBinding: qa09VersionInputs(),
     executorSha256: hash(readFileSync(new URL(import.meta.url))),
     versionReceipt: versionPath,
     artifactByteReceipt: version.byteReceipt ?? versionPath,

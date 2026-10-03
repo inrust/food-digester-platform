@@ -1,0 +1,258 @@
+{
+  "task": "QA-09",
+  "scope": "CURRENT_APPLICATION_VERSION",
+  "sourceCommit": "7c6f356b6917accd6cf562cb4bd6d5990416740f",
+  "accountId": "065986019555",
+  "region": "ap-southeast-1",
+  "stackName": "fdp-test-app",
+  "collectedAt": "2026-10-03T08:54:09.399Z",
+  "gate": "BLOCKED",
+  "blockers": [
+    "STACK_NOT_UPDATE_COMPLETE"
+  ],
+  "lambdaArtifacts": [],
+  "rangeTransport": "sdk",
+  "pendingDeployment": {
+    "conclusion": "success",
+    "headSha": "7c6f356b6917accd6cf562cb4bd6d5990416740f",
+    "status": "completed",
+    "url": "https://github.com/inrust/food-digester-platform/actions/runs/37108925188"
+  },
+  "applicationTreeHashes": [
+    {
+      "path": "apps",
+      "deployed": "5c8a9e9108f11764bccbb28f9762406cc7fa93a2",
+      "baseline": "5c8a9e9108f11764bccbb28f9762406cc7fa93a2",
+      "matches": true
+    },
+    {
+      "path": "packages",
+      "deployed": "7919ce0d4939bb0958b1eb56cfe6fcbf9f81e386",
+      "baseline": "7919ce0d4939bb0958b1eb56cfe6fcbf9f81e386",
+      "matches": true
+    },
+    {
+      "path": "contracts",
+      "deployed": "98c5d4dd40f8efe3870931d19a276e66ca8b9083",
+      "baseline": "98c5d4dd40f8efe3870931d19a276e66ca8b9083",
+      "matches": true
+    },
+    {
+      "path": "infra",
+      "deployed": "382a865cdab5f9f744f2cecab2d758cdb3cf9fc4",
+      "baseline": "382a865cdab5f9f744f2cecab2d758cdb3cf9fc4",
+      "matches": true
+    },
+    {
+      "path": "package.json",
+      "deployed": "d263a41529764ca29cc81b28f44dac6bed5a0569",
+      "baseline": "d263a41529764ca29cc81b28f44dac6bed5a0569",
+      "matches": true
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "deployed": "6a8a39ee626bb8a55bb114279aaca35734a8a500",
+      "baseline": "6a8a39ee626bb8a55bb114279aaca35734a8a500",
+      "matches": true
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "deployed": "72d188bcf671a82fbfe766bcf437d663b13bb40a",
+      "baseline": "72d188bcf671a82fbfe766bcf437d663b13bb40a",
+      "matches": true
+    },
+    {
+      "path": ".nvmrc",
+      "deployed": "248216ad5b80a75cb6913e4f54fde1340b845b4c",
+      "baseline": "248216ad5b80a75cb6913e4f54fde1340b845b4c",
+      "matches": true
+    },
+    {
+      "path": "scripts/esgiot-cdk.mjs",
+      "deployed": "2d253ba58050050480ba82bf851422fedb522849",
+      "baseline": "2d253ba58050050480ba82bf851422fedb522849",
+      "matches": true
+    }
+  ],
+  "executorBaseline": "7c6f356b6917accd6cf562cb4bd6d5990416740f",
+  "github": {
+    "conclusion": "success",
+    "headSha": "7c6f356b6917accd6cf562cb4bd6d5990416740f",
+    "jobs": [
+      {
+        "completedAt": "2026-10-03T08:43:23Z",
+        "conclusion": "success",
+        "databaseId": 111162858709,
+        "name": "deploy-test",
+        "startedAt": "2026-10-03T08:12:35Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-10-03T08:12:38Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-10-03T08:12:36Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:12:41Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v7",
+            "number": 2,
+            "startedAt": "2026-10-03T08:12:38Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:12:50Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v6",
+            "number": 3,
+            "startedAt": "2026-10-03T08:12:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:13:03Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v5",
+            "number": 4,
+            "startedAt": "2026-10-03T08:12:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:13:06Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-10-03T08:13:03Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:13:42Z",
+            "conclusion": "success",
+            "name": "Run pnpm exec playwright install --with-deps chromium",
+            "number": 6,
+            "startedAt": "2026-10-03T08:13:06Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:40:28Z",
+            "conclusion": "success",
+            "name": "Run pnpm verify",
+            "number": 7,
+            "startedAt": "2026-10-03T08:13:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:40:30Z",
+            "conclusion": "success",
+            "name": "Run aws-actions/configure-aws-credentials@v6.3.0",
+            "number": 8,
+            "startedAt": "2026-10-03T08:40:28Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:40:32Z",
+            "conclusion": "success",
+            "name": "Verify target account and exact commit",
+            "number": 9,
+            "startedAt": "2026-10-03T08:40:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:40:58Z",
+            "conclusion": "success",
+            "name": "Run node scripts/esgiot-cdk.mjs diff AppDependencies",
+            "number": 10,
+            "startedAt": "2026-10-03T08:40:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:43:19Z",
+            "conclusion": "success",
+            "name": "Run node scripts/esgiot-cdk.mjs deploy AppDependencies",
+            "number": 11,
+            "startedAt": "2026-10-03T08:40:58Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:43:19Z",
+            "conclusion": "success",
+            "name": "Post Run aws-actions/configure-aws-credentials@v6.3.0",
+            "number": 19,
+            "startedAt": "2026-10-03T08:43:19Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:43:19Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v5",
+            "number": 20,
+            "startedAt": "2026-10-03T08:43:19Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:43:19Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v6",
+            "number": 21,
+            "startedAt": "2026-10-03T08:43:19Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:43:20Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v7",
+            "number": 22,
+            "startedAt": "2026-10-03T08:43:19Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-03T08:43:20Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 23,
+            "startedAt": "2026-10-03T08:43:20Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/inrust/food-digester-platform/actions/runs/37108925188/job/111162858709"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/inrust/food-digester-platform/actions/runs/37108925188"
+  },
+  "ci": {
+    "conclusion": "success",
+    "headSha": "7c6f356b6917accd6cf562cb4bd6d5990416740f",
+    "status": "completed",
+    "url": "https://github.com/inrust/food-digester-platform/actions/runs/37108925152"
+  },
+  "stack": {
+    "status": "UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS",
+    "updated": "2026-10-03T08:52:30.434000+00:00"
+  },
+  "amplify": [
+    {
+      "jobId": "45",
+      "commitId": "7c6f356b6917accd6cf562cb4bd6d5990416740f",
+      "status": "SUCCEED",
+      "startTime": "2026-10-03T16:12:32.541000+08:00",
+      "endTime": "2026-10-03T16:15:42.583000+08:00"
+    },
+    {
+      "jobId": "44",
+      "commitId": "818faa0e949c247b13a97eeffd08bf0bdbdb5876",
+      "status": "SUCCEED",
+      "startTime": "2026-10-03T14:47:35.209000+08:00",
+      "endTime": "2026-10-03T14:50:03.090000+08:00"
+    },
+    {
+      "jobId": "43",
+      "commitId": "e759626a3e965cd9c0330b8e73bc713c0386d7de",
+      "status": "SUCCEED",
+      "startTime": "2026-10-03T07:41:29.375000+08:00",
+      "endTime": "2026-10-03T07:44:08.341000+08:00"
+    }
+  ]
+}

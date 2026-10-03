@@ -1,0 +1,115 @@
+{
+  "Resources": {
+    "AdminAccessLogKeyEF31A9BF": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Statement": [
+            {
+              "Action": "kms:*",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":iam::065986019555:root"
+                    ]
+                  ]
+                }
+              },
+              "Resource": "*"
+            },
+            {
+              "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:ReEncrypt*",
+                "kms:GenerateDataKey*",
+                "kms:DescribeKey"
+              ],
+              "Condition": {
+                "ArnEquals": {
+                  "kms:EncryptionContext:aws:logs:arn": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition"
+                        },
+                        ":logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/fdp-test-admin-api-access"
+                      ]
+                    ]
+                  }
+                }
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "logs.ap-southeast-1.amazonaws.com"
+              },
+              "Resource": "*"
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Tags": [
+          {
+            "Key": "fdp:env",
+            "Value": "test"
+          },
+          {
+            "Key": "fdp:managed-by",
+            "Value": "cdk"
+          },
+          {
+            "Key": "fdp:project",
+            "Value": "food-digester-platform"
+          }
+        ]
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "AppDependencies/AdminAccessLogKey/Resource"
+      }
+    },
+    "AdminAccessLogs21475B9B": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "KmsKeyId": {
+          "Fn::GetAtt": [
+            "AdminAccessLogKeyEF31A9BF",
+            "Arn"
+          ]
+        },
+        "LogGroupName": "/aws/apigateway/fdp-test-admin-api-access",
+        "RetentionInDays": 7,
+        "Tags": [
+          {
+            "Key": "fdp:env",
+            "Value": "test"
+          },
+          {
+            "Key": "fdp:managed-by",
+            "Value": "cdk"
+          },
+          {
+            "Key": "fdp:project",
+            "Value": "food-digester-platform"
+          }
+        ]
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "AppDependencies/AdminAccessLogs/Resource"
+      }
+    }
+  }
+}

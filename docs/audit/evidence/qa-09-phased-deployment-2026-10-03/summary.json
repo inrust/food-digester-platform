@@ -1,0 +1,136 @@
+{
+  "task": "QA-09",
+  "applicationCommit": "7c6f356b6917accd6cf562cb4bd6d5990416740f",
+  "deploymentPhases": {
+    "observability": "PASS_AFTER_THREE_ROLLBACKS",
+    "capacity": "PASS",
+    "immediate": "PASS"
+  },
+  "applicationVersion": "PASS_19_LAMBDA",
+  "welcomeTemporaryGrant": {
+    "authorized": true,
+    "applied": "v7",
+    "revokedDefault": "v8",
+    "roleRevocation": "PASS",
+    "historicalV3Preserved": true
+  },
+  "http": {
+    "observability": "ONE_500_EXACTLY_CORRELATED_TO_LAMBDA_INTEGRATION_429",
+    "capacityReads": "20_OF_20_PASS",
+    "capacityCorrelations": "24_OF_24_PASS",
+    "immediateReads": "20_OF_20_PASS",
+    "immediateCorrelations": "24_OF_24_PASS"
+  },
+  "actualConfiguration": "PASS_19_FUNCTIONS",
+  "sqsEventSource": "ENABLED_BATCH1_ZERO_WINDOW_PARTIAL_FAILURE",
+  "rdsObservedWindowMaximumConnections": 35,
+  "fullPeakCapacityProven": false,
+  "targetSlo": "FAIL_COMMAND_7507_MS_TELEMETRY_INCOMPLETE_AND_ARCHIVE_BACKLOG",
+  "fullQa09Gate": "PARTIAL",
+  "remoteGitPush": false,
+  "mqttQuick": {
+    "attempts": 965,
+    "puback": 965,
+    "burstMessages": 300,
+    "burstSeconds": 9.688,
+    "processedUnique": 950,
+    "samplesPerDevice": 92,
+    "brokerAndIngestionGate": "PASS",
+    "archiveGate": "FAIL",
+    "archiveOutboxSnapshot": {
+      "published": 572,
+      "pending": 348
+    },
+    "archiveDefaultBatchSize": 50,
+    "archiveSchedule": "rate(1 minute)",
+    "fullProfileExecuted": false,
+    "recoveryAttempts": 2,
+    "recovered": false
+  },
+  "firstRun": {
+    "prefix": "qa09-c601fc676b8665e0",
+    "devicesGate": "PASS",
+    "extendedGate": "FAIL",
+    "domainCleanup": "PASS",
+    "s3VersionsDeleted": 1544,
+    "cleanupFailed": false,
+    "telemetryP95": "NOT_RUN",
+    "commandP95": "NOT_RUN"
+  },
+  "secondRun": {
+    "prefix": "qa09-c6b8375015168915",
+    "scope": "SEPARATE_TELEMETRY_API_VISIBILITY_AND_ONLINE_COMMAND_P95",
+    "gate": "FAIL",
+    "mqttQuickRepeated": false,
+    "basicArchives": "PASS_20_ORIGINAL_RECORDS",
+    "telemetryVisible": 12,
+    "telemetryTimedOut": 8,
+    "telemetrySamples": 20,
+    "telemetryP95Ms": null,
+    "telemetryGate": "FAIL",
+    "commandReceived": 20,
+    "commandSamples": 20,
+    "commandP95Ms": 58180,
+    "commandGate": "FAIL",
+    "onlineKeepalive": {
+      "sent": 20,
+      "failed": 0
+    },
+    "browserGuardGate": "PASS",
+    "deviceConfirmationGate": "PASS",
+    "naturalLifecycleGate": "BLOCKED_ACTIVE_FIXTURE_ONLY",
+    "domainCleanup": "PASS"
+  },
+  "commandRootCause": {
+    "cloudTrail": "AccessDenied because no resource-based policy allows kms:Decrypt",
+    "role": "fdp-test-command-publisher-role",
+    "key": "22af85c4-76d3-40c9-a849-0621740afe6c",
+    "queueSent": 20,
+    "queueReceived": 0,
+    "queueDeleted": 0,
+    "fixedPolicyDeployment": "PASS",
+    "oldStatementsPreserved": true,
+    "oldQueuePointersRemaining": 0,
+    "caMetadataUnchanged": true
+  },
+  "commandOnlyRetest": {
+    "prefix": "qa09-60903bfad96a9887",
+    "gate": "FAIL",
+    "telemetryGate": "NOT_RUN_COMMAND_ONLY",
+    "applicationCommit": "7c6f356b6917accd6cf562cb4bd6d5990416740f",
+    "received": 20,
+    "samples": 20,
+    "commandP95Ms": 7507,
+    "commandGate": "FAIL",
+    "queueConsumerPublished": 20,
+    "workerWindowThrottles": 1,
+    "workerWindowErrors": 0,
+    "workerWindowMaxConcurrency": 2,
+    "keepaliveFailures": 0,
+    "cleanup": "PASS",
+    "domainCleanup": "PASS"
+  },
+  "temporaryWelcomeGrant": "REVOKED",
+  "boundaryVersions": {
+    "default": "v8",
+    "preservedOriginal": [
+      "v2",
+      "v3"
+    ],
+    "ownTemporaryArchivedThenRemoved": [
+      "v5",
+      "v6",
+      "v7"
+    ]
+  },
+  "finishedAt": "2026-10-03T12:43:20.276Z",
+  "queueResidual": {
+    "mainVisible": 0,
+    "mainInFlight": 0,
+    "mainDelayed": 0,
+    "dlqVisible": 20,
+    "ownershipGate": "NOT_PROVEN_READ_ONLY_COUNTS",
+    "action": "PRESERVED_NO_RECEIVE_OR_PURGE",
+    "cleanupGate": "PENDING_EXACT_OWNERSHIP_VERIFICATION"
+  }
+}

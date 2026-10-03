@@ -1,0 +1,51 @@
+{
+  "Action": "kms:Decrypt",
+  "Condition": {
+    "ArnEquals": {
+      "aws:PrincipalArn": {
+        "Fn::Join": [
+          "",
+          [
+            "arn:",
+            {
+              "Ref": "AWS::Partition"
+            },
+            ":iam::065986019555:role/fdp-test-command-publisher-role"
+          ]
+        ]
+      }
+    },
+    "StringEquals": {
+      "kms:ViaService": "sqs.ap-southeast-1.amazonaws.com",
+      "kms:EncryptionContext:aws:sqs:arn": {
+        "Fn::Join": [
+          "",
+          [
+            "arn:",
+            {
+              "Ref": "AWS::Partition"
+            },
+            ":sqs:ap-southeast-1:065986019555:fdp-test-command-publish"
+          ]
+        ]
+      }
+    }
+  },
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": {
+      "Fn::Join": [
+        "",
+        [
+          "arn:",
+          {
+            "Ref": "AWS::Partition"
+          },
+          ":iam::065986019555:root"
+        ]
+      ]
+    }
+  },
+  "Resource": "*",
+  "Sid": "CommandQueueConsumerDecrypt"
+}

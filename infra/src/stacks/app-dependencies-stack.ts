@@ -484,6 +484,35 @@ export class AppDependenciesStack extends Stack {
       }),
     );
 
+    if (this.config.enableImmediateCommandPublish === true) {
+      // The identity grant cannot decrypt SQS until this key delegates the matching data plane.
+      dataKey.addToResourcePolicy(
+        new iam.PolicyStatement({
+          sid: 'CommandQueueConsumerDecrypt',
+          principals: [new iam.AccountRootPrincipal()],
+          actions: ['kms:Decrypt'],
+          resources: ['*'],
+          conditions: {
+            ArnEquals: {
+              'aws:PrincipalArn': this.formatArn({
+                service: 'iam',
+                region: '',
+                resource: 'role',
+                resourceName: this.naming.name('command-publisher-role'),
+              }),
+            },
+            StringEquals: {
+              'kms:ViaService': `sqs.${this.region}.amazonaws.com`,
+              'kms:EncryptionContext:aws:sqs:arn': this.formatArn({
+                service: 'sqs',
+                resource: this.naming.name('command-publish'),
+              }),
+            },
+          },
+        }),
+      );
+    }
+
     // SEC-01：证书包 Key 数据面只授予 Onboarding/Device API、Provisioning Worker 与恢复 Lambda。
     // 使用确定性角色 ARN 条件，避免 Key ↔ Lambda Role 的 CloudFormation 循环依赖。
     const onboardingApiRoleArn = this.formatArn({
@@ -1664,8 +1693,37 @@ export class AppDependenciesStack extends Stack {
       });
       role.addToPolicy(
         new iam.PolicyStatement({
-          actions: ['logs:CreateLogStream', 'logs:DescribeLogStreams', 'logs:PutLogEvents'],
-          resources: [logGroup.logGroupArn],
+          actions: [
+            'logs:CreateLogGroup',
+            'logs:CreateLogStream',
+            'logs:DescribeLogStreams',
+            'logs:PutLogEvents',
+            'logs:GetLogEvents',
+            'logs:FilterLogEvents',
+          ],
+          resources: [
+            this.formatArn({
+              service: 'logs',
+              resource: 'log-group',
+              resourceName: logGroup.logGroupName,
+              arnFormat: ArnFormat.COLON_RESOURCE_NAME,
+            }),
+            logGroup.logGroupArn,
+          ],
+        }),
+      );
+      // API Gateway's Account validator creates this fixed system group before accepting a role.
+      // CloudTrail proves validation uses this system group; both groups remain explicit.
+      const validationGroupArn = this.formatArn({
+        service: 'logs',
+        resource: 'log-group',
+        resourceName: '/aws/apigateway/welcome',
+        arnFormat: ArnFormat.COLON_RESOURCE_NAME,
+      });
+      role.addToPolicy(
+        new iam.PolicyStatement({
+          actions: ['logs:CreateLogGroup'],
+          resources: [validationGroupArn, `${validationGroupArn}:*`],
         }),
       );
       role.addToPolicy(new iam.PolicyStatement({ actions: ['logs:DescribeLogGroups'], resources: ['*'] }));

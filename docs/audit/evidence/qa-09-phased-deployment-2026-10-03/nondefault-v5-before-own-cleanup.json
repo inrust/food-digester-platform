@@ -1,0 +1,89 @@
+{
+  "PolicyVersion": {
+    "Document": {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Sid": "AllowFDPServiceRuntimeActions",
+          "Effect": "Allow",
+          "Action": [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents",
+            "ec2:CreateNetworkInterface",
+            "ec2:DescribeNetworkInterfaces",
+            "ec2:DeleteNetworkInterface",
+            "ec2:AssignPrivateIpAddresses",
+            "ec2:UnassignPrivateIpAddresses",
+            "secretsmanager:GetSecretValue",
+            "secretsmanager:DescribeSecret",
+            "kms:Decrypt",
+            "kms:Encrypt",
+            "kms:GenerateDataKey*",
+            "kms:DescribeKey",
+            "s3:GetObject",
+            "s3:PutObject",
+            "s3:DeleteObject",
+            "s3:ListBucket",
+            "sqs:*",
+            "iot:DescribeEndpoint",
+            "iot:Publish",
+            "iot:CreateThing",
+            "iot:RegisterCertificateWithoutCA",
+            "iot:CreatePolicy",
+            "iot:AttachPolicy",
+            "iot:AttachThingPrincipal",
+            "iot:UpdateCertificate",
+            "iot:TagResource",
+            "cognito-idp:*",
+            "events:PutEvents",
+            "cloudwatch:PutMetricData"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Sid": "DenyHumanCredentialAndBoundaryMutation",
+          "Effect": "Deny",
+          "Action": [
+            "iam:CreateUser",
+            "iam:CreateAccessKey",
+            "iam:DeleteRolePermissionsBoundary",
+            "iam:PutRolePermissionsBoundary",
+            "kms:ScheduleKeyDeletion",
+            "kms:DisableKey"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Sid": "Qa09AdminGatewayLogDiscovery",
+          "Effect": "Allow",
+          "Action": [
+            "logs:DescribeLogGroups"
+          ],
+          "Resource": "*",
+          "Condition": {
+            "ArnEquals": {
+              "aws:PrincipalArn": "arn:aws:iam::065986019555:role/fdp-test-admin-gateway-logs-role"
+            }
+          }
+        },
+        {
+          "Sid": "Qa09AdminGatewayLogStreamDiscovery",
+          "Effect": "Allow",
+          "Action": [
+            "logs:DescribeLogStreams"
+          ],
+          "Resource": "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/fdp-test-admin-api-access:*",
+          "Condition": {
+            "ArnEquals": {
+              "aws:PrincipalArn": "arn:aws:iam::065986019555:role/fdp-test-admin-gateway-logs-role"
+            }
+          }
+        }
+      ]
+    },
+    "VersionId": "v5",
+    "IsDefaultVersion": false,
+    "CreateDate": "2026-10-03T08:18:49+00:00"
+  }
+}

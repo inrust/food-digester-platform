@@ -15,7 +15,7 @@ export function completeP95(samples, field) {
     ? p95(samples.map((x) => x.latencyMs))
     : null;
 }
-export async function runPerformanceProbes(ctx, api, record, output, { afterActivation } = {}) {
+export async function runPerformanceProbes(ctx, api, record, output, { afterActivation, commandOnly = false } = {}) {
   const id = ctx.receipt.devices[0],
     key = ctx.held.get(id),
     prefix = ctx.receipt.prefix;
@@ -45,7 +45,8 @@ export async function runPerformanceProbes(ctx, api, record, output, { afterActi
   const heartbeatTimer = setInterval(heartbeat, 30000);
 
   const result = {
-    scope: 'REAL_API_VISIBILITY_AND_ONLINE_COMMAND',
+    scope: commandOnly ? 'REAL_ONLINE_COMMAND_ONLY' : 'REAL_API_VISIBILITY_AND_ONLINE_COMMAND',
+    telemetryGate: commandOnly ? 'NOT_RUN_COMMAND_ONLY' : 'RUNNING',
     telemetry: [],
     commands: [],
     lifecycle: [],
@@ -55,7 +56,7 @@ export async function runPerformanceProbes(ctx, api, record, output, { afterActi
   try {
     let redeliveryRaw;
     // Markers are unique increasing maxima in the current UTC hourly bucket, verified absent before publish.
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < (commandOnly ? 0 : 20); i++) {
       const before = await api(
         'slo-before-' + i,
         'PlatformSuperAdmin',
@@ -186,14 +187,18 @@ export async function runPerformanceProbes(ctx, api, record, output, { afterActi
         elapsedAtEndMs: Math.round(performance.now() - start),
       });
     result.telemetryP95Ms = completeP95(result.telemetry, 'visible');
+    if (!commandOnly)
+      result.telemetryGate = result.telemetryP95Ms !== null && result.telemetryP95Ms <= 5000 ? 'PASS' : 'FAIL';
     const received = result.commands.filter((x) => x.received);
     result.commandP95Ms = received.length === 20 ? p95(received.map((x) => x.latencyMs)) : null;
-    put('telemetry-api-visible-p95', result.telemetryP95Ms !== null && result.telemetryP95Ms <= 5000, {
-      samples: 20,
-      p95Ms: result.telemetryP95Ms,
-      limitMs: 5000,
-      pollResolutionMs: 250,
-    });
+    result.commandGate = result.commandP95Ms !== null && result.commandP95Ms <= 3000 ? 'PASS' : 'FAIL';
+    if (!commandOnly)
+      put('telemetry-api-visible-p95', result.telemetryP95Ms !== null && result.telemetryP95Ms <= 5000, {
+        samples: 20,
+        p95Ms: result.telemetryP95Ms,
+        limitMs: 5000,
+        pollResolutionMs: 250,
+      });
     put('online-command-publish-p95', result.commandP95Ms !== null && result.commandP95Ms <= 3000, {
       samples: 20,
       received: received.length,
@@ -201,6 +206,7 @@ export async function runPerformanceProbes(ctx, api, record, output, { afterActi
       limitMs: 3000,
       clock: 'SAME_CLIENT_MONOTONIC_API_START_TO_BROKER_CALLBACK',
     });
+    if (commandOnly) return result;
     const suspended = await api(
       'lifecycle-suspend',
       'PlatformOperator',

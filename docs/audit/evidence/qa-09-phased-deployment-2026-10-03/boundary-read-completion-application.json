@@ -1,0 +1,25 @@
+{
+  "previousVersion": "v5",
+  "originalV3Preserved": true,
+  "onlyAddedStatement": {
+    "Sid": "Qa09AdminGatewayOwnLogRead",
+    "Effect": "Allow",
+    "Action": [
+      "logs:GetLogEvents",
+      "logs:FilterLogEvents"
+    ],
+    "Resource": "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/fdp-test-admin-api-access:*",
+    "Condition": {
+      "ArnEquals": {
+        "aws:PrincipalArn": "arn:aws:iam::065986019555:role/fdp-test-admin-gateway-logs-role"
+      }
+    }
+  },
+  "result": {
+    "PolicyVersion": {
+      "VersionId": "v6",
+      "IsDefaultVersion": true,
+      "CreateDate": "2026-10-03T09:03:31+00:00"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "RoleName": "fdp-test-admin-gateway-logs-role",
+  "PolicyName": "AdminGatewayLogsRoleDefaultPolicyF60F679B",
+  "PolicyDocument": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Action": [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:DescribeLogStreams",
+          "logs:PutLogEvents",
+          "logs:GetLogEvents",
+          "logs:FilterLogEvents"
+        ],
+        "Resource": [
+          "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/fdp-test-admin-api-access",
+          "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/fdp-test-admin-api-access:*"
+        ],
+        "Effect": "Allow"
+      },
+      {
+        "Action": "logs:CreateLogGroup",
+        "Resource": [
+          "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/welcome",
+          "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/welcome:*"
+        ],
+        "Effect": "Allow"
+      },
+      {
+        "Action": "logs:DescribeLogGroups",
+        "Resource": "*",
+        "Effect": "Allow"
+      }
+    ]
+  }
+}

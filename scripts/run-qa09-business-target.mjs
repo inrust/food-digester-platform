@@ -19,6 +19,7 @@ const paths = [
   'scripts/qa09-archive-reader.mjs',
   'scripts/qa09-archive-probe.mjs',
   'scripts/run-qa09-ten-device-acceptance.mjs',
+  'scripts/qa09-version-inputs.mjs',
   'scripts/qa09-ten-device-db.mjs',
   'scripts/qa09-ten-device-bridge.mjs',
   'scripts/qa09-own-s3-cli.mjs',

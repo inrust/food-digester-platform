@@ -1,0 +1,25 @@
+{
+  "gate": "PASS",
+  "oldStatementsPreserved": true,
+  "newStatements": [
+    {
+      "Sid": "CommandQueueConsumerDecrypt",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:root"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:EncryptionContext:aws:sqs:arn": "arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-command-publish",
+          "kms:ViaService": "sqs.ap-southeast-1.amazonaws.com"
+        },
+        "ArnEquals": {
+          "aws:PrincipalArn": "arn:aws:iam::065986019555:role/fdp-test-command-publisher-role"
+        }
+      }
+    }
+  ],
+  "keyArn": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c"
+}

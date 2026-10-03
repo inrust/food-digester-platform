@@ -16,7 +16,24 @@
       "Sid": "Qa09AdminGatewayLogStreamDiscovery",
       "Effect": "Allow",
       "Action": ["logs:DescribeLogStreams"],
-      "Resource": "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/fdp-test-admin-api-access:*",
+      "Resource": [
+        "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/fdp-test-admin-api-access",
+        "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/fdp-test-admin-api-access:*"
+      ],
+      "Condition": {
+        "ArnEquals": {
+          "aws:PrincipalArn": "arn:aws:iam::065986019555:role/fdp-test-admin-gateway-logs-role"
+        }
+      }
+    },
+    {
+      "Sid": "Qa09AdminGatewayOwnLogRead",
+      "Effect": "Allow",
+      "Action": ["logs:GetLogEvents", "logs:FilterLogEvents"],
+      "Resource": [
+        "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/fdp-test-admin-api-access",
+        "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/apigateway/fdp-test-admin-api-access:*"
+      ],
       "Condition": {
         "ArnEquals": {
           "aws:PrincipalArn": "arn:aws:iam::065986019555:role/fdp-test-admin-gateway-logs-role"
