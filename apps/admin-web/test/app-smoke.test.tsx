@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AdminWebApp } from '../src/app/App.js';
 import { createAdminWebServices } from '../src/app/composition-root.js';
@@ -101,5 +102,33 @@ describe('管理后台浏览器冒烟', () => {
     render(<AdminWebApp services={establishedServices()} />);
     expect(await screen.findByRole('heading', { name: 'User Management' })).toBeDefined();
     expect(screen.getByTestId('tab-platform-users').textContent).toContain('Platform role/user management');
+  });
+
+  it('当前业务页面和打开的表单即时切换语言，同时保留未保存输入且不重新请求', async () => {
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ data: [], meta: { nextCursor: null } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    );
+    window.history.replaceState({}, '', '/customers');
+    render(<AdminWebApp services={establishedServices(fetchFn as typeof fetch)} />);
+    const user = userEvent.setup();
+    await screen.findByRole('heading', { name: '客户档案' });
+    await waitFor(() => expect(fetchFn).toHaveBeenCalledTimes(1));
+    await user.click(screen.getByTestId('create-customer'));
+    const input = screen.getByLabelText('客户名称');
+    await user.type(input, 'Unsaved customer');
+    await user.selectOptions(screen.getByTestId('language-select'), 'en');
+    expect(await screen.findByRole('heading', { name: 'Customer directory', hidden: true })).toBeDefined();
+    expect(screen.getByLabelText('Customer Name')).toBe(input);
+    expect((input as HTMLInputElement).value).toBe('Unsaved customer');
+    await user.selectOptions(screen.getByTestId('language-select'), 'zh-CN');
+    expect(await screen.findByRole('heading', { name: '客户档案', hidden: true })).toBeDefined();
+    expect(screen.getByLabelText('客户名称')).toBe(input);
+    expect((input as HTMLInputElement).value).toBe('Unsaved customer');
+    expect(window.location.pathname).toBe('/customers');
+    expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 });

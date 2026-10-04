@@ -4,7 +4,7 @@ import { translate } from '../i18n/i18n.js';
 import { useCallback, useEffect, useState } from 'react';
 import { ToastHost, useToastQueue } from '../components/Toast.js';
 import { TimeZoneProvider } from '../components/TimeText.js';
-import { I18nProvider } from '../i18n/i18n.js';
+import { I18nProvider, useI18n } from '../i18n/i18n.js';
 import { resolveRoute } from '../router/guard.js';
 import { AppShell } from '../shell/AppShell.js';
 import type { AdminWebServices } from './composition-root.js';
@@ -90,6 +90,8 @@ export function AdminWebApp({ services }: { readonly services: AdminWebServices 
   );
 }
 function AdminWebAppInner({ services }: { readonly services: AdminWebServices }) {
+  // Re-render legacy translate() pages on language changes without remounting unsaved forms.
+  useI18n();
   const { location, navigate } = useBrowserRouter();
   const [sessionRevision, setSessionRevision] = useState(0);
   const [contractNavigationBlocked, setContractNavigationBlocked] = useState(false);

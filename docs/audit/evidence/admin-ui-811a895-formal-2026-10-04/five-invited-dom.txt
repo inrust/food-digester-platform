@@ -1,0 +1,573 @@
+- complementary:
+  - strong: 厨余机云平台
+  - generic: 管理工作台
+  - navigation "主菜单":
+    - list:
+      - link "概览":
+        - /url: /dashboard
+        - generic: 概览
+      - button "设备管理" [expanded]:
+        - generic: 设备管理
+      - list:
+        - link "查看设备":
+          - /url: /devices/view
+          - generic: 查看设备
+        - link "操作设备":
+          - /url: /devices/operate
+          - generic: 操作设备
+        - link "设备群管理":
+          - /url: /devices/groups
+          - generic: 设备群管理
+        - link "配置管理":
+          - /url: /configurations
+          - generic: 配置管理
+        - link "耗材查看":
+          - /url: /consumables
+          - generic: 耗材查看
+        - link "告警与事件":
+          - /url: /alarms
+          - generic: 告警与事件
+        - link "媒体管理":
+          - /url: /media
+          - generic: 媒体管理
+      - button "ESG管理" [expanded]:
+        - generic: ESG管理
+      - list:
+        - link "ESG概览":
+          - /url: /esg/overview
+          - generic: ESG概览
+        - link "设备ESG信息":
+          - /url: /esg/devices
+          - generic: 设备ESG信息
+      - button "合约管理" [expanded]:
+        - generic: 合约管理
+      - list:
+        - link "合约查询及修改":
+          - /url: /contracts
+          - generic: 合约查询及修改
+        - link "授权管理":
+          - /url: /licenses
+          - generic: 授权管理
+      - button "平台管理" [expanded]:
+        - generic: 平台管理
+      - list:
+        - link "用户管理":
+          - /url: /settings
+          - generic: 用户管理
+        - link "客户管理":
+          - /url: /customers
+          - generic: 客户管理
+        - link "站点管理":
+          - /url: /sites
+          - generic: 站点管理
+        - link "设备用户":
+          - /url: /device-users
+          - generic: 设备用户
+        - link "审计日志":
+          - /url: /audit-logs
+          - generic: 审计日志
+- banner:
+  - button "打开导航菜单":
+  - navigation "面包屑":
+    - list:
+      - listitem: /用户管理
+  - combobox "显示时区":
+    - option "UTC"
+    - option "Asia/Shanghai" [selected]
+    - option "Europe/London"
+    - option "America/New_York"
+  - combobox "语言":
+    - option "简体中文" [selected]
+    - option "English"
+  - button "登出":
+    - generic: 登出
+- link "跳转到工作区":
+  - /url: "#workspace-content"
+- main:
+  - heading "用户管理" [level=3]
+  - navigation "设置标签页":
+    - button "平台角色/用户管理" [pressed]:
+      - generic: 平台角色/用户管理
+    - button "设备用户管理":
+      - generic: 设备用户管理
+    - button "业务设置":
+      - generic: 业务设置
+  - status: 邀请已发送（ui-formal-811a895-viewer@example.invalid，状态：已邀请）；临时凭证由 Cognito 经邮件发送，本页面不接触密码
+  - region "平台用户":
+    - generic: 角色类型
+    - combobox "角色类型":
+      - option "全部" [selected]
+      - option "平台角色"
+      - option "Customer 角色"
+    - generic: 状态
+    - combobox "状态":
+      - option "全部" [selected]
+      - option "已邀请"
+      - option "正常"
+      - option "已停用"
+    - generic: 客户 ID
+    - textbox "客户 ID"
+    - generic: 关键词
+    - textbox "关键词": ui-formal-811a895
+    - button "筛选":
+      - generic: 筛选
+    - button "新建平台用户" [active]:
+      - generic: 新建平台用户
+    - table "用户列表":
+      - rowgroup:
+        - row "邮箱 显示名 角色 状态 MFA 所属客户 更新时间 操作":
+          - columnheader "邮箱"
+          - columnheader "显示名"
+          - columnheader "角色"
+          - columnheader "状态"
+          - columnheader "MFA"
+          - columnheader "所属客户"
+          - columnheader "更新时间"
+          - columnheader "操作"
+      - rowgroup:
+        - row "ui-formal-811a895-admin@example.invalid UI-FORMAL-811A895 CustomerAdmin A CustomerAdmin 已邀请 未启用 2475d4b8-a81b-4951-ac3d-5b3e9ce19fef 2026/10/04 17:33:47 角色 Scope 重置密码 停用":
+          - cell "ui-formal-811a895-admin@example.invalid"
+          - cell "UI-FORMAL-811A895 CustomerAdmin A"
+          - cell "CustomerAdmin"
+          - cell "已邀请"
+          - cell "未启用"
+          - cell "2475d4b8-a81b-4951-ac3d-5b3e9ce19fef"
+          - cell "2026/10/04 17:33:47":
+            - time: 2026/10/04 17:33:47
+          - cell "角色 Scope 重置密码 停用":
+            - button "角色":
+              - generic: 角色
+            - button "Scope":
+              - generic: Scope
+            - button "重置密码":
+              - generic: 重置密码
+            - button "停用":
+              - generic: 停用
+        - row "ui-formal-811a895-operator@example.invalid UI-FORMAL-811A895 Operator 设备操作员 已邀请 未启用 —（平台角色） 2026/10/04 17:32:15 角色 重置密码 停用":
+          - cell "ui-formal-811a895-operator@example.invalid"
+          - cell "UI-FORMAL-811A895 Operator"
+          - cell "设备操作员"
+          - cell "已邀请"
+          - cell "未启用"
+          - cell "—（平台角色）"
+          - cell "2026/10/04 17:32:15":
+            - time: 2026/10/04 17:32:15
+          - cell "角色 重置密码 停用":
+            - button "角色":
+              - generic: 角色
+            - button "重置密码":
+              - generic: 重置密码
+            - button "停用":
+              - generic: 停用
+        - row "ui-formal-811a895-superadmin@example.invalid UI-FORMAL-811A895 SuperAdmin 平台管理员 已邀请 未启用 —（平台角色） 2026/10/04 17:31:52 角色 重置密码 停用":
+          - cell "ui-formal-811a895-superadmin@example.invalid"
+          - cell "UI-FORMAL-811A895 SuperAdmin"
+          - cell "平台管理员"
+          - cell "已邀请"
+          - cell "未启用"
+          - cell "—（平台角色）"
+          - cell "2026/10/04 17:31:52":
+            - time: 2026/10/04 17:31:52
+          - cell "角色 重置密码 停用":
+            - button "角色":
+              - generic: 角色
+            - button "重置密码":
+              - generic: 重置密码
+            - button "停用":
+              - generic: 停用
+        - row "ui-formal-811a895-auditor@example.invalid UI-FORMAL-811A895 Auditor Auditor 已邀请 未启用 —（平台角色） 2026/10/04 17:32:35 角色 重置密码 停用":
+          - cell "ui-formal-811a895-auditor@example.invalid"
+          - cell "UI-FORMAL-811A895 Auditor"
+          - cell "Auditor"
+          - cell "已邀请"
+          - cell "未启用"
+          - cell "—（平台角色）"
+          - cell "2026/10/04 17:32:35":
+            - time: 2026/10/04 17:32:35
+          - cell "角色 重置密码 停用":
+            - button "角色":
+              - generic: 角色
+            - button "重置密码":
+              - generic: 重置密码
+            - button "停用":
+              - generic: 停用
+        - row "ui-formal-811a895-viewer@example.invalid UI-FORMAL-811A895 CustomerViewer B CustomerViewer 已邀请 未启用 58acf956-4d75-417c-923c-e87eae5251e5 2026/10/04 17:34:06 角色 Scope 重置密码 停用":
+          - cell "ui-formal-811a895-viewer@example.invalid"
+          - cell "UI-FORMAL-811A895 CustomerViewer B"
+          - cell "CustomerViewer"
+          - cell "已邀请"
+          - cell "未启用"
+          - cell "58acf956-4d75-417c-923c-e87eae5251e5"
+          - cell "2026/10/04 17:34:06":
+            - time: 2026/10/04 17:34:06
+          - cell "角色 Scope 重置密码 停用":
+            - button "角色":
+              - generic: 角色
+            - button "Scope":
+              - generic: Scope
+            - button "重置密码":
+              - generic: 重置密码
+            - button "停用":
+              - generic: 停用
+    - button "上一页" [disabled]:
+      - generic: 上一页
+    - button "下一页" [disabled]:
+      - generic: 下一页
+    - region "权限矩阵（只读）":
+      - heading "权限矩阵（V1 固定，只读）" [level=4]
+      - paragraph: 权限复选框仅展示当前角色的固定权限点（DEC-012）；仅允许给用户分配已有角色，矩阵本身不可编辑。
+      - heading "平台管理员" [level=5]
+      - checkbox "dashboard:read" [checked] [disabled]
+      - text: dashboard:read
+      - checkbox "customer:read" [checked] [disabled]
+      - text: customer:read
+      - checkbox "customer:write" [checked] [disabled]
+      - text: customer:write
+      - checkbox "site:read" [checked] [disabled]
+      - text: site:read
+      - checkbox "site:write" [checked] [disabled]
+      - text: site:write
+      - checkbox "device:read" [checked] [disabled]
+      - text: device:read
+      - checkbox "device:write" [checked] [disabled]
+      - text: device:write
+      - checkbox "device:assign" [checked] [disabled]
+      - text: device:assign
+      - checkbox "device-user:read" [checked] [disabled]
+      - text: device-user:read
+      - checkbox "device-user:write" [checked] [disabled]
+      - text: device-user:write
+      - checkbox "onboarding:read" [checked] [disabled]
+      - text: onboarding:read
+      - checkbox "onboarding:approve" [checked] [disabled]
+      - text: onboarding:approve
+      - checkbox "certificate:rotate" [checked] [disabled]
+      - text: certificate:rotate
+      - checkbox "contract:read" [checked] [disabled]
+      - text: contract:read
+      - checkbox "contract:write" [checked] [disabled]
+      - text: contract:write
+      - checkbox "license:read" [checked] [disabled]
+      - text: license:read
+      - checkbox "license:write" [checked] [disabled]
+      - text: license:write
+      - checkbox "config:read" [checked] [disabled]
+      - text: config:read
+      - checkbox "config:publish" [checked] [disabled]
+      - text: config:publish
+      - checkbox "command:send" [checked] [disabled]
+      - text: command:send
+      - checkbox "ota:read" [checked] [disabled]
+      - text: ota:read
+      - checkbox "ota:write" [checked] [disabled]
+      - text: ota:write
+      - checkbox "media:read" [checked] [disabled]
+      - text: media:read
+      - checkbox "alarm:read" [checked] [disabled]
+      - text: alarm:read
+      - checkbox "alarm:write" [checked] [disabled]
+      - text: alarm:write
+      - checkbox "report:read" [checked] [disabled]
+      - text: report:read
+      - checkbox "export:create" [checked] [disabled]
+      - text: export:create
+      - checkbox "audit:read" [checked] [disabled]
+      - text: audit:read
+      - checkbox "user:read" [checked] [disabled]
+      - text: user:read
+      - checkbox "user:write" [checked] [disabled]
+      - text: user:write
+      - checkbox "role:read" [checked] [disabled]
+      - text: role:read
+      - checkbox "role:write" [checked] [disabled]
+      - text: role:write
+      - checkbox "settings:read" [checked] [disabled]
+      - text: settings:read
+      - checkbox "settings:write" [checked] [disabled]
+      - text: settings:write
+      - checkbox "replay:create" [checked] [disabled]
+      - text: replay:create
+      - heading "设备操作员" [level=5]
+      - checkbox "dashboard:read" [checked] [disabled]
+      - text: dashboard:read
+      - checkbox "customer:read" [checked] [disabled]
+      - text: customer:read
+      - checkbox "customer:write" [checked] [disabled]
+      - text: customer:write
+      - checkbox "site:read" [checked] [disabled]
+      - text: site:read
+      - checkbox "site:write" [checked] [disabled]
+      - text: site:write
+      - checkbox "device:read" [checked] [disabled]
+      - text: device:read
+      - checkbox "device:write" [checked] [disabled]
+      - text: device:write
+      - checkbox "device:assign" [checked] [disabled]
+      - text: device:assign
+      - checkbox "device-user:read" [disabled]
+      - text: device-user:read
+      - checkbox "device-user:write" [disabled]
+      - text: device-user:write
+      - checkbox "onboarding:read" [checked] [disabled]
+      - text: onboarding:read
+      - checkbox "onboarding:approve" [disabled]
+      - text: onboarding:approve
+      - checkbox "certificate:rotate" [disabled]
+      - text: certificate:rotate
+      - checkbox "contract:read" [checked] [disabled]
+      - text: contract:read
+      - checkbox "contract:write" [disabled]
+      - text: contract:write
+      - checkbox "license:read" [checked] [disabled]
+      - text: license:read
+      - checkbox "license:write" [checked] [disabled]
+      - text: license:write
+      - checkbox "config:read" [checked] [disabled]
+      - text: config:read
+      - checkbox "config:publish" [checked] [disabled]
+      - text: config:publish
+      - checkbox "command:send" [checked] [disabled]
+      - text: command:send
+      - checkbox "ota:read" [checked] [disabled]
+      - text: ota:read
+      - checkbox "ota:write" [checked] [disabled]
+      - text: ota:write
+      - checkbox "media:read" [checked] [disabled]
+      - text: media:read
+      - checkbox "alarm:read" [checked] [disabled]
+      - text: alarm:read
+      - checkbox "alarm:write" [checked] [disabled]
+      - text: alarm:write
+      - checkbox "report:read" [checked] [disabled]
+      - text: report:read
+      - checkbox "export:create" [disabled]
+      - text: export:create
+      - checkbox "audit:read" [disabled]
+      - text: audit:read
+      - checkbox "user:read" [disabled]
+      - text: user:read
+      - checkbox "user:write" [disabled]
+      - text: user:write
+      - checkbox "role:read" [disabled]
+      - text: role:read
+      - checkbox "role:write" [disabled]
+      - text: role:write
+      - checkbox "settings:read" [disabled]
+      - text: settings:read
+      - checkbox "settings:write" [disabled]
+      - text: settings:write
+      - checkbox "replay:create" [checked] [disabled]
+      - text: replay:create
+      - heading "Auditor" [level=5]
+      - checkbox "dashboard:read" [checked] [disabled]
+      - text: dashboard:read
+      - checkbox "customer:read" [checked] [disabled]
+      - text: customer:read
+      - checkbox "customer:write" [disabled]
+      - text: customer:write
+      - checkbox "site:read" [checked] [disabled]
+      - text: site:read
+      - checkbox "site:write" [disabled]
+      - text: site:write
+      - checkbox "device:read" [checked] [disabled]
+      - text: device:read
+      - checkbox "device:write" [disabled]
+      - text: device:write
+      - checkbox "device:assign" [disabled]
+      - text: device:assign
+      - checkbox "device-user:read" [checked] [disabled]
+      - text: device-user:read
+      - checkbox "device-user:write" [disabled]
+      - text: device-user:write
+      - checkbox "onboarding:read" [checked] [disabled]
+      - text: onboarding:read
+      - checkbox "onboarding:approve" [disabled]
+      - text: onboarding:approve
+      - checkbox "certificate:rotate" [disabled]
+      - text: certificate:rotate
+      - checkbox "contract:read" [checked] [disabled]
+      - text: contract:read
+      - checkbox "contract:write" [disabled]
+      - text: contract:write
+      - checkbox "license:read" [checked] [disabled]
+      - text: license:read
+      - checkbox "license:write" [disabled]
+      - text: license:write
+      - checkbox "config:read" [checked] [disabled]
+      - text: config:read
+      - checkbox "config:publish" [disabled]
+      - text: config:publish
+      - checkbox "command:send" [disabled]
+      - text: command:send
+      - checkbox "ota:read" [checked] [disabled]
+      - text: ota:read
+      - checkbox "ota:write" [disabled]
+      - text: ota:write
+      - checkbox "media:read" [checked] [disabled]
+      - text: media:read
+      - checkbox "alarm:read" [checked] [disabled]
+      - text: alarm:read
+      - checkbox "alarm:write" [disabled]
+      - text: alarm:write
+      - checkbox "report:read" [checked] [disabled]
+      - text: report:read
+      - checkbox "export:create" [checked] [disabled]
+      - text: export:create
+      - checkbox "audit:read" [checked] [disabled]
+      - text: audit:read
+      - checkbox "user:read" [checked] [disabled]
+      - text: user:read
+      - checkbox "user:write" [disabled]
+      - text: user:write
+      - checkbox "role:read" [checked] [disabled]
+      - text: role:read
+      - checkbox "role:write" [disabled]
+      - text: role:write
+      - checkbox "settings:read" [checked] [disabled]
+      - text: settings:read
+      - checkbox "settings:write" [disabled]
+      - text: settings:write
+      - checkbox "replay:create" [disabled]
+      - text: replay:create
+      - heading "CustomerAdmin" [level=5]
+      - checkbox "dashboard:read" [checked] [disabled]
+      - text: dashboard:read
+      - checkbox "customer:read" [disabled]
+      - text: customer:read
+      - checkbox "customer:write" [disabled]
+      - text: customer:write
+      - checkbox "site:read" [checked] [disabled]
+      - text: site:read
+      - checkbox "site:write" [disabled]
+      - text: site:write
+      - checkbox "device:read" [checked] [disabled]
+      - text: device:read
+      - checkbox "device:write" [disabled]
+      - text: device:write
+      - checkbox "device:assign" [disabled]
+      - text: device:assign
+      - checkbox "device-user:read" [checked] [disabled]
+      - text: device-user:read
+      - checkbox "device-user:write" [checked] [disabled]
+      - text: device-user:write
+      - checkbox "onboarding:read" [disabled]
+      - text: onboarding:read
+      - checkbox "onboarding:approve" [disabled]
+      - text: onboarding:approve
+      - checkbox "certificate:rotate" [disabled]
+      - text: certificate:rotate
+      - checkbox "contract:read" [disabled]
+      - text: contract:read
+      - checkbox "contract:write" [disabled]
+      - text: contract:write
+      - checkbox "license:read" [disabled]
+      - text: license:read
+      - checkbox "license:write" [disabled]
+      - text: license:write
+      - checkbox "config:read" [disabled]
+      - text: config:read
+      - checkbox "config:publish" [disabled]
+      - text: config:publish
+      - checkbox "command:send" [checked] [disabled]
+      - text: command:send
+      - checkbox "ota:read" [disabled]
+      - text: ota:read
+      - checkbox "ota:write" [disabled]
+      - text: ota:write
+      - checkbox "media:read" [checked] [disabled]
+      - text: media:read
+      - checkbox "alarm:read" [checked] [disabled]
+      - text: alarm:read
+      - checkbox "alarm:write" [disabled]
+      - text: alarm:write
+      - checkbox "report:read" [checked] [disabled]
+      - text: report:read
+      - checkbox "export:create" [checked] [disabled]
+      - text: export:create
+      - checkbox "audit:read" [disabled]
+      - text: audit:read
+      - checkbox "user:read" [disabled]
+      - text: user:read
+      - checkbox "user:write" [disabled]
+      - text: user:write
+      - checkbox "role:read" [disabled]
+      - text: role:read
+      - checkbox "role:write" [disabled]
+      - text: role:write
+      - checkbox "settings:read" [disabled]
+      - text: settings:read
+      - checkbox "settings:write" [disabled]
+      - text: settings:write
+      - checkbox "replay:create" [disabled]
+      - text: replay:create
+      - heading "CustomerViewer" [level=5]
+      - checkbox "dashboard:read" [checked] [disabled]
+      - text: dashboard:read
+      - checkbox "customer:read" [disabled]
+      - text: customer:read
+      - checkbox "customer:write" [disabled]
+      - text: customer:write
+      - checkbox "site:read" [checked] [disabled]
+      - text: site:read
+      - checkbox "site:write" [disabled]
+      - text: site:write
+      - checkbox "device:read" [checked] [disabled]
+      - text: device:read
+      - checkbox "device:write" [disabled]
+      - text: device:write
+      - checkbox "device:assign" [disabled]
+      - text: device:assign
+      - checkbox "device-user:read" [checked] [disabled]
+      - text: device-user:read
+      - checkbox "device-user:write" [disabled]
+      - text: device-user:write
+      - checkbox "onboarding:read" [disabled]
+      - text: onboarding:read
+      - checkbox "onboarding:approve" [disabled]
+      - text: onboarding:approve
+      - checkbox "certificate:rotate" [disabled]
+      - text: certificate:rotate
+      - checkbox "contract:read" [disabled]
+      - text: contract:read
+      - checkbox "contract:write" [disabled]
+      - text: contract:write
+      - checkbox "license:read" [disabled]
+      - text: license:read
+      - checkbox "license:write" [disabled]
+      - text: license:write
+      - checkbox "config:read" [disabled]
+      - text: config:read
+      - checkbox "config:publish" [disabled]
+      - text: config:publish
+      - checkbox "command:send" [disabled]
+      - text: command:send
+      - checkbox "ota:read" [disabled]
+      - text: ota:read
+      - checkbox "ota:write" [disabled]
+      - text: ota:write
+      - checkbox "media:read" [checked] [disabled]
+      - text: media:read
+      - checkbox "alarm:read" [checked] [disabled]
+      - text: alarm:read
+      - checkbox "alarm:write" [disabled]
+      - text: alarm:write
+      - checkbox "report:read" [checked] [disabled]
+      - text: report:read
+      - checkbox "export:create" [disabled]
+      - text: export:create
+      - checkbox "audit:read" [disabled]
+      - text: audit:read
+      - checkbox "user:read" [disabled]
+      - text: user:read
+      - checkbox "user:write" [disabled]
+      - text: user:write
+      - checkbox "role:read" [disabled]
+      - text: role:read
+      - checkbox "role:write" [disabled]
+      - text: role:write
+      - checkbox "settings:read" [disabled]
+      - text: settings:read
+      - checkbox "settings:write" [disabled]
+      - text: settings:write
+      - checkbox "replay:create" [disabled]
+      - text: replay:create

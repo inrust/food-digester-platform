@@ -104,3 +104,5 @@ DOM 文本和日志节选仅去除行尾空白以满足 Git 空白检查；业�
 4. 稳态并发容量 / SLO、真实设备、生产环境验收继续单独建立对象与回执。现有 formal target Gate 不改成 PASS。
 
 相关历史：[首次真实验收](2026-10-04-admin-ui-target-acceptance.md)、[H-01 / M-01 本地修复](2026-10-04-admin-ui-h01-m01-remediation.md)、[d64af93 部署复查](2026-10-04-admin-ui-d64af93-deployment-recheck.md)、[af15a08 CI 超时修复](2026-10-04-admin-ui-af15a08-ci-timeout-remediation.md)。
+
+后续进展：[811a895 五角色、双 Customer 非空链路与实际 Chrome / Edge / Firefox 验收](2026-10-04-admin-ui-811a895-formal-acceptance.md)。该报告补齐限定范围证据，并记录 M-02 语言即时切换的本地修复与目标待复验边界；不覆盖本报告的历史结果或完整业务尚无回执的结论。

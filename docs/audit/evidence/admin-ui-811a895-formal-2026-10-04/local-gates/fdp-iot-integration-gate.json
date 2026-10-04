@@ -1,0 +1,640 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-03",
+  "status": "PASS",
+  "scope": "LOCAL_INTEGRATION",
+  "baselineCommit": "811a8959477d7b2608f2562b5d221f8b40370944",
+  "sourceHashes": {
+    "apps/cloud-api/test/helpers.ts": "29631777b4947474e08c03ec01b42f061555b085a8c27f478263bbef87190dc5",
+    "apps/ingestion-worker/src/archive/index.ts": "f1cc7aaa9f14a1ff0445de6e2d5408947ebcdb4549623bf866bdff094a5e7808",
+    "apps/ingestion-worker/src/archive/worker.ts": "56d250aece75c62a0287510bfa02631057ef6c35a5e774bb5ae2f1e493b372ea",
+    "apps/ingestion-worker/src/certificate-package-sweeper.ts": "54a90e7c8a76943038497b85076a97ff7f18da76a16db42ddc6c34a509a444a1",
+    "apps/ingestion-worker/src/heartbeat/handler.ts": "b03121850573aaadcb4c15f2069b98d404f467b993949bf698f238a194ca620f",
+    "apps/ingestion-worker/src/heartbeat/index.ts": "ebb11a9b3b09e16c74e439ff78668d52054b1773e371718163951b3538e08411",
+    "apps/ingestion-worker/src/heartbeat/repository.ts": "3fff8ab0c15a138680086e35e8fa97a655caf2748c1ad01eb608ec919f8f4ebe",
+    "apps/ingestion-worker/src/index.ts": "e978b6e2ec4c1410fc3c8202cdff8b31e90709b5d49781828e71827d3af6340f",
+    "apps/ingestion-worker/src/ingest/dispatcher.ts": "c777feda9f2209e8c78afa265c646ca8afc4d986523371e62baf0c9a6c701300",
+    "apps/ingestion-worker/src/ingest/envelope.ts": "f6dc1b9167d1cc2b1d39eb1ecfc4567fe95b6d0d56b6855eb44c97c2940bbd27",
+    "apps/ingestion-worker/src/ingest/errors.ts": "bab9e5c04941066e14a81301cf99d5eda44018dee8a7eb44c7aa331144f0dacc",
+    "apps/ingestion-worker/src/ingest/gap.ts": "58f66d368ced11b063d66454daaeffebe6716bb8dc8784377f21277c88c94f4c",
+    "apps/ingestion-worker/src/ingest/handler.ts": "508eac61c83c7acbde1f0b8e48268d82838da87239f37dbd5ee0a483580a4cab",
+    "apps/ingestion-worker/src/ingest/identity.ts": "03804d4cf373a34b50590c57196f027dd4c531c6732652be3159c4fbcd764f28",
+    "apps/ingestion-worker/src/ingest/index.ts": "ca2fd4db7e04e18220f29a9102ded71ee04b90fe3d243221757d8b84d0956374",
+    "apps/ingestion-worker/src/ingest/pipeline.ts": "7aef49db4caafef707c8eb8aa6d3c6bf813fa962408f229931cf5fe8c5da4cf1",
+    "apps/ingestion-worker/src/ingest/receipt.ts": "c2ecdf082322944da798dd86cc98b793bcd5e741ae5a13d7d4903c7c6c288e0d",
+    "apps/ingestion-worker/src/ingest/schema.ts": "3a546ab960233dfd4941ecff1fdcfd0b38edfa92b3c6ad231575ed41928dc87d",
+    "apps/ingestion-worker/src/media/handler.ts": "adf8e48becc1e499593f73b6f578830e5a80c53350ea54abe4153788c7f9dca5",
+    "apps/ingestion-worker/src/onboarding-completion.ts": "98923641665644b656aeee354f4656a4e3a6abe24b90b361c27d2ca072166e83",
+    "apps/ingestion-worker/src/outbox/drain.ts": "a1dcbfd6d9e4e3e65b01e5db251664d8e7029a2122deee2bdfa57aca8edda221",
+    "apps/ingestion-worker/src/outbox/index.ts": "cc686e33ee30a67bf4ba8575c6e2a54b17675410b62d8e469586dfc8091e0040",
+    "apps/ingestion-worker/src/outbox/leased-publisher.ts": "641d2146dd733eab1d9f7a303003ddd0393b52e0b87a508f0340704dadb09ad2",
+    "apps/ingestion-worker/src/outbox/notification-publisher.ts": "b582102e4af195b8a80dd9ad6132a5f01a33765bfdc5bab77d5f8c461261dfc2",
+    "apps/ingestion-worker/src/outbox/publisher.ts": "79ff645efb57b672a6492ac003bbf2179c8a3063071113647ea1b70c5502ef84",
+    "apps/ingestion-worker/src/replay/index.ts": "46fc835118d866f6bf6933aa262c50edcce4974ba1151b04fbebec9768d1326a",
+    "apps/ingestion-worker/src/replay/ingress-sink.ts": "d63199be494bc1c937bd21cc4143a26f1a66ed36be4f755b4982722539b72937",
+    "apps/ingestion-worker/src/replay/trigger-publisher.ts": "fb3e36a928f0bbc96fe1aa7e36c1599ab01657b4a6f334a91bbab1169f9f9e89",
+    "apps/ingestion-worker/src/replay/worker.ts": "e7e3657e3f45e6624fbc7b1fb5d59a99bd6857c511799a45f9fa19657c68b20e",
+    "apps/ingestion-worker/src/report/handler.ts": "564a84c0eb2f1f54926da92cdc60d50379a56e49e0810d97310b13ee3131f206",
+    "apps/ingestion-worker/src/report/index.ts": "bf1f35e896bc1815f4794e94e2b0bfdbc7d74dfa33ad699b20c7dc27a7009786",
+    "apps/ingestion-worker/src/report/repository.ts": "dda55699d19112c42e08eb9879d13e326119c23c898a2a52bd8b9d47e56725e8",
+    "apps/ingestion-worker/src/rotation-confirmation.ts": "78e7159bc59f295251896848070dd08425a4cc461ead95b6500e909f1f151378",
+    "apps/ingestion-worker/src/runtime/archive-entry.ts": "802e8f797d62a5de178b743515731c90927c7668b67d19f728f166d37183ee0d",
+    "apps/ingestion-worker/src/runtime/ingestion-entry.ts": "34f19683499ad5ea6d508616cd0ab05bc3ebcfa682bbfde0e82ea10cbbf304d5",
+    "apps/ingestion-worker/src/runtime/notification-publisher-entry.ts": "792b56f91e45dfaeba366443fde489a05393909719f820fbf61ccbb539e9ab7c",
+    "apps/ingestion-worker/src/runtime/onboarding-deadline-entry.ts": "cf4aa8156186dfbe628c661119cae08ae7f358eac7f6a1154be0a742dcf57728",
+    "apps/ingestion-worker/src/runtime/outbox-publisher-entry.ts": "254f128a3dd8898856314bc708e1c6bf70cf9acc9956a87da730e37c6b3a9c0b",
+    "apps/ingestion-worker/src/runtime/replay-entry.ts": "f6577f49b563e5df83760d9365f7b2666621f88754c2e181b022749cbd72b945",
+    "apps/ingestion-worker/src/runtime/replay-trigger-publisher-entry.ts": "af0278da852fe317479a755785273f276549cc2e6fa1e1f06a0ad4d3badd7abd",
+    "apps/ingestion-worker/src/signals/ack.ts": "d2c7478d031d533abbb1acff012cbf278f64704b8c708da44fabc60d23067a25",
+    "apps/ingestion-worker/src/signals/alarm.ts": "0dec4407bab3ed44dd6383d1bc4e4a7bd39a31fb7a44c4fb871468e201fcd7ae",
+    "apps/ingestion-worker/src/signals/archive.ts": "9c21d623e09056c28401e9bfb87f29c1419cd323546bc3db2d882a5a0b65b680",
+    "apps/ingestion-worker/src/signals/event.ts": "6099d0ba06ed8ea2ab09caaed7160ddc58cd44637ca15dfe7bd522bad4e39b95",
+    "apps/ingestion-worker/src/signals/index.ts": "ad670acbb5d09e0ffe1db24856c3ebb69da442263332652362e25c94cb44b7c7",
+    "apps/ingestion-worker/src/signals/tamper.ts": "84ded187e4d211fb57872f30cd733d5d55a76e8faadd97f3ddd324510d8bc372",
+    "apps/ingestion-worker/src/telemetry/handler.ts": "f5cf6be7746192a9e4e41f0bddad70ffcfdac8fe6129065650d74ea168922723",
+    "apps/ingestion-worker/src/telemetry/index.ts": "2ed1c9a5d6b98d383980e3d6c4f1d762f77740a39a2c39d142b05a12ee11c471",
+    "apps/ingestion-worker/src/telemetry/repository.ts": "22ad13c94c16c6fd252cc4d9991a94cb140ebc6c53c2dbcf96e7f24c653e3b4c",
+    "apps/ingestion-worker/test/qa03-data-path.test.ts": "e779e230f4c8b23da508fa2649e4ffb4d64d1bbaddabea34e0cbbd394ceabfc1",
+    "apps/ingestion-worker/test/qa03-fixture.ts": "de36c4c3a61cc0a2d9e4a6edaa108322e26e4448e46239dc14e37fac6e4b262f",
+    "contracts/mqtt/catalogs.test.ts": "bb558998cebe1b89fe99ffde7c9e7979d3ef2517eccdb9e442571c7f1b16fb3c",
+    "contracts/mqtt/catalogs.ts": "da4fc4f37e8b85df91e7a427a06d21457d99e2e3fd184f7e067216c8d06c4081",
+    "contracts/mqtt/command-catalog.json": "57f3f67fdc2b76c91b0b6025e2289efbae892611f7652fce00e87e1de7b6339e",
+    "contracts/mqtt/downlink-policy.json": "3cc9e67ca9ae7e31b1e3a495c183481f626d2873c8bbce65c81d244dd49cbfb5",
+    "contracts/mqtt/downlink-policy.schema.json": "a4f248ae412b20e326d043189c09ce2ce217b60e56b59a3a5908bab8cfef496f",
+    "contracts/mqtt/downlink-policy.test.ts": "b6d9acda32173a9b700930995337a437942d123485dfc56bbf650ca6095accf8",
+    "contracts/mqtt/downlink-policy.ts": "5b757c6e00a7c4bf3045b32d53a0ab0f79bf5fb9cf58f2afd2343c956ed82e97",
+    "contracts/mqtt/fixtures/ack.fixtures.json": "0ffa8f0a1214f319ac4d6e571157d80d60696415f33e23dde661f5ec87f754c0",
+    "contracts/mqtt/fixtures/alarm.fixtures.json": "ea014dca32f9a8c8100cc994c2e6d757303741166c476d153f3ba1f54c227622",
+    "contracts/mqtt/fixtures/cmd.fixtures.json": "b4c6ea7d60fa0a00bc7f581fde08977f1e274d03c70e6a4e2613434dda9be445",
+    "contracts/mqtt/fixtures/event.fixtures.json": "a1de9eb911d1d9d927cbf158f2819fdbe8ad435a0c4f9373545d2495c4ba52f7",
+    "contracts/mqtt/fixtures/heartbeat.fixtures.json": "22fe5d5ecd789c41b5073508c9bc304a88f1c30a12a85b12a137c19069d7c226",
+    "contracts/mqtt/fixtures/media.fixtures.json": "244a091d49c436cdd59ac8a3d19be5f4548a211a9472c1d5d667a920cd2815aa",
+    "contracts/mqtt/fixtures/notification.fixtures.json": "c95bdf4a3c35075b2141b5d2bbfc631664335459c536897828edf5a2c3fd405d",
+    "contracts/mqtt/fixtures/ota.fixtures.json": "612d64d1e1b6fe7156f3e0a156dda37d2a43943acd41af91842aa0e68df510ae",
+    "contracts/mqtt/fixtures/report.fixtures.json": "554b4758009e63d418da433b329657c5616b088379fc4a6bd62530ae0fc68d0a",
+    "contracts/mqtt/fixtures/tamper.fixtures.json": "b9af2b4cf85f4a4b4dd344a63f34c4d29a6d0dd50b50789ee6d1f900f70ce36c",
+    "contracts/mqtt/fixtures/telemetry.fixtures.json": "fcdb8fe5b67035e96869ff853798894c8403c941a37430a10dbb6d495b776499",
+    "contracts/mqtt/notification-catalog.json": "f451d08b53e81a9e2d5ef2a31a68bfab6bc0d1db3b60cad0b9e922adc2e7d8b9",
+    "contracts/mqtt/ota-status-channel-policy.json": "65d5ac92cf3a4ebdd94a417ad2d8c108ee1e8225b0e3ed8a6159df80542ec39d",
+    "contracts/mqtt/ota-status-channel-policy.test.ts": "f1feb75d13318ac2533ee8d79d25d6de98083b238c0e803bc3c0eb2ab3e5b0da",
+    "contracts/mqtt/ota-status-channel-policy.ts": "c79e1f76dbdc22655c58ad7586117313f5ef401d7e7d473f706874e10be4f7b5",
+    "contracts/mqtt/payload-normalization-policy.json": "ad6b282050dbe854064f3490dcffc79c7386ebae0187a5feb7463846a0a19905",
+    "contracts/mqtt/payload-normalization-policy.schema.json": "da0d9e46cb225c4cae74b094a60ac56573c18db99454a8ff4b41e5363047af3c",
+    "contracts/mqtt/payload-normalization.test.ts": "dbb023dde2918938ab180b160cd2368210b36dbd309f7c209414dbc371374faf",
+    "contracts/mqtt/payload-normalization.ts": "77acf174e6ea6b45bb2bf934f68263dc31b1236246342502cf6e4697ca568001",
+    "contracts/mqtt/payloads.ts": "659b945128bdd273e73bc86270f9c8a0e42b260e1ca074e3f441c945e819c95e",
+    "contracts/mqtt/schemas.test.mjs": "91f4e6a9f09295abd289f577e36ac046f8082a10c839148601e3d8d3162dea36",
+    "contracts/mqtt/schemas/ack.schema.json": "2682c0778f366cb4aafe93b84f2f0691f272bfda41d89e42fd4d4e19f7772be9",
+    "contracts/mqtt/schemas/alarm.schema.json": "f9c4c4713d9fd45556e4f7a7910b027b503767026f4c9d57a474d2b744948b36",
+    "contracts/mqtt/schemas/cmd.schema.json": "ce4eb67124b76caffb3561a5c20507b8c5dba27404388d1554a68b22f1161fb2",
+    "contracts/mqtt/schemas/common.schema.json": "e3a8460367224037767eea328bdd27ca333cd019069e2877345e75498a60bc2e",
+    "contracts/mqtt/schemas/event.schema.json": "30de32041122ce471e1e2de22147af545c12786c50325285eef136cef7b39e98",
+    "contracts/mqtt/schemas/heartbeat.schema.json": "38ccdd930da9eb4b8fa4d49627ad8e61d20de532abc53cdf275e13bc98b481bb",
+    "contracts/mqtt/schemas/media.schema.json": "ac4db3e1e1b7c4ba858da392e20e3667b6e2ed41cca15ee10454edbc62cff404",
+    "contracts/mqtt/schemas/notification.schema.json": "fba4f7df45257e53970cf91a43b9532120f9080fa382166432fb9e6708d9ce22",
+    "contracts/mqtt/schemas/ota.schema.json": "236ffd701c350ff148efea2eb79000595ff9f9e025289350c7ef7e9539d56aa2",
+    "contracts/mqtt/schemas/report.schema.json": "f8635836262edbac3f3bb8d3a0dfd072b4eab3dce0c995b0c97a43f062dd3743",
+    "contracts/mqtt/schemas/tamper.schema.json": "6e0e57807d697adbd4c3e8d202b1594568dba40f34def5b7808b3dd66a7e8227",
+    "contracts/mqtt/schemas/telemetry.schema.json": "df2deb185c387fed65d43b83abadcc70d205f08a503525de08e12517010efe00",
+    "contracts/mqtt/telemetry-backfill-policy.test.ts": "98265540eeac317ca9a87aff125a4f00e91e614b18f7252d1f1e020501ba79a5",
+    "contracts/mqtt/telemetry-backfill-policy.ts": "330d299a6bb4de6f54ffa896d060d2fae284ff10c1797eb3cc8293b89fd6d771",
+    "contracts/mqtt/topic-catalog.json": "0fe89d50927ae49ad2df5083ed305e8ff0ea8a0eefafa993d3e507302fe7d2e3",
+    "contracts/mqtt/topic-tier.json": "db1ce43735aa568521cdc259cfb0bd2f4eed200e71a008c1059e90f424dceade",
+    "contracts/mqtt/topic-tier.schema.json": "c6fb26194852480ff16aa018e575d9013a3578e7b50d96843f309cb33ce2daca",
+    "contracts/mqtt/topic-tier.test.ts": "1cf64c689e6829dced34b6ac4de7246e1ca9547653a49ef0e646aac93ae07210",
+    "contracts/mqtt/topic-tier.ts": "c7b2b2820c65071effc3c6425037ec00de758db034396f38e9468276f8a6168c",
+    "contracts/mqtt/topics.test.ts": "ff386bc6a7cd387b2159f91c4d1cf11bc0cd4843dddc5c4d742e14ab9e5cb1e4",
+    "contracts/mqtt/topics.ts": "e1be9e6b0c01ce21a9420b05d0e97a5f3485f71a435b676dac979dbdbf75508b",
+    "contracts/mqtt/validator.mjs": "6f676ec053ec1cb9ecf7304afb387adcba6e8c9cfcaad79051a3e25a4827f890",
+    "infra/src/app.ts": "55bcbbbd200669b1d7061471bb264b1994a04089082326f16bec9f44c5c254ee",
+    "infra/src/config.ts": "7a9b0cd795100236ea5b4678f2f280a06ed1c7aceae59f374eb16cfd9c8363ee",
+    "infra/src/database-capacity.ts": "56f06db40714d656b914603b6188f08c053eda74f3eb9f62ee462967ea4a57dd",
+    "infra/src/deployment.ts": "d1109285e8bde765260fa4e2e8308b740badd486b9d3cd7506ab98c4b36a1581",
+    "infra/src/index.ts": "08df3c9faee85557977d7632a0c6ea9dfe0d9de232839b74172fe3a6947e1b48",
+    "infra/src/naming.ts": "c603cdf28a46d30e95c7e6636407164a9d128b41bbf34c142a30a4fd10a59bd8",
+    "infra/src/stacks/admin-bootstrap-execution-stack.ts": "044c1826b67cda939a5f2a19f0d9c17e1acf67cc4e07ab547c20ac10f43099fe",
+    "infra/src/stacks/app-dependencies-stack.ts": "6aa48fe1e26b32479113c10e6d55c172e8f721cb4a1f427808f20c15e5a098a5",
+    "infra/src/stacks/migration-execution-stack.ts": "57b689d6074892e1f0a1a19c03d8aeef0d1f93877096a8035c2e835fd36a00a3",
+    "infra/src/template-security.ts": "194c4bc2a86314d22ade7d2f6b96f9ccc491b3a9231b99ac8596724d37f080ee",
+    "infra/src/topics.ts": "612c275cbff31fb940c9747b8db52d3d1de3996ad21979b3ddab0ddafeffc386",
+    "package.json": "c3cfe21a44d824a698c5ee2f29a9214a5d018b8fe30207ac26807c8da7e47332",
+    "packages/auth/src/browser.ts": "30a0106d9878e94ecf5bfce0e6887f7db9f75a87ff2d52ecb2c7e2c6c9f4102e",
+    "packages/auth/src/cognito.ts": "311fb42a98268399d2b090e887728f22acf925d56feea9fd1fd5969f7c672816",
+    "packages/auth/src/device/certificate-lifecycle.ts": "75940bb9dce6531c4f5ce7f72636cfdb0eb0eb8d2bf28cf2df7d4a65ec73ca21",
+    "packages/auth/src/device/guard.ts": "caab366f263d38277a1ee79449de4986e4138e0ba106a505d8b6c611ae7ac0f9",
+    "packages/auth/src/device/mtls-context.ts": "73d69e0f18312649ac6a2830671fa350d0a9224f7dcad2661589b0af7ffd564e",
+    "packages/auth/src/device/verifier.ts": "3b5ab8eb838d676a0c1cd9f2d52173721dc43032761758fd82cb843109866e1a",
+    "packages/auth/src/errors.ts": "0f5008d348c424b5821f15adde53be6a4f9f5c640ac07f9d71c38c652d547e57",
+    "packages/auth/src/guard.ts": "781871701c83dab69f7387967c2efe2d81934baee856b57ddce09e6a4e1e6d68",
+    "packages/auth/src/index.ts": "d95043be4ccc89d0cb617c27de264477eb8f38dfc198bb46a782b1fdd59ea187",
+    "packages/auth/src/onboarding/rate-limit.ts": "2f2eee6c58f12f066f18bdfb2a0b0aa4895d146e411c7dcf135a47fa4b969556",
+    "packages/auth/src/permissions.ts": "61b5c2097a49258b11db68781f19723dd3f1e18895c110151aeaf7ad8816344b",
+    "packages/auth/src/roles.ts": "46b793ce36bd10fe1867fe8371d0a38866578af8d30b353deb2e5a0ab9e6a0a5",
+    "packages/auth/src/secure-package/envelope.ts": "3bfb66a816e7aaf17ee9f9376f234b3081825e6d2f785f10e76db19593bae7df",
+    "packages/auth/src/secure-package/errors.ts": "93dfece6a45c1ce7fa6e6e2fbf217a5d6a0ae5f63eaa41e68cd35a502286da83",
+    "packages/auth/src/secure-package/local-test-key-provider.ts": "aeb6af52ca50abd07114af0d487ea4221fbbfc4f105fa5b691ee43575e5d78ca",
+    "packages/auth/src/secure-package/service.ts": "fb15b9a3858671a3fd9cb8e1912555163dc78fae56e4b9153f5ff56c63023bc8",
+    "packages/aws-clients/src/cognito-admin.ts": "87487ed90d2b0434e37535050f3689ccd7a7db9c6d41a6b98e264ef1dc7c80f9",
+    "packages/aws-clients/src/database-secret.ts": "ca8a7acb8c6352f0e3069752c30858e286e604e5af12ae56a79b68882066f710",
+    "packages/aws-clients/src/device-certificate-metadata.ts": "baf344fb1193bff6622749d6ea26b4e52d1782e06adc0521d72e5315c934c7a6",
+    "packages/aws-clients/src/index.ts": "f69dd17ffd97bb0cadd43157a47c596733ed664bda59036b8e1f22345aea97e5",
+    "packages/aws-clients/src/iot-data-publisher.ts": "8e8f8e885e5f596380b25465cf86ac4c469e97a36e0678b6922932047313c543",
+    "packages/aws-clients/src/iot-device-policy.ts": "9e7d1c2ae9ebee5db12a9cbd9e2cfd2636f11a1d79902f3131789b0791109fdd",
+    "packages/aws-clients/src/iot-provisioning-client.ts": "5f4cd5790b2fd46169f1f2606ea77b5c4526a702330a0402c0ca9d00d746e956",
+    "packages/aws-clients/src/kms-data-key-provider.ts": "ec629ab04618ffdade13f7a119e2d8f04b4be6926223ec0b1f271b479423edb7",
+    "packages/aws-clients/src/ota-firmware.ts": "7f334c44ffa3bcaa2fb7301a893cf826833f92501c63fd0e73d6bda588ecf13a",
+    "packages/aws-clients/src/project-ca-certificate-issuer.ts": "fb295fcfc623f4b8c3d2ceda3becac7a4a63b201ea88570921fce5e5023efba8",
+    "packages/aws-clients/src/s3-activity-export.ts": "2176dd664da7fd3ec71b679b95a2f3b4e1e4b2ad6a78b08c26cd2e9fb91ef0a6",
+    "packages/aws-clients/src/s3-archive-store.ts": "e43944959b218ea81af1c574d79dc0d05cdc626b4f219020b39d4bf8a9e597f5",
+    "packages/aws-clients/src/s3-media-object-storage.ts": "67a34926650b1703564fbdc7c916262d10ec0136c3b199e4c577eb25af8ee98d",
+    "packages/aws-clients/src/s3-media-url-signer.ts": "5074acb2f955cce0378a9b3807509b2fddd45136f67c7fa3fe82f256de26d682",
+    "packages/aws-clients/src/sqs-archive-sender.ts": "c07b226fe6e514f717b98ba715e959f7629afd4f2c5e9dd93193a9aac927fb9f",
+    "packages/aws-clients/src/sqs-json-sender.ts": "a4a32fa0c2ae47f1fd0ebe75ebe1ba49af6a6a717432c6b1696544a37f5d6818",
+    "packages/database/package.json": "45fe7c3f6073bb6a1997d0379c415f978870cc624da3e61fadc7ae676d5178f8",
+    "packages/database/prisma.config.ts": "4ec1e1ea9c25c992a3b8f70cb0243d27f4456814bae8a1d7ce4daa6ff933e72b",
+    "packages/database/prisma/migrations/20260826120000_init/migration.sql": "b269a9985a42ada6e592200bee1aa6f341930d3bfd08d22f9910907068349287",
+    "packages/database/prisma/migrations/20260827160000_onboarding_request_review_version/migration.sql": "e10a34e25d6f9c63fe443b3a0fceb9235837d903be05c33b491451ce9bdac2bb",
+    "packages/database/prisma/migrations/20260827170000_certificate_rotation_requests/migration.sql": "4ef7dce77b3371eacc05db75cb4d7c47502e1e8d4890a29dbedc60d4feae252c",
+    "packages/database/prisma/migrations/20260828090000_outbox_event_retry/migration.sql": "2a93d35849330ed2ef30cf0b84d1c8dfab1ae7e82abb9064840cc228dba5aa1e",
+    "packages/database/prisma/migrations/20260828120000_customer_version/migration.sql": "7e1eff395204b543bb6f7a105ed5d5c7dcda23ee3517eb149779b35863b23de7",
+    "packages/database/prisma/migrations/20260828130000_site_status_version/migration.sql": "6a72001e2b3b96eb7e17ef7ff634ff4717dbb9df6ed675a0a17e3fd1e9d32051",
+    "packages/database/prisma/migrations/20260828140000_device_retirements/migration.sql": "1f570f0d0770be4fe0d2ea849521d4b739d475f13d0228a6d0984d41b02f4f83",
+    "packages/database/prisma/migrations/20260829090000_configuration_target_device/migration.sql": "b43106f21101aef80b587d0a7203be2c82dc01ded7a6014b7411393402865a0f",
+    "packages/database/prisma/migrations/20260829100000_consumable_projection_nullable_customer/migration.sql": "735bb862f59287528d067e6a55b95d329e0a6f532b07df5161c41181b50a7b66",
+    "packages/database/prisma/migrations/20260829110000_consumable_requests_open_unique/migration.sql": "2fc05764646fe6ccb6e7eefc7b7e4498235f11a073f854d8a7e3bd6124ca8358",
+    "packages/database/prisma/migrations/20260829120000_device_users_version/migration.sql": "4d3d9e234ad563e86ddfd149b3ce67fc888950a1ddf9061a106209db3438744b",
+    "packages/database/prisma/migrations/20260830100000_alarm_handling_columns/migration.sql": "22694934f33b86e9d602c3c5141cef3f245762da4ad7c3ea3120064eb2370162",
+    "packages/database/prisma/migrations/20260830110000_business_notifications/migration.sql": "8a681ed016e94d462f8bb1f69abc78755c6e0d18da7f112efb77b7318cd5e711",
+    "packages/database/prisma/migrations/20260830120000_esg_export_jobs/migration.sql": "d710909b8307f783542a11aaaa8753943fa6cbc7dec371c405065947a259dcf7",
+    "packages/database/prisma/migrations/20260831100000_command_timeout_scan_index/migration.sql": "1ec1293d9d7fb17fe2b4233f220facfe9657446a541f5471620cd872a38cc61d",
+    "packages/database/prisma/migrations/20260904111500_dec017_onboarding_deadline/migration.sql": "6e523b14085a5646621ee15540982313969ada5bf5446af402111418e3b48e11",
+    "packages/database/prisma/migrations/20260904160000_device_user_argon2_phc/migration.sql": "394599d5bb59fa6487fdf5f4b1edf2927b85d89113d991ccac910f563e933280",
+    "packages/database/prisma/migrations/20260905093000_p0_data_integrity/migration.sql": "a9145c0e709ceaf2814c9c3f74e6e07b858fb7a6507a9ab3b7c26b195c299aae",
+    "packages/database/prisma/migrations/20260905093000_p0_data_integrity/schema.sha256": "dde0991713cd873db3e67db27a1b014efa71d1d4506ddb1aed903f125fa54e4f",
+    "packages/database/prisma/migrations/20260905110000_p1_state_history_axis/migration.sql": "539e3b5fc0816fee067d395a83cb0e7c3da10fe3db28d6c1329f938b92f67a4f",
+    "packages/database/prisma/migrations/20260905110000_p1_state_history_axis/schema.sha256": "5247d6b84fe324d3d3d4a247a097a5958f9fe6f79c171b22d545c1520374020e",
+    "packages/database/prisma/migrations/20260905120000_media_upload_session_sha256/migration.sql": "2ee34f61d107589417fd815550aed8138ed66348fedb1e405b100f16a1299232",
+    "packages/database/prisma/migrations/20260905120000_media_upload_session_sha256/schema.sha256": "c03ecfcad62d241a075f1d7ad9a9c3b9c7135471390397f170907688876c9a00",
+    "packages/database/prisma/migrations/20260905130000_seed_rbac_roles/migration.sql": "5e34e33f38ffdff8e13fa34da533ca2333da2cf758dde2e0d5409045659b9aad",
+    "packages/database/prisma/migrations/20260905130000_seed_rbac_roles/schema.sha256": "c03ecfcad62d241a075f1d7ad9a9c3b9c7135471390397f170907688876c9a00",
+    "packages/database/prisma/migrations/20260905193000_auth_rate_limits/migration.sql": "48415043e108cab7552a7e5955c45bba0a9a2d118f745274ff38afaa1d3d8e8e",
+    "packages/database/prisma/migrations/20260905193000_auth_rate_limits/schema.sha256": "e785a49576fa01a63ae7e4b4bc140344771f62ae7a2c8b5147ab5bcaa4f900b4",
+    "packages/database/prisma/migrations/20260905210000_certificate_recovery_state/migration.sql": "3b54f3580a439f4f20283d31f2f3914c73cc4263dbb4700141fccaebc77886a3",
+    "packages/database/prisma/migrations/20260905210000_certificate_recovery_state/schema.sha256": "5c6afcbefc0c332f005c85b1129a6cd831c50d01147dc3b6d7a9fef014a3d869",
+    "packages/database/prisma/migrations/20260905220000_business_settings/migration.sql": "541dcb09e8e77d947aa55a381ab0ba11325dca3bc651eb422f136a0ae0479628",
+    "packages/database/prisma/migrations/20260905220000_business_settings/schema.sha256": "946ce971a7b90418e189a85ddf073ec7631b18a2c584a0335acf0012a504e82f",
+    "packages/database/prisma/migrations/20260905230000_device_activity_export_jobs/migration.sql": "4bba5a82df6d0a0b3a5ff89ae250560bb0f8246e7011d28b44b3b6e6310eaabb",
+    "packages/database/prisma/migrations/20260905230000_device_activity_export_jobs/schema.sha256": "7ce21b7564e148b73bcb4bba1afe8a8f996a2b6b1bf99f96306b4793ebf15db7",
+    "packages/database/prisma/migrations/20260907100000_onboarding_provisioning_jobs/migration.sql": "971d33c9610ca740c910b936c79d4cf1989b470fb6b4b39b0e1d81d9a2575ed3",
+    "packages/database/prisma/migrations/20260907100000_onboarding_provisioning_jobs/schema.sha256": "a22afb6f0a6c5ee2bbf0ab65210aa5570c68d3a3b941338849a65bcfa93a65c3",
+    "packages/database/prisma/migrations/20260907143000_archive_replay_esg_correctness/migration.sql": "0b098050cb27d72dc4603b62cee869690e3c8a9bb4f2b0649f33570a1bb9720c",
+    "packages/database/prisma/migrations/20260907143000_archive_replay_esg_correctness/schema.sha256": "b807c427c93b5217c8150ab80c370e123ceeca55839f8855d657f8007a600893",
+    "packages/database/prisma/migrations/20260908100000_outbox_publisher_leases/migration.sql": "2074b283bd0ecd74143eeb70077e3b4445311b4d9fb217ea232f67d40b6e7977",
+    "packages/database/prisma/migrations/20260908100000_outbox_publisher_leases/schema.sha256": "0fa2676d868cba01121eb2259537b9cc9db0066434046bc0f98c196d30726f79",
+    "packages/database/prisma/migrations/20260908160000_activity_export_leases/migration.sql": "afb66392f6606bcd4e6843ca37a7ceac1697eded1eebf143bff7051ca892e530",
+    "packages/database/prisma/migrations/20260908160000_activity_export_leases/schema.sha256": "78bab7e5654afb23a499933e7374cb29bb8cd7a79b0b447a31339e1e993e670f",
+    "packages/database/prisma/migrations/20260908173000_close_security_concurrency_gaps/migration.sql": "bc21ff765e8f356dcd3de11959f06f8ccf121ce055c1f4cacebdcb6e79c0772a",
+    "packages/database/prisma/migrations/20260908173000_close_security_concurrency_gaps/schema.sha256": "07f7baa56fa9d0b8a6c9ab4cef8c44f64fc508413d153f637210a85781ff445a",
+    "packages/database/prisma/migrations/20260908200000_admin_p0_runtime_workers/migration.sql": "7917731f4efa1bd05c515191f4205a13fda03bf2ab9713582549def9c34e77fe",
+    "packages/database/prisma/migrations/20260908200000_admin_p0_runtime_workers/schema.sha256": "51ea09ae40a6a98fe82c2d2e50913b10e69b81a1fb367802bbff0f50d6b58d5b",
+    "packages/database/prisma/migrations/20260908210000_admin_p1_cross_layer/migration.sql": "8e49313f6f198524d498b5e26f0242d514ee5498315425a3858d055dc54062fc",
+    "packages/database/prisma/migrations/20260908210000_admin_p1_cross_layer/schema.sha256": "a90aeb76f789d49bd373f3ef9eeeb0fd2979ecf345dad4a86b39c494a23b93ba",
+    "packages/database/prisma/migrations/20260909100000_cmd_ota_p1_security_concurrency/migration.sql": "07a9e86cf36b4525257c38d3544ca1498a416e2b2c57491457e46c0e4885026f",
+    "packages/database/prisma/migrations/20260909100000_cmd_ota_p1_security_concurrency/schema.sha256": "4adfc202b896ad15a2ec3859804defac868e8573b40a510e8d791fabe4721c6e",
+    "packages/database/prisma/migrations/20260909150000_cmd_ota_p2_semantics_governance/migration.sql": "5d9c5562c68ad70050ecc6e07b843a11bec7676d30f14e739347a000af4bcfc2",
+    "packages/database/prisma/migrations/20260909150000_cmd_ota_p2_semantics_governance/schema.sha256": "da6e074dd764bad6c829a4f5ae6fc71ec773c6d6dcec2ca531336813727eb6ea",
+    "packages/database/prisma/migrations/20260910110000_admin_onboarding_submitter_status/migration.sql": "5db52ad299e3300e1e1c049b712a543e08145081ed0596f47a86837ec2b386b8",
+    "packages/database/prisma/migrations/20260910110000_admin_onboarding_submitter_status/schema.sha256": "640120803af5306e73d664d22bfaeb97de2704ac4da602319d1f0e5f1a3d5e63",
+    "packages/database/prisma/migrations/20260910170000_device_user_sync_receipts/migration.sql": "22e1efe0bf41fd08903288647ad122fdd00d65c57781995d478e1b8af392f221",
+    "packages/database/prisma/migrations/20260910170000_device_user_sync_receipts/schema.sha256": "cfcfcd349f681389a9310f58ef4e32376f7f54b8b908032f0b8533238bcfc741",
+    "packages/database/prisma/migrations/20260912123000_ota_target_failure_detail/migration.sql": "70115386648c4905e6e642e64d801b3f9547a34e65758069cb10f3ecfbd99f71",
+    "packages/database/prisma/migrations/20260912123000_ota_target_failure_detail/schema.sha256": "9a66039db1c68e7640c2cf8bd977731a98a10fe64af3ab2d2802d0738028535f",
+    "packages/database/prisma/migrations/20260929120000_csr_onboarding/migration.sql": "0878bc92881914294bc13141134a0d7c1d04b0f698df2e93ae0dcc9113642c77",
+    "packages/database/prisma/migrations/20260929120000_csr_onboarding/schema.sha256": "3d575cb8820bd26e7a7a1ecc1742387693c09810f1ec8a3d57c4d8fb65ea2f10",
+    "packages/database/prisma/migrations/20260929130000_remove_onboarding_tokens/migration.sql": "3cc347ec67b0184c5b82a40e6fc6155a280bd93287ddeb85406307918df1b4dc",
+    "packages/database/prisma/migrations/20260929130000_remove_onboarding_tokens/schema.sha256": "71ed8060f48ace96186beac119a746ca818405173f8d027782312b4ddff0b416",
+    "packages/database/prisma/migrations/20261001090000_csr_dual_channel_certificates/migration.sql": "46668f7f03104a50adbfc2cf327db6f1f6cc585b1d44310beaca245b97fc27ac",
+    "packages/database/prisma/migrations/20261001090000_csr_dual_channel_certificates/schema.sha256": "6832ff5d3e70ccb7f1aaafef4a2f8c30d942269f0562ef9123ad953dea812f71",
+    "packages/database/prisma/migrations/migration_lock.toml": "99836963713b4f5b269ad49af0ed3d7b0b2e336115c2f92dc9ac683d139d0900",
+    "packages/database/prisma/schema.prisma": "fd3e5b59670fe300db0406e295eaf9d9022bb5108210d24cd22c19dcf1c19d73",
+    "packages/database/prisma/seed.sql": "601da74d696518a3b013db647734fcc0e92a60b08d88c096ee617ef629224976",
+    "packages/database/scripts/check-migration-drift.mjs": "05ba6df84b5996d8adf6bd1ff7bf87193ac683c2ae220fed7bbfe095df1e7ec1",
+    "packages/database/src/advisory-lock.ts": "060d9ee7e9fdee0d5706a87029464c47e3ea4a27c7679a3de83c98089c304b04",
+    "packages/database/src/audit.ts": "384654bdd8044a28bbb944f4165cd21f27e346bc2c5baefb6155b75c298f8d83",
+    "packages/database/src/client.ts": "c8ac8cdf45f7fc4220a475a0d18c5fd39aee0677e3d74d69a432ddc0ae797975",
+    "packages/database/src/context.ts": "d510a89caa5ec482909f280f4ed4fe5e3bb5bc65fff35c821070dc3b15e69ec5",
+    "packages/database/src/errors.ts": "198ba46c44f053bc1f5928bc8ef73d5b7b0a1141c316f0592c04739ba0096321",
+    "packages/database/src/index.ts": "0f7d711f4111605972b1cc945b5aa05dac72d72f8b0fce74304ad681f1400a51",
+    "packages/database/src/pagination.ts": "e450dbb6f2d40d75ea035f38034cf60c8aa9aee50d91eaf720cacf840fe3215b",
+    "packages/database/src/repository.ts": "514a0984bf1af075421c0dbfd7f7698cc2e761a646955d27f724c5d374448a3a",
+    "packages/database/src/transaction.ts": "17d7b5bf8b5e4a279b73488eb8016f6194366dfc7d63c3cc281e169689d6cc5f",
+    "packages/database/test/db01.test.ts": "74f7b314477dfdaa7e135f53d33bec1ad85e59718a9ebffa1cb392fdebbd4353",
+    "packages/database/test/db02.test.ts": "78d4ef8e73b98041a702796317b520623b303e8224fcba4932fe714685eca619",
+    "packages/database/test/db03.test.ts": "5f4d65aebc00565fff70002bbf79c2acd1669ebefec1180e3023b08b90559342",
+    "packages/database/test/helpers.ts": "cc370e6508116a51c941cb2083d9d1ed819e99ace09744347295e83e35cc2614",
+    "packages/database/test/index.test.ts": "1caf6b801c4e7a81b63312eda333a540d62701d3545a9e13728cf69d669f7aad",
+    "packages/database/tsconfig.build.json": "5c4b2def96b4bdd29cde82fde0f2bee2973a9b5aaa40f75dec959b8db8f71978",
+    "packages/database/tsconfig.json": "4b38b08c19c5f05ac530df7f10a1c3563dea21e37e8763c9173eddd847f32c71",
+    "packages/domain/src/alarm.ts": "61da343a5c2ef7b85e5243f21d05f0b3e1a57d7e4d6b7b09e5c7cb361f93538e",
+    "packages/domain/src/command.ts": "8f12419a67cf34c1c20b1bd30458e2dcf2181f4eff75d6d15ac2612a5b634ee9",
+    "packages/domain/src/configuration.ts": "99ff37db14cad1485e6503ad9bdba7732ebf9584bf928c2730c8d7dac1cd65c5",
+    "packages/domain/src/consumable.ts": "c7526ca38c99c1c1bf3b6e3ff2561184424a85271b6cffc8fe600fe3bbeec3bc",
+    "packages/domain/src/contract.ts": "6bb399be32225a55c75fe20748937de5cc2b453fa5885fb040bd24f3fdec5392",
+    "packages/domain/src/device-lifecycle.ts": "563346c518c6ecbc040ca25cb3dff0ca237c5291ed8c72582d8d5fbc49b83f0b",
+    "packages/domain/src/index.ts": "bb7d1042d2586c0d93ca9cce0ce80d041bcdd68b5be78b3ecea9ad33678f4d64",
+    "packages/domain/src/license.ts": "632ead77959f87133fc04e122a6e9abdeaf5472401455a022b4abe8cb868221d",
+    "packages/media/src/index.ts": "d1cd5b8349a1a36163ed46876068e352187651ee2970df7a946e938e54d3fd5c",
+    "packages/media/src/metadata.ts": "1b0d1815e53ae6973f8767da34549de268cc34106fbab887e6630cef51ec2f28",
+    "packages/media/src/storage.ts": "e245c24e3e0970c2e8c09ebad6adfbd2c4b13e86eee7f198a0df69688a1aa95b",
+    "pnpm-lock.yaml": "2126f03557c343bc7fc90b12e060f663492a67b647e0892bb18dba126a7f3364",
+    "scripts/device-simulator/core.mjs": "db2e740ced4416e2d9707739a157922e99dad941a1ef2f9afceb1feb0ab748b7",
+    "scripts/iot-integration.test.mjs": "223ab37a976b046f2d14524b38e773bbd9f7b4ab2276974b54a60ddc18355990",
+    "scripts/run-iot-integration.mjs": "f97d7a18272c8d37be1ea7fd447fcbf8cdbad2d39b4145fc9bd00e88c5102b5b",
+    "vitest.config.mjs": "a2791d70c8ffe8cdee874f1909b0b04db033a0828a550fd96790eb23edf3240e"
+  },
+  "executedAt": "2026-10-04T10:51:53.100Z",
+  "environment": {
+    "database": "isolated in-memory PGlite, all migrations",
+    "awsPorts": "in-memory IoT envelope / queues / S3",
+    "productionCredentialsUsed": false
+  },
+  "legalMessages": 86,
+  "receipts": 86,
+  "duplicateBusinessRows": 0,
+  "rawArchiveRecords": 62,
+  "traceablePending": 4,
+  "scenarios": [
+    {
+      "name": "eight-routes",
+      "prefix": "QA03-FA19E25EEE33",
+      "status": "PASS",
+      "cleanup": "PASS",
+      "routes": [
+        "heartbeat",
+        "telemetry",
+        "report",
+        "alarm",
+        "event",
+        "ack",
+        "tamper",
+        "media"
+      ],
+      "legalMessages": 80,
+      "receipts": 80,
+      "businessRows": 80,
+      "duplicateDeliveries": 80,
+      "duplicateBusinessRows": 0,
+      "archiveRecords": 60,
+      "rawHashChecks": [
+        {
+          "messageId": "TELEMETRY-B9F3996E-1",
+          "rawSha256": "d3c77c9e2f8bd4eb75f2ba70862f4f3a666a45d711d44d738005f873f00f4737",
+          "objectSha256": "e9dc4bc017db86063a52d0d08360bf6d10e8371f08d3121bbab687b0794fd423"
+        },
+        {
+          "messageId": "REPORT-B9F3996E-1",
+          "rawSha256": "c2b6be6986b82b9ce44dbad7906b716624c13389b7ff51c57fd3edf2ace2688c",
+          "objectSha256": "d8b5d91ee0bc0a885991f289c5fbbe1f21782e1ab96bf62fa69e94dcf94edc14"
+        },
+        {
+          "messageId": "ALARM-B9F3996E-1",
+          "rawSha256": "6f4d928279af1e8a0baf74fe1ab1b5e0c26ba0e8c9b13d44e1f668336fc0d6e9",
+          "objectSha256": "0321bf5c0c4794f64521f0b6cf531e00b22c395e4615adb62a0ab3b28e92cc4d"
+        },
+        {
+          "messageId": "EVENT-B9F3996E-1",
+          "rawSha256": "ad924b159358371b2796a6fe55847334c7402810d67b82d7229216213a9b70ba",
+          "objectSha256": "e2c99064c46afe24101a22e70ea8364e4678081fdc496d8abf7344c1223c71a5"
+        },
+        {
+          "messageId": "ACK-B9F3996E-1",
+          "rawSha256": "c6efe4f78efc50f202a3f18c0773226d2b988b04f15bbd7fceb7bc62d938df55",
+          "objectSha256": "078bfd3f6bf5d18a366e41195dc7dc25b35b4084f3b364ddbe66c7fceba5dda6"
+        },
+        {
+          "messageId": "TAMPER-B9F3996E-1",
+          "rawSha256": "6a99ef5ae230d22b78ddf9146603a204ca0d55f31a84bf9cb62869caaed25685",
+          "objectSha256": "a8af4d419e71c04674ebab3c0cdce4ad179fdcda081e316b2bd25594dd0f5b78"
+        },
+        {
+          "messageId": "TELEMETRY-006A70BD-1",
+          "rawSha256": "ea67e95dececffa6524b077bfc72dd10df538eeb2ddc5593fdbd3a6381fcc406",
+          "objectSha256": "2e6a5306830879b650c1d6407fa4dcb1f669a7923097e1dbcc7ca17423c4e1b0"
+        },
+        {
+          "messageId": "REPORT-006A70BD-1",
+          "rawSha256": "8376fad4e160f1ca498bb814ba94f884e23411da37598510ef9bdda9f6ea4604",
+          "objectSha256": "9384d12a7a483916033cea7d4b9369fd56a342b8b67a73c259e58947b02c2eea"
+        },
+        {
+          "messageId": "ALARM-006A70BD-1",
+          "rawSha256": "1cbc457a2e47cda3994d555649d0815c36e36ad02360d08cb46d820170f5419e",
+          "objectSha256": "638409d5d7b0ec07e5d64e024d954d95a17e91e6a9773b1c3889d201f5e1a3fa"
+        },
+        {
+          "messageId": "EVENT-006A70BD-1",
+          "rawSha256": "0e811af1c41244ec7c4b6fc6c2599bfcb23dc1237011e0036f129129558ba70f",
+          "objectSha256": "938438ecd32e6f41a988d35fdc73a15bee6be57be3cfa1ab6f06f4ce15b622fc"
+        },
+        {
+          "messageId": "ACK-006A70BD-1",
+          "rawSha256": "af1220765396d39a8849f2ebfc7ed6db3503b41e3f55f7ea716cf4fe4843c9ef",
+          "objectSha256": "ddceea7b8312f911c66f8f85408cec3745baa8f70c79946d008a09d4028e24c2"
+        },
+        {
+          "messageId": "TAMPER-006A70BD-1",
+          "rawSha256": "0a8dabc1ada4d55c803f2d9af761e7467bb6910a6daabde43d5de4bef4b75851",
+          "objectSha256": "78295a862a3a1acad0b7f99dd2c45aa77edfc226803e58c3d63c434a89c5a7ae"
+        },
+        {
+          "messageId": "TELEMETRY-054709E3-1",
+          "rawSha256": "179cd3ada3e7af50e9ef6458c09941e189ca943d27b700f492dff2c1738ce9f3",
+          "objectSha256": "fdcbac77d879615070639afbc9005a2b4238198a631cc635c5d4f2e7c5e9b93a"
+        },
+        {
+          "messageId": "REPORT-054709E3-1",
+          "rawSha256": "f31e21e7f9fe96b913c48592c828ac2d0df60b754e037de2328806038edd2a19",
+          "objectSha256": "4a2cb2ef71e765a8667df002321b1de76fbbd3e137e0a32885d1798f8e490651"
+        },
+        {
+          "messageId": "ALARM-054709E3-1",
+          "rawSha256": "b905f5f0f96c90c57d0e85ac953069f4bd47528bd9c6aa408c3870b6cc412b51",
+          "objectSha256": "0db9e4af38e17b8a60b4d50e95dcb3ac4deb30e3433ddaa0ada3984dba4343d1"
+        },
+        {
+          "messageId": "EVENT-054709E3-1",
+          "rawSha256": "8f69a82a27029ce2c9221cf980891653fb92591f0b018782bcf5be9646830d8a",
+          "objectSha256": "4c8d91a5609d62319d4eb08d09ff6032c38904d3f2e8f808946647283d37eae2"
+        },
+        {
+          "messageId": "ACK-054709E3-1",
+          "rawSha256": "64f82f5a36d122793a268875683bd180a20cc7d0f4d27d5e435b01f7faa4b224",
+          "objectSha256": "446f0cfc2b6c7448cf4c346d02a626a14c562de6e226e8e8374fb72301fd2cdb"
+        },
+        {
+          "messageId": "TAMPER-054709E3-1",
+          "rawSha256": "f76ff8bc0e027a12ffd2d368741cd6e9015334b8806bc1ce93130f5fb6753df6",
+          "objectSha256": "406ebb992305a8abe090166c057b375cd44e3c5f33a1bbd583b482f13fa76749"
+        },
+        {
+          "messageId": "TELEMETRY-D7B7E231-1",
+          "rawSha256": "37607a77174cdaa98caea53d15f9baaf9aa2dd534532d844e719b983866208ca",
+          "objectSha256": "1db4829be58e9f26aaba1f0c4618e6039c27611773ebd1fc266108bfba8298f2"
+        },
+        {
+          "messageId": "REPORT-D7B7E231-1",
+          "rawSha256": "945f501b7fb5ecbd0b7207af0b423e1b2a6ab30ddd6ab07c37acad23d0d9dd56",
+          "objectSha256": "c59e0d9e7dba1d13f055c2b3e80d8717120ae2fb8a57a03e9b97e7480f2ee0d0"
+        },
+        {
+          "messageId": "ALARM-D7B7E231-1",
+          "rawSha256": "2dfbec6a0a7900a425fc912180382aba1fe4301f90f702bc57c90bfec67ed8be",
+          "objectSha256": "0d81bf2e27c18a722cf0367f08f306a702418eadabd5a4bade0053538018f556"
+        },
+        {
+          "messageId": "EVENT-D7B7E231-1",
+          "rawSha256": "5683313fe56037f0bb1c768bf681b6b9d3da12f98662c9d436dd07be4c4ffcf5",
+          "objectSha256": "a2c900486fdb86c68ab6d3e304bd62d052c2a1da7616161f810cbeb1a0279665"
+        },
+        {
+          "messageId": "ACK-D7B7E231-1",
+          "rawSha256": "43ffbb340e0bd462f03174e25e7edc4edcd60594edbb94323023793139a2301c",
+          "objectSha256": "20ed548e7bbca952e0840cc6b7741ef94ec9c5d8b9ccdf05ef6d2d2c73ea2748"
+        },
+        {
+          "messageId": "TAMPER-D7B7E231-1",
+          "rawSha256": "aad7f87aeaf2a58b103144a4f47f29b7c96198a4e882d3a6961b77ec6653113a",
+          "objectSha256": "db2bbdb189e569501cbb0ecfa8729f619a39b872d0f612f90fb78d58dbd3eacb"
+        },
+        {
+          "messageId": "TELEMETRY-1EC0455A-1",
+          "rawSha256": "fab912fd7308d4bbc2b663de830da0875d6479e6c292e48ccdfe4c82fcca92ce",
+          "objectSha256": "394052249f093881e55036c6ecdd8b39c54afc739eaf75a6478cdcb9a9e22e7e"
+        },
+        {
+          "messageId": "REPORT-1EC0455A-1",
+          "rawSha256": "59585574659e4b2fea141834311f24807e1f3e018bb17591f96d0f4167de807f",
+          "objectSha256": "ff5af9d306431c23a9760e995174923dd21f8f045945ce3995347236981ced27"
+        },
+        {
+          "messageId": "ALARM-1EC0455A-1",
+          "rawSha256": "f2958a69e690f74827a2c76ed9b8f8ea4c842cc96835dea1c0c75ae817159648",
+          "objectSha256": "b87a033f9d9526d4fa0d5f8adb5a47636c39e905748dd74b0ba88c7398a42f9f"
+        },
+        {
+          "messageId": "EVENT-1EC0455A-1",
+          "rawSha256": "9dd0bd09b1cb92ecad5f5e8fee0cc0691d80e72c2a53afd86fa21176c8b0988f",
+          "objectSha256": "1ff7a97c5472dd6923d06b76c6e6c14dbf874f22a2ac06207bc2cbbcd81d578b"
+        },
+        {
+          "messageId": "ACK-1EC0455A-1",
+          "rawSha256": "5cdc4a968ae6f609364e6d18cb809b217b2f6efc4d3a1ffe0d8115621e675d0c",
+          "objectSha256": "4f53e67fdf8438de08d45a0937721e20fec69d85a0ea6fc905cb6e997ae8b624"
+        },
+        {
+          "messageId": "TAMPER-1EC0455A-1",
+          "rawSha256": "765b8ba8c4e826270370cfb21d38d0623d9a695713dd1f761173e2662fb724ff",
+          "objectSha256": "e0456724fc3f3b6062d73d951f4ed3f03af132879bb195d4d18a46dfb9a2a6ea"
+        },
+        {
+          "messageId": "TELEMETRY-CF34C176-1",
+          "rawSha256": "17c5c75eef422362e3cae2a2f0baee40d35a78453f110a0e916a4488feb80c11",
+          "objectSha256": "772ae48404c18463e82a4544aa11b78a253467a6b6107cd17f6f69e222f671f5"
+        },
+        {
+          "messageId": "REPORT-CF34C176-1",
+          "rawSha256": "9eb2d8799fe7df1abc0f6d3bb575786127d658fc08e38ee602d861d6017412fc",
+          "objectSha256": "5618dcfb0fe5a666e1211ca1d04dd9ceaf06f47dd37a1b94338a18b462b03638"
+        },
+        {
+          "messageId": "ALARM-CF34C176-1",
+          "rawSha256": "f931e883a103fec412c536b8c69e0b9bcce1cde18a240ff163dda61b213d0f1c",
+          "objectSha256": "4b058ad0e5cca81770409e11b1845d5c980370b08f8b9c1249122b68a6607bbb"
+        },
+        {
+          "messageId": "EVENT-CF34C176-1",
+          "rawSha256": "9de91fb2a0b2c9368a3850f9e3ffd7da7ad40acac16dde82bae0591728e1b951",
+          "objectSha256": "0b322f721f8a77b938a67dc38f6f4586ba68cd29ab552167a8967fbb7665ca68"
+        },
+        {
+          "messageId": "ACK-CF34C176-1",
+          "rawSha256": "c9e66bec874eea73db404e46c4a3133329125e66c4dc9babb9054953e621ee1b",
+          "objectSha256": "f24625993a9671ef27e756306e3d7412ee1987e0e43f55c747d8cc1a2f01fd94"
+        },
+        {
+          "messageId": "TAMPER-CF34C176-1",
+          "rawSha256": "3f787a37ee2961eb051e39b5c8154d39e28a81f8681d4f64b48e341f19e71948",
+          "objectSha256": "601cb680fdb93e264f837f8514309450885b64aac5c5f15a2c5435510c7c66b8"
+        },
+        {
+          "messageId": "TELEMETRY-150A768B-1",
+          "rawSha256": "d284f9a098ae2998980ec4bb52e3ddd6c2433218068abeed896b53bcff1fd398",
+          "objectSha256": "c35eba4915523c2ce1449ad34480b8f77ef8304d5d6cb798076f5cfdb06f88b4"
+        },
+        {
+          "messageId": "REPORT-150A768B-1",
+          "rawSha256": "219268d9e6f642445bc82ebcd71f30e9325c0f61d05a85e696dcce889b1b8ee3",
+          "objectSha256": "2a08c7e1914c28360f6ba5106db04599de18b3fb3f2937263469535299916cf4"
+        },
+        {
+          "messageId": "ALARM-150A768B-1",
+          "rawSha256": "444944bda2788e3317858e6802b2f378ebf9bca7e28dd7167ac53102593eeff5",
+          "objectSha256": "57dfdc3d2926a71cae5da67f4a7c7f89b5a02a43d3c3702c1a39fba31211dc4c"
+        },
+        {
+          "messageId": "EVENT-150A768B-1",
+          "rawSha256": "74cceb5396c7d3a8d3d1784a358fcb7383dc15c5af035041ea300df9a09ec623",
+          "objectSha256": "cf916830c588ecf334a95acf70d8bc1d1f4a20b1979bb747357c36bf13f0083d"
+        },
+        {
+          "messageId": "ACK-150A768B-1",
+          "rawSha256": "3749eb35828944fc501b37801b39751596ceda45550c3c6e96452b6ce7c2d159",
+          "objectSha256": "182c8e1bec650d129630faaaed96fbc9834f2eb35520378340bd55432946ef36"
+        },
+        {
+          "messageId": "TAMPER-150A768B-1",
+          "rawSha256": "7d1cc661f463a05fc99ecc55120cb98f131b52971086b72a1122e13b69f54dba",
+          "objectSha256": "b57c5382ad032296879fb296973b30d03bf0f85c1fe2c10e0546d3da015cf6ac"
+        },
+        {
+          "messageId": "TELEMETRY-82F81649-1",
+          "rawSha256": "b22f7fc8d8b80982e34962404d31b14afd5a514112b78786f95e0582b790290a",
+          "objectSha256": "e6664dda5328e0fd2a46ff069f4196924a42fe739e9180a186ca405d7d76872e"
+        },
+        {
+          "messageId": "REPORT-82F81649-1",
+          "rawSha256": "b0c2055921a33e9e951e3ddc5769af730eec594d418be608cde206e990d44d55",
+          "objectSha256": "986302f700b164a2f6acb30449b97c3d73073533256651391ff58202bd32f38c"
+        },
+        {
+          "messageId": "ALARM-82F81649-1",
+          "rawSha256": "2e25ecb541bdd904bdf9afa8c65aa87057f837aa39b9d240f61357c318e586e5",
+          "objectSha256": "6b223d074707eb22ea202339ffaa0f211a5e5605f6b8af7f515a5e032db0314a"
+        },
+        {
+          "messageId": "EVENT-82F81649-1",
+          "rawSha256": "84e9b09881b45fc6e9f452e5c21538210cda1b6a4313d66037095be668b8080f",
+          "objectSha256": "555d577af8f1054260c8f0cca990de4d6fd67d6d31da21a59a837d0fd94cce6c"
+        },
+        {
+          "messageId": "ACK-82F81649-1",
+          "rawSha256": "dc3b20d86af75627fb413d482d56c5dd6ac0c71c1f10e0619fe381684de12464",
+          "objectSha256": "9603877d155f128395d5ea4922118402d9a5982061a35ec29541f058d0bdd1d3"
+        },
+        {
+          "messageId": "TAMPER-82F81649-1",
+          "rawSha256": "4cc04ceb8803f456853a4b81b6f04fa8c766e32d78069900d4f5c3c85411b34f",
+          "objectSha256": "8260e8ddb6bdad1af15e9130f366dfccd9fffbe830c7365321fb7f8bb2848597"
+        },
+        {
+          "messageId": "TELEMETRY-9CD9454C-1",
+          "rawSha256": "ca0d3b22694be7acc9434305cb32204cc3e18ae8c9a8aef549a613bae81f12df",
+          "objectSha256": "6ff64387ad107ea42390acbedffc4035f05380018f6bfa13e57ae7444d148644"
+        },
+        {
+          "messageId": "REPORT-9CD9454C-1",
+          "rawSha256": "8bde126278ea4315f2382ab28c73d07b057664bfc62e61b5e34923ad46110562",
+          "objectSha256": "776cb3ab518c28afc986dc244cf770885a24192a99054ff91280c580c320b8df"
+        },
+        {
+          "messageId": "ALARM-9CD9454C-1",
+          "rawSha256": "5d2a56da4752ad55326992270a637b45a6722c81f498ce8d3cbd20a2397d4dde",
+          "objectSha256": "b1ffb1766a5235644dbfb06ab29a3b91f83d2cc701c0b03c4c3d1acb4820ea02"
+        },
+        {
+          "messageId": "EVENT-9CD9454C-1",
+          "rawSha256": "2000d3d51771b836f9fe3c2c04122f8c53c029bb967acaaa4007750e9649c6e4",
+          "objectSha256": "198abdb1c2051578dd1c0fc17bcb4f0166ce9a08167727e12045e49b0461bd35"
+        },
+        {
+          "messageId": "ACK-9CD9454C-1",
+          "rawSha256": "766fc3f4f844d07225c8597352e5ccbada3706a5b8ecfd385ecf0dd4f5dff393",
+          "objectSha256": "243d4bb3fdf18042022bbf5fe4d31bcae944b8aade040584ba0b1b51e51da55a"
+        },
+        {
+          "messageId": "TAMPER-9CD9454C-1",
+          "rawSha256": "21e789f6597c43b67b291a81364df6de514ac3ce079103dc758c5d6e2216968d",
+          "objectSha256": "db04301cb2683aedad0d5056083cb3260966bcce7e2f1cc3aac629d6b1fe1fd6"
+        },
+        {
+          "messageId": "TELEMETRY-93FA94CB-1",
+          "rawSha256": "3857ae5934f36412878cd50adf936e7c54f4633f6bf675188ae8b5f9c512d73a",
+          "objectSha256": "ea45f1d1874cad903d1eb58a031be55daec0354fba4e3f12d2adbc74da62ec76"
+        },
+        {
+          "messageId": "REPORT-93FA94CB-1",
+          "rawSha256": "2b9f27e70efadbcbf7f33d4b0cf41d57630038a93c310289143fcf843f9f8d4f",
+          "objectSha256": "4d31cd6766f5170af31802d35372533696c30b7c0d8ef4e4ac9bde46b562598a"
+        },
+        {
+          "messageId": "ALARM-93FA94CB-1",
+          "rawSha256": "b989825838d6c7ede208eeca86b676cee320dd7cf5959e04e7950ba0b81ee5de",
+          "objectSha256": "d4d7b1fa3904d1ce1ed34372a6ae6b2f25514d86a2410e99c469787c4de2863a"
+        },
+        {
+          "messageId": "EVENT-93FA94CB-1",
+          "rawSha256": "fed8553f30730a135afcc7eccade7e845e5eae0cfd5d6a3948d9dda4040924f0",
+          "objectSha256": "e341f6d10cc952522557ca12ba2bca4f87a6330a3ec3c164ff89e184462bf319"
+        },
+        {
+          "messageId": "ACK-93FA94CB-1",
+          "rawSha256": "642b1b15fbb005e5c5bf92fa630e344d3cad1f8f2ba6dd7b9ac73f44f1357282",
+          "objectSha256": "e14379e089d6257b9c38b1b179389ca1e8196ff3d5af307e3128ac7e1e7d8e7c"
+        },
+        {
+          "messageId": "TAMPER-93FA94CB-1",
+          "rawSha256": "17566c7f4be9c2ffd6a2dd94ada079286a141ee7a36a3d994913b4d0b989285c",
+          "objectSha256": "1b759fda6b490b289440ae9ce08eec43500b84e4cc29e8d20c597c12ab694f61"
+        }
+      ]
+    },
+    {
+      "name": "ingestion-faults",
+      "prefix": "QA03-10082D662A5F",
+      "status": "PASS",
+      "cleanup": "PASS",
+      "legalMessages": 3,
+      "receipts": 3,
+      "partialFailures": 2,
+      "quarantined": 4,
+      "traceablePending": 3,
+      "gapDetected": true,
+      "gapResolved": true,
+      "duplicateBusinessRows": 0
+    },
+    {
+      "name": "archive-faults",
+      "prefix": "QA03-8FA1C9A56166",
+      "status": "PASS",
+      "cleanup": "PASS",
+      "legalMessages": 2,
+      "receipts": 2,
+      "archiveRecords": 2,
+      "queueRetry": true,
+      "manifestRetry": true,
+      "archivePartialFailure": true,
+      "duplicateBusinessRows": 0
+    },
+    {
+      "name": "transaction-rollback",
+      "prefix": "QA03-86857DF70BCB",
+      "status": "PASS",
+      "cleanup": "PASS",
+      "legalMessages": 1,
+      "receipts": 1,
+      "traceablePending": 1,
+      "rollback": true,
+      "duplicateBusinessRows": 0
+    },
+    {
+      "name": "cleanup-failure",
+      "prefix": "QA03-4314B3D41D31",
+      "status": "PASS",
+      "cleanup": "PASS",
+      "failureCleanup": true,
+      "isolatedPrefixes": true
+    }
+  ],
+  "cleanup": "PASS",
+  "awsTargetGate": "NOT RUN / NO RECEIPT"
+}

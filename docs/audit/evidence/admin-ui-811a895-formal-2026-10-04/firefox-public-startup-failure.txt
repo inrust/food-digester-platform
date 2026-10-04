@@ -1,0 +1,23 @@
+1791108979485	geckodriver	INFO	Listening on 127.0.0.1:46110
+1791108979589	webdriver::server	DEBUG	-> GET /status
+1791108979589	webdriver::server	DEBUG	<- 200 OK {"value":{"message":"","ready":true}}
+1791108979595	webdriver::server	DEBUG	-> POST /session {"capabilities":{"alwaysMatch":{"browserName":"firefox","acceptInsecureCerts":false,"moz:firefoxOptions":{"binary":"/private/tmp/fdp-formal-browser-811a895/Firefox.app/Contents/MacOS/firefox","args":["-headless"]}}}}
+1791108979595	geckodriver::capabilities	DEBUG	Trying to read firefox version from ini files
+1791108979595	geckodriver::capabilities	DEBUG	Found version 157.0
+1791108979598	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" "/private/tmp/fdp-forma ... eadless" "-foreground" "-no-remote" "-profile" "/private/tmp/fdp-formal-browser-811a895/gecko-profiles/rust_mozprofileqUDJa7"
+1791108979598	geckodriver::marionette	DEBUG	Waiting 60s to connect to browser on 127.0.0.1
+*** You are running in headless mode.
+Could not find profile folder.
+1791108979808	geckodriver::browser	DEBUG	Browser process stopped: exit status: 1
+1791108979808	geckodriver::browser	WARN	Couldn't read files from minidumps folder '/private/tmp/fdp-formal-browser-811a895/gecko-profiles/rust_mozprofileqUDJa7/minidumps'
+1791108979809	webdriver::server	DEBUG	<- 500 Internal Server Error {"value":{"error":"unknown error","message":"Process (pid=36171) unexpectedly closed with status 1","stacktrace":""}}
+file:///private/tmp/fdp-formal-browser-811a895/preflight.mjs:14
+let id;const req=async(method,path,body)=>{const q=await fetch('http://127.0.0.1:46110'+path,{method,headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});let x=await q.json();if(!q.ok)throw Error('WEBDRIVER_'+x.value?.error+':'+x.value?.message);return x.value;};
+                                                                                                                                                                                                                                ^
+
+Error: WEBDRIVER_unknown error:Process (pid=36171) unexpectedly closed with status 1
+    at req (file:///private/tmp/fdp-formal-browser-811a895/preflight.mjs:14:225)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///private/tmp/fdp-formal-browser-811a895/preflight.mjs:17:10
+
+Node.js v24.12.0
