@@ -8,6 +8,7 @@ export default defineConfig({
           { name: 'chromium', use: { browserName: 'chromium' as const } },
           { name: 'chrome', use: { browserName: 'chromium' as const, channel: 'chrome' } },
           { name: 'firefox', use: { browserName: 'firefox' as const } },
+          { name: 'edge', use: { browserName: 'chromium' as const, channel: 'msedge' } },
         ],
       }
     : {}),

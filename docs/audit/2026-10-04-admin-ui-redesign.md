@@ -54,14 +54,14 @@
 | 前端专门回归（含控件兼容契约） | 36 文件 / 348 项通过 |
 | API/领域契约测试 | 301 项通过 |
 | 仓库脚本测试 | 407 项通过 |
-| 跨浏览器业务与 UI 回归 | 99/99 通过，Chromium、Chrome、Firefox 各 33 项 |
-| 办公尺寸 | 22 路由 × 3 尺寸 × 3 浏览器，全部无页面溢出/文字裁切；另保留原有 375/768/1440px 中英多路由验证 |
+| 跨浏览器业务与 UI 回归 | 初次 Chromium、Chrome、Firefox 99/99 通过；追加实际 Edge 33/33 通过，共 132 项 |
+| 办公尺寸 | 22 路由 × 3 尺寸 × 4 浏览器，全部无页面溢出/文字裁切；另保留原有 375/768/1440px 中英多路由验证 |
 | TypeScript | 21 个 workspace 通过 |
 | Lint / Prettier / diff check | 通过 |
 | 交付组合根 / 敏感 sink / 模块边界 / Schema / Migration / 敏感信息扫描 | 通过 |
 | 生产构建 | 通过；组件库导致 >500kB chunk 警告仍保留 |
 
-实际版本：Chromium 151.0.7922.34、安装版 Chrome 152.0.7977.82、Playwright Firefox 153.0。并不将受控测试版本声明为所有渠道的最新版。
+实际版本：Chromium 151.0.7922.34、安装版 Chrome 152.0.7977.82、Playwright Firefox 153.0；追加实际 Edge 154.0.4258.53。并不将受控测试版本声明为所有渠道的最新版。
 
 [机器可读证据](evidence/admin-ui-redesign-2026-10-04/verification.json) 保存逐测试结果、浏览器版本、全部前端源码文件 SHA-256 和源树摘要，供本地提交后核对。没有保存会话 Token 或原始业务请求。
 
@@ -69,10 +69,20 @@
 
 验证过程发现并已关闭：长用户名裁切、原生控件替换后的 DOM ref 兼容问题、筛选区输入整行占用。原有横向滚动断言调整到真实的新滚动容器；新键盘断言修正为跳过禁用提交按钮。最终全套 99 项重跑通过。脚本测试首次因系统旧版 OpenSSL 生成弱签名证书失败；改用本机已安装 OpenSSL 3 后重新通过，没有降低 TLS 校验。
 
+## Edge 可执行程序兼容性补验
+
+2026-10-04：通过 Playwright `channel: msedge` 启动本机 `/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge`，运行时版本为 **154.0.4258.53**，完整业务与 UI 套件 **33/33 PASS**。不是以 Chromium 结果代替 Edge。
+
+覆盖五角色与路由权限、登录/MFA/登出、账号/角色/Scope、审批与重复提交、客户/站点 CRUD、危险命令确认、合约/授权边界、耗材状态、ESG 游标/导出、媒体链接过期/拒绝和只读审计。22 个业务路由在 1366×768、1440×900、1920×1080 下通过布局、导航滚动、弹窗键盘焦点及中英切换检查；原有 375/768/1440px 响应式回归也通过。
+
+[Edge 补验证据](evidence/admin-ui-redesign-2026-10-04/edge-verification.json) 保存实际可执行程序、运行时版本、33 项结果、配置摘要及源码核对信息。全部 132 个前端源码文件与 `4d40c21` 原验收摘要一致，没有修改 UI 或业务逻辑。原始 `verification.json` 保留首次测试时的 Edge `NOT RUN` 历史记录；当前 Edge 结论以补验证据为准。
+
+[Edge 总览](evidence/admin-ui-redesign-2026-10-04/edge-dashboard.png)、[Edge 设备群](evidence/admin-ui-redesign-2026-10-04/edge-devices-groups.png)、[Edge 账号设置](evidence/admin-ui-redesign-2026-10-04/edge-settings.png)、[Edge 客户](evidence/admin-ui-redesign-2026-10-04/edge-customers.png)：实际 Edge 的 1366×768 截图，使用隔离 fixture 数据。截图已逐张复核。前端 TypeScript、测试配置 ESLint、Prettier 和 diff check 通过。
+
 ## 验收边界与人工体验复核
 
-1. Edge 未安装，实际 Edge 可执行程序兼容性为 **NOT RUN**；Chromium 通过不能代替 Edge 实测。默认测试保持 Chromium；`UI_COMPAT_RUN=1 pnpm --filter @fdp/admin-web test:e2e` 可复跑 Chromium、安装版 Chrome 与 Playwright Firefox。
+1. 实际 Edge 可执行程序兼容性已补测 **PASS（33/33）**。默认测试保持 Chromium；`UI_COMPAT_RUN=1 pnpm --filter @fdp/admin-web test:e2e` 可复跑 Chromium、安装版 Chrome、Playwright Firefox 和安装版 Edge；单独 Edge 使用 `UI_COMPAT_RUN=1 pnpm --filter @fdp/admin-web exec playwright test --project=edge`。
 2. 未部署/未推送。真实 Cognito、真实管理员 API、生产数据、并发、跨 Customer 和已有目标环境验收凭证均未由本次 UI 回归补齐。
 3. 已做布局和键盘交互检查及截图视觉复核；没有真实管理员参与的用户研究/可用性访谈，不能称为用户实测通过。
-4. 正式交付前，管理员应在 Edge 和目标环境按上表执行核心流程，覆盖 1366×768 屏幕、真实长文本、多页/空结果、权限差异、导出文件、审批取消/提交及系统配置冲突。
+4. 正式交付前，管理员应在目标环境按上表执行核心流程，覆盖 1366×768 屏幕、真实长文本、多页/空结果、权限差异、导出文件、审批取消/提交及系统配置冲突。
 5. 引入组件库增加首屏 JS，构建仍报告大于 500kB 的 chunk；未做目标办公网络性能测量。依赖版本由锁文件锁定，后续性能优化应单独验证，不能为压缩包体删减业务功能。

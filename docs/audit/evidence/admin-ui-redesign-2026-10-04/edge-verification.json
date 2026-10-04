@@ -1,0 +1,257 @@
+{
+  "schema": "fdp-admin-ui-edge-verification/v1",
+  "date": "2026-10-04",
+  "status": "PASS",
+  "frontendSourceCommit": "4d40c2144d04382cd62e420edeae91980c9db1f0",
+  "sourceTreeSha256": "59433cc91a47aa0bc7daabac5f5d0e59e07b50615fe211b3afe5dc6bf5c21f1d",
+  "baselineReceipt": "verification.json",
+  "baselineReceiptSha256": "4a736d202574514cf34ea3bf4d6c91b18085e744c3f94ebdafc2aa78a5b46ee2",
+  "sourceFilesVerified": 132,
+  "playwrightConfigSha256": "7b8488a2f83c3ff15a339a2ccc817c93ccc703e87a78d428422820adb75610e9",
+  "runtime": {
+    "channel": "msedge",
+    "browserVersion": "154.0.4258.53",
+    "executablePath": "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
+  },
+  "scope": "Actual installed Edge executable; local production build; explicitly mocked Admin APIs",
+  "command": "UI_COMPAT_RUN=1 QA05_REPORT=/tmp/admin-ui-edge-report.json pnpm --filter @fdp/admin-web exec playwright test --project=edge",
+  "results": {
+    "browser": {
+      "passed": 33,
+      "failed": 0,
+      "skipped": 0
+    },
+    "businessRoutes": 22,
+    "officeViewports": [
+      {
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "width": 1440,
+        "height": 900
+      },
+      {
+        "width": 1920,
+        "height": 1080
+      }
+    ],
+    "existingResponsiveWidths": [
+      375,
+      768,
+      1440
+    ],
+    "languages": [
+      "zh-CN",
+      "en"
+    ],
+    "frontendTypecheck": "PASS",
+    "playwrightConfigLint": "PASS",
+    "diffCheck": "PASS"
+  },
+  "limitations": {
+    "targetIntegration": "NOT RUN: fixture APIs only",
+    "administratorUsabilityStudy": "NOT RUN: no participant study",
+    "deployment": "NOT RUN: local only"
+  },
+  "browserCases": [
+    {
+      "name": "无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 2928
+    },
+    {
+      "name": "刷新失败清会话，API 403 保留会话并呈现无权",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 578
+    },
+    {
+      "name": "Customer scope 与 Dashboard 离线/无 entitlement 动作在真实浏览器失败关闭",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 352
+    },
+    {
+      "name": "Onboarding 审批双击只提交一次，展示录入来源和证书状态",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 714
+    },
+    {
+      "name": "Customer/Site CRUD 关键路径：创建、非法时区、关联停用提示与 409",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 1730
+    },
+    {
+      "name": "1440/768/375 响应式布局、横向表格和对话框键盘边界",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 1484
+    },
+    {
+      "name": "FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、分页入口、时区与响应式",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 885
+    },
+    {
+      "name": "FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交场景失败关闭",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 1417
+    },
+    {
+      "name": "FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒体签发与审计详情",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 2306
+    },
+    {
+      "name": "FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关闭",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 497
+    },
+    {
+      "name": "FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 620
+    },
+    {
+      "name": "FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状态机",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 738
+    },
+    {
+      "name": "FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 1017
+    },
+    {
+      "name": "FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 867
+    },
+    {
+      "name": "FE-19 Chromium 22 个生产路由：zh-CN / 375px",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 2509
+    },
+    {
+      "name": "FE-19 Chromium 22 个生产路由：zh-CN / 768px",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 2456
+    },
+    {
+      "name": "FE-19 Chromium 22 个生产路由：zh-CN / 1440px",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 2252
+    },
+    {
+      "name": "FE-19 Chromium 22 个生产路由：en / 375px",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 2510
+    },
+    {
+      "name": "FE-19 Chromium 22 个生产路由：en / 768px",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 2373
+    },
+    {
+      "name": "FE-19 Chromium 22 个生产路由：en / 1440px",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 2432
+    },
+    {
+      "name": "FE-19 语言选择在刷新后保持",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 331
+    },
+    {
+      "name": "QA05 role route and button matrix PlatformSuperAdmin",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 4597
+    },
+    {
+      "name": "QA05 role route and button matrix PlatformOperator",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 3376
+    },
+    {
+      "name": "QA05 role route and button matrix Auditor",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 3307
+    },
+    {
+      "name": "QA05 role route and button matrix CustomerAdmin",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 2894
+    },
+    {
+      "name": "QA05 role route and button matrix CustomerViewer",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 2592
+    },
+    {
+      "name": "QA05 login SRP MFA error success logout without persisting password",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 753
+    },
+    {
+      "name": "QA05 ESG cursor totals export snapshot timezone and empty state",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 581
+    },
+    {
+      "name": "QA05 Command dangerous confirmation terminal result and publish failure",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 841
+    },
+    {
+      "name": "QA05 Media expiry renew 403 and audit read-only zero writes",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 694
+    },
+    {
+      "name": "UI redesign: all business routes at 1366x768",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 14946
+    },
+    {
+      "name": "UI redesign: all business routes at 1440x900",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 13820
+    },
+    {
+      "name": "UI redesign: all business routes at 1920x1080",
+      "browser": "edge",
+      "status": "passed",
+      "durationMs": 14065
+    }
+  ]
+}
