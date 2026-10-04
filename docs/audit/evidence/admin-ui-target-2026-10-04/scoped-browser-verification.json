@@ -1,0 +1,43 @@
+{
+  "scope": "Two temporary Customer roles, UI login and sites isolation",
+  "sourceCommit": "cb5beaaeb50132045427c55542263c5f2e846496",
+  "observedAt": "2026-10-04T04:08:52.184Z",
+  "checks": [
+    {
+      "role": "CustomerAdmin",
+      "path": "/sites",
+      "result": "PASS",
+      "ownSiteVisible": true,
+      "foreignSiteVisible": false
+    },
+    {
+      "role": "CustomerViewer",
+      "path": "/sites",
+      "result": "PASS",
+      "ownSiteVisible": true,
+      "foreignSiteVisible": false
+    },
+    {
+      "role": "CustomerAdmin",
+      "path": "/audit-logs",
+      "result": "PASS_EXPECTED_403"
+    },
+    {
+      "role": "CustomerViewer",
+      "path": "/audit-logs",
+      "result": "PASS_EXPECTED_403"
+    },
+    {
+      "role": "CustomerAdmin",
+      "path": "/device-users",
+      "result": "PASS_OWN_DISABLED_TEST_USER_VISIBLE"
+    },
+    {
+      "role": "CustomerViewer",
+      "path": "/device-users",
+      "result": "403_BY_EXISTING_ROUTE_POLICY",
+      "note": "Shared role permissions include device-user:read; route explicitly excludes Viewer. Policy consistency needs review; not claimed as read-only UI PASS."
+    }
+  ],
+  "fullAdminTargetAccepted": false
+}

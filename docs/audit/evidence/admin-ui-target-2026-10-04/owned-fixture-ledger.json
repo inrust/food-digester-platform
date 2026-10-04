@@ -8,27 +8,35 @@
       "kind": "customer",
       "name": "UI-ACCEPT-20261004-Customer-A",
       "id": "94371262-8afe-4fab-b748-2fb6d95c2bcd",
-      "status": "ACTIVE"
+      "status": "SUSPENDED"
     },
     {
       "kind": "customer",
       "name": "UI-ACCEPT-20261004-Customer-B",
       "id": "54bcc341-d8c5-4624-b694-d0702282105d",
-      "status": "ACTIVE"
+      "status": "SUSPENDED"
     },
     {
       "kind": "site",
       "name": "UI-ACCEPT-20261004-Site-A",
       "id": "2c8bca29-c681-434c-8af7-3b0afe3e8a54",
       "customerId": "94371262-8afe-4fab-b748-2fb6d95c2bcd",
-      "status": "ACTIVE"
+      "status": "SUSPENDED"
     },
     {
       "kind": "site",
       "name": "UI-ACCEPT-20261004-Site-B",
       "id": "d8fa1d22-83ad-43d6-a01c-8c15715409a9",
       "customerId": "54bcc341-d8c5-4624-b694-d0702282105d",
-      "status": "ACTIVE"
+      "status": "SUSPENDED"
+    },
+    {
+      "kind": "device-user",
+      "name": "ui-accept-20261004-concurrency",
+      "id": "100fa4ca-44a5-4c22-ad04-133f685bcd16",
+      "customerId": "94371262-8afe-4fab-b748-2fb6d95c2bcd",
+      "status": "DISABLED",
+      "version": 3
     }
   ],
   "accounts": [
@@ -36,18 +44,30 @@
       "username": "ui-accept-20261004-a@example.invalid",
       "role": "CustomerAdmin",
       "customerId": "94371262-8afe-4fab-b748-2fb6d95c2bcd",
-      "status": "NOT_CREATED_PENDING_UI_ACCESS_CONFIRMATION"
+      "status": "DISABLED",
+      "userId": "177af561-c07a-410c-a173-2748eb8b4bed",
+      "cognitoEnabled": false
     },
     {
       "username": "ui-accept-20261004-b@example.invalid",
       "role": "CustomerViewer",
       "customerId": "54bcc341-d8c5-4624-b694-d0702282105d",
-      "status": "NOT_CREATED_PENDING_UI_ACCESS_CONFIRMATION"
+      "status": "DISABLED",
+      "userId": "5ff0d880-2087-411c-807d-ab8c90abec48",
+      "cognitoEnabled": false
     }
   ],
   "cleanup": {
-    "completed": false,
-    "reason": "Fixtures retained for pending tenant and concurrency tests; no deletion/cleanup PASS claimed"
+    "completed": true,
+    "mode": "SOFT_DEACTIVATION_AND_IDENTITY_DISABLE",
+    "activeOwnBusinessRecordCount": 0,
+    "enabledOwnIdentityCount": 0,
+    "permanentlyDeleted": false,
+    "auditRetained": true,
+    "signedTokenRevocationGate": "FAIL_EXISTING_TOKEN_STILL_ACCEPTED",
+    "privateLoginFileRemoved": true,
+    "browserTemporaryTabsClosed": true,
+    "completedAt": "2026-10-04T04:18:01.575847+00:00"
   },
   "credentialsStoredInRepository": false
 }

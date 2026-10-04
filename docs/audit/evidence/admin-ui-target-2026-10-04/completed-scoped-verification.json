@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "1.0",
+  "scope": "SCOPED_REAL_ADMIN_TARGET_ACCEPTANCE_WITH_OPEN_FINDINGS",
+  "sourceCommit": "cb5beaaeb50132045427c55542263c5f2e846496",
+  "recordedAt": "2026-10-04T04:18:01.576117+00:00",
+  "status": "FAIL_SESSION_REVOCATION_AND_REMAINING_TARGET_GAPS",
+  "fullAdminTargetAccepted": false,
+  "productionAccepted": false,
+  "manualUsability": {
+    "status": "USER_CONFIRMED_PASS",
+    "source": "User message 2026-10-04: real administrator participated and confirmed usability OK",
+    "independentlyReplayable": false
+  },
+  "checks": {
+    "frontendDeployment": "PASS_AMPLIFY_JOB_50_EXACT_SHA",
+    "realCognitoConfiguration": "PASS_TWO_TEMPORARY_ROLES_REAL_SRP_AND_BROWSER_LOGIN",
+    "realAdminWrites": "PASS_FOUR_PERSISTED_CUSTOMER_SITE_WRITES_WITH_AUDIT_REQUEST_IDS",
+    "unauthenticatedDenial": "PASS_TWO_REAL_401_RESPONSES",
+    "duplicateSubmit": "PASS_SINGLE_SITE_AND_SINGLE_CREATE_AUDIT_AFTER_UI_DOUBLE_CLICK",
+    "ifMatchConcurrency": "PASS_ONE_200_ONE_409_SAME_VERSION_SINGLE_INCREMENT",
+    "crossCustomer": "PASS_TWO_SITES_AND_OWN_DEVICE_USER_LIMITED_SCOPE",
+    "fiveRoleLogin": "PARTIAL_SUPERADMIN_OBSERVED_TWO_CUSTOMER_ROLES_LOGGED_IN_OPERATOR_AUDITOR_NOT_RUN",
+    "fullBusinessWorkflows": "NOT_RUN",
+    "productionData": "NOT_VERIFIED_TARGET_STACK_IS_TEST",
+    "targetDesktop1366": "UNVERIFIED_OVERRIDE_NOT_APPLIED",
+    "cleanup": "PASS_SOFT_DISABLED_OWN_RECORDS_IDENTITIES_PRIVATE_CREDENTIALS_REMOVED",
+    "existingTokenAfterDisable": "FAIL_TWO_REAL_200_AFTER_DISABLE_AND_GLOBAL_SIGNOUT",
+    "viewerDeviceUserRoute": "POLICY_INCONSISTENCY_API_READ_ALLOWED_UI_403"
+  },
+  "formalTargetGates": [
+    {
+      "gate": "check:admin-web-target-evidence",
+      "status": "NOT_RUN_NO_RECEIPT",
+      "receipt": "docs/audit/evidence/fe-06-10-admin-web-target.json"
+    },
+    {
+      "gate": "check:admin-web-fe11-15-target-evidence",
+      "status": "NOT_RUN_NO_RECEIPT",
+      "receipt": "docs/audit/evidence/fe-11-15-admin-web-target.json"
+    },
+    {
+      "gate": "check:admin-web-fe16-19-target-evidence",
+      "status": "NOT_RUN_NO_RECEIPT",
+      "receipt": "docs/audit/evidence/fe-16-19-admin-web-target.json"
+    }
+  ],
+  "evidence": [
+    "environment-observations.json",
+    "route-observations.json",
+    "owned-fixture-ledger.json",
+    "owned-write-audits.json",
+    "viewport-observation.json",
+    "temporary-sites.jpg",
+    "dashboard-real-732x878-zh.jpg",
+    "dashboard-real-732x878-en.jpg",
+    "customer-account-preparation.jpg",
+    "scoped-api-verification.json",
+    "scoped-account-cleanup.json",
+    "scoped-browser-verification.json",
+    "created-account-ui-ids.json",
+    "owned-cleanup-audits.json",
+    "temporary-accounts-disabled.jpg",
+    "temporary-sites-disabled.jpg",
+    "temporary-customers-disabled.jpg",
+    "customer-a-own-sites.jpg",
+    "customer-b-own-sites.jpg",
+    "customer-a-device-users.jpg",
+    "customer-b-audit-forbidden.jpg"
+  ],
+  "findings": [
+    {
+      "id": "H-01",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "summary": "Disabled CustomerAdmin and CustomerViewer credentials cannot sign in, but previously issued ID tokens still read their own sites after AdminUserGlobalSignOut (HTTP 200).",
+      "evidence": "scoped-account-cleanup.json"
+    },
+    {
+      "id": "M-01",
+      "severity": "MEDIUM",
+      "status": "OPEN_POLICY_ALIGNMENT",
+      "summary": "CustomerViewer has device-user:read and real API returns 200, but /device-users UI route excludes Viewer and returns 403.",
+      "evidence": "scoped-browser-verification.json"
+    }
+  ],
+  "collectorNotes": "Application sourceCommit binds the deployed cb5beaa application. Collectors were added after deployment; after collection their formatting and process/credential-provider teardown were refined. Current collector source was statically checked, not rerun against now-disabled identities; this is not a formal exact-executor-SHA target Gate receipt."
+}

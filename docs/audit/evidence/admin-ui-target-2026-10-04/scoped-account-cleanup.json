@@ -1,0 +1,81 @@
+{
+  "scope": "OWN_ACCOUNT_DISABLE_AND_RESIDUAL_SESSION_CHECK",
+  "sourceCommit": "cb5beaaeb50132045427c55542263c5f2e846496",
+  "startedAt": "2026-10-04T04:10:09.162Z",
+  "identities": [
+    {
+      "username": "ui-accept-20261004-a@example.invalid",
+      "role": "CustomerAdmin",
+      "customerId": "94371262-8afe-4fab-b748-2fb6d95c2bcd",
+      "tokenExpiresAt": "2026-10-04T05:10:13.000Z",
+      "enabledAfterUiDisable": false,
+      "globalSignOut": "PASS",
+      "newLoginDenied": true,
+      "loginErrorCode": "INVALID_CREDENTIALS"
+    },
+    {
+      "username": "ui-accept-20261004-b@example.invalid",
+      "role": "CustomerViewer",
+      "customerId": "54bcc341-d8c5-4624-b694-d0702282105d",
+      "tokenExpiresAt": "2026-10-04T05:10:16.000Z",
+      "enabledAfterUiDisable": false,
+      "globalSignOut": "PASS",
+      "newLoginDenied": true,
+      "loginErrorCode": "INVALID_CREDENTIALS"
+    }
+  ],
+  "requests": [
+    {
+      "id": "before-disable-own-device-users-0",
+      "role": "CustomerAdmin",
+      "path": "/admin/device-users",
+      "status": 200,
+      "requestId": "87118fd3-756a-434e-b485-6d732e9510b9",
+      "expectedStatuses": [
+        200
+      ],
+      "result": "PASS",
+      "onlyOwnCustomer": true
+    },
+    {
+      "id": "before-disable-own-device-users-1",
+      "role": "CustomerViewer",
+      "path": "/admin/device-users",
+      "status": 200,
+      "requestId": "28b2a271-4288-4a80-8cf9-efbf5132b19f",
+      "expectedStatuses": [
+        200
+      ],
+      "result": "PASS",
+      "onlyOwnCustomer": true
+    },
+    {
+      "id": "disabled-existing-token-own-site-0",
+      "role": "CustomerAdmin",
+      "path": "/admin/sites/2c8bca29-c681-434c-8af7-3b0afe3e8a54",
+      "status": 200,
+      "requestId": "2758c834-fc26-413a-83df-d9b223fab9e5",
+      "expectedStatuses": [
+        401,
+        403
+      ],
+      "result": "FAIL"
+    },
+    {
+      "id": "disabled-existing-token-own-site-1",
+      "role": "CustomerViewer",
+      "path": "/admin/sites/d8fa1d22-83ad-43d6-a01c-8c15715409a9",
+      "status": 200,
+      "requestId": "8427d717-29fe-4afb-a8ce-eba7843a7195",
+      "expectedStatuses": [
+        401,
+        403
+      ],
+      "result": "FAIL"
+    }
+  ],
+  "fullAdminTargetAccepted": false,
+  "status": "FAIL",
+  "finishedAt": "2026-10-04T04:11:12.466Z",
+  "privateLoginFileRemoved": true
+}

@@ -1,0 +1,607 @@
+{
+  "schemaVersion": "1.0",
+  "scope": "TWO_CONFIRMED_CUSTOMER_IDENTITIES_SITE_ISOLATION_DEVICE_USER_CONCURRENCY",
+  "sourceCommit": "cb5beaaeb50132045427c55542263c5f2e846496",
+  "environment": "fdp-test-app",
+  "productionAccepted": false,
+  "fullAdminTargetAccepted": false,
+  "startedAt": "2026-10-04T04:04:29.547Z",
+  "status": "PASS_SCOPED_API_ONLY",
+  "identities": [
+    {
+      "username": "ui-accept-20261004-a@example.invalid",
+      "role": "CustomerAdmin",
+      "customerId": "94371262-8afe-4fab-b748-2fb6d95c2bcd",
+      "sub": "593a35cc-e0f1-7007-0669-d0ac0cf0e619"
+    },
+    {
+      "username": "ui-accept-20261004-b@example.invalid",
+      "role": "CustomerViewer",
+      "customerId": "54bcc341-d8c5-4624-b694-d0702282105d",
+      "sub": "e91a15fc-b001-70b8-7a43-4d9de97cf53e"
+    }
+  ],
+  "requests": [
+    {
+      "id": "CustomerAdmin:own-site",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/sites/2c8bca29-c681-434c-8af7-3b0afe3e8a54",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "9cc7a3f0-1755-471e-b450-8df160aa1b09",
+      "latencyMs": 2710,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:foreign-site-denied",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/sites/d8fa1d22-83ad-43d6-a01c-8c15715409a9",
+      "status": 403,
+      "expectedStatuses": [
+        403,
+        404
+      ],
+      "requestId": "6887bc98-f40d-4f0a-b849-31054ae4fa7e",
+      "latencyMs": 1272,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:own-sites-list",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/sites",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "313951b7-4d20-4f0c-a881-a07c7c5a842b",
+      "latencyMs": 473,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:foreign-customer-filter",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/sites?customerId=54bcc341-d8c5-4624-b694-d0702282105d",
+      "status": 403,
+      "expectedStatuses": [
+        200,
+        403,
+        404
+      ],
+      "requestId": "fab6505a-c592-431b-a1be-bfc81b863903",
+      "latencyMs": 443,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:deny-users",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/users",
+      "status": 403,
+      "expectedStatuses": [
+        403
+      ],
+      "requestId": "b12031f6-811c-41ba-a4b0-00a2f5fdbfb1",
+      "latencyMs": 377,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:deny-audit-logs",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/audit-logs",
+      "status": 403,
+      "expectedStatuses": [
+        403
+      ],
+      "requestId": "938923d3-940f-438b-b0e9-2cb920698921",
+      "latencyMs": 450,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:deny-settings",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/settings",
+      "status": 403,
+      "expectedStatuses": [
+        403
+      ],
+      "requestId": "0a59b6ca-3265-4fb4-b9cb-874de1ada3d2",
+      "latencyMs": 457,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:own-site",
+      "role": "CustomerViewer",
+      "method": "GET",
+      "path": "/admin/sites/d8fa1d22-83ad-43d6-a01c-8c15715409a9",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "a4231844-06b2-4f16-897f-508f5be9e427",
+      "latencyMs": 577,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:foreign-site-denied",
+      "role": "CustomerViewer",
+      "method": "GET",
+      "path": "/admin/sites/2c8bca29-c681-434c-8af7-3b0afe3e8a54",
+      "status": 403,
+      "expectedStatuses": [
+        403,
+        404
+      ],
+      "requestId": "1edc04e8-32c2-4775-b1fe-52d5d5054694",
+      "latencyMs": 361,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:own-sites-list",
+      "role": "CustomerViewer",
+      "method": "GET",
+      "path": "/admin/sites",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "20990230-bcb1-448c-8d1d-4b12ab12953c",
+      "latencyMs": 472,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:foreign-customer-filter",
+      "role": "CustomerViewer",
+      "method": "GET",
+      "path": "/admin/sites?customerId=94371262-8afe-4fab-b748-2fb6d95c2bcd",
+      "status": 403,
+      "expectedStatuses": [
+        200,
+        403,
+        404
+      ],
+      "requestId": "40aac561-9773-431e-808b-70d1d3145b16",
+      "latencyMs": 447,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:deny-users",
+      "role": "CustomerViewer",
+      "method": "GET",
+      "path": "/admin/users",
+      "status": 403,
+      "expectedStatuses": [
+        403
+      ],
+      "requestId": "77b8a7c6-c705-4e0c-bf43-591e52bb6b58",
+      "latencyMs": 353,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:deny-audit-logs",
+      "role": "CustomerViewer",
+      "method": "GET",
+      "path": "/admin/audit-logs",
+      "status": 403,
+      "expectedStatuses": [
+        403
+      ],
+      "requestId": "340b5ff0-128c-4861-8016-f00ef22c823f",
+      "latencyMs": 422,
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:deny-settings",
+      "role": "CustomerViewer",
+      "method": "GET",
+      "path": "/admin/settings",
+      "status": 403,
+      "expectedStatuses": [
+        403
+      ],
+      "requestId": "2999f9be-da21-4a60-b166-4e63af010d85",
+      "latencyMs": 438,
+      "result": "PASS"
+    },
+    {
+      "id": "device-user-create-own",
+      "role": "CustomerAdmin",
+      "method": "POST",
+      "path": "/admin/device-users",
+      "status": 201,
+      "expectedStatuses": [
+        201
+      ],
+      "requestId": "28ddd71c-7697-4657-9e22-21e82f109950",
+      "latencyMs": 1043,
+      "result": "PASS"
+    },
+    {
+      "id": "viewer-foreign-device-user-denied",
+      "role": "CustomerViewer",
+      "method": "GET",
+      "path": "/admin/device-users/100fa4ca-44a5-4c22-ad04-133f685bcd16",
+      "status": 404,
+      "expectedStatuses": [
+        403,
+        404
+      ],
+      "requestId": "9439d3d3-6902-4337-a917-d5d74ac6748c",
+      "latencyMs": 346,
+      "result": "PASS"
+    },
+    {
+      "id": "viewer-write-denied",
+      "role": "CustomerViewer",
+      "method": "PATCH",
+      "path": "/admin/device-users/100fa4ca-44a5-4c22-ad04-133f685bcd16",
+      "status": 403,
+      "expectedStatuses": [
+        403
+      ],
+      "requestId": "a412cb97-f208-43a0-96c6-8ae1a1be47ea",
+      "latencyMs": 357,
+      "result": "PASS"
+    },
+    {
+      "id": "if-match-race-0",
+      "role": "CustomerAdmin",
+      "method": "PATCH",
+      "path": "/admin/device-users/100fa4ca-44a5-4c22-ad04-133f685bcd16",
+      "status": 200,
+      "expectedStatuses": [
+        200,
+        409
+      ],
+      "requestId": "6300f085-dd32-4914-9a0c-f2c2a3f94679",
+      "latencyMs": 409,
+      "result": "PASS"
+    },
+    {
+      "id": "if-match-race-1",
+      "role": "CustomerAdmin",
+      "method": "PATCH",
+      "path": "/admin/device-users/100fa4ca-44a5-4c22-ad04-133f685bcd16",
+      "status": 409,
+      "expectedStatuses": [
+        200,
+        409
+      ],
+      "requestId": "6576b7a5-27d5-4dcc-aa42-9d1ee6d31f61",
+      "latencyMs": 1327,
+      "result": "PASS"
+    },
+    {
+      "id": "if-match-readback",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/device-users/100fa4ca-44a5-4c22-ad04-133f685bcd16",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "0a93a206-0528-4fa7-9724-341ba87d6c9c",
+      "latencyMs": 429,
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-0",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/sites/2c8bca29-c681-434c-8af7-3b0afe3e8a54",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "4d160f78-33e5-4fb1-82ec-991b119bfba2",
+      "latencyMs": 532,
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-1",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/sites/2c8bca29-c681-434c-8af7-3b0afe3e8a54",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "bbe34ab7-2513-451f-8400-d16d7a0810ad",
+      "latencyMs": 721,
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-3",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/sites/2c8bca29-c681-434c-8af7-3b0afe3e8a54",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "d4598250-b239-452c-a48b-21f5d203731b",
+      "latencyMs": 1624,
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-6",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/sites/2c8bca29-c681-434c-8af7-3b0afe3e8a54",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "686f0f9a-80ed-4819-9582-39af0ae763c0",
+      "latencyMs": 1624,
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-2",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/sites/2c8bca29-c681-434c-8af7-3b0afe3e8a54",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "dd7cc5d1-0e66-4815-957a-c87f33dcdb6b",
+      "latencyMs": 1648,
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-5",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/sites/2c8bca29-c681-434c-8af7-3b0afe3e8a54",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "12918697-7345-4eac-bed6-3dbe62cd7cca",
+      "latencyMs": 1653,
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-4",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/sites/2c8bca29-c681-434c-8af7-3b0afe3e8a54",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "593c1ad3-26db-4d10-99a2-025482ec298e",
+      "latencyMs": 1660,
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-7",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/sites/2c8bca29-c681-434c-8af7-3b0afe3e8a54",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "f67481f6-24bb-4589-85ef-b6b664f748e9",
+      "latencyMs": 3008,
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-device-user-read",
+      "role": "CustomerAdmin",
+      "method": "GET",
+      "path": "/admin/device-users/100fa4ca-44a5-4c22-ad04-133f685bcd16",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "e508d8d7-0bbe-4c95-98ca-db855b08fbf1",
+      "latencyMs": 430,
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-device-user-disable",
+      "role": "CustomerAdmin",
+      "method": "POST",
+      "path": "/admin/device-users/100fa4ca-44a5-4c22-ad04-133f685bcd16/disable",
+      "status": 200,
+      "expectedStatuses": [
+        200
+      ],
+      "requestId": "ef51228a-2b86-43d0-b6e3-8b9a5df6f392",
+      "latencyMs": 412,
+      "result": "PASS"
+    }
+  ],
+  "assertions": [
+    {
+      "id": "CustomerAdmin:real-srp-claims",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:real-srp-claims",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:own-site:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:own-site-binding",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:foreign-site-denied:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:own-sites-list:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:list-isolation",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:foreign-customer-filter:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:foreign-filter-no-leak",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:deny-users:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:deny-audit-logs:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerAdmin:deny-settings:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:own-site:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:own-site-binding",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:foreign-site-denied:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:own-sites-list:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:list-isolation",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:foreign-customer-filter:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:foreign-filter-no-leak",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:deny-users:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:deny-audit-logs:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "CustomerViewer:deny-settings:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "device-user-create-own:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "viewer-foreign-device-user-denied:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "viewer-write-denied:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "if-match-race-0:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "if-match-race-1:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "if-match-exactly-one-winner",
+      "result": "PASS"
+    },
+    {
+      "id": "if-match-readback:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "if-match-version-incremented-once",
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-0:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-1:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-3:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-6:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-2:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-5:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-4:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-concurrent-read-7:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "bounded-eight-read-consistency",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-device-user-read:no-secret-fields",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-device-user-disable:no-secret-fields",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "kind": "device-user",
+      "id": "100fa4ca-44a5-4c22-ad04-133f685bcd16",
+      "result": "PASS"
+    }
+  ],
+  "credentialsInRepository": false,
+  "ownDeviceUser": {
+    "id": "100fa4ca-44a5-4c22-ad04-133f685bcd16",
+    "customerId": "94371262-8afe-4fab-b748-2fb6d95c2bcd",
+    "version": 1
+  },
+  "loadTestClaim": "Eight concurrent authenticated reads only; not sustained capacity/SLO acceptance",
+  "finishedAt": "2026-10-04T04:04:54.464Z",
+  "identityCleanup": "PENDING_UI_DISABLE_AFTER_BROWSER_CHECKS"
+}
