@@ -218,6 +218,19 @@ export function validateCrossPhaseIsolation(phases) {
   if (prefixes.length !== total || new Set(prefixes).size !== total) throw new Error('CROSS_PHASE_DATA_COLLISION');
   return total;
 }
+/** 阶段总预算包含构建/启动和全部执行；单用例超时、重试与覆盖要求独立保持。 */
+export function browserPhaseTimeoutMs(repeatEach, workers) {
+  if (!Number.isSafeInteger(repeatEach) || repeatEach < 1 || !Number.isSafeInteger(workers) || workers < 1)
+    throw new Error('INVALID_BROWSER_PHASE_BUDGET');
+  const startupMs = 120000;
+  const executionSlotMs = 15000;
+  const maxPhaseMs = 900000;
+  return Math.min(maxPhaseMs, startupMs + Math.ceil((REQUIRED_TITLES.length * repeatEach) / workers) * executionSlotMs);
+}
+export function assertBrowserPhaseSucceeded(result, phase, timeoutMs) {
+  if (result.error?.code === 'ETIMEDOUT') throw new Error(`BROWSER_PHASE_TIMEOUT ${phase} limitMs=${timeoutMs}`);
+  if (result.error || result.status !== 0) throw new Error(`BROWSER_PHASE_FAILED ${phase}`);
+}
 export function sourceHashes() {
   const files = execFileSync(
     'git',
@@ -281,6 +294,11 @@ export function main(args) {
     ]) {
       const report = join(temp, `${phase}.json`),
         trace = join(temp, `${phase}.jsonl`);
+      const timeoutMs = browserPhaseTimeoutMs(repeatEach, workers);
+      console.log(
+        `QA05 phase=${phase} executions=${REQUIRED_TITLES.length * repeatEach} workers=${workers} timeoutMs=${timeoutMs}`,
+      );
+      const startedAt = performance.now();
       const result = spawnSync(
         process.execPath,
         [createRequire(resolve('apps/admin-web/package.json')).resolve('@playwright/test/cli'), 'test'],
@@ -294,16 +312,20 @@ export function main(args) {
             QA05_TRACE: trace,
             QA05_OUTPUT_DIR: join(temp, phase),
           },
-          timeout: 240000,
+          timeout: timeoutMs,
           maxBuffer: 8 * 1024 * 1024,
         },
       );
       process.stdout.write(result.stdout ?? '');
       process.stderr.write(result.stderr ?? '');
-      if (result.error || result.status !== 0) throw new Error(`BROWSER_PHASE_FAILED ${phase}`);
+      const durationMs = Math.round(performance.now() - startedAt);
+      console.log(`QA05 phase=${phase} durationMs=${durationMs}`);
+      assertBrowserPhaseSucceeded(result, phase, timeoutMs);
       phases.push({
         phase,
         workers,
+        timeoutMs,
+        durationMs,
         ...summarizePhase(
           JSON.parse(readFileSync(report, 'utf8')),
           readFileSync(trace, 'utf8')

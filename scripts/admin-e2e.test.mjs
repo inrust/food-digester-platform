@@ -1,12 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import {
   summarizePhase,
   validateDiscovery,
   validateCrossPhaseIsolation,
+  browserPhaseTimeoutMs,
+  assertBrowserPhaseSucceeded,
   REQUIRED_TITLES,
   ROLES,
   ROUTES,
@@ -248,4 +250,45 @@ test('serial and repeated phases require all 105 independent prefixes', () => {
   assert.equal(validateCrossPhaseIsolation(phases), 105);
   phases[1].tests[0].prefix = phases[0].tests[0].prefix;
   assert.throws(() => validateCrossPhaseIsolation(phases), /CROSS_PHASE_DATA_COLLISION/);
+});
+test('phase budget accounts for startup, executions and worker slots, with a finite ceiling', () => {
+  assert.equal(browserPhaseTimeoutMs(1, 1), 645000);
+  assert.equal(browserPhaseTimeoutMs(2, 2), 645000);
+  assert.equal(browserPhaseTimeoutMs(2, 1), 900000);
+  assert.equal(browserPhaseTimeoutMs(100, 2), 900000);
+});
+for (const [repeatEach, workers] of [
+  [0, 1],
+  [1, 0],
+  [0.5, 1],
+  [1, 0.5],
+  [Infinity, 1],
+  [1, NaN],
+])
+  test(`invalid phase budget rejected: repeat=${repeatEach} workers=${workers}`, () => {
+    assert.throws(() => browserPhaseTimeoutMs(repeatEach, workers), /INVALID_BROWSER_PHASE_BUDGET/);
+  });
+test('real child-process timeout is classified and cannot create a successful phase', () => {
+  const result = spawnSync(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { timeout: 50 });
+  assert.equal(result.error?.code, 'ETIMEDOUT');
+  assert.throws(
+    () => assertBrowserPhaseSucceeded(result, 'parallel-repeat', 50),
+    /BROWSER_PHASE_TIMEOUT parallel-repeat limitMs=50/,
+  );
+});
+for (const result of [
+  { status: 1, stdout: '70 passed' },
+  { status: null, signal: 'SIGTERM' },
+])
+  test(`failed/killed process cannot pass: status=${result.status}`, () => {
+    assert.throws(() => assertBrowserPhaseSucceeded(result, 'serial', 645000), /BROWSER_PHASE_FAILED serial/);
+  });
+test('spawn errors reject without disclosing raw process error details', () => {
+  const result = { status: 0, error: { code: 'EACCES', message: 'private process detail' } };
+  assert.throws(() => assertBrowserPhaseSucceeded(result, 'serial', 645000), {
+    message: 'BROWSER_PHASE_FAILED serial',
+  });
+});
+test('successful process may proceed to the strict report and trace validator', () => {
+  assert.doesNotThrow(() => assertBrowserPhaseSucceeded({ status: 0 }, 'serial', 645000));
 });
