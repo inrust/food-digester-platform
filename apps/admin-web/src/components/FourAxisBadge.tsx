@@ -1,3 +1,4 @@
+import { Tag } from 'antd';
 import { translate } from '../i18n/i18n.js';
 /**
  * FE-02 四轴状态徽标（DEC-010：connectivity/lifecycle/operational/license 分离展示）。
@@ -111,9 +112,9 @@ export const AXIS_VALUE_LABEL_MAPS = AXIS_VALUE_LABELS;
 export function AxisBadge({ axis, value }: { axis: StatusAxis; value: string | null | undefined }) {
   const label = value !== null && value !== undefined ? AXIS_VALUE_LABELS[axis][value] : undefined;
   return (
-    <span className={`axis-badge axis-${axis}`} data-axis={axis} data-value={value ?? 'unknown'}>
+    <Tag className={`axis-badge axis-${axis}`} data-axis={axis} data-value={value ?? 'unknown'}>
       {AXIS_LABELS[axis]}：{label ?? '—'}
-    </span>
+    </Tag>
   );
 }
 export interface FourAxisStatusValue {

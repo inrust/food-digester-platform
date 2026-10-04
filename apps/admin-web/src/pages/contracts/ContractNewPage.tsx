@@ -1,3 +1,4 @@
+import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-17 新建合约页（/contracts/new）：结构化表单 + 两步设备关联。
@@ -117,7 +118,7 @@ export function ContractNewPage({
     <div className="contract-new-page" data-testid="contract-new-page">
       <div className="page-header">
         <h3>{translate('page.44c75e312909')}</h3>
-        <button
+        <Button
           type="button"
           data-testid="contract-create-cancel"
           disabled={mustBindDevice}
@@ -125,7 +126,7 @@ export function ContractNewPage({
           onClick={onCancel}
         >
           {translate('page.11d024154013')}
-        </button>
+        </Button>
       </div>
 
       {notice !== null ? (
@@ -138,7 +139,7 @@ export function ContractNewPage({
       <section data-testid="contract-form" aria-label={translate('page.82fe9340d299')}>
         <div className="dialog-field">
           <label htmlFor="contract-number-input">{translate('page.e732638998ba')}</label>
-          <input
+          <Input
             id="contract-number-input"
             data-testid="contract-number-input"
             maxLength={100}
@@ -150,7 +151,7 @@ export function ContractNewPage({
         </div>
         <div className="dialog-field">
           <label htmlFor="contract-name-input">{translate('page.eec5002799b1')}</label>
-          <input
+          <Input
             id="contract-name-input"
             data-testid="contract-name-input"
             maxLength={200}
@@ -180,7 +181,7 @@ export function ContractNewPage({
         </div>
         <div className="dialog-field">
           <label htmlFor="contract-start-input">{translate('page.0ed8daddc54b')}</label>
-          <input
+          <Input
             id="contract-start-input"
             type="datetime-local"
             data-testid="contract-start-input"
@@ -189,7 +190,7 @@ export function ContractNewPage({
             onChange={(event) => setDraft({ ...draft, startAt: event.target.value })}
           />
           <label htmlFor="contract-end-input">{translate('page.a1bf0b770919')}</label>
-          <input
+          <Input
             id="contract-end-input"
             type="datetime-local"
             data-testid="contract-end-input"
@@ -201,7 +202,7 @@ export function ContractNewPage({
         </div>
         <div className="dialog-field">
           <label htmlFor="contract-contact-input">{translate('page.85e5fa1b0c95')}</label>
-          <input
+          <Input
             id="contract-contact-input"
             data-testid="contract-contact-input"
             maxLength={200}
@@ -213,7 +214,7 @@ export function ContractNewPage({
         </div>
         {created === null ? (
           <div className="dialog-actions">
-            <button
+            <Button
               type="button"
               className="primary-button"
               data-testid="contract-create-submit"
@@ -221,7 +222,7 @@ export function ContractNewPage({
               onClick={() => void submitCreate()}
             >
               {translate('page.68b24eeb6f4e')}
-            </button>
+            </Button>
           </div>
         ) : null}
       </section>
@@ -239,7 +240,7 @@ export function ContractNewPage({
             <div role="group" aria-label={translate('page.16c798774b40')} data-testid="contract-new-device-list">
               {available.map((device) => (
                 <label key={device.deviceId}>
-                  <input
+                  <Input
                     type="checkbox"
                     data-testid={`contract-new-device-${device.deviceId}`}
                     checked={selected.includes(device.deviceId)}
@@ -262,7 +263,7 @@ export function ContractNewPage({
           )}
           <div className="dialog-field">
             <label htmlFor="contract-bind-reason">{translate('page.45ec50c74ef1')}</label>
-            <input
+            <Input
               id="contract-bind-reason"
               data-testid="contract-bind-reason"
               maxLength={500}
@@ -271,7 +272,7 @@ export function ContractNewPage({
             />
           </div>
           <div className="dialog-actions">
-            <button
+            <Button
               type="button"
               className="primary-button"
               data-testid="contract-bind-submit"
@@ -279,8 +280,8 @@ export function ContractNewPage({
               onClick={() => void submitBind()}
             >
               {translate('page.381ba5101f1c')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               data-testid="contract-new-done"
               disabled={busy || mustBindDevice}
@@ -288,7 +289,7 @@ export function ContractNewPage({
               onClick={onDone}
             >
               {translate('page.33246f6a5e5b')}
-            </button>
+            </Button>
           </div>
           {mustBindDevice ? (
             <p className="field-hint" role="alert" data-testid="contract-new-device-required">

@@ -1,3 +1,4 @@
+import { Button } from './ui.js';
 import { translate } from '../i18n/i18n.js';
 /**
  * FE-14 可复用媒体预览组件（Media 页与设备查看/操作页共用）。
@@ -71,20 +72,20 @@ export function MediaPreview({
       ) : error !== undefined && error !== null ? (
         <div data-testid="media-url-error">
           <ErrorNotice error={error} />
-          <button type="button" className="primary-button" data-testid="media-url-request" onClick={onRequestUrl}>
+          <Button type="button" className="primary-button" data-testid="media-url-request" onClick={onRequestUrl}>
             {translate('ui.dfae99182d6c')}
-          </button>
+          </Button>
         </div>
       ) : download === null ? (
-        <button type="button" className="primary-button" data-testid="media-url-request" onClick={onRequestUrl}>
+        <Button type="button" className="primary-button" data-testid="media-url-request" onClick={onRequestUrl}>
           {translate('ui.e8e63786d256')}
-        </button>
+        </Button>
       ) : expired ? (
         <div data-testid="media-url-expired">
           <p className="field-hint">{translate('ui.7edf60045f5b')}</p>
-          <button type="button" className="primary-button" data-testid="media-url-renew" onClick={onRequestUrl}>
+          <Button type="button" className="primary-button" data-testid="media-url-renew" onClick={onRequestUrl}>
             {translate('ui.dfae99182d6c')}
-          </button>
+          </Button>
         </div>
       ) : usable ? (
         <div data-testid="media-content">

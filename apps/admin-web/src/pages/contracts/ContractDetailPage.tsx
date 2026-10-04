@@ -1,3 +1,4 @@
+import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-17 合约详情页（/contracts/detail）：合约信息、动作矩阵（编辑/激活/续约/终止）、
@@ -124,9 +125,9 @@ export function ContractDetailPage({
   if (contractError !== undefined) {
     return (
       <div className="contract-detail-page" data-testid="contract-detail-page">
-        <button type="button" data-testid="contract-detail-back" onClick={onBack}>
+        <Button type="button" data-testid="contract-detail-back" onClick={onBack}>
           {translate('page.11d024154013')}
-        </button>
+        </Button>
         <ErrorNotice error={contractError} onRefresh={onRefresh} />
       </div>
     );
@@ -199,9 +200,9 @@ export function ContractDetailPage({
   return (
     <div className="contract-detail-page" data-testid="contract-detail-page">
       <div className="page-header">
-        <button type="button" data-testid="contract-detail-back" onClick={onBack}>
+        <Button type="button" data-testid="contract-detail-back" onClick={onBack}>
           {translate('page.11d024154013')}
-        </button>
+        </Button>
         <h3>
           {translate('page.d21ae30b3f47')}
           {contract.contractNumber}
@@ -241,7 +242,7 @@ export function ContractDetailPage({
           </dd>
         </dl>
         <div className="action-row">
-          <button
+          <Button
             type="button"
             data-testid="contract-edit-open"
             disabled={busy || gate('edit') !== null}
@@ -259,8 +260,8 @@ export function ContractDetailPage({
             }}
           >
             {translate('page.a7f814c0a40d')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             data-testid="contract-activate-open"
             disabled={busy || gate('activate') !== null}
@@ -268,8 +269,8 @@ export function ContractDetailPage({
             onClick={() => setConfirm({ kind: 'activate' })}
           >
             {translate('page.4c25820818d6')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             data-testid="contract-renew-open"
             disabled={busy || gate('renew') !== null}
@@ -280,8 +281,8 @@ export function ContractDetailPage({
             }}
           >
             {translate('page.f7d3735c18eb')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className="danger-button"
             data-testid="contract-terminate-open"
@@ -290,7 +291,7 @@ export function ContractDetailPage({
             onClick={() => setConfirm({ kind: 'terminate' })}
           >
             {translate('page.2eee5759c39c')}
-          </button>
+          </Button>
         </div>
       </section>
 
@@ -298,7 +299,7 @@ export function ContractDetailPage({
         <div className="page-header">
           <h4>{translate('page.b113e4704c10')}</h4>
           <span className="action-row">
-            <button
+            <Button
               type="button"
               data-testid="contract-bind-open"
               disabled={busy || gate('bind') !== null}
@@ -306,8 +307,8 @@ export function ContractDetailPage({
               onClick={openBind}
             >
               {translate('page.b113e4704c10')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="danger-button"
               data-testid="contract-unbind-open"
@@ -316,7 +317,7 @@ export function ContractDetailPage({
               onClick={() => setConfirm({ kind: 'unbind', deviceIds: unbindSelected })}
             >
               {translate('page.39bd5faf0fb5')}
-            </button>
+            </Button>
           </span>
         </div>
         {devices.error !== undefined ? <ErrorNotice error={devices.error} onRefresh={onRefresh} /> : null}
@@ -349,7 +350,7 @@ export function ContractDetailPage({
                   <tr key={device.deviceId}>
                     <td>
                       {association.status === 'ACTIVE' ? (
-                        <input
+                        <Input
                           type="checkbox"
                           aria-label={translate('page.70b208202ce5') + ' ' + device.deviceId}
                           data-testid={`contract-unbind-check-${device.deviceId}`}
@@ -451,7 +452,7 @@ export function ContractDetailPage({
             </p>
             <div className="dialog-field">
               <label htmlFor="contract-edit-name">{translate('page.eec5002799b1')}</label>
-              <input
+              <Input
                 id="contract-edit-name"
                 data-testid="contract-edit-name"
                 maxLength={200}
@@ -461,7 +462,7 @@ export function ContractDetailPage({
             </div>
             <div className="dialog-field">
               <label htmlFor="contract-edit-contact">{translate('page.60beedc8f22b')}</label>
-              <input
+              <Input
                 id="contract-edit-contact"
                 data-testid="contract-edit-contact"
                 maxLength={200}
@@ -472,14 +473,14 @@ export function ContractDetailPage({
             {status === 'DRAFT' ? (
               <div className="dialog-field">
                 <label htmlFor="contract-edit-start">{translate('page.0ed8daddc54b')}</label>
-                <input
+                <Input
                   id="contract-edit-start"
                   data-testid="contract-edit-start"
                   value={editDraft.startAt}
                   onChange={(event) => setEditDraft({ ...editDraft, startAt: event.target.value })}
                 />
                 <label htmlFor="contract-edit-end">{translate('page.a1bf0b770919')}</label>
-                <input
+                <Input
                   id="contract-edit-end"
                   data-testid="contract-edit-end"
                   value={editDraft.endAt}
@@ -494,7 +495,7 @@ export function ContractDetailPage({
             ) : null}
             <div className="dialog-field">
               <label htmlFor="contract-edit-reason">{translate('page.c25db741afe8')}</label>
-              <input
+              <Input
                 id="contract-edit-reason"
                 data-testid="contract-edit-reason"
                 maxLength={500}
@@ -503,7 +504,7 @@ export function ContractDetailPage({
               />
             </div>
             <div className="dialog-actions">
-              <button
+              <Button
                 type="button"
                 className="primary-button"
                 data-testid="contract-edit-submit"
@@ -511,7 +512,7 @@ export function ContractDetailPage({
                 onClick={() => void submitEdit()}
               >
                 {translate('page.fadf24dbc5a9')}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -532,7 +533,7 @@ export function ContractDetailPage({
             </p>
             <div className="dialog-field">
               <label htmlFor="contract-renew-end">{translate('page.540c7d9c2407')}</label>
-              <input
+              <Input
                 id="contract-renew-end"
                 data-testid="contract-renew-end"
                 value={renewEndAt}
@@ -546,7 +547,7 @@ export function ContractDetailPage({
             ) : null}
             <div className="dialog-field">
               <label htmlFor="contract-renew-reason">{translate('page.c25db741afe8')}</label>
-              <input
+              <Input
                 id="contract-renew-reason"
                 data-testid="contract-renew-reason"
                 maxLength={500}
@@ -555,7 +556,7 @@ export function ContractDetailPage({
               />
             </div>
             <div className="dialog-actions">
-              <button
+              <Button
                 type="button"
                 className="primary-button"
                 data-testid="contract-renew-submit"
@@ -563,7 +564,7 @@ export function ContractDetailPage({
                 onClick={() => void submitRenew()}
               >
                 {translate('page.2326e59ede1d')}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -588,7 +589,7 @@ export function ContractDetailPage({
           <div role="group" aria-label={translate('page.16c798774b40')} data-testid="contract-bind-list">
             {available.map((device) => (
               <label key={device.deviceId}>
-                <input
+                <Input
                   type="checkbox"
                   data-testid={`contract-bind-check-${device.deviceId}`}
                   checked={bindSelected.includes(device.deviceId)}
@@ -607,7 +608,7 @@ export function ContractDetailPage({
         )}
         <div className="dialog-field">
           <label htmlFor="contract-bind-reason">{translate('page.c25db741afe8')}</label>
-          <input
+          <Input
             id="contract-bind-reason"
             data-testid="contract-bind-reason"
             maxLength={500}
@@ -616,7 +617,7 @@ export function ContractDetailPage({
           />
         </div>
         <div className="dialog-actions">
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="contract-bind-submit"
@@ -624,7 +625,7 @@ export function ContractDetailPage({
             onClick={() => void submitBind()}
           >
             {translate('page.1d5832409c92')}
-          </button>
+          </Button>
         </div>
       </Modal>
 

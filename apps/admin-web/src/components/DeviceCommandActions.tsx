@@ -1,3 +1,4 @@
+import { Button } from './ui.js';
 import { translate } from '../i18n/i18n.js';
 /**
  * FE-03 设备快捷命令按钮组（卡片级；FE-12 命令页复用同一组件语义）。
@@ -64,14 +65,14 @@ export function DeviceCommandActions({ deviceId, actions, onSubmit }: DeviceComm
       <div className="action-buttons">
         {models.map((model) => (
           <span key={model.command} className="action-item">
-            <button
+            <Button
               type="button"
               data-testid={`action-${model.command}-${deviceId}`}
               disabled={!model.allowed || submitting}
               onClick={() => setPendingCommand({ command: model.command, label: model.label })}
             >
               {model.label}
-            </button>
+            </Button>
             {!model.allowed && model.denyReason !== null ? (
               <span className="deny-reason" data-testid={`deny-${model.command}-${deviceId}`}>
                 {DENY_REASON_LABELS[model.denyReason]}

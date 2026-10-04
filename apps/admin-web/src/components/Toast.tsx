@@ -1,3 +1,4 @@
+import { Button } from './ui.js';
 import { translate } from '../i18n/i18n.js';
 /**
  * FE-02 Toast：轻量提示，info/success 自动消失，error 需手动关闭（含 code/requestId）。
@@ -30,13 +31,13 @@ export function ToastHost({ toasts, onDismiss }: ToastHostProps) {
           {toast.requestId !== undefined ? (
             <span className="toast-request-id">requestId：{toast.requestId}</span>
           ) : null}
-          <button
+          <Button
             type="button"
             aria-label={translate('ui.335447e2c3cf') + toast.message}
             onClick={() => onDismiss(toast.id)}
           >
             ×
-          </button>
+          </Button>
         </div>
       ))}
     </div>

@@ -1,3 +1,4 @@
+import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-08 授权管理页（/licenses）：License 列表/详情、Draft 创建、Issue、Activate、Renew、
@@ -130,39 +131,46 @@ export function LicensesPage({
   };
   return (
     <div className="licenses-page" data-testid="licenses-page">
+      <header className="page-header">
+        <h1>{translate('design.page.licenses')}</h1>
+      </header>
       <div className="filter-bar" data-testid="license-filter-bar">
-        <label htmlFor="license-status-filter">{translate('page.ac3cc79f9199')}</label>
-        <select
-          id="license-status-filter"
-          data-testid="license-status-filter"
-          value={draftFilter.licenseStatus ?? ''}
-          onChange={(event) =>
-            setDraftFilter({ ...draftFilter, licenseStatus: event.target.value === '' ? null : event.target.value })
-          }
-        >
-          <option value="">{translate('page.778fc8f99453')}</option>
-          {LICENSE_FILTER_OPTIONS.filter((status) => status !== 'None').map((status) => (
-            <option key={status} value={status}>
-              {licenseStatusLabel(status)}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="license-keyword">{translate('page.621219ff9885')}</label>
-        <input
-          id="license-keyword"
-          data-testid="license-keyword"
-          value={draftFilter.keyword ?? ''}
-          onChange={(event) => setDraftFilter({ ...draftFilter, keyword: event.target.value })}
-        />
-        <button
+        <div className="filter-field">
+          <label htmlFor="license-status-filter">{translate('page.ac3cc79f9199')}</label>
+          <select
+            id="license-status-filter"
+            data-testid="license-status-filter"
+            value={draftFilter.licenseStatus ?? ''}
+            onChange={(event) =>
+              setDraftFilter({ ...draftFilter, licenseStatus: event.target.value === '' ? null : event.target.value })
+            }
+          >
+            <option value="">{translate('page.778fc8f99453')}</option>
+            {LICENSE_FILTER_OPTIONS.filter((status) => status !== 'None').map((status) => (
+              <option key={status} value={status}>
+                {licenseStatusLabel(status)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-field">
+          <label htmlFor="license-keyword">{translate('page.621219ff9885')}</label>
+          <Input
+            id="license-keyword"
+            data-testid="license-keyword"
+            value={draftFilter.keyword ?? ''}
+            onChange={(event) => setDraftFilter({ ...draftFilter, keyword: event.target.value })}
+          />
+        </div>
+        <Button
           type="button"
           className="primary-button"
           data-testid="license-search"
           onClick={() => onApplyFilter(draftFilter)}
         >
           {translate('page.f04090805c6e')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           data-testid="license-reset"
           onClick={() => {
@@ -171,16 +179,16 @@ export function LicensesPage({
           }}
         >
           {translate('page.3d81345303ab')}
-        </button>
+        </Button>
         {canWrite ? (
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="license-create"
             onClick={() => setCreateOpen(true)}
           >
             {translate('page.d06cb1f9df42')}
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -206,13 +214,13 @@ export function LicensesPage({
             key: 'actions',
             header: translate('page.f3ea6d345e2a'),
             render: (license) => (
-              <button
+              <Button
                 type="button"
                 data-testid={`license-detail-${license.licenseId}`}
                 onClick={() => onSelect(license.licenseId)}
               >
                 {translate('page.4f55ee1e687f')}
-              </button>
+              </Button>
             ),
           },
         ]}
@@ -385,11 +393,11 @@ function LicenseDetailPanel({
       </dl>
 
       <div className="detail-actions">
-        <button type="button" onClick={onClose}>
+        <Button type="button" onClick={onClose}>
           {translate('page.6c14bd7f6f9e')}
-        </button>
+        </Button>
         {issueGate.enabled ? (
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="license-issue"
@@ -397,10 +405,10 @@ function LicenseDetailPanel({
             onClick={() => onIntent('issue')}
           >
             {translate('page.e48011457930')}
-          </button>
+          </Button>
         ) : null}
         {activateGate.enabled ? (
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="license-activate"
@@ -408,15 +416,15 @@ function LicenseDetailPanel({
             onClick={() => onIntent('activate')}
           >
             {translate('page.4c25820818d6')}
-          </button>
+          </Button>
         ) : null}
         {renewGate.enabled ? (
-          <button type="button" data-testid="license-renew" disabled={busy} onClick={onRenewIntent}>
+          <Button type="button" data-testid="license-renew" disabled={busy} onClick={onRenewIntent}>
             {translate('page.199d45f0cbc5')}
-          </button>
+          </Button>
         ) : null}
         {revokeGate.enabled ? (
-          <button
+          <Button
             type="button"
             className="danger-button"
             data-testid="license-revoke"
@@ -424,7 +432,7 @@ function LicenseDetailPanel({
             onClick={() => onIntent('revoke')}
           >
             {translate('page.9fcefd8dc81e')}
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -498,7 +506,7 @@ function CreateLicenseForm({
       </div>
       <div className="dialog-field">
         <label htmlFor="create-valid-from">{translate('page.206d975dbad5')}</label>
-        <input
+        <Input
           id="create-valid-from"
           data-testid="create-valid-from"
           placeholder="YYYY-MM-DD"
@@ -508,7 +516,7 @@ function CreateLicenseForm({
       </div>
       <div className="dialog-field">
         <label htmlFor="create-valid-to">{translate('page.4a12d38f1810')}</label>
-        <input
+        <Input
           id="create-valid-to"
           data-testid="create-valid-to"
           placeholder="YYYY-MM-DD"
@@ -520,7 +528,7 @@ function CreateLicenseForm({
         <legend>{translate('page.83b92e730564')}</legend>
         {ENTITLEMENT_CODES.map((code) => (
           <label key={code}>
-            <input
+            <Input
               type="checkbox"
               data-testid={`create-entitlement-${code}`}
               checked={entitlements.includes(code)}
@@ -532,7 +540,7 @@ function CreateLicenseForm({
       </fieldset>
       <div className="dialog-field">
         <label htmlFor="create-reason">{translate('page.db5e8a988ba0')}</label>
-        <textarea
+        <TextArea
           id="create-reason"
           data-testid="create-reason"
           value={reason}
@@ -545,7 +553,7 @@ function CreateLicenseForm({
         </p>
       ) : null}
       <div className="dialog-actions">
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="create-submit"
@@ -561,7 +569,7 @@ function CreateLicenseForm({
           }
         >
           {translate('page.098fafafeea6')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -585,7 +593,7 @@ function RenewForm({
       </p>
       <div className="dialog-field">
         <label htmlFor="renew-valid-to">{translate('page.3645af1b4193')}</label>
-        <input
+        <Input
           id="renew-valid-to"
           data-testid="renew-valid-to"
           placeholder="YYYY-MM-DD"
@@ -599,7 +607,7 @@ function RenewForm({
         </p>
       ) : null}
       <div className="dialog-actions">
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="renew-submit"
@@ -607,7 +615,7 @@ function RenewForm({
           onClick={() => onSubmit(newValidTo)}
         >
           {translate('page.10f61d3ddf64')}
-        </button>
+        </Button>
       </div>
     </div>
   );

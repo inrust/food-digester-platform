@@ -1,3 +1,5 @@
+import { Icon } from '../components/Icon.js';
+import { Button, Input } from '../components/ui.js';
 import { translate } from '../i18n/i18n.js';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
@@ -83,6 +85,27 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
   };
   return (
     <main className="login-page">
+      <section className="login-intro">
+        <span className="login-eyebrow">
+          <Icon name="leaf" />
+          {translate('design.console')}
+        </span>
+        <h2>{translate('design.loginTitle')}</h2>
+        <p>{translate('design.loginDescription')}</p>
+        <div className="login-capabilities">
+          {['device', 'leaf', 'shield'].map((name, index) => (
+            <div key={name}>
+              <Icon name={name} />
+              <span>{translate(`design.capability${index}`)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="login-art" aria-hidden="true">
+          <Icon name="leaf" />
+          <span />
+          <span />
+        </div>
+      </section>
       <form className="login-card" onSubmit={(event) => void submit(event)}>
         <h1>{translate('ui.702005aecd7f')}</h1>
         <p>{translate('ui.3504cf6398a8')}</p>
@@ -99,7 +122,7 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
           </section>
         ) : null}
         <label htmlFor="username">{translate('page.a1aaf352cb07')}</label>
-        <input
+        <Input
           id="username"
           autoComplete="username"
           value={username}
@@ -116,7 +139,7 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
                   ? translate('auth.newPassword.label')
                   : translate('page.d22c9c008539')}
             </label>
-            <input
+            <Input
               id="password"
               type="password"
               autoComplete={step === 'credentials' ? 'current-password' : 'new-password'}
@@ -129,7 +152,7 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
         {step === 'mfa' || step === 'confirm-forgot' ? (
           <>
             <label htmlFor="confirmation-code">{translate('ui.3e3d59a25863')}</label>
-            <input
+            <Input
               id="confirmation-code"
               inputMode="numeric"
               autoComplete="one-time-code"
@@ -144,7 +167,7 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
             {message}
           </div>
         ) : null}
-        <button className="primary-button" type="submit" disabled={busy}>
+        <Button className="primary-button" type="submit" disabled={busy}>
           {busy
             ? translate('ui.1cac8ac7f58f')
             : step === 'credentials'
@@ -154,13 +177,13 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
                 : step === 'new-password'
                   ? translate('auth.newPassword.submit')
                   : translate('ui.09cbc97ae2ac')}
-        </button>
+        </Button>
         {step === 'credentials' ? (
-          <button type="button" className="link-button" onClick={() => setStep('forgot')}>
+          <Button type="button" className="link-button" onClick={() => setStep('forgot')}>
             {translate('ui.2e90a4906264')}
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             type="button"
             className="link-button"
             onClick={() => {
@@ -169,7 +192,7 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
             }}
           >
             {translate('ui.f2fe4ecc0f4b')}
-          </button>
+          </Button>
         )}
       </form>
     </main>

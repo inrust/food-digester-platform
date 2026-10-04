@@ -1,3 +1,4 @@
+import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-18 耗材状态与更换申请页（/consumables）：耗材列表 + 更换申请两区域。
@@ -263,83 +264,97 @@ export function ConsumablesPage({
               : translate('ui.consumableThresholdFallback', { reason: thresholdSource.reason })}
         </p>
         <div className="filter-bar">
-          <label htmlFor="consumable-filter-region">{translate('page.17fc93c9cdbb')}</label>
-          <input
-            id="consumable-filter-region"
-            data-testid="consumable-filter-region"
-            value={statusDraft.region}
-            onChange={(event) => setStatusDraft({ ...statusDraft, region: event.target.value })}
-          />
-          <label htmlFor="consumable-filter-subregion">{translate('page.e1973949d60a')}</label>
-          <input
-            id="consumable-filter-subregion"
-            data-testid="consumable-filter-subregion"
-            value={statusDraft.subregion}
-            onChange={(event) => setStatusDraft({ ...statusDraft, subregion: event.target.value })}
-          />
-          <label htmlFor="consumable-filter-site">{translate('page.09232c5f3b50')}</label>
-          <input
-            id="consumable-filter-site"
-            data-testid="consumable-filter-site"
-            value={statusDraft.siteId}
-            onChange={(event) => setStatusDraft({ ...statusDraft, siteId: event.target.value })}
-          />
-          <label htmlFor="consumable-filter-connectivity">{translate('page.b639d60c4140')}</label>
-          <select
-            id="consumable-filter-connectivity"
-            data-testid="consumable-filter-connectivity"
-            value={statusDraft.connectivity}
-            onChange={(event) =>
-              setStatusDraft({
-                ...statusDraft,
-                connectivity: event.target.value === '' ? '' : (event.target.value as 'ONLINE' | 'OFFLINE'),
-              })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            <option value="ONLINE">{translate('page.0373ff923114')}</option>
-            <option value="OFFLINE">{translate('page.211357d22f4d')}</option>
-          </select>
-          <label htmlFor="consumable-filter-keyword">{translate('page.7f904bb70f96')}</label>
-          <input
-            id="consumable-filter-keyword"
-            data-testid="consumable-filter-keyword"
-            value={statusDraft.keyword}
-            onChange={(event) => setStatusDraft({ ...statusDraft, keyword: event.target.value })}
-          />
-          <label htmlFor="consumable-filter-max">{translate('page.c3d2894c6fdb')}</label>
-          <input
-            id="consumable-filter-max"
-            data-testid="consumable-filter-max"
-            type="number"
-            min={0}
-            max={100}
-            value={statusDraft.maxRemainingPercent}
-            onChange={(event) => setStatusDraft({ ...statusDraft, maxRemainingPercent: event.target.value })}
-          />
-          <label htmlFor="consumable-filter-type">{translate('page.6c9da0502120')}</label>
-          <select
-            id="consumable-filter-type"
-            data-testid="consumable-filter-type"
-            value={statusDraft.consumableType}
-            onChange={(event) =>
-              setStatusDraft({
-                ...statusDraft,
-                consumableType: event.target.value === '' ? '' : (event.target.value as ConsumableType),
-              })
-            }
-          >
-            <option value="">{translate('page.31af9a60c654')}</option>
-            {CONSUMABLE_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {CONSUMABLE_TYPE_LABELS[type]}
-              </option>
-            ))}
-          </select>
+          <div className="filter-field">
+            <label htmlFor="consumable-filter-region">{translate('page.17fc93c9cdbb')}</label>
+            <Input
+              id="consumable-filter-region"
+              data-testid="consumable-filter-region"
+              value={statusDraft.region}
+              onChange={(event) => setStatusDraft({ ...statusDraft, region: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="consumable-filter-subregion">{translate('page.e1973949d60a')}</label>
+            <Input
+              id="consumable-filter-subregion"
+              data-testid="consumable-filter-subregion"
+              value={statusDraft.subregion}
+              onChange={(event) => setStatusDraft({ ...statusDraft, subregion: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="consumable-filter-site">{translate('page.09232c5f3b50')}</label>
+            <Input
+              id="consumable-filter-site"
+              data-testid="consumable-filter-site"
+              value={statusDraft.siteId}
+              onChange={(event) => setStatusDraft({ ...statusDraft, siteId: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="consumable-filter-connectivity">{translate('page.b639d60c4140')}</label>
+            <select
+              id="consumable-filter-connectivity"
+              data-testid="consumable-filter-connectivity"
+              value={statusDraft.connectivity}
+              onChange={(event) =>
+                setStatusDraft({
+                  ...statusDraft,
+                  connectivity: event.target.value === '' ? '' : (event.target.value as 'ONLINE' | 'OFFLINE'),
+                })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              <option value="ONLINE">{translate('page.0373ff923114')}</option>
+              <option value="OFFLINE">{translate('page.211357d22f4d')}</option>
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="consumable-filter-keyword">{translate('page.7f904bb70f96')}</label>
+            <Input
+              id="consumable-filter-keyword"
+              data-testid="consumable-filter-keyword"
+              value={statusDraft.keyword}
+              onChange={(event) => setStatusDraft({ ...statusDraft, keyword: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="consumable-filter-max">{translate('page.c3d2894c6fdb')}</label>
+            <Input
+              id="consumable-filter-max"
+              data-testid="consumable-filter-max"
+              type="number"
+              min={0}
+              max={100}
+              value={statusDraft.maxRemainingPercent}
+              onChange={(event) => setStatusDraft({ ...statusDraft, maxRemainingPercent: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="consumable-filter-type">{translate('page.6c9da0502120')}</label>
+            <select
+              id="consumable-filter-type"
+              data-testid="consumable-filter-type"
+              value={statusDraft.consumableType}
+              onChange={(event) =>
+                setStatusDraft({
+                  ...statusDraft,
+                  consumableType: event.target.value === '' ? '' : (event.target.value as ConsumableType),
+                })
+              }
+            >
+              <option value="">{translate('page.31af9a60c654')}</option>
+              {CONSUMABLE_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {CONSUMABLE_TYPE_LABELS[type]}
+                </option>
+              ))}
+            </select>
+          </div>
           {isPlatformRole ? (
             <>
               <label htmlFor="consumable-filter-customer">{translate('page.a20148b7e39a')}</label>
-              <input
+              <Input
                 id="consumable-filter-customer"
                 data-testid="consumable-filter-customer"
                 value={statusDraft.customerId}
@@ -347,7 +362,7 @@ export function ConsumablesPage({
               />
             </>
           ) : null}
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="consumable-search"
@@ -367,8 +382,8 @@ export function ConsumablesPage({
             }
           >
             {translate('page.f04090805c6e')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             data-testid="consumable-reset"
             onClick={() => {
@@ -377,7 +392,7 @@ export function ConsumablesPage({
             }}
           >
             {translate('page.3d81345303ab')}
-          </button>
+          </Button>
         </div>
 
         <section data-testid="consumable-table" aria-label={translate('page.079ec3477314')}>
@@ -435,13 +450,13 @@ export function ConsumablesPage({
                   ) : contact?.kind === 'loading' ? (
                     <span role="status">{translate('common.loading')}</span>
                   ) : (
-                    <button
+                    <Button
                       type="button"
                       data-testid={`consumable-contact-${row.deviceId}`}
                       onClick={() => void loadContact(row.deviceId)}
                     >
                       {translate('page.60beedc8f22b')}
-                    </button>
+                    </Button>
                   );
                 },
               },
@@ -463,7 +478,7 @@ export function ConsumablesPage({
       <section data-testid="consumable-requests-section" aria-label={translate('page.07c43eb2dde1')}>
         <div className="page-header">
           <h4>{translate('page.07c43eb2dde1')}</h4>
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="consumable-request-create-open"
@@ -472,55 +487,61 @@ export function ConsumablesPage({
             onClick={() => setCreateOpen(true)}
           >
             {translate('page.d772b092f68b')}
-          </button>
+          </Button>
         </div>
         <div className="filter-bar">
-          <label htmlFor="request-filter-status">{translate('page.8542beb99054')}</label>
-          <select
-            id="request-filter-status"
-            data-testid="request-filter-status"
-            value={requestDraft.status}
-            onChange={(event) =>
-              setRequestDraft({
-                ...requestDraft,
-                status: event.target.value === '' ? '' : (event.target.value as ConsumableRequestStatus),
-              })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {REQUEST_STATUS_OPTIONS.map((statusOption) => (
-              <option key={statusOption} value={statusOption}>
-                {REQUEST_STATUS_LABELS[statusOption]}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="request-filter-type">{translate('page.6c9da0502120')}</label>
-          <select
-            id="request-filter-type"
-            data-testid="request-filter-type"
-            value={requestDraft.consumableType}
-            onChange={(event) =>
-              setRequestDraft({
-                ...requestDraft,
-                consumableType: event.target.value === '' ? '' : (event.target.value as ConsumableType),
-              })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {CONSUMABLE_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {CONSUMABLE_TYPE_LABELS[type]}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="request-filter-device">{translate('page.9a04e46a8d92')}</label>
-          <input
-            id="request-filter-device"
-            data-testid="request-filter-device"
-            value={requestDraft.deviceId}
-            onChange={(event) => setRequestDraft({ ...requestDraft, deviceId: event.target.value })}
-          />
-          <button
+          <div className="filter-field">
+            <label htmlFor="request-filter-status">{translate('page.8542beb99054')}</label>
+            <select
+              id="request-filter-status"
+              data-testid="request-filter-status"
+              value={requestDraft.status}
+              onChange={(event) =>
+                setRequestDraft({
+                  ...requestDraft,
+                  status: event.target.value === '' ? '' : (event.target.value as ConsumableRequestStatus),
+                })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {REQUEST_STATUS_OPTIONS.map((statusOption) => (
+                <option key={statusOption} value={statusOption}>
+                  {REQUEST_STATUS_LABELS[statusOption]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="request-filter-type">{translate('page.6c9da0502120')}</label>
+            <select
+              id="request-filter-type"
+              data-testid="request-filter-type"
+              value={requestDraft.consumableType}
+              onChange={(event) =>
+                setRequestDraft({
+                  ...requestDraft,
+                  consumableType: event.target.value === '' ? '' : (event.target.value as ConsumableType),
+                })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {CONSUMABLE_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {CONSUMABLE_TYPE_LABELS[type]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="request-filter-device">{translate('page.9a04e46a8d92')}</label>
+            <Input
+              id="request-filter-device"
+              data-testid="request-filter-device"
+              value={requestDraft.deviceId}
+              onChange={(event) => setRequestDraft({ ...requestDraft, deviceId: event.target.value })}
+            />
+          </div>
+          <Button
             type="button"
             className="primary-button"
             data-testid="request-filter-search"
@@ -533,7 +554,7 @@ export function ConsumablesPage({
             }
           >
             {translate('page.dcce9a144a40')}
-          </button>
+          </Button>
         </div>
 
         <section data-testid="consumable-requests-table" aria-label={translate('page.ea93d111282f')}>
@@ -578,7 +599,7 @@ export function ConsumablesPage({
                       // 仅渲染矩阵内动作（跳级动作不渲染按钮）
                       if (denied !== null && denied.includes(translate('page.41cd13289ce7'))) return null;
                       return (
-                        <button
+                        <Button
                           key={requestAction}
                           type="button"
                           data-testid={`consumable-${requestAction}-${req.requestId}`}
@@ -590,7 +611,7 @@ export function ConsumablesPage({
                           }}
                         >
                           {REQUEST_ACTION_LABELS[requestAction]}
-                        </button>
+                        </Button>
                       );
                     })}
                   </span>
@@ -625,7 +646,7 @@ export function ConsumablesPage({
             </p>
             <div className="dialog-field">
               <label htmlFor="consumable-action-note">{translate('page.9019638102fb')}</label>
-              <input
+              <Input
                 id="consumable-action-note"
                 data-testid="consumable-action-note"
                 maxLength={500}
@@ -639,7 +660,7 @@ export function ConsumablesPage({
               </p>
             ) : null}
             <div className="dialog-actions">
-              <button
+              <Button
                 type="button"
                 className="primary-button"
                 data-testid="consumable-action-submit"
@@ -648,7 +669,7 @@ export function ConsumablesPage({
               >
                 {translate('page.b56d9ac6c5a0')}
                 {REQUEST_ACTION_LABELS[action.action]}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -662,7 +683,7 @@ export function ConsumablesPage({
       >
         <div className="dialog-field">
           <label htmlFor="consumable-create-device">{translate('page.9a04e46a8d92')}</label>
-          <input
+          <Input
             id="consumable-create-device"
             data-testid="consumable-create-device"
             value={createDraft.deviceId}
@@ -689,7 +710,7 @@ export function ConsumablesPage({
         </div>
         <div className="dialog-field">
           <label htmlFor="consumable-create-note">{translate('page.bf243804ac18')}</label>
-          <input
+          <Input
             id="consumable-create-note"
             data-testid="consumable-create-note"
             maxLength={500}
@@ -698,7 +719,7 @@ export function ConsumablesPage({
           />
         </div>
         <div className="dialog-actions">
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="consumable-create-submit"
@@ -706,7 +727,7 @@ export function ConsumablesPage({
             onClick={() => void submitCreate()}
           >
             {translate('page.7bc5480e718b')}
-          </button>
+          </Button>
         </div>
       </Modal>
     </div>

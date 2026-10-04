@@ -1,3 +1,4 @@
+import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-15 审计日志页（/audit-logs）：按 actor/Customer/对象/动作/结果/时间筛选 +
@@ -102,17 +103,19 @@ export function AuditLogsPage({
 
       <section data-testid="audit-filter" aria-label={translate('page.dcce9a144a40')}>
         <div className="filter-bar">
-          <label htmlFor="audit-filter-actor">{translate('page.6dd194b747ea')}</label>
-          <input
-            id="audit-filter-actor"
-            data-testid="audit-filter-actor"
-            value={draft.actorId}
-            onChange={(event) => setDraft({ ...draft, actorId: event.target.value })}
-          />
+          <div className="filter-field">
+            <label htmlFor="audit-filter-actor">{translate('page.6dd194b747ea')}</label>
+            <Input
+              id="audit-filter-actor"
+              data-testid="audit-filter-actor"
+              value={draft.actorId}
+              onChange={(event) => setDraft({ ...draft, actorId: event.target.value })}
+            />
+          </div>
           {isPlatformRole ? (
             <>
               <label htmlFor="audit-filter-customer">{translate('page.a20148b7e39a')}</label>
-              <input
+              <Input
                 id="audit-filter-customer"
                 data-testid="audit-filter-customer"
                 value={draft.customerId}
@@ -120,60 +123,72 @@ export function AuditLogsPage({
               />
             </>
           ) : null}
-          <label htmlFor="audit-filter-object-type">{translate('page.bfa3562d543a')}</label>
-          <input
-            id="audit-filter-object-type"
-            data-testid="audit-filter-object-type"
-            value={draft.objectType}
-            onChange={(event) => setDraft({ ...draft, objectType: event.target.value })}
-          />
-          <label htmlFor="audit-filter-object-id">{translate('page.685ea0707c73')}</label>
-          <input
-            id="audit-filter-object-id"
-            data-testid="audit-filter-object-id"
-            value={draft.objectId}
-            onChange={(event) => setDraft({ ...draft, objectId: event.target.value })}
-          />
-          <label htmlFor="audit-filter-action">{translate('page.d9d9827827e1')}</label>
-          <input
-            id="audit-filter-action"
-            data-testid="audit-filter-action"
-            value={draft.action}
-            onChange={(event) => setDraft({ ...draft, action: event.target.value })}
-          />
-          <label htmlFor="audit-filter-result">{translate('page.0a2c91cec6c8')}</label>
-          <select
-            id="audit-filter-result"
-            data-testid="audit-filter-result"
-            value={draft.result}
-            onChange={(event) =>
-              setDraft({ ...draft, result: event.target.value === '' ? '' : (event.target.value as AuditResult) })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {AUDIT_RESULT_OPTIONS.map((result) => (
-              <option key={result} value={result}>
-                {AUDIT_RESULT_LABELS[result]}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="audit-filter-from">{translate('page.b4e119fecbac')}</label>
-          <input
-            id="audit-filter-from"
-            type="datetime-local"
-            data-testid="audit-filter-from"
-            value={draft.from}
-            onChange={(event) => setDraft({ ...draft, from: event.target.value })}
-          />
-          <label htmlFor="audit-filter-to">{translate('page.943df5fe5a8b')}</label>
-          <input
-            id="audit-filter-to"
-            type="datetime-local"
-            data-testid="audit-filter-to"
-            value={draft.to}
-            onChange={(event) => setDraft({ ...draft, to: event.target.value })}
-          />
-          <button
+          <div className="filter-field">
+            <label htmlFor="audit-filter-object-type">{translate('page.bfa3562d543a')}</label>
+            <Input
+              id="audit-filter-object-type"
+              data-testid="audit-filter-object-type"
+              value={draft.objectType}
+              onChange={(event) => setDraft({ ...draft, objectType: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="audit-filter-object-id">{translate('page.685ea0707c73')}</label>
+            <Input
+              id="audit-filter-object-id"
+              data-testid="audit-filter-object-id"
+              value={draft.objectId}
+              onChange={(event) => setDraft({ ...draft, objectId: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="audit-filter-action">{translate('page.d9d9827827e1')}</label>
+            <Input
+              id="audit-filter-action"
+              data-testid="audit-filter-action"
+              value={draft.action}
+              onChange={(event) => setDraft({ ...draft, action: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="audit-filter-result">{translate('page.0a2c91cec6c8')}</label>
+            <select
+              id="audit-filter-result"
+              data-testid="audit-filter-result"
+              value={draft.result}
+              onChange={(event) =>
+                setDraft({ ...draft, result: event.target.value === '' ? '' : (event.target.value as AuditResult) })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {AUDIT_RESULT_OPTIONS.map((result) => (
+                <option key={result} value={result}>
+                  {AUDIT_RESULT_LABELS[result]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="audit-filter-from">{translate('page.b4e119fecbac')}</label>
+            <Input
+              id="audit-filter-from"
+              type="datetime-local"
+              data-testid="audit-filter-from"
+              value={draft.from}
+              onChange={(event) => setDraft({ ...draft, from: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="audit-filter-to">{translate('page.943df5fe5a8b')}</label>
+            <Input
+              id="audit-filter-to"
+              type="datetime-local"
+              data-testid="audit-filter-to"
+              value={draft.to}
+              onChange={(event) => setDraft({ ...draft, to: event.target.value })}
+            />
+          </div>
+          <Button
             type="button"
             className="primary-button"
             data-testid="audit-filter-search"
@@ -181,7 +196,7 @@ export function AuditLogsPage({
             onClick={applyFilter}
           >
             {translate('page.dcce9a144a40')}
-          </button>
+          </Button>
         </div>
         {fromInvalid || toInvalid || rangeInvalid ? (
           <p className="field-hint" data-testid="audit-filter-time-error">
@@ -223,13 +238,13 @@ export function AuditLogsPage({
               key: 'actions',
               header: translate('page.f3ea6d345e2a'),
               render: (log) => (
-                <button
+                <Button
                   type="button"
                   data-testid={`audit-detail-${log.auditId}`}
                   onClick={() => onSelectLog(log.auditId)}
                 >
                   {translate('page.4f55ee1e687f')}
-                </button>
+                </Button>
               ),
             },
           ]}

@@ -1,3 +1,4 @@
+import { Button } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-06 查看设备页（/devices/view）：Region/Subregion/Site/Device 联动选择 + 设备控制台。
@@ -327,9 +328,9 @@ function ConsoleContent({
             {translate('page.8d2a5f52dba1')}
           </p>
         )}
-        <button type="button" data-testid="media-refresh" onClick={onRefresh}>
+        <Button type="button" data-testid="media-refresh" onClick={onRefresh}>
           {translate('page.dcc4d58c807c')}
-        </button>
+        </Button>
       </section>
 
       <section data-testid="console-activities">
@@ -350,9 +351,9 @@ function ConsoleContent({
           </ul>
         ) : null}
         {activityState.status === 'ready' && activityState.nextCursor !== null ? (
-          <button type="button" onClick={() => onLoadMoreActivities(activityState.nextCursor ?? '')}>
+          <Button type="button" onClick={() => onLoadMoreActivities(activityState.nextCursor ?? '')}>
             {translate('page.3a0fab4978fb')}
-          </button>
+          </Button>
         ) : null}
       </section>
     </div>
@@ -371,6 +372,9 @@ export function DeviceViewPage({
   const [scope, setScope] = useState<ScopeFilterValue>(EMPTY_SCOPE_FILTER);
   return (
     <div className="device-view-page" data-testid="device-view-page">
+      <header className="page-header">
+        <h1>{translate('design.page.device-view')}</h1>
+      </header>
       <div className="filter-bar" data-testid="view-filter-bar">
         <ScopeFilter
           regions={filterOptions.regions}
@@ -380,7 +384,7 @@ export function DeviceViewPage({
           value={scope}
           onChange={setScope}
         />
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="view-apply"
@@ -390,7 +394,7 @@ export function DeviceViewPage({
           }}
         >
           {translate('page.4562024ddec7')}
-        </button>
+        </Button>
       </div>
 
       {consoleState.status === 'idle' ? <p className="empty-state">{translate('page.4bca659f8ed9')}</p> : null}

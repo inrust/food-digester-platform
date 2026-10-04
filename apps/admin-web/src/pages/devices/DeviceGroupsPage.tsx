@@ -1,3 +1,4 @@
+import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-06 设备群管理页（/devices/groups）：设备台账列表 + 新增设备请求（FE-04 面板嵌入）。
@@ -121,10 +122,13 @@ export function DeviceGroupsPage({
   };
   return (
     <div className="device-groups-page" data-testid="device-groups-page">
+      <header className="page-header">
+        <h1>{translate('design.page.device-group')}</h1>
+      </header>
       <div className="filter-bar" data-testid="device-filter-bar">
         <span className="filter-field">
           <label htmlFor="device-keyword">{translate('page.621219ff9885')}</label>
-          <input
+          <Input
             id="device-keyword"
             data-testid="device-keyword"
             value={draft.keyword}
@@ -173,15 +177,15 @@ export function DeviceGroupsPage({
           (v) => LICENSE_FILTER_LABELS[v] ?? v,
           (v) => setDraft({ ...draft, licenseStatus: v }),
         )}
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="device-search"
           onClick={() => onApplyFilters(draft)}
         >
           {translate('page.f04090805c6e')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           data-testid="device-reset"
           onClick={() => {
@@ -190,7 +194,7 @@ export function DeviceGroupsPage({
           }}
         >
           {translate('page.3d81345303ab')}
-        </button>
+        </Button>
       </div>
 
       <CursorTable
@@ -235,13 +239,13 @@ export function DeviceGroupsPage({
             key: 'actions',
             header: translate('page.f3ea6d345e2a'),
             render: (d) => (
-              <button
+              <Button
                 type="button"
                 data-testid={`manage-${d.id}`}
                 onClick={() => onNavigate(`/devices/manage?deviceId=${encodeURIComponent(d.id)}`)}
               >
                 {translate('page.4989b5cf9483')}
-              </button>
+              </Button>
             ),
           },
         ]}

@@ -1,3 +1,4 @@
+import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-11 ESG 概览页（/esg/overview）：日/周/月切换、估算 CO2e（含计算版本与完整率）、
@@ -134,6 +135,9 @@ export function EsgOverviewPage({
   };
   return (
     <div className="esg-overview-page" data-testid="esg-overview-page">
+      <header className="page-header">
+        <h1>{translate('design.page.esg-overview')}</h1>
+      </header>
       <p className="esg-disclaimer" data-testid="esg-disclaimer">
         {esgDisclaimer()}
         {translate('page.504a12fd9000')}
@@ -147,7 +151,7 @@ export function EsgOverviewPage({
           data-testid="esg-period-toggle"
         >
           {ESG_PERIODS.map((p) => (
-            <button
+            <Button
               key={p}
               type="button"
               aria-pressed={period === p}
@@ -156,7 +160,7 @@ export function EsgOverviewPage({
               onClick={() => onPeriodChange(p)}
             >
               {ESG_PERIOD_LABELS[p]}
-            </button>
+            </Button>
           ))}
         </div>
         {!isCustomerRole ? (
@@ -179,28 +183,32 @@ export function EsgOverviewPage({
             </select>
           </>
         ) : null}
-        <label htmlFor="esg-from">
-          {translate('page.49f932b2f932')}
-          {timeZone}）
-        </label>
-        <input
-          id="esg-from"
-          type="date"
-          data-testid="esg-from-date"
-          value={draft.fromDate}
-          onChange={(event) => setDraft({ ...draft, fromDate: event.target.value })}
-        />
-        <label htmlFor="esg-to">{translate('page.9b3177f0b700')}</label>
-        <input
-          id="esg-to"
-          type="date"
-          data-testid="esg-to-date"
-          value={draft.toDate}
-          onChange={(event) => setDraft({ ...draft, toDate: event.target.value })}
-        />
-        <button type="button" className="primary-button" data-testid="esg-apply" onClick={applyFilter}>
+        <div className="filter-field">
+          <label htmlFor="esg-from">
+            {translate('page.49f932b2f932')}
+            {timeZone}）
+          </label>
+          <Input
+            id="esg-from"
+            type="date"
+            data-testid="esg-from-date"
+            value={draft.fromDate}
+            onChange={(event) => setDraft({ ...draft, fromDate: event.target.value })}
+          />
+        </div>
+        <div className="filter-field">
+          <label htmlFor="esg-to">{translate('page.9b3177f0b700')}</label>
+          <Input
+            id="esg-to"
+            type="date"
+            data-testid="esg-to-date"
+            value={draft.toDate}
+            onChange={(event) => setDraft({ ...draft, toDate: event.target.value })}
+          />
+        </div>
+        <Button type="button" className="primary-button" data-testid="esg-apply" onClick={applyFilter}>
           {translate('page.4562024ddec7')}
-        </button>
+        </Button>
         {dateError !== null ? (
           <p className="field-hint" data-testid="esg-date-error">
             {dateError}

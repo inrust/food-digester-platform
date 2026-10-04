@@ -1,7 +1,9 @@
+import { Icon, pageIcon } from '../components/Icon.js';
+import { Button } from '../components/ui.js';
 /**
  * FE-02 侧栏：角色菜单渲染 + 可折叠分组（键盘可操作）。
  *
- * 菜单数据来自 FE-01 menuForRoles（已按角色过滤）；分组用 <button aria-expanded> 控制，
+ * 菜单数据来自 FE-01 menuForRoles（已按角色过滤）；分组用 <Button aria-expanded> 控制，
  * 菜单项用 <a href aria-current> 保证键盘与读屏可用；点击经 onNavigate 交给壳层路由。
  */
 import { useState } from 'react';
@@ -28,7 +30,10 @@ export function Sidebar({ nodes, currentPath, onNavigate }: SidebarProps) {
   };
 
   const renderItem = (item: { path: string; pageState: string; label: string }) => {
-    const active = item.path === currentPath;
+    const active =
+      item.path === currentPath ||
+      (item.path === '/contracts' && currentPath.startsWith('/contracts/')) ||
+      (item.path === '/devices/groups' && currentPath === '/devices/manage');
     return (
       <li key={item.path}>
         <a
@@ -41,7 +46,8 @@ export function Sidebar({ nodes, currentPath, onNavigate }: SidebarProps) {
             onNavigate(item.path);
           }}
         >
-          {t(menuKeyForPageState(item.pageState))}
+          <Icon name={pageIcon(item.pageState)} />
+          <span>{t(menuKeyForPageState(item.pageState))}</span>
         </a>
       </li>
     );
@@ -58,7 +64,7 @@ export function Sidebar({ nodes, currentPath, onNavigate }: SidebarProps) {
           const subMenuId = `submenu-${node.groupId}`;
           return (
             <li key={node.groupId}>
-              <button
+              <Button
                 type="button"
                 className="menu-item menu-group-toggle"
                 data-testid={`menu-group-${node.groupId}`}
@@ -66,9 +72,9 @@ export function Sidebar({ nodes, currentPath, onNavigate }: SidebarProps) {
                 aria-controls={subMenuId}
                 onClick={() => toggleGroup(node.groupId)}
               >
-                {t(menuKeyForGroup(node.groupId))}
+                <span>{t(menuKeyForGroup(node.groupId))}</span>
                 <span aria-hidden="true" className={`arrow${isCollapsed ? '' : ' open'}`} />
-              </button>
+              </Button>
               <ul id={subMenuId} className="sub-menu" hidden={isCollapsed}>
                 {node.items.map((item) => renderItem(item))}
               </ul>

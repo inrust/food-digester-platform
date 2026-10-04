@@ -1,3 +1,4 @@
+import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-05 Site 管理页（/sites）：列表（customerId/region/subregion/status 筛选）+ 详情（含设备数）+ 创建/编辑/停用。
@@ -128,7 +129,7 @@ function SiteFormDialog({
   ) => (
     <div className="dialog-field" key={id}>
       <label htmlFor={id}>{label}</label>
-      <input id={id} value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input id={id} value={value} onChange={(e) => onChange(e.target.value)} />
       {errorKey !== undefined && fieldErrors[errorKey] !== undefined ? (
         <p role="alert" className="field-error" data-testid={`error-${errorKey}`}>
           {fieldErrors[errorKey]}
@@ -186,12 +187,12 @@ function SiteFormDialog({
       )}
       {error !== null && error !== undefined ? <ErrorNotice error={error} /> : null}
       <div className="dialog-actions">
-        <button type="button" onClick={onCancel}>
+        <Button type="button" onClick={onCancel}>
           {translate('page.4d0b4688c787')}
-        </button>
-        <button type="button" className="primary-button" disabled={busy} onClick={submit}>
+        </Button>
+        <Button type="button" className="primary-button" disabled={busy} onClick={submit}>
           {translate('page.fadf24dbc5a9')}
-        </button>
+        </Button>
       </div>
     </Modal>
   );
@@ -235,6 +236,9 @@ export function SitesPage({
   };
   return (
     <div className="sites-page" data-testid="sites-page">
+      <header className="page-header">
+        <h1>{translate('design.page.sites')}</h1>
+      </header>
       <div className="page-toolbar">
         <div className="site-filters" data-testid="site-filters">
           <label htmlFor="filter-customer">{translate('page.467c1137f479')}</label>
@@ -251,13 +255,13 @@ export function SitesPage({
             ))}
           </select>
           <label htmlFor="filter-region">{translate('page.406e0f8c6852')}</label>
-          <input
+          <Input
             id="filter-region"
             value={filters.region ?? ''}
             onChange={(e) => onFilterChange({ ...filters, region: e.target.value === '' ? null : e.target.value })}
           />
           <label htmlFor="filter-subregion">{translate('page.ff0beacd69e2')}</label>
-          <input
+          <Input
             id="filter-subregion"
             value={filters.subregion ?? ''}
             onChange={(e) => onFilterChange({ ...filters, subregion: e.target.value === '' ? null : e.target.value })}
@@ -276,14 +280,14 @@ export function SitesPage({
           </select>
         </div>
         {canWrite ? (
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="create-site"
             onClick={() => setDialog({ kind: 'create' })}
           >
             {translate('page.97cf62968aef')}
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -306,9 +310,9 @@ export function SitesPage({
             key: 'actions',
             header: translate('page.f3ea6d345e2a'),
             render: (s) => (
-              <button type="button" data-testid={`detail-${s.id}`} onClick={() => setSelected(s)}>
+              <Button type="button" data-testid={`detail-${s.id}`} onClick={() => setSelected(s)}>
                 {translate('page.b6e664d7362f')}
-              </button>
+              </Button>
             ),
           },
         ]}
@@ -361,12 +365,12 @@ export function SitesPage({
           </dl>
           {actionError !== null && dialog === null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
           <div className="detail-actions">
-            <button type="button" onClick={() => setSelected(null)}>
+            <Button type="button" onClick={() => setSelected(null)}>
               {translate('page.6c14bd7f6f9e')}
-            </button>
+            </Button>
             {canWrite ? (
               <>
-                <button
+                <Button
                   type="button"
                   data-testid="edit-site"
                   disabled={busy}
@@ -376,9 +380,9 @@ export function SitesPage({
                   }}
                 >
                   {translate('page.a7f814c0a40d')}
-                </button>
+                </Button>
                 {selected.status === 'ACTIVE' ? (
-                  <button
+                  <Button
                     type="button"
                     className="danger-button"
                     data-testid="deactivate-site"
@@ -389,7 +393,7 @@ export function SitesPage({
                     }}
                   >
                     {translate('page.d989e55188c9')}
-                  </button>
+                  </Button>
                 ) : null}
               </>
             ) : null}

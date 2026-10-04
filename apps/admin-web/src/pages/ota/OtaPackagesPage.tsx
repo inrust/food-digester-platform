@@ -1,3 +1,4 @@
+import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-13 固件包页（/ota/packages）：上传会话（元数据 + 签名 → 预签名 URL）→ 浏览器直传
@@ -129,15 +130,15 @@ export function OtaPackagesPage({
     <div className="ota-packages-page" data-testid="ota-packages-page">
       <div className="page-header">
         <h3>{translate('page.520fc0679572')}</h3>
-        <button type="button" data-testid="goto-ota-campaigns" onClick={() => onNavigate('/ota/campaigns')}>
+        <Button type="button" data-testid="goto-ota-campaigns" onClick={() => onNavigate('/ota/campaigns')}>
           {translate('page.3a40dc3045ce')}
-        </button>
+        </Button>
       </div>
 
       <section data-testid="package-upload" aria-label={translate('page.63395c3e01ec')}>
         <h4>{translate('page.63395c3e01ec')}</h4>
         <p className="field-hint">{translate('page.719057e1cc5e')}</p>
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="upload-session-open"
@@ -152,7 +153,7 @@ export function OtaPackagesPage({
           }}
         >
           {translate('page.4989a23c850b')}
-        </button>
+        </Button>
         {!canWrite ? (
           <span className="deny-reason" data-testid="upload-deny">
             {translate('page.89dc6cfd462e')}
@@ -176,13 +177,13 @@ export function OtaPackagesPage({
               </dd>
             </dl>
             <label htmlFor="upload-file">{translate('page.2f8765ba1a63')}</label>
-            <input
+            <Input
               id="upload-file"
               type="file"
               data-testid="upload-file"
               onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)}
             />
-            <button
+            <Button
               type="button"
               className="primary-button"
               data-testid="upload-complete-submit"
@@ -190,7 +191,7 @@ export function OtaPackagesPage({
               onClick={() => void submitComplete()}
             >
               {translate('page.04b4e141a193')}
-            </button>
+            </Button>
           </div>
         ) : null}
 
@@ -217,7 +218,7 @@ export function OtaPackagesPage({
       >
         <div className="dialog-field">
           <label htmlFor="upload-model">{translate('page.51bc54c99631')}</label>
-          <input
+          <Input
             id="upload-model"
             data-testid="upload-model"
             value={draft.model}
@@ -231,7 +232,7 @@ export function OtaPackagesPage({
         </div>
         <div className="dialog-field">
           <label htmlFor="upload-version">{translate('page.85c5eb624c9b')}</label>
-          <input
+          <Input
             id="upload-version"
             data-testid="upload-version"
             value={draft.version}
@@ -263,7 +264,7 @@ export function OtaPackagesPage({
             {translate('page.39ebdcfde88f')}
             <NumberText value={MAX_PACKAGE_SIZE_BYTES} />）
           </label>
-          <input
+          <Input
             id="upload-size"
             data-testid="upload-size"
             inputMode="numeric"
@@ -278,7 +279,7 @@ export function OtaPackagesPage({
         </div>
         <div className="dialog-field">
           <label htmlFor="upload-sha256">{translate('page.3011c1372cd5')}</label>
-          <input
+          <Input
             id="upload-sha256"
             data-testid="upload-sha256"
             value={draft.sha256}
@@ -292,7 +293,7 @@ export function OtaPackagesPage({
         </div>
         <div className="dialog-field">
           <label htmlFor="upload-signature">{translate('page.4433ede01c71')}</label>
-          <textarea
+          <TextArea
             id="upload-signature"
             data-testid="upload-signature"
             value={draft.signature}
@@ -305,7 +306,7 @@ export function OtaPackagesPage({
           ) : null}
         </div>
         <div className="dialog-actions">
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="upload-session-submit"
@@ -313,7 +314,7 @@ export function OtaPackagesPage({
             onClick={() => void submitSession()}
           >
             {translate('page.b432cfd5e434')}
-          </button>
+          </Button>
         </div>
       </Modal>
 
@@ -321,66 +322,74 @@ export function OtaPackagesPage({
         <h4>{translate('page.89432be06ed2')}</h4>
         <p className="field-hint">{translate('page.c647d5faaad0')}</p>
         <div className="filter-bar">
-          <label htmlFor="pkg-filter-model">{translate('page.0132ce7298ec')}</label>
-          <input
-            id="pkg-filter-model"
-            data-testid="pkg-filter-model"
-            value={draftFilter.model ?? ''}
-            onChange={(event) => setDraftFilter({ ...draftFilter, model: event.target.value })}
-          />
-          <label htmlFor="pkg-filter-version">{translate('page.989d1affa089')}</label>
-          <input
-            id="pkg-filter-version"
-            data-testid="pkg-filter-version"
-            value={draftFilter.version ?? ''}
-            onChange={(event) => setDraftFilter({ ...draftFilter, version: event.target.value })}
-          />
-          <label htmlFor="pkg-filter-type">{translate('page.e4e46c7235d1')}</label>
-          <select
-            id="pkg-filter-type"
-            data-testid="pkg-filter-type"
-            value={draftFilter.packageType ?? ''}
-            onChange={(event) =>
-              setDraftFilter({
-                ...draftFilter,
-                packageType: event.target.value === '' ? null : (event.target.value as FirmwarePackageType),
-              })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {PACKAGE_TYPE_OPTIONS.map((type) => (
-              <option key={type} value={type}>
-                {PACKAGE_TYPE_LABELS[type]}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="pkg-filter-status">{translate('page.62e951a692ff')}</label>
-          <select
-            id="pkg-filter-status"
-            data-testid="pkg-filter-status"
-            value={draftFilter.status ?? ''}
-            onChange={(event) =>
-              setDraftFilter({
-                ...draftFilter,
-                status: event.target.value === '' ? null : (event.target.value as FirmwarePackageStatus),
-              })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {PACKAGE_STATUS_OPTIONS.map((status) => (
-              <option key={status} value={status}>
-                {PACKAGE_STATUS_LABELS[status]}
-              </option>
-            ))}
-          </select>
-          <button
+          <div className="filter-field">
+            <label htmlFor="pkg-filter-model">{translate('page.0132ce7298ec')}</label>
+            <Input
+              id="pkg-filter-model"
+              data-testid="pkg-filter-model"
+              value={draftFilter.model ?? ''}
+              onChange={(event) => setDraftFilter({ ...draftFilter, model: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="pkg-filter-version">{translate('page.989d1affa089')}</label>
+            <Input
+              id="pkg-filter-version"
+              data-testid="pkg-filter-version"
+              value={draftFilter.version ?? ''}
+              onChange={(event) => setDraftFilter({ ...draftFilter, version: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="pkg-filter-type">{translate('page.e4e46c7235d1')}</label>
+            <select
+              id="pkg-filter-type"
+              data-testid="pkg-filter-type"
+              value={draftFilter.packageType ?? ''}
+              onChange={(event) =>
+                setDraftFilter({
+                  ...draftFilter,
+                  packageType: event.target.value === '' ? null : (event.target.value as FirmwarePackageType),
+                })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {PACKAGE_TYPE_OPTIONS.map((type) => (
+                <option key={type} value={type}>
+                  {PACKAGE_TYPE_LABELS[type]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="pkg-filter-status">{translate('page.62e951a692ff')}</label>
+            <select
+              id="pkg-filter-status"
+              data-testid="pkg-filter-status"
+              value={draftFilter.status ?? ''}
+              onChange={(event) =>
+                setDraftFilter({
+                  ...draftFilter,
+                  status: event.target.value === '' ? null : (event.target.value as FirmwarePackageStatus),
+                })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {PACKAGE_STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {PACKAGE_STATUS_LABELS[status]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Button
             type="button"
             className="primary-button"
             data-testid="pkg-filter-search"
             onClick={() => onApplyFilter(draftFilter)}
           >
             {translate('page.dcce9a144a40')}
-          </button>
+          </Button>
         </div>
         <CursorTable
           ariaLabel={translate('page.2a076b4dcce7')}

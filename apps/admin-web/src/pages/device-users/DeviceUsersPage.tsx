@@ -1,3 +1,4 @@
+import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-09 设备用户管理页（/device-users；FE-16 设置页可直接嵌入本页组件）。
@@ -175,6 +176,9 @@ export function DeviceUsersPage({
   };
   return (
     <div className="device-users-page" data-testid="device-users-page">
+      <header className="page-header">
+        <h1>{translate('design.page.device-users')}</h1>
+      </header>
       <div className="filter-bar" data-testid="device-user-filter-bar">
         {fixedCustomerId === null ? (
           <>
@@ -196,98 +200,108 @@ export function DeviceUsersPage({
             </select>
           </>
         ) : null}
-        <label htmlFor="device-user-region">{translate('page.406e0f8c6852')}</label>
-        <select
-          id="device-user-region"
-          data-testid="device-user-region-filter"
-          value={draftFilter.region ?? ''}
-          onChange={(event) =>
-            setDraftFilter({
-              ...draftFilter,
-              region: event.target.value || null,
-              subregion: null,
-              deviceId: null,
-            })
-          }
-        >
-          <option value="">{translate('page.778fc8f99453')}</option>
-          {regions.map((region) => (
-            <option key={region} value={region}>
-              {region}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="device-user-subregion">{translate('page.ff0beacd69e2')}</label>
-        <select
-          id="device-user-subregion"
-          data-testid="device-user-subregion-filter"
-          value={draftFilter.subregion ?? ''}
-          onChange={(event) =>
-            setDraftFilter({ ...draftFilter, subregion: event.target.value || null, deviceId: null })
-          }
-        >
-          <option value="">{translate('page.778fc8f99453')}</option>
-          {subregions.map((subregion) => (
-            <option key={subregion} value={subregion}>
-              {subregion}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="device-user-device">{translate('page.d79416b3896a')}</label>
-        <select
-          id="device-user-device"
-          data-testid="device-user-device-filter"
-          value={draftFilter.deviceId ?? ''}
-          onChange={(event) => setDraftFilter({ ...draftFilter, deviceId: event.target.value || null })}
-        >
-          <option value="">{translate('page.778fc8f99453')}</option>
-          {scopedTopology
-            .filter(
-              (item) =>
-                (draftFilter.region === null || item.region === draftFilter.region) &&
-                (draftFilter.subregion === null || item.subregion === draftFilter.subregion),
-            )
-            .map((item) => (
-              <option key={item.deviceId} value={item.deviceId}>
-                {item.label}
+        <div className="filter-field">
+          <label htmlFor="device-user-region">{translate('page.406e0f8c6852')}</label>
+          <select
+            id="device-user-region"
+            data-testid="device-user-region-filter"
+            value={draftFilter.region ?? ''}
+            onChange={(event) =>
+              setDraftFilter({
+                ...draftFilter,
+                region: event.target.value || null,
+                subregion: null,
+                deviceId: null,
+              })
+            }
+          >
+            <option value="">{translate('page.778fc8f99453')}</option>
+            {regions.map((region) => (
+              <option key={region} value={region}>
+                {region}
               </option>
             ))}
-        </select>
-        <label htmlFor="device-user-status">{translate('page.62e951a692ff')}</label>
-        <select
-          id="device-user-status"
-          data-testid="device-user-status-filter"
-          value={draftFilter.status ?? ''}
-          onChange={(event) =>
-            setDraftFilter({
-              ...draftFilter,
-              status: event.target.value === '' ? null : (event.target.value as 'ACTIVE' | 'DISABLED'),
-            })
-          }
-        >
-          <option value="">{translate('page.778fc8f99453')}</option>
-          {DEVICE_USER_STATUS_OPTIONS.map((status) => (
-            <option key={status} value={status}>
-              {DEVICE_USER_STATUS_LABELS[status]}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="device-user-keyword">{translate('page.621219ff9885')}</label>
-        <input
-          id="device-user-keyword"
-          data-testid="device-user-keyword"
-          value={draftFilter.keyword ?? ''}
-          onChange={(event) => setDraftFilter({ ...draftFilter, keyword: event.target.value })}
-        />
-        <button
+          </select>
+        </div>
+        <div className="filter-field">
+          <label htmlFor="device-user-subregion">{translate('page.ff0beacd69e2')}</label>
+          <select
+            id="device-user-subregion"
+            data-testid="device-user-subregion-filter"
+            value={draftFilter.subregion ?? ''}
+            onChange={(event) =>
+              setDraftFilter({ ...draftFilter, subregion: event.target.value || null, deviceId: null })
+            }
+          >
+            <option value="">{translate('page.778fc8f99453')}</option>
+            {subregions.map((subregion) => (
+              <option key={subregion} value={subregion}>
+                {subregion}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-field">
+          <label htmlFor="device-user-device">{translate('page.d79416b3896a')}</label>
+          <select
+            id="device-user-device"
+            data-testid="device-user-device-filter"
+            value={draftFilter.deviceId ?? ''}
+            onChange={(event) => setDraftFilter({ ...draftFilter, deviceId: event.target.value || null })}
+          >
+            <option value="">{translate('page.778fc8f99453')}</option>
+            {scopedTopology
+              .filter(
+                (item) =>
+                  (draftFilter.region === null || item.region === draftFilter.region) &&
+                  (draftFilter.subregion === null || item.subregion === draftFilter.subregion),
+              )
+              .map((item) => (
+                <option key={item.deviceId} value={item.deviceId}>
+                  {item.label}
+                </option>
+              ))}
+          </select>
+        </div>
+        <div className="filter-field">
+          <label htmlFor="device-user-status">{translate('page.62e951a692ff')}</label>
+          <select
+            id="device-user-status"
+            data-testid="device-user-status-filter"
+            value={draftFilter.status ?? ''}
+            onChange={(event) =>
+              setDraftFilter({
+                ...draftFilter,
+                status: event.target.value === '' ? null : (event.target.value as 'ACTIVE' | 'DISABLED'),
+              })
+            }
+          >
+            <option value="">{translate('page.778fc8f99453')}</option>
+            {DEVICE_USER_STATUS_OPTIONS.map((status) => (
+              <option key={status} value={status}>
+                {DEVICE_USER_STATUS_LABELS[status]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-field">
+          <label htmlFor="device-user-keyword">{translate('page.621219ff9885')}</label>
+          <Input
+            id="device-user-keyword"
+            data-testid="device-user-keyword"
+            value={draftFilter.keyword ?? ''}
+            onChange={(event) => setDraftFilter({ ...draftFilter, keyword: event.target.value })}
+          />
+        </div>
+        <Button
           type="button"
           className="primary-button"
           data-testid="device-user-search"
           onClick={() => onApplyFilter(draftFilter)}
         >
           {translate('page.dcce9a144a40')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           data-testid="device-user-filter-reset"
           onClick={() => {
@@ -296,16 +310,16 @@ export function DeviceUsersPage({
           }}
         >
           {translate('page.3d81345303ab')}
-        </button>
+        </Button>
         {canWrite ? (
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="device-user-create"
             onClick={() => setModal('create')}
           >
             {translate('page.6663d2d3519a')}
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -352,13 +366,13 @@ export function DeviceUsersPage({
                   <TimeText iso={row.updatedAt} />
                 </td>
                 <td>
-                  <button
+                  <Button
                     type="button"
                     data-testid={`device-user-detail-${row.deviceUserId}`}
                     onClick={() => onSelect(row.deviceUserId)}
                   >
                     {translate('page.4f55ee1e687f')}
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -398,23 +412,23 @@ export function DeviceUsersPage({
           </dl>
 
           <div className="detail-actions">
-            <button type="button" onClick={onCloseDetail}>
+            <Button type="button" onClick={onCloseDetail}>
               {translate('page.6c14bd7f6f9e')}
-            </button>
+            </Button>
             {canWrite ? (
               <>
-                <button type="button" data-testid="device-user-edit" disabled={busy} onClick={() => setModal('edit')}>
+                <Button type="button" data-testid="device-user-edit" disabled={busy} onClick={() => setModal('edit')}>
                   {translate('page.644d5f06bdba')}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   data-testid="device-user-password-reset"
                   disabled={busy}
                   onClick={() => setModal('password')}
                 >
                   {translate('page.7e422146dd5b')}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   className="danger-button"
                   data-testid="device-user-disable"
@@ -423,12 +437,12 @@ export function DeviceUsersPage({
                   onClick={() => setDisableOpen(true)}
                 >
                   {translate('page.d989e55188c9')}
-                </button>
+                </Button>
               </>
             ) : null}
             {canAssign ? (
               <>
-                <button
+                <Button
                   type="button"
                   data-testid="device-user-assign"
                   disabled={busy || detailView.status === 'DISABLED'}
@@ -436,8 +450,8 @@ export function DeviceUsersPage({
                   onClick={() => setModal('assign')}
                 >
                   {translate('page.229546d5233e')}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   data-testid="device-user-revoke"
                   disabled={busy || !detailView.assignments.some((a) => a.status === 'ACTIVE')}
@@ -447,7 +461,7 @@ export function DeviceUsersPage({
                   onClick={() => setModal('revoke')}
                 >
                   {translate('page.38fe0730070c')}
-                </button>
+                </Button>
               </>
             ) : null}
           </div>
@@ -709,7 +723,7 @@ function CreateDeviceUserForm({
       ) : null}
       <div className="dialog-field">
         <label htmlFor="create-username">{translate('page.ec8a1f47f74e')}</label>
-        <input
+        <Input
           id="create-username"
           data-testid="create-username"
           value={username}
@@ -718,7 +732,7 @@ function CreateDeviceUserForm({
       </div>
       <div className="dialog-field">
         <label htmlFor="create-display-name">{translate('page.5c87b3144de0')}</label>
-        <input
+        <Input
           id="create-display-name"
           data-testid="create-display-name"
           value={displayName}
@@ -727,7 +741,7 @@ function CreateDeviceUserForm({
       </div>
       <div className="dialog-field">
         <label htmlFor="create-password">{translate('page.dcc2db120b45')}</label>
-        <input
+        <Input
           id="create-password"
           type="password"
           autoComplete="new-password"
@@ -738,7 +752,7 @@ function CreateDeviceUserForm({
       </div>
       <div className="dialog-field">
         <label htmlFor="create-user-reason">{translate('page.db5e8a988ba0')}</label>
-        <textarea
+        <TextArea
           id="create-user-reason"
           data-testid="create-user-reason"
           value={reason}
@@ -753,7 +767,7 @@ function CreateDeviceUserForm({
         ) : null
       ) : null}
       <div className="dialog-actions">
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="create-user-submit"
@@ -773,7 +787,7 @@ function CreateDeviceUserForm({
           }}
         >
           {translate('page.315315d695e3')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -795,7 +809,7 @@ function EditDisplayNameForm({
     <div data-testid="device-user-edit-form">
       <div className="dialog-field">
         <label htmlFor="edit-display-name">{translate('page.de534c770f8e')}</label>
-        <input
+        <Input
           id="edit-display-name"
           data-testid="edit-display-name"
           value={displayName}
@@ -804,7 +818,7 @@ function EditDisplayNameForm({
       </div>
       <div className="dialog-field">
         <label htmlFor="edit-reason">{translate('page.935f3e28f6f2')}</label>
-        <textarea
+        <TextArea
           id="edit-reason"
           data-testid="edit-reason"
           value={reason}
@@ -812,7 +826,7 @@ function EditDisplayNameForm({
         />
       </div>
       <div className="dialog-actions">
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="edit-submit"
@@ -820,7 +834,7 @@ function EditDisplayNameForm({
           onClick={() => onSubmit(trimmed === '' ? null : trimmed, reasonTrimmed)}
         >
           {translate('page.fadf24dbc5a9')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -840,7 +854,7 @@ function PasswordResetForm({
       <p className="field-hint">{translate('page.907970494838')}</p>
       <div className="dialog-field">
         <label htmlFor="reset-password">{translate('page.d22c9c008539')}</label>
-        <input
+        <Input
           id="reset-password"
           type="password"
           autoComplete="new-password"
@@ -851,7 +865,7 @@ function PasswordResetForm({
       </div>
       <div className="dialog-field">
         <label htmlFor="reset-reason">{translate('page.935f3e28f6f2')}</label>
-        <textarea
+        <TextArea
           id="reset-reason"
           data-testid="reset-reason"
           value={reason}
@@ -859,7 +873,7 @@ function PasswordResetForm({
         />
       </div>
       <div className="dialog-actions">
-        <button
+        <Button
           type="button"
           className="danger-button"
           data-testid="reset-submit"
@@ -871,7 +885,7 @@ function PasswordResetForm({
           }}
         >
           {translate('page.30a6079ce340')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -904,7 +918,7 @@ function DevicePickForm({
         {devices.length === 0 ? <p className="empty-state">{translate('page.18fb8c8c906c')}</p> : null}
         {devices.map((d) => (
           <label key={d.value}>
-            <input
+            <Input
               type="checkbox"
               data-testid={`${testidPrefix}-device-${d.value}`}
               checked={selected.includes(d.value)}
@@ -919,7 +933,7 @@ function DevicePickForm({
           {reasonLabel}
           {translate('page.7b53c3b8c677')}
         </label>
-        <textarea
+        <TextArea
           id={`${testidPrefix}-reason`}
           data-testid={`${testidPrefix}-reason`}
           value={reason}
@@ -927,7 +941,7 @@ function DevicePickForm({
         />
       </div>
       <div className="dialog-actions">
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid={`${testidPrefix}-submit`}
@@ -935,7 +949,7 @@ function DevicePickForm({
           onClick={() => onSubmit(selected, reasonTrimmed)}
         >
           {submitText}
-        </button>
+        </Button>
       </div>
     </div>
   );

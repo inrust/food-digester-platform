@@ -1,3 +1,4 @@
+import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-11 设备 ESG 信息页（/esg/devices）：Region/Subregion/Site/Device 联动筛选（DEC-011）、
@@ -152,6 +153,9 @@ export function EsgDevicesPage({
   const aggregated = scopedRows === null ? null : aggregateDeviceReports(scopedRows, period);
   return (
     <div className="esg-devices-page" data-testid="esg-devices-page">
+      <header className="page-header">
+        <h1>{translate('design.page.esg-device')}</h1>
+      </header>
       <p className="esg-disclaimer" data-testid="esg-disclaimer">
         {esgDisclaimer()}
         {translate('page.9ace0f4aaae7')}
@@ -172,25 +176,29 @@ export function EsgDevicesPage({
             device: translate('page.01f2c16cda65'),
           }}
         />
-        <label htmlFor="esg-device-from">
-          {translate('page.49f932b2f932')}
-          {timeZone}）
-        </label>
-        <input
-          id="esg-device-from"
-          type="date"
-          data-testid="esg-device-from-date"
-          value={draftFrom}
-          onChange={(event) => setDraftFrom(event.target.value)}
-        />
-        <label htmlFor="esg-device-to">{translate('page.9b3177f0b700')}</label>
-        <input
-          id="esg-device-to"
-          type="date"
-          data-testid="esg-device-to-date"
-          value={draftTo}
-          onChange={(event) => setDraftTo(event.target.value)}
-        />
+        <div className="filter-field">
+          <label htmlFor="esg-device-from">
+            {translate('page.49f932b2f932')}
+            {timeZone}）
+          </label>
+          <Input
+            id="esg-device-from"
+            type="date"
+            data-testid="esg-device-from-date"
+            value={draftFrom}
+            onChange={(event) => setDraftFrom(event.target.value)}
+          />
+        </div>
+        <div className="filter-field">
+          <label htmlFor="esg-device-to">{translate('page.9b3177f0b700')}</label>
+          <Input
+            id="esg-device-to"
+            type="date"
+            data-testid="esg-device-to-date"
+            value={draftTo}
+            onChange={(event) => setDraftTo(event.target.value)}
+          />
+        </div>
         <div
           className="period-toggle"
           role="group"
@@ -198,7 +206,7 @@ export function EsgDevicesPage({
           data-testid="esg-device-period-toggle"
         >
           {ESG_PERIODS.map((p) => (
-            <button
+            <Button
               key={p}
               type="button"
               aria-pressed={period === p}
@@ -207,12 +215,12 @@ export function EsgDevicesPage({
               onClick={() => onPeriodChange(p)}
             >
               {ESG_PERIOD_LABELS[p]}
-            </button>
+            </Button>
           ))}
         </div>
-        <button type="button" className="primary-button" data-testid="esg-device-apply" onClick={applyFilter}>
+        <Button type="button" className="primary-button" data-testid="esg-device-apply" onClick={applyFilter}>
           {translate('page.4562024ddec7')}
-        </button>
+        </Button>
         {dateError !== null ? (
           <p className="field-hint" data-testid="esg-device-date-error">
             {dateError}

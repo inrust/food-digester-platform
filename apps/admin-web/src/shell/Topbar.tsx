@@ -1,3 +1,5 @@
+import { Icon } from '../components/Icon.js';
+import { Button } from '../components/ui.js';
 /**
  * FE-02 顶部栏：面包屑、通知徽标、用户区（角色显示名 + 登出）、移动端抽屉开关。
  * FE-19：全部文案经 i18n 资源；用户区提供语言切换入口（en/zh-CN，localStorage 持久化）。
@@ -38,7 +40,7 @@ export function Topbar({
 
   return (
     <header className="topbar">
-      <button
+      <Button
         type="button"
         className="topbar-menu-button"
         aria-label={t('common.openNav')}
@@ -46,8 +48,8 @@ export function Topbar({
         ref={drawerButtonRef}
         onClick={onOpenDrawer}
       >
-        ☰
-      </button>
+        <Icon name="menu" />
+      </Button>
 
       <nav aria-label={t('common.breadcrumb')} className="breadcrumb">
         <ol>
@@ -104,7 +106,7 @@ export function Topbar({
             ))}
           </select>
         </label>
-        <button
+        <Button
           type="button"
           className="notification-button"
           aria-label={
@@ -114,24 +116,27 @@ export function Topbar({
           }
           data-testid="notification-button"
         >
-          🔔
+          <Icon name="bell" />
           {notificationCount > 0 ? (
             <span className="notification-badge" data-testid="notification-badge">
               <NumberText value={notificationCount} />
             </span>
           ) : null}
-        </button>
+        </Button>
 
         <div className="user-badge" data-testid="user-badge">
+          <span className="user-avatar" aria-hidden="true">
+            {session.username.slice(0, 1).toUpperCase()}
+          </span>
           <span className="user-name">{session.username}</span>
           {primaryRole !== undefined ? (
             <span className="role-tag" data-testid="role-tag">
               {roleDisplayName(primaryRole)}
             </span>
           ) : null}
-          <button type="button" className="logout-button" data-testid="logout-button" onClick={onLogout}>
+          <Button type="button" className="logout-button" data-testid="logout-button" onClick={onLogout}>
             {t('common.logout')}
-          </button>
+          </Button>
         </div>
       </div>
     </header>

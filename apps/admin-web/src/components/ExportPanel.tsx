@@ -1,3 +1,4 @@
+import { Button } from './ui.js';
 import { translate } from '../i18n/i18n.js';
 /**
  * 通用异步导出面板（FE-11 ESG 导出 / FE-12 活动日志导出共享）：
@@ -47,7 +48,7 @@ export function ExportPanel({
   return (
     <div className="export-panel" data-testid={`${testidPrefix}-export-panel`}>
       {canExport ? (
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid={`${testidPrefix}-export-csv`}
@@ -55,7 +56,7 @@ export function ExportPanel({
           onClick={onExport}
         >
           {translate('ui.4cb9bf63076d')}
-        </button>
+        </Button>
       ) : null}
       {job !== null ? (
         <div className="export-job" data-testid={`${testidPrefix}-export-job`}>
@@ -69,13 +70,13 @@ export function ExportPanel({
             ) : null}
           </span>
           {job.status === 'PENDING' || job.status === 'PROCESSING' ? (
-            <button
+            <Button
               type="button"
               data-testid={`${testidPrefix}-export-refresh`}
               onClick={() => onCheckStatus(job.exportId)}
             >
               {translate('ui.7cc7f07a2c03')}
-            </button>
+            </Button>
           ) : null}
           {job.status === 'COMPLETED' && job.urlExpired ? (
             <p className="export-expired" role="alert" data-testid={`${testidPrefix}-export-expired`}>

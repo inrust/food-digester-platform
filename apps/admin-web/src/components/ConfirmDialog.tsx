@@ -1,3 +1,4 @@
+import { Button, TextArea } from './ui.js';
 /**
  * FE-02 危险操作确认模态框（替代浏览器原生 confirm）。
  *
@@ -75,7 +76,7 @@ export function ConfirmDialog({
         {requireReason ? (
           <div className="dialog-field">
             <label htmlFor={reasonId}>{resolvedReasonLabel}</label>
-            <textarea
+            <TextArea
               id={reasonId}
               ref={reasonRef}
               value={reason}
@@ -88,17 +89,17 @@ export function ConfirmDialog({
           </div>
         ) : null}
         <div className="dialog-actions">
-          <button type="button" ref={cancelRef} onClick={onCancel}>
+          <Button type="button" ref={cancelRef} onClick={onCancel}>
             {resolvedCancelText}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className={danger ? 'danger-button' : 'primary-button'}
             disabled={reasonMissing}
             onClick={() => onConfirm(reason.trim())}
           >
             {resolvedConfirmText}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

@@ -1,3 +1,4 @@
+import { Button } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-03 业务总览页面（/dashboard）。
@@ -99,7 +100,7 @@ function DeviceCard({
           actions={card.capabilities.commands}
           onSubmit={onSubmitCommand}
         />
-        <button
+        <Button
           type="button"
           data-testid={`action-upgrade-${card.deviceId}`}
           disabled={!card.capabilities.ota.allowed}
@@ -107,7 +108,7 @@ function DeviceCard({
           onClick={() => onNavigate('/ota/campaigns')}
         >
           {translate('page.2e8e70958c4a')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -135,6 +136,15 @@ export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }:
   const { overview } = state;
   return (
     <div className="dashboard-page" data-testid="dashboard-page">
+      <header className="page-header">
+        <div>
+          <h1>{translate('menu.dashboard')}</h1>
+          <p className="dashboard-intro">{translate('design.dashboardDescription')}</p>
+        </div>
+        <Button type="button" onClick={onRefresh}>
+          {translate('common.refresh')}
+        </Button>
+      </header>
       <p className="data-baseline" data-testid="dashboard-baseline">
         {translate('page.7d0639497c7e')}
         <TimeText iso={overview.generatedAt} />

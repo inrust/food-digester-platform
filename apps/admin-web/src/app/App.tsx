@@ -1,3 +1,5 @@
+import { Button } from '../components/ui.js';
+import { DesignProvider } from '../components/DesignProvider.js';
 import { translate } from '../i18n/i18n.js';
 import { useCallback, useEffect, useState } from 'react';
 import { ToastHost, useToastQueue } from '../components/Toast.js';
@@ -64,7 +66,7 @@ function ForbiddenPage({ onNavigate }: { onNavigate: (path: string) => void }) {
     <main className="standalone-page">
       <h1>403</h1>
       <p>{translate('ui.aeed26f03ff5')}</p>
-      <button onClick={() => onNavigate('/dashboard')}>{translate('ui.13e491d46e85')}</button>
+      <Button onClick={() => onNavigate('/dashboard')}>{translate('ui.13e491d46e85')}</Button>
     </main>
   );
 }
@@ -73,7 +75,7 @@ function NotFoundPage({ onNavigate }: { onNavigate: (path: string) => void }) {
     <main className="standalone-page">
       <h1>404</h1>
       <p>{translate('ui.db6114c405c1')}</p>
-      <button onClick={() => onNavigate('/dashboard')}>{translate('ui.13e491d46e85')}</button>
+      <Button onClick={() => onNavigate('/dashboard')}>{translate('ui.13e491d46e85')}</Button>
     </main>
   );
 }
@@ -81,7 +83,9 @@ export function AdminWebApp({ services }: { readonly services: AdminWebServices 
   // FE-19：i18n 顶层挂载（语言切换即时生效；localStorage 持久化，刷新/重新登录保持）
   return (
     <I18nProvider>
-      <AdminWebAppInner services={services} />
+      <DesignProvider>
+        <AdminWebAppInner services={services} />
+      </DesignProvider>
     </I18nProvider>
   );
 }

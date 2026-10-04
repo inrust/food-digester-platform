@@ -1,3 +1,4 @@
+import { Icon } from '../components/Icon.js';
 import { translate } from '../i18n/i18n.js';
 /**
  * FE-02 管理后台壳层：侧栏 + 顶部栏 + 内容区 + 移动端抽屉（≤768px）。
@@ -48,7 +49,15 @@ export function AppShell({ path, session, notificationCount, onNavigate, onLogou
         onClick={() => closeDrawer(true)}
       />
       <aside className={`sidebar${drawerOpen ? ' open' : ''}`} data-testid="sidebar">
-        <div className="logo">{translate('ui.702005aecd7f')}</div>
+        <div className="logo">
+          <span className="brand-mark">
+            <Icon name="leaf" />
+          </span>
+          <div>
+            <strong>{translate('ui.702005aecd7f')}</strong>
+            <small>{translate('design.console')}</small>
+          </div>
+        </div>
         <Sidebar nodes={nodes} currentPath={path} onNavigate={navigateAndClose} />
       </aside>
       <div className="main-area">
@@ -61,7 +70,10 @@ export function AppShell({ path, session, notificationCount, onNavigate, onLogou
           onOpenDrawer={() => setDrawerOpen(true)}
           drawerButtonRef={drawerButtonRef}
         />
-        <main className="page-content" data-testid="page-content">
+        <a className="skip-link" href="#workspace-content">
+          {translate('design.skip')}
+        </a>
+        <main id="workspace-content" tabIndex={-1} className="page-content" data-testid="page-content">
           {children}
         </main>
       </div>

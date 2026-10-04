@@ -1,3 +1,4 @@
+import { Button } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-04 Onboarding 审批面板（原型“设备群管理 → 新增设备请求”区域，FE-06 嵌入 /devices/groups）。
@@ -110,7 +111,7 @@ export function OnboardingReviewPanel({
     <section className="onboarding-review" data-testid="onboarding-review">
       <div className="status-tabs" role="tablist" aria-label={translate('page.8a6d566d7686')}>
         {STATUS_TABS.map((status) => (
-          <button
+          <Button
             key={status}
             type="button"
             role="tab"
@@ -119,7 +120,7 @@ export function OnboardingReviewPanel({
             onClick={() => onFilterStatus(status)}
           >
             {ONBOARDING_STATUS_LABELS[status]}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -143,9 +144,9 @@ export function OnboardingReviewPanel({
             key: 'actions',
             header: translate('page.f3ea6d345e2a'),
             render: (r) => (
-              <button type="button" data-testid={`detail-${r.requestId}`} onClick={() => onSelect(r.requestId)}>
+              <Button type="button" data-testid={`detail-${r.requestId}`} onClick={() => onSelect(r.requestId)}>
                 {translate('page.b6e664d7362f')}
-              </button>
+              </Button>
             ),
           },
         ]}
@@ -230,12 +231,12 @@ export function OnboardingReviewPanel({
           {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
           <div className="detail-actions">
-            <button type="button" onClick={onCloseDetail}>
+            <Button type="button" onClick={onCloseDetail}>
               {translate('page.6c14bd7f6f9e')}
-            </button>
+            </Button>
             {canReview && isReviewable(request.status) ? (
               <>
-                <button
+                <Button
                   type="button"
                   className="primary-button"
                   data-testid="approve-button"
@@ -243,8 +244,8 @@ export function OnboardingReviewPanel({
                   onClick={() => setPendingAction({ kind: 'approve' })}
                 >
                   {translate('page.62e26d21413f')}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   className="danger-button"
                   data-testid="reject-button"
@@ -252,7 +253,7 @@ export function OnboardingReviewPanel({
                   onClick={() => setPendingAction({ kind: 'reject' })}
                 >
                   {translate('page.03e210a66d07')}
-                </button>
+                </Button>
               </>
             ) : null}
           </div>

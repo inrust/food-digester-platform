@@ -1,3 +1,4 @@
+import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-14 Media 页（/media）：Media 元数据列表、类型/设备/时间筛选、受控图片/视频查看、
@@ -125,57 +126,63 @@ export function MediaPage({
     <div className="media-page" data-testid="media-page">
       <div className="page-header">
         <h3>{translate('page.fd695a67e418')}</h3>
-        <button type="button" data-testid="media-refresh" onClick={onRefresh}>
+        <Button type="button" data-testid="media-refresh" onClick={onRefresh}>
           {translate('page.dcc4d58c807c')}
-        </button>
+        </Button>
       </div>
       <p className="field-hint">{translate('page.2611c36de1a8')}</p>
 
       <section data-testid="media-filter" aria-label={translate('page.dcce9a144a40')}>
         <div className="filter-bar">
-          <label htmlFor="media-filter-type">{translate('page.e4e46c7235d1')}</label>
-          <select
-            id="media-filter-type"
-            data-testid="media-filter-type"
-            value={draft.mediaType}
-            onChange={(event) =>
-              setDraft({ ...draft, mediaType: event.target.value === '' ? '' : (event.target.value as MediaType) })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {MEDIA_TYPE_OPTIONS.map((type) => (
-              <option key={type} value={type}>
-                {mediaTypeLabel(type)}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="media-filter-status">{translate('page.62e951a692ff')}</label>
-          <select
-            id="media-filter-status"
-            data-testid="media-filter-status"
-            value={draft.status}
-            onChange={(event) =>
-              setDraft({ ...draft, status: event.target.value === '' ? '' : (event.target.value as MediaStatus) })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {MEDIA_STATUS_OPTIONS.map((status) => (
-              <option key={status} value={status}>
-                {MEDIA_STATUS_LABELS[status]}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="media-filter-device">{translate('page.9a04e46a8d92')}</label>
-          <input
-            id="media-filter-device"
-            data-testid="media-filter-device"
-            value={draft.deviceId}
-            onChange={(event) => setDraft({ ...draft, deviceId: event.target.value })}
-          />
+          <div className="filter-field">
+            <label htmlFor="media-filter-type">{translate('page.e4e46c7235d1')}</label>
+            <select
+              id="media-filter-type"
+              data-testid="media-filter-type"
+              value={draft.mediaType}
+              onChange={(event) =>
+                setDraft({ ...draft, mediaType: event.target.value === '' ? '' : (event.target.value as MediaType) })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {MEDIA_TYPE_OPTIONS.map((type) => (
+                <option key={type} value={type}>
+                  {mediaTypeLabel(type)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="media-filter-status">{translate('page.62e951a692ff')}</label>
+            <select
+              id="media-filter-status"
+              data-testid="media-filter-status"
+              value={draft.status}
+              onChange={(event) =>
+                setDraft({ ...draft, status: event.target.value === '' ? '' : (event.target.value as MediaStatus) })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {MEDIA_STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {MEDIA_STATUS_LABELS[status]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="media-filter-device">{translate('page.9a04e46a8d92')}</label>
+            <Input
+              id="media-filter-device"
+              data-testid="media-filter-device"
+              value={draft.deviceId}
+              onChange={(event) => setDraft({ ...draft, deviceId: event.target.value })}
+            />
+          </div>
           {isPlatformRole ? (
             <>
               <label htmlFor="media-filter-customer">{translate('page.a20148b7e39a')}</label>
-              <input
+              <Input
                 id="media-filter-customer"
                 data-testid="media-filter-customer"
                 value={draft.customerId}
@@ -183,23 +190,27 @@ export function MediaPage({
               />
             </>
           ) : null}
-          <label htmlFor="media-filter-from">{translate('page.4b9915a00508')}</label>
-          <input
-            id="media-filter-from"
-            type="datetime-local"
-            data-testid="media-filter-from"
-            value={draft.from}
-            onChange={(event) => setDraft({ ...draft, from: event.target.value })}
-          />
-          <label htmlFor="media-filter-to">{translate('page.9904cc627f05')}</label>
-          <input
-            id="media-filter-to"
-            type="datetime-local"
-            data-testid="media-filter-to"
-            value={draft.to}
-            onChange={(event) => setDraft({ ...draft, to: event.target.value })}
-          />
-          <button
+          <div className="filter-field">
+            <label htmlFor="media-filter-from">{translate('page.4b9915a00508')}</label>
+            <Input
+              id="media-filter-from"
+              type="datetime-local"
+              data-testid="media-filter-from"
+              value={draft.from}
+              onChange={(event) => setDraft({ ...draft, from: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="media-filter-to">{translate('page.9904cc627f05')}</label>
+            <Input
+              id="media-filter-to"
+              type="datetime-local"
+              data-testid="media-filter-to"
+              value={draft.to}
+              onChange={(event) => setDraft({ ...draft, to: event.target.value })}
+            />
+          </div>
+          <Button
             type="button"
             className="primary-button"
             data-testid="media-filter-search"
@@ -207,7 +218,7 @@ export function MediaPage({
             onClick={applyFilter}
           >
             {translate('page.dcce9a144a40')}
-          </button>
+          </Button>
         </div>
         {fromInvalid || toInvalid || rangeInvalid ? (
           <p className="field-hint" data-testid="media-filter-time-error">
@@ -247,9 +258,9 @@ export function MediaPage({
               header: translate('page.f3ea6d345e2a'),
               render: (m) =>
                 m.status === 'AVAILABLE' ? (
-                  <button type="button" data-testid={`media-open-${m.mediaId}`} onClick={() => void requestUrl(m)}>
+                  <Button type="button" data-testid={`media-open-${m.mediaId}`} onClick={() => void requestUrl(m)}>
                     {translate('page.d668db53bc2a')}
-                  </button>
+                  </Button>
                 ) : (
                   <span className="field-hint" data-testid={`media-deleted-${m.mediaId}`}>
                     {translate('page.41a4e70b235a')}

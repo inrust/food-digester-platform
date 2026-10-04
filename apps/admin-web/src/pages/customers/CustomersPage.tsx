@@ -1,3 +1,4 @@
+import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-05 Customer 管理页（/customers）：列表（状态筛选 + 游标分页）+ 详情 + 创建/改名/停用。
@@ -82,21 +83,21 @@ function CustomerFormDialog({
     >
       <div className="dialog-field">
         <label htmlFor="customer-name">{translate('page.e941d410f4c9')}</label>
-        <input id="customer-name" value={name} maxLength={200} onChange={(e) => setName(e.target.value)} />
+        <Input id="customer-name" value={name} maxLength={200} onChange={(e) => setName(e.target.value)} />
       </div>
       {error !== null && error !== undefined ? <ErrorNotice error={error} /> : null}
       <div className="dialog-actions">
-        <button type="button" onClick={onCancel}>
+        <Button type="button" onClick={onCancel}>
           {translate('page.4d0b4688c787')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className="primary-button"
           disabled={invalid || busy}
           onClick={() => onSubmit(name.trim())}
         >
           {translate('page.fadf24dbc5a9')}
-        </button>
+        </Button>
       </div>
     </Modal>
   );
@@ -139,10 +140,13 @@ export function CustomersPage({
   };
   return (
     <div className="customers-page" data-testid="customers-page">
+      <header className="page-header">
+        <h1>{translate('design.page.customers')}</h1>
+      </header>
       <div className="page-toolbar">
         <div className="status-tabs" role="tablist" aria-label={translate('page.d6ca3e50f98e')}>
           {([null, 'ACTIVE', 'SUSPENDED'] as const).map((status) => (
-            <button
+            <Button
               key={status ?? 'all'}
               type="button"
               role="tab"
@@ -151,18 +155,18 @@ export function CustomersPage({
               onClick={() => onFilterStatus(status)}
             >
               {status === null ? translate('page.778fc8f99453') : CUSTOMER_STATUS_LABELS[status]}
-            </button>
+            </Button>
           ))}
         </div>
         {canWrite ? (
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="create-customer"
             onClick={() => setDialog({ kind: 'create' })}
           >
             {translate('page.623d4cb5b1d7')}
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -177,9 +181,9 @@ export function CustomersPage({
             key: 'actions',
             header: translate('page.f3ea6d345e2a'),
             render: (c) => (
-              <button type="button" data-testid={`detail-${c.id}`} onClick={() => setSelected(c)}>
+              <Button type="button" data-testid={`detail-${c.id}`} onClick={() => setSelected(c)}>
                 {translate('page.b6e664d7362f')}
-              </button>
+              </Button>
             ),
           },
         ]}
@@ -218,12 +222,12 @@ export function CustomersPage({
           </dl>
           {actionError !== null && dialog === null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
           <div className="detail-actions">
-            <button type="button" onClick={() => setSelected(null)}>
+            <Button type="button" onClick={() => setSelected(null)}>
               {translate('page.6c14bd7f6f9e')}
-            </button>
+            </Button>
             {canWrite ? (
               <>
-                <button
+                <Button
                   type="button"
                   data-testid="edit-customer"
                   disabled={busy}
@@ -233,9 +237,9 @@ export function CustomersPage({
                   }}
                 >
                   {translate('page.a7f814c0a40d')}
-                </button>
+                </Button>
                 {selected.status === 'ACTIVE' ? (
-                  <button
+                  <Button
                     type="button"
                     className="danger-button"
                     data-testid="deactivate-customer"
@@ -246,7 +250,7 @@ export function CustomersPage({
                     }}
                   >
                     {translate('page.d989e55188c9')}
-                  </button>
+                  </Button>
                 ) : null}
               </>
             ) : null}

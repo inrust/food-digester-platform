@@ -1,3 +1,4 @@
+import { Button } from './ui.js';
 /**
  * FE-02 统一错误提示：解析 FE-01 API 客户端错误（CT-05 code/message/requestId）。
  * FE-19：全部文案经 i18n 资源（错误码统一映射表，两种语言）；requestId 原文保留。
@@ -70,9 +71,9 @@ export function ErrorNotice({ error, onRefresh }: ErrorNoticeProps) {
       ) : null}
       {model.requestId !== null ? <span className="error-request-id">requestId：{model.requestId}</span> : null}
       {model.variant === 'version-conflict' && onRefresh !== undefined ? (
-        <button type="button" onClick={onRefresh}>
+        <Button type="button" onClick={onRefresh}>
           {t('common.refresh')}
-        </button>
+        </Button>
       ) : null}
     </div>
   );

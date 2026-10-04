@@ -1,3 +1,4 @@
+import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-09 Configuration 管理页（/configurations）：DEC-018@1.0.0 V1 四字段配置。
@@ -161,30 +162,37 @@ export function ConfigurationsPage({
   };
   return (
     <div className="configurations-page" data-testid="configurations-page">
+      <header className="page-header">
+        <h1>{translate('design.page.configurations')}</h1>
+      </header>
       <div className="filter-bar" data-testid="config-filter-bar">
-        <label htmlFor="config-filter-model">{translate('page.418dfc356a6d')}</label>
-        <input
-          id="config-filter-model"
-          data-testid="config-filter-model"
-          value={draftFilter.targetModel ?? ''}
-          onChange={(event) => setDraftFilter({ ...draftFilter, targetModel: event.target.value })}
-        />
-        <label htmlFor="config-filter-device">{translate('page.1b73f8fcde1b')}</label>
-        <input
-          id="config-filter-device"
-          data-testid="config-filter-device"
-          value={draftFilter.targetDeviceId ?? ''}
-          onChange={(event) => setDraftFilter({ ...draftFilter, targetDeviceId: event.target.value })}
-        />
-        <button
+        <div className="filter-field">
+          <label htmlFor="config-filter-model">{translate('page.418dfc356a6d')}</label>
+          <Input
+            id="config-filter-model"
+            data-testid="config-filter-model"
+            value={draftFilter.targetModel ?? ''}
+            onChange={(event) => setDraftFilter({ ...draftFilter, targetModel: event.target.value })}
+          />
+        </div>
+        <div className="filter-field">
+          <label htmlFor="config-filter-device">{translate('page.1b73f8fcde1b')}</label>
+          <Input
+            id="config-filter-device"
+            data-testid="config-filter-device"
+            value={draftFilter.targetDeviceId ?? ''}
+            onChange={(event) => setDraftFilter({ ...draftFilter, targetDeviceId: event.target.value })}
+          />
+        </div>
+        <Button
           type="button"
           className="primary-button"
           data-testid="config-search"
           onClick={() => onApplyFilter(draftFilter)}
         >
           {translate('page.f04090805c6e')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           data-testid="config-reset"
           onClick={() => {
@@ -193,16 +201,16 @@ export function ConfigurationsPage({
           }}
         >
           {translate('page.3d81345303ab')}
-        </button>
+        </Button>
         {canWrite ? (
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="config-create"
             onClick={() => setCreateOpen(true)}
           >
             {translate('page.31cc2c4c86f0')}
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -253,13 +261,13 @@ export function ConfigurationsPage({
                   <TimeText iso={row.createdAt} />
                 </td>
                 <td>
-                  <button
+                  <Button
                     type="button"
                     data-testid={`config-detail-open-${row.configurationId}`}
                     onClick={() => onSelect(row.configurationId)}
                   >
                     {translate('page.4f55ee1e687f')}
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -339,11 +347,11 @@ export function ConfigurationsPage({
           </section>
 
           <div className="detail-actions">
-            <button type="button" onClick={onCloseDetail}>
+            <Button type="button" onClick={onCloseDetail}>
               {translate('page.6c14bd7f6f9e')}
-            </button>
+            </Button>
             {canWrite ? (
-              <button
+              <Button
                 type="button"
                 className="primary-button"
                 data-testid="config-version-create"
@@ -351,7 +359,7 @@ export function ConfigurationsPage({
                 onClick={() => setVersionFormOpen(true)}
               >
                 {translate('page.c87926d3eb9a')}
-              </button>
+              </Button>
             ) : null}
           </div>
         </aside>
@@ -472,7 +480,7 @@ function VersionCard({
         ))}
       </dl>
       <div className="action-row">
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid={`config-publish-${version.version}`}
@@ -481,11 +489,11 @@ function VersionCard({
           onClick={onPublishIntent}
         >
           {translate('page.94f172d02f5e')}
-        </button>
+        </Button>
         {version.status === 'PUBLISHED' ? (
-          <button type="button" data-testid={`config-sync-${version.version}`} onClick={onLoadSyncStatus}>
+          <Button type="button" data-testid={`config-sync-${version.version}`} onClick={onLoadSyncStatus}>
             {translate('page.0150205d5c21')}
-          </button>
+          </Button>
         ) : null}
       </div>
       {sync.kind === 'loading' && sync.version === version.version ? (
@@ -536,7 +544,7 @@ function VersionPayloadForm({
           <label htmlFor={`cfg-${field.key}`}>
             {field.label}（{field.unitLabel}，<NumberText value={field.min} />~<NumberText value={field.max} />）
           </label>
-          <input
+          <Input
             id={`cfg-${field.key}`}
             data-testid={`cfg-field-${field.key}`}
             inputMode={field.integer ? 'numeric' : 'decimal'}
@@ -553,7 +561,7 @@ function VersionPayloadForm({
       ))}
       <div className="dialog-field">
         <label htmlFor="cfg-change-note">{translate('page.4d7ded5e6306')}</label>
-        <textarea
+        <TextArea
           id="cfg-change-note"
           data-testid="cfg-change-note"
           value={changeNote}
@@ -562,7 +570,7 @@ function VersionPayloadForm({
       </div>
       <div className="dialog-field">
         <label htmlFor="cfg-reason">{translate('page.db5e8a988ba0')}</label>
-        <textarea
+        <TextArea
           id="cfg-reason"
           data-testid="cfg-reason"
           value={reason}
@@ -570,7 +578,7 @@ function VersionPayloadForm({
         />
       </div>
       <div className="dialog-actions">
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="cfg-submit"
@@ -581,7 +589,7 @@ function VersionPayloadForm({
           }}
         >
           {translate('page.c2098a5e9c7c')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -604,7 +612,7 @@ function CreateConfigurationForm({
     <div className="config-create-form" data-testid="config-create-form">
       <div className="dialog-field">
         <label htmlFor="config-name">{translate('page.a5f08c1d3371')}</label>
-        <input
+        <Input
           id="config-name"
           data-testid="config-name"
           value={name}
@@ -627,7 +635,7 @@ function CreateConfigurationForm({
         <label htmlFor="config-target-value">
           {targetKind === 'model' ? translate('page.418dfc356a6d') : translate('page.39c47009f7aa')}
         </label>
-        <input
+        <Input
           id="config-target-value"
           data-testid="config-target-value"
           value={targetValue}
@@ -636,7 +644,7 @@ function CreateConfigurationForm({
       </div>
       <div className="dialog-field">
         <label htmlFor="config-reason">{translate('page.db5e8a988ba0')}</label>
-        <textarea
+        <TextArea
           id="config-reason"
           data-testid="config-create-reason"
           value={reason}
@@ -644,7 +652,7 @@ function CreateConfigurationForm({
         />
       </div>
       <div className="dialog-actions">
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="config-create-submit"
@@ -658,7 +666,7 @@ function CreateConfigurationForm({
           }
         >
           {translate('page.0b002e0e99bf')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -679,7 +687,7 @@ function PublishForm({
       <p>{translate('page.f18eb02bde07')}</p>
       <div className="dialog-field">
         <label htmlFor="publish-effective-at">{translate('page.cdc8a1890529')}</label>
-        <input
+        <Input
           id="publish-effective-at"
           data-testid="publish-effective-at"
           placeholder="2026-09-07T00:00:00Z"
@@ -690,7 +698,7 @@ function PublishForm({
       </div>
       <div className="dialog-field">
         <label htmlFor="publish-reason">{translate('page.f734d80c7189')}</label>
-        <textarea
+        <TextArea
           id="publish-reason"
           data-testid="publish-reason"
           value={reason}
@@ -698,7 +706,7 @@ function PublishForm({
         />
       </div>
       <div className="dialog-actions">
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="config-publish"
@@ -706,7 +714,7 @@ function PublishForm({
           onClick={() => onSubmit(effectiveAtTrimmed, reason.trim())}
         >
           {translate('page.221f71a458cf')}
-        </button>
+        </Button>
       </div>
     </div>
   );

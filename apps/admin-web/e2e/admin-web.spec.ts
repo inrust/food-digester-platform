@@ -329,7 +329,7 @@ test('1440/768/375 响应式布局、横向表格和对话框键盘边界', asyn
 
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto('/customers');
-  const table = page.getByTestId('cursor-table');
+  const table = page.getByTestId('cursor-table').locator('.table-scroll');
   await expect(table).toBeVisible();
   expect(await table.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
   expect(await page.evaluate(() => document.body.scrollWidth <= window.innerWidth)).toBe(true);

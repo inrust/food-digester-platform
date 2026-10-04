@@ -1,3 +1,4 @@
+import { Modal as AntModal } from 'antd';
 /**
  * FE-05 通用模态框：表单类对话框容器（ConfirmDialog 语义不同，不共用）。
  * Esc 关闭；打开时焦点进入对话框，关闭后焦点回收至原聚焦元素。
@@ -26,19 +27,29 @@ export function Modal({ open, title, onClose, children, testid }: ModalProps) {
   if (!open) return null;
 
   return createPortal(
-    <div className="dialog-overlay" ref={overlayRef}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className="modal-dialog"
-        data-testid={testid ?? 'modal'}
-        ref={dialogRef}
-        tabIndex={-1}
+    <div className="library-dialog-overlay" ref={overlayRef}>
+      <AntModal
+        open
+        centered
+        getContainer={false}
+        width={560}
+        footer={null}
+        closable={false}
+        keyboard={false}
+        mask={{ closable: false }}
+        focusable={{ trap: false, focusTriggerAfterClose: false }}
+        transitionName=""
+        maskTransitionName=""
+        title={<h3 id={titleId}>{title}</h3>}
+        className="fdp-modal"
+        modalRender={(node) => (
+          <div data-testid={testid ?? 'modal'} ref={dialogRef} tabIndex={-1}>
+            {node}
+          </div>
+        )}
       >
-        <h3 id={titleId}>{title}</h3>
         {children}
-      </div>
+      </AntModal>
     </div>,
     document.body,
   );

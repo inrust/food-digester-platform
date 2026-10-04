@@ -1,3 +1,4 @@
+import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-16 用户角色和业务设置页（/settings）：平台用户、设备用户、业务设置三标签页。
@@ -235,7 +236,7 @@ export function SettingsPage({
 
       <nav className="tab-bar" data-testid="settings-tabs" aria-label={translate('page.578c6cd1c080')}>
         {visibleTabs.map((t) => (
-          <button
+          <Button
             key={t}
             type="button"
             data-testid={`tab-${t}`}
@@ -244,7 +245,7 @@ export function SettingsPage({
             onClick={() => setTab(t)}
           >
             {TAB_LABELS[t]}
-          </button>
+          </Button>
         ))}
       </nav>
 
@@ -258,48 +259,56 @@ export function SettingsPage({
       {tab === 'platform-users' ? (
         <section data-testid="platform-users-tab" aria-label={translate('page.5da6c051fbdc')}>
           <div className="filter-bar">
-            <label htmlFor="user-filter-role-type">{translate('page.cb23226152c7')}</label>
-            <select
-              id="user-filter-role-type"
-              data-testid="user-filter-role-type"
-              value={draftFilter.roleType}
-              onChange={(event) =>
-                setDraftFilter({ ...draftFilter, roleType: event.target.value as 'platform' | 'customer' | '' })
-              }
-            >
-              <option value="">{translate('page.778fc8f99453')}</option>
-              <option value="platform">{translate('page.736a37d8b701')}</option>
-              <option value="customer">{translate('page.2f9d2e2775b9')}</option>
-            </select>
-            <label htmlFor="user-filter-status">{translate('page.62e951a692ff')}</label>
-            <select
-              id="user-filter-status"
-              data-testid="user-filter-status"
-              value={draftFilter.status}
-              onChange={(event) => setDraftFilter({ ...draftFilter, status: event.target.value as UserStatus | '' })}
-            >
-              <option value="">{translate('page.778fc8f99453')}</option>
-              {USER_STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>
-                  {USER_STATUS_LABELS[status]}
-                </option>
-              ))}
-            </select>
-            <label htmlFor="user-filter-customer">{translate('page.a20148b7e39a')}</label>
-            <input
-              id="user-filter-customer"
-              data-testid="user-filter-customer"
-              value={draftFilter.customerId}
-              onChange={(event) => setDraftFilter({ ...draftFilter, customerId: event.target.value })}
-            />
-            <label htmlFor="user-filter-q">{translate('page.cc1b21e80080')}</label>
-            <input
-              id="user-filter-q"
-              data-testid="user-filter-q"
-              value={draftFilter.q}
-              onChange={(event) => setDraftFilter({ ...draftFilter, q: event.target.value })}
-            />
-            <button
+            <div className="filter-field">
+              <label htmlFor="user-filter-role-type">{translate('page.cb23226152c7')}</label>
+              <select
+                id="user-filter-role-type"
+                data-testid="user-filter-role-type"
+                value={draftFilter.roleType}
+                onChange={(event) =>
+                  setDraftFilter({ ...draftFilter, roleType: event.target.value as 'platform' | 'customer' | '' })
+                }
+              >
+                <option value="">{translate('page.778fc8f99453')}</option>
+                <option value="platform">{translate('page.736a37d8b701')}</option>
+                <option value="customer">{translate('page.2f9d2e2775b9')}</option>
+              </select>
+            </div>
+            <div className="filter-field">
+              <label htmlFor="user-filter-status">{translate('page.62e951a692ff')}</label>
+              <select
+                id="user-filter-status"
+                data-testid="user-filter-status"
+                value={draftFilter.status}
+                onChange={(event) => setDraftFilter({ ...draftFilter, status: event.target.value as UserStatus | '' })}
+              >
+                <option value="">{translate('page.778fc8f99453')}</option>
+                {USER_STATUS_OPTIONS.map((status) => (
+                  <option key={status} value={status}>
+                    {USER_STATUS_LABELS[status]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-field">
+              <label htmlFor="user-filter-customer">{translate('page.a20148b7e39a')}</label>
+              <Input
+                id="user-filter-customer"
+                data-testid="user-filter-customer"
+                value={draftFilter.customerId}
+                onChange={(event) => setDraftFilter({ ...draftFilter, customerId: event.target.value })}
+              />
+            </div>
+            <div className="filter-field">
+              <label htmlFor="user-filter-q">{translate('page.cc1b21e80080')}</label>
+              <Input
+                id="user-filter-q"
+                data-testid="user-filter-q"
+                value={draftFilter.q}
+                onChange={(event) => setDraftFilter({ ...draftFilter, q: event.target.value })}
+              />
+            </div>
+            <Button
               type="button"
               className="primary-button"
               data-testid="user-filter-search"
@@ -313,8 +322,8 @@ export function SettingsPage({
               }
             >
               {translate('page.dcce9a144a40')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="primary-button"
               data-testid="user-invite-open"
@@ -326,7 +335,7 @@ export function SettingsPage({
               }}
             >
               {translate('page.d3e63cf5b87c')}
-            </button>
+            </Button>
           </div>
 
           <CursorTable
@@ -360,33 +369,33 @@ export function SettingsPage({
                 header: translate('page.f3ea6d345e2a'),
                 render: (u) => (
                   <span className="action-row">
-                    <button
+                    <Button
                       type="button"
                       data-testid={`user-roles-${u.userId}`}
                       disabled={!manageUsers || busy || u.status === 'DISABLED'}
                       onClick={() => setAssignTarget({ user: u, roles: u.roles })}
                     >
                       {translate('page.6b26695e4dce')}
-                    </button>
+                    </Button>
                     {u.roles.every((r) => !isPlatformRole(r)) ? (
-                      <button
+                      <Button
                         type="button"
                         data-testid={`user-scope-${u.userId}`}
                         disabled={!manageUsers || busy || u.status === 'DISABLED'}
                         onClick={() => setScopeTarget({ user: u, customerId: u.customerId ?? '' })}
                       >
                         Scope
-                      </button>
+                      </Button>
                     ) : null}
-                    <button
+                    <Button
                       type="button"
                       data-testid={`user-reset-${u.userId}`}
                       disabled={!manageUsers || busy || u.status === 'DISABLED'}
                       onClick={() => setConfirm({ kind: 'reset', user: u })}
                     >
                       {translate('page.7e422146dd5b')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       className="danger-button"
                       data-testid={`user-disable-${u.userId}`}
@@ -394,7 +403,7 @@ export function SettingsPage({
                       onClick={() => setConfirm({ kind: 'disable', user: u })}
                     >
                       {translate('page.d989e55188c9')}
-                    </button>
+                    </Button>
                   </span>
                 ),
               },
@@ -418,7 +427,7 @@ export function SettingsPage({
                 <div className="rbac-perms">
                   {PERMISSIONS.map((permission) => (
                     <label key={permission} className="rbac-perm">
-                      <input
+                      <Input
                         type="checkbox"
                         data-testid={`rbac-${r}-${permission}`}
                         checked={permissionsOf(r).has(permission)}
@@ -478,7 +487,7 @@ export function SettingsPage({
                       {translate('page.f2b79f39e053')}
                     </p>
                   ) : (
-                    <button
+                    <Button
                       type="button"
                       data-testid={`setting-edit-${setting.key}`}
                       disabled={!writeSettings || busy}
@@ -486,7 +495,7 @@ export function SettingsPage({
                       onClick={() => setSettingEdit({ setting, raw: JSON.stringify(setting.value, null, 2) })}
                     >
                       {translate('page.a7f814c0a40d')}
-                    </button>
+                    </Button>
                   )}
                 </div>
               );
@@ -503,7 +512,7 @@ export function SettingsPage({
       >
         <div className="dialog-field">
           <label htmlFor="invite-email">{translate('page.9ed627bcf63d')}</label>
-          <input
+          <Input
             id="invite-email"
             data-testid="invite-email"
             value={inviteDraft.email}
@@ -512,7 +521,7 @@ export function SettingsPage({
         </div>
         <div className="dialog-field">
           <label htmlFor="invite-display-name">{translate('page.c10bbf5ddd2d')}</label>
-          <input
+          <Input
             id="invite-display-name"
             data-testid="invite-display-name"
             maxLength={128}
@@ -530,7 +539,7 @@ export function SettingsPage({
           >
             {ROLE_OPTIONS.map((r) => (
               <label key={r} className="role-option">
-                <input
+                <Input
                   type="checkbox"
                   data-testid={`invite-role-${r}`}
                   checked={inviteDraft.roles.includes(r)}
@@ -551,7 +560,7 @@ export function SettingsPage({
         {inviteHasCustomerRole ? (
           <div className="dialog-field">
             <label htmlFor="invite-customer">{translate('page.f0cb172c1c06')}</label>
-            <input
+            <Input
               id="invite-customer"
               data-testid="invite-customer"
               value={inviteDraft.customerId}
@@ -566,7 +575,7 @@ export function SettingsPage({
           </p>
         ) : null}
         <div className="dialog-actions">
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="invite-submit"
@@ -574,7 +583,7 @@ export function SettingsPage({
             onClick={() => void submitInvite()}
           >
             {translate('page.ac9575ddbfa8')}
-          </button>
+          </Button>
         </div>
       </Modal>
 
@@ -599,7 +608,7 @@ export function SettingsPage({
             >
               {ROLE_OPTIONS.map((r) => (
                 <label key={r} className="role-option">
-                  <input
+                  <Input
                     type="checkbox"
                     data-testid={`assign-role-${r}`}
                     checked={assignTarget.roles.includes(r)}
@@ -622,7 +631,7 @@ export function SettingsPage({
               </p>
             ) : null}
             <div className="dialog-actions">
-              <button
+              <Button
                 type="button"
                 className="primary-button"
                 data-testid="assign-submit"
@@ -634,7 +643,7 @@ export function SettingsPage({
                 }}
               >
                 {translate('page.2c83f1deab09')}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -650,7 +659,7 @@ export function SettingsPage({
           <div>
             <div className="dialog-field">
               <label htmlFor="scope-customer">{translate('page.2b5412405821')}</label>
-              <input
+              <Input
                 id="scope-customer"
                 data-testid="scope-customer"
                 value={scopeTarget.customerId}
@@ -658,7 +667,7 @@ export function SettingsPage({
               />
             </div>
             <div className="dialog-actions">
-              <button
+              <Button
                 type="button"
                 className="primary-button"
                 data-testid="scope-submit"
@@ -666,7 +675,7 @@ export function SettingsPage({
                 onClick={() => void submitScope()}
               >
                 {translate('page.f528cd729593')}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -692,7 +701,7 @@ export function SettingsPage({
             </p>
             <div className="dialog-field">
               <label htmlFor="setting-value-input">{translate('page.9ac6be10cbd4')}</label>
-              <textarea
+              <TextArea
                 id="setting-value-input"
                 data-testid="setting-value-input"
                 rows={10}
@@ -706,7 +715,7 @@ export function SettingsPage({
               </p>
             ) : null}
             <div className="dialog-actions">
-              <button
+              <Button
                 type="button"
                 className="primary-button"
                 data-testid="setting-submit"
@@ -714,7 +723,7 @@ export function SettingsPage({
                 onClick={() => void submitSetting()}
               >
                 {translate('page.bb79ec7c152f')}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}

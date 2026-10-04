@@ -1,3 +1,4 @@
+import { Button } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-08 授权摘要（可复用组件）：供授权管理列表与 FE-17 合约详情页嵌入。
@@ -34,9 +35,9 @@ export function LicenseSummary({ summary, onOpen }: LicenseSummaryProps) {
       </span>
       <span className="license-entitlements">{entitlements === '' ? '—' : entitlements}</span>
       {onOpen !== undefined ? (
-        <button type="button" data-testid="license-summary-open" onClick={() => onOpen(summary.licenseId)}>
+        <Button type="button" data-testid="license-summary-open" onClick={() => onOpen(summary.licenseId)}>
           {translate('page.642b717e63c6')}
-        </button>
+        </Button>
       ) : null}
     </span>
   );

@@ -1,3 +1,4 @@
+import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-12 操作设备页（/devices/operate）：联动选设备、当前运行状态、CT-04 命令白名单表单、
@@ -221,6 +222,9 @@ export function DeviceOperatePage({
   };
   return (
     <div className="device-operate-page" data-testid="device-operate-page">
+      <header className="page-header">
+        <h1>{translate('design.page.device-operate')}</h1>
+      </header>
       <section data-testid="device-picker" aria-label={translate('page.d1f8bd836068')}>
         <h4>{translate('page.d1f8bd836068')}</h4>
         <ScopeFilter
@@ -260,7 +264,7 @@ export function DeviceOperatePage({
             const gate = action.command !== undefined ? gateFor(action.command) : groupGate(action.commandGroup ?? []);
             return (
               <span key={action.key} className="action-item">
-                <button
+                <Button
                   type="button"
                   data-testid={`quick-${action.key}`}
                   disabled={!gate.allowed || busy}
@@ -271,7 +275,7 @@ export function DeviceOperatePage({
                 >
                   {action.label}
                   {action.command !== undefined ? `（${action.command}）` : ''}
-                </button>
+                </Button>
                 {!gate.allowed && gate.reason !== null ? (
                   <span className="deny-reason" data-testid={`quick-deny-${action.key}`}>
                     {gate.reason}
@@ -284,14 +288,14 @@ export function DeviceOperatePage({
         <div className="action-row">
           {CONFIG_REDIRECTS.map((redirect) => (
             <span key={redirect.key} className="action-item">
-              <button
+              <Button
                 type="button"
                 data-testid="goto-config-threshold"
                 title={redirect.hint}
                 onClick={() => onNavigate('/configurations')}
               >
                 {redirect.label}
-              </button>
+              </Button>
             </span>
           ))}
         </div>
@@ -299,13 +303,13 @@ export function DeviceOperatePage({
       </section>
 
       {selectedDevice && hasPermission(role, 'device:write') ? (
-        <button
+        <Button
           type="button"
           data-testid="goto-alias"
           onClick={() => onNavigate(`/devices/manage?deviceId=${encodeURIComponent(selectedDevice.id)}`)}
         >
           {translate('qa08.manageAlias')}
-        </button>
+        </Button>
       ) : null}
 
       {notice !== null ? (
@@ -343,7 +347,7 @@ export function DeviceOperatePage({
             </div>
             <div className="dialog-field">
               <label htmlFor="command-timeout">{translate('page.fedaa161097d')}</label>
-              <input
+              <Input
                 id="command-timeout"
                 data-testid="command-timeout"
                 inputMode="numeric"
@@ -358,7 +362,7 @@ export function DeviceOperatePage({
             </div>
             <div className="dialog-field">
               <label htmlFor="command-remarks">{translate('page.4980379d0c45')}</label>
-              <textarea
+              <TextArea
                 id="command-remarks"
                 data-testid="command-remarks"
                 maxLength={500}
@@ -374,7 +378,7 @@ export function DeviceOperatePage({
                   {translate('page.7ec95f3ebb99')}
                 </p>
                 <label htmlFor="command-confirm-text">{translate('page.a6cbec3dede2')}</label>
-                <input
+                <Input
                   id="command-confirm-text"
                   data-testid="command-confirm-text"
                   value={confirmText}
@@ -383,7 +387,7 @@ export function DeviceOperatePage({
               </div>
             ) : null}
             <div className="dialog-actions">
-              <button
+              <Button
                 type="button"
                 className="primary-button"
                 data-testid="command-submit"
@@ -395,7 +399,7 @@ export function DeviceOperatePage({
                 onClick={() => void submitCommand()}
               >
                 {translate('page.e9c7ee13638d')}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -404,52 +408,56 @@ export function DeviceOperatePage({
       <section data-testid="command-list-section" aria-label={translate('page.d8ae01cf4ed7')}>
         <h4>{translate('page.844c944e76d8')}</h4>
         <div className="filter-bar">
-          <label htmlFor="cmd-filter-status">{translate('page.62e951a692ff')}</label>
-          <select
-            id="cmd-filter-status"
-            data-testid="cmd-filter-status"
-            value={draftCommandFilter.status ?? ''}
-            onChange={(event) =>
-              setDraftCommandFilter({
-                ...draftCommandFilter,
-                status: event.target.value === '' ? null : (event.target.value as CommandStatus),
-              })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {COMMAND_STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {COMMAND_STATUS_LABELS[s]}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="cmd-filter-command">{translate('page.b114b91547d7')}</label>
-          <select
-            id="cmd-filter-command"
-            data-testid="cmd-filter-command"
-            value={draftCommandFilter.command ?? ''}
-            onChange={(event) =>
-              setDraftCommandFilter({
-                ...draftCommandFilter,
-                command: event.target.value === '' ? null : (event.target.value as CommandName),
-              })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {COMMAND_CATALOG.map((c) => (
-              <option key={c.command} value={c.command}>
-                {COMMAND_LABELS[c.command]}（{c.command}）
-              </option>
-            ))}
-          </select>
-          <button
+          <div className="filter-field">
+            <label htmlFor="cmd-filter-status">{translate('page.62e951a692ff')}</label>
+            <select
+              id="cmd-filter-status"
+              data-testid="cmd-filter-status"
+              value={draftCommandFilter.status ?? ''}
+              onChange={(event) =>
+                setDraftCommandFilter({
+                  ...draftCommandFilter,
+                  status: event.target.value === '' ? null : (event.target.value as CommandStatus),
+                })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {COMMAND_STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {COMMAND_STATUS_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="cmd-filter-command">{translate('page.b114b91547d7')}</label>
+            <select
+              id="cmd-filter-command"
+              data-testid="cmd-filter-command"
+              value={draftCommandFilter.command ?? ''}
+              onChange={(event) =>
+                setDraftCommandFilter({
+                  ...draftCommandFilter,
+                  command: event.target.value === '' ? null : (event.target.value as CommandName),
+                })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {COMMAND_CATALOG.map((c) => (
+                <option key={c.command} value={c.command}>
+                  {COMMAND_LABELS[c.command]}（{c.command}）
+                </option>
+              ))}
+            </select>
+          </div>
+          <Button
             type="button"
             className="primary-button"
             data-testid="cmd-filter-search"
             onClick={() => onApplyCommandFilter({ ...draftCommandFilter, deviceId: selectedDeviceId })}
           >
             {translate('page.dcce9a144a40')}
-          </button>
+          </Button>
         </div>
         <CursorTable
           ariaLabel={translate('page.88072264b0c8')}
@@ -482,13 +490,13 @@ export function DeviceOperatePage({
               key: 'actions',
               header: translate('page.f3ea6d345e2a'),
               render: (c) => (
-                <button
+                <Button
                   type="button"
                   data-testid={`command-detail-${c.commandId}`}
                   onClick={() => onSelectCommand(c.commandId)}
                 >
                   {translate('page.4f55ee1e687f')}
-                </button>
+                </Button>
               ),
             },
           ]}
@@ -600,9 +608,9 @@ export function DeviceOperatePage({
               </ol>
             )}
           </section>
-          <button type="button" onClick={onCloseCommandDetail}>
+          <Button type="button" onClick={onCloseCommandDetail}>
             {translate('page.6c14bd7f6f9e')}
-          </button>
+          </Button>
         </aside>
       ) : null}
 
@@ -622,57 +630,61 @@ export function DeviceOperatePage({
             {translate('page.c61f35aadcae')}
           </p>
         )}
-        <button type="button" data-testid="media-refresh" onClick={onRefreshMedia}>
+        <Button type="button" data-testid="media-refresh" onClick={onRefreshMedia}>
           {translate('page.7ea1129990c3')}
-        </button>
+        </Button>
       </section>
 
       <section data-testid="activity-table" aria-label={translate('page.f4bc877cd282')}>
         <h4>{translate('page.f4bc877cd282')}</h4>
         <div className="filter-bar">
-          <label htmlFor="activity-level">{translate('page.2548499200e5')}</label>
-          <select
-            id="activity-level"
-            data-testid="activity-filter-level"
-            value={draftActivityFilter.level ?? ''}
-            onChange={(event) =>
-              setDraftActivityFilter({
-                ...draftActivityFilter,
-                level: event.target.value === '' ? null : (event.target.value as ActivityLevel),
-              })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {ACTIVITY_LEVEL_OPTIONS.map((l) => (
-              <option key={l} value={l}>
-                {ACTIVITY_LEVEL_LABELS[l]}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="activity-kind">{translate('page.e4e46c7235d1')}</label>
-          <select
-            id="activity-kind"
-            data-testid="activity-filter-kind"
-            value={draftActivityFilter.kind ?? ''}
-            onChange={(event) =>
-              setDraftActivityFilter({
-                ...draftActivityFilter,
-                kind: event.target.value === '' ? null : (event.target.value as ActivityKind),
-              })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            <option value="EVENT">{translate('page.550e3280629d')}</option>
-            <option value="ALARM">{translate('page.5078424f7e0e')}</option>
-          </select>
-          <button
+          <div className="filter-field">
+            <label htmlFor="activity-level">{translate('page.2548499200e5')}</label>
+            <select
+              id="activity-level"
+              data-testid="activity-filter-level"
+              value={draftActivityFilter.level ?? ''}
+              onChange={(event) =>
+                setDraftActivityFilter({
+                  ...draftActivityFilter,
+                  level: event.target.value === '' ? null : (event.target.value as ActivityLevel),
+                })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {ACTIVITY_LEVEL_OPTIONS.map((l) => (
+                <option key={l} value={l}>
+                  {ACTIVITY_LEVEL_LABELS[l]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="activity-kind">{translate('page.e4e46c7235d1')}</label>
+            <select
+              id="activity-kind"
+              data-testid="activity-filter-kind"
+              value={draftActivityFilter.kind ?? ''}
+              onChange={(event) =>
+                setDraftActivityFilter({
+                  ...draftActivityFilter,
+                  kind: event.target.value === '' ? null : (event.target.value as ActivityKind),
+                })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              <option value="EVENT">{translate('page.550e3280629d')}</option>
+              <option value="ALARM">{translate('page.5078424f7e0e')}</option>
+            </select>
+          </div>
+          <Button
             type="button"
             className="primary-button"
             data-testid="activity-filter-search"
             onClick={() => onApplyActivityFilter(draftActivityFilter)}
           >
             {translate('page.dcce9a144a40')}
-          </button>
+          </Button>
         </div>
         <CursorTable
           ariaLabel={translate('page.f4bc877cd282')}

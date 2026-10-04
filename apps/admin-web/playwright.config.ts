@@ -2,9 +2,18 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
+  ...(process.env.UI_COMPAT_RUN
+    ? {
+        projects: [
+          { name: 'chromium', use: { browserName: 'chromium' as const } },
+          { name: 'chrome', use: { browserName: 'chromium' as const, channel: 'chrome' } },
+          { name: 'firefox', use: { browserName: 'firefox' as const } },
+        ],
+      }
+    : {}),
   ...(process.env.QA08_RUN ? { testMatch: 'qa08-prototype.spec.ts' } : { testIgnore: 'qa08-prototype.spec.ts' }),
   fullyParallel: process.env.QA05_PHASE === 'parallel-repeat',
-  workers: process.env.QA05_PHASE === 'parallel-repeat' ? 2 : 1,
+  workers: process.env.UI_COMPAT_RUN ? 3 : process.env.QA05_PHASE === 'parallel-repeat' ? 2 : 1,
   repeatEach: process.env.QA05_PHASE === 'parallel-repeat' ? 2 : 1,
   retries: 0,
   reporter: process.env.QA08_REPORT

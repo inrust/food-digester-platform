@@ -1,3 +1,4 @@
+import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-07 设备生命周期操作页（/devices/manage）：Assignment、Suspend、Reactivate、Retire、
@@ -160,9 +161,9 @@ export function DeviceManagePage({
   return (
     <div className="device-manage-page" data-testid="device-manage-page">
       <div className="manage-header">
-        <button type="button" data-testid="manage-back" onClick={onBack}>
+        <Button type="button" data-testid="manage-back" onClick={onBack}>
           {translate('page.11d024154013')}
-        </button>
+        </Button>
         <h3>
           {device.alias ?? device.serialNumber}
           <span className="device-serial">（{device.serialNumber}）</span>
@@ -187,7 +188,7 @@ export function DeviceManagePage({
       <section data-testid="lifecycle-actions" aria-label={translate('page.e4c42ba44ddc')}>
         <h4>{translate('page.e4c42ba44ddc')}</h4>
         <div className="action-row">
-          <button
+          <Button
             type="button"
             data-testid="action-assign"
             disabled={!assignGate.enabled || busy}
@@ -195,8 +196,8 @@ export function DeviceManagePage({
             onClick={() => setAssignOpen(true)}
           >
             {translate('page.9b3626b5d30f')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             data-testid="action-suspend"
             disabled={!suspendGate.enabled || busy}
@@ -204,8 +205,8 @@ export function DeviceManagePage({
             onClick={() => setPendingAction('suspend')}
           >
             {translate('page.b16ccb7bb587')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             data-testid="action-reactivate"
             disabled={!reactivateGate.enabled || busy}
@@ -213,8 +214,8 @@ export function DeviceManagePage({
             onClick={() => setPendingAction('reactivate')}
           >
             {translate('page.79748ca1c6e5')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className="danger-button"
             data-testid="action-retire"
@@ -223,20 +224,20 @@ export function DeviceManagePage({
             onClick={() => setPendingAction('retire')}
           >
             {translate('page.a3a128e21ebb')}
-          </button>
+          </Button>
         </div>
       </section>
 
       {hasPermission(role, 'config:read') ? (
         <section data-testid="configuration-entry" aria-label={translate('qa08.configurationEntry')}>
           <h4>{translate('qa08.configurationEntry')}</h4>
-          <button type="button" data-testid="goto-current-config" onClick={() => onNavigate('/configurations')}>
+          <Button type="button" data-testid="goto-current-config" onClick={() => onNavigate('/configurations')}>
             {translate('qa08.viewConfiguration')}
-          </button>
+          </Button>
           {hasPermission(role, 'config:publish') ? (
-            <button type="button" data-testid="goto-publish-config" onClick={() => onNavigate('/configurations')}>
+            <Button type="button" data-testid="goto-publish-config" onClick={() => onNavigate('/configurations')}>
               {translate('qa08.updateConfiguration')}
-            </button>
+            </Button>
           ) : null}
         </section>
       ) : null}
@@ -245,12 +246,12 @@ export function DeviceManagePage({
         <p className="field-hint">{translate('page.cee3cff2e854')}</p>
         {hasPermission(role, 'ota:read') ? (
           <div className="action-row">
-            <button type="button" data-testid="goto-ota-packages" onClick={() => onNavigate('/ota/packages')}>
+            <Button type="button" data-testid="goto-ota-packages" onClick={() => onNavigate('/ota/packages')}>
               {translate('page.35ae8f161851')}
-            </button>
-            <button type="button" data-testid="goto-ota-campaigns" onClick={() => onNavigate('/ota/campaigns')}>
+            </Button>
+            <Button type="button" data-testid="goto-ota-campaigns" onClick={() => onNavigate('/ota/campaigns')}>
               {translate('page.51e6d9eba498')}
-            </button>
+            </Button>
           </div>
         ) : (
           <p className="deny-reason" data-testid="ota-entry-deny">
@@ -264,7 +265,7 @@ export function DeviceManagePage({
         {aliasEditing ? (
           <div className="alias-form" data-testid="alias-form">
             <label htmlFor="alias-input">{translate('page.00029c8b5033')}</label>
-            <input
+            <Input
               id="alias-input"
               data-testid="alias-input"
               value={aliasDraft}
@@ -277,7 +278,7 @@ export function DeviceManagePage({
               </p>
             ) : null}
             <div className="action-row">
-              <button
+              <Button
                 type="button"
                 className="primary-button"
                 data-testid="alias-save"
@@ -290,8 +291,8 @@ export function DeviceManagePage({
                 }
               >
                 {translate('page.fadf24dbc5a9')}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 data-testid="alias-clear"
                 disabled={busy}
@@ -303,16 +304,16 @@ export function DeviceManagePage({
                 }
               >
                 {translate('page.6b9da041716c')}
-              </button>
-              <button type="button" data-testid="alias-cancel" onClick={() => setAliasEditing(false)}>
+              </Button>
+              <Button type="button" data-testid="alias-cancel" onClick={() => setAliasEditing(false)}>
                 {translate('page.4d0b4688c787')}
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
           <div className="alias-view">
             <span data-testid="alias-current">{device.alias ?? '—'}</span>
-            <button
+            <Button
               type="button"
               data-testid="alias-edit"
               disabled={!aliasGate.enabled || busy}
@@ -323,7 +324,7 @@ export function DeviceManagePage({
               }}
             >
               {translate('page.3ea46b0c32d9')}
-            </button>
+            </Button>
           </div>
         )}
       </section>
@@ -374,7 +375,7 @@ export function DeviceManagePage({
             {translate('page.038d6c10a99a')}
           </p>
         ) : null}
-        <button
+        <Button
           type="button"
           data-testid="cert-rotate"
           disabled={!rotationGate.enabled || busy}
@@ -382,7 +383,7 @@ export function DeviceManagePage({
           onClick={() => void runAction(onRequestRotation, translate('page.64f4faf010d5'))}
         >
           {translate('page.c1ba7b23295a')}
-        </button>
+        </Button>
       </section>
 
       {device.lifecycleStatus === 'Retired' ? (
@@ -425,7 +426,7 @@ export function DeviceManagePage({
                   {translate('page.336a1135b5c3')}
                 </p>
               ) : null}
-              <button
+              <Button
                 type="button"
                 className="danger-button"
                 data-testid="retire-force-complete"
@@ -434,7 +435,7 @@ export function DeviceManagePage({
                 onClick={() => setPendingAction('forceComplete')}
               >
                 {translate('page.041739719cce')}
-              </button>
+              </Button>
             </>
           ) : (
             <p className="retirement-unknown" data-testid="retirement-unknown">
@@ -615,7 +616,7 @@ function AssignForm({
       </div>
       <div className="dialog-field">
         <label htmlFor="assign-reason">{translate('page.f4d149ac018b')}</label>
-        <textarea
+        <TextArea
           id="assign-reason"
           data-testid="assign-reason"
           value={reason}
@@ -623,7 +624,7 @@ function AssignForm({
         />
       </div>
       <div className="dialog-actions">
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="assign-submit"
@@ -637,7 +638,7 @@ function AssignForm({
           }
         >
           {translate('page.1485e5902972')}
-        </button>
+        </Button>
       </div>
     </div>
   );

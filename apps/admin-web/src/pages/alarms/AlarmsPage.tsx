@@ -1,3 +1,4 @@
+import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-10 告警/事件/防拆页（/alarms）：Alarm 筛选/详情/确认/清除 + Event/Tamper 只读视图。
@@ -141,9 +142,12 @@ export function AlarmsPage({
   const alarm = alarmDetail.kind === 'ready' ? alarmDetail.alarm : null;
   return (
     <div className="alarms-page" data-testid="alarms-page">
+      <header className="page-header">
+        <h1>{translate('design.page.alarms')}</h1>
+      </header>
       <div className="tab-bar" role="tablist" data-testid="alarm-tabs">
         {ALARM_TABS.map((t) => (
-          <button
+          <Button
             key={t}
             type="button"
             role="tab"
@@ -153,7 +157,7 @@ export function AlarmsPage({
             onClick={() => onApplyUrlState({ ...urlState, tab: t })}
           >
             {ALARM_TAB_LABELS[t]}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -193,9 +197,9 @@ export function AlarmsPage({
           siteOptions={siteOptions}
           deviceOptions={deviceOptions}
         />
-        <button type="button" className="primary-button" data-testid="filter-search" onClick={applyFilter}>
+        <Button type="button" className="primary-button" data-testid="filter-search" onClick={applyFilter}>
           {translate('page.dcce9a144a40')}
-        </button>
+        </Button>
       </div>
 
       {notice !== null ? (
@@ -234,13 +238,13 @@ export function AlarmsPage({
               key: 'actions',
               header: translate('page.f3ea6d345e2a'),
               render: (a) => (
-                <button
+                <Button
                   type="button"
                   data-testid={`alarm-detail-${a.alarmId}`}
                   onClick={() => onSelectAlarm(a.alarmId)}
                 >
                   {translate('page.4f55ee1e687f')}
-                </button>
+                </Button>
               ),
             },
           ]}
@@ -393,10 +397,10 @@ export function AlarmsPage({
             ) : null}
           </dl>
           <div className="detail-actions">
-            <button type="button" onClick={onCloseAlarmDetail}>
+            <Button type="button" onClick={onCloseAlarmDetail}>
               {translate('page.6c14bd7f6f9e')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="primary-button"
               data-testid="alarm-acknowledge"
@@ -407,8 +411,8 @@ export function AlarmsPage({
               onClick={() => setPendingHandle('acknowledge')}
             >
               {translate('page.b56d9ac6c5a0')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="danger-button"
               data-testid="alarm-clear"
@@ -419,7 +423,7 @@ export function AlarmsPage({
               onClick={() => setPendingHandle('clear')}
             >
               {translate('page.7b15e5e8e7bd')}
-            </button>
+            </Button>
           </div>
         </aside>
       ) : null}
@@ -581,7 +585,7 @@ function CommonFilterFields({
       {tab !== 'alarm' ? (
         <>
           <label htmlFor="filter-event-type">{translate('page.5b2d75aa54d1')}</label>
-          <input
+          <Input
             id="filter-event-type"
             data-testid="filter-event-type"
             value={
@@ -596,7 +600,7 @@ function CommonFilterFields({
         </>
       ) : null}
       <label htmlFor="filter-from">{translate('page.503889d576aa')}</label>
-      <input
+      <Input
         id="filter-from"
         data-testid="filter-from"
         placeholder="2026-09-01T00:00:00Z"
@@ -604,7 +608,7 @@ function CommonFilterFields({
         onChange={(e) => patch('from', e.target.value)}
       />
       <label htmlFor="filter-to">{translate('page.864048b32f22')}</label>
-      <input
+      <Input
         id="filter-to"
         data-testid="filter-to"
         placeholder="2026-09-07T00:00:00Z"

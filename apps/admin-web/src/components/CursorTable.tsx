@@ -1,3 +1,4 @@
+import { Button } from './ui.js';
 /**
  * FE-02 游标表格：加载 / 空 / 错误（403/409/通用）/ 数据过期（stale）全状态覆盖。
  *
@@ -5,7 +6,9 @@
  * - stale=true 时显示“数据可能过期”徽标与数据时间（TimeText）；
  * - 分页为 CT-05 游标式：下一页携 nextCursor；上一页由调用方维护游标栈。
  */
-import type { ReactNode } from 'react';
+import { Empty, Skeleton, Table } from 'antd';
+import { useMemo } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 import { ErrorNotice } from './ErrorNotice.js';
 import { TimeText } from './TimeText.js';
 import { useI18n } from '../i18n/i18n.js';
@@ -55,6 +58,10 @@ export function CursorTable<T>({
   rowClassName,
 }: CursorTableProps<T>) {
   const { t } = useI18n();
+  const tableComponents = useMemo(
+    () => ({ table: (props: HTMLAttributes<HTMLTableElement>) => <table {...props} aria-label={ariaLabel} /> }),
+    [ariaLabel],
+  );
   const resolvedEmptyText = emptyText ?? t('common.empty');
   if (error !== undefined && error !== null) {
     return <ErrorNotice error={error} {...(onRefresh !== undefined ? { onRefresh } : {})} />;
@@ -62,14 +69,15 @@ export function CursorTable<T>({
 
   if (rows === null) {
     return (
-      <div role="status" data-testid="table-loading">
+      <div className="table-loading" role="status" data-testid="table-loading">
         {t('common.loading')}
+        <Skeleton active title={false} paragraph={{ rows: 4 }} />
       </div>
     );
   }
 
   return (
-    <div className="cursor-table" data-testid="cursor-table">
+    <div className="cursor-table" data-testid="cursor-table" aria-busy={loading}>
       {stale || loading ? (
         <div className="stale-banner" role="status" data-testid="table-stale">
           {t('common.stale')}
@@ -80,48 +88,47 @@ export function CursorTable<T>({
             </>
           ) : null}
           {onRefresh !== undefined ? (
-            <button type="button" onClick={onRefresh}>
+            <Button type="button" onClick={onRefresh}>
               {t('common.refresh')}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
 
       {rows.length === 0 ? (
         <div className="empty-state" data-testid="table-empty">
-          {resolvedEmptyText}
+          <Empty
+            image={
+              <svg aria-hidden="true" width="48" height="40" viewBox="0 0 48 40" fill="none">
+                <path d="M8 15h32v20H8z M16 15V5h16v10 M18 24h12" stroke="#a8b8c5" strokeWidth="2" />
+              </svg>
+            }
+            description={resolvedEmptyText}
+            styles={{ image: { fontSize: 0 } }}
+          />
         </div>
       ) : (
-        <table aria-label={ariaLabel}>
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th key={column.key} scope="col">
-                  {column.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const extraClass = rowClassName?.(row);
-              return (
-                <tr key={rowKey(row)} {...(extraClass !== undefined ? { className: extraClass } : {})}>
-                  {columns.map((column) => (
-                    <td key={column.key}>{column.render(row)}</td>
-                  ))}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="table-scroll">
+          <Table
+            components={tableComponents}
+            size="middle"
+            pagination={false}
+            dataSource={rows.map((row) => ({ key: rowKey(row), source: row }))}
+            columns={columns.map((column) => ({
+              key: column.key,
+              title: column.header,
+              render: (_: unknown, record: { source: T }) => column.render(record.source),
+            }))}
+            rowClassName={(record) => rowClassName?.(record.source) ?? ''}
+          />
+        </div>
       )}
 
       <div className="table-pagination">
-        <button type="button" disabled={!hasPrevPage} onClick={onPrevPage}>
+        <Button type="button" disabled={!hasPrevPage} onClick={onPrevPage}>
           {t('common.prevPage')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           disabled={nextCursor === null}
           onClick={() => {
@@ -129,7 +136,7 @@ export function CursorTable<T>({
           }}
         >
           {t('common.nextPage')}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { Button } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-17 Contract 列表页（/contracts）：客户/状态筛选、确定性设备计数、
@@ -62,7 +63,7 @@ export function ContractsPage({
     <div className="contracts-page" data-testid="contracts-page">
       <div className="page-header">
         <h3>{translate('page.b38179cfadeb')}</h3>
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="contract-new-open"
@@ -71,41 +72,45 @@ export function ContractsPage({
           onClick={onOpenNew}
         >
           {translate('page.44c75e312909')}
-        </button>
+        </Button>
       </div>
 
       <div className="filter-bar">
-        <label htmlFor="contract-filter-status">{translate('page.62e951a692ff')}</label>
-        <select
-          id="contract-filter-status"
-          data-testid="contract-filter-status"
-          value={draft.status}
-          onChange={(event) =>
-            setDraft({ ...draft, status: event.target.value === '' ? '' : (event.target.value as ContractStatus) })
-          }
-        >
-          <option value="">{translate('page.778fc8f99453')}</option>
-          {CONTRACT_STATUS_OPTIONS.map((status) => (
-            <option key={status} value={status}>
-              {CONTRACT_STATUS_LABELS[status]}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="contract-filter-customer">{translate('page.f20687060126')}</label>
-        <select
-          id="contract-filter-customer"
-          data-testid="contract-filter-customer"
-          value={draft.customerId}
-          onChange={(event) => setDraft({ ...draft, customerId: event.target.value })}
-        >
-          <option value="">{translate('page.778fc8f99453')}</option>
-          {customerOptions.map((customer) => (
-            <option key={customer.customerId} value={customer.customerId}>
-              {customer.name}
-            </option>
-          ))}
-        </select>
-        <button
+        <div className="filter-field">
+          <label htmlFor="contract-filter-status">{translate('page.62e951a692ff')}</label>
+          <select
+            id="contract-filter-status"
+            data-testid="contract-filter-status"
+            value={draft.status}
+            onChange={(event) =>
+              setDraft({ ...draft, status: event.target.value === '' ? '' : (event.target.value as ContractStatus) })
+            }
+          >
+            <option value="">{translate('page.778fc8f99453')}</option>
+            {CONTRACT_STATUS_OPTIONS.map((status) => (
+              <option key={status} value={status}>
+                {CONTRACT_STATUS_LABELS[status]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-field">
+          <label htmlFor="contract-filter-customer">{translate('page.f20687060126')}</label>
+          <select
+            id="contract-filter-customer"
+            data-testid="contract-filter-customer"
+            value={draft.customerId}
+            onChange={(event) => setDraft({ ...draft, customerId: event.target.value })}
+          >
+            <option value="">{translate('page.778fc8f99453')}</option>
+            {customerOptions.map((customer) => (
+              <option key={customer.customerId} value={customer.customerId}>
+                {customer.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <Button
           type="button"
           className="primary-button"
           data-testid="contract-filter-search"
@@ -117,7 +122,7 @@ export function ContractsPage({
           }
         >
           {translate('page.dcce9a144a40')}
-        </button>
+        </Button>
       </div>
 
       <section data-testid="contract-list" aria-label={translate('page.5ae89a50fd74')}>
@@ -162,13 +167,13 @@ export function ContractsPage({
               key: 'actions',
               header: translate('page.f3ea6d345e2a'),
               render: (c) => (
-                <button
+                <Button
                   type="button"
                   data-testid={`contract-open-${c.contractId}`}
                   onClick={() => onOpenDetail(c.contractId)}
                 >
                   {translate('page.1adb997cd4ce')}
-                </button>
+                </Button>
               ),
             },
           ]}

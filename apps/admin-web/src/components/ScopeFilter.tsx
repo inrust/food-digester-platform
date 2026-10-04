@@ -1,3 +1,4 @@
+import { Button } from './ui.js';
 import { translate } from '../i18n/i18n.js';
 /**
  * FE-02 联动 Region/Subregion/Site 筛选：选项按上游选择过滤，上游变更清空下游。
@@ -127,9 +128,9 @@ export function ScopeFilter({
         </div>
       ) : null}
 
-      <button type="button" onClick={() => onChange({ region: null, subregion: null, siteId: null, deviceId: null })}>
+      <Button type="button" onClick={() => onChange({ region: null, subregion: null, siteId: null, deviceId: null })}>
         {translate('page.3d81345303ab')}
-      </button>
+      </Button>
     </div>
   );
 }

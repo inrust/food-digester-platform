@@ -1,3 +1,4 @@
+import { Progress } from 'antd';
 import { translate } from '../i18n/i18n.js';
 /**
  * FE-03 耗材展示（DEC-008：unknown 不画正常进度条；stale 标记；低于冻结阈值 warn）。
@@ -23,7 +24,12 @@ export function ConsumableGauge({ model }: { model: ConsumableDisplayModel }) {
             aria-valuemax={100}
             aria-label={model.name + translate('ui.f37c034a97bb')}
           >
-            <div className={`fill${model.low ? ' warn' : ''}`} style={{ width: `${model.percent}%` }} />
+            <Progress
+              percent={model.percent}
+              showInfo={false}
+              strokeColor={model.low ? '#b76b08' : '#087f73'}
+              size="small"
+            />
           </div>
           <span className="consumable-value" data-testid={`consumable-value-${model.consumableType}`}>
             <PercentText value={model.percent} />

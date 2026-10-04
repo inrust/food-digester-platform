@@ -1,3 +1,4 @@
+import { Button, Input } from '../../components/ui.js';
 import { hasPermission } from '@fdp/auth/browser';
 import { translate } from '../../i18n/i18n.js';
 /**
@@ -251,7 +252,7 @@ export function OtaCampaignsPage({
     const gate = gateCampaignAction(action, campaign.status, role);
     return (
       <span key={action} className="action-item">
-        <button
+        <Button
           type="button"
           data-testid={testid}
           disabled={!gate.allowed || busy}
@@ -259,7 +260,7 @@ export function OtaCampaignsPage({
           onClick={onClick}
         >
           {CAMPAIGN_ACTION_LABELS[action]}
-        </button>
+        </Button>
         {!gate.allowed && gate.reason !== null ? (
           <span className="deny-reason" data-testid={`${testid}-deny`}>
             {gate.reason}
@@ -272,15 +273,15 @@ export function OtaCampaignsPage({
     <div className="ota-campaigns-page" data-testid="ota-campaigns-page">
       <div className="page-header">
         <h3>{translate('page.bdb9a2faeb72')}</h3>
-        <button type="button" data-testid="goto-ota-packages" onClick={() => onNavigate('/ota/packages')}>
+        <Button type="button" data-testid="goto-ota-packages" onClick={() => onNavigate('/ota/packages')}>
           {translate('page.520fc0679572')}
-        </button>
+        </Button>
       </div>
 
       <section data-testid="campaign-create-section" aria-label={translate('page.7a06c0b187b6')}>
         <h4>{translate('page.9d4b6023d061')}</h4>
         <p className="field-hint">{translate('page.fec04f09d673')}</p>
-        <button
+        <Button
           type="button"
           className="primary-button"
           data-testid="campaign-create-open"
@@ -296,7 +297,7 @@ export function OtaCampaignsPage({
           }}
         >
           {translate('page.7a06c0b187b6')}
-        </button>
+        </Button>
         {verifiedPackages.length === 0 ? (
           <span className="deny-reason" data-testid="create-no-package">
             {translate('page.0c74f236f25a')}
@@ -319,7 +320,7 @@ export function OtaCampaignsPage({
       >
         <div className="dialog-field">
           <label htmlFor="campaign-name">{translate('page.eb465cfa598b')}</label>
-          <input
+          <Input
             id="campaign-name"
             data-testid="campaign-name"
             maxLength={128}
@@ -366,7 +367,7 @@ export function OtaCampaignsPage({
           </p>
         ) : null}
         <div className="dialog-actions">
-          <button
+          <Button
             type="button"
             className="primary-button"
             data-testid="campaign-create-submit"
@@ -374,47 +375,51 @@ export function OtaCampaignsPage({
             onClick={() => void submitCreate()}
           >
             {translate('page.0255d0eb6e95')}
-          </button>
+          </Button>
         </div>
       </Modal>
 
       <section data-testid="campaign-list-section" aria-label={translate('page.561c14751c14')}>
         <h4>{translate('page.561c14751c14')}</h4>
         <div className="filter-bar">
-          <label htmlFor="campaign-filter-status">{translate('page.62e951a692ff')}</label>
-          <select
-            id="campaign-filter-status"
-            data-testid="campaign-filter-status"
-            value={draftFilter.status ?? ''}
-            onChange={(event) =>
-              setDraftFilter({
-                ...draftFilter,
-                status: event.target.value === '' ? null : (event.target.value as OtaCampaignStatus),
-              })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {CAMPAIGN_STATUS_OPTIONS.map((status) => (
-              <option key={status} value={status}>
-                {CAMPAIGN_STATUS_LABELS[status]}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="campaign-filter-model">{translate('page.418dfc356a6d')}</label>
-          <input
-            id="campaign-filter-model"
-            data-testid="campaign-filter-model"
-            value={draftFilter.targetModel ?? ''}
-            onChange={(event) => setDraftFilter({ ...draftFilter, targetModel: event.target.value })}
-          />
-          <button
+          <div className="filter-field">
+            <label htmlFor="campaign-filter-status">{translate('page.62e951a692ff')}</label>
+            <select
+              id="campaign-filter-status"
+              data-testid="campaign-filter-status"
+              value={draftFilter.status ?? ''}
+              onChange={(event) =>
+                setDraftFilter({
+                  ...draftFilter,
+                  status: event.target.value === '' ? null : (event.target.value as OtaCampaignStatus),
+                })
+              }
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {CAMPAIGN_STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {CAMPAIGN_STATUS_LABELS[status]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="campaign-filter-model">{translate('page.418dfc356a6d')}</label>
+            <Input
+              id="campaign-filter-model"
+              data-testid="campaign-filter-model"
+              value={draftFilter.targetModel ?? ''}
+              onChange={(event) => setDraftFilter({ ...draftFilter, targetModel: event.target.value })}
+            />
+          </div>
+          <Button
             type="button"
             className="primary-button"
             data-testid="campaign-filter-search"
             onClick={() => onApplyFilter(draftFilter)}
           >
             {translate('page.dcce9a144a40')}
-          </button>
+          </Button>
         </div>
         <CursorTable
           ariaLabel={translate('page.561c14751c14')}
@@ -430,13 +435,13 @@ export function OtaCampaignsPage({
               key: 'actions',
               header: translate('page.f3ea6d345e2a'),
               render: (c) => (
-                <button
+                <Button
                   type="button"
                   data-testid={`campaign-detail-${c.campaignId}`}
                   onClick={() => onSelectCampaign(c.campaignId)}
                 >
                   {translate('page.4f55ee1e687f')}
-                </button>
+                </Button>
               ),
             },
           ]}
@@ -526,31 +531,35 @@ export function OtaCampaignsPage({
           <section data-testid="target-list-section" aria-label={translate('page.ee3cdd7dc748')}>
             <h5>{translate('page.ee3cdd7dc748')}</h5>
             <div className="filter-bar">
-              <label htmlFor="target-filter-status">{translate('page.62e951a692ff')}</label>
-              <select
-                id="target-filter-status"
-                data-testid="target-filter-status"
-                value={draftTargetStatus}
-                onChange={(event) =>
-                  setDraftTargetStatus(event.target.value === '' ? '' : (event.target.value as OtaTargetStatus))
-                }
-              >
-                <option value="">{translate('page.778fc8f99453')}</option>
-                {TARGET_STATUS_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {TARGET_STATUS_LABELS[status]}
-                  </option>
-                ))}
-              </select>
-              <label htmlFor="target-filter-batch">{translate('page.2514034a3d8a')}</label>
-              <input
-                id="target-filter-batch"
-                data-testid="target-filter-batch"
-                inputMode="numeric"
-                value={draftBatchNo}
-                onChange={(event) => setDraftBatchNo(event.target.value)}
-              />
-              <button
+              <div className="filter-field">
+                <label htmlFor="target-filter-status">{translate('page.62e951a692ff')}</label>
+                <select
+                  id="target-filter-status"
+                  data-testid="target-filter-status"
+                  value={draftTargetStatus}
+                  onChange={(event) =>
+                    setDraftTargetStatus(event.target.value === '' ? '' : (event.target.value as OtaTargetStatus))
+                  }
+                >
+                  <option value="">{translate('page.778fc8f99453')}</option>
+                  {TARGET_STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {TARGET_STATUS_LABELS[status]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="filter-field">
+                <label htmlFor="target-filter-batch">{translate('page.2514034a3d8a')}</label>
+                <Input
+                  id="target-filter-batch"
+                  data-testid="target-filter-batch"
+                  inputMode="numeric"
+                  value={draftBatchNo}
+                  onChange={(event) => setDraftBatchNo(event.target.value)}
+                />
+              </div>
+              <Button
                 type="button"
                 className="primary-button"
                 data-testid="target-filter-search"
@@ -563,7 +572,7 @@ export function OtaCampaignsPage({
                 }}
               >
                 {translate('page.dcce9a144a40')}
-              </button>
+              </Button>
             </div>
             <CursorTable
               ariaLabel={translate('page.ee3cdd7dc748')}
@@ -614,9 +623,9 @@ export function OtaCampaignsPage({
             />
           </section>
 
-          <button type="button" data-testid="campaign-detail-close" onClick={onCloseDetail}>
+          <Button type="button" data-testid="campaign-detail-close" onClick={onCloseDetail}>
             {translate('page.6c14bd7f6f9e')}
-          </button>
+          </Button>
         </aside>
       ) : null}
 
@@ -640,7 +649,7 @@ export function OtaCampaignsPage({
               {eligibleDevices.map((d) => (
                 <li key={d.deviceId}>
                   <label>
-                    <input
+                    <Input
                       type="checkbox"
                       data-testid={`expand-device-${d.deviceId}`}
                       checked={expandSelected.includes(d.deviceId)}
@@ -660,7 +669,7 @@ export function OtaCampaignsPage({
             {isFinalRollout ? (
               <label>
                 {translate('page.c54f84d0d887')}
-                <input
+                <Input
                   data-testid="final-rollout-confirm"
                   value={finalRolloutConfirmText}
                   placeholder={expectedFinalRolloutText}
@@ -674,7 +683,7 @@ export function OtaCampaignsPage({
               </p>
             ) : null}
             <div className="dialog-actions">
-              <button
+              <Button
                 type="button"
                 className="primary-button"
                 data-testid="expand-submit"
@@ -684,7 +693,7 @@ export function OtaCampaignsPage({
                 {translate('page.b4a1dbe7c6be')}
                 <NumberText value={expandSelected.length} />
                 {' ' + translate('page.57151561028f')}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -709,7 +718,7 @@ export function OtaCampaignsPage({
                   {failedTargets.map((t) => (
                     <li key={t.targetId}>
                       <label>
-                        <input
+                        <Input
                           type="checkbox"
                           data-testid={`retry-target-${t.targetId}`}
                           checked={retrySelected.includes(t.targetId)}
@@ -731,7 +740,7 @@ export function OtaCampaignsPage({
               </>
             )}
             <div className="dialog-actions">
-              <button
+              <Button
                 type="button"
                 className="primary-button"
                 data-testid="retry-submit"
@@ -742,7 +751,7 @@ export function OtaCampaignsPage({
                 {retrySelected.length > 0
                   ? translate('page.a85b0e899cbf') + ' ' + retrySelected.length + (' ' + translate('page.64728a772742'))
                   : translate('page.6e0a3cd678cb')}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
