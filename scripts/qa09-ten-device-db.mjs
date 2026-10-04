@@ -1,11 +1,25 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { gzipSync } from 'node:zlib';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { DB_TARGET } from './qa09-db-readonly-probe.mjs';
 export const PROJECT = 'fdp-test-qa09-ten-device-fixtures';
+export function encodeFixtureFrame(frame) {
+  const bytes = Buffer.from(JSON.stringify(frame));
+  if (frame.kind !== 'fdp-qa09-ten-device-db/v1' || bytes.length > 8 * 1024 * 1024) throw Error('FIXTURE_FRAME_LIMIT');
+  return bytes.length <= 65536
+    ? bytes.toString('utf8')
+    : JSON.stringify({
+        kind: 'fdp-qa09-ten-device-db/gzip-v1',
+        rawBytes: bytes.length,
+        sha256: createHash('sha256').update(bytes).digest('hex'),
+        payloadBase64: gzipSync(bytes).toString('base64'),
+      });
+}
+
 export function assertOwnCloudDevice(id, prefix) {
   if (!/^qa09-[a-f0-9]{16}$/.test(prefix) || !new RegExp(`^${prefix}-(0[1-9]|10)$`).test(id))
     throw Error('NOT_OWN_DEVICE');
@@ -739,7 +753,7 @@ async function main() {
     try {
       const result = await executePoolReadOnly(pool, applicationName);
       console.log(
-        JSON.stringify({
+        encodeFixtureFrame({
           kind: 'fdp-qa09-ten-device-db/v1',
           gate: 'PASS',
           action: plan.action,
@@ -759,7 +773,7 @@ async function main() {
     await client.connect();
     const result = await executeFixture(client, plan);
     console.log(
-      JSON.stringify({
+      encodeFixtureFrame({
         kind: 'fdp-qa09-ten-device-db/v1',
         gate: 'PASS',
         action: plan.action,

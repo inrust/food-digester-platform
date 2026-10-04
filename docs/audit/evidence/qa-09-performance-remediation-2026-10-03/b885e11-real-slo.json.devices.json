@@ -1,0 +1,1017 @@
+{
+  "task": "QA-09",
+  "scope": "TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1",
+    "stackName": "fdp-test-app"
+  },
+  "sourceCommit": "b885e1174fdf0626e1a5e6c12ae55de4ddf3dcb9",
+  "versionBinding": {
+    "commit": "b885e1174fdf0626e1a5e6c12ae55de4ddf3dcb9",
+    "deployRunId": "37128021086"
+  },
+  "executorSha256": "31d42a8dae25b6d312246e52add96a8e7494f34830d7c94eedde6d722619925a",
+  "versionReceipt": "docs/audit/evidence/qa-09-performance-remediation-2026-10-03/b885e11-application-version.json",
+  "artifactByteReceipt": "docs/audit/evidence/qa-09-performance-remediation-2026-10-03/b885e11-application-version.json",
+  "startedAt": "2026-10-03T15:26:52.483Z",
+  "prefix": "qa09-53e391d7d2f5c357",
+  "devices": [
+    "qa09-53e391d7d2f5c357-01",
+    "qa09-53e391d7d2f5c357-02",
+    "qa09-53e391d7d2f5c357-03",
+    "qa09-53e391d7d2f5c357-04",
+    "qa09-53e391d7d2f5c357-05",
+    "qa09-53e391d7d2f5c357-06",
+    "qa09-53e391d7d2f5c357-07",
+    "qa09-53e391d7d2f5c357-08",
+    "qa09-53e391d7d2f5c357-09",
+    "qa09-53e391d7d2f5c357-10"
+  ],
+  "customers": [
+    {
+      "id": "f2dd2be7-c0bd-4ea1-87c6-a23253cc3449",
+      "name": "qa09-53e391d7d2f5c357-a",
+      "suffix": "a",
+      "version": 1
+    },
+    {
+      "id": "7c7da7e6-4fad-4b19-acc8-0e21191ae8ef",
+      "name": "qa09-53e391d7d2f5c357-b",
+      "suffix": "b",
+      "version": 1
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-03T15:27:09.461Z",
+      "latencyMs": 6405,
+      "gatewayRequestId": "e6dcfade-6f48-4c2d-8c19-5e048275e155",
+      "gatewayExtendedRequestId": "ErHAfGXjSQ0ER9Q=",
+      "gatewayErrorType": null,
+      "requestId": "e6dcfade-6f48-4c2d-8c19-5e048275e155",
+      "errorCode": null
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-03T15:27:15.868Z",
+      "latencyMs": 1860,
+      "gatewayRequestId": "7a7b82aa-c6ed-4813-a17d-21d1c5fb4cfd",
+      "gatewayExtendedRequestId": "ErHBaH8TSQ0EAeQ=",
+      "gatewayErrorType": null,
+      "requestId": "7a7b82aa-c6ed-4813-a17d-21d1c5fb4cfd",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-01:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-03T15:29:32.869Z",
+      "latencyMs": 8405,
+      "gatewayRequestId": "ef1f3088-cea7-4814-a48f-5cd89a3b040d",
+      "gatewayExtendedRequestId": "ErHXBEeUSQ0EfLg=",
+      "gatewayErrorType": null,
+      "requestId": "ef1f3088-cea7-4814-a48f-5cd89a3b040d",
+      "errorCode": null,
+      "businessRequestId": "5d29c1db-aa43-494a-ad36-a07725660f16"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-01:same-csr-idempotent",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:29:41.277Z",
+      "latencyMs": 1805,
+      "gatewayRequestId": "ea7e4bac-3c00-4390-9d5e-41f4610c12a8",
+      "gatewayExtendedRequestId": "ErHYHFJ_SQ0EVmg=",
+      "gatewayErrorType": null,
+      "requestId": "ea7e4bac-3c00-4390-9d5e-41f4610c12a8",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-01:different-key-conflict",
+      "result": "PASS",
+      "status": 409,
+      "expected": 409,
+      "startedAt": "2026-10-03T15:29:43.168Z",
+      "latencyMs": 594,
+      "gatewayRequestId": "e85c3318-659f-432f-84a2-604280ad4ff7",
+      "gatewayExtendedRequestId": "ErHYPHbiSQ0EX1g=",
+      "gatewayErrorType": null,
+      "requestId": "e85c3318-659f-432f-84a2-604280ad4ff7",
+      "errorCode": "CONFLICT"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-01:signed-pending",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:29:43.768Z",
+      "latencyMs": 633,
+      "gatewayRequestId": "4cac1589-caff-46cb-b682-b59c44f1e764",
+      "gatewayExtendedRequestId": "ErHYVFf8yQ0EZZw=",
+      "gatewayErrorType": null,
+      "requestId": "4cac1589-caff-46cb-b682-b59c44f1e764",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-01:nonce-replay-denied",
+      "result": "PASS",
+      "status": 401,
+      "expected": 401,
+      "startedAt": "2026-10-03T15:29:44.401Z",
+      "latencyMs": 725,
+      "gatewayRequestId": "1618c962-1623-459a-91ce-3d177bc71a58",
+      "gatewayExtendedRequestId": "ErHYbHYlyQ0ED9w=",
+      "gatewayErrorType": null,
+      "requestId": "1618c962-1623-459a-91ce-3d177bc71a58",
+      "errorCode": "UNAUTHENTICATED"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-01:wrong-key-denied",
+      "result": "PASS",
+      "status": 401,
+      "expected": 401,
+      "startedAt": "2026-10-03T15:29:45.129Z",
+      "latencyMs": 855,
+      "gatewayRequestId": "cc690b63-b7c8-43c1-a5e2-32c5d5c2c13b",
+      "gatewayExtendedRequestId": "ErHYiGxgyQ0EABw=",
+      "gatewayErrorType": null,
+      "requestId": "cc690b63-b7c8-43c1-a5e2-32c5d5c2c13b",
+      "errorCode": "UNAUTHENTICATED"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-01:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:29:45.986Z",
+      "latencyMs": 2663,
+      "gatewayRequestId": "727231ea-596a-48c0-b266-1e0f73471bf9",
+      "gatewayExtendedRequestId": "ErHY5HgPyQ0EYKA=",
+      "gatewayErrorType": null,
+      "requestId": "727231ea-596a-48c0-b266-1e0f73471bf9",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-01:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:29:48.650Z",
+      "latencyMs": 2717,
+      "gatewayRequestId": "4cff128c-5828-4687-bc1e-f65e3d543b3a",
+      "gatewayExtendedRequestId": "ErHZYE45SQ0ETsw=",
+      "gatewayErrorType": null,
+      "requestId": "4cff128c-5828-4687-bc1e-f65e3d543b3a",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-02:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-03T15:29:51.412Z",
+      "latencyMs": 2870,
+      "gatewayRequestId": "73d8cd09-daba-4820-a445-215f1324aba3",
+      "gatewayExtendedRequestId": "ErHZ3FdESQ0EMaQ=",
+      "gatewayErrorType": null,
+      "requestId": "73d8cd09-daba-4820-a445-215f1324aba3",
+      "errorCode": null,
+      "businessRequestId": "69914bf6-6989-4558-b6ab-cca52b165970"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-02:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:29:54.283Z",
+      "latencyMs": 3804,
+      "gatewayRequestId": "0d7c5949-87b6-46f2-9ce5-8622646ba0e7",
+      "gatewayExtendedRequestId": "ErHafHP3SQ0EZWA=",
+      "gatewayErrorType": null,
+      "requestId": "0d7c5949-87b6-46f2-9ce5-8622646ba0e7",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-02:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:29:58.088Z",
+      "latencyMs": 2118,
+      "gatewayRequestId": "5e1a730f-ea8b-40d1-abe2-20fdece862c6",
+      "gatewayExtendedRequestId": "ErHaxE97SQ0EEfQ=",
+      "gatewayErrorType": null,
+      "requestId": "5e1a730f-ea8b-40d1-abe2-20fdece862c6",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-03:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-03T15:30:00.274Z",
+      "latencyMs": 2506,
+      "gatewayRequestId": "fc454717-cfd0-40c6-bb0b-4ce616c165eb",
+      "gatewayExtendedRequestId": "ErHbLEvjSQ0ET4w=",
+      "gatewayErrorType": null,
+      "requestId": "fc454717-cfd0-40c6-bb0b-4ce616c165eb",
+      "errorCode": null,
+      "businessRequestId": "531e902b-483e-405c-bd86-843bf6039ecc"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-03:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:30:02.782Z",
+      "latencyMs": 1646,
+      "gatewayRequestId": "8ce5bc1b-e109-49cd-b26a-bababf3795cf",
+      "gatewayExtendedRequestId": "ErHbeHcFyQ0EE8g=",
+      "gatewayErrorType": null,
+      "requestId": "8ce5bc1b-e109-49cd-b26a-bababf3795cf",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-03:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:30:04.429Z",
+      "latencyMs": 4878,
+      "gatewayRequestId": "2c299356-dd98-482e-b9f6-67dccd6c0444",
+      "gatewayExtendedRequestId": "ErHcLFLpyQ0EZqg=",
+      "gatewayErrorType": null,
+      "requestId": "2c299356-dd98-482e-b9f6-67dccd6c0444",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-04:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-03T15:30:09.365Z",
+      "latencyMs": 5316,
+      "gatewayRequestId": "ecf42af9-b11c-4717-a332-ca99afd72071",
+      "gatewayExtendedRequestId": "ErHciG_qSQ0EAnw=",
+      "gatewayErrorType": null,
+      "requestId": "ecf42af9-b11c-4717-a332-ca99afd72071",
+      "errorCode": null,
+      "businessRequestId": "0799feda-7aab-40b4-8af4-ae8b19545640"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-04:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:30:14.683Z",
+      "latencyMs": 1646,
+      "gatewayRequestId": "1935422a-2f47-4ad2-926f-53b6cb7d07dd",
+      "gatewayExtendedRequestId": "ErHdVE3EyQ0EWgw=",
+      "gatewayErrorType": null,
+      "requestId": "1935422a-2f47-4ad2-926f-53b6cb7d07dd",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-04:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:30:16.330Z",
+      "latencyMs": 3344,
+      "gatewayRequestId": "91a9a5b2-8fa9-4444-9153-158b15ffcecc",
+      "gatewayExtendedRequestId": "ErHdmEgxSQ0EZWA=",
+      "gatewayErrorType": null,
+      "requestId": "91a9a5b2-8fa9-4444-9153-158b15ffcecc",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-05:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-03T15:30:19.719Z",
+      "latencyMs": 4595,
+      "gatewayRequestId": "0711d47e-cf71-40d7-8c82-414b743805b9",
+      "gatewayExtendedRequestId": "ErHekFsRSQ0ECPg=",
+      "gatewayErrorType": null,
+      "requestId": "0711d47e-cf71-40d7-8c82-414b743805b9",
+      "errorCode": null,
+      "businessRequestId": "8f51d5f4-4567-46c3-bb3d-c09a7b34629b"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-05:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:30:24.316Z",
+      "latencyMs": 3541,
+      "gatewayRequestId": "765e89b0-8aab-48e1-a619-28376263be77",
+      "gatewayExtendedRequestId": "ErHe2E7qyQ0EQGA=",
+      "gatewayErrorType": null,
+      "requestId": "765e89b0-8aab-48e1-a619-28376263be77",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-05:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:30:27.858Z",
+      "latencyMs": 1853,
+      "gatewayRequestId": "853ff374-7305-4c37-9050-3a693b32a62c",
+      "gatewayExtendedRequestId": "ErHfZFhdyQ0EABw=",
+      "gatewayErrorType": null,
+      "requestId": "853ff374-7305-4c37-9050-3a693b32a62c",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-06:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-03T15:30:29.758Z",
+      "latencyMs": 2850,
+      "gatewayRequestId": "adb14178-df9d-46ca-8263-cde105b6201f",
+      "gatewayExtendedRequestId": "ErHf4GqAyQ0EZqg=",
+      "gatewayErrorType": null,
+      "requestId": "adb14178-df9d-46ca-8263-cde105b6201f",
+      "errorCode": null,
+      "businessRequestId": "303d9108-f0d9-4b26-9247-bebf2e6c5369"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-06:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:30:32.610Z",
+      "latencyMs": 5151,
+      "gatewayRequestId": "c8f212c0-67db-4629-abb5-c31a123a22c8",
+      "gatewayExtendedRequestId": "ErHgsFtGSQ0EZWA=",
+      "gatewayErrorType": null,
+      "requestId": "c8f212c0-67db-4629-abb5-c31a123a22c8",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-06:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:30:37.762Z",
+      "latencyMs": 4236,
+      "gatewayRequestId": "406a3ef8-f777-4ba7-ad11-f718656a9aeb",
+      "gatewayExtendedRequestId": "ErHhTHuByQ0EQXw=",
+      "gatewayErrorType": null,
+      "requestId": "406a3ef8-f777-4ba7-ad11-f718656a9aeb",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-07:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-03T15:30:42.061Z",
+      "latencyMs": 3317,
+      "gatewayRequestId": "ca6672b0-e576-4540-85cf-7627728d806c",
+      "gatewayExtendedRequestId": "ErHhnGixyQ0Ee8Q=",
+      "gatewayErrorType": null,
+      "requestId": "ca6672b0-e576-4540-85cf-7627728d806c",
+      "errorCode": null,
+      "businessRequestId": "13955ff6-045a-49bb-8a46-0870eb08672e"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-07:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:30:45.380Z",
+      "latencyMs": 2270,
+      "gatewayRequestId": "e4e1ccbb-333c-4bb1-87ab-43cbd3a68146",
+      "gatewayExtendedRequestId": "ErHiOE0MSQ0Ec4g=",
+      "gatewayErrorType": null,
+      "requestId": "e4e1ccbb-333c-4bb1-87ab-43cbd3a68146",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-07:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:30:47.652Z",
+      "latencyMs": 5241,
+      "gatewayRequestId": "79a8f66c-8949-41aa-b95d-3b146db7a547",
+      "gatewayExtendedRequestId": "ErHjCHFMSQ0EZ-A=",
+      "gatewayErrorType": null,
+      "requestId": "79a8f66c-8949-41aa-b95d-3b146db7a547",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-08:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-03T15:30:52.946Z",
+      "latencyMs": 5945,
+      "gatewayRequestId": "0b9901ba-4017-4202-97f9-a6c31135c70b",
+      "gatewayExtendedRequestId": "ErHj-HDCSQ0EdvA=",
+      "gatewayErrorType": null,
+      "requestId": "0b9901ba-4017-4202-97f9-a6c31135c70b",
+      "errorCode": null,
+      "businessRequestId": "cf7d9138-dde7-4ec3-8d17-59dd82b0edb3"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-08:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:30:58.893Z",
+      "latencyMs": 3790,
+      "gatewayRequestId": "8b946a4b-7a82-4a89-a803-d18353030659",
+      "gatewayExtendedRequestId": "ErHkkH1MSQ0ELjw=",
+      "gatewayErrorType": null,
+      "requestId": "8b946a4b-7a82-4a89-a803-d18353030659",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-08:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:31:02.685Z",
+      "latencyMs": 5185,
+      "gatewayRequestId": "c6225974-4d1d-4bcb-80c6-ec881dc07250",
+      "gatewayExtendedRequestId": "ErHlYFAByQ0EPkQ=",
+      "gatewayErrorType": null,
+      "requestId": "c6225974-4d1d-4bcb-80c6-ec881dc07250",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-09:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-03T15:31:07.936Z",
+      "latencyMs": 4457,
+      "gatewayRequestId": "628c5596-2d40-4267-b767-793f2a956d4e",
+      "gatewayExtendedRequestId": "ErHmFE8gSQ0ET4w=",
+      "gatewayErrorType": null,
+      "requestId": "628c5596-2d40-4267-b767-793f2a956d4e",
+      "errorCode": null,
+      "businessRequestId": "1085f1b2-fc0d-451e-90ad-9f4313a6a7b2"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-09:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:31:12.395Z",
+      "latencyMs": 2233,
+      "gatewayRequestId": "59db37f8-162b-4112-acc4-cd111555919f",
+      "gatewayExtendedRequestId": "ErHmcFQgyQ0ENAw=",
+      "gatewayErrorType": null,
+      "requestId": "59db37f8-162b-4112-acc4-cd111555919f",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-09:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:31:14.629Z",
+      "latencyMs": 2297,
+      "gatewayRequestId": "a98f7972-5ef4-4280-9862-78ddd21714d9",
+      "gatewayExtendedRequestId": "ErHmzFfhSQ0EAkQ=",
+      "gatewayErrorType": null,
+      "requestId": "a98f7972-5ef4-4280-9862-78ddd21714d9",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-10:csr-create",
+      "result": "PASS",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-03T15:31:17.011Z",
+      "latencyMs": 4676,
+      "gatewayRequestId": "6159aea3-1250-4245-832b-4ec4e7d25977",
+      "gatewayExtendedRequestId": "ErHnUGQjyQ0EWrQ=",
+      "gatewayErrorType": null,
+      "requestId": "6159aea3-1250-4245-832b-4ec4e7d25977",
+      "errorCode": null,
+      "businessRequestId": "e9d098c8-966b-4311-b119-950fefddcb5d"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-10:admin-detail",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:31:21.688Z",
+      "latencyMs": 3246,
+      "gatewayRequestId": "5fdfa87e-dd55-4a02-a249-bfe13b59a583",
+      "gatewayExtendedRequestId": "ErHoDFKOSQ0ELjw=",
+      "gatewayErrorType": null,
+      "requestId": "5fdfa87e-dd55-4a02-a249-bfe13b59a583",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-10:approve",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:31:24.935Z",
+      "latencyMs": 3433,
+      "gatewayRequestId": "5e3eb090-1527-418a-9033-c57cb00a59ce",
+      "gatewayExtendedRequestId": "ErHoVHFTyQ0ELMg=",
+      "gatewayErrorType": null,
+      "requestId": "5e3eb090-1527-418a-9033-c57cb00a59ce",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-01:signed-status-39",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-01:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-01:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-02:signed-status-42",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-02:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-02:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-03:signed-status-45",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-03:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-03:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-04:signed-status-48",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-04:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-04:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-05:signed-status-51",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-05:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-05:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-06:signed-status-54",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-06:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-06:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-07:signed-status-57",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-07:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-07:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-08:signed-status-60",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-08:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-08:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-09:signed-status-63",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-10:signed-status-64",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-10:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-10:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-09:signed-status-67",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-09:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-09:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "ten-concurrent-independent-mqtt-sessions",
+      "result": "PASS",
+      "count": 10,
+      "keyFingerprints": [
+        "a52ded751cdfa90d3420d2ea3ea2b8a3fd455efb1273d26d71dc645a68f8e371",
+        "18eaf39377dde68071433d7a7c5f6a1992a05d10659db5aa4149c0bbc00f642d",
+        "ba2dea70970e2e7c5c985e46fcbf0bc2a7ad04cb0b81b245387506f36bb5d607",
+        "3e1f595a5fc91f34a5f5d0d0b16c0bddf983649aa14b7e32e60f09ce7923931a",
+        "c47a377f025123604bd79cb53923e0d6472a819722aac5d0ba7dc75d44470265",
+        "abe6578b39aa4f34e9065c7d4376036e82217b1b51413fcaba123417b520a811",
+        "6c549e7f249d5e10bc1b7241606217d24ac2684bfea5b726e2dbd3391f6010e6",
+        "71585d47c60359a6f9c82418a3e6188bcd357ef6cf0565cdbfd5e971f293fe3b",
+        "1f89a139e2e22d856a2e2b34af5173b452f947050807bff47e074694a374458a",
+        "bea35144eb31a7a62440f90891b93504b0be5671013f558f70fc95722e8c3075"
+      ]
+    },
+    {
+      "id": "first-heartbeat-completes-ten-onboardings",
+      "result": "PASS"
+    },
+    {
+      "id": "claimed-certificate-identities-match-rds",
+      "result": "PASS"
+    },
+    {
+      "id": "ten-active-packages-destroyed",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-01:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "6b499c34-b930-45c3-96e7-3c1bbc30124b"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-02:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "684c6b59-4e53-4efc-8439-33a1f01e8d07"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-03:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "eabd0e65-dcf6-434a-9683-6a5778ea945f"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-04:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "5b94e8cd-1f83-431e-853f-a03a6dd206fd"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-05:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "682642f7-b364-4932-ba52-db03dd74cf6c"
+    },
+    {
+      "id": "qa09-53e391d7d2f5c357-06:real-mtls-sync",
+      "result": "FAIL",
+      "status": 0
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:41:36.952Z",
+      "latencyMs": 9476,
+      "gatewayRequestId": "e5b56984-a80a-4438-a482-f209d668095f",
+      "gatewayExtendedRequestId": "ErJIXHhMyQ0EJIQ=",
+      "gatewayErrorType": null,
+      "requestId": "e5b56984-a80a-4438-a482-f209d668095f",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:41:46.429Z",
+      "latencyMs": 2169,
+      "gatewayRequestId": "c7a2745c-9932-4be5-bcc0-b0b7ae4afd69",
+      "gatewayExtendedRequestId": "ErJJbHTmyQ0EbcA=",
+      "gatewayErrorType": null,
+      "requestId": "c7a2745c-9932-4be5-bcc0-b0b7ae4afd69",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-b",
+      "result": "PASS",
+      "status": 404,
+      "expected": 404,
+      "startedAt": "2026-10-03T15:41:48.600Z",
+      "latencyMs": 497,
+      "gatewayRequestId": "f909f358-b54d-422b-9e70-187ecbc309f7",
+      "gatewayExtendedRequestId": "ErJJlHwzSQ0EcqQ=",
+      "gatewayErrorType": null,
+      "requestId": "f909f358-b54d-422b-9e70-187ecbc309f7",
+      "errorCode": "NOT_FOUND"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:41:49.099Z",
+      "latencyMs": 1687,
+      "gatewayRequestId": "26ac80d6-7110-448a-b82e-14c222e5bf4b",
+      "gatewayExtendedRequestId": "ErJJqEjoyQ0EZ1g=",
+      "gatewayErrorType": null,
+      "requestId": "26ac80d6-7110-448a-b82e-14c222e5bf4b",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "PASS",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-03T15:41:50.787Z",
+      "latencyMs": 816,
+      "gatewayRequestId": "7a1f3786-c6f9-4d37-a658-a478b34a49a6",
+      "gatewayExtendedRequestId": "ErJJ7F94yQ0EOtA=",
+      "gatewayErrorType": null,
+      "requestId": "7a1f3786-c6f9-4d37-a658-a478b34a49a6",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-a",
+      "result": "PASS",
+      "status": 404,
+      "expected": 404,
+      "startedAt": "2026-10-03T15:41:51.605Z",
+      "latencyMs": 534,
+      "gatewayRequestId": "b87c9b28-bc5c-4a16-8750-598bbc97c49e",
+      "gatewayExtendedRequestId": "ErJKDHmxyQ0EdxA=",
+      "gatewayErrorType": null,
+      "requestId": "b87c9b28-bc5c-4a16-8750-598bbc97c49e",
+      "errorCode": "NOT_FOUND"
+    }
+  ],
+  "published": [
+    {
+      "deviceId": "qa09-53e391d7d2f5c357-07",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-23CB0F32-1",
+      "bodySha256": "e4e8153b55d15378391b116c4ef3552a06c0d03585b72346e130b46ca096d07a",
+      "payloadSha256": "e7c9cf9fc4e55d45d706b74997674232f2749d6a8f55883a0c0ef3b5cf4a2289"
+    },
+    {
+      "deviceId": "qa09-53e391d7d2f5c357-09",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-EA803DBA-1",
+      "bodySha256": "fbcbfe0a9ae60261c6a41e6d90c04e6032349401062af7a125d32c5a3d688990",
+      "payloadSha256": "2a1e89170b9cad7b84af7e4b867afbc1227b3bb57ddf36010b3009a94e05be13"
+    },
+    {
+      "deviceId": "qa09-53e391d7d2f5c357-06",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-5681052D-1",
+      "bodySha256": "8e455797b946bc50b164c3a894bdabdec297df15234e45e755c83f785d77c71c",
+      "payloadSha256": "5c02bf5c28fc6399f3716392c8f7d160ecc04a2d476720da8c77ccf2f4df726f"
+    },
+    {
+      "deviceId": "qa09-53e391d7d2f5c357-03",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-9E1150F1-1",
+      "bodySha256": "0d69f48ab5b73a7f7f29b5805a129d2edda42348c4de7a099d2ed122e6e0f69f",
+      "payloadSha256": "a2f7b559bc36fe795b0b53051b33f03946086aa711ccbdd3e7205f0e4e80bb90"
+    },
+    {
+      "deviceId": "qa09-53e391d7d2f5c357-02",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-349871EB-1",
+      "bodySha256": "37445cec4619be0db276ebc41eff31b66368d5dc4c5461ac881912eee255e217",
+      "payloadSha256": "042a4025b45199f340a1370102999c38a205f923315b4ff4bd8cbcae3ce1b6bf"
+    },
+    {
+      "deviceId": "qa09-53e391d7d2f5c357-04",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-64B6F673-1",
+      "bodySha256": "73ed3c5721619aa1022f164be994001f34240531458a40bd9f0d8f0bd8dd7d66",
+      "payloadSha256": "8a94e7755cbd985d0126ef2a85caa290637b1a5775f082a7c51ae49b407d7a96"
+    },
+    {
+      "deviceId": "qa09-53e391d7d2f5c357-05",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-E8C0546D-1",
+      "bodySha256": "26d7723a24a733ff0501f4b9b72801cb6b332dc84f0af689784070b3628e0bfa",
+      "payloadSha256": "c09956234b20cf9b17cee5f0ac973b62c475a3da90e9366b7f1646d499c84d8f"
+    },
+    {
+      "deviceId": "qa09-53e391d7d2f5c357-10",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-B8F3ED62-1",
+      "bodySha256": "a32f402fb8f65b7258a32f84d88cca07bb80bcfc716194c328873b393928c4c3",
+      "payloadSha256": "5431d04686b22da428b742b697a60040e0bc2d325a84b5c6c80a51f71f753331"
+    },
+    {
+      "deviceId": "qa09-53e391d7d2f5c357-01",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-A0EF8336-1",
+      "bodySha256": "b51929747acdf4014dd98194fc97d29f3c0293697dfc027f63d263395007e1b9",
+      "payloadSha256": "063d6a3b458317ca9144f55ec7e3ae3a7b680d83756ae324993ec8c2e0884211"
+    },
+    {
+      "deviceId": "qa09-53e391d7d2f5c357-08",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-E1806C73-1",
+      "bodySha256": "b6b4d44563cc5eb46855a8ff421e376822c5cd12aac8187ed39a966f982328cb",
+      "payloadSha256": "fdd0f63677684f9fb97a53ab0cc72b6d3c253a97f908bc407326efda571a16d3"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "seed",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:c9835c31-9658-44fd-8a5c-3d8612315f75",
+      "receipt": "docs/audit/evidence/qa-09-performance-remediation-2026-10-03/b885e11-real-slo.json.devices.json.seed-0.json"
+    },
+    {
+      "action": "observe",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:74baac7a-1a66-4fa4-9646-e0db7c16146a",
+      "receipt": "docs/audit/evidence/qa-09-performance-remediation-2026-10-03/b885e11-real-slo.json.devices.json.observe-1.json"
+    },
+    {
+      "action": "observe",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:5930c567-34a9-4e8a-bc66-5f4641eb945d",
+      "receipt": "docs/audit/evidence/qa-09-performance-remediation-2026-10-03/b885e11-real-slo.json.devices.json.observe-2.json"
+    },
+    {
+      "action": "cleanup",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:c9960f4f-6842-4fbf-83ea-ffe116c6e618",
+      "receipt": "docs/audit/evidence/qa-09-performance-remediation-2026-10-03/b885e11-real-slo.json.devices.json.cleanup-3.json"
+    }
+  ],
+  "archiveObjects": [],
+  "cleanup": [
+    {
+      "type": "iot-certificate",
+      "id": "b5c77ba59cee56e91b85f3f35b3a3cc9e7baafdd3f811ee208b2b621df1f9174",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "9c78b5c0846ca93f63032e3bf2e6e1517951c48750c19ec9f22b4acf645b87cf",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "7a2440dd509d04281f579d9aa1ed5f9650cc8865c73570d21a1a10b7735a31d0",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "c4368461acb22b4fe0558c7f0a4a08c960698d7ad468f3ddd14eedd47b0ac760",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "24e1de0b002162fad08005c767a2092c6729cfd568dbc39fa956aca011735dee",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "044d9aff936c9d396c0644553fd72960d76959f4834187242942ca5222905363",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "c4e6ee8df61e9f07eff1c04f66e0b2df23e8747c27a6cbcd1c533f3fe08dfae6",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "7caaf6f6d9ee33b59a4eb7f3c6da329668dc8e3d36f64511665a6187048052dc",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "ac585689ae8e8efac026dc4a868b3bea900d4c04e22ed68b86ec83cde5ceb632",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "4c457603083c23efc3313226e4968aea217236cb3e1c3bb6c33a34e2bb2e7c2d",
+      "result": "PASS"
+    },
+    {
+      "type": "database-fixtures",
+      "count": 10,
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "7c7da7e6-4fad-4b19-acc8-0e21191ae8ef",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "f2dd2be7-c0bd-4ea1-87c6-a23253cc3449",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-53e391d7d2f5c357-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "gate": "FAIL",
+  "fullQa09Accepted": false,
+  "identity": {
+    "username": "qa09-53e391d7d2f5c357-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "failure": {
+    "code": "qa09-53e391d7d2f5c357-06:real-mtls-sync",
+    "errorClass": "Error"
+  },
+  "archiveKeys": [],
+  "finishedAt": "2026-10-03T15:41:58.910Z"
+}

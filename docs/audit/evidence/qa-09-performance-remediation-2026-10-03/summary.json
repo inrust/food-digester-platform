@@ -1,8 +1,8 @@
 {
   "task": "QA-09",
-  "date": "2026-10-03",
+  "date": "2026-10-04",
   "baseCommit": "890408f22f4f3966480a2be2eacbe0e82224f038",
-  "sharedApplicationCommit": "7c6f356b6917accd6cf562cb4bd6d5990416740f",
+  "sharedApplicationCommit": "b885e1174fdf0626e1a5e6c12ae55de4ddf3dcb9",
   "fullQa09Gate": "PARTIAL",
   "sourceGate": "PASS",
   "candidateBudget": {
@@ -16,10 +16,10 @@
     "publisherPoolMax": 1,
     "sqsMaxConcurrency": 2,
     "candidateMemoryMB": 512,
-    "deployed": false
+    "deployed": true
   },
-  "runtimeDeploymentGate": "NOT_RUN_REQUIRES_HUMAN_GITHUB_DESKTOP_PUSH_AND_EXACT_SHA_RECEIPTS",
-  "commandTelemetryArchiveRetestGate": "NOT_RUN_NEW_SOURCE_NOT_DEPLOYED",
+  "runtimeDeploymentGate": "PASS",
+  "commandTelemetryArchiveRetestGate": "PASS_REAL_SLO_AND_QUICK_ARCHIVE",
   "dlq": {
     "liveRetiredCommands": 20,
     "remainingCommands": 0,
@@ -35,7 +35,9 @@
     "controlledWorkerSourceTested": true,
     "cloudformationGate": "STOPPED_CONDITIONAL_RDS_EVENT_SOURCE_CHANGESET_NOT_EXECUTED",
     "ownChangeSetAndUploadCleanup": "PASS",
-    "keyManagementPrecondition": "PENDING_EXISTING_KEY_MANAGEMENT_CHANNEL"
+    "keyManagementPrecondition": "PENDING_EXISTING_KEY_MANAGEMENT_CHANNEL",
+    "latestKeyStatementReceipt": "dlq-operator-patch-resumed-state.json",
+    "oldProposalExpiry": "EXPIRED_DO_NOT_AUTO_RENEW"
   },
   "localValidation": {
     "pnpm verify": "PASS_BEFORE_FINAL_INCREMENTAL_OBSERVATION_AND_ARCHIVE_DEADLINE_FILES",
@@ -45,22 +47,25 @@
       "gate": "PASS"
     },
     "finalScriptTests": {
-      "tests": 401,
-      "gate": "PASS"
+      "tests": 407,
+      "gate": "PASS",
+      "receipt": "b885e11-harness-final-script-tests.log"
     },
     "finalTypecheck": {
       "tasks": 21,
       "gate": "PASS"
     },
-    "lint": "PASS",
-    "format": "PASS",
+    "lint": "PASS_LATEST_HARNESS",
+    "format": "PASS_LATEST_HARNESS",
     "secrets": "PASS",
     "sensitiveSinks": "PASS",
     "diffCheck": "PASS_EXCLUDING_RAW_LOG_WHITESPACE",
     "fullOwnEvidenceSecretScan": {
-      "files": 28,
       "gate": "PASS",
-      "sizeLimitApplied": false
+      "files": 129,
+      "sizeLimitApplied": false,
+      "frozenSourceBytesAlsoScanned": true,
+      "findings": []
     }
   },
   "originalFailuresPreserved": {
@@ -69,5 +74,48 @@
     "telemetrySamples": 20,
     "archiveGate": "FAIL"
   },
-  "gitPushed": false
+  "gitPushed": true,
+  "applicationCandidateCommit": "b885e1174fdf0626e1a5e6c12ae55de4ddf3dcb9",
+  "humanPushConfirmed": true,
+  "liveConfigurationBudgetGate": "PASS",
+  "liveConfigurationBudgetReceipt": "b885e11-runtime-capacity.json",
+  "applicationArtifactByteGate": "PASS_19_OF_19",
+  "realSlo": {
+    "receipt": "b885e11-real-slo-retry.json.slo.json",
+    "telemetrySamples": 20,
+    "telemetryVisible": 20,
+    "telemetryP95Ms": 1665,
+    "telemetryGate": "PASS",
+    "commandSamples": 20,
+    "commandReceived": 20,
+    "commandP95Ms": 1610,
+    "commandGate": "PASS",
+    "coldSamples": 0,
+    "warmSamples": 20,
+    "full24HourProfile": "NOT RUN",
+    "completeArchiveGate": "PASS",
+    "authenticationContractGate": "FAIL_403_VS_401",
+    "desktopBrowserGate": "FAIL_TIMEOUT",
+    "fullQa09Accepted": false
+  },
+  "mqttArchiveRetest": {
+    "prefix": "qa09-5b1103c686e1982a",
+    "receipt": "b885e11-mqtt-archive-retest.json",
+    "gate": "PASS",
+    "puback": 965,
+    "uniqueProcessed": 950,
+    "archiveObjects": 920,
+    "exactOriginalAndCanonicalHashes": "PASS",
+    "burstUnique": 300,
+    "burstSeconds": 9.684,
+    "archiveDeadlineAt": "2026-10-04T01:27:32.508Z",
+    "latestS3Write": "2026-10-04T01:24:27.000Z",
+    "cleanupGate": "PASS",
+    "full24HourProfileExecuted": false,
+    "queueRedeliveryGate": "BLOCKED_KMS_ACCESS_DENIED",
+    "domainCleanupGate": "PASS",
+    "parentAssertions": 124,
+    "cleanupChecks": 15,
+    "finishedAt": "2026-10-04T01:32:39.018Z"
+  }
 }

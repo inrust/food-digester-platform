@@ -11,12 +11,24 @@ import { qa09VersionInputs } from './qa09-version-inputs.mjs';
 const versionInputs = qa09VersionInputs();
 export const ACCEPTANCE_COMMIT = versionInputs.commit;
 export const EXECUTOR_BASELINE = versionInputs.commit;
+export function codeRangeTimeoutMs(env = process.env) {
+  const raw = env.QA09_CODE_RANGE_TIMEOUT_MS ?? '45000';
+  if (!/^[1-9][0-9]{0,5}$/.test(raw) || Number(raw) < 45000 || Number(raw) > 180000)
+    throw Error('INVALID_CODE_RANGE_TIMEOUT');
+  return Number(raw);
+}
+export function codeRangeConcurrency(env = process.env) {
+  const raw = env.QA09_CODE_RANGE_CONCURRENCY ?? '8';
+  if (!/^[1-9][0-9]?$/.test(raw) || Number(raw) > 32) throw Error('INVALID_CODE_RANGE_CONCURRENCY');
+  return Number(raw);
+}
 function command(name, args) {
   for (let attempt = 0; attempt < 3; attempt++) {
-    const r = spawnSync(name, args, { encoding: 'utf8', timeout: 45000, maxBuffer: 16 * 1024 * 1024 });
+    // The large CloudFormation template uses the same bounded slow-link allowance as asset reads.
+    const r = spawnSync(name, args, { encoding: 'utf8', timeout: codeRangeTimeoutMs(), maxBuffer: 16 * 1024 * 1024 });
     if (r.status === 0) return JSON.parse(r.stdout);
   }
-  throw Error('VERSION_READ_FAILED');
+  throw Object.assign(Error('VERSION_READ_FAILED'), { readOperation: `${name}:${args[0]}:${args[1]}` });
 }
 const aws = (args) =>
   command('aws', [
@@ -30,6 +42,8 @@ const aws = (args) =>
     '--no-cli-pager',
   ]);
 export async function collect(output, runtimeOnly = false, reusePassed = false) {
+  const rangeTimeoutMs = codeRangeTimeoutMs();
+  const rangeConcurrency = codeRangeConcurrency();
   const prior = reusePassed ? JSON.parse(readFileSync(output)) : null;
   const receipt = {
     task: 'QA-09',
@@ -49,6 +63,8 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
     blockers: [],
     lambdaArtifacts: [],
     rangeTransport: process.env.QA09_CODE_RANGE_TRANSPORT ?? 'cli',
+    rangeTimeoutMs,
+    rangeConcurrency,
   };
   const save = () => writeFileSync(output, JSON.stringify(receipt, null, 2) + '\n');
   if (aws(['sts', 'get-caller-identity']).Account !== receipt.accountId) throw Error('WRONG_ACCOUNT');
@@ -176,7 +192,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
           Range: value('--range'),
           VersionId: value('--version-id'),
         }),
-        { abortSignal: AbortSignal.timeout(45000) },
+        { abortSignal: AbortSignal.timeout(rangeTimeoutMs) },
       );
       const bytes = await response.Body.transformToByteArray();
       if (bytes.length > 262144) throw Error('CODE_RANGE_SIZE_EXCEEDED');
@@ -188,7 +204,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
         await execute(
           'aws',
           [...args, '--profile', 'esgiot-readonly', '--region', receipt.region, '--output', 'json', '--no-cli-pager'],
-          { timeout: 45000, maxBuffer: 1048576 },
+          { timeout: rangeTimeoutMs, maxBuffer: 1048576 },
         )
       ).stdout,
     );
@@ -304,7 +320,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
   let next = 0;
   let completed = 0;
   await Promise.all(
-    Array.from({ length: 8 }, async () => {
+    Array.from({ length: rangeConcurrency }, async () => {
       while (next < tasks.length) {
         const i = next++;
         await tasks[i]();
@@ -342,7 +358,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       console.log(JSON.stringify({ gate: r.gate, blockers: r.blockers, lambdaCount: r.lambdaArtifacts.length }));
       process.exitCode = r.gate === 'PASS' || r.applicationVersionGate === 'PASS' ? 0 : 1;
     })
-    .catch(() => {
-      console.error('QA09_VERSION_COLLECTION_FAILED');
+    .catch((error) => {
+      console.error(
+        JSON.stringify({
+          event: 'QA09_VERSION_COLLECTION_FAILED',
+          code: /^[A-Z_]+$/.test(error.message ?? '') ? error.message : 'UNEXPECTED_VERSION_ERROR',
+          readOperation: error.readOperation ?? null,
+        }),
+      );
       process.exitCode = 1;
     });

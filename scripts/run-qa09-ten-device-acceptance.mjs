@@ -466,11 +466,19 @@ export async function main(output, versionPath, extension) {
         observation.certificates.every((c) => c.status === 'ACTIVE' && c.package_destroyed && c.mqtt_verified_at),
     );
     for (const [id, k] of held) {
+      const startedAt = new Date().toISOString(),
+        start = performance.now();
       const res = await mtlsPost(k.cert, k.key);
       check(
         id + ':real-mtls-sync',
         res.status === 200 && (res.body?.deviceId === id || res.body?.device?.deviceId === id),
-        { status: res.status, requestId: res.requestId },
+        {
+          status: res.status,
+          requestId: res.requestId,
+          errorCode: res.errorCode ?? null,
+          startedAt,
+          latencyMs: Math.round(performance.now() - start),
+        },
       );
     }
     const missing = await mtlsPost();

@@ -32,7 +32,7 @@ export async function readVerifiedFixtureFrame(
       const code = e.code ?? e.message;
       if (
         e.message !== 'FIXTURE_FRAME_TRUNCATED' &&
-        !/(CLI_FAILED|Throttl|RequestTimeout|ServiceUnavailable|NetworkingError)/.test(code)
+        !/(CLI_FAILED|CLI_READ_TIMEOUT|Throttl|RequestTimeout|ServiceUnavailable|NetworkingError)/.test(code)
       )
         throw e;
       observations.push({ attempt, errorCode: code });

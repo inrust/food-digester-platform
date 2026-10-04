@@ -23,3 +23,65 @@ test('CloudWatch 250000-character fragments reassemble exact source-bound metada
   assert.throws(() => decodeFixtureFrames([{ message: encoded + 'x'.repeat(9 * 1024 * 1024) }]), /FIXTURE_LOG_LIMIT/);
   assert.deepEqual(decodeFixtureFrames([{ message: JSON.stringify({ kind: 'other' }) }]), []);
 });
+
+test('large fixture observations round-trip through bounded gzip without losing metadata', async () => {
+  const { encodeFixtureFrame } = await import('./qa09-ten-device-db.mjs');
+  const frame = {
+    kind: 'fdp-qa09-ten-device-db/v1',
+    prefix: 'qa09-1234567890abcdef',
+    sourceHash: 'a'.repeat(64),
+    buildId: 'own-build',
+    action: 'observe',
+    gate: 'PASS',
+    records: Array.from({ length: 950 }, (_, i) => ({
+      id: i,
+      status: 'PUBLISHED',
+      payload: 'historical-telemetry'.repeat(40),
+    })),
+  };
+  const encoded = encodeFixtureFrame(frame);
+  assert.equal(JSON.parse(encoded).kind, 'fdp-qa09-ten-device-db/gzip-v1');
+  assert.ok(encoded.length < JSON.stringify(frame).length / 10);
+  assert.deepEqual(decodeFixtureFrames([{ message: encoded.slice(0, 100) }, { message: encoded.slice(100) }]), [frame]);
+  assert.equal(JSON.parse(encodeFixtureFrame({ kind: frame.kind, gate: 'PASS' })).kind, frame.kind);
+});
+
+test('compressed fixture frames reject corruption, noncanonical data and decompression bombs', async () => {
+  const { encodeFixtureFrame } = await import('./qa09-ten-device-db.mjs');
+  const { gzipSync } = await import('node:zlib');
+  const frame = JSON.parse(encodeFixtureFrame({ kind: 'fdp-qa09-ten-device-db/v1', records: 'x'.repeat(70000) }));
+  const decode = (value) => decodeFixtureFrames([{ message: JSON.stringify(value) }]);
+  assert.throws(() => decode({ ...frame, sha256: '0'.repeat(64) }), /FIXTURE_FRAME_DIGEST_MISMATCH/);
+  assert.throws(() => decode({ ...frame, rawBytes: frame.rawBytes - 1 }), /FIXTURE_FRAME_DIGEST_MISMATCH/);
+  assert.throws(() => decode({ ...frame, payloadBase64: frame.payloadBase64 + '!' }), /FIXTURE_FRAME_ENCODING/);
+  assert.throws(
+    () => decode({ ...frame, rawBytes: 1, payloadBase64: gzipSync(Buffer.alloc(9 * 1024 * 1024)).toString('base64') }),
+    /FIXTURE_FRAME_ENCODING/,
+  );
+  assert.throws(
+    () => encodeFixtureFrame({ kind: 'fdp-qa09-ten-device-db/v1', records: 'x'.repeat(9 * 1024 * 1024) }),
+    /FIXTURE_FRAME_LIMIT/,
+  );
+});
+
+test('compressed metadata still requires the exact expected source/build/action binding', async () => {
+  const { encodeFixtureFrame } = await import('./qa09-ten-device-db.mjs');
+  const { readVerifiedFixtureFrame } = await import('./qa09-db-frame-wait.mjs');
+  const frame = {
+    kind: 'fdp-qa09-ten-device-db/v1',
+    prefix: 'qa09-1234567890abcdef',
+    sourceHash: 'b'.repeat(64),
+    buildId: 'own-build',
+    action: 'observe',
+    gate: 'PASS',
+    records: 'x'.repeat(70000),
+  };
+  await assert.rejects(
+    () =>
+      readVerifiedFixtureFrame(async () => ({ events: [{ message: encodeFixtureFrame(frame) }] }), {
+        ...frame,
+        sourceHash: 'a'.repeat(64),
+      }),
+    /FIXTURE_RESULT_NOT_VERIFIED/,
+  );
+});

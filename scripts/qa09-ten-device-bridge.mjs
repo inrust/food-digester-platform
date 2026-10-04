@@ -20,7 +20,9 @@ function aws(args, profile = 'esgiot-infra') {
     },
   );
   if (r.status !== 0) {
-    const code = r.stderr?.match(/An error occurred \(([A-Za-z0-9]+)\)/)?.[1] ?? 'CLI_FAILED';
+    const code =
+      r.stderr?.match(/An error occurred \(([A-Za-z0-9]+)\)/)?.[1] ??
+      (r.error?.code === 'ETIMEDOUT' ? 'CLI_READ_TIMEOUT' : 'CLI_FAILED');
     throw Object.assign(Error('AWS_OPERATION_FAILED'), { code: `AWS_${args[1]}_${code}` });
   }
   return r.stdout ? JSON.parse(r.stdout) : null;
