@@ -1,0 +1,21 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OwnCommandDlqOnly",
+      "Effect": "Allow",
+      "Action": [
+        "sqs:GetQueueAttributes",
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:ChangeMessageVisibility"
+      ],
+      "Resource": "arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-command-publish-dlq",
+      "Condition": {
+        "DateLessThan": {
+          "aws:CurrentTime": "2026-10-05T00:00:00Z"
+        }
+      }
+    }
+  ]
+}

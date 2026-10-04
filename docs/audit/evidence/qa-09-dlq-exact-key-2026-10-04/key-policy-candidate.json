@@ -1,0 +1,413 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "KeyAdministrationOnly",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:root"
+      },
+      "Action": [
+        "kms:Create*",
+        "kms:Describe*",
+        "kms:Enable*",
+        "kms:List*",
+        "kms:Put*",
+        "kms:Update*",
+        "kms:Revoke*",
+        "kms:Disable*",
+        "kms:Get*",
+        "kms:Delete*",
+        "kms:TagResource",
+        "kms:UntagResource",
+        "kms:ScheduleKeyDeletion",
+        "kms:CancelKeyDeletion",
+        "kms:RotateKeyOnDemand"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ApplicationRuntimeDataPlane",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:root"
+      },
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "ArnEquals": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::065986019555:role/fdp-test-ingestion-role",
+            "arn:aws:iam::065986019555:role/fdp-test-archive-role",
+            "arn:aws:iam::065986019555:role/fdp-test-outbox-publisher-role",
+            "arn:aws:iam::065986019555:role/fdp-test-replay-trigger-publisher-role",
+            "arn:aws:iam::065986019555:role/fdp-test-replay-role",
+            "arn:aws:iam::065986019555:role/fdp-test-api-role",
+            "arn:aws:iam::065986019555:role/fdp-test-device-api-role",
+            "arn:aws:iam::065986019555:role/fdp-test-activity-export-role",
+            "arn:aws:iam::065986019555:role/fdp-test-esg-export-role"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "CommandQueueConsumerDecrypt",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:root"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:EncryptionContext:aws:sqs:arn": "arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-command-publish",
+          "kms:ViaService": "sqs.ap-southeast-1.amazonaws.com"
+        },
+        "ArnEquals": {
+          "aws:PrincipalArn": "arn:aws:iam::065986019555:role/fdp-test-command-publisher-role"
+        }
+      }
+    },
+    {
+      "Sid": "IotRuleQueueEncryption",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:root"
+      },
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "ArnEquals": {
+          "aws:PrincipalArn": "arn:aws:iam::065986019555:role/fdp-test-iot-rule"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:root"
+      },
+      "Action": [
+        "kms:Decrypt",
+        "kms:Encrypt",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:root"
+      },
+      "Action": [
+        "kms:CreateGrant",
+        "kms:DescribeKey"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-migration-runner-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-admin-bootstrap-runner-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-ingestion-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-outbox-publisher-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-notification-publisher-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-summary-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-replay-trigger-publisher-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-replay-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-cert-package-sweeper-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-onboarding-deadline-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-retirement-timeout-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-activity-export-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-esg-export-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-command-publisher-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-command-timeout-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-ota-dispatcher-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-onboarding-api-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-onboarding-provisioning-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-device-api-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:role/fdp-test-api-role"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "Qa09CommandDlqDiagnosticDecrypt",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::065986019555:root"
+      },
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "ArnEquals": {
+          "aws:PrincipalArn": "arn:aws:iam::065986019555:role/fdp-test-command-publisher-role"
+        },
+        "StringEquals": {
+          "kms:ViaService": "sqs.ap-southeast-1.amazonaws.com",
+          "kms:EncryptionContext:aws:sqs:arn": "arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-command-publish-dlq"
+        },
+        "DateLessThan": {
+          "aws:CurrentTime": "2026-10-05T00:00:00Z"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TemporaryQA09ManageExactCommandPublisherInline",
+      "Effect": "Allow",
+      "Action": [
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy"
+      ],
+      "Resource": "arn:aws:iam::065986019555:role/fdp-test-command-publisher-role",
+      "Condition": {
+        "DateLessThan": {
+          "aws:CurrentTime": "2026-10-05T00:00:00Z"
+        }
+      }
+    },
+    {
+      "Sid": "DenyExactQAKeyPutPolicyAfterTemporaryWindow",
+      "Effect": "Deny",
+      "Action": "kms:PutKeyPolicy",
+      "Resource": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c",
+      "Condition": {
+        "DateGreaterThanEquals": {
+          "aws:CurrentTime": "2026-10-05T00:00:00Z"
+        }
+      }
+    }
+  ]
+}

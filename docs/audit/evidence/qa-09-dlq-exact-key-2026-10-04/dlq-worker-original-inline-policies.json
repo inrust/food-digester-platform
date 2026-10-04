@@ -1,0 +1,43 @@
+{
+  "CommandPublisherFnServiceRoleDefaultPolicy623AD814": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Action": [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ],
+        "Resource": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK",
+        "Effect": "Allow"
+      },
+      {
+        "Action": "iot:DescribeEndpoint",
+        "Resource": "*",
+        "Effect": "Allow",
+        "Sid": "IotDataEndpointDiscovery"
+      },
+      {
+        "Action": "iot:Publish",
+        "Resource": "arn:aws:iot:ap-southeast-1:065986019555:topic/bnx/device/*/cmd",
+        "Effect": "Allow",
+        "Sid": "DeviceCommandPublish"
+      },
+      {
+        "Action": [
+          "sqs:ReceiveMessage",
+          "sqs:ChangeMessageVisibility",
+          "sqs:GetQueueUrl",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ],
+        "Resource": "arn:aws:sqs:ap-southeast-1:065986019555:fdp-test-command-publish",
+        "Effect": "Allow"
+      },
+      {
+        "Action": "kms:Decrypt",
+        "Resource": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c",
+        "Effect": "Allow"
+      }
+    ]
+  }
+}
