@@ -66,6 +66,10 @@ export async function runBusinessTarget(
     coreOnly = false,
     readDomains = true,
     performanceProbes = false,
+    performanceLifecycleProbes = true,
+    writeBoundaryProbes = performanceProbes,
+    onLicenseIssued,
+    onLicenseActivated,
   } = {},
 ) {
   assertBusinessContext(ctx.receipt);
@@ -390,7 +394,15 @@ export async function runBusinessTarget(
       { reason: prefix },
       { 'If-Match': String(contract.version) },
     );
-    r.licenseLifecycle = await runTargetLicenseLifecycle(api, { deviceId: devices[0], from, to, prefix, now });
+    r.licenseLifecycle = await runTargetLicenseLifecycle(api, {
+      deviceId: devices[0],
+      from,
+      to,
+      prefix,
+      now,
+      onIssued: onLicenseIssued,
+      onActivated: onLicenseActivated,
+    });
     check(
       'license-state-sequence-proved',
       r.licenseLifecycle.renewalReplay && r.licenseLifecycle.reactivation === 'Active',
@@ -567,7 +579,7 @@ export async function runBusinessTarget(
     save();
   }
   if (!coreOnly) {
-    if (performanceProbes) {
+    if (writeBoundaryProbes) {
       stage = 'writeBoundaries';
       const measure = (id, ok, data = {}) => {
         r.checks.push({ id, stage, result: ok ? 'PASS' : 'FAIL', ...data });
@@ -745,6 +757,49 @@ export async function runBusinessTarget(
                 200,
               );
               check('browser-site-edit-persisted', observed.data.name === prefix + '-browser-updated');
+              // M-02 regression: existing page and open detail must translate without navigation.
+              const detail = page.getByTestId('site-detail');
+              const handle = await detail.elementHandle();
+              const originalUrl = page.url();
+              let navigations = 0;
+              const observeNavigation = (frame) => {
+                if (frame === page.mainFrame()) navigations++;
+              };
+              page.on('framenavigated', observeNavigation);
+              try {
+                for (const [language, title, name] of [
+                  ['en', 'Site directory', 'Site name'],
+                  ['zh-CN', '站点档案', '站点名称'],
+                ]) {
+                  await page.getByTestId('language-select').selectOption(language);
+                  await page.getByTestId('sites-page').getByRole('heading', { name: title, exact: true }).waitFor();
+                  await page.getByTestId('sites-page').getByRole('columnheader', { name, exact: true }).waitFor();
+                  await detail
+                    .locator('dt')
+                    .filter({ hasText: new RegExp('^' + name + '$') })
+                    .waitFor();
+                  check(
+                    'browser-M02-instant-page-detail-' + language,
+                    navigations === 0 &&
+                      page.url() === originalUrl &&
+                      (await handle.evaluate(
+                        (node) => node === document.querySelector('[data-testid="site-detail"]'),
+                      )) &&
+                      (await detail.textContent()).includes(prefix + '-browser-updated'),
+                  );
+                  const pixels = await page.screenshot({ fullPage: false });
+                  const artifact = output + '.M02-' + language + '.png';
+                  writeFileSync(artifact, pixels);
+                  check('browser-M02-evidence-' + language, true, {
+                    artifact,
+                    pixelSha256: sha(pixels),
+                    scope: 'SITES_PAGE_AND_OPEN_DETAIL_NO_NAVIGATION',
+                  });
+                }
+              } finally {
+                page.off('framenavigated', observeNavigation);
+                await handle.dispose();
+              }
             }
             for (const route of APP_ROUTES.filter(
               (p) => !p.public && !['contract-new', 'contract-detail'].includes(p.pageState),
@@ -858,7 +913,9 @@ export async function runBusinessTarget(
       save();
     };
     try {
-      r.performance = await runPerformanceProbes(ctx, api, measure, output);
+      r.performance = await runPerformanceProbes(ctx, api, measure, output, {
+        lifecycleProbes: performanceLifecycleProbes,
+      });
       r.stages.performance = r.checks.filter((x) => x.stage === stage).every((x) => x.result === 'PASS')
         ? 'PASS'
         : 'FAIL';

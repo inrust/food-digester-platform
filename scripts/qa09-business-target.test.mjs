@@ -33,10 +33,10 @@ test('target gates reject missing finish cleanup required case and foreign devic
 });
 test('business cleanup preserves outside rows, rejects baseline drift and deletes own dependent rows atomically', async () => {
   const pg = new PGlite();
-  await pg.exec(`CREATE TABLE customers(id text,name text);CREATE TABLE devices(id text,customer_id text,site_id text);CREATE TABLE device_certificates(device_id text);CREATE TABLE outbox_events(aggregate_id text);
- CREATE TABLE device_user_sync_receipts(device_id text);CREATE TABLE device_user_assignments(customer_id text);CREATE TABLE device_users(id text,customer_id text);CREATE TABLE license_history(license_id text);CREATE TABLE license_entitlements(license_id text);CREATE TABLE contract_devices(customer_id text);CREATE TABLE licenses(id text,customer_id text);CREATE TABLE contracts(id text,customer_id text);CREATE TABLE configuration_versions(configuration_id text);CREATE TABLE device_configurations(id text,target_device_id text);CREATE TABLE consumable_requests(customer_id text);CREATE TABLE esg_export_jobs(customer_id text);CREATE TABLE device_assignments(device_id text);CREATE TABLE device_commands(id text,device_id text);CREATE TABLE command_attempts(command_id text);CREATE TABLE command_acks(command_id text);CREATE TABLE device_retirements(device_id text);
+  await pg.exec(`CREATE TABLE customers(id text,name text);CREATE TABLE devices(id text,customer_id text,site_id text);CREATE TABLE device_certificates(device_id text);CREATE TABLE sites(id text,customer_id text);CREATE TABLE outbox_events(id text,event_type text,aggregate_type text,aggregate_id text,status text,created_at timestamptz,published_at timestamptz);
+ CREATE TABLE device_user_sync_receipts(device_id text);CREATE TABLE device_user_assignments(customer_id text);CREATE TABLE device_users(id text,customer_id text);CREATE TABLE license_history(license_id text);CREATE TABLE license_entitlements(license_id text);CREATE TABLE contract_devices(customer_id text);CREATE TABLE licenses(id text,customer_id text);CREATE TABLE contracts(id text,customer_id text);CREATE TABLE configuration_versions(id text,configuration_id text);CREATE TABLE device_configurations(id text,target_device_id text);CREATE TABLE consumable_requests(customer_id text);CREATE TABLE esg_export_jobs(customer_id text);CREATE TABLE device_assignments(device_id text);CREATE TABLE device_commands(id text,device_id text);CREATE TABLE command_attempts(command_id text);CREATE TABLE command_acks(command_id text);CREATE TABLE device_retirements(device_id text);
  INSERT INTO devices VALUES('original','original-customer','original-site');INSERT INTO licenses VALUES('original-license','original-customer');INSERT INTO license_history VALUES('original-license');
- INSERT INTO device_configurations VALUES('global-model-config',NULL);INSERT INTO esg_export_jobs VALUES(NULL);INSERT INTO outbox_events VALUES('original-license');`);
+ INSERT INTO device_configurations VALUES('global-model-config',NULL);INSERT INTO esg_export_jobs VALUES(NULL);INSERT INTO outbox_events(aggregate_id) VALUES('original-license');INSERT INTO sites VALUES('foreign-site','original-customer');INSERT INTO outbox_events(aggregate_id) VALUES('foreign-site');`);
   for (const c of plan.customers) await pg.query('INSERT INTO customers VALUES($1,$2)', [c.id, c.name]);
   const client = {
     query: async (sql, args) => {
@@ -56,9 +56,17 @@ test('business cleanup preserves outside rows, rejects baseline drift and delete
     );
     await pg.exec("UPDATE device_configurations SET id='global-model-config' WHERE target_device_id IS NULL");
     await pg.query('INSERT INTO licenses VALUES($1,$2)', ['own-license', plan.customers[0].id]);
-    await pg.exec("INSERT INTO license_history VALUES('own-license');INSERT INTO outbox_events VALUES('own-license');");
+    await pg.exec(
+      "INSERT INTO license_history VALUES('own-license');INSERT INTO outbox_events(aggregate_id) VALUES('own-license');",
+    );
     await pg.query('INSERT INTO device_commands VALUES($1,$2)', ['OWN-CMD', plan.devices[0]]);
-    await pg.exec("INSERT INTO outbox_events VALUES('OWN-CMD');");
+    await pg.exec("INSERT INTO outbox_events(aggregate_id) VALUES('OWN-CMD');");
+    await pg.query('INSERT INTO device_configurations VALUES($1,$2)', ['own-configuration', plan.devices[0]]);
+    await pg.query('INSERT INTO configuration_versions VALUES($1,$2)', ['own-config-version', 'own-configuration']);
+    await pg.query('INSERT INTO outbox_events(aggregate_id) VALUES($1),($2)', [
+      'own-configuration',
+      'own-config-version',
+    ]);
     await assert.rejects(
       executeFixture(client, { ...plan, action: 'business-cleanup', businessBaseline: [] }),
       /BUSINESS_BASELINE_DRIFT/,
@@ -75,7 +83,7 @@ test('business cleanup preserves outside rows, rejects baseline drift and delete
     );
     assert.deepEqual(result.businessFingerprints, baseline.businessFingerprints);
     assert.equal((await pg.query('SELECT count(*)::int n FROM licenses')).rows[0].n, 1);
-    assert.equal((await pg.query('SELECT count(*)::int n FROM outbox_events')).rows[0].n, 1);
+    assert.equal((await pg.query('SELECT count(*)::int n FROM outbox_events')).rows[0].n, 2);
     assert.equal((await pg.query('SELECT count(*)::int n FROM license_history')).rows[0].n, 1);
     assert.equal(
       (await pg.query('SELECT count(*)::int n FROM device_configurations WHERE target_device_id IS NULL')).rows[0].n,

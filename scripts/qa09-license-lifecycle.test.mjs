@@ -60,13 +60,22 @@ test('target License wire sequence proves ExpiringSoon renewal and Renewed activ
       rows.push({ id, status: response.body.data?.status, replayed: response.body.data?.replayed });
       return response.body;
     };
+    const observations = [];
     await runTargetLicenseLifecycle(api, {
       deviceId: 'qa09-local-device',
       prefix: 'qa09-local',
       now,
       from: new Date(now - 86400000).toISOString(),
       to: new Date(now + 86400000 * 30).toISOString(),
+      onIssued: async (license) =>
+        observations.push({ status: license.status, device: (await prisma.device.findFirst()).lifecycleStatus }),
+      onActivated: async (license) =>
+        observations.push({ status: license.status, device: (await prisma.device.findFirst()).lifecycleStatus }),
     });
+    assert.deepEqual(observations, [
+      { status: 'Issued', device: 'Assigned' },
+      { status: 'Active', device: 'Assigned' },
+    ]);
     assert.equal(rows.find((x) => x.id === 'license-before-renew-evaluate').status, 'ExpiringSoon');
     assert.equal(rows.find((x) => x.id === 'license-renew-replay').replayed, true);
     assert.equal(rows.find((x) => x.id === 'license-reactivate-renewed').status, 'Active');

@@ -285,7 +285,7 @@ export async function executeFixture(client, plan) {
       const scopes = [
         [
           'outbox_events',
-          'aggregate_id=ANY($1::text[]) OR aggregate_id IN(SELECT id FROM device_commands WHERE device_id=ANY($1::text[])) OR aggregate_id IN(SELECT id FROM licenses WHERE customer_id=ANY($2::text[]) UNION ALL SELECT id FROM contracts WHERE customer_id=ANY($2::text[]) UNION ALL SELECT id FROM device_users WHERE customer_id=ANY($2::text[]))',
+          'aggregate_id=ANY($1::text[]) OR aggregate_id IN(SELECT id FROM device_configurations WHERE target_device_id=ANY($1::text[])) OR aggregate_id IN(SELECT v.id FROM configuration_versions v JOIN device_configurations c ON c.id=v.configuration_id WHERE c.target_device_id=ANY($1::text[])) OR aggregate_id IN(SELECT id FROM device_commands WHERE device_id=ANY($1::text[])) OR aggregate_id IN(SELECT id FROM licenses WHERE customer_id=ANY($2::text[]) UNION ALL SELECT id FROM contracts WHERE customer_id=ANY($2::text[]) UNION ALL SELECT id FROM device_users WHERE customer_id=ANY($2::text[]))',
           [ids, customers],
         ],
         ['command_acks', 'command_id IN(SELECT id FROM device_commands WHERE device_id=ANY($1::text[]))', ids],
@@ -325,6 +325,12 @@ export async function executeFixture(client, plan) {
               ).rows[0],
             })),
         );
+      const outsideOutboxLedger = (
+        await client.query(
+          `SELECT id,event_type,aggregate_type,aggregate_id,status,created_at,published_at FROM outbox_events WHERE NOT COALESCE((${scopes[0][1]}),false) ORDER BY created_at DESC LIMIT 100`,
+          scopes[0][2],
+        )
+      ).rows;
       const fingerprint = await outside();
       const counts = {};
       const deleted = {};
@@ -336,8 +342,8 @@ export async function executeFixture(client, plan) {
           throw Error('BUSINESS_BASELINE_DRIFT');
         const objects = (
           await client.query(
-            'SELECT id FROM licenses WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM contracts WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM device_users WHERE customer_id=ANY($1::text[])',
-            [customers],
+            'SELECT id FROM licenses WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM contracts WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM device_users WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM device_configurations WHERE target_device_id=ANY($2::text[]) UNION ALL SELECT v.id FROM configuration_versions v JOIN device_configurations c ON c.id=v.configuration_id WHERE c.target_device_id=ANY($2::text[])',
+            [customers, ids],
           )
         ).rows.map((r) => r.id);
         await client.query('UPDATE devices SET site_id=NULL WHERE id=ANY($1::text[]) AND customer_id=ANY($2::text[])', [
@@ -378,7 +384,13 @@ export async function executeFixture(client, plan) {
       if (plan.action === 'business-cleanup') await client.query('COMMIT');
       else await client.query('ROLLBACK');
       committed = true;
-      return { businessFingerprints: after, counts, deleted, originalFingerprints: before };
+      return {
+        businessFingerprints: after,
+        counts,
+        deleted,
+        originalFingerprints: before,
+        outsideOutboxLedger,
+      };
     }
     if (plan.action === 'audit-empty') {
       if (!Array.isArray(plan.baseline)) throw Error('ORIGINAL_BASELINE_REQUIRED');
@@ -788,7 +800,17 @@ async function main() {
   }
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href)
-  main().catch(() => {
-    console.error('QA09_FIXTURE_OPERATION_FAILED');
+  main().catch((error) => {
+    console.error(
+      JSON.stringify({
+        kind: 'fdp-qa09-fixture-failure/v1',
+        errorCode: /^[A-Z0-9]{5}$/.test(error.code ?? '')
+          ? error.code
+          : /^[A-Z_]{1,100}$/.test(error.message ?? '')
+            ? error.message
+            : 'QA09_FIXTURE_OPERATION_FAILED',
+        errorName: /^[A-Za-z]{1,50}$/.test(error.name ?? '') ? error.name : 'Error',
+      }),
+    );
     process.exitCode = 1;
   });

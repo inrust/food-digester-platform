@@ -14,7 +14,7 @@ function aws(args, profile = 'esgiot-infra') {
     [...args, '--profile', profile, '--region', 'ap-southeast-1', '--output', 'json', '--no-cli-pager'],
     {
       encoding: 'utf8',
-      timeout: args[1] === 'get-log-events' ? 150000 : 30000,
+      timeout: ['get-log-events', 'batch-get-builds', 'batch-get-projects'].includes(args[1]) ? 150000 : 30000,
       maxBuffer: 16 * 1024 * 1024,
       env: { ...process.env, AWS_MAX_ATTEMPTS: '1' },
     },

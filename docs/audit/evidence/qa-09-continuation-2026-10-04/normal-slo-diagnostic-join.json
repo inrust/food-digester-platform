@@ -1,0 +1,1390 @@
+{
+  "task": "QA-09",
+  "scope": "NORMAL_TELEMETRY_RECEIPT_START_API_POLL_AND_MINUTE_METRICS_JOIN",
+  "sourceCommit": "0abf7cf299e0cda1d10ad9c1c1723a1735e3c388",
+  "prefix": "qa09-0365153b90e468c3",
+  "inputs": [
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/normal-slo.json.devices.json",
+      "sha256": "5b364b7db2f7fb2b01c337639282505412274c2aa1ebfe57005df0dd3f5fe0ac"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/normal-slo.json.slo.json",
+      "sha256": "7fc82c0361a69e5029561e14c0a5e307f9f91a393b2a5978de0617be9eece538"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/normal-slo.json.observe-2.json",
+      "sha256": "78b218c50edd0ba81d4af47222f3df79342876136c2d2632397ad536108675a8"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/normal-slo.json.probes.json",
+      "sha256": "839e50038f62005ff6372ecaab003107244f142b2fb26c807088a9dd80f021f2"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/normal-window-metrics.json",
+      "sha256": "3bc3ae6b2f8663acdac6220c08f4f77a63a1b1a600b9a8feac8b31073d2917e0"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/post-burst-metric-queries.json",
+      "sha256": "4a43964099f00eae0bb905020a0339717cd0e5ddadb06d8d953b0d89b5d6d66a"
+    }
+  ],
+  "telemetryP95Ms": 7635,
+  "commandP95Ms": 2017,
+  "receiptCreationP95Ms": 1184,
+  "limitations": [
+    "processed_at is receipt creation before business/outbox/gap updates and transaction commit; not visibility/commit time",
+    "minute metrics do not prove request/message-level causality",
+    "client API polling includes request/network and 250ms intervals",
+    "duplicate receipt is not specific SQS consumption proof"
+  ],
+  "rows": [
+    {
+      "messageId": "TELEMETRY-4543D029-3",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10000,
+      "occurredAt": "2026-10-04T14:51:24.144Z",
+      "receiptCreatedAt": "2026-10-04T14:51:30.541Z",
+      "receiptBeforeCommitMs": 6397,
+      "apiVisibleMs": 8135,
+      "polls": [
+        {
+          "id": "slo-poll-0-0",
+          "requestId": "9c64dad4-5fe6-4177-8d1b-ed6fe3a49e13",
+          "latencyMs": 711
+        },
+        {
+          "id": "slo-poll-0-1",
+          "requestId": "077fd696-9245-415f-85c2-7292af705bfa",
+          "latencyMs": 652
+        },
+        {
+          "id": "slo-poll-0-2",
+          "requestId": "28641655-c368-4ca0-a021-c2f337064874",
+          "latencyMs": 569
+        },
+        {
+          "id": "slo-poll-0-3",
+          "requestId": "21bd7efc-70dd-404e-bab5-d862b398b690",
+          "latencyMs": 767
+        },
+        {
+          "id": "slo-poll-0-4",
+          "requestId": "4695aabf-d391-4a18-a3bd-610832704370",
+          "latencyMs": 690
+        },
+        {
+          "id": "slo-poll-0-5",
+          "requestId": "f714a4a1-dab6-4e1e-b3cb-b76dc7dc6cde",
+          "latencyMs": 632
+        },
+        {
+          "id": "slo-poll-0-6",
+          "requestId": "0999fa0e-529f-4b69-8a20-d77383300502",
+          "latencyMs": 509
+        },
+        {
+          "id": "slo-poll-0-7",
+          "requestId": "c05fcab1-eba4-4589-8552-31273c64bcdc",
+          "latencyMs": 570
+        },
+        {
+          "id": "slo-poll-0-8",
+          "requestId": "5bced593-7b0b-456c-a177-fc75f9721e75",
+          "latencyMs": 545
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-4",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10001,
+      "occurredAt": "2026-10-04T14:51:34.029Z",
+      "receiptCreatedAt": "2026-10-04T14:51:34.714Z",
+      "receiptBeforeCommitMs": 685,
+      "apiVisibleMs": 3742,
+      "polls": [
+        {
+          "id": "slo-poll-1-0",
+          "requestId": "f5880d9b-4fce-4cce-889f-d1cc6a4323ed",
+          "latencyMs": 1180
+        },
+        {
+          "id": "slo-poll-1-1",
+          "requestId": "e2dd2a67-4c41-489f-9717-d7d6a72d229a",
+          "latencyMs": 1781
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-5",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10002,
+      "occurredAt": "2026-10-04T14:51:38.959Z",
+      "receiptCreatedAt": "2026-10-04T14:51:39.414Z",
+      "receiptBeforeCommitMs": 455,
+      "apiVisibleMs": 2385,
+      "polls": [
+        {
+          "id": "slo-poll-2-0",
+          "requestId": "9a181724-41e8-40dc-9282-ff95df8c568c",
+          "latencyMs": 495
+        },
+        {
+          "id": "slo-poll-2-1",
+          "requestId": "7730a3c0-ee52-493c-9f7c-00bc21523c8e",
+          "latencyMs": 1168
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-6",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10003,
+      "occurredAt": "2026-10-04T14:51:41.890Z",
+      "receiptCreatedAt": "2026-10-04T14:51:42.413Z",
+      "receiptBeforeCommitMs": 523,
+      "apiVisibleMs": 5956,
+      "polls": [
+        {
+          "id": "slo-poll-3-0",
+          "requestId": "070a8cc9-11fc-4762-9dec-4cee510c6b2a",
+          "latencyMs": 2228
+        },
+        {
+          "id": "slo-poll-3-1",
+          "requestId": "aa785ae1-9c69-4a7f-917d-b905eaa86fd0",
+          "latencyMs": 2946
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-7",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10004,
+      "occurredAt": "2026-10-04T14:51:49.488Z",
+      "receiptCreatedAt": "2026-10-04T14:51:49.816Z",
+      "receiptBeforeCommitMs": 328,
+      "apiVisibleMs": 4794,
+      "polls": [
+        {
+          "id": "slo-poll-4-0",
+          "requestId": "75e7cd07-f466-4d43-97e5-1570a2ae7c3b",
+          "latencyMs": 3567
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-8",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10005,
+      "occurredAt": "2026-10-04T14:51:56.025Z",
+      "receiptCreatedAt": "2026-10-04T14:51:56.417Z",
+      "receiptBeforeCommitMs": 392,
+      "apiVisibleMs": 3385,
+      "polls": [
+        {
+          "id": "slo-poll-5-0",
+          "requestId": "1a10fd60-2394-4464-9db9-48364a57f987",
+          "latencyMs": 2135
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-9",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10006,
+      "occurredAt": "2026-10-04T14:51:59.968Z",
+      "receiptCreatedAt": "2026-10-04T14:52:00.374Z",
+      "receiptBeforeCommitMs": 406,
+      "apiVisibleMs": 1738,
+      "polls": [
+        {
+          "id": "slo-poll-6-0",
+          "requestId": "c2aeac6a-ffcb-4256-9b77-ae645c7faab2",
+          "latencyMs": 486
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-10",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10007,
+      "occurredAt": "2026-10-04T14:52:02.320Z",
+      "receiptCreatedAt": "2026-10-04T14:52:02.734Z",
+      "receiptBeforeCommitMs": 414,
+      "apiVisibleMs": 2588,
+      "polls": [
+        {
+          "id": "slo-poll-7-0",
+          "requestId": "b9500c51-8250-4dc2-a9a7-73b4c49ea962",
+          "latencyMs": 2024
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-11",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10008,
+      "occurredAt": "2026-10-04T14:52:07.562Z",
+      "receiptCreatedAt": "2026-10-04T14:52:07.894Z",
+      "receiptBeforeCommitMs": 332,
+      "apiVisibleMs": 970,
+      "polls": [
+        {
+          "id": "slo-poll-8-0",
+          "requestId": "5015fb86-d0cc-4032-a20d-54a76814f045",
+          "latencyMs": 503
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-12",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10009,
+      "occurredAt": "2026-10-04T14:52:09.531Z",
+      "receiptCreatedAt": "2026-10-04T14:52:09.914Z",
+      "receiptBeforeCommitMs": 383,
+      "apiVisibleMs": 2429,
+      "polls": [
+        {
+          "id": "slo-poll-9-0",
+          "requestId": "2a23fa41-f4d3-434c-9883-ec7c3b1c2071",
+          "latencyMs": 1908
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-13",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10010,
+      "occurredAt": "2026-10-04T14:52:14.391Z",
+      "receiptCreatedAt": "2026-10-04T14:52:14.774Z",
+      "receiptBeforeCommitMs": 383,
+      "apiVisibleMs": 1832,
+      "polls": [
+        {
+          "id": "slo-poll-10-0",
+          "requestId": "038a0a72-02d2-437a-990c-a14dc365de18",
+          "latencyMs": 565
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-14",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10011,
+      "occurredAt": "2026-10-04T14:52:18.040Z",
+      "receiptCreatedAt": "2026-10-04T14:52:18.354Z",
+      "receiptBeforeCommitMs": 314,
+      "apiVisibleMs": 1722,
+      "polls": [
+        {
+          "id": "slo-poll-11-0",
+          "requestId": "e77f1949-e3f9-4daa-a2c6-12c1c12cd41e",
+          "latencyMs": 511
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-15",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10012,
+      "occurredAt": "2026-10-04T14:52:21.493Z",
+      "receiptCreatedAt": "2026-10-04T14:52:21.875Z",
+      "receiptBeforeCommitMs": 382,
+      "apiVisibleMs": 4002,
+      "polls": [
+        {
+          "id": "slo-poll-12-0",
+          "requestId": "15b4804f-b90c-492a-9241-1ad29ce87057",
+          "latencyMs": 3465
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-16",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10013,
+      "occurredAt": "2026-10-04T14:52:27.259Z",
+      "receiptCreatedAt": "2026-10-04T14:52:27.575Z",
+      "receiptBeforeCommitMs": 316,
+      "apiVisibleMs": 2265,
+      "polls": [
+        {
+          "id": "slo-poll-13-0",
+          "requestId": "8ad8df9b-e1f7-4f9a-a645-e7d2117c7015",
+          "latencyMs": 1778
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-17",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10014,
+      "occurredAt": "2026-10-04T14:52:31.322Z",
+      "receiptCreatedAt": "2026-10-04T14:52:31.655Z",
+      "receiptBeforeCommitMs": 333,
+      "apiVisibleMs": 3931,
+      "polls": [
+        {
+          "id": "slo-poll-14-0",
+          "requestId": "693cd10f-4049-46a8-9258-7383cfde4f05",
+          "latencyMs": 3425
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-18",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10015,
+      "occurredAt": "2026-10-04T14:52:36.226Z",
+      "receiptCreatedAt": "2026-10-04T14:52:36.558Z",
+      "receiptBeforeCommitMs": 332,
+      "apiVisibleMs": 2166,
+      "polls": [
+        {
+          "id": "slo-poll-15-0",
+          "requestId": "6f033166-7630-4790-b1cc-6157c743679c",
+          "latencyMs": 971
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-19",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10016,
+      "occurredAt": "2026-10-04T14:52:39.508Z",
+      "receiptCreatedAt": "2026-10-04T14:52:39.817Z",
+      "receiptBeforeCommitMs": 309,
+      "apiVisibleMs": 1560,
+      "polls": [
+        {
+          "id": "slo-poll-16-0",
+          "requestId": "29090da1-7a9d-4f4b-8c0e-bbb5fc647b2c",
+          "latencyMs": 1075
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-20",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10017,
+      "occurredAt": "2026-10-04T14:52:44.457Z",
+      "receiptCreatedAt": "2026-10-04T14:52:44.835Z",
+      "receiptBeforeCommitMs": 378,
+      "apiVisibleMs": 1325,
+      "polls": [
+        {
+          "id": "slo-poll-17-0",
+          "requestId": "46ca6e84-0fc1-45ad-a307-f595a487f89d",
+          "latencyMs": 788
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-21",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10018,
+      "occurredAt": "2026-10-04T14:52:51.835Z",
+      "receiptCreatedAt": "2026-10-04T14:52:53.019Z",
+      "receiptBeforeCommitMs": 1184,
+      "apiVisibleMs": 7635,
+      "polls": [
+        {
+          "id": "slo-poll-18-0",
+          "requestId": "b5dc9b13-e3dd-4be1-8308-80c0536d9677",
+          "latencyMs": 6280
+        }
+      ]
+    },
+    {
+      "messageId": "TELEMETRY-4543D029-22",
+      "deviceId": "qa09-0365153b90e468c3-01",
+      "seq": 10019,
+      "occurredAt": "2026-10-04T14:53:02.532Z",
+      "receiptCreatedAt": "2026-10-04T14:53:02.895Z",
+      "receiptBeforeCommitMs": 363,
+      "apiVisibleMs": 4937,
+      "polls": [
+        {
+          "id": "slo-poll-19-0",
+          "requestId": "29ad9079-0059-4b72-b438-9914ebfc4c4f",
+          "latencyMs": 4473
+        }
+      ]
+    }
+  ],
+  "minuteMetrics": [
+    {
+      "label": "fdp-test-ingress:ApproximateNumberOfMessagesVisible",
+      "stat": "Maximum",
+      "period": 60,
+      "maxObserved": 0.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T23:00:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:59:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:58:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:57:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:56:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:55:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:54:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-ingress:ApproximateAgeOfOldestMessage",
+      "stat": "Maximum",
+      "period": 60,
+      "maxObserved": 0.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T23:00:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:59:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:58:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:57:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:56:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:55:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:54:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-ingress:NumberOfMessagesReceived",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": 22.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T23:00:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:59:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:58:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:57:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:56:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:55:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:54:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          22.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          15.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          8.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-ingress:NumberOfMessagesDeleted",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": 22.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T23:00:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:59:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:58:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:57:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:56:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:55:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:54:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          22.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          15.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          8.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-archive:ApproximateNumberOfMessagesVisible",
+      "stat": "Maximum",
+      "period": 60,
+      "maxObserved": 0.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T23:00:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:59:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:58:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:57:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:56:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:55:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:54:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-archive:ApproximateAgeOfOldestMessage",
+      "stat": "Maximum",
+      "period": 60,
+      "maxObserved": 28.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T23:00:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:59:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:58:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:57:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:56:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:55:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:54:00+08:00",
+          2.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          28.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          28.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-archive:NumberOfMessagesReceived",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": 25.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T23:00:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:59:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:58:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:57:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:56:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:55:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:54:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          25.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          14.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          4.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-archive:NumberOfMessagesDeleted",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": 25.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T23:00:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:59:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:58:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:57:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:56:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:55:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:54:00+08:00",
+          25.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          14.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          4.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-ingress-dlq:ApproximateNumberOfMessagesVisible",
+      "stat": "Maximum",
+      "period": 60,
+      "maxObserved": null,
+      "statusCode": "Complete",
+      "samples": []
+    },
+    {
+      "label": "fdp-test-ingress-dlq:ApproximateAgeOfOldestMessage",
+      "stat": "Maximum",
+      "period": 60,
+      "maxObserved": null,
+      "statusCode": "Complete",
+      "samples": []
+    },
+    {
+      "label": "fdp-test-ingress-dlq:NumberOfMessagesReceived",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": null,
+      "statusCode": "Complete",
+      "samples": []
+    },
+    {
+      "label": "fdp-test-ingress-dlq:NumberOfMessagesDeleted",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": null,
+      "statusCode": "Complete",
+      "samples": []
+    },
+    {
+      "label": "fdp-test-archive-dlq:ApproximateNumberOfMessagesVisible",
+      "stat": "Maximum",
+      "period": 60,
+      "maxObserved": null,
+      "statusCode": "Complete",
+      "samples": []
+    },
+    {
+      "label": "fdp-test-archive-dlq:ApproximateAgeOfOldestMessage",
+      "stat": "Maximum",
+      "period": 60,
+      "maxObserved": null,
+      "statusCode": "Complete",
+      "samples": []
+    },
+    {
+      "label": "fdp-test-archive-dlq:NumberOfMessagesReceived",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": null,
+      "statusCode": "Complete",
+      "samples": []
+    },
+    {
+      "label": "fdp-test-archive-dlq:NumberOfMessagesDeleted",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": null,
+      "statusCode": "Complete",
+      "samples": []
+    },
+    {
+      "label": "fdp-test-ingestion:ConcurrentExecutions",
+      "stat": "Maximum",
+      "period": 60,
+      "maxObserved": 1.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T22:53:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          1.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-ingestion:Throttles",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": 10.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T22:53:00+08:00",
+          6.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          10.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-ingestion:Errors",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": 0.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T22:53:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-ingestion:Duration",
+      "stat": "p95",
+      "period": 60,
+      "maxObserved": 6618.0314397092125,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T22:53:00+08:00",
+          207.30539891003127
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          145.04328892528503
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          6618.0314397092125
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-archive:ConcurrentExecutions",
+      "stat": "Maximum",
+      "period": 60,
+      "maxObserved": 2.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T22:54:00+08:00",
+          2.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          2.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          2.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-archive:Throttles",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": 0.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T22:54:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-archive:Errors",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": 0.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T22:54:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-archive:Duration",
+      "stat": "p95",
+      "period": 60,
+      "maxObserved": 2248.737965488409,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T22:54:00+08:00",
+          2248.737965488409
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          1162.8917478152184
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          1027.4548262768376
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-api:ConcurrentExecutions",
+      "stat": "Maximum",
+      "period": 60,
+      "maxObserved": 1.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T22:53:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          1.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-api:Throttles",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": 0.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T22:53:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-api:Errors",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": 0.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T22:53:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-api:Duration",
+      "stat": "p95",
+      "period": 60,
+      "maxObserved": 3693.97,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T22:53:00+08:00",
+          245.7126794723696
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          94.73287469832147
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          637.3154097324272
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          3693.97
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-outbox-publisher:ConcurrentExecutions",
+      "stat": "Maximum",
+      "period": 60,
+      "maxObserved": 1.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T23:00:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:59:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:58:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:57:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:56:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:55:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:54:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          1.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          1.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-outbox-publisher:Throttles",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": 0.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T23:00:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:59:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:58:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:57:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:56:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:55:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:54:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-outbox-publisher:Errors",
+      "stat": "Sum",
+      "period": 60,
+      "maxObserved": 0.0,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T23:00:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:59:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:58:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:57:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:56:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:55:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:54:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          0.0
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          0.0
+        ]
+      ]
+    },
+    {
+      "label": "fdp-test-outbox-publisher:Duration",
+      "stat": "p95",
+      "period": 60,
+      "maxObserved": 1999.12,
+      "statusCode": "Complete",
+      "samples": [
+        [
+          "2026-10-04T23:00:00+08:00",
+          88.37
+        ],
+        [
+          "2026-10-04T22:59:00+08:00",
+          93.81
+        ],
+        [
+          "2026-10-04T22:58:00+08:00",
+          85.71
+        ],
+        [
+          "2026-10-04T22:57:00+08:00",
+          72.55
+        ],
+        [
+          "2026-10-04T22:56:00+08:00",
+          98.61
+        ],
+        [
+          "2026-10-04T22:55:00+08:00",
+          72.97
+        ],
+        [
+          "2026-10-04T22:54:00+08:00",
+          81.97
+        ],
+        [
+          "2026-10-04T22:53:00+08:00",
+          1999.12
+        ],
+        [
+          "2026-10-04T22:52:00+08:00",
+          949.85
+        ],
+        [
+          "2026-10-04T22:51:00+08:00",
+          398.69
+        ],
+        [
+          "2026-10-04T22:50:00+08:00",
+          98.88
+        ]
+      ]
+    }
+  ],
+  "gate": "PASS_SCOPED_DIAGNOSTIC_JOIN",
+  "fullQa09Accepted": false
+}

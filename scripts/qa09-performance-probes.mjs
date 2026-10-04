@@ -15,7 +15,13 @@ export function completeP95(samples, field) {
     ? p95(samples.map((x) => x.latencyMs))
     : null;
 }
-export async function runPerformanceProbes(ctx, api, record, output, { afterActivation, commandOnly = false } = {}) {
+export async function runPerformanceProbes(
+  ctx,
+  api,
+  record,
+  output,
+  { afterActivation, commandOnly = false, lifecycleProbes = true } = {},
+) {
   const id = ctx.receipt.devices[0],
     key = ctx.held.get(id),
     prefix = ctx.receipt.prefix;
@@ -50,6 +56,9 @@ export async function runPerformanceProbes(ctx, api, record, output, { afterActi
     telemetry: [],
     commands: [],
     lifecycle: [],
+    lifecycleGate: lifecycleProbes
+      ? 'INDEPENDENT_LIFECYCLE_ASSERTIONS_REQUIRED'
+      : 'NOT_RUN_NO_NATURAL_ACTIVE_PRECONDITION',
     fullQa09Accepted: false,
   };
   const put = (name, pass, data) => record(name, pass, data);
@@ -110,7 +119,7 @@ export async function runPerformanceProbes(ctx, api, record, output, { afterActi
       result.queueRedelivery = await redeliverOwnProcessedTelemetry(
         ctx,
         redeliveryRaw,
-        output + '.queue-redelivery.json',
+        output + '.performance-queue-redelivery.json',
       );
     const license = (
       await api('command-slo-license-create', 'PlatformOperator', 'POST', '/api/v1/admin/licenses', 201, {
@@ -206,7 +215,7 @@ export async function runPerformanceProbes(ctx, api, record, output, { afterActi
       limitMs: 3000,
       clock: 'SAME_CLIENT_MONOTONIC_API_START_TO_BROKER_CALLBACK',
     });
-    if (commandOnly) return result;
+    if (commandOnly || !lifecycleProbes) return result;
     const suspended = await api(
       'lifecycle-suspend',
       'PlatformOperator',

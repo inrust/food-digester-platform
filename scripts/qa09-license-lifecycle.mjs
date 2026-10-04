@@ -1,4 +1,4 @@
-export async function runTargetLicenseLifecycle(api, { deviceId, from, to, prefix, now }) {
+export async function runTargetLicenseLifecycle(api, { deviceId, from, to, prefix, now, onIssued, onActivated }) {
   let license = (
     await api('license-create', 'PlatformOperator', 'POST', '/api/v1/admin/licenses', 201, {
       deviceId,
@@ -10,12 +10,15 @@ export async function runTargetLicenseLifecycle(api, { deviceId, from, to, prefi
   ).data;
   const path = '/api/v1/admin/licenses/' + license.licenseId;
   await api('license-detail', 'PlatformOperator', 'GET', path, 200);
-  for (const action of ['issue', 'activate'])
+  for (const action of ['issue', 'activate']) {
     license = (
       await api('license-' + action, 'PlatformOperator', 'POST', path + '/' + action, 200, undefined, {
         'If-Match': String(license.version),
       })
     ).data;
+    if (action === 'issue') await onIssued?.(license);
+    else await onActivated?.(license);
+  }
   license = (await api('license-before-renew-evaluate', 'PlatformOperator', 'POST', path + '/evaluate', 200, {})).data;
   if (license.status !== 'ExpiringSoon') throw Error('LICENSE_RENEW_PREREQUISITE_NOT_PROVED');
   license = (
