@@ -81,6 +81,8 @@
 
 ## 验收边界与人工体验复核
 
+2026-10-04 后续更新：用户已推送 `cb5beaa`，并确认真实管理员参与使用、可用性 OK；独立查询确认 Amplify 实际部署该提交。真实环境阶段结果、临时测试数据及尚未完成的隔离/并发控制点见[目标环境验收阶段记录](2026-10-04-admin-ui-target-acceptance.md)。以下各项保留 UI/Edge 本地回归交付时的历史边界，不将后续有限验证扩展为全目标验收 PASS。
+
 1. 实际 Edge 可执行程序兼容性已补测 **PASS（33/33）**。默认测试保持 Chromium；`UI_COMPAT_RUN=1 pnpm --filter @fdp/admin-web test:e2e` 可复跑 Chromium、安装版 Chrome、Playwright Firefox 和安装版 Edge；单独 Edge 使用 `UI_COMPAT_RUN=1 pnpm --filter @fdp/admin-web exec playwright test --project=edge`。
 2. 未部署/未推送。真实 Cognito、真实管理员 API、生产数据、并发、跨 Customer 和已有目标环境验收凭证均未由本次 UI 回归补齐。
 3. 已做布局和键盘交互检查及截图视觉复核；没有真实管理员参与的用户研究/可用性访谈，不能称为用户实测通过。

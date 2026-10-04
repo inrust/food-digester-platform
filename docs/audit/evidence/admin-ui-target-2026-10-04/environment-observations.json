@@ -1,0 +1,172 @@
+{
+  "collectedAt": "2026-10-04T03:50:17.078531+00:00",
+  "expectedFrontendCommit": "cb5beaaeb50132045427c55542263c5f2e846496",
+  "observations": [
+    {
+      "id": "stack",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-app",
+        "status": "UPDATE_COMPLETE",
+        "tags": [
+          {
+            "Key": "fdp:env",
+            "Value": "test"
+          },
+          {
+            "Key": "fdp:project",
+            "Value": "food-digester-platform"
+          },
+          {
+            "Key": "fdp:managed-by",
+            "Value": "cdk"
+          }
+        ],
+        "outputs": [
+          {
+            "OutputKey": "AdminWebAmplifyAppId",
+            "OutputValue": "d29sdr89i4zl0"
+          },
+          {
+            "OutputKey": "AdminWebOrigin",
+            "OutputValue": "https://admin.bio-nexa.com",
+            "Description": "Exact CORS origin for the admin web application"
+          },
+          {
+            "OutputKey": "AdminApiUrl",
+            "OutputValue": "https://api.bio-nexa.com/api/v1/",
+            "Description": "Admin, customer, and internal API endpoint using Cognito and IAM"
+          },
+          {
+            "OutputKey": "UserPoolClientId",
+            "OutputValue": "5ljdjsf9g563mc1vdc7vjdjm09",
+            "Description": "Cognito Admin Web Client"
+          },
+          {
+            "OutputKey": "UserPoolId",
+            "OutputValue": "ap-southeast-1_hZMX8LpFo",
+            "Description": "Cognito User Pool"
+          }
+        ]
+      }
+    },
+    {
+      "id": "amplify",
+      "status": "OBSERVED",
+      "data": [
+        {
+          "id": "50",
+          "status": "SUCCEED",
+          "commit": "cb5beaaeb50132045427c55542263c5f2e846496",
+          "start": "2026-10-04T11:32:51.135000+08:00",
+          "end": "2026-10-04T11:35:26.098000+08:00"
+        },
+        {
+          "id": "49",
+          "status": "SUCCEED",
+          "commit": "4d40c2144d04382cd62e420edeae91980c9db1f0",
+          "start": "2026-10-04T11:19:47.216000+08:00",
+          "end": "2026-10-04T11:23:26.192000+08:00"
+        },
+        {
+          "id": "48",
+          "status": "SUCCEED",
+          "commit": "ae5433cd123af669df9f031960079b738a127f4c",
+          "start": "2026-10-04T09:41:33.476000+08:00",
+          "end": "2026-10-04T09:43:52.894000+08:00"
+        }
+      ]
+    },
+    {
+      "id": "cognito-client",
+      "status": "OBSERVED",
+      "data": {
+        "pool": "ap-southeast-1_hZMX8LpFo",
+        "clientId": "5ljdjsf9g563mc1vdc7vjdjm09",
+        "authFlows": [
+          "ALLOW_REFRESH_TOKEN_AUTH",
+          "ALLOW_USER_SRP_AUTH"
+        ]
+      }
+    },
+    {
+      "id": "admin-api",
+      "status": "OBSERVED",
+      "data": {
+        "name": "fdp-test-api",
+        "codeSha256": "fkxEuQu+sAsqGDBFycHFVUOPnFaDTj43p/1qvEZ3u14=",
+        "lastModified": "2026-10-03T14:28:44.000+0000",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "revisionId": "c89d5096-2af3-421f-b04e-8dc92f7ff018",
+        "runtime": "nodejs24.x"
+      }
+    }
+  ],
+  "historicalApiProvenance": {
+    "path": "docs/audit/evidence/qa-09-performance-remediation-2026-10-03/b885e11-application-version.json",
+    "sourceCommit": "b885e1174fdf0626e1a5e6c12ae55de4ddf3dcb9",
+    "historicalGate": "PASS",
+    "codeSha256": "fkxEuQu+sAsqGDBFycHFVUOPnFaDTj43p/1qvEZ3u14=",
+    "currentHashMatches": true,
+    "sourceTreeComparisons": [
+      {
+        "path": "apps/cloud-api",
+        "matches": true,
+        "hashes": [
+          "e8cf86a8b457b3888092c33070f596e6fbb219d4",
+          "e8cf86a8b457b3888092c33070f596e6fbb219d4"
+        ]
+      },
+      {
+        "path": "packages",
+        "matches": true,
+        "hashes": [
+          "65d1bf6688a07aab3c43f9c0fd7c9cb958113b38",
+          "65d1bf6688a07aab3c43f9c0fd7c9cb958113b38"
+        ]
+      },
+      {
+        "path": "contracts/rest",
+        "matches": true,
+        "hashes": [
+          "eb94f5dbb71982b0f6ece1339b25739ede9fd9ed",
+          "eb94f5dbb71982b0f6ece1339b25739ede9fd9ed"
+        ]
+      },
+      {
+        "path": "infra",
+        "matches": true,
+        "hashes": [
+          "4f74ce927890b0860533170068a9d56bc443b8e6",
+          "4f74ce927890b0860533170068a9d56bc443b8e6"
+        ]
+      }
+    ],
+    "initialSourcePathProbe": {
+      "path": "apps/api",
+      "status": "INVALID_PATH",
+      "note": "Collector path corrected to existing apps/cloud-api before reporting source equivalence."
+    }
+  },
+  "github": {
+    "status": "UNVERIFIED",
+    "reason": "Authenticated gh run list returned HTTP 404 for repository inrust/food-digester-platform; no exact-commit CI/deploy success asserted"
+  },
+  "unauthenticatedProbes": [
+    {
+      "path": "/api/v1/admin/customers",
+      "authentication": "NONE",
+      "status": 401,
+      "requestId": "e4c86744-7fa1-4fbc-940a-e7f1de6269d4",
+      "result": "PASS"
+    },
+    {
+      "path": "/api/v1/admin/sites",
+      "authentication": "NONE",
+      "status": 401,
+      "requestId": "cfc33aa8-811a-472e-9a31-08ea43cf0f86",
+      "result": "PASS"
+    }
+  ]
+}
