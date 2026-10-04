@@ -31,7 +31,7 @@ export const ROUTES = Object.fromEntries([
     '/ota/campaigns',
   ].map((p) => [p, platform]),
   ['/devices/operate', ['PlatformSuperAdmin', 'PlatformOperator', 'CustomerAdmin']],
-  ['/device-users', ['PlatformSuperAdmin', 'Auditor', 'CustomerAdmin']],
+  ['/device-users', ['PlatformSuperAdmin', 'Auditor', 'CustomerAdmin', 'CustomerViewer']],
   ['/audit-logs', ['PlatformSuperAdmin', 'Auditor']],
   ['/contracts/new', ['PlatformSuperAdmin']],
   ['/consumables', ['PlatformSuperAdmin', 'PlatformOperator', 'CustomerAdmin', 'CustomerViewer']],
@@ -50,6 +50,14 @@ const BUTTONS = {
   'campaign-create-open': ['/ota/campaigns', platform.slice(0, 2)],
 };
 export const PROOFS = {
+  'H-01 API 拒绝停用会话后清除浏览器会话并返回登录': ['disabledSessionLogout'],
+  'M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏': ['viewerOwnRead', 'viewerReadOnly'],
+  ...Object.fromEntries(
+    [1366, 1440, 1920].map((width, index) => [
+      `UI redesign: all business routes at ${width}x${[768, 900, 1080][index]}`,
+      ['desktopRoutes', 'desktopLayout', 'dialogKeyboard', 'languageSwitch'],
+    ]),
+  ),
   'QA05 login SRP MFA error success logout without persisting password': ['login', 'mfaRetry', 'logout'],
   'QA05 ESG cursor totals export snapshot timezone and empty state': ['cursorExport', 'timezone', 'empty'],
   'QA05 Command dangerous confirmation terminal result and publish failure': [
@@ -86,13 +94,35 @@ export const REQUIRED_TITLES = [
   ...ROLES.map((role) => `QA05 role route and button matrix ${role}`),
   ...Object.keys(PROOFS),
 ];
-export function summarizePhase(report, rows, repeatEach) {
+function reportSpecs(report) {
   const specs = [];
   function walk(suite) {
     specs.push(...(suite.specs ?? []));
     for (const child of suite.suites ?? []) walk(child);
   }
   for (const suite of report.suites ?? []) walk(suite);
+  return specs;
+}
+/** 与 Playwright 实际发现的测试集交叉核对，禁止遗漏、新增未登记或重复标题静默通过。 */
+export function validateDiscovery(report) {
+  const specs = reportSpecs(report);
+  const titles = specs.map((spec) => spec.title);
+  if (
+    report.errors?.length ||
+    report.config?.projects?.length !== 1 ||
+    report.config.projects[0].repeatEach !== 1 ||
+    report.config.projects[0].retries !== 0 ||
+    new Set(REQUIRED_TITLES).size !== REQUIRED_TITLES.length ||
+    titles.length !== REQUIRED_TITLES.length ||
+    new Set(titles).size !== titles.length ||
+    REQUIRED_TITLES.some((title) => !titles.includes(title)) ||
+    specs.some((spec) => spec.tests?.length !== 1)
+  )
+    throw new Error('BROWSER_DISCOVERY_MANIFEST_MISMATCH');
+  return { distinctCases: titles.length, titles };
+}
+export function summarizePhase(report, rows, repeatEach) {
+  const specs = reportSpecs(report);
   const tests = specs.flatMap((spec) => (spec.tests ?? []).map((test) => ({ title: spec.title, ...test })));
   const expected = REQUIRED_TITLES.length * repeatEach;
   if (
@@ -176,11 +206,17 @@ export function summarizePhase(report, rows, repeatEach) {
     distinctCases: REQUIRED_TITLES.length,
     repeatEach,
     roleRouteAssertions: Object.keys(ROUTES).length * ROLES.length * repeatEach,
-    buttonAssertions: 32 * repeatEach,
+    buttonAssertions: rows.filter((row) => row.proof.role).reduce((sum, row) => sum + row.proof.buttons.length, 0),
     observedApiResponses: responses.length,
     statuses: [...new Set(responses.map((r) => r.status))].sort(),
     tests: rows.map(({ responses, ...row }) => ({ ...row, observedApiResponses: responses.length })),
   };
+}
+export function validateCrossPhaseIsolation(phases) {
+  const total = phases.reduce((sum, phase) => sum + phase.testCount, 0);
+  const prefixes = phases.flatMap((phase) => phase.tests.map((row) => row.prefix));
+  if (prefixes.length !== total || new Set(prefixes).size !== total) throw new Error('CROSS_PHASE_DATA_COLLISION');
+  return total;
 }
 export function sourceHashes() {
   const files = execFileSync(
@@ -220,6 +256,24 @@ export function main(args) {
   const temp = mkdtempSync(join(tmpdir(), 'qa05-browser-'));
   try {
     const sources = sourceHashes();
+    const discoveryResult = spawnSync(
+      process.execPath,
+      [
+        createRequire(resolve('apps/admin-web/package.json')).resolve('@playwright/test/cli'),
+        'test',
+        '--list',
+        '--reporter=json',
+      ],
+      {
+        cwd: resolve('apps/admin-web'),
+        encoding: 'utf8',
+        env: { ...process.env, QA05_PHASE: 'serial' },
+        timeout: 30000,
+        maxBuffer: 8 * 1024 * 1024,
+      },
+    );
+    if (discoveryResult.error || discoveryResult.status !== 0) throw new Error('BROWSER_DISCOVERY_FAILED');
+    const discovery = validateDiscovery(JSON.parse(discoveryResult.stdout));
     const phases = [];
     for (const [phase, repeatEach, workers] of [
       ['serial', 1, 1],
@@ -260,8 +314,7 @@ export function main(args) {
         ),
       });
     }
-    if (new Set(phases.flatMap((p) => p.tests.map((t) => t.prefix))).size !== 90)
-      throw new Error('CROSS_PHASE_DATA_COLLISION');
+    const totalExecutions = validateCrossPhaseIsolation(phases);
     if (JSON.stringify(sources) !== JSON.stringify(sourceHashes())) throw new Error('SOURCE_CHANGED_DURING_RUN');
     writeFileSync(
       output,
@@ -281,7 +334,8 @@ export function main(args) {
           },
           sourceHashes: sources,
           phases,
-          totalExecutions: 90,
+          discovery,
+          totalExecutions,
           cleanup: 'PASS',
           awsTargetGate: 'NOT RUN / NO RECEIPT',
         },

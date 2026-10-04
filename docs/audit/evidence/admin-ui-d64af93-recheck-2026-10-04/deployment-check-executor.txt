@@ -1,0 +1,25 @@
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {readFileSync,writeFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+const execute=promisify(execFile);
+const commit='d64af93c30c071b84fba43cebeb91a43e9db865d';
+const aws='/Users/anray/.local/bin/aws';
+const query=async(args)=>JSON.parse((await execute(aws,[...args,'--profile','esgiot-readonly','--region','ap-southeast-1','--output','json','--cli-connect-timeout','10','--cli-read-timeout','20'],{timeout:45000,maxBuffer:1048576})).stdout);
+const tasks=[
+['frontend',()=>query(['amplify','list-jobs','--app-id','d29sdr89i4zl0','--branch-name','main','--max-results','3','--query','jobSummaries'])],
+['backend',()=>query(['lambda','get-function-configuration','--function-name','fdp-test-api','--query','{FunctionName:FunctionName,CodeSha256:CodeSha256,LastModified:LastModified,State:State,LastUpdateStatus:LastUpdateStatus}'])],
+['stack',()=>query(['cloudformation','describe-stacks','--stack-name','fdp-test-app','--query','Stacks[0].{StackName:StackName,StackStatus:StackStatus,LastUpdatedTime:LastUpdatedTime,Tags:Tags}'])],
+['github',async()=>JSON.parse((await execute('/opt/homebrew/bin/gh',['run','list','--commit',commit,'--limit','10','--json','databaseId,workflowName,status,conclusion,headSha,url,createdAt,updatedAt'],{timeout:30000,maxBuffer:1048576})).stdout)]
+];
+const r={sourceCommit:commit,environment:'fdp-test-app',collectedAt:new Date().toISOString(),executorSha256:createHash('sha256').update(readFileSync(import.meta.filename)).digest('hex'),fullAdminTargetAccepted:false,productionAccepted:false};
+await Promise.all(tasks.map(async([name,call])=>{try{r[name]=await call()}catch(error){r[name]={status:'UNVERIFIED',reason:(error.stderr??error.message).trim().slice(0,600)}}}));
+const old=JSON.parse(readFileSync('docs/audit/evidence/qa-09-performance-remediation-2026-10-03/b885e11-application-version.json'));
+const artifact=old.lambdaArtifacts.find(x=>x.name==='fdp-test-api');
+r.frontendExactCommitSucceeded=Array.isArray(r.frontend)&&r.frontend.some(x=>x.commitId===commit&&x.status==='SUCCEED');
+r.backendMatchesPreFixArtifact=r.backend.CodeSha256===artifact.codeSha256;
+r.historicalArtifact={sourceCommit:old.sourceCommit,receipt:'docs/audit/evidence/qa-09-performance-remediation-2026-10-03/b885e11-application-version.json',codeSha256:artifact.codeSha256,verifiedZipSha256:artifact.artifactSha256};
+r.status=r.frontendExactCommitSucceeded&&r.backendMatchesPreFixArtifact?'BLOCKED_BACKEND_FIX_NOT_DEPLOYED':'UNVERIFIED';
+r.H01='NOT_RUN_DEPLOYMENT_VERSION_BLOCKED';r.M01='NOT_RUN_NO_NEW_TEST_IDENTITY_CREATED';
+writeFileSync('docs/audit/evidence/admin-ui-d64af93-recheck-2026-10-04/deployment-verification.json',JSON.stringify(r,null,2)+'\n');
+console.log(JSON.stringify({status:r.status,frontendExactCommitSucceeded:r.frontendExactCommitSucceeded,backendMatchesPreFixArtifact:r.backendMatchesPreFixArtifact,backend:r.backend,stack:r.stack,github:r.github}));

@@ -12,13 +12,14 @@ pnpm --filter @fdp/admin-web typecheck
 pnpm verify
 ```
 
-预先安装仓库锁定依赖与 Playwright Chromium；默认端口 `127.0.0.1:4173` 必须空闲。测试不自动安装浏览器，不复用已有服务器。受限沙箱需要允许本地监听及 Chromium 进程；监听失败属于执行环境问题，不能生成 PASS。`verify` 包含一次 30 项浏览器回归，以及 QA-05 的 30 项串行、60 项双 worker 重复执行，全部禁用 retries。
+预先安装仓库锁定依赖与 Playwright Chromium；默认端口 `127.0.0.1:4173` 必须空闲。测试不自动安装浏览器，不复用已有服务器。受限沙箱需要允许本地监听及 Chromium 进程；监听失败属于执行环境问题，不能生成 PASS。`verify` 包含一次 35 项浏览器回归，以及 QA-05 的 35 项串行、70 项双 worker 重复执行，全部禁用 retries。
 
 ## 测试与隔离
 
 | 文件 | 用途 |
 | --- | --- |
-| `apps/admin-web/e2e/admin-web.spec.ts` | 既有 21 项 FE-01～19 浏览器行为、业务流程、响应式和双语言回归 |
+| `apps/admin-web/e2e/admin-web.spec.ts` | 既有 21 项 FE-01～19 回归及 H-01/M-01 两项，共 23 项浏览器用例 |
+| `apps/admin-web/e2e/ui-redesign.spec.ts` | 1366×768、1440×900、1920×1080 的全部业务路由、键盘与语言回归；同时记录 QA-05 隔离/网络证明 |
 | `apps/admin-web/e2e/qa05-workflows.spec.ts` | 五角色全路由/菜单/写入口矩阵，以及登录、ESG、Command、Media/Audit 四个专项流程 |
 | `apps/admin-web/e2e/qa05-api-fixtures.ts` | 克隆响应模板、会话、API 及像素媒体夹具，不注册测试 |
 | `apps/admin-web/e2e/qa05-fixture.ts` | 自动网络阻断、每项随机前缀、独立 Context、响应摘要和清理 |
@@ -34,7 +35,7 @@ pnpm verify
 ## 覆盖
 
 - 登录：SRP PASSWORD_VERIFIER、MFA 错误重试/成功、Logout、过期 Token 刷新失败清会话、无 Token 回登录；验证原始密码不进入请求和 Web Storage。
-- 五角色：22 个受保护路由 × 5 = 110 项允许/403 断言；菜单出现/隐藏；10 类写入口在可访问路由上形成 32 项按钮断言，包含 Customer 角色用户/耗材/站点边界及 Auditor OTA 禁用。
+- 五角色：22 个受保护路由 × 5 = 110 项允许/403 断言；菜单出现/隐藏；10 类写入口在可访问路由上形成 33 项按钮断言，包含 Customer 角色用户/耗材/站点边界及 Auditor OTA 禁用。
 - Onboarding、Customer/Site、Device、Contract、License、配置、用户、Consumable、Alarm：既有生产页面 CRUD/审批/生命周期/绑定解绑/邀请/申请状态机，Customer scope、404、空态、409、重复提交及键盘边界。
 - ESG：两页游标的汇总一致性、导出请求使用相同日期范围、America/New_York 本地日转换为 UTC 边界、刷新后时区保持、空态。
 - Command：SHUTDOWN 错误确认阻止写入，正确确认后创建、SUCCEEDED、PUBLISH_FAILED 页面结果。
@@ -44,8 +45,10 @@ pnpm verify
 
 ## Gate 与验收边界
 
-Gate 固定 30 个必需用例，两阶段分别验证 30/60 次通过、无 skip/flaky/retry、每次独立前缀和成功清理、无未模拟网络。Playwright JSON reporter 不暴露每项 repeatEachIndex；因此使用配置中的 repeatEach、每个标题的执行数，以及 fixture 逐次记录的 repeat 索引联合校验。权限预期矩阵独立写在 Gate 中，不从生产权限函数推导。关键流程须有成功断言后的证明，403/409 必须有观察到的 API 响应。源码在运行前后 Hash 不一致会拒绝 PASS。
+Gate 显式登记 35 个必需用例，先与 Playwright 实际发现清单严格交叉核对（缺项、额外项或重复项均拒绝），两阶段分别验证 35/70 次通过、无 skip/flaky/retry、每次独立前缀和成功清理、无未模拟网络。Playwright JSON reporter 不暴露每项 repeatEachIndex；因此使用配置中的 repeatEach、每个标题的执行数，以及 fixture 逐次记录的 repeat 索引联合校验。权限预期矩阵独立写在 Gate 中，不从生产权限函数推导。关键流程须有成功断言后的证明，403/409 必须有观察到的 API 响应。源码在运行前后 Hash 不一致会拒绝 PASS。跨阶段总数由已验证阶段计算，当前为 105；所有前缀必须跨阶段唯一。
 
 并行/重复执行验证了当前调度下的数据隔离和稳定性，不能穷举所有可能执行顺序。未运行真实 Cognito/API/RDS/S3/IoT 集成、真实签名验证、生产冒烟或人工验收；脚本认证和 UI 状态不得当作目标环境成功。本地 QA-05 Gate PASS 与真实 AWS 验收分别报告，后者继续由既有三个 admin-web target-evidence Gate 及 exact-commit 结构化回执控制。
 
-验收记录与回放摘要见 [QA-05 本地验收记录](../audit/QA-05-本地验收记录-2026-10-01.md)。下一任务为 QA-06 应用安全测试。
+2026-10-04 纳入 H-01 会话退出、M-01 Viewer 只读查询和三个桌面尺寸 UI 回归；桌面用例合并 QA-05 隔离/网络记录与 QA-08 数据夹具，关键行为断言完成后才记录证明。Viewer 可读取设备用户，写按钮隐藏；平台 Operator 仍无设备用户权限。
+
+历史验收记录与回放摘要见 [QA-05 本地验收记录](../audit/QA-05-本地验收记录-2026-10-01.md)。2026-10-04 清单与权限矩阵修复见 [QA-05 部署门禁修复记录](../audit/2026-10-04-admin-ui-qa05-gate-remediation.md)，同时记录完整 verify 中发现的 QA-08 快照同步及最终回归结果。

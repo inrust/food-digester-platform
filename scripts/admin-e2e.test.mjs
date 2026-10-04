@@ -1,6 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { summarizePhase, REQUIRED_TITLES, ROLES, ROUTES, PROOFS } from './run-admin-e2e.mjs';
+import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
+import {
+  summarizePhase,
+  validateDiscovery,
+  validateCrossPhaseIsolation,
+  REQUIRED_TITLES,
+  ROLES,
+  ROUTES,
+  PROOFS,
+} from './run-admin-e2e.mjs';
 function fixture(repeatEach = 1) {
   const specs = [],
     rows = [];
@@ -67,7 +78,9 @@ function fixture(repeatEach = 1) {
 test('serial and parallel repeated browser receipts are validated', () => {
   for (const repeat of [1, 2]) {
     const f = fixture(repeat);
-    assert.equal(summarizePhase(f.report, f.rows, repeat).testCount, 30 * repeat);
+    const summary = summarizePhase(f.report, f.rows, repeat);
+    assert.equal(summary.testCount, 35 * repeat);
+    assert.equal(summary.buttonAssertions, 33 * repeat);
   }
 });
 const probes = [
@@ -149,7 +162,8 @@ const probes = [
   [
     'missing MFA assertion',
     (f) => {
-      delete f.rows.find((r) => r.title in PROOFS).proof.mfaRetry;
+      delete f.rows.find((r) => r.title === 'QA05 login SRP MFA error success logout without persisting password').proof
+        .mfaRetry;
     },
   ],
   [
@@ -181,4 +195,57 @@ test('repeat traces cannot duplicate the first execution', () => {
   const f = fixture(2);
   f.rows[1].repeat = 0;
   assert.throws(() => summarizePhase(f.report, f.rows, 2));
+});
+
+test('manifest exactly matches independent Playwright discovery', () => {
+  const cli = createRequire(resolve('apps/admin-web/package.json')).resolve('@playwright/test/cli');
+  const report = JSON.parse(
+    execFileSync(process.execPath, [cli, 'test', '--list', '--reporter=json'], {
+      cwd: resolve('apps/admin-web'),
+      encoding: 'utf8',
+      timeout: 30000,
+      maxBuffer: 8 * 1024 * 1024,
+      env: { ...process.env, QA05_PHASE: 'serial' },
+    }),
+  );
+  assert.equal(validateDiscovery(report).distinctCases, 35);
+});
+for (const [name, mutate] of [
+  ['missing case', (specs) => specs.pop()],
+  ['extra case', (specs) => specs.push({ title: 'unregistered test', tests: [{}] })],
+  [
+    'duplicate replacing required case',
+    (specs) => {
+      specs[1] = specs[0];
+    },
+  ],
+])
+  test(`discovery fails closed: ${name}`, () => {
+    const f = fixture();
+    mutate(f.report.suites[0].suites[0].specs);
+    assert.throws(() => validateDiscovery(f.report), /BROWSER_DISCOVERY_MANIFEST_MISMATCH/);
+  });
+test('old Viewer permission cannot pass the updated matrix', () => {
+  const f = fixture();
+  f.rows
+    .find((row) => row.proof.role === 'CustomerViewer')
+    .proof.routeMatrix.find((route) => route.path === '/device-users').allowed = false;
+  assert.throws(() => summarizePhase(f.report, f.rows, 1), /INCORRECT_ROUTE_MATRIX/);
+});
+for (const title of Object.keys(PROOFS))
+  test(`required behavioral proof cannot be missing: ${title}`, () => {
+    const f = fixture();
+    delete f.rows.find((row) => row.title === title).proof[PROOFS[title][0]];
+    assert.throws(() => summarizePhase(f.report, f.rows, 1), /MISSING_WORKFLOW_PROOF/);
+  });
+test('serial and repeated phases require all 105 independent prefixes', () => {
+  const a = fixture();
+  const b = fixture(2);
+  b.rows.forEach((row, i) => {
+    row.prefix = `QA05-${(i + 1000).toString(16).padStart(12, '0').toUpperCase()}`;
+  });
+  const phases = [summarizePhase(a.report, a.rows, 1), summarizePhase(b.report, b.rows, 2)];
+  assert.equal(validateCrossPhaseIsolation(phases), 105);
+  phases[1].tests[0].prefix = phases[0].tests[0].prefix;
+  assert.throws(() => validateCrossPhaseIsolation(phases), /CROSS_PHASE_DATA_COLLISION/);
 });

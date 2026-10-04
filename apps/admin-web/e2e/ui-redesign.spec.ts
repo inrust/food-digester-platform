@@ -1,13 +1,19 @@
-import { expect } from '@playwright/test';
-import { test } from './qa08-fixture.js';
+import { expect, mergeTests } from '@playwright/test';
+import { test as qa08Test } from './qa08-fixture.js';
+import { test as qa05Test } from './qa05-fixture.js';
 import { json, layoutViolations } from './qa05-api-fixtures.js';
+const test = mergeTests(qa05Test, qa08Test);
 
 for (const viewport of [
   { width: 1366, height: 768 },
   { width: 1440, height: 900 },
   { width: 1920, height: 1080 },
 ]) {
-  test(`UI redesign: all business routes at ${viewport.width}x${viewport.height}`, async ({ page, qa08: q }, info) => {
+  test(`UI redesign: all business routes at ${viewport.width}x${viewport.height}`, async ({
+    page,
+    qa08: q,
+    qa05,
+  }, info) => {
     test.setTimeout(120_000);
     await page.setViewportSize(viewport);
     for (const endpoint of ['alarms', 'audit-logs']) {
@@ -56,6 +62,8 @@ for (const viewport of [
         });
       }
     }
+    qa05.proof.desktopRoutes = true;
+    qa05.proof.desktopLayout = true;
     // The long navigation remains independently scrollable at the minimum office size.
     await page.getByTestId('menu-item-/audit-logs').click();
     await expect(page).toHaveURL(/\/audit-logs$/);
@@ -68,8 +76,10 @@ for (const viewport of [
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByTestId('user-invite-open')).toBeFocused();
+    qa05.proof.dialogKeyboard = true;
     await page.getByTestId('language-select').selectOption('en');
     await expect(page.getByTestId('menu-item-/dashboard')).toContainText('Overview');
     expect(await layoutViolations(page)).toEqual([]);
+    qa05.proof.languageSwitch = true;
   });
 }

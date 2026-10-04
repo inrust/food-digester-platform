@@ -1,0 +1,86 @@
+> food-digester-platform@0.0.0 verify /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks && pnpm check:admin-web-delivery && pnpm check:admin-web-e2e && pnpm check:cmd-ota-delivery && pnpm test:device-contracts /tmp/fdp-device-contracts-gate.json && pnpm test:iot-integration /tmp/fdp-iot-integration-gate.json && pnpm test:core-api-integration /tmp/fdp-core-api-integration-gate.json && pnpm test:admin-e2e-suite /tmp/fdp-admin-e2e-gate.json && pnpm test:security-suite /tmp/fdp-security-gate.json && pnpm test:reliability-suite /tmp/fdp-reliability-gate.json && pnpm test:prototype-regression /tmp/fdp-prototype-regression-gate.json
+> food-digester-platform@0.0.0 lint /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> eslint .
+> food-digester-platform@0.0.0 format:check /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> prettier --check .
+All matched files use Prettier code style!
+> food-digester-platform@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> turbo run typecheck
+> food-digester-platform@0.0.0 openapi:check /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/build-openapi.mjs --check && redocly lint contracts/rest/openapi-base.json "contracts/rest/*-api.json" contracts/rest/openapi.bundle.json --extends spec
+> food-digester-platform@0.0.0 test /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> vitest run && pnpm test:contracts && pnpm test:scripts
+ Test Files  165 passed (165)
+      Tests  1340 passed (1340)
+> food-digester-platform@0.0.0 test:contracts /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> pnpm --filter @fdp/contracts test
+> @fdp/contracts@0.0.0 test /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/contracts
+> node --import tsx --test mqtt/*.test.ts mqtt/*.test.mjs domain/*.test.ts lifecycle/*.test.ts media/*.test.ts security/*.test.ts rest/*.test.ts iot/*.test.mjs archive/*.test.mjs configuration/*.test.ts settings/*.test.ts
+ℹ tests 301
+ℹ pass 301
+ℹ fail 0
+ℹ skipped 0
+> food-digester-platform@0.0.0 test:scripts /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx --test scripts/*.test.mjs
+ℹ tests 422
+ℹ pass 422
+ℹ fail 0
+ℹ skipped 0
+> food-digester-platform@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> turbo run build
+> food-digester-platform@0.0.0 check:boundaries /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-boundaries.mjs
+> food-digester-platform@0.0.0 check:schemas /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-schemas.mjs
+> food-digester-platform@0.0.0 check:migrations /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-migrations.mjs
+> food-digester-platform@0.0.0 check:evidence /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-eng-db-dom-evidence.mjs
+> food-digester-platform@0.0.0 check:secrets /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-secrets.mjs
+敏感信息扫描通过
+> food-digester-platform@0.0.0 check:sensitive-sinks /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-sensitive-sinks.mjs
+> food-digester-platform@0.0.0 check:admin-web-delivery /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-admin-web-delivery.mjs
+> food-digester-platform@0.0.0 check:admin-web-e2e /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> pnpm --filter @fdp/admin-web test:e2e
+> @fdp/admin-web@0.0.0 test:e2e /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web
+> playwright test
+  35 passed (1.4m)
+> food-digester-platform@0.0.0 check:cmd-ota-delivery /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> pnpm check:runtime && pnpm check:cdk
+> food-digester-platform@0.0.0 check:runtime /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/check-delivered-runtime.mjs
+> food-digester-platform@0.0.0 check:cdk /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-cdk-synth.mjs
+> food-digester-platform@0.0.0 test:device-contracts /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-contract-suite.mjs /tmp/fdp-device-contracts-gate.json
+ℹ tests 18
+ℹ pass 18
+ℹ fail 0
+ℹ skipped 0
+ Test Files  9 passed (9)
+      Tests  88 passed (88)
+> food-digester-platform@0.0.0 test:iot-integration /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-iot-integration.mjs /tmp/fdp-iot-integration-gate.json
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+> food-digester-platform@0.0.0 test:core-api-integration /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-core-api-integration.mjs /tmp/fdp-core-api-integration-gate.json
+ Test Files  14 passed (14)
+      Tests  129 passed (129)
+> food-digester-platform@0.0.0 test:admin-e2e-suite /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/run-admin-e2e.mjs /tmp/fdp-admin-e2e-gate.json
+  35 passed (1.4m)
+  70 passed (1.5m)
+> food-digester-platform@0.0.0 test:security-suite /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-security-suite.mjs /tmp/fdp-security-gate.json
+ Test Files  20 passed (20)
+      Tests  215 passed (215)
+> food-digester-platform@0.0.0 test:reliability-suite /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-reliability-suite.mjs /tmp/fdp-reliability-gate.json
+> food-digester-platform@0.0.0 test:prototype-regression /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/run-prototype-regression.mjs /tmp/fdp-prototype-regression-gate.json
+  24 passed (1.9m)

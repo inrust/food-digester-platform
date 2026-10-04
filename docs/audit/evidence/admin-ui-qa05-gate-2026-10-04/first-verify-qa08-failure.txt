@@ -1,0 +1,668 @@
+Running 24 tests using 1 worker
+
+
+
+[1/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 dashboard 375
+  1) e2e/qa08-prototype.spec.ts:461:5 › QA08 dashboard 375 ─────────────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 6
+
+    @@ -202,10 +202,15 @@
+          },
+        ],
+        "buttons": Array [
+          Object {
+            "disabled": false,
+    +       "id": null,
+    +       "name": "刷新",
+    +     },
+    +     Object {
+    +       "disabled": false,
+            "id": "action-START-<fixture>-DEV",
+            "name": "启动",
+          },
+          Object {
+            "disabled": false,
+    @@ -403,10 +408,11 @@
+            "name": "升级",
+          },
+        ],
+        "columns": Array [],
+        "headings": Array [
+    +     "概览",
+          "最新告警",
+          "全部设备（最多 10 台）",
+        ],
+        "labels": Array [],
+      }
+
+       at qa08-fixture.ts:217
+
+      215 |             body = JSON.stringify(canonical, null, 2) + '\n';
+      216 |           if (process.env.QA08_UPDATE === '1') writeFileSync(path, body);
+    > 217 |           else expect(canonical).toEqual(JSON.parse(readFileSync(path, 'utf8')));
+          |                                  ^
+      218 |           q.snapshotHash = createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+      219 |         },
+      220 |       };
+        at Object.snapshot (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-fixture.ts:217:34)
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-prototype.spec.ts:507:7
+
+    Error Context: ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-dashboard-375/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-dashboard-375/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-dashboard-375/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+[2/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-view 375
+  2) e2e/qa08-prototype.spec.ts:461:5 › QA08 device-view 375 ───────────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -39,10 +39,11 @@
+          "碳减排 (kg)",
+          "能耗 (kWh)",
+          "处理量 (kg)",
+        ],
+        "headings": Array [
+    +     "设备状态监测",
+          "<fixture>-ALIAS",
+          "部件状态（传感器健康）",
+          "最新传感器读数（10 类）",
+          "网络",
+          "耗材",
+
+       at qa08-fixture.ts:217
+
+      215 |             body = JSON.stringify(canonical, null, 2) + '\n';
+      216 |           if (process.env.QA08_UPDATE === '1') writeFileSync(path, body);
+    > 217 |           else expect(canonical).toEqual(JSON.parse(readFileSync(path, 'utf8')));
+          |                                  ^
+      218 |           q.snapshotHash = createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+      219 |         },
+      220 |       };
+        at Object.snapshot (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-fixture.ts:217:34)
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-prototype.spec.ts:507:7
+
+    Error Context: ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-view-375/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-view-375/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-view-375/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+[3/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-operate 375
+  3) e2e/qa08-prototype.spec.ts:461:5 › QA08 device-operate 375 ────────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -120,10 +120,11 @@
+          "类型",
+          "内容",
+          "详情",
+        ],
+        "headings": Array [
+    +     "远程设备操作",
+          "选择设备",
+          "当前运行状态：<fixture>-ALIAS",
+          "快捷操作",
+          "命令状态",
+          "最新授权媒体（非实时画面）",
+
+       at qa08-fixture.ts:217
+
+      215 |             body = JSON.stringify(canonical, null, 2) + '\n';
+      216 |           if (process.env.QA08_UPDATE === '1') writeFileSync(path, body);
+    > 217 |           else expect(canonical).toEqual(JSON.parse(readFileSync(path, 'utf8')));
+          |                                  ^
+      218 |           q.snapshotHash = createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+      219 |         },
+      220 |       };
+        at Object.snapshot (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-fixture.ts:217:34)
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-prototype.spec.ts:507:7
+
+    Error Context: ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-operate-375/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-operate-375/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-operate-375/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+[4/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-group 375
+  4) e2e/qa08-prototype.spec.ts:461:5 › QA08 device-group 375 ──────────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -101,10 +101,11 @@
+          "申请日期",
+          "状态",
+          "操作",
+        ],
+        "headings": Array [
+    +     "设备群总览",
+          "新增设备请求",
+        ],
+        "labels": Array [
+          "关键字",
+          "设备区域",
+
+       at qa08-fixture.ts:217
+
+      215 |             body = JSON.stringify(canonical, null, 2) + '\n';
+      216 |           if (process.env.QA08_UPDATE === '1') writeFileSync(path, body);
+    > 217 |           else expect(canonical).toEqual(JSON.parse(readFileSync(path, 'utf8')));
+          |                                  ^
+      218 |           q.snapshotHash = createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+      219 |         },
+      220 |       };
+        at Object.snapshot (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-fixture.ts:217:34)
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-prototype.spec.ts:507:7
+
+    Error Context: ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-group-375/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-group-375/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-group-375/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+[5/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-manage 375
+[6/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-consumable 375
+[7/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 contract-modify 375
+[8/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 contract-new 375
+[9/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 contract-detail 375
+[10/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-overview 375
+  5) e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-overview 375 ──────────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    @@ -36,11 +36,13 @@
+          "估算 CO2e (kg)",
+          "完整率",
+          "缺失记录",
+          "计算版本",
+        ],
+    -   "headings": Array [],
+    +   "headings": Array [
+    +     "ESG 数据总览",
+    +   ],
+        "labels": Array [
+          "起始日期（Asia/Shanghai）",
+          "截止日期",
+        ],
+      }
+
+       at qa08-fixture.ts:217
+
+      215 |             body = JSON.stringify(canonical, null, 2) + '\n';
+      216 |           if (process.env.QA08_UPDATE === '1') writeFileSync(path, body);
+    > 217 |           else expect(canonical).toEqual(JSON.parse(readFileSync(path, 'utf8')));
+          |                                  ^
+      218 |           q.snapshotHash = createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+      219 |         },
+      220 |       };
+        at Object.snapshot (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-fixture.ts:217:34)
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-prototype.spec.ts:507:7
+
+    Error Context: ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-esg-overview-375/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-esg-overview-375/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-esg-overview-375/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+[11/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-device 375
+  6) e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-device 375 ────────────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    @@ -45,11 +45,13 @@
+          "N2O (ppm)",
+          "估算 CO2e (kg)",
+          "完整率",
+          "计算版本",
+        ],
+    -   "headings": Array [],
+    +   "headings": Array [
+    +     "设备 ESG 数据",
+    +   ],
+        "labels": Array [
+          "区域",
+          "子区域",
+          "站点",
+          "设备",
+
+       at qa08-fixture.ts:217
+
+      215 |             body = JSON.stringify(canonical, null, 2) + '\n';
+      216 |           if (process.env.QA08_UPDATE === '1') writeFileSync(path, body);
+    > 217 |           else expect(canonical).toEqual(JSON.parse(readFileSync(path, 'utf8')));
+          |                                  ^
+      218 |           q.snapshotHash = createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+      219 |         },
+      220 |       };
+        at Object.snapshot (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-fixture.ts:217:34)
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-prototype.spec.ts:507:7
+
+    Error Context: ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-esg-device-375/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-esg-device-375/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-esg-device-375/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+[12/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 settings 375
+[13/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 dashboard 1440
+  7) e2e/qa08-prototype.spec.ts:461:5 › QA08 dashboard 1440 ────────────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 6
+
+    @@ -202,10 +202,15 @@
+          },
+        ],
+        "buttons": Array [
+          Object {
+            "disabled": false,
+    +       "id": null,
+    +       "name": "刷新",
+    +     },
+    +     Object {
+    +       "disabled": false,
+            "id": "action-START-<fixture>-DEV",
+            "name": "启动",
+          },
+          Object {
+            "disabled": false,
+    @@ -403,10 +408,11 @@
+            "name": "升级",
+          },
+        ],
+        "columns": Array [],
+        "headings": Array [
+    +     "概览",
+          "最新告警",
+          "全部设备（最多 10 台）",
+        ],
+        "labels": Array [],
+      }
+
+       at qa08-fixture.ts:217
+
+      215 |             body = JSON.stringify(canonical, null, 2) + '\n';
+      216 |           if (process.env.QA08_UPDATE === '1') writeFileSync(path, body);
+    > 217 |           else expect(canonical).toEqual(JSON.parse(readFileSync(path, 'utf8')));
+          |                                  ^
+      218 |           q.snapshotHash = createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+      219 |         },
+      220 |       };
+        at Object.snapshot (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-fixture.ts:217:34)
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-prototype.spec.ts:507:7
+
+    Error Context: ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-dashboard-1440/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-dashboard-1440/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-dashboard-1440/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+[14/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-view 1440
+  8) e2e/qa08-prototype.spec.ts:461:5 › QA08 device-view 1440 ──────────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -39,10 +39,11 @@
+          "碳减排 (kg)",
+          "能耗 (kWh)",
+          "处理量 (kg)",
+        ],
+        "headings": Array [
+    +     "设备状态监测",
+          "<fixture>-ALIAS",
+          "部件状态（传感器健康）",
+          "最新传感器读数（10 类）",
+          "网络",
+          "耗材",
+
+       at qa08-fixture.ts:217
+
+      215 |             body = JSON.stringify(canonical, null, 2) + '\n';
+      216 |           if (process.env.QA08_UPDATE === '1') writeFileSync(path, body);
+    > 217 |           else expect(canonical).toEqual(JSON.parse(readFileSync(path, 'utf8')));
+          |                                  ^
+      218 |           q.snapshotHash = createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+      219 |         },
+      220 |       };
+        at Object.snapshot (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-fixture.ts:217:34)
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-prototype.spec.ts:507:7
+
+    Error Context: ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-view-1440/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-view-1440/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-view-1440/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+[15/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-operate 1440
+  9) e2e/qa08-prototype.spec.ts:461:5 › QA08 device-operate 1440 ───────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -120,10 +120,11 @@
+          "类型",
+          "内容",
+          "详情",
+        ],
+        "headings": Array [
+    +     "远程设备操作",
+          "选择设备",
+          "当前运行状态：<fixture>-ALIAS",
+          "快捷操作",
+          "命令状态",
+          "最新授权媒体（非实时画面）",
+
+       at qa08-fixture.ts:217
+
+      215 |             body = JSON.stringify(canonical, null, 2) + '\n';
+      216 |           if (process.env.QA08_UPDATE === '1') writeFileSync(path, body);
+    > 217 |           else expect(canonical).toEqual(JSON.parse(readFileSync(path, 'utf8')));
+          |                                  ^
+      218 |           q.snapshotHash = createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+      219 |         },
+      220 |       };
+        at Object.snapshot (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-fixture.ts:217:34)
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-prototype.spec.ts:507:7
+
+    Error Context: ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-operate-1440/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-operate-1440/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-operate-1440/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+[16/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-group 1440
+  10) e2e/qa08-prototype.spec.ts:461:5 › QA08 device-group 1440 ────────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -101,10 +101,11 @@
+          "申请日期",
+          "状态",
+          "操作",
+        ],
+        "headings": Array [
+    +     "设备群总览",
+          "新增设备请求",
+        ],
+        "labels": Array [
+          "关键字",
+          "设备区域",
+
+       at qa08-fixture.ts:217
+
+      215 |             body = JSON.stringify(canonical, null, 2) + '\n';
+      216 |           if (process.env.QA08_UPDATE === '1') writeFileSync(path, body);
+    > 217 |           else expect(canonical).toEqual(JSON.parse(readFileSync(path, 'utf8')));
+          |                                  ^
+      218 |           q.snapshotHash = createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+      219 |         },
+      220 |       };
+        at Object.snapshot (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-fixture.ts:217:34)
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-prototype.spec.ts:507:7
+
+    Error Context: ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-group-1440/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-group-1440/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-device-group-1440/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+[17/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-manage 1440
+[18/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-consumable 1440
+[19/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 contract-modify 1440
+[20/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 contract-new 1440
+[21/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 contract-detail 1440
+[22/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-overview 1440
+  11) e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-overview 1440 ────────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    @@ -36,11 +36,13 @@
+          "估算 CO2e (kg)",
+          "完整率",
+          "缺失记录",
+          "计算版本",
+        ],
+    -   "headings": Array [],
+    +   "headings": Array [
+    +     "ESG 数据总览",
+    +   ],
+        "labels": Array [
+          "起始日期（Asia/Shanghai）",
+          "截止日期",
+        ],
+      }
+
+       at qa08-fixture.ts:217
+
+      215 |             body = JSON.stringify(canonical, null, 2) + '\n';
+      216 |           if (process.env.QA08_UPDATE === '1') writeFileSync(path, body);
+    > 217 |           else expect(canonical).toEqual(JSON.parse(readFileSync(path, 'utf8')));
+          |                                  ^
+      218 |           q.snapshotHash = createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+      219 |         },
+      220 |       };
+        at Object.snapshot (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-fixture.ts:217:34)
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-prototype.spec.ts:507:7
+
+    Error Context: ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-esg-overview-1440/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-esg-overview-1440/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-esg-overview-1440/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+[23/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-device 1440
+  12) e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-device 1440 ──────────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    @@ -45,11 +45,13 @@
+          "N2O (ppm)",
+          "估算 CO2e (kg)",
+          "完整率",
+          "计算版本",
+        ],
+    -   "headings": Array [],
+    +   "headings": Array [
+    +     "设备 ESG 数据",
+    +   ],
+        "labels": Array [
+          "区域",
+          "子区域",
+          "站点",
+          "设备",
+
+       at qa08-fixture.ts:217
+
+      215 |             body = JSON.stringify(canonical, null, 2) + '\n';
+      216 |           if (process.env.QA08_UPDATE === '1') writeFileSync(path, body);
+    > 217 |           else expect(canonical).toEqual(JSON.parse(readFileSync(path, 'utf8')));
+          |                                  ^
+      218 |           q.snapshotHash = createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+      219 |         },
+      220 |       };
+        at Object.snapshot (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-fixture.ts:217:34)
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/qa08-prototype.spec.ts:507:7
+
+    Error Context: ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-esg-device-1440/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-esg-device-1440/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace ../../../../../../../../var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa08-browser-ttGTuc/results/qa08-prototype-QA08-esg-device-1440/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+[24/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 settings 1440
+  12 failed
+    e2e/qa08-prototype.spec.ts:461:5 › QA08 dashboard 375 ──────────────────────────────────────────
+    e2e/qa08-prototype.spec.ts:461:5 › QA08 device-view 375 ────────────────────────────────────────
+    e2e/qa08-prototype.spec.ts:461:5 › QA08 device-operate 375 ─────────────────────────────────────
+    e2e/qa08-prototype.spec.ts:461:5 › QA08 device-group 375 ───────────────────────────────────────
+    e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-overview 375 ───────────────────────────────────────
+    e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-device 375 ─────────────────────────────────────────
+    e2e/qa08-prototype.spec.ts:461:5 › QA08 dashboard 1440 ─────────────────────────────────────────
+    e2e/qa08-prototype.spec.ts:461:5 › QA08 device-view 1440 ───────────────────────────────────────
+    e2e/qa08-prototype.spec.ts:461:5 › QA08 device-operate 1440 ────────────────────────────────────
+    e2e/qa08-prototype.spec.ts:461:5 › QA08 device-group 1440 ──────────────────────────────────────
+    e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-overview 1440 ──────────────────────────────────────
+    e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-device 1440 ────────────────────────────────────────
+  12 passed (1.3m)
+[WebServer] (node:78477) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:78500) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter]
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:78513) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:78528) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+(node:78531) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78552) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78562) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78580) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78585) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78629) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78635) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78657) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78662) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78668) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78675) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78734) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78739) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Error: BROWSER_REGRESSION_FAILED
+ ELIFECYCLE  Command failed with exit code 1.
+ ELIFECYCLE  Command failed with exit code 1.

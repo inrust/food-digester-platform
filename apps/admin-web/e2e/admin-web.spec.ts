@@ -12,7 +12,7 @@ import {
 } from './qa05-api-fixtures.js';
 import type { Role } from './qa05-api-fixtures.js';
 
-test('H-01 API 拒绝停用会话后清除浏览器会话并返回登录', async ({ page }) => {
+test('H-01 API 拒绝停用会话后清除浏览器会话并返回登录', async ({ page, qa05 }) => {
   await seedSession(page, 'CustomerViewer', { customerId: 'cust-a' });
   let refreshAttempts = 0;
   await page.route('https://cognito-idp.us-east-1.amazonaws.com/', (route) => {
@@ -36,9 +36,10 @@ test('H-01 API 拒绝停用会话后清除浏览器会话并返回登录', async
   await expect(page).toHaveURL(/\/login/);
   expect(await page.evaluate(() => sessionStorage.getItem('fdp.admin.session.v1'))).toBeNull();
   expect(refreshAttempts).toBe(1);
+  qa05.proof.disabledSessionLogout = true;
 });
 
-test('M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏', async ({ page }) => {
+test('M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏', async ({ page, qa05 }) => {
   await seedSession(page, 'CustomerViewer', { customerId: 'cust-a' });
   await page.route('**/api/v1/admin/dashboard/overview', (route) => json(route, { data: dashboard, meta: {} }));
   await page.route('**/api/v1/admin/devices**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
@@ -80,6 +81,8 @@ test('M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐
   }
   expect(requests.some((request) => request.customerId === 'cust-a')).toBe(true);
   expect(requests.every((request) => request.method === 'GET')).toBe(true);
+  qa05.proof.viewerOwnRead = true;
+  qa05.proof.viewerReadOnly = true;
 });
 
 test('无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫', async ({ qa05 }) => {
