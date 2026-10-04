@@ -448,7 +448,31 @@ describe('租户隔离与权限', () => {
       (await h.disable(writeReq(viewer, 1, { params: { deviceUserId: userId }, body: { reason: 'x' } }))).status,
       403,
     );
-    assert.equal((await h.list(req(viewer, {}))).status, 200);
+    const ownList = await h.list(req(viewer, {}));
+    assert.equal(ownList.status, 200);
+    assert.ok((ownList.body as ListBody).data.some((row) => row.deviceUserId === userId));
+    assert.ok((ownList.body as ListBody).data.every((row) => row.customerId === customerId));
+    assert.equal((await h.detail(req(viewer, { params: { deviceUserId: userId } }))).status, 200);
+    const foreignUser = await createUser(h, otherCustomer);
+    assert.equal(
+      (await h.detail(req(viewer, { params: { deviceUserId: foreignUser.deviceUserId as string } }))).status,
+      404,
+    );
+    const foreignFilter = await h.list(req(viewer, { query: { customerId: otherCustomer } }));
+    assert.equal(foreignFilter.status, 200);
+    assert.ok((foreignFilter.body as ListBody).data.every((row) => row.customerId === customerId));
+    // 隐藏按钮之外，直接调用全部写入口仍拒绝。
+    assert.equal(
+      (await h.create(req(viewer, { body: { customerId, username: 'viewer-write', password: DEVICE_PASSWORD } })))
+        .status,
+      403,
+    );
+    for (const mutate of [h.update, h.assign, h.revoke]) {
+      assert.equal(
+        (await mutate(writeReq(viewer, 1, { params: { deviceUserId: userId }, body: { reason: 'x' } }))).status,
+        403,
+      );
+    }
     // Operator 无 device-user 权限（DEC-012）：读/写均 403
     assert.equal((await h.list(req(operator, {}))).status, 403);
     assert.equal(

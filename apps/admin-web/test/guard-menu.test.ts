@@ -1,5 +1,6 @@
 import { assert, test } from 'vitest';
 import type { Role } from '@fdp/auth';
+import { hasPermission, ROLES } from '@fdp/auth';
 import { menuForRoles, homePathForRoles, roleDisplayName } from '../src/menu/menu.js';
 import type { MenuNode } from '../src/menu/menu.js';
 import { resolveRoute } from '../src/router/guard.js';
@@ -100,8 +101,18 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/overview',
     '/esg/devices',
     '/sites',
+    '/device-users',
   ],
 };
+
+test('设备用户路由与菜单遵循共享读取权限；写权限保持独立', () => {
+  for (const role of ROLES) {
+    const readable = hasPermission(role, 'device-user:read');
+    assert.equal(menuPaths([role]).includes('/device-users'), readable, role);
+    assert.equal(resolveRoute('/device-users', sessionOf(role)).kind, readable ? 'allow' : 'forbidden', role);
+  }
+  assert.equal(hasPermission('CustomerViewer', 'device-user:write'), false);
+});
 
 for (const role of Object.keys(EXPECTED_MENUS) as Role[]) {
   test(`角色菜单：${role} 看到且仅看到其路由`, () => {

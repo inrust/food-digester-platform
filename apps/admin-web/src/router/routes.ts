@@ -8,6 +8,7 @@ import { translate } from '../i18n/i18n.js';
  * 注意：前端路由守卫只是体验层，授权唯一可信来源是后端（AUTH-01）。
  */
 import type { Role } from '@fdp/auth';
+import { hasPermission } from '@fdp/auth/browser';
 export const LOGIN_PATH = '/login';
 export const FORBIDDEN_PATH = '/403';
 export type MenuGroupId = 'overview' | 'device' | 'esg' | 'contract' | 'platform';
@@ -221,14 +222,14 @@ export const APP_ROUTES: readonly AppRoute[] = [
     roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
     menuGroup: 'contract',
   },
-  // FE-09 扩展路由：device-user:read = SuperAdmin/Auditor/CustomerAdmin（Operator 无此权限点）
+  // FE-09 扩展路由（CT-06 矩阵外）：按共享 device-user:read 权限生成角色；Viewer 只读。
   {
     path: '/device-users',
     pageState: 'device-users',
     get label() {
       return translate('page.024ebe3ff3d1');
     },
-    roles: ['PlatformSuperAdmin', 'Auditor', 'CustomerAdmin'],
+    roles: ALL_ROLES.filter((role) => hasPermission(role, 'device-user:read')),
     menuGroup: 'platform',
   },
   // FE-15 扩展路由（CT-06 矩阵外）：audit:read V1 仅 PlatformSuperAdmin/Auditor（Customer 角色 403）

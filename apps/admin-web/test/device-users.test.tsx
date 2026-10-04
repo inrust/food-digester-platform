@@ -304,8 +304,9 @@ test('修改资料：原因必填；空显示名提交 null；详情含同步版
   assert.deepEqual(calls.updated, [{ deviceUserId: 'du-001', displayName: null, reason: '规范化命名' }]);
 });
 
-test('Auditor 只读：无创建/编辑/重置/停用/分配/撤销入口', () => {
-  renderPage({ role: 'Auditor', detail: { kind: 'ready', detail: DETAIL } });
+test.each(['Auditor', 'CustomerViewer'] as const)('%s 只读：可查详情，无创建/编辑/重置/停用/分配/撤销入口', (role) => {
+  const { calls } = renderPage({ role, detail: { kind: 'ready', detail: DETAIL } });
+  assert.ok(screen.getByTestId('detail-version'));
   assert.equal(screen.queryByTestId('device-user-create'), null);
   for (const testid of [
     'device-user-edit',
@@ -314,8 +315,13 @@ test('Auditor 只读：无创建/编辑/重置/停用/分配/撤销入口', () =
     'device-user-assign',
     'device-user-revoke',
   ]) {
-    assert.equal(screen.queryByTestId(testid), null, `Auditor 不应看到 ${testid}`);
+    assert.equal(screen.queryByTestId(testid), null, `${role} 不应看到 ${testid}`);
   }
+  assert.deepEqual(calls.created, []);
+  assert.deepEqual(calls.updated, []);
+  assert.deepEqual(calls.assigned, []);
+  assert.deepEqual(calls.revoked, []);
+  assert.deepEqual(calls.disabled, []);
 });
 
 // ---------- API 装配（If-Match=version + 强制原因 + 密码仅写） ----------

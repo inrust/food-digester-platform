@@ -20,7 +20,7 @@
 | 项 | 说明 |
 |---|---|
 | 任务 | FE-09（P1），依赖 FE-02（已交付）、BE-CFG-01（admin-configuration-api.json）、BE-DUSR-01/02（admin-device-user-api.json） |
-| 路由 | `/configurations`（配置管理，config:read = 平台三角色）、`/device-users`（设备用户，device-user:read = SuperAdmin/Auditor/CustomerAdmin；Operator 无此权限点） |
+| 路由 | `/configurations`（配置管理，config:read = 平台三角色）、`/device-users`（设备用户，device-user:read = SuperAdmin/Auditor/CustomerAdmin/CustomerViewer；Operator 无此权限点；Viewer 只读，Customer scope 由服务端强制） |
 | DEC-018@1.0.0 | V1 配置仅四字段：heartbeatInterval（秒 10~900 默认 60）、telemetryInterval（秒 5~3600 默认 30）、cameraRefreshInterval（**分钟** 1~1440 默认 1）、temperatureThreshold（°C 0~120 默认 80）；常量与冻结策略 JSON 由 parity 测试双向锁定 |
 | 候选扩展 | 图像/上传间隔、旋转、电机过载、温度上下限、语言、云域名/NTP 不进入 V1：不渲染任何字段（DOM 负向断言锁定） |
 | DEC-004 | 设备本地密码仅写接口受控接收一次（writeOnly），不回显/不持久化；类型层无密码字段；任何 DOM 不出现 passwordHash |

@@ -12,6 +12,76 @@ import {
 } from './qa05-api-fixtures.js';
 import type { Role } from './qa05-api-fixtures.js';
 
+test('H-01 API 拒绝停用会话后清除浏览器会话并返回登录', async ({ page }) => {
+  await seedSession(page, 'CustomerViewer', { customerId: 'cust-a' });
+  let refreshAttempts = 0;
+  await page.route('https://cognito-idp.us-east-1.amazonaws.com/', (route) => {
+    refreshAttempts += 1;
+    return json(route, { __type: 'NotAuthorizedException' }, 400);
+  });
+  await page.route('**/api/v1/admin/dashboard/overview', (route) =>
+    json(
+      route,
+      {
+        error: {
+          code: 'UNAUTHENTICATED',
+          message: 'Authentication is required or the credential is invalid',
+          requestId: 'req-disabled',
+        },
+      },
+      401,
+    ),
+  );
+  await page.goto('/dashboard');
+  await expect(page).toHaveURL(/\/login/);
+  expect(await page.evaluate(() => sessionStorage.getItem('fdp.admin.session.v1'))).toBeNull();
+  expect(refreshAttempts).toBe(1);
+});
+
+test('M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏', async ({ page }) => {
+  await seedSession(page, 'CustomerViewer', { customerId: 'cust-a' });
+  await page.route('**/api/v1/admin/dashboard/overview', (route) => json(route, { data: dashboard, meta: {} }));
+  await page.route('**/api/v1/admin/devices**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  const row = {
+    deviceUserId: 'du-viewer',
+    customerId: 'cust-a',
+    username: 'own-device-user',
+    displayName: '本租户设备用户',
+    status: 'ACTIVE',
+    version: 1,
+    activeDeviceCount: 0,
+    createdAt: '2026-10-04T00:00:00Z',
+    updatedAt: '2026-10-04T00:00:00Z',
+  };
+  const requests: { method: string; customerId: string | null }[] = [];
+  await page.route('**/api/v1/admin/device-users**', (route) => {
+    const url = new URL(route.request().url());
+    requests.push({ method: route.request().method(), customerId: url.searchParams.get('customerId') });
+    return json(route, {
+      data: url.pathname.endsWith('/du-viewer') ? { ...row, assignments: [], syncStates: [] } : [row],
+      meta: { nextCursor: null },
+    });
+  });
+  await page.goto('/dashboard');
+  await page.getByRole('link', { name: '设备用户', exact: true }).click();
+  await expect(page).toHaveURL(/\/device-users$/);
+  await expect(page.getByTestId('device-user-row-du-viewer')).toContainText('本租户设备用户');
+  await page.getByTestId('device-user-detail-du-viewer').click();
+  await expect(page.getByTestId('detail-version')).toHaveText('v1');
+  for (const id of [
+    'device-user-create',
+    'device-user-edit',
+    'device-user-password-reset',
+    'device-user-disable',
+    'device-user-assign',
+    'device-user-revoke',
+  ]) {
+    await expect(page.getByTestId(id)).toHaveCount(0);
+  }
+  expect(requests.some((request) => request.customerId === 'cust-a')).toBe(true);
+  expect(requests.every((request) => request.method === 'GET')).toBe(true);
+});
+
 test('无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫', async ({ qa05 }) => {
   const anonymous = await qa05.newPage();
   await anonymous.goto('/customers');

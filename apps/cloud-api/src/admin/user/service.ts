@@ -27,7 +27,7 @@ import {
   withTransaction,
 } from '@fdp/database';
 import type { ActorContext, Role } from '@fdp/auth';
-import { CUSTOMER_ROLES, PLATFORM_ROLES, actorTypeOf, isRole } from '@fdp/auth';
+import { CUSTOMER_ROLES, PLATFORM_ROLES, actorTypeOf, isRole, unauthenticated } from '@fdp/auth';
 import { userConflict, userForbidden, userNotFound, userValidationFailed } from './errors.js';
 import type { CognitoAdminPort } from './cognito-port.js';
 
@@ -211,7 +211,9 @@ export interface AuthenticatedUserSyncDeps {
 }
 
 /**
- * Cognito 完成首次登录后，在第一个通过验签的管理 API 请求中把对应业务用户激活。
+ * 每个通过验签的管理 API 请求均检查业务账号状态，拒绝已停用账号的旧 Token。
+ * Cognito 完成首次登录后，把对应 INVITED 业务用户激活。
+ * 无对应业务记录的启动账号维持既有认证/授权边界；不缓存账号状态。
  * 条件更新保证并发/重复请求至多迁移一次，状态更新与 SUCCESS 审计同事务提交。
  */
 export async function activateInvitedUserOnAuthenticatedRequest(
@@ -223,6 +225,7 @@ export async function activateInvitedUserOnAuthenticatedRequest(
   const target = (await users(deps.client).findFirst({
     where: { cognitoSub: actor.actorId },
   })) as unknown as UserRow | null;
+  if (target?.status === 'DISABLED') throw unauthenticated();
   if (!target || target.status !== 'INVITED') return false;
 
   return withTransaction(deps.client, async (tx) => {
@@ -230,7 +233,12 @@ export async function activateInvitedUserOnAuthenticatedRequest(
       where: { id: target.id, cognitoSub: actor.actorId, status: 'INVITED' },
       data: { status: 'ACTIVE', updatedAt: now },
     });
-    if (updated.count !== 1) return false;
+    if (updated.count !== 1) {
+      // 停用可能在首次查询与条件激活之间提交，不能把失败的激活当作可继续访问。
+      const current = (await users(tx).findFirst({ where: { id: target.id } })) as unknown as UserRow | null;
+      if (current?.status === 'DISABLED') throw unauthenticated();
+      return false;
+    }
 
     await recordAudit(tx, {
       objectType: 'user',

@@ -15,7 +15,7 @@ const routes: [string, Role[]][] = [
   ['/sites', ROLES],
   ['/licenses', platform],
   ['/configurations', platform],
-  ['/device-users', ['PlatformSuperAdmin', 'Auditor', 'CustomerAdmin']],
+  ['/device-users', ['PlatformSuperAdmin', 'Auditor', 'CustomerAdmin', 'CustomerViewer']],
   ['/alarms', ROLES],
   ['/media', ROLES],
   ['/audit-logs', ['PlatformSuperAdmin', 'Auditor']],

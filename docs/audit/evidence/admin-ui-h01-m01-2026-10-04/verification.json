@@ -1,0 +1,82 @@
+{
+  "status": "PASS_LOCAL_ONLY",
+  "targetAccepted": false,
+  "productionAccepted": false,
+  "baselineCommit": "bba270d1ce710e6982d019f950beb00d762c8307",
+  "createdAt": "2026-10-04T04:54:37.200066+00:00",
+  "filesSha256": {
+    "apps/cloud-api/src/admin/user/service.ts": "e43399f6334ee113c95ea2459182da0871ee502beabb5a65accba5db3ff84a3c",
+    "apps/cloud-api/test/admin-user.test.ts": "1f8937675c79496c7e7e21a9796661d9b7858e826cbd51f711c7d988e07f70e0",
+    "apps/cloud-api/test/admin-device-user.test.ts": "f0a55944f79deb20d1ffec205d95c31aff33c18ce4a9acd49506cb4b08320daa",
+    "apps/admin-web/src/router/routes.ts": "e9a302b95d32ba39a8d1c3d14b096aec5479649244dcc43a7c62feb3ba5c7475",
+    "apps/admin-web/test/guard-menu.test.ts": "b6cbebaec6389e9f1172b1d86d6dd01adaf09d020af966880522dc64f43f0112",
+    "apps/admin-web/test/shell.test.tsx": "5b5bd0baad01b6e33c5168b7a0b95930b1b93b317e837a99784b55ac54fcb250",
+    "apps/admin-web/test/device-users.test.tsx": "1aeae56982beb2873da15bf3f0d76ce8f7fe89427f8b6f78129a976cf18d9255",
+    "apps/admin-web/e2e/admin-web.spec.ts": "dd3e51b980a1185e2911957098996bf0770da86f63637fd027bba85e62d1c882",
+    "apps/admin-web/e2e/qa05-workflows.spec.ts": "4d48d938bd16182dc54b534842244abe0d425638bcfcb1edf078950883ce1083"
+  },
+  "checks": [
+    {
+      "name": "vitest",
+      "command": "pnpm exec vitest run",
+      "status": "PASS",
+      "filesOrWorkspaces": 165,
+      "tests": 1340
+    },
+    {
+      "name": "related_final",
+      "command": "pnpm exec vitest run apps/cloud-api/test/admin-user.test.ts apps/cloud-api/test/admin-device-user.test.ts",
+      "status": "PASS",
+      "filesOrWorkspaces": 2,
+      "tests": 39
+    },
+    {
+      "name": "contracts",
+      "command": "pnpm test:contracts",
+      "status": "PASS",
+      "tests": 301
+    },
+    {
+      "name": "scripts",
+      "command": "pnpm test:scripts",
+      "status": "PASS",
+      "tests": 407
+    },
+    {
+      "name": "typecheck",
+      "command": "pnpm typecheck",
+      "status": "PASS",
+      "filesOrWorkspaces": 21
+    },
+    {
+      "name": "browser",
+      "command": "UI_COMPAT_RUN=1 pnpm --filter @fdp/admin-web test:e2e --grep \"QA05 role route and button matrix|H-01|M-01\"",
+      "status": "PASS",
+      "tests": 28
+    }
+  ],
+  "browserProjects": [
+    "chromium",
+    "chrome (channel chrome)",
+    "firefox",
+    "edge (channel msedge)"
+  ],
+  "browserTestsPerProject": 7,
+  "initialBrowserResult": {
+    "passed": 24,
+    "failed": 4,
+    "reason": "Missing Cognito refresh rejection fixture; external request blocked; corrected and full selected matrix rerun"
+  },
+  "qualityGates": [
+    "lint",
+    "format:check",
+    "check:boundaries",
+    "check:schemas",
+    "check:secrets",
+    "check:sensitive-sinks",
+    "check:admin-web-delivery",
+    "check:runtime",
+    "git diff --check"
+  ],
+  "scope": "Local signed JWT + PostgreSQL and isolated browser fixtures; no target deployment or real Cognito reacceptance"
+}

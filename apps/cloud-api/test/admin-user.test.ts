@@ -12,7 +12,7 @@
  * - 审计齐备：user.invite / user.role.assign / user.scope.change / user.disable / user.password_reset.trigger；
  * - 列表筛选（roleType/status/customerId/q）+ 键集游标分页；视图不泄露 cognitoSub。
  */
-import { afterAll, beforeAll, describe, test } from 'vitest';
+import { afterAll, beforeAll, describe, test, vi } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
@@ -25,6 +25,8 @@ import {
 } from '../src/index.js';
 import type { AdminHttpRequest, CognitoAdminPort, UserAdminDeps } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { generateTestKeySet, signToken, testConfig } from '../../../packages/auth/test/helpers.js';
+import { createAdminLambdaRouter } from '../src/runtime/admin-lambda.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -169,6 +171,90 @@ function expectNoCredentialLeak(body: unknown): void {
 // ---------- 首次认证状态收敛 ----------
 
 describe('首次认证用户状态收敛', () => {
+  for (const role of [
+    'PlatformSuperAdmin',
+    'PlatformOperator',
+    'Auditor',
+    'CustomerAdmin',
+    'CustomerViewer',
+  ] as const) {
+    test.each(['id', 'access'] as const)(`${role} 停用后旧 %s Token 不再进入读写路由`, async (tokenUse) => {
+      // 独立保留管理员，停用 SuperAdmin 时不触发最后管理员保护。
+      await plantUser({ roles: ['PlatformSuperAdmin'] });
+      const customerId = role.startsWith('Customer') ? await plantCustomer() : undefined;
+      const target = await plantUser({ roles: [role], ...(customerId ? { customerId } : {}) });
+      const keys = await generateTestKeySet();
+      const token = await signToken(keys, {
+        groups: [role],
+        sub: target.cognitoSub,
+        tokenUse,
+        ...(customerId ? { customerId } : {}),
+      });
+      const read = vi.fn(async () => ({ status: 200, body: { data: [] } }));
+      const write = vi.fn(async () => ({ status: 201, body: { data: {} } }));
+      const resolve = vi.fn((event) => (event.httpMethod === 'POST' ? write : read));
+      const handler = createAdminLambdaRouter(testConfig(keys.jwks), resolve, {
+        onAuthenticated: async (actor, requestId) => {
+          await activateInvitedUserOnAuthenticatedRequest({ client: prisma }, actor, requestId);
+        },
+      });
+      const event = { headers: { authorization: `Bearer ${token}` }, requestContext: { requestId: 'req-old-token' } };
+      assert.equal((await handler({ ...event, httpMethod: 'GET' })).statusCode, 200);
+      assert.equal((await handler({ ...event, httpMethod: 'POST', body: '{}' })).statusCode, 201);
+      const { port } = fakeCognito();
+      const disabled = await createAdminUserHandlers(userDeps(port)).disableUser(
+        req(superAdmin, { params: { userId: target.userId } }),
+      );
+      assert.equal(disabled.status, 200);
+      assert.equal((await prisma.user.findUnique({ where: { id: target.userId } }))?.status, 'DISABLED');
+      read.mockClear();
+      write.mockClear();
+      resolve.mockClear();
+      const auditCount = await prisma.auditLog.count({ where: { objectId: target.userId } });
+      for (const httpMethod of ['GET', 'POST']) {
+        // 原 Token 原样重用，未重新签发或等到到期。
+        const response = await handler({ ...event, httpMethod, ...(httpMethod === 'POST' ? { body: '{}' } : {}) });
+        assert.equal(response.statusCode, 401);
+        assert.deepEqual(JSON.parse(response.body).error, {
+          code: 'UNAUTHENTICATED',
+          message: 'Authentication is required or the credential is invalid',
+          requestId: 'req-old-token',
+        });
+      }
+      assert.equal(resolve.mock.calls.length, 0);
+      assert.equal(read.mock.calls.length, 0);
+      assert.equal(write.mock.calls.length, 0);
+      assert.equal(await prisma.auditLog.count({ where: { objectId: target.userId } }), auditCount);
+    });
+  }
+
+  test('首次查询后被停用的 INVITED 用户不能绕过状态检查，且不写激活审计', async () => {
+    const target = await plantUser({ roles: ['Auditor'], status: 'INVITED' });
+    const find = prisma.user.findFirst.bind(prisma.user);
+    const query = vi.spyOn(prisma.user, 'findFirst').mockImplementationOnce((args) => {
+      // 此服务仅 await 查询结果，不使用 Prisma 关系查询方法。
+      return (async () => {
+        const invited = await find(args);
+        await prisma.user.update({ where: { id: target.userId }, data: { status: 'DISABLED' } });
+        return invited;
+      })() as ReturnType<typeof prisma.user.findFirst>;
+    });
+    try {
+      await expectReject(
+        activateInvitedUserOnAuthenticatedRequest(
+          { client: prisma },
+          { ...superAdmin, actorId: target.cognitoSub },
+          'req-activation-race',
+        ),
+        'UNAUTHENTICATED',
+      );
+      assert.equal((await prisma.user.findUnique({ where: { id: target.userId } }))?.status, 'DISABLED');
+      assert.equal(await prisma.auditLog.count({ where: { objectId: target.userId, action: 'user.activate' } }), 0);
+    } finally {
+      query.mockRestore();
+    }
+  });
+
   test('INVITED 用户首次通过认证后转为 ACTIVE，并只记录一次审计', async () => {
     const target = await plantUser({
       roles: ['PlatformSuperAdmin'],
