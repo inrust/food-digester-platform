@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { main } from './run-qa09-ten-device-acceptance.mjs';
 import { runBusinessTarget } from './qa09-business-target.mjs';
 import { cleanupOwnedDomain } from './qa09-owned-domain-cleanup.mjs';
-import { readOwnLicenseSync, licenseSyncObservationGate } from './qa09-natural-lifecycle-observation.mjs';
+import { confirmOwnLicenseReceived, licenseSyncObservationGate } from './qa09-natural-lifecycle-observation.mjs';
 
 const [output, version] = process.argv.slice(2);
 if (!output || !version) throw Error('OUTPUT_AND_VERSION_REQUIRED');
@@ -13,6 +13,7 @@ const paths = [
   'scripts/qa09-business-target.mjs',
   'scripts/qa09-license-lifecycle.mjs',
   'scripts/qa09-natural-lifecycle-observation.mjs',
+  'scripts/qa09-data-path-evidence.mjs',
   'scripts/qa09-write-boundary-probes.mjs',
   'scripts/qa09-performance-probes.mjs',
   'scripts/qa09-own-queue-redelivery.mjs',
@@ -75,7 +76,7 @@ const parent = await main(output + '.devices.json', version, async (ctx) => {
   };
   const observe = (phase) => async (license) => {
     try {
-      const row = await readOwnLicenseSync(ctx, license.licenseId, natural.rows.at(-1)?.snapshotAt ?? null);
+      const row = await confirmOwnLicenseReceived(ctx, license.licenseId, natural.rows.at(-1)?.snapshotAt ?? null);
       const detail = await ctx.api(
         'natural-' + phase + '-device-readback',
         'GET',

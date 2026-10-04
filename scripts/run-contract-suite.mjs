@@ -13,6 +13,7 @@ export const DEVICE_TEST_FILES = [
   'certificate-status',
   'certificate-rotate',
   'device-sync',
+  'license-sync-lifecycle',
   'device-deactivate',
   'media',
   'csr-onboarding',

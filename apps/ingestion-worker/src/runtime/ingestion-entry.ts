@@ -1,3 +1,4 @@
+import { withDataPathTrace, observeDataPathPhase, createRedactingLogger } from '@fdp/observability';
 import {
   createAwsIotProvisioningClient,
   createKmsDataKeyProvider,
@@ -16,6 +17,8 @@ import {
 } from '@fdp/contracts/media/media-upload-policy.js';
 import { createBusinessDispatcher } from '../ingest/dispatcher.js';
 import { createIngestionHandler, type SqsBatchEventLike, type SqsBatchResponseLike } from '../ingest/handler.js';
+
+const logger = createRedactingLogger(console);
 
 const required = (name: string): string => {
   const value = process.env[name];
@@ -57,7 +60,16 @@ async function initialize() {
   });
 }
 
-export async function handler(event: SqsBatchEventLike): Promise<SqsBatchResponseLike> {
-  runtimeHandler ??= await initialize();
-  return runtimeHandler(event);
+export async function handler(
+  event: SqsBatchEventLike,
+  context?: { readonly awsRequestId?: string },
+): Promise<SqsBatchResponseLike> {
+  return withDataPathTrace(
+    { ...(context?.awsRequestId ? { lambdaRequestId: context.awsRequestId } : {}), coldStart: !runtimeHandler },
+    async () => {
+      runtimeHandler ??= await observeDataPathPhase('runtime-initialize', initialize);
+      return runtimeHandler(event);
+    },
+    (row) => logger.info(JSON.stringify(row)),
+  );
 }

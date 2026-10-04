@@ -10,7 +10,7 @@
  * - 敏感字段不写日志：Quarantine 记录仅含原文与错误元数据，Handler 不输出 Payload 日志。
  */
 import type { DbClient } from '@fdp/database';
-import { createRedactingLogger } from '@fdp/observability';
+import { createRedactingLogger, withDataPathTrace, observeRecordResult } from '@fdp/observability';
 import { IngestError } from './errors.js';
 import { parseEnvelope } from './envelope.js';
 import { validateRecord } from './pipeline.js';
@@ -67,40 +67,48 @@ export function createIngestionHandler(
   return async (event) => {
     const failures: { itemIdentifier: string }[] = [];
     for (const record of event.Records) {
-      try {
-        const message = await validateRecord(deps, record.body);
-        await deps.onValidated?.(message);
-      } catch (err) {
-        if (err instanceof IngestError && err.classification === 'QUARANTINE') {
-          logger.warn('ingestion message quarantined', {
-            event: 'ingestion.quarantined',
-            messageId: record.messageId,
-            errorType: err.errorType,
-            errorPath: err.errorPath,
-            reason: err.message,
-            ...envelopeContextOf(record.body),
-          });
-          try {
-            await deps.quarantine.send({
-              rawBody: record.body,
+      await withDataPathTrace({ sqsMessageId: record.messageId }, async () => {
+        try {
+          const message = await validateRecord(deps, record.body);
+          await deps.onValidated?.(message);
+          observeRecordResult(deps.onValidated ? 'PROCESSED' : 'VALIDATED_ONLY');
+        } catch (err) {
+          if (err instanceof IngestError && err.classification === 'QUARANTINE') {
+            logger.warn('ingestion message quarantined', {
+              event: 'ingestion.quarantined',
+              messageId: record.messageId,
               errorType: err.errorType,
               errorPath: err.errorPath,
               reason: err.message,
               ...envelopeContextOf(record.body),
             });
-          } catch {
-            // 隔离投递自身失败属于当前记录的瞬时错误；继续处理同批后续记录。
-            failures.push({ itemIdentifier: record.messageId });
+            try {
+              await deps.quarantine.send({
+                rawBody: record.body,
+                errorType: err.errorType,
+                errorPath: err.errorPath,
+                reason: err.message,
+                ...envelopeContextOf(record.body),
+              });
+            } catch {
+              // 隔离投递自身失败属于当前记录的瞬时错误；继续处理同批后续记录。
+              failures.push({ itemIdentifier: record.messageId });
+              observeRecordResult('RETRY');
+              return;
+            }
+            observeRecordResult('QUARANTINED');
+            return; // 已隔离则成功；投递失败时当前记录已加入 partial failure
           }
-          continue; // 已隔离则成功；投递失败时当前记录已加入 partial failure
-        }
-        if (err instanceof IngestError && err.classification === 'TRANSIENT') {
+          if (err instanceof IngestError && err.classification === 'TRANSIENT') {
+            failures.push({ itemIdentifier: record.messageId });
+            observeRecordResult('RETRY');
+            return;
+          }
+          // 未知异常按瞬时错误处理（DB/AWS 抖动），交由 SQS 重试
           failures.push({ itemIdentifier: record.messageId });
-          continue;
+          observeRecordResult('RETRY');
         }
-        // 未知异常按瞬时错误处理（DB/AWS 抖动），交由 SQS 重试
-        failures.push({ itemIdentifier: record.messageId });
-      }
+      });
     }
     return { batchItemFailures: failures };
   };

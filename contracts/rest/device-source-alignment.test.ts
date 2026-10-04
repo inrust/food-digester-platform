@@ -68,7 +68,7 @@ test('Certificate 与 Sync 关键字段遵循源稿日期、枚举、用户和�
   const license = sync.components.schemas.SyncLicense;
   assert.ok(license.properties.status.enum.includes('ACTIVE'));
   assert.deepEqual(license.properties.entitlements.items.enum, ['REMOTE_CONTROL', 'OTA', 'ESG_REPORTING']);
-  assert.equal(license.properties.signature.type, 'string');
+  assert.deepEqual(license.properties.signature.type, ['string', 'null']); // Draft 尚未签发；已签发仍为字符串。
   assert.equal(adminLicense.components.schemas.LicenseCreateRequest.properties.validFrom.format, 'date');
   assert.equal(adminLicense.components.schemas.License.properties.validTo.format, 'date');
   assert.equal(adminDevice.components.schemas.DeviceLicenseSummary.properties.validFrom.format, 'date');

@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { main } from './run-qa09-ten-device-acceptance.mjs';
 import { runFixture } from './qa09-ten-device-bridge.mjs';
 import { runPerformanceProbes } from './qa09-performance-probes.mjs';
+import { confirmOwnLicenseReceived, licenseSyncObservationGate } from './qa09-natural-lifecycle-observation.mjs';
 import { cleanupOwnedDomain } from './qa09-owned-domain-cleanup.mjs';
 const [output, version] = process.argv.slice(2);
 const sha = (b) => createHash('sha256').update(b).digest('hex');
@@ -10,6 +11,8 @@ const paths = [
   'scripts/run-qa09-normal-slo-target.mjs',
   'scripts/run-qa09-ten-device-acceptance.mjs',
   'scripts/qa09-performance-probes.mjs',
+  'scripts/qa09-natural-lifecycle-observation.mjs',
+  'scripts/qa09-data-path-evidence.mjs',
   'scripts/qa09-own-queue-redelivery.mjs',
   'scripts/qa09-ten-device-db.mjs',
   'scripts/qa09-ten-device-bridge.mjs',
@@ -48,6 +51,7 @@ const parent = await main(output + '.devices.json', version, async (ctx) => {
     prefix: ctx.receipt.prefix,
     sourceCommit: ctx.receipt.sourceCommit,
     startedAt: new Date().toISOString(),
+    naturalLifecycle: { rows: [], independentHmacVerificationGate: 'NOT_RUN_NO_DEVICE_TRUST_CONFIGURATION' },
     checks: [],
     requests: [],
     databaseBuilds: [],
@@ -97,6 +101,22 @@ const parent = await main(output + '.devices.json', version, async (ctx) => {
       requestId: data?.meta?.requestId ?? data?.error?.requestId,
       latencyMs: Math.round(performance.now() - started),
     });
+    if (method === 'POST' && /^\/api\/v1\/admin\/licenses\/[a-f0-9-]+\/(issue|activate)$/.test(path)) {
+      const phase = path.endsWith('/issue') ? 'issued' : 'activated';
+      const row = await confirmOwnLicenseReceived(ctx, data.data.licenseId);
+      const detail = await ctx.api(
+        'natural-' + phase + '-readback',
+        'GET',
+        '/api/v1/admin/devices/' + ctx.receipt.devices[0],
+        200,
+      );
+      child.naturalLifecycle.rows.push({ phase, ...row, adminLifecycleStatus: detail.data.lifecycleStatus });
+      record(
+        'natural-' + phase + '-received',
+        row.receiptConfirmationAccepted === true && detail.data.lifecycleStatus === row.lifecycleStatus,
+      );
+      Object.assign(child.naturalLifecycle, licenseSyncObservationGate(child.naturalLifecycle.rows));
+    }
     save();
     return data;
   };

@@ -1,3 +1,4 @@
+import { observeDataPathSyncPhase } from '@fdp/observability';
 /**
  * 管理 API 的可信 Lambda 组合根。
  *
@@ -105,7 +106,11 @@ const header = (headers: Readonly<Record<string, string | undefined>>, wanted: s
 };
 
 function result(status: number, body: unknown): ApiGatewayAdminResult {
-  return { statusCode: status, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
+  return {
+    statusCode: status,
+    headers: { 'content-type': 'application/json' },
+    body: observeDataPathSyncPhase('response-serialize', () => JSON.stringify(body)),
+  };
 }
 
 /** AUTH-01 的首个生产路由表；不匹配的接口失败关闭为 404，不回退到未鉴权 Handler。 */

@@ -2,9 +2,9 @@
  * BE-SYNC-01 Unified Device Sync API Handler：POST /api/v1/device/sync（框架无关）。
  *
  * 接线：AUTH-03 verifyDeviceCertificate（mTLS 白名单；DEC-014 仅放行 72 小时窗口内的
- * PENDING_CONFIRMATION Retired；Suspended 放行）→ parseSyncRequest → buildDeviceSyncSnapshot。
+ * PENDING_CONFIRMATION Retired；Suspended 放行）→ parseSyncRequest → 可选许可证确认 → buildDeviceSyncSnapshot。
  * 响应：源协议顶层完整事实快照（含 etag），不使用 data/meta Envelope；
- * 错误：400 VALIDATION_FAILED / 401 UNAUTHENTICATED / 403 FORBIDDEN / 500 通用消息。
+ * 错误：400 VALIDATION_FAILED / 401 UNAUTHENTICATED / 403 FORBIDDEN / 409 CONFLICT / 500 通用消息。
  * 写入最小 Device User 快照交付/确认状态及证书 REST 验证时间；双通道轮换确认可撤销旧证并审计；响应不含证书材料与云端凭据（Device Users 验证材料为
  * DEC-004 设备本地专用加盐验证值，是本域的授权下发内容）。
  */
@@ -13,6 +13,7 @@ import type { ClientCertIdentity } from '@fdp/auth';
 import { mapDbErrorToHttp } from '@fdp/database';
 import { DeviceSyncError, buildDeviceSyncSnapshot, parseSyncRequest } from './sync.js';
 import type { DeviceSyncDeps } from './sync.js';
+import { confirmLicenseSnapshot, recordLicenseSnapshotServed } from './license-sync.js';
 
 export interface DeviceSyncRequest {
   readonly identity?: ClientCertIdentity | undefined;
@@ -57,11 +58,13 @@ export function createDeviceSyncHandler(
     try {
       const auth = await verifyDeviceCertificate(deps.client, req.identity, { now: now(), retiredAccess: 'SYNC' });
       const input = parseSyncRequest(req.body);
+      if (input.licenseConfirmation) await confirmLicenseSnapshot(deps, auth, input.licenseConfirmation, req.requestId);
       const snapshot = await buildDeviceSyncSnapshot(deps, auth, input);
       return {
         status: 200,
         body: snapshot,
         onCommitted: async () => {
+          await recordLicenseSnapshotServed(deps, auth, snapshot, req.requestId);
           await recordCertificateVerification(
             deps.client,
             { deviceId: auth.deviceId, certificateFingerprint: auth.certificateFingerprint, channel: 'rest' },

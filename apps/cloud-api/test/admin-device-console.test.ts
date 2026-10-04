@@ -1,3 +1,4 @@
+import { withDataPathTrace } from '@fdp/observability';
 import nodeAssert from 'node:assert/strict';
 /**
  * BE-DEV-05 设备控制台组合查询与活动导出 API 验收（PGlite 真实 PostgreSQL + 全部 migration）。
@@ -786,4 +787,36 @@ describe('BE-DEV-05 活动导出（异步 Worker）', () => {
     assert.equal(untouched.status, 'PROCESSING');
     assert.equal(untouched.attemptCount, 0);
   });
+});
+
+test('console phase telemetry correlates request IDs after scope validation and preserves the response', async () => {
+  const rows: Record<string, unknown>[] = [];
+  const handlers = createAdminDeviceConsoleHandlers(deps());
+  const response = await withDataPathTrace(
+    { gatewayRequestId: 'gateway-1', lambdaRequestId: 'lambda-1' },
+    () => handlers.getDeviceConsole(req(superAdmin, { params: { deviceId: DEV_A1 } })),
+    (row) => rows.push(row),
+  );
+  assert.equal(response.status, 200);
+  assertOpenApiResponse('getDeviceConsole', 200, response.body);
+  for (const phase of [
+    'console-read',
+    'console-device',
+    'console-latest-state',
+    'console-hour-selection',
+    'console-buckets',
+    'console-consumables',
+    'console-alarms',
+    'console-contract',
+    'console-esg',
+    'console-media',
+  ]) {
+    const event = rows.find((r) => r.phase === phase);
+    assert.ok(event, phase);
+    assert.equal(event!.gatewayRequestId, 'gateway-1');
+    assert.equal(event!.lambdaRequestId, 'lambda-1');
+    assert.equal(event!.outcome, 'PASS');
+    if (phase !== 'console-device') assert.equal(event!.deviceId, DEV_A1);
+  }
+  assert.notInclude(JSON.stringify(rows), 'passwordHash');
 });

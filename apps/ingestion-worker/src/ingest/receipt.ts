@@ -1,3 +1,4 @@
+import { observeDataPathPhase, observeReceiptResult } from '@fdp/observability';
 /**
  * BE-IOT-03 幂等收据服务（ingestion_receipts，DB-01 表结构）。
  *
@@ -70,7 +71,7 @@ export interface EventAttribution {
 
 interface ReceiptDelegate {
   create(args: { data: Record<string, unknown> }): Promise<unknown>;
-  findFirst(args: { where: Record<string, unknown> }): Promise<{ payloadHash: string } | null>;
+  findFirst(args: { where: Record<string, unknown> }): Promise<{ id?: string; payloadHash: string } | null>;
 }
 
 interface AssignmentDelegate {
@@ -94,55 +95,74 @@ export async function processWithReceipt<T>(
   params: ProcessWithReceiptParams<T>,
 ): Promise<ProcessReceiptResult<T>> {
   const now = params.now ?? (() => new Date());
+  let receiptId: unknown;
   try {
-    return await withTransaction(client, async (tx) => {
-      // 同设备同 Topic 串行化 receipt 与业务事务：同时消除 gap 漏检、Telemetry
-      // 读改写丢增量和 Report 重叠检查的并发窗口。
-      await acquireTransactionLock(tx, `ingestion:${params.key.deviceId}:${params.key.topicType}`);
-      const receivedAt = params.receivedAtMs !== undefined ? new Date(params.receivedAtMs) : now();
-      const occurredAt = params.occurredAt ?? receivedAt;
-      const assignment = await (
-        (tx as unknown as Record<string, unknown>).deviceAssignment as AssignmentDelegate
-      ).findFirst({
-        where: {
-          deviceId: params.key.deviceId,
-          assignedAt: { lte: occurredAt },
-          OR: [{ endedAt: null }, { endedAt: { gt: occurredAt } }],
-        },
-        orderBy: { assignedAt: 'desc' },
-      });
-      const attribution: EventAttribution = {
-        customerId: assignment?.customerId ?? params.customerId ?? null,
-        siteId: assignment?.siteId ?? params.siteId ?? null,
-      };
-      await receipts(tx).create({
-        data: {
-          idempotencyKey: idempotencyKeyOf(params.key),
-          deviceId: params.key.deviceId,
-          customerId: attribution.customerId,
-          siteId: attribution.siteId,
-          topicType: params.key.topicType,
-          seq: params.key.seq,
-          payloadHash: params.payloadHash,
-          result: 'PROCESSED',
-          receivedAt,
-          occurredAt,
-          processedAt: now(),
-        },
-      });
-      const result = await params.business(tx, attribution);
-      if (params.outbox) await params.outbox(tx);
-      // 缺口检测同事务追加（纯信息记录，不阻塞本条及后续消息）
-      await recordGapForNewReceipt(tx, params.key);
-      return { outcome: 'PROCESSED', result };
-    });
+    const processed = await observeDataPathPhase('db-transaction', () =>
+      withTransaction(client, async (tx) =>
+        observeDataPathPhase('db-transaction-callback', async () => {
+          // 同设备同 Topic 串行化 receipt 与业务事务：同时消除 gap 漏检、Telemetry
+          // 读改写丢增量和 Report 重叠检查的并发窗口。
+          await observeDataPathPhase('db-lock', () =>
+            acquireTransactionLock(tx, `ingestion:${params.key.deviceId}:${params.key.topicType}`),
+          );
+          const receivedAt = params.receivedAtMs !== undefined ? new Date(params.receivedAtMs) : now();
+          const occurredAt = params.occurredAt ?? receivedAt;
+          const assignment = await observeDataPathPhase('db-assignment', () =>
+            ((tx as unknown as Record<string, unknown>).deviceAssignment as AssignmentDelegate).findFirst({
+              where: {
+                deviceId: params.key.deviceId,
+                assignedAt: { lte: occurredAt },
+                OR: [{ endedAt: null }, { endedAt: { gt: occurredAt } }],
+              },
+              orderBy: { assignedAt: 'desc' },
+            }),
+          );
+          const attribution: EventAttribution = {
+            customerId: assignment?.customerId ?? params.customerId ?? null,
+            siteId: assignment?.siteId ?? params.siteId ?? null,
+          };
+          const created = await observeDataPathPhase('db-receipt', () =>
+            receipts(tx).create({
+              data: {
+                idempotencyKey: idempotencyKeyOf(params.key),
+                deviceId: params.key.deviceId,
+                customerId: attribution.customerId,
+                siteId: attribution.siteId,
+                topicType: params.key.topicType,
+                seq: params.key.seq,
+                payloadHash: params.payloadHash,
+                result: 'PROCESSED',
+                receivedAt,
+                occurredAt,
+                processedAt: now(),
+              },
+            }),
+          );
+          receiptId = (created as { id?: unknown } | null)?.id;
+          const result = await observeDataPathPhase('db-business', () => params.business(tx, attribution));
+          if (params.outbox) await observeDataPathPhase('db-outbox', () => params.outbox!(tx));
+          // 缺口检测同事务追加（纯信息记录，不阻塞本条及后续消息）
+          await observeDataPathPhase('db-gap', () => recordGapForNewReceipt(tx, params.key));
+          return { outcome: 'PROCESSED' as const, result };
+        }),
+      ),
+    );
+    observeReceiptResult('PROCESSED', receiptId, typeof (client as { $connect?: unknown }).$connect === 'function');
+    return processed;
   } catch (err) {
     if (!isUniqueViolation(err)) throw err;
     // 并发/重复：回读胜出记录比较 Hash（DB-02 P2002 幂等兜底模式）
-    const existing = await receipts(client).findFirst({
-      where: { idempotencyKey: idempotencyKeyOf(params.key) },
-    });
+    const existing = await observeDataPathPhase('duplicate-readback', () =>
+      receipts(client).findFirst({
+        where: { idempotencyKey: idempotencyKeyOf(params.key) },
+      }),
+    );
     if (existing && existing.payloadHash === params.payloadHash) {
+      observeReceiptResult(
+        'DUPLICATE_SKIPPED',
+        existing.id,
+        typeof (client as { $connect?: unknown }).$connect === 'function',
+      );
       return { outcome: 'DUPLICATE_SKIPPED', result: undefined };
     }
     // 相同键不同 Hash = 安全异常：隔离冲突消息，不覆盖原 receipt

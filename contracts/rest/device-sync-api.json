@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bio-Nexa CMP Unified Device Sync API",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "BE-SYNC-01 统一设备同步接口（mTLS 认证，设备自身身份）：接收 lastSyncTime，按 Device-Cloud Communication Design 的字段名和嵌套结构返回 Assignment、Device、License、Configuration、Device Users 与 Operational Status 的完整顶层快照。V1 不按 lastSyncTime 或 etag 裁剪必要域。Retired 且退役确认待处理的设备仍可调用 Sync 获取最新状态；生命周期 Endpoint Allowlist 与证书认证分离。错误响应继承 openapi-base.json（CT-05）。",
     "x-decision-versions": [
       "PRI-001@1.0.0",
@@ -17,7 +17,11 @@
     "x-decision-register-version": "1.36.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
-  "servers": [{ "url": "/" }],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
   "tags": [
     {
       "name": "device",
@@ -32,13 +36,19 @@
         "tags": ["device"],
         "operationId": "syncDevice",
         "summary": "统一设备同步（完整事实源快照）",
-        "description": "身份即设备（mTLS 客户端证书，AUTH-03）。请求体封闭：仅 lastSyncTime（首次同步为 null 或可省略请求体）。响应始终为全量快照；etag 为稳定域内容寻址版本（SHA-256），供设备检测配置域变化。",
-        "security": [{ "DeviceMtls": [] }],
+        "description": "身份即设备（mTLS 客户端证书，AUTH-03）。封闭请求允许 lastSyncTime 与可选 licenseConfirmation；后者绑定已提交的近24小时快照、当前许可证版本、分配和证书。RECEIVED 驱动 Assigned→Licensed；设备独立验签成功后才能声明 VERIFIED，驱动 Licensed→Active。响应始终返回全量快照，etag 为稳定域 SHA-256。",
+        "security": [
+          {
+            "DeviceMtls": []
+          }
+        ],
         "requestBody": {
           "required": false,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/SyncRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/SyncRequest"
+              }
             }
           }
         },
@@ -47,7 +57,9 @@
             "description": "完整事实快照",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/DeviceSyncSnapshot" }
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceSyncSnapshot"
+                }
               }
             }
           },
@@ -55,7 +67,9 @@
             "description": "请求体校验失败（VALIDATION_FAILED：未知字段/lastSyncTime 非 UTC 时间戳）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -63,7 +77,9 @@
             "description": "未认证（UNAUTHENTICATED：证书缺失/未登记/非 ACTIVE/过期）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -71,7 +87,9 @@
             "description": "生命周期不允许访问（FORBIDDEN）；Retired 且退役确认待处理的设备例外，仅允许 Sync/Deactivate",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -79,7 +97,19 @@
             "description": "服务器内部错误（INTERNAL_ERROR）",
             "content": {
               "application/json": {
-                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT：确认无对应交付记录、超过24小时、许可证/分配/证书已变化或生命周期不允许转换",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -89,7 +119,9 @@
   },
   "components": {
     "securitySchemes": {
-      "DeviceMtls": { "$ref": "openapi-base.json#/components/securitySchemes/DeviceMtls" }
+      "DeviceMtls": {
+        "$ref": "openapi-base.json#/components/securitySchemes/DeviceMtls"
+      }
     },
     "schemas": {
       "SyncRequest": {
@@ -97,8 +129,18 @@
         "additionalProperties": false,
         "properties": {
           "lastSyncTime": {
-            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }],
+            "oneOf": [
+              {
+                "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "上一次成功同步时点；首次同步为 null（或可省略请求体）"
+          },
+          "licenseConfirmation": {
+            "$ref": "#/components/schemas/LicenseConfirmation"
           }
         }
       },
@@ -108,15 +150,45 @@
         "additionalProperties": false,
         "description": "源稿 Assignment 结构；授权窗口为兼容扩展字段。",
         "properties": {
-          "assignmentId": { "type": "string", "minLength": 1 },
-          "customerId": { "type": "string", "minLength": 1 },
-          "customerName": { "type": "string", "minLength": 1 },
-          "siteId": { "type": "string", "minLength": 1 },
-          "siteName": { "type": "string", "minLength": 1 },
-          "region": { "type": ["string", "null"] },
-          "subregion": { "type": ["string", "null"] },
-          "assignedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
-          "endedAt": { "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }] }
+          "assignmentId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "customerId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "customerName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "siteId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "siteName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "region": {
+            "type": ["string", "null"]
+          },
+          "subregion": {
+            "type": ["string", "null"]
+          },
+          "assignedAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+          },
+          "endedAt": {
+            "oneOf": [
+              {
+                "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
         }
       },
       "SyncDeviceMetadata": {
@@ -125,11 +197,25 @@
         "additionalProperties": false,
         "description": "源稿示例只要求 alias；其余设备元数据为兼容扩展字段。",
         "properties": {
-          "deviceId": { "type": "string", "minLength": 1 },
-          "alias": { "type": ["string", "null"], "description": "Device Alias（管理后台可改，经本域下发）" },
-          "serialNumber": { "type": "string", "minLength": 1 },
-          "model": { "type": "string", "minLength": 1 },
-          "firmwareVersion": { "type": ["string", "null"] }
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "alias": {
+            "type": ["string", "null"],
+            "description": "Device Alias（管理后台可改，经本域下发）"
+          },
+          "serialNumber": {
+            "type": "string",
+            "minLength": 1
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "firmwareVersion": {
+            "type": ["string", "null"]
+          }
         }
       },
       "SyncLicense": {
@@ -138,25 +224,48 @@
         "additionalProperties": false,
         "description": "源稿 License 结构；设备线协议使用大写状态和 OTA entitlement。",
         "properties": {
-          "licenseId": { "type": "string", "minLength": 1 },
+          "licenseId": {
+            "type": "string",
+            "minLength": 1
+          },
           "status": {
             "type": "string",
             "enum": ["NO_LICENSE", "DRAFT", "ISSUED", "ACTIVE", "EXPIRING_SOON", "RENEWED", "EXPIRED", "REVOKED"]
           },
-          "validFrom": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-          "validTo": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
           "entitlements": {
             "type": "array",
-            "items": { "type": "string", "enum": ["REMOTE_CONTROL", "OTA", "ESG_REPORTING"] },
+            "items": {
+              "type": "string",
+              "enum": ["REMOTE_CONTROL", "OTA", "ESG_REPORTING"]
+            },
             "description": "启用的 Entitlement 代码"
           },
           "signature": {
-            "type": "string",
+            "type": ["string", "null"],
             "minLength": 1,
-            "description": "源稿 License 签名；具体算法与规范化方式仍待冻结。"
+            "description": "DEC-020@1.0.0：规范 JSON 的 HMAC-SHA256（v1.base64url）；Draft 尚未签发时为 null。"
           },
-          "version": { "type": "integer", "minimum": 1 },
-          "effective": { "type": "boolean", "description": "查询时点派生：是否可支撑设备运行" }
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "effective": {
+            "type": "boolean",
+            "description": "查询时点派生：是否可支撑设备运行"
+          },
+          "signaturePayload": {
+            "$ref": "#/components/schemas/LicenseSignaturePayload"
+          }
         }
       },
       "SyncDeviceUser": {
@@ -165,15 +274,27 @@
         "additionalProperties": false,
         "description": "与源稿 Device User 结构同形。passwordHash 是 DEC-004@1.0.0 冻结的 Argon2id PHC 字符串，不得复用云端用户或 Cognito 密码 Hash。",
         "properties": {
-          "userId": { "type": "string", "minLength": 1 },
-          "username": { "type": "string", "minLength": 1 },
-          "displayName": { "type": "string", "minLength": 1 },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "username": {
+            "type": "string",
+            "minLength": 1
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
           "passwordHash": {
             "type": "string",
             "pattern": "^\\$argon2id\\$v=19\\$m=32768,t=3,p=1\\$[^$]+\\$[^$]+$",
             "description": "设备本地专用 Argon2id PHC 字符串；不是云端账号密码 Hash。"
           },
-          "status": { "type": "string", "enum": ["ACTIVE", "DISABLED"] }
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "DISABLED"]
+          }
         }
       },
       "SyncConfiguration": {
@@ -238,14 +359,30 @@
           },
           "operationalStatus": {
             "oneOf": [
-              { "type": "string", "enum": ["Active", "Maintenance", "Suspended", "Retired"] },
-              { "type": "null" }
+              {
+                "type": "string",
+                "enum": ["Active", "Maintenance", "Suspended", "Retired"]
+              },
+              {
+                "type": "null"
+              }
             ],
             "description": "运行状态轴（设备上报值；未上报时按生命周期兜底，无法兜底为 null）"
           },
-          "connectivity": { "type": "string", "enum": ["ONLINE", "OFFLINE"], "description": "心跳阈值派生（不写回）" },
+          "connectivity": {
+            "type": "string",
+            "enum": ["ONLINE", "OFFLINE"],
+            "description": "心跳阈值派生（不写回）"
+          },
           "lastHeartbeatAt": {
-            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }]
+            "oneOf": [
+              {
+                "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "syncIntervalSeconds": {
             "type": "integer",
@@ -260,10 +397,22 @@
         "additionalProperties": false,
         "description": "与源稿顶层域同形的完整事实源快照（全量，不做增量裁剪；未分配/未许可/无配置域为 null 或空数组）。deviceId/snapshotAt/lastSyncTime/etag 是可选兼容元数据，不包裹 data/meta。",
         "properties": {
-          "deviceId": { "type": "string", "minLength": 1 },
-          "snapshotAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "snapshotAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+          },
           "lastSyncTime": {
-            "oneOf": [{ "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }, { "type": "null" }],
+            "oneOf": [
+              {
+                "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "请求回显"
           },
           "etag": {
@@ -271,15 +420,108 @@
             "minLength": 1,
             "description": "稳定域内容寻址版本（SHA-256 hex）；volatile 域（snapshotAt/connectivity/lastHeartbeatAt）不参与"
           },
-          "assignment": { "oneOf": [{ "$ref": "#/components/schemas/SyncAssignment" }, { "type": "null" }] },
-          "device": { "$ref": "#/components/schemas/SyncDeviceMetadata" },
-          "license": { "oneOf": [{ "$ref": "#/components/schemas/SyncLicense" }, { "type": "null" }] },
+          "assignment": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SyncAssignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "device": {
+            "$ref": "#/components/schemas/SyncDeviceMetadata"
+          },
+          "license": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SyncLicense"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "deviceUsers": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/SyncDeviceUser" }
+            "items": {
+              "$ref": "#/components/schemas/SyncDeviceUser"
+            }
           },
-          "configuration": { "oneOf": [{ "$ref": "#/components/schemas/SyncConfiguration" }, { "type": "null" }] },
-          "operationalStatus": { "$ref": "#/components/schemas/SyncOperationalStatus" }
+          "configuration": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SyncConfiguration"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "operationalStatus": {
+            "$ref": "#/components/schemas/SyncOperationalStatus"
+          }
+        }
+      },
+      "LicenseConfirmation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["licenseId", "version", "snapshotEtag", "status"],
+        "properties": {
+          "licenseId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "snapshotEtag": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["RECEIVED", "VERIFIED"],
+            "description": "VERIFIED 是已认证设备的独立验签声明；服务端不会代替固件完成验签。"
+          }
+        }
+      },
+      "LicenseSignaturePayload": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["licenseId", "deviceId", "customerId", "validFrom", "validTo", "entitlements"],
+        "description": "DEC-020 HMAC 的规范字段；完整 UTC 时间与签名输入一致，entitlements 按线协议名称排序。日期展示字段不能用于重建签名。",
+        "properties": {
+          "licenseId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "customerId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "validFrom": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+          },
+          "validTo": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+          },
+          "entitlements": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["REMOTE_CONTROL", "OTA", "ESG_REPORTING"]
+            },
+            "description": "启用的 Entitlement 代码"
+          }
         }
       }
     }

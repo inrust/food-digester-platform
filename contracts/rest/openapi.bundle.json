@@ -172,7 +172,7 @@
       },
       {
         "file": "device-sync-api.json",
-        "sha256": "646726c056d87b8223942b5af0b6cdda5d3532d91ff663bf6c872747ce1aeb8a",
+        "sha256": "e0ebeb838730bd6667a5d5421b30ddbd41ebe33d1012a27cca283b5f75c4ebee",
         "status": "implemented"
       },
       {
@@ -9709,7 +9709,7 @@
         ],
         "operationId": "syncDevice",
         "summary": "统一设备同步（完整事实源快照）",
-        "description": "身份即设备（mTLS 客户端证书，AUTH-03）。请求体封闭：仅 lastSyncTime（首次同步为 null 或可省略请求体）。响应始终为全量快照；etag 为稳定域内容寻址版本（SHA-256），供设备检测配置域变化。",
+        "description": "身份即设备（mTLS 客户端证书，AUTH-03）。封闭请求允许 lastSyncTime 与可选 licenseConfirmation；后者绑定已提交的近24小时快照、当前许可证版本、分配和证书。RECEIVED 驱动 Assigned→Licensed；设备独立验签成功后才能声明 VERIFIED，驱动 Licensed→Active。响应始终返回全量快照，etag 为稳定域 SHA-256。",
         "security": [
           {
             "DeviceMtls": []
@@ -9758,6 +9758,16 @@
           },
           "403": {
             "description": "生命周期不允许访问（FORBIDDEN）；Retired 且退役确认待处理的设备例外，仅允许 Sync/Deactivate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT：确认无对应交付记录、超过24小时、许可证/分配/证书已变化或生命周期不允许转换",
             "content": {
               "application/json": {
                 "schema": {
@@ -19647,6 +19657,9 @@
               }
             ],
             "description": "上一次成功同步时点；首次同步为 null（或可省略请求体）"
+          },
+          "licenseConfirmation": {
+            "$ref": "#/components/schemas/DeviceSyncApi__LicenseConfirmation"
           }
         }
       },
@@ -19796,9 +19809,12 @@
             "description": "启用的 Entitlement 代码"
           },
           "signature": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "minLength": 1,
-            "description": "源稿 License 签名；具体算法与规范化方式仍待冻结。"
+            "description": "DEC-020@1.0.0：规范 JSON 的 HMAC-SHA256（v1.base64url）；Draft 尚未签发时为 null。"
           },
           "version": {
             "type": "integer",
@@ -19807,6 +19823,9 @@
           "effective": {
             "type": "boolean",
             "description": "查询时点派生：是否可支撑设备运行"
+          },
+          "signaturePayload": {
+            "$ref": "#/components/schemas/DeviceSyncApi__LicenseSignaturePayload"
           }
         }
       },
@@ -20038,6 +20057,85 @@
           },
           "operationalStatus": {
             "$ref": "#/components/schemas/DeviceSyncApi__SyncOperationalStatus"
+          }
+        }
+      },
+      "DeviceSyncApi__LicenseConfirmation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "licenseId",
+          "version",
+          "snapshotEtag",
+          "status"
+        ],
+        "properties": {
+          "licenseId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "snapshotEtag": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "VERIFIED"
+            ],
+            "description": "VERIFIED 是已认证设备的独立验签声明；服务端不会代替固件完成验签。"
+          }
+        }
+      },
+      "DeviceSyncApi__LicenseSignaturePayload": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "licenseId",
+          "deviceId",
+          "customerId",
+          "validFrom",
+          "validTo",
+          "entitlements"
+        ],
+        "description": "DEC-020 HMAC 的规范字段；完整 UTC 时间与签名输入一致，entitlements 按线协议名称排序。日期展示字段不能用于重建签名。",
+        "properties": {
+          "licenseId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "customerId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "validFrom": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "validTo": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "entitlements": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "REMOTE_CONTROL",
+                "OTA",
+                "ESG_REPORTING"
+              ]
+            },
+            "description": "启用的 Entitlement 代码"
           }
         }
       }

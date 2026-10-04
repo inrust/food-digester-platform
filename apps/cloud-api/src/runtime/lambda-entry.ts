@@ -1,3 +1,4 @@
+import { withDataPathTrace, observeDataPathPhase } from '@fdp/observability';
 import { createRedactingLogger } from '@fdp/observability';
 import { observeRequest } from '@fdp/observability';
 import { matchDeliveredOperation } from './delivered-operations.js';
@@ -168,18 +169,28 @@ export async function handler(
   const method = event.requestContext?.http?.method ?? event.httpMethod ?? '';
   const path = event.rawPath ?? event.requestContext?.http?.path ?? event.path ?? '';
   const operationId = matchDeliveredOperation('admin-api', method, path)?.operation.operationId ?? 'unknown';
-  return observeRequest(
+  return withDataPathTrace(
     {
-      gatewayRequestId: event.requestContext?.requestId,
-      gatewayExtendedRequestId: event.requestContext?.extendedRequestId,
       lambdaRequestId: context?.awsRequestId,
+      gatewayRequestId: event.requestContext?.requestId,
       operationId,
+      coldStart: !runtimeHandler,
     },
     () =>
-      withAdminCors(event, process.env.ADMIN_WEB_ORIGIN, async () => {
-        runtimeHandler ??= await initialize();
-        return runtimeHandler(event);
-      }),
+      observeRequest(
+        {
+          gatewayRequestId: event.requestContext?.requestId,
+          gatewayExtendedRequestId: event.requestContext?.extendedRequestId,
+          lambdaRequestId: context?.awsRequestId,
+          operationId,
+        },
+        () =>
+          withAdminCors(event, process.env.ADMIN_WEB_ORIGIN, async () => {
+            runtimeHandler ??= await observeDataPathPhase('runtime-initialize', initialize);
+            return runtimeHandler(event);
+          }),
+        (entry) => logger.info(JSON.stringify(entry)),
+      ),
     (entry) => logger.info(JSON.stringify(entry)),
   );
 }

@@ -1,3 +1,4 @@
+import { observeDataPathPhase } from '@fdp/observability';
 /**
  * BE-DEV-05 设备控制台 API Handler（框架无关）。
  *
@@ -76,7 +77,9 @@ export function createAdminDeviceConsoleHandlers(deps: AdminDeviceConsoleHandler
   const console_ = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'device:read' },
     async (req) => {
-      const view = await getDeviceConsole(deps, actorOf(req), requireParam(req, 'deviceId'));
+      const view = await observeDataPathPhase('console-read', () =>
+        getDeviceConsole(deps, actorOf(req), requireParam(req, 'deviceId')),
+      );
       return { status: 200, body: { data: view, meta: meta(req) } };
     },
   );

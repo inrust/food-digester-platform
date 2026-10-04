@@ -133,19 +133,20 @@ test('all device operations and declared response JSON Schemas compile; stable e
 test('predecessor MQTT is compatible; known REST break requires exact version and frozen DEC approvals', async () => {
   const receipt = await checkBaselines();
   assert.equal(receipt.status, 'APPROVED_BREAKING_UPGRADE');
-  const old = json('contracts/testing/baselines/0.11.0.json');
+  const approvals = json('contracts/testing/compatibility-approvals.json');
+  const old = json(`contracts/testing/baselines/${approvals.fromContractVersion}.json`);
   const current = snapshot();
   assert.deepEqual(
     compareBaselines({ ...old, rest: {}, errorCodes: [] }, { ...current, rest: {}, errorCodes: [] }),
     [],
   );
-  const approvals = json('contracts/testing/compatibility-approvals.json');
   const changes = compareBaselines(old, current);
   const version = json('contracts/contract-version.json');
   const register = json('contracts/decisions/decision-register.json');
   assert.throws(() => enforceGovernance(changes, { ...approvals, changes: [] }, version, register), /UNAPPROVED_BREAK/);
   assert.throws(
-    () => enforceGovernance(changes, approvals, { ...version, contractVersion: '0.11.0' }, register),
+    () =>
+      enforceGovernance(changes, approvals, { ...version, contractVersion: approvals.fromContractVersion }, register),
     /VERSION_NOT_UPDATED/,
   );
   assert.throws(
@@ -220,5 +221,19 @@ test('receipt coverage gate fails closed for missing operations/statuses, no val
         operations,
       ),
     /INVALID_OPERATION_TRACE/,
+  );
+});
+
+test('archived CSR upgrade mapping still verifies original baselines without rewriting history', () => {
+  const approvals = json('contracts/testing/compatibility-approvals-0.11-to-0.12.json');
+  const old = json('contracts/testing/baselines/0.11.0.json');
+  const current = json('contracts/testing/baselines/0.12.0.json');
+  assert.equal(wireHash(old), approvals.fromWireSha256);
+  assert.equal(wireHash(current), approvals.toWireSha256);
+  enforceGovernance(
+    compareBaselines(old, current),
+    approvals,
+    { contractVersion: '0.12.0', decisionRegisterVersion: '1.36.0' },
+    json('contracts/decisions/decision-register.json'),
   );
 });

@@ -1,3 +1,4 @@
+import { observeDataPathPhase, setDataPathMessage } from '@fdp/observability';
 /**
  * BE-DEV-05 设备控制台组合查询领域服务（框架无关，只读）。
  *
@@ -233,17 +234,21 @@ function utcDateOnly(day: Date): Date {
 /** Latest device hour spans all sites; per-metric counts weight partial/missing samples correctly. */
 async function latestDeviceTelemetry(client: DbClient, device: DeviceRow): Promise<TelemetryHourlyRow | null> {
   const where = { deviceId: device.id, ...(device.customerId ? { customerId: device.customerId } : {}) };
-  const latest = (await table(client, 'telemetryHourly').findFirst({
-    where,
-    orderBy: { bucketStart: 'desc' },
-    select: { bucketStart: true },
-  })) as TelemetryHourlyRow | null;
+  const latest = (await observeDataPathPhase('console-hour-selection', () =>
+    table(client, 'telemetryHourly').findFirst({
+      where,
+      orderBy: { bucketStart: 'desc' },
+      select: { bucketStart: true },
+    }),
+  )) as TelemetryHourlyRow | null;
   if (!latest) return null;
-  const rows = (await table(client, 'telemetryHourly').findMany({
-    where: { ...where, bucketStart: latest.bucketStart },
-    orderBy: { siteId: 'asc' },
-    select: { bucketStart: true, metrics: true },
-  })) as TelemetryHourlyRow[];
+  const rows = (await observeDataPathPhase('console-buckets', () =>
+    table(client, 'telemetryHourly').findMany({
+      where: { ...where, bucketStart: latest.bucketStart },
+      orderBy: { siteId: 'asc' },
+      select: { bucketStart: true, metrics: true },
+    }),
+  )) as TelemetryHourlyRow[];
   const merged: Record<string, { avg: number; min: number; max: number; count: number }> = {};
   for (const row of rows) {
     for (const [key, raw] of Object.entries((row.metrics ?? {}) as Record<string, unknown>)) {
@@ -274,7 +279,9 @@ export async function loadScopedDevice(
   actor: ActorContext,
   deviceId: string,
 ): Promise<DeviceRow> {
-  const device = (await table(deps.client, 'device').findFirst({ where: { id: deviceId } })) as DeviceRow | null;
+  const device = (await observeDataPathPhase('console-device', () =>
+    table(deps.client, 'device').findFirst({ where: { id: deviceId } }),
+  )) as DeviceRow | null;
   if (!device) throw consoleNotFound();
   if (actor.actorType === 'customer' && device.customerId !== actor.customerId) throw consoleNotFound();
   return device;
@@ -288,6 +295,7 @@ export async function getDeviceConsole(
   deviceId: string,
 ): Promise<DeviceConsoleView> {
   const device = await loadScopedDevice(deps, actor, deviceId);
+  setDataPathMessage({ deviceId: device.id });
   const now = deps.now?.() ?? new Date();
   const client = deps.client;
 
@@ -295,26 +303,38 @@ export async function getDeviceConsole(
   const sevenDaysAgoUtc = new Date(todayUtc.getTime() - 6 * 24 * 60 * 60 * 1000);
 
   const [state, telemetry, consumableRows, alarmRows, contractAssoc, esgRows, mediaRow] = await Promise.all([
-    table(client, 'deviceLatestState').findFirst({ where: { deviceId } }) as unknown as Promise<LatestStateRow | null>,
+    observeDataPathPhase('console-latest-state', () =>
+      table(client, 'deviceLatestState').findFirst({ where: { deviceId } }),
+    ) as unknown as Promise<LatestStateRow | null>,
     latestDeviceTelemetry(client, device),
-    table(client, 'consumableProjection').findMany({ where: { deviceId } }) as unknown as Promise<ConsumableRow[]>,
-    table(client, 'alarm').findMany({
-      where: { deviceId },
-      orderBy: [{ detectedTime: 'desc' }, { id: 'desc' }],
-      take: CONSOLE_RECENT_ALARM_LIMIT,
-    }) as unknown as Promise<AlarmRow[]>,
-    table(client, 'contractDevice').findFirst({
-      where: { deviceId, status: 'ACTIVE' },
-      include: { contract: { select: { id: true, contractNumber: true, name: true, status: true, endAt: true } } },
-    }) as unknown as Promise<ContractAssocRow | null>,
-    table(client, 'esgDailySummary').findMany({
-      where: { deviceId, summaryDate: { gte: sevenDaysAgoUtc, lte: todayUtc } },
-      orderBy: { summaryDate: 'asc' },
-    }) as unknown as Promise<EsgDailyRow[]>,
-    table(client, 'mediaObject').findFirst({
-      where: { deviceId, status: { not: 'DELETED' } },
-      orderBy: { captureTime: 'desc' },
-    }) as unknown as Promise<MediaRow | null>,
+    observeDataPathPhase('console-consumables', () =>
+      table(client, 'consumableProjection').findMany({ where: { deviceId } }),
+    ) as unknown as Promise<ConsumableRow[]>,
+    observeDataPathPhase('console-alarms', () =>
+      table(client, 'alarm').findMany({
+        where: { deviceId },
+        orderBy: [{ detectedTime: 'desc' }, { id: 'desc' }],
+        take: CONSOLE_RECENT_ALARM_LIMIT,
+      }),
+    ) as unknown as Promise<AlarmRow[]>,
+    observeDataPathPhase('console-contract', () =>
+      table(client, 'contractDevice').findFirst({
+        where: { deviceId, status: 'ACTIVE' },
+        include: { contract: { select: { id: true, contractNumber: true, name: true, status: true, endAt: true } } },
+      }),
+    ) as unknown as Promise<ContractAssocRow | null>,
+    observeDataPathPhase('console-esg', () =>
+      table(client, 'esgDailySummary').findMany({
+        where: { deviceId, summaryDate: { gte: sevenDaysAgoUtc, lte: todayUtc } },
+        orderBy: { summaryDate: 'asc' },
+      }),
+    ) as unknown as Promise<EsgDailyRow[]>,
+    observeDataPathPhase('console-media', () =>
+      table(client, 'mediaObject').findFirst({
+        where: { deviceId, status: { not: 'DELETED' } },
+        orderBy: { captureTime: 'desc' },
+      }),
+    ) as unknown as Promise<MediaRow | null>,
   ]);
 
   // 心跳类块：observedAt = lastHeartbeatAt；stale = 超 DEC-024 冻结的连接阈值

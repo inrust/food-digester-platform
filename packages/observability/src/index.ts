@@ -15,3 +15,5 @@ export {
 export type { Logger } from './redaction.js';
 
 export * from './request-correlation.js';
+
+export * from './data-path.js';

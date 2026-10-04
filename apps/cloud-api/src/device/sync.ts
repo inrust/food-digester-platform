@@ -3,7 +3,7 @@
  *
  * 定位：POST /api/v1/device/sync 是设备从 CMP 获取完整单一事实源快照的强制接口
  *（实施方案 8.5）。设备经 AUTH-03 verifyDeviceCertificate 认证（mTLS 白名单；
- * Retired 设备 403 不得进入快照）。本服务不产生通知/审计；仅持久化 Device User 版本进入
+ * Retired 设备 403 不得进入快照）。快照服务仅持久化 Device User 版本进入
  * 快照以及后续 lastSyncTime 确认的最小状态，供管理端区分通知发布、快照交付与本地应用。
  *
  * 快照域（完整事实快照，不做增量下发）：
@@ -50,10 +50,11 @@ export const SYNC_INTERVAL_ACTIVE_SECONDS = 300 as const;
 /** 设备契约同步节奏（通信设计 8.5）：Suspended 每 15 分钟。 */
 export const SYNC_INTERVAL_SUSPENDED_SECONDS = 900 as const;
 
-export type DeviceSyncErrorCode = 'VALIDATION_FAILED';
+export type DeviceSyncErrorCode = 'VALIDATION_FAILED' | 'CONFLICT';
 
 export const DEVICE_SYNC_ERROR_HTTP_STATUS: Readonly<Record<DeviceSyncErrorCode, number>> = {
   VALIDATION_FAILED: 400,
+  CONFLICT: 409,
 } as const;
 
 export class DeviceSyncError extends Error {
@@ -86,25 +87,56 @@ export interface DeviceSyncDeps {
 const UTC_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
 
 /**
- * 解析 Sync 请求体（封闭 Schema：仅 lastSyncTime）。
+ * 解析 Sync 请求体（封闭 Schema：lastSyncTime 与可选 licenseConfirmation）。
  * body 缺省 → lastSyncTime=null（首次同步）；lastSyncTime 为 null 或 UTC ISO 8601（Z 结尾）。
  */
-export function parseSyncRequest(body: unknown): { readonly lastSyncTime: string | null } {
+export interface LicenseConfirmation {
+  readonly licenseId: string;
+  readonly version: number;
+  readonly snapshotEtag: string;
+  readonly status: 'RECEIVED' | 'VERIFIED';
+}
+export interface SyncRequestInput {
+  readonly lastSyncTime: string | null;
+  readonly licenseConfirmation?: LicenseConfirmation;
+}
+export function parseSyncRequest(body: unknown): SyncRequestInput {
   if (body === undefined || body === null) return { lastSyncTime: null };
   if (typeof body !== 'object' || Array.isArray(body)) {
     throw new DeviceSyncError('VALIDATION_FAILED', 'The request body must be an object');
   }
   const keys = Object.keys(body as Record<string, unknown>);
-  const unknown = keys.filter((k) => k !== 'lastSyncTime');
+  const unknown = keys.filter((k) => !['lastSyncTime', 'licenseConfirmation'].includes(k));
   if (unknown.length > 0) {
     throw new DeviceSyncError('VALIDATION_FAILED', `Unknown fields: ${unknown.join(', ')}`);
   }
+  const confirmation = (body as Record<string, unknown>).licenseConfirmation;
+  let licenseConfirmation: LicenseConfirmation | undefined;
+  if (confirmation !== undefined) {
+    if (!confirmation || typeof confirmation !== 'object' || Array.isArray(confirmation))
+      throw new DeviceSyncError('VALIDATION_FAILED', 'licenseConfirmation must be an object');
+    const c = confirmation as Record<string, unknown>;
+    if (
+      Object.keys(c).some((k) => !['licenseId', 'version', 'snapshotEtag', 'status'].includes(k)) ||
+      typeof c.licenseId !== 'string' ||
+      !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(c.licenseId) ||
+      !Number.isSafeInteger(c.version) ||
+      Number(c.version) < 1 ||
+      typeof c.snapshotEtag !== 'string' ||
+      !/^[a-f0-9]{64}$/.test(c.snapshotEtag) ||
+      typeof c.status !== 'string' ||
+      !['RECEIVED', 'VERIFIED'].includes(c.status)
+    )
+      throw new DeviceSyncError('VALIDATION_FAILED', 'licenseConfirmation fields are invalid');
+    licenseConfirmation = c as unknown as LicenseConfirmation;
+  }
+  const extra = licenseConfirmation ? { licenseConfirmation } : {};
   const value = (body as Record<string, unknown>).lastSyncTime;
-  if (value === undefined || value === null) return { lastSyncTime: null };
+  if (value === undefined || value === null) return { lastSyncTime: null, ...extra };
   if (typeof value !== 'string' || !UTC_TIMESTAMP_PATTERN.test(value) || Number.isNaN(Date.parse(value))) {
     throw new DeviceSyncError('VALIDATION_FAILED', 'lastSyncTime must be a UTC ISO 8601 timestamp or null');
   }
-  return { lastSyncTime: new Date(value).toISOString() };
+  return { lastSyncTime: new Date(value).toISOString(), ...extra };
 }
 
 // ---------- 快照视图 ----------
@@ -140,6 +172,15 @@ export interface SyncLicenseView {
   /** Issue/Renew 时计算的 HMAC 签名（Draft 为 null）。 */
   readonly signature: string | null;
   readonly version: number;
+  /** Exact DEC-020 payload; date-only display fields cannot reconstruct the signed UTC instants. */
+  readonly signaturePayload: {
+    readonly licenseId: string;
+    readonly deviceId: string;
+    readonly customerId: string;
+    readonly validFrom: string;
+    readonly validTo: string;
+    readonly entitlements: readonly string[];
+  };
   /** 查询时点派生：当前是否有效（可支撑设备运行）。 */
   readonly effective: boolean;
 }
@@ -222,6 +263,8 @@ interface AssignmentRow {
 
 interface LicenseRow {
   readonly id: string;
+  readonly deviceId: string;
+  readonly customerId: string;
   readonly status: string;
   readonly validFrom: Date;
   readonly validTo: Date;
@@ -308,6 +351,17 @@ function toLicenseView(row: LicenseRow, now: Date): SyncLicenseView {
     entitlements: row.entitlements.filter((e) => e.enabled).map((e) => entitlementToWire(e.code)),
     signature: row.signature,
     version: row.version,
+    signaturePayload: {
+      licenseId: row.id,
+      deviceId: row.deviceId,
+      customerId: row.customerId,
+      validFrom: row.validFrom.toISOString(),
+      validTo: row.validTo.toISOString(),
+      entitlements: row.entitlements
+        .filter((e) => e.enabled)
+        .map((e) => entitlementToWire(e.code))
+        .sort(),
+    },
     effective: (EFFECTIVE_LICENSE_STATUSES as readonly string[]).includes(row.status) && inWindow,
   };
 }

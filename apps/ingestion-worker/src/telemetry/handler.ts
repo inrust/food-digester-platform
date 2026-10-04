@@ -1,3 +1,4 @@
+import { observeDataPathPhase } from '@fdp/observability';
 /**
  * BE-IOT-05 Telemetry Handler：13 项指标的聚合输入/增量摘要 + S3 归档链路 outbox。
  *
@@ -85,38 +86,42 @@ export function createTelemetryHandler(
             'device has no customer assignment; hourly aggregate requires customerId',
           );
         }
-        const aggregate = await mergeHourlyAggregate(tx, {
-          deviceId,
-          customerId: attribution.customerId,
-          siteId: attribution.siteId,
-          bucketStart,
-          samples: extractSamples(message.data),
-        });
+        const aggregate = await observeDataPathPhase('telemetry-aggregate', () =>
+          mergeHourlyAggregate(tx, {
+            deviceId,
+            customerId: attribution.customerId,
+            siteId: attribution.siteId,
+            bucketStart,
+            samples: extractSamples(message.data),
+          }),
+        );
         // 归档 outbox：原始 Payload 进入 S3 归档链路（含 audit.hash 供核对，DEC-002）
         const outbox = (tx as unknown as Record<string, unknown>).outboxEvent as OutboxDelegate;
-        await outbox.create({
-          data: {
-            eventType: 'ARCHIVE',
-            aggregateType: 'device',
-            aggregateId: deviceId,
-            payload: {
-              archiveClass: 'MQTT_RAW',
-              envelopeVersion: '1.0',
+        await observeDataPathPhase('telemetry-archive-outbox', () =>
+          outbox.create({
+            data: {
+              eventType: 'ARCHIVE',
+              aggregateType: 'device',
               aggregateId: deviceId,
-              topicType: 'telemetry',
-              messageId: message.messageId,
-              deviceId,
-              customerId: attribution.customerId,
-              siteId: attribution.siteId,
-              occurredAt: message.occurredAt,
-              receivedAtMs: message.envelope.iotReceivedAt,
-              payloadHash,
-              auditHash: (message.audit as Record<string, unknown> | null)?.hash ?? null,
-              rawBody: message.rawBody,
-              payload: message.rawPayload,
+              payload: {
+                archiveClass: 'MQTT_RAW',
+                envelopeVersion: '1.0',
+                aggregateId: deviceId,
+                topicType: 'telemetry',
+                messageId: message.messageId,
+                deviceId,
+                customerId: attribution.customerId,
+                siteId: attribution.siteId,
+                occurredAt: message.occurredAt,
+                receivedAtMs: message.envelope.iotReceivedAt,
+                payloadHash,
+                auditHash: (message.audit as Record<string, unknown> | null)?.hash ?? null,
+                rawBody: message.rawBody,
+                payload: message.rawPayload,
+              },
             },
-          },
-        });
+          }),
+        );
         return aggregate;
       },
     });

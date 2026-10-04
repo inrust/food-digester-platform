@@ -52,7 +52,7 @@ Telemetry/Report/Tamper 复算 RFC8785 audit hash；ACK 按 DEC-015 检查 COMMA
 
 [0.11.0 基线](../../contracts/testing/baselines/0.11.0.json)来自 `d93cafb9b2f03ca14a5d3dafc3555e6692cd7232`；[0.12.0 基线](../../contracts/testing/baselines/0.12.0.json)来自 `1af58eede3bde8dfbae7c2012ff7dcdaccfba31b`。两份快照只包含设备 API 的引用展开线协议、11 类 MQTT 与稳定错误码，不包含私钥或生产流量。
 
-MQTT 与前版一致。REST 的 CSR 轮换新增必填 CSR、删除 privateKey、公开证书 chain/双通道状态等是已经批准的破坏性升级，回执标记 `APPROVED_BREAKING_UPGRADE`，不声称旧版完全兼容。精确差异分别关联[审批映射](../../contracts/testing/compatibility-approvals.json)中的 DEC-026@1.0.0 / DEC-003@1.1.0；这份映射追溯既有冻结决策，不创建新批准。
+MQTT 与前版一致。REST 的 CSR 轮换新增必填 CSR、删除 privateKey、公开证书 chain/双通道状态等是已经批准的破坏性升级，回执标记 `APPROVED_BREAKING_UPGRADE`，不声称旧版完全兼容。精确差异分别关联[旧版审批映射](../../contracts/testing/compatibility-approvals-0.11-to-0.12.json)中的 DEC-026@1.0.0 / DEC-003@1.1.0；这份映射追溯既有冻结决策，不创建新批准。
 
 当前线协议 SHA-256 必须与冻结基线一致；前后快照 hash 必须匹配审批映射；每条破坏性差异必须精确匹配 path/kind、契约版本升级及已冻结的登记版本/history。额外字段删除、类型变更、必填/安全声明/operation/status 删除等都会使 Gate 失败。比较器对未知约束变化采取保守拒绝，不假称完成任意 JSON Schema 的数学包含性证明。
 
@@ -63,3 +63,7 @@ MQTT 与前版一致。REST 的 CSR 轮换新增必填 CSR、删除 privateKey�
 ## 执行边界
 
 不访问生产凭据、不调用真实 AWS、不部署/发布、不推送、不回放生产流量。JSON 回执只保留覆盖计数、状态、决策差异和测试源码 hash，临时 trace 结束清理，不保存证书包、签名或下载 token。目标 AWS/真实 API Gateway 回执仍为 NOT RUN / NO RECEIPT；由后续隔离环境 QA-03/QA-04 获取。
+
+## QA-09 后续协议实现（2026-10-05）
+
+当前基线为 [0.13.0](../../contracts/testing/baselines/0.13.0.json)，由本轮自然生命周期实现提交引入；0.11.0/0.12.0 快照保留。Sync可选许可证确认、完整UTC签名输入及Draft无签名响应遵循既有DOM-01/冻结DEC-020，未重新批准或改写签名算法、许可证权益或业务生命周期。现行[精确变更映射](../../contracts/testing/compatibility-approvals.json)比较0.12.0→0.13.0；oneOf内闭合响应变化和409扩展被保守Gate识别为破坏性升级，不能声称旧固件自动兼容。新确认协议、独立设备验签缺口及回滚影响见[实施手册](QA-09-自然许可证确认与Telemetry阶段观测.md)。

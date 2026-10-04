@@ -34,15 +34,15 @@ test('sync 端点齐备且 DeviceMtls 认证；响应码齐备', () => {
   const op = doc.paths['/api/v1/device/sync'].post;
   assert.equal(op.operationId, 'syncDevice');
   assert.deepEqual(op.security, [{ DeviceMtls: [] }]);
-  for (const status of ['200', '400', '401', '403', '500']) {
+  for (const status of ['200', '400', '401', '403', '409', '500']) {
     assert.ok(op.responses[status], `缺少 ${status}`);
   }
 });
 
-test('请求体封闭：仅 lastSyncTime（UTC 时间戳或 null）', () => {
+test('请求体封闭：lastSyncTime 与可选许可证确认', () => {
   const req = doc.components.schemas.SyncRequest;
   assert.equal(req.additionalProperties, false);
-  assert.deepEqual(Object.keys(req.properties), ['lastSyncTime']);
+  assert.deepEqual(Object.keys(req.properties), ['lastSyncTime', 'licenseConfirmation']);
   assert.ok(!req.required?.includes('lastSyncTime'), '首次同步可省略');
 });
 
@@ -110,4 +110,26 @@ test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.
     assert.ok(targetDoc, `$ref 目标文件不允许: ${ref}`);
     assert.notEqual(resolvePointer(targetDoc, pointer), undefined, `悬空引用: ${ref}`);
   }
+});
+
+test('许可证确认绑定版本与快照，规范验签输入保留完整UTC时间', () => {
+  const s = doc.components.schemas;
+  assert.equal(s.LicenseConfirmation.additionalProperties, false);
+  assert.deepEqual(s.LicenseConfirmation.required, ['licenseId', 'version', 'snapshotEtag', 'status']);
+  assert.deepEqual(s.LicenseConfirmation.properties.status.enum, ['RECEIVED', 'VERIFIED']);
+  assert.equal(s.LicenseConfirmation.properties.version.maximum, Number.MAX_SAFE_INTEGER);
+  assert.equal(s.SyncLicense.properties.signaturePayload.$ref, '#/components/schemas/LicenseSignaturePayload');
+  assert.ok(!s.SyncLicense.required.includes('signaturePayload'), '兼容扩展不强制旧响应');
+  assert.equal(
+    s.LicenseSignaturePayload.properties.validFrom.$ref,
+    'openapi-base.json#/components/schemas/UtcTimestamp',
+  );
+  assert.deepEqual(s.LicenseSignaturePayload.required, [
+    'licenseId',
+    'deviceId',
+    'customerId',
+    'validFrom',
+    'validTo',
+    'entitlements',
+  ]);
 });

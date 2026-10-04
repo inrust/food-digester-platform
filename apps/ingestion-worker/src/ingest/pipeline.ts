@@ -1,3 +1,4 @@
+import { observeDataPathPhase, setDataPathMessage } from '@fdp/observability';
 /**
  * BE-IOT-02 Ingestion 通用校验管线（框架无关核心）。
  *
@@ -72,16 +73,27 @@ function normalizeContractPayload(envelope: IngressEnvelope): IngressEnvelope {
 }
 
 export async function validateRecord(deps: IngestPipelineDeps, rawBody: string): Promise<ValidatedMessage> {
-  const parsed = parseEnvelope(rawBody);
+  const parsed = await observeDataPathPhase('envelope', async () => parseEnvelope(rawBody));
   const rawPayload = deepFreeze(structuredClone(parsed.payload));
-  const device = await resolveDeviceContext(deps.client, parsed);
-  const envelope = normalizeContractPayload(parsed);
+  const device = await observeDataPathPhase('identity', () => resolveDeviceContext(deps.client, parsed));
+  const envelope = await observeDataPathPhase('payload-validation', async () => {
+    const envelope = normalizeContractPayload(parsed);
+    const validator = deps.schemaValidator ?? createSchemaValidator();
+    validator.validatePayload(envelope);
+    assertClockSkew(envelope, deps.clockSkewToleranceSeconds ?? DEFAULT_CLOCK_SKEW_TOLERANCE_SECONDS);
+    return envelope;
+  });
   const normalizedPayload = deepFreeze(envelope.payload);
-  const validator = deps.schemaValidator ?? createSchemaValidator();
-  validator.validatePayload(envelope);
-  assertClockSkew(envelope, deps.clockSkewToleranceSeconds ?? DEFAULT_CLOCK_SKEW_TOLERANCE_SECONDS);
 
   const meta = envelope.payload.meta as Record<string, unknown>;
+  setDataPathMessage({
+    deviceId: device.deviceId,
+    messageId: String(meta.id),
+    topicType: envelope.iotType,
+    seq: Number(meta.seq),
+    receivedAtMs: envelope.iotReceivedAt,
+    occurredAtMs: Date.parse(String(meta.ts)),
+  });
   return {
     envelope,
     rawBody,

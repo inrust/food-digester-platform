@@ -1,0 +1,27 @@
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ❯ apps/cloud-api/test/admin-device-console.test.ts (11 tests | 1 failed) 2291ms
+   × console phase telemetry correlates request IDs after scope validation and preserves the response 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  apps/cloud-api/test/admin-device-console.test.ts > console phase telemetry correlates request IDs after scope validation and preserves the response
+AssertionError: OpenAPI operation /api/v1/admin/devices/{deviceId}/console must exist: expected undefined to be truthy
+ ❯ assertOpenApiResponse apps/cloud-api/test/openapi-response.ts:27:10
+     25| export function assertOpenApiResponse(operationId: string, status: num…
+     26|   const operation = operations.get(operationId);
+     27|   assert.ok(operation, `OpenAPI operation ${operationId} must exist`);
+       |          ^
+     28|   const response = (api.paths as Record<string, any>)[operation.path]?…
+     29|   assert.ok(response, `OpenAPI response must exist: ${operationId} ${s…
+ ❯ apps/cloud-api/test/admin-device-console.test.ts:801:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 27 passed (28)
+      Tests  1 failed | 184 passed (185)
+   Start at  00:12:59
+   Duration  36.47s (transform 6.96s, setup 214ms, import 14.29s, tests 81.55s, environment 1ms)
+

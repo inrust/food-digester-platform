@@ -1,3 +1,4 @@
+import { rejects } from 'node:assert/strict';
 /**
  * BE-IOT-03 幂等、序号缺口与收据模块验收（PGlite 真实 PostgreSQL + DB-01 表结构）。
  *
@@ -10,7 +11,8 @@
  */
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
-import type { DbClient, PrismaClient } from '@fdp/database';
+import { withTransaction, type DbClient, type PrismaClient } from '@fdp/database';
+import { withDataPathTrace, observeRecordResult } from '@fdp/observability';
 import { IngestError, gapStatus, hashPayload, idempotencyKeyOf, processWithReceipt } from '../src/index.js';
 import { createTestDb } from '../../cloud-api/test/helpers.js';
 
@@ -266,4 +268,87 @@ describe('processWithReceipt（BE-IOT-03 幂等收据）', () => {
     assert.equal(await prisma.ingestionReceipt.count({ where: { deviceId } }), TOTAL, '每个唯一键恰好一条 receipt');
     assert.deepEqual(await gapStatus(prisma, { deviceId, topicType: 'telemetry' }), [], '乱序缺口全部解除');
   });
+});
+
+test('phase evidence closes after root COMMIT; redelivery correlates to original receipt and rollback never reports completion', async () => {
+  const deviceId = nextDeviceId();
+  const rows: Record<string, unknown>[] = [];
+  const params = {
+    key: { deviceId, topicType: 'telemetry', seq: 1 },
+    payloadHash: 'a'.repeat(64),
+    business: (tx: DbClient) => businessWrite(tx, deviceId, 1),
+  };
+  const run = (sqsMessageId: string) =>
+    withDataPathTrace(
+      { sqsMessageId, deviceId },
+      async () => {
+        const result = await processWithReceipt(prisma, params);
+        // Independent root-client read after processWithReceipt returns establishes durability.
+        assert.equal(await businessCount(deviceId), 1);
+        observeRecordResult('PROCESSED');
+        return result;
+      },
+      (row) => rows.push(row),
+    );
+  assert.equal((await run('sqs-first')).outcome, 'PROCESSED');
+  assert.equal((await run('sqs-redelivery')).outcome, 'DUPLICATE_SKIPPED');
+  const receipt = await prisma.ingestionReceipt.findFirstOrThrow({ where: { deviceId } });
+  const completions = rows.filter((r) => r.event === 'ingestion.receipt.completed');
+  assert.equal(completions.length, 2);
+  assert.isTrue(completions.every((r) => r.receiptId === receipt.id && r.commitScope === 'ROOT_TRANSACTION_COMPLETED'));
+  assert.deepEqual(
+    completions.map((r) => r.sqsMessageId),
+    ['sqs-first', 'sqs-redelivery'],
+  );
+  const firstCommit = rows.findIndex((r) => r.event === 'ingestion.receipt.completed');
+  const transactionPhase = rows.findIndex((r) => r.phase === 'db-transaction' && r.outcome === 'PASS');
+  assert.isAbove(firstCommit, transactionPhase);
+  const failingId = nextDeviceId();
+  const failed: Record<string, unknown>[] = [];
+  await rejects(
+    withDataPathTrace(
+      { sqsMessageId: 'sqs-failure' },
+      () =>
+        processWithReceipt(prisma, {
+          ...params,
+          key: { ...params.key, deviceId: failingId },
+          business: async (tx) => {
+            await businessWrite(tx, failingId, 1);
+            throw Error('private payload');
+          },
+        }),
+      (row) => failed.push(row),
+    ),
+  );
+  assert.equal(await businessCount(failingId), 0);
+  assert.equal(await prisma.ingestionReceipt.count({ where: { deviceId: failingId } }), 0);
+  assert.isFalse(failed.some((r) => r.event === 'ingestion.receipt.completed'));
+  assert.isTrue(failed.some((r) => r.phase === 'db-transaction' && r.outcome === 'FAIL'));
+  assert.notInclude(JSON.stringify(failed), 'private payload');
+});
+
+test('nested transaction phase is callback-only and later outer rollback invalidates its writes', async () => {
+  const deviceId = nextDeviceId();
+  const rows: Record<string, unknown>[] = [];
+  await rejects(
+    withDataPathTrace(
+      { deviceId },
+      () =>
+        withTransaction(prisma, async (tx) => {
+          await processWithReceipt(tx, {
+            key: { deviceId, topicType: 'telemetry', seq: 1 },
+            payloadHash: 'b'.repeat(64),
+            business: (inner) => businessWrite(inner, deviceId, 1),
+          });
+          throw Error('outer rollback');
+        }),
+      (row) => rows.push(row),
+    ),
+  );
+  assert.equal(
+    rows.find((r) => r.event === 'ingestion.receipt.completed')!.commitScope,
+    'ENCLOSING_TRANSACTION_CALLBACK_ONLY',
+  );
+  assert.equal(await businessCount(deviceId), 0);
+  assert.equal(await prisma.ingestionReceipt.count({ where: { deviceId } }), 0);
 });
