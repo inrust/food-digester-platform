@@ -1,0 +1,133 @@
+- complementary:
+  - strong: 厨余机云平台
+  - generic: 管理工作台
+  - navigation "主菜单":
+    - list:
+      - link "概览":
+        - /url: /dashboard
+        - generic: 概览
+      - button "设备管理" [expanded]:
+        - generic: 设备管理
+      - list:
+        - link "查看设备":
+          - /url: /devices/view
+          - generic: 查看设备
+        - link "设备群管理":
+          - /url: /devices/groups
+          - generic: 设备群管理
+        - link "耗材查看":
+          - /url: /consumables
+          - generic: 耗材查看
+        - link "告警与事件":
+          - /url: /alarms
+          - generic: 告警与事件
+        - link "媒体管理":
+          - /url: /media
+          - generic: 媒体管理
+      - button "ESG管理" [expanded]:
+        - generic: ESG管理
+      - list:
+        - link "ESG概览":
+          - /url: /esg/overview
+          - generic: ESG概览
+        - link "设备ESG信息":
+          - /url: /esg/devices
+          - generic: 设备ESG信息
+      - button "平台管理" [expanded]:
+        - generic: 平台管理
+      - list:
+        - link "站点管理":
+          - /url: /sites
+          - generic: 站点管理
+        - link "设备用户":
+          - /url: /device-users
+          - generic: 设备用户
+- banner:
+  - navigation "面包屑":
+    - list:
+      - listitem: 平台管理
+      - listitem: /设备用户
+  - combobox "显示时区":
+    - option "UTC"
+    - option "Asia/Shanghai" [selected]
+    - option "Europe/London"
+    - option "America/New_York"
+  - combobox "语言":
+    - option "简体中文" [selected]
+    - option "English"
+  - button "通知，无未读":
+  - generic: "1"
+  - generic: 19ea953c-10a1-704d-1549-7cae365739b0
+  - generic: CustomerViewer
+  - button "登出":
+    - generic: 登出
+- link "跳转到工作区":
+  - /url: "#workspace-content"
+- main:
+  - heading "设备账号" [level=1]
+  - generic: 设备区域
+  - combobox "设备区域":
+    - option "全部" [selected]
+  - generic: 设备子区域
+  - combobox "设备子区域":
+    - option "全部" [selected]
+  - generic: 设备唯一ID
+  - combobox "设备唯一ID":
+    - option "全部" [selected]
+  - generic: 状态
+  - combobox "状态":
+    - option "全部" [selected]
+    - option "正常"
+    - option "已停用"
+  - generic: 关键字
+  - textbox "关键字"
+  - button "筛选":
+    - generic: 筛选
+  - button "重置":
+    - generic: 重置
+  - table "设备用户列表":
+    - rowgroup:
+      - row "用户名 显示名 状态 分配设备数 同步版本 更新时间 操作":
+        - columnheader "用户名"
+        - columnheader "显示名"
+        - columnheader "状态"
+        - columnheader "分配设备数"
+        - columnheader "同步版本"
+        - columnheader "更新时间"
+        - columnheader "操作"
+    - rowgroup:
+      - row "ui-recheck-3f54e8a-readonly-fixture UI-RECHECK-3F54E8A-20261004-readonly-fixture 正常 0 v1 2026/10/04 16:41:41 详情":
+        - cell "ui-recheck-3f54e8a-readonly-fixture"
+        - cell "UI-RECHECK-3F54E8A-20261004-readonly-fixture"
+        - cell "正常"
+        - cell "0"
+        - cell "v1"
+        - cell "2026/10/04 16:41:41":
+          - time: 2026/10/04 16:41:41
+        - cell "详情":
+          - button "详情" [active]:
+            - generic: 详情
+  - complementary "设备用户详情":
+    - heading "设备用户详情" [level=4]
+    - term: 用户名
+    - definition: ui-recheck-3f54e8a-readonly-fixture
+    - term: 显示名
+    - definition: UI-RECHECK-3F54E8A-20261004-readonly-fixture
+    - term: 所属客户
+    - definition: 812d9906-9b86-4c52-81fd-b1ad491181d9
+    - term: 状态
+    - definition: 正常
+    - term: 同步版本
+    - definition: v1
+    - term: 更新时间
+    - definition:
+      - time: 2026/10/04 16:41:41
+    - button "关闭":
+      - generic: 关闭
+    - region "分配历史":
+      - heading "分配历史" [level=5]
+      - paragraph: 暂无分配
+    - region "设备同步状态":
+      - heading "同步交付状态" [level=5]
+      - paragraph: 实体版本、通知投递、同步快照确认与设备应用是独立阶段；当前协议尚未提供设备本地应用确认回执。
+      - paragraph: 尚未生成同步通知

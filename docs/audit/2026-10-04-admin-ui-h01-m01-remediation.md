@@ -32,6 +32,8 @@ H-01 代码：[user/service.ts](../../apps/cloud-api/src/admin/user/service.ts)�
 
 ## 下一步
 
+后续状态（2026-10-04，保留上表的修复时点结论）：`3f54e8a` 已完成 CI、真实部署制品绑定及 H-01 / M-01 限定范围目标复验。旧且未过期 ID Token 的读写均 401 / UNAUTHENTICATED；真实 Viewer 可访问自有非空列表和详情，六类写入均 403、写控件隐藏。详见 [目标复验报告](2026-10-04-admin-ui-3f54e8a-target-recheck.md)。正式五角色、全业务和 FE-06～19 回执仍需单独补齐。
+
 1. 人工通过 GitHub Desktop 推送本地修复提交，核验该应用版本的 CI、前端部署及后端 Lambda 制品。
 2. 在现有 `fdp-test-app` 创建新一轮隔离对象：停用前取得有效会话；停用完成后原 Token 的读取与写入均须返回 401，正常账号仍可使用；保留请求 ID、审计和收尾台账。此前账号与记录保持停用。
 3. 真实 CustomerViewer 验证设备用户菜单、筛选和详情可读，写入口不可用，直接 API 写入拒绝、跨 Customer 无泄漏。
