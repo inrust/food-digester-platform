@@ -38,7 +38,7 @@ test('target gates reject missing finish cleanup required case and foreign devic
 });
 test('business cleanup preserves outside rows, rejects baseline drift and deletes own dependent rows atomically', async () => {
   const pg = new PGlite();
-  await pg.exec(`CREATE TABLE customers(id text,name text);CREATE TABLE devices(id text,customer_id text,site_id text);CREATE TABLE device_certificates(device_id text);CREATE TABLE sites(id text,customer_id text);CREATE TABLE outbox_events(id text,event_type text,aggregate_type text,aggregate_id text,status text,created_at timestamptz,published_at timestamptz);
+  await pg.exec(`CREATE TABLE replay_jobs(id text,scope jsonb);CREATE TABLE customers(id text,name text);CREATE TABLE devices(id text,customer_id text,site_id text);CREATE TABLE device_certificates(device_id text);CREATE TABLE sites(id text,customer_id text);CREATE TABLE outbox_events(id text,event_type text,aggregate_type text,aggregate_id text,status text,created_at timestamptz,published_at timestamptz);
  CREATE TABLE device_user_sync_receipts(device_id text);CREATE TABLE device_user_assignments(customer_id text);CREATE TABLE device_users(id text,customer_id text);CREATE TABLE license_history(license_id text);CREATE TABLE license_entitlements(license_id text);CREATE TABLE contract_devices(customer_id text);CREATE TABLE licenses(id text,customer_id text);CREATE TABLE contracts(id text,customer_id text);CREATE TABLE configuration_versions(id text,configuration_id text);CREATE TABLE device_configurations(id text,target_device_id text);CREATE TABLE consumable_requests(customer_id text);CREATE TABLE esg_export_jobs(id text,customer_id text,filters jsonb);CREATE TABLE device_assignments(device_id text);CREATE TABLE device_commands(id text,device_id text);CREATE TABLE command_attempts(command_id text);CREATE TABLE command_acks(command_id text);CREATE TABLE device_retirements(device_id text);
  INSERT INTO devices VALUES('original','original-customer','original-site');INSERT INTO licenses VALUES('original-license','original-customer');INSERT INTO license_history VALUES('original-license');
  INSERT INTO device_configurations VALUES('global-model-config',NULL);INSERT INTO esg_export_jobs(customer_id) VALUES(NULL);INSERT INTO outbox_events(aggregate_id) VALUES('original-license');INSERT INTO sites VALUES('foreign-site','original-customer');INSERT INTO outbox_events(aggregate_id) VALUES('foreign-site');`);
@@ -62,7 +62,15 @@ test('business cleanup preserves outside rows, rejects baseline drift and delete
     },
   };
   try {
+    await pg.query('INSERT INTO replay_jobs VALUES($1,$2::jsonb)', [
+      'foreign-replay',
+      JSON.stringify({ customerId: plan.customers[0].id, deviceId: 'foreign-device' }),
+    ]);
     const baseline = await executeFixture(client, { ...plan, action: 'business-baseline' });
+    await pg.query('INSERT INTO replay_jobs VALUES($1,$2::jsonb)', [
+      'own-replay',
+      JSON.stringify({ customerId: plan.customers[0].id, deviceId: plan.devices[0] }),
+    ]);
     for (const table of ['device_configurations', 'esg_export_jobs'])
       assert.equal(baseline.businessFingerprints.find((row) => row.table === table).count, '1');
     await pg.exec("UPDATE device_configurations SET id='changed-global-model-config' WHERE target_device_id IS NULL");
@@ -98,6 +106,7 @@ test('business cleanup preserves outside rows, rejects baseline drift and delete
       0,
     );
     assert.deepEqual(result.businessFingerprints, baseline.businessFingerprints);
+    assert.deepEqual((await pg.query('SELECT id FROM replay_jobs ORDER BY id')).rows, [{ id: 'foreign-replay' }]);
     assert.equal((await pg.query('SELECT count(*)::int n FROM licenses')).rows[0].n, 1);
     assert.equal((await pg.query('SELECT count(*)::int n FROM outbox_events')).rows[0].n, 2);
     assert.equal((await pg.query('SELECT count(*)::int n FROM license_history')).rows[0].n, 1);
@@ -166,4 +175,16 @@ test('nonActive scope cannot enter the full wave that contains Active dependent 
     runBusinessTarget(null, '/tmp/not-written.json', { nonActiveOnly: true, coreOnly: false }),
     /NONACTIVE_FULL_WAVE_FORBIDDEN/,
   );
+});
+
+test('foundation mode cannot be mistaken for full core or browser acceptance', async () => {
+  for (const options of [
+    { foundationOnly: true },
+    { foundationOnly: true, coreOnly: true, nonActiveOnly: true },
+    { foundationOnly: true, coreOnly: true, nonActiveOnly: true, remainingTarget() {}, semanticBrowser() {} },
+  ])
+    await assert.rejects(
+      runBusinessTarget({}, '/tmp/qa09-invalid-foundation.json', options),
+      /FOUNDATION_SCOPE_INVALID/,
+    );
 });

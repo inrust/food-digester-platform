@@ -1,0 +1,2506 @@
+{
+  "sourceCommit": "525517a44f8568029615851e794ff5d87f833893",
+  "prefix": "qa09-dccb1899757347c0",
+  "operations": [
+    {
+      "operationId": "approveOnboardingRequest",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/{requestId}/approve",
+      "permission": "onboarding:approve",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "rejectOnboardingRequest",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/{requestId}/reject",
+      "permission": "onboarding:approve",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createCertificateRotationRequest",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/{deviceId}/certificate-rotation-requests",
+      "permission": "certificate:rotate",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createReplayJob",
+      "method": "POST",
+      "path": "/api/v1/admin/replay/jobs",
+      "permission": "replay:create",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:replay-create-PlatformSuperAdmin",
+              "requestId": "545c02b8-2cf1-4759-8b84-22b5469482ff",
+              "status": 201
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:replay-create-PlatformOperator",
+              "requestId": "02a12aca-201c-4957-b658-81baa50161c8",
+              "status": 201
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createCustomer",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "permission": "customer:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:customer-extra-create-PlatformSuperAdmin",
+              "requestId": "78ab80e8-6b54-4594-ad02-eb1ae99036df",
+              "status": 201
+            },
+            {
+              "id": "remaining:customer-extra-create-PlatformOperator",
+              "requestId": "ed9de6d6-3d45-45a1-ab14-d89a40033b12",
+              "status": 201
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "updateCustomer",
+      "method": "PATCH",
+      "path": "/api/v1/admin/customers/{customerId}",
+      "permission": "customer:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:customer-update-super",
+              "requestId": "6f1e8174-f178-4b14-80e3-49ea6bb444f9",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "deleteCustomer",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/{customerId}",
+      "permission": "customer:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:customer-delete-operator-PlatformSuperAdmin",
+              "requestId": "1bbaad65-a3e1-4691-a61a-08aaa1c56fac",
+              "status": 200
+            },
+            {
+              "id": "remaining:customer-delete-operator-PlatformOperator",
+              "requestId": "112216e0-c8a6-4c7a-8371-bff9663339d2",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "deactivateCustomer",
+      "method": "POST",
+      "path": "/api/v1/admin/customers/{customerId}/deactivate",
+      "permission": "customer:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:customer-deactivate-PlatformSuperAdmin",
+              "requestId": "93c82c9e-a6f0-4d19-ac20-3b41719f20b6",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:customer-deactivate-PlatformOperator",
+              "requestId": "5e3b5d8e-d72c-419e-ad73-2eebb942a41d",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createSite",
+      "method": "POST",
+      "path": "/api/v1/admin/sites",
+      "permission": "site:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "site-create-a",
+              "requestId": "ab28eee0-ec3d-4d26-b25e-c53f85d0a6ca",
+              "status": 201
+            },
+            {
+              "id": "site-create-b",
+              "requestId": "8c330305-03fc-4848-8657-841e02a5647c",
+              "status": 201
+            },
+            {
+              "id": "remaining:site-extra",
+              "requestId": "939c59c9-bed9-4f98-8757-8594b159ced3",
+              "status": 201
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "updateSite",
+      "method": "PATCH",
+      "path": "/api/v1/admin/sites/{siteId}",
+      "permission": "site:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "deleteSite",
+      "method": "DELETE",
+      "path": "/api/v1/admin/sites/{siteId}",
+      "permission": "site:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "cleanup-site-delete-0ad60dee-c5bc-4cbd-942c-061bc0b4b5de",
+              "requestId": "81e6acdc-ea36-4383-a071-a70a9a549a35",
+              "status": 200
+            },
+            {
+              "id": "cleanup-site-delete-7b8e42bc-aaac-4dfd-b20c-ac1bf266e8ea",
+              "requestId": "ed19379c-4ad5-4970-b3b5-cbce203d7a20",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:site-delete-operator",
+              "requestId": "7d01f991-aba9-4fac-a08d-d7164d15629b",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "deactivateSite",
+      "method": "POST",
+      "path": "/api/v1/admin/sites/{siteId}/deactivate",
+      "permission": "site:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:site-deactivate-super",
+              "requestId": "6b7140af-066e-4495-8b32-3250e15de96e",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "updateDeviceMetadata",
+      "method": "PATCH",
+      "path": "/api/v1/admin/devices/{deviceId}/metadata",
+      "permission": "device:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:metadata-super",
+              "requestId": "fdc800a8-f69c-4667-ad5d-f7b70466c9cb",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "assignDevice",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/{deviceId}/assignment",
+      "permission": "device:assign",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "qa09-dccb1899757347c0-01:assignment",
+              "requestId": "e5e6b1a1-7175-43f4-a2e1-2695102b32d9",
+              "status": 200
+            },
+            {
+              "id": "qa09-dccb1899757347c0-02:assignment",
+              "requestId": "6e56089b-ecd9-432d-9cc3-3c779bfdc4ed",
+              "status": 200
+            },
+            {
+              "id": "qa09-dccb1899757347c0-03:assignment",
+              "requestId": "9b77a68b-6b42-49af-b7ba-c21a9216d64b",
+              "status": 200
+            },
+            {
+              "id": "qa09-dccb1899757347c0-04:assignment",
+              "requestId": "2be4c6e4-1480-4b27-9648-96366a1b0644",
+              "status": 200
+            },
+            {
+              "id": "qa09-dccb1899757347c0-05:assignment",
+              "requestId": "d008d2f8-6585-4b3d-83b5-1c15074d2bfc",
+              "status": 200
+            },
+            {
+              "id": "qa09-dccb1899757347c0-06:assignment",
+              "requestId": "8ad4e48a-36a2-4b95-bbbc-357794d63e1a",
+              "status": 200
+            },
+            {
+              "id": "qa09-dccb1899757347c0-07:assignment",
+              "requestId": "3f816179-4630-4e83-82fc-8f21a8eca542",
+              "status": 200
+            },
+            {
+              "id": "qa09-dccb1899757347c0-08:assignment",
+              "requestId": "ece04e3b-42ed-4a7a-b8a6-f4502372982d",
+              "status": 200
+            },
+            {
+              "id": "qa09-dccb1899757347c0-09:assignment",
+              "requestId": "14f83782-6ceb-4d40-9eeb-492b90b03fcd",
+              "status": 200
+            },
+            {
+              "id": "qa09-dccb1899757347c0-10:assignment",
+              "requestId": "5f0c39aa-e124-40c2-9bbd-073d8e64e582",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:assignment-operator",
+              "requestId": "8b9c922a-9a8d-469f-9aa5-2b945b5d244e",
+              "status": 200
+            },
+            {
+              "id": "remaining:assignment-operator-restore",
+              "requestId": "be8a2eec-f4a0-48a6-b285-b26aeec273c6",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "suspendDevice",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/{deviceId}/suspend",
+      "permission": "device:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "reactivateDevice",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/{deviceId}/reactivate",
+      "permission": "device:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "retireDevice",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/{deviceId}/retire",
+      "permission": "device:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "forceCompleteRetirement",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/{deviceId}/retire/complete",
+      "permission": "device:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createActivityExport",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/{deviceId}/activities/export",
+      "permission": "export:create",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:activity-export-Auditor",
+              "requestId": "6aa9f9e8-7e2b-44a5-bb91-2131c1f8f0a2",
+              "status": 202
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:activity-export-CustomerAdmin",
+              "requestId": "21c7e4fd-f7d8-40be-a298-88015888eb52",
+              "status": 202
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createLicense",
+      "method": "POST",
+      "path": "/api/v1/admin/licenses",
+      "permission": "license:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:license-create-PlatformSuperAdmin",
+              "requestId": "d497231a-6d00-4af7-ab4b-7f2e45a7330e",
+              "status": 201
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:license-create-PlatformOperator",
+              "requestId": "c74b5882-2f6d-4466-9c06-429c64e103eb",
+              "status": 201
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "issueLicense",
+      "method": "POST",
+      "path": "/api/v1/admin/licenses/{licenseId}/issue",
+      "permission": "license:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:license-issue-PlatformSuperAdmin",
+              "requestId": "07c00a3d-7d05-47f9-bed6-eaa824ec152c",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:license-issue-PlatformOperator",
+              "requestId": "7a7f952e-a374-4ad6-9d97-4fa15a3656e3",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "activateLicense",
+      "method": "POST",
+      "path": "/api/v1/admin/licenses/{licenseId}/activate",
+      "permission": "license:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "renewLicense",
+      "method": "POST",
+      "path": "/api/v1/admin/licenses/{licenseId}/renew",
+      "permission": "license:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "revokeLicense",
+      "method": "POST",
+      "path": "/api/v1/admin/licenses/{licenseId}/revoke",
+      "permission": "license:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "evaluateLicense",
+      "method": "POST",
+      "path": "/api/v1/admin/licenses/{licenseId}/evaluate",
+      "permission": "license:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:license-evaluate-PlatformSuperAdmin",
+              "requestId": "76f7f1a6-b25c-4391-b815-9a0016853371",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:license-evaluate-PlatformOperator",
+              "requestId": "c6ec9311-9b9c-4357-b43d-484f0aecb648",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createContract",
+      "method": "POST",
+      "path": "/api/v1/admin/contracts",
+      "permission": "contract:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "updateContract",
+      "method": "PATCH",
+      "path": "/api/v1/admin/contracts/{contractId}",
+      "permission": "contract:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "activateContract",
+      "method": "POST",
+      "path": "/api/v1/admin/contracts/{contractId}/activate",
+      "permission": "contract:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "renewContract",
+      "method": "POST",
+      "path": "/api/v1/admin/contracts/{contractId}/renew",
+      "permission": "contract:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "terminateContract",
+      "method": "POST",
+      "path": "/api/v1/admin/contracts/{contractId}/terminate",
+      "permission": "contract:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "evaluateContract",
+      "method": "POST",
+      "path": "/api/v1/admin/contracts/{contractId}/evaluate",
+      "permission": "contract:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "bindContractDevices",
+      "method": "POST",
+      "path": "/api/v1/admin/contracts/{contractId}/devices/bind",
+      "permission": "contract:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "unbindContractDevices",
+      "method": "POST",
+      "path": "/api/v1/admin/contracts/{contractId}/devices/unbind",
+      "permission": "contract:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createConfiguration",
+      "method": "POST",
+      "path": "/api/v1/admin/configurations",
+      "permission": "config:publish",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:config-create",
+              "requestId": "92722540-4af7-4ca2-bc80-d14ce4f7f561",
+              "status": 201
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createConfigurationVersion",
+      "method": "POST",
+      "path": "/api/v1/admin/configurations/{configurationId}/versions",
+      "permission": "config:publish",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:config-version",
+              "requestId": "5d6c9498-f283-415a-8895-c6085a73cc03",
+              "status": 201
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "publishConfigurationVersion",
+      "method": "POST",
+      "path": "/api/v1/admin/configurations/{configurationId}/versions/{version}/publish",
+      "permission": "config:publish",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:config-publish",
+              "requestId": "cd576d90-fadf-434f-bdff-6335c054d73c",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createConsumableRequest",
+      "method": "POST",
+      "path": "/api/v1/admin/consumable-requests",
+      "permission": "device:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:consumable-CARBON_FILTER",
+              "requestId": "7ce41b8a-9adb-416a-8fb2-b15acc881f25",
+              "status": 201
+            },
+            {
+              "id": "remaining:consumable-BIO_ADDITIVE",
+              "requestId": "fcc1c201-0df1-4ff9-9169-8fc88c2e1ab7",
+              "status": 201
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "processConsumableRequest",
+      "method": "POST",
+      "path": "/api/v1/admin/consumable-requests/{requestId}/process",
+      "permission": "device:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:consumable-process",
+              "requestId": "db599886-122c-4640-b0ef-56b2dc5ef793",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "completeConsumableRequest",
+      "method": "POST",
+      "path": "/api/v1/admin/consumable-requests/{requestId}/complete",
+      "permission": "device:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:consumable-complete",
+              "requestId": "85a30978-bc3a-4877-9676-7373c3853d95",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "cancelConsumableRequest",
+      "method": "POST",
+      "path": "/api/v1/admin/consumable-requests/{requestId}/cancel",
+      "permission": "device:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:consumable-cancel",
+              "requestId": "717ae001-11ee-4cfd-a58a-312dd9b14df9",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createDeviceUser",
+      "method": "POST",
+      "path": "/api/v1/admin/device-users",
+      "permission": "device-user:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:user-create",
+              "requestId": "373d49a0-27d5-46c8-a4da-ab1d171b8b21",
+              "status": 201
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "updateDeviceUser",
+      "method": "PATCH",
+      "path": "/api/v1/admin/device-users/{deviceUserId}",
+      "permission": "device-user:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:user-update",
+              "requestId": "c8091c41-4f91-4919-be48-c91aa9b95382",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "disableDeviceUser",
+      "method": "POST",
+      "path": "/api/v1/admin/device-users/{deviceUserId}/disable",
+      "permission": "device-user:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:user-disable",
+              "requestId": "07938303-02e9-4177-b8cc-e7abaea59e73",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "assignDeviceUser",
+      "method": "POST",
+      "path": "/api/v1/admin/device-users/{deviceUserId}/assignments",
+      "permission": "device-user:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:user-assign",
+              "requestId": "e0ac4a3e-6d55-4f99-bd63-843efa031ab4",
+              "status": 201
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "revokeDeviceUser",
+      "method": "POST",
+      "path": "/api/v1/admin/device-users/{deviceUserId}/assignments/revoke",
+      "permission": "device-user:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:user-revoke",
+              "requestId": "26f2af4a-06f9-4c3e-9bd0-842160ac69e9",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "acknowledgeAlarm",
+      "method": "POST",
+      "path": "/api/v1/admin/alarms/{alarmId}/acknowledge",
+      "permission": "alarm:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:alarm-ack",
+              "requestId": "47e91e77-683f-49e0-8775-ac1b68176b78",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "clearAlarm",
+      "method": "POST",
+      "path": "/api/v1/admin/alarms/{alarmId}/clear",
+      "permission": "alarm:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:alarm-clear",
+              "requestId": "5afde71f-65ec-4eed-b8d7-33bc038023af",
+              "status": 200
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createEsgExport",
+      "method": "POST",
+      "path": "/api/v1/admin/esg/exports",
+      "permission": "export:create",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:esg-export-Auditor",
+              "requestId": "21a80c0c-a9a3-4484-9548-d31ef78502a7",
+              "status": 202
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "HTTP_SUCCESS_OBSERVED",
+          "checks": [
+            {
+              "id": "remaining:esg-export-CustomerAdmin",
+              "requestId": "9386c17c-0d5f-4a21-a988-207dcec78ace",
+              "status": 202
+            }
+          ],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createDeviceCommand",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/{deviceId}/commands",
+      "permission": "command:send",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createFirmwareUpload",
+      "method": "POST",
+      "path": "/api/v1/admin/ota/packages/upload-sessions",
+      "permission": "ota:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "completeFirmwareUpload",
+      "method": "POST",
+      "path": "/api/v1/admin/ota/packages/{packageId}/complete",
+      "permission": "ota:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "createOtaCampaign",
+      "method": "POST",
+      "path": "/api/v1/admin/ota/campaigns",
+      "permission": "ota:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "expandOtaCampaignBatch",
+      "method": "POST",
+      "path": "/api/v1/admin/ota/campaigns/{campaignId}/batches",
+      "permission": "ota:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "pauseOtaCampaign",
+      "method": "POST",
+      "path": "/api/v1/admin/ota/campaigns/{campaignId}/pause",
+      "permission": "ota:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "resumeOtaCampaign",
+      "method": "POST",
+      "path": "/api/v1/admin/ota/campaigns/{campaignId}/resume",
+      "permission": "ota:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "cancelOtaCampaign",
+      "method": "POST",
+      "path": "/api/v1/admin/ota/campaigns/{campaignId}/cancel",
+      "permission": "ota:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "retryOtaCampaignFailures",
+      "method": "POST",
+      "path": "/api/v1/admin/ota/campaigns/{campaignId}/retry",
+      "permission": "ota:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "inviteUser",
+      "method": "POST",
+      "path": "/api/v1/admin/users",
+      "permission": "user:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "assignUserRoles",
+      "method": "PUT",
+      "path": "/api/v1/admin/users/{userId}/roles",
+      "permission": "user:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "setUserScope",
+      "method": "PUT",
+      "path": "/api/v1/admin/users/{userId}/scope",
+      "permission": "user:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "disableUser",
+      "method": "POST",
+      "path": "/api/v1/admin/users/{userId}/disable",
+      "permission": "user:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "triggerUserPasswordReset",
+      "method": "POST",
+      "path": "/api/v1/admin/users/{userId}/password-reset",
+      "permission": "user:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    },
+    {
+      "operationId": "updateSetting",
+      "method": "PUT",
+      "path": "/api/v1/admin/settings/{key}",
+      "permission": "settings:write",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "result": "NOT_RUN",
+          "checks": [],
+          "persistenceAcceptance": "SEE_EXPLICIT_READBACK_AND_DATABASE_RECEIPTS"
+        },
+        {
+          "role": "PlatformOperator",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "Auditor",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerAdmin",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        },
+        {
+          "role": "CustomerViewer",
+          "result": "NOT_APPLICABLE",
+          "reason": "ROLE_HAS_NO_WRITE_PERMISSION"
+        }
+      ]
+    }
+  ],
+  "fullQa09Accepted": false
+}

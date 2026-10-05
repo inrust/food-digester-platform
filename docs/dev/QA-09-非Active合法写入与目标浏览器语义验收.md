@@ -89,3 +89,17 @@ node --import tsx scripts/recover-qa09-nonactive-business.mjs <失败业务回�
 ### 非空数据与实体补验（2026-10-05）
 
 本轮目标应用为a26bd94；执行器源码独立归档。最终数据波次使用明确标记的合成RDS读模型，真实API/租户隔离、活动与ESG实际CSV下载、双视口非空列/耗材进度通过，不能替代REPORT摄入或ESG计算。CSR实体按审核专用波次执行；证书实体按十设备真实CSR/mTLS波次执行，轮换仅验证PENDING意图及幂等性。范围与失败恢复记录见[非Active数据与实体续验记录](../audit/QA-09-剩余非Active数据与实体语义验收-2026-10-05.md)。
+
+## 剩余角色组合、安全和租约恢复
+
+使用 `node --import tsx scripts/run-qa09-nonactive-target.mjs <output> <version> --remaining`。此模式先执行五角色范围和设备分配基础检查，明确记录 `FIVE_ROLE_SCOPE_AND_ASSIGNMENT_FOUNDATION_NOT_FULL_CORE`；不计完整核心并发验收。剩余合法写入、安全和恢复三个分支独立保留失败结果。传输失败仅保存请求路径、角色、时间、错误类别和原因代码，不保存凭据或原始错误内容，不自动重试提交状态未知的写请求。
+
+合法写入仅本轮设备/客户/站点、许可证Draft→Issued、设备用户和配置、耗材及导出。拒绝探针不能补合法角色覆盖；租约仅本轮CustomerAdmin导出，禁止共享资源故障。Replay空源Job完成不证明实际消息重放。
+
+实际队列重投使用 `node --import tsx scripts/run-qa09-own-redelivery-target.mjs <output> <version>`；须先真实CSR/mTLS、MQTT消息API可见，再核对指定SQS消息消费和去重阶段。发送成功不能替代消费回执。权限拒绝保留BLOCKED，日志读取缺口保留NO_RECEIPT，不修改IAM/KMS。两种模式均须完成父夹具、业务域、身份和版本化S3对象精确清理。
+
+传输缺口补验使用 `node --import tsx scripts/run-qa09-nonactive-target.mjs <output> <version> --security-retest`，仅固定两项拒绝响应和六项改写签名JWT拒绝。允许Gateway返回401/403，并要求有效Token200、数据库无业务副作用和审计无凭证。它不是独立签名异常Claim或完整渗透测试。
+
+旧基础模式若缺`licenseLifecycle=NOT_RUN`字段而外层汇总FAIL，可执行 `node --import tsx scripts/check-qa09-remaining-target.mjs <receipt> <version> <new-revalidation>`，只读重新校验原业务、五角色、版本与清理回执，不重写原文件，不接受完整核心或Active证明。后续执行器已明确写入NOT_RUN字段。
+
+队列复验可加`--queue-only`，不重复已独立完成的Sup导出。基线的跨设备负探针使用同一clientId，因此扩展必须新建TLS会话，不能沿用被替换的旧会话。若创建客户等写请求传输失败且响应未知，先按唯一前缀执行AWS内`audit-unseeded-prefix`并确认身份不存在，未证明无残留前不得启动下一波次。

@@ -1,0 +1,97 @@
+{
+  "scope": "OWN_SUPERADMIN_ACTIVITY_ESG_EXPORTS",
+  "gate": "PASS",
+  "jobs": [
+    {
+      "id": "03a343c0-aef7-4581-8452-1bc9b6a43985",
+      "kind": "activity",
+      "role": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-2c69f3db7f469847-01/activities/export",
+      "status": 202,
+      "result": "PASS",
+      "csv": {
+        "sha256": "46219abf6cb99fe59348d0ac48af00be366952ed8068fe2c0986b6c97e87c290",
+        "bytes": 131,
+        "rowCount": 0
+      }
+    },
+    {
+      "id": "8cbed41d-9c32-47eb-9365-91daf9958023",
+      "kind": "esg",
+      "role": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/esg/exports",
+      "status": 202,
+      "result": "PASS",
+      "csv": {
+        "sha256": "b6c49d06b803c3fa27afb2b0e4c32f83a4453565cbf05f9a8e6cdbaf6c002129",
+        "bytes": 1035,
+        "rowCount": 1
+      }
+    }
+  ],
+  "checks": [
+    {
+      "id": "activity-completed",
+      "result": "PASS"
+    },
+    {
+      "id": "activity-download",
+      "result": "PASS"
+    },
+    {
+      "id": "activity-row-count",
+      "result": "PASS"
+    },
+    {
+      "id": "esg-completed",
+      "result": "PASS"
+    },
+    {
+      "id": "esg-download",
+      "result": "PASS"
+    },
+    {
+      "id": "esg-row-count",
+      "result": "PASS"
+    },
+    {
+      "id": "owned-business-rows-empty",
+      "result": "PASS"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "business-baseline",
+      "receipt": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/redelivery.json.super-exports.json.business-baseline.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:4efc8664-cce5-4385-b638-02bdbb09e1e8"
+    },
+    {
+      "action": "business-cleanup",
+      "receipt": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/redelivery.json.super-exports.json.business-cleanup.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:35190341-a1dc-4f3d-b203-898d0d8f7d86"
+    },
+    {
+      "action": "business-audit",
+      "receipt": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/redelivery.json.super-exports.json.business-audit.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:e7247d28-c02a-4341-a777-e73b596b6786"
+    }
+  ],
+  "cleanup": [
+    {
+      "key": "activity-exports/03a343c0-aef7-4581-8452-1bc9b6a43985.csv",
+      "result": "PASS"
+    },
+    {
+      "key": "esg-exports/8cbed41d-9c32-47eb-9365-91daf9958023.csv",
+      "result": "PASS"
+    },
+    {
+      "type": "database-and-outside-fingerprints",
+      "result": "PASS"
+    }
+  ],
+  "fullQa09Accepted": false,
+  "finishedAt": "2026-10-05T14:51:16.178Z"
+}

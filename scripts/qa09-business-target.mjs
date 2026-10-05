@@ -70,18 +70,30 @@ export async function runBusinessTarget(
     writeBoundaryProbes = performanceProbes,
     nonActiveOnly = false,
     semanticBrowser,
+    remainingTarget,
+    foundationOnly = false,
     onLicenseIssued,
     onLicenseActivated,
   } = {},
 ) {
+  if (foundationOnly && (!coreOnly || !nonActiveOnly || !remainingTarget || semanticBrowser))
+    throw Error('FOUNDATION_SCOPE_INVALID');
   if (nonActiveOnly && !coreOnly) throw Error('NONACTIVE_FULL_WAVE_FORBIDDEN');
   assertBusinessContext(ctx.receipt);
   const { prefix, devices, customers, sourceCommit } = ctx.receipt;
   const r = {
     task: 'QA-09',
-    scope: coreOnly ? 'CORE_BUSINESS_FIVE_ROLE_TARGET' : 'CORE_BUSINESS_FIVE_ROLE_BROWSER_SECURITY_LOAD_TARGET',
+    scope: foundationOnly
+      ? 'FIVE_ROLE_FOUNDATION_AND_REMAINING_WRITES'
+      : coreOnly
+        ? 'CORE_BUSINESS_FIVE_ROLE_TARGET'
+        : 'CORE_BUSINESS_FIVE_ROLE_BROWSER_SECURITY_LOAD_TARGET',
+    coreMode: foundationOnly ? 'FIVE_ROLE_SCOPE_AND_ASSIGNMENT_FOUNDATION_NOT_FULL_CORE' : 'FULL_CORE',
     coreOnly,
     nonActiveOnly,
+    ...(foundationOnly
+      ? { licenseLifecycle: { gate: 'NOT_RUN', reason: 'NONACTIVE_FOUNDATION_NO_DEVICE_VERIFICATION' } }
+      : {}),
     readDomainMatrixExecuted: readDomains,
     mode: 'REAL_EXISTING_TEST_ENVIRONMENT',
     sourceCommit,
@@ -126,6 +138,7 @@ export async function runBusinessTarget(
     exportIds = [],
     semanticExports = [];
   const idp = createCognitoIdpClient({ region: 'ap-southeast-1', clientId });
+  r.createdSemanticExports = semanticExports;
   const call = (Cmd, input) => ctx.cognito.send(new Cmd(input), { abortSignal: AbortSignal.timeout(30000) });
   const renewals = new Map();
   async function ensureSession(role) {
@@ -154,16 +167,32 @@ export async function runBusinessTarget(
     await ensureSession(role);
     const startedAt = new Date().toISOString();
     const start = performance.now();
-    const res = await fetch(host + path, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(role ? { Authorization: `Bearer ${sessions.get(role).idToken}` } : {}),
-        ...headers,
-      },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      signal: AbortSignal.timeout(20000),
-    });
+    let res;
+    try {
+      res = await fetch(host + path, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(role ? { Authorization: `Bearer ${sessions.get(role).idToken}` } : {}),
+          ...headers,
+        },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        signal: AbortSignal.timeout(20000),
+      });
+    } catch (e) {
+      const safe = (value) => (typeof value === 'string' && /^[A-Za-z0-9_:-]{1,80}$/.test(value) ? value : null);
+      check(id, false, {
+        method,
+        startedAt,
+        path: path.split('?')[0],
+        role: role ?? 'anonymous',
+        responseReceived: false,
+        errorName: safe(e.name),
+        causeCode: safe(e.cause?.code),
+        latencyMs: Math.round(performance.now() - start),
+      });
+      throw e;
+    }
     const data = await res.json().catch(() => null);
     check(id, (Array.isArray(expected) ? expected : [expected]).includes(res.status), {
       method,
@@ -300,289 +329,323 @@ export async function runBusinessTarget(
           endAt: new Date(Date.now() + 86400000).toISOString(),
         });
     }
-    const now = Date.now(),
-      from = new Date(now - 86400000).toISOString(),
-      to = new Date(now + 86400000 * 30).toISOString();
-    let contract = (
-      await api('contract-create', 'PlatformSuperAdmin', 'POST', '/api/v1/admin/contracts', 201, {
-        contractNumber: prefix,
-        name: prefix,
-        customerId: customers[0].id,
-        startAt: from,
-        endAt: to,
-      })
-    ).data;
-    const cp = '/api/v1/admin/contracts/' + contract.contractId;
-    await api('contract-detail', 'PlatformSuperAdmin', 'GET', cp, 200);
-    const race = await Promise.all([
-      api(
-        'contract-race-a',
-        'PlatformSuperAdmin',
-        'PATCH',
-        cp,
-        [200, 409],
-        { name: prefix + '-race-a', reason: prefix },
-        { 'If-Match': String(contract.version) },
-      ),
-      api(
-        'contract-race-b',
-        'PlatformSuperAdmin',
-        'PATCH',
-        cp,
-        [200, 409],
-        { name: prefix + '-race-b', reason: prefix },
-        { 'If-Match': String(contract.version) },
-      ),
-    ]);
-    check(
-      'contract-if-match-race',
-      r.checks
-        .filter((c) => /^contract-race-/.test(c.id))
-        .map((c) => c.status)
-        .sort()
-        .join(',') === '200,409',
-    );
-    contract = race.find((x) => x?.data)?.data;
-    contract = (
+    if (!foundationOnly) {
+      const now = Date.now(),
+        from = new Date(now - 86400000).toISOString(),
+        to = new Date(now + 86400000 * 30).toISOString();
+      let contract = (
+        await api('contract-create', 'PlatformSuperAdmin', 'POST', '/api/v1/admin/contracts', 201, {
+          contractNumber: prefix,
+          name: prefix,
+          customerId: customers[0].id,
+          startAt: from,
+          endAt: to,
+        })
+      ).data;
+      const cp = '/api/v1/admin/contracts/' + contract.contractId;
+      await api('contract-detail', 'PlatformSuperAdmin', 'GET', cp, 200);
+      const race = await Promise.all([
+        api(
+          'contract-race-a',
+          'PlatformSuperAdmin',
+          'PATCH',
+          cp,
+          [200, 409],
+          { name: prefix + '-race-a', reason: prefix },
+          { 'If-Match': String(contract.version) },
+        ),
+        api(
+          'contract-race-b',
+          'PlatformSuperAdmin',
+          'PATCH',
+          cp,
+          [200, 409],
+          { name: prefix + '-race-b', reason: prefix },
+          { 'If-Match': String(contract.version) },
+        ),
+      ]);
+      check(
+        'contract-if-match-race',
+        r.checks
+          .filter((c) => /^contract-race-/.test(c.id))
+          .map((c) => c.status)
+          .sort()
+          .join(',') === '200,409',
+      );
+      contract = race.find((x) => x?.data)?.data;
+      contract = (
+        await api(
+          'contract-activate',
+          'PlatformSuperAdmin',
+          'POST',
+          cp + '/activate',
+          200,
+          { reason: prefix },
+          { 'If-Match': String(contract.version) },
+        )
+      ).data;
+      await api('contract-bind', 'PlatformSuperAdmin', 'POST', cp + '/devices/bind', 201, {
+        deviceIds: [devices[0]],
+        reason: prefix,
+      });
+      await api('contract-devices', 'PlatformSuperAdmin', 'GET', cp + '/devices', 200);
+      await api('contract-available', 'PlatformSuperAdmin', 'GET', cp + '/available-devices', 200);
+      await api('contract-associations', 'PlatformSuperAdmin', 'GET', cp + '/associations', 200);
       await api(
-        'contract-activate',
+        'contract-cross-tenant-bind',
         'PlatformSuperAdmin',
         'POST',
-        cp + '/activate',
+        cp + '/devices/bind',
+        [400, 403, 404, 409],
+        {
+          deviceIds: [devices[1], devices[5]],
+          reason: prefix,
+        },
+      );
+      await api('contract-unbind', 'PlatformSuperAdmin', 'POST', cp + '/devices/unbind', 200, {
+        deviceIds: [devices[0]],
+        reason: prefix,
+      });
+      contract = (
+        await api(
+          'contract-renew',
+          'PlatformSuperAdmin',
+          'POST',
+          cp + '/renew',
+          200,
+          { newEndAt: new Date(now + 86400000 * 60).toISOString(), reason: prefix },
+          { 'If-Match': String(contract.version) },
+        )
+      ).data;
+      contract = (
+        await api(
+          'contract-evaluate',
+          'PlatformSuperAdmin',
+          'POST',
+          cp + '/evaluate',
+          200,
+          {},
+          { 'If-Match': String(contract.version) },
+        )
+      ).data;
+      await api(
+        'contract-terminate',
+        'PlatformSuperAdmin',
+        'POST',
+        cp + '/terminate',
         200,
         { reason: prefix },
         { 'If-Match': String(contract.version) },
-      )
-    ).data;
-    await api('contract-bind', 'PlatformSuperAdmin', 'POST', cp + '/devices/bind', 201, {
-      deviceIds: [devices[0]],
-      reason: prefix,
-    });
-    await api('contract-devices', 'PlatformSuperAdmin', 'GET', cp + '/devices', 200);
-    await api('contract-available', 'PlatformSuperAdmin', 'GET', cp + '/available-devices', 200);
-    await api('contract-associations', 'PlatformSuperAdmin', 'GET', cp + '/associations', 200);
-    await api('contract-cross-tenant-bind', 'PlatformSuperAdmin', 'POST', cp + '/devices/bind', [400, 403, 404, 409], {
-      deviceIds: [devices[1], devices[5]],
-      reason: prefix,
-    });
-    await api('contract-unbind', 'PlatformSuperAdmin', 'POST', cp + '/devices/unbind', 200, {
-      deviceIds: [devices[0]],
-      reason: prefix,
-    });
-    contract = (
-      await api(
-        'contract-renew',
-        'PlatformSuperAdmin',
-        'POST',
-        cp + '/renew',
-        200,
-        { newEndAt: new Date(now + 86400000 * 60).toISOString(), reason: prefix },
-        { 'If-Match': String(contract.version) },
-      )
-    ).data;
-    contract = (
-      await api(
-        'contract-evaluate',
-        'PlatformSuperAdmin',
-        'POST',
-        cp + '/evaluate',
-        200,
-        {},
-        { 'If-Match': String(contract.version) },
-      )
-    ).data;
-    await api(
-      'contract-terminate',
-      'PlatformSuperAdmin',
-      'POST',
-      cp + '/terminate',
-      200,
-      { reason: prefix },
-      { 'If-Match': String(contract.version) },
-    );
-    if (!nonActiveOnly) {
-      r.licenseLifecycle = await runTargetLicenseLifecycle(api, {
-        deviceId: devices[0],
-        from,
-        to,
-        prefix,
-        now,
-        onIssued: onLicenseIssued,
-        onActivated: onLicenseActivated,
-      });
-      check(
-        'license-state-sequence-proved',
-        r.licenseLifecycle.renewalReplay && r.licenseLifecycle.reactivation === 'Active',
       );
-    } else {
-      r.licenseLifecycle = { gate: 'NOT_RUN', reason: 'INDEPENDENT_DEVICE_HMAC_VERIFIER_UNAVAILABLE' };
-    }
-    const config = (
-      await api('config-create', 'PlatformOperator', 'POST', '/api/v1/admin/configurations', 201, {
-        name: prefix,
-        targetDeviceId: devices[0],
-      })
-    ).data;
-    const cfg = '/api/v1/admin/configurations/' + config.configurationId;
-    await api('config-detail', 'PlatformOperator', 'GET', cfg, 200);
-    const cv = (
-      await api('config-version-create', 'PlatformOperator', 'POST', cfg + '/versions', 201, {
-        payload: { heartbeatInterval: 60, telemetryInterval: 30, cameraRefreshInterval: 1, temperatureThreshold: 80 },
-      })
-    ).data;
-    await api('config-version-read', 'PlatformOperator', 'GET', cfg + '/versions/' + cv.version, 200);
-    await api('config-publish', 'PlatformOperator', 'POST', cfg + '/versions/' + cv.version + '/publish', 200, {});
-    await api(
-      'config-publish-duplicate',
-      'PlatformOperator',
-      'POST',
-      cfg + '/versions/' + cv.version + '/publish',
-      409,
-      {},
-    );
-    await api('config-status', 'PlatformOperator', 'GET', cfg + '/versions/' + cv.version + '/status', 200);
-    let du = (
-      await api('device-user-create', 'CustomerAdmin', 'POST', '/api/v1/admin/device-users', 201, {
-        username: prefix,
-        password: `A!z9${randomBytes(20).toString('base64url')}`,
-        displayName: prefix,
-      })
-    ).data;
-    const dp = '/api/v1/admin/device-users/' + du.deviceUserId;
-    await api('device-user-read', 'CustomerAdmin', 'GET', dp, 200);
-    du = (
+      if (!nonActiveOnly) {
+        r.licenseLifecycle = await runTargetLicenseLifecycle(api, {
+          deviceId: devices[0],
+          from,
+          to,
+          prefix,
+          now,
+          onIssued: onLicenseIssued,
+          onActivated: onLicenseActivated,
+        });
+        check(
+          'license-state-sequence-proved',
+          r.licenseLifecycle.renewalReplay && r.licenseLifecycle.reactivation === 'Active',
+        );
+      } else {
+        r.licenseLifecycle = { gate: 'NOT_RUN', reason: 'INDEPENDENT_DEVICE_HMAC_VERIFIER_UNAVAILABLE' };
+      }
+      const config = (
+        await api('config-create', 'PlatformOperator', 'POST', '/api/v1/admin/configurations', 201, {
+          name: prefix,
+          targetDeviceId: devices[0],
+        })
+      ).data;
+      const cfg = '/api/v1/admin/configurations/' + config.configurationId;
+      await api('config-detail', 'PlatformOperator', 'GET', cfg, 200);
+      const cv = (
+        await api('config-version-create', 'PlatformOperator', 'POST', cfg + '/versions', 201, {
+          payload: { heartbeatInterval: 60, telemetryInterval: 30, cameraRefreshInterval: 1, temperatureThreshold: 80 },
+        })
+      ).data;
+      await api('config-version-read', 'PlatformOperator', 'GET', cfg + '/versions/' + cv.version, 200);
+      await api('config-publish', 'PlatformOperator', 'POST', cfg + '/versions/' + cv.version + '/publish', 200, {});
       await api(
-        'device-user-update',
+        'config-publish-duplicate',
+        'PlatformOperator',
+        'POST',
+        cfg + '/versions/' + cv.version + '/publish',
+        409,
+        {},
+      );
+      await api('config-status', 'PlatformOperator', 'GET', cfg + '/versions/' + cv.version + '/status', 200);
+      let du = (
+        await api('device-user-create', 'CustomerAdmin', 'POST', '/api/v1/admin/device-users', 201, {
+          username: prefix,
+          password: `A!z9${randomBytes(20).toString('base64url')}`,
+          displayName: prefix,
+        })
+      ).data;
+      const dp = '/api/v1/admin/device-users/' + du.deviceUserId;
+      await api('device-user-read', 'CustomerAdmin', 'GET', dp, 200);
+      du = (
+        await api(
+          'device-user-update',
+          'CustomerAdmin',
+          'PATCH',
+          dp,
+          200,
+          { displayName: prefix + '-updated', reason: prefix },
+          { 'If-Match': String(du.version) },
+        )
+      ).data;
+      await api(
+        'device-user-assign',
         'CustomerAdmin',
-        'PATCH',
-        dp,
-        200,
-        { displayName: prefix + '-updated', reason: prefix },
+        'POST',
+        dp + '/assignments',
+        201,
+        { deviceIds: [devices[0]], reason: prefix },
         { 'If-Match': String(du.version) },
-      )
-    ).data;
-    await api(
-      'device-user-assign',
-      'CustomerAdmin',
-      'POST',
-      dp + '/assignments',
-      201,
-      { deviceIds: [devices[0]], reason: prefix },
-      { 'If-Match': String(du.version) },
-    );
-    du = (await api('device-user-after-assign', 'CustomerAdmin', 'GET', dp, 200)).data;
-    await api(
-      'device-user-cross-tenant',
-      'CustomerAdmin',
-      'POST',
-      dp + '/assignments',
-      409,
-      { deviceIds: [devices[5]], reason: prefix },
-      { 'If-Match': String(du.version) },
-    );
-    const afterRejectedAssignment = (await api('device-user-cross-tenant-readback', 'CustomerAdmin', 'GET', dp, 200))
-      .data;
-    check(
-      'device-user-cross-tenant-no-side-effects',
-      Array.isArray(du.assignments) &&
-        Array.isArray(afterRejectedAssignment.assignments) &&
-        afterRejectedAssignment.version === du.version &&
-        JSON.stringify(afterRejectedAssignment.assignments) === JSON.stringify(du.assignments),
-      { beforeVersion: du.version, afterVersion: afterRejectedAssignment.version },
-    );
-    await api(
-      'device-user-revoke',
-      'CustomerAdmin',
-      'POST',
-      dp + '/assignments/revoke',
-      200,
-      { deviceIds: [devices[0]], reason: prefix },
-      { 'If-Match': String(du.version) },
-    );
-    du = (await api('device-user-after-revoke', 'CustomerAdmin', 'GET', dp, 200)).data;
-    await api(
-      'device-user-disable',
-      'CustomerAdmin',
-      'POST',
-      dp + '/disable',
-      200,
-      { reason: prefix },
-      { 'If-Match': String(du.version) },
-    );
-    const req = (
-      await api('consumable-create', 'PlatformSuperAdmin', 'POST', '/api/v1/admin/consumable-requests', 201, {
+      );
+      du = (await api('device-user-after-assign', 'CustomerAdmin', 'GET', dp, 200)).data;
+      await api(
+        'device-user-cross-tenant',
+        'CustomerAdmin',
+        'POST',
+        dp + '/assignments',
+        409,
+        { deviceIds: [devices[5]], reason: prefix },
+        { 'If-Match': String(du.version) },
+      );
+      const afterRejectedAssignment = (await api('device-user-cross-tenant-readback', 'CustomerAdmin', 'GET', dp, 200))
+        .data;
+      check(
+        'device-user-cross-tenant-no-side-effects',
+        Array.isArray(du.assignments) &&
+          Array.isArray(afterRejectedAssignment.assignments) &&
+          afterRejectedAssignment.version === du.version &&
+          JSON.stringify(afterRejectedAssignment.assignments) === JSON.stringify(du.assignments),
+        { beforeVersion: du.version, afterVersion: afterRejectedAssignment.version },
+      );
+      await api(
+        'device-user-revoke',
+        'CustomerAdmin',
+        'POST',
+        dp + '/assignments/revoke',
+        200,
+        { deviceIds: [devices[0]], reason: prefix },
+        { 'If-Match': String(du.version) },
+      );
+      du = (await api('device-user-after-revoke', 'CustomerAdmin', 'GET', dp, 200)).data;
+      await api(
+        'device-user-disable',
+        'CustomerAdmin',
+        'POST',
+        dp + '/disable',
+        200,
+        { reason: prefix },
+        { 'If-Match': String(du.version) },
+      );
+      const req = (
+        await api('consumable-create', 'PlatformSuperAdmin', 'POST', '/api/v1/admin/consumable-requests', 201, {
+          deviceId: devices[0],
+          consumableType: 'CARBON_FILTER',
+          note: prefix,
+        })
+      ).data;
+      const rp = '/api/v1/admin/consumable-requests/' + req.requestId;
+      await api('consumable-replay', 'PlatformSuperAdmin', 'POST', '/api/v1/admin/consumable-requests', [200, 201], {
         deviceId: devices[0],
         consumableType: 'CARBON_FILTER',
         note: prefix,
-      })
-    ).data;
-    const rp = '/api/v1/admin/consumable-requests/' + req.requestId;
-    await api('consumable-replay', 'PlatformSuperAdmin', 'POST', '/api/v1/admin/consumable-requests', [200, 201], {
-      deviceId: devices[0],
-      consumableType: 'CARBON_FILTER',
-      note: prefix,
-    });
-    let cr = (
+      });
+      let cr = (
+        await api(
+          'consumable-process',
+          'PlatformSuperAdmin',
+          'POST',
+          rp + '/process',
+          200,
+          { note: prefix },
+          { 'If-Match': String(req.version) },
+        )
+      ).data;
       await api(
-        'consumable-process',
+        'consumable-complete',
         'PlatformSuperAdmin',
         'POST',
-        rp + '/process',
+        rp + '/complete',
         200,
         { note: prefix },
-        { 'If-Match': String(req.version) },
-      )
-    ).data;
-    await api(
-      'consumable-complete',
-      'PlatformSuperAdmin',
-      'POST',
-      rp + '/complete',
-      200,
-      { note: prefix },
-      { 'If-Match': String(cr.version) },
-    );
-    await api(
-      'consumable-status-list',
-      'PlatformSuperAdmin',
-      'GET',
-      '/api/v1/admin/consumables?customerId=' + customers[0].id,
-      200,
-    );
-    await api(
-      'consumable-contact',
-      'CustomerAdmin',
-      'GET',
-      '/api/v1/admin/consumables/' + devices[0] + '/contact',
-      200,
-    );
-    await api('consumable-request-detail', 'PlatformSuperAdmin', 'GET', rp, 200);
-    await api('consumable-request-list', 'CustomerViewer', 'GET', '/api/v1/admin/consumable-requests', 200);
-    const cancel = (
-      await api('consumable-second-create', 'PlatformSuperAdmin', 'POST', '/api/v1/admin/consumable-requests', 201, {
-        deviceId: devices[0],
-        consumableType: 'BIO_ADDITIVE',
-        note: prefix,
-      })
-    ).data;
-    await api(
-      'consumable-cancel',
-      'PlatformSuperAdmin',
-      'POST',
-      '/api/v1/admin/consumable-requests/' + cancel.requestId + '/cancel',
-      200,
-      { note: prefix },
-      { 'If-Match': String(cancel.version) },
-    );
-    const alarmId = randomUUID();
-    await db('business-seed-alarm', undefined, { alarmId });
-    const ap = '/api/v1/admin/alarms/' + alarmId;
-    await api('alarm-detail', 'PlatformOperator', 'GET', ap, 200);
-    await api('alarm-cross-customer', 'CustomerAdmin', 'GET', '/api/v1/admin/alarms/' + randomUUID(), 404);
-    await api('alarm-acknowledge', 'PlatformOperator', 'POST', ap + '/acknowledge', 200, { reason: prefix });
-    await api('alarm-clear', 'PlatformOperator', 'POST', ap + '/clear', 200, { reason: prefix });
-    if (semanticBrowser) {
-      r.semanticBrowser = await semanticBrowser({
+        { 'If-Match': String(cr.version) },
+      );
+      await api(
+        'consumable-status-list',
+        'PlatformSuperAdmin',
+        'GET',
+        '/api/v1/admin/consumables?customerId=' + customers[0].id,
+        200,
+      );
+      await api(
+        'consumable-contact',
+        'CustomerAdmin',
+        'GET',
+        '/api/v1/admin/consumables/' + devices[0] + '/contact',
+        200,
+      );
+      await api('consumable-request-detail', 'PlatformSuperAdmin', 'GET', rp, 200);
+      await api('consumable-request-list', 'CustomerViewer', 'GET', '/api/v1/admin/consumable-requests', 200);
+      const cancel = (
+        await api('consumable-second-create', 'PlatformSuperAdmin', 'POST', '/api/v1/admin/consumable-requests', 201, {
+          deviceId: devices[0],
+          consumableType: 'BIO_ADDITIVE',
+          note: prefix,
+        })
+      ).data;
+      await api(
+        'consumable-cancel',
+        'PlatformSuperAdmin',
+        'POST',
+        '/api/v1/admin/consumable-requests/' + cancel.requestId + '/cancel',
+        200,
+        { note: prefix },
+        { 'If-Match': String(cancel.version) },
+      );
+      const alarmId = randomUUID();
+      await db('business-seed-alarm', undefined, { alarmId });
+      const ap = '/api/v1/admin/alarms/' + alarmId;
+      await api('alarm-detail', 'PlatformOperator', 'GET', ap, 200);
+      await api('alarm-cross-customer', 'CustomerAdmin', 'GET', '/api/v1/admin/alarms/' + randomUUID(), 404);
+      await api('alarm-acknowledge', 'PlatformOperator', 'POST', ap + '/acknowledge', 200, { reason: prefix });
+      await api('alarm-clear', 'PlatformOperator', 'POST', ap + '/clear', 200, { reason: prefix });
+      if (semanticBrowser) {
+        r.semanticBrowser = await semanticBrowser({
+          api,
+          db,
+          semanticExports,
+          sourceCommit,
+          sessions,
+          logins,
+          prefix,
+          devices,
+          customers,
+          sites,
+          contractId: contract.contractId,
+          configId: config.configurationId,
+          deviceUserId: du.deviceUserId,
+          requestId: cancel.requestId,
+          save,
+        });
+        r.stages.semanticBrowser = r.semanticBrowser.gate;
+      }
+      check('core-workflows-complete', true);
+      r.stages.core = 'PASS';
+    } else {
+      check('five-role-foundation-complete', true);
+      r.stages.foundation = 'PASS';
+    }
+    if (remainingTarget) {
+      r.remaining = await remainingTarget({
         api,
         db,
         semanticExports,
@@ -593,18 +656,13 @@ export async function runBusinessTarget(
         devices,
         customers,
         sites,
-        contractId: contract.contractId,
-        configId: config.configurationId,
-        deviceUserId: du.deviceUserId,
-        requestId: cancel.requestId,
+        businessReceipt: r,
         save,
       });
-      r.stages.semanticBrowser = r.semanticBrowser.gate;
+      r.stages.remaining = r.remaining.gate;
     }
-    check('core-workflows-complete', true);
-    r.stages.core = 'PASS';
   } catch (e) {
-    r.stages.core = 'FAIL';
+    r.stages[foundationOnly && !r.stages.foundation ? 'foundation' : foundationOnly ? 'remaining' : 'core'] = 'FAIL';
     r.coreFailure = /^[\w:-]{1,150}$/.test(e.code ?? e.message) ? (e.code ?? e.message) : 'CORE_TARGET_FAILED';
     save();
   }
@@ -964,6 +1022,21 @@ export async function runBusinessTarget(
   try {
     stage = 'cleanup';
     sessions.set('PlatformSuperAdmin', await ctx.refreshIdentity());
+    for (const c of r.remaining?.extraCustomers ?? []) {
+      if (!/^[a-f0-9-]{36}$/.test(c.id) || !c.name?.startsWith(prefix + '-extra-'))
+        throw Error('EXTRA_CUSTOMER_SCOPE_DRIFT');
+      const path = '/api/v1/admin/customers/' + c.id;
+      const observed = await api('cleanup-extra-customer-read-' + c.id, 'PlatformSuperAdmin', 'GET', path, [200, 404]);
+      if (observed.data) {
+        if (observed.data.name !== c.name) throw Error('EXTRA_CUSTOMER_SCOPE_DRIFT');
+        await api('cleanup-extra-customer-' + c.id, 'PlatformSuperAdmin', 'DELETE', path, 200, undefined, {
+          'If-Match': String(observed.data.version),
+        });
+      }
+      await api('cleanup-extra-customer-absent-' + c.id, 'PlatformSuperAdmin', 'GET', path, 404);
+      r.cleanup.push({ type: 'extra-customer', id: c.id, result: 'PASS' });
+      save();
+    }
     const s3 = new s3Sdk.S3Client({ region: 'ap-southeast-1', credentials: ctx.credentials, maxAttempts: 1 });
     for (const { id, kind } of [...exportIds.map((id) => ({ id, kind: 'esg' })), ...semanticExports]) {
       if (!/^[a-f0-9-]{36}$/.test(id)) throw Error('EXPORT_CLEANUP_SCOPE_DRIFT');

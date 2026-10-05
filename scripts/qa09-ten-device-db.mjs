@@ -417,12 +417,17 @@ export async function executeFixture(client, plan) {
       const scopes = [
         [
           'outbox_events',
-          'aggregate_id=ANY($1::text[]) OR aggregate_id IN(SELECT id FROM device_configurations WHERE target_device_id=ANY($1::text[])) OR aggregate_id IN(SELECT v.id FROM configuration_versions v JOIN device_configurations c ON c.id=v.configuration_id WHERE c.target_device_id=ANY($1::text[])) OR aggregate_id IN(SELECT id FROM device_commands WHERE device_id=ANY($1::text[])) OR aggregate_id IN(SELECT id FROM licenses WHERE customer_id=ANY($2::text[]) UNION ALL SELECT id FROM contracts WHERE customer_id=ANY($2::text[]) UNION ALL SELECT id FROM device_users WHERE customer_id=ANY($2::text[]))',
+          "aggregate_id=ANY($1::text[]) OR aggregate_id IN(SELECT id FROM device_configurations WHERE target_device_id=ANY($1::text[])) OR aggregate_id IN(SELECT v.id FROM configuration_versions v JOIN device_configurations c ON c.id=v.configuration_id WHERE c.target_device_id=ANY($1::text[])) OR aggregate_id IN(SELECT id FROM device_commands WHERE device_id=ANY($1::text[])) OR aggregate_id IN(SELECT id FROM licenses WHERE customer_id=ANY($2::text[]) UNION ALL SELECT id FROM contracts WHERE customer_id=ANY($2::text[]) UNION ALL SELECT id FROM device_users WHERE customer_id=ANY($2::text[]) UNION ALL SELECT id FROM replay_jobs WHERE scope->>'customerId'=ANY($2::text[]) AND scope->>'deviceId'=ANY($1::text[]))",
           [ids, customers],
         ],
         ['command_acks', 'command_id IN(SELECT id FROM device_commands WHERE device_id=ANY($1::text[]))', ids],
         ['command_attempts', 'command_id IN(SELECT id FROM device_commands WHERE device_id=ANY($1::text[]))', ids],
         ['device_commands', 'device_id=ANY($1::text[])', ids],
+        [
+          'replay_jobs',
+          "scope->>'customerId'=ANY($1::text[]) AND scope->>'deviceId'=ANY($2::text[])",
+          [customers, ids],
+        ],
         ['device_retirements', 'device_id=ANY($1::text[])', ids],
         ['device_user_sync_receipts', 'device_id=ANY($1::text[])', ids],
         ['device_user_assignments', 'customer_id=ANY($1::text[])', customers],
@@ -466,7 +471,7 @@ export async function executeFixture(client, plan) {
               ...(
                 await client.query(
                   `SELECT count(*)::text,md5(coalesce(string_agg(to_jsonb(t)::text,'' ORDER BY to_jsonb(t)::text),'')) AS digest FROM public."${table}" t WHERE NOT COALESCE((${predicate}),false)`,
-                  ['outbox_events', 'esg_export_jobs'].includes(table) ? args : [args],
+                  ['outbox_events', 'esg_export_jobs', 'replay_jobs'].includes(table) ? args : [args],
                 )
               ).rows[0],
             })),
@@ -488,7 +493,7 @@ export async function executeFixture(client, plan) {
           throw Error('BUSINESS_BASELINE_DRIFT');
         const objects = (
           await client.query(
-            'SELECT id FROM licenses WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM contracts WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM device_users WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM device_configurations WHERE target_device_id=ANY($2::text[]) UNION ALL SELECT v.id FROM configuration_versions v JOIN device_configurations c ON c.id=v.configuration_id WHERE c.target_device_id=ANY($2::text[])',
+            `SELECT id FROM licenses WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM contracts WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM device_users WHERE customer_id=ANY($1::text[]) UNION ALL SELECT id FROM device_configurations WHERE target_device_id=ANY($2::text[]) UNION ALL SELECT v.id FROM configuration_versions v JOIN device_configurations c ON c.id=v.configuration_id WHERE c.target_device_id=ANY($2::text[]) UNION ALL SELECT id FROM replay_jobs WHERE scope->>'customerId'=ANY($1::text[]) AND scope->>'deviceId'=ANY($2::text[])`,
             [customers, ids],
           )
         ).rows.map((r) => r.id);
@@ -505,7 +510,7 @@ export async function executeFixture(client, plan) {
             (
               await client.query(
                 `DELETE FROM public."${table}" WHERE ${predicate}`,
-                ['outbox_events', 'esg_export_jobs'].includes(table) ? args : [args],
+                ['outbox_events', 'esg_export_jobs', 'replay_jobs'].includes(table) ? args : [args],
               )
             ).rowCount;
       }
@@ -514,7 +519,7 @@ export async function executeFixture(client, plan) {
           (
             await client.query(
               `SELECT count(*)::text AS count FROM public."${table}" WHERE ${predicate}`,
-              ['outbox_events', 'esg_export_jobs'].includes(table) ? args : [args],
+              ['outbox_events', 'esg_export_jobs', 'replay_jobs'].includes(table) ? args : [args],
             )
           ).rows[0].count,
         );

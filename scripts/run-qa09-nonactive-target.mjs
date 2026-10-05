@@ -12,7 +12,10 @@ import { ROLES } from './qa09-business-target.mjs';
 import { legalWriteInventory } from './qa09-legal-write-inventory.mjs';
 import { runNonActiveBrowser } from './qa09-nonactive-browser.mjs';
 import { cleanupOwnedDomain } from './qa09-owned-domain-cleanup.mjs';
-const [output, versionFile] = process.argv.slice(2);
+import { runSecurityRetest } from './qa09-security-retest.mjs';
+import { runRemainingNonActive } from './qa09-remaining-nonactive.mjs';
+const [output, versionFile, mode] = process.argv.slice(2);
+if (mode !== undefined && !['--remaining', '--security-retest'].includes(mode)) throw Error('INVALID_NONACTIVE_MODE');
 if (!output || !versionFile) throw Error('OUTPUT_AND_VERSION_REQUIRED');
 const version = JSON.parse(readFileSync(versionFile));
 validateBusinessVersion(version, version.sourceCommit);
@@ -35,6 +38,8 @@ const sourcePaths = [
   'scripts/qa09-write-boundary-probes.mjs',
   'apps/cloud-api/src/runtime/delivered-operations.ts',
   'scripts/qa09-nonactive-browser.mjs',
+  'scripts/qa09-remaining-nonactive.mjs',
+  'scripts/qa09-security-retest.mjs',
   'scripts/qa09-license-lifecycle.mjs',
   'scripts/qa08-bindings.mjs',
   'contracts/prototype-traceability.yaml',
@@ -224,7 +229,15 @@ try {
       coreOnly: true,
       readDomains: true,
       nonActiveOnly: true,
-      semanticBrowser: (ctx) => runNonActiveBrowser(ctx, output + '.browser.json'),
+      ...(mode !== undefined
+        ? {
+            foundationOnly: true,
+            remainingTarget: (ctx) =>
+              mode === '--security-retest'
+                ? runSecurityRetest(ctx)
+                : runRemainingNonActive({ ...ctx, receiptPath: output }),
+          }
+        : { semanticBrowser: (ctx) => runNonActiveBrowser(ctx, output + '.browser.json') }),
     },
   );
 } catch (e) {
@@ -308,7 +321,12 @@ try {
 }
 let gate = {
   task: 'QA-09',
-  scope: 'NONACTIVE_LEGAL_WRITES_AND_117_TARGET_BROWSER',
+  scope:
+    mode !== undefined
+      ? mode === '--security-retest'
+        ? 'SCOPED_SECURITY_RESPONSE_RETEST'
+        : 'REMAINING_NONACTIVE_LEGAL_WRITES_SECURITY_LEASE_RECOVERY'
+      : 'NONACTIVE_LEGAL_WRITES_AND_117_TARGET_BROWSER',
   sourceCommit: r.sourceCommit,
   prefix,
   fullQa09Accepted: false,
@@ -359,10 +377,24 @@ try {
       2,
     ) + '\n',
   );
-  if (child.stages.core !== 'PASS' || child.nonActiveOnly !== true || child.licenseLifecycle?.gate !== 'NOT_RUN')
+  if (
+    (mode !== undefined
+      ? child.stages.foundation !== 'PASS' ||
+        child.coreMode !== 'FIVE_ROLE_SCOPE_AND_ASSIGNMENT_FOUNDATION_NOT_FULL_CORE'
+      : child.stages.core !== 'PASS') ||
+    child.nonActiveOnly !== true ||
+    (child.licenseLifecycle?.gate !== 'NOT_RUN' &&
+      !(
+        mode !== undefined &&
+        child.licenseLifecycle === undefined &&
+        child.coreMode === 'FIVE_ROLE_SCOPE_AND_ASSIGNMENT_FOUNDATION_NOT_FULL_CORE'
+      ))
+  )
     throw Error('NONACTIVE_CORE_INCOMPLETE');
-  if (!child.semanticBrowser || child.semanticBrowser.elements.length !== 117)
+  if (mode === undefined && (!child.semanticBrowser || child.semanticBrowser.elements.length !== 117))
     throw Error('SEMANTIC_INVENTORY_INCOMPLETE');
+  if (mode !== undefined && (!child.remaining || child.remaining.gate !== 'PASS'))
+    throw Error('REMAINING_TARGET_INCOMPLETE');
   for (const role of ROLES) {
     const own = child.checks.find((c) => c.id === role + ':device-scope:0'),
       cross = child.checks.find((c) => c.id === role + ':device-scope:1');
@@ -372,7 +404,7 @@ try {
   if (r.gate !== 'PASS' || domain.gate !== 'PASS') throw Error('CORE_FIXTURE_CLEANUP_INCOMPLETE');
   gate = {
     ...gate,
-    gate: child.semanticBrowser.gate === 'FAIL' ? 'FAIL' : 'PARTIAL',
+    gate: mode !== undefined ? 'PASS' : child.semanticBrowser.gate === 'FAIL' ? 'FAIL' : 'PARTIAL',
     checks: child.checks.filter((c) => c.stage === 'core').length,
     cleanup: 'PASS',
     fixtureMode: r.fixtureMode,

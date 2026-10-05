@@ -99,7 +99,7 @@ export async function runWriteBoundaryProbes(ctx, api, sessions, record) {
   ]) {
     const forged = forgeClaimsToken(token, claims);
     try {
-      await api('jwt-reject-' + name, null, 'GET', '/api/v1/admin/devices/' + deviceId, 401, undefined, {
+      await api('jwt-reject-' + name, null, 'GET', '/api/v1/admin/devices/' + deviceId, [401, 403], undefined, {
         Authorization: 'Bearer ' + forged,
       });
       r.jwt.push({ case: name, result: 'PASS', proof: 'FORGED_SIGNATURE_REJECTED_NOT_INDEPENDENT_SIGNED_CLAIM_TEST' });

@@ -1,0 +1,48 @@
+{
+  "task": "QA-09",
+  "sourceCommit": "525517a44f8568029615851e794ff5d87f833893",
+  "gate": "PARTIAL",
+  "fullQa09Accepted": false,
+  "controls": {
+    "applicationVersion19ArtifactsAndFinalRuntime": "PASS",
+    "remainingNonActiveLegalWrites": "PASS",
+    "security63WriteRoleBoundariesAndForgedJwt": "PASS",
+    "expiredOwnEsgLeaseRecovery": "PASS",
+    "sixRealCsvDownloadsAndCleanup": "PASS",
+    "tenDeviceCsrMqttRestMtlsAndArchive": "PASS",
+    "specificSqsRedelivery": "BLOCKED",
+    "allOwnCleanup": "PASS"
+  },
+  "currentLegalInterfaces": 30,
+  "currentLegalRolePairs": 43,
+  "cumulativeInterfaces": 43,
+  "cumulativeRbacCandidateSuccessPairs": 75,
+  "rbacCandidatePairs": 112,
+  "unobservedRbacCandidatePairs": 37,
+  "domainInapplicableSuccessPairs": 1,
+  "applicablePendingPairs": 36,
+  "securityRequestCombinations": 378,
+  "jwtForgedSignatureRejections": 6,
+  "csvDownloads": 6,
+  "queueError": "KmsAccessDenied / KMS.AccessDeniedException",
+  "queueSpecificConsumptionProven": false,
+  "riskBoundaries": [
+    "Independent device HMAC verification and natural Active unavailable",
+    "Signed firmware OTA fixture unavailable",
+    "User invitations/password reset notifications not authorized",
+    "No own platform business user entity without invitation",
+    "Shared settings outside own fixture scope",
+    "Full signed JWT claim validation/WAF/rate-limit/penetration and full reliability load not established by scoped probes",
+    "Contract concurrent PATCH second request missing receipt; original FAIL retained"
+  ],
+  "evidenceRoot": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05",
+  "localChecks": {
+    "scriptTests": 507,
+    "scriptFailures": 0,
+    "skipped": 0,
+    "lint": "PASS",
+    "format": "PASS",
+    "secrets": "PASS",
+    "sensitiveSinks": "PASS"
+  }
+}

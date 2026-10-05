@@ -192,16 +192,32 @@ export async function main(output, versionPath, extension, options = { reviewOnl
   async function api(id, method, path, expected, body, headers = {}, host = 'api.bio-nexa.com') {
     const startedAt = new Date().toISOString(),
       start = performance.now();
-    const res = await fetch(`https://${host}${path}`, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(host === 'api.bio-nexa.com' ? { Authorization: `Bearer ${token}` } : {}),
-        ...headers,
-      },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      signal: AbortSignal.timeout(20000),
-    });
+    let res;
+    try {
+      res = await fetch(`https://${host}${path}`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(host === 'api.bio-nexa.com' ? { Authorization: `Bearer ${token}` } : {}),
+          ...headers,
+        },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        signal: AbortSignal.timeout(20000),
+      });
+    } catch (e) {
+      const safe = (value) => (typeof value === 'string' && /^[A-Za-z0-9_:-]{1,80}$/.test(value) ? value : null);
+      check(id, false, {
+        method,
+        path: path.split('?')[0],
+        role: host === 'api.bio-nexa.com' ? 'PlatformSuperAdmin' : 'anonymous',
+        startedAt,
+        responseReceived: false,
+        errorClass: safe(e.name),
+        causeCode: safe(e.cause?.code),
+        latencyMs: Math.round(performance.now() - start),
+      });
+      throw e;
+    }
     const parsed = await res.json().catch(() => null);
     check(id, res.status === expected, {
       method,
