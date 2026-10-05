@@ -1,3 +1,4 @@
+import { seedCleanupAction } from './qa09-seed-recovery.mjs';
 import { qa09VersionInputs } from './qa09-version-inputs.mjs';
 import { callOwnS3Cli } from './qa09-own-s3-cli.mjs';
 import { randomBytes, createHash, X509Certificate, createPrivateKey, createPublicKey, sign } from 'node:crypto';
@@ -96,7 +97,17 @@ async function publishKnown(client, topic, raw) {
     clearTimeout(timer);
   }
 }
-export async function main(output, versionPath, extension) {
+export function validateEntityMode(options, extension) {
+  if (
+    !options ||
+    Object.keys(options).some((k) => k !== 'reviewOnly') ||
+    typeof options.reviewOnly !== 'boolean' ||
+    (options.reviewOnly && typeof extension?.beforeApproval !== 'function')
+  )
+    throw Error('INVALID_ENTITY_REVIEW_MODE');
+}
+export async function main(output, versionPath, extension, options = { reviewOnly: false }) {
+  validateEntityMode(options, extension);
   if (!output || !versionPath) throw Error('OUTPUT_AND_VERSION_REQUIRED');
   if (extension !== undefined && typeof extension !== 'function') throw Error('INVALID_EXTENSION');
   const version = JSON.parse(readFileSync(versionPath));
@@ -143,7 +154,8 @@ export async function main(output, versionPath, extension) {
     pool = 'ap-southeast-1_hZMX8LpFo';
   const receipt = {
     task: 'QA-09',
-    scope: 'TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE',
+    scope: options.reviewOnly ? 'PENDING_CSR_ENTITY_REVIEW_ONLY' : 'TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE',
+    reviewOnly: options.reviewOnly,
     mode: 'REAL_EXISTING_TEST_ENVIRONMENT',
     target: { accountId: identity.Account, region: 'ap-southeast-1', stackName: 'fdp-test-app' },
     sourceCommit: version.sourceCommit,
@@ -192,6 +204,9 @@ export async function main(output, versionPath, extension) {
     });
     const parsed = await res.json().catch(() => null);
     check(id, res.status === expected, {
+      method,
+      path: path.split('?')[0],
+      role: host === 'api.bio-nexa.com' ? 'PlatformSuperAdmin' : 'anonymous',
       status: res.status,
       expected,
       startedAt,
@@ -287,9 +302,18 @@ export async function main(output, versionPath, extension) {
       receipt.customers.push({ id: r.data.id, name: r.data.name, suffix, version: r.data.version });
       save();
     }
+    const unseeded = await db('observe');
+    check(
+      'unseeded-prefix-empty',
+      !unseeded.devices.length && !unseeded.certificates.length && !unseeded.requests.length,
+    );
+    baseline = unseeded.originalFingerprints;
     seeded = true;
     const seededResult = await db('seed');
-    baseline = seededResult.originalFingerprints;
+    check(
+      'seed-original-baseline-preserved',
+      JSON.stringify(baseline) === JSON.stringify(seededResult.originalFingerprints),
+    );
     save();
     for (const id of devices) {
       assertOwnCloudDevice(id, prefix);
@@ -365,9 +389,41 @@ export async function main(output, versionPath, extension) {
         );
       }
       const detail = await api(id + ':admin-detail', 'GET', `/api/v1/admin/onboarding/requests/${r.requestId}`, 200);
-      await api(id + ':approve', 'POST', `/api/v1/admin/onboarding/requests/${r.requestId}/approve`, 200, undefined, {
-        'If-Match': String(detail.data.version),
-      });
+      if (options.reviewOnly) {
+        await extension.beforeApproval({
+          api,
+          prefix,
+          devices,
+          id,
+          requestId: r.requestId,
+          detail: detail.data,
+          browserLogin,
+        });
+      } else {
+        await api(id + ':approve', 'POST', `/api/v1/admin/onboarding/requests/${r.requestId}/approve`, 200, undefined, {
+          'If-Match': String(detail.data.version),
+        });
+      }
+    }
+    if (options.reviewOnly) {
+      const deadline = Date.now() + 300000;
+      while (true) {
+        const observed = await db('observe');
+        if (observed.jobs.some((j) => j.status === 'FAILED')) throw Error('CSR_PROVISIONING_FAILED');
+        if (!observed.jobs.some((j) => ['PENDING', 'PROCESSING'].includes(j.status))) {
+          check(
+            'review-only-exact-decisions',
+            observed.requests.filter((r) => r.status === 'APPROVED').length === 2 &&
+              observed.requests.filter((r) => r.status === 'REJECTED').length === 2 &&
+              observed.requests.filter((r) => r.status === 'PENDING').length === 6 &&
+              observed.certificates.length === 2,
+          );
+          break;
+        }
+        if (Date.now() > deadline) throw Error('CSR_PROVISIONING_STILL_RUNNING');
+      }
+      receipt.gate = 'PASS';
+      return receipt;
     }
     console.log('Ten CSR requests approved; waiting for real scheduled provisioning.');
     const end = Date.now() + 300000;
@@ -688,8 +744,8 @@ export async function main(output, versionPath, extension) {
             demand(e.name === 'ResourceNotFoundException', 'THING_DELETE_FAILED');
           }
         }
-        await db('cleanup');
-        receipt.cleanup.push({ type: 'database-fixtures', count: 10, result: 'PASS' });
+        if (seedCleanupAction(current, devices) === 'cleanup') await db('cleanup');
+        receipt.cleanup.push({ type: 'database-fixtures', count: current.devices.length, result: 'PASS' });
         save();
       } catch {
         receipt.cleanup.push({ type: 'cloud-and-database-fixtures', result: 'FAIL' });
@@ -762,8 +818,11 @@ export async function main(output, versionPath, extension) {
           }
         receipt.cleanup.push({ type: 'archive-batch-owned-prefix', count: owned.length, result: 'PASS' });
         save();
-      } catch {
-        receipt.cleanup.push({ type: 'archive-batch-owned-prefix', result: 'FAIL' });
+      } catch (e) {
+        const errorCode = /^[A-Za-z0-9:_-]+$/.test(e.code ?? e.message ?? '')
+          ? (e.code ?? e.message)
+          : 'ARCHIVE_CLEANUP_FAILED';
+        receipt.cleanup.push({ type: 'archive-batch-owned-prefix', result: 'FAIL', errorCode });
         receipt.gate = 'FAIL';
         save();
       }
@@ -797,9 +856,12 @@ export async function main(output, versionPath, extension) {
             'ARCHIVE_VERSION_STILL_EXISTS',
           );
           receipt.cleanup.push({ type: 'archive-object', key, result: 'PASS' });
-        } catch {
+        } catch (e) {
           receipt.gate = 'FAIL';
-          receipt.cleanup.push({ type: 'archive-object', key, result: 'FAIL' });
+          const errorCode = /^[A-Za-z0-9:_-]+$/.test(e.code ?? e.message ?? '')
+            ? (e.code ?? e.message)
+            : 'ARCHIVE_CLEANUP_FAILED';
+          receipt.cleanup.push({ type: 'archive-object', key, result: 'FAIL', errorCode });
         }
         save();
       }

@@ -1,3 +1,4 @@
+import { seedCleanupAction } from './qa09-seed-recovery.mjs';
 import { randomBytes, createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -28,6 +29,7 @@ if (
   throw Error('WRONG_AWS_IDENTITY');
 const sourcePaths = [
   'scripts/run-qa09-nonactive-target.mjs',
+  'scripts/qa09-seed-recovery.mjs',
   'scripts/qa09-business-target.mjs',
   'scripts/qa09-legal-write-inventory.mjs',
   'scripts/qa09-write-boundary-probes.mjs',
@@ -146,7 +148,7 @@ async function api(id, method, path, expected, body, headers = {}) {
   return v;
 }
 async function db(action) {
-  const path = output + `.fixtures-${action}.json`;
+  const path = output + `.fixtures-${action}-${r.databaseBuilds.length}.json`;
   const result = await runFixture(
     { prefix, devices, customers: r.customers, action, ...(baseline ? { baseline } : {}) },
     path,
@@ -190,9 +192,14 @@ try {
     r.customers.push({ ...x.data, suffix });
     save();
   }
-  const seed = await db('business-seed-devices');
-  baseline = seed.originalFingerprints;
+  const before = await db('observe');
+  if (before.devices.length || before.certificates.length || before.requests.length)
+    throw Error('UNSEEDED_PREFIX_NOT_EMPTY');
+  baseline = before.originalFingerprints;
   seeded = true;
+  const seed = await db('business-seed-devices');
+  if (JSON.stringify(seed.originalFingerprints) !== JSON.stringify(baseline))
+    throw Error('ORIGINAL_BASELINE_CHANGED_DURING_SEED');
   check(
     'real-rds-business-state-fixture',
     seed.fixtureMode === r.fixtureMode &&
@@ -232,12 +239,14 @@ try {
 } finally {
   if (seeded)
     try {
-      const result = await db('cleanup');
+      const observed = await db('observe');
+      const action = seedCleanupAction(observed, devices);
+      const result = action === 'cleanup' ? await db(action) : observed;
       check(
         'original-device-certificate-baseline-preserved',
         JSON.stringify(result.originalFingerprints) === JSON.stringify(baseline),
       );
-      r.cleanup.push({ type: 'database-fixtures', count: 10, result: 'PASS' });
+      r.cleanup.push({ type: 'database-fixtures', count: observed.devices.length, result: 'PASS' });
       save();
     } catch {
       r.cleanup.push({ type: 'database-fixtures', result: 'FAIL' });

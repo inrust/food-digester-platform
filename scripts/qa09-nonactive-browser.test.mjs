@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { semanticSummary } from './qa09-nonactive-browser.mjs';
+import { semanticSummary, validateOwnCsv } from './qa09-nonactive-browser.mjs';
 import { GROUPS, ABSENCE, VIEWPORTS } from './qa08-bindings.mjs';
 const matrix = JSON.parse(readFileSync('contracts/prototype-traceability.yaml'));
 const all = [...Object.keys(GROUPS), ...Object.keys(ABSENCE).map((id) => 'absence:' + id)].flatMap((group) =>
@@ -49,4 +49,15 @@ test('Defer and Reject failures also block the browser Gate', () => {
   );
   assert.equal(result.counts.PASS, 117);
   assert.equal(result.gate, 'FAIL');
+});
+
+test('CSV proof rejects empty, foreign and malformed downloads while parsing quoted data', () => {
+  assert.equal(validateOwnCsv(Buffer.from('id,remarks\r\n1,"qa09-own,fixture"\r\n'), 'qa09-own,fixture').dataRows, 1);
+  for (const text of [
+    'id,remarks\r\n',
+    'id,remarks\r\n1,foreign\r\n',
+    'id,remarks\r\n1,"qa09-own\r\n',
+    'id,remarks\r\n1,qa09-own,extra\r\n',
+  ])
+    assert.throws(() => validateOwnCsv(Buffer.from(text), 'qa09-own'));
 });

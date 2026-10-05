@@ -8,6 +8,16 @@ import { prepareProbe } from './prepare-qa09-db-readonly-probe.mjs';
 import { PROJECT, validatePlan } from './qa09-ten-device-db.mjs';
 import { readVerifiedFixtureFrame } from './qa09-db-frame-wait.mjs';
 const hash = (v) => createHash('sha256').update(v).digest('hex');
+export function classifyFixtureCliError(stderr, error) {
+  if (
+    /Token has expired and refresh failed|Error when retrieving token from sso|SSO session.*expired/i.test(stderr ?? '')
+  )
+    return 'SSO_SESSION_EXPIRED';
+  return (
+    stderr?.match(/An error occurred \(([A-Za-z0-9]+)\)/)?.[1] ??
+    (error?.code === 'ETIMEDOUT' ? 'CLI_READ_TIMEOUT' : 'CLI_FAILED')
+  );
+}
 function aws(args, profile = 'esgiot-infra') {
   const r = spawnSync(
     'aws',
@@ -20,9 +30,7 @@ function aws(args, profile = 'esgiot-infra') {
     },
   );
   if (r.status !== 0) {
-    const code =
-      r.stderr?.match(/An error occurred \(([A-Za-z0-9]+)\)/)?.[1] ??
-      (r.error?.code === 'ETIMEDOUT' ? 'CLI_READ_TIMEOUT' : 'CLI_FAILED');
+    const code = classifyFixtureCliError(r.stderr, r.error);
     throw Object.assign(Error('AWS_OPERATION_FAILED'), { code: `AWS_${args[1]}_${code}` });
   }
   return r.stdout ? JSON.parse(r.stdout) : null;
@@ -55,7 +63,8 @@ export function prepareFixture(plan) {
   ];
   return { plan, sourceHash: hash(source), buildspecHash: hash(project.source.buildspec), project };
 }
-export async function runFixture(plan, evidencePath, onProgress = () => {}) {
+export async function runFixture(plan, evidencePath, onProgress = () => {}, { logProfile = 'esgiot-readonly' } = {}) {
+  if (!['esgiot-readonly', 'esgiot-infra'].includes(logProfile)) throw Error('INVALID_FIXTURE_READ_PROFILE');
   const prep = prepareFixture(plan);
   writeFileSync(evidencePath + '.preparation.json', JSON.stringify(prep, null, 2) + '\n');
   const identity = aws(['sts', 'get-caller-identity']);
@@ -142,7 +151,7 @@ export async function runFixture(plan, evidencePath, onProgress = () => {}) {
             build.logs.streamName,
             '--start-from-head',
           ],
-          'esgiot-readonly',
+          logProfile,
         ),
       { buildId: start.id, sourceHash: prep.sourceHash, prefix: plan.prefix, action: plan.action },
     );
@@ -177,6 +186,7 @@ export async function runFixture(plan, evidencePath, onProgress = () => {}) {
     buildspecHash: prep.buildspecHash,
     result: verified.frame,
     resultReadObservations: verified.observations,
+    resultReadProfile: logProfile,
   };
   writeFileSync(evidencePath, JSON.stringify(receipt, null, 2) + '\n');
   return receipt;

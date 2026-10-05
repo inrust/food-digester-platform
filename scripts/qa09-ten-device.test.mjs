@@ -5,8 +5,13 @@ import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { PGlite } from '@electric-sql/pglite';
 import { validatePlan, executeFixture } from './qa09-ten-device-db.mjs';
-import { prepareFixture } from './qa09-ten-device-bridge.mjs';
-import { proofHeaders, createCsr, assertOwnCloudDevice } from './run-qa09-ten-device-acceptance.mjs';
+import { prepareFixture, classifyFixtureCliError } from './qa09-ten-device-bridge.mjs';
+import {
+  proofHeaders,
+  createCsr,
+  assertOwnCloudDevice,
+  validateEntityMode,
+} from './run-qa09-ten-device-acceptance.mjs';
 const prefix = 'qa09-1234567890abcdef';
 test('CodeBuild inline source fits service limit and decompresses to exact reviewed bytes', () => {
   const prep = prepareFixture(plan());
@@ -37,6 +42,7 @@ async function db() {
   await pg.exec(`
 CREATE TABLE customers(id text PRIMARY KEY,name text,deleted_at timestamptz);
 CREATE TABLE devices(id text PRIMARY KEY,serial_number text UNIQUE,model text,hardware_version text,manufacturer text,manufacture_date date,lifecycle_status text,customer_id text REFERENCES customers(id),updated_at timestamptz);
+CREATE TABLE certificate_rotation_requests(id text,device_id text,certificate_id text,status text);
 CREATE TABLE device_certificates(id text PRIMARY KEY,device_id text REFERENCES devices(id),status text,fingerprint text,mqtt_verified_at timestamptz,rest_verified_at timestamptz,claimed_at timestamptz,package_ciphertext bytea);
 CREATE TABLE onboarding_requests(id text PRIMARY KEY,serial_number text,status text);
 CREATE TABLE onboarding_proof_nonces(request_id text REFERENCES onboarding_requests(id));
@@ -90,7 +96,18 @@ test('real SQL creates exact fixtures and cleanup preserves original devices/cer
     const seed = await executeFixture(client, plan());
     assert.equal(seed.devices.length, 10);
     await assert.rejects(executeFixture(client, plan()), /FIXTURES_ALREADY_EXIST/);
+    await pg.query('INSERT INTO certificate_rotation_requests(id,device_id,status) VALUES($1,$2,$3),($4,$5,$3)', [
+      'own-rotation',
+      plan().devices[0],
+      'PENDING',
+      'outside-rotation',
+      'original',
+    ]);
     const result = await executeFixture(client, { ...plan('cleanup'), baseline: seed.originalFingerprints });
+    assert.equal(result.deleted.certificate_rotation_requests, 1);
+    assert.deepEqual((await pg.query('SELECT id FROM certificate_rotation_requests')).rows, [
+      { id: 'outside-rotation' },
+    ]);
     assert.equal(result.deleted.devices, 10);
     assert.deepEqual((await pg.query('SELECT id FROM devices')).rows, [{ id: 'original' }]);
     assert.deepEqual(result.originalFingerprints, seed.originalFingerprints);
@@ -291,4 +308,18 @@ test('capacity probe executes a read-only transaction and leaves fixture and ori
   } finally {
     await pg.close();
   }
+});
+
+test('review-only mode cannot run without an explicit review hook or with unknown options', () => {
+  assert.throws(() => validateEntityMode({ reviewOnly: true }, () => {}), /INVALID_ENTITY/);
+  assert.throws(() => validateEntityMode({ reviewOnly: false, seedActive: true }, () => {}), /INVALID_ENTITY/);
+  const fn = () => {};
+  fn.beforeApproval = () => {};
+  validateEntityMode({ reviewOnly: true }, fn);
+});
+
+test('fixture CLI distinguishes expired SSO from authorization rejection and transport timeouts', () => {
+  assert.equal(classifyFixtureCliError('Token has expired and refresh failed'), 'SSO_SESSION_EXPIRED');
+  assert.equal(classifyFixtureCliError('An error occurred (AccessDeniedException)'), 'AccessDeniedException');
+  assert.equal(classifyFixtureCliError('', { code: 'ETIMEDOUT' }), 'CLI_READ_TIMEOUT');
 });

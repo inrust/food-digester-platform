@@ -1,0 +1,151 @@
+{
+  "task": "QA-09",
+  "scope": "CORE_BUSINESS_REAL_RDS_STATE_FIXTURE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1"
+  },
+  "fixtureMode": "REAL_RDS_ONBOARDED_STATE_FOR_BUSINESS_APIS_NO_DEVICE_AUTH_CLAIM",
+  "prefix": "qa09-404cd44da7670758",
+  "devices": [
+    "qa09-404cd44da7670758-01",
+    "qa09-404cd44da7670758-02",
+    "qa09-404cd44da7670758-03",
+    "qa09-404cd44da7670758-04",
+    "qa09-404cd44da7670758-05",
+    "qa09-404cd44da7670758-06",
+    "qa09-404cd44da7670758-07",
+    "qa09-404cd44da7670758-08",
+    "qa09-404cd44da7670758-09",
+    "qa09-404cd44da7670758-10"
+  ],
+  "customers": [
+    {
+      "id": "8194f65a-3016-45bf-8ad3-3bdbe54751b1",
+      "name": "qa09-404cd44da7670758-a",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-05T08:33:20.591Z",
+      "updatedAt": "2026-10-05T08:33:20.591Z",
+      "suffix": "a"
+    },
+    {
+      "id": "64c7a8b2-c1b7-4d5c-900e-885edb01d27c",
+      "name": "qa09-404cd44da7670758-b",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-05T08:33:21.984Z",
+      "updatedAt": "2026-10-05T08:33:21.984Z",
+      "suffix": "b"
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "470730a8-f615-4dd3-a985-e490f2da91c7"
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "47d59fd0-5923-4cb3-b106-0d5315729cf8"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/64c7a8b2-c1b7-4d5c-900e-885edb01d27c",
+      "status": 200,
+      "requestId": "6f67f358-9d6e-47de-818b-53a1e97dfebb"
+    },
+    {
+      "id": "own-customer-name-b",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "FAIL",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/64c7a8b2-c1b7-4d5c-900e-885edb01d27c",
+      "status": 409,
+      "requestId": "48cbebb2-91e1-4158-a756-58702b839243"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/8194f65a-3016-45bf-8ad3-3bdbe54751b1",
+      "status": 200,
+      "requestId": "e1f34929-3616-42ad-8d7b-ed7c525b8962"
+    },
+    {
+      "id": "own-customer-name-a",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "FAIL",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/8194f65a-3016-45bf-8ad3-3bdbe54751b1",
+      "status": 409,
+      "requestId": "d8e41b5b-1430-4d3a-aae3-50e422b4c6a8"
+    },
+    {
+      "id": "own-superadmin-deleted",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "customer",
+      "id": "64c7a8b2-c1b7-4d5c-900e-885edb01d27c",
+      "result": "FAIL"
+    },
+    {
+      "type": "customer",
+      "id": "8194f65a-3016-45bf-8ad3-3bdbe54751b1",
+      "result": "FAIL"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-404cd44da7670758-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "databaseBuilds": [],
+  "sourceCommit": "a26bd943354d21c237a3260e9103979b199675fd",
+  "versionReceipt": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/application-version.json",
+  "startedAt": "2026-10-05T08:33:08.194Z",
+  "gate": "FAIL",
+  "fullQa09Accepted": false,
+  "credentialsExported": false,
+  "identity": {
+    "username": "qa09-404cd44da7670758-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "failure": {
+    "code": "FIXTURE_RESULT_READ_TIMEOUT",
+    "errorName": "Error"
+  },
+  "globalSignOut": "PASS",
+  "finishedAt": "2026-10-05T08:36:26.139Z"
+}

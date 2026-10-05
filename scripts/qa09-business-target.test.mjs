@@ -39,10 +39,21 @@ test('target gates reject missing finish cleanup required case and foreign devic
 test('business cleanup preserves outside rows, rejects baseline drift and deletes own dependent rows atomically', async () => {
   const pg = new PGlite();
   await pg.exec(`CREATE TABLE customers(id text,name text);CREATE TABLE devices(id text,customer_id text,site_id text);CREATE TABLE device_certificates(device_id text);CREATE TABLE sites(id text,customer_id text);CREATE TABLE outbox_events(id text,event_type text,aggregate_type text,aggregate_id text,status text,created_at timestamptz,published_at timestamptz);
- CREATE TABLE device_user_sync_receipts(device_id text);CREATE TABLE device_user_assignments(customer_id text);CREATE TABLE device_users(id text,customer_id text);CREATE TABLE license_history(license_id text);CREATE TABLE license_entitlements(license_id text);CREATE TABLE contract_devices(customer_id text);CREATE TABLE licenses(id text,customer_id text);CREATE TABLE contracts(id text,customer_id text);CREATE TABLE configuration_versions(id text,configuration_id text);CREATE TABLE device_configurations(id text,target_device_id text);CREATE TABLE consumable_requests(customer_id text);CREATE TABLE esg_export_jobs(customer_id text);CREATE TABLE device_assignments(device_id text);CREATE TABLE device_commands(id text,device_id text);CREATE TABLE command_attempts(command_id text);CREATE TABLE command_acks(command_id text);CREATE TABLE device_retirements(device_id text);
+ CREATE TABLE device_user_sync_receipts(device_id text);CREATE TABLE device_user_assignments(customer_id text);CREATE TABLE device_users(id text,customer_id text);CREATE TABLE license_history(license_id text);CREATE TABLE license_entitlements(license_id text);CREATE TABLE contract_devices(customer_id text);CREATE TABLE licenses(id text,customer_id text);CREATE TABLE contracts(id text,customer_id text);CREATE TABLE configuration_versions(id text,configuration_id text);CREATE TABLE device_configurations(id text,target_device_id text);CREATE TABLE consumable_requests(customer_id text);CREATE TABLE esg_export_jobs(id text,customer_id text,filters jsonb);CREATE TABLE device_assignments(device_id text);CREATE TABLE device_commands(id text,device_id text);CREATE TABLE command_attempts(command_id text);CREATE TABLE command_acks(command_id text);CREATE TABLE device_retirements(device_id text);
  INSERT INTO devices VALUES('original','original-customer','original-site');INSERT INTO licenses VALUES('original-license','original-customer');INSERT INTO license_history VALUES('original-license');
- INSERT INTO device_configurations VALUES('global-model-config',NULL);INSERT INTO esg_export_jobs VALUES(NULL);INSERT INTO outbox_events(aggregate_id) VALUES('original-license');INSERT INTO sites VALUES('foreign-site','original-customer');INSERT INTO outbox_events(aggregate_id) VALUES('foreign-site');`);
+ INSERT INTO device_configurations VALUES('global-model-config',NULL);INSERT INTO esg_export_jobs(customer_id) VALUES(NULL);INSERT INTO outbox_events(aggregate_id) VALUES('original-license');INSERT INTO sites VALUES('foreign-site','original-customer');INSERT INTO outbox_events(aggregate_id) VALUES('foreign-site');`);
   for (const c of plan.customers) await pg.query('INSERT INTO customers VALUES($1,$2)', [c.id, c.name]);
+  for (const table of [
+    'device_activity_export_jobs',
+    'telemetry_hourly',
+    'telemetry_daily',
+    'device_events',
+    'esg_reports',
+    'esg_daily_summary',
+    'consumable_projections',
+    'device_latest_state',
+  ])
+    await pg.exec(`CREATE TABLE ${table}(device_id text)`);
   const client = {
     query: async (sql, args) => {
       if (sql === 'SELECT current_database() AS database') return { rows: [{ database: 'fdp' }], rowCount: 1 };

@@ -66,3 +66,15 @@ test('wrong/multiple/failed frames and AccessDenied reject immediately, absent r
   );
   assert.equal(reads, 2);
 });
+
+test('expired SSO is a terminal authentication condition, never a transient log retry', async () => {
+  let reads = 0;
+  await assert.rejects(
+    readVerifiedFixtureFrame(async () => {
+      reads++;
+      throw Object.assign(Error('AWS_OPERATION_FAILED'), { code: 'AWS_get-log-events_SSO_SESSION_EXPIRED' });
+    }, expected),
+    /AWS_OPERATION_FAILED/,
+  );
+  assert.equal(reads, 1);
+});

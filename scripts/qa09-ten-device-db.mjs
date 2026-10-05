@@ -42,6 +42,7 @@ export function validatePlan(plan) {
       'business-cleanup',
       'business-audit',
       'business-seed-alarm',
+      'business-seed-semantic-data',
       'business-seed-devices',
       'business-seed-active-lifecycle',
       'business-inject-export-lease',
@@ -52,6 +53,14 @@ export function validatePlan(plan) {
     throw Error('UNSEEDED_AUDIT_REQUIRES_EMPTY_CUSTOMER_LEDGER');
   const ids = Array.from({ length: 10 }, (_, i) => `${plan.prefix}-${String(i + 1).padStart(2, '0')}`);
   if (JSON.stringify(plan.devices) !== JSON.stringify(ids)) throw Error('EXACT_TEN_REQUIRED');
+  if (
+    plan.semanticExportIds !== undefined &&
+    (!Array.isArray(plan.semanticExportIds) ||
+      plan.semanticExportIds.length > 20 ||
+      new Set(plan.semanticExportIds).size !== plan.semanticExportIds.length ||
+      plan.semanticExportIds.some((id) => !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(id)))
+  )
+    throw Error('OWN_EXPORT_LEDGER_REQUIRED');
   if (
     plan.action !== 'audit-unseeded-prefix' &&
     (!Array.isArray(plan.customers) ||
@@ -244,6 +253,115 @@ export async function executeFixture(client, plan) {
         fixtureMode: 'REAL_RDS_ONBOARDED_STATE_FOR_BUSINESS_APIS_NO_DEVICE_AUTH_CLAIM',
       };
     }
+    if (plan.action === 'business-seed-semantic-data') {
+      await client.query("SET LOCAL TIME ZONE 'UTC'");
+      // Synthetic business read models only: never a device ingestion, certificate or Active receipt.
+      const tables = [
+        'telemetry_hourly',
+        'telemetry_daily',
+        'device_events',
+        'esg_reports',
+        'esg_daily_summary',
+        'consumable_projections',
+        'device_latest_state',
+      ];
+      for (const table of tables)
+        if (
+          (await client.query(`SELECT count(*)::int AS count FROM "${table}" WHERE device_id=ANY($1::text[])`, [ids]))
+            .rows[0].count !== 0
+        )
+          throw Error('SEMANTIC_FIXTURE_ALREADY_EXISTS');
+      const rows = (
+        await client.query(
+          'SELECT d.id,d.customer_id,d.site_id,d.lifecycle_status,c.name AS customer_name,s.customer_id AS site_customer_id FROM devices d JOIN customers c ON c.id=d.customer_id JOIN sites s ON s.id=d.site_id WHERE d.id=ANY($1::text[]) AND c.deleted_at IS NULL ORDER BY d.id',
+          [ids],
+        )
+      ).rows;
+      if (
+        rows.length !== 10 ||
+        rows.some(
+          (r, i) =>
+            r.id !== ids[i] ||
+            r.customer_id !== plan.customers[i < 5 ? 0 : 1].id ||
+            !r.site_id ||
+            r.site_customer_id !== r.customer_id ||
+            r.customer_name !== plan.customers[i < 5 ? 0 : 1].name ||
+            r.lifecycle_status !== 'Assigned',
+        )
+      )
+        throw Error('SEMANTIC_OWN_ASSIGNMENT_REQUIRED');
+      const metrics = JSON.stringify(
+        Object.fromEntries(
+          Object.entries({
+            ambientTempC: 42,
+            heatTemperatureC: 42,
+            siloTemperatureC: 41,
+            chamberWeightKg: 12,
+            powerConsumptionKw: 3,
+            humidityPct: 60,
+            feedingWeightKg: 12,
+            o2Pct: 20,
+            co2Ppm: 400,
+            ch4Ppm: 2,
+            n2oPpm: 1,
+            currentAmp: 3,
+          }).map(([k, v]) => [k, { avg: v, min: v - 1, max: v + 1, count: 2 }]),
+        ),
+      );
+      for (const r of [rows[0], rows[5]]) {
+        const args = [r.id, r.customer_id, r.site_id];
+        for (const [table, bucket, expression] of [
+          ['telemetry_hourly', 'bucket_start', "date_trunc('hour',now())"],
+          ['telemetry_daily', 'bucket_date', 'current_date'],
+        ])
+          await client.query(
+            `INSERT INTO "${table}"(id,device_id,customer_id,site_id,${bucket},sample_count,completeness_pct,metrics) VALUES(gen_random_uuid()::text,$1,$2,$3,${expression},2,100,$4::jsonb)`,
+            [...args, metrics],
+          );
+        await client.query(
+          "INSERT INTO device_events(id,device_id,customer_id,event_type,source,remarks,occurred_at,source_message_id) VALUES(gen_random_uuid()::text,$1,$2,'QA09_SYNTHETIC_ACTIVITY','QA09_DATABASE_FIXTURE',$3,now(),$4)",
+          [r.id, r.customer_id, plan.prefix, plan.prefix + '-event-' + r.id],
+        );
+        await client.query(
+          "INSERT INTO consumable_projections(id,device_id,customer_id,consumable_type,remaining_percent,source_message_id,observed_at,stale,updated_at) VALUES(gen_random_uuid()::text,$1,$2,'CARBON_FILTER',37,$3,now(),false,now())",
+          [r.id, r.customer_id, plan.prefix + '-synthetic-consumable'],
+        );
+        await client.query(
+          'INSERT INTO device_latest_state(device_id,customer_id,sensor_status,last_heartbeat_at,updated_at) VALUES($1,$2,\'{"overall":"NORMAL","temperature":"NORMAL"}\'::jsonb,now()-interval \'1 day\',now())',
+          [r.id, r.customer_id],
+        );
+        await client.query(
+          "INSERT INTO esg_reports(id,device_id,customer_id,site_id,report_type,period_start_time,period_end_time,feeding_weight_kg,discharge_weight_kg,reduction_weight_kg,power_consumption_kwh,avg_o2_pct,avg_co2_ppm,avg_ch4_ppm,avg_n2o_ppm,carbon_reduction_kg,carbon_reduction_method,data_completeness_pct,source_message_id) VALUES(gen_random_uuid()::text,$1,$2,$3,'DAILY',date_trunc('day',now()),now(),12,4,8,3,20,400,2,1,5,'QA09_SYNTHETIC_ESTIMATE',100,$4)",
+          [...args, plan.prefix + '-synthetic-report-' + r.id],
+        );
+        await client.query(
+          'INSERT INTO esg_daily_summary(id,device_id,customer_id,site_id,summary_date,feeding_weight_kg,discharge_weight_kg,reduction_weight_kg,power_consumption_kwh,carbon_reduction_kg,data_completeness_pct) VALUES(gen_random_uuid()::text,$1,$2,$3,current_date,12,4,8,3,5,100)',
+          args,
+        );
+      }
+      const counts = Object.fromEntries(
+        await Promise.all(
+          tables.map(async (table) => [
+            table,
+            (await client.query(`SELECT count(*)::int AS count FROM "${table}" WHERE device_id=ANY($1::text[])`, [ids]))
+              .rows[0].count,
+          ]),
+        ),
+      );
+      if (
+        Object.values(counts).some((n) => n !== 2) ||
+        JSON.stringify(before) !== JSON.stringify(await original(client, ids))
+      )
+        throw Error('SEMANTIC_FIXTURE_READBACK_FAILED');
+      await client.query('COMMIT');
+      committed = true;
+      return {
+        fixtureMode: 'SYNTHETIC_RDS_READ_MODELS_NO_DEVICE_INGESTION_OR_AUTH_CLAIM',
+        counts,
+        devices: [rows[0].id, rows[5].id],
+        originalFingerprints: before,
+      };
+    }
     if (plan.action === 'business-seed-alarm') {
       const c = plan.customers[0];
       if (
@@ -279,6 +397,20 @@ export async function executeFixture(client, plan) {
     }
     if (plan.action.startsWith('business-')) {
       const customers = plan.customers.map((c) => c.id);
+      const exports = plan.semanticExportIds ?? [];
+      const exportRows = (
+        await client.query('SELECT id,filters FROM esg_export_jobs WHERE id=ANY($1::text[])', [exports])
+      ).rows;
+      if (
+        exportRows.some(
+          (r) =>
+            !r.filters ||
+            (!customers.includes(r.filters.customerId) && !ids.includes(r.filters.deviceId)) ||
+            (r.filters.customerId != null && !customers.includes(r.filters.customerId)) ||
+            (r.filters.deviceId != null && !ids.includes(r.filters.deviceId)),
+        )
+      )
+        throw Error('OWN_EXPORT_FILTER_SCOPE_DRIFT');
       for (const c of plan.customers)
         if ((await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2', [c.id, c.name])).rowCount !== 1)
           throw Error('CUSTOMER_SCOPE_DRIFT');
@@ -307,7 +439,21 @@ export async function executeFixture(client, plan) {
         ],
         ['device_configurations', 'target_device_id=ANY($1::text[])', ids],
         ['consumable_requests', 'customer_id=ANY($1::text[])', customers],
-        ['esg_export_jobs', 'customer_id=ANY($1::text[])', customers],
+        [
+          'esg_export_jobs',
+          "customer_id=ANY($1::text[]) OR (id=ANY($2::text[]) AND (filters->>'customerId'=ANY($1::text[]) OR filters->>'deviceId'=ANY($3::text[])))",
+          [customers, exports, ids],
+        ],
+        ['device_activity_export_jobs', 'device_id=ANY($1::text[])', ids],
+        ...[
+          'telemetry_hourly',
+          'telemetry_daily',
+          'device_events',
+          'esg_reports',
+          'esg_daily_summary',
+          'consumable_projections',
+          'device_latest_state',
+        ].map((table) => [table, 'device_id=ANY($1::text[])', ids]),
         ['device_assignments', 'device_id=ANY($1::text[])', ids],
         ['device_user_sync_receipts', 'device_id=ANY($1::text[])', ids],
       ];
@@ -320,7 +466,7 @@ export async function executeFixture(client, plan) {
               ...(
                 await client.query(
                   `SELECT count(*)::text,md5(coalesce(string_agg(to_jsonb(t)::text,'' ORDER BY to_jsonb(t)::text),'')) AS digest FROM public."${table}" t WHERE NOT COALESCE((${predicate}),false)`,
-                  table === 'outbox_events' ? args : [args],
+                  ['outbox_events', 'esg_export_jobs'].includes(table) ? args : [args],
                 )
               ).rows[0],
             })),
@@ -359,7 +505,7 @@ export async function executeFixture(client, plan) {
             (
               await client.query(
                 `DELETE FROM public."${table}" WHERE ${predicate}`,
-                table === 'outbox_events' ? args : [args],
+                ['outbox_events', 'esg_export_jobs'].includes(table) ? args : [args],
               )
             ).rowCount;
       }
@@ -368,7 +514,7 @@ export async function executeFixture(client, plan) {
           (
             await client.query(
               `SELECT count(*)::text AS count FROM public."${table}" WHERE ${predicate}`,
-              table === 'outbox_events' ? args : [args],
+              ['outbox_events', 'esg_export_jobs'].includes(table) ? args : [args],
             )
           ).rows[0].count,
         );
@@ -570,6 +716,33 @@ export async function executeFixture(client, plan) {
         ).rowCount
       )
         throw Error('JOB_STILL_PROCESSING');
+      const rotationOutside = (
+        await client.query(
+          "SELECT count(*)::text,md5(coalesce(string_agg(to_jsonb(t)::text,'' ORDER BY to_jsonb(t)::text),'')) AS digest FROM certificate_rotation_requests t WHERE NOT(device_id=ANY($1::text[]))",
+          [ids],
+        )
+      ).rows;
+      deleted.certificate_rotation_requests = (
+        await client.query('DELETE FROM certificate_rotation_requests WHERE device_id=ANY($1::text[])', [ids])
+      ).rowCount;
+      if (
+        (
+          await client.query(
+            'SELECT count(*)::int AS count FROM certificate_rotation_requests WHERE device_id=ANY($1::text[])',
+            [ids],
+          )
+        ).rows[0].count !== 0 ||
+        JSON.stringify(rotationOutside) !==
+          JSON.stringify(
+            (
+              await client.query(
+                "SELECT count(*)::text,md5(coalesce(string_agg(to_jsonb(t)::text,'' ORDER BY to_jsonb(t)::text),'')) AS digest FROM certificate_rotation_requests t WHERE NOT(device_id=ANY($1::text[]))",
+                [ids],
+              )
+            ).rows,
+          )
+      )
+        throw Error('ROTATION_CLEANUP_SCOPE_DRIFT');
       deleted.request_outbox = (
         await client.query(
           "DELETE FROM outbox_events WHERE event_type='ONBOARDING_PROVISIONING_FAILED' AND aggregate_type='onboarding_request' AND aggregate_id IN(SELECT id FROM onboarding_requests WHERE serial_number=ANY($1::text[])) AND payload->>'requestId'=aggregate_id",
@@ -620,6 +793,12 @@ export async function executeFixture(client, plan) {
     return {
       devices,
       certificates,
+      rotationRequests: (
+        await client.query(
+          'SELECT id,device_id,certificate_id,status FROM certificate_rotation_requests WHERE device_id=ANY($1::text[]) ORDER BY device_id,id',
+          [ids],
+        )
+      ).rows,
       requests,
       jobs,
       receipts: plan.action === 'cleanup' ? [] : receipts,

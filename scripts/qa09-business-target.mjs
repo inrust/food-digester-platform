@@ -123,7 +123,8 @@ export async function runBusinessTarget(
     logins = new Map([['PlatformSuperAdmin', ctx.browserLogin]]),
     created = [],
     sites = [],
-    exportIds = [];
+    exportIds = [],
+    semanticExports = [];
   const idp = createCognitoIdpClient({ region: 'ap-southeast-1', clientId });
   const call = (Cmd, input) => ctx.cognito.send(new Cmd(input), { abortSignal: AbortSignal.timeout(30000) });
   const renewals = new Map();
@@ -188,6 +189,7 @@ export async function runBusinessTarget(
         devices,
         customers,
         action,
+        semanticExportIds: [...exportIds, ...semanticExports.filter((x) => x.kind === 'esg').map((x) => x.id)],
         baseline: ctx.baseline,
         ...extra,
         ...(businessBaseline ? { businessBaseline } : {}),
@@ -582,6 +584,8 @@ export async function runBusinessTarget(
     if (semanticBrowser) {
       r.semanticBrowser = await semanticBrowser({
         api,
+        db,
+        semanticExports,
         sourceCommit,
         sessions,
         logins,
@@ -955,21 +959,33 @@ export async function runBusinessTarget(
       save();
     }
   }
+  r.createdSites = sites.map((site) => ({ id: site.id, customerId: site.customerId }));
+  save();
   try {
     stage = 'cleanup';
     sessions.set('PlatformSuperAdmin', await ctx.refreshIdentity());
     const s3 = new s3Sdk.S3Client({ region: 'ap-southeast-1', credentials: ctx.credentials, maxAttempts: 1 });
-    for (const id of exportIds) {
+    for (const { id, kind } of [...exportIds.map((id) => ({ id, kind: 'esg' })), ...semanticExports]) {
       if (!/^[a-f0-9-]{36}$/.test(id)) throw Error('EXPORT_CLEANUP_SCOPE_DRIFT');
-      const key = `esg-exports/${id}.csv`;
+      if (!['esg', 'activity'].includes(kind)) throw Error('EXPORT_CLEANUP_SCOPE_DRIFT');
+      const key = `${kind}-exports/${id}.csv`;
       const versions = await s3.send(
         new s3Sdk.ListObjectVersionsCommand({ Bucket: 'fdp-test-export-065986019555', Prefix: key }),
       );
+      if (versions.IsTruncated) throw Error('EXPORT_VERSION_PAGE_LIMIT');
       for (const v of [...(versions.Versions ?? []), ...(versions.DeleteMarkers ?? [])].filter((v) => v.Key === key))
         await s3.send(
           new s3Sdk.DeleteObjectCommand({ Bucket: 'fdp-test-export-065986019555', Key: key, VersionId: v.VersionId }),
         );
-      r.cleanup.push({ type: 'esg-object', key, result: 'PASS' });
+      const remaining = await s3.send(
+        new s3Sdk.ListObjectVersionsCommand({ Bucket: 'fdp-test-export-065986019555', Prefix: key }),
+      );
+      if (
+        remaining.IsTruncated ||
+        [...(remaining.Versions ?? []), ...(remaining.DeleteMarkers ?? [])].some((v) => v.Key === key)
+      )
+        throw Error('EXPORT_OBJECT_REMAINS');
+      r.cleanup.push({ type: kind + '-object', key, remainingVersions: 0, result: 'PASS' });
       save();
     }
     if (baseline) {

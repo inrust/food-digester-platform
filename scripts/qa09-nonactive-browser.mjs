@@ -58,6 +58,38 @@ export function semanticSummary(matrix, executions) {
         : 'PARTIAL',
   };
 }
+export function validateOwnCsv(bytes, marker) {
+  const text = bytes.toString('utf8').replace(/^\uFEFF/, '');
+  const rows = [];
+  let row = [],
+    cell = '',
+    quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') {
+      if (quoted && text[i + 1] === '"') {
+        cell += '"';
+        i++;
+      } else quoted = !quoted;
+    } else if (c === ',' && !quoted) {
+      row.push(cell);
+      cell = '';
+    } else if (c === '\n' && !quoted) {
+      row.push(cell.replace(/\r$/, ''));
+      rows.push(row);
+      row = [];
+      cell = '';
+    } else cell += c;
+  }
+  if (quoted || row.length || cell) throw Error('INVALID_CSV_FRAMING');
+  if (
+    rows.length < 2 ||
+    rows.some((r) => r.length !== rows[0].length) ||
+    !rows.slice(1).every((r) => r.some((c) => c === marker))
+  )
+    throw Error('CSV_OWN_ROWS_REQUIRED');
+  return { header: rows[0], dataRows: rows.length - 1, ownRowsVerified: true };
+}
 const roots = {
   dashboard: 'dashboard-page',
   'device-view': 'device-view-page',
@@ -94,6 +126,9 @@ export async function runNonActiveBrowser(ctx, output) {
     networkFailures: [],
     consoleErrorCategories: [],
     cleanupByParent: true,
+    dataFixture: null,
+    exports: [],
+    dataScope: [],
     gate: 'RUNNING',
   };
   const save = () => writeFileSync(output, JSON.stringify(r, null, 2) + '\n');
@@ -101,6 +136,35 @@ export async function runNonActiveBrowser(ctx, output) {
     base = '/api/v1/admin';
   const api = (id, method, path, status, body, headers) =>
     ctx.api(id, role, method, base + path, status, body, headers);
+  r.dataFixture = await ctx.db('business-seed-semantic-data');
+  save();
+  for (const scopedRole of ['CustomerAdmin', 'CustomerViewer']) {
+    for (const domain of ['reports', 'daily-summary', 'hourly']) {
+      const response = await ctx.api(
+        'semantic-scope-' + scopedRole + '-' + domain,
+        scopedRole,
+        'GET',
+        base + '/esg/' + domain,
+        200,
+      );
+      if (
+        !Array.isArray(response.data) ||
+        response.data.length !== 1 ||
+        response.data.some((x) => x.customerId !== ctx.customers[0].id || x.deviceId !== ctx.devices[0])
+      )
+        throw Error('SEMANTIC_DATA_CUSTOMER_SCOPE_FAILED');
+      r.dataScope.push({ role: scopedRole, domain, result: 'PASS', ownRows: response.data.length });
+      save();
+    }
+    await ctx.api(
+      'semantic-console-cross-' + scopedRole,
+      scopedRole,
+      'GET',
+      base + '/devices/' + ctx.devices[5] + '/console',
+      404,
+    );
+  }
+
   const own = ctx.devices[0],
     now = Date.now();
   const contract = (
@@ -353,6 +417,11 @@ export async function runNonActiveBrowser(ctx, output) {
           await page.goto('https://admin.bio-nexa.com' + route, { waitUntil: 'domcontentloaded' });
           await expect(page.getByTestId(roots[p.pageState])).toBeVisible({ timeout: 20000 });
           await page.waitForLoadState('networkidle', { timeout: 15000 });
+          if (p.pageState === 'esg-overview') {
+            await page.getByTestId('esg-customer-filter').selectOption(ctx.customers[0].id);
+            await page.getByTestId('esg-apply').click();
+            await page.waitForLoadState('networkidle');
+          }
           if (['device-view', 'device-operate', 'esg-device'].includes(p.pageState)) {
             await page.locator('#scope-region').selectOption(ctx.prefix + '-region');
             await page.locator('#scope-subregion').selectOption(ctx.prefix + '-subregion');
@@ -382,6 +451,73 @@ export async function runNonActiveBrowser(ctx, output) {
         const navigate = async (id, suffix) => {
           await page.getByTestId(id).click();
           await expect(page).toHaveURL(new RegExp(suffix));
+        };
+        const exportCsv = async (testid, kind, expectedMarker) => {
+          const endpoint = kind === 'activity' ? `/devices/${own}/activities/export` : '/esg/exports';
+          const pending = page.waitForResponse(
+            (res) => res.request().method() === 'POST' && new URL(res.url()).pathname === base + endpoint,
+          );
+          await page.getByTestId(testid + '-export-csv').click();
+          const response = await pending;
+          if (response.status() !== 202) throw Error('EXPORT_CREATE_FAILED');
+          const job = (await response.json()).data;
+          if (!/^[a-f0-9-]{36}$/.test(job.exportId)) throw Error('EXPORT_ID_MISSING');
+          ctx.semanticExports.push({ id: job.exportId, kind });
+          const evidence = {
+            id: job.exportId,
+            kind,
+            width,
+            role,
+            method: 'POST',
+            path: base + endpoint,
+            status: response.status(),
+            requestId: response.headers()['x-amzn-requestid'],
+            result: 'RUNNING',
+          };
+          r.exports.push(evidence);
+          save();
+          const deadline = Date.now() + 240000;
+          while (!(await page.getByTestId(testid + '-export-download').count())) {
+            if (Date.now() > deadline || (await page.getByTestId(testid + '-export-failed').count()))
+              throw Error('EXPORT_COMPLETION_FAILED');
+            await page.waitForTimeout(2000);
+            const refresh = page.getByTestId(testid + '-export-refresh');
+            if (await refresh.count()) await refresh.click();
+          }
+          const finished = (
+            await api(
+              'semantic-export-readback-' + job.exportId,
+              'GET',
+              (kind === 'activity' ? '/activity-exports/' : '/esg/exports/') + job.exportId,
+              200,
+            )
+          ).data;
+          if (finished.status !== 'COMPLETED' || finished.rowCount !== 1) throw Error('EXPORT_ROWS_OR_STATUS_MISMATCH');
+          const downloadPromise = page.waitForEvent('download');
+          await page.getByTestId(testid + '-export-download').click();
+          const download = await downloadPromise;
+          const stream = await download.createReadStream();
+          if (!stream) throw Error('CSV_DOWNLOAD_FAILED');
+          const chunks = [];
+          let size = 0;
+          for await (const chunk of stream) {
+            size += chunk.length;
+            if (size > 1024 * 1024) throw Error('CSV_DOWNLOAD_LIMIT');
+            chunks.push(chunk);
+          }
+          const bytes = Buffer.concat(chunks);
+          const proof = validateOwnCsv(bytes, expectedMarker);
+          if (proof.dataRows !== finished.rowCount) throw Error('CSV_ROWCOUNT_MISMATCH');
+          evidence.csvReceipt = output + '.' + kind + '-' + width + '-' + job.exportId + '.csv';
+          writeFileSync(evidence.csvReceipt, bytes);
+          Object.assign(evidence, {
+            result: 'PASS',
+            bytes: size,
+            sha256: createHash('sha256').update(bytes).digest('hex'),
+            ...proof,
+          });
+          save();
+          return { exportId: job.exportId, ...proof };
         };
         const groups = [
           ...Object.keys(GROUPS).filter((k) => k.startsWith(p.pageState + '.')),
@@ -451,16 +587,30 @@ export async function runNonActiveBrowser(ctx, output) {
                     await expect(page.locator(id)).toHaveValue('');
                   await expect(page.locator('#scope-subregion')).toBeDisabled();
                   break;
-                case 'device-view.console':
+                case 'device-view.console': {
                   for (const id of ['console-components', 'console-consumables', 'console-alarms', 'console-esg7d'])
                     await expect(page.getByTestId(id)).toBeVisible();
-                  row.proof = 'NONACTIVE_EMPTY_DATA_SEMANTICS_ONLY';
-                  row.result = 'NOT_RUN';
-                  row.reason = 'REAL_SENSOR_CONSUMABLE_ALARM_ESG_DATA_NOT_PROVIDED';
+                  const consoleData = (
+                    await api('semantic-console-' + width, 'GET', '/devices/' + own + '/console', 200)
+                  ).data;
+                  if (
+                    consoleData.metrics.metrics.ambientTempC?.avg !== 42 ||
+                    consoleData.consumables.find((c) => c.consumableType === 'CARBON_FILTER')?.remainingPercent !==
+                      37 ||
+                    !consoleData.recentAlarms.some((a) => a.code === 'QA09_TEST') ||
+                    !consoleData.esgLast7Days.some((d) => d.feedingWeightKg === 12)
+                  )
+                    throw Error('CONSOLE_SYNTHETIC_VALUES_MISMATCH');
+                  await expect(page.getByTestId('sensor-heatTemperatureC')).toContainText('42');
+                  await expect(page.getByTestId('consumable-value-CARBON_FILTER')).toContainText('37');
+                  await expect(page.getByTestId('console-alarms')).toContainText('QA09_TEST');
+                  await expect(page.getByTestId('console-esg7d')).toContainText('12');
+                  row.proof = 'SYNTHETIC_RDS_VALUES_REAL_API_AND_DOM_NOT_DEVICE_INGESTION';
                   break;
+                }
                 case 'device-view.media':
                   row.result = 'NOT_RUN';
-                  row.reason = 'NO_OWN_MEDIA_UPLOAD_DEVICE';
+                  row.reason = 'MEDIA_UPLOAD_REQUIRES_ACTIVE_OR_MAINTENANCE';
                   break;
                 case 'device-operate.commands':
                   row.result = 'NOT_RUN';
@@ -482,18 +632,32 @@ export async function runNonActiveBrowser(ctx, output) {
                     throw Error('ALIAS_NOT_PERSISTED');
                   break;
                 case 'device-operate.activities':
-                  if ((await page.getByTestId('activity-table').locator('table').count()) === 0) {
-                    row.result = 'NOT_RUN';
-                    row.reason = 'NO_OWN_ACTIVITY_ROWS';
-                    break;
+                  {
+                    const events = (
+                      await api(
+                        'semantic-activity-source-' + width,
+                        'GET',
+                        '/devices/' + own + '/activities?level=INFO',
+                        200,
+                      )
+                    ).data;
+                    if (
+                      !Array.isArray(events) ||
+                      events.length !== 1 ||
+                      events[0].summary !== 'QA09_SYNTHETIC_ACTIVITY' ||
+                      events[0].detail?.remarks !== ctx.prefix
+                    )
+                      throw Error('OWN_ACTIVITY_API_PROOF_REQUIRED');
+                    row.sourceRows = events.length;
                   }
+                  await expect(page.getByTestId('activity-table').getByRole('table')).toBeVisible({ timeout: 20000 });
                   await columns('activity-table', ['时间', '级别', '内容']);
                   await page.getByTestId('activity-filter-level').selectOption('INFO');
                   await page.getByTestId('activity-filter-search').click();
                   await page.waitForLoadState('networkidle');
-                  row.proof = 'FILTER_ONLY_EXPORT_NOT_RUN';
-                  row.result = 'NOT_RUN';
-                  row.reason = 'EXPORT_COMPLETION_NOT_EXECUTED';
+                  await expect(page.getByTestId('activity-table')).toContainText('QA09_SYNTHETIC_ACTIVITY');
+                  row.export = await exportCsv('activity', 'activity', ctx.prefix);
+                  row.proof = 'OWN_INFO_EVENT_FILTER_AND_COMPLETED_CSV_DOWNLOAD';
                   break;
                 case 'device-group.filters':
                   await page.getByTestId('device-keyword').fill(ctx.prefix);
@@ -586,10 +750,10 @@ export async function runNonActiveBrowser(ctx, output) {
                     '碳包预估剩余百分比',
                     '活性菌预估剩余百分比',
                   ]);
-                  for (const id of ['consumable-carbon-', 'consumable-bio-']) {
-                    await expect(page.getByTestId(id + own)).toContainText('unknown');
-                    await expect(page.getByTestId(id + own).locator('.consumable-bar')).toHaveCount(0);
-                  }
+                  await expect(page.getByTestId('consumable-carbon-' + own)).toContainText('37%');
+                  await expect(page.getByTestId('consumable-carbon-' + own).locator('.consumable-bar')).toHaveCount(1);
+                  await expect(page.getByTestId('consumable-bio-' + own)).toContainText('unknown');
+                  await expect(page.getByTestId('consumable-bio-' + own).locator('.consumable-bar')).toHaveCount(0);
                   break;
                 case 'device-consumable.contact':
                   await page.getByTestId('consumable-contact-' + own).click();
@@ -702,21 +866,12 @@ export async function runNonActiveBrowser(ctx, output) {
                   }
                   break;
                 case 'esg-overview.columns':
-                  if ((await page.getByTestId('esg-summary-table').getByRole('columnheader').count()) === 0) {
-                    row.result = 'NOT_RUN';
-                    row.reason = 'NO_OWN_ESG_ROWS';
-                    break;
-                  }
                   await columns('esg-summary-table', ['日期间', '投料量 (kg)', '能耗 (kWh)', '估算 CO2e (kg)']);
                   await expect(page.getByTestId('esg-disclaimer')).toContainText('估算');
-                  row.proof = 'EMPTY_DATA_TABLE_AND_ESTIMATE_DISCLOSURE';
+                  await expect(page.getByTestId('esg-summary-table')).toContainText('12');
+                  row.proof = 'SYNTHETIC_ESG_NONEMPTY_VALUES_AND_ESTIMATE_DISCLOSURE';
                   break;
                 case 'esg-device.metrics':
-                  if ((await page.getByTestId('esg-device-metrics').getByRole('columnheader').count()) === 0) {
-                    row.result = 'NOT_RUN';
-                    row.reason = 'NO_OWN_ESG_ROWS';
-                    break;
-                  }
                   await columns('esg-device-metrics', [
                     '投料 (kg)',
                     '出料 (kg)',
@@ -728,12 +883,13 @@ export async function runNonActiveBrowser(ctx, output) {
                     'N2O (ppm)',
                     '估算 CO2e (kg)',
                   ]);
-                  row.proof = 'EMPTY_DATA_COLUMN_SEMANTICS';
+                  await expect(page.getByTestId('esg-device-metrics')).toContainText('12');
+                  row.proof = 'SYNTHETIC_DAILY_REPORT_NONEMPTY_VALUES';
                   break;
                 case 'esg-overview.export':
                 case 'esg-device.export':
-                  row.result = 'NOT_RUN';
-                  row.reason = 'NO_OWN_TELEMETRY_EXPORT_IN_THIS_FIXTURE';
+                  row.export = await exportCsv(group.startsWith('esg-device') ? 'esg-device' : 'esg', 'esg', own);
+                  row.proof = 'OWN_SCOPE_COMPLETED_EXPORT_AND_DOWNLOADED_CSV';
                   break;
                 case 'settings.platform':
                   await page.getByTestId('user-invite-open').click();
