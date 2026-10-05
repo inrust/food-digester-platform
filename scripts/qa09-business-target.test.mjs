@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
-import { assertBusinessContext, validateTargetStage, validateTargetAssertions } from './qa09-business-target.mjs';
+import {
+  runBusinessTarget,
+  assertBusinessContext,
+  validateTargetStage,
+  validateTargetAssertions,
+} from './qa09-business-target.mjs';
 import { executeFixture } from './qa09-ten-device-db.mjs';
 const prefix = 'qa09-1234567890abcdef';
 const plan = {
@@ -143,4 +148,11 @@ test('assertion-only validation cannot stand in for cleanup or whole target acce
   assert.equal(proof.gate, undefined);
   assert.throws(() => validateTargetStage(r, 'core', ['workflow']), /CLEANUP_MISSING/);
   assert.throws(() => validateTargetAssertions({ ...r, checks: [] }, 'core', ['workflow']), /REQUIRED_PROOF/);
+});
+
+test('nonActive scope cannot enter the full wave that contains Active dependent probes', async () => {
+  await assert.rejects(
+    runBusinessTarget(null, '/tmp/not-written.json', { nonActiveOnly: true, coreOnly: false }),
+    /NONACTIVE_FULL_WAVE_FORBIDDEN/,
+  );
 });

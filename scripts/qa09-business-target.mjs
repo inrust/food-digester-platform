@@ -68,16 +68,20 @@ export async function runBusinessTarget(
     performanceProbes = false,
     performanceLifecycleProbes = true,
     writeBoundaryProbes = performanceProbes,
+    nonActiveOnly = false,
+    semanticBrowser,
     onLicenseIssued,
     onLicenseActivated,
   } = {},
 ) {
+  if (nonActiveOnly && !coreOnly) throw Error('NONACTIVE_FULL_WAVE_FORBIDDEN');
   assertBusinessContext(ctx.receipt);
   const { prefix, devices, customers, sourceCommit } = ctx.receipt;
   const r = {
     task: 'QA-09',
     scope: coreOnly ? 'CORE_BUSINESS_FIVE_ROLE_TARGET' : 'CORE_BUSINESS_FIVE_ROLE_BROWSER_SECURITY_LOAD_TARGET',
     coreOnly,
+    nonActiveOnly,
     readDomainMatrixExecuted: readDomains,
     mode: 'REAL_EXISTING_TEST_ENVIRONMENT',
     sourceCommit,
@@ -394,19 +398,23 @@ export async function runBusinessTarget(
       { reason: prefix },
       { 'If-Match': String(contract.version) },
     );
-    r.licenseLifecycle = await runTargetLicenseLifecycle(api, {
-      deviceId: devices[0],
-      from,
-      to,
-      prefix,
-      now,
-      onIssued: onLicenseIssued,
-      onActivated: onLicenseActivated,
-    });
-    check(
-      'license-state-sequence-proved',
-      r.licenseLifecycle.renewalReplay && r.licenseLifecycle.reactivation === 'Active',
-    );
+    if (!nonActiveOnly) {
+      r.licenseLifecycle = await runTargetLicenseLifecycle(api, {
+        deviceId: devices[0],
+        from,
+        to,
+        prefix,
+        now,
+        onIssued: onLicenseIssued,
+        onActivated: onLicenseActivated,
+      });
+      check(
+        'license-state-sequence-proved',
+        r.licenseLifecycle.renewalReplay && r.licenseLifecycle.reactivation === 'Active',
+      );
+    } else {
+      r.licenseLifecycle = { gate: 'NOT_RUN', reason: 'INDEPENDENT_DEVICE_HMAC_VERIFIER_UNAVAILABLE' };
+    }
     const config = (
       await api('config-create', 'PlatformOperator', 'POST', '/api/v1/admin/configurations', 201, {
         name: prefix,
@@ -571,6 +579,24 @@ export async function runBusinessTarget(
     await api('alarm-cross-customer', 'CustomerAdmin', 'GET', '/api/v1/admin/alarms/' + randomUUID(), 404);
     await api('alarm-acknowledge', 'PlatformOperator', 'POST', ap + '/acknowledge', 200, { reason: prefix });
     await api('alarm-clear', 'PlatformOperator', 'POST', ap + '/clear', 200, { reason: prefix });
+    if (semanticBrowser) {
+      r.semanticBrowser = await semanticBrowser({
+        api,
+        sourceCommit,
+        sessions,
+        logins,
+        prefix,
+        devices,
+        customers,
+        sites,
+        contractId: contract.contractId,
+        configId: config.configurationId,
+        deviceUserId: du.deviceUserId,
+        requestId: cancel.requestId,
+        save,
+      });
+      r.stages.semanticBrowser = r.semanticBrowser.gate;
+    }
     check('core-workflows-complete', true);
     r.stages.core = 'PASS';
   } catch (e) {

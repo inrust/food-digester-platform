@@ -1131,3 +1131,30 @@ test('FE-19 语言选择在刷新后保持', async ({ page }) => {
   await expect(page.getByTestId('language-select')).toHaveValue('en');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 });
+
+test('QA-09 设备管理长别名和序列号在375px完整换行且不裁切', async ({ page, qa05 }) => {
+  await seedSession(page, 'PlatformSuperAdmin');
+  await routeP0Apis(page);
+  const values = [
+    { alias: 'qa09-5ef64acf44707548-alias', serialNumber: 'qa09-5ef64acf44707548-01', certificate: null },
+    {
+      alias: 'A'.repeat(64),
+      serialNumber: 'S'.repeat(64),
+      certificate: { certificateId: 'C'.repeat(64), fingerprint: 'b'.repeat(64), status: 'ACTIVE' },
+    },
+  ];
+  for (const width of [375, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const value of values) {
+      await page.route('**/api/v1/admin/devices/dev-p0', (route) =>
+        json(route, { data: { ...p0Device, ...value, lifecycleStatus: 'Assigned' } }),
+      );
+      await page.goto('/devices/manage?deviceId=dev-p0');
+      const header = page.getByTestId('device-manage-page').locator('.manage-header');
+      await expect(header).toContainText(value.alias);
+      await expect(header).toContainText(value.serialNumber);
+      await expect.poll(() => layoutViolations(page)).toEqual([]);
+    }
+  }
+  qa05.proof.manageLongValues = true;
+});

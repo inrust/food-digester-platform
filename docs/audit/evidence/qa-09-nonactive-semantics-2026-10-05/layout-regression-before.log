@@ -1,0 +1,70 @@
+
+> @fdp/admin-web@0.0.0 test:e2e /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web
+> playwright test --grep 'QA-09 设备管理'
+
+[WebServer] (node:40457) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:40684) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+[WebServer] (node:40691) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:40712) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:40772) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] e2e/admin-web.spec.ts:1135:1 › QA-09 设备管理长别名和序列号在375px完整换行且不裁切
+  1) e2e/admin-web.spec.ts:1135:1 › QA-09 设备管理长别名和序列号在375px完整换行且不裁切 ────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "document:814>375",
+    + ]
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      1150 |       await expect(header).toContainText(value.alias);
+      1151 |       await expect(header).toContainText(value.serialNumber);
+    > 1152 |       await expect.poll(() => layoutViolations(page)).toEqual([]);
+           |                                                       ^
+      1153 |     }
+      1154 |   }
+      1155 | });
+        at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web/e2e/admin-web.spec.ts:1152:55
+
+    Error Context: test-results/admin-web-QA-09-设备管理长别名和序列号在375px完整换行且不裁切/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/admin-web-QA-09-设备管理长别名和序列号在375px完整换行且不裁切/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/admin-web-QA-09-设备管理长别名和序列号在375px完整换行且不裁切/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    e2e/admin-web.spec.ts:1135:1 › QA-09 设备管理长别名和序列号在375px完整换行且不裁切 ─────────────────────────────────
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @fdp/admin-web@0.0.0 test:e2e: `playwright test --grep 'QA-09 设备管理'`
+Exit status 1

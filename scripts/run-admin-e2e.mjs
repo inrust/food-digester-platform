@@ -50,6 +50,7 @@ const BUTTONS = {
   'campaign-create-open': ['/ota/campaigns', platform.slice(0, 2)],
 };
 export const PROOFS = {
+  'QA-09 设备管理长别名和序列号在375px完整换行且不裁切': ['manageLongValues'],
   'H-01 API 拒绝停用会话后清除浏览器会话并返回登录': ['disabledSessionLogout'],
   'M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏': ['viewerOwnRead', 'viewerReadOnly'],
   ...Object.fromEntries(
