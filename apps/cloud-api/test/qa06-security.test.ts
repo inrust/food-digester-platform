@@ -61,6 +61,8 @@ test('QA06 all admin write routes reject forged actor and missing expired tamper
   proof('all-admin-write-auth', { prefix: prefix(), cleanup: 'PASS', matrix, resolverCalls: 0 });
 });
 
+// Includes an isolated migrated database, signing keys and the full injection matrix.
+// Keep every security assertion; allow fixture/setup time on hosted CI.
 test('QA06 signed tenant scope and SQL JSON injection cannot cross boundaries or corrupt business state', async () => {
   await fixture('tenant-sql-json', async ({ prisma }, id) => {
     for (const suffix of ['A', 'B']) {
@@ -160,7 +162,7 @@ test('QA06 signed tenant scope and SQL JSON injection cannot cross boundaries or
       prototypeUnchanged: true,
     };
   });
-});
+}, 30_000);
 
 test('QA06 malicious media filenames and metadata reject before signing or persistence', async () => {
   await fixture('malicious-media', async ({ prisma }, id) => {

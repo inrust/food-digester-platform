@@ -1,0 +1,124 @@
+{
+  "task": "QA-09",
+  "requestedCommit": "811d84eca1d30fa200ed9fec0ee37e4c9af5f2be",
+  "recordedAt": "2026-10-05T00:45:57.836536+00:00",
+  "scope": "SAME_SHA_RERUN_BLOCKER_DIAGNOSIS_AND_TWO_TEST_BUDGET_FIX",
+  "workflowAttempts": [
+    {
+      "runId": "37217398699",
+      "attempt": 2,
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    {
+      "runId": "37217398699",
+      "attempt": 3,
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    {
+      "runId": "37217398702",
+      "attempt": 2,
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    {
+      "runId": "37217398702",
+      "attempt": 3,
+      "status": "completed",
+      "conclusion": "failure"
+    }
+  ],
+  "githubBillingStartupBlockerCleared": true,
+  "remoteCiGate": "FAIL_TEST_TIMEOUT",
+  "deploymentGate": "BLOCKED_VERIFY_FAILED",
+  "artifactByteGate": "NOT_RUN_PRECHECK_BLOCKED",
+  "artifactCount": 0,
+  "naturalReceivedGate": "NOT_RUN",
+  "independentHmacAndActiveGate": "NOT_RUN_NO_DEVICE_TRUST_CONFIGURATION",
+  "telemetryCommandStageGate": "NOT_RUN",
+  "fixtureCreated": false,
+  "fixturesCount": 0,
+  "cleanupGate": "NOT_APPLICABLE_NO_FIXTURES",
+  "iamOrKmsChanged": false,
+  "targetBusinessWrites": 0,
+  "tests": {
+    "fullWorkingTreeVerify": {
+      "command": "pnpm verify",
+      "exitCode": 0,
+      "status": "PASS",
+      "baselineCommit": "1bd9d75aaba74ca880ebdcb59ef8861120f9177d",
+      "cdkFixPresentAtStart": true,
+      "securityTimeoutFixAddedDuringRun": true,
+      "laterSecuritySuiteTests": 215
+    },
+    "finalTwoFilesFocused": {
+      "command": "pnpm exec vitest run infra/test/app-stack.test.ts apps/cloud-api/test/qa06-security.test.ts --maxWorkers=1",
+      "exitCode": 0,
+      "files": 2,
+      "passedTests": 43
+    },
+    "originalFocused": {
+      "files": 1,
+      "passedTests": 39
+    },
+    "localGates": [
+      {
+        "name": "device-contracts",
+        "status": "PASS",
+        "baselineCommit": "1bd9d75aaba74ca880ebdcb59ef8861120f9177d",
+        "receipt": "docs/audit/evidence/qa-09-811d84e-target-retest-2026-10-05/local-device-contracts-gate.json"
+      },
+      {
+        "name": "iot-integration",
+        "status": "PASS",
+        "baselineCommit": "1bd9d75aaba74ca880ebdcb59ef8861120f9177d",
+        "receipt": "docs/audit/evidence/qa-09-811d84e-target-retest-2026-10-05/local-iot-integration-gate.json"
+      },
+      {
+        "name": "core-api-integration",
+        "status": "PASS",
+        "baselineCommit": "1bd9d75aaba74ca880ebdcb59ef8861120f9177d",
+        "receipt": "docs/audit/evidence/qa-09-811d84e-target-retest-2026-10-05/local-core-api-integration-gate.json"
+      },
+      {
+        "name": "admin-e2e",
+        "status": "PASS",
+        "baselineCommit": "1bd9d75aaba74ca880ebdcb59ef8861120f9177d",
+        "receipt": "docs/audit/evidence/qa-09-811d84e-target-retest-2026-10-05/local-admin-e2e-gate.json"
+      },
+      {
+        "name": "security",
+        "status": "PASS",
+        "baselineCommit": "1bd9d75aaba74ca880ebdcb59ef8861120f9177d",
+        "receipt": "docs/audit/evidence/qa-09-811d84e-target-retest-2026-10-05/local-security-gate.json"
+      },
+      {
+        "name": "reliability",
+        "status": "PASS",
+        "baselineCommit": "1bd9d75aaba74ca880ebdcb59ef8861120f9177d",
+        "receipt": "docs/audit/evidence/qa-09-811d84e-target-retest-2026-10-05/local-reliability-gate.json"
+      },
+      {
+        "name": "prototype-regression",
+        "status": "PASS",
+        "baselineCommit": "1bd9d75aaba74ca880ebdcb59ef8861120f9177d",
+        "receipt": "docs/audit/evidence/qa-09-811d84e-target-retest-2026-10-05/local-prototype-regression-gate.json"
+      }
+    ]
+  },
+  "testSpecificBudgetsMs": {
+    "cdkNaming": {
+      "before": 15000,
+      "after": 60000
+    },
+    "tenantSqlInjection": {
+      "before": 5000,
+      "after": 30000
+    }
+  },
+  "businessSloThresholdsUnchanged": true,
+  "nextAction": "HUMAN_DESKTOP_PUSH_FIX_COMMIT_THEN_NEW_SHA_CI_DEPLOY_AMPLIFY_19_ASSET_RECEIPT_AND_NEW_PREFIX_TARGET_RUN",
+  "gate": "PARTIAL_DEPLOYMENT_BLOCKED",
+  "fullQa09Accepted": false
+}

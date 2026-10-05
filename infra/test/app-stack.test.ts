@@ -49,7 +49,9 @@ describe('资源命名（环境前缀）', () => {
       },
     });
     assert.equal(stack.stackName, 'fdp-staging-app');
-  }, 15_000);
+    // Stack construction bundles all 19 Lambda assets. Hosted CI exceeded 15s
+    // (15.647–22.424s); allow build time without changing the naming assertion.
+  }, 60_000);
 
   test('SQS 队列名带环境前缀', () => {
     for (const suffix of [
