@@ -457,34 +457,42 @@ export function DeviceManagePage({
             {translate('page.0db96f789d1f')}
           </p>
         ) : (
-          <table aria-label={translate('page.c9a07e5c1fbd')}>
-            <thead>
-              <tr>
-                <th scope="col">{translate('page.f20687060126')}</th>
-                <th scope="col">{translate('page.619bc67325a4')}</th>
-                <th scope="col">{translate('page.62e951a692ff')}</th>
-                <th scope="col">{translate('page.af2cdb23eed1')}</th>
-                <th scope="col">{translate('page.a0bb9f49abc5')}</th>
-                <th scope="col">{translate('page.06858dfbbcb4')}</th>
-                <th scope="col">{translate('page.1ff9c3d00112')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {assignments.map((a) => (
-                <tr key={a.assignmentId} data-testid={`assignment-${a.assignmentId}`}>
-                  <td>{a.customerId}</td>
-                  <td>{a.siteId}</td>
-                  <td>{ASSIGNMENT_STATUS_LABELS[a.status] ?? a.status}</td>
-                  <td>
-                    <TimeText iso={a.assignedAt} />
-                  </td>
-                  <td>{a.endedAt !== null ? <TimeText iso={a.endedAt} /> : '—'}</td>
-                  <td>{a.assignedBy}</td>
-                  <td>{a.reason ?? '—'}</td>
+          <div
+            className="table-scroll"
+            role="region"
+            aria-label={translate('page.c9a07e5c1fbd')}
+            tabIndex={0}
+            data-testid="assignment-history-scroll"
+          >
+            <table aria-label={translate('page.c9a07e5c1fbd')}>
+              <thead>
+                <tr>
+                  <th scope="col">{translate('page.f20687060126')}</th>
+                  <th scope="col">{translate('page.619bc67325a4')}</th>
+                  <th scope="col">{translate('page.62e951a692ff')}</th>
+                  <th scope="col">{translate('page.af2cdb23eed1')}</th>
+                  <th scope="col">{translate('page.a0bb9f49abc5')}</th>
+                  <th scope="col">{translate('page.06858dfbbcb4')}</th>
+                  <th scope="col">{translate('page.1ff9c3d00112')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {assignments.map((a) => (
+                  <tr key={a.assignmentId} data-testid={`assignment-${a.assignmentId}`}>
+                    <td>{a.customerId}</td>
+                    <td>{a.siteId}</td>
+                    <td>{ASSIGNMENT_STATUS_LABELS[a.status] ?? a.status}</td>
+                    <td>
+                      <TimeText iso={a.assignedAt} />
+                    </td>
+                    <td>{a.endedAt !== null ? <TimeText iso={a.endedAt} /> : '—'}</td>
+                    <td>{a.assignedBy}</td>
+                    <td>{a.reason ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 

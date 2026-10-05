@@ -1135,6 +1135,22 @@ test('FE-19 语言选择在刷新后保持', async ({ page }) => {
 test('QA-09 设备管理长别名和序列号在375px完整换行且不裁切', async ({ page, qa05 }) => {
   await seedSession(page, 'PlatformSuperAdmin');
   await routeP0Apis(page);
+  await page.route('**/api/v1/admin/devices/dev-p0/assignments', (route) =>
+    json(route, {
+      data: [
+        {
+          assignmentId: 'history-qa09',
+          customerId: 'b1481ccc-5b90-4ae3-bc79-89f5e549d427',
+          siteId: 'a5969b64-bd5b-4d14-b4c0-a59718c2ea13',
+          status: 'ACTIVE',
+          assignedAt: '2026-10-05T04:17:15.316Z',
+          endedAt: null,
+          assignedBy: '9b837a09-4d41-45d9-949d-10a287e1e075',
+          reason: 'qa09-720760a9e9dbca2d',
+        },
+      ],
+    }),
+  );
   const values = [
     { alias: 'qa09-5ef64acf44707548-alias', serialNumber: 'qa09-5ef64acf44707548-01', certificate: null },
     {
@@ -1151,9 +1167,28 @@ test('QA-09 设备管理长别名和序列号在375px完整换行且不裁切', 
       );
       await page.goto('/devices/manage?deviceId=dev-p0');
       const header = page.getByTestId('device-manage-page').locator('.manage-header');
+      await expect(page.getByTestId('assignment-history').getByTestId('assignment-history-qa09')).toBeVisible();
       await expect(header).toContainText(value.alias);
       await expect(header).toContainText(value.serialNumber);
       await expect.poll(() => layoutViolations(page)).toEqual([]);
+      const history = page.getByTestId('assignment-history-scroll');
+      await expect(history).toHaveAttribute('role', 'region');
+      await expect(history).toHaveAttribute('aria-label', /.+/);
+      await expect(history.getByTestId('assignment-history-qa09').locator('td')).toHaveCount(7);
+      await expect(history).toContainText('9b837a09-4d41-45d9-949d-10a287e1e075');
+      await expect(history).toContainText('qa09-720760a9e9dbca2d');
+      if (width === 375) {
+        expect(await history.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+        await history.focus();
+        await page.keyboard.press('ArrowRight');
+        await expect.poll(() => history.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+        await history.evaluate((el) => {
+          el.scrollLeft = el.scrollWidth;
+        });
+        const lastCell = history.getByTestId('assignment-history-qa09').locator('td').last();
+        expect((await lastCell.boundingBox())!.x).toBeLessThan(375);
+        await expect.poll(() => layoutViolations(page)).toEqual([]);
+      }
     }
   }
   qa05.proof.manageLongValues = true;

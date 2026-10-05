@@ -1,0 +1,191 @@
+{
+  "task": "QA-09",
+  "scope": "CORE_BUSINESS_REAL_RDS_STATE_FIXTURE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1"
+  },
+  "fixtureMode": "REAL_RDS_ONBOARDED_STATE_FOR_BUSINESS_APIS_NO_DEVICE_AUTH_CLAIM",
+  "prefix": "qa09-720760a9e9dbca2d",
+  "devices": [
+    "qa09-720760a9e9dbca2d-01",
+    "qa09-720760a9e9dbca2d-02",
+    "qa09-720760a9e9dbca2d-03",
+    "qa09-720760a9e9dbca2d-04",
+    "qa09-720760a9e9dbca2d-05",
+    "qa09-720760a9e9dbca2d-06",
+    "qa09-720760a9e9dbca2d-07",
+    "qa09-720760a9e9dbca2d-08",
+    "qa09-720760a9e9dbca2d-09",
+    "qa09-720760a9e9dbca2d-10"
+  ],
+  "customers": [
+    {
+      "id": "02443d0b-655b-4450-a8ac-6ca2f2c5f4b3",
+      "name": "qa09-720760a9e9dbca2d-a",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-05T04:17:29.879Z",
+      "updatedAt": "2026-10-05T04:17:29.879Z",
+      "suffix": "a"
+    },
+    {
+      "id": "d4887901-044d-4ac0-bcb7-9faa79faaa67",
+      "name": "qa09-720760a9e9dbca2d-b",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-05T04:17:31.637Z",
+      "updatedAt": "2026-10-05T04:17:31.637Z",
+      "suffix": "b"
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "a406634a-2cbc-4a2a-9c1c-e97f1e8d5b38"
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "ec5cef36-09c6-42ab-b4bb-a8c446865e9c"
+    },
+    {
+      "id": "real-rds-business-state-fixture",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "original-device-certificate-baseline-preserved",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/d4887901-044d-4ac0-bcb7-9faa79faaa67",
+      "status": 200,
+      "requestId": "c62f9467-7ccf-42fa-b47a-3f47104609e3"
+    },
+    {
+      "id": "own-customer-name-b",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/d4887901-044d-4ac0-bcb7-9faa79faaa67",
+      "status": 200,
+      "requestId": "c945d6e4-0d16-442d-8bea-91bf58e7cf58"
+    },
+    {
+      "id": "verify-customer-gone-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/d4887901-044d-4ac0-bcb7-9faa79faaa67",
+      "status": 404,
+      "requestId": "b26ed9c0-4b80-4ffe-a958-0ead5291d00d"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/02443d0b-655b-4450-a8ac-6ca2f2c5f4b3",
+      "status": 200,
+      "requestId": "faea4aac-ecfd-40e2-898b-6ec0b4d36e0a"
+    },
+    {
+      "id": "own-customer-name-a",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/02443d0b-655b-4450-a8ac-6ca2f2c5f4b3",
+      "status": 200,
+      "requestId": "0dbbad32-f4e0-4c68-b94b-2845ab1820b5"
+    },
+    {
+      "id": "verify-customer-gone-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/02443d0b-655b-4450-a8ac-6ca2f2c5f4b3",
+      "status": 404,
+      "requestId": "b5bfa852-30be-4d48-b941-215380ee872e"
+    },
+    {
+      "id": "own-superadmin-deleted",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "database-fixtures",
+      "count": 10,
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "d4887901-044d-4ac0-bcb7-9faa79faaa67",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "02443d0b-655b-4450-a8ac-6ca2f2c5f4b3",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-720760a9e9dbca2d-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "business-seed-devices",
+      "receipt": "docs/audit/evidence/qa-09-ee595f9-layout-2026-10-05/business.json.fixtures-business-seed-devices.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:ef8f96b1-9046-484b-91e3-10db22543af0"
+    },
+    {
+      "action": "cleanup",
+      "receipt": "docs/audit/evidence/qa-09-ee595f9-layout-2026-10-05/business.json.fixtures-cleanup.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:d5ad1185-8331-47f3-96ee-2ab00b7b1a94"
+    }
+  ],
+  "sourceCommit": "ee595f93486e91385dc80fd13d207b0b7593dcce",
+  "versionReceipt": "docs/audit/evidence/qa-09-ee595f9-layout-2026-10-05/application-version.json",
+  "startedAt": "2026-10-05T04:17:15.316Z",
+  "gate": "PASS",
+  "fullQa09Accepted": false,
+  "credentialsExported": false,
+  "identity": {
+    "username": "qa09-720760a9e9dbca2d-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "globalSignOut": "PASS",
+  "finishedAt": "2026-10-05T04:38:34.597Z"
+}
