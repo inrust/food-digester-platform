@@ -21,6 +21,31 @@ export function validateLayoutDiagnosticFixture(fixture, version) {
     throw Error('OWN_RUNNING_FIXTURE_REQUIRED');
 }
 
+/** Each cleanup action must still run when another action fails. Never throw from finally. */
+export async function cleanupLayoutDiagnosticIdentity(call) {
+  const receipt = { type: 'identity', result: 'FAIL', globalSignOut: 'FAIL', deletion: 'FAIL', absence: 'FAIL' };
+  try {
+    await call(sdk.AdminUserGlobalSignOutCommand, {});
+    receipt.globalSignOut = 'PASS';
+  } catch {
+    /* Keep the failed action, but still attempt deletion and readback. */
+  }
+  try {
+    await call(sdk.AdminDeleteUserCommand, {});
+    receipt.deletion = 'PASS';
+  } catch {
+    /* Readback independently determines whether the identity remains. */
+  }
+  try {
+    await call(sdk.AdminGetUserCommand, {});
+  } catch (error) {
+    if (error.name === 'UserNotFoundException') receipt.absence = 'PASS';
+  }
+  if ([receipt.globalSignOut, receipt.deletion, receipt.absence].every((result) => result === 'PASS'))
+    receipt.result = 'PASS';
+  return receipt;
+}
+
 export async function runLayoutDiagnostic(args) {
   const [output, fixtureFile, versionFile] = args;
   if (!output || !fixtureFile || !versionFile) throw Error('DIAGNOSTIC_INPUTS_REQUIRED');
@@ -169,20 +194,9 @@ export async function runLayoutDiagnostic(args) {
       }
     }
     if (created) {
-      try {
-        await call(sdk.AdminUserGlobalSignOutCommand, {});
-        await call(sdk.AdminDeleteUserCommand, {});
-        try {
-          await call(sdk.AdminGetUserCommand, {});
-          throw Error('DIAGNOSTIC_IDENTITY_REMAINS');
-        } catch (error) {
-          if (error.name !== 'UserNotFoundException') throw error;
-        }
-        r.cleanup.push({ type: 'identity', result: 'PASS' });
-      } catch {
-        r.cleanup.push({ type: 'identity', result: 'FAIL' });
-        r.gate = 'FAIL';
-      }
+      const cleanup = await cleanupLayoutDiagnosticIdentity(call);
+      r.cleanup.push(cleanup);
+      if (cleanup.result !== 'PASS') r.gate = 'FAIL';
     }
     r.finishedAt = new Date().toISOString();
     save();
