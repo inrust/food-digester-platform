@@ -16,11 +16,46 @@ test('log projection redacts payload/error details and rejects unrecognized even
         sqsMessageId: 'unsafe\nsecret',
       }),
   );
+  assert.equal(projected.event, 'data-path.phase.completed');
   assert.equal(projected.durationMs, 42);
   assert.equal(projected.errorCode, 'P2024');
   assert.ok(!JSON.stringify(projected).includes('secret'));
   assert.equal(projectDataPathLog('{"event":"unknown","payload":"secret"}'), null);
   assert.equal(projectDataPathLog('not json'), null);
+});
+test('serialized AWS log projection preserves closed event names through the 20-sequence Gate', () => {
+  const rows = Array.from({ length: 20 }, (_, i) => {
+    const ids = {
+      deviceId: prefix + '-01',
+      seq: 10000 + i,
+      topicType: 'telemetry',
+      sqsMessageId: 'sqs-' + i,
+      receiptId: 'receipt-' + i,
+    };
+    return [
+      {
+        ...ids,
+        event: 'ingestion.receipt.completed',
+        receiptOutcome: 'PROCESSED',
+        commitScope: 'ROOT_TRANSACTION_COMPLETED',
+      },
+      { ...ids, event: 'ingestion.record.completed', disposition: 'PROCESSED' },
+      ...['db-transaction', 'db-business', 'db-gap', 'telemetry-aggregate', 'telemetry-archive-outbox'].map(
+        (phase) => ({ ...ids, event: 'data-path.phase.completed', phase, outcome: 'PASS' }),
+      ),
+    ];
+  }).flat();
+  rows.push({ deviceId: prefix + '-01', event: 'data-path.phase.completed', phase: 'console-read', outcome: 'PASS' });
+  const projected = rows.map((row) => projectDataPathLog('timestamp INFO ' + JSON.stringify(row)));
+  assert.equal(ownedDataPathGate(projected, prefix).gate, 'PASS_SCOPED_STAGE_EVIDENCE');
+  assert.equal(
+    ownedDataPathGate(
+      projected.filter((row) => row.event !== 'ingestion.record.completed'),
+      prefix,
+    ).gate,
+    'NO_RECEIPT',
+  );
+  assert.equal(projectDataPathLog('{"event":"ingestion.record.completed.evil","payload":"secret"}'), null);
 });
 test('specific redelivery needs matching SQS ID, final disposition and durable duplicate receipt', () => {
   const expected = { sqsMessageId: 'sqs-own', deviceId: prefix + '-01', messageId: 'TEL-own' };

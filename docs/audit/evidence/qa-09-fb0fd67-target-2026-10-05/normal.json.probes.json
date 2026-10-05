@@ -1,0 +1,1219 @@
+{
+  "task": "QA-09",
+  "scope": "NORMAL_WINDOW_SLO_WITHOUT_PRECEDING_QUICK_MQTT_BURST",
+  "prefix": "qa09-90de5a6bdd5d57b2",
+  "sourceCommit": "fb0fd67cb19b9160f9260f49e370e05304ca37a0",
+  "startedAt": "2026-10-05T01:42:38.001Z",
+  "naturalLifecycle": {
+    "rows": [
+      {
+        "phase": "issued",
+        "status": 200,
+        "errorCode": null,
+        "requestId": "368972f0-e141-4b51-81ef-191a516f660d",
+        "deviceMatches": true,
+        "licenseMatches": true,
+        "licenseStatus": "ISSUED",
+        "signaturePayloadPresent": true,
+        "signaturePresent": true,
+        "lifecycleStatus": "Licensed",
+        "snapshotAt": "2026-10-05T01:48:10.196Z",
+        "firmwareVerificationClaimed": false,
+        "deliveryRequestId": "a469c375-584b-4cad-91dc-43d8519afe8f",
+        "receiptConfirmationAccepted": true,
+        "confirmationGate": "PASS_RECEIVED_ONLY",
+        "independentHmacVerificationGate": "NOT_RUN_NO_DEVICE_TRUST_CONFIGURATION",
+        "adminLifecycleStatus": "Licensed"
+      },
+      {
+        "phase": "activated",
+        "status": 200,
+        "errorCode": null,
+        "requestId": "174f0a1b-4e4b-4db1-a00b-f8afcf0151b4",
+        "deviceMatches": true,
+        "licenseMatches": true,
+        "licenseStatus": "ACTIVE",
+        "signaturePayloadPresent": true,
+        "signaturePresent": true,
+        "lifecycleStatus": "Licensed",
+        "snapshotAt": "2026-10-05T01:48:15.761Z",
+        "firmwareVerificationClaimed": false,
+        "deliveryRequestId": "24c8cf3d-feb4-465e-9d34-8679e78f6620",
+        "receiptConfirmationAccepted": true,
+        "confirmationGate": "PASS_RECEIVED_ONLY",
+        "independentHmacVerificationGate": "NOT_RUN_NO_DEVICE_TRUST_CONFIGURATION",
+        "adminLifecycleStatus": "Licensed"
+      }
+    ],
+    "independentHmacVerificationGate": "NOT_RUN_NO_DEVICE_TRUST_CONFIGURATION",
+    "licenseDeliveryGate": "PASS",
+    "lifecycleReadbackGate": "PASS",
+    "assignedToLicensedGate": "PASS",
+    "licensedToActiveGate": "NOT_RUN_NO_DELIVERED_DEVICE_VERIFICATION_ACK",
+    "naturalLifecycleGate": "PARTIAL",
+    "databaseActiveSeedUsed": false,
+    "fullQa09Accepted": false
+  },
+  "checks": [
+    {
+      "id": "normal-baseline-30-processed",
+      "result": "PASS"
+    },
+    {
+      "id": "normal-own-archives-drained",
+      "result": "PASS"
+    },
+    {
+      "id": "natural-issued-received",
+      "result": "PASS"
+    },
+    {
+      "id": "natural-activated-received",
+      "result": "PASS"
+    },
+    {
+      "id": "telemetry-api-visible-p95",
+      "result": "PASS",
+      "samples": 20,
+      "p95Ms": 1683,
+      "limitMs": 5000,
+      "pollResolutionMs": 250
+    },
+    {
+      "id": "online-command-publish-p95",
+      "result": "PASS",
+      "samples": 20,
+      "received": 20,
+      "p95Ms": 802,
+      "limitMs": 3000,
+      "clock": "SAME_CLIENT_MONOTONIC_API_START_TO_BROKER_CALLBACK"
+    },
+    {
+      "id": "normal-twenty-unique-telemetry-processed",
+      "result": "PASS"
+    },
+    {
+      "id": "normal-business-cleanup-zero",
+      "result": "PASS"
+    },
+    {
+      "id": "normal-site-owned",
+      "result": "PASS"
+    }
+  ],
+  "requests": [
+    {
+      "id": "slo-before-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "7d7fddec-af3e-4169-917a-0e8110002eea",
+      "latencyMs": 2333
+    },
+    {
+      "id": "slo-poll-0-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "5e43b983-8c11-44ff-8e81-aa5956d26953",
+      "latencyMs": 1735
+    },
+    {
+      "id": "slo-poll-0-1",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "b23233cc-a8cf-4717-bb5d-45774cdd241c",
+      "latencyMs": 670
+    },
+    {
+      "id": "slo-poll-0-2",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "540a7e0c-d50d-4989-a530-e063960d7fe8",
+      "latencyMs": 685
+    },
+    {
+      "id": "slo-poll-0-3",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "de8e4b80-d97c-4b8a-a7fb-dd7ca7420c09",
+      "latencyMs": 587
+    },
+    {
+      "id": "slo-poll-0-4",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "6e649249-40f5-4d78-b6d3-6ab95932c515",
+      "latencyMs": 574
+    },
+    {
+      "id": "slo-poll-0-5",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "c8acdc73-6d2a-483e-a565-f0a65b96599c",
+      "latencyMs": 603
+    },
+    {
+      "id": "slo-poll-0-6",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "24a965c0-7259-4bc0-9b99-830f91001026",
+      "latencyMs": 592
+    },
+    {
+      "id": "slo-poll-0-7",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "2c020c2e-fb04-47a2-945f-1ae613436add",
+      "latencyMs": 566
+    },
+    {
+      "id": "slo-poll-0-8",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "1110ef24-68c2-4315-9715-ae11dbf8f4e1",
+      "latencyMs": 491
+    },
+    {
+      "id": "slo-poll-0-9",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "e24cd7ca-e74e-41d9-98e6-30a37ee1fe37",
+      "latencyMs": 495
+    },
+    {
+      "id": "slo-poll-0-10",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "d3056081-8927-4b2e-bce3-93965d2979c2",
+      "latencyMs": 480
+    },
+    {
+      "id": "slo-poll-0-11",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "a96d87e1-e3fc-4a96-a41d-8bff520898d7",
+      "latencyMs": 509
+    },
+    {
+      "id": "slo-before-1",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "0ea82eb5-bfda-4a5a-bd89-f25215d0cb1a",
+      "latencyMs": 1589
+    },
+    {
+      "id": "slo-poll-1-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "f875db0b-bc6b-48a2-8e08-fabd59fe071e",
+      "latencyMs": 484
+    },
+    {
+      "id": "slo-poll-1-1",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "46f8d8da-f52e-4f70-9a16-979c93523bd7",
+      "latencyMs": 505
+    },
+    {
+      "id": "slo-before-2",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "31a36753-3299-4ffb-9878-cd291006f377",
+      "latencyMs": 477
+    },
+    {
+      "id": "slo-poll-2-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "e46c72e8-b43b-4c12-bb3c-c789a2f14a20",
+      "latencyMs": 490
+    },
+    {
+      "id": "slo-poll-2-1",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "3ea7ca9e-b465-4e34-94ac-5697cd8bfb14",
+      "latencyMs": 488
+    },
+    {
+      "id": "slo-before-3",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "ce2ca36b-d50f-4aed-bf1b-096a977cd442",
+      "latencyMs": 473
+    },
+    {
+      "id": "slo-poll-3-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "445f587e-c30f-4c04-bbf7-7ea9de402d88",
+      "latencyMs": 487
+    },
+    {
+      "id": "slo-before-4",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "aaba9f40-5982-47b0-842d-9c8edd556447",
+      "latencyMs": 512
+    },
+    {
+      "id": "slo-poll-4-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "ec272074-e38f-4c58-b84b-c91d9971f51b",
+      "latencyMs": 467
+    },
+    {
+      "id": "slo-poll-4-1",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "da8993ae-57b1-47d2-a337-36c1625b88ec",
+      "latencyMs": 507
+    },
+    {
+      "id": "slo-before-5",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "b6f51ab2-2a75-44b2-9786-6a3a9bb9448f",
+      "latencyMs": 468
+    },
+    {
+      "id": "slo-poll-5-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "d35a4830-4e18-4907-998e-555d4dbb0866",
+      "latencyMs": 486
+    },
+    {
+      "id": "slo-before-6",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "57c57a7b-be5b-401b-a484-0456542ff13e",
+      "latencyMs": 473
+    },
+    {
+      "id": "slo-poll-6-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "64ed2660-1c9e-4041-89a9-120bb4af0ab8",
+      "latencyMs": 480
+    },
+    {
+      "id": "slo-before-7",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "6820ff2d-7430-4656-b7b2-16293ccde6db",
+      "latencyMs": 472
+    },
+    {
+      "id": "slo-poll-7-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "0caef593-990c-4f08-b814-8efe67feac5b",
+      "latencyMs": 481
+    },
+    {
+      "id": "slo-before-8",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "ab446092-4303-46a4-8a21-d7019b235840",
+      "latencyMs": 473
+    },
+    {
+      "id": "slo-poll-8-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "0e7e3bda-1390-4f3f-8f9a-e8b8e752dc4f",
+      "latencyMs": 469
+    },
+    {
+      "id": "slo-before-9",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "9bc2681a-51a2-4df9-b59c-3356a5067771",
+      "latencyMs": 471
+    },
+    {
+      "id": "slo-poll-9-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "161bd5b9-0cff-47c6-9366-a3bf7877b577",
+      "latencyMs": 486
+    },
+    {
+      "id": "slo-before-10",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "71579b52-8fdd-4aa3-a393-49246370586f",
+      "latencyMs": 474
+    },
+    {
+      "id": "slo-poll-10-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "17668fad-3c6b-4eb2-930b-db75066db128",
+      "latencyMs": 476
+    },
+    {
+      "id": "slo-before-11",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "fadc0abf-34e6-4201-83c6-4ed1ab73fc8b",
+      "latencyMs": 472
+    },
+    {
+      "id": "slo-poll-11-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "75835264-9ded-4405-913d-df65bacd5a49",
+      "latencyMs": 538
+    },
+    {
+      "id": "slo-before-12",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "cb1dc772-fe9c-4afb-a8fa-117ff3350ccb",
+      "latencyMs": 550
+    },
+    {
+      "id": "slo-poll-12-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "2c537aa8-4900-48f0-95a7-bd50ef384265",
+      "latencyMs": 473
+    },
+    {
+      "id": "slo-before-13",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "710f0021-7373-49e0-bd49-37647ca7f33b",
+      "latencyMs": 487
+    },
+    {
+      "id": "slo-poll-13-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "944b7a31-2c66-4a54-8711-9446ffbcac23",
+      "latencyMs": 477
+    },
+    {
+      "id": "slo-before-14",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "67b55355-36c6-4112-a8d4-c29a8db18cc0",
+      "latencyMs": 471
+    },
+    {
+      "id": "slo-poll-14-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "85863688-d898-47f7-8fda-630573b2c462",
+      "latencyMs": 738
+    },
+    {
+      "id": "slo-before-15",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "4cbe2061-0807-4a9b-9bb5-fa0aabac6ebc",
+      "latencyMs": 533
+    },
+    {
+      "id": "slo-poll-15-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "4a4a7644-5b03-46a6-ad13-50cadd066be1",
+      "latencyMs": 501
+    },
+    {
+      "id": "slo-before-16",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "0913ef63-d4c0-4c9f-8c76-57e44d14a394",
+      "latencyMs": 491
+    },
+    {
+      "id": "slo-poll-16-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "7f9204db-015e-4cf1-95fd-0046c51ad1ab",
+      "latencyMs": 489
+    },
+    {
+      "id": "slo-before-17",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "314eada5-c3d8-4643-b1b2-6355979c8bd2",
+      "latencyMs": 477
+    },
+    {
+      "id": "slo-poll-17-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "a29fe2cc-70ea-4ad5-8b3a-816b3b349e39",
+      "latencyMs": 481
+    },
+    {
+      "id": "slo-before-18",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "ad586f19-3727-400a-8b4c-16e32645f143",
+      "latencyMs": 490
+    },
+    {
+      "id": "slo-poll-18-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "bd1f0e9b-665e-43cd-9221-374c8430ec0f",
+      "latencyMs": 469
+    },
+    {
+      "id": "slo-before-19",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "1a641cdd-6d74-4e86-bf33-0f438e9dfc88",
+      "latencyMs": 469
+    },
+    {
+      "id": "slo-poll-19-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/console",
+      "expected": 200,
+      "requestId": "81d8e52b-14d6-4c26-a54b-0a6ca05568e7",
+      "latencyMs": 471
+    },
+    {
+      "id": "command-slo-license-create",
+      "requestedRole": "PlatformOperator",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/licenses",
+      "expected": 201,
+      "requestId": "fa80ab7b-353d-4161-8296-8d3cc59c36c8",
+      "latencyMs": 691
+    },
+    {
+      "id": "command-slo-license-issue",
+      "requestedRole": "PlatformOperator",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/licenses/03100f70-b450-4758-a1e0-43b9a39dfed1/issue",
+      "expected": 200,
+      "requestId": "7314dfd6-2c9e-49d9-932b-75e0916fc431",
+      "latencyMs": 649
+    },
+    {
+      "id": "command-slo-license-activate",
+      "requestedRole": "PlatformOperator",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/licenses/03100f70-b450-4758-a1e0-43b9a39dfed1/activate",
+      "expected": 200,
+      "requestId": "66568902-997b-4ee8-a339-1fbd12940fc0",
+      "latencyMs": 1659
+    },
+    {
+      "id": "command-slo-create-0",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "9c005a89-82fd-4d7a-b816-96c3f2363227",
+      "latencyMs": 984
+    },
+    {
+      "id": "command-slo-create-1",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "9bb8843a-1907-4c41-a856-60f3cc2b8568",
+      "latencyMs": 511
+    },
+    {
+      "id": "command-slo-create-2",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "117bcb6b-a720-4f7a-8201-1d860b819125",
+      "latencyMs": 510
+    },
+    {
+      "id": "command-slo-create-3",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "22f4150c-f1bc-417b-b1a0-fa1055be1a2e",
+      "latencyMs": 508
+    },
+    {
+      "id": "command-slo-create-4",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "e7b37c28-8ac4-4a29-a3d6-c1300cac6dce",
+      "latencyMs": 495
+    },
+    {
+      "id": "command-slo-create-5",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "6310d1b4-efb6-47cc-bce6-d975106572a6",
+      "latencyMs": 492
+    },
+    {
+      "id": "command-slo-create-6",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "f4aea507-6a32-410c-982d-3a16d3e6f9d9",
+      "latencyMs": 500
+    },
+    {
+      "id": "command-slo-create-7",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "afa406f9-f4d6-4525-87a6-3ce913ec4f00",
+      "latencyMs": 493
+    },
+    {
+      "id": "command-slo-create-8",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "38636704-9f45-47ff-bc12-31831486917c",
+      "latencyMs": 549
+    },
+    {
+      "id": "command-slo-create-9",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "07a52dc6-417c-4e5a-9705-b6e33c24a1fa",
+      "latencyMs": 539
+    },
+    {
+      "id": "command-slo-create-10",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "8a707ac9-90c9-4e8e-ba0a-2fee7cc4cb5b",
+      "latencyMs": 531
+    },
+    {
+      "id": "command-slo-create-11",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "4017368e-2acf-4ec3-812d-af014eb7278e",
+      "latencyMs": 493
+    },
+    {
+      "id": "command-slo-create-12",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "520b2103-09e9-41b3-b52f-0f964c2b5231",
+      "latencyMs": 468
+    },
+    {
+      "id": "command-slo-create-13",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "aa6a631e-55db-469c-9240-228cb12c35fe",
+      "latencyMs": 504
+    },
+    {
+      "id": "command-slo-create-14",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "b1058a4c-7789-406a-b941-c03bb1f5176e",
+      "latencyMs": 485
+    },
+    {
+      "id": "command-slo-create-15",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "ee46a0b2-fdde-4460-94fa-a915007273ae",
+      "latencyMs": 742
+    },
+    {
+      "id": "command-slo-create-16",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "4b8904c6-86b2-464c-ba9f-d087e462e20f",
+      "latencyMs": 468
+    },
+    {
+      "id": "command-slo-create-17",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "87c27f8c-ea66-44cf-a3da-7bbee5a6c71a",
+      "latencyMs": 489
+    },
+    {
+      "id": "command-slo-create-18",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "dec47e7d-d0e8-45e9-9db5-b884cc9458cd",
+      "latencyMs": 472
+    },
+    {
+      "id": "command-slo-create-19",
+      "requestedRole": "PlatformSuperAdmin",
+      "actualRole": "PlatformSuperAdmin",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/qa09-90de5a6bdd5d57b2-01/commands",
+      "expected": 201,
+      "requestId": "b301f7ba-67ca-429a-867c-1ecfa03ccc1a",
+      "latencyMs": 482
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "business-baseline",
+      "receipt": "docs/audit/evidence/qa-09-fb0fd67-target-2026-10-05/normal.json.business-baseline-0.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:a5b072de-72ee-49c7-8a3c-164054010bff"
+    },
+    {
+      "action": "observe",
+      "receipt": "docs/audit/evidence/qa-09-fb0fd67-target-2026-10-05/normal.json.observe-1.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:c2c34255-b84c-4055-91c1-a51cbb5e5733"
+    },
+    {
+      "action": "observe",
+      "receipt": "docs/audit/evidence/qa-09-fb0fd67-target-2026-10-05/normal.json.observe-2.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:00cb7b49-c2af-4168-a7ac-4b349ec56bf5"
+    },
+    {
+      "action": "business-cleanup",
+      "receipt": "docs/audit/evidence/qa-09-fb0fd67-target-2026-10-05/normal.json.business-cleanup-3.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:b39668e8-22ca-4034-be53-64491681480e"
+    },
+    {
+      "action": "business-audit",
+      "receipt": "docs/audit/evidence/qa-09-fb0fd67-target-2026-10-05/normal.json.business-audit-4.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:654f8df6-c75a-4089-9398-f7b05c9c4a39"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "business-fixtures",
+      "result": "PASS"
+    },
+    {
+      "type": "site",
+      "id": "3017fd1d-74c6-4cc3-b381-00fc8ec2dd37",
+      "result": "PASS"
+    }
+  ],
+  "gate": "PASS_SCOPED_NORMAL_WINDOW_SLO",
+  "fullQa09Accepted": false,
+  "actualApiRole": "PlatformSuperAdmin",
+  "lifecycleActiveDatabaseSeed": false,
+  "normalWindowBeganAt": "2026-10-05T01:47:03.939Z",
+  "site": {
+    "id": "3017fd1d-74c6-4cc3-b381-00fc8ec2dd37",
+    "customerId": "160c08bd-6da4-4a43-99be-8e99428b3247",
+    "name": "qa09-90de5a6bdd5d57b2-normal-site-a"
+  },
+  "performance": {
+    "scope": "REAL_API_VISIBILITY_AND_ONLINE_COMMAND",
+    "telemetryGate": "PASS",
+    "telemetry": [
+      {
+        "messageId": "TELEMETRY-31EFA0A2-3",
+        "marker": 26,
+        "visible": true,
+        "latencyMs": 11209,
+        "polls": 12
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-4",
+        "marker": 27.001,
+        "visible": true,
+        "latencyMs": 1683,
+        "polls": 2
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-5",
+        "marker": 28.003,
+        "visible": true,
+        "latencyMs": 1667,
+        "polls": 2
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-6",
+        "marker": 29.006,
+        "visible": true,
+        "latencyMs": 924,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-7",
+        "marker": 30.01,
+        "visible": true,
+        "latencyMs": 1671,
+        "polls": 2
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-8",
+        "marker": 31.015,
+        "visible": true,
+        "latencyMs": 926,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-9",
+        "marker": 32.021,
+        "visible": true,
+        "latencyMs": 1032,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-10",
+        "marker": 33.028,
+        "visible": true,
+        "latencyMs": 926,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-11",
+        "marker": 34.036,
+        "visible": true,
+        "latencyMs": 908,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-12",
+        "marker": 35.045,
+        "visible": true,
+        "latencyMs": 926,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-13",
+        "marker": 36.055,
+        "visible": true,
+        "latencyMs": 1247,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-14",
+        "marker": 37.066,
+        "visible": true,
+        "latencyMs": 983,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-15",
+        "marker": 38.078,
+        "visible": true,
+        "latencyMs": 971,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-16",
+        "marker": 39.091,
+        "visible": true,
+        "latencyMs": 915,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-17",
+        "marker": 40.105,
+        "visible": true,
+        "latencyMs": 1181,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-18",
+        "marker": 41.12,
+        "visible": true,
+        "latencyMs": 946,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-19",
+        "marker": 42.136,
+        "visible": true,
+        "latencyMs": 927,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-20",
+        "marker": 43.153,
+        "visible": true,
+        "latencyMs": 924,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-21",
+        "marker": 44.171,
+        "visible": true,
+        "latencyMs": 908,
+        "polls": 1
+      },
+      {
+        "messageId": "TELEMETRY-31EFA0A2-22",
+        "marker": 45.19,
+        "visible": true,
+        "latencyMs": 912,
+        "polls": 1
+      }
+    ],
+    "commands": [
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-0",
+        "received": true,
+        "latencyMs": 1331,
+        "elapsedAtEndMs": 11228
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-1",
+        "received": true,
+        "latencyMs": 750,
+        "elapsedAtEndMs": 10244
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-2",
+        "received": true,
+        "latencyMs": 680,
+        "elapsedAtEndMs": 9733
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-3",
+        "received": true,
+        "latencyMs": 581,
+        "elapsedAtEndMs": 9222
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-4",
+        "received": true,
+        "latencyMs": 582,
+        "elapsedAtEndMs": 8713
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-5",
+        "received": true,
+        "latencyMs": 564,
+        "elapsedAtEndMs": 8218
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-6",
+        "received": true,
+        "latencyMs": 592,
+        "elapsedAtEndMs": 7726
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-7",
+        "received": true,
+        "latencyMs": 560,
+        "elapsedAtEndMs": 7225
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-8",
+        "received": true,
+        "latencyMs": 631,
+        "elapsedAtEndMs": 6732
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-9",
+        "received": true,
+        "latencyMs": 606,
+        "elapsedAtEndMs": 6182
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-10",
+        "received": true,
+        "latencyMs": 661,
+        "elapsedAtEndMs": 5643
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-11",
+        "received": true,
+        "latencyMs": 551,
+        "elapsedAtEndMs": 5111
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-12",
+        "received": true,
+        "latencyMs": 624,
+        "elapsedAtEndMs": 4617
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-13",
+        "received": true,
+        "latencyMs": 586,
+        "elapsedAtEndMs": 4149
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-14",
+        "received": true,
+        "latencyMs": 535,
+        "elapsedAtEndMs": 3645
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-15",
+        "received": true,
+        "latencyMs": 802,
+        "elapsedAtEndMs": 3159
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-16",
+        "received": true,
+        "latencyMs": 547,
+        "elapsedAtEndMs": 2417
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-17",
+        "received": true,
+        "latencyMs": 534,
+        "elapsedAtEndMs": 1948
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-18",
+        "received": true,
+        "latencyMs": 528,
+        "elapsedAtEndMs": 1458
+      },
+      {
+        "commandId": "QA09-90DE5A6BDD5D57B2-CMD-19",
+        "received": true,
+        "latencyMs": 537,
+        "elapsedAtEndMs": 985
+      }
+    ],
+    "lifecycle": [],
+    "lifecycleGate": "NOT_RUN_NO_NATURAL_ACTIVE_PRECONDITION",
+    "fullQa09Accepted": false,
+    "queueRedelivery": {
+      "scope": "OWN_API_VISIBLE_TELEMETRY_SQS_REDELIVERY",
+      "prefix": "qa09-90de5a6bdd5d57b2",
+      "gate": "BLOCKED",
+      "consumptionProven": false,
+      "sharedQueueConfigurationChanged": false,
+      "sharedQueueReadOrPurge": false,
+      "fullQa09Accepted": false,
+      "errorName": "KmsAccessDenied",
+      "errorCode": "KMS.AccessDeniedException"
+    },
+    "telemetryP95Ms": 1683,
+    "commandP95Ms": 802,
+    "commandGate": "PASS",
+    "keepalive": {
+      "intervalMs": 30000,
+      "published": 3,
+      "failures": []
+    }
+  },
+  "normalTelemetryUniqueRowsObserved": true,
+  "queueRedeliveryIdempotencyObserved": false,
+  "queueSpecificConsumptionProven": false,
+  "finishedAt": "2026-10-05T01:54:19.822Z",
+  "cleanupComplete": true
+}

@@ -60,3 +60,8 @@ node scripts/qa09-data-path-evidence.mjs <normal.json.probes.json> <version.json
 ## 回滚
 
 本轮没有 IaC、数据库 Schema 或容量修改。沿用 API/Ingestion pool1、Device API 既有 pool2 与统一63/70预算，余量7；不得因日志推断自行扩容。回滚到此前已核对的应用 SHA，并重新核对19工件；旧服务会拒绝新 licenseConfirmation，因此设备/验收驱动需停止新确认请求、恢复旧 Sync 请求。新字段不能强制旧设备接受。已写 Licensed/Active 状态和审计不会随代码回滚自动逆转，必须按合法领域操作处理，不直接批量改状态或删审计。保留原失败样本和所有版本回执。
+
+
+## 2026-10-05 目标复验回执
+
+应用fb0fd67同SHA部署/19工件与末次版本无漂移通过。RECEIVED推进Licensed、20Telemetry P95 1683ms、20Command P95 802ms、阶段日志及精确清理通过，完整QA-09仍PARTIAL。见[真实复验报告](../audit/QA-09-fb0fd67真实RECEIVED与阶段性能复验-2026-10-05.md)。只读日志投影必须在封闭event枚举检查后保留事件名；普通ID的字符规则不适用于带点号的event。本地采集器修复的源SHA与AWS受验应用SHA分别冻结，不将读取工具修复冒称为AWS新部署。

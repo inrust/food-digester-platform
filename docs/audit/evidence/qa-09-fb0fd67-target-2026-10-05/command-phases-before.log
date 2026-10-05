@@ -1,0 +1,19 @@
+
+aws: [ERROR]: An error occurred (InvalidParameterException) when calling the FilterLogEvents operation: 1 validation error detected: Value at 'filterPattern' failed to satisfy constraint: Member must have length less than or equal to 1024
+Traceback (most recent call last):
+  File "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-fb0fd67-target-2026-10-05/collect-own-command-phases.py", line 64, in <module>
+    related = [r for r in fetch('lambdaRequestId', requests) if r.get('commandId') in commands or not r.get('commandId') and (r.get('phase') in {'sqs-consumption', 'db-secret', 'iot-endpoint'} or r.get('sqsMessageId') in sqs_ids)]
+                          ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-fb0fd67-target-2026-10-05/collect-own-command-phases.py", line 37, in fetch
+    response = aws(args)
+  File "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-fb0fd67-target-2026-10-05/collect-own-command-phases.py", line 18, in aws
+    out = subprocess.check_output(['aws', *args, '--profile', 'esgiot-readonly', '--region', 'ap-southeast-1', '--output', 'json', '--no-cli-pager'], timeout=60)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 473, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+               **kwargs).stdout
+               ^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['aws', 'logs', 'filter-log-events', '--log-group-name', '/aws/lambda/fdp-test-command-publisher', '--start-time', '1791164558001', '--end-time', '1791165559822', '--filter-pattern', '{ ($.lambdaRequestId = "069fa98f-cf5c-5fbe-8a16-cab2cb752cb8") || ($.lambdaRequestId = "06a6b943-5630-568b-8422-da7e5213258d") || ($.lambdaRequestId = "36e76137-af3e-55c4-9bb9-020aab1d36c2") || ($.lambdaRequestId = "3cfcbf78-398d-58c0-8f0e-dc453da83bc6") || ($.lambdaRequestId = "57dd5eef-90b0-5843-9442-3dd294992b45") || ($.lambdaRequestId = "5d1f9aec-0304-5068-8def-f9d1072e736e") || ($.lambdaRequestId = "61717aa0-9f87-566a-9c58-199d9baf856c") || ($.lambdaRequestId = "8057b2f0-558e-57e7-82e0-d1cd51a5d4e1") || ($.lambdaRequestId = "8a8010d9-cff8-50c2-8666-73e4cbd283c4") || ($.lambdaRequestId = "a1ca224d-9a4a-54ac-b997-41709e684ea0") || ($.lambdaRequestId = "a57be636-b74c-5d9d-a8de-850bb36ff791") || ($.lambdaRequestId = "a766a508-b122-5dca-94c7-c635b5068ecc") || ($.lambdaRequestId = "a832d51e-77d8-57f6-82c9-b62373fc74f0") || ($.lambdaRequestId = "b37a33df-b845-59ef-aa56-50e2bc5e43e3") || ($.lambdaRequestId = "bb1f30d8-e799-5c29-870f-53e5e3bfd625") || ($.lambdaRequestId = "c16543f2-26ac-52cf-984b-20cf228b31c9") || ($.lambdaRequestId = "c36afc65-c022-5a50-9ba5-9f58c4075956") || ($.lambdaRequestId = "c7bdd35a-b8c8-5419-bd7e-b067bce9871f") || ($.lambdaRequestId = "d1180a05-dd65-5b57-b352-6938d943115b") || ($.lambdaRequestId = "ff5d7e67-8e71-5fd2-9e21-1d5a8a561cd4") }', '--limit', '10000', '--no-paginate', '--profile', 'esgiot-readonly', '--region', 'ap-southeast-1', '--output', 'json', '--no-cli-pager']' returned non-zero exit status 254.

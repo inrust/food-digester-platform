@@ -9,7 +9,6 @@ const allowedEvents = new Set([
   'ingestion.record.completed',
 ]);
 const fields = [
-  'event',
   'lambdaRequestId',
   'gatewayRequestId',
   'operationId',
@@ -44,7 +43,8 @@ export function projectDataPathLog(message) {
     return null;
   }
   if (!row || !allowedEvents.has(row.event)) return null;
-  const projected = {};
+  // Event names contain dots; preserve only the closed enum already checked above.
+  const projected = { event: row.event };
   for (const key of fields) {
     const v = row[key];
     if (typeof v === 'boolean' || (typeof v === 'number' && Number.isFinite(v) && v >= 0)) projected[key] = v;

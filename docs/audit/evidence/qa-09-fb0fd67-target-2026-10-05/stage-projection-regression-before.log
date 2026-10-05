@@ -1,0 +1,58 @@
+✖ log projection redacts payload/error details and rejects unrecognized events (0.940875ms)
+✖ serialized AWS log projection preserves closed event names through the 20-sequence Gate (0.987958ms)
+✔ specific redelivery needs matching SQS ID, final disposition and durable duplicate receipt (0.104791ms)
+✔ 20 sequence stage Gate rejects incomplete coverage and unrelated device evidence (0.402292ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 38.333208
+
+✖ failing tests:
+
+test at scripts/qa09-data-path-evidence.test.mjs:5:1
+✖ log projection redacts payload/error details and rejects unrecognized events (0.940875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'data-path.phase.completed'
+  
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-data-path-evidence.test.mjs:19:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'data-path.phase.completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/qa09-data-path-evidence.test.mjs:26:1
+✖ serialized AWS log projection preserves closed event names through the 20-sequence Gate (0.987958ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'NO_RECEIPT'
+  - 'PASS_SCOPED_STAGE_EVIDENCE'
+  
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-data-path-evidence.test.mjs:50:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'NO_RECEIPT',
+    expected: 'PASS_SCOPED_STAGE_EVIDENCE',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
