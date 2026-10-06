@@ -166,6 +166,9 @@ export async function runBusinessTarget(
   async function api(id, role, method, path, expected, body, headers = {}) {
     await ensureSession(role);
     const startedAt = new Date().toISOString();
+    const clientRequestId = /^[a-f0-9-]{36}$/.test(headers['x-amzn-RequestId'] ?? '')
+      ? headers['x-amzn-RequestId']
+      : null;
     const start = performance.now();
     let res;
     try {
@@ -187,6 +190,8 @@ export async function runBusinessTarget(
         path: path.split('?')[0],
         role: role ?? 'anonymous',
         responseReceived: false,
+        clientRequestId,
+        completedAt: new Date().toISOString(),
         errorName: safe(e.name),
         causeCode: safe(e.cause?.code),
         latencyMs: Math.round(performance.now() - start),
@@ -197,6 +202,9 @@ export async function runBusinessTarget(
     check(id, (Array.isArray(expected) ? expected : [expected]).includes(res.status), {
       method,
       startedAt,
+      clientRequestId,
+      completedAt: new Date().toISOString(),
+      responseReceived: true,
       gatewayRequestId: res.headers.get('x-amzn-requestid'),
       gatewayExtendedRequestId: res.headers.get('x-amz-apigw-id'),
       gatewayErrorType: res.headers.get('x-amzn-errortype'),
@@ -344,7 +352,7 @@ export async function runBusinessTarget(
       ).data;
       const cp = '/api/v1/admin/contracts/' + contract.contractId;
       await api('contract-detail', 'PlatformSuperAdmin', 'GET', cp, 200);
-      const race = await Promise.all([
+      const outcomes = await Promise.allSettled([
         api(
           'contract-race-a',
           'PlatformSuperAdmin',
@@ -364,6 +372,13 @@ export async function runBusinessTarget(
           { 'If-Match': String(contract.version) },
         ),
       ]);
+      const rejected = outcomes.find((x) => x.status === 'rejected');
+      if (rejected) {
+        // A client abort cannot cancel a remote Lambda write (API timeout: 30s).
+        await pause(35000);
+        throw rejected.reason;
+      }
+      const race = outcomes.map((x) => x.value);
       check(
         'contract-if-match-race',
         r.checks

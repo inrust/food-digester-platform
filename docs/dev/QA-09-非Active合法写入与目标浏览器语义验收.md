@@ -103,3 +103,25 @@ node --import tsx scripts/recover-qa09-nonactive-business.mjs <失败业务回�
 旧基础模式若缺`licenseLifecycle=NOT_RUN`字段而外层汇总FAIL，可执行 `node --import tsx scripts/check-qa09-remaining-target.mjs <receipt> <version> <new-revalidation>`，只读重新校验原业务、五角色、版本与清理回执，不重写原文件，不接受完整核心或Active证明。后续执行器已明确写入NOT_RUN字段。
 
 队列复验可加`--queue-only`，不重复已独立完成的Sup导出。基线的跨设备负探针使用同一clientId，因此扩展必须新建TLS会话，不能沿用被替换的旧会话。若创建客户等写请求传输失败且响应未知，先按唯一前缀执行AWS内`audit-unseeded-prefix`并确认身份不存在，未证明无残留前不得启动下一波次。
+
+## 合同并发 PATCH 专项（2026-10-06）
+
+先以最新已部署 SHA 收集同 SHA CI/Deploy/Amplify 与19工件字节回执，然后执行：
+
+```sh
+node --import tsx scripts/run-qa09-nonactive-target.mjs <目录>/contract-race.json <目录>/application-version.json --contract-race
+python3 scripts/collect-qa09-contract-correlation.py <目录>/contract-race.json <目录>/request-correlation.json
+```
+
+本模式只执行五角色范围基础检查和本轮 Draft 合同三组并发 PATCH，不证明完整核心、Active 或浏览器验收。每组两路在发送前各生成独立 UUID，通过 `x-amzn-RequestId` 关联 Gateway；不覆盖不可自定义的 extended request ID。保存发送/完成状态，`Promise.allSettled` 确保两路均结束后才读回或清理，不盲重试未知写入。真实API Lambda超时上限须只读核对为30秒；任一路失败时额外等待35秒再读回，仍不得把未知HTTP结果记PASS。要求每组200/409、VERSION_CONFLICT、版本仅递增一次、胜出名称一致，成功审计关联精确请求 ID 及前后版本。Gateway与Lambda关联还核对时间、方法、operationId、状态、extended ID及integrationRequestId；缺少HTTP响应或任一日志不得记完整PASS。
+
+只读历史诊断可向关联工具传入旧业务回执，输出到新文件；没有请求 ID 的旧第二路不能靠相邻时间或分钟指标补成已证实。历史FAIL保持原样。日志仅保存精确自身请求ID的白名单字段，不落盘Token、密码、完整请求体或其他租户日志。
+
+合同专项末段只读审计/清理失败时，不重发已提交的 PATCH。先保留完成的原子、父夹具及 FAIL 包装回执，`recover-qa09-contract-race.mjs` 只接受同前缀六路均已结算、每组200/409且读回只递增一次的原始证据。它通过新 SUPPRESS 身份真实 SRP 补读审计，受控 AWS 内业务清理与基线审计后清除十设备、站点/客户、原五身份及恢复身份，再核验唯一自有 License 域归档；不绕过 Active，不修改已有管理员密码。
+
+```sh
+node --import tsx scripts/recover-qa09-contract-race.mjs <原合同专项JSON> <独立恢复JSON>
+node --import tsx scripts/check-qa09-contract-race.mjs <证据目录> <独立专项GateJSON>
+```
+
+本次校验目录约定原回执名 `contract-race.json`、独立恢复名 `recovery.json`。最终校验绑定原 FAIL 字节，输出仅代表合同专项语义、关联与清理，不修改原结果或全部 QA-09 Gate。Gateway 时间窗重叠不等于 Lambda 执行重叠；完成日志减业务耗时仅提供毫秒近似，不能证明 SQL 锁竞争。阶段日志不足时不得将冷启动以外耗时猜作连接池等待。

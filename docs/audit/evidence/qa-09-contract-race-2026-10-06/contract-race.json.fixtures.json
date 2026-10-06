@@ -1,0 +1,175 @@
+{
+  "task": "QA-09",
+  "scope": "CORE_BUSINESS_REAL_RDS_STATE_FIXTURE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1"
+  },
+  "fixtureMode": "REAL_RDS_ONBOARDED_STATE_FOR_BUSINESS_APIS_NO_DEVICE_AUTH_CLAIM",
+  "prefix": "qa09-6898e75012610633",
+  "devices": [
+    "qa09-6898e75012610633-01",
+    "qa09-6898e75012610633-02",
+    "qa09-6898e75012610633-03",
+    "qa09-6898e75012610633-04",
+    "qa09-6898e75012610633-05",
+    "qa09-6898e75012610633-06",
+    "qa09-6898e75012610633-07",
+    "qa09-6898e75012610633-08",
+    "qa09-6898e75012610633-09",
+    "qa09-6898e75012610633-10"
+  ],
+  "customers": [
+    {
+      "id": "f81860f4-fbcb-4b4a-b71a-093b693bb7d2",
+      "name": "qa09-6898e75012610633-a",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-06T01:29:36.409Z",
+      "updatedAt": "2026-10-06T01:29:36.409Z",
+      "suffix": "a"
+    },
+    {
+      "id": "5f371525-c4e5-4b28-b09a-8d9bd2e314d7",
+      "name": "qa09-6898e75012610633-b",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-06T01:29:38.149Z",
+      "updatedAt": "2026-10-06T01:29:38.149Z",
+      "suffix": "b"
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "b59afa08-06ec-407c-989c-2b3900f68699"
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "de3be0c5-d39d-43c0-917f-65571b8a8783"
+    },
+    {
+      "id": "real-rds-business-state-fixture",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/5f371525-c4e5-4b28-b09a-8d9bd2e314d7",
+      "status": 200,
+      "requestId": "887920cf-fa96-4044-bef8-89066ef97bbc"
+    },
+    {
+      "id": "own-customer-name-b",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "FAIL",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/5f371525-c4e5-4b28-b09a-8d9bd2e314d7",
+      "status": 409,
+      "requestId": "1609f64d-a931-49ea-b887-88d6528181d9"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/f81860f4-fbcb-4b4a-b71a-093b693bb7d2",
+      "status": 200,
+      "requestId": "7ccc6335-a603-45ea-8efe-6a002a9c3ed7"
+    },
+    {
+      "id": "own-customer-name-a",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "FAIL",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/f81860f4-fbcb-4b4a-b71a-093b693bb7d2",
+      "status": 409,
+      "requestId": "77b190fc-c89b-4f9d-b2b9-1fe81f619395"
+    },
+    {
+      "id": "own-superadmin-deleted",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "database-fixtures",
+      "result": "FAIL"
+    },
+    {
+      "type": "customer",
+      "id": "5f371525-c4e5-4b28-b09a-8d9bd2e314d7",
+      "result": "FAIL"
+    },
+    {
+      "type": "customer",
+      "id": "f81860f4-fbcb-4b4a-b71a-093b693bb7d2",
+      "result": "FAIL"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-6898e75012610633-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "observe",
+      "receipt": "docs/audit/evidence/qa-09-contract-race-2026-10-06/contract-race.json.fixtures-observe-0.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:f3de48e2-091d-405b-9ab6-9ba8206017d3"
+    },
+    {
+      "action": "business-seed-devices",
+      "receipt": "docs/audit/evidence/qa-09-contract-race-2026-10-06/contract-race.json.fixtures-business-seed-devices-1.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:5893563a-f3cd-497c-92ec-87367b7418a6"
+    },
+    {
+      "action": "observe",
+      "receipt": "docs/audit/evidence/qa-09-contract-race-2026-10-06/contract-race.json.fixtures-observe-2.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:bc8c3570-c0f1-4081-b1d4-68d51bad00f2"
+    }
+  ],
+  "sourceCommit": "5cbe2d28c862f9be3280f8cb47f1a9bba7730ba3",
+  "versionReceipt": "docs/audit/evidence/qa-09-contract-race-2026-10-06/application-version.json",
+  "startedAt": "2026-10-06T01:29:23.236Z",
+  "gate": "FAIL",
+  "fullQa09Accepted": false,
+  "credentialsExported": false,
+  "identity": {
+    "username": "qa09-6898e75012610633-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "failure": {
+    "code": "BUSINESS_CLEANUP_FAILED",
+    "errorName": "Error"
+  },
+  "globalSignOut": "PASS",
+  "finishedAt": "2026-10-06T01:43:29.381Z"
+}
