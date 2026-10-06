@@ -1,0 +1,96 @@
+PATCH 6 clientMax 3653 lambdaMax 3169
+GET 19 clientMax 670 lambdaMax 121
+[
+  {
+    "id": "race:3:a",
+    "requestId": "1e0a8175-ab2f-4627-b7d0-ae6ac76927a4",
+    "method": "PATCH",
+    "status": 409,
+    "responseReceived": true,
+    "clientMs": 3653,
+    "gatewayMs": 3193,
+    "lambdaMs": 3169,
+    "gatewayArrivalAfterClientStartMs": 248,
+    "topLevelMeasuredMs": 1475,
+    "unmeasuredLambdaResidualMs": 1694,
+    "phaseDurations": {
+      "runtime-initialize": 976,
+      "admin-authenticate": 143,
+      "db-transaction-open": 56,
+      "contract-load": 83,
+      "contract-version-update": 118,
+      "db-transaction-callback": 239,
+      "db-transaction-finish": 2,
+      "db-transaction": 298,
+      "audit-failure-write": 58,
+      "response-serialize": 0
+    },
+    "residualBoundary": "Not pure pool wait; includes uninstrumented account-status hook, routing and instrumentation overhead. Nested transaction phases excluded from top-level sum."
+  },
+  {
+    "id": "race:audit-detail:799addf3-e7a4-4c02-998e-5145f8b29770:sample-2",
+    "requestId": "f327069d-2f25-436a-9a49-f188185f1dd2",
+    "method": "GET",
+    "status": 200,
+    "responseReceived": true,
+    "clientMs": 670,
+    "gatewayMs": 161,
+    "lambdaMs": 121,
+    "gatewayArrivalAfterClientStartMs": 301,
+    "topLevelMeasuredMs": 80,
+    "unmeasuredLambdaResidualMs": 41,
+    "phaseDurations": {
+      "admin-authenticate": 3,
+      "audit-detail-query": 77,
+      "audit-view": 0,
+      "response-serialize": 0
+    },
+    "residualBoundary": "Not pure pool wait; includes uninstrumented account-status hook, routing and instrumentation overhead. Nested transaction phases excluded from top-level sum."
+  },
+  {
+    "id": "race:1:a",
+    "requestId": "1b51249d-bb53-4be0-85fb-742a8da2f871",
+    "method": "PATCH",
+    "status": 200,
+    "responseReceived": true,
+    "clientMs": 600,
+    "gatewayMs": 136,
+    "lambdaMs": 114,
+    "gatewayArrivalAfterClientStartMs": 248,
+    "topLevelMeasuredMs": 110,
+    "unmeasuredLambdaResidualMs": 4,
+    "phaseDurations": {
+      "admin-authenticate": 1,
+      "db-transaction-open": 2,
+      "contract-load": 2,
+      "contract-version-update": 5,
+      "contract-readback": 19,
+      "audit-success-write": 60,
+      "db-transaction-callback": 87,
+      "db-transaction-finish": 19,
+      "db-transaction": 109,
+      "response-serialize": 0
+    },
+    "residualBoundary": "Not pure pool wait; includes uninstrumented account-status hook, routing and instrumentation overhead. Nested transaction phases excluded from top-level sum."
+  },
+  {
+    "id": "race:audit-list",
+    "requestId": "451d5a69-555b-4c7a-9d20-95c650738d81",
+    "method": "GET",
+    "status": 200,
+    "responseReceived": true,
+    "clientMs": 568,
+    "gatewayMs": 110,
+    "lambdaMs": 94,
+    "gatewayArrivalAfterClientStartMs": 246,
+    "topLevelMeasuredMs": 78,
+    "unmeasuredLambdaResidualMs": 16,
+    "phaseDurations": {
+      "admin-authenticate": 1,
+      "audit-list-query": 60,
+      "audit-view": 17,
+      "response-serialize": 0
+    },
+    "residualBoundary": "Not pure pool wait; includes uninstrumented account-status hook, routing and instrumentation overhead. Nested transaction phases excluded from top-level sum."
+  }
+]
