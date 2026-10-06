@@ -2,6 +2,8 @@
 
 2026-10-06。应用基线fb6f362，仓库基线9a6750b；依据[真实冷阶段复验](../audit/QA-09-fb6f362数据库准备冷阶段目标复验-2026-10-06.md)及[本轮诊断](../audit/QA-09-adapter后窗口与跨客户端TLS诊断-2026-10-06.md)。方案READY，生产代码实施/新SHA部署/目标优化验收NOT_RUN。
 
+截至本轮后续实施，第1/2步已落地本地代码，记录见[实施记录](../audit/QA-09-引擎CPU分界与Secret并行实施记录-2026-10-06.md)及[目标复验手册](QA-09-引擎CPU分界与Secret并行目标复验.md)；新SHA发布/真实收益仍待回执。第3步保持未实施。上述NOT_RUN为方案签发时状态，不替代后续实施记录。
+
 ## 判断与预算
 
 目标account query→driver1101ms，prepare1099、adapter后1096ms。安装的Prisma 7.9.1实际顺序为adapter返回→加载编译器JS/解码并构造WASM Module→Instance/bindgen启动→QueryCompiler(datamodel)构造→首模型查询编译→执行计划/driver。loader按provider缓存实例；同client重复模型查询可命中参数化计划缓存。不能把1096ms单独归因为WASM Module编译或数据库连接。

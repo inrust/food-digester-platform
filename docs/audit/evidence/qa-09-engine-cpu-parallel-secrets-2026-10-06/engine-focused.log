@@ -1,0 +1,65 @@
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ❯ apps/cloud-api/test/admin-engine-diagnostic.test.ts (3 tests | 1 failed) 18ms
+   × engine diagnostic uses one existing client, single flight and retains failure/retry ownership 2ms
+ ❯ packages/database/test/client-preparation.test.ts (5 tests | 1 failed) 5083ms
+   × public engine diagnostics has no checkout/SQL, then keeps model driver-dispatch phases distinct 5004ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  apps/cloud-api/test/admin-engine-diagnostic.test.ts > engine diagnostic uses one existing client, single flight and retains failure/retry ownership
+TypeError: assert.isRejected is not a function
+ ❯ apps/cloud-api/test/admin-engine-diagnostic.test.ts:46:16
+     44|   const fail = { $connect: vi.fn().mockRejectedValueOnce(error).mockRe…
+     45|   const retry = createAuthenticatedEngineDiagnostic(true, fail);
+     46|   await assert.isRejected(retry(), 'private connection details');
+       |                ^
+     47|   await retry();
+     48|   await retry();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  packages/database/test/client-preparation.test.ts > public engine diagnostics has no checkout/SQL, then keeps model driver-dispatch phases distinct
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ packages/database/test/client-preparation.test.ts:202:1
+    200| });
+    201|
+    202| test('public engine diagnostics has no checkout/SQL, then keeps model …
+       | ^
+    203|   const { observeDatabaseEnginePreparation } = await import('../src/cl…
+    204|   const rows: Record<string, unknown>[] = [];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: private connection details
+ ❯ apps/cloud-api/test/admin-engine-diagnostic.test.ts:43:17
+     41|   await createAuthenticatedEngineDiagnostic(false, client)();
+     42|   assert.equal(client.$connect.mock.calls.length, 1);
+     43|   const error = Error('private connection details');
+       |                 ^
+     44|   const fail = { $connect: vi.fn().mockRejectedValueOnce(error).mockRe…
+     45|   const retry = createAuthenticatedEngineDiagnostic(true, fail);
+ ❯ processTicksAndRejections node:internal/process/task_queues:103:5
+ ❯ node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+This error originated in "apps/cloud-api/test/admin-engine-diagnostic.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "signed JWT precedes engine preparation and unchanged per-request account hook; bad JWT never prepares". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  2 failed | 2 passed (4)
+      Tests  2 failed | 25 passed (27)
+     Errors  1 error
+   Start at  20:45:05
+   Duration  5.30s (transform 251ms, setup 42ms, import 461ms, tests 5.29s, environment 0ms)
+

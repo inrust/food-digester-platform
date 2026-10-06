@@ -59,6 +59,7 @@ import {
   type ApiGatewayAdminResult,
 } from './admin-lambda.js';
 
+import { readAdminRuntimeConfig, resolveAdminRuntimeSecrets } from './admin-runtime-secrets.js';
 import { createAuthenticatedEngineDiagnostic, resolveEngineCpuDiagnosis } from './admin-engine-diagnostic.js';
 
 const logger = createRedactingLogger(console);
@@ -70,21 +71,22 @@ const required = (name: string): string => {
 };
 
 let runtimeHandler: ((event: ApiGatewayAdminEvent) => Promise<ApiGatewayAdminResult>) | undefined;
+let runtimeInitialization: Promise<NonNullable<typeof runtimeHandler>> | undefined;
 
 async function initialize() {
   const engineCpuDiagnosis = resolveEngineCpuDiagnosis(process.env);
-  const region = required('AWS_REGION');
-  const databaseUrl = await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region });
+  const config = readAdminRuntimeConfig(process.env);
+  const region = config.region;
+  const { databaseUrl, licenseSigningKey } = await resolveAdminRuntimeSecrets(config, {
+    database: resolveDatabaseUrl,
+    license: resolveSecretString,
+  });
   const client = createPrismaClient(databaseUrl);
   const prepareAuthenticatedEngine = createAuthenticatedEngineDiagnostic(engineCpuDiagnosis, client);
-  const activityExportPorts = createS3ActivityExportPorts({ bucket: required('EXPORT_BUCKET_NAME'), region });
-  const licenseSigningKey = await resolveSecretString({
-    secretArn: required('LICENSE_SIGNING_KEY_SECRET_ARN'),
-    region,
-  });
+  const activityExportPorts = createS3ActivityExportPorts({ bucket: config.exportBucket, region });
   const iot = createAwsIotProvisioningClient({ region });
-  const ota = createOtaFirmwareS3Ports({ bucket: required('OTA_BUCKET_NAME'), region });
-  const mediaBucket = required('MEDIA_BUCKET_NAME');
+  const ota = createOtaFirmwareS3Ports({ bucket: config.otaBucket, region });
+  const mediaBucket = config.mediaBucket;
   const mediaDeps = {
     client,
     storage: createS3MediaObjectStorage({ bucket: mediaBucket, region }),
@@ -143,20 +145,20 @@ async function initialize() {
         getSignaturePayloadFields: () => otaSignaturePolicy.payload.fields,
         getSignatureTrustRoot: () => otaSignaturePolicy.signature.trustRoot,
       },
-      signatureVerifier: createKmsFirmwareSignatureVerifier({ keyId: required('OTA_SIGNING_KEY_ARN'), region }),
+      signatureVerifier: createKmsFirmwareSignatureVerifier({ keyId: config.otaSigningKeyArn, region }),
     }),
     otaCampaigns: createAdminOtaCampaignHandlers({ client }),
     media: createAdminMediaHandlers(mediaDeps),
     users: createAdminUserHandlers({
       client,
-      cognito: createCognitoAdminPort({ userPoolId: required('USER_POOL_ID'), region }),
+      cognito: createCognitoAdminPort({ userPoolId: config.userPoolId, region }),
     }),
     audit: createAdminAuditHandlers({ client }),
     dashboard: createAdminDashboardHandlers({ client }),
     settings: createAdminSettingsHandlers({ client }),
   };
   return createAdminLambdaRouter(
-    { region, userPoolId: required('USER_POOL_ID'), clientId: required('USER_POOL_CLIENT_ID') },
+    { region, userPoolId: config.userPoolId, clientId: config.clientId },
     (event) => createAdminRoute(event, routes),
     {
       onAuthenticated: async (actor, requestId) => {
@@ -196,7 +198,15 @@ export async function handler(
         },
         () =>
           withAdminCors(event, process.env.ADMIN_WEB_ORIGIN, async () => {
-            runtimeHandler ??= await observeDataPathPhase('runtime-initialize', initialize);
+            if (!runtimeHandler) {
+              runtimeInitialization ??= observeDataPathPhase('runtime-initialize', initialize);
+              const pending = runtimeInitialization;
+              try {
+                runtimeHandler = await pending;
+              } finally {
+                if (runtimeInitialization === pending) runtimeInitialization = undefined;
+              }
+            }
             return runtimeHandler(event);
           }),
         (entry) => logger.info(JSON.stringify(entry)),
