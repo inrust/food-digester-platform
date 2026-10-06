@@ -1,0 +1,315 @@
+{
+  "task": "QA-02",
+  "scope": "LOCAL_CONTRACT_AND_REAL_HANDLER",
+  "status": "PASS",
+  "baselineCommit": "1e7b68cb96e0c2e7565ba22457e52471c6601c54",
+  "sourceSha256": {
+    "contracts/testing/device-contract.ts": "1e2342d6cbfebbecf46efa8a1ac91d7d2f92d3e41ae63c9b5bb149ac98c293ed",
+    "contracts/testing/mqtt-contract.ts": "2cc93ae3bdf3573dff54f87969767e8e135be256bb2b4e1d40faf26e51e9fe6f",
+    "contracts/testing/compatibility-approvals.json": "f5dd071f7cac33d5d04eba1d5b2ed6cb8065a288599bfc37473c1cd06e0faf6a",
+    "scripts/contract-suite/baseline.mjs": "f34aeeee69146b0fea37710b222ac1923095a1a91ce0ceaa0aca17dc70575d1c",
+    "scripts/contract-suite/compatibility.mjs": "1192d9ea95d119fa4b1c1cb2ea3cd3acd15c320aeeb0716e61c074367e08ff72",
+    "scripts/contract-suite.test.mjs": "690743bec35fb807d59755610500164ad0b40bdcd92eabe95e9b22712e722764",
+    "scripts/run-contract-suite.mjs": "a085bda2575ebfe0e602ad8f2003060f71593d4ec98c9d45f9282cf0d62176d3",
+    "apps/cloud-api/src/ota/download.ts": "311908a39025c8a73fda64f53a29e690012f80bbc1453b22805afc9b4c0ea553",
+    "apps/cloud-api/src/runtime/device-lambda.ts": "c9350c1c43cc7f8e7fd3e7988bb6dde589defead69322cc3ebfa5feeec8b13d9",
+    "apps/cloud-api/test/certificate-status.test.ts": "f5706418ac75b1cbd40d91fa431ade5120358ce4fd8ce3ca54d37284f08fc416",
+    "apps/cloud-api/test/certificate-rotate.test.ts": "37f4ce372405be7dba738b2b429195c926a069594666faae259490a35f5e77db",
+    "apps/cloud-api/test/device-sync.test.ts": "c830e32bee5fe8011d88fe78eec9b328d7a57476fbb17a8b5c57ae30bf7e4db3",
+    "apps/cloud-api/test/license-sync-lifecycle.test.ts": "6040e0ea820b9f30f7e0f3b9f9abcd1ef2f6e9ba0075d3b9a6d8da6a74a9d301",
+    "apps/cloud-api/test/device-deactivate.test.ts": "0e1565a4e574593f51cb90b6082f613cac6ddd7783575f050e761bb00dbcc253",
+    "apps/cloud-api/test/media.test.ts": "d4660aeb795669cefc7930525caa4cd8cb2f909925348a71552bdcc078bfc57a",
+    "apps/cloud-api/test/csr-onboarding.test.ts": "14ba443ceecd2f2b6fb218fdb0f73005fe473ede590230d45024f3ec4ca93d66",
+    "apps/cloud-api/test/ota-dispatch.test.ts": "145dd33bc96f4bb91d3151c767f317612b36768a970327466d430556e3965cfa",
+    "apps/cloud-api/test/qa02-device-errors.test.ts": "7d252b22814ff342565c0a0cac4ea6235e369723ea660778fb6b4ac68a524ddf",
+    "apps/cloud-api/test/device-lambda-composition.test.ts": "167dac492561ba573ebdad3325603674e8ca42343a69753d59dd2cd7787a23ab"
+  },
+  "mqttSchemaCount": 11,
+  "mqtt": [
+    {
+      "topicType": "heartbeat",
+      "validFixtures": 2,
+      "invalidFixtures": 6,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "telemetry",
+      "validFixtures": 1,
+      "invalidFixtures": 4,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "report",
+      "validFixtures": 1,
+      "invalidFixtures": 4,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "alarm",
+      "validFixtures": 1,
+      "invalidFixtures": 4,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "event",
+      "validFixtures": 1,
+      "invalidFixtures": 3,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "ack",
+      "validFixtures": 2,
+      "invalidFixtures": 4,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "tamper",
+      "validFixtures": 1,
+      "invalidFixtures": 3,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "media",
+      "validFixtures": 1,
+      "invalidFixtures": 3,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "cmd",
+      "validFixtures": 1,
+      "invalidFixtures": 5,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "ota",
+      "validFixtures": 1,
+      "invalidFixtures": 4,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "notification",
+      "validFixtures": 1,
+      "invalidFixtures": 4,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    }
+  ],
+  "deviceOperationCoverage": "8/8",
+  "declaredResponseStatusCoverage": "100%",
+  "checkedResponses": 168,
+  "nonConformingResponses": 0,
+  "rest": [
+    {
+      "operationId": "getCertificateStatus",
+      "checkedResponses": 13,
+      "validRequests": 13,
+      "rejectedInvalidRequests": 0,
+      "declaredStatuses": [
+        200,
+        401,
+        403,
+        500
+      ],
+      "observedStatuses": [
+        200,
+        401,
+        403,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "rotateCertificate",
+      "checkedResponses": 15,
+      "validRequests": 12,
+      "rejectedInvalidRequests": 3,
+      "declaredStatuses": [
+        200,
+        400,
+        401,
+        403,
+        409,
+        500
+      ],
+      "observedStatuses": [
+        200,
+        400,
+        401,
+        403,
+        409,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "confirmDeactivation",
+      "checkedResponses": 16,
+      "validRequests": 12,
+      "rejectedInvalidRequests": 4,
+      "declaredStatuses": [
+        200,
+        400,
+        401,
+        404,
+        409,
+        500
+      ],
+      "observedStatuses": [
+        200,
+        400,
+        401,
+        404,
+        409,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "createMediaUploadSession",
+      "checkedResponses": 35,
+      "validRequests": 26,
+      "rejectedInvalidRequests": 9,
+      "declaredStatuses": [
+        201,
+        400,
+        401,
+        403,
+        409,
+        500
+      ],
+      "observedStatuses": [
+        201,
+        400,
+        401,
+        403,
+        409,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "submitOnboardingRequest",
+      "checkedResponses": 10,
+      "validRequests": 9,
+      "rejectedInvalidRequests": 1,
+      "declaredStatuses": [
+        200,
+        201,
+        400,
+        404,
+        409,
+        429,
+        500
+      ],
+      "observedStatuses": [
+        200,
+        201,
+        400,
+        404,
+        409,
+        429,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "getOnboardingStatus",
+      "checkedResponses": 12,
+      "validRequests": 10,
+      "rejectedInvalidRequests": 2,
+      "declaredStatuses": [
+        200,
+        400,
+        401,
+        404,
+        409,
+        429,
+        500
+      ],
+      "observedStatuses": [
+        200,
+        400,
+        401,
+        404,
+        409,
+        429,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "redeemOtaDownloadGrant",
+      "checkedResponses": 7,
+      "validRequests": 6,
+      "rejectedInvalidRequests": 1,
+      "declaredStatuses": [
+        307,
+        400,
+        401,
+        403,
+        404,
+        409,
+        500
+      ],
+      "observedStatuses": [
+        307,
+        400,
+        401,
+        403,
+        404,
+        409,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "syncDevice",
+      "checkedResponses": 60,
+      "validRequests": 57,
+      "rejectedInvalidRequests": 3,
+      "declaredStatuses": [
+        200,
+        400,
+        401,
+        403,
+        409,
+        500
+      ],
+      "observedStatuses": [
+        200,
+        400,
+        401,
+        403,
+        409,
+        500
+      ],
+      "missingStatuses": []
+    }
+  ],
+  "compatibility": {
+    "previousContractVersion": "0.12.0",
+    "currentContractVersion": "0.13.0",
+    "status": "APPROVED_BREAKING_UPGRADE",
+    "approvedBreakingChanges": [
+      {
+        "path": "/rest/syncDevice/responses/200/content/application/json/schema/properties/license/oneOf",
+        "kind": "constraint-changed"
+      },
+      {
+        "path": "/rest/syncDevice/responses/409",
+        "kind": "constraint-added"
+      }
+    ]
+  },
+  "awsTargetAcceptance": "NOT RUN / NO RECEIPT"
+}

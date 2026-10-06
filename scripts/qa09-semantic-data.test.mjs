@@ -1,4 +1,4 @@
-import test from 'node:test';
+import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readAllMigrationSql } from '../packages/database/test/helpers.ts';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
@@ -12,8 +12,19 @@ const customers = ['11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2
 }));
 const devices = Array.from({ length: 10 }, (_, i) => prefix + '-' + String(i + 1).padStart(2, '0'));
 const plan = { prefix, customers, devices, action: 'business-seed-semantic-data' };
+// Keep one Wasm instance alive until the file completes: Node 24's V8 can
+// abort while reclaiming wrappers after repeated PGlite create/close cycles.
+// Rebuild the schema for every test so fixture state never carries across cases.
+let pg;
+before(async () => {
+  pg = new PGlite({ extensions: { btree_gist } });
+  await pg.waitReady;
+});
+after(async () => {
+  await pg?.close();
+});
 async function setup() {
-  const pg = new PGlite({ extensions: { btree_gist } });
+  await pg.exec('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
   await pg.exec(readAllMigrationSql());
   for (const c of customers) {
     await pg.query('INSERT INTO customers(id,name,updated_at)VALUES($1,$2,now())', [c.id, c.name]);
@@ -35,33 +46,29 @@ async function setup() {
 }
 test('semantic SQL creates two scoped read models without lifecycle or authentication claims and refuses reuse', async () => {
   const { pg, client } = await setup();
-  try {
-    const baseline = await executeFixture(client, { ...plan, action: 'business-baseline' });
-    const r = await executeFixture(client, plan);
-    assert.match(r.fixtureMode, /SYNTHETIC.*NO_DEVICE/);
-    assert.ok(Object.values(r.counts).every((n) => n === 2));
-    const metrics = (await pg.query('SELECT metrics FROM telemetry_hourly ORDER BY device_id')).rows[0].metrics;
-    assert.equal(metrics.heatTemperatureC.avg, 42);
-    assert.equal(
-      (await pg.query("SELECT count(*)::int AS n FROM devices WHERE lifecycle_status='Assigned'")).rows[0].n,
-      10,
-    );
-    assert.equal((await pg.query('SELECT count(*)::int AS n FROM device_certificates')).rows[0].n, 0);
-    await assert.rejects(executeFixture(client, plan), /ALREADY_EXISTS/);
-    const cleanup = await executeFixture(client, {
-      ...plan,
-      action: 'business-cleanup',
-      businessBaseline: baseline.businessFingerprints,
-    });
-    assert.ok(Object.values(cleanup.counts).every((n) => n === 0));
-    await executeFixture(client, {
-      ...plan,
-      action: 'business-audit',
-      businessBaseline: baseline.businessFingerprints,
-    });
-  } finally {
-    await pg.close();
-  }
+  const baseline = await executeFixture(client, { ...plan, action: 'business-baseline' });
+  const r = await executeFixture(client, plan);
+  assert.match(r.fixtureMode, /SYNTHETIC.*NO_DEVICE/);
+  assert.ok(Object.values(r.counts).every((n) => n === 2));
+  const metrics = (await pg.query('SELECT metrics FROM telemetry_hourly ORDER BY device_id')).rows[0].metrics;
+  assert.equal(metrics.heatTemperatureC.avg, 42);
+  assert.equal(
+    (await pg.query("SELECT count(*)::int AS n FROM devices WHERE lifecycle_status='Assigned'")).rows[0].n,
+    10,
+  );
+  assert.equal((await pg.query('SELECT count(*)::int AS n FROM device_certificates')).rows[0].n, 0);
+  await assert.rejects(executeFixture(client, plan), /ALREADY_EXISTS/);
+  const cleanup = await executeFixture(client, {
+    ...plan,
+    action: 'business-cleanup',
+    businessBaseline: baseline.businessFingerprints,
+  });
+  assert.ok(Object.values(cleanup.counts).every((n) => n === 0));
+  await executeFixture(client, {
+    ...plan,
+    action: 'business-audit',
+    businessBaseline: baseline.businessFingerprints,
+  });
 });
 for (const mutation of [
   "UPDATE devices SET lifecycle_status='Active'",
@@ -71,59 +78,51 @@ for (const mutation of [
 ])
   test('semantic SQL refuses scope/state drift: ' + mutation.split(' SET ')[1], async () => {
     const { pg, client } = await setup();
-    try {
-      await pg.exec(mutation);
-      await assert.rejects(executeFixture(client, plan), /OWN_ASSIGNMENT_REQUIRED/);
-      assert.equal((await pg.query('SELECT count(*)::int AS n FROM esg_reports')).rows[0].n, 0);
-    } finally {
-      await pg.close();
-    }
+    await pg.exec(mutation);
+    await assert.rejects(executeFixture(client, plan), /OWN_ASSIGNMENT_REQUIRED/);
+    assert.equal((await pg.query('SELECT count(*)::int AS n FROM esg_reports')).rows[0].n, 0);
   });
 
 test('platform exports require the exact ledger and own frozen filters; foreign jobs remain unchanged', async () => {
   const { pg, client } = await setup();
   const own = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     foreign = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
-  try {
-    await pg.query(
-      "INSERT INTO esg_export_jobs(id,requested_by,dataset,filters)VALUES($1,'fixture','DAILY_SUMMARY',$2)",
-      [foreign, { customerId: 'outside' }],
-    );
-    const baseline = await executeFixture(client, { ...plan, action: 'business-baseline' });
-    await pg.query(
-      "INSERT INTO esg_export_jobs(id,requested_by,dataset,filters)VALUES($1,'fixture','DAILY_SUMMARY',$2)",
-      [own, { customerId: customers[0].id }],
-    );
-    await assert.rejects(
-      executeFixture(client, { ...plan, action: 'business-cleanup', businessBaseline: baseline.businessFingerprints }),
-      /BUSINESS_BASELINE_DRIFT/,
-    );
-    await assert.rejects(
-      executeFixture(client, {
-        ...plan,
-        action: 'business-cleanup',
-        semanticExportIds: [foreign],
-        businessBaseline: baseline.businessFingerprints,
-      }),
-      /OWN_EXPORT_FILTER_SCOPE_DRIFT/,
-    );
-    const cleaned = await executeFixture(client, {
+  await pg.query(
+    "INSERT INTO esg_export_jobs(id,requested_by,dataset,filters)VALUES($1,'fixture','DAILY_SUMMARY',$2)",
+    [foreign, { customerId: 'outside' }],
+  );
+  const baseline = await executeFixture(client, { ...plan, action: 'business-baseline' });
+  await pg.query(
+    "INSERT INTO esg_export_jobs(id,requested_by,dataset,filters)VALUES($1,'fixture','DAILY_SUMMARY',$2)",
+    [own, { customerId: customers[0].id }],
+  );
+  await assert.rejects(
+    executeFixture(client, { ...plan, action: 'business-cleanup', businessBaseline: baseline.businessFingerprints }),
+    /BUSINESS_BASELINE_DRIFT/,
+  );
+  await assert.rejects(
+    executeFixture(client, {
       ...plan,
       action: 'business-cleanup',
-      semanticExportIds: [own],
+      semanticExportIds: [foreign],
       businessBaseline: baseline.businessFingerprints,
-    });
-    assert.equal(cleaned.deleted.esg_export_jobs, 1);
-    assert.deepEqual((await pg.query('SELECT id,filters FROM esg_export_jobs')).rows, [
-      { id: foreign, filters: { customerId: 'outside' } },
-    ]);
-    await executeFixture(client, {
-      ...plan,
-      action: 'business-audit',
-      semanticExportIds: [own],
-      businessBaseline: baseline.businessFingerprints,
-    });
-  } finally {
-    await pg.close();
-  }
+    }),
+    /OWN_EXPORT_FILTER_SCOPE_DRIFT/,
+  );
+  const cleaned = await executeFixture(client, {
+    ...plan,
+    action: 'business-cleanup',
+    semanticExportIds: [own],
+    businessBaseline: baseline.businessFingerprints,
+  });
+  assert.equal(cleaned.deleted.esg_export_jobs, 1);
+  assert.deepEqual((await pg.query('SELECT id,filters FROM esg_export_jobs')).rows, [
+    { id: foreign, filters: { customerId: 'outside' } },
+  ]);
+  await executeFixture(client, {
+    ...plan,
+    action: 'business-audit',
+    semanticExportIds: [own],
+    businessBaseline: baseline.businessFingerprints,
+  });
 });
