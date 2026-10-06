@@ -1,11 +1,12 @@
+import { validateSamplingCorrelationLedger } from './qa09-cold409-proof.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { validatePhaseCorrelation } from './check-qa09-contract-phases.mjs';
 
-export function analyzeAccountPhases(patch, audit) {
-  const proof = validatePhaseCorrelation(patch, audit, { accountPhases: true, requireColdConflict: true });
+export function analyzeAccountPhases(patch, audit, { sampling = false } = {}) {
+  const proof = validatePhaseCorrelation(patch, audit, { accountPhases: true, requireColdConflict: true, sampling });
   const top = new Set([
     'runtime-initialize',
     'admin-authenticate',
@@ -32,6 +33,8 @@ export function analyzeAccountPhases(patch, audit) {
       clientMs: c.latencyMs,
       gatewayMs: Number(c.gateway[0].responseLatency),
       lambdaMs: c.lambda[0].elapsedMs,
+      clientTransport: c.clientTransport,
+      platformReport: c.platformReports?.[0],
       hookMs: hook.durationMs,
       accountQueryMs: account.durationMs,
       firstDriverQueryMs: driver.durationMs,
@@ -67,7 +70,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     audit = JSON.parse(auditBytes);
   if (patch.sourceReceiptSha256 !== hash(child) || audit.sourceReceiptSha256 !== hash(child))
     throw Error('CHILD_BYTES_NOT_BOUND');
-  const result = analyzeAccountPhases(patch, audit);
+  const sampling = process.argv.slice(6).includes('--cold-sampling');
+  if (sampling) validateSamplingCorrelationLedger(JSON.parse(child), patch, audit);
+  const result = analyzeAccountPhases(patch, audit, { sampling });
   result.bindings = {
     childSha256: hash(child),
     patchSha256: hash(patchBytes),

@@ -1,3 +1,4 @@
+import { validateSamplingCorrelationLedger } from './qa09-cold409-proof.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
@@ -5,7 +6,12 @@ import { pathToFileURL } from 'node:url';
 const demand = (ok, code) => {
   if (!ok) throw Error(code);
 };
-export function validatePhaseCorrelation(patch, audit, { accountPhases = false, requireColdConflict = false } = {}) {
+export function validatePhaseCorrelation(
+  patch,
+  audit,
+  { accountPhases = false, requireColdConflict = false, sampling = false } = {},
+) {
+  demand(!sampling || accountPhases, 'SAMPLING_REQUIRES_ACCOUNT_PHASES');
   demand(!requireColdConflict || accountPhases, 'COLD_CONFLICT_REQUIRES_ACCOUNT_PHASES');
   for (const r of [patch, audit])
     demand(
@@ -18,10 +24,16 @@ export function validatePhaseCorrelation(patch, audit, { accountPhases = false, 
       'HTTP_CORRELATION_INCOMPLETE',
     );
   demand(
-    patch.scope === 'OWN_CONTRACT_PATCH_GATEWAY_LAMBDA_REQUEST_CORRELATION' &&
-      audit.scope === 'OWN_AUDIT_GET_GATEWAY_LAMBDA_REQUEST_CORRELATION' &&
-      patch.records.length === 6 &&
-      audit.records.length >= 10 &&
+    patch.scope ===
+      (sampling
+        ? 'OWN_COLD409_PATCH_GATEWAY_LAMBDA_REQUEST_CORRELATION'
+        : 'OWN_CONTRACT_PATCH_GATEWAY_LAMBDA_REQUEST_CORRELATION') &&
+      audit.scope ===
+        (sampling
+          ? 'OWN_COLD409_AUDIT_GET_GATEWAY_LAMBDA_REQUEST_CORRELATION'
+          : 'OWN_AUDIT_GET_GATEWAY_LAMBDA_REQUEST_CORRELATION') &&
+      (sampling ? [6, 12].includes(patch.records.length) : patch.records.length === 6) &&
+      (sampling ? audit.records.length === 9 * (patch.records.length / 6) : audit.records.length >= 10) &&
       patch.sourceReceiptSha256 === audit.sourceReceiptSha256 &&
       patch.sourceCommit === audit.sourceCommit &&
       patch.prefix === audit.prefix,
@@ -34,6 +46,32 @@ export function validatePhaseCorrelation(patch, audit, { accountPhases = false, 
   ])
     for (const c of r.records) {
       const phases = c.phases;
+      if (sampling) {
+        demand(c.clientTransport?.source === 'NODE_HTTPS_SOCKET_EVENTS', 'CLIENT_SOCKET_OBSERVATION_REQUIRED');
+        demand(
+          ['socketAcquisitionMs', 'requestSentAtMs', 'headersAtMs', 'bodyEndAtMs', 'bodyReadMs', 'jsonParseMs'].every(
+            (name) => Number.isFinite(c.clientTransport[name]) && c.clientTransport[name] >= 0,
+          ) &&
+            ['dnsMs', 'tcpMs', 'tlsMs'].every(
+              (name) =>
+                c.clientTransport[name] === null ||
+                (Number.isFinite(c.clientTransport[name]) && c.clientTransport[name] >= 0),
+            ) &&
+            c.clientTransport.bodyEndAtMs >= c.clientTransport.headersAtMs &&
+            typeof c.clientTransport.reusedSocket === 'boolean' &&
+            (!c.clientTransport.reusedSocket ||
+              ['dnsMs', 'tcpMs', 'tlsMs'].every((name) => c.clientTransport[name] === null)),
+          'CLIENT_TRANSPORT_TIMINGS_REQUIRED',
+        );
+        demand(
+          c.platformReports?.length === 1 &&
+            c.platformReports[0].lambdaRequestId === c.lambda[0].lambdaRequestId &&
+            Number.isFinite(c.platformReports[0].durationMs) &&
+            c.platformReports[0].durationMs >= 0 &&
+            c.platformReports[0].memoryMiB === 512,
+          'EXACT_PLATFORM_REPORT_REQUIRED',
+        );
+      }
       demand(
         phases.every(
           (p) =>
@@ -122,7 +160,12 @@ export function validatePhaseCorrelation(patch, audit, { accountPhases = false, 
       c.phases.filter((p) => p.phase === 'runtime-initialize').length === 1 &&
       c.phases.some((p) => p.phase === 'runtime-initialize' && p.outcome === 'PASS' && p.errorCode === 'NONE'),
   );
-  if (requireColdConflict) demand(coldConflicts.length > 0, 'COLD_CONFLICT_REQUIRED');
+  const verifiedCold = sampling
+    ? coldConflicts.filter(
+        (c) => Number.isFinite(c.platformReports[0].initDurationMs) && c.platformReports[0].initDurationMs > 0,
+      )
+    : coldConflicts;
+  if (requireColdConflict) demand(verifiedCold.length > 0, 'COLD_CONFLICT_REQUIRED');
   return {
     gate: 'PASS',
     scope: 'CONTRACT_DATABASE_CONFLICT_AND_AUDIT_GET_PHASE_OBSERVATION',
@@ -132,7 +175,9 @@ export function validatePhaseCorrelation(patch, audit, { accountPhases = false, 
     cleanupVerified: false,
     p95Accepted: false,
     accountPhasesRequired: accountPhases,
-    coldConflictObservedCount: coldConflicts.length,
+    coldConflictObservedCount: verifiedCold.length,
+    applicationColdConflictObservedCount: coldConflicts.length,
+    platformColdProofRequired: sampling,
     coldConflictRequired: requireColdConflict,
     summaries,
   };
@@ -143,7 +188,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const patch = JSON.parse(readFileSync(patchFile)),
     audit = JSON.parse(readFileSync(auditFile));
   demand(patch.sourceReceiptSha256 === createHash('sha256').update(child).digest('hex'), 'CHILD_BYTES_NOT_BOUND');
+  const sampling = process.argv.slice(6).includes('--cold-sampling');
+  if (sampling) validateSamplingCorrelationLedger(JSON.parse(child), patch, audit);
   const r = validatePhaseCorrelation(patch, audit, {
+    sampling,
     accountPhases: process.argv.slice(6).includes('--account-phases'),
     requireColdConflict: process.argv.slice(6).includes('--require-cold-conflict'),
   });

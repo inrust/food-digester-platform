@@ -2,6 +2,7 @@
 import datetime
 import hashlib
 import json
+import math
 import re
 import subprocess
 import sys
@@ -13,8 +14,15 @@ receipt = json.loads(raw)
 if not re.fullmatch(r'qa09-[a-f0-9]{16}', receipt.get('prefix', '')) or receipt.get('fullQa09Accepted') is not False:
     raise ValueError('OWN_RECEIPT_REQUIRED')
 audit_mode = '--audit-get' in sys.argv[3:]
-attempts = ([r for r in receipt['checks'] if r.get('method') == 'GET' and r.get('id', '').startswith('race:audit')] if audit_mode else receipt.get('remaining', {}).get('attempts', []))
-if not attempts and not audit_mode:
+sampling = '--cold-sampling' in sys.argv[3:]
+if any(x not in ['--audit-get', '--cold-sampling'] for x in sys.argv[3:]):
+    raise ValueError('INVALID_CORRELATION_MODE')
+if sampling and receipt.get('cold409Sampling', {}).get('gate') != 'PASS':
+    raise ValueError('COLD_SAMPLING_BUSINESS_REQUIRED')
+ledger = receipt.get('cold409Sampling' if sampling else 'remaining', {})
+prefix_id = 'cold:audit' if sampling else 'race:audit'
+attempts = ([r for r in receipt['checks'] if r.get('method') == 'GET' and r.get('id', '').startswith(prefix_id)] if audit_mode else ledger.get('attempts', []))
+if not attempts and not audit_mode and not sampling:
     attempts = [r for r in receipt['checks'] if r.get('id', '').startswith('contract-race-')]
 if not attempts:
     raise ValueError('CONTRACT_ATTEMPTS_REQUIRED')
@@ -24,11 +32,12 @@ for attempt in attempts:
     request_id = observed.get('gatewayRequestId') or observed.get('clientRequestId') or attempt.get('clientRequestId')
     started = observed.get('startedAt') or attempt['startedAt']
     start_ms = int(datetime.datetime.fromisoformat(started.replace('Z', '+00:00')).timestamp() * 1000)
-    clients.append({'method': observed.get('method', 'PATCH'), 'operationId': ('listAuditLogs' if observed.get('id') == 'race:audit-list' else 'getAuditLogDetail') if audit_mode else 'updateContract', 'id': attempt['id'], 'requestId': request_id, 'startedAt': started,
+    clients.append({'method': observed.get('method', 'PATCH'), 'operationId': ('listAuditLogs' if (observed.get('id', '').endswith(':list') if sampling else observed.get('id') == 'race:audit-list') else 'getAuditLogDetail') if audit_mode else 'updateContract', 'id': attempt['id'], 'requestId': request_id, 'startedAt': started,
                     'startMs': start_ms, 'status': observed.get('status'),
                     'extendedRequestId': observed.get('gatewayExtendedRequestId'),
                     'latencyMs': observed.get('latencyMs'),
-                    'responseReceived': observed.get('responseReceived', bool(observed.get('status')))})
+                    'responseReceived': observed.get('responseReceived', bool(observed.get('status'))),
+                    'clientTransport': {k: v for k, v in observed.get('clientTransport', {}).items() if k in ['socketAcquisitionMs', 'dnsMs', 'tcpMs', 'tlsMs', 'requestSentAtMs', 'headersAtMs', 'responseWaitMs', 'firstBodyAtMs', 'bodyEndAtMs', 'bodyReadMs', 'jsonParseMs'] and (v is None or isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and v >= 0)} | {'source': 'NODE_HTTPS_SOCKET_EVENTS' if observed.get('clientTransport', {}).get('source') == 'NODE_HTTPS_SOCKET_EVENTS' else 'NOT_AVAILABLE', 'reusedSocket': observed.get('clientTransport', {}).get('reusedSocket') is True}})
 start_ms = min(c['startMs'] for c in clients) - 2000
 end_ms = max(c['startMs'] + max(c['latencyMs'] or 0, 30000) for c in clients) + 2000
 ids = {c['requestId'] for c in clients if c['requestId']}
@@ -40,6 +49,7 @@ fields = {
                'status', 'elapsedMs'],
 }
 rows = {}
+platform_reports = []
 for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
                     ('lambda', '/aws/lambda/fdp-test-api')]:
     found, phases, error, token, pages = [], [], None, None, 0
@@ -62,6 +72,15 @@ for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
         page = json.loads(result.stdout)
         for event in page.get('events', []):
             message = event['message']
+            if name == 'lambda':
+                report = re.search(r'REPORT RequestId:\s*([a-f0-9-]{36})', message)
+                if report:
+                    metrics = {}
+                    for label, key in [('Duration', 'durationMs'), ('Billed Duration', 'billedDurationMs'), ('Memory Size', 'memoryMiB'), ('Max Memory Used', 'maxMemoryMiB'), ('Init Duration', 'initDurationMs')]:
+                        found_metric = re.search(r'(?:^|\t)' + label + r':\s*([0-9.]+)\s*(?:ms|MB)', message)
+                        if found_metric:
+                            metrics[key] = float(found_metric.group(1))
+                    platform_reports.append({'lambdaRequestId': report.group(1), **metrics})
             try:
                 value = json.loads(message[message.find('{'):])
             except (ValueError, TypeError):
@@ -105,21 +124,22 @@ for client in clients:
                  (not client['extendedRequestId'] or g.get('extendedRequestId') == client['extendedRequestId']) and
                  (client['status'] is None or int(g.get('status', 0)) == client['status']) and
                  str(g.get('status')) == str(l.get('status')))
-    linked.append({**client, 'gateway': gateway, 'lambda': runtime, 'exactLinked': exact,
+    own_reports = [p for p in platform_reports if len(runtime) == 1 and p['lambdaRequestId'] == runtime[0].get('lambdaRequestId')]
+    linked.append({**client, 'platformReports': own_reports, 'gateway': gateway, 'lambda': runtime, 'exactLinked': exact,
                    'integrationThrottled': any(str(g.get('integrationStatus')) == '429' for g in gateway),
                    'phases': [p for p in rows['lambda']['phases'] if p.get('gatewayRequestId') == client['requestId']]})
-expected_count = len(clients) if audit_mode else 6
+expected_count = len(clients) if audit_mode or sampling else 6
 complete = (len(linked) == expected_count and len(ids) == expected_count and expected_count > 0 and
             len({c['id'] for c in clients}) == expected_count and
             all(x['exactLinked'] and x['responseReceived'] for x in linked))
-report = {'task': 'QA-09', 'scope': 'OWN_AUDIT_GET_GATEWAY_LAMBDA_REQUEST_CORRELATION' if audit_mode else 'OWN_CONTRACT_PATCH_GATEWAY_LAMBDA_REQUEST_CORRELATION',
+report = {'task': 'QA-09', 'sampling': sampling, 'scope': ('OWN_COLD409_AUDIT_GET_GATEWAY_LAMBDA_REQUEST_CORRELATION' if audit_mode else 'OWN_COLD409_PATCH_GATEWAY_LAMBDA_REQUEST_CORRELATION') if sampling else ('OWN_AUDIT_GET_GATEWAY_LAMBDA_REQUEST_CORRELATION' if audit_mode else 'OWN_CONTRACT_PATCH_GATEWAY_LAMBDA_REQUEST_CORRELATION'),
           'collectorSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
           'sourceReceiptSha256': hashlib.sha256(raw).hexdigest(), 'sourceCommit': receipt.get('sourceCommit'),
           'prefix': receipt['prefix'], 'fullQa09Accepted': False,
           'startMs': start_ms, 'endMs': end_ms, 'records': linked,
           'logReadErrors': {k: v['error'] for k, v in rows.items() if v['error']},
           'exactLinkedCount': sum(x['exactLinked'] for x in linked),
-          'missingHistoricalSiblingReceipt': not receipt.get('remaining', {}).get('attempts'),
+          'missingHistoricalSiblingReceipt': not ledger.get('attempts'),
           'gate': 'PASS' if complete and not any(v['error'] for v in rows.values()) else 'PARTIAL'}
 output.write_text(json.dumps(report, indent=2) + '\n')
 print(json.dumps({k: v for k, v in report.items() if k != 'records'}))

@@ -12,11 +12,13 @@ import { ROLES } from './qa09-business-target.mjs';
 import { legalWriteInventory } from './qa09-legal-write-inventory.mjs';
 import { runNonActiveBrowser } from './qa09-nonactive-browser.mjs';
 import { cleanupOwnedDomain } from './qa09-owned-domain-cleanup.mjs';
+import { validateColdSamplingReceipt } from './qa09-cold409-proof.mjs';
+import { runCold409Sampling } from './qa09-cold409-sampling.mjs';
 import { runContractRaceTarget } from './qa09-contract-race.mjs';
 import { runSecurityRetest } from './qa09-security-retest.mjs';
 import { runRemainingNonActive } from './qa09-remaining-nonactive.mjs';
 const [output, versionFile, mode] = process.argv.slice(2);
-if (mode !== undefined && !['--remaining', '--security-retest', '--contract-race'].includes(mode))
+if (mode !== undefined && !['--remaining', '--security-retest', '--contract-race', '--cold409-sampling'].includes(mode))
   throw Error('INVALID_NONACTIVE_MODE');
 if (!output || !versionFile) throw Error('OUTPUT_AND_VERSION_REQUIRED');
 const version = JSON.parse(readFileSync(versionFile));
@@ -37,6 +39,9 @@ const sourcePaths = [
   'scripts/qa09-seed-recovery.mjs',
   'scripts/qa09-business-target.mjs',
   'scripts/qa09-http-observation.mjs',
+  'scripts/qa09-https-transport.mjs',
+  'scripts/qa09-cold409-sampling.mjs',
+  'scripts/qa09-cold409-proof.mjs',
   'scripts/qa09-legal-write-inventory.mjs',
   'scripts/qa09-write-boundary-probes.mjs',
   'apps/cloud-api/src/runtime/delivered-operations.ts',
@@ -231,20 +236,28 @@ try {
     output,
     {
       coreOnly: true,
-      readDomains: mode !== '--contract-race',
+      readDomains: !['--contract-race', '--cold409-sampling'].includes(mode),
+      detailedHttp: ['--contract-race', '--cold409-sampling'].includes(mode),
       nonActiveOnly: true,
       ...(mode !== undefined
         ? {
             foundationOnly: true,
-            remainingTarget: (ctx) =>
-              mode === '--contract-race'
-                ? runContractRaceTarget(ctx, {
-                    historical: {
-                      prefix: 'qa09-0ed30921f63c8541',
-                      contractId: '7d95a76b-1b79-42c0-9f64-2c98a9297898',
-                      sourceReceiptSha256: '59473f9dbb9288fe2b2933f7bb08c6d187553ac2bf313ccc38ea47b711737e5f',
-                    },
-                  })
+            remainingTarget: async (ctx) =>
+              ['--contract-race', '--cold409-sampling'].includes(mode)
+                ? await (async () => {
+                    const race = await runContractRaceTarget(ctx, {
+                      historical: {
+                        prefix: 'qa09-0ed30921f63c8541',
+                        contractId: '7d95a76b-1b79-42c0-9f64-2c98a9297898',
+                        sourceReceiptSha256: '59473f9dbb9288fe2b2933f7bb08c6d187553ac2bf313ccc38ea47b711737e5f',
+                      },
+                    });
+                    if (mode === '--cold409-sampling' && race.gate === 'PASS') {
+                      const sample = await runCold409Sampling(ctx);
+                      if (sample.gate !== 'PASS') throw Error('COLD_SAMPLING_BUSINESS_INCOMPLETE');
+                    }
+                    return race;
+                  })()
                 : mode === '--security-retest'
                   ? runSecurityRetest(ctx)
                   : runRemainingNonActive({ ...ctx, receiptPath: output }),
@@ -335,11 +348,13 @@ let gate = {
   task: 'QA-09',
   scope:
     mode !== undefined
-      ? mode === '--contract-race'
-        ? 'OWN_CONTRACT_CONCURRENT_PATCH_RETEST'
-        : mode === '--security-retest'
-          ? 'SCOPED_SECURITY_RESPONSE_RETEST'
-          : 'REMAINING_NONACTIVE_LEGAL_WRITES_SECURITY_LEASE_RECOVERY'
+      ? mode === '--cold409-sampling'
+        ? 'OWN_BOUNDED_COLD409_SAMPLING'
+        : mode === '--contract-race'
+          ? 'OWN_CONTRACT_CONCURRENT_PATCH_RETEST'
+          : mode === '--security-retest'
+            ? 'SCOPED_SECURITY_RESPONSE_RETEST'
+            : 'REMAINING_NONACTIVE_LEGAL_WRITES_SECURITY_LEASE_RECOVERY'
       : 'NONACTIVE_LEGAL_WRITES_AND_117_TARGET_BROWSER',
   sourceCommit: r.sourceCommit,
   prefix,
@@ -405,6 +420,7 @@ try {
       ))
   )
     throw Error('NONACTIVE_CORE_INCOMPLETE');
+  if (mode === '--cold409-sampling') validateColdSamplingReceipt(child);
   if (mode === undefined && (!child.semanticBrowser || child.semanticBrowser.elements.length !== 117))
     throw Error('SEMANTIC_INVENTORY_INCOMPLETE');
   if (mode !== undefined && (!child.remaining || child.remaining.gate !== 'PASS'))
@@ -426,6 +442,7 @@ try {
     sourceReceiptSha256: createHash('sha256')
       .update(readFileSync(output + '.sources.json'))
       .digest('hex'),
+    ...(mode === '--cold409-sampling' ? { cold409Gate: 'NOT_EVALUATED', maxConcurrency: 6, maxPatchRequests: 12 } : {}),
     remainingCoverage:
       'No real device authentication, natural Active, native browser, full 117 behavior or full QA09 acceptance claim',
   };

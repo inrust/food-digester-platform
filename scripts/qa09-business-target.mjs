@@ -50,6 +50,7 @@ export function validateTargetStage(r, stage, required) {
 const EXECUTED_BUSINESS_SOURCES = [
   'scripts/qa09-business-target.mjs',
   'scripts/qa09-http-observation.mjs',
+  'scripts/qa09-https-transport.mjs',
   'scripts/qa09-license-lifecycle.mjs',
   'scripts/qa09-ten-device-db.mjs',
   'apps/admin-web/src/router/routes.ts',
@@ -73,6 +74,7 @@ export async function runBusinessTarget(
     nonActiveOnly = false,
     semanticBrowser,
     remainingTarget,
+    detailedHttp = false,
     foundationOnly = false,
     onLicenseIssued,
     onLicenseActivated,
@@ -171,6 +173,7 @@ export async function runBusinessTarget(
       url: host + path,
       method,
       body,
+      detailedTransport: detailedHttp,
       headers: {
         'Content-Type': 'application/json',
         ...(role ? { Authorization: `Bearer ${sessions.get(role).idToken}` } : {}),

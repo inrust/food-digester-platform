@@ -150,3 +150,63 @@ for (const fault of ['foreign-invocation', 'missing-transaction', 'conflict-code
     if (fault === 'other-run') audit.sourceReceiptSha256 = 'other';
     assert.throws(() => validatePhaseCorrelation(patch, audit));
   });
+
+function samplingFixtures() {
+  const f = accountFixtures();
+  f.patch.scope = 'OWN_COLD409_PATCH_GATEWAY_LAMBDA_REQUEST_CORRELATION';
+  f.audit.scope = 'OWN_COLD409_AUDIT_GET_GATEWAY_LAMBDA_REQUEST_CORRELATION';
+  f.audit.records.pop();
+  for (const r of [...f.patch.records, ...f.audit.records]) {
+    r.clientTransport = {
+      source: 'NODE_HTTPS_SOCKET_EVENTS',
+      socketAcquisitionMs: 0,
+      requestSentAtMs: 2,
+      headersAtMs: 3,
+      bodyEndAtMs: 5,
+      bodyReadMs: 2,
+      jsonParseMs: 0,
+      dnsMs: null,
+      tcpMs: null,
+      tlsMs: null,
+      reusedSocket: true,
+    };
+    r.platformReports = [{ lambdaRequestId: r.lambda[0].lambdaRequestId, durationMs: 20, memoryMiB: 512 }];
+  }
+  const cold = f.patch.records[1];
+  cold.phases.forEach((p) => {
+    p.coldStart = true;
+  });
+  cold.phases.push({ ...cold.phases[0], phase: 'runtime-initialize' });
+  cold.platformReports[0].initDurationMs = 800;
+  return f;
+}
+test('bounded sampler requires physical Init Duration as well as application cold phases and retains client metrics', () => {
+  const { patch, audit } = samplingFixtures();
+  const options = { sampling: true, accountPhases: true, requireColdConflict: true };
+  const proof = validatePhaseCorrelation(patch, audit, options);
+  assert.equal(proof.coldConflictObservedCount, 1);
+  assert.equal(proof.platformColdProofRequired, true);
+  assert.equal(analyzeAccountPhases(patch, audit, { sampling: true }).rows[1].platformReport.initDurationMs, 800);
+  delete patch.records[1].platformReports[0].initDurationMs;
+  assert.throws(() => validatePhaseCorrelation(patch, audit, options), /COLD_CONFLICT_REQUIRED/);
+});
+for (const fault of [
+  'foreign-report',
+  'duplicate-report',
+  'no-socket-metrics',
+  'missing-body',
+  'over-budget',
+  'missing-audit',
+])
+  test('bounded sampler rejects ' + fault, () => {
+    const { patch, audit } = samplingFixtures();
+    if (fault === 'foreign-report') patch.records[1].platformReports[0].lambdaRequestId = 'foreign';
+    if (fault === 'duplicate-report') patch.records[1].platformReports.push({ ...patch.records[1].platformReports[0] });
+    if (fault === 'no-socket-metrics') delete audit.records[0].clientTransport;
+    if (fault === 'missing-body') delete patch.records[0].clientTransport.bodyReadMs;
+    if (fault === 'over-budget') patch.records.push(patch.records[0]);
+    if (fault === 'missing-audit') audit.records.pop();
+    assert.throws(() =>
+      validatePhaseCorrelation(patch, audit, { sampling: true, accountPhases: true, requireColdConflict: true }),
+    );
+  });
