@@ -91,7 +91,10 @@ for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
             if name == 'lambda' and value.get('event') == 'data-path.phase.completed':
                 phase_fields = ['gatewayRequestId', 'lambdaRequestId', 'operationId', 'phase', 'durationMs',
                                 'outcome', 'errorCode', 'startedAt', 'completedAt', 'coldStart', 'includesConnectionWait']
-                phases.append({k: value[k] for k in phase_fields if k in value})
+                phase = {k: value[k] for k in phase_fields if k in value}
+                if value.get('completionBoundary') in ['DRIVER_DISPATCH', 'OPERATION_SETTLED', 'OPERATION_FAILED']:
+                    phase['completionBoundary'] = value['completionBoundary']
+                phases.append(phase)
             if name == 'lambda' and value.get('event') != 'admin.request.completed':
                 continue
             row = {k: value[k] for k in fields[name] if k in value}

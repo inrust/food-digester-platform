@@ -210,3 +210,99 @@ for (const fault of [
       validatePhaseCorrelation(patch, audit, { sampling: true, accountPhases: true, requireColdConflict: true }),
     );
   });
+function preparationFixtures() {
+  const r = accountFixtures();
+  for (const c of [...r.patch.records, ...r.audit.records]) {
+    const template = c.phases.find((p) => p.phase === 'admin-account-query');
+    c.phases.push({
+      ...template,
+      phase: 'db-client-prepare',
+      durationMs: 1,
+      includesConnectionWait: false,
+      startedAt: new Date(1001).toISOString(),
+      completedAt: new Date(1002).toISOString(),
+      completionBoundary: 'DRIVER_DISPATCH',
+    });
+  }
+  const cold = r.patch.records[1];
+  cold.phases.forEach((p) => (p.coldStart = true));
+  cold.phases.push(
+    { ...cold.phases[0], phase: 'runtime-initialize' },
+    {
+      ...cold.phases.at(-1),
+      phase: 'db-adapter-connect',
+      durationMs: 0,
+      includesConnectionWait: false,
+      startedAt: new Date(1001).toISOString(),
+      completedAt: new Date(1001).toISOString(),
+    },
+    {
+      ...cold.phases.at(-1),
+      phase: 'db-client-after-adapter',
+      durationMs: 1,
+      includesConnectionWait: false,
+      startedAt: new Date(1001).toISOString(),
+      completedAt: new Date(1002).toISOString(),
+      completionBoundary: 'DRIVER_DISPATCH',
+    },
+  );
+  return r;
+}
+test('client preparation requires actual dispatch, cold adapter suffix and leaves warm adapter timings absent', () => {
+  const { patch, audit } = preparationFixtures();
+  const proof = validatePhaseCorrelation(patch, audit, {
+    accountPhases: true,
+    clientPreparation: true,
+    requireColdConflict: true,
+  });
+  assert.equal(proof.clientPreparationRequired, true);
+  const a = analyzeAccountPhases(patch, audit, { clientPreparation: true });
+  assert.equal(a.rows[1].clientPreparationMs, 1);
+  assert.equal(a.rows[1].afterAdapterMs, 1);
+  assert.equal(a.rows[0].adapterConnectMs, null);
+  assert.equal(a.rows[0].afterAdapterMs, null);
+  assert.equal(a.rows[1].topLevelMeasuredMs, 14, 'nested preparation must not be summed with account hook');
+});
+for (const [name, mutate, reason] of [
+  ['missing prepare', (c) => (c.phases = c.phases.filter((p) => p.phase !== 'db-client-prepare')), /PHASE_MISSING/],
+  [
+    'settlement is not driver dispatch',
+    (c) => (c.phases.find((p) => p.phase === 'db-client-prepare').completionBoundary = 'OPERATION_SETTLED'),
+    /CLIENT_PREPARATION_BOUNDARY/,
+  ],
+  [
+    'preparation after driver start',
+    (c) => (c.phases.find((p) => p.phase === 'db-client-prepare').completedAt = new Date(1004).toISOString()),
+    /CLIENT_PREPARATION_BOUNDARY/,
+  ],
+  [
+    'cold missing suffix',
+    (c) => (c.phases = c.phases.filter((p) => p.phase !== 'db-client-after-adapter')),
+    /CLIENT_ADAPTER_PHASES/,
+  ],
+  [
+    'suffix outside preparation',
+    (c) => (c.phases.find((p) => p.phase === 'db-client-after-adapter').completedAt = new Date(1003).toISOString()),
+    /CLIENT_ADAPTER_PHASE_NOT_NESTED/,
+  ],
+  [
+    'wrong invocation',
+    (c) => (c.phases.find((p) => p.phase === 'db-client-prepare').lambdaRequestId = 'foreign'),
+    /PHASE_ID_MISMATCH/,
+  ],
+])
+  test('client preparation rejects ' + name, () => {
+    const { patch, audit } = preparationFixtures();
+    mutate(patch.records[1]);
+    assert.throws(
+      () => validatePhaseCorrelation(patch, audit, { accountPhases: true, clientPreparation: true }),
+      reason,
+    );
+  });
+test('client preparation cannot bypass account phase checks', () => {
+  const { patch, audit } = preparationFixtures();
+  assert.throws(
+    () => validatePhaseCorrelation(patch, audit, { clientPreparation: true }),
+    /CLIENT_PREPARATION_REQUIRES_ACCOUNT_PHASES/,
+  );
+});

@@ -5,8 +5,13 @@ import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { validatePhaseCorrelation } from './check-qa09-contract-phases.mjs';
 
-export function analyzeAccountPhases(patch, audit, { sampling = false } = {}) {
-  const proof = validatePhaseCorrelation(patch, audit, { accountPhases: true, requireColdConflict: true, sampling });
+export function analyzeAccountPhases(patch, audit, { sampling = false, clientPreparation = false } = {}) {
+  const proof = validatePhaseCorrelation(patch, audit, {
+    accountPhases: true,
+    requireColdConflict: true,
+    sampling,
+    clientPreparation,
+  });
   const top = new Set([
     'runtime-initialize',
     'admin-authenticate',
@@ -33,6 +38,23 @@ export function analyzeAccountPhases(patch, audit, { sampling = false } = {}) {
       clientMs: c.latencyMs,
       gatewayMs: Number(c.gateway[0].responseLatency),
       lambdaMs: c.lambda[0].elapsedMs,
+      ...(clientPreparation
+        ? {
+            clientPreparationMs: phase('db-client-prepare').durationMs,
+            accountBeforePreparationMs:
+              Date.parse(phase('db-client-prepare').startedAt) - Date.parse(account.startedAt),
+            adapterConnectMs: phase('db-adapter-connect')?.durationMs ?? null,
+            afterAdapterMs: phase('db-client-after-adapter')?.durationMs ?? null,
+            preparationBeforeAdapterMs: phase('db-adapter-connect')
+              ? Date.parse(phase('db-adapter-connect').startedAt) - Date.parse(phase('db-client-prepare').startedAt)
+              : null,
+            preparationResidualMs: phase('db-adapter-connect')
+              ? phase('db-client-prepare').durationMs -
+                phase('db-adapter-connect').durationMs -
+                phase('db-client-after-adapter').durationMs
+              : null,
+          }
+        : {}),
       clientTransport: c.clientTransport,
       platformReport: c.platformReports?.[0],
       hookMs: hook.durationMs,
@@ -54,10 +76,11 @@ export function analyzeAccountPhases(patch, audit, { sampling = false } = {}) {
     fullQa09Accepted: false,
     p95Accepted: false,
     cleanupVerified: false,
+    clientPreparationRequired: clientPreparation,
     coldConflictObservedCount: proof.coldConflictObservedCount,
     rows,
     boundaries:
-      'First root adapter query and pool checkout are per trace, claimed before dispatch. Hook includes Prisma initialization and optional activation. Checkout includes queueing, TCP/TLS and authentication; it is not pure pool waiting. Driver query includes checkout and result conversion. Differences are elapsed observations, not isolated CPU, SQL or lock time; rounding may yield small negative residuals. Nested phases excluded from top-level sum.',
+      'First root adapter query and pool checkout are per trace, claimed before dispatch. Hook includes Prisma initialization and optional activation. Checkout includes queueing, TCP/TLS and authentication; it is not pure pool waiting. Driver query includes checkout and result conversion. Differences are elapsed observations, not isolated CPU, SQL or lock time; rounding may yield small negative residuals. Nested phases excluded from top-level sum. Preparation uses public ORM extension entry through its own driver dispatch; adapter construction is lazy, suffix includes compiler/planning and scheduling, not isolated CPU or SQL. Warm requests do not invent adapter phases.',
   };
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
@@ -72,7 +95,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     throw Error('CHILD_BYTES_NOT_BOUND');
   const sampling = process.argv.slice(6).includes('--cold-sampling');
   if (sampling) validateSamplingCorrelationLedger(JSON.parse(child), patch, audit);
-  const result = analyzeAccountPhases(patch, audit, { sampling });
+  const result = analyzeAccountPhases(patch, audit, {
+    sampling,
+    clientPreparation: process.argv.slice(6).includes('--client-preparation'),
+  });
   result.bindings = {
     childSha256: hash(child),
     patchSha256: hash(patchBytes),

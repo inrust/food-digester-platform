@@ -4,6 +4,7 @@
  * Prisma 7：连接 URL 由 adapter 提供，schema 内不再配置 url。
  */
 import { ObservedPrismaPg } from './observed-pg.js';
+import { observeDatabaseClientPreparation } from './client-preparation.js';
 import { PrismaClient } from './generated/client.js';
 
 /** Defaults remain compatible; deployment sets an explicit per-function pool budget. */
@@ -21,13 +22,22 @@ export function resolveDatabasePoolMax(value = process.env.FDP_DB_POOL_MAX): 1 |
 }
 
 export function createPrismaClient(databaseUrl: string): PrismaClient {
-  return new PrismaClient({
+  const client = new PrismaClient({
     adapter: new ObservedPrismaPg({
       connectionString: databaseUrl,
       ...DATABASE_POOL_CONFIG,
       max: resolveDatabasePoolMax(),
     }),
   });
+  // Public query extension keeps Prisma's lazy execution/transaction machinery; no eager $connect or SQL.
+  return client.$extends({
+    name: 'fdp-client-preparation-observation',
+    query: {
+      $allOperations({ args, query }) {
+        return observeDatabaseClientPreparation(() => query(args));
+      },
+    },
+  }) as unknown as PrismaClient;
 }
 
 // PrismaClient 同时导出值（测试/Worker 用适配器构造）与类型

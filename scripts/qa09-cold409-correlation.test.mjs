@@ -17,6 +17,8 @@ def logs(args,**kwargs):
             value={'requestId':rid,'extendedRequestId':'extended-'+rid,'integrationRequestId':invocation,'requestTimeEpoch':str(epoch),'httpMethod':'GET' if audit else 'PATCH','status':str(o['status']),'integrationStatus':'200','functionStatus':str(o['status'])}
         else:
             value={'event':'admin.request.completed','gatewayRequestId':rid,'gatewayExtendedRequestId':'extended-'+rid,'lambdaRequestId':invocation,'operationId':('listAuditLogs' if a['id'].endswith(':list') else 'getAuditLogDetail') if audit else 'updateContract','status':o['status'],'elapsedMs':30,'unsafe':'SECRET_SENTINEL'}
+            events.append({'message':json.dumps({'event':'data-path.phase.completed','gatewayRequestId':rid,'lambdaRequestId':invocation,'phase':'db-client-prepare','completionBoundary':'DRIVER_DISPATCH','unsafe':'SECRET_SENTINEL'})})
+            events.append({'message':json.dumps({'event':'data-path.phase.completed','gatewayRequestId':rid,'lambdaRequestId':invocation,'phase':'db-client-after-adapter','completionBoundary':'SECRET_SENTINEL'})})
             events.append({'message':'REPORT RequestId: '+invocation+'\\tDuration: 30.50 ms\\tBilled Duration: 100 ms\\tMemory Size: 512 MB\\tMax Memory Used: 120 MB\\tInit Duration: 80.25 ms'})
         events.append({'message':json.dumps(value)})
     events.append({'message':'REPORT RequestId: 00000000-0000-0000-0000-000000000000\\tInit Duration: 999 ms'})
@@ -90,6 +92,8 @@ for (const audit of [false, true])
       false,
     );
     for (const row of receipt.records) {
+      assert.equal(row.phases[0].completionBoundary, 'DRIVER_DISPATCH');
+      assert.equal('completionBoundary' in row.phases[1], false);
       assert.equal(row.platformReports.length, 1);
       assert.equal(row.platformReports[0].lambdaRequestId, row.lambda[0].lambdaRequestId);
       assert.equal(row.platformReports[0].initDurationMs, 80.25);

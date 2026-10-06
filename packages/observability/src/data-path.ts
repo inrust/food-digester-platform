@@ -5,6 +5,9 @@ export type DataPathPhase =
   | 'admin-account-hook'
   | 'admin-account-query'
   | 'admin-account-activation'
+  | 'db-client-prepare'
+  | 'db-adapter-connect'
+  | 'db-client-after-adapter'
   | 'db-first-connection'
   | 'db-first-query'
   | 'envelope'
@@ -113,13 +116,14 @@ export function setDataPathMessage(
   if (t) t.ids = { ...t.ids, ...ids };
 }
 /** Finish is idempotent; no SQL, payload or arbitrary error messages enter the log. */
-export function beginDataPathPhase(phase: DataPathPhase): (error?: unknown) => void {
+export type PreparationBoundary = 'DRIVER_DISPATCH' | 'OPERATION_SETTLED' | 'OPERATION_FAILED';
+export function beginDataPathPhase(phase: DataPathPhase): (error?: unknown, boundary?: PreparationBoundary) => void {
   const trace = storage.getStore();
   if (!trace) return () => {};
   const start = trace.clock(),
     startedAt = new Date().toISOString();
   let finished = false;
-  return (error?: unknown) => {
+  return (error?: unknown, boundary?: PreparationBoundary) => {
     if (finished) return;
     finished = true;
     const code = (error as { code?: unknown } | undefined)?.code;
@@ -133,6 +137,11 @@ export function beginDataPathPhase(phase: DataPathPhase): (error?: unknown) => v
       'data-path.phase.completed',
       {
         phase,
+        ...(boundary !== undefined &&
+        ['db-client-prepare', 'db-client-after-adapter'].includes(phase) &&
+        ['DRIVER_DISPATCH', 'OPERATION_SETTLED', 'OPERATION_FAILED'].includes(boundary)
+          ? { completionBoundary: boundary }
+          : {}),
         durationMs: Math.max(0, Math.round(trace.clock() - start)),
         outcome: error === undefined ? 'PASS' : 'FAIL',
         errorCode,
@@ -156,11 +165,15 @@ export function beginDataPathPhase(phase: DataPathPhase): (error?: unknown) => v
   };
 }
 /** Claim before dispatch, so concurrent operations log only the first attempt in this trace. */
-export function beginFirstDataPathPhase(phase: 'db-first-connection' | 'db-first-query') {
+export type FirstDataPathPhase = 'db-first-connection' | 'db-first-query' | 'db-client-prepare' | 'db-adapter-connect';
+export function claimFirstDataPathPhase(phase: FirstDataPathPhase): ReturnType<typeof beginDataPathPhase> | undefined {
   const trace = storage.getStore();
-  if (!trace || trace.firstPhases.has(phase)) return () => {};
+  if (!trace || trace.firstPhases.has(phase)) return undefined;
   trace.firstPhases.add(phase);
   return beginDataPathPhase(phase);
+}
+export function beginFirstDataPathPhase(phase: FirstDataPathPhase) {
+  return claimFirstDataPathPhase(phase) ?? (() => {});
 }
 export async function observeDataPathPhase<T>(phase: DataPathPhase, work: () => Promise<T>): Promise<T> {
   const finish = beginDataPathPhase(phase);

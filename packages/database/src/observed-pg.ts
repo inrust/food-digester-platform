@@ -1,5 +1,6 @@
 import { Pool, type PoolClient, type PoolConfig } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { markDatabaseAdapterReady, markDatabaseDriverDispatch } from './client-preparation.js';
 import { beginFirstDataPathPhase } from '@fdp/observability';
 
 type ConnectCallback = (
@@ -43,10 +44,20 @@ export class ObservedPrismaPg extends PrismaPg {
     super(poolConfig);
   }
   override async connect(): Promise<Awaited<ReturnType<PrismaPg['connect']>>> {
-    const adapter = await new PrismaPg(new ObservedPgPool(this.poolConfig), { disposeExternalPool: true }).connect();
+    const ready = beginFirstDataPathPhase('db-adapter-connect');
+    let adapter: Awaited<ReturnType<PrismaPg['connect']>>;
+    try {
+      adapter = await new PrismaPg(new ObservedPgPool(this.poolConfig), { disposeExternalPool: true }).connect();
+      ready();
+      markDatabaseAdapterReady();
+    } catch (error) {
+      ready(error ?? new Error('ADAPTER_PREPARATION_FAILED'));
+      throw error;
+    }
     const query = adapter.queryRaw.bind(adapter);
     const execute = adapter.executeRaw.bind(adapter);
     const first = async <T>(work: () => Promise<T>): Promise<T> => {
+      markDatabaseDriverDispatch();
       const finish = beginFirstDataPathPhase('db-first-query');
       try {
         const value = await work();

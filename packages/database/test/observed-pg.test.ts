@@ -36,7 +36,15 @@ test('real Prisma engine and pg Pool.query preserve per-request phases and relea
     for (const id of ['first', 'second'])
       assert.deepEqual(
         rows.filter((r) => r.gatewayRequestId === id).map((r) => r.phase),
-        ['db-first-connection', 'db-first-query'],
+        id === 'first'
+          ? [
+              'db-adapter-connect',
+              'db-client-after-adapter',
+              'db-client-prepare',
+              'db-first-connection',
+              'db-first-query',
+            ]
+          : ['db-client-prepare', 'db-first-connection', 'db-first-query'],
       );
     assert.equal(release.mock.calls.length, 4);
     assert.equal(connect.mock.calls.length, 4);
