@@ -306,3 +306,70 @@ test('client preparation cannot bypass account phase checks', () => {
     /CLIENT_PREPARATION_REQUIRES_ACCOUNT_PHASES/,
   );
 });
+
+function engineFixtures() {
+  const { patch, audit } = accountFixtures();
+  for (const r of [patch, audit])
+    for (const c of r.records) {
+      for (const p of c.phases) {
+        p.coldStart = false;
+        if (p.phase === 'admin-account-hook') {
+          p.startedAt = new Date(900).toISOString();
+          p.durationMs = 110;
+        }
+        if (p.phase === 'admin-account-query')
+          Object.assign(p, { processCpuUserUs: 50, processCpuSystemUs: 10, processCpuScope: 'PROCESS_ALL_THREADS' });
+      }
+      const base = {
+        lambdaRequestId: c.lambda[0].lambdaRequestId,
+        gatewayRequestId: c.requestId,
+        operationId: c.lambda[0].operationId,
+        coldStart: false,
+        outcome: 'PASS',
+        errorCode: 'NONE',
+        includesConnectionWait: false,
+      };
+      const add = (phase, start, end, boundary, cpu = false) =>
+        c.phases.push({
+          ...base,
+          phase,
+          durationMs: end - start,
+          startedAt: new Date(start).toISOString(),
+          completedAt: new Date(end).toISOString(),
+          ...(boundary ? { completionBoundary: boundary } : {}),
+          ...(cpu ? { processCpuUserUs: 50, processCpuSystemUs: 10, processCpuScope: 'PROCESS_ALL_THREADS' } : {}),
+        });
+      add('db-engine-prepare', 910, 990, 'OPERATION_SETTLED', true);
+      add('db-adapter-connect', 911, 912);
+      add('db-engine-after-adapter', 912, 990, 'OPERATION_SETTLED', true);
+      add('db-client-prepare', 1001, 1002, 'DRIVER_DISPATCH');
+    }
+  return { patch, audit };
+}
+test('engine CPU mode proves preparation before model, preserves driver boundary and refuses old lazy ownership', () => {
+  const { patch, audit } = engineFixtures();
+  const options = { accountPhases: true, clientPreparation: true, engineCpu: true };
+  assert.equal(validatePhaseCorrelation(patch, audit, options).gate, 'PASS');
+  assert.throws(() => validatePhaseCorrelation(patch, audit, { accountPhases: true, clientPreparation: true }));
+  for (const mutate of [
+    (c) => {
+      c.phases.find((p) => p.phase === 'admin-account-query').processCpuUserUs = -1;
+    },
+    (c) => {
+      c.phases.find((p) => p.phase === 'db-engine-prepare').completedAt = new Date(1005).toISOString();
+    },
+    (c) => {
+      c.phases.find((p) => p.phase === 'db-engine-after-adapter').completionBoundary = 'DRIVER_DISPATCH';
+    },
+    (c) => {
+      c.phases = c.phases.filter((p) => p.phase !== 'db-engine-prepare');
+    },
+    (c) => {
+      c.phases.find((p) => p.phase === 'db-first-connection').startedAt = new Date(920).toISOString();
+    },
+  ]) {
+    const f = engineFixtures();
+    mutate(f.patch.records[0]);
+    assert.throws(() => validatePhaseCorrelation(f.patch, f.audit, options));
+  }
+});

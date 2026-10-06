@@ -23,10 +23,20 @@ test('observability and immediate queue synth retain narrow logs and hard DB bud
       enableRequestObservability: true,
       enableQa09Capacity: true,
       enableImmediateCommandPublish: true,
+      enableQa09EngineCpuDiagnosis: true,
     },
   });
   const template = Template.fromStack(stack).toJSON();
   const resources = Object.values(template.Resources) as { Type: string; Properties: Record<string, any> }[];
+  const functions = resources.filter((r) => r.Type === 'AWS::Lambda::Function');
+  const diagnosed = functions.filter(
+    (r) => r.Properties.Environment?.Variables.FDP_QA09_ENGINE_CPU_DIAGNOSIS === 'true',
+  );
+  assert.equal(diagnosed.length, 1);
+  assert.equal(diagnosed[0]?.Properties.FunctionName, 'fdp-test-api');
+  assert.equal(diagnosed[0]?.Properties.Environment.Variables.FDP_DB_POOL_MAX, '1');
+  assert.equal(diagnosed[0]?.Properties.MemorySize, 512);
+  assert.equal(diagnosed[0]?.Properties.ReservedConcurrentExecutions, 12);
   const stage = resources.find((r) => r.Type === 'AWS::ApiGateway::Stage' && r.Properties.AccessLogSetting);
   assert.isDefined(stage);
   const fields = JSON.parse(stage!.Properties.AccessLogSetting.Format);

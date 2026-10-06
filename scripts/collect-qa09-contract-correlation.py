@@ -94,6 +94,12 @@ for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
                 phase = {k: value[k] for k in phase_fields if k in value}
                 if value.get('completionBoundary') in ['DRIVER_DISPATCH', 'OPERATION_SETTLED', 'OPERATION_FAILED']:
                     phase['completionBoundary'] = value['completionBoundary']
+                if value.get('processCpuScope') == 'PROCESS_ALL_THREADS':
+                    phase['processCpuScope'] = 'PROCESS_ALL_THREADS'
+                    for key in ['processCpuUserUs', 'processCpuSystemUs']:
+                        metric = value.get(key)
+                        if type(metric) is int and 0 <= metric <= 9007199254740991:
+                            phase[key] = metric
                 phases.append(phase)
             if name == 'lambda' and value.get('event') != 'admin.request.completed':
                 continue

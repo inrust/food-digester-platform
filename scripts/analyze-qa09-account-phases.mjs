@@ -5,12 +5,17 @@ import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { validatePhaseCorrelation } from './check-qa09-contract-phases.mjs';
 
-export function analyzeAccountPhases(patch, audit, { sampling = false, clientPreparation = false } = {}) {
+export function analyzeAccountPhases(
+  patch,
+  audit,
+  { sampling = false, clientPreparation = false, engineCpu = false } = {},
+) {
   const proof = validatePhaseCorrelation(patch, audit, {
     accountPhases: true,
     requireColdConflict: true,
     sampling,
     clientPreparation,
+    engineCpu,
   });
   const top = new Set([
     'runtime-initialize',
@@ -43,16 +48,31 @@ export function analyzeAccountPhases(patch, audit, { sampling = false, clientPre
             clientPreparationMs: phase('db-client-prepare').durationMs,
             accountBeforePreparationMs:
               Date.parse(phase('db-client-prepare').startedAt) - Date.parse(account.startedAt),
-            adapterConnectMs: phase('db-adapter-connect')?.durationMs ?? null,
+            adapterConnectMs: engineCpu ? null : (phase('db-adapter-connect')?.durationMs ?? null),
             afterAdapterMs: phase('db-client-after-adapter')?.durationMs ?? null,
-            preparationBeforeAdapterMs: phase('db-adapter-connect')
-              ? Date.parse(phase('db-adapter-connect').startedAt) - Date.parse(phase('db-client-prepare').startedAt)
-              : null,
-            preparationResidualMs: phase('db-adapter-connect')
-              ? phase('db-client-prepare').durationMs -
-                phase('db-adapter-connect').durationMs -
-                phase('db-client-after-adapter').durationMs
-              : null,
+            preparationBeforeAdapterMs:
+              !engineCpu && phase('db-adapter-connect')
+                ? Date.parse(phase('db-adapter-connect').startedAt) - Date.parse(phase('db-client-prepare').startedAt)
+                : null,
+            preparationResidualMs:
+              !engineCpu && phase('db-adapter-connect')
+                ? phase('db-client-prepare').durationMs -
+                  phase('db-adapter-connect').durationMs -
+                  phase('db-client-after-adapter').durationMs
+                : null,
+          }
+        : {}),
+      ...(engineCpu
+        ? {
+            enginePrepareMs: phase('db-engine-prepare')?.durationMs ?? null,
+            engineProcessCpuUserUs: phase('db-engine-prepare')?.processCpuUserUs ?? null,
+            engineProcessCpuSystemUs: phase('db-engine-prepare')?.processCpuSystemUs ?? null,
+            engineAfterAdapterMs: phase('db-engine-after-adapter')?.durationMs ?? null,
+            engineAfterAdapterProcessCpuUserUs: phase('db-engine-after-adapter')?.processCpuUserUs ?? null,
+            engineAfterAdapterProcessCpuSystemUs: phase('db-engine-after-adapter')?.processCpuSystemUs ?? null,
+            accountQueryProcessCpuUserUs: account.processCpuUserUs,
+            accountQueryProcessCpuSystemUs: account.processCpuSystemUs,
+            processCpuScope: 'PROCESS_ALL_THREADS',
           }
         : {}),
       clientTransport: c.clientTransport,
@@ -77,6 +97,7 @@ export function analyzeAccountPhases(patch, audit, { sampling = false, clientPre
     p95Accepted: false,
     cleanupVerified: false,
     clientPreparationRequired: clientPreparation,
+    engineCpuRequired: engineCpu,
     coldConflictObservedCount: proof.coldConflictObservedCount,
     rows,
     boundaries:
@@ -97,6 +118,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   if (sampling) validateSamplingCorrelationLedger(JSON.parse(child), patch, audit);
   const result = analyzeAccountPhases(patch, audit, {
     sampling,
+    engineCpu: process.argv.slice(6).includes('--engine-cpu'),
     clientPreparation: process.argv.slice(6).includes('--client-preparation'),
   });
   result.bindings = {

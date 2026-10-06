@@ -1,6 +1,10 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 export type DataPathPhase =
   | 'runtime-initialize'
+  | 'runtime-database-secret'
+  | 'runtime-license-secret'
+  | 'db-engine-prepare'
+  | 'db-engine-after-adapter'
   | 'admin-authenticate'
   | 'admin-account-hook'
   | 'admin-account-query'
@@ -115,13 +119,25 @@ export function setDataPathMessage(
   const t = storage.getStore();
   if (t) t.ids = { ...t.ids, ...ids };
 }
+function cpuMetrics(start: NodeJS.CpuUsage): LogRow {
+  const delta = process.cpuUsage(start);
+  return {
+    processCpuUserUs: Math.max(0, Math.round(delta.user)),
+    processCpuSystemUs: Math.max(0, Math.round(delta.system)),
+    processCpuScope: 'PROCESS_ALL_THREADS',
+  };
+}
 /** Finish is idempotent; no SQL, payload or arbitrary error messages enter the log. */
 export type PreparationBoundary = 'DRIVER_DISPATCH' | 'OPERATION_SETTLED' | 'OPERATION_FAILED';
-export function beginDataPathPhase(phase: DataPathPhase): (error?: unknown, boundary?: PreparationBoundary) => void {
+export function beginDataPathPhase(
+  phase: DataPathPhase,
+  options: { readonly processCpu?: boolean } = {},
+): (error?: unknown, boundary?: PreparationBoundary) => void {
   const trace = storage.getStore();
   if (!trace) return () => {};
   const start = trace.clock(),
     startedAt = new Date().toISOString();
+  const cpuStart = options.processCpu ? process.cpuUsage() : undefined;
   let finished = false;
   return (error?: unknown, boundary?: PreparationBoundary) => {
     if (finished) return;
@@ -137,8 +153,11 @@ export function beginDataPathPhase(phase: DataPathPhase): (error?: unknown, boun
       'data-path.phase.completed',
       {
         phase,
+        ...(cpuStart ? cpuMetrics(cpuStart) : {}),
         ...(boundary !== undefined &&
-        ['db-client-prepare', 'db-client-after-adapter'].includes(phase) &&
+        ['db-client-prepare', 'db-client-after-adapter', 'db-engine-prepare', 'db-engine-after-adapter'].includes(
+          phase,
+        ) &&
         ['DRIVER_DISPATCH', 'OPERATION_SETTLED', 'OPERATION_FAILED'].includes(boundary)
           ? { completionBoundary: boundary }
           : {}),
@@ -175,8 +194,12 @@ export function claimFirstDataPathPhase(phase: FirstDataPathPhase): ReturnType<t
 export function beginFirstDataPathPhase(phase: FirstDataPathPhase) {
   return claimFirstDataPathPhase(phase) ?? (() => {});
 }
-export async function observeDataPathPhase<T>(phase: DataPathPhase, work: () => Promise<T>): Promise<T> {
-  const finish = beginDataPathPhase(phase);
+export async function observeDataPathPhase<T>(
+  phase: DataPathPhase,
+  work: () => Promise<T>,
+  options: { readonly processCpu?: boolean } = {},
+): Promise<T> {
+  const finish = beginDataPathPhase(phase, options);
   try {
     const result = await work();
     finish();

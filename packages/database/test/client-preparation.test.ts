@@ -198,3 +198,42 @@ test('public ORM extension preserves lazy batch/interactive transactions, discon
     connect.mockRestore();
   }
 });
+
+test('public engine diagnostics has no checkout/SQL, then keeps model driver-dispatch phases distinct', async () => {
+  const { observeDatabaseEnginePreparation } = await import('../src/client-preparation.js');
+  const rows: Record<string, unknown>[] = [];
+  const driver = Object.assign(new EventEmitter(), {
+    query: vi.fn((_config, _values, callback) => {
+      const result = { rows: [], fields: [], rowCount: 0 };
+      if (callback) return callback(undefined, result);
+      return Promise.resolve(result);
+    }),
+    release: vi.fn(),
+  });
+  const connect = vi.spyOn(Pool.prototype, 'connect').mockImplementation((callback) => {
+    if (callback) return callback(undefined, driver as unknown as PoolClient, driver.release);
+    return Promise.resolve(driver as unknown as PoolClient);
+  });
+  const client = createPrismaClient('postgresql://unused:unused@localhost/never-connect');
+  try {
+    await withDataPathTrace(
+      { gatewayRequestId: 'engine-then-model' },
+      async () => {
+        await observeDatabaseEnginePreparation(() => client.$connect());
+        assert.equal(connect.mock.calls.length, 0);
+        assert.equal(driver.query.mock.calls.length, 0);
+        assert.equal(await client.user.findFirst({ where: { cognitoSub: 'synthetic' } }), null);
+      },
+      (r) => rows.push(r),
+    );
+    assert.equal(connect.mock.calls.length, 1);
+    assert.equal(driver.query.mock.calls.length, 1);
+    assert.equal(driver.release.mock.calls.length, 1);
+    assert.equal(rows.find((r) => r.phase === 'db-engine-after-adapter')?.completionBoundary, 'OPERATION_SETTLED');
+    assert.equal(rows.find((r) => r.phase === 'db-client-prepare')?.completionBoundary, 'DRIVER_DISPATCH');
+    assert.isFalse(rows.some((r) => r.phase === 'db-client-after-adapter'));
+  } finally {
+    await client.$disconnect();
+    connect.mockRestore();
+  }
+});

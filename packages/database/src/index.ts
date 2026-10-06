@@ -16,3 +16,5 @@ export * from './transaction.js';
 export * from './audit.js';
 export * from './client.js';
 export * from './advisory-lock.js';
+
+export { observeDatabaseEnginePreparation } from './client-preparation.js';

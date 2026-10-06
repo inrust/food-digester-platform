@@ -59,6 +59,8 @@ import {
   type ApiGatewayAdminResult,
 } from './admin-lambda.js';
 
+import { createAuthenticatedEngineDiagnostic, resolveEngineCpuDiagnosis } from './admin-engine-diagnostic.js';
+
 const logger = createRedactingLogger(console);
 
 const required = (name: string): string => {
@@ -70,9 +72,11 @@ const required = (name: string): string => {
 let runtimeHandler: ((event: ApiGatewayAdminEvent) => Promise<ApiGatewayAdminResult>) | undefined;
 
 async function initialize() {
+  const engineCpuDiagnosis = resolveEngineCpuDiagnosis(process.env);
   const region = required('AWS_REGION');
   const databaseUrl = await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region });
   const client = createPrismaClient(databaseUrl);
+  const prepareAuthenticatedEngine = createAuthenticatedEngineDiagnostic(engineCpuDiagnosis, client);
   const activityExportPorts = createS3ActivityExportPorts({ bucket: required('EXPORT_BUCKET_NAME'), region });
   const licenseSigningKey = await resolveSecretString({
     secretArn: required('LICENSE_SIGNING_KEY_SECRET_ARN'),
@@ -155,8 +159,14 @@ async function initialize() {
     { region, userPoolId: required('USER_POOL_ID'), clientId: required('USER_POOL_CLIENT_ID') },
     (event) => createAdminRoute(event, routes),
     {
-      onAuthenticated: (actor, requestId) =>
-        activateInvitedUserOnAuthenticatedRequest({ client }, actor, requestId).then(() => undefined),
+      onAuthenticated: async (actor, requestId) => {
+        await prepareAuthenticatedEngine();
+        await activateInvitedUserOnAuthenticatedRequest(
+          { client, observeProcessCpu: engineCpuDiagnosis },
+          actor,
+          requestId,
+        );
+      },
     },
   );
 }

@@ -37,7 +37,12 @@ export function qa09RolloutContext(env = process.env) {
   const phase = env.FDP_QA09_ROLLOUT_PHASE ?? 'baseline';
   if (!['baseline', 'observability', 'capacity', 'immediate'].includes(phase))
     throw Error('INVALID_QA09_ROLLOUT_PHASE');
+  const engineCpu = env.FDP_QA09_ENGINE_CPU_DIAGNOSIS;
+  if (engineCpu !== undefined && !['true', 'false'].includes(engineCpu)) throw Error('INVALID_ENGINE_CPU_DIAGNOSIS');
+  if (engineCpu === 'true' && !['capacity', 'immediate'].includes(phase))
+    throw Error('ENGINE_CPU_DIAGNOSIS_REQUIRES_CAPACITY');
   return {
+    ...(engineCpu !== undefined ? { enableQa09EngineCpuDiagnosis: engineCpu === 'true' } : {}),
     enableRequestObservability: phase !== 'baseline',
     enableQa09Capacity: ['capacity', 'immediate'].includes(phase),
     enableImmediateCommandPublish: phase === 'immediate',

@@ -208,6 +208,7 @@ function isUniqueViolation(err: unknown): boolean {
 
 export interface AuthenticatedUserSyncDeps {
   readonly client: DbClient;
+  readonly observeProcessCpu?: boolean;
   readonly now?: () => Date;
 }
 
@@ -223,8 +224,10 @@ export async function activateInvitedUserOnAuthenticatedRequest(
   requestId: string,
 ): Promise<boolean> {
   const now = deps.now?.() ?? new Date();
-  const target = (await observeDataPathPhase('admin-account-query', async () =>
-    users(deps.client).findFirst({ where: { cognitoSub: actor.actorId } }),
+  const target = (await observeDataPathPhase(
+    'admin-account-query',
+    async () => users(deps.client).findFirst({ where: { cognitoSub: actor.actorId } }),
+    { processCpu: deps.observeProcessCpu === true },
   )) as unknown as UserRow | null;
   if (target?.status === 'DISABLED') throw unauthenticated();
   if (!target || target.status !== 'INVITED') return false;

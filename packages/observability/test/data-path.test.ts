@@ -164,3 +164,35 @@ test('manual phase timer emits once even when transaction catch revisits complet
   assert.equal(rows[0]!.outcome, 'PASS');
   assert.equal(rows[0]!.includesConnectionWait, true);
 });
+
+test('opt-in process CPU records only integer all-thread deltas and preserves original error', async () => {
+  const rows: Record<string, unknown>[] = [],
+    error = Error('secret SQL password');
+  await rejects(
+    withDataPathTrace(
+      {},
+      () =>
+        observeDataPathPhase(
+          'db-engine-prepare',
+          async () => {
+            throw error;
+          },
+          { processCpu: true },
+        ),
+      (r) => rows.push(r),
+    ),
+    (e) => e === error,
+  );
+  assert.equal(rows[0].processCpuScope, 'PROCESS_ALL_THREADS');
+  for (const key of ['processCpuUserUs', 'processCpuSystemUs']) {
+    assert.isTrue(Number.isSafeInteger(rows[0][key]));
+    assert.isAtLeast(rows[0][key] as number, 0);
+  }
+  assert.notInclude(JSON.stringify(rows), error.message);
+  await withDataPathTrace(
+    {},
+    () => observeDataPathPhase('db-business', async () => 1),
+    (r) => rows.push(r),
+  );
+  assert.notProperty(rows[1], 'processCpuScope');
+});

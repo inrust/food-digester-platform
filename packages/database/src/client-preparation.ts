@@ -5,6 +5,7 @@ interface Preparation {
   finish: Finish;
   afterAdapter?: Finish;
   completed: boolean;
+  engine?: boolean;
 }
 const preparation = new AsyncLocalStorage<Preparation | undefined>();
 function finishPreparation(frame: Preparation, boundary: PreparationBoundary, error?: unknown): void {
@@ -33,9 +34,29 @@ export async function observeDatabaseClientPreparation<T>(work: () => Promise<T>
 export function markDatabaseAdapterReady(): void {
   const frame = preparation.getStore();
   if (frame && !frame.completed && !frame.afterAdapter)
-    frame.afterAdapter = beginDataPathPhase('db-client-after-adapter');
+    frame.afterAdapter = beginDataPathPhase(frame.engine ? 'db-engine-after-adapter' : 'db-client-after-adapter', {
+      processCpu: frame.engine === true,
+    });
 }
 export function markDatabaseDriverDispatch(): void {
   const frame = preparation.getStore();
   if (frame) finishPreparation(frame, 'DRIVER_DISPATCH');
+}
+
+/** Public $connect diagnostics only; keeps the later query's driver-dispatch boundary independent. */
+export async function observeDatabaseEnginePreparation(work: () => Promise<void>): Promise<void> {
+  const frame: Preparation = {
+    finish: beginDataPathPhase('db-engine-prepare', { processCpu: true }),
+    completed: false,
+    engine: true,
+  };
+  return preparation.run(frame, async () => {
+    try {
+      await work();
+      finishPreparation(frame, 'OPERATION_SETTLED');
+    } catch (error) {
+      finishPreparation(frame, 'OPERATION_FAILED', error ?? new Error('ENGINE_PREPARATION_FAILED'));
+      throw error;
+    }
+  });
 }

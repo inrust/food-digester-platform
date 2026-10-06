@@ -9,8 +9,15 @@ const demand = (ok, code) => {
 export function validatePhaseCorrelation(
   patch,
   audit,
-  { accountPhases = false, requireColdConflict = false, sampling = false, clientPreparation = false } = {},
+  {
+    accountPhases = false,
+    requireColdConflict = false,
+    sampling = false,
+    clientPreparation = false,
+    engineCpu = false,
+  } = {},
 ) {
+  demand(!engineCpu || clientPreparation, 'ENGINE_CPU_REQUIRES_CLIENT_PREPARATION');
   demand(!clientPreparation || accountPhases, 'CLIENT_PREPARATION_REQUIRES_ACCOUNT_PHASES');
   demand(!sampling || accountPhases, 'SAMPLING_REQUIRES_ACCOUNT_PHASES');
   demand(!requireColdConflict || accountPhases, 'COLD_CONFLICT_REQUIRES_ACCOUNT_PHASES');
@@ -133,11 +140,11 @@ export function validatePhaseCorrelation(
           suffixes = c.phases.filter((p) => p.phase === 'db-client-after-adapter');
         demand(
           adapters.length <= 1 &&
-            suffixes.length === adapters.length &&
-            (!c.phases.every((p) => p.coldStart === true) || adapters.length === 1),
+            suffixes.length === (engineCpu ? 0 : adapters.length) &&
+            (engineCpu || !c.phases.every((p) => p.coldStart === true) || adapters.length === 1),
           'CLIENT_ADAPTER_PHASES_REQUIRED',
         );
-        if (adapters.length) {
+        if (adapters.length && !engineCpu) {
           const adapter = phase('db-adapter-connect'),
             suffix = phase('db-client-after-adapter');
           const [aStart, aEnd] = window(adapter),
@@ -156,6 +163,58 @@ export function validatePhaseCorrelation(
             'CLIENT_ADAPTER_PHASE_NOT_NESTED',
           );
         }
+      }
+      if (engineCpu) {
+        const cpu = (p) =>
+          demand(
+            p.processCpuScope === 'PROCESS_ALL_THREADS' &&
+              ['processCpuUserUs', 'processCpuSystemUs'].every((k) => Number.isSafeInteger(p[k]) && p[k] >= 0),
+            'PROCESS_CPU_METRICS_REQUIRED',
+          );
+        cpu(phase('admin-account-query'));
+        const engines = phases.filter((p) => p.phase === 'db-engine-prepare');
+        demand(
+          engines.length <= 1 && (!phases.every((p) => p.coldStart === true) || engines.length === 1),
+          'ENGINE_PREPARATION_REQUIRED',
+        );
+        if (engines.length) {
+          const engine = phase('db-engine-prepare'),
+            suffix = phase('db-engine-after-adapter'),
+            adapter = phase('db-adapter-connect');
+          cpu(engine);
+          cpu(suffix);
+          const window = (p) => [Date.parse(p.startedAt), Date.parse(p.completedAt)];
+          const [es, ee] = window(engine),
+            [ss, se] = window(suffix),
+            [as, ae] = window(adapter),
+            [hs, he] = window(phase('admin-account-hook')),
+            [qs] = window(phase('admin-account-query'));
+          demand(
+            [es, ee, ss, se, as, ae, hs, he, qs].every(Number.isFinite) &&
+              hs <= es &&
+              es <= as &&
+              as <= ae &&
+              ae <= ss &&
+              ss <= se &&
+              se <= ee &&
+              ee <= qs &&
+              ee <= he &&
+              engine.completionBoundary === 'OPERATION_SETTLED' &&
+              suffix.completionBoundary === 'OPERATION_SETTLED' &&
+              [engine, suffix, adapter].every((p) => p.includesConnectionWait === false),
+            'ENGINE_PHASE_BOUNDARY_REQUIRED',
+          );
+          demand(
+            !phases.some(
+              (p) => ['db-first-query', 'db-first-connection'].includes(p.phase) && Date.parse(p.startedAt) < ee,
+            ),
+            'ENGINE_PREPARATION_DISPATCHED_DRIVER',
+          );
+        } else
+          demand(
+            !phases.some((p) => ['db-engine-after-adapter', 'db-adapter-connect'].includes(p.phase)),
+            'ORPHAN_ENGINE_PHASE',
+          );
       }
       if (kind === 'patch') {
         demand(c.method === 'PATCH' && [200, 409].includes(c.status), 'PATCH_RESULT_REQUIRED');
@@ -223,6 +282,7 @@ export function validatePhaseCorrelation(
     p95Accepted: false,
     accountPhasesRequired: accountPhases,
     clientPreparationRequired: clientPreparation,
+    engineCpuRequired: engineCpu,
     coldConflictObservedCount: verifiedCold.length,
     applicationColdConflictObservedCount: coldConflicts.length,
     platformColdProofRequired: sampling,
@@ -240,6 +300,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   if (sampling) validateSamplingCorrelationLedger(JSON.parse(child), patch, audit);
   const r = validatePhaseCorrelation(patch, audit, {
     sampling,
+    engineCpu: process.argv.slice(6).includes('--engine-cpu'),
     clientPreparation: process.argv.slice(6).includes('--client-preparation'),
     accountPhases: process.argv.slice(6).includes('--account-phases'),
     requireColdConflict: process.argv.slice(6).includes('--require-cold-conflict'),
