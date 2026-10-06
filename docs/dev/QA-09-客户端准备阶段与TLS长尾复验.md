@@ -51,3 +51,8 @@ node scripts/qa09-tls-diagnostic.mjs <dir>/tls-target.json
 TCP复用与TLS session恢复分别记录，复用socket的DNS/TCP/TLS为null。TLS阶段是TCP connect至secureConnect的事件间隔；正常证书验证成功不证明每个网络节点正常。event-loop histogram不是逐请求CPU profiler，没有同量级主线程阻塞也不能证明丢包、重传、代理/VPN、服务端节点或操作系统调度的具体根因。样本只有12次，禁止以描述性最大值/对照推导P95或业务性能验收。
 
 回退：回退本次工厂query extension/adapter计时及新增观测阶段，保留既有pool和连接/查询计时；不改数据库数据或容量。旧阶段检查默认兼容，不以禁用新旗标来宣称新准备阶段通过。
+
+
+## 2026-10-06 目标回执
+
+fb6f362同SHA CI/部署及19实际ZIP、新前缀冷409准备阶段与清理已执行，见[目标复验报告](../audit/QA-09-fb6f362数据库准备冷阶段目标复验-2026-10-06.md)。原三轮取得1条物理冷409，新query→driver1101ms，其中prepare1099、adapter后1096ms；独立采样全暖，严格冷Gate仍保留COLD_CONFLICT_REQUIRED。该回执只证明此SHA/前缀与范围，不替代后续版本/P95或完整QA-09验收。

@@ -1,0 +1,32 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+const dir=dirname(fileURLToPath(import.meta.url));
+const bindings={};
+const digest=b=>createHash('sha256').update(b).digest('hex');
+const read=n=>{const b=readFileSync(join(dir,n));bindings[n]=digest(b);return JSON.parse(b);};
+const demand=(ok,code)=>{if(!ok)throw Error(code);};
+const child=read('sample.json'),parent=read('sample.json.fixtures.json'),domain=read('sample.json.domain-cleanup.json'),wrapper=read('sample.json.gate.json');
+demand(child.sourceCommit==='fb6f3628a176628d3752f04a9fa35f70c54b5009' && child.prefix===parent.prefix,'SOURCE_PREFIX');
+demand(child.gate==='FAIL' && child.coreFailure==='NETWORK' && child.stages.foundation==='FAIL' && !child.remaining && !child.cold409Sampling && wrapper.gate==='FAIL','PRESERVE_ORIGINAL_FAILURE');
+demand(child.cleanupComplete===true && child.cleanup.every(c=>c.result==='PASS') && parent.gate==='PASS' && parent.globalSignOut==='PASS' && parent.cleanup.every(c=>c.result==='PASS') && parent.finishedAt,'OWN_CLEANUP');
+demand(child.createdIdentities.length===4 && child.createdIdentities.every(i=>child.cleanup.some(c=>c.type==='cognito' && c.username===i.username && c.result==='PASS')),'FOUR_IDENTITIES');
+demand(parent.cleanup.some(c=>c.type==='identity' && c.username===parent.identity.username && c.result==='PASS') && parent.customers.length===2 && parent.customers.every(c=>parent.cleanup.some(x=>x.type==='customer' && x.id===c.id && x.result==='PASS')),'PARENT_ENTITIES');
+demand(domain.gate==='PASS' && domain.parentReceiptSha256===bindings['sample.json.fixtures.json'] && domain.observations.every(x=>x.versionsRemaining===0),'ARCHIVE_CLEANUP');
+const sources=read('sample.json.sources.json');
+for(const x of sources.sources){demand(digest(Buffer.from(x.sourceBase64,'base64'))===x.sha256 && digest(execFileSync('git',['show',child.sourceCommit+':'+x.path]))===x.sha256,'EXECUTED_SOURCE_BINDING');}
+const initial=read(parent.databaseBuilds.find(b=>b.action==='observe').receipt.split('/').at(-1));
+const cleaned=read(parent.databaseBuilds.find(b=>b.action==='cleanup').receipt.split('/').at(-1));
+const empty=read('database-empty-audit.json');
+for(const r of [initial,cleaned,empty])demand(r.gate==='PASS' && r.build.status==='SUCCEEDED' && r.build.id===r.result.buildId && r.build.serviceRole==='arn:aws:iam::065986019555:role/fdp-test-migration-runner-role' && r.result.prefix===child.prefix,'BUILD_BINDING');
+demand(cleaned.result.deleted.devices===10 && empty.result.action==='audit-empty' && empty.result.empty===true && ['devices','certificates','onboardingRequests'].every(k=>empty.result[k].length===0),'EMPTY_PROOF');
+demand(JSON.stringify(initial.result.originalFingerprints)===JSON.stringify(cleaned.result.originalFingerprints) && JSON.stringify(initial.result.originalFingerprints)===JSON.stringify(empty.result.originalFingerprints),'ORIGINAL_FINGERPRINTS');
+for(const b of child.databaseBuilds){const r=read(b.receipt.split('/').at(-1));demand(r.gate==='PASS' && r.build.id===b.buildId && r.result.prefix===child.prefix,'BUSINESS_BUILD_BINDING');if(b.action==='business-cleanup' || b.action==='business-audit')demand(Object.values(r.result.counts).every(n=>n===0),'BUSINESS_EMPTY');}
+const version=read('application-version.json'),final=read('runtime-first-final.json');
+demand(version.gate==='PASS' && version.sourceCommit===child.sourceCommit && version.lambdaArtifacts.length===19 && final.sourceCommit===child.sourceCommit && final.lambdaArtifacts.length===19 && final.blockers.length===0,'VERSION_PROOF');
+for(const a of version.lambdaArtifacts)demand(a.matches && final.lambdaArtifacts.some(b=>b.name===a.name && ['codeSha256','revisionId','runtime','state','lastUpdateStatus'].every(k=>a[k]===b[k])),'VERSION_DRIFT');
+const summary={gate:'FAIL',businessGate:'FAIL',reason:'CUSTOMER_VIEWER_FIRST_LOGIN_NETWORK_NO_CONTRACT_REQUESTS',cleanupGate:'PASS',independentAuditEmptyGate:'PASS',runtimeNoDriftGate:'PASS',sourceCommit:child.sourceCommit,prefix:child.prefix,checks:child.checks.length,contractPatchCount:0,ownedIdentitiesDeleted:5,ownedCustomersDeleted:2,ownedDevicesDeleted:10,fullQa09Accepted:false,p95Accepted:false,bindings};
+writeFileSync(join(dir,'first-failed-cleanup-summary.json'),JSON.stringify(summary,null,2)+'\n');
+console.log(JSON.stringify(summary));
