@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-account-phases-target-2026-10-06/collect-platform-report.py", line 18, in <module>
+    response = subprocess.run([
+        'aws', 'logs', 'filter-log-events', '--log-group-name', '/aws/lambda/fdp-test-api',
+        '--filter-pattern', '"' + invocation + '"', '--profile', 'esgiot-readonly',
+        '--region', 'ap-southeast-1', '--output', 'json', '--no-cli-pager',
+    ], capture_output=True, text=True, timeout=45, check=True)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 557, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1221, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 2154, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1268, in _check_timeout
+    raise TimeoutExpired(
+    ...<2 lines>...
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['aws', 'logs', 'filter-log-events', '--log-group-name', '/aws/lambda/fdp-test-api', '--filter-pattern', '"7ae04a3b-98bc-48f3-bb14-57aa589b17aa"', '--profile', 'esgiot-readonly', '--region', 'ap-southeast-1', '--output', 'json', '--no-cli-pager']' timed out after 45 seconds
