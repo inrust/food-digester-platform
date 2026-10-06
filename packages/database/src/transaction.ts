@@ -4,6 +4,7 @@
  * - 嵌套调用复用外层事务，不开启新事务；
  * - AsyncLocalStorage 上下文在事务内自动传播（见 context.ts）。
  */
+import { beginDataPathPhase, observeDataPathPhase } from '@fdp/observability';
 import type { Prisma, PrismaClient } from './generated/client.js';
 
 export type DbClient = PrismaClient | Prisma.TransactionClient;
@@ -17,7 +18,28 @@ export async function withTransaction<T>(
   client: DbClient,
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
   options?: { timeout?: number; maxWait?: number },
+  observe = false,
 ): Promise<T> {
   if (isTransactionClient(client)) return fn(client);
-  return (client as PrismaClient).$transaction(fn, options);
+  if (!observe) return (client as PrismaClient).$transaction(fn, options);
+  return observeDataPathPhase('db-transaction', async () => {
+    const opened = beginDataPathPhase('db-transaction-open');
+    let finish: ReturnType<typeof beginDataPathPhase> | undefined;
+    try {
+      const result = await (client as PrismaClient).$transaction(async (tx) => {
+        opened();
+        try {
+          return await observeDataPathPhase('db-transaction-callback', () => fn(tx));
+        } finally {
+          finish = beginDataPathPhase('db-transaction-finish');
+        }
+      }, options);
+      finish?.();
+      return result;
+    } catch (error) {
+      opened(error ?? new Error('TRANSACTION_OPEN_FAILED'));
+      finish?.(error ?? new Error('TRANSACTION_FINISH_FAILED'));
+      throw error;
+    }
+  });
 }

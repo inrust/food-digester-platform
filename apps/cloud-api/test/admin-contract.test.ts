@@ -437,3 +437,53 @@ describe('契约一致性', () => {
     }
   });
 });
+
+test('PATCH trace distinguishes conditional conflict, rollback and independent failure audit without leaking payload', async () => {
+  const { withDataPathTrace } = await import('@fdp/observability');
+  const h = handlers(),
+    customerId = await plantCustomer();
+  const c = await createContract(h, customerId);
+  const contractId = c.contractId as string;
+  const rows: Record<string, unknown>[] = [];
+  const update = (version: number, requestId: string) =>
+    withDataPathTrace(
+      { gatewayRequestId: requestId, lambdaRequestId: 'lambda-' + requestId, operationId: 'updateContract' },
+      () =>
+        h.update(
+          writeReq(superAdmin, version, {
+            requestId,
+            params: { contractId },
+            body: { name: 'private-name', contact: 'private-contact', reason: 'private-reason' },
+          }),
+        ),
+      (r) => rows.push(r),
+    );
+  assert.equal((await update(1, 'winner')).status, 200);
+  assert.equal((await update(1, 'loser')).status, 409);
+  const winner = rows.filter((r) => r.gatewayRequestId === 'winner');
+  const loser = rows.filter((r) => r.gatewayRequestId === 'loser');
+  for (const phase of [
+    'db-transaction-open',
+    'db-transaction-callback',
+    'db-transaction-finish',
+    'db-transaction',
+    'contract-load',
+    'contract-version-update',
+    'contract-readback',
+    'audit-success-write',
+  ])
+    assert.equal(winner.filter((r) => r.phase === phase && r.outcome === 'PASS').length, 1, phase);
+  assert.isTrue(
+    loser.some(
+      (r) => r.phase === 'contract-version-update' && r.errorCode === 'VERSION_CONFLICT' && r.outcome === 'FAIL',
+    ),
+  );
+  assert.isTrue(loser.some((r) => r.phase === 'db-transaction-finish' && r.outcome === 'FAIL'));
+  assert.isTrue(
+    loser.some((r) => r.phase === 'audit-failure-write' && r.outcome === 'PASS' && r.includesConnectionWait === true),
+  );
+  assert.isFalse(loser.some((r) => r.phase === 'contract-readback' || r.phase === 'audit-success-write'));
+  assert.equal(await auditCount(contractId, 'contract.update'), 1);
+  for (const secret of ['private-name', 'private-contact', 'private-reason'])
+    assert.notInclude(JSON.stringify(rows), secret);
+});

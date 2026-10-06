@@ -13,6 +13,7 @@
  *   Auditor 视图遮蔽为 null（Customer 角色无 contract:read，整接口 403）；
  * - 边界（DEC-007）：不管理价格/开票/收付款/电子签署；不自动创建、激活或续期 License。
  */
+import { observeDataPathPhase } from '@fdp/observability';
 import type { DbClient } from '@fdp/database';
 import { audited } from '@fdp/database';
 import {
@@ -121,13 +122,19 @@ async function updateWithVersion(
   contractId: string,
   ifMatchVersion: number,
   data: Record<string, unknown>,
+  observe = false,
 ): Promise<ContractRow> {
-  const { count } = await contracts(tx).updateMany({
-    where: { id: contractId, version: ifMatchVersion },
-    data: { ...data, version: { increment: 1 } },
-  });
-  if (count !== 1) throw contractVersionConflict();
-  const fresh = await contracts(tx).findFirst({ where: { id: contractId } });
+  const update = async () => {
+    const { count } = await contracts(tx).updateMany({
+      where: { id: contractId, version: ifMatchVersion },
+      data: { ...data, version: { increment: 1 } },
+    });
+    if (count !== 1) throw contractVersionConflict();
+  };
+  if (observe) await observeDataPathPhase('contract-version-update', update);
+  else await update();
+  const read = () => contracts(tx).findFirst({ where: { id: contractId } });
+  const fresh = observe ? await observeDataPathPhase('contract-readback', read) : await read();
   if (!fresh) throw contractNotFound();
   return fresh;
 }
@@ -241,7 +248,7 @@ export async function updateContract(
       afterValue: (result: unknown) => auditSnapshot(result as ContractView),
     },
     async (tx) => {
-      const current = await loadContract(tx, input.contractId);
+      const current = await observeDataPathPhase('contract-load', () => loadContract(tx, input.contractId));
       assertContractEditable(current.status as ContractStatus, {
         touchesStartAt: input.startAt !== undefined,
         touchesEndAt: input.endAt !== undefined,
@@ -253,9 +260,10 @@ export async function updateContract(
       if (input.name !== undefined) data.name = input.name;
       if (input.contact !== undefined) data.contact = input.contact;
       // DRAFT 下窗口修改不改变状态；状态仅由显式动作与 evaluate 推导
-      const row = await updateWithVersion(tx, input.contractId, input.ifMatchVersion, data);
+      const row = await updateWithVersion(tx, input.contractId, input.ifMatchVersion, data, true);
       return toView(row, at, actor);
     },
+    true,
   );
 }
 

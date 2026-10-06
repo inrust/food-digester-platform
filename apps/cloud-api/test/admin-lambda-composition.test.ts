@@ -486,3 +486,29 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
     assert.equal(response.statusCode, 403);
   });
 });
+
+test('authentication phase separates JWKS/auth time from SQL without recording credentials', async () => {
+  const { withDataPathTrace } = await import('@fdp/observability');
+  const keys = await generateTestKeySet(),
+    token = await signToken(keys, { groups: ['Auditor'] });
+  const route = vi.fn(async () => ({ status: 200, body: { data: {} } }));
+  const lambda = createAdminLambdaHandler(testConfig(keys.jwks), route);
+  const rows: Record<string, unknown>[] = [];
+  const traced = (id: string, authorization: string) =>
+    withDataPathTrace(
+      { gatewayRequestId: id, operationId: 'getAuditLogDetail' },
+      () => lambda({ headers: { authorization }, requestContext: { requestId: id } }),
+      (r) => rows.push(r),
+    );
+  assert.equal((await traced('valid-auth', 'Bearer ' + token)).statusCode, 200);
+  assert.equal((await traced('invalid-auth', 'Bearer invalid')).statusCode, 401);
+  assert.equal(route.mock.calls.length, 1);
+  assert.isTrue(
+    rows.some((r) => r.gatewayRequestId === 'valid-auth' && r.phase === 'admin-authenticate' && r.outcome === 'PASS'),
+  );
+  assert.isTrue(
+    rows.some((r) => r.gatewayRequestId === 'invalid-auth' && r.phase === 'admin-authenticate' && r.outcome === 'FAIL'),
+  );
+  assert.notInclude(JSON.stringify(rows), token);
+  assert.notInclude(JSON.stringify(rows), 'Bearer invalid');
+});

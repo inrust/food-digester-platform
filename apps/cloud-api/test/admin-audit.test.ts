@@ -334,3 +334,34 @@ describe('BE-AUD-01 脱敏与详情', () => {
     assert.deepEqual(Object.keys(h).sort(), ['getAuditLogDetail', 'listAuditLogs']);
   });
 });
+
+test('audit query phases keep request correlation and redact payload, while unauthorized reads skip SQL', async () => {
+  const { withDataPathTrace } = await import('@fdp/observability');
+  const planted = await plantAudit({ beforeValue: { password: 'secret-password' } });
+  const h = createAdminAuditHandlers(deps());
+  const rows: Record<string, unknown>[] = [];
+  const trace = (id: string, fn: () => Promise<unknown>) =>
+    withDataPathTrace({ gatewayRequestId: id, operationId: 'getAuditLogDetail' }, fn, (r) => rows.push(r));
+  await trace('detail', async () =>
+    assert.equal((await h.getAuditLogDetail(req(auditor, { params: { auditId: planted.auditId } }))).status, 200),
+  );
+  await trace('denied', async () =>
+    assert.equal((await h.getAuditLogDetail(req(operator, { params: { auditId: planted.auditId } }))).status, 403),
+  );
+  await trace('missing', async () =>
+    assert.equal((await h.getAuditLogDetail(req(auditor, { params: { auditId: 'absent' } }))).status, 404),
+  );
+  await trace('list', async () => assert.equal((await h.listAuditLogs(req(auditor, { query: {} }))).status, 200));
+  assert.isTrue(
+    rows.some(
+      (r) => r.gatewayRequestId === 'detail' && r.phase === 'audit-detail-query' && r.includesConnectionWait === true,
+    ),
+  );
+  assert.isTrue(rows.some((r) => r.gatewayRequestId === 'detail' && r.phase === 'audit-view'));
+  assert.isFalse(rows.some((r) => r.gatewayRequestId === 'denied'));
+  assert.isTrue(
+    rows.some((r) => r.gatewayRequestId === 'missing' && r.phase === 'audit-detail-query' && r.outcome === 'PASS'),
+  );
+  assert.isTrue(rows.some((r) => r.gatewayRequestId === 'list' && r.phase === 'audit-list-query'));
+  assert.notInclude(JSON.stringify(rows), 'secret-password');
+});

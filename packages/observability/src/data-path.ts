@@ -1,11 +1,22 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 export type DataPathPhase =
   | 'runtime-initialize'
+  | 'admin-authenticate'
   | 'envelope'
   | 'identity'
   | 'payload-validation'
   | 'db-transaction'
   | 'db-transaction-callback'
+  | 'db-transaction-open'
+  | 'db-transaction-finish'
+  | 'contract-load'
+  | 'contract-version-update'
+  | 'contract-readback'
+  | 'audit-success-write'
+  | 'audit-failure-write'
+  | 'audit-list-query'
+  | 'audit-detail-query'
+  | 'audit-view'
   | 'db-lock'
   | 'db-assignment'
   | 'db-receipt'
@@ -95,30 +106,49 @@ export function setDataPathMessage(
   const t = storage.getStore();
   if (t) t.ids = { ...t.ids, ...ids };
 }
-export async function observeDataPathPhase<T>(phase: DataPathPhase, work: () => Promise<T>): Promise<T> {
+/** Finish is idempotent; no SQL, payload or arbitrary error messages enter the log. */
+export function beginDataPathPhase(phase: DataPathPhase): (error?: unknown) => void {
   const trace = storage.getStore();
-  if (!trace) return work();
-  const start = trace.clock();
-  const startedAt = new Date().toISOString();
-  let outcome = 'PASS',
-    errorCode = 'NONE';
-  try {
-    return await work();
-  } catch (error) {
-    outcome = 'FAIL';
-    const c = (error as { code?: unknown })?.code;
-    errorCode = typeof c === 'string' && /^P[0-9]{4}$/.test(c) ? c : 'DATA_PATH_PHASE_FAILED';
-    throw error;
-  } finally {
+  if (!trace) return () => {};
+  const start = trace.clock(),
+    startedAt = new Date().toISOString();
+  let finished = false;
+  return (error?: unknown) => {
+    if (finished) return;
+    finished = true;
+    const code = (error as { code?: unknown } | undefined)?.code;
+    const errorCode =
+      error === undefined
+        ? 'NONE'
+        : typeof code === 'string' && (/^P[0-9]{4}$/.test(code) || code === 'VERSION_CONFLICT')
+          ? code
+          : 'DATA_PATH_PHASE_FAILED';
     emit('data-path.phase.completed', {
       phase,
       durationMs: Math.max(0, Math.round(trace.clock() - start)),
-      outcome,
+      outcome: error === undefined ? 'PASS' : 'FAIL',
       errorCode,
       startedAt,
       completedAt: new Date().toISOString(),
-      includesConnectionWait: phase.startsWith('console-') || phase === 'db-transaction',
+      includesConnectionWait:
+        phase.startsWith('console-') ||
+        phase === 'db-transaction' ||
+        phase === 'db-transaction-open' ||
+        phase === 'audit-list-query' ||
+        phase === 'audit-detail-query' ||
+        phase === 'audit-failure-write',
     });
+  };
+}
+export async function observeDataPathPhase<T>(phase: DataPathPhase, work: () => Promise<T>): Promise<T> {
+  const finish = beginDataPathPhase(phase);
+  try {
+    const result = await work();
+    finish();
+    return result;
+  } catch (error) {
+    finish(error ?? new Error('DATA_PATH_PHASE_FAILED'));
+    throw error;
   }
 }
 export function observeReceiptResult(

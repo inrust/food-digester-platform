@@ -1,3 +1,4 @@
+import { observeTargetHttp } from './qa09-http-observation.mjs';
 import { runWriteBoundaryProbes } from './qa09-write-boundary-probes.mjs';
 import { runPerformanceProbes } from './qa09-performance-probes.mjs';
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
@@ -48,6 +49,7 @@ export function validateTargetStage(r, stage, required) {
 }
 const EXECUTED_BUSINESS_SOURCES = [
   'scripts/qa09-business-target.mjs',
+  'scripts/qa09-http-observation.mjs',
   'scripts/qa09-license-lifecycle.mjs',
   'scripts/qa09-ten-device-db.mjs',
   'apps/admin-web/src/router/routes.ts',
@@ -165,56 +167,31 @@ export async function runBusinessTarget(
   }
   async function api(id, role, method, path, expected, body, headers = {}) {
     await ensureSession(role);
-    const startedAt = new Date().toISOString();
-    const clientRequestId = /^[a-f0-9-]{36}$/.test(headers['x-amzn-RequestId'] ?? '')
-      ? headers['x-amzn-RequestId']
-      : null;
-    const start = performance.now();
-    let res;
-    try {
-      res = await fetch(host + path, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(role ? { Authorization: `Bearer ${sessions.get(role).idToken}` } : {}),
-          ...headers,
-        },
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-        signal: AbortSignal.timeout(20000),
-      });
-    } catch (e) {
-      const safe = (value) => (typeof value === 'string' && /^[A-Za-z0-9_:-]{1,80}$/.test(value) ? value : null);
-      check(id, false, {
-        method,
-        startedAt,
-        path: path.split('?')[0],
-        role: role ?? 'anonymous',
-        responseReceived: false,
-        clientRequestId,
-        completedAt: new Date().toISOString(),
-        errorName: safe(e.name),
-        causeCode: safe(e.cause?.code),
-        latencyMs: Math.round(performance.now() - start),
-      });
-      throw e;
-    }
-    const data = await res.json().catch(() => null);
-    check(id, (Array.isArray(expected) ? expected : [expected]).includes(res.status), {
+    const { data, observation } = await observeTargetHttp({
+      url: host + path,
       method,
-      startedAt,
-      clientRequestId,
-      completedAt: new Date().toISOString(),
-      responseReceived: true,
-      gatewayRequestId: res.headers.get('x-amzn-requestid'),
-      gatewayExtendedRequestId: res.headers.get('x-amz-apigw-id'),
-      gatewayErrorType: res.headers.get('x-amzn-errortype'),
+      body,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(role ? { Authorization: `Bearer ${sessions.get(role).idToken}` } : {}),
+        ...headers,
+      },
+      onPrepared: (attempt) => {
+        (r.httpAttempts ??= []).push({ id, path: path.split('?')[0], role: role ?? 'anonymous', ...attempt });
+        save();
+      },
+      onFailure: (observed) => {
+        r.checks.push({ id, stage, result: 'FAIL', path: path.split('?')[0], role: role ?? 'anonymous', ...observed });
+        save();
+      },
+    });
+    check(id, (Array.isArray(expected) ? expected : [expected]).includes(observation.status), {
+      ...observation,
       path: path.split('?')[0],
       role: role ?? 'anonymous',
-      status: res.status,
       expected,
-      requestId: data?.meta?.requestId ?? data?.error?.requestId ?? res.headers.get('x-amzn-requestid'),
+      requestId: data?.meta?.requestId ?? data?.error?.requestId ?? observation.gatewayRequestId,
       errorCode: data?.error?.code ?? null,
-      latencyMs: Math.round(performance.now() - start),
     });
     return data;
   }

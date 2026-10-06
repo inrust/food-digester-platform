@@ -125,3 +125,12 @@ node --import tsx scripts/check-qa09-contract-race.mjs <证据目录> <独立专
 ```
 
 本次校验目录约定原回执名 `contract-race.json`、独立恢复名 `recovery.json`。最终校验绑定原 FAIL 字节，输出仅代表合同专项语义、关联与清理，不修改原结果或全部 QA-09 Gate。Gateway 时间窗重叠不等于 Lambda 执行重叠；完成日志减业务耗时仅提供毫秒近似，不能证明 SQL 锁竞争。阶段日志不足时不得将冷启动以外耗时猜作连接池等待。
+
+合同阶段观测新版本复验：合同PATCH通过显式事务观测区分开启、回调、收尾和条件更新的VERSION_CONFLICT，审计GET区分认证、查询、视图及客户端响应头/正文传输。使用`--contract-race`时每条审计详情做三次独立GET采样，任何失败都保留FAIL，禁止隐式重试PATCH。部署新SHA后另运行：
+
+```sh
+python3 scripts/collect-qa09-contract-correlation.py <专项JSON> <审计GET关联JSON> --audit-get
+node scripts/check-qa09-contract-phases.mjs <专项JSON> <PATCH关联JSON> <审计GET关联JSON> <阶段GateJSON>
+```
+
+[实施与发布后复验手册](../audit/QA-09-合同数据库冲突与审计GET阶段观测实施-2026-10-06.md)列出准确计时边界。事务开启包括连接获取与BEGIN，不代表纯池等待；日志收尾FAIL表示根事务承诺拒绝，不代表ROLLBACK SQL失败；嵌套阶段不得累加为整体耗时。阶段Gate与部署/清理/性能门槛分别核验。

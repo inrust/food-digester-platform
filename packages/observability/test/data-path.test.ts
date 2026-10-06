@@ -115,3 +115,20 @@ test('phase clock measures elapsed phase time and sync serialization failures', 
   assert.equal(rows[1]!.outcome, 'FAIL');
   assert.notInclude(JSON.stringify(rows), 'private');
 });
+
+test('manual phase timer emits once even when transaction catch revisits completion', async () => {
+  const { beginDataPathPhase } = await import('../src/data-path.js');
+  const rows: Record<string, unknown>[] = [];
+  withDataPathTrace(
+    {},
+    () => {
+      const finish = beginDataPathPhase('db-transaction-open');
+      finish();
+      finish(Object.assign(Error('secret'), { code: 'VERSION_CONFLICT' }));
+    },
+    (r) => rows.push(r),
+  );
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]!.outcome, 'PASS');
+  assert.equal(rows[0]!.includesConnectionWait, true);
+});

@@ -1,3 +1,4 @@
+import { observeDataPathPhase, observeDataPathSyncPhase } from '@fdp/observability';
 /**
  * BE-AUD-01 审计日志查询领域服务（框架无关，只读）。
  *
@@ -179,15 +180,17 @@ export async function listAuditLogs(
   const where: Record<string, unknown> =
     conditions.length === 0 ? {} : conditions.length === 1 ? { ...conditions[0] } : { AND: conditions };
 
-  const rows = (await auditLogs(deps.client).findMany({
-    where,
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    take: limit + 1,
-  })) as unknown as AuditLogRow[];
+  const rows = (await observeDataPathPhase('audit-list-query', () =>
+    auditLogs(deps.client).findMany({
+      where,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
+    }),
+  )) as unknown as AuditLogRow[];
   const page = rows.slice(0, limit);
   const last = page[page.length - 1];
   return {
-    items: page.map(toView),
+    items: observeDataPathSyncPhase('audit-view', () => page.map(toView)),
     nextCursor:
       rows.length > limit && last
         ? encodeKeysetCursor(`${last.createdAt.toISOString()}${CURSOR_KEY_SEPARATOR}${last.id}`)
@@ -202,9 +205,11 @@ export async function getAuditLogDetail(
   actor: ActorContext,
   auditId: string,
 ): Promise<AuditLogDetailView> {
-  const row = (await auditLogs(deps.client).findFirst({ where: { id: auditId } })) as AuditLogRow | null;
+  const row = (await observeDataPathPhase('audit-detail-query', () =>
+    auditLogs(deps.client).findFirst({ where: { id: auditId } }),
+  )) as AuditLogRow | null;
   if (!row) throw auditNotFound();
   // 跨 Customer 详情 → 404（不泄露存在性）
   if (actor.actorType === 'customer' && row.customerId !== actor.customerId) throw auditNotFound();
-  return toDetailView(row);
+  return observeDataPathSyncPhase('audit-view', () => toDetailView(row));
 }

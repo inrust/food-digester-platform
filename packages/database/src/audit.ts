@@ -14,7 +14,7 @@ import { getRequestContext } from './context.js';
 import { DbError } from './errors.js';
 import { withTransaction, type DbClient } from './transaction.js';
 import type { PrismaClient } from './generated/client.js';
-import { createRedactingLogger } from '@fdp/observability';
+import { observeDataPathPhase, createRedactingLogger } from '@fdp/observability';
 
 const logger = createRedactingLogger(console);
 
@@ -111,20 +111,34 @@ export interface AuditedOperation {
  * 然后独立写入 FAILURE 审计（含失败原因不伪造成功），最后原样抛出业务错误。
  * 必须传入根 PrismaClient（事务内嵌套调用会让失败审计随外层回滚，属误用）。
  */
-export async function audited<T>(client: DbClient, op: AuditedOperation, fn: (tx: DbClient) => Promise<T>): Promise<T> {
+export async function audited<T>(
+  client: DbClient,
+  op: AuditedOperation,
+  fn: (tx: DbClient) => Promise<T>,
+  observe = false,
+): Promise<T> {
   if (!isRootClient(client)) {
     throw new DbError('audited() 必须使用根 PrismaClient，禁止在事务内嵌套');
   }
   try {
-    return await withTransaction(client, async (tx) => {
-      const result = await fn(tx);
-      const afterValue = typeof op.afterValue === 'function' ? op.afterValue(result) : op.afterValue;
-      await recordAudit(tx, { ...op, afterValue, result: 'SUCCESS' });
-      return result;
-    });
+    return await withTransaction(
+      client,
+      async (tx) => {
+        const result = await fn(tx);
+        const afterValue = typeof op.afterValue === 'function' ? op.afterValue(result) : op.afterValue;
+        const write = () => recordAudit(tx, { ...op, afterValue, result: 'SUCCESS' });
+        if (observe) await observeDataPathPhase('audit-success-write', write);
+        else await write();
+        return result;
+      },
+      undefined,
+      observe,
+    );
   } catch (err) {
     try {
-      await recordAudit(client, { ...op, afterValue: undefined, result: 'FAILURE' });
+      const write = () => recordAudit(client, { ...op, afterValue: undefined, result: 'FAILURE' });
+      if (observe) await observeDataPathPhase('audit-failure-write', write);
+      else await write();
     } catch (auditErr) {
       // 审计写入失败不掩盖业务错误；结构化日志由 observability 任务接入
       logger.error('audit FAILURE 记录写入失败', auditErr);

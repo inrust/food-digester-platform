@@ -2,8 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { assertBusinessContext } from './qa09-business-target.mjs';
 
 /** Both requests must settle before readback or fixture cleanup; never retry an unknown write. */
-export async function runContractRaceTarget(ctx, { historical } = {}) {
+export async function runContractRaceTarget(ctx, { historical, auditDetailSamples = 3 } = {}) {
   assertBusinessContext(ctx);
+  if (!Number.isInteger(auditDetailSamples) || auditDetailSamples < 1 || auditDetailSamples > 3)
+    throw Error('AUDIT_SAMPLE_LIMIT');
   const r = {
     scope: 'OWN_DRAFT_CONTRACT_THREE_CONCURRENT_IF_MATCH_ROUNDS',
     gate: 'RUNNING',
@@ -169,15 +171,29 @@ export async function runContractRaceTarget(ctx, { historical } = {}) {
     r.audit = [];
     for (const row of list.data) {
       proof('audit-own-object-' + row.auditId, row.objectType === 'contract' && row.objectId === r.contractId);
-      const detail = (
-        await ctx.api(
-          'race:audit-detail:' + row.auditId,
-          'PlatformSuperAdmin',
-          'GET',
-          '/api/v1/admin/audit-logs/' + row.auditId,
-          200,
-        )
-      ).data;
+      let detail;
+      for (let sample = 1; sample <= auditDetailSamples; sample++) {
+        const id = `race:audit-detail:${row.auditId}:sample-${sample}`;
+        const startedAt = new Date().toISOString();
+        try {
+          const body = await ctx.api(id, 'PlatformSuperAdmin', 'GET', '/api/v1/admin/audit-logs/' + row.auditId, 200);
+          proof(
+            id + ':stable-object',
+            body.data.auditId === row.auditId && body.data.objectId === r.contractId && body.data.result === row.result,
+          );
+          detail ??= body.data;
+          (r.auditReadSamples ??= []).push({ id, startedAt, completedAt: new Date().toISOString(), result: 'PASS' });
+        } catch {
+          (r.auditReadSamples ??= []).push({ id, startedAt, completedAt: new Date().toISOString(), result: 'FAIL' });
+        }
+        ctx.save();
+      }
+      proof(
+        'audit-detail-complete-' + row.auditId,
+        r.auditReadSamples
+          .filter((s) => s.id.startsWith(`race:audit-detail:${row.auditId}:`))
+          .every((s) => s.result === 'PASS'),
+      );
       r.audit.push({
         id: detail.auditId,
         result: detail.result,

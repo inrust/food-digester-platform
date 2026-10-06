@@ -12,18 +12,19 @@ raw = source.read_bytes()
 receipt = json.loads(raw)
 if not re.fullmatch(r'qa09-[a-f0-9]{16}', receipt.get('prefix', '')) or receipt.get('fullQa09Accepted') is not False:
     raise ValueError('OWN_RECEIPT_REQUIRED')
-attempts = receipt.get('remaining', {}).get('attempts', [])
-if not attempts:
+audit_mode = '--audit-get' in sys.argv[3:]
+attempts = ([r for r in receipt['checks'] if r.get('method') == 'GET' and r.get('id', '').startswith('race:audit')] if audit_mode else receipt.get('remaining', {}).get('attempts', []))
+if not attempts and not audit_mode:
     attempts = [r for r in receipt['checks'] if r.get('id', '').startswith('contract-race-')]
 if not attempts:
     raise ValueError('CONTRACT_ATTEMPTS_REQUIRED')
 clients = []
 for attempt in attempts:
     observed = attempt.get('observation', attempt)
-    request_id = observed.get('gatewayRequestId') or attempt.get('clientRequestId')
+    request_id = observed.get('gatewayRequestId') or observed.get('clientRequestId') or attempt.get('clientRequestId')
     started = observed.get('startedAt') or attempt['startedAt']
     start_ms = int(datetime.datetime.fromisoformat(started.replace('Z', '+00:00')).timestamp() * 1000)
-    clients.append({'id': attempt['id'], 'requestId': request_id, 'startedAt': started,
+    clients.append({'method': observed.get('method', 'PATCH'), 'operationId': ('listAuditLogs' if observed.get('id') == 'race:audit-list' else 'getAuditLogDetail') if audit_mode else 'updateContract', 'id': attempt['id'], 'requestId': request_id, 'startedAt': started,
                     'startMs': start_ms, 'status': observed.get('status'),
                     'extendedRequestId': observed.get('gatewayExtendedRequestId'),
                     'latencyMs': observed.get('latencyMs'),
@@ -98,7 +99,7 @@ for client in clients:
                  g.get('integrationRequestId') == l.get('lambdaRequestId') and
                  str(g.get('integrationStatus')) == '200' and
                  str(g.get('functionStatus')) == str(l.get('status')) and
-                 l.get('operationId') == 'updateContract' and g.get('httpMethod') == 'PATCH' and
+                 l.get('operationId') == client['operationId'] and g.get('httpMethod') == client['method'] and
                  client['startMs'] - 2000 <= int(g.get('requestTimeEpoch', 0)) <=
                  client['startMs'] + (client['latencyMs'] if client['latencyMs'] is not None else 30000) + 2000 and
                  (not client['extendedRequestId'] or g.get('extendedRequestId') == client['extendedRequestId']) and
@@ -107,10 +108,11 @@ for client in clients:
     linked.append({**client, 'gateway': gateway, 'lambda': runtime, 'exactLinked': exact,
                    'integrationThrottled': any(str(g.get('integrationStatus')) == '429' for g in gateway),
                    'phases': [p for p in rows['lambda']['phases'] if p.get('gatewayRequestId') == client['requestId']]})
-complete = (len(linked) == 6 and len(ids) == 6 and
-            len({c['id'] for c in clients}) == 6 and
+expected_count = len(clients) if audit_mode else 6
+complete = (len(linked) == expected_count and len(ids) == expected_count and expected_count > 0 and
+            len({c['id'] for c in clients}) == expected_count and
             all(x['exactLinked'] and x['responseReceived'] for x in linked))
-report = {'task': 'QA-09', 'scope': 'OWN_CONTRACT_PATCH_GATEWAY_LAMBDA_REQUEST_CORRELATION',
+report = {'task': 'QA-09', 'scope': 'OWN_AUDIT_GET_GATEWAY_LAMBDA_REQUEST_CORRELATION' if audit_mode else 'OWN_CONTRACT_PATCH_GATEWAY_LAMBDA_REQUEST_CORRELATION',
           'collectorSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
           'sourceReceiptSha256': hashlib.sha256(raw).hexdigest(), 'sourceCommit': receipt.get('sourceCommit'),
           'prefix': receipt['prefix'], 'fullQa09Accepted': False,

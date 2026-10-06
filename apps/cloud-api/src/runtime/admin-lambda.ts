@@ -1,4 +1,4 @@
-import { observeDataPathSyncPhase } from '@fdp/observability';
+import { observeDataPathPhase, observeDataPathSyncPhase } from '@fdp/observability';
 /**
  * 管理 API 的可信 Lambda 组合根。
  *
@@ -346,7 +346,9 @@ export function createAdminLambdaRouter(
     const requestId = event.requestContext?.requestId ?? 'unknown';
     let actor;
     try {
-      actor = await authenticator.authenticate(header(headers, 'authorization'));
+      actor = await observeDataPathPhase('admin-authenticate', () =>
+        authenticator.authenticate(header(headers, 'authorization')),
+      );
     } catch (error) {
       if (error instanceof AuthError) {
         return result(error.httpStatus, {
