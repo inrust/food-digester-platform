@@ -5,7 +5,8 @@ import { pathToFileURL } from 'node:url';
 const demand = (ok, code) => {
   if (!ok) throw Error(code);
 };
-export function validatePhaseCorrelation(patch, audit) {
+export function validatePhaseCorrelation(patch, audit, { accountPhases = false, requireColdConflict = false } = {}) {
+  demand(!requireColdConflict || accountPhases, 'COLD_CONFLICT_REQUIRES_ACCOUNT_PHASES');
   for (const r of [patch, audit])
     demand(
       r.gate === 'PASS' &&
@@ -53,6 +54,24 @@ export function validatePhaseCorrelation(patch, audit) {
         return found[0];
       };
       phase('admin-authenticate');
+      if (accountPhases) {
+        for (const name of ['admin-account-hook', 'admin-account-query', 'db-first-query', 'db-first-connection'])
+          demand(phase(name).includesConnectionWait === true, 'ACCOUNT_CONNECTION_BOUNDARY_REQUIRED');
+        const intervals = ['admin-account-hook', 'admin-account-query', 'db-first-query', 'db-first-connection'].map(
+          (name) => {
+            const p = phases.find((p) => p.phase === name);
+            const start = Date.parse(p.startedAt),
+              end = Date.parse(p.completedAt);
+            demand(Number.isFinite(start) && Number.isFinite(end) && end >= start, 'ACCOUNT_TIMESTAMPS_REQUIRED');
+            return [start, end];
+          },
+        );
+        for (let i = 1; i < intervals.length; i++)
+          demand(
+            intervals[i][0] >= intervals[i - 1][0] && intervals[i][1] <= intervals[i - 1][1],
+            'ACCOUNT_PHASE_NOT_NESTED',
+          );
+      }
       if (kind === 'patch') {
         demand(c.method === 'PATCH' && [200, 409].includes(c.status), 'PATCH_RESULT_REQUIRED');
         const conflict = c.status === 409;
@@ -95,6 +114,15 @@ export function validatePhaseCorrelation(patch, audit) {
         })),
       });
     }
+  const coldConflicts = patch.records.filter(
+    (c) =>
+      c.status === 409 &&
+      c.phases.length > 0 &&
+      c.phases.every((p) => p.coldStart === true) &&
+      c.phases.filter((p) => p.phase === 'runtime-initialize').length === 1 &&
+      c.phases.some((p) => p.phase === 'runtime-initialize' && p.outcome === 'PASS' && p.errorCode === 'NONE'),
+  );
+  if (requireColdConflict) demand(coldConflicts.length > 0, 'COLD_CONFLICT_REQUIRED');
   return {
     gate: 'PASS',
     scope: 'CONTRACT_DATABASE_CONFLICT_AND_AUDIT_GET_PHASE_OBSERVATION',
@@ -103,6 +131,9 @@ export function validatePhaseCorrelation(patch, audit) {
     fullQa09Accepted: false,
     cleanupVerified: false,
     p95Accepted: false,
+    accountPhasesRequired: accountPhases,
+    coldConflictObservedCount: coldConflicts.length,
+    coldConflictRequired: requireColdConflict,
     summaries,
   };
 }
@@ -112,7 +143,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const patch = JSON.parse(readFileSync(patchFile)),
     audit = JSON.parse(readFileSync(auditFile));
   demand(patch.sourceReceiptSha256 === createHash('sha256').update(child).digest('hex'), 'CHILD_BYTES_NOT_BOUND');
-  const r = validatePhaseCorrelation(patch, audit);
+  const r = validatePhaseCorrelation(patch, audit, {
+    accountPhases: process.argv.slice(6).includes('--account-phases'),
+    requireColdConflict: process.argv.slice(6).includes('--require-cold-conflict'),
+  });
+  r.checkerSha256 = createHash('sha256')
+    .update(readFileSync(new URL(import.meta.url)))
+    .digest('hex');
   writeFileSync(out, JSON.stringify(r, null, 2) + '\n');
   console.log(JSON.stringify({ gate: r.gate, scope: r.scope, requests: r.summaries.length }));
 }

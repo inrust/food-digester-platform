@@ -14,6 +14,7 @@
  */
 import { afterAll, beforeAll, describe, test, vi } from 'vitest';
 import { assert } from 'vitest';
+import { withDataPathTrace } from '@fdp/observability';
 import type { PrismaClient } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
 import {
@@ -262,10 +263,16 @@ describe('首次认证用户状态收敛', () => {
       status: 'INVITED',
     });
 
-    const first = await activateInvitedUserOnAuthenticatedRequest(
-      { client: prisma, now: () => NOW },
-      { ...superAdmin, actorId: target.cognitoSub },
-      'req-first-login',
+    const rows: Record<string, unknown>[] = [];
+    const first = await withDataPathTrace(
+      {},
+      () =>
+        activateInvitedUserOnAuthenticatedRequest(
+          { client: prisma, now: () => NOW },
+          { ...superAdmin, actorId: target.cognitoSub },
+          'req-first-login',
+        ),
+      (r) => rows.push(r),
     );
     const repeated = await activateInvitedUserOnAuthenticatedRequest(
       { client: prisma, now: () => NOW },
@@ -274,6 +281,13 @@ describe('首次认证用户状态收敛', () => {
     );
 
     assert.equal(first, true);
+    assert.deepEqual(
+      rows.map((r) => [r.phase, r.outcome]),
+      [
+        ['admin-account-query', 'PASS'],
+        ['admin-account-activation', 'PASS'],
+      ],
+    );
     assert.equal(repeated, false);
     assert.equal((await prisma.user.findUnique({ where: { id: target.userId } }))?.status, 'ACTIVE');
     const audits = await prisma.auditLog.findMany({

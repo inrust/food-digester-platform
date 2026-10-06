@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validatePhaseCorrelation } from './check-qa09-contract-phases.mjs';
+import { analyzeAccountPhases } from './analyze-qa09-account-phases.mjs';
 function fixtures() {
   const make = (scope, audit) => ({
     scope,
@@ -71,6 +72,73 @@ test('phase proof covers success, conditional conflict and all audit reads witho
   assert.equal(r.cleanupVerified, false);
   assert.equal(r.p95Accepted, false);
 });
+function accountFixtures() {
+  const result = fixtures();
+  for (const receipt of [result.patch, result.audit])
+    for (const row of receipt.records)
+      for (const [i, name] of [
+        'admin-account-hook',
+        'admin-account-query',
+        'db-first-query',
+        'db-first-connection',
+      ].entries())
+        row.phases.push({
+          phase: name,
+          durationMs: 10 - i * 2,
+          outcome: 'PASS',
+          errorCode: 'NONE',
+          lambdaRequestId: row.requestId,
+          gatewayRequestId: row.requestId,
+          operationId: row.operationId,
+          includesConnectionWait: true,
+          startedAt: new Date(1000 + i).toISOString(),
+          completedAt: new Date(1010 - i).toISOString(),
+        });
+  return result;
+}
+test('cold 409 gate requires matching cold phase flags and successful runtime initialization', () => {
+  const { patch, audit } = accountFixtures();
+  const options = { accountPhases: true, requireColdConflict: true };
+  assert.throws(() => validatePhaseCorrelation(patch, audit, options), /COLD_CONFLICT_REQUIRED/);
+  const row = patch.records[1];
+  row.phases.forEach((p) => {
+    p.coldStart = true;
+  });
+  row.phases.push({ ...row.phases[0], phase: 'runtime-initialize' });
+  assert.equal(validatePhaseCorrelation(patch, audit, options).coldConflictObservedCount, 1);
+  const analysis = analyzeAccountPhases(patch, audit);
+  assert.equal(analysis.rows.length, 16);
+  assert.equal(analysis.cleanupVerified, false);
+  assert.equal(analysis.rows[1].accountNonDriverMs, 2);
+  assert.equal(analysis.rows[1].driverNonConnectionMs, 2);
+  assert.equal(analysis.rows[1].accountBeforeDriverMs, 1);
+  // Hook contains account/driver/checkout, so only the hook contributes to the top-level sum.
+  assert.equal(analysis.rows[1].topLevelMeasuredMs, 14);
+  row.phases.push({ ...row.phases.at(-1) });
+  assert.throws(() => validatePhaseCorrelation(patch, audit, options), /COLD_CONFLICT_REQUIRED/);
+  row.phases.pop();
+  row.phases[0].coldStart = false;
+  assert.throws(() => validatePhaseCorrelation(patch, audit, options), /COLD_CONFLICT_REQUIRED/);
+});
+test('new account gate requires nested hook, Prisma query, first driver query and checkout on every request', () => {
+  const { patch, audit } = accountFixtures();
+  const r = validatePhaseCorrelation(patch, audit, { accountPhases: true });
+  assert.equal(r.accountPhasesRequired, true);
+  assert.equal(r.p95Accepted, false);
+});
+for (const fault of ['missing', 'duplicate', 'failure', 'wait-boundary', 'timestamp', 'outside-hook'])
+  test('account gate rejects ' + fault, () => {
+    const { patch, audit } = accountFixtures();
+    const row = audit.records[0];
+    const p = row.phases.find((p) => p.phase === 'db-first-connection');
+    if (fault === 'missing') row.phases.splice(row.phases.indexOf(p), 1);
+    if (fault === 'duplicate') row.phases.push({ ...p });
+    if (fault === 'failure') p.outcome = 'FAIL';
+    if (fault === 'wait-boundary') p.includesConnectionWait = false;
+    if (fault === 'timestamp') p.startedAt = 'invalid';
+    if (fault === 'outside-hook') p.completedAt = new Date(1050).toISOString();
+    assert.throws(() => validatePhaseCorrelation(patch, audit, { accountPhases: true }));
+  });
 for (const fault of ['foreign-invocation', 'missing-transaction', 'conflict-code', 'missing-http', 'other-run'])
   test('phase proof rejects ' + fault, () => {
     const { patch, audit } = fixtures();

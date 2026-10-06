@@ -17,6 +17,7 @@
  * - 功能边界：不负责 Cognito 租户运维、MFA 客服重置和人工账号恢复。
  */
 import { randomUUID } from 'node:crypto';
+import { observeDataPathPhase } from '@fdp/observability';
 import type { DbClient, Page } from '@fdp/database';
 import {
   audited,
@@ -222,39 +223,41 @@ export async function activateInvitedUserOnAuthenticatedRequest(
   requestId: string,
 ): Promise<boolean> {
   const now = deps.now?.() ?? new Date();
-  const target = (await users(deps.client).findFirst({
-    where: { cognitoSub: actor.actorId },
-  })) as unknown as UserRow | null;
+  const target = (await observeDataPathPhase('admin-account-query', async () =>
+    users(deps.client).findFirst({ where: { cognitoSub: actor.actorId } }),
+  )) as unknown as UserRow | null;
   if (target?.status === 'DISABLED') throw unauthenticated();
   if (!target || target.status !== 'INVITED') return false;
 
-  return withTransaction(deps.client, async (tx) => {
-    const updated = await users(tx).updateMany({
-      where: { id: target.id, cognitoSub: actor.actorId, status: 'INVITED' },
-      data: { status: 'ACTIVE', updatedAt: now },
-    });
-    if (updated.count !== 1) {
-      // 停用可能在首次查询与条件激活之间提交，不能把失败的激活当作可继续访问。
-      const current = (await users(tx).findFirst({ where: { id: target.id } })) as unknown as UserRow | null;
-      if (current?.status === 'DISABLED') throw unauthenticated();
-      return false;
-    }
+  return observeDataPathPhase('admin-account-activation', () =>
+    withTransaction(deps.client, async (tx) => {
+      const updated = await users(tx).updateMany({
+        where: { id: target.id, cognitoSub: actor.actorId, status: 'INVITED' },
+        data: { status: 'ACTIVE', updatedAt: now },
+      });
+      if (updated.count !== 1) {
+        // 停用可能在首次查询与条件激活之间提交，不能把失败的激活当作可继续访问。
+        const current = (await users(tx).findFirst({ where: { id: target.id } })) as unknown as UserRow | null;
+        if (current?.status === 'DISABLED') throw unauthenticated();
+        return false;
+      }
 
-    await recordAudit(tx, {
-      objectType: 'user',
-      objectId: target.id,
-      action: 'user.activate',
-      result: 'SUCCESS',
-      reason: 'first authenticated admin API request',
-      actorId: actor.actorId,
-      actorRole: actor.roles[0],
-      customerId: actor.customerId,
-      requestId,
-      beforeValue: { status: 'INVITED' },
-      afterValue: { status: 'ACTIVE' },
-    });
-    return true;
-  });
+      await recordAudit(tx, {
+        objectType: 'user',
+        objectId: target.id,
+        action: 'user.activate',
+        result: 'SUCCESS',
+        reason: 'first authenticated admin API request',
+        actorId: actor.actorId,
+        actorRole: actor.roles[0],
+        customerId: actor.customerId,
+        requestId,
+        beforeValue: { status: 'INVITED' },
+        afterValue: { status: 'ACTIVE' },
+      });
+      return true;
+    }),
+  );
 }
 
 // ---------- 角色集校验 ----------

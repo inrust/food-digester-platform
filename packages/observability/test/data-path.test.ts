@@ -7,7 +7,39 @@ import {
   setDataPathMessage,
   observeReceiptResult,
   observeRecordResult,
+  beginDataPathPhase,
+  beginFirstDataPathPhase,
 } from '../src/data-path.js';
+
+test('first database phases claim once per concurrent trace and completion retains acquisition owner', async () => {
+  const rows: Record<string, unknown>[] = [];
+  let finish!: (error?: unknown) => void;
+  await Promise.all(
+    ['a', 'b'].map((id) =>
+      withDataPathTrace(
+        { gatewayRequestId: id },
+        async () => {
+          for (let i = 0; i < 2; i++) {
+            const end = beginFirstDataPathPhase('db-first-query');
+            await Promise.resolve();
+            end();
+          }
+          if (id === 'a') finish = beginDataPathPhase('db-first-connection');
+        },
+        (row) => rows.push(row),
+      ),
+    ),
+  );
+  withDataPathTrace({ gatewayRequestId: 'wrong-context' }, () => finish());
+  assert.deepEqual(
+    rows
+      .filter((r) => r.phase === 'db-first-query')
+      .map((r) => r.gatewayRequestId)
+      .sort(),
+    ['a', 'b'],
+  );
+  assert.equal(rows.find((r) => r.phase === 'db-first-connection')!.gatewayRequestId, 'a');
+});
 
 test('concurrent traces isolate SQS and device IDs and retain parent Lambda ID', async () => {
   const rows: Record<string, unknown>[] = [];

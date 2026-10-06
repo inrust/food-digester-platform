@@ -1,0 +1,3829 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-05",
+  "status": "PASS",
+  "scope": "LOCAL_BROWSER_E2E",
+  "baselineCommit": "63e2dfeb794c86a3c08312607e31fd6dafc5eb8d",
+  "executedAt": "2026-10-06T04:01:15.256Z",
+  "environment": {
+    "browser": "headless Chromium",
+    "api": "per-test route fixtures; no deployed API",
+    "identity": "scripted Cognito SRP/MFA and synthetic tokens",
+    "productionCredentialsUsed": false
+  },
+  "sourceHashes": {
+    "apps/admin-web/e2e/admin-web.spec.ts": "1e8d8e2b2ee0e11b73276f328feb9bf1ab6c8f4501ca47ae26bba9a9fa023ad3",
+    "apps/admin-web/e2e/qa05-api-fixtures.ts": "fb6c2ebde6e6308c66914d3ee0e4e7e5ddc5cacb7d2f70f4e56bba1359f0578b",
+    "apps/admin-web/e2e/qa05-fixture.ts": "6d1efa29985f599aefc9f762da816739df22ca079fd1cd8a24b3a7f7db1fd945",
+    "apps/admin-web/e2e/qa05-workflows.spec.ts": "4d48d938bd16182dc54b534842244abe0d425638bcfcb1edf078950883ce1083",
+    "apps/admin-web/e2e/qa08-fixture.ts": "0fca405933372e56fec6645ebaf11f02fe75b0e457bd05c0afbeb26c98fced7d",
+    "apps/admin-web/e2e/qa08-prototype.spec.ts": "bfd6322860393e15e8e5418285ed08b5dd427cb7b33ad4b170ffbcb1e096f25a",
+    "apps/admin-web/e2e/qa08-snapshots/contract-detail-1440.json": "250a6ae7d03bc90019132c194cdf34381313acc716b76153859935e597114e2c",
+    "apps/admin-web/e2e/qa08-snapshots/contract-detail-375.json": "250a6ae7d03bc90019132c194cdf34381313acc716b76153859935e597114e2c",
+    "apps/admin-web/e2e/qa08-snapshots/contract-modify-1440.json": "faf899db219d237faf32b2a6d038b84621dfee44e1370fbc9ed1cd257a8ac39e",
+    "apps/admin-web/e2e/qa08-snapshots/contract-modify-375.json": "faf899db219d237faf32b2a6d038b84621dfee44e1370fbc9ed1cd257a8ac39e",
+    "apps/admin-web/e2e/qa08-snapshots/contract-new-1440.json": "c303dde720071b3c5e3429dd1f0d83fbfaf1f4f4f4a1c9e2c7dde6b84c74fcf5",
+    "apps/admin-web/e2e/qa08-snapshots/contract-new-375.json": "c303dde720071b3c5e3429dd1f0d83fbfaf1f4f4f4a1c9e2c7dde6b84c74fcf5",
+    "apps/admin-web/e2e/qa08-snapshots/dashboard-1440.json": "478dd002554e6308a585efa5422bcf588d905ce7fdd425dd7a25f7ebf6dab9f0",
+    "apps/admin-web/e2e/qa08-snapshots/dashboard-375.json": "478dd002554e6308a585efa5422bcf588d905ce7fdd425dd7a25f7ebf6dab9f0",
+    "apps/admin-web/e2e/qa08-snapshots/device-consumable-1440.json": "b3ee3023e219757eb693531b69b5333c1d086c5f597cb3672720b6fc20534fee",
+    "apps/admin-web/e2e/qa08-snapshots/device-consumable-375.json": "b3ee3023e219757eb693531b69b5333c1d086c5f597cb3672720b6fc20534fee",
+    "apps/admin-web/e2e/qa08-snapshots/device-group-1440.json": "863f4470a3b5851abff479ab2996b2af109f46d5b82f770d552035a367e60b89",
+    "apps/admin-web/e2e/qa08-snapshots/device-group-375.json": "863f4470a3b5851abff479ab2996b2af109f46d5b82f770d552035a367e60b89",
+    "apps/admin-web/e2e/qa08-snapshots/device-manage-1440.json": "7f306bf64636e328cbccd0c7f60d45b901948e87ff8caf28d900ae3fca28788b",
+    "apps/admin-web/e2e/qa08-snapshots/device-manage-375.json": "7f306bf64636e328cbccd0c7f60d45b901948e87ff8caf28d900ae3fca28788b",
+    "apps/admin-web/e2e/qa08-snapshots/device-operate-1440.json": "85d40f2a5f7c7bc41387f94043b9ab12a8e6012453656881445980ff50c88763",
+    "apps/admin-web/e2e/qa08-snapshots/device-operate-375.json": "85d40f2a5f7c7bc41387f94043b9ab12a8e6012453656881445980ff50c88763",
+    "apps/admin-web/e2e/qa08-snapshots/device-view-1440.json": "ca87e0adc935efc874914d242ddaa674f636feac5ff3e0dad7995fa70446c611",
+    "apps/admin-web/e2e/qa08-snapshots/device-view-375.json": "ca87e0adc935efc874914d242ddaa674f636feac5ff3e0dad7995fa70446c611",
+    "apps/admin-web/e2e/qa08-snapshots/esg-device-1440.json": "d17ca57073a07628ea80afd1e05f706339d2f20ab855d47f381b89f068ec1b59",
+    "apps/admin-web/e2e/qa08-snapshots/esg-device-375.json": "d17ca57073a07628ea80afd1e05f706339d2f20ab855d47f381b89f068ec1b59",
+    "apps/admin-web/e2e/qa08-snapshots/esg-overview-1440.json": "7cb742f4dffadffd1e3353eeef843350d49957e23cee4ccf7aa1137b57cc3b7b",
+    "apps/admin-web/e2e/qa08-snapshots/esg-overview-375.json": "7cb742f4dffadffd1e3353eeef843350d49957e23cee4ccf7aa1137b57cc3b7b",
+    "apps/admin-web/e2e/qa08-snapshots/settings-1440.json": "e3c50f83644883018f8f469eefdedcc3decc793a4ca94fe4a4760f84cc71f6e3",
+    "apps/admin-web/e2e/qa08-snapshots/settings-375.json": "e3c50f83644883018f8f469eefdedcc3decc793a4ca94fe4a4760f84cc71f6e3",
+    "apps/admin-web/e2e/ui-redesign.spec.ts": "ec1a317e19c82fbba93724843fc16b3030a70c2432727f1bd16c53a57c176135",
+    "apps/admin-web/package.json": "45fd2b22f78261e666d1749c329ec406675cd2615b2a25a14c9cf42dd961b03b",
+    "apps/admin-web/playwright.config.ts": "7b8488a2f83c3ff15a339a2ccc817c93ccc703e87a78d428422820adb75610e9",
+    "apps/admin-web/src/api/errors.ts": "045ab5b63c508a311282abca258cda8ceae9fbb3191aa88ae1dd463c26653098",
+    "apps/admin-web/src/api/http-client.ts": "b6d8ee9914612afa6fd420d028820dc14fbb65b20ddbc1c50b50a354177c6004",
+    "apps/admin-web/src/app/App.tsx": "fd0d1e506a3b054cca6cb96adc5e5cfd7efd46a0e12a06f5305c899133abdacd",
+    "apps/admin-web/src/app/LoginPage.tsx": "b97c21b49b377f3bbf499818113899b59b14a0764858bb3b30fe92ce7708b129",
+    "apps/admin-web/src/app/app.css": "bb2106084e6cb0c0992f697f2c4793f483eb50e8e81c77ad4f12a1c9c02b97a9",
+    "apps/admin-web/src/app/browser-router.ts": "5bfa3a39037de185a9aa0d5b6e4f71c8905f7401b8dfa6dcbb220a1632a3f483",
+    "apps/admin-web/src/app/business-controllers.tsx": "96b3cbbe239f901c9476ef8dc5d8e44d5974b138c40d33a86dae4bfc3ecec3b4",
+    "apps/admin-web/src/app/composition-root.ts": "6436baaec1784026c1097174edc0c5ffc303b5fd4c4b2a994507a86bb1594823",
+    "apps/admin-web/src/app/controllers.tsx": "565cb76bb1036ab12f2a6f08cd8efcfe4a1418e65aff0692ba320210eeee6eb2",
+    "apps/admin-web/src/app/feature-controllers.tsx": "d042fca4edd57938271740fefff8d726c95cd72df7a633349c5ff4dbfb84b92c",
+    "apps/admin-web/src/app/operations-controllers.tsx": "09d7812678be1abf962563de067ab64e294eb56e9fb2eb925a40cc08bd5666d0",
+    "apps/admin-web/src/app/runtime-config.ts": "ceedcac805a587f9a92714162628d9b232d0a4c12b80b9123f1f81dec6e7a9e7",
+    "apps/admin-web/src/auth/auth-flow.ts": "27d3335f737c9195ca38762d224a99f5ce67d6d62cdfee855761c70bd1651638",
+    "apps/admin-web/src/auth/cognito-idp.ts": "226b76d7bcf4f968223054b2771329176531b6d5bff67c8281c6df52942c423d",
+    "apps/admin-web/src/auth/srp.ts": "e4b12e2d9cfc127cbb2a6824c7d89872a508210f6fc22b114429a31a6e801bac",
+    "apps/admin-web/src/components/ConfirmDialog.tsx": "e013f98886820a7678919fb9da10a461638205a15e04a3b3194c188e58c5e1a9",
+    "apps/admin-web/src/components/ConsumableGauge.tsx": "336b8309eb0b2112aa7f53518335532365a68d8f5579c1815ee353b77ef1fca8",
+    "apps/admin-web/src/components/CursorTable.tsx": "440e28da5d3b8876d40aa2f871009a149cadd95cc30535acbf38b998092864e0",
+    "apps/admin-web/src/components/CustomerScope.tsx": "bbc17c34593d0e7aead299d6ad02491db38c0f184b9dd496181c7425912eb309",
+    "apps/admin-web/src/components/DesignProvider.tsx": "bb58eb5cc54c8a9de1f0db0da1e22b73cd5ab6680cbbb5ddf9eb792c29224b70",
+    "apps/admin-web/src/components/DeviceCommandActions.tsx": "76666b2cdd50fae51a20d15c231fe5edad0a0e1a3d4d8dd2dc43eb21b31983c5",
+    "apps/admin-web/src/components/ErrorNotice.tsx": "7334d8566a7c011ac5f8bdb4a78e8ced46cbe0b93d65d74e67aed97b26501e91",
+    "apps/admin-web/src/components/ExportPanel.tsx": "94cfe5d4afccabc2463da286a6c8dbc06d5799d674b9a4ba3cd8cd10a5f19e85",
+    "apps/admin-web/src/components/FourAxisBadge.tsx": "0591eb4e3d5ce3f1d6f1bd8202768b8b9bbd58e49b15ca180969ec4bd252a974",
+    "apps/admin-web/src/components/Icon.tsx": "ef5a77d83b91ed6419c19b7b66c921dbc6b7a68fb61a580aaca2d2ea2f5dc54a",
+    "apps/admin-web/src/components/LocaleValue.tsx": "91ba1ee75bfc50b747dad77904c9ae2176c1e76256a2f5cd9f99ed606982d45b",
+    "apps/admin-web/src/components/MediaPreview.tsx": "c61eb00258ecc46c8a7093401f303fbde397b398204b848d9127f36b40eed128",
+    "apps/admin-web/src/components/Modal.tsx": "dd74f5c94ccf4ce696a8d4921d710590a0dc2338b0055f43f93ce4f5e1df5161",
+    "apps/admin-web/src/components/ScopeFilter.tsx": "9ebbc1d2d85acb373287fbf70d431a92a06767a34e872a3cb1b7df5012313564",
+    "apps/admin-web/src/components/TimeText.tsx": "ba6bbf6bbaba2925b490c402bf3f7381c0cbd7e9b4a75417d714f1633db27a2c",
+    "apps/admin-web/src/components/Toast.tsx": "0742fb133e78dd6c3bdfc37919d354f9dc072a4e13345605267d9be778c5a425",
+    "apps/admin-web/src/components/date-time.ts": "95e1e2349b14b490140d1c1a57a22023df18c08dbabf9593cf2b17600f5fc57f",
+    "apps/admin-web/src/components/dialog-a11y.ts": "c5cbb1e3ccb3684fb34765b693943abf7bba6f999557eaeba563676e587e4ea2",
+    "apps/admin-web/src/components/filter-state.ts": "4ede7f00e832631c80969d112ddd86cb7bf1ba535a919e33f409b88d659a3486",
+    "apps/admin-web/src/components/toast-store.ts": "ce36ad67bb87cac202645562bee696e0bbf8493af3109a1f688fed13c317d69e",
+    "apps/admin-web/src/components/ui.tsx": "d74ea908a4e1716e06b01284298004936128837d5d536058aaff4ac40b8fa590",
+    "apps/admin-web/src/i18n/i18n.tsx": "6dfeb7efbfb95876acb27cb65c7852ba254d6f1894a8b574c6466712df5d3ab4",
+    "apps/admin-web/src/i18n/resources/en.ts": "70669bfd7e05dc8cb09056d40e127ff0621e20042be2820faee9f6ddfa6e6727",
+    "apps/admin-web/src/i18n/resources/pages.ts": "0da2ac84a7294e72abfaf42c2555b21ee8ec1d0ec26f2afb9dde9c436df59949",
+    "apps/admin-web/src/i18n/resources/zh-CN.ts": "63255c118d4d929751f8a953aa2cbe0788a3e111d23da6770deb100f37046f1d",
+    "apps/admin-web/src/index.ts": "15a6fadbf03e291f94d9c52cb3e0d1b86ed954198ba982b61d31e10fd2331ba9",
+    "apps/admin-web/src/main.tsx": "7a035459da9bdfb09974ad93568ab4072a1b7737e1ad21487a2c07188b24b641",
+    "apps/admin-web/src/menu/menu.ts": "c32c5f98ef8db430c6296a1903acb3b85db219137470ec426d08f3a9185b4b95",
+    "apps/admin-web/src/pages/alarms/AlarmsPage.tsx": "4a5bc72088b6f598195023b06c370c257d47e2d8a6ccaaea8209e1c8b0c4c480",
+    "apps/admin-web/src/pages/alarms/alarm-state.ts": "2186de64c82be40df03c35c9601127de4cb668be8b73b9ea458a1b78f6b3aa2a",
+    "apps/admin-web/src/pages/alarms/alarms-api.ts": "fe8c6354383835581e97eb62bee3b1d84aaad63f9662a79a1b05ce32f7aaf875",
+    "apps/admin-web/src/pages/alarms/types.ts": "9183e10c3cecc7eb952fb479788750fe908b584467b3a78b61199adac9ab0a29",
+    "apps/admin-web/src/pages/audit/AuditLogsPage.tsx": "cd9a8a16767aede48d8d2870dc8c34e9909a39a666038f42c087a11f2d29bab2",
+    "apps/admin-web/src/pages/audit/audit-api.ts": "2428a237d18ff1cf39d9756b0e6b1cd7135dd28e072cdce3b5840224837f2024",
+    "apps/admin-web/src/pages/audit/audit-state.ts": "75556c7c6505b70539b641faf0857eb4fbbbfe98fd9dc9f8888947dd1caa9acc",
+    "apps/admin-web/src/pages/audit/types.ts": "9ac14b632cc8363bbe94ead790bdc1a623615f67d26483c7690bd866762d1fae",
+    "apps/admin-web/src/pages/configuration/ConfigurationsPage.tsx": "2b250d1835ec976b52ac119259f2ca96fdaca16fab25c402ba6e80fc9b132743",
+    "apps/admin-web/src/pages/configuration/configuration-api.ts": "f3f54cba9b0298be62ff01919435ad5d40020c914e24c9bdd07c1b5d91b0188f",
+    "apps/admin-web/src/pages/configuration/configuration-state.ts": "1d4d5314fba83713ff79da2e5b5ab7b4ec3aa77d6b5fb8a3e8e784c606494d8d",
+    "apps/admin-web/src/pages/configuration/types.ts": "8889ca7807490bbe1f6927df7d175dcf72a037cbd09fdb73f0feb02284aaa143",
+    "apps/admin-web/src/pages/consumables/ConsumablesPage.tsx": "a74fcb99d7a260eaa7f5b87311b8df76baad2fc05f4be9365b9c6d78910653d1",
+    "apps/admin-web/src/pages/consumables/consumable-state.ts": "c37294a3a4c52f1562f737540108f7d5ade7eabf273726d324f0843d17c59536",
+    "apps/admin-web/src/pages/consumables/consumables-api.ts": "c4915ea44f481f29a88e490b4acaed8b8599dd384bd99646d12e830899d30f6e",
+    "apps/admin-web/src/pages/consumables/types.ts": "85c20a708b3e094b3515c135c086c6636394c6d130e32506feb281ff0d551db5",
+    "apps/admin-web/src/pages/contracts/ContractDetailPage.tsx": "1e38bbb24d2183a879424b0910934e6b12d229e968fb8a031d53c7ffba437725",
+    "apps/admin-web/src/pages/contracts/ContractNewPage.tsx": "b3a602efb851da41b747d4e2c9ff6d88786d986173ee31c1f1f9f1a443bdd5e5",
+    "apps/admin-web/src/pages/contracts/ContractsPage.tsx": "f0c662dd196d0a4603a14b53bc21570c599c558c3b46e92d8959ca614c9670e4",
+    "apps/admin-web/src/pages/contracts/contract-state.ts": "506ec888ebefb58cbfb30b28f56bd44b2cbe99b57924381dd67fb9ec4f55eb21",
+    "apps/admin-web/src/pages/contracts/contracts-api.ts": "1fc725d4e552a49e642fddad21605b895df485ffa4282475f53581ef8a0d7dfc",
+    "apps/admin-web/src/pages/contracts/types.ts": "c8042eb4c68dc47ad8db1497611dfb7f8817dba3b56c0ed5947b5253e8207ac9",
+    "apps/admin-web/src/pages/customers/CustomersPage.tsx": "409eb75a9abc1f068677f921e7fc351ab3f725e45c7a6a5bd3442a64c0adcf33",
+    "apps/admin-web/src/pages/customers/customers-api.ts": "58e278f606c64ba97d92959fc2bcb29ec99f76bbc505dff60455e75037ec3c49",
+    "apps/admin-web/src/pages/customers/types.ts": "387b56f5085540717428f73fea98591b24fe2a73d989ae309dba9b96419d67fa",
+    "apps/admin-web/src/pages/dashboard/DashboardPage.tsx": "3ef3d3bfe69cbe4248511422572354ee1cfe6413ae6f98d0d2ae2506d89b0dd3",
+    "apps/admin-web/src/pages/dashboard/dashboard-api.ts": "4ae2ed59a0207ac216426e366c4c4bb9af251a06fc4328a4ea0de1af73be2f60",
+    "apps/admin-web/src/pages/dashboard/dashboard-state.ts": "b249647c8fe5285b65d41c793b8465423e43b8d3bb8a12f8e68110cc04d10f18",
+    "apps/admin-web/src/pages/dashboard/types.ts": "77b68ec3ee95f54e42d3cbfc6eed6e8ab95e94cc6514246d1f9664dbb56c7158",
+    "apps/admin-web/src/pages/device-manage/DeviceManagePage.tsx": "9f6ee8baa54f726a2981ab1651350b38026c897a7d8c73c82c55fb3681a8ee80",
+    "apps/admin-web/src/pages/device-manage/device-manage-api.ts": "3c59968207e7852830721968949d904ce02b228905595211dc70f194f1690475",
+    "apps/admin-web/src/pages/device-manage/device-manage-state.ts": "ac2ba9c36c9f6f7d661957b15be22d5b7e1cfa6ffa0243f9a63f6ba73a55754f",
+    "apps/admin-web/src/pages/device-manage/types.ts": "420f412f6f79410b107a0f587ae9e1d610ea778d8fbcaaa2801d3f91e6a752f9",
+    "apps/admin-web/src/pages/device-operate/DeviceOperatePage.tsx": "d806ea131554b22776e2777e9c19f452022580951881637b8b773b450d47ff88",
+    "apps/admin-web/src/pages/device-operate/command-state.ts": "5eab39791d738bb080a6f29e2f2b2bbf7d86c3333d19b3c7c8deb3e2f2f88fcb",
+    "apps/admin-web/src/pages/device-operate/commands-api.ts": "515f3f0751781e940ddbad36b09cc617ddfb932637e7c8d2d582c89a5bac53e6",
+    "apps/admin-web/src/pages/device-operate/types.ts": "d142da133548343a19bd0bb711104294b306951a487e91ce0f3c21a6014dfe37",
+    "apps/admin-web/src/pages/device-users/DeviceUsersPage.tsx": "e8095b03d999adcb18c9c0c93e8edccf6134df2cd8c4c8b334092d25b5ed8ccf",
+    "apps/admin-web/src/pages/device-users/device-user-state.ts": "fb9d28969c5815bd2be58d7f912588ebaa34e1def0c34983b2c2d3f54a70672b",
+    "apps/admin-web/src/pages/device-users/device-users-api.ts": "6778a4bec4df0095a6e7e4bf16d96037a1541193228397af673a836872250781",
+    "apps/admin-web/src/pages/device-users/types.ts": "0b3bdf85b08462c63d2c55d18a1b33ae9d74388687dadb4768be7ddbe4c72643",
+    "apps/admin-web/src/pages/devices/DeviceGroupsPage.tsx": "5c73f24269ac5805c624bee908fd385632389d9d587be6b2508f9844af17a6ce",
+    "apps/admin-web/src/pages/devices/DeviceViewPage.tsx": "a4b641f6fe0e6fff70cd991da5c0dee178afb352441a57ab0c3ace2d7b412f28",
+    "apps/admin-web/src/pages/devices/device-state.ts": "95694ff7f9e70ce64c31ef7ed112bb81aab4328b079d6c295e6d0d935cfe3558",
+    "apps/admin-web/src/pages/devices/devices-api.ts": "bd70d2445921d4cb070b79f49516791aa696a00cff36c85d6577419f4588ca7d",
+    "apps/admin-web/src/pages/devices/types.ts": "30471bf766832620af639703227dd91f47d83641fe938dd9d57da140b628a69b",
+    "apps/admin-web/src/pages/esg/EsgDevicesPage.tsx": "cbe6ed0252ad81d547618aab09cbaa0f011a098ca138bde591ff22029bf99b29",
+    "apps/admin-web/src/pages/esg/EsgOverviewPage.tsx": "24bded520b3e5267f87bd19085ba4f68601c16999acbb7bb3d80aee9f6918e73",
+    "apps/admin-web/src/pages/esg/esg-api.ts": "a253319ededf4e9b6c830edca76df0bdca00ac49e550d29b5fc24b7004028df5",
+    "apps/admin-web/src/pages/esg/esg-state.ts": "2c8b362e8d4ea63c194e4cdd151977b4a341fce43929334c6a4626334c077220",
+    "apps/admin-web/src/pages/esg/types.ts": "95bfa60a0dea6e9cc434eeb5e715fe29df13118aea1d17b6675b9121f13a229c",
+    "apps/admin-web/src/pages/licenses/LicenseSummary.tsx": "4016819b64b14ee8ec27d7fba171ef3c1b460438daa0d37d4001f4bad96ba9e9",
+    "apps/admin-web/src/pages/licenses/LicensesPage.tsx": "dbab71d5c249c583a5a60f679c0d6f3edbd91a69e3bbeb3021e1d10656f0ff84",
+    "apps/admin-web/src/pages/licenses/license-state.ts": "4ed3fb92a226d85c9b25c50b6974fa1a4cea2c5bfcbce1bfb3524dae8f380783",
+    "apps/admin-web/src/pages/licenses/licenses-api.ts": "04243ced8cc2c3940137ad32a267aefcedb578bda47e02594200a719fe40252d",
+    "apps/admin-web/src/pages/licenses/types.ts": "dd8d42c7782bdfb83e5e84e0176236ee7b076e85ad100c2d37657bc60a6758c2",
+    "apps/admin-web/src/pages/media/MediaPage.tsx": "34bd957fc9a38600cc6dc4b157ddea2e29cc1045170134d18cb9c5f976a8e707",
+    "apps/admin-web/src/pages/media/media-api.ts": "4dce01dec4e6eade2cc9525041f6ccb096ec7d5afd0cc0e5e8352e12dba0e5ed",
+    "apps/admin-web/src/pages/media/media-state.ts": "d3635c6378702fefa99020818c68c0369467d017d8b2733d11d9553e9abd32bd",
+    "apps/admin-web/src/pages/media/types.ts": "a528386a96a8fac0dfb84ba1959208761ce40dcaa81e52421c2104d96b30c972",
+    "apps/admin-web/src/pages/onboarding/OnboardingReviewPanel.tsx": "9e930e6eeb3d3de18d208fe3ff9226a8943899f2ec8e25daa1dae16cfbcd89fd",
+    "apps/admin-web/src/pages/onboarding/onboarding-api.ts": "12617d00e5a33097aeb5abb799e96320188502ae57aa99a9d8158fe3caa72d23",
+    "apps/admin-web/src/pages/onboarding/onboarding-state.ts": "69a68d39558beafb952883e5c316bda1d097992aa5ca1932a10be5fc0998e794",
+    "apps/admin-web/src/pages/onboarding/types.ts": "242d1d1191545d0fe4e6af9a856e43daca12681f1cceaa5239178402be0e34fa",
+    "apps/admin-web/src/pages/ota/OtaCampaignsPage.tsx": "339793c92ea1a43759a93e8d97a4b810ea373b788158bc1db5e1eb48db87ef53",
+    "apps/admin-web/src/pages/ota/OtaPackagesPage.tsx": "b1effce6092678bcf3201ae64628affbb612643a1176d3551c16cace56fe6553",
+    "apps/admin-web/src/pages/ota/ota-api.ts": "8e3b8afd9a1993c54bb879016e7ed01a980299d88e3e5e29ec9a24bd4d152468",
+    "apps/admin-web/src/pages/ota/ota-state.ts": "76984683a830198568b3fe0b00718e6f369de0033802c24d6ce546988c4866b2",
+    "apps/admin-web/src/pages/ota/types.ts": "aafd1efe349c4350f8d5d4e63f22c303c99f1797197b7158f834715ecebf1d67",
+    "apps/admin-web/src/pages/settings/SettingsPage.tsx": "682d6375581e7becea12d2dd8f72411c8d46da9fc7b43349e234cb22704c34fc",
+    "apps/admin-web/src/pages/settings/settings-api.ts": "2b6e6aaab579a84408dffe4b3cb96c92888202786c261ce9e798804426bb9e28",
+    "apps/admin-web/src/pages/settings/settings-state.ts": "840b1362d0e49796aaee917f217caaf3d22809cbf4175bd1f507d4355910c1b2",
+    "apps/admin-web/src/pages/settings/types.ts": "d55b03dcc826114f07e3cbf096670b910e1eb85e642505f09cab840d64f3b446",
+    "apps/admin-web/src/pages/settings/users-api.ts": "1ec8b008039caf8f3c638e16662a81b2f92bac1642019fcb0d4477f390bf48b6",
+    "apps/admin-web/src/pages/sites/SitesPage.tsx": "0ef334ccb80b3b2d32557b760cd1906c9e2a17744508dd2d7273d9bbe7cb79e3",
+    "apps/admin-web/src/pages/sites/sites-api.ts": "5a84e423786c301d27852284f0706d3d3d210839413e556fcd6934194672468c",
+    "apps/admin-web/src/pages/sites/sites-state.ts": "db8f43f22315696d15320446bce16c3ef09b54efe067a9305fd9433a5c1ef42c",
+    "apps/admin-web/src/pages/sites/types.ts": "d6284efdf420f0c58fd248eaf49025b622e62ccc1a6a98c43fb48e719d0c7d87",
+    "apps/admin-web/src/router/guard.ts": "467dc9701526185ef12b7b91d9dbd6d382beb4f0484d854ab9997c7d4a7d8af7",
+    "apps/admin-web/src/router/routes.ts": "e9a302b95d32ba39a8d1c3d14b096aec5479649244dcc43a7c62feb3ba5c7475",
+    "apps/admin-web/src/session/jwt.ts": "c6f09bdf4bc471dde19ecd7e3332f630efca77ad7725f44ae55990e9cf2d6ae4",
+    "apps/admin-web/src/session/session-manager.ts": "f793c10615d001df51a6365d4f36fab8fe624ac8b176d693c8549877eb551509",
+    "apps/admin-web/src/session/session-store.ts": "295300875db7bc8c76467805e7d642fa02d2079f8df81bbc094d43f362046b0d",
+    "apps/admin-web/src/shell/AppShell.tsx": "5c3a6b70dbb8fa7736914ec78fbb55ec9194fbc154f369a9cafdaf09a23dc734",
+    "apps/admin-web/src/shell/Sidebar.tsx": "7d716ce04e3f38f99dc7c62fdc9c8e3d335f6f712e3766585704425891557cb6",
+    "apps/admin-web/src/shell/Topbar.tsx": "2676eea5f9e5347ced107f3c212ed825acb6316c8ee66021af4ced3ade0c4c33",
+    "apps/admin-web/src/shell/breadcrumb.ts": "7e11efd0f286da7af65c0f5cd947b4a5d788b5be90da21bf7a01ea2c314725bc",
+    "apps/admin-web/src/shell/shell.css": "fccae31dc21b31a8d65da177192d76d2cf2ca9c43e8e3c5e1a726eb0f0ef5481",
+    "apps/admin-web/src/vite-env.d.ts": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+    "apps/admin-web/test/ota.test.tsx": "a3b888ffbb36ea6b60559670a92053e1bec5ac4191e68f66271c3ea743a2b54f",
+    "apps/admin-web/tsconfig.e2e.json": "45b9f8c8bf70aa68c3bcf60509da074a9346f3050253458993fbab7effd7fc43",
+    "package.json": "c3cfe21a44d824a698c5ee2f29a9214a5d018b8fe30207ac26807c8da7e47332",
+    "packages/auth/src/browser.ts": "30a0106d9878e94ecf5bfce0e6887f7db9f75a87ff2d52ecb2c7e2c6c9f4102e",
+    "packages/auth/src/cognito.ts": "311fb42a98268399d2b090e887728f22acf925d56feea9fd1fd5969f7c672816",
+    "packages/auth/src/device/certificate-lifecycle.ts": "75940bb9dce6531c4f5ce7f72636cfdb0eb0eb8d2bf28cf2df7d4a65ec73ca21",
+    "packages/auth/src/device/guard.ts": "caab366f263d38277a1ee79449de4986e4138e0ba106a505d8b6c611ae7ac0f9",
+    "packages/auth/src/device/mtls-context.ts": "73d69e0f18312649ac6a2830671fa350d0a9224f7dcad2661589b0af7ffd564e",
+    "packages/auth/src/device/verifier.ts": "3b5ab8eb838d676a0c1cd9f2d52173721dc43032761758fd82cb843109866e1a",
+    "packages/auth/src/errors.ts": "0f5008d348c424b5821f15adde53be6a4f9f5c640ac07f9d71c38c652d547e57",
+    "packages/auth/src/guard.ts": "781871701c83dab69f7387967c2efe2d81934baee856b57ddce09e6a4e1e6d68",
+    "packages/auth/src/index.ts": "d95043be4ccc89d0cb617c27de264477eb8f38dfc198bb46a782b1fdd59ea187",
+    "packages/auth/src/onboarding/rate-limit.ts": "2f2eee6c58f12f066f18bdfb2a0b0aa4895d146e411c7dcf135a47fa4b969556",
+    "packages/auth/src/permissions.ts": "61b5c2097a49258b11db68781f19723dd3f1e18895c110151aeaf7ad8816344b",
+    "packages/auth/src/roles.ts": "46b793ce36bd10fe1867fe8371d0a38866578af8d30b353deb2e5a0ab9e6a0a5",
+    "packages/auth/src/secure-package/envelope.ts": "3bfb66a816e7aaf17ee9f9376f234b3081825e6d2f785f10e76db19593bae7df",
+    "packages/auth/src/secure-package/errors.ts": "93dfece6a45c1ce7fa6e6e2fbf217a5d6a0ae5f63eaa41e68cd35a502286da83",
+    "packages/auth/src/secure-package/local-test-key-provider.ts": "aeb6af52ca50abd07114af0d487ea4221fbbfc4f105fa5b691ee43575e5d78ca",
+    "packages/auth/src/secure-package/service.ts": "fb15b9a3858671a3fd9cb8e1912555163dc78fae56e4b9153f5ff56c63023bc8",
+    "pnpm-lock.yaml": "2126f03557c343bc7fc90b12e060f663492a67b647e0892bb18dba126a7f3364",
+    "scripts/admin-e2e.test.mjs": "429dad388dd8075e1a721df96673430ce643405f4cf848f088ca9212a246ed53",
+    "scripts/run-admin-e2e.mjs": "89dad27873cbf92b927756f122cf8cd74cc9e4a62dd1972b14a76345761edf00"
+  },
+  "phases": [
+    {
+      "phase": "serial",
+      "workers": 1,
+      "timeoutMs": 660000,
+      "durationMs": 83397,
+      "testCount": 36,
+      "distinctCases": 36,
+      "repeatEach": 1,
+      "roleRouteAssertions": 110,
+      "buttonAssertions": 33,
+      "observedApiResponses": 1019,
+      "statuses": [
+        200,
+        201,
+        202,
+        401,
+        403,
+        404,
+        409
+      ],
+      "tests": [
+        {
+          "title": "H-01 API 拒绝停用会话后清除浏览器会话并返回登录",
+          "testId": "2b3de5c40391388d7643-2a0356c5a6ea11266d96",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-E12174459470",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "disabledSessionLogout": true
+          },
+          "observedApiResponses": 1
+        },
+        {
+          "title": "M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏",
+          "testId": "2b3de5c40391388d7643-76305a80fb71fe2b57b9",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-EE6F72DFD577",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "viewerOwnRead": true,
+            "viewerReadOnly": true
+          },
+          "observedApiResponses": 4
+        },
+        {
+          "title": "无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫",
+          "testId": "2b3de5c40391388d7643-c179b34cf24e454b2d85",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-A309CE15013D",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 5
+        },
+        {
+          "title": "刷新失败清会话，API 403 保留会话并呈现无权",
+          "testId": "2b3de5c40391388d7643-c92b8ce2992a6c7af399",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-84F40F67D3EC",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 1
+        },
+        {
+          "title": "Customer scope 与 Dashboard 离线/无 entitlement 动作在真实浏览器失败关闭",
+          "testId": "2b3de5c40391388d7643-7c976a6b1072b619b762",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-4297B211E091",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 2
+        },
+        {
+          "title": "Onboarding 审批双击只提交一次，展示录入来源和证书状态",
+          "testId": "2b3de5c40391388d7643-f7dc0c4bb59631cc2d03",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-36D30FC0EF1D",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 3
+        },
+        {
+          "title": "Customer/Site CRUD 关键路径：创建、非法时区、关联停用提示与 409",
+          "testId": "2b3de5c40391388d7643-0c57d9f298e27b844108",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-BD80302E852B",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 19
+        },
+        {
+          "title": "1440/768/375 响应式布局、横向表格和对话框键盘边界",
+          "testId": "2b3de5c40391388d7643-1b9e7990ea566d744fbf",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-0A1C72C5F285",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 3
+        },
+        {
+          "title": "FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、分页入口、时区与响应式",
+          "testId": "2b3de5c40391388d7643-af803316a9d700cd2e20",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-05F3DE0D8737",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 21
+        },
+        {
+          "title": "FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交场景失败关闭",
+          "testId": "2b3de5c40391388d7643-969016c92a4898b1e3fb",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-B6E2C9301FB5",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 20
+        },
+        {
+          "title": "FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒体签发与审计详情",
+          "testId": "2b3de5c40391388d7643-4b6c82809856516bc74a",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-D2D3558AD311",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 55
+        },
+        {
+          "title": "FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关闭",
+          "testId": "2b3de5c40391388d7643-98f48c032a7fae0a1909",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-794517D1AC23",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 1
+        },
+        {
+          "title": "FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭",
+          "testId": "2b3de5c40391388d7643-4745ac6c0e247d7fcbc6",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-D3A948752B9A",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 3
+        },
+        {
+          "title": "FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状态机",
+          "testId": "2b3de5c40391388d7643-37db37fb0da5b6d32c2b",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-36CB5BDC0A3D",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 11
+        },
+        {
+          "title": "FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源",
+          "testId": "2b3de5c40391388d7643-03b6a0353fb99772c39d",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-46CD354503EE",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 22
+        },
+        {
+          "title": "FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界",
+          "testId": "2b3de5c40391388d7643-c2f4ae0b508c38bc7bd3",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-5B45F11E4120",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 33
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：zh-CN / 375px",
+          "testId": "2b3de5c40391388d7643-077014565e01cc7b5c36",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-E3AE40F55539",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 57
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：zh-CN / 768px",
+          "testId": "2b3de5c40391388d7643-430ff838ffe32e437fbf",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-D18A363E1625",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 58
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：zh-CN / 1440px",
+          "testId": "2b3de5c40391388d7643-975415ef86798bde5f28",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-2F2954D90E1C",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 58
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：en / 375px",
+          "testId": "2b3de5c40391388d7643-8fe477b1c0717c7cb9d1",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-2CC22C74565B",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 58
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：en / 768px",
+          "testId": "2b3de5c40391388d7643-17683ba8bd6a71301c47",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-FDA4AE9674F0",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 56
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：en / 1440px",
+          "testId": "2b3de5c40391388d7643-4bc7f364c2d8051bf003",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-E8256119D669",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 58
+        },
+        {
+          "title": "FE-19 语言选择在刷新后保持",
+          "testId": "2b3de5c40391388d7643-7539e2ffe2e982ea97e5",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-DB58AADB5C1F",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 2
+        },
+        {
+          "title": "QA-09 设备管理长别名和序列号在375px完整换行且不裁切",
+          "testId": "2b3de5c40391388d7643-bff334f12b2bfd6cbdd7",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-1AABFF7E2E28",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "manageLongValues": true
+          },
+          "observedApiResponses": 16
+        },
+        {
+          "title": "QA05 role route and button matrix PlatformSuperAdmin",
+          "testId": "d08b1798d485941b413a-c2208852246433f8cec7",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-1AB35B7A9DF1",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "PlatformSuperAdmin",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": true
+              },
+              {
+                "path": "/customers",
+                "allowed": true
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": true
+              },
+              {
+                "path": "/configurations",
+                "allowed": true
+              },
+              {
+                "path": "/device-users",
+                "allowed": true
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": true
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": true
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": true
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": true
+              },
+              {
+                "path": "/consumables",
+                "allowed": true
+              },
+              {
+                "path": "/settings",
+                "allowed": true
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": true
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/customers",
+                "id": "create-customer",
+                "enabled": true
+              },
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": true
+              },
+              {
+                "path": "/device-users",
+                "id": "device-user-create",
+                "enabled": true
+              },
+              {
+                "path": "/settings",
+                "id": "user-invite-open",
+                "enabled": true
+              },
+              {
+                "path": "/consumables",
+                "id": "consumable-request-create-open",
+                "enabled": true
+              },
+              {
+                "path": "/licenses",
+                "id": "license-create",
+                "enabled": true
+              },
+              {
+                "path": "/configurations",
+                "id": "config-create",
+                "enabled": true
+              },
+              {
+                "path": "/contracts",
+                "id": "contract-new-open",
+                "enabled": true
+              },
+              {
+                "path": "/ota/packages",
+                "id": "upload-session-open",
+                "enabled": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "id": "campaign-create-open",
+                "enabled": true
+              }
+            ]
+          },
+          "observedApiResponses": 72
+        },
+        {
+          "title": "QA05 role route and button matrix PlatformOperator",
+          "testId": "d08b1798d485941b413a-e207dfc1e5ebfc09a49b",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-BC3B7F6AC8AB",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "PlatformOperator",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": true
+              },
+              {
+                "path": "/customers",
+                "allowed": true
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": true
+              },
+              {
+                "path": "/configurations",
+                "allowed": true
+              },
+              {
+                "path": "/device-users",
+                "allowed": false
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": false
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": true
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": true
+              },
+              {
+                "path": "/consumables",
+                "allowed": true
+              },
+              {
+                "path": "/settings",
+                "allowed": false
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": true
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/customers",
+                "id": "create-customer",
+                "enabled": true
+              },
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": true
+              },
+              {
+                "path": "/consumables",
+                "id": "consumable-request-create-open",
+                "enabled": true
+              },
+              {
+                "path": "/licenses",
+                "id": "license-create",
+                "enabled": true
+              },
+              {
+                "path": "/configurations",
+                "id": "config-create",
+                "enabled": true
+              },
+              {
+                "path": "/contracts",
+                "id": "contract-new-open",
+                "enabled": false
+              },
+              {
+                "path": "/ota/packages",
+                "id": "upload-session-open",
+                "enabled": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "id": "campaign-create-open",
+                "enabled": true
+              }
+            ]
+          },
+          "observedApiResponses": 52
+        },
+        {
+          "title": "QA05 role route and button matrix Auditor",
+          "testId": "d08b1798d485941b413a-c60317340edbfd6eb1fc",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-5B0F6F70D2FA",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "Auditor",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": false
+              },
+              {
+                "path": "/customers",
+                "allowed": true
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": true
+              },
+              {
+                "path": "/configurations",
+                "allowed": true
+              },
+              {
+                "path": "/device-users",
+                "allowed": true
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": true
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": true
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": true
+              },
+              {
+                "path": "/consumables",
+                "allowed": false
+              },
+              {
+                "path": "/settings",
+                "allowed": false
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": true
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/customers",
+                "id": "create-customer",
+                "enabled": false
+              },
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": false
+              },
+              {
+                "path": "/device-users",
+                "id": "device-user-create",
+                "enabled": false
+              },
+              {
+                "path": "/licenses",
+                "id": "license-create",
+                "enabled": false
+              },
+              {
+                "path": "/configurations",
+                "id": "config-create",
+                "enabled": false
+              },
+              {
+                "path": "/contracts",
+                "id": "contract-new-open",
+                "enabled": false
+              },
+              {
+                "path": "/ota/packages",
+                "id": "upload-session-open",
+                "enabled": false
+              },
+              {
+                "path": "/ota/campaigns",
+                "id": "campaign-create-open",
+                "enabled": false
+              }
+            ]
+          },
+          "observedApiResponses": 53
+        },
+        {
+          "title": "QA05 role route and button matrix CustomerAdmin",
+          "testId": "d08b1798d485941b413a-8dee424051a3969fdfea",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-5C6B7868200E",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "CustomerAdmin",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": true
+              },
+              {
+                "path": "/customers",
+                "allowed": false
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": false
+              },
+              {
+                "path": "/configurations",
+                "allowed": false
+              },
+              {
+                "path": "/device-users",
+                "allowed": true
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": false
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": false
+              },
+              {
+                "path": "/consumables",
+                "allowed": true
+              },
+              {
+                "path": "/settings",
+                "allowed": true
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": false
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": false
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": false
+              },
+              {
+                "path": "/device-users",
+                "id": "device-user-create",
+                "enabled": true
+              },
+              {
+                "path": "/settings",
+                "id": "user-invite-open",
+                "enabled": false
+              },
+              {
+                "path": "/consumables",
+                "id": "consumable-request-create-open",
+                "enabled": false
+              }
+            ]
+          },
+          "observedApiResponses": 34
+        },
+        {
+          "title": "QA05 role route and button matrix CustomerViewer",
+          "testId": "d08b1798d485941b413a-f5f7368fd71c60f1a0a1",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-F1DD4122280F",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "CustomerViewer",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": false
+              },
+              {
+                "path": "/customers",
+                "allowed": false
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": false
+              },
+              {
+                "path": "/configurations",
+                "allowed": false
+              },
+              {
+                "path": "/device-users",
+                "allowed": true
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": false
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": false
+              },
+              {
+                "path": "/consumables",
+                "allowed": true
+              },
+              {
+                "path": "/settings",
+                "allowed": false
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": false
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": false
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": false
+              },
+              {
+                "path": "/device-users",
+                "id": "device-user-create",
+                "enabled": false
+              },
+              {
+                "path": "/consumables",
+                "id": "consumable-request-create-open",
+                "enabled": false
+              }
+            ]
+          },
+          "observedApiResponses": 28
+        },
+        {
+          "title": "QA05 login SRP MFA error success logout without persisting password",
+          "testId": "d08b1798d485941b413a-983b21645b3244423089",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-3C3B4530B775",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "login": true,
+            "mfaRetry": true,
+            "logout": true
+          },
+          "observedApiResponses": 1
+        },
+        {
+          "title": "QA05 ESG cursor totals export snapshot timezone and empty state",
+          "testId": "d08b1798d485941b413a-307c191e05f9ed1e3b50",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-BEE35BB22731",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "cursorExport": true,
+            "timezone": true,
+            "empty": true
+          },
+          "observedApiResponses": 15
+        },
+        {
+          "title": "QA05 Command dangerous confirmation terminal result and publish failure",
+          "testId": "d08b1798d485941b413a-6d6e91ce0a0366fc0be4",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-72DB1ED30FFB",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "dangerousConfirmation": true,
+            "commandTerminal": true,
+            "publishFailure": true
+          },
+          "observedApiResponses": 26
+        },
+        {
+          "title": "QA05 Media expiry renew 403 and audit read-only zero writes",
+          "testId": "d08b1798d485941b413a-542b7ae7a81b203c575d",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-C04C02FE56AB",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "mediaExpiry": true,
+            "mediaRenew": true,
+            "media403": true,
+            "auditReadOnly": true
+          },
+          "observedApiResponses": 6
+        },
+        {
+          "title": "UI redesign: all business routes at 1366x768",
+          "testId": "60d171471997609e54aa-bbbccc4e52032610a1c7",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-D4800CDCF225",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "desktopRoutes": true,
+            "desktopLayout": true,
+            "dialogKeyboard": true,
+            "languageSwitch": true
+          },
+          "observedApiResponses": 55
+        },
+        {
+          "title": "UI redesign: all business routes at 1440x900",
+          "testId": "60d171471997609e54aa-ad31289d08186eea5190",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-6078D02EADDD",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "desktopRoutes": true,
+            "desktopLayout": true,
+            "dialogKeyboard": true,
+            "languageSwitch": true
+          },
+          "observedApiResponses": 55
+        },
+        {
+          "title": "UI redesign: all business routes at 1920x1080",
+          "testId": "60d171471997609e54aa-3a46a16e390cfc87c407",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-F7C8F625AA72",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "desktopRoutes": true,
+            "desktopLayout": true,
+            "dialogKeyboard": true,
+            "languageSwitch": true
+          },
+          "observedApiResponses": 55
+        }
+      ]
+    },
+    {
+      "phase": "parallel-repeat",
+      "workers": 2,
+      "timeoutMs": 660000,
+      "durationMs": 90528,
+      "testCount": 72,
+      "distinctCases": 36,
+      "repeatEach": 2,
+      "roleRouteAssertions": 220,
+      "buttonAssertions": 66,
+      "observedApiResponses": 2028,
+      "statuses": [
+        200,
+        201,
+        202,
+        401,
+        403,
+        404,
+        409
+      ],
+      "tests": [
+        {
+          "title": "H-01 API 拒绝停用会话后清除浏览器会话并返回登录",
+          "testId": "2b3de5c40391388d7643-2a0356c5a6ea11266d96",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-6C8D19F53DE7",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "disabledSessionLogout": true
+          },
+          "observedApiResponses": 1
+        },
+        {
+          "title": "M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏",
+          "testId": "2b3de5c40391388d7643-76305a80fb71fe2b57b9",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-A50992F31B95",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "viewerOwnRead": true,
+            "viewerReadOnly": true
+          },
+          "observedApiResponses": 4
+        },
+        {
+          "title": "刷新失败清会话，API 403 保留会话并呈现无权",
+          "testId": "2b3de5c40391388d7643-c92b8ce2992a6c7af399",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-EE293CCE3C21",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 1
+        },
+        {
+          "title": "Customer scope 与 Dashboard 离线/无 entitlement 动作在真实浏览器失败关闭",
+          "testId": "2b3de5c40391388d7643-7c976a6b1072b619b762",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-1B1AB5B8EC66",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 2
+        },
+        {
+          "title": "Onboarding 审批双击只提交一次，展示录入来源和证书状态",
+          "testId": "2b3de5c40391388d7643-f7dc0c4bb59631cc2d03",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-AFEE7EC1C0C4",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 3
+        },
+        {
+          "title": "无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫",
+          "testId": "2b3de5c40391388d7643-c179b34cf24e454b2d85",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-1CFC7AD353FE",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 5
+        },
+        {
+          "title": "Customer/Site CRUD 关键路径：创建、非法时区、关联停用提示与 409",
+          "testId": "2b3de5c40391388d7643-0c57d9f298e27b844108",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-50DE3E99A4C1",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 19
+        },
+        {
+          "title": "1440/768/375 响应式布局、横向表格和对话框键盘边界",
+          "testId": "2b3de5c40391388d7643-1b9e7990ea566d744fbf",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-074035D6E6F8",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 3
+        },
+        {
+          "title": "FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、分页入口、时区与响应式",
+          "testId": "2b3de5c40391388d7643-af803316a9d700cd2e20",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-DF4C2EA82A76",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 21
+        },
+        {
+          "title": "FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交场景失败关闭",
+          "testId": "2b3de5c40391388d7643-969016c92a4898b1e3fb",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-AD5EF7465B65",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 20
+        },
+        {
+          "title": "FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关闭",
+          "testId": "2b3de5c40391388d7643-98f48c032a7fae0a1909",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-DE404D91C5C8",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 1
+        },
+        {
+          "title": "FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒体签发与审计详情",
+          "testId": "2b3de5c40391388d7643-4b6c82809856516bc74a",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-E3E335EBA2D3",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 55
+        },
+        {
+          "title": "FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭",
+          "testId": "2b3de5c40391388d7643-4745ac6c0e247d7fcbc6",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-E518CB874398",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 3
+        },
+        {
+          "title": "FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状态机",
+          "testId": "2b3de5c40391388d7643-37db37fb0da5b6d32c2b",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-6488800A963E",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 11
+        },
+        {
+          "title": "FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源",
+          "testId": "2b3de5c40391388d7643-03b6a0353fb99772c39d",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-BC411CBEA2C3",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 22
+        },
+        {
+          "title": "FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界",
+          "testId": "2b3de5c40391388d7643-c2f4ae0b508c38bc7bd3",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-7C036ADD0D89",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 33
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：zh-CN / 375px",
+          "testId": "2b3de5c40391388d7643-077014565e01cc7b5c36",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-E865960E3A70",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 57
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：zh-CN / 768px",
+          "testId": "2b3de5c40391388d7643-430ff838ffe32e437fbf",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-C9D5BE9F3413",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 56
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：zh-CN / 1440px",
+          "testId": "2b3de5c40391388d7643-975415ef86798bde5f28",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-B7D47DC622FC",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 57
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：en / 375px",
+          "testId": "2b3de5c40391388d7643-8fe477b1c0717c7cb9d1",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-1B4D28EF0736",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 56
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：en / 768px",
+          "testId": "2b3de5c40391388d7643-17683ba8bd6a71301c47",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-03A503DD35B1",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 56
+        },
+        {
+          "title": "FE-19 语言选择在刷新后保持",
+          "testId": "2b3de5c40391388d7643-7539e2ffe2e982ea97e5",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-4DE4E0359B3F",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 2
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：en / 1440px",
+          "testId": "2b3de5c40391388d7643-4bc7f364c2d8051bf003",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-80AA9F4E6EA4",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 57
+        },
+        {
+          "title": "QA-09 设备管理长别名和序列号在375px完整换行且不裁切",
+          "testId": "2b3de5c40391388d7643-bff334f12b2bfd6cbdd7",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-52DAD12797E1",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "manageLongValues": true
+          },
+          "observedApiResponses": 16
+        },
+        {
+          "title": "QA05 role route and button matrix PlatformSuperAdmin",
+          "testId": "d08b1798d485941b413a-c2208852246433f8cec7",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-4CAC7201F09B",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "PlatformSuperAdmin",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": true
+              },
+              {
+                "path": "/customers",
+                "allowed": true
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": true
+              },
+              {
+                "path": "/configurations",
+                "allowed": true
+              },
+              {
+                "path": "/device-users",
+                "allowed": true
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": true
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": true
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": true
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": true
+              },
+              {
+                "path": "/consumables",
+                "allowed": true
+              },
+              {
+                "path": "/settings",
+                "allowed": true
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": true
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/customers",
+                "id": "create-customer",
+                "enabled": true
+              },
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": true
+              },
+              {
+                "path": "/device-users",
+                "id": "device-user-create",
+                "enabled": true
+              },
+              {
+                "path": "/settings",
+                "id": "user-invite-open",
+                "enabled": true
+              },
+              {
+                "path": "/consumables",
+                "id": "consumable-request-create-open",
+                "enabled": true
+              },
+              {
+                "path": "/licenses",
+                "id": "license-create",
+                "enabled": true
+              },
+              {
+                "path": "/configurations",
+                "id": "config-create",
+                "enabled": true
+              },
+              {
+                "path": "/contracts",
+                "id": "contract-new-open",
+                "enabled": true
+              },
+              {
+                "path": "/ota/packages",
+                "id": "upload-session-open",
+                "enabled": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "id": "campaign-create-open",
+                "enabled": true
+              }
+            ]
+          },
+          "observedApiResponses": 72
+        },
+        {
+          "title": "QA05 role route and button matrix PlatformOperator",
+          "testId": "d08b1798d485941b413a-e207dfc1e5ebfc09a49b",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-73C5E9E2761F",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "PlatformOperator",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": true
+              },
+              {
+                "path": "/customers",
+                "allowed": true
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": true
+              },
+              {
+                "path": "/configurations",
+                "allowed": true
+              },
+              {
+                "path": "/device-users",
+                "allowed": false
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": false
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": true
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": true
+              },
+              {
+                "path": "/consumables",
+                "allowed": true
+              },
+              {
+                "path": "/settings",
+                "allowed": false
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": true
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/customers",
+                "id": "create-customer",
+                "enabled": true
+              },
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": true
+              },
+              {
+                "path": "/consumables",
+                "id": "consumable-request-create-open",
+                "enabled": true
+              },
+              {
+                "path": "/licenses",
+                "id": "license-create",
+                "enabled": true
+              },
+              {
+                "path": "/configurations",
+                "id": "config-create",
+                "enabled": true
+              },
+              {
+                "path": "/contracts",
+                "id": "contract-new-open",
+                "enabled": false
+              },
+              {
+                "path": "/ota/packages",
+                "id": "upload-session-open",
+                "enabled": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "id": "campaign-create-open",
+                "enabled": true
+              }
+            ]
+          },
+          "observedApiResponses": 52
+        },
+        {
+          "title": "QA05 role route and button matrix Auditor",
+          "testId": "d08b1798d485941b413a-c60317340edbfd6eb1fc",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-A03513F5A9BF",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "Auditor",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": false
+              },
+              {
+                "path": "/customers",
+                "allowed": true
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": true
+              },
+              {
+                "path": "/configurations",
+                "allowed": true
+              },
+              {
+                "path": "/device-users",
+                "allowed": true
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": true
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": true
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": true
+              },
+              {
+                "path": "/consumables",
+                "allowed": false
+              },
+              {
+                "path": "/settings",
+                "allowed": false
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": true
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/customers",
+                "id": "create-customer",
+                "enabled": false
+              },
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": false
+              },
+              {
+                "path": "/device-users",
+                "id": "device-user-create",
+                "enabled": false
+              },
+              {
+                "path": "/licenses",
+                "id": "license-create",
+                "enabled": false
+              },
+              {
+                "path": "/configurations",
+                "id": "config-create",
+                "enabled": false
+              },
+              {
+                "path": "/contracts",
+                "id": "contract-new-open",
+                "enabled": false
+              },
+              {
+                "path": "/ota/packages",
+                "id": "upload-session-open",
+                "enabled": false
+              },
+              {
+                "path": "/ota/campaigns",
+                "id": "campaign-create-open",
+                "enabled": false
+              }
+            ]
+          },
+          "observedApiResponses": 53
+        },
+        {
+          "title": "QA05 role route and button matrix CustomerAdmin",
+          "testId": "d08b1798d485941b413a-8dee424051a3969fdfea",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-8E931090C8B8",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "CustomerAdmin",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": true
+              },
+              {
+                "path": "/customers",
+                "allowed": false
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": false
+              },
+              {
+                "path": "/configurations",
+                "allowed": false
+              },
+              {
+                "path": "/device-users",
+                "allowed": true
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": false
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": false
+              },
+              {
+                "path": "/consumables",
+                "allowed": true
+              },
+              {
+                "path": "/settings",
+                "allowed": true
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": false
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": false
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": false
+              },
+              {
+                "path": "/device-users",
+                "id": "device-user-create",
+                "enabled": true
+              },
+              {
+                "path": "/settings",
+                "id": "user-invite-open",
+                "enabled": false
+              },
+              {
+                "path": "/consumables",
+                "id": "consumable-request-create-open",
+                "enabled": false
+              }
+            ]
+          },
+          "observedApiResponses": 34
+        },
+        {
+          "title": "QA05 login SRP MFA error success logout without persisting password",
+          "testId": "d08b1798d485941b413a-983b21645b3244423089",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-8FA1F877AD95",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "login": true,
+            "mfaRetry": true,
+            "logout": true
+          },
+          "observedApiResponses": 1
+        },
+        {
+          "title": "QA05 ESG cursor totals export snapshot timezone and empty state",
+          "testId": "d08b1798d485941b413a-307c191e05f9ed1e3b50",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-44663D700522",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "cursorExport": true,
+            "timezone": true,
+            "empty": true
+          },
+          "observedApiResponses": 15
+        },
+        {
+          "title": "QA05 Command dangerous confirmation terminal result and publish failure",
+          "testId": "d08b1798d485941b413a-6d6e91ce0a0366fc0be4",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-FFB134438BA3",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "dangerousConfirmation": true,
+            "commandTerminal": true,
+            "publishFailure": true
+          },
+          "observedApiResponses": 26
+        },
+        {
+          "title": "QA05 Media expiry renew 403 and audit read-only zero writes",
+          "testId": "d08b1798d485941b413a-542b7ae7a81b203c575d",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-75A05CE1746B",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "mediaExpiry": true,
+            "mediaRenew": true,
+            "media403": true,
+            "auditReadOnly": true
+          },
+          "observedApiResponses": 6
+        },
+        {
+          "title": "QA05 role route and button matrix CustomerViewer",
+          "testId": "d08b1798d485941b413a-f5f7368fd71c60f1a0a1",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-FDFAF37A66A6",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "CustomerViewer",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": false
+              },
+              {
+                "path": "/customers",
+                "allowed": false
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": false
+              },
+              {
+                "path": "/configurations",
+                "allowed": false
+              },
+              {
+                "path": "/device-users",
+                "allowed": true
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": false
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": false
+              },
+              {
+                "path": "/consumables",
+                "allowed": true
+              },
+              {
+                "path": "/settings",
+                "allowed": false
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": false
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": false
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": false
+              },
+              {
+                "path": "/device-users",
+                "id": "device-user-create",
+                "enabled": false
+              },
+              {
+                "path": "/consumables",
+                "id": "consumable-request-create-open",
+                "enabled": false
+              }
+            ]
+          },
+          "observedApiResponses": 28
+        },
+        {
+          "title": "UI redesign: all business routes at 1366x768",
+          "testId": "60d171471997609e54aa-bbbccc4e52032610a1c7",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-7D048FB3E4D5",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "desktopRoutes": true,
+            "desktopLayout": true,
+            "dialogKeyboard": true,
+            "languageSwitch": true
+          },
+          "observedApiResponses": 55
+        },
+        {
+          "title": "UI redesign: all business routes at 1440x900",
+          "testId": "60d171471997609e54aa-ad31289d08186eea5190",
+          "repeat": 0,
+          "workerIndex": 1,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-5ED1D1884329",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "desktopRoutes": true,
+            "desktopLayout": true,
+            "dialogKeyboard": true,
+            "languageSwitch": true
+          },
+          "observedApiResponses": 55
+        },
+        {
+          "title": "H-01 API 拒绝停用会话后清除浏览器会话并返回登录",
+          "testId": "2b3de5c40391388d7643-e932fbf63669a12826b4",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-D4A5510A432C",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "disabledSessionLogout": true
+          },
+          "observedApiResponses": 1
+        },
+        {
+          "title": "M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏",
+          "testId": "2b3de5c40391388d7643-45902406bd0f99da651e",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-C346F638CF2E",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "viewerOwnRead": true,
+            "viewerReadOnly": true
+          },
+          "observedApiResponses": 4
+        },
+        {
+          "title": "无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫",
+          "testId": "2b3de5c40391388d7643-83760ef15fb64835d3f8",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-C0A12634ADBB",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 5
+        },
+        {
+          "title": "刷新失败清会话，API 403 保留会话并呈现无权",
+          "testId": "2b3de5c40391388d7643-8b6e44e7bad1a5f3a466",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-E7C160B964E6",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 1
+        },
+        {
+          "title": "Customer scope 与 Dashboard 离线/无 entitlement 动作在真实浏览器失败关闭",
+          "testId": "2b3de5c40391388d7643-dc08f9e0bd49bec30347",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-109D78276BC3",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 2
+        },
+        {
+          "title": "Onboarding 审批双击只提交一次，展示录入来源和证书状态",
+          "testId": "2b3de5c40391388d7643-1f1bd3816e9dddc8fbd8",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-D45CED6E3C41",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 3
+        },
+        {
+          "title": "Customer/Site CRUD 关键路径：创建、非法时区、关联停用提示与 409",
+          "testId": "2b3de5c40391388d7643-19398caf9cfa8581a602",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-784359150422",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 19
+        },
+        {
+          "title": "1440/768/375 响应式布局、横向表格和对话框键盘边界",
+          "testId": "2b3de5c40391388d7643-c03f8eab44956b4703fb",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-88611617B62A",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 3
+        },
+        {
+          "title": "FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、分页入口、时区与响应式",
+          "testId": "2b3de5c40391388d7643-4a15567899bed98d2170",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-28C5291F8F1B",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 21
+        },
+        {
+          "title": "FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交场景失败关闭",
+          "testId": "2b3de5c40391388d7643-5555336012a81e15f824",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-D6917F726A4B",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 20
+        },
+        {
+          "title": "FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒体签发与审计详情",
+          "testId": "2b3de5c40391388d7643-6019bc2bf5dac7a636c5",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-FD95C76917B4",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 55
+        },
+        {
+          "title": "FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关闭",
+          "testId": "2b3de5c40391388d7643-e45d83f879d8435b5d57",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-5662D6F203FB",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 1
+        },
+        {
+          "title": "FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭",
+          "testId": "2b3de5c40391388d7643-04a40f87df6e8b43c62d",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-849C84368530",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 3
+        },
+        {
+          "title": "FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状态机",
+          "testId": "2b3de5c40391388d7643-5e92bfae645effcdfd9d",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-3846A355A65D",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 11
+        },
+        {
+          "title": "FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源",
+          "testId": "2b3de5c40391388d7643-39e0cd1b85fef3d8a11e",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-FC4D73BAAB11",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 22
+        },
+        {
+          "title": "FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界",
+          "testId": "2b3de5c40391388d7643-0d312e1cedb477711b39",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-C38D1EBD5AF8",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 33
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：zh-CN / 375px",
+          "testId": "2b3de5c40391388d7643-9f14921584c011da6882",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-B88704F45809",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 56
+        },
+        {
+          "title": "UI redesign: all business routes at 1920x1080",
+          "testId": "60d171471997609e54aa-3a46a16e390cfc87c407",
+          "repeat": 0,
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-E23B14216687",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "desktopRoutes": true,
+            "desktopLayout": true,
+            "dialogKeyboard": true,
+            "languageSwitch": true
+          },
+          "observedApiResponses": 55
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：zh-CN / 768px",
+          "testId": "2b3de5c40391388d7643-e1f165a1c6fabbd70b2e",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-3FF87ABA9391",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 57
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：zh-CN / 1440px",
+          "testId": "2b3de5c40391388d7643-9d1c5a42a5e8c7a4b9d3",
+          "repeat": 1,
+          "workerIndex": 3,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-A8488248C4BC",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 56
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：en / 375px",
+          "testId": "2b3de5c40391388d7643-f266dbbeb46ef1272148",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-39B6F5CB08D0",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 59
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：en / 768px",
+          "testId": "2b3de5c40391388d7643-090c55c84cca5dd06dd0",
+          "repeat": 1,
+          "workerIndex": 3,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-D20A836479B4",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 56
+        },
+        {
+          "title": "FE-19 语言选择在刷新后保持",
+          "testId": "2b3de5c40391388d7643-76efe4fb364749f25cfc",
+          "repeat": 1,
+          "workerIndex": 3,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-BF6BFC8CAD21",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 2
+        },
+        {
+          "title": "QA-09 设备管理长别名和序列号在375px完整换行且不裁切",
+          "testId": "2b3de5c40391388d7643-474bd33775696164efcd",
+          "repeat": 1,
+          "workerIndex": 3,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-C6A58E2E463C",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "manageLongValues": true
+          },
+          "observedApiResponses": 16
+        },
+        {
+          "title": "FE-19 Chromium 22 个生产路由：en / 1440px",
+          "testId": "2b3de5c40391388d7643-b45564e67341fe678665",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-ACE207CC92D4",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {},
+          "observedApiResponses": 57
+        },
+        {
+          "title": "QA05 role route and button matrix PlatformOperator",
+          "testId": "d08b1798d485941b413a-80005ca30ac12f1af81c",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-96EB207D821B",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "PlatformOperator",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": true
+              },
+              {
+                "path": "/customers",
+                "allowed": true
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": true
+              },
+              {
+                "path": "/configurations",
+                "allowed": true
+              },
+              {
+                "path": "/device-users",
+                "allowed": false
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": false
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": true
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": true
+              },
+              {
+                "path": "/consumables",
+                "allowed": true
+              },
+              {
+                "path": "/settings",
+                "allowed": false
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": true
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/customers",
+                "id": "create-customer",
+                "enabled": true
+              },
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": true
+              },
+              {
+                "path": "/consumables",
+                "id": "consumable-request-create-open",
+                "enabled": true
+              },
+              {
+                "path": "/licenses",
+                "id": "license-create",
+                "enabled": true
+              },
+              {
+                "path": "/configurations",
+                "id": "config-create",
+                "enabled": true
+              },
+              {
+                "path": "/contracts",
+                "id": "contract-new-open",
+                "enabled": false
+              },
+              {
+                "path": "/ota/packages",
+                "id": "upload-session-open",
+                "enabled": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "id": "campaign-create-open",
+                "enabled": true
+              }
+            ]
+          },
+          "observedApiResponses": 52
+        },
+        {
+          "title": "QA05 role route and button matrix PlatformSuperAdmin",
+          "testId": "d08b1798d485941b413a-31ec7a483b67b5aed4ee",
+          "repeat": 1,
+          "workerIndex": 3,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-7CB919440BFA",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "PlatformSuperAdmin",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": true
+              },
+              {
+                "path": "/customers",
+                "allowed": true
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": true
+              },
+              {
+                "path": "/configurations",
+                "allowed": true
+              },
+              {
+                "path": "/device-users",
+                "allowed": true
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": true
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": true
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": true
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": true
+              },
+              {
+                "path": "/consumables",
+                "allowed": true
+              },
+              {
+                "path": "/settings",
+                "allowed": true
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": true
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/customers",
+                "id": "create-customer",
+                "enabled": true
+              },
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": true
+              },
+              {
+                "path": "/device-users",
+                "id": "device-user-create",
+                "enabled": true
+              },
+              {
+                "path": "/settings",
+                "id": "user-invite-open",
+                "enabled": true
+              },
+              {
+                "path": "/consumables",
+                "id": "consumable-request-create-open",
+                "enabled": true
+              },
+              {
+                "path": "/licenses",
+                "id": "license-create",
+                "enabled": true
+              },
+              {
+                "path": "/configurations",
+                "id": "config-create",
+                "enabled": true
+              },
+              {
+                "path": "/contracts",
+                "id": "contract-new-open",
+                "enabled": true
+              },
+              {
+                "path": "/ota/packages",
+                "id": "upload-session-open",
+                "enabled": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "id": "campaign-create-open",
+                "enabled": true
+              }
+            ]
+          },
+          "observedApiResponses": 72
+        },
+        {
+          "title": "QA05 role route and button matrix CustomerAdmin",
+          "testId": "d08b1798d485941b413a-b79407bf4f14fe7c7b40",
+          "repeat": 1,
+          "workerIndex": 3,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-0DCA51D31080",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "CustomerAdmin",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": true
+              },
+              {
+                "path": "/customers",
+                "allowed": false
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": false
+              },
+              {
+                "path": "/configurations",
+                "allowed": false
+              },
+              {
+                "path": "/device-users",
+                "allowed": true
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": false
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": false
+              },
+              {
+                "path": "/consumables",
+                "allowed": true
+              },
+              {
+                "path": "/settings",
+                "allowed": true
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": false
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": false
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": false
+              },
+              {
+                "path": "/device-users",
+                "id": "device-user-create",
+                "enabled": true
+              },
+              {
+                "path": "/settings",
+                "id": "user-invite-open",
+                "enabled": false
+              },
+              {
+                "path": "/consumables",
+                "id": "consumable-request-create-open",
+                "enabled": false
+              }
+            ]
+          },
+          "observedApiResponses": 34
+        },
+        {
+          "title": "QA05 role route and button matrix Auditor",
+          "testId": "d08b1798d485941b413a-4490bae69bb9c1542a2a",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-185540952EE5",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "Auditor",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": false
+              },
+              {
+                "path": "/customers",
+                "allowed": true
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": true
+              },
+              {
+                "path": "/configurations",
+                "allowed": true
+              },
+              {
+                "path": "/device-users",
+                "allowed": true
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": true
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": true
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": true
+              },
+              {
+                "path": "/consumables",
+                "allowed": false
+              },
+              {
+                "path": "/settings",
+                "allowed": false
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": true
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": true
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/customers",
+                "id": "create-customer",
+                "enabled": false
+              },
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": false
+              },
+              {
+                "path": "/device-users",
+                "id": "device-user-create",
+                "enabled": false
+              },
+              {
+                "path": "/licenses",
+                "id": "license-create",
+                "enabled": false
+              },
+              {
+                "path": "/configurations",
+                "id": "config-create",
+                "enabled": false
+              },
+              {
+                "path": "/contracts",
+                "id": "contract-new-open",
+                "enabled": false
+              },
+              {
+                "path": "/ota/packages",
+                "id": "upload-session-open",
+                "enabled": false
+              },
+              {
+                "path": "/ota/campaigns",
+                "id": "campaign-create-open",
+                "enabled": false
+              }
+            ]
+          },
+          "observedApiResponses": 53
+        },
+        {
+          "title": "QA05 login SRP MFA error success logout without persisting password",
+          "testId": "d08b1798d485941b413a-5418a01391bafb75a4b7",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-439437ACB4E7",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "login": true,
+            "mfaRetry": true,
+            "logout": true
+          },
+          "observedApiResponses": 1
+        },
+        {
+          "title": "QA05 ESG cursor totals export snapshot timezone and empty state",
+          "testId": "d08b1798d485941b413a-ba28d9ad2ccf9867d33d",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-E5ADA52FAF02",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "cursorExport": true,
+            "timezone": true,
+            "empty": true
+          },
+          "observedApiResponses": 15
+        },
+        {
+          "title": "QA05 Command dangerous confirmation terminal result and publish failure",
+          "testId": "d08b1798d485941b413a-1f822c929ca5811d7768",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-490542E98885",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "dangerousConfirmation": true,
+            "commandTerminal": true,
+            "publishFailure": true
+          },
+          "observedApiResponses": 26
+        },
+        {
+          "title": "QA05 Media expiry renew 403 and audit read-only zero writes",
+          "testId": "d08b1798d485941b413a-38cacacf9fe3f02ba8dd",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-F05BD0C6DAD9",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "mediaExpiry": true,
+            "mediaRenew": true,
+            "media403": true,
+            "auditReadOnly": true
+          },
+          "observedApiResponses": 6
+        },
+        {
+          "title": "QA05 role route and button matrix CustomerViewer",
+          "testId": "d08b1798d485941b413a-af2f79eb5caba2cb8b9f",
+          "repeat": 1,
+          "workerIndex": 3,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-4AF1015CB92A",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "role": "CustomerViewer",
+            "routeMatrix": [
+              {
+                "path": "/dashboard",
+                "allowed": true
+              },
+              {
+                "path": "/devices/view",
+                "allowed": true
+              },
+              {
+                "path": "/devices/groups",
+                "allowed": true
+              },
+              {
+                "path": "/devices/manage",
+                "allowed": true
+              },
+              {
+                "path": "/devices/operate",
+                "allowed": false
+              },
+              {
+                "path": "/customers",
+                "allowed": false
+              },
+              {
+                "path": "/sites",
+                "allowed": true
+              },
+              {
+                "path": "/licenses",
+                "allowed": false
+              },
+              {
+                "path": "/configurations",
+                "allowed": false
+              },
+              {
+                "path": "/device-users",
+                "allowed": true
+              },
+              {
+                "path": "/alarms",
+                "allowed": true
+              },
+              {
+                "path": "/media",
+                "allowed": true
+              },
+              {
+                "path": "/audit-logs",
+                "allowed": false
+              },
+              {
+                "path": "/esg/overview",
+                "allowed": true
+              },
+              {
+                "path": "/esg/devices",
+                "allowed": true
+              },
+              {
+                "path": "/contracts",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/new",
+                "allowed": false
+              },
+              {
+                "path": "/contracts/detail",
+                "allowed": false
+              },
+              {
+                "path": "/consumables",
+                "allowed": true
+              },
+              {
+                "path": "/settings",
+                "allowed": false
+              },
+              {
+                "path": "/ota/packages",
+                "allowed": false
+              },
+              {
+                "path": "/ota/campaigns",
+                "allowed": false
+              }
+            ],
+            "buttons": [
+              {
+                "path": "/sites",
+                "id": "create-site",
+                "enabled": false
+              },
+              {
+                "path": "/device-users",
+                "id": "device-user-create",
+                "enabled": false
+              },
+              {
+                "path": "/consumables",
+                "id": "consumable-request-create-open",
+                "enabled": false
+              }
+            ]
+          },
+          "observedApiResponses": 28
+        },
+        {
+          "title": "UI redesign: all business routes at 1440x900",
+          "testId": "60d171471997609e54aa-41fd8e1e9cbe8e5a57ef",
+          "repeat": 1,
+          "workerIndex": 3,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-BFF788F01A54",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "desktopRoutes": true,
+            "desktopLayout": true,
+            "dialogKeyboard": true,
+            "languageSwitch": true
+          },
+          "observedApiResponses": 55
+        },
+        {
+          "title": "UI redesign: all business routes at 1366x768",
+          "testId": "60d171471997609e54aa-4e645890182d0d117ac5",
+          "repeat": 1,
+          "workerIndex": 2,
+          "parallelIndex": 1,
+          "retry": 0,
+          "prefix": "QA05-A61E6DF3AEA5",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "desktopRoutes": true,
+            "desktopLayout": true,
+            "dialogKeyboard": true,
+            "languageSwitch": true
+          },
+          "observedApiResponses": 55
+        },
+        {
+          "title": "UI redesign: all business routes at 1920x1080",
+          "testId": "60d171471997609e54aa-2eec3da0f388b8615aa6",
+          "repeat": 1,
+          "workerIndex": 3,
+          "parallelIndex": 0,
+          "retry": 0,
+          "prefix": "QA05-0C17D99C2300",
+          "status": "passed",
+          "cleanup": "PASS",
+          "unhandled": [],
+          "proof": {
+            "desktopRoutes": true,
+            "desktopLayout": true,
+            "dialogKeyboard": true,
+            "languageSwitch": true
+          },
+          "observedApiResponses": 55
+        }
+      ]
+    }
+  ],
+  "discovery": {
+    "distinctCases": 36,
+    "titles": [
+      "H-01 API 拒绝停用会话后清除浏览器会话并返回登录",
+      "M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏",
+      "无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫",
+      "刷新失败清会话，API 403 保留会话并呈现无权",
+      "Customer scope 与 Dashboard 离线/无 entitlement 动作在真实浏览器失败关闭",
+      "Onboarding 审批双击只提交一次，展示录入来源和证书状态",
+      "Customer/Site CRUD 关键路径：创建、非法时区、关联停用提示与 409",
+      "1440/768/375 响应式布局、横向表格和对话框键盘边界",
+      "FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、分页入口、时区与响应式",
+      "FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交场景失败关闭",
+      "FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒体签发与审计详情",
+      "FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关闭",
+      "FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭",
+      "FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状态机",
+      "FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源",
+      "FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界",
+      "FE-19 Chromium 22 个生产路由：zh-CN / 375px",
+      "FE-19 Chromium 22 个生产路由：zh-CN / 768px",
+      "FE-19 Chromium 22 个生产路由：zh-CN / 1440px",
+      "FE-19 Chromium 22 个生产路由：en / 375px",
+      "FE-19 Chromium 22 个生产路由：en / 768px",
+      "FE-19 Chromium 22 个生产路由：en / 1440px",
+      "FE-19 语言选择在刷新后保持",
+      "QA-09 设备管理长别名和序列号在375px完整换行且不裁切",
+      "QA05 role route and button matrix PlatformSuperAdmin",
+      "QA05 role route and button matrix PlatformOperator",
+      "QA05 role route and button matrix Auditor",
+      "QA05 role route and button matrix CustomerAdmin",
+      "QA05 role route and button matrix CustomerViewer",
+      "QA05 login SRP MFA error success logout without persisting password",
+      "QA05 ESG cursor totals export snapshot timezone and empty state",
+      "QA05 Command dangerous confirmation terminal result and publish failure",
+      "QA05 Media expiry renew 403 and audit read-only zero writes",
+      "UI redesign: all business routes at 1366x768",
+      "UI redesign: all business routes at 1440x900",
+      "UI redesign: all business routes at 1920x1080"
+    ]
+  },
+  "totalExecutions": 108,
+  "cleanup": "PASS",
+  "awsTargetGate": "NOT RUN / NO RECEIPT"
+}

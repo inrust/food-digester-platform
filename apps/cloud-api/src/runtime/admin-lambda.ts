@@ -373,7 +373,8 @@ export function createAdminLambdaRouter(
     try {
       const sourceIp = event.requestContext?.http?.sourceIp ?? event.requestContext?.identity?.sourceIp;
       const userAgent = header(headers, 'user-agent');
-      await hooks.onAuthenticated?.(actor, requestId);
+      if (hooks.onAuthenticated)
+        await observeDataPathPhase('admin-account-hook', () => hooks.onAuthenticated!(actor, requestId));
       const response = await resolveRoute(event)({
         actor,
         headers,

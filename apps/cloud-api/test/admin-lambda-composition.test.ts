@@ -1,4 +1,5 @@
 import { withAuthorization } from '@fdp/auth';
+import { withDataPathTrace } from '@fdp/observability';
 import { assert, describe, expect, test, vi } from 'vitest';
 import { generateTestKeySet, signToken, testConfig } from '../../../packages/auth/test/helpers.js';
 import type { AdminHttpRequest } from '../src/admin/onboarding/handler.js';
@@ -423,14 +424,22 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
     });
     const handler = createAdminLambdaRouter(testConfig(keys.jwks), () => route, { onAuthenticated: hook });
 
-    const response = await handler({
-      headers: { authorization: `Bearer ${token}` },
-      requestContext: { requestId: 'req-activate' },
-    });
+    const rows: Record<string, unknown>[] = [];
+    const response = await withDataPathTrace(
+      { gatewayRequestId: 'req-activate' },
+      () =>
+        handler({
+          headers: { authorization: `Bearer ${token}` },
+          requestContext: { requestId: 'req-activate' },
+        }),
+      (r) => rows.push(r),
+    );
 
     assert.equal(response.statusCode, 200);
     assert.deepEqual(order, ['hook', 'route']);
     assert.equal(hook.mock.calls.length, 1);
+    assert.equal(rows.find((r) => r.phase === 'admin-account-hook')!.outcome, 'PASS');
+    assert.notInclude(JSON.stringify(rows), token);
   });
 
   test('状态收敛失败时返回 500，且不执行业务路由', async () => {
@@ -443,14 +452,22 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
       }),
     });
 
-    const response = await handler({
-      headers: { authorization: `Bearer ${token}` },
-      requestContext: { requestId: 'req-activation-failed' },
-    });
+    const rows: Record<string, unknown>[] = [];
+    const response = await withDataPathTrace(
+      { gatewayRequestId: 'req-activation-failed' },
+      () =>
+        handler({
+          headers: { authorization: `Bearer ${token}` },
+          requestContext: { requestId: 'req-activation-failed' },
+        }),
+      (r) => rows.push(r),
+    );
 
     assert.equal(response.statusCode, 500);
     assert.equal(route.mock.calls.length, 0);
     assert.equal(JSON.parse(response.body).error.code, 'INTERNAL_ERROR');
+    assert.equal(rows.find((r) => r.phase === 'admin-account-hook')!.outcome, 'FAIL');
+    assert.notInclude(JSON.stringify(rows), 'database unavailable');
   });
 
   test('伪造 actor/authorizer claims 不能绕过缺失 JWT', async () => {

@@ -2,6 +2,11 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 export type DataPathPhase =
   | 'runtime-initialize'
   | 'admin-authenticate'
+  | 'admin-account-hook'
+  | 'admin-account-query'
+  | 'admin-account-activation'
+  | 'db-first-connection'
+  | 'db-first-query'
   | 'envelope'
   | 'identity'
   | 'payload-validation'
@@ -57,11 +62,11 @@ interface Trace {
   clock: () => number;
   receiptId?: string | undefined;
   receiptOutcome?: string | undefined;
+  firstPhases: Set<DataPathPhase>;
 }
 const storage = new AsyncLocalStorage<Trace>();
 const safeId = (v: unknown) => (typeof v === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(v) ? v : 'unknown');
-function emit(event: string, detail: LogRow) {
-  const trace = storage.getStore();
+function emit(event: string, detail: LogRow, trace = storage.getStore()) {
   if (!trace) return;
   const ids = trace.ids;
   try {
@@ -96,6 +101,7 @@ export function withDataPathTrace<T>(
       ids: { ...parent?.ids, ...ids },
       emit: output ?? parent?.emit ?? (() => {}),
       clock: clock ?? parent?.clock ?? (() => performance.now()),
+      firstPhases: new Set(),
     },
     work,
   );
@@ -123,22 +129,38 @@ export function beginDataPathPhase(phase: DataPathPhase): (error?: unknown) => v
         : typeof code === 'string' && (/^P[0-9]{4}$/.test(code) || code === 'VERSION_CONFLICT')
           ? code
           : 'DATA_PATH_PHASE_FAILED';
-    emit('data-path.phase.completed', {
-      phase,
-      durationMs: Math.max(0, Math.round(trace.clock() - start)),
-      outcome: error === undefined ? 'PASS' : 'FAIL',
-      errorCode,
-      startedAt,
-      completedAt: new Date().toISOString(),
-      includesConnectionWait:
-        phase.startsWith('console-') ||
-        phase === 'db-transaction' ||
-        phase === 'db-transaction-open' ||
-        phase === 'audit-list-query' ||
-        phase === 'audit-detail-query' ||
-        phase === 'audit-failure-write',
-    });
+    emit(
+      'data-path.phase.completed',
+      {
+        phase,
+        durationMs: Math.max(0, Math.round(trace.clock() - start)),
+        outcome: error === undefined ? 'PASS' : 'FAIL',
+        errorCode,
+        startedAt,
+        completedAt: new Date().toISOString(),
+        includesConnectionWait:
+          phase.startsWith('console-') ||
+          phase === 'db-transaction' ||
+          phase === 'db-transaction-open' ||
+          phase === 'audit-list-query' ||
+          phase === 'audit-detail-query' ||
+          phase === 'audit-failure-write' ||
+          phase === 'admin-account-hook' ||
+          phase === 'admin-account-query' ||
+          phase === 'admin-account-activation' ||
+          phase === 'db-first-connection' ||
+          phase === 'db-first-query',
+      },
+      trace,
+    );
   };
+}
+/** Claim before dispatch, so concurrent operations log only the first attempt in this trace. */
+export function beginFirstDataPathPhase(phase: 'db-first-connection' | 'db-first-query') {
+  const trace = storage.getStore();
+  if (!trace || trace.firstPhases.has(phase)) return () => {};
+  trace.firstPhases.add(phase);
+  return beginDataPathPhase(phase);
 }
 export async function observeDataPathPhase<T>(phase: DataPathPhase, work: () => Promise<T>): Promise<T> {
   const finish = beginDataPathPhase(phase);

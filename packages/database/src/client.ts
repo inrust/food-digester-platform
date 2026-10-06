@@ -3,7 +3,7 @@
  * 生产/开发环境使用 @prisma/adapter-pg（DATABASE_URL）；测试使用 PGlite 适配器（见 test/）。
  * Prisma 7：连接 URL 由 adapter 提供，schema 内不再配置 url。
  */
-import { PrismaPg } from '@prisma/adapter-pg';
+import { ObservedPrismaPg } from './observed-pg.js';
 import { PrismaClient } from './generated/client.js';
 
 /** Defaults remain compatible; deployment sets an explicit per-function pool budget. */
@@ -22,7 +22,7 @@ export function resolveDatabasePoolMax(value = process.env.FDP_DB_POOL_MAX): 1 |
 
 export function createPrismaClient(databaseUrl: string): PrismaClient {
   return new PrismaClient({
-    adapter: new PrismaPg({
+    adapter: new ObservedPrismaPg({
       connectionString: databaseUrl,
       ...DATABASE_POOL_CONFIG,
       max: resolveDatabasePoolMax(),
