@@ -41,7 +41,13 @@ export function qa09RolloutContext(env = process.env) {
   if (engineCpu !== undefined && !['true', 'false'].includes(engineCpu)) throw Error('INVALID_ENGINE_CPU_DIAGNOSIS');
   if (engineCpu === 'true' && !['capacity', 'immediate'].includes(phase))
     throw Error('ENGINE_CPU_DIAGNOSIS_REQUIRES_CAPACITY');
+  const preconnect = env.FDP_QA09_AUTHENTICATED_PRECONNECT;
+  if (preconnect !== undefined && !['true', 'false'].includes(preconnect))
+    throw Error('INVALID_AUTHENTICATED_PRECONNECT');
+  if (preconnect === 'true' && (engineCpu !== 'true' || !['capacity', 'immediate'].includes(phase)))
+    throw Error('PRECONNECT_REQUIRES_CAPACITY_ENGINE');
   return {
+    ...(preconnect !== undefined ? { enableQa09AuthenticatedPreconnect: preconnect === 'true' } : {}),
     ...(engineCpu !== undefined ? { enableQa09EngineCpuDiagnosis: engineCpu === 'true' } : {}),
     enableRequestObservability: phase !== 'baseline',
     enableQa09Capacity: ['capacity', 'immediate'].includes(phase),

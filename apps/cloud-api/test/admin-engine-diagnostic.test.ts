@@ -89,3 +89,22 @@ test('signed JWT precedes engine preparation and unchanged per-request account h
   assert.isAtLeast(engine[0].processCpuUserUs as number, 0);
   assert.notInclude(JSON.stringify(rows), token);
 });
+
+test('authenticated preconnect is off by default and fails closed unless test/pool1/engine is explicit', async () => {
+  const { resolveAuthenticatedPreconnect } = await import('../src/runtime/admin-engine-diagnostic.js');
+  assert.isFalse(resolveAuthenticatedPreconnect({}));
+  const env = {
+    ENV_NAME: 'test',
+    FDP_DB_POOL_MAX: '1',
+    FDP_QA09_ENGINE_CPU_DIAGNOSIS: 'true',
+    FDP_QA09_AUTHENTICATED_PRECONNECT: 'true',
+  };
+  assert.isTrue(resolveAuthenticatedPreconnect(env));
+  for (const patch of [
+    { ENV_NAME: 'prod' },
+    { FDP_DB_POOL_MAX: '2' },
+    { FDP_QA09_ENGINE_CPU_DIAGNOSIS: 'false' },
+    { FDP_QA09_AUTHENTICATED_PRECONNECT: 'yes' },
+  ])
+    assert.throws(() => resolveAuthenticatedPreconnect({ ...env, ...patch }));
+});

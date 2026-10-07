@@ -76,3 +76,41 @@ test('workflow records input receipt before verification/AWS and never interpola
   assert.match(s, /qa09-deployment-inputs-\$\{\{ github.run_id \}\}-\$\{\{ github.run_attempt \}\}/);
   assert.doesNotMatch(s, /run:.*\$\{\{ inputs\./);
 });
+
+test('C0/C1 same SHA and engine=true differ only preconnect; push cannot turn candidate on', () => {
+  const c = (on) => ({
+    ...receipt(true),
+    ...resolveDeploymentInputs(
+      {
+        ...env,
+        QA09_REQUESTED_ENGINE: 'true',
+        QA09_REQUESTED_PRECONNECT: String(on),
+        GITHUB_RUN_ID: on ? '126' : '125',
+      },
+      sha,
+    ),
+  });
+  assert.equal(validateEngineInputPair(c(false), c(true), { preconnect: true }).comparison, 'C0_C1_PRECONNECT_ONLY');
+  assert.equal(
+    resolveDeploymentInputs({ ...env, GITHUB_EVENT_NAME: 'push', FDP_QA09_AUTHENTICATED_PRECONNECT: 'true' }, sha)
+      .authenticatedPreconnect,
+    false,
+  );
+  for (const mutate of [
+    (r) => (r.engineCpu = false),
+    (r) => (r.authenticatedPreconnect = false),
+    (r) => (r.sourceCommit = 'c'.repeat(40)),
+    (r) => (r.runId = '125'),
+    (r) => (r.context.enableQa09AuthenticatedPreconnect = false),
+    (r) => (r.deploymentConfigSha256 = 'c'.repeat(64)),
+  ]) {
+    const r = c(true);
+    mutate(r);
+    assert.throws(() => validateEngineInputPair(c(false), r, { preconnect: true }));
+  }
+  for (const patch of [
+    { QA09_REQUESTED_ENGINE: 'false', QA09_REQUESTED_PRECONNECT: 'true' },
+    { QA09_REQUESTED_PRECONNECT: 'yes' },
+  ])
+    assert.throws(() => resolveDeploymentInputs({ ...env, ...patch }, sha));
+});

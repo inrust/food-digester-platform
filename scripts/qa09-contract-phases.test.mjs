@@ -405,3 +405,41 @@ test('runtime assembly opt-in preserves both engine ownership modes and rejects 
     assert.equal(validatePhaseCorrelation(f.patch, f.audit, { ...options, runtimeAssembly: false }).gate, 'PASS');
   }
 });
+
+test('parent phase Gate requires engine/runtime and C1 settlement before queries; C0 refuses candidate phases', () => {
+  const f = engineFixtures();
+  for (const c of [...f.patch.records, ...f.audit.records]) {
+    Object.assign(
+      c.phases.find((p) => p.phase === 'admin-authenticate'),
+      { startedAt: new Date(850).toISOString(), completedAt: new Date(899).toISOString() },
+    );
+    c.phases.push({
+      ...c.phases.find((p) => p.phase === 'db-engine-prepare'),
+      phase: 'db-authenticated-preconnect',
+      includesConnectionWait: true,
+      startedAt: new Date(912).toISOString(),
+      completedAt: new Date(995).toISOString(),
+      durationMs: 83,
+    });
+  }
+  const options = {
+    accountPhases: true,
+    clientPreparation: true,
+    engineCpu: true,
+    runtimeAssembly: true,
+    authenticatedPreconnect: true,
+  };
+  assert.equal(validatePhaseCorrelation(f.patch, f.audit, options).authenticatedPreconnectRequired, true);
+  assert.throws(
+    () => validatePhaseCorrelation(f.patch, f.audit, { ...options, authenticatedPreconnect: false }),
+    /PRECONNECT_DISABLED/,
+  );
+  assert.throws(
+    () => validatePhaseCorrelation(f.patch, f.audit, { ...options, engineCpu: false }),
+    /PRECONNECT_REQUIRES_ENGINE/,
+  );
+  f.patch.records[0].phases.find((p) => p.phase === 'db-authenticated-preconnect').completedAt = new Date(
+    1002,
+  ).toISOString();
+  assert.throws(() => validatePhaseCorrelation(f.patch, f.audit, options), /PRECONNECT_ORDER/);
+});

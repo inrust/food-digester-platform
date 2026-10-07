@@ -15,7 +15,7 @@ import {
   resolveDatabaseUrl,
   resolveSecretString,
 } from '@fdp/aws-clients';
-import { createPrismaClient } from '@fdp/database';
+import { createPrismaClient, createAdminPreconnectCandidate } from '@fdp/database';
 import { createAdminOnboardingHandlers } from '../admin/onboarding/handler.js';
 import { createAdminCertificateRotationHandler } from '../admin/certificate-rotation/handler.js';
 import { createAdminReplayHandlers } from '../admin/replay/handler.js';
@@ -40,7 +40,6 @@ import { createAdminOtaPackageHandlers } from '../admin/ota-package/handler.js';
 import { createAdminOtaCampaignHandlers } from '../admin/ota-campaign/handler.js';
 import { createAdminMediaHandlers } from '../media/admin-handler.js';
 import { createAdminUserHandlers } from '../admin/user/handler.js';
-import { activateInvitedUserOnAuthenticatedRequest } from '../admin/user/service.js';
 import { createAdminAuditHandlers } from '../admin/audit/handler.js';
 import { createAdminDashboardHandlers } from '../admin/dashboard/handler.js';
 import { createAdminSettingsHandlers } from '../admin/settings/handler.js';
@@ -60,7 +59,13 @@ import {
 } from './admin-lambda.js';
 
 import { readAdminRuntimeConfig, resolveAdminRuntimeSecrets } from './admin-runtime-secrets.js';
-import { createAuthenticatedEngineDiagnostic, resolveEngineCpuDiagnosis } from './admin-engine-diagnostic.js';
+import {
+  createAuthenticatedEngineDiagnostic,
+  resolveEngineCpuDiagnosis,
+  resolveAuthenticatedPreconnect,
+} from './admin-engine-diagnostic.js';
+
+import { createAdminAuthenticatedAccountHook } from './admin-account-hook.js';
 
 const logger = createRedactingLogger(console);
 
@@ -75,19 +80,27 @@ let runtimeInitialization: Promise<NonNullable<typeof runtimeHandler>> | undefin
 
 async function initialize() {
   const engineCpuDiagnosis = resolveEngineCpuDiagnosis(process.env);
+  const preconnectEnabled = resolveAuthenticatedPreconnect(process.env);
   const config = readAdminRuntimeConfig(process.env);
   const region = config.region;
   const { databaseUrl, licenseSigningKey } = await resolveAdminRuntimeSecrets(config, {
     database: resolveDatabaseUrl,
     license: resolveSecretString,
   });
-  const client = observeDataPathSyncPhase('runtime-client-construct', () => createPrismaClient(databaseUrl), {
-    processCpu: true,
-  });
+  const runtimeClient = observeDataPathSyncPhase(
+    'runtime-client-construct',
+    () =>
+      preconnectEnabled ? createAdminPreconnectCandidate(databaseUrl) : { client: createPrismaClient(databaseUrl) },
+    { processCpu: true },
+  );
+  const client = runtimeClient.client;
   return observeDataPathSyncPhase(
     'runtime-route-assembly',
     () => {
-      const prepareAuthenticatedEngine = createAuthenticatedEngineDiagnostic(engineCpuDiagnosis, client);
+      const prepareAuthenticatedEngine =
+        'prepareAuthenticated' in runtimeClient
+          ? runtimeClient.prepareAuthenticated
+          : createAuthenticatedEngineDiagnostic(engineCpuDiagnosis, client);
       const activityExportPorts = createS3ActivityExportPorts({ bucket: config.exportBucket, region });
       const iot = createAwsIotProvisioningClient({ region });
       const ota = createOtaFirmwareS3Ports({ bucket: config.otaBucket, region });
@@ -171,14 +184,7 @@ async function initialize() {
         { region, userPoolId: config.userPoolId, clientId: config.clientId },
         (event) => createAdminRoute(event, routes),
         {
-          onAuthenticated: async (actor, requestId) => {
-            await prepareAuthenticatedEngine();
-            await activateInvitedUserOnAuthenticatedRequest(
-              { client, observeProcessCpu: engineCpuDiagnosis },
-              actor,
-              requestId,
-            );
-          },
+          onAuthenticated: createAdminAuthenticatedAccountHook(client, prepareAuthenticatedEngine, engineCpuDiagnosis),
         },
       );
     },

@@ -1,3 +1,4 @@
+import { createAdminAuthenticatedAccountHook } from '../src/runtime/admin-account-hook.js';
 import { EventEmitter } from 'node:events';
 import { Pool, type PoolClient } from 'pg';
 import { assert, test, vi } from 'vitest';
@@ -20,10 +21,7 @@ test('offline candidate checkout starts only after signed JWT and valid JSON; ac
   const { client, prepareAuthenticated } = createAdminPreconnectCandidate(
     'postgresql://unused:unused@localhost/offline',
   );
-  const account = vi.fn(async () => {
-    await prepareAuthenticated();
-    await client.user.findFirst({ where: { cognitoSub: 'synthetic' } });
-  });
+  const account = vi.fn(createAdminAuthenticatedAccountHook(client, prepareAuthenticated, true));
   const router = createAdminLambdaRouter(testConfig(keys.jwks), () => async () => ({ status: 200, body: {} }), {
     onAuthenticated: account,
   });

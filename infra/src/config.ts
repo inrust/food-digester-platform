@@ -25,6 +25,7 @@ export interface InfraConfig {
   readonly enableRequestObservability?: boolean;
   readonly enableQa09Capacity?: boolean;
   readonly enableQa09EngineCpuDiagnosis?: boolean;
+  readonly enableQa09AuthenticatedPreconnect?: boolean;
   readonly enableImmediateCommandPublish?: boolean;
   readonly deviceApiDomain?: DeviceApiDomainConfig;
   /** 仅 local/test 可显式打开的无 mTLS execute-api 开发入口。 */
@@ -83,6 +84,12 @@ export function resolveConfig(app: App): InfraConfig {
   const enableQa09EngineCpuDiagnosis = ['true', true].includes(app.node.tryGetContext('enableQa09EngineCpuDiagnosis'));
   if (enableQa09EngineCpuDiagnosis && (envName !== 'test' || !enableQa09Capacity))
     throw new Error('ENGINE_CPU_DIAGNOSIS_REQUIRES_TEST_CAPACITY');
+  const rawPreconnect = app.node.tryGetContext('enableQa09AuthenticatedPreconnect');
+  if (rawPreconnect !== undefined && ![true, false, 'true', 'false'].includes(rawPreconnect))
+    throw new Error('INVALID_AUTHENTICATED_PRECONNECT');
+  const enableQa09AuthenticatedPreconnect = [true, 'true'].includes(rawPreconnect);
+  if (enableQa09AuthenticatedPreconnect && (envName !== 'test' || !enableQa09Capacity || !enableQa09EngineCpuDiagnosis))
+    throw new Error('PRECONNECT_REQUIRES_TEST_CAPACITY_ENGINE');
   const enableMigrationRunner = ['true', true].includes(app.node.tryGetContext('enableMigrationRunner'));
   const enableAdminBootstrapRunner = ['true', true].includes(app.node.tryGetContext('enableAdminBootstrapRunner'));
   const enableScheduledWorkers = ['true', true].includes(app.node.tryGetContext('enableScheduledWorkers'));
@@ -146,6 +153,7 @@ export function resolveConfig(app: App): InfraConfig {
       enableQa09Capacity,
       enableImmediateCommandPublish,
       enableQa09EngineCpuDiagnosis,
+      enableQa09AuthenticatedPreconnect,
       ...deployment,
       allowInsecureDeviceEndpointForLocal: true,
     };
@@ -159,6 +167,7 @@ export function resolveConfig(app: App): InfraConfig {
     enableQa09Capacity,
     enableImmediateCommandPublish,
     enableQa09EngineCpuDiagnosis,
+    enableQa09AuthenticatedPreconnect,
     ...deployment,
     deviceApiDomain: {
       domainName,

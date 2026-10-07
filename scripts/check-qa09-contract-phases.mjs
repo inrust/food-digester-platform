@@ -1,3 +1,4 @@
+import { validateAuthenticatedPreconnectPhases } from './qa09-authenticated-preconnect-proof.mjs';
 import { validateRuntimeAssemblyPhases } from './qa09-runtime-assembly-proof.mjs';
 import { validateSamplingCorrelationLedger } from './qa09-cold409-proof.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -17,8 +18,10 @@ export function validatePhaseCorrelation(
     clientPreparation = false,
     engineCpu = false,
     runtimeAssembly = false,
+    authenticatedPreconnect = false,
   } = {},
 ) {
+  demand(!authenticatedPreconnect || (engineCpu && runtimeAssembly), 'PRECONNECT_REQUIRES_ENGINE_RUNTIME_PHASES');
   demand(!engineCpu || clientPreparation, 'ENGINE_CPU_REQUIRES_CLIENT_PREPARATION');
   demand(!clientPreparation || accountPhases, 'CLIENT_PREPARATION_REQUIRES_ACCOUNT_PHASES');
   demand(!sampling || accountPhases, 'SAMPLING_REQUIRES_ACCOUNT_PHASES');
@@ -102,6 +105,7 @@ export function validatePhaseCorrelation(
         return found[0];
       };
       if (runtimeAssembly) validateRuntimeAssemblyPhases(phases);
+      validateAuthenticatedPreconnectPhases(phases, authenticatedPreconnect);
       phase('admin-authenticate');
       if (accountPhases) {
         for (const name of ['admin-account-hook', 'admin-account-query', 'db-first-query', 'db-first-connection'])
@@ -286,6 +290,7 @@ export function validatePhaseCorrelation(
     accountPhasesRequired: accountPhases,
     clientPreparationRequired: clientPreparation,
     engineCpuRequired: engineCpu,
+    authenticatedPreconnectRequired: authenticatedPreconnect,
     runtimeAssemblyRequired: runtimeAssembly,
     coldConflictObservedCount: verifiedCold.length,
     applicationColdConflictObservedCount: coldConflicts.length,
@@ -304,12 +309,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   if (sampling) validateSamplingCorrelationLedger(JSON.parse(child), patch, audit);
   const r = validatePhaseCorrelation(patch, audit, {
     sampling,
+    authenticatedPreconnect: process.argv.slice(6).includes('--authenticated-preconnect'),
     engineCpu: process.argv.slice(6).includes('--engine-cpu'),
     runtimeAssembly: process.argv.slice(6).includes('--runtime-assembly'),
     clientPreparation: process.argv.slice(6).includes('--client-preparation'),
     accountPhases: process.argv.slice(6).includes('--account-phases'),
     requireColdConflict: process.argv.slice(6).includes('--require-cold-conflict'),
   });
+  r.preconnectCheckerSha256 = createHash('sha256')
+    .update(readFileSync(new URL('./qa09-authenticated-preconnect-proof.mjs', import.meta.url)))
+    .digest('hex');
   r.checkerSha256 = createHash('sha256')
     .update(readFileSync(new URL(import.meta.url)))
     .digest('hex');

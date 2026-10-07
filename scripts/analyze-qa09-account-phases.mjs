@@ -9,7 +9,13 @@ import { validatePhaseCorrelation } from './check-qa09-contract-phases.mjs';
 export function analyzeAccountPhases(
   patch,
   audit,
-  { sampling = false, clientPreparation = false, engineCpu = false, runtimeAssembly = false } = {},
+  {
+    sampling = false,
+    clientPreparation = false,
+    engineCpu = false,
+    runtimeAssembly = false,
+    authenticatedPreconnect = false,
+  } = {},
 ) {
   const proof = validatePhaseCorrelation(patch, audit, {
     accountPhases: true,
@@ -18,6 +24,7 @@ export function analyzeAccountPhases(
     clientPreparation,
     engineCpu,
     runtimeAssembly,
+    authenticatedPreconnect,
   });
   const top = new Set([
     'runtime-initialize',
@@ -78,6 +85,9 @@ export function analyzeAccountPhases(
             processCpuScope: 'PROCESS_ALL_THREADS',
           }
         : {}),
+      ...(authenticatedPreconnect
+        ? { authenticatedPreconnectMs: phase('db-authenticated-preconnect')?.durationMs ?? null }
+        : {}),
       clientTransport: c.clientTransport,
       platformReport: c.platformReports?.[0],
       hookMs: hook.durationMs,
@@ -101,6 +111,7 @@ export function analyzeAccountPhases(
     cleanupVerified: false,
     clientPreparationRequired: clientPreparation,
     engineCpuRequired: engineCpu,
+    authenticatedPreconnectRequired: authenticatedPreconnect,
     runtimeAssemblyRequired: runtimeAssembly,
     coldConflictObservedCount: proof.coldConflictObservedCount,
     rows,
@@ -122,6 +133,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   if (sampling) validateSamplingCorrelationLedger(JSON.parse(child), patch, audit);
   const result = analyzeAccountPhases(patch, audit, {
     sampling,
+    authenticatedPreconnect: process.argv.slice(6).includes('--authenticated-preconnect'),
     engineCpu: process.argv.slice(6).includes('--engine-cpu'),
     runtimeAssembly: process.argv.slice(6).includes('--runtime-assembly'),
     clientPreparation: process.argv.slice(6).includes('--client-preparation'),
@@ -130,6 +142,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     childSha256: hash(child),
     patchSha256: hash(patchBytes),
     auditSha256: hash(auditBytes),
+    preconnectCheckerSha256: hash(readFileSync(new URL('./qa09-authenticated-preconnect-proof.mjs', import.meta.url))),
+    runtimeCheckerSha256: hash(readFileSync(new URL('./qa09-runtime-assembly-proof.mjs', import.meta.url))),
     analyzerSha256: hash(readFileSync(new URL(import.meta.url))),
     checkerSha256: hash(readFileSync(new URL('./check-qa09-contract-phases.mjs', import.meta.url))),
   };

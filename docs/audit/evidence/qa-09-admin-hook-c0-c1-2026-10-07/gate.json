@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-09",
+  "scope": "LOCAL_DEFAULT_OFF_ADMIN_HOOK_C0_C1_INPUTS_AND_PHASE_GATE",
+  "status": "PASS",
+  "baselineCommit": "6b6d67b07434c57ca0bcbde9306b409fc239e3d4",
+  "executedAt": "2026-10-07T04:57:43.165924+00:00",
+  "defaultOff": true,
+  "pushPreconnect": false,
+  "runtimeWiring": "IMPLEMENTED_OFFLINE_VERIFIED",
+  "accountCombination": "REAL_PGLITE_WITH_CONTROLLED_PRECONNECT_PORT",
+  "targetDeployment": "NOT_RUN",
+  "targetC0C1": "NOT_RUN",
+  "actualConnectionPeak": "NOT_RUN",
+  "targetBenefit": "NOT_RUN",
+  "overallQa09": "PARTIAL",
+  "p95": "PARTIAL",
+  "awsMutations": 0,
+  "sourceHashes": {
+    ".github/workflows/deploy-test.yml": "57993d8bf5e31ef70f8ec54a472e47673a0909bd24f1008eec84ca04eb7db21c",
+    "apps/cloud-api/src/runtime/admin-account-hook.ts": "86a7796b5b22cb456f4a157b089010eef510c3a01d3fbedf104f0c2713c37711",
+    "apps/cloud-api/src/runtime/admin-engine-diagnostic.ts": "0f51e629eb0ea1fadb63e95a5987b2d5f7e6c296610fd9b06c98b2538937e4e7",
+    "apps/cloud-api/src/runtime/lambda-entry.ts": "a6433ee374c229649ae98cf4809d6d26f1efb12118eefbf8ecd896d21e47725d",
+    "apps/cloud-api/test/admin-account-hook-combination.test.ts": "bda19856925bd8d1c41596b9124d54aa2b542e9d98cb443cbf8424ed0c5ec5ab",
+    "apps/cloud-api/test/admin-engine-diagnostic.test.ts": "9c66428955088745881c76ddb5e2ad93c073bd979e2671c7bac3bcfb45c28965",
+    "apps/cloud-api/test/admin-preconnect-candidate.test.ts": "ecbe018a24e27758e9c86ec78dc1decf9363720f567d310c5a54db0a807ed317",
+    "apps/cloud-api/test/admin-runtime-initialization.test.ts": "a8ca946aef08852ad5b7789be39c97150fd6e20621024aec53cc7fcfc19bfff8",
+    "infra/src/config.ts": "6ea84a27f6c2597da49ab045f90d01d17449a71c431063ca5f3d568983a1bc27",
+    "infra/src/stacks/app-dependencies-stack.ts": "b898a4f8dfaf14ad256c373b1b1785e9762c2effe65a7c2b2d11b700d34c89d9",
+    "infra/test/deployment-config.test.ts": "ceb3a2bccb12a005ca1d26b3e4238e858ef2bb283e7bdfb28cbc8a8aa32a6847",
+    "infra/test/qa09-performance.test.ts": "ec5a25aeeeef7494b65f4412a2d54f7c2329ec3ec155efabe907c7bc3c73d63f",
+    "packages/database/src/authenticated-preconnect.ts": "89ec3a60efde9f1d1e361c80be55ac45fd759501e6c7268216984c104bc7befc",
+    "packages/database/src/client.ts": "e9a8563e1b1634659d1d57e828c04a8c567c618423657382f123e2cdebf76a10",
+    "packages/database/test/authenticated-preconnect.test.ts": "8853b6db76e4cf8306d52f366d76477b6d40a518e2d59cec2c7f6a18c174c9e9",
+    "pnpm-lock.yaml": "2126f03557c343bc7fc90b12e060f663492a67b647e0892bb18dba126a7f3364",
+    "scripts/analyze-qa09-account-phases.mjs": "ceef47245bb851b5c5384de7e447fec829acc1661460461cc0de7dd2e6279d76",
+    "scripts/check-qa09-contract-phases.mjs": "7c74e524071ffbcca91dd42844a00e0d97ec7dc5bc66f8eae40c252063ab0b97",
+    "scripts/esgiot-cdk.mjs": "b63161b05d64592022ad566497a853a44d3a1ef1e02cb2ed2fde0ec955db7654",
+    "scripts/qa09-authenticated-preconnect-proof.mjs": "ab4a89608dd2535b59482e08e13f0a0b6c697ef541c0b4b360e549e6d6f95175",
+    "scripts/qa09-authenticated-preconnect-proof.test.mjs": "40e9b6b0fe310f94ec5d27c27acaea4f7261f77bda814926db267ffdc99d4269",
+    "scripts/qa09-business-target.mjs": "10e16d75e6058911c24b5d48fedc3e72ada2adf6ee51372d31aa58ad48b4d3b8",
+    "scripts/qa09-contract-phases.test.mjs": "a4d343023d8218a111d5852b27fe62885a149c45078a8ca6d1286893f7f75895",
+    "scripts/qa09-deployment-inputs.test.mjs": "42e1f590d05cf268647b042d859debc56c2134c651defd88a668f593a8217103",
+    "scripts/record-qa09-deployment-inputs.mjs": "9d3439b2e0d6e167a2fc2a7e7d9782312602da0442cb513a5bdecc2043541653",
+    "scripts/run-qa09-nonactive-target.mjs": "872b8249ec56d6f50621d97101fa7b5ee0bfca88c2867b4a812a1e55c720a08c",
+    "vitest.config.mjs": "a2791d70c8ffe8cdee874f1909b0b04db033a0828a550fd96790eb23edf3240e"
+  },
+  "tests": {
+    "focusedFinal": {
+      "exitCode": 0,
+      "files": 5,
+      "tests": 34
+    },
+    "scriptsFinal": {
+      "exitCode": 0,
+      "tests": 54
+    },
+    "fullVerify": {
+      "exitCode": 0,
+      "applicationTests": 1418,
+      "contractTests": 302,
+      "scriptTests": 607,
+      "mainBrowserExecutions": 36,
+      "qa05BrowserExecutions": 108
+    },
+    "finalDelta": "After full verify only factory explanatory comment and proof nonempty-identity hardening changed; focused34/script54 and final lint/format cover final bytes"
+  },
+  "localGates": {
+    "QA-02": {
+      "status": "PASS",
+      "scope": "LOCAL_CONTRACT_AND_REAL_HANDLER",
+      "receipt": "device-contracts-gate.json"
+    },
+    "QA-03": {
+      "status": "PASS",
+      "scope": "LOCAL_INTEGRATION",
+      "receipt": "iot-integration-gate.json"
+    },
+    "QA-04": {
+      "status": "PASS",
+      "scope": "LOCAL_API_INTEGRATION",
+      "receipt": "core-api-integration-gate.json"
+    },
+    "QA-05": {
+      "status": "PASS",
+      "scope": "LOCAL_BROWSER_E2E",
+      "receipt": "admin-e2e-gate.json"
+    },
+    "QA-06": {
+      "status": "PASS",
+      "scope": "LOCAL_APPLICATION_SECURITY",
+      "receipt": "security-gate.json"
+    },
+    "QA-07": {
+      "status": "PASS",
+      "scope": "LOCAL_LOAD_RELIABILITY",
+      "receipt": "reliability-gate.json"
+    },
+    "QA-08": {
+      "status": "PASS",
+      "scope": "LOCAL_PROTOTYPE_BROWSER_REGRESSION",
+      "receipt": "prototype-regression-gate.json"
+    }
+  },
+  "logNormalization": {
+    "operation": "Only trim line-end whitespace and extra EOF blank lines",
+    "originalSha256": {
+      "focused-final.log": "02a2792e5d82488d3261cb400f4a941c435ba820caf8667648c9afd3213b7cde",
+      "scripts-final.log": "bc23ad52c9b882a562f8d6d38cfaf7e21fb245bcfea77b2732087408faa456ce",
+      "verify-pass.log": "14a4f0946cc748c0e87b6f2e60980065bb84d378ae394731905f7938ea5a1d9a",
+      "infra-focused-before-extra-guard.log": "c6162d35cf2b3effdb22c25b83a0de73a33a00543385c8744c710442e679b44c",
+      "lint-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "format-final.log": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    }
+  },
+  "receiptHashes": {
+    "core-api-integration-gate.json": "31d52bd03e426544fe1b609913c15133c3f2f2a8d96f9dc376138bbe9e09d1d2",
+    "reliability-gate.json": "cb5543d8e6972fabf35e0fcc3988c07180dd10861bdd210a6d59d3dd0b153858",
+    "format-final.log": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20",
+    "verify-pass.log": "3da786b0f72da09ab7edd1fecc5786a99f63de3aec60a6cd432bd6e04edf5e87",
+    "admin-e2e-gate.json": "1b7f708ee7fdfee4fa9d1ebc7be362b708eabaa4f3af95e7f52f2f0031f4324d",
+    "focused-final.log": "57f1ff90af982939aa3ee3f84f19e8d30cdfc3e1652e545af066a001a06e670c",
+    "device-contracts-gate.json": "cd7d2746ea5b663d45f4e615a9fae2b2a52a5237db220ff5a91e2532f9247c49",
+    "scripts-final.log": "bc23ad52c9b882a562f8d6d38cfaf7e21fb245bcfea77b2732087408faa456ce",
+    "security-gate.json": "fc9550eece15272d2fedceed3df64c68db85a0fc4ad70859b602baec6499bb71",
+    "infra-focused-before-extra-guard.log": "beacdd894b65dd07fbe25a93eebaa5852bdb115fd3a193a991b85a4980e084ae",
+    "lint-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "iot-integration-gate.json": "c3f72aea4967af0a9e5059b859e027f6a4dbd4d6ab7187797efa83bccae45ec6",
+    "prototype-regression-gate.json": "5fc8ec008e4838466d41ee16a83eea524a38fbd1f03e84347bd7ee3dc2ac0db1"
+  }
+}

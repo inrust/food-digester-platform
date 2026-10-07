@@ -48,7 +48,7 @@ function createObservedClient(databaseUrl: string, preconnect?: AuthenticatedPre
 export function createPrismaClient(databaseUrl: string): PrismaClient {
   return createObservedClient(databaseUrl);
 }
-/** Offline candidate only: no environment/deployment toggle. Ordinary factory remains lazy/default off. */
+/** Explicit Admin candidate; caller guards test/pool1/engine. Ordinary factory stays lazy/default off. */
 export function createAdminPreconnectCandidate(databaseUrl: string): {
   client: PrismaClient;
   prepareAuthenticated: () => Promise<void>;

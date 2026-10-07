@@ -24,6 +24,7 @@ test('observability and immediate queue synth retain narrow logs and hard DB bud
       enableQa09Capacity: true,
       enableImmediateCommandPublish: true,
       enableQa09EngineCpuDiagnosis: true,
+      enableQa09AuthenticatedPreconnect: true,
     },
   });
   const template = Template.fromStack(stack).toJSON();
@@ -33,6 +34,12 @@ test('observability and immediate queue synth retain narrow logs and hard DB bud
     (r) => r.Properties.Environment?.Variables.FDP_QA09_ENGINE_CPU_DIAGNOSIS === 'true',
   );
   assert.equal(diagnosed.length, 1);
+  assert.deepEqual(
+    functions
+      .filter((r) => r.Properties.Environment?.Variables.FDP_QA09_AUTHENTICATED_PRECONNECT === 'true')
+      .map((r) => r.Properties.FunctionName),
+    ['fdp-test-api'],
+  );
   assert.equal(diagnosed[0]?.Properties.FunctionName, 'fdp-test-api');
   assert.equal(diagnosed[0]?.Properties.Environment.Variables.FDP_DB_POOL_MAX, '1');
   assert.equal(diagnosed[0]?.Properties.MemorySize, 512);

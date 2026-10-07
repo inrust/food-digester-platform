@@ -24,3 +24,12 @@ export function createAuthenticatedEngineDiagnostic(
     await preparation;
   };
 }
+
+/** Candidate requires the same explicit engine preparation as C0; only test/pool1. */
+export function resolveAuthenticatedPreconnect(env: Readonly<Record<string, string | undefined>>): boolean {
+  const value = env.FDP_QA09_AUTHENTICATED_PRECONNECT;
+  if (value !== undefined && value !== 'false' && value !== 'true') throw new Error('INVALID_AUTHENTICATED_PRECONNECT');
+  if (value === 'true' && (!resolveEngineCpuDiagnosis(env) || env.ENV_NAME !== 'test' || env.FDP_DB_POOL_MAX !== '1'))
+    throw new Error('PRECONNECT_REQUIRES_TEST_POOL1_ENGINE');
+  return value === 'true';
+}

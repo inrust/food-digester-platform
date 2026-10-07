@@ -173,6 +173,11 @@ export class AppDependenciesStack extends Stack {
       throw new Error('INVALID_QA09_ROLLOUT_PHASE');
     if (this.config.enableQa09EngineCpuDiagnosis && (this.config.envName !== 'test' || !this.config.enableQa09Capacity))
       throw new Error('ENGINE_CPU_DIAGNOSIS_REQUIRES_TEST_CAPACITY');
+    if (
+      this.config.enableQa09AuthenticatedPreconnect &&
+      (this.config.envName !== 'test' || !this.config.enableQa09Capacity || !this.config.enableQa09EngineCpuDiagnosis)
+    )
+      throw new Error('PRECONNECT_REQUIRES_TEST_CAPACITY_ENGINE');
     this.naming = new Naming(this.config.envName);
     if (this.config.deploymentAccount && this.config.allowInsecureDeviceEndpointForLocal) {
       throw new Error('真实部署禁止不安全 Device execute-api 入口');
@@ -1512,6 +1517,7 @@ export class AppDependenciesStack extends Stack {
       timeout: Duration.seconds(30),
       memorySize: 512,
       environment: {
+        FDP_QA09_AUTHENTICATED_PRECONNECT: String(this.config.enableQa09AuthenticatedPreconnect === true),
         FDP_QA09_ENGINE_CPU_DIAGNOSIS: String(this.config.enableQa09EngineCpuDiagnosis === true),
         ADMIN_WEB_ORIGIN: this.config.adminWebOrigin ?? '',
         DB_SECRET_ARN: dbSecret,

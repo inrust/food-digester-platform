@@ -207,3 +207,22 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
   assert.equal(template.findOutputs('*').AdminApiUrl.Value, 'https://api.bio-nexa.com/api/v1/');
   assert.equal(template.findOutputs('*').OnboardingApiUrl.Value, 'https://onboard-api.bio-nexa.com/');
 }, 30000);
+
+test('preconnect context is default off and restricted to test capacity with explicit engine', () => {
+  assert.isFalse(resolveConfig(new App({ context })).enableQa09AuthenticatedPreconnect);
+  const enabled = {
+    ...context,
+    enableRequestObservability: true,
+    enableQa09Capacity: true,
+    enableQa09EngineCpuDiagnosis: true,
+    enableQa09AuthenticatedPreconnect: true,
+  };
+  assert.isTrue(resolveConfig(new App({ context: enabled })).enableQa09AuthenticatedPreconnect);
+  for (const patch of [
+    { envName: 'prod' },
+    { enableQa09Capacity: false },
+    { enableQa09EngineCpuDiagnosis: false },
+    { enableQa09AuthenticatedPreconnect: 'yes' },
+  ])
+    assert.throws(() => resolveConfig(new App({ context: { ...enabled, ...patch } })));
+});

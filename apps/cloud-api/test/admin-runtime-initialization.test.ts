@@ -133,3 +133,22 @@ test('client construction failure retains safe runtime failure and later attempt
   assert.equal((await handler(event)).statusCode, 401);
   assert.equal(mocks.client.mock.calls.length, 2);
 });
+
+test('actual C1 Lambda initialization uses one candidate client; invalid JWT does no checkout', async () => {
+  setup();
+  vi.stubEnv('FDP_QA09_AUTHENTICATED_PRECONNECT', 'true');
+  const { Pool } = await import('pg');
+  const checkout = vi.spyOn(Pool.prototype, 'connect');
+  try {
+    const { handler } = await import('../src/runtime/lambda-entry.js');
+    assert.deepEqual(
+      (await Promise.all([handler(event), handler(event)])).map((r) => r.statusCode),
+      [401, 401],
+    );
+    assert.equal(mocks.client.mock.calls.length, 0);
+    assert.equal(checkout.mock.calls.length, 0);
+    assert.equal(mocks.database.mock.calls.length, 1);
+  } finally {
+    checkout.mockRestore();
+  }
+});

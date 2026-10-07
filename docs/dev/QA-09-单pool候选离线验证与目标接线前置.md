@@ -2,6 +2,8 @@
 
 2026-10-07。候选入口为 `createAdminPreconnectCandidate`，仅供显式离线调用；现有 Lambda 继续调用 `createPrismaClient`，没有候选环境变量、CDK context 或 Actions 参数。默认关闭，不开展 AWS 操作。
 
+后续更新：默认关闭的Admin hook/部署输入/阶段Gate已完成离线实施，详见[当前手册](QA-09-Admin-hook与C0-C1复验手册.md)。以下记录保留本任务原始离线验证时点，不能当作已执行目标部署。
+
 ## 所有权与失败策略
 
 候选持有一个 Prisma client。其 ObservedPrismaPg 创建实际 ObservedPgPool 时向所有权端口发布该 pool；端口不创建 pool、不读取 Prisma 私有字段。pool 必须 max=1，保留 connectionTimeoutMillis=5000、idleTimeoutMillis=10000。准备借出连接并立即 release，不执行 SQL，驱动固有握手仍可能发生。
