@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "1.0",
+  "task": "QA-09",
+  "scope": "OFFLINE_SINGLE_POOL_OWNERSHIP_AND_FAILURE_MATRIX",
+  "status": "PASS",
+  "baselineCommit": "c690623d472aa9a653f5522324e690a87e72b219",
+  "executedAt": "2026-10-07T04:31:11.561747+00:00",
+  "candidateDefaultOff": true,
+  "runtimeWired": false,
+  "targetBenefit": "NOT_RUN",
+  "physicalNetworkTimeout": "NOT_RUN",
+  "runtimeAccountHookCombination": "NOT_RUN",
+  "overallQa09": "PARTIAL",
+  "p95": "PARTIAL",
+  "awsMutations": 0,
+  "sourceHashes": {
+    "packages/database/src/authenticated-preconnect.ts": "89ec3a60efde9f1d1e361c80be55ac45fd759501e6c7268216984c104bc7befc",
+    "packages/database/src/client.ts": "c286460d5f2e753d697296bc26c25f73fdef80c4f13e06625f033f9c47619355",
+    "packages/database/src/observed-pg.ts": "4dd91d30d21309de6ba1e7a218682ea801ee1eeeb427ee2f196f747e8d881159",
+    "packages/observability/src/data-path.ts": "74268d5ccf7e1d2a02fd5ce1652d8854e58dead29612391af8b7e8dc97bcb58b",
+    "packages/database/test/authenticated-preconnect.test.ts": "8853b6db76e4cf8306d52f366d76477b6d40a518e2d59cec2c7f6a18c174c9e9",
+    "apps/cloud-api/test/admin-preconnect-candidate.test.ts": "e6920b78711350a494d6af01a8552aa4ed926b5ed90b74b4ffef863f3122355d",
+    "apps/cloud-api/test/admin-user.test.ts": "f09993e323511b48e29958c378b0253ab4d323f948abde2ccb88f6d4754eff30",
+    "apps/cloud-api/src/runtime/lambda-entry.ts": "7192313e407d20d155b1ed7a67a6eaf2e2b161ae564c98d6276fa2608550e2c7",
+    "vitest.config.mjs": "a2791d70c8ffe8cdee874f1909b0b04db033a0828a550fd96790eb23edf3240e",
+    "pnpm-lock.yaml": "2126f03557c343bc7fc90b12e060f663492a67b647e0892bb18dba126a7f3364"
+  },
+  "tests": {
+    "focused": {
+      "exitCode": 0,
+      "files": 5,
+      "tests": 53,
+      "receipt": "focused-final.log"
+    },
+    "verify": {
+      "exitCode": 0,
+      "applicationTests": 1404,
+      "contractTests": 302,
+      "scriptTests": 592,
+      "mainBrowserExecutions": 36,
+      "qa05BrowserExecutions": 108,
+      "receipt": "verify-pass.log"
+    },
+    "sandboxAttempt": {
+      "exitCode": 1,
+      "reason": "127.0.0.1 listen EPERM",
+      "receipt": "verify-sandbox-failed.log"
+    }
+  },
+  "localGates": {
+    "QA-02": {
+      "status": "PASS",
+      "scope": "LOCAL_CONTRACT_AND_REAL_HANDLER",
+      "receipt": "device-contracts-gate.json"
+    },
+    "QA-03": {
+      "status": "PASS",
+      "scope": "LOCAL_INTEGRATION",
+      "receipt": "iot-integration-gate.json"
+    },
+    "QA-04": {
+      "status": "PASS",
+      "scope": "LOCAL_API_INTEGRATION",
+      "receipt": "core-api-integration-gate.json"
+    },
+    "QA-05": {
+      "status": "PASS",
+      "scope": "LOCAL_BROWSER_E2E",
+      "receipt": "admin-e2e-gate.json"
+    },
+    "QA-06": {
+      "status": "PASS",
+      "scope": "LOCAL_APPLICATION_SECURITY",
+      "receipt": "security-gate.json"
+    },
+    "QA-07": {
+      "status": "PASS",
+      "scope": "LOCAL_LOAD_RELIABILITY",
+      "receipt": "reliability-gate.json"
+    },
+    "QA-08": {
+      "status": "PASS",
+      "scope": "LOCAL_PROTOTYPE_BROWSER_REGRESSION",
+      "receipt": "prototype-regression-gate.json"
+    }
+  },
+  "receiptHashes": {
+    "core-api-integration-gate.json": "379201b6c5200bbb3f840da8766c6053942e6a7357ccb187e7065aa19e4bc297",
+    "reliability-gate.json": "e504ccbfa23b262a74e0b637829779c1a26472356ceaf9861955a26930bcfefd",
+    "verify-pass.log": "bc76ea86800be8bca5fc1981bd679b2e1f03b52b8dc4c9cd261d84d06189064f",
+    "admin-e2e-gate.json": "5d8b084e6c4e5aadba62bd9b4224d6eaac3ab40fb4b0c45aee1a62b8699424b6",
+    "focused-final.log": "414e86b0856d6a31509413c25a404d4f9d7d492452c09f6719ddc2ddfd9c5212",
+    "device-contracts-gate.json": "c544b0dc5174b271d1dc39f7c9eba2beae041f211362cc2715345869ec6cc091",
+    "security-gate.json": "ab368b30d7722acaeee18fb77a470714ed7a03e811c09970644ff89013097a90",
+    "verify-sandbox-failed.log": "c5aa92984225a7f0b82c6dabdbcce741fd776ac50bca771686b089bc2b50bb63",
+    "iot-integration-gate.json": "ffda7550bba392b0acd05eb05d51ea3d27a619bf0ee1811adb80e035e55a1812",
+    "prototype-regression-gate.json": "728f71c6f4d352ae2aa0d8ff4e2fc0552a8393cfd4d860b604ec186db2f5d8a7"
+  },
+  "nextTask": "Default-off Admin hook wiring, account-state combination tests and reproducible C0/C1 inputs/phase Gate; no target enablement in this task",
+  "logArchiveNormalization": {
+    "operation": "Only trim line-end whitespace and extra EOF blank lines; preserve failure and success content",
+    "originalSha256": {
+      "verify-pass.log": "28a6fd5232a430014053b162c66837eeacb3018e122fe6d790d5e5a000f7b22e",
+      "focused-final.log": "3e79225fd2180f363f5360bfa068010b8db910053f2c461376d4995db761e049",
+      "verify-sandbox-failed.log": "a9c9abe6944258cab3f084b7bbb31a5bb586509f21658a4e8d2d10ccba387db6"
+    }
+  }
+}

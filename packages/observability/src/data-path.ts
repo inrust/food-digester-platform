@@ -6,6 +6,7 @@ export type DataPathPhase =
   | 'runtime-database-secret'
   | 'runtime-license-secret'
   | 'db-engine-prepare'
+  | 'db-authenticated-preconnect'
   | 'db-engine-after-adapter'
   | 'admin-authenticate'
   | 'admin-account-hook'
@@ -157,9 +158,13 @@ export function beginDataPathPhase(
         phase,
         ...(cpuStart ? cpuMetrics(cpuStart) : {}),
         ...(boundary !== undefined &&
-        ['db-client-prepare', 'db-client-after-adapter', 'db-engine-prepare', 'db-engine-after-adapter'].includes(
-          phase,
-        ) &&
+        [
+          'db-client-prepare',
+          'db-client-after-adapter',
+          'db-engine-prepare',
+          'db-engine-after-adapter',
+          'db-authenticated-preconnect',
+        ].includes(phase) &&
         ['DRIVER_DISPATCH', 'OPERATION_SETTLED', 'OPERATION_FAILED'].includes(boundary)
           ? { completionBoundary: boundary }
           : {}),
@@ -179,6 +184,7 @@ export function beginDataPathPhase(
           phase === 'admin-account-query' ||
           phase === 'admin-account-activation' ||
           phase === 'db-first-connection' ||
+          phase === 'db-authenticated-preconnect' ||
           phase === 'db-first-query',
       },
       trace,
