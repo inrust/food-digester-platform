@@ -1,0 +1,201 @@
+{
+  "task": "QA-09",
+  "scope": "CORE_BUSINESS_REAL_RDS_STATE_FIXTURE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1"
+  },
+  "fixtureMode": "REAL_RDS_ONBOARDED_STATE_FOR_BUSINESS_APIS_NO_DEVICE_AUTH_CLAIM",
+  "prefix": "qa09-1b2b18b1ef0b7d9a",
+  "devices": [
+    "qa09-1b2b18b1ef0b7d9a-01",
+    "qa09-1b2b18b1ef0b7d9a-02",
+    "qa09-1b2b18b1ef0b7d9a-03",
+    "qa09-1b2b18b1ef0b7d9a-04",
+    "qa09-1b2b18b1ef0b7d9a-05",
+    "qa09-1b2b18b1ef0b7d9a-06",
+    "qa09-1b2b18b1ef0b7d9a-07",
+    "qa09-1b2b18b1ef0b7d9a-08",
+    "qa09-1b2b18b1ef0b7d9a-09",
+    "qa09-1b2b18b1ef0b7d9a-10"
+  ],
+  "customers": [
+    {
+      "id": "85345e5f-dd78-458c-a1f5-5f3807462b40",
+      "name": "qa09-1b2b18b1ef0b7d9a-a",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-07T03:24:57.222Z",
+      "updatedAt": "2026-10-07T03:24:57.222Z",
+      "suffix": "a"
+    },
+    {
+      "id": "620a8928-61d0-4849-b964-9c0f01570637",
+      "name": "qa09-1b2b18b1ef0b7d9a-b",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-07T03:24:59.056Z",
+      "updatedAt": "2026-10-07T03:24:59.056Z",
+      "suffix": "b"
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "9a934bb1-1c77-4ca2-90db-5f9ada675834"
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "813da877-dee2-44a7-a5ad-a7d034a52136"
+    },
+    {
+      "id": "real-rds-business-state-fixture",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "original-device-certificate-baseline-preserved",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/620a8928-61d0-4849-b964-9c0f01570637",
+      "status": 200,
+      "requestId": "0b9cb256-2bc7-41b2-968a-818a6027e944"
+    },
+    {
+      "id": "own-customer-name-b",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/620a8928-61d0-4849-b964-9c0f01570637",
+      "status": 200,
+      "requestId": "c976bcd1-99fb-4eb1-b314-9963b73c265e"
+    },
+    {
+      "id": "verify-customer-gone-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/620a8928-61d0-4849-b964-9c0f01570637",
+      "status": 404,
+      "requestId": "c7867aa1-f04e-4005-ae4c-f19f54f521e8"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/85345e5f-dd78-458c-a1f5-5f3807462b40",
+      "status": 200,
+      "requestId": "813fdba3-f111-42bb-bc82-eeaac9ecee40"
+    },
+    {
+      "id": "own-customer-name-a",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/85345e5f-dd78-458c-a1f5-5f3807462b40",
+      "status": 200,
+      "requestId": "aa5e015d-8c53-45b6-8f42-dd98d2628d88"
+    },
+    {
+      "id": "verify-customer-gone-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/85345e5f-dd78-458c-a1f5-5f3807462b40",
+      "status": 404,
+      "requestId": "e2f2513a-44e4-4de3-99a5-7137d23e7e30"
+    },
+    {
+      "id": "own-superadmin-deleted",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "database-fixtures",
+      "count": 10,
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "620a8928-61d0-4849-b964-9c0f01570637",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "85345e5f-dd78-458c-a1f5-5f3807462b40",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-1b2b18b1ef0b7d9a-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "observe",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-9e4143b-runtime-assembly-comparison-2026-10-07/on/sample.json.fixtures-observe-0.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:9bb7cd6d-1a31-43ba-8e08-f3b3a11e6501"
+    },
+    {
+      "action": "business-seed-devices",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-9e4143b-runtime-assembly-comparison-2026-10-07/on/sample.json.fixtures-business-seed-devices-1.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:7da67838-5f7d-4059-8107-63f74e760df8"
+    },
+    {
+      "action": "observe",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-9e4143b-runtime-assembly-comparison-2026-10-07/on/sample.json.fixtures-observe-2.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:cb9c0f47-e97e-4b66-ae14-4ad1f19f1615"
+    },
+    {
+      "action": "cleanup",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-9e4143b-runtime-assembly-comparison-2026-10-07/on/sample.json.fixtures-cleanup-3.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:3aeeb9d1-77f1-4cc0-b15a-7f9bcd9ac2fc"
+    }
+  ],
+  "sourceCommit": "9e4143b5144a8aa10692927084256c225d5dd6d4",
+  "versionReceipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-9e4143b-runtime-assembly-comparison-2026-10-07/on/application-version.json",
+  "startedAt": "2026-10-07T03:24:43.191Z",
+  "gate": "PASS",
+  "fullQa09Accepted": false,
+  "credentialsExported": false,
+  "identity": {
+    "username": "qa09-1b2b18b1ef0b7d9a-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "globalSignOut": "PASS",
+  "finishedAt": "2026-10-07T03:41:56.094Z"
+}

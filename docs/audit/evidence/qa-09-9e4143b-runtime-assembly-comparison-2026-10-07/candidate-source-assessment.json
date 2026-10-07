@@ -1,0 +1,37 @@
+{
+  "gate": "DEFERRED",
+  "scope": "STATIC_EXISTING_PORTS_AND_UNIMPLEMENTED_CANDIDATE_ONLY",
+  "sourceCommit": "9e4143b5144a8aa10692927084256c225d5dd6d4",
+  "candidateImplemented": false,
+  "sourceFiles": [
+    {
+      "path": "packages/database/src/observed-pg.ts",
+      "sourceSha256": "24901e7f5f2443a7ccd615017e3fbb96b8d2b5ac1bacdf936bedfcc7075a3861"
+    },
+    {
+      "path": "packages/database/src/client-preparation.ts",
+      "sourceSha256": "4f5b2b634c89bec49bf47079b3a153cd88a1ffaea325e0c3a46420524add053e"
+    },
+    {
+      "path": "packages/database/src/client.ts",
+      "sourceSha256": "7d24cbd03946c75f60033fbd666347661311312b8f36872ee4584c340eb93db0"
+    }
+  ],
+  "facts": [
+    "ObservedPrismaPg.connect creates an ObservedPgPool per adapter and disposes it with that adapter",
+    "No Admin preconnect readiness or generation ownership port is currently exposed",
+    "ObservedPgPool.connect currently claims db-first-connection; candidate must use a separately proven phase boundary"
+  ],
+  "requiredBeforeCandidateTarget": [
+    "single_client_single_pool_generation_ownership",
+    "checkout_release_exactly_once_both_branch_failures_disconnect_reconnect",
+    "no_sql_and_invalid_jwt_json_no_checkout",
+    "real_account_status_and_audit_transaction_semantics",
+    "later_query_keeps_independent_driver_checkout_claims",
+    "default_off_same_budget_source_bound_controlled_target_inputs",
+    "actual_peak_connections_within_70_and_end_to_end_benefit"
+  ],
+  "candidateTargetBenefit": "NOT_RUN",
+  "fullQa09Accepted": false,
+  "p95Accepted": false
+}

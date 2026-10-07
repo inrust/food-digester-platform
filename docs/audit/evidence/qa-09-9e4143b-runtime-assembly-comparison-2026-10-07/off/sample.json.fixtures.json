@@ -1,0 +1,201 @@
+{
+  "task": "QA-09",
+  "scope": "CORE_BUSINESS_REAL_RDS_STATE_FIXTURE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1"
+  },
+  "fixtureMode": "REAL_RDS_ONBOARDED_STATE_FOR_BUSINESS_APIS_NO_DEVICE_AUTH_CLAIM",
+  "prefix": "qa09-520b22c13500d81b",
+  "devices": [
+    "qa09-520b22c13500d81b-01",
+    "qa09-520b22c13500d81b-02",
+    "qa09-520b22c13500d81b-03",
+    "qa09-520b22c13500d81b-04",
+    "qa09-520b22c13500d81b-05",
+    "qa09-520b22c13500d81b-06",
+    "qa09-520b22c13500d81b-07",
+    "qa09-520b22c13500d81b-08",
+    "qa09-520b22c13500d81b-09",
+    "qa09-520b22c13500d81b-10"
+  ],
+  "customers": [
+    {
+      "id": "edf89356-8f99-4b7b-b0c9-2c3dbd15eaf1",
+      "name": "qa09-520b22c13500d81b-a",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-07T01:46:01.835Z",
+      "updatedAt": "2026-10-07T01:46:01.835Z",
+      "suffix": "a"
+    },
+    {
+      "id": "56e2a9d1-ae9c-462a-9be4-e292e2c5fa6c",
+      "name": "qa09-520b22c13500d81b-b",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-07T01:46:03.657Z",
+      "updatedAt": "2026-10-07T01:46:03.657Z",
+      "suffix": "b"
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "edd9df14-9286-4605-b204-f6b6832d935d"
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "bdbaf795-1f26-4fa2-9621-efb307023e9b"
+    },
+    {
+      "id": "real-rds-business-state-fixture",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "original-device-certificate-baseline-preserved",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/56e2a9d1-ae9c-462a-9be4-e292e2c5fa6c",
+      "status": 200,
+      "requestId": "ba60b25b-0f73-4c21-9d2f-52c1f88fb44d"
+    },
+    {
+      "id": "own-customer-name-b",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/56e2a9d1-ae9c-462a-9be4-e292e2c5fa6c",
+      "status": 200,
+      "requestId": "8c1a905a-a6f8-49e9-8a5b-57848343cde9"
+    },
+    {
+      "id": "verify-customer-gone-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/56e2a9d1-ae9c-462a-9be4-e292e2c5fa6c",
+      "status": 404,
+      "requestId": "f7353d00-50c1-4684-be80-4f3a8396dd70"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/edf89356-8f99-4b7b-b0c9-2c3dbd15eaf1",
+      "status": 200,
+      "requestId": "32721689-c136-40d2-b1a5-8c063be85b54"
+    },
+    {
+      "id": "own-customer-name-a",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/edf89356-8f99-4b7b-b0c9-2c3dbd15eaf1",
+      "status": 200,
+      "requestId": "2ed9d063-3e6b-4578-a19b-a80b10ba6bc5"
+    },
+    {
+      "id": "verify-customer-gone-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/edf89356-8f99-4b7b-b0c9-2c3dbd15eaf1",
+      "status": 404,
+      "requestId": "cf3904d2-e64b-466e-9145-341874859499"
+    },
+    {
+      "id": "own-superadmin-deleted",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "database-fixtures",
+      "count": 10,
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "56e2a9d1-ae9c-462a-9be4-e292e2c5fa6c",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "edf89356-8f99-4b7b-b0c9-2c3dbd15eaf1",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-520b22c13500d81b-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "observe",
+      "receipt": "docs/audit/evidence/qa-09-9e4143b-runtime-assembly-comparison-2026-10-07/off/sample.json.fixtures-observe-0.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:8f81c5da-8366-4939-87ec-4a4c9011f3b0"
+    },
+    {
+      "action": "business-seed-devices",
+      "receipt": "docs/audit/evidence/qa-09-9e4143b-runtime-assembly-comparison-2026-10-07/off/sample.json.fixtures-business-seed-devices-1.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:ef11d150-4f59-4d14-bfc5-059027f2d8ea"
+    },
+    {
+      "action": "observe",
+      "receipt": "docs/audit/evidence/qa-09-9e4143b-runtime-assembly-comparison-2026-10-07/off/sample.json.fixtures-observe-2.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:612cfa49-b86b-45c2-9fe5-03a8e5e182c0"
+    },
+    {
+      "action": "cleanup",
+      "receipt": "docs/audit/evidence/qa-09-9e4143b-runtime-assembly-comparison-2026-10-07/off/sample.json.fixtures-cleanup-3.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:16aafd98-84a1-4217-a34b-e80488741e54"
+    }
+  ],
+  "sourceCommit": "9e4143b5144a8aa10692927084256c225d5dd6d4",
+  "versionReceipt": "docs/audit/evidence/qa-09-9e4143b-runtime-assembly-comparison-2026-10-07/off/application-version.json",
+  "startedAt": "2026-10-07T01:45:49.813Z",
+  "gate": "PASS",
+  "fullQa09Accepted": false,
+  "credentialsExported": false,
+  "identity": {
+    "username": "qa09-520b22c13500d81b-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "globalSignOut": "PASS",
+  "finishedAt": "2026-10-07T02:02:43.210Z"
+}

@@ -1,0 +1,63 @@
+"""Authorized sequential target unit; prerequisites precede fixture creation."""
+import subprocess,json,time,datetime,concurrent.futures,sys
+from pathlib import Path
+p=Path(__file__).parent
+root=p.parent
+sha='9e4143b5144a8aa10692927084256c225d5dd6d4'
+start=time.monotonic()
+while not (p/'negative-gate.json').exists():
+ assert time.monotonic()-start<2700,'DEPLOY_READ_DEADLINE_NO_FIXTURE'
+ assert not (p/'deployment-read-driver.stderr.log').read_text(),'READ_DRIVER_FAILED_NO_FIXTURE'
+ time.sleep(30)
+for name in ('application-version.json','deployment-input-binding.json','negative-gate.json'):
+ assert json.loads((p/name).read_text())['gate']=='PASS'
+assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==sha
+assert subprocess.check_output(['gh','api','repos/inrust/food-digester-platform/commits/main','--jq','.sha'],text=True).strip()==sha
+assert json.loads((root/'off/unit-completion.json').read_text())['gate']=='PASS'
+assert not (p/'sample.json').exists() and not (p/'sample.json.fixtures.json').exists(),'NO_DUPLICATE_FIXTURES'
+version=json.loads((p/'application-version.json').read_text())
+initial_config=json.loads((p/'api-config.json').read_text())
+api=next(a for a in version['lambdaArtifacts'] if a['name']=='fdp-test-api')
+assert api['revisionId']==initial_config['revisionId'],'VERSION_CONFIG_REVISION_DRIFT_NO_FIXTURE'
+fresh=json.loads(subprocess.check_output(['aws','lambda','get-function-configuration','--function-name','fdp-test-api','--query','{revisionId:RevisionId,memory:MemorySize,state:State,update:LastUpdateStatus,envName:Environment.Variables.ENV_NAME,pool:Environment.Variables.FDP_DB_POOL_MAX,engineCpu:Environment.Variables.FDP_QA09_ENGINE_CPU_DIAGNOSIS,parallelSecrets:Environment.Variables.FDP_ADMIN_PARALLEL_SECRETS}','--profile','esgiot-readonly','--region','ap-southeast-1','--output','json','--no-cli-pager'],text=True))
+assert fresh==initial_config and fresh['engineCpu']=='true','FRESH_CONFIG_DRIFT_NO_FIXTURE'
+(p/'target-preflight-safe-config.json').write_text(json.dumps(fresh,indent=2)+'\n')
+latest=json.loads(subprocess.check_output(['gh','run','list','--workflow','deploy-test.yml','--limit','1','--json','databaseId,status,conclusion,headSha'],text=True))[0]
+assert str(latest['databaseId'])=='37563191928' and latest['status']=='completed' and latest['conclusion']=='success' and latest['headSha']==sha,'DEPLOY_DRIFT_NO_FIXTURE'
+(p/'target-preflight-latest-deploy.json').write_text(json.dumps(latest,indent=2)+'\n')
+
+q=subprocess.run(['aws','configure','export-credentials','--profile','esgiot-infra','--format','process'],capture_output=True,text=True)
+assert q.returncode==0,'INFRA_CREDENTIAL_REFRESH_FAILED_NO_FIXTURE'
+cred=json.loads(q.stdout)
+expiration=datetime.datetime.fromisoformat(cred['Expiration'].replace('Z','+00:00'))
+now=datetime.datetime.now(datetime.timezone.utc)
+remaining=(expiration-now).total_seconds()
+assert remaining>=3600,'LESS_THAN_ONE_HOUR_CLEANUP_WINDOW_NO_FIXTURE'
+identity=json.loads(subprocess.check_output(['aws','sts','get-caller-identity','--profile','esgiot-infra','--output','json','--no-cli-pager'],text=True))
+assert identity['Account']=='065986019555' and '/AWSReservedSSO_FDP-InfraSetup_' in identity['Arn']
+(p/'target-preflight.json').write_text(json.dumps({'gate':'PASS','sourceCommit':sha,'runId':'37563191928','checkedAt':now.isoformat(),'expiration':expiration.isoformat(),'cleanupWindowSeconds':remaining,'account':identity['Account'],'role':identity['Arn'],'priorUnitCleanup':'PASS','fixtureExists':False},indent=2)+'\n')
+print('preflight PASS; starting single new-prefix fixture owner',flush=True)
+def call(name,cmd):
+ (p/(name+'.command.json')).write_text(json.dumps(cmd,indent=2)+'\n')
+ with (p/(name+'.stdout.log')).open('w') as o,(p/(name+'.stderr.log')).open('w') as e:
+  code=subprocess.run(cmd,stdout=o,stderr=e).returncode
+ (p/(name+'.exit')).write_text(str(code)+'\n'); print(name,code,flush=True)
+ return code
+def aws_read(name,cmd):
+ q=subprocess.run(cmd,capture_output=True,text=True)
+ (p/(name+'.stderr.log')).write_text(q.stderr);(p/(name+'.exit')).write_text(str(q.returncode)+'\n')
+ assert q.returncode==0,name
+ json.loads(q.stdout);(p/(name+'.json')).write_text(q.stdout)
+ return 0
+assert call('target-run',['node','--import','tsx','scripts/run-qa09-nonactive-target.mjs',str(p/'sample.json'),str(p/'application-version.json'),'--cold409-sampling'])==0,'TARGET_OWNER_FAILED_INSPECT_CLEANUP_BEFORE_ANY_RETRY'
+assert json.loads((p/'sample.json.gate.json').read_text())['gate']=='PASS'
+aws=['--profile','esgiot-readonly','--region','ap-southeast-1','--output','json','--no-cli-pager']
+jobs=[('correlations',['python3',str(p/'collect-correlations.py')]),('audit-empty',['node',str(p/'audit-empty.mjs')]),('initial-phases',['python3',str(p/'collect-initial-phases.py')]),('runtime-final',['node','scripts/collect-qa09-application-version.mjs',str(p/'runtime-final.json'),'--runtime-only'])]
+with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
+ codes=list(ex.map(lambda j:call(*j),jobs))
+assert codes==[0,0,0,0],'READ_PROOF_FAILED_PRESERVE_FIRST_RESULTS'
+aws_read('api-final-config',['aws','lambda','get-function-configuration','--function-name','fdp-test-api','--query','{revisionId:RevisionId,memory:MemorySize,state:State,update:LastUpdateStatus,envName:Environment.Variables.ENV_NAME,pool:Environment.Variables.FDP_DB_POOL_MAX,engineCpu:Environment.Variables.FDP_QA09_ENGINE_CPU_DIAGNOSIS,parallelSecrets:Environment.Variables.FDP_ADMIN_PARALLEL_SECRETS}']+aws)
+aws_read('api-final-concurrency',['aws','lambda','get-function-concurrency','--function-name','fdp-test-api']+aws)
+assert call('unit-check',['python3',str(p/'check-unit.py')])==0
+assert call('unit-complete',['python3',str(root/'complete-unit.py'),'on'])==0
+print('ON_BOUNDED_UNIT_PASS_CLEANUP_COMPLETE',flush=True)
