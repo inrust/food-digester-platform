@@ -1,0 +1,72 @@
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  apps/cloud-api/test/admin-runtime-initialization.test.ts > failed secret never publishes runtime/client; later request retries initialization without business work
+AssertionError: expected +0 to equal 1
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ apps/cloud-api/test/admin-runtime-initialization.test.ts:54:10
+     52|   assert.equal(mocks.client.mock.calls.length, 0);
+     53|   assert.equal((await handler(event)).statusCode, 401);
+     54|   assert.equal(mocks.client.mock.calls.length, 1);
+       |          ^
+     55|   assert.equal(mocks.database.mock.calls.length, 2);
+     56|   assert.equal(mocks.license.mock.calls.length, 2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  apps/cloud-api/test/admin-runtime-initialization.test.ts > concurrent initialization shares one handler/client and warm bad JWT never triggers engine preparation
+AssertionError: expected +0 to equal 1
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ apps/cloud-api/test/admin-runtime-initialization.test.ts:76:10
+     74|     [401, 401],
+     75|   );
+     76|   assert.equal(mocks.client.mock.calls.length, 1);
+       |          ^
+     77|   assert.equal(mocks.database.mock.calls.length, 1);
+     78|   assert.equal(mocks.license.mock.calls.length, 1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  apps/cloud-api/test/admin-runtime-initialization.test.ts > actual initialization emits client/assembly CPU once in cold scope; warm invalid JWT does no preparation
+Error: The vi.spyOn() function could not find an object to spy upon. The first argument must be defined.
+ ❯ apps/cloud-api/test/admin-runtime-initialization.test.ts:111:24
+    109|     }
+    110|     const client = mocks.client.mock.results[0]?.value;
+    111|     const connect = vi.spyOn(client, '$connect');
+       |                        ^
+    112|     assert.equal((await handler(event)).statusCode, 401);
+    113|     assert.equal(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  apps/cloud-api/test/admin-runtime-initialization.test.ts > client construction failure retains safe runtime failure and later attempt can initialize
+AssertionError: expected 401 to equal 500
+
+- Expected
++ Received
+
+- 500
++ 401
+
+ ❯ apps/cloud-api/test/admin-runtime-initialization.test.ts:131:10
+    129|   const { handler } = await import('../src/runtime/lambda-entry.js');
+    130|   const first = await handler(event);
+    131|   assert.equal(first.statusCode, 500);
+       |          ^
+    132|   assert.notInclude(first.body, 'private-construction-error');
+    133|   assert.equal((await handler(event)).statusCode, 401);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

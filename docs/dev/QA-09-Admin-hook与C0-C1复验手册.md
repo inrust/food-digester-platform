@@ -50,3 +50,9 @@ pnpm verify
 ```
 
 完整verify中的本机HTTP/browser服务需要允许127.0.0.1监听。报告仅按实际命令退出码及证据判定，不用旧/tmp Gate代替本轮输出。
+
+## 2026-10-07执行补充
+
+8b3babb默认关闭/19工件及C0已闭合；C1手动运行在部署前CI阻断，AWS步骤均SKIPPED，实际候选保持false、无C1业务夹具。详见[目标与CI修复报告](../audit/QA-09-8b3babb默认关闭与C0-C1目标复验-2026-10-07.md)。resolver在pnpm verify之前经GITHUB_ENV导出C1输入，读取process.env的基线测试必须显式固定候选false，C1专项显式true，不能继承部署模式来选择mock factory。已完成该测试隔离修复与完整C1环境本地验证，待人工推送新提交。
+
+新SHA必须重新取得相同SHA的C0/C1手动输入及目标回执；旧8b3babb C0不得与新SHA C1混配。C1未实际部署时，核对实际false及19配置并记录无需回退，不能编造C1后恢复回执。

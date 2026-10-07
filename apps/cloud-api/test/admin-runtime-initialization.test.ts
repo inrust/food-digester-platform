@@ -22,6 +22,8 @@ const env = {
   FDP_DB_POOL_MAX: '1',
   ENV_NAME: 'test',
   FDP_QA09_ENGINE_CPU_DIAGNOSIS: 'true',
+  // Baseline factory assertions must not inherit the deployment workflow's C1 flag.
+  FDP_QA09_AUTHENTICATED_PRECONNECT: 'false',
   FDP_ADMIN_PARALLEL_SECRETS: 'true',
 };
 const setup = () => {
