@@ -1,0 +1,89 @@
+{
+  "gate": "PARTIAL",
+  "scope": "EXISTING_REQUESTS_DESCRIPTIVE_REMAINDER_AND_SEPARATE_TRANSPORT_ONLY",
+  "sourceCommit": "aa9b50eb010e2a1735084be587613431e6664ed3",
+  "cold409": {
+    "requestId": "b3e2847c-f041-4858-a1ab-cdf3f142ef09",
+    "clientMs": 3568,
+    "gatewayMs": 3242,
+    "lambdaMs": 3142,
+    "runtimeAssembly": {
+      "clientConstructMs": 200,
+      "routeAssemblyMs": 440,
+      "clientCpuUserUs": 43538,
+      "clientCpuSystemUs": 15503,
+      "assemblyCpuUserUs": 119812,
+      "assemblyCpuSystemUs": 9111,
+      "runtimeMs": 937,
+      "postSecretsIntervalMs": 658,
+      "unpartitionedPostSecretsIntervalMs": 18,
+      "scope": "NESTED_INTERVALS_NOT_ADDITIVE_PROCESS_ALL_THREADS"
+    },
+    "enginePrepareMs": 657,
+    "engineAfterAdapterMs": 616,
+    "authenticatedPreconnectMs": 901,
+    "clientPreparationMs": 722,
+    "hookMs": 1800,
+    "accountQueryMs": 882,
+    "firstDriverQueryMs": 41,
+    "firstConnectionMs": 0,
+    "clientTransport": {
+      "dnsMs": null,
+      "tcpMs": null,
+      "tlsMs": null,
+      "socketAcquisitionMs": 1,
+      "requestSentAtMs": 1,
+      "headersAtMs": 3568,
+      "responseWaitMs": 3567,
+      "firstBodyAtMs": 3568,
+      "bodyEndAtMs": 3568,
+      "bodyReadMs": 0,
+      "jsonParseMs": 0,
+      "source": "NODE_HTTPS_SOCKET_EVENTS",
+      "reusedSocket": true
+    },
+    "platformReport": {
+      "lambdaRequestId": "11e25039-93a1-4e77-9df6-998cddafabba",
+      "durationMs": 3239.13,
+      "billedDurationMs": 3936,
+      "memoryMiB": 512,
+      "maxMemoryMiB": 238,
+      "initDurationMs": 696.43
+    }
+  },
+  "separateTlsTail": {
+    "requestId": "30e1fe59-f7c2-4f89-b642-59e78ecaf8b0",
+    "status": 409,
+    "clientMs": 2771,
+    "gatewayMs": 93,
+    "applicationMs": 74,
+    "clientTransport": {
+      "dnsMs": 0,
+      "tcpMs": 628,
+      "tlsMs": 1722,
+      "socketAcquisitionMs": 2,
+      "requestSentAtMs": 2353,
+      "headersAtMs": 2771,
+      "responseWaitMs": 418,
+      "firstBodyAtMs": 2771,
+      "bodyEndAtMs": 2771,
+      "bodyReadMs": 0,
+      "jsonParseMs": 0,
+      "source": "NODE_HTTPS_SOCKET_EVENTS",
+      "reusedSocket": false
+    }
+  },
+  "findings": [
+    "C1 real preconnect topology observed twice; no corresponding C0 cold409 sample",
+    "First business checkout observed as 0ms; 722ms first model preparation persists after preconnect settlement",
+    "Independent reused-socket cold409 and non-reused TCP/TLS tail are separate requests; no network node attribution"
+  ],
+  "candidateDefaultOff": true,
+  "causalBenefit": "NOT_ESTABLISHED",
+  "p95Accepted": false,
+  "bindings": {
+    "comparison.json": "575ae280cf6cdbd0433d1f40bd0b2c62507d385e011e253da2917323e5d1ee1e",
+    "c1/initial-topology-gate.json": "afa3844c4eae48dfc3a31adb0160888ec0f27114ea92ad9cbd105fa7b11b8bf5",
+    "c1/baseline-cold-analysis.json": "9fd54b9ae053564d90b45b9ce07e0d714005a98b378952be2446b2789a959b6c"
+  }
+}

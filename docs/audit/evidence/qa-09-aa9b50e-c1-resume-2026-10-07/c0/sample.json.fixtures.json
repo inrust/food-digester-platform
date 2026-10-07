@@ -1,0 +1,201 @@
+{
+  "task": "QA-09",
+  "scope": "CORE_BUSINESS_REAL_RDS_STATE_FIXTURE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1"
+  },
+  "fixtureMode": "REAL_RDS_ONBOARDED_STATE_FOR_BUSINESS_APIS_NO_DEVICE_AUTH_CLAIM",
+  "prefix": "qa09-913f16cd17278c50",
+  "devices": [
+    "qa09-913f16cd17278c50-01",
+    "qa09-913f16cd17278c50-02",
+    "qa09-913f16cd17278c50-03",
+    "qa09-913f16cd17278c50-04",
+    "qa09-913f16cd17278c50-05",
+    "qa09-913f16cd17278c50-06",
+    "qa09-913f16cd17278c50-07",
+    "qa09-913f16cd17278c50-08",
+    "qa09-913f16cd17278c50-09",
+    "qa09-913f16cd17278c50-10"
+  ],
+  "customers": [
+    {
+      "id": "2bf2213a-e7a7-4939-a11c-235b407497f1",
+      "name": "qa09-913f16cd17278c50-a",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-07T09:40:57.954Z",
+      "updatedAt": "2026-10-07T09:40:57.954Z",
+      "suffix": "a"
+    },
+    {
+      "id": "2e476545-646d-4369-8bc3-93ea722c7155",
+      "name": "qa09-913f16cd17278c50-b",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-07T09:40:59.634Z",
+      "updatedAt": "2026-10-07T09:40:59.634Z",
+      "suffix": "b"
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "59fe055e-cb36-45a6-a3ac-19b1ec135421"
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "0b33e6a5-3051-4328-9769-5c36389081f1"
+    },
+    {
+      "id": "real-rds-business-state-fixture",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "original-device-certificate-baseline-preserved",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/2e476545-646d-4369-8bc3-93ea722c7155",
+      "status": 200,
+      "requestId": "7d3d9c9b-a560-475b-956f-47e6afba9027"
+    },
+    {
+      "id": "own-customer-name-b",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/2e476545-646d-4369-8bc3-93ea722c7155",
+      "status": 200,
+      "requestId": "ff8a7ab8-c5cb-4bad-a6d2-91e9b7c92fe2"
+    },
+    {
+      "id": "verify-customer-gone-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/2e476545-646d-4369-8bc3-93ea722c7155",
+      "status": 404,
+      "requestId": "82cc5820-8248-47bd-8e91-f8b13de07f28"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/2bf2213a-e7a7-4939-a11c-235b407497f1",
+      "status": 200,
+      "requestId": "3dd60d99-5f87-4c1b-96c1-4f878b6275a3"
+    },
+    {
+      "id": "own-customer-name-a",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/2bf2213a-e7a7-4939-a11c-235b407497f1",
+      "status": 200,
+      "requestId": "9c203947-71a0-43e6-9181-29b4a05ba9b6"
+    },
+    {
+      "id": "verify-customer-gone-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/2bf2213a-e7a7-4939-a11c-235b407497f1",
+      "status": 404,
+      "requestId": "c8306550-4c60-4fa3-9421-1b653528ea2c"
+    },
+    {
+      "id": "own-superadmin-deleted",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "database-fixtures",
+      "count": 10,
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "2e476545-646d-4369-8bc3-93ea722c7155",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "2bf2213a-e7a7-4939-a11c-235b407497f1",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-913f16cd17278c50-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "observe",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-aa9b50e-c0-c1-target-2026-10-07/c0/sample.json.fixtures-observe-0.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:427f385e-5ab6-454b-bd7f-654553d464ea"
+    },
+    {
+      "action": "business-seed-devices",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-aa9b50e-c0-c1-target-2026-10-07/c0/sample.json.fixtures-business-seed-devices-1.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:79d3df52-954a-4e93-9499-e6c3b962219a"
+    },
+    {
+      "action": "observe",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-aa9b50e-c0-c1-target-2026-10-07/c0/sample.json.fixtures-observe-2.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:f4678064-b3d0-4d9c-bf0a-54ece68ecd7a"
+    },
+    {
+      "action": "cleanup",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-aa9b50e-c0-c1-target-2026-10-07/c0/sample.json.fixtures-cleanup-3.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:b30a1e4e-2039-4543-8b61-28c2e586e782"
+    }
+  ],
+  "sourceCommit": "aa9b50eb010e2a1735084be587613431e6664ed3",
+  "versionReceipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-aa9b50e-c0-c1-target-2026-10-07/c0/application-version.json",
+  "startedAt": "2026-10-07T09:40:44.292Z",
+  "gate": "PASS",
+  "fullQa09Accepted": false,
+  "credentialsExported": false,
+  "identity": {
+    "username": "qa09-913f16cd17278c50-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "globalSignOut": "PASS",
+  "finishedAt": "2026-10-07T09:56:46.809Z"
+}

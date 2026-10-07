@@ -1,0 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { runFixture } from '../../../../../scripts/qa09-ten-device-bridge.mjs';
+const dir = join(dirname(fileURLToPath(import.meta.url)), '../c0');
+const child = JSON.parse(readFileSync(join(dir, 'sample.json')));
+const parent = JSON.parse(readFileSync(join(dir, 'sample.json.fixtures.json')));
+if (child.sourceCommit !== 'aa9b50eb010e2a1735084be587613431e6664ed3' || child.prefix !== parent.prefix || parent.gate !== 'PASS' || !child.cleanupComplete || !child.cleanup.every(c => c.result === 'PASS') || !parent.cleanup.every(c => c.result === 'PASS')) throw Error('FINAL_OWN_CLEANUP_REQUIRED');
+const first = parent.databaseBuilds.find(b => b.action === 'observe');
+const initial = JSON.parse(readFileSync(first.receipt));
+if (initial.gate !== 'PASS' || initial.result.prefix !== child.prefix || initial.result.action !== 'observe') throw Error('INITIAL_BASELINE_REQUIRED');
+await runFixture({ prefix: child.prefix, devices: parent.devices, customers: parent.customers, action: 'audit-empty', baseline: initial.result.originalFingerprints }, join(dirname(fileURLToPath(import.meta.url)), 'c0-current-empty-audit.json'), p => console.log(p));
