@@ -13,6 +13,8 @@ export type DataPathPhase =
   | 'admin-account-query'
   | 'admin-account-activation'
   | 'db-client-prepare'
+  | 'db-client-submit'
+  | 'db-client-await-dispatch'
   | 'db-adapter-connect'
   | 'db-client-after-adapter'
   | 'db-first-connection'
@@ -131,7 +133,7 @@ function cpuMetrics(start: NodeJS.CpuUsage): LogRow {
   };
 }
 /** Finish is idempotent; no SQL, payload or arbitrary error messages enter the log. */
-export type PreparationBoundary = 'DRIVER_DISPATCH' | 'OPERATION_SETTLED' | 'OPERATION_FAILED';
+export type PreparationBoundary = 'DRIVER_DISPATCH' | 'CALL_RETURNED' | 'OPERATION_SETTLED' | 'OPERATION_FAILED';
 export function beginDataPathPhase(
   phase: DataPathPhase,
   options: { readonly processCpu?: boolean } = {},
@@ -160,12 +162,14 @@ export function beginDataPathPhase(
         ...(boundary !== undefined &&
         [
           'db-client-prepare',
+          'db-client-submit',
+          'db-client-await-dispatch',
           'db-client-after-adapter',
           'db-engine-prepare',
           'db-engine-after-adapter',
           'db-authenticated-preconnect',
         ].includes(phase) &&
-        ['DRIVER_DISPATCH', 'OPERATION_SETTLED', 'OPERATION_FAILED'].includes(boundary)
+        ['DRIVER_DISPATCH', 'CALL_RETURNED', 'OPERATION_SETTLED', 'OPERATION_FAILED'].includes(boundary)
           ? { completionBoundary: boundary }
           : {}),
         durationMs: Math.max(0, Math.round(trace.clock() - start)),
@@ -193,11 +197,14 @@ export function beginDataPathPhase(
 }
 /** Claim before dispatch, so concurrent operations log only the first attempt in this trace. */
 export type FirstDataPathPhase = 'db-first-connection' | 'db-first-query' | 'db-client-prepare' | 'db-adapter-connect';
-export function claimFirstDataPathPhase(phase: FirstDataPathPhase): ReturnType<typeof beginDataPathPhase> | undefined {
+export function claimFirstDataPathPhase(
+  phase: FirstDataPathPhase,
+  options: { readonly processCpu?: boolean } = {},
+): ReturnType<typeof beginDataPathPhase> | undefined {
   const trace = storage.getStore();
   if (!trace || trace.firstPhases.has(phase)) return undefined;
   trace.firstPhases.add(phase);
-  return beginDataPathPhase(phase);
+  return beginDataPathPhase(phase, options);
 }
 export function beginFirstDataPathPhase(phase: FirstDataPathPhase) {
   return claimFirstDataPathPhase(phase) ?? (() => {});

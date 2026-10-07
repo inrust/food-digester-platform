@@ -33,6 +33,8 @@ test('preparation distinguishes driver dispatch, no-driver settlement and origin
   assert.deepEqual(
     rows.map((r) => [r.phase, r.durationMs, r.completionBoundary]),
     [
+      ['db-client-submit', 90, 'DRIVER_DISPATCH'],
+      ['db-client-await-dispatch', 0, 'DRIVER_DISPATCH'],
       ['db-client-after-adapter', 80, 'DRIVER_DISPATCH'],
       ['db-client-prepare', 90, 'DRIVER_DISPATCH'],
     ],
@@ -48,8 +50,14 @@ test('preparation distinguishes driver dispatch, no-driver settlement and origin
     ),
     (e) => e === error,
   );
-  assert.equal(rows.find((r) => r.gatewayRequestId === 'settled')?.completionBoundary, 'OPERATION_SETTLED');
-  assert.equal(rows.find((r) => r.gatewayRequestId === 'failed')?.completionBoundary, 'OPERATION_FAILED');
+  assert.equal(
+    rows.find((r) => r.gatewayRequestId === 'settled' && r.phase === 'db-client-prepare')?.completionBoundary,
+    'OPERATION_SETTLED',
+  );
+  assert.equal(
+    rows.find((r) => r.gatewayRequestId === 'failed' && r.phase === 'db-client-prepare')?.completionBoundary,
+    'OPERATION_FAILED',
+  );
   assert.notInclude(JSON.stringify(rows), 'secret SQL password');
   const count = rows.length;
   await observeDatabaseClientPreparation(async () => {
@@ -86,7 +94,7 @@ test('simultaneous trace preparation remains owned by its operation, with no sib
     },
     (r) => rows.push(r),
   );
-  assert.isFalse(rows.some((r) => r.gatewayRequestId === 'first'));
+  assert.isFalse(rows.some((r) => r.gatewayRequestId === 'first' && r.phase === 'db-client-prepare'));
   release();
   await first;
   assert.equal(rows.filter((r) => r.phase === 'db-client-prepare' && r.gatewayRequestId === 'first').length, 1);
@@ -101,13 +109,16 @@ test('same-trace nested extra operation cannot dispatch the outer preparation pr
       observeDatabaseClientPreparation(async () => {
         markDatabaseAdapterReady();
         await observeDatabaseClientPreparation(async () => markDatabaseDriverDispatch());
-        assert.equal(rows.length, 0);
+        assert.isFalse(rows.some((r) => r.phase === 'db-client-prepare'));
         markDatabaseDriverDispatch();
       }),
     (r) => rows.push(r),
   );
-  assert.equal(rows.length, 2);
-  assert.isTrue(rows.every((r) => r.completionBoundary === 'DRIVER_DISPATCH'));
+  assert.equal(rows.length, 4);
+  assert.equal(rows.find((r) => r.phase === 'db-client-submit')?.completionBoundary, 'CALL_RETURNED');
+  assert.isTrue(
+    rows.filter((r) => r.phase !== 'db-client-submit').every((r) => r.completionBoundary === 'DRIVER_DISPATCH'),
+  );
 });
 
 test('public ORM extension preserves lazy batch/interactive transactions, disconnect ownership and query failure', async () => {
@@ -236,4 +247,46 @@ test('public engine diagnostics has no checkout/SQL, then keeps model driver-dis
     await client.$disconnect();
     connect.mockRestore();
   }
+});
+
+test('split keeps synchronous throw identity and closes asynchronous suffix only at own dispatch', async () => {
+  const error = Error('PRIVATE_INPUT');
+  const rows: Record<string, unknown>[] = [];
+  await rejects(
+    withDataPathTrace(
+      { gatewayRequestId: 'sync-error' },
+      () =>
+        observeDatabaseClientPreparation(() => {
+          throw error;
+        }),
+      (r) => rows.push(r),
+    ),
+    (e) => e === error,
+  );
+  assert.equal(rows.find((r) => r.phase === 'db-client-submit')?.completionBoundary, 'OPERATION_FAILED');
+  assert.equal(rows.find((r) => r.phase === 'db-client-prepare')?.outcome, 'FAIL');
+  assert.notInclude(JSON.stringify(rows), 'PRIVATE_INPUT');
+  rows.length = 0;
+  let release!: () => void;
+  const held = new Promise<void>((r) => {
+    release = r;
+  });
+  const pending = withDataPathTrace(
+    { gatewayRequestId: 'held' },
+    () =>
+      observeDatabaseClientPreparation(async () => {
+        await held;
+        markDatabaseDriverDispatch();
+      }),
+    (r) => rows.push(r),
+  );
+  assert.equal(rows.find((r) => r.phase === 'db-client-submit')?.completionBoundary, 'CALL_RETURNED');
+  assert.isFalse(rows.some((r) => r.phase === 'db-client-await-dispatch'));
+  release();
+  await pending;
+  for (const row of rows) {
+    assert.equal(row.processCpuScope, 'PROCESS_ALL_THREADS');
+    assert.isAtLeast(row.processCpuUserUs as number, 0);
+  }
+  assert.equal(rows.find((r) => r.phase === 'db-client-await-dispatch')?.completionBoundary, 'DRIVER_DISPATCH');
 });

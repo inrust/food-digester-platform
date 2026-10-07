@@ -1,3 +1,4 @@
+import { validateClientSplitPhases } from './qa09-client-split-proof.mjs';
 import { validateAuthenticatedPreconnectPhases } from './qa09-authenticated-preconnect-proof.mjs';
 import { validateRuntimeAssemblyPhases } from './qa09-runtime-assembly-proof.mjs';
 import { validateSamplingCorrelationLedger } from './qa09-cold409-proof.mjs';
@@ -16,12 +17,14 @@ export function validatePhaseCorrelation(
     requireColdConflict = false,
     sampling = false,
     clientPreparation = false,
+    clientSplit = false,
     engineCpu = false,
     runtimeAssembly = false,
     authenticatedPreconnect = false,
   } = {},
 ) {
   demand(!authenticatedPreconnect || (engineCpu && runtimeAssembly), 'PRECONNECT_REQUIRES_ENGINE_RUNTIME_PHASES');
+  demand(!clientSplit || clientPreparation, 'CLIENT_SPLIT_REQUIRES_PREPARATION');
   demand(!engineCpu || clientPreparation, 'ENGINE_CPU_REQUIRES_CLIENT_PREPARATION');
   demand(!clientPreparation || accountPhases, 'CLIENT_PREPARATION_REQUIRES_ACCOUNT_PHASES');
   demand(!sampling || accountPhases, 'SAMPLING_REQUIRES_ACCOUNT_PHASES');
@@ -125,6 +128,7 @@ export function validatePhaseCorrelation(
             'ACCOUNT_PHASE_NOT_NESTED',
           );
       }
+      validateClientSplitPhases(c.phases, clientSplit);
       if (clientPreparation) {
         const prepare = phase('db-client-prepare'),
           account = phase('admin-account-query'),
@@ -289,6 +293,7 @@ export function validatePhaseCorrelation(
     p95Accepted: false,
     accountPhasesRequired: accountPhases,
     clientPreparationRequired: clientPreparation,
+    clientSplitRequired: clientSplit,
     engineCpuRequired: engineCpu,
     authenticatedPreconnectRequired: authenticatedPreconnect,
     runtimeAssemblyRequired: runtimeAssembly,
@@ -313,6 +318,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     engineCpu: process.argv.slice(6).includes('--engine-cpu'),
     runtimeAssembly: process.argv.slice(6).includes('--runtime-assembly'),
     clientPreparation: process.argv.slice(6).includes('--client-preparation'),
+    clientSplit: process.argv.slice(6).includes('--client-split'),
     accountPhases: process.argv.slice(6).includes('--account-phases'),
     requireColdConflict: process.argv.slice(6).includes('--require-cold-conflict'),
   });
@@ -321,6 +327,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     .digest('hex');
   r.checkerSha256 = createHash('sha256')
     .update(readFileSync(new URL(import.meta.url)))
+    .digest('hex');
+  r.clientSplitCheckerSha256 = createHash('sha256')
+    .update(readFileSync(new URL('./qa09-client-split-proof.mjs', import.meta.url)))
     .digest('hex');
   writeFileSync(out, JSON.stringify(r, null, 2) + '\n');
   console.log(JSON.stringify({ gate: r.gate, scope: r.scope, requests: r.summaries.length }));

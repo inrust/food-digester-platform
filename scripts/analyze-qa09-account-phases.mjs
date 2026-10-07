@@ -1,3 +1,4 @@
+import { validateClientSplitPhases } from './qa09-client-split-proof.mjs';
 import { validateRuntimeAssemblyPhases } from './qa09-runtime-assembly-proof.mjs';
 import { validateSamplingCorrelationLedger } from './qa09-cold409-proof.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -12,6 +13,7 @@ export function analyzeAccountPhases(
   {
     sampling = false,
     clientPreparation = false,
+    clientSplit = false,
     engineCpu = false,
     runtimeAssembly = false,
     authenticatedPreconnect = false,
@@ -22,6 +24,7 @@ export function analyzeAccountPhases(
     requireColdConflict: true,
     sampling,
     clientPreparation,
+    clientSplit,
     engineCpu,
     runtimeAssembly,
     authenticatedPreconnect,
@@ -50,6 +53,7 @@ export function analyzeAccountPhases(
       status: c.status,
       coldStart: c.phases.every((p) => p.coldStart === true),
       clientMs: c.latencyMs,
+      ...(clientSplit ? { clientSplit: validateClientSplitPhases(c.phases, true) } : {}),
       ...(runtimeAssembly ? { runtimeAssembly: validateRuntimeAssemblyPhases(c.phases) } : {}),
       gatewayMs: Number(c.gateway[0].responseLatency),
       lambdaMs: c.lambda[0].elapsedMs,
@@ -110,6 +114,7 @@ export function analyzeAccountPhases(
     p95Accepted: false,
     cleanupVerified: false,
     clientPreparationRequired: clientPreparation,
+    clientSplitRequired: clientSplit,
     engineCpuRequired: engineCpu,
     authenticatedPreconnectRequired: authenticatedPreconnect,
     runtimeAssemblyRequired: runtimeAssembly,
@@ -137,6 +142,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     engineCpu: process.argv.slice(6).includes('--engine-cpu'),
     runtimeAssembly: process.argv.slice(6).includes('--runtime-assembly'),
     clientPreparation: process.argv.slice(6).includes('--client-preparation'),
+    clientSplit: process.argv.slice(6).includes('--client-split'),
   });
   result.bindings = {
     childSha256: hash(child),
@@ -144,6 +150,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     auditSha256: hash(auditBytes),
     preconnectCheckerSha256: hash(readFileSync(new URL('./qa09-authenticated-preconnect-proof.mjs', import.meta.url))),
     runtimeCheckerSha256: hash(readFileSync(new URL('./qa09-runtime-assembly-proof.mjs', import.meta.url))),
+    clientSplitCheckerSha256: hash(readFileSync(new URL('./qa09-client-split-proof.mjs', import.meta.url))),
     analyzerSha256: hash(readFileSync(new URL(import.meta.url))),
     checkerSha256: hash(readFileSync(new URL('./check-qa09-contract-phases.mjs', import.meta.url))),
   };

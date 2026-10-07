@@ -31,6 +31,7 @@ import type { ActorContext, Role } from '@fdp/auth';
 import { CUSTOMER_ROLES, PLATFORM_ROLES, actorTypeOf, isRole, unauthenticated } from '@fdp/auth';
 import { userConflict, userForbidden, userNotFound, userValidationFailed } from './errors.js';
 import type { CognitoAdminPort } from './cognito-port.js';
+import { readAuthenticatedAccount } from './account-read-candidate.js';
 
 export interface UserAdminDeps {
   readonly client: DbClient;
@@ -207,6 +208,8 @@ function isUniqueViolation(err: unknown): boolean {
 // ---------- 首次认证状态收敛 ----------
 
 export interface AuthenticatedUserSyncDeps {
+  /** Offline comparison only; no runtime/env/rollout switch enables this option. */
+  readonly accountReadCandidate?: boolean;
   readonly client: DbClient;
   readonly observeProcessCpu?: boolean;
   readonly now?: () => Date;
@@ -224,11 +227,11 @@ export async function activateInvitedUserOnAuthenticatedRequest(
   requestId: string,
 ): Promise<boolean> {
   const now = deps.now?.() ?? new Date();
-  const target = (await observeDataPathPhase(
+  const target = await observeDataPathPhase(
     'admin-account-query',
-    async () => users(deps.client).findFirst({ where: { cognitoSub: actor.actorId } }),
+    () => readAuthenticatedAccount(deps.client, actor.actorId, deps.accountReadCandidate),
     { processCpu: deps.observeProcessCpu === true },
-  )) as unknown as UserRow | null;
+  );
   if (target?.status === 'DISABLED') throw unauthenticated();
   if (!target || target.status !== 'INVITED') return false;
 

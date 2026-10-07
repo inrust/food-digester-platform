@@ -1,0 +1,109 @@
+✔ partition preserves 722ms without treating CPU as exclusive scheduling or compiler time (1.485875ms)
+✔ split rejects missing (0.422708ms)
+✔ split rejects duplicate (0.0665ms)
+✔ split rejects foreign (0.064ms)
+✔ split rejects invalid CPU (0.055584ms)
+✔ split rejects no CPU (0.0645ms)
+✔ split rejects wrong boundary (0.057625ms)
+✔ split rejects failed (0.043375ms)
+✔ split rejects gap (0.05875ms)
+✔ split rejects overlap (0.090208ms)
+✔ split rejects fake duration (0.058208ms)
+✔ split rejects connection claim (0.042334ms)
+✔ phase proof covers success, conditional conflict and all audit reads without declaring latency/cleanup acceptance (1.077667ms)
+✔ cold 409 gate requires matching cold phase flags and successful runtime initialization (1.741875ms)
+✔ new account gate requires nested hook, Prisma query, first driver query and checkout on every request (0.227458ms)
+✔ account gate rejects missing (0.188833ms)
+✔ account gate rejects duplicate (0.162834ms)
+✔ account gate rejects failure (0.167625ms)
+✔ account gate rejects wait-boundary (0.197458ms)
+✔ account gate rejects timestamp (0.149458ms)
+✔ account gate rejects outside-hook (0.204208ms)
+✔ phase proof rejects foreign-invocation (0.358792ms)
+✔ phase proof rejects missing-transaction (0.120875ms)
+✔ phase proof rejects conflict-code (0.136792ms)
+✔ phase proof rejects missing-http (0.073209ms)
+✔ phase proof rejects other-run (0.042709ms)
+✔ bounded sampler requires physical Init Duration as well as application cold phases and retains client metrics (0.712833ms)
+✔ bounded sampler rejects foreign-report (0.192875ms)
+✔ bounded sampler rejects duplicate-report (0.128916ms)
+✔ bounded sampler rejects no-socket-metrics (0.139833ms)
+✔ bounded sampler rejects missing-body (0.108792ms)
+✔ bounded sampler rejects over-budget (0.088667ms)
+✔ bounded sampler rejects missing-audit (0.088625ms)
+✔ client preparation requires actual dispatch, cold adapter suffix and leaves warm adapter timings absent (0.601458ms)
+✔ client preparation rejects missing prepare (0.179417ms)
+✔ client preparation rejects settlement is not driver dispatch (0.159792ms)
+✔ client preparation rejects preparation after driver start (0.1415ms)
+✔ client preparation rejects cold missing suffix (0.213958ms)
+✔ client preparation rejects suffix outside preparation (0.159708ms)
+✔ client preparation rejects wrong invocation (0.141625ms)
+✔ client preparation cannot bypass account phase checks (0.113625ms)
+✔ engine CPU mode proves preparation before model, preserves driver boundary and refuses old lazy ownership (1.442167ms)
+✔ runtime assembly opt-in preserves both engine ownership modes and rejects old partial runtime receipts (1.188292ms)
+✔ parent phase Gate requires engine/runtime and C1 settlement before queries; C0 refuses candidate phases (0.674917ms)
+✔ socket events split DNS/TCP/TLS; receipts contain no URL, authorization or socket details (1.113292ms)
+✖ real delayed body is measured separately; a reused connection has absent DNS/TCP/TLS, not invented zeros (3.858333ms)
+✖ total deadline aborts an unfinished response body; no complete-body receipt or retry (1.732083ms)
+✔ injected fetch cannot masquerade as detailed socket observation (0.272875ms)
+✔ planner never dispatches and matchable inputs never accept P95 or causal benefit (0.620417ms)
+✔ pair rejects drift or missing proof sourceCommit (0.081292ms)
+✔ pair rejects drift or missing proof memoryMiB (0.052ms)
+✔ pair rejects drift or missing proof poolMax (0.067375ms)
+✔ pair rejects drift or missing proof actorRole (0.062084ms)
+✔ pair rejects drift or missing proof accountState (0.04575ms)
+✔ pair rejects drift or missing proof operationId (0.043417ms)
+✔ pair rejects drift or missing proof expectedStatus (0.043833ms)
+✔ pair rejects drift or missing proof authenticatedPreconnect (0.050791ms)
+✔ pair rejects drift or missing proof engineCpuDiagnosis (0.080708ms)
+✔ pair rejects drift or missing proof artifactSetSha256 (0.051959ms)
+✔ pair rejects drift or missing proof lambdaCount (0.060875ms)
+✔ pair rejects drift or missing proof cleanupGate (0.163167ms)
+✔ pair rejects drift or missing proof source (0.074125ms)
+✔ pair rejects drift or missing proof naturalCold409Count (0.06475ms)
+✔ pair rejects drift or missing proof platformInitDurationMs (0.050041ms)
+✔ pair rejects drift or missing proof clientSplitGate (0.032333ms)
+✔ pair rejects drift or missing proof firstCheckoutOwned (0.034875ms)
+✔ pair rejects drift or missing proof startedAt (0.02475ms)
+✔ CPU ancestry attributes minified constructor and compile samples exclusively (0.388875ms)
+✔ curl metrics differences preserve boundaries and reject bad ordering or nonfinite values (0.449833ms)
+✔ curl probes are six bounded verified GETs with no credential/config/retry path; proxy prevents dispatch (1.261292ms)
+✔ curl failures retain siblings and discard raw error text (0.184667ms)
+✔ TLS diagnostic bounds independent reads to 12 and six concurrent; fake observations cannot claim real target source (40.57675ms)
+✔ TLS diagnostic retains settled siblings, missing samples and unexpected HTTP/authentication as PARTIAL (0.456625ms)
+ℹ tests 73
+ℹ suites 0
+ℹ pass 71
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 78.793583
+
+✖ failing tests:
+
+test at scripts/qa09-https-transport.test.mjs:74:1
+✖ real delayed body is measured separately; a reused connection has absent DNS/TCP/TLS, not invented zeros (3.858333ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:1918:21)
+      at listenInCluster (node:net:1997:12)
+      at node:net:2206:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/qa09-https-transport.test.mjs:97:1
+✖ total deadline aborts an unfinished response body; no complete-body receipt or retry (1.732083ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:1918:21)
+      at listenInCluster (node:net:1997:12)
+      at node:net:2206:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }

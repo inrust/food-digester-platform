@@ -45,14 +45,19 @@ export function summarizeProfile(profile, { constructorName = 'QueryCompiler' } 
   };
 }
 export async function diagnosePreparation(mode) {
-  if (!['lazy', 'prepared'].includes(mode)) throw Error('INVALID_DIAGNOSTIC_MODE');
+  if (!['lazy', 'prepared', 'parameterized'].includes(mode)) throw Error('INVALID_DIAGNOSTIC_MODE');
+  if (process.env.FDP_DB_POOL_MAX !== '1') throw Error('OFFLINE_POOL1_REQUIRED');
   const require = createRequire(new URL('../packages/database/package.json', import.meta.url));
   const { Pool } = require('pg');
   const originalConnect = Pool.prototype.connect;
   let checkouts = 0,
     queries = 0,
     releases = 0;
-  const spans = [];
+  const spans = [],
+    pools = new Set(),
+    poolMaxima = new Set();
+  let activeLeases = 0,
+    peakLeases = 0;
   const originalModule = WebAssembly.Module,
     originalInstance = WebAssembly.Instance;
   const timed = (name, work) => {
@@ -74,9 +79,14 @@ export async function diagnosePreparation(mode) {
     construct: (t, a) => timed('wasm-instance', () => Reflect.construct(t, a)),
   });
   Pool.prototype.connect = function (callback) {
+    pools.add(this);
+    poolMaxima.add(this.options.max);
     checkouts++;
+    activeLeases++;
+    peakLeases = Math.max(peakLeases, activeLeases);
     const release = () => {
       releases++;
+      activeLeases--;
     };
     const driver = Object.assign(new EventEmitter(), {
       release,
@@ -94,9 +104,17 @@ export async function diagnosePreparation(mode) {
   session.connect();
   const post = (name, args = {}) =>
     new Promise((res, rej) => session.post(name, args, (e, v) => (e ? rej(e) : res(v))));
+  const compilerModule = await import(
+    pathToFileURL(require.resolve('@prisma/client/runtime/query_compiler_fast_bg.postgresql.mjs')).href
+  );
+  const originalCompile = compilerModule.QueryCompiler.prototype.compile;
+  compilerModule.QueryCompiler.prototype.compile = function (...args) {
+    return timed('compile-query', () => originalCompile.apply(this, args));
+  };
   let client;
   try {
     const { createPrismaClient } = await import('../packages/database/src/client.ts');
+    const { readAuthenticatedAccount } = await import('../apps/cloud-api/src/admin/user/account-read-candidate.ts');
     const { withDataPathTrace } = await import(pathToFileURL(require.resolve('@fdp/observability')).href);
     const phases = [];
     await post('Profiler.enable');
@@ -107,7 +125,7 @@ export async function diagnosePreparation(mode) {
     const constructionMs = performance.now() - started;
     const beforePreparation = { checkouts, queries };
     let prepareMs = 0;
-    if (mode === 'prepared') {
+    if (mode !== 'lazy') {
       const start = performance.now();
       await client.$connect();
       prepareMs = performance.now() - start;
@@ -118,7 +136,7 @@ export async function diagnosePreparation(mode) {
       const start = performance.now();
       const value = await withDataPathTrace(
         {},
-        () => client.user.findFirst({ where: { cognitoSub: 'local-diagnostic-only' } }),
+        () => readAuthenticatedAccount(client, 'local-diagnostic-only', mode === 'parameterized'),
         (r) => phases.push(r),
       );
       if (value !== null) throw Error('FAKE_DRIVER_RESULT_INVALID');
@@ -137,7 +155,18 @@ export async function diagnosePreparation(mode) {
     return {
       source: 'LOCAL_FRESH_PROCESS_REAL_PRISMA_FAKE_PG_NO_NETWORK',
       mode,
-      gate: noPreQueryCheckout && checkouts === 2 && queries === 2 && releases === 2 ? 'PASS' : 'FAIL',
+      gate:
+        noPreQueryCheckout &&
+        checkouts === 2 &&
+        queries === 2 &&
+        releases === 2 &&
+        activeLeases === 0 &&
+        peakLeases === 1 &&
+        pools.size === 1 &&
+        poolMaxima.size === 1 &&
+        poolMaxima.has(1)
+          ? 'PASS'
+          : 'FAIL',
       constructionMs,
       prepareMs,
       firstQueryMs: queryTimes[0],
@@ -145,7 +174,15 @@ export async function diagnosePreparation(mode) {
       preparePlusFirstQueryMs: prepareMs + queryTimes[0],
       beforePreparation,
       beforeQuery,
-      counts: { checkouts, queries, releases },
+      counts: {
+        checkouts,
+        queries,
+        releases,
+        activeLeases,
+        peakLeases,
+        pools: pools.size,
+        poolMaxima: [...poolMaxima],
+      },
       noPreQueryCheckout,
       wasmSpans: spans,
       compilerConstructorName: constructorName,
@@ -156,6 +193,8 @@ export async function diagnosePreparation(mode) {
         durationMs: r.durationMs,
         outcome: r.outcome,
         completionBoundary: r.completionBoundary ?? null,
+        processCpuUserUs: r.processCpuUserUs ?? null,
+        processCpuSystemUs: r.processCpuSystemUs ?? null,
       })),
       eventLoopMaxMs: histogram.max / 1e6,
       node: process.version,
@@ -166,6 +205,7 @@ export async function diagnosePreparation(mode) {
   } finally {
     await client?.$disconnect();
     Pool.prototype.connect = originalConnect;
+    compilerModule.QueryCompiler.prototype.compile = originalCompile;
     WebAssembly.Module = originalModule;
     WebAssembly.Instance = originalInstance;
     histogram.disable();
@@ -181,7 +221,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (!output || process.argv.length !== 3) throw Error('OUTPUT_DIRECTORY_REQUIRED');
     mkdirSync(output, { recursive: true });
     const rows = [];
-    for (const mode of ['lazy', 'prepared'])
+    for (const mode of ['lazy', 'prepared', 'parameterized'])
       for (let i = 1; i <= 3; i++) {
         const raw = execFileSync(process.execPath, ['--import', 'tsx', process.argv[1], '--child', mode], {
           encoding: 'utf8',
@@ -196,6 +236,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     const sources = [
       'scripts/qa09-prisma-preparation-diagnostic.mjs',
       'packages/database/src/client.ts',
+      'apps/cloud-api/src/admin/user/account-read-candidate.ts',
       'packages/database/src/client-preparation.ts',
       'packages/database/src/observed-pg.ts',
       'packages/database/src/generated/internal/class.ts',

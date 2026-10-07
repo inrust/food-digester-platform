@@ -38,13 +38,21 @@ test('real Prisma engine and pg Pool.query preserve per-request phases and relea
         rows.filter((r) => r.gatewayRequestId === id).map((r) => r.phase),
         id === 'first'
           ? [
+              'db-client-submit',
               'db-adapter-connect',
+              'db-client-await-dispatch',
               'db-client-after-adapter',
               'db-client-prepare',
               'db-first-connection',
               'db-first-query',
             ]
-          : ['db-client-prepare', 'db-first-connection', 'db-first-query'],
+          : [
+              'db-client-submit',
+              'db-client-await-dispatch',
+              'db-client-prepare',
+              'db-first-connection',
+              'db-first-query',
+            ],
       );
     assert.equal(release.mock.calls.length, 4);
     assert.equal(connect.mock.calls.length, 4);

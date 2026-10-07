@@ -6,22 +6,37 @@ interface Preparation {
   afterAdapter?: Finish;
   completed: boolean;
   engine?: boolean;
+  submit?: Finish;
+  awaitDispatch?: Finish;
 }
 const preparation = new AsyncLocalStorage<Preparation | undefined>();
+function finishSubmission(frame: Preparation, boundary: PreparationBoundary, error?: unknown): void {
+  if (!frame.submit || frame.awaitDispatch) return;
+  frame.submit(error, boundary);
+  frame.awaitDispatch = beginDataPathPhase('db-client-await-dispatch', { processCpu: true });
+}
 function finishPreparation(frame: Preparation, boundary: PreparationBoundary, error?: unknown): void {
   if (frame.completed) return;
   frame.completed = true;
+  finishSubmission(frame, boundary, error);
+  frame.awaitDispatch?.(error, boundary);
   frame.afterAdapter?.(error, boundary);
   frame.finish(error, boundary);
 }
 /** First public ORM operation in a trace, measured until its own root driver dispatch or settlement. */
 export async function observeDatabaseClientPreparation<T>(work: () => Promise<T>): Promise<T> {
-  const finish = claimFirstDataPathPhase('db-client-prepare');
+  const finish = claimFirstDataPathPhase('db-client-prepare', { processCpu: true });
   if (!finish) return preparation.run(undefined, async () => await work());
-  const frame: Preparation = { finish, completed: false };
+  const frame: Preparation = {
+    finish,
+    completed: false,
+    submit: beginDataPathPhase('db-client-submit', { processCpu: true }),
+  };
   return preparation.run(frame, async () => {
     try {
-      const value = await work();
+      const pending = work();
+      finishSubmission(frame, 'CALL_RETURNED');
+      const value = await pending;
       finishPreparation(frame, 'OPERATION_SETTLED');
       return value;
     } catch (error) {
