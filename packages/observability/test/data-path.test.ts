@@ -196,3 +196,39 @@ test('opt-in process CPU records only integer all-thread deltas and preserves or
   );
   assert.notProperty(rows[1], 'processCpuScope');
 });
+
+test('synchronous CPU phases preserve result/original failure and never log error content', () => {
+  const rows: Readonly<Record<string, string | number | boolean>>[] = [];
+  const error = Error('private-secret-error');
+  withDataPathTrace(
+    { lambdaRequestId: 'runtime-cpu' },
+    () => {
+      assert.equal(
+        observeDataPathSyncPhase('runtime-client-construct', () => 42, { processCpu: true }),
+        42,
+      );
+      assert.throws(
+        () =>
+          observeDataPathSyncPhase(
+            'runtime-route-assembly',
+            () => {
+              throw error;
+            },
+            { processCpu: true },
+          ),
+        error,
+      );
+    },
+    (row) => rows.push(row),
+  );
+  assert.deepEqual(
+    rows.map((r) => r.outcome),
+    ['PASS', 'FAIL'],
+  );
+  for (const row of rows) {
+    assert.equal(row.processCpuScope, 'PROCESS_ALL_THREADS');
+    assert.isTrue(Number.isSafeInteger(row.processCpuUserUs));
+    assert.isTrue(Number.isSafeInteger(row.processCpuSystemUs));
+  }
+  assert.notInclude(JSON.stringify(rows), 'private-secret-error');
+});

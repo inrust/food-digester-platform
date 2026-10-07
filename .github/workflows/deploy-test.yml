@@ -3,6 +3,22 @@ name: Deploy test API
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      expected_commit:
+        description: Full SHA of current main; must match workflow SHA
+        required: true
+        type: string
+      engine_cpu_diagnosis:
+        description: Explicit diagnostic mode for paired runs
+        required: true
+        type: choice
+        options: ['false', 'true']
+      rollout_phase:
+        description: Must match current repository rollout phase
+        required: true
+        type: choice
+        options: [immediate, capacity]
 
 permissions:
   contents: read
@@ -15,7 +31,7 @@ concurrency:
 jobs:
   deploy:
     name: deploy-test
-    if: vars.FDP_DEPLOY_ENABLED == 'true'
+    if: vars.FDP_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -25,6 +41,7 @@ jobs:
       FDP_TRUSTSTORE_VERSION: ${{ vars.FDP_TRUSTSTORE_VERSION }}
       FDP_QA09_ENGINE_CPU_DIAGNOSIS: ${{ vars.FDP_QA09_ENGINE_CPU_DIAGNOSIS || ((vars.FDP_QA09_ROLLOUT_PHASE == 'capacity' || vars.FDP_QA09_ROLLOUT_PHASE == 'immediate') && 'true' || 'false') }}
       FDP_QA09_ROLLOUT_PHASE: ${{ vars.FDP_QA09_ROLLOUT_PHASE || 'baseline' }}
+      FDP_TEST_DEPLOY_ROLE_ARN: ${{ vars.FDP_TEST_DEPLOY_ROLE_ARN }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -36,6 +53,18 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      - name: Resolve and record exact deployment inputs
+        env:
+          QA09_EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          QA09_REQUESTED_ENGINE: ${{ inputs.engine_cpu_diagnosis }}
+          QA09_REQUESTED_PHASE: ${{ inputs.rollout_phase }}
+        run: node scripts/record-qa09-deployment-inputs.mjs qa09-deployment-inputs.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: qa09-deployment-inputs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: qa09-deployment-inputs.json
+          if-no-files-found: error
+          retention-days: 30
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm verify

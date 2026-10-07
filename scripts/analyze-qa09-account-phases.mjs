@@ -1,3 +1,4 @@
+import { validateRuntimeAssemblyPhases } from './qa09-runtime-assembly-proof.mjs';
 import { validateSamplingCorrelationLedger } from './qa09-cold409-proof.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -8,7 +9,7 @@ import { validatePhaseCorrelation } from './check-qa09-contract-phases.mjs';
 export function analyzeAccountPhases(
   patch,
   audit,
-  { sampling = false, clientPreparation = false, engineCpu = false } = {},
+  { sampling = false, clientPreparation = false, engineCpu = false, runtimeAssembly = false } = {},
 ) {
   const proof = validatePhaseCorrelation(patch, audit, {
     accountPhases: true,
@@ -16,6 +17,7 @@ export function analyzeAccountPhases(
     sampling,
     clientPreparation,
     engineCpu,
+    runtimeAssembly,
   });
   const top = new Set([
     'runtime-initialize',
@@ -41,6 +43,7 @@ export function analyzeAccountPhases(
       status: c.status,
       coldStart: c.phases.every((p) => p.coldStart === true),
       clientMs: c.latencyMs,
+      ...(runtimeAssembly ? { runtimeAssembly: validateRuntimeAssemblyPhases(c.phases) } : {}),
       gatewayMs: Number(c.gateway[0].responseLatency),
       lambdaMs: c.lambda[0].elapsedMs,
       ...(clientPreparation
@@ -98,6 +101,7 @@ export function analyzeAccountPhases(
     cleanupVerified: false,
     clientPreparationRequired: clientPreparation,
     engineCpuRequired: engineCpu,
+    runtimeAssemblyRequired: runtimeAssembly,
     coldConflictObservedCount: proof.coldConflictObservedCount,
     rows,
     boundaries:
@@ -119,6 +123,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const result = analyzeAccountPhases(patch, audit, {
     sampling,
     engineCpu: process.argv.slice(6).includes('--engine-cpu'),
+    runtimeAssembly: process.argv.slice(6).includes('--runtime-assembly'),
     clientPreparation: process.argv.slice(6).includes('--client-preparation'),
   });
   result.bindings = {

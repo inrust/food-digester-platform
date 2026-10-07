@@ -1,0 +1,64 @@
+✔ phase proof covers success, conditional conflict and all audit reads without declaring latency/cleanup acceptance (1.35775ms)
+✔ cold 409 gate requires matching cold phase flags and successful runtime initialization (1.740958ms)
+✔ new account gate requires nested hook, Prisma query, first driver query and checkout on every request (0.21175ms)
+✔ account gate rejects missing (0.151584ms)
+✔ account gate rejects duplicate (0.142167ms)
+✔ account gate rejects failure (0.144916ms)
+✔ account gate rejects wait-boundary (0.160125ms)
+✔ account gate rejects timestamp (0.150041ms)
+✔ account gate rejects outside-hook (0.487667ms)
+✔ phase proof rejects foreign-invocation (0.131ms)
+✔ phase proof rejects missing-transaction (0.097125ms)
+✔ phase proof rejects conflict-code (0.106958ms)
+✔ phase proof rejects missing-http (0.048291ms)
+✔ phase proof rejects other-run (0.0375ms)
+✔ bounded sampler requires physical Init Duration as well as application cold phases and retains client metrics (0.503167ms)
+✔ bounded sampler rejects foreign-report (0.154209ms)
+✔ bounded sampler rejects duplicate-report (0.109209ms)
+✔ bounded sampler rejects no-socket-metrics (0.113208ms)
+✔ bounded sampler rejects missing-body (0.094709ms)
+✔ bounded sampler rejects over-budget (0.074708ms)
+✔ bounded sampler rejects missing-audit (0.068083ms)
+✔ client preparation requires actual dispatch, cold adapter suffix and leaves warm adapter timings absent (0.488458ms)
+✔ client preparation rejects missing prepare (0.151459ms)
+✔ client preparation rejects settlement is not driver dispatch (0.133292ms)
+✔ client preparation rejects preparation after driver start (0.115166ms)
+✔ client preparation rejects cold missing suffix (0.142167ms)
+✔ client preparation rejects suffix outside preparation (0.125791ms)
+✔ client preparation rejects wrong invocation (0.119959ms)
+✔ client preparation cannot bypass account phase checks (0.0955ms)
+✔ engine CPU mode proves preparation before model, preserves driver boundary and refuses old lazy ownership (1.304875ms)
+✖ runtime assembly opt-in preserves both engine ownership modes and rejects old partial runtime receipts (0.29925ms)
+✔ explicit manual false overrides repository true and preserves capacity/immediate context (0.484292ms)
+✔ manual deployment rejects branch/SHA, missing mode, phase drift and unsupported events before cloud work (0.123791ms)
+✔ push keeps existing resolved defaults but cannot ignore explicit invalid input (0.05625ms)
+✔ input pair gate never implies target acceptance and rejects SHA/config/context/duplicate run drift (0.190958ms)
+✔ workflow records input receipt before verification/AWS and never interpolates manual input into shell (0.192125ms)
+✔ QA09 rollout separates logging, budget and event publication and rejects silent phase mistakes (0.663ms)
+✔ engine CPU diagnosis is explicit and only allowed after pool budget rollout (0.083833ms)
+✔ runtime assembly has ordered nested CPU intervals without additive initialization totals (1.201208ms)
+✔ runtime proof rejects absent, duplicate, failed, foreign IDs, overlap, bad CPU and invalid durations (0.327333ms)
+ℹ tests 40
+ℹ suites 0
+ℹ pass 39
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 71.828292
+
+✖ failing tests:
+
+test at scripts/qa09-contract-phases.test.mjs:377:1
+✖ runtime assembly opt-in preserves both engine ownership modes and rejects old partial runtime receipts (0.29925ms)
+  Error: RUNTIME_ASSEMBLY_PHASES_REQUIRED
+      at demand (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-runtime-assembly-proof.mjs:2:18)
+      at validateRuntimeAssemblyPhases (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-runtime-assembly-proof.mjs:15:3)
+      at validatePhaseCorrelation (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/check-qa09-contract-phases.mjs:104:28)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-phases.test.mjs:401:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)

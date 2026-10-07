@@ -81,3 +81,55 @@ test('concurrent initialization shares one handler/client and warm bad JWT never
   assert.equal((await handler(event)).statusCode, 401);
   assert.equal(connect.mock.calls.length, 0);
 });
+
+test('actual initialization emits client/assembly CPU once in cold scope; warm invalid JWT does no preparation', async () => {
+  setup();
+  const logs = vi.spyOn(console, 'info').mockImplementation(() => {});
+  try {
+    const { handler } = await import('../src/runtime/lambda-entry.js');
+    assert.equal((await handler(event, { awsRequestId: 'runtime-test' })).statusCode, 401);
+    const rows = () =>
+      logs.mock.calls.flatMap(([text]) => {
+        try {
+          return [JSON.parse(String(text))];
+        } catch {
+          return [];
+        }
+      });
+    const stages = rows().filter((r) => ['runtime-client-construct', 'runtime-route-assembly'].includes(r.phase));
+    assert.equal(stages.length, 2);
+    for (const row of stages) {
+      assert.equal(row.lambdaRequestId, 'runtime-test');
+      assert.equal(row.outcome, 'PASS');
+      assert.equal(row.coldStart, true);
+      assert.equal(row.processCpuScope, 'PROCESS_ALL_THREADS');
+      assert.isTrue(Number.isSafeInteger(row.processCpuUserUs));
+      assert.isTrue(Number.isSafeInteger(row.processCpuSystemUs));
+      assert.equal(row.includesConnectionWait, false);
+    }
+    const client = mocks.client.mock.results[0]?.value;
+    const connect = vi.spyOn(client, '$connect');
+    assert.equal((await handler(event)).statusCode, 401);
+    assert.equal(
+      rows().filter((r) => ['runtime-client-construct', 'runtime-route-assembly'].includes(r.phase)).length,
+      2,
+    );
+    assert.equal(connect.mock.calls.length, 0);
+    assert.equal(mocks.client.mock.calls.length, 1);
+  } finally {
+    logs.mockRestore();
+  }
+});
+
+test('client construction failure retains safe runtime failure and later attempt can initialize', async () => {
+  setup();
+  mocks.client.mockImplementationOnce(() => {
+    throw Error('private-construction-error');
+  });
+  const { handler } = await import('../src/runtime/lambda-entry.js');
+  const first = await handler(event);
+  assert.equal(first.statusCode, 500);
+  assert.notInclude(first.body, 'private-construction-error');
+  assert.equal((await handler(event)).statusCode, 401);
+  assert.equal(mocks.client.mock.calls.length, 2);
+});

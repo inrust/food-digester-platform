@@ -1,3 +1,4 @@
+import { validateRuntimeAssemblyPhases } from './qa09-runtime-assembly-proof.mjs';
 import { validateSamplingCorrelationLedger } from './qa09-cold409-proof.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -15,6 +16,7 @@ export function validatePhaseCorrelation(
     sampling = false,
     clientPreparation = false,
     engineCpu = false,
+    runtimeAssembly = false,
   } = {},
 ) {
   demand(!engineCpu || clientPreparation, 'ENGINE_CPU_REQUIRES_CLIENT_PREPARATION');
@@ -99,6 +101,7 @@ export function validatePhaseCorrelation(
         );
         return found[0];
       };
+      if (runtimeAssembly) validateRuntimeAssemblyPhases(phases);
       phase('admin-authenticate');
       if (accountPhases) {
         for (const name of ['admin-account-hook', 'admin-account-query', 'db-first-query', 'db-first-connection'])
@@ -283,6 +286,7 @@ export function validatePhaseCorrelation(
     accountPhasesRequired: accountPhases,
     clientPreparationRequired: clientPreparation,
     engineCpuRequired: engineCpu,
+    runtimeAssemblyRequired: runtimeAssembly,
     coldConflictObservedCount: verifiedCold.length,
     applicationColdConflictObservedCount: coldConflicts.length,
     platformColdProofRequired: sampling,
@@ -301,6 +305,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const r = validatePhaseCorrelation(patch, audit, {
     sampling,
     engineCpu: process.argv.slice(6).includes('--engine-cpu'),
+    runtimeAssembly: process.argv.slice(6).includes('--runtime-assembly'),
     clientPreparation: process.argv.slice(6).includes('--client-preparation'),
     accountPhases: process.argv.slice(6).includes('--account-phases'),
     requireColdConflict: process.argv.slice(6).includes('--require-cold-conflict'),

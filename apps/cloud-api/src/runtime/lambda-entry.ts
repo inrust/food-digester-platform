@@ -1,4 +1,4 @@
-import { withDataPathTrace, observeDataPathPhase } from '@fdp/observability';
+import { withDataPathTrace, observeDataPathPhase, observeDataPathSyncPhase } from '@fdp/observability';
 import { createRedactingLogger } from '@fdp/observability';
 import { observeRequest } from '@fdp/observability';
 import { matchDeliveredOperation } from './delivered-operations.js';
@@ -81,95 +81,108 @@ async function initialize() {
     database: resolveDatabaseUrl,
     license: resolveSecretString,
   });
-  const client = createPrismaClient(databaseUrl);
-  const prepareAuthenticatedEngine = createAuthenticatedEngineDiagnostic(engineCpuDiagnosis, client);
-  const activityExportPorts = createS3ActivityExportPorts({ bucket: config.exportBucket, region });
-  const iot = createAwsIotProvisioningClient({ region });
-  const ota = createOtaFirmwareS3Ports({ bucket: config.otaBucket, region });
-  const mediaBucket = config.mediaBucket;
-  const mediaDeps = {
-    client,
-    storage: createS3MediaObjectStorage({ bucket: mediaBucket, region }),
-    urlSigner: createS3MediaUrlSigner({ bucket: mediaBucket, region }),
-    uploadPolicy: {
-      getMediaTypes,
-      getMaxSizeKb: (mediaType: string) =>
-        getMediaTypes().includes(mediaType as ReturnType<typeof getMediaTypes>[number])
-          ? getMaxSizeKb(mediaType as ReturnType<typeof getMediaTypes>[number])
-          : undefined,
-      getDailyUploadQuotaPerDevice,
-      getUploadUrlTtlSeconds,
-      getDownloadUrlTtlSeconds,
+  const client = observeDataPathSyncPhase('runtime-client-construct', () => createPrismaClient(databaseUrl), {
+    processCpu: true,
+  });
+  return observeDataPathSyncPhase(
+    'runtime-route-assembly',
+    () => {
+      const prepareAuthenticatedEngine = createAuthenticatedEngineDiagnostic(engineCpuDiagnosis, client);
+      const activityExportPorts = createS3ActivityExportPorts({ bucket: config.exportBucket, region });
+      const iot = createAwsIotProvisioningClient({ region });
+      const ota = createOtaFirmwareS3Ports({ bucket: config.otaBucket, region });
+      const mediaBucket = config.mediaBucket;
+      const mediaDeps = {
+        client,
+        storage: createS3MediaObjectStorage({ bucket: mediaBucket, region }),
+        urlSigner: createS3MediaUrlSigner({ bucket: mediaBucket, region }),
+        uploadPolicy: {
+          getMediaTypes,
+          getMaxSizeKb: (mediaType: string) =>
+            getMediaTypes().includes(mediaType as ReturnType<typeof getMediaTypes>[number])
+              ? getMaxSizeKb(mediaType as ReturnType<typeof getMediaTypes>[number])
+              : undefined,
+          getDailyUploadQuotaPerDevice,
+          getUploadUrlTtlSeconds,
+          getDownloadUrlTtlSeconds,
+        },
+      };
+      const commandNotifier = process.env.COMMAND_PUBLISH_QUEUE_URL
+        ? createSqsJsonSender({
+            queueUrl: required('COMMAND_PUBLISH_QUEUE_URL'),
+            region,
+            maxAttempts: 1,
+            timeoutMs: 1000,
+          })
+        : undefined;
+      const routes = {
+        onboarding: createAdminOnboardingHandlers({ client }),
+        certificateRotation: createAdminCertificateRotationHandler({ client }),
+        replay: createAdminReplayHandlers({ client }),
+        customers: createAdminCustomerHandlers({ client }),
+        sites: createAdminSiteHandlers({ client }),
+        devices: createAdminDeviceHandlers({ client }),
+        assignments: createAdminDeviceAssignmentHandlers({ client }),
+        statuses: createAdminDeviceStatusHandlers({ client }),
+        retirements: createAdminDeviceRetirementHandlers({ client, iot }),
+        console: createAdminDeviceConsoleHandlers({ client, ...activityExportPorts }),
+        licenses: createAdminLicenseHandlers({ client, signingKey: licenseSigningKey }),
+        contracts: createAdminContractHandlers({ client }),
+        contractDevices: createAdminContractDeviceHandlers({ client }),
+        configurations: createAdminConfigurationHandlers({ client }),
+        consumables: createAdminConsumableHandlers({ client }),
+        consumableRequests: createAdminConsumableRequestHandlers({ client }),
+        deviceUsers: createAdminDeviceUserHandlers({ client }),
+        alarms: createAdminAlarmHandlers({ client }),
+        esg: createAdminEsgHandlers({ client, ...activityExportPorts }),
+        commands: createAdminCommandHandlers({
+          client,
+          ...(commandNotifier
+            ? {
+                notifyAuthorizedCommand: (commandId: string) => commandNotifier.send({ commandId }),
+                onImmediatePublishFailure: (commandId: string) =>
+                  logger.info(JSON.stringify({ event: 'command.notification.failed', commandId, code: 'SEND_FAILED' })),
+              }
+            : {}),
+        }),
+        otaPackages: createAdminOtaPackageHandlers({
+          client,
+          storage: ota.storage,
+          uploadUrlSigner: ota.uploadUrlSigner,
+          signaturePolicy: {
+            getSignatureAlgorithm: () => otaSignaturePolicy.signature.algorithm,
+            getSignatureEncoding: () => otaSignaturePolicy.signature.encoding,
+            getSignaturePayloadFields: () => otaSignaturePolicy.payload.fields,
+            getSignatureTrustRoot: () => otaSignaturePolicy.signature.trustRoot,
+          },
+          signatureVerifier: createKmsFirmwareSignatureVerifier({ keyId: config.otaSigningKeyArn, region }),
+        }),
+        otaCampaigns: createAdminOtaCampaignHandlers({ client }),
+        media: createAdminMediaHandlers(mediaDeps),
+        users: createAdminUserHandlers({
+          client,
+          cognito: createCognitoAdminPort({ userPoolId: config.userPoolId, region }),
+        }),
+        audit: createAdminAuditHandlers({ client }),
+        dashboard: createAdminDashboardHandlers({ client }),
+        settings: createAdminSettingsHandlers({ client }),
+      };
+      return createAdminLambdaRouter(
+        { region, userPoolId: config.userPoolId, clientId: config.clientId },
+        (event) => createAdminRoute(event, routes),
+        {
+          onAuthenticated: async (actor, requestId) => {
+            await prepareAuthenticatedEngine();
+            await activateInvitedUserOnAuthenticatedRequest(
+              { client, observeProcessCpu: engineCpuDiagnosis },
+              actor,
+              requestId,
+            );
+          },
+        },
+      );
     },
-  };
-  const commandNotifier = process.env.COMMAND_PUBLISH_QUEUE_URL
-    ? createSqsJsonSender({ queueUrl: required('COMMAND_PUBLISH_QUEUE_URL'), region, maxAttempts: 1, timeoutMs: 1000 })
-    : undefined;
-  const routes = {
-    onboarding: createAdminOnboardingHandlers({ client }),
-    certificateRotation: createAdminCertificateRotationHandler({ client }),
-    replay: createAdminReplayHandlers({ client }),
-    customers: createAdminCustomerHandlers({ client }),
-    sites: createAdminSiteHandlers({ client }),
-    devices: createAdminDeviceHandlers({ client }),
-    assignments: createAdminDeviceAssignmentHandlers({ client }),
-    statuses: createAdminDeviceStatusHandlers({ client }),
-    retirements: createAdminDeviceRetirementHandlers({ client, iot }),
-    console: createAdminDeviceConsoleHandlers({ client, ...activityExportPorts }),
-    licenses: createAdminLicenseHandlers({ client, signingKey: licenseSigningKey }),
-    contracts: createAdminContractHandlers({ client }),
-    contractDevices: createAdminContractDeviceHandlers({ client }),
-    configurations: createAdminConfigurationHandlers({ client }),
-    consumables: createAdminConsumableHandlers({ client }),
-    consumableRequests: createAdminConsumableRequestHandlers({ client }),
-    deviceUsers: createAdminDeviceUserHandlers({ client }),
-    alarms: createAdminAlarmHandlers({ client }),
-    esg: createAdminEsgHandlers({ client, ...activityExportPorts }),
-    commands: createAdminCommandHandlers({
-      client,
-      ...(commandNotifier
-        ? {
-            notifyAuthorizedCommand: (commandId: string) => commandNotifier.send({ commandId }),
-            onImmediatePublishFailure: (commandId: string) =>
-              logger.info(JSON.stringify({ event: 'command.notification.failed', commandId, code: 'SEND_FAILED' })),
-          }
-        : {}),
-    }),
-    otaPackages: createAdminOtaPackageHandlers({
-      client,
-      storage: ota.storage,
-      uploadUrlSigner: ota.uploadUrlSigner,
-      signaturePolicy: {
-        getSignatureAlgorithm: () => otaSignaturePolicy.signature.algorithm,
-        getSignatureEncoding: () => otaSignaturePolicy.signature.encoding,
-        getSignaturePayloadFields: () => otaSignaturePolicy.payload.fields,
-        getSignatureTrustRoot: () => otaSignaturePolicy.signature.trustRoot,
-      },
-      signatureVerifier: createKmsFirmwareSignatureVerifier({ keyId: config.otaSigningKeyArn, region }),
-    }),
-    otaCampaigns: createAdminOtaCampaignHandlers({ client }),
-    media: createAdminMediaHandlers(mediaDeps),
-    users: createAdminUserHandlers({
-      client,
-      cognito: createCognitoAdminPort({ userPoolId: config.userPoolId, region }),
-    }),
-    audit: createAdminAuditHandlers({ client }),
-    dashboard: createAdminDashboardHandlers({ client }),
-    settings: createAdminSettingsHandlers({ client }),
-  };
-  return createAdminLambdaRouter(
-    { region, userPoolId: config.userPoolId, clientId: config.clientId },
-    (event) => createAdminRoute(event, routes),
-    {
-      onAuthenticated: async (actor, requestId) => {
-        await prepareAuthenticatedEngine();
-        await activateInvitedUserOnAuthenticatedRequest(
-          { client, observeProcessCpu: engineCpuDiagnosis },
-          actor,
-          requestId,
-        );
-      },
-    },
+    { processCpu: true },
   );
 }
 

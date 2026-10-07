@@ -373,3 +373,35 @@ test('engine CPU mode proves preparation before model, preserves driver boundary
     assert.throws(() => validatePhaseCorrelation(f.patch, f.audit, options));
   }
 });
+
+test('runtime assembly opt-in preserves both engine ownership modes and rejects old partial runtime receipts', () => {
+  for (const engineCpu of [false, true]) {
+    const f = engineCpu ? engineFixtures() : preparationFixtures();
+    for (const r of [...f.patch.records, ...f.audit.records])
+      r.phases = r.phases.filter((p) => p.phase !== 'runtime-initialize');
+    const c = f.patch.records[0];
+    for (const [phase, a, b] of [
+      ['runtime-initialize', 0, 850],
+      ['runtime-database-secret', 1, 20],
+      ['runtime-license-secret', 2, 21],
+      ['runtime-client-construct', 22, 400],
+      ['runtime-route-assembly', 400, 849],
+    ])
+      c.phases.push({
+        ...c.phases[0],
+        phase,
+        startedAt: new Date(a).toISOString(),
+        completedAt: new Date(b).toISOString(),
+        durationMs: b - a,
+        includesConnectionWait: false,
+        processCpuUserUs: 10,
+        processCpuSystemUs: 2,
+        processCpuScope: 'PROCESS_ALL_THREADS',
+      });
+    const options = { accountPhases: true, clientPreparation: true, engineCpu, runtimeAssembly: true };
+    assert.equal(validatePhaseCorrelation(f.patch, f.audit, options).runtimeAssemblyRequired, true);
+    c.phases = c.phases.filter((p) => p.phase !== 'runtime-route-assembly');
+    assert.throws(() => validatePhaseCorrelation(f.patch, f.audit, options), /RUNTIME_ASSEMBLY_PHASES_REQUIRED/);
+    assert.equal(validatePhaseCorrelation(f.patch, f.audit, { ...options, runtimeAssembly: false }).gate, 'PASS');
+  }
+});

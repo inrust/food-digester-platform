@@ -1,6 +1,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 export type DataPathPhase =
   | 'runtime-initialize'
+  | 'runtime-client-construct'
+  | 'runtime-route-assembly'
   | 'runtime-database-secret'
   | 'runtime-license-secret'
   | 'db-engine-prepare'
@@ -237,11 +239,16 @@ export function observeRecordResult(disposition: 'PROCESSED' | 'VALIDATED_ONLY' 
   });
 }
 
-export function observeDataPathSyncPhase<T>(phase: DataPathPhase, work: () => T): T {
+export function observeDataPathSyncPhase<T>(
+  phase: DataPathPhase,
+  work: () => T,
+  options: { readonly processCpu?: boolean } = {},
+): T {
   const trace = storage.getStore();
   if (!trace) return work();
   const start = trace.clock();
   const startedAt = new Date().toISOString();
+  const cpuStart = options.processCpu ? process.cpuUsage() : undefined;
   let outcome = 'PASS';
   try {
     return work();
@@ -251,6 +258,7 @@ export function observeDataPathSyncPhase<T>(phase: DataPathPhase, work: () => T)
   } finally {
     emit('data-path.phase.completed', {
       phase,
+      ...(cpuStart ? cpuMetrics(cpuStart) : {}),
       durationMs: Math.max(0, Math.round(trace.clock() - start)),
       outcome,
       errorCode: outcome === 'FAIL' ? 'DATA_PATH_PHASE_FAILED' : 'NONE',
