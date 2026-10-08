@@ -46,6 +46,16 @@ export function validateAccountReadTargetConfig(inputs, version, config, concurr
     !inputs.accountReadCandidate || (inputs.engineCpu === true && inputs.authenticatedPreconnect === true),
     'ACCOUNT_READ_ACTUAL_GUARD',
   );
+  if (inputs.contractLoadDetail !== undefined) {
+    demand(
+      typeof inputs.contractLoadDetail === 'boolean' && config.contractLoadDetail === String(inputs.contractLoadDetail),
+      'CONTRACT_DETAIL_ACTUAL_MODE_DRIFT',
+    );
+    demand(
+      !inputs.contractLoadDetail || (inputs.engineCpu === true && inputs.authenticatedPreconnect === true),
+      'CONTRACT_DETAIL_ACTUAL_GUARD',
+    );
+  }
   return {
     gate: 'PASS',
     scope: 'ACTUAL_ACCOUNT_READ_CONFIG_AND_VERSION_ONLY',
@@ -80,7 +90,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     '--function-name',
     'fdp-test-api',
     '--query',
-    '{name:FunctionName,revisionId:RevisionId,codeSha256:CodeSha256,memory:MemorySize,state:State,update:LastUpdateStatus,runtime:Runtime,architecture:Architectures[0],envName:Environment.Variables.ENV_NAME,pool:Environment.Variables.FDP_DB_POOL_MAX,engineCpu:Environment.Variables.FDP_QA09_ENGINE_CPU_DIAGNOSIS,preconnect:Environment.Variables.FDP_QA09_AUTHENTICATED_PRECONNECT,accountReadCandidate:Environment.Variables.FDP_QA09_ACCOUNT_READ_CANDIDATE}',
+    '{name:FunctionName,revisionId:RevisionId,codeSha256:CodeSha256,memory:MemorySize,state:State,update:LastUpdateStatus,runtime:Runtime,architecture:Architectures[0],envName:Environment.Variables.ENV_NAME,pool:Environment.Variables.FDP_DB_POOL_MAX,engineCpu:Environment.Variables.FDP_QA09_ENGINE_CPU_DIAGNOSIS,preconnect:Environment.Variables.FDP_QA09_AUTHENTICATED_PRECONNECT,accountReadCandidate:Environment.Variables.FDP_QA09_ACCOUNT_READ_CANDIDATE,contractLoadDetail:Environment.Variables.FDP_QA09_CONTRACT_LOAD_DETAIL}',
   ]);
   const concurrency = read(['lambda', 'get-function-concurrency', '--function-name', 'fdp-test-api']);
   const result = {

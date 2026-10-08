@@ -1,5 +1,6 @@
 import { validateClientSplitPhases } from './qa09-client-split-proof.mjs';
 import { validateContractLoadSplit } from './qa09-contract-load-proof.mjs';
+import { validateContractLoadDetail } from './qa09-contract-load-detail-proof.mjs';
 import { validateAuthenticatedPreconnectPhases } from './qa09-authenticated-preconnect-proof.mjs';
 import { validateRuntimeAssemblyPhases } from './qa09-runtime-assembly-proof.mjs';
 import { validateSamplingCorrelationLedger } from './qa09-cold409-proof.mjs';
@@ -23,6 +24,7 @@ export function validatePhaseCorrelation(
     runtimeAssembly = false,
     authenticatedPreconnect = false,
     contractLoadSplit = false,
+    contractLoadDetail = false,
   } = {},
 ) {
   demand(!authenticatedPreconnect || (engineCpu && runtimeAssembly), 'PRECONNECT_REQUIRES_ENGINE_RUNTIME_PHASES');
@@ -235,6 +237,7 @@ export function validatePhaseCorrelation(
         phase('db-transaction-open');
         phase('contract-load');
         validateContractLoadSplit(phases, c.contractLoadOwnership, contractLoadSplit);
+        validateContractLoadDetail(phases, c.contractLoadOwnership, contractLoadDetail);
         for (const name of [
           'contract-version-update',
           'db-transaction-callback',
@@ -298,6 +301,7 @@ export function validatePhaseCorrelation(
     clientPreparationRequired: clientPreparation,
     clientSplitRequired: clientSplit,
     contractLoadSplitRequired: contractLoadSplit,
+    contractLoadDetailRequired: contractLoadDetail,
     engineCpuRequired: engineCpu,
     authenticatedPreconnectRequired: authenticatedPreconnect,
     runtimeAssemblyRequired: runtimeAssembly,
@@ -324,6 +328,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     clientPreparation: process.argv.slice(6).includes('--client-preparation'),
     clientSplit: process.argv.slice(6).includes('--client-split'),
     contractLoadSplit: process.argv.slice(6).includes('--contract-load-split'),
+    contractLoadDetail: process.argv.slice(6).includes('--contract-load-detail'),
     accountPhases: process.argv.slice(6).includes('--account-phases'),
     requireColdConflict: process.argv.slice(6).includes('--require-cold-conflict'),
   });
@@ -338,6 +343,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     .digest('hex');
   r.contractLoadCheckerSha256 = createHash('sha256')
     .update(readFileSync(new URL('./qa09-contract-load-proof.mjs', import.meta.url)))
+    .digest('hex');
+  r.contractLoadDetailCheckerSha256 = createHash('sha256')
+    .update(readFileSync(new URL('./qa09-contract-load-detail-proof.mjs', import.meta.url)))
     .digest('hex');
   writeFileSync(out, JSON.stringify(r, null, 2) + '\n');
   console.log(JSON.stringify({ gate: r.gate, scope: r.scope, requests: r.summaries.length }));

@@ -1,0 +1,134 @@
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+stdout | apps/cloud-api/test/admin-runtime-initialization.test.ts > failed secret never publishes runtime/client; later request retries initialization without business work
+{"event":"data-path.phase.completed","lambdaRequestId":"unknown","gatewayRequestId":"unknown","operationId":"listContracts","sqsMessageId":"unknown","deviceId":"unknown","messageId":"unknown","topicType":"unknown","coldStart":true,"phase":"runtime-initialize","durationMs":0,"outcome":"FAIL","errorCode":"DATA_PATH_PHASE_FAILED","startedAt":"2026-10-08T13:22:32.002Z","completedAt":"2026-10-08T13:22:32.002Z","includesConnectionWait":false}
+
+stdout | apps/cloud-api/test/admin-runtime-initialization.test.ts > failed secret never publishes runtime/client; later request retries initialization without business work
+{"event":"admin.request.completed","gatewayRequestId":"unknown","gatewayExtendedRequestId":"unknown","lambdaRequestId":"unknown","operationId":"listContracts","status":500,"elapsedMs":0}
+
+stdout | apps/cloud-api/test/admin-runtime-initialization.test.ts > failed secret never publishes runtime/client; later request retries initialization without business work
+{"event":"data-path.phase.completed","lambdaRequestId":"unknown","gatewayRequestId":"unknown","operationId":"listContracts","sqsMessageId":"unknown","deviceId":"unknown","messageId":"unknown","topicType":"unknown","coldStart":true,"phase":"runtime-initialize","durationMs":0,"outcome":"FAIL","errorCode":"DATA_PATH_PHASE_FAILED","startedAt":"2026-10-08T13:22:32.003Z","completedAt":"2026-10-08T13:22:32.003Z","includesConnectionWait":false}
+
+stdout | apps/cloud-api/test/admin-runtime-initialization.test.ts > failed secret never publishes runtime/client; later request retries initialization without business work
+{"event":"admin.request.completed","gatewayRequestId":"unknown","gatewayExtendedRequestId":"unknown","lambdaRequestId":"unknown","operationId":"listContracts","status":500,"elapsedMs":0}
+
+stdout | apps/cloud-api/test/admin-runtime-initialization.test.ts > concurrent initialization shares one handler/client and warm bad JWT never triggers engine preparation
+{"event":"data-path.phase.completed","lambdaRequestId":"unknown","gatewayRequestId":"unknown","operationId":"listContracts","sqsMessageId":"unknown","deviceId":"unknown","messageId":"unknown","topicType":"unknown","coldStart":true,"phase":"runtime-initialize","durationMs":0,"outcome":"FAIL","errorCode":"DATA_PATH_PHASE_FAILED","startedAt":"2026-10-08T13:22:32.011Z","completedAt":"2026-10-08T13:22:32.011Z","includesConnectionWait":false}
+
+stdout | apps/cloud-api/test/admin-runtime-initialization.test.ts > concurrent initialization shares one handler/client and warm bad JWT never triggers engine preparation
+{"event":"admin.request.completed","gatewayRequestId":"unknown","gatewayExtendedRequestId":"unknown","lambdaRequestId":"unknown","operationId":"listContracts","status":500,"elapsedMs":0}
+{"event":"admin.request.completed","gatewayRequestId":"unknown","gatewayExtendedRequestId":"unknown","lambdaRequestId":"unknown","operationId":"listContracts","status":500,"elapsedMs":0}
+
+stdout | apps/cloud-api/test/admin-runtime-initialization.test.ts > client construction failure retains safe runtime failure and later attempt can initialize
+{"event":"data-path.phase.completed","lambdaRequestId":"unknown","gatewayRequestId":"unknown","operationId":"listContracts","sqsMessageId":"unknown","deviceId":"unknown","messageId":"unknown","topicType":"unknown","coldStart":true,"phase":"runtime-initialize","durationMs":0,"outcome":"FAIL","errorCode":"DATA_PATH_PHASE_FAILED","startedAt":"2026-10-08T13:22:32.021Z","completedAt":"2026-10-08T13:22:32.021Z","includesConnectionWait":false}
+
+stdout | apps/cloud-api/test/admin-runtime-initialization.test.ts > client construction failure retains safe runtime failure and later attempt can initialize
+{"event":"admin.request.completed","gatewayRequestId":"unknown","gatewayExtendedRequestId":"unknown","lambdaRequestId":"unknown","operationId":"listContracts","status":500,"elapsedMs":0}
+
+stdout | apps/cloud-api/test/admin-runtime-initialization.test.ts > client construction failure retains safe runtime failure and later attempt can initialize
+{"event":"data-path.phase.completed","lambdaRequestId":"unknown","gatewayRequestId":"unknown","operationId":"listContracts","sqsMessageId":"unknown","deviceId":"unknown","messageId":"unknown","topicType":"unknown","coldStart":true,"phase":"runtime-initialize","durationMs":0,"outcome":"FAIL","errorCode":"DATA_PATH_PHASE_FAILED","startedAt":"2026-10-08T13:22:32.021Z","completedAt":"2026-10-08T13:22:32.022Z","includesConnectionWait":false}
+
+stdout | apps/cloud-api/test/admin-runtime-initialization.test.ts > client construction failure retains safe runtime failure and later attempt can initialize
+{"event":"admin.request.completed","gatewayRequestId":"unknown","gatewayExtendedRequestId":"unknown","lambdaRequestId":"unknown","operationId":"listContracts","status":500,"elapsedMs":0}
+
+stdout | apps/cloud-api/test/admin-runtime-initialization.test.ts > actual C1 Lambda initialization uses one candidate client; invalid JWT does no checkout
+{"event":"data-path.phase.completed","lambdaRequestId":"unknown","gatewayRequestId":"unknown","operationId":"listContracts","sqsMessageId":"unknown","deviceId":"unknown","messageId":"unknown","topicType":"unknown","coldStart":true,"phase":"runtime-license-secret","durationMs":0,"outcome":"FAIL","errorCode":"DATA_PATH_PHASE_FAILED","startedAt":"2026-10-08T13:22:32.027Z","completedAt":"2026-10-08T13:22:32.027Z","includesConnectionWait":false}
+
+ ❯ apps/cloud-api/test/admin-runtime-initialization.test.ts (6 tests | 5 failed) 5556ms
+   × failed secret never publishes runtime/client; later request retries initialization without business work 9ms
+   × concurrent initialization shares one handler/client and warm bad JWT never triggers engine preparation 6ms
+   × actual initialization emits client/assembly CPU once in cold scope; warm invalid JWT does no preparation 5ms
+   × client construction failure retains safe runtime failure and later attempt can initialize 5ms
+   × actual C1 Lambda initialization uses one candidate client; invalid JWT does no checkout 5003ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  apps/cloud-api/test/admin-runtime-initialization.test.ts > failed secret never publishes runtime/client; later request retries initialization without business work
+AssertionError: expected 500 to equal 401
+
+- Expected
++ Received
+
+- 401
++ 500
+
+ ❯ apps/cloud-api/test/admin-runtime-initialization.test.ts:56:10
+     54|   assert.notInclude(failure.body, 'private-secret-error');
+     55|   assert.equal(mocks.client.mock.calls.length, 0);
+     56|   assert.equal((await handler(event)).statusCode, 401);
+       |          ^
+     57|   assert.equal(mocks.client.mock.calls.length, 1);
+     58|   assert.equal(mocks.database.mock.calls.length, 2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  apps/cloud-api/test/admin-runtime-initialization.test.ts > concurrent initialization shares one handler/client and warm bad JWT never triggers engine preparation
+TypeError: release is not a function
+ ❯ apps/cloud-api/test/admin-runtime-initialization.test.ts:74:3
+     72|     second = handler(event);
+     73|   await Promise.resolve();
+     74|   release('postgresql://unused:unused@localhost/never-connect');
+       |   ^
+     75|   assert.deepEqual(
+     76|     (await Promise.all([first, second])).map((r) => r.statusCode),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  apps/cloud-api/test/admin-runtime-initialization.test.ts > actual initialization emits client/assembly CPU once in cold scope; warm invalid JWT does no preparation
+AssertionError: expected 500 to equal 401
+
+- Expected
++ Received
+
+- 401
++ 500
+
+ ❯ apps/cloud-api/test/admin-runtime-initialization.test.ts:93:12
+     91|   try {
+     92|     const { handler } = await import('../src/runtime/lambda-entry.js');
+     93|     assert.equal((await handler(event, { awsRequestId: 'runtime-test' …
+       |            ^
+     94|     const rows = () =>
+     95|       logs.mock.calls.flatMap(([text]) => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  apps/cloud-api/test/admin-runtime-initialization.test.ts > client construction failure retains safe runtime failure and later attempt can initialize
+AssertionError: expected 500 to equal 401
+
+- Expected
++ Received
+
+- 401
++ 500
+
+ ❯ apps/cloud-api/test/admin-runtime-initialization.test.ts:136:10
+    134|   assert.equal(first.statusCode, 500);
+    135|   assert.notInclude(first.body, 'private-construction-error');
+    136|   assert.equal((await handler(event)).statusCode, 401);
+       |          ^
+    137|   assert.equal(mocks.client.mock.calls.length, 2);
+    138| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  apps/cloud-api/test/admin-runtime-initialization.test.ts > actual C1 Lambda initialization uses one candidate client; invalid JWT does no checkout
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ apps/cloud-api/test/admin-runtime-initialization.test.ts:140:1
+    138| });
+    139|
+    140| test('actual C1 Lambda initialization uses one candidate client; inval…
+       | ^
+    141|   setup();
+    142|   vi.stubEnv('FDP_QA09_AUTHENTICATED_PRECONNECT', 'true');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 1 passed (6)
+   Start at  21:22:31
+   Duration  5.67s (transform 356ms, setup 10ms, import 14ms, tests 5.56s, environment 0ms)
+

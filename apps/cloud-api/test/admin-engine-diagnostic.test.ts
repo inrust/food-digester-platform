@@ -129,3 +129,24 @@ test('account read R1 is default off and rejects malformed or unbudgeted runtime
   ])
     assert.throws(() => resolveAccountReadCandidate({ ...env, ...patch }));
 });
+
+test('contract detail defaults off and requires the existing guarded authenticated pool', async () => {
+  const { resolveContractLoadDetail } = await import('../src/runtime/admin-engine-diagnostic.js');
+  assert.isFalse(resolveContractLoadDetail({}));
+  const env = {
+    ENV_NAME: 'test',
+    FDP_DB_POOL_MAX: '1',
+    FDP_QA09_ENGINE_CPU_DIAGNOSIS: 'true',
+    FDP_QA09_AUTHENTICATED_PRECONNECT: 'true',
+    FDP_QA09_CONTRACT_LOAD_DETAIL: 'true',
+  };
+  assert.isTrue(resolveContractLoadDetail(env));
+  for (const patch of [
+    { ENV_NAME: 'prod' },
+    { FDP_DB_POOL_MAX: '2' },
+    { FDP_QA09_ENGINE_CPU_DIAGNOSIS: 'false' },
+    { FDP_QA09_AUTHENTICATED_PRECONNECT: 'false' },
+    { FDP_QA09_CONTRACT_LOAD_DETAIL: 'yes' },
+  ])
+    assert.throws(() => resolveContractLoadDetail({ ...env, ...patch }));
+});

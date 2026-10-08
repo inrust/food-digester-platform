@@ -165,3 +165,55 @@ test('R0/R1 input pair binds same SHA and budget, differs only account read; pus
   }
   assert.match(readFileSync('.github/workflows/deploy-test.yml', 'utf8'), /inputs.account_read_candidate/);
 });
+
+test('detail is off on push, manual detail requires guarded preconnect and round trips both R inputs', () => {
+  const make = (on) => ({
+    ...receipt(true),
+    ...resolveDeploymentInputs(
+      {
+        ...env,
+        QA09_REQUESTED_ENGINE: 'true',
+        QA09_REQUESTED_PRECONNECT: 'true',
+        QA09_REQUESTED_ACCOUNT_READ: String(on),
+        QA09_REQUESTED_CONTRACT_DETAIL: 'true',
+        GITHUB_RUN_ID: on ? '132' : '131',
+      },
+      sha,
+    ),
+  });
+  assert.equal(validateEngineInputPair(make(false), make(true), { accountRead: true }).gate, 'PASS');
+  assert.equal(
+    resolveDeploymentInputs({ ...env, GITHUB_EVENT_NAME: 'push', FDP_QA09_CONTRACT_LOAD_DETAIL: 'true' }, sha)
+      .contractLoadDetail,
+    false,
+  );
+  for (const patch of [
+    { QA09_REQUESTED_CONTRACT_DETAIL: 'yes' },
+    { QA09_REQUESTED_PRECONNECT: 'false' },
+    { QA09_REQUESTED_ENGINE: 'false' },
+  ])
+    assert.throws(() =>
+      resolveDeploymentInputs(
+        {
+          ...env,
+          QA09_REQUESTED_ENGINE: 'true',
+          QA09_REQUESTED_PRECONNECT: 'true',
+          QA09_REQUESTED_CONTRACT_DETAIL: 'true',
+          ...patch,
+        },
+        sha,
+      ),
+    );
+  const mismatch = make(true);
+  mismatch.contractLoadDetail = false;
+  mismatch.context.enableQa09ContractLoadDetail = false;
+  assert.throws(() => validateEngineInputPair(make(false), mismatch, { accountRead: true }), /DETAIL_MODE_DRIFT/);
+  const oldOff = receipt(),
+    oldOn = receipt(true);
+  for (const r of [oldOff, oldOn]) {
+    delete r.contractLoadDetail;
+    delete r.context.enableQa09ContractLoadDetail;
+  }
+  assert.equal(validateEngineInputPair(oldOff, oldOn).gate, 'PASS');
+  assert.match(readFileSync('.github/workflows/deploy-test.yml', 'utf8'), /inputs.contract_load_detail/);
+});

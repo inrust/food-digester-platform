@@ -50,7 +50,12 @@ export function qa09RolloutContext(env = process.env) {
   if (accountRead !== undefined && !['true', 'false'].includes(accountRead))
     throw Error('INVALID_ACCOUNT_READ_CANDIDATE');
   if (accountRead === 'true' && preconnect !== 'true') throw Error('ACCOUNT_READ_REQUIRES_PRECONNECT_ENGINE_CAPACITY');
+  const detail = env.FDP_QA09_CONTRACT_LOAD_DETAIL;
+  if (detail !== undefined && !['true', 'false'].includes(detail)) throw Error('INVALID_CONTRACT_LOAD_DETAIL');
+  if (detail === 'true' && preconnect !== 'true')
+    throw Error('CONTRACT_LOAD_DETAIL_REQUIRES_PRECONNECT_ENGINE_CAPACITY');
   return {
+    ...(detail !== undefined ? { enableQa09ContractLoadDetail: detail === 'true' } : {}),
     ...(accountRead !== undefined ? { enableQa09AccountReadCandidate: accountRead === 'true' } : {}),
     ...(preconnect !== undefined ? { enableQa09AuthenticatedPreconnect: preconnect === 'true' } : {}),
     ...(engineCpu !== undefined ? { enableQa09EngineCpuDiagnosis: engineCpu === 'true' } : {}),

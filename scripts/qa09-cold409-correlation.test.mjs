@@ -21,7 +21,9 @@ def logs(args,**kwargs):
             events.append({'message':json.dumps({'event':'data-path.phase.completed','gatewayRequestId':rid,'lambdaRequestId':invocation,'phase':'db-client-after-adapter','completionBoundary':'SECRET_SENTINEL','processCpuScope':'SECRET_SENTINEL','processCpuUserUs':-1})})
             events.append({'message':json.dumps({'event':'data-path.phase.completed','gatewayRequestId':rid,'lambdaRequestId':invocation,'phase':'db-client-submit','completionBoundary':'CALL_RETURNED','unsafe':'SECRET_SENTINEL'})})
             events.append({'message':json.dumps({'event':'data-path.phase.completed','gatewayRequestId':rid,'lambdaRequestId':invocation,'phase':'contract-load-delegate','completionBoundary':'MODEL_EXTENSION_ENTERED','unsafe':'SECRET_SENTINEL'})})
-            events.append({'message':json.dumps({'event':'data-path.contract-load.ownership','gatewayRequestId':rid,'lambdaRequestId':invocation,'operationId':'updateContract','modelEntries':1,'driverDispatches':1,'transactional':True,'unsafe':'SECRET_SENTINEL'})})
+            events.append({'message':json.dumps({'event':'data-path.contract-load.ownership','gatewayRequestId':rid,'lambdaRequestId':invocation,'operationId':'updateContract','modelEntries':1,'driverDispatches':1,'transactional':True,'detailEnabled':True,'pgQueries':1,'pgSettlements':1,'unsafe':'SECRET_SENTINEL'})})
+            for boundary in ['PG_DISPATCH','PG_SETTLED']:
+                events.append({'message':json.dumps({'event':'data-path.phase.completed','gatewayRequestId':rid,'lambdaRequestId':invocation,'phase':'contract-load-driver-pg','completionBoundary':boundary,'unsafe':'SECRET_SENTINEL'})})
             events.append({'message':'REPORT RequestId: '+invocation+'\\tDuration: 30.50 ms\\tBilled Duration: 100 ms\\tMemory Size: 512 MB\\tMax Memory Used: 120 MB\\tInit Duration: 80.25 ms'})
         events.append({'message':json.dumps(value)})
     events.append({'message':'REPORT RequestId: 00000000-0000-0000-0000-000000000000\\tInit Duration: 999 ms'})
@@ -103,6 +105,11 @@ for (const audit of [false, true])
       assert.equal(row.contractLoadOwnership.length, 1);
       assert.equal(row.contractLoadOwnership[0].driverDispatches, 1);
       assert.equal(row.contractLoadOwnership[0].transactional, true);
+      assert.equal(row.contractLoadOwnership[0].detailEnabled, true);
+      assert.equal(row.contractLoadOwnership[0].pgQueries, 1);
+      assert.equal(row.contractLoadOwnership[0].pgSettlements, 1);
+      assert.equal(row.phases[4].completionBoundary, 'PG_DISPATCH');
+      assert.equal(row.phases[5].completionBoundary, 'PG_SETTLED');
       assert.equal(row.phases[0].processCpuUserUs, 120);
       assert.equal(row.phases[0].processCpuSystemUs, 30);
       assert.equal(row.phases[0].processCpuScope, 'PROCESS_ALL_THREADS');

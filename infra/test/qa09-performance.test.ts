@@ -26,6 +26,7 @@ test('observability and immediate queue synth retain narrow logs and hard DB bud
       enableQa09EngineCpuDiagnosis: true,
       enableQa09AuthenticatedPreconnect: true,
       enableQa09AccountReadCandidate: true,
+      enableQa09ContractLoadDetail: true,
     },
   });
   const template = Template.fromStack(stack).toJSON();
@@ -44,6 +45,12 @@ test('observability and immediate queue synth retain narrow logs and hard DB bud
   assert.deepEqual(
     functions
       .filter((r) => r.Properties.Environment?.Variables.FDP_QA09_ACCOUNT_READ_CANDIDATE === 'true')
+      .map((r) => r.Properties.FunctionName),
+    ['fdp-test-api'],
+  );
+  assert.deepEqual(
+    functions
+      .filter((r) => r.Properties.Environment?.Variables.FDP_QA09_CONTRACT_LOAD_DETAIL === 'true')
       .map((r) => r.Properties.FunctionName),
     ['fdp-test-api'],
   );
@@ -191,4 +198,27 @@ test('account read stack cannot bypass preconnect/engine/test capacity guards', 
         }),
     );
   }
+});
+
+test('detail stack retains all existing test engine capacity preconnect constraints', () => {
+  for (const patch of [
+    { enableQa09AuthenticatedPreconnect: false },
+    { enableQa09EngineCpuDiagnosis: false },
+    { enableQa09Capacity: false },
+    { envName: 'prod' },
+  ])
+    assert.throws(
+      () =>
+        new AppDependenciesStack(new App(), 'InvalidDetail', {
+          config: {
+            envName: 'test',
+            allowInsecureDeviceEndpointForLocal: true,
+            enableQa09Capacity: true,
+            enableQa09EngineCpuDiagnosis: true,
+            enableQa09AuthenticatedPreconnect: true,
+            enableQa09ContractLoadDetail: true,
+            ...patch,
+          },
+        }),
+    );
 });

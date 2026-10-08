@@ -32,6 +32,11 @@ export type DataPathPhase =
   | 'contract-load-orm-prepare'
   | 'contract-load-driver-query'
   | 'contract-load-result'
+  | 'contract-load-orm-submit'
+  | 'contract-load-orm-await'
+  | 'contract-load-driver-before-pg'
+  | 'contract-load-driver-pg'
+  | 'contract-load-driver-after-pg'
   | 'contract-version-update'
   | 'contract-readback'
   | 'audit-success-write'
@@ -158,6 +163,18 @@ export function captureDataPathBoundary(): DataPathBoundary | undefined {
   boundaries.set(boundary, { trace, time, wall, cpu });
   return boundary;
 }
+/** Re-enter only an observation closure, never a business callback, when pg settles in another context. */
+export function bindDataPathObservation(work: (error?: unknown) => void): (error?: unknown) => void {
+  const trace = storage.getStore();
+  return (error) => {
+    if (!trace) return;
+    try {
+      storage.run(trace, () => work(error));
+    } catch {
+      /* Observation must not change pg settlement. */
+    }
+  };
+}
 /** Claim at the original first-operation entrance, before observer/frame construction. */
 export function claimFirstDataPathBoundary(phase: FirstDataPathPhase): DataPathBoundary | undefined {
   const trace = storage.getStore();
@@ -171,7 +188,13 @@ function ownBoundary(boundary: DataPathBoundary | undefined, trace: Trace): Boun
 }
 /** Finish is idempotent; no SQL, payload or arbitrary error messages enter the log. */
 export type PreparationBoundary =
-  'DRIVER_DISPATCH' | 'CALL_RETURNED' | 'MODEL_EXTENSION_ENTERED' | 'OPERATION_SETTLED' | 'OPERATION_FAILED';
+  | 'DRIVER_DISPATCH'
+  | 'CALL_RETURNED'
+  | 'MODEL_EXTENSION_ENTERED'
+  | 'OPERATION_SETTLED'
+  | 'OPERATION_FAILED'
+  | 'PG_DISPATCH'
+  | 'PG_SETTLED';
 export function beginDataPathPhase(
   phase: DataPathPhase,
   options: { readonly processCpu?: boolean; readonly startBoundary?: DataPathBoundary | undefined } = {},
@@ -223,6 +246,11 @@ export function beginDataPathPhase(
           'contract-load-orm-prepare',
           'contract-load-driver-query',
           'contract-load-result',
+          'contract-load-orm-submit',
+          'contract-load-orm-await',
+          'contract-load-driver-before-pg',
+          'contract-load-driver-pg',
+          'contract-load-driver-after-pg',
         ].includes(phase) &&
         [
           'DRIVER_DISPATCH',
@@ -230,6 +258,8 @@ export function beginDataPathPhase(
           'MODEL_EXTENSION_ENTERED',
           'OPERATION_SETTLED',
           'OPERATION_FAILED',
+          'PG_DISPATCH',
+          'PG_SETTLED',
         ].includes(boundary)
           ? { completionBoundary: boundary }
           : {}),
@@ -252,7 +282,8 @@ export function beginDataPathPhase(
           phase === 'db-authenticated-preconnect' ||
           phase === 'db-first-query' ||
           phase === 'contract-load' ||
-          phase === 'contract-load-driver-query',
+          phase === 'contract-load-driver-query' ||
+          phase === 'contract-load-driver-pg',
       },
       trace,
     );
@@ -263,11 +294,13 @@ export function recordContractLoadOwnership(
   modelEntries: number,
   driverDispatches: number,
   transactional: boolean,
+  detail?: { readonly pgQueries: number; readonly pgSettlements: number },
 ): void {
   emit('data-path.contract-load.ownership', {
     modelEntries,
     driverDispatches,
     transactional,
+    ...(detail ? { detailEnabled: true, pgQueries: detail.pgQueries, pgSettlements: detail.pgSettlements } : {}),
   });
 }
 /** Claim before dispatch, so concurrent operations log only the first attempt in this trace. */

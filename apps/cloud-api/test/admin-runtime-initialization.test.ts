@@ -1,5 +1,5 @@
 import { assert, test, vi, afterEach } from 'vitest';
-const mocks = vi.hoisted(() => ({ database: vi.fn(), license: vi.fn(), client: vi.fn() }));
+const mocks = vi.hoisted(() => ({ database: vi.fn(), license: vi.fn(), client: vi.fn(), candidate: vi.fn() }));
 vi.mock('@fdp/aws-clients', async (importActual) => ({
   ...(await importActual<object>()),
   resolveDatabaseUrl: mocks.database,
@@ -7,7 +7,11 @@ vi.mock('@fdp/aws-clients', async (importActual) => ({
 }));
 vi.mock('@fdp/database', async (importActual) => {
   const actual = await importActual<typeof import('@fdp/database')>();
-  return { ...actual, createPrismaClient: mocks.client.mockImplementation(actual.createPrismaClient) };
+  return {
+    ...actual,
+    createPrismaClient: mocks.client.mockImplementation(actual.createPrismaClient),
+    createAdminPreconnectCandidate: mocks.candidate.mockImplementation(actual.createAdminPreconnectCandidate),
+  };
 });
 const env = {
   AWS_REGION: 'ap-southeast-1',
@@ -25,6 +29,7 @@ const env = {
   // Baseline factory assertions must not inherit the deployment workflow's C1 flag.
   FDP_QA09_AUTHENTICATED_PRECONNECT: 'false',
   FDP_QA09_ACCOUNT_READ_CANDIDATE: 'false',
+  FDP_QA09_CONTRACT_LOAD_DETAIL: 'false',
   FDP_ADMIN_PARALLEL_SECRETS: 'true',
 };
 const setup = () => {
@@ -155,3 +160,27 @@ test('actual C1 Lambda initialization uses one candidate client; invalid JWT doe
     checkout.mockRestore();
   }
 });
+
+for (const accountRead of [false, true])
+  test(`actual detailed R${accountRead ? 1 : 0} initialization passes flag to one candidate without checkout for invalid JWT`, async () => {
+    setup();
+    vi.stubEnv('FDP_QA09_AUTHENTICATED_PRECONNECT', 'true');
+    vi.stubEnv('FDP_QA09_ACCOUNT_READ_CANDIDATE', String(accountRead));
+    vi.stubEnv('FDP_QA09_CONTRACT_LOAD_DETAIL', 'true');
+    const { Pool } = await import('pg');
+    const checkout = vi.spyOn(Pool.prototype, 'connect');
+    try {
+      const { handler } = await import('../src/runtime/lambda-entry.js');
+      assert.deepEqual(
+        (await Promise.all([handler(event), handler(event)])).map((r) => r.statusCode),
+        [401, 401],
+      );
+      assert.equal(mocks.candidate.mock.calls.length, 1);
+      assert.isTrue(mocks.candidate.mock.calls[0]![1]);
+      assert.equal(mocks.client.mock.calls.length, 0);
+      assert.equal(checkout.mock.calls.length, 0);
+      assert.equal(mocks.database.mock.calls.length, 1);
+    } finally {
+      checkout.mockRestore();
+    }
+  });

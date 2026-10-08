@@ -42,3 +42,12 @@ export function resolveAccountReadCandidate(env: Readonly<Record<string, string 
     throw new Error('ACCOUNT_READ_REQUIRES_TEST_POOL1_ENGINE_PRECONNECT');
   return value === 'true';
 }
+
+/** Default off; identical test/pool1/engine/preconnect guard for both R0 and R1. */
+export function resolveContractLoadDetail(env: Readonly<Record<string, string | undefined>>): boolean {
+  const value = env.FDP_QA09_CONTRACT_LOAD_DETAIL;
+  if (value !== undefined && value !== 'false' && value !== 'true') throw new Error('INVALID_CONTRACT_LOAD_DETAIL');
+  if (value === 'true' && !resolveAuthenticatedPreconnect(env))
+    throw new Error('CONTRACT_LOAD_DETAIL_REQUIRES_TEST_POOL1_ENGINE_PRECONNECT');
+  return value === 'true';
+}

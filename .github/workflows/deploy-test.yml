@@ -31,6 +31,12 @@ on:
         required: true
         type: choice
         options: [immediate, capacity]
+      contract_load_detail:
+        description: Default off; both detailed R0/R1 true; requires engine/preconnect; push always false
+        required: true
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
 
 permissions:
   contents: read
@@ -69,6 +75,7 @@ jobs:
         env:
           QA09_EXPECTED_COMMIT: ${{ inputs.expected_commit }}
           QA09_REQUESTED_ACCOUNT_READ: ${{ inputs.account_read_candidate }}
+          QA09_REQUESTED_CONTRACT_DETAIL: ${{ inputs.contract_load_detail }}
           QA09_REQUESTED_PRECONNECT: ${{ inputs.authenticated_preconnect }}
           QA09_REQUESTED_ENGINE: ${{ inputs.engine_cpu_diagnosis }}
           QA09_REQUESTED_PHASE: ${{ inputs.rollout_phase }}

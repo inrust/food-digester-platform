@@ -74,3 +74,20 @@ test('config rejects source, inventory and concurrency drift', () => {
     assert.throws(() => validateAccountReadTargetConfig(...f));
   }
 });
+
+test('new detail receipts require explicit matching actual flag, including false restore', () => {
+  for (const on of [false, true]) {
+    const f = fixture(false, on);
+    f[0].contractLoadDetail = on;
+    f[2].contractLoadDetail = String(on);
+    assert.equal(validateAccountReadTargetConfig(...f).gate, 'PASS');
+    for (const actual of [undefined, 'yes', String(!on)]) {
+      f[2].contractLoadDetail = actual;
+      assert.throws(() => validateAccountReadTargetConfig(...f));
+    }
+  }
+  const f = fixture(false, false);
+  f[0].contractLoadDetail = true;
+  f[2].contractLoadDetail = 'true';
+  assert.throws(() => validateAccountReadTargetConfig(...f));
+});

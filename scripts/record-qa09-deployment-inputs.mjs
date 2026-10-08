@@ -16,6 +16,8 @@ export function resolveDeploymentInputs(env, sourceCommit) {
   const engine = manual ? env.QA09_REQUESTED_ENGINE : env.FDP_QA09_ENGINE_CPU_DIAGNOSIS;
   const preconnect = manual ? (env.QA09_REQUESTED_PRECONNECT ?? 'false') : 'false';
   const accountRead = manual ? (env.QA09_REQUESTED_ACCOUNT_READ ?? 'false') : 'false';
+  const detail = manual ? (env.QA09_REQUESTED_CONTRACT_DETAIL ?? 'false') : 'false';
+  demand(['true', 'false'].includes(detail), 'EXPLICIT_CONTRACT_DETAIL_MODE_REQUIRED');
   demand(['true', 'false'].includes(accountRead), 'EXPLICIT_ACCOUNT_READ_MODE_REQUIRED');
   demand(['true', 'false'].includes(preconnect), 'EXPLICIT_PRECONNECT_MODE_REQUIRED');
   if (manual) {
@@ -29,6 +31,7 @@ export function resolveDeploymentInputs(env, sourceCommit) {
     FDP_QA09_ENGINE_CPU_DIAGNOSIS: engine,
     FDP_QA09_AUTHENTICATED_PRECONNECT: preconnect,
     FDP_QA09_ACCOUNT_READ_CANDIDATE: accountRead,
+    FDP_QA09_CONTRACT_LOAD_DETAIL: detail,
   });
   demand(
     /^[1-9][0-9]*$/.test(env.GITHUB_RUN_ID ?? '') && /^[1-9][0-9]*$/.test(env.GITHUB_RUN_ATTEMPT ?? ''),
@@ -45,6 +48,7 @@ export function resolveDeploymentInputs(env, sourceCommit) {
     engineCpu: engine === 'true',
     authenticatedPreconnect: preconnect === 'true',
     accountReadCandidate: accountRead === 'true',
+    contractLoadDetail: detail === 'true',
     context,
     fullQa09Accepted: false,
     p95Accepted: false,
@@ -71,12 +75,20 @@ export function validateEngineInputPair(off, on, { preconnect = false, accountRe
         QA09_REQUESTED_ENGINE: String(r.engineCpu),
         QA09_REQUESTED_PRECONNECT: String(r.authenticatedPreconnect ?? false),
         QA09_REQUESTED_ACCOUNT_READ: String(r.accountReadCandidate ?? false),
+        QA09_REQUESTED_CONTRACT_DETAIL: String(r.contractLoadDetail ?? false),
         GITHUB_RUN_ID: r.runId,
         GITHUB_RUN_ATTEMPT: r.runAttempt,
       },
       r.sourceCommit,
     );
-    demand(JSON.stringify(r.context) === JSON.stringify(expected.context), 'RESOLVED_CONTEXT_DRIFT');
+    const context = { ...r.context };
+    // Immutable pre-detail receipts remain readable only as default-off, never as detailed proof.
+    if (r.contractLoadDetail === undefined && context.enableQa09ContractLoadDetail === undefined)
+      context.enableQa09ContractLoadDetail = false;
+    demand(
+      JSON.stringify(Object.entries(context).sort()) === JSON.stringify(Object.entries(expected.context).sort()),
+      'RESOLVED_CONTEXT_DRIFT',
+    );
   }
   demand(
     off.runId !== on.runId &&
@@ -114,6 +126,7 @@ export function validateEngineInputPair(off, on, { preconnect = false, accountRe
         (k === 'sourceCommit' || k === 'rolloutPhase' || /^[a-f0-9]{64}$/.test(off[k])),
       'PAIR_INPUT_DRIFT',
     );
+  demand((off.contractLoadDetail ?? false) === (on.contractLoadDetail ?? false), 'PAIR_DETAIL_MODE_DRIFT');
   return {
     gate: 'PASS',
     scope: 'INPUT_COMPARABILITY_ONLY',
@@ -170,7 +183,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (process.env.GITHUB_ENV)
       appendFileSync(
         process.env.GITHUB_ENV,
-        `FDP_QA09_ROLLOUT_PHASE=${result.rolloutPhase}\nFDP_QA09_ENGINE_CPU_DIAGNOSIS=${result.engineCpu}\nFDP_QA09_AUTHENTICATED_PRECONNECT=${result.authenticatedPreconnect}\nFDP_QA09_ACCOUNT_READ_CANDIDATE=${result.accountReadCandidate}\n`,
+        `FDP_QA09_ROLLOUT_PHASE=${result.rolloutPhase}\nFDP_QA09_ENGINE_CPU_DIAGNOSIS=${result.engineCpu}\nFDP_QA09_AUTHENTICATED_PRECONNECT=${result.authenticatedPreconnect}\nFDP_QA09_ACCOUNT_READ_CANDIDATE=${result.accountReadCandidate}\nFDP_QA09_CONTRACT_LOAD_DETAIL=${result.contractLoadDetail}\n`,
       );
     console.log(
       JSON.stringify({

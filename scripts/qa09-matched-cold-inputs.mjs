@@ -54,6 +54,8 @@ export function matchedColdInputs(sourceCommit) {
 }
 /** Derived unit inputs must be independently byte-bound to deployment/19 ZIPs/phases/cleanup. */
 export function validateMatchedColdPair(off, on) {
+  if (off.contractLoadDetail !== undefined || on.contractLoadDetail !== undefined)
+    demand(off.contractLoadDetail === on.contractLoadDetail, 'MATCHED_DETAIL_MODE_DRIFT');
   demand(
     off.provenanceGate === 'PASS' &&
       on.provenanceGate === 'PASS' &&
@@ -107,6 +109,30 @@ export function validateMatchedColdPair(off, on) {
     targetGate: 'NOT_RUN',
     fullQa09Accepted: false,
   };
+}
+/** Additional detail proof binds explicit hosted input bytes; legacy absence is never inferred as enabled. */
+export function validateContractDetailDeployment(inputs, config, deployed, deployment, inputPath, inputHash) {
+  demand(inputs?.contractLoadDetail === true && config.contractLoadDetail === 'true', 'MATCHED_DETAIL_CONFIG_REQUIRED');
+  demand(
+    deployed.gate === 'PASS' &&
+      deployed.event === 'workflow_dispatch' &&
+      deployed.sourceCommit === inputs.sourceCommit &&
+      deployed.runId === deployment.runId &&
+      deployed.contractLoadDetail === true &&
+      deployed.engineCpu === true &&
+      deployed.authenticatedPreconnect === true &&
+      deployed.accountReadCandidate === inputs.accountReadCandidate &&
+      deployed.rolloutPhase === inputs.rolloutPhase &&
+      deployed.context?.enableQa09ContractLoadDetail === true &&
+      deployed.context?.enableQa09EngineCpuDiagnosis === true &&
+      deployed.context?.enableQa09AuthenticatedPreconnect === true &&
+      deployed.context?.enableQa09AccountReadCandidate === inputs.accountReadCandidate &&
+      deployed.context?.enableQa09Capacity === true &&
+      deployed.context?.enableImmediateCommandPublish === true &&
+      /^[a-f0-9]{64}$/.test(inputHash) &&
+      deployment.bindings?.[inputPath] === inputHash,
+    'MATCHED_DETAIL_DEPLOYMENT_REQUIRED',
+  );
 }
 /** Local manifest binds actual captured receipts; old/unwired candidate config cannot pass. */
 export function readMatchedColdUnit(manifestFile) {
@@ -163,8 +189,20 @@ export function readMatchedColdUnit(manifestFile) {
     runtimeAssembly: true,
     authenticatedPreconnect: true,
     contractLoadSplit: manifest.requireContractLoadSplit === true,
+    contractLoadDetail: manifest.requireContractLoadDetail === true,
   });
   const inputs = manifest.inputs;
+  if (manifest.requireContractLoadDetail === true) {
+    const deployed = read('inputs');
+    validateContractDetailDeployment(
+      inputs,
+      config,
+      deployed,
+      deployment,
+      manifest.receipts.inputs.path,
+      bindings.inputs,
+    );
+  }
   demand(
     inputs && config.accountReadCandidate === String(inputs.accountReadCandidate),
     'MATCHED_ACTUAL_CANDIDATE_CONFIG_REQUIRED',

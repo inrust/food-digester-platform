@@ -4,6 +4,7 @@ import { markDatabaseAdapterReady, markDatabaseDriverDispatch } from './client-p
 import { beginFirstDataPathPhase } from '@fdp/observability';
 import type { AuthenticatedPreconnect } from './authenticated-preconnect.js';
 import { observeContractLoadDriver } from './contract-load-observation.js';
+import { attachContractLoadPgLease } from './contract-load-pg-lease.js';
 
 type ConnectCallback = (
   error: Error | undefined,
@@ -13,6 +14,12 @@ type ConnectCallback = (
 
 /** Measures checkout through callback/promise settlement, including queueing and new TCP/TLS connections. */
 export class ObservedPgPool extends Pool {
+  constructor(
+    config: PoolConfig = {},
+    private readonly contractLoadDetail = false,
+  ) {
+    super(config);
+  }
   /** Bypass first-business-checkout claiming; pg retains its original 5s checkout timeout. */
   async prepareAuthenticatedConnection(): Promise<void> {
     const client = await super.connect();
@@ -26,11 +33,16 @@ export class ObservedPgPool extends Pool {
       if (callback)
         return super.connect((error, client, release) => {
           finish(error);
-          callback(error, client, release);
+          callback(
+            error,
+            client,
+            this.contractLoadDetail && client && !error ? attachContractLoadPgLease(client, release) : release,
+          );
         });
       return super.connect().then(
         (client) => {
           finish();
+          if (this.contractLoadDetail) attachContractLoadPgLease(client, client.release);
           return client;
         },
         (error) => {
@@ -50,13 +62,14 @@ export class ObservedPrismaPg extends PrismaPg {
   constructor(
     private readonly poolConfig: PoolConfig,
     private readonly preconnect?: AuthenticatedPreconnect,
+    private readonly contractLoadDetail = false,
   ) {
     super(poolConfig);
   }
   override async connect(): Promise<Awaited<ReturnType<PrismaPg['connect']>>> {
     const ready = beginFirstDataPathPhase('db-adapter-connect');
     let adapter: Awaited<ReturnType<PrismaPg['connect']>>;
-    const pool = new ObservedPgPool(this.poolConfig);
+    const pool = new ObservedPgPool(this.poolConfig, this.contractLoadDetail);
     try {
       adapter = await new PrismaPg(pool, { disposeExternalPool: true }).connect();
       this.preconnect?.adapterReady(pool);

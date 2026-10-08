@@ -226,3 +226,24 @@ test('preconnect context is default off and restricted to test capacity with exp
   ])
     assert.throws(() => resolveConfig(new App({ context: { ...enabled, ...patch } })));
 });
+
+test('contract detail context defaults off, accepts only strict booleans and requires existing preconnect guards', () => {
+  assert.isFalse(resolveConfig(new App({ context })).enableQa09ContractLoadDetail);
+  const enabled = {
+    ...context,
+    enableRequestObservability: true,
+    enableQa09Capacity: true,
+    enableQa09EngineCpuDiagnosis: true,
+    enableQa09AuthenticatedPreconnect: true,
+    enableQa09ContractLoadDetail: true,
+  };
+  assert.isTrue(resolveConfig(new App({ context: enabled })).enableQa09ContractLoadDetail);
+  for (const patch of [
+    { enableQa09ContractLoadDetail: 'yes' },
+    { enableQa09AuthenticatedPreconnect: false },
+    { enableQa09EngineCpuDiagnosis: false },
+    { enableQa09Capacity: false },
+    { envName: 'prod' },
+  ])
+    assert.throws(() => resolveConfig(new App({ context: { ...enabled, ...patch } })));
+});

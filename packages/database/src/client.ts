@@ -8,7 +8,7 @@ import { observeDatabaseClientPreparation } from './client-preparation.js';
 import { PrismaClient } from './generated/client.js';
 import { AuthenticatedPreconnect } from './authenticated-preconnect.js';
 import { observeDatabaseEnginePreparation } from './client-preparation.js';
-import { markContractLoadModelEntry } from './contract-load-observation.js';
+import { markContractLoadModelEntry, observeContractLoadSubmission } from './contract-load-observation.js';
 
 /** Defaults remain compatible; deployment sets an explicit per-function pool budget. */
 export const DATABASE_POOL_CONFIG = Object.freeze({
@@ -24,7 +24,11 @@ export function resolveDatabasePoolMax(value = process.env.FDP_DB_POOL_MAX): 1 |
   throw new Error('INVALID_DATABASE_POOL_MAX');
 }
 
-function createObservedClient(databaseUrl: string, preconnect?: AuthenticatedPreconnect): PrismaClient {
+function createObservedClient(
+  databaseUrl: string,
+  preconnect?: AuthenticatedPreconnect,
+  contractLoadDetail = false,
+): PrismaClient {
   if (preconnect && resolveDatabasePoolMax() !== 1) throw new Error('PRECONNECT_REQUIRES_POOL1');
   const client = new PrismaClient({
     adapter: new ObservedPrismaPg(
@@ -34,6 +38,7 @@ function createObservedClient(databaseUrl: string, preconnect?: AuthenticatedPre
         max: resolveDatabasePoolMax(),
       },
       preconnect,
+      contractLoadDetail,
     ),
   });
   // Public query extension keeps Prisma's lazy execution/transaction machinery; no eager $connect or SQL.
@@ -41,8 +46,8 @@ function createObservedClient(databaseUrl: string, preconnect?: AuthenticatedPre
     name: 'fdp-client-preparation-observation',
     query: {
       $allOperations({ args, query, model, operation }) {
-        markContractLoadModelEntry(model, operation);
-        return observeDatabaseClientPreparation(() => query(args));
+        markContractLoadModelEntry(model, operation, contractLoadDetail);
+        return observeDatabaseClientPreparation(() => observeContractLoadSubmission(() => query(args)));
       },
     },
   }) as unknown as PrismaClient;
@@ -51,12 +56,15 @@ export function createPrismaClient(databaseUrl: string): PrismaClient {
   return createObservedClient(databaseUrl);
 }
 /** Explicit Admin candidate; caller guards test/pool1/engine. Ordinary factory stays lazy/default off. */
-export function createAdminPreconnectCandidate(databaseUrl: string): {
+export function createAdminPreconnectCandidate(
+  databaseUrl: string,
+  contractLoadDetail = false,
+): {
   client: PrismaClient;
   prepareAuthenticated: () => Promise<void>;
 } {
   const ownership = new AuthenticatedPreconnect();
-  const client = createObservedClient(databaseUrl, ownership);
+  const client = createObservedClient(databaseUrl, ownership, contractLoadDetail);
   return {
     client,
     prepareAuthenticated: () => ownership.prepare(() => observeDatabaseEnginePreparation(() => client.$connect())),
