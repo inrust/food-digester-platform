@@ -1,0 +1,36 @@
+"""Normal renewal of this existing SSO role; secrets stay in memory/stdin and the standard CLI cache only."""
+import configparser,datetime,json,os,pathlib,subprocess,sys,tempfile
+root=pathlib.Path(__file__).parent;output=root/sys.argv[1];assert not output.exists()
+now=datetime.datetime.now(datetime.timezone.utc);home=pathlib.Path.home();c=configparser.ConfigParser();c.read(home/'.aws/config');profile=c['profile esgiot-infra'];assert profile['sso_account_id']=='065986019555' and profile['sso_role_name']=='FDP-InfraSetup';sec=c['sso-session '+profile['sso_session']]
+def cli(args,**kwargs):
+ q=subprocess.run(['aws',*args,'--output','json','--no-cli-pager'],capture_output=True,text=True,timeout=60,**kwargs)
+ assert q.returncode==0,'NORMAL_PROFILE_CREDENTIAL_READ_FAILED'
+ return json.loads(q.stdout)
+old=cli(['configure','export-credentials','--profile','esgiot-infra','--format','process']);oldExpiry=datetime.datetime.fromisoformat(old['Expiration'].replace('Z','+00:00'));assert oldExpiry<=now+datetime.timedelta(minutes=75),'RENEW_ONLY_WHEN_ENTRY_MARGIN_IS_INSUFFICIENT'
+found=[]
+for p in (home/'.aws/cli/cache').glob('*.json'):
+ try:
+  j=json.loads(p.read_text())
+  if j.get('Credentials',{}).get('AccessKeyId')==old['AccessKeyId']:found.append((p,j))
+ except (ValueError,OSError):pass
+assert len(found)==1,'EXACT_EXISTING_PROFILE_CACHE_REQUIRED'
+tokens=[]
+for p in (home/'.aws/sso/cache').glob('*.json'):
+ try:
+  j=json.loads(p.read_text());expiry=datetime.datetime.fromisoformat(j['expiresAt'].replace('Z','+00:00'))
+  if j.get('startUrl')==sec['sso_start_url'] and j.get('region')==sec['sso_region'] and j.get('accessToken') and expiry>now+datetime.timedelta(minutes=10):tokens.append((expiry,j['accessToken']))
+ except (ValueError,KeyError,OSError):pass
+assert tokens,'FRESH_PROFILE_LOGIN_REQUIRED'
+loginExpiry,token=max(tokens,key=lambda x:x[0]);payload={'roleName':profile['sso_role_name'],'accountId':profile['sso_account_id'],'accessToken':token}
+fresh=cli(['sso','get-role-credentials','--profile','esgiot-infra','--region',sec['sso_region'],'--no-sign-request','--cli-input-json','file:///dev/stdin'],input=json.dumps(payload))['roleCredentials'];expiry=datetime.datetime.fromtimestamp(fresh['expiration']/1000,datetime.timezone.utc);assert expiry>now+datetime.timedelta(minutes=75)
+p,j=found[0];j['Credentials']={'AccessKeyId':fresh['accessKeyId'],'SecretAccessKey':fresh['secretAccessKey'],'SessionToken':fresh['sessionToken'],'Expiration':expiry.isoformat()}
+fd,tmp=tempfile.mkstemp(prefix='qa09-renew-',dir=p.parent)
+try:
+ os.fchmod(fd,0o600)
+ with os.fdopen(fd,'w') as f:json.dump(j,f)
+ os.replace(tmp,p);os.chmod(p,0o600)
+finally:
+ if pathlib.Path(tmp).exists():pathlib.Path(tmp).unlink()
+identity=cli(['sts','get-caller-identity','--profile','esgiot-infra']);assert identity['Account']=='065986019555' and ':assumed-role/AWSReservedSSO_FDP-InfraSetup_' in identity['Arn']
+out={'gate':'PASS','scope':'NORMAL_SAME_PROFILE_ROLE_RENEWAL_NOT_IAM_OR_SSO_PERMISSION_CHANGE','profile':'esgiot-infra','accountId':identity['Account'],'previousRoleExpiresAt':oldExpiry.isoformat(),'roleExpiresAt':expiry.isoformat(),'loginExpiresAt':loginExpiry.isoformat(),'credentialsPersistedToRepository':False,'credentialDestination':'EXACT_EXISTING_STANDARD_AWS_CLI_CACHE_ONLY','minimumCleanupMarginMinutes':75}
+output.write_text(json.dumps(out,indent=2)+'\n');print(json.dumps(out))

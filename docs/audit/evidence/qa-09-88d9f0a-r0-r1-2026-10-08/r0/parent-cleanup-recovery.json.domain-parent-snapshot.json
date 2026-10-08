@@ -1,0 +1,181 @@
+{
+  "task": "QA-09",
+  "scope": "EXACT_NONACTIVE_PARENT_CLEANUP_RECOVERY_NO_BUSINESS_REPLAY",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1"
+  },
+  "sourceCommit": "88d9f0a5a734aacf0aef6af69c5a4985baacfe84",
+  "prefix": "qa09-56793f2ff33cad71",
+  "devices": [
+    "qa09-56793f2ff33cad71-01",
+    "qa09-56793f2ff33cad71-02",
+    "qa09-56793f2ff33cad71-03",
+    "qa09-56793f2ff33cad71-04",
+    "qa09-56793f2ff33cad71-05",
+    "qa09-56793f2ff33cad71-06",
+    "qa09-56793f2ff33cad71-07",
+    "qa09-56793f2ff33cad71-08",
+    "qa09-56793f2ff33cad71-09",
+    "qa09-56793f2ff33cad71-10"
+  ],
+  "customers": [
+    {
+      "id": "f73b0873-07d2-485f-8cda-5c59861c77fa",
+      "name": "qa09-56793f2ff33cad71-a",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-08T05:22:12.458Z",
+      "updatedAt": "2026-10-08T05:22:12.458Z",
+      "suffix": "a"
+    },
+    {
+      "id": "5ebe5424-daaf-42c8-982b-e93e6ee579da",
+      "name": "qa09-56793f2ff33cad71-b",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-08T05:22:14.978Z",
+      "updatedAt": "2026-10-08T05:22:14.978Z",
+      "suffix": "b"
+    }
+  ],
+  "startedAt": "2026-10-08T05:41:01.786Z",
+  "gate": "PASS",
+  "checks": [
+    {
+      "id": "exact-ten-own-devices-deleted",
+      "result": "PASS"
+    },
+    {
+      "id": "original-baseline-preserved",
+      "result": "PASS"
+    },
+    {
+      "id": "recovery-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "recovery-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "scope-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/5ebe5424-daaf-42c8-982b-e93e6ee579da",
+      "status": 200,
+      "requestId": "8a568290-48a0-4146-aa12-78a39a5c72fd"
+    },
+    {
+      "id": "own-customer-name-b",
+      "result": "PASS"
+    },
+    {
+      "id": "delete-b",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/5ebe5424-daaf-42c8-982b-e93e6ee579da",
+      "status": 200,
+      "requestId": "14dc6506-2971-43e5-a06e-7caeddad75d4"
+    },
+    {
+      "id": "absent-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/5ebe5424-daaf-42c8-982b-e93e6ee579da",
+      "status": 404,
+      "requestId": "85827ae6-3954-409c-a961-c5c247198453"
+    },
+    {
+      "id": "scope-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/f73b0873-07d2-485f-8cda-5c59861c77fa",
+      "status": 200,
+      "requestId": "d9414222-d88a-4f7c-b926-ee445e9d35f1"
+    },
+    {
+      "id": "own-customer-name-a",
+      "result": "PASS"
+    },
+    {
+      "id": "delete-a",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/f73b0873-07d2-485f-8cda-5c59861c77fa",
+      "status": 200,
+      "requestId": "9a45ba7e-f6b0-4e5b-9a3a-e6a74f6216e3"
+    },
+    {
+      "id": "absent-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/f73b0873-07d2-485f-8cda-5c59861c77fa",
+      "status": 404,
+      "requestId": "e4c94ffe-e551-47b1-9361-a88ba457ead1"
+    },
+    {
+      "id": "original-dedicated-identity-absent",
+      "result": "PASS"
+    },
+    {
+      "id": "recovery-identity-absent",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "database-fixtures",
+      "count": 10,
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "5ebe5424-daaf-42c8-982b-e93e6ee579da",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "f73b0873-07d2-485f-8cda-5c59861c77fa",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-56793f2ff33cad71-platformsuperadmin@example.invalid",
+      "result": "PASS"
+    },
+    {
+      "type": "recovery-identity",
+      "username": "qa09-56793f2ff33cad71-parent-recovery@example.invalid",
+      "result": "PASS"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "cleanup",
+      "receipt": "docs/audit/evidence/qa-09-88d9f0a-r0-r1-2026-10-08/r0/parent-cleanup-recovery.json.cleanup.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:f78d8ccc-c226-451b-b834-0b3fa6eddda2"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "docs/audit/evidence/qa-09-88d9f0a-r0-r1-2026-10-08/r0/sample.json.fixtures.json",
+      "sha256": "5b7e04ef8b4882a80d8336b24fc6cd30128d26dc5dd2b21289806d5dd6259e9c"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-88d9f0a-r0-r1-2026-10-08/r0/sample.json",
+      "sha256": "48c818bc6e569ae867af86dc2099f4023072c3c32774c2306ad224e6a97f0baf"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-88d9f0a-r0-r1-2026-10-08/r0/parent-observe-recovered.json",
+      "sha256": "6ec050cf93a1e5bfccd7d08a60a1d09f39a84bc51491e52d49cf2bbec1043bf3"
+    }
+  ],
+  "patchReplay": false,
+  "samplingReplay": false,
+  "fullQa09Accepted": false,
+  "recoveryIdentity": "qa09-56793f2ff33cad71-parent-recovery@example.invalid",
+  "globalSignOut": "PASS",
+  "finishedAt": "2026-10-08T05:43:56.251Z"
+}
