@@ -18,6 +18,7 @@ const pair = () => {
     naturalCold409Count: 1,
     platformInitDurationMs: 400,
     coldProofGate: 'PASS',
+    coldProofGroup: 'BASELINE',
     clientSplitGate: 'PASS',
     firstCheckoutOwned: true,
   };
@@ -52,6 +53,7 @@ test('planner never dispatches and matchable inputs never accept P95 or causal b
 for (const [key, value] of [
   ['sourceCommit', 'c'.repeat(40)],
   ['memoryMiB', 1024],
+  ['architecture', 'x86_64'],
   ['poolMax', 2],
   ['actorRole', 'Auditor'],
   ['accountState', 'INVITED'],
@@ -63,6 +65,7 @@ for (const [key, value] of [
   ['lambdaCount', 18],
   ['cleanupGate', 'FAIL'],
   ['source', 'CONTROLLED_TEST_ONLY'],
+  ['coldProofGroup', 'INDEPENDENT_SAMPLING'],
   ['naturalCold409Count', 0],
   ['platformInitDurationMs', 0],
   ['clientSplitGate', 'NOT_RUN'],
@@ -102,4 +105,12 @@ test('actual receipt loader rejects byte drift and directory escape before readi
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('matched independent sampling stays distinct from baseline and cannot accept a missing group', () => {
+  const [a, b] = pair();
+  a.coldProofGroup = b.coldProofGroup = 'INDEPENDENT_SAMPLING';
+  assert.equal(validateMatchedColdPair(a, b).gate, 'INPUT_COMPATIBLE');
+  delete a.coldProofGroup;
+  assert.throws(() => validateMatchedColdPair(a, b), /SAME_COLD_GROUP/);
 });

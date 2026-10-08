@@ -1,0 +1,255 @@
+import { readFileSync, writeFileSync, realpathSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { resolve, dirname, sep } from 'node:path';
+import { validatePhaseCorrelation } from './check-qa09-contract-phases.mjs';
+import { pathToFileURL } from 'node:url';
+const demand = (ok, reason) => {
+  if (!ok) throw Error(reason);
+};
+export function matchedColdInputs(sourceCommit) {
+  demand(/^[a-f0-9]{40}$/.test(sourceCommit), 'EXACT_SOURCE_SHA_REQUIRED');
+  const common = {
+    sourceCommit,
+    engineCpuDiagnosis: true,
+    authenticatedPreconnect: true,
+    rolloutPhase: 'immediate',
+    runtime: 'nodejs24.x',
+    architecture: 'arm64',
+    memoryMiB: 512,
+    reservedConcurrency: 12,
+    poolMax: 1,
+    connectionBudget: 70,
+    maxConcurrency: 6,
+    baselinePatchRequests: 6,
+    maxPatchRequests: 12,
+    accountState: 'ACTIVE',
+    actorRole: 'PlatformSuperAdmin',
+    operationId: 'updateContract',
+    expectedStatus: 409,
+  };
+  return {
+    gate: 'PREPARED_OFFLINE_TARGET_NOT_RUN',
+    scope: 'PLANNED_R0_R1_NATURAL_COLD_PAIR_NO_DISPATCH',
+    r0: { ...common, accountReadCandidate: false },
+    r1: { ...common, accountReadCandidate: true },
+    required: [
+      'same SHA hosted CI/deployment and 19 actual ZIPs',
+      'actual runtime candidate config binding (not yet wired)',
+      'R0 complete business, own cleanup and independent empty before R1',
+      'positive REPORT Init Duration and strict stage identities, not only application coldStart',
+      'same operation/status/account state/role/budget',
+      'client split and independent query/checkout boundaries',
+      'sampled connection budget and both own cleanup',
+      'restore account candidate false and preconnect false after R1',
+    ],
+    prohibited: [
+      'shared Lambda/database/queue restarts to force cold',
+      'additional pools or capacity',
+      'reuse older SHA cold receipt',
+      'replay/expand fixture probes to fill missing cold samples',
+    ],
+    p95Accepted: false,
+    fullQa09Accepted: false,
+  };
+}
+/** Derived unit inputs must be independently byte-bound to deployment/19 ZIPs/phases/cleanup. */
+export function validateMatchedColdPair(off, on) {
+  demand(
+    off.provenanceGate === 'PASS' &&
+      on.provenanceGate === 'PASS' &&
+      off.cleanupGate === 'PASS' &&
+      on.cleanupGate === 'PASS' &&
+      off.phaseGate === 'PASS' &&
+      on.phaseGate === 'PASS' &&
+      off.connectionBudgetGate === 'PASS' &&
+      on.connectionBudgetGate === 'PASS',
+    'MATCHED_CLOSED_PROVENANCE_REQUIRED',
+  );
+  demand(off.source === 'TARGET_RECEIPT' && on.source === 'TARGET_RECEIPT', 'MATCHED_TARGET_REQUIRED');
+  demand(off.accountReadCandidate === false && on.accountReadCandidate === true, 'MATCHED_MODE_REQUIRED');
+  demand(
+    off.prefix !== on.prefix && off.runId !== on.runId && Date.parse(off.closedAt) < Date.parse(on.startedAt),
+    'MATCHED_SEQUENTIAL_UNITS_REQUIRED',
+  );
+  const common = matchedColdInputs(off.sourceCommit).r0;
+  for (const k of Object.keys(common).filter((k) => k !== 'accountReadCandidate'))
+    demand(off[k] === common[k] && on[k] === common[k], 'MATCHED_INPUT_DRIFT');
+  demand(
+    off.artifactSetSha256 === on.artifactSetSha256 &&
+      /^[a-f0-9]{64}$/.test(off.artifactSetSha256) &&
+      off.lambdaCount === 19 &&
+      on.lambdaCount === 19,
+    'MATCHED_19_ARTIFACTS_REQUIRED',
+  );
+  for (const r of [off, on])
+    demand(
+      Number.isSafeInteger(r.naturalCold409Count) &&
+        r.naturalCold409Count > 0 &&
+        r.naturalCold409Count <= r.maxPatchRequests &&
+        Number.isFinite(r.platformInitDurationMs) &&
+        r.platformInitDurationMs > 0 &&
+        r.coldProofGate === 'PASS' &&
+        r.clientSplitGate === 'PASS' &&
+        r.firstCheckoutOwned === true,
+      'MATCHED_PHYSICAL_COLD_REQUIRED',
+    );
+  return {
+    gate: 'INPUT_COMPATIBLE',
+    scope: 'DECLARED_MATCHABLE_NATURAL_COLD_INPUTS_ONLY_NO_RECEIPT_BYTES_VERIFIED',
+    sourceCommit: off.sourceCommit,
+    p95Accepted: false,
+    causalBenefit: 'NOT_ESTABLISHED',
+    receiptBytesVerified: false,
+    targetGate: 'NOT_RUN',
+    fullQa09Accepted: false,
+  };
+}
+/** Local manifest binds actual captured receipts; old/unwired candidate config cannot pass. */
+export function readMatchedColdUnit(manifestFile) {
+  const manifest = JSON.parse(readFileSync(manifestFile));
+  const root = realpathSync(dirname(manifestFile));
+  const bindings = {};
+  const bytes = {};
+  const read = (key) => {
+    const ref = manifest.receipts?.[key];
+    demand(ref && /^[a-f0-9]{64}$/.test(ref.sha256), 'MATCHED_RECEIPT_REFERENCE_REQUIRED');
+    const path = realpathSync(resolve(root, ref.path));
+    demand(path.startsWith(root + sep), 'MATCHED_RECEIPT_PATH_ESCAPE');
+    const b = readFileSync(path),
+      hash = createHash('sha256').update(b).digest('hex');
+    demand(hash === ref.sha256, 'MATCHED_RECEIPT_BYTE_DRIFT');
+    bindings[key] = hash;
+    bytes[key] = b;
+    return JSON.parse(b);
+  };
+  const version = read('version'),
+    deployment = read('deployment'),
+    configReceipt = read('config'),
+    concurrencyReceipt = read('concurrency'),
+    unit = read('unit'),
+    empty = read('empty'),
+    budget = read('budget'),
+    child = read('child'),
+    patch = read('patch'),
+    audit = read('audit');
+  const config = configReceipt.config ?? configReceipt,
+    concurrency = concurrencyReceipt.concurrency ?? concurrencyReceipt;
+  for (const receipt of [version, deployment, unit, empty, budget])
+    demand(receipt.gate === 'PASS', 'MATCHED_RECEIPT_GATE');
+  for (const [name, hash] of Object.entries(unit.bindings)) {
+    const path = realpathSync(resolve(root, name));
+    demand(path.startsWith(root + sep), 'MATCHED_RECEIPT_PATH_ESCAPE');
+    demand(createHash('sha256').update(readFileSync(path)).digest('hex') === hash, 'MATCHED_UNIT_BINDING_DRIFT');
+  }
+  demand(
+    child.gate === 'PASS' &&
+      child.cleanupComplete === true &&
+      patch.sourceReceiptSha256 === bindings.child &&
+      audit.sourceReceiptSha256 === bindings.child,
+    'MATCHED_CHILD_CLEANUP_BYTES',
+  );
+  const phases = validatePhaseCorrelation(patch, audit, {
+    accountPhases: true,
+    requireColdConflict: true,
+    clientPreparation: true,
+    clientSplit: true,
+    engineCpu: true,
+    runtimeAssembly: true,
+    authenticatedPreconnect: true,
+  });
+  const inputs = manifest.inputs;
+  demand(
+    inputs && config.accountReadCandidate === String(inputs.accountReadCandidate),
+    'MATCHED_ACTUAL_CANDIDATE_CONFIG_REQUIRED',
+  );
+  demand(
+    config.pool === '1' &&
+      config.memory === 512 &&
+      config.engineCpu === 'true' &&
+      config.preconnect === 'true' &&
+      config.envName === 'test' &&
+      config.runtime === 'nodejs24.x' &&
+      config.architecture === 'arm64' &&
+      concurrency.ReservedConcurrentExecutions === 12,
+    'MATCHED_ACTUAL_BUDGET',
+  );
+  demand(
+    [version, deployment, unit, child, patch, audit].every((r) => r.sourceCommit === inputs.sourceCommit) &&
+      unit.runId === deployment.runId &&
+      child.prefix === unit.prefix &&
+      patch.prefix === unit.prefix &&
+      audit.prefix === unit.prefix,
+    'MATCHED_SOURCE_PREFIX_DRIFT',
+  );
+  demand(
+    version.lambdaArtifacts.length === 19 && version.lambdaArtifacts.every((a) => a.matches === true),
+    'MATCHED_ARTIFACT_COUNT',
+  );
+  demand(
+    budget.maxBudget === 70 && budget.observedMaximum <= 70 && budget.businessWindowSampleCoverage === true,
+    'MATCHED_SAMPLED_BUDGET',
+  );
+  const artifacts = version.lambdaArtifacts
+    .map((a) => ({
+      name: a.name,
+      codeSha256: a.codeSha256,
+      artifactSha256: a.artifactSha256,
+      s3Bucket: a.s3Bucket,
+      s3Key: a.s3Key,
+      runtime: a.runtime,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  demand(
+    new Set(artifacts.map((a) => a.name)).size === 19 &&
+      artifacts.every((a) => typeof a.artifactSha256 === 'string' && a.artifactSha256.length > 0),
+    'MATCHED_ARTIFACT_BYTES',
+  );
+  const cold = patch.records.filter((r) => r.status === 409 && r.platformReports?.[0]?.initDurationMs > 0);
+  demand(cold.length === phases.coldConflictObservedCount && cold.length > 0, 'MATCHED_REPORT_PROOF');
+  return {
+    ...inputs,
+    source: 'TARGET_RECEIPT',
+    provenanceGate: 'PASS',
+    cleanupGate: 'PASS',
+    phaseGate: phases.gate,
+    connectionBudgetGate: budget.gate,
+    lambdaCount: 19,
+    artifactSetSha256: createHash('sha256').update(JSON.stringify(artifacts)).digest('hex'),
+    naturalCold409Count: cold.length,
+    platformInitDurationMs: Math.min(...cold.map((r) => r.platformReports[0].initDurationMs)),
+    coldProofGate: 'PASS',
+    clientSplitGate: 'PASS',
+    firstCheckoutOwned: true,
+    prefix: unit.prefix,
+    runId: deployment.runId,
+    startedAt: child.startedAt,
+    closedAt: unit.finishedAt,
+    receiptBindings: bindings,
+  };
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  if (process.argv[2] === '--pair') {
+    const [off, on, out] = process.argv.slice(3);
+    demand(off && on && out && process.argv.length === 6, 'TWO_MANIFESTS_OUTPUT_REQUIRED');
+    const r0 = readMatchedColdUnit(off),
+      r1 = readMatchedColdUnit(on);
+    const result = {
+      ...validateMatchedColdPair(r0, r1),
+      receiptBytesVerified: true,
+      receiptBindingGate: 'PASS',
+      r0,
+      r1,
+    };
+    writeFileSync(out, JSON.stringify(result, null, 2) + '\n');
+    console.log(JSON.stringify({ gate: result.gate, receiptBindingGate: result.receiptBindingGate }));
+  } else {
+    const [sha, out] = process.argv.slice(2);
+    demand(sha && out && process.argv.length === 4, 'SHA_AND_OUTPUT_REQUIRED');
+    const result = matchedColdInputs(sha);
+    result.generatorSha256 = createHash('sha256')
+      .update(readFileSync(new URL(import.meta.url)))
+      .digest('hex');
+    writeFileSync(out, JSON.stringify(result, null, 2) + '\n');
+    console.log(JSON.stringify({ gate: result.gate, sourceCommit: sha }));
+  }
+}

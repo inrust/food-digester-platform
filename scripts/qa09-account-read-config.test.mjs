@@ -30,7 +30,7 @@ const fixture = (candidate, preconnect = true) => [
     pool: '1',
     memory: 512,
     runtime: 'nodejs24.x',
-    architecture: 'x86_64',
+    architecture: 'arm64',
     engineCpu: 'true',
     preconnect: String(preconnect),
     accountReadCandidate: String(candidate),
@@ -55,7 +55,7 @@ for (const [key, value] of [
   ['revisionId', 'changed'],
   ['codeSha256', 'changed'],
   ['state', 'Pending'],
-  ['architecture', 'arm64'],
+  ['architecture', 'x86_64'],
 ])
   test(`config rejects ${key} drift`, () => {
     const f = fixture(true);

@@ -48,3 +48,21 @@ for (const [name, mutate] of [
     mutate(p);
     assert.throws(() => validateClientSplitPhases(p, true));
   });
+
+for (const [outer, startGap, submit, wait] of [
+  [737, 17, 20, 699],
+  [498, 18, 20, 460],
+  [40, 20, 20, 0],
+])
+  test(`target observer setup gap remains rejected: ${outer}ms/${startGap}ms`, () => {
+    const p = fixture();
+    p[0].completedAt = new Date(outer).toISOString();
+    p[0].durationMs = outer;
+    p[1].startedAt = new Date(startGap).toISOString();
+    p[1].completedAt = new Date(outer - wait).toISOString();
+    p[1].durationMs = submit;
+    p[2].startedAt = new Date(outer - wait).toISOString();
+    p[2].completedAt = new Date(outer).toISOString();
+    p[2].durationMs = wait;
+    assert.throws(() => validateClientSplitPhases(p, true), /CLIENT_SPLIT_ORDER/);
+  });

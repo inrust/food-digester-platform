@@ -32,7 +32,7 @@ export function validateAccountReadTargetConfig(inputs, version, config, concurr
       config.pool === '1' &&
       config.memory === 512 &&
       config.runtime === 'nodejs24.x' &&
-      config.architecture === 'x86_64' &&
+      config.architecture === 'arm64' &&
       concurrency.ReservedConcurrentExecutions === 12,
     'ACCOUNT_READ_ACTUAL_BUDGET',
   );

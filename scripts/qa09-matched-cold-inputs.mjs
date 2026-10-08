@@ -14,7 +14,7 @@ export function matchedColdInputs(sourceCommit) {
     authenticatedPreconnect: true,
     rolloutPhase: 'immediate',
     runtime: 'nodejs24.x',
-    architecture: 'x86_64',
+    architecture: 'arm64',
     memoryMiB: 512,
     reservedConcurrency: 12,
     poolMax: 1,
@@ -70,6 +70,10 @@ export function validateMatchedColdPair(off, on) {
   demand(
     off.prefix !== on.prefix && off.runId !== on.runId && Date.parse(off.closedAt) < Date.parse(on.startedAt),
     'MATCHED_SEQUENTIAL_UNITS_REQUIRED',
+  );
+  demand(
+    ['BASELINE', 'INDEPENDENT_SAMPLING'].includes(off.coldProofGroup) && off.coldProofGroup === on.coldProofGroup,
+    'MATCHED_SAME_COLD_GROUP_REQUIRED',
   );
   const common = matchedColdInputs(off.sourceCommit).r0;
   for (const k of Object.keys(common).filter((k) => k !== 'accountReadCandidate'))
@@ -148,7 +152,9 @@ export function readMatchedColdUnit(manifestFile) {
       audit.sourceReceiptSha256 === bindings.child,
     'MATCHED_CHILD_CLEANUP_BYTES',
   );
+  const sampling = patch.scope === 'OWN_COLD409_PATCH_GATEWAY_LAMBDA_REQUEST_CORRELATION';
   const phases = validatePhaseCorrelation(patch, audit, {
+    sampling,
     accountPhases: true,
     requireColdConflict: true,
     clientPreparation: true,
@@ -169,7 +175,7 @@ export function readMatchedColdUnit(manifestFile) {
       config.preconnect === 'true' &&
       config.envName === 'test' &&
       config.runtime === 'nodejs24.x' &&
-      config.architecture === 'x86_64' &&
+      config.architecture === 'arm64' &&
       concurrency.ReservedConcurrentExecutions === 12,
     'MATCHED_ACTUAL_BUDGET',
   );
@@ -215,6 +221,7 @@ export function readMatchedColdUnit(manifestFile) {
     connectionBudgetGate: budget.gate,
     lambdaCount: 19,
     artifactSetSha256: createHash('sha256').update(JSON.stringify(artifacts)).digest('hex'),
+    coldProofGroup: sampling ? 'INDEPENDENT_SAMPLING' : 'BASELINE',
     naturalCold409Count: cold.length,
     platformInitDurationMs: Math.min(...cold.map((r) => r.platformReports[0].initDurationMs)),
     coldProofGate: 'PASS',

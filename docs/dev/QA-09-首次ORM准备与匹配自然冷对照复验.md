@@ -26,7 +26,7 @@ node scripts/qa09-matched-cold-inputs.mjs FULL_40_CHARACTER_PUSHED_SHA /tmp/qa09
 
 ## R0→R1 顺序
 
-两组同SHA、engine/preconnect=true，nodejs24.x/x86_64/512MiB/reserved12/pool1，连接预算70；相同ACTIVE账号状态、PlatformSuperAdmin、updateContract及409输入。最大并发6、基线PATCH6、独立PATCH最多12。不缓存账号状态、不强制冷启动、不扩大采样，不使用旧SHA冷回执。
+两组同SHA、engine/preconnect=true，nodejs24.x/arm64/512MiB/reserved12/pool1，连接预算70；相同ACTIVE账号状态、PlatformSuperAdmin、updateContract及409输入。最大并发6、基线PATCH6、独立PATCH最多12。不缓存账号状态、不强制冷启动、不扩大采样，不使用旧SHA冷回执。
 
 R0 accountReadCandidate=false：新前缀限定业务、自然冷采样、逐请求关联；记录Lambda REPORT Init Duration、submit/await/prepare、首checkout/query、账号hook、Gateway/app/client与TCP/TLS。完成自有清理、GlobalSignOut、AWS独立空集、预算窗口覆盖、19工件/配置无漂移后才启动R1=true。R1同流程及清理；最终候选false、preconnect=false恢复，核对实际配置/19工件。缺任何物理冷组保留NOT_OBSERVED，不重放补样。
 
@@ -70,3 +70,5 @@ node scripts/record-qa09-deployment-inputs.mjs --account-read-pair /tmp/R0/qa09-
 此PASS仅部署输入可比。每组必须有自然冷物理REPORT和 `--client-split` 严格阶段，match loader与实际业务检查不可省略。旧工件可复用已验证ZIP字节，必须新读19配置并绑定新run，不得复用旧ApiFn revision/config。
 
 R1完成/异常后先清理本轮夹具再恢复，恢复手动输入固定 `engine_cpu_diagnosis=true authenticated_preconnect=false account_read_candidate=false rollout_phase=immediate`（同完整SHA）。等待SUCCESS、再核对最新19工件和两flag实际false、仅ApiFn变化、预算/独立空集。无IAM/KMS/资源容量调整，不强制冷、不重复故障注入补样。
+
+2026-10-08目标预检纠正：此前离线输入误写x86_64；de4c2f6的Infra固定ARM_64，真实ApiFn确认arm64。仅修正本机验收输入/只读门禁及负例，未改应用、工作流、架构、内存或并发。目标两组继续绑定de4c2f6；原失败配置回执和首版输入保留。
