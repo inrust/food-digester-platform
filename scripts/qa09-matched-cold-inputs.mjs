@@ -162,6 +162,7 @@ export function readMatchedColdUnit(manifestFile) {
     engineCpu: true,
     runtimeAssembly: true,
     authenticatedPreconnect: true,
+    contractLoadSplit: manifest.requireContractLoadSplit === true,
   });
   const inputs = manifest.inputs;
   demand(

@@ -52,7 +52,7 @@ rows = {}
 platform_reports = []
 for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
                     ('lambda', '/aws/lambda/fdp-test-api')]:
-    found, phases, error, token, pages = [], [], None, None, 0
+    found, phases, ownership, error, token, pages = [], [], [], None, None, 0
     seen_tokens = set()
     while True:
         args = ['aws', 'logs', 'filter-log-events', '--log-group-name', group,
@@ -92,7 +92,7 @@ for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
                 phase_fields = ['gatewayRequestId', 'lambdaRequestId', 'operationId', 'phase', 'durationMs',
                                 'outcome', 'errorCode', 'startedAt', 'completedAt', 'coldStart', 'includesConnectionWait']
                 phase = {k: value[k] for k in phase_fields if k in value}
-                if value.get('completionBoundary') in ['DRIVER_DISPATCH', 'CALL_RETURNED', 'OPERATION_SETTLED', 'OPERATION_FAILED']:
+                if value.get('completionBoundary') in ['DRIVER_DISPATCH', 'CALL_RETURNED', 'MODEL_EXTENSION_ENTERED', 'OPERATION_SETTLED', 'OPERATION_FAILED']:
                     phase['completionBoundary'] = value['completionBoundary']
                 if value.get('processCpuScope') == 'PROCESS_ALL_THREADS':
                     phase['processCpuScope'] = 'PROCESS_ALL_THREADS'
@@ -101,6 +101,10 @@ for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
                         if type(metric) is int and 0 <= metric <= 9007199254740991:
                             phase[key] = metric
                 phases.append(phase)
+            if name == 'lambda' and value.get('event') == 'data-path.contract-load.ownership':
+                if (all(type(value.get(k)) is int and 0 <= value[k] <= 9007199254740991 for k in ['modelEntries', 'driverDispatches'])
+                        and type(value.get('transactional')) is bool):
+                    ownership.append({k: value[k] for k in ['gatewayRequestId', 'lambdaRequestId', 'operationId', 'modelEntries', 'driverDispatches', 'transactional'] if k in value})
             if name == 'lambda' and value.get('event') != 'admin.request.completed':
                 continue
             row = {k: value[k] for k in fields[name] if k in value}
@@ -115,7 +119,7 @@ for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
             error = 'LOG_PAGINATION_INCOMPLETE'
             break
         seen_tokens.add(token)
-    rows[name] = {'rows': found, 'phases': phases, 'pages': pages, 'error': error}
+    rows[name] = {'rows': found, 'phases': phases, 'ownership': ownership, 'pages': pages, 'error': error}
 linked = []
 for client in clients:
     gateway = [g for g in rows['gateway']['rows'] if g.get('requestId') == client['requestId']]
@@ -136,7 +140,8 @@ for client in clients:
     own_reports = [p for p in platform_reports if len(runtime) == 1 and p['lambdaRequestId'] == runtime[0].get('lambdaRequestId')]
     linked.append({**client, 'platformReports': own_reports, 'gateway': gateway, 'lambda': runtime, 'exactLinked': exact,
                    'integrationThrottled': any(str(g.get('integrationStatus')) == '429' for g in gateway),
-                   'phases': [p for p in rows['lambda']['phases'] if p.get('gatewayRequestId') == client['requestId']]})
+                   'phases': [p for p in rows['lambda']['phases'] if p.get('gatewayRequestId') == client['requestId']],
+                   'contractLoadOwnership': [p for p in rows['lambda']['ownership'] if p.get('gatewayRequestId') == client['requestId']]})
 expected_count = len(clients) if audit_mode or sampling else 6
 complete = (len(linked) == expected_count and len(ids) == expected_count and expected_count > 0 and
             len({c['id'] for c in clients}) == expected_count and

@@ -3,6 +3,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { markDatabaseAdapterReady, markDatabaseDriverDispatch } from './client-preparation.js';
 import { beginFirstDataPathPhase } from '@fdp/observability';
 import type { AuthenticatedPreconnect } from './authenticated-preconnect.js';
+import { observeContractLoadDriver } from './contract-load-observation.js';
 
 type ConnectCallback = (
   error: Error | undefined,
@@ -84,8 +85,17 @@ export class ObservedPrismaPg extends PrismaPg {
         throw error;
       }
     };
-    adapter.queryRaw = (q) => first(() => query(q));
-    adapter.executeRaw = (q) => first(() => execute(q));
+    adapter.queryRaw = (q) => observeContractLoadDriver(() => first(() => query(q)), false);
+    adapter.executeRaw = (q) => observeContractLoadDriver(() => first(() => execute(q)), false);
+    const startTransaction = adapter.startTransaction.bind(adapter);
+    adapter.startTransaction = async (...args) => {
+      const tx = await startTransaction(...args);
+      const txQuery = tx.queryRaw.bind(tx),
+        txExecute = tx.executeRaw.bind(tx);
+      tx.queryRaw = (q) => observeContractLoadDriver(() => txQuery(q), true);
+      tx.executeRaw = (q) => observeContractLoadDriver(() => txExecute(q), true);
+      return tx;
+    };
     return adapter;
   }
 }

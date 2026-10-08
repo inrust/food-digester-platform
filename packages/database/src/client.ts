@@ -8,6 +8,7 @@ import { observeDatabaseClientPreparation } from './client-preparation.js';
 import { PrismaClient } from './generated/client.js';
 import { AuthenticatedPreconnect } from './authenticated-preconnect.js';
 import { observeDatabaseEnginePreparation } from './client-preparation.js';
+import { markContractLoadModelEntry } from './contract-load-observation.js';
 
 /** Defaults remain compatible; deployment sets an explicit per-function pool budget. */
 export const DATABASE_POOL_CONFIG = Object.freeze({
@@ -39,7 +40,8 @@ function createObservedClient(databaseUrl: string, preconnect?: AuthenticatedPre
   return client.$extends({
     name: 'fdp-client-preparation-observation',
     query: {
-      $allOperations({ args, query }) {
+      $allOperations({ args, query, model, operation }) {
+        markContractLoadModelEntry(model, operation);
         return observeDatabaseClientPreparation(() => query(args));
       },
     },

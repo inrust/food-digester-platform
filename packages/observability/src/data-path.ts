@@ -28,6 +28,10 @@ export type DataPathPhase =
   | 'db-transaction-open'
   | 'db-transaction-finish'
   | 'contract-load'
+  | 'contract-load-delegate'
+  | 'contract-load-orm-prepare'
+  | 'contract-load-driver-query'
+  | 'contract-load-result'
   | 'contract-version-update'
   | 'contract-readback'
   | 'audit-success-write'
@@ -166,7 +170,8 @@ function ownBoundary(boundary: DataPathBoundary | undefined, trace: Trace): Boun
   return value?.trace === trace ? value : undefined;
 }
 /** Finish is idempotent; no SQL, payload or arbitrary error messages enter the log. */
-export type PreparationBoundary = 'DRIVER_DISPATCH' | 'CALL_RETURNED' | 'OPERATION_SETTLED' | 'OPERATION_FAILED';
+export type PreparationBoundary =
+  'DRIVER_DISPATCH' | 'CALL_RETURNED' | 'MODEL_EXTENSION_ENTERED' | 'OPERATION_SETTLED' | 'OPERATION_FAILED';
 export function beginDataPathPhase(
   phase: DataPathPhase,
   options: { readonly processCpu?: boolean; readonly startBoundary?: DataPathBoundary | undefined } = {},
@@ -214,8 +219,18 @@ export function beginDataPathPhase(
           'db-engine-prepare',
           'db-engine-after-adapter',
           'db-authenticated-preconnect',
+          'contract-load-delegate',
+          'contract-load-orm-prepare',
+          'contract-load-driver-query',
+          'contract-load-result',
         ].includes(phase) &&
-        ['DRIVER_DISPATCH', 'CALL_RETURNED', 'OPERATION_SETTLED', 'OPERATION_FAILED'].includes(boundary)
+        [
+          'DRIVER_DISPATCH',
+          'CALL_RETURNED',
+          'MODEL_EXTENSION_ENTERED',
+          'OPERATION_SETTLED',
+          'OPERATION_FAILED',
+        ].includes(boundary)
           ? { completionBoundary: boundary }
           : {}),
         durationMs: Math.max(0, Math.round((sharedEnd?.time ?? trace.clock()) - start)),
@@ -235,11 +250,25 @@ export function beginDataPathPhase(
           phase === 'admin-account-activation' ||
           phase === 'db-first-connection' ||
           phase === 'db-authenticated-preconnect' ||
-          phase === 'db-first-query',
+          phase === 'db-first-query' ||
+          phase === 'contract-load' ||
+          phase === 'contract-load-driver-query',
       },
       trace,
     );
   };
+}
+/** Fixed numeric scope diagnostics; never records model arguments, SQL or result contents. */
+export function recordContractLoadOwnership(
+  modelEntries: number,
+  driverDispatches: number,
+  transactional: boolean,
+): void {
+  emit('data-path.contract-load.ownership', {
+    modelEntries,
+    driverDispatches,
+    transactional,
+  });
 }
 /** Claim before dispatch, so concurrent operations log only the first attempt in this trace. */
 export type FirstDataPathPhase = 'db-first-connection' | 'db-first-query' | 'db-client-prepare' | 'db-adapter-connect';

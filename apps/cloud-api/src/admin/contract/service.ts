@@ -15,7 +15,7 @@
  */
 import { observeDataPathPhase } from '@fdp/observability';
 import type { DbClient } from '@fdp/database';
-import { audited } from '@fdp/database';
+import { audited, observeContractLoad } from '@fdp/database';
 import {
   assertContractActivatable,
   assertContractEditable,
@@ -248,7 +248,7 @@ export async function updateContract(
       afterValue: (result: unknown) => auditSnapshot(result as ContractView),
     },
     async (tx) => {
-      const current = await observeDataPathPhase('contract-load', () => loadContract(tx, input.contractId));
+      const current = await observeContractLoad(() => loadContract(tx, input.contractId));
       assertContractEditable(current.status as ContractStatus, {
         touchesStartAt: input.startAt !== undefined,
         touchesEndAt: input.endAt !== undefined,

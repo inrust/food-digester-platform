@@ -1,0 +1,90 @@
+{
+  "gate": "PASS",
+  "scope": "LOCAL_IMPLEMENTATION_FULL_VERIFY_AND_BOUNDED_UNAUTHENTICATED_TRANSPORT_ONLY",
+  "baseCommit": "9e3258c1be9514c77a5e7331ef6b44807420e3e1",
+  "sourceBasis": "WORKING_TREE_HASHES_NOT_NEW_SHA_HOSTED_RECEIPTS",
+  "commands": [
+    {
+      "command": "pnpm verify",
+      "log": "full-verify.log",
+      "exit": 1,
+      "reason": "SANDBOX_LISTEN_EPERM_THREE_LOCAL_PORT_TESTS"
+    },
+    {
+      "command": "pnpm verify",
+      "log": "full-verify-escalated.log",
+      "exit": 0,
+      "applicationTests": 1464,
+      "contractTests": 302,
+      "scriptTests": 680
+    },
+    {
+      "command": "pnpm exec vitest run packages/database/test/contract-load-observation.test.ts packages/database/test/contract-load-boundary-runtime.test.mjs packages/database/test/observed-pg.test.ts apps/cloud-api/test/admin-contract.test.ts",
+      "log": "targeted-vitest.log",
+      "tests": 19,
+      "exit": 0
+    }
+  ],
+  "localGates": [
+    {
+      "task": "QA-02",
+      "status": "PASS",
+      "scope": "LOCAL_CONTRACT_AND_REAL_HANDLER",
+      "file": "local-gates/device-contracts.json",
+      "sha256": "367a7ab6fa0e35eced3a1bacbcb569017d35504e8a1c1d7c2ea7664f58502a8e"
+    },
+    {
+      "task": "QA-03",
+      "status": "PASS",
+      "scope": "LOCAL_INTEGRATION",
+      "file": "local-gates/iot-integration.json",
+      "sha256": "45eae92501e718f005ea03faabef1f5c01c9c6e79d0e0df7add069997193cb5e"
+    },
+    {
+      "task": "QA-04",
+      "status": "PASS",
+      "scope": "LOCAL_API_INTEGRATION",
+      "file": "local-gates/core-api-integration.json",
+      "sha256": "b1980456b8729ff2caa0ebc73929f9516ffc2f0fe1e74b8614f0bfb42121d99d"
+    },
+    {
+      "task": "QA-05",
+      "status": "PASS",
+      "scope": "LOCAL_BROWSER_E2E",
+      "file": "local-gates/admin-e2e.json",
+      "sha256": "75e46a9598bb1aa90ae0cdeedcae6684a3752b449d12260cb6fae7d4b00a389d"
+    },
+    {
+      "task": "QA-06",
+      "status": "PASS",
+      "scope": "LOCAL_APPLICATION_SECURITY",
+      "file": "local-gates/security.json",
+      "sha256": "b7a892265ae14e727815c430fa45a8345ed03fc794d37e030e494d3318da7bc3"
+    },
+    {
+      "task": "QA-07",
+      "status": "PASS",
+      "scope": "LOCAL_LOAD_RELIABILITY",
+      "file": "local-gates/reliability.json",
+      "sha256": "886671bcb87f60c603100cb311d8fd8b409942fc42f076b1d43e76a7682d028d"
+    },
+    {
+      "task": "QA-08",
+      "status": "PASS",
+      "scope": "LOCAL_PROTOTYPE_BROWSER_REGRESSION",
+      "file": "local-gates/prototype-regression.json",
+      "sha256": "265fed45189b4b80eb62ba7012d728d0633ee2279e14dabc4472d9fa7aef562c"
+    }
+  ],
+  "transport": {
+    "nodeRequests": 12,
+    "curlRequests": 6,
+    "gates": "PASS",
+    "auth": "UNAUTHENTICATED_GET_EXPECTED_401_NORMAL_TLS",
+    "networkNodeAttribution": "UNRESOLVED"
+  },
+  "newTargetGate": "NOT_RUN",
+  "modelCostShift": "NOT_ESTABLISHED",
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}

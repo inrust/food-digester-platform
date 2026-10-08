@@ -443,3 +443,11 @@ test('parent phase Gate requires engine/runtime and C1 settlement before queries
   ).toISOString();
   assert.throws(() => validatePhaseCorrelation(f.patch, f.audit, options), /PRECONNECT_ORDER/);
 });
+
+test('new contract-load split opt-in cannot reuse an older unsplit target receipt', () => {
+  const { patch, audit } = fixtures();
+  assert.throws(
+    () => validatePhaseCorrelation(patch, audit, { contractLoadSplit: true }),
+    /CONTRACT_LOAD_SPLIT_REQUIRED/,
+  );
+});
