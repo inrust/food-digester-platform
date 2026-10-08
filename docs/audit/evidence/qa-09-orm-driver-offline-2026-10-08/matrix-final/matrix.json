@@ -1,0 +1,617 @@
+{
+  "gate": "PASS",
+  "scope": "OFFLINE_PUBLIC_BOUNDARIES_OWNERSHIP_AND_CONTROLLED_FAILURE_MATRIX",
+  "source": "FRESH_NODE_PROCESS_PER_CASE_REAL_PRISMA_CONTROLLED_PG",
+  "runtime": {
+    "node": "v24.12.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "budget": {
+    "childProcesses": 8,
+    "concurrency": 1,
+    "childDeadlineMs": 45000,
+    "poolMax": 1,
+    "networkRequests": 0,
+    "databaseServers": 0,
+    "targetFixtures": 0
+  },
+  "inputs": [
+    {
+      "path": "scripts/run-qa09-contract-load-offline.mjs",
+      "sha256": "6701c68b0443e2facfc2d3d6428cf38c18bbd7250cb5b9b95c32cee31f734449"
+    },
+    {
+      "path": "scripts/qa09-contract-load-proof.mjs",
+      "sha256": "d915105663fec9e188b8021ecb0a5370cbfc2f54c2ac2169e95a5b2dffc8a8d9"
+    },
+    {
+      "path": "packages/database/test/contract-load-offline.test.ts",
+      "sha256": "5828d223ef74c3d688e21db4bce4123b052d9771ec97b603b4105e5a32e6b475"
+    },
+    {
+      "path": "packages/database/src/client.ts",
+      "sha256": "055f77ef0fb857180949089bbedcf05eb338d7a8b25f19660d936af75c5b5040"
+    },
+    {
+      "path": "packages/database/src/observed-pg.ts",
+      "sha256": "553aa1a0099de58c8d9a5f32b6a606f622bc738150f923be4fc9e515cda0cf39"
+    },
+    {
+      "path": "packages/database/src/contract-load-observation.ts",
+      "sha256": "ebaae206c2aad52f121898d0257b331b3ab016f0c260b61bf81d1790b775fa7d"
+    },
+    {
+      "path": "apps/cloud-api/src/admin/user/account-read-candidate.ts",
+      "sha256": "c01424fd813b1e4dca7f84a062f9b94d2a15f0450041830e7cce6ed7dea25ae5"
+    },
+    {
+      "path": "apps/cloud-api/src/admin/contract/service.ts",
+      "sha256": "5f3bfad166ca965b260603dd7b6984c0d7263851b511cd2649e6705a8fcd9da0"
+    },
+    {
+      "path": "packages/database/prisma/schema.prisma",
+      "sha256": "fd3e5b59670fe300db0406e295eaf9d9022bb5108210d24cd22c19dcf1c19d73"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2126f03557c343bc7fc90b12e060f663492a67b647e0892bb18dba126a7f3364"
+    },
+    {
+      "path": "node_modules/@prisma/adapter-pg/dist/index.mjs",
+      "sha256": "e6879b3429f9efade5696321da768476fd4710f2aff7de95c01cca15d6a8d1d1"
+    }
+  ],
+  "rows": [
+    {
+      "case": "orm-zero",
+      "receipt": "orm-zero.json",
+      "sha256": "c66bc9684d5677741834efb78f436c2469a303929261d6400d791fb00fb2392a",
+      "accountMs": 16.131541999999996,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "firstContractForClient": true,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 1,
+            "driverQueryMs": 0,
+            "resultMs": 0,
+            "loadMs": 1,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.004,
+            "returnToAdapterMs": 0.507,
+            "adapterToPgMs": 0.034,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.015,
+            "controlledFieldsCpuMs": 0.002,
+            "fieldsReadyToAdapterMs": 0.088,
+            "adapterTotalMs": 0.14
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 0,
+            "driverQueryMs": 0,
+            "resultMs": 0,
+            "loadMs": 0,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.112,
+            "adapterToPgMs": 0.019,
+            "controlledPgMs": 0,
+            "resultReadyToFieldsMs": 0.004,
+            "controlledFieldsCpuMs": 0,
+            "fieldsReadyToAdapterMs": 0.012,
+            "adapterTotalMs": 0.035
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 0,
+            "driverQueryMs": 0,
+            "resultMs": 0,
+            "loadMs": 0,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.097,
+            "adapterToPgMs": 0.012,
+            "controlledPgMs": 0,
+            "resultReadyToFieldsMs": 0.005,
+            "controlledFieldsCpuMs": 0,
+            "fieldsReadyToAdapterMs": 0.008,
+            "adapterTotalMs": 0.025
+          },
+          "publicWindowOnly": true
+        }
+      ]
+    },
+    {
+      "case": "raw-zero",
+      "receipt": "raw-zero.json",
+      "sha256": "1db131266fbe56a11df9bc3afa68482e6043bdf37c5f59a8eb7b960a23ed032e",
+      "accountMs": 1.8074160000000177,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "firstContractForClient": true,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 16,
+            "driverQueryMs": 0,
+            "resultMs": 1,
+            "loadMs": 17,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.003,
+            "returnToAdapterMs": 15.838,
+            "adapterToPgMs": 0.08,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.02,
+            "controlledFieldsCpuMs": 0.002,
+            "fieldsReadyToAdapterMs": 0.107,
+            "adapterTotalMs": 0.21
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 0,
+            "driverQueryMs": 0,
+            "resultMs": 0,
+            "loadMs": 0,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.003,
+            "returnToAdapterMs": 0.142,
+            "adapterToPgMs": 0.012,
+            "controlledPgMs": 0,
+            "resultReadyToFieldsMs": 0.004,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.011,
+            "adapterTotalMs": 0.028
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 0,
+            "driverQueryMs": 0,
+            "resultMs": 0,
+            "loadMs": 0,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.098,
+            "adapterToPgMs": 0.016,
+            "controlledPgMs": 0,
+            "resultReadyToFieldsMs": 0.005,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.008,
+            "adapterTotalMs": 0.03
+          },
+          "publicWindowOnly": true
+        }
+      ]
+    },
+    {
+      "case": "orm-wait",
+      "receipt": "orm-wait.json",
+      "sha256": "7f235efb0add802b9ac9840721307577562bacdb44624fb1a1db7e00705aae13",
+      "accountMs": 16.73245799999998,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "firstContractForClient": true,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 1,
+            "driverQueryMs": 30,
+            "resultMs": 1,
+            "loadMs": 31,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.004,
+            "returnToAdapterMs": 0.441,
+            "adapterToPgMs": 0.031,
+            "controlledPgMs": 29.781,
+            "resultReadyToFieldsMs": 0.067,
+            "controlledFieldsCpuMs": 0.002,
+            "fieldsReadyToAdapterMs": 0.168,
+            "adapterTotalMs": 30.049
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 0,
+            "driverQueryMs": 31,
+            "resultMs": 0,
+            "loadMs": 32,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.136,
+            "adapterToPgMs": 0.019,
+            "controlledPgMs": 31.142,
+            "resultReadyToFieldsMs": 0.017,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.048,
+            "adapterTotalMs": 31.227
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 0,
+            "driverQueryMs": 30,
+            "resultMs": 0,
+            "loadMs": 30,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.155,
+            "adapterToPgMs": 0.015,
+            "controlledPgMs": 29.978,
+            "resultReadyToFieldsMs": 0.015,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.041,
+            "adapterTotalMs": 30.05
+          },
+          "publicWindowOnly": true
+        }
+      ]
+    },
+    {
+      "case": "raw-wait",
+      "receipt": "raw-wait.json",
+      "sha256": "8acd3cddf2b91eda8a7a4dbb888b1847c4d4264d12704955dc8564f37b62cc84",
+      "accountMs": 1.606833000000023,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "firstContractForClient": true,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 15,
+            "driverQueryMs": 32,
+            "resultMs": 1,
+            "loadMs": 48,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.004,
+            "returnToAdapterMs": 14.902,
+            "adapterToPgMs": 0.076,
+            "controlledPgMs": 31.771,
+            "resultReadyToFieldsMs": 0.084,
+            "controlledFieldsCpuMs": 0.002,
+            "fieldsReadyToAdapterMs": 0.182,
+            "adapterTotalMs": 32.115
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 0,
+            "driverQueryMs": 30,
+            "resultMs": 0,
+            "loadMs": 30,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.159,
+            "adapterToPgMs": 0.013,
+            "controlledPgMs": 29.685,
+            "resultReadyToFieldsMs": 0.023,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.072,
+            "adapterTotalMs": 29.794
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 0,
+            "driverQueryMs": 31,
+            "resultMs": 0,
+            "loadMs": 31,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.132,
+            "adapterToPgMs": 0.016,
+            "controlledPgMs": 30.837,
+            "resultReadyToFieldsMs": 0.023,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.06,
+            "adapterTotalMs": 30.937
+          },
+          "publicWindowOnly": true
+        }
+      ]
+    },
+    {
+      "case": "orm-result",
+      "receipt": "orm-result.json",
+      "sha256": "dd7158ba65554413036354bd9ea05f5a815c5fa6ce3a042e530cb075efdec248",
+      "accountMs": 16.898375000000016,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "firstContractForClient": true,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 1,
+            "driverQueryMs": 20,
+            "resultMs": 0,
+            "loadMs": 21,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.005,
+            "returnToAdapterMs": 0.476,
+            "adapterToPgMs": 0.034,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.019,
+            "controlledFieldsCpuMs": 20.026,
+            "fieldsReadyToAdapterMs": 0.196,
+            "adapterTotalMs": 20.276
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 0,
+            "driverQueryMs": 20,
+            "resultMs": 0,
+            "loadMs": 20,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.003,
+            "returnToAdapterMs": 0.14,
+            "adapterToPgMs": 0.018,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.005,
+            "controlledFieldsCpuMs": 20.008,
+            "fieldsReadyToAdapterMs": 0.02,
+            "adapterTotalMs": 20.052
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 0,
+            "driverQueryMs": 20,
+            "resultMs": 0,
+            "loadMs": 20,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.001,
+            "returnToAdapterMs": 0.109,
+            "adapterToPgMs": 0.013,
+            "controlledPgMs": 0,
+            "resultReadyToFieldsMs": 0.003,
+            "controlledFieldsCpuMs": 20.018,
+            "fieldsReadyToAdapterMs": 0.054,
+            "adapterTotalMs": 20.088
+          },
+          "publicWindowOnly": true
+        }
+      ]
+    },
+    {
+      "case": "raw-result",
+      "receipt": "raw-result.json",
+      "sha256": "e06291f9e66e59d0806441ca39395a674c3408c5e124b6db8e5146eb0e433e8f",
+      "accountMs": 1.6234159999999918,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "firstContractForClient": true,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 15,
+            "driverQueryMs": 20,
+            "resultMs": 1,
+            "loadMs": 36,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.004,
+            "returnToAdapterMs": 14.937,
+            "adapterToPgMs": 0.072,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.019,
+            "controlledFieldsCpuMs": 20.025,
+            "fieldsReadyToAdapterMs": 0.198,
+            "adapterTotalMs": 20.315
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 0,
+            "driverQueryMs": 20,
+            "resultMs": 0,
+            "loadMs": 20,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.135,
+            "adapterToPgMs": 0.012,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.003,
+            "controlledFieldsCpuMs": 20.016,
+            "fieldsReadyToAdapterMs": 0.047,
+            "adapterTotalMs": 20.079
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "originalSplit": {
+            "gate": "PASS",
+            "delegateMs": 0,
+            "ormPrepareMs": 0,
+            "driverQueryMs": 20,
+            "resultMs": 0,
+            "loadMs": 21,
+            "scope": "PUBLIC_MODEL_EXTENSION_TO_TRANSACTION_ADAPTER_NOT_COMPILER_OR_SERVER_ONLY",
+            "causalBenefit": "NOT_ESTABLISHED"
+          },
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.136,
+            "adapterToPgMs": 0.016,
+            "controlledPgMs": 0,
+            "resultReadyToFieldsMs": 0.004,
+            "controlledFieldsCpuMs": 20.024,
+            "fieldsReadyToAdapterMs": 0.073,
+            "adapterTotalMs": 20.117
+          },
+          "publicWindowOnly": true
+        }
+      ]
+    },
+    {
+      "case": "raw-reject",
+      "receipt": "raw-reject.json",
+      "sha256": "05b1f7386805b5db980cba1ab73cf189852d2f46298223468206b656299e2402",
+      "accountMs": 1.5632920000000183,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "EXPECTED_FAILURE",
+          "rollback": true,
+          "retried": false
+        }
+      ]
+    },
+    {
+      "case": "raw-invalid",
+      "receipt": "raw-invalid.json",
+      "sha256": "0127784746b9bb4e698e0cf050762622fa43edd8a4406e2ec1cb28e71e3cb675",
+      "accountMs": 1.5807499999999948,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "EXPECTED_FAILURE",
+          "rollback": true,
+          "retried": false
+        }
+      ]
+    }
+  ],
+  "targetEquivalent": false,
+  "modelCostShift": "NOT_ESTABLISHED",
+  "compilerOnlyAttribution": false,
+  "serverExecutionIsolated": false,
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}

@@ -1,0 +1,77 @@
+{
+  "baselineHead": "3cb5b759caeb38cc7c54a0506174be7832cc6f2e",
+  "targetApplicationCommit": "17fb6f10443f74d05ae3686928b9f2ed575d9b05",
+  "libraries": [
+    {
+      "path": "node_modules/@prisma/client/package.json",
+      "sha256": "e002c79a2c14d51de18fedce8f4471b00bd3d67bc4cbdd7faaaa4dfdd50f6d67",
+      "package": "@prisma/client",
+      "version": "7.9.1"
+    },
+    {
+      "path": "node_modules/@prisma/adapter-pg/package.json",
+      "sha256": "8256e8a778b798a5552a3b795409ec23a1c629ee94c308ad2d5909a29fe03e5b",
+      "package": "@prisma/adapter-pg",
+      "version": "7.10.0"
+    },
+    {
+      "path": "node_modules/pg/package.json",
+      "sha256": "e42dd36cba6e9dd8dbb6f773a2f7be8a8c3c273e18b155e42e75961a4cb8bc28",
+      "package": "pg",
+      "version": "8.23.0"
+    },
+    {
+      "path": "node_modules/vitest/package.json",
+      "sha256": "a28126d97bcaf567da5bed69443b7f3bcd9a7a8c38c8b66e554686b6bb2c10e0",
+      "package": "vitest",
+      "version": "4.1.11"
+    },
+    {
+      "path": "packages/database/src/generated/internal/class.ts",
+      "sha256": "4affdcf2e15d882f19eb8e720479eff16792cd046231174c6bb77af81a88d09a"
+    }
+  ],
+  "commands": {
+    "offline": [
+      "node",
+      "scripts/run-qa09-contract-load-offline.mjs",
+      "docs/audit/evidence/qa-09-orm-driver-offline-2026-10-08/matrix-final"
+    ],
+    "validators": [
+      "node",
+      "--test",
+      "scripts/qa09-contract-load-offline.test.mjs",
+      "scripts/qa09-contract-load-proof.test.mjs"
+    ],
+    "targeted": [
+      "pnpm",
+      "exec",
+      "vitest",
+      "run",
+      "packages/database/test/contract-load-offline.test.ts"
+    ],
+    "typecheck": [
+      "pnpm",
+      "exec",
+      "tsc",
+      "-p",
+      "packages/database/tsconfig.json",
+      "--noEmit"
+    ],
+    "verify": [
+      "pnpm",
+      "verify"
+    ],
+    "nodeTransport": [
+      "node",
+      "scripts/qa09-tls-diagnostic.mjs",
+      "docs/audit/evidence/qa-09-orm-driver-offline-2026-10-08/node-transport.json"
+    ],
+    "curlTransport": [
+      "node",
+      "scripts/qa09-curl-transport-diagnostic.mjs",
+      "docs/audit/evidence/qa-09-orm-driver-offline-2026-10-08/curl-transport.json"
+    ]
+  },
+  "networkScope": "EXACT_18_UNAUTHENTICATED_GETS_ONLY_NO_AWS_RESOURCE_MUTATION"
+}

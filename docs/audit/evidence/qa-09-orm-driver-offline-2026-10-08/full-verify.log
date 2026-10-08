@@ -1,0 +1,2166 @@
+
+> food-digester-platform@0.0.0 verify /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks && pnpm check:admin-web-delivery && pnpm check:admin-web-e2e && pnpm check:cmd-ota-delivery && pnpm test:device-contracts /tmp/fdp-device-contracts-gate.json && pnpm test:iot-integration /tmp/fdp-iot-integration-gate.json && pnpm test:core-api-integration /tmp/fdp-core-api-integration-gate.json && pnpm test:admin-e2e-suite /tmp/fdp-admin-e2e-gate.json && pnpm test:security-suite /tmp/fdp-security-gate.json && pnpm test:reliability-suite /tmp/fdp-reliability-gate.json && pnpm test:prototype-regression /tmp/fdp-prototype-regression-gate.json
+
+
+> food-digester-platform@0.0.0 lint /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> eslint .
+
+
+> food-digester-platform@0.0.0 format:check /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> food-digester-platform@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> turbo run typecheck
+
+• turbo 2.10.11
+
+   • Packages in scope: @fdp/admin-web, @fdp/archive-worker, @fdp/auth, @fdp/aws-clients, @fdp/cloud-api, @fdp/contracts, @fdp/database, @fdp/domain, @fdp/infra, @fdp/ingestion-worker, @fdp/media, @fdp/observability, @fdp/summary-worker
+   • Running typecheck in 13 packages
+   • Remote caching disabled
+
+@fdp/database:generate: cache miss, executing 57ec0bc624edaaca
+@fdp/aws-clients:typecheck: cache hit, replaying logs 767e47322641a244
+@fdp/observability:typecheck: cache hit, replaying logs 1f853972df4dd9a6
+@fdp/observability:build: cache hit, replaying logs f03cb858f5095aa4
+@fdp/observability:typecheck: 
+@fdp/observability:typecheck: > @fdp/observability@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability
+@fdp/observability:typecheck: > tsc -p tsconfig.json
+@fdp/observability:typecheck: 
+@fdp/aws-clients:typecheck: 
+@fdp/aws-clients:typecheck: > @fdp/aws-clients@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/aws-clients
+@fdp/aws-clients:typecheck: > tsc -p tsconfig.json
+@fdp/aws-clients:typecheck: 
+@fdp/observability:build: 
+@fdp/observability:build: > @fdp/observability@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability
+@fdp/observability:build: > tsc -p tsconfig.build.json
+@fdp/observability:build: 
+@fdp/contracts:typecheck: cache hit, replaying logs aa15856efcfb63ca
+@fdp/contracts:build: cache hit, replaying logs badb40bf08f6da73
+@fdp/contracts:build: 
+@fdp/contracts:build: > @fdp/contracts@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/contracts
+@fdp/contracts:typecheck: 
+@fdp/contracts:typecheck: > @fdp/contracts@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/contracts
+@fdp/contracts:build: > node -e "console.log('@fdp/contracts 为源码契约包：内部使用 .ts 扩展名互引，不经 tsc 构建；消费方经 tsx/打包器直接使用源码')"
+@fdp/contracts:build: 
+@fdp/contracts:typecheck: > tsc -p tsconfig.json
+@fdp/contracts:typecheck: 
+@fdp/contracts:build: @fdp/contracts 为源码契约包：内部使用 .ts 扩展名互引，不经 tsc 构建；消费方经 tsx/打包器直接使用源码
+@fdp/infra:typecheck: cache hit, replaying logs d4cd6bfa1a601435
+@fdp/infra:typecheck: 
+@fdp/infra:typecheck: > @fdp/infra@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/infra
+@fdp/infra:typecheck: > tsc -p tsconfig.json
+@fdp/infra:typecheck: 
+@fdp/domain:typecheck: cache hit, replaying logs fd26312a4c0953c8
+@fdp/domain:typecheck: 
+@fdp/domain:typecheck: > @fdp/domain@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/domain
+@fdp/domain:typecheck: > tsc -p tsconfig.json
+@fdp/domain:typecheck: 
+@fdp/domain:build: cache hit, replaying logs 47ef0249a0b99843
+@fdp/domain:build: 
+@fdp/domain:build: > @fdp/domain@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/domain
+@fdp/domain:build: > tsc -p tsconfig.build.json
+@fdp/domain:build: 
+@fdp/aws-clients:build: cache hit, replaying logs 72b741ff8e28f9c8
+@fdp/aws-clients:build: 
+@fdp/aws-clients:build: > @fdp/aws-clients@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/aws-clients
+@fdp/aws-clients:build: > tsc -p tsconfig.build.json
+@fdp/aws-clients:build: 
+@fdp/database:generate: 
+@fdp/database:generate: > @fdp/database@0.0.0 generate /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database
+@fdp/database:generate: > prisma generate
+@fdp/database:generate: 
+@fdp/database:generate: Loaded Prisma config from prisma.config.ts.
+@fdp/database:generate: 
+@fdp/database:generate: Prisma schema loaded from prisma/schema.prisma.
+@fdp/database:generate: ┌─────────────────────────────────────────────────────────┐
+@fdp/database:generate: │  Update available 7.9.1 -> 8.0.0-rc.21                  │
+@fdp/database:generate: │                                                         │
+@fdp/database:generate: │  This is a major update - please follow the guide at    │
+@fdp/database:generate: │  https://pris.ly/d/major-version-upgrade                │
+@fdp/database:generate: │                                                         │
+@fdp/database:generate: │  Run the following to update                            │
+@fdp/database:generate: │    npm i --save-dev prisma@latest                       │
+@fdp/database:generate: │    npm i @prisma/client@latest                          │
+@fdp/database:generate: └─────────────────────────────────────────────────────────┘
+@fdp/database:generate: 
+@fdp/database:generate: ✔ Generated Prisma Client (7.9.1) to ./src/generated in 128ms
+@fdp/database:generate: 
+@fdp/database:build: cache miss, executing 8a71eaec091f1a16
+@fdp/database:typecheck: cache miss, executing c6ad684d3b9db528
+@fdp/database:build: 
+@fdp/database:build: > @fdp/database@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database
+@fdp/database:build: > tsc -p tsconfig.build.json
+@fdp/database:build: 
+@fdp/database:typecheck: 
+@fdp/database:typecheck: > @fdp/database@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database
+@fdp/database:typecheck: > tsc -p tsconfig.json
+@fdp/database:typecheck: 
+@fdp/media:typecheck: cache miss, executing 4fa6e8539254d0bb
+@fdp/summary-worker:typecheck: cache miss, executing 43eb2f7c9c9c7360
+@fdp/auth:build: cache miss, executing efa39a0182ab3b56
+@fdp/media:build: cache miss, executing ab9bbad7d409e677
+@fdp/archive-worker:typecheck: cache miss, executing b6a5c00102517e83
+@fdp/auth:typecheck: cache miss, executing bb9fe3925069cb8d
+@fdp/auth:typecheck: 
+@fdp/auth:typecheck: > @fdp/auth@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/auth
+@fdp/auth:typecheck: > tsc -p tsconfig.json
+@fdp/auth:typecheck: 
+@fdp/auth:build: 
+@fdp/auth:build: > @fdp/auth@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/auth
+@fdp/auth:build: > tsc -p tsconfig.build.json
+@fdp/auth:build: 
+@fdp/summary-worker:typecheck: 
+@fdp/summary-worker:typecheck: > @fdp/summary-worker@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/summary-worker
+@fdp/summary-worker:typecheck: > tsc -p tsconfig.json
+@fdp/summary-worker:typecheck: 
+@fdp/media:build: 
+@fdp/media:build: > @fdp/media@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/media
+@fdp/media:build: > tsc -p tsconfig.build.json
+@fdp/media:build: 
+@fdp/archive-worker:typecheck: 
+@fdp/archive-worker:typecheck: > @fdp/archive-worker@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/archive-worker
+@fdp/archive-worker:typecheck: > tsc -p tsconfig.json
+@fdp/archive-worker:typecheck: 
+@fdp/media:typecheck: 
+@fdp/media:typecheck: > @fdp/media@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/media
+@fdp/media:typecheck: > tsc -p tsconfig.json
+@fdp/media:typecheck: 
+@fdp/ingestion-worker:typecheck: cache miss, executing 3ed5a7a862cec2c3
+@fdp/admin-web:typecheck: cache miss, executing 589e1c6b5dfe10b3
+@fdp/cloud-api:typecheck: cache miss, executing 3a5b6168e80403b0
+@fdp/admin-web:typecheck: 
+@fdp/admin-web:typecheck: > @fdp/admin-web@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web
+@fdp/admin-web:typecheck: > tsc -p tsconfig.json && tsc -p tsconfig.e2e.json
+@fdp/admin-web:typecheck: 
+@fdp/ingestion-worker:typecheck: 
+@fdp/ingestion-worker:typecheck: > @fdp/ingestion-worker@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/ingestion-worker
+@fdp/ingestion-worker:typecheck: > tsc -p tsconfig.json
+@fdp/ingestion-worker:typecheck: 
+@fdp/cloud-api:typecheck: 
+@fdp/cloud-api:typecheck: > @fdp/cloud-api@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api
+@fdp/cloud-api:typecheck: > tsc -p tsconfig.json
+@fdp/cloud-api:typecheck: 
+
+ Tasks:    21 successful, 21 total
+Cached:    9 cached, 21 total
+  Time:    6.617s 
+
+
+> food-digester-platform@0.0.0 openapi:check /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/build-openapi.mjs --check && redocly lint contracts/rest/openapi-base.json "contracts/rest/*-api.json" contracts/rest/openapi.bundle.json --extends spec
+
+OpenAPI bundle 新鲜：contracts/rest/openapi.bundle.json
+
+    ╔═══════════════════════════════════════════════════════╗
+    ║                                                       ║
+    ║  A new version of Redocly CLI (2.60.0) is available.  ║
+    ║  Update now: `npm i -g @redocly/cli@latest`.          ║
+    ║  Changelog: https://redocly.com/docs/cli/changelog/   ║
+    ║                                                       ║
+    ╚═══════════════════════════════════════════════════════╝
+
+validating contracts/rest/openapi-base.json...
+contracts/rest/openapi-base.json: validated in 6ms
+
+validating contracts/rest/prototype-planned-api.json...
+contracts/rest/prototype-planned-api.json: validated in 4ms
+
+validating contracts/rest/device-sync-api.json...
+contracts/rest/device-sync-api.json: validated in 5ms
+
+validating contracts/rest/device-ota-api.json...
+contracts/rest/device-ota-api.json: validated in 2ms
+
+validating contracts/rest/device-onboarding-api.json...
+contracts/rest/device-onboarding-api.json: validated in 3ms
+
+validating contracts/rest/device-media-api.json...
+contracts/rest/device-media-api.json: validated in 2ms
+
+validating contracts/rest/device-deactivate-api.json...
+contracts/rest/device-deactivate-api.json: validated in 3ms
+
+validating contracts/rest/device-certificate-api.json...
+contracts/rest/device-certificate-api.json: validated in 2ms
+
+validating contracts/rest/admin-user-api.json...
+contracts/rest/admin-user-api.json: validated in 3ms
+
+validating contracts/rest/admin-site-api.json...
+contracts/rest/admin-site-api.json: validated in 3ms
+
+validating contracts/rest/admin-settings-api.json...
+contracts/rest/admin-settings-api.json: validated in 2ms
+
+validating contracts/rest/admin-replay-api.json...
+contracts/rest/admin-replay-api.json: validated in 3ms
+
+validating contracts/rest/admin-ota-package-api.json...
+contracts/rest/admin-ota-package-api.json: validated in 3ms
+
+validating contracts/rest/admin-ota-campaign-api.json...
+contracts/rest/admin-ota-campaign-api.json: validated in 4ms
+
+validating contracts/rest/admin-onboarding-api.json...
+contracts/rest/admin-onboarding-api.json: validated in 3ms
+
+validating contracts/rest/admin-media-api.json...
+contracts/rest/admin-media-api.json: validated in 2ms
+
+validating contracts/rest/admin-license-api.json...
+contracts/rest/admin-license-api.json: validated in 4ms
+
+validating contracts/rest/admin-esg-api.json...
+contracts/rest/admin-esg-api.json: validated in 4ms
+
+validating contracts/rest/admin-device-user-api.json...
+contracts/rest/admin-device-user-api.json: validated in 3ms
+
+validating contracts/rest/admin-device-status-api.json...
+contracts/rest/admin-device-status-api.json: validated in 2ms
+
+validating contracts/rest/admin-device-retirement-api.json...
+contracts/rest/admin-device-retirement-api.json: validated in 2ms
+
+validating contracts/rest/admin-device-console-api.json...
+contracts/rest/admin-device-console-api.json: validated in 3ms
+
+validating contracts/rest/admin-device-assignment-api.json...
+contracts/rest/admin-device-assignment-api.json: validated in 2ms
+
+validating contracts/rest/admin-device-api.json...
+contracts/rest/admin-device-api.json: validated in 3ms
+
+validating contracts/rest/admin-dashboard-api.json...
+contracts/rest/admin-dashboard-api.json: validated in 2ms
+
+validating contracts/rest/admin-customer-api.json...
+contracts/rest/admin-customer-api.json: validated in 2ms
+
+validating contracts/rest/admin-contract-device-api.json...
+contracts/rest/admin-contract-device-api.json: validated in 2ms
+
+validating contracts/rest/admin-contract-api.json...
+contracts/rest/admin-contract-api.json: validated in 2ms
+
+validating contracts/rest/admin-consumable-request-api.json...
+contracts/rest/admin-consumable-request-api.json: validated in 2ms
+
+validating contracts/rest/admin-consumable-api.json...
+contracts/rest/admin-consumable-api.json: validated in 2ms
+
+validating contracts/rest/admin-configuration-api.json...
+contracts/rest/admin-configuration-api.json: validated in 3ms
+
+validating contracts/rest/admin-command-api.json...
+contracts/rest/admin-command-api.json: validated in 3ms
+
+validating contracts/rest/admin-certificate-rotation-api.json...
+contracts/rest/admin-certificate-rotation-api.json: validated in 2ms
+
+validating contracts/rest/admin-audit-api.json...
+contracts/rest/admin-audit-api.json: validated in 2ms
+
+validating contracts/rest/admin-alarm-api.json...
+contracts/rest/admin-alarm-api.json: validated in 3ms
+
+validating contracts/rest/openapi.bundle.json...
+contracts/rest/openapi.bundle.json: validated in 30ms
+
+Woohoo! Your API descriptions are valid. 🎉
+
+
+> food-digester-platform@0.0.0 test /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> vitest run && pnpm test:contracts && pnpm test:scripts
+
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+Bundling asset Qa09Perf/IngestionFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset DeployTest/IngestionFn/Code/Stage...
+Bundling asset DeployTest/ArchiveFn/Code/Stage...
+Bundling asset Qa09Perf/ArchiveFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset DeployTest/OutboxPublisherFn/Code/Stage...
+Bundling asset Qa09Perf/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset DeployTest/NotificationPublisherFn/Code/Stage...
+Bundling asset Qa09Perf/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset Qa09Perf/SummaryFn/Code/Stage...
+Bundling asset DeployTest/SummaryFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset DeployTest/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset Qa09Perf/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset DeployTest/ReplayFn/Code/Stage...
+Bundling asset Qa09Perf/ReplayFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset Qa09Perf/CertPackageSweeperFn/Code/Stage...
+Bundling asset DeployTest/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset DeployTest/OnboardingDeadlineFn/Code/Stage...
+Bundling asset Qa09Perf/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset DeployTest/RetirementTimeoutFn/Code/Stage...
+Bundling asset Qa09Perf/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset DeployTest/ActivityExportFn/Code/Stage...
+Bundling asset Qa09Perf/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset DeployTest/EsgExportFn/Code/Stage...
+Bundling asset Qa09Perf/EsgExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset DeployTest/CommandPublisherFn/Code/Stage...
+Bundling asset Qa09Perf/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset DeployTest/CommandTimeoutFn/Code/Stage...
+Bundling asset Qa09Perf/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset DeployTest/OtaDispatcherFn/Code/Stage...
+Bundling asset Qa09Perf/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset DeployTest/OnboardingApiFn/Code/Stage...
+Bundling asset Qa09Perf/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset DeployTest/OnboardingProvisioningFn/Code/Stage...
+Bundling asset Qa09Perf/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset DeployTest/DeviceApiFn/Code/Stage...
+Bundling asset Qa09Perf/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset DeployTest/ApiFn/Code/Stage...
+Bundling asset Qa09Perf/ApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset Named/IngestionFn/Code/Stage...
+Bundling asset Named/ArchiveFn/Code/Stage...
+Bundling asset Named/OutboxPublisherFn/Code/Stage...
+Bundling asset Named/NotificationPublisherFn/Code/Stage...
+Bundling asset Named/SummaryFn/Code/Stage...
+Bundling asset Named/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset Named/ReplayFn/Code/Stage...
+Bundling asset Named/CertPackageSweeperFn/Code/Stage...
+Bundling asset Named/OnboardingDeadlineFn/Code/Stage...
+Bundling asset Named/RetirementTimeoutFn/Code/Stage...
+Bundling asset Named/ActivityExportFn/Code/Stage...
+Bundling asset Named/EsgExportFn/Code/Stage...
+Bundling asset Named/CommandPublisherFn/Code/Stage...
+Bundling asset Named/CommandTimeoutFn/Code/Stage...
+Bundling asset Named/OtaDispatcherFn/Code/Stage...
+Bundling asset Named/OnboardingApiFn/Code/Stage...
+Bundling asset Named/OnboardingProvisioningFn/Code/Stage...
+Bundling asset Named/DeviceApiFn/Code/Stage...
+Bundling asset Named/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+
+ Test Files  181 passed (181)
+      Tests  1472 passed (1472)
+   Start at  20:36:09
+   Duration  70.43s (transform 10.14s, setup 1.16s, import 165.92s, tests 321.42s, environment 13.15s)
+
+
+> food-digester-platform@0.0.0 test:contracts /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> pnpm --filter @fdp/contracts test
+
+
+> @fdp/contracts@0.0.0 test /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/contracts
+> node --import tsx --test mqtt/*.test.ts mqtt/*.test.mjs domain/*.test.ts lifecycle/*.test.ts media/*.test.ts security/*.test.ts rest/*.test.ts iot/*.test.mjs archive/*.test.mjs configuration/*.test.ts settings/*.test.ts
+
+✔ 合法 Manifest fixtures 通过校验 (0.831459ms)
+✔ 非法 Manifest fixtures 被拒绝 (0.197083ms)
+✔ DEC-016 已冻结且策略覆盖全部阻塞任务 (0.653166ms)
+✔ 三类来源使用独立 Envelope 与互斥前缀 (0.137792ms)
+✔ License/OTA 禁止伪装为 MQTT 原文，OTA 记录类型封闭 (0.065542ms)
+✔ 归档 Envelope 判别字段和版本固定 (0.058375ms)
+✔ DEC-018 策略结构有效、已冻结且覆盖全部阻塞任务 (1.070292ms)
+✔ V1 只允许四字段，范围、单位、默认值与冻结值一致 (0.0715ms)
+✔ Admin Configuration 与 Device Sync OpenAPI 逐字段匹配统一策略 (0.133416ms)
+✔ TS 常量与 JSON 策略一致 (0.056333ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.7315ms)
+✔ 负向结构：实时流启用、非法范围/刷新模式与缺失字段被 Schema 拒绝 (0.273541ms)
+✔ x-decision-versions 引用 DEC-009 且版本与决策登记一致；prototype-traceability.yaml 同步 (0.06275ms)
+✔ 冻结值定性规则可执行：仅最新授权 Media、手动刷新、禁实时流 (0.058375ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-009 阻塞任务 (0.114084ms)
+✔ TS 常量与 camera-interaction-policy.json 完全一致 (0.092625ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.761333ms)
+✔ 负向结构：数据来源篡改与缺失字段被 Schema 拒绝 (0.3475ms)
+✔ x-decision-versions 引用 DEC-008 且版本与决策登记一致；prototype-traceability.yaml 同步 (0.06375ms)
+✔ 冻结值定性规则可执行：封闭类型集合、仅设备上报、禁云端臆测 (0.096458ms)
+✔ 冻结参数可执行：正式名称、阈值和 24 小时过期规则 (0.205625ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-008 阻塞任务 (0.12ms)
+✔ TS 常量与 consumables-policy.json 完全一致 (0.080916ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.769125ms)
+✔ 负向结构：联动规则反转与缺失字段被 Schema 拒绝 (0.780708ms)
+✔ x-decision-versions 引用 DEC-007 且版本与决策登记一致；prototype-traceability.yaml 同步 (0.164416ms)
+✔ 冻结值定性规则可执行：职责划分、联动与展示 (0.2925ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-007 阻塞任务与关联任务 (0.363625ms)
+✔ TS 常量与 contract-license-relation.json 完全一致 (0.177208ms)
+✔ DEC-019 alias 策略已冻结且无待定参数 (0.557708ms)
+✔ TS、JSON 与 Admin Device OpenAPI 使用同一 alias 规则 (0.10475ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.740584ms)
+✔ 负向结构：单字段混用、独立存储"启用"与缺失字段被 Schema 拒绝 (0.315292ms)
+✔ x-decision-versions 引用 DEC-010 且版本与决策登记一致；prototype-traceability.yaml 同步 (0.06225ms)
+✔ 冻结值定性规则可执行：四轴分离、禁单字段混用、派生原则 (0.105584ms)
+✔ 冻结参数可执行：启用由 Active 生命周期和有效 License 派生 (0.050583ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-010 阻塞任务与关联任务 (0.111875ms)
+✔ TS 常量与 device-status-axes-policy.json 完全一致 (0.066833ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.752792ms)
+✔ 负向结构：设备地域真值与缺失字段被 Schema 拒绝 (0.220959ms)
+✔ x-decision-versions 引用 DEC-011 且版本与决策登记一致；prototype-traceability.yaml 同步 (0.063417ms)
+✔ 冻结值定性规则可执行：层级链、Site 属性、设备仅关联 Site (0.100292ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-011 阻塞任务 (0.113125ms)
+✔ TS 常量与 geo-model-policy.json 完全一致 (0.06175ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.773333ms)
+✔ 负向结构：AWS 授权、矩阵可编辑与缺失字段被 Schema 拒绝 (0.2815ms)
+✔ x-decision-versions 引用 DEC-012 且版本与决策登记一致；prototype-traceability.yaml 同步 (0.065166ms)
+✔ 冻结值定性规则可执行：封闭映射、界面名、AWS 权限与矩阵规则 (0.152958ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-012 阻塞任务 (0.300792ms)
+✔ TS 常量与 role-mapping-policy.json 完全一致 (0.358459ms)
+✔ Envelope 必填五个 iot* 上下文字段，Payload 平铺透传 (2.035417ms)
+✔ iotType 枚举与 topic-catalog 上行类型严格一致（8 个） (0.12275ms)
+✔ 所有合法 Fixture 通过校验（含 Payload 内不可信身份字段的样本） (0.303833ms)
+✔ 所有非法 Fixture 被稳定拒绝且错误路径正确 (0.126583ms)
+✔ 矩阵 JSON 通过自身 JSON Schema 结构校验 (0.933958ms)
+✔ 负向结构：缺失必填字段、非法枚举与额外行为键被 Schema 拒绝 (0.440625ms)
+✔ x-decision-versions 引用 DEC-001 且版本与决策登记一致 (0.07ms)
+✔ 冻结值：独立状态；允许维护、同步、遥测、告警和 OTA (0.075041ms)
+✔ Maintenance Sync 节奏为 15 分钟（Suspended 节奏） (0.050958ms)
+✔ 失败关闭：未知行为拒绝并抛出稳定错误 (0.176042ms)
+✔ 命令策略与 command-catalog 一致：Maintenance 允许集合 == Suspended 允许集合 (0.107542ms)
+✔ 行为条目消费者均为合法任务 ID 且覆盖 DEC-001 阻塞任务 (0.125875ms)
+✔ TS 常量与 maintenance-behavior-matrix.json 完全一致 (0.125666ms)
+✔ DEC-017 策略结构有效、已冻结且覆盖全部阻塞任务 (0.743625ms)
+✔ 24 小时截止从证书包存储开始，截止边界包含在超时内 (2.759417ms)
+✔ 超时处置、迟到 Heartbeat 与重新申请规则失败关闭 (0.243583ms)
+✔ TS 常量与 JSON 策略一致 (0.155125ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.7115ms)
+✔ 负向结构：存储位置篡改、非法处置行为与缺失字段被 Schema 拒绝 (0.932667ms)
+✔ x-decision-versions 引用 DEC-005 且版本与决策登记一致 (0.165125ms)
+✔ 冻结值定性规则可执行：RDS 元数据 / S3 文件分离 (0.161375ms)
+✔ 冻结参数可执行：元数据 365 天、文件 90 天且删除文件保留元数据 (0.15825ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-005 阻塞任务与关联任务 (0.286125ms)
+✔ TS 常量与 media-retention-policy.json 完全一致 (0.22925ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (1.691583ms)
+✔ 负向结构：客户端指定 Key、篡改冻结 TTL/配额与缺失字段被 Schema 拒绝 (0.347625ms)
+✔ 锁定规则：mediaTypes 与 CT-03 media.schema.json 枚举一致；客户端不得指定 Key (0.117208ms)
+✔ DEC-024 冻结值可执行且无待定参数 (0.061917ms)
+✔ TS 常量与 media-upload-policy.json 完全一致 (0.130833ms)
+✔ 22 个 Command 全部唯一且覆盖六大分类 (0.681458ms)
+✔ 13 个 Notification 全部唯一且有设备动作映射 (0.12525ms)
+✔ 高风险标记与文档一致（EMERGENCY_STOP/FACTORY_RESET/SHUTDOWN/全部加热、排料、电机控制） (0.072708ms)
+✔ 允许状态矩阵无遗漏：22 命令 × 4 状态 (0.10075ms)
+✔ Suspended 仅允许安全停止、诊断、同步和维护/恢复类命令 (0.071791ms)
+✔ MAINTENANCE 按 Suspended 限制（DEC-001 冻结值） (0.050584ms)
+✔ 未知命令/通知在运行时被拒绝 (0.20825ms)
+✔ denyReason 稳定且允许时返回 null (0.047083ms)
+✔ TS 常量与 command-catalog.json / notification-catalog.json 完全一致 (0.108584ms)
+✔ Schema 枚举与目录一致（cmd/ack command、notification type） (0.282208ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.753042ms)
+✔ 负向结构：非法取值与缺失字段被 Schema 拒绝 (0.311917ms)
+✔ x-decision-versions 引用 DEC-006 且版本与决策登记一致 (0.059458ms)
+✔ 冻结值可执行：V1 下行 seq 可选、上行必填、Command 以 meta.id 幂等 (0.06125ms)
+✔ 策略与 common.schema.json 一致：下行 metaBase 不要求 seq、id 必填；上行 metaSeq 要求 seq (0.057458ms)
+✔ 下行/上行 Schema 的 meta 引用与策略一致 (0.549583ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-006 阻塞任务 (0.133ms)
+✔ TS 常量与 downlink-policy.json 完全一致 (0.093208ms)
+✔ DEC-015 策略冻结、可追溯且覆盖全部阻塞任务 (0.616458ms)
+✔ 唯一通道为既有 ACK；Topic 总数和 IoT 权限面不扩大 (0.069042ms)
+✔ ACK 判别字段、关联键和 OTA 状态与冻结策略一致 (0.053625ms)
+✔ 状态机只允许冻结的单向迁移；相同状态幂等 (0.066166ms)
+✔ TS 常量与 JSON 策略完全一致 (0.074ms)
+✔ DEC-013 策略 JSON 通过自身 Schema 且覆盖登记阻塞任务 (1.697417ms)
+✔ DEC-013 策略关键值被 Schema 锁定，篡改时失败关闭 (0.401917ms)
+✔ DEC-013 策略冻结且无待定参数 (0.105334ms)
+✔ Heartbeat 旧嵌套结构在兼容期转换为正式扁平结构且不修改原对象 (1.428167ms)
+✔ Telemetry motorCurrentAmp 在兼容期转换为 currentAmp；同值并存允许、冲突失败关闭 (0.313209ms)
+✔ 兼容截止边界起拒绝嵌套结构、motorCurrentAmp 与 DISCHARING (0.103083ms)
+✔ RFC 8785 固定向量与 audit.hash 覆盖 {meta,data} (0.191292ms)
+✔ 11 类消息均有 Schema 和 Fixture，且每类 >=1 合法 + >=3 非法 (2.370417ms)
+✔ 所有合法 Fixture 通过校验 (1.527ms)
+✔ 所有非法 Fixture 被稳定拒绝并返回明确错误路径 (1.826083ms)
+✔ 非法枚举被稳定拒绝且路径明确 (0.184625ms)
+✔ 单位/类型错误被拒绝（integer 不接受小数与字符串） (0.601458ms)
+✔ 缺少必填字段被拒绝（meta.id、上行 seq、Heartbeat 必填 data 字段） (0.453208ms)
+✔ 额外身份字段（customerId/tenantId/deviceId）在各层均被拒绝 (0.620417ms)
+✔ 下行消息 meta.seq 可选（DEC-006），上行强制 (0.370375ms)
+✔ Telemetry/Report/Tamper 强制 audit.hash；Command 禁止 audit（DEC-002） (0.353792ms)
+✔ DEC-013：Audited 合法 Fixture 携带可复算的 RFC 8785 audit.hash (0.477334ms)
+✔ schemaVer 缺省按 1.0 归一化；非法 schemaVer 被拒绝 (0.205208ms)
+✔ meta.id 字符集与长度固定 (0.091792ms)
+✔ payloads.ts 与 Schema 保持一致（生成器新鲜度） (1.128417ms)
+✔ 全部 Schema 的 x-decision-versions 可追溯到决策登记 (1.010583ms)
+✔ Telemetry current (0.408791ms)
+✔ Telemetry past 300s (0.047042ms)
+✔ Telemetry past 301s (0.035792ms)
+✔ Telemetry past 24h inclusive (0.033417ms)
+✔ Telemetry past 24h plus 1ms (0.722875ms)
+✔ Telemetry future 300s inclusive (0.048916ms)
+✔ Telemetry future 300s plus 1ms (0.043916ms)
+✔ other topics retain symmetric 300-second tolerance (0.06725ms)
+✔ configured tolerance affects future bound but cannot enlarge Telemetry history (0.050291ms)
+✔ invalid numeric policy inputs fail closed (0.0795ms)
+✔ Tier 登记 JSON 通过自身 JSON Schema 结构校验 (0.855958ms)
+✔ 负向结构：非法 Tier、未知 Topic 键与缺失字段被 Schema 拒绝 (0.450958ms)
+✔ x-decision-versions 引用 DEC-002 且版本与决策登记一致 (0.075417ms)
+✔ 冻结值：Telemetry/Report/Tamper 为 AUDITED，Command 及其余为 STANDARD (0.136417ms)
+✔ Tier 与 topic-catalog.json 的 payloadEnvelope 完全一致 (0.146834ms)
+✔ Tier 与 11 个 MQTT Schema 的 audit 强制完全一致 (0.535ms)
+✔ 失败关闭：未知 Topic 拒绝并抛出稳定错误 (0.24175ms)
+✔ Tier 条目消费者均为合法任务 ID 且覆盖 DEC-002 阻塞任务 (0.158083ms)
+✔ 登记覆盖全部 11 个 Topic 且 TS 常量与 topic-tier.json 完全一致 (0.104958ms)
+✔ catalog 恰好包含 8 个上行和 3 个下行 Topic (0.615542ms)
+✔ 11 个 Topic 的方向与 QoS 矩阵全部符合契约 (0.109167ms)
+✔ TS 常量与 topic-catalog.json 完全一致 (0.08575ms)
+✔ 合法 Topic 可解析出 deviceId/type/direction (0.105333ms)
+✔ buildTopic 与 parseTopic 往返一致 (0.081458ms)
+✔ 未知层级和空 deviceId 被拒绝 (0.224042ms)
+✔ buildTopic 拒绝空和非法 deviceId (0.087583ms)
+✔ 权限模板：设备只能发布自身上行、只能订阅自身下行 (0.092917ms)
+✔ 权限模板拒绝非法 deviceId (0.05575ms)
+✔ 六个端点齐备且 CognitoJwt 认证；响应码齐备 (1.442333ms)
+✔ 筛选参数齐备：severity/status/device/site/时间范围 + 游标分页 (0.206208ms)
+✔ Schema 封闭：Alarm 处理字段（操作者/原因/时间）与 replayed 齐备；确认/清除强制 reason (0.093667ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.441167ms)
+✔ 端点齐备且 CognitoJwt 认证：列表 + 详情 (0.617792ms)
+✔ 只读 API：不存在任何写路由（post/put/patch/delete） (0.586291ms)
+✔ 筛选参数齐备（actor/Customer/对象/动作/结果/时间 + 游标分页）；响应不暴露敏感字段 (0.152875ms)
+✔ 所有 $ref 可解析（内部引用 + openapi-base.json） (0.223708ms)
+✔ 端点存在且 Cognito 认证；轮换请求视图为七字段且不含密钥材料 (0.621792ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.190625ms)
+✔ 端点齐备且 CognitoJwt 认证；201 创建 + 200 幂等重放 + 409 冲突/状态门 (1.311791ms)
+✔ 命令枚举与 CT-04 目录 22 个白名单一致；确认凭证与 timeoutSec 边界齐备 (0.248042ms)
+✔ 响应 Schema 封闭且含 requestedBy/expiresAt/replayed/confirmedBy (0.13075ms)
+✔ BE-CMD-03 查询端点齐备：列表/详情 + 状态枚举 + attempts/acks 时间线 (0.263875ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.726458ms)
+✔ 七个端点齐备且 Cognito 认证；operationId 与响应码齐备 (1.244791ms)
+✔ Schema 封闭：DEC-018 冻结 V1 四字段、单位、范围与默认值 (0.194042ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.329959ms)
+✔ 列表与按需联系人端点齐备且 Cognito 认证；筛选参数齐备 (0.618959ms)
+✔ Schema 封闭：两种耗材列恒在；列表零联系人 PII；按需联系人独立；百分比 0~100 (0.095416ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.786916ms)
+✔ 六个端点齐备且 Cognito 认证；状态迁移强制 If-Match (0.700542ms)
+✔ Schema 封闭：四态枚举/source 固定 ADMIN/幂等 replayed/完整历史字段 (0.089041ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (1.818ms)
+✔ 八个端点齐备且 Cognito 认证；写操作强制 If-Match (1.544959ms)
+✔ Schema 封闭：五态枚举/唯一编号/强制原因/派生状态/最小权限 contact (0.250459ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.84125ms)
+✔ 五个端点齐备且 Cognito 认证；operationId 与响应码齐备 (2.594208ms)
+✔ Schema 封闭：设备视图字段齐备/关联窗口/强制原因/批量语义 (0.112834ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (21.5075ms)
+✔ 六端点齐备且 Cognito 认证；写操作声明 If-Match；响应码齐备 (0.655125ms)
+✔ Customer 视图六字段封闭；status 枚举 ACTIVE|SUSPENDED；请求体封闭 (0.127875ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.296833ms)
+✔ 端点齐备且 CognitoJwt 认证：仅 GET 总览（只读，无写路由） (0.593208ms)
+✔ 总览 DTO 齐备：Contract/设备分布/在线率/今日 ESG/最新告警/设备卡片；四轴分离不合并 (0.179959ms)
+✔ 所有 $ref 可解析（内部引用 + openapi-base.json） (0.649834ms)
+✔ 列表/详情端点存在且 Cognito 认证；筛选参数齐备；响应码齐备 (3.482833ms)
+✔ Device 视图字段封闭（原型设备群表格字段均有来源）；证书仅摘要 (0.196292ms)
+✔ BE-DEV-06 元数据 PATCH 端点：白名单仅 alias + If-Match 乐观锁 + 409 冲突语义 (0.095208ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.284166ms)
+✔ 分配/历史端点齐备且 Cognito 认证；响应码齐备 (0.60225ms)
+✔ DeviceAssignment 视图封闭：授权窗口（assignedAt/endedAt）+ 幂等/通知字段齐备 (0.090792ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.972041ms)
+✔ 端点齐备且 CognitoJwt 认证：console/activities/export/导出详情 (2.332333ms)
+✔ 四轴分离 + 数据块 observedAt/stale/单位；最新 Media 可选块稳定可空 (0.150041ms)
+✔ 不透传 MQTT 原始消息、不含实时流/运维字段；所有 $ref 可解析 (0.377667ms)
+✔ retire/force-complete 端点齐备且 Cognito 认证；响应码齐备 (0.602542ms)
+✔ 请求体封闭：retire 强制原因 + confirm 恒 true；视图封闭且通知枚举正确 (0.090417ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (1.075083ms)
+✔ suspend/reactivate 端点齐备且 Cognito 认证；响应码齐备 (0.601458ms)
+✔ 请求体封闭：挂起强制原因；恢复强制原因 + issueResolved 恒 true；通知枚举正确 (0.08575ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (1.061ms)
+✔ 七个端点齐备且 Cognito 认证；写操作强制 If-Match (2.144666ms)
+✔ Schema 封闭：管理 DTO 无 PHC；写接口只受控接收 writeOnly password (0.251291ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.890917ms)
+✔ 八个端点齐备且 CognitoJwt 认证；导出创建返回 202 (0.633208ms)
+✔ 查询筛选参数齐备（customerId/siteId/deviceId/时间范围 + 游标）；reports 含 reportType (0.643292ms)
+✔ Schema 封闭：导出数据集枚举、短期 URL 过期字段、CSV 一致性字段 (0.104333ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.723041ms)
+✔ 八个端点齐备且 Cognito 认证；operationId 与响应码齐备 (0.642208ms)
+✔ Schema 封闭：七态枚举/Entitlement 三码/签名字段/强制原因/幂等与派生字段 (0.112917ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.534583ms)
+✔ 四个审批端点存在且使用 Cognito JWT 认证 (0.593083ms)
+✔ approve/reject 强制 If-Match；reject 强制 reason (0.097208ms)
+✔ 申请 DTO 不含 CSR 原文 (0.051292ms)
+✔ 管理端明确暴露内部 TIMED_OUT，列表状态过滤为封闭枚举 (0.064625ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.230917ms)
+✔ 端点齐备且 CognitoJwt 认证：创建/列表/详情/targets/扩大批次/pause/resume/cancel/retry (1.188458ms)
+✔ 首批强制恰好 1 台；最终全量审批契约封闭；状态机枚举封闭 (0.084958ms)
+✔ 视图封闭且不泄露内部字段；批次/重试结果结构稳定 (0.072708ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.348625ms)
+✔ 端点齐备且 CognitoJwt 认证：上传会话/complete/列表/详情 (0.632417ms)
+✔ packageType/sha256 与 CT-03 OTA Schema 一致；创建字段封闭且签名必填 (0.077291ms)
+✔ 状态机封闭：UPLOADED/VERIFIED/RETIRED；可发布=VERIFIED；视图不泄露信任根 (0.089125ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.242125ms)
+✔ 端点存在且 Cognito 认证；三端点（create/list/detail）响应码齐备 (0.58475ms)
+✔ ReplayJob 视图七字段封闭；状态枚举与统计字段齐备；scope 封闭 (0.0885ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.693916ms)
+✔ 端点齐备且 CognitoJwt 认证：列表/读取/更新（无删除与新建路由） (0.595084ms)
+✔ 封闭 key 集与乐观锁版本控制；固定枚举不可经 API 改写 (0.120292ms)
+✔ 所有 $ref 可解析（内部引用 + openapi-base.json） (0.779417ms)
+✔ 六端点齐备且 Cognito 认证；写操作声明 If-Match；响应码齐备 (0.632ms)
+✔ Site 视图字段封闭（含 deviceCount/version）；status 枚举；请求体封闭且更新体不含 customerId (0.099375ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.301542ms)
+✔ 端点齐备且 CognitoJwt 认证：列表/邀请/角色/scope/停用/密码重置 (0.68475ms)
+✔ 角色封闭集与 DEC-012 映射；输入不含密码字段；响应不含凭证材料 (0.529083ms)
+✔ 所有 $ref 可解析（内部引用 + openapi-base.json） (0.288916ms)
+✔ 端点存在且使用 Device mTLS 认证 (0.542625ms)
+✔ 轮换契约：请求强制 currentCertificateId；响应五字段；409/403/400/401 齐整 (0.098125ms)
+✔ 状态契约为四态枚举且响应不含 PEM/私钥字段 (0.476375ms)
+✔ 状态查询由 mTLS 身份定位证书，不增加源稿未定义的 deviceId Query (0.077666ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.232292ms)
+✔ deactivate 端点齐备且 DeviceMtls 认证；响应码齐备 (0.590167ms)
+✔ 响应视图封闭：退役记录 + 证书摘要（无证书材料字段）；幂等字段齐备 (0.149667ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.766208ms)
+✔ BE-ONB-01 端点存在且 CSR 首次申请无需预置 Token (0.550875ms)
+✔ 请求体包含设备资料和必填 CSR (0.667875ms)
+✔ 成功响应含 requestId 与 PENDING 状态（200 幂等重放 / 201 新建） (0.087167ms)
+✔ 匿名申请负向响应覆盖稳定错误码语义：400/404/409/429/500 (0.078875ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.227125ms)
+✔ BE-ONB-03 status 端点：requestId 与 CSR 私钥签名，三态响应不含设备私钥 (0.095541ms)
+✔ BE-OTA-03 下载兑换必须使用 Device mTLS 且绑定 target/token (0.5525ms)
+✔ 一次性兑换响应禁止缓存，并封闭安全失败状态 (0.090333ms)
+✔ 六个设备 Endpoint 的 Method、Path 完整且认证方式符合 DEC-025 (0.614208ms)
+✔ Onboarding 按 DEC-026 增加 chain 与 REST，保留顶层结构，不使用 data/meta 包裹 (0.069625ms)
+✔ Certificate 与 Sync 关键字段遵循源稿日期、枚举、用户和配置结构 (0.088042ms)
+✔ 管理端 License/Device 投影不把源稿 OTA entitlement 改名为 OTA_UPDATE (0.044083ms)
+✔ 所有 REST OpenAPI 使用当前正式决策登记版本且无非法 SEC 决策引用 (11.385791ms)
+✔ sync 端点齐备且 DeviceMtls 认证；响应码齐备 (2.39725ms)
+✔ 请求体封闭：lastSyncTime 与可选许可证确认 (0.077625ms)
+✔ 快照顶层与源稿六域同形，兼容元数据不成为必填线协议 (0.189041ms)
+✔ Retired 退役确认待处理设备仍可 Sync，契约不在认证层全局拒绝 (0.077875ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.248ms)
+✔ 许可证确认绑定版本与快照，规范验签输入保留完整UTC时间 (0.067166ms)
+✔ 基座 SuccessResponse 结构：data + meta(requestId, UTC timestamp) (1.682125ms)
+✔ 游标分页响应与往返解析 (0.148958ms)
+✔ 非法游标返回 CURSOR_INVALID（400） (0.225083ms)
+✔ limit 归一化：默认 50，范围 1~100 (0.085583ms)
+✔ Idempotency-Key：缺失/非法被拒绝，合法值透传 (0.115417ms)
+✔ If-Match 并发版本冲突返回确定的 409 (0.198584ms)
+✔ 验证失败有确定响应（400 + VALIDATION_FAILED） (0.103459ms)
+✔ 异常映射器不泄露堆栈、SQL 或 AWS 内部错误 (0.059125ms)
+✔ 错误码目录、HTTP 状态映射与 OpenAPI ErrorCode 枚举三者一致 (0.098959ms)
+✔ OpenAPI 基座结构有效：四个 API 分组与安全方案 (0.101875ms)
+✔ OpenAPI 基座所有内部 $ref 均可解析（无悬空引用） (0.148ms)
+✔ 设备端：上传会话端点齐备且 DeviceMtls 认证；输入封闭；objectPath 由服务端签发 (0.6005ms)
+✔ 管理端：列表/下载端点齐备且 CognitoJwt 认证；视图不泄露内部存储信息 (0.133542ms)
+✔ Media 状态枚举封闭（AVAILABLE/DELETED）；配额/大小/TTL 引用 DEC-024 冻结值 (0.079417ms)
+✔ 所有 $ref 可解析（内部引用 + openapi-base.json） (0.250958ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.700417ms)
+✔ 负向结构：非法枚举、非空待冻结参数与缺失字段被 Schema 拒绝 (0.32025ms)
+✔ x-decision-versions 引用 DEC-003 且版本与决策登记一致 (0.056042ms)
+✔ 暂定值定性规则可执行：KMS 信封、一次性领取、成功即销毁、丢失重签 (0.065417ms)
+✔ 冻结参数可直接执行：24 小时、一次成功领取、无待定参数 (0.099917ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-003 阻塞任务与 SEC-01 (0.163916ms)
+✔ TS 常量与 certificate-package-policy.json 完全一致 (0.136291ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.704584ms)
+✔ 负向结构：复用云端 Hash、非独立 salt 与非法字段被 Schema 拒绝 (0.336292ms)
+✔ x-decision-versions 引用 DEC-004 且版本与决策登记一致 (0.057ms)
+✔ 暂定值定性规则可执行：设备本地专用、禁复用云端 Hash、每用户 salt、仅 Sync 下发 (0.096541ms)
+✔ 冻结参数可直接执行：Argon2id PHC、固定参数与长度 (0.072041ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-004 阻塞任务 (0.107125ms)
+✔ TS 常量与 device-user-verifier-policy.json 完全一致 (0.082459ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.69575ms)
+✔ 负向结构：跳过服务端验签、非失败关闭与内嵌信任根被 Schema 拒绝 (0.321375ms)
+✔ 暂定值定性规则可执行：服务端验签强制、失败关闭、载荷字段锁定、信任根带外分发 (0.095834ms)
+✔ DEC-022 冻结算法、信任根类型、编码且无待定参数 (0.055459ms)
+✔ DEC-022 固定 RSA/SHA-256 测试向量可复验 (0.651917ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 BE-OTA-01 (0.10525ms)
+✔ TS 常量与 ota-package-signature-policy.json 完全一致 (0.08225ms)
+✔ 四类业务设置共享版本化 JSON Schema 与运行时校验器 (22.792292ms)
+ℹ tests 302
+ℹ suites 0
+ℹ pass 302
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 579.876042
+
+> food-digester-platform@0.0.0 test:scripts /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx --test scripts/*.test.mjs
+
+✔ bootstrap input is bound to the normalized email and never accepts a password (1.776125ms)
+✔ successful bootstrap creates Cognito identity before committing linked database user (0.565958ms)
+✔ non-pristine Cognito or database fails before any mutation (0.228333ms)
+✔ database failure deletes Cognito identity and records compensated failure (0.213083ms)
+✔ failed Cognito compensation keeps reconciliation required (0.119291ms)
+✔ source approval requires exact SHA and packager embeds committed SHA (5867.572542ms)
+✔ runner without approved source fails closed without leaking configuration (26.001667ms)
+✔ serial and parallel repeated browser receipts are validated (5.194417ms)
+✔ fail closed: missing required flow (0.472417ms)
+✔ fail closed: skipped execution (0.113125ms)
+✔ fail closed: flaky execution (0.083792ms)
+✔ fail closed: retry hides failure (0.090375ms)
+✔ fail closed: unexpected error (0.081083ms)
+✔ fail closed: missing isolated trace (0.077458ms)
+✔ fail closed: data prefix reused (0.574458ms)
+✔ fail closed: context cleanup failed (0.096416ms)
+✔ fail closed: unmocked network request (0.118083ms)
+✔ fail closed: missing role proof (0.163959ms)
+✔ fail closed: wrong route permission (0.146625ms)
+✔ fail closed: Auditor OTA write enabled (0.13825ms)
+✔ fail closed: missing MFA assertion (0.141208ms)
+✔ fail closed: missing conflict response (0.166291ms)
+✔ fail closed: missing forbidden response (0.142416ms)
+✔ fail closed: missing repeat (0.071458ms)
+✔ repeat traces cannot duplicate the first execution (0.137875ms)
+✔ manifest exactly matches independent Playwright discovery (428.148875ms)
+✔ discovery fails closed: missing case (0.209166ms)
+✔ discovery fails closed: extra case (0.073375ms)
+✔ discovery fails closed: duplicate replacing required case (0.151084ms)
+✔ old Viewer permission cannot pass the updated matrix (0.269583ms)
+✔ required behavioral proof cannot be missing: QA-09 设备管理长别名和序列号在375px完整换行且不裁切 (0.288875ms)
+✔ required behavioral proof cannot be missing: H-01 API 拒绝停用会话后清除浏览器会话并返回登录 (0.176291ms)
+✔ required behavioral proof cannot be missing: M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏 (0.138375ms)
+✔ required behavioral proof cannot be missing: UI redesign: all business routes at 1366x768 (0.143542ms)
+✔ required behavioral proof cannot be missing: UI redesign: all business routes at 1440x900 (0.794584ms)
+✔ required behavioral proof cannot be missing: UI redesign: all business routes at 1920x1080 (0.146417ms)
+✔ required behavioral proof cannot be missing: QA05 login SRP MFA error success logout without persisting password (0.126083ms)
+✔ required behavioral proof cannot be missing: QA05 ESG cursor totals export snapshot timezone and empty state (0.1095ms)
+✔ required behavioral proof cannot be missing: QA05 Command dangerous confirmation terminal result and publish failure (0.114292ms)
+✔ required behavioral proof cannot be missing: QA05 Media expiry renew 403 and audit read-only zero writes (0.119083ms)
+✔ serial and repeated phases require all 108 independent prefixes (0.3745ms)
+✔ phase budget accounts for startup, executions and worker slots, with a finite ceiling (0.063042ms)
+✔ invalid phase budget rejected: repeat=0 workers=1 (0.040833ms)
+✔ invalid phase budget rejected: repeat=1 workers=0 (0.024625ms)
+✔ invalid phase budget rejected: repeat=0.5 workers=1 (0.021ms)
+✔ invalid phase budget rejected: repeat=1 workers=0.5 (0.024167ms)
+✔ invalid phase budget rejected: repeat=Infinity workers=1 (0.020375ms)
+✔ invalid phase budget rejected: repeat=1 workers=NaN (0.019625ms)
+✔ real child-process timeout is classified and cannot create a successful phase (51.758208ms)
+✔ failed/killed process cannot pass: status=1 (0.086542ms)
+✔ failed/killed process cannot pass: status=null (0.036667ms)
+✔ spawn errors reject without disclosing raw process error details (0.199125ms)
+✔ successful process may proceed to the strict report and trace validator (0.076542ms)
+✔ 真实 OpenAPI 片段可确定性打包且无外部引用 (37.315959ms)
+✔ bundle 新鲜度检查拒绝缺失或过期产物 (54.900459ms)
+✔ 失败示例：非法 OpenAPI 版本与缺少 responses 被拒绝 (0.1645ms)
+✔ 失败示例：全局重复 operationId 被拒绝 (0.071208ms)
+✔ 失败示例：非法 parameter 与 Schema 被拒绝 (0.112875ms)
+✔ 仓库提交的统一 bundle 与当前片段一致 (19.515083ms)
+✔ scoped Gate accepts the archived real-target receipt, without promoting full acceptance (20.220084ms)
+✔ scoped Gate rejects missing role (15.326542ms)
+✔ scoped Gate rejects wrong SHA (9.464959ms)
+✔ scoped Gate rejects unverified Lambda (13.768083ms)
+✔ scoped Gate rejects runtime drift (6.62525ms)
+✔ scoped Gate rejects mocked API (6.445708ms)
+✔ scoped Gate rejects empty tenant (6.358042ms)
+✔ scoped Gate rejects cross-Customer list leak (5.9405ms)
+✔ scoped Gate rejects Viewer mutation accepted (6.429459ms)
+✔ scoped Gate rejects expired old Token (11.663417ms)
+✔ scoped Gate rejects two duplicate successes (6.912125ms)
+✔ scoped Gate rejects two optimistic successes (7.245541ms)
+✔ scoped Gate rejects bundled Firefox (6.452875ms)
+✔ scoped Gate rejects missing browser-role case (5.750208ms)
+✔ scoped Gate rejects persisted edit belongs to another record (5.723208ms)
+✔ scoped Gate rejects forbidden page rendered as business page (6.266416ms)
+✔ scoped Gate rejects missing screenshot (1.697125ms)
+✔ scoped Gate rejects cleanup duplicate hides missing ID (6.103917ms)
+✔ scoped Gate rejects cleanup incomplete (8.026333ms)
+✔ scoped Gate rejects private credentials retained (6.121416ms)
+✔ scoped Gate rejects scope promoted (6.123542ms)
+✔ 当前管理后台源代码满足入口与组合根交付约束 (8.093667ms)
+✔ 缺少入口和构建产物时失败关闭 (0.338084ms)
+✔ FE-06 至 FE-19 任一任务或路由从事实源缺失时失败关闭 (5.8085ms)
+✔ FE-11 至 FE-15 任一任务、路由或页面标识缺失时失败关闭 (4.787625ms)
+✔ FE-06 至 FE-15 任一控制器或 operationId 缺失时失败关闭 (2.678417ms)
+✔ FE-11 至 FE-15 控制器或 operationId 缺失时失败关闭 (3.714667ms)
+✔ FE-16 至 FE-19 任一任务、路由、控制器、页面标识或 operationId 缺失时失败关闭 (6.347208ms)
+✔ App 移除显式页面分支时失败关闭 (4.676458ms)
+✔ 完整目标回执覆盖双提交、隔离环境、五角色、七路由、五闭环与清理 (36.925625ms)
+✔ 缺路由、角色、闭环或审计拒绝角色时失败关闭 (15.601875ms)
+✔ mock、泄露、短链持久化、危险操作与只读写请求均失败关闭 (17.966125ms)
+✔ 缺失回执、双部署提交漂移、HEAD 不一致与未清理均失败关闭 (19.612875ms)
+✔ 目标 Gate 是显式发布步骤且不进入普通 verify (1.154583ms)
+✔ 完整回执覆盖双提交、隔离环境、五角色、五路由、四闭环、隐私、双语布局与清理 (47.377583ms)
+✔ 缺路由、角色、闭环、locale 或 viewport 时失败关闭 (23.515542ms)
+✔ mock、权限、并发、泄露或布局不合格时失败关闭 (9.931958ms)
+✔ 缺失回执、双部署提交漂移、HEAD 不一致与未清理均失败关闭 (23.477834ms)
+✔ 目标 Gate 是显式发布步骤且不进入普通 verify (0.252ms)
+✔ 完整路由、五角色、五业务闭环、租户、并发、敏感字段与清理回执通过 (0.811208ms)
+✔ 缺路由、角色或业务闭环时失败关闭 (0.173625ms)
+✔ Cognito、部署 API、跨租户、并发与敏感字段证据不满足约束时失败关闭 (0.099375ms)
+✔ 缺失回执、部署提交或 sourceCommit 不一致时失败关闭 (0.498ms)
+✔ 完整的 58 API、五角色、并发、ESG 与清理目标 AWS 回执通过 (0.89425ms)
+✔ 58 个回执 operationId 与九份正式业务 OpenAPI 精确一致 (5.303834ms)
+✔ API 缺项、角色缺项与跨 Customer 放行均失败关闭 (0.266791ms)
+✔ 并发或 ESG 证据不满足生产约束时失败关闭 (0.108625ms)
+✔ 缺失回执与 sourceCommit 不匹配均失败关闭 (0.992583ms)
+✔ 完整覆盖 25 API、五角色、竞态、退役与导出的隔离 AWS 回执通过 (0.848625ms)
+✔ 缺 operation、跨租户放行、竞态双成功、证书未失活与 MQTT/S3 缺口均失败关闭 (0.186ms)
+✔ operation 成功状态与负向状态集合不完整时失败关闭 (0.090208ms)
+✔ 回执缺失、非法 JSON 或 sourceCommit 不一致时独立发布 Gate 失败 (0.675542ms)
+✔ 完整 Archive、Replay、Summary 目标 AWS 回执通过 (0.964083ms)
+✔ 缺探针、重复归档、Replay 复制业务行和空 Summary 均失败关闭 (0.21325ms)
+✔ 缺少回执或提交不一致时独立 Gate 失败 (0.556041ms)
+✔ 完整隔离 AWS 回执覆盖 8 Topic、负向路径、QA-03 与清理时通过 (0.85475ms)
+✔ 缺 Topic、未知 Topic 命中、Error Action 未恢复和原文漂移均失败关闭 (0.154125ms)
+✔ 未提供目标 AWS 回执时独立发布 Gate 明确失败 (0.470916ms)
+✔ 回执必须对应待发布的精确 Git 提交 (0.367167ms)
+✔ 完整的 15 API、角色、Cognito、并发、S3、Dashboard、审计与清理回执通过 (0.896375ms)
+✔ 15 个 operationId 与六份正式 OpenAPI 精确一致 (0.75575ms)
+✔ API、角色、租户或安全/并发探针缺口均失败关闭 (0.218791ms)
+✔ 缺失回执与 sourceCommit 不匹配均失败关闭 (2.6795ms)
+✔ 干净的依赖图通过检查 (1.9025ms)
+✔ 共享包反向依赖 apps 被识别为边界违规 (4.910625ms)
+✔ contracts 反向依赖 apps 被识别为边界违规 (2.372292ms)
+✔ apps 之间互相依赖被识别为边界违规 (0.565084ms)
+✔ 工作区循环依赖被检出 (0.806875ms)
+✔ 非工作区依赖（外部 npm 包）不参与检查 (0.335666ms)
+✔ 当前仓库通过边界与循环依赖检查 (0.761083ms)
+✔ CDK WARNING 与规则校验编号会触发 Gate (0.531042ms)
+✔ 正常 synth 输出不会误报 (0.366792ms)
+✔ 已交付 Lambda 缺失或回退到内联 501 占位时 Gate 失败 (0.150542ms)
+✔ 已交付 Lambda 使用 S3 asset 时 Gate 通过 (0.052334ms)
+✔ CMD/OTA 生产接线 Gate 对 Worker/调度任一缺失均失败关闭 (0.18775ms)
+✔ CMD/OTA 生产接线 Gate 对 IoT/S3/KMS 权限缺失失败关闭 (0.213084ms)
+✔ 真实登记文件：结构校验通过，并准确识别当前未决 DEC (1.584625ms)
+✔ 真实契约版本文件：decisionRegisterVersion 与登记一致 (0.98075ms)
+✔ 契约版本不一致被拒绝 (0.361791ms)
+✔ 重复决策 ID 被拒绝（已知冲突必须有唯一决策 ID） (0.149833ms)
+✔ 原则与决策之间 ID 也全局唯一 (0.089459ms)
+✔ pending 决策携带批准人被拒绝 (0.055416ms)
+✔ frozen 决策必须有批准人、批准时间和 >=1.0.0 版本 (0.09425ms)
+✔ blockingTasks 为空或格式非法被拒绝 (0.077625ms)
+✔ history 必须非空且末条版本与条目版本一致 (0.072583ms)
+✔ 非 UTC 时间戳被拒绝 (0.088666ms)
+✔ CLI validate 模式：真实文件退出码 0 且输出实际未决数；--fail-on-pending 按实际未决数返回 (0.950875ms)
+✔ CLI：结构错误退出码 1 (0.7615ms)
+✔ 追溯校验：合法 x-decision-versions 引用通过（Schema 可追溯到决策版本） (1.49825ms)
+✔ 追溯校验：不存在的决策 ID 被拒绝 (0.740959ms)
+✔ 追溯校验：引用版本与登记版本不一致被拒绝 (0.730792ms)
+✔ 追溯校验：缺少 x-decision-versions 或格式非法被拒绝 (3.086ms)
+✔ 追溯校验：嵌套在 OpenAPI info 下的 x-decision-versions 可被递归发现 (0.73925ms)
+✔ 已交付 API（含管理后台 P1）的 129 个 OpenAPI operation 与生产路由双向一致 (9.548583ms)
+✔ 版本化已交付清单缺失、重复或引用不存在文件时失败关闭 (0.872666ms)
+✔ 缺失、额外、重复及 method/path 漂移均失败关闭 (0.152333ms)
+✔ CMD/OTA 治理 Gate 校验四份 REST 契约及 DEC-022/023 冻结状态 (4.0345ms)
+✔ 有效链接、无易漂移计数且工具链配对正确时通过 (1.726291ms)
+✔ 损坏的仓库内 Markdown 链接被拒绝 (1.025917ms)
+✔ 陈旧测试计数或不兼容工具链声明被拒绝 (0.660958ms)
+✔ 当前仓库 ENG/DB/DOM 与 IAC/AUTH/SEC 任务文档证据一致 (25.084917ms)
+✔ BE-IOT-01～08 文档全部纳入默认链接与证据门禁 (0.09425ms)
+✔ BE-ARC/RPL/ESG 四份文档及 P2 回归纳入默认证据门禁 (0.0545ms)
+✔ 11 份管理后台业务文档全部纳入默认链接与证据门禁 (0.049333ms)
+✔ BE-MED/RBAC/AUD/DASH/SET 五份文档纳入状态与 AWS 证据门禁 (0.040209ms)
+✔ FE-06～FE-10 五份前端文档纳入四层状态与目标回执门禁 (0.049333ms)
+✔ FE-11～FE-15 五份前端文档纳入四层状态与独立目标回执门禁 (0.076959ms)
+✔ 前端任务文档拒绝缺层级、问题责任字段、目标 Gate 和 P1 陈旧描述 (0.087709ms)
+✔ FE-11～FE-15 文档拒绝旧缺陷、任务级勾选及旧目标 Gate (0.060875ms)
+✔ BE-MED/RBAC/AUD/DASH/SET 文档拒绝缺状态层、陈旧参数和设置生效误述 (0.05825ms)
+✔ 管理后台业务文档拒绝缺证据引用和陈旧决策或部署说法 (0.049958ms)
+✔ BE-ARC/RPL/ESG 文档拒绝缺审计快照和生产接线边界外旧说法 (0.042167ms)
+✔ BE-IOT 文档拒绝缺少审计快照、Report P2002 与 Media 另路由旧说法 (0.052334ms)
+✔ BE-IOT 严格负向探针必须保留为可定位的永久回归 (0.688958ms)
+✔ 安全任务文档拒绝历史计数、缺少 verify 命令与陈旧 DEC-012 状态 (0.055083ms)
+✔ 安全任务文档接受当前命令、审计快照引用与 frozen 决策 (0.033417ms)
+✔ 当前仓库（DB-01 已落地）Migration 结构通过 (11.175542ms)
+✔ schema.prisma 未落地时跳过并通过（骨架期行为） (0.211583ms)
+✔ 失败示例：Schema 已存在但无任何 Migration（未提交 Migration） (0.4215ms)
+✔ 失败示例：migrations/ 为空且缺少 migration_lock.toml (0.494666ms)
+✔ 失败示例：Migration 目录名非法与空 migration.sql (1.826792ms)
+✔ 合法 Migration 结构通过 (1.57675ms)
+✔ 失败示例：已有旧 Migration 但 Schema 已变化且未登记快照 (0.911625ms)
+✔ 真实矩阵通过完整性检查 (1.886208ms)
+✔ 真实引用集合：41 个矩阵 API 与 13 个 routeId 全部可解析 (0.349542ms)
+✔ index19.html 源清单：9 个菜单、12 个页面、128 个元素与矩阵双向覆盖 (0.303041ms)
+✔ 真实矩阵：9 菜单、12 页面、每项均有处置结论 (0.232917ms)
+✔ 被拒绝的实时流、明文密码、状态混用不携带实现任务 (0.237625ms)
+✔ 矩阵的 x-decision-versions 可追溯到决策登记（DEC-007~012） (1.022833ms)
+✔ 缺少菜单或页面被拒绝 (0.239ms)
+✔ 重复元素 ID 被拒绝 (0.071583ms)
+✔ Adapt/Reject 缺少依据被拒绝 (0.074875ms)
+✔ Adopt/Adapt 生产字段缺少 API 来源被拒绝 (0.103125ms)
+✔ rejectCategory 项非 Reject 或携带实现任务被拒绝 (0.076667ms)
+✔ 未知角色被拒绝（R7） (0.065916ms)
+✔ 格式合法但不存在的 operationId、routeId 与响应字段被拒绝 (0.849209ms)
+✔ planned operation 的任务归属漂移被拒绝 (0.29275ms)
+✔ 源清单与矩阵任一侧删除元素均被双向覆盖检查拒绝 (33.406417ms)
+✔ index19.html 内容变化但未重新盘点源清单时失败关闭 (5.968083ms)
+✔ 重复 operationId 与 routeId 被引用索引拒绝 (1.827375ms)
+✔ CLI：真实矩阵退出码 0，违规矩阵退出码 1 (15.606959ms)
+✔ remaining scope cannot replace full core, Active acceptance or failed cleanups (0.483ms)
+✔ 当前仓库全部 Schema、OpenAPI 片段与统一 bundle 通过引用校验 (134.009291ms)
+✔ 失败示例：悬空内部 $ref 被拒绝 (13.018333ms)
+✔ 失败示例：同目录相对 $ref 目标文件不存在被拒绝 (0.52175ms)
+✔ 失败示例：JSON 语法损坏的 Schema 被拒绝 (0.426125ms)
+✔ 失败示例：JSON Schema 2020-12 非法 type 被元 Schema 拒绝 (0.471333ms)
+✔ 失败示例：OpenAPI 基座缺少 paths 被拒绝 (0.489541ms)
+✔ 同目录相对 $ref 可解析时通过 (0.584208ms)
+✔ 失败示例：PEM 私钥块被检出 (0.599916ms)
+✔ 失败示例：AWS Access Key ID 被检出 (0.072083ms)
+✔ 失败示例：GitHub 令牌被检出 (0.08275ms)
+✔ 失败示例：Slack 令牌被检出 (0.046667ms)
+✔ 正常内容不误报 (0.372542ms)
+✔ 失败示例：未跟踪且未忽略文件中的私钥也被扫描 (44.274084ms)
+✔ 当前仓库通过敏感信息扫描 (2386.81825ms)
+✔ 生产源码直接 console 与 raw trace API 均被拒绝 (2.304125ms)
+✔ 测试目录可使用 console，生产统一 logger 允许 (0.987458ms)
+✔ 当前仓库生产源码通过 sink 门禁 (103.732041ms)
+✔ QA-02 MQTT heartbeat: all valid/invalid fixtures, missing meta and type mutation (29.6455ms)
+✔ QA-02 MQTT telemetry: all valid/invalid fixtures, missing meta and type mutation (9.269291ms)
+✔ QA-02 MQTT report: all valid/invalid fixtures, missing meta and type mutation (2.21225ms)
+✔ QA-02 MQTT alarm: all valid/invalid fixtures, missing meta and type mutation (2.080375ms)
+✔ QA-02 MQTT event: all valid/invalid fixtures, missing meta and type mutation (1.060167ms)
+✔ QA-02 MQTT ack: all valid/invalid fixtures, missing meta and type mutation (1.266625ms)
+✔ QA-02 MQTT tamper: all valid/invalid fixtures, missing meta and type mutation (1.170125ms)
+✔ QA-02 MQTT media: all valid/invalid fixtures, missing meta and type mutation (0.990666ms)
+✔ QA-02 MQTT cmd: all valid/invalid fixtures, missing meta and type mutation (1.209834ms)
+✔ QA-02 MQTT ota: all valid/invalid fixtures, missing meta and type mutation (1.22425ms)
+✔ QA-02 MQTT notification: all valid/invalid fixtures, missing meta and type mutation (5.019125ms)
+✔ MQTT semantic hash, discriminator and UTC calendar errors fail closed (0.496292ms)
+✔ full REST response: field deletion/type mutation/envelope/date/errors/status/headers are enforced (2.728625ms)
+✔ REST request validation: required body/path/query/header, optional Sync, bodyless Deactivate, no type coercion in JSON (3.203666ms)
+✔ all device operations and declared response JSON Schemas compile; stable error catalog has no duplicates (48.073333ms)
+✔ predecessor MQTT is compatible; known REST break requires exact version and frozen DEC approvals (21.517125ms)
+✔ breaking contract mutations fail: removing fields/operations/status, changing type/required/security (116.788291ms)
+✔ receipt coverage gate fails closed for missing operations/statuses, no valid request and forged records (0.279208ms)
+✔ archived CSR upgrade mapping still verifies original baselines without rewriting history (47.174167ms)
+✔ QA04 coverage Gate accepts complete matrix and proofs (0.790042ms)
+✔ QA04 coverage Gate rejects missing domain (0.236334ms)
+✔ QA04 coverage Gate rejects no negative path (0.235333ms)
+✔ QA04 coverage Gate rejects untrusted handler (0.138625ms)
+✔ QA04 coverage Gate rejects missing role (0.526625ms)
+✔ QA04 coverage Gate rejects cross-tenant leak (0.176667ms)
+✔ QA04 coverage Gate rejects two write winners (0.168417ms)
+✔ QA04 coverage Gate rejects duplicate audit (0.214208ms)
+✔ QA04 coverage Gate rejects rollback missing (0.160125ms)
+✔ QA04 coverage Gate rejects unclean resource (0.147792ms)
+✔ QA04 coverage Gate rejects reused isolation (0.105667ms)
+✔ QA04 coverage Gate rejects no observed replay (0.117333ms)
+✔ QA04 required acceptance cases are enforced (0.575459ms)
+✔ QA04 skipped assertion fails execution Gate (0.051459ms)
+✔ QA04 removed state-machine assertion fails coverage Gate (0.450666ms)
+✔ migration source requires exact approved commit (0.474667ms)
+✔ migration connection requires complete secret and verified TLS; special credentials are encoded (0.174ms)
+✔ database verification derives every mapped Prisma table (0.450708ms)
+✔ runner without approved source fails without reporting credentials or driver details (35.113208ms)
+✔ source packager archives committed tree, includes exact SHA and refuses overwriting ZIP (5786.437ms)
+✔ local TLS broker: 10 independent certificate sessions, QoS1, downlinks, reconnect and broker ACL rejection (795.864584ms)
+✔ 10 concurrent sessions: all topics, exact 5% duplicates / 2% delayed telemetry, replay and isolated bad Schema (143.185041ms)
+✔ cross-device publish, subscribe, receive and wildcard denied (0.475625ms)
+✔ invalid configuration, OTA transitions and test credential gate fail closed (0.486875ms)
+✔ scripted failed command, missing target mapping and illegal downlink do not generate mixed ACK (0.238333ms)
+✔ all sessions close when one transport fails; no successful receipt (69.663083ms)
+✔ MQTT adapter rejects SUBACK denial and connection failures (0.250583ms)
+✔ CLI creates offline receipt and refuses ungated mqtts before reading credential paths (386.69425ms)
+✔ CDK wrapper accepts synth/diff and requires explicit deploy stack (1.88575ms)
+✔ CDK wrapper builds the whole workspace and fails closed on build errors (0.428917ms)
+✔ CDK wrapper uses local SSO but requires OIDC credentials in GitHub Actions (0.234834ms)
+✔ QA03 Gate accepts complete local integration receipt (0.933417ms)
+✔ QA03 Gate rejects missing scenario (0.186042ms)
+✔ QA03 Gate rejects unclean resources (0.082791ms)
+✔ QA03 Gate rejects reused isolation prefix (0.081333ms)
+✔ QA03 Gate rejects lost message (0.088417ms)
+✔ QA03 Gate rejects duplicate business record (0.114459ms)
+✔ QA03 Gate rejects missing raw proof (0.083ms)
+✔ QA03 Gate rejects missing fault probe (0.691125ms)
+✔ receipt covers all 128 decisions in two viewports (2.520666ms)
+✔ fail closed: missing page (0.796ms)
+✔ fail closed: skipped case (1.406167ms)
+✔ fail closed: flaky success (0.258208ms)
+✔ fail closed: retry (0.21ms)
+✔ fail closed: unexpected external network (0.204ms)
+✔ fail closed: fixture collision (0.195125ms)
+✔ fail closed: missing cleanup (0.189417ms)
+✔ fail closed: updated baseline masquerades as regression (0.185958ms)
+✔ fail closed: missing group (0.225792ms)
+✔ fail closed: duplicate group (0.190417ms)
+✔ fail closed: missing rejection assertion (0.209459ms)
+✔ fail closed: missing menu (0.196792ms)
+✔ fail closed: missing behavior guard (0.1935ms)
+✔ fail closed: wrong viewport (0.194958ms)
+✔ fail closed: snapshot hash mismatch (0.184083ms)
+✔ binding omission, duplication and reject implementation fail closed (0.285083ms)
+✔ actual config guard accepts R0/R1 and final false restore without declaring business/P95 (0.595417ms)
+✔ config rejects accountReadCandidate drift (0.119208ms)
+✔ config rejects pool drift (0.048833ms)
+✔ config rejects memory drift (0.042916ms)
+✔ config rejects preconnect drift (0.048542ms)
+✔ config rejects engineCpu drift (0.051416ms)
+✔ config rejects envName drift (0.03825ms)
+✔ config rejects revisionId drift (0.039958ms)
+✔ config rejects codeSha256 drift (0.042292ms)
+✔ config rejects state drift (0.075458ms)
+✔ config rejects architecture drift (0.046333ms)
+✔ config rejects source, inventory and concurrency drift (0.095042ms)
+✔ real gzip bytes bind exact own devices, raw outbox hash and canonical published hash (3.255666ms)
+✔ scope expansion, unknown customer/device, modified bytes and missing archive fail closed (1.743292ms)
+✔ IoT normalized raw body binds outbox bytes while original publication binds canonical payload (2.620667ms)
+✔ quick MQTT profile requires exact additional telemetry ledger and cannot waive missing archives (2.223417ms)
+✔ archive deadline uses actual S3 modification times and cannot green an eventual late archive (1.501834ms)
+✔ redelivery rejects foreign archives, unbounded inventories and unbound certificates before AWS operations (1.1625ms)
+✔ C1 waits for both branches then independent query/checkout; C0 refuses candidate signal; warm absent is null (1.460375ms)
+✔ preconnect proof rejects missing (0.081ms)
+✔ preconnect proof rejects duplicate (0.054542ms)
+✔ preconnect proof rejects failed (0.0555ms)
+✔ preconnect proof rejects foreign (0.066333ms)
+✔ preconnect proof rejects bad timestamp (0.071875ms)
+✔ preconnect proof rejects dispatch instead of settlement (0.05825ms)
+✔ preconnect proof rejects not connection wait (0.051333ms)
+✔ preconnect proof rejects query before preparation (0.058667ms)
+✔ preconnect proof rejects checkout steals readiness (0.091167ms)
+✔ preconnect proof rejects outside hook (0.066959ms)
+✔ preconnect proof rejects invalid duration (0.052042ms)
+✔ preconnect proof rejects orphan (0.4735ms)
+✔ preconnect proof rejects consistently empty invocation identities (0.17675ms)
+✔ nominal 30x profile cannot conceal a slower real publish window (56.814083ms)
+✔ version proof requires CI deploy Amplify exact commit and 19 distinct verified artifact bytes (0.374083ms)
+✔ own-fixture fault grant rejects shared changes and unknown faults while retaining deployment boundary (0.126542ms)
+✔ database proof rejects foreign build, source, role and nonzero cleanup instead of trusting child PASS (0.287042ms)
+✔ target gates reject missing finish cleanup required case and foreign device before live calls (0.663417ms)
+✔ business cleanup preserves outside rows, rejects baseline drift and deletes own dependent rows atomically (1685.34875ms)
+✔ fault injection rejects missing authorization and foreign export identity without mutation (0.466583ms)
+✔ assertion-only validation cannot stand in for cleanup or whole target acceptance (0.137333ms)
+✔ nonActive scope cannot enter the full wave that contains Active dependent probes (0.962667ms)
+✔ foundation mode cannot be mistaken for full core or browser acceptance (0.09525ms)
+✔ complete intermediate/root chain matches truststore and private key (7.372459ms)
+✔ missing root is distinguished from valid signing certificate and key (0.435542ms)
+✔ wrong parent, expired chain and wrong private key fail independently (0.915084ms)
+✔ oversized worker chain, malformed values and arbitrary canaries never leak (1.262333ms)
+✔ receipt gate accepts completed diagnostic with invalid chain, rejects data leak and missing cleanup (5.334792ms)
+✔ approved exact Worker, Secret, KMS and original expiry scope is accepted (0.725209ms)
+✔ removing role condition, wildcard Secret or extended expiry is rejected (0.375417ms)
+✔ unrestricted KMS, different context or extra secret permissions are rejected (0.153333ms)
+✔ repair gate requires retained versions, exact output binding and all cleanup (2.232042ms)
+✔ only root field changes, original version remains immutable and AWSPREVIOUS (5.603458ms)
+✔ baseline drift prevents all writes (0.116292ms)
+✔ wrong fixed root prevents all writes (0.335ms)
+✔ unknown put outcome recovers immutable token without a second put (1.177166ms)
+✔ candidate mutation fails before promotion (0.337959ms)
+✔ concurrent current movement after candidate write is preserved (0.5855ms)
+✔ unknown promotion response is recovered from current stages (0.816458ms)
+✔ post-promotion failed readback rolls back only the known current candidate (0.611667ms)
+✔ invalid version token rejects before accessing any secret (0.231083ms)
+✔ rollback refuses to overwrite a concurrent foreign current version (0.64925ms)
+✔ unknown AWS errors are returned as fixed codes without secret exception text (0.08375ms)
+✔ successful promotion waits for metadata visibility without repeating stage writes (0.854667ms)
+✔ existing current candidate is verified using read-only store without new versions or stage writes (0.77275ms)
+✔ read-only recovery rejects changed fields without rolling back an existing current version (0.26375ms)
+✔ capacity planning includes operational and rotation idle overlap and rejects naive concurrency increase (1.276084ms)
+✔ partition preserves 722ms without treating CPU as exclusive scheduling or compiler time (3.974417ms)
+✔ split rejects missing setup (0.177083ms)
+✔ split rejects setup gap (0.443417ms)
+✔ split rejects setup wrong boundary (0.47ms)
+✔ split rejects missing (0.066334ms)
+✔ split rejects duplicate (0.044208ms)
+✔ split rejects foreign (0.15ms)
+✔ split rejects invalid CPU (0.051125ms)
+✔ split rejects no CPU (3.865333ms)
+✔ split rejects wrong boundary (0.492417ms)
+✔ split rejects failed (1.9275ms)
+✔ split rejects gap (0.20075ms)
+✔ split rejects overlap (0.104167ms)
+✔ split rejects fake duration (0.196542ms)
+✔ split rejects connection claim (0.114792ms)
+✔ target observer setup gap remains rejected: 737ms/17ms (0.284041ms)
+✔ target observer setup gap remains rejected: 498ms/18ms (0.117375ms)
+✔ target observer setup gap remains rejected: 40ms/20ms (0.127375ms)
+✔ explicit setup covers 17ms without shifting original entrance (4.968958ms)
+✔ explicit setup covers 18ms without shifting original entrance (0.384458ms)
+✔ explicit setup covers 20ms without shifting original entrance (2.488458ms)
+✔ range reads keep the original default and permit bounded slow-link retry (0.348583ms)
+✔ range reads reject unbounded, ambiguous and below-default timeouts (0.184208ms)
+✔ read-only asset concurrency stays bounded independently of DB/API capacity (0.103792ms)
+✔ cold sampler collector binds exact own REPORT and safe client metrics: patch (63.045792ms)
+✔ cold sampler collector binds exact own REPORT and safe client metrics: audit (56.0205ms)
+✔ two batches preserve six own contracts, six winners/conflicts and audits with a hard concurrency/request bound (47.67025ms)
+✔ unknown write drains siblings and waits for Lambda quiescence without retry or false PASS (23.094125ms)
+✔ audit drift fails closed: audit-id (17.910416ms)
+✔ audit drift fails closed: foreign-list (31.819875ms)
+✔ foreign context, missing baseline or excess batches fail before any dispatch/receipt (33.954542ms)
+✔ sampling correlation ledger rejects foreign or missing HTTP rows even with a valid business result (30.963667ms)
+✔ DLQ scope requires closed ledger, 20 exact IDs and fresh empty database proof (0.915542ms)
+✔ one-shot worker deletes only exact retired pointers, restores unknown visibility, and exports no bodies or handles (8.823875ms)
+✔ six exact request/time/status/extended/Lambda links pass without saving unrelated fields or requests (63.922917ms)
+✔ correlation refuses complete proof for time (54.216959ms)
+✔ correlation refuses complete proof for lambda-id (70.944458ms)
+✔ correlation refuses complete proof for duplicate (57.549042ms)
+✔ correlation refuses complete proof for missing-http (59.042166ms)
+✔ audit GET binds list/detail operation and timeout UUID without claiming client success (103.541833ms)
+✔ driver partition separates controlled wait and result access without causal claims (1.702375ms)
+✔ reject crossed boundary (0.254083ms)
+✔ reject nonfinite boundary (0.09875ms)
+✔ reject missing boundary (0.085208ms)
+✔ reject wrong sample order (0.15525ms)
+✔ reject extra sample (0.189875ms)
+✔ reject hidden query retry (0.515542ms)
+✔ reject unreleased connection (0.086333ms)
+✔ reject extra pool (0.077083ms)
+✔ reject target equivalence (0.105416ms)
+✔ reject compiler-only claim (0.066917ms)
+✔ reject server-only claim (0.053917ms)
+✔ reject wrong controlled recipe (0.05975ms)
+✔ reject wrong account mode (0.043958ms)
+✔ reject unproved phases (0.068542ms)
+✔ cold summary requires exact transactional physical proof and never copies payloads (2.014042ms)
+✔ strict load split preserves 5ms coverage and only public boundary attribution (0.115ms)
+✔ rejects foreign request (0.07725ms)
+✔ rejects duplicate (0.056292ms)
+✔ rejects missing model boundary (0.061916ms)
+✔ rejects multiple SQL (0.049708ms)
+✔ rejects root query (0.0515ms)
+✔ rejects duplicate ownership (0.051917ms)
+✔ rejects CPU attribution (0.058167ms)
+✔ rejects boundary guess (0.09075ms)
+✔ rejects gap (0.059584ms)
+✔ rejects overlap (0.048625ms)
+✔ rejects failure (0.044917ms)
+✔ rejects invalid wait (0.040875ms)
+✔ phase proof covers success, conditional conflict and all audit reads without declaring latency/cleanup acceptance (2.335709ms)
+✔ cold 409 gate requires matching cold phase flags and successful runtime initialization (3.058791ms)
+✔ new account gate requires nested hook, Prisma query, first driver query and checkout on every request (0.305042ms)
+✔ account gate rejects missing (0.362875ms)
+✔ account gate rejects duplicate (0.214208ms)
+✔ account gate rejects failure (0.671917ms)
+✔ account gate rejects wait-boundary (0.54075ms)
+✔ account gate rejects timestamp (0.775625ms)
+✔ account gate rejects outside-hook (0.19575ms)
+✔ phase proof rejects foreign-invocation (0.151875ms)
+✔ phase proof rejects missing-transaction (0.851291ms)
+✔ phase proof rejects conflict-code (0.326792ms)
+✔ phase proof rejects missing-http (1.049917ms)
+✔ phase proof rejects other-run (8.061375ms)
+✔ bounded sampler requires physical Init Duration as well as application cold phases and retains client metrics (3.20525ms)
+✔ bounded sampler rejects foreign-report (1.23375ms)
+✔ bounded sampler rejects duplicate-report (1.005958ms)
+✔ bounded sampler rejects no-socket-metrics (2.865458ms)
+✔ bounded sampler rejects missing-body (0.137916ms)
+✔ bounded sampler rejects over-budget (0.097709ms)
+✔ bounded sampler rejects missing-audit (0.08775ms)
+✔ client preparation requires actual dispatch, cold adapter suffix and leaves warm adapter timings absent (0.695167ms)
+✔ client preparation rejects missing prepare (0.186959ms)
+✔ client preparation rejects settlement is not driver dispatch (0.175417ms)
+✔ client preparation rejects preparation after driver start (0.174459ms)
+✔ client preparation rejects cold missing suffix (0.16525ms)
+✔ client preparation rejects suffix outside preparation (0.155709ms)
+✔ client preparation rejects wrong invocation (0.147458ms)
+✔ client preparation cannot bypass account phase checks (0.140041ms)
+✔ engine CPU mode proves preparation before model, preserves driver boundary and refuses old lazy ownership (1.481875ms)
+✔ runtime assembly opt-in preserves both engine ownership modes and rejects old partial runtime receipts (1.802333ms)
+✔ parent phase Gate requires engine/runtime and C1 settlement before queries; C0 refuses candidate phases (0.823709ms)
+✔ new contract-load split opt-in cannot reuse an older unsplit target receipt (0.081084ms)
+✔ success audits bind precisely and conflicts never have a success audit (0.35025ms)
+✔ audit proof rejects duplicate (0.136167ms)
+✔ audit proof rejects wrong-version (0.05525ms)
+✔ audit proof rejects conflict-success (0.043833ms)
+✔ Gateway overlap cannot conceal serialized Lambda executions (0.31025ms)
+✔ three races accept either winner, bind every successful write to audit and advance once per version (20.554167ms)
+✔ early failure still drains the late sibling before readback and never retries or reports PASS (2.97525ms)
+✔ race fails closed for double-winner (4.215542ms)
+✔ race fails closed for gateway-id (5.355917ms)
+✔ race fails closed for audit-id (17.459125ms)
+✔ foreign context fails before dispatch or receipt writes (0.710125ms)
+✔ historical read scope rejects any resource outside the exact sealed old contract before live calls (0.234708ms)
+✔ read-only completion accepts only all six settled exact successful PATCH receipts (0.700417ms)
+✔ cleanup/completion guard rejects unknown-write (0.193458ms)
+✔ cleanup/completion guard rejects foreign-site (0.081791ms)
+✔ cleanup/completion guard rejects wrong-account (0.066667ms)
+✔ cleanup/completion guard rejects unfinished (0.068959ms)
+✔ cleanup/completion guard rejects gateway-id (0.07925ms)
+✔ log projection redacts payload/error details and rejects unrecognized events (0.448083ms)
+✔ serialized AWS log projection preserves closed event names through the 20-sequence Gate (1.394292ms)
+✔ specific redelivery needs matching SQS ID, final disposition and durable duplicate receipt (0.110083ms)
+✔ 20 sequence stage Gate rejects incomplete coverage and unrelated device evidence (0.410542ms)
+✔ completed Build result tolerates delayed/truncated CloudWatch visibility and transient read failure without rerunning SQL (0.556708ms)
+✔ wrong/multiple/failed frames and AccessDenied reject immediately, absent result fails closed after bounded reads (0.385958ms)
+✔ expired SSO is a terminal authentication condition, never a transient log retry (0.07175ms)
+✔ CloudWatch 250000-character fragments reassemble exact source-bound metadata without accepting truncation or another frame (6.779917ms)
+✔ large fixture observations round-trip through bounded gzip without losing metadata (7.832708ms)
+✔ compressed fixture frames reject corruption, noncanonical data and decompression bombs (25.762334ms)
+✔ compressed metadata still requires the exact expected source/build/action binding (4.047708ms)
+✔ fixed manifest rejects unsafe SQL identifiers, missing hash and duplicates (0.528458ms)
+✔ migration comparison distinguishes missing, tampered, unfinished and rolled-back migrations (0.140959ms)
+✔ snapshot uses repeatable read/read only, timeouts, fixed SELECTs and always rolls back (0.331541ms)
+✔ writable transaction rejected before business queries and rolled back (0.1855ms)
+✔ query failure rolls back instead of yielding partial PASS (0.12025ms)
+✔ dedicated query project never changes migration project or passes StartBuild overrides (21.7115ms)
+✔ legacy onboarding rows without CSR columns require reconciliation before migration (0.195875ms)
+✔ query success preserves real migration BLOCKED instead of promoting readiness (0.742708ms)
+✔ wrong build, writable transaction, unbound hash and fabricated migration PASS rejected (0.258833ms)
+✔ missing table count cannot become complete SQL evidence (0.600791ms)
+✔ explicit manual false overrides repository true and preserves capacity/immediate context (0.607916ms)
+✔ manual deployment rejects branch/SHA, missing mode, phase drift and unsupported events before cloud work (3.431375ms)
+✔ push keeps existing resolved defaults but cannot ignore explicit invalid input (0.100125ms)
+✔ input pair gate never implies target acceptance and rejects SHA/config/context/duplicate run drift (0.278208ms)
+✔ workflow records input receipt before verification/AWS and never interpolates manual input into shell (0.276083ms)
+✔ C0/C1 same SHA and engine=true differ only preconnect; push cannot turn candidate on (0.251417ms)
+✔ R0/R1 input pair binds same SHA and budget, differs only account read; push always off (5.040166ms)
+✔ entity merge requires actual decisions on both viewports, scoped devices, versions and cleanup (0.604833ms)
+✔ certificate merge cannot use review-only parent to claim real dual-channel certificate entity (0.102292ms)
+✔ request UUID is durable before a single dispatch and credentials never enter receipts (10.747625ms)
+✔ failed AWAIT_HEADERS preserves correlation without retry (0.355208ms)
+✔ failed READ_BODY preserves correlation without retry (0.110959ms)
+✔ malformed JSON cannot become a successful HTTP receipt (0.1715ms)
+✔ socket events split DNS/TCP/TLS; receipts contain no URL, authorization or socket details (1.152542ms)
+✔ real delayed body is measured separately; a reused connection has absent DNS/TCP/TLS, not invented zeros (185.886833ms)
+✔ total deadline aborts an unfinished response body; no complete-body receipt or retry (3.681583ms)
+✔ injected fetch cannot masquerade as detailed socket observation (0.265291ms)
+✔ layout diagnostic fails closed before AWS calls for foreign, finished or unbound fixtures (0.572375ms)
+✔ diagnostic cleanup retains all actions and fails closed: absent (0.478292ms)
+✔ diagnostic cleanup retains all actions and fails closed: still-present (0.048667ms)
+✔ diagnostic cleanup retains all actions and fails closed: read-denied (0.051ms)
+✔ diagnostic cleanup retains all actions and fails closed: signout-failed (0.058583ms)
+✔ diagnostic cleanup retains all actions and fails closed: delete-failed (0.063792ms)
+✔ snapshot must be available encrypted manual and exact whitelist cannot expand (1.603458ms)
+✔ real local SQL retires exactly two jobs/requests and preserves every other table (1395.264458ms)
+✔ live status drift aborts with original rows intact (516.4835ms)
+✔ unexpected cascade/trigger changing a preserved table rolls back all deletes (448.994083ms)
+✔ valid HTTP writes cannot be inflated by malformed, wrong role, wrong method or failed requests (1.019834ms)
+✔ target License wire sequence proves ExpiringSoon renewal and Renewed activation using real handlers and PostgreSQL (1539.508459ms)
+✔ planner never dispatches and matchable inputs never accept P95 or causal benefit (1.796792ms)
+✔ pair rejects drift or missing proof sourceCommit (0.1165ms)
+✔ pair rejects drift or missing proof memoryMiB (0.0575ms)
+✔ pair rejects drift or missing proof architecture (0.057875ms)
+✔ pair rejects drift or missing proof poolMax (0.062167ms)
+✔ pair rejects drift or missing proof actorRole (0.046375ms)
+✔ pair rejects drift or missing proof accountState (0.04175ms)
+✔ pair rejects drift or missing proof operationId (0.044ms)
+✔ pair rejects drift or missing proof expectedStatus (0.058334ms)
+✔ pair rejects drift or missing proof authenticatedPreconnect (0.092375ms)
+✔ pair rejects drift or missing proof engineCpuDiagnosis (0.050583ms)
+✔ pair rejects drift or missing proof artifactSetSha256 (0.041167ms)
+✔ pair rejects drift or missing proof lambdaCount (0.06225ms)
+✔ pair rejects drift or missing proof cleanupGate (0.036167ms)
+✔ pair rejects drift or missing proof source (0.031083ms)
+✔ pair rejects drift or missing proof coldProofGroup (0.031542ms)
+✔ pair rejects drift or missing proof naturalCold409Count (0.039334ms)
+✔ pair rejects drift or missing proof platformInitDurationMs (0.034791ms)
+✔ pair rejects drift or missing proof clientSplitGate (0.031916ms)
+✔ pair rejects drift or missing proof firstCheckoutOwned (0.032875ms)
+✔ pair rejects drift or missing proof startedAt (0.02425ms)
+✔ actual receipt loader rejects byte drift and directory escape before reading semantic proof (1.905833ms)
+✔ matched independent sampling stays distinct from baseline and cannot accept a missing group (0.093542ms)
+✔ recovery sub-gate checks all preserved tables without accepting full QA09 (0.578375ms)
+✔ version mismatch, missing migration and changed certificate/other business data fail closed (0.373625ms)
+✔ retirement evidence cannot hide wrong deleted IDs or lose preservation proof (0.237083ms)
+✔ retirement project has fixed source and never modifies readonly/migration runner (15.822042ms)
+✔ real Sync observation redacts secret domains and cannot treat delivery as firmware verification (0.507833ms)
+✔ receipt runner sends only RECEIVED and redacts complete snapshots even with device password hashes (0.511458ms)
+✔ receipt runner fails closed for mismatched snapshots and refused confirmation (0.157041ms)
+✔ 117 elements require both real viewport receipts (6.457917ms)
+✔ one failure fails all elements in the affected behavior group (0.576333ms)
+✔ Active dependent operations are explicit NOT_RUN, not successful disabled checks (0.77ms)
+✔ duplicate, foreign and invalid viewport receipts fail closed (1.504ms)
+✔ Defer and Reject failures also block the browser Gate (0.837167ms)
+✔ CSV proof rejects empty, foreign and malformed downloads while parsing quoted data (0.239292ms)
+✔ reopens own TLS session after same-clientId negative probe and closes on failure (0.694458ms)
+✔ foreign MQTT scope is rejected before connection (0.092667ms)
+✔ S3 fallback accepts exact owned version cleanup and rejects bucket, customer and pagination expansion (0.5005ms)
+✔ export scope rejects a foreign device before API, AWS or output writes (0.550625ms)
+✔ domain cleanup refuses live run, foreign customer name, missing DB cleanup and out-of-scope objects (0.64425ms)
+✔ unseeded identity cleanup rejects unfinished, foreign, seeded and pre-existing admin ledgers (0.486417ms)
+✔ Cognito canonical UUID is allowed only with exact own email and creation within this failed run (0.190709ms)
+✔ P95 uses all actual samples and rejects empty or invalid measurements (0.432167ms)
+✔ complete P95 excludes censored timeouts and refuses partial sample acceptance (0.105417ms)
+✔ performance summary refuses to report P95 PASS for missing or incomplete actual samples (46.818666ms)
+✔ read-only pool probe distinguishes one connection, recovery and incomplete capacity acceptance (2.61175ms)
+✔ observed connection-budget violation refuses a pool PASS receipt (0.621083ms)
+✔ foreign probe application name is rejected before database access (0.068083ms)
+✔ CPU ancestry attributes minified constructor and compile samples exclusively (0.656167ms)
+✔ curl metrics differences preserve boundaries and reject bad ordering or nonfinite values (1.102833ms)
+✔ curl probes are six bounded verified GETs with no credential/config/retry path; proxy prevents dispatch (2.089958ms)
+✔ curl failures retain siblings and discard raw error text (0.445042ms)
+✔ scheduled publishing overlaps slow PUBACK and drains failures without abandoning in-flight writes (17.20225ms)
+✔ only exact test account and readonly role accepted (1.1675ms)
+✔ stack identity, region, project and test tag fail closed (0.190792ms)
+✔ permission denial is unverified, never classified as absent (0.126166ms)
+✔ metadata health never promotes missing business evidence to AWS PASS (0.228083ms)
+✔ five groups with unconfirmed or disabled users do not prove usable identities (0.072667ms)
+✔ missing target receipts and version mismatch remain blockers (0.066458ms)
+✔ existing test environment requires neither new account nor stack and retains real-response/cleanup boundaries (0.215125ms)
+✔ real sub-scope acceptance cannot claim whole QA09 (0.991083ms)
+✔ unfinished execution, missing role probe and failed assertion rejected (0.142875ms)
+✔ missing cleanup, wrong target, secrets and source tampering rejected (0.813834ms)
+✔ identity cleanup only accepts this run and the five known role identities (0.452542ms)
+✔ record cleanup requires exact run namespace, not merely a partial prefix (0.098458ms)
+✔ recovery excludes explicitly later own SLO records without waiving original bytes or deadlines (4.353708ms)
+✔ later record exemption never includes other devices or customers (1.718ms)
+✔ site compensation rejects foreign-route before any AWS command (153.125875ms)
+✔ site compensation rejects failed-cleanup before any AWS command (217.925084ms)
+✔ site compensation rejects unbound-parent before any AWS command (159.138583ms)
+✔ remaining target rejects foreign fixture before an API or database call (0.954584ms)
+✔ unproved license activation fails legal stage and independent stage failures remain explicit without credentials (1.12375ms)
+✔ per-request service throttling requires both unique IDs and bound access-row time/status, never minute metrics (0.841917ms)
+✔ QA09 rollout separates logging, budget and event publication and rejects silent phase mistakes (0.692375ms)
+✔ engine CPU diagnosis is explicit and only allowed after pool budget rollout (0.092917ms)
+✔ runtime assembly has ordered nested CPU intervals without additive initialization totals (1.785ms)
+✔ runtime proof rejects absent, duplicate, failed, foreign IDs, overlap, bad CPU and invalid durations (0.765209ms)
+✔ security retest rejects foreign fixture before any credential or live API access (0.565166ms)
+✔ six tampered tokens require HTTP rejection and keep credentials out of receipt (0.6925ms)
+✔ unknown seed outcome requires observed complete own set or proven empty set, never a blind retry (0.759916ms)
+✔ semantic SQL creates two scoped read models without lifecycle or authentication claims and refuses reuse (1165.309375ms)
+✔ semantic SQL refuses scope/state drift: lifecycle_status='Active' (169.634ms)
+✔ semantic SQL refuses scope/state drift: site_id=NULL (178.913667ms)
+✔ semantic SQL refuses scope/state drift: customer_id='22222222-2222-2222-2222-222222222222' WHERE customer_id='11111111-1111-1111-1111-111111111111' (173.098166ms)
+✔ semantic SQL refuses scope/state drift: name='outside' (165.146084ms)
+✔ platform exports require the exact ledger and own frozen filters; foreign jobs remain unchanged (235.260875ms)
+✔ business session cleanup never accepts a foreign email id role scope or lifecycle (0.620125ms)
+✔ session fixtures require exact own customer and site binding before cleanup (0.123542ms)
+✔ complete narrow real-environment scope never accepts full QA09 (1.36275ms)
+✔ missing mTLS, shared keys, different ingress/archive bytes and missing cleanup fail closed (0.731834ms)
+✔ CodeBuild inline source fits service limit and decompresses to exact reviewed bytes (27.45425ms)
+✔ exact own-ten plan rejects expansion, historical identity and wrong customer namespace (24.658542ms)
+✔ real SQL creates exact fixtures and cleanup preserves original devices/certificates (832.593959ms)
+✔ unexpected original-data trigger mutation rolls back fixture creation (465.430625ms)
+✔ processing provisioning job prevents cleanup without deleting any own devices (445.267167ms)
+✔ CSR proofs bind method, path, request ID, timestamp, nonce and independent key (116.185166ms)
+✔ closed-fixture audit and request outbox cleanup require ledger and preserve unrelated events (431.777417ms)
+✔ closed-fixture access rejects missing approval audit and live customer (425.826958ms)
+✔ unseeded capacity attempt has read-only empty audit with deleted customers and fixed original baseline (424.98175ms)
+✔ business-only Onboarded fixtures preserve original rows, refuse reuse and make no certificate/authentication claim (460.975083ms)
+✔ unseeded timeout audit reads only exact prefix and cannot mutate original or retry customer creation (427.946875ms)
+✔ active lifecycle fixture changes exactly two own states and never claims a natural path (416.625708ms)
+✔ capacity probe executes a read-only transaction and leaves fixture and original rows unchanged (409.201875ms)
+✔ review-only mode cannot run without an explicit review hook or with unknown options (0.434583ms)
+✔ fixture CLI distinguishes expired SSO from authorization rejection and transport timeouts (0.140292ms)
+✔ TLS diagnostic bounds independent reads to 12 and six concurrent; fake observations cannot claim real target source (40.853041ms)
+✔ TLS diagnostic retains settled siblings, missing samples and unexpected HTTP/authentication as PARTIAL (0.48975ms)
+✔ version binding preserves prior defaults and accepts exact new target (0.730916ms)
+✔ invalid version input is rejected before any AWS operation (0.161917ms)
+✔ all delivered writes have an explicit permission and own or absent object path (0.644625ms)
+✔ identical claims still change signed payload bytes rather than unused base64 signature bits (0.113ms)
+✔ Gateway 403 rejects tampered signatures while protected 2xx must fail (10.688583ms)
+✔ quick has exact cadence, 24 historical hours, 30x burst, 5% duplicates and 2% delayed delivery (4.654458ms)
+✔ full plan contains 86400 historical Telemetry samples for 10 devices at 10-second cadence (211.57325ms)
+✔ unknown profile fails closed (0.170375ms)
+✔ P95 uses nearest rank and does not mutate input (0.119125ms)
+✔ invalid latency  rejected (0.05875ms)
+✔ invalid latency NaN rejected (0.032833ms)
+✔ invalid latency Infinity rejected (0.035666ms)
+✔ invalid latency -1 rejected (0.037541ms)
+✔ independent checker verifies count average min max and UTC buckets (0.24025ms)
+✔ complete reliability proof passes (0.592042ms)
+✔ Gate rejects missing trace (0.400541ms)
+✔ Gate rejects duplicate trace (0.303416ms)
+✔ Gate rejects failed cleanup (0.304458ms)
+✔ Gate rejects wrong profile (0.356041ms)
+✔ Gate rejects wrong cadence (0.34ms)
+✔ Gate rejects untracked loss (0.338084ms)
+✔ Gate rejects duplicate business row (0.341584ms)
+✔ Gate rejects missing archive (0.401292ms)
+✔ Gate rejects missing reorder (0.413667ms)
+✔ Gate rejects missing retry (0.383292ms)
+✔ Gate rejects unresolved gap (0.383708ms)
+✔ Gate rejects worker not paused (0.364833ms)
+✔ Gate rejects no backlog (0.84425ms)
+✔ Gate rejects unscoped replay (1.0865ms)
+✔ Gate rejects duplicate MQTT publish (0.591375ms)
+✔ Gate rejects late ACK changed terminal state (0.567291ms)
+✔ Gate rejects telemetry P95 failed (0.416959ms)
+✔ Gate rejects command P95 failed (0.403375ms)
+✔ Gate rejects NaN P95 (0.519083ms)
+✔ Gate rejects missing latency samples (0.432375ms)
+✔ security receipt accepts complete execution and all observed acceptance proofs (3.195083ms)
+✔ execution fails closed: deleted required test (0.536ms)
+✔ execution fails closed: missing file (0.238833ms)
+✔ execution fails closed: pending test (0.29975ms)
+✔ execution fails closed: failed test (1.070041ms)
+✔ proof fails closed: missing proof (0.147333ms)
+✔ proof fails closed: reused prefix (0.092417ms)
+✔ proof fails closed: cleanup incomplete (0.082458ms)
+✔ proof fails closed: expired JWT accepted (0.124208ms)
+✔ proof fails closed: missing write operation (0.2015ms)
+✔ proof fails closed: forged identity accepted (0.291625ms)
+✔ proof fails closed: route resolved before auth (0.074167ms)
+✔ proof fails closed: cross tenant allowed (0.097959ms)
+✔ proof fails closed: unauthorized side effect (0.140417ms)
+✔ proof fails closed: prototype pollution (0.117167ms)
+✔ proof fails closed: malicious media signed (0.153708ms)
+✔ proof fails closed: malicious media persisted (0.072792ms)
+✔ proof fails closed: leak ignored (0.082792ms)
+✔ proof fails closed: unscanned audit (0.2015ms)
+✔ proof fails closed: unscanned snapshot (0.198625ms)
+✔ proof fails closed: partial response scan (0.084083ms)
+✔ independent scanner rejects nested secrets raw JWT Error private key and signed URL without echoing values (0.969083ms)
+✔ scanner detects opaque canary leakage and permits null redacted values and public certificate (0.057917ms)
+ℹ tests 695
+ℹ suites 0
+ℹ pass 695
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7465.015166
+
+> food-digester-platform@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> turbo run build
+
+• turbo 2.10.11
+
+   • Packages in scope: @fdp/admin-web, @fdp/archive-worker, @fdp/auth, @fdp/aws-clients, @fdp/cloud-api, @fdp/contracts, @fdp/database, @fdp/domain, @fdp/infra, @fdp/ingestion-worker, @fdp/media, @fdp/observability, @fdp/summary-worker
+   • Running build in 13 packages
+   • Remote caching disabled
+
+@fdp/contracts:build: cache hit, replaying logs badb40bf08f6da73
+@fdp/observability:build: cache hit, replaying logs f03cb858f5095aa4
+@fdp/aws-clients:build: cache hit, replaying logs 72b741ff8e28f9c8
+@fdp/database:generate: cache hit, replaying logs 57ec0bc624edaaca
+@fdp/contracts:build: 
+@fdp/contracts:build: > @fdp/contracts@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/contracts
+@fdp/contracts:build: > node -e "console.log('@fdp/contracts 为源码契约包：内部使用 .ts 扩展名互引，不经 tsc 构建；消费方经 tsx/打包器直接使用源码')"
+@fdp/contracts:build: 
+@fdp/contracts:build: @fdp/contracts 为源码契约包：内部使用 .ts 扩展名互引，不经 tsc 构建；消费方经 tsx/打包器直接使用源码
+@fdp/observability:build: 
+@fdp/observability:build: > @fdp/observability@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability
+@fdp/observability:build: > tsc -p tsconfig.build.json
+@fdp/observability:build: 
+@fdp/aws-clients:build: 
+@fdp/aws-clients:build: > @fdp/aws-clients@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/aws-clients
+@fdp/aws-clients:build: > tsc -p tsconfig.build.json
+@fdp/aws-clients:build: 
+@fdp/database:generate: 
+@fdp/database:generate: > @fdp/database@0.0.0 generate /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database
+@fdp/database:generate: > prisma generate
+@fdp/database:generate: 
+@fdp/database:generate: Loaded Prisma config from prisma.config.ts.
+@fdp/database:generate: 
+@fdp/database:generate: Prisma schema loaded from prisma/schema.prisma.
+@fdp/database:generate: ┌─────────────────────────────────────────────────────────┐
+@fdp/database:generate: │  Update available 7.9.1 -> 8.0.0-rc.21                  │
+@fdp/database:generate: │                                                         │
+@fdp/database:generate: │  This is a major update - please follow the guide at    │
+@fdp/database:generate: │  https://pris.ly/d/major-version-upgrade                │
+@fdp/database:generate: │                                                         │
+@fdp/database:generate: │  Run the following to update                            │
+@fdp/database:generate: │    npm i --save-dev prisma@latest                       │
+@fdp/database:generate: │    npm i @prisma/client@latest                          │
+@fdp/database:generate: └─────────────────────────────────────────────────────────┘
+@fdp/database:generate: 
+@fdp/database:generate: ✔ Generated Prisma Client (7.9.1) to ./src/generated in 128ms
+@fdp/database:generate: 
+@fdp/infra:build: cache hit, replaying logs 336f7a52738bc936
+@fdp/domain:build: cache hit, replaying logs 47ef0249a0b99843
+@fdp/infra:build: 
+@fdp/infra:build: > @fdp/infra@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/infra
+@fdp/infra:build: > tsc -p tsconfig.build.json
+@fdp/infra:build: 
+@fdp/domain:build: 
+@fdp/domain:build: > @fdp/domain@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/domain
+@fdp/domain:build: > tsc -p tsconfig.build.json
+@fdp/domain:build: 
+@fdp/database:build: cache hit, replaying logs 8a71eaec091f1a16
+@fdp/database:build: 
+@fdp/database:build: > @fdp/database@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database
+@fdp/database:build: > tsc -p tsconfig.build.json
+@fdp/database:build: 
+@fdp/summary-worker:build: cache miss, executing 5e89138e3d6029fe
+@fdp/archive-worker:build: cache miss, executing f278c338a4092d10
+@fdp/media:build: cache hit, replaying logs ab9bbad7d409e677
+@fdp/media:build: 
+@fdp/media:build: > @fdp/media@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/media
+@fdp/media:build: > tsc -p tsconfig.build.json
+@fdp/media:build: 
+@fdp/auth:build: cache hit, replaying logs efa39a0182ab3b56
+@fdp/auth:build: 
+@fdp/auth:build: > @fdp/auth@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/auth
+@fdp/auth:build: > tsc -p tsconfig.build.json
+@fdp/auth:build: 
+@fdp/admin-web:build: cache miss, executing fd63168431c58baf
+@fdp/cloud-api:build: cache miss, executing d8fc79ce8e87540f
+@fdp/ingestion-worker:build: cache miss, executing 336c85ea4a5d2fd2
+@fdp/archive-worker:build: 
+@fdp/archive-worker:build: > @fdp/archive-worker@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/archive-worker
+@fdp/archive-worker:build: > tsc -p tsconfig.build.json
+@fdp/archive-worker:build: 
+@fdp/ingestion-worker:build: 
+@fdp/ingestion-worker:build: > @fdp/ingestion-worker@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/ingestion-worker
+@fdp/ingestion-worker:build: > tsc -p tsconfig.build.json
+@fdp/ingestion-worker:build: 
+@fdp/summary-worker:build: 
+@fdp/summary-worker:build: > @fdp/summary-worker@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/summary-worker
+@fdp/summary-worker:build: > tsc -p tsconfig.build.json
+@fdp/summary-worker:build: 
+@fdp/cloud-api:build: 
+@fdp/cloud-api:build: > @fdp/cloud-api@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api
+@fdp/cloud-api:build: > tsc -p tsconfig.build.json
+@fdp/cloud-api:build: 
+@fdp/admin-web:build: 
+@fdp/admin-web:build: > @fdp/admin-web@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web
+@fdp/admin-web:build: > tsc -p tsconfig.build.json && vite build
+@fdp/admin-web:build: 
+@fdp/admin-web:build: vite v8.2.2 building client environment for production...
+@fdp/admin-web:build: transforming...
+@fdp/admin-web:build: ✓ 1609 modules transformed.
+@fdp/admin-web:build: rendering chunks...
+@fdp/admin-web:build: computing gzip size...
+@fdp/admin-web:build: dist/web/index.html                     0.46 kB │ gzip:   0.32 kB
+@fdp/admin-web:build: dist/web/assets/index-CecZB0A0.css     19.08 kB │ gzip:   5.07 kB
+@fdp/admin-web:build: dist/web/assets/index-D1EpTElP.js   1,357.74 kB │ gzip: 417.92 kB
+@fdp/admin-web:build: 
+@fdp/admin-web:build: ✓ built in 229ms
+@fdp/admin-web:build: [plugin builtin:vite-reporter] 
+@fdp/admin-web:build: (!) Some chunks are larger than 500 kB after minification. Consider:
+@fdp/admin-web:build: - Using dynamic import() to code-split the application
+@fdp/admin-web:build: - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+@fdp/admin-web:build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+ Tasks:    14 successful, 14 total
+Cached:    9 cached, 14 total
+  Time:    3.228s 
+
+
+> food-digester-platform@0.0.0 check:boundaries /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-boundaries.mjs
+
+检查 13 个工作区包
+模块边界与循环依赖检查通过
+
+> food-digester-platform@0.0.0 check:schemas /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-schemas.mjs
+
+OpenAPI / JSON Schema 校验通过
+
+> food-digester-platform@0.0.0 check:migrations /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-migrations.mjs
+
+Migration 结构与 Prisma Schema 漂移检查通过
+
+> food-digester-platform@0.0.0 check:evidence /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-eng-db-dom-evidence.mjs
+
+ENG/DB/DOM/IAC/AUTH/SEC/BE-IOT/BE-ARC/RPL/ESG/管理后台业务与前端 证据与开发文档检查通过
+
+> food-digester-platform@0.0.0 check:secrets /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-secrets.mjs
+
+敏感信息扫描通过
+
+> food-digester-platform@0.0.0 check:sensitive-sinks /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-sensitive-sinks.mjs
+
+生产日志与 Trace sink 脱敏门禁通过
+
+> food-digester-platform@0.0.0 check:admin-web-delivery /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-admin-web-delivery.mjs
+
+管理后台交付检查通过：入口、组合根、路由页面、OpenAPI operationId、CSS 与浏览器构建产物均已就绪
+
+> food-digester-platform@0.0.0 check:admin-web-e2e /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> pnpm --filter @fdp/admin-web test:e2e
+
+
+> @fdp/admin-web@0.0.0 test:e2e /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web
+> playwright test
+
+[WebServer] (node:89235) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:89263) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+[WebServer] (node:89264) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:89290) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 36 tests using 1 worker
+
+(node:89291) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/36] e2e/admin-web.spec.ts:15:1 › H-01 API 拒绝停用会话后清除浏览器会话并返回登录
+[2/36] e2e/admin-web.spec.ts:42:1 › M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏
+[3/36] e2e/admin-web.spec.ts:88:1 › 无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫
+[4/36] e2e/admin-web.spec.ts:116:1 › 刷新失败清会话，API 403 保留会话并呈现无权
+[5/36] e2e/admin-web.spec.ts:138:1 › Customer scope 与 Dashboard 离线/无 entitlement 动作在真实浏览器失败关闭
+[6/36] e2e/admin-web.spec.ts:175:1 › Onboarding 审批双击只提交一次，展示录入来源和证书状态
+[7/36] e2e/admin-web.spec.ts:220:1 › Customer/Site CRUD 关键路径：创建、非法时区、关联停用提示与 409
+[8/36] e2e/admin-web.spec.ts:343:1 › 1440/768/375 响应式布局、横向表格和对话框键盘边界
+[9/36] e2e/admin-web.spec.ts:429:1 › FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、分页入口、时区与响应式
+[10/36] e2e/admin-web.spec.ts:471:1 › FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交场景失败关闭
+[11/36] e2e/admin-web.spec.ts:547:1 › FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒体签发与审计详情
+[12/36] e2e/admin-web.spec.ts:611:1 › FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关闭
+[13/36] e2e/admin-web.spec.ts:628:1 › FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭
+[14/36] e2e/admin-web.spec.ts:699:1 › FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状态机
+[15/36] e2e/admin-web.spec.ts:803:1 › FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源
+[16/36] e2e/admin-web.spec.ts:927:1 › FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界
+[17/36] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：zh-CN / 375px
+[18/36] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：zh-CN / 768px
+[19/36] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：zh-CN / 1440px
+[20/36] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：en / 375px
+[21/36] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：en / 768px
+[22/36] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：en / 1440px
+[23/36] e2e/admin-web.spec.ts:1123:1 › FE-19 语言选择在刷新后保持
+[24/36] e2e/admin-web.spec.ts:1135:1 › QA-09 设备管理长别名和序列号在375px完整换行且不裁切
+[25/36] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix PlatformSuperAdmin
+[26/36] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix PlatformOperator
+[27/36] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix Auditor
+[28/36] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix CustomerAdmin
+[29/36] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix CustomerViewer
+[30/36] e2e/qa05-workflows.spec.ts:80:1 › QA05 login SRP MFA error success logout without persisting password
+[31/36] e2e/qa05-workflows.spec.ts:146:1 › QA05 ESG cursor totals export snapshot timezone and empty state
+[32/36] e2e/qa05-workflows.spec.ts:216:1 › QA05 Command dangerous confirmation terminal result and publish failure
+[33/36] e2e/qa05-workflows.spec.ts:271:1 › QA05 Media expiry renew 403 and audit read-only zero writes
+[34/36] e2e/ui-redesign.spec.ts:12:3 › UI redesign: all business routes at 1366x768
+[35/36] e2e/ui-redesign.spec.ts:12:3 › UI redesign: all business routes at 1440x900
+[36/36] e2e/ui-redesign.spec.ts:12:3 › UI redesign: all business routes at 1920x1080
+  36 passed (1.4m)
+
+> food-digester-platform@0.0.0 check:cmd-ota-delivery /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> pnpm check:runtime && pnpm check:cdk
+
+
+> food-digester-platform@0.0.0 check:runtime /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/check-delivered-runtime.mjs
+
+已交付 REST 生产路由与 OpenAPI 双向一致（129 operations）
+
+> food-digester-platform@0.0.0 check:cdk /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/check-cdk-synth.mjs
+
+CDK synth 无 warning；已交付 Lambda asset 与 CMD/OTA 生产接线 Gate 通过
+
+> food-digester-platform@0.0.0 test:device-contracts /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-contract-suite.mjs /tmp/fdp-device-contracts-gate.json
+
+✔ QA-02 MQTT heartbeat: all valid/invalid fixtures, missing meta and type mutation (4.19725ms)
+✔ QA-02 MQTT telemetry: all valid/invalid fixtures, missing meta and type mutation (1.656292ms)
+✔ QA-02 MQTT report: all valid/invalid fixtures, missing meta and type mutation (2.072291ms)
+✔ QA-02 MQTT alarm: all valid/invalid fixtures, missing meta and type mutation (1.172791ms)
+✔ QA-02 MQTT event: all valid/invalid fixtures, missing meta and type mutation (0.716041ms)
+✔ QA-02 MQTT ack: all valid/invalid fixtures, missing meta and type mutation (0.994875ms)
+✔ QA-02 MQTT tamper: all valid/invalid fixtures, missing meta and type mutation (0.938333ms)
+✔ QA-02 MQTT media: all valid/invalid fixtures, missing meta and type mutation (0.896666ms)
+✔ QA-02 MQTT cmd: all valid/invalid fixtures, missing meta and type mutation (1.086709ms)
+✔ QA-02 MQTT ota: all valid/invalid fixtures, missing meta and type mutation (1.092208ms)
+✔ QA-02 MQTT notification: all valid/invalid fixtures, missing meta and type mutation (1.406167ms)
+✔ MQTT semantic hash, discriminator and UTC calendar errors fail closed (0.43125ms)
+✔ full REST response: field deletion/type mutation/envelope/date/errors/status/headers are enforced (2.156875ms)
+✔ REST request validation: required body/path/query/header, optional Sync, bodyless Deactivate, no type coercion in JSON (2.781209ms)
+✔ all device operations and declared response JSON Schemas compile; stable error catalog has no duplicates (16.271208ms)
+✔ predecessor MQTT is compatible; known REST break requires exact version and frozen DEC approvals (16.170541ms)
+✔ breaking contract mutations fail: removing fields/operations/status, changing type/required/security (34.752ms)
+✔ receipt coverage gate fails closed for missing operations/statuses, no valid request and forged records (0.261416ms)
+✔ archived CSR upgrade mapping still verifies original baselines without rewriting history (2.185083ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 211.904084
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+
+ Test Files  10 passed (10)
+      Tests  98 passed (98)
+   Start at  20:39:14
+   Duration  3.71s (transform 3.74s, setup 77ms, import 7.72s, tests 14.58s, environment 0ms)
+
+QA-02 PASS: 11 MQTT schemas, 8 device operations, 168 checked Handler responses
+
+> food-digester-platform@0.0.0 test:iot-integration /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-iot-integration.mjs /tmp/fdp-iot-integration-gate.json
+
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  20:39:18
+   Duration  4.52s (transform 207ms, setup 9ms, import 351ms, tests 4.11s, environment 0ms)
+
+
+> food-digester-platform@0.0.0 test:core-api-integration /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-core-api-integration.mjs /tmp/fdp-core-api-integration-gate.json
+
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ✓ apps/cloud-api/test/admin-alarm.test.ts (10 tests) 2004ms
+ ✓ apps/cloud-api/test/admin-onboarding.test.ts (13 tests) 2135ms
+ ✓ apps/cloud-api/test/admin-command.test.ts (15 tests) 2586ms
+     ✓ ACTIVE 设备：22 个命令全部创建成功并进入 AUTHORIZED  330ms
+ ✓ apps/cloud-api/test/admin-device-assignment.test.ts (9 tests) 2549ms
+ ✓ apps/cloud-api/test/admin-audit.test.ts (7 tests) 2676ms
+ ✓ apps/cloud-api/test/admin-device-status.test.ts (8 tests) 2804ms
+ ✓ apps/cloud-api/test/admin-esg.test.ts (10 tests) 2911ms
+ ✓ apps/cloud-api/test/admin-consumable-request.test.ts (8 tests) 2921ms
+ ✓ apps/cloud-api/test/admin-device-retirement.test.ts (7 tests) 2998ms
+ ✓ apps/cloud-api/test/admin-contract-device.test.ts (8 tests) 3014ms
+ ✓ apps/cloud-api/test/admin-contract.test.ts (9 tests) 3014ms
+ ✓ apps/cloud-api/test/admin-license.test.ts (11 tests) 3040ms
+ ✓ apps/cloud-api/test/device-sync.test.ts (13 tests) 1054ms
+ ✓ apps/cloud-api/test/qa04-core-api.test.ts (3 tests) 4175ms
+   ✓ QA04 five roles, two tenants: read scope, mutation and audit boundaries  2835ms
+   ✓ QA04 concurrent If-Match writes have one winner and one success audit  736ms
+   ✓ QA04 audit failure rolls back lifecycle/outbox; retry and replay preserve exactly one audit  603ms
+
+ Test Files  14 passed (14)
+      Tests  131 passed (131)
+   Start at  20:39:23
+   Duration  5.20s (transform 6.37s, setup 260ms, import 13.41s, tests 37.88s, environment 1ms)
+
+JSON report written to /var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa04-core-api-vSR9K4/vitest.json
+stderr | apps/cloud-api/test/qa04-core-api.test.ts > QA04 audit failure rolls back lifecycle/outbox; retry and replay preserve exactly one audit
+audit FAILURE 记录写入失败 Error [PrismaClientKnownRequestError]: 
+Invalid `client.auditLog.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database/src/audit.ts:72:25
+
+  69 /** 写一条审计记录。可在事务内（tx）或根 client 上调用。 */
+  70 export async function recordAudit(client: DbClient, entry: AuditEntry): Promise<void> {
+  71   const ctx = getRequestContext();
+→ 72   await client.auditLog.create(
+Database error. Code: `P0001`. Message: `QA04 audit unavailable`
+    at redactSensitive (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability/src/redaction.ts:43:19)
+    at Array.map (<anonymous>)
+    at Object.error (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability/src/redaction.ts:70:18)
+    at audited (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database/src/audit.ts:144:14)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/device-status/handler.ts:79:20
+    at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/device-status/handler.ts:104:16
+    at Object.suspend (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/test/qa04-observe.ts:18:28)
+    at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/test/qa04-core-api.test.ts:193:20
+    at withFixture (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/test/qa04-core-api.test.ts:50:13)
+
+
+> food-digester-platform@0.0.0 test:admin-e2e-suite /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/run-admin-e2e.mjs /tmp/fdp-admin-e2e-gate.json
+
+QA05 phase=serial executions=36 workers=1 timeoutMs=660000
+
+
+
+
+
+
+Running 36 tests using 1 worker
+
+
+
+[1/36] e2e/admin-web.spec.ts:15:1 › H-01 API 拒绝停用会话后清除浏览器会话并返回登录
+[2/36] e2e/admin-web.spec.ts:42:1 › M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏
+[3/36] e2e/admin-web.spec.ts:88:1 › 无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫
+[4/36] e2e/admin-web.spec.ts:116:1 › 刷新失败清会话，API 403 保留会话并呈现无权
+[5/36] e2e/admin-web.spec.ts:138:1 › Customer scope 与 Dashboard 离线/无 entitlement 动作在真实浏览器失败关闭
+[6/36] e2e/admin-web.spec.ts:175:1 › Onboarding 审批双击只提交一次，展示录入来源和证书状态
+[7/36] e2e/admin-web.spec.ts:220:1 › Customer/Site CRUD 关键路径：创建、非法时区、关联停用提示与 409
+[8/36] e2e/admin-web.spec.ts:343:1 › 1440/768/375 响应式布局、横向表格和对话框键盘边界
+[9/36] e2e/admin-web.spec.ts:429:1 › FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、分页入口、时区与响应式
+[10/36] e2e/admin-web.spec.ts:471:1 › FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交场景失败关闭
+[11/36] e2e/admin-web.spec.ts:547:1 › FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒体签发与审计详情
+[12/36] e2e/admin-web.spec.ts:611:1 › FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关闭
+[13/36] e2e/admin-web.spec.ts:628:1 › FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭
+[14/36] e2e/admin-web.spec.ts:699:1 › FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状态机
+[15/36] e2e/admin-web.spec.ts:803:1 › FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源
+[16/36] e2e/admin-web.spec.ts:927:1 › FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界
+[17/36] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：zh-CN / 375px
+[18/36] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：zh-CN / 768px
+[19/36] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：zh-CN / 1440px
+[20/36] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：en / 375px
+[21/36] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：en / 768px
+[22/36] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：en / 1440px
+[23/36] e2e/admin-web.spec.ts:1123:1 › FE-19 语言选择在刷新后保持
+[24/36] e2e/admin-web.spec.ts:1135:1 › QA-09 设备管理长别名和序列号在375px完整换行且不裁切
+[25/36] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix PlatformSuperAdmin
+[26/36] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix PlatformOperator
+[27/36] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix Auditor
+[28/36] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix CustomerAdmin
+[29/36] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix CustomerViewer
+[30/36] e2e/qa05-workflows.spec.ts:80:1 › QA05 login SRP MFA error success logout without persisting password
+[31/36] e2e/qa05-workflows.spec.ts:146:1 › QA05 ESG cursor totals export snapshot timezone and empty state
+[32/36] e2e/qa05-workflows.spec.ts:216:1 › QA05 Command dangerous confirmation terminal result and publish failure
+[33/36] e2e/qa05-workflows.spec.ts:271:1 › QA05 Media expiry renew 403 and audit read-only zero writes
+[34/36] e2e/ui-redesign.spec.ts:12:3 › UI redesign: all business routes at 1366x768
+[35/36] e2e/ui-redesign.spec.ts:12:3 › UI redesign: all business routes at 1440x900
+[36/36] e2e/ui-redesign.spec.ts:12:3 › UI redesign: all business routes at 1920x1080
+  36 passed (1.4m)
+[WebServer] (node:90441) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:90477) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:90489) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:90512) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+(node:90515) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+QA05 phase=serial durationMs=84342
+QA05 phase=parallel-repeat executions=72 workers=2 timeoutMs=660000
+
+
+
+
+
+
+Running 72 tests using 2 workers
+
+
+
+
+
+[1/72] e2e/admin-web.spec.ts:15:1 › H-01 API 拒绝停用会话后清除浏览器会话并返回登录
+[2/72] e2e/admin-web.spec.ts:42:1 › M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏
+[3/72] e2e/admin-web.spec.ts:88:1 › 无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫
+[4/72] e2e/admin-web.spec.ts:116:1 › 刷新失败清会话，API 403 保留会话并呈现无权
+[5/72] e2e/admin-web.spec.ts:138:1 › Customer scope 与 Dashboard 离线/无 entitlement 动作在真实浏览器失败关闭
+[6/72] e2e/admin-web.spec.ts:175:1 › Onboarding 审批双击只提交一次，展示录入来源和证书状态
+[7/72] e2e/admin-web.spec.ts:220:1 › Customer/Site CRUD 关键路径：创建、非法时区、关联停用提示与 409
+[8/72] e2e/admin-web.spec.ts:343:1 › 1440/768/375 响应式布局、横向表格和对话框键盘边界
+[9/72] e2e/admin-web.spec.ts:429:1 › FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、分页入口、时区与响应式
+[10/72] e2e/admin-web.spec.ts:471:1 › FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交场景失败关闭
+[11/72] e2e/admin-web.spec.ts:547:1 › FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒体签发与审计详情
+[12/72] e2e/admin-web.spec.ts:611:1 › FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关闭
+[13/72] e2e/admin-web.spec.ts:628:1 › FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭
+[14/72] e2e/admin-web.spec.ts:699:1 › FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状态机
+[15/72] e2e/admin-web.spec.ts:803:1 › FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源
+[16/72] e2e/admin-web.spec.ts:927:1 › FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界
+[17/72] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：zh-CN / 375px
+[18/72] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：zh-CN / 768px
+[19/72] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：zh-CN / 1440px
+[20/72] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：en / 375px
+[21/72] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：en / 768px
+[22/72] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：en / 1440px
+[23/72] e2e/admin-web.spec.ts:1123:1 › FE-19 语言选择在刷新后保持
+[24/72] e2e/admin-web.spec.ts:1135:1 › QA-09 设备管理长别名和序列号在375px完整换行且不裁切
+[25/72] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix PlatformSuperAdmin
+[26/72] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix PlatformOperator
+[27/72] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix Auditor
+[28/72] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix CustomerAdmin
+[29/72] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix CustomerViewer
+[30/72] e2e/qa05-workflows.spec.ts:80:1 › QA05 login SRP MFA error success logout without persisting password
+[31/72] e2e/qa05-workflows.spec.ts:146:1 › QA05 ESG cursor totals export snapshot timezone and empty state
+[32/72] e2e/qa05-workflows.spec.ts:216:1 › QA05 Command dangerous confirmation terminal result and publish failure
+[33/72] e2e/qa05-workflows.spec.ts:271:1 › QA05 Media expiry renew 403 and audit read-only zero writes
+[34/72] e2e/ui-redesign.spec.ts:12:3 › UI redesign: all business routes at 1366x768
+[35/72] e2e/ui-redesign.spec.ts:12:3 › UI redesign: all business routes at 1440x900
+[36/72] e2e/ui-redesign.spec.ts:12:3 › UI redesign: all business routes at 1920x1080
+
+
+[37/72] e2e/admin-web.spec.ts:15:1 › H-01 API 拒绝停用会话后清除浏览器会话并返回登录
+[38/72] e2e/admin-web.spec.ts:42:1 › M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏
+[39/72] e2e/admin-web.spec.ts:88:1 › 无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫
+[40/72] e2e/admin-web.spec.ts:116:1 › 刷新失败清会话，API 403 保留会话并呈现无权
+[41/72] e2e/admin-web.spec.ts:138:1 › Customer scope 与 Dashboard 离线/无 entitlement 动作在真实浏览器失败关闭
+[42/72] e2e/admin-web.spec.ts:175:1 › Onboarding 审批双击只提交一次，展示录入来源和证书状态
+[43/72] e2e/admin-web.spec.ts:220:1 › Customer/Site CRUD 关键路径：创建、非法时区、关联停用提示与 409
+[44/72] e2e/admin-web.spec.ts:343:1 › 1440/768/375 响应式布局、横向表格和对话框键盘边界
+[45/72] e2e/admin-web.spec.ts:429:1 › FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、分页入口、时区与响应式
+[46/72] e2e/admin-web.spec.ts:471:1 › FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交场景失败关闭
+[47/72] e2e/admin-web.spec.ts:547:1 › FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒体签发与审计详情
+[48/72] e2e/admin-web.spec.ts:611:1 › FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关闭
+[49/72] e2e/admin-web.spec.ts:628:1 › FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭
+[50/72] e2e/admin-web.spec.ts:699:1 › FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状态机
+[51/72] e2e/admin-web.spec.ts:803:1 › FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源
+[52/72] e2e/admin-web.spec.ts:927:1 › FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界
+[53/72] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：zh-CN / 375px
+[54/72] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：zh-CN / 768px
+
+
+[55/72] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：zh-CN / 1440px
+[56/72] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：en / 375px
+[57/72] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：en / 768px
+[58/72] e2e/admin-web.spec.ts:1102:5 › FE-19 Chromium 22 个生产路由：en / 1440px
+[59/72] e2e/admin-web.spec.ts:1123:1 › FE-19 语言选择在刷新后保持
+[60/72] e2e/admin-web.spec.ts:1135:1 › QA-09 设备管理长别名和序列号在375px完整换行且不裁切
+[61/72] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix PlatformSuperAdmin
+[62/72] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix PlatformOperator
+[63/72] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix Auditor
+[64/72] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix CustomerAdmin
+[65/72] e2e/qa05-workflows.spec.ts:33:3 › QA05 role route and button matrix CustomerViewer
+[66/72] e2e/qa05-workflows.spec.ts:80:1 › QA05 login SRP MFA error success logout without persisting password
+[67/72] e2e/qa05-workflows.spec.ts:146:1 › QA05 ESG cursor totals export snapshot timezone and empty state
+[68/72] e2e/qa05-workflows.spec.ts:216:1 › QA05 Command dangerous confirmation terminal result and publish failure
+[69/72] e2e/qa05-workflows.spec.ts:271:1 › QA05 Media expiry renew 403 and audit read-only zero writes
+[70/72] e2e/ui-redesign.spec.ts:12:3 › UI redesign: all business routes at 1366x768
+[71/72] e2e/ui-redesign.spec.ts:12:3 › UI redesign: all business routes at 1440x900
+[72/72] e2e/ui-redesign.spec.ts:12:3 › UI redesign: all business routes at 1920x1080
+  72 passed (1.5m)
+[WebServer] (node:90622) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:90662) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:90670) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:90693) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+(node:90694) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:90695) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:90796) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:90834) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+QA05 phase=parallel-repeat durationMs=91072
+
+> food-digester-platform@0.0.0 test:security-suite /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-security-suite.mjs /tmp/fdp-security-gate.json
+
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ✓ packages/database/test/db03.test.ts (10 tests) 1180ms
+ ✓ packages/auth/test/device-mtls.test.ts (11 tests) 1298ms
+ ✓ packages/auth/test/secure-package.test.ts (14 tests) 1350ms
+ ✓ packages/auth/test/cognito.test.ts (14 tests) 139ms
+ ✓ packages/auth/test/qa06-jwt-security.test.ts (1 test) 62ms
+ ✓ packages/aws-clients/test/iot-device-policy.test.ts (12 tests) 3ms
+ ✓ apps/cloud-api/test/admin-lambda-composition.test.ts (12 tests) 636ms
+     ✓ P0 范围 86 个管理业务 operation 全部可达真实 Handler  378ms
+ ✓ apps/cloud-api/test/device-lambda-composition.test.ts (13 tests) 12ms
+ ✓ packages/observability/test/redaction.test.ts (8 tests) 6ms
+ ✓ apps/cloud-api/test/admin-audit.test.ts (7 tests) 1542ms
+ ✓ packages/auth/test/guard.test.ts (10 tests) 9ms
+ ✓ apps/cloud-api/test/admin-settings.test.ts (10 tests) 2229ms
+ ✓ apps/cloud-api/test/media.test.ts (12 tests) 2453ms
+ ✓ apps/cloud-api/test/csr-onboarding.test.ts (1 test) 2413ms
+ ✓ apps/cloud-api/test/admin-command.test.ts (15 tests) 2515ms
+     ✓ ACTIVE 设备：22 个命令全部创建成功并进入 AUTHORIZED  310ms
+ ✓ apps/cloud-api/test/ota-dispatch.test.ts (16 tests) 2651ms
+ ✓ apps/cloud-api/test/admin-user.test.ts (31 tests) 2741ms
+     ✓ PlatformSuperAdmin 停用后旧 id Token 不再进入读写路由  346ms
+ ✓ apps/cloud-api/test/admin-device-user.test.ts (8 tests) 2926ms
+     ✓ 仅匹配具有目标设备 ACTIVE 分配的设备操作员  378ms
+ ✓ apps/cloud-api/test/certificate-rotate.test.ts (8 tests) 3261ms
+     ✓ 缺失 CSR 不签发；AWS attach 失败保留可重试停用记录并保留旧证  329ms
+ ✓ apps/cloud-api/test/qa06-security.test.ts (4 tests) 3546ms
+   ✓ QA06 signed tenant scope and SQL JSON injection cannot cross boundaries or corrupt business state  2158ms
+   ✓ QA06 malicious media filenames and metadata reject before signing or persistence  609ms
+   ✓ QA06 raw canaries are absent from actual logger trace audit and snapshot artifacts  577ms
+
+ Test Files  20 passed (20)
+      Tests  217 passed (217)
+   Start at  20:42:24
+   Duration  4.85s (transform 6.94s, setup 204ms, import 13.97s, tests 30.97s, environment 1ms)
+
+JSON report written to /var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa06-security-47jrNG/vitest.json
+
+> food-digester-platform@0.0.0 test:reliability-suite /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-reliability-suite.mjs /tmp/fdp-reliability-gate.json
+
+JSON report written to /var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa07-reliability-3xT3TX/vitest.json
+
+> food-digester-platform@0.0.0 test:prototype-regression /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/run-prototype-regression.mjs /tmp/fdp-prototype-regression-gate.json
+
+
+
+
+
+
+
+Running 24 tests using 1 worker
+
+
+
+[1/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 dashboard 375
+[2/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-view 375
+[3/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-operate 375
+[4/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-group 375
+[5/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-manage 375
+[6/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-consumable 375
+[7/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 contract-modify 375
+[8/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 contract-new 375
+[9/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 contract-detail 375
+[10/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-overview 375
+[11/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-device 375
+[12/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 settings 375
+[13/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 dashboard 1440
+[14/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-view 1440
+[15/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-operate 1440
+[16/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-group 1440
+[17/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-manage 1440
+[18/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 device-consumable 1440
+[19/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 contract-modify 1440
+[20/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 contract-new 1440
+[21/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 contract-detail 1440
+[22/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-overview 1440
+[23/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 esg-device 1440
+[24/24] e2e/qa08-prototype.spec.ts:461:5 › QA08 settings 1440
+  24 passed (1.9m)
+[WebServer] (node:91144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:91191) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:91198) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:91223) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+(node:91227) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)

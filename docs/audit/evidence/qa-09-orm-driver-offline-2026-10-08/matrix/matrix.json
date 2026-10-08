@@ -1,0 +1,433 @@
+{
+  "gate": "PASS",
+  "scope": "OFFLINE_PUBLIC_BOUNDARIES_OWNERSHIP_AND_CONTROLLED_FAILURE_MATRIX",
+  "source": "FRESH_NODE_PROCESS_PER_CASE_REAL_PRISMA_CONTROLLED_PG",
+  "runtime": {
+    "node": "v24.12.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "budget": {
+    "childProcesses": 8,
+    "concurrency": 1,
+    "childDeadlineMs": 45000,
+    "poolMax": 1,
+    "networkRequests": 0,
+    "databaseServers": 0,
+    "targetFixtures": 0
+  },
+  "inputs": [
+    {
+      "path": "scripts/run-qa09-contract-load-offline.mjs",
+      "sha256": "957c8f4597b1aa5a082c776075b844af60a97510b85375ba2926799d32117583"
+    },
+    {
+      "path": "packages/database/test/contract-load-offline.test.ts",
+      "sha256": "9e95d24a491ee18c38f73cc3f6f7aefa88a5d1f7bccbd5ced2ff5f7fe2c5d419"
+    },
+    {
+      "path": "packages/database/src/client.ts",
+      "sha256": "055f77ef0fb857180949089bbedcf05eb338d7a8b25f19660d936af75c5b5040"
+    },
+    {
+      "path": "packages/database/src/observed-pg.ts",
+      "sha256": "553aa1a0099de58c8d9a5f32b6a606f622bc738150f923be4fc9e515cda0cf39"
+    },
+    {
+      "path": "packages/database/src/contract-load-observation.ts",
+      "sha256": "ebaae206c2aad52f121898d0257b331b3ab016f0c260b61bf81d1790b775fa7d"
+    },
+    {
+      "path": "apps/cloud-api/src/admin/user/account-read-candidate.ts",
+      "sha256": "c01424fd813b1e4dca7f84a062f9b94d2a15f0450041830e7cce6ed7dea25ae5"
+    },
+    {
+      "path": "apps/cloud-api/src/admin/contract/service.ts",
+      "sha256": "5f3bfad166ca965b260603dd7b6984c0d7263851b511cd2649e6705a8fcd9da0"
+    },
+    {
+      "path": "packages/database/prisma/schema.prisma",
+      "sha256": "fd3e5b59670fe300db0406e295eaf9d9022bb5108210d24cd22c19dcf1c19d73"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2126f03557c343bc7fc90b12e060f663492a67b647e0892bb18dba126a7f3364"
+    },
+    {
+      "path": "node_modules/@prisma/adapter-pg/dist/index.mjs",
+      "sha256": "e6879b3429f9efade5696321da768476fd4710f2aff7de95c01cca15d6a8d1d1"
+    }
+  ],
+  "rows": [
+    {
+      "case": "orm-zero",
+      "receipt": "orm-zero.json",
+      "sha256": "ae590724ba28f9d323f4d50a1569a9b0327d143ebc950edb17013e6f39e8f529",
+      "accountMs": 16.240250000000003,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "firstContractForClient": true,
+          "durations": {
+            "publicQueryCallMs": 0.005,
+            "returnToAdapterMs": 0.467,
+            "adapterToPgMs": 0.033,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.018,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.1,
+            "adapterTotalMs": 0.153
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.112,
+            "adapterToPgMs": 0.015,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.004,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.01,
+            "adapterTotalMs": 0.031
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "durations": {
+            "publicQueryCallMs": 0.001,
+            "returnToAdapterMs": 0.092,
+            "adapterToPgMs": 0.011,
+            "controlledPgMs": 0,
+            "resultReadyToFieldsMs": 0.002,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.007,
+            "adapterTotalMs": 0.021
+          },
+          "publicWindowOnly": true
+        }
+      ]
+    },
+    {
+      "case": "raw-zero",
+      "receipt": "raw-zero.json",
+      "sha256": "c20aa76192dee76656dc87069d1b4885fdbd1db3e0ba5ac4f275aecb244a65da",
+      "accountMs": 1.5992919999999913,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "firstContractForClient": true,
+          "durations": {
+            "publicQueryCallMs": 0.004,
+            "returnToAdapterMs": 14.746,
+            "adapterToPgMs": 0.067,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.016,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.09,
+            "adapterTotalMs": 0.175
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "durations": {
+            "publicQueryCallMs": 0.003,
+            "returnToAdapterMs": 0.123,
+            "adapterToPgMs": 0.013,
+            "controlledPgMs": 0,
+            "resultReadyToFieldsMs": 0.003,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.011,
+            "adapterTotalMs": 0.028
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.095,
+            "adapterToPgMs": 0.014,
+            "controlledPgMs": 0,
+            "resultReadyToFieldsMs": 0.004,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.007,
+            "adapterTotalMs": 0.026
+          },
+          "publicWindowOnly": true
+        }
+      ]
+    },
+    {
+      "case": "orm-wait",
+      "receipt": "orm-wait.json",
+      "sha256": "90d9abc335322d93fb7a5ce871f6d59d71b9c75709b90f73502aa753181b1d04",
+      "accountMs": 16.729416999999984,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "firstContractForClient": true,
+          "durations": {
+            "publicQueryCallMs": 0.004,
+            "returnToAdapterMs": 0.481,
+            "adapterToPgMs": 0.034,
+            "controlledPgMs": 31.162,
+            "resultReadyToFieldsMs": 0.064,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.147,
+            "adapterTotalMs": 31.408
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.129,
+            "adapterToPgMs": 0.016,
+            "controlledPgMs": 32.588,
+            "resultReadyToFieldsMs": 0.018,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.048,
+            "adapterTotalMs": 32.671
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.127,
+            "adapterToPgMs": 0.013,
+            "controlledPgMs": 30.255,
+            "resultReadyToFieldsMs": 0.032,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.062,
+            "adapterTotalMs": 30.363
+          },
+          "publicWindowOnly": true
+        }
+      ]
+    },
+    {
+      "case": "raw-wait",
+      "receipt": "raw-wait.json",
+      "sha256": "9a8a232a326d5695702a108e6a4c6a950ca3e72c4d953984243d960daf0d0168",
+      "accountMs": 1.8225840000000062,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "firstContractForClient": true,
+          "durations": {
+            "publicQueryCallMs": 0.003,
+            "returnToAdapterMs": 14.885,
+            "adapterToPgMs": 0.079,
+            "controlledPgMs": 31.184,
+            "resultReadyToFieldsMs": 0.061,
+            "controlledFieldsCpuMs": 0.002,
+            "fieldsReadyToAdapterMs": 0.154,
+            "adapterTotalMs": 31.48
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "durations": {
+            "publicQueryCallMs": 0.003,
+            "returnToAdapterMs": 0.142,
+            "adapterToPgMs": 0.015,
+            "controlledPgMs": 31.437,
+            "resultReadyToFieldsMs": 0.015,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.059,
+            "adapterTotalMs": 31.527
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.148,
+            "adapterToPgMs": 0.014,
+            "controlledPgMs": 30.89,
+            "resultReadyToFieldsMs": 0.014,
+            "controlledFieldsCpuMs": 0.001,
+            "fieldsReadyToAdapterMs": 0.055,
+            "adapterTotalMs": 30.974
+          },
+          "publicWindowOnly": true
+        }
+      ]
+    },
+    {
+      "case": "orm-result",
+      "receipt": "orm-result.json",
+      "sha256": "e44cee00c556c68fdd1857733349597c59788b1454166a9980bcb48f5e87e247",
+      "accountMs": 16.528582999999998,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "firstContractForClient": true,
+          "durations": {
+            "publicQueryCallMs": 0.004,
+            "returnToAdapterMs": 0.477,
+            "adapterToPgMs": 0.036,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.017,
+            "controlledFieldsCpuMs": 20.026,
+            "fieldsReadyToAdapterMs": 0.202,
+            "adapterTotalMs": 20.282
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "durations": {
+            "publicQueryCallMs": 0.004,
+            "returnToAdapterMs": 0.144,
+            "adapterToPgMs": 0.048,
+            "controlledPgMs": 0,
+            "resultReadyToFieldsMs": 0.007,
+            "controlledFieldsCpuMs": 20.015,
+            "fieldsReadyToAdapterMs": 0.039,
+            "adapterTotalMs": 20.109
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.126,
+            "adapterToPgMs": 0.016,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.004,
+            "controlledFieldsCpuMs": 20.019,
+            "fieldsReadyToAdapterMs": 0.064,
+            "adapterTotalMs": 20.104
+          },
+          "publicWindowOnly": true
+        }
+      ]
+    },
+    {
+      "case": "raw-result",
+      "receipt": "raw-result.json",
+      "sha256": "558c0664366d030aeaed7acd33b8320ccbec1fe96cf7a34bb7bfe1c1c838e49f",
+      "accountMs": 1.8181660000000193,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "firstContractForClient": true,
+          "durations": {
+            "publicQueryCallMs": 0.007,
+            "returnToAdapterMs": 18.429,
+            "adapterToPgMs": 0.06,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.019,
+            "controlledFieldsCpuMs": 20.024,
+            "fieldsReadyToAdapterMs": 0.184,
+            "adapterTotalMs": 20.288
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "durations": {
+            "publicQueryCallMs": 0.003,
+            "returnToAdapterMs": 0.139,
+            "adapterToPgMs": 0.013,
+            "controlledPgMs": 0.001,
+            "resultReadyToFieldsMs": 0.003,
+            "controlledFieldsCpuMs": 20.015,
+            "fieldsReadyToAdapterMs": 0.027,
+            "adapterTotalMs": 20.059
+          },
+          "publicWindowOnly": true
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "firstContractForClient": false,
+          "durations": {
+            "publicQueryCallMs": 0.002,
+            "returnToAdapterMs": 0.111,
+            "adapterToPgMs": 0.013,
+            "controlledPgMs": 0,
+            "resultReadyToFieldsMs": 0.003,
+            "controlledFieldsCpuMs": 20.02,
+            "fieldsReadyToAdapterMs": 0.064,
+            "adapterTotalMs": 20.1
+          },
+          "publicWindowOnly": true
+        }
+      ]
+    },
+    {
+      "case": "raw-reject",
+      "receipt": "raw-reject.json",
+      "sha256": "6ac144585423d7dc7193c2d8d6c234053eac0fadbee0963e063577e3bce47762",
+      "accountMs": 1.5418750000000045,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "EXPECTED_FAILURE",
+          "rollback": true,
+          "retried": false
+        }
+      ]
+    },
+    {
+      "case": "raw-invalid",
+      "receipt": "raw-invalid.json",
+      "sha256": "fab3849d38b5a5a32cd0d99aba9337705b57872333b823d65751463392c9661c",
+      "accountMs": 1.6576659999999777,
+      "samples": [
+        {
+          "index": 0,
+          "gate": "EXPECTED_FAILURE",
+          "rollback": true,
+          "retried": false
+        }
+      ]
+    }
+  ],
+  "targetEquivalent": false,
+  "modelCostShift": "NOT_ESTABLISHED",
+  "compilerOnlyAttribution": false,
+  "serverExecutionIsolated": false,
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}
