@@ -1,0 +1,18 @@
+{
+  "baselineCommit": "29b1b93455fa9f68675f4b473f31d4994e1eb774",
+  "diagnosis": "TS2307_SELF_PACKAGE_DIST_UNAVAILABLE_IN_CLEAN_TYPECHECK",
+  "commands": [
+    "gh run view 37785509251 --log-failed",
+    "gh run view 37785509323 --log-failed",
+    "pnpm --filter @fdp/database typecheck (own dist absent; before then after patch)",
+    "pnpm typecheck --force (all workspace dist absent)",
+    "pnpm exec vitest run packages/database/test/contract-load-offline.test.ts packages/database/test/contract-load-detail.test.ts apps/cloud-api/test/admin-runtime-initialization.test.ts",
+    "pnpm lint",
+    "pnpm format:check",
+    "git diff --check"
+  ],
+  "runtimeChanged": false,
+  "deploymentChanged": false,
+  "cloudOperationsPerformed": false,
+  "pushPerformed": false
+}
