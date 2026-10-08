@@ -13,6 +13,7 @@ export type DataPathPhase =
   | 'admin-account-query'
   | 'admin-account-activation'
   | 'db-client-prepare'
+  | 'db-client-observer-setup'
   | 'db-client-submit'
   | 'db-client-await-dispatch'
   | 'db-adapter-connect'
@@ -132,21 +133,65 @@ function cpuMetrics(start: NodeJS.CpuUsage): LogRow {
     processCpuScope: 'PROCESS_ALL_THREADS',
   };
 }
+/** Opaque shared boundary: wall/monotonic time precedes CPU capture; capture cost belongs to the next span. */
+export interface DataPathBoundary {
+  readonly kind: 'DATA_PATH_BOUNDARY';
+}
+interface BoundarySnapshot {
+  trace: Trace;
+  time: number;
+  wall: string;
+  cpu: NodeJS.CpuUsage;
+}
+const boundaries = new WeakMap<DataPathBoundary, BoundarySnapshot>();
+export function captureDataPathBoundary(): DataPathBoundary | undefined {
+  const trace = storage.getStore();
+  if (!trace) return undefined;
+  const time = trace.clock(),
+    wall = new Date().toISOString(),
+    cpu = process.cpuUsage();
+  const boundary: DataPathBoundary = { kind: 'DATA_PATH_BOUNDARY' };
+  boundaries.set(boundary, { trace, time, wall, cpu });
+  return boundary;
+}
+/** Claim at the original first-operation entrance, before observer/frame construction. */
+export function claimFirstDataPathBoundary(phase: FirstDataPathPhase): DataPathBoundary | undefined {
+  const trace = storage.getStore();
+  if (!trace || trace.firstPhases.has(phase)) return undefined;
+  trace.firstPhases.add(phase);
+  return captureDataPathBoundary();
+}
+function ownBoundary(boundary: DataPathBoundary | undefined, trace: Trace): BoundarySnapshot | undefined {
+  const value = boundary && boundaries.get(boundary);
+  return value?.trace === trace ? value : undefined;
+}
 /** Finish is idempotent; no SQL, payload or arbitrary error messages enter the log. */
 export type PreparationBoundary = 'DRIVER_DISPATCH' | 'CALL_RETURNED' | 'OPERATION_SETTLED' | 'OPERATION_FAILED';
 export function beginDataPathPhase(
   phase: DataPathPhase,
-  options: { readonly processCpu?: boolean } = {},
-): (error?: unknown, boundary?: PreparationBoundary) => void {
+  options: { readonly processCpu?: boolean; readonly startBoundary?: DataPathBoundary | undefined } = {},
+): (error?: unknown, boundary?: PreparationBoundary, endBoundary?: DataPathBoundary) => void {
   const trace = storage.getStore();
   if (!trace) return () => {};
-  const start = trace.clock(),
-    startedAt = new Date().toISOString();
-  const cpuStart = options.processCpu ? process.cpuUsage() : undefined;
+  const sharedStart = ownBoundary(options.startBoundary, trace);
+  const start = sharedStart?.time ?? trace.clock(),
+    startedAt = sharedStart?.wall ?? new Date().toISOString();
+  const cpuStart = options.processCpu ? (sharedStart?.cpu ?? process.cpuUsage()) : undefined;
   let finished = false;
-  return (error?: unknown, boundary?: PreparationBoundary) => {
+  return (error?: unknown, boundary?: PreparationBoundary, endBoundary?: DataPathBoundary) => {
     if (finished) return;
     finished = true;
+    const sharedEnd = ownBoundary(endBoundary, trace);
+    const cpu =
+      cpuStart && sharedEnd
+        ? {
+            processCpuUserUs: Math.max(0, Math.round(sharedEnd.cpu.user - cpuStart.user)),
+            processCpuSystemUs: Math.max(0, Math.round(sharedEnd.cpu.system - cpuStart.system)),
+            processCpuScope: 'PROCESS_ALL_THREADS',
+          }
+        : cpuStart
+          ? cpuMetrics(cpuStart)
+          : {};
     const code = (error as { code?: unknown } | undefined)?.code;
     const errorCode =
       error === undefined
@@ -158,10 +203,11 @@ export function beginDataPathPhase(
       'data-path.phase.completed',
       {
         phase,
-        ...(cpuStart ? cpuMetrics(cpuStart) : {}),
+        ...cpu,
         ...(boundary !== undefined &&
         [
           'db-client-prepare',
+          'db-client-observer-setup',
           'db-client-submit',
           'db-client-await-dispatch',
           'db-client-after-adapter',
@@ -172,11 +218,11 @@ export function beginDataPathPhase(
         ['DRIVER_DISPATCH', 'CALL_RETURNED', 'OPERATION_SETTLED', 'OPERATION_FAILED'].includes(boundary)
           ? { completionBoundary: boundary }
           : {}),
-        durationMs: Math.max(0, Math.round(trace.clock() - start)),
+        durationMs: Math.max(0, Math.round((sharedEnd?.time ?? trace.clock()) - start)),
         outcome: error === undefined ? 'PASS' : 'FAIL',
         errorCode,
         startedAt,
-        completedAt: new Date().toISOString(),
+        completedAt: sharedEnd?.wall ?? new Date().toISOString(),
         includesConnectionWait:
           phase.startsWith('console-') ||
           phase === 'db-transaction' ||

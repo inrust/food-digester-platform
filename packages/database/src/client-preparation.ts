@@ -1,5 +1,11 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { beginDataPathPhase, claimFirstDataPathPhase, type PreparationBoundary } from '@fdp/observability';
+import {
+  beginDataPathPhase,
+  captureDataPathBoundary,
+  claimFirstDataPathBoundary,
+  type DataPathBoundary,
+  type PreparationBoundary,
+} from '@fdp/observability';
 type Finish = ReturnType<typeof beginDataPathPhase>;
 interface Preparation {
   finish: Finish;
@@ -10,28 +16,39 @@ interface Preparation {
   awaitDispatch?: Finish;
 }
 const preparation = new AsyncLocalStorage<Preparation | undefined>();
-function finishSubmission(frame: Preparation, boundary: PreparationBoundary, error?: unknown): void {
+function finishSubmission(
+  frame: Preparation,
+  boundary: PreparationBoundary,
+  error?: unknown,
+  end?: DataPathBoundary,
+): void {
   if (!frame.submit || frame.awaitDispatch) return;
-  frame.submit(error, boundary);
-  frame.awaitDispatch = beginDataPathPhase('db-client-await-dispatch', { processCpu: true });
+  const split = end ?? captureDataPathBoundary();
+  frame.awaitDispatch = beginDataPathPhase('db-client-await-dispatch', { processCpu: true, startBoundary: split });
+  frame.submit(error, boundary, split);
 }
 function finishPreparation(frame: Preparation, boundary: PreparationBoundary, error?: unknown): void {
   if (frame.completed) return;
   frame.completed = true;
-  finishSubmission(frame, boundary, error);
-  frame.awaitDispatch?.(error, boundary);
-  frame.afterAdapter?.(error, boundary);
-  frame.finish(error, boundary);
+  const end = frame.engine ? undefined : captureDataPathBoundary();
+  finishSubmission(frame, boundary, error, end);
+  frame.awaitDispatch?.(error, boundary, end);
+  frame.afterAdapter?.(error, boundary, end);
+  frame.finish(error, boundary, end);
 }
 /** First public ORM operation in a trace, measured until its own root driver dispatch or settlement. */
 export async function observeDatabaseClientPreparation<T>(work: () => Promise<T>): Promise<T> {
-  const finish = claimFirstDataPathPhase('db-client-prepare', { processCpu: true });
-  if (!finish) return preparation.run(undefined, async () => await work());
+  const start = claimFirstDataPathBoundary('db-client-prepare');
+  if (!start) return preparation.run(undefined, async () => await work());
+  const finish = beginDataPathPhase('db-client-prepare', { processCpu: true, startBoundary: start });
+  const setup = beginDataPathPhase('db-client-observer-setup', { processCpu: true, startBoundary: start });
   const frame: Preparation = {
     finish,
     completed: false,
-    submit: beginDataPathPhase('db-client-submit', { processCpu: true }),
   };
+  const submitStart = captureDataPathBoundary();
+  frame.submit = beginDataPathPhase('db-client-submit', { processCpu: true, startBoundary: submitStart });
+  setup(undefined, 'CALL_RETURNED', submitStart);
   return preparation.run(frame, async () => {
     try {
       const pending = work();

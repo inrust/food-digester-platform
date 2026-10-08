@@ -3,7 +3,7 @@ const demand = (ok, code) => {
 };
 /** Public extension boundaries only; asynchronous suffix includes compilation/planning/scheduling. */
 export function validateClientSplitPhases(phases, required = false) {
-  const names = ['db-client-submit', 'db-client-await-dispatch'];
+  const names = ['db-client-observer-setup', 'db-client-submit', 'db-client-await-dispatch'];
   if (!names.some((n) => phases.some((p) => p.phase === n))) {
     demand(!required, 'CLIENT_SPLIT_REQUIRED');
     return null;
@@ -14,7 +14,7 @@ export function validateClientSplitPhases(phases, required = false) {
     return rows[0];
   };
   const all = ['db-client-prepare', ...names].map(one),
-    [outer, submit, wait] = all;
+    [outer, setup, submit, wait] = all;
   for (const p of all) {
     demand(
       p.outcome === 'PASS' && p.errorCode === 'NONE' && p.includesConnectionWait === false,
@@ -32,35 +32,40 @@ export function validateClientSplitPhases(phases, required = false) {
       'CLIENT_SPLIT_CPU_DURATION',
     );
   }
-  const [[os, oe], [ss, se], [ws, we]] = all.map((p) => [Date.parse(p.startedAt), Date.parse(p.completedAt)]);
+  const [[os, oe], [xs, xe], [ss, se], [ws, we]] = all.map((p) => [Date.parse(p.startedAt), Date.parse(p.completedAt)]);
   demand(
-    [os, oe, ss, se, ws, we].every(Number.isFinite) &&
-      os <= ss &&
+    [os, oe, xs, xe, ss, se, ws, we].every(Number.isFinite) &&
+      os <= xs &&
+      xs <= xe &&
+      xe <= ss &&
       ss <= se &&
       se <= ws &&
       ws <= we &&
       we <= oe &&
-      ss - os <= 5 &&
+      xs - os <= 5 &&
+      ss - xe <= 5 &&
       ws - se <= 5 &&
       oe - we <= 5,
     'CLIENT_SPLIT_ORDER',
   );
   demand(
-    ['CALL_RETURNED', 'DRIVER_DISPATCH'].includes(submit.completionBoundary) &&
+    setup.completionBoundary === 'CALL_RETURNED' &&
+      ['CALL_RETURNED', 'DRIVER_DISPATCH'].includes(submit.completionBoundary) &&
       outer.completionBoundary === 'DRIVER_DISPATCH' &&
       wait.completionBoundary === 'DRIVER_DISPATCH',
     'CLIENT_SPLIT_BOUNDARY',
   );
   demand(
-    Math.abs(outer.durationMs - submit.durationMs - wait.durationMs) <= 5 &&
+    Math.abs(outer.durationMs - setup.durationMs - submit.durationMs - wait.durationMs) <= 5 &&
       all.every((p) => Math.abs(Date.parse(p.completedAt) - Date.parse(p.startedAt) - p.durationMs) <= 5),
     'CLIENT_SPLIT_COVERAGE',
   );
   return {
+    observerSetupMs: setup.durationMs,
     submitMs: submit.durationMs,
     awaitDispatchMs: wait.durationMs,
     preparationMs: outer.durationMs,
-    partitionResidualMs: outer.durationMs - submit.durationMs - wait.durationMs,
+    partitionResidualMs: outer.durationMs - setup.durationMs - submit.durationMs - wait.durationMs,
     processCpuUserUs: outer.processCpuUserUs,
     processCpuSystemUs: outer.processCpuSystemUs,
     scope: 'NESTED_PROCESS_ALL_THREADS_NOT_COMPILER_ONLY_OR_NETWORK_WAIT',

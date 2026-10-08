@@ -33,6 +33,7 @@ test('preparation distinguishes driver dispatch, no-driver settlement and origin
   assert.deepEqual(
     rows.map((r) => [r.phase, r.durationMs, r.completionBoundary]),
     [
+      ['db-client-observer-setup', 0, 'CALL_RETURNED'],
       ['db-client-submit', 90, 'DRIVER_DISPATCH'],
       ['db-client-await-dispatch', 0, 'DRIVER_DISPATCH'],
       ['db-client-after-adapter', 80, 'DRIVER_DISPATCH'],
@@ -114,10 +115,12 @@ test('same-trace nested extra operation cannot dispatch the outer preparation pr
       }),
     (r) => rows.push(r),
   );
-  assert.equal(rows.length, 4);
+  assert.equal(rows.length, 5);
   assert.equal(rows.find((r) => r.phase === 'db-client-submit')?.completionBoundary, 'CALL_RETURNED');
   assert.isTrue(
-    rows.filter((r) => r.phase !== 'db-client-submit').every((r) => r.completionBoundary === 'DRIVER_DISPATCH'),
+    rows
+      .filter((r) => r.phase !== 'db-client-submit' && r.phase !== 'db-client-observer-setup')
+      .every((r) => r.completionBoundary === 'DRIVER_DISPATCH'),
   );
 });
 

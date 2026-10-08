@@ -24,6 +24,10 @@ export default defineConfig({
   },
   test: {
     setupFiles: [r('./apps/admin-web/test/browser-apis.setup.ts')],
-    include: ['apps/*/test/**/*.test.{ts,tsx}', 'packages/*/test/**/*.test.{ts,tsx}', 'infra/test/**/*.test.{ts,tsx}'],
+    include: [
+      'apps/*/test/**/*.test.{ts,tsx}',
+      'packages/*/test/**/*.test.{ts,tsx,mjs}',
+      'infra/test/**/*.test.{ts,tsx}',
+    ],
   },
 });

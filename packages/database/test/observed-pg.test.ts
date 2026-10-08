@@ -38,6 +38,7 @@ test('real Prisma engine and pg Pool.query preserve per-request phases and relea
         rows.filter((r) => r.gatewayRequestId === id).map((r) => r.phase),
         id === 'first'
           ? [
+              'db-client-observer-setup',
               'db-client-submit',
               'db-adapter-connect',
               'db-client-await-dispatch',
@@ -47,6 +48,7 @@ test('real Prisma engine and pg Pool.query preserve per-request phases and relea
               'db-first-query',
             ]
           : [
+              'db-client-observer-setup',
               'db-client-submit',
               'db-client-await-dispatch',
               'db-client-prepare',

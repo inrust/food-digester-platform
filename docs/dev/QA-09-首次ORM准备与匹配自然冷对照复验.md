@@ -17,7 +17,7 @@ pnpm verify
 
 1. 接线已完成：`FDP_QA09_ACCOUNT_READ_CANDIDATE` 默认false，true需test/pool1/engine/preconnect；部署context `enableQa09AccountReadCandidate` 和手动 `account_read_candidate` 输入受同样guard，普通push强制false。仅ApiFn环境字段，不增加pool/内存/并发，预算70。
 2. 人工通过GitHub Desktop推送完成源码。核对完整40位SHA的CI/部署与19实际ZIP及配置，凭据可续期且夹具可清理。
-3. 在新版本默认关闭先复验新增submit/await分段。阶段CLI/分析器新增 `--client-split`，同时传原account/runtime/engine/preconnect/client-preparation严格参数；缺自然冷不得伪造。
+3. 在新版本默认关闭先复验新增observer-setup/submit/await分段。阶段CLI/分析器新增 `--client-split`，同时传原account/runtime/engine/preconnect/client-preparation严格参数；缺自然冷不得伪造。
 4. 生成计划（仅生成文件，不dispatch）：
 
 ```sh
@@ -72,3 +72,5 @@ node scripts/record-qa09-deployment-inputs.mjs --account-read-pair /tmp/R0/qa09-
 R1完成/异常后先清理本轮夹具再恢复，恢复手动输入固定 `engine_cpu_diagnosis=true authenticated_preconnect=false account_read_candidate=false rollout_phase=immediate`（同完整SHA）。等待SUCCESS、再核对最新19工件和两flag实际false、仅ApiFn变化、预算/独立空集。无IAM/KMS/资源容量调整，不强制冷、不重复故障注入补样。
 
 2026-10-08目标预检纠正：此前离线输入误写x86_64；de4c2f6的Infra固定ARM_64，真实ApiFn确认arm64。仅修正本机验收输入/只读门禁及负例，未改应用、工作流、架构、内存或并发。目标两组继续绑定de4c2f6；原失败配置回执和首版输入保留。
+
+2026-10-08 客户端分段修复：新版本必须含 `db-client-observer-setup`，与 submit、await-dispatch 共用相邻墙钟/单调边界；CLI仍限定5ms覆盖误差。旧版本三阶段不能升级为新证明。setup结束日志成本归入submit，submit结束日志成本归入await；driver入口最终快照/完成日志位于公开准备边界之后，仍包含在应用总耗时中，不冒充compiler或网络时间。严格Gate通过且自有清理/预算闭合后才派发R1；失败则只执行同SHA两个候选false恢复。详见[实施记录](../audit/QA-09-客户端分段共享边界实施记录-2026-10-08.md)。
