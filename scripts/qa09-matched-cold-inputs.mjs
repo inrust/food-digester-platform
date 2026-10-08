@@ -124,14 +124,16 @@ export function readMatchedColdUnit(manifestFile) {
   };
   const version = read('version'),
     deployment = read('deployment'),
-    config = read('config'),
-    concurrency = read('concurrency'),
+    configReceipt = read('config'),
+    concurrencyReceipt = read('concurrency'),
     unit = read('unit'),
     empty = read('empty'),
     budget = read('budget'),
     child = read('child'),
     patch = read('patch'),
     audit = read('audit');
+  const config = configReceipt.config ?? configReceipt,
+    concurrency = concurrencyReceipt.concurrency ?? concurrencyReceipt;
   for (const receipt of [version, deployment, unit, empty, budget])
     demand(receipt.gate === 'PASS', 'MATCHED_RECEIPT_GATE');
   for (const [name, hash] of Object.entries(unit.bindings)) {

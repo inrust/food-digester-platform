@@ -26,6 +26,7 @@ export interface InfraConfig {
   readonly enableQa09Capacity?: boolean;
   readonly enableQa09EngineCpuDiagnosis?: boolean;
   readonly enableQa09AuthenticatedPreconnect?: boolean;
+  readonly enableQa09AccountReadCandidate?: boolean;
   readonly enableImmediateCommandPublish?: boolean;
   readonly deviceApiDomain?: DeviceApiDomainConfig;
   /** 仅 local/test 可显式打开的无 mTLS execute-api 开发入口。 */
@@ -90,6 +91,12 @@ export function resolveConfig(app: App): InfraConfig {
   const enableQa09AuthenticatedPreconnect = [true, 'true'].includes(rawPreconnect);
   if (enableQa09AuthenticatedPreconnect && (envName !== 'test' || !enableQa09Capacity || !enableQa09EngineCpuDiagnosis))
     throw new Error('PRECONNECT_REQUIRES_TEST_CAPACITY_ENGINE');
+  const rawAccountRead = app.node.tryGetContext('enableQa09AccountReadCandidate');
+  if (rawAccountRead !== undefined && ![true, false, 'true', 'false'].includes(rawAccountRead))
+    throw new Error('INVALID_ACCOUNT_READ_CANDIDATE');
+  const enableQa09AccountReadCandidate = [true, 'true'].includes(rawAccountRead);
+  if (enableQa09AccountReadCandidate && !enableQa09AuthenticatedPreconnect)
+    throw new Error('ACCOUNT_READ_REQUIRES_TEST_CAPACITY_ENGINE_PRECONNECT');
   const enableMigrationRunner = ['true', true].includes(app.node.tryGetContext('enableMigrationRunner'));
   const enableAdminBootstrapRunner = ['true', true].includes(app.node.tryGetContext('enableAdminBootstrapRunner'));
   const enableScheduledWorkers = ['true', true].includes(app.node.tryGetContext('enableScheduledWorkers'));
@@ -154,6 +161,7 @@ export function resolveConfig(app: App): InfraConfig {
       enableImmediateCommandPublish,
       enableQa09EngineCpuDiagnosis,
       enableQa09AuthenticatedPreconnect,
+      enableQa09AccountReadCandidate,
       ...deployment,
       allowInsecureDeviceEndpointForLocal: true,
     };
@@ -168,6 +176,7 @@ export function resolveConfig(app: App): InfraConfig {
     enableImmediateCommandPublish,
     enableQa09EngineCpuDiagnosis,
     enableQa09AuthenticatedPreconnect,
+    enableQa09AccountReadCandidate,
     ...deployment,
     deviceApiDomain: {
       domainName,

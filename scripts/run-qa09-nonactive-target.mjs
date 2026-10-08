@@ -49,6 +49,7 @@ const sourcePaths = [
   'packages/database/src/observed-pg.ts',
   'packages/observability/src/data-path.ts',
   'apps/cloud-api/src/admin/user/service.ts',
+  'apps/cloud-api/src/admin/user/account-read-candidate.ts',
   'scripts/qa09-cold409-sampling.mjs',
   'scripts/qa09-cold409-proof.mjs',
   'scripts/qa09-legal-write-inventory.mjs',

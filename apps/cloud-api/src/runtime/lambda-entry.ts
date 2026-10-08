@@ -63,6 +63,7 @@ import {
   createAuthenticatedEngineDiagnostic,
   resolveEngineCpuDiagnosis,
   resolveAuthenticatedPreconnect,
+  resolveAccountReadCandidate,
 } from './admin-engine-diagnostic.js';
 
 import { createAdminAuthenticatedAccountHook } from './admin-account-hook.js';
@@ -81,6 +82,7 @@ let runtimeInitialization: Promise<NonNullable<typeof runtimeHandler>> | undefin
 async function initialize() {
   const engineCpuDiagnosis = resolveEngineCpuDiagnosis(process.env);
   const preconnectEnabled = resolveAuthenticatedPreconnect(process.env);
+  const accountReadCandidate = resolveAccountReadCandidate(process.env);
   const config = readAdminRuntimeConfig(process.env);
   const region = config.region;
   const { databaseUrl, licenseSigningKey } = await resolveAdminRuntimeSecrets(config, {
@@ -184,7 +186,12 @@ async function initialize() {
         { region, userPoolId: config.userPoolId, clientId: config.clientId },
         (event) => createAdminRoute(event, routes),
         {
-          onAuthenticated: createAdminAuthenticatedAccountHook(client, prepareAuthenticatedEngine, engineCpuDiagnosis),
+          onAuthenticated: createAdminAuthenticatedAccountHook(
+            client,
+            prepareAuthenticatedEngine,
+            engineCpuDiagnosis,
+            accountReadCandidate,
+          ),
         },
       );
     },

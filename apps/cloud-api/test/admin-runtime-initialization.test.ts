@@ -24,6 +24,7 @@ const env = {
   FDP_QA09_ENGINE_CPU_DIAGNOSIS: 'true',
   // Baseline factory assertions must not inherit the deployment workflow's C1 flag.
   FDP_QA09_AUTHENTICATED_PRECONNECT: 'false',
+  FDP_QA09_ACCOUNT_READ_CANDIDATE: 'false',
   FDP_ADMIN_PARALLEL_SECRETS: 'true',
 };
 const setup = () => {

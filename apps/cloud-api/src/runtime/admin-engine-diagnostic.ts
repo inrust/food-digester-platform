@@ -33,3 +33,12 @@ export function resolveAuthenticatedPreconnect(env: Readonly<Record<string, stri
     throw new Error('PRECONNECT_REQUIRES_TEST_POOL1_ENGINE');
   return value === 'true';
 }
+
+/** Explicit R1 only: the same test/pool1/engine/preconnect budget as R0. */
+export function resolveAccountReadCandidate(env: Readonly<Record<string, string | undefined>>): boolean {
+  const value = env.FDP_QA09_ACCOUNT_READ_CANDIDATE;
+  if (value !== undefined && value !== 'false' && value !== 'true') throw new Error('INVALID_ACCOUNT_READ_CANDIDATE');
+  if (value === 'true' && !resolveAuthenticatedPreconnect(env))
+    throw new Error('ACCOUNT_READ_REQUIRES_TEST_POOL1_ENGINE_PRECONNECT');
+  return value === 'true';
+}

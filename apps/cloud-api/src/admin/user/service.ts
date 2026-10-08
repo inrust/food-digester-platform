@@ -208,7 +208,7 @@ function isUniqueViolation(err: unknown): boolean {
 // ---------- 首次认证状态收敛 ----------
 
 export interface AuthenticatedUserSyncDeps {
-  /** Offline comparison only; no runtime/env/rollout switch enables this option. */
+  /** Explicit test-only R1; runtime guard enforces pool1/engine/preconnect. */
   readonly accountReadCandidate?: boolean;
   readonly client: DbClient;
   readonly observeProcessCpu?: boolean;

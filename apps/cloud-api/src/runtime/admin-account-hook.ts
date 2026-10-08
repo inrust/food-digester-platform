@@ -7,9 +7,14 @@ export function createAdminAuthenticatedAccountHook(
   client: PrismaClient,
   prepare: () => Promise<void>,
   observeProcessCpu: boolean,
+  accountReadCandidate = false,
 ): (actor: ActorContext, requestId: string) => Promise<void> {
   return async (actor, requestId) => {
     await prepare();
-    await activateInvitedUserOnAuthenticatedRequest({ client, observeProcessCpu }, actor, requestId);
+    await activateInvitedUserOnAuthenticatedRequest(
+      { client, observeProcessCpu, accountReadCandidate },
+      actor,
+      requestId,
+    );
   };
 }

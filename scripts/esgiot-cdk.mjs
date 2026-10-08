@@ -46,7 +46,12 @@ export function qa09RolloutContext(env = process.env) {
     throw Error('INVALID_AUTHENTICATED_PRECONNECT');
   if (preconnect === 'true' && (engineCpu !== 'true' || !['capacity', 'immediate'].includes(phase)))
     throw Error('PRECONNECT_REQUIRES_CAPACITY_ENGINE');
+  const accountRead = env.FDP_QA09_ACCOUNT_READ_CANDIDATE;
+  if (accountRead !== undefined && !['true', 'false'].includes(accountRead))
+    throw Error('INVALID_ACCOUNT_READ_CANDIDATE');
+  if (accountRead === 'true' && preconnect !== 'true') throw Error('ACCOUNT_READ_REQUIRES_PRECONNECT_ENGINE_CAPACITY');
   return {
+    ...(accountRead !== undefined ? { enableQa09AccountReadCandidate: accountRead === 'true' } : {}),
     ...(preconnect !== undefined ? { enableQa09AuthenticatedPreconnect: preconnect === 'true' } : {}),
     ...(engineCpu !== undefined ? { enableQa09EngineCpuDiagnosis: engineCpu === 'true' } : {}),
     enableRequestObservability: phase !== 'baseline',

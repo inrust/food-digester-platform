@@ -15,6 +15,8 @@ export function resolveDeploymentInputs(env, sourceCommit) {
   const phase = manual ? env.QA09_REQUESTED_PHASE : env.FDP_QA09_ROLLOUT_PHASE;
   const engine = manual ? env.QA09_REQUESTED_ENGINE : env.FDP_QA09_ENGINE_CPU_DIAGNOSIS;
   const preconnect = manual ? (env.QA09_REQUESTED_PRECONNECT ?? 'false') : 'false';
+  const accountRead = manual ? (env.QA09_REQUESTED_ACCOUNT_READ ?? 'false') : 'false';
+  demand(['true', 'false'].includes(accountRead), 'EXPLICIT_ACCOUNT_READ_MODE_REQUIRED');
   demand(['true', 'false'].includes(preconnect), 'EXPLICIT_PRECONNECT_MODE_REQUIRED');
   if (manual) {
     demand(env.QA09_EXPECTED_COMMIT === sourceCommit, 'COMPARISON_SHA_DRIFT');
@@ -26,6 +28,7 @@ export function resolveDeploymentInputs(env, sourceCommit) {
     FDP_QA09_ROLLOUT_PHASE: phase,
     FDP_QA09_ENGINE_CPU_DIAGNOSIS: engine,
     FDP_QA09_AUTHENTICATED_PRECONNECT: preconnect,
+    FDP_QA09_ACCOUNT_READ_CANDIDATE: accountRead,
   });
   demand(
     /^[1-9][0-9]*$/.test(env.GITHUB_RUN_ID ?? '') && /^[1-9][0-9]*$/.test(env.GITHUB_RUN_ATTEMPT ?? ''),
@@ -41,12 +44,13 @@ export function resolveDeploymentInputs(env, sourceCommit) {
     rolloutPhase: phase,
     engineCpu: engine === 'true',
     authenticatedPreconnect: preconnect === 'true',
+    accountReadCandidate: accountRead === 'true',
     context,
     fullQa09Accepted: false,
     p95Accepted: false,
   };
 }
-export function validateEngineInputPair(off, on, { preconnect = false } = {}) {
+export function validateEngineInputPair(off, on, { preconnect = false, accountRead = false } = {}) {
   for (const r of [off, on]) {
     demand(
       r.gate === 'PASS' &&
@@ -66,6 +70,7 @@ export function validateEngineInputPair(off, on, { preconnect = false } = {}) {
         FDP_QA09_ROLLOUT_PHASE: r.rolloutPhase,
         QA09_REQUESTED_ENGINE: String(r.engineCpu),
         QA09_REQUESTED_PRECONNECT: String(r.authenticatedPreconnect ?? false),
+        QA09_REQUESTED_ACCOUNT_READ: String(r.accountReadCandidate ?? false),
         GITHUB_RUN_ID: r.runId,
         GITHUB_RUN_ATTEMPT: r.runAttempt,
       },
@@ -75,15 +80,24 @@ export function validateEngineInputPair(off, on, { preconnect = false } = {}) {
   }
   demand(
     off.runId !== on.runId &&
-      (preconnect
+      (accountRead
         ? off.engineCpu === true &&
           on.engineCpu === true &&
-          off.authenticatedPreconnect === false &&
-          on.authenticatedPreconnect === true
-        : off.engineCpu === false &&
-          on.engineCpu === true &&
-          !off.authenticatedPreconnect &&
-          !on.authenticatedPreconnect),
+          off.authenticatedPreconnect === true &&
+          on.authenticatedPreconnect === true &&
+          off.accountReadCandidate === false &&
+          on.accountReadCandidate === true
+        : !off.accountReadCandidate &&
+          !on.accountReadCandidate &&
+          (preconnect
+            ? off.engineCpu === true &&
+              on.engineCpu === true &&
+              off.authenticatedPreconnect === false &&
+              on.authenticatedPreconnect === true
+            : off.engineCpu === false &&
+              on.engineCpu === true &&
+              !off.authenticatedPreconnect &&
+              !on.authenticatedPreconnect)),
     'DISTINCT_OFF_ON_RUNS_REQUIRED',
   );
   for (const k of [
@@ -103,7 +117,7 @@ export function validateEngineInputPair(off, on, { preconnect = false } = {}) {
   return {
     gate: 'PASS',
     scope: 'INPUT_COMPARABILITY_ONLY',
-    comparison: preconnect ? 'C0_C1_PRECONNECT_ONLY' : 'ENGINE_OFF_ON',
+    comparison: accountRead ? 'R0_R1_ACCOUNT_READ_ONLY' : preconnect ? 'C0_C1_PRECONNECT_ONLY' : 'ENGINE_OFF_ON',
     sourceCommit: off.sourceCommit,
     offRunId: off.runId,
     onRunId: on.runId,
@@ -113,11 +127,14 @@ export function validateEngineInputPair(off, on, { preconnect = false } = {}) {
   };
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  if (['--pair', '--preconnect-pair'].includes(process.argv[2])) {
+  if (['--pair', '--preconnect-pair', '--account-read-pair'].includes(process.argv[2])) {
     demand(process.argv.length === 6, 'PAIR_ARGUMENTS_REQUIRED');
     const files = process.argv.slice(3, 5),
       values = files.map((f) => JSON.parse(readFileSync(f)));
-    const result = validateEngineInputPair(...values, { preconnect: process.argv[2] === '--preconnect-pair' });
+    const result = validateEngineInputPair(...values, {
+      preconnect: process.argv[2] === '--preconnect-pair',
+      accountRead: process.argv[2] === '--account-read-pair',
+    });
     result.bindings = files.map((path) => ({
       path,
       sha256: createHash('sha256').update(readFileSync(path)).digest('hex'),
@@ -153,7 +170,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (process.env.GITHUB_ENV)
       appendFileSync(
         process.env.GITHUB_ENV,
-        `FDP_QA09_ROLLOUT_PHASE=${result.rolloutPhase}\nFDP_QA09_ENGINE_CPU_DIAGNOSIS=${result.engineCpu}\nFDP_QA09_AUTHENTICATED_PRECONNECT=${result.authenticatedPreconnect}\n`,
+        `FDP_QA09_ROLLOUT_PHASE=${result.rolloutPhase}\nFDP_QA09_ENGINE_CPU_DIAGNOSIS=${result.engineCpu}\nFDP_QA09_AUTHENTICATED_PRECONNECT=${result.authenticatedPreconnect}\nFDP_QA09_ACCOUNT_READ_CANDIDATE=${result.accountReadCandidate}\n`,
       );
     console.log(
       JSON.stringify({

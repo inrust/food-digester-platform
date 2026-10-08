@@ -5,7 +5,7 @@ export interface AuthenticatedAccountState {
   readonly status: string;
 }
 
-/** Offline opt-in only. Runtime hooks do not enable this candidate; no status cache or extra pool. */
+/** Explicit opt-in only. Guarded test runtime or offline comparison; no status cache or extra pool. */
 export async function readAuthenticatedAccount(
   client: DbClient,
   cognitoSub: string,

@@ -25,6 +25,7 @@ test('observability and immediate queue synth retain narrow logs and hard DB bud
       enableImmediateCommandPublish: true,
       enableQa09EngineCpuDiagnosis: true,
       enableQa09AuthenticatedPreconnect: true,
+      enableQa09AccountReadCandidate: true,
     },
   });
   const template = Template.fromStack(stack).toJSON();
@@ -37,6 +38,12 @@ test('observability and immediate queue synth retain narrow logs and hard DB bud
   assert.deepEqual(
     functions
       .filter((r) => r.Properties.Environment?.Variables.FDP_QA09_AUTHENTICATED_PRECONNECT === 'true')
+      .map((r) => r.Properties.FunctionName),
+    ['fdp-test-api'],
+  );
+  assert.deepEqual(
+    functions
+      .filter((r) => r.Properties.Environment?.Variables.FDP_QA09_ACCOUNT_READ_CANDIDATE === 'true')
       .map((r) => r.Properties.FunctionName),
     ['fdp-test-api'],
   );
@@ -159,4 +166,29 @@ test('Gateway service-boundary additions allow only required discovery and own-l
   }
   assert.include(JSON.stringify(patch.Statement[1].Resource), '/aws/apigateway/fdp-test-admin-api-access');
   assert.notInclude(JSON.stringify(patch), '/aws/apigateway/welcome');
+});
+
+test('account read stack cannot bypass preconnect/engine/test capacity guards', () => {
+  for (const patch of [
+    { enableQa09AuthenticatedPreconnect: false },
+    { enableQa09EngineCpuDiagnosis: false },
+    { enableQa09Capacity: false },
+    { envName: 'prod' },
+  ]) {
+    assert.throws(
+      () =>
+        new AppDependenciesStack(new App(), 'InvalidAccountRead', {
+          config: {
+            envName: 'test',
+            allowInsecureDeviceEndpointForLocal: true,
+            enableRequestObservability: true,
+            enableQa09Capacity: true,
+            enableQa09EngineCpuDiagnosis: true,
+            enableQa09AuthenticatedPreconnect: true,
+            enableQa09AccountReadCandidate: true,
+            ...patch,
+          },
+        }),
+    );
+  }
 });

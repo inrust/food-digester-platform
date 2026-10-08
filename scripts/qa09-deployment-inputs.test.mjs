@@ -114,3 +114,54 @@ test('C0/C1 same SHA and engine=true differ only preconnect; push cannot turn ca
   ])
     assert.throws(() => resolveDeploymentInputs({ ...env, ...patch }, sha));
 });
+
+test('R0/R1 input pair binds same SHA and budget, differs only account read; push always off', () => {
+  const r = (on) => ({
+    ...receipt(true),
+    ...resolveDeploymentInputs(
+      {
+        ...env,
+        QA09_REQUESTED_ENGINE: 'true',
+        QA09_REQUESTED_PRECONNECT: 'true',
+        QA09_REQUESTED_ACCOUNT_READ: String(on),
+        GITHUB_RUN_ID: on ? '128' : '127',
+      },
+      sha,
+    ),
+  });
+  assert.equal(validateEngineInputPair(r(false), r(true), { accountRead: true }).comparison, 'R0_R1_ACCOUNT_READ_ONLY');
+  assert.equal(
+    resolveDeploymentInputs({ ...env, GITHUB_EVENT_NAME: 'push', FDP_QA09_ACCOUNT_READ_CANDIDATE: 'true' }, sha)
+      .accountReadCandidate,
+    false,
+  );
+  for (const patch of [
+    { QA09_REQUESTED_ENGINE: 'false' },
+    { QA09_REQUESTED_PRECONNECT: 'false' },
+    { QA09_REQUESTED_ACCOUNT_READ: 'yes' },
+  ])
+    assert.throws(() =>
+      resolveDeploymentInputs(
+        {
+          ...env,
+          QA09_REQUESTED_ENGINE: 'true',
+          QA09_REQUESTED_PRECONNECT: 'true',
+          QA09_REQUESTED_ACCOUNT_READ: 'true',
+          ...patch,
+        },
+        sha,
+      ),
+    );
+  for (const mutate of [
+    (v) => (v.accountReadCandidate = false),
+    (v) => (v.authenticatedPreconnect = false),
+    (v) => (v.context.enableQa09AccountReadCandidate = false),
+    (v) => (v.sourceCommit = 'c'.repeat(40)),
+    (v) => (v.deploymentConfigSha256 = 'c'.repeat(64)),
+  ]) {
+    const on = r(true);
+    mutate(on);
+    assert.throws(() => validateEngineInputPair(r(false), on, { accountRead: true }));
+  }
+  assert.match(readFileSync('.github/workflows/deploy-test.yml', 'utf8'), /inputs.account_read_candidate/);
+});

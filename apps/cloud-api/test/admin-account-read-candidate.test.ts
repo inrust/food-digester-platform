@@ -3,6 +3,7 @@ import { rejects } from 'node:assert/strict';
 import type { ActorContext, Role } from '@fdp/auth';
 import { activateInvitedUserOnAuthenticatedRequest } from '../src/admin/user/service.js';
 import { readAuthenticatedAccount } from '../src/admin/user/account-read-candidate.js';
+import { createAdminAuthenticatedAccountHook } from '../src/runtime/admin-account-hook.js';
 import { createTestDb } from './helpers.js';
 
 describe.each([false, true])('offline real database account read candidate=%s', (candidate) => {
@@ -45,6 +46,39 @@ describe.each([false, true])('offline real database account read candidate=%s', 
       assert.equal(await hook(invited.cognitoSub!, role), true);
       assert.equal(await hook(invited.cognitoSub!, role), false);
       assert.equal(await db.prisma.auditLog.count({ where: { objectId: invited.id, action: 'user.activate' } }), 1);
+    },
+  );
+  test.each(['PlatformSuperAdmin', 'PlatformOperator', 'Auditor', 'CustomerAdmin', 'CustomerViewer'] as Role[])(
+    'wired hook awaits preparation and re-reads status for %s',
+    async (role) => {
+      const u = await plant('ACTIVE');
+      let release!: () => void;
+      const barrier = new Promise<void>((r) => {
+        release = r;
+      });
+      const prepare = vi.fn(() => barrier);
+      const raw = vi.spyOn(db.prisma, '$queryRaw');
+      const orm = vi.spyOn(db.prisma.user, 'findFirst');
+      try {
+        const hook = createAdminAuthenticatedAccountHook(db.prisma, prepare, true, candidate);
+        const pending = hook(actor(u.cognitoSub!, role), 'wired-active');
+        await Promise.resolve();
+        assert.equal(raw.mock.calls.length + orm.mock.calls.length, 0);
+        release();
+        await pending;
+        assert.equal(raw.mock.calls.length, candidate ? 1 : 0);
+        assert.equal(orm.mock.calls.length, candidate ? 0 : 1);
+        await db.prisma.user.update({ where: { id: u.id }, data: { status: 'DISABLED' } });
+        await rejects(
+          hook(actor(u.cognitoSub!, role), 'wired-disabled'),
+          (e) => (e as { code: string }).code === 'UNAUTHENTICATED',
+        );
+        assert.equal(prepare.mock.calls.length, 2);
+      } finally {
+        release();
+        raw.mockRestore();
+        orm.mockRestore();
+      }
     },
   );
   test('parameterized apostrophes cannot select another account; errors never fall back or retry', async () => {
