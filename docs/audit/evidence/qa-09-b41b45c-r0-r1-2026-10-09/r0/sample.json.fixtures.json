@@ -1,0 +1,131 @@
+{
+  "task": "QA-09",
+  "scope": "CORE_BUSINESS_REAL_RDS_STATE_FIXTURE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1"
+  },
+  "fixtureMode": "REAL_RDS_ONBOARDED_STATE_FOR_BUSINESS_APIS_NO_DEVICE_AUTH_CLAIM",
+  "prefix": "qa09-1a2a29d5130b8f5b",
+  "devices": [
+    "qa09-1a2a29d5130b8f5b-01",
+    "qa09-1a2a29d5130b8f5b-02",
+    "qa09-1a2a29d5130b8f5b-03",
+    "qa09-1a2a29d5130b8f5b-04",
+    "qa09-1a2a29d5130b8f5b-05",
+    "qa09-1a2a29d5130b8f5b-06",
+    "qa09-1a2a29d5130b8f5b-07",
+    "qa09-1a2a29d5130b8f5b-08",
+    "qa09-1a2a29d5130b8f5b-09",
+    "qa09-1a2a29d5130b8f5b-10"
+  ],
+  "customers": [
+    {
+      "id": "9e596c74-407b-4582-bbcb-3cf0d490d4bd",
+      "name": "qa09-1a2a29d5130b8f5b-a",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-08T23:46:51.923Z",
+      "updatedAt": "2026-10-08T23:46:51.923Z",
+      "suffix": "a"
+    },
+    {
+      "id": "4f9bf947-edc4-449c-8c5c-3903d327d3a5",
+      "name": "qa09-1a2a29d5130b8f5b-b",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-08T23:46:53.423Z",
+      "updatedAt": "2026-10-08T23:46:53.423Z",
+      "suffix": "b"
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "684bfc47-8a21-4bf6-a827-0e507e3a6a71"
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "af4aefb4-8621-4e87-b3ea-13fa01f1b927"
+    },
+    {
+      "id": "real-rds-business-state-fixture",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "database-fixtures",
+      "result": "FAIL"
+    },
+    {
+      "type": "identity-renewal",
+      "result": "FAIL"
+    },
+    {
+      "type": "customer",
+      "id": "4f9bf947-edc4-449c-8c5c-3903d327d3a5",
+      "result": "FAIL"
+    },
+    {
+      "type": "customer",
+      "id": "9e596c74-407b-4582-bbcb-3cf0d490d4bd",
+      "result": "FAIL"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-1a2a29d5130b8f5b-platformsuperadmin@example.invalid",
+      "result": "FAIL"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "observe",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-b41b45c-r0-r1-2026-10-09/r0/sample.json.fixtures-observe-0.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:778460e5-ec7e-4e59-8f58-1a36538f9124"
+    },
+    {
+      "action": "business-seed-devices",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-b41b45c-r0-r1-2026-10-09/r0/sample.json.fixtures-business-seed-devices-1.json",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:dd2db66c-289c-49f4-afc6-bb5fc9e69c35"
+    }
+  ],
+  "sourceCommit": "b41b45c891eeb5adabc69c1fdaea2b0e81acdf1e",
+  "versionReceipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-b41b45c-r0-r1-2026-10-09/r0/application-version.json",
+  "startedAt": "2026-10-08T23:46:39.224Z",
+  "gate": "FAIL",
+  "fullQa09Accepted": false,
+  "credentialsExported": false,
+  "identity": {
+    "username": "qa09-1a2a29d5130b8f5b-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "failure": {
+    "code": "BUSINESS_CLEANUP_FAILED",
+    "errorName": "Error"
+  },
+  "globalSignOut": "FAIL",
+  "globalSignOutErrorName": "CognitoIdpError",
+  "finishedAt": "2026-10-08T23:54:29.071Z"
+}
