@@ -1,0 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { runFixture } from '../../../../../scripts/qa09-ten-device-bridge.mjs';
+const dir = dirname(fileURLToPath(import.meta.url));
+const bytes = readFileSync(join(dir,'independent-capacity-plan.json'));
+const review = JSON.parse(readFileSync(join(dir,'independent-capacity-review.json')));
+const authorization = JSON.parse(readFileSync(join(dir,'independent-capacity-authorization.json')));
+const plan = JSON.parse(bytes);
+if (authorization.gate !== 'AUTHORIZED' || authorization.authorizer !== 'USER' || authorization.maxStarts !== 1 || authorization.planSha256 !== createHash('sha256').update(bytes).digest('hex') || authorization.planSha256 !== review.planSha256 || plan.action !== 'capacity-readonly' || plan.prefix !== 'qa09-8601a398da9bbdf6') throw Error('EXACT_INDEPENDENT_READ_ONLY_AUTHORIZATION_REQUIRED');
+await runFixture(plan,join(dir,'independent-capacity-before.json'),value=>console.log(value));

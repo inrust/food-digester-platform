@@ -1,0 +1,14 @@
+Get "https://api.github.com/repos/inrust/food-digester-platform/commits/main": dial tcp 140.82.114.6:443: i/o timeout
+Traceback (most recent call last):
+  File "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-24d50d6-r0-r1-2026-10-09/dispatch-unit.py", line 12, in <module>
+    head=json.loads(subprocess.check_output(['gh','api','repos/inrust/food-digester-platform/commits/main'],text=True));assert head['sha']==sha,'REMOTE_SOURCE_DRIFT'
+                    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 473, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+               **kwargs).stdout
+               ^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['gh', 'api', 'repos/inrust/food-digester-platform/commits/main']' returned non-zero exit status 1.
