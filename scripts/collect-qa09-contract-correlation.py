@@ -9,13 +9,23 @@ import sys
 from pathlib import Path
 
 source, output = map(Path, sys.argv[1:3])
+if output.exists():
+    raise ValueError('OUTPUT_ALREADY_EXISTS')
+flags = sys.argv[3:]
+exact_file = None
+if '--exact-from' in flags:
+    i = flags.index('--exact-from')
+    if i + 1 >= len(flags):
+        raise ValueError('EXACT_PRIOR_RECEIPT_REQUIRED')
+    exact_file = Path(flags[i + 1])
+    flags = flags[:i] + flags[i + 2:]
 raw = source.read_bytes()
 receipt = json.loads(raw)
 if not re.fullmatch(r'qa09-[a-f0-9]{16}', receipt.get('prefix', '')) or receipt.get('fullQa09Accepted') is not False:
     raise ValueError('OWN_RECEIPT_REQUIRED')
-audit_mode = '--audit-get' in sys.argv[3:]
-sampling = '--cold-sampling' in sys.argv[3:]
-if any(x not in ['--audit-get', '--cold-sampling'] for x in sys.argv[3:]):
+audit_mode = '--audit-get' in flags
+sampling = '--cold-sampling' in flags
+if any(x not in ['--audit-get', '--cold-sampling'] for x in flags):
     raise ValueError('INVALID_CORRELATION_MODE')
 if sampling and receipt.get('cold409Sampling', {}).get('gate') != 'PASS':
     raise ValueError('COLD_SAMPLING_BUSINESS_REQUIRED')
@@ -38,6 +48,38 @@ for attempt in attempts:
                     'latencyMs': observed.get('latencyMs'),
                     'responseReceived': observed.get('responseReceived', bool(observed.get('status'))),
                     'clientTransport': {k: v for k, v in observed.get('clientTransport', {}).items() if k in ['socketAcquisitionMs', 'dnsMs', 'tcpMs', 'tlsMs', 'requestSentAtMs', 'headersAtMs', 'responseWaitMs', 'firstBodyAtMs', 'bodyEndAtMs', 'bodyReadMs', 'jsonParseMs'] and (v is None or isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and v >= 0)} | {'source': 'NODE_HTTPS_SOCKET_EVENTS' if observed.get('clientTransport', {}).get('source') == 'NODE_HTTPS_SOCKET_EVENTS' else 'NOT_AVAILABLE', 'reusedSocket': observed.get('clientTransport', {}).get('reusedSocket') is True}})
+read_optimization = None
+pattern = None
+if exact_file:
+    prior_bytes = exact_file.read_bytes()
+    prior = json.loads(prior_bytes)
+    if (prior.get('sourceReceiptSha256') != hashlib.sha256(raw).hexdigest()
+            or prior.get('prefix') != receipt['prefix'] or prior.get('sourceCommit') != receipt.get('sourceCommit')):
+        raise ValueError('PRIOR_GATEWAY_BINDING_REQUIRED')
+    invocations = []
+    for c in clients:
+        own = [r for r in prior['records'] if r.get('requestId') == c['requestId']]
+        if len(own) != 1 or len(own[0].get('gateway', [])) != 1:
+            raise ValueError('UNIQUE_GATEWAY_REQUIRED')
+        g = own[0]['gateway'][0]
+        latency = c['latencyMs'] if c['latencyMs'] is not None else 30000
+        if (g.get('requestId') != c['requestId'] or str(g.get('integrationStatus')) != '200'
+                or (c['status'] is not None and str(g.get('status')) != str(c['status']))
+                or g.get('httpMethod') != c['method']
+                or (c['extendedRequestId'] and g.get('extendedRequestId') != c['extendedRequestId'])
+                or not c['startMs'] - 2000 <= int(g.get('requestTimeEpoch', 0)) <= c['startMs'] + latency + 2000):
+            raise ValueError('GATEWAY_TIME_STATUS_REQUIRED')
+        if not re.fullmatch(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}', g.get('integrationRequestId', '')):
+            raise ValueError('EXACT_INVOCATION_REQUIRED')
+        invocations.append(g['integrationRequestId'])
+    if len(set(invocations)) != len(clients) or not 0 < len(clients) <= 19:
+        raise ValueError('BOUNDED_UNIQUE_INVOCATIONS_REQUIRED')
+    pattern = '%' + '|'.join(invocations) + '%'
+    if len(pattern) > 1024:
+        raise ValueError('BOUNDED_FILTER_REQUIRED')
+    read_optimization = {'scope': 'OWN_EXACT_GATEWAY_INTEGRATION_INVOCATIONS_ONLY',
+                         'priorGatewayReceiptSha256': hashlib.sha256(prior_bytes).hexdigest(),
+                         'invocationIds': invocations}
 start_ms = min(c['startMs'] for c in clients) - 2000
 end_ms = max(c['startMs'] + max(c['latencyMs'] or 0, 30000) for c in clients) + 2000
 ids = {c['requestId'] for c in clients if c['requestId']}
@@ -59,6 +101,8 @@ for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
                 '--start-time', str(start_ms), '--end-time', str(end_ms),
                 '--profile', 'esgiot-readonly', '--region', 'ap-southeast-1',
                 '--output', 'json', '--no-cli-pager', '--no-paginate']
+        if name == 'lambda' and pattern:
+            args += ['--filter-pattern', pattern]
         if token:
             args += ['--next-token', token]
         try:
@@ -158,5 +202,7 @@ report = {'task': 'QA-09', 'sampling': sampling, 'scope': ('OWN_COLD409_AUDIT_GE
           'exactLinkedCount': sum(x['exactLinked'] for x in linked),
           'missingHistoricalSiblingReceipt': not ledger.get('attempts'),
           'gate': 'PASS' if complete and not any(v['error'] for v in rows.values()) else 'PARTIAL'}
+if read_optimization:
+    report['readOptimization'] = read_optimization
 output.write_text(json.dumps(report, indent=2) + '\n')
 print(json.dumps({k: v for k, v in report.items() if k != 'records'}))

@@ -1,4 +1,9 @@
-import { seedCleanupAction } from './qa09-seed-recovery.mjs';
+import {
+  cleanupNonActiveParent,
+  createParentFixtureExecutor,
+  validateNonActiveParentCleanup,
+} from './qa09-nonactive-cleanup.mjs';
+import { createOperationObserver, safeOperationError } from './qa09-operation-observation.mjs';
 import { randomBytes, createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -37,6 +42,7 @@ if (
 const sourcePaths = [
   'scripts/run-qa09-nonactive-target.mjs',
   'scripts/qa09-seed-recovery.mjs',
+  'scripts/qa09-nonactive-cleanup.mjs',
   'scripts/qa09-business-target.mjs',
   'scripts/qa09-operation-observation.mjs',
   'scripts/qa09-started-build-read.mjs',
@@ -102,6 +108,7 @@ const r = {
   customers: [],
   checks: [],
   cleanup: [],
+  cleanupOperations: [],
   databaseBuilds: [],
   sourceCommit: version.sourceCommit,
   versionReceipt: versionFile,
@@ -173,17 +180,16 @@ async function api(id, method, path, expected, body, headers = {}) {
   });
   return v;
 }
-async function db(action) {
-  const path = output + `.fixtures-${action}-${r.databaseBuilds.length}.json`;
-  const result = await runFixture(
-    { prefix, devices, customers: r.customers, action, ...(baseline ? { baseline } : {}) },
-    path,
-    (p) => console.log(p),
-  );
-  r.databaseBuilds.push({ action, receipt: path, buildId: result.build.id });
-  save();
-  return result.result;
-}
+const observeCleanup = createOperationObserver(r.cleanupOperations, save);
+const db = createParentFixtureExecutor({
+  receipt: r,
+  output,
+  plan: () => ({ prefix, devices, customers: r.customers, ...(baseline ? { baseline } : {}) }),
+  runFixture,
+  save,
+  observe: observeCleanup,
+  progress: (p) => console.log(p),
+});
 save();
 try {
   const temporary = `A!z9${randomBytes(24).toString('base64url')}`;
@@ -279,77 +285,27 @@ try {
   );
 } catch (e) {
   r.gate = 'FAIL';
-  r.failure = {
-    code: /^[\w:-]{1,150}$/.test(e.code ?? e.message) ? (e.code ?? e.message) : 'CORE_TARGET_FAILED',
-    errorName: e.name,
-    causeCode: e.cause?.code,
-    httpStatus: e.$metadata?.httpStatusCode,
-  };
+  r.failure = safeOperationError(e);
   save();
 } finally {
-  if (seeded)
-    try {
-      const observed = await db('observe');
-      const action = seedCleanupAction(observed, devices);
-      const result = action === 'cleanup' ? await db(action) : observed;
-      check(
-        'original-device-certificate-baseline-preserved',
-        JSON.stringify(result.originalFingerprints) === JSON.stringify(baseline),
-      );
-      r.cleanup.push({ type: 'database-fixtures', count: observed.devices.length, result: 'PASS' });
-      save();
-    } catch {
-      r.cleanup.push({ type: 'database-fixtures', result: 'FAIL' });
-      save();
-    }
-  if (created)
-    try {
-      await refreshIdentity();
-    } catch {
-      r.cleanup.push({ type: 'identity-renewal', result: 'FAIL' });
-      save();
-    }
-  for (const c of [...r.customers].reverse())
-    try {
-      const path = '/api/v1/admin/customers/' + c.id;
-      const current = await api('cleanup-customer-scope-' + c.suffix, 'GET', path, 200);
-      check('own-customer-name-' + c.suffix, current.data.name === prefix + '-' + c.suffix);
-      await api('cleanup-customer-' + c.suffix, 'DELETE', path, 200, undefined, {
-        'If-Match': String(current.data.version),
-      });
-      await api('verify-customer-gone-' + c.suffix, 'GET', path, 404);
-      r.cleanup.push({ type: 'customer', id: c.id, result: 'PASS' });
-      save();
-    } catch {
-      r.cleanup.push({ type: 'customer', id: c.id, result: 'FAIL' });
-      save();
-    }
-  if (created)
-    try {
-      if (accessToken) {
-        try {
-          await idp.globalSignOut(accessToken);
-          r.globalSignOut = 'PASS';
-        } catch (e) {
-          r.globalSignOut = 'FAIL';
-          r.globalSignOutErrorName = e.name;
-          save();
-        }
-      }
-      await call(cognitoSdk.AdminDeleteUserCommand, { UserPoolId: pool, Username: username });
-      let absent = false;
-      try {
-        await call(cognitoSdk.AdminGetUserCommand, { UserPoolId: pool, Username: username });
-      } catch (e) {
-        absent = e.name === 'UserNotFoundException';
-      }
-      check('own-superadmin-deleted', absent);
-      r.cleanup.push({ type: 'identity', username, result: 'PASS' });
-      save();
-    } catch {
-      r.cleanup.push({ type: 'identity', username, result: 'FAIL' });
-      save();
-    }
+  await cleanupNonActiveParent({
+    receipt: r,
+    save,
+    db,
+    check,
+    refreshIdentity,
+    api,
+    created,
+    seeded,
+    baseline,
+    devices,
+    username,
+    hasAccessToken: () => Boolean(accessToken),
+    globalSignOut: () => idp.globalSignOut(accessToken),
+    adminGlobalSignOut: () => call(cognitoSdk.AdminUserGlobalSignOutCommand, { UserPoolId: pool, Username: username }),
+    deleteUser: () => call(cognitoSdk.AdminDeleteUserCommand, { UserPoolId: pool, Username: username }),
+    getUser: () => call(cognitoSdk.AdminGetUserCommand, { UserPoolId: pool, Username: username }),
+  });
   token = undefined;
   accessToken = undefined;
   r.finishedAt = new Date().toISOString();
@@ -375,6 +331,7 @@ let gate = {
 };
 try {
   const domain = await cleanupOwnedDomain(output + '.fixtures.json', output + '.domain-cleanup.json');
+  const parentCleanup = validateNonActiveParentCleanup(r);
   const child = JSON.parse(readFileSync(output));
   const executed = JSON.parse(readFileSync(output + '.sources.json')).sources;
   const hashes = new Map(
@@ -389,6 +346,7 @@ try {
   for (const build of r.databaseBuilds) {
     const proof = JSON.parse(readFileSync(build.receipt));
     if (
+      build.gate !== 'PASS' ||
       proof.gate !== 'PASS' ||
       proof.build.status !== 'SUCCEEDED' ||
       proof.build.id !== build.buildId ||
@@ -449,6 +407,7 @@ try {
     gate: mode !== undefined ? 'PASS' : child.semanticBrowser.gate === 'FAIL' ? 'FAIL' : 'PARTIAL',
     checks: child.checks.filter((c) => c.stage === 'core').length,
     cleanup: 'PASS',
+    parentCleanupObservation: parentCleanup,
     fixtureMode: r.fixtureMode,
     sourceReceipt: output + '.sources.json',
     sourceReceiptSha256: createHash('sha256')
