@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { validateContractLoadDetail } from './qa09-contract-load-detail-proof.mjs';
+import { validateContractLoadDetail, validateContractAwaitCheckpoint } from './qa09-contract-load-detail-proof.mjs';
 import { contractDetailInputs, analyzeContractLoadDetailPair } from './analyze-qa09-contract-load-detail.mjs';
 import { validateMatchedColdPair } from './qa09-matched-cold-inputs.mjs';
 export function detailFixture() {
@@ -160,5 +160,70 @@ test('hosted detail input byte binding is explicit and rejects run, mode, budget
     const v = fixture();
     mutate(v);
     assert.throws(() => validateContractDetailDeployment(...v));
+  }
+});
+
+function checkpointFixture() {
+  const v = detailFixture(),
+    parent = v.phases.find((p) => p.phase === 'contract-load-orm-await');
+  v.phases.push(
+    {
+      ...parent,
+      phase: 'contract-load-await-queue',
+      completedAt: new Date(35).toISOString(),
+      durationMs: 5,
+      completionBoundary: 'MICROTASK_CHECKPOINT',
+    },
+    { ...parent, phase: 'contract-load-await-after-queue', startedAt: new Date(35).toISOString(), durationMs: 445 },
+  );
+  return v;
+}
+test('checkpoint splits public await only and rejects legacy target promotion', () => {
+  const v = checkpointFixture(),
+    proof = validateContractAwaitCheckpoint(v.phases, v.ownership, true);
+  assert.equal(proof.gate, 'PASS');
+  assert.equal(proof.windowsMs['contract-load-await-after-queue'], 445);
+  assert.equal(proof.compilerOnlyAttribution, false);
+  assert.equal(proof.p95Accepted, false);
+  assert.equal(validateContractAwaitCheckpoint([], [], false), null);
+  const old = detailFixture();
+  assert.throws(() => validateContractAwaitCheckpoint(old.phases, old.ownership, true), /REQUIRED/);
+});
+for (const [name, mutate] of [
+  ['missing', (v) => v.phases.pop()],
+  ['duplicate', (v) => v.phases.push(v.phases.at(-1))],
+  ['foreign', (v) => (v.phases.at(-1).lambdaRequestId = 'other')],
+  ['failure', (v) => (v.phases.at(-1).outcome = 'FAIL')],
+  ['CPU', (v) => (v.phases.at(-1).processCpuScope = 'COMPILER_ONLY')],
+  ['negative', (v) => (v.phases.at(-1).processCpuUserUs = -1)],
+  ['boundary', (v) => (v.phases.at(-2).completionBoundary = 'DRIVER_DISPATCH')],
+  ['wait', (v) => (v.phases.at(-1).includesConnectionWait = true)],
+  ['gap', (v) => (v.phases.at(-1).startedAt = new Date(41).toISOString())],
+  ['overlap', (v) => (v.phases.at(-1).startedAt = new Date(34).toISOString())],
+  ['coverage', (v) => (v.phases.at(-1).durationMs -= 6)],
+  ['invalid time', (v) => (v.phases.at(-1).completedAt = 'bad')],
+])
+  test('checkpoint rejects ' + name, () => {
+    const v = checkpointFixture();
+    mutate(v);
+    assert.throws(() => validateContractAwaitCheckpoint(v.phases, v.ownership, true));
+  });
+test('await planner holds native candidate off and old manifests cannot satisfy new proof', async () => {
+  const { contractAwaitInputs, analyzeContractAwaitPair } = await import('./analyze-qa09-contract-await.mjs');
+  const p = contractAwaitInputs('a'.repeat(40));
+  assert.equal(p.requireContractAwaitCheckpoint, true);
+  assert.equal(p.contractReadCandidate, false);
+  assert.equal(p.r0.contractLoadDetail, true);
+  assert.equal(p.r1.contractLoadDetail, true);
+  assert.equal(p.r0.poolMax, 1);
+  const root = mkdtempSync(join(tmpdir(), 'qa09-await-'));
+  try {
+    const a = join(root, 'a.json'),
+      b = join(root, 'b.json');
+    writeFileSync(a, '{}');
+    writeFileSync(b, '{}');
+    assert.throws(() => analyzeContractAwaitPair(a, b), /EXPLICIT_AWAIT/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });

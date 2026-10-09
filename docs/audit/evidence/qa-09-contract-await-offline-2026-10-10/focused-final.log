@@ -1,0 +1,42 @@
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ❯ apps/cloud-api/test/admin-contract-load-candidate.test.ts (12 tests | 2 failed) 801ms
+   × full PostgreSQL service semantics native=false 22ms
+   × full PostgreSQL service semantics native=true 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  apps/cloud-api/test/admin-contract-load-candidate.test.ts > full PostgreSQL service semantics native=false
+ FAIL  apps/cloud-api/test/admin-contract-load-candidate.test.ts > full PostgreSQL service semantics native=true
+AssertionError: The input did not match the regular expression /version/i. Input:
+
+'AdminContractError: The resource was modified concurrently; refresh and retry'
+
+
+- Expected:
+/version/i
+
++ Received:
+AdminContractError {
+  "message": "The resource was modified concurrently; refresh and retry",
+  "name": "AdminContractError",
+  "code": "VERSION_CONFLICT",
+}
+
+ ❯ apps/cloud-api/test/admin-contract-load-candidate.test.ts:63:5
+     61|     assert.isNull(view.contact);
+     62|     assert.equal(view.startAt, c.startAt.toISOString());
+     63|     await rejects(
+       |     ^
+     64|       () => updateContract(deps, actor, { contractId: c.id, ifMatchVer…
+     65|       /version/i,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  2 failed | 33 passed (35)
+   Start at  07:29:48
+   Duration  1.06s (transform 215ms, setup 28ms, import 326ms, tests 1.29s, environment 0ms)
+

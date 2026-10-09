@@ -34,6 +34,8 @@ export type DataPathPhase =
   | 'contract-load-result'
   | 'contract-load-orm-submit'
   | 'contract-load-orm-await'
+  | 'contract-load-await-queue'
+  | 'contract-load-await-after-queue'
   | 'contract-load-driver-before-pg'
   | 'contract-load-driver-pg'
   | 'contract-load-driver-after-pg'
@@ -194,7 +196,8 @@ export type PreparationBoundary =
   | 'OPERATION_SETTLED'
   | 'OPERATION_FAILED'
   | 'PG_DISPATCH'
-  | 'PG_SETTLED';
+  | 'PG_SETTLED'
+  | 'MICROTASK_CHECKPOINT';
 export function beginDataPathPhase(
   phase: DataPathPhase,
   options: { readonly processCpu?: boolean; readonly startBoundary?: DataPathBoundary | undefined } = {},
@@ -248,6 +251,8 @@ export function beginDataPathPhase(
           'contract-load-result',
           'contract-load-orm-submit',
           'contract-load-orm-await',
+          'contract-load-await-queue',
+          'contract-load-await-after-queue',
           'contract-load-driver-before-pg',
           'contract-load-driver-pg',
           'contract-load-driver-after-pg',
@@ -260,6 +265,7 @@ export function beginDataPathPhase(
           'OPERATION_FAILED',
           'PG_DISPATCH',
           'PG_SETTLED',
+          'MICROTASK_CHECKPOINT',
         ].includes(boundary)
           ? { completionBoundary: boundary }
           : {}),

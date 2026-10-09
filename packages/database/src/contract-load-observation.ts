@@ -18,6 +18,8 @@ interface LoadScope {
   detailed?: boolean;
   submit?: Finish;
   await?: Finish;
+  awaitQueue?: Finish;
+  awaitAfterQueue?: Finish;
   beforePg?: Finish;
   pg?: Finish;
   afterPg?: Finish;
@@ -51,6 +53,8 @@ export async function observeContractLoad<T>(work: () => Promise<T>): Promise<T>
       frame.completed = true;
       const boundary = failure === undefined ? 'OPERATION_SETTLED' : 'OPERATION_FAILED';
       frame.result?.(failure, boundary, end);
+      frame.awaitQueue?.(failure, boundary, end);
+      frame.awaitAfterQueue?.(failure, boundary, end);
       frame.await?.(failure, boundary, end);
       frame.submit?.(failure, boundary, end);
       frame.prepare?.(failure, boundary, end);
@@ -88,6 +92,19 @@ export function observeContractLoadSubmission<T>(work: () => T): T {
     const result = work();
     const returned = captureDataPathBoundary();
     frame.await = beginDataPathPhase('contract-load-orm-await', { processCpu: true, startBoundary: returned });
+    frame.awaitQueue = beginDataPathPhase('contract-load-await-queue', { processCpu: true, startBoundary: returned });
+    // One observation-only checkpoint. It neither awaits nor replaces the original Promise.
+    queueMicrotask(
+      bindDataPathObservation(() => {
+        if (frame.completed || frame.driverDispatches !== 0) return;
+        const checkpoint = captureDataPathBoundary();
+        frame.awaitAfterQueue = beginDataPathPhase('contract-load-await-after-queue', {
+          processCpu: true,
+          startBoundary: checkpoint,
+        });
+        frame.awaitQueue?.(undefined, 'MICROTASK_CHECKPOINT', checkpoint);
+      }),
+    );
     frame.submit?.(undefined, 'CALL_RETURNED', returned);
     return result;
   } catch (error) {
@@ -129,6 +146,8 @@ export function observeContractLoadDriver<T>(work: () => Promise<T>, transaction
       processCpu: true,
       startBoundary: dispatch,
     });
+    frame.awaitQueue?.(undefined, 'DRIVER_DISPATCH', dispatch);
+    frame.awaitAfterQueue?.(undefined, 'DRIVER_DISPATCH', dispatch);
     frame.await?.(undefined, 'DRIVER_DISPATCH', dispatch);
   }
   frame.prepare?.(undefined, 'DRIVER_DISPATCH', dispatch);

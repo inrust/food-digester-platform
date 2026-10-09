@@ -9,7 +9,10 @@ import {
   observeContractLoadSubmission,
   observeContractLoadDriver,
 } from '../src/contract-load-observation.js';
-import { validateContractLoadDetail } from '../../../scripts/qa09-contract-load-detail-proof.mjs';
+import {
+  validateContractLoadDetail,
+  validateContractAwaitCheckpoint,
+} from '../../../scripts/qa09-contract-load-detail-proof.mjs';
 
 const trace = (id: string, work: () => Promise<unknown>, rows: Record<string, unknown>[]) =>
   withDataPathTrace({ lambdaRequestId: id, gatewayRequestId: id, operationId: 'updateContract' }, work, (r) =>
@@ -33,6 +36,14 @@ function client(query: (...args: any[]) => any) {
   return { value, releases: () => releases };
 }
 function proof(rows: Record<string, unknown>[]) {
+  assert.equal(
+    validateContractAwaitCheckpoint(
+      rows.filter((r) => r.event === 'data-path.phase.completed'),
+      rows.filter((r) => r.event === 'data-path.contract-load.ownership'),
+      true,
+    )?.gate,
+    'PASS',
+  );
   return validateContractLoadDetail(
     rows.filter((r) => r.event === 'data-path.phase.completed'),
     rows.filter((r) => r.event === 'data-path.contract-load.ownership'),
@@ -207,7 +218,7 @@ test('default off preserves query Promise and does not emit children even if a l
     rows,
   );
   assert.isFalse(rows.some((r) => r.phase === 'contract-load-driver-pg'));
-  assert.throws(() => proof(rows), /DETAIL_REQUIRED/);
+  assert.throws(() => proof(rows), /CHECKPOINT_REQUIRED/);
   c.value.release();
 });
 test('submittable/embedded callback and frozen port pass through; missing pg proof fails closed', async () => {
@@ -250,4 +261,49 @@ test('duplicate callbacks remain delivered and reject detail ownership, no synth
   assert.equal(calls, 2);
   assert.throws(() => proof(rows), /PG_OWNERSHIP/);
   c.value.release();
+});
+
+test('dispatch before checkpoint stays incomplete, never invents a zero child or changes Promise', async () => {
+  const rows: Record<string, unknown>[] = [],
+    p = Promise.resolve(1);
+  await trace(
+    'early-dispatch',
+    () =>
+      observeContractLoad(async () => {
+        markContractLoadModelEntry('Contract', 'findFirst', true);
+        strictEqual(
+          observeContractLoadSubmission(() => p),
+          p,
+        );
+        return observeContractLoadDriver(() => p, true);
+      }),
+    rows,
+  );
+  assert.isFalse(rows.some((r) => r.phase === 'contract-load-await-after-queue'));
+  assert.throws(() => proof(rows));
+});
+test('queued checkpoint cannot emit after owning operation has failed/completed', async () => {
+  const rows: Record<string, unknown>[] = [],
+    error = Error('ORIGINAL_FAILURE');
+  await rejects(
+    trace(
+      'already-completed',
+      () =>
+        observeContractLoad(async () => {
+          markContractLoadModelEntry('Contract', 'findFirst', true);
+          const p = Promise.resolve(1);
+          strictEqual(
+            observeContractLoadSubmission(() => p),
+            p,
+          );
+          throw error;
+        }),
+      rows,
+    ),
+    (e) => e === error,
+  );
+  const count = rows.length;
+  await new Promise((r) => setImmediate(r));
+  assert.equal(rows.length, count);
+  assert.throws(() => proof(rows));
 });

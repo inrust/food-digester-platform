@@ -136,7 +136,7 @@ for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
                 phase_fields = ['gatewayRequestId', 'lambdaRequestId', 'operationId', 'phase', 'durationMs',
                                 'outcome', 'errorCode', 'startedAt', 'completedAt', 'coldStart', 'includesConnectionWait']
                 phase = {k: value[k] for k in phase_fields if k in value}
-                if value.get('completionBoundary') in ['DRIVER_DISPATCH', 'CALL_RETURNED', 'MODEL_EXTENSION_ENTERED', 'OPERATION_SETTLED', 'OPERATION_FAILED', 'PG_DISPATCH', 'PG_SETTLED']:
+                if value.get('completionBoundary') in ['DRIVER_DISPATCH', 'CALL_RETURNED', 'MODEL_EXTENSION_ENTERED', 'OPERATION_SETTLED', 'OPERATION_FAILED', 'PG_DISPATCH', 'PG_SETTLED', 'MICROTASK_CHECKPOINT']:
                     phase['completionBoundary'] = value['completionBoundary']
                 if value.get('processCpuScope') == 'PROCESS_ALL_THREADS':
                     phase['processCpuScope'] = 'PROCESS_ALL_THREADS'

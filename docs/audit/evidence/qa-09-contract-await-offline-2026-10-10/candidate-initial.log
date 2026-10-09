@@ -1,0 +1,102 @@
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ❯ apps/cloud-api/test/admin-contract-load-candidate.test.ts (12 tests | 8 failed) 786ms
+   × full PostgreSQL service semantics native=false 17ms
+   × audit failure rolls back business and preserves original error native=false 1ms
+   × full PostgreSQL service semantics native=true 3ms
+   × audit failure rolls back business and preserves original error native=true 1ms
+   × candidate handler retains role guard PlatformOperator 2ms
+   × candidate handler retains role guard Auditor 1ms
+   × default false delegates once; candidate rejects wrong pool/root before SQL 0ms
+   × native parameter binding, null, malformed rows and driver error have no ORM fallback/retry 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  apps/cloud-api/test/admin-contract-load-candidate.test.ts > full PostgreSQL service semantics native=false
+ FAIL  apps/cloud-api/test/admin-contract-load-candidate.test.ts > full PostgreSQL service semantics native=true
+TypeError: assert.rejects is not a function
+ ❯ apps/cloud-api/test/admin-contract-load-candidate.test.ts:19:18
+     17|     const view=await updateContract(deps,actor,{contractId:c.id,ifMatc…
+     18|     assert.equal(view.name,'after');assert.equal(view.version,2);asser…
+     19|     await assert.rejects(()=>updateContract(deps,actor,{contractId:c.i…
+       |                  ^
+     20|     assert.equal((await db.prisma.contract.findUniqueOrThrow({where:{i…
+     21|     assert.equal(await db.prisma.auditLog.count({where:{objectId:c.id,…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  apps/cloud-api/test/admin-contract-load-candidate.test.ts > audit failure rolls back business and preserves original error native=false
+ FAIL  apps/cloud-api/test/admin-contract-load-candidate.test.ts > audit failure rolls back business and preserves original error native=true
+TypeError: assert.rejects is not a function
+ ❯ apps/cloud-api/test/admin-contract-load-candidate.test.ts:34:18
+     32|     const c=await seed(), failure=Error('CONTROLLED_AUDIT_FAILURE');
+     33|     const client=db.prisma.$extends({query:{auditLog:{create({args,que…
+     34|     await assert.rejects(()=>updateContract({client:client as never,no…
+       |                  ^
+     35|     const current=await db.prisma.contract.findUniqueOrThrow({where:{i…
+     36|     assert.equal(current.version,1);assert.equal(current.name,'before'…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  apps/cloud-api/test/admin-contract-load-candidate.test.ts > candidate handler retains role guard PlatformOperator
+AssertionError: expected 403 to equal 200
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ apps/cloud-api/test/admin-contract-load-candidate.test.ts:46:10
+     44|   const response=await h.update({actor:a,headers:{'If-Match':'1'},requ…
+     45|   const allowed=['PlatformSuperAdmin','PlatformOperator'].includes(rol…
+     46|   assert.equal(response.status,allowed?200:role==='unauthenticated'?40…
+       |          ^
+     47|   assert.equal((await db.prisma.contract.findUniqueOrThrow({where:{id:…
+     48|   if(role==='Auditor') {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  apps/cloud-api/test/admin-contract-load-candidate.test.ts > candidate handler retains role guard Auditor
+TypeError: h.get is not a function
+ ❯ apps/cloud-api/test/admin-contract-load-candidate.test.ts:49:24
+     47|   assert.equal((await db.prisma.contract.findUniqueOrThrow({where:{id:…
+     48|   if(role==='Auditor') {
+     49|     const read=await h.get({actor:a,headers:{},requestId:'offline-read…
+       |                        ^
+     50|     assert.equal(read.status,200);assert.isNull((read.body as {data:{c…
+     51|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  apps/cloud-api/test/admin-contract-load-candidate.test.ts > default false delegates once; candidate rejects wrong pool/root before SQL
+TypeError: assert.rejects is not a function
+ ❯ apps/cloud-api/test/admin-contract-load-candidate.test.ts:58:20
+     56|   assert.isNull(await readContractForUpdate(tx as never,'text-id'));as…
+     57|   process.env.FDP_DB_POOL_MAX='2';
+     58|   try{await assert.rejects(()=>readContractForUpdate(tx as never,'text…
+       |                    ^
+     59|   await assert.rejects(()=>readContractForUpdate({...tx,$connect(){}} …
+     60|   assert.equal(query.mock.calls.length,0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  apps/cloud-api/test/admin-contract-load-candidate.test.ts > native parameter binding, null, malformed rows and driver error have no ORM fallback/retry
+TypeError: assert.rejects is not a function
+ ❯ apps/cloud-api/test/admin-contract-load-candidate.test.ts:69:23
+     67|     if(Array.isArray(value)&&value.length===0)assert.isNull(await read…
+     68|     else if(value?.[0]===good&&value.length===1)assert.strictEqual(awa…
+     69|     else await assert.rejects(()=>readContractForUpdate(tx as never,id…
+       |                       ^
+     70|     assert.equal(query.mock.calls.length,1);assert.equal(findFirst.moc…
+     71|     const [strings,boundId]=query.mock.calls[0]!;assert.equal(boundId,…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  8 failed | 16 passed (24)
+   Start at  07:29:07
+   Duration  1.06s (transform 158ms, setup 17ms, import 235ms, tests 792ms, environment 0ms)
+

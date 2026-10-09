@@ -190,6 +190,7 @@ export function readMatchedColdUnit(manifestFile) {
     authenticatedPreconnect: true,
     contractLoadSplit: manifest.requireContractLoadSplit === true,
     contractLoadDetail: manifest.requireContractLoadDetail === true,
+    contractAwaitCheckpoint: manifest.requireContractAwaitCheckpoint === true,
   });
   const inputs = manifest.inputs;
   if (manifest.requireContractLoadDetail === true) {

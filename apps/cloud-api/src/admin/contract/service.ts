@@ -16,6 +16,8 @@
 import { observeDataPathPhase } from '@fdp/observability';
 import type { DbClient } from '@fdp/database';
 import { audited, observeContractLoad } from '@fdp/database';
+import { readContractForUpdate } from './load-candidate.js';
+import type { ContractUpdateReadRow } from './load-candidate.js';
 import {
   assertContractActivatable,
   assertContractEditable,
@@ -32,6 +34,8 @@ import { contractConflict, contractNotFound, contractValidationFailed, contractV
 export interface ContractDeps {
   readonly client: DbClient;
   readonly now?: () => Date;
+  /** Offline/service-only candidate. Runtime deployment remains unwired/default off. */
+  readonly contractReadCandidate?: boolean;
 }
 
 export interface ContractView {
@@ -53,20 +57,7 @@ export interface ContractView {
   readonly updatedAt: string;
 }
 
-interface ContractRow {
-  readonly id: string;
-  readonly contractNumber: string;
-  readonly name: string;
-  readonly customerId: string;
-  readonly contact: string | null;
-  readonly startAt: Date;
-  readonly endAt: Date;
-  readonly status: string;
-  readonly version: number;
-  readonly createdBy: string;
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
-}
+type ContractRow = ContractUpdateReadRow;
 
 interface ContractDelegate {
   findFirst(args: Record<string, unknown>): Promise<ContractRow | null>;
@@ -110,8 +101,11 @@ function toView(row: ContractRow, at: Date, actor: ActorContext): ContractView {
   };
 }
 
-async function loadContract(client: DbClient, contractId: string): Promise<ContractRow> {
-  const row = await contracts(client).findFirst({ where: { id: contractId } });
+async function loadContract(client: DbClient, contractId: string, candidate = false): Promise<ContractRow> {
+  const row =
+    candidate === true
+      ? await readContractForUpdate(client, contractId, true)
+      : await contracts(client).findFirst({ where: { id: contractId } });
   if (!row) throw contractNotFound();
   return row;
 }
@@ -248,7 +242,7 @@ export async function updateContract(
       afterValue: (result: unknown) => auditSnapshot(result as ContractView),
     },
     async (tx) => {
-      const current = await observeContractLoad(() => loadContract(tx, input.contractId));
+      const current = await observeContractLoad(() => loadContract(tx, input.contractId, deps.contractReadCandidate));
       assertContractEditable(current.status as ContractStatus, {
         touchesStartAt: input.startAt !== undefined,
         touchesEndAt: input.endAt !== undefined,

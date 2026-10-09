@@ -1,0 +1,498 @@
+{
+  "gate": "PASS",
+  "scope": "OFFLINE_MICROTASK_BOUNDARIES_REPLACEMENT_READ_AND_DOWNSTREAM_COST",
+  "runtime": {
+    "node": "v24.12.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "budget": {
+    "childProcesses": 11,
+    "concurrency": 1,
+    "childDeadlineMs": 45000,
+    "poolMax": 1,
+    "networkRequests": 0,
+    "databaseServers": 0,
+    "targetFixtures": 0
+  },
+  "inputs": [
+    {
+      "path": "scripts/run-qa09-contract-await-offline.mjs",
+      "sha256": "48295012a7cd651d8b5130509333cf0f00b2600b1f04a232f91a6464845e0246"
+    },
+    {
+      "path": "scripts/qa09-contract-load-detail-proof.mjs",
+      "sha256": "4068b83c3958987b0600e3b002b9993581db055047042dc396ac73973b085a77"
+    },
+    {
+      "path": "packages/database/test/contract-await-offline.test.ts",
+      "sha256": "39a0c39c2eb8cf3c77db6be913bd6a49f6cf597c8faae63ac15a6621cad8cd00"
+    },
+    {
+      "path": "apps/cloud-api/src/admin/contract/load-candidate.ts",
+      "sha256": "b993341ef1d7df7108da9cc24ddfd77b466722e6e5456deb6ae60a30a5c4da70"
+    },
+    {
+      "path": "apps/cloud-api/src/admin/contract/service.ts",
+      "sha256": "39425277daa1201d7e811941ea2828988187e9432944736fa50bb3cdceea81f3"
+    },
+    {
+      "path": "packages/database/src/client.ts",
+      "sha256": "043a0e7eec97794c622332b0831e71001ae64372099116c8a2742aa00b09054c"
+    },
+    {
+      "path": "packages/database/src/observed-pg.ts",
+      "sha256": "741ec38a5e3d4a267f39523b634d28e51b6c5573769e8ac3244afe94834085c2"
+    },
+    {
+      "path": "packages/database/src/contract-load-observation.ts",
+      "sha256": "dbb4f0c8fc0bf0085e5764241e7ee0e75da259eda70568f4b34237b0d18b03dd"
+    },
+    {
+      "path": "packages/observability/src/data-path.ts",
+      "sha256": "9a9ca57cfe92792de5a53b6ab52cbf54eb27d16874670d83a494c4f7cb1a8384"
+    },
+    {
+      "path": "packages/database/prisma/schema.prisma",
+      "sha256": "fd3e5b59670fe300db0406e295eaf9d9022bb5108210d24cd22c19dcf1c19d73"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2126f03557c343bc7fc90b12e060f663492a67b647e0892bb18dba126a7f3364"
+    },
+    {
+      "path": "node_modules/@prisma/adapter-pg/dist/index.mjs",
+      "sha256": "e6879b3429f9efade5696321da768476fd4710f2aff7de95c01cca15d6a8d1d1"
+    }
+  ],
+  "rows": [
+    {
+      "case": "orm-zero",
+      "receipt": "orm-zero.json",
+      "sha256": "8fe6d2aa71b915dd29969a466d0ab79105b0b686388b66f7c8481a3dbc001f7f",
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 23.898,
+            "update": 3.592,
+            "readback": 0.306,
+            "audit": 1.745
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 22
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 0.323,
+            "update": 0.185,
+            "readback": 0.146,
+            "audit": 0.197
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 0.285,
+            "update": 0.186,
+            "readback": 0.134,
+            "audit": 0.156
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "native-zero",
+      "receipt": "native-zero.json",
+      "sha256": "415d56cf0fa5d1602a0a5d454c6bf94bd8813c0da97e7fa39ae5261f01983555",
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 1.195,
+            "update": 15.557,
+            "readback": 4.626,
+            "audit": 1.933
+          },
+          "checkpoint": null
+        },
+        {
+          "index": 1,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 0.314,
+            "update": 0.236,
+            "readback": 0.196,
+            "audit": 0.199
+          },
+          "checkpoint": null
+        },
+        {
+          "index": 2,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 0.261,
+            "update": 0.161,
+            "readback": 0.149,
+            "audit": 0.476
+          },
+          "checkpoint": null
+        }
+      ]
+    },
+    {
+      "case": "orm-wait",
+      "receipt": "orm-wait.json",
+      "sha256": "89950db14bfef6ac7285b232abae66665e2c8361ca9a43fd770dea5f0c759731",
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 48.759,
+            "update": 3.203,
+            "readback": 0.252,
+            "audit": 1.645
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 16
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 31.581,
+            "update": 0.331,
+            "readback": 0.192,
+            "audit": 0.248
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 31.778,
+            "update": 0.297,
+            "readback": 0.144,
+            "audit": 0.176
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "native-wait",
+      "receipt": "native-wait.json",
+      "sha256": "e215f577166bae424b020e27c68d7a51e706c73e60e6ae4d787ca34d92186a67",
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 32.93,
+            "update": 16.03,
+            "readback": 4.449,
+            "audit": 1.638
+          },
+          "checkpoint": null
+        },
+        {
+          "index": 1,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 31.828,
+            "update": 0.307,
+            "readback": 0.221,
+            "audit": 0.203
+          },
+          "checkpoint": null
+        },
+        {
+          "index": 2,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 32.047,
+            "update": 0.303,
+            "readback": 0.157,
+            "audit": 0.171
+          },
+          "checkpoint": null
+        }
+      ]
+    },
+    {
+      "case": "orm-result",
+      "receipt": "orm-result.json",
+      "sha256": "a8f4a0dc34048e78e35bfc70813ebe6032234e115e584e399e621ab6c97b9673",
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 39.877,
+            "update": 3.237,
+            "readback": 0.241,
+            "audit": 1.648
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 18
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.356,
+            "update": 0.207,
+            "readback": 0.144,
+            "audit": 0.182
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.427,
+            "update": 0.338,
+            "readback": 0.16,
+            "audit": 0.182
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "native-result",
+      "receipt": "native-result.json",
+      "sha256": "848d1216fbea7d21e368ba0bb6bb2d2e73b298477269053b9b82512bd96754d9",
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 23.18,
+            "update": 16.751,
+            "readback": 4.612,
+            "audit": 1.667
+          },
+          "checkpoint": null
+        },
+        {
+          "index": 1,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.361,
+            "update": 0.3,
+            "readback": 0.217,
+            "audit": 0.192
+          },
+          "checkpoint": null
+        },
+        {
+          "index": 2,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.328,
+            "update": 0.299,
+            "readback": 0.173,
+            "audit": 0.162
+          },
+          "checkpoint": null
+        }
+      ]
+    },
+    {
+      "case": "orm-reject",
+      "receipt": "orm-reject.json",
+      "sha256": "e0f5b635da10ae62c56874a53ec5decfc7584a9dc7747a622775f7c5b5a351ae",
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 20.029
+          },
+          "checkpoint": null
+        }
+      ]
+    },
+    {
+      "case": "native-reject",
+      "receipt": "native-reject.json",
+      "sha256": "edbecbd746b0ed94ad99a9cd6e22f49a266ed1cb65d57762e58560189aae40fb",
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 2.513
+          },
+          "checkpoint": null
+        }
+      ]
+    },
+    {
+      "case": "native-invalid",
+      "receipt": "native-invalid.json",
+      "sha256": "3adbac0dd9a37abf62ef3bcd50341dbcd789a2a0dc98babc426e313a520e9773",
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 1.153
+          },
+          "checkpoint": null
+        }
+      ]
+    },
+    {
+      "case": "native-update-reject",
+      "receipt": "native-update-reject.json",
+      "sha256": "064cbba0a8d1e0c061b71bdfabee8ac4186400cb11dbc1750643996b806ea673",
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 1.193,
+            "update": 17.955
+          },
+          "checkpoint": null
+        }
+      ]
+    },
+    {
+      "case": "native-audit-reject",
+      "receipt": "native-audit-reject.json",
+      "sha256": "0653d81a45a51d16f95c8e4139118d53dfda713d7ebcee2132fe7e2f553890c2",
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 1.105,
+            "update": 14.984,
+            "readback": 4.275,
+            "audit": 4.125
+          },
+          "checkpoint": null
+        }
+      ]
+    }
+  ],
+  "targetEquivalent": false,
+  "modelCostShift": "OBSERVATIONS_ONLY_NOT_TARGET_CAUSALITY",
+  "compilerOnlyAttribution": false,
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}

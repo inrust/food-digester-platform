@@ -1,6 +1,6 @@
 import { validateClientSplitPhases } from './qa09-client-split-proof.mjs';
 import { validateContractLoadSplit } from './qa09-contract-load-proof.mjs';
-import { validateContractLoadDetail } from './qa09-contract-load-detail-proof.mjs';
+import { validateContractLoadDetail, validateContractAwaitCheckpoint } from './qa09-contract-load-detail-proof.mjs';
 import { validateAuthenticatedPreconnectPhases } from './qa09-authenticated-preconnect-proof.mjs';
 import { validateRuntimeAssemblyPhases } from './qa09-runtime-assembly-proof.mjs';
 import { validateSamplingCorrelationLedger } from './qa09-cold409-proof.mjs';
@@ -25,8 +25,10 @@ export function validatePhaseCorrelation(
     authenticatedPreconnect = false,
     contractLoadSplit = false,
     contractLoadDetail = false,
+    contractAwaitCheckpoint = false,
   } = {},
 ) {
+  demand(!contractAwaitCheckpoint || contractLoadDetail, 'AWAIT_REQUIRES_DETAIL');
   demand(!authenticatedPreconnect || (engineCpu && runtimeAssembly), 'PRECONNECT_REQUIRES_ENGINE_RUNTIME_PHASES');
   demand(!clientSplit || clientPreparation, 'CLIENT_SPLIT_REQUIRES_PREPARATION');
   demand(!engineCpu || clientPreparation, 'ENGINE_CPU_REQUIRES_CLIENT_PREPARATION');
@@ -238,6 +240,7 @@ export function validatePhaseCorrelation(
         phase('contract-load');
         validateContractLoadSplit(phases, c.contractLoadOwnership, contractLoadSplit);
         validateContractLoadDetail(phases, c.contractLoadOwnership, contractLoadDetail);
+        validateContractAwaitCheckpoint(phases, c.contractLoadOwnership, contractAwaitCheckpoint);
         for (const name of [
           'contract-version-update',
           'db-transaction-callback',
@@ -302,6 +305,7 @@ export function validatePhaseCorrelation(
     clientSplitRequired: clientSplit,
     contractLoadSplitRequired: contractLoadSplit,
     contractLoadDetailRequired: contractLoadDetail,
+    contractAwaitCheckpointRequired: contractAwaitCheckpoint,
     engineCpuRequired: engineCpu,
     authenticatedPreconnectRequired: authenticatedPreconnect,
     runtimeAssemblyRequired: runtimeAssembly,
@@ -329,6 +333,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     clientSplit: process.argv.slice(6).includes('--client-split'),
     contractLoadSplit: process.argv.slice(6).includes('--contract-load-split'),
     contractLoadDetail: process.argv.slice(6).includes('--contract-load-detail'),
+    contractAwaitCheckpoint: process.argv.slice(6).includes('--contract-await-checkpoint'),
     accountPhases: process.argv.slice(6).includes('--account-phases'),
     requireColdConflict: process.argv.slice(6).includes('--require-cold-conflict'),
   });

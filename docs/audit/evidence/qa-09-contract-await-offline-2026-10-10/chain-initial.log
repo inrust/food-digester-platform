@@ -1,0 +1,45 @@
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ❯ packages/database/test/contract-await-offline.test.ts (11 tests | 7 failed) 358ms
+   × bounded contract await chain native-zero 13ms
+   × bounded contract await chain native-wait 40ms
+   × bounded contract await chain native-result 26ms
+   × bounded contract await chain native-reject 5ms
+   × bounded contract await chain native-invalid 5ms
+   × bounded contract await chain native-update-reject 5ms
+   × bounded contract await chain native-audit-reject 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/database/test/contract-await-offline.test.ts > bounded contract await chain native-zero
+ FAIL  packages/database/test/contract-await-offline.test.ts > bounded contract await chain native-wait
+ FAIL  packages/database/test/contract-await-offline.test.ts > bounded contract await chain native-result
+ FAIL  packages/database/test/contract-await-offline.test.ts > bounded contract await chain native-reject
+ FAIL  packages/database/test/contract-await-offline.test.ts > bounded contract await chain native-invalid
+ FAIL  packages/database/test/contract-await-offline.test.ts > bounded contract await chain native-update-reject
+ FAIL  packages/database/test/contract-await-offline.test.ts > bounded contract await chain native-audit-reject
+AssertionError: expected undefined to equal true
+
+- Expected:
+true
+
++ Received:
+undefined
+
+ ❯ packages/database/test/contract-await-offline.test.ts:98:16
+     96|         assert.equal(ownership[0].modelEntries, 0); // Native query mu…
+     97|         assert.equal(ownership[0].driverDispatches, 1);
+     98|         assert.equal(ownership[0].transactionalDriver, true);
+       |                ^
+     99|         assert.isFalse(phases.some(r => r.phase === 'contract-load-orm…
+    100|         assert.throws(() => validateContractAwaitCheckpoint(phases, ow…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 4 passed (11)
+   Start at  07:27:30
+   Duration  524ms (transform 73ms, setup 8ms, import 103ms, tests 358ms, environment 0ms)
+

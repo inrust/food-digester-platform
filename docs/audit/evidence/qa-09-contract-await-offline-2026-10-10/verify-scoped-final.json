@@ -1,0 +1,52 @@
+{
+  "scope": "FULL_VERIFY_EQUIVALENT_EXCEPT_UNRELATED_UNTRACKED_BUILD_LINT_FORMAT",
+  "excluded": "build/",
+  "originalVerify": "verify-initial.log",
+  "prettierIgnore": "node_modules/\ndist/\n.turbo/\ncoverage/\ncdk.out/\npnpm-lock.yaml\ndocs/\n# 生成文件：格式由 scripts/generate-payload-types.mjs 决定，新鲜度由契约测试保证\ncontracts/mqtt/payloads.ts\n# 生成文件：格式与内容由 scripts/build-openapi.mjs 决定，新鲜度由 openapi:check 保证\ncontracts/rest/openapi.bundle.json\n# Prisma 生成的 Client\npackages/database/src/generated/\n# 该文件按设计使用 YAML 1.2 的 JSON 语法子集（零依赖 JSON.parse），禁止按 YAML 重排\ncontracts/prototype-traceability.yaml\n\n# Exclude pre-existing user untracked build artifacts\nbuild/\n",
+  "commands": [
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "eslint",
+        ".",
+        "--ignore-pattern",
+        "build/**"
+      ],
+      "exit": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "prettier",
+        "--check",
+        ".",
+        "!build/**"
+      ],
+      "exit": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "typecheck"
+      ],
+      "exit": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "openapi:check"
+      ],
+      "exit": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "test"
+      ],
+      "exit": 1
+    }
+  ],
+  "gate": "FAIL"
+}

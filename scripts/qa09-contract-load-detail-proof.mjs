@@ -82,3 +82,62 @@ export function validateContractLoadDetail(phases, ownership = [], required = fa
     p95Accepted: false,
   };
 }
+
+/** A scheduled microtask is a public queue boundary, never a compiler or event-loop-only attribution. */
+export function validateContractAwaitCheckpoint(phases, ownership = [], required = false) {
+  const names = ['contract-load-await-queue', 'contract-load-await-after-queue'];
+  if (!phases.some((p) => names.includes(p.phase))) {
+    demand(!required, 'CONTRACT_AWAIT_CHECKPOINT_REQUIRED');
+    return null;
+  }
+  validateContractLoadDetail(phases, ownership, true);
+  const parent = phases.find((p) => p.phase === 'contract-load-orm-await');
+  let cursor = Date.parse(parent.startedAt),
+    total = 0;
+  const end = Date.parse(parent.completedAt),
+    windowsMs = {};
+  for (const [i, name] of names.entries()) {
+    const rows = phases.filter((p) => p.phase === name);
+    demand(rows.length === 1, 'CONTRACT_AWAIT_CHECKPOINT_UNIQUE');
+    const p = rows[0],
+      start = Date.parse(p.startedAt),
+      stop = Date.parse(p.completedAt);
+    demand(
+      ['gatewayRequestId', 'lambdaRequestId', 'operationId'].every((k) => p[k] === parent[k]),
+      'CONTRACT_AWAIT_CHECKPOINT_IDS',
+    );
+    demand(
+      p.outcome === 'PASS' &&
+        p.errorCode === 'NONE' &&
+        p.completionBoundary === (i ? 'DRIVER_DISPATCH' : 'MICROTASK_CHECKPOINT'),
+      'CONTRACT_AWAIT_CHECKPOINT_BOUNDARY',
+    );
+    demand(
+      p.processCpuScope === 'PROCESS_ALL_THREADS' &&
+        p.includesConnectionWait === false &&
+        ['durationMs', 'processCpuUserUs', 'processCpuSystemUs'].every((k) => Number.isSafeInteger(p[k]) && p[k] >= 0),
+      'CONTRACT_AWAIT_CHECKPOINT_CPU',
+    );
+    demand(
+      Number.isFinite(start) &&
+        Number.isFinite(stop) &&
+        start >= cursor &&
+        start - cursor <= 5 &&
+        stop >= start &&
+        stop <= end &&
+        Math.abs(stop - start - p.durationMs) <= 5,
+      'CONTRACT_AWAIT_CHECKPOINT_ORDER',
+    );
+    total += p.durationMs;
+    cursor = stop;
+    windowsMs[name] = p.durationMs;
+  }
+  demand(end - cursor <= 5 && Math.abs(total - parent.durationMs) <= 5, 'CONTRACT_AWAIT_CHECKPOINT_COVERAGE');
+  return {
+    gate: 'PASS',
+    windowsMs,
+    scope: 'PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY',
+    compilerOnlyAttribution: false,
+    p95Accepted: false,
+  };
+}
