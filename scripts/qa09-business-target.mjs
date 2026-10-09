@@ -1,3 +1,8 @@
+import {
+  createOperationObserver,
+  safeOperationError,
+  cleanupIdentityOperations,
+} from './qa09-operation-observation.mjs';
 import { observeTargetHttp } from './qa09-http-observation.mjs';
 import { runWriteBoundaryProbes } from './qa09-write-boundary-probes.mjs';
 import { runPerformanceProbes } from './qa09-performance-probes.mjs';
@@ -49,6 +54,10 @@ export function validateTargetStage(r, stage, required) {
 }
 const EXECUTED_BUSINESS_SOURCES = [
   'scripts/qa09-business-target.mjs',
+  'scripts/qa09-operation-observation.mjs',
+  'scripts/qa09-ten-device-bridge.mjs',
+  'scripts/qa09-started-build-read.mjs',
+  'scripts/qa09-db-frame-wait.mjs',
   'scripts/qa09-http-observation.mjs',
   'scripts/qa09-https-transport.mjs',
   'packages/database/src/authenticated-preconnect.ts',
@@ -117,6 +126,7 @@ export async function runBusinessTarget(
     checks: [],
     stages: {},
     cleanup: [],
+    cleanupOperations: [],
     databaseBuilds: [],
     createdIdentities: [],
     createdSites: [],
@@ -138,6 +148,7 @@ export async function runBusinessTarget(
   }
   const save = () => writeFileSync(output, JSON.stringify(r, null, 2) + '\n');
   save();
+  const observeCleanup = createOperationObserver(r.cleanupOperations, save);
   let stage = 'core';
   const check = (id, ok, data = {}) => {
     r.checks.push({ id, stage, result: ok ? 'PASS' : 'FAIL', ...data });
@@ -152,7 +163,10 @@ export async function runBusinessTarget(
     semanticExports = [];
   const idp = createCognitoIdpClient({ region: 'ap-southeast-1', clientId });
   r.createdSemanticExports = semanticExports;
-  const call = (Cmd, input) => ctx.cognito.send(new Cmd(input), { abortSignal: AbortSignal.timeout(30000) });
+  const call = (Cmd, input) => {
+    const run = () => ctx.cognito.send(new Cmd(input), { abortSignal: AbortSignal.timeout(30000) });
+    return stage === 'cleanup' ? observeCleanup('cognito:' + Cmd.name, run) : run();
+  };
   const renewals = new Map();
   async function ensureSession(role) {
     if (!role) return;
@@ -177,6 +191,10 @@ export async function runBusinessTarget(
     await renewals.get(role);
   }
   async function api(id, role, method, path, expected, body, headers = {}) {
+    const run = () => executeApi(id, role, method, path, expected, body, headers);
+    return stage === 'cleanup' ? observeCleanup('http:' + id, run) : run();
+  }
+  async function executeApi(id, role, method, path, expected, body, headers = {}) {
     await ensureSession(role);
     const { data, observation } = await observeTargetHttp({
       url: host + path,
@@ -209,21 +227,33 @@ export async function runBusinessTarget(
   }
   async function db(action, businessBaseline, extra = {}) {
     const path = output + `.${action}-${r.databaseBuilds.length}.json`;
-    const result = await runFixture(
-      {
-        prefix,
-        devices,
-        customers,
-        action,
-        semanticExportIds: [...exportIds, ...semanticExports.filter((x) => x.kind === 'esg').map((x) => x.id)],
-        baseline: ctx.baseline,
-        ...extra,
-        ...(businessBaseline ? { businessBaseline } : {}),
-      },
-      path,
-      (p) => console.log(p),
-    );
-    r.databaseBuilds.push({ action, receipt: path, buildId: result.build.id });
+    const run = () =>
+      runFixture(
+        {
+          prefix,
+          devices,
+          customers,
+          action,
+          semanticExportIds: [...exportIds, ...semanticExports.filter((x) => x.kind === 'esg').map((x) => x.id)],
+          baseline: ctx.baseline,
+          ...extra,
+          ...(businessBaseline ? { businessBaseline } : {}),
+        },
+        path,
+        (p) => console.log(p),
+      );
+    // Persist the exact receipt path before launch, including failed/started Builds.
+    r.databaseBuilds.push({ action, receipt: path, gate: 'RUNNING' });
+    save();
+    let result;
+    try {
+      result = await (stage === 'cleanup' ? observeCleanup('database:' + action, run) : run());
+    } catch (error) {
+      Object.assign(r.databaseBuilds.at(-1), { gate: 'FAIL', failure: safeOperationError(error) });
+      save();
+      throw error;
+    }
+    Object.assign(r.databaseBuilds.at(-1), { buildId: result.build.id, gate: result.gate });
     save();
     return result.result;
   }
@@ -1025,7 +1055,7 @@ export async function runBusinessTarget(
   save();
   try {
     stage = 'cleanup';
-    sessions.set('PlatformSuperAdmin', await ctx.refreshIdentity());
+    sessions.set('PlatformSuperAdmin', await observeCleanup('identity:refresh', () => ctx.refreshIdentity()));
     for (const c of r.remaining?.extraCustomers ?? []) {
       if (!/^[a-f0-9-]{36}$/.test(c.id) || !c.name?.startsWith(prefix + '-extra-'))
         throw Error('EXTRA_CUSTOMER_SCOPE_DRIFT');
@@ -1042,19 +1072,23 @@ export async function runBusinessTarget(
       save();
     }
     const s3 = new s3Sdk.S3Client({ region: 'ap-southeast-1', credentials: ctx.credentials, maxAttempts: 1 });
+    const send = (command) =>
+      observeCleanup('s3:' + command.constructor.name, () =>
+        s3.send(command, { abortSignal: AbortSignal.timeout(30000) }),
+      );
     for (const { id, kind } of [...exportIds.map((id) => ({ id, kind: 'esg' })), ...semanticExports]) {
       if (!/^[a-f0-9-]{36}$/.test(id)) throw Error('EXPORT_CLEANUP_SCOPE_DRIFT');
       if (!['esg', 'activity'].includes(kind)) throw Error('EXPORT_CLEANUP_SCOPE_DRIFT');
       const key = `${kind}-exports/${id}.csv`;
-      const versions = await s3.send(
+      const versions = await send(
         new s3Sdk.ListObjectVersionsCommand({ Bucket: 'fdp-test-export-065986019555', Prefix: key }),
       );
       if (versions.IsTruncated) throw Error('EXPORT_VERSION_PAGE_LIMIT');
       for (const v of [...(versions.Versions ?? []), ...(versions.DeleteMarkers ?? [])].filter((v) => v.Key === key))
-        await s3.send(
+        await send(
           new s3Sdk.DeleteObjectCommand({ Bucket: 'fdp-test-export-065986019555', Key: key, VersionId: v.VersionId }),
         );
-      const remaining = await s3.send(
+      const remaining = await send(
         new s3Sdk.ListObjectVersionsCommand({ Bucket: 'fdp-test-export-065986019555', Prefix: key }),
       );
       if (
@@ -1088,38 +1122,30 @@ export async function runBusinessTarget(
       save();
     }
   } catch (e) {
-    r.cleanupFailure = {
-      code: e.code ?? (/^[\w:-]{1,150}$/.test(e.message) ? e.message : 'BUSINESS_CLEANUP_FAILED'),
-      errorName: e.name,
-      causeCode: e.cause?.code,
-    };
+    r.cleanupFailure = safeOperationError(e);
     r.cleanup.push({ type: 'business-fixtures', result: 'FAIL' });
     save();
   }
   for (const own of created.reverse()) {
-    try {
-      const session = sessions.get(own.role);
-      let globalSignOut = 'NOT_RUN';
-      if (session) {
-        try {
-          await idp.globalSignOut(session.accessToken);
-          globalSignOut = 'PASS';
-        } catch {
-          globalSignOut = 'FAIL';
-        }
-      }
-      await call(cognitoSdk.AdminDeleteUserCommand, { UserPoolId: pool, Username: own.username });
-      let absent = false;
-      try {
-        await call(cognitoSdk.AdminGetUserCommand, { UserPoolId: pool, Username: own.username });
-      } catch (e) {
-        absent = e.name === 'UserNotFoundException';
-      }
-      if (!absent) throw Error('IDENTITY_CLEANUP_NOT_CONFIRMED');
-      r.cleanup.push({ type: 'cognito', username: own.username, result: 'PASS', globalSignOut });
-    } catch {
-      r.cleanup.push({ type: 'cognito', username: own.username, result: 'FAIL' });
-    }
+    const session = sessions.get(own.role);
+    const result = await cleanupIdentityOperations(observeCleanup, {
+      globalSignOut: () =>
+        session
+          ? idp.globalSignOut(session.accessToken)
+          : ctx.cognito.send(
+              new cognitoSdk.AdminUserGlobalSignOutCommand({ UserPoolId: pool, Username: own.username }),
+              { abortSignal: AbortSignal.timeout(30000) },
+            ),
+      deleteUser: () =>
+        ctx.cognito.send(new cognitoSdk.AdminDeleteUserCommand({ UserPoolId: pool, Username: own.username }), {
+          abortSignal: AbortSignal.timeout(30000),
+        }),
+      getUser: () =>
+        ctx.cognito.send(new cognitoSdk.AdminGetUserCommand({ UserPoolId: pool, Username: own.username }), {
+          abortSignal: AbortSignal.timeout(30000),
+        }),
+    });
+    r.cleanup.push({ type: 'cognito', username: own.username, ...result });
     save();
   }
   sessions.clear();

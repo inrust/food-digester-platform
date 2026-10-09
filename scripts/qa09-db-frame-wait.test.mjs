@@ -15,7 +15,8 @@ test('completed Build result tolerates delayed/truncated CloudWatch visibility a
   const result = await readVerifiedFixtureFrame(
     async () => {
       reads++;
-      if (reads === 1) throw Object.assign(Error('AWS_OPERATION_FAILED'), { code: 'AWS_get-log-events_CLI_FAILED' });
+      if (reads === 1)
+        throw Object.assign(Error('AWS_OPERATION_FAILED'), { code: 'AWS_get-log-events_CLI_NETWORK_ERROR' });
       if (reads === 2) return { events: [] };
       if (reads === 3) return { events: [{ message: JSON.stringify(frame).slice(0, 80) }] };
       return logs(frame);

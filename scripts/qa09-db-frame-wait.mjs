@@ -1,3 +1,4 @@
+import { transientFixtureRead, safeOperationError } from './qa09-operation-observation.mjs';
 import { decodeFixtureFrames } from './qa09-db-log-frames.mjs';
 export async function readVerifiedFixtureFrame(
   read,
@@ -29,13 +30,9 @@ export async function readVerifiedFixtureFrame(
         return { frame: frames[0], observations };
       }
     } catch (e) {
-      const code = e.code ?? e.message;
-      if (
-        e.message !== 'FIXTURE_FRAME_TRUNCATED' &&
-        !/(CLI_FAILED|CLI_READ_TIMEOUT|Throttl|RequestTimeout|ServiceUnavailable|NetworkingError)/.test(code)
-      )
-        throw e;
-      observations.push({ attempt, errorCode: code });
+      const code = safeOperationError(e).code;
+      if (e.message !== 'FIXTURE_FRAME_TRUNCATED' && !transientFixtureRead(e)) throw e;
+      observations.push({ attempt, errorCode: code, failure: safeOperationError(e) });
     }
     if (attempt < maxAttempts && now() - started < timeoutMs) await pause(2000);
   }

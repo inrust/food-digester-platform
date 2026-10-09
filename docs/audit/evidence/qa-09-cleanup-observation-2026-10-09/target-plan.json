@@ -1,0 +1,53 @@
+{
+  "gate": "PREPARED_ONLY",
+  "targetGate": "NOT_RUN",
+  "sourceCommit": null,
+  "sourceCommitRequirement": "NEW_IMPLEMENTATION_SHA_MUST_BE_HUMAN_PUSHED_THEN_CI_DEPLOY_AMPLIFY_19_ARTIFACTS_VERIFIED",
+  "stages": [
+    "R0",
+    "CLEANUP_AND_INDEPENDENT_EMPTY",
+    "R1",
+    "CLEANUP_AND_INDEPENDENT_EMPTY",
+    "DEFAULT_OFF_RESTORE"
+  ],
+  "inputs": {
+    "r0": {
+      "engineCpuDiagnosis": true,
+      "authenticatedPreconnect": true,
+      "accountReadCandidate": false,
+      "contractLoadDetail": true
+    },
+    "r1": {
+      "engineCpuDiagnosis": true,
+      "authenticatedPreconnect": true,
+      "accountReadCandidate": true,
+      "contractLoadDetail": true
+    },
+    "restore": {
+      "engineCpuDiagnosis": true,
+      "authenticatedPreconnect": false,
+      "accountReadCandidate": false,
+      "contractLoadDetail": false
+    }
+  },
+  "budget": {
+    "poolMax": 1,
+    "apiReservedConcurrency": 12,
+    "apiMemoryMiB": 512,
+    "architecture": "arm64",
+    "runtime": "nodejs24.x",
+    "staticConnections": 63,
+    "usableConnections": 70,
+    "maxBusinessConcurrency": 6,
+    "baselinePatch": 6,
+    "baselineAuditGet": 19,
+    "independentPatchMax": 12,
+    "independentAuditGetMax": 18,
+    "negativeGet": 12
+  },
+  "failureRule": "ORIGINAL_UNIT_FAIL_BLOCKS_R1_EXACT_CLEANUP_THEN_RESTORE_PRESERVE_ORIGINALS",
+  "noPermissionChanges": true,
+  "newBusinessFixturesStarted": 0,
+  "fullQa09Accepted": false,
+  "p95Accepted": false
+}

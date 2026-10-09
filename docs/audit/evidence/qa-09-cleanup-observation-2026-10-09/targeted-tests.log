@@ -1,0 +1,48 @@
+✔ read recovery preserves original timeout, reads only one started ID and never replays a mutation (14.538083ms)
+✔ known authorization, expired SSO, invalid JSON and unknown failures never retry (26.644625ms)
+✔ two read recoveries are the global bound, repeated timeout remains FAIL (6.439959ms)
+✔ started Build waiting is bounded by polls and elapsed time; non-success terminal status never admits cleanup (6.4305ms)
+✔ every cloud ownership field and raw Plan is required before reading results (6.465375ms)
+✔ CLI failure records exit/signal/timing, classifies recognized errors and stores no stderr or credentials (0.775084ms)
+✔ cleanup observer persists each success/failure and preserves failure identity without raw message, stack or input (0.261ms)
+✖ sign-out failure still deletes and verifies own identity, retains failure and cannot admit cleanup PASS (0.10125ms)
+✖ only UserNotFound proves absence, failed delete is retained, and surviving identity fails closed (0.082167ms)
+✔ completed Build result tolerates delayed/truncated CloudWatch visibility and transient read failure without rerunning SQL (0.709375ms)
+✔ wrong/multiple/failed frames and AccessDenied reject immediately, absent result fails closed after bounded reads (0.460042ms)
+✔ expired SSO is a terminal authentication condition, never a transient log retry (0.079333ms)
+✔ pre-start rejection is persisted and never retried; no started receipt or SQL is invented (379.988ms)
+✔ post-start authorization rejection retains exact Build receipt and failed read with no restart (415.11675ms)
+✔ terminal failed Build remains FAIL, is known terminal and never reads successful frame (421.03275ms)
+✔ in-budget transient read recovers the same Build, retains original FAIL and runs mutation once (2506.791209ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 14
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3784.604709
+
+✖ failing tests:
+
+test at scripts/qa09-cleanup-recovery.test.mjs:253:1
+✖ sign-out failure still deletes and verifies own identity, retains failure and cannot admit cleanup PASS (0.10125ms)
+  ReferenceError: cleanupIdentityOperations is not defined
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-cleanup-recovery.test.mjs:259:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at scripts/qa09-cleanup-recovery.test.mjs:281:1
+✖ only UserNotFound proves absence, failed delete is retained, and surviving identity fails closed (0.082167ms)
+  ReferenceError: cleanupIdentityOperations is not defined
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-cleanup-recovery.test.mjs:284:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)

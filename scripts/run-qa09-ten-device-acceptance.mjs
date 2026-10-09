@@ -1,3 +1,8 @@
+import {
+  createOperationObserver,
+  safeOperationError,
+  cleanupIdentityOperations,
+} from './qa09-operation-observation.mjs';
 import { seedCleanupAction } from './qa09-seed-recovery.mjs';
 import { qa09VersionInputs } from './qa09-version-inputs.mjs';
 import { callOwnS3Cli } from './qa09-own-s3-cli.mjs';
@@ -172,11 +177,14 @@ export async function main(output, versionPath, extension, options = { reviewOnl
     databaseBuilds: [],
     archiveObjects: [],
     cleanup: [],
+    cleanupOperations: [],
     gate: 'RUNNING',
     fullQa09Accepted: false,
   };
   const save = () => writeFileSync(output, JSON.stringify(receipt, null, 2) + '\n');
   save();
+  const observeCleanup = createOperationObserver(receipt.cleanupOperations, save);
+  let cleaning = false;
   const check = (id, ok, data = {}) => {
     receipt.checks.push({ id, result: ok ? 'PASS' : 'FAIL', ...data });
     save();
@@ -190,6 +198,10 @@ export async function main(output, versionPath, extension, options = { reviewOnl
     clients = [];
   let observation;
   async function api(id, method, path, expected, body, headers = {}, host = 'api.bio-nexa.com') {
+    const run = () => executeApi(id, method, path, expected, body, headers, host);
+    return cleaning ? observeCleanup('http:' + id, run) : run();
+  }
+  async function executeApi(id, method, path, expected, body, headers = {}, host = 'api.bio-nexa.com') {
     const startedAt = new Date().toISOString(),
       start = performance.now();
     let res;
@@ -237,18 +249,27 @@ export async function main(output, versionPath, extension, options = { reviewOnl
   }
   async function db(action) {
     const plan = { prefix, devices, customers: receipt.customers, action, ...(baseline ? { baseline } : {}) };
-    const result = await runFixture(plan, output + `.${action}-${receipt.databaseBuilds.length}.json`, (msg) =>
-      console.log(msg),
-    );
-    receipt.databaseBuilds.push({
-      action,
-      buildId: result.build.id,
-      receipt: output + `.${action}-${receipt.databaseBuilds.length}.json`,
-    });
+    const path = output + `.${action}-${receipt.databaseBuilds.length}.json`;
+    receipt.databaseBuilds.push({ action, receipt: path, gate: 'RUNNING' });
+    save();
+    const run = () => runFixture(plan, path, (msg) => console.log(msg));
+    let result;
+    try {
+      result = await (cleaning ? observeCleanup('database:' + action, run) : run());
+    } catch (error) {
+      Object.assign(receipt.databaseBuilds.at(-1), { gate: 'FAIL', failure: safeOperationError(error) });
+      save();
+      throw error;
+    }
+    Object.assign(receipt.databaseBuilds.at(-1), { buildId: result.build.id, gate: result.gate });
     save();
     return result.result;
   }
   const call = (client, command, input) => {
+    const run = () => send(client, command, input);
+    return cleaning ? observeCleanup('aws:' + command.name, run) : run();
+  };
+  const send = (client, command, input) => {
     if (client === s3) {
       const actions = new Map([
         [s3Sdk.ListObjectsV2Command, 'list-objects-v2'],
@@ -722,12 +743,17 @@ export async function main(output, versionPath, extension, options = { reviewOnl
     save();
     console.log('Ten-device acceptance failed; cleaning exact own fixtures.');
   } finally {
+    cleaning = true;
     for (const c of clients) await c.endAsync(true).catch(() => {});
     if (createdIdentity)
       try {
-        await refreshIdentity();
+        await observeCleanup('identity:refresh', refreshIdentity);
       } catch (e) {
-        receipt.cleanup.push({ type: 'identity-refresh-before-cleanup', result: 'FAIL', errorName: e.name });
+        receipt.cleanup.push({
+          type: 'identity-refresh-before-cleanup',
+          result: 'FAIL',
+          failure: safeOperationError(e),
+        });
         receipt.gate = 'FAIL';
         save();
       }
@@ -763,8 +789,8 @@ export async function main(output, versionPath, extension, options = { reviewOnl
         if (seedCleanupAction(current, devices) === 'cleanup') await db('cleanup');
         receipt.cleanup.push({ type: 'database-fixtures', count: current.devices.length, result: 'PASS' });
         save();
-      } catch {
-        receipt.cleanup.push({ type: 'cloud-and-database-fixtures', result: 'FAIL' });
+      } catch (e) {
+        receipt.cleanup.push({ type: 'cloud-and-database-fixtures', result: 'FAIL', failure: safeOperationError(e) });
         receipt.gate = 'FAIL';
         save();
       }
@@ -786,9 +812,9 @@ export async function main(output, versionPath, extension, options = { reviewOnl
             } while (continuation);
           }
         }
-      } catch {
+      } catch (e) {
         receipt.gate = 'FAIL';
-        receipt.cleanup.push({ type: 'archive-discovery', result: 'FAIL' });
+        receipt.cleanup.push({ type: 'archive-discovery', result: 'FAIL', failure: safeOperationError(e) });
       }
       save();
     }
@@ -891,27 +917,31 @@ export async function main(output, versionPath, extension, options = { reviewOnl
         });
         await api('verify-customer-gone-' + c.suffix, 'GET', `/api/v1/admin/customers/${c.id}`, 404);
         receipt.cleanup.push({ type: 'customer', id: c.id, result: 'PASS' });
-      } catch {
+      } catch (e) {
         receipt.gate = 'FAIL';
-        receipt.cleanup.push({ type: 'customer', id: c.id, result: 'FAIL' });
+        receipt.cleanup.push({ type: 'customer', id: c.id, result: 'FAIL', failure: safeOperationError(e) });
       }
       save();
     }
     if (createdIdentity) {
-      try {
-        if (accessToken)
-          await createCognitoIdpClient({ region, clientId: '5ljdjsf9g563mc1vdc7vjdjm09' }).globalSignOut(accessToken);
-        await call(cognito, cognitoSdk.AdminDeleteUserCommand, { UserPoolId: pool, Username: username });
-        const gone = await call(cognito, cognitoSdk.AdminGetUserCommand, { UserPoolId: pool, Username: username }).then(
-          () => false,
-          (e) => e.name === 'UserNotFoundException',
-        );
-        if (!gone) demand(false, 'IDENTITY_STILL_EXISTS');
-        receipt.cleanup.push({ type: 'identity', username, result: 'PASS' });
-      } catch {
-        receipt.gate = 'FAIL';
-        receipt.cleanup.push({ type: 'identity', username, result: 'FAIL' });
-      }
+      const result = await cleanupIdentityOperations(observeCleanup, {
+        globalSignOut: () =>
+          accessToken
+            ? createCognitoIdpClient({ region, clientId: '5ljdjsf9g563mc1vdc7vjdjm09' }).globalSignOut(accessToken)
+            : cognito.send(new cognitoSdk.AdminUserGlobalSignOutCommand({ UserPoolId: pool, Username: username }), {
+                abortSignal: AbortSignal.timeout(30000),
+              }),
+        deleteUser: () =>
+          cognito.send(new cognitoSdk.AdminDeleteUserCommand({ UserPoolId: pool, Username: username }), {
+            abortSignal: AbortSignal.timeout(30000),
+          }),
+        getUser: () =>
+          cognito.send(new cognitoSdk.AdminGetUserCommand({ UserPoolId: pool, Username: username }), {
+            abortSignal: AbortSignal.timeout(30000),
+          }),
+      });
+      if (result.result !== 'PASS') receipt.gate = 'FAIL';
+      receipt.cleanup.push({ type: 'identity', username, ...result });
       save();
     }
     held.clear();
