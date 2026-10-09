@@ -38,6 +38,8 @@ const sourcePaths = [
   'scripts/run-qa09-nonactive-target.mjs',
   'scripts/qa09-seed-recovery.mjs',
   'scripts/qa09-business-target.mjs',
+  'scripts/qa09-operation-observation.mjs',
+  'scripts/qa09-started-build-read.mjs',
   'scripts/qa09-http-observation.mjs',
   'scripts/qa09-https-transport.mjs',
   'packages/database/src/authenticated-preconnect.ts',

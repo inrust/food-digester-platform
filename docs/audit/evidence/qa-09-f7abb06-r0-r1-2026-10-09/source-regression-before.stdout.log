@@ -1,0 +1,35 @@
+✖ parent snapshot covers every executed child source before any cloud fixture starts (2.529917ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 33.879875
+
+✖ failing tests:
+
+test at ../../../../../../private/tmp/qa09-executed-source-manifest.test.mjs:16:1
+✖ parent snapshot covers every executed child source before any cloud fixture starts (2.529917ms)
+  AssertionError [ERR_ASSERTION]: a new child executor must be included in the original parent source snapshot
+  + actual - expected
+  
+  + [
+  +   'scripts/qa09-operation-observation.mjs',
+  +   'scripts/qa09-started-build-read.mjs'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///private/tmp/qa09-executed-source-manifest.test.mjs:20:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'scripts/qa09-operation-observation.mjs', 'scripts/qa09-started-build-read.mjs' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
