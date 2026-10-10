@@ -1,0 +1,3225 @@
+{
+  "gate": "PASS",
+  "scope": "OFFLINE_PUBLIC_PORT_BOUNDARIES_AND_CONTROLLED_COST_LOCATION",
+  "runtime": {
+    "node": "v24.12.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "budget": {
+    "childProcesses": 16,
+    "concurrency": 1,
+    "childDeadlineMs": 45000,
+    "poolMax": 1,
+    "networkRequests": 0,
+    "databaseServers": 0,
+    "targetFixtures": 0
+  },
+  "inputs": [
+    {
+      "path": "scripts/run-qa09-contract-windows-offline.mjs",
+      "sha256": "51f5bf71656fa05ba01b9b2a4df49ebde09d01e3a3e191692148b09de78ba193"
+    },
+    {
+      "path": "scripts/qa09-contract-windows-proof.mjs",
+      "sha256": "56b661188513b33a7decea76b26bf434b3b5ba2168db1d9cac721cffc268a526"
+    },
+    {
+      "path": "packages/database/test/contract-windows-offline.test.ts",
+      "sha256": "e5d0091752e12bd8a1a90684a53d65442a369598e76ae134c80a2ba78d9944ad"
+    },
+    {
+      "path": "packages/database/test/helpers/contract-window-probe.ts",
+      "sha256": "b6f316a5a299811c24c3dc0931232520dae1b74d9255ea23ec15750d573b0970"
+    },
+    {
+      "path": "packages/database/src/client.ts",
+      "sha256": "043a0e7eec97794c622332b0831e71001ae64372099116c8a2742aa00b09054c"
+    },
+    {
+      "path": "packages/database/src/observed-pg.ts",
+      "sha256": "741ec38a5e3d4a267f39523b634d28e51b6c5573769e8ac3244afe94834085c2"
+    },
+    {
+      "path": "packages/database/src/contract-load-observation.ts",
+      "sha256": "dbb4f0c8fc0bf0085e5764241e7ee0e75da259eda70568f4b34237b0d18b03dd"
+    },
+    {
+      "path": "packages/database/src/contract-load-pg-lease.ts",
+      "sha256": "da2a70091d507ab46f911ea2b9b80131eb4b67daba07313db939af92103cb65f"
+    },
+    {
+      "path": "packages/observability/src/data-path.ts",
+      "sha256": "9a9ca57cfe92792de5a53b6ab52cbf54eb27d16874670d83a494c4f7cb1a8384"
+    },
+    {
+      "path": "packages/database/prisma/schema.prisma",
+      "sha256": "fd3e5b59670fe300db0406e295eaf9d9022bb5108210d24cd22c19dcf1c19d73"
+    },
+    {
+      "path": "apps/cloud-api/src/admin/contract/load-candidate.ts",
+      "sha256": "b993341ef1d7df7108da9cc24ddfd77b466722e6e5456deb6ae60a30a5c4da70"
+    },
+    {
+      "path": "apps/cloud-api/src/admin/contract/service.ts",
+      "sha256": "39425277daa1201d7e811941ea2828988187e9432944736fa50bb3cdceea81f3"
+    },
+    {
+      "path": "scripts/qa09-contract-load-detail-proof.mjs",
+      "sha256": "4068b83c3958987b0600e3b002b9993581db055047042dc396ac73973b085a77"
+    },
+    {
+      "path": "scripts/qa09-contract-load-proof.mjs",
+      "sha256": "d915105663fec9e188b8021ecb0a5370cbfc2f54c2ac2169e95a5b2dffc8a8d9"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2126f03557c343bc7fc90b12e060f663492a67b647e0892bb18dba126a7f3364"
+    },
+    {
+      "path": "node_modules/@prisma/adapter-pg/dist/index.mjs",
+      "sha256": "e6879b3429f9efade5696321da768476fd4710f2aff7de95c01cca15d6a8d1d1"
+    },
+    {
+      "path": "node_modules/@prisma/client/runtime/client.js",
+      "sha256": "800c4112433763007bd448f9824e9e5e368f0b46960d88898ea2e7e18baeb084"
+    }
+  ],
+  "rows": [
+    {
+      "case": "off",
+      "receipt": "off.json",
+      "sha256": "cf031ba0a08c5678765fc39caea09117802a0d03e22f9daa8ec61c763af27606",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS_DEFAULT_OFF",
+          "windowsMs": {
+            "load": 17.372,
+            "update": 2.876,
+            "readback": 0.25,
+            "audit": 1.956
+          }
+        },
+        {
+          "index": 1,
+          "gate": "PASS_DEFAULT_OFF",
+          "windowsMs": {
+            "load": 0.37,
+            "update": 0.185,
+            "readback": 0.23,
+            "audit": 0.419
+          }
+        },
+        {
+          "index": 2,
+          "gate": "PASS_DEFAULT_OFF",
+          "windowsMs": {
+            "load": 0.311,
+            "update": 0.165,
+            "readback": 0.14,
+            "audit": 0.156
+          }
+        }
+      ]
+    },
+    {
+      "case": "on",
+      "receipt": "on.json",
+      "sha256": "9bb97e3303ac27084c3d7fe35b4e4838ce6c6ad83a23519f34794ed894cbd423",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 17.606,
+            "update": 2.783,
+            "readback": 0.227,
+            "audit": 1.419
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 15794,
+              "segmentsUs": [
+                17,
+                5,
+                15772
+              ],
+              "cpuUserUs": 30738,
+              "cpuSystemUs": 1015,
+              "segmentsCpuUserUs": [
+                18,
+                5,
+                30715
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                0,
+                1015
+              ]
+            },
+            "adapter": {
+              "totalUs": 674,
+              "segmentsUs": [
+                491,
+                182,
+                1
+              ],
+              "cpuUserUs": 1305,
+              "cpuSystemUs": 116,
+              "segmentsCpuUserUs": [
+                980,
+                323,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                75,
+                41,
+                0
+              ]
+            },
+            "pg": {
+              "totalUs": 20,
+              "segmentsUs": [
+                5,
+                15
+              ],
+              "cpuUserUs": 23,
+              "cpuSystemUs": 3,
+              "segmentsCpuUserUs": [
+                10,
+                13
+              ],
+              "segmentsCpuSystemUs": [
+                3,
+                0
+              ]
+            },
+            "result": {
+              "totalUs": 495,
+              "segmentsUs": [
+                361,
+                2,
+                130,
+                2
+              ],
+              "cpuUserUs": 1045,
+              "cpuSystemUs": 45,
+              "segmentsCpuUserUs": [
+                594,
+                3,
+                446,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                36,
+                1,
+                7,
+                1
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 16
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 0.297,
+            "update": 0.155,
+            "readback": 0.131,
+            "audit": 0.156
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 84,
+              "segmentsUs": [
+                2,
+                5,
+                77
+              ],
+              "cpuUserUs": 188,
+              "cpuSystemUs": 23,
+              "segmentsCpuUserUs": [
+                2,
+                10,
+                176
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                3,
+                20
+              ]
+            },
+            "adapter": {
+              "totalUs": 56,
+              "segmentsUs": [
+                40,
+                15,
+                1
+              ],
+              "cpuUserUs": 97,
+              "cpuSystemUs": 15,
+              "segmentsCpuUserUs": [
+                71,
+                24,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                12,
+                3,
+                0
+              ]
+            },
+            "pg": {
+              "totalUs": 5,
+              "segmentsUs": [
+                1,
+                4
+              ],
+              "cpuUserUs": 17,
+              "cpuSystemUs": 3,
+              "segmentsCpuUserUs": [
+                14,
+                3
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                2
+              ]
+            },
+            "result": {
+              "totalUs": 51,
+              "segmentsUs": [
+                34,
+                2,
+                13,
+                2
+              ],
+              "cpuUserUs": 162,
+              "cpuSystemUs": 15,
+              "segmentsCpuUserUs": [
+                61,
+                1,
+                99,
+                1
+              ],
+              "segmentsCpuSystemUs": [
+                7,
+                0,
+                3,
+                5
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 0.307,
+            "update": 0.139,
+            "readback": 0.106,
+            "audit": 0.129
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 116,
+              "segmentsUs": [
+                1,
+                2,
+                113
+              ],
+              "cpuUserUs": 257,
+              "cpuSystemUs": 35,
+              "segmentsCpuUserUs": [
+                1,
+                1,
+                255
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                0,
+                35
+              ]
+            },
+            "adapter": {
+              "totalUs": 50,
+              "segmentsUs": [
+                29,
+                19,
+                2
+              ],
+              "cpuUserUs": 224,
+              "cpuSystemUs": 18,
+              "segmentsCpuUserUs": [
+                122,
+                97,
+                5
+              ],
+              "segmentsCpuSystemUs": [
+                10,
+                7,
+                1
+              ]
+            },
+            "pg": {
+              "totalUs": 6,
+              "segmentsUs": [
+                2,
+                4
+              ],
+              "cpuUserUs": 15,
+              "cpuSystemUs": 3,
+              "segmentsCpuUserUs": [
+                11,
+                4
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                3
+              ]
+            },
+            "result": {
+              "totalUs": 44,
+              "segmentsUs": [
+                21,
+                1,
+                21,
+                1
+              ],
+              "cpuUserUs": 139,
+              "cpuSystemUs": 15,
+              "segmentsCpuUserUs": [
+                96,
+                1,
+                41,
+                1
+              ],
+              "segmentsCpuSystemUs": [
+                4,
+                2,
+                8,
+                1
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "await-cpu",
+      "receipt": "await-cpu.json",
+      "sha256": "61c8cdbf4261b6c12a2a280be912819186e354cd6201dae9220d8e284a80f530",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 38.402,
+            "update": 2.894,
+            "readback": 0.237,
+            "audit": 1.495
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 36838,
+              "segmentsUs": [
+                20100,
+                25,
+                16713
+              ],
+              "cpuUserUs": 71820,
+              "cpuSystemUs": 3278,
+              "segmentsCpuUserUs": [
+                38935,
+                40,
+                32845
+              ],
+              "segmentsCpuSystemUs": [
+                697,
+                5,
+                2576
+              ]
+            },
+            "adapter": {
+              "totalUs": 457,
+              "segmentsUs": [
+                320,
+                135,
+                2
+              ],
+              "cpuUserUs": 911,
+              "cpuSystemUs": 25,
+              "segmentsCpuUserUs": [
+                711,
+                198,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                18,
+                4,
+                3
+              ]
+            },
+            "pg": {
+              "totalUs": 15,
+              "segmentsUs": [
+                4,
+                11
+              ],
+              "cpuUserUs": 15,
+              "cpuSystemUs": 1,
+              "segmentsCpuUserUs": [
+                6,
+                9
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                0
+              ]
+            },
+            "result": {
+              "totalUs": 508,
+              "segmentsUs": [
+                378,
+                2,
+                127,
+                1
+              ],
+              "cpuUserUs": 1235,
+              "cpuSystemUs": 36,
+              "segmentsCpuUserUs": [
+                926,
+                3,
+                248,
+                58
+              ],
+              "segmentsCpuSystemUs": [
+                23,
+                3,
+                9,
+                1
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 37
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.528,
+            "update": 0.22,
+            "readback": 0.19,
+            "audit": 0.219
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 20235,
+              "segmentsUs": [
+                20022,
+                20,
+                193
+              ],
+              "cpuUserUs": 39898,
+              "cpuSystemUs": 650,
+              "segmentsCpuUserUs": [
+                39432,
+                20,
+                446
+              ],
+              "segmentsCpuSystemUs": [
+                623,
+                9,
+                18
+              ]
+            },
+            "adapter": {
+              "totalUs": 93,
+              "segmentsUs": [
+                72,
+                20,
+                1
+              ],
+              "cpuUserUs": 217,
+              "cpuSystemUs": 14,
+              "segmentsCpuUserUs": [
+                197,
+                19,
+                1
+              ],
+              "segmentsCpuSystemUs": [
+                12,
+                1,
+                1
+              ]
+            },
+            "pg": {
+              "totalUs": 6,
+              "segmentsUs": [
+                2,
+                4
+              ],
+              "cpuUserUs": 7,
+              "cpuSystemUs": 1,
+              "segmentsCpuUserUs": [
+                3,
+                4
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                0
+              ]
+            },
+            "result": {
+              "totalUs": 84,
+              "segmentsUs": [
+                59,
+                2,
+                21,
+                2
+              ],
+              "cpuUserUs": 249,
+              "cpuSystemUs": 14,
+              "segmentsCpuUserUs": [
+                91,
+                2,
+                154,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                10,
+                1,
+                3,
+                0
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 20
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.606,
+            "update": 0.187,
+            "readback": 0.12,
+            "audit": 0.169
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 20324,
+              "segmentsUs": [
+                20016,
+                11,
+                297
+              ],
+              "cpuUserUs": 39827,
+              "cpuSystemUs": 567,
+              "segmentsCpuUserUs": [
+                39347,
+                14,
+                466
+              ],
+              "segmentsCpuSystemUs": [
+                509,
+                3,
+                55
+              ]
+            },
+            "adapter": {
+              "totalUs": 84,
+              "segmentsUs": [
+                59,
+                24,
+                1
+              ],
+              "cpuUserUs": 657,
+              "cpuSystemUs": 9,
+              "segmentsCpuUserUs": [
+                59,
+                596,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                5,
+                2,
+                2
+              ]
+            },
+            "pg": {
+              "totalUs": 9,
+              "segmentsUs": [
+                2,
+                7
+              ],
+              "cpuUserUs": 7,
+              "cpuSystemUs": 3,
+              "segmentsCpuUserUs": [
+                2,
+                5
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                3
+              ]
+            },
+            "result": {
+              "totalUs": 72,
+              "segmentsUs": [
+                41,
+                1,
+                29,
+                1
+              ],
+              "cpuUserUs": 100,
+              "cpuSystemUs": 12,
+              "segmentsCpuUserUs": [
+                70,
+                2,
+                27,
+                1
+              ],
+              "segmentsCpuSystemUs": [
+                10,
+                1,
+                1,
+                0
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 20
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "await-wait",
+      "receipt": "await-wait.json",
+      "sha256": "4f8ea815f77a10e1ec682528e9db507b106f16156a8fb3ee2cc5b9c25d7af311",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 49.572,
+            "update": 2.904,
+            "readback": 0.236,
+            "audit": 1.919
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 48061,
+              "segmentsUs": [
+                30303,
+                25,
+                17733
+              ],
+              "cpuUserUs": 74764,
+              "cpuSystemUs": 5812,
+              "segmentsCpuUserUs": [
+                41683,
+                80,
+                33001
+              ],
+              "segmentsCpuSystemUs": [
+                3591,
+                12,
+                2209
+              ]
+            },
+            "adapter": {
+              "totalUs": 419,
+              "segmentsUs": [
+                294,
+                124,
+                1
+              ],
+              "cpuUserUs": 866,
+              "cpuSystemUs": 24,
+              "segmentsCpuUserUs": [
+                623,
+                241,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                12,
+                10,
+                2
+              ]
+            },
+            "pg": {
+              "totalUs": 13,
+              "segmentsUs": [
+                4,
+                9
+              ],
+              "cpuUserUs": 12,
+              "cpuSystemUs": 2,
+              "segmentsCpuUserUs": [
+                5,
+                7
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                1
+              ]
+            },
+            "result": {
+              "totalUs": 445,
+              "segmentsUs": [
+                316,
+                2,
+                125,
+                2
+              ],
+              "cpuUserUs": 1023,
+              "cpuSystemUs": 26,
+              "segmentsCpuUserUs": [
+                706,
+                78,
+                237,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                19,
+                1,
+                5,
+                1
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 48
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 32.056,
+            "update": 0.231,
+            "readback": 0.16,
+            "audit": 0.235
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 31718,
+              "segmentsUs": [
+                31459,
+                18,
+                241
+              ],
+              "cpuUserUs": 30185,
+              "cpuSystemUs": 888,
+              "segmentsCpuUserUs": [
+                29855,
+                26,
+                304
+              ],
+              "segmentsCpuSystemUs": [
+                869,
+                7,
+                12
+              ]
+            },
+            "adapter": {
+              "totalUs": 104,
+              "segmentsUs": [
+                78,
+                25,
+                1
+              ],
+              "cpuUserUs": 139,
+              "cpuSystemUs": 12,
+              "segmentsCpuUserUs": [
+                75,
+                62,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                6,
+                1,
+                5
+              ]
+            },
+            "pg": {
+              "totalUs": 8,
+              "segmentsUs": [
+                3,
+                5
+              ],
+              "cpuUserUs": 9,
+              "cpuSystemUs": 1,
+              "segmentsCpuUserUs": [
+                4,
+                5
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                1
+              ]
+            },
+            "result": {
+              "totalUs": 85,
+              "segmentsUs": [
+                58,
+                2,
+                24,
+                1
+              ],
+              "cpuUserUs": 111,
+              "cpuSystemUs": 17,
+              "segmentsCpuUserUs": [
+                56,
+                2,
+                51,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                3,
+                0,
+                13,
+                1
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 32
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 31.557,
+            "update": 0.153,
+            "readback": 0.104,
+            "audit": 0.132
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 31305,
+              "segmentsUs": [
+                31049,
+                13,
+                243
+              ],
+              "cpuUserUs": 23547,
+              "cpuSystemUs": 669,
+              "segmentsCpuUserUs": [
+                23240,
+                18,
+                289
+              ],
+              "segmentsCpuSystemUs": [
+                657,
+                3,
+                9
+              ]
+            },
+            "adapter": {
+              "totalUs": 77,
+              "segmentsUs": [
+                57,
+                19,
+                1
+              ],
+              "cpuUserUs": 157,
+              "cpuSystemUs": 18,
+              "segmentsCpuUserUs": [
+                132,
+                24,
+                1
+              ],
+              "segmentsCpuSystemUs": [
+                6,
+                12,
+                0
+              ]
+            },
+            "pg": {
+              "totalUs": 11,
+              "segmentsUs": [
+                6,
+                5
+              ],
+              "cpuUserUs": 87,
+              "cpuSystemUs": 4,
+              "segmentsCpuUserUs": [
+                63,
+                24
+              ],
+              "segmentsCpuSystemUs": [
+                2,
+                2
+              ]
+            },
+            "result": {
+              "totalUs": 65,
+              "segmentsUs": [
+                36,
+                1,
+                27,
+                1
+              ],
+              "cpuUserUs": 112,
+              "cpuSystemUs": 5,
+              "segmentsCpuUserUs": [
+                35,
+                1,
+                74,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                0,
+                4,
+                0
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 31
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "pg-submit",
+      "receipt": "pg-submit.json",
+      "sha256": "0f81ef27a025e48220606aa16e6ab575cfcdc8496ac7f291844cad18d23fc720",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 37.893,
+            "update": 3.212,
+            "readback": 0.276,
+            "audit": 1.847
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 16040,
+              "segmentsUs": [
+                19,
+                7,
+                16014
+              ],
+              "cpuUserUs": 31044,
+              "cpuSystemUs": 1185,
+              "segmentsCpuUserUs": [
+                29,
+                6,
+                31009
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                2,
+                1183
+              ]
+            },
+            "adapter": {
+              "totalUs": 20614,
+              "segmentsUs": [
+                20347,
+                264,
+                3
+              ],
+              "cpuUserUs": 40726,
+              "cpuSystemUs": 1918,
+              "segmentsCpuUserUs": [
+                40178,
+                544,
+                4
+              ],
+              "segmentsCpuSystemUs": [
+                1891,
+                24,
+                3
+              ]
+            },
+            "pg": {
+              "totalUs": 20079,
+              "segmentsUs": [
+                20039,
+                40
+              ],
+              "cpuUserUs": 39600,
+              "cpuSystemUs": 1869,
+              "segmentsCpuUserUs": [
+                39505,
+                95
+              ],
+              "segmentsCpuSystemUs": [
+                1857,
+                12
+              ]
+            },
+            "result": {
+              "totalUs": 590,
+              "segmentsUs": [
+                452,
+                3,
+                134,
+                1
+              ],
+              "cpuUserUs": 1222,
+              "cpuSystemUs": 50,
+              "segmentsCpuUserUs": [
+                967,
+                3,
+                250,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                45,
+                0,
+                4,
+                1
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 16
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.496,
+            "update": 0.289,
+            "readback": 0.35,
+            "audit": 0.291
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 112,
+              "segmentsUs": [
+                5,
+                5,
+                102
+              ],
+              "cpuUserUs": 174,
+              "cpuSystemUs": 7,
+              "segmentsCpuUserUs": [
+                2,
+                6,
+                166
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                1,
+                5
+              ]
+            },
+            "adapter": {
+              "totalUs": 20123,
+              "segmentsUs": [
+                20068,
+                54,
+                1
+              ],
+              "cpuUserUs": 39704,
+              "cpuSystemUs": 568,
+              "segmentsCpuUserUs": [
+                39603,
+                100,
+                1
+              ],
+              "segmentsCpuSystemUs": [
+                562,
+                6,
+                0
+              ]
+            },
+            "pg": {
+              "totalUs": 20029,
+              "segmentsUs": [
+                20016,
+                13
+              ],
+              "cpuUserUs": 39566,
+              "cpuSystemUs": 558,
+              "segmentsCpuUserUs": [
+                39549,
+                17
+              ],
+              "segmentsCpuSystemUs": [
+                552,
+                6
+              ]
+            },
+            "result": {
+              "totalUs": 120,
+              "segmentsUs": [
+                85,
+                2,
+                32,
+                1
+              ],
+              "cpuUserUs": 264,
+              "cpuSystemUs": 15,
+              "segmentsCpuUserUs": [
+                190,
+                2,
+                71,
+                1
+              ],
+              "segmentsCpuSystemUs": [
+                13,
+                0,
+                2,
+                0
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.532,
+            "update": 0.351,
+            "readback": 0.187,
+            "audit": 0.183
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 115,
+              "segmentsUs": [
+                2,
+                1,
+                112
+              ],
+              "cpuUserUs": 262,
+              "cpuSystemUs": 19,
+              "segmentsCpuUserUs": [
+                1,
+                2,
+                259
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                0,
+                19
+              ]
+            },
+            "adapter": {
+              "totalUs": 20158,
+              "segmentsUs": [
+                20077,
+                79,
+                2
+              ],
+              "cpuUserUs": 39168,
+              "cpuSystemUs": 1217,
+              "segmentsCpuUserUs": [
+                39066,
+                101,
+                1
+              ],
+              "segmentsCpuSystemUs": [
+                1208,
+                9,
+                0
+              ]
+            },
+            "pg": {
+              "totalUs": 20055,
+              "segmentsUs": [
+                20021,
+                34
+              ],
+              "cpuUserUs": 38870,
+              "cpuSystemUs": 1191,
+              "segmentsCpuUserUs": [
+                38786,
+                84
+              ],
+              "segmentsCpuSystemUs": [
+                1181,
+                10
+              ]
+            },
+            "result": {
+              "totalUs": 127,
+              "segmentsUs": [
+                77,
+                2,
+                46,
+                2
+              ],
+              "cpuUserUs": 114,
+              "cpuSystemUs": 15,
+              "segmentsCpuUserUs": [
+                68,
+                2,
+                42,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                9,
+                1,
+                3,
+                2
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "pg-wait",
+      "receipt": "pg-wait.json",
+      "sha256": "030b4f3bb358423a212225fe7f6fdd073eb302390edd425502bd1fede099f18f",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 49.303,
+            "update": 2.935,
+            "readback": 0.232,
+            "audit": 1.368
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 16474,
+              "segmentsUs": [
+                22,
+                7,
+                16445
+              ],
+              "cpuUserUs": 31864,
+              "cpuSystemUs": 1139,
+              "segmentsCpuUserUs": [
+                22,
+                49,
+                31793
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                1,
+                1137
+              ]
+            },
+            "adapter": {
+              "totalUs": 31366,
+              "segmentsUs": [
+                329,
+                31035,
+                2
+              ],
+              "cpuUserUs": 43484,
+              "cpuSystemUs": 3013,
+              "segmentsCpuUserUs": [
+                840,
+                42641,
+                3
+              ],
+              "segmentsCpuSystemUs": [
+                30,
+                2982,
+                1
+              ]
+            },
+            "pg": {
+              "totalUs": 30794,
+              "segmentsUs": [
+                3,
+                30791
+              ],
+              "cpuUserUs": 42150,
+              "cpuSystemUs": 2958,
+              "segmentsCpuUserUs": [
+                4,
+                42146
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                2957
+              ]
+            },
+            "result": {
+              "totalUs": 715,
+              "segmentsUs": [
+                439,
+                2,
+                269,
+                5
+              ],
+              "cpuUserUs": 1530,
+              "cpuSystemUs": 82,
+              "segmentsCpuUserUs": [
+                1037,
+                3,
+                480,
+                10
+              ],
+              "segmentsCpuSystemUs": [
+                26,
+                0,
+                54,
+                2
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 16
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 30.892,
+            "update": 0.316,
+            "readback": 0.194,
+            "audit": 0.228
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 82,
+              "segmentsUs": [
+                2,
+                4,
+                76
+              ],
+              "cpuUserUs": 119,
+              "cpuSystemUs": 5,
+              "segmentsCpuUserUs": [
+                1,
+                3,
+                115
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                2,
+                3
+              ]
+            },
+            "adapter": {
+              "totalUs": 30566,
+              "segmentsUs": [
+                47,
+                30517,
+                2
+              ],
+              "cpuUserUs": 29764,
+              "cpuSystemUs": 894,
+              "segmentsCpuUserUs": [
+                45,
+                29717,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                5,
+                889,
+                0
+              ]
+            },
+            "pg": {
+              "totalUs": 30462,
+              "segmentsUs": [
+                1,
+                30461
+              ],
+              "cpuUserUs": 29655,
+              "cpuSystemUs": 886,
+              "segmentsCpuUserUs": [
+                2,
+                29653
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                886
+              ]
+            },
+            "result": {
+              "totalUs": 136,
+              "segmentsUs": [
+                99,
+                2,
+                33,
+                2
+              ],
+              "cpuUserUs": 130,
+              "cpuSystemUs": 8,
+              "segmentsCpuUserUs": [
+                94,
+                2,
+                33,
+                1
+              ],
+              "segmentsCpuSystemUs": [
+                6,
+                1,
+                0,
+                1
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 31.422,
+            "update": 0.257,
+            "readback": 0.139,
+            "audit": 0.15
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 100,
+              "segmentsUs": [
+                2,
+                2,
+                96
+              ],
+              "cpuUserUs": 214,
+              "cpuSystemUs": 12,
+              "segmentsCpuUserUs": [
+                2,
+                2,
+                210
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                0,
+                12
+              ]
+            },
+            "adapter": {
+              "totalUs": 31082,
+              "segmentsUs": [
+                55,
+                31026,
+                1
+              ],
+              "cpuUserUs": 20764,
+              "cpuSystemUs": 553,
+              "segmentsCpuUserUs": [
+                200,
+                20563,
+                1
+              ],
+              "segmentsCpuSystemUs": [
+                18,
+                535,
+                0
+              ]
+            },
+            "pg": {
+              "totalUs": 30955,
+              "segmentsUs": [
+                2,
+                30953
+              ],
+              "cpuUserUs": 20548,
+              "cpuSystemUs": 524,
+              "segmentsCpuUserUs": [
+                35,
+                20513
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                524
+              ]
+            },
+            "result": {
+              "totalUs": 128,
+              "segmentsUs": [
+                77,
+                2,
+                47,
+                2
+              ],
+              "cpuUserUs": 117,
+              "cpuSystemUs": 11,
+              "segmentsCpuUserUs": [
+                76,
+                2,
+                37,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                0,
+                10,
+                0
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "decode-cpu",
+      "receipt": "decode-cpu.json",
+      "sha256": "673d97e477e825fb8a4c78dea728f5e8302f00a9f1aebeca202883824eb3884b",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 37.578,
+            "update": 3.094,
+            "readback": 0.252,
+            "audit": 1.514
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 15837,
+              "segmentsUs": [
+                17,
+                5,
+                15815
+              ],
+              "cpuUserUs": 30775,
+              "cpuSystemUs": 969,
+              "segmentsCpuUserUs": [
+                16,
+                24,
+                30735
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                1,
+                967
+              ]
+            },
+            "adapter": {
+              "totalUs": 20573,
+              "segmentsUs": [
+                310,
+                20257,
+                6
+              ],
+              "cpuUserUs": 40671,
+              "cpuSystemUs": 1963,
+              "segmentsCpuUserUs": [
+                371,
+                40293,
+                7
+              ],
+              "segmentsCpuSystemUs": [
+                6,
+                1956,
+                1
+              ]
+            },
+            "pg": {
+              "totalUs": 14,
+              "segmentsUs": [
+                4,
+                10
+              ],
+              "cpuUserUs": 14,
+              "cpuSystemUs": 1,
+              "segmentsCpuUserUs": [
+                5,
+                9
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                1
+              ]
+            },
+            "result": {
+              "totalUs": 582,
+              "segmentsUs": [
+                443,
+                2,
+                136,
+                1
+              ],
+              "cpuUserUs": 1279,
+              "cpuSystemUs": 37,
+              "segmentsCpuUserUs": [
+                921,
+                3,
+                353,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                32,
+                1,
+                4,
+                0
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 16
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.474,
+            "update": 0.31,
+            "readback": 0.185,
+            "audit": 0.222
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 97,
+              "segmentsUs": [
+                2,
+                3,
+                92
+              ],
+              "cpuUserUs": 132,
+              "cpuSystemUs": 17,
+              "segmentsCpuUserUs": [
+                2,
+                2,
+                128
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                0,
+                16
+              ]
+            },
+            "adapter": {
+              "totalUs": 20098,
+              "segmentsUs": [
+                46,
+                20047,
+                5
+              ],
+              "cpuUserUs": 39840,
+              "cpuSystemUs": 537,
+              "segmentsCpuUserUs": [
+                233,
+                39602,
+                5
+              ],
+              "segmentsCpuSystemUs": [
+                7,
+                530,
+                0
+              ]
+            },
+            "pg": {
+              "totalUs": 8,
+              "segmentsUs": [
+                2,
+                6
+              ],
+              "cpuUserUs": 6,
+              "cpuSystemUs": 2,
+              "segmentsCpuUserUs": [
+                2,
+                4
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                2
+              ]
+            },
+            "result": {
+              "totalUs": 154,
+              "segmentsUs": [
+                117,
+                1,
+                34,
+                2
+              ],
+              "cpuUserUs": 330,
+              "cpuSystemUs": 16,
+              "segmentsCpuUserUs": [
+                245,
+                51,
+                32,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                11,
+                4,
+                0,
+                1
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.518,
+            "update": 0.293,
+            "readback": 0.159,
+            "audit": 0.206
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 118,
+              "segmentsUs": [
+                2,
+                1,
+                115
+              ],
+              "cpuUserUs": 288,
+              "cpuSystemUs": 17,
+              "segmentsCpuUserUs": [
+                2,
+                1,
+                285
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                0,
+                17
+              ]
+            },
+            "adapter": {
+              "totalUs": 20114,
+              "segmentsUs": [
+                48,
+                20063,
+                3
+              ],
+              "cpuUserUs": 38157,
+              "cpuSystemUs": 421,
+              "segmentsCpuUserUs": [
+                141,
+                38012,
+                4
+              ],
+              "segmentsCpuSystemUs": [
+                16,
+                404,
+                1
+              ]
+            },
+            "pg": {
+              "totalUs": 6,
+              "segmentsUs": [
+                1,
+                5
+              ],
+              "cpuUserUs": 5,
+              "cpuSystemUs": 0,
+              "segmentsCpuUserUs": [
+                1,
+                4
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                0
+              ]
+            },
+            "result": {
+              "totalUs": 149,
+              "segmentsUs": [
+                100,
+                2,
+                45,
+                2
+              ],
+              "cpuUserUs": 140,
+              "cpuSystemUs": 8,
+              "segmentsCpuUserUs": [
+                98,
+                2,
+                38,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                1,
+                7,
+                0
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "adapter-cpu",
+      "receipt": "adapter-cpu.json",
+      "sha256": "00f5a343390cb1ba1fd90fe4bb59006a75ac880a28bdcf95e1c7a3d51576de89",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 37.833,
+            "update": 2.977,
+            "readback": 0.245,
+            "audit": 1.519
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 16145,
+              "segmentsUs": [
+                18,
+                5,
+                16122
+              ],
+              "cpuUserUs": 30918,
+              "cpuSystemUs": 1138,
+              "segmentsCpuUserUs": [
+                50,
+                5,
+                30863
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                1,
+                1137
+              ]
+            },
+            "adapter": {
+              "totalUs": 20462,
+              "segmentsUs": [
+                301,
+                141,
+                20020
+              ],
+              "cpuUserUs": 40735,
+              "cpuSystemUs": 2011,
+              "segmentsCpuUserUs": [
+                847,
+                135,
+                39753
+              ],
+              "segmentsCpuSystemUs": [
+                7,
+                7,
+                1997
+              ]
+            },
+            "pg": {
+              "totalUs": 16,
+              "segmentsUs": [
+                4,
+                12
+              ],
+              "cpuUserUs": 13,
+              "cpuSystemUs": 2,
+              "segmentsCpuUserUs": [
+                5,
+                8
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                2
+              ]
+            },
+            "result": {
+              "totalUs": 642,
+              "segmentsUs": [
+                515,
+                3,
+                122,
+                2
+              ],
+              "cpuUserUs": 1327,
+              "cpuSystemUs": 86,
+              "segmentsCpuUserUs": [
+                1026,
+                4,
+                294,
+                3
+              ],
+              "segmentsCpuSystemUs": [
+                81,
+                1,
+                4,
+                0
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 16
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.382,
+            "update": 0.215,
+            "readback": 0.158,
+            "audit": 0.188
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 95,
+              "segmentsUs": [
+                2,
+                6,
+                87
+              ],
+              "cpuUserUs": 3065,
+              "cpuSystemUs": 12,
+              "segmentsCpuUserUs": [
+                1,
+                2895,
+                169
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                6,
+                6
+              ]
+            },
+            "adapter": {
+              "totalUs": 20082,
+              "segmentsUs": [
+                54,
+                17,
+                20011
+              ],
+              "cpuUserUs": 39768,
+              "cpuSystemUs": 458,
+              "segmentsCpuUserUs": [
+                120,
+                16,
+                39632
+              ],
+              "segmentsCpuSystemUs": [
+                15,
+                1,
+                442
+              ]
+            },
+            "pg": {
+              "totalUs": 6,
+              "segmentsUs": [
+                1,
+                5
+              ],
+              "cpuUserUs": 6,
+              "cpuSystemUs": 1,
+              "segmentsCpuUserUs": [
+                2,
+                4
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                0
+              ]
+            },
+            "result": {
+              "totalUs": 88,
+              "segmentsUs": [
+                65,
+                2,
+                20,
+                1
+              ],
+              "cpuUserUs": 216,
+              "cpuSystemUs": 19,
+              "segmentsCpuUserUs": [
+                70,
+                2,
+                47,
+                97
+              ],
+              "segmentsCpuSystemUs": [
+                13,
+                0,
+                3,
+                3
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.516,
+            "update": 0.324,
+            "readback": 0.159,
+            "audit": 0.204
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 114,
+              "segmentsUs": [
+                2,
+                2,
+                110
+              ],
+              "cpuUserUs": 286,
+              "cpuSystemUs": 16,
+              "segmentsCpuUserUs": [
+                2,
+                1,
+                283
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                1,
+                15
+              ]
+            },
+            "adapter": {
+              "totalUs": 20088,
+              "segmentsUs": [
+                46,
+                16,
+                20026
+              ],
+              "cpuUserUs": 38795,
+              "cpuSystemUs": 595,
+              "segmentsCpuUserUs": [
+                129,
+                35,
+                38631
+              ],
+              "segmentsCpuSystemUs": [
+                30,
+                4,
+                561
+              ]
+            },
+            "pg": {
+              "totalUs": 8,
+              "segmentsUs": [
+                1,
+                7
+              ],
+              "cpuUserUs": 7,
+              "cpuSystemUs": 3,
+              "segmentsCpuUserUs": [
+                2,
+                5
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                2
+              ]
+            },
+            "result": {
+              "totalUs": 191,
+              "segmentsUs": [
+                140,
+                3,
+                47,
+                1
+              ],
+              "cpuUserUs": 179,
+              "cpuSystemUs": 30,
+              "segmentsCpuUserUs": [
+                132,
+                3,
+                42,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                24,
+                1,
+                5,
+                0
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "result-cpu",
+      "receipt": "result-cpu.json",
+      "sha256": "10441a120126402bdedc43b346ea6b73d56852955c3a06c6f71a0d7a5fc3ff4c",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 37.877,
+            "update": 3.713,
+            "readback": 0.298,
+            "audit": 1.701
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 16008,
+              "segmentsUs": [
+                19,
+                6,
+                15983
+              ],
+              "cpuUserUs": 30011,
+              "cpuSystemUs": 1234,
+              "segmentsCpuUserUs": [
+                20,
+                6,
+                29985
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                0,
+                1233
+              ]
+            },
+            "adapter": {
+              "totalUs": 509,
+              "segmentsUs": [
+                353,
+                154,
+                2
+              ],
+              "cpuUserUs": 1978,
+              "cpuSystemUs": 26,
+              "segmentsCpuUserUs": [
+                421,
+                1555,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                11,
+                13,
+                2
+              ]
+            },
+            "pg": {
+              "totalUs": 16,
+              "segmentsUs": [
+                4,
+                12
+              ],
+              "cpuUserUs": 16,
+              "cpuSystemUs": 1,
+              "segmentsCpuUserUs": [
+                6,
+                10
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                0
+              ]
+            },
+            "result": {
+              "totalUs": 20692,
+              "segmentsUs": [
+                384,
+                20027,
+                276,
+                5
+              ],
+              "cpuUserUs": 40454,
+              "cpuSystemUs": 2335,
+              "segmentsCpuUserUs": [
+                780,
+                39159,
+                509,
+                6
+              ],
+              "segmentsCpuSystemUs": [
+                104,
+                2162,
+                69,
+                0
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 16
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.44,
+            "update": 0.334,
+            "readback": 0.199,
+            "audit": 0.23
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 102,
+              "segmentsUs": [
+                2,
+                6,
+                94
+              ],
+              "cpuUserUs": 298,
+              "cpuSystemUs": 18,
+              "segmentsCpuUserUs": [
+                3,
+                3,
+                292
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                2,
+                16
+              ]
+            },
+            "adapter": {
+              "totalUs": 66,
+              "segmentsUs": [
+                48,
+                16,
+                2
+              ],
+              "cpuUserUs": 146,
+              "cpuSystemUs": 10,
+              "segmentsCpuUserUs": [
+                43,
+                15,
+                88
+              ],
+              "segmentsCpuSystemUs": [
+                7,
+                1,
+                2
+              ]
+            },
+            "pg": {
+              "totalUs": 5,
+              "segmentsUs": [
+                2,
+                3
+              ],
+              "cpuUserUs": 6,
+              "cpuSystemUs": 1,
+              "segmentsCpuUserUs": [
+                2,
+                4
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                0
+              ]
+            },
+            "result": {
+              "totalUs": 20134,
+              "segmentsUs": [
+                37,
+                20018,
+                73,
+                6
+              ],
+              "cpuUserUs": 39684,
+              "cpuSystemUs": 688,
+              "segmentsCpuUserUs": [
+                37,
+                39425,
+                217,
+                5
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                678,
+                6,
+                4
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.412,
+            "update": 0.262,
+            "readback": 0.13,
+            "audit": 0.166
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 121,
+              "segmentsUs": [
+                2,
+                3,
+                116
+              ],
+              "cpuUserUs": 275,
+              "cpuSystemUs": 17,
+              "segmentsCpuUserUs": [
+                2,
+                1,
+                272
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                0,
+                17
+              ]
+            },
+            "adapter": {
+              "totalUs": 56,
+              "segmentsUs": [
+                40,
+                15,
+                1
+              ],
+              "cpuUserUs": 149,
+              "cpuSystemUs": 12,
+              "segmentsCpuUserUs": [
+                106,
+                42,
+                1
+              ],
+              "segmentsCpuSystemUs": [
+                10,
+                2,
+                0
+              ]
+            },
+            "pg": {
+              "totalUs": 7,
+              "segmentsUs": [
+                2,
+                5
+              ],
+              "cpuUserUs": 6,
+              "cpuSystemUs": 2,
+              "segmentsCpuUserUs": [
+                2,
+                4
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                1
+              ]
+            },
+            "result": {
+              "totalUs": 20104,
+              "segmentsUs": [
+                27,
+                20009,
+                67,
+                1
+              ],
+              "cpuUserUs": 38662,
+              "cpuSystemUs": 791,
+              "segmentsCpuUserUs": [
+                51,
+                38547,
+                61,
+                3
+              ],
+              "segmentsCpuSystemUs": [
+                3,
+                777,
+                10,
+                1
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "caller-cpu",
+      "receipt": "caller-cpu.json",
+      "sha256": "634d175baca23a524e86c4e590c950aa110c77dfb20392cbc1109488d2cb73ca",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 37.638,
+            "update": 3.279,
+            "readback": 0.272,
+            "audit": 1.629
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 15980,
+              "segmentsUs": [
+                17,
+                5,
+                15958
+              ],
+              "cpuUserUs": 30581,
+              "cpuSystemUs": 1070,
+              "segmentsCpuUserUs": [
+                58,
+                10,
+                30513
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                1,
+                1068
+              ]
+            },
+            "adapter": {
+              "totalUs": 465,
+              "segmentsUs": [
+                325,
+                138,
+                2
+              ],
+              "cpuUserUs": 534,
+              "cpuSystemUs": 16,
+              "segmentsCpuUserUs": [
+                397,
+                134,
+                3
+              ],
+              "segmentsCpuSystemUs": [
+                10,
+                3,
+                3
+              ]
+            },
+            "pg": {
+              "totalUs": 15,
+              "segmentsUs": [
+                4,
+                11
+              ],
+              "cpuUserUs": 14,
+              "cpuSystemUs": 4,
+              "segmentsCpuUserUs": [
+                5,
+                9
+              ],
+              "segmentsCpuSystemUs": [
+                3,
+                1
+              ]
+            },
+            "result": {
+              "totalUs": 20514,
+              "segmentsUs": [
+                363,
+                2,
+                128,
+                20021
+              ],
+              "cpuUserUs": 41341,
+              "cpuSystemUs": 2037,
+              "segmentsCpuUserUs": [
+                1524,
+                3,
+                512,
+                39302
+              ],
+              "segmentsCpuSystemUs": [
+                20,
+                0,
+                3,
+                2014
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 16
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.354,
+            "update": 0.253,
+            "readback": 0.159,
+            "audit": 0.227
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 97,
+              "segmentsUs": [
+                3,
+                4,
+                90
+              ],
+              "cpuUserUs": 234,
+              "cpuSystemUs": 10,
+              "segmentsCpuUserUs": [
+                3,
+                2,
+                229
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                1,
+                9
+              ]
+            },
+            "adapter": {
+              "totalUs": 67,
+              "segmentsUs": [
+                47,
+                19,
+                1
+              ],
+              "cpuUserUs": 126,
+              "cpuSystemUs": 10,
+              "segmentsCpuUserUs": [
+                89,
+                35,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                6,
+                4,
+                0
+              ]
+            },
+            "pg": {
+              "totalUs": 8,
+              "segmentsUs": [
+                2,
+                6
+              ],
+              "cpuUserUs": 7,
+              "cpuSystemUs": 1,
+              "segmentsCpuUserUs": [
+                3,
+                4
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                0
+              ]
+            },
+            "result": {
+              "totalUs": 20065,
+              "segmentsUs": [
+                43,
+                1,
+                17,
+                20004
+              ],
+              "cpuUserUs": 39665,
+              "cpuSystemUs": 570,
+              "segmentsCpuUserUs": [
+                102,
+                2,
+                51,
+                39510
+              ],
+              "segmentsCpuSystemUs": [
+                6,
+                0,
+                1,
+                563
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.365,
+            "update": 0.313,
+            "readback": 0.149,
+            "audit": 0.162
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 115,
+              "segmentsUs": [
+                2,
+                1,
+                112
+              ],
+              "cpuUserUs": 244,
+              "cpuSystemUs": 22,
+              "segmentsCpuUserUs": [
+                2,
+                1,
+                241
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                0,
+                22
+              ]
+            },
+            "adapter": {
+              "totalUs": 60,
+              "segmentsUs": [
+                41,
+                18,
+                1
+              ],
+              "cpuUserUs": 283,
+              "cpuSystemUs": 32,
+              "segmentsCpuUserUs": [
+                147,
+                135,
+                1
+              ],
+              "segmentsCpuSystemUs": [
+                20,
+                11,
+                1
+              ]
+            },
+            "pg": {
+              "totalUs": 6,
+              "segmentsUs": [
+                1,
+                5
+              ],
+              "cpuUserUs": 5,
+              "cpuSystemUs": 1,
+              "segmentsCpuUserUs": [
+                1,
+                4
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                0
+              ]
+            },
+            "result": {
+              "totalUs": 20054,
+              "segmentsUs": [
+                23,
+                1,
+                24,
+                20006
+              ],
+              "cpuUserUs": 39168,
+              "cpuSystemUs": 550,
+              "segmentsCpuUserUs": [
+                36,
+                2,
+                84,
+                39046
+              ],
+              "segmentsCpuSystemUs": [
+                1,
+                1,
+                6,
+                542
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 0
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "await-reject",
+      "receipt": "await-reject.json",
+      "sha256": "f3d2bf1253ab10c733c47d86e15a18cc159bfb6647755ffdce1b90e6cc1adede",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 0.728
+          },
+          "partitions": null
+        }
+      ]
+    },
+    {
+      "case": "pg-reject",
+      "receipt": "pg-reject.json",
+      "sha256": "4e30308396843f1e2fe86cfd2e17f9778525106a480d72af60f37cdbd56d6d76",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 20.164
+          },
+          "partitions": null
+        }
+      ]
+    },
+    {
+      "case": "decode-reject",
+      "receipt": "decode-reject.json",
+      "sha256": "545d1f7212654f966c591d4427c5f5fab4ba97ebca93071b1b73a8e696634d6d",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 19.369
+          },
+          "partitions": null
+        }
+      ]
+    },
+    {
+      "case": "result-reject",
+      "receipt": "result-reject.json",
+      "sha256": "68f15b5ed60d4ad6fc19edb44c03ca280a2f2fcf44b8df707f43838e27648f28",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 17.568
+          },
+          "partitions": null
+        }
+      ]
+    },
+    {
+      "case": "update-reject",
+      "receipt": "update-reject.json",
+      "sha256": "bc6526151b992c4c717d62787dbe5a3efbe8cc619dc90405a3f8e08e9aad7d21",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 17.686,
+            "update": 6.335
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 16121,
+              "segmentsUs": [
+                17,
+                6,
+                16098
+              ],
+              "cpuUserUs": 30901,
+              "cpuSystemUs": 1092,
+              "segmentsCpuUserUs": [
+                44,
+                6,
+                30851
+              ],
+              "segmentsCpuSystemUs": [
+                2,
+                0,
+                1090
+              ]
+            },
+            "adapter": {
+              "totalUs": 472,
+              "segmentsUs": [
+                342,
+                128,
+                2
+              ],
+              "cpuUserUs": 1178,
+              "cpuSystemUs": 32,
+              "segmentsCpuUserUs": [
+                1051,
+                125,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                27,
+                5,
+                0
+              ]
+            },
+            "pg": {
+              "totalUs": 14,
+              "segmentsUs": [
+                3,
+                11
+              ],
+              "cpuUserUs": 14,
+              "cpuSystemUs": 1,
+              "segmentsCpuUserUs": [
+                5,
+                9
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                1
+              ]
+            },
+            "result": {
+              "totalUs": 499,
+              "segmentsUs": [
+                372,
+                2,
+                123,
+                2
+              ],
+              "cpuUserUs": 1256,
+              "cpuSystemUs": 40,
+              "segmentsCpuUserUs": [
+                1129,
+                3,
+                121,
+                3
+              ],
+              "segmentsCpuSystemUs": [
+                38,
+                1,
+                0,
+                1
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 16
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "audit-reject",
+      "receipt": "audit-reject.json",
+      "sha256": "6cf60243e274f09e3765d6d867524a3257adfa789f17c4b5d94226251978e37c",
+      "samples": [
+        {
+          "index": 0,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 17.473,
+            "update": 2.962,
+            "readback": 0.25,
+            "audit": 4.232
+          },
+          "partitions": {
+            "afterQueue": {
+              "totalUs": 15935,
+              "segmentsUs": [
+                18,
+                5,
+                15912
+              ],
+              "cpuUserUs": 30829,
+              "cpuSystemUs": 1160,
+              "segmentsCpuUserUs": [
+                43,
+                5,
+                30781
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                1,
+                1159
+              ]
+            },
+            "adapter": {
+              "totalUs": 476,
+              "segmentsUs": [
+                339,
+                135,
+                2
+              ],
+              "cpuUserUs": 518,
+              "cpuSystemUs": 35,
+              "segmentsCpuUserUs": [
+                384,
+                132,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                29,
+                4,
+                2
+              ]
+            },
+            "pg": {
+              "totalUs": 14,
+              "segmentsUs": [
+                4,
+                10
+              ],
+              "cpuUserUs": 13,
+              "cpuSystemUs": 1,
+              "segmentsCpuUserUs": [
+                5,
+                8
+              ],
+              "segmentsCpuSystemUs": [
+                0,
+                1
+              ]
+            },
+            "result": {
+              "totalUs": 482,
+              "segmentsUs": [
+                352,
+                2,
+                126,
+                2
+              ],
+              "cpuUserUs": 1332,
+              "cpuSystemUs": 59,
+              "segmentsCpuUserUs": [
+                1202,
+                3,
+                125,
+                2
+              ],
+              "segmentsCpuSystemUs": [
+                57,
+                1,
+                0,
+                1
+              ]
+            }
+          },
+          "checkpoint": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-await-queue": 0,
+              "contract-load-await-after-queue": 16
+            },
+            "scope": "PUBLIC_MICROTASK_CHECKPOINT_NOT_COMPILER_OR_EVENT_LOOP_ONLY",
+            "compilerOnlyAttribution": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    }
+  ],
+  "targetEquivalent": false,
+  "compilerOnlyAttribution": false,
+  "serverExecutionIsolated": false,
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}

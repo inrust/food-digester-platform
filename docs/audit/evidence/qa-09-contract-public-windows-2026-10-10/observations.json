@@ -1,0 +1,1424 @@
+{
+  "gate": "OBSERVATIONS_ONLY",
+  "matrixSha256": "e45769cb5ec07abc7a2ccde1649b4399148c6ea11753e5c64fadc1f73b36e7a2",
+  "totals": {
+    "checkout": 52,
+    "release": 52,
+    "begin": 36,
+    "commit": 30,
+    "rollback": 6,
+    "account": 16,
+    "load": 35,
+    "update": 32,
+    "readback": 31,
+    "audit": 31,
+    "dispose": 16,
+    "networkAttempts": 0,
+    "pools": 16
+  },
+  "rows": [
+    {
+      "case": "off",
+      "firstWindowsMs": {
+        "load": 17.372,
+        "update": 2.876,
+        "readback": 0.25,
+        "audit": 1.956
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": null,
+        "contract-load-driver-query": 0,
+        "contract-load-driver-pg": null,
+        "contract-load-driver-after-pg": null,
+        "contract-load-result": 1
+      },
+      "firstPartitions": null,
+      "allWindowsMs": [
+        {
+          "load": 17.372,
+          "update": 2.876,
+          "readback": 0.25,
+          "audit": 1.956
+        },
+        {
+          "load": 0.37,
+          "update": 0.185,
+          "readback": 0.23,
+          "audit": 0.419
+        },
+        {
+          "load": 0.311,
+          "update": 0.165,
+          "readback": 0.14,
+          "audit": 0.156
+        }
+      ]
+    },
+    {
+      "case": "on",
+      "firstWindowsMs": {
+        "load": 17.606,
+        "update": 2.783,
+        "readback": 0.227,
+        "audit": 1.419
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 16,
+        "contract-load-driver-query": 1,
+        "contract-load-driver-pg": 1,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-result": 0
+      },
+      "firstPartitions": {
+        "afterQueue": {
+          "totalUs": 15794,
+          "segmentsUs": [
+            17,
+            5,
+            15772
+          ],
+          "cpuUserUs": 30738,
+          "cpuSystemUs": 1015,
+          "segmentsCpuUserUs": [
+            18,
+            5,
+            30715
+          ],
+          "segmentsCpuSystemUs": [
+            0,
+            0,
+            1015
+          ]
+        },
+        "adapter": {
+          "totalUs": 674,
+          "segmentsUs": [
+            491,
+            182,
+            1
+          ],
+          "cpuUserUs": 1305,
+          "cpuSystemUs": 116,
+          "segmentsCpuUserUs": [
+            980,
+            323,
+            2
+          ],
+          "segmentsCpuSystemUs": [
+            75,
+            41,
+            0
+          ]
+        },
+        "pg": {
+          "totalUs": 20,
+          "segmentsUs": [
+            5,
+            15
+          ],
+          "cpuUserUs": 23,
+          "cpuSystemUs": 3,
+          "segmentsCpuUserUs": [
+            10,
+            13
+          ],
+          "segmentsCpuSystemUs": [
+            3,
+            0
+          ]
+        },
+        "result": {
+          "totalUs": 495,
+          "segmentsUs": [
+            361,
+            2,
+            130,
+            2
+          ],
+          "cpuUserUs": 1045,
+          "cpuSystemUs": 45,
+          "segmentsCpuUserUs": [
+            594,
+            3,
+            446,
+            2
+          ],
+          "segmentsCpuSystemUs": [
+            36,
+            1,
+            7,
+            1
+          ]
+        }
+      },
+      "allWindowsMs": [
+        {
+          "load": 17.606,
+          "update": 2.783,
+          "readback": 0.227,
+          "audit": 1.419
+        },
+        {
+          "load": 0.297,
+          "update": 0.155,
+          "readback": 0.131,
+          "audit": 0.156
+        },
+        {
+          "load": 0.307,
+          "update": 0.139,
+          "readback": 0.106,
+          "audit": 0.129
+        }
+      ]
+    },
+    {
+      "case": "await-cpu",
+      "firstWindowsMs": {
+        "load": 38.402,
+        "update": 2.894,
+        "readback": 0.237,
+        "audit": 1.495
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 37,
+        "contract-load-driver-query": 1,
+        "contract-load-driver-pg": 0,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-result": 1
+      },
+      "firstPartitions": {
+        "afterQueue": {
+          "totalUs": 36838,
+          "segmentsUs": [
+            20100,
+            25,
+            16713
+          ],
+          "cpuUserUs": 71820,
+          "cpuSystemUs": 3278,
+          "segmentsCpuUserUs": [
+            38935,
+            40,
+            32845
+          ],
+          "segmentsCpuSystemUs": [
+            697,
+            5,
+            2576
+          ]
+        },
+        "adapter": {
+          "totalUs": 457,
+          "segmentsUs": [
+            320,
+            135,
+            2
+          ],
+          "cpuUserUs": 911,
+          "cpuSystemUs": 25,
+          "segmentsCpuUserUs": [
+            711,
+            198,
+            2
+          ],
+          "segmentsCpuSystemUs": [
+            18,
+            4,
+            3
+          ]
+        },
+        "pg": {
+          "totalUs": 15,
+          "segmentsUs": [
+            4,
+            11
+          ],
+          "cpuUserUs": 15,
+          "cpuSystemUs": 1,
+          "segmentsCpuUserUs": [
+            6,
+            9
+          ],
+          "segmentsCpuSystemUs": [
+            1,
+            0
+          ]
+        },
+        "result": {
+          "totalUs": 508,
+          "segmentsUs": [
+            378,
+            2,
+            127,
+            1
+          ],
+          "cpuUserUs": 1235,
+          "cpuSystemUs": 36,
+          "segmentsCpuUserUs": [
+            926,
+            3,
+            248,
+            58
+          ],
+          "segmentsCpuSystemUs": [
+            23,
+            3,
+            9,
+            1
+          ]
+        }
+      },
+      "allWindowsMs": [
+        {
+          "load": 38.402,
+          "update": 2.894,
+          "readback": 0.237,
+          "audit": 1.495
+        },
+        {
+          "load": 20.528,
+          "update": 0.22,
+          "readback": 0.19,
+          "audit": 0.219
+        },
+        {
+          "load": 20.606,
+          "update": 0.187,
+          "readback": 0.12,
+          "audit": 0.169
+        }
+      ]
+    },
+    {
+      "case": "await-wait",
+      "firstWindowsMs": {
+        "load": 49.572,
+        "update": 2.904,
+        "readback": 0.236,
+        "audit": 1.919
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 48,
+        "contract-load-driver-query": 1,
+        "contract-load-driver-pg": 0,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-result": 0
+      },
+      "firstPartitions": {
+        "afterQueue": {
+          "totalUs": 48061,
+          "segmentsUs": [
+            30303,
+            25,
+            17733
+          ],
+          "cpuUserUs": 74764,
+          "cpuSystemUs": 5812,
+          "segmentsCpuUserUs": [
+            41683,
+            80,
+            33001
+          ],
+          "segmentsCpuSystemUs": [
+            3591,
+            12,
+            2209
+          ]
+        },
+        "adapter": {
+          "totalUs": 419,
+          "segmentsUs": [
+            294,
+            124,
+            1
+          ],
+          "cpuUserUs": 866,
+          "cpuSystemUs": 24,
+          "segmentsCpuUserUs": [
+            623,
+            241,
+            2
+          ],
+          "segmentsCpuSystemUs": [
+            12,
+            10,
+            2
+          ]
+        },
+        "pg": {
+          "totalUs": 13,
+          "segmentsUs": [
+            4,
+            9
+          ],
+          "cpuUserUs": 12,
+          "cpuSystemUs": 2,
+          "segmentsCpuUserUs": [
+            5,
+            7
+          ],
+          "segmentsCpuSystemUs": [
+            1,
+            1
+          ]
+        },
+        "result": {
+          "totalUs": 445,
+          "segmentsUs": [
+            316,
+            2,
+            125,
+            2
+          ],
+          "cpuUserUs": 1023,
+          "cpuSystemUs": 26,
+          "segmentsCpuUserUs": [
+            706,
+            78,
+            237,
+            2
+          ],
+          "segmentsCpuSystemUs": [
+            19,
+            1,
+            5,
+            1
+          ]
+        }
+      },
+      "allWindowsMs": [
+        {
+          "load": 49.572,
+          "update": 2.904,
+          "readback": 0.236,
+          "audit": 1.919
+        },
+        {
+          "load": 32.056,
+          "update": 0.231,
+          "readback": 0.16,
+          "audit": 0.235
+        },
+        {
+          "load": 31.557,
+          "update": 0.153,
+          "readback": 0.104,
+          "audit": 0.132
+        }
+      ]
+    },
+    {
+      "case": "pg-submit",
+      "firstWindowsMs": {
+        "load": 37.893,
+        "update": 3.212,
+        "readback": 0.276,
+        "audit": 1.847
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 16,
+        "contract-load-driver-query": 21,
+        "contract-load-driver-pg": 20,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-result": 1
+      },
+      "firstPartitions": {
+        "afterQueue": {
+          "totalUs": 16040,
+          "segmentsUs": [
+            19,
+            7,
+            16014
+          ],
+          "cpuUserUs": 31044,
+          "cpuSystemUs": 1185,
+          "segmentsCpuUserUs": [
+            29,
+            6,
+            31009
+          ],
+          "segmentsCpuSystemUs": [
+            0,
+            2,
+            1183
+          ]
+        },
+        "adapter": {
+          "totalUs": 20614,
+          "segmentsUs": [
+            20347,
+            264,
+            3
+          ],
+          "cpuUserUs": 40726,
+          "cpuSystemUs": 1918,
+          "segmentsCpuUserUs": [
+            40178,
+            544,
+            4
+          ],
+          "segmentsCpuSystemUs": [
+            1891,
+            24,
+            3
+          ]
+        },
+        "pg": {
+          "totalUs": 20079,
+          "segmentsUs": [
+            20039,
+            40
+          ],
+          "cpuUserUs": 39600,
+          "cpuSystemUs": 1869,
+          "segmentsCpuUserUs": [
+            39505,
+            95
+          ],
+          "segmentsCpuSystemUs": [
+            1857,
+            12
+          ]
+        },
+        "result": {
+          "totalUs": 590,
+          "segmentsUs": [
+            452,
+            3,
+            134,
+            1
+          ],
+          "cpuUserUs": 1222,
+          "cpuSystemUs": 50,
+          "segmentsCpuUserUs": [
+            967,
+            3,
+            250,
+            2
+          ],
+          "segmentsCpuSystemUs": [
+            45,
+            0,
+            4,
+            1
+          ]
+        }
+      },
+      "allWindowsMs": [
+        {
+          "load": 37.893,
+          "update": 3.212,
+          "readback": 0.276,
+          "audit": 1.847
+        },
+        {
+          "load": 20.496,
+          "update": 0.289,
+          "readback": 0.35,
+          "audit": 0.291
+        },
+        {
+          "load": 20.532,
+          "update": 0.351,
+          "readback": 0.187,
+          "audit": 0.183
+        }
+      ]
+    },
+    {
+      "case": "pg-wait",
+      "firstWindowsMs": {
+        "load": 49.303,
+        "update": 2.935,
+        "readback": 0.232,
+        "audit": 1.368
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 16,
+        "contract-load-driver-query": 31,
+        "contract-load-driver-pg": 31,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-result": 1
+      },
+      "firstPartitions": {
+        "afterQueue": {
+          "totalUs": 16474,
+          "segmentsUs": [
+            22,
+            7,
+            16445
+          ],
+          "cpuUserUs": 31864,
+          "cpuSystemUs": 1139,
+          "segmentsCpuUserUs": [
+            22,
+            49,
+            31793
+          ],
+          "segmentsCpuSystemUs": [
+            1,
+            1,
+            1137
+          ]
+        },
+        "adapter": {
+          "totalUs": 31366,
+          "segmentsUs": [
+            329,
+            31035,
+            2
+          ],
+          "cpuUserUs": 43484,
+          "cpuSystemUs": 3013,
+          "segmentsCpuUserUs": [
+            840,
+            42641,
+            3
+          ],
+          "segmentsCpuSystemUs": [
+            30,
+            2982,
+            1
+          ]
+        },
+        "pg": {
+          "totalUs": 30794,
+          "segmentsUs": [
+            3,
+            30791
+          ],
+          "cpuUserUs": 42150,
+          "cpuSystemUs": 2958,
+          "segmentsCpuUserUs": [
+            4,
+            42146
+          ],
+          "segmentsCpuSystemUs": [
+            1,
+            2957
+          ]
+        },
+        "result": {
+          "totalUs": 715,
+          "segmentsUs": [
+            439,
+            2,
+            269,
+            5
+          ],
+          "cpuUserUs": 1530,
+          "cpuSystemUs": 82,
+          "segmentsCpuUserUs": [
+            1037,
+            3,
+            480,
+            10
+          ],
+          "segmentsCpuSystemUs": [
+            26,
+            0,
+            54,
+            2
+          ]
+        }
+      },
+      "allWindowsMs": [
+        {
+          "load": 49.303,
+          "update": 2.935,
+          "readback": 0.232,
+          "audit": 1.368
+        },
+        {
+          "load": 30.892,
+          "update": 0.316,
+          "readback": 0.194,
+          "audit": 0.228
+        },
+        {
+          "load": 31.422,
+          "update": 0.257,
+          "readback": 0.139,
+          "audit": 0.15
+        }
+      ]
+    },
+    {
+      "case": "decode-cpu",
+      "firstWindowsMs": {
+        "load": 37.578,
+        "update": 3.094,
+        "readback": 0.252,
+        "audit": 1.514
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 16,
+        "contract-load-driver-query": 21,
+        "contract-load-driver-pg": 0,
+        "contract-load-driver-after-pg": 20,
+        "contract-load-result": 1
+      },
+      "firstPartitions": {
+        "afterQueue": {
+          "totalUs": 15837,
+          "segmentsUs": [
+            17,
+            5,
+            15815
+          ],
+          "cpuUserUs": 30775,
+          "cpuSystemUs": 969,
+          "segmentsCpuUserUs": [
+            16,
+            24,
+            30735
+          ],
+          "segmentsCpuSystemUs": [
+            1,
+            1,
+            967
+          ]
+        },
+        "adapter": {
+          "totalUs": 20573,
+          "segmentsUs": [
+            310,
+            20257,
+            6
+          ],
+          "cpuUserUs": 40671,
+          "cpuSystemUs": 1963,
+          "segmentsCpuUserUs": [
+            371,
+            40293,
+            7
+          ],
+          "segmentsCpuSystemUs": [
+            6,
+            1956,
+            1
+          ]
+        },
+        "pg": {
+          "totalUs": 14,
+          "segmentsUs": [
+            4,
+            10
+          ],
+          "cpuUserUs": 14,
+          "cpuSystemUs": 1,
+          "segmentsCpuUserUs": [
+            5,
+            9
+          ],
+          "segmentsCpuSystemUs": [
+            0,
+            1
+          ]
+        },
+        "result": {
+          "totalUs": 582,
+          "segmentsUs": [
+            443,
+            2,
+            136,
+            1
+          ],
+          "cpuUserUs": 1279,
+          "cpuSystemUs": 37,
+          "segmentsCpuUserUs": [
+            921,
+            3,
+            353,
+            2
+          ],
+          "segmentsCpuSystemUs": [
+            32,
+            1,
+            4,
+            0
+          ]
+        }
+      },
+      "allWindowsMs": [
+        {
+          "load": 37.578,
+          "update": 3.094,
+          "readback": 0.252,
+          "audit": 1.514
+        },
+        {
+          "load": 20.474,
+          "update": 0.31,
+          "readback": 0.185,
+          "audit": 0.222
+        },
+        {
+          "load": 20.518,
+          "update": 0.293,
+          "readback": 0.159,
+          "audit": 0.206
+        }
+      ]
+    },
+    {
+      "case": "adapter-cpu",
+      "firstWindowsMs": {
+        "load": 37.833,
+        "update": 2.977,
+        "readback": 0.245,
+        "audit": 1.519
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 16,
+        "contract-load-driver-query": 21,
+        "contract-load-driver-pg": 0,
+        "contract-load-driver-after-pg": 20,
+        "contract-load-result": 1
+      },
+      "firstPartitions": {
+        "afterQueue": {
+          "totalUs": 16145,
+          "segmentsUs": [
+            18,
+            5,
+            16122
+          ],
+          "cpuUserUs": 30918,
+          "cpuSystemUs": 1138,
+          "segmentsCpuUserUs": [
+            50,
+            5,
+            30863
+          ],
+          "segmentsCpuSystemUs": [
+            0,
+            1,
+            1137
+          ]
+        },
+        "adapter": {
+          "totalUs": 20462,
+          "segmentsUs": [
+            301,
+            141,
+            20020
+          ],
+          "cpuUserUs": 40735,
+          "cpuSystemUs": 2011,
+          "segmentsCpuUserUs": [
+            847,
+            135,
+            39753
+          ],
+          "segmentsCpuSystemUs": [
+            7,
+            7,
+            1997
+          ]
+        },
+        "pg": {
+          "totalUs": 16,
+          "segmentsUs": [
+            4,
+            12
+          ],
+          "cpuUserUs": 13,
+          "cpuSystemUs": 2,
+          "segmentsCpuUserUs": [
+            5,
+            8
+          ],
+          "segmentsCpuSystemUs": [
+            0,
+            2
+          ]
+        },
+        "result": {
+          "totalUs": 642,
+          "segmentsUs": [
+            515,
+            3,
+            122,
+            2
+          ],
+          "cpuUserUs": 1327,
+          "cpuSystemUs": 86,
+          "segmentsCpuUserUs": [
+            1026,
+            4,
+            294,
+            3
+          ],
+          "segmentsCpuSystemUs": [
+            81,
+            1,
+            4,
+            0
+          ]
+        }
+      },
+      "allWindowsMs": [
+        {
+          "load": 37.833,
+          "update": 2.977,
+          "readback": 0.245,
+          "audit": 1.519
+        },
+        {
+          "load": 20.382,
+          "update": 0.215,
+          "readback": 0.158,
+          "audit": 0.188
+        },
+        {
+          "load": 20.516,
+          "update": 0.324,
+          "readback": 0.159,
+          "audit": 0.204
+        }
+      ]
+    },
+    {
+      "case": "result-cpu",
+      "firstWindowsMs": {
+        "load": 37.877,
+        "update": 3.713,
+        "readback": 0.298,
+        "audit": 1.701
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 16,
+        "contract-load-driver-query": 1,
+        "contract-load-driver-pg": 0,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-result": 21
+      },
+      "firstPartitions": {
+        "afterQueue": {
+          "totalUs": 16008,
+          "segmentsUs": [
+            19,
+            6,
+            15983
+          ],
+          "cpuUserUs": 30011,
+          "cpuSystemUs": 1234,
+          "segmentsCpuUserUs": [
+            20,
+            6,
+            29985
+          ],
+          "segmentsCpuSystemUs": [
+            1,
+            0,
+            1233
+          ]
+        },
+        "adapter": {
+          "totalUs": 509,
+          "segmentsUs": [
+            353,
+            154,
+            2
+          ],
+          "cpuUserUs": 1978,
+          "cpuSystemUs": 26,
+          "segmentsCpuUserUs": [
+            421,
+            1555,
+            2
+          ],
+          "segmentsCpuSystemUs": [
+            11,
+            13,
+            2
+          ]
+        },
+        "pg": {
+          "totalUs": 16,
+          "segmentsUs": [
+            4,
+            12
+          ],
+          "cpuUserUs": 16,
+          "cpuSystemUs": 1,
+          "segmentsCpuUserUs": [
+            6,
+            10
+          ],
+          "segmentsCpuSystemUs": [
+            1,
+            0
+          ]
+        },
+        "result": {
+          "totalUs": 20692,
+          "segmentsUs": [
+            384,
+            20027,
+            276,
+            5
+          ],
+          "cpuUserUs": 40454,
+          "cpuSystemUs": 2335,
+          "segmentsCpuUserUs": [
+            780,
+            39159,
+            509,
+            6
+          ],
+          "segmentsCpuSystemUs": [
+            104,
+            2162,
+            69,
+            0
+          ]
+        }
+      },
+      "allWindowsMs": [
+        {
+          "load": 37.877,
+          "update": 3.713,
+          "readback": 0.298,
+          "audit": 1.701
+        },
+        {
+          "load": 20.44,
+          "update": 0.334,
+          "readback": 0.199,
+          "audit": 0.23
+        },
+        {
+          "load": 20.412,
+          "update": 0.262,
+          "readback": 0.13,
+          "audit": 0.166
+        }
+      ]
+    },
+    {
+      "case": "caller-cpu",
+      "firstWindowsMs": {
+        "load": 37.638,
+        "update": 3.279,
+        "readback": 0.272,
+        "audit": 1.629
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 16,
+        "contract-load-driver-query": 1,
+        "contract-load-driver-pg": 0,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-result": 21
+      },
+      "firstPartitions": {
+        "afterQueue": {
+          "totalUs": 15980,
+          "segmentsUs": [
+            17,
+            5,
+            15958
+          ],
+          "cpuUserUs": 30581,
+          "cpuSystemUs": 1070,
+          "segmentsCpuUserUs": [
+            58,
+            10,
+            30513
+          ],
+          "segmentsCpuSystemUs": [
+            1,
+            1,
+            1068
+          ]
+        },
+        "adapter": {
+          "totalUs": 465,
+          "segmentsUs": [
+            325,
+            138,
+            2
+          ],
+          "cpuUserUs": 534,
+          "cpuSystemUs": 16,
+          "segmentsCpuUserUs": [
+            397,
+            134,
+            3
+          ],
+          "segmentsCpuSystemUs": [
+            10,
+            3,
+            3
+          ]
+        },
+        "pg": {
+          "totalUs": 15,
+          "segmentsUs": [
+            4,
+            11
+          ],
+          "cpuUserUs": 14,
+          "cpuSystemUs": 4,
+          "segmentsCpuUserUs": [
+            5,
+            9
+          ],
+          "segmentsCpuSystemUs": [
+            3,
+            1
+          ]
+        },
+        "result": {
+          "totalUs": 20514,
+          "segmentsUs": [
+            363,
+            2,
+            128,
+            20021
+          ],
+          "cpuUserUs": 41341,
+          "cpuSystemUs": 2037,
+          "segmentsCpuUserUs": [
+            1524,
+            3,
+            512,
+            39302
+          ],
+          "segmentsCpuSystemUs": [
+            20,
+            0,
+            3,
+            2014
+          ]
+        }
+      },
+      "allWindowsMs": [
+        {
+          "load": 37.638,
+          "update": 3.279,
+          "readback": 0.272,
+          "audit": 1.629
+        },
+        {
+          "load": 20.354,
+          "update": 0.253,
+          "readback": 0.159,
+          "audit": 0.227
+        },
+        {
+          "load": 20.365,
+          "update": 0.313,
+          "readback": 0.149,
+          "audit": 0.162
+        }
+      ]
+    },
+    {
+      "case": "await-reject",
+      "firstWindowsMs": {
+        "load": 0.728
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 0,
+        "contract-load-driver-query": null,
+        "contract-load-driver-pg": null,
+        "contract-load-driver-after-pg": null,
+        "contract-load-result": null
+      },
+      "firstPartitions": null,
+      "allWindowsMs": [
+        {
+          "load": 0.728
+        }
+      ]
+    },
+    {
+      "case": "pg-reject",
+      "firstWindowsMs": {
+        "load": 20.164
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 16,
+        "contract-load-driver-query": 1,
+        "contract-load-driver-pg": 0,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-result": 3
+      },
+      "firstPartitions": null,
+      "allWindowsMs": [
+        {
+          "load": 20.164
+        }
+      ]
+    },
+    {
+      "case": "decode-reject",
+      "firstWindowsMs": {
+        "load": 19.369
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 16,
+        "contract-load-driver-query": 0,
+        "contract-load-driver-pg": 0,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-result": 3
+      },
+      "firstPartitions": null,
+      "allWindowsMs": [
+        {
+          "load": 19.369
+        }
+      ]
+    },
+    {
+      "case": "result-reject",
+      "firstWindowsMs": {
+        "load": 17.568
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 16,
+        "contract-load-driver-query": 1,
+        "contract-load-driver-pg": 0,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-result": 0
+      },
+      "firstPartitions": null,
+      "allWindowsMs": [
+        {
+          "load": 17.568
+        }
+      ]
+    },
+    {
+      "case": "update-reject",
+      "firstWindowsMs": {
+        "load": 17.686,
+        "update": 6.335
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 16,
+        "contract-load-driver-query": 1,
+        "contract-load-driver-pg": 0,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-result": 0
+      },
+      "firstPartitions": {
+        "afterQueue": {
+          "totalUs": 16121,
+          "segmentsUs": [
+            17,
+            6,
+            16098
+          ],
+          "cpuUserUs": 30901,
+          "cpuSystemUs": 1092,
+          "segmentsCpuUserUs": [
+            44,
+            6,
+            30851
+          ],
+          "segmentsCpuSystemUs": [
+            2,
+            0,
+            1090
+          ]
+        },
+        "adapter": {
+          "totalUs": 472,
+          "segmentsUs": [
+            342,
+            128,
+            2
+          ],
+          "cpuUserUs": 1178,
+          "cpuSystemUs": 32,
+          "segmentsCpuUserUs": [
+            1051,
+            125,
+            2
+          ],
+          "segmentsCpuSystemUs": [
+            27,
+            5,
+            0
+          ]
+        },
+        "pg": {
+          "totalUs": 14,
+          "segmentsUs": [
+            3,
+            11
+          ],
+          "cpuUserUs": 14,
+          "cpuSystemUs": 1,
+          "segmentsCpuUserUs": [
+            5,
+            9
+          ],
+          "segmentsCpuSystemUs": [
+            0,
+            1
+          ]
+        },
+        "result": {
+          "totalUs": 499,
+          "segmentsUs": [
+            372,
+            2,
+            123,
+            2
+          ],
+          "cpuUserUs": 1256,
+          "cpuSystemUs": 40,
+          "segmentsCpuUserUs": [
+            1129,
+            3,
+            121,
+            3
+          ],
+          "segmentsCpuSystemUs": [
+            38,
+            1,
+            0,
+            1
+          ]
+        }
+      },
+      "allWindowsMs": [
+        {
+          "load": 17.686,
+          "update": 6.335
+        }
+      ]
+    },
+    {
+      "case": "audit-reject",
+      "firstWindowsMs": {
+        "load": 17.473,
+        "update": 2.962,
+        "readback": 0.25,
+        "audit": 4.232
+      },
+      "firstDetailedMs": {
+        "contract-load-await-after-queue": 16,
+        "contract-load-driver-query": 1,
+        "contract-load-driver-pg": 0,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-result": 0
+      },
+      "firstPartitions": {
+        "afterQueue": {
+          "totalUs": 15935,
+          "segmentsUs": [
+            18,
+            5,
+            15912
+          ],
+          "cpuUserUs": 30829,
+          "cpuSystemUs": 1160,
+          "segmentsCpuUserUs": [
+            43,
+            5,
+            30781
+          ],
+          "segmentsCpuSystemUs": [
+            0,
+            1,
+            1159
+          ]
+        },
+        "adapter": {
+          "totalUs": 476,
+          "segmentsUs": [
+            339,
+            135,
+            2
+          ],
+          "cpuUserUs": 518,
+          "cpuSystemUs": 35,
+          "segmentsCpuUserUs": [
+            384,
+            132,
+            2
+          ],
+          "segmentsCpuSystemUs": [
+            29,
+            4,
+            2
+          ]
+        },
+        "pg": {
+          "totalUs": 14,
+          "segmentsUs": [
+            4,
+            10
+          ],
+          "cpuUserUs": 13,
+          "cpuSystemUs": 1,
+          "segmentsCpuUserUs": [
+            5,
+            8
+          ],
+          "segmentsCpuSystemUs": [
+            0,
+            1
+          ]
+        },
+        "result": {
+          "totalUs": 482,
+          "segmentsUs": [
+            352,
+            2,
+            126,
+            2
+          ],
+          "cpuUserUs": 1332,
+          "cpuSystemUs": 59,
+          "segmentsCpuUserUs": [
+            1202,
+            3,
+            125,
+            2
+          ],
+          "segmentsCpuSystemUs": [
+            57,
+            1,
+            0,
+            1
+          ]
+        }
+      },
+      "allWindowsMs": [
+        {
+          "load": 17.473,
+          "update": 2.962,
+          "readback": 0.25,
+          "audit": 4.232
+        }
+      ]
+    }
+  ],
+  "same20msRelocationPairs": [
+    [
+      "await-cpu",
+      "result-cpu"
+    ],
+    [
+      "pg-submit",
+      "caller-cpu"
+    ],
+    [
+      "decode-cpu",
+      "adapter-cpu"
+    ]
+  ],
+  "causalBenefit": "NOT_ESTABLISHED",
+  "targetEquivalent": false,
+  "modelCostShift": "CONTROLLED_COST_LOCATION_ONLY",
+  "transport": "INDEPENDENT_UNRESOLVED_NO_NEW_REQUESTS",
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}
