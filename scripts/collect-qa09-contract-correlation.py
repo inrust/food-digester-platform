@@ -136,7 +136,7 @@ for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
                 phase_fields = ['gatewayRequestId', 'lambdaRequestId', 'operationId', 'phase', 'durationMs',
                                 'outcome', 'errorCode', 'startedAt', 'completedAt', 'coldStart', 'includesConnectionWait']
                 phase = {k: value[k] for k in phase_fields if k in value}
-                if value.get('completionBoundary') in ['DRIVER_DISPATCH', 'CALL_RETURNED', 'MODEL_EXTENSION_ENTERED', 'OPERATION_SETTLED', 'OPERATION_FAILED', 'PG_DISPATCH', 'PG_SETTLED', 'MICROTASK_CHECKPOINT']:
+                if value.get('completionBoundary') in ['DRIVER_DISPATCH', 'CALL_RETURNED', 'MODEL_EXTENSION_ENTERED', 'OPERATION_SETTLED', 'OPERATION_FAILED', 'PG_DISPATCH', 'PG_SETTLED', 'MICROTASK_CHECKPOINT', 'ADAPTER_CALL_RETURNED', 'PG_CALL_RETURNED', 'MODEL_EXTENSION_RESUMED']:
                     phase['completionBoundary'] = value['completionBoundary']
                 if value.get('processCpuScope') == 'PROCESS_ALL_THREADS':
                     phase['processCpuScope'] = 'PROCESS_ALL_THREADS'
@@ -151,6 +151,10 @@ for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
                     own = {k: value[k] for k in ['gatewayRequestId', 'lambdaRequestId', 'operationId', 'modelEntries', 'driverDispatches', 'transactional'] if k in value}
                     if value.get('detailEnabled') is True and all(type(value.get(k)) is int and 0 <= value[k] <= 9007199254740991 for k in ['pgQueries','pgSettlements']):
                         own.update(detailEnabled=True, pgQueries=value['pgQueries'], pgSettlements=value['pgSettlements'])
+                    if (value.get('publicBoundariesEnabled') is True and type(value.get('modelResumeObserved')) is bool
+                            and all(type(value.get(k)) is int and 0 <= value[k] <= 9007199254740991 for k in ['driverReturns', 'pgReturns', 'modelResumes'])):
+                        own.update(publicBoundariesEnabled=True, modelResumeObserved=value['modelResumeObserved'],
+                                   **{k: value[k] for k in ['driverReturns', 'pgReturns', 'modelResumes']})
                     ownership.append(own)
             if name == 'lambda' and value.get('event') != 'admin.request.completed':
                 continue

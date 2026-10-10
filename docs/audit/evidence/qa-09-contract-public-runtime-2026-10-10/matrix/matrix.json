@@ -1,0 +1,613 @@
+{
+  "gate": "PASS",
+  "scope": "OFFLINE_REAL_PRISMA_PUBLIC_SEAMS_NO_FORCED_YIELDS",
+  "runtime": {
+    "node": "v24.12.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "budget": {
+    "childProcesses": 8,
+    "concurrency": 1,
+    "childDeadlineMs": 45000,
+    "poolMax": 1,
+    "networkRequests": 0,
+    "databaseServers": 0,
+    "targetFixtures": 0
+  },
+  "inputs": [
+    {
+      "path": "scripts/run-qa09-contract-public-runtime.mjs",
+      "sha256": "5d4f7e32c8370cbb8f3f23c85e9ec8e813448c9372c60602cdb1cbcc956e0372"
+    },
+    {
+      "path": "scripts/qa09-contract-public-proof.mjs",
+      "sha256": "b8de61ecc0101fad06534f2f496d06bff5ab5692c49a684a2c1bc73fe169853b"
+    },
+    {
+      "path": "scripts/qa09-contract-load-detail-proof.mjs",
+      "sha256": "4068b83c3958987b0600e3b002b9993581db055047042dc396ac73973b085a77"
+    },
+    {
+      "path": "scripts/qa09-contract-load-proof.mjs",
+      "sha256": "d915105663fec9e188b8021ecb0a5370cbfc2f54c2ac2169e95a5b2dffc8a8d9"
+    },
+    {
+      "path": "packages/database/test/contract-public-runtime.test.ts",
+      "sha256": "9b2f88c1e48f40c5c698fc6c9fdf5cedd97408cbcdea4f12acdf075946124c2d"
+    },
+    {
+      "path": "packages/database/src/client.ts",
+      "sha256": "cf3d205ee4aa4499d6b3e487c87a5d70fc252c19afcab2172889fd1544832ce9"
+    },
+    {
+      "path": "packages/database/src/client-preparation.ts",
+      "sha256": "9dc7a0994025777e627bb87757a0612e9047ce0996165d81db7cfff9250d6fdc"
+    },
+    {
+      "path": "packages/database/src/contract-load-pg-lease.ts",
+      "sha256": "a842cc8ae6431474ad8e4b0d4396b81a29f4da586e9e883517b24c7ef4ef132b"
+    },
+    {
+      "path": "packages/database/src/observed-pg.ts",
+      "sha256": "741ec38a5e3d4a267f39523b634d28e51b6c5573769e8ac3244afe94834085c2"
+    },
+    {
+      "path": "packages/database/src/contract-load-observation.ts",
+      "sha256": "0624aded5b62d9b8aededcb46b1304be625a20537e0e5c9e5fa84e3f0954a91f"
+    },
+    {
+      "path": "packages/observability/src/data-path.ts",
+      "sha256": "80dadd8527f3caf8848151c2cd82f0e5a0b67100b9f9812ddba241784a77c4df"
+    },
+    {
+      "path": "apps/cloud-api/src/admin/contract/load-candidate.ts",
+      "sha256": "b993341ef1d7df7108da9cc24ddfd77b466722e6e5456deb6ae60a30a5c4da70"
+    },
+    {
+      "path": "packages/database/prisma/schema.prisma",
+      "sha256": "fd3e5b59670fe300db0406e295eaf9d9022bb5108210d24cd22c19dcf1c19d73"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2126f03557c343bc7fc90b12e060f663492a67b647e0892bb18dba126a7f3364"
+    },
+    {
+      "path": "node_modules/@prisma/adapter-pg/dist/index.mjs",
+      "sha256": "e6879b3429f9efade5696321da768476fd4710f2aff7de95c01cca15d6a8d1d1"
+    }
+  ],
+  "rows": [
+    {
+      "case": "off",
+      "receipt": "off.json",
+      "sha256": "0fc88612d9a2dc2a770b508bd90e947756b4bceb3fabb0d3ac4c54bef5d2ac5b",
+      "counts": {
+        "checkout": 4,
+        "release": 4,
+        "begin": 3,
+        "commit": 3,
+        "rollback": 0,
+        "account": 1,
+        "load": 3,
+        "update": 3,
+        "readback": 3,
+        "audit": 3,
+        "dispose": 1,
+        "network": 0,
+        "pools": 1
+      },
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 22.129,
+            "update": 3.085,
+            "readback": 0.256,
+            "audit": 1.632
+          },
+          "proof": null
+        },
+        {
+          "index": 1,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 0.319,
+            "update": 0.183,
+            "readback": 0.146,
+            "audit": 0.181
+          },
+          "proof": null
+        },
+        {
+          "index": 2,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 0.288,
+            "update": 0.18,
+            "readback": 0.12,
+            "audit": 0.133
+          },
+          "proof": null
+        }
+      ]
+    },
+    {
+      "case": "on",
+      "receipt": "on.json",
+      "sha256": "ca1ce305b3cba3c93c11e7eb51cfd699c8e66a1f24415fe35f2575a139536ca8",
+      "counts": {
+        "checkout": 4,
+        "release": 4,
+        "begin": 3,
+        "commit": 3,
+        "rollback": 0,
+        "account": 1,
+        "load": 3,
+        "update": 3,
+        "readback": 3,
+        "audit": 3,
+        "dispose": 1,
+        "network": 0,
+        "pools": 1
+      },
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 16.206,
+            "update": 2.735,
+            "readback": 0.214,
+            "audit": 1.517
+          },
+          "proof": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-driver-submit": 0,
+              "contract-load-driver-await": 0,
+              "contract-load-pg-submit": 0,
+              "contract-load-pg-await": 0,
+              "contract-load-result-to-model": 0,
+              "contract-load-result-after-model": 0
+            },
+            "scope": "PUBLIC_SYNCHRONOUS_RETURN_EXISTING_AWAIT_CONTINUATION_NO_FORCED_YIELD",
+            "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+            "compilerOnlyAttribution": false,
+            "serverExecutionIsolated": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 0.401,
+            "update": 0.221,
+            "readback": 0.18,
+            "audit": 0.202
+          },
+          "proof": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-driver-submit": 0,
+              "contract-load-driver-await": 0,
+              "contract-load-pg-submit": 0,
+              "contract-load-pg-await": 0,
+              "contract-load-result-to-model": 0,
+              "contract-load-result-after-model": 0
+            },
+            "scope": "PUBLIC_SYNCHRONOUS_RETURN_EXISTING_AWAIT_CONTINUATION_NO_FORCED_YIELD",
+            "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+            "compilerOnlyAttribution": false,
+            "serverExecutionIsolated": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 0.339,
+            "update": 0.206,
+            "readback": 0.121,
+            "audit": 0.137
+          },
+          "proof": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-driver-submit": 0,
+              "contract-load-driver-await": 0,
+              "contract-load-pg-submit": 0,
+              "contract-load-pg-await": 0,
+              "contract-load-result-to-model": 0,
+              "contract-load-result-after-model": 0
+            },
+            "scope": "PUBLIC_SYNCHRONOUS_RETURN_EXISTING_AWAIT_CONTINUATION_NO_FORCED_YIELD",
+            "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+            "compilerOnlyAttribution": false,
+            "serverExecutionIsolated": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "pg-wait",
+      "receipt": "pg-wait.json",
+      "sha256": "be695c94e7ab316c523a937dba8acc776c31bd89109099641986730485e0c557",
+      "counts": {
+        "checkout": 4,
+        "release": 4,
+        "begin": 3,
+        "commit": 3,
+        "rollback": 0,
+        "account": 1,
+        "load": 3,
+        "update": 3,
+        "readback": 3,
+        "audit": 3,
+        "dispose": 1,
+        "network": 0,
+        "pools": 1
+      },
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 47.913,
+            "update": 2.961,
+            "readback": 0.228,
+            "audit": 1.536
+          },
+          "proof": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-driver-submit": 0,
+              "contract-load-driver-await": 31,
+              "contract-load-pg-submit": 0,
+              "contract-load-pg-await": 31,
+              "contract-load-result-to-model": 0,
+              "contract-load-result-after-model": 0
+            },
+            "scope": "PUBLIC_SYNCHRONOUS_RETURN_EXISTING_AWAIT_CONTINUATION_NO_FORCED_YIELD",
+            "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+            "compilerOnlyAttribution": false,
+            "serverExecutionIsolated": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 30.221,
+            "update": 0.284,
+            "readback": 0.177,
+            "audit": 0.209
+          },
+          "proof": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-driver-submit": 0,
+              "contract-load-driver-await": 30,
+              "contract-load-pg-submit": 0,
+              "contract-load-pg-await": 30,
+              "contract-load-result-to-model": 0,
+              "contract-load-result-after-model": 0
+            },
+            "scope": "PUBLIC_SYNCHRONOUS_RETURN_EXISTING_AWAIT_CONTINUATION_NO_FORCED_YIELD",
+            "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+            "compilerOnlyAttribution": false,
+            "serverExecutionIsolated": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 31.59,
+            "update": 0.255,
+            "readback": 0.154,
+            "audit": 0.165
+          },
+          "proof": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-driver-submit": 0,
+              "contract-load-driver-await": 31,
+              "contract-load-pg-submit": 0,
+              "contract-load-pg-await": 31,
+              "contract-load-result-to-model": 0,
+              "contract-load-result-after-model": 0
+            },
+            "scope": "PUBLIC_SYNCHRONOUS_RETURN_EXISTING_AWAIT_CONTINUATION_NO_FORCED_YIELD",
+            "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+            "compilerOnlyAttribution": false,
+            "serverExecutionIsolated": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "fields-cpu",
+      "receipt": "fields-cpu.json",
+      "sha256": "3f56db38d18d08631c86c5be9cdac3d077d036e3a14605a1f5ab20b1cf51c060",
+      "counts": {
+        "checkout": 4,
+        "release": 4,
+        "begin": 3,
+        "commit": 3,
+        "rollback": 0,
+        "account": 1,
+        "load": 3,
+        "update": 3,
+        "readback": 3,
+        "audit": 3,
+        "dispose": 1,
+        "network": 0,
+        "pools": 1
+      },
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 38.877,
+            "update": 2.899,
+            "readback": 0.231,
+            "audit": 1.467
+          },
+          "proof": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-driver-submit": 0,
+              "contract-load-driver-await": 20,
+              "contract-load-pg-submit": 0,
+              "contract-load-pg-await": 0,
+              "contract-load-result-to-model": 0,
+              "contract-load-result-after-model": 0
+            },
+            "scope": "PUBLIC_SYNCHRONOUS_RETURN_EXISTING_AWAIT_CONTINUATION_NO_FORCED_YIELD",
+            "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+            "compilerOnlyAttribution": false,
+            "serverExecutionIsolated": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 1,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.332,
+            "update": 0.178,
+            "readback": 0.138,
+            "audit": 0.172
+          },
+          "proof": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-driver-submit": 0,
+              "contract-load-driver-await": 20,
+              "contract-load-pg-submit": 0,
+              "contract-load-pg-await": 0,
+              "contract-load-result-to-model": 0,
+              "contract-load-result-after-model": 0
+            },
+            "scope": "PUBLIC_SYNCHRONOUS_RETURN_EXISTING_AWAIT_CONTINUATION_NO_FORCED_YIELD",
+            "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+            "compilerOnlyAttribution": false,
+            "serverExecutionIsolated": false,
+            "p95Accepted": false
+          }
+        },
+        {
+          "index": 2,
+          "firstForClient": false,
+          "gate": "PASS",
+          "windowsMs": {
+            "load": 20.375,
+            "update": 0.224,
+            "readback": 0.123,
+            "audit": 0.144
+          },
+          "proof": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-driver-submit": 0,
+              "contract-load-driver-await": 20,
+              "contract-load-pg-submit": 0,
+              "contract-load-pg-await": 0,
+              "contract-load-result-to-model": 0,
+              "contract-load-result-after-model": 0
+            },
+            "scope": "PUBLIC_SYNCHRONOUS_RETURN_EXISTING_AWAIT_CONTINUATION_NO_FORCED_YIELD",
+            "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+            "compilerOnlyAttribution": false,
+            "serverExecutionIsolated": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "pg-reject",
+      "receipt": "pg-reject.json",
+      "sha256": "234b38a2c1feaf7b79798389b643ac9acf7282d97a0997075a3c550967c06122",
+      "counts": {
+        "checkout": 2,
+        "release": 2,
+        "begin": 1,
+        "commit": 0,
+        "rollback": 1,
+        "account": 1,
+        "load": 1,
+        "update": 0,
+        "readback": 0,
+        "audit": 0,
+        "dispose": 1,
+        "network": 0,
+        "pools": 1
+      },
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 18.253
+          },
+          "proof": null
+        }
+      ]
+    },
+    {
+      "case": "validation-reject",
+      "receipt": "validation-reject.json",
+      "sha256": "c98ced2629678f6f6d442f3ea734ee7c13e99be3998ebd7093ac53f95d06300b",
+      "counts": {
+        "checkout": 2,
+        "release": 2,
+        "begin": 1,
+        "commit": 0,
+        "rollback": 1,
+        "account": 1,
+        "load": 0,
+        "update": 0,
+        "readback": 0,
+        "audit": 0,
+        "dispose": 1,
+        "network": 0,
+        "pools": 1
+      },
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 10.379
+          },
+          "proof": null
+        }
+      ]
+    },
+    {
+      "case": "update-reject",
+      "receipt": "update-reject.json",
+      "sha256": "ae6b505d493c5b1d0ba49829c92db1e62805e54b2972b6f05418be4943f27082",
+      "counts": {
+        "checkout": 2,
+        "release": 2,
+        "begin": 1,
+        "commit": 0,
+        "rollback": 1,
+        "account": 1,
+        "load": 1,
+        "update": 1,
+        "readback": 0,
+        "audit": 0,
+        "dispose": 1,
+        "network": 0,
+        "pools": 1
+      },
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 16.315,
+            "update": 5.135
+          },
+          "proof": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-driver-submit": 0,
+              "contract-load-driver-await": 0,
+              "contract-load-pg-submit": 0,
+              "contract-load-pg-await": 0,
+              "contract-load-result-to-model": 0,
+              "contract-load-result-after-model": 0
+            },
+            "scope": "PUBLIC_SYNCHRONOUS_RETURN_EXISTING_AWAIT_CONTINUATION_NO_FORCED_YIELD",
+            "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+            "compilerOnlyAttribution": false,
+            "serverExecutionIsolated": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "audit-reject",
+      "receipt": "audit-reject.json",
+      "sha256": "2a86f2480aa9f6373a09111990e3e1721b8f413bb51ee0e3884a922f3d0c49c3",
+      "counts": {
+        "checkout": 2,
+        "release": 2,
+        "begin": 1,
+        "commit": 0,
+        "rollback": 1,
+        "account": 1,
+        "load": 1,
+        "update": 1,
+        "readback": 1,
+        "audit": 1,
+        "dispose": 1,
+        "network": 0,
+        "pools": 1
+      },
+      "samples": [
+        {
+          "index": 0,
+          "firstForClient": true,
+          "gate": "EXPECTED_FAILURE",
+          "windowsMs": {
+            "load": 16.67,
+            "update": 2.641,
+            "readback": 0.205,
+            "audit": 3.927
+          },
+          "proof": {
+            "gate": "PASS",
+            "windowsMs": {
+              "contract-load-driver-submit": 0,
+              "contract-load-driver-await": 0,
+              "contract-load-pg-submit": 0,
+              "contract-load-pg-await": 0,
+              "contract-load-result-to-model": 0,
+              "contract-load-result-after-model": 0
+            },
+            "scope": "PUBLIC_SYNCHRONOUS_RETURN_EXISTING_AWAIT_CONTINUATION_NO_FORCED_YIELD",
+            "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+            "compilerOnlyAttribution": false,
+            "serverExecutionIsolated": false,
+            "p95Accepted": false
+          }
+        }
+      ]
+    }
+  ],
+  "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+  "targetEquivalent": false,
+  "compilerOnlyAttribution": false,
+  "serverExecutionIsolated": false,
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}

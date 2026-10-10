@@ -54,6 +54,8 @@ export function matchedColdInputs(sourceCommit) {
 }
 /** Derived unit inputs must be independently byte-bound to deployment/19 ZIPs/phases/cleanup. */
 export function validateMatchedColdPair(off, on) {
+  if (off.contractPublicBoundaries !== undefined || on.contractPublicBoundaries !== undefined)
+    demand(off.contractPublicBoundaries === on.contractPublicBoundaries, 'MATCHED_PUBLIC_MODE_DRIFT');
   if (off.contractLoadDetail !== undefined || on.contractLoadDetail !== undefined)
     demand(off.contractLoadDetail === on.contractLoadDetail, 'MATCHED_DETAIL_MODE_DRIFT');
   demand(
@@ -134,6 +136,17 @@ export function validateContractDetailDeployment(inputs, config, deployed, deplo
     'MATCHED_DETAIL_DEPLOYMENT_REQUIRED',
   );
 }
+/** New public proof requires explicit true inputs, actual config and hosted context; old receipts stay default-off. */
+export function validateContractPublicDeployment(inputs, config, deployed, deployment, inputPath, inputHash) {
+  validateContractDetailDeployment(inputs, config, deployed, deployment, inputPath, inputHash);
+  demand(
+    inputs.contractPublicBoundaries === true &&
+      config.contractPublicBoundaries === 'true' &&
+      deployed.contractPublicBoundaries === true &&
+      deployed.context?.enableQa09ContractPublicBoundaries === true,
+    'MATCHED_PUBLIC_DEPLOYMENT_REQUIRED',
+  );
+}
 /** Local manifest binds actual captured receipts; old/unwired candidate config cannot pass. */
 export function readMatchedColdUnit(manifestFile) {
   const manifest = JSON.parse(readFileSync(manifestFile));
@@ -191,8 +204,23 @@ export function readMatchedColdUnit(manifestFile) {
     contractLoadSplit: manifest.requireContractLoadSplit === true,
     contractLoadDetail: manifest.requireContractLoadDetail === true,
     contractAwaitCheckpoint: manifest.requireContractAwaitCheckpoint === true,
+    contractPublicBoundaries: manifest.requireContractPublicBoundaries === true,
   });
   const inputs = manifest.inputs;
+  if (manifest.requireContractPublicBoundaries === true) {
+    demand(
+      manifest.requireContractLoadDetail === true && manifest.requireContractAwaitCheckpoint === true,
+      'MATCHED_PUBLIC_PREREQUISITES',
+    );
+    validateContractPublicDeployment(
+      inputs,
+      config,
+      read('inputs'),
+      deployment,
+      manifest.receipts.inputs.path,
+      bindings.inputs,
+    );
+  }
   if (manifest.requireContractLoadDetail === true) {
     const deployed = read('inputs');
     validateContractDetailDeployment(

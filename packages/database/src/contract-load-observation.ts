@@ -25,6 +25,17 @@ interface LoadScope {
   afterPg?: Finish;
   pgQueries: number;
   pgSettlements: number;
+  publicBoundaries?: boolean;
+  driverSubmit?: Finish;
+  driverAwait?: Finish;
+  pgSubmit?: Finish;
+  pgAwait?: Finish;
+  resultToModel?: Finish;
+  resultAfterModel?: Finish;
+  driverReturns: number;
+  pgReturns: number;
+  modelResumes: number;
+  modelResumeObserved: boolean;
 }
 const loads = new AsyncLocalStorage<LoadScope>();
 
@@ -40,6 +51,10 @@ export async function observeContractLoad<T>(work: () => Promise<T>): Promise<T>
     completed: false,
     pgQueries: 0,
     pgSettlements: 0,
+    driverReturns: 0,
+    pgReturns: 0,
+    modelResumes: 0,
+    modelResumeObserved: false,
   };
   let failure: unknown;
   return loads.run(frame, async () => {
@@ -52,6 +67,8 @@ export async function observeContractLoad<T>(work: () => Promise<T>): Promise<T>
       const end = captureDataPathBoundary();
       frame.completed = true;
       const boundary = failure === undefined ? 'OPERATION_SETTLED' : 'OPERATION_FAILED';
+      frame.resultToModel?.(failure, boundary, end);
+      frame.resultAfterModel?.(failure, boundary, end);
       frame.result?.(failure, boundary, end);
       frame.awaitQueue?.(failure, boundary, end);
       frame.awaitAfterQueue?.(failure, boundary, end);
@@ -64,24 +81,66 @@ export async function observeContractLoad<T>(work: () => Promise<T>): Promise<T>
         frame.modelEntries,
         frame.driverDispatches,
         frame.transactional,
-        frame.detailed ? { pgQueries: frame.pgQueries, pgSettlements: frame.pgSettlements } : undefined,
+        frame.detailed
+          ? {
+              pgQueries: frame.pgQueries,
+              pgSettlements: frame.pgSettlements,
+              ...(frame.publicBoundaries
+                ? {
+                    publicBoundariesEnabled: true,
+                    driverReturns: frame.driverReturns,
+                    pgReturns: frame.pgReturns,
+                    modelResumes: frame.modelResumes,
+                    modelResumeObserved: frame.modelResumeObserved,
+                  }
+                : {}),
+            }
+          : undefined,
       );
     }
   });
 }
 
 /** Public query extension entry, not a compiler-only or first-model-compilation claim. */
-export function markContractLoadModelEntry(model: string | undefined, operation: string, detailed = false): void {
+export function markContractLoadModelEntry(
+  model: string | undefined,
+  operation: string,
+  detailed = false,
+  publicBoundaries = false,
+): void {
   const frame = loads.getStore();
   if (!frame || frame.completed || model !== 'Contract' || operation !== 'findFirst') return;
   frame.modelEntries++;
   if (frame.modelEntries !== 1) return;
   const boundary = captureDataPathBoundary();
   frame.detailed = detailed;
+  frame.publicBoundaries = detailed && publicBoundaries;
   if (detailed)
     frame.submit = beginDataPathPhase('contract-load-orm-submit', { processCpu: true, startBoundary: boundary });
   frame.prepare = beginDataPathPhase('contract-load-orm-prepare', { processCpu: true, startBoundary: boundary });
   frame.delegate(undefined, 'MODEL_EXTENSION_ENTERED', boundary);
+}
+
+/** Capture the existing extension wrapper's await continuation; never consume query(args) twice. */
+export function captureContractLoadModelResume(
+  model: string | undefined,
+  operation: string,
+): ((error?: unknown) => void) | undefined {
+  const frame = loads.getStore();
+  if (!frame?.publicBoundaries || frame.completed || model !== 'Contract' || operation !== 'findFirst')
+    return undefined;
+  return bindDataPathObservation((error) => {
+    if (frame.completed) return;
+    frame.modelResumes++;
+    frame.modelResumeObserved = true;
+    if (frame.modelResumes !== 1 || !frame.resultToModel) return;
+    const boundary = captureDataPathBoundary();
+    frame.resultAfterModel = beginDataPathPhase('contract-load-result-after-model', {
+      processCpu: true,
+      startBoundary: boundary,
+    });
+    frame.resultToModel(error, error === undefined ? 'MODEL_EXTENSION_RESUMED' : 'OPERATION_FAILED', boundary);
+  });
 }
 
 /** Synchronous public query(args) return; preserve the original value/Promise and exception. */
@@ -114,22 +173,41 @@ export function observeContractLoadSubmission<T>(work: () => T): T {
 }
 
 /** Called only by the leased pg port while its owning Contract adapter query is active. */
-export function beginContractLoadPgQuery(): ((error?: unknown) => void) | undefined {
+export interface ContractPgObservation {
+  (error?: unknown): void;
+  returned?: () => void;
+}
+export function beginContractLoadPgQuery(): ContractPgObservation | undefined {
   const frame = loads.getStore();
   if (!frame?.detailed || frame.completed || !frame.beforePg) return undefined;
   frame.pgQueries++;
   if (frame.pgQueries !== 1) return undefined;
   const entered = captureDataPathBoundary();
+  if (frame.publicBoundaries)
+    frame.pgSubmit = beginDataPathPhase('contract-load-pg-submit', { processCpu: true, startBoundary: entered });
   frame.pg = beginDataPathPhase('contract-load-driver-pg', { processCpu: true, startBoundary: entered });
   frame.beforePg(undefined, 'PG_DISPATCH', entered);
-  return bindDataPathObservation((error) => {
+  const finish: ContractPgObservation = bindDataPathObservation((error) => {
     if (frame.completed) return;
     frame.pgSettlements++;
     if (frame.pgSettlements !== 1) return;
     const settled = captureDataPathBoundary();
     frame.afterPg = beginDataPathPhase('contract-load-driver-after-pg', { processCpu: true, startBoundary: settled });
+    frame.pgAwait?.(error, error === undefined ? 'PG_SETTLED' : 'OPERATION_FAILED', settled);
+    frame.pgSubmit?.(error, error === undefined ? 'PG_SETTLED' : 'OPERATION_FAILED', settled);
     frame.pg?.(error, error === undefined ? 'PG_SETTLED' : 'OPERATION_FAILED', settled);
   });
+  if (frame.publicBoundaries)
+    finish.returned = bindDataPathObservation(() => {
+      if (frame.completed) return;
+      frame.pgReturns++;
+      // A synchronous callback may have already settled. Preserve it; do not fabricate a zero await.
+      if (frame.pgReturns !== 1 || frame.pgSettlements !== 0) return;
+      const returned = captureDataPathBoundary();
+      frame.pgAwait = beginDataPathPhase('contract-load-pg-await', { processCpu: true, startBoundary: returned });
+      frame.pgSubmit?.(undefined, 'PG_CALL_RETURNED', returned);
+    });
+  return finish;
 }
 
 /** Query settlement includes driver I/O and adapter decoding; does not isolate server execution. */
@@ -151,18 +229,42 @@ export function observeContractLoadDriver<T>(work: () => Promise<T>, transaction
     frame.await?.(undefined, 'DRIVER_DISPATCH', dispatch);
   }
   frame.prepare?.(undefined, 'DRIVER_DISPATCH', dispatch);
+  if (frame.publicBoundaries)
+    frame.driverSubmit = beginDataPathPhase('contract-load-driver-submit', {
+      processCpu: true,
+      startBoundary: dispatch,
+    });
   return (async () => {
     let failure: unknown;
     try {
-      return await work();
+      const pending = work();
+      if (frame.publicBoundaries) {
+        const returned = captureDataPathBoundary();
+        frame.driverReturns++;
+        frame.driverAwait = beginDataPathPhase('contract-load-driver-await', {
+          processCpu: true,
+          startBoundary: returned,
+        });
+        frame.driverSubmit?.(undefined, 'ADAPTER_CALL_RETURNED', returned);
+      }
+      return await pending;
     } catch (error) {
       failure = error ?? new Error('CONTRACT_QUERY_FAILED');
       throw error;
     } finally {
       const settled = captureDataPathBoundary();
       frame.afterPg?.(failure, failure === undefined ? 'OPERATION_SETTLED' : 'OPERATION_FAILED', settled);
+      frame.pgAwait?.(failure, failure === undefined ? 'OPERATION_SETTLED' : 'OPERATION_FAILED', settled);
+      frame.pgSubmit?.(failure, failure === undefined ? 'OPERATION_SETTLED' : 'OPERATION_FAILED', settled);
       frame.pg?.(failure, failure === undefined ? 'OPERATION_SETTLED' : 'OPERATION_FAILED', settled);
       frame.beforePg?.(failure, failure === undefined ? 'OPERATION_SETTLED' : 'OPERATION_FAILED', settled);
+      frame.driverAwait?.(failure, failure === undefined ? 'OPERATION_SETTLED' : 'OPERATION_FAILED', settled);
+      frame.driverSubmit?.(failure, failure === undefined ? 'OPERATION_SETTLED' : 'OPERATION_FAILED', settled);
+      if (frame.publicBoundaries)
+        frame.resultToModel = beginDataPathPhase('contract-load-result-to-model', {
+          processCpu: true,
+          startBoundary: settled,
+        });
       frame.result = beginDataPathPhase('contract-load-result', { processCpu: true, startBoundary: settled });
       query(failure, failure === undefined ? 'OPERATION_SETTLED' : 'OPERATION_FAILED', settled);
     }

@@ -8,7 +8,11 @@ import { observeDatabaseClientPreparation } from './client-preparation.js';
 import { PrismaClient } from './generated/client.js';
 import { AuthenticatedPreconnect } from './authenticated-preconnect.js';
 import { observeDatabaseEnginePreparation } from './client-preparation.js';
-import { markContractLoadModelEntry, observeContractLoadSubmission } from './contract-load-observation.js';
+import {
+  markContractLoadModelEntry,
+  observeContractLoadSubmission,
+  captureContractLoadModelResume,
+} from './contract-load-observation.js';
 
 /** Defaults remain compatible; deployment sets an explicit per-function pool budget. */
 export const DATABASE_POOL_CONFIG = Object.freeze({
@@ -28,7 +32,9 @@ function createObservedClient(
   databaseUrl: string,
   preconnect?: AuthenticatedPreconnect,
   contractLoadDetail = false,
+  contractPublicBoundaries = false,
 ): PrismaClient {
+  if (contractPublicBoundaries && !contractLoadDetail) throw new Error('PUBLIC_BOUNDARIES_REQUIRE_DETAIL');
   if (preconnect && resolveDatabasePoolMax() !== 1) throw new Error('PRECONNECT_REQUIRES_POOL1');
   const client = new PrismaClient({
     adapter: new ObservedPrismaPg(
@@ -46,8 +52,11 @@ function createObservedClient(
     name: 'fdp-client-preparation-observation',
     query: {
       $allOperations({ args, query, model, operation }) {
-        markContractLoadModelEntry(model, operation, contractLoadDetail);
-        return observeDatabaseClientPreparation(() => observeContractLoadSubmission(() => query(args)));
+        markContractLoadModelEntry(model, operation, contractLoadDetail, contractPublicBoundaries);
+        return observeDatabaseClientPreparation(
+          () => observeContractLoadSubmission(() => query(args)),
+          contractPublicBoundaries ? captureContractLoadModelResume(model, operation) : undefined,
+        );
       },
     },
   }) as unknown as PrismaClient;
@@ -59,12 +68,13 @@ export function createPrismaClient(databaseUrl: string): PrismaClient {
 export function createAdminPreconnectCandidate(
   databaseUrl: string,
   contractLoadDetail = false,
+  contractPublicBoundaries = false,
 ): {
   client: PrismaClient;
   prepareAuthenticated: () => Promise<void>;
 } {
   const ownership = new AuthenticatedPreconnect();
-  const client = createObservedClient(databaseUrl, ownership, contractLoadDetail);
+  const client = createObservedClient(databaseUrl, ownership, contractLoadDetail, contractPublicBoundaries);
   return {
     client,
     prepareAuthenticated: () => ownership.prepare(() => observeDatabaseEnginePreparation(() => client.$connect())),

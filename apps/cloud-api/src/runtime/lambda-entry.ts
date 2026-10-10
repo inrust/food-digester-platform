@@ -65,6 +65,7 @@ import {
   resolveAuthenticatedPreconnect,
   resolveAccountReadCandidate,
   resolveContractLoadDetail,
+  resolveContractPublicBoundaries,
 } from './admin-engine-diagnostic.js';
 
 import { createAdminAuthenticatedAccountHook } from './admin-account-hook.js';
@@ -85,6 +86,7 @@ async function initialize() {
   const preconnectEnabled = resolveAuthenticatedPreconnect(process.env);
   const accountReadCandidate = resolveAccountReadCandidate(process.env);
   const contractLoadDetail = resolveContractLoadDetail(process.env);
+  const contractPublicBoundaries = resolveContractPublicBoundaries(process.env);
   const config = readAdminRuntimeConfig(process.env);
   const region = config.region;
   const { databaseUrl, licenseSigningKey } = await resolveAdminRuntimeSecrets(config, {
@@ -95,7 +97,7 @@ async function initialize() {
     'runtime-client-construct',
     () =>
       preconnectEnabled
-        ? createAdminPreconnectCandidate(databaseUrl, contractLoadDetail)
+        ? createAdminPreconnectCandidate(databaseUrl, contractLoadDetail, contractPublicBoundaries)
         : { client: createPrismaClient(databaseUrl) },
     { processCpu: true },
   );

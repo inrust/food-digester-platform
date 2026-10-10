@@ -39,6 +39,12 @@ export type DataPathPhase =
   | 'contract-load-driver-before-pg'
   | 'contract-load-driver-pg'
   | 'contract-load-driver-after-pg'
+  | 'contract-load-driver-submit'
+  | 'contract-load-driver-await'
+  | 'contract-load-pg-submit'
+  | 'contract-load-pg-await'
+  | 'contract-load-result-to-model'
+  | 'contract-load-result-after-model'
   | 'contract-version-update'
   | 'contract-readback'
   | 'audit-success-write'
@@ -197,7 +203,10 @@ export type PreparationBoundary =
   | 'OPERATION_FAILED'
   | 'PG_DISPATCH'
   | 'PG_SETTLED'
-  | 'MICROTASK_CHECKPOINT';
+  | 'MICROTASK_CHECKPOINT'
+  | 'ADAPTER_CALL_RETURNED'
+  | 'PG_CALL_RETURNED'
+  | 'MODEL_EXTENSION_RESUMED';
 export function beginDataPathPhase(
   phase: DataPathPhase,
   options: { readonly processCpu?: boolean; readonly startBoundary?: DataPathBoundary | undefined } = {},
@@ -256,6 +265,12 @@ export function beginDataPathPhase(
           'contract-load-driver-before-pg',
           'contract-load-driver-pg',
           'contract-load-driver-after-pg',
+          'contract-load-driver-submit',
+          'contract-load-driver-await',
+          'contract-load-pg-submit',
+          'contract-load-pg-await',
+          'contract-load-result-to-model',
+          'contract-load-result-after-model',
         ].includes(phase) &&
         [
           'DRIVER_DISPATCH',
@@ -266,6 +281,9 @@ export function beginDataPathPhase(
           'PG_DISPATCH',
           'PG_SETTLED',
           'MICROTASK_CHECKPOINT',
+          'ADAPTER_CALL_RETURNED',
+          'PG_CALL_RETURNED',
+          'MODEL_EXTENSION_RESUMED',
         ].includes(boundary)
           ? { completionBoundary: boundary }
           : {}),
@@ -289,7 +307,9 @@ export function beginDataPathPhase(
           phase === 'db-first-query' ||
           phase === 'contract-load' ||
           phase === 'contract-load-driver-query' ||
-          phase === 'contract-load-driver-pg',
+          phase === 'contract-load-driver-pg' ||
+          phase === 'contract-load-driver-await' ||
+          phase === 'contract-load-pg-await',
       },
       trace,
     );
@@ -300,13 +320,21 @@ export function recordContractLoadOwnership(
   modelEntries: number,
   driverDispatches: number,
   transactional: boolean,
-  detail?: { readonly pgQueries: number; readonly pgSettlements: number },
+  detail?: {
+    readonly pgQueries: number;
+    readonly pgSettlements: number;
+    readonly publicBoundariesEnabled?: boolean;
+    readonly driverReturns?: number;
+    readonly pgReturns?: number;
+    readonly modelResumes?: number;
+    readonly modelResumeObserved?: boolean;
+  },
 ): void {
   emit('data-path.contract-load.ownership', {
     modelEntries,
     driverDispatches,
     transactional,
-    ...(detail ? { detailEnabled: true, pgQueries: detail.pgQueries, pgSettlements: detail.pgSettlements } : {}),
+    ...(detail ? { detailEnabled: true, ...detail } : {}),
   });
 }
 /** Claim before dispatch, so concurrent operations log only the first attempt in this trace. */

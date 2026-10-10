@@ -27,6 +27,7 @@ test('observability and immediate queue synth retain narrow logs and hard DB bud
       enableQa09AuthenticatedPreconnect: true,
       enableQa09AccountReadCandidate: true,
       enableQa09ContractLoadDetail: true,
+      enableQa09ContractPublicBoundaries: true,
     },
   });
   const template = Template.fromStack(stack).toJSON();
@@ -51,6 +52,12 @@ test('observability and immediate queue synth retain narrow logs and hard DB bud
   assert.deepEqual(
     functions
       .filter((r) => r.Properties.Environment?.Variables.FDP_QA09_CONTRACT_LOAD_DETAIL === 'true')
+      .map((r) => r.Properties.FunctionName),
+    ['fdp-test-api'],
+  );
+  assert.deepEqual(
+    functions
+      .filter((r) => r.Properties.Environment?.Variables.FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES === 'true')
       .map((r) => r.Properties.FunctionName),
     ['fdp-test-api'],
   );

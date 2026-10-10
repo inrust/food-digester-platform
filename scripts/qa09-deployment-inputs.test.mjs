@@ -217,3 +217,51 @@ test('detail is off on push, manual detail requires guarded preconnect and round
   assert.equal(validateEngineInputPair(oldOff, oldOn).gate, 'PASS');
   assert.match(readFileSync('.github/workflows/deploy-test.yml', 'utf8'), /inputs.contract_load_detail/);
 });
+
+test('public deployment remains default-off/push-off and binds identical guarded R modes including legacy false', () => {
+  const make = (on) => ({
+    ...receipt(true),
+    ...resolveDeploymentInputs(
+      {
+        ...env,
+        QA09_REQUESTED_ENGINE: 'true',
+        QA09_REQUESTED_PRECONNECT: 'true',
+        QA09_REQUESTED_CONTRACT_DETAIL: 'true',
+        QA09_REQUESTED_CONTRACT_PUBLIC: 'true',
+        QA09_REQUESTED_ACCOUNT_READ: String(on),
+        GITHUB_RUN_ID: on ? '130' : '129',
+      },
+      sha,
+    ),
+  });
+  const a = make(false),
+    b = make(true);
+  assert.equal(validateEngineInputPair(a, b, { accountRead: true }).gate, 'PASS');
+  const push = resolveDeploymentInputs(
+    { ...env, GITHUB_EVENT_NAME: 'push', FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES: 'true' },
+    sha,
+  );
+  assert.equal(push.contractPublicBoundaries, false);
+  assert.equal(push.context.enableQa09ContractPublicBoundaries, false);
+  for (const mutate of [
+    (r) => (r.contractPublicBoundaries = false),
+    (r) => delete r.contractPublicBoundaries,
+    (r) => (r.context.enableQa09ContractPublicBoundaries = false),
+  ]) {
+    const c = make(true);
+    mutate(c);
+    assert.throws(() => validateEngineInputPair(a, c, { accountRead: true }));
+  }
+  for (const patch of [{ QA09_REQUESTED_CONTRACT_PUBLIC: 'yes' }, { QA09_REQUESTED_CONTRACT_PUBLIC: 'true' }])
+    assert.throws(() => resolveDeploymentInputs({ ...env, ...patch }, sha));
+  const oldA = receipt(),
+    oldB = receipt(true);
+  for (const r of [oldA, oldB]) {
+    delete r.contractPublicBoundaries;
+    delete r.context.enableQa09ContractPublicBoundaries;
+  }
+  assert.equal(validateEngineInputPair(oldA, oldB).gate, 'PASS');
+  const workflow = readFileSync('.github/workflows/deploy-test.yml', 'utf8');
+  assert.match(workflow, /contract_public_boundaries:[\s\S]*?default: 'false'/);
+  assert.match(workflow, /QA09_REQUESTED_CONTRACT_PUBLIC: \$\{\{ inputs.contract_public_boundaries \}\}/);
+});

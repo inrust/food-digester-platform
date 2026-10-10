@@ -247,3 +247,26 @@ test('contract detail context defaults off, accepts only strict booleans and req
   ])
     assert.throws(() => resolveConfig(new App({ context: { ...enabled, ...patch } })));
 });
+
+test('public context defaults off and requires strict detail and all existing budget guards', () => {
+  assert.isFalse(resolveConfig(new App({ context })).enableQa09ContractPublicBoundaries);
+  const enabled = {
+    ...context,
+    enableRequestObservability: true,
+    enableQa09Capacity: true,
+    enableQa09EngineCpuDiagnosis: true,
+    enableQa09AuthenticatedPreconnect: true,
+    enableQa09ContractLoadDetail: true,
+    enableQa09ContractPublicBoundaries: true,
+  };
+  assert.isTrue(resolveConfig(new App({ context: enabled })).enableQa09ContractPublicBoundaries);
+  for (const patch of [
+    { enableQa09ContractPublicBoundaries: 'yes' },
+    { enableQa09ContractLoadDetail: false },
+    { enableQa09AuthenticatedPreconnect: false },
+    { enableQa09Capacity: false },
+    { enableQa09EngineCpuDiagnosis: false },
+    { envName: 'prod' },
+  ])
+    assert.throws(() => resolveConfig(new App({ context: { ...enabled, ...patch } })));
+});

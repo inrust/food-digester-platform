@@ -28,6 +28,7 @@ export interface InfraConfig {
   readonly enableQa09AuthenticatedPreconnect?: boolean;
   readonly enableQa09AccountReadCandidate?: boolean;
   readonly enableQa09ContractLoadDetail?: boolean;
+  readonly enableQa09ContractPublicBoundaries?: boolean;
   readonly enableImmediateCommandPublish?: boolean;
   readonly deviceApiDomain?: DeviceApiDomainConfig;
   /** 仅 local/test 可显式打开的无 mTLS execute-api 开发入口。 */
@@ -104,6 +105,12 @@ export function resolveConfig(app: App): InfraConfig {
   const enableQa09ContractLoadDetail = [true, 'true'].includes(rawDetail);
   if (enableQa09ContractLoadDetail && !enableQa09AuthenticatedPreconnect)
     throw new Error('CONTRACT_LOAD_DETAIL_REQUIRES_TEST_CAPACITY_ENGINE_PRECONNECT');
+  const rawPublic = app.node.tryGetContext('enableQa09ContractPublicBoundaries');
+  if (rawPublic !== undefined && ![true, false, 'true', 'false'].includes(rawPublic))
+    throw new Error('INVALID_CONTRACT_PUBLIC_BOUNDARIES');
+  const enableQa09ContractPublicBoundaries = [true, 'true'].includes(rawPublic);
+  if (enableQa09ContractPublicBoundaries && !enableQa09ContractLoadDetail)
+    throw new Error('CONTRACT_PUBLIC_BOUNDARIES_REQUIRE_DETAIL');
   const enableMigrationRunner = ['true', true].includes(app.node.tryGetContext('enableMigrationRunner'));
   const enableAdminBootstrapRunner = ['true', true].includes(app.node.tryGetContext('enableAdminBootstrapRunner'));
   const enableScheduledWorkers = ['true', true].includes(app.node.tryGetContext('enableScheduledWorkers'));
@@ -170,6 +177,7 @@ export function resolveConfig(app: App): InfraConfig {
       enableQa09AuthenticatedPreconnect,
       enableQa09AccountReadCandidate,
       enableQa09ContractLoadDetail,
+      enableQa09ContractPublicBoundaries,
       ...deployment,
       allowInsecureDeviceEndpointForLocal: true,
     };
@@ -186,6 +194,7 @@ export function resolveConfig(app: App): InfraConfig {
     enableQa09AuthenticatedPreconnect,
     enableQa09AccountReadCandidate,
     enableQa09ContractLoadDetail,
+    enableQa09ContractPublicBoundaries,
     ...deployment,
     deviceApiDomain: {
       domainName,

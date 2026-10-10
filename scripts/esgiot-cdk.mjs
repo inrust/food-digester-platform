@@ -54,7 +54,12 @@ export function qa09RolloutContext(env = process.env) {
   if (detail !== undefined && !['true', 'false'].includes(detail)) throw Error('INVALID_CONTRACT_LOAD_DETAIL');
   if (detail === 'true' && preconnect !== 'true')
     throw Error('CONTRACT_LOAD_DETAIL_REQUIRES_PRECONNECT_ENGINE_CAPACITY');
+  const publicBoundaries = env.FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES;
+  if (publicBoundaries !== undefined && !['true', 'false'].includes(publicBoundaries))
+    throw Error('INVALID_CONTRACT_PUBLIC_BOUNDARIES');
+  if (publicBoundaries === 'true' && detail !== 'true') throw Error('CONTRACT_PUBLIC_BOUNDARIES_REQUIRE_DETAIL');
   return {
+    ...(publicBoundaries !== undefined ? { enableQa09ContractPublicBoundaries: publicBoundaries === 'true' } : {}),
     ...(detail !== undefined ? { enableQa09ContractLoadDetail: detail === 'true' } : {}),
     ...(accountRead !== undefined ? { enableQa09AccountReadCandidate: accountRead === 'true' } : {}),
     ...(preconnect !== undefined ? { enableQa09AuthenticatedPreconnect: preconnect === 'true' } : {}),

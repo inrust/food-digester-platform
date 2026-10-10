@@ -150,3 +150,26 @@ test('contract detail defaults off and requires the existing guarded authenticat
   ])
     assert.throws(() => resolveContractLoadDetail({ ...env, ...patch }));
 });
+
+test('public seams default off; require exact detail/test/pool1/engine/preconnect inputs', async () => {
+  const { resolveContractPublicBoundaries } = await import('../src/runtime/admin-engine-diagnostic.js');
+  assert.isFalse(resolveContractPublicBoundaries({}));
+  const env = {
+    ENV_NAME: 'test',
+    FDP_DB_POOL_MAX: '1',
+    FDP_QA09_ENGINE_CPU_DIAGNOSIS: 'true',
+    FDP_QA09_AUTHENTICATED_PRECONNECT: 'true',
+    FDP_QA09_CONTRACT_LOAD_DETAIL: 'true',
+    FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES: 'true',
+  };
+  assert.isTrue(resolveContractPublicBoundaries(env));
+  for (const patch of [
+    { ENV_NAME: 'prod' },
+    { FDP_DB_POOL_MAX: '2' },
+    { FDP_QA09_ENGINE_CPU_DIAGNOSIS: 'false' },
+    { FDP_QA09_AUTHENTICATED_PRECONNECT: 'false' },
+    { FDP_QA09_CONTRACT_LOAD_DETAIL: 'false' },
+    { FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES: 'yes' },
+  ])
+    assert.throws(() => resolveContractPublicBoundaries({ ...env, ...patch }));
+});

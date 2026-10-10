@@ -30,6 +30,7 @@ const env = {
   FDP_QA09_AUTHENTICATED_PRECONNECT: 'false',
   FDP_QA09_ACCOUNT_READ_CANDIDATE: 'false',
   FDP_QA09_CONTRACT_LOAD_DETAIL: 'false',
+  FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES: 'false',
   FDP_ADMIN_PARALLEL_SECRETS: 'true',
 };
 const setup = () => {
@@ -161,26 +162,29 @@ test('actual C1 Lambda initialization uses one candidate client; invalid JWT doe
   }
 });
 
-for (const accountRead of [false, true])
-  test(`actual detailed R${accountRead ? 1 : 0} initialization passes flag to one candidate without checkout for invalid JWT`, async () => {
-    setup();
-    vi.stubEnv('FDP_QA09_AUTHENTICATED_PRECONNECT', 'true');
-    vi.stubEnv('FDP_QA09_ACCOUNT_READ_CANDIDATE', String(accountRead));
-    vi.stubEnv('FDP_QA09_CONTRACT_LOAD_DETAIL', 'true');
-    const { Pool } = await import('pg');
-    const checkout = vi.spyOn(Pool.prototype, 'connect');
-    try {
-      const { handler } = await import('../src/runtime/lambda-entry.js');
-      assert.deepEqual(
-        (await Promise.all([handler(event), handler(event)])).map((r) => r.statusCode),
-        [401, 401],
-      );
-      assert.equal(mocks.candidate.mock.calls.length, 1);
-      assert.isTrue(mocks.candidate.mock.calls[0]![1]);
-      assert.equal(mocks.client.mock.calls.length, 0);
-      assert.equal(checkout.mock.calls.length, 0);
-      assert.equal(mocks.database.mock.calls.length, 1);
-    } finally {
-      checkout.mockRestore();
-    }
-  });
+for (const publicBoundaries of [false, true])
+  for (const accountRead of [false, true])
+    test(`actual detailed R${accountRead ? 1 : 0} initialization public=${publicBoundaries} passes flags to one candidate without checkout for invalid JWT`, async () => {
+      setup();
+      vi.stubEnv('FDP_QA09_AUTHENTICATED_PRECONNECT', 'true');
+      vi.stubEnv('FDP_QA09_ACCOUNT_READ_CANDIDATE', String(accountRead));
+      vi.stubEnv('FDP_QA09_CONTRACT_LOAD_DETAIL', 'true');
+      vi.stubEnv('FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES', String(publicBoundaries));
+      const { Pool } = await import('pg');
+      const checkout = vi.spyOn(Pool.prototype, 'connect');
+      try {
+        const { handler } = await import('../src/runtime/lambda-entry.js');
+        assert.deepEqual(
+          (await Promise.all([handler(event), handler(event)])).map((r) => r.statusCode),
+          [401, 401],
+        );
+        assert.equal(mocks.candidate.mock.calls.length, 1);
+        assert.isTrue(mocks.candidate.mock.calls[0]![1]);
+        assert.equal(mocks.candidate.mock.calls[0]![2], publicBoundaries);
+        assert.equal(mocks.client.mock.calls.length, 0);
+        assert.equal(checkout.mock.calls.length, 0);
+        assert.equal(mocks.database.mock.calls.length, 1);
+      } finally {
+        checkout.mockRestore();
+      }
+    });

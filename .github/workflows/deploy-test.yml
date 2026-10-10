@@ -5,6 +5,12 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      contract_public_boundaries:
+        description: 'QA-09 public seams (requires contract_load_detail); default off'
+        required: true
+        type: choice
+        options: ['false', 'true']
+        default: 'false'
       expected_commit:
         description: Full SHA of current main; must match workflow SHA
         required: true
@@ -76,6 +82,7 @@ jobs:
           QA09_EXPECTED_COMMIT: ${{ inputs.expected_commit }}
           QA09_REQUESTED_ACCOUNT_READ: ${{ inputs.account_read_candidate }}
           QA09_REQUESTED_CONTRACT_DETAIL: ${{ inputs.contract_load_detail }}
+          QA09_REQUESTED_CONTRACT_PUBLIC: ${{ inputs.contract_public_boundaries }}
           QA09_REQUESTED_PRECONNECT: ${{ inputs.authenticated_preconnect }}
           QA09_REQUESTED_ENGINE: ${{ inputs.engine_cpu_diagnosis }}
           QA09_REQUESTED_PHASE: ${{ inputs.rollout_phase }}

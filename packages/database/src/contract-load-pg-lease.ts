@@ -36,6 +36,7 @@ export function attachContractLoadPgLease(client: PoolClient, release: (...args:
       };
     try {
       const result = Reflect.apply(query, this, args);
+      finish.returned?.();
       if (typeof callback !== 'function' && result instanceof Promise) {
         // Observe settlement without replacing the original Promise or the original rejection.
         void result.then(

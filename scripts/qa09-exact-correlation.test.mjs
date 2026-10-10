@@ -21,10 +21,10 @@ def logs(args,**kwargs):
             value={'requestId':rid,'extendedRequestId':'extended-'+rid,'integrationRequestId':inv,'requestTimeEpoch':'1791264000000','httpMethod':'GET' if audit else 'PATCH','status':str(o['status']),'integrationStatus':'200','functionStatus':str(o['status'])}
         else:
             value={**common,'event':'admin.request.completed','gatewayExtendedRequestId':'extended-'+rid,'status':o['status'],'elapsedMs':30,'password':'PRIVATE_SENTINEL'}
-            for boundary in ['CALL_RETURNED','DRIVER_DISPATCH','PG_DISPATCH','PG_SETTLED','OPERATION_SETTLED']:
+            for boundary in ['CALL_RETURNED','DRIVER_DISPATCH','PG_DISPATCH','PG_SETTLED','OPERATION_SETTLED','ADAPTER_CALL_RETURNED','PG_CALL_RETURNED','MODEL_EXTENSION_RESUMED']:
                 events.append({'message':json.dumps({**common,'event':'data-path.phase.completed','phase':'contract-load-driver-pg','completionBoundary':boundary,'processCpuScope':'PROCESS_ALL_THREADS','processCpuUserUs':120,'processCpuSystemUs':30,'password':'PRIVATE_SENTINEL'})})
             events.append({'message':json.dumps({**common,'event':'data-path.phase.completed','phase':'bad-optional','completionBoundary':'PRIVATE_SENTINEL','processCpuScope':'PRIVATE_SENTINEL','processCpuUserUs':True})})
-            events.append({'message':json.dumps({**common,'event':'data-path.contract-load.ownership','modelEntries':1,'driverDispatches':1,'transactional':True,'detailEnabled':True,'pgQueries':1,'pgSettlements':1,'password':'PRIVATE_SENTINEL'})})
+            events.append({'message':json.dumps({**common,'event':'data-path.contract-load.ownership','modelEntries':1,'driverDispatches':1,'transactional':True,'detailEnabled':True,'pgQueries':1,'pgSettlements':1,'publicBoundariesEnabled':True,'modelResumeObserved':True,'driverReturns':1,'pgReturns':1,'modelResumes':1,'password':'PRIVATE_SENTINEL'})})
             events.append({'message':'REPORT RequestId: '+inv+'\tDuration: 30.5 ms\tMemory Size: 512 MB\tInit Duration: 20 ms'})
         events.append({'message':json.dumps(value)})
     return subprocess.CompletedProcess(args,0,json.dumps({'events':events}),'')
@@ -104,6 +104,12 @@ for (const mode of ['baseline', 'cold', 'audit'])
     assert.equal(row.contractLoadOwnership[0].detailEnabled, true);
     assert.equal(row.contractLoadOwnership[0].pgQueries, 1);
     assert.equal(row.contractLoadOwnership[0].pgSettlements, 1);
+    for (const key of ['driverReturns', 'pgReturns', 'modelResumes'])
+      assert.equal(row.contractLoadOwnership[0][key], 1);
+    assert.equal(row.contractLoadOwnership[0].publicBoundariesEnabled, true);
+    assert.equal(row.contractLoadOwnership[0].modelResumeObserved, true);
+    for (const boundary of ['ADAPTER_CALL_RETURNED', 'PG_CALL_RETURNED', 'MODEL_EXTENSION_RESUMED'])
+      assert.ok(row.phases.some((p) => p.completionBoundary === boundary));
     assert.ok(row.phases.some((p) => p.completionBoundary === 'PG_DISPATCH'));
     assert.ok(row.phases.some((p) => p.completionBoundary === 'PG_SETTLED'));
     assert.equal(row.phases.at(-1).completionBoundary, undefined);

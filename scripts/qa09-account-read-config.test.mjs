@@ -91,3 +91,20 @@ test('new detail receipts require explicit matching actual flag, including false
   f[2].contractLoadDetail = 'true';
   assert.throws(() => validateAccountReadTargetConfig(...f));
 });
+
+test('public mode is exact and guarded; missing actual field cannot pass true or false restore', () => {
+  for (const on of [false, true]) {
+    const f = fixture(false, on);
+    Object.assign(f[0], { contractLoadDetail: on, contractPublicBoundaries: on });
+    Object.assign(f[2], { contractLoadDetail: String(on), contractPublicBoundaries: String(on) });
+    assert.equal(validateAccountReadTargetConfig(...f).gate, 'PASS');
+    for (const actual of [undefined, 'yes', String(!on)]) {
+      f[2].contractPublicBoundaries = actual;
+      assert.throws(() => validateAccountReadTargetConfig(...f));
+    }
+  }
+  const f = fixture(false, true);
+  f[0].contractPublicBoundaries = true;
+  f[2].contractPublicBoundaries = 'true';
+  assert.throws(() => validateAccountReadTargetConfig(...f), /ACTUAL_GUARD/);
+});

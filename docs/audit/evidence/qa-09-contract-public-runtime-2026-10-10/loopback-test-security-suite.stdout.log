@@ -1,0 +1,41 @@
+
+> food-digester-platform@0.0.0 test:security-suite /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-security-suite.mjs /tmp/fdp-public-runtime-test-security-suite.json
+
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ✓ packages/database/test/db03.test.ts (10 tests) 1018ms
+ ✓ packages/auth/test/secure-package.test.ts (14 tests) 1155ms
+ ✓ packages/auth/test/device-mtls.test.ts (11 tests) 1141ms
+ ✓ packages/auth/test/qa06-jwt-security.test.ts (1 test) 39ms
+ ✓ packages/auth/test/cognito.test.ts (14 tests) 125ms
+ ✓ apps/cloud-api/test/device-lambda-composition.test.ts (13 tests) 7ms
+ ✓ apps/cloud-api/test/admin-lambda-composition.test.ts (12 tests) 555ms
+ ✓ packages/aws-clients/test/iot-device-policy.test.ts (12 tests) 4ms
+ ✓ packages/observability/test/redaction.test.ts (8 tests) 5ms
+ ✓ packages/auth/test/guard.test.ts (10 tests) 7ms
+ ✓ apps/cloud-api/test/admin-settings.test.ts (10 tests) 2162ms
+ ✓ apps/cloud-api/test/admin-audit.test.ts (7 tests) 2163ms
+ ✓ apps/cloud-api/test/csr-onboarding.test.ts (1 test) 2230ms
+ ✓ apps/cloud-api/test/media.test.ts (12 tests) 2348ms
+ ✓ apps/cloud-api/test/admin-command.test.ts (15 tests) 2378ms
+     ✓ ACTIVE 设备：22 个命令全部创建成功并进入 AUTHORIZED  310ms
+ ✓ apps/cloud-api/test/ota-dispatch.test.ts (16 tests) 2537ms
+ ✓ apps/cloud-api/test/admin-user.test.ts (31 tests) 2682ms
+ ✓ apps/cloud-api/test/admin-device-user.test.ts (8 tests) 2741ms
+     ✓ 仅匹配具有目标设备 ACTIVE 分配的设备操作员  326ms
+ ✓ apps/cloud-api/test/certificate-rotate.test.ts (8 tests) 3180ms
+     ✓ 缺失 CSR 不签发；AWS attach 失败保留可重试停用记录并保留旧证  350ms
+ ✓ apps/cloud-api/test/qa06-security.test.ts (4 tests) 3519ms
+   ✓ QA06 all admin write routes reject forged actor and missing expired tampered JWT before resolution  365ms
+   ✓ QA06 signed tenant scope and SQL JSON injection cannot cross boundaries or corrupt business state  2005ms
+   ✓ QA06 malicious media filenames and metadata reject before signing or persistence  590ms
+   ✓ QA06 raw canaries are absent from actual logger trace audit and snapshot artifacts  557ms
+
+ Test Files  20 passed (20)
+      Tests  217 passed (217)
+   Start at  19:17:31
+   Duration  4.86s (transform 7.32s, setup 196ms, import 14.34s, tests 30.00s, environment 1ms)
+
+JSON report written to /var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa06-security-mSZIGx/vitest.json

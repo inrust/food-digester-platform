@@ -51,3 +51,12 @@ export function resolveContractLoadDetail(env: Readonly<Record<string, string | 
     throw new Error('CONTRACT_LOAD_DETAIL_REQUIRES_TEST_POOL1_ENGINE_PRECONNECT');
   return value === 'true';
 }
+
+/** Public return/await seams only; no forced yield, SQL, or private compiler hooks. Default off. */
+export function resolveContractPublicBoundaries(env: Readonly<Record<string, string | undefined>>): boolean {
+  const value = env.FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES;
+  if (value !== undefined && value !== 'false' && value !== 'true')
+    throw new Error('INVALID_CONTRACT_PUBLIC_BOUNDARIES');
+  if (value === 'true' && !resolveContractLoadDetail(env)) throw new Error('CONTRACT_PUBLIC_BOUNDARIES_REQUIRE_DETAIL');
+  return value === 'true';
+}

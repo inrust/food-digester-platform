@@ -17,6 +17,8 @@ export function resolveDeploymentInputs(env, sourceCommit) {
   const preconnect = manual ? (env.QA09_REQUESTED_PRECONNECT ?? 'false') : 'false';
   const accountRead = manual ? (env.QA09_REQUESTED_ACCOUNT_READ ?? 'false') : 'false';
   const detail = manual ? (env.QA09_REQUESTED_CONTRACT_DETAIL ?? 'false') : 'false';
+  const publicBoundaries = manual ? (env.QA09_REQUESTED_CONTRACT_PUBLIC ?? 'false') : 'false';
+  demand(['true', 'false'].includes(publicBoundaries), 'EXPLICIT_CONTRACT_PUBLIC_MODE_REQUIRED');
   demand(['true', 'false'].includes(detail), 'EXPLICIT_CONTRACT_DETAIL_MODE_REQUIRED');
   demand(['true', 'false'].includes(accountRead), 'EXPLICIT_ACCOUNT_READ_MODE_REQUIRED');
   demand(['true', 'false'].includes(preconnect), 'EXPLICIT_PRECONNECT_MODE_REQUIRED');
@@ -32,6 +34,7 @@ export function resolveDeploymentInputs(env, sourceCommit) {
     FDP_QA09_AUTHENTICATED_PRECONNECT: preconnect,
     FDP_QA09_ACCOUNT_READ_CANDIDATE: accountRead,
     FDP_QA09_CONTRACT_LOAD_DETAIL: detail,
+    FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES: publicBoundaries,
   });
   demand(
     /^[1-9][0-9]*$/.test(env.GITHUB_RUN_ID ?? '') && /^[1-9][0-9]*$/.test(env.GITHUB_RUN_ATTEMPT ?? ''),
@@ -49,6 +52,7 @@ export function resolveDeploymentInputs(env, sourceCommit) {
     authenticatedPreconnect: preconnect === 'true',
     accountReadCandidate: accountRead === 'true',
     contractLoadDetail: detail === 'true',
+    contractPublicBoundaries: publicBoundaries === 'true',
     context,
     fullQa09Accepted: false,
     p95Accepted: false,
@@ -76,6 +80,7 @@ export function validateEngineInputPair(off, on, { preconnect = false, accountRe
         QA09_REQUESTED_PRECONNECT: String(r.authenticatedPreconnect ?? false),
         QA09_REQUESTED_ACCOUNT_READ: String(r.accountReadCandidate ?? false),
         QA09_REQUESTED_CONTRACT_DETAIL: String(r.contractLoadDetail ?? false),
+        QA09_REQUESTED_CONTRACT_PUBLIC: String(r.contractPublicBoundaries ?? false),
         GITHUB_RUN_ID: r.runId,
         GITHUB_RUN_ATTEMPT: r.runAttempt,
       },
@@ -85,6 +90,8 @@ export function validateEngineInputPair(off, on, { preconnect = false, accountRe
     // Immutable pre-detail receipts remain readable only as default-off, never as detailed proof.
     if (r.contractLoadDetail === undefined && context.enableQa09ContractLoadDetail === undefined)
       context.enableQa09ContractLoadDetail = false;
+    if (r.contractPublicBoundaries === undefined && context.enableQa09ContractPublicBoundaries === undefined)
+      context.enableQa09ContractPublicBoundaries = false;
     demand(
       JSON.stringify(Object.entries(context).sort()) === JSON.stringify(Object.entries(expected.context).sort()),
       'RESOLVED_CONTEXT_DRIFT',
@@ -127,6 +134,7 @@ export function validateEngineInputPair(off, on, { preconnect = false, accountRe
       'PAIR_INPUT_DRIFT',
     );
   demand((off.contractLoadDetail ?? false) === (on.contractLoadDetail ?? false), 'PAIR_DETAIL_MODE_DRIFT');
+  demand((off.contractPublicBoundaries ?? false) === (on.contractPublicBoundaries ?? false), 'PAIR_PUBLIC_MODE_DRIFT');
   return {
     gate: 'PASS',
     scope: 'INPUT_COMPARABILITY_ONLY',
@@ -183,7 +191,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (process.env.GITHUB_ENV)
       appendFileSync(
         process.env.GITHUB_ENV,
-        `FDP_QA09_ROLLOUT_PHASE=${result.rolloutPhase}\nFDP_QA09_ENGINE_CPU_DIAGNOSIS=${result.engineCpu}\nFDP_QA09_AUTHENTICATED_PRECONNECT=${result.authenticatedPreconnect}\nFDP_QA09_ACCOUNT_READ_CANDIDATE=${result.accountReadCandidate}\nFDP_QA09_CONTRACT_LOAD_DETAIL=${result.contractLoadDetail}\n`,
+        `FDP_QA09_ROLLOUT_PHASE=${result.rolloutPhase}\nFDP_QA09_ENGINE_CPU_DIAGNOSIS=${result.engineCpu}\nFDP_QA09_AUTHENTICATED_PRECONNECT=${result.authenticatedPreconnect}\nFDP_QA09_ACCOUNT_READ_CANDIDATE=${result.accountReadCandidate}\nFDP_QA09_CONTRACT_LOAD_DETAIL=${result.contractLoadDetail}\nFDP_QA09_CONTRACT_PUBLIC_BOUNDARIES=${result.contractPublicBoundaries}\n`,
       );
     console.log(
       JSON.stringify({

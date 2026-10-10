@@ -1,3 +1,4 @@
+import { validateContractPublicBoundaries } from './qa09-contract-public-proof.mjs';
 import { validateClientSplitPhases } from './qa09-client-split-proof.mjs';
 import { validateContractLoadSplit } from './qa09-contract-load-proof.mjs';
 import { validateContractLoadDetail, validateContractAwaitCheckpoint } from './qa09-contract-load-detail-proof.mjs';
@@ -26,8 +27,10 @@ export function validatePhaseCorrelation(
     contractLoadSplit = false,
     contractLoadDetail = false,
     contractAwaitCheckpoint = false,
+    contractPublicBoundaries = false,
   } = {},
 ) {
+  demand(!contractPublicBoundaries || contractAwaitCheckpoint, 'PUBLIC_REQUIRES_AWAIT');
   demand(!contractAwaitCheckpoint || contractLoadDetail, 'AWAIT_REQUIRES_DETAIL');
   demand(!authenticatedPreconnect || (engineCpu && runtimeAssembly), 'PRECONNECT_REQUIRES_ENGINE_RUNTIME_PHASES');
   demand(!clientSplit || clientPreparation, 'CLIENT_SPLIT_REQUIRES_PREPARATION');
@@ -241,6 +244,7 @@ export function validatePhaseCorrelation(
         validateContractLoadSplit(phases, c.contractLoadOwnership, contractLoadSplit);
         validateContractLoadDetail(phases, c.contractLoadOwnership, contractLoadDetail);
         validateContractAwaitCheckpoint(phases, c.contractLoadOwnership, contractAwaitCheckpoint);
+        validateContractPublicBoundaries(phases, c.contractLoadOwnership, contractPublicBoundaries);
         for (const name of [
           'contract-version-update',
           'db-transaction-callback',
@@ -306,6 +310,7 @@ export function validatePhaseCorrelation(
     contractLoadSplitRequired: contractLoadSplit,
     contractLoadDetailRequired: contractLoadDetail,
     contractAwaitCheckpointRequired: contractAwaitCheckpoint,
+    contractPublicBoundariesRequired: contractPublicBoundaries,
     engineCpuRequired: engineCpu,
     authenticatedPreconnectRequired: authenticatedPreconnect,
     runtimeAssemblyRequired: runtimeAssembly,
@@ -334,6 +339,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     contractLoadSplit: process.argv.slice(6).includes('--contract-load-split'),
     contractLoadDetail: process.argv.slice(6).includes('--contract-load-detail'),
     contractAwaitCheckpoint: process.argv.slice(6).includes('--contract-await-checkpoint'),
+    contractPublicBoundaries: process.argv.slice(6).includes('--contract-public-boundaries'),
     accountPhases: process.argv.slice(6).includes('--account-phases'),
     requireColdConflict: process.argv.slice(6).includes('--require-cold-conflict'),
   });
@@ -351,6 +357,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     .digest('hex');
   r.contractLoadDetailCheckerSha256 = createHash('sha256')
     .update(readFileSync(new URL('./qa09-contract-load-detail-proof.mjs', import.meta.url)))
+    .digest('hex');
+  r.contractPublicCheckerSha256 = createHash('sha256')
+    .update(readFileSync(new URL('./qa09-contract-public-proof.mjs', import.meta.url)))
     .digest('hex');
   writeFileSync(out, JSON.stringify(r, null, 2) + '\n');
   console.log(JSON.stringify({ gate: r.gate, scope: r.scope, requests: r.summaries.length }));

@@ -36,10 +36,30 @@ function finishPreparation(frame: Preparation, boundary: PreparationBoundary, er
   frame.afterAdapter?.(error, boundary, end);
   frame.finish(error, boundary, end);
 }
+function notifySettlement(settled: ((error?: unknown) => void) | undefined, error?: unknown): void {
+  try {
+    settled?.(error);
+  } catch {
+    /* Observation cannot replace the original result or exception. */
+  }
+}
 /** First public ORM operation in a trace, measured until its own root driver dispatch or settlement. */
-export async function observeDatabaseClientPreparation<T>(work: () => Promise<T>): Promise<T> {
+export async function observeDatabaseClientPreparation<T>(
+  work: () => Promise<T>,
+  settled?: (error?: unknown) => void,
+): Promise<T> {
   const start = claimFirstDataPathBoundary('db-client-prepare');
-  if (!start) return preparation.run(undefined, async () => await work());
+  if (!start)
+    return preparation.run(undefined, async () => {
+      try {
+        const value = await work();
+        notifySettlement(settled);
+        return value;
+      } catch (error) {
+        notifySettlement(settled, error ?? new Error('CLIENT_PREPARATION_FAILED'));
+        throw error;
+      }
+    });
   const finish = beginDataPathPhase('db-client-prepare', { processCpu: true, startBoundary: start });
   const setup = beginDataPathPhase('db-client-observer-setup', { processCpu: true, startBoundary: start });
   const frame: Preparation = {
@@ -54,9 +74,11 @@ export async function observeDatabaseClientPreparation<T>(work: () => Promise<T>
       const pending = work();
       finishSubmission(frame, 'CALL_RETURNED');
       const value = await pending;
+      notifySettlement(settled);
       finishPreparation(frame, 'OPERATION_SETTLED');
       return value;
     } catch (error) {
+      notifySettlement(settled, error ?? new Error('CLIENT_PREPARATION_FAILED'));
       finishPreparation(frame, 'OPERATION_FAILED', error ?? new Error('CLIENT_PREPARATION_FAILED'));
       throw error;
     }

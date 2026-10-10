@@ -182,6 +182,8 @@ export class AppDependenciesStack extends Stack {
       throw new Error('ACCOUNT_READ_REQUIRES_TEST_CAPACITY_ENGINE_PRECONNECT');
     if (this.config.enableQa09ContractLoadDetail && !this.config.enableQa09AuthenticatedPreconnect)
       throw new Error('CONTRACT_LOAD_DETAIL_REQUIRES_TEST_CAPACITY_ENGINE_PRECONNECT');
+    if (this.config.enableQa09ContractPublicBoundaries && !this.config.enableQa09ContractLoadDetail)
+      throw new Error('CONTRACT_PUBLIC_BOUNDARIES_REQUIRE_DETAIL');
     this.naming = new Naming(this.config.envName);
     if (this.config.deploymentAccount && this.config.allowInsecureDeviceEndpointForLocal) {
       throw new Error('真实部署禁止不安全 Device execute-api 入口');
@@ -1524,6 +1526,7 @@ export class AppDependenciesStack extends Stack {
         FDP_QA09_AUTHENTICATED_PRECONNECT: String(this.config.enableQa09AuthenticatedPreconnect === true),
         FDP_QA09_ACCOUNT_READ_CANDIDATE: String(this.config.enableQa09AccountReadCandidate === true),
         FDP_QA09_CONTRACT_LOAD_DETAIL: String(this.config.enableQa09ContractLoadDetail === true),
+        FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES: String(this.config.enableQa09ContractPublicBoundaries === true),
         FDP_QA09_ENGINE_CPU_DIAGNOSIS: String(this.config.enableQa09EngineCpuDiagnosis === true),
         ADMIN_WEB_ORIGIN: this.config.adminWebOrigin ?? '',
         DB_SECRET_ARN: dbSecret,
