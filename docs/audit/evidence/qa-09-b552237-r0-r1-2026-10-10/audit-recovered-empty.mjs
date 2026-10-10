@@ -1,0 +1,13 @@
+import {readFileSync,writeFileSync,existsSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {runFixture} from '../../../../scripts/qa09-ten-device-bridge.mjs';
+const dir=process.argv[2],read=n=>JSON.parse(readFileSync(dir+'/'+n)),hash=b=>createHash('sha256').update(b).digest('hex');
+const p=read('sample.json.fixtures.json'),c=read('sample.json'),r=read('parent-cleanup-recovery.json'),d=read('parent-cleanup-recovery.json.domain-cleanup.json');
+if(p.gate!=='FAIL'||c.gate!=='PASS'||!c.cleanupComplete||r.gate!=='PASS'||r.sourceCommit!==p.sourceCommit||r.sourceCommit!=='b5522378aebca9340a0767b53ed3bab846ffc080'||p.prefix!==c.prefix||p.prefix!==r.prefix||r.patchReplay!==false||r.samplingReplay!==false||r.globalSignOut!=='PASS'||r.cleanup.some(x=>x.result!=='PASS')||r.checks.some(x=>x.result!=='PASS'))throw Error('RECOVERED_OWN_CLEANUP_REQUIRED');
+for(const i of r.inputs)if(hash(readFileSync(i.path))!==i.sha256)throw Error('ORIGINAL_RECOVERY_INPUT_DRIFT');
+if(r.cleanup.at(-1).type!=='license-domain-archive')throw Error('DOMAIN_CLOSE_REQUIRED');
+const closed={...r,cleanup:r.cleanup.slice(0,-1)},snapshot=JSON.stringify(closed,null,2)+'\n',name=dir+'/parent-cleanup-recovery.json.domain-parent-snapshot.json';
+if(d.gate!=='PASS'||d.parentReceiptSha256!==hash(snapshot)||d.observations.length!==2||d.observations.some(x=>x.versionsRemaining!==0)||existsSync(name))throw Error('DOMAIN_SNAPSHOT_BYTE_BINDING_REQUIRED');
+writeFileSync(name,snapshot);
+const first=JSON.parse(readFileSync(p.databaseBuilds.find(x=>x.action==='observe'&&x.gate==='PASS').receipt));
+await runFixture({prefix:p.prefix,devices:p.devices,customers:p.customers,action:'audit-empty',baseline:first.result.originalFingerprints},dir+'/database-empty-audit.json',console.log);

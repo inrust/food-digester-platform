@@ -1,0 +1,355 @@
+{
+  "task": "QA-09",
+  "scope": "CORE_BUSINESS_REAL_RDS_STATE_FIXTURE",
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1"
+  },
+  "fixtureMode": "REAL_RDS_ONBOARDED_STATE_FOR_BUSINESS_APIS_NO_DEVICE_AUTH_CLAIM",
+  "prefix": "qa09-210268582a36fd89",
+  "devices": [
+    "qa09-210268582a36fd89-01",
+    "qa09-210268582a36fd89-02",
+    "qa09-210268582a36fd89-03",
+    "qa09-210268582a36fd89-04",
+    "qa09-210268582a36fd89-05",
+    "qa09-210268582a36fd89-06",
+    "qa09-210268582a36fd89-07",
+    "qa09-210268582a36fd89-08",
+    "qa09-210268582a36fd89-09",
+    "qa09-210268582a36fd89-10"
+  ],
+  "customers": [
+    {
+      "id": "16971f2e-b669-41ae-8fde-694f181d8cdc",
+      "name": "qa09-210268582a36fd89-a",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-10T00:49:44.830Z",
+      "updatedAt": "2026-10-10T00:49:44.830Z",
+      "suffix": "a"
+    },
+    {
+      "id": "0a1d1652-31e1-475b-8d67-7589cb274458",
+      "name": "qa09-210268582a36fd89-b",
+      "status": "ACTIVE",
+      "version": 1,
+      "createdAt": "2026-10-10T00:49:47.270Z",
+      "updatedAt": "2026-10-10T00:49:47.270Z",
+      "suffix": "b"
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "155bd7a7-d96b-4c5a-b800-54c26f7f463d"
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "status": 201,
+      "requestId": "ff6040a1-3882-48fd-9a39-e1140c3263a9"
+    },
+    {
+      "id": "real-rds-business-state-fixture",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp-renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/0a1d1652-31e1-475b-8d67-7589cb274458",
+      "status": 200,
+      "requestId": "0365f106-1efb-4dad-b7db-7b4863a7b7a9"
+    },
+    {
+      "id": "own-customer-name-b",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "FAIL",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/0a1d1652-31e1-475b-8d67-7589cb274458",
+      "status": 409,
+      "requestId": "da81f1b1-1baf-497f-a0f3-63c42d8ec14d"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/16971f2e-b669-41ae-8fde-694f181d8cdc",
+      "status": 200,
+      "requestId": "5644fa5d-81af-423a-afe4-8a6d0e4bf65f"
+    },
+    {
+      "id": "own-customer-name-a",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "FAIL",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/16971f2e-b669-41ae-8fde-694f181d8cdc",
+      "status": 409,
+      "requestId": "56822ead-02ad-47f1-a9cb-7deaecc2a48b"
+    },
+    {
+      "id": "own-superadmin-deleted",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "database-fixtures",
+      "result": "FAIL",
+      "failure": {
+        "code": "AWS_batch-get-projects_CLI_NETWORK_ERROR",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null,
+        "cli": {
+          "exitStatus": 255,
+          "signal": null,
+          "spawnErrorCode": null,
+          "stderrBytes": 104,
+          "durationMs": 5426
+        }
+      }
+    },
+    {
+      "type": "customer",
+      "id": "0a1d1652-31e1-475b-8d67-7589cb274458",
+      "result": "FAIL",
+      "failure": {
+        "code": "UNCLASSIFIED_FAILURE",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null
+      }
+    },
+    {
+      "type": "customer",
+      "id": "16971f2e-b669-41ae-8fde-694f181d8cdc",
+      "result": "FAIL",
+      "failure": {
+        "code": "UNCLASSIFIED_FAILURE",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null
+      }
+    },
+    {
+      "type": "identity",
+      "username": "qa09-210268582a36fd89-platformsuperadmin@example.invalid",
+      "globalSignOut": "PASS",
+      "deletion": "PASS",
+      "absence": "PASS",
+      "failures": [],
+      "absenceProof": "UserNotFoundException",
+      "result": "PASS"
+    }
+  ],
+  "cleanupOperations": [
+    {
+      "sequence": 1,
+      "operation": "database:observe",
+      "startedAt": "2026-10-10T01:00:38.970Z",
+      "result": "FAIL",
+      "failure": {
+        "code": "AWS_batch-get-projects_CLI_NETWORK_ERROR",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null,
+        "cli": {
+          "exitStatus": 255,
+          "signal": null,
+          "spawnErrorCode": null,
+          "stderrBytes": 104,
+          "durationMs": 5426
+        }
+      },
+      "durationMs": 12486,
+      "finishedAt": "2026-10-10T01:00:51.456Z"
+    },
+    {
+      "sequence": 2,
+      "operation": "identity:refresh",
+      "startedAt": "2026-10-10T01:00:51.456Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1099,
+      "finishedAt": "2026-10-10T01:00:52.555Z"
+    },
+    {
+      "sequence": 3,
+      "operation": "http:customer-scope-b",
+      "startedAt": "2026-10-10T01:00:52.555Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 2028,
+      "finishedAt": "2026-10-10T01:00:54.585Z"
+    },
+    {
+      "sequence": 4,
+      "operation": "http:customer-delete-b",
+      "startedAt": "2026-10-10T01:00:54.586Z",
+      "result": "FAIL",
+      "failure": {
+        "code": "UNCLASSIFIED_FAILURE",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null
+      },
+      "durationMs": 1675,
+      "finishedAt": "2026-10-10T01:00:56.262Z"
+    },
+    {
+      "sequence": 5,
+      "operation": "http:customer-scope-a",
+      "startedAt": "2026-10-10T01:00:56.263Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 348,
+      "finishedAt": "2026-10-10T01:00:56.612Z"
+    },
+    {
+      "sequence": 6,
+      "operation": "http:customer-delete-a",
+      "startedAt": "2026-10-10T01:00:56.612Z",
+      "result": "FAIL",
+      "failure": {
+        "code": "UNCLASSIFIED_FAILURE",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null
+      },
+      "durationMs": 368,
+      "finishedAt": "2026-10-10T01:00:56.981Z"
+    },
+    {
+      "sequence": 7,
+      "operation": "cognito:GlobalSignOut",
+      "startedAt": "2026-10-10T01:00:56.983Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1816,
+      "finishedAt": "2026-10-10T01:00:58.800Z"
+    },
+    {
+      "sequence": 8,
+      "operation": "cognito:AdminDeleteUserCommand",
+      "startedAt": "2026-10-10T01:00:58.801Z",
+      "result": "PASS",
+      "requestId": "9323b085-2217-4c97-9ca0-d5e5c7b2d5df",
+      "durationMs": 585,
+      "finishedAt": "2026-10-10T01:00:59.387Z"
+    },
+    {
+      "sequence": 9,
+      "operation": "cognito:AdminGetUserCommand",
+      "startedAt": "2026-10-10T01:00:59.389Z",
+      "result": "FAIL",
+      "failure": {
+        "code": "UNCLASSIFIED_FAILURE",
+        "errorName": "UserNotFoundException",
+        "causeCode": null,
+        "requestId": "5a631316-8a1b-44f0-be4a-b80d4efd1e1b",
+        "httpStatusCode": 400,
+        "attempts": 1,
+        "totalRetryDelay": 0
+      },
+      "expectedOutcome": "ABSENT_IDENTITY",
+      "durationMs": 385,
+      "finishedAt": "2026-10-10T01:00:59.775Z"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "observe",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-b552237-r0-r1-2026-10-10/r0/sample.json.fixtures-observe-0.json",
+      "gate": "PASS",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:f7949375-fdba-4441-96ab-aea222a9b128"
+    },
+    {
+      "action": "business-seed-devices",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-b552237-r0-r1-2026-10-10/r0/sample.json.fixtures-business-seed-devices-1.json",
+      "gate": "PASS",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:72ad8c6e-dcf5-4f15-97bc-52ee6493d810"
+    },
+    {
+      "action": "observe",
+      "receipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-b552237-r0-r1-2026-10-10/r0/sample.json.fixtures-observe-2.json",
+      "gate": "FAIL",
+      "failure": {
+        "code": "AWS_batch-get-projects_CLI_NETWORK_ERROR",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null,
+        "cli": {
+          "exitStatus": 255,
+          "signal": null,
+          "spawnErrorCode": null,
+          "stderrBytes": 104,
+          "durationMs": 5426
+        }
+      }
+    }
+  ],
+  "sourceCommit": "b5522378aebca9340a0767b53ed3bab846ffc080",
+  "versionReceipt": "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-b552237-r0-r1-2026-10-10/r0/application-version.json",
+  "startedAt": "2026-10-10T00:49:32.383Z",
+  "gate": "FAIL",
+  "fullQa09Accepted": false,
+  "credentialsExported": false,
+  "identity": {
+    "username": "qa09-210268582a36fd89-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "globalSignOut": "PASS",
+  "finishedAt": "2026-10-10T01:00:59.778Z"
+}

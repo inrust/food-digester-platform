@@ -1,0 +1,15 @@
+"""Summarize actual receipts; cannot upgrade original execution or synthesize R1 evidence."""
+from pathlib import Path
+import json,hashlib,datetime
+root=Path(__file__).parent;bindings={}
+def read(n):
+ b=(root/n).read_bytes();bindings[n]=hashlib.sha256(b).hexdigest();return json.loads(b)
+closure=read('r0/cleanup-only-completion.json');restore=read('restore/restore-completion.json');post=read('restore/post-restoration-readonly.json');domain=read('restore/owned-domain-readonly.json');builds=read('restore/owned-build-terminal-bounded.json')
+assert closure['gate']==restore['gate']==post['gate']==domain['gate']==builds['gate']=='PASS'
+assert read('r0/sample.json.fixtures.json')['gate']==read('r0/sample.json.gate.json')['gate']=='FAIL'
+child=read('r0/sample.json');assert child['gate']=='PASS' and len(child['checks'])==123
+assert not (root/'r1/dispatch-run.json').exists() and not (root/'r1/sample.json').exists()
+phases=[read('r0/'+n) for n in ['baseline-phases.json','sampling-phases.json']];assert all(x['gate']=='PASS' and x['contractAwaitCheckpointRequired'] for x in phases)
+read('r0/await-observations.json');read('r0/failure-diagnosis.json');read('r0/negative-gate.json');read('r0/transport-observations.json');budget=read('r0/connection-budget-gate.json');capacity=read('restore/capacity-before-gate.json')
+out={'gate':'PARTIAL','scope':'SAME_SHA_FAILED_ORIGINAL_R0_WITH_EXACT_COMPENSATING_CLEANUP_AND_DEFAULT_OFF_RESTORE','sourceCommit':closure['sourceCommit'],'ciRunId':'38006504899','defaultRunId':'38006504921','r0RunId':'38008861924','restoreRunId':'38012239856','prefix':child['prefix'],'r0OriginalGate':'FAIL','r0ChildBusinessGate':'PASS','businessChecks':123,'contractAwaitStageGate':'PASS','exactPhaseRequests':55,'negativeNoSqlRequests':12,'baselineCold409':phases[0]['coldConflictObservedCount'],'samplingCold409':phases[1]['coldConflictObservedCount'],'r1Gate':'NOT_RUN','matchedNaturalColdGate':'NOT_RUN','inputPairGate':'NOT_RUN','causalBenefit':'NOT_ESTABLISHED','compensatingCleanupGate':'PASS','independentEmptyAudit':'PASS','restoreGate':'PASS','restoredConfigFalseCount':3,'all19CodeUnchanged':True,'nonApiRevisionsUnchanged':True,'observedMinuteConnectionMaximum':budget['observedMaximum'],'connectionBudget':70,'restoredConnectionSnapshot':capacity['snapshotClientConnections'],'ownArchivePrefixesEmpty':len(domain['observations']),'knownExactPlanBuildsTerminal':len(builds['ownBuilds']),'historicalUnknownPreserved':True,'newBusinessReplays':0,'iamKmsCapacityChanges':False,'p95Accepted':False,'fullQa09Accepted':False,'finishedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'nextTask':'Bounded recovery for read-only calls before project mutation/StartBuild; then new-SHA complete fresh-prefix R0/R1. Never retry a project mutation or unknown StartBuild.','bindings':bindings}
+assert not (root/'comparison.json').exists();(root/'comparison.json').write_text(json.dumps(out,indent=2)+'\n');print(json.dumps({k:v for k,v in out.items() if k!='bindings'}))

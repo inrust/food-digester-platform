@@ -1,0 +1,74 @@
+{
+  "gate": "DIAGNOSED_ORIGINAL_FAIL_PRESERVED",
+  "sourceCommit": "b5522378aebca9340a0767b53ed3bab846ffc080",
+  "prefix": "qa09-210268582a36fd89",
+  "failedOperation": "codebuild:batch-get-projects",
+  "failure": {
+    "code": "AWS_batch-get-projects_CLI_NETWORK_ERROR",
+    "errorName": "Error",
+    "causeCode": null,
+    "requestId": null,
+    "httpStatusCode": null,
+    "attempts": null,
+    "totalRetryDelay": null,
+    "cli": {
+      "exitStatus": 255,
+      "signal": null,
+      "spawnErrorCode": null,
+      "stderrBytes": 104,
+      "durationMs": 5426
+    },
+    "kind": "PRE_START_OR_MUTATION_FAILURE",
+    "observations": [],
+    "startedBuildMayStillRun": false,
+    "recoveryAction": "NO_AUTOMATIC_START_RETRY"
+  },
+  "mutationOperationsAttempted": 0,
+  "startBuildAttempted": false,
+  "originalFailureKind": "PRE_START_OR_MUTATION_FAILURE",
+  "customerDeleteFailures": [
+    {
+      "id": "cleanup-customer-b",
+      "result": "FAIL",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/0a1d1652-31e1-475b-8d67-7589cb274458",
+      "status": 409,
+      "requestId": "da81f1b1-1baf-497f-a0f3-63c42d8ec14d"
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "FAIL",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/16971f2e-b669-41ae-8fde-694f181d8cdc",
+      "status": 409,
+      "requestId": "56822ead-02ad-47f1-a9cb-7deaecc2a48b"
+    }
+  ],
+  "remainingBeforeRecovery": {
+    "devices": 10,
+    "lifecycleStatuses": [
+      "Assigned"
+    ],
+    "certificates": 0
+  },
+  "customer409Explanation": "INFERENCE_FROM_REMAINING_ASSIGNED_DEVICES_AND_CURRENT_DELETE_CONSTRAINT_SOURCE; original response error body not captured",
+  "permissionDenialEstablished": false,
+  "iamKmsActionRequiredByEvidence": false,
+  "nextRepairScope": "bounded read-only pre-start recovery only; never automatically repeat project mutation or StartBuild",
+  "bindings": {
+    "sample.json.fixtures.json": "c57675f9169fbf15e3cd94a429eb301279bc1e9341e51fc32dfab17ab4b10ef1",
+    "sample.json.fixtures-observe-2.json": "69ffb818df5581031554dc802b8b9dda5316272e191054880a6214a8e2e30aea",
+    "parent-observe-recovered.json": "26d02cc863fbc820941743540c211b5d8cb221667f060df40648eff98b652fe1",
+    "parent-cleanup-recovery.json": "be920d91fb22814b9090f4463cc0ad410f8f41166708b86af1d75eb6b33386b6",
+    "database-empty-audit.json": "25da719c3f2670a7faae0226bbd4f7ed9f8b6353a63c7c8647041dd0acd05ed9"
+  },
+  "sourceBindings": {
+    "scripts/qa09-ten-device-bridge.mjs": "c1d3a5a38225b88feeb744ce21656cf85df7760767067a7d3252942f61ca154e",
+    "scripts/qa09-operation-observation.mjs": "d3530321803e8fa84e17d691560e66a32a3ab847a5e57145e04f69d961465303",
+    "apps/cloud-api/src/admin/customer/service.ts": "d8efe9369eb77c4d9b3c9360553460c4b8d440b415f77d969d17a805575f79a4",
+    "apps/cloud-api/src/admin/customer/repository.ts": "d26484bfba0b72e06cf5645f9b623960c62449585245cda5f66b8e64d5ab7cb1"
+  },
+  "p95Accepted": false,
+  "fullQa09Accepted": false,
+  "checkedAt": "2026-10-10T01:16:28.427820+00:00"
+}

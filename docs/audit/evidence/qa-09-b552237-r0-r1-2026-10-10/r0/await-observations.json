@@ -1,0 +1,140 @@
+{
+  "gate": "OBSERVATIONS_ONLY",
+  "scope": "R0_ORIGINAL_REQUESTS_NEW_MICROTASK_PARTITION_WITH_ORIGINAL_PARENT_FAILURE_PRESERVED",
+  "sourceCommit": "b5522378aebca9340a0767b53ed3bab846ffc080",
+  "r0OriginalGate": "FAIL",
+  "r1Gate": "NOT_RUN",
+  "phaseGate": "PASS",
+  "matchedPairGate": "NOT_RUN",
+  "causalBenefit": "NOT_ESTABLISHED",
+  "p95Accepted": false,
+  "fullQa09Accepted": false,
+  "bindings": {
+    "baseline-patch.json": "2ef0d26e657f6de116c31a935dd1cab4833be4575c565fdd12d4d09ee480f066",
+    "sampling-patch.json": "2a96b993af7ca1794517ff8ac3839ed1f0af167cfef63eb749a6285f1eed0b4f",
+    "sample.json": "cabf0a2d1d8e7c27a21c2ea8f0a9d2b45c63f9cacc4c7ff1df775c08998178b3",
+    "sample.json.fixtures.json": "c57675f9169fbf15e3cd94a429eb301279bc1e9341e51fc32dfab17ab4b10ef1",
+    "baseline-phases.json": "6c291866d2268e65860a5e5acf5e83ce033fc5bc27c3ab1cacf0d6fda8e7a7c8",
+    "sampling-phases.json": "8e0df2c94e2f3ccae0cadfc69896839177168de5880318d6bff8977df93a269b",
+    "baseline-cold-phases.json": "9dd74c222b28d703415b59af0604ec72a2e452a77f9b0c96e68c44b2b803c249",
+    "cold-phases.json": "502979f9d8a8f377b34d308ac90a5a6b4e43bf773f55ec723c68f94a24128eae"
+  },
+  "rows": [
+    {
+      "group": "baseline-patch.json",
+      "requestId": "023c9e40-e627-4d09-8f54-410a1071d3d6",
+      "lambdaRequestId": "1d0f6c21-1609-4c51-9ed9-9a50aef66222",
+      "status": 409,
+      "applicationMs": 3100,
+      "phases": {
+        "contract-load": {
+          "durationMs": 81,
+          "completionBoundary": null,
+          "processCpuUserUs": 12113,
+          "processCpuSystemUs": 2449,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        },
+        "contract-load-orm-prepare": {
+          "durationMs": 3,
+          "completionBoundary": "DRIVER_DISPATCH",
+          "processCpuUserUs": 2552,
+          "processCpuSystemUs": 515,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        },
+        "contract-load-orm-submit": {
+          "durationMs": 0,
+          "completionBoundary": "CALL_RETURNED",
+          "processCpuUserUs": 217,
+          "processCpuSystemUs": 43,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        },
+        "contract-load-orm-await": {
+          "durationMs": 3,
+          "completionBoundary": "DRIVER_DISPATCH",
+          "processCpuUserUs": 2335,
+          "processCpuSystemUs": 472,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        },
+        "contract-load-await-queue": {
+          "durationMs": 0,
+          "completionBoundary": "MICROTASK_CHECKPOINT",
+          "processCpuUserUs": 251,
+          "processCpuSystemUs": 51,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        },
+        "contract-load-await-after-queue": {
+          "durationMs": 2,
+          "completionBoundary": "DRIVER_DISPATCH",
+          "processCpuUserUs": 2084,
+          "processCpuSystemUs": 421,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        },
+        "contract-load-driver-query": {
+          "durationMs": 36,
+          "completionBoundary": "OPERATION_SETTLED",
+          "processCpuUserUs": 5695,
+          "processCpuSystemUs": 1152,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        }
+      }
+    },
+    {
+      "group": "sampling-patch.json",
+      "requestId": "205dc189-bddc-4a79-9204-50f0c71e8d1c",
+      "lambdaRequestId": "97530161-2d5a-42aa-8ea3-d8f206bec523",
+      "status": 409,
+      "applicationMs": 3276,
+      "phases": {
+        "contract-load": {
+          "durationMs": 121,
+          "completionBoundary": null,
+          "processCpuUserUs": 38430,
+          "processCpuSystemUs": 591,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        },
+        "contract-load-orm-prepare": {
+          "durationMs": 40,
+          "completionBoundary": "DRIVER_DISPATCH",
+          "processCpuUserUs": 13557,
+          "processCpuSystemUs": 235,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        },
+        "contract-load-orm-submit": {
+          "durationMs": 0,
+          "completionBoundary": "CALL_RETURNED",
+          "processCpuUserUs": 370,
+          "processCpuSystemUs": 97,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        },
+        "contract-load-orm-await": {
+          "durationMs": 40,
+          "completionBoundary": "DRIVER_DISPATCH",
+          "processCpuUserUs": 13187,
+          "processCpuSystemUs": 138,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        },
+        "contract-load-await-queue": {
+          "durationMs": 18,
+          "completionBoundary": "MICROTASK_CHECKPOINT",
+          "processCpuUserUs": 7783,
+          "processCpuSystemUs": 0,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        },
+        "contract-load-await-after-queue": {
+          "durationMs": 22,
+          "completionBoundary": "DRIVER_DISPATCH",
+          "processCpuUserUs": 5404,
+          "processCpuSystemUs": 138,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        },
+        "contract-load-driver-query": {
+          "durationMs": 79,
+          "completionBoundary": "OPERATION_SETTLED",
+          "processCpuUserUs": 21823,
+          "processCpuSystemUs": 0,
+          "processCpuScope": "PROCESS_ALL_THREADS"
+        }
+      }
+    }
+  ]
+}
