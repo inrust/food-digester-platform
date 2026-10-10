@@ -1,0 +1,41 @@
+
+> food-digester-platform@0.0.0 test:security-suite /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-security-suite.mjs /tmp/fdp-prestart-test-security-suite.json
+
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ✓ packages/database/test/db03.test.ts (10 tests) 1076ms
+ ✓ packages/auth/test/secure-package.test.ts (14 tests) 1169ms
+ ✓ packages/auth/test/device-mtls.test.ts (11 tests) 1240ms
+ ✓ packages/auth/test/cognito.test.ts (14 tests) 96ms
+ ✓ packages/auth/test/qa06-jwt-security.test.ts (1 test) 56ms
+ ✓ apps/cloud-api/test/admin-lambda-composition.test.ts (12 tests) 427ms
+ ✓ packages/aws-clients/test/iot-device-policy.test.ts (12 tests) 5ms
+ ✓ packages/observability/test/redaction.test.ts (8 tests) 13ms
+ ✓ apps/cloud-api/test/device-lambda-composition.test.ts (13 tests) 28ms
+ ✓ packages/auth/test/guard.test.ts (10 tests) 8ms
+ ✓ apps/cloud-api/test/admin-settings.test.ts (10 tests) 2295ms
+ ✓ apps/cloud-api/test/admin-audit.test.ts (7 tests) 2406ms
+ ✓ apps/cloud-api/test/media.test.ts (12 tests) 2507ms
+ ✓ apps/cloud-api/test/csr-onboarding.test.ts (1 test) 2477ms
+ ✓ apps/cloud-api/test/admin-command.test.ts (15 tests) 2646ms
+     ✓ ACTIVE 设备：22 个命令全部创建成功并进入 AUTHORIZED  472ms
+ ✓ apps/cloud-api/test/ota-dispatch.test.ts (16 tests) 2719ms
+     ✓ 成功下发：OTA Topic + CT-03 载荷（schema 校验）+ 15 分钟 URL + NOTIFIED + 历史 + OTA_AVAILABLE + PUBLICATION 归档  340ms
+ ✓ apps/cloud-api/test/admin-user.test.ts (31 tests) 3003ms
+ ✓ apps/cloud-api/test/admin-device-user.test.ts (8 tests) 3084ms
+     ✓ 仅匹配具有目标设备 ACTIVE 分配的设备操作员  406ms
+ ✓ apps/cloud-api/test/certificate-rotate.test.ts (8 tests) 3396ms
+     ✓ 缺失 CSR 不签发；AWS attach 失败保留可重试停用记录并保留旧证  341ms
+ ✓ apps/cloud-api/test/qa06-security.test.ts (4 tests) 3838ms
+   ✓ QA06 signed tenant scope and SQL JSON injection cannot cross boundaries or corrupt business state  2377ms
+   ✓ QA06 malicious media filenames and metadata reject before signing or persistence  597ms
+   ✓ QA06 raw canaries are absent from actual logger trace audit and snapshot artifacts  653ms
+
+ Test Files  20 passed (20)
+      Tests  217 passed (217)
+   Start at  10:08:14
+   Duration  5.46s (transform 8.66s, setup 180ms, import 16.82s, tests 32.49s, environment 1ms)
+
+JSON report written to /var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa06-security-tj3Yoj/vitest.json

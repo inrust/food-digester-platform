@@ -46,6 +46,7 @@ const codes = new Set([
   'FIXTURE_RESULT_NOT_VERIFIED',
   'FIXTURE_RESULT_READ_TIMEOUT',
   'FIXTURE_FRAME_TRUNCATED',
+  'PRE_START_READ_TIMEOUT',
 ]);
 const operations = new Set([
   'batch-get-builds',
@@ -130,6 +131,60 @@ export function transientFixtureRead(error) {
   return /(?:^|_)(CLI_READ_TIMEOUT|CLI_NETWORK_ERROR|ThrottlingException|TooManyRequestsException|RequestTimeout|RequestTimeoutException|ServiceUnavailableException|NetworkingError)$/.test(
     code,
   );
+}
+// The caller supplies only one of the two fixed reads before any project mutation or StartBuild.
+// Bridge call sites pass fixed read callbacks before mutations. Every failed attempt remains in the ledger.
+export async function readPreStartFixtureOperation(
+  operation,
+  read,
+  {
+    observations = [],
+    onObservation = () => {},
+    now = () => performance.now(),
+    pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    maxAttempts = 3,
+    timeoutMs = 65000,
+  } = {},
+) {
+  if (!['sts:get-caller-identity', 'codebuild:batch-get-projects'].includes(operation))
+    throw Error('INVALID_PRE_START_READ_OPERATION');
+  if (
+    !Number.isInteger(maxAttempts) ||
+    maxAttempts < 1 ||
+    maxAttempts > 3 ||
+    !Number.isInteger(timeoutMs) ||
+    timeoutMs < 1 ||
+    timeoutMs > 65000
+  )
+    throw Error('INVALID_PRE_START_READ_BUDGET');
+  const started = now();
+  let recoveries = 0;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const remaining = Math.floor(timeoutMs - (now() - started));
+    if (remaining < 1) throw Error('PRE_START_READ_TIMEOUT');
+    const tick = now();
+    const row = { operation, attempt, startedAt: new Date().toISOString(), result: 'RUNNING' };
+    observations.push(row);
+    onObservation(row);
+    try {
+      const value = await read({ timeoutMs: Math.min(30000, remaining) });
+      if (now() - started >= timeoutMs) throw Error('PRE_START_READ_TIMEOUT');
+      row.result = 'PASS';
+      row.durationMs = Math.max(0, Math.round(now() - tick));
+      row.elapsedMs = Math.max(0, Math.round(now() - started));
+      onObservation(row);
+      return { value, readRecoveries: recoveries, readGate: recoveries ? 'RECOVERED' : 'PASS' };
+    } catch (error) {
+      row.result = 'FAIL';
+      row.failure = safeOperationError(error);
+      row.durationMs = Math.max(0, Math.round(now() - tick));
+      row.elapsedMs = Math.max(0, Math.round(now() - started));
+      onObservation(row);
+      if (!transientFixtureRead(error) || attempt === maxAttempts || now() - started + 250 >= timeoutMs) throw error;
+      recoveries++;
+      await pause(250);
+    }
+  }
 }
 // Continue deletion and absence verification after sign-out failure, but never admit a full cleanup PASS.
 export async function cleanupIdentityOperations(observe, { globalSignOut, deleteUser, getUser }) {

@@ -23,8 +23,19 @@ const c=JSON.parse(readFileSync(process.env.QA09_FAKE_CONFIG));
 const op=process.argv[3];appendFileSync(c.calls,op+'\\n');
 const emit=(x)=>process.stdout.write(JSON.stringify(x));
 const fail=(code)=>{process.stderr.write('An error occurred ('+code+') sensitive-password-token');process.exit(1)};
-if(op==='get-caller-identity')emit({Account:'065986019555'});
-else if(op==='batch-get-projects')emit({projects:[c.prep.project]});
+if(op===c.failOperation && c.failures?.length){
+ const code=c.failures.shift();writeFileSync(process.env.QA09_FAKE_CONFIG,JSON.stringify(c));
+ if(code==='network'){process.stderr.write('Could not connect to the endpoint URL sensitive-password-token');process.exit(1)};
+ if(code==='expired'){process.stderr.write('Token has expired and refresh failed sensitive-password-token');process.exit(1)};
+ if(code==='unknown'){process.stderr.write('unknown sensitive-password-token');process.exit(1)};
+ if(code==='invalid-json'){process.stdout.write('sensitive-password-token');process.exit(0)};
+ fail(code);
+}
+if(op==='get-caller-identity')emit({Account:c.wrongAccount?'999999999999':'065986019555'});
+else if(op==='batch-get-projects')emit({projects:c.missingProject?[]:[{...c.prep.project,
+ ...(c.wrongRole?{serviceRole:'foreign'}:{}),
+ ...(c.changedProject?{source:{...c.prep.project.source,buildspec:'changed'}}:{})}]});
+else if(op==='create-project'||op==='update-project')emit({});
 else if(op==='start-build'){
  if(c.mode==='start-fail')fail('AccessDeniedException');
  if(c.mode==='start-uncertain'){process.stderr.write('Read timeout on endpoint URL');process.exit(1)};
@@ -41,13 +52,13 @@ else if(op==='batch-get-builds'){
 }
 else if(op==='get-log-events')emit({events:[{message:JSON.stringify({kind:'fdp-qa09-ten-device-db/v1',buildId:c.id,sourceHash:c.prep.sourceHash,prefix:c.prep.plan.prefix,action:c.prep.plan.action,gate:'PASS'})}]});
 else fail('InvalidParameterException');`;
-function execute(mode) {
+function execute(mode, extra = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'qa09-cli-observation-'));
   try {
     const output = join(dir, 'result.json'),
       config = join(dir, 'config.json'),
       calls = join(dir, 'calls.log');
-    writeFileSync(config, JSON.stringify({ mode, prep: prepareFixture(plan), calls, id }));
+    writeFileSync(config, JSON.stringify({ mode, prep: prepareFixture(plan), calls, id, ...extra }));
     writeFileSync(join(dir, 'aws'), `#!${process.execPath}\n${shim}`, { mode: 0o755 });
     const runner = join(dir, 'runner.mjs');
     writeFileSync(
@@ -123,6 +134,86 @@ test('lost start response is UNKNOWN, never assumed unstarted, restarted or attr
   assert.equal(r.result.failure.kind, 'START_OUTCOME_UNCONFIRMED');
   assert.equal(r.result.failure.startedBuildMayStillRun, true);
   assert.equal(r.result.failure.recoveryAction, 'READ_ONLY_DIAGNOSTIC_REQUIRED_NO_RESTART');
+  assert.equal(r.called.filter((x) => x === 'start-build').length, 1);
+  assert.ok(!r.called.includes('batch-get-builds'));
+});
+
+for (const operation of ['get-caller-identity', 'batch-get-projects'])
+  test(`pre-start ${operation} recovers twice with immutable failures and exactly one StartBuild`, () => {
+    const r = execute('pass', { failOperation: operation, failures: ['network', 'ThrottlingException'] });
+    assert.equal(r.status, 0);
+    assert.equal(r.result.gate, 'PASS');
+    assert.equal(r.result.readGate, 'RECOVERED');
+    assert.equal(r.result.originalReadGate, 'FAIL');
+    assert.equal(r.result.preStartReadFailures, 2);
+    assert.equal(r.called.filter((x) => x === operation).length, 3);
+    assert.equal(r.called.filter((x) => x === 'start-build').length, 1);
+    assert.ok(!r.called.includes('update-project') && !r.called.includes('create-project'));
+    assert.deepEqual(
+      r.result.preStartReads.filter((x) => x.operation.endsWith(operation)).map((x) => x.result),
+      ['FAIL', 'FAIL', 'PASS'],
+    );
+    assert.ok(!JSON.stringify(r.result).includes('sensitive-password-token'));
+  });
+
+for (const failure of ['network', 'AccessDeniedException', 'expired', 'unknown', 'invalid-json'])
+  test(`pre-start project ${failure} fails closed before mutation or StartBuild`, () => {
+    const r = execute('pass', { failOperation: 'batch-get-projects', failures: Array(4).fill(failure) });
+    assert.equal(r.status, 1);
+    assert.equal(r.started, null);
+    assert.equal(r.result.gate, 'FAIL');
+    assert.equal(r.result.failure.kind, 'PRE_START_OR_MUTATION_FAILURE');
+    assert.equal(r.result.failure.startedBuildMayStillRun, false);
+    assert.equal(r.called.filter((x) => x === 'batch-get-projects').length, failure === 'network' ? 3 : 1);
+    assert.ok(
+      !r.called.some((x) => ['start-build', 'update-project', 'create-project', 'batch-get-builds'].includes(x)),
+    );
+    assert.ok(!JSON.stringify(r.result).includes('sensitive-password-token'));
+  });
+
+for (const [operation, extra] of [
+  ['update-project', { changedProject: true }],
+  ['create-project', { missingProject: true }],
+])
+  test(`${operation} network failure is never retried or followed by StartBuild`, () => {
+    const r = execute('pass', { ...extra, failOperation: operation, failures: ['network', 'network'] });
+    assert.equal(r.status, 1);
+    assert.equal(r.started, null);
+    assert.equal(r.called.filter((x) => x === operation).length, 1);
+    assert.ok(!r.called.includes('start-build'));
+  });
+
+for (const extra of [{ wrongAccount: true }, { wrongRole: true }])
+  test(`successful read with ${Object.keys(extra)[0]} never retries semantic verification`, () => {
+    const r = execute('pass', extra);
+    assert.equal(r.status, 1);
+    assert.equal(r.started, null);
+    assert.equal(r.called.filter((x) => x === 'get-caller-identity').length, 1);
+    assert.ok(r.called.filter((x) => x === 'batch-get-projects').length <= 1);
+    assert.ok(!r.called.some((x) => ['start-build', 'update-project', 'create-project'].includes(x)));
+  });
+
+for (const [operation, extra] of [
+  ['update-project', { changedProject: true }],
+  ['create-project', { missingProject: true }],
+])
+  test(`project read recovery permits one reviewed ${operation} and one StartBuild`, () => {
+    const r = execute('pass', { ...extra, failOperation: 'batch-get-projects', failures: ['network'] });
+    assert.equal(r.status, 0);
+    assert.equal(r.result.gate, 'PASS');
+    assert.equal(r.result.originalReadGate, 'FAIL');
+    assert.equal(r.called.filter((x) => x === 'batch-get-projects').length, 2);
+    assert.equal(r.called.filter((x) => x === operation).length, 1);
+    assert.equal(r.called.filter((x) => x === 'start-build').length, 1);
+  });
+
+test('recovered project read never converts a later lost StartBuild response into a safe retry', () => {
+  const r = execute('start-uncertain', { failOperation: 'batch-get-projects', failures: ['network'] });
+  assert.equal(r.status, 1);
+  assert.equal(r.started, null);
+  assert.equal(r.result.failure.kind, 'START_OUTCOME_UNCONFIRMED');
+  assert.equal(r.result.failure.startedBuildMayStillRun, true);
+  assert.equal(r.called.filter((x) => x === 'batch-get-projects').length, 2);
   assert.equal(r.called.filter((x) => x === 'start-build').length, 1);
   assert.ok(!r.called.includes('batch-get-builds'));
 });

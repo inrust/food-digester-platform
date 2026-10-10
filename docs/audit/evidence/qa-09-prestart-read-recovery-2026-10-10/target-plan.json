@@ -1,0 +1,65 @@
+{
+  "gate": "NOT_RUN",
+  "scope": "PREPARED_TARGET_SEQUENCE_ONLY",
+  "implementationSourceSha256": {
+    "scripts/qa09-operation-observation.mjs": "c00348db98c38d55be0eb5c17467e92d6c8642ecfbb9909f780f9a94f03025e6",
+    "scripts/qa09-ten-device-bridge.mjs": "c6b7f0186ef3cb4e8525963852954e7285449858ca868d10cdb409d7a383d228",
+    "scripts/qa09-prestart-read.test.mjs": "3cc5db952eada9605374e50e4bf1416a864a499a941cc63ec19ad3e194f423b7",
+    "scripts/qa09-fixture-cli-observation.test.mjs": "a85d51f369bd5de55dc1c08c0b9a2770215da62d55af914073631ea6ddf50d4b"
+  },
+  "newSha": "RESOLVE_FROM_HUMAN_PUSHED_IMPLEMENTATION_COMMIT",
+  "stages": [
+    {
+      "id": "default",
+      "engine_cpu_diagnosis": true,
+      "authenticated_preconnect": false,
+      "account_read_candidate": false,
+      "contract_load_detail": false
+    },
+    {
+      "id": "R0",
+      "engine_cpu_diagnosis": true,
+      "authenticated_preconnect": true,
+      "account_read_candidate": false,
+      "contract_load_detail": true
+    },
+    {
+      "id": "R0_original_cleanup",
+      "requiredGate": "PASS",
+      "compensatingCleanupCannotAdmitR1": true
+    },
+    {
+      "id": "R1",
+      "engine_cpu_diagnosis": true,
+      "authenticated_preconnect": true,
+      "account_read_candidate": true,
+      "contract_load_detail": true
+    },
+    {
+      "id": "R1_original_cleanup",
+      "requiredGate": "PASS"
+    },
+    {
+      "id": "restore",
+      "engine_cpu_diagnosis": true,
+      "authenticated_preconnect": false,
+      "account_read_candidate": false,
+      "contract_load_detail": false
+    }
+  ],
+  "rollout_phase": "immediate",
+  "eachBusinessUnitFreshPrefix": true,
+  "firstNewShaActualArtifacts": 19,
+  "requireContractAwaitCheckpoint": true,
+  "contractReadCandidate": false,
+  "connectionBudget": 70,
+  "staticConnectionBudget": 63,
+  "businessChecksPerUnit": 123,
+  "originalPhaseRequestsPerUnit": 55,
+  "negativeNoSqlRequestsPerUnit": 12,
+  "maxExtraBusinessSamples": 0,
+  "failR0StopsR1": true,
+  "unknownStartNeverRestarted": true,
+  "permissionOrCapacityChanges": false,
+  "awsActionsExecutedInThisImplementationTask": 0
+}

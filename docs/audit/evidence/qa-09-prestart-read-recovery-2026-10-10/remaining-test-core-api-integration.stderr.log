@@ -1,0 +1,21 @@
+stderr | apps/cloud-api/test/qa04-core-api.test.ts > QA04 audit failure rolls back lifecycle/outbox; retry and replay preserve exactly one audit
+audit FAILURE 记录写入失败 Error [PrismaClientKnownRequestError]: 
+Invalid `client.auditLog.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database/src/audit.ts:72:25
+
+  69 /** 写一条审计记录。可在事务内（tx）或根 client 上调用。 */
+  70 export async function recordAudit(client: DbClient, entry: AuditEntry): Promise<void> {
+  71   const ctx = getRequestContext();
+→ 72   await client.auditLog.create(
+Database error. Code: `P0001`. Message: `QA04 audit unavailable`
+    at redactSensitive (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability/src/redaction.ts:43:19)
+    at Array.map (<anonymous>)
+    at Object.error (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability/src/redaction.ts:70:18)
+    at audited (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database/src/audit.ts:144:14)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/device-status/handler.ts:79:20
+    at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/device-status/handler.ts:104:16
+    at Object.suspend (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/test/qa04-observe.ts:18:28)
+    at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/test/qa04-core-api.test.ts:193:20
+    at withFixture (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/test/qa04-core-api.test.ts:50:13)
+

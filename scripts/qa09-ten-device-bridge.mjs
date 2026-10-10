@@ -7,11 +7,20 @@ import { gzipSync } from 'node:zlib';
 import { prepareProbe } from './prepare-qa09-db-readonly-probe.mjs';
 import { PROJECT, validatePlan } from './qa09-ten-device-db.mjs';
 import { readVerifiedFixtureFrame } from './qa09-db-frame-wait.mjs';
-import { classifySafeCliError, safeOperationError } from './qa09-operation-observation.mjs';
+import {
+  classifySafeCliError,
+  safeOperationError,
+  readPreStartFixtureOperation,
+} from './qa09-operation-observation.mjs';
 import { readStartedFixtureBuild, STARTED_BUILD_QUERY } from './qa09-started-build-read.mjs';
 const hash = (v) => createHash('sha256').update(v).digest('hex');
 export const classifyFixtureCliError = classifySafeCliError;
-export function fixtureAws(args, profile = 'esgiot-infra', { spawn = spawnSync, now = () => performance.now() } = {}) {
+export function fixtureAws(
+  args,
+  profile = 'esgiot-infra',
+  { spawn = spawnSync, now = () => performance.now(), timeoutMs = 30000 } = {},
+) {
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) throw Error('INVALID_FIXTURE_CLI_TIMEOUT');
   const started = now();
   const r = spawn(
     'aws',
@@ -31,7 +40,7 @@ export function fixtureAws(args, profile = 'esgiot-infra', { spawn = spawnSync, 
     ],
     {
       encoding: 'utf8',
-      timeout: 30000,
+      timeout: timeoutMs,
       maxBuffer: 16 * 1024 * 1024,
       env: { ...process.env, AWS_MAX_ATTEMPTS: '1' },
     },
@@ -89,7 +98,8 @@ export async function runFixture(plan, evidencePath, onProgress = () => {}, { lo
   const prep = prepareFixture(plan);
   writeFileSync(evidencePath + '.preparation.json', JSON.stringify(prep, null, 2) + '\n');
   const operations = [],
-    buildReads = [];
+    buildReads = [],
+    preStartReads = [];
   let start, build, readResult;
   let startAttempted = false;
   const persist = (gate, extra = {}) =>
@@ -103,13 +113,14 @@ export async function runFixture(plan, evidencePath, onProgress = () => {}, { lo
           buildspecHash: prep.buildspecHash,
           operations,
           buildReads,
+          preStartReads,
           ...extra,
         },
         null,
         2,
       ) + '\n',
     );
-  const aws = (args, profile = 'esgiot-infra') => {
+  const aws = (args, profile = 'esgiot-infra', limits = {}) => {
     const row = {
       sequence: operations.length + 1,
       operation: args[1],
@@ -121,7 +132,7 @@ export async function runFixture(plan, evidencePath, onProgress = () => {}, { lo
     persist('RUNNING');
     const tick = performance.now();
     try {
-      const value = fixtureAws(args, profile);
+      const value = fixtureAws(args, profile, limits);
       row.result = 'PASS';
       return value;
     } catch (error) {
@@ -133,10 +144,18 @@ export async function runFixture(plan, evidencePath, onProgress = () => {}, { lo
       persist('RUNNING');
     }
   };
+  const preStartRead = async (args) => {
+    const result = await readPreStartFixtureOperation(
+      args[0] + ':' + args[1],
+      (limits) => aws(args, 'esgiot-infra', limits),
+      { observations: preStartReads, onObservation: () => persist('RUNNING') },
+    );
+    return result.value;
+  };
   try {
-    const identity = aws(['sts', 'get-caller-identity']);
+    const identity = await preStartRead(['sts', 'get-caller-identity']);
     if (identity.Account !== '065986019555') throw Error('WRONG_ACCOUNT');
-    const existing = aws(['codebuild', 'batch-get-projects', '--names', PROJECT]);
+    const existing = await preStartRead(['codebuild', 'batch-get-projects', '--names', PROJECT]);
     if (existing.projects.length && existing.projects[0].serviceRole !== prep.project.serviceRole)
       throw Error('FIXTURE_PROJECT_ROLE_MISMATCH');
     const reuseReviewedBuildspec = existing.projects[0]?.source?.buildspec === prep.project.source.buildspec;
@@ -220,12 +239,15 @@ export async function runFixture(plan, evidencePath, onProgress = () => {}, { lo
       { buildId: start.id, sourceHash: prep.sourceHash, prefix: plan.prefix, action: plan.action },
     );
     const resultReadFailures = verified.observations.filter((row) => row.errorCode).length;
+    const preStartReadFailures = preStartReads.filter((row) => row.result === 'FAIL').length;
+    const recovered = readResult.readRecoveries || resultReadFailures || preStartReadFailures;
     persist('PASS', {
       result: verified.frame,
       resultReadObservations: verified.observations,
       resultReadProfile: logProfile,
-      readGate: readResult.readRecoveries || resultReadFailures ? 'RECOVERED' : 'PASS',
-      originalReadGate: readResult.readRecoveries || resultReadFailures ? 'FAIL' : 'PASS',
+      readGate: recovered ? 'RECOVERED' : 'PASS',
+      originalReadGate: recovered ? 'FAIL' : 'PASS',
+      preStartReadFailures,
       resultReadFailures,
       readRecoveries: readResult.readRecoveries,
     });
