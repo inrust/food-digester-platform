@@ -118,7 +118,7 @@ for (const mode of ['baseline', 'cold', 'audit'])
       { gateway: true, exactFilter: false },
       { gateway: false, exactFilter: false },
       { gateway: true, exactFilter: false },
-      { gateway: false, exactFilter: true },
+      ...Array.from({ length: Math.ceil(r.exact.records.length / 3) }, () => ({ gateway: false, exactFilter: true })),
     ]);
     assert.ok(r.priorUnchanged);
   });

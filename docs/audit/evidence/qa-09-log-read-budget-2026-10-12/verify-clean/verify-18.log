@@ -1,0 +1,56 @@
+
+> food-digester-platform@0.0.0 test:core-api-integration /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-core-api-integration.mjs /tmp/fdp-core-api-integration-gate.json
+
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ✓ apps/cloud-api/test/admin-device-assignment.test.ts (9 tests) 2089ms
+ ✓ apps/cloud-api/test/admin-audit.test.ts (7 tests) 2661ms
+ ✓ apps/cloud-api/test/admin-alarm.test.ts (10 tests) 2668ms
+     ✓ 确认记录操作者/原因/时间 + 审计；重复确认幂等（无新写入/审计/领域事件）  317ms
+ ✓ apps/cloud-api/test/admin-onboarding.test.ts (13 tests) 2915ms
+ ✓ apps/cloud-api/test/admin-device-retirement.test.ts (7 tests) 2846ms
+     ✓ Active→Retired：撤销 Assignment/License/Entitlement + 待确认记录 + DEVICE_RETIRED + 审计；证书保持 ACTIVE  329ms
+ ✓ apps/cloud-api/test/admin-consumable-request.test.ts (8 tests) 2839ms
+ ✓ apps/cloud-api/test/admin-license.test.ts (11 tests) 2887ms
+     ✓ 完整链路：每步状态/签名/历史/审计/通知各一次  422ms
+ ✓ apps/cloud-api/test/admin-esg.test.ts (10 tests) 3014ms
+ ✓ apps/cloud-api/test/admin-contract-device.test.ts (8 tests) 3068ms
+ ✓ apps/cloud-api/test/device-sync.test.ts (13 tests) 3176ms
+ ✓ apps/cloud-api/test/admin-contract.test.ts (9 tests) 3070ms
+ ✓ apps/cloud-api/test/admin-command.test.ts (15 tests) 3218ms
+     ✓ ACTIVE 设备：22 个命令全部创建成功并进入 AUTHORIZED  505ms
+ ✓ apps/cloud-api/test/admin-device-status.test.ts (8 tests) 1016ms
+ ✓ apps/cloud-api/test/qa04-core-api.test.ts (3 tests) 4367ms
+   ✓ QA04 five roles, two tenants: read scope, mutation and audit boundaries  3024ms
+   ✓ QA04 concurrent If-Match writes have one winner and one success audit  738ms
+   ✓ QA04 audit failure rolls back lifecycle/outbox; retry and replay preserve exactly one audit  605ms
+
+ Test Files  14 passed (14)
+      Tests  131 passed (131)
+   Start at  07:28:35
+   Duration  5.42s (transform 6.31s, setup 265ms, import 13.76s, tests 39.83s, environment 1ms)
+
+JSON report written to /var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa04-core-api-IL2Yr9/vitest.json
+stderr | apps/cloud-api/test/qa04-core-api.test.ts > QA04 audit failure rolls back lifecycle/outbox; retry and replay preserve exactly one audit
+audit FAILURE 记录写入失败 Error [PrismaClientKnownRequestError]: 
+Invalid `client.auditLog.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database/src/audit.ts:72:25
+
+  69 /** 写一条审计记录。可在事务内（tx）或根 client 上调用。 */
+  70 export async function recordAudit(client: DbClient, entry: AuditEntry): Promise<void> {
+  71   const ctx = getRequestContext();
+→ 72   await client.auditLog.create(
+Database error. Code: `P0001`. Message: `QA04 audit unavailable`
+    at redactSensitive (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability/src/redaction.ts:43:19)
+    at Array.map (<anonymous>)
+    at Object.error (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability/src/redaction.ts:70:18)
+    at audited (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database/src/audit.ts:144:14)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/device-status/handler.ts:79:20
+    at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/device-status/handler.ts:104:16
+    at Object.suspend (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/test/qa04-observe.ts:18:28)
+    at /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/test/qa04-core-api.test.ts:193:20
+    at withFixture (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/test/qa04-core-api.test.ts:50:13)
+

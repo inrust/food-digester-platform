@@ -1,0 +1,49 @@
+{
+  "gate": "PASS",
+  "commands": [
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "eslint",
+        "scripts/check-qa09-log-read-budget.mjs",
+        "scripts/check-qa09-log-read-budget.test.mjs",
+        "scripts/qa09-log-read.test.mjs",
+        "scripts/qa09-exact-correlation.test.mjs",
+        "scripts/qa09-observer-collector.test.mjs"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "prettier",
+        "--check",
+        "scripts/check-qa09-log-read-budget.mjs",
+        "scripts/check-qa09-log-read-budget.test.mjs",
+        "scripts/qa09-log-read.test.mjs",
+        "scripts/qa09-exact-correlation.test.mjs",
+        "scripts/qa09-observer-collector.test.mjs"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "python3",
+        "ast.parse",
+        "scripts/qa09_log_read.py"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "python3",
+        "ast.parse",
+        "scripts/collect-qa09-contract-correlation.py"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "noCloudActions": true
+}

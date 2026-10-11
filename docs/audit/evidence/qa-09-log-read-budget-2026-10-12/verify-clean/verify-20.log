@@ -1,0 +1,39 @@
+
+> food-digester-platform@0.0.0 test:security-suite /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-security-suite.mjs /tmp/fdp-security-gate.json
+
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ✓ packages/database/test/db03.test.ts (10 tests) 1117ms
+ ✓ packages/auth/test/device-mtls.test.ts (11 tests) 1214ms
+ ✓ packages/auth/test/secure-package.test.ts (14 tests) 1274ms
+ ✓ packages/auth/test/qa06-jwt-security.test.ts (1 test) 45ms
+ ✓ packages/auth/test/cognito.test.ts (14 tests) 197ms
+ ✓ apps/cloud-api/test/admin-lambda-composition.test.ts (12 tests) 636ms
+ ✓ packages/auth/test/guard.test.ts (10 tests) 8ms
+ ✓ apps/cloud-api/test/device-lambda-composition.test.ts (13 tests) 13ms
+ ✓ packages/aws-clients/test/iot-device-policy.test.ts (12 tests) 8ms
+ ✓ apps/cloud-api/test/csr-onboarding.test.ts (1 test) 1480ms
+ ✓ packages/observability/test/redaction.test.ts (8 tests) 7ms
+ ✓ apps/cloud-api/test/ota-dispatch.test.ts (16 tests) 1797ms
+ ✓ apps/cloud-api/test/admin-settings.test.ts (10 tests) 2253ms
+ ✓ apps/cloud-api/test/admin-audit.test.ts (7 tests) 2329ms
+ ✓ apps/cloud-api/test/media.test.ts (12 tests) 2442ms
+ ✓ apps/cloud-api/test/admin-command.test.ts (15 tests) 2544ms
+ ✓ apps/cloud-api/test/admin-user.test.ts (31 tests) 2871ms
+ ✓ apps/cloud-api/test/admin-device-user.test.ts (8 tests) 2960ms
+     ✓ 仅匹配具有目标设备 ACTIVE 分配的设备操作员  333ms
+ ✓ apps/cloud-api/test/certificate-rotate.test.ts (8 tests) 3299ms
+     ✓ 缺失 CSR 不签发；AWS attach 失败保留可重试停用记录并保留旧证  330ms
+ ✓ apps/cloud-api/test/qa06-security.test.ts (4 tests) 3487ms
+   ✓ QA06 signed tenant scope and SQL JSON injection cannot cross boundaries or corrupt business state  2078ms
+   ✓ QA06 malicious media filenames and metadata reject before signing or persistence  585ms
+   ✓ QA06 raw canaries are absent from actual logger trace audit and snapshot artifacts  546ms
+
+ Test Files  20 passed (20)
+      Tests  217 passed (217)
+   Start at  07:31:37
+   Duration  4.82s (transform 6.91s, setup 129ms, import 14.40s, tests 29.98s, environment 1ms)
+
+JSON report written to /var/folders/k8/_4hymb6j59s0c8xntb11ktmc0000gn/T/qa06-security-e8wyVI/vitest.json

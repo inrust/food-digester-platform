@@ -4,12 +4,12 @@ import hashlib
 import json
 import math
 import re
-import subprocess
 import sys
 from pathlib import Path
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from qa09_observer_cost import project_observer, exact_observers
+from qa09_log_read import LogReader, EXACT_BATCH_SIZE
 
 source, output = map(Path, sys.argv[1:3])
 if output.exists():
@@ -21,6 +21,13 @@ if '--exact-from' in flags:
     if i + 1 >= len(flags):
         raise ValueError('EXACT_PRIOR_RECEIPT_REQUIRED')
     exact_file = Path(flags[i + 1])
+    flags = flags[:i] + flags[i + 2:]
+expected_prior_hash = None
+if '--exact-sha256' in flags:
+    i = flags.index('--exact-sha256')
+    if not exact_file or i + 1 >= len(flags) or not re.fullmatch(r'[a-f0-9]{64}', flags[i + 1]):
+        raise ValueError('EXACT_EXPECTED_HASH_REQUIRED')
+    expected_prior_hash = flags[i + 1]
     flags = flags[:i] + flags[i + 2:]
 raw = source.read_bytes()
 receipt = json.loads(raw)
@@ -59,6 +66,8 @@ read_optimization = None
 pattern = None
 if exact_file:
     prior_bytes = exact_file.read_bytes()
+    if expected_prior_hash and hashlib.sha256(prior_bytes).hexdigest() != expected_prior_hash:
+        raise ValueError('PRIOR_RECEIPT_BYTES_DRIFT')
     prior = json.loads(prior_bytes)
     if (prior.get('sourceReceiptSha256') != hashlib.sha256(raw).hexdigest()
             or prior.get('prefix') != receipt['prefix'] or prior.get('sourceCommit') != receipt.get('sourceCommit')):
@@ -86,7 +95,7 @@ if exact_file:
         raise ValueError('BOUNDED_FILTER_REQUIRED')
     read_optimization = {'scope': 'OWN_EXACT_GATEWAY_INTEGRATION_INVOCATIONS_ONLY',
                          'priorGatewayReceiptSha256': hashlib.sha256(prior_bytes).hexdigest(),
-                         'invocationIds': invocations}
+                         'invocationIds': invocations, 'expectedPriorReceiptSha256': expected_prior_hash}
 start_ms = min(c['startMs'] for c in clients) - 2000
 end_ms = max(c['startMs'] + max(c['latencyMs'] or 0, 30000) for c in clients) + 2000
 ids = {c['requestId'] for c in clients if c['requestId']}
@@ -101,91 +110,79 @@ rows = {}
 platform_reports = []
 observer_candidates = []
 observer_rejected = 0
+reader = LogReader()
 for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
                     ('lambda', '/aws/lambda/fdp-test-api')]:
-    found, phases, ownership, error, token, pages = [], [], [], None, None, 0
-    seen_tokens = set()
-    while True:
-        args = ['aws', 'logs', 'filter-log-events', '--log-group-name', group,
-                '--start-time', str(start_ms), '--end-time', str(end_ms),
-                '--profile', 'esgiot-readonly', '--region', 'ap-southeast-1',
-                '--output', 'json', '--no-cli-pager', '--no-paginate']
-        if name == 'lambda' and pattern:
-            args += ['--filter-pattern', pattern]
-        if token:
-            args += ['--next-token', token]
-        try:
-            result = subprocess.run(args, capture_output=True, text=True, timeout=45)
-        except subprocess.TimeoutExpired:
-            error = 'LOG_READ_TIMEOUT'
+    found, phases, ownership = [], [], []
+    queries = [None]
+    if name == 'lambda' and exact_file:
+        queries = [invocations[i:i + EXACT_BATCH_SIZE] for i in range(0, len(invocations), EXACT_BATCH_SIZE)]
+    for query, batch in enumerate(queries):
+        batch_invocations = set(batch) if batch else None
+        batch_ids = {c['requestId'] for c, inv in zip(clients, invocations) if inv in batch_invocations} if batch else ids
+        query_pattern = '%' + '|'.join(batch) + '%' if batch else None
+        for page in reader.pages(name, group, start_ms, end_ms, query_pattern, query):
+            for event in page.get('events', []):
+                message = event['message']
+                if name == 'lambda':
+                    report = re.search(r'REPORT RequestId:\s*([a-f0-9-]{36})', message)
+                    if report and (batch_invocations is None or report.group(1) in batch_invocations):
+                        metrics = {}
+                        for label, key in [('Duration', 'durationMs'), ('Billed Duration', 'billedDurationMs'), ('Memory Size', 'memoryMiB'), ('Max Memory Used', 'maxMemoryMiB'), ('Init Duration', 'initDurationMs')]:
+                            found_metric = re.search(r'(?:^|\t)' + label + r':\s*([0-9.]+)\s*(?:ms|MB)', message)
+                            if found_metric:
+                                metrics[key] = float(found_metric.group(1))
+                        platform_reports.append({'lambdaRequestId': report.group(1), **metrics})
+                try:
+                    value = json.loads(message[message.find('{'):])
+                except (ValueError, TypeError):
+                    continue
+                if not isinstance(value, dict):
+                    continue
+                request_id = value.get('requestId') if name == 'gateway' else value.get('gatewayRequestId')
+                if not isinstance(request_id, str) or request_id not in batch_ids:
+                    continue
+                if name == 'lambda' and value.get('event') == 'data-path.contract-load.observer-cost':
+                    projected = project_observer(value)
+                    if projected is not None and type(event.get('timestamp')) is int:
+                        observer_candidates.append({**projected, 'logTimestampMs': event['timestamp']})
+                    else:
+                        observer_rejected += 1
+                if name == 'lambda' and value.get('event') == 'data-path.phase.completed':
+                    phase_fields = ['gatewayRequestId', 'lambdaRequestId', 'operationId', 'phase', 'durationMs',
+                                    'outcome', 'errorCode', 'startedAt', 'completedAt', 'coldStart', 'includesConnectionWait']
+                    phase = {k: value[k] for k in phase_fields if k in value}
+                    if value.get('completionBoundary') in ['DRIVER_DISPATCH', 'CALL_RETURNED', 'MODEL_EXTENSION_ENTERED', 'OPERATION_SETTLED', 'OPERATION_FAILED', 'PG_DISPATCH', 'PG_SETTLED', 'MICROTASK_CHECKPOINT', 'ADAPTER_CALL_RETURNED', 'PG_CALL_RETURNED', 'MODEL_EXTENSION_RESUMED']:
+                        phase['completionBoundary'] = value['completionBoundary']
+                    if value.get('processCpuScope') == 'PROCESS_ALL_THREADS':
+                        phase['processCpuScope'] = 'PROCESS_ALL_THREADS'
+                        for key in ['processCpuUserUs', 'processCpuSystemUs']:
+                            metric = value.get(key)
+                            if type(metric) is int and 0 <= metric <= 9007199254740991:
+                                phase[key] = metric
+                    phases.append(phase)
+                if name == 'lambda' and value.get('event') == 'data-path.contract-load.ownership':
+                    if (all(type(value.get(k)) is int and 0 <= value[k] <= 9007199254740991 for k in ['modelEntries', 'driverDispatches'])
+                            and type(value.get('transactional')) is bool):
+                        own = {k: value[k] for k in ['gatewayRequestId', 'lambdaRequestId', 'operationId', 'modelEntries', 'driverDispatches', 'transactional'] if k in value}
+                        if value.get('detailEnabled') is True and all(type(value.get(k)) is int and 0 <= value[k] <= 9007199254740991 for k in ['pgQueries','pgSettlements']):
+                            own.update(detailEnabled=True, pgQueries=value['pgQueries'], pgSettlements=value['pgSettlements'])
+                        if (value.get('publicBoundariesEnabled') is True and type(value.get('modelResumeObserved')) is bool
+                                and all(type(value.get(k)) is int and 0 <= value[k] <= 9007199254740991 for k in ['driverReturns', 'pgReturns', 'modelResumes'])):
+                            own.update(publicBoundariesEnabled=True, modelResumeObserved=value['modelResumeObserved'],
+                                       **{k: value[k] for k in ['driverReturns', 'pgReturns', 'modelResumes']})
+                        ownership.append(own)
+                if name == 'lambda' and value.get('event') != 'admin.request.completed':
+                    continue
+                row = {k: value[k] for k in fields[name] if k in value}
+                if name == 'lambda' and isinstance(event.get('timestamp'), int):
+                    row['logTimestampMs'] = event['timestamp']
+                found.append(row)
+        if reader.error:
             break
-        if result.returncode:
-            error = 'LOG_READ_FAILED'
-            break
-        page = json.loads(result.stdout)
-        for event in page.get('events', []):
-            message = event['message']
-            if name == 'lambda':
-                report = re.search(r'REPORT RequestId:\s*([a-f0-9-]{36})', message)
-                if report:
-                    metrics = {}
-                    for label, key in [('Duration', 'durationMs'), ('Billed Duration', 'billedDurationMs'), ('Memory Size', 'memoryMiB'), ('Max Memory Used', 'maxMemoryMiB'), ('Init Duration', 'initDurationMs')]:
-                        found_metric = re.search(r'(?:^|\t)' + label + r':\s*([0-9.]+)\s*(?:ms|MB)', message)
-                        if found_metric:
-                            metrics[key] = float(found_metric.group(1))
-                    platform_reports.append({'lambdaRequestId': report.group(1), **metrics})
-            try:
-                value = json.loads(message[message.find('{'):])
-            except (ValueError, TypeError):
-                continue
-            request_id = value.get('requestId') if name == 'gateway' else value.get('gatewayRequestId')
-            if request_id not in ids:
-                continue
-            if name == 'lambda' and value.get('event') == 'data-path.contract-load.observer-cost':
-                projected = project_observer(value)
-                if projected is not None and type(event.get('timestamp')) is int:
-                    observer_candidates.append({**projected, 'logTimestampMs': event['timestamp']})
-                else:
-                    observer_rejected += 1
-            if name == 'lambda' and value.get('event') == 'data-path.phase.completed':
-                phase_fields = ['gatewayRequestId', 'lambdaRequestId', 'operationId', 'phase', 'durationMs',
-                                'outcome', 'errorCode', 'startedAt', 'completedAt', 'coldStart', 'includesConnectionWait']
-                phase = {k: value[k] for k in phase_fields if k in value}
-                if value.get('completionBoundary') in ['DRIVER_DISPATCH', 'CALL_RETURNED', 'MODEL_EXTENSION_ENTERED', 'OPERATION_SETTLED', 'OPERATION_FAILED', 'PG_DISPATCH', 'PG_SETTLED', 'MICROTASK_CHECKPOINT', 'ADAPTER_CALL_RETURNED', 'PG_CALL_RETURNED', 'MODEL_EXTENSION_RESUMED']:
-                    phase['completionBoundary'] = value['completionBoundary']
-                if value.get('processCpuScope') == 'PROCESS_ALL_THREADS':
-                    phase['processCpuScope'] = 'PROCESS_ALL_THREADS'
-                    for key in ['processCpuUserUs', 'processCpuSystemUs']:
-                        metric = value.get(key)
-                        if type(metric) is int and 0 <= metric <= 9007199254740991:
-                            phase[key] = metric
-                phases.append(phase)
-            if name == 'lambda' and value.get('event') == 'data-path.contract-load.ownership':
-                if (all(type(value.get(k)) is int and 0 <= value[k] <= 9007199254740991 for k in ['modelEntries', 'driverDispatches'])
-                        and type(value.get('transactional')) is bool):
-                    own = {k: value[k] for k in ['gatewayRequestId', 'lambdaRequestId', 'operationId', 'modelEntries', 'driverDispatches', 'transactional'] if k in value}
-                    if value.get('detailEnabled') is True and all(type(value.get(k)) is int and 0 <= value[k] <= 9007199254740991 for k in ['pgQueries','pgSettlements']):
-                        own.update(detailEnabled=True, pgQueries=value['pgQueries'], pgSettlements=value['pgSettlements'])
-                    if (value.get('publicBoundariesEnabled') is True and type(value.get('modelResumeObserved')) is bool
-                            and all(type(value.get(k)) is int and 0 <= value[k] <= 9007199254740991 for k in ['driverReturns', 'pgReturns', 'modelResumes'])):
-                        own.update(publicBoundariesEnabled=True, modelResumeObserved=value['modelResumeObserved'],
-                                   **{k: value[k] for k in ['driverReturns', 'pgReturns', 'modelResumes']})
-                    ownership.append(own)
-            if name == 'lambda' and value.get('event') != 'admin.request.completed':
-                continue
-            row = {k: value[k] for k in fields[name] if k in value}
-            if name == 'lambda' and isinstance(event.get('timestamp'), int):
-                row['logTimestampMs'] = event['timestamp']
-            found.append(row)
-        pages += 1
-        token = page.get('nextToken')
-        if not token:
-            break
-        if token in seen_tokens or pages >= 20:
-            error = 'LOG_PAGINATION_INCOMPLETE'
-            break
-        seen_tokens.add(token)
-    rows[name] = {'rows': found, 'phases': phases, 'ownership': ownership, 'pages': pages, 'error': error}
+    rows[name] = {'rows': found, 'phases': phases, 'ownership': ownership,
+                  'pages': sum(a['result'] == 'PASS' for a in reader.attempts if a['group'] == name),
+                  'error': reader.group_errors.get(name)}
 linked = []
 for client in clients:
     gateway = [g for g in rows['gateway']['rows'] if g.get('requestId') == client['requestId']]
@@ -211,6 +208,7 @@ for client in clients:
                    'phases': [p for p in rows['lambda']['phases'] if p.get('gatewayRequestId') == client['requestId']],
                    'contractLoadOwnership': [p for p in rows['lambda']['ownership'] if p.get('gatewayRequestId') == client['requestId']],
                    'contractObserverCost': observer_rows, 'observerCostGate': observer_gate})
+read_budget = reader.finish()
 expected_count = len(clients) if audit_mode or sampling else 6
 complete = (len(linked) == expected_count and len(ids) == expected_count and expected_count > 0 and
             len({c['id'] for c in clients}) == expected_count and
@@ -221,12 +219,14 @@ report = {'task': 'QA-09', 'sampling': sampling, 'scope': ('OWN_COLD409_AUDIT_GE
           'sourceReceiptSha256': hashlib.sha256(raw).hexdigest(), 'sourceCommit': receipt.get('sourceCommit'),
           'prefix': receipt['prefix'], 'fullQa09Accepted': False,
           'startMs': start_ms, 'endMs': end_ms, 'records': linked,
-          'logReadErrors': {k: v['error'] for k, v in rows.items() if v['error']},
+          'logReadErrors': dict(reader.group_errors),
+          'logReadBudget': read_budget,
+          'readerSha256': hashlib.sha256(Path(__file__).with_name('qa09_log_read.py').read_bytes()).hexdigest(),
           'exactLinkedCount': sum(x['exactLinked'] for x in linked),
           'ownedBoundariesRequired': owned_required, 'observerCostRequired': observer_required, 'observerCostRejected': observer_rejected,
           'observerProjectorSha256': hashlib.sha256(Path(__file__).with_name('qa09_observer_cost.py').read_bytes()).hexdigest(),
           'missingHistoricalSiblingReceipt': not ledger.get('attempts'),
-          'gate': 'PASS' if complete and not any(v['error'] for v in rows.values()) else 'PARTIAL'}
+          'gate': 'PASS' if complete and not reader.error else 'PARTIAL'}
 if read_optimization:
     report['readOptimization'] = read_optimization
 output.write_text(json.dumps(report, indent=2) + '\n')

@@ -105,6 +105,7 @@ test('normal and exact collectors share strict bounded observer projection and s
     { gateway: false, exact: false },
     { gateway: true, exact: false },
     { gateway: false, exact: true },
+    { gateway: false, exact: true },
   ]);
 });
 for (const fault of [

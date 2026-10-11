@@ -1,0 +1,40 @@
+{
+  "scope": "LOCAL_CONTROLLED_NO_AWS",
+  "fullQa09Accepted": false,
+  "budget": {
+    "schemaVersion": 1,
+    "totalDeadlineMs": 120000,
+    "callTimeoutMs": 15000,
+    "maxCalls": 40,
+    "maxPagesPerQuery": 20,
+    "exactBatchSize": 3,
+    "readConcurrency": 1,
+    "automaticRetries": 0,
+    "elapsedMs": 0,
+    "attempts": [
+      {
+        "group": "gateway",
+        "query": 0,
+        "page": 1,
+        "timeoutMs": 15000,
+        "result": "FAIL",
+        "elapsedMs": 0,
+        "error": "LOG_READ_TIMEOUT"
+      }
+    ],
+    "error": "LOG_READ_TIMEOUT"
+  },
+  "groupErrors": {
+    "gateway": "LOG_READ_TIMEOUT",
+    "lambda": "LOG_READ_NOT_STARTED"
+  },
+  "pages": 0,
+  "calls": [
+    {
+      "timeout": 15,
+      "singleAttempt": true,
+      "noPaginate": true,
+      "readTimeout": "10"
+    }
+  ]
+}
