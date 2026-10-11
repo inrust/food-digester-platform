@@ -15,7 +15,7 @@ def metric(v):
 
 
 def project_observer(value):
-    if (value.get('event') != EVENT or value.get('schemaVersion') != 1 or type(value.get('schemaVersion')) is not int
+    if (value.get('event') != EVENT or value.get('schemaVersion') not in (1, 2) or type(value.get('schemaVersion')) is not int
             or value.get('publicOutcome') not in ['NOT_OBSERVED', 'RETURNED', 'THREW']
             or value.get('status') not in STATUSES or value.get('cpuSubtractionAllowed') is not False
             or value.get('compilerOnlyAttribution') is not False or value.get('processCpuScope') != 'PROCESS_ALL_THREADS'
@@ -44,6 +44,33 @@ def project_observer(value):
     result = {k: value[k] for k in ['event', 'schemaVersion', 'gatewayRequestId', 'lambdaRequestId', 'operationId',
                                    'status', 'publicOutcome', 'processCpuScope', 'cpuSubtractionAllowed', 'compilerOnlyAttribution'] + COUNTERS if k in value}
     result['segments'] = segments
+    if value['schemaVersion'] == 2:
+        own = value.get('ownedBoundaries')
+        owned_names = ['checkpoint-phase-setup', 'checkpoint-output-return', 'after-checkpoint-to-dispatch',
+                       'repository-driver-setup', 'observer-public-bridge', 'public-callback-setup']
+        if (not isinstance(own, dict) or own.get('seam') != 'SELF_OWNED_CALL_SITES'
+                or own.get('includesObservationOverhead') is not True or not isinstance(own.get('segments'), list)
+                or len(own['segments']) > 6):
+            return None
+        owned_segments = []
+        for segment in own['segments']:
+            if (not isinstance(segment, dict) or segment.get('name') not in owned_names
+                    or type(segment.get('wallUs')) is not int or not metric(segment['wallUs'])):
+                return None
+            owned_segments.append({k: segment[k] for k in ['name', 'wallUs']})
+        own_names = [s['name'] for s in owned_segments]
+        if len(set(own_names)) != len(own_names) or own_names != sorted(own_names, key=owned_names.index):
+            return None
+        after_queue = own.get('afterQueueWallUs')
+        if after_queue is not None and (type(after_queue) is not int or not metric(after_queue)):
+            return None
+        if value['status'] == 'COMPLETE' and (own_names != owned_names or after_queue is None
+                or sum(s['wallUs'] for s in owned_segments[:3]) != after_queue
+                or sum(s['wallUs'] for s in owned_segments[3:5]) != segments[0]['wallUs']
+                or owned_segments[5]['wallUs'] > segments[1]['wallUs']):
+            return None
+        result['ownedBoundaries'] = {'seam': own['seam'], 'includesObservationOverhead': True,
+                                     'afterQueueWallUs': after_queue, 'segments': owned_segments}
     return result if len(json.dumps(result, separators=(',', ':')).encode()) <= 4096 else None
 
 

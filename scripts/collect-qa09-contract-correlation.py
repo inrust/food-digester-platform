@@ -29,7 +29,10 @@ if not re.fullmatch(r'qa09-[a-f0-9]{16}', receipt.get('prefix', '')) or receipt.
 audit_mode = '--audit-get' in flags
 sampling = '--cold-sampling' in flags
 observer_required = '--observer-cost' in flags
-if any(x not in ['--audit-get', '--cold-sampling', '--observer-cost'] for x in flags):
+owned_required = '--owned-boundaries' in flags
+if owned_required and not observer_required:
+    raise ValueError('OWNED_REQUIRES_OBSERVER')
+if any(x not in ['--audit-get', '--cold-sampling', '--observer-cost', '--owned-boundaries'] for x in flags):
     raise ValueError('INVALID_CORRELATION_MODE')
 if sampling and receipt.get('cold409Sampling', {}).get('gate') != 'PASS':
     raise ValueError('COLD_SAMPLING_BUSINESS_REQUIRED')
@@ -202,7 +205,7 @@ for client in clients:
                  str(g.get('status')) == str(l.get('status')))
     own_reports = [p for p in platform_reports if len(runtime) == 1 and p['lambdaRequestId'] == runtime[0].get('lambdaRequestId')]
     observer_rows = exact_observers(observer_candidates, gateway, runtime, client, start_ms, end_ms)
-    observer_gate = 'PASS' if exact and len(observer_rows) == 1 and observer_rows[0]['status'] == 'COMPLETE' else 'NOT_OBSERVED' if not observer_rows else 'FAIL'
+    observer_gate = 'PASS' if exact and len(observer_rows) == 1 and observer_rows[0]['status'] == 'COMPLETE' and (not owned_required or observer_rows[0]['schemaVersion'] == 2) else 'NOT_OBSERVED' if not observer_rows else 'FAIL'
     linked.append({**client, 'platformReports': own_reports, 'gateway': gateway, 'lambda': runtime, 'exactLinked': exact,
                    'integrationThrottled': any(str(g.get('integrationStatus')) == '429' for g in gateway),
                    'phases': [p for p in rows['lambda']['phases'] if p.get('gatewayRequestId') == client['requestId']],
@@ -220,7 +223,7 @@ report = {'task': 'QA-09', 'sampling': sampling, 'scope': ('OWN_COLD409_AUDIT_GE
           'startMs': start_ms, 'endMs': end_ms, 'records': linked,
           'logReadErrors': {k: v['error'] for k, v in rows.items() if v['error']},
           'exactLinkedCount': sum(x['exactLinked'] for x in linked),
-          'observerCostRequired': observer_required, 'observerCostRejected': observer_rejected,
+          'ownedBoundariesRequired': owned_required, 'observerCostRequired': observer_required, 'observerCostRejected': observer_rejected,
           'observerProjectorSha256': hashlib.sha256(Path(__file__).with_name('qa09_observer_cost.py').read_bytes()).hexdigest(),
           'missingHistoricalSiblingReceipt': not ledger.get('attempts'),
           'gate': 'PASS' if complete and not any(v['error'] for v in rows.values()) else 'PARTIAL'}

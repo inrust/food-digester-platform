@@ -276,3 +276,72 @@ test('runtime receipt replay rejects business count/status/identity/budget forge
     assert.throws(() => validateObserverRuntimeReceipt(v));
   }
 });
+
+function ownedRecord() {
+  const r = record(),
+    row = r.contractObserverCost[0];
+  row.schemaVersion = 2;
+  row.ownedBoundaries = {
+    seam: 'SELF_OWNED_CALL_SITES',
+    includesObservationOverhead: true,
+    afterQueueWallUs: 30,
+    segments: [
+      'checkpoint-phase-setup',
+      'checkpoint-output-return',
+      'after-checkpoint-to-dispatch',
+      'repository-driver-setup',
+      'observer-public-bridge',
+      'public-callback-setup',
+    ].map((name, i) => ({ name, wallUs: [10, 10, 10, 40, 60, 10][i] })),
+  };
+  return r;
+}
+test('new required Gate accepts schema2 and refuses historical schema1; deployment receipt describes schema without changing defaults', async () => {
+  assert.equal(validateContractObserverCost(ownedRecord(), true, true).gate, 'PASS');
+  assert.throws(() => validateContractObserverCost(record(), true, true), /OWNED_SCHEMA_REQUIRED/);
+  assert.equal(resolveDeploymentInputs(env, sha).contractObserverSchemaVersion, 2);
+  assert.equal(
+    resolveDeploymentInputs({ ...env, QA09_REQUESTED_OBSERVER_COST: 'false' }, sha).contractObserverSchemaVersion,
+    null,
+  );
+  const { observerTargetInputs } = await import('./analyze-qa09-contract-observer.mjs');
+  const p = observerTargetInputs(sha, { ownedBoundaries: true });
+  assert.equal(p.manifestRequirements.requireOwnedBoundaries, true);
+  assert.equal(p.r0.contractObserverCost, false);
+  assert.equal(p.r1.contractObserverCost, true);
+  assert.equal(p.restore.contractObserverCost, false);
+});
+for (const [name, mutate] of Object.entries({
+  missing: (o) => o.segments.pop(),
+  duplicate: (o) => (o.segments[1] = o.segments[0]),
+  order: (o) => o.segments.reverse(),
+  negative: (o) => (o.segments[0].wallUs = -1),
+  boolean: (o) => (o.segments[0].wallUs = true),
+  nan: (o) => (o.segments[0].wallUs = NaN),
+  afterQueue: (o) => o.afterQueueWallUs++,
+  prefix: (o) => o.segments[3].wallUs++,
+  callback: (o) => (o.segments[5].wallUs = 101),
+  scope: (o) => (o.seam = 'COMPILER_INTERNAL'),
+  overhead: (o) => (o.includesObservationOverhead = false),
+}))
+  test('owned stage validation rejects ' + name, () => {
+    const r = ownedRecord();
+    mutate(r.contractObserverCost[0].ownedBoundaries);
+    assert.throws(() => validateContractObserverCost(r, true, true));
+  });
+
+test('owned parent window is tied to the original rounded after-queue phase', async () => {
+  const { validateOwnedPhaseWindow } = await import('./qa09-contract-observer-proof.mjs');
+  const row = ownedRecord().contractObserverCost[0];
+  validateOwnedPhaseWindow(row, { phase: 'contract-load-await-after-queue', durationMs: 0 });
+  for (const p of [
+    undefined,
+    { phase: 'wrong', durationMs: 0 },
+    { phase: 'contract-load-await-after-queue', durationMs: 2 },
+    { phase: 'contract-load-await-after-queue', durationMs: NaN },
+    { phase: 'contract-load-await-after-queue', durationMs: true },
+  ])
+    assert.throws(() => validateOwnedPhaseWindow(row, p), /OWNED_PHASE_WINDOW/);
+  const { validatePhaseCorrelation } = await import('./check-qa09-contract-phases.mjs');
+  assert.throws(() => validatePhaseCorrelation({}, {}, { ownedBoundaries: true }), /OWNED_REQUIRES_OBSERVER/);
+});

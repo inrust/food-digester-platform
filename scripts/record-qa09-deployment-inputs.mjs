@@ -57,6 +57,7 @@ export function resolveDeploymentInputs(env, sourceCommit) {
     contractLoadDetail: detail === 'true',
     contractPublicBoundaries: publicBoundaries === 'true',
     contractObserverCost: observerCost === 'true',
+    contractObserverSchemaVersion: observerCost === 'true' ? 2 : null,
     context,
     fullQa09Accepted: false,
     p95Accepted: false,

@@ -1,0 +1,25 @@
+{
+  "scope": "VERIFY_EQUIVALENT_ONLY_LINT_FORMAT_EXCLUDE_PREEXISTING_UNTRACKED_BUILD",
+  "noCloudActions": true,
+  "exclusions": [
+    "build/ (lint and format only)"
+  ],
+  "commands": [
+    {
+      "index": 1,
+      "original": "pnpm lint",
+      "command": "pnpm exec eslint . --ignore-pattern 'build/**'",
+      "exitCode": 0,
+      "elapsedSeconds": 5.425,
+      "log": "verify-01.log"
+    },
+    {
+      "index": 2,
+      "original": "pnpm format:check",
+      "command": "pnpm exec prettier --check . --ignore-path /tmp/qa09-owned-prettierignore",
+      "exitCode": 2,
+      "elapsedSeconds": 35.126,
+      "log": "verify-02.log"
+    }
+  ]
+}

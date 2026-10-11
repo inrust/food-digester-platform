@@ -22,7 +22,7 @@ vi.mock('../src/runtime/admin-lambda.js', async (original) => {
     ) => actual.createAdminLambdaRouter(state.jwt, route, hooks),
   };
 });
-const enabled = true;
+const enabled = process.env.QA09_ADMIN_OBSERVER_MODE !== 'false';
 test(`actual Lambda JSON/redaction/account/contract entry observer=${enabled} preserves signed business and negative matrix`, async () => {
   vi.resetModules();
   const env = {
@@ -130,7 +130,11 @@ test(`actual Lambda JSON/redaction/account/contract entry observer=${enabled} pr
     const success = await call(token);
     assert.equal(success.result.statusCode, 200);
     assert.equal(success.summaries.length, enabled ? 1 : 0);
-    if (enabled) assert.equal(success.summaries[0].status, 'OWNERSHIP_INVALID'); // PGlite is not the observed pg adapter: never fabricate public proof.
+    if (enabled) {
+      assert.equal(success.summaries[0].schemaVersion, 2);
+      assert.equal(success.summaries[0].ownedBoundaries.seam, 'SELF_OWNED_CALL_SITES');
+      assert.equal(success.summaries[0].status, 'OWNERSHIP_INVALID');
+    } // PGlite is not the observed pg adapter: never fabricate public proof.
     const conflict = await call(token);
     assert.equal(conflict.result.statusCode, 409);
     assert.equal(conflict.summaries.length, enabled ? 1 : 0);

@@ -1,0 +1,2689 @@
+{
+  "kind": "qa09-production-observer-controlled-runtime/v1",
+  "enabled": true,
+  "forcedYields": 0,
+  "gate": "PASS",
+  "source": "REAL_PRISMA_CONTROLLED_PG_NO_NETWORK",
+  "case": "slow-prefix-log",
+  "native": false,
+  "accountNative": true,
+  "config": {
+    "profile": false,
+    "waitMs": 0,
+    "checkpointCpuMs": 0,
+    "adapterCpuMs": 0,
+    "pgCpuMs": 0,
+    "fieldsCpuMs": 0,
+    "resumeCpuMs": 0
+  },
+  "probe": {
+    "measurements": [
+      {
+        "name": "prepare",
+        "start": 40252202808,
+        "end": 40252239182,
+        "processCpuUs": 73381
+      },
+      {
+        "name": "account",
+        "start": 40252239191,
+        "end": 40252240743,
+        "processCpuUs": 5081
+      }
+    ],
+    "controls": [],
+    "adapterReturns": 0
+  },
+  "profile": null,
+  "poolMax": 1,
+  "delayMs": 0,
+  "resultCpuMs": 0,
+  "counts": {
+    "checkout": 4,
+    "release": 4,
+    "begin": 3,
+    "commit": 3,
+    "rollback": 0,
+    "account": 1,
+    "load": 3,
+    "update": 3,
+    "readback": 3,
+    "audit": 3,
+    "dispose": 1,
+    "network": 0,
+    "pools": 1
+  },
+  "samples": [
+    {
+      "index": 0,
+      "firstForClient": true,
+      "failed": false,
+      "expectedFailureMatched": false,
+      "windowsMs": {
+        "load": 37.817,
+        "update": 3,
+        "readback": 0.234,
+        "audit": 1.585
+      },
+      "windowsCpuUs": {
+        "load": 79197,
+        "update": 5314,
+        "readback": 232,
+        "audit": 1780
+      },
+      "observations": [
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.972Z",
+          "completedAt": "2026-10-11T11:17:13.973Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-delegate",
+          "processCpuUserUs": 667,
+          "processCpuSystemUs": 14,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "MODEL_EXTENSION_ENTERED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.973Z",
+          "completedAt": "2026-10-11T11:17:13.974Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-client-observer-setup",
+          "processCpuUserUs": 12,
+          "processCpuSystemUs": 1,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "CALL_RETURNED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.974Z",
+          "completedAt": "2026-10-11T11:17:13.974Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-orm-submit",
+          "processCpuUserUs": 314,
+          "processCpuSystemUs": 19,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "CALL_RETURNED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.974Z",
+          "completedAt": "2026-10-11T11:17:13.974Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-client-submit",
+          "processCpuUserUs": 225,
+          "processCpuSystemUs": 10,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "CALL_RETURNED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.974Z",
+          "completedAt": "2026-10-11T11:17:13.974Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-await-queue",
+          "processCpuUserUs": 202,
+          "processCpuSystemUs": 10,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "MICROTASK_CHECKPOINT",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.974Z",
+          "completedAt": "2026-10-11T11:17:13.974Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-await-after-queue",
+          "processCpuUserUs": 28701,
+          "processCpuSystemUs": 870,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "DRIVER_DISPATCH",
+          "durationMs": 16,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.974Z",
+          "completedAt": "2026-10-11T11:17:13.990Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-orm-await",
+          "processCpuUserUs": 28903,
+          "processCpuSystemUs": 880,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "DRIVER_DISPATCH",
+          "durationMs": 16,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.974Z",
+          "completedAt": "2026-10-11T11:17:13.990Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-orm-prepare",
+          "processCpuUserUs": 29217,
+          "processCpuSystemUs": 899,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "DRIVER_DISPATCH",
+          "durationMs": 16,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.974Z",
+          "completedAt": "2026-10-11T11:17:13.990Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-before-pg",
+          "processCpuUserUs": 41822,
+          "processCpuSystemUs": 3651,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "PG_DISPATCH",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.990Z",
+          "completedAt": "2026-10-11T11:17:14.010Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-pg-submit",
+          "processCpuUserUs": 747,
+          "processCpuSystemUs": 9,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "PG_CALL_RETURNED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.010Z",
+          "completedAt": "2026-10-11T11:17:14.010Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-submit",
+          "processCpuUserUs": 42588,
+          "processCpuSystemUs": 3666,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "ADAPTER_CALL_RETURNED",
+          "durationMs": 21,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.990Z",
+          "completedAt": "2026-10-11T11:17:14.010Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-pg-await",
+          "processCpuUserUs": 115,
+          "processCpuSystemUs": 10,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "PG_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.010Z",
+          "completedAt": "2026-10-11T11:17:14.010Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-pg",
+          "processCpuUserUs": 862,
+          "processCpuSystemUs": 19,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "PG_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.010Z",
+          "completedAt": "2026-10-11T11:17:14.010Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-after-pg",
+          "processCpuUserUs": 258,
+          "processCpuSystemUs": 19,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.010Z",
+          "completedAt": "2026-10-11T11:17:14.010Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-await",
+          "processCpuUserUs": 354,
+          "processCpuSystemUs": 23,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.010Z",
+          "completedAt": "2026-10-11T11:17:14.010Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-query",
+          "processCpuUserUs": 42942,
+          "processCpuSystemUs": 3689,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 21,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.990Z",
+          "completedAt": "2026-10-11T11:17:14.010Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-result-to-model",
+          "processCpuUserUs": 838,
+          "processCpuSystemUs": 23,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "MODEL_EXTENSION_RESUMED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.010Z",
+          "completedAt": "2026-10-11T11:17:14.011Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-client-await-dispatch",
+          "processCpuUserUs": 72621,
+          "processCpuSystemUs": 4591,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 37,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.974Z",
+          "completedAt": "2026-10-11T11:17:14.011Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-client-prepare",
+          "processCpuUserUs": 72858,
+          "processCpuSystemUs": 4602,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 37,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.974Z",
+          "completedAt": "2026-10-11T11:17:14.011Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-result-after-model",
+          "processCpuUserUs": 277,
+          "processCpuSystemUs": 3,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.011Z",
+          "completedAt": "2026-10-11T11:17:14.011Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-result",
+          "processCpuUserUs": 1115,
+          "processCpuSystemUs": 26,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.010Z",
+          "completedAt": "2026-10-11T11:17:14.011Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load",
+          "processCpuUserUs": 73941,
+          "processCpuSystemUs": 4628,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "durationMs": 37,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:13.973Z",
+          "completedAt": "2026-10-11T11:17:14.011Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.contract-load.ownership",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "modelEntries": 1,
+          "driverDispatches": 1,
+          "transactional": true,
+          "detailEnabled": true,
+          "pgQueries": 1,
+          "pgSettlements": 1,
+          "publicBoundariesEnabled": true,
+          "driverReturns": 1,
+          "pgReturns": 1,
+          "modelResumes": 1,
+          "modelResumeObserved": true
+        },
+        {
+          "event": "data-path.contract-load.observer-cost",
+          "schemaVersion": 2,
+          "ownedBoundaries": {
+            "seam": "SELF_OWNED_CALL_SITES",
+            "afterQueueWallUs": 15555,
+            "includesObservationOverhead": true,
+            "segments": [
+              {
+                "name": "checkpoint-phase-setup",
+                "wallUs": 52
+              },
+              {
+                "name": "checkpoint-output-return",
+                "wallUs": 20
+              },
+              {
+                "name": "after-checkpoint-to-dispatch",
+                "wallUs": 15483
+              },
+              {
+                "name": "repository-driver-setup",
+                "wallUs": 20228
+              },
+              {
+                "name": "observer-public-bridge",
+                "wallUs": 23
+              },
+              {
+                "name": "public-callback-setup",
+                "wallUs": 10
+              }
+            ]
+          },
+          "gatewayRequestId": "entry-slow-prefix-log-0",
+          "lambdaRequestId": "entry-L-slow-prefix-log-0",
+          "operationId": "updateContract",
+          "status": "COMPLETE",
+          "intervalRecords": 19,
+          "publicCalls": 1,
+          "publicOutcome": "RETURNED",
+          "overflow": 0,
+          "nestedOutputs": 0,
+          "foreignOutputs": 0,
+          "probeFailures": 0,
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "wallUs": 20251,
+              "outputWallUs": 20066,
+              "outputProcessCpuUs": 44953,
+              "unattributedWallUs": 185
+            },
+            {
+              "name": "public-call",
+              "wallUs": 424,
+              "outputWallUs": 10,
+              "outputProcessCpuUs": 9,
+              "unattributedWallUs": 414
+            },
+            {
+              "name": "driver-return-tail",
+              "wallUs": 3,
+              "outputWallUs": 0,
+              "outputProcessCpuUs": 0,
+              "unattributedWallUs": 3
+            },
+            {
+              "name": "after-model",
+              "wallUs": 138,
+              "outputWallUs": 3,
+              "outputProcessCpuUs": 51,
+              "unattributedWallUs": 135
+            }
+          ],
+          "outsideOutputs": 12,
+          "ambiguousOutputs": 0,
+          "unresolvedOutputs": 0,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false
+        }
+      ],
+      "spans": [
+        {
+          "phase": "contract-load",
+          "start": {
+            "lower": 40252242372,
+            "upper": 40252242388
+          },
+          "end": {
+            "lower": 40252279868,
+            "upper": 40252279870
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-delegate",
+          "start": {
+            "lower": 40252242372,
+            "upper": 40252242388
+          },
+          "end": {
+            "lower": 40252242730,
+            "upper": 40252242735
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-orm-submit",
+          "start": {
+            "lower": 40252242730,
+            "upper": 40252242735
+          },
+          "end": {
+            "lower": 40252242878,
+            "upper": 40252242885
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-orm-prepare",
+          "start": {
+            "lower": 40252242730,
+            "upper": 40252242735
+          },
+          "end": {
+            "lower": 40252258507,
+            "upper": 40252258530
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-orm-await",
+          "start": {
+            "lower": 40252242878,
+            "upper": 40252242885
+          },
+          "end": {
+            "lower": 40252258507,
+            "upper": 40252258530
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-await-queue",
+          "start": {
+            "lower": 40252242878,
+            "upper": 40252242885
+          },
+          "end": {
+            "lower": 40252242957,
+            "upper": 40252242960
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-await-after-queue",
+          "start": {
+            "lower": 40252242957,
+            "upper": 40252242960
+          },
+          "end": {
+            "lower": 40252258507,
+            "upper": 40252258530
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-query",
+          "start": {
+            "lower": 40252258507,
+            "upper": 40252258530
+          },
+          "end": {
+            "lower": 40252279354,
+            "upper": 40252279357
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-before-pg",
+          "start": {
+            "lower": 40252258507,
+            "upper": 40252258530
+          },
+          "end": {
+            "lower": 40252278828,
+            "upper": 40252278840
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-submit",
+          "start": {
+            "lower": 40252258507,
+            "upper": 40252258530
+          },
+          "end": {
+            "lower": 40252279190,
+            "upper": 40252279192
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-pg-submit",
+          "start": {
+            "lower": 40252278828,
+            "upper": 40252278840
+          },
+          "end": {
+            "lower": 40252279164,
+            "upper": 40252279168
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-pg",
+          "start": {
+            "lower": 40252278828,
+            "upper": 40252278840
+          },
+          "end": {
+            "lower": 40252279240,
+            "upper": 40252279243
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-pg-await",
+          "start": {
+            "lower": 40252279164,
+            "upper": 40252279168
+          },
+          "end": {
+            "lower": 40252279240,
+            "upper": 40252279243
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-await",
+          "start": {
+            "lower": 40252279190,
+            "upper": 40252279192
+          },
+          "end": {
+            "lower": 40252279354,
+            "upper": 40252279357
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-after-pg",
+          "start": {
+            "lower": 40252279240,
+            "upper": 40252279243
+          },
+          "end": {
+            "lower": 40252279354,
+            "upper": 40252279357
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-result-to-model",
+          "start": {
+            "lower": 40252279354,
+            "upper": 40252279357
+          },
+          "end": {
+            "lower": 40252279730,
+            "upper": 40252279732
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-result",
+          "start": {
+            "lower": 40252279354,
+            "upper": 40252279357
+          },
+          "end": {
+            "lower": 40252279868,
+            "upper": 40252279870
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-result-after-model",
+          "start": {
+            "lower": 40252279730,
+            "upper": 40252279732
+          },
+          "end": {
+            "lower": 40252279868,
+            "upper": 40252279870
+          },
+          "sharedEnd": true,
+          "failed": false
+        }
+      ],
+      "entryOutput": {
+        "requestId": "entry-slow-prefix-log-0",
+        "lambdaRequestId": "entry-L-slow-prefix-log-0",
+        "enabled": false,
+        "publicCalls": 0,
+        "overflow": 0,
+        "nestedOutputs": 0,
+        "foreignOutputs": 0,
+        "probeFailures": 0,
+        "intervals": [],
+        "diagnosticEmissions": 0,
+        "status": "COMPLETE"
+      },
+      "delivered": 25
+    },
+    {
+      "index": 1,
+      "firstForClient": false,
+      "failed": false,
+      "expectedFailureMatched": false,
+      "windowsMs": {
+        "load": 20.627,
+        "update": 0.206,
+        "readback": 0.147,
+        "audit": 0.168
+      },
+      "windowsCpuUs": {
+        "load": 42230,
+        "update": 614,
+        "readback": 452,
+        "audit": 400
+      },
+      "observations": [
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.017Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-delegate",
+          "processCpuUserUs": 98,
+          "processCpuSystemUs": 3,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "MODEL_EXTENSION_ENTERED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.017Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-client-observer-setup",
+          "processCpuUserUs": 4,
+          "processCpuSystemUs": 0,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "CALL_RETURNED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.017Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-orm-submit",
+          "processCpuUserUs": 61,
+          "processCpuSystemUs": 2,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "CALL_RETURNED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.017Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-client-submit",
+          "processCpuUserUs": 21,
+          "processCpuSystemUs": 1,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "CALL_RETURNED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.017Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-await-queue",
+          "processCpuUserUs": 21,
+          "processCpuSystemUs": 1,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "MICROTASK_CHECKPOINT",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.017Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-await-after-queue",
+          "processCpuUserUs": 349,
+          "processCpuSystemUs": 20,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "DRIVER_DISPATCH",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.017Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-orm-await",
+          "processCpuUserUs": 370,
+          "processCpuSystemUs": 21,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "DRIVER_DISPATCH",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.017Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-orm-prepare",
+          "processCpuUserUs": 431,
+          "processCpuSystemUs": 23,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "DRIVER_DISPATCH",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.017Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-before-pg",
+          "processCpuUserUs": 39513,
+          "processCpuSystemUs": 1221,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "PG_DISPATCH",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.037Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-pg-submit",
+          "processCpuUserUs": 163,
+          "processCpuSystemUs": 8,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "PG_CALL_RETURNED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.037Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-submit",
+          "processCpuUserUs": 39690,
+          "processCpuSystemUs": 1230,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "ADAPTER_CALL_RETURNED",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-pg-await",
+          "processCpuUserUs": 94,
+          "processCpuSystemUs": 9,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "PG_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.038Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-pg",
+          "processCpuUserUs": 257,
+          "processCpuSystemUs": 17,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "PG_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.037Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-after-pg",
+          "processCpuUserUs": 29,
+          "processCpuSystemUs": 4,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.038Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-await",
+          "processCpuUserUs": 109,
+          "processCpuSystemUs": 12,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.038Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-query",
+          "processCpuUserUs": 39799,
+          "processCpuSystemUs": 1242,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-result-to-model",
+          "processCpuUserUs": 188,
+          "processCpuSystemUs": 12,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "MODEL_EXTENSION_RESUMED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.038Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-client-await-dispatch",
+          "processCpuUserUs": 40354,
+          "processCpuSystemUs": 1275,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-client-prepare",
+          "processCpuUserUs": 40379,
+          "processCpuSystemUs": 1276,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-result-after-model",
+          "processCpuUserUs": 32,
+          "processCpuSystemUs": 2,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.038Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-result",
+          "processCpuUserUs": 220,
+          "processCpuSystemUs": 14,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.038Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load",
+          "processCpuUserUs": 40548,
+          "processCpuSystemUs": 1282,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "durationMs": 21,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.017Z",
+          "completedAt": "2026-10-11T11:17:14.038Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.contract-load.ownership",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "modelEntries": 1,
+          "driverDispatches": 1,
+          "transactional": true,
+          "detailEnabled": true,
+          "pgQueries": 1,
+          "pgSettlements": 1,
+          "publicBoundariesEnabled": true,
+          "driverReturns": 1,
+          "pgReturns": 1,
+          "modelResumes": 1,
+          "modelResumeObserved": true
+        },
+        {
+          "event": "data-path.contract-load.observer-cost",
+          "schemaVersion": 2,
+          "ownedBoundaries": {
+            "seam": "SELF_OWNED_CALL_SITES",
+            "afterQueueWallUs": 119,
+            "includesObservationOverhead": true,
+            "segments": [
+              {
+                "name": "checkpoint-phase-setup",
+                "wallUs": 5
+              },
+              {
+                "name": "checkpoint-output-return",
+                "wallUs": 8
+              },
+              {
+                "name": "after-checkpoint-to-dispatch",
+                "wallUs": 106
+              },
+              {
+                "name": "repository-driver-setup",
+                "wallUs": 20057
+              },
+              {
+                "name": "observer-public-bridge",
+                "wallUs": 2
+              },
+              {
+                "name": "public-callback-setup",
+                "wallUs": 1
+              }
+            ]
+          },
+          "gatewayRequestId": "entry-slow-prefix-log-1",
+          "lambdaRequestId": "entry-L-slow-prefix-log-1",
+          "operationId": "updateContract",
+          "status": "COMPLETE",
+          "intervalRecords": 19,
+          "publicCalls": 1,
+          "publicOutcome": "RETURNED",
+          "overflow": 0,
+          "nestedOutputs": 0,
+          "foreignOutputs": 0,
+          "probeFailures": 0,
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "wallUs": 20059,
+              "outputWallUs": 20020,
+              "outputProcessCpuUs": 40683,
+              "unattributedWallUs": 39
+            },
+            {
+              "name": "public-call",
+              "wallUs": 93,
+              "outputWallUs": 8,
+              "outputProcessCpuUs": 67,
+              "unattributedWallUs": 85
+            },
+            {
+              "name": "driver-return-tail",
+              "wallUs": 2,
+              "outputWallUs": 0,
+              "outputProcessCpuUs": 0,
+              "unattributedWallUs": 2
+            },
+            {
+              "name": "after-model",
+              "wallUs": 33,
+              "outputWallUs": 2,
+              "outputProcessCpuUs": 2,
+              "unattributedWallUs": 31
+            }
+          ],
+          "outsideOutputs": 12,
+          "ambiguousOutputs": 0,
+          "unresolvedOutputs": 0,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false
+        }
+      ],
+      "spans": [
+        {
+          "phase": "contract-load",
+          "start": {
+            "lower": 40252286026,
+            "upper": 40252286028
+          },
+          "end": {
+            "lower": 40252306563,
+            "upper": 40252306565
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-delegate",
+          "start": {
+            "lower": 40252286026,
+            "upper": 40252286028
+          },
+          "end": {
+            "lower": 40252286090,
+            "upper": 40252286093
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-orm-submit",
+          "start": {
+            "lower": 40252286090,
+            "upper": 40252286093
+          },
+          "end": {
+            "lower": 40252286121,
+            "upper": 40252286122
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-orm-prepare",
+          "start": {
+            "lower": 40252286090,
+            "upper": 40252286093
+          },
+          "end": {
+            "lower": 40252286261,
+            "upper": 40252286264
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-orm-await",
+          "start": {
+            "lower": 40252286121,
+            "upper": 40252286122
+          },
+          "end": {
+            "lower": 40252286261,
+            "upper": 40252286264
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-await-queue",
+          "start": {
+            "lower": 40252286121,
+            "upper": 40252286122
+          },
+          "end": {
+            "lower": 40252286142,
+            "upper": 40252286144
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-await-after-queue",
+          "start": {
+            "lower": 40252286142,
+            "upper": 40252286144
+          },
+          "end": {
+            "lower": 40252286261,
+            "upper": 40252286264
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-query",
+          "start": {
+            "lower": 40252286261,
+            "upper": 40252286264
+          },
+          "end": {
+            "lower": 40252306465,
+            "upper": 40252306466
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-before-pg",
+          "start": {
+            "lower": 40252286261,
+            "upper": 40252286264
+          },
+          "end": {
+            "lower": 40252306334,
+            "upper": 40252306338
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-submit",
+          "start": {
+            "lower": 40252286261,
+            "upper": 40252286264
+          },
+          "end": {
+            "lower": 40252306415,
+            "upper": 40252306417
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-pg-submit",
+          "start": {
+            "lower": 40252306334,
+            "upper": 40252306338
+          },
+          "end": {
+            "lower": 40252306400,
+            "upper": 40252306403
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-pg",
+          "start": {
+            "lower": 40252306334,
+            "upper": 40252306338
+          },
+          "end": {
+            "lower": 40252306446,
+            "upper": 40252306448
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-pg-await",
+          "start": {
+            "lower": 40252306400,
+            "upper": 40252306403
+          },
+          "end": {
+            "lower": 40252306446,
+            "upper": 40252306448
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-await",
+          "start": {
+            "lower": 40252306415,
+            "upper": 40252306417
+          },
+          "end": {
+            "lower": 40252306465,
+            "upper": 40252306466
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-after-pg",
+          "start": {
+            "lower": 40252306446,
+            "upper": 40252306448
+          },
+          "end": {
+            "lower": 40252306465,
+            "upper": 40252306466
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-result-to-model",
+          "start": {
+            "lower": 40252306465,
+            "upper": 40252306466
+          },
+          "end": {
+            "lower": 40252306530,
+            "upper": 40252306533
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-result",
+          "start": {
+            "lower": 40252306465,
+            "upper": 40252306466
+          },
+          "end": {
+            "lower": 40252306563,
+            "upper": 40252306565
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-result-after-model",
+          "start": {
+            "lower": 40252306530,
+            "upper": 40252306533
+          },
+          "end": {
+            "lower": 40252306563,
+            "upper": 40252306565
+          },
+          "sharedEnd": true,
+          "failed": false
+        }
+      ],
+      "entryOutput": {
+        "requestId": "entry-slow-prefix-log-1",
+        "lambdaRequestId": "entry-L-slow-prefix-log-1",
+        "enabled": false,
+        "publicCalls": 0,
+        "overflow": 0,
+        "nestedOutputs": 0,
+        "foreignOutputs": 0,
+        "probeFailures": 0,
+        "intervals": [],
+        "diagnosticEmissions": 0,
+        "status": "COMPLETE"
+      },
+      "delivered": 25
+    },
+    {
+      "index": 2,
+      "firstForClient": false,
+      "failed": false,
+      "expectedFailureMatched": false,
+      "windowsMs": {
+        "load": 20.729,
+        "update": 0.32,
+        "readback": 0.155,
+        "audit": 0.167
+      },
+      "windowsCpuUs": {
+        "load": 42153,
+        "update": 413,
+        "readback": 154,
+        "audit": 263
+      },
+      "observations": [
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.039Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-delegate",
+          "processCpuUserUs": 218,
+          "processCpuSystemUs": 6,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "MODEL_EXTENSION_ENTERED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.039Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-client-observer-setup",
+          "processCpuUserUs": 3,
+          "processCpuSystemUs": 0,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "CALL_RETURNED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.039Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-orm-submit",
+          "processCpuUserUs": 25,
+          "processCpuSystemUs": 5,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "CALL_RETURNED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.039Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-client-submit",
+          "processCpuUserUs": 19,
+          "processCpuSystemUs": 3,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "CALL_RETURNED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.039Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-await-queue",
+          "processCpuUserUs": 18,
+          "processCpuSystemUs": 1,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "MICROTASK_CHECKPOINT",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.039Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-await-after-queue",
+          "processCpuUserUs": 128,
+          "processCpuSystemUs": 7,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "DRIVER_DISPATCH",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.039Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-orm-await",
+          "processCpuUserUs": 146,
+          "processCpuSystemUs": 8,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "DRIVER_DISPATCH",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.039Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-orm-prepare",
+          "processCpuUserUs": 171,
+          "processCpuSystemUs": 13,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "DRIVER_DISPATCH",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.039Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-before-pg",
+          "processCpuUserUs": 39326,
+          "processCpuSystemUs": 301,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "PG_DISPATCH",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-pg-submit",
+          "processCpuUserUs": 89,
+          "processCpuSystemUs": 9,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "PG_CALL_RETURNED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.059Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-submit",
+          "processCpuUserUs": 39431,
+          "processCpuSystemUs": 311,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "ADAPTER_CALL_RETURNED",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-pg-await",
+          "processCpuUserUs": 29,
+          "processCpuSystemUs": 2,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "PG_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.059Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-pg",
+          "processCpuUserUs": 118,
+          "processCpuSystemUs": 11,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "PG_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.059Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-after-pg",
+          "processCpuUserUs": 18,
+          "processCpuSystemUs": 1,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.059Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-await",
+          "processCpuUserUs": 31,
+          "processCpuSystemUs": 2,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.059Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-driver-query",
+          "processCpuUserUs": 39462,
+          "processCpuSystemUs": 313,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-result-to-model",
+          "processCpuUserUs": 139,
+          "processCpuSystemUs": 20,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "MODEL_EXTENSION_RESUMED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.059Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-client-await-dispatch",
+          "processCpuUserUs": 39788,
+          "processCpuSystemUs": 342,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "db-client-prepare",
+          "processCpuUserUs": 39810,
+          "processCpuSystemUs": 345,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-result-after-model",
+          "processCpuUserUs": 88,
+          "processCpuSystemUs": 4,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.059Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load-result",
+          "processCpuUserUs": 227,
+          "processCpuSystemUs": 24,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "completionBoundary": "OPERATION_SETTLED",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.059Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": false
+        },
+        {
+          "event": "data-path.phase.completed",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "phase": "contract-load",
+          "processCpuUserUs": 40078,
+          "processCpuSystemUs": 356,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "durationMs": 21,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "startedAt": "2026-10-11T11:17:14.039Z",
+          "completedAt": "2026-10-11T11:17:14.059Z",
+          "includesConnectionWait": true
+        },
+        {
+          "event": "data-path.contract-load.ownership",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "sqsMessageId": "unknown",
+          "deviceId": "unknown",
+          "messageId": "unknown",
+          "topicType": "unknown",
+          "coldStart": false,
+          "modelEntries": 1,
+          "driverDispatches": 1,
+          "transactional": true,
+          "detailEnabled": true,
+          "pgQueries": 1,
+          "pgSettlements": 1,
+          "publicBoundariesEnabled": true,
+          "driverReturns": 1,
+          "pgReturns": 1,
+          "modelResumes": 1,
+          "modelResumeObserved": true
+        },
+        {
+          "event": "data-path.contract-load.observer-cost",
+          "schemaVersion": 2,
+          "ownedBoundaries": {
+            "seam": "SELF_OWNED_CALL_SITES",
+            "afterQueueWallUs": 90,
+            "includesObservationOverhead": true,
+            "segments": [
+              {
+                "name": "checkpoint-phase-setup",
+                "wallUs": 4
+              },
+              {
+                "name": "checkpoint-output-return",
+                "wallUs": 6
+              },
+              {
+                "name": "after-checkpoint-to-dispatch",
+                "wallUs": 80
+              },
+              {
+                "name": "repository-driver-setup",
+                "wallUs": 20105
+              },
+              {
+                "name": "observer-public-bridge",
+                "wallUs": 4
+              },
+              {
+                "name": "public-callback-setup",
+                "wallUs": 2
+              }
+            ]
+          },
+          "gatewayRequestId": "entry-slow-prefix-log-2",
+          "lambdaRequestId": "entry-L-slow-prefix-log-2",
+          "operationId": "updateContract",
+          "status": "COMPLETE",
+          "intervalRecords": 19,
+          "publicCalls": 1,
+          "publicOutcome": "RETURNED",
+          "overflow": 0,
+          "nestedOutputs": 0,
+          "foreignOutputs": 0,
+          "probeFailures": 0,
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "wallUs": 20109,
+              "outputWallUs": 20040,
+              "outputProcessCpuUs": 39529,
+              "unattributedWallUs": 69
+            },
+            {
+              "name": "public-call",
+              "wallUs": 144,
+              "outputWallUs": 8,
+              "outputProcessCpuUs": 8,
+              "unattributedWallUs": 136
+            },
+            {
+              "name": "driver-return-tail",
+              "wallUs": 1,
+              "outputWallUs": 0,
+              "outputProcessCpuUs": 0,
+              "unattributedWallUs": 1
+            },
+            {
+              "name": "after-model",
+              "wallUs": 52,
+              "outputWallUs": 4,
+              "outputProcessCpuUs": 3,
+              "unattributedWallUs": 48
+            }
+          ],
+          "outsideOutputs": 12,
+          "ambiguousOutputs": 0,
+          "unresolvedOutputs": 0,
+          "processCpuScope": "PROCESS_ALL_THREADS",
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false
+        }
+      ],
+      "spans": [
+        {
+          "phase": "contract-load",
+          "start": {
+            "lower": 40252307507,
+            "upper": 40252307516
+          },
+          "end": {
+            "lower": 40252328110,
+            "upper": 40252328112
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-delegate",
+          "start": {
+            "lower": 40252307507,
+            "upper": 40252307516
+          },
+          "end": {
+            "lower": 40252307568,
+            "upper": 40252307570
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-orm-submit",
+          "start": {
+            "lower": 40252307568,
+            "upper": 40252307570
+          },
+          "end": {
+            "lower": 40252307597,
+            "upper": 40252307598
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-orm-prepare",
+          "start": {
+            "lower": 40252307568,
+            "upper": 40252307570
+          },
+          "end": {
+            "lower": 40252307706,
+            "upper": 40252307708
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-orm-await",
+          "start": {
+            "lower": 40252307597,
+            "upper": 40252307598
+          },
+          "end": {
+            "lower": 40252307706,
+            "upper": 40252307708
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-await-queue",
+          "start": {
+            "lower": 40252307597,
+            "upper": 40252307598
+          },
+          "end": {
+            "lower": 40252307615,
+            "upper": 40252307616
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-await-after-queue",
+          "start": {
+            "lower": 40252307615,
+            "upper": 40252307616
+          },
+          "end": {
+            "lower": 40252307706,
+            "upper": 40252307708
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-query",
+          "start": {
+            "lower": 40252307706,
+            "upper": 40252307708
+          },
+          "end": {
+            "lower": 40252327993,
+            "upper": 40252327994
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-before-pg",
+          "start": {
+            "lower": 40252307706,
+            "upper": 40252307708
+          },
+          "end": {
+            "lower": 40252327842,
+            "upper": 40252327854
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-submit",
+          "start": {
+            "lower": 40252307706,
+            "upper": 40252307708
+          },
+          "end": {
+            "lower": 40252327959,
+            "upper": 40252327961
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-pg-submit",
+          "start": {
+            "lower": 40252327842,
+            "upper": 40252327854
+          },
+          "end": {
+            "lower": 40252327941,
+            "upper": 40252327945
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-pg",
+          "start": {
+            "lower": 40252327842,
+            "upper": 40252327854
+          },
+          "end": {
+            "lower": 40252327973,
+            "upper": 40252327975
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-pg-await",
+          "start": {
+            "lower": 40252327941,
+            "upper": 40252327945
+          },
+          "end": {
+            "lower": 40252327973,
+            "upper": 40252327975
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-await",
+          "start": {
+            "lower": 40252327959,
+            "upper": 40252327961
+          },
+          "end": {
+            "lower": 40252327993,
+            "upper": 40252327994
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-driver-after-pg",
+          "start": {
+            "lower": 40252327973,
+            "upper": 40252327975
+          },
+          "end": {
+            "lower": 40252327993,
+            "upper": 40252327994
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-result-to-model",
+          "start": {
+            "lower": 40252327993,
+            "upper": 40252327994
+          },
+          "end": {
+            "lower": 40252328058,
+            "upper": 40252328061
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-result",
+          "start": {
+            "lower": 40252327993,
+            "upper": 40252327994
+          },
+          "end": {
+            "lower": 40252328110,
+            "upper": 40252328112
+          },
+          "sharedEnd": true,
+          "failed": false
+        },
+        {
+          "phase": "contract-load-result-after-model",
+          "start": {
+            "lower": 40252328058,
+            "upper": 40252328061
+          },
+          "end": {
+            "lower": 40252328110,
+            "upper": 40252328112
+          },
+          "sharedEnd": true,
+          "failed": false
+        }
+      ],
+      "entryOutput": {
+        "requestId": "entry-slow-prefix-log-2",
+        "lambdaRequestId": "entry-L-slow-prefix-log-2",
+        "enabled": false,
+        "publicCalls": 0,
+        "overflow": 0,
+        "nestedOutputs": 0,
+        "foreignOutputs": 0,
+        "probeFailures": 0,
+        "intervals": [],
+        "diagnosticEmissions": 0,
+        "status": "COMPLETE"
+      },
+      "delivered": 25
+    }
+  ],
+  "auditReturnProjection": "ID_ONLY_OFFLINE",
+  "targetEquivalent": false,
+  "compilerOnlyAttribution": false,
+  "modelCostShift": "OBSERVATIONS_ONLY",
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}

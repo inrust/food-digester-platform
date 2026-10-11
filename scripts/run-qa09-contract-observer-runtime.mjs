@@ -15,6 +15,7 @@ export function runObserverRuntimeMatrix(directory) {
     'scripts/qa09-contract-observer-proof.mjs',
     'packages/observability/src/contract-observer-cost.ts',
     'packages/observability/test/contract-observer-cost.test.ts',
+    'packages/observability/test/contract-owned-boundaries.test.ts',
     'apps/cloud-api/src/admin/contract/service.ts',
     'apps/cloud-api/src/runtime/admin-engine-diagnostic.ts',
     'apps/cloud-api/test/admin-observer-entry.test.ts',
@@ -89,6 +90,9 @@ export function runObserverRuntimeMatrix(directory) {
       if (child.status !== 0) throw Error('OBSERVER_CHILD_FAILED:' + name);
       const bytes = readFileSync(output),
         receipt = JSON.parse(bytes);
+      for (const sample of receipt.samples)
+        for (const row of sample.observations.filter((r) => r.event === 'data-path.contract-load.observer-cost'))
+          if (row.schemaVersion !== 2) throw Error('OWNED_RUNTIME_SCHEMA_REQUIRED');
       rows.push({
         case: name,
         receipt: name + '.json',
@@ -120,7 +124,7 @@ export function runObserverRuntimeMatrix(directory) {
       rows,
       candidateDefaultsChanged: false,
       targetWiring: 'IMPLEMENTED_DEFAULT_OFF_NOT_DEPLOYED',
-      observationDesignDecision: 'PUBLIC_ENTRY_AND_OUTPUT_ONLY_DEFAULT_OFF',
+      observationDesignDecision: 'SELF_OWNED_BOUNDARIES_SCHEMA2_DEFAULT_OFF',
       targetEquivalent: false,
       afterQueueAttribution: 'UNRESOLVED_NO_STABLE_COMPILER_SEAM',
       compilerOnlyAttribution: false,

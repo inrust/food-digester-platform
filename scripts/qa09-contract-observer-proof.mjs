@@ -4,14 +4,54 @@ const demand = (v, c) => {
 };
 const names = ['driver-prefix', 'public-call', 'driver-return-tail', 'after-model'];
 const metric = (v) => Number.isSafeInteger(v) && v >= 0;
-export function validateContractObserverCost(record, required = false) {
+export const ownedBoundaryNames = [
+  'checkpoint-phase-setup',
+  'checkpoint-output-return',
+  'after-checkpoint-to-dispatch',
+  'repository-driver-setup',
+  'observer-public-bridge',
+  'public-callback-setup',
+];
+export function validateOwnedBoundaries(row) {
+  const own = row.ownedBoundaries;
+  demand(
+    row.schemaVersion === 2 && own?.seam === 'SELF_OWNED_CALL_SITES' && own.includesObservationOverhead === true,
+    'OWNED_SCHEMA_REQUIRED',
+  );
+  demand(
+    Array.isArray(own.segments) &&
+      JSON.stringify(own.segments.map((s) => s.name)) === JSON.stringify(ownedBoundaryNames) &&
+      own.segments.every((s) => metric(s.wallUs)),
+    'OWNED_SEGMENTS_REQUIRED',
+  );
+  demand(
+    metric(own.afterQueueWallUs) &&
+      own.segments.slice(0, 3).reduce((n, s) => n + s.wallUs, 0) === own.afterQueueWallUs &&
+      own.segments.slice(3, 5).reduce((n, s) => n + s.wallUs, 0) === row.segments[0].wallUs &&
+      own.segments[5].wallUs <= row.segments[1].wallUs,
+    'OWNED_CONSERVATION',
+  );
+  return own;
+}
+export function validateOwnedPhaseWindow(row, phase) {
+  const own = validateOwnedBoundaries(row);
+  demand(
+    phase?.phase === 'contract-load-await-after-queue' &&
+      metric(phase.durationMs) &&
+      Math.abs(own.afterQueueWallUs / 1000 - phase.durationMs) <= 1,
+    'OWNED_PHASE_WINDOW',
+  );
+}
+export function validateContractObserverCost(record, required = false, ownedBoundaries = false) {
   const rows = record.contractObserverCost ?? [];
   if (!required && rows.length === 0) return null;
   demand(record.exactLinked === true && rows.length === 1, 'OBSERVER_EXACT_UNIQUE');
   const row = rows[0],
     invocation = record.lambda?.[0]?.lambdaRequestId;
   demand(
-    row.event === 'data-path.contract-load.observer-cost' && row.schemaVersion === 1 && row.status === 'COMPLETE',
+    row.event === 'data-path.contract-load.observer-cost' &&
+      [1, 2].includes(row.schemaVersion) &&
+      row.status === 'COMPLETE',
     'OBSERVER_COMPLETE_REQUIRED',
   );
   demand(
@@ -55,12 +95,14 @@ export function validateContractObserverCost(record, required = false) {
         s.unattributedWallUs === s.wallUs - s.outputWallUs,
       'OBSERVER_CONSERVATION',
     );
+  if (ownedBoundaries || row.schemaVersion === 2) validateOwnedBoundaries(row);
   demand(Buffer.byteLength(JSON.stringify(row)) <= 4096, 'OBSERVER_BYTES');
   return {
     gate: 'PASS',
     requestId: record.requestId,
     lambdaRequestId: invocation,
     segments: row.segments,
+    ...(row.schemaVersion === 2 ? { ownedBoundaries: row.ownedBoundaries } : {}),
     compilerOnlyAttribution: false,
     p95Accepted: false,
   };
@@ -172,6 +214,7 @@ export function validateObserverRuntimeReceipt(r) {
         ),
       'OBSERVER_RUNTIME_BUDGET',
     );
+    if (expected === 'COMPLETE' && row.schemaVersion === 2) validateOwnedBoundaries(row);
     if (expected === 'COMPLETE')
       demand(
         row.publicCalls === 1 &&
@@ -190,6 +233,7 @@ export function validateObserverRuntimeReceipt(r) {
       intervalRecords: row.intervalRecords,
       summaryBytes: Buffer.byteLength(JSON.stringify(row)),
       segments: row.segments,
+      ...(row.schemaVersion === 2 ? { ownedBoundaries: row.ownedBoundaries } : {}),
     };
   });
   return {

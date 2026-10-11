@@ -61,7 +61,7 @@ export function resolveContractPublicBoundaries(env: Readonly<Record<string, str
   return value === 'true';
 }
 
-/** Default off, only the existing test/pool1/engine/preconnect/detail/public path. */
+/** Default-off schema2 self-owned boundary summary, only test/pool1/engine/preconnect/detail/public. */
 export function resolveContractObserverCost(env: Readonly<Record<string, string | undefined>>): boolean {
   const value = env.FDP_CONTRACT_OBSERVER_COST;
   if (value !== undefined && value !== 'false' && value !== 'true') throw Error('INVALID_CONTRACT_OBSERVER_COST');

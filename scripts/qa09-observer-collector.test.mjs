@@ -18,6 +18,20 @@ def logs(args,**kw):
             common={'gatewayRequestId':rid,'lambdaRequestId':inv,'operationId':'updateContract'}
             row={**common,'event':'admin.request.completed','gatewayExtendedRequestId':'ext-'+rid,'status':c['status'],'elapsedMs':30}
             cost={**common,'event':'data-path.contract-load.observer-cost','schemaVersion':1,'status':'COMPLETE','intervalRecords':19,'publicCalls':1,'publicOutcome':'RETURNED','overflow':0,'nestedOutputs':0,'foreignOutputs':0,'probeFailures':0,'outsideOutputs':12,'ambiguousOutputs':0,'unresolvedOutputs':0,'processCpuScope':'PROCESS_ALL_THREADS','cpuSubtractionAllowed':False,'compilerOnlyAttribution':False,'segments':[{'name':name,'wallUs':100,'outputWallUs':10,'outputProcessCpuUs':20,'unattributedWallUs':90,'password':'PRIVATE_SENTINEL'} for name in ['driver-prefix','public-call','driver-return-tail','after-model']],'password':'PRIVATE_SENTINEL'}
+            if fault.startswith('owned') and fault != 'owned-legacy':
+                cost['schemaVersion']=2
+                cost['ownedBoundaries']={'seam':'SELF_OWNED_CALL_SITES','includesObservationOverhead':True,'afterQueueWallUs':30,'segments':[{'name':n,'wallUs':v,'password':'PRIVATE_SENTINEL'} for n,v in zip(['checkpoint-phase-setup','checkpoint-output-return','after-checkpoint-to-dispatch','repository-driver-setup','observer-public-bridge','public-callback-setup'],[10,10,10,40,60,10])],'password':'PRIVATE_SENTINEL'}
+                if i==0:
+                    own=cost['ownedBoundaries']
+                    if fault=='owned-missing':own['segments'].pop()
+                    if fault=='owned-duplicate':own['segments'][1]=own['segments'][0]
+                    if fault=='owned-order':own['segments'].reverse()
+                    if fault=='owned-conservation':own['afterQueueWallUs']=31
+                    if fault=='owned-prefix':own['segments'][3]['wallUs']=41
+                    if fault=='owned-callback':own['segments'][5]['wallUs']=101
+                    if fault=='owned-bool':own['segments'][0]['wallUs']=True
+                    if fault=='owned-claim':own['seam']='COMPILER_INTERNAL'
+                    if fault=='owned-overhead':own['includesObservationOverhead']=False
             at=1791264000001
             if i==0:
                 if fault=='foreign':cost['lambdaRequestId']='foreign'
@@ -35,7 +49,7 @@ def logs(args,**kw):
         events.append({'timestamp':1791264000001,'message':json.dumps(row)})
     return subprocess.CompletedProcess(args,0,json.dumps({'events':events}),'')
 subprocess.run=logs
-flags=['--observer-cost'];sys.argv=[script,source,output]+flags
+flags=['--observer-cost']+(['--owned-boundaries'] if fault.startswith('owned') else []);sys.argv=[script,source,output]+flags
 with contextlib.redirect_stdout(io.StringIO()):runpy.run_path(script,run_name='__main__')
 normal=json.load(open(output));sys.argv=[script,source,output+'.exact']+flags+['--exact-from',output]
 with contextlib.redirect_stdout(io.StringIO()):runpy.run_path(script,run_name='__main__')
@@ -126,3 +140,30 @@ print('PASS')
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.stdout.trim(), 'PASS');
 });
+
+test('schema2 owned summary is projected identically by normal/exact collectors without payload leaks', () => {
+  const r = run('owned');
+  assert.equal(r.normal.gate, 'PASS');
+  assert.equal(r.exact.gate, 'PASS');
+  assert.equal(r.normal.ownedBoundariesRequired, true);
+  assert.deepEqual(r.normal.records, r.exact.records);
+  assert.equal(r.exact.records[0].contractObserverCost[0].ownedBoundaries.segments.length, 6);
+});
+for (const fault of [
+  'legacy',
+  'missing',
+  'duplicate',
+  'order',
+  'conservation',
+  'prefix',
+  'callback',
+  'bool',
+  'claim',
+  'overhead',
+])
+  test('schema2 required collection fails closed for ' + fault, () => {
+    const r = run('owned-' + fault);
+    assert.equal(r.normal.gate, 'PARTIAL');
+    assert.equal(r.exact.gate, 'PARTIAL');
+    assert.notEqual(r.exact.records[0].observerCostGate, 'PASS');
+  });

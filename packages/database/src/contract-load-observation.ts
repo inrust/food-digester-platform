@@ -46,7 +46,7 @@ const loads = new AsyncLocalStorage<LoadScope>();
 
 /** One existing contract findFirst; no eager query, compiler internals, retries or new pool. */
 export async function observeContractLoad<T>(work: () => Promise<T>, observerCost = false): Promise<T> {
-  const costScope = beginContractObserverCost(observerCost);
+  const costScope = beginContractObserverCost(observerCost, observerCost);
   const start = captureDataPathBoundary();
   const outer = beginDataPathPhase('contract-load', { processCpu: true, startBoundary: start });
   const frame: LoadScope = {
@@ -173,11 +173,16 @@ export function observeContractLoadSubmission<T>(work: () => T): T {
       bindDataPathObservation(() => {
         if (frame.completed || frame.driverDispatches !== 0) return;
         const checkpoint = captureDataPathBoundary();
+        recordContractObserverBoundary(frame.costScope, 'CHECKPOINT', checkpoint);
         frame.awaitAfterQueue = beginDataPathPhase('contract-load-await-after-queue', {
           processCpu: true,
           startBoundary: checkpoint,
         });
+        if (frame.costScope)
+          recordContractObserverBoundary(frame.costScope, 'CHECKPOINT_PHASE_READY', captureDataPathBoundary());
         frame.awaitQueue?.(undefined, 'MICROTASK_CHECKPOINT', checkpoint);
+        if (frame.costScope)
+          recordContractObserverBoundary(frame.costScope, 'CHECKPOINT_RETURN', captureDataPathBoundary());
       }),
     );
     frame.submit?.(undefined, 'CALL_RETURNED', returned);

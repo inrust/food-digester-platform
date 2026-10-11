@@ -1,0 +1,73 @@
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ❯ packages/observability/test/contract-owned-boundaries.test.ts (21 tests | 1 failed) 6ms
+   × asynchronous rejection identity, invalid ownership and late callbacks never create success 1ms
+ ❯ apps/cloud-api/test/admin-observer-entry.test.ts (2 tests | 1 failed) 2003ms
+   × actual Lambda JSON/redaction/account/contract entry observer=true preserves signed business and negative matrix 622ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  apps/cloud-api/test/admin-observer-entry.test.ts > actual Lambda JSON/redaction/account/contract entry observer=true preserves signed business and negative matrix
+AssertionError: expected +0 to equal 1
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ apps/cloud-api/test/admin-observer-entry.test.ts:132:14
+    130|       const success = await call(token);
+    131|       assert.equal(success.result.statusCode, 200);
+    132|       assert.equal(success.summaries.length, enabled ? 1 : 0);
+       |              ^
+    133|       if (enabled) {
+    134|         assert.equal(success.summaries[0].schemaVersion, 2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  packages/observability/test/contract-owned-boundaries.test.ts > asynchronous rejection identity, invalid ownership and late callbacks never create success
+TypeError: assert.isRejected is not a function
+ ❯ packages/observability/test/contract-owned-boundaries.test.ts:120:16
+    118|     pending,
+    119|   );
+    120|   await assert.isRejected(pending, 'original');
+       |                ^
+    121|   const row = state.summary(ids, false);
+    122|   assert.equal(row.status, 'OWNERSHIP_INVALID');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: original
+ ❯ packages/observability/test/contract-owned-boundaries.test.ts:114:13
+    112| test('asynchronous rejection identity, invalid ownership and late call…
+    113|   const state = create(),
+    114|     error = Error('original'),
+       |             ^
+    115|     pending = Promise.reject(error);
+    116|   assert.strictEqual(
+ ❯ node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+ ❯ node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+ ❯ node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+ ❯ runWithCancel node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10
+ ❯ node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+ ❯ runWithTimeout node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10
+ ❯ node_modules/@vitest/runner/dist/chunk-artifact.js:2956:64
+
+This error originated in "packages/observability/test/contract-owned-boundaries.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  2 failed (2)
+      Tests  2 failed | 21 passed (23)
+     Errors  1 error
+   Start at  19:14:19
+   Duration  2.12s (transform 398ms, setup 18ms, import 78ms, tests 2.01s, environment 0ms)
+

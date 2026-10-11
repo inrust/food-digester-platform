@@ -215,12 +215,12 @@ export interface ContractObserverScope {
   readonly kind: 'CONTRACT_OBSERVER_SCOPE';
 }
 const observerScopes = new WeakMap<ContractObserverScope, { trace: Trace; observer: ContractObserverCost }>();
-export function beginContractObserverCost(enabled = false): ContractObserverScope | undefined {
+export function beginContractObserverCost(enabled = false, ownedBoundaries = false): ContractObserverScope | undefined {
   if (enabled !== true) return undefined;
   const trace = storage.getStore();
   if (!trace || trace.observerClaimed) return undefined;
   trace.observerClaimed = true;
-  const observer = new ContractObserverCost(trace.clock);
+  const observer = new ContractObserverCost(trace.clock, process.cpuUsage, ownedBoundaries);
   const scope: ContractObserverScope = { kind: 'CONTRACT_OBSERVER_SCOPE' };
   trace.observerCost = observer;
   observerScopes.set(scope, { trace, observer });
@@ -255,6 +255,7 @@ export function recordContractObserverBoundary(
 export function observeContractPublicCall<T>(scope: ContractObserverScope | undefined, work: () => T): T {
   if (!scope) return work();
   const own = ownObserver(scope);
+  own?.observer.ownedPoint('PUBLIC_BRIDGE_ENTER');
   return own ? own.observer.publicCall(work) : work();
 }
 export function finishContractObserverCost(scope: ContractObserverScope | undefined, ownership: boolean): void {

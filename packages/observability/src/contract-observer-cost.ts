@@ -1,5 +1,8 @@
 /** Internal bounded bookkeeping. No SQL, business values, compiler hooks or asynchronous work. */
-export type ObserverPoint = 'DRIVER_DISPATCH' | 'ADAPTER_CALL_RETURNED' | 'MODEL_EXTENSION_RESUMED' | 'OPERATION_END';
+export type OwnedObserverPoint =
+  'CHECKPOINT' | 'CHECKPOINT_PHASE_READY' | 'CHECKPOINT_RETURN' | 'PUBLIC_BRIDGE_ENTER' | 'PUBLIC_CALLBACK_ENTER';
+export type ObserverPoint =
+  OwnedObserverPoint | 'DRIVER_DISPATCH' | 'ADAPTER_CALL_RETURNED' | 'MODEL_EXTENSION_RESUMED' | 'OPERATION_END';
 type Point = ObserverPoint | 'PUBLIC_ENTER' | 'PUBLIC_EXIT';
 type Interval = { start: number; end: number; cpuUs: number; kind: 'OUTPUT' | 'PUBLIC' };
 export class ContractObserverCost {
@@ -18,6 +21,7 @@ export class ContractObserverCost {
   constructor(
     private readonly clock: () => number,
     private readonly cpu = process.cpuUsage,
+    private readonly ownedBoundaries = false,
   ) {}
   fail(code: string) {
     this.errors.add(code);
@@ -31,9 +35,35 @@ export class ContractObserverCost {
       this.probeFailures++;
       return this.fail('PROBE_FAILED');
     }
-    if (!['DRIVER_DISPATCH', 'ADAPTER_CALL_RETURNED', 'MODEL_EXTENSION_RESUMED', 'OPERATION_END'].includes(point))
+    if (
+      ![
+        'DRIVER_DISPATCH',
+        'ADAPTER_CALL_RETURNED',
+        'MODEL_EXTENSION_RESUMED',
+        'OPERATION_END',
+        ...(this.ownedBoundaries
+          ? [
+              'CHECKPOINT',
+              'CHECKPOINT_PHASE_READY',
+              'CHECKPOINT_RETURN',
+              'PUBLIC_BRIDGE_ENTER',
+              'PUBLIC_CALLBACK_ENTER',
+            ]
+          : []),
+      ].includes(point)
+    )
       return this.fail('MISSING_BOUNDARY');
     this.points.set(point, micros);
+  }
+  /** Synchronous owned call-site only. No Promise consumption, output, CPU read or forced yield. */
+  ownedPoint(point: OwnedObserverPoint) {
+    if (!this.ownedBoundaries || this.closed) return;
+    try {
+      this.point(point, this.clock());
+    } catch {
+      this.probeFailures++;
+      this.fail('PROBE_FAILED');
+    }
   }
   private measure<T>(kind: Interval['kind'], work: () => T): T {
     if (this.slots >= 64) {
@@ -87,6 +117,7 @@ export class ContractObserverCost {
     }
     return this.measure('PUBLIC', () => {
       try {
+        this.ownedPoint('PUBLIC_CALLBACK_ENTER');
         const value = work();
         this.publicOutcome = 'RETURNED';
         return value;
@@ -177,6 +208,28 @@ export class ContractObserverCost {
       } else outsideOutputs++;
     }
     for (const s of spans) if (s.outputWallUs > s.wallUs) this.fail('AMBIGUOUS');
+    // These are self-owned call sites, not an adapter/compiler-internal entry.
+    // Output/probe overhead is included. No CPU or log cost is subtracted here.
+    const ownedPairs = [
+      ['checkpoint-phase-setup', 'CHECKPOINT', 'CHECKPOINT_PHASE_READY'],
+      ['checkpoint-output-return', 'CHECKPOINT_PHASE_READY', 'CHECKPOINT_RETURN'],
+      ['after-checkpoint-to-dispatch', 'CHECKPOINT_RETURN', 'DRIVER_DISPATCH'],
+      ['repository-driver-setup', 'DRIVER_DISPATCH', 'PUBLIC_BRIDGE_ENTER'],
+      ['observer-public-bridge', 'PUBLIC_BRIDGE_ENTER', 'PUBLIC_ENTER'],
+      ['public-callback-setup', 'PUBLIC_ENTER', 'PUBLIC_CALLBACK_ENTER'],
+    ] as const;
+    const ownedSegments: { name: string; wallUs: number }[] = [];
+    if (this.ownedBoundaries) {
+      for (const [name, from, to] of ownedPairs) {
+        const lower = this.points.get(from),
+          upper = this.points.get(to);
+        if (lower === undefined || upper === undefined || upper < lower) this.fail('MISSING_BOUNDARY');
+        else ownedSegments.push({ name, wallUs: upper - lower });
+      }
+      const callback = this.points.get('PUBLIC_CALLBACK_ENTER'),
+        exit = this.points.get('PUBLIC_EXIT');
+      if (callback === undefined || exit === undefined || callback > exit) this.fail('MISSING_BOUNDARY');
+    }
     const order = [
       'TRUNCATED',
       'PROBE_FAILED',
@@ -191,7 +244,20 @@ export class ContractObserverCost {
     const status = order.find((s) => this.errors.has(s)) ?? 'COMPLETE';
     return {
       event: 'data-path.contract-load.observer-cost',
-      schemaVersion: 1,
+      schemaVersion: this.ownedBoundaries ? 2 : 1,
+      ...(this.ownedBoundaries
+        ? {
+            ownedBoundaries: {
+              seam: 'SELF_OWNED_CALL_SITES',
+              afterQueueWallUs:
+                this.points.has('CHECKPOINT') && this.points.has('DRIVER_DISPATCH')
+                  ? this.points.get('DRIVER_DISPATCH')! - this.points.get('CHECKPOINT')!
+                  : null,
+              includesObservationOverhead: true,
+              segments: ownedSegments,
+            },
+          }
+        : {}),
       ...ids,
       status,
       intervalRecords: this.intervals.length,

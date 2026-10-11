@@ -1,4 +1,4 @@
-import { validateContractObserverCost } from './qa09-contract-observer-proof.mjs';
+import { validateContractObserverCost, validateOwnedPhaseWindow } from './qa09-contract-observer-proof.mjs';
 import { validateContractPublicBoundaries } from './qa09-contract-public-proof.mjs';
 import { validateClientSplitPhases } from './qa09-client-split-proof.mjs';
 import { validateContractLoadSplit } from './qa09-contract-load-proof.mjs';
@@ -30,8 +30,10 @@ export function validatePhaseCorrelation(
     contractAwaitCheckpoint = false,
     contractPublicBoundaries = false,
     contractObserverCost = false,
+    ownedBoundaries = false,
   } = {},
 ) {
+  demand(!ownedBoundaries || contractObserverCost, 'OWNED_REQUIRES_OBSERVER');
   demand(!contractObserverCost || contractPublicBoundaries, 'OBSERVER_REQUIRES_PUBLIC');
   demand(!contractPublicBoundaries || contractAwaitCheckpoint, 'PUBLIC_REQUIRES_AWAIT');
   demand(!contractAwaitCheckpoint || contractLoadDetail, 'AWAIT_REQUIRES_DETAIL');
@@ -248,7 +250,11 @@ export function validatePhaseCorrelation(
         validateContractLoadDetail(phases, c.contractLoadOwnership, contractLoadDetail);
         validateContractAwaitCheckpoint(phases, c.contractLoadOwnership, contractAwaitCheckpoint);
         validateContractPublicBoundaries(phases, c.contractLoadOwnership, contractPublicBoundaries);
-        if (contractObserverCost) validateContractObserverCost(c, true);
+        if (contractObserverCost) {
+          validateContractObserverCost(c, true, ownedBoundaries);
+          if (ownedBoundaries)
+            validateOwnedPhaseWindow(c.contractObserverCost[0], phase('contract-load-await-after-queue'));
+        }
         for (const name of [
           'contract-version-update',
           'db-transaction-callback',
@@ -315,6 +321,7 @@ export function validatePhaseCorrelation(
     contractLoadDetailRequired: contractLoadDetail,
     contractAwaitCheckpointRequired: contractAwaitCheckpoint,
     contractPublicBoundariesRequired: contractPublicBoundaries,
+    ...(ownedBoundaries ? { ownedBoundariesRequired: true } : {}),
     ...(contractObserverCost ? { contractObserverCostRequired: true } : {}),
     engineCpuRequired: engineCpu,
     authenticatedPreconnectRequired: authenticatedPreconnect,
@@ -346,6 +353,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     contractAwaitCheckpoint: process.argv.slice(6).includes('--contract-await-checkpoint'),
     contractPublicBoundaries: process.argv.slice(6).includes('--contract-public-boundaries'),
     contractObserverCost: process.argv.slice(6).includes('--observer-cost'),
+    ownedBoundaries: process.argv.slice(6).includes('--owned-boundaries'),
     accountPhases: process.argv.slice(6).includes('--account-phases'),
     requireColdConflict: process.argv.slice(6).includes('--require-cold-conflict'),
   });

@@ -218,10 +218,19 @@ export function readMatchedColdUnit(manifestFile) {
     contractLoadDetail: manifest.requireContractLoadDetail === true,
     contractAwaitCheckpoint: manifest.requireContractAwaitCheckpoint === true,
     contractPublicBoundaries: manifest.requireContractPublicBoundaries === true,
+    ownedBoundaries: manifest.requireOwnedBoundaries === true && manifest.inputs?.contractObserverCost === true,
     contractObserverCost:
       manifest.requireContractObserverCost === true && manifest.inputs?.contractObserverCost === true,
   });
   const inputs = manifest.inputs;
+  if (manifest.requireOwnedBoundaries === true) {
+    demand(manifest.requireContractObserverCost === true, 'MATCHED_OWNED_REQUIRES_OBSERVER');
+    demand(
+      read('inputs').contractObserverSchemaVersion === (inputs.contractObserverCost ? 2 : null),
+      'MATCHED_OWNED_DEPLOYMENT_SCHEMA',
+    );
+    demand(patch.ownedBoundariesRequired === inputs.contractObserverCost, 'MATCHED_OWNED_COLLECTOR_REQUIRED');
+  }
   if (manifest.requireContractObserverCost === true) {
     demand(manifest.requireContractPublicBoundaries === true, 'MATCHED_OBSERVER_PUBLIC_REQUIRED');
     const deployed = read('inputs');
