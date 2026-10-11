@@ -1,0 +1,122 @@
+{
+  "gate": "DESCRIPTIVE_ONLY",
+  "scope": "EXISTING_EXACT_PHYSICAL_COLD_409_NESTED_WINDOWS",
+  "sourceCommit": "5773ac9d7bad13d41c2d00e456f8b633fa939579",
+  "prefix": "qa09-edffa1fa44db5ea8",
+  "mode": "r1",
+  "coldRequests": 2,
+  "rows": [
+    {
+      "id": "race:3:a",
+      "group": "baseline",
+      "requestId": "009edd31-c9eb-45d5-8178-dbc9bedd5e32",
+      "lambdaRequestId": "c90b87fe-d258-45e0-bfae-83e6c89f6d59",
+      "clientMs": 4199,
+      "phaseMs": {
+        "contract-load": 599,
+        "contract-load-await-after-queue": 462,
+        "contract-load-driver-before-pg": 17,
+        "contract-load-pg-submit": 40,
+        "contract-load-driver-submit": 58,
+        "contract-load-pg-await": 2,
+        "contract-load-driver-after-pg": 18,
+        "contract-load-driver-query": 77,
+        "contract-load-result-to-model": 2,
+        "contract-load-result-after-model": 38,
+        "contract-load-result": 40
+      },
+      "observerSegmentsUs": [
+        {
+          "name": "driver-prefix",
+          "wallUs": 17303,
+          "outputWallUs": 472,
+          "outputProcessCpuUs": 745,
+          "unattributedWallUs": 16831
+        },
+        {
+          "name": "public-call",
+          "wallUs": 40171,
+          "outputWallUs": 20329,
+          "outputProcessCpuUs": 326,
+          "unattributedWallUs": 19842
+        },
+        {
+          "name": "driver-return-tail",
+          "wallUs": 38,
+          "outputWallUs": 0,
+          "outputProcessCpuUs": 0,
+          "unattributedWallUs": 38
+        },
+        {
+          "name": "after-model",
+          "wallUs": 38076,
+          "outputWallUs": 20155,
+          "outputProcessCpuUs": 227,
+          "unattributedWallUs": 17921
+        }
+      ]
+    },
+    {
+      "id": "cold:2:2:a",
+      "group": "sampling",
+      "requestId": "7e8cd713-2557-4cc5-9cf6-e2846c681163",
+      "lambdaRequestId": "f6c5c5ed-bc08-4773-b141-69d0091cd71c",
+      "clientMs": 4271,
+      "phaseMs": {
+        "contract-load": 621,
+        "contract-load-await-after-queue": 464,
+        "contract-load-driver-before-pg": 56,
+        "contract-load-pg-submit": 1,
+        "contract-load-driver-submit": 57,
+        "contract-load-pg-await": 40,
+        "contract-load-driver-after-pg": 19,
+        "contract-load-driver-query": 115,
+        "contract-load-result-to-model": 22,
+        "contract-load-result-after-model": 1,
+        "contract-load-result": 23
+      },
+      "observerSegmentsUs": [
+        {
+          "name": "driver-prefix",
+          "wallUs": 55950,
+          "outputWallUs": 570,
+          "outputProcessCpuUs": 1512,
+          "unattributedWallUs": 55380
+        },
+        {
+          "name": "public-call",
+          "wallUs": 1087,
+          "outputWallUs": 188,
+          "outputProcessCpuUs": 1341,
+          "unattributedWallUs": 899
+        },
+        {
+          "name": "driver-return-tail",
+          "wallUs": 291,
+          "outputWallUs": 0,
+          "outputProcessCpuUs": 0,
+          "unattributedWallUs": 291
+        },
+        {
+          "name": "after-model",
+          "wallUs": 776,
+          "outputWallUs": 115,
+          "outputProcessCpuUs": 2179,
+          "unattributedWallUs": 661
+        }
+      ]
+    }
+  ],
+  "bindings": {
+    "unit-completion.json": "babbbb95248485a672d100a9282d6a851b6c53b599f224f36f0a0fed4645b04d",
+    "baseline-patch.json": "5d192dc16f92d8b0762786d041c572ecb0fdb717832384a5c269a10e95d1674a",
+    "sampling-patch.json": "637d5d3153d061a3b673f37f24cc0bcafc881e15ef44214e828986294e3702db"
+  },
+  "additionalRequests": 0,
+  "nestedIntervalsAdditive": false,
+  "cpuSubtractionAllowed": false,
+  "compilerOnlyAttribution": false,
+  "candidateBenefit": "NOT_ESTABLISHED",
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}
