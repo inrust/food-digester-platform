@@ -1,0 +1,73 @@
+{
+  "gate": "OFFLINE_BOUNDARY_PASS",
+  "baseCommit": "d7ac1df6a5c7cce406f0af1f98d05f0af1808302",
+  "checks": [
+    {
+      "command": "node scripts/run-qa09-contract-dispatch-offline.mjs docs/audit/evidence/qa-09-dispatch-offline-2026-10-11/matrix-final",
+      "exitCode": 0,
+      "result": "16 independent processes / 36 transactions PASS"
+    },
+    {
+      "command": "node --test scripts/qa09-contract-dispatch-proof.test.mjs",
+      "exitCode": 0,
+      "result": "19 PASS"
+    },
+    {
+      "command": "pnpm exec vitest run packages/database/test/contract-dispatch-offline.test.ts packages/database/test/contract-entry-output-runtime.test.ts packages/database/test/contract-entry-output-ownership.test.ts packages/database/test/contract-public-runtime.test.ts packages/database/test/contract-public-ownership.test.ts packages/database/test/contract-observer-runtime.test.ts packages/observability/test/contract-observer-cost.test.ts apps/cloud-api/test/admin-engine-diagnostic.test.ts apps/cloud-api/test/admin-observer-entry.test.ts",
+      "exitCode": 0,
+      "log": "focused-vitest.log",
+      "result": "100 PASS"
+    },
+    {
+      "command": "pnpm test:scripts",
+      "exitCode": 1,
+      "log": "script-suite.log",
+      "result": "1034 PASS / 3 listen EPERM sandbox failures",
+      "scope": "ORIGINAL_SANDBOX_FAILURE_RETAINED"
+    },
+    {
+      "command": "pnpm test:scripts",
+      "exitCode": 0,
+      "log": "script-suite-host.log",
+      "result": "1037 PASS",
+      "scope": "SAME_SUITE_WITH_LOCAL_LOOPBACK_PORTS_ALLOWED"
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "log": "workspace-typecheck.log",
+      "result": "21 workspace tasks PASS"
+    },
+    {
+      "command": "pnpm exec eslint . --ignore-pattern 'build/**'",
+      "exitCode": 0,
+      "log": "lint.log",
+      "result": "PASS; only preexisting untracked build excluded"
+    },
+    {
+      "command": "pnpm exec prettier --check <six new source files>",
+      "exitCode": 0,
+      "log": "format.log",
+      "result": "PASS"
+    },
+    {
+      "command": "node scripts/check-boundaries.mjs",
+      "exitCode": 0,
+      "log": "boundaries.log",
+      "result": "PASS"
+    },
+    {
+      "command": "node scripts/check-secrets.mjs",
+      "exitCode": 0,
+      "log": "secrets.log",
+      "result": "PASS"
+    }
+  ],
+  "full22StepVerifyRun": false,
+  "newHostedCiRun": false,
+  "awsActions": 0,
+  "candidateDefaultsChanged": false,
+  "targetGate": "NOT_RUN",
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}

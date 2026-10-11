@@ -1,0 +1,242 @@
+{
+  "gate": "OFFLINE_BOUNDARY_PASS",
+  "scope": "LOCAL_FIRST_SAMPLE_DESCRIPTIVE_NOT_AWS_EQUIVALENT",
+  "matrixSha256": "10e84efe85735f52c2936d1e45f3c39cba5c9eea862a706dcf43e470531f2410",
+  "targetReference": {
+    "path": "docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r1/contract-window-observations.json",
+    "sha256": "11e633ca83caba0bac3430b7f65e21d2a8575eba5ef1824b8906919a6c0778da",
+    "status": "HISTORICAL_TARGET_REFERENCE_NOT_NEW_RUN"
+  },
+  "runtime": {
+    "node": "v24.12.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "cases": 16,
+  "transactionSamples": 36,
+  "cpuControlCases": 6,
+  "expectedRollbackCases": 6,
+  "firstProfileSample": {
+    "gate": "OFFLINE_BOUNDARY_ONLY",
+    "segments": [
+      {
+        "name": "checkpoint-phase-setup",
+        "lower": 38364255391,
+        "upper": 38364255427,
+        "wallLowerUs": 36,
+        "processCpuUs": 98,
+        "processCpuScope": "PROCESS_ALL_THREADS_BETWEEN_TEST_PORT_READINGS"
+      },
+      {
+        "name": "checkpoint-output-return",
+        "lower": 38364255428,
+        "upper": 38364255444,
+        "wallLowerUs": 16,
+        "processCpuUs": 28,
+        "processCpuScope": "PROCESS_ALL_THREADS_BETWEEN_TEST_PORT_READINGS"
+      },
+      {
+        "name": "engine-dispatch-gap",
+        "lower": 38364255445,
+        "upper": 38364270823,
+        "wallLowerUs": 15378,
+        "processCpuUs": 29484,
+        "processCpuScope": "PROCESS_ALL_THREADS_BETWEEN_TEST_PORT_READINGS"
+      },
+      {
+        "name": "repository-driver-setup",
+        "lower": 38364270843,
+        "upper": 38364270973,
+        "wallLowerUs": 130,
+        "processCpuUs": 204,
+        "processCpuScope": "PROCESS_ALL_THREADS_BETWEEN_TEST_PORT_READINGS"
+      },
+      {
+        "name": "observer-public-bridge",
+        "lower": 38364270974,
+        "upper": 38364270993,
+        "wallLowerUs": 19,
+        "processCpuUs": 19,
+        "processCpuScope": "PROCESS_ALL_THREADS_BETWEEN_TEST_PORT_READINGS"
+      },
+      {
+        "name": "adapter-entry-wrapper",
+        "lower": 38364270994,
+        "upper": 38364271013,
+        "wallLowerUs": 19,
+        "processCpuUs": 99,
+        "processCpuScope": "PROCESS_ALL_THREADS_BETWEEN_TEST_PORT_READINGS"
+      }
+    ],
+    "afterQueue": {
+      "wallLowerUs": 15430,
+      "boundaryUncertaintyUs": 26,
+      "enclosingWallUs": 15456
+    },
+    "driverPrefix": {
+      "wallLowerUs": 168,
+      "boundaryUncertaintyUs": 23,
+      "enclosingWallUs": 191
+    },
+    "outputOwnership": [
+      {
+        "ordinal": 0,
+        "owner": "OUTSIDE",
+        "wallUs": 16
+      },
+      {
+        "ordinal": 1,
+        "owner": "OUTSIDE",
+        "wallUs": 6
+      },
+      {
+        "ordinal": 2,
+        "owner": "checkpoint-output-return",
+        "wallUs": 3
+      },
+      {
+        "ordinal": 3,
+        "owner": "repository-driver-setup",
+        "wallUs": 9
+      },
+      {
+        "ordinal": 4,
+        "owner": "repository-driver-setup",
+        "wallUs": 4
+      },
+      {
+        "ordinal": 5,
+        "owner": "repository-driver-setup",
+        "wallUs": 6
+      },
+      {
+        "ordinal": 7,
+        "owner": "OUTSIDE",
+        "wallUs": 4
+      },
+      {
+        "ordinal": 8,
+        "owner": "OUTSIDE",
+        "wallUs": 4
+      },
+      {
+        "ordinal": 9,
+        "owner": "OUTSIDE",
+        "wallUs": 5
+      },
+      {
+        "ordinal": 10,
+        "owner": "OUTSIDE",
+        "wallUs": 3
+      },
+      {
+        "ordinal": 11,
+        "owner": "OUTSIDE",
+        "wallUs": 2
+      },
+      {
+        "ordinal": 12,
+        "owner": "OUTSIDE",
+        "wallUs": 4
+      },
+      {
+        "ordinal": 13,
+        "owner": "OUTSIDE",
+        "wallUs": 2
+      },
+      {
+        "ordinal": 14,
+        "owner": "OUTSIDE",
+        "wallUs": 2
+      },
+      {
+        "ordinal": 15,
+        "owner": "OUTSIDE",
+        "wallUs": 2
+      },
+      {
+        "ordinal": 16,
+        "owner": "OUTSIDE",
+        "wallUs": 2
+      },
+      {
+        "ordinal": 17,
+        "owner": "OUTSIDE",
+        "wallUs": 1
+      },
+      {
+        "ordinal": 18,
+        "owner": "OUTSIDE",
+        "wallUs": 2
+      }
+    ],
+    "cpuSamples": [
+      {
+        "phase": "checkpoint-phase-setup",
+        "sharedEnd": true,
+        "wallUs": 36,
+        "inside": 0,
+        "ambiguous": 0,
+        "outside": 48,
+        "buckets": {}
+      },
+      {
+        "phase": "checkpoint-output-return",
+        "sharedEnd": true,
+        "wallUs": 16,
+        "inside": 0,
+        "ambiguous": 0,
+        "outside": 48,
+        "buckets": {}
+      },
+      {
+        "phase": "engine-dispatch-gap",
+        "sharedEnd": true,
+        "wallUs": 15378,
+        "inside": 10,
+        "ambiguous": 0,
+        "outside": 38,
+        "buckets": {
+          "OTHER_UNRESOLVED": 9,
+          "PRISMA_RUNTIME_LOCATION": 1
+        }
+      },
+      {
+        "phase": "repository-driver-setup",
+        "sharedEnd": true,
+        "wallUs": 130,
+        "inside": 0,
+        "ambiguous": 0,
+        "outside": 48,
+        "buckets": {}
+      },
+      {
+        "phase": "observer-public-bridge",
+        "sharedEnd": true,
+        "wallUs": 19,
+        "inside": 0,
+        "ambiguous": 0,
+        "outside": 48,
+        "buckets": {}
+      },
+      {
+        "phase": "adapter-entry-wrapper",
+        "sharedEnd": true,
+        "wallUs": 19,
+        "inside": 0,
+        "ambiguous": 0,
+        "outside": 48,
+        "buckets": {}
+      }
+    ],
+    "cpuSubtractionAllowed": false,
+    "compilerOnlyAttribution": false,
+    "expectedFailure": false
+  },
+  "candidateDefaultsChanged": false,
+  "runtimeWiringImplemented": false,
+  "readyToDeploy": false,
+  "targetGate": "NOT_RUN",
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}
