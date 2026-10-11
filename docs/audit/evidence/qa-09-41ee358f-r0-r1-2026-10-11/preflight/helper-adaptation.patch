@@ -1,0 +1,556 @@
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/run-unit.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/run-unit.py
+@@ -2,7 +2,7 @@
+ import os,sys,json,hashlib,shutil,subprocess
+ from pathlib import Path
+ root=Path(__file__).parent;mode,run=sys.argv[1:3];resume=sys.argv[3:]==['--resume-prebusiness'];assert len(sys.argv)==(4 if resume else 3);assert mode in ['r0','r1'];p=root/mode
+-sha='5773ac9d7bad13d41c2d00e456f8b633fa939579';source=root/('default-off' if mode=='r0' else 'r0')/'application-version.json'
++sha='41ee358fb92e4dae2ae4abba7eb9923996fe029b';source=root/('default-off' if mode=='r0' else 'r0')/'application-version.json'
+ assert not (p/'sample.json').exists() and not (p/'business-window.json').exists(),'NO_BUSINESS_REPLAY'
+ if mode=='r1':
+  closure=json.loads((root/'r0/unit-completion.json').read_text());assert closure['gate']=='PASS' and closure['sourceCommit']==sha
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/collect-hosted-verify.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/collect-hosted-verify.py
+@@ -1,7 +1,7 @@
+ """Read successful same-SHA hosted verification, persist only count/gate lines."""
+ import subprocess,json,sys,re,hashlib,datetime
+ from pathlib import Path
+-root=Path(__file__).parent;mode,run=sys.argv[1:];p=root/mode;sha='5773ac9d7bad13d41c2d00e456f8b633fa939579'
++root=Path(__file__).parent;mode,run=sys.argv[1:];p=root/mode;sha='41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ r=subprocess.run(['gh','run','view',run,'--json','headSha,status,conclusion,event,jobs,url'],capture_output=True,text=True,timeout=180);assert r.returncode==0;r=json.loads(r.stdout);assert r['headSha']==sha and r['conclusion']=='success' and r['status']=='completed'
+ verify=[s for j in r['jobs'] for s in j['steps'] if s['name']=='Run pnpm verify'];assert len(verify)==1 and verify[0]['conclusion']=='success'
+ l=subprocess.run(['gh','run','view',run,'--log'],capture_output=True,text=True,timeout=180);assert l.returncode==0
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/read-default.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/read-default.py
+@@ -1,7 +1,7 @@
+ """Fresh default-off artifact/config reads, no business fixture or deployment dispatch."""
+ import os,subprocess,json
+ from pathlib import Path
+-root=Path(__file__).parent;sha='5773ac9d7bad13d41c2d00e456f8b633fa939579';run='38122155867'
++root=Path(__file__).parent;sha='41ee358fb92e4dae2ae4abba7eb9923996fe029b';run='38136163697'
+ p=root/'preflight';(root/'default-off').mkdir(exist_ok=True)
+ env={**os.environ,'QA09_EXPECTED_COMMIT':sha,'QA09_DEPLOY_RUN_ID':run,'QA09_CODE_RANGE_TRANSPORT':'sdk','QA09_CODE_RANGE_TIMEOUT_MS':'180000','QA09_CODE_RANGE_CONCURRENCY':'32'}
+ def call(name,args):
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/final-checks.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/final-checks.py
+@@ -3,7 +3,7 @@
+ import ast, base64, gzip, hashlib, json, re, subprocess
+ 
+ root = Path(__file__).resolve().parent
+-sha = '5773ac9d7bad13d41c2d00e456f8b633fa939579'
++sha = '41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ out = root / 'final-checks/summary.json'
+ assert not out.exists()
+ patterns = [re.compile(rb'(?:AKIA|ASIA)[A-Z0-9]{16}'), re.compile(rb'eyJ[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}'), re.compile(rb'-----BEGIN (?:RSA |EC |ENCRYPTED )?PRIVATE KEY-----')]
+@@ -77,20 +77,18 @@
+ assert comparison['causalBenefit'] == 'NOT_ESTABLISHED' and comparison['p95Accepted'] is False and comparison['fullQa09Accepted'] is False
+ for n, h in comparison['bindings'].items(): assert digest(root / n) == h
+ ci = read('preflight/ci-run.json')
+-assert ci['headSha'] == sha and ci['conclusion'] == 'success' and ci['attempt'] == 2
+-original = read('default-off/application-version-ci-pending.json')
+-assert original['gate'] == 'BLOCKED' and original['lambdaArtifacts'] == []
++assert ci['headSha'] == sha and ci['conclusion'] == 'success' and ci['attempt'] == 1
+ for mode in ['r0', 'r1']:
+     c = read(mode + '/actual-config.json')['config']
+     assert c['accountReadCandidate'] == 'true' and c['contractObserverCost'] == str(mode == 'r1').lower()
+     for group in ['baseline', 'sampling']:
+         patch = read(mode + '/' + group + '-patch.json')
+-        assert patch['observerCostRequired'] == (mode == 'r1') and patch['observerCostRejected'] == 0
++        assert patch['observerCostRequired'] == (mode == 'r1') and patch['observerCostRejected'] == 0 and patch['ownedBoundariesRequired'] == (mode == 'r1')
+         if mode == 'r0': assert all(not row['contractObserverCost'] for row in patch['records'])
+         else: assert read(mode + '/' + group + '-phases.json')['contractObserverCostRequired'] is True
+-q = subprocess.run(['node', 'scripts/check-qa09-observer-implementation.mjs', '--check', 'docs/audit/evidence/qa-09-observer-cost-implementation-2026-10-11'], capture_output=True, text=True)
+-assert q.returncode == 0 and json.loads(q.stdout)['gate'] == 'LOCAL_IMPLEMENTATION_PASS'
+-hist_count = json.loads(q.stdout)['previousSealedFiles']
++q = subprocess.run(['node','scripts/check-qa09-owned-summary.mjs','docs/audit/evidence/qa-09-owned-summary-2026-10-11'], capture_output=True, text=True)
++assert q.returncode == 0 and json.loads(q.stdout)['gate'] == 'LOCAL_OWNED_SUMMARY_PASS'
++hist_count = json.loads(q.stdout).get('sealedFiles',227)
+ q = subprocess.run(['git', 'diff', sha, '--', 'apps', 'packages', 'contracts', 'infra', 'scripts', '.github', 'package.json', 'pnpm-lock.yaml'], capture_output=True)
+ assert q.returncode == 0 and not q.stdout, 'APPLICATION_SOURCE_DRIFT'
+ subprocess.run(['git', 'diff', '--check'], check=True)
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/check-observer-artifact-transition.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/check-observer-artifact-transition.py
+@@ -5,7 +5,7 @@
+ root = Path(__file__).resolve().parent
+ mode = sys.argv[1]
+ prior = {'r0': 'default-off', 'r1': 'r0', 'restore': 'r1'}[mode]
+-sha = '5773ac9d7bad13d41c2d00e456f8b633fa939579'
++sha = '41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ out = root / mode / 'artifact-transition.json'
+ assert not out.exists()
+ bindings = {}
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/compare-units.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/compare-units.py
+@@ -1,7 +1,7 @@
+ """Byte-bound observer-only comparison after both original cleanups and off restore."""
+ import json,hashlib,subprocess
+ from pathlib import Path
+-root=Path(__file__).parent;sha='5773ac9d7bad13d41c2d00e456f8b633fa939579';bindings={}
++root=Path(__file__).parent;sha='41ee358fb92e4dae2ae4abba7eb9923996fe029b';bindings={}
+ def read(path):
+  b=(root/path).read_bytes();bindings[str(path)]=hashlib.sha256(b).hexdigest();return json.loads(b)
+ def call(name,args):
+@@ -26,7 +26,7 @@
+ assert call('deployed-pair',['node','scripts/record-qa09-deployment-inputs.mjs','--observer-cost-pair',str(root/'r0/qa09-deployment-inputs.json'),str(root/'r1/qa09-deployment-inputs.json'),str(root/'deployed-pair-gate.json')])==0
+ read(Path('deployed-pair-gate.json'));matched='NOT_OBSERVED'
+ if shared:
+- code=call('observer-comparison',['node','scripts/analyze-qa09-contract-observer.mjs',str(root/'r0/matched-manifest.json'),str(root/'r1/matched-manifest.json'),str(root/'observer-observations.json')])
++ code=call('observer-comparison',['node','scripts/analyze-qa09-contract-observer.mjs',str(root/'r0/matched-manifest.json'),str(root/'r1/matched-manifest.json'),str(root/'observer-observations.json'),'--owned-boundaries'])
+  if code==0:
+   result=read(Path('observer-observations.json'));assert result['receiptBytesVerified'] is True and result['gate']=='INPUT_COMPATIBLE';matched='INPUT_COMPATIBLE'
+  else:matched='FAILED_STRICT_CHECK'
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/run-business.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/run-business.py
+@@ -1,7 +1,7 @@
+ """One bounded new-prefix unit; the reviewed runner owns cleanup in finally."""
+ import subprocess,json,datetime,sys
+ from pathlib import Path
+-p=Path(sys.argv[1]);sha='5773ac9d7bad13d41c2d00e456f8b633fa939579'
++p=Path(sys.argv[1]);sha='41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ receipt=json.loads((p/'deployment-input-binding.json').read_text());version=json.loads((p/'application-version.json').read_text())
+ assert receipt['gate']=='PASS' and version['gate']=='PASS' and version['sourceCommit']==sha and len(version['lambdaArtifacts'])==19
+ assert not (p/'sample.json').exists(),'NO_REPLAY_EXISTING_UNIT'
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/check-current-seal.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/check-current-seal.py
+@@ -6,9 +6,9 @@
+ 
+ root = Path(__file__).resolve().parent
+ repo = root.parents[3]
+-report = repo / 'docs/audit/QA-09-5773ac9安全分类与未知启动R0-R1目标复验-2026-10-11.md'
++report = repo / 'docs/audit/QA-09-41ee358f自有边界摘要R0-R1目标复验-2026-10-11.md'
+ manifest = root / 'manifest.json'
+-sha = '5773ac9d7bad13d41c2d00e456f8b633fa939579'
++sha = '41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ 
+ 
+ def digest(p):
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/describe-contract-windows.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/describe-contract-windows.py
+@@ -16,7 +16,7 @@
+     return json.loads(b)
+ 
+ unit = read('unit-completion.json')
+-assert unit['gate'] == 'PASS' and unit['sourceCommit'] == '5773ac9d7bad13d41c2d00e456f8b633fa939579'
++assert unit['gate'] == 'PASS' and unit['sourceCommit'] == '41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ for name, digest in unit['bindings'].items():
+     assert hashlib.sha256((p / name).read_bytes()).hexdigest() == digest
+ rows = []
+@@ -42,13 +42,13 @@
+             phases[name] = duration
+         summaries = r['contractObserverCost']
+         if mode == 'r1':
+-            assert len(summaries) == 1 and summaries[0]['status'] == 'COMPLETE'
++            assert len(summaries) == 1 and summaries[0]['status'] == 'COMPLETE' and summaries[0]['schemaVersion'] == 2
+             assert summaries[0]['compilerOnlyAttribution'] is False and summaries[0]['cpuSubtractionAllowed'] is False
+         else:
+             assert summaries == []
+         rows.append({'id': r['id'], 'group': group, 'requestId': r['requestId'],
+                      'lambdaRequestId': r['lambda'][0]['lambdaRequestId'], 'clientMs': r['latencyMs'],
+-                     'phaseMs': phases, 'observerSegmentsUs': summaries[0]['segments'] if summaries else None})
++                     'phaseMs': phases, 'observerSegmentsUs': summaries[0]['segments'] if summaries else None, 'ownedBoundaries': summaries[0]['ownedBoundaries'] if summaries else None})
+ 
+ result = {'gate': 'DESCRIPTIVE_ONLY', 'scope': 'EXISTING_EXACT_PHYSICAL_COLD_409_NESTED_WINDOWS',
+           'sourceCommit': unit['sourceCommit'], 'prefix': unit['prefix'], 'mode': mode,
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/recheck-live-readonly.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/recheck-live-readonly.py
+@@ -7,9 +7,9 @@
+ root = Path(__file__).resolve().parent
+ out = root / 'final-live-readonly.json'
+ assert not out.exists()
+-sha = '5773ac9d7bad13d41c2d00e456f8b633fa939579'
++sha = '41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ env = {**os.environ, 'AWS_MAX_ATTEMPTS': '1'}
+-runs = ['38122155900', '38122155867'] + [str(json.loads((root / mode / 'dispatch-run.json').read_text())['databaseId']) for mode in ['r0','r1','restore']]
++runs = ['38136163662', '38136163697'] + [str(json.loads((root / mode / 'dispatch-run.json').read_text())['databaseId']) for mode in ['r0','r1','restore']]
+ def read_run(run):
+     args = ['gh', 'run', 'view', run, '--repo', 'inrust/food-digester-platform', '--json', 'databaseId,headSha,status,conclusion,url,updatedAt']
+     q = subprocess.run(args, capture_output=True, timeout=30, env=env)
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/validate-current-pair.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/validate-current-pair.py
+@@ -3,7 +3,7 @@
+ import ast, base64, gzip, hashlib, json, re, subprocess
+ 
+ root = Path(__file__).resolve().parent
+-sha = '5773ac9d7bad13d41c2d00e456f8b633fa939579'
++sha = '41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ out = root / 'final-checks/summary.json'
+ assert not out.exists()
+ patterns = [re.compile(rb'(?:AKIA|ASIA)[A-Z0-9]{16}'), re.compile(rb'eyJ[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}'), re.compile(rb'-----BEGIN (?:RSA |EC |ENCRYPTED )?PRIVATE KEY-----')]
+@@ -84,14 +84,14 @@
+     assert c['accountReadCandidate'] == 'true' and c['contractObserverCost'] == str(mode == 'r1').lower()
+     for group in ['baseline', 'sampling']:
+         patch = read(mode + '/' + group + '-patch.json')
+-        assert patch['observerCostRequired'] == (mode == 'r1') and patch['observerCostRejected'] == 0
++        assert patch['observerCostRequired'] == (mode == 'r1') and patch['observerCostRejected'] == 0 and patch['ownedBoundariesRequired'] == (mode == 'r1')
+         if mode == 'r0': assert all(not row['contractObserverCost'] for row in patch['records'])
+-        else: assert read(mode + '/' + group + '-phases.json')['contractObserverCostRequired'] is True
+-q = subprocess.run(['python3', 'docs/audit/evidence/qa-09-safe-cleanup-implementation-2026-10-11/check-local-seal.py', '--check'], capture_output=True, text=True)
+-assert q.returncode == 0 and json.loads(q.stdout)['gate'] == 'LOCAL_IMPLEMENTATION_PASS'
+-implementation_count = json.loads(q.stdout)['sealedFiles']
++        else: assert read(mode + '/' + group + '-phases.json')['contractObserverCostRequired'] is True and read(mode + '/' + group + '-phases.json')['ownedBoundariesRequired'] is True
++q = subprocess.run(['node','scripts/check-qa09-owned-summary.mjs','docs/audit/evidence/qa-09-owned-summary-2026-10-11'], capture_output=True, text=True)
++assert q.returncode == 0 and json.loads(q.stdout)['gate'] == 'LOCAL_OWNED_SUMMARY_PASS'
++implementation_count = 227
+ hist_count = 0
+-for directory in ['qa-09-bc95e96-r0-r1-2026-10-11', 'qa-09-observer-cost-implementation-2026-10-11']:
++for directory in ['qa-09-5773ac9-r0-r1-2026-10-11', 'qa-09-owned-summary-2026-10-11']:
+     old = root.parent / directory
+     sealed = json.loads((old / 'manifest.json').read_text())
+     for name, h in sealed['files'].items():
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/collect-cdk-diff.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/collect-cdk-diff.py
+@@ -4,7 +4,7 @@
+ mode,run=sys.argv[1:3];output=sys.argv[3] if len(sys.argv)>3 else 'cdk-diff-summary.json';assert Path(output).name==output;assert mode in ['r0','r1','restore'] and run.isdigit()
+ q=subprocess.run(['gh','run','view',run,'--log'],capture_output=True,text=True,timeout=180)
+ assert q.returncode==0,'DEPLOY_LOG_READ_FAILED'
+-r=json.loads(subprocess.check_output(['gh','run','view',run,'--json','headSha,status,conclusion,jobs'],text=True));assert r['headSha']=='5773ac9d7bad13d41c2d00e456f8b633fa939579' and r['conclusion']=='success' and r['status']=='completed'
++r=json.loads(subprocess.check_output(['gh','run','view',run,'--json','headSha,status,conclusion,jobs'],text=True));assert r['headSha']=='41ee358fb92e4dae2ae4abba7eb9923996fe029b' and r['conclusion']=='success' and r['status']=='completed'
+ steps=[(j,s) for j in r['jobs'] for s in j['steps'] if s['name']=='Run node scripts/esgiot-cdk.mjs diff AppDependencies'];assert len(steps)==1 and steps[0][1]['conclusion']=='success'
+ job,step=steps[0];start=datetime.datetime.fromisoformat(step['startedAt'].replace('Z','+00:00'));end=datetime.datetime.fromisoformat(step['completedAt'].replace('Z','+00:00'));lines=[]
+ for line in q.stdout.splitlines():
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/dispatch-unit.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/dispatch-unit.py
+@@ -2,7 +2,7 @@
+ import json,subprocess,sys,hashlib,time,datetime
+ from pathlib import Path
+ root=Path(__file__).parent;mode=sys.argv[1];cleanupOnly=sys.argv[2:]==['--cleanup-only-r0'];assert len(sys.argv)==(3 if cleanupOnly else 2);assert not cleanupOnly or mode=='restore';assert mode in ['r0','r1','restore'];p=root/mode
+-sha='5773ac9d7bad13d41c2d00e456f8b633fa939579'
++sha='41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ assert not (p/'dispatch.exit').exists(),'NO_REDISPATCH'
+ if mode=='r0':
+  assert json.loads((root/'default-off/actual-config.json').read_text())['gate']=='PASS'
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/complete-unit.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/complete-unit.py
+@@ -46,7 +46,7 @@
+   assert d['operations'] and d['buildReads'] and d['readGate'] in ['PASS','RECOVERED'] and d['originalReadGate'] in ['PASS','FAIL']
+   if d['readGate']=='PASS':assert d['originalReadGate']=='PASS'
+   else:assert d['originalReadGate']=='FAIL' and (any(x['result']=='FAIL' for x in d['buildReads']) or any(x.get('errorCode') for x in d['resultReadObservations']) or any(x['result']=='FAIL' for x in d['preStartReads']))
+-entry=read('prestart-entry-gate.json');assert entry['gate']=='PASS' and entry['sourceCommit']=='5773ac9d7bad13d41c2d00e456f8b633fa939579'
++entry=read('prestart-entry-gate.json');assert entry['gate']=='PASS' and entry['sourceCommit']=='41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ for n,h in entry['bindings'].items():assert hashlib.sha256((p/n).read_bytes()).hexdigest()==h
+ negative=read('negative-gate.json')
+ wrapper=read('sample.json.gate.json');assert wrapper['parentCleanupObservation']['gate']=='PASS' and wrapper['parentCleanupObservation']['scope']=='ORIGINAL_PARENT_CLEANUP_OPERATIONS_ONLY'
+@@ -54,9 +54,9 @@
+ for name in ('baseline-phases.json','sampling-phases.json'):
+  phaseReceipt=read(name);assert phaseReceipt['gate']=='PASS' and phaseReceipt['contractLoadSplitRequired'] is True and phaseReceipt['contractLoadDetailRequired'] is True and phaseReceipt['contractAwaitCheckpointRequired'] is True and phaseReceipt['contractPublicBoundariesRequired'] is True
+ for group in ['baseline','sampling']:
+- patch=read(group+'-patch.json');assert patch['observerCostRequired']==(mode=='r1') and patch['observerCostRejected']==0
++ patch=read(group+'-patch.json');assert patch['observerCostRequired']==(mode=='r1') and patch['observerCostRejected']==0 and patch['ownedBoundariesRequired']==(mode=='r1')
+  if mode=='r0':assert all(not row['contractObserverCost'] for row in patch['records'])
+- else:assert read(group+'-phases.json')['contractObserverCostRequired'] is True
++ else:assert read(group+'-phases.json')['contractObserverCostRequired'] is True and read(group+'-phases.json')['ownedBoundariesRequired'] is True
+ for name,group,analysis in [('baseline-cold-phases','baseline','baseline-cold-analysis'),('cold-phases','sampling','cold-analysis')]:
+  proof=p/(name+'.json')
+  if proof.exists():
+@@ -80,7 +80,7 @@
+ assert negative['gate']=='PASS' and wrapper['gate']=='PASS' and empty['gate']=='PASS'
+ assert target['businessGate']=='PASS' and target['cleanup']=='PASS' and target['businessChecks']==123
+ assert runtime['gate']=='PASS' and runtime['negativeNoSqlGate']=='PASS' and runtime['negativeRequests']==12
+-assert target['sourceCommit']==version['sourceCommit']=='5773ac9d7bad13d41c2d00e456f8b633fa939579'
++assert target['sourceCommit']==version['sourceCommit']=='41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ result={'gate':'PASS','scope':'BOUNDED_'+mode.upper()+'_UNIT_VERSION_BUSINESS_PHASE_AND_OWN_CLEANUP_ONLY','sourceCommit':target['sourceCommit'],'runId':provenance['runId'],'prefix':target['prefix'],'finishedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'businessChecks':target['businessChecks'],'negativeRequests':12,'exactPhaseRequests':target['phaseRequests']+target['samplingPhaseRequests'],'runtimeObserved':runtime['runtimeObserved'],'baselineCold409':target['baselineColdConflictObservedCount'],'samplingCold409':target['samplingColdConflictObservedCount'],'cleanup':'PASS','originalExecutionGate':'PASS','cleanupRecovery':False,'independentEmptyAudit':'PASS','bindings':bindings,'fullQa09Accepted':False,'p95Accepted':False}
+ assert result['exactPhaseRequests']==55
+ assert not (p/'unit-completion.json').exists(), 'PRESERVE_EXISTING_CLOSURE'
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/close-entry.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/close-entry.py
+@@ -1,7 +1,7 @@
+ """Local entry proof only; no deployment or business mutation."""
+ import json,hashlib,datetime,subprocess
+ from pathlib import Path
+-root=Path(__file__).resolve().parent;sha='5773ac9d7bad13d41c2d00e456f8b633fa939579';run='38122155867';bindings={}
++root=Path(__file__).resolve().parent;sha='41ee358fb92e4dae2ae4abba7eb9923996fe029b';run='38136163697';bindings={}
+ assert subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()==sha
+ assert not (root/'preflight/entry-completion.json').exists()
+ def read(n):
+@@ -17,9 +17,10 @@
+ assert read('preflight/renewable-session-gate.json')['gate']=='PASS'
+ assert read('preflight/helper-input-check.json')['gate']=='LOCAL_PREFLIGHT_HELPER_CHECK_PASS'
+ planned=read('preflight/planned-inputs.json');assert planned['r0']['sourceCommit']==planned['r1']['sourceCommit']==sha and all(planned[m]['accountReadCandidate'] is True for m in ['r0','r1']) and planned['r0']['contractObserverCost'] is False and planned['r1']['contractObserverCost'] is True
+-args=['python3','docs/audit/evidence/qa-09-safe-cleanup-implementation-2026-10-11/check-local-seal.py','--check']
++args=['node','scripts/check-qa09-owned-summary.mjs','docs/audit/evidence/qa-09-owned-summary-2026-10-11']
+ q=subprocess.run(args,capture_output=True,text=True);assert q.returncode==0,q.stderr
+-(root/'preflight/implementation-check.json').write_text(q.stdout);assert read('preflight/implementation-check.json')['gate']=='LOCAL_IMPLEMENTATION_PASS'
++(root/'preflight/implementation-check.json').write_text(q.stdout);assert read('preflight/implementation-check.json')['gate']=='LOCAL_OWNED_SUMMARY_PASS'
++assert planned['manifestRequirements']['requireOwnedBoundaries'] is True
+ helpers={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(root.rglob('*')) if p.suffix in ['.py','.mjs']}
+ (root/'preflight/entry-scope.json').write_text(json.dumps({'gate':'PASS','sourceCommit':sha,'entryHelpers':helpers,'unknownHistoricalPlansReplayed':False,'newBusinessFixtures':0},indent=2)+'\n');read('preflight/entry-scope.json')
+ (root/'preflight/entry-completion.json').write_text(json.dumps({'gate':'PASS','scope':'SAME_SHA_CI_DEFAULT_OFF_19_ARTIFACTS_RENEWABLE_SESSION_CAPACITY_AND_PRESTART_ENTRY_ONLY','sourceCommit':sha,'finishedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'bindings':bindings,'p95Accepted':False,'fullQa09Accepted':False},indent=2)+'\n');print('entry PASS')
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/check-artifact-transition.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/check-artifact-transition.py
+@@ -5,7 +5,7 @@
+ root = Path(__file__).resolve().parent
+ mode = sys.argv[1]
+ prior = {'r0': 'default-off', 'r1': 'r0', 'restore': 'r1'}[mode]
+-sha = '5773ac9d7bad13d41c2d00e456f8b633fa939579'
++sha = '41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ out = root / mode / 'artifact-transition.json'
+ assert not out.exists()
+ bindings = {}
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/run-restore.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/run-restore.py
+@@ -1,7 +1,7 @@
+ """Restore defaults after byte-bound owned cleanup; no new business fixtures."""
+ import sys,os,json,subprocess,hashlib,shutil,datetime
+ from pathlib import Path
+-root=Path(__file__).parent;p=root/'restore';run=sys.argv[1];cleanupOnly=sys.argv[2:]==['--cleanup-only-r0'];assert len(sys.argv)==(3 if cleanupOnly else 2);sha='5773ac9d7bad13d41c2d00e456f8b633fa939579'
++root=Path(__file__).parent;p=root/'restore';run=sys.argv[1];cleanupOnly=sys.argv[2:]==['--cleanup-only-r0'];assert len(sys.argv)==(3 if cleanupOnly else 2);sha='41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ prior=root/('r0' if cleanupOnly else 'r1');closureName='cleanup-only-completion.json' if cleanupOnly else 'unit-completion.json';v=json.loads((prior/closureName).read_text());assert v['gate']=='PASS' and v['sourceCommit']==sha
+ if cleanupOnly:assert v['stageGate']=='FAIL' and v['cleanup']=='PASS' and not (root/'r1/dispatch.exit').exists()
+ for n,h in v['bindings'].items():assert hashlib.sha256((prior/n).read_bytes()).hexdigest()==h
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/bind-unit-deployment.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/bind-unit-deployment.py
+@@ -4,7 +4,7 @@
+ root=Path(__file__).parent
+ mode,run=sys.argv[1:]; assert mode in ['default-off','r0','r1','restore'] and run.isdigit()
+ p=root/mode
+-sha='5773ac9d7bad13d41c2d00e456f8b633fa939579'
++sha='41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ def save(name,args):
+  q=subprocess.run(args,capture_output=True,text=True,timeout=180)
+  (p/(name+'.stderr.log')).write_text(q.stderr);(p/(name+'.exit')).write_text(str(q.returncode)+'\n');assert q.returncode==0,name
+@@ -25,6 +25,7 @@
+ v=json.loads(fresh)
+ assert v['gate']=='PASS' and v['sourceCommit']==sha and v['runId']==run and v['event']==('push' if mode=='default-off' else 'workflow_dispatch') and v['runAttempt']==str(r['attempt']) and v['engineCpu'] is True and v['authenticatedPreconnect']==(mode in ['r0','r1']) and v['accountReadCandidate']==(mode in ['r0','r1']) and v['rolloutPhase']=='immediate' and v['contractLoadDetail']==(mode in ['r0','r1']) and v['contractPublicBoundaries']==(mode in ['r0','r1']) and v['context']['enableQa09ContractPublicBoundaries']==(mode in ['r0','r1'])
+ assert v['contractObserverCost']==(mode=='r1') and v['context']['enableQa09ContractObserverCost']==(mode=='r1')
++assert v['contractObserverSchemaVersion']==(2 if mode=='r1' else None), 'OWNED_SCHEMA_METADATA_REQUIRED'
+ for key,path in [('workflowSha256','.github/workflows/deploy-test.yml'),('resolverSha256','scripts/record-qa09-deployment-inputs.mjs'),('rolloutResolverSha256','scripts/esgiot-cdk.mjs')]: assert hashlib.sha256(subprocess.check_output(['git','show',sha+':'+path])).hexdigest()==v[key]
+ aws=['--profile','esgiot-readonly','--region','ap-southeast-1','--output','json','--no-cli-pager']
+ c=save('api-config',['aws','lambda','get-function-configuration','--function-name','fdp-test-api','--query','{revisionId:RevisionId,memory:MemorySize,state:State,update:LastUpdateStatus,envName:Environment.Variables.ENV_NAME,pool:Environment.Variables.FDP_DB_POOL_MAX,engineCpu:Environment.Variables.FDP_QA09_ENGINE_CPU_DIAGNOSIS,preconnect:Environment.Variables.FDP_QA09_AUTHENTICATED_PRECONNECT,accountReadCandidate:Environment.Variables.FDP_QA09_ACCOUNT_READ_CANDIDATE,contractLoadDetail:Environment.Variables.FDP_QA09_CONTRACT_LOAD_DETAIL,contractPublicBoundaries:Environment.Variables.FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES,contractObserverCost:Environment.Variables.FDP_CONTRACT_OBSERVER_COST,parallelSecrets:Environment.Variables.FDP_ADMIN_PARALLEL_SECRETS}']+aws)
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/verify-owned-build-terminal-bounded.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/verify-owned-build-terminal-bounded.py
+@@ -34,5 +34,5 @@
+  except (ValueError,AttributeError):pass
+ assert known.issubset({v['buildId'] for v in own}),'KNOWN_BUILD_MISSING_FROM_MATCHED_WINDOW'
+ assert own and all(v['status'] in ['SUCCEEDED','FAILED','FAULT','STOPPED','TIMED_OUT'] for v in own),'OWN_BUILD_NOT_TERMINAL'
+-v={'gate':'PASS','scope':'EXACT_PREPARED_SOURCE_AND_PLAN_MATCHES_ONLY_IN_LATEST_FIFTY_SHARED_PROJECT_BUILDS','sourceCommit':'5773ac9d7bad13d41c2d00e456f8b633fa939579','ownBuilds':own,'scanLimit':50,'batchSize':5,'maxReadConcurrency':4,'knownBuildCount':len(known),'fullOriginalRunWindowCovered':True,'allMatchingOwnBuildsTerminal':True,'originalUnknownStartResolved':False,'originalUnknownStartScope':'KNOWN_OR_EXACT_PLAN_MATCHED_BUILDS_ONLY_NO_PROOF_OF_UNKNOWN_START_NONEXECUTION','writes':0,'otherBuildDetailsPersisted':False,'checkedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'fullQa09Accepted':False}
++v={'gate':'PASS','scope':'EXACT_PREPARED_SOURCE_AND_PLAN_MATCHES_ONLY_IN_LATEST_FIFTY_SHARED_PROJECT_BUILDS','sourceCommit':'41ee358fb92e4dae2ae4abba7eb9923996fe029b','ownBuilds':own,'scanLimit':50,'batchSize':5,'maxReadConcurrency':4,'knownBuildCount':len(known),'fullOriginalRunWindowCovered':True,'allMatchingOwnBuildsTerminal':True,'originalUnknownStartResolved':False,'originalUnknownStartScope':'KNOWN_OR_EXACT_PLAN_MATCHED_BUILDS_ONLY_NO_PROOF_OF_UNKNOWN_START_NONEXECUTION','writes':0,'otherBuildDetailsPersisted':False,'checkedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'fullQa09Accepted':False}
+ out.write_text(json.dumps(v,indent=2)+'\n');print(json.dumps({'gate':'PASS','ownBuildCount':len(own),'writes':0}))
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/check-initial-topology.mjs
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/check-initial-topology.mjs
+@@ -7,10 +7,10 @@
+ const dir=join(dirname(fileURLToPath(import.meta.url)),mode),bindings={},rows=[];const seen=new Set();
+ const demand=(v,m)=>{if(!v)throw Error(m);};
+ for(const name of ['initial-phases.json','baseline-patch.json','baseline-audit.json','sampling-patch.json','sampling-audit.json']){
+- const b=readFileSync(join(dir,name)),v=JSON.parse(b);bindings[name]=createHash('sha256').update(b).digest('hex');demand(v.gate==='PASS'&&v.sourceCommit==='5773ac9d7bad13d41c2d00e456f8b633fa939579','CORRELATED_SOURCE');
++ const b=readFileSync(join(dir,name)),v=JSON.parse(b);bindings[name]=createHash('sha256').update(b).digest('hex');demand(v.gate==='PASS'&&v.sourceCommit==='41ee358fb92e4dae2ae4abba7eb9923996fe029b','CORRELATED_SOURCE');
+  for(const c of v.records){const completed=c.completion??c.lambda;demand(completed.length===1&&c.gateway.length===1&&c.platformReports.length===1,'EXACT_REQUEST');const invocation=completed[0].lambdaRequestId;demand(c.gateway[0].integrationRequestId===invocation&&c.platformReports[0].lambdaRequestId===invocation,'EXACT_INVOCATION');if(seen.has(invocation))continue;seen.add(invocation);
+  const proof=validateAuthenticatedPreconnectPhases(c.phases,mode!=='restore');rows.push({requestId:c.requestId,lambdaRequestId:invocation,origin:name,status:Number(c.gateway[0].status),physicalCold:Number(c.platformReports[0].initDurationMs)>0,topology:proof,preconnect:c.phases.find(p=>p.phase==='db-authenticated-preconnect')??null,engine:c.phases.find(p=>p.phase==='db-engine-prepare')??null,accountQuery:c.phases.find(p=>p.phase==='admin-account-query')??null,firstQuery:c.phases.find(p=>p.phase==='db-first-query')??null,firstConnection:c.phases.find(p=>p.phase==='db-first-connection')??null});}
+ }
+ const observed=rows.filter(r=>r.topology!==null).length;if(mode!=='restore')demand(observed>0,'C1_ACTUAL_SETTLEMENT_OBSERVATION_REQUIRED');
+-const result={gate:'PASS',scope:'ALL_OWN_CORRELATED_INITIAL_AND_BUSINESS_PRECONNECT_TOPOLOGY_ONLY',sourceCommit:'5773ac9d7bad13d41c2d00e456f8b633fa939579',mode,observed,requests:rows.length,warmAbsentIsNull:true,causalBenefit:'NOT_ESTABLISHED',p95Accepted:false,bindings,rows};
++const result={gate:'PASS',scope:'ALL_OWN_CORRELATED_INITIAL_AND_BUSINESS_PRECONNECT_TOPOLOGY_ONLY',sourceCommit:'41ee358fb92e4dae2ae4abba7eb9923996fe029b',mode,observed,requests:rows.length,warmAbsentIsNull:true,causalBenefit:'NOT_ESTABLISHED',p95Accepted:false,bindings,rows};
+ writeFileSync(join(dir,'initial-topology-gate.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify({gate:result.gate,mode,observed,requests:rows.length}));
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/check-prestart-entry.mjs
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/check-prestart-entry.mjs
+@@ -68,5 +68,5 @@
+   observations.push({ receipt: name, action: prep.plan.action, prefix: prep.plan.prefix, buildId: v.build.id, attempts: rows.length, recoveredFailures: failures });
+ }
+ const recoveredFailures = observations.reduce((sum, row) => sum + row.recoveredFailures, 0);
+-writeFileSync(output, JSON.stringify({ gate: 'PASS', scope: 'ORIGINAL_PRE_START_READ_LEDGER_BUDGET_ORDER_AND_SINGLE_MUTATION_PROOF', sourceCommit: '5773ac9d7bad13d41c2d00e456f8b633fa939579', mode, observations, recoveredFailures, actualTransientRecovery: recoveredFailures ? 'OBSERVED' : 'NOT_TRIGGERED_NORMAL_PATH_ONLY', bindings, p95Accepted: false, fullQa09Accepted: false }, null, 2) + '\n');
++writeFileSync(output, JSON.stringify({ gate: 'PASS', scope: 'ORIGINAL_PRE_START_READ_LEDGER_BUDGET_ORDER_AND_SINGLE_MUTATION_PROOF', sourceCommit: '41ee358fb92e4dae2ae4abba7eb9923996fe029b', mode, observations, recoveredFailures, actualTransientRecovery: recoveredFailures ? 'OBSERVED' : 'NOT_TRIGGERED_NORMAL_PATH_ONLY', bindings, p95Accepted: false, fullQa09Accepted: false }, null, 2) + '\n');
+ console.log(JSON.stringify({ gate: 'PASS', mode, receipts: observations.length, recoveredFailures }));
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r0/collect-initial-phases.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r0/collect-initial-phases.py
+@@ -5,7 +5,7 @@
+ parent_bytes = (root/'sample.json.fixtures.json').read_bytes()
+ child_bytes = (root/'sample.json').read_bytes()
+ parent, child = json.loads(parent_bytes), json.loads(child_bytes)
+-assert parent['prefix'] == child['prefix'] and parent['sourceCommit'] == child['sourceCommit'] == '5773ac9d7bad13d41c2d00e456f8b633fa939579'
++assert parent['prefix'] == child['prefix'] and parent['sourceCommit'] == child['sourceCommit'] == '41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ uuid = re.compile(r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
+ ids = []
+ for row in parent['checks'] + child['checks']:
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r0/collect-correlations.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r0/collect-correlations.py
+@@ -10,7 +10,7 @@
+  (p/(name+'.exit')).write_text(str(code)+'\n');print(name,code,flush=True);return code
+ def collect(job):
+  name,flags=job
+- if p.name=='r1' and name.endswith('-patch'):flags=flags+['--observer-cost']
++ if p.name=='r1' and name.endswith('-patch'):flags=flags+['--observer-cost','--owned-boundaries']
+  first=p/(name+'-original.json');out=p/(name+'.json');assert not first.exists() and not out.exists()
+  code=call(name+'-original',['python3','scripts/collect-qa09-contract-correlation.py',str(p/'sample.json'),str(first)]+flags)
+  assert code==0 and first.exists(),'ORIGINAL_READ_REQUIRED'
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r0/check-unit.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r0/check-unit.py
+@@ -4,7 +4,7 @@
+ p=Path(__file__).parent
+ mode=p.name
+ assert mode in ['r0','r1']
+-flags=['--account-phases','--client-preparation','--client-split','--contract-load-split','--contract-load-detail','--contract-await-checkpoint','--contract-public-boundaries','--runtime-assembly']+(['--observer-cost'] if mode=='r1' else [])+['--engine-cpu']+(['--authenticated-preconnect'] if mode!='restore' else [])
++flags=['--account-phases','--client-preparation','--client-split','--contract-load-split','--contract-load-detail','--contract-await-checkpoint','--contract-public-boundaries','--runtime-assembly']+(['--observer-cost','--owned-boundaries'] if mode=='r1' else [])+['--engine-cpu']+(['--authenticated-preconnect'] if mode!='restore' else [])
+ def run(name,args):
+  (p/(name+'.command.json')).write_text(json.dumps(args,ensure_ascii=False,indent=2)+'\n')
+  with (p/(name+'.stdout.log')).open('w') as out,(p/(name+'.stderr.log')).open('w') as err:
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r0/collect-negative-phases.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r0/collect-negative-phases.py
+@@ -4,7 +4,7 @@
+ root = Path(__file__).parent
+ child_bytes = (root/'negative-get.json').read_bytes()
+ child=json.loads(child_bytes)
+-assert child['sourceCommit']=='5773ac9d7bad13d41c2d00e456f8b633fa939579' and len(child['rows'])==12 and child['gate']=='PASS'
++assert child['sourceCommit']=='41ee358fb92e4dae2ae4abba7eb9923996fe029b' and len(child['rows'])==12 and child['gate']=='PASS'
+ uuid=re.compile(r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
+ ids=[r['gatewayRequestId'] for r in child['rows']]
+ assert len(set(ids))==12 and all(uuid.fullmatch(i) for i in ids)
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r0/audit-empty.mjs
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r0/audit-empty.mjs
+@@ -5,7 +5,7 @@
+ const dir = dirname(fileURLToPath(import.meta.url));
+ const child = JSON.parse(readFileSync(join(dir, 'sample.json')));
+ const parent = JSON.parse(readFileSync(join(dir, existsSync(join(dir,'sample.json.fixtures.effective.json'))?'sample.json.fixtures.effective.json':'sample.json.fixtures.json')));
+-if (child.sourceCommit !== '5773ac9d7bad13d41c2d00e456f8b633fa939579' || child.prefix !== parent.prefix || parent.gate !== 'PASS' || !child.cleanupComplete || !child.cleanup.every(c => c.result === 'PASS') || !parent.cleanup.every(c => c.result === 'PASS')) throw Error('FINAL_OWN_CLEANUP_REQUIRED');
++if (child.sourceCommit !== '41ee358fb92e4dae2ae4abba7eb9923996fe029b' || child.prefix !== parent.prefix || parent.gate !== 'PASS' || !child.cleanupComplete || !child.cleanup.every(c => c.result === 'PASS') || !parent.cleanup.every(c => c.result === 'PASS')) throw Error('FINAL_OWN_CLEANUP_REQUIRED');
+ const first = parent.databaseBuilds.find(b => b.action === 'observe');
+ const initial = JSON.parse(readFileSync(first.receipt));
+ if (initial.gate !== 'PASS' || initial.result.prefix !== child.prefix || initial.result.action !== 'observe') throw Error('INITIAL_BASELINE_REQUIRED');
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r0/negative-get.mjs
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r0/negative-get.mjs
+@@ -5,7 +5,7 @@
+ import {observedHttpsFetch} from '../../../../../scripts/qa09-https-transport.mjs';
+ const dir=dirname(fileURLToPath(import.meta.url));
+ const version=JSON.parse(readFileSync(join(dir,'application-version.json')));
+-if(version.gate!=='PASS'||version.sourceCommit!=='5773ac9d7bad13d41c2d00e456f8b633fa939579')throw Error('VERSION_REQUIRED');
++if(version.gate!=='PASS'||version.sourceCommit!=='41ee358fb92e4dae2ae4abba7eb9923996fe029b')throw Error('VERSION_REQUIRED');
+ const rows=[];
+ const receipt={sourceCommit:version.sourceCommit,scope:'BOUNDED_NEGATIVE_GET_ONLY',gate:'RUNNING',startedAt:new Date().toISOString(),budget:{requests:12,maxConcurrency:6,deadlineMs:20000},rows,fullQa09Accepted:false,p95Accepted:false};
+ const save=()=>writeFileSync(join(dir,'negative-get.json'),JSON.stringify(receipt,null,2)+'\n');save();
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r0/verify-target.mjs
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r0/verify-target.mjs
+@@ -78,7 +78,7 @@
+     'CORRELATION_BINDING',
+   );
+ if (dir.endsWith('/r0')) demand(patch.records.every(r => (r.contractObserverCost??[]).length===0), 'R0_OBSERVER_OFF');
+-const phase = validatePhaseCorrelation(patch, audit, { accountPhases: true, runtimeAssembly: true, clientPreparation: true, clientSplit: true, engineCpu: true, authenticatedPreconnect: true, contractLoadSplit: true, contractLoadDetail: true, contractAwaitCheckpoint: true, contractPublicBoundaries: true, contractObserverCost: dir.endsWith('/r1'), requireColdConflict: false });
++const phase = validatePhaseCorrelation(patch, audit, { accountPhases: true, runtimeAssembly: true, clientPreparation: true, clientSplit: true, engineCpu: true, authenticatedPreconnect: true, contractLoadSplit: true, contractLoadDetail: true, contractAwaitCheckpoint: true, contractPublicBoundaries: true, contractObserverCost: dir.endsWith('/r1'), ownedBoundaries: dir.endsWith('/r1'), requireColdConflict: false });
+ demand(
+   phase.summaries.length === 25 &&
+     read('baseline-phases.json').gate === 'PASS' &&
+@@ -212,7 +212,7 @@
+ const samplePatch = read('sampling-patch.json'), sampleAudit = read('sampling-audit.json');
+ const sample = validateSamplingCorrelationLedger(child, samplePatch, sampleAudit);
+ for (const [r, n] of [[samplePatch,12],[sampleAudit,18]]) demand(r.exactLinkedCount===n && r.records.length===n && r.sourceReceiptSha256===bindings['sample.json'] && Object.keys(r.logReadErrors).length===0, 'SAMPLE_LOG_BINDING');
+-const samplingPhase = validatePhaseCorrelation(samplePatch, sampleAudit, {accountPhases:true, runtimeAssembly:true, clientPreparation:true, clientSplit:true, engineCpu:true, authenticatedPreconnect:true, contractLoadSplit:true, contractLoadDetail:true, contractAwaitCheckpoint:true,contractPublicBoundaries:true,contractObserverCost:dir.endsWith('/r1'), sampling:true});
++const samplingPhase = validatePhaseCorrelation(samplePatch, sampleAudit, {accountPhases:true, runtimeAssembly:true, clientPreparation:true, clientSplit:true, engineCpu:true, authenticatedPreconnect:true, contractLoadSplit:true, contractLoadDetail:true, contractAwaitCheckpoint:true,contractPublicBoundaries:true,contractObserverCost:dir.endsWith('/r1'),ownedBoundaries:dir.endsWith('/r1'), sampling:true});
+ if (dir.endsWith('/r0')) demand(samplePatch.records.every(r => (r.contractObserverCost??[]).length===0), 'R0_SAMPLING_OBSERVER_OFF');
+ const observed = read('sampling-phases.json');
+ demand(observed.runtimeAssemblyRequired===true && observed.clientPreparationRequired===true && observed.engineCpuRequired===true && observed.authenticatedPreconnectRequired===true && observed.gate==='PASS' && observed.summaries.length===30 && observed.coldConflictRequired===false && observed.platformColdProofRequired===true, 'SAMPLING_PHASE_PROOF');
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r0/analyze-runtime.mjs
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r0/analyze-runtime.mjs
+@@ -3,7 +3,7 @@
+ import {dirname,join} from 'node:path';
+ import {fileURLToPath} from 'node:url';
+ import {validateRuntimeAssemblyPhases} from '../../../../../scripts/qa09-runtime-assembly-proof.mjs';
+-const dir=dirname(fileURLToPath(import.meta.url)),sha='5773ac9d7bad13d41c2d00e456f8b633fa939579';
++const dir=dirname(fileURLToPath(import.meta.url)),sha='41ee358fb92e4dae2ae4abba7eb9923996fe029b';
+ const names=['negative-phases.json','initial-phases.json','baseline-patch.json','baseline-audit.json','sampling-patch.json','sampling-audit.json'];
+ const bindings={},rows=[]; const seen=new Set();
+ const demand=(v,m)=>{if(!v)throw Error(m);};
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r1/collect-initial-phases.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r1/collect-initial-phases.py
+@@ -5,7 +5,7 @@
+ parent_bytes = (root/'sample.json.fixtures.json').read_bytes()
+ child_bytes = (root/'sample.json').read_bytes()
+ parent, child = json.loads(parent_bytes), json.loads(child_bytes)
+-assert parent['prefix'] == child['prefix'] and parent['sourceCommit'] == child['sourceCommit'] == '5773ac9d7bad13d41c2d00e456f8b633fa939579'
++assert parent['prefix'] == child['prefix'] and parent['sourceCommit'] == child['sourceCommit'] == '41ee358fb92e4dae2ae4abba7eb9923996fe029b'
+ uuid = re.compile(r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
+ ids = []
+ for row in parent['checks'] + child['checks']:
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r1/collect-correlations.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r1/collect-correlations.py
+@@ -10,7 +10,7 @@
+  (p/(name+'.exit')).write_text(str(code)+'\n');print(name,code,flush=True);return code
+ def collect(job):
+  name,flags=job
+- if p.name=='r1' and name.endswith('-patch'):flags=flags+['--observer-cost']
++ if p.name=='r1' and name.endswith('-patch'):flags=flags+['--observer-cost','--owned-boundaries']
+  first=p/(name+'-original.json');out=p/(name+'.json');assert not first.exists() and not out.exists()
+  code=call(name+'-original',['python3','scripts/collect-qa09-contract-correlation.py',str(p/'sample.json'),str(first)]+flags)
+  assert code==0 and first.exists(),'ORIGINAL_READ_REQUIRED'
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r1/check-unit.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r1/check-unit.py
+@@ -4,7 +4,7 @@
+ p=Path(__file__).parent
+ mode=p.name
+ assert mode in ['r0','r1']
+-flags=['--account-phases','--client-preparation','--client-split','--contract-load-split','--contract-load-detail','--contract-await-checkpoint','--contract-public-boundaries','--runtime-assembly']+(['--observer-cost'] if mode=='r1' else [])+['--engine-cpu']+(['--authenticated-preconnect'] if mode!='restore' else [])
++flags=['--account-phases','--client-preparation','--client-split','--contract-load-split','--contract-load-detail','--contract-await-checkpoint','--contract-public-boundaries','--runtime-assembly']+(['--observer-cost','--owned-boundaries'] if mode=='r1' else [])+['--engine-cpu']+(['--authenticated-preconnect'] if mode!='restore' else [])
+ def run(name,args):
+  (p/(name+'.command.json')).write_text(json.dumps(args,ensure_ascii=False,indent=2)+'\n')
+  with (p/(name+'.stdout.log')).open('w') as out,(p/(name+'.stderr.log')).open('w') as err:
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r1/collect-negative-phases.py
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r1/collect-negative-phases.py
+@@ -4,7 +4,7 @@
+ root = Path(__file__).parent
+ child_bytes = (root/'negative-get.json').read_bytes()
+ child=json.loads(child_bytes)
+-assert child['sourceCommit']=='5773ac9d7bad13d41c2d00e456f8b633fa939579' and len(child['rows'])==12 and child['gate']=='PASS'
++assert child['sourceCommit']=='41ee358fb92e4dae2ae4abba7eb9923996fe029b' and len(child['rows'])==12 and child['gate']=='PASS'
+ uuid=re.compile(r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
+ ids=[r['gatewayRequestId'] for r in child['rows']]
+ assert len(set(ids))==12 and all(uuid.fullmatch(i) for i in ids)
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r1/audit-empty.mjs
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r1/audit-empty.mjs
+@@ -5,7 +5,7 @@
+ const dir = dirname(fileURLToPath(import.meta.url));
+ const child = JSON.parse(readFileSync(join(dir, 'sample.json')));
+ const parent = JSON.parse(readFileSync(join(dir, existsSync(join(dir,'sample.json.fixtures.effective.json'))?'sample.json.fixtures.effective.json':'sample.json.fixtures.json')));
+-if (child.sourceCommit !== '5773ac9d7bad13d41c2d00e456f8b633fa939579' || child.prefix !== parent.prefix || parent.gate !== 'PASS' || !child.cleanupComplete || !child.cleanup.every(c => c.result === 'PASS') || !parent.cleanup.every(c => c.result === 'PASS')) throw Error('FINAL_OWN_CLEANUP_REQUIRED');
++if (child.sourceCommit !== '41ee358fb92e4dae2ae4abba7eb9923996fe029b' || child.prefix !== parent.prefix || parent.gate !== 'PASS' || !child.cleanupComplete || !child.cleanup.every(c => c.result === 'PASS') || !parent.cleanup.every(c => c.result === 'PASS')) throw Error('FINAL_OWN_CLEANUP_REQUIRED');
+ const first = parent.databaseBuilds.find(b => b.action === 'observe');
+ const initial = JSON.parse(readFileSync(first.receipt));
+ if (initial.gate !== 'PASS' || initial.result.prefix !== child.prefix || initial.result.action !== 'observe') throw Error('INITIAL_BASELINE_REQUIRED');
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r1/negative-get.mjs
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r1/negative-get.mjs
+@@ -5,7 +5,7 @@
+ import {observedHttpsFetch} from '../../../../../scripts/qa09-https-transport.mjs';
+ const dir=dirname(fileURLToPath(import.meta.url));
+ const version=JSON.parse(readFileSync(join(dir,'application-version.json')));
+-if(version.gate!=='PASS'||version.sourceCommit!=='5773ac9d7bad13d41c2d00e456f8b633fa939579')throw Error('VERSION_REQUIRED');
++if(version.gate!=='PASS'||version.sourceCommit!=='41ee358fb92e4dae2ae4abba7eb9923996fe029b')throw Error('VERSION_REQUIRED');
+ const rows=[];
+ const receipt={sourceCommit:version.sourceCommit,scope:'BOUNDED_NEGATIVE_GET_ONLY',gate:'RUNNING',startedAt:new Date().toISOString(),budget:{requests:12,maxConcurrency:6,deadlineMs:20000},rows,fullQa09Accepted:false,p95Accepted:false};
+ const save=()=>writeFileSync(join(dir,'negative-get.json'),JSON.stringify(receipt,null,2)+'\n');save();
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r1/verify-target.mjs
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r1/verify-target.mjs
+@@ -78,7 +78,7 @@
+     'CORRELATION_BINDING',
+   );
+ if (dir.endsWith('/r0')) demand(patch.records.every(r => (r.contractObserverCost??[]).length===0), 'R0_OBSERVER_OFF');
+-const phase = validatePhaseCorrelation(patch, audit, { accountPhases: true, runtimeAssembly: true, clientPreparation: true, clientSplit: true, engineCpu: true, authenticatedPreconnect: true, contractLoadSplit: true, contractLoadDetail: true, contractAwaitCheckpoint: true, contractPublicBoundaries: true, contractObserverCost: dir.endsWith('/r1'), requireColdConflict: false });
++const phase = validatePhaseCorrelation(patch, audit, { accountPhases: true, runtimeAssembly: true, clientPreparation: true, clientSplit: true, engineCpu: true, authenticatedPreconnect: true, contractLoadSplit: true, contractLoadDetail: true, contractAwaitCheckpoint: true, contractPublicBoundaries: true, contractObserverCost: dir.endsWith('/r1'), ownedBoundaries: dir.endsWith('/r1'), requireColdConflict: false });
+ demand(
+   phase.summaries.length === 25 &&
+     read('baseline-phases.json').gate === 'PASS' &&
+@@ -212,7 +212,7 @@
+ const samplePatch = read('sampling-patch.json'), sampleAudit = read('sampling-audit.json');
+ const sample = validateSamplingCorrelationLedger(child, samplePatch, sampleAudit);
+ for (const [r, n] of [[samplePatch,12],[sampleAudit,18]]) demand(r.exactLinkedCount===n && r.records.length===n && r.sourceReceiptSha256===bindings['sample.json'] && Object.keys(r.logReadErrors).length===0, 'SAMPLE_LOG_BINDING');
+-const samplingPhase = validatePhaseCorrelation(samplePatch, sampleAudit, {accountPhases:true, runtimeAssembly:true, clientPreparation:true, clientSplit:true, engineCpu:true, authenticatedPreconnect:true, contractLoadSplit:true, contractLoadDetail:true, contractAwaitCheckpoint:true,contractPublicBoundaries:true,contractObserverCost:dir.endsWith('/r1'), sampling:true});
++const samplingPhase = validatePhaseCorrelation(samplePatch, sampleAudit, {accountPhases:true, runtimeAssembly:true, clientPreparation:true, clientSplit:true, engineCpu:true, authenticatedPreconnect:true, contractLoadSplit:true, contractLoadDetail:true, contractAwaitCheckpoint:true,contractPublicBoundaries:true,contractObserverCost:dir.endsWith('/r1'),ownedBoundaries:dir.endsWith('/r1'), sampling:true});
+ if (dir.endsWith('/r0')) demand(samplePatch.records.every(r => (r.contractObserverCost??[]).length===0), 'R0_SAMPLING_OBSERVER_OFF');
+ const observed = read('sampling-phases.json');
+ demand(observed.runtimeAssemblyRequired===true && observed.clientPreparationRequired===true && observed.engineCpuRequired===true && observed.authenticatedPreconnectRequired===true && observed.gate==='PASS' && observed.summaries.length===30 && observed.coldConflictRequired===false && observed.platformColdProofRequired===true, 'SAMPLING_PHASE_PROOF');
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/r1/analyze-runtime.mjs
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/r1/analyze-runtime.mjs
+@@ -3,7 +3,7 @@
+ import {dirname,join} from 'node:path';
+ import {fileURLToPath} from 'node:url';
+ import {validateRuntimeAssemblyPhases} from '../../../../../scripts/qa09-runtime-assembly-proof.mjs';
+-const dir=dirname(fileURLToPath(import.meta.url)),sha='5773ac9d7bad13d41c2d00e456f8b633fa939579';
++const dir=dirname(fileURLToPath(import.meta.url)),sha='41ee358fb92e4dae2ae4abba7eb9923996fe029b';
+ const names=['negative-phases.json','initial-phases.json','baseline-patch.json','baseline-audit.json','sampling-patch.json','sampling-audit.json'];
+ const bindings={},rows=[]; const seen=new Set();
+ const demand=(v,m)=>{if(!v)throw Error(m);};
+--- docs/audit/evidence/qa-09-5773ac9-r0-r1-2026-10-11/restore/audit-empty.mjs
++++ docs/audit/evidence/qa-09-41ee358f-r0-r1-2026-10-11/restore/audit-empty.mjs
+@@ -15,7 +15,7 @@
+  const recovery=JSON.parse(readFileSync(recoveryPath)),hash=b=>createHash('sha256').update(b).digest('hex');
+  cleanupReady=recovery.gate==='PASS'&&recovery.sourceCommit===child.sourceCommit&&recovery.prefix===child.prefix&&recovery.originalExecutionGate==='FAIL'&&recovery.independentEmptyAudit==='PASS'&&recovery.cleanup.every(c=>c.result==='PASS')&&recovery.bindings['sample.json']===hash(readFileSync(join(dir,'../r0/sample.json')))&&recovery.bindings['sample.json.fixtures.json']===hash(readFileSync(join(dir,'../r0/sample.json.fixtures.json')));
+ }
+-if (child.sourceCommit !== '5773ac9d7bad13d41c2d00e456f8b633fa939579' || child.prefix !== parent.prefix || !cleanupReady) throw Error('FINAL_OWN_CLEANUP_REQUIRED');
++if (child.sourceCommit !== '41ee358fb92e4dae2ae4abba7eb9923996fe029b' || child.prefix !== parent.prefix || !cleanupReady) throw Error('FINAL_OWN_CLEANUP_REQUIRED');
+ const first = parent.databaseBuilds.find(b => b.action === 'observe');
+ const initial = JSON.parse(readFileSync(first.receipt));
+ if (initial.gate !== 'PASS' || initial.result.prefix !== child.prefix || initial.result.action !== 'observe') throw Error('INITIAL_BASELINE_REQUIRED');

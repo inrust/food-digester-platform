@@ -1,0 +1,3365 @@
+{
+  "gate": "PASS",
+  "scope": "CONTRACT_DATABASE_CONFLICT_AND_AUDIT_GET_PHASE_OBSERVATION",
+  "sourceCommit": "41ee358fb92e4dae2ae4abba7eb9923996fe029b",
+  "prefix": "qa09-78e09b93e9f8eafe",
+  "fullQa09Accepted": false,
+  "cleanupVerified": false,
+  "p95Accepted": false,
+  "accountPhasesRequired": true,
+  "clientPreparationRequired": true,
+  "clientSplitRequired": true,
+  "contractLoadSplitRequired": true,
+  "contractLoadDetailRequired": true,
+  "contractAwaitCheckpointRequired": true,
+  "contractPublicBoundariesRequired": true,
+  "engineCpuRequired": true,
+  "authenticatedPreconnectRequired": true,
+  "runtimeAssemblyRequired": true,
+  "coldConflictObservedCount": 1,
+  "applicationColdConflictObservedCount": 1,
+  "platformColdProofRequired": false,
+  "coldConflictRequired": true,
+  "summaries": [
+    {
+      "id": "race:1:a",
+      "status": 200,
+      "clientMs": 543,
+      "gatewayMs": 96,
+      "lambdaMs": 78,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-transaction-open",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-delegate",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-submit",
+          "durationMs": 10,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-await-queue",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-await-after-queue",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-await",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-prepare",
+          "durationMs": 11,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-before-pg",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-pg-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-submit",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-pg-await",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-pg",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-after-pg",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-await",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-result-to-model",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-result-after-model",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-result",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load",
+          "durationMs": 15,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-version-update",
+          "durationMs": 4,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-readback",
+          "durationMs": 12,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "audit-success-write",
+          "durationMs": 5,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction-callback",
+          "durationMs": 37,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction-finish",
+          "durationMs": 34,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction",
+          "durationMs": 73,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:1:b",
+      "status": 409,
+      "clientMs": 5335,
+      "gatewayMs": 88,
+      "lambdaMs": 72,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-transaction-open",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-delegate",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-await-queue",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-await-after-queue",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-await",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-prepare",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-before-pg",
+          "durationMs": 19,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-pg-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-submit",
+          "durationMs": 19,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-pg-await",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-pg",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-after-pg",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-await",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-query",
+          "durationMs": 21,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-result-to-model",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-result-after-model",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-result",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load",
+          "durationMs": 23,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-version-update",
+          "durationMs": 16,
+          "outcome": "FAIL",
+          "errorCode": "VERSION_CONFLICT",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction-callback",
+          "durationMs": 40,
+          "outcome": "FAIL",
+          "errorCode": "VERSION_CONFLICT",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction-finish",
+          "durationMs": 19,
+          "outcome": "FAIL",
+          "errorCode": "VERSION_CONFLICT",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction",
+          "durationMs": 62,
+          "outcome": "FAIL",
+          "errorCode": "VERSION_CONFLICT",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-failure-write",
+          "durationMs": 5,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:2:a",
+      "status": 200,
+      "clientMs": 523,
+      "gatewayMs": 37,
+      "lambdaMs": 21,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-transaction-open",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-delegate",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-await-queue",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-await-after-queue",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-await",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-before-pg",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-pg-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-submit",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-pg-await",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-pg",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-after-pg",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-await",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-result-to-model",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-result-after-model",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-result",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-version-update",
+          "durationMs": 5,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-readback",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "audit-success-write",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction-callback",
+          "durationMs": 13,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction-finish",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction",
+          "durationMs": 17,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:2:b",
+      "status": 409,
+      "clientMs": 584,
+      "gatewayMs": 88,
+      "lambdaMs": 40,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-transaction-open",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-delegate",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-await-queue",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-await-after-queue",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-await",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-before-pg",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-pg-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-submit",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-pg-await",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-pg",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-after-pg",
+          "durationMs": 11,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-await",
+          "durationMs": 13,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-query",
+          "durationMs": 13,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-result-to-model",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-result-after-model",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-result",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load",
+          "durationMs": 14,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-version-update",
+          "durationMs": 3,
+          "outcome": "FAIL",
+          "errorCode": "VERSION_CONFLICT",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction-callback",
+          "durationMs": 18,
+          "outcome": "FAIL",
+          "errorCode": "VERSION_CONFLICT",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction-finish",
+          "durationMs": 1,
+          "outcome": "FAIL",
+          "errorCode": "VERSION_CONFLICT",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction",
+          "durationMs": 21,
+          "outcome": "FAIL",
+          "errorCode": "VERSION_CONFLICT",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-failure-write",
+          "durationMs": 15,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:3:a",
+      "status": 409,
+      "clientMs": 3912,
+      "gatewayMs": 3471,
+      "lambdaMs": 3399,
+      "phases": [
+        {
+          "phase": "runtime-license-secret",
+          "durationMs": 339,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "runtime-database-secret",
+          "durationMs": 380,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "runtime-client-construct",
+          "durationMs": 217,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "runtime-route-assembly",
+          "durationMs": 283,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "runtime-initialize",
+          "durationMs": 901,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 379,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-adapter-connect",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-engine-after-adapter",
+          "durationMs": 558,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-engine-prepare",
+          "durationMs": 599,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-authenticated-preconnect",
+          "durationMs": 1020,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 38,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 5,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 43,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 42,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 180,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 1220,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-transaction-open",
+          "durationMs": 4,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-delegate",
+          "durationMs": 34,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-submit",
+          "durationMs": 38,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-await-queue",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-await-after-queue",
+          "durationMs": 540,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-await",
+          "durationMs": 540,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-prepare",
+          "durationMs": 578,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-before-pg",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-pg-submit",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-submit",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-pg-await",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-pg",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-after-pg",
+          "durationMs": 19,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-await",
+          "durationMs": 38,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-query",
+          "durationMs": 40,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-result-to-model",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-result-after-model",
+          "durationMs": 19,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-result",
+          "durationMs": 21,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load",
+          "durationMs": 673,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-version-update",
+          "durationMs": 79,
+          "outcome": "FAIL",
+          "errorCode": "VERSION_CONFLICT",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction-callback",
+          "durationMs": 753,
+          "outcome": "FAIL",
+          "errorCode": "VERSION_CONFLICT",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction-finish",
+          "durationMs": 40,
+          "outcome": "FAIL",
+          "errorCode": "VERSION_CONFLICT",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction",
+          "durationMs": 798,
+          "outcome": "FAIL",
+          "errorCode": "VERSION_CONFLICT",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-failure-write",
+          "durationMs": 65,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:3:b",
+      "status": 200,
+      "clientMs": 471,
+      "gatewayMs": 43,
+      "lambdaMs": 23,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-transaction-open",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-delegate",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-await-queue",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-await-after-queue",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-await",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-orm-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-before-pg",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-pg-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-submit",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-pg-await",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-pg",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-after-pg",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-driver-await",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-driver-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-load-result-to-model",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-result-after-model",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load-result",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-load",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "contract-version-update",
+          "durationMs": 8,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "contract-readback",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "audit-success-write",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction-callback",
+          "durationMs": 16,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction-finish",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-transaction",
+          "durationMs": 19,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-list",
+      "status": 200,
+      "clientMs": 634,
+      "gatewayMs": 133,
+      "lambdaMs": 113,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 31,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 32,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-list-query",
+          "durationMs": 62,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 15,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:0dbd0ebc-185c-46d6-8184-d2eb10e4f18f:sample-1",
+      "status": 200,
+      "clientMs": 615,
+      "gatewayMs": 125,
+      "lambdaMs": 81,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 18,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 38,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 58,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 58,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:0dbd0ebc-185c-46d6-8184-d2eb10e4f18f:sample-2",
+      "status": 200,
+      "clientMs": 538,
+      "gatewayMs": 100,
+      "lambdaMs": 80,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 56,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 56,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 4,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 16,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:0dbd0ebc-185c-46d6-8184-d2eb10e4f18f:sample-3",
+      "status": 200,
+      "clientMs": 521,
+      "gatewayMs": 82,
+      "lambdaMs": 42,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 36,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 36,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:43f3c7fc-3011-46f0-91e1-ab09fc3ad370:sample-1",
+      "status": 200,
+      "clientMs": 573,
+      "gatewayMs": 133,
+      "lambdaMs": 76,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 18,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 35,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 35,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 19,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:43f3c7fc-3011-46f0-91e1-ab09fc3ad370:sample-2",
+      "status": 200,
+      "clientMs": 497,
+      "gatewayMs": 53,
+      "lambdaMs": 10,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 6,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:43f3c7fc-3011-46f0-91e1-ab09fc3ad370:sample-3",
+      "status": 200,
+      "clientMs": 518,
+      "gatewayMs": 78,
+      "lambdaMs": 50,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 30,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 16,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:6d98439d-0f22-4e93-9ec2-459022e15788:sample-1",
+      "status": 200,
+      "clientMs": 1221,
+      "gatewayMs": 93,
+      "lambdaMs": 33,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 27,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 27,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:6d98439d-0f22-4e93-9ec2-459022e15788:sample-2",
+      "status": 200,
+      "clientMs": 492,
+      "gatewayMs": 54,
+      "lambdaMs": 37,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 6,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 13,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 13,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 17,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:6d98439d-0f22-4e93-9ec2-459022e15788:sample-3",
+      "status": 200,
+      "clientMs": 478,
+      "gatewayMs": 39,
+      "lambdaMs": 21,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 16,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:fd582998-91dd-4c27-a1dd-130845337a1d:sample-1",
+      "status": 200,
+      "clientMs": 496,
+      "gatewayMs": 58,
+      "lambdaMs": 39,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 4,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 4,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 32,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:fd582998-91dd-4c27-a1dd-130845337a1d:sample-2",
+      "status": 200,
+      "clientMs": 557,
+      "gatewayMs": 119,
+      "lambdaMs": 90,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 10,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 40,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 40,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:fd582998-91dd-4c27-a1dd-130845337a1d:sample-3",
+      "status": 200,
+      "clientMs": 558,
+      "gatewayMs": 118,
+      "lambdaMs": 99,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 7,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 13,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 13,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 31,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:ed32b7ab-ef6c-4c1c-b6fa-05a27f6d0f2f:sample-1",
+      "status": 200,
+      "clientMs": 515,
+      "gatewayMs": 74,
+      "lambdaMs": 58,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 4,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 4,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 13,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:ed32b7ab-ef6c-4c1c-b6fa-05a27f6d0f2f:sample-2",
+      "status": 200,
+      "clientMs": 478,
+      "gatewayMs": 38,
+      "lambdaMs": 8,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 4,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:ed32b7ab-ef6c-4c1c-b6fa-05a27f6d0f2f:sample-3",
+      "status": 200,
+      "clientMs": 557,
+      "gatewayMs": 115,
+      "lambdaMs": 65,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 18,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 19,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 22,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 61,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 61,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:bb403e21-251c-4acc-beac-07a3c751ba3b:sample-1",
+      "status": 200,
+      "clientMs": 493,
+      "gatewayMs": 31,
+      "lambdaMs": 12,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 1,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 7,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 8,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 8,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:bb403e21-251c-4acc-beac-07a3c751ba3b:sample-2",
+      "status": 200,
+      "clientMs": 482,
+      "gatewayMs": 43,
+      "lambdaMs": 7,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 3,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    },
+    {
+      "id": "race:audit-detail:bb403e21-251c-4acc-beac-07a3c751ba3b:sample-3",
+      "status": 200,
+      "clientMs": 599,
+      "gatewayMs": 160,
+      "lambdaMs": 98,
+      "phases": [
+        {
+          "phase": "admin-authenticate",
+          "durationMs": 2,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-observer-setup",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-submit",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-await-dispatch",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-client-prepare",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "db-first-connection",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "db-first-query",
+          "durationMs": 35,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-query",
+          "durationMs": 56,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "admin-account-hook",
+          "durationMs": 56,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-detail-query",
+          "durationMs": 20,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": true
+        },
+        {
+          "phase": "audit-view",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        },
+        {
+          "phase": "response-serialize",
+          "durationMs": 0,
+          "outcome": "PASS",
+          "errorCode": "NONE",
+          "includesConnectionWait": false
+        }
+      ]
+    }
+  ],
+  "preconnectCheckerSha256": "ab4a89608dd2535b59482e08e13f0a0b6c697ef541c0b4b360e549e6d6f95175",
+  "checkerSha256": "35683e3dbcac517ec0b074e0a27132e97f8ec931b09ccb13a7128a03d3721464",
+  "clientSplitCheckerSha256": "2c8812a8d775a86052ec53aa607b2d597c3de924418d2b61b764393496764559",
+  "contractLoadCheckerSha256": "d915105663fec9e188b8021ecb0a5370cbfc2f54c2ac2169e95a5b2dffc8a8d9",
+  "contractLoadDetailCheckerSha256": "4068b83c3958987b0600e3b002b9993581db055047042dc396ac73973b085a77",
+  "contractObserverCheckerSha256": "6c4716e9d173c432e5240bba128e728c34094bb515fab0e0d8cf08c2b48ce48e",
+  "contractPublicCheckerSha256": "b8de61ecc0101fad06534f2f496d06bff5ab5692c49a684a2c1bc73fe169853b"
+}

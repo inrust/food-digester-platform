@@ -1,0 +1,1717 @@
+{
+  "gate": "DESCRIPTIVE_ONLY",
+  "scope": "AVAILABLE_ORIGINAL_R1_BASELINE_6_PATCH_19_AUDIT_AND_SAMPLING_18_AUDIT_ONLY",
+  "sourceCommit": "41ee358fb92e4dae2ae4abba7eb9923996fe029b",
+  "prefix": "qa09-0ed6354b6d1c3643",
+  "baselinePhaseGate": "PASS",
+  "fullR1StageGate": "FAIL",
+  "missingSamplingPatchInvocations": 12,
+  "summaries": [
+    {
+      "id": "race:1:a",
+      "requestId": "b098578c-3f00-4244-afc4-d18369960dfa",
+      "physicalCold": false,
+      "clientMs": 577,
+      "phaseMs": {
+        "contract-load-delegate": 1,
+        "contract-load-orm-submit": 0,
+        "contract-load-await-queue": 0,
+        "contract-load-await-after-queue": 0,
+        "contract-load-orm-await": 1,
+        "contract-load-orm-prepare": 1,
+        "contract-load-driver-before-pg": 0,
+        "contract-load-pg-submit": 0,
+        "contract-load-driver-submit": 1,
+        "contract-load-pg-await": 1,
+        "contract-load-driver-pg": 1,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-driver-await": 1,
+        "contract-load-driver-query": 2,
+        "contract-load-result-to-model": 0,
+        "contract-load-result-after-model": 0,
+        "contract-load-result": 0,
+        "contract-load": 4
+      },
+      "summary": {
+        "event": "data-path.contract-load.observer-cost",
+        "schemaVersion": 2,
+        "gatewayRequestId": "b098578c-3f00-4244-afc4-d18369960dfa",
+        "lambdaRequestId": "1ffdd2fe-0f46-476a-8169-871eeafccf35",
+        "operationId": "updateContract",
+        "status": "COMPLETE",
+        "publicOutcome": "RETURNED",
+        "processCpuScope": "PROCESS_ALL_THREADS",
+        "cpuSubtractionAllowed": false,
+        "compilerOnlyAttribution": false,
+        "intervalRecords": 19,
+        "publicCalls": 1,
+        "overflow": 0,
+        "nestedOutputs": 0,
+        "foreignOutputs": 0,
+        "probeFailures": 0,
+        "outsideOutputs": 12,
+        "ambiguousOutputs": 0,
+        "unresolvedOutputs": 0,
+        "segments": [
+          {
+            "name": "driver-prefix",
+            "wallUs": 349,
+            "outputWallUs": 115,
+            "outputProcessCpuUs": 116,
+            "unattributedWallUs": 234
+          },
+          {
+            "name": "public-call",
+            "wallUs": 551,
+            "outputWallUs": 109,
+            "outputProcessCpuUs": 109,
+            "unattributedWallUs": 442
+          },
+          {
+            "name": "driver-return-tail",
+            "wallUs": 25,
+            "outputWallUs": 0,
+            "outputProcessCpuUs": 0,
+            "unattributedWallUs": 25
+          },
+          {
+            "name": "after-model",
+            "wallUs": 122,
+            "outputWallUs": 48,
+            "outputProcessCpuUs": 47,
+            "unattributedWallUs": 74
+          }
+        ],
+        "ownedBoundaries": {
+          "seam": "SELF_OWNED_CALL_SITES",
+          "includesObservationOverhead": true,
+          "afterQueueWallUs": 469,
+          "segments": [
+            {
+              "name": "checkpoint-phase-setup",
+              "wallUs": 130
+            },
+            {
+              "name": "checkpoint-output-return",
+              "wallUs": 92
+            },
+            {
+              "name": "after-checkpoint-to-dispatch",
+              "wallUs": 247
+            },
+            {
+              "name": "repository-driver-setup",
+              "wallUs": 290
+            },
+            {
+              "name": "observer-public-bridge",
+              "wallUs": 59
+            },
+            {
+              "name": "public-callback-setup",
+              "wallUs": 29
+            }
+          ]
+        },
+        "logTimestampMs": 1791726850756
+      }
+    },
+    {
+      "id": "race:1:b",
+      "requestId": "dc69f084-eb11-497c-af34-7a03fa40f14f",
+      "physicalCold": false,
+      "clientMs": 3076,
+      "phaseMs": {
+        "contract-load-delegate": 0,
+        "contract-load-orm-submit": 0,
+        "contract-load-await-queue": 0,
+        "contract-load-await-after-queue": 0,
+        "contract-load-orm-await": 0,
+        "contract-load-orm-prepare": 1,
+        "contract-load-driver-before-pg": 0,
+        "contract-load-pg-submit": 0,
+        "contract-load-driver-submit": 1,
+        "contract-load-pg-await": 1,
+        "contract-load-driver-pg": 1,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-driver-await": 1,
+        "contract-load-driver-query": 2,
+        "contract-load-result-to-model": 0,
+        "contract-load-result-after-model": 0,
+        "contract-load-result": 0,
+        "contract-load": 3
+      },
+      "summary": {
+        "event": "data-path.contract-load.observer-cost",
+        "schemaVersion": 2,
+        "gatewayRequestId": "dc69f084-eb11-497c-af34-7a03fa40f14f",
+        "lambdaRequestId": "567b9a2e-afd2-4a02-b4dd-c770a6361a37",
+        "operationId": "updateContract",
+        "status": "COMPLETE",
+        "publicOutcome": "RETURNED",
+        "processCpuScope": "PROCESS_ALL_THREADS",
+        "cpuSubtractionAllowed": false,
+        "compilerOnlyAttribution": false,
+        "intervalRecords": 19,
+        "publicCalls": 1,
+        "overflow": 0,
+        "nestedOutputs": 0,
+        "foreignOutputs": 0,
+        "probeFailures": 0,
+        "outsideOutputs": 12,
+        "ambiguousOutputs": 0,
+        "unresolvedOutputs": 0,
+        "segments": [
+          {
+            "name": "driver-prefix",
+            "wallUs": 375,
+            "outputWallUs": 272,
+            "outputProcessCpuUs": 321,
+            "unattributedWallUs": 103
+          },
+          {
+            "name": "public-call",
+            "wallUs": 480,
+            "outputWallUs": 190,
+            "outputProcessCpuUs": 90,
+            "unattributedWallUs": 290
+          },
+          {
+            "name": "driver-return-tail",
+            "wallUs": 10,
+            "outputWallUs": 0,
+            "outputProcessCpuUs": 0,
+            "unattributedWallUs": 10
+          },
+          {
+            "name": "after-model",
+            "wallUs": 86,
+            "outputWallUs": 34,
+            "outputProcessCpuUs": 34,
+            "unattributedWallUs": 52
+          }
+        ],
+        "ownedBoundaries": {
+          "seam": "SELF_OWNED_CALL_SITES",
+          "includesObservationOverhead": true,
+          "afterQueueWallUs": 339,
+          "segments": [
+            {
+              "name": "checkpoint-phase-setup",
+              "wallUs": 20
+            },
+            {
+              "name": "checkpoint-output-return",
+              "wallUs": 51
+            },
+            {
+              "name": "after-checkpoint-to-dispatch",
+              "wallUs": 268
+            },
+            {
+              "name": "repository-driver-setup",
+              "wallUs": 368
+            },
+            {
+              "name": "observer-public-bridge",
+              "wallUs": 7
+            },
+            {
+              "name": "public-callback-setup",
+              "wallUs": 10
+            }
+          ]
+        },
+        "logTimestampMs": 1791726851891
+      }
+    },
+    {
+      "id": "race:2:a",
+      "requestId": "178e955f-40ea-4f96-a289-3a66e0547365",
+      "physicalCold": false,
+      "clientMs": 502,
+      "phaseMs": {
+        "contract-load-delegate": 0,
+        "contract-load-orm-submit": 0,
+        "contract-load-await-queue": 0,
+        "contract-load-await-after-queue": 0,
+        "contract-load-orm-await": 0,
+        "contract-load-orm-prepare": 1,
+        "contract-load-driver-before-pg": 0,
+        "contract-load-pg-submit": 0,
+        "contract-load-driver-submit": 1,
+        "contract-load-pg-await": 1,
+        "contract-load-driver-pg": 1,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-driver-await": 1,
+        "contract-load-driver-query": 2,
+        "contract-load-result-to-model": 0,
+        "contract-load-result-after-model": 0,
+        "contract-load-result": 0,
+        "contract-load": 3
+      },
+      "summary": {
+        "event": "data-path.contract-load.observer-cost",
+        "schemaVersion": 2,
+        "gatewayRequestId": "178e955f-40ea-4f96-a289-3a66e0547365",
+        "lambdaRequestId": "173aaf81-c82e-43ae-bee8-f59b1c9b1039",
+        "operationId": "updateContract",
+        "status": "COMPLETE",
+        "publicOutcome": "RETURNED",
+        "processCpuScope": "PROCESS_ALL_THREADS",
+        "cpuSubtractionAllowed": false,
+        "compilerOnlyAttribution": false,
+        "intervalRecords": 19,
+        "publicCalls": 1,
+        "overflow": 0,
+        "nestedOutputs": 0,
+        "foreignOutputs": 0,
+        "probeFailures": 0,
+        "outsideOutputs": 12,
+        "ambiguousOutputs": 0,
+        "unresolvedOutputs": 0,
+        "segments": [
+          {
+            "name": "driver-prefix",
+            "wallUs": 184,
+            "outputWallUs": 116,
+            "outputProcessCpuUs": 118,
+            "unattributedWallUs": 68
+          },
+          {
+            "name": "public-call",
+            "wallUs": 368,
+            "outputWallUs": 79,
+            "outputProcessCpuUs": 77,
+            "unattributedWallUs": 289
+          },
+          {
+            "name": "driver-return-tail",
+            "wallUs": 4,
+            "outputWallUs": 0,
+            "outputProcessCpuUs": 0,
+            "unattributedWallUs": 4
+          },
+          {
+            "name": "after-model",
+            "wallUs": 83,
+            "outputWallUs": 32,
+            "outputProcessCpuUs": 33,
+            "unattributedWallUs": 51
+          }
+        ],
+        "ownedBoundaries": {
+          "seam": "SELF_OWNED_CALL_SITES",
+          "includesObservationOverhead": true,
+          "afterQueueWallUs": 288,
+          "segments": [
+            {
+              "name": "checkpoint-phase-setup",
+              "wallUs": 18
+            },
+            {
+              "name": "checkpoint-output-return",
+              "wallUs": 47
+            },
+            {
+              "name": "after-checkpoint-to-dispatch",
+              "wallUs": 223
+            },
+            {
+              "name": "repository-driver-setup",
+              "wallUs": 179
+            },
+            {
+              "name": "observer-public-bridge",
+              "wallUs": 5
+            },
+            {
+              "name": "public-callback-setup",
+              "wallUs": 3
+            }
+          ]
+        },
+        "logTimestampMs": 1791726854734
+      }
+    },
+    {
+      "id": "race:2:b",
+      "requestId": "e36eec45-d50e-4691-b826-9c2eb29cad77",
+      "physicalCold": false,
+      "clientMs": 1235,
+      "phaseMs": {
+        "contract-load-delegate": 0,
+        "contract-load-orm-submit": 0,
+        "contract-load-await-queue": 0,
+        "contract-load-await-after-queue": 0,
+        "contract-load-orm-await": 1,
+        "contract-load-orm-prepare": 1,
+        "contract-load-driver-before-pg": 0,
+        "contract-load-pg-submit": 0,
+        "contract-load-driver-submit": 1,
+        "contract-load-pg-await": 1,
+        "contract-load-driver-pg": 1,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-driver-await": 1,
+        "contract-load-driver-query": 2,
+        "contract-load-result-to-model": 0,
+        "contract-load-result-after-model": 0,
+        "contract-load-result": 0,
+        "contract-load": 3
+      },
+      "summary": {
+        "event": "data-path.contract-load.observer-cost",
+        "schemaVersion": 2,
+        "gatewayRequestId": "e36eec45-d50e-4691-b826-9c2eb29cad77",
+        "lambdaRequestId": "2f117ebb-e840-4abb-8305-c676ff6c65a4",
+        "operationId": "updateContract",
+        "status": "COMPLETE",
+        "publicOutcome": "RETURNED",
+        "processCpuScope": "PROCESS_ALL_THREADS",
+        "cpuSubtractionAllowed": false,
+        "compilerOnlyAttribution": false,
+        "intervalRecords": 19,
+        "publicCalls": 1,
+        "overflow": 0,
+        "nestedOutputs": 0,
+        "foreignOutputs": 0,
+        "probeFailures": 0,
+        "outsideOutputs": 12,
+        "ambiguousOutputs": 0,
+        "unresolvedOutputs": 0,
+        "segments": [
+          {
+            "name": "driver-prefix",
+            "wallUs": 364,
+            "outputWallUs": 275,
+            "outputProcessCpuUs": 159,
+            "unattributedWallUs": 89
+          },
+          {
+            "name": "public-call",
+            "wallUs": 420,
+            "outputWallUs": 163,
+            "outputProcessCpuUs": 530,
+            "unattributedWallUs": 257
+          },
+          {
+            "name": "driver-return-tail",
+            "wallUs": 4,
+            "outputWallUs": 0,
+            "outputProcessCpuUs": 0,
+            "unattributedWallUs": 4
+          },
+          {
+            "name": "after-model",
+            "wallUs": 81,
+            "outputWallUs": 30,
+            "outputProcessCpuUs": 30,
+            "unattributedWallUs": 51
+          }
+        ],
+        "ownedBoundaries": {
+          "seam": "SELF_OWNED_CALL_SITES",
+          "includesObservationOverhead": true,
+          "afterQueueWallUs": 380,
+          "segments": [
+            {
+              "name": "checkpoint-phase-setup",
+              "wallUs": 30
+            },
+            {
+              "name": "checkpoint-output-return",
+              "wallUs": 111
+            },
+            {
+              "name": "after-checkpoint-to-dispatch",
+              "wallUs": 239
+            },
+            {
+              "name": "repository-driver-setup",
+              "wallUs": 357
+            },
+            {
+              "name": "observer-public-bridge",
+              "wallUs": 7
+            },
+            {
+              "name": "public-callback-setup",
+              "wallUs": 4
+            }
+          ]
+        },
+        "logTimestampMs": 1791726854777
+      }
+    },
+    {
+      "id": "race:3:a",
+      "requestId": "2dd6880c-b7f5-4839-abd8-4843ac0b3dd4",
+      "physicalCold": true,
+      "clientMs": 3885,
+      "phaseMs": {
+        "contract-load-delegate": 99,
+        "contract-load-orm-submit": 73,
+        "contract-load-await-queue": 0,
+        "contract-load-await-after-queue": 562,
+        "contract-load-orm-await": 562,
+        "contract-load-orm-prepare": 635,
+        "contract-load-driver-before-pg": 18,
+        "contract-load-pg-submit": 21,
+        "contract-load-driver-submit": 39,
+        "contract-load-pg-await": 3,
+        "contract-load-driver-pg": 23,
+        "contract-load-driver-after-pg": 17,
+        "contract-load-driver-await": 19,
+        "contract-load-driver-query": 58,
+        "contract-load-result-to-model": 2,
+        "contract-load-result-after-model": 1,
+        "contract-load-result": 3,
+        "contract-load": 795
+      },
+      "summary": {
+        "event": "data-path.contract-load.observer-cost",
+        "schemaVersion": 2,
+        "gatewayRequestId": "2dd6880c-b7f5-4839-abd8-4843ac0b3dd4",
+        "lambdaRequestId": "1155715b-5a19-45d1-9605-11730c632e11",
+        "operationId": "updateContract",
+        "status": "COMPLETE",
+        "publicOutcome": "RETURNED",
+        "processCpuScope": "PROCESS_ALL_THREADS",
+        "cpuSubtractionAllowed": false,
+        "compilerOnlyAttribution": false,
+        "intervalRecords": 19,
+        "publicCalls": 1,
+        "overflow": 0,
+        "nestedOutputs": 0,
+        "foreignOutputs": 0,
+        "probeFailures": 0,
+        "outsideOutputs": 12,
+        "ambiguousOutputs": 0,
+        "unresolvedOutputs": 0,
+        "segments": [
+          {
+            "name": "driver-prefix",
+            "wallUs": 585,
+            "outputWallUs": 241,
+            "outputProcessCpuUs": 591,
+            "unattributedWallUs": 344
+          },
+          {
+            "name": "public-call",
+            "wallUs": 38016,
+            "outputWallUs": 265,
+            "outputProcessCpuUs": 1213,
+            "unattributedWallUs": 37751
+          },
+          {
+            "name": "driver-return-tail",
+            "wallUs": 35,
+            "outputWallUs": 0,
+            "outputProcessCpuUs": 0,
+            "unattributedWallUs": 35
+          },
+          {
+            "name": "after-model",
+            "wallUs": 691,
+            "outputWallUs": 84,
+            "outputProcessCpuUs": 1963,
+            "unattributedWallUs": 607
+          }
+        ],
+        "ownedBoundaries": {
+          "seam": "SELF_OWNED_CALL_SITES",
+          "includesObservationOverhead": true,
+          "afterQueueWallUs": 561538,
+          "segments": [
+            {
+              "name": "checkpoint-phase-setup",
+              "wallUs": 19394
+            },
+            {
+              "name": "checkpoint-output-return",
+              "wallUs": 20015
+            },
+            {
+              "name": "after-checkpoint-to-dispatch",
+              "wallUs": 522129
+            },
+            {
+              "name": "repository-driver-setup",
+              "wallUs": 520
+            },
+            {
+              "name": "observer-public-bridge",
+              "wallUs": 65
+            },
+            {
+              "name": "public-callback-setup",
+              "wallUs": 17061
+            }
+          ]
+        },
+        "logTimestampMs": 1791726860072
+      }
+    },
+    {
+      "id": "race:3:b",
+      "requestId": "9de51296-12ff-4f68-a279-aff977f18b40",
+      "physicalCold": false,
+      "clientMs": 524,
+      "phaseMs": {
+        "contract-load-delegate": 0,
+        "contract-load-orm-submit": 0,
+        "contract-load-await-queue": 0,
+        "contract-load-await-after-queue": 0,
+        "contract-load-orm-await": 0,
+        "contract-load-orm-prepare": 1,
+        "contract-load-driver-before-pg": 0,
+        "contract-load-pg-submit": 0,
+        "contract-load-driver-submit": 4,
+        "contract-load-pg-await": 4,
+        "contract-load-driver-pg": 4,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-driver-await": 0,
+        "contract-load-driver-query": 4,
+        "contract-load-result-to-model": 0,
+        "contract-load-result-after-model": 0,
+        "contract-load-result": 0,
+        "contract-load": 5
+      },
+      "summary": {
+        "event": "data-path.contract-load.observer-cost",
+        "schemaVersion": 2,
+        "gatewayRequestId": "9de51296-12ff-4f68-a279-aff977f18b40",
+        "lambdaRequestId": "a8af8512-5382-4d3f-932d-f2086c798d17",
+        "operationId": "updateContract",
+        "status": "COMPLETE",
+        "publicOutcome": "RETURNED",
+        "processCpuScope": "PROCESS_ALL_THREADS",
+        "cpuSubtractionAllowed": false,
+        "compilerOnlyAttribution": false,
+        "intervalRecords": 19,
+        "publicCalls": 1,
+        "overflow": 0,
+        "nestedOutputs": 0,
+        "foreignOutputs": 0,
+        "probeFailures": 0,
+        "outsideOutputs": 12,
+        "ambiguousOutputs": 0,
+        "unresolvedOutputs": 0,
+        "segments": [
+          {
+            "name": "driver-prefix",
+            "wallUs": 174,
+            "outputWallUs": 109,
+            "outputProcessCpuUs": 105,
+            "unattributedWallUs": 65
+          },
+          {
+            "name": "public-call",
+            "wallUs": 3796,
+            "outputWallUs": 69,
+            "outputProcessCpuUs": 68,
+            "unattributedWallUs": 3727
+          },
+          {
+            "name": "driver-return-tail",
+            "wallUs": 15,
+            "outputWallUs": 0,
+            "outputProcessCpuUs": 0,
+            "unattributedWallUs": 15
+          },
+          {
+            "name": "after-model",
+            "wallUs": 87,
+            "outputWallUs": 31,
+            "outputProcessCpuUs": 31,
+            "unattributedWallUs": 56
+          }
+        ],
+        "ownedBoundaries": {
+          "seam": "SELF_OWNED_CALL_SITES",
+          "includesObservationOverhead": true,
+          "afterQueueWallUs": 280,
+          "segments": [
+            {
+              "name": "checkpoint-phase-setup",
+              "wallUs": 25
+            },
+            {
+              "name": "checkpoint-output-return",
+              "wallUs": 58
+            },
+            {
+              "name": "after-checkpoint-to-dispatch",
+              "wallUs": 197
+            },
+            {
+              "name": "repository-driver-setup",
+              "wallUs": 165
+            },
+            {
+              "name": "observer-public-bridge",
+              "wallUs": 9
+            },
+            {
+              "name": "public-callback-setup",
+              "wallUs": 9
+            }
+          ]
+        },
+        "logTimestampMs": 1791726857012
+      }
+    }
+  ],
+  "requestCount": 43,
+  "transportRows": [
+    {
+      "group": "baseline-patch.json",
+      "id": "race:1:a",
+      "requestId": "b098578c-3f00-4244-afc4-d18369960dfa",
+      "status": 200,
+      "clientMs": 577,
+      "lambdaMs": 66,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 1,
+        "requestSentAtMs": 1,
+        "headersAtMs": 577,
+        "responseWaitMs": 576,
+        "firstBodyAtMs": 577,
+        "bodyEndAtMs": 577,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-patch.json",
+      "id": "race:1:b",
+      "requestId": "dc69f084-eb11-497c-af34-7a03fa40f14f",
+      "status": 409,
+      "clientMs": 3076,
+      "lambdaMs": 60,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": 1,
+        "tcpMs": 733,
+        "tlsMs": 427,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 1162,
+        "headersAtMs": 3076,
+        "responseWaitMs": 1914,
+        "firstBodyAtMs": 3076,
+        "bodyEndAtMs": 3076,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": false
+      }
+    },
+    {
+      "group": "baseline-patch.json",
+      "id": "race:2:a",
+      "requestId": "178e955f-40ea-4f96-a289-3a66e0547365",
+      "status": 200,
+      "clientMs": 502,
+      "lambdaMs": 44,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 1,
+        "requestSentAtMs": 1,
+        "headersAtMs": 501,
+        "responseWaitMs": 500,
+        "firstBodyAtMs": 501,
+        "bodyEndAtMs": 502,
+        "bodyReadMs": 1,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-patch.json",
+      "id": "race:2:b",
+      "requestId": "e36eec45-d50e-4691-b826-9c2eb29cad77",
+      "status": 409,
+      "clientMs": 1235,
+      "lambdaMs": 51,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 1235,
+        "responseWaitMs": 1235,
+        "firstBodyAtMs": 1235,
+        "bodyEndAtMs": 1235,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-patch.json",
+      "id": "race:3:a",
+      "requestId": "2dd6880c-b7f5-4839-abd8-4843ac0b3dd4",
+      "status": 409,
+      "clientMs": 3885,
+      "lambdaMs": 3361,
+      "physicalCold": true,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 1,
+        "requestSentAtMs": 2,
+        "headersAtMs": 3885,
+        "responseWaitMs": 3883,
+        "firstBodyAtMs": 3885,
+        "bodyEndAtMs": 3885,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-patch.json",
+      "id": "race:3:b",
+      "requestId": "9de51296-12ff-4f68-a279-aff977f18b40",
+      "status": 200,
+      "clientMs": 524,
+      "lambdaMs": 16,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 522,
+        "responseWaitMs": 522,
+        "firstBodyAtMs": 523,
+        "bodyEndAtMs": 524,
+        "bodyReadMs": 2,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-list",
+      "requestId": "88c8434f-1e42-4c41-96a1-691260320c04",
+      "status": 200,
+      "clientMs": 670,
+      "lambdaMs": 163,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 670,
+        "responseWaitMs": 670,
+        "firstBodyAtMs": 670,
+        "bodyEndAtMs": 670,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:cdbb6db3-d549-4351-b900-a3117bc2d25a:sample-1",
+      "requestId": "1bca8ae8-74e0-420f-8752-426c42cdcbe5",
+      "status": 200,
+      "clientMs": 658,
+      "lambdaMs": 152,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 658,
+        "responseWaitMs": 658,
+        "firstBodyAtMs": 658,
+        "bodyEndAtMs": 658,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:cdbb6db3-d549-4351-b900-a3117bc2d25a:sample-2",
+      "requestId": "dec7cc44-1aa0-4d59-a98f-d89aa0215988",
+      "status": 200,
+      "clientMs": 570,
+      "lambdaMs": 110,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 569,
+        "responseWaitMs": 569,
+        "firstBodyAtMs": 569,
+        "bodyEndAtMs": 569,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:cdbb6db3-d549-4351-b900-a3117bc2d25a:sample-3",
+      "requestId": "985e9134-f092-4de0-8913-8cf6b0a7592b",
+      "status": 200,
+      "clientMs": 512,
+      "lambdaMs": 34,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 511,
+        "responseWaitMs": 511,
+        "firstBodyAtMs": 512,
+        "bodyEndAtMs": 512,
+        "bodyReadMs": 1,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:312faef0-ad2c-45e9-81ff-9cd2b0cf3ac9:sample-1",
+      "requestId": "829673ba-ef8a-417c-91c5-15d8de483c7d",
+      "status": 200,
+      "clientMs": 647,
+      "lambdaMs": 102,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 646,
+        "responseWaitMs": 646,
+        "firstBodyAtMs": 647,
+        "bodyEndAtMs": 647,
+        "bodyReadMs": 1,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:312faef0-ad2c-45e9-81ff-9cd2b0cf3ac9:sample-2",
+      "requestId": "aaf57078-7eb5-4b3d-bbb6-7b1fc5b5a455",
+      "status": 200,
+      "clientMs": 503,
+      "lambdaMs": 43,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 502,
+        "responseWaitMs": 502,
+        "firstBodyAtMs": 502,
+        "bodyEndAtMs": 502,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:312faef0-ad2c-45e9-81ff-9cd2b0cf3ac9:sample-3",
+      "requestId": "c041d55b-6fa1-405c-988f-e24c956e6cf5",
+      "status": 200,
+      "clientMs": 665,
+      "lambdaMs": 190,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 664,
+        "responseWaitMs": 664,
+        "firstBodyAtMs": 665,
+        "bodyEndAtMs": 665,
+        "bodyReadMs": 1,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:8de05854-6a3d-42ed-a810-02a5a5540235:sample-1",
+      "requestId": "f623b04a-33e6-47c5-80a6-2f02f97b0320",
+      "status": 200,
+      "clientMs": 1288,
+      "lambdaMs": 94,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 1,
+        "headersAtMs": 1288,
+        "responseWaitMs": 1287,
+        "firstBodyAtMs": 1288,
+        "bodyEndAtMs": 1288,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:8de05854-6a3d-42ed-a810-02a5a5540235:sample-2",
+      "requestId": "087b04e1-4792-44c6-b007-033407e9a59f",
+      "status": 200,
+      "clientMs": 497,
+      "lambdaMs": 39,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 497,
+        "responseWaitMs": 497,
+        "firstBodyAtMs": 497,
+        "bodyEndAtMs": 497,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:8de05854-6a3d-42ed-a810-02a5a5540235:sample-3",
+      "requestId": "890b47b1-5c29-41a7-aaf6-54c6629ad55b",
+      "status": 200,
+      "clientMs": 633,
+      "lambdaMs": 120,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 633,
+        "responseWaitMs": 633,
+        "firstBodyAtMs": 633,
+        "bodyEndAtMs": 633,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:875e6d46-c289-46e6-a4aa-6a8f3d3134ba:sample-1",
+      "requestId": "099d962f-db8a-45ed-9bb8-057f4812b0ae",
+      "status": 200,
+      "clientMs": 553,
+      "lambdaMs": 39,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 552,
+        "responseWaitMs": 552,
+        "firstBodyAtMs": 553,
+        "bodyEndAtMs": 553,
+        "bodyReadMs": 1,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:875e6d46-c289-46e6-a4aa-6a8f3d3134ba:sample-2",
+      "requestId": "ed025254-eeec-4ca7-bf2f-393738ffd6d6",
+      "status": 200,
+      "clientMs": 496,
+      "lambdaMs": 36,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 496,
+        "responseWaitMs": 496,
+        "firstBodyAtMs": 496,
+        "bodyEndAtMs": 496,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:875e6d46-c289-46e6-a4aa-6a8f3d3134ba:sample-3",
+      "requestId": "c665a5f8-c195-4d69-852c-1b523a8f938b",
+      "status": 200,
+      "clientMs": 519,
+      "lambdaMs": 60,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 519,
+        "responseWaitMs": 519,
+        "firstBodyAtMs": 519,
+        "bodyEndAtMs": 519,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:39a120b7-6f35-4b96-84c0-31c9e5930d85:sample-1",
+      "requestId": "669ef889-f42f-49a0-b728-291b45b97ac5",
+      "status": 200,
+      "clientMs": 480,
+      "lambdaMs": 21,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 479,
+        "responseWaitMs": 479,
+        "firstBodyAtMs": 479,
+        "bodyEndAtMs": 479,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:39a120b7-6f35-4b96-84c0-31c9e5930d85:sample-2",
+      "requestId": "97fe839c-bb01-4968-89f2-65d8ae8aaa0b",
+      "status": 200,
+      "clientMs": 490,
+      "lambdaMs": 37,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 489,
+        "responseWaitMs": 489,
+        "firstBodyAtMs": 489,
+        "bodyEndAtMs": 489,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:39a120b7-6f35-4b96-84c0-31c9e5930d85:sample-3",
+      "requestId": "986005de-eadb-4a13-a436-17e0d3e86158",
+      "status": 200,
+      "clientMs": 551,
+      "lambdaMs": 47,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 551,
+        "responseWaitMs": 551,
+        "firstBodyAtMs": 551,
+        "bodyEndAtMs": 551,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:a01662b9-1dae-47b6-b791-b4590343e3b1:sample-1",
+      "requestId": "7a9c978e-b9fd-41b9-83f4-116a17d17db3",
+      "status": 200,
+      "clientMs": 515,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 515,
+        "responseWaitMs": 515,
+        "firstBodyAtMs": 515,
+        "bodyEndAtMs": 515,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:a01662b9-1dae-47b6-b791-b4590343e3b1:sample-2",
+      "requestId": "e741fcdf-3732-4cbe-8b4f-f4945ea9a1f4",
+      "status": 200,
+      "clientMs": 1193,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 1192,
+        "responseWaitMs": 1192,
+        "firstBodyAtMs": 1193,
+        "bodyEndAtMs": 1193,
+        "bodyReadMs": 1,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "baseline-audit.json",
+      "id": "race:audit-detail:a01662b9-1dae-47b6-b791-b4590343e3b1:sample-3",
+      "requestId": "7f2e1eeb-6895-41ec-aca3-8e14e77e3e0e",
+      "status": 200,
+      "clientMs": 473,
+      "lambdaMs": 7,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 472,
+        "responseWaitMs": 472,
+        "firstBodyAtMs": 473,
+        "bodyEndAtMs": 473,
+        "bodyReadMs": 1,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:1:1:list",
+      "requestId": "e8194566-0c9a-45be-bd19-b3500417e8c2",
+      "status": 200,
+      "clientMs": 461,
+      "lambdaMs": 7,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 460,
+        "responseWaitMs": 460,
+        "firstBodyAtMs": 460,
+        "bodyEndAtMs": 460,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:1:1:4172c503-8591-44ec-9fee-6b509dc46635",
+      "requestId": "8d73b290-9d68-427f-9d47-10d9bb16cdf7",
+      "status": 200,
+      "clientMs": 529,
+      "lambdaMs": 19,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 528,
+        "responseWaitMs": 528,
+        "firstBodyAtMs": 529,
+        "bodyEndAtMs": 529,
+        "bodyReadMs": 1,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:1:1:64f9c65f-1455-4fdc-8ee8-f9ab31600384",
+      "requestId": "f8ebfaf3-082f-42cd-a681-6106fdcdbd87",
+      "status": 200,
+      "clientMs": 1512,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 1,
+        "headersAtMs": 1511,
+        "responseWaitMs": 1510,
+        "firstBodyAtMs": 1511,
+        "bodyEndAtMs": 1511,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:1:2:list",
+      "requestId": "3527aaa6-11c0-4e1c-97d5-d2543ad245aa",
+      "status": 200,
+      "clientMs": 517,
+      "lambdaMs": 7,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 517,
+        "responseWaitMs": 517,
+        "firstBodyAtMs": 517,
+        "bodyEndAtMs": 517,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:1:2:31fcd9af-0ebb-4991-b2a7-237f7bafb742",
+      "requestId": "b4029e8b-6659-4709-8125-651e255a1bf9",
+      "status": 200,
+      "clientMs": 520,
+      "lambdaMs": 7,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 1,
+        "headersAtMs": 519,
+        "responseWaitMs": 518,
+        "firstBodyAtMs": 520,
+        "bodyEndAtMs": 520,
+        "bodyReadMs": 1,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:1:2:d0dcc8ce-2a32-4b06-a262-4afb6ddc49d9",
+      "requestId": "f1db725b-cfc7-414b-804e-5b6631e76df7",
+      "status": 200,
+      "clientMs": 1324,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 1323,
+        "responseWaitMs": 1323,
+        "firstBodyAtMs": 1324,
+        "bodyEndAtMs": 1324,
+        "bodyReadMs": 1,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:1:3:list",
+      "requestId": "7634090e-55be-4574-bd31-eb5cc6effda0",
+      "status": 200,
+      "clientMs": 456,
+      "lambdaMs": 7,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 455,
+        "responseWaitMs": 455,
+        "firstBodyAtMs": 456,
+        "bodyEndAtMs": 456,
+        "bodyReadMs": 1,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:1:3:f8b36855-5591-4aba-bad0-a845fe41414e",
+      "requestId": "5c400868-c0a6-401e-897c-8299db7390e1",
+      "status": 200,
+      "clientMs": 457,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 456,
+        "responseWaitMs": 456,
+        "firstBodyAtMs": 456,
+        "bodyEndAtMs": 456,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:1:3:6c663fcf-f451-4597-a7d2-6fd59d437966",
+      "requestId": "397f1773-c0d4-444d-9754-9a2fdd2f369d",
+      "status": 200,
+      "clientMs": 463,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 462,
+        "responseWaitMs": 462,
+        "firstBodyAtMs": 463,
+        "bodyEndAtMs": 463,
+        "bodyReadMs": 1,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:2:1:list",
+      "requestId": "19a7df6d-4f9c-477c-8352-72df75e63277",
+      "status": 200,
+      "clientMs": 520,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 1,
+        "headersAtMs": 520,
+        "responseWaitMs": 519,
+        "firstBodyAtMs": 520,
+        "bodyEndAtMs": 520,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:2:1:f5a4bd05-8ae9-4781-b4e9-de4a8b21ca3a",
+      "requestId": "9675ffaa-fdf3-4c3f-8ac8-fa6ab01c7370",
+      "status": 200,
+      "clientMs": 505,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 1,
+        "headersAtMs": 505,
+        "responseWaitMs": 504,
+        "firstBodyAtMs": 505,
+        "bodyEndAtMs": 505,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:2:1:2bfab587-1445-4db0-af4b-204d37228c01",
+      "requestId": "6e5c3e86-a875-4976-a6bc-856db222b903",
+      "status": 200,
+      "clientMs": 457,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 457,
+        "responseWaitMs": 457,
+        "firstBodyAtMs": 457,
+        "bodyEndAtMs": 457,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:2:2:list",
+      "requestId": "dc21ea99-9ec3-4658-afdb-0f373afcbc91",
+      "status": 200,
+      "clientMs": 691,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 690,
+        "responseWaitMs": 690,
+        "firstBodyAtMs": 690,
+        "bodyEndAtMs": 690,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:2:2:a9b17448-c56f-4d03-bf71-64914f23b796",
+      "requestId": "9ed3c90a-e2dd-4a23-a957-9a991f2ab1f2",
+      "status": 200,
+      "clientMs": 1326,
+      "lambdaMs": 7,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 1,
+        "headersAtMs": 1325,
+        "responseWaitMs": 1324,
+        "firstBodyAtMs": 1325,
+        "bodyEndAtMs": 1325,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:2:2:cd0bac9a-4c5a-4ca3-858d-de0a479b2426",
+      "requestId": "943ad0aa-de20-4d1b-bf7a-d01bf8e5259d",
+      "status": 200,
+      "clientMs": 515,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 515,
+        "responseWaitMs": 515,
+        "firstBodyAtMs": 515,
+        "bodyEndAtMs": 515,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:2:3:list",
+      "requestId": "7c9590fd-8be5-40e9-bc7a-b3f7f0b5d1ba",
+      "status": 200,
+      "clientMs": 508,
+      "lambdaMs": 7,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 1,
+        "headersAtMs": 508,
+        "responseWaitMs": 507,
+        "firstBodyAtMs": 508,
+        "bodyEndAtMs": 508,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:2:3:ad2e28f5-c3ae-42e6-95e0-c6cf8af1f808",
+      "requestId": "8eed8861-dbc9-4162-bc51-656616bffb43",
+      "status": 200,
+      "clientMs": 1279,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 1279,
+        "responseWaitMs": 1279,
+        "firstBodyAtMs": 1279,
+        "bodyEndAtMs": 1279,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    },
+    {
+      "group": "sampling-audit.json",
+      "id": "cold:audit:2:3:3ed3b8f3-d9c9-4c93-bd60-b48395720f34",
+      "requestId": "5cd9a60f-8143-45b2-a852-85df96b6b75c",
+      "status": 200,
+      "clientMs": 456,
+      "lambdaMs": 6,
+      "physicalCold": false,
+      "transport": {
+        "dnsMs": null,
+        "tcpMs": null,
+        "tlsMs": null,
+        "socketAcquisitionMs": 0,
+        "requestSentAtMs": 0,
+        "headersAtMs": 456,
+        "responseWaitMs": 456,
+        "firstBodyAtMs": 456,
+        "bodyEndAtMs": 456,
+        "bodyReadMs": 0,
+        "jsonParseMs": 0,
+        "source": "NODE_HTTPS_SOCKET_EVENTS",
+        "reusedSocket": true
+      }
+    }
+  ],
+  "longTailRequestCount": 0,
+  "warmLongTailRequestCount": 0,
+  "maxTcpMs": 733,
+  "maxTlsMs": 427,
+  "newRequests": 0,
+  "networkNodeAttribution": "UNRESOLVED",
+  "causalBenefit": "NOT_ESTABLISHED",
+  "compilerOnlyAttribution": false,
+  "p95Accepted": false,
+  "fullQa09Accepted": false,
+  "bindings": {
+    "baseline-patch.json": "9fa8c31befa07d804981e4869247e9aa808fdb6c5d2308043d14c733b2778437",
+    "baseline-audit.json": "c6733df0a1e03bd8560e32e8ae9446df2ed56cf4efb01bbdf3aa6b8cc13739f5",
+    "sampling-audit.json": "9937ee2229f70731c329dec48ffabbda9f5f3c36f173c5dcffd3555f92cc21e3",
+    "available-baseline-phases.json": "d5e57b05cda082676f0b9cd96f388ebe9c693f7e85dbe5d7d3b0983183067c3b",
+    "cleanup-only-completion.json": "d37a1950e5e22295c1d8468915c4201547bf8de9ab2e24c8d9b9ddd104d03dc1"
+  }
+}

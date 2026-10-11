@@ -1,0 +1,54 @@
+{
+  "gate": "PASS",
+  "scope": "ONE_SAME_SUCCESSFUL_RUN_ARTIFACT_READ_RETRY_ONLY_NO_REDISPATCH_OR_BUSINESS",
+  "rows": [
+    {
+      "source": "bind-unit-deployment.py",
+      "sourceSha256": "19edc9bccacdfb32af1c88e03dda7d90301b68faf4eda8ee447c2d64f1676c62",
+      "adapted": "bind-restoration-artifact-read-recovery.py",
+      "adaptedSha256": "b009b52d81a88f15f9de328692ed840d32461ac6d3077361ad59a3606db67983",
+      "replacements": [
+        {
+          "before": "r=save('deploy-run',['gh','run','view',run,'--json','headSha,status,conclusion,event,attempt,jobs,url'])",
+          "after": "assert mode=='restore' and not (p/'deployment-input-binding.json').exists() and not (p/'artifact-download-recovered.exit').exists(),'ONE_READ_RECOVERY_ONLY'\nassert int((p/'artifact-download.exit').read_text())!=0 and 'unexpected EOF' in (p/'artifact-download.stderr.log').read_text()\nassert int((p/'wait-success.pipeline.exit').read_text())==0\nr=json.loads((p/'deploy-run.json').read_text())"
+        },
+        {
+          "before": "published-input",
+          "after": "published-input-recovered"
+        },
+        {
+          "before": "artifact-download.",
+          "after": "artifact-download-recovered."
+        },
+        {
+          "before": "'scope':'ACTUAL_RUN_ARTIFACT_SOURCE_AND_CONFIG'",
+          "after": "'scope':'ACTUAL_RUN_ARTIFACT_SOURCE_AND_CONFIG','originalArtifactDownloadGate':'FAIL','artifactReadRecovery':'PASS'"
+        },
+        {
+          "before": "['deploy-run.json','qa09-deployment-inputs.json','api-config.json','api-concurrency.json']",
+          "after": "['deploy-run.json','qa09-deployment-inputs.json','api-config.json','api-concurrency.json','artifact-download.exit','artifact-download.stderr.log','artifact-download-recovered.exit']"
+        },
+        {
+          "before": "assert int((p/'artifact-download-recovered.exit').read_text())!=0 and 'unexpected EOF' in (p/'artifact-download-recovered.stderr.log').read_text()",
+          "after": "assert int((p/'artifact-download.exit').read_text())!=0 and 'unexpected EOF' in (p/'artifact-download.stderr.log').read_text()"
+        }
+      ]
+    },
+    {
+      "source": "run-restore-after-r1-stage-failure.py",
+      "sourceSha256": "bba17d5503ed719bba3732f1a05282679854e247105b6fd79c8fa6f22c2c600f",
+      "adapted": "continue-restoration-after-artifact-read-failure.py",
+      "adaptedSha256": "45574c59a04c2e32b64bc6691058beb2cd174fdad002fcc2e7fd8274708ba51c",
+      "replacements": [
+        {
+          "before": "call('wait-success',['gh','run','watch',run,'--exit-status','--interval','30'])\ncall('bind-deployment',['python3',str(root/'bind-unit-deployment.py'),'restore',run])",
+          "after": "assert int((p/'wait-success.pipeline.exit').read_text())==0 and int((p/'bind-deployment.pipeline.exit').read_text())==1\ncall('bind-deployment-recovered',['python3',str(root/'bind-restoration-artifact-read-recovery.py'),'restore',run])"
+        },
+        {
+          "before": "'newFixtures':0,",
+          "after": "'originalArtifactDownloadGate':'FAIL','artifactReadRecovery':'PASS','newFixtures':0,"
+        }
+      ]
+    }
+  ]
+}

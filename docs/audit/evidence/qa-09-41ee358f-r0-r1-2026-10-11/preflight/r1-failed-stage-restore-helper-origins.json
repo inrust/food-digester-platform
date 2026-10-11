@@ -1,0 +1,54 @@
+{
+  "gate": "PASS",
+  "scope": "DEFAULT_OFF_RESTORE_ONLY_AFTER_ORIGINAL_R1_CLEANUP_AND_INDEPENDENT_EMPTY_NO_STAGE_PASS",
+  "rows": [
+    {
+      "source": "dispatch-unit.py",
+      "sourceSha256": "c9d8e93c813612ffb612bddee4c5513527dcae571e25e3526682e59452398f00",
+      "adapted": "dispatch-restore-after-r1-stage-failure.py",
+      "adaptedSha256": "bdc73ea0e4c221234b350d3194bb17beeed6c77e4d5d77a8b6585a14eb8c1972",
+      "replacements": [
+        {
+          "before": "cleanupOnly=sys.argv[2:]==['--cleanup-only-r0']",
+          "after": "cleanupOnly=sys.argv[2:]==['--cleanup-only-r1']"
+        },
+        {
+          "before": "'r0' if mode=='r1' or cleanupOnly else 'r1'",
+          "after": "'r0' if mode=='r1' else 'r1'"
+        },
+        {
+          "before": "closure['stageGate']=='FAIL' and closure['cleanup']=='PASS' and not (root/'r1/dispatch.exit').exists()",
+          "after": "closure['stageGate']=='FAIL' and closure['cleanup']=='PASS' and closure['logReadRecoveryGate']=='FAIL' and closure['independentEmptyAudit']=='PASS'"
+        },
+        {
+          "before": "assert mode in ['r0','r1','restore']",
+          "after": "assert mode=='restore' and cleanupOnly"
+        }
+      ]
+    },
+    {
+      "source": "run-restore.py",
+      "sourceSha256": "7140bd9bb73e6bc3497b83145afd6410587f4e19b2709a6ecc5a394562fec616",
+      "adapted": "run-restore-after-r1-stage-failure.py",
+      "adaptedSha256": "bba17d5503ed719bba3732f1a05282679854e247105b6fd79c8fa6f22c2c600f",
+      "replacements": [
+        {
+          "before": "cleanupOnly=sys.argv[2:]==['--cleanup-only-r0']",
+          "after": "cleanupOnly=sys.argv[2:]==['--cleanup-only-r1']"
+        },
+        {
+          "before": "prior=root/('r0' if cleanupOnly else 'r1')",
+          "after": "prior=root/'r1'"
+        },
+        {
+          "before": "v['stageGate']=='FAIL' and v['cleanup']=='PASS' and not (root/'r1/dispatch.exit').exists()",
+          "after": "v['stageGate']=='FAIL' and v['cleanup']=='PASS' and v['logReadRecoveryGate']=='FAIL' and v['independentEmptyAudit']=='PASS'"
+        },
+        {
+          "before": "SAME_SHA_RESTORE_DEFAULT_OFF_AFTER_R0_FAILED_STAGE_OWN_CLEANUP",
+          "after": "SAME_SHA_RESTORE_DEFAULT_OFF_AFTER_R1_FAILED_LOG_STAGE_OWN_CLEANUP"
+        }
+      ]
+    }
+  ]
+}
