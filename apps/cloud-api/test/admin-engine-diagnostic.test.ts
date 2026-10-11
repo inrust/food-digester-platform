@@ -173,3 +173,32 @@ test('public seams default off; require exact detail/test/pool1/engine/preconnec
   ])
     assert.throws(() => resolveContractPublicBoundaries({ ...env, ...patch }));
 });
+
+test('observer is default off and rejects every missing public/detail/preconnect/engine/test/pool guard', async () => {
+  const { resolveContractObserverCost } = await import('../src/runtime/admin-engine-diagnostic.js');
+  assert.isFalse(resolveContractObserverCost({}));
+  const env = {
+    ENV_NAME: 'test',
+    FDP_DB_POOL_MAX: '1',
+    FDP_QA09_ENGINE_CPU_DIAGNOSIS: 'true',
+    FDP_QA09_AUTHENTICATED_PRECONNECT: 'true',
+    FDP_QA09_CONTRACT_LOAD_DETAIL: 'true',
+    FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES: 'true',
+    FDP_CONTRACT_OBSERVER_COST: 'true',
+  };
+  assert.isTrue(resolveContractObserverCost(env));
+  for (const key of Object.keys(env))
+    assert.throws(() =>
+      resolveContractObserverCost({
+        ...env,
+        [key]:
+          key === 'ENV_NAME'
+            ? 'prod'
+            : key === 'FDP_DB_POOL_MAX'
+              ? '2'
+              : key === 'FDP_CONTRACT_OBSERVER_COST'
+                ? 'yes'
+                : 'false',
+      }),
+    );
+});

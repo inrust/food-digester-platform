@@ -198,7 +198,7 @@ test('opt-in process CPU records only integer all-thread deltas and preserves or
 });
 
 test('synchronous CPU phases preserve result/original failure and never log error content', () => {
-  const rows: Readonly<Record<string, string | number | boolean>>[] = [];
+  const rows: Readonly<Record<string, unknown>>[] = [];
   const error = Error('private-secret-error');
   withDataPathTrace(
     { lambdaRequestId: 'runtime-cpu' },

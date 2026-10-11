@@ -1,4 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { ContractObserverCost } from './contract-observer-cost.js';
+import type { ObserverPoint } from './contract-observer-cost.js';
 export type DataPathPhase =
   | 'runtime-initialize'
   | 'runtime-client-construct'
@@ -85,7 +87,7 @@ export interface DataPathIds {
   readonly occurredAtMs?: number | undefined;
   readonly coldStart?: boolean | undefined;
 }
-type LogRow = Readonly<Record<string, string | number | boolean>>;
+type LogRow = Readonly<Record<string, unknown>>;
 interface Trace {
   ids: DataPathIds;
   emit: (row: LogRow) => void;
@@ -93,6 +95,8 @@ interface Trace {
   receiptId?: string | undefined;
   receiptOutcome?: string | undefined;
   firstPhases: Set<DataPathPhase>;
+  observerCost?: ContractObserverCost | undefined;
+  observerClaimed?: boolean;
 }
 const storage = new AsyncLocalStorage<Trace>();
 const safeId = (v: unknown) => (typeof v === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(v) ? v : 'unknown');
@@ -100,7 +104,7 @@ function emit(event: string, detail: LogRow, trace = storage.getStore()) {
   if (!trace) return;
   const ids = trace.ids;
   try {
-    trace.emit({
+    const row: LogRow = {
       event,
       lambdaRequestId: safeId(ids.lambdaRequestId),
       gatewayRequestId: safeId(ids.gatewayRequestId),
@@ -114,7 +118,19 @@ function emit(event: string, detail: LogRow, trace = storage.getStore()) {
       ...(Number.isSafeInteger(ids.occurredAtMs) && ids.occurredAtMs! >= 0 ? { occurredAtMs: ids.occurredAtMs! } : {}),
       coldStart: ids.coldStart === true,
       ...detail,
-    });
+    };
+    const observer = trace.observerCost;
+    if (
+      observer &&
+      event === 'data-path.phase.completed' &&
+      typeof row.phase === 'string' &&
+      row.phase.startsWith('contract-load')
+    ) {
+      if (storage.getStore() !== trace) {
+        observer.foreign();
+        trace.emit(row);
+      } else observer.output(() => trace.emit(row));
+    } else trace.emit(row);
   } catch {
     /* Observability must never change transaction ownership, business results or retries. */
   }
@@ -193,6 +209,73 @@ export function claimFirstDataPathBoundary(phase: FirstDataPathPhase): DataPathB
 function ownBoundary(boundary: DataPathBoundary | undefined, trace: Trace): BoundarySnapshot | undefined {
   const value = boundary && boundaries.get(boundary);
   return value?.trace === trace ? value : undefined;
+}
+/** One first-load observer per trace; disabled entrance allocates and measures nothing. */
+export interface ContractObserverScope {
+  readonly kind: 'CONTRACT_OBSERVER_SCOPE';
+}
+const observerScopes = new WeakMap<ContractObserverScope, { trace: Trace; observer: ContractObserverCost }>();
+export function beginContractObserverCost(enabled = false): ContractObserverScope | undefined {
+  if (enabled !== true) return undefined;
+  const trace = storage.getStore();
+  if (!trace || trace.observerClaimed) return undefined;
+  trace.observerClaimed = true;
+  const observer = new ContractObserverCost(trace.clock);
+  const scope: ContractObserverScope = { kind: 'CONTRACT_OBSERVER_SCOPE' };
+  trace.observerCost = observer;
+  observerScopes.set(scope, { trace, observer });
+  return scope;
+}
+function ownObserver(scope: ContractObserverScope | undefined) {
+  const value = scope && observerScopes.get(scope);
+  if (!value || value.observer.closed) return undefined;
+  if (value.trace !== storage.getStore()) {
+    value.observer.foreign();
+    return undefined;
+  }
+  return value;
+}
+export function recordContractObserverBoundary(
+  scope: ContractObserverScope | undefined,
+  point: ObserverPoint,
+  boundary: DataPathBoundary | undefined,
+): void {
+  if (!scope) return;
+  try {
+    const own = ownObserver(scope);
+    if (!own) return;
+    const snapshot = ownBoundary(boundary, own.trace);
+    if (boundary && !snapshot) own.observer.foreign();
+    own.observer.point(point, snapshot?.time);
+  } catch {
+    /* Diagnostic bookkeeping cannot change business ownership. */
+  }
+}
+/** Synchronous return identity and original exception are preserved; never consumes then. */
+export function observeContractPublicCall<T>(scope: ContractObserverScope | undefined, work: () => T): T {
+  if (!scope) return work();
+  const own = ownObserver(scope);
+  return own ? own.observer.publicCall(work) : work();
+}
+export function finishContractObserverCost(scope: ContractObserverScope | undefined, ownership: boolean): void {
+  if (!scope) return;
+  try {
+    const own = ownObserver(scope);
+    if (!own) return;
+    const ids = own.trace.ids;
+    const row = own.observer.summary(
+      {
+        gatewayRequestId: safeId(ids.gatewayRequestId),
+        lambdaRequestId: safeId(ids.lambdaRequestId),
+        operationId: safeId(ids.operationId),
+      },
+      ownership,
+    );
+    own.trace.observerCost = undefined; // Summary is after original load logs and never measures itself.
+    if (Buffer.byteLength(JSON.stringify(row)) <= 4096) own.trace.emit(row);
+  } catch {
+    /* One attempt only, no retries or business impact. */
+  }
 }
 /** Finish is idempotent; no SQL, payload or arbitrary error messages enter the log. */
 export type PreparationBoundary =

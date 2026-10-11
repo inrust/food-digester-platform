@@ -36,6 +36,8 @@ export interface ContractDeps {
   readonly now?: () => Date;
   /** Offline/service-only candidate. Runtime deployment remains unwired/default off. */
   readonly contractReadCandidate?: boolean;
+  /** Test-only observer, guarded at runtime initialization; no query candidate change. */
+  readonly contractObserverCost?: boolean;
 }
 
 export interface ContractView {
@@ -242,7 +244,10 @@ export async function updateContract(
       afterValue: (result: unknown) => auditSnapshot(result as ContractView),
     },
     async (tx) => {
-      const current = await observeContractLoad(() => loadContract(tx, input.contractId, deps.contractReadCandidate));
+      const current = await observeContractLoad(
+        () => loadContract(tx, input.contractId, deps.contractReadCandidate),
+        deps.contractObserverCost,
+      );
       assertContractEditable(current.status as ContractStatus, {
         touchesStartAt: input.startAt !== undefined,
         touchesEndAt: input.endAt !== undefined,

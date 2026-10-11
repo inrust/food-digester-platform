@@ -1,0 +1,33 @@
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ❯ apps/cloud-api/test/admin-observer-entry.test.ts (2 tests | 1 failed) 1859ms
+   × actual Lambda JSON/redaction/account/contract entry observer=true preserves signed business and negative matrix 618ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  apps/cloud-api/test/admin-observer-entry.test.ts > actual Lambda JSON/redaction/account/contract entry observer=true preserves signed business and negative matrix
+AssertionError: expected +0 to equal 1
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ apps/cloud-api/test/admin-observer-entry.test.ts:132:14
+    130|       const success = await call(token);
+    131|       assert.equal(success.result.statusCode, 200);
+    132|       assert.equal(success.summaries.length, enabled ? 1 : 0);
+       |              ^
+    133|       if (enabled) assert.equal(success.summaries[0].status, 'OWNERSHI…
+    134|       const conflict = await call(token);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  09:59:03
+   Duration  2.09s (transform 383ms, setup 8ms, import 165ms, tests 1.86s, environment 0ms)
+

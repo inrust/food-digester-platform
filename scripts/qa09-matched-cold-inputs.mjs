@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, realpathSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve, dirname, sep } from 'node:path';
 import { validatePhaseCorrelation } from './check-qa09-contract-phases.mjs';
+import { validateAccountReadTargetConfig } from './qa09-account-read-config.mjs';
 import { pathToFileURL } from 'node:url';
 const demand = (ok, reason) => {
   if (!ok) throw Error(reason);
@@ -53,7 +54,7 @@ export function matchedColdInputs(sourceCommit) {
   };
 }
 /** Derived unit inputs must be independently byte-bound to deployment/19 ZIPs/phases/cleanup. */
-export function validateMatchedColdPair(off, on) {
+export function validateMatchedColdPair(off, on, { observerCost = false } = {}) {
   if (off.contractPublicBoundaries !== undefined || on.contractPublicBoundaries !== undefined)
     demand(off.contractPublicBoundaries === on.contractPublicBoundaries, 'MATCHED_PUBLIC_MODE_DRIFT');
   if (off.contractLoadDetail !== undefined || on.contractLoadDetail !== undefined)
@@ -70,7 +71,19 @@ export function validateMatchedColdPair(off, on) {
     'MATCHED_CLOSED_PROVENANCE_REQUIRED',
   );
   demand(off.source === 'TARGET_RECEIPT' && on.source === 'TARGET_RECEIPT', 'MATCHED_TARGET_REQUIRED');
-  demand(off.accountReadCandidate === false && on.accountReadCandidate === true, 'MATCHED_MODE_REQUIRED');
+  demand(
+    observerCost
+      ? off.accountReadCandidate === true &&
+          on.accountReadCandidate === true &&
+          off.contractObserverCost === false &&
+          on.contractObserverCost === true &&
+          off.contractPublicBoundaries === true &&
+          on.contractPublicBoundaries === true
+      : off.accountReadCandidate === false &&
+          on.accountReadCandidate === true &&
+          (off.contractObserverCost ?? false) === (on.contractObserverCost ?? false),
+    'MATCHED_MODE_REQUIRED',
+  );
   demand(
     off.prefix !== on.prefix && off.runId !== on.runId && Date.parse(off.closedAt) < Date.parse(on.startedAt),
     'MATCHED_SEQUENTIAL_UNITS_REQUIRED',
@@ -205,8 +218,30 @@ export function readMatchedColdUnit(manifestFile) {
     contractLoadDetail: manifest.requireContractLoadDetail === true,
     contractAwaitCheckpoint: manifest.requireContractAwaitCheckpoint === true,
     contractPublicBoundaries: manifest.requireContractPublicBoundaries === true,
+    contractObserverCost:
+      manifest.requireContractObserverCost === true && manifest.inputs?.contractObserverCost === true,
   });
   const inputs = manifest.inputs;
+  if (manifest.requireContractObserverCost === true) {
+    demand(manifest.requireContractPublicBoundaries === true, 'MATCHED_OBSERVER_PUBLIC_REQUIRED');
+    const deployed = read('inputs');
+    demand(
+      typeof inputs.contractObserverCost === 'boolean' &&
+        deployed.contractObserverCost === inputs.contractObserverCost &&
+        deployed.context?.enableQa09ContractObserverCost === inputs.contractObserverCost,
+      'MATCHED_OBSERVER_DEPLOYMENT_REQUIRED',
+    );
+    validateAccountReadTargetConfig(deployed, version, config, concurrency);
+    demand(
+      patch.observerCostRequired === inputs.contractObserverCost && patch.observerCostRejected === 0,
+      'MATCHED_OBSERVER_COLLECTOR_REQUIRED',
+    );
+    if (!inputs.contractObserverCost)
+      demand(
+        patch.records.every((r) => (r.contractObserverCost ?? []).length === 0),
+        'MATCHED_OBSERVER_OFF_OUTPUT',
+      );
+  }
   if (manifest.requireContractPublicBoundaries === true) {
     demand(
       manifest.requireContractLoadDetail === true && manifest.requireContractAwaitCheckpoint === true,

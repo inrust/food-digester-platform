@@ -7,6 +7,9 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from qa09_observer_cost import project_observer, exact_observers
 
 source, output = map(Path, sys.argv[1:3])
 if output.exists():
@@ -25,7 +28,8 @@ if not re.fullmatch(r'qa09-[a-f0-9]{16}', receipt.get('prefix', '')) or receipt.
     raise ValueError('OWN_RECEIPT_REQUIRED')
 audit_mode = '--audit-get' in flags
 sampling = '--cold-sampling' in flags
-if any(x not in ['--audit-get', '--cold-sampling'] for x in flags):
+observer_required = '--observer-cost' in flags
+if any(x not in ['--audit-get', '--cold-sampling', '--observer-cost'] for x in flags):
     raise ValueError('INVALID_CORRELATION_MODE')
 if sampling and receipt.get('cold409Sampling', {}).get('gate') != 'PASS':
     raise ValueError('COLD_SAMPLING_BUSINESS_REQUIRED')
@@ -92,6 +96,8 @@ fields = {
 }
 rows = {}
 platform_reports = []
+observer_candidates = []
+observer_rejected = 0
 for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
                     ('lambda', '/aws/lambda/fdp-test-api')]:
     found, phases, ownership, error, token, pages = [], [], [], None, None, 0
@@ -132,6 +138,12 @@ for name, group in [('gateway', '/aws/apigateway/fdp-test-admin-api-access'),
             request_id = value.get('requestId') if name == 'gateway' else value.get('gatewayRequestId')
             if request_id not in ids:
                 continue
+            if name == 'lambda' and value.get('event') == 'data-path.contract-load.observer-cost':
+                projected = project_observer(value)
+                if projected is not None and type(event.get('timestamp')) is int:
+                    observer_candidates.append({**projected, 'logTimestampMs': event['timestamp']})
+                else:
+                    observer_rejected += 1
             if name == 'lambda' and value.get('event') == 'data-path.phase.completed':
                 phase_fields = ['gatewayRequestId', 'lambdaRequestId', 'operationId', 'phase', 'durationMs',
                                 'outcome', 'errorCode', 'startedAt', 'completedAt', 'coldStart', 'includesConnectionWait']
@@ -189,14 +201,18 @@ for client in clients:
                  (client['status'] is None or int(g.get('status', 0)) == client['status']) and
                  str(g.get('status')) == str(l.get('status')))
     own_reports = [p for p in platform_reports if len(runtime) == 1 and p['lambdaRequestId'] == runtime[0].get('lambdaRequestId')]
+    observer_rows = exact_observers(observer_candidates, gateway, runtime, client, start_ms, end_ms)
+    observer_gate = 'PASS' if exact and len(observer_rows) == 1 and observer_rows[0]['status'] == 'COMPLETE' else 'NOT_OBSERVED' if not observer_rows else 'FAIL'
     linked.append({**client, 'platformReports': own_reports, 'gateway': gateway, 'lambda': runtime, 'exactLinked': exact,
                    'integrationThrottled': any(str(g.get('integrationStatus')) == '429' for g in gateway),
                    'phases': [p for p in rows['lambda']['phases'] if p.get('gatewayRequestId') == client['requestId']],
-                   'contractLoadOwnership': [p for p in rows['lambda']['ownership'] if p.get('gatewayRequestId') == client['requestId']]})
+                   'contractLoadOwnership': [p for p in rows['lambda']['ownership'] if p.get('gatewayRequestId') == client['requestId']],
+                   'contractObserverCost': observer_rows, 'observerCostGate': observer_gate})
 expected_count = len(clients) if audit_mode or sampling else 6
 complete = (len(linked) == expected_count and len(ids) == expected_count and expected_count > 0 and
             len({c['id'] for c in clients}) == expected_count and
-            all(x['exactLinked'] and x['responseReceived'] for x in linked))
+            all(x['exactLinked'] and x['responseReceived'] for x in linked) and
+            (not observer_required or (observer_rejected == 0 and all(x['observerCostGate'] == 'PASS' for x in linked))))
 report = {'task': 'QA-09', 'sampling': sampling, 'scope': ('OWN_COLD409_AUDIT_GET_GATEWAY_LAMBDA_REQUEST_CORRELATION' if audit_mode else 'OWN_COLD409_PATCH_GATEWAY_LAMBDA_REQUEST_CORRELATION') if sampling else ('OWN_AUDIT_GET_GATEWAY_LAMBDA_REQUEST_CORRELATION' if audit_mode else 'OWN_CONTRACT_PATCH_GATEWAY_LAMBDA_REQUEST_CORRELATION'),
           'collectorSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
           'sourceReceiptSha256': hashlib.sha256(raw).hexdigest(), 'sourceCommit': receipt.get('sourceCommit'),
@@ -204,6 +220,8 @@ report = {'task': 'QA-09', 'sampling': sampling, 'scope': ('OWN_COLD409_AUDIT_GE
           'startMs': start_ms, 'endMs': end_ms, 'records': linked,
           'logReadErrors': {k: v['error'] for k, v in rows.items() if v['error']},
           'exactLinkedCount': sum(x['exactLinked'] for x in linked),
+          'observerCostRequired': observer_required, 'observerCostRejected': observer_rejected,
+          'observerProjectorSha256': hashlib.sha256(Path(__file__).with_name('qa09_observer_cost.py').read_bytes()).hexdigest(),
           'missingHistoricalSiblingReceipt': not ledger.get('attempts'),
           'gate': 'PASS' if complete and not any(v['error'] for v in rows.values()) else 'PARTIAL'}
 if read_optimization:

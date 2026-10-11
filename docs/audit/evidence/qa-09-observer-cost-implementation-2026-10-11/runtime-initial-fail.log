@@ -1,0 +1,47 @@
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ❯ packages/database/test/contract-observer-runtime.test.ts (14 tests | 2 failed) 670ms
+   × production public entry/output observer reentrant-resume-log 9ms
+   × production public entry/output observer pg-reject 16ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/database/test/contract-observer-runtime.test.ts > production public entry/output observer reentrant-resume-log
+Error: CONTRACT_LOAD_UNIQUE
+ ❯ demand scripts/qa09-contract-load-proof.mjs:2:18
+      1| const demand = (ok, code) => {
+      2|   if (!ok) throw Error(code);
+       |                  ^
+      3| };
+      4| const names = [
+ ❯ one scripts/qa09-contract-load-proof.mjs:18:5
+ ❯ validateContractLoadSplit scripts/qa09-contract-load-proof.mjs:21:43
+ ❯ validateContractLoadDetail scripts/qa09-contract-load-detail-proof.mjs:24:3
+ ❯ Module.validateContractAwaitCheckpoint scripts/qa09-contract-load-detail-proof.mjs:93:3
+ ❯ packages/database/test/contract-observer-runtime.test.ts:314:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  packages/database/test/contract-observer-runtime.test.ts > production public entry/output observer pg-reject
+AssertionError: expected 'COMPLETE' to equal 'MISSING_BOUNDARY'
+
+Expected: "MISSING_BOUNDARY"
+Received: "COMPLETE"
+
+ ❯ packages/database/test/contract-observer-runtime.test.ts:335:18
+    333|                   ? 'MISSING_BOUNDARY'
+    334|                   : 'COMPLETE';
+    335|           assert.equal(summary.status, expected);
+       |                  ^
+    336|           assert.equal(summary.gatewayRequestId, `entry-${name}-${inde…
+    337|           assert.equal(summary.lambdaRequestId, `entry-L-${name}-${ind…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 47 passed (49)
+   Start at  09:55:14
+   Duration  2.11s (transform 2.45s, setup 64ms, import 1.54s, tests 2.62s, environment 0ms)
+

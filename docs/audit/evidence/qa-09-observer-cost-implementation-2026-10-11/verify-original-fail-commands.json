@@ -1,0 +1,52 @@
+{
+  "scope": "REPOSITORY_VERIFY_EXCLUDING_PREEXISTING_UNTRACKED_BUILD_FROM_LINT_FORMAT_ONLY",
+  "excludedPaths": [
+    "build/"
+  ],
+  "complete": false,
+  "commands": [
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "eslint",
+        ".",
+        "--ignore-pattern",
+        "build/"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "prettier",
+        "--check",
+        ".",
+        "!build/**"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "typecheck"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "openapi:check"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "pnpm",
+        "test"
+      ],
+      "exitCode": 1
+    }
+  ]
+}

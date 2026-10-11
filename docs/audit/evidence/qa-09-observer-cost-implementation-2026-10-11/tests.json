@@ -1,0 +1,107 @@
+{
+  "gate": "LOCAL_VALIDATION_PASS",
+  "scope": "REPOSITORY_VERIFY_EXCLUDING_PREEXISTING_UNTRACKED_BUILD_FROM_LINT_FORMAT_ONLY",
+  "verifySteps": 22,
+  "commandsReceipt": "verify-commands.json",
+  "fullLog": "verify-final.log",
+  "application": {
+    "files": 194,
+    "tests": 1637,
+    "pass": 1637
+  },
+  "contracts": {
+    "tests": 302,
+    "pass": 302
+  },
+  "scripts": {
+    "tests": 970,
+    "pass": 970,
+    "finalDeltaLog": "scripts-final-pass.log",
+    "finalCommand": "pnpm test:scripts",
+    "execution": "LOCAL_LOOPBACK_ALLOWED"
+  },
+  "lint": {
+    "command": "pnpm exec eslint . --ignore-pattern build/",
+    "exitCode": 0,
+    "log": "lint-final-pass.log"
+  },
+  "format": {
+    "command": "pnpm exec prettier --check . '!build/**'",
+    "exitCode": 0,
+    "log": "format-final-pass.log"
+  },
+  "buildTasks": 14,
+  "typecheckTasks": 21,
+  "adminBrowser": {
+    "serial": 36,
+    "suite": 108,
+    "network": "LOCAL_FIXTURES_ONLY"
+  },
+  "prototype": {
+    "executions": 24,
+    "positive": 117,
+    "negative": 11,
+    "snapshots": 24,
+    "network": "LOCAL_FIXTURES_ONLY"
+  },
+  "deviceContracts": {
+    "mqttSchemas": 11,
+    "deviceOperations": 8,
+    "handlerResponses": 168
+  },
+  "iotTests": 5,
+  "coreApiTests": 131,
+  "securityTests": 217,
+  "reliabilityScenarios": 2,
+  "suiteReceipts": {
+    "fdp-prototype-regression-gate.json": "PASS",
+    "fdp-admin-e2e-gate.json": "PASS",
+    "fdp-iot-integration-gate.json": "PASS",
+    "fdp-device-contracts-gate.json": "PASS",
+    "fdp-security-gate.json": "PASS",
+    "fdp-reliability-gate.json": "PASS",
+    "fdp-core-api-integration-gate.json": "PASS"
+  },
+  "controlledRuntime": {
+    "command": "node scripts/run-qa09-contract-observer-runtime.mjs docs/audit/evidence/qa-09-observer-cost-implementation-2026-10-11/matrix-03",
+    "matrix": "matrix-03/matrix.json",
+    "cases": 14,
+    "transactions": 34,
+    "checkoutRelease": 48,
+    "network": 0,
+    "summaryRecordsMax": 19,
+    "summaryBytesMax": 951
+  },
+  "originalFailuresPreserved": true,
+  "knownFailures": [
+    {
+      "logs": [
+        "lint-preexisting-build-fail.log",
+        "format-preexisting-build-fail.log"
+      ],
+      "cause": "PREEXISTING_UNTRACKED_BUILD",
+      "resolution": "Explicitly exclude build from lint and format only; preserve files"
+    },
+    {
+      "logs": [
+        "verify-original-fail.log",
+        "original-cpu-isolated-pass.log"
+      ],
+      "cause": "EXISTING_CPU_CONTRACT_PUBLIC_ORDER",
+      "resolution": "Isolated and subsequent full execution passed; no threshold change; timing cause unresolved"
+    },
+    {
+      "logs": [
+        "scripts-loopback-sandbox-fail.log",
+        "scripts-final-pass.log"
+      ],
+      "cause": "SANDBOX_LOOPBACK_LISTEN_EPERM",
+      "resolution": "Same final script suite passed with local loopback allowed; no code or assertion change"
+    }
+  ],
+  "candidateDefaultsChanged": false,
+  "awsExecuted": false,
+  "targetRun": "NOT_RUN",
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}

@@ -58,7 +58,12 @@ export function qa09RolloutContext(env = process.env) {
   if (publicBoundaries !== undefined && !['true', 'false'].includes(publicBoundaries))
     throw Error('INVALID_CONTRACT_PUBLIC_BOUNDARIES');
   if (publicBoundaries === 'true' && detail !== 'true') throw Error('CONTRACT_PUBLIC_BOUNDARIES_REQUIRE_DETAIL');
+  const observerCost = env.FDP_CONTRACT_OBSERVER_COST;
+  if (observerCost !== undefined && !['true', 'false'].includes(observerCost))
+    throw Error('INVALID_CONTRACT_OBSERVER_COST');
+  if (observerCost === 'true' && publicBoundaries !== 'true') throw Error('CONTRACT_OBSERVER_COST_REQUIRES_PUBLIC');
   return {
+    ...(observerCost !== undefined ? { enableQa09ContractObserverCost: observerCost === 'true' } : {}),
     ...(publicBoundaries !== undefined ? { enableQa09ContractPublicBoundaries: publicBoundaries === 'true' } : {}),
     ...(detail !== undefined ? { enableQa09ContractLoadDetail: detail === 'true' } : {}),
     ...(accountRead !== undefined ? { enableQa09AccountReadCandidate: accountRead === 'true' } : {}),

@@ -66,6 +66,7 @@ import {
   resolveAccountReadCandidate,
   resolveContractLoadDetail,
   resolveContractPublicBoundaries,
+  resolveContractObserverCost,
 } from './admin-engine-diagnostic.js';
 
 import { createAdminAuthenticatedAccountHook } from './admin-account-hook.js';
@@ -87,6 +88,7 @@ async function initialize() {
   const accountReadCandidate = resolveAccountReadCandidate(process.env);
   const contractLoadDetail = resolveContractLoadDetail(process.env);
   const contractPublicBoundaries = resolveContractPublicBoundaries(process.env);
+  const contractObserverCost = resolveContractObserverCost(process.env);
   const config = readAdminRuntimeConfig(process.env);
   const region = config.region;
   const { databaseUrl, licenseSigningKey } = await resolveAdminRuntimeSecrets(config, {
@@ -148,7 +150,7 @@ async function initialize() {
         retirements: createAdminDeviceRetirementHandlers({ client, iot }),
         console: createAdminDeviceConsoleHandlers({ client, ...activityExportPorts }),
         licenses: createAdminLicenseHandlers({ client, signingKey: licenseSigningKey }),
-        contracts: createAdminContractHandlers({ client }),
+        contracts: createAdminContractHandlers({ client, contractObserverCost }),
         contractDevices: createAdminContractDeviceHandlers({ client }),
         configurations: createAdminConfigurationHandlers({ client }),
         consumables: createAdminConsumableHandlers({ client }),

@@ -68,6 +68,21 @@ export function validateAccountReadTargetConfig(inputs, version, config, concurr
       'CONTRACT_PUBLIC_ACTUAL_GUARD',
     );
   }
+  if (inputs.contractObserverCost !== undefined) {
+    demand(
+      typeof inputs.contractObserverCost === 'boolean' &&
+        config.contractObserverCost === String(inputs.contractObserverCost),
+      'OBSERVER_ACTUAL_MODE_DRIFT',
+    );
+    demand(
+      !inputs.contractObserverCost ||
+        (inputs.contractPublicBoundaries === true &&
+          inputs.contractLoadDetail === true &&
+          inputs.engineCpu === true &&
+          inputs.authenticatedPreconnect === true),
+      'OBSERVER_ACTUAL_GUARD',
+    );
+  }
   return {
     gate: 'PASS',
     scope: 'ACTUAL_ACCOUNT_READ_CONFIG_AND_VERSION_ONLY',
@@ -102,7 +117,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     '--function-name',
     'fdp-test-api',
     '--query',
-    '{name:FunctionName,revisionId:RevisionId,codeSha256:CodeSha256,memory:MemorySize,state:State,update:LastUpdateStatus,runtime:Runtime,architecture:Architectures[0],envName:Environment.Variables.ENV_NAME,pool:Environment.Variables.FDP_DB_POOL_MAX,engineCpu:Environment.Variables.FDP_QA09_ENGINE_CPU_DIAGNOSIS,preconnect:Environment.Variables.FDP_QA09_AUTHENTICATED_PRECONNECT,accountReadCandidate:Environment.Variables.FDP_QA09_ACCOUNT_READ_CANDIDATE,contractLoadDetail:Environment.Variables.FDP_QA09_CONTRACT_LOAD_DETAIL,contractPublicBoundaries:Environment.Variables.FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES}',
+    '{name:FunctionName,revisionId:RevisionId,codeSha256:CodeSha256,memory:MemorySize,state:State,update:LastUpdateStatus,runtime:Runtime,architecture:Architectures[0],envName:Environment.Variables.ENV_NAME,pool:Environment.Variables.FDP_DB_POOL_MAX,engineCpu:Environment.Variables.FDP_QA09_ENGINE_CPU_DIAGNOSIS,preconnect:Environment.Variables.FDP_QA09_AUTHENTICATED_PRECONNECT,accountReadCandidate:Environment.Variables.FDP_QA09_ACCOUNT_READ_CANDIDATE,contractLoadDetail:Environment.Variables.FDP_QA09_CONTRACT_LOAD_DETAIL,contractPublicBoundaries:Environment.Variables.FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES,contractObserverCost:Environment.Variables.FDP_CONTRACT_OBSERVER_COST}',
   ]);
   const concurrency = read(['lambda', 'get-function-concurrency', '--function-name', 'fdp-test-api']);
   const result = {

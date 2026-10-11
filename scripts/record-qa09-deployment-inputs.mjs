@@ -18,6 +18,8 @@ export function resolveDeploymentInputs(env, sourceCommit) {
   const accountRead = manual ? (env.QA09_REQUESTED_ACCOUNT_READ ?? 'false') : 'false';
   const detail = manual ? (env.QA09_REQUESTED_CONTRACT_DETAIL ?? 'false') : 'false';
   const publicBoundaries = manual ? (env.QA09_REQUESTED_CONTRACT_PUBLIC ?? 'false') : 'false';
+  const observerCost = manual ? (env.QA09_REQUESTED_OBSERVER_COST ?? 'false') : 'false';
+  demand(['true', 'false'].includes(observerCost), 'EXPLICIT_OBSERVER_COST_MODE_REQUIRED');
   demand(['true', 'false'].includes(publicBoundaries), 'EXPLICIT_CONTRACT_PUBLIC_MODE_REQUIRED');
   demand(['true', 'false'].includes(detail), 'EXPLICIT_CONTRACT_DETAIL_MODE_REQUIRED');
   demand(['true', 'false'].includes(accountRead), 'EXPLICIT_ACCOUNT_READ_MODE_REQUIRED');
@@ -35,6 +37,7 @@ export function resolveDeploymentInputs(env, sourceCommit) {
     FDP_QA09_ACCOUNT_READ_CANDIDATE: accountRead,
     FDP_QA09_CONTRACT_LOAD_DETAIL: detail,
     FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES: publicBoundaries,
+    FDP_CONTRACT_OBSERVER_COST: observerCost,
   });
   demand(
     /^[1-9][0-9]*$/.test(env.GITHUB_RUN_ID ?? '') && /^[1-9][0-9]*$/.test(env.GITHUB_RUN_ATTEMPT ?? ''),
@@ -53,12 +56,17 @@ export function resolveDeploymentInputs(env, sourceCommit) {
     accountReadCandidate: accountRead === 'true',
     contractLoadDetail: detail === 'true',
     contractPublicBoundaries: publicBoundaries === 'true',
+    contractObserverCost: observerCost === 'true',
     context,
     fullQa09Accepted: false,
     p95Accepted: false,
   };
 }
-export function validateEngineInputPair(off, on, { preconnect = false, accountRead = false } = {}) {
+export function validateEngineInputPair(
+  off,
+  on,
+  { preconnect = false, accountRead = false, observerCost = false } = {},
+) {
   for (const r of [off, on]) {
     demand(
       r.gate === 'PASS' &&
@@ -81,6 +89,7 @@ export function validateEngineInputPair(off, on, { preconnect = false, accountRe
         QA09_REQUESTED_ACCOUNT_READ: String(r.accountReadCandidate ?? false),
         QA09_REQUESTED_CONTRACT_DETAIL: String(r.contractLoadDetail ?? false),
         QA09_REQUESTED_CONTRACT_PUBLIC: String(r.contractPublicBoundaries ?? false),
+        QA09_REQUESTED_OBSERVER_COST: String(r.contractObserverCost ?? false),
         GITHUB_RUN_ID: r.runId,
         GITHUB_RUN_ATTEMPT: r.runAttempt,
       },
@@ -92,6 +101,8 @@ export function validateEngineInputPair(off, on, { preconnect = false, accountRe
       context.enableQa09ContractLoadDetail = false;
     if (r.contractPublicBoundaries === undefined && context.enableQa09ContractPublicBoundaries === undefined)
       context.enableQa09ContractPublicBoundaries = false;
+    if (r.contractObserverCost === undefined && context.enableQa09ContractObserverCost === undefined)
+      context.enableQa09ContractObserverCost = false;
     demand(
       JSON.stringify(Object.entries(context).sort()) === JSON.stringify(Object.entries(expected.context).sort()),
       'RESOLVED_CONTEXT_DRIFT',
@@ -99,24 +110,37 @@ export function validateEngineInputPair(off, on, { preconnect = false, accountRe
   }
   demand(
     off.runId !== on.runId &&
-      (accountRead
+      (observerCost
         ? off.engineCpu === true &&
           on.engineCpu === true &&
           off.authenticatedPreconnect === true &&
           on.authenticatedPreconnect === true &&
-          off.accountReadCandidate === false &&
-          on.accountReadCandidate === true
-        : !off.accountReadCandidate &&
-          !on.accountReadCandidate &&
-          (preconnect
-            ? off.engineCpu === true &&
-              on.engineCpu === true &&
-              off.authenticatedPreconnect === false &&
-              on.authenticatedPreconnect === true
-            : off.engineCpu === false &&
-              on.engineCpu === true &&
-              !off.authenticatedPreconnect &&
-              !on.authenticatedPreconnect)),
+          off.accountReadCandidate === true &&
+          on.accountReadCandidate === true &&
+          off.contractLoadDetail === true &&
+          on.contractLoadDetail === true &&
+          off.contractPublicBoundaries === true &&
+          on.contractPublicBoundaries === true &&
+          off.contractObserverCost === false &&
+          on.contractObserverCost === true
+        : accountRead
+          ? off.engineCpu === true &&
+            on.engineCpu === true &&
+            off.authenticatedPreconnect === true &&
+            on.authenticatedPreconnect === true &&
+            off.accountReadCandidate === false &&
+            on.accountReadCandidate === true
+          : !off.accountReadCandidate &&
+            !on.accountReadCandidate &&
+            (preconnect
+              ? off.engineCpu === true &&
+                on.engineCpu === true &&
+                off.authenticatedPreconnect === false &&
+                on.authenticatedPreconnect === true
+              : off.engineCpu === false &&
+                on.engineCpu === true &&
+                !off.authenticatedPreconnect &&
+                !on.authenticatedPreconnect)),
     'DISTINCT_OFF_ON_RUNS_REQUIRED',
   );
   for (const k of [
@@ -134,11 +158,19 @@ export function validateEngineInputPair(off, on, { preconnect = false, accountRe
       'PAIR_INPUT_DRIFT',
     );
   demand((off.contractLoadDetail ?? false) === (on.contractLoadDetail ?? false), 'PAIR_DETAIL_MODE_DRIFT');
+  if (!observerCost)
+    demand((off.contractObserverCost ?? false) === (on.contractObserverCost ?? false), 'PAIR_OBSERVER_MODE_DRIFT');
   demand((off.contractPublicBoundaries ?? false) === (on.contractPublicBoundaries ?? false), 'PAIR_PUBLIC_MODE_DRIFT');
   return {
     gate: 'PASS',
     scope: 'INPUT_COMPARABILITY_ONLY',
-    comparison: accountRead ? 'R0_R1_ACCOUNT_READ_ONLY' : preconnect ? 'C0_C1_PRECONNECT_ONLY' : 'ENGINE_OFF_ON',
+    comparison: observerCost
+      ? 'R0_R1_OBSERVER_COST_ONLY'
+      : accountRead
+        ? 'R0_R1_ACCOUNT_READ_ONLY'
+        : preconnect
+          ? 'C0_C1_PRECONNECT_ONLY'
+          : 'ENGINE_OFF_ON',
     sourceCommit: off.sourceCommit,
     offRunId: off.runId,
     onRunId: on.runId,
@@ -148,13 +180,14 @@ export function validateEngineInputPair(off, on, { preconnect = false, accountRe
   };
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  if (['--pair', '--preconnect-pair', '--account-read-pair'].includes(process.argv[2])) {
+  if (['--pair', '--preconnect-pair', '--account-read-pair', '--observer-cost-pair'].includes(process.argv[2])) {
     demand(process.argv.length === 6, 'PAIR_ARGUMENTS_REQUIRED');
     const files = process.argv.slice(3, 5),
       values = files.map((f) => JSON.parse(readFileSync(f)));
     const result = validateEngineInputPair(...values, {
       preconnect: process.argv[2] === '--preconnect-pair',
       accountRead: process.argv[2] === '--account-read-pair',
+      observerCost: process.argv[2] === '--observer-cost-pair',
     });
     result.bindings = files.map((path) => ({
       path,
@@ -191,7 +224,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (process.env.GITHUB_ENV)
       appendFileSync(
         process.env.GITHUB_ENV,
-        `FDP_QA09_ROLLOUT_PHASE=${result.rolloutPhase}\nFDP_QA09_ENGINE_CPU_DIAGNOSIS=${result.engineCpu}\nFDP_QA09_AUTHENTICATED_PRECONNECT=${result.authenticatedPreconnect}\nFDP_QA09_ACCOUNT_READ_CANDIDATE=${result.accountReadCandidate}\nFDP_QA09_CONTRACT_LOAD_DETAIL=${result.contractLoadDetail}\nFDP_QA09_CONTRACT_PUBLIC_BOUNDARIES=${result.contractPublicBoundaries}\n`,
+        `FDP_QA09_ROLLOUT_PHASE=${result.rolloutPhase}\nFDP_QA09_ENGINE_CPU_DIAGNOSIS=${result.engineCpu}\nFDP_QA09_AUTHENTICATED_PRECONNECT=${result.authenticatedPreconnect}\nFDP_QA09_ACCOUNT_READ_CANDIDATE=${result.accountReadCandidate}\nFDP_QA09_CONTRACT_LOAD_DETAIL=${result.contractLoadDetail}\nFDP_QA09_CONTRACT_PUBLIC_BOUNDARIES=${result.contractPublicBoundaries}\nFDP_CONTRACT_OBSERVER_COST=${result.contractObserverCost}\n`,
       );
     console.log(
       JSON.stringify({

@@ -4,10 +4,15 @@ import {
   bindDataPathObservation,
   captureDataPathBoundary,
   recordContractLoadOwnership,
+  beginContractObserverCost,
+  recordContractObserverBoundary,
+  observeContractPublicCall,
+  finishContractObserverCost,
 } from '@fdp/observability';
 
 type Finish = ReturnType<typeof beginDataPathPhase>;
 interface LoadScope {
+  costScope?: ReturnType<typeof beginContractObserverCost>;
   delegate: Finish;
   prepare?: Finish;
   result?: Finish;
@@ -40,10 +45,12 @@ interface LoadScope {
 const loads = new AsyncLocalStorage<LoadScope>();
 
 /** One existing contract findFirst; no eager query, compiler internals, retries or new pool. */
-export async function observeContractLoad<T>(work: () => Promise<T>): Promise<T> {
+export async function observeContractLoad<T>(work: () => Promise<T>, observerCost = false): Promise<T> {
+  const costScope = beginContractObserverCost(observerCost);
   const start = captureDataPathBoundary();
   const outer = beginDataPathPhase('contract-load', { processCpu: true, startBoundary: start });
   const frame: LoadScope = {
+    costScope,
     delegate: beginDataPathPhase('contract-load-delegate', { processCpu: true, startBoundary: start }),
     modelEntries: 0,
     driverDispatches: 0,
@@ -65,6 +72,7 @@ export async function observeContractLoad<T>(work: () => Promise<T>): Promise<T>
       throw error;
     } finally {
       const end = captureDataPathBoundary();
+      recordContractObserverBoundary(frame.costScope, 'OPERATION_END', end);
       frame.completed = true;
       const boundary = failure === undefined ? 'OPERATION_SETTLED' : 'OPERATION_FAILED';
       frame.resultToModel?.(failure, boundary, end);
@@ -96,6 +104,13 @@ export async function observeContractLoad<T>(work: () => Promise<T>): Promise<T>
                 : {}),
             }
           : undefined,
+      );
+      finishContractObserverCost(
+        frame.costScope,
+        frame.modelEntries === 1 &&
+          frame.driverDispatches === 1 &&
+          frame.transactional &&
+          frame.publicBoundaries === true,
       );
     }
   });
@@ -135,6 +150,7 @@ export function captureContractLoadModelResume(
     frame.modelResumeObserved = true;
     if (frame.modelResumes !== 1 || !frame.resultToModel) return;
     const boundary = captureDataPathBoundary();
+    recordContractObserverBoundary(frame.costScope, 'MODEL_EXTENSION_RESUMED', boundary);
     frame.resultAfterModel = beginDataPathPhase('contract-load-result-after-model', {
       processCpu: true,
       startBoundary: boundary,
@@ -218,6 +234,7 @@ export function observeContractLoadDriver<T>(work: () => Promise<T>, transaction
   if (frame.driverDispatches !== 1) return work();
   frame.transactional = transactional;
   const dispatch = captureDataPathBoundary();
+  recordContractObserverBoundary(frame.costScope, 'DRIVER_DISPATCH', dispatch);
   const query = beginDataPathPhase('contract-load-driver-query', { processCpu: true, startBoundary: dispatch });
   if (frame.detailed) {
     frame.beforePg = beginDataPathPhase('contract-load-driver-before-pg', {
@@ -237,9 +254,10 @@ export function observeContractLoadDriver<T>(work: () => Promise<T>, transaction
   return (async () => {
     let failure: unknown;
     try {
-      const pending = work();
+      const pending = observeContractPublicCall(frame.costScope, work);
       if (frame.publicBoundaries) {
         const returned = captureDataPathBoundary();
+        recordContractObserverBoundary(frame.costScope, 'ADAPTER_CALL_RETURNED', returned);
         frame.driverReturns++;
         frame.driverAwait = beginDataPathPhase('contract-load-driver-await', {
           processCpu: true,

@@ -1,5 +1,11 @@
 import { assert, test, vi, afterEach } from 'vitest';
-const mocks = vi.hoisted(() => ({ database: vi.fn(), license: vi.fn(), client: vi.fn(), candidate: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  database: vi.fn(),
+  license: vi.fn(),
+  client: vi.fn(),
+  candidate: vi.fn(),
+  contracts: vi.fn(),
+}));
 vi.mock('@fdp/aws-clients', async (importActual) => ({
   ...(await importActual<object>()),
   resolveDatabaseUrl: mocks.database,
@@ -11,6 +17,13 @@ vi.mock('@fdp/database', async (importActual) => {
     ...actual,
     createPrismaClient: mocks.client.mockImplementation(actual.createPrismaClient),
     createAdminPreconnectCandidate: mocks.candidate.mockImplementation(actual.createAdminPreconnectCandidate),
+  };
+});
+vi.mock('../src/admin/contract/handler.js', async (importActual) => {
+  const actual = await importActual<typeof import('../src/admin/contract/handler.js')>();
+  return {
+    ...actual,
+    createAdminContractHandlers: mocks.contracts.mockImplementation(actual.createAdminContractHandlers),
   };
 });
 const env = {
@@ -31,6 +44,7 @@ const env = {
   FDP_QA09_ACCOUNT_READ_CANDIDATE: 'false',
   FDP_QA09_CONTRACT_LOAD_DETAIL: 'false',
   FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES: 'false',
+  FDP_CONTRACT_OBSERVER_COST: 'false',
   FDP_ADMIN_PARALLEL_SECRETS: 'true',
 };
 const setup = () => {
@@ -188,3 +202,29 @@ for (const publicBoundaries of [false, true])
         checkout.mockRestore();
       }
     });
+
+for (const observer of [false, true])
+  test(`actual Lambda observer=${observer} never observes bad JWT or changes single-pool preparation`, async () => {
+    setup();
+    for (const key of [
+      'FDP_QA09_AUTHENTICATED_PRECONNECT',
+      'FDP_QA09_CONTRACT_LOAD_DETAIL',
+      'FDP_QA09_CONTRACT_PUBLIC_BOUNDARIES',
+    ])
+      vi.stubEnv(key, 'true');
+    vi.stubEnv('FDP_CONTRACT_OBSERVER_COST', String(observer));
+    const { Pool } = await import('pg'),
+      checkout = vi.spyOn(Pool.prototype, 'connect');
+    const output = vi.spyOn(console, 'info').mockImplementation(() => {});
+    try {
+      const { handler } = await import('../src/runtime/lambda-entry.js');
+      assert.equal((await handler(event)).statusCode, 401);
+      assert.equal(mocks.candidate.mock.calls.length, 1);
+      assert.equal(mocks.contracts.mock.calls[0]![0].contractObserverCost, observer);
+      assert.equal(checkout.mock.calls.length, 0);
+      assert.isFalse(output.mock.calls.some(([r]) => String(r).includes('data-path.contract-load.observer-cost')));
+    } finally {
+      checkout.mockRestore();
+      output.mockRestore();
+    }
+  });

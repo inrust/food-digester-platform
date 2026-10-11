@@ -270,3 +270,28 @@ test('public context defaults off and requires strict detail and all existing bu
   ])
     assert.throws(() => resolveConfig(new App({ context: { ...enabled, ...patch } })));
 });
+
+test('observer context is default off and requires public plus every existing test budget guard', () => {
+  assert.isFalse(resolveConfig(new App({ context })).enableQa09ContractObserverCost);
+  const enabled = {
+    ...context,
+    enableRequestObservability: true,
+    enableQa09Capacity: true,
+    enableQa09EngineCpuDiagnosis: true,
+    enableQa09AuthenticatedPreconnect: true,
+    enableQa09ContractLoadDetail: true,
+    enableQa09ContractPublicBoundaries: true,
+    enableQa09ContractObserverCost: true,
+  };
+  assert.isTrue(resolveConfig(new App({ context: enabled })).enableQa09ContractObserverCost);
+  for (const patch of [
+    { enableQa09ContractObserverCost: 'yes' },
+    { enableQa09ContractPublicBoundaries: false },
+    { enableQa09ContractLoadDetail: false },
+    { enableQa09AuthenticatedPreconnect: false },
+    { enableQa09Capacity: false },
+    { enableQa09EngineCpuDiagnosis: false },
+    { envName: 'prod' },
+  ])
+    assert.throws(() => resolveConfig(new App({ context: { ...enabled, ...patch } })));
+});
