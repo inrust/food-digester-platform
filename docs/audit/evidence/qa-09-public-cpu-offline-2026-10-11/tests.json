@@ -1,0 +1,71 @@
+{
+  "gate": "PASS",
+  "scope": "LOCAL_CHECKS_ONLY_NOT_DEPLOYMENT_OR_P95",
+  "originalFullCommand": {
+    "command": "pnpm test",
+    "exit": 1,
+    "applicationPassed": 1574,
+    "applicationFiles": 189,
+    "contractPassed": 302,
+    "scriptPassed": 880,
+    "scriptTotal": 884,
+    "failures": {
+      "loopbackSandboxEPERM": 3,
+      "gitFileListENOBUFS": 1
+    },
+    "receipt": "pnpm-test-sandbox-fail.log"
+  },
+  "effectiveChecks": [
+    {
+      "command": "pnpm test:scripts",
+      "exit": 0,
+      "passed": 886,
+      "receipt": "scripts-final-886.log",
+      "localLoopbackAllowed": true
+    },
+    {
+      "command": "node --test scripts/qa09-contract-cpu-proof.test.mjs scripts/analyze-qa09-public-cpu-history.test.mjs scripts/check-qa09-public-cpu-offline.test.mjs",
+      "exit": 0,
+      "passed": 21,
+      "receipt": "proof-tests-final.log"
+    },
+    {
+      "command": "pnpm typecheck",
+      "exit": 0,
+      "tasks": 21,
+      "receipt": "typecheck.log"
+    },
+    {
+      "command": "scoped eslint",
+      "exit": 0,
+      "receipt": "lint.log"
+    },
+    {
+      "command": "scoped prettier --check",
+      "exit": 0,
+      "receipt": "format.log"
+    },
+    {
+      "command": "node scripts/check-boundaries.mjs",
+      "exit": 0,
+      "receipt": "boundaries.log"
+    },
+    {
+      "command": "node scripts/check-secrets.mjs",
+      "exit": 0,
+      "receipt": "secrets.log"
+    },
+    {
+      "command": "node scripts/run-qa09-contract-cpu-runtime.mjs .../matrix-03",
+      "exit": 0,
+      "cases": 14,
+      "transactions": 34,
+      "receipt": "matrix-03/matrix.json"
+    }
+  ],
+  "productionSourceChanged": false,
+  "candidateDefaultsChanged": false,
+  "targetNewSha": "NOT_RUN",
+  "overallQa09": "PARTIAL",
+  "p95Accepted": false
+}

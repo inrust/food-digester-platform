@@ -45,6 +45,8 @@ export function listRepositoryFiles(root) {
   const out = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], {
     cwd: root,
     encoding: 'utf8',
+    // Audit evidence paths now exceed execFileSync's 1 MiB default; remain bounded and fail closed.
+    maxBuffer: 16 * 1024 * 1024,
   });
   return out.split('\n').filter(Boolean);
 }

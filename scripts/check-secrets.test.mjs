@@ -6,10 +6,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { scanContent, scanRepository } from './check-secrets.mjs';
+import { scanContent, scanRepository, listRepositoryFiles } from './check-secrets.mjs';
 
 const pemExample = ['-----BEGIN', 'PRIVATE', 'KEY-----'].join(' ');
 const awsExample = 'AK' + 'IA' + 'ABCDEFGHIJKLMNOP'.slice(0, 16);
@@ -53,4 +53,32 @@ test('失败示例：未跟踪且未忽略文件中的私钥也被扫描', () =>
 test('当前仓库通过敏感信息扫描', () => {
   const root = new URL('..', import.meta.url).pathname;
   assert.deepEqual(scanRepository(root), []);
+});
+
+// Populate only the temporary Git index: no thousands of physical fixture files are needed.
+test('超过1MiB的路径清单完整扫描，末尾敏感文件不能被截断跳过', () => {
+  const root = mkdtempSync(join(tmpdir(), 'fdp-secrets-large-index-'));
+  try {
+    execFileSync('git', ['init', '--quiet'], { cwd: root });
+    const blob = execFileSync('git', ['hash-object', '-w', '--stdin'], {
+      cwd: root,
+      input: '',
+      encoding: 'utf8',
+    }).trim();
+    const names = Array.from(
+      { length: 6000 },
+      (_, i) => `fixture-${String(i).padStart(5, '0')}-${'x'.repeat(180)}.txt`,
+    );
+    names.push('zzzz-last-sensitive-fixture.txt');
+    execFileSync('git', ['update-index', '--index-info'], {
+      cwd: root,
+      input: names.map((name) => `100644 ${blob}\t${name}\n`).join(''),
+    });
+    writeFileSync(join(root, names.at(-1)), pemExample);
+    assert.ok(Buffer.byteLength(names.join('\n')) > 1024 * 1024);
+    assert.deepEqual(listRepositoryFiles(root), names);
+    assert.ok(scanRepository(root).some((f) => f.file === names.at(-1) && f.id === 'pem-private-key'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
