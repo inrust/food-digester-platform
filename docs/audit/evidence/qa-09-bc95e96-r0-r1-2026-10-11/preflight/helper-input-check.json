@@ -1,0 +1,54 @@
+{
+  "gate": "LOCAL_PREFLIGHT_HELPER_CHECK_PASS",
+  "scope": "OFFLINE_ARGUMENTS_ONLY_NO_CLOUD_EXECUTION",
+  "sourceCommit": "bc95e9671a0bfb69effa95ad7c315b375199f132",
+  "rows": [
+    {
+      "mode": "r0",
+      "dispatchInputs": {
+        "expected_commit": "bc95e9671a0bfb69effa95ad7c315b375199f132",
+        "engine_cpu_diagnosis": "true",
+        "authenticated_preconnect": "true",
+        "account_read_candidate": "true",
+        "contract_load_detail": "true",
+        "contract_public_boundaries": "true",
+        "contract_observer_cost": "false",
+        "rollout_phase": "immediate"
+      },
+      "gate": "PASS"
+    },
+    {
+      "mode": "r1",
+      "dispatchInputs": {
+        "expected_commit": "bc95e9671a0bfb69effa95ad7c315b375199f132",
+        "engine_cpu_diagnosis": "true",
+        "authenticated_preconnect": "true",
+        "account_read_candidate": "true",
+        "contract_load_detail": "true",
+        "contract_public_boundaries": "true",
+        "contract_observer_cost": "true",
+        "rollout_phase": "immediate"
+      },
+      "gate": "PASS"
+    },
+    {
+      "mode": "restore",
+      "dispatchInputs": {
+        "expected_commit": "bc95e9671a0bfb69effa95ad7c315b375199f132",
+        "engine_cpu_diagnosis": "true",
+        "authenticated_preconnect": "false",
+        "account_read_candidate": "false",
+        "contract_load_detail": "false",
+        "contract_public_boundaries": "false",
+        "contract_observer_cost": "false",
+        "rollout_phase": "immediate"
+      },
+      "gate": "PASS"
+    }
+  ],
+  "bindings": {
+    "dispatch-unit.py": "44b5b88dc05eacbf95af70fa07879ac37e45c5d02aff4e01e7c58b086cc89a2c",
+    "r0/check-unit.py": "a7f441622329d658a148d556d7392e2ae467c56a32b15bb8fb717b00a3bd0691",
+    "r1/check-unit.py": "a7f441622329d658a148d556d7392e2ae467c56a32b15bb8fb717b00a3bd0691"
+  }
+}
