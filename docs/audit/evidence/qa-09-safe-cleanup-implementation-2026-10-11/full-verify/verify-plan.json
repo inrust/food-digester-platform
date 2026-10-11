@@ -1,0 +1,40 @@
+{
+  "gate": "PREPARED",
+  "baseCommit": "0af53c7a02e53f681cdbd111f905b2c87124bb53",
+  "originalVerifySha256": "c3cfe21a44d824a698c5ee2f29a9214a5d018b8fe30207ac26807c8da7e47332",
+  "scope": "VERIFY_EQUIVALENT_ONLY_LINT_FORMAT_EXCLUDE_PREEXISTING_UNTRACKED_BUILD",
+  "commands": [
+    "pnpm exec eslint . --ignore-pattern build/**",
+    "pnpm exec prettier --check . '!build/**'",
+    "pnpm typecheck",
+    "pnpm openapi:check",
+    "pnpm test",
+    "pnpm build",
+    "pnpm check:boundaries",
+    "pnpm check:schemas",
+    "pnpm check:migrations",
+    "pnpm check:evidence",
+    "pnpm check:secrets",
+    "pnpm check:sensitive-sinks",
+    "pnpm check:admin-web-delivery",
+    "pnpm check:admin-web-e2e",
+    "pnpm check:cmd-ota-delivery",
+    "pnpm test:device-contracts /tmp/fdp-device-contracts-gate.json",
+    "pnpm test:iot-integration /tmp/fdp-iot-integration-gate.json",
+    "pnpm test:core-api-integration /tmp/fdp-core-api-integration-gate.json",
+    "pnpm test:admin-e2e-suite /tmp/fdp-admin-e2e-gate.json",
+    "pnpm test:security-suite /tmp/fdp-security-gate.json",
+    "pnpm test:reliability-suite /tmp/fdp-reliability-gate.json",
+    "pnpm test:prototype-regression /tmp/fdp-prototype-regression-gate.json"
+  ],
+  "exclusions": [
+    "build/ (lint and format only)"
+  ],
+  "noCloudActions": true,
+  "initialInvocation": {
+    "scope": "TEMP_IGNORE_FILE_WRONG_BASE_DIRECTORY",
+    "result": "FAIL_AT_FORMAT",
+    "sourcePlanSha256": "fc9e4a9967e112479e77e29bb4d79904996f5a78585034b9e9c83f4fffce62f8",
+    "sourceResultSha256": "722a000be7f1e0a1a7762665e64b45891020843ccac9ad31987917fff28e7a72"
+  }
+}

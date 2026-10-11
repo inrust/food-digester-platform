@@ -21,6 +21,25 @@ const names = new Set([
   'InternalErrorException',
   'NetworkingError',
   'CredentialsProviderError',
+  'CognitoIdpError',
+]);
+const cognitoCodes = new Set([
+  'INVALID_CREDENTIALS',
+  'PASSWORD_RESET_REQUIRED',
+  'USER_NOT_CONFIRMED',
+  'CODE_MISMATCH',
+  'CODE_EXPIRED',
+  'PASSWORD_TOO_SHORT',
+  'PASSWORD_REQUIRES_UPPERCASE',
+  'PASSWORD_REQUIRES_LOWERCASE',
+  'PASSWORD_REQUIRES_NUMBER',
+  'PASSWORD_REQUIRES_SYMBOL',
+  'PASSWORD_POLICY_VIOLATION',
+  'PASSWORD_REUSE_NOT_ALLOWED',
+  'REFRESH_TOKEN_INVALID',
+  'RATE_LIMITED',
+  'NETWORK',
+  'UNKNOWN',
 ]);
 const codes = new Set([
   ...names,
@@ -32,6 +51,7 @@ const codes = new Set([
   'EAI_AGAIN',
   'UND_ERR_CONNECT_TIMEOUT',
   'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_BODY_TIMEOUT',
   'UND_ERR_SOCKET',
   'CLI_READ_TIMEOUT',
   'CLI_NETWORK_ERROR',
@@ -47,6 +67,13 @@ const codes = new Set([
   'FIXTURE_RESULT_READ_TIMEOUT',
   'FIXTURE_FRAME_TRUNCATED',
   'PRE_START_READ_TIMEOUT',
+  'UNKNOWN_START_READ_TIMEOUT',
+  'UNKNOWN_START_RECEIPT_REQUIRED',
+  'INVALID_UNKNOWN_START_INVENTORY',
+  'UNKNOWN_START_INVENTORY_READ_INCOMPLETE',
+  'DUPLICATE_BUILD_INVENTORY_ID',
+  'INVALID_BUILD_START_TIME',
+  'WRONG_ACCOUNT',
 ]);
 const operations = new Set([
   'batch-get-builds',
@@ -56,6 +83,7 @@ const operations = new Set([
   'create-project',
   'get-caller-identity',
   'get-log-events',
+  'list-builds-for-project',
 ]);
 const safeCode = (v) => {
   if (codes.has(v)) return v;
@@ -67,11 +95,22 @@ const requestId = (v) => (typeof v === 'string' && /^[a-f0-9-]{16,64}$/i.test(v)
 export function safeOperationError(error) {
   const cli = error?.cliObservation;
   return {
-    code: safeCode(error?.code) ?? safeCode(error?.message) ?? 'UNCLASSIFIED_FAILURE',
+    code:
+      (error?.name === 'CognitoIdpError' && cognitoCodes.has(error?.code) ? error.code : null) ??
+      safeCode(error?.code) ??
+      safeCode(error?.message) ??
+      'UNCLASSIFIED_FAILURE',
     errorName: names.has(error?.name) ? error.name : 'UNCLASSIFIED_ERROR',
     causeCode: safeCode(error?.cause?.code),
     requestId: requestId(error?.$metadata?.requestId),
-    httpStatusCode: integer(error?.$metadata?.httpStatusCode, 599),
+    httpStatusCode: error?.$metadata?.httpStatusCode >= 100 ? integer(error?.$metadata?.httpStatusCode, 599) : null,
+    ...(error?.name === 'CognitoIdpError'
+      ? {
+          diagnosticStage: ['FETCH', 'BODY', 'HTTP', 'REPLY'].includes(error?.diagnosticStage)
+            ? error.diagnosticStage
+            : null,
+        }
+      : {}),
     attempts: integer(error?.$metadata?.attempts, 100),
     totalRetryDelay: integer(error?.$metadata?.totalRetryDelay, 3600000),
     ...(cli

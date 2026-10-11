@@ -1,0 +1,206 @@
+{
+  "gate": "PASS",
+  "scope": "VERIFY_EQUIVALENT_ONLY_LINT_FORMAT_EXCLUDE_PREEXISTING_UNTRACKED_BUILD",
+  "steps": [
+    {
+      "step": 1,
+      "command": "pnpm exec eslint . --ignore-pattern build/**",
+      "startedAt": "2026-10-11T07:27:55.006374+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:28:00.110176+00:00",
+      "log": "verify-01.log"
+    },
+    {
+      "step": 2,
+      "command": "pnpm exec prettier --check . '!build/**'",
+      "startedAt": "2026-10-11T07:28:00.110651+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:28:05.410751+00:00",
+      "log": "verify-02.log"
+    },
+    {
+      "step": 3,
+      "command": "pnpm typecheck",
+      "startedAt": "2026-10-11T07:28:05.411029+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:28:08.552636+00:00",
+      "log": "verify-03.log"
+    },
+    {
+      "step": 4,
+      "command": "pnpm openapi:check",
+      "startedAt": "2026-10-11T07:28:08.552903+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:28:10.481747+00:00",
+      "log": "verify-04.log"
+    },
+    {
+      "step": 5,
+      "command": "pnpm test",
+      "startedAt": "2026-10-11T07:28:10.482361+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:29:37.934328+00:00",
+      "log": "verify-05.log"
+    },
+    {
+      "step": 6,
+      "command": "pnpm build",
+      "startedAt": "2026-10-11T07:29:37.934746+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:29:41.162787+00:00",
+      "log": "verify-06.log"
+    },
+    {
+      "step": 7,
+      "command": "pnpm check:boundaries",
+      "startedAt": "2026-10-11T07:29:41.163066+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:29:41.312064+00:00",
+      "log": "verify-07.log"
+    },
+    {
+      "step": 8,
+      "command": "pnpm check:schemas",
+      "startedAt": "2026-10-11T07:29:41.312312+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:29:41.520931+00:00",
+      "log": "verify-08.log"
+    },
+    {
+      "step": 9,
+      "command": "pnpm check:migrations",
+      "startedAt": "2026-10-11T07:29:41.521200+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:29:43.450391+00:00",
+      "log": "verify-09.log"
+    },
+    {
+      "step": 10,
+      "command": "pnpm check:evidence",
+      "startedAt": "2026-10-11T07:29:43.450689+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:29:43.606065+00:00",
+      "log": "verify-10.log"
+    },
+    {
+      "step": 11,
+      "command": "pnpm check:secrets",
+      "startedAt": "2026-10-11T07:29:43.606354+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:29:44.961771+00:00",
+      "log": "verify-11.log"
+    },
+    {
+      "step": 12,
+      "command": "pnpm check:sensitive-sinks",
+      "startedAt": "2026-10-11T07:29:44.962047+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:29:45.134375+00:00",
+      "log": "verify-12.log"
+    },
+    {
+      "step": 13,
+      "command": "pnpm check:admin-web-delivery",
+      "startedAt": "2026-10-11T07:29:45.134662+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:29:45.297004+00:00",
+      "log": "verify-13.log"
+    },
+    {
+      "step": 14,
+      "command": "pnpm check:admin-web-e2e",
+      "startedAt": "2026-10-11T07:29:45.297274+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:31:08.989397+00:00",
+      "log": "verify-14.log"
+    },
+    {
+      "step": 15,
+      "command": "pnpm check:cmd-ota-delivery",
+      "startedAt": "2026-10-11T07:31:08.989666+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:31:23.911091+00:00",
+      "log": "verify-15.log"
+    },
+    {
+      "step": 16,
+      "command": "pnpm test:device-contracts /tmp/fdp-device-contracts-gate.json",
+      "startedAt": "2026-10-11T07:31:23.911467+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:31:28.734666+00:00",
+      "log": "verify-16.log"
+    },
+    {
+      "step": 17,
+      "command": "pnpm test:iot-integration /tmp/fdp-iot-integration-gate.json",
+      "startedAt": "2026-10-11T07:31:28.735073+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:31:33.676650+00:00",
+      "log": "verify-17.log"
+    },
+    {
+      "step": 18,
+      "command": "pnpm test:core-api-integration /tmp/fdp-core-api-integration-gate.json",
+      "startedAt": "2026-10-11T07:31:33.676995+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:31:39.420900+00:00",
+      "log": "verify-18.log"
+    },
+    {
+      "step": 19,
+      "command": "pnpm test:admin-e2e-suite /tmp/fdp-admin-e2e-gate.json",
+      "startedAt": "2026-10-11T07:31:39.421314+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:34:35.866181+00:00",
+      "log": "verify-19.log"
+    },
+    {
+      "step": 20,
+      "command": "pnpm test:security-suite /tmp/fdp-security-gate.json",
+      "startedAt": "2026-10-11T07:34:35.866536+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:34:41.439084+00:00",
+      "log": "verify-20.log"
+    },
+    {
+      "step": 21,
+      "command": "pnpm test:reliability-suite /tmp/fdp-reliability-gate.json",
+      "startedAt": "2026-10-11T07:34:41.439388+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:35:15.434088+00:00",
+      "log": "verify-21.log"
+    },
+    {
+      "step": 22,
+      "command": "pnpm test:prototype-regression /tmp/fdp-prototype-regression-gate.json",
+      "startedAt": "2026-10-11T07:35:15.434377+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:37:11.190763+00:00",
+      "log": "verify-22.log"
+    }
+  ],
+  "cloudActions": 0,
+  "targetAcceptance": false
+}

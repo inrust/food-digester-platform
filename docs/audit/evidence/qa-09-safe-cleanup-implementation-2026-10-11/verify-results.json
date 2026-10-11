@@ -1,0 +1,24 @@
+{
+  "gate": "RUNNING",
+  "scope": "VERIFY_EQUIVALENT_ONLY_LINT_FORMAT_EXCLUDE_PREEXISTING_UNTRACKED_BUILD",
+  "steps": [
+    {
+      "step": 1,
+      "command": "pnpm exec eslint . --ignore-pattern build/**",
+      "startedAt": "2026-10-11T07:26:00.522406+00:00",
+      "gate": "PASS",
+      "exit": 0,
+      "finishedAt": "2026-10-11T07:26:05.718651+00:00",
+      "log": "verify-01.log"
+    },
+    {
+      "step": 2,
+      "command": "pnpm exec prettier --check . --ignore-path /tmp/qa09-safe-cleanup-prettierignore",
+      "startedAt": "2026-10-11T07:26:05.719040+00:00",
+      "gate": "FAIL",
+      "exit": 2,
+      "finishedAt": "2026-10-11T07:26:39.518389+00:00",
+      "log": "verify-02.log"
+    }
+  ]
+}

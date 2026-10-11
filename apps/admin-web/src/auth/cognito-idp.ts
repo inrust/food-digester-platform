@@ -56,17 +56,73 @@ export type CognitoErrorCode =
 
 export class CognitoIdpError extends Error {
   readonly code: CognitoErrorCode;
+  readonly diagnosticStage?: 'FETCH' | 'BODY' | 'HTTP' | 'REPLY';
+  readonly $metadata: { readonly httpStatusCode?: number; readonly requestId?: string };
 
-  constructor(code: CognitoErrorCode, message: string) {
-    super(message);
+  constructor(code: CognitoErrorCode, message: string, diagnostic: CognitoDiagnostic = {}) {
+    const causeCode = transportCauseCode(diagnostic.cause);
+    super(message, causeCode ? { cause: { code: causeCode } } : undefined);
     this.name = 'CognitoIdpError';
     this.code = code;
+    if (diagnostic.stage !== undefined && ['FETCH', 'BODY', 'HTTP', 'REPLY'].includes(diagnostic.stage))
+      this.diagnosticStage = diagnostic.stage;
+    const status = diagnostic.httpStatusCode;
+    const requestId = safeRequestId(diagnostic.requestId);
+    this.$metadata = {
+      ...(typeof status === 'number' && Number.isInteger(status) && status >= 100 && status <= 599
+        ? { httpStatusCode: status }
+        : {}),
+      ...(requestId ? { requestId } : {}),
+    };
   }
+}
+
+interface CognitoDiagnostic {
+  readonly stage?: 'FETCH' | 'BODY' | 'HTTP' | 'REPLY';
+  readonly cause?: unknown;
+  readonly httpStatusCode?: unknown;
+  readonly requestId?: unknown;
+}
+const transportCodes = new Set([
+  'ETIMEDOUT',
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'EPIPE',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_BODY_TIMEOUT',
+  'UND_ERR_SOCKET',
+  'AbortError',
+  'TimeoutError',
+]);
+function transportCauseCode(error: unknown): string | undefined {
+  try {
+    if (!isRecord(error)) return undefined;
+    const nested = isRecord(error['cause']) ? error['cause']['code'] : undefined;
+    for (const value of [error['code'], nested, error['name']])
+      if (typeof value === 'string' && transportCodes.has(value)) return value;
+  } catch {
+    /* Diagnostics must never retain or inspect an arbitrary error graph. */
+  }
+  return undefined;
+}
+function safeRequestId(value: unknown): string | undefined {
+  return typeof value === 'string' && /^[a-f0-9-]{16,64}$/i.test(value) ? value : undefined;
+}
+function responseError(error: CognitoIdpError, response: IdpHttpResponse, stage: 'HTTP' | 'REPLY') {
+  return new CognitoIdpError(error.code, error.message, {
+    stage,
+    httpStatusCode: response.status,
+    requestId: response.requestId,
+  });
 }
 
 export interface IdpHttpResponse {
   readonly status: number;
   readonly body: unknown;
+  readonly requestId?: string;
 }
 
 /** 传输层抽象：一次 Cognito IDP 操作调用；测试注入脚本化实现。 */
@@ -109,16 +165,22 @@ export function createHttpIdpFetch(region: string, fetchFn: typeof fetch): IdpFe
         },
         body: JSON.stringify(payload),
       });
-    } catch {
-      throw new CognitoIdpError('NETWORK', 'The identity provider is unreachable');
+    } catch (cause) {
+      throw new CognitoIdpError('NETWORK', 'The identity provider is unreachable', { stage: 'FETCH', cause });
     }
+    const requestId = safeRequestId(response.headers.get('x-amzn-requestid'));
     let body: unknown = null;
     try {
       body = await response.json();
-    } catch {
-      body = null;
+    } catch (cause) {
+      throw new CognitoIdpError('UNKNOWN', 'The identity provider returned an unreadable response', {
+        stage: 'BODY',
+        cause,
+        httpStatusCode: response.status,
+        requestId,
+      });
     }
-    return { status: response.status, body };
+    return { status: response.status, body, ...(requestId ? { requestId } : {}) };
   };
 }
 
@@ -197,7 +259,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function parseAuthReply(response: IdpHttpResponse, context: 'auth' | 'refresh'): IdpAuthReply {
   if (response.status < 200 || response.status >= 300) {
-    throw mapCognitoError(response.body, context);
+    throw responseError(mapCognitoError(response.body, context), response, 'HTTP');
   }
   const body = response.body;
   if (isRecord(body) && isRecord(body['AuthenticationResult'])) {
@@ -232,13 +294,21 @@ function parseAuthReply(response: IdpHttpResponse, context: 'auth' | 'refresh'):
       },
     };
   }
-  throw new CognitoIdpError('UNKNOWN', 'The identity provider returned an unexpected response');
+  throw responseError(
+    new CognitoIdpError('UNKNOWN', 'The identity provider returned an unexpected response'),
+    response,
+    'REPLY',
+  );
 }
 
 function parseTokens(response: IdpHttpResponse): AuthenticationResult {
   const reply = parseAuthReply(response, 'refresh');
   if (reply.kind !== 'tokens') {
-    throw new CognitoIdpError('UNKNOWN', 'The identity provider returned an unexpected response');
+    throw responseError(
+      new CognitoIdpError('UNKNOWN', 'The identity provider returned an unexpected response'),
+      response,
+      'REPLY',
+    );
   }
   return reply.tokens;
 }
@@ -249,7 +319,7 @@ export function createCognitoIdpClient(config: CognitoIdpClientConfig): CognitoI
   async function callVoid(operation: string, payload: Record<string, unknown>): Promise<void> {
     const response = await transport(operation, payload);
     if (response.status < 200 || response.status >= 300) {
-      throw mapCognitoError(response.body, 'auth');
+      throw responseError(mapCognitoError(response.body, 'auth'), response, 'HTTP');
     }
   }
 

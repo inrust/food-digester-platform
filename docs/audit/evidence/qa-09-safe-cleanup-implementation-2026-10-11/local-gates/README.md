@@ -1,0 +1,1 @@
+These are local fixture, handler, database and browser suite receipts from the declared full verification. No deployed API, real Cognito, AWS broker, target throughput or P95 acceptance is implied. baselineCommit records the pre-commit HEAD; verification-source.json binds this implementation.

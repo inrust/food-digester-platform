@@ -1,0 +1,205 @@
+{
+  "gate": "LOCAL_MATRIX_PASS",
+  "cognitoCases": [
+    {
+      "name": "constructor and projection reject malformed diagnostic fields",
+      "gate": "PASS"
+    },
+    {
+      "name": "actual Cognito fetch transport preserves only closed one-hop cause ECONNRESET",
+      "gate": "PASS"
+    },
+    {
+      "name": "actual Cognito fetch transport preserves only closed one-hop cause ETIMEDOUT",
+      "gate": "PASS"
+    },
+    {
+      "name": "actual Cognito fetch transport preserves only closed one-hop cause ENOTFOUND",
+      "gate": "PASS"
+    },
+    {
+      "name": "actual Cognito fetch transport preserves only closed one-hop cause UND_ERR_CONNECT_TIMEOUT",
+      "gate": "PASS"
+    },
+    {
+      "name": "actual Cognito fetch transport preserves only closed one-hop cause UND_ERR_HEADERS_TIMEOUT",
+      "gate": "PASS"
+    },
+    {
+      "name": "actual Cognito fetch transport preserves only closed one-hop cause UND_ERR_BODY_TIMEOUT",
+      "gate": "PASS"
+    },
+    {
+      "name": "actual Cognito fetch transport preserves only closed one-hop cause UND_ERR_SOCKET",
+      "gate": "PASS"
+    },
+    {
+      "name": "unknown transport cause, arbitrary metadata and messages never cross the boundary",
+      "gate": "PASS"
+    },
+    {
+      "name": "actual GlobalSignOut HTTP rejection 400/INVALID_CREDENTIALS retains safe metadata only",
+      "gate": "PASS"
+    },
+    {
+      "name": "actual GlobalSignOut HTTP rejection 429/RATE_LIMITED retains safe metadata only",
+      "gate": "PASS"
+    },
+    {
+      "name": "actual GlobalSignOut HTTP rejection 500/UNKNOWN retains safe metadata only",
+      "gate": "PASS"
+    },
+    {
+      "name": "actual GlobalSignOut HTTP rejection 503/UNKNOWN retains safe metadata only",
+      "gate": "PASS"
+    },
+    {
+      "name": "malformed JSON body 200 fails closed, including void GlobalSignOut",
+      "gate": "PASS"
+    },
+    {
+      "name": "malformed JSON body 503 fails closed, including void GlobalSignOut",
+      "gate": "PASS"
+    },
+    {
+      "name": "body stream reset is distinct from initial fetch failure",
+      "gate": "PASS"
+    },
+    {
+      "name": "valid JSON but invalid authentication reply has REPLY stage",
+      "gate": "PASS"
+    },
+    {
+      "name": "wrong password and unknown user remain indistinguishable even in safe projection",
+      "gate": "PASS"
+    },
+    {
+      "name": "actual mapped sign-out error still deletes/reads absence but never grants cleanup PASS",
+      "gate": "PASS"
+    },
+    {
+      "name": "successful signout is one request, and request shape remains unchanged",
+      "gate": "PASS"
+    }
+  ],
+  "unknownStartCases": [
+    {
+      "name": "zero exact matches preserves UNKNOWN, never proves nonexecution or permits restart",
+      "gate": "PASS"
+    },
+    {
+      "name": "unique exact IN_PROGRESS resolves identity only",
+      "gate": "PASS"
+    },
+    {
+      "name": "unique exact SUCCEEDED resolves identity only",
+      "gate": "PASS"
+    },
+    {
+      "name": "unique exact FAILED resolves identity only",
+      "gate": "PASS"
+    },
+    {
+      "name": "unique exact FAULT resolves identity only",
+      "gate": "PASS"
+    },
+    {
+      "name": "unique exact STOPPED resolves identity only",
+      "gate": "PASS"
+    },
+    {
+      "name": "unique exact TIMED_OUT resolves identity only",
+      "gate": "PASS"
+    },
+    {
+      "name": "two exact builds are ambiguous even if both succeeded",
+      "gate": "PASS"
+    },
+    {
+      "name": "foreign serviceRole cannot acquire ownership",
+      "gate": "PASS"
+    },
+    {
+      "name": "foreign sourceType cannot acquire ownership",
+      "gate": "PASS"
+    },
+    {
+      "name": "foreign buildspec cannot acquire ownership",
+      "gate": "PASS"
+    },
+    {
+      "name": "foreign vpcConfig cannot acquire ownership",
+      "gate": "PASS"
+    },
+    {
+      "name": "foreign sourceHash cannot acquire ownership",
+      "gate": "PASS"
+    },
+    {
+      "name": "foreign planBytes cannot acquire ownership",
+      "gate": "PASS"
+    },
+    {
+      "name": "foreign duplicatePlan cannot acquire ownership",
+      "gate": "PASS"
+    },
+    {
+      "name": "foreign planType cannot acquire ownership",
+      "gate": "PASS"
+    },
+    {
+      "name": "truncated recent window cannot resolve; an older boundary is required",
+      "gate": "PASS"
+    },
+    {
+      "name": "outside start window 2026-10-10T23:57:59Z is blocked",
+      "gate": "PASS"
+    },
+    {
+      "name": "outside start window 2026-10-11T00:00:41Z is blocked",
+      "gate": "PASS"
+    },
+    {
+      "name": "malformed dates, duplicate IDs, bound drift and known started receipts fail closed",
+      "gate": "PASS"
+    },
+    {
+      "name": "global two transient read recoveries, ledger and original failures are retained",
+      "gate": "PASS"
+    },
+    {
+      "name": "permanent AWS_list-builds-for-project_AccessDeniedException has no retry",
+      "gate": "PASS"
+    },
+    {
+      "name": "permanent AWS_list-builds-for-project_SSO_SESSION_EXPIRED has no retry",
+      "gate": "PASS"
+    },
+    {
+      "name": "permanent CLI_INVALID_JSON has no retry",
+      "gate": "PASS"
+    },
+    {
+      "name": "permanent CLI_FAILED has no retry",
+      "gate": "PASS"
+    },
+    {
+      "name": "repeated transient failure stops at three reads across the fixed inventory operation",
+      "gate": "PASS"
+    },
+    {
+      "name": "elapsed read budget, wrong account, incomplete inventory and foreign returned IDs block admission",
+      "gate": "PASS"
+    },
+    {
+      "name": "real reader wrapper calls only fixed read APIs, does not persist other build payloads, and refuses overwrite",
+      "gate": "PASS"
+    }
+  ],
+  "newCases": 48,
+  "focusedTotal": 99,
+  "networkCalls": 0,
+  "targetRun": "NOT_RUN",
+  "cleanupFailureUpgradeAllowed": false,
+  "unknownRestartAllowed": false
+}
