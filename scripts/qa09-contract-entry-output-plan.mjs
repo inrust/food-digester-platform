@@ -1,0 +1,94 @@
+/** Design-only input validation. This module never dispatches, deploys, logs in, or changes environment. */
+export const observerPlanDefaults = Object.freeze({
+  environment: 'test',
+  memoryMiB: 512,
+  reservedConcurrency: 12,
+  poolMax: 1,
+  databaseStaticConnections: 63,
+  databaseAvailableConnections: 70,
+  businessConcurrency: 6,
+  baselinePatchMax: 6,
+  samplingPatchMax: 12,
+  intervalRecordsMax: 64,
+  summaryBytesMax: 4096,
+  summaryRecordsMax: 1,
+  engine: true,
+  preconnect: true,
+  detailed: true,
+  publicBoundaries: true,
+  accountReadCandidate: true,
+  extraQueries: 0,
+  extraAwaits: 0,
+  forcedYields: 0,
+  inspectorSessions: 0,
+});
+export function buildEntryOutputTargetPlan(overrides = {}) {
+  if (Object.keys(overrides).some((k) => !Object.hasOwn(observerPlanDefaults, k)))
+    throw Error('OBSERVER_PLAN_UNKNOWN_INPUT');
+  const p = { ...observerPlanDefaults, ...overrides };
+  // A plan revision must explicitly review any budget/control change; never silently widen an existing budget.
+  for (const [k, v] of Object.entries(observerPlanDefaults))
+    if (p[k] !== v) throw Error('OBSERVER_PLAN_FIXED_BUDGET:' + k);
+  return {
+    gate: 'DESIGN_ONLY',
+    scope: 'NEXT_DEFAULT_OFF_IMPLEMENTATION_NOT_TARGET_EXECUTION',
+    decision: 'ADOPT_PUBLIC_CALL_AND_EXISTING_OUTPUT_CALLBACK_NO_COMPILER_PRIVATE_HOOK',
+    flag: { name: 'FDP_CONTRACT_OBSERVER_COST', default: false, implemented: false, workflowInputExists: false },
+    prerequisites: [
+      'test environment',
+      'engine/preconnect/detail/public enabled',
+      'pool1',
+      'one first transactional Contract.findFirst per request',
+      'opaque shared boundary bridge implemented inside observability',
+      'strict output owner and bounded records',
+      'exact collector event allowlist implemented',
+    ],
+    proposedEvent: 'data-path.contract-load.observer-cost',
+    intervalScope: 'SYNCHRONOUS_PUBLIC_RETURN_AND_ORIGINAL_OUTPUT_CALL_ONLY',
+    summaryPolicy: {
+      afterOriginalLoadClose: true,
+      recursiveMeasurement: false,
+      cpuSubtractionAllowed: false,
+      residualDisabledOn: [
+        'TRUNCATED',
+        'PROBE_FAILED',
+        'FOREIGN_SCOPE',
+        'REENTRANT',
+        'OUTPUT_FAILED',
+        'MISSING_BOUNDARY',
+        'DUPLICATE_PUBLIC_CALL',
+      ],
+      residualMeaning: 'UNATTRIBUTED_WALL_BOUND_NOT_MODEL_OR_COMPILER_CPU',
+    },
+    budget: p,
+    sequence: [
+      {
+        stage: 'R0',
+        observerCost: false,
+        accountReadCandidate: true,
+        require: 'same SHA / 19 artifacts / entry gates',
+      },
+      { stage: 'R0 cleanup', require: 'original parent/child cleanup and independent empty set' },
+      {
+        stage: 'R1',
+        observerCost: true,
+        accountReadCandidate: true,
+        require: 'R0 closed; same budget and business input',
+      },
+      { stage: 'R1 cleanup', require: 'original parent/child cleanup and independent empty set' },
+      {
+        stage: 'restore',
+        observerCost: false,
+        existingCandidates: false,
+        require: 'same SHA / 19 artifacts / final empty set and budget',
+      },
+    ],
+    executesAws: false,
+    readyToDeploy: false,
+    candidateDefaultsChanged: false,
+    compilerOnlyAttribution: false,
+    afterQueueAttribution: 'UNRESOLVED_NO_STABLE_COMPILER_SEAM',
+    p95Accepted: false,
+    fullQa09Accepted: false,
+  };
+}

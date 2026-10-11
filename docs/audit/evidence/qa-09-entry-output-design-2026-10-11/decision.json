@@ -1,0 +1,3183 @@
+{
+  "gate": "LOCAL_DESIGN_AND_OWNERSHIP_PASS",
+  "finalMatrixSha256": "bdbc8784b0ffa90ce5d50f02c4b5e77d01376866db8a56bac7e62ab0f8b319a4",
+  "previousManifestSha256": "ca15f8e579df6d9558de1c6387b1cecbdb01c25807645be9b8e2f918fd9b469c",
+  "previousSealedFiles": 185,
+  "historicalTargetFiles": 833,
+  "counts": {
+    "checkout": 48,
+    "release": 48,
+    "begin": 34,
+    "commit": 30,
+    "rollback": 4,
+    "account": 14,
+    "load": 33,
+    "update": 32,
+    "readback": 31,
+    "audit": 31,
+    "dispose": 14,
+    "network": 0,
+    "pools": 14
+  },
+  "maxRecords": 19,
+  "maxSummaryBytes": 776,
+  "expectedDegradedSamples": 9,
+  "samples": [
+    {
+      "case": "default-off",
+      "first": {
+        "index": 0,
+        "transactionGate": "PASS",
+        "operationWallMs": {
+          "load": 15.878,
+          "update": 2.631,
+          "readback": 0.213,
+          "audit": 1.424
+        },
+        "proof": {
+          "gate": "OFF",
+          "records": 0,
+          "segments": [],
+          "outputRows": [],
+          "diagnosticEmissions": 0
+        }
+      }
+    },
+    {
+      "case": "reference-public",
+      "first": {
+        "index": 0,
+        "transactionGate": "PASS",
+        "operationWallMs": {
+          "load": 16.406,
+          "update": 2.692,
+          "readback": 0.224,
+          "audit": 1.499
+        },
+        "proof": {
+          "gate": "OFF",
+          "records": 0,
+          "segments": [],
+          "outputRows": [],
+          "diagnosticEmissions": 0
+        }
+      }
+    },
+    {
+      "case": "entry-output",
+      "first": {
+        "index": 0,
+        "transactionGate": "PASS",
+        "operationWallMs": {
+          "load": 23.399,
+          "update": 3.28,
+          "readback": 0.319,
+          "audit": 1.917
+        },
+        "proof": {
+          "gate": "PASS",
+          "status": "COMPLETE",
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "lower": 3175493418,
+              "upper": 3175493522,
+              "wallUs": 104,
+              "outputWallUs": 21,
+              "unattributedWallUs": 83
+            },
+            {
+              "name": "public-call",
+              "lower": 3175493522,
+              "upper": 3175493863,
+              "wallUs": 341,
+              "outputWallUs": 7,
+              "unattributedWallUs": 334
+            },
+            {
+              "name": "driver-return-tail",
+              "lower": 3175493863,
+              "upper": 3175493868,
+              "wallUs": 5,
+              "outputWallUs": 0,
+              "unattributedWallUs": 5
+            },
+            {
+              "name": "after-model",
+              "lower": 3175494350,
+              "upper": 3175494477,
+              "wallUs": 127,
+              "outputWallUs": 5,
+              "unattributedWallUs": 122
+            }
+          ],
+          "outputRows": [
+            {
+              "phase": "contract-load-delegate",
+              "start": 3175471606,
+              "end": 3175471617,
+              "wallUs": 11,
+              "processCpuUs": 9,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-submit",
+              "start": 3175471721,
+              "end": 3175471727,
+              "wallUs": 6,
+              "processCpuUs": 24,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-queue",
+              "start": 3175471801,
+              "end": 3175471805,
+              "wallUs": 4,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-after-queue",
+              "start": 3175493449,
+              "end": 3175493461,
+              "wallUs": 12,
+              "processCpuUs": 12,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-await",
+              "start": 3175493473,
+              "end": 3175493478,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-prepare",
+              "start": 3175493492,
+              "end": 3175493496,
+              "wallUs": 4,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-driver-before-pg",
+              "start": 3175493562,
+              "end": 3175493566,
+              "wallUs": 4,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-pg-submit",
+              "start": 3175493856,
+              "end": 3175493859,
+              "wallUs": 3,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-driver-submit",
+              "start": 3175493882,
+              "end": 3175493886,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-pg-await",
+              "start": 3175493916,
+              "end": 3175493919,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-pg",
+              "start": 3175493926,
+              "end": 3175493928,
+              "wallUs": 2,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-after-pg",
+              "start": 3175494016,
+              "end": 3175494019,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-await",
+              "start": 3175494022,
+              "end": 3175494023,
+              "wallUs": 1,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-query",
+              "start": 3175494030,
+              "end": 3175494032,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result-to-model",
+              "start": 3175494354,
+              "end": 3175494359,
+              "wallUs": 5,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "after-model"
+            },
+            {
+              "phase": "contract-load-result-after-model",
+              "start": 3175494482,
+              "end": 3175494485,
+              "wallUs": 3,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result",
+              "start": 3175494487,
+              "end": 3175494489,
+              "wallUs": 2,
+              "processCpuUs": 1,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load",
+              "start": 3175494496,
+              "end": 3175494500,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            }
+          ],
+          "records": 19,
+          "diagnosticEmissions": 0,
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false,
+          "proposedSummary": {
+            "event": "data-path.contract-load.observer-cost",
+            "schemaVersion": 1,
+            "proposedOnly": true,
+            "gatewayRequestId": "entry-entry-output-0",
+            "lambdaRequestId": "entry-L-entry-output-0",
+            "status": "COMPLETE",
+            "intervalRecords": 19,
+            "publicCalls": 1,
+            "overflow": 0,
+            "nestedOutputs": 0,
+            "foreignOutputs": 0,
+            "probeFailures": 0,
+            "segments": [
+              {
+                "name": "driver-prefix",
+                "wallUs": 104,
+                "outputWallUs": 21,
+                "unattributedWallUs": 83
+              },
+              {
+                "name": "public-call",
+                "wallUs": 341,
+                "outputWallUs": 7,
+                "unattributedWallUs": 334
+              },
+              {
+                "name": "driver-return-tail",
+                "wallUs": 5,
+                "outputWallUs": 0,
+                "unattributedWallUs": 5
+              },
+              {
+                "name": "after-model",
+                "wallUs": 127,
+                "outputWallUs": 5,
+                "unattributedWallUs": 122
+              }
+            ],
+            "outsideOutputs": 12,
+            "ambiguousOutputs": 0,
+            "unresolvedOutputs": 0,
+            "cpuSubtractionAllowed": false,
+            "compilerOnlyAttribution": false
+          },
+          "proposedSummaryBytes": 752
+        }
+      }
+    },
+    {
+      "case": "slow-prefix-log",
+      "first": {
+        "index": 0,
+        "transactionGate": "PASS",
+        "operationWallMs": {
+          "load": 37.01,
+          "update": 3.479,
+          "readback": 0.253,
+          "audit": 1.644
+        },
+        "proof": {
+          "gate": "PASS",
+          "status": "COMPLETE",
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "lower": 3175883812,
+              "upper": 3175904077,
+              "wallUs": 20265,
+              "outputWallUs": 20059,
+              "unattributedWallUs": 206
+            },
+            {
+              "name": "public-call",
+              "lower": 3175904077,
+              "upper": 3175904510,
+              "wallUs": 433,
+              "outputWallUs": 9,
+              "unattributedWallUs": 424
+            },
+            {
+              "name": "driver-return-tail",
+              "lower": 3175904510,
+              "upper": 3175904517,
+              "wallUs": 7,
+              "outputWallUs": 0,
+              "unattributedWallUs": 7
+            },
+            {
+              "name": "after-model",
+              "lower": 3175905079,
+              "upper": 3175905222,
+              "wallUs": 143,
+              "outputWallUs": 2,
+              "unattributedWallUs": 141
+            }
+          ],
+          "outputRows": [
+            {
+              "phase": "contract-load-delegate",
+              "start": 3175868747,
+              "end": 3175868758,
+              "wallUs": 11,
+              "processCpuUs": 44,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-submit",
+              "start": 3175868863,
+              "end": 3175868868,
+              "wallUs": 5,
+              "processCpuUs": 19,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-queue",
+              "start": 3175868945,
+              "end": 3175868949,
+              "wallUs": 4,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-after-queue",
+              "start": 3175883841,
+              "end": 3175903888,
+              "wallUs": 20047,
+              "processCpuUs": 43562,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-await",
+              "start": 3175903944,
+              "end": 3175903950,
+              "wallUs": 6,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-prepare",
+              "start": 3175903982,
+              "end": 3175903988,
+              "wallUs": 6,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-driver-before-pg",
+              "start": 3175904149,
+              "end": 3175904154,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-pg-submit",
+              "start": 3175904501,
+              "end": 3175904505,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-driver-submit",
+              "start": 3175904534,
+              "end": 3175904539,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-pg-await",
+              "start": 3175904574,
+              "end": 3175904578,
+              "wallUs": 4,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-pg",
+              "start": 3175904584,
+              "end": 3175904587,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-after-pg",
+              "start": 3175904687,
+              "end": 3175904691,
+              "wallUs": 4,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-await",
+              "start": 3175904695,
+              "end": 3175904698,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-query",
+              "start": 3175904705,
+              "end": 3175904707,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result-to-model",
+              "start": 3175905084,
+              "end": 3175905086,
+              "wallUs": 2,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "after-model"
+            },
+            {
+              "phase": "contract-load-result-after-model",
+              "start": 3175905227,
+              "end": 3175905229,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result",
+              "start": 3175905232,
+              "end": 3175905234,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load",
+              "start": 3175905241,
+              "end": 3175905244,
+              "wallUs": 3,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            }
+          ],
+          "records": 19,
+          "diagnosticEmissions": 0,
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false,
+          "proposedSummary": {
+            "event": "data-path.contract-load.observer-cost",
+            "schemaVersion": 1,
+            "proposedOnly": true,
+            "gatewayRequestId": "entry-slow-prefix-log-0",
+            "lambdaRequestId": "entry-L-slow-prefix-log-0",
+            "status": "COMPLETE",
+            "intervalRecords": 19,
+            "publicCalls": 1,
+            "overflow": 0,
+            "nestedOutputs": 0,
+            "foreignOutputs": 0,
+            "probeFailures": 0,
+            "segments": [
+              {
+                "name": "driver-prefix",
+                "wallUs": 20265,
+                "outputWallUs": 20059,
+                "unattributedWallUs": 206
+              },
+              {
+                "name": "public-call",
+                "wallUs": 433,
+                "outputWallUs": 9,
+                "unattributedWallUs": 424
+              },
+              {
+                "name": "driver-return-tail",
+                "wallUs": 7,
+                "outputWallUs": 0,
+                "unattributedWallUs": 7
+              },
+              {
+                "name": "after-model",
+                "wallUs": 143,
+                "outputWallUs": 2,
+                "unattributedWallUs": 141
+              }
+            ],
+            "outsideOutputs": 12,
+            "ambiguousOutputs": 0,
+            "unresolvedOutputs": 0,
+            "cpuSubtractionAllowed": false,
+            "compilerOnlyAttribution": false
+          },
+          "proposedSummaryBytes": 764
+        }
+      }
+    },
+    {
+      "case": "slow-public-call",
+      "first": {
+        "index": 0,
+        "transactionGate": "PASS",
+        "operationWallMs": {
+          "load": 37.306,
+          "update": 3.146,
+          "readback": 0.238,
+          "audit": 1.579
+        },
+        "proof": {
+          "gate": "PASS",
+          "status": "COMPLETE",
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "lower": 3176334792,
+              "upper": 3176334904,
+              "wallUs": 112,
+              "outputWallUs": 23,
+              "unattributedWallUs": 89
+            },
+            {
+              "name": "public-call",
+              "lower": 3176334904,
+              "upper": 3176355502,
+              "wallUs": 20598,
+              "outputWallUs": 27,
+              "unattributedWallUs": 20571
+            },
+            {
+              "name": "driver-return-tail",
+              "lower": 3176355502,
+              "upper": 3176355511,
+              "wallUs": 9,
+              "outputWallUs": 0,
+              "unattributedWallUs": 9
+            },
+            {
+              "name": "after-model",
+              "lower": 3176356081,
+              "upper": 3176356229,
+              "wallUs": 148,
+              "outputWallUs": 4,
+              "unattributedWallUs": 144
+            }
+          ],
+          "outputRows": [
+            {
+              "phase": "contract-load-delegate",
+              "start": 3176319435,
+              "end": 3176319446,
+              "wallUs": 11,
+              "processCpuUs": 9,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-submit",
+              "start": 3176319537,
+              "end": 3176319542,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-queue",
+              "start": 3176319610,
+              "end": 3176319614,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-after-queue",
+              "start": 3176334825,
+              "end": 3176334837,
+              "wallUs": 12,
+              "processCpuUs": 12,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-await",
+              "start": 3176334847,
+              "end": 3176334852,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-prepare",
+              "start": 3176334869,
+              "end": 3176334875,
+              "wallUs": 6,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-driver-before-pg",
+              "start": 3176355083,
+              "end": 3176355103,
+              "wallUs": 20,
+              "processCpuUs": 34,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-pg-submit",
+              "start": 3176355491,
+              "end": 3176355498,
+              "wallUs": 7,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-driver-submit",
+              "start": 3176355530,
+              "end": 3176355537,
+              "wallUs": 7,
+              "processCpuUs": 7,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-pg-await",
+              "start": 3176355576,
+              "end": 3176355579,
+              "wallUs": 3,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-pg",
+              "start": 3176355584,
+              "end": 3176355587,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-after-pg",
+              "start": 3176355686,
+              "end": 3176355690,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-await",
+              "start": 3176355694,
+              "end": 3176355696,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-query",
+              "start": 3176355702,
+              "end": 3176355705,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result-to-model",
+              "start": 3176356086,
+              "end": 3176356090,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "after-model"
+            },
+            {
+              "phase": "contract-load-result-after-model",
+              "start": 3176356235,
+              "end": 3176356237,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result",
+              "start": 3176356239,
+              "end": 3176356241,
+              "wallUs": 2,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load",
+              "start": 3176356250,
+              "end": 3176356252,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            }
+          ],
+          "records": 19,
+          "diagnosticEmissions": 0,
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false,
+          "proposedSummary": {
+            "event": "data-path.contract-load.observer-cost",
+            "schemaVersion": 1,
+            "proposedOnly": true,
+            "gatewayRequestId": "entry-slow-public-call-0",
+            "lambdaRequestId": "entry-L-slow-public-call-0",
+            "status": "COMPLETE",
+            "intervalRecords": 19,
+            "publicCalls": 1,
+            "overflow": 0,
+            "nestedOutputs": 0,
+            "foreignOutputs": 0,
+            "probeFailures": 0,
+            "segments": [
+              {
+                "name": "driver-prefix",
+                "wallUs": 112,
+                "outputWallUs": 23,
+                "unattributedWallUs": 89
+              },
+              {
+                "name": "public-call",
+                "wallUs": 20598,
+                "outputWallUs": 27,
+                "unattributedWallUs": 20571
+              },
+              {
+                "name": "driver-return-tail",
+                "wallUs": 9,
+                "outputWallUs": 0,
+                "unattributedWallUs": 9
+              },
+              {
+                "name": "after-model",
+                "wallUs": 148,
+                "outputWallUs": 4,
+                "unattributedWallUs": 144
+              }
+            ],
+            "outsideOutputs": 12,
+            "ambiguousOutputs": 0,
+            "unresolvedOutputs": 0,
+            "cpuSubtractionAllowed": false,
+            "compilerOnlyAttribution": false
+          },
+          "proposedSummaryBytes": 765
+        }
+      }
+    },
+    {
+      "case": "slow-resume-log",
+      "first": {
+        "index": 0,
+        "transactionGate": "PASS",
+        "operationWallMs": {
+          "load": 37.143,
+          "update": 3.024,
+          "readback": 0.23,
+          "audit": 1.51
+        },
+        "proof": {
+          "gate": "PASS",
+          "status": "COMPLETE",
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "lower": 3176798956,
+              "upper": 3176799057,
+              "wallUs": 101,
+              "outputWallUs": 22,
+              "unattributedWallUs": 79
+            },
+            {
+              "name": "public-call",
+              "lower": 3176799057,
+              "upper": 3176799438,
+              "wallUs": 381,
+              "outputWallUs": 10,
+              "unattributedWallUs": 371
+            },
+            {
+              "name": "driver-return-tail",
+              "lower": 3176799438,
+              "upper": 3176799479,
+              "wallUs": 41,
+              "outputWallUs": 0,
+              "unattributedWallUs": 41
+            },
+            {
+              "name": "after-model",
+              "lower": 3176800110,
+              "upper": 3176820418,
+              "wallUs": 20308,
+              "outputWallUs": 20046,
+              "unattributedWallUs": 262
+            }
+          ],
+          "outputRows": [
+            {
+              "phase": "contract-load-delegate",
+              "start": 3176783822,
+              "end": 3176783833,
+              "wallUs": 11,
+              "processCpuUs": 9,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-submit",
+              "start": 3176783935,
+              "end": 3176783941,
+              "wallUs": 6,
+              "processCpuUs": 11,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-queue",
+              "start": 3176784017,
+              "end": 3176784021,
+              "wallUs": 4,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-after-queue",
+              "start": 3176798985,
+              "end": 3176798996,
+              "wallUs": 11,
+              "processCpuUs": 11,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-await",
+              "start": 3176799007,
+              "end": 3176799012,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-prepare",
+              "start": 3176799026,
+              "end": 3176799032,
+              "wallUs": 6,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-driver-before-pg",
+              "start": 3176799096,
+              "end": 3176799102,
+              "wallUs": 6,
+              "processCpuUs": 27,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-pg-submit",
+              "start": 3176799430,
+              "end": 3176799434,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-driver-submit",
+              "start": 3176799514,
+              "end": 3176799526,
+              "wallUs": 12,
+              "processCpuUs": 56,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-pg-await",
+              "start": 3176799592,
+              "end": 3176799596,
+              "wallUs": 4,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-pg",
+              "start": 3176799602,
+              "end": 3176799604,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-after-pg",
+              "start": 3176799707,
+              "end": 3176799710,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-await",
+              "start": 3176799714,
+              "end": 3176799716,
+              "wallUs": 2,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-query",
+              "start": 3176799722,
+              "end": 3176799724,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result-to-model",
+              "start": 3176800118,
+              "end": 3176820164,
+              "wallUs": 20046,
+              "processCpuUs": 42966,
+              "threw": false,
+              "owner": "after-model"
+            },
+            {
+              "phase": "contract-load-result-after-model",
+              "start": 3176820427,
+              "end": 3176820430,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result",
+              "start": 3176820436,
+              "end": 3176820438,
+              "wallUs": 2,
+              "processCpuUs": 71,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load",
+              "start": 3176820447,
+              "end": 3176820450,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            }
+          ],
+          "records": 19,
+          "diagnosticEmissions": 0,
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false,
+          "proposedSummary": {
+            "event": "data-path.contract-load.observer-cost",
+            "schemaVersion": 1,
+            "proposedOnly": true,
+            "gatewayRequestId": "entry-slow-resume-log-0",
+            "lambdaRequestId": "entry-L-slow-resume-log-0",
+            "status": "COMPLETE",
+            "intervalRecords": 19,
+            "publicCalls": 1,
+            "overflow": 0,
+            "nestedOutputs": 0,
+            "foreignOutputs": 0,
+            "probeFailures": 0,
+            "segments": [
+              {
+                "name": "driver-prefix",
+                "wallUs": 101,
+                "outputWallUs": 22,
+                "unattributedWallUs": 79
+              },
+              {
+                "name": "public-call",
+                "wallUs": 381,
+                "outputWallUs": 10,
+                "unattributedWallUs": 371
+              },
+              {
+                "name": "driver-return-tail",
+                "wallUs": 41,
+                "outputWallUs": 0,
+                "unattributedWallUs": 41
+              },
+              {
+                "name": "after-model",
+                "wallUs": 20308,
+                "outputWallUs": 20046,
+                "unattributedWallUs": 262
+              }
+            ],
+            "outsideOutputs": 12,
+            "ambiguousOutputs": 0,
+            "unresolvedOutputs": 0,
+            "cpuSubtractionAllowed": false,
+            "compilerOnlyAttribution": false
+          },
+          "proposedSummaryBytes": 767
+        }
+      }
+    },
+    {
+      "case": "slow-terminal-log",
+      "first": {
+        "index": 0,
+        "transactionGate": "PASS",
+        "operationWallMs": {
+          "load": 38.526,
+          "update": 3.322,
+          "readback": 0.254,
+          "audit": 1.625
+        },
+        "proof": {
+          "gate": "PASS",
+          "status": "COMPLETE",
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "lower": 3177261966,
+              "upper": 3177262062,
+              "wallUs": 96,
+              "outputWallUs": 18,
+              "unattributedWallUs": 78
+            },
+            {
+              "name": "public-call",
+              "lower": 3177262062,
+              "upper": 3177262430,
+              "wallUs": 368,
+              "outputWallUs": 11,
+              "unattributedWallUs": 357
+            },
+            {
+              "name": "driver-return-tail",
+              "lower": 3177262430,
+              "upper": 3177262440,
+              "wallUs": 10,
+              "outputWallUs": 0,
+              "unattributedWallUs": 10
+            },
+            {
+              "name": "after-model",
+              "lower": 3177262960,
+              "upper": 3177263098,
+              "wallUs": 138,
+              "outputWallUs": 3,
+              "unattributedWallUs": 135
+            }
+          ],
+          "outputRows": [
+            {
+              "phase": "contract-load-delegate",
+              "start": 3177245295,
+              "end": 3177245308,
+              "wallUs": 13,
+              "processCpuUs": 13,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-submit",
+              "start": 3177245412,
+              "end": 3177245417,
+              "wallUs": 5,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-queue",
+              "start": 3177245491,
+              "end": 3177245496,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-after-queue",
+              "start": 3177261995,
+              "end": 3177262004,
+              "wallUs": 9,
+              "processCpuUs": 9,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-await",
+              "start": 3177262014,
+              "end": 3177262019,
+              "wallUs": 5,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-prepare",
+              "start": 3177262033,
+              "end": 3177262037,
+              "wallUs": 4,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-driver-before-pg",
+              "start": 3177262102,
+              "end": 3177262108,
+              "wallUs": 6,
+              "processCpuUs": 38,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-pg-submit",
+              "start": 3177262422,
+              "end": 3177262427,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-driver-submit",
+              "start": 3177262453,
+              "end": 3177262457,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-pg-await",
+              "start": 3177262491,
+              "end": 3177262494,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-pg",
+              "start": 3177262499,
+              "end": 3177262502,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-after-pg",
+              "start": 3177262596,
+              "end": 3177262598,
+              "wallUs": 2,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-await",
+              "start": 3177262602,
+              "end": 3177262604,
+              "wallUs": 2,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-query",
+              "start": 3177262611,
+              "end": 3177262614,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result-to-model",
+              "start": 3177262966,
+              "end": 3177262969,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "after-model"
+            },
+            {
+              "phase": "contract-load-result-after-model",
+              "start": 3177263104,
+              "end": 3177283145,
+              "wallUs": 20041,
+              "processCpuUs": 42704,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result",
+              "start": 3177283167,
+              "end": 3177283170,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load",
+              "start": 3177283183,
+              "end": 3177283189,
+              "wallUs": 6,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "OUTSIDE"
+            }
+          ],
+          "records": 19,
+          "diagnosticEmissions": 0,
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false,
+          "proposedSummary": {
+            "event": "data-path.contract-load.observer-cost",
+            "schemaVersion": 1,
+            "proposedOnly": true,
+            "gatewayRequestId": "entry-slow-terminal-log-0",
+            "lambdaRequestId": "entry-L-slow-terminal-log-0",
+            "status": "COMPLETE",
+            "intervalRecords": 19,
+            "publicCalls": 1,
+            "overflow": 0,
+            "nestedOutputs": 0,
+            "foreignOutputs": 0,
+            "probeFailures": 0,
+            "segments": [
+              {
+                "name": "driver-prefix",
+                "wallUs": 96,
+                "outputWallUs": 18,
+                "unattributedWallUs": 78
+              },
+              {
+                "name": "public-call",
+                "wallUs": 368,
+                "outputWallUs": 11,
+                "unattributedWallUs": 357
+              },
+              {
+                "name": "driver-return-tail",
+                "wallUs": 10,
+                "outputWallUs": 0,
+                "unattributedWallUs": 10
+              },
+              {
+                "name": "after-model",
+                "wallUs": 138,
+                "outputWallUs": 3,
+                "unattributedWallUs": 135
+              }
+            ],
+            "outsideOutputs": 12,
+            "ambiguousOutputs": 0,
+            "unresolvedOutputs": 0,
+            "cpuSubtractionAllowed": false,
+            "compilerOnlyAttribution": false
+          },
+          "proposedSummaryBytes": 764
+        }
+      }
+    },
+    {
+      "case": "throw-prefix-log",
+      "first": {
+        "index": 0,
+        "transactionGate": "PASS",
+        "operationWallMs": {
+          "load": 16.892,
+          "update": 2.785,
+          "readback": 0.222,
+          "audit": 1.563
+        },
+        "proof": {
+          "gate": "EXPECTED_DEGRADED",
+          "status": "OUTPUT_FAILED",
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "lower": 3177725358,
+              "upper": 3177725460,
+              "wallUs": 102,
+              "outputWallUs": 24,
+              "unattributedWallUs": null
+            },
+            {
+              "name": "public-call",
+              "lower": 3177725460,
+              "upper": 3177725792,
+              "wallUs": 332,
+              "outputWallUs": 10,
+              "unattributedWallUs": null
+            },
+            {
+              "name": "driver-return-tail",
+              "lower": 3177725792,
+              "upper": 3177725795,
+              "wallUs": 3,
+              "outputWallUs": 0,
+              "unattributedWallUs": null
+            },
+            {
+              "name": "after-model",
+              "lower": 3177726318,
+              "upper": 3177726436,
+              "wallUs": 118,
+              "outputWallUs": 3,
+              "unattributedWallUs": null
+            }
+          ],
+          "outputRows": [
+            {
+              "phase": "contract-load-delegate",
+              "start": 3177710060,
+              "end": 3177710071,
+              "wallUs": 11,
+              "processCpuUs": 41,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-submit",
+              "start": 3177710175,
+              "end": 3177710180,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-queue",
+              "start": 3177710257,
+              "end": 3177710261,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-after-queue",
+              "start": 3177725382,
+              "end": 3177725393,
+              "wallUs": 11,
+              "processCpuUs": 24,
+              "threw": true,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-await",
+              "start": 3177725407,
+              "end": 3177725415,
+              "wallUs": 8,
+              "processCpuUs": 9,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-prepare",
+              "start": 3177725430,
+              "end": 3177725435,
+              "wallUs": 5,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-driver-before-pg",
+              "start": 3177725496,
+              "end": 3177725501,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-pg-submit",
+              "start": 3177725780,
+              "end": 3177725785,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-driver-submit",
+              "start": 3177725815,
+              "end": 3177725819,
+              "wallUs": 4,
+              "processCpuUs": 604,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-pg-await",
+              "start": 3177725853,
+              "end": 3177725857,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-pg",
+              "start": 3177725863,
+              "end": 3177725866,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-after-pg",
+              "start": 3177725959,
+              "end": 3177725963,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-await",
+              "start": 3177725967,
+              "end": 3177725969,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-query",
+              "start": 3177725975,
+              "end": 3177725977,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result-to-model",
+              "start": 3177726322,
+              "end": 3177726325,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "after-model"
+            },
+            {
+              "phase": "contract-load-result-after-model",
+              "start": 3177726441,
+              "end": 3177726444,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result",
+              "start": 3177726446,
+              "end": 3177726448,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load",
+              "start": 3177726456,
+              "end": 3177726459,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            }
+          ],
+          "records": 19,
+          "diagnosticEmissions": 0,
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false,
+          "proposedSummary": {
+            "event": "data-path.contract-load.observer-cost",
+            "schemaVersion": 1,
+            "proposedOnly": true,
+            "gatewayRequestId": "entry-throw-prefix-log-0",
+            "lambdaRequestId": "entry-L-throw-prefix-log-0",
+            "status": "OUTPUT_FAILED",
+            "intervalRecords": 19,
+            "publicCalls": 1,
+            "overflow": 0,
+            "nestedOutputs": 0,
+            "foreignOutputs": 0,
+            "probeFailures": 0,
+            "segments": [
+              {
+                "name": "driver-prefix",
+                "wallUs": 102,
+                "outputWallUs": 24,
+                "unattributedWallUs": null
+              },
+              {
+                "name": "public-call",
+                "wallUs": 332,
+                "outputWallUs": 10,
+                "unattributedWallUs": null
+              },
+              {
+                "name": "driver-return-tail",
+                "wallUs": 3,
+                "outputWallUs": 0,
+                "unattributedWallUs": null
+              },
+              {
+                "name": "after-model",
+                "wallUs": 118,
+                "outputWallUs": 3,
+                "unattributedWallUs": null
+              }
+            ],
+            "outsideOutputs": 12,
+            "ambiguousOutputs": 0,
+            "unresolvedOutputs": 0,
+            "cpuSubtractionAllowed": false,
+            "compilerOnlyAttribution": false
+          },
+          "proposedSummaryBytes": 773
+        }
+      }
+    },
+    {
+      "case": "throw-resume-log",
+      "first": {
+        "index": 0,
+        "transactionGate": "PASS",
+        "operationWallMs": {
+          "load": 17.242,
+          "update": 2.836,
+          "readback": 0.244,
+          "audit": 1.6
+        },
+        "proof": {
+          "gate": "EXPECTED_DEGRADED",
+          "status": "OUTPUT_FAILED",
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "lower": 3178116681,
+              "upper": 3178116793,
+              "wallUs": 112,
+              "outputWallUs": 25,
+              "unattributedWallUs": null
+            },
+            {
+              "name": "public-call",
+              "lower": 3178116793,
+              "upper": 3178117162,
+              "wallUs": 369,
+              "outputWallUs": 10,
+              "unattributedWallUs": null
+            },
+            {
+              "name": "driver-return-tail",
+              "lower": 3178117162,
+              "upper": 3178117168,
+              "wallUs": 6,
+              "outputWallUs": 0,
+              "unattributedWallUs": null
+            },
+            {
+              "name": "after-model",
+              "lower": 3178117688,
+              "upper": 3178117841,
+              "wallUs": 153,
+              "outputWallUs": 15,
+              "unattributedWallUs": null
+            }
+          ],
+          "outputRows": [
+            {
+              "phase": "contract-load-delegate",
+              "start": 3178101109,
+              "end": 3178101120,
+              "wallUs": 11,
+              "processCpuUs": 16,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-submit",
+              "start": 3178101212,
+              "end": 3178101218,
+              "wallUs": 6,
+              "processCpuUs": 21,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-queue",
+              "start": 3178101284,
+              "end": 3178101287,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-after-queue",
+              "start": 3178116713,
+              "end": 3178116725,
+              "wallUs": 12,
+              "processCpuUs": 11,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-await",
+              "start": 3178116735,
+              "end": 3178116740,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-prepare",
+              "start": 3178116756,
+              "end": 3178116764,
+              "wallUs": 8,
+              "processCpuUs": 8,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-driver-before-pg",
+              "start": 3178116836,
+              "end": 3178116841,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-pg-submit",
+              "start": 3178117154,
+              "end": 3178117159,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-driver-submit",
+              "start": 3178117182,
+              "end": 3178117186,
+              "wallUs": 4,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-pg-await",
+              "start": 3178117221,
+              "end": 3178117224,
+              "wallUs": 3,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-pg",
+              "start": 3178117229,
+              "end": 3178117231,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-after-pg",
+              "start": 3178117328,
+              "end": 3178117332,
+              "wallUs": 4,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-await",
+              "start": 3178117337,
+              "end": 3178117340,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-query",
+              "start": 3178117347,
+              "end": 3178117350,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result-to-model",
+              "start": 3178117693,
+              "end": 3178117708,
+              "wallUs": 15,
+              "processCpuUs": 1557,
+              "threw": true,
+              "owner": "after-model"
+            },
+            {
+              "phase": "contract-load-result-after-model",
+              "start": 3178117847,
+              "end": 3178117849,
+              "wallUs": 2,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result",
+              "start": 3178117852,
+              "end": 3178117854,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load",
+              "start": 3178117861,
+              "end": 3178117864,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            }
+          ],
+          "records": 19,
+          "diagnosticEmissions": 0,
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false,
+          "proposedSummary": {
+            "event": "data-path.contract-load.observer-cost",
+            "schemaVersion": 1,
+            "proposedOnly": true,
+            "gatewayRequestId": "entry-throw-resume-log-0",
+            "lambdaRequestId": "entry-L-throw-resume-log-0",
+            "status": "OUTPUT_FAILED",
+            "intervalRecords": 19,
+            "publicCalls": 1,
+            "overflow": 0,
+            "nestedOutputs": 0,
+            "foreignOutputs": 0,
+            "probeFailures": 0,
+            "segments": [
+              {
+                "name": "driver-prefix",
+                "wallUs": 112,
+                "outputWallUs": 25,
+                "unattributedWallUs": null
+              },
+              {
+                "name": "public-call",
+                "wallUs": 369,
+                "outputWallUs": 10,
+                "unattributedWallUs": null
+              },
+              {
+                "name": "driver-return-tail",
+                "wallUs": 6,
+                "outputWallUs": 0,
+                "unattributedWallUs": null
+              },
+              {
+                "name": "after-model",
+                "wallUs": 153,
+                "outputWallUs": 15,
+                "unattributedWallUs": null
+              }
+            ],
+            "outsideOutputs": 12,
+            "ambiguousOutputs": 0,
+            "unresolvedOutputs": 0,
+            "cpuSubtractionAllowed": false,
+            "compilerOnlyAttribution": false
+          },
+          "proposedSummaryBytes": 774
+        }
+      }
+    },
+    {
+      "case": "reentrant-resume-log",
+      "first": {
+        "index": 0,
+        "transactionGate": "PASS",
+        "operationWallMs": {
+          "load": 18.056,
+          "update": 2.92,
+          "readback": 0.231,
+          "audit": 1.599
+        },
+        "proof": {
+          "gate": "EXPECTED_DEGRADED",
+          "status": "REENTRANT",
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "lower": 3178503738,
+              "upper": 3178503835,
+              "wallUs": 97,
+              "outputWallUs": 17,
+              "unattributedWallUs": null
+            },
+            {
+              "name": "public-call",
+              "lower": 3178503835,
+              "upper": 3178504176,
+              "wallUs": 341,
+              "outputWallUs": 8,
+              "unattributedWallUs": null
+            },
+            {
+              "name": "driver-return-tail",
+              "lower": 3178504176,
+              "upper": 3178504181,
+              "wallUs": 5,
+              "outputWallUs": 0,
+              "unattributedWallUs": null
+            },
+            {
+              "name": "after-model",
+              "lower": 3178504686,
+              "upper": 3178504819,
+              "wallUs": 133,
+              "outputWallUs": 13,
+              "unattributedWallUs": null
+            }
+          ],
+          "outputRows": [
+            {
+              "phase": "contract-load-delegate",
+              "start": 3178487349,
+              "end": 3178487361,
+              "wallUs": 12,
+              "processCpuUs": 50,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-submit",
+              "start": 3178487463,
+              "end": 3178487469,
+              "wallUs": 6,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-queue",
+              "start": 3178487539,
+              "end": 3178487543,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-after-queue",
+              "start": 3178503767,
+              "end": 3178503776,
+              "wallUs": 9,
+              "processCpuUs": 10,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-await",
+              "start": 3178503787,
+              "end": 3178503791,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-prepare",
+              "start": 3178503805,
+              "end": 3178503809,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-driver-before-pg",
+              "start": 3178503876,
+              "end": 3178503881,
+              "wallUs": 5,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-pg-submit",
+              "start": 3178504170,
+              "end": 3178504173,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-driver-submit",
+              "start": 3178504198,
+              "end": 3178504203,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-pg-await",
+              "start": 3178504238,
+              "end": 3178504242,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-pg",
+              "start": 3178504247,
+              "end": 3178504250,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-after-pg",
+              "start": 3178504341,
+              "end": 3178504344,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-await",
+              "start": 3178504348,
+              "end": 3178504351,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-query",
+              "start": 3178504359,
+              "end": 3178504361,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result-to-model",
+              "start": 3178504691,
+              "end": 3178504704,
+              "wallUs": 13,
+              "processCpuUs": 13,
+              "threw": false,
+              "owner": "after-model"
+            },
+            {
+              "phase": "contract-load-result-after-model",
+              "start": 3178504824,
+              "end": 3178504828,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result",
+              "start": 3178504831,
+              "end": 3178504832,
+              "wallUs": 1,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load",
+              "start": 3178504840,
+              "end": 3178504842,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            }
+          ],
+          "records": 19,
+          "diagnosticEmissions": 0,
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false,
+          "proposedSummary": {
+            "event": "data-path.contract-load.observer-cost",
+            "schemaVersion": 1,
+            "proposedOnly": true,
+            "gatewayRequestId": "entry-reentrant-resume-log-0",
+            "lambdaRequestId": "entry-L-reentrant-resume-log-0",
+            "status": "REENTRANT",
+            "intervalRecords": 19,
+            "publicCalls": 1,
+            "overflow": 0,
+            "nestedOutputs": 1,
+            "foreignOutputs": 0,
+            "probeFailures": 0,
+            "segments": [
+              {
+                "name": "driver-prefix",
+                "wallUs": 97,
+                "outputWallUs": 17,
+                "unattributedWallUs": null
+              },
+              {
+                "name": "public-call",
+                "wallUs": 341,
+                "outputWallUs": 8,
+                "unattributedWallUs": null
+              },
+              {
+                "name": "driver-return-tail",
+                "wallUs": 5,
+                "outputWallUs": 0,
+                "unattributedWallUs": null
+              },
+              {
+                "name": "after-model",
+                "wallUs": 133,
+                "outputWallUs": 13,
+                "unattributedWallUs": null
+              }
+            ],
+            "outsideOutputs": 12,
+            "ambiguousOutputs": 0,
+            "unresolvedOutputs": 0,
+            "cpuSubtractionAllowed": false,
+            "compilerOnlyAttribution": false
+          },
+          "proposedSummaryBytes": 776
+        }
+      }
+    },
+    {
+      "case": "pg-reject",
+      "first": {
+        "index": 0,
+        "transactionGate": "EXPECTED_FAILURE",
+        "operationWallMs": {
+          "load": 21.149
+        },
+        "proof": {
+          "gate": "PASS",
+          "status": "COMPLETE",
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "lower": 3178902792,
+              "upper": 3178902903,
+              "wallUs": 111,
+              "outputWallUs": 21,
+              "unattributedWallUs": 90
+            },
+            {
+              "name": "public-call",
+              "lower": 3178902903,
+              "upper": 3178903316,
+              "wallUs": 413,
+              "outputWallUs": 11,
+              "unattributedWallUs": 402
+            },
+            {
+              "name": "driver-return-tail",
+              "lower": 3178903316,
+              "upper": 3178903323,
+              "wallUs": 7,
+              "outputWallUs": 0,
+              "unattributedWallUs": 7
+            },
+            {
+              "name": "after-model",
+              "lower": 3178906317,
+              "upper": 3178906349,
+              "wallUs": 32,
+              "outputWallUs": 6,
+              "unattributedWallUs": 26
+            }
+          ],
+          "outputRows": [
+            {
+              "phase": "contract-load-delegate",
+              "start": 3178885819,
+              "end": 3178885832,
+              "wallUs": 13,
+              "processCpuUs": 53,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-submit",
+              "start": 3178885943,
+              "end": 3178885950,
+              "wallUs": 7,
+              "processCpuUs": 8,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-queue",
+              "start": 3178886031,
+              "end": 3178886035,
+              "wallUs": 4,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-after-queue",
+              "start": 3178902825,
+              "end": 3178902836,
+              "wallUs": 11,
+              "processCpuUs": 13,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-await",
+              "start": 3178902849,
+              "end": 3178902854,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-prepare",
+              "start": 3178902869,
+              "end": 3178902874,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-driver-before-pg",
+              "start": 3178902946,
+              "end": 3178902952,
+              "wallUs": 6,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-pg-submit",
+              "start": 3178903304,
+              "end": 3178903309,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-driver-submit",
+              "start": 3178903339,
+              "end": 3178903344,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-pg-await",
+              "start": 3178903402,
+              "end": 3178903407,
+              "wallUs": 5,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-pg",
+              "start": 3178903425,
+              "end": 3178903429,
+              "wallUs": 4,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-after-pg",
+              "start": 3178903482,
+              "end": 3178903485,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-await",
+              "start": 3178903490,
+              "end": 3178903493,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-query",
+              "start": 3178903499,
+              "end": 3178903501,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result-to-model",
+              "start": 3178906326,
+              "end": 3178906332,
+              "wallUs": 6,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "after-model"
+            },
+            {
+              "phase": "contract-load-result-after-model",
+              "start": 3178906354,
+              "end": 3178906358,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result",
+              "start": 3178906361,
+              "end": 3178906363,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load",
+              "start": 3178906372,
+              "end": 3178906375,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            }
+          ],
+          "records": 19,
+          "diagnosticEmissions": 0,
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false,
+          "proposedSummary": {
+            "event": "data-path.contract-load.observer-cost",
+            "schemaVersion": 1,
+            "proposedOnly": true,
+            "gatewayRequestId": "entry-pg-reject-0",
+            "lambdaRequestId": "entry-L-pg-reject-0",
+            "status": "COMPLETE",
+            "intervalRecords": 19,
+            "publicCalls": 1,
+            "overflow": 0,
+            "nestedOutputs": 0,
+            "foreignOutputs": 0,
+            "probeFailures": 0,
+            "segments": [
+              {
+                "name": "driver-prefix",
+                "wallUs": 111,
+                "outputWallUs": 21,
+                "unattributedWallUs": 90
+              },
+              {
+                "name": "public-call",
+                "wallUs": 413,
+                "outputWallUs": 11,
+                "unattributedWallUs": 402
+              },
+              {
+                "name": "driver-return-tail",
+                "wallUs": 7,
+                "outputWallUs": 0,
+                "unattributedWallUs": 7
+              },
+              {
+                "name": "after-model",
+                "wallUs": 32,
+                "outputWallUs": 6,
+                "unattributedWallUs": 26
+              }
+            ],
+            "outsideOutputs": 12,
+            "ambiguousOutputs": 0,
+            "unresolvedOutputs": 0,
+            "cpuSubtractionAllowed": false,
+            "compilerOnlyAttribution": false
+          },
+          "proposedSummaryBytes": 745
+        }
+      }
+    },
+    {
+      "case": "validation-reject",
+      "first": {
+        "index": 0,
+        "transactionGate": "EXPECTED_FAILURE",
+        "operationWallMs": {
+          "load": 10.548
+        },
+        "proof": {
+          "gate": "PASS",
+          "status": "COMPLETE",
+          "segments": [],
+          "outputRows": [
+            {
+              "phase": "contract-load-delegate",
+              "start": 3179269747,
+              "end": 3179269758,
+              "wallUs": 11,
+              "processCpuUs": 10,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-submit",
+              "start": 3179269860,
+              "end": 3179269866,
+              "wallUs": 6,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-queue",
+              "start": 3179269941,
+              "end": 3179269945,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-after-queue",
+              "start": 3179279759,
+              "end": 3179279763,
+              "wallUs": 4,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-await",
+              "start": 3179279778,
+              "end": 3179279783,
+              "wallUs": 5,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-prepare",
+              "start": 3179279792,
+              "end": 3179279795,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load",
+              "start": 3179279806,
+              "end": 3179279808,
+              "wallUs": 2,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            }
+          ],
+          "records": 7,
+          "diagnosticEmissions": 0,
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false,
+          "proposedSummary": {
+            "event": "data-path.contract-load.observer-cost",
+            "schemaVersion": 1,
+            "proposedOnly": true,
+            "gatewayRequestId": "entry-validation-reject-0",
+            "lambdaRequestId": "entry-L-validation-reject-0",
+            "status": "COMPLETE",
+            "intervalRecords": 7,
+            "publicCalls": 0,
+            "overflow": 0,
+            "nestedOutputs": 0,
+            "foreignOutputs": 0,
+            "probeFailures": 0,
+            "segments": [],
+            "outsideOutputs": 7,
+            "ambiguousOutputs": 0,
+            "unresolvedOutputs": 0,
+            "cpuSubtractionAllowed": false,
+            "compilerOnlyAttribution": false
+          },
+          "proposedSummaryBytes": 444
+        }
+      }
+    },
+    {
+      "case": "update-reject",
+      "first": {
+        "index": 0,
+        "transactionGate": "EXPECTED_FAILURE",
+        "operationWallMs": {
+          "load": 16.707,
+          "update": 5.192
+        },
+        "proof": {
+          "gate": "PASS",
+          "status": "COMPLETE",
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "lower": 3179655380,
+              "upper": 3179655480,
+              "wallUs": 100,
+              "outputWallUs": 18,
+              "unattributedWallUs": 82
+            },
+            {
+              "name": "public-call",
+              "lower": 3179655480,
+              "upper": 3179655816,
+              "wallUs": 336,
+              "outputWallUs": 9,
+              "unattributedWallUs": 327
+            },
+            {
+              "name": "driver-return-tail",
+              "lower": 3179655816,
+              "upper": 3179655820,
+              "wallUs": 4,
+              "outputWallUs": 0,
+              "unattributedWallUs": 4
+            },
+            {
+              "name": "after-model",
+              "lower": 3179656317,
+              "upper": 3179656441,
+              "wallUs": 124,
+              "outputWallUs": 4,
+              "unattributedWallUs": 120
+            }
+          ],
+          "outputRows": [
+            {
+              "phase": "contract-load-delegate",
+              "start": 3179640261,
+              "end": 3179640272,
+              "wallUs": 11,
+              "processCpuUs": 37,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-submit",
+              "start": 3179640373,
+              "end": 3179640379,
+              "wallUs": 6,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-queue",
+              "start": 3179640457,
+              "end": 3179640461,
+              "wallUs": 4,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-after-queue",
+              "start": 3179655408,
+              "end": 3179655417,
+              "wallUs": 9,
+              "processCpuUs": 10,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-await",
+              "start": 3179655428,
+              "end": 3179655432,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-prepare",
+              "start": 3179655448,
+              "end": 3179655453,
+              "wallUs": 5,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-driver-before-pg",
+              "start": 3179655517,
+              "end": 3179655523,
+              "wallUs": 6,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-pg-submit",
+              "start": 3179655809,
+              "end": 3179655812,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-driver-submit",
+              "start": 3179655836,
+              "end": 3179655841,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-pg-await",
+              "start": 3179655877,
+              "end": 3179655881,
+              "wallUs": 4,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-pg",
+              "start": 3179655885,
+              "end": 3179655888,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-after-pg",
+              "start": 3179655972,
+              "end": 3179655975,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-await",
+              "start": 3179655981,
+              "end": 3179655984,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-query",
+              "start": 3179655991,
+              "end": 3179655993,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result-to-model",
+              "start": 3179656322,
+              "end": 3179656326,
+              "wallUs": 4,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "after-model"
+            },
+            {
+              "phase": "contract-load-result-after-model",
+              "start": 3179656447,
+              "end": 3179656450,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result",
+              "start": 3179656452,
+              "end": 3179656454,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load",
+              "start": 3179656461,
+              "end": 3179656463,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            }
+          ],
+          "records": 19,
+          "diagnosticEmissions": 0,
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false,
+          "proposedSummary": {
+            "event": "data-path.contract-load.observer-cost",
+            "schemaVersion": 1,
+            "proposedOnly": true,
+            "gatewayRequestId": "entry-update-reject-0",
+            "lambdaRequestId": "entry-L-update-reject-0",
+            "status": "COMPLETE",
+            "intervalRecords": 19,
+            "publicCalls": 1,
+            "overflow": 0,
+            "nestedOutputs": 0,
+            "foreignOutputs": 0,
+            "probeFailures": 0,
+            "segments": [
+              {
+                "name": "driver-prefix",
+                "wallUs": 100,
+                "outputWallUs": 18,
+                "unattributedWallUs": 82
+              },
+              {
+                "name": "public-call",
+                "wallUs": 336,
+                "outputWallUs": 9,
+                "unattributedWallUs": 327
+              },
+              {
+                "name": "driver-return-tail",
+                "wallUs": 4,
+                "outputWallUs": 0,
+                "unattributedWallUs": 4
+              },
+              {
+                "name": "after-model",
+                "wallUs": 124,
+                "outputWallUs": 4,
+                "unattributedWallUs": 120
+              }
+            ],
+            "outsideOutputs": 12,
+            "ambiguousOutputs": 0,
+            "unresolvedOutputs": 0,
+            "cpuSubtractionAllowed": false,
+            "compilerOnlyAttribution": false
+          },
+          "proposedSummaryBytes": 754
+        }
+      }
+    },
+    {
+      "case": "audit-reject",
+      "first": {
+        "index": 0,
+        "transactionGate": "EXPECTED_FAILURE",
+        "operationWallMs": {
+          "load": 17.589,
+          "update": 2.895,
+          "readback": 0.283,
+          "audit": 4.264
+        },
+        "proof": {
+          "gate": "PASS",
+          "status": "COMPLETE",
+          "segments": [
+            {
+              "name": "driver-prefix",
+              "lower": 3180042233,
+              "upper": 3180042345,
+              "wallUs": 112,
+              "outputWallUs": 24,
+              "unattributedWallUs": 88
+            },
+            {
+              "name": "public-call",
+              "lower": 3180042345,
+              "upper": 3180042737,
+              "wallUs": 392,
+              "outputWallUs": 10,
+              "unattributedWallUs": 382
+            },
+            {
+              "name": "driver-return-tail",
+              "lower": 3180042737,
+              "upper": 3180042745,
+              "wallUs": 8,
+              "outputWallUs": 0,
+              "unattributedWallUs": 8
+            },
+            {
+              "name": "after-model",
+              "lower": 3180043314,
+              "upper": 3180043462,
+              "wallUs": 148,
+              "outputWallUs": 5,
+              "unattributedWallUs": 143
+            }
+          ],
+          "outputRows": [
+            {
+              "phase": "contract-load-delegate",
+              "start": 3180026396,
+              "end": 3180026407,
+              "wallUs": 11,
+              "processCpuUs": 10,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-orm-submit",
+              "start": 3180026496,
+              "end": 3180026501,
+              "wallUs": 5,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-queue",
+              "start": 3180026569,
+              "end": 3180026573,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-await-after-queue",
+              "start": 3180042263,
+              "end": 3180042274,
+              "wallUs": 11,
+              "processCpuUs": 11,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-await",
+              "start": 3180042286,
+              "end": 3180042291,
+              "wallUs": 5,
+              "processCpuUs": 6,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-orm-prepare",
+              "start": 3180042307,
+              "end": 3180042315,
+              "wallUs": 8,
+              "processCpuUs": 8,
+              "threw": false,
+              "owner": "driver-prefix"
+            },
+            {
+              "phase": "contract-load-driver-before-pg",
+              "start": 3180042387,
+              "end": 3180042392,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-pg-submit",
+              "start": 3180042728,
+              "end": 3180042733,
+              "wallUs": 5,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "public-call"
+            },
+            {
+              "phase": "contract-load-driver-submit",
+              "start": 3180042759,
+              "end": 3180042764,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-pg-await",
+              "start": 3180042799,
+              "end": 3180042803,
+              "wallUs": 4,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-pg",
+              "start": 3180042808,
+              "end": 3180042811,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-after-pg",
+              "start": 3180042920,
+              "end": 3180042923,
+              "wallUs": 3,
+              "processCpuUs": 4,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-await",
+              "start": 3180042928,
+              "end": 3180042931,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-driver-query",
+              "start": 3180042937,
+              "end": 3180042940,
+              "wallUs": 3,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result-to-model",
+              "start": 3180043320,
+              "end": 3180043325,
+              "wallUs": 5,
+              "processCpuUs": 5,
+              "threw": false,
+              "owner": "after-model"
+            },
+            {
+              "phase": "contract-load-result-after-model",
+              "start": 3180043469,
+              "end": 3180043472,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load-result",
+              "start": 3180043475,
+              "end": 3180043477,
+              "wallUs": 2,
+              "processCpuUs": 2,
+              "threw": false,
+              "owner": "OUTSIDE"
+            },
+            {
+              "phase": "contract-load",
+              "start": 3180043486,
+              "end": 3180043489,
+              "wallUs": 3,
+              "processCpuUs": 3,
+              "threw": false,
+              "owner": "OUTSIDE"
+            }
+          ],
+          "records": 19,
+          "diagnosticEmissions": 0,
+          "cpuSubtractionAllowed": false,
+          "compilerOnlyAttribution": false,
+          "proposedSummary": {
+            "event": "data-path.contract-load.observer-cost",
+            "schemaVersion": 1,
+            "proposedOnly": true,
+            "gatewayRequestId": "entry-audit-reject-0",
+            "lambdaRequestId": "entry-L-audit-reject-0",
+            "status": "COMPLETE",
+            "intervalRecords": 19,
+            "publicCalls": 1,
+            "overflow": 0,
+            "nestedOutputs": 0,
+            "foreignOutputs": 0,
+            "probeFailures": 0,
+            "segments": [
+              {
+                "name": "driver-prefix",
+                "wallUs": 112,
+                "outputWallUs": 24,
+                "unattributedWallUs": 88
+              },
+              {
+                "name": "public-call",
+                "wallUs": 392,
+                "outputWallUs": 10,
+                "unattributedWallUs": 382
+              },
+              {
+                "name": "driver-return-tail",
+                "wallUs": 8,
+                "outputWallUs": 0,
+                "unattributedWallUs": 8
+              },
+              {
+                "name": "after-model",
+                "wallUs": 148,
+                "outputWallUs": 5,
+                "unattributedWallUs": 143
+              }
+            ],
+            "outsideOutputs": 12,
+            "ambiguousOutputs": 0,
+            "unresolvedOutputs": 0,
+            "cpuSubtractionAllowed": false,
+            "compilerOnlyAttribution": false
+          },
+          "proposedSummaryBytes": 753
+        }
+      }
+    }
+  ],
+  "plan": {
+    "gate": "DESIGN_ONLY",
+    "scope": "NEXT_DEFAULT_OFF_IMPLEMENTATION_NOT_TARGET_EXECUTION",
+    "decision": "ADOPT_PUBLIC_CALL_AND_EXISTING_OUTPUT_CALLBACK_NO_COMPILER_PRIVATE_HOOK",
+    "flag": {
+      "name": "FDP_CONTRACT_OBSERVER_COST",
+      "default": false,
+      "implemented": false,
+      "workflowInputExists": false
+    },
+    "prerequisites": [
+      "test environment",
+      "engine/preconnect/detail/public enabled",
+      "pool1",
+      "one first transactional Contract.findFirst per request",
+      "opaque shared boundary bridge implemented inside observability",
+      "strict output owner and bounded records",
+      "exact collector event allowlist implemented"
+    ],
+    "proposedEvent": "data-path.contract-load.observer-cost",
+    "intervalScope": "SYNCHRONOUS_PUBLIC_RETURN_AND_ORIGINAL_OUTPUT_CALL_ONLY",
+    "summaryPolicy": {
+      "afterOriginalLoadClose": true,
+      "recursiveMeasurement": false,
+      "cpuSubtractionAllowed": false,
+      "residualDisabledOn": [
+        "TRUNCATED",
+        "PROBE_FAILED",
+        "FOREIGN_SCOPE",
+        "REENTRANT",
+        "OUTPUT_FAILED",
+        "MISSING_BOUNDARY",
+        "DUPLICATE_PUBLIC_CALL"
+      ],
+      "residualMeaning": "UNATTRIBUTED_WALL_BOUND_NOT_MODEL_OR_COMPILER_CPU"
+    },
+    "budget": {
+      "environment": "test",
+      "memoryMiB": 512,
+      "reservedConcurrency": 12,
+      "poolMax": 1,
+      "databaseStaticConnections": 63,
+      "databaseAvailableConnections": 70,
+      "businessConcurrency": 6,
+      "baselinePatchMax": 6,
+      "samplingPatchMax": 12,
+      "intervalRecordsMax": 64,
+      "summaryBytesMax": 4096,
+      "summaryRecordsMax": 1,
+      "engine": true,
+      "preconnect": true,
+      "detailed": true,
+      "publicBoundaries": true,
+      "accountReadCandidate": true,
+      "extraQueries": 0,
+      "extraAwaits": 0,
+      "forcedYields": 0,
+      "inspectorSessions": 0
+    },
+    "sequence": [
+      {
+        "stage": "R0",
+        "observerCost": false,
+        "accountReadCandidate": true,
+        "require": "same SHA / 19 artifacts / entry gates"
+      },
+      {
+        "stage": "R0 cleanup",
+        "require": "original parent/child cleanup and independent empty set"
+      },
+      {
+        "stage": "R1",
+        "observerCost": true,
+        "accountReadCandidate": true,
+        "require": "R0 closed; same budget and business input"
+      },
+      {
+        "stage": "R1 cleanup",
+        "require": "original parent/child cleanup and independent empty set"
+      },
+      {
+        "stage": "restore",
+        "observerCost": false,
+        "existingCandidates": false,
+        "require": "same SHA / 19 artifacts / final empty set and budget"
+      }
+    ],
+    "executesAws": false,
+    "readyToDeploy": false,
+    "candidateDefaultsChanged": false,
+    "compilerOnlyAttribution": false,
+    "afterQueueAttribution": "UNRESOLVED_NO_STABLE_COMPILER_SEAM",
+    "p95Accepted": false,
+    "fullQa09Accepted": false
+  },
+  "decision": "PROCEED_WITH_DEFAULT_OFF_OBSERVATION_IMPLEMENTATION_NEXT_TASK",
+  "targetWiring": "NOT_IMPLEMENTED",
+  "additionalRequests": 0,
+  "compilerOnlyAttribution": false,
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}

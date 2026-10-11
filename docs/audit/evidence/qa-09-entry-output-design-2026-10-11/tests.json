@@ -1,0 +1,93 @@
+{
+  "gate": "PASS",
+  "scope": "LOCAL_DESIGN_AND_OWNERSHIP_ONLY",
+  "runtime": {
+    "node": "24.12.0",
+    "pnpm": "10.20.0"
+  },
+  "checks": [
+    {
+      "command": "node scripts/run-qa09-contract-entry-output-runtime.mjs docs/audit/evidence/qa-09-entry-output-design-2026-10-11/matrix-04",
+      "exitCode": 0,
+      "receipt": "matrix-04/matrix.json",
+      "cases": 14,
+      "transactions": 34,
+      "checkoutRelease": 48,
+      "networkRequests": 0
+    },
+    {
+      "command": "pnpm exec vitest run packages/database/test/contract-entry-output-runtime.test.ts packages/database/test/contract-entry-output-ownership.test.ts packages/database/test/contract-public-ownership.test.ts",
+      "exitCode": 0,
+      "receipt": "ownership-tests-final2.log",
+      "passed": 36
+    },
+    {
+      "command": "node --test scripts/qa09-contract-entry-output-proof.test.mjs scripts/qa09-contract-entry-output-plan.test.mjs scripts/check-qa09-entry-output-design.test.mjs",
+      "exitCode": 0,
+      "receipt": "proof-plan-seal-tests-final2.log",
+      "passed": 41
+    },
+    {
+      "command": "pnpm test",
+      "exitCode": 0,
+      "receipt": "pnpm-test-final2.log",
+      "applicationFiles": 191,
+      "applicationPassed": 1601,
+      "contractPassed": 302,
+      "scriptPassed": 927
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "receipt": "typecheck-final.log",
+      "workspacesPassed": 21
+    },
+    {
+      "command": "pnpm exec eslint <10 changed JavaScript/TypeScript files listed in audit report>",
+      "exitCode": 0,
+      "receipt": "lint-final.log"
+    },
+    {
+      "command": "pnpm exec prettier --check <11 changed source/declaration/test files listed in audit report>",
+      "exitCode": 0,
+      "receipt": "format-final.log"
+    },
+    {
+      "command": "pnpm check:boundaries",
+      "exitCode": 0,
+      "receipt": "boundaries-final.log",
+      "workspaces": 13
+    },
+    {
+      "command": "pnpm check:secrets",
+      "exitCode": 0,
+      "receipt": "secrets-final.log"
+    },
+    {
+      "command": "Resolve 9 local Markdown links in new audit and design documents",
+      "exitCode": 0,
+      "links": 9
+    }
+  ],
+  "originalFailuresRetained": [
+    {
+      "receipt": "lint-original-fail.log",
+      "exitCode": 1,
+      "code": "no-unsafe-finally",
+      "fixedInFinalInputs": true
+    }
+  ],
+  "exploratoryOnly": [
+    "matrix-01",
+    "matrix-02",
+    "matrix-03",
+    "decision.json",
+    "target-plan.json"
+  ],
+  "candidateDefaultsChanged": false,
+  "targetWiring": "NOT_IMPLEMENTED",
+  "readyToDeploy": false,
+  "executesAws": false,
+  "fullQa09Accepted": false,
+  "p95Accepted": false
+}
