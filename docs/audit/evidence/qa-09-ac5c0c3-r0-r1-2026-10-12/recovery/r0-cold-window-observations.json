@@ -1,0 +1,82 @@
+{
+  "gate": "DESCRIPTIVE_ONLY",
+  "scope": "EXISTING_FAILED_R0_EXACT_PHYSICAL_COLD_409_WINDOWS",
+  "sourceCommit": "ac5c0c335dc9356236e04f724b7abd5ccb8ef9f2",
+  "prefix": "qa09-8f91d1734a8ffc1c",
+  "originalUnitGate": "FAIL",
+  "samplingFinalPhaseGate": "BLOCKED",
+  "coldRequests": 3,
+  "rows": [
+    {
+      "group": "baseline",
+      "requestId": "61e4a529-d9f6-448f-83dc-1fa0c9440860",
+      "lambdaRequestId": "2bd630e7-d3ec-454b-a221-56076abc9617",
+      "initDurationMs": 564.1,
+      "clientMs": 3695,
+      "phaseMs": {
+        "contract-load": 581,
+        "contract-load-await-after-queue": 427,
+        "contract-load-driver-before-pg": 73,
+        "contract-load-pg-submit": 1,
+        "contract-load-driver-submit": 74,
+        "contract-load-pg-await": 2,
+        "contract-load-driver-after-pg": 17,
+        "contract-load-driver-query": 92,
+        "contract-load-result-to-model": 2,
+        "contract-load-result-after-model": 1,
+        "contract-load-result": 2
+      }
+    },
+    {
+      "group": "sampling",
+      "requestId": "bc1bcc22-ee3d-49e6-874b-6fa518152269",
+      "lambdaRequestId": "0df5619a-374f-485d-9035-5c33034d8977",
+      "initDurationMs": 412.79,
+      "clientMs": 3079,
+      "phaseMs": {
+        "contract-load": 460,
+        "contract-load-await-after-queue": 222,
+        "contract-load-driver-before-pg": 98,
+        "contract-load-pg-submit": 40,
+        "contract-load-driver-submit": 138,
+        "contract-load-pg-await": 20,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-driver-query": 159,
+        "contract-load-result-to-model": 1,
+        "contract-load-result-after-model": 18,
+        "contract-load-result": 19
+      }
+    },
+    {
+      "group": "sampling",
+      "requestId": "92faf4aa-3455-4885-bc73-1429d4ec1d5d",
+      "lambdaRequestId": "b30f882a-c7e1-4204-893b-37416917dc95",
+      "initDurationMs": 553.95,
+      "clientMs": 3763,
+      "phaseMs": {
+        "contract-load": 601,
+        "contract-load-await-after-queue": 520,
+        "contract-load-driver-before-pg": 0,
+        "contract-load-pg-submit": 18,
+        "contract-load-driver-submit": 18,
+        "contract-load-pg-await": 3,
+        "contract-load-driver-after-pg": 17,
+        "contract-load-driver-query": 38,
+        "contract-load-result-to-model": 2,
+        "contract-load-result-after-model": 1,
+        "contract-load-result": 2
+      }
+    }
+  ],
+  "additionalRequests": 0,
+  "nestedIntervalsAdditive": false,
+  "cpuSubtractionAllowed": false,
+  "candidateBenefit": "NOT_ESTABLISHED",
+  "p95Accepted": false,
+  "fullQa09Accepted": false,
+  "bindings": {
+    "r0/sample.json": "2b0e3653ea73f3b1b432d89f70711b07167a6f8da1e2a77512aef36fc75bc780",
+    "r0/baseline-patch.json": "fba20ec44d0769beeb3090dac2fba41e3dcd4a85a7e004e6ab8588ff743a6da5",
+    "r0/sampling-patch.json": "864647ec5239cfbe4656a79084f2735067e1f3b1123273e6bec351909a312fa9"
+  }
+}
