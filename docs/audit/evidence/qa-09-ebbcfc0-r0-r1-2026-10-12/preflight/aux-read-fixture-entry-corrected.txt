@@ -1,0 +1,54 @@
+"""Controlled auxiliary collector entry/failure proof, no AWS calls."""
+import contextlib,io,json,runpy,subprocess,sys,tempfile,hashlib,datetime
+from pathlib import Path
+sys.dont_write_bytecode=True
+repo=Path.cwd();sys.path.insert(0,str(repo/'scripts'));import qa09_log_read as m
+source=Path(sys.argv[1]).resolve();kind=sys.argv[2];fault=sys.argv[3]
+sha='ebbcfc0ee31673b3332b217ca757e6aa1ea6013d';stamp='2026-10-12T00:00:00.000Z';epoch=1791763200000
+count=8 if kind=='initial' else 12
+ids=['20000000-0000-4000-8000-'+str(i).zfill(12) for i in range(count)]
+invs=['30000000-0000-4000-8000-'+str(i).zfill(12) for i in range(count)]
+calls=[];clock=[0];m.time.monotonic=lambda:clock[0]
+def cli(args,**kw):
+ assert args[:3]==['aws','logs','filter-log-events'] and kw['timeout']<=15
+ assert kw['env']['AWS_MAX_ATTEMPTS']=='1'
+ group=args[args.index('--log-group-name')+1];pattern=args[args.index('--filter-pattern')+1]
+ calls.append({'group':'gateway' if '/apigateway/' in group else 'lambda','timeout':kw['timeout']})
+ if fault=='timeout' and len(calls)==5:raise subprocess.TimeoutExpired(args,kw['timeout'],stderr='PRIVATE_SENTINEL')
+ if fault=='denied':return subprocess.CompletedProcess(args,1,'PRIVATE_SENTINEL','AccessDenied PRIVATE_SENTINEL')
+ if fault=='deadline' and len(calls)==3:clock[0]=120
+ if fault=='repeat':return subprocess.CompletedProcess(args,0,json.dumps({'events':[],'nextToken':'PRIVATE_SENTINEL'}),'')
+ i=next((i for i,rid in enumerate(ids) if rid in pattern),None)
+ if i is None:
+  i=next(i for i,inv in enumerate(invs) if inv in pattern)
+  events=[{'message':'REPORT RequestId: '+invs[i]+'\tDuration: 12 ms\tMemory Size: 512 MB'}]
+ elif '/apigateway/' in group:
+  events=[{'message':json.dumps({'requestId':ids[i],'extendedRequestId':'ext-'+ids[i],'integrationRequestId':invs[i],'requestTimeEpoch':epoch,'httpMethod':'GET','status':401 if kind=='negative' else 200,'integrationStatus':200,'functionStatus':401 if kind=='negative' else 200})}]
+ else:
+  common={'gatewayRequestId':ids[i],'lambdaRequestId':invs[i],'gatewayExtendedRequestId':'ext-'+ids[i],'operationId':'listCustomers','status':401 if kind=='negative' else 200}
+  events=[{'message':json.dumps({**common,'event':'admin.request.completed','elapsedMs':12,'password':'PRIVATE_SENTINEL'})},{'message':json.dumps({**common,'event':'data-path.phase.completed','phase':'auth','durationMs':1,'password':'PRIVATE_SENTINEL'})}]
+ return subprocess.CompletedProcess(args,0,json.dumps({'events':events}),'')
+m.subprocess.run=cli
+with tempfile.TemporaryDirectory(prefix='qa09-aux-proof-') as d:
+ root=Path(d)/'a'/'b'/'c'/'r0';root.mkdir(parents=True)
+ script=root/source.name
+ text=source.read_text().replace('Path(__file__).resolve().parents[5]',repr(str(repo)))
+ # Path literal substitution retains path arithmetic in the copied helper.
+ text=text.replace(repr(str(repo))+'/', 'Path('+repr(str(repo))+')/')
+ script.write_text(text)
+ if kind=='initial':
+  parent={'prefix':'qa09-1234567890abcdef','sourceCommit':sha,'startedAt':stamp,'finishedAt':'2026-10-12T00:00:01.000Z','checks':[{'requestId':i} for i in ids]}
+  (root/'sample.json.fixtures.json').write_text(json.dumps(parent));(root/'sample.json').write_text(json.dumps({**parent,'checks':[]}));out=root/'initial-phases.json'
+ else:
+  (root/'negative-get.json').write_text(json.dumps({'sourceCommit':sha,'gate':'PASS','startedAt':stamp,'finishedAt':'2026-10-12T00:00:01.000Z','rows':[{'gatewayRequestId':i,'gatewayExtendedRequestId':'ext-'+i,'startedAt':stamp,'latencyMs':100} for i in ids]}));out=root/'negative-phases.json'
+ error=None
+ try:
+  with contextlib.redirect_stdout(io.StringIO()):runpy.run_path(str(script),run_name='__main__')
+ except RuntimeError as e:error=str(e)
+ result=json.loads(out.read_text());raw=out.read_text();assert 'PRIVATE_SENTINEL' not in raw
+ expected={'timeout':'LOG_READ_TIMEOUT','denied':'LOG_ACCESS_DENIED','deadline':'LOG_TOTAL_DEADLINE_EXCEEDED','repeat':'LOG_PAGINATION_INCOMPLETE'}.get(fault)
+ assert result['gate']==('PASS' if not expected else 'PARTIAL')
+ assert error==expected,(error,expected)
+ assert len(calls)==({'timeout':5,'denied':1,'deadline':3,'repeat':2}.get(fault,count*3))
+ assert len(result['records'])==(count if not expected else 1 if fault=='timeout' else 0)
+ print(json.dumps({'gate':'PASS','scope':'CONTROLLED_AUXILIARY_READER_FAILURE_MATRIX_NO_AWS','kind':kind,'fault':fault or 'complete','sourceSha256':hashlib.sha256(source.read_bytes()).hexdigest(),'readerSha256':hashlib.sha256((repo/'scripts/qa09_log_read.py').read_bytes()).hexdigest(),'calls':len(calls),'result':result,'fullQa09Accepted':False}))

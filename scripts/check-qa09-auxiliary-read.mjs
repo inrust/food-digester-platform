@@ -1,0 +1,247 @@
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const scripts = dirname(fileURLToPath(import.meta.url));
+const sha = (path) => createHash('sha256').update(readFileSync(path)).digest('hex');
+const read = (path) => JSON.parse(readFileSync(path, 'utf8'));
+const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+const finite = (value) => Number.isFinite(value) && value >= 0;
+const phaseFields = new Set([
+  'lambdaRequestId',
+  'gatewayRequestId',
+  'gatewayExtendedRequestId',
+  'operationId',
+  'phase',
+  'durationMs',
+  'outcome',
+  'errorCode',
+  'startedAt',
+  'completedAt',
+  'coldStart',
+  'includesConnectionWait',
+  'completionBoundary',
+  'processCpuUserUs',
+  'processCpuSystemUs',
+  'processCpuScope',
+  'elapsedMs',
+  'status',
+  'event',
+]);
+const gatewayFields = new Set([
+  'requestId',
+  'extendedRequestId',
+  'integrationRequestId',
+  'requestTimeEpoch',
+  'httpMethod',
+  'status',
+  'integrationStatus',
+  'functionStatus',
+  'integrationLatency',
+  'responseLatency',
+  'errorResponseType',
+]);
+const reportFields = new Set(['lambdaRequestId', 'durationMs', 'initDurationMs', 'memoryMiB', 'maxMemoryMiB']);
+const only = (row, fields) =>
+  Object.keys(row).every(
+    (key) =>
+      fields.has(key) &&
+      (row[key] === null ||
+        typeof row[key] === 'boolean' ||
+        (typeof row[key] === 'string' && row[key].length <= 512) ||
+        Number.isFinite(row[key])),
+  );
+
+export function checkAuxiliaryRead(childPath, receiptPath, parentPath) {
+  const child = read(childPath);
+  const receipt = read(receiptPath);
+  const initial = receipt.scope === 'OWN_FIRST_EIGHT_INITIALIZATION_REQUESTS_EXACT_INVOCATIONS';
+  assert.ok(initial || receipt.scope === 'OWN_TWELVE_NEGATIVE_GET_EXACT_INVOCATIONS', 'AUX_SCOPE');
+  assert.equal(child.gate, 'PASS');
+  assert.match(child.sourceCommit, /^[a-f0-9]{40}$/);
+  assert.equal(receipt.sourceCommit, child.sourceCommit);
+  assert.equal(receipt.gate, 'PASS');
+  assert.equal(receipt.collectionError, null);
+  assert.deepEqual(receipt.logReadErrors, {});
+  assert.deepEqual(receipt.pendingRecords, []);
+  assert.equal(receipt.bindings.childSha256, sha(childPath));
+  assert.equal(receipt.bindings.collectorSha256, sha(join(scripts, 'collect-qa09-auxiliary-phases.py')));
+  assert.equal(receipt.readerSha256, sha(join(scripts, 'qa09_log_read.py')));
+  let ids;
+  let start;
+  let end;
+  if (initial) {
+    assert.ok(parentPath, 'AUX_PARENT_REQUIRED');
+    const parent = read(parentPath);
+    assert.equal(parent.gate, 'PASS');
+    assert.equal(parent.sourceCommit, child.sourceCommit);
+    assert.equal(parent.prefix, child.prefix);
+    assert.equal(receipt.prefix, child.prefix);
+    assert.equal(receipt.bindings.parentSha256, sha(parentPath));
+    ids = [
+      ...new Set(
+        [...parent.checks, ...child.checks]
+          .map((row) => row.requestId || row.gatewayRequestId)
+          .filter((id) => typeof id === 'string' && uuid.test(id)),
+      ),
+    ].slice(0, 8);
+    assert.equal(ids.length, 8);
+    start = Date.parse(parent.startedAt) - 2000;
+    end = Date.parse(parent.finishedAt) + 120000;
+  } else {
+    ids = child.rows.map((row) => row.gatewayRequestId);
+    assert.equal(ids.length, 12);
+    assert.equal(receipt.bindings.parentSha256, undefined);
+    start = Date.parse(child.startedAt) - 2000;
+    end = Date.parse(child.finishedAt) + 120000;
+  }
+  assert.ok(finite(start) && finite(end) && end > start && end - start < (initial ? 3600000 : 600000));
+  assert.equal(new Set(ids).size, ids.length);
+  assert.ok(ids.every((id) => uuid.test(id)));
+  assert.deepEqual(receipt.requestIds, ids);
+  assert.deepEqual(
+    receipt.records.map((row) => row.requestId),
+    ids,
+  );
+  const invocations = [];
+  for (const row of receipt.records) {
+    assert.ok(
+      Object.keys(row).every((key) =>
+        new Set([
+          'requestId',
+          'lambdaRequestId',
+          'phases',
+          'completion',
+          'platformReports',
+          'gateway',
+          'boundary',
+          'exactOwnLambdaLogMatches',
+        ]).has(key),
+      ),
+    );
+    assert.equal(row.gateway.length, 1);
+    assert.ok(only(row.gateway[0], gatewayFields));
+    assert.equal(row.gateway[0].requestId, row.requestId);
+    assert.ok(
+      finite(row.gateway[0].requestTimeEpoch) &&
+        row.gateway[0].requestTimeEpoch >= start &&
+        row.gateway[0].requestTimeEpoch <= end,
+    );
+    assert.ok(
+      row.phases.every(
+        (phase) =>
+          only(phase, phaseFields) &&
+          phase.gatewayRequestId === row.requestId &&
+          phase.lambdaRequestId === row.lambdaRequestId &&
+          phase.event === 'data-path.phase.completed',
+      ),
+    );
+    if (row.lambdaRequestId === null) {
+      assert.ok(!initial);
+      assert.equal(row.boundary, 'COGNITO_AUTHORIZER_REJECTED_BEFORE_LAMBDA');
+      assert.equal(row.exactOwnLambdaLogMatches, 0);
+      assert.deepEqual(row.phases, []);
+      assert.deepEqual(row.completion, []);
+      assert.deepEqual(row.platformReports, []);
+      assert.equal(row.gateway[0].errorResponseType, 'UNAUTHORIZED');
+      assert.ok(
+        ['integrationRequestId', 'integrationStatus', 'functionStatus'].every((key) => row.gateway[0][key] === '-'),
+      );
+    } else {
+      assert.match(row.lambdaRequestId, uuid);
+      invocations.push(row.lambdaRequestId);
+      assert.equal(row.completion.length, 1);
+      const complete = row.completion[0];
+      assert.equal(complete.event, 'admin.request.completed');
+      assert.ok(only(complete, phaseFields));
+      assert.equal(complete.gatewayRequestId, row.requestId);
+      assert.equal(complete.lambdaRequestId, row.lambdaRequestId);
+      assert.equal(row.gateway[0].integrationRequestId, row.lambdaRequestId);
+      assert.equal(row.gateway[0].extendedRequestId, complete.gatewayExtendedRequestId);
+      assert.equal(String(row.gateway[0].status), String(complete.status));
+      assert.equal(row.platformReports.length, 1);
+      assert.ok(only(row.platformReports[0], reportFields));
+      assert.equal(row.platformReports[0].lambdaRequestId, row.lambdaRequestId);
+    }
+    if (!initial) {
+      assert.equal(String(row.gateway[0].status), '401');
+      assert.equal(row.gateway[0].httpMethod, 'GET');
+      const client = child.rows.find((item) => item.gatewayRequestId === row.requestId);
+      const sent = Date.parse(client.startedAt);
+      assert.ok(
+        finite(sent) &&
+          finite(client.latencyMs) &&
+          row.gateway[0].requestTimeEpoch >= sent - 2000 &&
+          row.gateway[0].requestTimeEpoch <= sent + client.latencyMs + 2000,
+      );
+      if (client.gatewayExtendedRequestId)
+        assert.equal(row.gateway[0].extendedRequestId, client.gatewayExtendedRequestId);
+    }
+  }
+  assert.equal(new Set(invocations).size, invocations.length);
+  const expected = [];
+  const counters = { gateway: 0, lambda: 0 };
+  for (let offset = 0; offset < ids.length; offset += 3) {
+    const members = ids.slice(offset, offset + 3);
+    expected.push({ group: 'gateway', query: counters.gateway++, stage: 'gateway', members });
+    expected.push({ group: 'lambda', query: counters.lambda++, stage: 'phase', members });
+    const own = receipt.records
+      .slice(offset, offset + 3)
+      .map((row) => row.lambdaRequestId)
+      .filter(Boolean);
+    if (own.length) expected.push({ group: 'lambda', query: counters.lambda++, stage: 'report', members: own });
+  }
+  assert.deepEqual(receipt.readBatches, expected, 'AUX_BATCH_OWNERSHIP');
+  const budget = receipt.logReadBudget;
+  for (const [key, value] of Object.entries({
+    schemaVersion: 1,
+    totalDeadlineMs: 120000,
+    callTimeoutMs: 15000,
+    maxCalls: 40,
+    maxPagesPerQuery: 20,
+    exactBatchSize: 3,
+    readConcurrency: 1,
+    automaticRetries: 0,
+  }))
+    assert.equal(budget[key], value);
+  assert.equal(budget.error, null);
+  assert.ok(finite(budget.elapsedMs) && budget.elapsedMs < 120000);
+  assert.ok(budget.attempts.length > 0 && budget.attempts.length <= 40);
+  let index = 0;
+  for (const query of expected) {
+    let page = 1;
+    while (
+      index < budget.attempts.length &&
+      budget.attempts[index].group === query.group &&
+      budget.attempts[index].query === query.query
+    ) {
+      const call = budget.attempts[index++];
+      assert.equal(call.page, page++);
+      assert.equal(call.result, 'PASS');
+      assert.equal(call.error, undefined);
+      assert.ok(finite(call.elapsedMs) && finite(call.timeoutMs) && call.timeoutMs > 0 && call.timeoutMs <= 15000);
+    }
+    assert.ok(page > 1 && page <= 21, 'AUX_QUERY_PAGES');
+  }
+  assert.equal(index, budget.attempts.length, 'AUX_UNOWNED_CALL');
+  return {
+    gate: 'PASS',
+    scope: 'BOUNDED_OWN_AUXILIARY_READ_AND_SOURCE_BYTES_ONLY',
+    requests: ids.length,
+    calls: budget.attempts.length,
+    batchSize: 3,
+    fullQa09Accepted: false,
+    p95Accepted: false,
+  };
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    console.log(JSON.stringify(checkAuxiliaryRead(...process.argv.slice(2))));
+  } catch {
+    console.log(JSON.stringify({ gate: 'FAIL', error: 'AUXILIARY_READ_PROOF_INVALID' }));
+    process.exitCode = 1;
+  }
+}
