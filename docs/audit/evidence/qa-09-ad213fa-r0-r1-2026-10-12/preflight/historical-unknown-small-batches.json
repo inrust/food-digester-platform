@@ -1,0 +1,163 @@
+{
+  "gate": "UNKNOWN",
+  "scope": "EXISTING_BUILD_IDENTITY_ONLY_NOT_EXECUTION_ACCEPTANCE",
+  "originalReceiptSha256": "c3b1014b415456a3f1fe6b626cab58062d6985b82a5b2bf9aeec2fb9873bbab5",
+  "preparationSha256": "bee8bfe2a9a73c58dd6e67a79fcdc883f32fc32f0a6e92ad16ec029ffcee9d07",
+  "executorSha256": "0c8e855cfb173c8a5ba9d24b1cdc95f849213e2928d3b7477321eff00c53b6ae",
+  "readerSha256": "fe3eca3b136c95ed4275514a418252140cd44068a4140ed7f4db8e4f3c895b94",
+  "originalGate": "FAIL",
+  "originalStartGate": "UNKNOWN",
+  "writes": 0,
+  "restartAllowed": false,
+  "absenceProvesNonExecution": false,
+  "executionGate": "NOT_ASSESSED",
+  "cleanupGate": "NOT_ASSESSED",
+  "readBudget": {
+    "totalTimeoutMs": 90000,
+    "cliTimeoutMs": 15000,
+    "inventoryLimit": 50,
+    "batchSize": 5,
+    "maxRecoveries": 2,
+    "maxCliInvocations": 14
+  },
+  "observations": [
+    {
+      "operation": "sts:get-caller-identity",
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 2871,
+      "elapsedMs": 2871
+    },
+    {
+      "operation": "codebuild:list-builds-for-project",
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 2431,
+      "elapsedMs": 5303
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 1,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 7863,
+      "elapsedMs": 13166
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 2,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "FAIL",
+      "failure": {
+        "code": "AWS_batch-get-builds_CLI_READ_TIMEOUT",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null,
+        "cli": {
+          "exitStatus": 255,
+          "signal": null,
+          "spawnErrorCode": null,
+          "stderrBytes": 95,
+          "durationMs": 6735
+        }
+      },
+      "durationMs": 6986,
+      "elapsedMs": 20152
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 2,
+      "batchSize": 5,
+      "attempt": 2,
+      "result": "PASS",
+      "durationMs": 3579,
+      "elapsedMs": 23732
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 3,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 7795,
+      "elapsedMs": 31527
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 4,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 8468,
+      "elapsedMs": 39996
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 5,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 11514,
+      "elapsedMs": 51510
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 6,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 6832,
+      "elapsedMs": 58342
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 7,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 4054,
+      "elapsedMs": 62397
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 8,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 3832,
+      "elapsedMs": 66229
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 9,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 4028,
+      "elapsedMs": 70258
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 10,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 11216,
+      "elapsedMs": 81474
+    }
+  ],
+  "scannedCount": 50,
+  "exactMatches": 0,
+  "windowCovered": true,
+  "reason": "NO_EXACT_BUILD_OBSERVED",
+  "readBatchCount": 10,
+  "readGate": "RECOVERED",
+  "originalReadGate": "FAIL",
+  "readRecoveries": 1,
+  "finishedAt": "2026-10-12T08:06:28.552Z"
+}

@@ -1,0 +1,184 @@
+{
+  "gate": "DESCRIPTIVE_ONLY",
+  "scope": "EXISTING_EXACT_PHYSICAL_COLD_409_NESTED_WINDOWS",
+  "sourceCommit": "ad213fa27375369fc0320f1747b1490a6292a41b",
+  "prefix": "qa09-8b64137f50bfd686",
+  "mode": "r1",
+  "coldRequests": 2,
+  "rows": [
+    {
+      "id": "race:3:a",
+      "group": "baseline",
+      "requestId": "94c95dc2-574e-4da1-9783-88b0072509b7",
+      "lambdaRequestId": "f38c44ff-b511-4ca1-af9a-fd4989d50bff",
+      "clientMs": 3514,
+      "phaseMs": {
+        "contract-load": 617,
+        "contract-load-await-after-queue": 442,
+        "contract-load-driver-before-pg": 18,
+        "contract-load-pg-submit": 1,
+        "contract-load-driver-submit": 18,
+        "contract-load-pg-await": 20,
+        "contract-load-driver-after-pg": 0,
+        "contract-load-driver-query": 38,
+        "contract-load-result-to-model": 2,
+        "contract-load-result-after-model": 38,
+        "contract-load-result": 39
+      },
+      "observerSegmentsUs": [
+        {
+          "name": "driver-prefix",
+          "wallUs": 17445,
+          "outputWallUs": 237,
+          "outputProcessCpuUs": 485,
+          "unattributedWallUs": 17208
+        },
+        {
+          "name": "public-call",
+          "wallUs": 915,
+          "outputWallUs": 152,
+          "outputProcessCpuUs": 1002,
+          "unattributedWallUs": 763
+        },
+        {
+          "name": "driver-return-tail",
+          "wallUs": 29,
+          "outputWallUs": 0,
+          "outputProcessCpuUs": 0,
+          "unattributedWallUs": 29
+        },
+        {
+          "name": "after-model",
+          "wallUs": 37837,
+          "outputWallUs": 20048,
+          "outputProcessCpuUs": 196,
+          "unattributedWallUs": 17789
+        }
+      ],
+      "ownedBoundaries": {
+        "seam": "SELF_OWNED_CALL_SITES",
+        "includesObservationOverhead": true,
+        "afterQueueWallUs": 442310,
+        "segments": [
+          {
+            "name": "checkpoint-phase-setup",
+            "wallUs": 186
+          },
+          {
+            "name": "checkpoint-output-return",
+            "wallUs": 147
+          },
+          {
+            "name": "after-checkpoint-to-dispatch",
+            "wallUs": 441977
+          },
+          {
+            "name": "repository-driver-setup",
+            "wallUs": 17373
+          },
+          {
+            "name": "observer-public-bridge",
+            "wallUs": 72
+          },
+          {
+            "name": "public-callback-setup",
+            "wallUs": 60
+          }
+        ]
+      }
+    },
+    {
+      "id": "cold:2:3:b",
+      "group": "sampling",
+      "requestId": "014fa2fd-788d-4889-9caa-99ee436c4e7c",
+      "lambdaRequestId": "da4218aa-9982-4421-a7c6-0287189a4e16",
+      "clientMs": 3617,
+      "phaseMs": {
+        "contract-load": 541,
+        "contract-load-await-after-queue": 420,
+        "contract-load-driver-before-pg": 20,
+        "contract-load-pg-submit": 1,
+        "contract-load-driver-submit": 21,
+        "contract-load-pg-await": 2,
+        "contract-load-driver-after-pg": 37,
+        "contract-load-driver-query": 60,
+        "contract-load-result-to-model": 2,
+        "contract-load-result-after-model": 1,
+        "contract-load-result": 3
+      },
+      "observerSegmentsUs": [
+        {
+          "name": "driver-prefix",
+          "wallUs": 19936,
+          "outputWallUs": 231,
+          "outputProcessCpuUs": 485,
+          "unattributedWallUs": 19705
+        },
+        {
+          "name": "public-call",
+          "wallUs": 873,
+          "outputWallUs": 150,
+          "outputProcessCpuUs": 1110,
+          "unattributedWallUs": 723
+        },
+        {
+          "name": "driver-return-tail",
+          "wallUs": 47,
+          "outputWallUs": 0,
+          "outputProcessCpuUs": 0,
+          "unattributedWallUs": 47
+        },
+        {
+          "name": "after-model",
+          "wallUs": 736,
+          "outputWallUs": 77,
+          "outputProcessCpuUs": 1816,
+          "unattributedWallUs": 659
+        }
+      ],
+      "ownedBoundaries": {
+        "seam": "SELF_OWNED_CALL_SITES",
+        "includesObservationOverhead": true,
+        "afterQueueWallUs": 419946,
+        "segments": [
+          {
+            "name": "checkpoint-phase-setup",
+            "wallUs": 182
+          },
+          {
+            "name": "checkpoint-output-return",
+            "wallUs": 131
+          },
+          {
+            "name": "after-checkpoint-to-dispatch",
+            "wallUs": 419633
+          },
+          {
+            "name": "repository-driver-setup",
+            "wallUs": 19869
+          },
+          {
+            "name": "observer-public-bridge",
+            "wallUs": 67
+          },
+          {
+            "name": "public-callback-setup",
+            "wallUs": 38
+          }
+        ]
+      }
+    }
+  ],
+  "bindings": {
+    "unit-completion.json": "069a14ef367b0ea807cdd7648463d6be8f86a84dd3ecab8c562171339948c879",
+    "baseline-patch.json": "bed2292baac9ca76739ca7c6ff0057da4689ae3b643c3a8ae0927a3ebedca3ae",
+    "sampling-patch.json": "a6140b8954b3a6788fd1ea3e43a669c7ecc2f74ff98ec0a107fe3670f5ef0396"
+  },
+  "additionalRequests": 0,
+  "nestedIntervalsAdditive": false,
+  "cpuSubtractionAllowed": false,
+  "compilerOnlyAttribution": false,
+  "candidateBenefit": "NOT_ESTABLISHED",
+  "p95Accepted": false,
+  "fullQa09Accepted": false
+}
