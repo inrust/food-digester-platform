@@ -66,7 +66,7 @@ export function runContractWindows(directory) {
     scope: 'OFFLINE_PUBLIC_PORT_BOUNDARIES_AND_CONTROLLED_COST_LOCATION',
     runtime: { node: process.version, platform: process.platform, arch: process.arch },
     budget: {
-      childProcesses: 16,
+      childProcesses: Object.keys(windowCases).length,
       concurrency: 1,
       childDeadlineMs: 45000,
       poolMax: 1,

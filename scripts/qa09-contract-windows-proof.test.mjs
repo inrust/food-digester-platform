@@ -117,6 +117,71 @@ test('complete public-port receipt retains strict parent proof and microsecond p
     { totalUs: 15000, segmentsUs: [2000, 2000, 2000, 9000] },
   );
 });
+function addDriverPrefix(r, milliseconds) {
+  for (const sample of r.samples) {
+    // The public adapter entrance is after dispatch and its existing phase output.
+    // Insert time inside driver-before-pg, preserving every original boundary.
+    for (const mark of sample.marks.slice(5)) {
+      mark.us += milliseconds * 1000;
+      mark.wallMs += milliseconds;
+    }
+    sample.windowsMs.load += milliseconds;
+    for (const phase of sample.observations.filter((p) => p.event === 'data-path.phase.completed')) {
+      if (Date.parse(phase.startedAt) > 40)
+        phase.startedAt = new Date(Date.parse(phase.startedAt) + milliseconds).toISOString();
+      if (Date.parse(phase.completedAt) > 40) {
+        phase.completedAt = new Date(Date.parse(phase.completedAt) + milliseconds).toISOString();
+        phase.durationMs = Date.parse(phase.completedAt) - Date.parse(phase.startedAt);
+      }
+    }
+  }
+  return r;
+}
+test('public await-to-adapter span includes driver prefix without relaxing the 5ms bound', () => {
+  const r = summarizeContractWindows(addDriverPrefix(fixture(), 30));
+  assert.equal(r[0].partitions.afterQueue.totalUs, 49000);
+  assert.equal(r[0].partitions.adapter.totalUs, 23000);
+});
+test('public await-to-adapter span cannot escape the adjacent after-queue and driver parents', () => {
+  const r = addDriverPrefix(fixture(), 30);
+  r.samples[0].marks.slice(5).forEach((m) => (m.us += 40000));
+  assert.throws(() => summarizeContractWindows(r), /WINDOW_PARENT_CONTAINMENT/);
+});
+test('public adapter entrance beyond driver completion fails the strict wall bound', () => {
+  const r = addDriverPrefix(fixture(), 30);
+  r.samples[0].marks[5].wallMs = 101;
+  assert.throws(() => summarizeContractWindows(r), /WINDOW_WALL_CONTAINMENT/);
+});
+test('public adapter return before settlement is contained by driver plus result', () => {
+  const r = fixture();
+  for (const sample of r.samples) {
+    sample.marks.slice(14).forEach((m) => {
+      m.us += 30000;
+      m.wallMs += 30;
+    });
+    sample.windowsMs.load += 30;
+    for (const p of sample.observations.filter((p) => p.event === 'data-path.phase.completed')) {
+      if (Date.parse(p.startedAt) >= 65) p.startedAt = new Date(Date.parse(p.startedAt) + 30).toISOString();
+      if (Date.parse(p.completedAt) >= 65) {
+        p.completedAt = new Date(Date.parse(p.completedAt) + 30).toISOString();
+        p.durationMs = Date.parse(p.completedAt) - Date.parse(p.startedAt);
+      }
+    }
+  }
+  const s = summarizeContractWindows(r)[0];
+  assert.equal(s.partitions.result.totalUs, 45000);
+  assert.deepEqual(s.publicWindowParents.result, ['contract-load-driver-query', 'contract-load-result']);
+});
+for (const [key, start, excessUs] of [
+  ['afterQueue', 5, 31001],
+  ['adapter', 13, 7001],
+  ['result', 14, 30001],
+])
+  test(`${key} parent containment rejects one microsecond beyond the existing 5ms bound`, () => {
+    const r = fixture();
+    r.samples[0].marks.slice(start).forEach((m) => (m.us += excessUs));
+    assert.throws(() => summarizeContractWindows(r), /WINDOW_PARENT_CONTAINMENT/);
+  });
 for (const [name, mutate] of [
   ['old source', (r) => delete r.kind],
   ['claims', (r) => (r.p95Accepted = true)],

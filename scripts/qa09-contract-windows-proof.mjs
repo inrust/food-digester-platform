@@ -10,6 +10,7 @@ export const windowCases = Object.freeze({
   'adapter-cpu': { adapterCpu: 20 },
   'result-cpu': { resultCpu: 20 },
   'caller-cpu': { callerCpu: 20 },
+  'driver-prefix-output': { driverPrefixOutputCpu: 20 },
   'await-reject': { failure: 'await' },
   'pg-reject': { failure: 'pg' },
   'decode-reject': { failure: 'decode' },
@@ -37,8 +38,8 @@ export const windowMarks = [
   'caller-resume',
   'load-return',
 ];
-const demand = (v, code) => {
-  if (!v) throw Error(code);
+const demand = (v, code, detail) => {
+  if (!v) throw Error(detail ? `${code}:${JSON.stringify(detail)}` : code);
 };
 const partitions = {
   afterQueue: ['await-enter', 'await-exit', 'extension-query-return', 'adapter-enter'],
@@ -199,26 +200,43 @@ export function summarizeContractWindows(r) {
       adapterCpu: span('adapter-resume', 'adapter-return'),
       resultCpu: span('extension-resume', 'extension-return'),
       callerCpu: span('caller-resume', 'load-return'),
+      driverPrefixOutputCpu: span('extension-query-return', 'adapter-enter'),
     };
     for (const [k, v] of Object.entries(control))
       if (typeof v === 'number') demand(located[k] >= (v - 2) * 1000, 'WINDOW_INJECTION_LOCATION');
     const phase = (name) => phases.find((p) => p.phase === name);
-    // Separate clocks are used, so this checks containment with the existing 5ms rounding bound only.
+    // Public marks straddle the dispatch/settlement boundaries: adapter-enter follows
+    // dispatch output, and adapter-return precedes settlement capture. These spans
+    // belong to the union of adjacent phases, not to either smaller phase alone.
+    // Keep the original 5ms bound and the individual in-phase wall checks below.
+    const parentMs = {
+      afterQueue: phase('contract-load-await-after-queue').durationMs + phase('contract-load-driver-query').durationMs,
+      result: phase('contract-load-driver-query').durationMs + phase('contract-load-result').durationMs,
+      adapter: phase('contract-load-driver-query').durationMs,
+    };
     demand(
-      windows.afterQueue.totalUs / 1000 <= phase('contract-load-await-after-queue').durationMs + 5 &&
-        windows.result.totalUs / 1000 <= phase('contract-load-result').durationMs + 5 &&
-        windows.adapter.totalUs / 1000 <= phase('contract-load-driver-query').durationMs + 5,
+      Object.entries(parentMs).every(([key, parent]) => windows[key].totalUs / 1000 <= parent + 5),
       'WINDOW_PARENT_CONTAINMENT',
+      {
+        case: r.case,
+        index: i,
+        publicUs: Object.fromEntries(Object.entries(windows).map(([k, w]) => [k, w.totalUs])),
+        parentMs,
+      },
     );
     const wall = Object.fromEntries(s.marks.map((m) => [m.name, m.wallMs]));
-    for (const [parent, a, b] of [
-      ['contract-load-await-after-queue', 'await-enter', 'await-exit'],
-      ['contract-load-driver-query', 'adapter-enter', 'adapter-return'],
-      ['contract-load-result', 'extension-resume', 'load-return'],
+    for (const [startParent, endParent, a, b] of [
+      ['contract-load-await-after-queue', 'contract-load-await-after-queue', 'await-enter', 'await-exit'],
+      ['contract-load-await-after-queue', 'contract-load-driver-query', 'await-enter', 'adapter-enter'],
+      ['contract-load-driver-query', 'contract-load-driver-query', 'adapter-enter', 'adapter-return'],
+      ['contract-load-driver-query', 'contract-load-result', 'adapter-return', 'load-return'],
+      ['contract-load-result', 'contract-load-result', 'extension-resume', 'load-return'],
     ]) {
       demand(
-        wall[a] >= Date.parse(phase(parent).startedAt) - 5 && wall[b] <= Date.parse(phase(parent).completedAt) + 5,
+        wall[a] >= Date.parse(phase(startParent).startedAt) - 5 &&
+          wall[b] <= Date.parse(phase(endParent).completedAt) + 5,
         'WINDOW_WALL_CONTAINMENT',
+        { case: r.case, index: i, startParent, endParent, startMark: a, endMark: b },
       );
     }
     return {
@@ -226,6 +244,11 @@ export function summarizeContractWindows(r) {
       gate: failure ? 'EXPECTED_FAILURE' : 'PASS',
       windowsMs: s.windowsMs,
       partitions: windows,
+      publicWindowParents: {
+        afterQueue: ['contract-load-await-after-queue', 'contract-load-driver-query'],
+        adapter: ['contract-load-driver-query'],
+        result: ['contract-load-driver-query', 'contract-load-result'],
+      },
       checkpoint,
     };
   });

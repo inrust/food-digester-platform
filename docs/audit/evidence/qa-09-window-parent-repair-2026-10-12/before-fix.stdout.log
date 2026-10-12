@@ -1,0 +1,86 @@
+✔ complete public-port receipt retains strict parent proof and microsecond partitions (2.472458ms)
+✖ public await-to-adapter span includes driver prefix without relaxing the 5ms bound (0.270541ms)
+✔ public await-to-adapter span cannot escape the adjacent after-queue and driver parents (0.29275ms)
+✖ public adapter entrance beyond driver completion fails the strict wall bound (0.357333ms)
+✔ strict offline receipt rejects old source (0.086375ms)
+✔ strict offline receipt rejects claims (0.078417ms)
+✔ strict offline receipt rejects compiler (0.072792ms)
+✔ strict offline receipt rejects pool (0.069833ms)
+✔ strict offline receipt rejects scheduling (0.083458ms)
+✔ strict offline receipt rejects control (0.212709ms)
+✔ strict offline receipt rejects missing (0.154792ms)
+✔ strict offline receipt rejects duplicate (0.103833ms)
+✔ strict offline receipt rejects foreign mark (0.086958ms)
+✔ strict offline receipt rejects foreign phase (0.105083ms)
+✔ strict offline receipt rejects reverse (0.1885ms)
+✔ strict offline receipt rejects fraction (0.096125ms)
+✔ strict offline receipt rejects negative cpu (0.123125ms)
+✔ strict offline receipt rejects missing wall (0.06775ms)
+✔ strict offline receipt rejects wall outside (0.134792ms)
+✔ strict offline receipt rejects incomplete pg (0.058375ms)
+✔ strict offline receipt rejects sequence (0.353416ms)
+✔ strict offline receipt rejects leak (0.088ms)
+✔ strict offline receipt rejects extra pool (0.064292ms)
+✔ strict offline receipt rejects retry (0.056625ms)
+✔ strict offline receipt rejects network (0.053125ms)
+✔ strict offline receipt rejects missing downstream (0.060041ms)
+✔ strict offline receipt rejects cpu scope (0.060625ms)
+✔ strict offline receipt rejects wrong phase boundary (0.092458ms)
+✔ CPU partition uses counter differences and never sums nested windows (0.252416ms)
+✔ injection must land in its named window, not only increase total load (0.172584ms)
+✔ runner refuses all existing directories before starting any process (0.439375ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 29
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 46.261334
+
+✖ failing tests:
+
+test at scripts/qa09-contract-windows-proof.test.mjs:140:1
+✖ public await-to-adapter span includes driver prefix without relaxing the 5ms bound (0.270541ms)
+  Error: WINDOW_PARENT_CONTAINMENT
+      at demand (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-windows-proof.mjs:41:17)
+      at file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-windows-proof.mjs:207:5
+      at Array.map (<anonymous>)
+      at summarizeContractWindows (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-windows-proof.mjs:91:20)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-windows-proof.test.mjs:141:13)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+
+test at scripts/qa09-contract-windows-proof.test.mjs:150:1
+✖ public adapter entrance beyond driver completion fails the strict wall bound (0.357333ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /WINDOW_WALL_CONTAINMENT/. Input:
+  
+  'Error: WINDOW_PARENT_CONTAINMENT'
+  
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-windows-proof.test.mjs:153:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: WINDOW_PARENT_CONTAINMENT
+        at demand (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-windows-proof.mjs:41:17)
+        at file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-windows-proof.mjs:207:5
+        at Array.map (<anonymous>)
+        at summarizeContractWindows (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-windows-proof.mjs:91:20)
+        at file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-windows-proof.test.mjs:153:23
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-windows-proof.test.mjs:153:10)
+        at Test.runInAsyncScope (node:async_hooks:214:14)
+        at Test.run (node:internal/test_runner/test:1106:25),
+    expected: /WINDOW_WALL_CONTAINMENT/,
+    operator: 'throws',
+    diff: 'simple'
+  }

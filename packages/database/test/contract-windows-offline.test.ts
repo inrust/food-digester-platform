@@ -270,7 +270,11 @@ for (const name of cases)
                   }),
                 );
               }),
-            (r) => rows.push(r),
+            (r) => {
+              rows.push(r);
+              if (r.event === 'data-path.phase.completed' && r.phase === 'contract-load-await-after-queue')
+                burn('driverPrefixOutputCpu');
+            },
           );
         } catch (caught) {
           failed = true;
