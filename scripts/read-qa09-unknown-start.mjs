@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { fixtureAws } from './qa09-ten-device-bridge.mjs';
 import { PROJECT } from './qa09-ten-device-db.mjs';
 import { STARTED_BUILD_QUERY } from './qa09-started-build-read.mjs';
-import { readUnknownStart, validateUnknownStart } from './qa09-unknown-start-read.mjs';
+import { readUnknownStart, validateUnknownStart, UNKNOWN_START_READ_BUDGET } from './qa09-unknown-start-read.mjs';
 import { safeOperationError } from './qa09-operation-observation.mjs';
 
 export async function collectUnknownStart(originalFile, output, { aws = fixtureAws } = {}) {
@@ -28,6 +28,10 @@ export async function collectUnknownStart(originalFile, output, { aws = fixtureA
     originalStartGate: 'UNKNOWN',
     writes: 0,
     restartAllowed: false,
+    absenceProvesNonExecution: false,
+    executionGate: 'NOT_ASSESSED',
+    cleanupGate: 'NOT_ASSESSED',
+    readBudget: UNKNOWN_START_READ_BUDGET,
     observations,
   };
   const save = () => writeFileSync(output, JSON.stringify(result, null, 2) + '\n');

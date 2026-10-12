@@ -1,0 +1,27 @@
+✔ pre-start rejection is persisted and never retried; no started receipt or SQL is invented (473.690042ms)
+✔ post-start authorization rejection retains exact Build receipt and failed read with no restart (386.693167ms)
+✔ terminal failed Build remains FAIL, is known terminal and never reads successful frame (378.362834ms)
+✔ in-budget transient read recovers the same Build, retains original FAIL and runs mutation once (2448.810208ms)
+✔ lost start response is UNKNOWN, never assumed unstarted, restarted or attributed to an invented Build (377.128333ms)
+✔ pre-start get-caller-identity recovers twice with immutable failures and exactly one StartBuild (1012.160125ms)
+✔ pre-start batch-get-projects recovers twice with immutable failures and exactly one StartBuild (968.457625ms)
+✔ pre-start project network fails closed before mutation or StartBuild (893.053791ms)
+✔ pre-start project AccessDeniedException fails closed before mutation or StartBuild (324.344333ms)
+✔ pre-start project expired fails closed before mutation or StartBuild (324.804958ms)
+✔ pre-start project unknown fails closed before mutation or StartBuild (329.684ms)
+✔ pre-start project invalid-json fails closed before mutation or StartBuild (351.400625ms)
+✔ update-project network failure is never retried or followed by StartBuild (931.930667ms)
+✔ create-project network failure is never retried or followed by StartBuild (375.217917ms)
+✔ successful read with wrongAccount never retries semantic verification (326.538833ms)
+✔ successful read with wrongRole never retries semantic verification (352.498084ms)
+✔ project read recovery permits one reviewed update-project and one StartBuild (693.556125ms)
+✔ project read recovery permits one reviewed create-project and one StartBuild (786.98425ms)
+✔ recovered project read never converts a later lost StartBuild response into a safe retry (1424.191416ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13195.728333

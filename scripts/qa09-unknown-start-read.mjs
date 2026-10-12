@@ -2,6 +2,15 @@ import { validateStartedPreparation, verifyStartedBuild } from './qa09-started-b
 import { PROJECT } from './qa09-ten-device-db.mjs';
 import { safeOperationError, transientFixtureRead } from './qa09-operation-observation.mjs';
 
+export const UNKNOWN_START_READ_BUDGET = Object.freeze({
+  totalTimeoutMs: 90000,
+  cliTimeoutMs: 15000,
+  inventoryLimit: 50,
+  batchSize: 5,
+  maxRecoveries: 2,
+  maxCliInvocations: 14,
+});
+
 // Resolves only the identity of an existing Build. It never accepts SQL results or cleanup.
 export function validateUnknownStart(original, prep) {
   validateStartedPreparation(prep, PROJECT + ':11111111-1111-1111-1111-111111111111');
@@ -80,7 +89,7 @@ export function inspectUnknownStart(original, prep, builds, { truncated = false 
   };
 }
 
-// All dependencies are fixed reads. At most two transient recoveries across all three operations.
+// All dependencies are fixed reads. Recovery allowance is shared by every serial batch.
 export async function readUnknownStart(
   original,
   prep,
@@ -90,31 +99,38 @@ export async function readUnknownStart(
     onObservation = () => {},
     now = () => performance.now(),
     pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-    timeoutMs = 90000,
+    timeoutMs = UNKNOWN_START_READ_BUDGET.totalTimeoutMs,
   } = {},
 ) {
   validateUnknownStart(original, prep);
-  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 90000)
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > UNKNOWN_START_READ_BUDGET.totalTimeoutMs)
     throw Error('INVALID_UNKNOWN_START_READ_BUDGET');
   const started = now();
   let recoveries = 0;
-  async function read(operation, run) {
+  async function read(operation, run, context = {}) {
     for (let attempt = 1; ; attempt++) {
       const remaining = Math.floor(timeoutMs - (now() - started));
       if (remaining < 1) throw Error('UNKNOWN_START_READ_TIMEOUT');
-      const row = { operation, attempt, result: 'RUNNING' },
+      const row = { operation, ...context, attempt, result: 'RUNNING' },
         tick = now();
       observations.push(row);
       onObservation(row);
       try {
-        const value = await run({ timeoutMs: Math.min(30000, remaining) });
+        const allowance = Math.floor(timeoutMs - (now() - started));
+        if (allowance < 1) throw Error('UNKNOWN_START_READ_TIMEOUT');
+        const value = await run({ timeoutMs: Math.min(UNKNOWN_START_READ_BUDGET.cliTimeoutMs, allowance) });
         if (now() - started >= timeoutMs) throw Error('UNKNOWN_START_READ_TIMEOUT');
         row.result = 'PASS';
         return value;
       } catch (error) {
         row.result = 'FAIL';
         row.failure = safeOperationError(error);
-        if (!transientFixtureRead(error) || recoveries >= 2 || now() - started + 250 >= timeoutMs) throw error;
+        if (
+          !transientFixtureRead(error) ||
+          recoveries >= UNKNOWN_START_READ_BUDGET.maxRecoveries ||
+          now() - started + 250 >= timeoutMs
+        )
+          throw error;
         recoveries++;
         await pause(250);
       } finally {
@@ -130,16 +146,35 @@ export async function readUnknownStart(
   const ids = inventory?.ids;
   if (
     !Array.isArray(ids) ||
-    ids.length > 50 ||
+    ids.length > UNKNOWN_START_READ_BUDGET.inventoryLimit ||
     new Set(ids).size !== ids.length ||
     ids.some((id) => !new RegExp(`^${PROJECT}:[a-f0-9-]{36}$`).test(id))
   )
     throw Error('INVALID_UNKNOWN_START_INVENTORY');
-  const builds = ids.length ? await read('codebuild:batch-get-builds', (limits) => reads.builds(ids, limits)) : [];
-  if (!Array.isArray(builds) || builds.length !== ids.length || builds.some((b) => !ids.includes(b?.id)))
-    throw Error('UNKNOWN_START_INVENTORY_READ_INCOMPLETE');
+  const builds = [];
+  for (let offset = 0; offset < ids.length; offset += UNKNOWN_START_READ_BUDGET.batchSize) {
+    const batch = ids.slice(offset, offset + UNKNOWN_START_READ_BUDGET.batchSize);
+    const details = await read('codebuild:batch-get-builds', (limits) => reads.builds([...batch], limits), {
+      batch: offset / UNKNOWN_START_READ_BUDGET.batchSize + 1,
+      batchSize: batch.length,
+    });
+    if (
+      !Array.isArray(details) ||
+      details.length !== batch.length ||
+      new Set(details.map((b) => b?.id)).size !== batch.length ||
+      details.some((b) => !batch.includes(b?.id))
+    )
+      throw Error('UNKNOWN_START_INVENTORY_READ_INCOMPLETE');
+    builds.push(...details);
+  }
+  const inspection = inspectUnknownStart(original, prep, builds, {
+    truncated: !!inventory.NextToken || ids.length === UNKNOWN_START_READ_BUDGET.inventoryLimit,
+  });
+  if (now() - started >= timeoutMs) throw Error('UNKNOWN_START_READ_TIMEOUT');
   return {
-    ...inspectUnknownStart(original, prep, builds, { truncated: !!inventory.NextToken || ids.length === 50 }),
+    ...inspection,
+    readBudget: { ...UNKNOWN_START_READ_BUDGET, totalTimeoutMs: timeoutMs },
+    readBatchCount: Math.ceil(ids.length / UNKNOWN_START_READ_BUDGET.batchSize),
     readGate: recoveries ? 'RECOVERED' : 'PASS',
     originalReadGate: recoveries ? 'FAIL' : 'PASS',
     readRecoveries: recoveries,
