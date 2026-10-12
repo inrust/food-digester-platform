@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-close-01-2026-10-12/final-readonly.py", line 32, in <module>
+    rows=aws(['codebuild','batch-get-builds','--ids',*ids,'--query','builds[].{id:id,status:buildStatus,endTime:endTime}'])
+  File "/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/qa-09-close-01-2026-10-12/final-readonly.py", line 16, in aws
+    p = subprocess.run(['aws',*args,'--profile','esgiot-infra','--region','ap-southeast-1','--output','json'],capture_output=True,timeout=25)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 557, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1221, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 2154, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1268, in _check_timeout
+    raise TimeoutExpired(
+    ...<2 lines>...
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['aws', 'codebuild', 'batch-get-builds', '--ids', 'fdp-test-qa09-ten-device-fixtures:d801415e-7aba-42b4-87e3-8a9feecb6b81', 'fdp-test-qa09-ten-device-fixtures:2dc1c3a6-05c3-4014-9217-bcb7257718f5', 'fdp-test-qa09-ten-device-fixtures:c6a76279-4ed3-4003-be16-25914e8c7310', 'fdp-test-qa09-ten-device-fixtures:2722a15c-2349-4a38-90e2-a58b0e38b470', 'fdp-test-qa09-ten-device-fixtures:9bce99ea-d361-4c92-8031-5f2d009f6734', '--query', 'builds[].{id:id,status:buildStatus,endTime:endTime}', '--profile', 'esgiot-infra', '--region', 'ap-southeast-1', '--output', 'json']' timed out after 25 seconds

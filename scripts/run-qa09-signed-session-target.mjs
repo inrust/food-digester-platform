@@ -1,11 +1,12 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash, randomBytes } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import * as sdk from '@aws-sdk/client-cognito-identity-provider';
 import { AuthFlow } from '../apps/admin-web/src/auth/auth-flow.ts';
 import { createCognitoIdpClient } from '../apps/admin-web/src/auth/cognito-idp.ts';
 import { qa09VersionInputs } from './qa09-version-inputs.mjs';
+import { validateBusinessVersion } from './check-qa09-business-target.mjs';
 
 const roles = ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor', 'CustomerAdmin', 'CustomerViewer'];
 const pool = 'ap-southeast-1_hZMX8LpFo',
@@ -49,7 +50,12 @@ export function assertOwnedSessionSite(prefix, customer, site) {
     throw Error('OWN_SESSION_SITE_REQUIRED');
 }
 
-export async function runSignedSessionTarget(output, versionPath) {
+export async function runSignedSessionTarget(
+  output,
+  versionPath,
+  { provisionWithoutNotification, beforeUserDisable } = {},
+) {
+  if (existsSync(output) || existsSync(output + '.sources.json')) throw Error('FRESH_SESSION_EVIDENCE_REQUIRED');
   const versionBytes = readFileSync(versionPath),
     version = JSON.parse(versionBytes);
   if (
@@ -61,6 +67,7 @@ export async function runSignedSessionTarget(output, versionPath) {
     version.lambdaArtifacts?.length !== 19
   )
     throw Error('EXACT_DEPLOYED_VERSION_REQUIRED');
+  validateBusinessVersion(version, version.sourceCommit);
   const prefix = 'qa09-' + randomBytes(8).toString('hex');
   const r = {
     task: 'QA-09',
@@ -79,6 +86,11 @@ export async function runSignedSessionTarget(output, versionPath) {
     applicationVersionReceiptSha256: hash(versionBytes),
     credentialsExported: false,
     kmsAndIamManagementPerformed: false,
+    userProvisioningMode: provisionWithoutNotification
+      ? 'SUPPRESSED_COGNITO_AND_INVITED_DATABASE_FIXTURE'
+      : 'BUSINESS_INVITATION',
+    invitationAcceptanceClaimed: false,
+    notificationSendingRequested: !provisionWithoutNotification,
   };
   const save = () => writeFileSync(output, JSON.stringify(r, null, 2) + '\n');
   writeFileSync(
@@ -97,6 +109,14 @@ export async function runSignedSessionTarget(output, versionPath) {
           'packages/aws-clients/src/cognito-admin.ts',
           'packages/auth/src/permissions.ts',
           'pnpm-lock.yaml',
+          ...(provisionWithoutNotification
+            ? [
+                'scripts/run-qa09-user-closeout-target.mjs',
+                'scripts/qa09-ten-device-db.mjs',
+                'scripts/qa09-ten-device-bridge.mjs',
+                'scripts/qa09-user-closeout-browser.mjs',
+              ]
+            : []),
         ].map((path) => {
           const bytes = readFileSync(path);
           return { path, sha256: hash(bytes), sourceBase64: bytes.toString('base64') };
@@ -285,16 +305,19 @@ export async function runSignedSessionTarget(output, versionPath) {
           absent = e.name === 'UserNotFoundException';
         }
         check(role + ':fresh-cognito-name', absent);
-        own.invitationAttempted = true;
+        own.invitationAttempted = !provisionWithoutNotification;
+        own.identityProvisionAttempted = true;
         save();
-        const invited = (
-          await admin(role + ':invite', 'POST', '/api/v1/admin/users', 201, {
-            email: own.email,
-            displayName: prefix + '-' + role,
-            roles: [role],
-            ...(customerId ? { customerId } : {}),
-          })
-        ).data;
+        const invited = provisionWithoutNotification
+          ? await provisionWithoutNotification({ prefix, own, customers: r.customers, call, sdk, receipt: r, save })
+          : (
+              await admin(role + ':invite', 'POST', '/api/v1/admin/users', 201, {
+                email: own.email,
+                displayName: prefix + '-' + role,
+                roles: [role],
+                ...(customerId ? { customerId } : {}),
+              })
+            ).data;
         own.userId = assertOwnedBusinessUser(prefix, own, invited);
         own.invitedStatus = invited.status;
         save();
@@ -360,6 +383,8 @@ export async function runSignedSessionTarget(output, versionPath) {
         const active = (await allUsers()).find((u) => u.userId === own.userId);
         assertOwnedBusinessUser(prefix, own, active);
         check(role + ':business-active', active.status === 'ACTIVE');
+        if (beforeUserDisable)
+          await beforeUserDisable({ prefix, own, browserLogin: bootstrap, admin, receipt: r, save });
         const disabled = (await admin(role + ':disable', 'POST', '/api/v1/admin/users/' + own.userId + '/disable', 200))
           .data;
         assertOwnedBusinessUser(prefix, own, disabled);
@@ -378,9 +403,47 @@ export async function runSignedSessionTarget(output, versionPath) {
           qa09UnknownField: true,
         });
         check(role + ':post-requests-unexpired', Date.now() + 120000 < expiresAt);
+        if (provisionWithoutNotification) {
+          const audits = (
+            await admin(
+              role + ':audit-readback',
+              'GET',
+              '/api/v1/admin/audit-logs?objectType=user&objectId=' + own.userId + '&limit=100',
+              200,
+            )
+          ).data;
+          const expectedActions = [
+            'user.activate',
+            'user.disable',
+            ...(role === 'PlatformOperator' ? ['user.role.assign'] : []),
+            ...(role === 'CustomerAdmin' ? ['user.scope.change'] : []),
+          ];
+          check(
+            role + ':mutation-audit-persisted',
+            Array.isArray(audits) &&
+              expectedActions.every((action) =>
+                audits.some((a) => a.objectId === own.userId && a.action === action && a.result === 'SUCCESS'),
+              ),
+          );
+          const auditRaw = JSON.stringify(audits);
+          check(
+            role + ':audit-no-credentials',
+            !/-----BEGIN|\bBearer |\beyJ[\w-]+\.[\w-]+\.[\w-]+/.test(auditRaw) &&
+              !auditRaw.includes(password) &&
+              !auditRaw.includes(session.idToken),
+          );
+          own.auditReadback = audits.map((a) => ({
+            auditId: a.auditId,
+            objectId: a.objectId,
+            action: a.action,
+            result: a.result,
+          }));
+          save();
+        }
       } catch (error) {
         own.failureCode = /^[A-Z_]+$/.test(error.message) ? error.message : 'OWN_SIGNED_SESSION_CASE_FAILED';
         save();
+        if (own.failureCode === 'UNKNOWN_USER_SEED_START_NO_RESTART') break;
       }
     }
   } catch (error) {
@@ -389,7 +452,7 @@ export async function runSignedSessionTarget(output, versionPath) {
   } finally {
     for (const own of r.users) {
       try {
-        if (!own.invitationAttempted) {
+        if (!own.invitationAttempted && !own.identityProvisionAttempted) {
           r.cleanup.push({ type: 'identity-not-created', email: own.email, result: 'PASS' });
           save();
           continue;

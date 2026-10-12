@@ -44,6 +44,7 @@ export function validatePlan(plan) {
       'business-seed-alarm',
       'business-seed-semantic-data',
       'business-seed-devices',
+      'business-seed-user',
       'business-seed-active-lifecycle',
       'business-inject-export-lease',
     ].includes(plan.action)
@@ -72,6 +73,23 @@ export function validatePlan(plan) {
       plan.customers[0].id === plan.customers[1].id)
   )
     throw Error('OWN_CUSTOMERS_REQUIRED');
+  if (plan.action === 'business-seed-user') {
+    const u = plan.ownUser;
+    const roles = ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor', 'CustomerAdmin', 'CustomerViewer'];
+    const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+    const expectedCustomer =
+      u?.role === 'CustomerAdmin' ? plan.customers[0].id : u?.role === 'CustomerViewer' ? plan.customers[1].id : null;
+    if (
+      !u ||
+      !roles.includes(u.role) ||
+      !uuid.test(u.userId ?? '') ||
+      !uuid.test(u.cognitoSub ?? '') ||
+      u.email !== `${plan.prefix}-h01-${u.role.toLowerCase()}@example.invalid` ||
+      u.customerId !== expectedCustomer ||
+      u.identityProvisioning !== 'COGNITO_SUPPRESS_REAL_SUBJECT'
+    )
+      throw Error('EXACT_SUPPRESSED_OWN_USER_REQUIRED');
+  }
   if (
     plan.action.endsWith('-closed') &&
     (!Array.isArray(plan.requestLedger) ||
@@ -180,6 +198,66 @@ export async function executeFixture(client, plan) {
         transactionReadOnly: true,
         writes: 0,
         originalFingerprints: before,
+      };
+    }
+    if (plan.action === 'business-seed-user') {
+      const u = plan.ownUser;
+      for (const c of plan.customers)
+        if (
+          (
+            await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2 AND deleted_at IS NULL', [
+              c.id,
+              c.name,
+            ])
+          ).rowCount !== 1
+        )
+          throw Error('CUSTOMER_SCOPE_DRIFT');
+      if (
+        (
+          await client.query('SELECT id FROM users WHERE id=$1 OR email=$2 OR cognito_sub=$3', [
+            u.userId,
+            u.email,
+            u.cognitoSub,
+          ])
+        ).rowCount
+      )
+        throw Error('OWN_USER_ALREADY_EXISTS');
+      const fingerprints = async () =>
+        (
+          await client.query(
+            "SELECT 'users' AS entity,md5(coalesce(string_agg(to_jsonb(t)::text,'' ORDER BY to_jsonb(t)::text),'')) AS digest FROM users t WHERE id<>$1 UNION ALL SELECT 'user_roles',md5(coalesce(string_agg(to_jsonb(t)::text,'' ORDER BY to_jsonb(t)::text),'')) FROM user_roles t WHERE user_id<>$1 UNION ALL SELECT 'user_scopes',md5(coalesce(string_agg(to_jsonb(t)::text,'' ORDER BY to_jsonb(t)::text),'')) FROM user_scopes t WHERE user_id<>$1",
+            [u.userId],
+          )
+        ).rows;
+      const originalUsers = await fingerprints();
+      await client.query(
+        "INSERT INTO users(id,email,display_name,cognito_sub,status,updated_at) VALUES($1,$2,$3,$4,'INVITED',now())",
+        [u.userId, u.email, plan.prefix + '-' + u.role, u.cognitoSub],
+      );
+      await client.query('INSERT INTO user_roles(user_id,role_code) VALUES($1,$2)', [u.userId, u.role]);
+      if (u.customerId)
+        await client.query('INSERT INTO user_scopes(id,user_id,customer_id) VALUES($1,$2,$3)', [
+          u.userId,
+          u.userId,
+          u.customerId,
+        ]);
+      if (
+        JSON.stringify(originalUsers) !== JSON.stringify(await fingerprints()) ||
+        JSON.stringify(before) !== JSON.stringify(await original(client, ids))
+      )
+        throw Error('OWN_USER_OUTSIDE_FINGERPRINT_DRIFT');
+      const row = (await client.query('SELECT id,email,cognito_sub,status FROM users WHERE id=$1', [u.userId])).rows[0];
+      if (row?.email !== u.email || row.cognito_sub !== u.cognitoSub || row.status !== 'INVITED')
+        throw Error('OWN_USER_SEED_READBACK_FAILED');
+      await client.query('COMMIT');
+      committed = true;
+      return {
+        fixtureMode: 'SUPPRESSED_COGNITO_IDENTITY_WITH_INVITED_DB_PRECONDITION_NOT_INVITATION_ACCEPTANCE',
+        user: { userId: row.id, email: row.email, status: row.status, roles: [u.role], customerId: u.customerId },
+        originalUsers,
+        originalFingerprints: before,
+        invitationSent: false,
+        naturalActivationClaimed: false,
       };
     }
     if (plan.action === 'business-seed-active-lifecycle') {

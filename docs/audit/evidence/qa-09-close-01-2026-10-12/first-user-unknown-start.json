@@ -1,0 +1,167 @@
+{
+  "gate": "UNAVAILABLE",
+  "scope": "READ_ONLY_UNKNOWN_START_IDENTITY_NO_REPLAY",
+  "originalReceiptSha256": "497514b7a137337cdb354ea3df04e05b53f0f17906ff198126f9af4378f5f77f",
+  "preparationSha256": "c7bd7b009b4a47710b7b9cfd16490816ca7c99726712473b799f70a9d5eed432",
+  "executorSha256": "0c8e855cfb173c8a5ba9d24b1cdc95f849213e2928d3b7477321eff00c53b6ae",
+  "readerSha256": "fe3eca3b136c95ed4275514a418252140cd44068a4140ed7f4db8e4f3c895b94",
+  "originalGate": "FAIL",
+  "originalStartGate": "UNKNOWN",
+  "writes": 0,
+  "restartAllowed": false,
+  "absenceProvesNonExecution": false,
+  "executionGate": "NOT_ASSESSED",
+  "cleanupGate": "NOT_ASSESSED",
+  "readBudget": {
+    "totalTimeoutMs": 90000,
+    "cliTimeoutMs": 15000,
+    "inventoryLimit": 50,
+    "batchSize": 5,
+    "maxRecoveries": 2,
+    "maxCliInvocations": 14
+  },
+  "observations": [
+    {
+      "operation": "sts:get-caller-identity",
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 2996,
+      "elapsedMs": 2996
+    },
+    {
+      "operation": "codebuild:list-builds-for-project",
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 4197,
+      "elapsedMs": 7195
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 1,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "FAIL",
+      "failure": {
+        "code": "AWS_batch-get-builds_CLI_READ_TIMEOUT",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null,
+        "cli": {
+          "exitStatus": null,
+          "signal": "SIGTERM",
+          "spawnErrorCode": "ETIMEDOUT",
+          "stderrBytes": 0,
+          "durationMs": 15003
+        }
+      },
+      "durationMs": 15255,
+      "elapsedMs": 22450
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 1,
+      "batchSize": 5,
+      "attempt": 2,
+      "result": "PASS",
+      "durationMs": 14491,
+      "elapsedMs": 36941
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 2,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 13105,
+      "elapsedMs": 50046
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 3,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 12703,
+      "elapsedMs": 62749
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 4,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "PASS",
+      "durationMs": 8078,
+      "elapsedMs": 70828
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 5,
+      "batchSize": 5,
+      "attempt": 1,
+      "result": "FAIL",
+      "failure": {
+        "code": "AWS_batch-get-builds_CLI_READ_TIMEOUT",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null,
+        "cli": {
+          "exitStatus": 255,
+          "signal": null,
+          "spawnErrorCode": null,
+          "stderrBytes": 95,
+          "durationMs": 5760
+        }
+      },
+      "durationMs": 6011,
+      "elapsedMs": 76839
+    },
+    {
+      "operation": "codebuild:batch-get-builds",
+      "batch": 5,
+      "batchSize": 5,
+      "attempt": 2,
+      "result": "FAIL",
+      "failure": {
+        "code": "AWS_batch-get-builds_CLI_READ_TIMEOUT",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null,
+        "cli": {
+          "exitStatus": null,
+          "signal": "SIGTERM",
+          "spawnErrorCode": "ETIMEDOUT",
+          "stderrBytes": 0,
+          "durationMs": 13163
+        }
+      },
+      "durationMs": 13164,
+      "elapsedMs": 90003
+    }
+  ],
+  "failure": {
+    "code": "AWS_batch-get-builds_CLI_READ_TIMEOUT",
+    "errorName": "Error",
+    "causeCode": null,
+    "requestId": null,
+    "httpStatusCode": null,
+    "attempts": null,
+    "totalRetryDelay": null,
+    "cli": {
+      "exitStatus": null,
+      "signal": "SIGTERM",
+      "spawnErrorCode": "ETIMEDOUT",
+      "stderrBytes": 0,
+      "durationMs": 13163
+    }
+  },
+  "finishedAt": "2026-10-12T12:12:37.531Z"
+}

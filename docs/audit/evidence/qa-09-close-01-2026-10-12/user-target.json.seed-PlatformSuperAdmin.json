@@ -1,0 +1,95 @@
+{
+  "gate": "FAIL",
+  "sourceHash": "bebbc397da814b534561ae2aac64b3e91d5245840eb57c630329d4994c7ae020",
+  "buildspecHash": "71c034771e12af51bd350d2bfa528a8383172b5fa9a2883bed364e57a70a6523",
+  "operations": [
+    {
+      "sequence": 1,
+      "operation": "get-caller-identity",
+      "profile": "esgiot-infra",
+      "startedAt": "2026-10-12T12:02:12.399Z",
+      "result": "PASS",
+      "durationMs": 2662
+    },
+    {
+      "sequence": 2,
+      "operation": "batch-get-projects",
+      "profile": "esgiot-infra",
+      "startedAt": "2026-10-12T12:02:15.061Z",
+      "result": "PASS",
+      "durationMs": 11036
+    },
+    {
+      "sequence": 3,
+      "operation": "update-project",
+      "profile": "esgiot-infra",
+      "startedAt": "2026-10-12T12:02:26.098Z",
+      "result": "PASS",
+      "durationMs": 11211
+    },
+    {
+      "sequence": 4,
+      "operation": "start-build",
+      "profile": "esgiot-infra",
+      "startedAt": "2026-10-12T12:02:37.310Z",
+      "result": "FAIL",
+      "failure": {
+        "code": "AWS_start-build_CLI_READ_TIMEOUT",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null,
+        "cli": {
+          "exitStatus": 255,
+          "signal": null,
+          "spawnErrorCode": null,
+          "stderrBytes": 95,
+          "durationMs": 7720
+        }
+      },
+      "durationMs": 7721
+    }
+  ],
+  "buildReads": [],
+  "preStartReads": [
+    {
+      "operation": "sts:get-caller-identity",
+      "attempt": 1,
+      "startedAt": "2026-10-12T12:02:12.399Z",
+      "result": "PASS",
+      "durationMs": 2662,
+      "elapsedMs": 2662
+    },
+    {
+      "operation": "codebuild:batch-get-projects",
+      "attempt": 1,
+      "startedAt": "2026-10-12T12:02:15.061Z",
+      "result": "PASS",
+      "durationMs": 11036,
+      "elapsedMs": 11036
+    }
+  ],
+  "finishedAt": "2026-10-12T12:02:45.031Z",
+  "failure": {
+    "code": "AWS_start-build_CLI_READ_TIMEOUT",
+    "errorName": "Error",
+    "causeCode": null,
+    "requestId": null,
+    "httpStatusCode": null,
+    "attempts": null,
+    "totalRetryDelay": null,
+    "cli": {
+      "exitStatus": 255,
+      "signal": null,
+      "spawnErrorCode": null,
+      "stderrBytes": 95,
+      "durationMs": 7720
+    },
+    "kind": "START_OUTCOME_UNCONFIRMED",
+    "observations": [],
+    "startedBuildMayStillRun": true,
+    "recoveryAction": "READ_ONLY_DIAGNOSTIC_REQUIRED_NO_RESTART"
+  }
+}

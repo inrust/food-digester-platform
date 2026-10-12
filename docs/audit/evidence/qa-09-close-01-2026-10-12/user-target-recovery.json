@@ -1,0 +1,438 @@
+{
+  "task": "QA-09",
+  "scope": "EXACT_OWN_USER_CLEANUP_RECOVERY_NO_SEED_OR_INVITATION",
+  "sourceCommit": "beaccece84ec865020aefc537af296228ec8b933",
+  "prefix": "qa09-14197706b32ec5b0",
+  "startedAt": "2026-10-12T12:13:15.861Z",
+  "fullQa09Accepted": false,
+  "gate": "PASS_CLEANUP_ONLY",
+  "checks": [
+    {
+      "id": "user-ledger-0",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformSuperAdmin:cognito-absent",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:cleanup-disable",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:cognito-absent",
+      "result": "PASS"
+    },
+    {
+      "id": "user-ledger-2",
+      "result": "PASS"
+    },
+    {
+      "id": "outside-user-records-preserved",
+      "result": "PASS"
+    },
+    {
+      "id": "own-business-users-all-disabled",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-site-read-b7f4a789-559e-4681-8030-b04b1d07162c",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-site-b7f4a789-559e-4681-8030-b04b1d07162c",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-site-absent-b7f4a789-559e-4681-8030-b04b1d07162c",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-site-read-48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-site-48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-site-absent-48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-read-8875640c-8b18-404c-846d-7371b338cd41",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-owned-8875640c-8b18-404c-846d-7371b338cd41",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-8875640c-8b18-404c-846d-7371b338cd41",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-absent-8875640c-8b18-404c-846d-7371b338cd41",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-read-e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-owned-e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "result": "PASS"
+    },
+    {
+      "id": "cleanup-customer-absent-e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "result": "PASS"
+    },
+    {
+      "id": "bootstrap-cognito-absent",
+      "result": "PASS"
+    }
+  ],
+  "requests": [
+    {
+      "id": "user-ledger-0",
+      "method": "GET",
+      "path": "/api/v1/admin/users",
+      "startedAt": "2026-10-12T12:13:27.554Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "75087446-6928-48d4-9227-20b2becf64db",
+      "errorCode": null,
+      "latencyMs": 5016
+    },
+    {
+      "id": "PlatformOperator:cleanup-disable",
+      "method": "POST",
+      "path": "/api/v1/admin/users/98e447cf-a378-4eca-846c-7c573d44aa9b/disable",
+      "startedAt": "2026-10-12T12:13:34.350Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "96319db9-2c4f-4fed-9cb6-a899b6eb209a",
+      "errorCode": null,
+      "latencyMs": 1054
+    },
+    {
+      "id": "user-ledger-2",
+      "method": "GET",
+      "path": "/api/v1/admin/users",
+      "startedAt": "2026-10-12T12:13:37.080Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "0f537668-f489-4cad-bdf4-edd5b0aaf056",
+      "errorCode": null,
+      "latencyMs": 889
+    },
+    {
+      "id": "cleanup-site-read-b7f4a789-559e-4681-8030-b04b1d07162c",
+      "method": "GET",
+      "path": "/api/v1/admin/sites/b7f4a789-559e-4681-8030-b04b1d07162c",
+      "startedAt": "2026-10-12T12:13:37.975Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "fea7ec8a-014e-4578-bb91-7a6e6f15e973",
+      "errorCode": null,
+      "latencyMs": 3370
+    },
+    {
+      "id": "cleanup-site-b7f4a789-559e-4681-8030-b04b1d07162c",
+      "method": "DELETE",
+      "path": "/api/v1/admin/sites/b7f4a789-559e-4681-8030-b04b1d07162c",
+      "startedAt": "2026-10-12T12:13:41.344Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "57ddd212-6872-4675-bb1d-271f2c135e72",
+      "errorCode": null,
+      "latencyMs": 560
+    },
+    {
+      "id": "cleanup-site-absent-b7f4a789-559e-4681-8030-b04b1d07162c",
+      "method": "GET",
+      "path": "/api/v1/admin/sites/b7f4a789-559e-4681-8030-b04b1d07162c",
+      "startedAt": "2026-10-12T12:13:41.904Z",
+      "status": 404,
+      "expected": 404,
+      "gatewayRequestId": "09b77ce6-9aff-475c-8d93-e57d2eee4582",
+      "errorCode": "NOT_FOUND",
+      "latencyMs": 465
+    },
+    {
+      "id": "cleanup-site-read-48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "method": "GET",
+      "path": "/api/v1/admin/sites/48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "startedAt": "2026-10-12T12:13:42.370Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "acd00841-a44c-4b11-a0fa-b3cf6f515bf1",
+      "errorCode": null,
+      "latencyMs": 471
+    },
+    {
+      "id": "cleanup-site-48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "method": "DELETE",
+      "path": "/api/v1/admin/sites/48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "startedAt": "2026-10-12T12:13:42.841Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "16d7a0e7-5b2a-4e97-9bfb-e5c29672189a",
+      "errorCode": null,
+      "latencyMs": 485
+    },
+    {
+      "id": "cleanup-site-absent-48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "method": "GET",
+      "path": "/api/v1/admin/sites/48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "startedAt": "2026-10-12T12:13:43.326Z",
+      "status": 404,
+      "expected": 404,
+      "gatewayRequestId": "335d50db-ba95-4ef3-9250-1e5a249754ca",
+      "errorCode": "NOT_FOUND",
+      "latencyMs": 1277
+    },
+    {
+      "id": "cleanup-customer-read-8875640c-8b18-404c-846d-7371b338cd41",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/8875640c-8b18-404c-846d-7371b338cd41",
+      "startedAt": "2026-10-12T12:13:44.604Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "0a090c11-afa1-4c11-a1a8-68117ae83b4c",
+      "errorCode": null,
+      "latencyMs": 483
+    },
+    {
+      "id": "cleanup-customer-8875640c-8b18-404c-846d-7371b338cd41",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/8875640c-8b18-404c-846d-7371b338cd41",
+      "startedAt": "2026-10-12T12:13:45.087Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "4b7055ff-c07b-4a87-a9a8-8218cf5e3740",
+      "errorCode": null,
+      "latencyMs": 560
+    },
+    {
+      "id": "cleanup-customer-absent-8875640c-8b18-404c-846d-7371b338cd41",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/8875640c-8b18-404c-846d-7371b338cd41",
+      "startedAt": "2026-10-12T12:13:45.647Z",
+      "status": 404,
+      "expected": 404,
+      "gatewayRequestId": "51d626a5-6cad-465c-9a8a-de07f574ebae",
+      "errorCode": "NOT_FOUND",
+      "latencyMs": 469
+    },
+    {
+      "id": "cleanup-customer-read-e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "startedAt": "2026-10-12T12:13:46.116Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "89e4d778-91f5-4c73-9d52-f5526cc5472d",
+      "errorCode": null,
+      "latencyMs": 463
+    },
+    {
+      "id": "cleanup-customer-e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "startedAt": "2026-10-12T12:13:46.580Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "f9a20a31-6d4c-44bd-8b80-59a8beb4f3a3",
+      "errorCode": null,
+      "latencyMs": 490
+    },
+    {
+      "id": "cleanup-customer-absent-e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "startedAt": "2026-10-12T12:13:47.070Z",
+      "status": 404,
+      "expected": 404,
+      "gatewayRequestId": "e2794158-4405-4cc3-9019-f64984c176a0",
+      "errorCode": "NOT_FOUND",
+      "latencyMs": 538
+    }
+  ],
+  "users": [
+    {
+      "role": "PlatformSuperAdmin",
+      "email": "qa09-14197706b32ec5b0-h01-platformsuperadmin@example.invalid",
+      "customerId": null,
+      "userId": null,
+      "businessDisabled": false,
+      "cognitoDeleted": true,
+      "invitationAttempted": false,
+      "identityProvisionAttempted": true,
+      "preparedUserId": "303bf667-bd61-44f9-b255-d2cd2008892e",
+      "failureCode": "AWS_OPERATION_FAILED"
+    },
+    {
+      "role": "PlatformOperator",
+      "email": "qa09-14197706b32ec5b0-h01-platformoperator@example.invalid",
+      "customerId": null,
+      "userId": "98e447cf-a378-4eca-846c-7c573d44aa9b",
+      "businessDisabled": true,
+      "cognitoDeleted": true,
+      "invitationAttempted": false,
+      "identityProvisionAttempted": true,
+      "preparedUserId": "98e447cf-a378-4eca-846c-7c573d44aa9b",
+      "invitedStatus": "INVITED",
+      "signedSession": {
+        "sha256": "7b714ef9471a7b19fd7e403e97bd95b9798ee5331e6d24313c8206329f89f49b",
+        "expiresAt": "2026-10-12T13:05:14.000Z",
+        "credentialExported": false
+      }
+    }
+  ],
+  "customers": [
+    {
+      "id": "e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "name": "qa09-14197706b32ec5b0-a",
+      "suffix": "a"
+    },
+    {
+      "id": "8875640c-8b18-404c-846d-7371b338cd41",
+      "name": "qa09-14197706b32ec5b0-b",
+      "suffix": "b"
+    }
+  ],
+  "sites": [
+    {
+      "id": "48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "customerId": "e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "name": "qa09-14197706b32ec5b0-site-a",
+      "status": "ACTIVE",
+      "region": null,
+      "subregion": null,
+      "address": null,
+      "timezone": "Asia/Shanghai",
+      "contactName": null,
+      "contactPhone": null,
+      "contactEmail": null,
+      "deviceCount": 0,
+      "version": 1,
+      "createdAt": "2026-10-12T12:02:07.579Z",
+      "updatedAt": "2026-10-12T12:02:07.579Z"
+    },
+    {
+      "id": "b7f4a789-559e-4681-8030-b04b1d07162c",
+      "customerId": "8875640c-8b18-404c-846d-7371b338cd41",
+      "name": "qa09-14197706b32ec5b0-site-b",
+      "status": "ACTIVE",
+      "region": null,
+      "subregion": null,
+      "address": null,
+      "timezone": "Asia/Shanghai",
+      "contactName": null,
+      "contactPhone": null,
+      "contactEmail": null,
+      "deviceCount": 0,
+      "version": 1,
+      "createdAt": "2026-10-12T12:02:09.977Z",
+      "updatedAt": "2026-10-12T12:02:09.977Z"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "own-user-retired",
+      "email": "qa09-14197706b32ec5b0-h01-platformsuperadmin@example.invalid",
+      "userId": null,
+      "result": "PASS",
+      "disabledTombstoneRetained": true
+    },
+    {
+      "type": "own-user-retired",
+      "email": "qa09-14197706b32ec5b0-h01-platformoperator@example.invalid",
+      "userId": "98e447cf-a378-4eca-846c-7c573d44aa9b",
+      "result": "PASS",
+      "disabledTombstoneRetained": true
+    },
+    {
+      "type": "site",
+      "id": "b7f4a789-559e-4681-8030-b04b1d07162c",
+      "result": "PASS"
+    },
+    {
+      "type": "site",
+      "id": "48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "8875640c-8b18-404c-846d-7371b338cd41",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "result": "PASS"
+    },
+    {
+      "type": "bootstrap",
+      "result": "PASS"
+    },
+    {
+      "type": "recovery-identity",
+      "result": "PASS"
+    }
+  ],
+  "applicationVersionReceiptSha256": "c798551c81d4b44d207f3eae3ee9c99e53462165f72bbcb867547abe2a2a13e8",
+  "credentialsExported": false,
+  "kmsAndIamManagementPerformed": false,
+  "userProvisioningMode": "SUPPRESSED_COGNITO_AND_INVITED_DATABASE_FIXTURE",
+  "invitationAcceptanceClaimed": false,
+  "notificationSendingRequested": false,
+  "originalUsers": {
+    "count": 22,
+    "sha256": "ae29ec9dc51e5fae8743eb27082b8726e8b6d27cb33e99bccbdf642a629f72d2",
+    "eligibleSuperAdmins": 2
+  },
+  "outputPath": "docs/audit/evidence/qa-09-close-01-2026-10-12/user-target.json",
+  "fixtureBuilds": [
+    {
+      "action": "business-seed-user",
+      "role": "PlatformSuperAdmin",
+      "receipt": "docs/audit/evidence/qa-09-close-01-2026-10-12/user-target.json.seed-PlatformSuperAdmin.json",
+      "gate": "RUNNING"
+    },
+    {
+      "action": "business-seed-user",
+      "role": "PlatformOperator",
+      "receipt": "docs/audit/evidence/qa-09-close-01-2026-10-12/user-target.json.seed-PlatformOperator.json",
+      "gate": "PASS",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:d4e28485-ff24-4632-8df9-b9b0cbc0812b",
+      "sha256": "bfda9e9a425ac30887b53f156f6bd508d7bdcd9830cbb6e907d3073cea2aa18c"
+    }
+  ],
+  "userBrowser": [
+    {
+      "width": 375,
+      "userId": "98e447cf-a378-4eca-846c-7c573d44aa9b",
+      "email": "qa09-14197706b32ec5b0-h01-platformoperator@example.invalid",
+      "apiMock": false,
+      "result": "RUNNING",
+      "notificationWrites": 0
+    }
+  ],
+  "originalReceiptSha256": "6a1dbf2ff01ab7a1de198c9887c67012d586c7cc251d196560a19616946596a9",
+  "originalGate": "RUNNING",
+  "disabledTombstones": [
+    {
+      "userId": "98e447cf-a378-4eca-846c-7c573d44aa9b",
+      "email": "qa09-14197706b32ec5b0-h01-platformoperator@example.invalid",
+      "status": "DISABLED"
+    }
+  ],
+  "tombstoneRetentionReason": "Business DISABLED records prevent still-valid signed tokens from falling back to bootstrap behavior; no credentials are retained.",
+  "finishedAt": "2026-10-12T12:13:52.984Z"
+}

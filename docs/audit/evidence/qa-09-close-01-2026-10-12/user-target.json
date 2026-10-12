@@ -1,0 +1,355 @@
+{
+  "task": "QA-09",
+  "scope": "FRESH_SIGNED_TOKENS_BUSINESS_DISABLE_USER_ROLES_AND_SCOPE",
+  "sourceCommit": "beaccece84ec865020aefc537af296228ec8b933",
+  "prefix": "qa09-14197706b32ec5b0",
+  "startedAt": "2026-10-12T12:01:42.824Z",
+  "fullQa09Accepted": false,
+  "gate": "RUNNING",
+  "checks": [
+    {
+      "id": "bootstrap-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "user-ledger-0",
+      "result": "PASS"
+    },
+    {
+      "id": "fresh-business-prefix",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS"
+    },
+    {
+      "id": "own-customer-a",
+      "result": "PASS"
+    },
+    {
+      "id": "create-site-a",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS"
+    },
+    {
+      "id": "own-customer-b",
+      "result": "PASS"
+    },
+    {
+      "id": "create-site-b",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformSuperAdmin:fresh-cognito-name",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:fresh-cognito-name",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:invited-state",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:srp-claims",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:first-authenticated-read",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:set-roles-Auditor",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:fresh-role-Auditor",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:set-roles-PlatformOperator",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:fresh-role-PlatformOperator",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:active-read-0",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:active-read-1",
+      "result": "PASS"
+    },
+    {
+      "id": "user-ledger-10",
+      "result": "PASS"
+    },
+    {
+      "id": "PlatformOperator:business-active",
+      "result": "PASS"
+    },
+    {
+      "id": "browser-cancel-readback-375",
+      "result": "PASS"
+    }
+  ],
+  "requests": [
+    {
+      "id": "user-ledger-0",
+      "method": "GET",
+      "path": "/api/v1/admin/users",
+      "startedAt": "2026-10-12T12:01:52.795Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "e8f856d2-1960-4270-b62c-b934c2150e9b",
+      "errorCode": null,
+      "latencyMs": 8122
+    },
+    {
+      "id": "create-customer-a",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "startedAt": "2026-10-12T12:02:00.921Z",
+      "status": 201,
+      "expected": 201,
+      "gatewayRequestId": "59d91c9f-6fb3-40aa-b747-1b4df491fda0",
+      "errorCode": null,
+      "latencyMs": 4299
+    },
+    {
+      "id": "create-site-a",
+      "method": "POST",
+      "path": "/api/v1/admin/sites",
+      "startedAt": "2026-10-12T12:02:05.221Z",
+      "status": 201,
+      "expected": 201,
+      "gatewayRequestId": "56ab785b-9add-41c9-aed9-517a361bc81d",
+      "errorCode": null,
+      "latencyMs": 3807
+    },
+    {
+      "id": "create-customer-b",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "startedAt": "2026-10-12T12:02:09.028Z",
+      "status": 201,
+      "expected": 201,
+      "gatewayRequestId": "dbee5347-7ff2-418c-a0e2-ce90d0ef430b",
+      "errorCode": null,
+      "latencyMs": 568
+    },
+    {
+      "id": "create-site-b",
+      "method": "POST",
+      "path": "/api/v1/admin/sites",
+      "startedAt": "2026-10-12T12:02:09.596Z",
+      "status": 201,
+      "expected": 201,
+      "gatewayRequestId": "7133c4d8-4630-4e00-82a7-886dee984846",
+      "errorCode": null,
+      "latencyMs": 782
+    },
+    {
+      "id": "PlatformOperator:first-authenticated-read",
+      "method": "GET",
+      "path": "/api/v1/admin/sites/48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "startedAt": "2026-10-12T12:04:50.391Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "bd2fba06-e807-4a9b-88ab-9cc24ca7748c",
+      "errorCode": null,
+      "latencyMs": 3621
+    },
+    {
+      "id": "PlatformOperator:set-roles-Auditor",
+      "method": "PUT",
+      "path": "/api/v1/admin/users/98e447cf-a378-4eca-846c-7c573d44aa9b/roles",
+      "startedAt": "2026-10-12T12:04:54.012Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "77073b32-fa8f-47ff-b38b-0ae3adb10518",
+      "errorCode": null,
+      "latencyMs": 12779
+    },
+    {
+      "id": "PlatformOperator:set-roles-PlatformOperator",
+      "method": "PUT",
+      "path": "/api/v1/admin/users/98e447cf-a378-4eca-846c-7c573d44aa9b/roles",
+      "startedAt": "2026-10-12T12:05:10.314Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "96b46fa3-b4c2-410e-9ab0-62af6ac2a5ce",
+      "errorCode": null,
+      "latencyMs": 3357
+    },
+    {
+      "id": "PlatformOperator:active-read-0",
+      "method": "GET",
+      "path": "/api/v1/admin/sites/48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "startedAt": "2026-10-12T12:05:14.848Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "d9564fa4-6ad1-4bb9-b89a-3faa20981b5f",
+      "errorCode": null,
+      "latencyMs": 1588
+    },
+    {
+      "id": "PlatformOperator:active-read-1",
+      "method": "GET",
+      "path": "/api/v1/admin/sites/b7f4a789-559e-4681-8030-b04b1d07162c",
+      "startedAt": "2026-10-12T12:05:16.436Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "9467d4da-ed90-4fd1-a6b4-631471a10f0e",
+      "errorCode": null,
+      "latencyMs": 1601
+    },
+    {
+      "id": "user-ledger-10",
+      "method": "GET",
+      "path": "/api/v1/admin/users",
+      "startedAt": "2026-10-12T12:05:18.037Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "5a2cc794-24b9-4e3a-815a-9543d748e3dc",
+      "errorCode": null,
+      "latencyMs": 647
+    },
+    {
+      "id": "browser-cancel-readback-375",
+      "method": "GET",
+      "path": "/api/v1/admin/users",
+      "startedAt": "2026-10-12T12:05:34.164Z",
+      "status": 200,
+      "expected": 200,
+      "gatewayRequestId": "dcb30ec0-b255-460b-93cc-fe6acb5bb2d7",
+      "errorCode": null,
+      "latencyMs": 4262
+    }
+  ],
+  "users": [
+    {
+      "role": "PlatformSuperAdmin",
+      "email": "qa09-14197706b32ec5b0-h01-platformsuperadmin@example.invalid",
+      "customerId": null,
+      "userId": null,
+      "businessDisabled": false,
+      "cognitoDeleted": false,
+      "invitationAttempted": false,
+      "identityProvisionAttempted": true,
+      "preparedUserId": "303bf667-bd61-44f9-b255-d2cd2008892e",
+      "failureCode": "AWS_OPERATION_FAILED"
+    },
+    {
+      "role": "PlatformOperator",
+      "email": "qa09-14197706b32ec5b0-h01-platformoperator@example.invalid",
+      "customerId": null,
+      "userId": "98e447cf-a378-4eca-846c-7c573d44aa9b",
+      "businessDisabled": false,
+      "cognitoDeleted": false,
+      "invitationAttempted": false,
+      "identityProvisionAttempted": true,
+      "preparedUserId": "98e447cf-a378-4eca-846c-7c573d44aa9b",
+      "invitedStatus": "INVITED",
+      "signedSession": {
+        "sha256": "7b714ef9471a7b19fd7e403e97bd95b9798ee5331e6d24313c8206329f89f49b",
+        "expiresAt": "2026-10-12T13:05:14.000Z",
+        "credentialExported": false
+      }
+    }
+  ],
+  "customers": [
+    {
+      "id": "e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "name": "qa09-14197706b32ec5b0-a",
+      "suffix": "a"
+    },
+    {
+      "id": "8875640c-8b18-404c-846d-7371b338cd41",
+      "name": "qa09-14197706b32ec5b0-b",
+      "suffix": "b"
+    }
+  ],
+  "sites": [
+    {
+      "id": "48bbe0b8-6b69-4b7a-9b0a-a4fc7940048c",
+      "customerId": "e7998e6f-3d4a-40c1-9090-6d6c505dbc27",
+      "name": "qa09-14197706b32ec5b0-site-a",
+      "status": "ACTIVE",
+      "region": null,
+      "subregion": null,
+      "address": null,
+      "timezone": "Asia/Shanghai",
+      "contactName": null,
+      "contactPhone": null,
+      "contactEmail": null,
+      "deviceCount": 0,
+      "version": 1,
+      "createdAt": "2026-10-12T12:02:07.579Z",
+      "updatedAt": "2026-10-12T12:02:07.579Z"
+    },
+    {
+      "id": "b7f4a789-559e-4681-8030-b04b1d07162c",
+      "customerId": "8875640c-8b18-404c-846d-7371b338cd41",
+      "name": "qa09-14197706b32ec5b0-site-b",
+      "status": "ACTIVE",
+      "region": null,
+      "subregion": null,
+      "address": null,
+      "timezone": "Asia/Shanghai",
+      "contactName": null,
+      "contactPhone": null,
+      "contactEmail": null,
+      "deviceCount": 0,
+      "version": 1,
+      "createdAt": "2026-10-12T12:02:09.977Z",
+      "updatedAt": "2026-10-12T12:02:09.977Z"
+    }
+  ],
+  "cleanup": [],
+  "applicationVersionReceiptSha256": "c798551c81d4b44d207f3eae3ee9c99e53462165f72bbcb867547abe2a2a13e8",
+  "credentialsExported": false,
+  "kmsAndIamManagementPerformed": false,
+  "userProvisioningMode": "SUPPRESSED_COGNITO_AND_INVITED_DATABASE_FIXTURE",
+  "invitationAcceptanceClaimed": false,
+  "notificationSendingRequested": false,
+  "originalUsers": {
+    "count": 22,
+    "sha256": "ae29ec9dc51e5fae8743eb27082b8726e8b6d27cb33e99bccbdf642a629f72d2",
+    "eligibleSuperAdmins": 2
+  },
+  "outputPath": "docs/audit/evidence/qa-09-close-01-2026-10-12/user-target.json",
+  "fixtureBuilds": [
+    {
+      "action": "business-seed-user",
+      "role": "PlatformSuperAdmin",
+      "receipt": "docs/audit/evidence/qa-09-close-01-2026-10-12/user-target.json.seed-PlatformSuperAdmin.json",
+      "gate": "RUNNING"
+    },
+    {
+      "action": "business-seed-user",
+      "role": "PlatformOperator",
+      "receipt": "docs/audit/evidence/qa-09-close-01-2026-10-12/user-target.json.seed-PlatformOperator.json",
+      "gate": "PASS",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:d4e28485-ff24-4632-8df9-b9b0cbc0812b",
+      "sha256": "bfda9e9a425ac30887b53f156f6bd508d7bdcd9830cbb6e907d3073cea2aa18c"
+    }
+  ],
+  "userBrowser": [
+    {
+      "width": 375,
+      "userId": "98e447cf-a378-4eca-846c-7c573d44aa9b",
+      "email": "qa09-14197706b32ec5b0-h01-platformoperator@example.invalid",
+      "apiMock": false,
+      "result": "RUNNING",
+      "notificationWrites": 0
+    }
+  ]
+}
