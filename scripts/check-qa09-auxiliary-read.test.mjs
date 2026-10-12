@@ -29,13 +29,19 @@ for (const [mode, scenario] of [
   ['initial', 'complete'],
   ['negative', 'complete'],
   ['negative', 'rejected'],
+  ['initial', 'gateway-string'],
+  ['negative', 'gateway-string'],
+  ['negative', 'gateway-rejected-string'],
 ]) {
   test(`auxiliary budget proof accepts ${mode}/${scenario}`, () =>
     fixture(mode, scenario, (receipt, paths) => {
       writeFileSync(paths[1], JSON.stringify(receipt));
       const result = checkAuxiliaryRead(paths[0], paths[1], mode === 'initial' ? paths[2] : undefined);
       assert.equal(result.gate, 'PASS');
-      assert.equal(result.calls, scenario === 'rejected' ? 16 : mode === 'initial' ? 18 : 24);
+      assert.equal(
+        result.calls,
+        ['rejected', 'gateway-rejected-string'].includes(scenario) ? 16 : mode === 'initial' ? 18 : 24,
+      );
       assert.equal(result.p95Accepted, false);
     }));
 }
@@ -118,5 +124,29 @@ for (const scenario of ['call-limit', 'timeout', 'report-timeout']) {
     fixture('initial', scenario, (receipt, paths) => {
       writeFileSync(paths[1], JSON.stringify(receipt));
       assert.throws(() => checkAuxiliaryRead(...paths));
+    }));
+}
+
+for (const value of [
+  ' 1791763200000',
+  '1791763200000 ',
+  '1e12',
+  '1791763200000.0',
+  '01791763200000',
+  '9007199254740992',
+  '',
+  '１２３',
+  'NaN',
+  true,
+  null,
+  1.5,
+  -1,
+  9007199254740992,
+]) {
+  test(`auxiliary checker rejects invalid Gateway epoch ${JSON.stringify(value)}`, () =>
+    fixture('negative', 'rejected', (receipt, paths) => {
+      receipt.records[0].gateway[0].requestTimeEpoch = value;
+      writeFileSync(paths[1], JSON.stringify(receipt));
+      assert.throws(() => checkAuxiliaryRead(paths[0], paths[1]), /AUX_GATEWAY_TIME_INVALID/);
     }));
 }

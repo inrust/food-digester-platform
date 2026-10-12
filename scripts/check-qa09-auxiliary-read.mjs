@@ -9,6 +9,14 @@ const sha = (path) => createHash('sha256').update(readFileSync(path)).digest('he
 const read = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const finite = (value) => Number.isFinite(value) && value >= 0;
+const gatewayEpoch = (value) => {
+  if (typeof value === 'string') {
+    assert.match(value, /^(?:0|[1-9][0-9]{0,15})$/, 'AUX_GATEWAY_TIME_INVALID');
+    value = Number(value);
+  }
+  assert.ok(Number.isSafeInteger(value) && value >= 0, 'AUX_GATEWAY_TIME_INVALID');
+  return value;
+};
 const phaseFields = new Set([
   'lambdaRequestId',
   'gatewayRequestId',
@@ -124,11 +132,8 @@ export function checkAuxiliaryRead(childPath, receiptPath, parentPath) {
     assert.equal(row.gateway.length, 1);
     assert.ok(only(row.gateway[0], gatewayFields));
     assert.equal(row.gateway[0].requestId, row.requestId);
-    assert.ok(
-      finite(row.gateway[0].requestTimeEpoch) &&
-        row.gateway[0].requestTimeEpoch >= start &&
-        row.gateway[0].requestTimeEpoch <= end,
-    );
+    const gatewayTime = gatewayEpoch(row.gateway[0].requestTimeEpoch);
+    assert.ok(gatewayTime >= start && gatewayTime <= end);
     assert.ok(
       row.phases.every(
         (phase) =>
@@ -173,8 +178,8 @@ export function checkAuxiliaryRead(childPath, receiptPath, parentPath) {
       assert.ok(
         finite(sent) &&
           finite(client.latencyMs) &&
-          row.gateway[0].requestTimeEpoch >= sent - 2000 &&
-          row.gateway[0].requestTimeEpoch <= sent + client.latencyMs + 2000,
+          gatewayTime >= sent - 2000 &&
+          gatewayTime <= sent + client.latencyMs + 2000,
       );
       if (client.gatewayExtendedRequestId)
         assert.equal(row.gateway[0].extendedRequestId, client.gatewayExtendedRequestId);

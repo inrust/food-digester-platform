@@ -47,6 +47,18 @@ def timestamp(value):
         raise InvalidEvidence('AUX_TIME_INVALID') from None
 
 
+def gateway_epoch(value):
+    # API Gateway's JSON access-log template emits this field as decimal text.
+    # Preserve the original scalar in evidence; parse only for comparisons.
+    if isinstance(value, str):
+        require(re.fullmatch(r'(?:0|[1-9][0-9]{0,15})', value) is not None, 'AUX_GATEWAY_TIME_INVALID')
+        value = int(value)
+    require(isinstance(value, (int, float)) and not isinstance(value, bool)
+            and math.isfinite(value) and value == int(value)
+            and 0 <= value <= 9007199254740991, 'AUX_GATEWAY_TIME_INVALID')
+    return int(value)
+
+
 def object_event(event):
     text = event['message']
     try:
@@ -139,6 +151,8 @@ def collect(child_path, output, mode, expected_commit, parent_path=None):
                     gateways[row['requestId']].append(project(row, GATEWAY_FIELDS))
             for rid in batch:
                 require(len(gateways[rid]) == 1, 'AUX_GATEWAY_NOT_UNIQUE')
+                gateway_ms = gateway_epoch(gateways[rid][0].get('requestTimeEpoch'))
+                require(start <= gateway_ms <= end, 'AUX_GATEWAY_TIME_MISMATCH')
             for event in events('lambda', batch, 'phase'):
                 row = object_event(event)
                 if not isinstance(row.get('gatewayRequestId'), str) or row['gatewayRequestId'] not in phases or row.get('event') not in ['data-path.phase.completed', 'admin.request.completed']:
@@ -152,8 +166,8 @@ def collect(child_path, output, mode, expected_commit, parent_path=None):
                     client = next(r for r in child['rows'] if r['gatewayRequestId'] == rid)
                     require(gateway.get('httpMethod') == 'GET' and str(gateway.get('status')) == '401', 'AUX_NEGATIVE_STATUS_INVALID')
                     sent = timestamp(client['startedAt'])
-                    require(isinstance(gateway.get('requestTimeEpoch'), (int, float)) and not isinstance(gateway['requestTimeEpoch'], bool)
-                            and sent - 2000 <= gateway['requestTimeEpoch'] <= sent + client['latencyMs'] + 2000,
+                    gateway_ms = gateway_epoch(gateway.get('requestTimeEpoch'))
+                    require(sent - 2000 <= gateway_ms <= sent + client['latencyMs'] + 2000,
                             'AUX_GATEWAY_TIME_MISMATCH')
                     require(not client.get('gatewayExtendedRequestId') or client['gatewayExtendedRequestId'] == gateway.get('extendedRequestId'), 'AUX_EXTENDED_ID_MISMATCH')
                     if all(gateway.get(k) == '-' for k in ['integrationRequestId', 'integrationStatus', 'functionStatus']):

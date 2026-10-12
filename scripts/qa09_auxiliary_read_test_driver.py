@@ -55,7 +55,7 @@ def cli(args, **kw):
     events = []
     if page == 1:
         for i, rid in enumerate(ids):
-            rejected = mode == 'negative' and case in ['rejected', 'rejected-leak']
+            rejected = mode == 'negative' and case in ['rejected', 'rejected-leak', 'gateway-rejected-string']
             if '/apigateway/' in group and rid in members:
                 value = {'requestId': rid, 'extendedRequestId': 'ext-' + rid,
                          'integrationRequestId': '-' if rejected else invs[i],
@@ -65,6 +65,17 @@ def cli(args, **kw):
                          'functionStatus': '-' if rejected else 401 if mode == 'negative' else 200,
                          'errorResponseType': 'UNAUTHORIZED' if rejected else None,
                          'password': secret}
+                gateway_values = {
+                    'gateway-string': str(epoch), 'gateway-rejected-string': str(epoch),
+                    'gateway-whitespace': ' ' + str(epoch), 'gateway-exponent': str(epoch) + 'e0',
+                    'gateway-fraction-string': str(epoch) + '.0', 'gateway-leading-zero': '0' + str(epoch),
+                    'gateway-unsafe-string': '9007199254740992', 'gateway-bool': True,
+                    'gateway-number-fraction': epoch + 0.5, 'gateway-null': None,
+                    'gateway-empty': '', 'gateway-unicode': '１２３', 'gateway-malformed': 'NaN',
+                    'gateway-negative': -1, 'gateway-string-outside': str(epoch + 999999)
+                }
+                if case in gateway_values:
+                    value['requestTimeEpoch'] = gateway_values[case]
                 if case == 'gateway-time':
                     value['requestTimeEpoch'] = epoch + 999999
                 if case == 'gateway-status':
@@ -129,6 +140,13 @@ with tempfile.TemporaryDirectory(prefix='qa09-auxiliary-test-') as folder:
         'parent-drift': 'AUX_PARENT_INVALID', 'output-exists': 'AUX_OUTPUT_EXISTS',
         'latency-invalid': 'AUX_CLIENT_LATENCY_INVALID', 'time-invalid': 'AUX_TIME_INVALID'
     }.get(case)
+    if case in ['gateway-whitespace', 'gateway-exponent', 'gateway-fraction-string',
+                'gateway-leading-zero', 'gateway-unsafe-string', 'gateway-bool',
+                'gateway-number-fraction', 'gateway-null', 'gateway-empty',
+                'gateway-unicode', 'gateway-malformed', 'gateway-negative']:
+        expected = 'AUX_GATEWAY_TIME_INVALID'
+    if case == 'gateway-string-outside':
+        expected = 'AUX_GATEWAY_TIME_MISMATCH'
     if case == 'duplicate-id':
         child['rows'][-1]['gatewayRequestId'] = ids[0]
     if case == 'short-initial':
@@ -160,8 +178,8 @@ with tempfile.TemporaryDirectory(prefix='qa09-auxiliary-test-') as folder:
         assert all(1 <= len(b['members']) <= 3 for b in result['readBatches'])
         if not expected:
             assert len(result['records']) == count
-            assert len(calls) == (18 if mode == 'initial' else 16 if case == 'rejected' else 24)
-            if case == 'rejected':
+            assert len(calls) == (18 if mode == 'initial' else 16 if case in ['rejected', 'gateway-rejected-string'] else 24)
+            if case in ['rejected', 'gateway-rejected-string']:
                 assert all(r['lambdaRequestId'] is None and r['exactOwnLambdaLogMatches'] == 0 for r in result['records'])
         if case in ['timeout', 'deadline']:
             assert len(calls) == 7 and len(result['records']) == 3

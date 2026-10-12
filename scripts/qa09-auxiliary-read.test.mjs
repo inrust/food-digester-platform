@@ -12,6 +12,20 @@ const collector = join(scripts, 'collect-qa09-auxiliary-phases.py');
 const driver = join(scripts, 'qa09_auxiliary_read_test_driver.py');
 const common = [
   'complete',
+  'gateway-string',
+  'gateway-whitespace',
+  'gateway-exponent',
+  'gateway-fraction-string',
+  'gateway-leading-zero',
+  'gateway-unsafe-string',
+  'gateway-bool',
+  'gateway-number-fraction',
+  'gateway-null',
+  'gateway-empty',
+  'gateway-unicode',
+  'gateway-malformed',
+  'gateway-negative',
+  'gateway-string-outside',
   'timeout',
   'report-timeout',
   'deadline',
@@ -42,6 +56,7 @@ for (const mode of ['initial', 'negative']) {
       ? ['short-initial', 'parent-drift', 'invalid-prefix']
       : [
           'rejected',
+          'gateway-rejected-string',
           'rejected-leak',
           'gateway-time',
           'gateway-status',
