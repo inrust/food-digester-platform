@@ -29,7 +29,7 @@ export async function prepareOwnReplayOperator(
     if (ctx.receipt.cleanupHold) return { gate: 'BLOCKED_UNKNOWN_WRITE' };
     if (!own.userId) throw Error('KNOWN_OWN_OPERATOR_REQUIRED');
     own.cleanupAttempted = true;
-    save();
+    hold('OPERATOR_CLEANUP_IN_PROGRESS');
     // Disable is an irreversible business write. A lost response is never retried here.
     try {
       const disabled = (
@@ -45,6 +45,8 @@ export async function prepareOwnReplayOperator(
       save();
       await call(sdk.AdminDeleteUserCommand, { Username: own.email });
       own.cognitoDeleted = true;
+      delete ctx.receipt.cleanupHold;
+      delete own.cleanupHold;
       save();
       return { gate: 'PASS_DISABLED_TOMBSTONE_AND_COGNITO_DELETED' };
     } catch (error) {

@@ -4,6 +4,7 @@ import {
   projectReplayProduction,
   uniqueReplayProduction,
   collectReplayProduction,
+  requireReplayConsumerCompletion,
 } from './qa09-replay-production-proof.mjs';
 const expected = {
   jobId: 'a'.repeat(36),
@@ -40,4 +41,28 @@ test('collector reads the exact fixed log group; truncation and repeated tokens 
     collectReplayProduction(expected, { read: async () => ({ events: [], nextToken: 'repeat' }) }),
     /INCOMPLETE/,
   );
+});
+
+test('terminal Replay alone never releases cleanup; exact root and final consumer outcomes are required', () => {
+  const identity = { ...expected, sqsMessageId: 'actual-sqs-1', receiptId: 'receipt-1' };
+  const receipt = { cleanupHold: 'UNKNOWN_OR_RUNNING_RELIABILITY_WRITE' };
+  assert.throws(() => requireReplayConsumerCompletion([], identity, receipt), /NO_CLEANUP/);
+  assert.equal(receipt.cleanupHold, 'UNKNOWN_OR_RUNNING_RELIABILITY_WRITE');
+  const root = {
+    ...identity,
+    event: 'ingestion.receipt.completed',
+    receiptOutcome: 'DUPLICATE_SKIPPED',
+    commitScope: 'ROOT_TRANSACTION_COMPLETED',
+    lambdaRequestId: 'invocation-1',
+  };
+  const final = {
+    ...identity,
+    event: 'ingestion.record.completed',
+    receiptOutcome: 'DUPLICATE_SKIPPED',
+    disposition: 'PROCESSED',
+    lambdaRequestId: 'invocation-1',
+  };
+  assert.throws(() => requireReplayConsumerCompletion([root], identity, receipt), /NO_CLEANUP/);
+  assert.equal(requireReplayConsumerCompletion([root, final], identity, receipt), 'PASS_EXACT_DUPLICATE_CONSUMPTION');
+  assert.equal(receipt.cleanupHold, undefined);
 });

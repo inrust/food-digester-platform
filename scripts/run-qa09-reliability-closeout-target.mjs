@@ -8,7 +8,7 @@ import { main } from './run-qa09-ten-device-acceptance.mjs';
 import { runFixture } from './qa09-ten-device-bridge.mjs';
 import { prepareOwnReplayOperator } from './qa09-own-replay-operator.mjs';
 import { waitOwnDaily } from './qa09-wait-own-daily.mjs';
-import { collectReplayProduction } from './qa09-replay-production-proof.mjs';
+import { collectReplayProduction, requireReplayConsumerCompletion } from './qa09-replay-production-proof.mjs';
 import { PROJECT } from './qa09-ten-device-db.mjs';
 import {
   finishOwnReplayCleanup,
@@ -96,7 +96,10 @@ export async function runReliabilityCloseout(output, versionPath, options = {}) 
       replayProducerToSpecificSqsIdClaimed: false,
     };
     ctx.receipt.batchArchiveCleanup = true;
-    const save = () => saveJson(output + '.reliability.json', r);
+    const save = () => {
+      saveJson(output + '.reliability.json', r);
+      if (a5) saveJson(output, ctx.receipt); // Persist ownership holds before Operator writes.
+    };
     save();
     const db = async (action, extra = {}) => {
       const plan = {
@@ -231,7 +234,7 @@ export async function runReliabilityCloseout(output, versionPath, options = {}) 
         if (['COMPLETED', 'FAILED'].includes(view.status)) {
           completed = view;
           cleanupSafe = true;
-          delete ctx.receipt.cleanupHold;
+          if (!a5) delete ctx.receipt.cleanupHold;
           break;
         }
         await pause(5000);
@@ -263,6 +266,12 @@ export async function runReliabilityCloseout(output, versionPath, options = {}) 
         },
         { read: logRead },
       );
+      if (a5)
+        r.queueConsumptionGate = requireReplayConsumerCompletion(
+          r.replayConsumption.rows,
+          { ...r.expected, sqsMessageId: r.production.sqsMessageId },
+          ctx.receipt,
+        );
       save();
       if (!a5) {
         const client = new SQSClient({ region: 'ap-southeast-1', credentials: ctx.credentials, maxAttempts: 1 });
@@ -321,10 +330,7 @@ export async function runReliabilityCloseout(output, versionPath, options = {}) 
         } else r.queueConsumptionGate = 'NOT_RUN_NO_SUBMISSION';
       } else {
         r.submission = { gate: 'NOT_REQUIRED_BUSINESS_REPLAY_PRODUCER_BOUND', ssoSendAttempts: 0 };
-        r.queueConsumptionGate = exactDuplicateGate(r.replayConsumption.rows, {
-          ...r.expected,
-          sqsMessageId: r.production.sqsMessageId,
-        });
+        // The exact consumer terminal gate above has already released the ownership hold.
       }
       r.after = await db('reliability-observe');
       r.dedupGate = dedupGate(before, r.after);

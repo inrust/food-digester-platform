@@ -1,3 +1,4 @@
+import { exactDuplicateGate } from './qa09-reliability-closeout.mjs';
 /** Exact Job -> SQS production -> duplicate consumption, without inspecting payloads. */
 export function projectReplayProduction(text) {
   let row;
@@ -96,4 +97,15 @@ export async function collectReplayProduction(
     if (round < 5) await sleep(Math.min(10000, Math.max(0, budgetMs - (now() - start))));
   }
   return { gate: 'NO_RECEIPT', rows, reads };
+}
+
+/** A terminal Replay Job is not a terminal Ingress consumer. */
+export function requireReplayConsumerCompletion(rows, expected, receipt) {
+  const gate = exactDuplicateGate(rows, expected);
+  if (gate !== 'PASS_EXACT_DUPLICATE_CONSUMPTION') {
+    receipt.cleanupHold = 'UNKNOWN_OR_RUNNING_RELIABILITY_WRITE';
+    throw Error('REPLAY_CONSUMER_NOT_TERMINAL_NO_CLEANUP');
+  }
+  delete receipt.cleanupHold;
+  return gate;
 }
