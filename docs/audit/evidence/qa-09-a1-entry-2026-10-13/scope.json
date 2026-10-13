@@ -1,0 +1,1304 @@
+{
+  "schemaVersion": "1.0",
+  "scope": "QA09_BUSINESS_ACCEPTANCE_ENTRY",
+  "domains": [
+    {
+      "id": "iot",
+      "validator": "check-aws-iot-data-path-evidence.mjs",
+      "check": "checkAwsIotDataPathEvidence",
+      "receipt": "docs/audit/evidence/be-iot-aws-data-path.json",
+      "ancillary": [
+        "unknownTopic",
+        "errorAction",
+        "cleanup"
+      ],
+      "requiredSets": {
+        "QA03_PROBES": [
+          "partialFailure",
+          "quarantine",
+          "receipt",
+          "rds",
+          "outbox",
+          "archiveQueue",
+          "s3RawArchive"
+        ],
+        "UPLINK_TYPES": [
+          "heartbeat",
+          "telemetry",
+          "report",
+          "alarm",
+          "event",
+          "ack",
+          "tamper",
+          "media"
+        ]
+      },
+      "fullOriginalContractRequired": true
+    },
+    {
+      "id": "processing",
+      "validator": "check-aws-data-processing-evidence.mjs",
+      "check": "checkAwsDataProcessingEvidence",
+      "receipt": "docs/audit/evidence/be-arc-rpl-esg-aws-data-processing.json",
+      "ancillary": [
+        "cleanup"
+      ],
+      "requiredSets": {
+        "REQUIRED_PROBES": {
+          "archive": [
+            "outbox",
+            "archiveQueue",
+            "s3Object",
+            "manifest",
+            "duplicateDelivery",
+            "partialFailure"
+          ],
+          "replay": [
+            "apiCreate",
+            "triggerQueue",
+            "worker",
+            "idempotency",
+            "outOfScope"
+          ],
+          "summary": [
+            "scheduleInvocation",
+            "migration",
+            "hourly",
+            "daily",
+            "esgDaily"
+          ]
+        }
+      },
+      "fullOriginalContractRequired": true
+    },
+    {
+      "id": "customersDevices",
+      "validator": "check-aws-admin-cus-dev-evidence.mjs",
+      "check": "checkAwsAdminCusDevEvidence",
+      "receipt": "docs/audit/evidence/be-cus-dev-aws-acceptance.json",
+      "ancillary": [
+        "rbac.crossCustomer",
+        "ifMatchRace",
+        "retirement",
+        "activityExport",
+        "cleanup"
+      ],
+      "requiredSets": {
+        "REQUIRED_ADMIN_OPERATIONS": [
+          "listCustomers",
+          "createCustomer",
+          "getCustomer",
+          "updateCustomer",
+          "deleteCustomer",
+          "deactivateCustomer",
+          "listSites",
+          "createSite",
+          "getSite",
+          "updateSite",
+          "deleteSite",
+          "deactivateSite",
+          "listDevices",
+          "getDevice",
+          "updateDeviceMetadata",
+          "assignDevice",
+          "listDeviceAssignments",
+          "suspendDevice",
+          "reactivateDevice",
+          "retireDevice",
+          "forceCompleteRetirement",
+          "getDeviceConsole",
+          "listDeviceActivities",
+          "createActivityExport",
+          "getActivityExport"
+        ],
+        "REQUIRED_ROLES": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ],
+        "RETIRED_MQTT_TYPES": [
+          "heartbeat",
+          "telemetry",
+          "report",
+          "alarm",
+          "event",
+          "ack",
+          "tamper",
+          "media"
+        ]
+      },
+      "fullOriginalContractRequired": true
+    },
+    {
+      "id": "business",
+      "validator": "check-aws-admin-business-evidence.mjs",
+      "check": "checkAwsAdminBusinessEvidence",
+      "receipt": "docs/audit/evidence/be-admin-business-aws-acceptance.json",
+      "ancillary": [
+        "rbac.crossCustomer",
+        "ifMatchRace",
+        "esgExport",
+        "cleanup"
+      ],
+      "requiredSets": {
+        "REQUIRED_ADMIN_BUSINESS_OPERATIONS": [
+          "listLicenses",
+          "createLicense",
+          "getLicense",
+          "listLicenseHistory",
+          "issueLicense",
+          "activateLicense",
+          "renewLicense",
+          "revokeLicense",
+          "evaluateLicense",
+          "createContract",
+          "listContracts",
+          "getContract",
+          "updateContract",
+          "activateContract",
+          "renewContract",
+          "terminateContract",
+          "evaluateContract",
+          "listContractDevices",
+          "listAvailableDevices",
+          "listContractAssociations",
+          "bindContractDevices",
+          "unbindContractDevices",
+          "createConfiguration",
+          "listConfigurations",
+          "getConfiguration",
+          "createConfigurationVersion",
+          "publishConfigurationVersion",
+          "getConfigurationVersion",
+          "getConfigurationVersionStatus",
+          "listConsumableStatus",
+          "getConsumableContact",
+          "createConsumableRequest",
+          "listConsumableRequests",
+          "getConsumableRequest",
+          "processConsumableRequest",
+          "completeConsumableRequest",
+          "cancelConsumableRequest",
+          "createDeviceUser",
+          "listDeviceUsers",
+          "getDeviceUser",
+          "updateDeviceUser",
+          "disableDeviceUser",
+          "assignDeviceUser",
+          "revokeDeviceUser",
+          "listAlarms",
+          "getAlarm",
+          "acknowledgeAlarm",
+          "clearAlarm",
+          "listDeviceEvents",
+          "listTamperEvents",
+          "getEsgOverview",
+          "listEsgHourly",
+          "listEsgDaily",
+          "listEsgReports",
+          "listEsgDailySummary",
+          "listEsgCalculationVersions",
+          "createEsgExport",
+          "getEsgExport"
+        ],
+        "REQUIRED_ADMIN_BUSINESS_ROLES": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ]
+      },
+      "fullOriginalContractRequired": true
+    },
+    {
+      "id": "mediaUsersSettings",
+      "validator": "check-aws-med-rbac-aud-dash-set-evidence.mjs",
+      "check": "checkEvidence",
+      "receipt": "docs/audit/evidence/be-med-rbac-aud-dash-set-aws-acceptance.json",
+      "ancillary": [
+        "rbac.crossCustomer",
+        "cognito",
+        "superAdminRace",
+        "settingVersionRace",
+        "mediaS3",
+        "mediaQuotaRace",
+        "dashboardEntitlement",
+        "auditRedaction",
+        "strictRequests",
+        "cleanup"
+      ],
+      "requiredSets": {
+        "REQUIRED_OPERATIONS": [
+          "createMediaUploadSession",
+          "listMedia",
+          "createMediaDownloadUrl",
+          "listUsers",
+          "inviteUser",
+          "assignUserRoles",
+          "setUserScope",
+          "disableUser",
+          "triggerUserPasswordReset",
+          "listAuditLogs",
+          "getAuditLogDetail",
+          "getDashboardOverview",
+          "listSettings",
+          "getSetting",
+          "updateSetting"
+        ],
+        "REQUIRED_ROLES": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ]
+      },
+      "fullOriginalContractRequired": true
+    },
+    {
+      "id": "fe06_10",
+      "validator": "check-admin-web-target-evidence.mjs",
+      "check": "checkAdminWebTargetEvidence",
+      "receipt": "docs/audit/evidence/fe-06-10-admin-web-target.json",
+      "ancillary": [
+        "cognito",
+        "deployedApi",
+        "crossCustomer",
+        "concurrency",
+        "sensitiveData",
+        "cleanup"
+      ],
+      "requiredSets": {
+        "REQUIRED_ROLES": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ],
+        "REQUIRED_ROUTES": [
+          "/devices/view",
+          "/devices/manage",
+          "/licenses",
+          "/configurations",
+          "/device-users",
+          "/alarms"
+        ],
+        "REQUIRED_WORKFLOWS": [
+          "FE-06-device-media-activities",
+          "FE-07-lifecycle-retirement-alias",
+          "FE-08-license-history-actions",
+          "FE-09-configuration-device-user-sync",
+          "FE-10-alarm-url-critical"
+        ]
+      },
+      "fullOriginalContractRequired": true
+    },
+    {
+      "id": "fe11_15",
+      "validator": "check-admin-web-fe11-15-target-evidence.mjs",
+      "check": "checkFe11To15TargetEvidence",
+      "receipt": "docs/audit/evidence/fe-11-15-admin-web-target.json",
+      "ancillary": [
+        "cognito",
+        "deployedApi",
+        "crossCustomer",
+        "shortLink",
+        "dangerousAction",
+        "readonlyAudit",
+        "sensitiveData",
+        "cleanup"
+      ],
+      "requiredSets": {
+        "REQUIRED_AUDIT_DENIED_ROLES": [
+          "PlatformOperator",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ],
+        "REQUIRED_ROLES": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ],
+        "REQUIRED_ROUTES": [
+          "/esg/overview",
+          "/esg/devices",
+          "/devices/operate",
+          "/ota/packages",
+          "/ota/campaigns",
+          "/media",
+          "/audit-logs"
+        ],
+        "REQUIRED_WORKFLOWS": [
+          "FE-11-esg-pagination-export",
+          "FE-12-command-danger-publish-failure",
+          "FE-13-ota-package-campaign-failure",
+          "FE-14-media-short-link-cross-customer",
+          "FE-15-audit-readonly-redaction"
+        ]
+      },
+      "fullOriginalContractRequired": true
+    },
+    {
+      "id": "fe16_19",
+      "validator": "check-admin-web-fe16-19-target-evidence.mjs",
+      "check": "checkFe16To19TargetEvidence",
+      "receipt": "docs/audit/evidence/fe-16-19-admin-web-target.json",
+      "ancillary": [
+        "cognito",
+        "deployedApi",
+        "authorization",
+        "concurrency",
+        "privacy",
+        "i18nLayout",
+        "cleanup"
+      ],
+      "requiredSets": {
+        "REQUIRED_LOCALES": [
+          "zh-CN",
+          "en"
+        ],
+        "REQUIRED_ROLES": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ],
+        "REQUIRED_ROUTES": [
+          "/settings",
+          "/contracts",
+          "/contracts/new",
+          "/contracts/detail",
+          "/consumables"
+        ],
+        "REQUIRED_VIEWPORTS": [
+          375,
+          768,
+          1440
+        ],
+        "REQUIRED_WORKFLOWS": [
+          "FE-16-users-settings",
+          "FE-17-contract-lifecycle",
+          "FE-18-consumable-privacy-workflow",
+          "FE-19-bilingual-layout"
+        ]
+      },
+      "fullOriginalContractRequired": true
+    }
+  ],
+  "prototype": {
+    "requiredElements": [
+      {
+        "id": "dashboard.field.validContracts",
+        "page": "dashboard",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "dashboard.field.deviceStats",
+        "page": "dashboard",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "dashboard.field.onlineRate",
+        "page": "dashboard",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "dashboard.field.carbonToday",
+        "page": "dashboard",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "dashboard.field.latestAlarms",
+        "page": "dashboard",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "dashboard.field.deviceCards",
+        "page": "dashboard",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "dashboard.button.start",
+        "page": "dashboard",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "dashboard.button.stop",
+        "page": "dashboard",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "dashboard.button.upgrade",
+        "page": "dashboard",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "dashboard.button.reboot",
+        "page": "dashboard",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-view.filter.region",
+        "page": "device-view",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-view.filter.subregion",
+        "page": "device-view",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-view.filter.device",
+        "page": "device-view",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-view.button.apply",
+        "page": "device-view",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-view.field.componentStates",
+        "page": "device-view",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-view.field.sensorReadings",
+        "page": "device-view",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-view.field.consumables",
+        "page": "device-view",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-view.field.recentAlarms",
+        "page": "device-view",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-view.field.esg7d",
+        "page": "device-view",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-view.field.mediaPreview",
+        "page": "device-view",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-operate.button.agitatorForward",
+        "page": "device-operate",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-operate.button.agitatorReverse",
+        "page": "device-operate",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-operate.button.heating",
+        "page": "device-operate",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-operate.button.exhaust",
+        "page": "device-operate",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-operate.button.reboot",
+        "page": "device-operate",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-operate.button.shutdown",
+        "page": "device-operate",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-operate.button.modeSwitch",
+        "page": "device-operate",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-operate.button.factoryReset",
+        "page": "device-operate",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-operate.button.updateThreshold",
+        "page": "device-operate",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-operate.button.saveAlias",
+        "page": "device-operate",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-operate.table.activityLog",
+        "page": "device-operate",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-operate.button.logFilter",
+        "page": "device-operate",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-operate.button.logExport",
+        "page": "device-operate",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-group.button.search",
+        "page": "device-group",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-group.button.reset",
+        "page": "device-group",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-group.column.seq",
+        "page": "device-group",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-group.column.region",
+        "page": "device-group",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-group.column.subregion",
+        "page": "device-group",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-group.column.deviceId",
+        "page": "device-group",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-group.column.alias",
+        "page": "device-group",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-group.column.contractName",
+        "page": "device-group",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-group.column.leaseTerm",
+        "page": "device-group",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-group.column.firmware",
+        "page": "device-group",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-group.field.fourAxisStatus",
+        "page": "device-group",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-group.column.actions",
+        "page": "device-group",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-group.req.column.deviceId",
+        "page": "device-group",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-group.req.column.requestDate",
+        "page": "device-group",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-group.req.button.detail",
+        "page": "device-group",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-group.req.button.accept",
+        "page": "device-group",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-group.req.button.reject",
+        "page": "device-group",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-manage.button.updateConfig",
+        "page": "device-manage",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-manage.button.viewConfig",
+        "page": "device-manage",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-manage.button.selectFirmware",
+        "page": "device-manage",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-manage.button.syncUpdate",
+        "page": "device-manage",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-manage.button.certDetail",
+        "page": "device-manage",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-manage.button.issueCert",
+        "page": "device-manage",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-manage.button.confirm",
+        "page": "device-manage",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-manage.button.back",
+        "page": "device-manage",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-consumable.button.search",
+        "page": "device-consumable",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-consumable.button.reset",
+        "page": "device-consumable",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-consumable.column.region",
+        "page": "device-consumable",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-consumable.column.subregion",
+        "page": "device-consumable",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-consumable.column.deviceId",
+        "page": "device-consumable",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-consumable.column.alias",
+        "page": "device-consumable",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-consumable.column.carbonFilterPct",
+        "page": "device-consumable",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-consumable.column.bioAdditivePct",
+        "page": "device-consumable",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-consumable.button.contact",
+        "page": "device-consumable",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-consumable.req.column.requestTime",
+        "page": "device-consumable",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "device-consumable.req.column.status",
+        "page": "device-consumable",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-consumable.req.button.process",
+        "page": "device-consumable",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "device-consumable.req.button.complete",
+        "page": "device-consumable",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-modify.button.new",
+        "page": "contract-modify",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "contract-modify.column.contractNumber",
+        "page": "contract-modify",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "contract-modify.column.customer",
+        "page": "contract-modify",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-modify.column.deviceCount",
+        "page": "contract-modify",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-modify.column.servicePeriod",
+        "page": "contract-modify",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-modify.column.status",
+        "page": "contract-modify",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-modify.button.edit",
+        "page": "contract-modify",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-modify.button.renewOrUnbind",
+        "page": "contract-modify",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-modify.button.queryDevices",
+        "page": "contract-modify",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "contract-new.field.number",
+        "page": "contract-new",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-new.field.name",
+        "page": "contract-new",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "contract-new.field.customer",
+        "page": "contract-new",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-new.field.period",
+        "page": "contract-new",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-new.field.devices",
+        "page": "contract-new",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-new.button.submit",
+        "page": "contract-new",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-new.button.cancel",
+        "page": "contract-new",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "contract-detail.button.back",
+        "page": "contract-detail",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "contract-detail.column.region",
+        "page": "contract-detail",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-detail.column.subregion",
+        "page": "contract-detail",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-detail.column.deviceId",
+        "page": "contract-detail",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "contract-detail.column.alias",
+        "page": "contract-detail",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "contract-detail.field.fourAxisStatus",
+        "page": "contract-detail",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "contract-detail.column.firmware",
+        "page": "contract-detail",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "contract-detail.field.licenseSummary",
+        "page": "contract-detail",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "esg-overview.toggle.period",
+        "page": "esg-overview",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "esg-overview.button.exportCsv",
+        "page": "esg-overview",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "esg-overview.column.date",
+        "page": "esg-overview",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "esg-overview.column.carbon",
+        "page": "esg-overview",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "esg-overview.column.throughput",
+        "page": "esg-overview",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "esg-overview.column.energy",
+        "page": "esg-overview",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "esg-device.filter.region",
+        "page": "esg-device",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "esg-device.filter.subregion",
+        "page": "esg-device",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "esg-device.filter.device",
+        "page": "esg-device",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "esg-device.button.apply",
+        "page": "esg-device",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "esg-device.toggle.period",
+        "page": "esg-device",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "esg-device.button.exportCsv",
+        "page": "esg-device",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "esg-device.field.metrics",
+        "page": "esg-device",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "settings.button.addPlatformUser",
+        "page": "settings",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "settings.button.resetPlatformUserPassword",
+        "page": "settings",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "settings.button.deletePlatformUser",
+        "page": "settings",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "settings.button.addDeviceUser",
+        "page": "settings",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "settings.button.deviceUserFilter",
+        "page": "settings",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "settings.button.deviceUserFilterReset",
+        "page": "settings",
+        "disposition": "Adopt"
+      },
+      {
+        "id": "settings.button.resetDeviceUserPassword",
+        "page": "settings",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "settings.button.deleteDeviceUser",
+        "page": "settings",
+        "disposition": "Adapt"
+      },
+      {
+        "id": "settings.modal.confirm",
+        "page": "settings",
+        "disposition": "Adapt"
+      }
+    ],
+    "forbiddenOrReadonly": [
+      {
+        "id": "device-view.button.camPlay",
+        "page": "device-view",
+        "disposition": "Reject"
+      },
+      {
+        "id": "device-view.button.camStop",
+        "page": "device-view",
+        "disposition": "Reject"
+      },
+      {
+        "id": "device-operate.button.updateStrategy",
+        "page": "device-operate",
+        "disposition": "Reject"
+      },
+      {
+        "id": "device-operate.button.camPlay",
+        "page": "device-operate",
+        "disposition": "Reject"
+      },
+      {
+        "id": "device-operate.button.camStop",
+        "page": "device-operate",
+        "disposition": "Reject"
+      },
+      {
+        "id": "device-group.column.enabledFlag",
+        "page": "device-group",
+        "disposition": "Reject"
+      },
+      {
+        "id": "device-group.column.enabledStatus",
+        "page": "device-group",
+        "disposition": "Reject"
+      },
+      {
+        "id": "device-group.req.column.creator",
+        "page": "device-group",
+        "disposition": "Defer"
+      },
+      {
+        "id": "contract-detail.column.enabledStatus",
+        "page": "contract-detail",
+        "disposition": "Reject"
+      },
+      {
+        "id": "settings.field.permissionCheckboxes",
+        "page": "settings",
+        "disposition": "Defer"
+      },
+      {
+        "id": "settings.modal.passwordInput",
+        "page": "settings",
+        "disposition": "Reject"
+      }
+    ],
+    "menus": [
+      "menu.dashboard",
+      "menu.device-view",
+      "menu.device-operate",
+      "menu.device-group",
+      "menu.device-consumable",
+      "menu.esg-overview",
+      "menu.esg-device",
+      "menu.contract-modify",
+      "menu.settings"
+    ],
+    "pages": [
+      "dashboard",
+      "device-view",
+      "device-operate",
+      "device-group",
+      "device-manage",
+      "device-consumable",
+      "contract-modify",
+      "contract-new",
+      "contract-detail",
+      "esg-overview",
+      "esg-device",
+      "settings"
+    ]
+  },
+  "mandatorySupplemental": [
+    {
+      "id": "device.independentLicenseVerification",
+      "workPackage": "A2/A3",
+      "initialStatus": "BLOCKED_TEST_VERIFIER",
+      "criterion": "Independent verifier of the actual issued license; no fabricated VERIFIED or SQL Active",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "device.naturalActive",
+      "workPackage": "A3",
+      "initialStatus": "BLOCKED_TEST_VERIFIER",
+      "criterion": "RECEIVED -> VERIFIED -> natural Active over real mTLS and persisted audit",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "device.suspendReactivateRetire",
+      "workPackage": "A3",
+      "initialStatus": "REQUIRES_ACTIVE",
+      "criterion": "Applicable lifecycle and illegal transitions, certificate/Topic denial after retirement",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "license.lifecycle",
+      "workPackage": "A3",
+      "initialStatus": "REQUIRES_ACTIVE",
+      "criterion": "Activate/renew/revoke, readback, replay denial and applicable roles",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "command.deliveryAndResult",
+      "workPackage": "A3",
+      "initialStatus": "REQUIRES_ACTIVE",
+      "criterion": "Applicable commands delivered with result/failed publish, idempotency and dangerous-action denial",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "ota.trustedFirmwareAndCampaign",
+      "workPackage": "A4",
+      "initialStatus": "BLOCKED_TRUSTED_FIRMWARE",
+      "criterion": "Trusted package verification, batches, pause/resume/cancel/retry and protocol results",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "media.realUploadAndIsolation",
+      "workPackage": "A4",
+      "initialStatus": "NOT_RUN",
+      "criterion": "Real upload/hash/readback, cross-customer denial, expiry, quota race and exact cleanup",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "certificate.completeRotation",
+      "workPackage": "A4",
+      "initialStatus": "NOT_RUN",
+      "criterion": "New certificate connects, old certificate denied, persisted state and cleanup",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "replay.operatorNonempty",
+      "workPackage": "A5",
+      "initialStatus": "NOT_RUN",
+      "criterion": "PlatformOperator nonempty Replay with audit and exact own source",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "replay.uniqueProducerAssociation",
+      "workPackage": "A5",
+      "initialStatus": "NO_RECEIPT",
+      "criterion": "Unique Job -> produced message -> exact consumer invocation, not temporal proximity",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "reliability.sameRunNonemptyDedup",
+      "workPackage": "A5",
+      "initialStatus": "NO_RECEIPT",
+      "criterion": "Same-run nonempty receipt/hourly/daily/outbox before and after exact redelivery; no extra business rows",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "reliability.archivePartialFailure",
+      "workPackage": "A5",
+      "initialStatus": "NO_RECEIPT",
+      "criterion": "Partial failure success/failure separation and bad-message isolation",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "reliability.queueAndScheduleAssociation",
+      "workPackage": "A5",
+      "initialStatus": "NO_RECEIPT",
+      "criterion": "Archive/Replay queue and natural schedule execution association",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "users.signedSessionAndState",
+      "workPackage": "A6",
+      "initialStatus": "SCOPED_EVIDENCE_AVAILABLE",
+      "criterion": "Five roles, real signed unexpired tokens, disable/roles/scope audit and no side effects",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "security.signedClaimsAndIsolation",
+      "workPackage": "A6",
+      "initialStatus": "NO_COMPLETE_RECEIPT",
+      "criterion": "Trusted signatures with invalid exp/nbf/audience, JWT/role/customer/cert/Topic boundaries and zero credential leaks",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "business.operationsRolesPersistence",
+      "workPackage": "A6",
+      "initialStatus": "NEEDS_FORMAL_ASSEMBLY",
+      "criterion": "Applicable operations/authorization branches with persistence and audit; HTTP coverage is insufficient",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "notifications.inviteAndPasswordApi",
+      "workPackage": "A6",
+      "initialStatus": "BLOCKED_AUTHORIZATION",
+      "criterion": "No implicit waiver of invite/reset API, compensation, permissions or signed-user semantics",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "settings.authorizedWriteAndRestore",
+      "workPackage": "A6",
+      "initialStatus": "BLOCKED_SHARED_SETTING_SCOPE",
+      "criterion": "Authorized real update/version race/restoration; no implicit waiver",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "prototype.117SemanticItems",
+      "workPackage": "A7",
+      "initialStatus": "HISTORICAL_102_OF_117_NOT_CURRENT_ACCEPTANCE",
+      "criterion": "All 117 mapped individually; revalidate only incompatible/missing behavior",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "browser.targetJourneys",
+      "workPackage": "A7",
+      "initialStatus": "NEEDS_FORMAL_ASSEMBLY",
+      "criterion": "Real Cognito/API, required roles/workflows/locales/viewports, persisted results and no interception",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "data.naturalEsgConsistency",
+      "workPackage": "A5",
+      "initialStatus": "SCOPED_EVIDENCE_AVAILABLE",
+      "criterion": "Natural hourly/daily/report/ESG values and original archive/manifest match",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "data.exportLeaseRecovery",
+      "workPackage": "A5",
+      "initialStatus": "SCOPED_EVIDENCE_AVAILABLE",
+      "criterion": "Own expired export lease naturally recovers with nonempty unchanged CSV",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    },
+    {
+      "id": "cleanup.ownedResourcesAndUnknownWrites",
+      "workPackage": "A8",
+      "initialStatus": "PER_RUN_PROOF_REQUIRED",
+      "criterion": "Created-ID ledger, independent empty sets, no outside drift, revoked identities/restored config, unknown writes contained",
+      "required": true,
+      "closure": "SPECIALIZED_BUSINESS_EVIDENCE_REQUIRED_NOT_A_FREE_FORM_PASS_FLAG"
+    }
+  ],
+  "releaseDeferrals": [
+    {
+      "id": "REL-PERF-01.telemetryP95",
+      "criterion": "Telemetry API visibility P95 <= 5000 ms",
+      "status": "DEFERRED_TO_RELEASE_NOT_ACCEPTED",
+      "authorization": "USER_CONFIRMED_2026_10_12_AND_A1_DIRECTIVE_2026_10_13",
+      "businessFailureWaived": false
+    },
+    {
+      "id": "REL-PERF-01.commandP95",
+      "criterion": "Online Command P95 <= 3000 ms",
+      "status": "DEFERRED_TO_RELEASE_NOT_ACCEPTED",
+      "authorization": "USER_CONFIRMED_2026_10_12_AND_A1_DIRECTIVE_2026_10_13",
+      "businessFailureWaived": false
+    },
+    {
+      "id": "REL-PERF-01.loadAndCapacity",
+      "criterion": "Sustained/mixed/burst load, backlog recovery and capacity",
+      "status": "DEFERRED_TO_RELEASE_NOT_ACCEPTED",
+      "authorization": "USER_CONFIRMED_2026_10_12_AND_A1_DIRECTIVE_2026_10_13",
+      "businessFailureWaived": false
+    },
+    {
+      "id": "REL-PERF-01.coldAndTransport",
+      "criterion": "Cold-start/transport tails; detailed attribution only when needed for SLO/capacity decisions",
+      "status": "DEFERRED_TO_RELEASE_NOT_ACCEPTED",
+      "authorization": "USER_CONFIRMED_2026_10_12_AND_A1_DIRECTIVE_2026_10_13",
+      "businessFailureWaived": false
+    },
+    {
+      "id": "REL-PERF-01.candidateBenefit",
+      "criterion": "Candidate optimization and instrumentation-cost comparisons only when needed for SLO/capacity decisions",
+      "status": "DEFERRED_TO_RELEASE_NOT_ACCEPTED",
+      "authorization": "USER_CONFIRMED_2026_10_12_AND_A1_DIRECTIVE_2026_10_13",
+      "businessFailureWaived": false
+    }
+  ],
+  "proposedReleaseOnly": [
+    "Actual external notification delivery",
+    "Shared/global configuration switching",
+    "Global disaster recovery and long-running operations"
+  ],
+  "proposedReleaseIsNotFunctionalWaiver": true,
+  "outsideOriginalQa09": [
+    "Physical actuator/sensor/interlock validation",
+    "Physical flashing/power-loss recovery",
+    "Third-party carbon verification"
+  ],
+  "stoppingRule": "Only a failed frozen business/security requirement may expand the current blocking work; no performance decomposition or repeated full suite",
+  "fullQa09Accepted": false,
+  "releasePerformanceAccepted": false,
+  "productionReady": false
+}

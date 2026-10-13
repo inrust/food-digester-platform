@@ -3,9 +3,9 @@
  * BE-MED/RBAC/AUD/DASH/SET 目标 AWS 验收回执 Gate。
  * 本地测试、PGlite、mock 与 CDK synth 均不能替代目标环境回执；缺失时失败关闭。
  */
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { targetEnvironmentErrors, validateReceiptBinding, runTargetEvidenceCli } from './qa09-acceptance-context.mjs';
 
 export const REQUIRED_OPERATIONS = [
   'createMediaUploadSession',
@@ -55,7 +55,7 @@ function exact(errors, rows, required, path, field) {
   return true;
 }
 
-export function validateEvidence(receipt) {
+export function validateEvidence(receipt, context) {
   const errors = [];
   if (!isRecord(receipt)) return ['回执根节点必须为对象'];
   if (receipt.schemaVersion !== '1.0') errors.push('schemaVersion 必须为 1.0');
@@ -66,7 +66,7 @@ export function validateEvidence(receipt) {
   }
   if (!isRecord(receipt.environment)) errors.push('environment 必须为对象');
   else {
-    if (receipt.environment.isolated !== true) errors.push('environment.isolated 必须为 true');
+    errors.push(...targetEnvironmentErrors(receipt.environment, context));
     for (const key of ['accountId', 'region', 'stackName', 'apiBaseUrl', 'userPoolId', 'mediaBucket']) {
       requireString(errors, receipt.environment[key], `environment.${key}`);
     }
@@ -215,7 +215,7 @@ export function validateEvidence(receipt) {
   return errors;
 }
 
-export function checkEvidence(root, relativeReceipt, expectedSourceCommit) {
+export function checkEvidence(root, relativeReceipt, expectedSourceCommit, context) {
   const path = resolve(root, relativeReceipt);
   if (!existsSync(path)) return [`缺少目标 AWS BE-MED/RBAC/AUD/DASH/SET 回执: ${relativeReceipt}`];
   let receipt;
@@ -224,7 +224,10 @@ export function checkEvidence(root, relativeReceipt, expectedSourceCommit) {
   } catch (error) {
     return [`目标 AWS 回执不是合法 JSON: ${error instanceof Error ? error.message : String(error)}`];
   }
-  const errors = validateEvidence(receipt);
+  const errors = validateEvidence(receipt, context);
+  errors.push(
+    ...validateReceiptBinding(root, relativeReceipt, receipt, context, 'check-aws-med-rbac-aud-dash-set-evidence.mjs'),
+  );
   if (expectedSourceCommit && receipt.sourceCommit !== expectedSourceCommit)
     errors.push(`sourceCommit 与待发布提交不一致: expected ${expectedSourceCommit}, received ${receipt.sourceCommit}`);
   return errors;
@@ -235,11 +238,13 @@ function main() {
   const relativeReceipt =
     process.env.FDP_AWS_MED_RBAC_AUD_DASH_SET_RECEIPT ??
     'docs/audit/evidence/be-med-rbac-aud-dash-set-aws-acceptance.json';
-  const expectedSourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
-  const errors = checkEvidence(root, relativeReceipt, expectedSourceCommit);
-  errors.forEach((error) => process.stderr.write(`${error}\n`));
-  if (errors.length === 0) process.stdout.write('BE-MED/RBAC/AUD/DASH/SET 目标 AWS 证据 PASS\n');
-  process.exitCode = errors.length === 0 ? 0 : 1;
+  runTargetEvidenceCli(
+    root,
+    'check-aws-med-rbac-aud-dash-set-evidence.mjs',
+    relativeReceipt,
+    checkEvidence,
+    'BE-MED/RBAC/AUD/DASH/SET 目标 AWS 证据 PASS',
+  );
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main();

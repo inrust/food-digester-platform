@@ -36,7 +36,7 @@
         "deployedDeploymentCommit"
       ],
       "properties": {
-        "isolated": { "const": true },
+        "isolated": { "type": "boolean" },
         "accountId": { "type": "string", "minLength": 1 },
         "region": { "type": "string", "minLength": 1 },
         "stackName": { "type": "string", "minLength": 1 },
@@ -45,8 +45,23 @@
         "userPoolId": { "type": "string", "minLength": 1 },
         "browser": { "type": "string", "minLength": 1 },
         "deployedSourceCommit": { "$ref": "#/$defs/commit" },
-        "deployedDeploymentCommit": { "$ref": "#/$defs/commit" }
-      }
+        "deployedDeploymentCommit": { "$ref": "#/$defs/commit" },
+        "mode": { "const": "REAL_EXISTING_TEST_ENVIRONMENT" },
+        "runPrefix": { "type": "string", "pattern": "^qa09-[a-f0-9]{16}$" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "isolated": { "const": false } }, "required": ["isolated"] },
+          "then": {
+            "required": ["mode", "runPrefix"],
+            "properties": {
+              "accountId": { "const": "065986019555" },
+              "region": { "const": "ap-southeast-1" },
+              "stackName": { "const": "fdp-test-app" }
+            }
+          }
+        }
+      ]
     },
     "probes": {
       "type": "object",

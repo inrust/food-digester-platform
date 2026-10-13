@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /** FE-11～FE-15 独立目标环境回执 Gate；不得由本地 mock、构建或占位文件替代。 */
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { targetEnvironmentErrors, validateReceiptBinding, runTargetEvidenceCli } from './qa09-acceptance-context.mjs';
 import Ajv2020 from 'ajv/dist/2020.js';
 
 export const REQUIRED_ROUTES = [
@@ -37,7 +37,7 @@ function exact(errors, rows, required, path, field) {
   }
 }
 
-export function validateFe11To15TargetEvidence(root, receipt) {
+export function validateFe11To15TargetEvidence(root, receipt, context) {
   const schema = JSON.parse(readFileSync(resolve(root, SCHEMA), 'utf8'));
   const ajv = new Ajv2020({ allErrors: true, strict: false });
   ajv.addFormat(
@@ -49,6 +49,7 @@ export function validateFe11To15TargetEvidence(root, receipt) {
   const errors = validate(receipt)
     ? []
     : (validate.errors ?? []).map((error) => `schema${error.instancePath || '/'} ${error.message}`);
+  errors.push(...targetEnvironmentErrors(receipt?.environment, context));
   exact(errors, receipt?.probes?.routes, REQUIRED_ROUTES, 'probes.routes', 'path');
   exact(errors, receipt?.probes?.roles, REQUIRED_ROLES, 'probes.roles', 'role');
   exact(errors, receipt?.probes?.workflows, REQUIRED_WORKFLOWS, 'probes.workflows', 'workflowId');
@@ -68,7 +69,7 @@ export function validateFe11To15TargetEvidence(root, receipt) {
   return errors;
 }
 
-export function checkFe11To15TargetEvidence(root, relativeReceipt, expectedSourceCommit) {
+export function checkFe11To15TargetEvidence(root, relativeReceipt, expectedSourceCommit, context) {
   const path = resolve(root, relativeReceipt);
   if (!existsSync(path)) return [`缺少 FE-11～FE-15 目标环境回执: ${relativeReceipt}；状态为 NOT RUN / NO RECEIPT`];
   let receipt;
@@ -77,7 +78,10 @@ export function checkFe11To15TargetEvidence(root, relativeReceipt, expectedSourc
   } catch (error) {
     return [`目标环境回执不是合法 JSON: ${error instanceof Error ? error.message : String(error)}`];
   }
-  const errors = validateFe11To15TargetEvidence(root, receipt);
+  const errors = validateFe11To15TargetEvidence(root, receipt, context);
+  errors.push(
+    ...validateReceiptBinding(root, relativeReceipt, receipt, context, 'check-admin-web-fe11-15-target-evidence.mjs'),
+  );
   if (expectedSourceCommit && receipt.sourceCommit !== expectedSourceCommit) {
     errors.push(`sourceCommit 与待发布提交不一致: expected ${expectedSourceCommit}, received ${receipt.sourceCommit}`);
   }
@@ -88,11 +92,13 @@ function main() {
   const root = process.cwd();
   const relativeReceipt =
     process.env.FDP_ADMIN_WEB_FE11_15_TARGET_RECEIPT ?? 'docs/audit/evidence/fe-11-15-admin-web-target.json';
-  const expectedSourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
-  const errors = checkFe11To15TargetEvidence(root, relativeReceipt, expectedSourceCommit);
-  errors.forEach((error) => process.stderr.write(`${error}\n`));
-  if (errors.length === 0) process.stdout.write('FE-11～FE-15 管理后台目标环境证据 PASS\n');
-  process.exitCode = errors.length === 0 ? 0 : 1;
+  runTargetEvidenceCli(
+    root,
+    'check-admin-web-fe11-15-target-evidence.mjs',
+    relativeReceipt,
+    checkFe11To15TargetEvidence,
+    'FE-11～FE-15 管理后台目标环境证据 PASS',
+  );
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main();

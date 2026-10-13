@@ -3,9 +3,9 @@
  * BE-ARC-01/02、BE-RPL-01、BE-ESG-01 目标 AWS 验收回执 Gate。
  * 本地测试、mock、CDK synth 或文字声明均不能替代此结构化回执。
  */
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { targetEnvironmentErrors, validateReceiptBinding, runTargetEvidenceCli } from './qa09-acceptance-context.mjs';
 
 export const REQUIRED_PROBES = {
   archive: ['outbox', 'archiveQueue', 's3Object', 'manifest', 'duplicateDelivery', 'partialFailure'],
@@ -34,7 +34,7 @@ function validatePassedProbe(errors, probe, path) {
   }
 }
 
-export function validateAwsDataProcessingEvidence(receipt) {
+export function validateAwsDataProcessingEvidence(receipt, context) {
   const errors = [];
   if (!isRecord(receipt)) return ['回执根节点必须为对象'];
   if (receipt.schemaVersion !== '1.0') errors.push('schemaVersion 必须为 1.0');
@@ -47,7 +47,7 @@ export function validateAwsDataProcessingEvidence(receipt) {
   if (!isRecord(receipt.environment)) {
     errors.push('environment 必须为对象');
   } else {
-    if (receipt.environment.isolated !== true) errors.push('environment.isolated 必须为 true');
+    errors.push(...targetEnvironmentErrors(receipt.environment, context));
     for (const key of ['accountId', 'region', 'stackName']) {
       if (typeof receipt.environment[key] !== 'string' || receipt.environment[key].trim() === '') {
         errors.push(`environment.${key} 必须为非空字符串`);
@@ -102,7 +102,7 @@ export function validateAwsDataProcessingEvidence(receipt) {
   return errors;
 }
 
-export function checkAwsDataProcessingEvidence(root, relativeReceipt, expectedSourceCommit) {
+export function checkAwsDataProcessingEvidence(root, relativeReceipt, expectedSourceCommit, context) {
   const path = resolve(root, relativeReceipt);
   if (!existsSync(path)) return [`缺少目标 AWS 数据处理回执: ${relativeReceipt}`];
   let receipt;
@@ -111,7 +111,10 @@ export function checkAwsDataProcessingEvidence(root, relativeReceipt, expectedSo
   } catch (error) {
     return [`目标 AWS 数据处理回执不是合法 JSON: ${error instanceof Error ? error.message : String(error)}`];
   }
-  const errors = validateAwsDataProcessingEvidence(receipt);
+  const errors = validateAwsDataProcessingEvidence(receipt, context);
+  errors.push(
+    ...validateReceiptBinding(root, relativeReceipt, receipt, context, 'check-aws-data-processing-evidence.mjs'),
+  );
   if (expectedSourceCommit && receipt.sourceCommit !== expectedSourceCommit) {
     errors.push(`sourceCommit 与待发布提交不一致: expected ${expectedSourceCommit}, received ${receipt.sourceCommit}`);
   }
@@ -122,11 +125,13 @@ function main() {
   const root = process.cwd();
   const relativeReceipt =
     process.env.FDP_AWS_DATA_PROCESSING_RECEIPT ?? 'docs/audit/evidence/be-arc-rpl-esg-aws-data-processing.json';
-  const expectedSourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
-  const errors = checkAwsDataProcessingEvidence(root, relativeReceipt, expectedSourceCommit);
-  for (const error of errors) process.stderr.write(`${error}\n`);
-  if (errors.length === 0) process.stdout.write('BE-ARC/RPL/ESG 目标 AWS 数据处理证据 PASS\n');
-  process.exitCode = errors.length === 0 ? 0 : 1;
+  runTargetEvidenceCli(
+    root,
+    'check-aws-data-processing-evidence.mjs',
+    relativeReceipt,
+    checkAwsDataProcessingEvidence,
+    'BE-ARC/RPL/ESG 目标 AWS 数据处理证据 PASS',
+  );
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main();

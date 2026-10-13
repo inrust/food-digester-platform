@@ -3,9 +3,9 @@
  * FE-06～FE-10 管理后台前端目标环境回执 Gate。
  * 本地 Vitest、Playwright mock、构建和 CDK synth 均不能替代真实 Cognito + 已部署 API 回执。
  */
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { targetEnvironmentErrors, validateReceiptBinding, runTargetEvidenceCli } from './qa09-acceptance-context.mjs';
 
 export const REQUIRED_ROUTES = [
   '/devices/view',
@@ -54,7 +54,7 @@ function exact(errors, rows, required, path, field) {
   return true;
 }
 
-export function validateAdminWebTargetEvidence(receipt) {
+export function validateAdminWebTargetEvidence(receipt, context) {
   const errors = [];
   if (!isRecord(receipt)) return ['回执根节点必须为对象'];
   if (receipt.schemaVersion !== '1.0') errors.push('schemaVersion 必须为 1.0');
@@ -66,7 +66,7 @@ export function validateAdminWebTargetEvidence(receipt) {
 
   if (!isRecord(receipt.environment)) errors.push('environment 必须为对象');
   else {
-    if (receipt.environment.isolated !== true) errors.push('environment.isolated 必须为 true');
+    errors.push(...targetEnvironmentErrors(receipt.environment, context));
     for (const key of ['accountId', 'region', 'stackName', 'webUrl', 'apiBaseUrl', 'userPoolId', 'browser']) {
       requireString(errors, receipt.environment[key], `environment.${key}`);
     }
@@ -144,7 +144,7 @@ export function validateAdminWebTargetEvidence(receipt) {
   return errors;
 }
 
-export function checkAdminWebTargetEvidence(root, relativeReceipt, expectedSourceCommit) {
+export function checkAdminWebTargetEvidence(root, relativeReceipt, expectedSourceCommit, context) {
   const path = resolve(root, relativeReceipt);
   if (!existsSync(path)) return [`缺少 FE-06～FE-10 目标环境回执: ${relativeReceipt}`];
   let receipt;
@@ -153,7 +153,10 @@ export function checkAdminWebTargetEvidence(root, relativeReceipt, expectedSourc
   } catch (error) {
     return [`目标环境回执不是合法 JSON: ${error instanceof Error ? error.message : String(error)}`];
   }
-  const errors = validateAdminWebTargetEvidence(receipt);
+  const errors = validateAdminWebTargetEvidence(receipt, context);
+  errors.push(
+    ...validateReceiptBinding(root, relativeReceipt, receipt, context, 'check-admin-web-target-evidence.mjs'),
+  );
   if (expectedSourceCommit && receipt.sourceCommit !== expectedSourceCommit) {
     errors.push(`sourceCommit 与待发布提交不一致: expected ${expectedSourceCommit}, received ${receipt.sourceCommit}`);
   }
@@ -164,11 +167,13 @@ function main() {
   const root = process.cwd();
   const relativeReceipt =
     process.env.FDP_ADMIN_WEB_TARGET_RECEIPT ?? 'docs/audit/evidence/fe-06-10-admin-web-target.json';
-  const expectedSourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
-  const errors = checkAdminWebTargetEvidence(root, relativeReceipt, expectedSourceCommit);
-  errors.forEach((error) => process.stderr.write(`${error}\n`));
-  if (errors.length === 0) process.stdout.write('FE-06～FE-10 管理后台目标环境证据 PASS\n');
-  process.exitCode = errors.length === 0 ? 0 : 1;
+  runTargetEvidenceCli(
+    root,
+    'check-admin-web-target-evidence.mjs',
+    relativeReceipt,
+    checkAdminWebTargetEvidence,
+    'FE-06～FE-10 管理后台目标环境证据 PASS',
+  );
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main();

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
  * BE-CUS-01/02、BE-DEV-01～06 目标 AWS 验收回执 Gate。
- * 本地测试、mock、CDK synth 或人工声明不能替代隔离 AWS 回执；缺失时失败关闭。
+ * 本地测试、mock、CDK synth 或人工声明不能替代真实 AWS 回执；缺失时失败关闭。
  */
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { targetEnvironmentErrors, validateReceiptBinding, runTargetEvidenceCli } from './qa09-acceptance-context.mjs';
 
 export const REQUIRED_ADMIN_OPERATIONS = [
   'listCustomers',
@@ -79,7 +79,7 @@ function validateExactNames(errors, rows, required, path, field) {
   return true;
 }
 
-export function validateAwsAdminCusDevEvidence(receipt) {
+export function validateAwsAdminCusDevEvidence(receipt, context) {
   const errors = [];
   if (!isRecord(receipt)) return ['回执根节点必须为对象'];
   if (receipt.schemaVersion !== '1.0') errors.push('schemaVersion 必须为 1.0');
@@ -92,7 +92,7 @@ export function validateAwsAdminCusDevEvidence(receipt) {
   if (!isRecord(receipt.environment)) {
     errors.push('environment 必须为对象');
   } else {
-    if (receipt.environment.isolated !== true) errors.push('environment.isolated 必须为 true');
+    errors.push(...targetEnvironmentErrors(receipt.environment, context));
     for (const key of ['accountId', 'region', 'stackName', 'apiBaseUrl']) {
       requireString(errors, receipt.environment[key], `environment.${key}`);
     }
@@ -176,7 +176,7 @@ export function validateAwsAdminCusDevEvidence(receipt) {
   return errors;
 }
 
-export function checkAwsAdminCusDevEvidence(root, relativeReceipt, expectedSourceCommit) {
+export function checkAwsAdminCusDevEvidence(root, relativeReceipt, expectedSourceCommit, context) {
   const path = resolve(root, relativeReceipt);
   if (!existsSync(path)) return [`缺少目标 AWS 管理后台回执: ${relativeReceipt}`];
   let receipt;
@@ -185,7 +185,10 @@ export function checkAwsAdminCusDevEvidence(root, relativeReceipt, expectedSourc
   } catch (error) {
     return [`目标 AWS 管理后台回执不是合法 JSON: ${error instanceof Error ? error.message : String(error)}`];
   }
-  const errors = validateAwsAdminCusDevEvidence(receipt);
+  const errors = validateAwsAdminCusDevEvidence(receipt, context);
+  errors.push(
+    ...validateReceiptBinding(root, relativeReceipt, receipt, context, 'check-aws-admin-cus-dev-evidence.mjs'),
+  );
   if (expectedSourceCommit && receipt.sourceCommit !== expectedSourceCommit) {
     errors.push(`sourceCommit 与待发布提交不一致: expected ${expectedSourceCommit}, received ${receipt.sourceCommit}`);
   }
@@ -196,11 +199,13 @@ function main() {
   const root = process.cwd();
   const relativeReceipt =
     process.env.FDP_AWS_ADMIN_CUS_DEV_RECEIPT ?? 'docs/audit/evidence/be-cus-dev-aws-acceptance.json';
-  const expectedSourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
-  const errors = checkAwsAdminCusDevEvidence(root, relativeReceipt, expectedSourceCommit);
-  for (const error of errors) process.stderr.write(`${error}\n`);
-  if (errors.length === 0) process.stdout.write('BE-CUS-01/02、BE-DEV-01～06 目标 AWS 证据 PASS\n');
-  process.exitCode = errors.length === 0 ? 0 : 1;
+  runTargetEvidenceCli(
+    root,
+    'check-aws-admin-cus-dev-evidence.mjs',
+    relativeReceipt,
+    checkAwsAdminCusDevEvidence,
+    'BE-CUS-01/02、BE-DEV-01～06 目标 AWS 证据 PASS',
+  );
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main();

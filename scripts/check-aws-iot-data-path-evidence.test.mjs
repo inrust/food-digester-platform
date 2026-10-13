@@ -80,3 +80,39 @@ test('回执必须对应待发布的精确 Git 提交', () => {
   const errors = checkAwsIotDataPathEvidence(root, 'receipt.json', '2'.repeat(40));
   assert.ok(errors.some((error) => error.includes('sourceCommit 与待发布提交不一致')));
 });
+
+// Only the environment/version entry changes; the original business probes remain mandatory.
+test('显式现有测试环境支持绑定；缺绑定、错账号、缺清理仍失败关闭', () => {
+  const receipt = validReceipt();
+  receipt.probes.qa03.s3RawArchive = {
+    passed: true,
+    evidence: ['s3://test/raw'],
+    sourceRawBodySha256: 'a'.repeat(64),
+    archivedRawBodySha256: 'a'.repeat(64),
+  };
+  const environment = {
+    mode: 'REAL_EXISTING_TEST_ENVIRONMENT',
+    isolated: false,
+    accountId: '065986019555',
+    region: 'ap-southeast-1',
+    stackName: 'fdp-test-app',
+    syntheticResponsesAllowed: false,
+    dataSeparation: 'UNIQUE_RUN_PREFIX_AND_CREATED_ID_LEDGER',
+  };
+  const context = { environment };
+  Object.assign(receipt.environment, {
+    mode: environment.mode,
+    isolated: false,
+    accountId: environment.accountId,
+    region: environment.region,
+    stackName: environment.stackName,
+    runPrefix: 'qa09-1234567890abcdef',
+  });
+  assert.ok(validateAwsIotDataPathEvidence(receipt).some((error) => error.includes('isolated')));
+  assert.deepEqual(validateAwsIotDataPathEvidence(receipt, context), []);
+  receipt.environment.accountId = '000000000000';
+  assert.ok(validateAwsIotDataPathEvidence(receipt, context).some((error) => error.includes('accountId')));
+  receipt.environment.accountId = environment.accountId;
+  receipt.cleanup.completed = false;
+  assert.ok(validateAwsIotDataPathEvidence(receipt, context).some((error) => error.includes('cleanup')));
+});

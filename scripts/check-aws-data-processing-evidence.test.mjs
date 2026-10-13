@@ -67,3 +67,39 @@ test('缺少回执或提交不一致时独立 Gate 失败', () => {
     ),
   );
 });
+
+// Only the environment/version entry changes; the original business probes remain mandatory.
+test('显式现有测试环境支持绑定；缺绑定、错账号、缺清理仍失败关闭', () => {
+  const receipt = validReceipt();
+  receipt.probes.archive.s3Object.sha256 = hash;
+  receipt.probes.archive.manifest.sha256 = hash;
+  Object.assign(receipt.probes.archive.duplicateDelivery, { deliveryCount: 2, logicalRecordCount: 1 });
+  Object.assign(receipt.probes.archive.partialFailure, { failedCount: 1, succeededCount: 1 });
+  receipt.probes.replay.idempotency.duplicateBusinessRows = 0;
+  for (const name of ['hourly', 'daily', 'esgDaily']) receipt.probes.summary[name].rowCount = 1;
+  const environment = {
+    mode: 'REAL_EXISTING_TEST_ENVIRONMENT',
+    isolated: false,
+    accountId: '065986019555',
+    region: 'ap-southeast-1',
+    stackName: 'fdp-test-app',
+    syntheticResponsesAllowed: false,
+    dataSeparation: 'UNIQUE_RUN_PREFIX_AND_CREATED_ID_LEDGER',
+  };
+  const context = { environment };
+  Object.assign(receipt.environment, {
+    mode: environment.mode,
+    isolated: false,
+    accountId: environment.accountId,
+    region: environment.region,
+    stackName: environment.stackName,
+    runPrefix: 'qa09-1234567890abcdef',
+  });
+  assert.ok(validateAwsDataProcessingEvidence(receipt).some((error) => error.includes('isolated')));
+  assert.deepEqual(validateAwsDataProcessingEvidence(receipt, context), []);
+  receipt.environment.accountId = '000000000000';
+  assert.ok(validateAwsDataProcessingEvidence(receipt, context).some((error) => error.includes('accountId')));
+  receipt.environment.accountId = environment.accountId;
+  receipt.cleanup.completed = false;
+  assert.ok(validateAwsDataProcessingEvidence(receipt, context).some((error) => error.includes('cleanup')));
+});

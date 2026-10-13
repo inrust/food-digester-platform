@@ -94,3 +94,34 @@ test('缺失回执、部署提交或 sourceCommit 不一致时失败关闭', () 
   assert.ok(errors.some((error) => error.includes('deployedSourceCommit')));
   assert.ok(errors.some((error) => error.includes('sourceCommit 与待发布提交不一致')));
 });
+
+// Only the environment/version entry changes; the original business probes remain mandatory.
+test('显式现有测试环境支持绑定；缺绑定、错账号、缺清理仍失败关闭', () => {
+  const receipt = fixture();
+
+  const environment = {
+    mode: 'REAL_EXISTING_TEST_ENVIRONMENT',
+    isolated: false,
+    accountId: '065986019555',
+    region: 'ap-southeast-1',
+    stackName: 'fdp-test-app',
+    syntheticResponsesAllowed: false,
+    dataSeparation: 'UNIQUE_RUN_PREFIX_AND_CREATED_ID_LEDGER',
+  };
+  const context = { environment };
+  Object.assign(receipt.environment, {
+    mode: environment.mode,
+    isolated: false,
+    accountId: environment.accountId,
+    region: environment.region,
+    stackName: environment.stackName,
+    runPrefix: 'qa09-1234567890abcdef',
+  });
+  assert.ok(validateAdminWebTargetEvidence(receipt).some((error) => error.includes('isolated')));
+  assert.deepEqual(validateAdminWebTargetEvidence(receipt, context), []);
+  receipt.environment.accountId = '000000000000';
+  assert.ok(validateAdminWebTargetEvidence(receipt, context).some((error) => error.includes('accountId')));
+  receipt.environment.accountId = environment.accountId;
+  receipt.cleanup.completed = false;
+  assert.ok(validateAdminWebTargetEvidence(receipt, context).some((error) => error.includes('cleanup')));
+});

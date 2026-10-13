@@ -155,3 +155,34 @@ test('缺失回执与 sourceCommit 不匹配均失败关闭', () => {
     checkEvidence(root, 'evidence/receipt.json', 'b'.repeat(40)).some((error) => error.includes('sourceCommit')),
   );
 });
+
+// Only the environment/version entry changes; the original business probes remain mandatory.
+test('显式现有测试环境支持绑定；缺绑定、错账号、缺清理仍失败关闭', () => {
+  const receipt = fixture();
+
+  const environment = {
+    mode: 'REAL_EXISTING_TEST_ENVIRONMENT',
+    isolated: false,
+    accountId: '065986019555',
+    region: 'ap-southeast-1',
+    stackName: 'fdp-test-app',
+    syntheticResponsesAllowed: false,
+    dataSeparation: 'UNIQUE_RUN_PREFIX_AND_CREATED_ID_LEDGER',
+  };
+  const context = { environment };
+  Object.assign(receipt.environment, {
+    mode: environment.mode,
+    isolated: false,
+    accountId: environment.accountId,
+    region: environment.region,
+    stackName: environment.stackName,
+    runPrefix: 'qa09-1234567890abcdef',
+  });
+  assert.ok(validateEvidence(receipt).some((error) => error.includes('isolated')));
+  assert.deepEqual(validateEvidence(receipt, context), []);
+  receipt.environment.accountId = '000000000000';
+  assert.ok(validateEvidence(receipt, context).some((error) => error.includes('accountId')));
+  receipt.environment.accountId = environment.accountId;
+  receipt.cleanup.completed = false;
+  assert.ok(validateEvidence(receipt, context).some((error) => error.includes('cleanup')));
+});
