@@ -11,7 +11,7 @@ export function assertOwnS3Request(action, input, customerIds) {
   )
     throw Error('FIXED_OWN_S3_SCOPE_REQUIRED');
   const prefixes = customerIds.flatMap((id) =>
-    ['heartbeat', 'telemetry', 'ack'].map((type) => `raw/topic_type=${type}/customer_id=${id}/`),
+    ['heartbeat', 'telemetry', 'ack', 'report'].map((type) => `raw/topic_type=${type}/customer_id=${id}/`),
   );
   const owns = (key) => typeof key === 'string' && prefixes.some((p) => key.startsWith(p));
   if (action.startsWith('list-') && !owns(input.Prefix)) throw Error('OWN_S3_PREFIX_REQUIRED');

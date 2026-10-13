@@ -123,7 +123,12 @@ export async function collectReliabilityFinal(parentPath, output) {
     r.identities.push({ username, count: users.count });
     if (users.count !== 0 || users.token) throw Error('OWN_IDENTITY_NOT_EMPTY');
     for (const c of parent.customers)
-      for (const type of ['heartbeat', 'telemetry', 'ack']) {
+      for (const type of [
+        'heartbeat',
+        'telemetry',
+        'ack',
+        ...(parent.published.some((p) => p.type === 'report') ? ['report'] : []),
+      ]) {
         const prefix = `raw/topic_type=${type}/customer_id=${c.id}/`;
         const page = await read([
           's3api',
@@ -145,6 +150,31 @@ export async function collectReliabilityFinal(parentPath, output) {
     const extension = existsSync(parentPath + '.reliability.json')
       ? JSON.parse(readFileSync(parentPath + '.reliability.json'))
       : { builds: [] };
+    if (extension.scope === 'OWN_REAL_MQTT_REPORT_NATURAL_DAILY_AND_EXPORT_LEASE') {
+      if (extension.prefix !== parent.prefix || extension.businessCleanup !== 'PASS')
+        throw Error('OWN_ESG_CLEANUP_BINDING_REQUIRED');
+      r.exportObjects = [];
+      for (const job of extension.jobs.filter((j) => j.id)) {
+        if (!/^[a-f0-9-]{36}$/.test(job.id)) throw Error('EXACT_EXPORT_LEDGER_REQUIRED');
+        const key = 'esg-exports/' + job.id + '.csv';
+        const page = await read([
+          's3api',
+          'list-object-versions',
+          '--bucket',
+          'fdp-test-export-065986019555',
+          '--prefix',
+          key,
+          '--max-keys',
+          '1',
+          '--no-paginate',
+          '--query',
+          '{versions:length(Versions || `[]`),markers:length(DeleteMarkers || `[]`),truncated:IsTruncated}',
+        ]);
+        r.exportObjects.push({ key, ...page });
+        save();
+        if (page.versions !== 0 || page.markers !== 0 || page.truncated) throw Error('OWN_EXPORT_OBJECT_NOT_EMPTY');
+      }
+    }
     const ids = [
       ...parent.databaseBuilds.map((b) => b.buildId),
       ...extension.builds.map((b) => b.buildId),

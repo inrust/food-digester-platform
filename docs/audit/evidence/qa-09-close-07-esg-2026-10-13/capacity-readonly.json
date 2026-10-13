@@ -1,0 +1,87 @@
+{
+  "gate": "FAIL",
+  "sourceHash": "47e88a3780d224b36455343d0dfce76889e8e3d8d33855d629edec46520e7d59",
+  "buildspecHash": "239757b975c311a581a9a28eb921cf611d55708265f7700cce6fb0743cb12ade",
+  "operations": [
+    {
+      "sequence": 1,
+      "operation": "get-caller-identity",
+      "profile": "esgiot-infra",
+      "startedAt": "2026-10-13T01:13:28.236Z",
+      "result": "PASS",
+      "durationMs": 6694
+    },
+    {
+      "sequence": 2,
+      "operation": "batch-get-projects",
+      "profile": "esgiot-infra",
+      "startedAt": "2026-10-13T01:13:34.931Z",
+      "result": "PASS",
+      "durationMs": 2450
+    },
+    {
+      "sequence": 3,
+      "operation": "update-project",
+      "profile": "esgiot-infra",
+      "startedAt": "2026-10-13T01:13:37.382Z",
+      "result": "FAIL",
+      "failure": {
+        "code": "AWS_update-project_CLI_READ_TIMEOUT",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null,
+        "cli": {
+          "exitStatus": 255,
+          "signal": null,
+          "spawnErrorCode": null,
+          "stderrBytes": 95,
+          "durationMs": 5820
+        }
+      },
+      "durationMs": 5820
+    }
+  ],
+  "buildReads": [],
+  "preStartReads": [
+    {
+      "operation": "sts:get-caller-identity",
+      "attempt": 1,
+      "startedAt": "2026-10-13T01:13:28.236Z",
+      "result": "PASS",
+      "durationMs": 6694,
+      "elapsedMs": 6694
+    },
+    {
+      "operation": "codebuild:batch-get-projects",
+      "attempt": 1,
+      "startedAt": "2026-10-13T01:13:34.931Z",
+      "result": "PASS",
+      "durationMs": 2451,
+      "elapsedMs": 2451
+    }
+  ],
+  "finishedAt": "2026-10-13T01:13:43.203Z",
+  "failure": {
+    "code": "AWS_update-project_CLI_READ_TIMEOUT",
+    "errorName": "Error",
+    "causeCode": null,
+    "requestId": null,
+    "httpStatusCode": null,
+    "attempts": null,
+    "totalRetryDelay": null,
+    "cli": {
+      "exitStatus": 255,
+      "signal": null,
+      "spawnErrorCode": null,
+      "stderrBytes": 95,
+      "durationMs": 5820
+    },
+    "kind": "PRE_START_OR_MUTATION_FAILURE",
+    "observations": [],
+    "startedBuildMayStillRun": false,
+    "recoveryAction": "NO_AUTOMATIC_START_RETRY"
+  }
+}

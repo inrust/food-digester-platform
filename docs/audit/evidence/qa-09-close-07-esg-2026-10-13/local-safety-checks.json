@@ -1,0 +1,26 @@
+{
+  "gate": "PASS_LOCAL_ONLY",
+  "checks": [
+    {
+      "command": "node scripts/check-secrets.mjs",
+      "exitCode": 0
+    },
+    {
+      "command": "node scripts/check-sensitive-sinks.mjs",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "command": "node node_modules/prettier/bin/prettier.cjs --check <12 task scripts>",
+      "exitCode": 0
+    }
+  ],
+  "fullQa09Accepted": false,
+  "frozenExecutionSourcesVerified": 27,
+  "historicalEvidenceFilesVerified": 114,
+  "historicalBindingsVerifiedAgainstCommit": "ee8f0713cdc5785dbf45e354f1f63723d77e3716",
+  "historicalBindingCount": 14
+}

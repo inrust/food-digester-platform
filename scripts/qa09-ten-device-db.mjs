@@ -39,6 +39,7 @@ export function validatePlan(plan) {
       'capacity-readonly',
       'capacity-pool-readonly',
       'reliability-observe',
+      'consistency-observe',
       'business-baseline',
       'business-cleanup',
       'business-audit',
@@ -127,6 +128,7 @@ export async function executeFixture(client, plan) {
         'capacity-readonly',
         'capacity-pool-readonly',
         'reliability-observe',
+        'consistency-observe',
         'business-baseline',
         'business-audit',
       ].includes(plan.action)
@@ -138,6 +140,62 @@ export async function executeFixture(client, plan) {
     if ((await client.query('SELECT current_database() AS database')).rows[0].database !== 'fdp')
       throw Error('WRONG_DATABASE');
     const before = await original(client, ids);
+    if (plan.action === 'consistency-observe') {
+      for (const c of plan.customers)
+        if ((await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2', [c.id, c.name])).rowCount !== 1)
+          throw Error('CUSTOMER_SCOPE_DRIFT');
+      const devices = (
+        await client.query('SELECT id,customer_id,lifecycle_status FROM devices WHERE id=ANY($1::text[]) ORDER BY id', [
+          ids,
+        ])
+      ).rows;
+      if (
+        devices.length !== 10 ||
+        devices.some(
+          (d, i) =>
+            d.id !== ids[i] || d.customer_id !== plan.customers[i < 5 ? 0 : 1].id || d.lifecycle_status === 'Active',
+        )
+      )
+        throw Error('EXACT_NONACTIVE_OWN_SCOPE_REQUIRED');
+      const rows = {};
+      for (const table of ['telemetry_hourly', 'telemetry_daily', 'esg_reports', 'esg_daily_summary'])
+        rows[table] = (
+          await client.query(`SELECT * FROM public."${table}" WHERE device_id=ANY($1::text[]) ORDER BY id`, [ids])
+        ).rows;
+      rows.calculationVersions = (
+        await client.query(
+          'SELECT id,version,status FROM esg_calculation_versions WHERE id IN(SELECT calculation_version_id FROM esg_daily_summary WHERE device_id=ANY($1::text[])) ORDER BY id',
+          [ids],
+        )
+      ).rows;
+      rows.receipts = (
+        await client.query(
+          'SELECT id,device_id,customer_id,site_id,topic_type,seq,payload_hash,result,occurred_at FROM ingestion_receipts WHERE device_id=ANY($1::text[]) ORDER BY device_id,topic_type,seq',
+          [ids],
+        )
+      ).rows;
+      rows.outbox = (
+        await client.query(
+          "SELECT id,aggregate_id,status,payload->>'topicType' AS topic_type,payload->>'rawBody' IS NOT NULL AS has_raw,encode(sha256(convert_to(payload->>'rawBody','UTF8')),'hex') AS raw_body_sha256,payload->>'payloadHash' AS payload_hash FROM outbox_events WHERE aggregate_id=ANY($1::text[]) AND event_type='ARCHIVE' ORDER BY id",
+          [ids],
+        )
+      ).rows;
+      rows.exports = (
+        await client.query(
+          'SELECT id,customer_id,requested_by,dataset,filters,status,row_count,storage_key,completed_at,lease_token,lease_until FROM esg_export_jobs WHERE id=ANY($1::text[]) ORDER BY id',
+          [plan.semanticExportIds ?? []],
+        )
+      ).rows;
+      if (
+        rows.exports.some(
+          (j) => !plan.customers.some((c) => c.id === j.customer_id) || !ids.includes(j.filters?.deviceId),
+        )
+      )
+        throw Error('EXACT_OWN_EXPORT_SCOPE_REQUIRED');
+      await client.query('ROLLBACK');
+      committed = true;
+      return { readOnly: true, devices, ...rows, originalFingerprints: before };
+    }
     if (plan.action === 'reliability-observe') {
       const customers = plan.customers.map((c) => c.id);
       for (const c of plan.customers)
@@ -518,9 +576,23 @@ export async function executeFixture(client, plan) {
       )
         throw Error('OWN_FAULT_AUTHORIZATION_REQUIRED');
       const c = plan.customers[0];
+      if (
+        plan.exportRequestedBy !== undefined &&
+        (!/^[a-f0-9-]{36}$/.test(plan.exportRequestedBy) || !plan.semanticExportIds?.includes(plan.exportId))
+      )
+        throw Error('OWN_EXPORT_ACTOR_LEDGER_REQUIRED');
+      const actorPredicate = plan.exportRequestedBy === undefined ? '' : " AND requested_by=$5 AND status='COMPLETED'";
       const changed = await client.query(
-        "UPDATE esg_export_jobs SET status='PROCESSING',lease_until=now()-interval '1 second',lease_token=$4 WHERE id=$1 AND customer_id=$2 AND filters->>'deviceId'=$3 AND status IN('PENDING','COMPLETED','FAILED') RETURNING id,status,lease_until<now() AS expired",
-        [plan.exportId, c.id, ids[0], plan.exportId],
+        "UPDATE esg_export_jobs SET status='PROCESSING',lease_until=now()-interval '1 second',lease_token=$4 WHERE id=$1 AND customer_id=$2 AND filters->>'deviceId'=$3 AND status IN('PENDING','COMPLETED','FAILED')" +
+          actorPredicate +
+          ' RETURNING id,status,lease_until<now() AS expired',
+        [
+          plan.exportId,
+          c.id,
+          ids[0],
+          plan.exportId,
+          ...(plan.exportRequestedBy === undefined ? [] : [plan.exportRequestedBy]),
+        ],
       );
       if (changed.rowCount !== 1) throw Error('OWN_EXPORT_NOT_READY_FOR_INJECTION');
       await client.query('COMMIT');

@@ -818,7 +818,12 @@ export async function main(output, versionPath, extension, options = { reviewOnl
         receipt.archiveKeys = [];
         try {
           for (const c of receipt.customers) {
-            for (const type of ['heartbeat', 'telemetry', 'ack']) {
+            for (const type of [
+              'heartbeat',
+              'telemetry',
+              'ack',
+              ...(receipt.published.some((p) => p.type === 'report') ? ['report'] : []),
+            ]) {
               let continuation;
               do {
                 const page = await call(s3, s3Sdk.ListObjectsV2Command, {
@@ -841,7 +846,12 @@ export async function main(output, versionPath, extension, options = { reviewOnl
         try {
           const owned = [];
           for (const c of receipt.customers)
-            for (const type of ['heartbeat', 'telemetry', 'ack']) {
+            for (const type of [
+              'heartbeat',
+              'telemetry',
+              'ack',
+              ...(receipt.published.some((p) => p.type === 'report') ? ['report'] : []),
+            ]) {
               const prefix = `raw/topic_type=${type}/customer_id=${c.id}/`;
               let marker, versionMarker;
               do {
@@ -867,7 +877,12 @@ export async function main(output, versionPath, extension, options = { reviewOnl
             demand(!result.Errors?.length, 'ARCHIVE_DELETE_PARTIAL_FAILURE');
           }
           for (const c of receipt.customers)
-            for (const type of ['heartbeat', 'telemetry', 'ack']) {
+            for (const type of [
+              'heartbeat',
+              'telemetry',
+              'ack',
+              ...(receipt.published.some((p) => p.type === 'report') ? ['report'] : []),
+            ]) {
               const result = await call(s3, s3Sdk.ListObjectVersionsCommand, {
                 Bucket: 'fdp-test-raw-065986019555',
                 Prefix: `raw/topic_type=${type}/customer_id=${c.id}/`,

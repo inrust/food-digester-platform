@@ -28,9 +28,12 @@ export function validateArchivePlan(p) {
     p.customers?.length === 2 && new Set(p.customers).size === 2 && p.customers.every((c) => /^[a-f0-9-]{36}$/.test(c)),
     'INVALID_ARCHIVE_CUSTOMERS',
   );
-  const total = p.profile === 'QA07_QUICK_REAL_MQTT' ? 950 : 30;
+  const total = p.profile === 'QA07_QUICK_REAL_MQTT' ? 950 : p.profile === 'QA09_REPORT_CONSISTENCY' ? 32 : 30;
   const telemetry = p.profile === 'QA07_QUICK_REAL_MQTT' ? 920 : 20;
-  demand(p.profile === undefined || p.profile === 'QA07_QUICK_REAL_MQTT', 'INVALID_ARCHIVE_PROFILE');
+  demand(
+    p.profile === undefined || ['QA07_QUICK_REAL_MQTT', 'QA09_REPORT_CONSISTENCY'].includes(p.profile),
+    'INVALID_ARCHIVE_PROFILE',
+  );
   demand(
     p.published?.length === total &&
       new Set(p.published.map((p) => p.messageId)).size === total &&
@@ -43,8 +46,19 @@ export function validateArchivePlan(p) {
       ),
     'INVALID_PUBLISH_LEDGER',
   );
+  if (p.profile === 'QA09_REPORT_CONSISTENCY')
+    demand(
+      p.published.filter((m) => m.type === 'report').length === 2 &&
+        JSON.stringify(
+          p.published
+            .filter((m) => m.type === 'report')
+            .map((m) => m.deviceId)
+            .sort(),
+        ) === JSON.stringify([p.devices[0], p.devices[5]].sort()),
+      'EXACT_TWO_REPORTS_REQUIRED',
+    );
   demand(
-    p.outbox?.length >= telemetry &&
+    p.outbox?.length >= (p.profile === 'QA09_REPORT_CONSISTENCY' ? 22 : telemetry) &&
       p.outbox.every((r) => /^[a-f0-9-]{36}$/.test(r.id) && /^[a-f0-9]{64}$/.test(r.rawBodySha256)),
     'INVALID_OUTBOX_LEDGER',
   );
@@ -60,7 +74,9 @@ export function verifyArchiveObjects(plan, objects) {
   for (const object of objects) {
     demand(
       plan.customers.some((c) =>
-        ['heartbeat', 'telemetry'].some((t) => object.key.startsWith(`raw/topic_type=${t}/customer_id=${c}/`)),
+        ['heartbeat', 'telemetry', ...(plan.profile === 'QA09_REPORT_CONSISTENCY' ? ['report'] : [])].some((t) =>
+          object.key.startsWith(`raw/topic_type=${t}/customer_id=${c}/`),
+        ),
       ) && object.key.endsWith('.json.gz'),
       'OBJECT_SCOPE_MISMATCH',
     );
@@ -74,8 +90,13 @@ export function verifyArchiveObjects(plan, objects) {
     const lines = gunzipSync(object.bytes, { maxOutputLength: 4194304 }).toString().trim().split('\n').map(JSON.parse);
     for (const line of lines) {
       demand(plan.devices.includes(line.deviceId), 'ARCHIVE_DEVICE_SCOPE_MISMATCH');
+      const messageId =
+        line.messageId ??
+        (plan.profile === 'QA09_REPORT_CONSISTENCY' && line.topicType === 'report'
+          ? line.payload?.meta?.id
+          : undefined);
       const row = plan.outbox.find((r) => r.id === line.eventId),
-        published = plan.published.find((r) => r.deviceId === line.deviceId && r.messageId === line.messageId);
+        published = plan.published.find((r) => r.deviceId === line.deviceId && r.messageId === messageId);
       demand(
         row &&
           published &&
@@ -84,8 +105,25 @@ export function verifyArchiveObjects(plan, objects) {
           JSON.stringify(JSON.parse(line.rawBody).meta) === JSON.stringify(line.payload.meta),
         'ARCHIVE_ORIGINAL_BYTES_MISMATCH',
       );
-      demand(!found.has(line.messageId), 'DUPLICATE_ARCHIVE_MESSAGE');
-      found.add(line.messageId);
+      if (plan.profile === 'QA09_REPORT_CONSISTENCY') {
+        const envelope = JSON.parse(line.rawBody),
+          contextKeys = ['iotTopic', 'iotDeviceId', 'iotType', 'iotReceivedAt', 'iotPrincipal'],
+          rawPayload = Object.fromEntries(Object.entries(envelope).filter(([key]) => !contextKeys.includes(key)));
+        demand(
+          envelope.iotTopic === `bnx/device/${line.deviceId}/${line.topicType}` &&
+            envelope.iotDeviceId === line.deviceId &&
+            envelope.iotType === line.topicType &&
+            Number.isInteger(envelope.iotReceivedAt) &&
+            envelope.iotReceivedAt >= 0 &&
+            envelope.iotReceivedAt === line.receivedAtMs &&
+            typeof envelope.iotPrincipal === 'string' &&
+            envelope.iotPrincipal.length > 0 &&
+            hash(canonical(rawPayload)) === published.payloadSha256,
+          'INGRESS_CONTEXT_OR_PAYLOAD_MISMATCH',
+        );
+      }
+      demand(!found.has(messageId), 'DUPLICATE_ARCHIVE_MESSAGE');
+      found.add(messageId);
       checks.push({
         id: 'archive-original-' + line.eventId,
         result: 'PASS',
@@ -95,15 +133,43 @@ export function verifyArchiveObjects(plan, objects) {
         payloadSha256: hash(canonical(line.payload)),
       });
     }
+    if (plan.profile === 'QA09_REPORT_CONSISTENCY') {
+      const m = object.manifest;
+      demand(
+        m?.manifestVersion === '2.0' &&
+          m.archiveClass === 'MQTT_RAW' &&
+          m.bucket === 'fdp-test-raw-065986019555' &&
+          m.key === object.key &&
+          m.sha256 === hash(object.bytes) &&
+          m.recordCount === lines.length &&
+          JSON.stringify(m.eventIds) === JSON.stringify(lines.map((l) => l.eventId)) &&
+          lines.every(
+            (l) =>
+              l.topicType === m.topicType &&
+              l.customerId === m.customerId &&
+              object.key.startsWith(`raw/topic_type=${m.topicType}/customer_id=${m.customerId}/`),
+          ),
+        'MANIFEST_ARCHIVE_BINDING_DRIFT',
+      );
+    }
     archiveObjects.push({
       key: object.key,
       ...(object.lastModified ? { lastModified: object.lastModified } : {}),
       compressedSha256: hash(object.bytes),
       records: lines.length,
+      ...(plan.profile === 'QA09_REPORT_CONSISTENCY'
+        ? {
+            manifestKey: object.key.replace(/\.json\.gz$/, '.manifest.json'),
+            manifestProjectionSha256: hash(JSON.stringify(object.manifest)),
+            manifestMatched: true,
+          }
+        : {}),
     });
   }
   demand(
-    plan.published.filter((p) => p.type === 'telemetry').every((p) => found.has(p.messageId)),
+    plan.published
+      .filter((p) => p.type === 'telemetry' || (plan.profile === 'QA09_REPORT_CONSISTENCY' && p.type === 'report'))
+      .every((p) => found.has(p.messageId)),
     'TELEMETRY_ARCHIVE_MISSING',
   );
   return {
@@ -113,5 +179,6 @@ export function verifyArchiveObjects(plan, objects) {
     archiveObjects,
     archivedMessages: found.size,
     allTelemetryArchived: true,
+    ...(plan.profile === 'QA09_REPORT_CONSISTENCY' ? { allReportsArchived: true } : {}),
   };
 }

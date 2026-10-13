@@ -1,0 +1,87 @@
+{
+  "gate": "FAIL",
+  "sourceHash": "47e88a3780d224b36455343d0dfce76889e8e3d8d33855d629edec46520e7d59",
+  "buildspecHash": "239757b975c311a581a9a28eb921cf611d55708265f7700cce6fb0743cb12ade",
+  "operations": [
+    {
+      "sequence": 1,
+      "operation": "get-caller-identity",
+      "profile": "esgiot-infra",
+      "startedAt": "2026-10-13T01:39:33.570Z",
+      "result": "PASS",
+      "durationMs": 1942
+    },
+    {
+      "sequence": 2,
+      "operation": "batch-get-projects",
+      "profile": "esgiot-infra",
+      "startedAt": "2026-10-13T01:39:35.512Z",
+      "result": "PASS",
+      "durationMs": 2969
+    },
+    {
+      "sequence": 3,
+      "operation": "start-build",
+      "profile": "esgiot-infra",
+      "startedAt": "2026-10-13T01:39:38.482Z",
+      "result": "FAIL",
+      "failure": {
+        "code": "AWS_start-build_CLI_READ_TIMEOUT",
+        "errorName": "Error",
+        "causeCode": null,
+        "requestId": null,
+        "httpStatusCode": null,
+        "attempts": null,
+        "totalRetryDelay": null,
+        "cli": {
+          "exitStatus": 255,
+          "signal": null,
+          "spawnErrorCode": null,
+          "stderrBytes": 95,
+          "durationMs": 5756
+        }
+      },
+      "durationMs": 5757
+    }
+  ],
+  "buildReads": [],
+  "preStartReads": [
+    {
+      "operation": "sts:get-caller-identity",
+      "attempt": 1,
+      "startedAt": "2026-10-13T01:39:33.570Z",
+      "result": "PASS",
+      "durationMs": 1942,
+      "elapsedMs": 1942
+    },
+    {
+      "operation": "codebuild:batch-get-projects",
+      "attempt": 1,
+      "startedAt": "2026-10-13T01:39:35.512Z",
+      "result": "PASS",
+      "durationMs": 2969,
+      "elapsedMs": 2969
+    }
+  ],
+  "finishedAt": "2026-10-13T01:39:44.239Z",
+  "failure": {
+    "code": "AWS_start-build_CLI_READ_TIMEOUT",
+    "errorName": "Error",
+    "causeCode": null,
+    "requestId": null,
+    "httpStatusCode": null,
+    "attempts": null,
+    "totalRetryDelay": null,
+    "cli": {
+      "exitStatus": 255,
+      "signal": null,
+      "spawnErrorCode": null,
+      "stderrBytes": 95,
+      "durationMs": 5756
+    },
+    "kind": "START_OUTCOME_UNCONFIRMED",
+    "observations": [],
+    "startedBuildMayStillRun": true,
+    "recoveryAction": "READ_ONLY_DIAGNOSTIC_REQUIRED_NO_RESTART"
+  }
+}
