@@ -6,16 +6,19 @@ import { pathToFileURL } from 'node:url';
 import { runFixture } from './qa09-ten-device-bridge.mjs';
 import { validatePlan } from './qa09-ten-device-db.mjs';
 import { sha256 } from './qa09-reliability-closeout.mjs';
+import { verifyA5RecoveryReceipt } from './recover-qa09-a5-cleanup.mjs';
 const exec = promisify(execFile);
-export async function collectReliabilityFinal(parentPath, output) {
+export async function collectReliabilityFinal(parentPath, output, recoveryPath) {
   if (existsSync(output)) throw Error('FRESH_FINAL_READ_REQUIRED');
   const parent = JSON.parse(readFileSync(parentPath));
+  const recovery = recoveryPath ? verifyA5RecoveryReceipt(parentPath, recoveryPath) : null;
+  const ledger = recovery ? JSON.parse(readFileSync(recovery.resourceReceipt)) : parent;
   if (
     !/^qa09-[a-f0-9]{16}$/.test(parent.prefix) ||
     !parent.finishedAt ||
-    parent.cleanupHold ||
+    (!recovery && parent.cleanupHold) ||
     parent.customers?.length !== 2 ||
-    parent.cleanup?.some((c) => c.result !== 'PASS' && c.type !== 'identity-refresh-before-cleanup')
+    ledger.cleanup?.some((c) => c.result !== 'PASS' && c.type !== 'identity-refresh-before-cleanup')
   )
     throw Error('COMPLETED_PARENT_CLEANUP_REQUIRED');
   const frozen = JSON.parse(readFileSync(parentPath + '.sources.json'));
@@ -24,12 +27,14 @@ export async function collectReliabilityFinal(parentPath, output) {
     !mainSource ||
     sha256(Buffer.from(mainSource.sourceBase64, 'base64')) !== parent.executorSha256 ||
     mainSource.sha256 !== parent.executorSha256 ||
-    parent.cleanup.filter((c) => c.type === 'iot-certificate' && c.result === 'PASS').length !== 10 ||
-    !parent.cleanup.some((c) => c.type === 'database-fixtures' && c.count === 10 && c.result === 'PASS') ||
-    parent.cleanup.filter((c) => c.type === 'customer' && c.result === 'PASS').length !== 2 ||
-    !parent.cleanup.some((c) => c.type === 'identity' && c.result === 'PASS') ||
-    parent.cleanupOperations.filter((o) => o.operation === 'aws:DeleteThingCommand' && o.result === 'PASS').length !==
-      10
+    ledger.cleanup.filter((c) => c.type === 'iot-certificate' && c.result === 'PASS').length !== 10 ||
+    !ledger.cleanup.some((c) => c.type === 'database-fixtures' && c.count === 10 && c.result === 'PASS') ||
+    ledger.cleanup.filter((c) => c.type === 'customer' && c.result === 'PASS').length !== 2 ||
+    !ledger.cleanup.some((c) => c.type === 'identity' && c.result === 'PASS') ||
+    (recovery
+      ? ledger.cleanup.filter((c) => c.type === 'iot-thing' && c.result === 'PASS').length !== 10
+      : parent.cleanupOperations.filter((o) => o.operation === 'aws:DeleteThingCommand' && o.result === 'PASS')
+          .length !== 10)
   )
     throw Error('BOUND_PARENT_RESOURCE_CLEANUP_REQUIRED');
   const first = JSON.parse(readFileSync(parent.databaseBuilds.find((b) => b.action === 'observe').receipt));
@@ -56,9 +61,11 @@ export async function collectReliabilityFinal(parentPath, output) {
     identities: [],
     archives: [],
     builds: [],
+    failedBuilds: [],
     businessWrites: 0,
     iamKmsOrCapacityWrites: 0,
     fullQa09Accepted: false,
+    recovery: recovery ? { path: recoveryPath, sha256: sha256(readFileSync(recoveryPath)), gate: recovery.gate } : null,
   };
   const save = () => writeFileSync(output, JSON.stringify(r, null, 2) + '\n');
   save();
@@ -151,14 +158,16 @@ export async function collectReliabilityFinal(parentPath, output) {
       ? JSON.parse(readFileSync(parentPath + '.reliability.json'))
       : { builds: [] };
     if (extension.operator) {
-      const own = extension.operator;
+      const own = recovery
+        ? { ...extension.operator, businessDisabled: true, cognitoDeleted: true }
+        : extension.operator;
       if (
         extension.prefix !== parent.prefix ||
         own.email !== parent.prefix + '-h01-platformoperator@example.invalid' ||
         !/^[a-f0-9-]{36}$/.test(own.userId ?? '') ||
         !own.businessDisabled ||
         !own.cognitoDeleted ||
-        extension.operatorCleanup?.gate !== 'PASS_DISABLED_TOMBSTONE_AND_COGNITO_DELETED'
+        (recovery?.operatorCleanup ?? extension.operatorCleanup)?.gate !== 'PASS_DISABLED_TOMBSTONE_AND_COGNITO_DELETED'
       )
         throw Error('BOUND_DISABLED_OWN_OPERATOR_REQUIRED');
       const identity = await read([
@@ -177,6 +186,30 @@ export async function collectReliabilityFinal(parentPath, output) {
       r.identities.push({ username: own.email, count: identity.count });
       save();
       if (identity.count !== 0 || identity.token) throw Error('OWN_OPERATOR_IDENTITY_NOT_EMPTY');
+    }
+    if (recovery) {
+      const username = recovery.recoveryIdentity.username;
+      if (
+        username !== ledger.recoveryIdentity.username ||
+        !/^qa09-[a-f0-9]{16}-platformsuperadmin@example\.invalid$/.test(username)
+      )
+        throw Error('BOUND_RECOVERY_IDENTITY_REQUIRED');
+      const identity = await read([
+        'cognito-idp',
+        'list-users',
+        '--user-pool-id',
+        'ap-southeast-1_hZMX8LpFo',
+        '--filter',
+        `email = "${username}"`,
+        '--limit',
+        '1',
+        '--no-paginate',
+        '--query',
+        '{count:length(Users),token:PaginationToken}',
+      ]);
+      r.identities.push({ username, count: identity.count });
+      save();
+      if (identity.count !== 0 || identity.token) throw Error('RECOVERY_IDENTITY_NOT_EMPTY');
     }
     if (extension.scope === 'OWN_REAL_MQTT_REPORT_NATURAL_DAILY_AND_EXPORT_LEASE') {
       if (extension.prefix !== parent.prefix || extension.businessCleanup !== 'PASS')
@@ -207,6 +240,7 @@ export async function collectReliabilityFinal(parentPath, output) {
       ...parent.databaseBuilds.map((b) => b.buildId),
       ...extension.builds.map((b) => b.buildId),
       ...(extension.fixtureBuilds ?? []).map((b) => b.buildId),
+      ...(recovery?.databaseBuilds ?? []).map((b) => b.buildId),
       db.build.id,
     ].filter(Boolean);
     if (
@@ -233,6 +267,39 @@ export async function collectReliabilityFinal(parentPath, output) {
         throw Error('OWN_BUILD_NOT_TERMINAL_SUCCEEDED');
       r.builds.push(...response.builds);
       save();
+    }
+    if (recovery?.failedBuilds?.length) {
+      for (const failed of recovery.failedBuilds) {
+        if (
+          !/^fdp-test-qa09-ten-device-fixtures:[a-f0-9-]{36}$/.test(failed.id) ||
+          ids.includes(failed.id) ||
+          failed.status !== 'FAILED' ||
+          failed.errorCode !== 'BUSINESS_BASELINE_DRIFT'
+        )
+          throw Error('BOUND_ROLLED_BACK_BUILD_REQUIRED');
+        const response = await read([
+          'codebuild',
+          'batch-get-builds',
+          '--ids',
+          failed.id,
+          '--query',
+          '{builds:builds[].{id:id,status:buildStatus,phase:currentPhase},missing:buildsNotFound}',
+        ]);
+        if (
+          response.missing.length ||
+          response.builds.length !== 1 ||
+          response.builds[0].id !== failed.id ||
+          response.builds[0].status !== 'FAILED' ||
+          response.builds[0].phase !== 'COMPLETED'
+        )
+          throw Error('ROLLED_BACK_BUILD_NOT_TERMINAL');
+        r.failedBuilds.push({
+          ...response.builds[0],
+          errorCode: failed.errorCode,
+          rollbackSourceHash: failed.rollbackSourceHash,
+        });
+        save();
+      }
     }
     r.gate = 'PASS_READONLY_EMPTY_AND_BUILD_TERMINAL';
   } catch (e) {

@@ -75,7 +75,12 @@ test('known Operator cleanup checks exact disabled tombstone and stops unknown d
   const requests = [];
   ctx.api = async (id, method, path) => {
     requests.push({ method, path });
-    return { data: { userId, email: prefix + '-h01-platformoperator@example.invalid', status: 'DISABLED' } };
+    const user = { userId, email: prefix + '-h01-platformoperator@example.invalid', status: 'DISABLED' };
+    if (method === 'GET') {
+      assert.ok(path.startsWith('/api/v1/admin/users?status=DISABLED&q='));
+      return { data: [user], meta: { nextCursor: null } };
+    }
+    return { data: user };
   };
   const operator = await prepareOwnReplayOperator(ctx, r, () => {}, '/tmp/unit', {
     provision: async ({ own }) => {

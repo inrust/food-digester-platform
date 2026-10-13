@@ -42,6 +42,8 @@ export async function provisionSuppressedOwnUser(
   const sub = created.User?.Attributes?.find((a) => a.Name === 'sub')?.Value;
   if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(sub ?? ''))
     throw Error('REAL_COGNITO_SUBJECT_REQUIRED');
+  own.cognitoSub = sub;
+  save();
   await call(sdk.AdminAddUserToGroupCommand, { Username: own.email, GroupName: own.role });
   own.preparedUserId = userId;
   save();

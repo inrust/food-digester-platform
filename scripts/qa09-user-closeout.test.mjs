@@ -99,6 +99,7 @@ test('identity provisioning suppresses delivery, requires real returned subject,
   const sdk = { AdminCreateUserCommand: Create, AdminAddUserToGroupCommand: Group };
   const calls = [];
   const own = { ...plan().ownUser };
+  delete own.cognitoSub;
   const receipt = { outputPath: '/tmp/qa09-unit-only' };
   const ctx = {
     prefix,
@@ -118,6 +119,8 @@ test('identity provisioning suppresses delivery, requires real returned subject,
   });
   // A fabricated success without the exact source, scope and successful Build metadata is refused.
   await assert.rejects(provisionSuppressedOwnUser(ctx, fixture), /OWN_USER_FIXTURE_NOT_BOUND/);
+  assert.equal(own.cognitoSub, subject);
+  assert.notEqual(own.preparedUserId, own.cognitoSub);
   assert.equal(calls[0].input.MessageAction, 'SUPPRESS');
   assert.equal(calls[0].input.DesiredDeliveryMediums, undefined);
   assert.equal(calls.length, 2);

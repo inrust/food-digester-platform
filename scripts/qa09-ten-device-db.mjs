@@ -92,6 +92,17 @@ export function validatePlan(plan) {
     )
       throw Error('EXACT_SUPPRESSED_OWN_USER_REQUIRED');
   }
+  if (plan.ownDisabledUser !== undefined) {
+    const u = plan.ownDisabledUser;
+    if (
+      !['business-baseline', 'business-cleanup', 'business-audit'].includes(plan.action) ||
+      !/^[a-f0-9-]{36}$/.test(u?.userId ?? '') ||
+      !/^[a-f0-9-]{36}$/.test(u?.cognitoSub ?? '') ||
+      u.email !== plan.prefix + '-h01-platformoperator@example.invalid' ||
+      Object.keys(u).sort().join(',') !== 'cognitoSub,email,userId'
+    )
+      throw Error('EXACT_DISABLED_OWN_OPERATOR_REQUIRED');
+  }
   if (
     plan.action.endsWith('-closed') &&
     (!Array.isArray(plan.requestLedger) ||
@@ -601,6 +612,22 @@ export async function executeFixture(client, plan) {
     }
     if (plan.action.startsWith('business-')) {
       const customers = plan.customers.map((c) => c.id);
+      const own = plan.ownDisabledUser;
+      if (own) {
+        const user = (await client.query('SELECT id,email,cognito_sub,status FROM users WHERE id=$1', [own.userId]))
+          .rows[0];
+        const roles = (
+          await client.query('SELECT role_code FROM user_roles WHERE user_id=$1 ORDER BY role_code', [own.userId])
+        ).rows.map((r) => r.role_code);
+        if (
+          !user ||
+          user.email !== own.email ||
+          user.cognito_sub !== own.cognitoSub ||
+          user.status !== 'DISABLED' ||
+          JSON.stringify(roles) !== '["PlatformOperator"]'
+        )
+          throw Error('DISABLED_OWN_OPERATOR_DATABASE_BINDING_REQUIRED');
+      }
       const exports = plan.semanticExportIds ?? [];
       const exportRows = (
         await client.query('SELECT id,filters FROM esg_export_jobs WHERE id=ANY($1::text[])', [exports])
@@ -666,6 +693,12 @@ export async function executeFixture(client, plan) {
         ['device_assignments', 'device_id=ANY($1::text[])', ids],
         ['device_user_sync_receipts', 'device_id=ANY($1::text[])', ids],
       ];
+      if (own) {
+        // Only the exact completed disable intent belongs to this cleanup scope; preserve the DISABLED user tombstone.
+        scopes[0][1] +=
+          " OR (aggregate_type='user' AND aggregate_id=$3 AND event_type='COGNITO_ADMIN_RECONCILIATION' AND status='PUBLISHED' AND payload->>'action'='DISABLE' AND payload->>'cognitoSub'=$4)";
+        scopes[0][2].push(own.userId, own.cognitoSub);
+      }
       const outside = async () =>
         Promise.all(
           scopes

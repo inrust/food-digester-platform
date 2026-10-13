@@ -1,0 +1,1819 @@
+{
+  "scope": "SANITIZED_OFFLINE_REGRESSION_PROJECTION_NOT_A_FORMAL_TARGET_RECEIPT",
+  "parent": {
+    "gate": "FAIL",
+    "finishedAt": "2026-10-13T10:46:33.558Z",
+    "sourceCommit": "72fd93b107ca99be0ddcfb928dd6527727f0f188",
+    "prefix": "qa09-15f381e4a5fa3530",
+    "cleanupHold": "UNKNOWN_OR_RUNNING_RELIABILITY_WRITE",
+    "cleanup": [
+      {
+        "type": "reliability-write-ownership",
+        "result": "BLOCKED",
+        "reason": "UNKNOWN_OR_RUNNING_RELIABILITY_WRITE"
+      }
+    ],
+    "published": [
+      {
+        "deviceId": "qa09-15f381e4a5fa3530-03",
+        "type": "telemetry",
+        "seq": 1,
+        "messageId": "TELEMETRY-A4B66F73-1",
+        "bodySha256": "cb44baaf6bcdba587b1c7973915a4e988cfb7f0fa5816f8a9f468e432839b239",
+        "payloadSha256": "751a59da13c44f6482ebee721a7697fe3973974a07de9689dbb85051ac77037e"
+      }
+    ],
+    "checks": [
+      {
+        "id": "a5:operator-disable",
+        "result": "PASS",
+        "method": "POST",
+        "status": 200,
+        "expected": 200
+      },
+      {
+        "id": "a5:operator-disabled-readback",
+        "result": "FAIL",
+        "method": "GET",
+        "status": 404,
+        "expected": 200
+      }
+    ]
+  },
+  "r": {
+    "gate": "FAIL",
+    "finishedAt": "2026-10-13T10:46:33.557Z",
+    "startedAt": "2026-10-13T09:54:32.365Z",
+    "sourceCommit": "72fd93b107ca99be0ddcfb928dd6527727f0f188",
+    "prefix": "qa09-15f381e4a5fa3530",
+    "operator": {
+      "role": "PlatformOperator",
+      "email": "qa09-15f381e4a5fa3530-h01-platformoperator@example.invalid",
+      "customerId": null,
+      "preparedUserId": "074daf5d-8081-4793-85e3-e5b4510250be",
+      "userId": "074daf5d-8081-4793-85e3-e5b4510250be",
+      "realSrp": true,
+      "cleanupAttempted": true,
+      "cleanupHold": "UNKNOWN_OPERATOR_CLEANUP_NO_RETRY"
+    },
+    "operatorActorGate": "NO_RECEIPT",
+    "operatorCleanup": {
+      "gate": "FAIL_OR_UNKNOWN_NO_RETRY"
+    },
+    "businessCleanup": "BLOCKED_UNKNOWN_OR_RUNNING_REPLAY",
+    "jobs": [
+      {
+        "jobId": "8f2cf646-752e-4256-9d8d-770fb3f64eed",
+        "scope": {
+          "customerId": "b0e2c92b-4373-4b42-895a-240fbf09c7c6",
+          "deviceId": "qa09-15f381e4a5fa3530-03",
+          "topicType": "telemetry",
+          "from": "2026-10-13T09:49:41.936Z",
+          "to": "2026-10-13T09:49:43.936Z",
+          "seqFrom": 1,
+          "seqTo": 1
+        },
+        "requestedBy": "29da953c-f061-70f4-7773-531989ce0cb2",
+        "role": "PlatformOperator",
+        "view": {
+          "jobId": "8f2cf646-752e-4256-9d8d-770fb3f64eed",
+          "scope": {
+            "to": "2026-10-13T09:49:43.936Z",
+            "from": "2026-10-13T09:49:41.936Z",
+            "seqTo": 1,
+            "seqFrom": 1,
+            "deviceId": "qa09-15f381e4a5fa3530-03",
+            "topicType": "telemetry",
+            "customerId": "b0e2c92b-4373-4b42-895a-240fbf09c7c6"
+          },
+          "status": "COMPLETED",
+          "resultSummary": {
+            "sent": 1,
+            "scope": {
+              "to": "2026-10-13T09:49:43.936Z",
+              "from": "2026-10-13T09:49:41.936Z",
+              "seqTo": 1,
+              "seqFrom": 1,
+              "deviceId": "qa09-15f381e4a5fa3530-03",
+              "topicType": "telemetry",
+              "customerId": "b0e2c92b-4373-4b42-895a-240fbf09c7c6"
+            },
+            "failed": 0,
+            "skipped": 9,
+            "failedLines": 0,
+            "scannedLines": 10,
+            "sendFailures": 0,
+            "failedObjects": 0,
+            "scannedObjects": 10
+          },
+          "requestedBy": "29da953c-f061-70f4-7773-531989ce0cb2",
+          "createdAt": "2026-10-13T10:44:02.915Z",
+          "completedAt": "2026-10-13T10:44:20.040Z"
+        }
+      }
+    ],
+    "expected": {
+      "deviceId": "qa09-15f381e4a5fa3530-03",
+      "messageId": "TELEMETRY-A4B66F73-1",
+      "receiptId": "08f07486-f347-4b6d-b0d3-cf5393ffda46",
+      "rawBodySha256": "cb44baaf6bcdba587b1c7973915a4e988cfb7f0fa5816f8a9f468e432839b239",
+      "seq": 1
+    },
+    "production": {
+      "gate": "PASS_UNIQUE_REPLAY_JOB_PRODUCTION",
+      "rows": [
+        {
+          "event": "replay.record.produced",
+          "schemaVersion": 1,
+          "jobId": "8f2cf646-752e-4256-9d8d-770fb3f64eed",
+          "deviceId": "qa09-15f381e4a5fa3530-03",
+          "topicType": "telemetry",
+          "messageId": "TELEMETRY-A4B66F73-1",
+          "seq": 1,
+          "sqsMessageId": "38182368-6091-45e0-ad08-28610f51187e"
+        }
+      ]
+    },
+    "replayGate": "PASS_NONEMPTY_EXACT_SCOPE_REPLAY",
+    "queueConsumptionGate": "PASS_EXACT_DUPLICATE_CONSUMPTION",
+    "dedupGate": "PASS_NO_RECEIPT_AGGREGATE_OR_ARCHIVE_DUPLICATION",
+    "replayAuditGate": "PASS",
+    "submission": {
+      "gate": "NOT_REQUIRED_BUSINESS_REPLAY_PRODUCER_BOUND",
+      "ssoSendAttempts": 0
+    },
+    "activeRequired": false,
+    "dailyWait": {
+      "gate": "PASS_NATURAL_OWN_DAILY_VISIBLE",
+      "deviceId": "qa09-15f381e4a5fa3530-03",
+      "customerId": "b0e2c92b-4373-4b42-895a-240fbf09c7c6",
+      "sharedWorkerInvocations": 0
+    },
+    "replayConsumption": {
+      "rows": [
+        {
+          "event": "ingestion.receipt.completed",
+          "lambdaRequestId": "e35ea9c6-affe-5723-989e-ca8ea246f2c1",
+          "gatewayRequestId": "unknown",
+          "operationId": "unknown",
+          "sqsMessageId": "38182368-6091-45e0-ad08-28610f51187e",
+          "deviceId": "qa09-15f381e4a5fa3530-03",
+          "messageId": "TELEMETRY-A4B66F73-1",
+          "topicType": "telemetry",
+          "seq": 1,
+          "receivedAtMs": 1791884983109,
+          "occurredAtMs": 1791884982936,
+          "coldStart": true,
+          "completedAt": "2026-10-13T10:44:26.151Z",
+          "receiptId": "08f07486-f347-4b6d-b0d3-cf5393ffda46",
+          "receiptOutcome": "DUPLICATE_SKIPPED",
+          "commitScope": "ROOT_TRANSACTION_COMPLETED",
+          "observedAtMs": 1791888266151
+        },
+        {
+          "event": "ingestion.record.completed",
+          "lambdaRequestId": "e35ea9c6-affe-5723-989e-ca8ea246f2c1",
+          "gatewayRequestId": "unknown",
+          "operationId": "unknown",
+          "sqsMessageId": "38182368-6091-45e0-ad08-28610f51187e",
+          "deviceId": "qa09-15f381e4a5fa3530-03",
+          "messageId": "TELEMETRY-A4B66F73-1",
+          "topicType": "telemetry",
+          "seq": 1,
+          "receivedAtMs": 1791884983109,
+          "occurredAtMs": 1791884982936,
+          "coldStart": true,
+          "completedAt": "2026-10-13T10:44:26.151Z",
+          "receiptId": "08f07486-f347-4b6d-b0d3-cf5393ffda46",
+          "receiptOutcome": "DUPLICATE_SKIPPED",
+          "disposition": "PROCESSED",
+          "businessDispatchCompleted": true,
+          "observedAtMs": 1791888266151
+        }
+      ]
+    },
+    "before": {
+      "readOnly": true,
+      "fingerprints": [
+        {
+          "table": "ingestion_receipts",
+          "count": "30",
+          "digest": "6f6f6dab77239395dcf19ee03dad27ee"
+        },
+        {
+          "table": "telemetry_hourly",
+          "count": "10",
+          "digest": "353c89fd8f1d28d3e439a03f0ac3ce2c"
+        },
+        {
+          "table": "telemetry_daily",
+          "count": "10",
+          "digest": "8c98ac7edf96aaa8e160060f65be5048"
+        },
+        {
+          "table": "outbox_events",
+          "count": "20",
+          "digest": "6398339607b9b886cb7a6223739a2420"
+        }
+      ],
+      "receipts": [
+        {
+          "id": "1e3c38b6-4ac9-47d9-839d-f89715abf2e7",
+          "device_id": "qa09-15f381e4a5fa3530-01",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "9c1a19bf06b62438df5f57fa9b160a7bf356a5daa02b5be582bd94966c3f5ad2",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:10.703Z",
+          "processed_at": "2026-10-13T09:46:24.435Z"
+        },
+        {
+          "id": "886ac961-4e66-4634-85aa-06c6b55d7622",
+          "device_id": "qa09-15f381e4a5fa3530-01",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "5f2e276f1de5032e1a5f80619518cbdde6426889589144314b009b91a29f96c1",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:17.625Z",
+          "processed_at": "2026-10-13T09:49:18.617Z"
+        },
+        {
+          "id": "6f650006-349e-4897-97af-cdf43604b8fa",
+          "device_id": "qa09-15f381e4a5fa3530-01",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "a88fb917161e167d912185197ba9f71f8e32380617c8ddfce3edaba0e9199ea7",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:28.333Z",
+          "processed_at": "2026-10-13T09:49:28.694Z"
+        },
+        {
+          "id": "c166eacd-89d2-4cde-9eed-808522779039",
+          "device_id": "qa09-15f381e4a5fa3530-02",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "388fbd58c75a37f8592d8b5769fd67b68b1af604714116b4a4798cf17b88e818",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:10.659Z",
+          "processed_at": "2026-10-13T09:46:24.037Z"
+        },
+        {
+          "id": "8a488a38-5893-426d-af2e-97bf38d1191f",
+          "device_id": "qa09-15f381e4a5fa3530-02",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "e3da5230aadab94e8c1b5c36d7dc144480ab2ad09dd7faf77038c34149752784",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:30.402Z",
+          "processed_at": "2026-10-13T09:49:30.754Z"
+        },
+        {
+          "id": "c69ac2e2-ae6c-4831-b74c-7fd2ce679076",
+          "device_id": "qa09-15f381e4a5fa3530-02",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "e28d911700b84b434877c53fb4ba0c6eca998b9c55faafc34b973e5801cb9287",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:41.158Z",
+          "processed_at": "2026-10-13T09:49:41.557Z"
+        },
+        {
+          "id": "7e183391-76b5-40db-811d-8e3b81fde1ff",
+          "device_id": "qa09-15f381e4a5fa3530-03",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "99086477873e3bd27fdd7c38cdecb9126332268ccfc8ce9fff71e090f6271d3e",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:10.673Z",
+          "processed_at": "2026-10-13T09:46:23.114Z"
+        },
+        {
+          "id": "08f07486-f347-4b6d-b0d3-cf5393ffda46",
+          "device_id": "qa09-15f381e4a5fa3530-03",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "751a59da13c44f6482ebee721a7697fe3973974a07de9689dbb85051ac77037e",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:42.936Z",
+          "processed_at": "2026-10-13T09:49:43.236Z"
+        },
+        {
+          "id": "6f5603d4-679b-4fa0-bcaa-c82da0b83923",
+          "device_id": "qa09-15f381e4a5fa3530-03",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "0143ce8a0ed967c9efe04dbbb381db3ebf039a752ce1340913f7fb8f21e37a0c",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:54.524Z",
+          "processed_at": "2026-10-13T09:49:54.934Z"
+        },
+        {
+          "id": "ab2a5f5b-3442-4679-8ce4-86642266a52b",
+          "device_id": "qa09-15f381e4a5fa3530-04",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "ca790bf822e865f75a8c44935d128b7835fc125800e50fcfbb8912356f9d3ed4",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:11.080Z",
+          "processed_at": "2026-10-13T09:46:26.535Z"
+        },
+        {
+          "id": "47abe5d2-770d-4acc-bcb0-799a112a0717",
+          "device_id": "qa09-15f381e4a5fa3530-04",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "f3496f36bc4aca1a45f35666d93def1d73e3a19637a18dcd1c7e6e6f110cf78e",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:56.760Z",
+          "processed_at": "2026-10-13T09:49:57.094Z"
+        },
+        {
+          "id": "94edab0a-1e6e-49f2-bab4-d1fd9b48e378",
+          "device_id": "qa09-15f381e4a5fa3530-04",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "37838dfbf9ccc7c0c34bf46ef2a6abf8abd2ab3a9f08ef998402e82755a3be13",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:08.302Z",
+          "processed_at": "2026-10-13T09:50:08.714Z"
+        },
+        {
+          "id": "684ef024-f0ac-4d25-8203-4a4771240b37",
+          "device_id": "qa09-15f381e4a5fa3530-05",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "11784459229b1f08acfe9131bba4baa10d20955e26697c8bd15574b72a99f59a",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:10.659Z",
+          "processed_at": "2026-10-13T09:46:21.415Z"
+        },
+        {
+          "id": "ae66647e-4b9e-482e-a733-eff63e8f5456",
+          "device_id": "qa09-15f381e4a5fa3530-05",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "45b0b1a5eed033b0fd4aaca6c60e18210c9febed84b3881afc8ab3403f5e5dec",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:10.146Z",
+          "processed_at": "2026-10-13T09:50:10.455Z"
+        },
+        {
+          "id": "b8d1790b-884d-4040-a74f-e980dc807984",
+          "device_id": "qa09-15f381e4a5fa3530-05",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "3b59598b729ceffe5eefdcbadbc6f1a3d656bbe8fa6e4cd675bcb51ae7a53317",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:21.717Z",
+          "processed_at": "2026-10-13T09:50:22.077Z"
+        },
+        {
+          "id": "5179e7cb-5e3d-48e6-a95d-e2635e09be1a",
+          "device_id": "qa09-15f381e4a5fa3530-06",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "2c2b299e0f0824cb2e657bfea6f362023b25ee85d7ff5bdc62fe7e442d07a50e",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:10.773Z",
+          "processed_at": "2026-10-13T09:46:31.978Z"
+        },
+        {
+          "id": "fbb6a6de-ed85-4df9-9812-407b0b7a06e0",
+          "device_id": "qa09-15f381e4a5fa3530-06",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "aee03dfdf2bf4137388bf622239e5eab2e0161616176f3beb51e674903f5afc5",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:24.361Z",
+          "processed_at": "2026-10-13T09:50:24.654Z"
+        },
+        {
+          "id": "ac56cd28-4422-4dfb-b914-d92bd2808864",
+          "device_id": "qa09-15f381e4a5fa3530-06",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "ba2517787fd9810eaf809ca9c26a3a75e231cc4acefcf073ceb70515589f8d3f",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:35.067Z",
+          "processed_at": "2026-10-13T09:50:35.474Z"
+        },
+        {
+          "id": "334bb393-23bc-4cc2-b96a-16b83ef03d49",
+          "device_id": "qa09-15f381e4a5fa3530-07",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "9a69bafe8e8dcc5a266108dac2b586045f78e3c528a90c333d5ec46eb445bdb1",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:12.542Z",
+          "processed_at": "2026-10-13T09:46:26.055Z"
+        },
+        {
+          "id": "b2dd5fa4-9464-4c37-90bc-002c47ef4e75",
+          "device_id": "qa09-15f381e4a5fa3530-07",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "b5c8e26f889186c39dab2a8b66e575208ee62b17b6d2d40700bfca1fa71a432e",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:37.038Z",
+          "processed_at": "2026-10-13T09:50:37.374Z"
+        },
+        {
+          "id": "6d74b49c-b3e4-4ec2-9be8-2793ac811d87",
+          "device_id": "qa09-15f381e4a5fa3530-07",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "a88c3dd96af2239236c46a8c9cfd068699b1f573af14cb11718c88083f043023",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:47.753Z",
+          "processed_at": "2026-10-13T09:50:48.197Z"
+        },
+        {
+          "id": "ba44859e-c757-44ce-bcd8-60fd33f72779",
+          "device_id": "qa09-15f381e4a5fa3530-08",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "f7fb26a09ba068d67955153d5e2313beb6f70ccb3587e2ef90b89574d2aa3fb0",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:11.101Z",
+          "processed_at": "2026-10-13T09:46:27.338Z"
+        },
+        {
+          "id": "b2c5fea5-57d3-42ec-8c4d-2e5636406059",
+          "device_id": "qa09-15f381e4a5fa3530-08",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "1c8e4f35da9e9f4b5cc03caf35d1c04934aa4e77111c1d498d17f9584315e720",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:50.413Z",
+          "processed_at": "2026-10-13T09:50:50.714Z"
+        },
+        {
+          "id": "69154ef6-e553-488f-9216-e425bc5a1ef1",
+          "device_id": "qa09-15f381e4a5fa3530-08",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "b2ab7c0b535c7d6bab4c910ee5ca212bf58182f667f75dde1a69a63f87e9d4d4",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:51:01.131Z",
+          "processed_at": "2026-10-13T09:51:02.117Z"
+        },
+        {
+          "id": "5ca1feb8-df0c-4456-bf42-d2116f8c7a30",
+          "device_id": "qa09-15f381e4a5fa3530-09",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "e5f83d995b2749d67364936746cd0c652d8d0db5b6e9bef841e6499b3d819fb8",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:10.703Z",
+          "processed_at": "2026-10-13T09:46:17.815Z"
+        },
+        {
+          "id": "3ac78e8b-f2c3-461b-9c17-cb0b17edd88f",
+          "device_id": "qa09-15f381e4a5fa3530-09",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "84a56fa3248a6e851e6f168e5fe76522efb6e76e4edd5a797e36ce9da7fdc4f8",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:51:04.323Z",
+          "processed_at": "2026-10-13T09:51:04.634Z"
+        },
+        {
+          "id": "d79f80cf-95f4-49c3-8d11-4c9967661ba6",
+          "device_id": "qa09-15f381e4a5fa3530-09",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "ed6a83c9f7ef8fa5a035a5aab7bb0da303f30012fdf37115abae62f0f23005f8",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:51:15.024Z",
+          "processed_at": "2026-10-13T09:51:15.434Z"
+        },
+        {
+          "id": "7f87f849-d7d0-480d-9cbb-b0cf8db8b874",
+          "device_id": "qa09-15f381e4a5fa3530-10",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "6bf9ad431e180c2126c73806574ef45d6ec08e159e32478bf9e6a309dd73094a",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:12.556Z",
+          "processed_at": "2026-10-13T09:46:24.856Z"
+        },
+        {
+          "id": "ec01eb95-dc14-49ee-bf0b-f072b033e1d0",
+          "device_id": "qa09-15f381e4a5fa3530-10",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "8447989d27f90aa5ec29b7f14de5410877db705baa3654f7f3f9b3340f5f050b",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:51:16.769Z",
+          "processed_at": "2026-10-13T09:51:17.074Z"
+        },
+        {
+          "id": "eedddd59-cfa9-4916-9e79-cbf406dac5fb",
+          "device_id": "qa09-15f381e4a5fa3530-10",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "5ba469d190ba748ae7201fc28053ef7f418c117460ebd9af0c2bf9f84942b1b4",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:51:27.470Z",
+          "processed_at": "2026-10-13T09:51:27.898Z"
+        }
+      ],
+      "originalFingerprints": [
+        {
+          "entity": "devices",
+          "count": "2",
+          "digest": "6679dbc98fad914441b6fa10424d2813"
+        },
+        {
+          "entity": "device_certificates",
+          "count": "3",
+          "digest": "f74ee1ff34e592be77b5eac20b9df1ec"
+        }
+      ],
+      "audits": [],
+      "devices": [
+        {
+          "id": "qa09-15f381e4a5fa3530-01",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-02",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-03",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-04",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-05",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-06",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-07",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-08",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-09",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-10",
+          "lifecycle_status": "Onboarded"
+        }
+      ]
+    },
+    "after": {
+      "readOnly": true,
+      "fingerprints": [
+        {
+          "table": "ingestion_receipts",
+          "count": "30",
+          "digest": "6f6f6dab77239395dcf19ee03dad27ee"
+        },
+        {
+          "table": "telemetry_hourly",
+          "count": "10",
+          "digest": "353c89fd8f1d28d3e439a03f0ac3ce2c"
+        },
+        {
+          "table": "telemetry_daily",
+          "count": "10",
+          "digest": "8c98ac7edf96aaa8e160060f65be5048"
+        },
+        {
+          "table": "outbox_events",
+          "count": "20",
+          "digest": "6398339607b9b886cb7a6223739a2420"
+        }
+      ],
+      "receipts": [
+        {
+          "id": "1e3c38b6-4ac9-47d9-839d-f89715abf2e7",
+          "device_id": "qa09-15f381e4a5fa3530-01",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "9c1a19bf06b62438df5f57fa9b160a7bf356a5daa02b5be582bd94966c3f5ad2",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:10.703Z",
+          "processed_at": "2026-10-13T09:46:24.435Z"
+        },
+        {
+          "id": "886ac961-4e66-4634-85aa-06c6b55d7622",
+          "device_id": "qa09-15f381e4a5fa3530-01",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "5f2e276f1de5032e1a5f80619518cbdde6426889589144314b009b91a29f96c1",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:17.625Z",
+          "processed_at": "2026-10-13T09:49:18.617Z"
+        },
+        {
+          "id": "6f650006-349e-4897-97af-cdf43604b8fa",
+          "device_id": "qa09-15f381e4a5fa3530-01",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "a88fb917161e167d912185197ba9f71f8e32380617c8ddfce3edaba0e9199ea7",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:28.333Z",
+          "processed_at": "2026-10-13T09:49:28.694Z"
+        },
+        {
+          "id": "c166eacd-89d2-4cde-9eed-808522779039",
+          "device_id": "qa09-15f381e4a5fa3530-02",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "388fbd58c75a37f8592d8b5769fd67b68b1af604714116b4a4798cf17b88e818",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:10.659Z",
+          "processed_at": "2026-10-13T09:46:24.037Z"
+        },
+        {
+          "id": "8a488a38-5893-426d-af2e-97bf38d1191f",
+          "device_id": "qa09-15f381e4a5fa3530-02",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "e3da5230aadab94e8c1b5c36d7dc144480ab2ad09dd7faf77038c34149752784",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:30.402Z",
+          "processed_at": "2026-10-13T09:49:30.754Z"
+        },
+        {
+          "id": "c69ac2e2-ae6c-4831-b74c-7fd2ce679076",
+          "device_id": "qa09-15f381e4a5fa3530-02",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "e28d911700b84b434877c53fb4ba0c6eca998b9c55faafc34b973e5801cb9287",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:41.158Z",
+          "processed_at": "2026-10-13T09:49:41.557Z"
+        },
+        {
+          "id": "7e183391-76b5-40db-811d-8e3b81fde1ff",
+          "device_id": "qa09-15f381e4a5fa3530-03",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "99086477873e3bd27fdd7c38cdecb9126332268ccfc8ce9fff71e090f6271d3e",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:10.673Z",
+          "processed_at": "2026-10-13T09:46:23.114Z"
+        },
+        {
+          "id": "08f07486-f347-4b6d-b0d3-cf5393ffda46",
+          "device_id": "qa09-15f381e4a5fa3530-03",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "751a59da13c44f6482ebee721a7697fe3973974a07de9689dbb85051ac77037e",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:42.936Z",
+          "processed_at": "2026-10-13T09:49:43.236Z"
+        },
+        {
+          "id": "6f5603d4-679b-4fa0-bcaa-c82da0b83923",
+          "device_id": "qa09-15f381e4a5fa3530-03",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "0143ce8a0ed967c9efe04dbbb381db3ebf039a752ce1340913f7fb8f21e37a0c",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:54.524Z",
+          "processed_at": "2026-10-13T09:49:54.934Z"
+        },
+        {
+          "id": "ab2a5f5b-3442-4679-8ce4-86642266a52b",
+          "device_id": "qa09-15f381e4a5fa3530-04",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "ca790bf822e865f75a8c44935d128b7835fc125800e50fcfbb8912356f9d3ed4",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:11.080Z",
+          "processed_at": "2026-10-13T09:46:26.535Z"
+        },
+        {
+          "id": "47abe5d2-770d-4acc-bcb0-799a112a0717",
+          "device_id": "qa09-15f381e4a5fa3530-04",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "f3496f36bc4aca1a45f35666d93def1d73e3a19637a18dcd1c7e6e6f110cf78e",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:49:56.760Z",
+          "processed_at": "2026-10-13T09:49:57.094Z"
+        },
+        {
+          "id": "94edab0a-1e6e-49f2-bab4-d1fd9b48e378",
+          "device_id": "qa09-15f381e4a5fa3530-04",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "37838dfbf9ccc7c0c34bf46ef2a6abf8abd2ab3a9f08ef998402e82755a3be13",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:08.302Z",
+          "processed_at": "2026-10-13T09:50:08.714Z"
+        },
+        {
+          "id": "684ef024-f0ac-4d25-8203-4a4771240b37",
+          "device_id": "qa09-15f381e4a5fa3530-05",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "11784459229b1f08acfe9131bba4baa10d20955e26697c8bd15574b72a99f59a",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:10.659Z",
+          "processed_at": "2026-10-13T09:46:21.415Z"
+        },
+        {
+          "id": "ae66647e-4b9e-482e-a733-eff63e8f5456",
+          "device_id": "qa09-15f381e4a5fa3530-05",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "45b0b1a5eed033b0fd4aaca6c60e18210c9febed84b3881afc8ab3403f5e5dec",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:10.146Z",
+          "processed_at": "2026-10-13T09:50:10.455Z"
+        },
+        {
+          "id": "b8d1790b-884d-4040-a74f-e980dc807984",
+          "device_id": "qa09-15f381e4a5fa3530-05",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "3b59598b729ceffe5eefdcbadbc6f1a3d656bbe8fa6e4cd675bcb51ae7a53317",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:21.717Z",
+          "processed_at": "2026-10-13T09:50:22.077Z"
+        },
+        {
+          "id": "5179e7cb-5e3d-48e6-a95d-e2635e09be1a",
+          "device_id": "qa09-15f381e4a5fa3530-06",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "2c2b299e0f0824cb2e657bfea6f362023b25ee85d7ff5bdc62fe7e442d07a50e",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:10.773Z",
+          "processed_at": "2026-10-13T09:46:31.978Z"
+        },
+        {
+          "id": "fbb6a6de-ed85-4df9-9812-407b0b7a06e0",
+          "device_id": "qa09-15f381e4a5fa3530-06",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "aee03dfdf2bf4137388bf622239e5eab2e0161616176f3beb51e674903f5afc5",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:24.361Z",
+          "processed_at": "2026-10-13T09:50:24.654Z"
+        },
+        {
+          "id": "ac56cd28-4422-4dfb-b914-d92bd2808864",
+          "device_id": "qa09-15f381e4a5fa3530-06",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "ba2517787fd9810eaf809ca9c26a3a75e231cc4acefcf073ceb70515589f8d3f",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:35.067Z",
+          "processed_at": "2026-10-13T09:50:35.474Z"
+        },
+        {
+          "id": "334bb393-23bc-4cc2-b96a-16b83ef03d49",
+          "device_id": "qa09-15f381e4a5fa3530-07",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "9a69bafe8e8dcc5a266108dac2b586045f78e3c528a90c333d5ec46eb445bdb1",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:12.542Z",
+          "processed_at": "2026-10-13T09:46:26.055Z"
+        },
+        {
+          "id": "b2dd5fa4-9464-4c37-90bc-002c47ef4e75",
+          "device_id": "qa09-15f381e4a5fa3530-07",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "b5c8e26f889186c39dab2a8b66e575208ee62b17b6d2d40700bfca1fa71a432e",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:37.038Z",
+          "processed_at": "2026-10-13T09:50:37.374Z"
+        },
+        {
+          "id": "6d74b49c-b3e4-4ec2-9be8-2793ac811d87",
+          "device_id": "qa09-15f381e4a5fa3530-07",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "a88c3dd96af2239236c46a8c9cfd068699b1f573af14cb11718c88083f043023",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:47.753Z",
+          "processed_at": "2026-10-13T09:50:48.197Z"
+        },
+        {
+          "id": "ba44859e-c757-44ce-bcd8-60fd33f72779",
+          "device_id": "qa09-15f381e4a5fa3530-08",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "f7fb26a09ba068d67955153d5e2313beb6f70ccb3587e2ef90b89574d2aa3fb0",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:11.101Z",
+          "processed_at": "2026-10-13T09:46:27.338Z"
+        },
+        {
+          "id": "b2c5fea5-57d3-42ec-8c4d-2e5636406059",
+          "device_id": "qa09-15f381e4a5fa3530-08",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "1c8e4f35da9e9f4b5cc03caf35d1c04934aa4e77111c1d498d17f9584315e720",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:50:50.413Z",
+          "processed_at": "2026-10-13T09:50:50.714Z"
+        },
+        {
+          "id": "69154ef6-e553-488f-9216-e425bc5a1ef1",
+          "device_id": "qa09-15f381e4a5fa3530-08",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "b2ab7c0b535c7d6bab4c910ee5ca212bf58182f667f75dde1a69a63f87e9d4d4",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:51:01.131Z",
+          "processed_at": "2026-10-13T09:51:02.117Z"
+        },
+        {
+          "id": "5ca1feb8-df0c-4456-bf42-d2116f8c7a30",
+          "device_id": "qa09-15f381e4a5fa3530-09",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "e5f83d995b2749d67364936746cd0c652d8d0db5b6e9bef841e6499b3d819fb8",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:10.703Z",
+          "processed_at": "2026-10-13T09:46:17.815Z"
+        },
+        {
+          "id": "3ac78e8b-f2c3-461b-9c17-cb0b17edd88f",
+          "device_id": "qa09-15f381e4a5fa3530-09",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "84a56fa3248a6e851e6f168e5fe76522efb6e76e4edd5a797e36ce9da7fdc4f8",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:51:04.323Z",
+          "processed_at": "2026-10-13T09:51:04.634Z"
+        },
+        {
+          "id": "d79f80cf-95f4-49c3-8d11-4c9967661ba6",
+          "device_id": "qa09-15f381e4a5fa3530-09",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "ed6a83c9f7ef8fa5a035a5aab7bb0da303f30012fdf37115abae62f0f23005f8",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:51:15.024Z",
+          "processed_at": "2026-10-13T09:51:15.434Z"
+        },
+        {
+          "id": "7f87f849-d7d0-480d-9cbb-b0cf8db8b874",
+          "device_id": "qa09-15f381e4a5fa3530-10",
+          "topic_type": "heartbeat",
+          "seq": 1,
+          "payload_hash": "6bf9ad431e180c2126c73806574ef45d6ec08e159e32478bf9e6a309dd73094a",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:46:12.556Z",
+          "processed_at": "2026-10-13T09:46:24.856Z"
+        },
+        {
+          "id": "ec01eb95-dc14-49ee-bf0b-f072b033e1d0",
+          "device_id": "qa09-15f381e4a5fa3530-10",
+          "topic_type": "telemetry",
+          "seq": 1,
+          "payload_hash": "8447989d27f90aa5ec29b7f14de5410877db705baa3654f7f3f9b3340f5f050b",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:51:16.769Z",
+          "processed_at": "2026-10-13T09:51:17.074Z"
+        },
+        {
+          "id": "eedddd59-cfa9-4916-9e79-cbf406dac5fb",
+          "device_id": "qa09-15f381e4a5fa3530-10",
+          "topic_type": "telemetry",
+          "seq": 2,
+          "payload_hash": "5ba469d190ba748ae7201fc28053ef7f418c117460ebd9af0c2bf9f84942b1b4",
+          "result": "PROCESSED",
+          "occurred_at": "2026-10-13T09:51:27.470Z",
+          "processed_at": "2026-10-13T09:51:27.898Z"
+        }
+      ],
+      "originalFingerprints": [
+        {
+          "entity": "devices",
+          "count": "2",
+          "digest": "6679dbc98fad914441b6fa10424d2813"
+        },
+        {
+          "entity": "device_certificates",
+          "count": "3",
+          "digest": "f74ee1ff34e592be77b5eac20b9df1ec"
+        }
+      ],
+      "audits": [
+        {
+          "object_id": "8f2cf646-752e-4256-9d8d-770fb3f64eed",
+          "action": "replay.job.create",
+          "result": "SUCCESS"
+        },
+        {
+          "object_id": "8f2cf646-752e-4256-9d8d-770fb3f64eed",
+          "action": "replay.job.execute",
+          "result": "SUCCESS"
+        }
+      ],
+      "devices": [
+        {
+          "id": "qa09-15f381e4a5fa3530-01",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-02",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-03",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-04",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-05",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-06",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-07",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-08",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-09",
+          "lifecycle_status": "Onboarded"
+        },
+        {
+          "id": "qa09-15f381e4a5fa3530-10",
+          "lifecycle_status": "Onboarded"
+        }
+      ]
+    },
+    "versionSha256": "d7eb2fe1af88f6db52079bd255c4b5ea016e4aec5326d2b33f4945bf1e33d2d9"
+  },
+  "actor": {
+    "gate": "PASS_REAL_COGNITO_SUB_TO_OWN_DATABASE_USER",
+    "prefix": "qa09-15f381e4a5fa3530",
+    "applicationCommit": "72fd93b107ca99be0ddcfb928dd6527727f0f188",
+    "businessUserId": "074daf5d-8081-4793-85e3-e5b4510250be",
+    "actorId": "29da953c-f061-70f4-7773-531989ce0cb2",
+    "email": "qa09-15f381e4a5fa3530-h01-platformoperator@example.invalid",
+    "groups": [
+      "PlatformOperator"
+    ]
+  },
+  "prior": {
+    "gate": "FAIL_OR_UNKNOWN_NO_RETRY",
+    "prefix": "qa09-15f381e4a5fa3530",
+    "operatorCleanup": {
+      "gate": "PASS_DISABLED_TOMBSTONE_AND_COGNITO_DELETED",
+      "userId": "074daf5d-8081-4793-85e3-e5b4510250be",
+      "status": "DISABLED",
+      "cognitoDeleted": true,
+      "disablePostRetries": 0
+    },
+    "operations": [
+      {
+        "id": "existing-own-root-password",
+        "result": "PASS"
+      },
+      {
+        "id": "delete-own-operator-cognito",
+        "result": "PASS"
+      },
+      {
+        "id": "business-cleanup",
+        "result": "FAIL_OR_UNKNOWN_NO_RETRY"
+      }
+    ]
+  },
+  "failed": {
+    "failure": {
+      "code": "FIXTURE_BUILD_NOT_VERIFIED",
+      "errorName": "Error",
+      "causeCode": null,
+      "requestId": null,
+      "httpStatusCode": null,
+      "attempts": null,
+      "totalRetryDelay": null,
+      "kind": "STARTED_BUILD_READ_OR_VERIFICATION",
+      "observations": [],
+      "startedBuildMayStillRun": false,
+      "recoveryAction": "EXACT_EXISTING_BUILD_READ_ONLY"
+    }
+  },
+  "drift": {
+    "gate": "PASS",
+    "sourceHash": "47e88a3780d224b36455343d0dfce76889e8e3d8d33855d629edec46520e7d59",
+    "result": {
+      "businessFingerprints": [
+        {
+          "table": "outbox_events",
+          "count": "65",
+          "digest": "3342348c138da304c7bf3341de741bf5"
+        },
+        {
+          "table": "command_acks",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "command_attempts",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_commands",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "replay_jobs",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_retirements",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_user_sync_receipts",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_user_assignments",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_users",
+          "count": "6",
+          "digest": "93d6f6e85c5117cd67dd0b90da9b17a1"
+        },
+        {
+          "table": "license_history",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "license_entitlements",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "contract_devices",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "licenses",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "contracts",
+          "count": "4",
+          "digest": "b445c4af5ade7f58fce6212c3310edfa"
+        },
+        {
+          "table": "configuration_versions",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_configurations",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "consumable_requests",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "esg_export_jobs",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_activity_export_jobs",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "telemetry_hourly",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "telemetry_daily",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_events",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "esg_reports",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "esg_daily_summary",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "consumable_projections",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_latest_state",
+          "count": "2",
+          "digest": "006398c10d2bf75a63488e4e8b6e7e5e"
+        },
+        {
+          "table": "device_assignments",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        }
+      ],
+      "outsideOutboxLedger": [
+        {
+          "id": "842fec60-1f13-4e2e-a77c-8492e88cc1f4",
+          "event_type": "COGNITO_ADMIN_RECONCILIATION",
+          "aggregate_type": "user",
+          "aggregate_id": "074daf5d-8081-4793-85e3-e5b4510250be",
+          "status": "PUBLISHED",
+          "created_at": "2026-10-13T10:46:31.606Z",
+          "published_at": "2026-10-13T10:46:31.513Z"
+        },
+        {
+          "id": "dd2d87d944cdcc349f643ed68ec57d96ec8d03d20d8c9037fc70d16e31d0b3a5"
+        },
+        {
+          "id": "dae7e708dccb3db8679702c90acfb31640c84ee61412b7a171765ac55e0cea58"
+        },
+        {
+          "id": "a726ec8b91506c110f5dd16855483c83c104f7c43932205ec0e28d2a41b07304"
+        },
+        {
+          "id": "49dd5929e1d433aebbf1d516760a15167d51686fe7d4a00e298de66c0571b9ca"
+        },
+        {
+          "id": "318ddb211c97e4372a3672ff2db78814c3193a4922a3b4025eb6bb6c4cf10f95"
+        },
+        {
+          "id": "a7281ac37f13f93c7234b700fdf9a1f4f12f83d277b7d587a0e2cd6b85369c7f"
+        },
+        {
+          "id": "5a3e0ba64d49161548b0bb5443c74ae6604dc9fbfc96530f55ee3ba29b0367eb"
+        },
+        {
+          "id": "f06219731b60f0dab15a85bb55794aa974d24cecf420a741c74ac970b5cad72f"
+        },
+        {
+          "id": "2e6aa35bc5d30626de7daf1224f48f4dde1d1b0e1fca3691cc84d9af976b7868"
+        },
+        {
+          "id": "c25c2693273e1a22bb550beb8e654c865268cd6653d50f3260034e65a9792996"
+        },
+        {
+          "id": "b55b5b061932db277b0a796060fa5d109271ec43c0a23d427f66bc5132b40ed9"
+        },
+        {
+          "id": "5449c58e472c8c8c828135cf570c7f71df8b1163984617a06541a6ad82f53e88"
+        },
+        {
+          "id": "0f6a388df3d668ca2b6756c3586322a8e5b84f6877b105509fdc93f4030a82d4"
+        },
+        {
+          "id": "a77d47a155ee79a7729c65ffe7e27272075f792f53bed6d0d99383783b4f8d86"
+        },
+        {
+          "id": "e346d894b7348ebd34c8e1ce17f7c933648badc0e761335fecea18cef295715b"
+        },
+        {
+          "id": "a95c4e4a4bdeed5b3b25b7ae7a42845a6f1bdc25bb50f4ee28ca7fb39be09c63"
+        },
+        {
+          "id": "d2dbaf91e839673b6c4f1e7ba5959e0b599d967a0cdfc940bc85e4a8a63b9e85"
+        },
+        {
+          "id": "b962ee8f1ba597dbe218b72c1b3e459e3bccc9011aeb124e855101c2d7cd9697"
+        },
+        {
+          "id": "7155cee84e00218ee53f50be1b2175f045a09246bada240413d78cfb143f5b44"
+        },
+        {
+          "id": "89ac4c8d5359a37003b2886f51619430a5a89f4dde191ecfa1c29bd358f4745e"
+        },
+        {
+          "id": "a2371d3e194713f8f25412cbf9bb5b3c4175f7976d9404afd0f786ebae4c731e"
+        },
+        {
+          "id": "f42c868dcd32f2c32019d6f515b16b7b161eea76a09e59fa80efac3506142665"
+        },
+        {
+          "id": "5d9f7aa7a3571ea827d572858e9f5dd13a12a74152863478dd1292b825506253"
+        },
+        {
+          "id": "1d59c0d8ba956f3439d291057b10531a5e712eefe9ff63b27c2896a260ee6480"
+        },
+        {
+          "id": "17b87bf800bd8aef07af0ab3947e8f667f3e0f1b54b2fe7fdde7b13e583fa328"
+        },
+        {
+          "id": "d57054db82003b05c97358e307722964215b17510ae0c47f612017cffde4f823"
+        },
+        {
+          "id": "840e46017d2b2daf2671d3c931de4e5c987c8fd94f7c85c9e79defc175bbdfbb"
+        },
+        {
+          "id": "881bdbb8f3f1cc6a0723b37c3322f833804cc632b4e21be8146b5ef7321563a6"
+        },
+        {
+          "id": "61b44788f2837881ca82099f61b4c029bddcaed22fa766848e2609ae770479bd"
+        },
+        {
+          "id": "100d89dae3a089c6a4069091cf5b90f8e1760da4599435800c63beabf5ccde88"
+        },
+        {
+          "id": "aa7b1e045483088962d6abdecc99ae24df232c150df8cc86aa0330b448213e7a"
+        },
+        {
+          "id": "703b3f2e3d4a205d143420f6b863ed0289b43a7cbdec5c35cd28a347c83eb136"
+        },
+        {
+          "id": "ab253d6b80d9f1211c5b67dd505ab3622c92b9cdbbc04f110566f18e04d52e50"
+        },
+        {
+          "id": "1d1f7a08cc9be5fcb2cf100d948698a9a74c6bd1ae77a7eb36f85cb9312c1e91"
+        },
+        {
+          "id": "cd1e736a82743a90530c2c0202f56c6fcf5446514a2c2898a0cf9c9018e88bb3"
+        },
+        {
+          "id": "1ac019b353c011bb9d97022686817a01e66d51c5f4fa83f9b3f20926d0d52b08"
+        },
+        {
+          "id": "7ea9f217456838d748231a610c7b6fe80c16de00256dd617637125e9523ef673"
+        },
+        {
+          "id": "43f05446ae68e35d65669c656b50c5fd4b397a657e7e27f400c5c913c27664e2"
+        },
+        {
+          "id": "ca76503160054c7aed7654b1469d78368889b17ef35bab312aa197c5fed7602e"
+        },
+        {
+          "id": "0988e6a1f2ad87edabbe7066e69402e6d51b1227dd9280d5ddfcfdf790c04c1b"
+        },
+        {
+          "id": "4008d44a0dc732d986367f71b306fc5401bd057829625af39a6a3e0666422d2a"
+        },
+        {
+          "id": "10066ac4945ed9cf14aa0db493fb69fac7af4489fc8617ca412577c622dc6602"
+        },
+        {
+          "id": "08c4941e2131b3db2fd529ea301ab430a5cb915ddf26bb7240d90c2206d7de64"
+        },
+        {
+          "id": "eca1749af1bf055fc138770d401c8bc6e6c4c05039c218b97c7404bd50f729f4"
+        },
+        {
+          "id": "cac66974ea4c2b224fbbe3647b7e2c5a2f02ab1526a429fd88193743582ac283"
+        },
+        {
+          "id": "7fa75f13fca96ba55a98ff1f8e6251d9037d0b3b4de4c5531ea3a9093491381d"
+        },
+        {
+          "id": "b1f6bfaf89c60dbc656380074f5fb3194f2daf1db1a538c94ec1533fada3cb74"
+        },
+        {
+          "id": "1777654795afc10aac8a18c61bfb27c2f72b63432ac5800c54e1da9a5a14f36e"
+        },
+        {
+          "id": "c14f4fed79a76c2934739244491a5892e4bd1e3e414f4ae22925d3304f6eb5a9"
+        },
+        {
+          "id": "4e345f0320980e5fc1a8b90f6e31eb75ceee4b9bc3241d8b83cff3ea48eda6b7"
+        },
+        {
+          "id": "da7ef472d70a49ed579eb26d9fcca67aa03bc75f317e3c69b379ce13d3f24cec"
+        },
+        {
+          "id": "9ae3caa3bddecabc5984e6e2b95629f74f958d551dbb71f98418b2da667215c1"
+        },
+        {
+          "id": "8be00295c667d2b4f836cc6483cb8732e15310c2c46f498c5c602e2aaedf127e"
+        },
+        {
+          "id": "1ba65cdcfd9e9dfdc1a3b8b7052b6b98ef91282dd1d1e5d7ade712e29d45b819"
+        },
+        {
+          "id": "3427be59acef2afc01af23525f58e5e87c633ba558aca615d082e8330b16c4af"
+        },
+        {
+          "id": "ba172d36118717b5c3a5eed3378a806c46390ebf00cfac81621553862952737c"
+        },
+        {
+          "id": "80fc1cf8fb310dfcdfe20f5fe9b52d07895a0d35c5c3ab929e4e6709a4466f51"
+        },
+        {
+          "id": "86061eb1514cba70b60903fcfd31f8abab5f48c1db3e8407e0bb66709a672f7a"
+        },
+        {
+          "id": "4a8e4b1aaceb85e85c63d7a37134398d383da634025c1bf2cceffb8f3abe6bb5"
+        },
+        {
+          "id": "619653559d9c855f18c7d571e76c3c64a8a5b8303a5a80b835f419355c204339"
+        },
+        {
+          "id": "d98bbbe680dbf36e8da5eb4ededb4d6102ef9b87516b8c643aa3150a4dbd6ee1"
+        },
+        {
+          "id": "439966d41532201e9f40e1ed0c97fefc877353cd6234370f44f5f549bf229c24"
+        },
+        {
+          "id": "c897ded14efa1ffdf99dfa9c67b62e8a96115c3f922dc104be148cc79e54e751"
+        },
+        {
+          "id": "f4fdaf0ba088943174c51fad628587e45d7336d44ae7e797262497c44a71137e"
+        }
+      ]
+    }
+  },
+  "baseline": {
+    "sourceHash": "47e88a3780d224b36455343d0dfce76889e8e3d8d33855d629edec46520e7d59",
+    "result": {
+      "businessFingerprints": [
+        {
+          "table": "outbox_events",
+          "count": "64",
+          "digest": "5ab975dde8aef2f3603984d2c1e13d7f"
+        },
+        {
+          "table": "command_acks",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "command_attempts",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_commands",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "replay_jobs",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_retirements",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_user_sync_receipts",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_user_assignments",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_users",
+          "count": "6",
+          "digest": "93d6f6e85c5117cd67dd0b90da9b17a1"
+        },
+        {
+          "table": "license_history",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "license_entitlements",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "contract_devices",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "licenses",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "contracts",
+          "count": "4",
+          "digest": "b445c4af5ade7f58fce6212c3310edfa"
+        },
+        {
+          "table": "configuration_versions",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_configurations",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "consumable_requests",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "esg_export_jobs",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_activity_export_jobs",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "telemetry_hourly",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "telemetry_daily",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_events",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "esg_reports",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "esg_daily_summary",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "consumable_projections",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "device_latest_state",
+          "count": "2",
+          "digest": "006398c10d2bf75a63488e4e8b6e7e5e"
+        },
+        {
+          "table": "device_assignments",
+          "count": "0",
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        }
+      ],
+      "outsideOutboxLedger": [
+        {
+          "id": "dd2d87d944cdcc349f643ed68ec57d96ec8d03d20d8c9037fc70d16e31d0b3a5"
+        },
+        {
+          "id": "dae7e708dccb3db8679702c90acfb31640c84ee61412b7a171765ac55e0cea58"
+        },
+        {
+          "id": "a726ec8b91506c110f5dd16855483c83c104f7c43932205ec0e28d2a41b07304"
+        },
+        {
+          "id": "49dd5929e1d433aebbf1d516760a15167d51686fe7d4a00e298de66c0571b9ca"
+        },
+        {
+          "id": "318ddb211c97e4372a3672ff2db78814c3193a4922a3b4025eb6bb6c4cf10f95"
+        },
+        {
+          "id": "a7281ac37f13f93c7234b700fdf9a1f4f12f83d277b7d587a0e2cd6b85369c7f"
+        },
+        {
+          "id": "5a3e0ba64d49161548b0bb5443c74ae6604dc9fbfc96530f55ee3ba29b0367eb"
+        },
+        {
+          "id": "f06219731b60f0dab15a85bb55794aa974d24cecf420a741c74ac970b5cad72f"
+        },
+        {
+          "id": "2e6aa35bc5d30626de7daf1224f48f4dde1d1b0e1fca3691cc84d9af976b7868"
+        },
+        {
+          "id": "c25c2693273e1a22bb550beb8e654c865268cd6653d50f3260034e65a9792996"
+        },
+        {
+          "id": "b55b5b061932db277b0a796060fa5d109271ec43c0a23d427f66bc5132b40ed9"
+        },
+        {
+          "id": "5449c58e472c8c8c828135cf570c7f71df8b1163984617a06541a6ad82f53e88"
+        },
+        {
+          "id": "0f6a388df3d668ca2b6756c3586322a8e5b84f6877b105509fdc93f4030a82d4"
+        },
+        {
+          "id": "a77d47a155ee79a7729c65ffe7e27272075f792f53bed6d0d99383783b4f8d86"
+        },
+        {
+          "id": "e346d894b7348ebd34c8e1ce17f7c933648badc0e761335fecea18cef295715b"
+        },
+        {
+          "id": "a95c4e4a4bdeed5b3b25b7ae7a42845a6f1bdc25bb50f4ee28ca7fb39be09c63"
+        },
+        {
+          "id": "d2dbaf91e839673b6c4f1e7ba5959e0b599d967a0cdfc940bc85e4a8a63b9e85"
+        },
+        {
+          "id": "b962ee8f1ba597dbe218b72c1b3e459e3bccc9011aeb124e855101c2d7cd9697"
+        },
+        {
+          "id": "7155cee84e00218ee53f50be1b2175f045a09246bada240413d78cfb143f5b44"
+        },
+        {
+          "id": "89ac4c8d5359a37003b2886f51619430a5a89f4dde191ecfa1c29bd358f4745e"
+        },
+        {
+          "id": "a2371d3e194713f8f25412cbf9bb5b3c4175f7976d9404afd0f786ebae4c731e"
+        },
+        {
+          "id": "f42c868dcd32f2c32019d6f515b16b7b161eea76a09e59fa80efac3506142665"
+        },
+        {
+          "id": "5d9f7aa7a3571ea827d572858e9f5dd13a12a74152863478dd1292b825506253"
+        },
+        {
+          "id": "1d59c0d8ba956f3439d291057b10531a5e712eefe9ff63b27c2896a260ee6480"
+        },
+        {
+          "id": "17b87bf800bd8aef07af0ab3947e8f667f3e0f1b54b2fe7fdde7b13e583fa328"
+        },
+        {
+          "id": "d57054db82003b05c97358e307722964215b17510ae0c47f612017cffde4f823"
+        },
+        {
+          "id": "840e46017d2b2daf2671d3c931de4e5c987c8fd94f7c85c9e79defc175bbdfbb"
+        },
+        {
+          "id": "881bdbb8f3f1cc6a0723b37c3322f833804cc632b4e21be8146b5ef7321563a6"
+        },
+        {
+          "id": "61b44788f2837881ca82099f61b4c029bddcaed22fa766848e2609ae770479bd"
+        },
+        {
+          "id": "100d89dae3a089c6a4069091cf5b90f8e1760da4599435800c63beabf5ccde88"
+        },
+        {
+          "id": "aa7b1e045483088962d6abdecc99ae24df232c150df8cc86aa0330b448213e7a"
+        },
+        {
+          "id": "703b3f2e3d4a205d143420f6b863ed0289b43a7cbdec5c35cd28a347c83eb136"
+        },
+        {
+          "id": "ab253d6b80d9f1211c5b67dd505ab3622c92b9cdbbc04f110566f18e04d52e50"
+        },
+        {
+          "id": "1d1f7a08cc9be5fcb2cf100d948698a9a74c6bd1ae77a7eb36f85cb9312c1e91"
+        },
+        {
+          "id": "cd1e736a82743a90530c2c0202f56c6fcf5446514a2c2898a0cf9c9018e88bb3"
+        },
+        {
+          "id": "1ac019b353c011bb9d97022686817a01e66d51c5f4fa83f9b3f20926d0d52b08"
+        },
+        {
+          "id": "7ea9f217456838d748231a610c7b6fe80c16de00256dd617637125e9523ef673"
+        },
+        {
+          "id": "43f05446ae68e35d65669c656b50c5fd4b397a657e7e27f400c5c913c27664e2"
+        },
+        {
+          "id": "ca76503160054c7aed7654b1469d78368889b17ef35bab312aa197c5fed7602e"
+        },
+        {
+          "id": "0988e6a1f2ad87edabbe7066e69402e6d51b1227dd9280d5ddfcfdf790c04c1b"
+        },
+        {
+          "id": "4008d44a0dc732d986367f71b306fc5401bd057829625af39a6a3e0666422d2a"
+        },
+        {
+          "id": "10066ac4945ed9cf14aa0db493fb69fac7af4489fc8617ca412577c622dc6602"
+        },
+        {
+          "id": "08c4941e2131b3db2fd529ea301ab430a5cb915ddf26bb7240d90c2206d7de64"
+        },
+        {
+          "id": "eca1749af1bf055fc138770d401c8bc6e6c4c05039c218b97c7404bd50f729f4"
+        },
+        {
+          "id": "cac66974ea4c2b224fbbe3647b7e2c5a2f02ab1526a429fd88193743582ac283"
+        },
+        {
+          "id": "7fa75f13fca96ba55a98ff1f8e6251d9037d0b3b4de4c5531ea3a9093491381d"
+        },
+        {
+          "id": "b1f6bfaf89c60dbc656380074f5fb3194f2daf1db1a538c94ec1533fada3cb74"
+        },
+        {
+          "id": "1777654795afc10aac8a18c61bfb27c2f72b63432ac5800c54e1da9a5a14f36e"
+        },
+        {
+          "id": "c14f4fed79a76c2934739244491a5892e4bd1e3e414f4ae22925d3304f6eb5a9"
+        },
+        {
+          "id": "4e345f0320980e5fc1a8b90f6e31eb75ceee4b9bc3241d8b83cff3ea48eda6b7"
+        },
+        {
+          "id": "da7ef472d70a49ed579eb26d9fcca67aa03bc75f317e3c69b379ce13d3f24cec"
+        },
+        {
+          "id": "9ae3caa3bddecabc5984e6e2b95629f74f958d551dbb71f98418b2da667215c1"
+        },
+        {
+          "id": "8be00295c667d2b4f836cc6483cb8732e15310c2c46f498c5c602e2aaedf127e"
+        },
+        {
+          "id": "1ba65cdcfd9e9dfdc1a3b8b7052b6b98ef91282dd1d1e5d7ade712e29d45b819"
+        },
+        {
+          "id": "3427be59acef2afc01af23525f58e5e87c633ba558aca615d082e8330b16c4af"
+        },
+        {
+          "id": "ba172d36118717b5c3a5eed3378a806c46390ebf00cfac81621553862952737c"
+        },
+        {
+          "id": "80fc1cf8fb310dfcdfe20f5fe9b52d07895a0d35c5c3ab929e4e6709a4466f51"
+        },
+        {
+          "id": "86061eb1514cba70b60903fcfd31f8abab5f48c1db3e8407e0bb66709a672f7a"
+        },
+        {
+          "id": "4a8e4b1aaceb85e85c63d7a37134398d383da634025c1bf2cceffb8f3abe6bb5"
+        },
+        {
+          "id": "619653559d9c855f18c7d571e76c3c64a8a5b8303a5a80b835f419355c204339"
+        },
+        {
+          "id": "d98bbbe680dbf36e8da5eb4ededb4d6102ef9b87516b8c643aa3150a4dbd6ee1"
+        },
+        {
+          "id": "439966d41532201e9f40e1ed0c97fefc877353cd6234370f44f5f549bf229c24"
+        },
+        {
+          "id": "c897ded14efa1ffdf99dfa9c67b62e8a96115c3f922dc104be148cc79e54e751"
+        },
+        {
+          "id": "f4fdaf0ba088943174c51fad628587e45d7336d44ae7e797262497c44a71137e"
+        }
+      ]
+    }
+  },
+  "originalFileDigests": {
+    "a5-target.json": "906f9b57f1475db37a6c35a11eac871e50286cb9bdfb8abdee151c54c2cf2df2",
+    "a5-target.json.reliability.json": "2384a2f3fd46cdc5cebda9881a9b3941beb5422bbbb524b61e4a6bf906a8a9bc",
+    "operator-actor-binding.json": "9812965249a22d2b566df3adcce6dcba4fb87b41831ad77d93408ef533591e69",
+    "a5-cleanup-recovery.json": "af9b863dc8db56aeccfcac0ec0e39142224593aa69fe159c444f316f75102be1",
+    "a5-cleanup-drift-read.json": "394fa133a88d4c0fc8caf15d61528dd659153831340d68484d6994dd251dee1c",
+    "final-readonly.json": "47da3e724f173694ac278145d2f672e3f5107685b1859263b7876579d61992fe",
+    "a5-cleanup-recovery-v2.json": "eb94ee80fab3468c133ef5e9d75d5850a80f7f5442229c6fbfe0ea977a9deea7",
+    "a5-closeout.json": "9ac3fb363ea917d67a3869b31f00c09965f5bbf8f68bff2cb29565d9e258ee6f"
+  },
+  "version": {
+    "gate": "PASS",
+    "sourceCommit": "72fd93b107ca99be0ddcfb928dd6527727f0f188",
+    "lambdaArtifacts": [
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      },
+      {
+        "matches": true
+      }
+    ]
+  },
+  "final": {
+    "gate": "PASS_READONLY_EMPTY_AND_BUILD_TERMINAL",
+    "parentSha256": "906f9b57f1475db37a6c35a11eac871e50286cb9bdfb8abdee151c54c2cf2df2",
+    "prefix": "qa09-15f381e4a5fa3530",
+    "sourceCommit": "72fd93b107ca99be0ddcfb928dd6527727f0f188",
+    "recovery": {
+      "path": "docs/audit/evidence/qa-09-a2-a5-2026-10-13/a5-cleanup-recovery-v2.json",
+      "sha256": "eb94ee80fab3468c133ef5e9d75d5850a80f7f5442229c6fbfe0ea977a9deea7",
+      "gate": "PASS_RECOVERED_OWN_A5_CLEANUP"
+    }
+  },
+  "hashes": {
+    "parent": "906f9b57f1475db37a6c35a11eac871e50286cb9bdfb8abdee151c54c2cf2df2",
+    "version": "d7eb2fe1af88f6db52079bd255c4b5ea016e4aec5326d2b33f4945bf1e33d2d9",
+    "actorBinding": {
+      "gate": "PASS_REAL_COGNITO_SUB_TO_OWN_DATABASE_USER",
+      "prefix": "qa09-15f381e4a5fa3530",
+      "applicationCommit": "72fd93b107ca99be0ddcfb928dd6527727f0f188",
+      "businessUserId": "074daf5d-8081-4793-85e3-e5b4510250be",
+      "actorId": "29da953c-f061-70f4-7773-531989ce0cb2",
+      "email": "qa09-15f381e4a5fa3530-h01-platformoperator@example.invalid",
+      "groups": [
+        "PlatformOperator"
+      ]
+    },
+    "actorBindingFilesVerified": true,
+    "recovery": {
+      "gate": "PASS_RECOVERED_OWN_A5_CLEANUP",
+      "prefix": "qa09-15f381e4a5fa3530",
+      "businessCleanup": "PASS",
+      "operatorCleanup": {
+        "gate": "PASS_DISABLED_TOMBSTONE_AND_COGNITO_DELETED",
+        "userId": "074daf5d-8081-4793-85e3-e5b4510250be",
+        "status": "DISABLED",
+        "cognitoDeleted": true,
+        "disablePostRetries": 0
+      }
+    },
+    "recoveryHash": "eb94ee80fab3468c133ef5e9d75d5850a80f7f5442229c6fbfe0ea977a9deea7",
+    "recoveryFilesVerified": true
+  }
+}

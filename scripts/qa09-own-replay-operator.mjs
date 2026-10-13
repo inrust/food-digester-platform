@@ -37,8 +37,15 @@ export async function prepareOwnReplayOperator(
       ).data;
       if (disabled.userId !== own.userId || disabled.email !== own.email || disabled.status !== 'DISABLED')
         throw Error('OWN_OPERATOR_DISABLE_REQUIRED');
-      const readback = (await ctx.api('a5:operator-disabled-readback', 'GET', '/api/v1/admin/users/' + own.userId, 200))
-        .data;
+      const page = await ctx.api(
+        'a5:operator-disabled-readback',
+        'GET',
+        '/api/v1/admin/users?status=DISABLED&q=' + encodeURIComponent(own.email) + '&limit=100',
+        200,
+      );
+      if (page.meta?.nextCursor || !Array.isArray(page.data) || page.data.length !== 1)
+        throw Error('EXACT_DISABLED_OPERATOR_LIST_REQUIRED');
+      const readback = page.data[0];
       if (readback.userId !== own.userId || readback.email !== own.email || readback.status !== 'DISABLED')
         throw Error('OWN_DISABLED_OPERATOR_READBACK_REQUIRED');
       own.businessDisabled = true;

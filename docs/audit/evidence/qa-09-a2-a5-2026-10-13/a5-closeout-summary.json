@@ -1,0 +1,152 @@
+{
+  "gate": "PASS_THREE_A5_SUPPLEMENTAL_CRITERIA",
+  "prefix": "qa09-15f381e4a5fa3530",
+  "applicationCommit": "72fd93b107ca99be0ddcfb928dd6527727f0f188",
+  "originalExecutionGate": "FAIL",
+  "originalParentGate": "FAIL",
+  "cleanupRecoveryGate": "PASS_RECOVERED_OWN_A5_CLEANUP",
+  "actorBindingGate": "PASS_REAL_COGNITO_SUB_TO_OWN_DATABASE_USER",
+  "actorIdentifierRule": "requestedBy is signed Cognito sub; database userId remains the disable/readback identifier",
+  "closed": [
+    {
+      "id": "replay.operatorNonempty",
+      "status": "PASS_SCOPED_TARGET"
+    },
+    {
+      "id": "replay.uniqueProducerAssociation",
+      "status": "PASS_SCOPED_TARGET"
+    },
+    {
+      "id": "reliability.sameRunNonemptyDedup",
+      "status": "PASS_SCOPED_TARGET"
+    }
+  ],
+  "remainingA5Mandatory": [
+    "reliability.archivePartialFailure",
+    "reliability.queueAndScheduleAssociation",
+    "Remaining applicable MQTT message types from the frozen formal probes"
+  ],
+  "a2Gate": "BLOCKED_EXTERNAL_OPERATIONS_AUTHORITY",
+  "fullA5Accepted": false,
+  "fullQa09Accepted": false,
+  "checkedAt": "2026-10-13T11:21:49.671Z",
+  "scope": "SANITIZED_A5_TARGET_SUMMARY_FULL_ORIGINALS_LOCAL_ONLY",
+  "mainExecutorCommit": "43a6f196b2ede0cc23abde7ef9d4c03454c5846a",
+  "actorReaderCommit": "0641b391",
+  "naturalDaily": {
+    "deviceId": "qa09-15f381e4a5fa3530-03",
+    "gate": "PASS_NATURAL_OWN_DAILY_VISIBLE",
+    "visibleAt": "2026-10-13T10:37:46.698Z",
+    "sharedWorkerInvocations": 0
+  },
+  "replay": {
+    "jobId": "8f2cf646-752e-4256-9d8d-770fb3f64eed",
+    "role": "PlatformOperator",
+    "status": "COMPLETED",
+    "resultSummary": {
+      "sent": 1,
+      "scope": {
+        "to": "2026-10-13T09:49:43.936Z",
+        "from": "2026-10-13T09:49:41.936Z",
+        "seqTo": 1,
+        "seqFrom": 1,
+        "deviceId": "qa09-15f381e4a5fa3530-03",
+        "topicType": "telemetry",
+        "customerId": "b0e2c92b-4373-4b42-895a-240fbf09c7c6"
+      },
+      "failed": 0,
+      "skipped": 9,
+      "failedLines": 0,
+      "scannedLines": 10,
+      "sendFailures": 0,
+      "failedObjects": 0,
+      "scannedObjects": 10
+    },
+    "jobsCreated": 1,
+    "ssoSendMessageAttempts": 0,
+    "producerGate": "PASS_UNIQUE_REPLAY_JOB_PRODUCTION",
+    "exactConsumerGate": "PASS_EXACT_DUPLICATE_CONSUMPTION"
+  },
+  "dedup": {
+    "gate": "PASS_NO_RECEIPT_AGGREGATE_OR_ARCHIVE_DUPLICATION",
+    "before": [
+      {
+        "table": "ingestion_receipts",
+        "count": "30",
+        "digest": "6f6f6dab77239395dcf19ee03dad27ee"
+      },
+      {
+        "table": "telemetry_hourly",
+        "count": "10",
+        "digest": "353c89fd8f1d28d3e439a03f0ac3ce2c"
+      },
+      {
+        "table": "telemetry_daily",
+        "count": "10",
+        "digest": "8c98ac7edf96aaa8e160060f65be5048"
+      },
+      {
+        "table": "outbox_events",
+        "count": "20",
+        "digest": "6398339607b9b886cb7a6223739a2420"
+      }
+    ],
+    "after": [
+      {
+        "table": "ingestion_receipts",
+        "count": "30",
+        "digest": "6f6f6dab77239395dcf19ee03dad27ee"
+      },
+      {
+        "table": "telemetry_hourly",
+        "count": "10",
+        "digest": "353c89fd8f1d28d3e439a03f0ac3ce2c"
+      },
+      {
+        "table": "telemetry_daily",
+        "count": "10",
+        "digest": "8c98ac7edf96aaa8e160060f65be5048"
+      },
+      {
+        "table": "outbox_events",
+        "count": "20",
+        "digest": "6398339607b9b886cb7a6223739a2420"
+      }
+    ],
+    "allDevicesOnboardedNotActive": true,
+    "outsideFingerprintsUnchanged": true
+  },
+  "cleanup": {
+    "gate": "PASS_READONLY_EMPTY_AND_BUILD_TERMINAL",
+    "finishedAt": "2026-10-13T11:21:15.188Z",
+    "ownCertificatesDeleted": 10,
+    "ownThingsDeleted": 10,
+    "customersDeleted": 2,
+    "temporaryIdentityCounts": [
+      0,
+      0,
+      0
+    ],
+    "rawObjectVersionsDeleted": 40,
+    "rawPrefixesVerifiedEmpty": 6,
+    "successfulBuildsVerified": 14,
+    "rolledBackFailedBuildsVerified": 1,
+    "disabledOperatorTombstoneRetained": true
+  },
+  "originalFailuresPreserved": [
+    "ACTOR_SUB_VS_DATABASE_ID_COMPARISON",
+    "UNSUPPORTED_SINGLE_USER_GET_READBACK",
+    "OWN_DISABLE_OUTBOX_MISSING_FROM_CLEANUP_SCOPE"
+  ],
+  "noIamKmsOrCapacityChanges": true,
+  "fullReceiptDigests": {
+    "a5-target.json": "906f9b57f1475db37a6c35a11eac871e50286cb9bdfb8abdee151c54c2cf2df2",
+    "a5-target.json.reliability.json": "2384a2f3fd46cdc5cebda9881a9b3941beb5422bbbb524b61e4a6bf906a8a9bc",
+    "operator-actor-binding.json": "9812965249a22d2b566df3adcce6dcba4fb87b41831ad77d93408ef533591e69",
+    "a5-cleanup-recovery.json": "af9b863dc8db56aeccfcac0ec0e39142224593aa69fe159c444f316f75102be1",
+    "a5-cleanup-drift-read.json": "394fa133a88d4c0fc8caf15d61528dd659153831340d68484d6994dd251dee1c",
+    "a5-cleanup-recovery-v2.json": "eb94ee80fab3468c133ef5e9d75d5850a80f7f5442229c6fbfe0ea977a9deea7",
+    "final-readonly.json": "47da3e724f173694ac278145d2f672e3f5107685b1859263b7876579d61992fe",
+    "a5-closeout.json": "9ac3fb363ea917d67a3869b31f00c09965f5bbf8f68bff2cb29565d9e258ee6f"
+  }
+}

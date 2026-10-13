@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-13T10:15:39.648498+00:00",
+  "scope": "NEXT_REQUIRED_GAP_PREPARATION_ONLY_NO_NEW_CLOUD_EXECUTION",
+  "fullA5Accepted": false,
+  "fullQa09Accepted": false,
+  "activeRequired": false,
+  "performanceExpansion": false,
+  "items": [
+    {
+      "id": "reliability.archivePartialFailure",
+      "status": "NOT_RUN_TARGET",
+      "minimumProof": [
+        "A bounded owned batch contains a valid archive envelope and an invalid envelope",
+        "Actual deployed handler processes the good message and returns only the bad SQS message identifier as failed",
+        "Bad message retry/quarantine is traceable to its exact SQS identifier and cannot duplicate the good archive record",
+        "Terminal state and owned-only queue/DLQ/object cleanup are established before releasing the fixture"
+      ],
+      "executionConstraint": "Prepare the authorized bad-message route and exact owned-message terminal/cleanup procedure before injection; never alter shared mappings, policies or purge a shared queue",
+      "reusableProof": "Deployed SHA CI contains local archive batch/fault tests; these do not replace target receipts"
+    },
+    {
+      "id": "reliability.queueAndScheduleAssociation",
+      "status": "NO_COMPLETE_TARGET_RECEIPT",
+      "minimumProof": [
+        "Bind the actual Archive queue event-source configuration and exact owned event/message/consumer outcome to archived object/manifest bytes",
+        "Bind actual Replay trigger/worker queue execution to the owned Job; reuse this wave if its source/message/consumer proof passes",
+        "Bind the enabled natural schedule to an actual invocation and owned aggregation result; rate configuration or temporal proximity alone is insufficient"
+      ],
+      "executionConstraint": "Read current metadata/logs and preserve the unique linkage; no manual shared Summary invocation and no full data wave solely to reproduce an existing result"
+    },
+    {
+      "id": "Remaining applicable MQTT types",
+      "status": "PARTIAL_TYPE_COVERAGE",
+      "minimumProof": [
+        "Map heartbeat/telemetry/ack from the current wave and existing report evidence by compatible application/configuration",
+        "Execute only missing alarm/event/tamper/media or other applicable types after checking their real state/resource prerequisites",
+        "Retain certificate/Topic/customer rejection checks, persistence/archival proof and owned cleanup"
+      ],
+      "executionConstraint": "Use the frozen formal probes to determine applicability; do not claim all eight MQTT routes from three types or infer physical execution"
+    }
+  ]
+}

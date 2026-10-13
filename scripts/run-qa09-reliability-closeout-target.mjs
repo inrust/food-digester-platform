@@ -107,6 +107,15 @@ export async function runReliabilityCloseout(output, versionPath, options = {}) 
         devices: ctx.receipt.devices,
         customers: ctx.receipt.customers,
         action,
+        ...(a5 && r.operator?.businessDisabled && ['business-cleanup', 'business-audit'].includes(action)
+          ? {
+              ownDisabledUser: {
+                userId: r.operator.userId,
+                email: r.operator.email,
+                cognitoSub: r.operator.cognitoSub,
+              },
+            }
+          : {}),
         ...extra,
       };
       const path = output + `.reliability-${action}-${r.builds.length}.json`;
@@ -221,7 +230,8 @@ export async function runReliabilityCloseout(output, versionPath, options = {}) 
         requestedBy: job.requestedBy,
         role: a5 ? 'PlatformOperator' : 'PlatformSuperAdmin',
       });
-      if (a5) r.operatorActorGate = job.requestedBy === r.operator.userId ? 'PASS_REAL_OPERATOR_ACTOR' : 'NO_RECEIPT';
+      if (a5)
+        r.operatorActorGate = job.requestedBy === r.operator.cognitoSub ? 'PASS_REAL_OPERATOR_ACTOR' : 'NO_RECEIPT';
       r.replayCreate.gate = 'CREATED';
       save();
       let completed;

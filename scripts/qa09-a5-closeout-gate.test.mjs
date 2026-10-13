@@ -30,3 +30,45 @@ test('historical SuperAdmin/empty-daily reliability evidence cannot close the ne
     assert.equal(result.fullQa09Accepted, false);
   }
 });
+
+test('sanitized actual wave closes only three criteria; corrupted actor, consumer, daily, version or recovery fails closed', () => {
+  const fixture = () =>
+    JSON.parse(readFileSync('docs/audit/evidence/qa-09-a2-a5-2026-10-13/a5-sanitized-regression-fixture.json'));
+  const check = (f) => evaluateA5Closeout(f.parent, f.r, f.final, f.version, f.hashes);
+  const result = check(fixture());
+  assert.equal(result.gate, 'PASS_THREE_A5_SUPPLEMENTAL_CRITERIA');
+  assert.equal(result.closed.length, 3);
+  assert.equal(result.fullA5Accepted, false);
+  assert.equal(result.fullQa09Accepted, false);
+  assert.equal(result.originalExecutionGate, 'FAIL');
+  for (const mutate of [
+    (f) => {
+      f.r.jobs[0].requestedBy = f.r.operator.userId;
+    },
+    (f) => {
+      f.r.replayConsumption.rows = [];
+    },
+    (f) => {
+      f.r.after.fingerprints.find((x) => x.table === 'telemetry_daily').count = '0';
+    },
+    (f) => {
+      f.r.dailyWait.deviceId = f.r.before.devices[0].id;
+    },
+    (f) => {
+      f.version.lambdaArtifacts[0].matches = false;
+    },
+    (f) => {
+      f.hashes.recoveryFilesVerified = false;
+    },
+    (f) => {
+      f.final.recovery.sha256 = '0'.repeat(64);
+    },
+    (f) => {
+      f.r.jobs[0].role = 'PlatformSuperAdmin';
+    },
+  ]) {
+    const f = fixture();
+    mutate(f);
+    assert.equal(check(f).gate, 'PARTIAL');
+  }
+});

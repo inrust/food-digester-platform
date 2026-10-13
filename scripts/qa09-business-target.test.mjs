@@ -61,6 +61,20 @@ test('business cleanup preserves outside rows, rejects baseline drift and delete
       return { rows: x.rows, rowCount: /^SELECT/.test(sql) ? x.rows.length : x.affectedRows };
     },
   };
+  const ownDisabledUser = {
+    userId: '33333333-3333-4333-8333-333333333333',
+    cognitoSub: '44444444-4444-4444-8444-444444444444',
+    email: prefix + '-h01-platformoperator@example.invalid',
+  };
+  await pg.exec(
+    'ALTER TABLE outbox_events ADD COLUMN payload jsonb; CREATE TABLE users(id text,email text,cognito_sub text,status text); CREATE TABLE user_roles(user_id text,role_code text);',
+  );
+  await pg.query("INSERT INTO users VALUES($1,$2,$3,'DISABLED')", [
+    ownDisabledUser.userId,
+    ownDisabledUser.email,
+    ownDisabledUser.cognitoSub,
+  ]);
+  await pg.query("INSERT INTO user_roles VALUES($1,'PlatformOperator')", [ownDisabledUser.userId]);
   try {
     await pg.query('INSERT INTO replay_jobs VALUES($1,$2::jsonb)', [
       'foreign-replay',
@@ -96,11 +110,56 @@ test('business cleanup preserves outside rows, rejects baseline drift and delete
       /BUSINESS_BASELINE_DRIFT/,
     );
     assert.equal((await pg.query("SELECT count(*)::int n FROM licenses WHERE id='own-license'")).rows[0].n, 1);
+    await pg.query(
+      "INSERT INTO outbox_events(id,event_type,aggregate_type,aggregate_id,status,payload) VALUES('own-disable','COGNITO_ADMIN_RECONCILIATION','user',$1,'PUBLISHED',$2::jsonb)",
+      [ownDisabledUser.userId, JSON.stringify({ action: 'DISABLE', cognitoSub: ownDisabledUser.cognitoSub })],
+    );
+    await assert.rejects(
+      executeFixture(client, { ...plan, action: 'business-cleanup', businessBaseline: baseline.businessFingerprints }),
+      /BUSINESS_BASELINE_DRIFT/,
+    );
+    await pg.exec("UPDATE users SET status='ACTIVE'");
+    await assert.rejects(
+      executeFixture(client, {
+        ...plan,
+        action: 'business-cleanup',
+        ownDisabledUser,
+        businessBaseline: baseline.businessFingerprints,
+      }),
+      /DISABLED_OWN_OPERATOR_DATABASE_BINDING/,
+    );
+    await pg.exec(
+      "UPDATE users SET status='DISABLED'; UPDATE outbox_events SET status='PENDING' WHERE id='own-disable'",
+    );
+    await assert.rejects(
+      executeFixture(client, {
+        ...plan,
+        action: 'business-cleanup',
+        ownDisabledUser,
+        businessBaseline: baseline.businessFingerprints,
+      }),
+      /BUSINESS_BASELINE_DRIFT/,
+    );
+    await pg.exec("UPDATE outbox_events SET status='PUBLISHED' WHERE id='own-disable'");
+    await assert.rejects(
+      executeFixture(client, {
+        ...plan,
+        action: 'business-cleanup',
+        ownDisabledUser: { ...ownDisabledUser, cognitoSub: ownDisabledUser.userId },
+        businessBaseline: baseline.businessFingerprints,
+      }),
+      /DISABLED_OWN_OPERATOR_DATABASE_BINDING/,
+    );
     const result = await executeFixture(client, {
       ...plan,
+      ownDisabledUser,
       action: 'business-cleanup',
       businessBaseline: baseline.businessFingerprints,
     });
+    assert.equal(
+      (await pg.query('SELECT status FROM users WHERE id=$1', [ownDisabledUser.userId])).rows[0].status,
+      'DISABLED',
+    );
     assert.equal(
       Object.values(result.counts).reduce((a, b) => a + b, 0),
       0,
@@ -121,6 +180,7 @@ test('business cleanup preserves outside rows, rejects baseline drift and delete
     await executeFixture(client, {
       ...plan,
       action: 'business-audit',
+      ownDisabledUser,
       businessBaseline: baseline.businessFingerprints,
     });
   } finally {
