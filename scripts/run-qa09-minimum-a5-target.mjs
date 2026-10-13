@@ -46,6 +46,7 @@ async function logs(group, start, pattern) {
     const result = await aws([
       'logs',
       'filter-log-events',
+      '--no-paginate',
       '--log-group-name',
       group,
       '--start-time',
