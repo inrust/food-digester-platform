@@ -1,0 +1,43 @@
+{
+  "scope": "MINIMUM_A5_SUPPLEMENTAL_ONLY",
+  "completed": [
+    "replay.operatorNonempty",
+    "replay.uniqueProducerAssociation",
+    "reliability.sameRunNonemptyDedup",
+    "reliability.archivePartialFailure",
+    "reliability.queueAndScheduleAssociation"
+  ],
+  "deferredNotAcceptedReleaseRequired": [
+    {
+      "id": "REL-A2-01",
+      "status": "MATERIAL_PENDING",
+      "requires": [
+        "REAL_CURRENT_LICENSE_SIGNATURE_VERIFICATION",
+        "REAL_TARGET_TRUSTED_SIGNED_PACKAGE_VERIFICATION",
+        "DEPENDENT_ACTIVE_LICENSE_COMMAND_OTA_AND_BROWSER_SUCCESS_PATHS"
+      ],
+      "newA2ChannelsOrRolesRequired": false
+    },
+    {
+      "id": "REL-QUEUE-01",
+      "status": "NOT_RUN_ACTUAL_POISON_RETRY_DLQ",
+      "requires": [
+        "SAFE_OWNED_ACTUAL_SQS_RETRY_DLQ_ROUTING_AND_RECOVERY"
+      ],
+      "directHandlerProbeIsSubstitute": false
+    }
+  ],
+  "stillRequiredInMinimumPhase": [
+    "A4_MEDIA_AND_CERTIFICATE_ROTATION_WHERE_NOT_A2_DEPENDENT",
+    "A6_REMAINING_BUSINESS_AND_SECURITY_GAPS",
+    "A7_NON_A2_DEPENDENT_TARGET_BROWSER_GAPS",
+    "A8_FINAL_QA09_AGGREGATION_AND_ACCEPTANCE"
+  ],
+  "existingDataConsistencyEvidence": "RETAINED_WITHOUT_FRESH_REASSESSMENT",
+  "normalQueueIndependentByteReadbackThisRun": false,
+  "naturalDailyIndependentValueReadbackThisRun": false,
+  "fullA5OriginalScopeAccepted": false,
+  "fullQa09Accepted": false,
+  "minimumQa09Accepted": false,
+  "productionReady": false
+}

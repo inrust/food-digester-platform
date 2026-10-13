@@ -1,0 +1,170 @@
+{
+  "gate": "PASS_FIVE_MINIMUM_A5_SUPPLEMENTAL_CRITERIA",
+  "scope": "MINIMUM_A5_ASSOCIATIONS_AND_DIRECT_HANDLER_PARTIAL_BATCH",
+  "applicationCommit": "50cb1125d4d6e064d28b3113cf39cb511d5fa8f2",
+  "closed": [
+    {
+      "id": "replay.operatorNonempty",
+      "status": "PASS_COMPATIBLE_SCOPED_TARGET"
+    },
+    {
+      "id": "replay.uniqueProducerAssociation",
+      "status": "PASS_COMPATIBLE_SCOPED_TARGET"
+    },
+    {
+      "id": "reliability.sameRunNonemptyDedup",
+      "status": "PASS_COMPATIBLE_SCOPED_TARGET"
+    },
+    {
+      "id": "reliability.archivePartialFailure",
+      "status": "PASS_DIRECT_DEPLOYED_HANDLER_AND_REAL_S3_READBACK"
+    },
+    {
+      "id": "reliability.queueAndScheduleAssociation",
+      "status": "PASS_ACTUAL_NORMAL_QUEUE_AND_NATURAL_BUSINESS_ASSOCIATION"
+    }
+  ],
+  "normalQueue": {
+    "result": "PASS",
+    "source": "ACTUAL_MQTT_DB_OUTBOX_SQS_CONSUMER_POST_S3_WRITE_RECEIPT_AND_OBSERVED_OBJECT_KEYS",
+    "messages": 4,
+    "types": [
+      "telemetry",
+      "alarm",
+      "event",
+      "tamper"
+    ],
+    "newIndependentNormalObjectByteReadback": false
+  },
+  "naturalSummary": {
+    "result": "PASS",
+    "source": "NATURAL_EVENTBRIDGE_POST_UPSERT_RECEIPT_AND_ACTUAL_OWN_DAILY_DELETE_COUNT",
+    "sampleCount": 1,
+    "actualDailyRowsDeleted": 1,
+    "uniqueInvocations": 1,
+    "independentDailyValueReadback": false,
+    "freshDataConsistencyReassessment": false,
+    "sharedSummaryInvocations": 0
+  },
+  "partialBatch": {
+    "result": "PASS",
+    "failed": 2,
+    "successful": 2,
+    "source": "DIRECT_DEPLOYED_HANDLER_FIXTURE_NOT_SQS_DELIVERY",
+    "actualPoisonRetryOrDlqProven": false,
+    "association": {
+      "gate": "PASS_DIRECT_HANDLER_REQUEST_TO_OWN_OBJECT",
+      "successRecordReceipts": 2,
+      "uniqueInvocations": 1,
+      "actualSqsDeliveryOrDlq": false
+    },
+    "logicalObjects": 1,
+    "realObjectAndManifestHashesVerified": true
+  },
+  "extraRealSignalTypes": [
+    "alarm",
+    "event",
+    "tamper"
+  ],
+  "cleanup": {
+    "allAttempts": "PASS_INDEPENDENT_OWN_EMPTY_AND_TERMINAL_READS",
+    "normalRun": "PASS_READONLY_EMPTY_AND_BUILD_TERMINAL",
+    "extraFailedRun": "PASS_READONLY_EMPTY_AND_BUILD_TERMINAL",
+    "mixedObjectVersionsDeleted": 2,
+    "mixedReaderDeleted": true,
+    "existingRolePolicyUnchanged": true
+  },
+  "a2Gate": "MATERIAL_PENDING_NO_NEW_PERMISSION_CHANNEL",
+  "releaseRequired": [
+    "REAL_CURRENT_LICENSE_SIGNATURE_VERIFICATION",
+    "REAL_TARGET_TRUSTED_SIGNED_PACKAGE_VERIFICATION",
+    "ACTUAL_POISON_RETRY_AND_DLQ_ROUTING_RECOVERY_IN_SAFE_SCOPE"
+  ],
+  "fullA5OriginalScopeAccepted": false,
+  "fullQa09Accepted": false,
+  "minimumQa09Accepted": false,
+  "productionReady": false,
+  "newIamRolesOrA2ChannelsCreated": false,
+  "iamKmsOrSharedCapacityConfigurationChanges": false,
+  "originalFailuresPreserved": true,
+  "checkedAt": "2026-10-13T23:41:33.311Z",
+  "fullEvidenceLocalOnly": true,
+  "localBindings": [
+    {
+      "file": "target-v3.json",
+      "sha256": "c7ec1589fa65e942b1073f140e93a6423f2813201d98a9b7f75820c76c7fd0af"
+    },
+    {
+      "file": "v3-final-readonly.json",
+      "sha256": "af7b77d22514ff9feef5052bb5fe0569e4e8ed33f8dfb286a4ed8c6a71d05196"
+    },
+    {
+      "file": "v3-archive-consumer-logs.json",
+      "sha256": "8f9b72c2083e580f4ea61b0f0dee3f6e8628b5c1935aca8084e05f462f7fa1ca"
+    },
+    {
+      "file": "natural-summary-association.json",
+      "sha256": "a3c52195d5cbcd8c93140ca266cd28e4a62f5cdce8da0bc939d0a67fe954760c"
+    },
+    {
+      "file": "mixed-minimum.json",
+      "sha256": "3cf6e23740cb073e4b0c3e8e699bab21a013fb08b10a4f8b20442c99b0e46139"
+    },
+    {
+      "file": "mixed-final-readonly.json",
+      "sha256": "bebd0db038dd927a40eafc7036e12bbcea1cd92d793b6e257954f94bf576d675"
+    },
+    {
+      "file": "mixed-minimum.input.json",
+      "sha256": "e0f84d9b6b68dc6fefce5f4847ca24f58493823635f9491ec0b3d3109f86e291"
+    },
+    {
+      "file": "mixed-minimum.response.json",
+      "sha256": "f9e88a36580fbb24e7897d145472bc010dd20f2aebe33a92ffd130dc903e4e87"
+    },
+    {
+      "file": "mixed-minimum.source.json",
+      "sha256": "3c4d3d0114d7e5f0311b0e3ed18b3f303237b5bf50e1239829103c72eb670990"
+    },
+    {
+      "file": "application-version.json",
+      "sha256": "6c08db27b1f18950983fddbdf1f105faddac3ad9b46e690851eb3f9ef0407519"
+    },
+    {
+      "file": "compatibility.json",
+      "sha256": "8a1edfbdab77e653a758acf27b704cc3ffe55866cc1582ce945ccd6926345131"
+    },
+    {
+      "file": "prior-a5-recheck.json",
+      "sha256": "a7e4cea80f2fc649ee1ada843f17b1e2608d73b075291a354c87da8c0684c38b"
+    },
+    {
+      "file": "v4-final-readonly.json",
+      "sha256": "8eacccf6aa2514dbfefda80afa261b8261b957373551cdb3e7ec8d45de5550ba"
+    },
+    {
+      "file": "first-final-readonly-v2.json",
+      "sha256": "377dba5650cf4ed9d9a3859fd8f7c3cf683d4af2a89b681812f74bef2b83ef3a"
+    },
+    {
+      "file": "v2-unseeded-audit.json",
+      "sha256": "61b999aa1cb4de9bc4de487c39e43beccb6556de97cae767c9098e2d83d0ff95"
+    },
+    {
+      "file": "additional-identities-absent.json",
+      "sha256": "4821efcf16a2a3a30f5fea4e97f6e2323cce95ad8250c77b2bf77c2218c9a9b6"
+    },
+    {
+      "file": "v2-start-reconciliation.json",
+      "sha256": "607b55466dbc6421ddfdf329923f5f1d45ea0980a3f77670cb826a324f576bf3"
+    },
+    {
+      "file": "final-runtime-two-functions.json",
+      "sha256": "17ab6e0aa2a8658f9765ff87f443e6d7e92077d0443f743f4d96c8a6764b3600"
+    },
+    {
+      "file": "mixed-minimum.reader.json",
+      "sha256": "d62d410f081754e9ca6f2390a6e95cf51e45ef8f80ee5afb932680222452547c"
+    }
+  ]
+}
