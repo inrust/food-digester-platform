@@ -1,0 +1,61 @@
+{
+  "at": "2026-10-13T08:20:08.727Z",
+  "gate": "PASS",
+  "rows": [
+    {
+      "name": "focused-tests",
+      "args": [
+        "--import",
+        "tsx",
+        "--test",
+        "scripts/qa09-a2-verification.test.mjs",
+        "scripts/qa09-replay-production-proof.test.mjs",
+        "scripts/qa09-a5-orchestration.test.mjs",
+        "scripts/qa09-reliability-closeout.test.mjs",
+        "scripts/qa09-user-closeout.test.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "✔ independent verifier accepts actual cloud signer wire values and exports only bounded hashes (1.335708ms)\n✔ foreign/stale/expired/revoked/date-only/extra fields and signature drift fail before VERIFIED (0.369959ms)\n✔ invalid owned input never fetches a secret; wrong secret binding is rejected (0.181667ms)\n✔ firmware fixture is non-executable and requires the bound KMS key, RSA signature and exact bytes (24.995458ms)\n✔ controlled worker binds frozen sources, dedicated test role and current input before key access (2.105292ms)\n✔ daily wait consumes actual bounded API envelope and times out without shared invocations (1.528542ms)\n✔ unknown Operator preparation freezes cleanup; no fake login or destructive recovery (0.21925ms)\n✔ known Operator cleanup checks exact disabled tombstone and stops unknown disable without retry (0.730625ms)\n✔ nonempty Replay requires exact scope, terminal success, real scan and zero failures (0.493875ms)\n✔ consumer proof binds root and final to all identities and one invocation (0.129167ms)\n✔ single submission persists uncertainty first, never retries denial, timeout or missing ID (0.852416ms)\n✔ small consumer pages project metadata and stop on repeated tokens, failures and total budget (0.578792ms)\n✔ dedup gate refuses empty frames, missing tables and changed receipt/aggregate/archive data (0.237584ms)\n✔ real readonly SQL verifies owned device/customer scope and leaves outside and owned rows intact (656.933916ms)\n✔ Replay observation discovers only exact owned duplicate IDs without claiming Job-to-SQS producer mapping (0.492875ms)\n✔ consumer reader fails closed on oversized pages and page cap without mutation recovery (0.18325ms)\n✔ fresh own MQTT session closes predecessor, disables reconnect and cannot touch a foreign device (0.418583ms)\n✔ PUBACK has a bounded functional deadline, owns late rejection and never resubmits unknown publication (92.467292ms)\n✔ cleanup never starts under unknown/running write ownership or retries an unknown cleanup Build (0.201125ms)\n✔ only bounded fields are projected and an exact unique Job/source/SQS tuple proves production (0.773917ms)\n✔ collector reads the exact fixed log group; truncation and repeated tokens cannot pass (0.318292ms)\n✔ only exact fresh suppressed identities and matching customer scopes are allowed (0.68325ms)\n✔ real SQL seeds only INVITED and preserves outside users; duplicate seed never replays (652.884458ms)\n✔ foreign customer and outside-user trigger mutation roll back all seed writes (483.930541ms)\n✔ identity provisioning suppresses delivery, requires real returned subject, and cannot act on foreign names (0.879333ms)\n✔ response rejection is owned even when the browser action fails first (0.525458ms)\n✔ unknown fixture start is preserved and surfaced as a stop condition without replay (1.373792ms)\n✔ cleanup recovery rejects foreign identities and sites before any AWS operation (292.239917ms)\nℹ tests 28\nℹ suites 0\nℹ pass 28\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1750.031\n",
+      "stderr": ""
+    },
+    {
+      "name": "focused-eslint",
+      "args": [
+        "node_modules/eslint/bin/eslint.js",
+        "scripts/qa09-a2-controlled-worker.mjs",
+        "scripts/qa09-a2-verification.test.mjs",
+        "scripts/qa09-device-license-verifier.mjs",
+        "scripts/qa09-firmware-fixture.mjs",
+        "scripts/qa09-own-replay-operator.mjs",
+        "scripts/qa09-replay-production-proof.mjs",
+        "scripts/qa09-replay-production-proof.test.mjs",
+        "scripts/qa09-a5-orchestration.test.mjs",
+        "scripts/qa09-wait-own-daily.mjs",
+        "scripts/run-qa09-a5-target.mjs",
+        "scripts/run-qa09-reliability-closeout-target.mjs",
+        "scripts/collect-qa09-reliability-final.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "secrets",
+      "args": [
+        "scripts/check-secrets.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "敏感信息扫描通过\n",
+      "stderr": ""
+    },
+    {
+      "name": "sensitive-sinks",
+      "args": [
+        "scripts/check-sensitive-sinks.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "生产日志与 Trace sink 脱敏门禁通过\n",
+      "stderr": ""
+    }
+  ]
+}

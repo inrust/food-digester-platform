@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-13T08:23:40.296976+00:00",
+  "scope": "SANITIZED_A2_PERMISSION_CONCLUSIONS_NO_ACCOUNT_ARNS_OR_POLICY_CONTENT",
+  "gate": "BLOCKED_PENDING_SEPARATE_IAM_KMS_AUTHORIZATION",
+  "keyMaterialRead": false,
+  "iamKmsOrCapacityMutations": 0,
+  "licenseVerifier": {
+    "controlledCodeGate": "LOCAL_TARGETED_TESTS_PASS_NOT_TARGET_VERIFIED",
+    "existingFixtureRoleCanReadLicenseSecret": false,
+    "requiredNextAction": "Authorize a dedicated controlled test verifier with access to only the current test license signing Secret, using the key internally and exporting only verification hashes"
+  },
+  "trustedFirmware": {
+    "keyState": "Enabled_SIGN_VERIFY_RSA_2048",
+    "existingKeyPolicyAuthorizesSigner": false,
+    "requiredNextAction": "Authorize a separate controlled test firmware signer for only the test OTA trust root, verify public signature, then execute real OTA business flow"
+  },
+  "resourceProposal": "Exact role trust, Secret/Decrypt IAM and additive OTA Sign/PublicKey statements are prepared locally only; no resources provisioned and no policy applied",
+  "currentDeploymentAuthorizationIncludesIamKms": false,
+  "publicationBoundary": "User approved public code and sanitized conclusions only; four full permission/preflight files and their unpublished original commit remain local"
+}

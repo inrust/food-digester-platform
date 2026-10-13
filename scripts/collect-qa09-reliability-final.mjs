@@ -150,6 +150,34 @@ export async function collectReliabilityFinal(parentPath, output) {
     const extension = existsSync(parentPath + '.reliability.json')
       ? JSON.parse(readFileSync(parentPath + '.reliability.json'))
       : { builds: [] };
+    if (extension.operator) {
+      const own = extension.operator;
+      if (
+        extension.prefix !== parent.prefix ||
+        own.email !== parent.prefix + '-h01-platformoperator@example.invalid' ||
+        !/^[a-f0-9-]{36}$/.test(own.userId ?? '') ||
+        !own.businessDisabled ||
+        !own.cognitoDeleted ||
+        extension.operatorCleanup?.gate !== 'PASS_DISABLED_TOMBSTONE_AND_COGNITO_DELETED'
+      )
+        throw Error('BOUND_DISABLED_OWN_OPERATOR_REQUIRED');
+      const identity = await read([
+        'cognito-idp',
+        'list-users',
+        '--user-pool-id',
+        'ap-southeast-1_hZMX8LpFo',
+        '--filter',
+        `email = "${own.email}"`,
+        '--limit',
+        '1',
+        '--no-paginate',
+        '--query',
+        '{count:length(Users),token:PaginationToken}',
+      ]);
+      r.identities.push({ username: own.email, count: identity.count });
+      save();
+      if (identity.count !== 0 || identity.token) throw Error('OWN_OPERATOR_IDENTITY_NOT_EMPTY');
+    }
     if (extension.scope === 'OWN_REAL_MQTT_REPORT_NATURAL_DAILY_AND_EXPORT_LEASE') {
       if (extension.prefix !== parent.prefix || extension.businessCleanup !== 'PASS')
         throw Error('OWN_ESG_CLEANUP_BINDING_REQUIRED');
@@ -178,6 +206,7 @@ export async function collectReliabilityFinal(parentPath, output) {
     const ids = [
       ...parent.databaseBuilds.map((b) => b.buildId),
       ...extension.builds.map((b) => b.buildId),
+      ...(extension.fixtureBuilds ?? []).map((b) => b.buildId),
       db.build.id,
     ].filter(Boolean);
     if (

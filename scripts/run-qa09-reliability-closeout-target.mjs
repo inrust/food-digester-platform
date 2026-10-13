@@ -6,6 +6,9 @@ import { promisify } from 'node:util';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 import { main } from './run-qa09-ten-device-acceptance.mjs';
 import { runFixture } from './qa09-ten-device-bridge.mjs';
+import { prepareOwnReplayOperator } from './qa09-own-replay-operator.mjs';
+import { waitOwnDaily } from './qa09-wait-own-daily.mjs';
+import { collectReplayProduction } from './qa09-replay-production-proof.mjs';
 import { PROJECT } from './qa09-ten-device-db.mjs';
 import {
   finishOwnReplayCleanup,
@@ -20,7 +23,8 @@ import {
 const exec = promisify(execFile);
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 const saveJson = (path, r) => writeFileSync(path, JSON.stringify(r, null, 2) + '\n');
-export async function runReliabilityCloseout(output, versionPath) {
+export async function runReliabilityCloseout(output, versionPath, options = {}) {
+  const a5 = options.a5 === true;
   if ([output, output + '.sources.json', output + '.reliability.json'].some(existsSync))
     throw Error('FRESH_RELIABILITY_OUTPUT_REQUIRED');
   const version = JSON.parse(readFileSync(versionPath));
@@ -56,6 +60,15 @@ export async function runReliabilityCloseout(output, versionPath) {
     'scripts/qa09-db-readonly-probe.mjs',
     'pnpm-lock.yaml',
   ];
+  if (a5)
+    sourcePaths.push(
+      'scripts/run-qa09-a5-target.mjs',
+      'scripts/qa09-own-replay-operator.mjs',
+      'scripts/run-qa09-user-closeout-target.mjs',
+      'scripts/qa09-replay-production-proof.mjs',
+      'scripts/qa09-wait-own-daily.mjs',
+      'scripts/qa09-esg-api.mjs',
+    );
   saveJson(output + '.sources.json', {
     frozenAt: new Date().toISOString(),
     nodeVersion: process.version,
@@ -67,7 +80,8 @@ export async function runReliabilityCloseout(output, versionPath) {
   let captured;
   const extension = async (ctx) => {
     const r = {
-      task: 'QA09-CLOSE-07',
+      task: a5 ? 'QA09-A5-NONACTIVE-RELIABILITY' : 'QA09-CLOSE-07',
+      executionMode: a5 ? 'REAL_OPERATOR_REPLAY_BUSINESS_WORKER_NO_SSO_SEND' : 'LEGACY_SUPERADMIN_AND_DIRECT_QUEUE',
       prefix: ctx.receipt.prefix,
       sourceCommit: ctx.receipt.sourceCommit,
       versionSha256: sha256(readFileSync(versionPath)),
@@ -139,7 +153,8 @@ export async function runReliabilityCloseout(output, versionPath) {
       return JSON.parse(response.stdout);
     };
     let businessBaseline,
-      cleanupSafe = false;
+      cleanupSafe = false,
+      operator;
     try {
       const id = ctx.receipt.devices[2];
       const payload = captured && JSON.parse(captured.raw);
@@ -153,6 +168,7 @@ export async function runReliabilityCloseout(output, versionPath) {
       const archived = ctx.receipt.archiveReaderEvidence;
       if (archived?.gate !== 'PASS' || archived.result?.allTelemetryArchived !== true)
         throw Error('ARCHIVE_BYTES_PROOF_REQUIRED');
+      if (a5) await waitOwnDaily(ctx, r, save);
       const before = await db('reliability-observe');
       r.before = before;
       save();
@@ -175,6 +191,8 @@ export async function runReliabilityCloseout(output, versionPath) {
         seq: payload.meta.seq,
       };
       businessBaseline = (await db('business-baseline')).businessFingerprints;
+      if (a5) operator = await prepareOwnReplayOperator(ctx, r, save, output);
+      const replayApi = operator ? operator.api : ctx.api;
       // Replay scope uses original occurred_at, not the later submission time.
       const at = Date.parse(receipt.occurred_at);
       const scope = {
@@ -191,16 +209,22 @@ export async function runReliabilityCloseout(output, versionPath) {
       ctx.receipt.cleanupHold = 'UNKNOWN_OR_RUNNING_RELIABILITY_WRITE';
       save();
       // A lost POST response may have created a Job: no automatic POST retry or cleanup of a running Job.
-      const created = await ctx.api('reliability:replay-create', 'POST', '/api/v1/admin/replay/jobs', 201, scope);
+      const created = await replayApi('reliability:replay-create', 'POST', '/api/v1/admin/replay/jobs', 201, scope);
       const job = created?.data;
       if (!/^[a-f0-9-]{36}$/.test(job?.jobId ?? '')) throw Error('REPLAY_JOB_ID_REQUIRED');
-      r.jobs.push({ jobId: job.jobId, scope, role: 'PlatformSuperAdmin' });
+      r.jobs.push({
+        jobId: job.jobId,
+        scope,
+        requestedBy: job.requestedBy,
+        role: a5 ? 'PlatformOperator' : 'PlatformSuperAdmin',
+      });
+      if (a5) r.operatorActorGate = job.requestedBy === r.operator.userId ? 'PASS_REAL_OPERATOR_ACTOR' : 'NO_RECEIPT';
       r.replayCreate.gate = 'CREATED';
       save();
       let completed;
       for (let i = 0; i < 36; i++) {
         const view = (
-          await ctx.api('reliability:replay-read-' + i, 'GET', '/api/v1/admin/replay/jobs/' + job.jobId, 200)
+          await replayApi('reliability:replay-read-' + i, 'GET', '/api/v1/admin/replay/jobs/' + job.jobId, 200)
         ).data;
         r.jobs[0].view = view;
         save();
@@ -215,60 +239,93 @@ export async function runReliabilityCloseout(output, versionPath) {
       r.replayGate = replayGate(completed, scope);
       save();
       if (!cleanupSafe) throw Error('REPLAY_NOT_TERMINAL_NO_DESTRUCTIVE_CLEANUP');
+      if (a5) {
+        r.production = await collectReplayProduction(
+          {
+            ...r.expected,
+            jobId: job.jobId,
+            topicType: 'telemetry',
+            startMs: replayStartMs,
+            endMs: Date.now() + 90000,
+          },
+          { read: logRead },
+        );
+        save();
+        if (r.production.gate !== 'PASS_UNIQUE_REPLAY_JOB_PRODUCTION') throw Error('EXACT_REPLAY_PRODUCTION_REQUIRED');
+        r.replayProducerToSpecificSqsIdClaimed = true;
+      }
       r.replayConsumption = await collectExactConsumption(
-        { ...r.expected, startMs: replayStartMs, endMs: Date.now() + 90000 },
+        {
+          ...r.expected,
+          ...(a5 ? { sqsMessageId: r.production.sqsMessageId } : {}),
+          startMs: replayStartMs,
+          endMs: Date.now() + 90000,
+        },
         { read: logRead },
       );
       save();
-      const client = new SQSClient({ region: 'ap-southeast-1', credentials: ctx.credentials, maxAttempts: 1 });
-      const startMs = Date.now() - 1000;
-      r.submission = await submitOnce(
-        (input) => client.send(new SendMessageCommand(input), { abortSignal: AbortSignal.timeout(15000) }),
-        (row) => {
-          r.submission = row;
-          save();
-        },
-        {
-          QueueUrl: 'https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-ingress',
-          MessageBody: JSON.stringify({
-            ...payload,
-            iotTopic: `bnx/device/${id}/telemetry`,
-            iotDeviceId: id,
-            iotType: 'telemetry',
-            iotReceivedAt: Date.now(),
-            iotPrincipal: 'arn:aws:iot:ap-southeast-1:065986019555:cert/' + cert.id,
-          }),
-        },
-      );
-      if (r.submission.gate === 'UNKNOWN_SUBMISSION_NO_RETRY')
-        ctx.receipt.cleanupHold = 'UNKNOWN_OR_RUNNING_RELIABILITY_WRITE';
-      if (r.submission.sqsMessageId) {
-        const expected = { ...r.expected, sqsMessageId: r.submission.sqsMessageId, startMs, endMs: Date.now() + 90000 };
-        r.consumption = await collectExactConsumption(expected, {
-          read: async (args, timeout) => {
-            const result = await exec(
-              'aws',
-              [
-                ...args,
-                '--profile',
-                'esgiot-infra',
-                '--region',
-                'ap-southeast-1',
-                '--output',
-                'json',
-                '--no-cli-pager',
-                '--cli-connect-timeout',
-                '3',
-                '--cli-read-timeout',
-                '8',
-              ],
-              { timeout, maxBuffer: 1024 * 1024, env: { ...process.env, AWS_MAX_ATTEMPTS: '1' } },
-            );
-            return JSON.parse(result.stdout);
+      if (!a5) {
+        const client = new SQSClient({ region: 'ap-southeast-1', credentials: ctx.credentials, maxAttempts: 1 });
+        const startMs = Date.now() - 1000;
+        r.submission = await submitOnce(
+          (input) => client.send(new SendMessageCommand(input), { abortSignal: AbortSignal.timeout(15000) }),
+          (row) => {
+            r.submission = row;
+            save();
           },
+          {
+            QueueUrl: 'https://sqs.ap-southeast-1.amazonaws.com/065986019555/fdp-test-ingress',
+            MessageBody: JSON.stringify({
+              ...payload,
+              iotTopic: `bnx/device/${id}/telemetry`,
+              iotDeviceId: id,
+              iotType: 'telemetry',
+              iotReceivedAt: Date.now(),
+              iotPrincipal: 'arn:aws:iot:ap-southeast-1:065986019555:cert/' + cert.id,
+            }),
+          },
+        );
+        if (r.submission.gate === 'UNKNOWN_SUBMISSION_NO_RETRY')
+          ctx.receipt.cleanupHold = 'UNKNOWN_OR_RUNNING_RELIABILITY_WRITE';
+        if (r.submission.sqsMessageId) {
+          const expected = {
+            ...r.expected,
+            sqsMessageId: r.submission.sqsMessageId,
+            startMs,
+            endMs: Date.now() + 90000,
+          };
+          r.consumption = await collectExactConsumption(expected, {
+            read: async (args, timeout) => {
+              const result = await exec(
+                'aws',
+                [
+                  ...args,
+                  '--profile',
+                  'esgiot-infra',
+                  '--region',
+                  'ap-southeast-1',
+                  '--output',
+                  'json',
+                  '--no-cli-pager',
+                  '--cli-connect-timeout',
+                  '3',
+                  '--cli-read-timeout',
+                  '8',
+                ],
+                { timeout, maxBuffer: 1024 * 1024, env: { ...process.env, AWS_MAX_ATTEMPTS: '1' } },
+              );
+              return JSON.parse(result.stdout);
+            },
+          });
+          r.queueConsumptionGate = exactDuplicateGate(r.consumption.rows, expected);
+        } else r.queueConsumptionGate = 'NOT_RUN_NO_SUBMISSION';
+      } else {
+        r.submission = { gate: 'NOT_REQUIRED_BUSINESS_REPLAY_PRODUCER_BOUND', ssoSendAttempts: 0 };
+        r.queueConsumptionGate = exactDuplicateGate(r.replayConsumption.rows, {
+          ...r.expected,
+          sqsMessageId: r.production.sqsMessageId,
         });
-        r.queueConsumptionGate = exactDuplicateGate(r.consumption.rows, expected);
-      } else r.queueConsumptionGate = 'NOT_RUN_NO_SUBMISSION';
+      }
       r.after = await db('reliability-observe');
       r.dedupGate = dedupGate(before, r.after);
       r.replayAuditGate = ['replay.job.create', 'replay.job.execute'].every((action) =>
@@ -277,6 +334,7 @@ export async function runReliabilityCloseout(output, versionPath) {
         ? 'PASS'
         : 'NO_RECEIPT';
       r.gate =
+        (!a5 || r.operatorActorGate === 'PASS_REAL_OPERATOR_ACTOR') &&
         r.replayGate.startsWith('PASS_') &&
         r.queueConsumptionGate.startsWith('PASS_') &&
         r.dedupGate.startsWith('PASS_') &&
@@ -285,7 +343,7 @@ export async function runReliabilityCloseout(output, versionPath) {
           : 'PARTIAL';
       save();
     } catch (e) {
-      const last = ctx.receipt.checks.at(-1);
+      const last = a5 ? r.operatorRequests?.at(-1) : ctx.receipt.checks.at(-1);
       if (last?.id === 'reliability:replay-create' && [400, 401, 403, 404, 409, 422].includes(last.status)) {
         cleanupSafe = true;
         delete ctx.receipt.cleanupHold;
@@ -296,6 +354,23 @@ export async function runReliabilityCloseout(output, versionPath) {
       save();
       throw e;
     } finally {
+      if (a5 && !businessBaseline && !ctx.receipt.cleanupHold) {
+        try {
+          businessBaseline = (await db('business-baseline')).businessFingerprints;
+        } catch {
+          ctx.receipt.cleanupHold = 'UNKNOWN_OR_RUNNING_RELIABILITY_WRITE';
+          r.gate = 'FAIL';
+        }
+      }
+      if (operator) {
+        try {
+          r.operatorCleanup = await operator.cleanup();
+        } catch {
+          r.operatorCleanup = { gate: 'FAIL_OR_UNKNOWN_NO_RETRY' };
+          r.gate = 'FAIL';
+        }
+        save();
+      }
       const cleanup = await finishOwnReplayCleanup(
         {
           baseline: businessBaseline,
