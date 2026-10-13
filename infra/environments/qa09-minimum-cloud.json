@@ -13,7 +13,8 @@
     "missingMaterial": "NOT_ACCEPTED_DEFER_DEPENDENT_SUCCESS_PATHS_TO_RELEASE",
     "keyExportAllowed": false,
     "fabricatedVerifiedAllowed": false,
-    "signatureBypassAllowed": false
+    "signatureBypassAllowed": false,
+    "currentInputStatus": "NOT_PROVIDED_DO_NOT_ASSUME_NO_EXISTING_SERVICE"
   },
   "retainedA5": [
     "replay.operatorNonempty",
@@ -26,7 +27,7 @@
   "conditionalExclusions": [
     {
       "id": "REL-A2-01",
-      "condition": "Required material is unavailable through existing authorized channels",
+      "condition": "Required material has not been provided through existing authorized channels for this phase; do not create channels or change permissions",
       "cases": [
         "device.independentLicenseVerification",
         "device.naturalActive",
@@ -67,5 +68,7 @@
   "minimumPhaseAccepted": false,
   "productionReady": false,
   "channelScope": "A2_LICENSE_VERIFICATION_AND_OTA_SIGNING",
-  "a5Readback": "REUSE_EXISTING_REPLAY_ROLE_EXACT_OWN_IMMUTABLE_ARCHIVE_READER_DELETE_AND_VERIFY_NO_POLICY_CHANGE"
+  "a5Readback": "REUSE_EXISTING_REPLAY_ROLE_EXACT_OWN_IMMUTABLE_ARCHIVE_READER_DELETE_AND_VERIFY_NO_POLICY_CHANGE",
+  "naturalSummaryAssociation": "REUSE_CURRENT_APPLICATION_REAL_POST_UPSERT_AND_SAME_REQUEST_COMPLETION_WITH_ACTUAL_OWN_DAILY_CLEANUP_COUNT_NO_NEW_VALUE_READBACK_CLAIM",
+  "archiveReadMethod": "EXISTING_GET_OBJECT_ONLY_RESPONSE_VERSION_ID_MUST_MATCH_FROZEN_EXPECTED_VERSION"
 }

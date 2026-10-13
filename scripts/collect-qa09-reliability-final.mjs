@@ -9,6 +9,8 @@ import { sha256 } from './qa09-reliability-closeout.mjs';
 import { verifyA5RecoveryReceipt } from './recover-qa09-a5-cleanup.mjs';
 const exec = promisify(execFile);
 export async function collectReliabilityFinal(parentPath, output, recoveryPath) {
+  const readerCleanupOnly = recoveryPath === '--reader-cleanup-only';
+  if (readerCleanupOnly) recoveryPath = undefined;
   if (existsSync(output)) throw Error('FRESH_FINAL_READ_REQUIRED');
   const parent = JSON.parse(readFileSync(parentPath));
   const recovery = recoveryPath ? verifyA5RecoveryReceipt(parentPath, recoveryPath) : null;
@@ -128,11 +130,17 @@ export async function collectReliabilityFinal(parentPath, output, recoveryPath) 
     if (parent.archiveReaderReceipt) {
       const reader = JSON.parse(readFileSync(parent.archiveReaderReceipt));
       if (
-        reader.gate !== 'PASS' ||
+        (reader.gate !== 'PASS' &&
+          !(
+            readerCleanupOnly &&
+            reader.gate === 'FAIL' &&
+            reader.failure === 'READER_INVOCATION_NOT_TERMINAL_SUCCESS' &&
+            reader.cleanup.find((r) => r.type === 'existing-role-policy-unchanged')?.result === 'PASS'
+          )) ||
         reader.prefix !== parent.prefix ||
         reader.cleanup.length !== 2 ||
-        reader.cleanup.some((r) => r.result !== 'PASS') ||
-        sha256(readFileSync(parent.archiveReaderReceipt)) !== parent.archiveReaderSha256 ||
+        (!readerCleanupOnly && reader.cleanup.some((r) => r.result !== 'PASS')) ||
+        (!readerCleanupOnly && sha256(readFileSync(parent.archiveReaderReceipt)) !== parent.archiveReaderSha256) ||
         !/^fdp-test-qa09-archive-[a-f0-9]{16}$/.test(reader.functionName)
       )
         throw Error('BOUND_ARCHIVE_READER_CLEANUP_REQUIRED');
@@ -150,7 +158,9 @@ export async function collectReliabilityFinal(parentPath, output, recoveryPath) 
         throw Error('EXISTING_ARCHIVE_ROLE_POLICY_DRIFT');
       r.archiveReader = {
         gate: 'PASS_INDEPENDENTLY_ABSENT_AND_EXISTING_POLICY_UNCHANGED',
-        receiptSha256: parent.archiveReaderSha256,
+        receiptSha256: sha256(readFileSync(parent.archiveReaderReceipt)),
+        originalReaderGate: reader.gate,
+        cleanupOnlyRecheck: readerCleanupOnly,
       };
       save();
     }

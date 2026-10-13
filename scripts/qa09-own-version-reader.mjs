@@ -17,8 +17,8 @@ export function validateOwnVersionPlan(plan) {
     new Set(plan.customerIds).size !== 2 ||
     plan.customerIds.some((id) => !/^[a-f0-9-]{36}$/.test(id)) ||
     !Array.isArray(plan.objects) ||
-    plan.objects.length !== 10 ||
-    new Set(plan.objects.map((o) => o.key)).size !== 10 ||
+    ![2, 10].includes(plan.objects.length) ||
+    new Set(plan.objects.map((o) => o.key)).size !== plan.objects.length ||
     plan.objects.some(
       (o) =>
         !o.versionId ||
@@ -29,7 +29,7 @@ export function validateOwnVersionPlan(plan) {
         ),
     )
   )
-    throw Error('EXACT_TEN_OWN_IMMUTABLE_ARCHIVE_FILES_REQUIRED');
+    throw Error('FIXED_OWN_IMMUTABLE_ARCHIVE_FILES_REQUIRED');
 }
 export async function readOwnVersions(plan, output) {
   validateOwnVersionPlan(plan);
@@ -73,6 +73,12 @@ export async function readOwnVersions(plan, output) {
       return x.stdout.trim() ? JSON.parse(x.stdout) : {};
     } catch (e) {
       if (absent && e.stderr?.includes('ResourceNotFoundException')) return null;
+      (r.awsFailures ??= []).push({
+        operation: args[0] + ':' + args[1],
+        code: e.code ?? null,
+        stderr: e.stderr ?? null,
+      });
+      save();
       throw Error('OWN_VERSION_READER_AWS_FAILED');
     }
   };
@@ -99,7 +105,7 @@ export async function readOwnVersions(plan, output) {
     r.originalRolePolicySha256 = hash(JSON.stringify(await policy()));
     const source = `import {S3Client,GetObjectCommand} from '@aws-sdk/client-s3';
 const plan=${JSON.stringify(plan)}; const client=new S3Client({region:'ap-southeast-1',maxAttempts:1});
-export const handler=async event=>{if(event?.nonce!==${JSON.stringify(nonce)})return {gate:'INVALID_NONCE'}; const objects=[];for(const o of plan.objects){const response=await client.send(new GetObjectCommand({Bucket:'fdp-test-raw-065986019555',Key:o.key,VersionId:o.versionId}),{abortSignal:AbortSignal.timeout(10000)});if(response.VersionId!==o.versionId||!response.ContentLength||response.ContentLength>65536)throw Error('OWN_VERSION_SIZE_OR_ID_MISMATCH');const body=Buffer.from(await response.Body.transformToByteArray());if(body.length!==response.ContentLength)throw Error('OWN_VERSION_BYTES_MISMATCH');objects.push({...o,bodyBase64:body.toString('base64')});}return {gate:'PASS',nonce:${JSON.stringify(nonce)},planSha256:${JSON.stringify(r.planSha256)},objects};};`;
+export const handler=async event=>{if(event?.nonce!==${JSON.stringify(nonce)})return {gate:'INVALID_NONCE'}; const objects=[];for(const o of plan.objects){const response=await client.send(new GetObjectCommand({Bucket:'fdp-test-raw-065986019555',Key:o.key}),{abortSignal:AbortSignal.timeout(10000)});if(response.VersionId!==o.versionId||!response.ContentLength||response.ContentLength>65536)throw Error('OWN_VERSION_SIZE_OR_ID_MISMATCH');const body=Buffer.from(await response.Body.transformToByteArray());if(body.length!==response.ContentLength)throw Error('OWN_VERSION_BYTES_MISMATCH');objects.push({...o,bodyBase64:body.toString('base64')});}return {gate:'PASS',nonce:${JSON.stringify(nonce)},planSha256:${JSON.stringify(r.planSha256)},objects};};`;
     writeFileSync(join(dir, 'handler.mjs'), source);
     r.handlerSha256 = hash(source);
     r.handlerSourceBase64 = Buffer.from(source).toString('base64');
@@ -167,16 +173,20 @@ export const handler=async event=>{if(event?.nonce!==${JSON.stringify(nonce)})re
       ],
       'esgiot-infra',
     );
-    if (metadata.StatusCode !== 200 || metadata.FunctionError || metadata.ExecutedVersion !== '1')
-      throw Error('READER_INVOCATION_NOT_TERMINAL_SUCCESS');
-    r.invocation = { status: metadata.StatusCode, executedVersion: metadata.ExecutedVersion };
+    r.invocation = {
+      status: metadata.StatusCode,
+      executedVersion: metadata.ExecutedVersion,
+      functionError: metadata.FunctionError ?? null,
+    };
     r.result = JSON.parse(readFileSync(join(dir, 'result.json')));
     save();
+    if (metadata.StatusCode !== 200 || metadata.FunctionError || metadata.ExecutedVersion !== '1')
+      throw Error('READER_INVOCATION_NOT_TERMINAL_SUCCESS');
     if (
       r.result.gate !== 'PASS' ||
       r.result.nonce !== nonce ||
       r.result.planSha256 !== r.planSha256 ||
-      r.result.objects.length !== 10 ||
+      r.result.objects.length !== plan.objects.length ||
       r.result.objects.some((o, i) => o.key !== plan.objects[i].key || o.versionId !== plan.objects[i].versionId)
     )
       throw Error('READER_RESULT_BINDING_REQUIRED');

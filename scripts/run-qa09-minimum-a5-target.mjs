@@ -197,7 +197,8 @@ async function partialBatch(ctx, output) {
   );
   save();
 }
-export async function run(output, versionPath) {
+export async function run(output, versionPath, mode = 'FULL') {
+  if (!['FULL', '--archive-only'].includes(mode)) throw Error('EXPLICIT_A5_MODE_REQUIRED');
   if (!output || !versionPath || existsSync(output)) throw Error('FRESH_OUTPUT_AND_VERSION_REQUIRED');
   mkdirSync(dirname(output), { recursive: true });
   const sourcePaths = [
@@ -240,6 +241,7 @@ export async function run(output, versionPath) {
   const extension = async (ctx) => {
     const { receipt, held, db, check, save } = ctx;
     receipt.batchArchiveCleanup = true;
+    receipt.archiveOnly = mode === '--archive-only';
     receipt.remainderExecutorSources = [
       'run-qa09-minimum-a5-target.mjs',
       'qa09-minimum-a5-proof.mjs',
@@ -428,6 +430,13 @@ export async function run(output, versionPath) {
     );
     receipt.archiveLogs = archiveLogs.filter((l) => observation.outbox.some((o) => o.id === l.eventId));
     save();
+    if (receipt.archiveOnly) {
+      await checkCode();
+      receipt.remainingA5Gate = 'PASS_ARCHIVE_REMAINDER_ONLY';
+      receipt.naturalSummaryAssociation = 'SEPARATE_COMPATIBLE_ACTUAL_BUSINESS_PROOF_REQUIRED';
+      save();
+      return;
+    }
     console.log('Archive queue and deployed mixed-batch separation verified; waiting for natural Summary.');
     const summaryDeadline = Date.now() + 75 * 60000;
     let summaryLogs, completed;

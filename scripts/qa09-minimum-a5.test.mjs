@@ -165,6 +165,7 @@ test('Existing-role reader only accepts ten fixed own versioned files and no arb
     ).flat(),
   };
   validateOwnVersionPlan(plan);
+  validateOwnVersionPlan({ ...plan, objects: plan.objects.slice(0, 2) });
   for (const patch of [
     { objects: plan.objects.slice(1) },
     { objects: plan.objects.map((o) => ({ ...o, versionId: undefined })) },
@@ -222,4 +223,69 @@ test('Minimum scope keeps truth and disallows all new privilege channels', () =>
     assert.equal(scope[k], false);
   assert.ok(scope.conditionalExclusions.every((e) => e.releaseRequired && e.status.endsWith('NOT_ACCEPTED')));
   assert.equal(logRows([{ message: 'PREFIX {"event":"test"}' }, { message: 'bad' }])[0].event, 'test');
+});
+
+test('Direct handler proof binds both synthetic successes to one real invocation and exact own object', async () => {
+  const { assertDirectPartialAssociation } = await import('./check-qa09-minimum-a5.mjs');
+  const partial = {
+    eventId: uuid,
+    goodIds: ['DIRECT-GOOD', 'DIRECT-DUPLICATE'],
+    object: { key, manifestKey: key + '.manifest', compressedSha256: 'a'.repeat(64) },
+  };
+  const rows = partial.goodIds.map((messageId) => ({
+    event: 'archive.record.completed',
+    eventId: uuid,
+    messageId,
+    source: 'DIRECT_FIXTURE_OR_UNKNOWN',
+    queueName: null,
+    outcome: 'ARCHIVED',
+    objectKey: key,
+    manifestKey: key + '.manifest',
+    compressedSha256: 'a'.repeat(64),
+    lambdaRequestId: other,
+  }));
+  assert.equal(assertDirectPartialAssociation(partial, rows).actualSqsDeliveryOrDlq, false);
+  for (const patch of [
+    { source: 'aws:sqs' },
+    { lambdaRequestId: uuid },
+    { compressedSha256: 'bad' },
+    { objectKey: 'foreign' },
+  ])
+    assert.throws(() => assertDirectPartialAssociation(partial, [rows[0], { ...rows[1], ...patch }]));
+});
+
+test('Reused natural association requires real nonempty upsert, same request and actual daily persistence count', async () => {
+  const { naturalSummaryBusinessAssociation } = await import('./qa09-natural-summary-association.mjs');
+  const p = {
+    devices: [row.device_id],
+    customers: [{ id: uuid }],
+    prefix: 'qa09-1234567890abcdef',
+    failure: { code: 'OWN_VERSION_READER_FAILED' },
+    finishedAt: '2026-10-13T11:00:00Z',
+    remainderStartedAt: expected.notBefore,
+  };
+  const before = {
+    prefix: p.prefix,
+    action: 'consistency-observe',
+    gate: 'PASS',
+    devices: [{ lifecycle_status: 'Onboarded' }],
+    telemetry_hourly: [{ device_id: row.device_id, customer_id: uuid, sample_count: 1 }],
+  };
+  const cleanup = {
+    prefix: p.prefix,
+    action: 'cleanup',
+    gate: 'PASS',
+    deleted: { telemetry_daily: 1, telemetry_hourly: 1 },
+  };
+  const r = naturalSummaryBusinessAssociation(p, before, cleanup, [upsert, completed]);
+  assert.equal(r.independentDailyValueReadback, false);
+  assert.equal(r.result, 'PASS');
+  assert.throws(() =>
+    naturalSummaryBusinessAssociation(p, before, { ...cleanup, deleted: { telemetry_daily: 0, telemetry_hourly: 1 } }, [
+      upsert,
+      completed,
+    ]),
+  );
+  for (const patch of [{ source: 'MANUAL_OR_UNRECOGNIZED' }, { customerId: other }, { lambdaRequestId: uuid }])
+    assert.throws(() => naturalSummaryBusinessAssociation(p, before, cleanup, [{ ...upsert, ...patch }, completed]));
 });

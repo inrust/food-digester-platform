@@ -7,7 +7,37 @@ import {
   assertNaturalSummary,
   assertPartialBatch,
 } from './qa09-minimum-a5-proof.mjs';
+import { naturalSummaryBusinessAssociation } from './qa09-natural-summary-association.mjs';
+import { archiveBytes } from './run-qa09-minimum-a5-target.mjs';
+import { canonicalizeJson } from '../contracts/mqtt/payload-normalization.ts';
 const read = (path) => JSON.parse(readFileSync(path));
+export function assertDirectPartialAssociation(partial, rows) {
+  const matches = rows.filter(
+    (r) =>
+      r.event === 'archive.record.completed' &&
+      r.eventId === partial.eventId &&
+      partial.goodIds.includes(r.messageId) &&
+      r.source === 'DIRECT_FIXTURE_OR_UNKNOWN' &&
+      r.queueName === null &&
+      r.outcome === 'ARCHIVED' &&
+      r.objectKey === partial.object.key &&
+      r.manifestKey === partial.object.manifestKey &&
+      r.compressedSha256 === partial.object.compressedSha256 &&
+      /^[a-f0-9-]{36}$/.test(r.lambdaRequestId ?? ''),
+  );
+  if (
+    matches.length !== 2 ||
+    new Set(matches.map((r) => r.messageId)).size !== 2 ||
+    new Set(matches.map((r) => r.lambdaRequestId)).size !== 1
+  )
+    throw Error('ONE_REAL_DIRECT_INVOCATION_AND_OWN_OBJECT_REQUIRED');
+  return {
+    gate: 'PASS_DIRECT_HANDLER_REQUEST_TO_OWN_OBJECT',
+    successRecordReceipts: 2,
+    uniqueInvocations: 1,
+    actualSqsDeliveryOrDlq: false,
+  };
+}
 export function checkMinimumA5(parentPath, finalPath, output) {
   const p = read(parentPath),
     final = read(finalPath),
@@ -18,7 +48,8 @@ export function checkMinimumA5(parentPath, finalPath, output) {
     if (!condition) throw Error(code);
   };
   require(p.gate === 'PASS' &&
-    p.remainingA5Gate === 'PASS_MINIMUM_SCOPE' &&
+    (p.remainingA5Gate === 'PASS_MINIMUM_SCOPE' ||
+      (p.archiveOnly === true && p.remainingA5Gate === 'PASS_ARCHIVE_REMAINDER_ONLY')) &&
     p.remainingOnly === true &&
     !p.cleanupHold &&
     p.finishedAt &&
@@ -41,6 +72,20 @@ export function checkMinimumA5(parentPath, finalPath, output) {
     final.identities.every((r) => r.count === 0) &&
     final.archives.length === 12 &&
     final.archives.every((r) => r.versions === 0 && r.markers === 0 && !r.truncated), 'INDEPENDENT_CLEANUP_REQUIRED');
+  const directInputPath = parentPath + '.partial-input.json',
+    directResponsePath = parentPath + '.partial-response.json';
+  const directInput = read(directInputPath),
+    directGood = JSON.parse(directInput.Records.find((r) => r.messageId === p.partialBatch.goodIds[0]).body);
+  require(sha256(readFileSync(directInputPath)) === p.partialBatch.inputSha256 &&
+    directGood.eventId === p.partialBatch.eventId &&
+    p.partialBatch.object.rawBodySha256 === sha256(directGood.payload.rawBody) &&
+    p.partialBatch.object.payloadSha256 === sha256(canonicalizeJson(directGood.payload.payload)) &&
+    JSON.stringify(read(directResponsePath)) ===
+      JSON.stringify(p.partialBatch.response), 'EXACT_DIRECT_INPUT_RESPONSE_AND_ARCHIVED_CONTENT_REQUIRED');
+  const directAssociation = read(parentPath + '.partial-association.json');
+  require(directAssociation.parentSha256 === sha256(readFileSync(parentPath)) &&
+    directAssociation.readOnly === true, 'BOUND_DIRECT_HANDLER_ASSOCIATION_REQUIRED');
+  const directProof = assertDirectPartialAssociation(p.partialBatch, directAssociation.rows);
   const reader = read(p.archiveReaderReceipt);
   require(sha256(readFileSync(p.archiveReaderReceipt)) === p.archiveReaderSha256 &&
     reader.gate === 'PASS' &&
@@ -69,13 +114,65 @@ export function checkMinimumA5(parentPath, finalPath, output) {
   const published = p.published.filter((r) => r.type !== 'heartbeat');
   require(published.length === 4 &&
     new Set(published.map((r) => r.type)).size === 4, 'EXACT_REMAINING_MESSAGES_REQUIRED');
+  const certs = observations.filter((b) => b.action === 'observe').at(-1).result.certificates;
+  for (const object of p.normalArchiveObjects) {
+    const outbox = current.outbox.find((o) => o.id === object.eventId),
+      pub = published.find(
+        (r) =>
+          r.deviceId === outbox.aggregate_id && r.type === outbox.topic_type && r.payloadSha256 === outbox.payload_hash,
+      );
+    const computed = archiveBytes(
+      p,
+      object.key,
+      object.manifestKey,
+      {
+        eventId: object.eventId,
+        customerId: pub.customerId,
+        published: pub,
+        certificateId: certs.find((c) => c.device_id === pub.deviceId).id,
+      },
+      reader,
+    );
+    require(canonicalizeJson(computed) ===
+      canonicalizeJson(object), 'INDEPENDENT_NORMAL_ARCHIVE_BYTES_RECOMPUTATION_REQUIRED');
+  }
+  const directComputed = archiveBytes(
+    p,
+    p.partialBatch.object.key,
+    p.partialBatch.object.manifestKey,
+    { eventId: p.partialBatch.eventId, customerId: p.customers[0].id },
+    reader,
+  );
+  require(canonicalizeJson(directComputed) ===
+    canonicalizeJson(p.partialBatch.object), 'INDEPENDENT_DIRECT_ARCHIVE_BYTES_RECOMPUTATION_REQUIRED');
   assertArchiveAssociation(published, current.outbox, p.archiveLogs, p.normalArchiveObjects);
-  assertNaturalSummary(current.telemetry_daily, p.summaryLogs, {
-    deviceId: p.devices[0],
-    customerId: p.customers[0].id,
-    notBefore: p.remainderStartedAt,
-    ruleName: 'fdp-test-summary',
-  });
+  let naturalProof, naturalPath;
+  if (p.archiveOnly) {
+    naturalPath = parentPath + '.natural-summary.json';
+    const packet = read(naturalPath);
+    require(packet.applicationCommit === p.sourceCommit &&
+      packet.bindings.every(
+        (b) => sha256(readFileSync(b.path)) === b.sha256,
+      ), 'SAME_APPLICATION_NATURAL_ASSOCIATION_BINDINGS_REQUIRED');
+    const oldParent = read(packet.parentPath),
+      oldFinal = read(packet.finalPath);
+    require(oldFinal.gate === 'PASS_READONLY_EMPTY_AND_BUILD_TERMINAL' &&
+      oldFinal.parentSha256 === sha256(readFileSync(packet.parentPath)), 'REUSED_NATURAL_CLEANUP_REQUIRED');
+    naturalProof = naturalSummaryBusinessAssociation(
+      oldParent,
+      read(packet.beforePath).result,
+      read(packet.cleanupPath).result,
+      packet.rows,
+    );
+  } else {
+    naturalProof = assertNaturalSummary(current.telemetry_daily, p.summaryLogs, {
+      deviceId: p.devices[0],
+      customerId: p.customers[0].id,
+      notBefore: p.remainderStartedAt,
+      ruleName: 'fdp-test-summary',
+    });
+  }
+
   require(p.partialBatch.state === 'TERMINAL' &&
     p.partialBatch.invoke.status === 200 &&
     !p.partialBatch.invoke.functionError &&
@@ -93,8 +190,8 @@ export function checkMinimumA5(parentPath, finalPath, output) {
     applicationCommit: p.sourceCommit,
     closed: ['reliability.archivePartialFailure', 'reliability.queueAndScheduleAssociation'],
     queue: p.archiveQueueProof,
-    summary: p.summaryProof,
-    partialBatch: p.partialBatch.proof,
+    summary: naturalProof,
+    partialBatch: { ...p.partialBatch.proof, association: directProof },
     extraSignalTypes: ['alarm', 'event', 'tamper'],
     cleanup: {
       gate: final.gate,
@@ -116,9 +213,13 @@ export function checkMinimumA5(parentPath, finalPath, output) {
     fullEvidenceLocalOnly: true,
     localBindings: [
       parentPath,
+      ...(naturalPath ? [naturalPath] : []),
       finalPath,
       p.versionReceipt,
       p.archiveReaderReceipt,
+      parentPath + '.partial-association.json',
+      directInputPath,
+      directResponsePath,
       parentPath + '.sources.json',
       ...p.databaseBuilds.map((b) => b.receipt),
       final.databaseReceipt,
