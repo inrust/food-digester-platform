@@ -1,0 +1,646 @@
+{
+  "scope": "REPOSITORY_ROOT_CAUSE_AND_CLOSEOUT_PLANNING_ONLY",
+  "date": "2026-10-13",
+  "timezone": "Asia/Shanghai",
+  "baseline": "f8e943d2c1a3bca6418f238e732a275e255fc75c",
+  "lastRecordedTargetApplication": "ee8f0713cdc5785dbf45e354f1f63723d77e3716",
+  "qa09Status": "PARTIAL",
+  "fullQa09Accepted": false,
+  "releasePerformanceAccepted": false,
+  "productionReady": false,
+  "liveAwsRead": false,
+  "cloudMutation": false,
+  "formalPassCount": 0,
+  "formalRequiredCount": 8,
+  "applicationInputs": [
+    {
+      "path": "apps",
+      "before": "781fc407991e05e5d9b3e1f1ab70bb5893a8a71b",
+      "after": "781fc407991e05e5d9b3e1f1ab70bb5893a8a71b",
+      "equal": true,
+      "changedFiles": []
+    },
+    {
+      "path": "packages",
+      "before": "5f24aaef171e80ae47d1b24583ccd80f8079fda4",
+      "after": "5f24aaef171e80ae47d1b24583ccd80f8079fda4",
+      "equal": true,
+      "changedFiles": []
+    },
+    {
+      "path": "contracts",
+      "before": "0a9d6bddb69863fdfa4a3addfa44239d1c76401b",
+      "after": "0a9d6bddb69863fdfa4a3addfa44239d1c76401b",
+      "equal": true,
+      "changedFiles": []
+    },
+    {
+      "path": "infra",
+      "before": "e30dfb82ed90dfee4a0e090e2025932157c0bdd0",
+      "after": "e30dfb82ed90dfee4a0e090e2025932157c0bdd0",
+      "equal": true,
+      "changedFiles": []
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "before": "cc4fe15e2189802f1f819853c0f40a5ef71e8c19",
+      "after": "cc4fe15e2189802f1f819853c0f40a5ef71e8c19",
+      "equal": true,
+      "changedFiles": []
+    },
+    {
+      "path": "package.json",
+      "before": "d263a41529764ca29cc81b28f44dac6bed5a0569",
+      "after": "d263a41529764ca29cc81b28f44dac6bed5a0569",
+      "equal": true,
+      "changedFiles": []
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "before": "72d188bcf671a82fbfe766bcf437d663b13bb40a",
+      "after": "72d188bcf671a82fbfe766bcf437d663b13bb40a",
+      "equal": true,
+      "changedFiles": []
+    },
+    {
+      "path": ".nvmrc",
+      "before": "248216ad5b80a75cb6913e4f54fde1340b845b4c",
+      "after": "248216ad5b80a75cb6913e4f54fde1340b845b4c",
+      "equal": true,
+      "changedFiles": []
+    },
+    {
+      "path": "scripts/esgiot-cdk.mjs",
+      "before": "e359128579170c14c5efa821f9858456c3408824",
+      "after": "e359128579170c14c5efa821f9858456c3408824",
+      "equal": true,
+      "changedFiles": []
+    },
+    {
+      "path": ".github/workflows/deploy-test.yml",
+      "before": "061d8f643a8ae42c198712159edc9d7679cfaa9a",
+      "after": "061d8f643a8ae42c198712159edc9d7679cfaa9a",
+      "equal": true,
+      "changedFiles": []
+    }
+  ],
+  "gates": [
+    {
+      "path": "scripts/check-aws-iot-data-path-evidence.mjs",
+      "sha256": "5bf661dbfa9a1da8d928bdf893c91f58933edccd4e438662c66ed0224b5a7106",
+      "required": {
+        "QA03_PROBES": [
+          "partialFailure",
+          "quarantine",
+          "receipt",
+          "rds",
+          "outbox",
+          "archiveQueue",
+          "s3RawArchive"
+        ],
+        "UPLINK_TYPES": [
+          "heartbeat",
+          "telemetry",
+          "report",
+          "alarm",
+          "event",
+          "ack",
+          "tamper",
+          "media"
+        ]
+      },
+      "isolatedFalseErrors": [
+        "environment.isolated 必须为 true"
+      ],
+      "actual": {
+        "command": [
+          "/Users/anray/.nvm/versions/node/v24.12.0/bin/node",
+          "scripts/check-aws-iot-data-path-evidence.mjs"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "缺少目标 AWS 数据链路回执: docs/audit/evidence/be-iot-aws-data-path.json\n"
+      }
+    },
+    {
+      "path": "scripts/check-aws-data-processing-evidence.mjs",
+      "sha256": "c31bcec808a5a945f3706fd60344375fe33e3da422c2c20685d88f585629a593",
+      "required": {
+        "REQUIRED_PROBES": {
+          "archive": [
+            "outbox",
+            "archiveQueue",
+            "s3Object",
+            "manifest",
+            "duplicateDelivery",
+            "partialFailure"
+          ],
+          "replay": [
+            "apiCreate",
+            "triggerQueue",
+            "worker",
+            "idempotency",
+            "outOfScope"
+          ],
+          "summary": [
+            "scheduleInvocation",
+            "migration",
+            "hourly",
+            "daily",
+            "esgDaily"
+          ]
+        }
+      },
+      "isolatedFalseErrors": [
+        "environment.isolated 必须为 true"
+      ],
+      "actual": {
+        "command": [
+          "/Users/anray/.nvm/versions/node/v24.12.0/bin/node",
+          "scripts/check-aws-data-processing-evidence.mjs"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "缺少目标 AWS 数据处理回执: docs/audit/evidence/be-arc-rpl-esg-aws-data-processing.json\n"
+      }
+    },
+    {
+      "path": "scripts/check-aws-admin-cus-dev-evidence.mjs",
+      "sha256": "81251a54d78ab6c38af3bd8899fd57a1f9b8dbfcd28428ca923c53f0cfd495fe",
+      "required": {
+        "REQUIRED_ADMIN_OPERATIONS": [
+          "listCustomers",
+          "createCustomer",
+          "getCustomer",
+          "updateCustomer",
+          "deleteCustomer",
+          "deactivateCustomer",
+          "listSites",
+          "createSite",
+          "getSite",
+          "updateSite",
+          "deleteSite",
+          "deactivateSite",
+          "listDevices",
+          "getDevice",
+          "updateDeviceMetadata",
+          "assignDevice",
+          "listDeviceAssignments",
+          "suspendDevice",
+          "reactivateDevice",
+          "retireDevice",
+          "forceCompleteRetirement",
+          "getDeviceConsole",
+          "listDeviceActivities",
+          "createActivityExport",
+          "getActivityExport"
+        ],
+        "REQUIRED_ROLES": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ],
+        "RETIRED_MQTT_TYPES": [
+          "heartbeat",
+          "telemetry",
+          "report",
+          "alarm",
+          "event",
+          "ack",
+          "tamper",
+          "media"
+        ]
+      },
+      "isolatedFalseErrors": [
+        "environment.isolated 必须为 true"
+      ],
+      "actual": {
+        "command": [
+          "/Users/anray/.nvm/versions/node/v24.12.0/bin/node",
+          "scripts/check-aws-admin-cus-dev-evidence.mjs"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "缺少目标 AWS 管理后台回执: docs/audit/evidence/be-cus-dev-aws-acceptance.json\n"
+      }
+    },
+    {
+      "path": "scripts/check-aws-admin-business-evidence.mjs",
+      "sha256": "8465362d2ffbb515062f0e738d6ad30db244c196e4b2427ba2cb4162eafe40ba",
+      "required": {
+        "REQUIRED_ADMIN_BUSINESS_OPERATIONS": [
+          "listLicenses",
+          "createLicense",
+          "getLicense",
+          "listLicenseHistory",
+          "issueLicense",
+          "activateLicense",
+          "renewLicense",
+          "revokeLicense",
+          "evaluateLicense",
+          "createContract",
+          "listContracts",
+          "getContract",
+          "updateContract",
+          "activateContract",
+          "renewContract",
+          "terminateContract",
+          "evaluateContract",
+          "listContractDevices",
+          "listAvailableDevices",
+          "listContractAssociations",
+          "bindContractDevices",
+          "unbindContractDevices",
+          "createConfiguration",
+          "listConfigurations",
+          "getConfiguration",
+          "createConfigurationVersion",
+          "publishConfigurationVersion",
+          "getConfigurationVersion",
+          "getConfigurationVersionStatus",
+          "listConsumableStatus",
+          "getConsumableContact",
+          "createConsumableRequest",
+          "listConsumableRequests",
+          "getConsumableRequest",
+          "processConsumableRequest",
+          "completeConsumableRequest",
+          "cancelConsumableRequest",
+          "createDeviceUser",
+          "listDeviceUsers",
+          "getDeviceUser",
+          "updateDeviceUser",
+          "disableDeviceUser",
+          "assignDeviceUser",
+          "revokeDeviceUser",
+          "listAlarms",
+          "getAlarm",
+          "acknowledgeAlarm",
+          "clearAlarm",
+          "listDeviceEvents",
+          "listTamperEvents",
+          "getEsgOverview",
+          "listEsgHourly",
+          "listEsgDaily",
+          "listEsgReports",
+          "listEsgDailySummary",
+          "listEsgCalculationVersions",
+          "createEsgExport",
+          "getEsgExport"
+        ],
+        "REQUIRED_ADMIN_BUSINESS_ROLES": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ]
+      },
+      "isolatedFalseErrors": [
+        "environment.isolated 必须为 true"
+      ],
+      "actual": {
+        "command": [
+          "/Users/anray/.nvm/versions/node/v24.12.0/bin/node",
+          "scripts/check-aws-admin-business-evidence.mjs"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "缺少目标 AWS 管理后台业务回执: docs/audit/evidence/be-admin-business-aws-acceptance.json\n"
+      }
+    },
+    {
+      "path": "scripts/check-aws-med-rbac-aud-dash-set-evidence.mjs",
+      "sha256": "be9b3e8dc3399e26c81648ad77aa7bef38372a1a6973d0e958ac9399b8f588ce",
+      "required": {
+        "REQUIRED_OPERATIONS": [
+          "createMediaUploadSession",
+          "listMedia",
+          "createMediaDownloadUrl",
+          "listUsers",
+          "inviteUser",
+          "assignUserRoles",
+          "setUserScope",
+          "disableUser",
+          "triggerUserPasswordReset",
+          "listAuditLogs",
+          "getAuditLogDetail",
+          "getDashboardOverview",
+          "listSettings",
+          "getSetting",
+          "updateSetting"
+        ],
+        "REQUIRED_ROLES": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ]
+      },
+      "isolatedFalseErrors": [
+        "environment.isolated 必须为 true"
+      ],
+      "actual": {
+        "command": [
+          "/Users/anray/.nvm/versions/node/v24.12.0/bin/node",
+          "scripts/check-aws-med-rbac-aud-dash-set-evidence.mjs"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "缺少目标 AWS BE-MED/RBAC/AUD/DASH/SET 回执: docs/audit/evidence/be-med-rbac-aud-dash-set-aws-acceptance.json\n"
+      }
+    },
+    {
+      "path": "scripts/check-admin-web-target-evidence.mjs",
+      "sha256": "fe914138256af191191bedd3a3dccda8c47df25c42b0a23a9fe3c286659ebc80",
+      "required": {
+        "REQUIRED_ROLES": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ],
+        "REQUIRED_ROUTES": [
+          "/devices/view",
+          "/devices/manage",
+          "/licenses",
+          "/configurations",
+          "/device-users",
+          "/alarms"
+        ],
+        "REQUIRED_WORKFLOWS": [
+          "FE-06-device-media-activities",
+          "FE-07-lifecycle-retirement-alias",
+          "FE-08-license-history-actions",
+          "FE-09-configuration-device-user-sync",
+          "FE-10-alarm-url-critical"
+        ]
+      },
+      "isolatedFalseErrors": [
+        "environment.isolated 必须为 true"
+      ],
+      "actual": {
+        "command": [
+          "/Users/anray/.nvm/versions/node/v24.12.0/bin/node",
+          "scripts/check-admin-web-target-evidence.mjs"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "缺少 FE-06～FE-10 目标环境回执: docs/audit/evidence/fe-06-10-admin-web-target.json\n"
+      }
+    },
+    {
+      "path": "scripts/check-admin-web-fe11-15-target-evidence.mjs",
+      "sha256": "a040083c2a32a9dfc4a263a10b8de62d6123f35ccd48a61a7fb641cae89fa5c9",
+      "required": {
+        "REQUIRED_AUDIT_DENIED_ROLES": [
+          "PlatformOperator",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ],
+        "REQUIRED_ROLES": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ],
+        "REQUIRED_ROUTES": [
+          "/esg/overview",
+          "/esg/devices",
+          "/devices/operate",
+          "/ota/packages",
+          "/ota/campaigns",
+          "/media",
+          "/audit-logs"
+        ],
+        "REQUIRED_WORKFLOWS": [
+          "FE-11-esg-pagination-export",
+          "FE-12-command-danger-publish-failure",
+          "FE-13-ota-package-campaign-failure",
+          "FE-14-media-short-link-cross-customer",
+          "FE-15-audit-readonly-redaction"
+        ]
+      },
+      "isolatedFalseErrors": [
+        "schema/environment/isolated must be equal to constant"
+      ],
+      "actual": {
+        "command": [
+          "/Users/anray/.nvm/versions/node/v24.12.0/bin/node",
+          "scripts/check-admin-web-fe11-15-target-evidence.mjs"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "缺少 FE-11～FE-15 目标环境回执: docs/audit/evidence/fe-11-15-admin-web-target.json；状态为 NOT RUN / NO RECEIPT\n"
+      }
+    },
+    {
+      "path": "scripts/check-admin-web-fe16-19-target-evidence.mjs",
+      "sha256": "f0b30c89c86a17aa0ecc63362d6f7adcf1d9bb531a5c76494dcf11568659934c",
+      "required": {
+        "REQUIRED_LOCALES": [
+          "zh-CN",
+          "en"
+        ],
+        "REQUIRED_ROLES": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "Auditor",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ],
+        "REQUIRED_ROUTES": [
+          "/settings",
+          "/contracts",
+          "/contracts/new",
+          "/contracts/detail",
+          "/consumables"
+        ],
+        "REQUIRED_VIEWPORTS": [
+          375,
+          768,
+          1440
+        ],
+        "REQUIRED_WORKFLOWS": [
+          "FE-16-users-settings",
+          "FE-17-contract-lifecycle",
+          "FE-18-consumable-privacy-workflow",
+          "FE-19-bilingual-layout"
+        ]
+      },
+      "isolatedFalseErrors": [
+        "schema/environment/isolated must be equal to constant"
+      ],
+      "actual": {
+        "command": [
+          "/Users/anray/.nvm/versions/node/v24.12.0/bin/node",
+          "scripts/check-admin-web-fe16-19-target-evidence.mjs"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "缺少 FE-16～FE-19 目标环境回执: docs/audit/evidence/fe-16-19-admin-web-target.json；状态为 NOT RUN / NO RECEIPT\n"
+      }
+    }
+  ],
+  "focused": {
+    "command": [
+      "/Users/anray/.nvm/versions/node/v24.12.0/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "scripts/qa09-business-reconciliation.test.mjs",
+      "scripts/qa09-formal-closeout-map.test.mjs",
+      "scripts/qa09-replay-dedup-assessment.test.mjs"
+    ],
+    "exitCode": 0,
+    "stdout": "✔ path matcher is anchored, escapes literals, and respects method (0.417792ms)\n✔ HTTP observations deduplicate by version/request without transferring acceptance or changing domains (0.264708ms)\n✔ denial, failed check, wrong actor and unknown request cannot close lawful-write gaps (0.265459ms)\n✔ current cleanup is required and HTTP scope cannot upgrade full business acceptance (0.084167ms)\n✔ signed session aggregate label alone cannot replace per-role unexpired token and cleanup evidence (0.087792ms)\n✔ browser claims require actual disable response, unchanged cancel, scope, screenshot and zero notification writes (0.112166ms)\n✔ same request cannot be attributed to different roles or operations (0.089125ms)\n✔ formal mapping cannot promote scoped evidence or cross version/prefix/cleanup boundaries (0.9235ms)\n✔ nonempty hourly/receipt/archive scope is independent of unexercised daily rollup; original full Gate stays unchanged (0.840833ms)\n✔ narrow proof refuses missing/empty/changed business rows, foreign devices, duplicate seq and outside drift (0.882375ms)\nℹ tests 10\nℹ suites 0\nℹ pass 10\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 236.09525\n",
+    "stderr": ""
+  },
+  "integrity": {
+    "command": [
+      "python3",
+      "docs/audit/evidence/qa-09-close-07-esg-2026-10-13/verify.py"
+    ],
+    "exitCode": 0,
+    "stdout": "{\"gate\": \"PASS_INTEGRITY_ONLY\", \"scopedBusinessGate\": \"PASS_SCOPED_ESG_LEASE_AND_CONSISTENCY\", \"qa09Gate\": \"PARTIAL\", \"formalPassCount\": 0, \"frozenSources\": 27, \"decodedSourcesScanned\": 101, \"originalFailuresAndUnknownsPreserved\": true}\n",
+    "stderr": ""
+  },
+  "history": {
+    "titleFilter": "qa09|qa-09 case-insensitive, Oct 1-13, reachable from baseline",
+    "commits": [
+      "f8e943d2|2026-10-13|test(qa09): close owned export lease and ESG consistency evidence",
+      "ee8f0713|2026-10-13|test(qa09): reconcile reliability and verify nonempty replay",
+      "dade6d95|2026-10-12|test(qa09): reconcile business evidence and close non-active user flows",
+      "beaccece|2026-10-12|docs(qa09): prioritize business closure and defer deep performance to release",
+      "0a965f61|2026-10-12|docs(qa09): preserve raw log whitespace check receipt",
+      "6504b635|2026-10-12|docs(qa09): seal ad213fa R0 R1 acceptance and off restore",
+      "ad213fa2|2026-10-12|fix(qa09): bound unknown StartBuild identity reads in small batches",
+      "f082cce3|2026-10-12|docs(qa09): preserve ac5c0c3 failed audit and verified off restore",
+      "ac5c0c33|2026-10-12|fix(qa09): validate public windows against adjacent phase parents",
+      "be97cb60|2026-10-12|fix(qa09): accept strict Gateway epoch strings before target entry",
+      "f7f996f2|2026-10-12|fix(qa09): batch auxiliary log reads and seal failed R0 restoration",
+      "ebbcfc0e|2026-10-12|fix(qa09): bound exact log batches and total read deadline",
+      "1b41ed9d|2026-10-11|docs(qa09): seal 41ee358f acceptance and failed log gate",
+      "41ee358f|2026-10-11|feat(qa09): add default-off owned boundary summaries",
+      "98a5163f|2026-10-11|test(qa09): add bounded offline checkpoint and driver prefix partitions",
+      "d7ac1df6|2026-10-11|docs(qa09): record 5773ac9 R0 R1 acceptance and default-off restoration",
+      "5773ac9d|2026-10-11|fix(qa09): classify Cognito errors and bound unknown-start diagnostics",
+      "0af53c7a|2026-10-11|docs(qa09): seal bc95e96 failed R0 and default-off restore evidence",
+      "bc95e967|2026-10-11|feat(qa09): wire bounded default-off contract observer",
+      "8af60f3c|2026-10-11|test(qa09): validate public entry and output boundary design",
+      "072b6bdf|2026-10-11|test(qa09): add bounded public CPU attribution controls",
+      "3b708c1e|2026-10-10|docs(qa09): record same-sha public boundary R0 R1 acceptance",
+      "12d57bef|2026-10-10|feat(qa09): wire default-off public contract runtime boundaries",
+      "a880042b|2026-10-10|test(qa09): bound contract public-window offline contrasts",
+      "402a699c|2026-10-10|docs(qa09): close 0afe483 R0 R1 target acceptance sequence",
+      "0afe4838|2026-10-10|fix(qa09): bound fixture pre-start read recovery",
+      "5c21377a|2026-10-10|docs(qa09): record b552237 R0 recovery and restore evidence",
+      "b5522378|2026-10-10|feat(qa09): split contract await and add offline read candidate",
+      "da0929b3|2026-10-09|docs(qa09): close 24d50d6 R0 R1 acceptance and restoration",
+      "24d50d6c|2026-10-09|test(qa09): observe parent cleanup and unify exact correlation",
+      "e3da42c1|2026-10-09|fix(qa09): bind child executor sources and record failed R0 acceptance",
+      "f7abb067|2026-10-09|fix(qa09): observe cleanup failures and recover exact started builds",
+      "3d5cc5f1|2026-10-09|docs(qa09): preserve failed R0 and verify cleanup restoration",
+      "b41b45c8|2026-10-08|fix(qa09): resolve database self types from source in clean CI",
+      "29b1b934|2026-10-08|feat(qa09): wire default-off ORM and pg settlement observations",
+      "3554c1e4|2026-10-08|test(qa09): add offline ORM driver boundary controls",
+      "3cb5b759|2026-10-08|docs(qa09): seal 17fb6f1 contract load R0 R1 acceptance",
+      "17fb6f10|2026-10-08|feat(qa09): observe transactional contract load boundaries and strict proof",
+      "9e3258c1|2026-10-08|docs(qa09): seal 88d9f0a R0 R1 target receipts and default restore",
+      "8350786b|2026-10-08|test(qa09): preserve R0 stage failure and restore defaults",
+      "de4c2f6a|2026-10-08|feat(qa09): wire guarded account-read candidate and deployment config proofs",
+      "5a8ce2f1|2026-10-07|feat(qa09): split first ORM preparation and validate offline account read candidate",
+      "ac65af24|2026-10-07|chore(qa09): close same-SHA C1 acceptance and restore default off",
+      "5ae4291c|2026-10-07|test(qa09): archive aa9b50e C0 and guarded C1 acceptance",
+      "aa9b50eb|2026-10-07|fix(qa09): isolate baseline tests from C1 deployment mode",
+      "8b3babbf|2026-10-07|feat(qa09): wire default-off Admin preconnect and C0 C1 gates",
+      "c690623d|2026-10-07|docs(qa09): seal 9e4143b runtime off-on comparison and cleanup",
+      "9e4143b5|2026-10-07|feat(qa09): observe runtime assembly and pin engine comparison inputs",
+      "2456452d|2026-10-07|docs(qa09): plan bounded model preparation controls and transport diagnosis",
+      "b49ea5fb|2026-10-06|docs(qa09): record 54685cf engine CPU target acceptance",
+      "54685cf2|2026-10-06|feat(qa09): parallelize admin secrets with fail-closed startup",
+      "893d7914|2026-10-06|feat(qa09): observe authenticated engine and account process CPU",
+      "04075e84|2026-10-06|feat(qa09): diagnose compiler preparation and cross-client TLS tails",
+      "9a6750b4|2026-10-06|docs(qa09): record fb6f362 cold preparation target acceptance",
+      "fb6f3628|2026-10-06|feat(qa09): observe database preparation and diagnose TLS transport",
+      "ed2745ae|2026-10-06|docs(qa09): seal f341f68 cold conflict and transport acceptance",
+      "f341f684|2026-10-06|test(qa09): bound cold conflict sampling and observe client transport",
+      "9dcfe0ec|2026-10-06|docs(qa09): seal 703a284 warm phase retests and cold conflict gap",
+      "703a2848|2026-10-06|feat(qa09): observe authenticated account hook and first database checkout",
+      "63e2dfeb|2026-10-06|docs(qa09): seal same-sha contract phase retest and cleanup",
+      "9b60754c|2026-10-06|feat(qa09): observe contract transactions and audit GET transport phases",
+      "cde97066|2026-10-06|test(qa09): correlate contract PATCH races and recover scoped acceptance",
+      "525517a4|2026-10-05|test(qa09): verify nonactive data and entity semantics with scoped recovery",
+      "a26bd943|2026-10-05|docs(qa09): close same-sha target layout acceptance",
+      "22155928|2026-10-05|fix(qa09): make diagnostic identity cleanup lint-safe",
+      "84ca6835|2026-10-05|fix(qa09): contain populated assignment history on mobile",
+      "ee595f93|2026-10-05|fix(qa09): verify non-active writes and wrap device details",
+      "5dee2a42|2026-10-05|fix(qa09): preserve stage event names and record real target acceptance",
+      "fb0fd67c|2026-10-05|test(qa09): budget CDK bundling and tenant security fixture time",
+      "1bd9d75a|2026-10-05|docs(qa09): record local verify and GitHub billing blocker",
+      "811d84ec|2026-10-05|feat(qa09): wire license confirmations and telemetry stage traces",
+      "993e7ca9|2026-10-04|test(qa09): record real acceptance and recover scoped fixtures",
+      "0abf7cf2|2026-10-04|docs(qa09): record exact KMS patch and worker IAM blocker",
+      "ae5433cd|2026-10-04|test(qa09): close real performance and archive subgates",
+      "b885e117|2026-10-03|fix(qa09): bound publishing and merge telemetry across sites",
+      "890408f2|2026-10-03|fix(qa09): deploy scoped IAM and preserve AWS performance evidence",
+      "7c6f356b|2026-10-03|feat(qa09): add request correlation and budgeted immediate command publishing",
+      "818faa0e|2026-10-03|test(qa09): diagnose capacity and verify real MQTT and online SLO gaps",
+      "fa4219a4|2026-10-03|test(qa09): add real business acceptance and scoped recovery evidence",
+      "661ccd66|2026-10-02|test(qa09): prepare guarded CA root repair and exact write permission plan",
+      "6670d358|2026-10-02|test(qa09): diagnose missing CA root chain within AWS and verify cleanup",
+      "0469a4a9|2026-10-02|test(qa09): execute scoped CA grant and preserve ten-device chain failure evidence",
+      "46b632d6|2026-10-02|docs(qa09): prepare scoped SSO worker grant and record provisioning rollback",
+      "4cd3dc22|2026-10-02|docs(qa09): verify IAM denial from target boundary condition mismatch",
+      "887ff614|2026-10-02|docs(qa09): record approved CA policy application IAM blocker",
+      "bcc84075|2026-10-02|test(qa09): run ten real CSR approvals and trace CA decrypt blocker",
+      "56f74f63|2026-10-02|test(qa09): add ten-device AWS acceptance runner and record IAM blocker",
+      "2321fad9|2026-10-02|test(qa09): run real five-role smoke and controlled AWS DB snapshots",
+      "f63b56ed|2026-10-02|fix(qa09): reuse current AWS test environment for real acceptance",
+      "e59d9afa|2026-10-01|test(qa): add QA-09 readonly AWS preflight and preparation evidence"
+    ],
+    "count": 90,
+    "auditReportCountAtBaseline": 110,
+    "devGuideCountAtBaseline": 44
+  },
+  "sources": [
+    {
+      "path": "infra/environments/qa09-current-test.json",
+      "sha256": "d8b714b4176674afdb0f671e217bdd2c360d41492648dfa6ccdffa9963233302"
+    },
+    {
+      "path": ".github/workflows/deploy-test.yml",
+      "sha256": "e939728e2fff6a4429519fc32290e720202841bca48d6c3a1a1f53bfd319cbcb"
+    },
+    {
+      "path": "docs/dev/QA-09-业务闭环优先收口计划.md",
+      "sha256": "43e34d58373d2c4852396c151c0ed7bd5d6923e0e12e6193d95948956190bdba"
+    },
+    {
+      "path": "docs/dev/QA-09-自然许可证确认与Telemetry阶段观测.md",
+      "sha256": "f4f5ade5ddc2db52dc6482ce362577c954a7d8c9e376b20d07bca9fbcae41cee"
+    },
+    {
+      "path": "docs/audit/QA-09-CLOSE-01业务证据合并与非Active用户闭环-2026-10-12.md",
+      "sha256": "e7b9b441addfc865bc37b2c189afaafa75acc3a1a7e60514fe0c5280a4ec737c"
+    },
+    {
+      "path": "docs/audit/QA-09-CLOSE-07可靠性业务证据与非空Replay队列去重-2026-10-13.md",
+      "sha256": "a695b720d7ead4ea4288646f9d73825075cca9828e4e3e13461f545fd831f4e4"
+    },
+    {
+      "path": "docs/audit/QA-09-CLOSE-07自有导出租约与自然日报归档ESG一致性-2026-10-13.md",
+      "sha256": "72a86f38569d0a9626a10261236182d21001296877c6da960be627f5c33acdd8"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-close-07-esg-2026-10-13/formal-map.json",
+      "sha256": "44591e216f44f13ddd61aefd44f7eb43975b92d1846b60e738effd936256f0de"
+    }
+  ],
+  "historicalResultsNotPromoted": true
+}
