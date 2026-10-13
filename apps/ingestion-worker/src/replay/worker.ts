@@ -22,7 +22,7 @@ export interface ReplayIngressRecord {
   readonly payload: unknown;
 }
 export interface ReplayIngressSink {
-  send(record: ReplayIngressRecord): Promise<void>;
+  send(record: ReplayIngressRecord): Promise<void | { readonly sqsMessageId: string; readonly requestId?: string }>;
 }
 export interface ReplayArchiveReader {
   listKeys(prefix: string): Promise<string[]>;
@@ -34,6 +34,16 @@ export interface ReplayWorkerDeps {
   readonly sink: ReplayIngressSink;
   readonly now?: () => Date;
   readonly leaseDurationMs?: number;
+  /** Bounded delivery metadata only; observation failure never retries an already sent message. */
+  readonly onProduced?: (metadata: {
+    jobId: string;
+    deviceId: string;
+    topicType: string;
+    messageId: string;
+    seq: number;
+    sqsMessageId: string;
+    sqsRequestId?: string;
+  }) => void;
 }
 export interface ReplayExecutionSummary {
   readonly scannedObjects: number;
@@ -262,7 +272,7 @@ export function createReplayWorker(deps: ReplayWorkerDeps) {
                   continue;
                 }
                 try {
-                  await deps.sink.send({
+                  const delivery = await deps.sink.send({
                     iotTopic: `bnx/device/${line.deviceId}/${line.topicType}`,
                     iotDeviceId: line.deviceId,
                     iotType: line.topicType,
@@ -270,6 +280,28 @@ export function createReplayWorker(deps: ReplayWorkerDeps) {
                     payload: line.payload,
                   });
                   summary.sent += 1;
+                  const meta = (line.payload as { meta?: { id?: unknown; seq?: unknown } }).meta;
+                  if (
+                    delivery &&
+                    typeof meta?.id === 'string' &&
+                    /^[A-Za-z0-9_-]{1,128}$/.test(meta.id) &&
+                    Number.isSafeInteger(meta.seq) &&
+                    /^[A-Za-z0-9-]{1,128}$/.test(delivery.sqsMessageId)
+                  ) {
+                    try {
+                      deps.onProduced?.({
+                        jobId: job.id,
+                        deviceId: line.deviceId,
+                        topicType: line.topicType,
+                        messageId: meta.id,
+                        seq: meta.seq as number,
+                        sqsMessageId: delivery.sqsMessageId,
+                        ...(delivery.requestId ? { sqsRequestId: delivery.requestId } : {}),
+                      });
+                    } catch {
+                      /* A successful send is never retried because a metadata observer failed. */
+                    }
+                  }
                 } catch {
                   summary.sendFailures += 1;
                   summary.failed += 1;

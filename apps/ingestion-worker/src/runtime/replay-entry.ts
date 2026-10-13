@@ -1,7 +1,9 @@
 import { createS3ArchiveObjectReader, createSqsJsonSender, resolveDatabaseUrl } from '@fdp/aws-clients';
 import { createPrismaClient } from '@fdp/database';
+import { createRedactingLogger } from '@fdp/observability';
 import { createReplayIngressSink } from '../replay/ingress-sink.js';
 import { createReplayWorker } from '../replay/worker.js';
+const logger = createRedactingLogger(console);
 
 export interface ReplaySqsEvent {
   readonly Records?: readonly { readonly messageId?: string; readonly body?: string }[];
@@ -51,6 +53,8 @@ async function initialize() {
       region,
       accountId: required('FDP_AWS_ACCOUNT_ID'),
     }),
+    onProduced: (metadata) =>
+      logger.info(JSON.stringify({ event: 'replay.record.produced', schemaVersion: 1, ...metadata })),
   });
   return createReplaySqsHandler(executor);
 }

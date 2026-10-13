@@ -125,6 +125,44 @@ async function plantJob(scope: ReplayScopeInput): Promise<string> {
 }
 
 describe('createReplayWorker（BE-RPL-01）', () => {
+  test('真实发送回执绑定Job与原消息；观测失败不重发或改变业务结果', async () => {
+    const reader = new MemoryReader();
+    reader.putLines(PREFIX_10H, 'part-production-proof', [archiveLine({ seq: 88, messageId: 'original-88' })]);
+    const jobId = await plantJob({ ...SCOPE, deviceId: 'dev-rpl-a', seqFrom: 88, seqTo: 88 });
+    const observations: unknown[] = [];
+    let sends = 0;
+    const worker = createReplayWorker({
+      client: prisma,
+      reader,
+      sink: {
+        async send() {
+          sends += 1;
+          return { sqsMessageId: 'sqs-unique-88', requestId: 'aws-request-88' };
+        },
+      },
+      onProduced(metadata) {
+        observations.push(metadata);
+        throw new Error('observer unavailable');
+      },
+    });
+    const result = await worker.executeJob(jobId);
+    assert.equal(sends, 1);
+    assert.equal(result.status, 'COMPLETED');
+    assert.equal(result.summary?.sent, 1);
+    assert.equal(result.summary?.sendFailures, 0);
+    assert.deepEqual(observations, [
+      {
+        jobId,
+        deviceId: 'dev-rpl-a',
+        topicType: 'telemetry',
+        messageId: 'original-88',
+        seq: 88,
+        sqsMessageId: 'sqs-unique-88',
+        sqsRequestId: 'aws-request-88',
+      },
+    ]);
+    assert.notInclude(JSON.stringify(observations), 'chamberTempC');
+  });
   test('范围内记录重投 Ingress（沿用原 meta.id/seq）；范围外（设备/时间/序号/Customer）不进入队列；COMPLETED + 统计 + 执行审计', async () => {
     const reader = new MemoryReader();
     reader.putLines(PREFIX_10H, 'part-aaaa1111bbbb2222', [

@@ -1,0 +1,47 @@
+[
+  {
+    "command": [
+      "node",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "packages/aws-clients/test/sqs-json-sender.test.ts",
+      "apps/ingestion-worker/test/replay-runtime.test.ts",
+      "apps/ingestion-worker/test/replay-worker.test.ts"
+    ],
+    "exitCode": 0,
+    "stdout": "\n RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform\n\n\n Test Files  3 passed (3)\n      Tests  13 passed (13)\n   Start at  15:53:57\n   Duration  1.29s (transform 321ms, setup 37ms, import 603ms, tests 888ms, environment 0ms)\n\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "node",
+      "node_modules/typescript/bin/tsc",
+      "-p",
+      "packages/aws-clients/tsconfig.build.json"
+    ],
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "node",
+      "node_modules/typescript/bin/tsc",
+      "-p",
+      "apps/ingestion-worker/tsconfig.json",
+      "--noEmit"
+    ],
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "node",
+      "scripts/check-sensitive-sinks.mjs"
+    ],
+    "exitCode": 0,
+    "stdout": "生产日志与 Trace sink 脱敏门禁通过\n",
+    "stderr": ""
+  }
+]

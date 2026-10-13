@@ -42,14 +42,15 @@ export function createReplayIngressSink(deps: {
         orderBy: { createdAt: 'desc' },
       });
       if (!certificate) throw new Error(`No ACTIVE certificate for replay device: ${record.iotDeviceId}`);
-      await deps.sender.send({
+      const message = {
         ...(record.payload as Record<string, unknown>),
         iotTopic: record.iotTopic,
         iotDeviceId: record.iotDeviceId,
         iotType: record.iotType,
         iotReceivedAt: record.iotReceivedAt,
         iotPrincipal: `arn:${deps.partition}:iot:${deps.region}:${deps.accountId}:cert/${certificate.id}`,
-      });
+      };
+      return deps.sender.sendWithReceipt ? deps.sender.sendWithReceipt(message) : deps.sender.send(message);
     },
   };
 }

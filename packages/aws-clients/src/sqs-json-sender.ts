@@ -2,6 +2,7 @@ import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 
 export interface JsonMessageSender {
   send(message: unknown): Promise<void>;
+  sendWithReceipt?(message: unknown): Promise<void | { readonly sqsMessageId: string; readonly requestId?: string }>;
 }
 
 export interface SqsJsonSenderConfig {
@@ -20,12 +21,21 @@ export function createSqsJsonSender(config: SqsJsonSenderConfig): JsonMessageSen
       ...(config.region ? { region: config.region } : {}),
       ...(config.maxAttempts ? { maxAttempts: config.maxAttempts } : {}),
     });
+  const sendWithReceipt = async (message: unknown) => {
+    const result = await client.send(
+      new SendMessageCommand({ QueueUrl: config.queueUrl, MessageBody: JSON.stringify(message) }),
+      config.timeoutMs ? { abortSignal: AbortSignal.timeout(config.timeoutMs) } : {},
+    );
+    if (result?.MessageId)
+      return {
+        sqsMessageId: result.MessageId,
+        ...(result.$metadata?.requestId ? { requestId: result.$metadata.requestId } : {}),
+      };
+  };
   return {
     async send(message) {
-      await client.send(
-        new SendMessageCommand({ QueueUrl: config.queueUrl, MessageBody: JSON.stringify(message) }),
-        config.timeoutMs ? { abortSignal: AbortSignal.timeout(config.timeoutMs) } : {},
-      );
+      await sendWithReceipt(message);
     },
+    sendWithReceipt,
   };
 }
