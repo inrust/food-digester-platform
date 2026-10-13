@@ -8,15 +8,16 @@ export async function waitOwnDaily(
     now = () => Date.now(),
     sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     budgetMs = 4500000,
+    deviceId = ctx.receipt.devices[0],
   } = {},
 ) {
   if (budgetMs < 1 || budgetMs > 4500000) throw Error('DAILY_WAIT_BUDGET_REQUIRED');
+  if (!ctx.receipt.devices.includes(deviceId)) throw Error('EXACT_OWN_DAILY_DEVICE_REQUIRED');
+  const customerId = ctx.receipt.customers[ctx.receipt.devices.indexOf(deviceId) < 5 ? 0 : 1].id;
   const start = now();
   let lastAuth = start;
-  r.dailyWait = { gate: 'WAITING_NATURAL_SUMMARY', sharedWorkerInvocations: 0, polls: [] };
+  r.dailyWait = { gate: 'WAITING_NATURAL_SUMMARY', deviceId, customerId, sharedWorkerInvocations: 0, polls: [] };
   save();
-  const deviceId = ctx.receipt.devices[0],
-    customerId = ctx.receipt.customers[0].id;
   while (now() - start < budgetMs) {
     if (now() - lastAuth >= 1200000) {
       await ctx.refreshIdentity();

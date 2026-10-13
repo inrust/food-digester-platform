@@ -60,6 +60,7 @@ export function evaluateA5Closeout(parent, r, final, version, hashes) {
     unique &&
     r.dailyWait?.gate === 'PASS_NATURAL_OWN_DAILY_VISIBLE' &&
     r.dailyWait.sharedWorkerInvocations === 0 &&
+    r.dailyWait.deviceId === r.expected.deviceId &&
     dedupGate(r.before, r.after) === 'PASS_NO_RECEIPT_AGGREGATE_OR_ARCHIVE_DUPLICATION';
   const closed = [
     ['replay.operatorNonempty', operator],

@@ -27,6 +27,18 @@ export function codeRangeBytes(env = process.env) {
   if (!['262144', '1048576', '8388608', '33554432'].includes(raw)) throw Error('INVALID_CODE_RANGE_BYTES');
   return Number(raw);
 }
+export function validateStoredAssetSha256(value, { versionId, contentLength, codeSha256 }) {
+  if (
+    !versionId ||
+    value?.VersionId !== versionId ||
+    value.ObjectSize !== contentLength ||
+    value.Checksum?.ChecksumType !== 'FULL_OBJECT' ||
+    !/^[A-Za-z0-9+/]{43}=$/.test(value.Checksum.ChecksumSHA256 ?? '') ||
+    value.Checksum.ChecksumSHA256 !== codeSha256
+  )
+    throw Error('FIXED_VERSION_FULL_OBJECT_SHA256_REQUIRED');
+  return value.Checksum.ChecksumSHA256;
+}
 function command(name, args) {
   for (let attempt = 0; attempt < 3; attempt++) {
     // The large CloudFormation template uses the same bounded slow-link allowance as asset reads.
@@ -50,6 +62,8 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
   const rangeTimeoutMs = codeRangeTimeoutMs();
   const rangeConcurrency = codeRangeConcurrency();
   const rangeBytes = codeRangeBytes();
+  const verificationMode = process.env.QA09_CODE_VERIFICATION_MODE ?? 'bytes';
+  if (!['bytes', 's3-full-object-sha256'].includes(verificationMode)) throw Error('INVALID_ARTIFACT_VERIFICATION_MODE');
   const prior = reusePassed ? JSON.parse(readFileSync(output)) : null;
   const receipt = {
     task: 'QA-09',
@@ -72,6 +86,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
     rangeTimeoutMs,
     rangeConcurrency,
     rangeBytes,
+    artifactVerificationMode: verificationMode,
   };
   const save = () => writeFileSync(output, JSON.stringify(receipt, null, 2) + '\n');
   if (aws(['sts', 'get-caller-identity']).Account !== receipt.accountId) throw Error('WRONG_ACCOUNT');
@@ -248,13 +263,65 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
         a.s3Key === code.S3Key &&
         a.s3Bucket === code.S3Bucket,
     );
-    if (old) {
+    if (old && verificationMode === 'bytes') {
       receipt.lambdaArtifacts.push({ ...old, ...config, reusedVerifiedBytes: true });
       continue;
     }
     const head = aws(['s3api', 'head-object', '--bucket', code.S3Bucket, '--key', code.S3Key]);
     if (!Number.isInteger(head.ContentLength) || head.ContentLength < 1 || head.ContentLength > 33554432)
       throw Error('INVALID_CODE_ASSET_SIZE');
+    if (verificationMode === 's3-full-object-sha256') {
+      const item = {
+        ...config,
+        logicalId: resource.LogicalResourceId,
+        s3Bucket: code.S3Bucket,
+        s3Key: code.S3Key,
+        sourceVersion: head.VersionId ?? null,
+        contentLength: head.ContentLength,
+        artifactSha256: null,
+        bytesDownloadedLocally: false,
+        matches: false,
+      };
+      try {
+        const stored = aws([
+          's3api',
+          'get-object-attributes',
+          '--bucket',
+          code.S3Bucket,
+          '--key',
+          code.S3Key,
+          '--version-id',
+          head.VersionId,
+          '--object-attributes',
+          'Checksum',
+          'ObjectSize',
+        ]);
+        item.artifactSha256 = validateStoredAssetSha256(stored, {
+          versionId: head.VersionId,
+          contentLength: head.ContentLength,
+          codeSha256: config.codeSha256,
+        });
+        item.checksumReceipt = {
+          algorithm: 'SHA256',
+          type: 'FULL_OBJECT',
+          versionId: stored.VersionId,
+          objectSize: stored.ObjectSize,
+          sha256: stored.Checksum.ChecksumSHA256,
+        };
+        item.matches = config.state === 'Active' && config.lastUpdateStatus === 'Successful';
+      } catch {
+        item.verificationFailure = 'FIXED_VERSION_FULL_OBJECT_SHA256_NOT_VERIFIED';
+      }
+      if (!item.matches) receipt.blockers.push('LAMBDA_TEMPLATE_ARTIFACT_UNVERIFIED:' + item.name);
+      receipt.lambdaArtifacts.push(item);
+      console.log(
+        'Full-object SHA256 verified: ' +
+          receipt.lambdaArtifacts.filter((row) => row.matches).length +
+          '/' +
+          functions.length,
+      );
+      continue;
+    }
     const item = {
       ...config,
       logicalId: resource.LogicalResourceId,
@@ -338,7 +405,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
   );
   s3?.destroy();
   for (const item of receipt.lambdaArtifacts) {
-    if (item.reusedVerifiedBytes) continue;
+    if (item.reusedVerifiedBytes || verificationMode === 's3-full-object-sha256') continue;
     const chunks = item.chunks.sort((a, b) => a.start - b.start);
     const byteCount = chunks.reduce((n, c) => n + c.bytes.length, 0);
     if (!item.rangeReadFailed && byteCount === item.contentLength) {
@@ -354,7 +421,9 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
   }
   if (receipt.lambdaArtifacts.length < 10) receipt.blockers.push('LAMBDA_INVENTORY_INCOMPLETE');
   receipt.binding =
-    'Successful exact-commit GitHub OIDC/CDK workflow + deployed CloudFormation asset + S3 ZIP bytes equal current Lambda CodeSha256; S3 immutable versions read in bounded ranges and reassembled for SHA256; no app build commit environment variable exists.';
+    verificationMode === 's3-full-object-sha256'
+      ? 'Successful exact-commit GitHub OIDC/CDK workflow + deployed CloudFormation asset + immutable S3 VersionId and ObjectSize + S3 verified FULL_OBJECT SHA256 equals current Lambda CodeSha256. No local full-file download is claimed.'
+      : 'Successful exact-commit GitHub OIDC/CDK workflow + deployed CloudFormation asset + S3 ZIP bytes equal current Lambda CodeSha256; S3 immutable versions read in bounded ranges and reassembled for SHA256; no app build commit environment variable exists.';
   receipt.gate = receipt.blockers.length ? 'BLOCKED' : 'PASS';
   save();
   return receipt;

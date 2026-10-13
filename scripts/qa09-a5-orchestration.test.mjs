@@ -104,3 +104,33 @@ test('known Operator cleanup checks exact disabled tombstone and stops unknown d
   assert.equal(writes, 1);
   assert.equal(ctx2.receipt.cleanupHold, 'UNKNOWN_OR_RUNNING_RELIABILITY_WRITE');
 });
+
+test('natural daily frame must belong to the selected Replay device; foreign and borrowed frames fail closed', async () => {
+  const ctx = context(),
+    r = {};
+  ctx.receipt.devices = [prefix + '-01', prefix + '-02', prefix + '-03'];
+  let calls = 0;
+  ctx.api = async (id, method, path) => {
+    calls++;
+    assert.ok(path.includes('deviceId=' + prefix + '-03'));
+    return {
+      data: [{ deviceId: prefix + '-03', customerId }],
+      meta: { nextCursor: null, requestId: 'r', timestamp: '2026-10-13T10:00:00.000Z' },
+    };
+  };
+  await waitOwnDaily(ctx, r, () => {}, { deviceId: prefix + '-03' });
+  assert.equal(r.dailyWait.deviceId, prefix + '-03');
+  await assert.rejects(
+    waitOwnDaily(ctx, {}, () => {}, { deviceId: 'foreign' }),
+    /EXACT_OWN_DAILY/,
+  );
+  assert.equal(calls, 1);
+  ctx.api = async () => ({
+    data: [{ deviceId: prefix + '-01', customerId }],
+    meta: { nextCursor: null, requestId: 'r', timestamp: '2026-10-13T10:00:00.000Z' },
+  });
+  await assert.rejects(
+    waitOwnDaily(ctx, {}, () => {}, { deviceId: prefix + '-03' }),
+    /EXACT_ESG_HTTP/,
+  );
+});

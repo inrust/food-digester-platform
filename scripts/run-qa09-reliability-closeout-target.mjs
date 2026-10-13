@@ -171,7 +171,7 @@ export async function runReliabilityCloseout(output, versionPath, options = {}) 
       const archived = ctx.receipt.archiveReaderEvidence;
       if (archived?.gate !== 'PASS' || archived.result?.allTelemetryArchived !== true)
         throw Error('ARCHIVE_BYTES_PROOF_REQUIRED');
-      if (a5) await waitOwnDaily(ctx, r, save);
+      if (a5) await waitOwnDaily(ctx, r, save, { deviceId: id });
       const before = await db('reliability-observe');
       r.before = before;
       save();
