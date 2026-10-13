@@ -22,6 +22,11 @@ export function codeRangeConcurrency(env = process.env) {
   if (!/^[1-9][0-9]?$/.test(raw) || Number(raw) > 32) throw Error('INVALID_CODE_RANGE_CONCURRENCY');
   return Number(raw);
 }
+export function codeRangeBytes(env = process.env) {
+  const raw = env.QA09_CODE_RANGE_BYTES ?? '262144';
+  if (!['262144', '1048576', '8388608', '33554432'].includes(raw)) throw Error('INVALID_CODE_RANGE_BYTES');
+  return Number(raw);
+}
 function command(name, args) {
   for (let attempt = 0; attempt < 3; attempt++) {
     // The large CloudFormation template uses the same bounded slow-link allowance as asset reads.
@@ -44,6 +49,7 @@ const aws = (args) =>
 export async function collect(output, runtimeOnly = false, reusePassed = false) {
   const rangeTimeoutMs = codeRangeTimeoutMs();
   const rangeConcurrency = codeRangeConcurrency();
+  const rangeBytes = codeRangeBytes();
   const prior = reusePassed ? JSON.parse(readFileSync(output)) : null;
   const receipt = {
     task: 'QA-09',
@@ -65,6 +71,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
     rangeTransport: process.env.QA09_CODE_RANGE_TRANSPORT ?? 'cli',
     rangeTimeoutMs,
     rangeConcurrency,
+    rangeBytes,
   };
   const save = () => writeFileSync(output, JSON.stringify(receipt, null, 2) + '\n');
   if (aws(['sts', 'get-caller-identity']).Account !== receipt.accountId) throw Error('WRONG_ACCOUNT');
@@ -195,7 +202,7 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
         { abortSignal: AbortSignal.timeout(rangeTimeoutMs) },
       );
       const bytes = await response.Body.transformToByteArray();
-      if (bytes.length > 262144) throw Error('CODE_RANGE_SIZE_EXCEEDED');
+      if (bytes.length > rangeBytes) throw Error('CODE_RANGE_SIZE_EXCEEDED');
       writeFileSync(args.at(-1), bytes);
       return { ContentRange: response.ContentRange, VersionId: response.VersionId };
     }
@@ -255,15 +262,15 @@ export async function collect(output, runtimeOnly = false, reusePassed = false) 
       s3Key: code.S3Key,
       sourceVersion: head.VersionId ?? null,
       contentLength: head.ContentLength,
-      rangeBytes: 262144,
+      rangeBytes,
       artifactSha256: null,
       matches: false,
       chunks: [],
     };
     receipt.lambdaArtifacts.push(item);
-    for (let offset = 0; offset < head.ContentLength; offset += 262144) {
+    for (let offset = 0; offset < head.ContentLength; offset += rangeBytes) {
       const start = offset,
-        end = Math.min(offset + 262143, head.ContentLength - 1);
+        end = Math.min(offset + rangeBytes - 1, head.ContentLength - 1);
       tasks.push(async () => {
         const dir = mkdtempSync(join(tmpdir(), 'qa09-code-range-'));
         try {
