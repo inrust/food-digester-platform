@@ -38,6 +38,7 @@ export function validatePlan(plan) {
       'command-dlq-readonly',
       'capacity-readonly',
       'capacity-pool-readonly',
+      'reliability-observe',
       'business-baseline',
       'business-cleanup',
       'business-audit',
@@ -125,6 +126,7 @@ export async function executeFixture(client, plan) {
         'command-dlq-readonly',
         'capacity-readonly',
         'capacity-pool-readonly',
+        'reliability-observe',
         'business-baseline',
         'business-audit',
       ].includes(plan.action)
@@ -136,6 +138,58 @@ export async function executeFixture(client, plan) {
     if ((await client.query('SELECT current_database() AS database')).rows[0].database !== 'fdp')
       throw Error('WRONG_DATABASE');
     const before = await original(client, ids);
+    if (plan.action === 'reliability-observe') {
+      const customers = plan.customers.map((c) => c.id);
+      for (const c of plan.customers)
+        if ((await client.query('SELECT id FROM customers WHERE id=$1 AND name=$2', [c.id, c.name])).rowCount !== 1)
+          throw Error('CUSTOMER_SCOPE_DRIFT');
+      const ownedDevices = (
+        await client.query('SELECT id,customer_id,lifecycle_status FROM devices WHERE id=ANY($1::text[]) ORDER BY id', [
+          ids,
+        ])
+      ).rows;
+      if (ownedDevices.length !== 10 || ownedDevices.some((d) => !customers.includes(d.customer_id)))
+        throw Error('RELIABILITY_DEVICE_SCOPE_DRIFT');
+      const fingerprints = [];
+      for (const [table, predicate] of [
+        ['ingestion_receipts', 'device_id=ANY($1::text[])'],
+        ['telemetry_hourly', 'device_id=ANY($1::text[])'],
+        ['telemetry_daily', 'device_id=ANY($1::text[])'],
+        ['outbox_events', "aggregate_id=ANY($1::text[]) AND event_type='ARCHIVE'"],
+      ]) {
+        const query = `SELECT count(*)::text,md5(coalesce(string_agg(to_jsonb(t)::text,'' ORDER BY to_jsonb(t)::text),'')) AS digest FROM public."${table}" t WHERE ${predicate}`;
+        fingerprints.push({ table, ...(await client.query(query, [ids])).rows[0] });
+      }
+      const receipts = (
+        await client.query(
+          'SELECT id,device_id,topic_type,seq,payload_hash,result,occurred_at,processed_at FROM ingestion_receipts WHERE device_id=ANY($1::text[]) ORDER BY device_id,topic_type,seq',
+          [ids],
+        )
+      ).rows;
+      const jobs = (
+        await client.query(
+          "SELECT id,scope,status,result_summary,completed_at FROM replay_jobs WHERE scope->>'customerId'=ANY($1::text[]) AND scope->>'deviceId'=ANY($2::text[]) ORDER BY id",
+          [customers, ids],
+        )
+      ).rows;
+      const audits = (
+        await client.query(
+          "SELECT object_id,action,result FROM audit_logs WHERE object_type='replayJob' AND object_id=ANY($1::text[]) ORDER BY object_id,action",
+          [jobs.map((j) => j.id)],
+        )
+      ).rows;
+      await client.query('ROLLBACK');
+      committed = true;
+      return {
+        readOnly: true,
+        devices: ownedDevices,
+        fingerprints,
+        receipts,
+        jobs,
+        audits,
+        originalFingerprints: before,
+      };
+    }
     if (plan.action === 'audit-unseeded-prefix') {
       const customers = (
         await client.query(

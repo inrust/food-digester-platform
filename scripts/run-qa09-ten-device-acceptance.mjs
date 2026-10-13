@@ -89,17 +89,18 @@ const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 function demand(ok, code) {
   if (!ok) throw Error(code);
 }
-async function publishKnown(client, topic, raw) {
+export async function publishKnown(client, topic, raw, deadlineMs = 10000, timers = { setTimeout, clearTimeout }) {
+  if (!Number.isInteger(deadlineMs) || deadlineMs < 1000 || deadlineMs > 45000) throw Error('INVALID_PUBACK_DEADLINE');
   let timer;
   try {
     await Promise.race([
       client.publishAsync(topic, raw, { qos: 1 }),
       new Promise((_, reject) => {
-        timer = setTimeout(() => reject(Error('PUBACK_TIMEOUT')), 10000);
+        timer = timers.setTimeout(() => reject(Error('PUBACK_TIMEOUT')), deadlineMs);
       }),
     ]);
   } finally {
-    clearTimeout(timer);
+    timers.clearTimeout(timer);
   }
 }
 export function validateEntityMode(options, extension) {
@@ -115,6 +116,13 @@ export async function main(output, versionPath, extension, options = { reviewOnl
   validateEntityMode(options, extension);
   if (!output || !versionPath) throw Error('OUTPUT_AND_VERSION_REQUIRED');
   if (extension !== undefined && typeof extension !== 'function') throw Error('INVALID_EXTENSION');
+  if (
+    extension?.mqttPublishDeadlineMs !== undefined &&
+    (!Number.isInteger(extension.mqttPublishDeadlineMs) ||
+      extension.mqttPublishDeadlineMs < 1000 ||
+      extension.mqttPublishDeadlineMs > 45000)
+  )
+    throw Error('INVALID_PUBACK_DEADLINE');
   const version = JSON.parse(readFileSync(versionPath));
   if (
     (version.gate !== 'PASS' && version.applicationVersionGate !== 'PASS') ||
@@ -161,6 +169,7 @@ export async function main(output, versionPath, extension, options = { reviewOnl
     task: 'QA-09',
     scope: options.reviewOnly ? 'PENDING_CSR_ENTITY_REVIEW_ONLY' : 'TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE',
     reviewOnly: options.reviewOnly,
+    mqttPublishDeadlineMs: extension?.mqttPublishDeadlineMs ?? 10000,
     mode: 'REAL_EXISTING_TEST_ENVIRONMENT',
     target: { accountId: identity.Account, region: 'ap-southeast-1', stackName: 'fdp-test-app' },
     sourceCommit: version.sourceCommit,
@@ -520,7 +529,7 @@ export async function main(output, versionPath, extension, options = { reviewOnl
         k.sim = sim;
         const payload = sim.payload('heartbeat'),
           raw = JSON.stringify(payload);
-        await publishKnown(mqtt, `bnx/device/${id}/heartbeat`, raw);
+        await publishKnown(mqtt, `bnx/device/${id}/heartbeat`, raw, extension?.mqttPublishDeadlineMs);
         receipt.published.push({
           deviceId: id,
           type: 'heartbeat',
@@ -605,10 +614,12 @@ export async function main(output, versionPath, extension, options = { reviewOnl
       { status: rejected.status, errorCode: rejected.errorCode ?? null },
     );
     for (const [id, k] of held) {
+      if (extension?.beforeDeviceTelemetry)
+        await extension.beforeDeviceTelemetry({ id, k, receipt, clients, connectAsync });
       for (let i = 0; i < 2; i++) {
         const p = k.sim.payload('telemetry'),
           raw = JSON.stringify(p);
-        await publishKnown(k.client, `bnx/device/${id}/telemetry`, raw);
+        await publishKnown(k.client, `bnx/device/${id}/telemetry`, raw, extension?.mqttPublishDeadlineMs);
         receipt.published.push({
           deviceId: id,
           type: 'telemetry',
@@ -617,7 +628,9 @@ export async function main(output, versionPath, extension, options = { reviewOnl
           bodySha256: hash(raw),
           payloadSha256: hash(canonicalizeJson(JSON.parse(raw))),
         });
-        if (i === 0) await publishKnown(k.client, `bnx/device/${id}/telemetry`, raw);
+        // Own extensions may retain original bytes in memory; never put payloads in receipts.
+        if (extension?.onCorePublished) await extension.onCorePublished({ deviceId: id, type: 'telemetry', raw });
+        if (i === 0) await publishKnown(k.client, `bnx/device/${id}/telemetry`, raw, extension?.mqttPublishDeadlineMs);
         save();
         if (i === 0) await pause(10000);
       }
@@ -745,210 +758,217 @@ export async function main(output, versionPath, extension, options = { reviewOnl
   } finally {
     cleaning = true;
     for (const c of clients) await c.endAsync(true).catch(() => {});
-    if (createdIdentity)
-      try {
-        await observeCleanup('identity:refresh', refreshIdentity);
-      } catch (e) {
-        receipt.cleanup.push({
-          type: 'identity-refresh-before-cleanup',
-          result: 'FAIL',
-          failure: safeOperationError(e),
-        });
-        receipt.gate = 'FAIL';
-        save();
-      }
-    // Discover only certificates linked to the exact ten ledger devices, including partially-provisioned fixtures.
-    if (seeded) {
-      try {
-        const current = await db('observe');
-        for (const cert of current.certificates) {
-          assertOwnCloudDevice(cert.device_id, prefix);
-          const arn = `arn:aws:iot:${region}:065986019555:cert/${cert.id}`;
-          const principals = await call(iot, iotSdk.ListPrincipalThingsCommand, { principal: arn });
-          if ((principals.things ?? []).some((t) => !devices.includes(t))) demand(false, 'CERTIFICATE_SCOPE_DRIFT');
-          await call(iot, iotSdk.UpdateCertificateCommand, { certificateId: cert.id, newStatus: 'INACTIVE' });
-          for (const thing of principals.things ?? [])
-            await call(iot, iotSdk.DetachThingPrincipalCommand, { thingName: thing, principal: arn });
-          const policies = await call(iot, iotSdk.ListAttachedPoliciesCommand, { target: arn });
-          for (const policy of policies.policies ?? []) {
-            if (policy.policyName !== `fdp-device-${cert.device_id}`) demand(false, 'POLICY_SCOPE_DRIFT');
-            await call(iot, iotSdk.DetachPolicyCommand, { policyName: policy.policyName, target: arn });
-            await call(iot, iotSdk.DeletePolicyCommand, { policyName: policy.policyName });
-          }
-          await call(iot, iotSdk.DeleteCertificateCommand, { certificateId: cert.id });
-          receipt.cleanup.push({ type: 'iot-certificate', id: cert.id, result: 'PASS' });
+    if (receipt.cleanupHold === 'UNKNOWN_OR_RUNNING_RELIABILITY_WRITE') {
+      receipt.gate = 'FAIL';
+      receipt.cleanup.push({ type: 'reliability-write-ownership', result: 'BLOCKED', reason: receipt.cleanupHold });
+      receipt.finishedAt = new Date().toISOString();
+      save();
+    } else {
+      if (createdIdentity)
+        try {
+          await observeCleanup('identity:refresh', refreshIdentity);
+        } catch (e) {
+          receipt.cleanup.push({
+            type: 'identity-refresh-before-cleanup',
+            result: 'FAIL',
+            failure: safeOperationError(e),
+          });
+          receipt.gate = 'FAIL';
           save();
         }
-        for (const id of devices) {
-          try {
-            await call(iot, iotSdk.DeleteThingCommand, { thingName: id });
-          } catch (e) {
-            demand(e.name === 'ResourceNotFoundException', 'THING_DELETE_FAILED');
-          }
-        }
-        if (seedCleanupAction(current, devices) === 'cleanup') await db('cleanup');
-        receipt.cleanup.push({ type: 'database-fixtures', count: current.devices.length, result: 'PASS' });
-        save();
-      } catch (e) {
-        receipt.cleanup.push({ type: 'cloud-and-database-fixtures', result: 'FAIL', failure: safeOperationError(e) });
-        receipt.gate = 'FAIL';
-        save();
-      }
-    }
-    if (receipt.published.length && !receipt.archiveKeys) {
-      receipt.archiveKeys = [];
-      try {
-        for (const c of receipt.customers) {
-          for (const type of ['heartbeat', 'telemetry', 'ack']) {
-            let continuation;
-            do {
-              const page = await call(s3, s3Sdk.ListObjectsV2Command, {
-                Bucket: 'fdp-test-raw-065986019555',
-                Prefix: `raw/topic_type=${type}/customer_id=${c.id}/`,
-                ContinuationToken: continuation,
-              });
-              for (const obj of page.Contents ?? []) receipt.archiveKeys.push(obj.Key);
-              continuation = page.NextContinuationToken;
-            } while (continuation);
-          }
-        }
-      } catch (e) {
-        receipt.gate = 'FAIL';
-        receipt.cleanup.push({ type: 'archive-discovery', result: 'FAIL', failure: safeOperationError(e) });
-      }
-      save();
-    }
-    if (receipt.batchArchiveCleanup) {
-      try {
-        const owned = [];
-        for (const c of receipt.customers)
-          for (const type of ['heartbeat', 'telemetry', 'ack']) {
-            const prefix = `raw/topic_type=${type}/customer_id=${c.id}/`;
-            let marker, versionMarker;
-            do {
-              const page = await call(s3, s3Sdk.ListObjectVersionsCommand, {
-                Bucket: 'fdp-test-raw-065986019555',
-                Prefix: prefix,
-                KeyMarker: marker,
-                VersionIdMarker: versionMarker,
-              });
-              for (const item of [...(page.Versions ?? []), ...(page.DeleteMarkers ?? [])]) {
-                demand(item.Key.startsWith(prefix), 'ARCHIVE_SCOPE_DRIFT');
-                owned.push({ Key: item.Key, VersionId: item.VersionId });
-              }
-              marker = page.IsTruncated ? page.NextKeyMarker : undefined;
-              versionMarker = page.IsTruncated ? page.NextVersionIdMarker : undefined;
-            } while (marker);
-          }
-        for (let i = 0; i < owned.length; i += 1000) {
-          const result = await call(s3, s3Sdk.DeleteObjectsCommand, {
-            Bucket: 'fdp-test-raw-065986019555',
-            Delete: { Objects: owned.slice(i, i + 1000), Quiet: false },
-          });
-          demand(!result.Errors?.length, 'ARCHIVE_DELETE_PARTIAL_FAILURE');
-        }
-        for (const c of receipt.customers)
-          for (const type of ['heartbeat', 'telemetry', 'ack']) {
-            const result = await call(s3, s3Sdk.ListObjectVersionsCommand, {
-              Bucket: 'fdp-test-raw-065986019555',
-              Prefix: `raw/topic_type=${type}/customer_id=${c.id}/`,
-            });
-            demand(
-              !result.Versions?.length && !result.DeleteMarkers?.length && !result.IsTruncated,
-              'ARCHIVE_CLEANUP_NOT_EMPTY',
-            );
-          }
-        receipt.cleanup.push({ type: 'archive-batch-owned-prefix', count: owned.length, result: 'PASS' });
-        save();
-      } catch (e) {
-        const errorCode = /^[A-Za-z0-9:_-]+$/.test(e.code ?? e.message ?? '')
-          ? (e.code ?? e.message)
-          : 'ARCHIVE_CLEANUP_FAILED';
-        receipt.cleanup.push({ type: 'archive-batch-owned-prefix', result: 'FAIL', errorCode });
-        receipt.gate = 'FAIL';
-        save();
-      }
-    }
-    if (!receipt.batchArchiveCleanup)
-      for (const key of receipt.archiveKeys ?? []) {
+      // Discover only certificates linked to the exact ten ledger devices, including partially-provisioned fixtures.
+      if (seeded) {
         try {
-          if (!receipt.customers.some((c) => key.includes(`/customer_id=${c.id}/`)))
-            demand(false, 'ARCHIVE_SCOPE_DRIFT');
-          const versions = await call(s3, s3Sdk.ListObjectVersionsCommand, {
-            Bucket: 'fdp-test-raw-065986019555',
-            Prefix: key,
-          });
-          const ownVersions = [...(versions.Versions ?? []), ...(versions.DeleteMarkers ?? [])].filter(
-            (v) => v.Key === key,
-          );
-          for (const v of ownVersions)
-            await call(s3, s3Sdk.DeleteObjectCommand, {
-              Bucket: 'fdp-test-raw-065986019555',
-              Key: key,
-              VersionId: v.VersionId,
-            });
-          if (!ownVersions.length)
-            await call(s3, s3Sdk.DeleteObjectCommand, { Bucket: 'fdp-test-raw-065986019555', Key: key });
-          const remaining = await call(s3, s3Sdk.ListObjectVersionsCommand, {
-            Bucket: 'fdp-test-raw-065986019555',
-            Prefix: key,
-          });
-          demand(
-            ![...(remaining.Versions ?? []), ...(remaining.DeleteMarkers ?? [])].some((v) => v.Key === key),
-            'ARCHIVE_VERSION_STILL_EXISTS',
-          );
-          receipt.cleanup.push({ type: 'archive-object', key, result: 'PASS' });
+          const current = await db('observe');
+          for (const cert of current.certificates) {
+            assertOwnCloudDevice(cert.device_id, prefix);
+            const arn = `arn:aws:iot:${region}:065986019555:cert/${cert.id}`;
+            const principals = await call(iot, iotSdk.ListPrincipalThingsCommand, { principal: arn });
+            if ((principals.things ?? []).some((t) => !devices.includes(t))) demand(false, 'CERTIFICATE_SCOPE_DRIFT');
+            await call(iot, iotSdk.UpdateCertificateCommand, { certificateId: cert.id, newStatus: 'INACTIVE' });
+            for (const thing of principals.things ?? [])
+              await call(iot, iotSdk.DetachThingPrincipalCommand, { thingName: thing, principal: arn });
+            const policies = await call(iot, iotSdk.ListAttachedPoliciesCommand, { target: arn });
+            for (const policy of policies.policies ?? []) {
+              if (policy.policyName !== `fdp-device-${cert.device_id}`) demand(false, 'POLICY_SCOPE_DRIFT');
+              await call(iot, iotSdk.DetachPolicyCommand, { policyName: policy.policyName, target: arn });
+              await call(iot, iotSdk.DeletePolicyCommand, { policyName: policy.policyName });
+            }
+            await call(iot, iotSdk.DeleteCertificateCommand, { certificateId: cert.id });
+            receipt.cleanup.push({ type: 'iot-certificate', id: cert.id, result: 'PASS' });
+            save();
+          }
+          for (const id of devices) {
+            try {
+              await call(iot, iotSdk.DeleteThingCommand, { thingName: id });
+            } catch (e) {
+              demand(e.name === 'ResourceNotFoundException', 'THING_DELETE_FAILED');
+            }
+          }
+          if (seedCleanupAction(current, devices) === 'cleanup') await db('cleanup');
+          receipt.cleanup.push({ type: 'database-fixtures', count: current.devices.length, result: 'PASS' });
+          save();
+        } catch (e) {
+          receipt.cleanup.push({ type: 'cloud-and-database-fixtures', result: 'FAIL', failure: safeOperationError(e) });
+          receipt.gate = 'FAIL';
+          save();
+        }
+      }
+      if (receipt.published.length && !receipt.archiveKeys) {
+        receipt.archiveKeys = [];
+        try {
+          for (const c of receipt.customers) {
+            for (const type of ['heartbeat', 'telemetry', 'ack']) {
+              let continuation;
+              do {
+                const page = await call(s3, s3Sdk.ListObjectsV2Command, {
+                  Bucket: 'fdp-test-raw-065986019555',
+                  Prefix: `raw/topic_type=${type}/customer_id=${c.id}/`,
+                  ContinuationToken: continuation,
+                });
+                for (const obj of page.Contents ?? []) receipt.archiveKeys.push(obj.Key);
+                continuation = page.NextContinuationToken;
+              } while (continuation);
+            }
+          }
         } catch (e) {
           receipt.gate = 'FAIL';
+          receipt.cleanup.push({ type: 'archive-discovery', result: 'FAIL', failure: safeOperationError(e) });
+        }
+        save();
+      }
+      if (receipt.batchArchiveCleanup) {
+        try {
+          const owned = [];
+          for (const c of receipt.customers)
+            for (const type of ['heartbeat', 'telemetry', 'ack']) {
+              const prefix = `raw/topic_type=${type}/customer_id=${c.id}/`;
+              let marker, versionMarker;
+              do {
+                const page = await call(s3, s3Sdk.ListObjectVersionsCommand, {
+                  Bucket: 'fdp-test-raw-065986019555',
+                  Prefix: prefix,
+                  KeyMarker: marker,
+                  VersionIdMarker: versionMarker,
+                });
+                for (const item of [...(page.Versions ?? []), ...(page.DeleteMarkers ?? [])]) {
+                  demand(item.Key.startsWith(prefix), 'ARCHIVE_SCOPE_DRIFT');
+                  owned.push({ Key: item.Key, VersionId: item.VersionId });
+                }
+                marker = page.IsTruncated ? page.NextKeyMarker : undefined;
+                versionMarker = page.IsTruncated ? page.NextVersionIdMarker : undefined;
+              } while (marker);
+            }
+          for (let i = 0; i < owned.length; i += 1000) {
+            const result = await call(s3, s3Sdk.DeleteObjectsCommand, {
+              Bucket: 'fdp-test-raw-065986019555',
+              Delete: { Objects: owned.slice(i, i + 1000), Quiet: false },
+            });
+            demand(!result.Errors?.length, 'ARCHIVE_DELETE_PARTIAL_FAILURE');
+          }
+          for (const c of receipt.customers)
+            for (const type of ['heartbeat', 'telemetry', 'ack']) {
+              const result = await call(s3, s3Sdk.ListObjectVersionsCommand, {
+                Bucket: 'fdp-test-raw-065986019555',
+                Prefix: `raw/topic_type=${type}/customer_id=${c.id}/`,
+              });
+              demand(
+                !result.Versions?.length && !result.DeleteMarkers?.length && !result.IsTruncated,
+                'ARCHIVE_CLEANUP_NOT_EMPTY',
+              );
+            }
+          receipt.cleanup.push({ type: 'archive-batch-owned-prefix', count: owned.length, result: 'PASS' });
+          save();
+        } catch (e) {
           const errorCode = /^[A-Za-z0-9:_-]+$/.test(e.code ?? e.message ?? '')
             ? (e.code ?? e.message)
             : 'ARCHIVE_CLEANUP_FAILED';
-          receipt.cleanup.push({ type: 'archive-object', key, result: 'FAIL', errorCode });
+          receipt.cleanup.push({ type: 'archive-batch-owned-prefix', result: 'FAIL', errorCode });
+          receipt.gate = 'FAIL';
+          save();
+        }
+      }
+      if (!receipt.batchArchiveCleanup)
+        for (const key of receipt.archiveKeys ?? []) {
+          try {
+            if (!receipt.customers.some((c) => key.includes(`/customer_id=${c.id}/`)))
+              demand(false, 'ARCHIVE_SCOPE_DRIFT');
+            const versions = await call(s3, s3Sdk.ListObjectVersionsCommand, {
+              Bucket: 'fdp-test-raw-065986019555',
+              Prefix: key,
+            });
+            const ownVersions = [...(versions.Versions ?? []), ...(versions.DeleteMarkers ?? [])].filter(
+              (v) => v.Key === key,
+            );
+            for (const v of ownVersions)
+              await call(s3, s3Sdk.DeleteObjectCommand, {
+                Bucket: 'fdp-test-raw-065986019555',
+                Key: key,
+                VersionId: v.VersionId,
+              });
+            if (!ownVersions.length)
+              await call(s3, s3Sdk.DeleteObjectCommand, { Bucket: 'fdp-test-raw-065986019555', Key: key });
+            const remaining = await call(s3, s3Sdk.ListObjectVersionsCommand, {
+              Bucket: 'fdp-test-raw-065986019555',
+              Prefix: key,
+            });
+            demand(
+              ![...(remaining.Versions ?? []), ...(remaining.DeleteMarkers ?? [])].some((v) => v.Key === key),
+              'ARCHIVE_VERSION_STILL_EXISTS',
+            );
+            receipt.cleanup.push({ type: 'archive-object', key, result: 'PASS' });
+          } catch (e) {
+            receipt.gate = 'FAIL';
+            const errorCode = /^[A-Za-z0-9:_-]+$/.test(e.code ?? e.message ?? '')
+              ? (e.code ?? e.message)
+              : 'ARCHIVE_CLEANUP_FAILED';
+            receipt.cleanup.push({ type: 'archive-object', key, result: 'FAIL', errorCode });
+          }
+          save();
+        }
+      for (const c of [...receipt.customers].reverse()) {
+        try {
+          const owned = await api('cleanup-customer-scope-' + c.suffix, 'GET', `/api/v1/admin/customers/${c.id}`, 200);
+          demand(owned.data.name === `${prefix}-${c.suffix}`, 'CUSTOMER_SCOPE_DRIFT');
+          c.version = owned.data.version;
+          await api('cleanup-customer-' + c.suffix, 'DELETE', `/api/v1/admin/customers/${c.id}`, 200, undefined, {
+            'If-Match': String(c.version),
+          });
+          await api('verify-customer-gone-' + c.suffix, 'GET', `/api/v1/admin/customers/${c.id}`, 404);
+          receipt.cleanup.push({ type: 'customer', id: c.id, result: 'PASS' });
+        } catch (e) {
+          receipt.gate = 'FAIL';
+          receipt.cleanup.push({ type: 'customer', id: c.id, result: 'FAIL', failure: safeOperationError(e) });
         }
         save();
       }
-    for (const c of [...receipt.customers].reverse()) {
-      try {
-        const owned = await api('cleanup-customer-scope-' + c.suffix, 'GET', `/api/v1/admin/customers/${c.id}`, 200);
-        demand(owned.data.name === `${prefix}-${c.suffix}`, 'CUSTOMER_SCOPE_DRIFT');
-        c.version = owned.data.version;
-        await api('cleanup-customer-' + c.suffix, 'DELETE', `/api/v1/admin/customers/${c.id}`, 200, undefined, {
-          'If-Match': String(c.version),
+      if (createdIdentity) {
+        const result = await cleanupIdentityOperations(observeCleanup, {
+          globalSignOut: () =>
+            accessToken
+              ? createCognitoIdpClient({ region, clientId: '5ljdjsf9g563mc1vdc7vjdjm09' }).globalSignOut(accessToken)
+              : cognito.send(new cognitoSdk.AdminUserGlobalSignOutCommand({ UserPoolId: pool, Username: username }), {
+                  abortSignal: AbortSignal.timeout(30000),
+                }),
+          deleteUser: () =>
+            cognito.send(new cognitoSdk.AdminDeleteUserCommand({ UserPoolId: pool, Username: username }), {
+              abortSignal: AbortSignal.timeout(30000),
+            }),
+          getUser: () =>
+            cognito.send(new cognitoSdk.AdminGetUserCommand({ UserPoolId: pool, Username: username }), {
+              abortSignal: AbortSignal.timeout(30000),
+            }),
         });
-        await api('verify-customer-gone-' + c.suffix, 'GET', `/api/v1/admin/customers/${c.id}`, 404);
-        receipt.cleanup.push({ type: 'customer', id: c.id, result: 'PASS' });
-      } catch (e) {
-        receipt.gate = 'FAIL';
-        receipt.cleanup.push({ type: 'customer', id: c.id, result: 'FAIL', failure: safeOperationError(e) });
+        if (result.result !== 'PASS') receipt.gate = 'FAIL';
+        receipt.cleanup.push({ type: 'identity', username, ...result });
+        save();
       }
+      held.clear();
+      token = undefined;
+      accessToken = undefined;
+      receipt.finishedAt = new Date().toISOString();
       save();
     }
-    if (createdIdentity) {
-      const result = await cleanupIdentityOperations(observeCleanup, {
-        globalSignOut: () =>
-          accessToken
-            ? createCognitoIdpClient({ region, clientId: '5ljdjsf9g563mc1vdc7vjdjm09' }).globalSignOut(accessToken)
-            : cognito.send(new cognitoSdk.AdminUserGlobalSignOutCommand({ UserPoolId: pool, Username: username }), {
-                abortSignal: AbortSignal.timeout(30000),
-              }),
-        deleteUser: () =>
-          cognito.send(new cognitoSdk.AdminDeleteUserCommand({ UserPoolId: pool, Username: username }), {
-            abortSignal: AbortSignal.timeout(30000),
-          }),
-        getUser: () =>
-          cognito.send(new cognitoSdk.AdminGetUserCommand({ UserPoolId: pool, Username: username }), {
-            abortSignal: AbortSignal.timeout(30000),
-          }),
-      });
-      if (result.result !== 'PASS') receipt.gate = 'FAIL';
-      receipt.cleanup.push({ type: 'identity', username, ...result });
-      save();
-    }
-    held.clear();
-    token = undefined;
-    accessToken = undefined;
-    receipt.finishedAt = new Date().toISOString();
-    save();
   }
   return receipt;
 }

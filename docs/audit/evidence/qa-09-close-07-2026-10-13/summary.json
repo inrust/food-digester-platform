@@ -1,0 +1,59 @@
+{
+  "task": "QA09-CLOSE-07",
+  "applicationCommit": "dade6d950eb5fc681f9ab8c876762de5ffc77f4f",
+  "ciRunId": "38250000748",
+  "deploymentRunId": "38250000745",
+  "gate": "PARTIAL",
+  "fullQa09Accepted": false,
+  "productionReady": false,
+  "releasePerformanceAccepted": false,
+  "business": {
+    "nonemptyReplay": "PASS_NONEMPTY_EXACT_SCOPE_REPLAY",
+    "sameMessageExactDuplicateConsumption": "PASS_EXACT_DUPLICATE_CONSUMPTION",
+    "hourlyArchiveDedup": "PASS_HOURLY_ARCHIVE_DEDUP_SCOPE",
+    "directQueueSubmission": "BLOCKED_PERMISSION_NO_RETRY",
+    "directQueueConsumption": "NOT_RUN_NO_SUBMISSION",
+    "originalFullDedup": "NO_RECEIPT",
+    "daily": "NOT_RUN_NO_DAILY_ROWS",
+    "replayProducerToSpecificSqsIdClaimed": false,
+    "audit": "PASS",
+    "cleanup": "PASS",
+    "independentFinal": "PASS_READONLY_EMPTY_AND_BUILD_TERMINAL"
+  },
+  "preserved": {
+    "firstExecution": "FAIL_PUBACK_TIMEOUT",
+    "firstCleanupRefresh": "UND_ERR_CONNECT_TIMEOUT",
+    "historicalUnknownPlans": "UNKNOWN_NEVER_RESTART",
+    "historicalCorrectedQueueClaim": false,
+    "localVerificationOutputOrder": "FAIL_LOCAL_EVIDENCE_OUTPUT_ORDER; original empty output preserved; successful generation followed by full re-verification"
+  },
+  "local": {
+    "scriptTests": {
+      "pass": 1329,
+      "fail": 0,
+      "skipped": 0
+    },
+    "focusedTests": 26,
+    "hourlyAssessmentTests": 2,
+    "localReliabilityTests": 2
+  },
+  "remaining": [
+    "Current-version export lease recovery",
+    "Daily/archive/ESG consistency",
+    "Replay producer unique SQS association",
+    "PlatformOperator nonempty path not exercised this wave",
+    "Direct SSO redelivery blocked by KMS; no policy changes"
+  ],
+  "next": "Current-version owned export lease and daily/archive/ESG consistency; CLOSE-08 formal receipt mapping",
+  "receipts": [
+    "reconciliation-after.json",
+    "target.json",
+    "first-final-readonly.json",
+    "target-v2.json",
+    "target-v2.json.reliability.json",
+    "hourly-dedup-assessment.json",
+    "final-readonly.json",
+    "final-application-version.json",
+    "api-final-config.json"
+  ]
+}

@@ -1,0 +1,470 @@
+{
+  "task": "QA09-CLOSE-07",
+  "targetCommit": "dade6d950eb5fc681f9ab8c876762de5ffc77f4f",
+  "gate": "PASS_INVENTORY_QA09_PARTIAL",
+  "historical": [
+    {
+      "id": "NONEMPTY_REPLAY",
+      "evidence": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/writes-retest.json",
+      "sourceCommit": "525517a44f8568029615851e794ff5d87f833893",
+      "gate": "NOT_RUN_EMPTY_SOURCE_ONLY",
+      "roles": [
+        {
+          "role": "PlatformSuperAdmin",
+          "sent": 0
+        },
+        {
+          "role": "PlatformOperator",
+          "sent": 0
+        }
+      ],
+      "meaning": "Terminal empty-source Jobs prove role/scope plumbing only, never message replay"
+    },
+    {
+      "id": "QUEUE_REDELIVERY_CONSUMPTION",
+      "evidence": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/redelivery-final.json.gate.json",
+      "sourceCommit": "525517a44f8568029615851e794ff5d87f833893",
+      "gate": "BLOCKED",
+      "submission": "BLOCKED",
+      "consumption": "NOT_RUN_NO_SUBMITTED_REDELIVERY",
+      "cleanup": "PASS"
+    },
+    {
+      "id": "ORIGINAL_QUEUE_LABEL_CORRECTION",
+      "evidence": "docs/audit/evidence/qa-09-continuation-2026-10-04/normal-queue-claim-correction.json",
+      "sourceCommit": "0abf7cf299e0cda1d10ad9c1c1723a1735e3c388",
+      "gate": "NOT_RUN_NO_SUBMISSION_OR_CONSUMPTION_RECEIPT",
+      "correctedClaim": false,
+      "originalPreserved": true
+    },
+    {
+      "id": "EXPORT_EXPIRED_LEASE_AND_ARCHIVE",
+      "evidence": "docs/audit/evidence/qa-09-continuation-2026-10-04/real-wave.json.business.json",
+      "sourceCommit": "0abf7cf299e0cda1d10ad9c1c1723a1735e3c388",
+      "originalExecutionGate": "FAIL",
+      "gate": "HISTORICAL_SCOPED_PROOF_REVALIDATE_CHANGED_INPUTS",
+      "cleanup": "PASS",
+      "meaning": "Expired own export lease recovery and downloaded CSV; raw archive hashes belong to original source/config, not current version"
+    },
+    {
+      "id": "NONEMPTY_ESG_EXPORT",
+      "evidence": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/redelivery.json.super-exports.json",
+      "sourceCommit": "525517a44f8568029615851e794ff5d87f833893",
+      "gate": "PASS",
+      "jobs": [
+        {
+          "kind": "activity",
+          "rowCount": 0,
+          "sha256": "46219abf6cb99fe59348d0ac48af00be366952ed8068fe2c0986b6c97e87c290"
+        },
+        {
+          "kind": "esg",
+          "rowCount": 1,
+          "sha256": "b6c49d06b803c3fa27afb2b0e4c32f83a4453565cbf05f9a8e6cdbaf6c002129"
+        }
+      ],
+      "meaning": "Own nonempty ESG CSV; empty activity CSV is not nonempty activity acceptance"
+    },
+    {
+      "id": "ORIGINAL_FAILURE_AND_RECOVERED_CLEANUP",
+      "evidence": "docs/audit/evidence/qa-09-continuation-2026-10-04/recovered-closure-8.json",
+      "sourceCommit": "0abf7cf299e0cda1d10ad9c1c1723a1735e3c388",
+      "originalExecutionGate": "FAIL",
+      "gate": "PASS",
+      "normalCleanup": "PASS"
+    }
+  ],
+  "comparisons": {
+    "525517a44f8568029615851e794ff5d87f833893": [
+      {
+        "path": "apps",
+        "before": "901714ae6bc4ae906f59688a2c5cfd6d7d72feed",
+        "after": "781fc407991e05e5d9b3e1f1ab70bb5893a8a71b",
+        "equal": false,
+        "changedFiles": [
+          "apps/admin-web/src/auth/cognito-idp.ts",
+          "apps/cloud-api/src/admin/audit/service.ts",
+          "apps/cloud-api/src/admin/contract/load-candidate.ts",
+          "apps/cloud-api/src/admin/contract/service.ts",
+          "apps/cloud-api/src/admin/user/account-read-candidate.ts",
+          "apps/cloud-api/src/admin/user/service.ts",
+          "apps/cloud-api/src/runtime/admin-account-hook.ts",
+          "apps/cloud-api/src/runtime/admin-engine-diagnostic.ts",
+          "apps/cloud-api/src/runtime/admin-lambda.ts",
+          "apps/cloud-api/src/runtime/admin-runtime-secrets.ts",
+          "apps/cloud-api/src/runtime/lambda-entry.ts",
+          "apps/cloud-api/test/admin-account-hook-combination.test.ts",
+          "apps/cloud-api/test/admin-account-read-candidate.test.ts",
+          "apps/cloud-api/test/admin-audit.test.ts",
+          "apps/cloud-api/test/admin-contract-load-candidate.test.ts",
+          "apps/cloud-api/test/admin-contract.test.ts",
+          "apps/cloud-api/test/admin-engine-diagnostic.test.ts",
+          "apps/cloud-api/test/admin-lambda-composition.test.ts",
+          "apps/cloud-api/test/admin-observer-entry.test.ts",
+          "apps/cloud-api/test/admin-preconnect-candidate.test.ts",
+          "apps/cloud-api/test/admin-runtime-initialization.test.ts",
+          "apps/cloud-api/test/admin-runtime-secrets.test.ts",
+          "apps/cloud-api/test/admin-user.test.ts"
+        ]
+      },
+      {
+        "path": "packages",
+        "before": "1d253b1315d485b572aa3aab38943bd9956a4c04",
+        "after": "5f24aaef171e80ae47d1b24583ccd80f8079fda4",
+        "equal": false,
+        "changedFiles": [
+          "packages/database/src/audit.ts",
+          "packages/database/src/authenticated-preconnect.ts",
+          "packages/database/src/client-preparation.ts",
+          "packages/database/src/client.ts",
+          "packages/database/src/contract-load-observation.ts",
+          "packages/database/src/contract-load-pg-lease.ts",
+          "packages/database/src/index.ts",
+          "packages/database/src/observed-pg.ts",
+          "packages/database/src/transaction.ts",
+          "packages/database/test/authenticated-preconnect.test.ts",
+          "packages/database/test/client-preparation.test.ts",
+          "packages/database/test/client-split-runtime.test.mjs",
+          "packages/database/test/contract-await-offline.test.ts",
+          "packages/database/test/contract-cpu-runtime.test.ts",
+          "packages/database/test/contract-dispatch-offline.test.ts",
+          "packages/database/test/contract-entry-output-ownership.test.ts",
+          "packages/database/test/contract-entry-output-runtime.test.ts",
+          "packages/database/test/contract-load-boundary-runtime.test.mjs",
+          "packages/database/test/contract-load-detail.test.ts",
+          "packages/database/test/contract-load-observation.test.ts",
+          "packages/database/test/contract-load-offline.test.ts",
+          "packages/database/test/contract-observer-runtime.test.ts",
+          "packages/database/test/contract-public-ownership.test.ts",
+          "packages/database/test/contract-public-runtime.test.ts",
+          "packages/database/test/contract-window-probe.test.ts",
+          "packages/database/test/contract-windows-offline.test.ts",
+          "packages/database/test/helpers/contract-cpu-probe.ts",
+          "packages/database/test/helpers/contract-dispatch-probe.ts",
+          "packages/database/test/helpers/contract-entry-output-probe.ts",
+          "packages/database/test/helpers/contract-window-probe.ts",
+          "packages/database/test/observed-pg.test.ts",
+          "packages/database/test/transaction-observation.test.ts",
+          "packages/database/tsconfig.json",
+          "packages/observability/src/contract-observer-cost.ts",
+          "packages/observability/src/data-path.ts",
+          "packages/observability/test/contract-observer-cost.test.ts",
+          "packages/observability/test/contract-owned-boundaries.test.ts",
+          "packages/observability/test/data-path.test.ts"
+        ]
+      },
+      {
+        "path": "contracts",
+        "before": "0a9d6bddb69863fdfa4a3addfa44239d1c76401b",
+        "after": "0a9d6bddb69863fdfa4a3addfa44239d1c76401b",
+        "equal": true,
+        "changedFiles": []
+      },
+      {
+        "path": "infra",
+        "before": "9e8f11ad3c3ebeab4877f10bb6e4149523e403ea",
+        "after": "e30dfb82ed90dfee4a0e090e2025932157c0bdd0",
+        "equal": false,
+        "changedFiles": [
+          "infra/src/config.ts",
+          "infra/src/stacks/app-dependencies-stack.ts",
+          "infra/test/deployment-config.test.ts",
+          "infra/test/qa09-performance.test.ts"
+        ]
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "before": "cc4fe15e2189802f1f819853c0f40a5ef71e8c19",
+        "after": "cc4fe15e2189802f1f819853c0f40a5ef71e8c19",
+        "equal": true,
+        "changedFiles": []
+      },
+      {
+        "path": "package.json",
+        "before": "d263a41529764ca29cc81b28f44dac6bed5a0569",
+        "after": "d263a41529764ca29cc81b28f44dac6bed5a0569",
+        "equal": true,
+        "changedFiles": []
+      },
+      {
+        "path": "pnpm-workspace.yaml",
+        "before": "72d188bcf671a82fbfe766bcf437d663b13bb40a",
+        "after": "72d188bcf671a82fbfe766bcf437d663b13bb40a",
+        "equal": true,
+        "changedFiles": []
+      },
+      {
+        "path": ".nvmrc",
+        "before": "248216ad5b80a75cb6913e4f54fde1340b845b4c",
+        "after": "248216ad5b80a75cb6913e4f54fde1340b845b4c",
+        "equal": true,
+        "changedFiles": []
+      },
+      {
+        "path": "scripts/esgiot-cdk.mjs",
+        "before": "2d253ba58050050480ba82bf851422fedb522849",
+        "after": "e359128579170c14c5efa821f9858456c3408824",
+        "equal": false,
+        "changedFiles": [
+          "scripts/esgiot-cdk.mjs"
+        ]
+      },
+      {
+        "path": ".github/workflows/deploy-test.yml",
+        "before": "d274524cfd363267f7bd8489887daffb54d19dbb",
+        "after": "061d8f643a8ae42c198712159edc9d7679cfaa9a",
+        "equal": false,
+        "changedFiles": [
+          ".github/workflows/deploy-test.yml"
+        ]
+      }
+    ],
+    "0abf7cf299e0cda1d10ad9c1c1723a1735e3c388": [
+      {
+        "path": "apps",
+        "before": "1df0b3f9a1b0f2f4b7c9cb1024a56278a8ec36a8",
+        "after": "781fc407991e05e5d9b3e1f1ab70bb5893a8a71b",
+        "equal": false,
+        "changedFiles": [
+          "apps/admin-web/e2e/admin-web.spec.ts",
+          "apps/admin-web/src/app/app.css",
+          "apps/admin-web/src/auth/cognito-idp.ts",
+          "apps/admin-web/src/pages/device-manage/DeviceManagePage.tsx",
+          "apps/cloud-api/src/admin/audit/service.ts",
+          "apps/cloud-api/src/admin/contract/load-candidate.ts",
+          "apps/cloud-api/src/admin/contract/service.ts",
+          "apps/cloud-api/src/admin/device-console/handler.ts",
+          "apps/cloud-api/src/admin/device-console/service.ts",
+          "apps/cloud-api/src/admin/user/account-read-candidate.ts",
+          "apps/cloud-api/src/admin/user/service.ts",
+          "apps/cloud-api/src/device/license-sync.ts",
+          "apps/cloud-api/src/device/sync-handler.ts",
+          "apps/cloud-api/src/device/sync.ts",
+          "apps/cloud-api/src/runtime/admin-account-hook.ts",
+          "apps/cloud-api/src/runtime/admin-engine-diagnostic.ts",
+          "apps/cloud-api/src/runtime/admin-lambda.ts",
+          "apps/cloud-api/src/runtime/admin-runtime-secrets.ts",
+          "apps/cloud-api/src/runtime/lambda-entry.ts",
+          "apps/cloud-api/test/admin-account-hook-combination.test.ts",
+          "apps/cloud-api/test/admin-account-read-candidate.test.ts",
+          "apps/cloud-api/test/admin-audit.test.ts",
+          "apps/cloud-api/test/admin-contract-load-candidate.test.ts",
+          "apps/cloud-api/test/admin-contract.test.ts",
+          "apps/cloud-api/test/admin-device-console.test.ts",
+          "apps/cloud-api/test/admin-engine-diagnostic.test.ts",
+          "apps/cloud-api/test/admin-lambda-composition.test.ts",
+          "apps/cloud-api/test/admin-observer-entry.test.ts",
+          "apps/cloud-api/test/admin-preconnect-candidate.test.ts",
+          "apps/cloud-api/test/admin-runtime-initialization.test.ts",
+          "apps/cloud-api/test/admin-runtime-secrets.test.ts",
+          "apps/cloud-api/test/admin-user.test.ts",
+          "apps/cloud-api/test/license-sync-lifecycle.test.ts",
+          "apps/cloud-api/test/qa06-security.test.ts",
+          "apps/ingestion-worker/src/ingest/handler.ts",
+          "apps/ingestion-worker/src/ingest/pipeline.ts",
+          "apps/ingestion-worker/src/ingest/receipt.ts",
+          "apps/ingestion-worker/src/runtime/ingestion-entry.ts",
+          "apps/ingestion-worker/src/telemetry/handler.ts",
+          "apps/ingestion-worker/test/ingest-receipt.test.ts"
+        ]
+      },
+      {
+        "path": "packages",
+        "before": "65d1bf6688a07aab3c43f9c0fd7c9cb958113b38",
+        "after": "5f24aaef171e80ae47d1b24583ccd80f8079fda4",
+        "equal": false,
+        "changedFiles": [
+          "packages/database/src/audit.ts",
+          "packages/database/src/authenticated-preconnect.ts",
+          "packages/database/src/client-preparation.ts",
+          "packages/database/src/client.ts",
+          "packages/database/src/contract-load-observation.ts",
+          "packages/database/src/contract-load-pg-lease.ts",
+          "packages/database/src/index.ts",
+          "packages/database/src/observed-pg.ts",
+          "packages/database/src/transaction.ts",
+          "packages/database/test/authenticated-preconnect.test.ts",
+          "packages/database/test/client-preparation.test.ts",
+          "packages/database/test/client-split-runtime.test.mjs",
+          "packages/database/test/contract-await-offline.test.ts",
+          "packages/database/test/contract-cpu-runtime.test.ts",
+          "packages/database/test/contract-dispatch-offline.test.ts",
+          "packages/database/test/contract-entry-output-ownership.test.ts",
+          "packages/database/test/contract-entry-output-runtime.test.ts",
+          "packages/database/test/contract-load-boundary-runtime.test.mjs",
+          "packages/database/test/contract-load-detail.test.ts",
+          "packages/database/test/contract-load-observation.test.ts",
+          "packages/database/test/contract-load-offline.test.ts",
+          "packages/database/test/contract-observer-runtime.test.ts",
+          "packages/database/test/contract-public-ownership.test.ts",
+          "packages/database/test/contract-public-runtime.test.ts",
+          "packages/database/test/contract-window-probe.test.ts",
+          "packages/database/test/contract-windows-offline.test.ts",
+          "packages/database/test/helpers/contract-cpu-probe.ts",
+          "packages/database/test/helpers/contract-dispatch-probe.ts",
+          "packages/database/test/helpers/contract-entry-output-probe.ts",
+          "packages/database/test/helpers/contract-window-probe.ts",
+          "packages/database/test/observed-pg.test.ts",
+          "packages/database/test/transaction-observation.test.ts",
+          "packages/database/tsconfig.json",
+          "packages/observability/src/contract-observer-cost.ts",
+          "packages/observability/src/data-path.ts",
+          "packages/observability/src/index.ts",
+          "packages/observability/test/contract-observer-cost.test.ts",
+          "packages/observability/test/contract-owned-boundaries.test.ts",
+          "packages/observability/test/data-path.test.ts"
+        ]
+      },
+      {
+        "path": "contracts",
+        "before": "98c5d4dd40f8efe3870931d19a276e66ca8b9083",
+        "after": "0a9d6bddb69863fdfa4a3addfa44239d1c76401b",
+        "equal": false,
+        "changedFiles": [
+          "contracts/contract-version.json",
+          "contracts/rest/device-source-alignment.test.ts",
+          "contracts/rest/device-sync-api.json",
+          "contracts/rest/device-sync-api.test.ts",
+          "contracts/rest/openapi.bundle.json",
+          "contracts/testing/baselines/0.13.0.json",
+          "contracts/testing/compatibility-approvals-0.11-to-0.12.json",
+          "contracts/testing/compatibility-approvals.json"
+        ]
+      },
+      {
+        "path": "infra",
+        "before": "4f74ce927890b0860533170068a9d56bc443b8e6",
+        "after": "e30dfb82ed90dfee4a0e090e2025932157c0bdd0",
+        "equal": false,
+        "changedFiles": [
+          "infra/src/config.ts",
+          "infra/src/stacks/app-dependencies-stack.ts",
+          "infra/test/app-stack.test.ts",
+          "infra/test/deployment-config.test.ts",
+          "infra/test/qa09-performance.test.ts"
+        ]
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "before": "cc4fe15e2189802f1f819853c0f40a5ef71e8c19",
+        "after": "cc4fe15e2189802f1f819853c0f40a5ef71e8c19",
+        "equal": true,
+        "changedFiles": []
+      },
+      {
+        "path": "package.json",
+        "before": "d263a41529764ca29cc81b28f44dac6bed5a0569",
+        "after": "d263a41529764ca29cc81b28f44dac6bed5a0569",
+        "equal": true,
+        "changedFiles": []
+      },
+      {
+        "path": "pnpm-workspace.yaml",
+        "before": "72d188bcf671a82fbfe766bcf437d663b13bb40a",
+        "after": "72d188bcf671a82fbfe766bcf437d663b13bb40a",
+        "equal": true,
+        "changedFiles": []
+      },
+      {
+        "path": ".nvmrc",
+        "before": "248216ad5b80a75cb6913e4f54fde1340b845b4c",
+        "after": "248216ad5b80a75cb6913e4f54fde1340b845b4c",
+        "equal": true,
+        "changedFiles": []
+      },
+      {
+        "path": "scripts/esgiot-cdk.mjs",
+        "before": "2d253ba58050050480ba82bf851422fedb522849",
+        "after": "e359128579170c14c5efa821f9858456c3408824",
+        "equal": false,
+        "changedFiles": [
+          "scripts/esgiot-cdk.mjs"
+        ]
+      },
+      {
+        "path": ".github/workflows/deploy-test.yml",
+        "before": "d274524cfd363267f7bd8489887daffb54d19dbb",
+        "after": "061d8f643a8ae42c198712159edc9d7679cfaa9a",
+        "equal": false,
+        "changedFiles": [
+          ".github/workflows/deploy-test.yml"
+        ]
+      }
+    ]
+  },
+  "refs": [
+    {
+      "path": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/writes-retest.json",
+      "sha256": "750e0ac0db4dede8991f7827977526f08dc21b9aba2395095f79e4a9423ca82c"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/redelivery-final.json.gate.json",
+      "sha256": "b208d7117ccb90f1223b420bfdcee1b46d57c51aa3a93ef95babcbd7babcb2d1"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/redelivery-final.json.submission.json",
+      "sha256": "761b8912837a92a752fff7d9bfb614fdd41b38424fdcbcc26f0916e1702caf13"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/redelivery-final.json.data-path.json",
+      "sha256": "8933667a2086dc22e0aa585062a66464666471c7d45d5049379953ca831f2a42"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/normal-queue-claim-correction.json",
+      "sha256": "090c5dbd5f3e6c8877bcf41a2033263da87206b1e96ab91299a251424f8fc6d6"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/normal-slo.json.probes.json",
+      "sha256": "839e50038f62005ff6372ecaab003107244f142b2fb26c807088a9dd80f021f2"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/normal-slo.json.performance-queue-redelivery.json",
+      "sha256": "668d9187adc31df1a488c8ace97f130d01cc14ce3fb2ed545e26f890799cd651"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/real-wave.json.business.json",
+      "sha256": "64292eb2f3caa06acc62315fcb5bcafed20f59202d06c2a7f603aee0d3083c6e"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/real-wave.json.business.json.business-inject-export-lease-4.json",
+      "sha256": "92a5c1abb73c135ec42379ee0d87931c77eafb6488f451db55be51b7006f88e9"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/recovered-closure-8.json",
+      "sha256": "af8890518f9f2a2c326fbde9e1888603a058bae8325fd4bc5c6c6e176e1612f5"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/recovered-closure-8.json.audit-empty.json",
+      "sha256": "a211c4460a58431d4ada3ec13f3595406bb1f5f6f6e19eb985f91fe1d8dc092e"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-continuation-2026-10-04/normal-recovered-closure.json",
+      "sha256": "5185c063c912a8773846449f189186abeac72f78a9f62b40794979048977e5b4"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/redelivery.json.super-exports.json",
+      "sha256": "0b56c59fbe1f464efc4862f319e426a06d65593413a60c39d685a12a003b7e58"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/redelivery.json.super-exports.json.business-baseline.json",
+      "sha256": "26fada0e281d5f28f0f1a6a133e0c74b9d2b9bcd68f8394cbfae84cf6e3ae39b"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/redelivery.json.super-exports.json.business-cleanup.json",
+      "sha256": "950b25c1cd6fb0e3a891882a5296f351c92cab04beadef17ca48d780b7401a66"
+    },
+    {
+      "path": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/redelivery.json.super-exports.json.business-audit.json",
+      "sha256": "b037d65c9fdc79b4490cb7e5745f6f5610a20d3517aba0325c11dadcb82da439"
+    }
+  ],
+  "compatibilityRule": "Identical source trees support reuse only within original configuration and scope; changed application/infra/dependency trees require current receipts. Historical FAIL and corrected false claims stay unchanged.",
+  "deferred": [
+    "REL-PERF-01: deep performance and transport tails",
+    "CLOSE-08: formal target Gate mapping",
+    "Active lifecycle requires independent device verification",
+    "Current-version export lease and full archive/ESG consistency remain separate receipts"
+  ],
+  "unknownStartPolicy": "Never repeat StartBuild for an original UNKNOWN Plan. Only bounded exact read recovery may bind an existing Build. Original failure remains.",
+  "fullQa09Accepted": false
+}

@@ -1,0 +1,2305 @@
+{
+  "task": "QA-09",
+  "scope": "TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE",
+  "reviewOnly": false,
+  "mode": "REAL_EXISTING_TEST_ENVIRONMENT",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1",
+    "stackName": "fdp-test-app"
+  },
+  "sourceCommit": "dade6d950eb5fc681f9ab8c876762de5ffc77f4f",
+  "versionBinding": {
+    "commit": "dade6d950eb5fc681f9ab8c876762de5ffc77f4f",
+    "deployRunId": "38250000745"
+  },
+  "executorSha256": "44ad88e545bd6c620c2da1872fdf5037c63ba22f955d2d3d2edb9a8f61605783",
+  "versionReceipt": "docs/audit/evidence/qa-09-close-07-2026-10-13/application-version.json",
+  "artifactByteReceipt": "docs/audit/evidence/qa-09-close-07-2026-10-13/application-version.json",
+  "startedAt": "2026-10-12T23:46:31.334Z",
+  "prefix": "qa09-7e66eb47eff01696",
+  "devices": [
+    "qa09-7e66eb47eff01696-01",
+    "qa09-7e66eb47eff01696-02",
+    "qa09-7e66eb47eff01696-03",
+    "qa09-7e66eb47eff01696-04",
+    "qa09-7e66eb47eff01696-05",
+    "qa09-7e66eb47eff01696-06",
+    "qa09-7e66eb47eff01696-07",
+    "qa09-7e66eb47eff01696-08",
+    "qa09-7e66eb47eff01696-09",
+    "qa09-7e66eb47eff01696-10"
+  ],
+  "customers": [
+    {
+      "id": "453c315b-3f61-40b8-a42c-44f5d7d6a7c4",
+      "name": "qa09-7e66eb47eff01696-a",
+      "suffix": "a",
+      "version": 1
+    },
+    {
+      "id": "009d1d71-fafa-4947-b0fd-cc4f6719a782",
+      "name": "qa09-7e66eb47eff01696-b",
+      "suffix": "b",
+      "version": 1
+    }
+  ],
+  "checks": [
+    {
+      "id": "dedicated-first-login-challenge",
+      "result": "PASS"
+    },
+    {
+      "id": "dedicated-real-srp",
+      "result": "PASS"
+    },
+    {
+      "id": "create-customer-a",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "role": "PlatformSuperAdmin",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-12T23:46:40.052Z",
+      "latencyMs": 6548,
+      "gatewayRequestId": "8ef42092-9f49-4233-b0b7-c939e265c8c3",
+      "gatewayExtendedRequestId": "FJ6nXHE9yQ0EMQQ=",
+      "gatewayErrorType": null,
+      "requestId": "8ef42092-9f49-4233-b0b7-c939e265c8c3",
+      "errorCode": null
+    },
+    {
+      "id": "create-customer-b",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "role": "PlatformSuperAdmin",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-12T23:46:46.603Z",
+      "latencyMs": 2897,
+      "gatewayRequestId": "f681509d-90f3-4290-9cce-49460277df92",
+      "gatewayExtendedRequestId": "FJ6oeGCRSQ0EGEA=",
+      "gatewayErrorType": null,
+      "requestId": "f681509d-90f3-4290-9cce-49460277df92",
+      "errorCode": null
+    },
+    {
+      "id": "unseeded-prefix-empty",
+      "result": "PASS"
+    },
+    {
+      "id": "seed-original-baseline-preserved",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:csr-create",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "role": "anonymous",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-12T23:50:29.399Z",
+      "latencyMs": 5822,
+      "gatewayRequestId": "83d65664-5f9f-4168-b95c-d33ed6fbab73",
+      "gatewayExtendedRequestId": "FJ7LLHGHSQ0ECqA=",
+      "gatewayErrorType": null,
+      "requestId": "83d65664-5f9f-4168-b95c-d33ed6fbab73",
+      "errorCode": null,
+      "businessRequestId": "5dded353-5a0a-4f86-911b-bee94150f244"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:same-csr-idempotent",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "role": "anonymous",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:35.222Z",
+      "latencyMs": 1775,
+      "gatewayRequestId": "453f628f-063b-4a34-9331-162c33bef299",
+      "gatewayExtendedRequestId": "FJ7MCEiLyQ0EC3A=",
+      "gatewayErrorType": null,
+      "requestId": "453f628f-063b-4a34-9331-162c33bef299",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:different-key-conflict",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "role": "anonymous",
+      "status": 409,
+      "expected": 409,
+      "startedAt": "2026-10-12T23:50:37.021Z",
+      "latencyMs": 649,
+      "gatewayRequestId": "1781d49c-a89b-4d34-ac1c-07960affad38",
+      "gatewayExtendedRequestId": "FJ7MJEh_SQ0EdEQ=",
+      "gatewayErrorType": null,
+      "requestId": "1781d49c-a89b-4d34-ac1c-07960affad38",
+      "errorCode": "CONFLICT"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:signed-pending",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "role": "anonymous",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:37.671Z",
+      "latencyMs": 612,
+      "gatewayRequestId": "9f390887-11b3-4a94-9167-a769cc14258c",
+      "gatewayExtendedRequestId": "FJ7MPGmNSQ0EPwQ=",
+      "gatewayErrorType": null,
+      "requestId": "9f390887-11b3-4a94-9167-a769cc14258c",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:nonce-replay-denied",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "role": "anonymous",
+      "status": 401,
+      "expected": 401,
+      "startedAt": "2026-10-12T23:50:38.283Z",
+      "latencyMs": 719,
+      "gatewayRequestId": "47cdf833-e65b-4bd4-8c22-b91a83e467e1",
+      "gatewayExtendedRequestId": "FJ7MWGtiyQ0EWkA=",
+      "gatewayErrorType": null,
+      "requestId": "47cdf833-e65b-4bd4-8c22-b91a83e467e1",
+      "errorCode": "UNAUTHENTICATED"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:wrong-key-denied",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "role": "anonymous",
+      "status": 401,
+      "expected": 401,
+      "startedAt": "2026-10-12T23:50:39.003Z",
+      "latencyMs": 597,
+      "gatewayRequestId": "31a39331-410b-48fe-92e6-994ce7cbb35d",
+      "gatewayExtendedRequestId": "FJ7MdEYFyQ0EIkw=",
+      "gatewayErrorType": null,
+      "requestId": "31a39331-410b-48fe-92e6-994ce7cbb35d",
+      "errorCode": "UNAUTHENTICATED"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:admin-detail",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/5dded353-5a0a-4f86-911b-bee94150f244",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:39.600Z",
+      "latencyMs": 2601,
+      "gatewayRequestId": "a2712f0f-1219-4844-af8a-3d8310c81cea",
+      "gatewayExtendedRequestId": "FJ7MwE8vyQ0EBfQ=",
+      "gatewayErrorType": null,
+      "requestId": "a2712f0f-1219-4844-af8a-3d8310c81cea",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:approve",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/5dded353-5a0a-4f86-911b-bee94150f244/approve",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:42.202Z",
+      "latencyMs": 2094,
+      "gatewayRequestId": "b97d028f-81e7-46f3-850a-d6b88afd52ca",
+      "gatewayExtendedRequestId": "FJ7NJG92yQ0EQJQ=",
+      "gatewayErrorType": null,
+      "requestId": "b97d028f-81e7-46f3-850a-d6b88afd52ca",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-02:csr-create",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "role": "anonymous",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-12T23:50:44.329Z",
+      "latencyMs": 1908,
+      "gatewayRequestId": "c66ffd53-7a7b-41ba-b1c8-325a1895a8ff",
+      "gatewayExtendedRequestId": "FJ7NdGwjyQ0EKrQ=",
+      "gatewayErrorType": null,
+      "requestId": "c66ffd53-7a7b-41ba-b1c8-325a1895a8ff",
+      "errorCode": null,
+      "businessRequestId": "842164c8-e371-481e-9ef3-6a2be76466eb"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-02:admin-detail",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/842164c8-e371-481e-9ef3-6a2be76466eb",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:46.238Z",
+      "latencyMs": 1664,
+      "gatewayRequestId": "d55cd008-9195-47e5-835e-4707e0edef39",
+      "gatewayExtendedRequestId": "FJ7NxHxgSQ0Eb3A=",
+      "gatewayErrorType": null,
+      "requestId": "d55cd008-9195-47e5-835e-4707e0edef39",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-02:approve",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/842164c8-e371-481e-9ef3-6a2be76466eb/approve",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:47.903Z",
+      "latencyMs": 939,
+      "gatewayRequestId": "874cb9b5-5206-484c-9b5a-cb57766d08a7",
+      "gatewayExtendedRequestId": "FJ7N2GY0SQ0EEDw=",
+      "gatewayErrorType": null,
+      "requestId": "874cb9b5-5206-484c-9b5a-cb57766d08a7",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-03:csr-create",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "role": "anonymous",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-12T23:50:48.905Z",
+      "latencyMs": 778,
+      "gatewayRequestId": "558832b4-3041-42ce-a963-b9ac5e9b5d8f",
+      "gatewayExtendedRequestId": "FJ7OAGeOyQ0EAvA=",
+      "gatewayErrorType": null,
+      "requestId": "558832b4-3041-42ce-a963-b9ac5e9b5d8f",
+      "errorCode": null,
+      "businessRequestId": "7ad248cb-518d-40e8-a06d-c36aac5f2989"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-03:admin-detail",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/7ad248cb-518d-40e8-a06d-c36aac5f2989",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:49.685Z",
+      "latencyMs": 533,
+      "gatewayRequestId": "d163a46e-8f23-4c87-a59e-757818f1a419",
+      "gatewayExtendedRequestId": "FJ7OIFMdyQ0EGtg=",
+      "gatewayErrorType": null,
+      "requestId": "d163a46e-8f23-4c87-a59e-757818f1a419",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-03:approve",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/7ad248cb-518d-40e8-a06d-c36aac5f2989/approve",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:50.219Z",
+      "latencyMs": 657,
+      "gatewayRequestId": "de60e838-3e15-4312-b66a-50c41151275d",
+      "gatewayExtendedRequestId": "FJ7ONGTJSQ0EJVw=",
+      "gatewayErrorType": null,
+      "requestId": "de60e838-3e15-4312-b66a-50c41151275d",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-04:csr-create",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "role": "anonymous",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-12T23:50:50.937Z",
+      "latencyMs": 682,
+      "gatewayRequestId": "9e764f99-085c-43e0-af41-31542c570364",
+      "gatewayExtendedRequestId": "FJ7OUEYFyQ0EfSg=",
+      "gatewayErrorType": null,
+      "requestId": "9e764f99-085c-43e0-af41-31542c570364",
+      "errorCode": null,
+      "businessRequestId": "3e20ce6d-4891-4446-a142-4f9e53d21756"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-04:admin-detail",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/3e20ce6d-4891-4446-a142-4f9e53d21756",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:51.621Z",
+      "latencyMs": 538,
+      "gatewayRequestId": "bb3a8342-8e2b-4691-b57b-c1991d01c7b0",
+      "gatewayExtendedRequestId": "FJ7ObH24yQ0Ef6A=",
+      "gatewayErrorType": null,
+      "requestId": "bb3a8342-8e2b-4691-b57b-c1991d01c7b0",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-04:approve",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/3e20ce6d-4891-4446-a142-4f9e53d21756/approve",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:52.160Z",
+      "latencyMs": 544,
+      "gatewayRequestId": "982b3fe9-2e51-4b6b-9cb0-210e1cd33c99",
+      "gatewayExtendedRequestId": "FJ7OgFYfSQ0ERgQ=",
+      "gatewayErrorType": null,
+      "requestId": "982b3fe9-2e51-4b6b-9cb0-210e1cd33c99",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-05:csr-create",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "role": "anonymous",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-12T23:50:52.801Z",
+      "latencyMs": 1742,
+      "gatewayRequestId": "6d189efd-1854-4877-b0a7-e7786a473197",
+      "gatewayExtendedRequestId": "FJ7OnEG_yQ0EJAA=",
+      "gatewayErrorType": null,
+      "requestId": "6d189efd-1854-4877-b0a7-e7786a473197",
+      "errorCode": null,
+      "businessRequestId": "32fb2d48-02f2-45ce-b152-ecd22420fd53"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-05:admin-detail",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/32fb2d48-02f2-45ce-b152-ecd22420fd53",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:54.544Z",
+      "latencyMs": 485,
+      "gatewayRequestId": "de8000cc-f115-49b2-9fa0-5115bc5c922e",
+      "gatewayExtendedRequestId": "FJ7O4EfjyQ0EQBA=",
+      "gatewayErrorType": null,
+      "requestId": "de8000cc-f115-49b2-9fa0-5115bc5c922e",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-05:approve",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/32fb2d48-02f2-45ce-b152-ecd22420fd53/approve",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:55.031Z",
+      "latencyMs": 508,
+      "gatewayRequestId": "49c1677c-7310-485b-be9c-4426b9a1c258",
+      "gatewayExtendedRequestId": "FJ7O9FZ2yQ0EdxA=",
+      "gatewayErrorType": null,
+      "requestId": "49c1677c-7310-485b-be9c-4426b9a1c258",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-06:csr-create",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "role": "anonymous",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-12T23:50:55.597Z",
+      "latencyMs": 532,
+      "gatewayRequestId": "6e960094-8acb-44e2-b17b-861e9a35644a",
+      "gatewayExtendedRequestId": "FJ7PDFPtSQ0EASA=",
+      "gatewayErrorType": null,
+      "requestId": "6e960094-8acb-44e2-b17b-861e9a35644a",
+      "errorCode": null,
+      "businessRequestId": "e53b91ee-d0a0-4c79-afae-5b0811477f33"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-06:admin-detail",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/e53b91ee-d0a0-4c79-afae-5b0811477f33",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:56.132Z",
+      "latencyMs": 494,
+      "gatewayRequestId": "9d98659f-cae0-4836-a85a-9608b5ef7c7f",
+      "gatewayExtendedRequestId": "FJ7PIHAlSQ0ESiA=",
+      "gatewayErrorType": null,
+      "requestId": "9d98659f-cae0-4836-a85a-9608b5ef7c7f",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-06:approve",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/e53b91ee-d0a0-4c79-afae-5b0811477f33/approve",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:56.627Z",
+      "latencyMs": 533,
+      "gatewayRequestId": "2783bc7f-9458-41f3-82cc-3b7f60c5f311",
+      "gatewayExtendedRequestId": "FJ7PNHyxyQ0ESVQ=",
+      "gatewayErrorType": null,
+      "requestId": "2783bc7f-9458-41f3-82cc-3b7f60c5f311",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-07:csr-create",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "role": "anonymous",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-12T23:50:57.241Z",
+      "latencyMs": 528,
+      "gatewayRequestId": "ae0e7133-4f5b-4421-9b46-7c3bb0d75dbf",
+      "gatewayExtendedRequestId": "FJ7PTGe_yQ0EatQ=",
+      "gatewayErrorType": null,
+      "requestId": "ae0e7133-4f5b-4421-9b46-7c3bb0d75dbf",
+      "errorCode": null,
+      "businessRequestId": "efe34c5c-63a8-463e-a349-5f811c1e7132"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-07:admin-detail",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/efe34c5c-63a8-463e-a349-5f811c1e7132",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:57.771Z",
+      "latencyMs": 471,
+      "gatewayRequestId": "a176f956-8121-4040-a15c-8dff10a7c094",
+      "gatewayExtendedRequestId": "FJ7PYHCcyQ0EEDw=",
+      "gatewayErrorType": null,
+      "requestId": "a176f956-8121-4040-a15c-8dff10a7c094",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-07:approve",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/efe34c5c-63a8-463e-a349-5f811c1e7132/approve",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:58.243Z",
+      "latencyMs": 533,
+      "gatewayRequestId": "99704894-bfaf-4750-8c38-de5ee2ba9703",
+      "gatewayExtendedRequestId": "FJ7PdFWqyQ0EOtA=",
+      "gatewayErrorType": null,
+      "requestId": "99704894-bfaf-4750-8c38-de5ee2ba9703",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-08:csr-create",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "role": "anonymous",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-12T23:50:58.836Z",
+      "latencyMs": 504,
+      "gatewayRequestId": "dac27faa-fa5b-411d-bd70-8f4b2b018ec0",
+      "gatewayExtendedRequestId": "FJ7PjF4lyQ0Eb0w=",
+      "gatewayErrorType": null,
+      "requestId": "dac27faa-fa5b-411d-bd70-8f4b2b018ec0",
+      "errorCode": null,
+      "businessRequestId": "eee1613f-43b0-4a57-a5f4-01c7b53bb728"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-08:admin-detail",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/eee1613f-43b0-4a57-a5f4-01c7b53bb728",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:59.343Z",
+      "latencyMs": 479,
+      "gatewayRequestId": "610945b6-2f73-483a-b2cd-9df812333bc6",
+      "gatewayExtendedRequestId": "FJ7PoGlcSQ0Efdg=",
+      "gatewayErrorType": null,
+      "requestId": "610945b6-2f73-483a-b2cd-9df812333bc6",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-08:approve",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/eee1613f-43b0-4a57-a5f4-01c7b53bb728/approve",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:50:59.823Z",
+      "latencyMs": 574,
+      "gatewayRequestId": "d91be5ae-1177-49c9-bf8c-47c89965adc4",
+      "gatewayExtendedRequestId": "FJ7PtG8DSQ0EAkg=",
+      "gatewayErrorType": null,
+      "requestId": "d91be5ae-1177-49c9-bf8c-47c89965adc4",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-09:csr-create",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "role": "anonymous",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-12T23:51:00.439Z",
+      "latencyMs": 507,
+      "gatewayRequestId": "11ba28e1-b75c-4372-9303-749b65491851",
+      "gatewayExtendedRequestId": "FJ7PzGaMyQ0EdCg=",
+      "gatewayErrorType": null,
+      "requestId": "11ba28e1-b75c-4372-9303-749b65491851",
+      "errorCode": null,
+      "businessRequestId": "31b1ed5a-bc9e-4f94-9136-4671fc1c757d"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-09:admin-detail",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/31b1ed5a-bc9e-4f94-9136-4671fc1c757d",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:51:00.949Z",
+      "latencyMs": 483,
+      "gatewayRequestId": "57516b63-ed71-4c39-96d9-a28eee2cb504",
+      "gatewayExtendedRequestId": "FJ7P4FQDSQ0EcqQ=",
+      "gatewayErrorType": null,
+      "requestId": "57516b63-ed71-4c39-96d9-a28eee2cb504",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-09:approve",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/31b1ed5a-bc9e-4f94-9136-4671fc1c757d/approve",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:51:01.433Z",
+      "latencyMs": 490,
+      "gatewayRequestId": "3d6473e1-25e9-4ec4-935a-db83829cd13a",
+      "gatewayExtendedRequestId": "FJ7P9Hc3SQ0EJkQ=",
+      "gatewayErrorType": null,
+      "requestId": "3d6473e1-25e9-4ec4-935a-db83829cd13a",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-10:csr-create",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "role": "anonymous",
+      "status": 201,
+      "expected": 201,
+      "startedAt": "2026-10-12T23:51:02.006Z",
+      "latencyMs": 505,
+      "gatewayRequestId": "7079ef20-aa7d-429e-8a89-d6e6aa2d543a",
+      "gatewayExtendedRequestId": "FJ7QDES6SQ0EFnQ=",
+      "gatewayErrorType": null,
+      "requestId": "7079ef20-aa7d-429e-8a89-d6e6aa2d543a",
+      "errorCode": null,
+      "businessRequestId": "d19dc93e-dba9-4363-abbb-412d1e920b9a"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-10:admin-detail",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/d19dc93e-dba9-4363-abbb-412d1e920b9a",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:51:02.512Z",
+      "latencyMs": 527,
+      "gatewayRequestId": "d6a0710e-cf8a-4157-ac6c-0f2d9ee61efc",
+      "gatewayExtendedRequestId": "FJ7QIHfmyQ0Edtg=",
+      "gatewayErrorType": null,
+      "requestId": "d6a0710e-cf8a-4157-ac6c-0f2d9ee61efc",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-10:approve",
+      "result": "PASS",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/d19dc93e-dba9-4363-abbb-412d1e920b9a/approve",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-12T23:51:03.040Z",
+      "latencyMs": 562,
+      "gatewayRequestId": "33d5f3c8-3534-4db3-80e7-ce8b74ee2ef0",
+      "gatewayExtendedRequestId": "FJ7QOHMLSQ0EJVw=",
+      "gatewayErrorType": null,
+      "requestId": "33d5f3c8-3534-4db3-80e7-ce8b74ee2ef0",
+      "errorCode": null
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:signed-status-41",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-02:signed-status-42",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-03:signed-status-43",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-04:signed-status-44",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-05:signed-status-45",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-05:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-05:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-06:signed-status-48",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-06:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-06:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-07:signed-status-51",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-07:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-07:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-08:signed-status-54",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-08:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-08:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-09:signed-status-57",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-09:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-09:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-10:signed-status-60",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-10:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-10:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:signed-status-63",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-02:signed-status-66",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-02:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-02:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-03:signed-status-69",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-03:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-03:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-04:signed-status-72",
+      "result": "PASS",
+      "status": 200
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-04:csr-key-certificate-match",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-04:target-endpoints",
+      "result": "PASS"
+    },
+    {
+      "id": "ten-concurrent-independent-mqtt-sessions",
+      "result": "PASS",
+      "count": 10,
+      "keyFingerprints": [
+        "0708aa023743d16b81f098a977cc5a0e6dc2d893b691b17926508f95ccf40daf",
+        "81fb3c0bc93822574d4cea33f6ac43166463da1aeb3ed4b888d80fb85f5a88cd",
+        "58db048fa1518422eb39f0fde8789c6a4c133ce8b1787fff3c08d5054f422093",
+        "0dd1d883e9b90888e49135855a86c6a9ca175f6ed9cab7e35a2cbe661b44049d",
+        "5f73cde24f8ee86196a6ae58fe12f383de526ea02ad2895ccc7db458a355a893",
+        "ce1fb943279258bea09f66c4bfdd1f2d0e02fffefb2da4221c45a77121ec5ba1",
+        "a220dbf1c91d846f1ed21f0658004bf1a3fb9d31cb53b94dc7b39001a0b0f1d9",
+        "222655a8905d0b55b94a49b5834653f8bc588039cfd7c4d914b8286787330339",
+        "4d55303fa095175e429dac41229935654d3f46ac58a7ac28bd9fa49bd2dbb1f6",
+        "1a83bb0aaa10de8d98d071d52c7049530851de724fca73a391b9c36c49e05172"
+      ]
+    },
+    {
+      "id": "first-heartbeat-completes-ten-onboardings",
+      "result": "PASS"
+    },
+    {
+      "id": "claimed-certificate-identities-match-rds",
+      "result": "PASS"
+    },
+    {
+      "id": "ten-active-packages-destroyed",
+      "result": "PASS"
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-01:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "f26d3524-1a03-4019-9ab1-8d0cc77ba17c",
+      "errorCode": null,
+      "startedAt": "2026-10-12T23:54:07.367Z",
+      "latencyMs": 5450
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-02:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "054b20bc-1a1b-46ba-928b-9523ac7c92f4",
+      "errorCode": null,
+      "startedAt": "2026-10-12T23:54:12.818Z",
+      "latencyMs": 1941
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-03:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "2f39bfa4-6162-4e5d-90ed-b2e1ed7abf0a",
+      "errorCode": null,
+      "startedAt": "2026-10-12T23:54:14.761Z",
+      "latencyMs": 1626
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-04:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "c8360a32-8e65-46b3-b869-82fc64cce9ad",
+      "errorCode": null,
+      "startedAt": "2026-10-12T23:54:16.388Z",
+      "latencyMs": 1687
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-05:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "672a9a32-cb78-4515-9e37-cc7d04c8e31e",
+      "errorCode": null,
+      "startedAt": "2026-10-12T23:54:18.077Z",
+      "latencyMs": 1518
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-06:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "8c27e731-df54-4074-a5c5-e8e82c24d830",
+      "errorCode": null,
+      "startedAt": "2026-10-12T23:54:19.596Z",
+      "latencyMs": 2188
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-07:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "c5efacea-cc53-475f-9ccb-f1f52236dab9",
+      "errorCode": null,
+      "startedAt": "2026-10-12T23:54:21.786Z",
+      "latencyMs": 1433
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-08:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "565202cd-25f4-4f79-9f31-dd6cf3dc1853",
+      "errorCode": null,
+      "startedAt": "2026-10-12T23:54:23.221Z",
+      "latencyMs": 1455
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-09:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "ff010566-4c10-41f7-98b1-cd0f92f0039e",
+      "errorCode": null,
+      "startedAt": "2026-10-12T23:54:24.676Z",
+      "latencyMs": 2146
+    },
+    {
+      "id": "qa09-7e66eb47eff01696-10:real-mtls-sync",
+      "result": "PASS",
+      "status": 200,
+      "requestId": "2f1537f0-c3ca-437c-b4e1-b95a3f9610b7",
+      "errorCode": null,
+      "startedAt": "2026-10-12T23:54:26.822Z",
+      "latencyMs": 1409
+    },
+    {
+      "id": "rest-no-client-certificate-denied",
+      "result": "PASS",
+      "status": 0,
+      "errorCode": "ECONNRESET"
+    },
+    {
+      "id": "rest-untrusted-client-certificate-denied",
+      "result": "PASS",
+      "status": 403,
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-scope-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/009d1d71-fafa-4947-b0fd-cc4f6719a782",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-13T00:00:35.054Z",
+      "latencyMs": 6139,
+      "gatewayRequestId": "9c8e3af6-2703-4d45-81d9-d7ddf24373da",
+      "gatewayExtendedRequestId": "FJ8p1GiCSQ0EHxg=",
+      "gatewayErrorType": null,
+      "requestId": "9c8e3af6-2703-4d45-81d9-d7ddf24373da",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-b",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/009d1d71-fafa-4947-b0fd-cc4f6719a782",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-13T00:00:41.197Z",
+      "latencyMs": 2074,
+      "gatewayRequestId": "36093840-ac0f-4db6-b77d-0f438d004839",
+      "gatewayExtendedRequestId": "FJ8qvFmgSQ0EVcg=",
+      "gatewayErrorType": null,
+      "requestId": "36093840-ac0f-4db6-b77d-0f438d004839",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-b",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/009d1d71-fafa-4947-b0fd-cc4f6719a782",
+      "role": "PlatformSuperAdmin",
+      "status": 404,
+      "expected": 404,
+      "startedAt": "2026-10-13T00:00:43.277Z",
+      "latencyMs": 525,
+      "gatewayRequestId": "e584217f-d8b6-4d6f-8fc5-c5798cdae62a",
+      "gatewayExtendedRequestId": "FJ8q4Gb1SQ0EYjw=",
+      "gatewayErrorType": null,
+      "requestId": "e584217f-d8b6-4d6f-8fc5-c5798cdae62a",
+      "errorCode": "NOT_FOUND"
+    },
+    {
+      "id": "cleanup-customer-scope-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/453c315b-3f61-40b8-a42c-44f5d7d6a7c4",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-13T00:00:43.807Z",
+      "latencyMs": 1634,
+      "gatewayRequestId": "9619e8e8-28e8-4c31-ba50-8dda079c672d",
+      "gatewayExtendedRequestId": "FJ8q9HH2yQ0Edtg=",
+      "gatewayErrorType": null,
+      "requestId": "9619e8e8-28e8-4c31-ba50-8dda079c672d",
+      "errorCode": null
+    },
+    {
+      "id": "cleanup-customer-a",
+      "result": "PASS",
+      "method": "DELETE",
+      "path": "/api/v1/admin/customers/453c315b-3f61-40b8-a42c-44f5d7d6a7c4",
+      "role": "PlatformSuperAdmin",
+      "status": 200,
+      "expected": 200,
+      "startedAt": "2026-10-13T00:00:45.444Z",
+      "latencyMs": 629,
+      "gatewayRequestId": "89385fef-ff48-4c08-ab93-6fcd717066d3",
+      "gatewayExtendedRequestId": "FJ8rNGWOSQ0EVQw=",
+      "gatewayErrorType": null,
+      "requestId": "89385fef-ff48-4c08-ab93-6fcd717066d3",
+      "errorCode": null
+    },
+    {
+      "id": "verify-customer-gone-a",
+      "result": "PASS",
+      "method": "GET",
+      "path": "/api/v1/admin/customers/453c315b-3f61-40b8-a42c-44f5d7d6a7c4",
+      "role": "PlatformSuperAdmin",
+      "status": 404,
+      "expected": 404,
+      "startedAt": "2026-10-13T00:00:46.076Z",
+      "latencyMs": 515,
+      "gatewayRequestId": "bd311189-b3d9-4ad0-9358-ad556075da71",
+      "gatewayExtendedRequestId": "FJ8rUG8KSQ0ESiA=",
+      "gatewayErrorType": null,
+      "requestId": "bd311189-b3d9-4ad0-9358-ad556075da71",
+      "errorCode": "NOT_FOUND"
+    }
+  ],
+  "published": [
+    {
+      "deviceId": "qa09-7e66eb47eff01696-03",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-810A54AE-1",
+      "bodySha256": "7c89a588e48c53f6e9ed72c4870508c55d0c91720d4081f84e684a04c1f09a94",
+      "payloadSha256": "59bcdd569ea84695d5744f92dcd7a5f29a6e5ac87a883f2dcf55ce4c5e61396a"
+    },
+    {
+      "deviceId": "qa09-7e66eb47eff01696-08",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-7F72E6E2-1",
+      "bodySha256": "eea32e8a49ff0ac108390c95d100646ed30f0bd829523bd57900974a9ff56f8a",
+      "payloadSha256": "0df387cfab2ff3ee3fab28e692e1ee29ea6ec1055214ae5251470bd6f4486424"
+    },
+    {
+      "deviceId": "qa09-7e66eb47eff01696-07",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-3748704A-1",
+      "bodySha256": "f404947317af15c2aa44c8a8f693973f6f7d1bd5075066b0078f7b27ec7b48f2",
+      "payloadSha256": "972b56899fda5b803c2cc54be2cdce2de1c777c3965a5a8f8a95870068be5330"
+    },
+    {
+      "deviceId": "qa09-7e66eb47eff01696-01",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-E6FAF6C0-1",
+      "bodySha256": "1c7ceb420a1f71efc3739d8b33124bc6817b063656927235ef60821504d4b9df",
+      "payloadSha256": "3e2b8430ec89175d0bd9c61c623852e6a22ff1aa0c5f162fbfddbd927bd43484"
+    },
+    {
+      "deviceId": "qa09-7e66eb47eff01696-06",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-D9F108E6-1",
+      "bodySha256": "1a32d04d9862d9f3e34629c66451aa978ec9f1c6b9fd0350a5d1e454701c6cfb",
+      "payloadSha256": "241ade2bdff3f58557ff1a04fad325440add59a26c2e557ada598edd15fbf35e"
+    },
+    {
+      "deviceId": "qa09-7e66eb47eff01696-05",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-3B40D765-1",
+      "bodySha256": "1dc1096c43ff339825d1677f8bdb2f4b0f6cef7961eb697c7712af810d01713c",
+      "payloadSha256": "34f7a16278bb50fc06bb64a012126ee20f89553073e2c6d0da230bb18c2dedd9"
+    },
+    {
+      "deviceId": "qa09-7e66eb47eff01696-10",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-6061BBE9-1",
+      "bodySha256": "aee6817c6ebfe3737886608a43364dcd22c36e3e45b07a13286f2a9c84b91163",
+      "payloadSha256": "aef889252ec5a71cc6ced8719e5775ca6dae75896b86a71872b150d2e8a4128f"
+    },
+    {
+      "deviceId": "qa09-7e66eb47eff01696-04",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-9EAC5057-1",
+      "bodySha256": "e4eb5d684407eb445864f36ccef1798ece99d0fba5e5b2436fc3e683f3da672f",
+      "payloadSha256": "75d103e524adaa01149bce43faf30251c1592e964f4fd71bd6bbf297eba1626a"
+    },
+    {
+      "deviceId": "qa09-7e66eb47eff01696-02",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-B7567006-1",
+      "bodySha256": "32b51c7dad8cb8cf1cadb9ef831ad6b37c7ee274c62715f67ef419096a966378",
+      "payloadSha256": "731e086dd790820a45f1023cf4134125d9300a45321972377e3c2d605a4d5626"
+    },
+    {
+      "deviceId": "qa09-7e66eb47eff01696-09",
+      "type": "heartbeat",
+      "seq": 1,
+      "messageId": "HEARTBEAT-3CD801EF-1",
+      "bodySha256": "19426e5c6428d3bf244d0929720d9ab93803d88d2f9efc17b3f48aa9c666756b",
+      "payloadSha256": "0b28e9a4f347cbc39078b980a9e0c9bb4d8d5cf029cae8c0baeeebaca74a202e"
+    },
+    {
+      "deviceId": "qa09-7e66eb47eff01696-01",
+      "type": "telemetry",
+      "seq": 1,
+      "messageId": "TELEMETRY-E6FAF6C0-1",
+      "bodySha256": "ea1520c68050798341ab266d466a915a372690fbefee282cec1fa7d547b20cfb",
+      "payloadSha256": "75b39e95646c314ec06b4864775de5ae4155090a18976039cb1bc0b8971cc2c6"
+    }
+  ],
+  "databaseBuilds": [
+    {
+      "action": "observe",
+      "receipt": "docs/audit/evidence/qa-09-close-07-2026-10-13/target.json.observe-0.json",
+      "gate": "PASS",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:7b340355-98a3-4d2b-81e7-9d686f7679e8"
+    },
+    {
+      "action": "seed",
+      "receipt": "docs/audit/evidence/qa-09-close-07-2026-10-13/target.json.seed-1.json",
+      "gate": "PASS",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:c74a099f-df39-441d-a9f3-47af6ae648e4"
+    },
+    {
+      "action": "observe",
+      "receipt": "docs/audit/evidence/qa-09-close-07-2026-10-13/target.json.observe-2.json",
+      "gate": "PASS",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:698a79ab-b3ff-4d86-bbbc-698025a63bb2"
+    },
+    {
+      "action": "observe",
+      "receipt": "docs/audit/evidence/qa-09-close-07-2026-10-13/target.json.observe-3.json",
+      "gate": "PASS",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:74b2589c-728d-4b66-bec4-4fce7e799be6"
+    },
+    {
+      "action": "cleanup",
+      "receipt": "docs/audit/evidence/qa-09-close-07-2026-10-13/target.json.cleanup-4.json",
+      "gate": "PASS",
+      "buildId": "fdp-test-qa09-ten-device-fixtures:bfbf0eb9-902a-4430-8237-3acd179df5dc"
+    }
+  ],
+  "archiveObjects": [],
+  "cleanup": [
+    {
+      "type": "identity-refresh-before-cleanup",
+      "result": "FAIL",
+      "failure": {
+        "code": "NETWORK",
+        "errorName": "CognitoIdpError",
+        "causeCode": "UND_ERR_CONNECT_TIMEOUT",
+        "requestId": null,
+        "httpStatusCode": null,
+        "diagnosticStage": "FETCH",
+        "attempts": null,
+        "totalRetryDelay": null
+      }
+    },
+    {
+      "type": "iot-certificate",
+      "id": "b4ebfe1d9e8f8160aeccf2ac466b600a59c5f2bb16465a2ccc916b5ab99e9edd",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "c28dae791c837e734e058ad8e1d981831ef5b56a27ee2e8dfe89899fdff7dfa5",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "4838252b3be212a14c2f6d46ae671eca04614be849b23c16e291103fae17907f",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "7be6ff644cc1c1a53da0dbaa1fb0c287c07ac984001c20c971d9b22902aa3615",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "a07e5f37d1f15697c9c847ed8b57568c64d7a7ed739cae52a76161852e3bd0b7",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "9e0068c1940c7d4c521d455072cd78a461cc25a4b9da6a74d60e504b9508d4ed",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "8df0b6cbd6f11b53fc3ff8f1ef5a044746fd6d73df9306a5015ca200cfebf990",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "6f4ffe39f970619fef042bd2e9c6584dffbe5ed63be25f50ef7f72abdc11d3f6",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "eb4b29305dc4c11485c2f2c3c1f526b197407c439182eeea0730aa7f3870f5b2",
+      "result": "PASS"
+    },
+    {
+      "type": "iot-certificate",
+      "id": "8eaad251d600c85eb8755c426b4bc0b5e9c4f17bebe905018b815ab052183bb0",
+      "result": "PASS"
+    },
+    {
+      "type": "database-fixtures",
+      "count": 10,
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=453c315b-3f61-40b8-a42c-44f5d7d6a7c4/year=2026/month=10/day=12/hour=23/part-4ecb34f4b15e8171.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=453c315b-3f61-40b8-a42c-44f5d7d6a7c4/year=2026/month=10/day=12/hour=23/part-4ecb34f4b15e8171.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=453c315b-3f61-40b8-a42c-44f5d7d6a7c4/year=2026/month=10/day=12/hour=23/part-616f271afb434ca7.json.gz",
+      "result": "PASS"
+    },
+    {
+      "type": "archive-object",
+      "key": "raw/topic_type=telemetry/customer_id=453c315b-3f61-40b8-a42c-44f5d7d6a7c4/year=2026/month=10/day=12/hour=23/part-616f271afb434ca7.manifest.json",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "009d1d71-fafa-4947-b0fd-cc4f6719a782",
+      "result": "PASS"
+    },
+    {
+      "type": "customer",
+      "id": "453c315b-3f61-40b8-a42c-44f5d7d6a7c4",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "username": "qa09-7e66eb47eff01696-platformsuperadmin@example.invalid",
+      "globalSignOut": "PASS",
+      "deletion": "PASS",
+      "absence": "PASS",
+      "failures": [],
+      "absenceProof": "UserNotFoundException",
+      "result": "PASS"
+    }
+  ],
+  "cleanupOperations": [
+    {
+      "sequence": 1,
+      "operation": "identity:refresh",
+      "startedAt": "2026-10-12T23:54:53.215Z",
+      "result": "FAIL",
+      "failure": {
+        "code": "NETWORK",
+        "errorName": "CognitoIdpError",
+        "causeCode": "UND_ERR_CONNECT_TIMEOUT",
+        "requestId": null,
+        "httpStatusCode": null,
+        "diagnosticStage": "FETCH",
+        "attempts": null,
+        "totalRetryDelay": null
+      },
+      "durationMs": 10522,
+      "finishedAt": "2026-10-12T23:55:03.738Z"
+    },
+    {
+      "sequence": 2,
+      "operation": "database:observe",
+      "startedAt": "2026-10-12T23:55:03.741Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 128560,
+      "finishedAt": "2026-10-12T23:57:12.302Z"
+    },
+    {
+      "sequence": 3,
+      "operation": "aws:ListPrincipalThingsCommand",
+      "startedAt": "2026-10-12T23:57:12.302Z",
+      "result": "PASS",
+      "requestId": "00a48fe5-fcf0-4a0a-86f1-19310a632c29",
+      "durationMs": 2153,
+      "finishedAt": "2026-10-12T23:57:14.456Z"
+    },
+    {
+      "sequence": 4,
+      "operation": "aws:UpdateCertificateCommand",
+      "startedAt": "2026-10-12T23:57:14.457Z",
+      "result": "PASS",
+      "requestId": "a021c460-cdca-4eee-a342-fbbee45b110b",
+      "durationMs": 503,
+      "finishedAt": "2026-10-12T23:57:14.960Z"
+    },
+    {
+      "sequence": 5,
+      "operation": "aws:DetachThingPrincipalCommand",
+      "startedAt": "2026-10-12T23:57:14.961Z",
+      "result": "PASS",
+      "requestId": "ee7e671b-6409-4742-8929-253a8f7c5504",
+      "durationMs": 477,
+      "finishedAt": "2026-10-12T23:57:15.439Z"
+    },
+    {
+      "sequence": 6,
+      "operation": "aws:ListAttachedPoliciesCommand",
+      "startedAt": "2026-10-12T23:57:15.440Z",
+      "result": "PASS",
+      "requestId": "c0fdaf0c-8ba3-4155-8499-2fd0f7aa5c97",
+      "durationMs": 486,
+      "finishedAt": "2026-10-12T23:57:15.927Z"
+    },
+    {
+      "sequence": 7,
+      "operation": "aws:DetachPolicyCommand",
+      "startedAt": "2026-10-12T23:57:15.928Z",
+      "result": "PASS",
+      "requestId": "ddb75b5d-78b5-47fb-9b39-1f00869f6022",
+      "durationMs": 1469,
+      "finishedAt": "2026-10-12T23:57:17.398Z"
+    },
+    {
+      "sequence": 8,
+      "operation": "aws:DeletePolicyCommand",
+      "startedAt": "2026-10-12T23:57:17.399Z",
+      "result": "PASS",
+      "requestId": "d80cddd3-864f-4daf-8b6b-e87d2995c205",
+      "durationMs": 500,
+      "finishedAt": "2026-10-12T23:57:17.900Z"
+    },
+    {
+      "sequence": 9,
+      "operation": "aws:DeleteCertificateCommand",
+      "startedAt": "2026-10-12T23:57:17.901Z",
+      "result": "PASS",
+      "requestId": "360fd200-ac68-4641-a320-9aaa31ae3788",
+      "durationMs": 492,
+      "finishedAt": "2026-10-12T23:57:18.394Z"
+    },
+    {
+      "sequence": 10,
+      "operation": "aws:ListPrincipalThingsCommand",
+      "startedAt": "2026-10-12T23:57:18.397Z",
+      "result": "PASS",
+      "requestId": "67a8e44f-6528-4b0d-84f2-efb305cb2807",
+      "durationMs": 475,
+      "finishedAt": "2026-10-12T23:57:18.872Z"
+    },
+    {
+      "sequence": 11,
+      "operation": "aws:UpdateCertificateCommand",
+      "startedAt": "2026-10-12T23:57:18.873Z",
+      "result": "PASS",
+      "requestId": "a107a028-bf54-430f-a53d-356b661d04f6",
+      "durationMs": 513,
+      "finishedAt": "2026-10-12T23:57:19.388Z"
+    },
+    {
+      "sequence": 12,
+      "operation": "aws:DetachThingPrincipalCommand",
+      "startedAt": "2026-10-12T23:57:19.389Z",
+      "result": "PASS",
+      "requestId": "cdb1e401-77db-4f63-a047-a8bccf5e37f9",
+      "durationMs": 490,
+      "finishedAt": "2026-10-12T23:57:19.880Z"
+    },
+    {
+      "sequence": 13,
+      "operation": "aws:ListAttachedPoliciesCommand",
+      "startedAt": "2026-10-12T23:57:19.881Z",
+      "result": "PASS",
+      "requestId": "de37a52b-0adc-4f1d-948e-2643a819322e",
+      "durationMs": 471,
+      "finishedAt": "2026-10-12T23:57:20.353Z"
+    },
+    {
+      "sequence": 14,
+      "operation": "aws:DetachPolicyCommand",
+      "startedAt": "2026-10-12T23:57:20.354Z",
+      "result": "PASS",
+      "requestId": "1f014636-7759-4b4b-90fd-5d3dc9039387",
+      "durationMs": 471,
+      "finishedAt": "2026-10-12T23:57:20.827Z"
+    },
+    {
+      "sequence": 15,
+      "operation": "aws:DeletePolicyCommand",
+      "startedAt": "2026-10-12T23:57:20.828Z",
+      "result": "PASS",
+      "requestId": "2dc94223-3b82-4bd7-853d-ad89bce9bacc",
+      "durationMs": 518,
+      "finishedAt": "2026-10-12T23:57:21.347Z"
+    },
+    {
+      "sequence": 16,
+      "operation": "aws:DeleteCertificateCommand",
+      "startedAt": "2026-10-12T23:57:21.348Z",
+      "result": "PASS",
+      "requestId": "765677e0-56ca-45e4-bca7-fe047e5a5077",
+      "durationMs": 469,
+      "finishedAt": "2026-10-12T23:57:21.818Z"
+    },
+    {
+      "sequence": 17,
+      "operation": "aws:ListPrincipalThingsCommand",
+      "startedAt": "2026-10-12T23:57:21.820Z",
+      "result": "PASS",
+      "requestId": "9ba93b5e-7ecc-417f-8259-60df13a900ac",
+      "durationMs": 474,
+      "finishedAt": "2026-10-12T23:57:22.294Z"
+    },
+    {
+      "sequence": 18,
+      "operation": "aws:UpdateCertificateCommand",
+      "startedAt": "2026-10-12T23:57:22.295Z",
+      "result": "PASS",
+      "requestId": "1e5213f3-59c7-41dd-9aa7-11845a150f48",
+      "durationMs": 467,
+      "finishedAt": "2026-10-12T23:57:22.762Z"
+    },
+    {
+      "sequence": 19,
+      "operation": "aws:DetachThingPrincipalCommand",
+      "startedAt": "2026-10-12T23:57:22.763Z",
+      "result": "PASS",
+      "requestId": "2f85410f-6181-462c-8288-1a2770e7c386",
+      "durationMs": 483,
+      "finishedAt": "2026-10-12T23:57:23.246Z"
+    },
+    {
+      "sequence": 20,
+      "operation": "aws:ListAttachedPoliciesCommand",
+      "startedAt": "2026-10-12T23:57:23.248Z",
+      "result": "PASS",
+      "requestId": "875ee31c-c205-4fa9-8e62-7e75817d4c37",
+      "durationMs": 499,
+      "finishedAt": "2026-10-12T23:57:23.747Z"
+    },
+    {
+      "sequence": 21,
+      "operation": "aws:DetachPolicyCommand",
+      "startedAt": "2026-10-12T23:57:23.749Z",
+      "result": "PASS",
+      "requestId": "8b93c924-7d14-4f81-ab1d-3bd431d62d67",
+      "durationMs": 1188,
+      "finishedAt": "2026-10-12T23:57:24.938Z"
+    },
+    {
+      "sequence": 22,
+      "operation": "aws:DeletePolicyCommand",
+      "startedAt": "2026-10-12T23:57:24.939Z",
+      "result": "PASS",
+      "requestId": "07f910dc-b4d0-4490-aa9f-1bd8f7a48636",
+      "durationMs": 506,
+      "finishedAt": "2026-10-12T23:57:25.446Z"
+    },
+    {
+      "sequence": 23,
+      "operation": "aws:DeleteCertificateCommand",
+      "startedAt": "2026-10-12T23:57:25.448Z",
+      "result": "PASS",
+      "requestId": "2f7cc8bb-c4a5-436a-a63a-06f0feb02c78",
+      "durationMs": 463,
+      "finishedAt": "2026-10-12T23:57:25.911Z"
+    },
+    {
+      "sequence": 24,
+      "operation": "aws:ListPrincipalThingsCommand",
+      "startedAt": "2026-10-12T23:57:25.914Z",
+      "result": "PASS",
+      "requestId": "52d6b18a-c994-4edd-8a60-243275f996f4",
+      "durationMs": 472,
+      "finishedAt": "2026-10-12T23:57:26.386Z"
+    },
+    {
+      "sequence": 25,
+      "operation": "aws:UpdateCertificateCommand",
+      "startedAt": "2026-10-12T23:57:26.387Z",
+      "result": "PASS",
+      "requestId": "e19249aa-4bf3-44a3-ad24-0f8828145140",
+      "durationMs": 465,
+      "finishedAt": "2026-10-12T23:57:26.853Z"
+    },
+    {
+      "sequence": 26,
+      "operation": "aws:DetachThingPrincipalCommand",
+      "startedAt": "2026-10-12T23:57:26.855Z",
+      "result": "PASS",
+      "requestId": "74006cee-eb15-42d0-b715-f99fa257328f",
+      "durationMs": 463,
+      "finishedAt": "2026-10-12T23:57:27.319Z"
+    },
+    {
+      "sequence": 27,
+      "operation": "aws:ListAttachedPoliciesCommand",
+      "startedAt": "2026-10-12T23:57:27.321Z",
+      "result": "PASS",
+      "requestId": "94b8130c-5cbb-423e-bbd7-5f265e3d59da",
+      "durationMs": 1500,
+      "finishedAt": "2026-10-12T23:57:28.823Z"
+    },
+    {
+      "sequence": 28,
+      "operation": "aws:DetachPolicyCommand",
+      "startedAt": "2026-10-12T23:57:28.824Z",
+      "result": "PASS",
+      "requestId": "34d192c8-acdf-44b4-852e-f56d8a617059",
+      "durationMs": 460,
+      "finishedAt": "2026-10-12T23:57:29.285Z"
+    },
+    {
+      "sequence": 29,
+      "operation": "aws:DeletePolicyCommand",
+      "startedAt": "2026-10-12T23:57:29.286Z",
+      "result": "PASS",
+      "requestId": "4d9bb8dc-2e8e-43da-845a-603798425374",
+      "durationMs": 505,
+      "finishedAt": "2026-10-12T23:57:29.791Z"
+    },
+    {
+      "sequence": 30,
+      "operation": "aws:DeleteCertificateCommand",
+      "startedAt": "2026-10-12T23:57:29.792Z",
+      "result": "PASS",
+      "requestId": "e247ff2f-0450-4ee4-9c91-01168583e39d",
+      "durationMs": 470,
+      "finishedAt": "2026-10-12T23:57:30.262Z"
+    },
+    {
+      "sequence": 31,
+      "operation": "aws:ListPrincipalThingsCommand",
+      "startedAt": "2026-10-12T23:57:30.264Z",
+      "result": "PASS",
+      "requestId": "d076ff37-6ac9-411d-84ed-131c2b9489da",
+      "durationMs": 474,
+      "finishedAt": "2026-10-12T23:57:30.739Z"
+    },
+    {
+      "sequence": 32,
+      "operation": "aws:UpdateCertificateCommand",
+      "startedAt": "2026-10-12T23:57:30.741Z",
+      "result": "PASS",
+      "requestId": "b38a1ec9-6eea-4c6f-bde1-44324f818f78",
+      "durationMs": 458,
+      "finishedAt": "2026-10-12T23:57:31.199Z"
+    },
+    {
+      "sequence": 33,
+      "operation": "aws:DetachThingPrincipalCommand",
+      "startedAt": "2026-10-12T23:57:31.200Z",
+      "result": "PASS",
+      "requestId": "b0530483-c26e-4e17-91ce-b210bd445659",
+      "durationMs": 454,
+      "finishedAt": "2026-10-12T23:57:31.654Z"
+    },
+    {
+      "sequence": 34,
+      "operation": "aws:ListAttachedPoliciesCommand",
+      "startedAt": "2026-10-12T23:57:31.657Z",
+      "result": "PASS",
+      "requestId": "785e0251-1e90-4468-8f8c-c2f1b79c9e50",
+      "durationMs": 465,
+      "finishedAt": "2026-10-12T23:57:32.123Z"
+    },
+    {
+      "sequence": 35,
+      "operation": "aws:DetachPolicyCommand",
+      "startedAt": "2026-10-12T23:57:32.124Z",
+      "result": "PASS",
+      "requestId": "7a66c560-a1ff-449e-94a1-84a0471038d6",
+      "durationMs": 473,
+      "finishedAt": "2026-10-12T23:57:32.597Z"
+    },
+    {
+      "sequence": 36,
+      "operation": "aws:DeletePolicyCommand",
+      "startedAt": "2026-10-12T23:57:32.598Z",
+      "result": "PASS",
+      "requestId": "63014f7f-23d8-4c8c-824b-0a803a5ab2fe",
+      "durationMs": 505,
+      "finishedAt": "2026-10-12T23:57:33.103Z"
+    },
+    {
+      "sequence": 37,
+      "operation": "aws:DeleteCertificateCommand",
+      "startedAt": "2026-10-12T23:57:33.104Z",
+      "result": "PASS",
+      "requestId": "a5675403-61c3-40d1-acb0-efbeb9411776",
+      "durationMs": 474,
+      "finishedAt": "2026-10-12T23:57:33.579Z"
+    },
+    {
+      "sequence": 38,
+      "operation": "aws:ListPrincipalThingsCommand",
+      "startedAt": "2026-10-12T23:57:33.579Z",
+      "result": "PASS",
+      "requestId": "01b2fa93-b93f-4533-b095-f1dd6e2cbb1d",
+      "durationMs": 456,
+      "finishedAt": "2026-10-12T23:57:34.035Z"
+    },
+    {
+      "sequence": 39,
+      "operation": "aws:UpdateCertificateCommand",
+      "startedAt": "2026-10-12T23:57:34.037Z",
+      "result": "PASS",
+      "requestId": "45059ffe-b603-48b6-90b8-5ca6391370be",
+      "durationMs": 459,
+      "finishedAt": "2026-10-12T23:57:34.496Z"
+    },
+    {
+      "sequence": 40,
+      "operation": "aws:DetachThingPrincipalCommand",
+      "startedAt": "2026-10-12T23:57:34.498Z",
+      "result": "PASS",
+      "requestId": "2a21657f-3316-49d0-979f-4ef36a5d3cd3",
+      "durationMs": 485,
+      "finishedAt": "2026-10-12T23:57:34.983Z"
+    },
+    {
+      "sequence": 41,
+      "operation": "aws:ListAttachedPoliciesCommand",
+      "startedAt": "2026-10-12T23:57:34.985Z",
+      "result": "PASS",
+      "requestId": "305fa585-71b7-4544-bd77-78b5e10e760c",
+      "durationMs": 465,
+      "finishedAt": "2026-10-12T23:57:35.452Z"
+    },
+    {
+      "sequence": 42,
+      "operation": "aws:DetachPolicyCommand",
+      "startedAt": "2026-10-12T23:57:35.453Z",
+      "result": "PASS",
+      "requestId": "44370e63-4c6e-491e-9824-e15705896ea2",
+      "durationMs": 523,
+      "finishedAt": "2026-10-12T23:57:35.977Z"
+    },
+    {
+      "sequence": 43,
+      "operation": "aws:DeletePolicyCommand",
+      "startedAt": "2026-10-12T23:57:35.979Z",
+      "result": "PASS",
+      "requestId": "4739fb77-823e-466c-9145-2227961d6dae",
+      "durationMs": 543,
+      "finishedAt": "2026-10-12T23:57:36.523Z"
+    },
+    {
+      "sequence": 44,
+      "operation": "aws:DeleteCertificateCommand",
+      "startedAt": "2026-10-12T23:57:36.525Z",
+      "result": "PASS",
+      "requestId": "e124656e-9638-4162-9d29-ee3d30e50c2c",
+      "durationMs": 528,
+      "finishedAt": "2026-10-12T23:57:37.053Z"
+    },
+    {
+      "sequence": 45,
+      "operation": "aws:ListPrincipalThingsCommand",
+      "startedAt": "2026-10-12T23:57:37.055Z",
+      "result": "PASS",
+      "requestId": "9f9b879e-a7a5-4731-a9fd-3a5f7cbfd5de",
+      "durationMs": 514,
+      "finishedAt": "2026-10-12T23:57:37.570Z"
+    },
+    {
+      "sequence": 46,
+      "operation": "aws:UpdateCertificateCommand",
+      "startedAt": "2026-10-12T23:57:37.572Z",
+      "result": "PASS",
+      "requestId": "59766dab-aeba-473e-9ae7-2ba29062086b",
+      "durationMs": 522,
+      "finishedAt": "2026-10-12T23:57:38.094Z"
+    },
+    {
+      "sequence": 47,
+      "operation": "aws:DetachThingPrincipalCommand",
+      "startedAt": "2026-10-12T23:57:38.095Z",
+      "result": "PASS",
+      "requestId": "b155e58a-60b6-4a21-b912-b7a05a5283b9",
+      "durationMs": 471,
+      "finishedAt": "2026-10-12T23:57:38.567Z"
+    },
+    {
+      "sequence": 48,
+      "operation": "aws:ListAttachedPoliciesCommand",
+      "startedAt": "2026-10-12T23:57:38.568Z",
+      "result": "PASS",
+      "requestId": "b40114a7-a73d-4bc2-b3be-832854cb4124",
+      "durationMs": 463,
+      "finishedAt": "2026-10-12T23:57:39.032Z"
+    },
+    {
+      "sequence": 49,
+      "operation": "aws:DetachPolicyCommand",
+      "startedAt": "2026-10-12T23:57:39.034Z",
+      "result": "PASS",
+      "requestId": "63d8b94b-50d2-4a81-8a94-cac59d42fe70",
+      "durationMs": 463,
+      "finishedAt": "2026-10-12T23:57:39.498Z"
+    },
+    {
+      "sequence": 50,
+      "operation": "aws:DeletePolicyCommand",
+      "startedAt": "2026-10-12T23:57:39.498Z",
+      "result": "PASS",
+      "requestId": "0223cba7-2eb8-4882-880f-8dbe58ad58c1",
+      "durationMs": 500,
+      "finishedAt": "2026-10-12T23:57:40.000Z"
+    },
+    {
+      "sequence": 51,
+      "operation": "aws:DeleteCertificateCommand",
+      "startedAt": "2026-10-12T23:57:40.002Z",
+      "result": "PASS",
+      "requestId": "0aa4febe-8dbb-4fa5-83b8-0c655bfb833e",
+      "durationMs": 471,
+      "finishedAt": "2026-10-12T23:57:40.475Z"
+    },
+    {
+      "sequence": 52,
+      "operation": "aws:ListPrincipalThingsCommand",
+      "startedAt": "2026-10-12T23:57:40.477Z",
+      "result": "PASS",
+      "requestId": "63f3c975-a2ae-4a10-8b6e-a987807981d2",
+      "durationMs": 463,
+      "finishedAt": "2026-10-12T23:57:40.941Z"
+    },
+    {
+      "sequence": 53,
+      "operation": "aws:UpdateCertificateCommand",
+      "startedAt": "2026-10-12T23:57:40.942Z",
+      "result": "PASS",
+      "requestId": "9d4bfbd8-83d2-4b24-ac28-dccf0b9307ef",
+      "durationMs": 519,
+      "finishedAt": "2026-10-12T23:57:41.462Z"
+    },
+    {
+      "sequence": 54,
+      "operation": "aws:DetachThingPrincipalCommand",
+      "startedAt": "2026-10-12T23:57:41.464Z",
+      "result": "PASS",
+      "requestId": "d30362ad-040a-4374-9d37-f4869370d2bb",
+      "durationMs": 515,
+      "finishedAt": "2026-10-12T23:57:41.979Z"
+    },
+    {
+      "sequence": 55,
+      "operation": "aws:ListAttachedPoliciesCommand",
+      "startedAt": "2026-10-12T23:57:41.981Z",
+      "result": "PASS",
+      "requestId": "8ab71f84-ac1e-46d7-ae80-4437c36626a0",
+      "durationMs": 515,
+      "finishedAt": "2026-10-12T23:57:42.497Z"
+    },
+    {
+      "sequence": 56,
+      "operation": "aws:DetachPolicyCommand",
+      "startedAt": "2026-10-12T23:57:42.499Z",
+      "result": "PASS",
+      "requestId": "748181c2-1d4f-42a7-bc93-4008bece6efb",
+      "durationMs": 526,
+      "finishedAt": "2026-10-12T23:57:43.025Z"
+    },
+    {
+      "sequence": 57,
+      "operation": "aws:DeletePolicyCommand",
+      "startedAt": "2026-10-12T23:57:43.028Z",
+      "result": "PASS",
+      "requestId": "8a187fa0-4105-4f3b-9ada-ba3d6c78d4d4",
+      "durationMs": 562,
+      "finishedAt": "2026-10-12T23:57:43.594Z"
+    },
+    {
+      "sequence": 58,
+      "operation": "aws:DeleteCertificateCommand",
+      "startedAt": "2026-10-12T23:57:43.596Z",
+      "result": "PASS",
+      "requestId": "44df407f-2c39-415d-9c53-3c73fcf0d60d",
+      "durationMs": 524,
+      "finishedAt": "2026-10-12T23:57:44.121Z"
+    },
+    {
+      "sequence": 59,
+      "operation": "aws:ListPrincipalThingsCommand",
+      "startedAt": "2026-10-12T23:57:44.124Z",
+      "result": "PASS",
+      "requestId": "0d831af7-ff2b-47ab-bdf5-e9da6df5f263",
+      "durationMs": 518,
+      "finishedAt": "2026-10-12T23:57:44.643Z"
+    },
+    {
+      "sequence": 60,
+      "operation": "aws:UpdateCertificateCommand",
+      "startedAt": "2026-10-12T23:57:44.645Z",
+      "result": "PASS",
+      "requestId": "14b89f3b-e0f1-4599-a171-f637cddd8529",
+      "durationMs": 523,
+      "finishedAt": "2026-10-12T23:57:45.168Z"
+    },
+    {
+      "sequence": 61,
+      "operation": "aws:DetachThingPrincipalCommand",
+      "startedAt": "2026-10-12T23:57:45.170Z",
+      "result": "PASS",
+      "requestId": "05fb5392-140f-42e9-80e9-5d4e306e2fd0",
+      "durationMs": 563,
+      "finishedAt": "2026-10-12T23:57:45.734Z"
+    },
+    {
+      "sequence": 62,
+      "operation": "aws:ListAttachedPoliciesCommand",
+      "startedAt": "2026-10-12T23:57:45.736Z",
+      "result": "PASS",
+      "requestId": "7a80e36d-09e7-4df3-a424-b7335b109563",
+      "durationMs": 519,
+      "finishedAt": "2026-10-12T23:57:46.256Z"
+    },
+    {
+      "sequence": 63,
+      "operation": "aws:DetachPolicyCommand",
+      "startedAt": "2026-10-12T23:57:46.257Z",
+      "result": "PASS",
+      "requestId": "f606910d-1fe3-4623-a7f8-e106cf959bbe",
+      "durationMs": 461,
+      "finishedAt": "2026-10-12T23:57:46.719Z"
+    },
+    {
+      "sequence": 64,
+      "operation": "aws:DeletePolicyCommand",
+      "startedAt": "2026-10-12T23:57:46.721Z",
+      "result": "PASS",
+      "requestId": "22d7810d-c4fd-499c-8538-30365d512265",
+      "durationMs": 548,
+      "finishedAt": "2026-10-12T23:57:47.270Z"
+    },
+    {
+      "sequence": 65,
+      "operation": "aws:DeleteCertificateCommand",
+      "startedAt": "2026-10-12T23:57:47.272Z",
+      "result": "PASS",
+      "requestId": "a30d9d9a-e05e-413b-86aa-4b680ad34479",
+      "durationMs": 522,
+      "finishedAt": "2026-10-12T23:57:47.794Z"
+    },
+    {
+      "sequence": 66,
+      "operation": "aws:ListPrincipalThingsCommand",
+      "startedAt": "2026-10-12T23:57:47.797Z",
+      "result": "PASS",
+      "requestId": "50065dfe-bfe3-4c66-8775-ede69ff25eda",
+      "durationMs": 535,
+      "finishedAt": "2026-10-12T23:57:48.332Z"
+    },
+    {
+      "sequence": 67,
+      "operation": "aws:UpdateCertificateCommand",
+      "startedAt": "2026-10-12T23:57:48.334Z",
+      "result": "PASS",
+      "requestId": "706cf9ef-6769-4592-bfa4-a6918e09f95b",
+      "durationMs": 526,
+      "finishedAt": "2026-10-12T23:57:48.860Z"
+    },
+    {
+      "sequence": 68,
+      "operation": "aws:DetachThingPrincipalCommand",
+      "startedAt": "2026-10-12T23:57:48.862Z",
+      "result": "PASS",
+      "requestId": "086089e7-b39d-4d4c-bdcc-356fc390ad56",
+      "durationMs": 558,
+      "finishedAt": "2026-10-12T23:57:49.422Z"
+    },
+    {
+      "sequence": 69,
+      "operation": "aws:ListAttachedPoliciesCommand",
+      "startedAt": "2026-10-12T23:57:49.424Z",
+      "result": "PASS",
+      "requestId": "4124c557-e702-4458-a892-8c5348068fcb",
+      "durationMs": 522,
+      "finishedAt": "2026-10-12T23:57:49.947Z"
+    },
+    {
+      "sequence": 70,
+      "operation": "aws:DetachPolicyCommand",
+      "startedAt": "2026-10-12T23:57:49.949Z",
+      "result": "PASS",
+      "requestId": "bb9f5314-8459-4ce1-9f20-254e7d4e65f1",
+      "durationMs": 516,
+      "finishedAt": "2026-10-12T23:57:50.466Z"
+    },
+    {
+      "sequence": 71,
+      "operation": "aws:DeletePolicyCommand",
+      "startedAt": "2026-10-12T23:57:50.467Z",
+      "result": "PASS",
+      "requestId": "58549723-efa0-4284-a072-19776018aff7",
+      "durationMs": 492,
+      "finishedAt": "2026-10-12T23:57:50.960Z"
+    },
+    {
+      "sequence": 72,
+      "operation": "aws:DeleteCertificateCommand",
+      "startedAt": "2026-10-12T23:57:50.961Z",
+      "result": "PASS",
+      "requestId": "af75b6b2-3227-4f65-b44c-d0a678d5d37b",
+      "durationMs": 1194,
+      "finishedAt": "2026-10-12T23:57:52.156Z"
+    },
+    {
+      "sequence": 73,
+      "operation": "aws:DeleteThingCommand",
+      "startedAt": "2026-10-12T23:57:52.158Z",
+      "result": "PASS",
+      "requestId": "6ecd0834-c6ee-46f3-99c7-05f0e3089994",
+      "durationMs": 470,
+      "finishedAt": "2026-10-12T23:57:52.628Z"
+    },
+    {
+      "sequence": 74,
+      "operation": "aws:DeleteThingCommand",
+      "startedAt": "2026-10-12T23:57:52.630Z",
+      "result": "PASS",
+      "requestId": "20bc9842-6047-44f4-b5aa-a9754380916e",
+      "durationMs": 484,
+      "finishedAt": "2026-10-12T23:57:53.115Z"
+    },
+    {
+      "sequence": 75,
+      "operation": "aws:DeleteThingCommand",
+      "startedAt": "2026-10-12T23:57:53.117Z",
+      "result": "PASS",
+      "requestId": "18033d19-43b1-4793-9e94-8007980b10e7",
+      "durationMs": 481,
+      "finishedAt": "2026-10-12T23:57:53.599Z"
+    },
+    {
+      "sequence": 76,
+      "operation": "aws:DeleteThingCommand",
+      "startedAt": "2026-10-12T23:57:53.601Z",
+      "result": "PASS",
+      "requestId": "b1348280-a33e-4598-833f-b79ca10bc9b8",
+      "durationMs": 467,
+      "finishedAt": "2026-10-12T23:57:54.069Z"
+    },
+    {
+      "sequence": 77,
+      "operation": "aws:DeleteThingCommand",
+      "startedAt": "2026-10-12T23:57:54.071Z",
+      "result": "PASS",
+      "requestId": "c5da1b4b-e8a7-4d96-93ae-fb8fd1c315dd",
+      "durationMs": 474,
+      "finishedAt": "2026-10-12T23:57:54.546Z"
+    },
+    {
+      "sequence": 78,
+      "operation": "aws:DeleteThingCommand",
+      "startedAt": "2026-10-12T23:57:54.548Z",
+      "result": "PASS",
+      "requestId": "7a6934e7-854e-4b28-a2c8-1dd86e8b390e",
+      "durationMs": 521,
+      "finishedAt": "2026-10-12T23:57:55.070Z"
+    },
+    {
+      "sequence": 79,
+      "operation": "aws:DeleteThingCommand",
+      "startedAt": "2026-10-12T23:57:55.072Z",
+      "result": "PASS",
+      "requestId": "1804a1b5-1df8-47a4-b2e9-83913056aa29",
+      "durationMs": 524,
+      "finishedAt": "2026-10-12T23:57:55.597Z"
+    },
+    {
+      "sequence": 80,
+      "operation": "aws:DeleteThingCommand",
+      "startedAt": "2026-10-12T23:57:55.599Z",
+      "result": "PASS",
+      "requestId": "f5755c0d-c4c9-49d8-bece-7405aef597e1",
+      "durationMs": 466,
+      "finishedAt": "2026-10-12T23:57:56.066Z"
+    },
+    {
+      "sequence": 81,
+      "operation": "aws:DeleteThingCommand",
+      "startedAt": "2026-10-12T23:57:56.068Z",
+      "result": "PASS",
+      "requestId": "2d1dfefa-d509-44f5-bcab-01bd2e862155",
+      "durationMs": 466,
+      "finishedAt": "2026-10-12T23:57:56.534Z"
+    },
+    {
+      "sequence": 82,
+      "operation": "aws:DeleteThingCommand",
+      "startedAt": "2026-10-12T23:57:56.536Z",
+      "result": "PASS",
+      "requestId": "3791698a-bbf9-4e60-ada3-4eb6c5d525ed",
+      "durationMs": 475,
+      "finishedAt": "2026-10-12T23:57:57.011Z"
+    },
+    {
+      "sequence": 83,
+      "operation": "database:cleanup",
+      "startedAt": "2026-10-12T23:57:57.013Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 119486,
+      "finishedAt": "2026-10-12T23:59:56.500Z"
+    },
+    {
+      "sequence": 84,
+      "operation": "aws:ListObjectsV2Command",
+      "startedAt": "2026-10-12T23:59:56.500Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 2706,
+      "finishedAt": "2026-10-12T23:59:59.207Z"
+    },
+    {
+      "sequence": 85,
+      "operation": "aws:ListObjectsV2Command",
+      "startedAt": "2026-10-12T23:59:59.207Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1715,
+      "finishedAt": "2026-10-13T00:00:00.922Z"
+    },
+    {
+      "sequence": 86,
+      "operation": "aws:ListObjectsV2Command",
+      "startedAt": "2026-10-13T00:00:00.923Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1729,
+      "finishedAt": "2026-10-13T00:00:02.651Z"
+    },
+    {
+      "sequence": 87,
+      "operation": "aws:ListObjectsV2Command",
+      "startedAt": "2026-10-13T00:00:02.652Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 2717,
+      "finishedAt": "2026-10-13T00:00:05.369Z"
+    },
+    {
+      "sequence": 88,
+      "operation": "aws:ListObjectsV2Command",
+      "startedAt": "2026-10-13T00:00:05.369Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1683,
+      "finishedAt": "2026-10-13T00:00:07.052Z"
+    },
+    {
+      "sequence": 89,
+      "operation": "aws:ListObjectsV2Command",
+      "startedAt": "2026-10-13T00:00:07.052Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1705,
+      "finishedAt": "2026-10-13T00:00:08.758Z"
+    },
+    {
+      "sequence": 90,
+      "operation": "aws:ListObjectVersionsCommand",
+      "startedAt": "2026-10-13T00:00:08.758Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 2768,
+      "finishedAt": "2026-10-13T00:00:11.526Z"
+    },
+    {
+      "sequence": 91,
+      "operation": "aws:DeleteObjectCommand",
+      "startedAt": "2026-10-13T00:00:11.526Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1694,
+      "finishedAt": "2026-10-13T00:00:13.220Z"
+    },
+    {
+      "sequence": 92,
+      "operation": "aws:ListObjectVersionsCommand",
+      "startedAt": "2026-10-13T00:00:13.221Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1664,
+      "finishedAt": "2026-10-13T00:00:14.885Z"
+    },
+    {
+      "sequence": 93,
+      "operation": "aws:ListObjectVersionsCommand",
+      "startedAt": "2026-10-13T00:00:14.885Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1719,
+      "finishedAt": "2026-10-13T00:00:16.604Z"
+    },
+    {
+      "sequence": 94,
+      "operation": "aws:DeleteObjectCommand",
+      "startedAt": "2026-10-13T00:00:16.604Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1720,
+      "finishedAt": "2026-10-13T00:00:18.324Z"
+    },
+    {
+      "sequence": 95,
+      "operation": "aws:ListObjectVersionsCommand",
+      "startedAt": "2026-10-13T00:00:18.325Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 2200,
+      "finishedAt": "2026-10-13T00:00:20.525Z"
+    },
+    {
+      "sequence": 96,
+      "operation": "aws:ListObjectVersionsCommand",
+      "startedAt": "2026-10-13T00:00:20.526Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1734,
+      "finishedAt": "2026-10-13T00:00:22.260Z"
+    },
+    {
+      "sequence": 97,
+      "operation": "aws:DeleteObjectCommand",
+      "startedAt": "2026-10-13T00:00:22.260Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1814,
+      "finishedAt": "2026-10-13T00:00:24.074Z"
+    },
+    {
+      "sequence": 98,
+      "operation": "aws:ListObjectVersionsCommand",
+      "startedAt": "2026-10-13T00:00:24.075Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 4062,
+      "finishedAt": "2026-10-13T00:00:28.137Z"
+    },
+    {
+      "sequence": 99,
+      "operation": "aws:ListObjectVersionsCommand",
+      "startedAt": "2026-10-13T00:00:28.137Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 3526,
+      "finishedAt": "2026-10-13T00:00:31.663Z"
+    },
+    {
+      "sequence": 100,
+      "operation": "aws:DeleteObjectCommand",
+      "startedAt": "2026-10-13T00:00:31.664Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1711,
+      "finishedAt": "2026-10-13T00:00:33.374Z"
+    },
+    {
+      "sequence": 101,
+      "operation": "aws:ListObjectVersionsCommand",
+      "startedAt": "2026-10-13T00:00:33.375Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1678,
+      "finishedAt": "2026-10-13T00:00:35.054Z"
+    },
+    {
+      "sequence": 102,
+      "operation": "http:cleanup-customer-scope-b",
+      "startedAt": "2026-10-13T00:00:35.054Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 6141,
+      "finishedAt": "2026-10-13T00:00:41.195Z"
+    },
+    {
+      "sequence": 103,
+      "operation": "http:cleanup-customer-b",
+      "startedAt": "2026-10-13T00:00:41.197Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 2078,
+      "finishedAt": "2026-10-13T00:00:43.275Z"
+    },
+    {
+      "sequence": 104,
+      "operation": "http:verify-customer-gone-b",
+      "startedAt": "2026-10-13T00:00:43.276Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 527,
+      "finishedAt": "2026-10-13T00:00:43.804Z"
+    },
+    {
+      "sequence": 105,
+      "operation": "http:cleanup-customer-scope-a",
+      "startedAt": "2026-10-13T00:00:43.806Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 1636,
+      "finishedAt": "2026-10-13T00:00:45.442Z"
+    },
+    {
+      "sequence": 106,
+      "operation": "http:cleanup-customer-a",
+      "startedAt": "2026-10-13T00:00:45.444Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 630,
+      "finishedAt": "2026-10-13T00:00:46.075Z"
+    },
+    {
+      "sequence": 107,
+      "operation": "http:verify-customer-gone-a",
+      "startedAt": "2026-10-13T00:00:46.076Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 516,
+      "finishedAt": "2026-10-13T00:00:46.593Z"
+    },
+    {
+      "sequence": 108,
+      "operation": "cognito:GlobalSignOut",
+      "startedAt": "2026-10-13T00:00:46.595Z",
+      "result": "PASS",
+      "requestId": null,
+      "durationMs": 2402,
+      "finishedAt": "2026-10-13T00:00:48.997Z"
+    },
+    {
+      "sequence": 109,
+      "operation": "cognito:AdminDeleteUserCommand",
+      "startedAt": "2026-10-13T00:00:49.000Z",
+      "result": "PASS",
+      "requestId": "9ce0d186-dcb5-42cb-90c7-a9eae7910899",
+      "durationMs": 2307,
+      "finishedAt": "2026-10-13T00:00:51.308Z"
+    },
+    {
+      "sequence": 110,
+      "operation": "cognito:AdminGetUserCommand",
+      "startedAt": "2026-10-13T00:00:51.310Z",
+      "result": "FAIL",
+      "failure": {
+        "code": "UNCLASSIFIED_FAILURE",
+        "errorName": "UserNotFoundException",
+        "causeCode": null,
+        "requestId": "8a658383-5b6b-4f6d-85b5-1b89a8b52fbe",
+        "httpStatusCode": 400,
+        "attempts": 1,
+        "totalRetryDelay": 0
+      },
+      "expectedOutcome": "ABSENT_IDENTITY",
+      "durationMs": 558,
+      "finishedAt": "2026-10-13T00:00:51.869Z"
+    }
+  ],
+  "gate": "FAIL",
+  "fullQa09Accepted": false,
+  "identity": {
+    "username": "qa09-7e66eb47eff01696-platformsuperadmin@example.invalid",
+    "created": true
+  },
+  "failure": {
+    "code": "PUBACK_TIMEOUT",
+    "errorClass": "Error"
+  },
+  "archiveKeys": [
+    "raw/topic_type=telemetry/customer_id=453c315b-3f61-40b8-a42c-44f5d7d6a7c4/year=2026/month=10/day=12/hour=23/part-4ecb34f4b15e8171.json.gz",
+    "raw/topic_type=telemetry/customer_id=453c315b-3f61-40b8-a42c-44f5d7d6a7c4/year=2026/month=10/day=12/hour=23/part-4ecb34f4b15e8171.manifest.json",
+    "raw/topic_type=telemetry/customer_id=453c315b-3f61-40b8-a42c-44f5d7d6a7c4/year=2026/month=10/day=12/hour=23/part-616f271afb434ca7.json.gz",
+    "raw/topic_type=telemetry/customer_id=453c315b-3f61-40b8-a42c-44f5d7d6a7c4/year=2026/month=10/day=12/hour=23/part-616f271afb434ca7.manifest.json"
+  ],
+  "finishedAt": "2026-10-13T00:00:51.871Z"
+}
