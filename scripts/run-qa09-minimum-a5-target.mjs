@@ -7,12 +7,14 @@ import { randomUUID } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
 import { main, publishKnown } from './run-qa09-ten-device-acceptance.mjs';
 import { callOwnS3Cli } from './qa09-own-s3-cli.mjs';
+import { readOwnVersions } from './qa09-own-version-reader.mjs';
 import {
   sha256,
   logRows,
   assertArchiveAssociation,
   assertNaturalSummary,
   assertPartialBatch,
+  assertIngressArchive,
 } from './qa09-minimum-a5-proof.mjs';
 import { canonicalizeJson } from '../contracts/mqtt/payload-normalization.ts';
 const exec = promisify(execFile);
@@ -63,22 +65,14 @@ async function logs(group, start, pattern) {
   }
   throw Error('BOUNDED_LOG_PAGES_EXCEEDED');
 }
-export function archiveBytes(receipt, key, manifestKey, expected) {
-  const ids = receipt.customers.map((c) => c.id);
-  const version = (target) => {
-    const r = callOwnS3Cli('list-object-versions', { Bucket: bucket, Prefix: target }, ids);
-    const matches = (r.Versions ?? []).filter((v) => v.Key === target && v.IsLatest);
-    if (r.IsTruncated || matches.length !== 1) throw Error('EXACT_LATEST_OBJECT_VERSION_REQUIRED');
-    return matches[0].VersionId;
-  };
-  const versionId = version(key),
-    manifestVersionId = version(manifestKey);
-  const bytes = callOwnS3Cli('get-object', { Bucket: bucket, Key: key, VersionId: versionId }, ids).body;
-  const manifestBytes = callOwnS3Cli(
-    'get-object',
-    { Bucket: bucket, Key: manifestKey, VersionId: manifestVersionId },
-    ids,
-  ).body;
+export function archiveBytes(receipt, key, manifestKey, expected, downloaded) {
+  const archive = downloaded.result.objects.find((o) => o.key === key),
+    manifestObject = downloaded.result.objects.find((o) => o.key === manifestKey);
+  if (!archive || !manifestObject) throw Error('EXACT_DOWNLOADED_VERSIONS_REQUIRED');
+  const versionId = archive.versionId,
+    manifestVersionId = manifestObject.versionId;
+  const bytes = Buffer.from(archive.bodyBase64, 'base64'),
+    manifestBytes = Buffer.from(manifestObject.bodyBase64, 'base64');
   const manifest = JSON.parse(manifestBytes),
     lines = gunzipSync(bytes).toString().trim().split('\n').map(JSON.parse);
   if (
@@ -104,6 +98,7 @@ export function archiveBytes(receipt, key, manifestKey, expected) {
     eventId: row.eventId,
     rawBodySha256: typeof row.rawBody === 'string' ? sha256(row.rawBody) : null,
     payloadSha256: row.payload ? sha256(canonicalizeJson(row.payload)) : null,
+    ...(expected.published ? assertIngressArchive(row, expected.published, expected.certificateId) : {}),
   };
 }
 async function partialBatch(ctx, output) {
@@ -191,7 +186,7 @@ async function partialBatch(ctx, output) {
   const key = listing.Contents?.find((o) => o.Key.endsWith(`part-${sha256(eventId).slice(0, 16)}.json.gz`))?.Key;
   check('deployed-mixed-batch-good-object-present', !!key && !listing.IsTruncated);
   const manifestKey = key.replace('.json.gz', '.manifest.json');
-  receipt.partialBatch.object = archiveBytes(receipt, key, manifestKey, { eventId, customerId });
+  receipt.partialBatch.objectBinding = { key, manifestKey, eventId, customerId };
   check(
     'deployed-mixed-batch-bad-object-absent',
     !listing.Contents.some((o) => o.Key.includes(`part-${sha256(badEventId).slice(0, 16)}.`)),
@@ -208,6 +203,7 @@ export async function run(output, versionPath) {
   const sourcePaths = [
     'scripts/run-qa09-minimum-a5-target.mjs',
     'scripts/qa09-minimum-a5-proof.mjs',
+    'scripts/qa09-own-version-reader.mjs',
     'scripts/run-qa09-ten-device-acceptance.mjs',
     'scripts/qa09-ten-device-db.mjs',
     'scripts/qa09-ten-device-bridge.mjs',
@@ -372,7 +368,7 @@ export async function run(output, versionPath) {
       if (
         wanted.every((p) => {
           const o = observation.outbox.find(
-            (o) => o.aggregate_id === p.deviceId && o.topic_type === p.type && o.raw_body_sha256 === p.bodySha256,
+            (o) => o.aggregate_id === p.deviceId && o.topic_type === p.type && o.payload_hash === p.payloadSha256,
           );
           return o && archiveLogs.some((l) => l.eventId === o.id);
         })
@@ -382,17 +378,48 @@ export async function run(output, versionPath) {
       await pause(15000);
     }
     observation = await db('consistency-observe');
-    receipt.normalArchiveObjects = [];
-    for (const p of wanted) {
+    const bindings = wanted.map((p) => {
       const event = observation.outbox.find(
-        (o) => o.aggregate_id === p.deviceId && o.topic_type === p.type && o.raw_body_sha256 === p.bodySha256,
+        (o) => o.aggregate_id === p.deviceId && o.topic_type === p.type && o.payload_hash === p.payloadSha256,
       );
       const log = archiveLogs.find((l) => l.eventId === event.id && l.outcome === 'ARCHIVED');
       if (!log) throw Error('ARCHIVE_COMPLETED_RECEIPT_MISSING');
-      receipt.normalArchiveObjects.push(
-        archiveBytes(receipt, log.objectKey, log.manifestKey, { eventId: event.id, customerId }),
-      );
-    }
+      const certs = JSON.parse(
+        readFileSync(receipt.databaseBuilds.filter((b) => b.action === 'observe' && b.gate === 'PASS').at(-1).receipt),
+      ).result.certificates;
+      return {
+        key: log.objectKey,
+        manifestKey: log.manifestKey,
+        eventId: event.id,
+        customerId,
+        published: p,
+        certificateId: certs.find((c) => c.device_id === p.deviceId)?.id,
+      };
+    });
+    await partialBatch(ctx, output);
+    const allBindings = [...bindings, receipt.partialBatch.objectBinding];
+    const objects = allBindings.flatMap((binding) =>
+      [binding.key, binding.manifestKey].map((key) => {
+        const page = callOwnS3Cli(
+          'list-object-versions',
+          { Bucket: bucket, Prefix: key },
+          receipt.customers.map((c) => c.id),
+        );
+        const matches = (page.Versions ?? []).filter((v) => v.Key === key && v.IsLatest);
+        if (page.IsTruncated || matches.length !== 1) throw Error('EXACT_LATEST_OBJECT_VERSION_REQUIRED');
+        return { key, versionId: matches[0].VersionId };
+      }),
+    );
+    receipt.archiveReaderReceipt = output + '.version-reader.json';
+    save();
+    const downloaded = await readOwnVersions(
+      { prefix: receipt.prefix, customerIds: receipt.customers.map((c) => c.id), objects },
+      receipt.archiveReaderReceipt,
+    );
+    receipt.archiveReaderSha256 = sha256(readFileSync(receipt.archiveReaderReceipt));
+    receipt.normalArchiveObjects = bindings.map((b) => archiveBytes(receipt, b.key, b.manifestKey, b, downloaded));
+    const direct = receipt.partialBatch.objectBinding;
+    receipt.partialBatch.object = archiveBytes(receipt, direct.key, direct.manifestKey, direct, downloaded);
     receipt.archiveQueueProof = assertArchiveAssociation(
       wanted,
       observation.outbox,
@@ -401,10 +428,9 @@ export async function run(output, versionPath) {
     );
     receipt.archiveLogs = archiveLogs.filter((l) => observation.outbox.some((o) => o.id === l.eventId));
     save();
-    await partialBatch(ctx, output);
     console.log('Archive queue and deployed mixed-batch separation verified; waiting for natural Summary.');
     const summaryDeadline = Date.now() + 75 * 60000;
-    let summaryLogs;
+    let summaryLogs, completed;
     while (true) {
       summaryLogs = await logs('/aws/lambda/fdp-test-summary', Date.parse(startedAt), '"summary.daily.upserted"');
       const candidate = summaryLogs.find(
@@ -414,11 +440,15 @@ export async function run(output, versionPath) {
           l.source === 'aws.events' &&
           Date.parse(l.eventTime) >= Date.parse(startedAt),
       );
-      if (candidate) break;
+      if (candidate) {
+        completed = await logs('/aws/lambda/fdp-test-summary', Date.parse(startedAt), '"summary.run.completed"');
+        if (completed.some((l) => l.eventId === candidate.eventId && l.lambdaRequestId === candidate.lambdaRequestId))
+          break;
+      }
       if (Date.now() > summaryDeadline) throw Error('NATURAL_SUMMARY_DEADLINE');
       await pause(30000);
     }
-    const completed = await logs('/aws/lambda/fdp-test-summary', Date.parse(startedAt), '"summary.run.completed"');
+
     observation = await db('consistency-observe');
     receipt.summaryProof = assertNaturalSummary(observation.telemetry_daily, [...summaryLogs, ...completed], {
       deviceId: id,

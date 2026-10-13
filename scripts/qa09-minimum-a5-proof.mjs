@@ -39,7 +39,6 @@ export function assertArchiveAssociation(published, outbox, logs, objects) {
         o.event_type === 'ARCHIVE' &&
         o.aggregate_id === p.deviceId &&
         o.topic_type === p.type &&
-        o.raw_body_sha256 === p.bodySha256 &&
         o.payload_hash === p.payloadSha256 &&
         o.status === 'PUBLISHED',
     );
@@ -64,7 +63,10 @@ export function assertArchiveAssociation(published, outbox, logs, objects) {
           o.manifestKey === l.manifestKey &&
           o.compressedSha256 === l.compressedSha256 &&
           o.eventId === events[0].id &&
-          o.rawBodySha256 === p.bodySha256 &&
+          o.rawBodySha256 === events[0].raw_body_sha256 &&
+          o.ingressPayloadSha256 === p.payloadSha256 &&
+          o.ingressContextVerified === true &&
+          o.messageId === p.messageId &&
           o.payloadSha256 === p.payloadSha256 &&
           o.versionId &&
           o.manifestVersionId,
@@ -132,5 +134,37 @@ export function assertPartialBatch(response, badIds, goodIds) {
     successful: goodIds.length,
     source: 'DIRECT_DEPLOYED_HANDLER_FIXTURE_NOT_SQS_DELIVERY',
     actualPoisonRetryOrDlqProven: false,
+  };
+}
+
+export function assertIngressArchive(row, published, certificateId) {
+  const envelope = JSON.parse(row.rawBody);
+  const reserved = ['iotTopic', 'iotDeviceId', 'iotType', 'iotReceivedAt', 'iotPrincipal'];
+  const payload = Object.fromEntries(Object.entries(envelope).filter(([key]) => !reserved.includes(key)));
+  const digest = (value) => sha256(JSON.stringify(canonical(value)));
+  if (
+    !/^[a-f0-9]{64}$/.test(certificateId ?? '') ||
+    row.deviceId !== published.deviceId ||
+    row.customerId !== published.customerId ||
+    row.topicType !== published.type ||
+    row.payload?.meta?.id !== published.messageId ||
+    envelope.meta?.id !== published.messageId ||
+    envelope.meta?.seq !== published.seq ||
+    envelope.iotTopic !== `bnx/device/${published.deviceId}/${published.type}` ||
+    envelope.iotDeviceId !== published.deviceId ||
+    envelope.iotType !== published.type ||
+    !Number.isSafeInteger(envelope.iotReceivedAt) ||
+    envelope.iotReceivedAt < 0 ||
+    row.receivedAtMs !== envelope.iotReceivedAt ||
+    ![certificateId, `arn:aws:iot:ap-southeast-1:065986019555:cert/${certificateId}`].includes(envelope.iotPrincipal) ||
+    digest(payload) !== published.payloadSha256 ||
+    digest(row.payload) !== published.payloadSha256
+  )
+    throw Error('EXACT_BROKER_ENVELOPE_AND_PUBLISHED_PAYLOAD_REQUIRED');
+  return {
+    rawBodySha256: sha256(row.rawBody),
+    ingressPayloadSha256: digest(payload),
+    ingressContextVerified: true,
+    messageId: envelope.meta.id,
   };
 }

@@ -7,9 +7,13 @@ import {
   assertPartialBatch,
   dailyDigest,
   logRows,
+  assertIngressArchive,
+  sha256,
 } from './qa09-minimum-a5-proof.mjs';
 import { validateEntityMode } from './run-qa09-ten-device-acceptance.mjs';
 import { assertOwnS3Request } from './qa09-own-s3-cli.mjs';
+import { validateOwnVersionPlan } from './qa09-own-version-reader.mjs';
+import { canonicalizeJson } from '../contracts/mqtt/payload-normalization.ts';
 const uuid = '11111111-1111-1111-1111-111111111111',
   other = '22222222-2222-2222-2222-222222222222';
 const published = [
@@ -17,6 +21,8 @@ const published = [
     deviceId: 'qa09-1234567890abcdef-01',
     customerId: uuid,
     type: 'telemetry',
+    messageId: 'T-1',
+    seq: 1,
     bodySha256: 'b'.repeat(64),
     payloadSha256: 'c'.repeat(64),
   },
@@ -28,7 +34,7 @@ const outbox = [
     aggregate_id: published[0].deviceId,
     topic_type: 'telemetry',
     status: 'PUBLISHED',
-    raw_body_sha256: published[0].bodySha256,
+    raw_body_sha256: 'd'.repeat(64),
     payload_hash: published[0].payloadSha256,
   },
 ];
@@ -54,7 +60,10 @@ const objects = [
     manifestKey: key + '.manifest',
     compressedSha256: 'a'.repeat(64),
     eventId: uuid,
-    rawBodySha256: published[0].bodySha256,
+    rawBodySha256: 'd'.repeat(64),
+    ingressPayloadSha256: published[0].payloadSha256,
+    ingressContextVerified: true,
+    messageId: published[0].messageId,
     payloadSha256: published[0].payloadSha256,
     versionId: 'v1',
     manifestVersionId: 'm1',
@@ -144,16 +153,60 @@ test('Remaining-only mode requires explicit hook and cannot combine review or un
   validateEntityMode({ reviewOnly: false, remainingOnly: true }, fn);
   assert.throws(() => validateEntityMode({ reviewOnly: true, remainingOnly: true }, fn));
 });
-test('S3 reads require own prefixes and immutable version, including new signal types', () => {
-  const input = {
-    Bucket: 'fdp-test-raw-065986019555',
-    Key: `raw/topic_type=tamper/customer_id=${uuid}/part.json.gz`,
-    VersionId: 'v1',
+test('Existing-role reader only accepts ten fixed own versioned files and no arbitrary prefix', () => {
+  const plan = {
+    prefix: 'qa09-1234567890abcdef',
+    customerIds: [uuid, other],
+    objects: Array.from({ length: 5 }, (_, i) =>
+      ['json.gz', 'manifest.json'].map((ext) => ({
+        key: `raw/topic_type=telemetry/customer_id=${uuid}/year=2026/month=10/day=13/hour=13/part-${String(i).padStart(16, '0')}.${ext}`,
+        versionId: 'v1',
+      })),
+    ).flat(),
   };
-  assertOwnS3Request('get-object', input, [uuid, other]);
-  assert.throws(() => assertOwnS3Request('get-object', { ...input, VersionId: undefined }, [uuid, other]));
-  assert.throws(() => assertOwnS3Request('get-object', { ...input, Key: 'raw/foreign' }, [uuid, other]));
-  assert.throws(() => assertOwnS3Request('put-object', input, [uuid, other]));
+  validateOwnVersionPlan(plan);
+  for (const patch of [
+    { objects: plan.objects.slice(1) },
+    { objects: plan.objects.map((o) => ({ ...o, versionId: undefined })) },
+    { objects: plan.objects.map((o) => ({ ...o, key: o.key.replace(uuid, '33333333-3333-3333-3333-333333333333') })) },
+  ])
+    assert.throws(() => validateOwnVersionPlan({ ...plan, ...patch }));
+  assert.throws(() =>
+    assertOwnS3Request('get-object', { Bucket: 'fdp-test-raw-065986019555', Key: key, VersionId: 'v1' }, [uuid, other]),
+  );
+});
+
+test('Actual broker envelope remains byte-bound separately from the published payload and certificate', () => {
+  const payload = { meta: { id: 'T-1', seq: 1, ts: '2026-10-13T13:00:00Z' }, data: { value: 1 } };
+  const p = { ...published[0], payloadSha256: sha256(canonicalizeJson(payload)) };
+  const envelope = {
+    ...payload,
+    iotTopic: `bnx/device/${p.deviceId}/telemetry`,
+    iotDeviceId: p.deviceId,
+    iotType: 'telemetry',
+    iotReceivedAt: 1,
+    iotPrincipal: 'a'.repeat(64),
+  };
+  const row = {
+    deviceId: p.deviceId,
+    customerId: p.customerId,
+    topicType: p.type,
+    receivedAtMs: 1,
+    payload,
+    rawBody: JSON.stringify(envelope),
+  };
+  const proof = assertIngressArchive(row, p, 'a'.repeat(64));
+  assert.equal(proof.ingressContextVerified, true);
+  assert.notEqual(proof.rawBodySha256, sha256(JSON.stringify(payload)));
+  for (const patch of [
+    { iotPrincipal: 'b'.repeat(64) },
+    { iotDeviceId: 'foreign' },
+    { iotTopic: 'bnx/device/foreign/telemetry' },
+    { data: { value: 2 } },
+  ])
+    assert.throws(() =>
+      assertIngressArchive({ ...row, rawBody: JSON.stringify({ ...envelope, ...patch }) }, p, 'a'.repeat(64)),
+    );
 });
 test('Minimum scope keeps truth and disallows all new privilege channels', () => {
   const scope = JSON.parse(readFileSync(new URL('../infra/environments/qa09-minimum-cloud.json', import.meta.url)));

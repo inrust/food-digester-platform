@@ -192,7 +192,7 @@ export async function executeFixture(client, plan) {
       ).rows;
       rows.outbox = (
         await client.query(
-          "SELECT id,aggregate_id,status,payload->>'topicType' AS topic_type,payload->>'rawBody' IS NOT NULL AS has_raw,encode(sha256(convert_to(payload->>'rawBody','UTF8')),'hex') AS raw_body_sha256,payload->>'payloadHash' AS payload_hash FROM outbox_events WHERE aggregate_id=ANY($1::text[]) AND event_type='ARCHIVE' ORDER BY id",
+          "SELECT id,event_type,aggregate_id,status,payload->>'topicType' AS topic_type,payload->>'rawBody' IS NOT NULL AS has_raw,encode(sha256(convert_to(payload->>'rawBody','UTF8')),'hex') AS raw_body_sha256,payload->>'payloadHash' AS payload_hash FROM outbox_events WHERE aggregate_id=ANY($1::text[]) AND event_type='ARCHIVE' ORDER BY id",
           [ids],
         )
       ).rows;

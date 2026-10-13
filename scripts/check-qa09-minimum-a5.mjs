@@ -41,6 +41,12 @@ export function checkMinimumA5(parentPath, finalPath, output) {
     final.identities.every((r) => r.count === 0) &&
     final.archives.length === 12 &&
     final.archives.every((r) => r.versions === 0 && r.markers === 0 && !r.truncated), 'INDEPENDENT_CLEANUP_REQUIRED');
+  const reader = read(p.archiveReaderReceipt);
+  require(sha256(readFileSync(p.archiveReaderReceipt)) === p.archiveReaderSha256 &&
+    reader.gate === 'PASS' &&
+    reader.cleanup.every((r) => r.result === 'PASS') &&
+    final.archiveReader?.gate === 'PASS_INDEPENDENTLY_ABSENT_AND_EXISTING_POLICY_UNCHANGED' &&
+    final.archiveReader.receiptSha256 === p.archiveReaderSha256, 'BOUND_EXISTING_ROLE_READER_REQUIRED');
   const empty = read(final.databaseReceipt);
   require(sha256(readFileSync(final.databaseReceipt)) === final.databaseSha256 &&
     empty.gate === 'PASS' &&
@@ -112,6 +118,7 @@ export function checkMinimumA5(parentPath, finalPath, output) {
       parentPath,
       finalPath,
       p.versionReceipt,
+      p.archiveReaderReceipt,
       parentPath + '.sources.json',
       ...p.databaseBuilds.map((b) => b.receipt),
       final.databaseReceipt,

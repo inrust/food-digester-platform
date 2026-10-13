@@ -69,7 +69,7 @@ export async function collectReliabilityFinal(parentPath, output, recoveryPath) 
   };
   const save = () => writeFileSync(output, JSON.stringify(r, null, 2) + '\n');
   save();
-  const read = async (args) => {
+  const read = async (args, allowOwnReaderAbsent = false) => {
     const row = { service: args[0], operation: args[1], result: 'RUNNING' };
     r.reads.push(row);
     save();
@@ -88,14 +88,26 @@ export async function collectReliabilityFinal(parentPath, output, recoveryPath) 
           '--cli-connect-timeout',
           '3',
           '--cli-read-timeout',
-          '10',
+          '30',
         ],
-        { timeout: 15000, maxBuffer: 1024 * 1024, env: { ...process.env, AWS_MAX_ATTEMPTS: '1' } },
+        { timeout: 45000, maxBuffer: 1024 * 1024, env: { ...process.env, AWS_MAX_ATTEMPTS: '1' } },
       );
       row.result = 'PASS';
       save();
       return JSON.parse(response.stdout);
-    } catch {
+    } catch (error) {
+      if (
+        allowOwnReaderAbsent &&
+        args[0] === 'lambda' &&
+        args[1] === 'get-function-configuration' &&
+        /^fdp-test-qa09-archive-[a-f0-9]{16}$/.test(args[3]) &&
+        error.stderr?.includes('ResourceNotFoundException')
+      ) {
+        row.result = 'PASS';
+        row.outcome = 'EXPECTED_NOT_FOUND';
+        save();
+        return { absent: true };
+      }
       row.result = 'FAIL';
       save();
       throw Error('FINAL_READ_FAILED_NO_MUTATION_RETRY');
@@ -113,6 +125,35 @@ export async function collectReliabilityFinal(parentPath, output, recoveryPath) 
     r.databaseStart = 'COMPLETED';
     r.databaseSha256 = sha256(readFileSync(dbPath));
     save();
+    if (parent.archiveReaderReceipt) {
+      const reader = JSON.parse(readFileSync(parent.archiveReaderReceipt));
+      if (
+        reader.gate !== 'PASS' ||
+        reader.prefix !== parent.prefix ||
+        reader.cleanup.length !== 2 ||
+        reader.cleanup.some((r) => r.result !== 'PASS') ||
+        sha256(readFileSync(parent.archiveReaderReceipt)) !== parent.archiveReaderSha256 ||
+        !/^fdp-test-qa09-archive-[a-f0-9]{16}$/.test(reader.functionName)
+      )
+        throw Error('BOUND_ARCHIVE_READER_CLEANUP_REQUIRED');
+      const absent = await read(['lambda', 'get-function-configuration', '--function-name', reader.functionName], true);
+      if (absent?.absent !== true) throw Error('TEMPORARY_ARCHIVE_READER_REMAINS');
+      const currentPolicy = await read([
+        'iam',
+        'get-role-policy',
+        '--role-name',
+        'fdp-test-replay-role',
+        '--policy-name',
+        'ReplayFnServiceRoleDefaultPolicy676F95BC',
+      ]);
+      if (sha256(JSON.stringify(currentPolicy.PolicyDocument)) !== reader.originalRolePolicySha256)
+        throw Error('EXISTING_ARCHIVE_ROLE_POLICY_DRIFT');
+      r.archiveReader = {
+        gate: 'PASS_INDEPENDENTLY_ABSENT_AND_EXISTING_POLICY_UNCHANGED',
+        receiptSha256: parent.archiveReaderSha256,
+      };
+      save();
+    }
     const username = parent.prefix + '-platformsuperadmin@example.invalid';
     const users = await read([
       'cognito-idp',
