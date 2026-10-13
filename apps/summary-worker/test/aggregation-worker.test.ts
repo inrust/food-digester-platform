@@ -13,6 +13,7 @@ import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import { AGGREGATION_CALCULATION_VERSION, createAggregationWorker } from '../src/index.js';
 import { createTestDb } from '../../cloud-api/test/helpers.js';
+import { summaryOutputSha256 } from '../src/aggregation/worker.js';
 
 let pg: Awaited<ReturnType<typeof createTestDb>>['pg'];
 let prisma: InstanceType<typeof PrismaClient>;
@@ -366,4 +367,37 @@ describe('createAggregationWorker（BE-ESG-01）', () => {
       ],
     );
   });
+});
+
+test('业务摘要关联绑定持久化日报和当前自然调度请求', async () => {
+  const deviceId = 'summary-proof-own';
+  await ensureScopedDevice(deviceId);
+  await plantReceipt(deviceId, 1, '2026-08-27T10:01:00.000Z');
+  await plantHourly(deviceId, '2026-08-27T10:00:00.000Z', 1, { weight: { avg: 2, min: 1, max: 3, count: 1 } });
+  const rows: Record<string, unknown>[] = [];
+  await createAggregationWorker({ client: prisma }).recomputeWindow(WINDOW, {
+    lambdaRequestId: 'request-own',
+    eventId: 'event-own',
+    eventTime: WINDOW.to.toISOString(),
+    source: 'aws.events',
+    ruleName: 'fdp-test-summary',
+    observe: (row) => rows.push(row),
+  });
+  const proof = rows.filter((row) => row.deviceId === deviceId);
+  assert.equal(proof.length, 1);
+  const saved = await prisma.telemetryDaily.findFirstOrThrow({ where: { deviceId } });
+  assert.equal(
+    proof[0]?.outputSha256,
+    summaryOutputSha256({
+      sampleCount: saved.sampleCount,
+      completenessPct: saved.completenessPct === null ? null : Number(saved.completenessPct),
+      missingRecordCount: saved.missingRecordCount,
+      metrics: saved.metrics,
+    }),
+  );
+  assert.equal(proof[0]?.lambdaRequestId, 'request-own');
+  assert.equal(proof[0]?.eventId, 'event-own');
+  assert.equal(proof[0]?.customerId, saved.customerId);
+  assert.equal(proof[0]?.bucketDate, saved.bucketDate.toISOString());
+  assert.ok(!('metrics' in proof[0]!));
 });

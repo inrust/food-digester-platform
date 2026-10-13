@@ -1,5 +1,6 @@
 /** BE-ESG-01 event-time 聚合：历史归属、边界缺口与原子 upsert。 */
 import type { DbClient } from '@fdp/database';
+import { createHash } from 'node:crypto';
 
 export const AGGREGATION_CALCULATION_VERSION = 'aggregator@2.0.0';
 export const AGGREGATION_FORMULA = {
@@ -22,6 +23,30 @@ export interface AggregationRunResult {
   readonly dailyUpserted: number;
   readonly esgUpserted: number;
   readonly calculationVersionId: string;
+}
+export interface AggregationRunObservation {
+  readonly lambdaRequestId: string | null;
+  readonly eventId: string | null;
+  readonly eventTime: string;
+  readonly source: string;
+  readonly ruleName: string | null;
+  readonly observe: (row: Record<string, unknown>) => void;
+}
+/** Canonical JSON keeps database JSONB key ordering from changing the business-result digest. */
+export function summaryOutputSha256(value: unknown): string {
+  const canonical = (item: unknown): unknown =>
+    Array.isArray(item)
+      ? item.map(canonical)
+      : item !== null && typeof item === 'object'
+        ? Object.fromEntries(
+            Object.entries(item)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([key, child]) => [key, canonical(child)]),
+          )
+        : item;
+  return createHash('sha256')
+    .update(JSON.stringify(canonical(value)))
+    .digest('hex');
 }
 interface ReceiptRow {
   readonly deviceId: string;
@@ -171,7 +196,10 @@ export function createAggregationWorker(deps: AggregationWorkerDeps) {
     return row.id as string;
   }
   return {
-    async recomputeWindow(window: AggregationWindow): Promise<AggregationRunResult> {
+    async recomputeWindow(
+      window: AggregationWindow,
+      observation?: AggregationRunObservation,
+    ): Promise<AggregationRunResult> {
       const calculationVersionId = await ensureCalculationVersion();
       const windowReceipts = (await db.ingestionReceipt.findMany({
         where: { topicType: 'telemetry', occurredAt: { gte: window.from, lte: window.to } },
@@ -236,6 +264,21 @@ export function createAggregationWorker(deps: AggregationWorkerDeps) {
           where: { deviceId_customerId_siteId_bucketDate: { deviceId, customerId, siteId, bucketDate } },
           update: data,
           create: { deviceId, customerId, siteId, bucketDate, ...data },
+        });
+        observation?.observe({
+          event: 'summary.daily.upserted',
+          schemaVersion: 1,
+          lambdaRequestId: observation.lambdaRequestId,
+          eventId: observation.eventId,
+          eventTime: observation.eventTime,
+          source: observation.source,
+          ruleName: observation.ruleName,
+          deviceId,
+          customerId,
+          siteId,
+          bucketDate: bucketDate.toISOString(),
+          sampleCount: data.sampleCount,
+          outputSha256: summaryOutputSha256(data),
         });
         dailyUpserted += 1;
       }

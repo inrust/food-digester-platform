@@ -2,6 +2,9 @@ import { resolveDatabaseUrl } from '@fdp/aws-clients';
 import { createPrismaClient } from '@fdp/database';
 import { createAggregationWorker } from '../aggregation/worker.js';
 import type { AggregationRunResult, AggregationWindow } from '../aggregation/worker.js';
+import type { AggregationRunObservation } from '../aggregation/worker.js';
+import { createRedactingLogger } from '@fdp/observability';
+const logger = createRedactingLogger(console);
 
 const DEFAULT_LOOKBACK_HOURS = 48;
 
@@ -22,6 +25,9 @@ export function aggregationWindow(now: Date, lookbackHours = DEFAULT_LOOKBACK_HO
 
 export interface SummaryScheduleEvent {
   readonly time?: string;
+  readonly id?: string;
+  readonly source?: string;
+  readonly resources?: readonly string[];
 }
 
 /** EventBridge 的事件时间是重算窗口锚点；缺失时才回退到当前 UTC 时间。 */
@@ -32,7 +38,24 @@ export function eventTimeOf(event: SummaryScheduleEvent | undefined, fallback: (
   return time;
 }
 
-let recompute: ((window: AggregationWindow) => Promise<AggregationRunResult>) | undefined;
+let recompute:
+  ((window: AggregationWindow, observation?: AggregationRunObservation) => Promise<AggregationRunResult>) | undefined;
+
+export function summaryObservation(
+  event: SummaryScheduleEvent | undefined,
+  time: Date,
+  context: { readonly awsRequestId?: string } | undefined,
+  observe: (row: Record<string, unknown>) => void,
+): AggregationRunObservation {
+  return {
+    lambdaRequestId: context?.awsRequestId ?? null,
+    eventId: event?.id ?? null,
+    eventTime: time.toISOString(),
+    source: event?.source === 'aws.events' && event.id ? 'aws.events' : 'MANUAL_OR_UNRECOGNIZED',
+    ruleName: event?.resources?.[0]?.split('/').at(-1) ?? null,
+    observe,
+  };
+}
 
 async function initialize() {
   const region = required('AWS_REGION');
@@ -40,9 +63,28 @@ async function initialize() {
   return createAggregationWorker({ client }).recomputeWindow;
 }
 
-export async function handler(event?: SummaryScheduleEvent): Promise<AggregationRunResult> {
+export async function handler(
+  event?: SummaryScheduleEvent,
+  context?: { readonly awsRequestId?: string },
+): Promise<AggregationRunResult> {
   recompute ??= await initialize();
   const rawLookback = process.env.SUMMARY_LOOKBACK_HOURS;
   const lookbackHours = rawLookback === undefined ? DEFAULT_LOOKBACK_HOURS : Number(rawLookback);
-  return recompute(aggregationWindow(eventTimeOf(event), lookbackHours));
+  const eventTime = eventTimeOf(event),
+    window = aggregationWindow(eventTime, lookbackHours);
+  const observation = summaryObservation(event, eventTime, context, (row) => logger.info(JSON.stringify(row)));
+  const result = await recompute(window, observation);
+  logger.info(
+    JSON.stringify({
+      event: 'summary.run.completed',
+      schemaVersion: 1,
+      lambdaRequestId: observation.lambdaRequestId,
+      eventId: observation.eventId,
+      eventTime: observation.eventTime,
+      source: observation.source,
+      ruleName: observation.ruleName,
+      ...result,
+    }),
+  );
+  return result;
 }

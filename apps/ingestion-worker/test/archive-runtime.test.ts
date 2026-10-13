@@ -12,6 +12,55 @@ const validMessage = (eventId: string) => ({
 });
 
 describe('Archive SQS runtime', () => {
+  test('归档成功绑定实际请求、队列消息与对象；拒绝记录不冒充成功，重复 event 不重复记录', async () => {
+    const rows: Record<string, unknown>[] = [];
+    const handler = createArchiveSqsHandler(
+      {
+        archiveBatch: async () => ({
+          rejectedEventIds: ['bad'],
+          objects: [
+            { eventIds: ['good'], key: 'own.json.gz', manifestKey: 'own.manifest.json', sha256: 'a'.repeat(64) },
+          ],
+        }),
+      },
+      (row) => rows.push(row),
+    );
+    const event = {
+      Records: [
+        {
+          messageId: 'sqs-1',
+          body: JSON.stringify(validMessage('good')),
+          eventSource: 'aws:sqs',
+          eventSourceARN: 'arn:aws:sqs:test-region:000000000000:fdp-test-archive',
+        },
+        {
+          messageId: 'sqs-2',
+          body: JSON.stringify(validMessage('good')),
+          eventSource: 'aws:sqs',
+          eventSourceARN: 'arn:aws:sqs:test-region:000000000000:fdp-test-archive',
+        },
+        { messageId: 'sqs-bad', body: JSON.stringify(validMessage('bad')) },
+      ],
+    };
+    assert.deepEqual((await handler(event, { awsRequestId: 'request-1' })).batchItemFailures, [
+      { itemIdentifier: 'sqs-bad' },
+    ]);
+    assert.equal(rows.length, 2);
+    assert.deepEqual(
+      rows.map((row) => row.messageId),
+      ['sqs-1', 'sqs-2'],
+    );
+    assert.ok(
+      rows.every(
+        (row) =>
+          row.lambdaRequestId === 'request-1' &&
+          row.eventId === 'good' &&
+          row.queueName === 'fdp-test-archive' &&
+          row.outcome === 'ARCHIVED',
+      ),
+    );
+    assert.ok(rows.every((row) => !('rawBody' in row) && !('eventSourceARN' in row)));
+  });
   test('非法记录与业务拒绝记录进入 partial batch failure，合法记录仍处理', async () => {
     const archiveBatch = vi.fn(async (_messages: ArchiveEventMessage[]) => ({ rejectedEventIds: ['evt-rejected'] }));
     const handler = createArchiveSqsHandler({ archiveBatch });

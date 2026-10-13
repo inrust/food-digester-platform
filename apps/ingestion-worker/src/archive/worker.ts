@@ -40,6 +40,7 @@ export interface ArchiveWorkerDeps {
 }
 
 export interface ArchivedObject {
+  readonly eventIds?: readonly string[];
   readonly key: string;
   readonly manifestKey: string;
   readonly archiveClass: ArchiveClass;
@@ -294,6 +295,7 @@ export function createArchiveWorker(deps: ArchiveWorkerDeps): {
           contentType: 'application/json',
         });
         objects.push({
+          eventIds: records.map((record) => record.eventId),
           key,
           manifestKey,
           archiveClass: group.archiveClass,
