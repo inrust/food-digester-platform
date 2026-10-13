@@ -173,6 +173,11 @@ export async function executeFixture(client, plan) {
         rows[table] = (
           await client.query(`SELECT * FROM public."${table}" WHERE device_id=ANY($1::text[]) ORDER BY id`, [ids])
         ).rows;
+      rows.signalRows = {};
+      for (const table of ['alarms', 'device_events', 'tamper_events'])
+        rows.signalRows[table] = (
+          await client.query(`SELECT * FROM public."${table}" WHERE device_id=ANY($1::text[])`, [ids])
+        ).rows;
       rows.calculationVersions = (
         await client.query(
           'SELECT id,version,status FROM esg_calculation_versions WHERE id IN(SELECT calculation_version_id FROM esg_daily_summary WHERE device_id=ANY($1::text[])) ORDER BY id',
@@ -792,17 +797,49 @@ export async function executeFixture(client, plan) {
           ).rowCount !== 1
         )
           throw Error('CLOSED_CUSTOMER_NOT_VERIFIED');
+      const emptyCounts = [];
       for (const [table, column] of [
         ['devices', 'id'],
         ['device_certificates', 'device_id'],
         ['onboarding_requests', 'serial_number'],
-      ])
-        if ((await client.query(`SELECT 1 FROM ${table} WHERE ${column}=ANY($1::text[])`, [ids])).rowCount)
-          throw Error('FIXTURE_NOT_EMPTY');
+        ...[
+          'ingestion_gaps',
+          'ingestion_receipts',
+          'telemetry_hourly',
+          'telemetry_daily',
+          'device_events',
+          'tamper_events',
+          'alarms',
+          'device_latest_state',
+          'device_state_history',
+          'device_public_keys',
+        ].map((table) => [table, 'device_id']),
+      ]) {
+        const count = (
+          await client.query(`SELECT count(*)::int AS count FROM ${table} WHERE ${column}=ANY($1::text[])`, [ids])
+        ).rows[0].count;
+        emptyCounts.push({ table, count });
+        if (count !== 0) throw Error('FIXTURE_NOT_EMPTY');
+      }
+      const archiveOutboxCount = (
+        await client.query(
+          "SELECT count(*)::int AS count FROM outbox_events WHERE aggregate_id=ANY($1::text[]) OR payload->>'deviceId'=ANY($1::text[])",
+          [ids],
+        )
+      ).rows[0].count;
+      emptyCounts.push({ table: 'outbox_events', count: archiveOutboxCount });
+      if (archiveOutboxCount !== 0) throw Error('FIXTURE_OUTBOX_NOT_EMPTY');
       if (JSON.stringify(before) !== JSON.stringify(plan.baseline)) throw Error('ORIGINAL_BASELINE_DRIFT');
       await client.query('ROLLBACK');
       committed = true;
-      return { empty: true, devices: [], certificates: [], onboardingRequests: [], originalFingerprints: before };
+      return {
+        empty: true,
+        emptyCounts,
+        devices: [],
+        certificates: [],
+        onboardingRequests: [],
+        originalFingerprints: before,
+      };
     }
     if (plan.action.endsWith('-closed')) {
       for (const c of plan.customers)

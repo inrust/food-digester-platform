@@ -134,7 +134,7 @@ export async function collectReliabilityFinal(parentPath, output, recoveryPath) 
         'heartbeat',
         'telemetry',
         'ack',
-        ...(parent.published.some((p) => p.type === 'report') ? ['report'] : []),
+        ...['report', 'alarm', 'event', 'tamper'].filter((type) => parent.published.some((p) => p.type === type)),
       ]) {
         const prefix = `raw/topic_type=${type}/customer_id=${c.id}/`;
         const page = await read([

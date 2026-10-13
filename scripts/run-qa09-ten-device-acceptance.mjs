@@ -106,9 +106,11 @@ export async function publishKnown(client, topic, raw, deadlineMs = 10000, timer
 export function validateEntityMode(options, extension) {
   if (
     !options ||
-    Object.keys(options).some((k) => k !== 'reviewOnly') ||
+    Object.keys(options).some((k) => !['reviewOnly', 'remainingOnly'].includes(k)) ||
     typeof options.reviewOnly !== 'boolean' ||
-    (options.reviewOnly && typeof extension?.beforeApproval !== 'function')
+    (options.reviewOnly && typeof extension?.beforeApproval !== 'function') ||
+    (options.remainingOnly !== undefined && typeof options.remainingOnly !== 'boolean') ||
+    (options.remainingOnly && (options.reviewOnly || extension?.remainingOnly !== true))
   )
     throw Error('INVALID_ENTITY_REVIEW_MODE');
 }
@@ -167,7 +169,12 @@ export async function main(output, versionPath, extension, options = { reviewOnl
     pool = 'ap-southeast-1_hZMX8LpFo';
   const receipt = {
     task: 'QA-09',
-    scope: options.reviewOnly ? 'PENDING_CSR_ENTITY_REVIEW_ONLY' : 'TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE',
+    scope: options.remainingOnly
+      ? 'OWN_CERTIFICATE_BOOTSTRAP_AND_A5_REMAINDER_ONLY'
+      : options.reviewOnly
+        ? 'PENDING_CSR_ENTITY_REVIEW_ONLY'
+        : 'TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE',
+    remainingOnly: options.remainingOnly === true,
     reviewOnly: options.reviewOnly,
     mqttPublishDeadlineMs: extension?.mqttPublishDeadlineMs ?? 10000,
     mode: 'REAL_EXISTING_TEST_ENVIRONMENT',
@@ -613,6 +620,11 @@ export async function main(output, versionPath, extension, options = { reviewOnl
         [401, 403].includes(rejected.status),
       { status: rejected.status, errorCode: rejected.errorCode ?? null },
     );
+    if (options.remainingOnly) {
+      await extension({ receipt, held, db, check, save, api, refreshIdentity, credentials });
+      receipt.gate = 'PASS';
+      return receipt;
+    }
     for (const [id, k] of held) {
       if (extension?.beforeDeviceTelemetry)
         await extension.beforeDeviceTelemetry({ id, k, receipt, clients, connectAsync });
@@ -822,7 +834,9 @@ export async function main(output, versionPath, extension, options = { reviewOnl
               'heartbeat',
               'telemetry',
               'ack',
-              ...(receipt.published.some((p) => p.type === 'report') ? ['report'] : []),
+              ...['report', 'alarm', 'event', 'tamper'].filter((type) =>
+                receipt.published.some((p) => p.type === type),
+              ),
             ]) {
               let continuation;
               do {
@@ -850,7 +864,9 @@ export async function main(output, versionPath, extension, options = { reviewOnl
               'heartbeat',
               'telemetry',
               'ack',
-              ...(receipt.published.some((p) => p.type === 'report') ? ['report'] : []),
+              ...['report', 'alarm', 'event', 'tamper'].filter((type) =>
+                receipt.published.some((p) => p.type === type),
+              ),
             ]) {
               const prefix = `raw/topic_type=${type}/customer_id=${c.id}/`;
               let marker, versionMarker;
@@ -881,7 +897,9 @@ export async function main(output, versionPath, extension, options = { reviewOnl
               'heartbeat',
               'telemetry',
               'ack',
-              ...(receipt.published.some((p) => p.type === 'report') ? ['report'] : []),
+              ...['report', 'alarm', 'event', 'tamper'].filter((type) =>
+                receipt.published.some((p) => p.type === type),
+              ),
             ]) {
               const result = await call(s3, s3Sdk.ListObjectVersionsCommand, {
                 Bucket: 'fdp-test-raw-065986019555',

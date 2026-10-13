@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "1.0",
+  "scope": "QA09_MINIMUM_CLOUD_NO_PERMISSION_CHANGES",
+  "authorization": "USER_DIRECTIVE_2026_10_13_MINIMUM_MATERIALS_AND_CONDITIONAL_SCOPE_REDUCTION",
+  "originalScopePreserved": "docs/audit/evidence/qa-09-a1-entry-2026-10-13/scope.json",
+  "newChannelsRequired": false,
+  "newIamRolesRequired": false,
+  "iamKmsOrSharedPermissionChangesAllowed": false,
+  "materialPolicy": {
+    "source": "EXISTING_AUTHORIZED_DEVICE_OR_SERVICE_OR_EXISTING_SIGNED_PACKAGE",
+    "licenseVerification": "REAL_INDEPENDENT_CURRENT_SYNC_VERIFICATION_REQUIRED",
+    "firmwareVerification": "REAL_TARGET_TRUSTED_SIGNATURE_AND_FILE_HASH_REQUIRED",
+    "missingMaterial": "NOT_ACCEPTED_DEFER_DEPENDENT_SUCCESS_PATHS_TO_RELEASE",
+    "keyExportAllowed": false,
+    "fabricatedVerifiedAllowed": false,
+    "signatureBypassAllowed": false
+  },
+  "retainedA5": [
+    "replay.operatorNonempty",
+    "replay.uniqueProducerAssociation",
+    "reliability.sameRunNonemptyDedup",
+    "reliability.archivePartialFailure",
+    "reliability.queueAndScheduleAssociation"
+  ],
+  "archivePartialFailureExecution": "ACTUAL_DEPLOYED_HANDLER_MIXED_BATCH_AND_REAL_OWN_S3_OBJECTS_WITH_EXPLICIT_DIRECT_INVOCATION_PROVENANCE",
+  "conditionalExclusions": [
+    {
+      "id": "REL-A2-01",
+      "condition": "Required material is unavailable through existing authorized channels",
+      "cases": [
+        "device.independentLicenseVerification",
+        "device.naturalActive",
+        "device.suspendReactivateRetire",
+        "license.lifecycle",
+        "Active-dependent command success paths",
+        "ota.trustedFirmwareAndCampaign",
+        "corresponding dependent browser journeys"
+      ],
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "releaseRequired": true,
+      "retain": [
+        "real license verification",
+        "real trusted package verification",
+        "authorization and isolation",
+        "invalid signature and illegal transition rejection"
+      ]
+    },
+    {
+      "id": "REL-QUEUE-01",
+      "condition": "Real poison-message retry/DLQ execution cannot be safely scoped and cleaned using existing authorized paths",
+      "cases": ["actual SQS poison-message retry", "actual Archive DLQ routing and owned-message recovery"],
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "releaseRequired": true,
+      "retain": [
+        "deployed handler partial batch failure",
+        "good/bad record separation",
+        "normal Archive queue consumption",
+        "exact object and manifest hashes",
+        "owned cleanup"
+      ]
+    }
+  ],
+  "performanceExpansion": false,
+  "repeatFullBusinessSuite": false,
+  "fullA5OriginalScopeAccepted": false,
+  "fullQa09Accepted": false,
+  "minimumPhaseAccepted": false,
+  "productionReady": false
+}

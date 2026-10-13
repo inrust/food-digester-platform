@@ -323,3 +323,22 @@ test('fixture CLI distinguishes expired SSO from authorization rejection and tra
   assert.equal(classifyFixtureCliError('An error occurred (AccessDeniedException)'), 'AccessDeniedException');
   assert.equal(classifyFixtureCliError('', { code: 'ETIMEDOUT' }), 'CLI_READ_TIMEOUT');
 });
+
+test('final empty audit rejects remaining owned signal or outbox rows after device cleanup', async () => {
+  const { pg, client } = await db();
+  try {
+    const before = await executeFixture(client, plan('observe'));
+    await pg.query('UPDATE customers SET deleted_at=now() WHERE id=ANY($1)', [plan().customers.map((c) => c.id)]);
+    const audit = { ...plan('audit-empty'), baseline: before.originalFingerprints };
+    const empty = await executeFixture(client, audit);
+    assert.equal(empty.emptyCounts.length, 14);
+    await pg.query('INSERT INTO tamper_events(device_id)VALUES($1)', [plan().devices[0]]);
+    await assert.rejects(executeFixture(client, audit), /FIXTURE_NOT_EMPTY/);
+    await pg.query('DELETE FROM tamper_events WHERE device_id=$1', [plan().devices[0]]);
+    await pg.query("INSERT INTO outbox_events(id,aggregate_id,payload)VALUES('own',$1,'{}')", [plan().devices[0]]);
+    await assert.rejects(executeFixture(client, audit), /FIXTURE_OUTBOX_NOT_EMPTY/);
+    assert.equal((await pg.query("SELECT count(*)::int AS n FROM outbox_events WHERE id='own'")).rows[0].n, 1);
+  } finally {
+    await pg.close();
+  }
+});

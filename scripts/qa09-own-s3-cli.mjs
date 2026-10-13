@@ -1,21 +1,23 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 export function assertOwnS3Request(action, input, customerIds) {
   if (
-    !['list-objects-v2', 'list-object-versions', 'delete-objects', 'delete-object'].includes(action) ||
+    !['list-objects-v2', 'list-object-versions', 'delete-objects', 'delete-object', 'get-object'].includes(action) ||
     input.Bucket !== 'fdp-test-raw-065986019555' ||
     customerIds.length !== 2 ||
     customerIds.some((x) => !/^[a-f0-9-]{36}$/.test(x))
   )
     throw Error('FIXED_OWN_S3_SCOPE_REQUIRED');
   const prefixes = customerIds.flatMap((id) =>
-    ['heartbeat', 'telemetry', 'ack', 'report'].map((type) => `raw/topic_type=${type}/customer_id=${id}/`),
+    ['heartbeat', 'telemetry', 'ack', 'report', 'alarm', 'event', 'tamper'].map(
+      (type) => `raw/topic_type=${type}/customer_id=${id}/`,
+    ),
   );
   const owns = (key) => typeof key === 'string' && prefixes.some((p) => key.startsWith(p));
   if (action.startsWith('list-') && !owns(input.Prefix)) throw Error('OWN_S3_PREFIX_REQUIRED');
-  if (action === 'delete-object' && !owns(input.Key)) throw Error('OWN_S3_KEY_REQUIRED');
+  if (['delete-object', 'get-object'].includes(action) && !owns(input.Key)) throw Error('OWN_S3_KEY_REQUIRED');
   if (
     action === 'delete-objects' &&
     (!input.Delete?.Objects?.length ||
@@ -23,6 +25,7 @@ export function assertOwnS3Request(action, input, customerIds) {
       input.Delete.Objects.some((x) => !owns(x.Key) || !x.VersionId))
   )
     throw Error('EXACT_OWN_S3_VERSIONS_REQUIRED');
+  if (action === 'get-object' && !input.VersionId) throw Error('EXACT_OWN_S3_VERSION_REQUIRED');
   if (input.KeyMarker && !owns(input.KeyMarker)) throw Error('OWN_S3_MARKER_REQUIRED');
 }
 export function callOwnS3Cli(action, input, customerIds) {
@@ -38,10 +41,11 @@ export function callOwnS3Cli(action, input, customerIds) {
       [
         's3api',
         action,
+        ...(action === 'get-object' ? [join(dir, 'object.bin')] : []),
         '--cli-input-json',
         'file://' + file,
         '--profile',
-        action.startsWith('list-') ? 'esgiot-readonly' : 'esgiot-infra',
+        action.startsWith('list-') ? 'esgiot-readonly' : action === 'get-object' ? 'esgiot-readonly' : 'esgiot-infra',
         '--region',
         'ap-southeast-1',
         '--no-cli-pager',
@@ -66,7 +70,8 @@ export function callOwnS3Cli(action, input, customerIds) {
           x.stderr?.match(/An error occurred \(([A-Za-z0-9]+)\)/)?.[1] ??
           (x.error?.code === 'ETIMEDOUT' ? 'S3_TRANSFER_TIMEOUT' : 'S3_CLI_FAILED'),
       });
-    return x.stdout.trim() ? JSON.parse(x.stdout) : {};
+    const metadata = x.stdout.trim() ? JSON.parse(x.stdout) : {};
+    return action === 'get-object' ? { metadata, body: readFileSync(join(dir, 'object.bin')) } : metadata;
   } finally {
     rmSync(dir, { recursive: true });
   }
