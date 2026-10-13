@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, rmSync, mkdirSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import {
@@ -17,6 +17,7 @@ const root = new URL('..', import.meta.url).pathname;
 const bindingPath = 'docs/audit/evidence/qa-09-a1-entry-2026-10-13/bindings.json';
 const context = () => JSON.parse(readFileSync(resolve(root, bindingPath)));
 function fixture(action) {
+  mkdirSync(resolve(root, 'build'), { recursive: true });
   const directory = mkdtempSync(resolve(root, 'build/qa09-a1-test-'));
   const write = (name, value) => {
     const path = relative(root, resolve(directory, name));
