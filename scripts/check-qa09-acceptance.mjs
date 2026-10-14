@@ -81,22 +81,30 @@ export async function checkAcceptanceEntry(root, context) {
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
-    const args = process.argv.slice(2).filter((arg) => arg !== '--entry-only');
-    if (args.length > 2 || args.some((arg) => arg.startsWith('--'))) throw Error('UNKNOWN_ACCEPTANCE_ARGUMENT');
-    const [input, output] = args;
-    if (!input || (output && existsSync(output))) throw Error('INPUT_AND_FRESH_OUTPUT_REQUIRED');
-    const result = await checkAcceptanceEntry(process.cwd(), JSON.parse(readFileSync(input)));
-    if (output) writeFileSync(output, JSON.stringify(result, null, 2) + '\n');
-    console.log(
-      JSON.stringify({
-        gate: result.gate,
-        formalPassCount: result.formalPassCount,
-        qa09BusinessGate: result.qa09BusinessGate,
-        fullQa09Accepted: false,
-      }),
-    );
-    // Business mode fails closed; --entry-only is explicitly limited to A1 infrastructure validation.
-    process.exitCode = process.argv.includes('--entry-only') ? 0 : 1;
+    if (process.argv[2] === '--minimum') {
+      const args = process.argv.slice(3);
+      if (args.length < 1 || args.length > 2 || args.some((arg) => arg.startsWith('--')))
+        throw Error('UNKNOWN_MINIMUM_ARGUMENT');
+      const { runMinimumPhaseCheck } = await import('./check-qa09-minimum-phase.mjs');
+      await runMinimumPhaseCheck(...args);
+    } else {
+      const args = process.argv.slice(2).filter((arg) => arg !== '--entry-only');
+      if (args.length > 2 || args.some((arg) => arg.startsWith('--'))) throw Error('UNKNOWN_ACCEPTANCE_ARGUMENT');
+      const [input, output] = args;
+      if (!input || (output && existsSync(output))) throw Error('INPUT_AND_FRESH_OUTPUT_REQUIRED');
+      const result = await checkAcceptanceEntry(process.cwd(), JSON.parse(readFileSync(input)));
+      if (output) writeFileSync(output, JSON.stringify(result, null, 2) + '\n');
+      console.log(
+        JSON.stringify({
+          gate: result.gate,
+          formalPassCount: result.formalPassCount,
+          qa09BusinessGate: result.qa09BusinessGate,
+          fullQa09Accepted: false,
+        }),
+      );
+      // Business mode fails closed; --entry-only is explicitly limited to A1 infrastructure validation.
+      process.exitCode = process.argv.includes('--entry-only') ? 0 : 1;
+    }
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

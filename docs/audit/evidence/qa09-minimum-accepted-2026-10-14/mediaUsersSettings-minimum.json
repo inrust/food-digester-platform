@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "2.0",
+  "kind": "QA09_FORMAL_MINIMUM_DOMAIN_RECEIPT",
+  "domain": "mediaUsersSettings",
+  "status": "PASS_MINIMUM_SCOPE",
+  "scopeSha256": "424772b80f2288c3010a11a501c6c49c1934fc8d080fc6215bd73fe14a7a3376",
+  "applicationCommit": "74089df0df214ca61528a3f48b25e4534c358980",
+  "executorSnapshotSha256": "6e5b78774427443eae2016569e59694ed953c63f7208ec5f0294c7fa6c792e6b",
+  "documentationSnapshotSha256": "1c2679c3f6016f887b40ffd3d81da634697a9744d5f617c80df29b00f3fccc8f",
+  "evidenceBundleSha256": "1a54203c12fb1131e12cf8a6c37a92650d1e074a87a1191cfde7e58620ba1ba9",
+  "factsSha256": "3e31767d32ec6fd43043ca5c555827818d6fb779936dbc2f2d70d07fd6f60256",
+  "required": [
+    "users.signedSessionAndState",
+    "business.operationsRolesPersistence",
+    "security.signedClaimsAndIsolation",
+    "cleanup.ownedResourcesAndUnknownWrites"
+  ],
+  "accepted": [
+    "users.signedSessionAndState",
+    "business.operationsRolesPersistence",
+    "security.signedClaimsAndIsolation",
+    "cleanup.ownedResourcesAndUnknownWrites"
+  ],
+  "scopeLimit": "Signed user role/scope/disable state, scoped audit and authorization; no Media success, notification or Setting-write acceptance.",
+  "releaseDeferrals": [
+    "device.independentLicenseVerification",
+    "device.naturalActive",
+    "device.suspendReactivateRetire",
+    "license.lifecycle",
+    "command.deliveryAndResult",
+    "ota.trustedFirmwareAndCampaign",
+    "media.realUploadAndIsolation",
+    "notifications.inviteAndPasswordApi",
+    "settings.authorizedWriteAndRestore",
+    "actualArchivePoisonRetryDlq"
+  ],
+  "materialDependencyDeferrals": {
+    "REL-MATERIAL-CLAIMS-01": {
+      "status": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "releaseRequired": true,
+      "input": "trustedSignedInvalidClaims",
+      "requirements": [
+        "security.signedClaimsAndIsolation"
+      ],
+      "operations": [],
+      "semanticItems": [],
+      "deferred": [
+        "trusted signed invalid exp/nbf/audience rejection and valid control"
+      ]
+    },
+    "REL-MATERIAL-NOTIFY-01": {
+      "status": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "releaseRequired": true,
+      "input": "controlledNotificationRecipientAndScope",
+      "requirements": [
+        "notifications.inviteAndPasswordApi",
+        "business.operationsRolesPersistence",
+        "prototype.117SemanticItems",
+        "browser.targetJourneys"
+      ],
+      "operations": [
+        "inviteUser",
+        "triggerUserPasswordReset"
+      ],
+      "semanticItems": [
+        "settings.button.addPlatformUser",
+        "settings.button.resetPlatformUserPassword"
+      ],
+      "deferred": [
+        "real invite/password-reset API and delivery",
+        "associated Cognito compensation and notification workflows"
+      ]
+    },
+    "REL-MATERIAL-SETTING-01": {
+      "status": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "releaseRequired": true,
+      "input": "writableRestorableSettingKey",
+      "requirements": [
+        "settings.authorizedWriteAndRestore",
+        "business.operationsRolesPersistence",
+        "browser.targetJourneys"
+      ],
+      "operations": [
+        "updateSetting"
+      ],
+      "semanticItems": [],
+      "deferred": [
+        "authorized Setting update, version race, readback and restoration",
+        "associated settings-write browser workflow"
+      ]
+    }
+  },
+  "originalValidator": "scripts/check-aws-med-rbac-aud-dash-set-evidence.mjs",
+  "originalValidatorSha256": "a2067a649e217eefa22478cba762705fb5f79400577e01f7b90c14fbf79d9f36",
+  "fullOriginalDomainAccepted": false,
+  "fullQa09Accepted": false,
+  "productionReady": false
+}

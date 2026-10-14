@@ -1,0 +1,302 @@
+{
+  "schemaVersion": "2.0",
+  "scope": "QA09_MINIMUM_PHASE_2026_10_14",
+  "authorization": "USER_DIRECTIVE_2026_10_14_DEFER_THREE_MATERIALS_AND_DEPENDENCIES_TO_PRE_RELEASE",
+  "originalScopeSha256": "99e6cfa95b61a56aba1bd4a2d8f9e820bb32a441373e73c25cb00b5437467d90",
+  "applicationAndExecutorAndDocumentationSeparatelyBound": true,
+  "materialDeferrals": {
+    "REL-MATERIAL-CLAIMS-01": {
+      "status": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "releaseRequired": true,
+      "input": "trustedSignedInvalidClaims",
+      "requirements": ["security.signedClaimsAndIsolation"],
+      "operations": [],
+      "semanticItems": [],
+      "deferred": ["trusted signed invalid exp/nbf/audience rejection and valid control"]
+    },
+    "REL-MATERIAL-NOTIFY-01": {
+      "status": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "releaseRequired": true,
+      "input": "controlledNotificationRecipientAndScope",
+      "requirements": [
+        "notifications.inviteAndPasswordApi",
+        "business.operationsRolesPersistence",
+        "prototype.117SemanticItems",
+        "browser.targetJourneys"
+      ],
+      "operations": ["inviteUser", "triggerUserPasswordReset"],
+      "semanticItems": ["settings.button.addPlatformUser", "settings.button.resetPlatformUserPassword"],
+      "deferred": [
+        "real invite/password-reset API and delivery",
+        "associated Cognito compensation and notification workflows"
+      ]
+    },
+    "REL-MATERIAL-SETTING-01": {
+      "status": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "releaseRequired": true,
+      "input": "writableRestorableSettingKey",
+      "requirements": [
+        "settings.authorizedWriteAndRestore",
+        "business.operationsRolesPersistence",
+        "browser.targetJourneys"
+      ],
+      "operations": ["updateSetting"],
+      "semanticItems": [],
+      "deferred": [
+        "authorized Setting update, version race, readback and restoration",
+        "associated settings-write browser workflow"
+      ]
+    }
+  },
+  "requirements": [
+    {
+      "id": "device.independentLicenseVerification",
+      "disposition": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "deferral": "REL-A2-01",
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": true
+    },
+    {
+      "id": "device.naturalActive",
+      "disposition": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "deferral": "REL-A2-01",
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": true
+    },
+    {
+      "id": "device.suspendReactivateRetire",
+      "disposition": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "deferral": "REL-A2-01",
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": true
+    },
+    {
+      "id": "license.lifecycle",
+      "disposition": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "deferral": "REL-A2-01",
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": true
+    },
+    {
+      "id": "command.deliveryAndResult",
+      "disposition": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "deferral": "REL-A2-01",
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": true
+    },
+    {
+      "id": "ota.trustedFirmwareAndCampaign",
+      "disposition": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "deferral": "REL-A2-01",
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": true
+    },
+    {
+      "id": "media.realUploadAndIsolation",
+      "disposition": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "deferral": "REL-A2-01",
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": true
+    },
+    {
+      "id": "certificate.completeRotation",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": false
+    },
+    {
+      "id": "replay.operatorNonempty",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": false
+    },
+    {
+      "id": "replay.uniqueProducerAssociation",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": false
+    },
+    {
+      "id": "reliability.sameRunNonemptyDedup",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": false
+    },
+    {
+      "id": "reliability.archivePartialFailure",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": false
+    },
+    {
+      "id": "reliability.queueAndScheduleAssociation",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": false
+    },
+    {
+      "id": "users.signedSessionAndState",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": false
+    },
+    {
+      "id": "security.signedClaimsAndIsolation",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": ["REL-MATERIAL-CLAIMS-01"],
+      "releaseRequired": false
+    },
+    {
+      "id": "business.operationsRolesPersistence",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": ["REL-MATERIAL-NOTIFY-01", "REL-MATERIAL-SETTING-01"],
+      "releaseRequired": false
+    },
+    {
+      "id": "notifications.inviteAndPasswordApi",
+      "disposition": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "deferral": "REL-MATERIAL-NOTIFY-01",
+      "dependentSubscopeDeferrals": ["REL-MATERIAL-NOTIFY-01"],
+      "releaseRequired": true
+    },
+    {
+      "id": "settings.authorizedWriteAndRestore",
+      "disposition": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "deferral": "REL-MATERIAL-SETTING-01",
+      "dependentSubscopeDeferrals": ["REL-MATERIAL-SETTING-01"],
+      "releaseRequired": true
+    },
+    {
+      "id": "prototype.117SemanticItems",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": ["REL-MATERIAL-NOTIFY-01"],
+      "releaseRequired": false
+    },
+    {
+      "id": "browser.targetJourneys",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": ["REL-MATERIAL-NOTIFY-01", "REL-MATERIAL-SETTING-01"],
+      "releaseRequired": false
+    },
+    {
+      "id": "data.naturalEsgConsistency",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": false
+    },
+    {
+      "id": "data.exportLeaseRecovery",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": false
+    },
+    {
+      "id": "cleanup.ownedResourcesAndUnknownWrites",
+      "disposition": "RETAINED_REQUIRED",
+      "deferral": null,
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": false
+    },
+    {
+      "id": "actualArchivePoisonRetryDlq",
+      "disposition": "DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+      "deferral": "REL-QUEUE-01",
+      "dependentSubscopeDeferrals": [],
+      "releaseRequired": true
+    }
+  ],
+  "minimumDomainRequirements": {
+    "iot": [
+      "certificate.completeRotation",
+      "reliability.queueAndScheduleAssociation",
+      "security.signedClaimsAndIsolation",
+      "cleanup.ownedResourcesAndUnknownWrites"
+    ],
+    "processing": [
+      "replay.operatorNonempty",
+      "replay.uniqueProducerAssociation",
+      "reliability.sameRunNonemptyDedup",
+      "reliability.archivePartialFailure",
+      "reliability.queueAndScheduleAssociation",
+      "data.naturalEsgConsistency",
+      "data.exportLeaseRecovery",
+      "cleanup.ownedResourcesAndUnknownWrites"
+    ],
+    "customersDevices": [
+      "business.operationsRolesPersistence",
+      "security.signedClaimsAndIsolation",
+      "cleanup.ownedResourcesAndUnknownWrites"
+    ],
+    "business": [
+      "business.operationsRolesPersistence",
+      "data.naturalEsgConsistency",
+      "data.exportLeaseRecovery",
+      "security.signedClaimsAndIsolation",
+      "cleanup.ownedResourcesAndUnknownWrites"
+    ],
+    "mediaUsersSettings": [
+      "users.signedSessionAndState",
+      "business.operationsRolesPersistence",
+      "security.signedClaimsAndIsolation",
+      "cleanup.ownedResourcesAndUnknownWrites"
+    ],
+    "fe06_10": [
+      "prototype.117SemanticItems",
+      "browser.targetJourneys",
+      "business.operationsRolesPersistence",
+      "security.signedClaimsAndIsolation",
+      "cleanup.ownedResourcesAndUnknownWrites"
+    ],
+    "fe11_15": [
+      "prototype.117SemanticItems",
+      "browser.targetJourneys",
+      "data.naturalEsgConsistency",
+      "data.exportLeaseRecovery",
+      "security.signedClaimsAndIsolation",
+      "cleanup.ownedResourcesAndUnknownWrites"
+    ],
+    "fe16_19": [
+      "prototype.117SemanticItems",
+      "browser.targetJourneys",
+      "users.signedSessionAndState",
+      "business.operationsRolesPersistence",
+      "security.signedClaimsAndIsolation",
+      "cleanup.ownedResourcesAndUnknownWrites"
+    ]
+  },
+  "minimumDomainLimits": {
+    "iot": "Real certificate rotation and retained MQTT/queue observations; not full eight-uplink/QA03 acceptance.",
+    "processing": "Five scoped A5 criteria plus retained real archive/ESG/lease proofs; mixed batch is direct deployed-handler invocation, not actual poison-message retry/DLQ.",
+    "customersDevices": "Applicable server-state operation/role persistence and scoped isolation; no natural Active or retirement success claim.",
+    "business": "Applicable committed server transactions, including Draft/Issued license state; not device-side license verification, delivery or full branch acceptance.",
+    "mediaUsersSettings": "Signed user role/scope/disable state, scoped audit and authorization; no Media success, notification or Setting-write acceptance.",
+    "fe06_10": "Retained real UI semantics, route controls and corresponding server persistence; no A2-dependent device/Media success journey.",
+    "fe11_15": "Retained ESG/activity export and read/audit routes plus related semantic groups; no command/OTA/Media success journey.",
+    "fe16_19": "Retained user-state/contract/consumable semantics and persisted results, route and language/layout controls; no notification or Setting-write journey."
+  },
+  "retainedOperationRoles": 76,
+  "deferredA2OperationRoles": 33,
+  "deferredMaterialOperationRoles": 3,
+  "retainedSemanticItems": 100,
+  "deferredA2SemanticItems": 15,
+  "deferredMaterialSemanticItems": 2,
+  "fullOriginalDomainContractsUnchanged": true,
+  "fullOriginalDomainAcceptanceClaimed": false,
+  "unknownExecutionMustRemainUnknown": true,
+  "permissionChangesAllowed": false,
+  "fullSuiteRepeated": false,
+  "productionReady": false
+}

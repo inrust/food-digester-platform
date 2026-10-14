@@ -67,19 +67,64 @@
         "exact object and manifest hashes",
         "owned cleanup"
       ]
+    },
+    {
+      "id": "REL-MATERIAL-CLAIMS-01",
+      "authorization": "USER_DIRECTIVE_2026_10_14_DEFER_THREE_MATERIALS_AND_DEPENDENCIES_TO_PRE_RELEASE",
+      "cases": ["Trusted-signed invalid exp/nbf/audience rejection and valid control"],
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "releaseRequired": true,
+      "retain": [
+        "unrelated real business and safety proofs",
+        "historical FAIL and UNKNOWN",
+        "no new channels or permission changes"
+      ]
+    },
+    {
+      "id": "REL-MATERIAL-NOTIFY-01",
+      "authorization": "USER_DIRECTIVE_2026_10_14_DEFER_THREE_MATERIALS_AND_DEPENDENCIES_TO_PRE_RELEASE",
+      "cases": [
+        "inviteUser",
+        "triggerUserPasswordReset",
+        "associated Cognito notification compensation",
+        "associated two platform-user semantic items and browser journeys"
+      ],
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "releaseRequired": true,
+      "retain": [
+        "unrelated real business and safety proofs",
+        "historical FAIL and UNKNOWN",
+        "no new channels or permission changes"
+      ]
+    },
+    {
+      "id": "REL-MATERIAL-SETTING-01",
+      "authorization": "USER_DIRECTIVE_2026_10_14_DEFER_THREE_MATERIALS_AND_DEPENDENCIES_TO_PRE_RELEASE",
+      "cases": [
+        "updateSetting",
+        "Setting version race/readback/restoration",
+        "associated settings-write browser journeys"
+      ],
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "releaseRequired": true,
+      "retain": [
+        "unrelated real business and safety proofs",
+        "historical FAIL and UNKNOWN",
+        "no new channels or permission changes"
+      ]
     }
   ],
   "performanceExpansion": false,
   "repeatFullBusinessSuite": false,
   "fullA5OriginalScopeAccepted": false,
   "fullQa09Accepted": false,
-  "minimumPhaseAccepted": false,
+  "minimumPhaseAccepted": true,
   "productionReady": false,
   "channelScope": "A2_LICENSE_VERIFICATION_AND_OTA_SIGNING",
   "a5Readback": "REUSE_EXISTING_REPLAY_ROLE_EXACT_OWN_IMMUTABLE_ARCHIVE_READER_DELETE_AND_VERIFY_NO_POLICY_CHANGE",
   "naturalSummaryAssociation": "REUSE_CURRENT_APPLICATION_REAL_POST_UPSERT_AND_SAME_REQUEST_COMPLETION_WITH_ACTUAL_OWN_DAILY_CLEANUP_COUNT_NO_NEW_VALUE_READBACK_CLAIM",
   "archiveReadMethod": "EXISTING_GET_OBJECT_ONLY_RESPONSE_VERSION_ID_MUST_MATCH_FROZEN_EXPECTED_VERSION",
-  "finalEvidenceChecker": "scripts/collect-qa09-a678-closeout.mjs",
+  "finalEvidenceChecker": "scripts/check-qa09-minimum-phase.mjs",
   "normalQueueAssociation": "ACTUAL_MQTT_DB_OUTBOX_SQS_POST_STORAGE_RECEIPT_AND_OBSERVED_KEYS_NO_NEW_NORMAL_OBJECT_BYTE_READBACK",
   "retainedExistingEvidenceWithoutFreshReassessment": [
     "data.naturalEsgConsistency",
@@ -89,17 +134,8 @@
   "finalMinimumA5SupplementalGate": "PASS_FIVE_MINIMUM_A5_SUPPLEMENTAL_CRITERIA",
   "fullEvidenceLocalOnly": true,
   "priorMinimumA5EvidenceChecker": "scripts/check-qa09-minimum-associations.mjs",
-  "a467RemainingRequirementsNotAutomaticallyDeferred": [
-    "security.signedClaimsAndIsolation",
-    "business.operationsRolesPersistence",
-    "notifications.inviteAndPasswordApi",
-    "settings.authorizedWriteAndRestore",
-    "prototype.117SemanticItems",
-    "browser.targetJourneys",
-    "cleanup.ownedResourcesAndUnknownWrites"
-  ],
   "a467EvidenceTargetAttempt": "target-v3.json",
-  "a8SummaryGate": "PARTIAL_MINIMUM_QA09_NOT_ACCEPTED",
+  "a8SummaryGate": "PASS_MINIMUM_QA09_ONLY",
   "completedA4Scope": "ONE_REAL_DUAL_CHANNEL_CERTIFICATE_ROTATION_WITH_REVOKED_REST_AND_INACTIVE_IOT_PAIRED_MQTT_DENIAL",
   "a7SupplementalScope": "REUSED_117_SEMANTIC_DISPOSITIONS_AND_MISSING_READ_LAYOUT_ROLE_CONTROLS_WITH_ONLY_DEVICE_USER_375_EN_DEPLOYED_RECHECK_NOT_FULL_WORKFLOWS",
   "a6InputAvailability": {
@@ -108,10 +144,11 @@
     "controlledNotificationRecipientAndScope": "UNAVAILABLE",
     "writableRestorableSettingKey": "UNAVAILABLE",
     "scopeWaiverOrPassInferred": false,
-    "newChannelsOrPermissionsRequired": false
+    "newChannelsOrPermissionsRequired": false,
+    "explicitUserDeferral": true
   },
   "priorA467EvidenceChecker": "scripts/collect-qa09-a4678-minimum.mjs",
-  "a8Summary": "docs/audit/evidence/qa09-a678-closeout-2026-10-14/a8-summary.json",
+  "a8Summary": "docs/audit/evidence/qa09-minimum-accepted-2026-10-14/a8-summary.json",
   "a8ApplicationCommit": "74089df0df214ca61528a3f48b25e4534c358980",
   "a678IndependentEvidenceWorkCompleted": [
     "eligibleOperationRolePersistence",
@@ -127,5 +164,21 @@
   ],
   "a8OriginalDomainGatesPassed": 0,
   "a8OriginalDomainGatesRequired": 8,
-  "fullOriginalAncillaryFieldsAccepted": false
+  "fullOriginalAncillaryFieldsAccepted": false,
+  "priorA678EvidenceChecker": "scripts/collect-qa09-a678-closeout.mjs",
+  "minimumPhaseScope": "infra/environments/qa09-minimum-phase-20261014.json",
+  "minimumPhaseScopeAuthorization": "USER_DIRECTIVE_2026_10_14_DEFER_THREE_MATERIALS_AND_DEPENDENCIES_TO_PRE_RELEASE",
+  "a8MinimumFormalDomainsPassed": 8,
+  "a8MinimumFormalDomainsRequired": 8,
+  "a6UnavailableInputsDisposition": "EXPLICITLY_DEFERRED_TO_PRE_RELEASE_NOT_ACCEPTED",
+  "historicalA467NotAutomaticallyDeferred": [
+    "security.signedClaimsAndIsolation",
+    "business.operationsRolesPersistence",
+    "notifications.inviteAndPasswordApi",
+    "settings.authorizedWriteAndRestore",
+    "prototype.117SemanticItems",
+    "browser.targetJourneys",
+    "cleanup.ownedResourcesAndUnknownWrites"
+  ],
+  "currentMinimumOutstanding": []
 }

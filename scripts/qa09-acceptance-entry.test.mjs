@@ -9,13 +9,23 @@ import {
   validateReceiptBinding,
   targetEnvironmentErrors,
   readBoundFile,
+  contentSnapshot,
 } from './qa09-acceptance-context.mjs';
 import { checkAcceptanceEntry } from './check-qa09-acceptance.mjs';
 import { REQUIRED_PROBES, checkAwsDataProcessingEvidence } from './check-aws-data-processing-evidence.mjs';
 
 const root = new URL('..', import.meta.url).pathname;
 const bindingPath = 'docs/audit/evidence/qa-09-a1-entry-2026-10-13/bindings.json';
-const context = () => JSON.parse(readFileSync(resolve(root, bindingPath)));
+const context = () => {
+  const c = JSON.parse(readFileSync(resolve(root, bindingPath)));
+  // A new entry executor needs current content binding; never rewrite the sealed A1 receipt.
+  c.versions.executor = contentSnapshot(
+    root,
+    c.versions.executor.baseCommit,
+    c.versions.executor.files.map((r) => r.path),
+  );
+  return c;
+};
 function fixture(action) {
   mkdirSync(resolve(root, 'build'), { recursive: true });
   const directory = mkdtempSync(resolve(root, 'build/qa09-a1-test-'));
@@ -185,15 +195,23 @@ test('rehashed scope deletions, security deferrals and unsupported inventory PAS
     c.inventory = write('fake-pass.json', inventory);
     await assert.rejects(checkAcceptanceEntry(root, c), /PROMOTION_OR_SCOPE_DRIFT/);
   }));
-test('CLI default remains nonzero while explicit A1-only readiness succeeds with QA09 partial', () => {
-  for (const entryOnly of [false, true]) {
-    const run = spawnSync(
-      process.execPath,
-      ['--import', 'tsx', 'scripts/check-qa09-acceptance.mjs', bindingPath, ...(entryOnly ? ['--entry-only'] : [])],
-      { cwd: root, encoding: 'utf8', timeout: 30000 },
-    );
-    assert.equal(run.status, entryOnly ? 0 : 1, run.stderr);
-    assert.equal(JSON.parse(run.stdout).qa09BusinessGate, 'PARTIAL');
-    assert.equal(JSON.parse(run.stdout).fullQa09Accepted, false);
-  }
-});
+test('CLI default remains nonzero while explicit A1-only readiness succeeds with QA09 partial', async () =>
+  fixture((write) => {
+    const currentContext = write('current-entry-context.json', context());
+    for (const entryOnly of [false, true]) {
+      const run = spawnSync(
+        process.execPath,
+        [
+          '--import',
+          'tsx',
+          'scripts/check-qa09-acceptance.mjs',
+          currentContext.path,
+          ...(entryOnly ? ['--entry-only'] : []),
+        ],
+        { cwd: root, encoding: 'utf8', timeout: 30000 },
+      );
+      assert.equal(run.status, entryOnly ? 0 : 1, run.stderr);
+      assert.equal(JSON.parse(run.stdout).qa09BusinessGate, 'PARTIAL');
+      assert.equal(JSON.parse(run.stdout).fullQa09Accepted, false);
+    }
+  }));
