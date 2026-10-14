@@ -50,6 +50,12 @@ const BUTTONS = {
   'campaign-create-open': ['/ota/campaigns', platform.slice(0, 2)],
 };
 export const PROOFS = {
+  ...Object.fromEntries(
+    [375, 1440].map((width) => [
+      `管理员邮件重置验证码 → 新密码 → 邮箱别名 SRP 登录 (${width}px)`,
+      ['passwordResetLogin', 'canonicalUsername'],
+    ]),
+  ),
   'QA-09 设备管理长别名和序列号在375px完整换行且不裁切': ['manageLongValues'],
   'H-01 API 拒绝停用会话后清除浏览器会话并返回登录': ['disabledSessionLogout'],
   'M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏': ['viewerOwnRead', 'viewerReadOnly'],
@@ -253,6 +259,8 @@ export function sourceHashes() {
     .trim()
     .split('\n');
   files.push(
+    'apps/admin-web/test/fake-cognito.ts',
+    'apps/admin-web/test/helpers.ts',
     'apps/admin-web/tsconfig.e2e.json',
     'apps/admin-web/e2e/qa05-api-fixtures.ts',
     'apps/admin-web/e2e/qa05-fixture.ts',

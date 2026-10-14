@@ -1,15 +1,18 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from './qa05-fixture.js';
 import { FakeCognitoServer } from '../test/fake-cognito.js';
 import { dashboard, json } from './qa05-api-fixtures.js';
 
 for (const width of [375, 1440]) {
-  test(`管理员邮件重置验证码 → 新密码 → 邮箱别名 SRP 登录 (${width}px)`, async ({ page }) => {
+  test(`管理员邮件重置验证码 → 新密码 → 邮箱别名 SRP 登录 (${width}px)`, async ({ page, qa05 }) => {
     await page.setViewportSize({ width, height: 900 });
+    const email = `${qa05.prefix.toLowerCase()}@example.com`;
+    const internalUsername = `${qa05.prefix}-internal-reset-user`;
     const server = new FakeCognitoServer({
       userPoolId: 'us-east-1_local',
       users: {
-        'reset@example.com': {
-          cognitoUsername: 'internal-reset-user',
+        [email]: {
+          cognitoUsername: internalUsername,
           password: 'OldPass123',
           groups: ['PlatformSuperAdmin'],
           resetRequired: true,
@@ -24,7 +27,7 @@ for (const width of [375, 1440]) {
     });
     await page.route('**/api/v1/admin/dashboard/overview', (route) => json(route, { data: dashboard, meta: {} }));
     await page.goto('/login');
-    await page.getByLabel('用户名').fill('reset@example.com');
+    await page.getByLabel('用户名').fill(email);
     await page.getByLabel('密码', { exact: true }).fill('654321');
     await page.getByRole('button', { name: '登录', exact: true }).click();
     await expect(page.getByRole('heading', { name: '使用邮件验证码设置新密码' })).toBeVisible();
@@ -45,7 +48,9 @@ for (const width of [375, 1440]) {
     const challenges = server.calls.filter((call) => call.operation === 'RespondToAuthChallenge');
     expect(challenges.length).toBe(2);
     for (const call of challenges) {
-      expect((call.payload['ChallengeResponses'] as Record<string, unknown>)['USERNAME']).toBe('internal-reset-user');
+      expect((call.payload['ChallengeResponses'] as Record<string, unknown>)['USERNAME']).toBe(internalUsername);
     }
+    qa05.proof.passwordResetLogin = true;
+    qa05.proof.canonicalUsername = true;
   });
 }
