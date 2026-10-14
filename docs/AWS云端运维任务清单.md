@@ -771,6 +771,8 @@
 
 ## 18. 上线前演练与验收
 
+**QA-09 同步（2026-10-14）**：A8 最小范围已通过（14 条保留要求、8/8 最小正式回执），见[验收完成报告](audit/QA-09-最小范围验收完成-2026-10-14.md)。这不关闭下列上线演练、原完整八域或生产门禁；`fullQa09Accepted=false`、`releasePerformanceAccepted=false`、`productionReady=false`。发布前具体延期项统一见[必验清单](dev/QA-09-发布前必验清单.md)。无需为本次已完成验收新建通道、角色或调整权限。
+
 ### OPS-TEST-001 执行接入和消息链路演练（P1）
 
 操作步骤：
@@ -812,7 +814,10 @@
 - [ ] AWS Budget 和异常成本告警已配置；
 - [ ] 10 台设备各自使用独立证书且不能访问其他设备 Topic；
 - [ ] Onboarding 发证、证书轮换和吊销已演练；
-- SES/Webhook 业务通知延期，不作为当前上线验收项；
+- [ ] 按 REL-MATERIAL-NOTIFY-01 补齐受控邀请/密码重置 API、通知、补偿及相关旅程；当前最小 QA-09 不验收，发布前必验；
+- [ ] 按 REL-MATERIAL-CLAIMS-01 补齐可信签名异常 exp/nbf/audience 与有效对照；
+- [ ] 按 REL-MATERIAL-SETTING-01 补齐指定设置更新、版本竞争、读回与恢复；
+- [ ] 按 REL-A2-01 完成真实许可证验签、自然 Active 及可信固件/相关成功路径；
 - [ ] CloudTrail、生产日志和审计存储正常；
 - [ ] 30 倍突发、重复、乱序、断网补报、Worker 暂停场景通过；
 - [ ] DLQ 和归档重放演练通过；

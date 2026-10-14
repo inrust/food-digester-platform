@@ -18,11 +18,16 @@ const root = new URL('..', import.meta.url).pathname;
 const bindingPath = 'docs/audit/evidence/qa-09-a1-entry-2026-10-13/bindings.json';
 const context = () => {
   const c = JSON.parse(readFileSync(resolve(root, bindingPath)));
-  // A new entry executor needs current content binding; never rewrite the sealed A1 receipt.
+  // Tests bind current executor/docs; sealed A1 receipts retain their historical content hashes.
   c.versions.executor = contentSnapshot(
     root,
     c.versions.executor.baseCommit,
     c.versions.executor.files.map((r) => r.path),
+  );
+  c.versions.documentation = contentSnapshot(
+    root,
+    c.versions.documentation.baseCommit,
+    c.versions.documentation.files.map((r) => r.path),
   );
   return c;
 };
