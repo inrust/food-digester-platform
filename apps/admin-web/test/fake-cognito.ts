@@ -41,6 +41,8 @@ function modPow(base: bigint, exponent: bigint, modulus: bigint): bigint {
 const K = BigInt(`0x${hexHash(`00${SRP_N_HEX}0${'2'}`)}`);
 
 export interface FakeUser {
+  /** Cognito 内部用户名可与登录邮箱别名不同。 */
+  readonly cognitoUsername?: string;
   readonly password: string;
   readonly groups: readonly string[];
   readonly customerId?: string;
@@ -49,6 +51,8 @@ export interface FakeUser {
   readonly mfaCode?: string;
   /** 首次登录强制改密。 */
   readonly forceNewPassword?: boolean;
+  readonly resetRequired?: boolean;
+  readonly resetCode?: string;
   /** 密码校验后进入 MFA_SETUP（终止态）。 */
   readonly mfaSetup?: boolean;
 }
@@ -150,6 +154,12 @@ export class FakeCognitoServer {
         return { status: 200, body: {} };
       case 'ConfirmForgotPassword': {
         const code = (payload as Record<string, unknown>)['ConfirmationCode'];
+        const username = payload['Username'] as string;
+        const user = this.options.users[username];
+        if (user?.resetRequired) {
+          if (code !== user.resetCode) return errorResponse('CodeMismatchException');
+          this.options.users[username] = { ...user, password: payload['Password'] as string, resetRequired: false };
+        }
         return code === '000000' ? errorResponse('CodeMismatchException') : { status: 200, body: {} };
       }
       case 'GlobalSignOut': {
@@ -167,7 +177,9 @@ export class FakeCognitoServer {
       const params = payload['AuthParameters'] as Record<string, string>;
       const refreshToken = params['REFRESH_TOKEN'] ?? '';
       const username = refreshToken.replace(/^refresh-/, '');
-      const user = this.options.users[username];
+      const user =
+        this.options.users[username] ??
+        Object.values(this.options.users).find((candidate) => candidate.cognitoUsername === username);
       if (!this.refreshTokensValid || !refreshToken.startsWith('refresh-') || user === undefined) {
         return errorResponse('NotAuthorizedException');
       }
@@ -179,24 +191,26 @@ export class FakeCognitoServer {
     const username = params['USERNAME'] ?? '';
     const user = this.options.users[username];
     if (user === undefined) return errorResponse('NotAuthorizedException');
+    if (user.resetRequired) return errorResponse('PasswordResetRequiredException');
+    const cognitoUsername = user.cognitoUsername ?? username;
     const bigA = BigInt(`0x${params['SRP_A'] ?? '0'}`);
     if (bigA % N === 0n) return errorResponse('InvalidParameterException');
 
     this.sequence += 1;
     const saltHex = 'aa55'.repeat(8);
-    const v = this.verifierOf(username, user.password, saltHex);
+    const v = this.verifierOf(cognitoUsername, user.password, saltHex);
     const b = BigInt(`0x${'cd'.repeat(32)}`) + BigInt(this.sequence);
     const bigB = (K * v + modPow(G, b, N)) % N;
     const secretBlock = Buffer.from(`secret-block-${this.sequence}`, 'utf8');
     const sessionId = `sess-${this.sequence}`;
-    this.pending.set(sessionId, { username, bigA, bigB, b, v, secretBlock });
+    this.pending.set(sessionId, { username: cognitoUsername, bigA, bigB, b, v, secretBlock });
     return {
       status: 200,
       body: {
         ChallengeName: 'PASSWORD_VERIFIER',
         ChallengeParameters: {
-          USERNAME: username,
-          USER_ID_FOR_SRP: username,
+          USERNAME: cognitoUsername,
+          USER_ID_FOR_SRP: cognitoUsername,
           SALT: saltHex,
           SRP_B: bigB.toString(16),
           SECRET_BLOCK: secretBlock.toString('base64'),
@@ -212,8 +226,11 @@ export class FakeCognitoServer {
     const sessionId = payload['Session'] as string;
     const pending = this.pending.get(sessionId);
     if (pending === undefined) return errorResponse('NotAuthorizedException');
-    const user = this.options.users[pending.username];
+    const user = Object.entries(this.options.users).find(
+      ([alias, candidate]) => (candidate.cognitoUsername ?? alias) === pending.username,
+    )?.[1];
     if (user === undefined) return errorResponse('NotAuthorizedException');
+    if (responses['USERNAME'] !== pending.username) return errorResponse('NotAuthorizedException');
 
     if (challengeName === 'PASSWORD_VERIFIER') {
       const ok = this.verifyPasswordClaim(

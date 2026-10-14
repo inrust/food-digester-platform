@@ -31,8 +31,15 @@ export const EN: Readonly<Record<string, string>> = {
     'Your temporary password has been verified. Create the new password you will use for future sign-ins before continuing.',
   'auth.newPassword.label': 'Create new password',
   'auth.newPassword.submit': 'Set new password and sign in',
+  'auth.resetPassword.title': 'Set a new password with your email code',
+  'auth.resetPassword.description':
+    'After an administrator resets your password, the number in the email is a reset code, not a sign-in password. Enter the code and choose a new password, then sign in with your new password.',
+  'auth.resetPassword.haveCode': 'Already have a reset code',
+  'auth.resetPassword.requestCode': 'Request a new code',
+  'auth.resetPassword.submit': 'Set new password',
   'auth.error.invalidCredentials': 'The username or password is incorrect. Check both and try again.',
-  'auth.error.passwordResetRequired': 'This account requires a password reset. Use “Forgot password” to continue.',
+  'auth.error.passwordResetRequired':
+    'This account requires a password reset. Enter the reset code from your email and choose a new password.',
   'auth.error.userNotConfirmed':
     'This account is not confirmed. Check the invitation email or contact an administrator.',
   'auth.error.codeMismatch': 'The verification code is incorrect. Check it and try again.',

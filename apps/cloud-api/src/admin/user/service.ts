@@ -8,7 +8,7 @@
  *   CustomerAdmin 不可提升为平台角色；Customer actor 不得跨 Customer 授权；
  * - 自我提权/自我角色变更/自我停用拒绝（目标 cognitoSub === actor.actorId）；
  * - 最后一个非停用 PlatformSuperAdmin 不可被移除角色或停用；
- * - 邀请/密码重置的临时凭证由 Cognito 生成并发送（CognitoAdminPort），本服务不接触密码；
+ * - 邀请的临时密码、重置的验证码由 Cognito 生成并发送（CognitoAdminPort），本服务不接触密码；
  * - 外部变更前先持久化 COGNITO_ADMIN_RECONCILIATION 意图；Cognito 调用置于 audited
  *   事务内，DB 失败确定性恢复 Groups/Scope/Enabled 状态；结果不确定或补偿失败时保留
  *   PENDING 对账意图并写 reconciliation_required 失败审计，禁止静默形成权限漂移；

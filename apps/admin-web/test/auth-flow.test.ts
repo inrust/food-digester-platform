@@ -80,6 +80,63 @@ test('NEW_PASSWORD_REQUIRED：提交新密码后建立会话', async () => {
   assert.equal(second.status, 'authenticated');
 });
 
+test.each(['new-password', 'mfa'] as const)('邮箱别名登录：%s 全链路使用 Cognito 返回的内部用户名', async (next) => {
+  const { server, session, flow } = setup({
+    'alias@example.com': {
+      cognitoUsername: 'internal-user-123',
+      password: 'Temp!12345',
+      groups: ['Auditor'],
+      forceNewPassword: next === 'new-password',
+      mfa: next === 'mfa',
+    },
+  });
+  const first = await flow.login('alias@example.com', 'Temp!12345');
+  assert.equal(first.status, next === 'mfa' ? 'mfa-required' : 'new-password-required');
+  const result = next === 'mfa' ? await flow.submitMfaCode('123456') : await flow.submitNewPassword('New!Pass1234');
+  assert.equal(result.status, 'authenticated');
+  assert.ok(session.isAuthenticated());
+  await session.ensureFreshAccessToken({ forceRefresh: true });
+  assert.ok(session.isAuthenticated());
+  const responses = server.calls.filter((call) => call.operation === 'RespondToAuthChallenge');
+  assert.equal(responses.length, 2);
+  for (const call of responses) {
+    assert.equal((call.payload['ChallengeResponses'] as Record<string, string>)['USERNAME'], 'internal-user-123');
+  }
+});
+
+test('管理员重置：邮件验证码用于确认新密码，完成后新密码可登录而旧密码失效', async () => {
+  const { flow, session, server } = setup({
+    'reset@example.com': {
+      password: 'Old!Pass1234',
+      groups: ['Auditor'],
+      resetRequired: true,
+      resetCode: '654321',
+    },
+  });
+  for (const password of ['Old!Pass1234', '654321']) {
+    await expectRejects(flow.login('reset@example.com', password), (error) => {
+      assert.ok(error instanceof CognitoIdpError);
+      assert.equal(error.code, 'PASSWORD_RESET_REQUIRED');
+    });
+  }
+  assert.equal(session.isAuthenticated(), false);
+  await expectRejects(flow.confirmForgotPassword('reset@example.com', '000000', 'New!Pass1234'), (error) => {
+    assert.ok(error instanceof CognitoIdpError);
+    assert.equal(error.code, 'CODE_MISMATCH');
+  });
+  await flow.confirmForgotPassword('reset@example.com', '654321', 'New!Pass1234');
+  assert.equal(session.isAuthenticated(), false);
+  await expectRejects(flow.login('reset@example.com', 'Old!Pass1234'), (error) => {
+    assert.ok(error instanceof CognitoIdpError);
+    assert.equal(error.code, 'INVALID_CREDENTIALS');
+  });
+  assert.equal((await flow.login('reset@example.com', 'New!Pass1234')).status, 'authenticated');
+  assert.equal(
+    server.calls.some((call) => call.operation === 'ForgotPassword'),
+    false,
+  );
+});
+
 test('MFA_SETUP 为终止态：提示需管理员完成 MFA 绑定，不建立会话', async () => {
   const { session, flow } = setup({
     'setup@example.com': { password: 'Passw0rd!', groups: ['PlatformSuperAdmin'], mfaSetup: true },

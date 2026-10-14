@@ -23,6 +23,8 @@
 
 **审计（DOM-03）**：`user.invite` / `user.role.assign` / `user.scope.change` / `user.disable` / `user.password_reset.trigger` 经 `audited` 同事务写入（before/after 值齐备）。
 
+**密码重置语义**：邀请的 `AdminCreateUser` 邮件含临时密码；管理员重置的 `AdminResetUserPassword` 会使原密码失效并发送重置验证码，邮件验证码不能作为登录密码。用户在登录页选择“已有重置验证码”，通过 `ConfirmForgotPassword` 提交邮箱、验证码及自己设置的新密码，再使用新密码登录。登录返回 `PasswordResetRequiredException` 时直接进入该确认页；错误或过期验证码支持重新获取。管理员/API 不接触用户新密码。参见 [AWS 接口说明](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminResetUserPassword.html)。
+
 ## 3. 验收基准与证据（vitest + PGlite）
 
 | 验收基准 | 测试 | 结果 |

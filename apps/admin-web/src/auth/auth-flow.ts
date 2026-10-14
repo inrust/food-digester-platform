@@ -84,14 +84,15 @@ export class AuthFlow {
     const reply = await this.deps.idp.respondToChallenge(
       CHALLENGE_NAMES.passwordVerifier,
       {
-        USERNAME: username,
+        // 邮箱是登录别名；SRP 与后续 challenge 必须使用 Cognito 解析出的内部用户名。
+        USERNAME: userIdForSrp,
         PASSWORD_CLAIM_SECRET_BLOCK: secretBlock,
         TIMESTAMP: claim.timestamp,
         PASSWORD_CLAIM_SIGNATURE: claim.passwordClaimSignature,
       },
       first.challenge.session,
     );
-    return this.handleReply(username, reply);
+    return this.handleReply(userIdForSrp, reply);
   }
 
   /** 提交 MFA 验证码（软件令牌 / 短信），续走 pending challenge。 */

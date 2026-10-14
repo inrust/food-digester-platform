@@ -49,6 +49,12 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const changeStep = (next: LoginStep) => {
+    setPassword('');
+    setCode('');
+    setMessage(null);
+    setStep(next);
+  };
   const handleOutcome = (outcome: LoginOutcome) => {
     setPassword('');
     if (outcome.status === 'authenticated') onAuthenticated();
@@ -78,6 +84,10 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
       }
     } catch (error) {
       setPassword('');
+      if (step === 'credentials' && error instanceof CognitoIdpError && error.code === 'PASSWORD_RESET_REQUIRED') {
+        setCode('');
+        setStep('confirm-forgot');
+      }
       setMessage(loginErrorMessage(error, step));
     } finally {
       setBusy(false);
@@ -119,6 +129,12 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
             <span className="login-step-badge">{translate('auth.newPassword.badge')}</span>
             <h2 id="new-password-title">{translate('auth.newPassword.title')}</h2>
             <p>{translate('auth.newPassword.description')}</p>
+          </section>
+        ) : null}
+        {step === 'confirm-forgot' ? (
+          <section className="login-challenge-notice" role="status" aria-labelledby="reset-password-title">
+            <h2 id="reset-password-title">{translate('auth.resetPassword.title')}</h2>
+            <p>{translate('auth.resetPassword.description')}</p>
           </section>
         ) : null}
         <label htmlFor="username">{translate('page.a1aaf352cb07')}</label>
@@ -176,24 +192,29 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
                 ? translate('ui.42e8edb226ec')
                 : step === 'new-password'
                   ? translate('auth.newPassword.submit')
-                  : translate('ui.09cbc97ae2ac')}
+                  : step === 'confirm-forgot'
+                    ? translate('auth.resetPassword.submit')
+                    : translate('ui.09cbc97ae2ac')}
         </Button>
         {step === 'credentials' ? (
-          <Button type="button" className="link-button" onClick={() => setStep('forgot')}>
+          <Button type="button" className="link-button" disabled={busy} onClick={() => changeStep('forgot')}>
             {translate('ui.2e90a4906264')}
           </Button>
         ) : (
-          <Button
-            type="button"
-            className="link-button"
-            onClick={() => {
-              setStep('credentials');
-              setMessage(null);
-            }}
-          >
+          <Button type="button" className="link-button" disabled={busy} onClick={() => changeStep('credentials')}>
             {translate('ui.f2fe4ecc0f4b')}
           </Button>
         )}
+        {step === 'credentials' || step === 'forgot' ? (
+          <Button type="button" className="link-button" disabled={busy} onClick={() => changeStep('confirm-forgot')}>
+            {translate('auth.resetPassword.haveCode')}
+          </Button>
+        ) : null}
+        {step === 'confirm-forgot' ? (
+          <Button type="button" className="link-button" disabled={busy} onClick={() => changeStep('forgot')}>
+            {translate('auth.resetPassword.requestCode')}
+          </Button>
+        ) : null}
       </form>
     </main>
   );

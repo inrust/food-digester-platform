@@ -262,10 +262,15 @@ test('停用与重置：明确确认；重置提示不接触密码', async () =>
   assert.ok(notice.textContent?.includes('已停用'));
 
   await user.click(screen.getByTestId('user-reset-usr-001'));
+  assert.ok(screen.getByTestId('confirm-dialog').textContent?.includes('不是登录密码'));
+  assert.ok(screen.getByTestId('confirm-dialog').textContent?.includes('原密码将失效'));
   await user.click(within(screen.getByTestId('confirm-dialog')).getByText('触发重置'));
   assert.deepEqual(calls.reset, ['usr-001']);
   notice = await screen.findByTestId('action-notice');
   assert.ok(notice.textContent?.includes('不接触密码'));
+  assert.ok(notice.textContent?.includes('重置验证码'));
+  assert.ok(notice.textContent?.includes('已有重置验证码'));
+  assert.ok(!notice.textContent?.includes('临时凭证'));
 });
 
 test('自我提权/越权：403 经 ErrorNotice 正确呈现', async () => {

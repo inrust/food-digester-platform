@@ -4,7 +4,7 @@
  * 同步语义（AUTH-01 运行时事实源）：
  * - 角色 ↔ User Pool Groups（`cognito:groups`）；
  * - Customer scope ↔ `custom:customer_id`（平台角色用户恒为 null）；
- * - 邀请/密码重置的临时凭证由 Cognito 生成并直接发送给用户——本端口与本 API
+ * - 邀请的临时密码、密码重置的验证码由 Cognito 生成并直接发送给用户——本端口与本 API
  *   均不接收、不返回管理员指定的永久密码或任何凭证材料；
  * - 部署层实现：AdminCreateUser（邀请）/ AdminAddUserToGroup + AdminRemoveUserFromGroup
  *   （角色）/ AdminUpdateUserAttributes（scope）/ AdminDisableUser（停用）/
@@ -31,6 +31,6 @@ export interface CognitoAdminPort {
   readonly deleteUser: (input: { readonly cognitoSub: string }) => Promise<void>;
   /** 停用落库失败的确定性补偿：恢复用户登录能力。 */
   readonly enableUser: (input: { readonly cognitoSub: string }) => Promise<void>;
-  /** 触发受控密码重置（Cognito 生成临时凭证并发送；无返回值材料）。 */
+  /** 触发受控密码重置（Cognito 发送重置验证码；用户须 ConfirmForgotPassword 设置新密码）。 */
   readonly triggerPasswordReset: (input: { readonly cognitoSub: string }) => Promise<void>;
 }

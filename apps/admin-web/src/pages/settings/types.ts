@@ -20,7 +20,7 @@ export interface UserView {
   readonly updatedAt: string;
 }
 
-/** 密码重置结果（不含密码 Hash 或现有密码；临时凭证由 Cognito 直接发送给用户）。 */
+/** 密码重置结果（不含密码材料；重置验证码由 Cognito 直接发送给用户）。 */
 export interface PasswordResetResult {
   readonly userId: string;
   readonly status: 'RESET_TRIGGERED';

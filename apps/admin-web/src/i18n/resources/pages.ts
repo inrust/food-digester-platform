@@ -283,7 +283,8 @@ export const PAGE_ZH_CN: Readonly<Record<string, string>> = {
   'page.504a12fd9000': '：碳减排为带计算版本的估算 CO2e，不构成任何认证结论。',
   'page.504bbdd261f1': '变更前值（已脱敏）',
   'page.5078424f7e0e': '告警',
-  'page.507c8bd1e8d6': '）；临时凭证由 Cognito 直接发送给用户，本页面不接触密码',
+  'page.507c8bd1e8d6':
+    '）；重置验证码由 Cognito 经邮件发送。请用户在登录页点击“已有重置验证码”，设置新密码后登录；本页面不接触密码',
   'page.50e2bd94f3f9': '（最终全量须显式审批）',
   'page.51991a5d111a': '成功',
   'page.51bc54c99631': '目标设备型号 model',
@@ -555,7 +556,8 @@ export const PAGE_ZH_CN: Readonly<Record<string, string>> = {
   'page.a9870f07ca2d': '命令（CT-04 白名单）',
   'page.aaab19f0f7c0': '当前值 / 阈值',
   'page.aabe043f2bda': '角色分配：',
-  'page.ab5cfb10b2d5': '触发后 Cognito 生成并发送临时凭证给用户；本操作不读取或显示密码。',
+  'page.ab5cfb10b2d5':
+    '触发后原密码将失效，Cognito 经邮件发送重置验证码（不是登录密码）。请用户在登录页点击“已有重置验证码”，输入验证码并设置新密码。本操作不读取或显示密码。',
   'page.ac3cc79f9199': '授权状态',
   'page.ac7d92446ab6': '最新已发布',
   'page.ac8962435f91': '新增设备请求',
@@ -1450,7 +1452,7 @@ export const PAGE_EN: Readonly<Record<string, string>> = {
   'page.504bbdd261f1': 'Value before change (anonymized)',
   'page.5078424f7e0e': 'Alert',
   'page.507c8bd1e8d6':
-    '); temporary credentials are sent directly to the user by Cognito; this page does not handle passwords',
+    '); Cognito sends a reset code by email. Ask the user to select “Already have a reset code” on the sign-in page and set a new password before signing in; this page does not handle passwords',
   'page.50e2bd94f3f9': '(Final full rollout requires explicit approval)',
   'page.51991a5d111a': 'Success',
   'page.51bc54c99631': 'Target device model model',
@@ -1735,7 +1737,7 @@ export const PAGE_EN: Readonly<Record<string, string>> = {
   'page.aaab19f0f7c0': 'Current value / Threshold',
   'page.aabe043f2bda': 'Role assignment:',
   'page.ab5cfb10b2d5':
-    'Upon triggering, Cognito generates and sends temporary credentials to the user; this operation does not read or display the password.',
+    'This invalidates the current password. Cognito emails a reset code, not a sign-in password. Ask the user to select “Already have a reset code” on the sign-in page, enter the code and set a new password. This operation does not read or display passwords.',
   'page.ac3cc79f9199': 'Authorization status',
   'page.ac7d92446ab6': 'Latest released',
   'page.ac8962435f91': 'New device request',
