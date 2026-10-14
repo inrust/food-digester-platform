@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash, randomBytes } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import * as iotSdk from '@aws-sdk/client-iot';
@@ -9,8 +9,10 @@ import { assertBusinessContext } from './qa09-business-target.mjs';
 import { runFixture } from './qa09-ten-device-bridge.mjs';
 import { assertOwnCloudDevice } from './qa09-ten-device-db.mjs';
 import { cleanupOwnedDomain } from './qa09-owned-domain-cleanup.mjs';
+import { callOwnS3Cli } from './qa09-own-s3-cli.mjs';
 const [parentFile, output] = process.argv.slice(2);
 if (!parentFile || !output) throw Error('PARENT_AND_OUTPUT_REQUIRED');
+if (existsSync(output)) throw Error('FRESH_RECOVERY_OUTPUT_REQUIRED');
 const bytes = readFileSync(parentFile),
   parent = JSON.parse(bytes);
 assertBusinessContext(parent);
@@ -27,6 +29,15 @@ const baseline = seed.result.originalFingerprints,
   prefix = parent.prefix,
   devices = parent.devices,
   customers = parent.customers;
+const rotationOnly = parent.rotationOnly === true;
+if (
+  rotationOnly &&
+  (parent.scope !== 'ONE_REAL_CERTIFICATE_ROTATION_WITH_TEN_INVENTORY_LEDGER_NOT_TEN_DEVICE_RETEST' ||
+    parent.interruption?.exitCode !== 13 ||
+    !parent.rotation?.newCertificateId ||
+    parent.rotation.oldIotStatus !== 'INACTIVE')
+)
+  throw Error('EXACT_STOPPED_SINGLE_ROTATION_REQUIRED');
 const authPrefix = 'qa09-' + randomBytes(8).toString('hex'),
   username = authPrefix + '-platformsuperadmin@example.invalid',
   pool = 'ap-southeast-1_hZMX8LpFo';
@@ -49,6 +60,8 @@ const r = {
   sourceHashes: {},
   credentialsExported: false,
   fullQa09Accepted: false,
+  rotationOnly,
+  sourceCommit: parent.sourceCommit,
 };
 r.sources = [];
 for (const path of [
@@ -131,7 +144,11 @@ try {
   )
     throw Error('WRONG_AWS_IDENTITY');
   const current = await db('observe');
-  check('exact-ten-records-and-certificates', current.devices.length === 10 && current.certificates.length === 10);
+  check(
+    'exact-ten-records-and-certificates',
+    current.devices.length === 10 && current.certificates.length === (rotationOnly ? 2 : 10),
+  );
+  const detachedPolicies = new Set();
   for (const cert of current.certificates) {
     assertOwnCloudDevice(cert.device_id, prefix);
     const principal = `arn:aws:iot:ap-southeast-1:065986019555:cert/${cert.id}`;
@@ -144,12 +161,13 @@ try {
     for (const p of policies.policies ?? []) {
       if (p.policyName !== 'fdp-device-' + cert.device_id) throw Error('POLICY_SCOPE_DRIFT');
       await call(iot, iotSdk.DetachPolicyCommand, { policyName: p.policyName, target: principal });
-      await call(iot, iotSdk.DeletePolicyCommand, { policyName: p.policyName });
+      detachedPolicies.add(p.policyName);
     }
     await call(iot, iotSdk.DeleteCertificateCommand, { certificateId: cert.id });
     r.cleanup.push({ type: 'iot-certificate', id: cert.id, result: 'PASS' });
     save();
   }
+  for (const policyName of detachedPolicies) await call(iot, iotSdk.DeletePolicyCommand, { policyName });
   for (const id of devices) {
     await call(iot, iotSdk.DeleteThingCommand, { thingName: id });
     r.cleanup.push({ type: 'iot-thing', id, result: 'PASS' });
@@ -162,6 +180,56 @@ try {
   );
   r.cleanup.push({ type: 'database-fixtures', count: 10, result: 'PASS' });
   save();
+  if (rotationOnly) {
+    if (parent.published.some((p) => p.type !== 'heartbeat' || p.deviceId !== devices[0]))
+      throw Error('EXACT_ROTATION_HEARTBEATS_ONLY');
+    let deleted = 0;
+    for (const c of customers) {
+      const input = { Bucket: 'fdp-test-raw-065986019555', Prefix: `raw/topic_type=heartbeat/customer_id=${c.id}/` };
+      const page = callOwnS3Cli(
+        'list-object-versions',
+        input,
+        customers.map((c) => c.id),
+      );
+      if (page.IsTruncated) throw Error('ROTATION_ARCHIVE_PAGE_TRUNCATED');
+      const objects = [...(page.Versions ?? []), ...(page.DeleteMarkers ?? [])].map((v) => ({
+        Key: v.Key,
+        VersionId: v.VersionId,
+      }));
+      if (objects.length) {
+        const result = callOwnS3Cli(
+          'delete-objects',
+          { Bucket: input.Bucket, Delete: { Objects: objects } },
+          customers.map((c) => c.id),
+        );
+        if (result.Errors?.length) throw Error('ROTATION_ARCHIVE_DELETE_FAILED');
+        deleted += objects.length;
+      }
+      const after = callOwnS3Cli(
+        'list-object-versions',
+        input,
+        customers.map((c) => c.id),
+      );
+      if (after.IsTruncated || after.Versions?.length || after.DeleteMarkers?.length)
+        throw Error('ROTATION_ARCHIVE_REMAINS');
+    }
+    r.cleanup.push({ type: 'archive-batch-owned-prefix', count: deleted, result: 'PASS' });
+    save();
+    const originalUsername = prefix + '-platformsuperadmin@example.invalid';
+    if (parent.identity?.username !== originalUsername) throw Error('EXACT_ORIGINAL_IDENTITY_REQUIRED');
+    await call(cognito, cognitoSdk.AdminUserGlobalSignOutCommand, { UserPoolId: pool, Username: originalUsername });
+    await call(cognito, cognitoSdk.AdminDeleteUserCommand, { UserPoolId: pool, Username: originalUsername });
+    let absent = false;
+    try {
+      await call(cognito, cognitoSdk.AdminGetUserCommand, { UserPoolId: pool, Username: originalUsername });
+    } catch (e) {
+      absent = e.name === 'UserNotFoundException';
+    }
+    check('original-identity-absent', absent);
+    r.originalRootDeleted = true;
+    r.cleanup.push({ type: 'original-identity', username: originalUsername, result: 'PASS' });
+    save();
+  }
   const temporary = `A!z9${randomBytes(24).toString('base64url')}`,
     password = `A!z9${randomBytes(24).toString('base64url')}`;
   await call(cognito, cognitoSdk.AdminCreateUserCommand, {

@@ -13,8 +13,35 @@ export async function collectReliabilityFinal(parentPath, output, recoveryPath) 
   if (readerCleanupOnly) recoveryPath = undefined;
   if (existsSync(output)) throw Error('FRESH_FINAL_READ_REQUIRED');
   const parent = JSON.parse(readFileSync(parentPath));
+  let rotationRecovery;
+  if (parent.rotationRecoveryReceipt) {
+    rotationRecovery = JSON.parse(readFileSync(parent.rotationRecoveryReceipt.path));
+    const interrupted = JSON.parse(readFileSync(rotationRecovery.parentReceipt));
+    if (
+      parent.rotationOnly !== true ||
+      sha256(readFileSync(parent.rotationRecoveryReceipt.path)) !== parent.rotationRecoveryReceipt.sha256 ||
+      sha256(readFileSync(rotationRecovery.parentReceipt)) !== rotationRecovery.parentReceiptSha256 ||
+      interrupted.interruption?.exitCode !== 13 ||
+      interrupted.interruption.processStoppedConfirmed !== true ||
+      rotationRecovery.gate !== 'PASS' ||
+      rotationRecovery.originalRootDeleted !== true ||
+      rotationRecovery.prefix !== parent.prefix ||
+      rotationRecovery.sourceCommit !== parent.sourceCommit ||
+      JSON.stringify(interrupted.rotation) !== JSON.stringify(parent.rotation) ||
+      JSON.stringify(rotationRecovery.cleanup) !== JSON.stringify(parent.cleanup) ||
+      rotationRecovery.sources.some((s) => sha256(Buffer.from(s.sourceBase64, 'base64')) !== s.sha256)
+    )
+      throw Error('BOUND_STOPPED_ROTATION_RECOVERY_REQUIRED');
+  }
   const recovery = recoveryPath ? verifyA5RecoveryReceipt(parentPath, recoveryPath) : null;
   const ledger = recovery ? JSON.parse(readFileSync(recovery.resourceReceipt)) : parent;
+  const rotationOnly = parent.rotationOnly === true;
+  if (
+    rotationOnly &&
+    (parent.scope !== 'ONE_REAL_CERTIFICATE_ROTATION_WITH_TEN_INVENTORY_LEDGER_NOT_TEN_DEVICE_RETEST' || recovery)
+  )
+    throw Error('EXACT_SINGLE_ROTATION_SCOPE_REQUIRED');
+  const expectedCertificateCount = rotationOnly ? (parent.rotation?.newCertificateId ? 2 : 1) : 10;
   if (
     !/^qa09-[a-f0-9]{16}$/.test(parent.prefix) ||
     !parent.finishedAt ||
@@ -29,14 +56,17 @@ export async function collectReliabilityFinal(parentPath, output, recoveryPath) 
     !mainSource ||
     sha256(Buffer.from(mainSource.sourceBase64, 'base64')) !== parent.executorSha256 ||
     mainSource.sha256 !== parent.executorSha256 ||
-    ledger.cleanup.filter((c) => c.type === 'iot-certificate' && c.result === 'PASS').length !== 10 ||
+    ledger.cleanup.filter((c) => c.type === 'iot-certificate' && c.result === 'PASS').length !==
+      expectedCertificateCount ||
     !ledger.cleanup.some((c) => c.type === 'database-fixtures' && c.count === 10 && c.result === 'PASS') ||
     ledger.cleanup.filter((c) => c.type === 'customer' && c.result === 'PASS').length !== 2 ||
     !ledger.cleanup.some((c) => c.type === 'identity' && c.result === 'PASS') ||
     (recovery
       ? ledger.cleanup.filter((c) => c.type === 'iot-thing' && c.result === 'PASS').length !== 10
-      : parent.cleanupOperations.filter((o) => o.operation === 'aws:DeleteThingCommand' && o.result === 'PASS')
-          .length !== 10)
+      : !(rotationOnly ? [1, 10] : [10]).includes(
+          parent.cleanupOperations.filter((o) => o.operation === 'aws:DeleteThingCommand' && o.result === 'PASS')
+            .length,
+        ))
   )
     throw Error('BOUND_PARENT_RESOURCE_CLEANUP_REQUIRED');
   const first = JSON.parse(readFileSync(parent.databaseBuilds.find((b) => b.action === 'observe').receipt));
@@ -100,9 +130,15 @@ export async function collectReliabilityFinal(parentPath, output, recoveryPath) 
     } catch (error) {
       if (
         allowOwnReaderAbsent &&
-        args[0] === 'lambda' &&
-        args[1] === 'get-function-configuration' &&
-        /^fdp-test-qa09-archive-[a-f0-9]{16}$/.test(args[3]) &&
+        ((args[0] === 'lambda' &&
+          args[1] === 'get-function-configuration' &&
+          /^fdp-test-qa09-archive-[a-f0-9]{16}$/.test(args[3])) ||
+          (rotationOnly &&
+            args[0] === 'iot' &&
+            ((args[1] === 'describe-certificate' &&
+              parent.cleanup.some((c) => c.type === 'iot-certificate' && c.id === args[3])) ||
+              (args[1] === 'describe-thing' && parent.devices.includes(args[3])) ||
+              (args[1] === 'get-policy' && args[3] === 'fdp-device-' + parent.devices[0])))) &&
         error.stderr?.includes('ResourceNotFoundException')
       ) {
         row.result = 'PASS';
@@ -127,6 +163,22 @@ export async function collectReliabilityFinal(parentPath, output, recoveryPath) 
     r.databaseStart = 'COMPLETED';
     r.databaseSha256 = sha256(readFileSync(dbPath));
     save();
+    if (rotationOnly) {
+      r.iotAbsence = [];
+      const operations = [
+        ...parent.cleanup
+          .filter((c) => c.type === 'iot-certificate')
+          .map((c) => ['iot', 'describe-certificate', '--certificate-id', c.id]),
+        ...parent.devices.map((id) => ['iot', 'describe-thing', '--thing-name', id]),
+        ['iot', 'get-policy', '--policy-name', 'fdp-device-' + parent.devices[0]],
+      ];
+      for (const args of operations) {
+        const absent = await read(args, true);
+        if (absent?.absent !== true) throw Error('OWN_ROTATION_IOT_RESOURCE_REMAINS');
+        r.iotAbsence.push({ operation: args[1], id: args[3], absent: true });
+        save();
+      }
+    }
     if (parent.archiveReaderReceipt) {
       const reader = JSON.parse(readFileSync(parent.archiveReaderReceipt));
       if (
@@ -180,6 +232,31 @@ export async function collectReliabilityFinal(parentPath, output, recoveryPath) 
     ]);
     r.identities.push({ username, count: users.count });
     if (users.count !== 0 || users.token) throw Error('OWN_IDENTITY_NOT_EMPTY');
+    if (rotationRecovery) {
+      const username = rotationRecovery.recoveryIdentity.username;
+      if (!/^qa09-[a-f0-9]{16}-platformsuperadmin@example\.invalid$/.test(username))
+        throw Error('EXACT_RECOVERY_IDENTITY_REQUIRED');
+      const users = await read([
+        'cognito-idp',
+        'list-users',
+        '--user-pool-id',
+        'ap-southeast-1_hZMX8LpFo',
+        '--filter',
+        `email = "${username}"`,
+        '--limit',
+        '1',
+        '--no-paginate',
+        '--query',
+        '{count:length(Users),token:PaginationToken}',
+      ]);
+      r.identities.push({ username, count: users.count });
+      if (users.count !== 0 || users.token) throw Error('ROTATION_RECOVERY_IDENTITY_REMAINS');
+      r.rotationRecovery = {
+        gate: 'PASS_BOUND_CLEANUP_ONLY_ORIGINAL_EXECUTION_NOT_ACCEPTED',
+        sha256: parent.rotationRecoveryReceipt.sha256,
+      };
+      save();
+    }
     for (const c of parent.customers)
       for (const type of [
         'heartbeat',

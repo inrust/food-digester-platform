@@ -106,11 +106,13 @@ export async function publishKnown(client, topic, raw, deadlineMs = 10000, timer
 export function validateEntityMode(options, extension) {
   if (
     !options ||
-    Object.keys(options).some((k) => !['reviewOnly', 'remainingOnly'].includes(k)) ||
+    Object.keys(options).some((k) => !['reviewOnly', 'remainingOnly', 'rotationOnly'].includes(k)) ||
     typeof options.reviewOnly !== 'boolean' ||
     (options.reviewOnly && typeof extension?.beforeApproval !== 'function') ||
     (options.remainingOnly !== undefined && typeof options.remainingOnly !== 'boolean') ||
-    (options.remainingOnly && (options.reviewOnly || extension?.remainingOnly !== true))
+    (options.remainingOnly && (options.reviewOnly || extension?.remainingOnly !== true)) ||
+    (options.rotationOnly !== undefined && typeof options.rotationOnly !== 'boolean') ||
+    (options.rotationOnly && (options.reviewOnly || options.remainingOnly || extension?.rotationOnly !== true))
   )
     throw Error('INVALID_ENTITY_REVIEW_MODE');
 }
@@ -169,12 +171,15 @@ export async function main(output, versionPath, extension, options = { reviewOnl
     pool = 'ap-southeast-1_hZMX8LpFo';
   const receipt = {
     task: 'QA-09',
-    scope: options.remainingOnly
-      ? 'OWN_CERTIFICATE_BOOTSTRAP_AND_A5_REMAINDER_ONLY'
-      : options.reviewOnly
-        ? 'PENDING_CSR_ENTITY_REVIEW_ONLY'
-        : 'TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE',
+    scope: options.rotationOnly
+      ? 'ONE_REAL_CERTIFICATE_ROTATION_WITH_TEN_INVENTORY_LEDGER_NOT_TEN_DEVICE_RETEST'
+      : options.remainingOnly
+        ? 'OWN_CERTIFICATE_BOOTSTRAP_AND_A5_REMAINDER_ONLY'
+        : options.reviewOnly
+          ? 'PENDING_CSR_ENTITY_REVIEW_ONLY'
+          : 'TEN_DEVICE_CSR_MTLS_HEARTBEAT_TELEMETRY_ARCHIVE',
     remainingOnly: options.remainingOnly === true,
+    rotationOnly: options.rotationOnly === true,
     reviewOnly: options.reviewOnly,
     mqttPublishDeadlineMs: extension?.mqttPublishDeadlineMs ?? 10000,
     mode: 'REAL_EXISTING_TEST_ENVIRONMENT',
@@ -368,7 +373,7 @@ export async function main(output, versionPath, extension, options = { reviewOnl
       JSON.stringify(baseline) === JSON.stringify(seededResult.originalFingerprints),
     );
     save();
-    for (const id of devices) {
+    for (const id of options.rotationOnly ? devices.slice(0, 1) : devices) {
       assertOwnCloudDevice(id, prefix);
       const key = createCsr(id);
       held.set(id, key);
@@ -392,7 +397,7 @@ export async function main(output, versionPath, extension, options = { reviewOnl
       key.requestId = r.requestId;
       receipt.checks.at(-1).businessRequestId = r.requestId;
       save();
-      if (id === devices[0]) {
+      if (id === devices[0] && !options.rotationOnly) {
         await api(
           id + ':same-csr-idempotent',
           'POST',
@@ -478,7 +483,11 @@ export async function main(output, versionPath, extension, options = { reviewOnl
       receipt.gate = 'PASS';
       return receipt;
     }
-    console.log('Ten CSR requests approved; waiting for real scheduled provisioning.');
+    console.log(
+      options.rotationOnly
+        ? 'One CSR approved; waiting for scheduled provisioning.'
+        : 'Ten CSR requests approved; waiting for real scheduled provisioning.',
+    );
     const end = Date.now() + 300000;
     while ([...held.values()].some((k) => !k.cert)) {
       for (const [id, k] of held) {
@@ -549,8 +558,10 @@ export async function main(output, versionPath, extension, options = { reviewOnl
       }),
     );
     check(
-      'ten-concurrent-independent-mqtt-sessions',
-      connected.every((r) => r.status === 'fulfilled') && clients.length === 10 && clients.every((c) => c.connected),
+      options.rotationOnly ? 'one-own-mqtt-bootstrap' : 'ten-concurrent-independent-mqtt-sessions',
+      connected.every((r) => r.status === 'fulfilled') &&
+        clients.length === (options.rotationOnly ? 1 : 10) &&
+        clients.every((c) => c.connected),
       {
         count: clients.length,
         keyFingerprints: [...held.values()].map((k) =>
@@ -558,8 +569,38 @@ export async function main(output, versionPath, extension, options = { reviewOnl
         ),
       },
     );
-    console.log('Ten real MQTT sessions and heartbeats published; observing RDS.');
+    console.log(
+      options.rotationOnly
+        ? 'One MQTT heartbeat published; observing RDS.'
+        : 'Ten real MQTT sessions and heartbeats published; observing RDS.',
+    );
     observation = await db('observe');
+    if (options.rotationOnly) {
+      check(
+        'one-own-onboarded-nine-unused-inventory-rows',
+        observation.devices.length === 10 &&
+          observation.devices[0].id === devices[0] &&
+          observation.devices[0].lifecycle_status === 'Onboarded' &&
+          observation.devices.slice(1).every((d) => d.lifecycle_status === 'PendingOnboarding') &&
+          observation.certificates.length === 1 &&
+          observation.certificates[0].fingerprint === held.get(devices[0]).fingerprint,
+      );
+      await extension({
+        receipt,
+        held,
+        clients,
+        db,
+        check,
+        save,
+        api,
+        refreshIdentity,
+        credentials,
+        browserLogin,
+        observation,
+      });
+      receipt.gate = 'PASS';
+      return receipt;
+    }
     check(
       'first-heartbeat-completes-ten-onboardings',
       observation.devices.length === 10 && observation.devices.every((d) => d.lifecycle_status === 'Onboarded'),
@@ -792,6 +833,7 @@ export async function main(output, versionPath, extension, options = { reviewOnl
       if (seeded) {
         try {
           const current = await db('observe');
+          const detachedPolicies = new Set();
           for (const cert of current.certificates) {
             assertOwnCloudDevice(cert.device_id, prefix);
             const arn = `arn:aws:iot:${region}:065986019555:cert/${cert.id}`;
@@ -804,13 +846,16 @@ export async function main(output, versionPath, extension, options = { reviewOnl
             for (const policy of policies.policies ?? []) {
               if (policy.policyName !== `fdp-device-${cert.device_id}`) demand(false, 'POLICY_SCOPE_DRIFT');
               await call(iot, iotSdk.DetachPolicyCommand, { policyName: policy.policyName, target: arn });
-              await call(iot, iotSdk.DeletePolicyCommand, { policyName: policy.policyName });
+              detachedPolicies.add(policy.policyName);
             }
             await call(iot, iotSdk.DeleteCertificateCommand, { certificateId: cert.id });
             receipt.cleanup.push({ type: 'iot-certificate', id: cert.id, result: 'PASS' });
             save();
           }
-          for (const id of devices) {
+          // A rotation shares the same device policy across old/new certificates.
+          // Delete it only after every owned principal has been detached.
+          for (const policyName of detachedPolicies) await call(iot, iotSdk.DeletePolicyCommand, { policyName });
+          for (const id of options.rotationOnly ? devices.slice(0, 1) : devices) {
             try {
               await call(iot, iotSdk.DeleteThingCommand, { thingName: id });
             } catch (e) {

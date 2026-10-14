@@ -935,7 +935,7 @@ export async function executeFixture(client, plan) {
       throw Error('DEVICE_SCOPE_DRIFT');
     const certificates = (
       await client.query(
-        'SELECT id,device_id,status,fingerprint,mqtt_verified_at,rest_verified_at,claimed_at,package_ciphertext IS NULL AS package_destroyed FROM device_certificates WHERE device_id=ANY($1::text[]) ORDER BY device_id,id',
+        'SELECT id,device_id,status,fingerprint,mqtt_verified_at,rest_verified_at,claimed_at,rotated_from_id,rotation_confirmed_at,revoked_at,iot_deactivation_pending,package_ciphertext IS NULL AS package_destroyed FROM device_certificates WHERE device_id=ANY($1::text[]) ORDER BY device_id,id',
         [ids],
       )
     ).rows;

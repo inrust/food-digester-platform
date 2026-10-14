@@ -1,0 +1,2085 @@
+{
+  "task": "QA09-A8",
+  "scope": "MINIMUM_WITHOUT_NEW_PERMISSION_CHANNELS",
+  "applicationCommit": "50cb1125d4d6e064d28b3113cf39cb511d5fa8f2",
+  "gate": "PARTIAL_MINIMUM_QA09_NOT_ACCEPTED",
+  "minimumPhaseAccepted": false,
+  "fullQa09Accepted": false,
+  "productionReady": false,
+  "outstanding": [
+    "security.signedClaimsAndIsolation",
+    "business.operationsRolesPersistence",
+    "notifications.inviteAndPasswordApi",
+    "settings.authorizedWriteAndRestore",
+    "prototype.117SemanticItems",
+    "browser.targetJourneys",
+    "cleanup.ownedResourcesAndUnknownWrites"
+  ],
+  "required": [
+    {
+      "id": "device.independentLicenseVerification",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "device.naturalActive",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "device.suspendReactivateRetire",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "license.lifecycle",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "command.deliveryAndResult",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "ota.trustedFirmwareAndCampaign",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "media.realUploadAndIsolation",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "certificate.completeRotation",
+      "status": "PASS",
+      "proof": "REAL_DUAL_CHANNEL_ROTATION_AND_REVOKED_OLD_CERTIFICATE_DENIAL"
+    },
+    {
+      "id": "replay.operatorNonempty",
+      "status": "PASS",
+      "proof": "BOUND_PRIOR_FIVE_MINIMUM_A5_AGGREGATE",
+      "scope": "MINIMUM_A5_ASSOCIATIONS_AND_DIRECT_HANDLER_PARTIAL_BATCH"
+    },
+    {
+      "id": "replay.uniqueProducerAssociation",
+      "status": "PASS",
+      "proof": "BOUND_PRIOR_FIVE_MINIMUM_A5_AGGREGATE",
+      "scope": "MINIMUM_A5_ASSOCIATIONS_AND_DIRECT_HANDLER_PARTIAL_BATCH"
+    },
+    {
+      "id": "reliability.sameRunNonemptyDedup",
+      "status": "PASS",
+      "proof": "BOUND_PRIOR_FIVE_MINIMUM_A5_AGGREGATE",
+      "scope": "MINIMUM_A5_ASSOCIATIONS_AND_DIRECT_HANDLER_PARTIAL_BATCH"
+    },
+    {
+      "id": "reliability.archivePartialFailure",
+      "status": "PASS",
+      "proof": "BOUND_PRIOR_FIVE_MINIMUM_A5_AGGREGATE",
+      "scope": "MINIMUM_A5_ASSOCIATIONS_AND_DIRECT_HANDLER_PARTIAL_BATCH"
+    },
+    {
+      "id": "reliability.queueAndScheduleAssociation",
+      "status": "PASS",
+      "proof": "BOUND_PRIOR_FIVE_MINIMUM_A5_AGGREGATE",
+      "scope": "MINIMUM_A5_ASSOCIATIONS_AND_DIRECT_HANDLER_PARTIAL_BATCH"
+    },
+    {
+      "id": "users.signedSessionAndState",
+      "status": "PASS",
+      "proof": "REUSED_EXACT_RELEVANT_SOURCE_CONFIG_FIVE_ROLE_STATE_AUDIT_AND_CLEANUP",
+      "sourceCommit": "beaccece84ec865020aefc537af296228ec8b933"
+    },
+    {
+      "id": "security.signedClaimsAndIsolation",
+      "status": "NOT_PROVEN_IN_CURRENT_MINIMUM_SCOPE",
+      "criterion": "Trusted signatures with invalid exp/nbf/audience, JWT/role/customer/cert/Topic boundaries and zero credential leaks"
+    },
+    {
+      "id": "business.operationsRolesPersistence",
+      "status": "NOT_PROVEN_IN_CURRENT_MINIMUM_SCOPE",
+      "criterion": "Applicable operations/authorization branches with persistence and audit; HTTP coverage is insufficient"
+    },
+    {
+      "id": "notifications.inviteAndPasswordApi",
+      "status": "NOT_PROVEN_IN_CURRENT_MINIMUM_SCOPE",
+      "criterion": "No implicit waiver of invite/reset API, compensation, permissions or signed-user semantics"
+    },
+    {
+      "id": "settings.authorizedWriteAndRestore",
+      "status": "NOT_PROVEN_IN_CURRENT_MINIMUM_SCOPE",
+      "criterion": "Authorized real update/version race/restoration; no implicit waiver"
+    },
+    {
+      "id": "prototype.117SemanticItems",
+      "status": "NOT_PROVEN_IN_CURRENT_MINIMUM_SCOPE",
+      "criterion": "All 117 mapped individually; revalidate only incompatible/missing behavior"
+    },
+    {
+      "id": "browser.targetJourneys",
+      "status": "NOT_PROVEN_IN_CURRENT_MINIMUM_SCOPE",
+      "criterion": "Real Cognito/API, required roles/workflows/locales/viewports, persisted results and no interception"
+    },
+    {
+      "id": "data.naturalEsgConsistency",
+      "status": "PASS",
+      "proof": "RETAINED_ORIGINAL_SCOPED_DATA_RECHECK_NOT_FRESH_TARGET_REASSESSMENT",
+      "sourceCommit": "ee8f0713cdc5785dbf45e354f1f63723d77e3716"
+    },
+    {
+      "id": "data.exportLeaseRecovery",
+      "status": "PASS",
+      "proof": "RETAINED_ORIGINAL_SCOPED_DATA_RECHECK_NOT_FRESH_TARGET_REASSESSMENT",
+      "sourceCommit": "ee8f0713cdc5785dbf45e354f1f63723d77e3716"
+    },
+    {
+      "id": "cleanup.ownedResourcesAndUnknownWrites",
+      "status": "NOT_PROVEN_IN_CURRENT_MINIMUM_SCOPE",
+      "criterion": "Created-ID ledger, independent empty sets, no outside drift, revoked identities/restored config, unknown writes contained"
+    },
+    {
+      "id": "actualArchivePoisonRetryDlq",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-QUEUE-01",
+      "releaseRequired": true
+    }
+  ],
+  "rotationAccepted": true,
+  "tabletSupplementAccepted": true,
+  "userEvidence": {
+    "gate": "PASS_REUSED_RELEVANT_SOURCE_AND_CONFIG_SCOPED_USER_STATE",
+    "sourceCommit": "beaccece84ec865020aefc537af296228ec8b933",
+    "compatibility": [
+      {
+        "path": "apps/cloud-api",
+        "before": "b99fec6f6adcb967fdb9a4d1fd2925fcdb19c4cb",
+        "after": "b99fec6f6adcb967fdb9a4d1fd2925fcdb19c4cb",
+        "equal": true,
+        "historyDepthOnly": false
+      },
+      {
+        "path": "apps/admin-web",
+        "before": "f91c495de9d2b998d5d45ca6daec0b69bb42e379",
+        "after": "f91c495de9d2b998d5d45ca6daec0b69bb42e379",
+        "equal": true,
+        "historyDepthOnly": false
+      },
+      {
+        "path": "packages/auth",
+        "before": "8703abb55ff042e439af318c4c67ffb39fc6c8a2",
+        "after": "8703abb55ff042e439af318c4c67ffb39fc6c8a2",
+        "equal": true,
+        "historyDepthOnly": false
+      },
+      {
+        "path": "packages/database",
+        "before": "a24cf2784989a249f8ead7a2a8ae8e0396e8daeb",
+        "after": "a24cf2784989a249f8ead7a2a8ae8e0396e8daeb",
+        "equal": true,
+        "historyDepthOnly": false
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "before": "cc4fe15e2189802f1f819853c0f40a5ef71e8c19",
+        "after": "cc4fe15e2189802f1f819853c0f40a5ef71e8c19",
+        "equal": true,
+        "historyDepthOnly": false
+      },
+      {
+        "path": "package.json",
+        "before": "d263a41529764ca29cc81b28f44dac6bed5a0569",
+        "after": "d263a41529764ca29cc81b28f44dac6bed5a0569",
+        "equal": true,
+        "historyDepthOnly": false
+      },
+      {
+        "path": "pnpm-workspace.yaml",
+        "before": "72d188bcf671a82fbfe766bcf437d663b13bb40a",
+        "after": "72d188bcf671a82fbfe766bcf437d663b13bb40a",
+        "equal": true,
+        "historyDepthOnly": false
+      },
+      {
+        "path": ".nvmrc",
+        "before": "248216ad5b80a75cb6913e4f54fde1340b845b4c",
+        "after": "248216ad5b80a75cb6913e4f54fde1340b845b4c",
+        "equal": true,
+        "historyDepthOnly": false
+      },
+      {
+        "path": "infra",
+        "before": "e30dfb82ed90dfee4a0e090e2025932157c0bdd0",
+        "after": "e30dfb82ed90dfee4a0e090e2025932157c0bdd0",
+        "equal": true,
+        "historyDepthOnly": false
+      },
+      {
+        "path": ".github/workflows/deploy-test.yml",
+        "before": "061d8f643a8ae42c198712159edc9d7679cfaa9a",
+        "after": "27e25b37522ed83257192f92ec263333f20d9b41",
+        "equal": false,
+        "historyDepthOnly": true
+      }
+    ],
+    "runtimeArtifactBytesIdenticalClaimed": false,
+    "currentApiConfigMatches": true,
+    "repeatedFiveRole129Checks": false
+  },
+  "prototypeLedger": [
+    {
+      "id": "dashboard.field.validContracts",
+      "group": "dashboard.summary",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "dashboard.field.deviceStats",
+      "group": "dashboard.summary",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "dashboard.field.onlineRate",
+      "group": "dashboard.summary",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "dashboard.field.carbonToday",
+      "group": "dashboard.summary",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "dashboard.field.latestAlarms",
+      "group": "dashboard.collections",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "dashboard.field.deviceCards",
+      "group": "dashboard.collections",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "dashboard.button.start",
+      "group": "dashboard.commands",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "dashboard.button.stop",
+      "group": "dashboard.commands",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "dashboard.button.upgrade",
+      "group": "dashboard.upgrade",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "dashboard.button.reboot",
+      "group": "dashboard.commands",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-view.filter.region",
+      "group": "device-view.scope",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-view.filter.subregion",
+      "group": "device-view.scope",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-view.filter.device",
+      "group": "device-view.scope",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-view.button.apply",
+      "group": "device-view.scope",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-view.field.componentStates",
+      "group": "device-view.console",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-view.field.sensorReadings",
+      "group": "device-view.console",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-view.field.consumables",
+      "group": "device-view.console",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-view.field.recentAlarms",
+      "group": "device-view.console",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-view.field.esg7d",
+      "group": "device-view.console",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-view.field.mediaPreview",
+      "group": "device-view.media",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.button.agitatorForward",
+      "group": "device-operate.commands",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.button.agitatorReverse",
+      "group": "device-operate.commands",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.button.heating",
+      "group": "device-operate.commands",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.button.exhaust",
+      "group": "device-operate.commands",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.button.reboot",
+      "group": "device-operate.commands",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.button.shutdown",
+      "group": "device-operate.commands",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.button.modeSwitch",
+      "group": "device-operate.commands",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.button.factoryReset",
+      "group": "device-operate.commands",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.button.updateThreshold",
+      "group": "device-operate.configuration",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.button.saveAlias",
+      "group": "device-operate.alias",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.table.activityLog",
+      "group": "device-operate.activities",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.button.logFilter",
+      "group": "device-operate.activities",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-operate.button.logExport",
+      "group": "device-operate.activities",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-group.button.search",
+      "group": "device-group.filters",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-group.button.reset",
+      "group": "device-group.filters",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-group.column.seq",
+      "group": "device-group.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-group.column.region",
+      "group": "device-group.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-group.column.subregion",
+      "group": "device-group.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-group.column.deviceId",
+      "group": "device-group.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-group.column.alias",
+      "group": "device-group.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-group.column.contractName",
+      "group": "device-group.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-group.column.leaseTerm",
+      "group": "device-group.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-group.column.firmware",
+      "group": "device-group.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-group.field.fourAxisStatus",
+      "group": "device-group.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-group.column.actions",
+      "group": "device-group.manage",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-group.req.column.deviceId",
+      "group": "device-group.onboarding",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-group.req.column.requestDate",
+      "group": "device-group.onboarding",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-group.req.button.detail",
+      "group": "device-group.onboarding",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-group.req.button.accept",
+      "group": "device-group.onboarding",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-group.req.button.reject",
+      "group": "device-group.onboarding",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-manage.button.updateConfig",
+      "group": "device-manage.configuration",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-manage.button.viewConfig",
+      "group": "device-manage.configuration",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-manage.button.selectFirmware",
+      "group": "device-manage.ota",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-manage.button.syncUpdate",
+      "group": "device-manage.ota",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-manage.button.certDetail",
+      "group": "device-manage.certificate",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-manage.button.issueCert",
+      "group": "device-manage.certificate",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-manage.button.confirm",
+      "group": "device-manage.configuration",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-manage.button.back",
+      "group": "device-manage.back",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-consumable.button.search",
+      "group": "device-consumable.filters",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-consumable.button.reset",
+      "group": "device-consumable.filters",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-consumable.column.region",
+      "group": "device-consumable.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-consumable.column.subregion",
+      "group": "device-consumable.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-consumable.column.deviceId",
+      "group": "device-consumable.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-consumable.column.alias",
+      "group": "device-consumable.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-consumable.column.carbonFilterPct",
+      "group": "device-consumable.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-consumable.column.bioAdditivePct",
+      "group": "device-consumable.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-consumable.button.contact",
+      "group": "device-consumable.contact",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "device-consumable.req.column.requestTime",
+      "group": "device-consumable.requests",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-consumable.req.column.status",
+      "group": "device-consumable.requests",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-consumable.req.button.process",
+      "group": "device-consumable.requests",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "device-consumable.req.button.complete",
+      "group": "device-consumable.requests",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-modify.button.new",
+      "group": "contract-modify.new",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-modify.column.contractNumber",
+      "group": "contract-modify.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-modify.column.customer",
+      "group": "contract-modify.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-modify.column.deviceCount",
+      "group": "contract-modify.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-modify.column.servicePeriod",
+      "group": "contract-modify.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-modify.column.status",
+      "group": "contract-modify.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-modify.button.edit",
+      "group": "contract-modify.detail",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-modify.button.renewOrUnbind",
+      "group": "contract-modify.detail",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-modify.button.queryDevices",
+      "group": "contract-modify.detail",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-new.field.number",
+      "group": "contract-new.fields",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-new.field.name",
+      "group": "contract-new.fields",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-new.field.customer",
+      "group": "contract-new.fields",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-new.field.period",
+      "group": "contract-new.fields",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-new.field.devices",
+      "group": "contract-new.submit",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-new.button.submit",
+      "group": "contract-new.submit",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-new.button.cancel",
+      "group": "contract-new.cancel",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-detail.button.back",
+      "group": "contract-detail.back",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-detail.column.region",
+      "group": "contract-detail.devices",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-detail.column.subregion",
+      "group": "contract-detail.devices",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-detail.column.deviceId",
+      "group": "contract-detail.devices",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-detail.column.alias",
+      "group": "contract-detail.devices",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-detail.field.fourAxisStatus",
+      "group": "contract-detail.devices",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-detail.column.firmware",
+      "group": "contract-detail.devices",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "contract-detail.field.licenseSummary",
+      "group": "contract-detail.devices",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "esg-overview.toggle.period",
+      "group": "esg-overview.period",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "esg-overview.button.exportCsv",
+      "group": "esg-overview.export",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "esg-overview.column.date",
+      "group": "esg-overview.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "esg-overview.column.carbon",
+      "group": "esg-overview.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "esg-overview.column.throughput",
+      "group": "esg-overview.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "esg-overview.column.energy",
+      "group": "esg-overview.columns",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "esg-device.filter.region",
+      "group": "esg-device.scope",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "esg-device.filter.subregion",
+      "group": "esg-device.scope",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "esg-device.filter.device",
+      "group": "esg-device.scope",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "esg-device.button.apply",
+      "group": "esg-device.scope",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "esg-device.toggle.period",
+      "group": "esg-device.period",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "esg-device.button.exportCsv",
+      "group": "esg-device.export",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "esg-device.field.metrics",
+      "group": "esg-device.metrics",
+      "historicalStatus": "PASS",
+      "currentStatus": "PASS_REUSED_ROOT_READ_UI_SCOPE_SOURCE_AND_CONFIG_BOUND"
+    },
+    {
+      "id": "settings.button.addPlatformUser",
+      "group": "settings.platform",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "settings.button.resetPlatformUserPassword",
+      "group": "settings.platform",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "settings.button.deletePlatformUser",
+      "group": "settings.platform",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "PASS_REUSED_SCOPED_USER_BROWSER"
+    },
+    {
+      "id": "settings.button.addDeviceUser",
+      "group": "settings.device-users",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "settings.button.deviceUserFilter",
+      "group": "settings.device-users",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "settings.button.deviceUserFilterReset",
+      "group": "settings.device-users",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "settings.button.resetDeviceUserPassword",
+      "group": "settings.device-users",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "settings.button.deleteDeviceUser",
+      "group": "settings.device-users",
+      "historicalStatus": "PASS",
+      "currentStatus": "HISTORICAL_ONLY_REQUIRES_DOMAIN_COMPATIBILITY_AND_FORMAL_ASSEMBLY"
+    },
+    {
+      "id": "settings.modal.confirm",
+      "group": "settings.platform",
+      "historicalStatus": "NOT_RUN",
+      "currentStatus": "PASS_REUSED_SCOPED_USER_BROWSER"
+    }
+  ],
+  "readUiReuse": {
+    "scope": "UNCHANGED_ROOT_READ_CONTROLS_ONLY_NOT_MUTATING_WORKFLOWS_OR_ALL_ROLES",
+    "count": 48,
+    "compatibility": [
+      {
+        "path": "apps/admin-web/src/pages",
+        "before": "be8514d4aefbd360c47ec777eb8374baa4d3f5dd",
+        "after": "be8514d4aefbd360c47ec777eb8374baa4d3f5dd",
+        "equal": true
+      },
+      {
+        "path": "apps/admin-web/src/api",
+        "before": "1d1d1a0c583409c2072da8015a21886839ab7e69",
+        "after": "1d1d1a0c583409c2072da8015a21886839ab7e69",
+        "equal": true
+      },
+      {
+        "path": "apps/admin-web/src/router",
+        "before": "7384662f4b2c84bfe5c452d1d93ca46b55679590",
+        "after": "7384662f4b2c84bfe5c452d1d93ca46b55679590",
+        "equal": true
+      },
+      {
+        "path": "apps/admin-web/src/shell",
+        "before": "a430997e408064492f9f3f9fe67018b5198033de",
+        "after": "a430997e408064492f9f3f9fe67018b5198033de",
+        "equal": true
+      },
+      {
+        "path": "apps/admin-web/src/i18n",
+        "before": "f4b0e12bdd3c9a2fa94503349d6e48138b8ab00b",
+        "after": "f4b0e12bdd3c9a2fa94503349d6e48138b8ab00b",
+        "equal": true
+      },
+      {
+        "path": "apps/admin-web/src/auth/auth-flow.ts",
+        "before": "0423ab2e12ed203f810e4c94b539dd4cf6e916c3",
+        "after": "0423ab2e12ed203f810e4c94b539dd4cf6e916c3",
+        "equal": true
+      },
+      {
+        "path": "apps/admin-web/src/session",
+        "before": "bdd8b2eef96dcfae942bd0121ea6860176494214",
+        "after": "bdd8b2eef96dcfae942bd0121ea6860176494214",
+        "equal": true
+      },
+      {
+        "path": "packages/auth",
+        "before": "8703abb55ff042e439af318c4c67ffb39fc6c8a2",
+        "after": "8703abb55ff042e439af318c4c67ffb39fc6c8a2",
+        "equal": true
+      },
+      {
+        "path": "packages/database/prisma",
+        "before": "cf7bcddf3f1e01938e73bd60e91afee9cc70b675",
+        "after": "cf7bcddf3f1e01938e73bd60e91afee9cc70b675",
+        "equal": true
+      },
+      {
+        "path": "contracts/rest",
+        "before": "bf6f9377f0a1e8a985d6045280293bdaccd686f1",
+        "after": "bf6f9377f0a1e8a985d6045280293bdaccd686f1",
+        "equal": true
+      },
+      {
+        "path": "contracts/lifecycle",
+        "before": "a41911a072b1b244e21e520abf077820fddc604a",
+        "after": "a41911a072b1b244e21e520abf077820fddc604a",
+        "equal": true
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "before": "cc4fe15e2189802f1f819853c0f40a5ef71e8c19",
+        "after": "cc4fe15e2189802f1f819853c0f40a5ef71e8c19",
+        "equal": true
+      },
+      {
+        "path": ".nvmrc",
+        "before": "248216ad5b80a75cb6913e4f54fde1340b845b4c",
+        "after": "248216ad5b80a75cb6913e4f54fde1340b845b4c",
+        "equal": true
+      },
+      {
+        "path": "apps/cloud-api/src/admin/device",
+        "before": "751fb7b4e6fc875b448d7cbc8689182a624991b8",
+        "after": "751fb7b4e6fc875b448d7cbc8689182a624991b8",
+        "equal": true
+      },
+      {
+        "path": "apps/cloud-api/src/admin/device-console",
+        "before": "1c86e43f7b08728e8362d22402fc5f8ee45cd02f",
+        "after": "1c86e43f7b08728e8362d22402fc5f8ee45cd02f",
+        "equal": true
+      },
+      {
+        "path": "apps/cloud-api/src/admin/dashboard",
+        "before": "7a53718a0b305bb5ff75a9900869e0385a942717",
+        "after": "7a53718a0b305bb5ff75a9900869e0385a942717",
+        "equal": true
+      },
+      {
+        "path": "apps/cloud-api/src/admin/esg",
+        "before": "c04dff4b2c495fa916949bbf25c923e6fb5a76bf",
+        "after": "c04dff4b2c495fa916949bbf25c923e6fb5a76bf",
+        "equal": true
+      },
+      {
+        "path": "apps/cloud-api/src/consumable",
+        "before": "a407dd88ad6d416b2341445921f9f9ddfd9f15c5",
+        "after": "a407dd88ad6d416b2341445921f9f9ddfd9f15c5",
+        "equal": true
+      }
+    ],
+    "successfulCurrentRootLoginAndReadControl": true,
+    "candidateFlagsRemainOff": true,
+    "databasePoolAndObservationChanges": "NO_NEW_PERFORMANCE_OR_PERSISTENCE_CLAIM; ORIGINAL_READ_QUERY_AND_DTO_SCOPE_ONLY"
+  },
+  "operationRoleLedger": [
+    {
+      "operationId": "approveOnboardingRequest",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "rejectOnboardingRequest",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createCertificateRotationRequest",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createReplayJob",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createReplayJob",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createCustomer",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createCustomer",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "updateCustomer",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "updateCustomer",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "deleteCustomer",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "deleteCustomer",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "deactivateCustomer",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "deactivateCustomer",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createSite",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createSite",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "updateSite",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "updateSite",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "deleteSite",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "deleteSite",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "deactivateSite",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "deactivateSite",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "updateDeviceMetadata",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "updateDeviceMetadata",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "assignDevice",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "assignDevice",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "suspendDevice",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "suspendDevice",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "reactivateDevice",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "reactivateDevice",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "retireDevice",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "retireDevice",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "forceCompleteRetirement",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "forceCompleteRetirement",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createActivityExport",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createActivityExport",
+      "role": "Auditor",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createActivityExport",
+      "role": "CustomerAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createLicense",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createLicense",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "issueLicense",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "issueLicense",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "activateLicense",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "activateLicense",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "renewLicense",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "renewLicense",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "revokeLicense",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "revokeLicense",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "evaluateLicense",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "evaluateLicense",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createContract",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "updateContract",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "activateContract",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "renewContract",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "terminateContract",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "evaluateContract",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "bindContractDevices",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "unbindContractDevices",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createConfiguration",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createConfiguration",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createConfigurationVersion",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createConfigurationVersion",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "publishConfigurationVersion",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "publishConfigurationVersion",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createConsumableRequest",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createConsumableRequest",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "processConsumableRequest",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "processConsumableRequest",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "completeConsumableRequest",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "completeConsumableRequest",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "cancelConsumableRequest",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "cancelConsumableRequest",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createDeviceUser",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createDeviceUser",
+      "role": "CustomerAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "updateDeviceUser",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "updateDeviceUser",
+      "role": "CustomerAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "disableDeviceUser",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "disableDeviceUser",
+      "role": "CustomerAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "assignDeviceUser",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "assignDeviceUser",
+      "role": "CustomerAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "revokeDeviceUser",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "revokeDeviceUser",
+      "role": "CustomerAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "acknowledgeAlarm",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "acknowledgeAlarm",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "clearAlarm",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "clearAlarm",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createEsgExport",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createEsgExport",
+      "role": "Auditor",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createEsgExport",
+      "role": "CustomerAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createDeviceCommand",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createDeviceCommand",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createDeviceCommand",
+      "role": "CustomerAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createFirmwareUpload",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createFirmwareUpload",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "completeFirmwareUpload",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "completeFirmwareUpload",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createOtaCampaign",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "createOtaCampaign",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "expandOtaCampaignBatch",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "expandOtaCampaignBatch",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "pauseOtaCampaign",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "pauseOtaCampaign",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "resumeOtaCampaign",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "resumeOtaCampaign",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "cancelOtaCampaign",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "cancelOtaCampaign",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "retryOtaCampaignFailures",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "retryOtaCampaignFailures",
+      "role": "PlatformOperator",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "inviteUser",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "assignUserRoles",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "PASS_REUSED_USER_STATE_AUDIT_SCOPE"
+    },
+    {
+      "operationId": "setUserScope",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "PASS_REUSED_USER_STATE_AUDIT_SCOPE"
+    },
+    {
+      "operationId": "disableUser",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": true,
+      "currentPersistenceAcceptance": "PASS_REUSED_USER_STATE_AUDIT_SCOPE"
+    },
+    {
+      "operationId": "triggerUserPasswordReset",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    },
+    {
+      "operationId": "updateSetting",
+      "role": "PlatformSuperAdmin",
+      "historicalHttpSuccess": false,
+      "currentPersistenceAcceptance": "NOT_IMPLIED_BY_HTTP; REUSE_SCOPED_DOMAIN_PROOFS_OR_COMPLETE_FORMAL_ASSEMBLY"
+    }
+  ],
+  "formalDomains": [
+    {
+      "id": "iot",
+      "validator": "check-aws-iot-data-path-evidence.mjs",
+      "status": "FULL_ORIGINAL_RECEIPT_NOT_ASSEMBLED",
+      "exitCode": 1,
+      "fullOriginalGatePassed": false
+    },
+    {
+      "id": "processing",
+      "validator": "check-aws-data-processing-evidence.mjs",
+      "status": "FULL_ORIGINAL_RECEIPT_NOT_ASSEMBLED",
+      "exitCode": 1,
+      "fullOriginalGatePassed": false
+    },
+    {
+      "id": "customersDevices",
+      "validator": "check-aws-admin-cus-dev-evidence.mjs",
+      "status": "FULL_ORIGINAL_RECEIPT_NOT_ASSEMBLED",
+      "exitCode": 1,
+      "fullOriginalGatePassed": false
+    },
+    {
+      "id": "business",
+      "validator": "check-aws-admin-business-evidence.mjs",
+      "status": "FULL_ORIGINAL_RECEIPT_NOT_ASSEMBLED",
+      "exitCode": 1,
+      "fullOriginalGatePassed": false
+    },
+    {
+      "id": "mediaUsersSettings",
+      "validator": "check-aws-med-rbac-aud-dash-set-evidence.mjs",
+      "status": "FULL_ORIGINAL_RECEIPT_NOT_ASSEMBLED",
+      "exitCode": 1,
+      "fullOriginalGatePassed": false
+    },
+    {
+      "id": "fe06_10",
+      "validator": "check-admin-web-target-evidence.mjs",
+      "status": "FULL_ORIGINAL_RECEIPT_NOT_ASSEMBLED",
+      "exitCode": 1,
+      "fullOriginalGatePassed": false
+    },
+    {
+      "id": "fe11_15",
+      "validator": "check-admin-web-fe11-15-target-evidence.mjs",
+      "status": "FULL_ORIGINAL_RECEIPT_NOT_ASSEMBLED",
+      "exitCode": 1,
+      "fullOriginalGatePassed": false
+    },
+    {
+      "id": "fe16_19",
+      "validator": "check-admin-web-fe16-19-target-evidence.mjs",
+      "status": "FULL_ORIGINAL_RECEIPT_NOT_ASSEMBLED",
+      "exitCode": 1,
+      "fullOriginalGatePassed": false
+    }
+  ],
+  "narrowerTabletProof": "768_ZH_EN_FOUR_ROOT_READ_PAGES_ONLY_NOT_ALL_ROLES_OR_ALL_WORKFLOWS",
+  "signedInvalidClaims": "NOT_RUN_NO_CURRENT_TRUSTED_SIGNATURE_FIXTURES_FOR_EXP_NBF_AUDIENCE; FORGED_SIGNATURE_REJECTIONS_NOT_SUBSTITUTE",
+  "notifications": "NOT_RUN_EXISTING_NO_NOTIFICATION_SEND_AUTHORIZATION_PRESERVED",
+  "settings": "NOT_RUN_NO_OWNED_SETTING_RESTORE_SCOPE",
+  "a6InputAvailability": {
+    "source": "USER_REPLY_2026_10_14_UNAVAILABLE",
+    "trustedSignedInvalidClaims": "UNAVAILABLE",
+    "controlledNotificationRecipientAndScope": "UNAVAILABLE",
+    "writableRestorableSettingKey": "UNAVAILABLE",
+    "scopeWaiverOrPassInferred": false,
+    "newChannelsOrPermissionsRequested": false
+  },
+  "media": "ACTIVE_MAINTENANCE_REQUIRED_BY_DEPLOYED_SOURCE; NO_SQL_ACTIVE_OR_FAKE_VERIFIED",
+  "dataReuse": {
+    "gate": "RETAINED_ORIGINAL_SCOPED_PASS",
+    "freshTargetValueReassessment": false,
+    "sourceCommit": "ee8f0713cdc5785dbf45e354f1f63723d77e3716"
+  },
+  "currentTargetGate": "PASS",
+  "independentCleanupGate": "PASS_READONLY_EMPTY_AND_BUILD_TERMINAL",
+  "priorAttemptsCleanup": {
+    "first": "PASS_READONLY_EMPTY_AND_BUILD_TERMINAL",
+    "interruptedRecovery": "PASS_READONLY_EMPTY_AND_BUILD_TERMINAL",
+    "originalInterruptedExecutionAccepted": false
+  },
+  "historicalUnknownWrite": {
+    "gate": "UNKNOWN_PRESERVED_UNRELATED_KNOWN_OPERATOR_BUILD",
+    "originalUnknownStart": "UNKNOWN",
+    "absenceProvesNonExecution": false,
+    "restarted": false
+  },
+  "iamKmsOrSharedPermissionChanges": false,
+  "ownDevicePolicyLifecycleOnly": true,
+  "fullSuiteRepeated": false,
+  "originalFailuresPreserved": true,
+  "releasePerformanceAccepted": false,
+  "fullEvidenceLocalOnly": true,
+  "bindings": [
+    {
+      "file": "application-version.json",
+      "sha256": "8637f3e4885b47acbc0fb5ea16bb91dfcd1c611ff0af39c3b8a3b72392ca8e36",
+      "location": "LOCAL_ONLY_RAW"
+    },
+    {
+      "file": "api-config.json",
+      "sha256": "a21495d746c1bdfa85b7dc6da3ad2426b58cc8d5df21646ea7489b1dbf42de27",
+      "location": "LOCAL_ONLY_RAW"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-01-2026-10-12/user-target-v2.json",
+      "sha256": "574ed1117a6812a0b7691affaccbf3a6a3b9b0ef135d14e8c258f4bd8405bca3",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-01-2026-10-12/api-entry-config.json",
+      "sha256": "704df12f8c012200ee0c62ba4f16e7cc879c39ec4e262d6e629e175cfce44d61",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-01-2026-10-12/reconciliation-after.json",
+      "sha256": "2f3bd97f4d59a1fb056cbe95e64e81fed6483546f4b7fa30b86a7dbe0df60eb3",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-a1-entry-2026-10-13/scope.json",
+      "sha256": "99e6cfa95b61a56aba1bd4a2d8f9e820bb32a441373e73c25cb00b5437467d90",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "formal-gate-checks.json",
+      "sha256": "5d6616fe6a43640747b03178d230153a8b8944fc1451298d849985d3ec218533",
+      "location": "LOCAL_ONLY_RAW"
+    },
+    {
+      "file": "docs/audit/evidence/qa09-minimum-2026-10-13/closeout-summary.json",
+      "sha256": "956deac814b48120bf628b3dd0a45829ebe5a9761fb98d8031547e72179c810f",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "final-readonly.json",
+      "sha256": "71f64875b36950474077ad34d990deca9267177a81a5d3c77810e70b388f705c",
+      "location": "LOCAL_ONLY_RAW"
+    },
+    {
+      "file": "v2-recovered-final.json",
+      "sha256": "3c0a5223fe75234675609fff2528c5ab92a4127a2e3f276d15878ade16ac6e32",
+      "location": "LOCAL_ONLY_RAW"
+    },
+    {
+      "file": "target-v2-interrupted.json",
+      "sha256": "4033166a41f0f83f0e69e77b25c82f53576c4c35e13b29c067d4657016f3bfb8",
+      "location": "LOCAL_ONLY_RAW"
+    },
+    {
+      "file": "old-unknown-recheck.json",
+      "sha256": "fa6226d676d29b354fd4904c2dc9e9b94550b4b49d9d455a54b1a6396123a490",
+      "location": "LOCAL_ONLY_RAW"
+    },
+    {
+      "file": "target-v3.json",
+      "sha256": "1c86423ab023deb67449c06af78aeba76c8b47e8349cf700fca21a7ac634c976",
+      "location": "LOCAL_ONLY_RAW"
+    },
+    {
+      "file": "final-readonly-v3.json",
+      "sha256": "c17fe65b5f84adea2ec19b06381d140c7c28d522650c2ee72db9b40f1ce7e460",
+      "location": "LOCAL_ONLY_RAW"
+    },
+    {
+      "file": "target-v3.json.sources.json",
+      "sha256": "05e9130dc93ea7624441049ed75f0f0e946fbf326556004cd8219f1657e3c157",
+      "location": "LOCAL_ONLY_RAW"
+    },
+    {
+      "file": "tablet-only.json",
+      "sha256": "fa35bc863c2b5dddbaa27f1e7d9b5d9bcb1d50d9dc45b0f7763a974c2878a2e3",
+      "location": "LOCAL_ONLY_RAW"
+    },
+    {
+      "file": "tablet-only.json.sources.json",
+      "sha256": "6b52259c88946c690e9d1f118f5a221465e74bdc7fd22b6366a7ad597e29b6e1",
+      "location": "LOCAL_ONLY_RAW"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-07-esg-2026-10-13/target-v3.json.reliability.json",
+      "sha256": "a33ecf88bf57e7ab6b1dd5e240fa1f1e7bb228e37ef8e80096eb0bfee9ea322b",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-07-esg-2026-10-13/target-v3.json",
+      "sha256": "8cc2ddaa3ef188c70d2883e2c2edc09782ed6b50f0ee5c382a409b6fdea29bda",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-07-esg-2026-10-13/target-v3.json.esg-consistency-observe-2.json",
+      "sha256": "d519d6782fda097630c0836ecbb1ea6eabfc6cb3ce70d47b6bcc6848d900eaa5",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-07-esg-2026-10-13/target-v3.json.esg-consistency-observe-4.json",
+      "sha256": "e5a2907cc74e0357f357115223a20d854ac08ec1ada4d07ff7708a418ae305ef",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-07-esg-2026-10-13/target-v3.json.hourly.csv",
+      "sha256": "e2fce36de2413233dd261b6d0122e2eeadcfd65ef19806ee98df76e73bff595f",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-07-esg-2026-10-13/target-v3.json.hourly-recovered.csv",
+      "sha256": "e2fce36de2413233dd261b6d0122e2eeadcfd65ef19806ee98df76e73bff595f",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-07-esg-2026-10-13/target-v3.json.hourly.csv",
+      "sha256": "e2fce36de2413233dd261b6d0122e2eeadcfd65ef19806ee98df76e73bff595f",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-07-esg-2026-10-13/target-v3.json.daily.csv",
+      "sha256": "0f938ca5314c7c8bc185fae8453a8bb03ca4a0d51e41d72ce3c76fc901bc4ebd",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-07-esg-2026-10-13/target-v3.json.reports.csv",
+      "sha256": "d8efa9f03e72ca9a7435aa2d4534c47988e0857e488a1410b5573482a71c2ca6",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-close-07-esg-2026-10-13/target-v3.json.daily_summary.csv",
+      "sha256": "deb27dd10131007804ebd3a5a7eb26ab7026d11d811ecf466a2d5893494b75e9",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/completed/semantic-summary.json",
+      "sha256": "6ff976742259c2ca2c24d6ce73ad8b82d86db73a5e3ade6da741bdbc4b4ceb07",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/completed/application-version.json",
+      "sha256": "7932aa7ce164b50485f9e6e194883ab37ef18bbb159a77ddd32bf1c0b4e5cb50",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/completed/business.json",
+      "sha256": "dee77fcb841e346d769d0ccaa5a6bc08111250f3456390170fd202c21cb4689b",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/completed/business.json.browser.json",
+      "sha256": "c29bf368357b448297481bdb47bcd829047bf147d9377d2a1e361b6c92d95ca7",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/completed/business.json.gate.json",
+      "sha256": "94885573f5d55c56f78a9b1306cf63e275b13a409957b9581d2189d2263f4c55",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/completed/business.json.sources.json",
+      "sha256": "3c0459c12c558ffa0b3a8b0b1bf343d05a4e7995fadc8e3c1247350f7c3e2a00",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/verified/business.json.business-baseline-0.json",
+      "sha256": "37f642ecded5eae1db0723c6c6cc6e8b25c74b5899c26160d78c7f2b46e6cc64",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/verified/business.json.business-seed-alarm-1.json",
+      "sha256": "9e556847b62c4df57f8b49ba1416e6865e8cbc7171bef0948e40830f8e3596bb",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/verified/business.json.business-seed-semantic-data-2.json",
+      "sha256": "5edb978c9818bdd2ac7dc09fcf7b2b67ed18075973dd3aed34976bb90381952b",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/verified/business.json.business-cleanup-3.json",
+      "sha256": "598a8b709777ee4d0ddbbaec0e0073bff7aac7331bdedaac42689eb7b6503161",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/verified/business.json.business-audit-4.json",
+      "sha256": "a52fb1b9f0074d04bcf13c6f224f1181d85fa9159b60f92c5aa0c83eaa78ff68",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/verified/business.json.browser.json.activity-375-245d8309-6159-4b83-8858-5750bc33cf54.csv",
+      "sha256": "36266594fa88f892911b33be9b4a03b0bf2331a543ea0ff09d88614aba56e050",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/verified/business.json.browser.json.esg-375-cd558db5-efd4-463b-9aad-b8c903eaded4.csv",
+      "sha256": "e35e69110f494b2972af16380b2c84bb85f72eefad32085b8e38fcd1b855eb60",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/verified/business.json.browser.json.esg-375-1bb3f8a6-73a0-4c76-800b-305a62166671.csv",
+      "sha256": "a9e1c9f42534a1f6c24bccc96eb36e410cc7c590c3abc11d427bb9e26ab247d5",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/verified/business.json.browser.json.activity-1440-af463626-ecf3-4b2a-b7f8-548acb242615.csv",
+      "sha256": "36266594fa88f892911b33be9b4a03b0bf2331a543ea0ff09d88614aba56e050",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/verified/business.json.browser.json.esg-1440-a2e468e5-a04b-459b-9d07-b0c45405d774.csv",
+      "sha256": "e35e69110f494b2972af16380b2c84bb85f72eefad32085b8e38fcd1b855eb60",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/verified/business.json.browser.json.esg-1440-59071e48-7c9a-41af-ba13-5a0d4f16eaf2.csv",
+      "sha256": "a9e1c9f42534a1f6c24bccc96eb36e410cc7c590c3abc11d427bb9e26ab247d5",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/completed/csr.json",
+      "sha256": "54a613189a41b699504cf4e41e8b6c4f0bfe5b5b47eeeb1a21a1ace9241a3d0d",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/verified/csr.json.devices.json",
+      "sha256": "acd7299aaffc468827c02a99922563c4f98982864759d5ce5879618b52e7ae39",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/completed/csr.json.sources.json",
+      "sha256": "5808149132a1cd23c4bbe81bc7b7fbfd1b4488245c2e21e97d3f7f0a490f41ad",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/completed/certificate.json",
+      "sha256": "a1baf4f5d24e8341213a4d1c8889743329911433cce7cef232c91778717b3617",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/completed/certificate.json.devices.json",
+      "sha256": "1c54f339726ebd847ef0cac7540c3ef376f02e3459124711e5e91e89f4ed3bdf",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    },
+    {
+      "file": "docs/audit/evidence/qa-09-nonactive-data-2026-10-05/completed/certificate.json.sources.json",
+      "sha256": "608582ba80028f181758b1988a56bc85d6f4fc512e1eda10ac5e612e07e988f9",
+      "location": "EXISTING_PUBLIC_EVIDENCE"
+    }
+  ],
+  "requiredStatusCounts": {
+    "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED": 8,
+    "PASS": 9,
+    "NOT_PROVEN_IN_CURRENT_MINIMUM_SCOPE": 7
+  },
+  "applicationAndExecutorSeparation": "APP_50CB1125_FIXED; ACTUAL_EXECUTOR_SNAPSHOTS_BOUND_SEPARATELY; DOCUMENTS_DO_NOT_TRIGGER_DEPLOYMENT"
+}

@@ -43,7 +43,7 @@ async function db() {
 CREATE TABLE customers(id text PRIMARY KEY,name text,deleted_at timestamptz);
 CREATE TABLE devices(id text PRIMARY KEY,serial_number text UNIQUE,model text,hardware_version text,manufacturer text,manufacture_date date,lifecycle_status text,customer_id text REFERENCES customers(id),updated_at timestamptz);
 CREATE TABLE certificate_rotation_requests(id text,device_id text,certificate_id text,status text);
-CREATE TABLE device_certificates(id text PRIMARY KEY,device_id text REFERENCES devices(id),status text,fingerprint text,mqtt_verified_at timestamptz,rest_verified_at timestamptz,claimed_at timestamptz,package_ciphertext bytea);
+CREATE TABLE device_certificates(id text PRIMARY KEY,device_id text REFERENCES devices(id),status text,fingerprint text,mqtt_verified_at timestamptz,rest_verified_at timestamptz,claimed_at timestamptz,rotated_from_id text,rotation_confirmed_at timestamptz,revoked_at timestamptz,iot_deactivation_pending boolean DEFAULT false,package_ciphertext bytea);
 CREATE TABLE onboarding_requests(id text PRIMARY KEY,serial_number text,status text);
 CREATE TABLE onboarding_proof_nonces(request_id text REFERENCES onboarding_requests(id));
 CREATE TABLE onboarding_provisioning_jobs(id text,request_id text REFERENCES onboarding_requests(id),status text,attempts int,issued_certificate_id text,last_error text);
