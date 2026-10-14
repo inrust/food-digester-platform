@@ -340,44 +340,46 @@ export function DeviceUsersPage({
           {translate('page.39b4bad93c4a')}
         </p>
       ) : (
-        <table aria-label={translate('page.2993d42bd8c9')} data-testid="device-user-table">
-          <thead>
-            <tr>
-              <th scope="col">{translate('page.a1aaf352cb07')}</th>
-              <th scope="col">{translate('page.c10bbf5ddd2d')}</th>
-              <th scope="col">{translate('page.62e951a692ff')}</th>
-              <th scope="col">{translate('page.08eb0e60ad1a')}</th>
-              <th scope="col">{translate('page.928728223d5a')}</th>
-              <th scope="col">{translate('page.093dea88c930')}</th>
-              <th scope="col">{translate('page.f3ea6d345e2a')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.rows.map((row) => (
-              <tr key={row.deviceUserId} data-testid={`device-user-row-${row.deviceUserId}`}>
-                <td>{row.username}</td>
-                <td>{row.displayName ?? '—'}</td>
-                <td>{DEVICE_USER_STATUS_LABELS[row.status]}</td>
-                <td>
-                  <NumberText value={row.activeDeviceCount} />
-                </td>
-                <td>v{row.version}</td>
-                <td>
-                  <TimeText iso={row.updatedAt} />
-                </td>
-                <td>
-                  <Button
-                    type="button"
-                    data-testid={`device-user-detail-${row.deviceUserId}`}
-                    onClick={() => onSelect(row.deviceUserId)}
-                  >
-                    {translate('page.4f55ee1e687f')}
-                  </Button>
-                </td>
+        <div className="table-scroll" role="region" aria-label={translate('page.2993d42bd8c9')} tabIndex={0}>
+          <table aria-label={translate('page.2993d42bd8c9')} data-testid="device-user-table">
+            <thead>
+              <tr>
+                <th scope="col">{translate('page.a1aaf352cb07')}</th>
+                <th scope="col">{translate('page.c10bbf5ddd2d')}</th>
+                <th scope="col">{translate('page.62e951a692ff')}</th>
+                <th scope="col">{translate('page.08eb0e60ad1a')}</th>
+                <th scope="col">{translate('page.928728223d5a')}</th>
+                <th scope="col">{translate('page.093dea88c930')}</th>
+                <th scope="col">{translate('page.f3ea6d345e2a')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {list.rows.map((row) => (
+                <tr key={row.deviceUserId} data-testid={`device-user-row-${row.deviceUserId}`}>
+                  <td>{row.username}</td>
+                  <td>{row.displayName ?? '—'}</td>
+                  <td>{DEVICE_USER_STATUS_LABELS[row.status]}</td>
+                  <td>
+                    <NumberText value={row.activeDeviceCount} />
+                  </td>
+                  <td>v{row.version}</td>
+                  <td>
+                    <TimeText iso={row.updatedAt} />
+                  </td>
+                  <td>
+                    <Button
+                      type="button"
+                      data-testid={`device-user-detail-${row.deviceUserId}`}
+                      onClick={() => onSelect(row.deviceUserId)}
+                    >
+                      {translate('page.4f55ee1e687f')}
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {detail.kind === 'loading' ? (
