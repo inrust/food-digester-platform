@@ -1,0 +1,325 @@
+{
+  "task": "QA09-A6-A7-A8-CLOSEOUT",
+  "applicationCommit": "74089df0df214ca61528a3f48b25e4534c358980",
+  "gate": "PARTIAL_MINIMUM_QA09_NOT_ACCEPTED",
+  "minimumPhaseAccepted": false,
+  "fullQa09Accepted": false,
+  "productionReady": false,
+  "executorBinding": {
+    "collector": "scripts/collect-qa09-a678-closeout.mjs",
+    "collectorSha256": "b640b9a18fb4d2e847b06d701068df1584740e9ccb05fc20e8c7b1b929972836",
+    "applicationAndDocumentationVersionSeparated": true
+  },
+  "required": [
+    {
+      "id": "device.independentLicenseVerification",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "device.naturalActive",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "device.suspendReactivateRetire",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "license.lifecycle",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "command.deliveryAndResult",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "ota.trustedFirmwareAndCampaign",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "media.realUploadAndIsolation",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-A2-01",
+      "releaseRequired": true
+    },
+    {
+      "id": "certificate.completeRotation",
+      "status": "PASS",
+      "proof": "REAL_DUAL_CHANNEL_ROTATION_AND_REVOKED_OLD_CERTIFICATE_DENIAL"
+    },
+    {
+      "id": "replay.operatorNonempty",
+      "status": "PASS",
+      "proof": "BOUND_PRIOR_FIVE_MINIMUM_A5_AGGREGATE",
+      "scope": "MINIMUM_A5_ASSOCIATIONS_AND_DIRECT_HANDLER_PARTIAL_BATCH"
+    },
+    {
+      "id": "replay.uniqueProducerAssociation",
+      "status": "PASS",
+      "proof": "BOUND_PRIOR_FIVE_MINIMUM_A5_AGGREGATE",
+      "scope": "MINIMUM_A5_ASSOCIATIONS_AND_DIRECT_HANDLER_PARTIAL_BATCH"
+    },
+    {
+      "id": "reliability.sameRunNonemptyDedup",
+      "status": "PASS",
+      "proof": "BOUND_PRIOR_FIVE_MINIMUM_A5_AGGREGATE",
+      "scope": "MINIMUM_A5_ASSOCIATIONS_AND_DIRECT_HANDLER_PARTIAL_BATCH"
+    },
+    {
+      "id": "reliability.archivePartialFailure",
+      "status": "PASS",
+      "proof": "BOUND_PRIOR_FIVE_MINIMUM_A5_AGGREGATE",
+      "scope": "MINIMUM_A5_ASSOCIATIONS_AND_DIRECT_HANDLER_PARTIAL_BATCH"
+    },
+    {
+      "id": "reliability.queueAndScheduleAssociation",
+      "status": "PASS",
+      "proof": "BOUND_PRIOR_FIVE_MINIMUM_A5_AGGREGATE",
+      "scope": "MINIMUM_A5_ASSOCIATIONS_AND_DIRECT_HANDLER_PARTIAL_BATCH"
+    },
+    {
+      "id": "users.signedSessionAndState",
+      "status": "PASS",
+      "proof": "REUSED_EXACT_RELEVANT_SOURCE_CONFIG_FIVE_ROLE_STATE_AUDIT_AND_CLEANUP",
+      "sourceCommit": "beaccece84ec865020aefc537af296228ec8b933"
+    },
+    {
+      "id": "security.signedClaimsAndIsolation",
+      "status": "BLOCKED_UNAVAILABLE_INPUT_NOT_ACCEPTED",
+      "criterion": "Trusted signatures with invalid exp/nbf/audience, JWT/role/customer/cert/Topic boundaries and zero credential leaks",
+      "remainingInputDependencies": ["trustedSignedInvalidClaims"],
+      "independentSubscopeCompleted": true,
+      "fullOriginalScopeAccepted": false
+    },
+    {
+      "id": "business.operationsRolesPersistence",
+      "status": "BLOCKED_UNAVAILABLE_INPUT_NOT_ACCEPTED",
+      "criterion": "Applicable operations/authorization branches with persistence and audit; HTTP coverage is insufficient",
+      "remainingInputDependencies": ["controlledNotificationRecipientAndScope", "writableRestorableSettingKey"],
+      "independentSubscopeCompleted": true,
+      "fullOriginalScopeAccepted": false
+    },
+    {
+      "id": "notifications.inviteAndPasswordApi",
+      "status": "BLOCKED_UNAVAILABLE_INPUT_NOT_ACCEPTED",
+      "criterion": "No implicit waiver of invite/reset API, compensation, permissions or signed-user semantics",
+      "remainingInputDependencies": ["controlledNotificationRecipientAndScope"],
+      "independentSubscopeCompleted": true,
+      "fullOriginalScopeAccepted": false
+    },
+    {
+      "id": "settings.authorizedWriteAndRestore",
+      "status": "BLOCKED_UNAVAILABLE_INPUT_NOT_ACCEPTED",
+      "criterion": "Authorized real update/version race/restoration; no implicit waiver",
+      "remainingInputDependencies": ["writableRestorableSettingKey"],
+      "independentSubscopeCompleted": true,
+      "fullOriginalScopeAccepted": false
+    },
+    {
+      "id": "prototype.117SemanticItems",
+      "status": "BLOCKED_UNAVAILABLE_INPUT_NOT_ACCEPTED",
+      "criterion": "All 117 mapped individually; revalidate only incompatible/missing behavior",
+      "remainingInputDependencies": ["controlledNotificationRecipientAndScope"],
+      "independentSubscopeCompleted": true,
+      "fullOriginalScopeAccepted": false
+    },
+    {
+      "id": "browser.targetJourneys",
+      "status": "BLOCKED_UNAVAILABLE_INPUT_NOT_ACCEPTED",
+      "criterion": "Real Cognito/API, required roles/workflows/locales/viewports, persisted results and no interception",
+      "remainingInputDependencies": ["controlledNotificationRecipientAndScope", "writableRestorableSettingKey"],
+      "independentSubscopeCompleted": true,
+      "fullOriginalScopeAccepted": false
+    },
+    {
+      "id": "data.naturalEsgConsistency",
+      "status": "PASS",
+      "proof": "RETAINED_ORIGINAL_SCOPED_DATA_RECHECK_NOT_FRESH_TARGET_REASSESSMENT",
+      "sourceCommit": "ee8f0713cdc5785dbf45e354f1f63723d77e3716"
+    },
+    {
+      "id": "data.exportLeaseRecovery",
+      "status": "PASS",
+      "proof": "RETAINED_ORIGINAL_SCOPED_DATA_RECHECK_NOT_FRESH_TARGET_REASSESSMENT",
+      "sourceCommit": "ee8f0713cdc5785dbf45e354f1f63723d77e3716"
+    },
+    {
+      "id": "cleanup.ownedResourcesAndUnknownWrites",
+      "status": "PASS",
+      "criterion": "Created-ID ledger, independent empty sets, no outside drift, revoked identities/restored config, unknown writes contained",
+      "basis": "CURRENT_EXACT_EMPTY_SETS_AND_IDENTITY_ABSENCE_HISTORICAL_UNKNOWN_CONTAINED_ONLY"
+    },
+    {
+      "id": "actualArchivePoisonRetryDlq",
+      "status": "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED",
+      "authorizedExclusion": "REL-QUEUE-01",
+      "releaseRequired": true
+    }
+  ],
+  "requiredStatusCounts": {
+    "DEFERRED_FROM_MINIMUM_PHASE_NOT_ACCEPTED": 8,
+    "PASS": 10,
+    "BLOCKED_UNAVAILABLE_INPUT_NOT_ACCEPTED": 6
+  },
+  "remainingRootCauses": [
+    "trustedSignedInvalidClaims",
+    "controlledNotificationRecipientAndScope",
+    "writableRestorableSettingKey"
+  ],
+  "completedIndependentWork": [
+    "eligibleOperationRolePersistence",
+    "all117SemanticDispositions",
+    "remainingReadRouteLayoutAndRoleControls",
+    "historicalUnknownContainment",
+    "eightTypedPartialDomainAssemblies"
+  ],
+  "authorizationReuse": {
+    "scope": "ALL_63_WRITE_ANONYMOUS_FIVE_ROLE_INVALID_INPUT_AND_FORGED_SIGNATURE_BOUNDARIES",
+    "operationCount": 63,
+    "invalidInputAnonymousAndRoleBranches": 378,
+    "forgedSignatureRejections": 6,
+    "signedInvalidClaimsIndependentlyProven": false,
+    "currentRoleControls": 5,
+    "currentSignedAccountStateScopeRetained": true,
+    "originalFailedRequestsPreserved": true
+  },
+  "unavailableInputs": {
+    "source": "USER_REPLY_2026_10_14_UNAVAILABLE",
+    "trustedSignedInvalidClaims": "UNAVAILABLE",
+    "controlledNotificationRecipientAndScope": "UNAVAILABLE",
+    "writableRestorableSettingKey": "UNAVAILABLE",
+    "scopeWaiverOrPassInferred": false,
+    "newChannelsOrPermissionsRequested": false
+  },
+  "originalFailuresPreserved": true,
+  "permissionChanges": false,
+  "fullSuiteRepeated": false,
+  "persistence": {
+    "counts": {
+      "PASS_SCOPED_PERSISTENCE": 76,
+      "DEFERRED_A2_NOT_ACCEPTED": 33,
+      "UNAVAILABLE_INPUT_NOT_ACCEPTED": 3
+    },
+    "ledger": "operation-role-ledger.json",
+    "scope": "COMMITTED_SERVER_STATE_OR_TYPED_READBACK_NOT_DEVICE_DELIVERY_OR_FULL_BRANCH_ACCEPTANCE"
+  },
+  "semantics": {
+    "mappingComplete": true,
+    "total": 117,
+    "counts": {
+      "PASS_REUSED_ORIGINAL_BROWSER_SCOPE": 98,
+      "DEFERRED_A2_SUCCESS_NOT_ACCEPTED": 15,
+      "UNAVAILABLE_NOTIFICATION_INPUT_NOT_ACCEPTED": 2,
+      "PASS_REUSED_SCOPED_USER_BROWSER": 2
+    },
+    "ledger": "semantic-ledger.json",
+    "full117Accepted": false
+  },
+  "browser": {
+    "summary": "browser-summary.json",
+    "gapCases": 88,
+    "originalPass": 87,
+    "originalFail": 1,
+    "finalDeployedRepair": "PASS",
+    "changedViewerReadAccess": "PASS",
+    "fullWorkflowAcceptanceClaimed": false
+  },
+  "cleanup": {
+    "summary": "containment-summary.json",
+    "currentOwnResources": "PASS",
+    "historicalUnknown": "UNKNOWN_EXECUTION_PRESERVED_CONTAINMENT_PASS"
+  },
+  "formalReceiptAssembly": {
+    "complete": true,
+    "completionScope": "EIGHT_TYPED_PARTIAL_DOMAIN_RECEIPTS_WITH_REQUIRED_SETS_AND_EXPLICIT_UNACCEPTED_ANCILLARY_FIELDS_NOT_EIGHT_FORMAL_PASSES",
+    "fullOriginalGatesPassed": 0,
+    "fullOriginalGatesRequired": 8,
+    "domains": [
+      {
+        "file": "docs/audit/evidence/qa09-a678-closeout-2026-10-14/domain-01-partial.json",
+        "sha256": "0042d3615c719d03c5c822747d67a9b47e097c2dc480a1925ccf4d4ab569a2fc",
+        "validator": "scripts/check-aws-iot-data-path-evidence.mjs",
+        "validatorSha256": "7a2e877f86ec112a8ac06a67f3da67d5f4d02d2f4932ee59753fc9bc1a4474b0",
+        "status": "PARTIAL_NOT_ACCEPTED",
+        "fullOriginalGatePassed": false
+      },
+      {
+        "file": "docs/audit/evidence/qa09-a678-closeout-2026-10-14/domain-02-partial.json",
+        "sha256": "9ef734697877a7245fff106a8618a34cd56f3688bb1748a5473bb113623318d3",
+        "validator": "scripts/check-aws-data-processing-evidence.mjs",
+        "validatorSha256": "c30302a5cff35210607d1800a2ed648d081f319182cb378fa9fb4307abd94516",
+        "status": "PARTIAL_NOT_ACCEPTED",
+        "fullOriginalGatePassed": false
+      },
+      {
+        "file": "docs/audit/evidence/qa09-a678-closeout-2026-10-14/domain-03-partial.json",
+        "sha256": "690426e82a2ba7f02c971769c9f5539b90f9efdc4c3baf8a2ffa072f4860d12f",
+        "validator": "scripts/check-aws-admin-cus-dev-evidence.mjs",
+        "validatorSha256": "5a53ac4ee1c80084a48677224dbf56b9070c3b09983886ef260039662f4c4d82",
+        "status": "PARTIAL_NOT_ACCEPTED",
+        "fullOriginalGatePassed": false
+      },
+      {
+        "file": "docs/audit/evidence/qa09-a678-closeout-2026-10-14/domain-04-partial.json",
+        "sha256": "a4432659aca3ee3b92f17942b18ef178257b163edbd04b48e431aae18a5c8a36",
+        "validator": "scripts/check-aws-admin-business-evidence.mjs",
+        "validatorSha256": "02c2a4e8da169eadd60be4d051685ef2e95fa291e8d24efbbf32e91506f5fab0",
+        "status": "PARTIAL_NOT_ACCEPTED",
+        "fullOriginalGatePassed": false
+      },
+      {
+        "file": "docs/audit/evidence/qa09-a678-closeout-2026-10-14/domain-05-partial.json",
+        "sha256": "2549cae267f688d42d206c9e8d2bcb85ee237959348f89905d905919d007c2ce",
+        "validator": "scripts/check-aws-med-rbac-aud-dash-set-evidence.mjs",
+        "validatorSha256": "a2067a649e217eefa22478cba762705fb5f79400577e01f7b90c14fbf79d9f36",
+        "status": "PARTIAL_NOT_ACCEPTED",
+        "fullOriginalGatePassed": false
+      },
+      {
+        "file": "docs/audit/evidence/qa09-a678-closeout-2026-10-14/domain-06-partial.json",
+        "sha256": "0322dea3eebb8c02e61bf9925a786d79f64dc8abd208e347877f5c746df1cddb",
+        "validator": "scripts/check-admin-web-target-evidence.mjs",
+        "validatorSha256": "4eda8a74997f79c3c810583f2f5efacf358fe6cce62daf524f8b368c28aee189",
+        "status": "PARTIAL_NOT_ACCEPTED",
+        "fullOriginalGatePassed": false
+      },
+      {
+        "file": "docs/audit/evidence/qa09-a678-closeout-2026-10-14/domain-07-partial.json",
+        "sha256": "4ba7163827702ac580fd1a2d5fd48db5e69911319da8bcf5fd3b213c8e77ba41",
+        "validator": "scripts/check-admin-web-fe11-15-target-evidence.mjs",
+        "validatorSha256": "ebb78d9c71b4a4e131533e358cf752a88a3f352d720ab14caedfb6239fd17df1",
+        "status": "PARTIAL_NOT_ACCEPTED",
+        "fullOriginalGatePassed": false
+      },
+      {
+        "file": "docs/audit/evidence/qa09-a678-closeout-2026-10-14/domain-08-partial.json",
+        "sha256": "17bd8fd898e671fbb69a9fd3b47a1dc8ef32bad05df102c77feee884b6c402f6",
+        "validator": "scripts/check-admin-web-fe16-19-target-evidence.mjs",
+        "validatorSha256": "bb8bc02d873142a4485b280ae90f1af16c20d2dfd18b0038a65deb43aa873f88",
+        "status": "PARTIAL_NOT_ACCEPTED",
+        "fullOriginalGatePassed": false
+      }
+    ]
+  },
+  "applicationAndExecutorSeparation": {
+    "applicationCommit": "74089df0df214ca61528a3f48b25e4534c358980",
+    "rawExecutionApplicationCommit": "50cb1125d4d6e064d28b3113cf39cb511d5fa8f2",
+    "backendInputsSameAcrossLayoutDeployment": true,
+    "executedSources": "LOCAL_ONLY_SOURCE_SNAPSHOTS_AND_HASH_INDEX",
+    "publishedExecutor": "MANIFEST_FILE_HASHES",
+    "documentation": "MANIFEST_FILE_HASHES",
+    "finalCollectorSha256": "b640b9a18fb4d2e847b06d701068df1584740e9ccb05fc20e8c7b1b929972836"
+  },
+  "formalAncillaryBoundary": "EIGHT_FULL_ORIGINAL_DOMAINS_REMAIN_UNACCEPTED_INCLUDING_THEIR_WORKFLOWS_AND_ANCILLARY_FIELDS; THREE_UNAVAILABLE_INPUTS_ARE_NOT_A_WAIVER_OR_A_CLAIM_THAT_MATERIALS_ALONE_CLOSE_ALL_DOMAINS"
+}

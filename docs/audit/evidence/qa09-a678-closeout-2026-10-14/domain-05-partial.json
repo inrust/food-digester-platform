@@ -1,0 +1,269 @@
+{
+  "validator": "scripts/check-aws-med-rbac-aud-dash-set-evidence.mjs",
+  "validatorSha256": "a2067a649e217eefa22478cba762705fb5f79400577e01f7b90c14fbf79d9f36",
+  "kind": "PARTIAL_DOMAIN_RECEIPT_ASSEMBLY_NOT_LEGACY_PASS_RECEIPT",
+  "status": "PARTIAL_NOT_ACCEPTED",
+  "requiredSets": {
+    "REQUIRED_OPERATIONS": [
+      "createMediaUploadSession",
+      "listMedia",
+      "createMediaDownloadUrl",
+      "listUsers",
+      "inviteUser",
+      "assignUserRoles",
+      "setUserScope",
+      "disableUser",
+      "triggerUserPasswordReset",
+      "listAuditLogs",
+      "getAuditLogDetail",
+      "getDashboardOverview",
+      "listSettings",
+      "getSetting",
+      "updateSetting"
+    ],
+    "REQUIRED_ROLES": ["PlatformSuperAdmin", "PlatformOperator", "Auditor", "CustomerAdmin", "CustomerViewer"]
+  },
+  "probePaths": [
+    "apiOperations",
+    "rbac",
+    "cognito",
+    "superAdminRace",
+    "settingVersionRace",
+    "mediaS3",
+    "mediaQuotaRace",
+    "dashboardEntitlement",
+    "auditRedaction",
+    "strictRequests"
+  ],
+  "originalValidatorModified": false,
+  "fullOriginalGatePassed": false,
+  "operationCoverage": [
+    {
+      "operationId": "createMediaUploadSession",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listMedia",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "createMediaDownloadUrl",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listUsers",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "inviteUser",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "UNAVAILABLE_INPUT_NOT_ACCEPTED",
+          "proofs": []
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "assignUserRoles",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "assignUserRoles",
+              "role": "PlatformSuperAdmin",
+              "receipt": "docs/audit/evidence/qa-09-close-01-2026-10-12/user-target-v2.json",
+              "receiptSha256": "574ed1117a6812a0b7691affaccbf3a6a3b9b0ef135d14e8c258f4bd8405bca3",
+              "proofKind": "SCOPED_SIGNED_USER_AUDIT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "setUserScope",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "setUserScope",
+              "role": "PlatformSuperAdmin",
+              "receipt": "docs/audit/evidence/qa-09-close-01-2026-10-12/user-target-v2.json",
+              "receiptSha256": "574ed1117a6812a0b7691affaccbf3a6a3b9b0ef135d14e8c258f4bd8405bca3",
+              "proofKind": "SCOPED_SIGNED_USER_AUDIT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "disableUser",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "disableUser",
+              "role": "PlatformSuperAdmin",
+              "receipt": "docs/audit/evidence/qa-09-close-01-2026-10-12/user-target-v2.json",
+              "receiptSha256": "574ed1117a6812a0b7691affaccbf3a6a3b9b0ef135d14e8c258f4bd8405bca3",
+              "proofKind": "SCOPED_SIGNED_USER_AUDIT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "triggerUserPasswordReset",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "UNAVAILABLE_INPUT_NOT_ACCEPTED",
+          "proofs": []
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "listAuditLogs",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "getAuditLogDetail",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "getDashboardOverview",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listSettings",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "getSetting",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "updateSetting",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "UNAVAILABLE_INPUT_NOT_ACCEPTED",
+          "proofs": []
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    }
+  ],
+  "routeCoverage": [],
+  "workflowCoverage": [],
+  "probeCoverage": [
+    {
+      "path": "apiOperations",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "rbac",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "cognito",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "superAdminRace",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "settingVersionRace",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "mediaS3",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "mediaQuotaRace",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "dashboardEntitlement",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "auditRedaction",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "strictRequests",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    }
+  ],
+  "evidence": {
+    "operationRoles": [
+      "assignUserRoles:PlatformSuperAdmin",
+      "setUserScope:PlatformSuperAdmin",
+      "disableUser:PlatformSuperAdmin"
+    ],
+    "semanticItems": [
+      "dashboard.field.validContracts",
+      "dashboard.field.deviceStats",
+      "dashboard.field.onlineRate",
+      "dashboard.field.carbonToday",
+      "dashboard.field.latestAlarms",
+      "dashboard.field.deviceCards",
+      "settings.button.deletePlatformUser",
+      "settings.modal.confirm"
+    ],
+    "semanticAssociationScope": "RELEVANT_SCOPED_BROWSER_GROUPS_ONLY_NOT_PROTOCOL_OR_FULL_PROBE_PROOF",
+    "priorA5": []
+  },
+  "unavailableInputs": {
+    "source": "USER_REPLY_2026_10_14_UNAVAILABLE",
+    "trustedSignedInvalidClaims": "UNAVAILABLE",
+    "controlledNotificationRecipientAndScope": "UNAVAILABLE",
+    "writableRestorableSettingKey": "UNAVAILABLE",
+    "scopeWaiverOrPassInferred": false,
+    "newChannelsOrPermissionsRequested": false
+  },
+  "originalFailuresPreserved": true,
+  "fullQa09Accepted": false
+}

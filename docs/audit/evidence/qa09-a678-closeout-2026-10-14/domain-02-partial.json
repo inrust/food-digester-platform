@@ -1,0 +1,60 @@
+{
+  "validator": "scripts/check-aws-data-processing-evidence.mjs",
+  "validatorSha256": "c30302a5cff35210607d1800a2ed648d081f319182cb378fa9fb4307abd94516",
+  "kind": "PARTIAL_DOMAIN_RECEIPT_ASSEMBLY_NOT_LEGACY_PASS_RECEIPT",
+  "status": "PARTIAL_NOT_ACCEPTED",
+  "requiredSets": {
+    "REQUIRED_PROBES": {
+      "archive": ["outbox", "archiveQueue", "s3Object", "manifest", "duplicateDelivery", "partialFailure"],
+      "replay": ["apiCreate", "triggerQueue", "worker", "idempotency", "outOfScope"],
+      "summary": ["scheduleInvocation", "migration", "hourly", "daily", "esgDaily"]
+    }
+  },
+  "probePaths": ["archive", "replay", "summary"],
+  "originalValidatorModified": false,
+  "fullOriginalGatePassed": false,
+  "operationCoverage": [],
+  "routeCoverage": [],
+  "workflowCoverage": [],
+  "probeCoverage": [
+    {
+      "path": "archive",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "replay",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "summary",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    }
+  ],
+  "evidence": {
+    "operationRoles": [],
+    "semanticItems": [],
+    "semanticAssociationScope": "RELEVANT_SCOPED_BROWSER_GROUPS_ONLY_NOT_PROTOCOL_OR_FULL_PROBE_PROOF",
+    "priorA5": [
+      "replay.operatorNonempty",
+      "replay.uniqueProducerAssociation",
+      "reliability.sameRunNonemptyDedup",
+      "reliability.archivePartialFailure",
+      "reliability.queueAndScheduleAssociation",
+      "data.naturalEsgConsistency",
+      "data.exportLeaseRecovery"
+    ]
+  },
+  "unavailableInputs": {
+    "source": "USER_REPLY_2026_10_14_UNAVAILABLE",
+    "trustedSignedInvalidClaims": "UNAVAILABLE",
+    "controlledNotificationRecipientAndScope": "UNAVAILABLE",
+    "writableRestorableSettingKey": "UNAVAILABLE",
+    "scopeWaiverOrPassInferred": false,
+    "newChannelsOrPermissionsRequested": false
+  },
+  "originalFailuresPreserved": true,
+  "fullQa09Accepted": false
+}

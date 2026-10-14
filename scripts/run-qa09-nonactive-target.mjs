@@ -5,7 +5,7 @@ import {
 } from './qa09-nonactive-cleanup.mjs';
 import { createOperationObserver, safeOperationError } from './qa09-operation-observation.mjs';
 import { randomBytes, createHash } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import * as cognitoSdk from '@aws-sdk/client-cognito-identity-provider';
 import { AuthFlow } from '../apps/admin-web/src/auth/auth-flow.ts';
@@ -22,10 +22,16 @@ import { runCold409Sampling } from './qa09-cold409-sampling.mjs';
 import { runContractRaceTarget } from './qa09-contract-race.mjs';
 import { runSecurityRetest } from './qa09-security-retest.mjs';
 import { runRemainingNonActive } from './qa09-remaining-nonactive.mjs';
+import { runCloseoutGaps } from './qa09-closeout-gaps-target.mjs';
 const [output, versionFile, mode] = process.argv.slice(2);
-if (mode !== undefined && !['--remaining', '--security-retest', '--contract-race', '--cold409-sampling'].includes(mode))
+if (
+  mode !== undefined &&
+  !['--remaining', '--security-retest', '--contract-race', '--cold409-sampling', '--closeout-gaps'].includes(mode)
+)
   throw Error('INVALID_NONACTIVE_MODE');
 if (!output || !versionFile) throw Error('OUTPUT_AND_VERSION_REQUIRED');
+if ([output, output + '.sources.json', output + '.fixtures.json'].some(existsSync))
+  throw Error('FRESH_NONACTIVE_OUTPUT_REQUIRED');
 const version = JSON.parse(readFileSync(versionFile));
 validateBusinessVersion(version, version.sourceCommit);
 const identity = spawnSync(
@@ -65,6 +71,8 @@ const sourcePaths = [
   'apps/cloud-api/src/runtime/delivered-operations.ts',
   'scripts/qa09-nonactive-browser.mjs',
   'scripts/qa09-remaining-nonactive.mjs',
+  'scripts/qa09-closeout-gaps-target.mjs',
+  'scripts/qa09-closeout-browser-gaps.mjs',
   'scripts/qa09-security-retest.mjs',
   'scripts/qa09-contract-race.mjs',
   'scripts/qa09-license-lifecycle.mjs',
@@ -254,31 +262,33 @@ try {
     output,
     {
       coreOnly: true,
-      readDomains: !['--contract-race', '--cold409-sampling'].includes(mode),
+      readDomains: !['--contract-race', '--cold409-sampling', '--closeout-gaps'].includes(mode),
       detailedHttp: ['--contract-race', '--cold409-sampling'].includes(mode),
       nonActiveOnly: true,
       ...(mode !== undefined
         ? {
             foundationOnly: true,
             remainingTarget: async (ctx) =>
-              ['--contract-race', '--cold409-sampling'].includes(mode)
-                ? await (async () => {
-                    const race = await runContractRaceTarget(ctx, {
-                      historical: {
-                        prefix: 'qa09-0ed30921f63c8541',
-                        contractId: '7d95a76b-1b79-42c0-9f64-2c98a9297898',
-                        sourceReceiptSha256: '59473f9dbb9288fe2b2933f7bb08c6d187553ac2bf313ccc38ea47b711737e5f',
-                      },
-                    });
-                    if (mode === '--cold409-sampling' && race.gate === 'PASS') {
-                      const sample = await runCold409Sampling(ctx);
-                      if (sample.gate !== 'PASS') throw Error('COLD_SAMPLING_BUSINESS_INCOMPLETE');
-                    }
-                    return race;
-                  })()
-                : mode === '--security-retest'
-                  ? runSecurityRetest(ctx)
-                  : runRemainingNonActive({ ...ctx, receiptPath: output }),
+              mode === '--closeout-gaps'
+                ? runCloseoutGaps(ctx)
+                : ['--contract-race', '--cold409-sampling'].includes(mode)
+                  ? await (async () => {
+                      const race = await runContractRaceTarget(ctx, {
+                        historical: {
+                          prefix: 'qa09-0ed30921f63c8541',
+                          contractId: '7d95a76b-1b79-42c0-9f64-2c98a9297898',
+                          sourceReceiptSha256: '59473f9dbb9288fe2b2933f7bb08c6d187553ac2bf313ccc38ea47b711737e5f',
+                        },
+                      });
+                      if (mode === '--cold409-sampling' && race.gate === 'PASS') {
+                        const sample = await runCold409Sampling(ctx);
+                        if (sample.gate !== 'PASS') throw Error('COLD_SAMPLING_BUSINESS_INCOMPLETE');
+                      }
+                      return race;
+                    })()
+                  : mode === '--security-retest'
+                    ? runSecurityRetest(ctx)
+                    : runRemainingNonActive({ ...ctx, receiptPath: output }),
           }
         : { semanticBrowser: (ctx) => runNonActiveBrowser(ctx, output + '.browser.json') }),
     },
@@ -316,13 +326,15 @@ let gate = {
   task: 'QA-09',
   scope:
     mode !== undefined
-      ? mode === '--cold409-sampling'
-        ? 'OWN_BOUNDED_COLD409_SAMPLING'
-        : mode === '--contract-race'
-          ? 'OWN_CONTRACT_CONCURRENT_PATCH_RETEST'
-          : mode === '--security-retest'
-            ? 'SCOPED_SECURITY_RESPONSE_RETEST'
-            : 'REMAINING_NONACTIVE_LEGAL_WRITES_SECURITY_LEASE_RECOVERY'
+      ? mode === '--closeout-gaps'
+        ? 'ONLY_UNCHANGED_EVIDENCE_GAPS_CONTRACT_AND_BROWSER'
+        : mode === '--cold409-sampling'
+          ? 'OWN_BOUNDED_COLD409_SAMPLING'
+          : mode === '--contract-race'
+            ? 'OWN_CONTRACT_CONCURRENT_PATCH_RETEST'
+            : mode === '--security-retest'
+              ? 'SCOPED_SECURITY_RESPONSE_RETEST'
+              : 'REMAINING_NONACTIVE_LEGAL_WRITES_SECURITY_LEASE_RECOVERY'
       : 'NONACTIVE_LEGAL_WRITES_AND_117_TARGET_BROWSER',
   sourceCommit: r.sourceCommit,
   prefix,

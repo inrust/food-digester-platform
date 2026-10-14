@@ -1,0 +1,365 @@
+{
+  "validator": "scripts/check-admin-web-target-evidence.mjs",
+  "validatorSha256": "4eda8a74997f79c3c810583f2f5efacf358fe6cce62daf524f8b368c28aee189",
+  "kind": "PARTIAL_DOMAIN_RECEIPT_ASSEMBLY_NOT_LEGACY_PASS_RECEIPT",
+  "status": "PARTIAL_NOT_ACCEPTED",
+  "requiredSets": {
+    "REQUIRED_ROLES": ["PlatformSuperAdmin", "PlatformOperator", "Auditor", "CustomerAdmin", "CustomerViewer"],
+    "REQUIRED_ROUTES": ["/devices/view", "/devices/manage", "/licenses", "/configurations", "/device-users", "/alarms"],
+    "REQUIRED_WORKFLOWS": [
+      "FE-06-device-media-activities",
+      "FE-07-lifecycle-retirement-alias",
+      "FE-08-license-history-actions",
+      "FE-09-configuration-device-user-sync",
+      "FE-10-alarm-url-critical"
+    ]
+  },
+  "probePaths": [
+    "routes",
+    "roles",
+    "workflows",
+    "cognito",
+    "deployedApi",
+    "crossCustomer",
+    "concurrency",
+    "sensitiveData"
+  ],
+  "originalValidatorModified": false,
+  "fullOriginalGatePassed": false,
+  "operationCoverage": [],
+  "routeCoverage": [
+    {
+      "route": "/devices/view",
+      "newLayoutCases": [
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 375,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 1440,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 768,
+          "locale": "zh-CN",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 768,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformOperator",
+          "width": 768,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "Auditor",
+          "width": 768,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "CustomerAdmin",
+          "width": 768,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "CustomerViewer",
+          "width": 768,
+          "locale": "en",
+          "originalResult": "PASS"
+        }
+      ],
+      "deployedRepair": null,
+      "scope": "READ_ROUTE_LAYOUT_ONLY_NOT_MUTATING_WORKFLOW"
+    },
+    {
+      "route": "/devices/manage",
+      "newLayoutCases": [
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 375,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 1440,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 768,
+          "locale": "zh-CN",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 768,
+          "locale": "en",
+          "originalResult": "PASS"
+        }
+      ],
+      "deployedRepair": null,
+      "scope": "READ_ROUTE_LAYOUT_ONLY_NOT_MUTATING_WORKFLOW"
+    },
+    {
+      "route": "/licenses",
+      "newLayoutCases": [
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 375,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 1440,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 768,
+          "locale": "zh-CN",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 768,
+          "locale": "en",
+          "originalResult": "PASS"
+        }
+      ],
+      "deployedRepair": null,
+      "scope": "READ_ROUTE_LAYOUT_ONLY_NOT_MUTATING_WORKFLOW"
+    },
+    {
+      "route": "/configurations",
+      "newLayoutCases": [
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 375,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 1440,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 768,
+          "locale": "zh-CN",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 768,
+          "locale": "en",
+          "originalResult": "PASS"
+        }
+      ],
+      "deployedRepair": null,
+      "scope": "READ_ROUTE_LAYOUT_ONLY_NOT_MUTATING_WORKFLOW"
+    },
+    {
+      "route": "/device-users",
+      "newLayoutCases": [
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 375,
+          "locale": "en",
+          "originalResult": "FAIL"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 1440,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 768,
+          "locale": "zh-CN",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 768,
+          "locale": "en",
+          "originalResult": "PASS"
+        }
+      ],
+      "deployedRepair": "PASS_DEPLOYED_DEVICE_USER_375_EN_SCROLL_REGION",
+      "scope": "READ_ROUTE_LAYOUT_ONLY_NOT_MUTATING_WORKFLOW"
+    },
+    {
+      "route": "/alarms",
+      "newLayoutCases": [
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 375,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 1440,
+          "locale": "en",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 768,
+          "locale": "zh-CN",
+          "originalResult": "PASS"
+        },
+        {
+          "role": "PlatformSuperAdmin",
+          "width": 768,
+          "locale": "en",
+          "originalResult": "PASS"
+        }
+      ],
+      "deployedRepair": null,
+      "scope": "READ_ROUTE_LAYOUT_ONLY_NOT_MUTATING_WORKFLOW"
+    }
+  ],
+  "workflowCoverage": [
+    {
+      "workflowId": "FE-06-device-media-activities",
+      "status": "SCOPED_OBSERVATIONS_ASSEMBLED_FULL_ORIGINAL_WORKFLOW_NOT_ACCEPTED",
+      "retainA2AndUnavailableInputBoundaries": true
+    },
+    {
+      "workflowId": "FE-07-lifecycle-retirement-alias",
+      "status": "SCOPED_OBSERVATIONS_ASSEMBLED_FULL_ORIGINAL_WORKFLOW_NOT_ACCEPTED",
+      "retainA2AndUnavailableInputBoundaries": true
+    },
+    {
+      "workflowId": "FE-08-license-history-actions",
+      "status": "SCOPED_OBSERVATIONS_ASSEMBLED_FULL_ORIGINAL_WORKFLOW_NOT_ACCEPTED",
+      "retainA2AndUnavailableInputBoundaries": true
+    },
+    {
+      "workflowId": "FE-09-configuration-device-user-sync",
+      "status": "SCOPED_OBSERVATIONS_ASSEMBLED_FULL_ORIGINAL_WORKFLOW_NOT_ACCEPTED",
+      "retainA2AndUnavailableInputBoundaries": true
+    },
+    {
+      "workflowId": "FE-10-alarm-url-critical",
+      "status": "SCOPED_OBSERVATIONS_ASSEMBLED_FULL_ORIGINAL_WORKFLOW_NOT_ACCEPTED",
+      "retainA2AndUnavailableInputBoundaries": true
+    }
+  ],
+  "probeCoverage": [
+    {
+      "path": "routes",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "roles",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "workflows",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "cognito",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "deployedApi",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "crossCustomer",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "concurrency",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "sensitiveData",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    }
+  ],
+  "evidence": {
+    "operationRoles": [],
+    "semanticItems": [
+      "device-view.filter.region",
+      "device-view.filter.subregion",
+      "device-view.filter.device",
+      "device-view.button.apply",
+      "device-view.field.componentStates",
+      "device-view.field.sensorReadings",
+      "device-view.field.consumables",
+      "device-view.field.recentAlarms",
+      "device-view.field.esg7d",
+      "device-group.button.search",
+      "device-group.button.reset",
+      "device-group.column.seq",
+      "device-group.column.region",
+      "device-group.column.subregion",
+      "device-group.column.deviceId",
+      "device-group.column.alias",
+      "device-group.column.contractName",
+      "device-group.column.leaseTerm",
+      "device-group.column.firmware",
+      "device-group.field.fourAxisStatus",
+      "device-group.column.actions",
+      "device-group.req.column.deviceId",
+      "device-group.req.column.requestDate",
+      "device-group.req.button.detail",
+      "device-group.req.button.accept",
+      "device-group.req.button.reject",
+      "device-manage.button.updateConfig",
+      "device-manage.button.viewConfig",
+      "device-manage.button.certDetail",
+      "device-manage.button.issueCert",
+      "device-manage.button.confirm",
+      "device-manage.button.back",
+      "settings.button.addDeviceUser",
+      "settings.button.deviceUserFilter",
+      "settings.button.deviceUserFilterReset",
+      "settings.button.resetDeviceUserPassword",
+      "settings.button.deleteDeviceUser"
+    ],
+    "semanticAssociationScope": "RELEVANT_SCOPED_BROWSER_GROUPS_ONLY_NOT_PROTOCOL_OR_FULL_PROBE_PROOF",
+    "priorA5": []
+  },
+  "unavailableInputs": {
+    "source": "USER_REPLY_2026_10_14_UNAVAILABLE",
+    "trustedSignedInvalidClaims": "UNAVAILABLE",
+    "controlledNotificationRecipientAndScope": "UNAVAILABLE",
+    "writableRestorableSettingKey": "UNAVAILABLE",
+    "scopeWaiverOrPassInferred": false,
+    "newChannelsOrPermissionsRequested": false
+  },
+  "originalFailuresPreserved": true,
+  "fullQa09Accepted": false
+}

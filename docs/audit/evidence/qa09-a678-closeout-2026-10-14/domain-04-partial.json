@@ -1,0 +1,1804 @@
+{
+  "validator": "scripts/check-aws-admin-business-evidence.mjs",
+  "validatorSha256": "02c2a4e8da169eadd60be4d051685ef2e95fa291e8d24efbbf32e91506f5fab0",
+  "kind": "PARTIAL_DOMAIN_RECEIPT_ASSEMBLY_NOT_LEGACY_PASS_RECEIPT",
+  "status": "PARTIAL_NOT_ACCEPTED",
+  "requiredSets": {
+    "REQUIRED_ADMIN_BUSINESS_OPERATIONS": [
+      "listLicenses",
+      "createLicense",
+      "getLicense",
+      "listLicenseHistory",
+      "issueLicense",
+      "activateLicense",
+      "renewLicense",
+      "revokeLicense",
+      "evaluateLicense",
+      "createContract",
+      "listContracts",
+      "getContract",
+      "updateContract",
+      "activateContract",
+      "renewContract",
+      "terminateContract",
+      "evaluateContract",
+      "listContractDevices",
+      "listAvailableDevices",
+      "listContractAssociations",
+      "bindContractDevices",
+      "unbindContractDevices",
+      "createConfiguration",
+      "listConfigurations",
+      "getConfiguration",
+      "createConfigurationVersion",
+      "publishConfigurationVersion",
+      "getConfigurationVersion",
+      "getConfigurationVersionStatus",
+      "listConsumableStatus",
+      "getConsumableContact",
+      "createConsumableRequest",
+      "listConsumableRequests",
+      "getConsumableRequest",
+      "processConsumableRequest",
+      "completeConsumableRequest",
+      "cancelConsumableRequest",
+      "createDeviceUser",
+      "listDeviceUsers",
+      "getDeviceUser",
+      "updateDeviceUser",
+      "disableDeviceUser",
+      "assignDeviceUser",
+      "revokeDeviceUser",
+      "listAlarms",
+      "getAlarm",
+      "acknowledgeAlarm",
+      "clearAlarm",
+      "listDeviceEvents",
+      "listTamperEvents",
+      "getEsgOverview",
+      "listEsgHourly",
+      "listEsgDaily",
+      "listEsgReports",
+      "listEsgDailySummary",
+      "listEsgCalculationVersions",
+      "createEsgExport",
+      "getEsgExport"
+    ],
+    "REQUIRED_ADMIN_BUSINESS_ROLES": [
+      "PlatformSuperAdmin",
+      "PlatformOperator",
+      "Auditor",
+      "CustomerAdmin",
+      "CustomerViewer"
+    ]
+  },
+  "probePaths": ["apiOperations", "rbac", "ifMatchRace", "esgExport"],
+  "originalValidatorModified": false,
+  "fullOriginalGatePassed": false,
+  "operationCoverage": [
+    {
+      "operationId": "listLicenses",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "createLicense",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createLicense",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "license.create_draft",
+              "auditDetailSha256": "3fe930c8cf1c93741a9d076b72296dab9285c94aa3f031075077d65d84a869d7",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createLicense",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "license.create_draft",
+              "auditDetailSha256": "e0fe24e89ddb5a19eeb9e65f67219f7923c9cf8ac6043f32abf15b7f0bc521f3",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "createLicense",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "license.create_draft",
+              "auditDetailSha256": "5f832bb7cb771af0a7792c539a515d48e877327e63f2fa2e4c6de89ae2237bd2",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "getLicense",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listLicenseHistory",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "issueLicense",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "issueLicense",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "license.Draft_to_Issued",
+              "auditDetailSha256": "0b2f9bf47c25731f0e182c83780e8de85c932c9f3813d99f3caa202ee7facc24",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "issueLicense",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "license.Draft_to_Issued",
+              "auditDetailSha256": "4e50e4da07c5b38f575b0cdc43d17bd912a1d0ae6c2a219406340c5ddaaa349e",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "issueLicense",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "license.Draft_to_Issued",
+              "auditDetailSha256": "335ce94608a48055249c61268ccd25fa70e0deedeb10e4efef1e5834a7da0ebb",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "activateLicense",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "DEFERRED_A2_NOT_ACCEPTED",
+          "proofs": []
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "DEFERRED_A2_NOT_ACCEPTED",
+          "proofs": [
+            {
+              "operationId": "activateLicense",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "license.Issued_to_Active",
+              "auditDetailSha256": "a638bdc5c7fc93bfaaf998d85aae68076e33d6abd8a3a679addc3627d4b8e441",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "renewLicense",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "DEFERRED_A2_NOT_ACCEPTED",
+          "proofs": []
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "DEFERRED_A2_NOT_ACCEPTED",
+          "proofs": []
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "revokeLicense",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "DEFERRED_A2_NOT_ACCEPTED",
+          "proofs": []
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "DEFERRED_A2_NOT_ACCEPTED",
+          "proofs": [
+            {
+              "operationId": "revokeLicense",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "license.Active_to_Revoked",
+              "auditDetailSha256": "5ed091f5110cd138f2ab78eda458c8dee9f72b7de387e0ec5685d3c61a3df0a9",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "evaluateLicense",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "evaluateLicense",
+              "role": "PlatformSuperAdmin",
+              "receipt": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/writes-retest.json",
+              "receiptSha256": "750e0ac0db4dede8991f7827977526f08dc21b9aba2395095f79e4a9423ca82c",
+              "proofKind": "NONACTIVE_LICENSE_EVALUATION_READBACK",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "scope": "SERVER_ISSUED_STATE_ONLY_NOT_INDEPENDENT_DEVICE_VERIFICATION_OR_NATURAL_ACTIVE"
+            }
+          ]
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "evaluateLicense",
+              "role": "PlatformOperator",
+              "receipt": "docs/audit/evidence/qa-09-remaining-writes-security-recovery-2026-10-05/writes-retest.json",
+              "receiptSha256": "750e0ac0db4dede8991f7827977526f08dc21b9aba2395095f79e4a9423ca82c",
+              "proofKind": "NONACTIVE_LICENSE_EVALUATION_READBACK",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "scope": "SERVER_ISSUED_STATE_ONLY_NOT_INDEPENDENT_DEVICE_VERIFICATION_OR_NATURAL_ACTIVE"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "createContract",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createContract",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "contract.create",
+              "auditDetailSha256": "2e694ed71e1ef2f785cac6cad74785263895d126f72a5c78ab3dd51c155165ae",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "createContract",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "contract.create",
+              "auditDetailSha256": "c3c98455b8f523f8e7185b347375f472046107ec4445100407c4d3e8a014d6bc",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "createContract",
+              "role": "PlatformSuperAdmin",
+              "receipt": "target-v2.json",
+              "receiptSha256": "734a2232d0167e174538e64b011da57603d48a1c53774c1b5de492888607f414",
+              "proofKind": "CURRENT_CONTRACT_STATE_READBACK",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "listContracts",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "getContract",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "updateContract",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "updateContract",
+              "role": "PlatformSuperAdmin",
+              "receipt": "target-v2.json",
+              "receiptSha256": "734a2232d0167e174538e64b011da57603d48a1c53774c1b5de492888607f414",
+              "proofKind": "CURRENT_CONTRACT_STATE_READBACK",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "activateContract",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "activateContract",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "contract.activate",
+              "auditDetailSha256": "755a89be0c2be895546dccf02487e83d2776a72f48417dc16650dcfe830b5859",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "activateContract",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "contract.activate",
+              "auditDetailSha256": "eb47b4cba31e9ae2164587182ddeba9a126989cd7d921839002f17e0a86161cd",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "activateContract",
+              "role": "PlatformSuperAdmin",
+              "receipt": "target-v2.json",
+              "receiptSha256": "734a2232d0167e174538e64b011da57603d48a1c53774c1b5de492888607f414",
+              "proofKind": "CURRENT_CONTRACT_STATE_READBACK",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "renewContract",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "renewContract",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "contract.renew",
+              "auditDetailSha256": "c90ce40eb5931ad5bace7c30532becb245a9b15f22d2601538e73b1907c1be2e",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "renewContract",
+              "role": "PlatformSuperAdmin",
+              "receipt": "target-v2.json",
+              "receiptSha256": "734a2232d0167e174538e64b011da57603d48a1c53774c1b5de492888607f414",
+              "proofKind": "CURRENT_CONTRACT_STATE_READBACK",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "terminateContract",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "terminateContract",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "contract.terminate",
+              "auditDetailSha256": "a37978750e142aaa35c66dc5661285ea969368f23e7f378e6f9ffe669b867686",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "evaluateContract",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "evaluateContract",
+              "role": "PlatformSuperAdmin",
+              "receipt": "target-v2.json",
+              "receiptSha256": "734a2232d0167e174538e64b011da57603d48a1c53774c1b5de492888607f414",
+              "proofKind": "CURRENT_CONTRACT_STATE_READBACK",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "listContractDevices",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listAvailableDevices",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listContractAssociations",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "bindContractDevices",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "bindContractDevices",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "contract.devices.bind",
+              "auditDetailSha256": "7b2cb00bc0b3feca5c85d29fe7f89908a4c3f4b3f96b5f42cdc9dfb856ec98a6",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "bindContractDevices",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "contract.devices.bind",
+              "auditDetailSha256": "d85e33e3728d2e2c99af79d73cfeea2da7658fde09674a91d1896a2330863c19",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "bindContractDevices",
+              "role": "PlatformSuperAdmin",
+              "receipt": "target-v2.json",
+              "receiptSha256": "734a2232d0167e174538e64b011da57603d48a1c53774c1b5de492888607f414",
+              "proofKind": "CURRENT_CONTRACT_STATE_READBACK",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "unbindContractDevices",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "unbindContractDevices",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "contract.devices.unbind",
+              "auditDetailSha256": "c52259dbf1db4e7445409fdcbf8f60c80e5d7629539f82be582c1163b41a7eeb",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "unbindContractDevices",
+              "role": "PlatformSuperAdmin",
+              "receipt": "target-v2.json",
+              "receiptSha256": "734a2232d0167e174538e64b011da57603d48a1c53774c1b5de492888607f414",
+              "proofKind": "CURRENT_CONTRACT_STATE_READBACK",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "createConfiguration",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createConfiguration",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "configuration.create",
+              "auditDetailSha256": "16dbb126ad86f0232e085e773063033e2dd5b714c793fd21c23c2d85ff46587b",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createConfiguration",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "configuration.create",
+              "auditDetailSha256": "fdb99dccddd26a2529b4c298118f6b07e91ec0f68491193b2b89c5d5d86e587c",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "listConfigurations",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "getConfiguration",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "createConfigurationVersion",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createConfigurationVersion",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "configuration.create_version",
+              "auditDetailSha256": "5f00e67ea2dc958f63575d31fc665160bbdd10f2d884339edc250ef9dcd2304d",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createConfigurationVersion",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "configuration.create_version",
+              "auditDetailSha256": "aa0bdc70cbfffa2207f399e2ee4b2e7cd39acb5bfcc4b026fd4efb63a4f2ac35",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "createConfigurationVersion",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "configuration.create_version",
+              "auditDetailSha256": "de6e652926ba1093aa38e9dd336c8b8f377ce7f686b6aacf120e69458bd6235e",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "createConfigurationVersion",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "configuration.create_version",
+              "auditDetailSha256": "2750f4633706a0f8e4757762fd09e0546fb21ea9a0bc7fe9b311a3f891ae8346",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "publishConfigurationVersion",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "publishConfigurationVersion",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "configuration.publish",
+              "auditDetailSha256": "798a4f51073b3715e37ca77132a9bc8637ede9c79bbee3387854dffa0f69637d",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "publishConfigurationVersion",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "configuration.publish",
+              "auditDetailSha256": "56d683df72d5b62b6d139c6987eab8f7058f2b560a9c7bddb010a15956645257",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "getConfigurationVersion",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "getConfigurationVersionStatus",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listConsumableStatus",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "getConsumableContact",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "createConsumableRequest",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createConsumableRequest",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.create",
+              "auditDetailSha256": "a4815560d6f0fd0dc5c86a7e42643ada49c9a54fbe9c8aa41e5a85c155414698",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "createConsumableRequest",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.create",
+              "auditDetailSha256": "8db5f8f0b6f1577ce03fd62b071b60c5eaa3a0f123bb9b369be08412fcd4efac",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "createConsumableRequest",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.create",
+              "auditDetailSha256": "da471283ef5d57db55308835ff5daa03282e4f6e5cf7c220b0718946394cfdd7",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "createConsumableRequest",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.create",
+              "auditDetailSha256": "70674dd1ecacdb63f6f0ab11708382b02a10b15bcffec89eab5d0cbc4195f870",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "createConsumableRequest",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.create",
+              "auditDetailSha256": "a42b5cc033be4a9514d0a815fe1124f85d3838d6034a3873d9363fcefbd3c08a",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createConsumableRequest",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.create",
+              "auditDetailSha256": "a8daa7b1ddcad72809b21d7aec804ebb93db69eb7c8f5d13e7de6d36cd93ea18",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "createConsumableRequest",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.create",
+              "auditDetailSha256": "ecabe2206e4683cfe7cb72c8c71926763f1ff4f8ca27896404d9980c5250b1fb",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "listConsumableRequests",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "getConsumableRequest",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "processConsumableRequest",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "processConsumableRequest",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.process",
+              "auditDetailSha256": "1da3f4afbb16a4bfcc7f833638aa1f7c90dba7840e36e76cd804c11c8a63d86d",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "processConsumableRequest",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.process",
+              "auditDetailSha256": "272d36612c02df76d25b9c47616978b588870ca7c0dddfd17f4587a3c086e09f",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "completeConsumableRequest",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "completeConsumableRequest",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.complete",
+              "auditDetailSha256": "53dc1a66906cc5fa96de906b4f6030a7ba60671a8d4c238ada0526fbfb1adcc6",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "completeConsumableRequest",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.complete",
+              "auditDetailSha256": "417a560d605a0e4915266074ec4328a5f4595b6de4089895507024963e3228a8",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "cancelConsumableRequest",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "cancelConsumableRequest",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.cancel",
+              "auditDetailSha256": "0415c124997ebda46b11cf505b708348f33d4a00891e9525ad05cd1d41e60e5b",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "cancelConsumableRequest",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "consumable.request.cancel",
+              "auditDetailSha256": "cb2687a271f98efb00740ce0493a1d15940cfee089565804adaec8b49ef8aa04",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "createDeviceUser",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createDeviceUser",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "device.user.create",
+              "auditDetailSha256": "ac82d451636ad6dee340edd64a9586f3e0ec6ea988f3776242dd924870a39b97",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "CustomerAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createDeviceUser",
+              "role": "CustomerAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "device.user.create",
+              "auditDetailSha256": "b0ed4da687f8ba9a528296c85ef871f6c3326d9591bebc78fb4b802514ae074b",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "createDeviceUser",
+              "role": "CustomerAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "device.user.create",
+              "auditDetailSha256": "9e21fc1033c6ee2c0925092b2306138be93f433d67e85efa9f331e5cd0de45b8",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "listDeviceUsers",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "getDeviceUser",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "updateDeviceUser",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "updateDeviceUser",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "device.user.update",
+              "auditDetailSha256": "b46fc76f18a4a02555c993033e3e3d477e146b4fb4c54cf788b0308bca51c548",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "CustomerAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "updateDeviceUser",
+              "role": "CustomerAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "device.user.update",
+              "auditDetailSha256": "f8a62903e4b9f42be5a3d47768b49c4582e8d7e01dd6cd08fdba9899a76ca55c",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            },
+            {
+              "operationId": "updateDeviceUser",
+              "role": "CustomerAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "device.user.update",
+              "auditDetailSha256": "c4d320e9312ec91fdfedc4d7fe5115c91be4fd258ba11c146f674b9c257e88bd",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "disableDeviceUser",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "disableDeviceUser",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "device.user.disable",
+              "auditDetailSha256": "eaf70564bf0cc439106761a14a0f44a5470b17d658539895d95b955b3b4dd2fd",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "CustomerAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "disableDeviceUser",
+              "role": "CustomerAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "device.user.disable",
+              "auditDetailSha256": "cab3131763fb91b9028001ec59653dc817108c1095f7040c8195305c8efd5952",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "assignDeviceUser",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "assignDeviceUser",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "device.user.assign",
+              "auditDetailSha256": "dab494d474ddd10e54621147a6072640b7b9af77a09f22af0debc5f243bb19c1",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "CustomerAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "assignDeviceUser",
+              "role": "CustomerAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "device.user.assign",
+              "auditDetailSha256": "9b9c56efe50d2a46c7c6c90002870a0c6f628eeabc230a4824987ebf828926e7",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "revokeDeviceUser",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "revokeDeviceUser",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "device.user.revoke",
+              "auditDetailSha256": "3e7b957012a1f2959a7c1173a7a84f9672503a90fc03fbe27934e39af4d96d79",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "CustomerAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "revokeDeviceUser",
+              "role": "CustomerAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "device.user.revoke",
+              "auditDetailSha256": "89d2f76256046c364f30c6ae3582676de2b8e399c05044c10e6bc40e30c0da89",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "listAlarms",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "getAlarm",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "acknowledgeAlarm",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "acknowledgeAlarm",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "alarm.acknowledge",
+              "auditDetailSha256": "29293fa9c9e2701f7071702e10b7e4d067e49a9fe3f57f055f56aa40d3ec798d",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "acknowledgeAlarm",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "alarm.acknowledge",
+              "auditDetailSha256": "b3bfd1898fb162d6ff559c556ae083e4e6d9ff5c78a9bea44e0531ca0aaf0df7",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "clearAlarm",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "clearAlarm",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "alarm.clear",
+              "auditDetailSha256": "e3f88bcccb8d33b0eaaf51d369ddc4135f7a0bdb136acc48152821e2a070121b",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "PlatformOperator",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "clearAlarm",
+              "role": "PlatformOperator",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "alarm.clear",
+              "auditDetailSha256": "c905f5f4c1fb1f8bfdb2f24667ba17a4aec89a97f1c4c29fabeeadd5169b21ab",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "listDeviceEvents",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listTamperEvents",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "getEsgOverview",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listEsgHourly",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listEsgDaily",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listEsgReports",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listEsgDailySummary",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "listEsgCalculationVersions",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    },
+    {
+      "operationId": "createEsgExport",
+      "roleRows": [
+        {
+          "role": "PlatformSuperAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createEsgExport",
+              "role": "PlatformSuperAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "esg.export.create",
+              "auditDetailSha256": "888ac5a40c7b27625946e7cbc430d1e516a2621b2c81fc0cb68c94c7c1601ef0",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "Auditor",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createEsgExport",
+              "role": "Auditor",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "esg.export.create",
+              "auditDetailSha256": "25da187793c5399fe217b4600a71b65950896835402ed35ec44d06347b28e273",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        },
+        {
+          "role": "CustomerAdmin",
+          "status": "PASS_SCOPED_PERSISTENCE",
+          "proofs": [
+            {
+              "operationId": "createEsgExport",
+              "role": "CustomerAdmin",
+              "receipt": "persistence-audit-v3.json",
+              "receiptSha256": "beac65efd85da7031370f045c58bdee0ab2cae36214afb01b9924b462a6b7b0d",
+              "proofKind": "ATOMIC_AUDIT_SNAPSHOT",
+              "sourceCompatible": true,
+              "cleanupVerified": true,
+              "specializedValidation": "PASS",
+              "action": "esg.export.create",
+              "auditDetailSha256": "20a26852826addb06f626d79c7d3727ba3d973168a5b16000c19ad1282f6b6f6",
+              "artifactBytesIdenticalClaimed": false,
+              "localBundle": "qa09-private-a678-followup-20261014",
+              "location": "LOCAL_ONLY_RAW"
+            }
+          ]
+        }
+      ],
+      "uncoveredReadOrAncillaryRequirement": null
+    },
+    {
+      "operationId": "getEsgExport",
+      "roleRows": [],
+      "uncoveredReadOrAncillaryRequirement": "ORIGINAL_SCHEMA_OR_HTTP_READ_RECEIPT_STILL_AUTHORITATIVE_NOT_A_WRITE_LEDGER_PASS"
+    }
+  ],
+  "routeCoverage": [],
+  "workflowCoverage": [],
+  "probeCoverage": [
+    {
+      "path": "apiOperations",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "rbac",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "ifMatchRace",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    },
+    {
+      "path": "esgExport",
+      "status": "PARTIAL_SCOPED_OBSERVATIONS_NOT_FULL_ORIGINAL_PROBE",
+      "originalValidatorAndAncillaryConstraintsStillRequired": true
+    }
+  ],
+  "evidence": {
+    "operationRoles": [
+      "createLicense:PlatformSuperAdmin",
+      "createLicense:PlatformOperator",
+      "issueLicense:PlatformSuperAdmin",
+      "issueLicense:PlatformOperator",
+      "evaluateLicense:PlatformSuperAdmin",
+      "evaluateLicense:PlatformOperator",
+      "createContract:PlatformSuperAdmin",
+      "updateContract:PlatformSuperAdmin",
+      "activateContract:PlatformSuperAdmin",
+      "renewContract:PlatformSuperAdmin",
+      "terminateContract:PlatformSuperAdmin",
+      "evaluateContract:PlatformSuperAdmin",
+      "bindContractDevices:PlatformSuperAdmin",
+      "unbindContractDevices:PlatformSuperAdmin",
+      "createConfiguration:PlatformSuperAdmin",
+      "createConfiguration:PlatformOperator",
+      "createConfigurationVersion:PlatformSuperAdmin",
+      "createConfigurationVersion:PlatformOperator",
+      "publishConfigurationVersion:PlatformSuperAdmin",
+      "publishConfigurationVersion:PlatformOperator",
+      "createConsumableRequest:PlatformSuperAdmin",
+      "createConsumableRequest:PlatformOperator",
+      "processConsumableRequest:PlatformSuperAdmin",
+      "processConsumableRequest:PlatformOperator",
+      "completeConsumableRequest:PlatformSuperAdmin",
+      "completeConsumableRequest:PlatformOperator",
+      "cancelConsumableRequest:PlatformSuperAdmin",
+      "cancelConsumableRequest:PlatformOperator",
+      "createDeviceUser:PlatformSuperAdmin",
+      "createDeviceUser:CustomerAdmin",
+      "updateDeviceUser:PlatformSuperAdmin",
+      "updateDeviceUser:CustomerAdmin",
+      "disableDeviceUser:PlatformSuperAdmin",
+      "disableDeviceUser:CustomerAdmin",
+      "assignDeviceUser:PlatformSuperAdmin",
+      "assignDeviceUser:CustomerAdmin",
+      "revokeDeviceUser:PlatformSuperAdmin",
+      "revokeDeviceUser:CustomerAdmin",
+      "acknowledgeAlarm:PlatformSuperAdmin",
+      "acknowledgeAlarm:PlatformOperator",
+      "clearAlarm:PlatformSuperAdmin",
+      "clearAlarm:PlatformOperator",
+      "createEsgExport:PlatformSuperAdmin",
+      "createEsgExport:Auditor",
+      "createEsgExport:CustomerAdmin"
+    ],
+    "semanticItems": [
+      "device-consumable.button.search",
+      "device-consumable.button.reset",
+      "device-consumable.column.region",
+      "device-consumable.column.subregion",
+      "device-consumable.column.deviceId",
+      "device-consumable.column.alias",
+      "device-consumable.column.carbonFilterPct",
+      "device-consumable.column.bioAdditivePct",
+      "device-consumable.button.contact",
+      "device-consumable.req.column.requestTime",
+      "device-consumable.req.column.status",
+      "device-consumable.req.button.process",
+      "device-consumable.req.button.complete",
+      "contract-modify.button.new",
+      "contract-modify.column.contractNumber",
+      "contract-modify.column.customer",
+      "contract-modify.column.deviceCount",
+      "contract-modify.column.servicePeriod",
+      "contract-modify.column.status",
+      "contract-modify.button.edit",
+      "contract-modify.button.renewOrUnbind",
+      "contract-modify.button.queryDevices",
+      "contract-new.field.number",
+      "contract-new.field.name",
+      "contract-new.field.customer",
+      "contract-new.field.period",
+      "contract-new.field.devices",
+      "contract-new.button.submit",
+      "contract-new.button.cancel",
+      "contract-detail.button.back",
+      "contract-detail.column.region",
+      "contract-detail.column.subregion",
+      "contract-detail.column.deviceId",
+      "contract-detail.column.alias",
+      "contract-detail.field.fourAxisStatus",
+      "contract-detail.column.firmware",
+      "contract-detail.field.licenseSummary",
+      "esg-overview.toggle.period",
+      "esg-overview.button.exportCsv",
+      "esg-overview.column.date",
+      "esg-overview.column.carbon",
+      "esg-overview.column.throughput",
+      "esg-overview.column.energy",
+      "esg-device.filter.region",
+      "esg-device.filter.subregion",
+      "esg-device.filter.device",
+      "esg-device.button.apply",
+      "esg-device.toggle.period",
+      "esg-device.button.exportCsv",
+      "esg-device.field.metrics",
+      "settings.button.addDeviceUser",
+      "settings.button.deviceUserFilter",
+      "settings.button.deviceUserFilterReset",
+      "settings.button.resetDeviceUserPassword",
+      "settings.button.deleteDeviceUser"
+    ],
+    "semanticAssociationScope": "RELEVANT_SCOPED_BROWSER_GROUPS_ONLY_NOT_PROTOCOL_OR_FULL_PROBE_PROOF",
+    "priorA5": []
+  },
+  "unavailableInputs": {
+    "source": "USER_REPLY_2026_10_14_UNAVAILABLE",
+    "trustedSignedInvalidClaims": "UNAVAILABLE",
+    "controlledNotificationRecipientAndScope": "UNAVAILABLE",
+    "writableRestorableSettingKey": "UNAVAILABLE",
+    "scopeWaiverOrPassInferred": false,
+    "newChannelsOrPermissionsRequested": false
+  },
+  "originalFailuresPreserved": true,
+  "fullQa09Accepted": false
+}
