@@ -27,7 +27,7 @@ for (const width of [375, 1440]) {
     });
     await page.route('**/api/v1/admin/dashboard/overview', (route) => json(route, { data: dashboard, meta: {} }));
     await page.goto('/login');
-    await page.getByLabel('用户名').fill(email);
+    await page.getByLabel('邮箱').fill(email);
     await page.getByLabel('密码', { exact: true }).fill('654321');
     await page.getByRole('button', { name: '登录', exact: true }).click();
     await expect(page.getByRole('heading', { name: '使用邮件验证码设置新密码' })).toBeVisible();
@@ -41,7 +41,7 @@ for (const width of [375, 1440]) {
     expect(await page.evaluate(() => sessionStorage.getItem('fdp.admin.session.v1'))).toBeNull();
     await page.getByLabel('密码', { exact: true }).fill('OldPass123');
     await page.getByRole('button', { name: '登录', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('用户名或密码错误');
+    await expect(page.getByRole('alert')).toContainText('邮箱或密码错误');
     await page.getByLabel('密码', { exact: true }).fill('NewPass123');
     await page.getByRole('button', { name: '登录', exact: true }).click();
     await expect(page).toHaveURL(/\/dashboard$/);

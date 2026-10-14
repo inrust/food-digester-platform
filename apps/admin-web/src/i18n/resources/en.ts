@@ -25,6 +25,7 @@ export const EN: Readonly<Record<string, string>> = {
   'design.capability0': 'Device lifecycle management',
   'design.capability1': 'Environmental data and insights',
   'design.capability2': 'Role permissions and audit history',
+  'auth.email.label': 'Email',
   'auth.newPassword.badge': 'First sign-in',
   'auth.newPassword.title': 'Set a new sign-in password',
   'auth.newPassword.description':
@@ -37,7 +38,7 @@ export const EN: Readonly<Record<string, string>> = {
   'auth.resetPassword.haveCode': 'Already have a reset code',
   'auth.resetPassword.requestCode': 'Request a new code',
   'auth.resetPassword.submit': 'Set new password',
-  'auth.error.invalidCredentials': 'The username or password is incorrect. Check both and try again.',
+  'auth.error.invalidCredentials': 'The email or password is incorrect. Check both and try again.',
   'auth.error.passwordResetRequired':
     'This account requires a password reset. Enter the reset code from your email and choose a new password.',
   'auth.error.userNotConfirmed':

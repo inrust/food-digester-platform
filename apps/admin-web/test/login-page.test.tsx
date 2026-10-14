@@ -10,8 +10,8 @@ import { I18nProvider } from '../src/i18n/i18n.js';
 afterEach(cleanup);
 
 test.each([
-  ['zh-CN', '用户名', '已有重置验证码', '新密码', '验证码', '设置新密码', '登录'],
-  ['en', 'Username', 'Already have a reset code', 'New password', 'Verification code', 'Set new password', 'Login'],
+  ['zh-CN', '邮箱', '已有重置验证码', '新密码', '验证码', '设置新密码', '登录'],
+  ['en', 'Email', 'Already have a reset code', 'New password', 'Verification code', 'Set new password', 'Login'],
 ] as const)(
   '管理员邮件验证码：%s 直接确认新密码，不重发或尝试用验证码登录',
   async (language, usernameLabel, haveCode, passwordLabel, codeLabel, submitLabel, loginLabel) => {
@@ -55,11 +55,11 @@ test('登录遇到 RESET_REQUIRED 自动转到验证码确认页且保留邮箱�
       <LoginPage auth={auth as unknown as AuthFlow} onAuthenticated={vi.fn()} />
     </I18nProvider>,
   );
-  await user.type(screen.getByLabelText('用户名'), 'reset@example.com');
+  await user.type(screen.getByLabelText('邮箱'), 'reset@example.com');
   await user.type(screen.getByLabelText('密码'), '654321');
   await user.click(screen.getByRole('button', { name: '登录' }));
   expect(await screen.findByRole('heading', { name: '使用邮件验证码设置新密码' })).toBeDefined();
-  expect((screen.getByLabelText('用户名') as HTMLInputElement).value).toBe('reset@example.com');
+  expect((screen.getByLabelText('邮箱') as HTMLInputElement).value).toBe('reset@example.com');
   expect((screen.getByLabelText('新密码') as HTMLInputElement).value).toBe('');
   expect(auth.forgotPassword).not.toHaveBeenCalled();
 });
@@ -77,7 +77,7 @@ test.each(['CODE_MISMATCH', 'CODE_EXPIRED'] as const)(
         <LoginPage auth={auth as unknown as AuthFlow} onAuthenticated={vi.fn()} />
       </I18nProvider>,
     );
-    await user.type(screen.getByLabelText('用户名'), 'reset@example.com');
+    await user.type(screen.getByLabelText('邮箱'), 'reset@example.com');
     await user.click(screen.getByRole('button', { name: '已有重置验证码' }));
     await user.type(screen.getByLabelText('新密码'), 'NewPass123');
     await user.type(screen.getByLabelText('验证码'), '000000');
@@ -105,7 +105,7 @@ test('临时密码登录后突出显示首次登录改密说明与明确提交�
   );
 
   expect(screen.queryByTestId('new-password-notice')).toBeNull();
-  await user.type(screen.getByLabelText('用户名'), 'new-user@example.com');
+  await user.type(screen.getByLabelText('邮箱'), 'new-user@example.com');
   await user.type(screen.getByLabelText('密码'), 'Temporary-Password-1');
   await user.click(screen.getByRole('button', { name: '登录' }));
 
@@ -132,7 +132,7 @@ test('设置新密码失败时显示具体规则且不暴露身份服务英文�
     </I18nProvider>,
   );
 
-  await user.type(screen.getByLabelText('用户名'), 'new-user@example.com');
+  await user.type(screen.getByLabelText('邮箱'), 'new-user@example.com');
   await user.type(screen.getByLabelText('密码'), 'Temporary-Password-1');
   await user.click(screen.getByRole('button', { name: '登录' }));
   await user.type(await screen.findByLabelText('创建新密码'), 'No-Numbers');

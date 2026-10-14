@@ -109,7 +109,7 @@ try {
         });
     });
     await page.goto('https://admin.bio-nexa.com/login');
-    await page.getByLabel('用户名').fill(username);
+    await page.getByLabel('邮箱').fill(username);
     await page.getByLabel('密码', { exact: true }).fill(password);
     await page.getByRole('button', { name: '登录', exact: true }).click();
     await page.waitForURL('**/dashboard', { timeout: 30000 });

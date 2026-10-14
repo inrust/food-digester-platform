@@ -137,7 +137,7 @@ export function LoginPage({ auth, onAuthenticated }: LoginPageProps) {
             <p>{translate('auth.resetPassword.description')}</p>
           </section>
         ) : null}
-        <label htmlFor="username">{translate('page.a1aaf352cb07')}</label>
+        <label htmlFor="username">{translate('auth.email.label')}</label>
         <Input
           id="username"
           autoComplete="username"
