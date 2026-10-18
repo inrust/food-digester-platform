@@ -1,0 +1,1648 @@
+{
+  "title": "设备 MQTT 完整报文样例",
+  "date": "2026-10-18",
+  "sourceCommit": "dc95d4b34307569deabc145f83747cdbca666e6b",
+  "exampleOnly": true,
+  "publishOnlyPayload": true,
+  "connection": {
+    "host": "使用 Onboarding APPROVED.mqtt.endpoint",
+    "port": 8883,
+    "clientId": "DEV001（替换为实际 deviceId）",
+    "tlsSni": "与 Host 完全一致",
+    "authentication": "设备 X.509 证书及本地私钥",
+    "qos": 1,
+    "retain": false
+  },
+  "notes": [
+    "样例为独立场景集合，不是自动发布脚本；不要将整个 manifest 作为 MQTT Payload。",
+    "DEV001、用户/客户/任务 ID、路径、时间戳、OTA token 及包摘要均为演示值。",
+    "实际发送须使用当前 UTC 时间、真实业务状态、持久递增 seq、唯一 meta.id；变更审计报文后重算 audit.hash。",
+    "默认时间窗 ±300 秒；静态样例不能直接作为当前在线报文重放。",
+    "Heartbeat ACTIVE/License ACTIVE 仅用于已许可运行场景；无 License 或 Maintenance 到 Heartbeat 的映射尚需明确，不能伪报 ACTIVE。",
+    "Telemetry 的全部 13 指标、Report 等可选字段为展示格式而填满；实际缺测应省略，不能伪造 0。",
+    "只有 Telemetry、Report、Tamper 带 audit.hash；Hash 按 RFC 8785 的 {meta,data} 计算。",
+    "commandId=原 cmd.meta.id，逐字符回传；command-success 与 command-failed 是替代分支。",
+    "OTA targetId 从 downloadUrl 路径 URL 解码取得，不能把大写 meta.id 截取后直接回传。",
+    "OTA 正常路径 NOTIFIED→DOWNLOADING→INSTALLING→SUCCEEDED；FAILED 为异常终态，ROLLED_BACK 按状态机允许的前置状态发送。",
+    "命令与 OTA 回执共享 ack 序号，成功用 SUCCESS（命令）或 SUCCEEDED（OTA）。",
+    "媒体需先 REST 上传会话→上传文件→MQTT 元数据；objectPath 原样回传，sizeKb=ceil(bytes/1024)。",
+    "OTA downloadUrl 是虚构一次性下载授权；sha256 是格式占位值，非实际升级包摘要；设备 mTLS 换取 307 Location 后再下载校验。",
+    "Tamper 样例采用 WARNING；真实 CRITICAL 可能使设备自动挂起。",
+    "PUBACK 不等于业务落库；本次只验证 Schema、Hash、字段覆盖与关联结构，未向 AWS 发送消息。"
+  ],
+  "catalogs": {
+    "commands": [
+      {
+        "command": "START",
+        "category": "MACHINE",
+        "highRisk": false,
+        "allowedStatuses": [
+          "ACTIVE"
+        ]
+      },
+      {
+        "command": "STOP",
+        "category": "MACHINE",
+        "highRisk": false,
+        "allowedStatuses": [
+          "ACTIVE",
+          "MAINTENANCE",
+          "SUSPENDED"
+        ]
+      },
+      {
+        "command": "PAUSE",
+        "category": "MACHINE",
+        "highRisk": false,
+        "allowedStatuses": [
+          "ACTIVE"
+        ]
+      },
+      {
+        "command": "RESUME",
+        "category": "MACHINE",
+        "highRisk": false,
+        "allowedStatuses": [
+          "ACTIVE"
+        ]
+      },
+      {
+        "command": "EMERGENCY_STOP",
+        "category": "MACHINE",
+        "highRisk": true,
+        "allowedStatuses": [
+          "ACTIVE",
+          "MAINTENANCE",
+          "SUSPENDED"
+        ]
+      },
+      {
+        "command": "AGITATOR_FORWARD",
+        "category": "MOTOR",
+        "highRisk": true,
+        "allowedStatuses": [
+          "ACTIVE"
+        ]
+      },
+      {
+        "command": "AGITATOR_REVERSE",
+        "category": "MOTOR",
+        "highRisk": true,
+        "allowedStatuses": [
+          "ACTIVE"
+        ]
+      },
+      {
+        "command": "AGITATOR_STOP",
+        "category": "MOTOR",
+        "highRisk": true,
+        "allowedStatuses": [
+          "ACTIVE",
+          "MAINTENANCE",
+          "SUSPENDED"
+        ]
+      },
+      {
+        "command": "HEATING_ON",
+        "category": "HEATING",
+        "highRisk": true,
+        "allowedStatuses": [
+          "ACTIVE"
+        ]
+      },
+      {
+        "command": "HEATING_OFF",
+        "category": "HEATING",
+        "highRisk": true,
+        "allowedStatuses": [
+          "ACTIVE",
+          "MAINTENANCE",
+          "SUSPENDED"
+        ]
+      },
+      {
+        "command": "SET_TARGET_TEMPERATURE",
+        "category": "HEATING",
+        "highRisk": true,
+        "allowedStatuses": [
+          "ACTIVE"
+        ]
+      },
+      {
+        "command": "EXHAUST_ON",
+        "category": "VENTILATION",
+        "highRisk": false,
+        "allowedStatuses": [
+          "ACTIVE"
+        ]
+      },
+      {
+        "command": "EXHAUST_OFF",
+        "category": "VENTILATION",
+        "highRisk": false,
+        "allowedStatuses": [
+          "ACTIVE",
+          "MAINTENANCE",
+          "SUSPENDED"
+        ]
+      },
+      {
+        "command": "AIR_SUPPLY_ON",
+        "category": "VENTILATION",
+        "highRisk": false,
+        "allowedStatuses": [
+          "ACTIVE"
+        ]
+      },
+      {
+        "command": "AIR_SUPPLY_OFF",
+        "category": "VENTILATION",
+        "highRisk": false,
+        "allowedStatuses": [
+          "ACTIVE",
+          "MAINTENANCE",
+          "SUSPENDED"
+        ]
+      },
+      {
+        "command": "DISCHARGE_START",
+        "category": "DISCHARGE",
+        "highRisk": true,
+        "allowedStatuses": [
+          "ACTIVE"
+        ]
+      },
+      {
+        "command": "DISCHARGE_STOP",
+        "category": "DISCHARGE",
+        "highRisk": true,
+        "allowedStatuses": [
+          "ACTIVE",
+          "MAINTENANCE",
+          "SUSPENDED"
+        ]
+      },
+      {
+        "command": "REBOOT",
+        "category": "DEVICE",
+        "highRisk": false,
+        "allowedStatuses": [
+          "ACTIVE",
+          "MAINTENANCE",
+          "SUSPENDED"
+        ]
+      },
+      {
+        "command": "SHUTDOWN",
+        "category": "DEVICE",
+        "highRisk": true,
+        "allowedStatuses": [
+          "ACTIVE",
+          "MAINTENANCE",
+          "SUSPENDED"
+        ]
+      },
+      {
+        "command": "FACTORY_RESET",
+        "category": "DEVICE",
+        "highRisk": true,
+        "allowedStatuses": [
+          "ACTIVE"
+        ]
+      },
+      {
+        "command": "TAKE_SNAPSHOT",
+        "category": "DEVICE",
+        "highRisk": false,
+        "allowedStatuses": [
+          "ACTIVE",
+          "MAINTENANCE",
+          "SUSPENDED"
+        ]
+      },
+      {
+        "command": "FORCE_SYNC",
+        "category": "DEVICE",
+        "highRisk": false,
+        "allowedStatuses": [
+          "ACTIVE",
+          "MAINTENANCE",
+          "SUSPENDED"
+        ]
+      }
+    ],
+    "notifications": [
+      {
+        "type": "SYNC_REQUIRED",
+        "deviceAction": "SYNC",
+        "description": "调用 /api/v1/device/sync"
+      },
+      {
+        "type": "LICENSE_CHANGED",
+        "deviceAction": "SYNC",
+        "description": "调用 /api/v1/device/sync"
+      },
+      {
+        "type": "CONFIG_CHANGED",
+        "deviceAction": "SYNC",
+        "description": "调用 /api/v1/device/sync"
+      },
+      {
+        "type": "USERS_CHANGED",
+        "deviceAction": "SYNC",
+        "description": "调用 /api/v1/device/sync"
+      },
+      {
+        "type": "STATUS_CHANGED",
+        "deviceAction": "SYNC",
+        "description": "调用 /api/v1/device/sync"
+      },
+      {
+        "type": "ASSIGNMENT_CHANGED",
+        "deviceAction": "SYNC",
+        "description": "调用 /api/v1/device/sync"
+      },
+      {
+        "type": "CERTIFICATE_EXPIRING",
+        "deviceAction": "CHECK_CERTIFICATE_STATUS",
+        "description": "调用证书状态 API"
+      },
+      {
+        "type": "CERTIFICATE_ROTATION_REQUIRED",
+        "deviceAction": "ROTATE_CERTIFICATE",
+        "description": "调用证书轮换 API"
+      },
+      {
+        "type": "OTA_AVAILABLE",
+        "deviceAction": "AWAIT_OTA_MESSAGE",
+        "description": "等待/接收 OTA Topic"
+      },
+      {
+        "type": "OTA_CANCELLED",
+        "deviceAction": "CANCEL_PENDING_OTA",
+        "description": "取消待执行升级"
+      },
+      {
+        "type": "SECURITY_POLICY_UPDATED",
+        "deviceAction": "SYNC",
+        "description": "Sync 最新安全策略"
+      },
+      {
+        "type": "DEVICE_SUSPENDED",
+        "deviceAction": "ENTER_SUSPENDED_MODE",
+        "description": "进入 Suspended 模式"
+      },
+      {
+        "type": "DEVICE_RETIRED",
+        "deviceAction": "ENTER_RETIRED_MODE",
+        "description": "进入 Retired 模式"
+      }
+    ]
+  },
+  "messages": [
+    {
+      "name": "heartbeat",
+      "topic": "bnx/device/DEV001/heartbeat",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "HB-DEV001-100",
+          "ts": "2026-10-18T08:00:00Z",
+          "seq": 100,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "deviceStatus": "ONLINE",
+          "uptimeSeconds": 86400,
+          "firmwareVersion": "1.0.5",
+          "operationalStatus": "ACTIVE",
+          "machineRunning": true,
+          "machineMode": "PROCESSING",
+          "licenseStatus": "ACTIVE",
+          "licenseExpiryDate": "2027-12-31",
+          "networkType": "4G",
+          "networkStatus": "CONNECTED",
+          "signalStrength": -68,
+          "cpuUsagePct": 25,
+          "memoryUsagePct": 40,
+          "storageUsagePct": 30,
+          "sensorOverallStatus": "NORMAL",
+          "temperatureSensor": "NORMAL",
+          "humiditySensor": "NORMAL",
+          "weightSensor": "NORMAL",
+          "gasSensor": "NORMAL",
+          "certificateStatus": "VALID",
+          "tamperStatus": "NORMAL"
+        }
+      },
+      "file": "payloads/01-heartbeat.json"
+    },
+    {
+      "name": "telemetry",
+      "topic": "bnx/device/DEV001/telemetry",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "TEL-DEV001-10001",
+          "ts": "2026-10-18T08:00:00Z",
+          "seq": 10001,
+          "schemaVer": "1.0"
+        },
+        "audit": {
+          "hash": "1e70de4a3554075016bde187ce5ad3c18563bd1d57f9875945f0af6ccde2c068"
+        },
+        "data": {
+          "feedingWeightKg": 25,
+          "chamberWeightKg": 120,
+          "dischargeWeightKg": 5,
+          "humidityPct": 45.2,
+          "ambientTempC": 28.5,
+          "heatTemperatureC": 72.1,
+          "siloTemperatureC": 62.5,
+          "powerConsumptionKw": 2.8,
+          "o2Pct": 20.5,
+          "co2Ppm": 420,
+          "ch4Ppm": 12,
+          "n2oPpm": 1.5,
+          "currentAmp": 3.8
+        }
+      },
+      "file": "payloads/02-telemetry.json"
+    },
+    {
+      "name": "report",
+      "topic": "bnx/device/DEV001/report",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "RPT-DEV001-20001",
+          "ts": "2026-10-18T08:00:00Z",
+          "seq": 20001,
+          "schemaVer": "1.0"
+        },
+        "audit": {
+          "hash": "89bcab306f94ff0dbbf5be8c7fb5e2020ef06b1edf1d2c234bb90eb4bbd13410"
+        },
+        "data": {
+          "reportType": "DAILY",
+          "periodStartTime": "2026-10-17T00:00:00Z",
+          "periodEndTime": "2026-10-17T23:59:59Z",
+          "feedingWeightKg": 250,
+          "dischargeWeightKg": 180,
+          "reductionWeightKg": 70,
+          "cycleCount": 12,
+          "processingDurationMinutes": 480,
+          "energyConsumptionKwh": 19.2,
+          "averagePowerKw": 2.4,
+          "averageO2Pct": 20.4,
+          "averageCo2Ppm": 430,
+          "averageCh4Ppm": 11,
+          "averageN2oPpm": 1.4,
+          "carbonReductionKg": 35.6,
+          "carbonReductionMethod": "DEFAULT_V1",
+          "dataCompletenessPct": 99.8,
+          "missingRecordCount": 2
+        }
+      },
+      "file": "payloads/03-report.json"
+    },
+    {
+      "name": "alarm",
+      "topic": "bnx/device/DEV001/alarm",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "ALM-DEV001-30001",
+          "ts": "2026-10-18T08:00:00Z",
+          "seq": 30001,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "code": "TEMP_HIGH",
+          "category": "TEMPERATURE",
+          "severity": "HIGH",
+          "status": "ACTIVE",
+          "detectedTime": "2026-10-18T08:00:00Z",
+          "component": "HEATER",
+          "currentValue": 88,
+          "threshold": 80,
+          "unit": "C",
+          "message": "Heating temperature exceeded threshold",
+          "recommendedAction": "CHECK_HEATER"
+        }
+      },
+      "file": "payloads/04-alarm.json"
+    },
+    {
+      "name": "event",
+      "topic": "bnx/device/DEV001/event",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "EVT-DEV001-40001",
+          "ts": "2026-10-18T08:00:00Z",
+          "seq": 40001,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "eventType": "MACHINE_STARTED",
+          "userId": "USR001",
+          "username": "operator01",
+          "source": "LOCAL",
+          "remarks": "Daily operation start"
+        }
+      },
+      "file": "payloads/05-event.json"
+    },
+    {
+      "name": "tamper",
+      "topic": "bnx/device/DEV001/tamper",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "TMP-DEV001-60001",
+          "ts": "2026-10-18T08:00:00Z",
+          "seq": 60001,
+          "schemaVer": "1.0"
+        },
+        "audit": {
+          "hash": "91acac5b929860e7978f3c037f0cf2b2264af76d706346a20252d8b62d9c4f58"
+        },
+        "data": {
+          "eventType": "ENCLOSURE_OPENED",
+          "severity": "WARNING",
+          "component": "ENCLOSURE",
+          "details": "Enclosure opened during maintenance inspection",
+          "actionTaken": "EVENT_RECORDED"
+        }
+      },
+      "file": "payloads/06-tamper.json"
+    },
+    {
+      "name": "ack-command-success",
+      "topic": "bnx/device/DEV001/ack",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "ACK-DEV001-50001",
+          "ts": "2026-10-18T08:00:00.623Z",
+          "seq": 50001,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "objectType": "COMMAND",
+          "commandId": "CMD-DEV001-6001",
+          "command": "START",
+          "result": "SUCCESS",
+          "executeTimeMs": 523,
+          "errorCode": null,
+          "message": "Machine Started"
+        }
+      },
+      "file": "payloads/07-ack-command-success.json"
+    },
+    {
+      "name": "ack-ota-downloading",
+      "topic": "bnx/device/DEV001/ack",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "ACK-DEV001-50002",
+          "ts": "2026-10-18T08:00:00Z",
+          "seq": 50002,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "objectType": "OTA_TARGET",
+          "otaTargetId": "OTATGT001",
+          "status": "DOWNLOADING",
+          "errorCode": null,
+          "message": "Download started"
+        }
+      },
+      "file": "payloads/08-ack-ota-downloading.json"
+    },
+    {
+      "name": "media",
+      "topic": "bnx/device/DEV001/media",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "MED-DEV001-70001",
+          "ts": "2026-10-18T08:00:00Z",
+          "seq": 70001,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "mediaType": "IMAGE",
+          "captureTime": "2026-10-18T07:59:55Z",
+          "fileName": "capture-001.jpg",
+          "objectPath": "media/CUS001/DEV001/MEDSES001/capture-001.jpg",
+          "sizeKb": 120,
+          "durationSec": 0
+        }
+      },
+      "file": "payloads/09-media.json"
+    },
+    {
+      "name": "cmd",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6001",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "START",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Start processing batch"
+        }
+      },
+      "file": "payloads/10-cmd.json"
+    },
+    {
+      "name": "ota",
+      "topic": "bnx/device/DEV001/ota",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "OTA-OTATGT001",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "version": "2.1.0",
+          "packageType": "FIRMWARE",
+          "downloadUrl": "https://device-api.bio-nexa.com/api/v1/device/ota/targets/OTATGT001/download?token=example-download-grant-for-test-only",
+          "sha256": "ABC123DEF4567890ABC123DEF4567890ABC123DEF4567890ABC123DEF4567890",
+          "mandatory": false,
+          "scheduledTime": "2026-10-18T08:00:00Z"
+        }
+      },
+      "file": "payloads/11-ota.json"
+    },
+    {
+      "name": "notification",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90001",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "LICENSE_CHANGED",
+          "priority": "NORMAL",
+          "title": "License Updated",
+          "message": "New license is available",
+          "action": "SYNC"
+        }
+      },
+      "file": "payloads/12-notification.json"
+    },
+    {
+      "name": "ack-command-received",
+      "topic": "bnx/device/DEV001/ack",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "先收到确认，再使用新 seq 报告最终结果；本报文省略 result。",
+      "payload": {
+        "meta": {
+          "id": "ACK-DEV001-50000",
+          "ts": "2026-10-18T08:00:00.100Z",
+          "seq": 50000,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "objectType": "COMMAND",
+          "commandId": "CMD-DEV001-6001",
+          "command": "START",
+          "message": "Command received"
+        }
+      },
+      "file": "payloads/13-ack-command-received.json"
+    },
+    {
+      "name": "ack-command-failed-alternative",
+      "topic": "bnx/device/DEV001/ack",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "与 command-success 二选一；错误代码为示例文本，并非冻结错误码目录。",
+      "payload": {
+        "meta": {
+          "id": "ACK-DEV001-50007",
+          "ts": "2026-10-18T08:00:01Z",
+          "seq": 50007,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "objectType": "COMMAND",
+          "commandId": "CMD-DEV001-6001",
+          "command": "START",
+          "result": "FAILED",
+          "executeTimeMs": 523,
+          "errorCode": "LOCAL_SAFETY_INTERLOCK",
+          "message": "Safety interlock prevents machine start"
+        }
+      },
+      "file": "payloads/14-ack-command-failed-alternative.json"
+    },
+    {
+      "name": "ack-ota-installing",
+      "topic": "bnx/device/DEV001/ack",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "OTA 正常流程阶段。",
+      "payload": {
+        "meta": {
+          "id": "ACK-DEV001-50003",
+          "ts": "2026-10-18T08:01:00Z",
+          "seq": 50003,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "objectType": "OTA_TARGET",
+          "otaTargetId": "OTATGT001",
+          "status": "INSTALLING",
+          "errorCode": null,
+          "message": "OTA installing"
+        }
+      },
+      "file": "payloads/15-ack-ota-installing.json"
+    },
+    {
+      "name": "ack-ota-succeeded",
+      "topic": "bnx/device/DEV001/ack",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "OTA 正常流程阶段。",
+      "payload": {
+        "meta": {
+          "id": "ACK-DEV001-50004",
+          "ts": "2026-10-18T08:03:00Z",
+          "seq": 50004,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "objectType": "OTA_TARGET",
+          "otaTargetId": "OTATGT001",
+          "status": "SUCCEEDED",
+          "errorCode": null,
+          "message": "OTA succeeded"
+        }
+      },
+      "file": "payloads/16-ack-ota-succeeded.json"
+    },
+    {
+      "name": "ack-ota-failed",
+      "topic": "bnx/device/DEV001/ack",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "下载校验失败的替代分支；从 NOTIFIED 或 DOWNLOADING 可进入 FAILED，失败后不能继续 INSTALLING。",
+      "payload": {
+        "meta": {
+          "id": "ACK-DEV001-50005",
+          "ts": "2026-10-18T08:00:30Z",
+          "seq": 50005,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "objectType": "OTA_TARGET",
+          "otaTargetId": "OTATGT001",
+          "status": "FAILED",
+          "errorCode": "PACKAGE_HASH_MISMATCH",
+          "message": "OTA failed"
+        }
+      },
+      "file": "payloads/17-ack-ota-failed.json"
+    },
+    {
+      "name": "ack-ota-rolled_back",
+      "topic": "bnx/device/DEV001/ack",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "异常分支独立演示；不要将目录中全部回执按文件顺序依次发送。",
+      "payload": {
+        "meta": {
+          "id": "ACK-DEV001-50006",
+          "ts": "2026-10-18T08:04:00Z",
+          "seq": 50006,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "objectType": "OTA_TARGET",
+          "otaTargetId": "OTATGT001",
+          "status": "ROLLED_BACK",
+          "errorCode": null,
+          "message": "OTA rolled_back"
+        }
+      },
+      "file": "payloads/18-ack-ota-rolled_back.json"
+    },
+    {
+      "name": "alarm-cleared",
+      "topic": "bnx/device/DEV001/alarm",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "与 ACTIVE 告警使用同一 code，使用新消息 ID 和 seq。",
+      "payload": {
+        "meta": {
+          "id": "ALM-DEV001-30002",
+          "ts": "2026-10-18T08:02:00Z",
+          "seq": 30002,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "code": "TEMP_HIGH",
+          "category": "TEMPERATURE",
+          "severity": "INFO",
+          "status": "CLEARED",
+          "detectedTime": "2026-10-18T08:02:00Z",
+          "component": "HEATER",
+          "currentValue": 72,
+          "threshold": 80,
+          "unit": "C",
+          "message": "Heating temperature returned to normal",
+          "recommendedAction": "RESUME_MONITORING"
+        }
+      },
+      "file": "payloads/19-alarm-cleared.json"
+    },
+    {
+      "name": "media-video",
+      "topic": "bnx/device/DEV001/media",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "文件及路径仅演示；真实发送前先取得上传会话并完成文件上传。",
+      "payload": {
+        "meta": {
+          "id": "MED-DEV001-70002",
+          "ts": "2026-10-18T08:00:00Z",
+          "seq": 70002,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "mediaType": "VIDEO",
+          "captureTime": "2026-10-18T07:59:55Z",
+          "fileName": "capture-002.mp4",
+          "objectPath": "media/CUS001/DEV001/MEDSES002/capture-002.mp4",
+          "sizeKb": 2048,
+          "durationSec": 10
+        }
+      },
+      "file": "payloads/20-media-video.json"
+    },
+    {
+      "name": "report-hourly",
+      "topic": "bnx/device/DEV001/report",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "RPT-DEV001-20002",
+          "ts": "2026-10-18T08:00:00Z",
+          "seq": 20002,
+          "schemaVer": "1.0"
+        },
+        "audit": {
+          "hash": "7ab6aa3a2ea08589eb4a40afb7e40ce245b0a0fb08f355f25254403c245058d4"
+        },
+        "data": {
+          "reportType": "HOURLY",
+          "periodStartTime": "2026-10-18T07:00:00Z",
+          "periodEndTime": "2026-10-18T08:00:00Z",
+          "feedingWeightKg": 25,
+          "dischargeWeightKg": 18,
+          "reductionWeightKg": 7,
+          "cycleCount": 1,
+          "processingDurationMinutes": 60,
+          "energyConsumptionKwh": 2.4,
+          "averagePowerKw": 2.4,
+          "averageO2Pct": 20.4,
+          "averageCo2Ppm": 430,
+          "averageCh4Ppm": 11,
+          "averageN2oPpm": 1.4,
+          "carbonReductionKg": 3.56,
+          "carbonReductionMethod": "DEFAULT_V1",
+          "dataCompletenessPct": 100,
+          "missingRecordCount": 0
+        }
+      },
+      "file": "payloads/21-report-hourly.json"
+    },
+    {
+      "name": "report-cycle",
+      "topic": "bnx/device/DEV001/report",
+      "direction": "device-to-cloud",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "RPT-DEV001-20003",
+          "ts": "2026-10-18T08:00:00Z",
+          "seq": 20003,
+          "schemaVer": "1.0"
+        },
+        "audit": {
+          "hash": "59206817ef03f774837ac38638281fd1b29af0462488c4b952dab998356a48e3"
+        },
+        "data": {
+          "reportType": "CYCLE",
+          "periodStartTime": "2026-10-18T07:00:00Z",
+          "periodEndTime": "2026-10-18T08:00:00Z",
+          "feedingWeightKg": 25,
+          "dischargeWeightKg": 18,
+          "reductionWeightKg": 7,
+          "cycleCount": 1,
+          "processingDurationMinutes": 60,
+          "energyConsumptionKwh": 2.4,
+          "averagePowerKw": 2.4,
+          "averageO2Pct": 20.4,
+          "averageCo2Ppm": 430,
+          "averageCh4Ppm": 11,
+          "averageN2oPpm": 1.4,
+          "carbonReductionKg": 3.56,
+          "carbonReductionMethod": "DEFAULT_V1",
+          "dataCompletenessPct": 100,
+          "missingRecordCount": 0
+        }
+      },
+      "file": "payloads/22-report-cycle.json"
+    },
+    {
+      "name": "cmd-stop",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6101",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "STOP",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: STOP"
+        }
+      },
+      "file": "payloads/23-cmd-stop.json"
+    },
+    {
+      "name": "cmd-pause",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6102",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "PAUSE",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: PAUSE"
+        }
+      },
+      "file": "payloads/24-cmd-pause.json"
+    },
+    {
+      "name": "cmd-resume",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6103",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "RESUME",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: RESUME"
+        }
+      },
+      "file": "payloads/25-cmd-resume.json"
+    },
+    {
+      "name": "cmd-emergency_stop",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6104",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "EMERGENCY_STOP",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: EMERGENCY_STOP"
+        }
+      },
+      "file": "payloads/26-cmd-emergency_stop.json"
+    },
+    {
+      "name": "cmd-agitator_forward",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6105",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "AGITATOR_FORWARD",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: AGITATOR_FORWARD"
+        }
+      },
+      "file": "payloads/27-cmd-agitator_forward.json"
+    },
+    {
+      "name": "cmd-agitator_reverse",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6106",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "AGITATOR_REVERSE",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: AGITATOR_REVERSE"
+        }
+      },
+      "file": "payloads/28-cmd-agitator_reverse.json"
+    },
+    {
+      "name": "cmd-agitator_stop",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6107",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "AGITATOR_STOP",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: AGITATOR_STOP"
+        }
+      },
+      "file": "payloads/29-cmd-agitator_stop.json"
+    },
+    {
+      "name": "cmd-heating_on",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6108",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "HEATING_ON",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: HEATING_ON"
+        }
+      },
+      "file": "payloads/30-cmd-heating_on.json"
+    },
+    {
+      "name": "cmd-heating_off",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6109",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "HEATING_OFF",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: HEATING_OFF"
+        }
+      },
+      "file": "payloads/31-cmd-heating_off.json"
+    },
+    {
+      "name": "cmd-set_target_temperature",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6110",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "SET_TARGET_TEMPERATURE",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: SET_TARGET_TEMPERATURE"
+        }
+      },
+      "file": "payloads/32-cmd-set_target_temperature.json"
+    },
+    {
+      "name": "cmd-exhaust_on",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6111",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "EXHAUST_ON",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: EXHAUST_ON"
+        }
+      },
+      "file": "payloads/33-cmd-exhaust_on.json"
+    },
+    {
+      "name": "cmd-exhaust_off",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6112",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "EXHAUST_OFF",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: EXHAUST_OFF"
+        }
+      },
+      "file": "payloads/34-cmd-exhaust_off.json"
+    },
+    {
+      "name": "cmd-air_supply_on",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6113",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "AIR_SUPPLY_ON",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: AIR_SUPPLY_ON"
+        }
+      },
+      "file": "payloads/35-cmd-air_supply_on.json"
+    },
+    {
+      "name": "cmd-air_supply_off",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6114",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "AIR_SUPPLY_OFF",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: AIR_SUPPLY_OFF"
+        }
+      },
+      "file": "payloads/36-cmd-air_supply_off.json"
+    },
+    {
+      "name": "cmd-discharge_start",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6115",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "DISCHARGE_START",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: DISCHARGE_START"
+        }
+      },
+      "file": "payloads/37-cmd-discharge_start.json"
+    },
+    {
+      "name": "cmd-discharge_stop",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6116",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "DISCHARGE_STOP",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: DISCHARGE_STOP"
+        }
+      },
+      "file": "payloads/38-cmd-discharge_stop.json"
+    },
+    {
+      "name": "cmd-reboot",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6117",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "REBOOT",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: REBOOT"
+        }
+      },
+      "file": "payloads/39-cmd-reboot.json"
+    },
+    {
+      "name": "cmd-shutdown",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6118",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "SHUTDOWN",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: SHUTDOWN"
+        }
+      },
+      "file": "payloads/40-cmd-shutdown.json"
+    },
+    {
+      "name": "cmd-factory_reset",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6119",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "FACTORY_RESET",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: FACTORY_RESET"
+        }
+      },
+      "file": "payloads/41-cmd-factory_reset.json"
+    },
+    {
+      "name": "cmd-take_snapshot",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6120",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "TAKE_SNAPSHOT",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: TAKE_SNAPSHOT"
+        }
+      },
+      "file": "payloads/42-cmd-take_snapshot.json"
+    },
+    {
+      "name": "cmd-force_sync",
+      "topic": "bnx/device/DEV001/cmd",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "独立命令格式样例；不能在同一设备上自动批量执行。SET_TARGET_TEMPERATURE 当前没有可传温度参数字段。",
+      "payload": {
+        "meta": {
+          "id": "CMD-DEV001-6121",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "command": "FORCE_SYNC",
+          "requestedBy": "tenant_admin",
+          "requestTime": "2026-10-18T08:00:00Z",
+          "timeoutSec": 30,
+          "remarks": "Command format example: FORCE_SYNC"
+        }
+      },
+      "file": "payloads/43-cmd-force_sync.json"
+    },
+    {
+      "name": "notification-sync_required",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90002",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "SYNC_REQUIRED",
+          "priority": "NORMAL",
+          "title": "SYNC_REQUIRED",
+          "message": "调用 /api/v1/device/sync",
+          "action": "SYNC"
+        }
+      },
+      "file": "payloads/44-notification-sync_required.json"
+    },
+    {
+      "name": "notification-config_changed",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90004",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "CONFIG_CHANGED",
+          "priority": "NORMAL",
+          "title": "CONFIG_CHANGED",
+          "message": "调用 /api/v1/device/sync",
+          "action": "SYNC"
+        }
+      },
+      "file": "payloads/45-notification-config_changed.json"
+    },
+    {
+      "name": "notification-users_changed",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90005",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "USERS_CHANGED",
+          "priority": "NORMAL",
+          "title": "USERS_CHANGED",
+          "message": "调用 /api/v1/device/sync",
+          "action": "SYNC"
+        }
+      },
+      "file": "payloads/46-notification-users_changed.json"
+    },
+    {
+      "name": "notification-status_changed",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90006",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "STATUS_CHANGED",
+          "priority": "NORMAL",
+          "title": "STATUS_CHANGED",
+          "message": "调用 /api/v1/device/sync",
+          "action": "SYNC"
+        }
+      },
+      "file": "payloads/47-notification-status_changed.json"
+    },
+    {
+      "name": "notification-assignment_changed",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90007",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "ASSIGNMENT_CHANGED",
+          "priority": "NORMAL",
+          "title": "ASSIGNMENT_CHANGED",
+          "message": "调用 /api/v1/device/sync",
+          "action": "SYNC"
+        }
+      },
+      "file": "payloads/48-notification-assignment_changed.json"
+    },
+    {
+      "name": "notification-certificate_expiring",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90008",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "CERTIFICATE_EXPIRING",
+          "priority": "NORMAL",
+          "title": "CERTIFICATE_EXPIRING",
+          "message": "调用证书状态 API",
+          "action": "CHECK_CERTIFICATE_STATUS"
+        }
+      },
+      "file": "payloads/49-notification-certificate_expiring.json"
+    },
+    {
+      "name": "notification-certificate_rotation_required",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90009",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "CERTIFICATE_ROTATION_REQUIRED",
+          "priority": "NORMAL",
+          "title": "CERTIFICATE_ROTATION_REQUIRED",
+          "message": "调用证书轮换 API",
+          "action": "ROTATE_CERTIFICATE"
+        }
+      },
+      "file": "payloads/50-notification-certificate_rotation_required.json"
+    },
+    {
+      "name": "notification-ota_available",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90010",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "OTA_AVAILABLE",
+          "priority": "NORMAL",
+          "title": "OTA_AVAILABLE",
+          "message": "等待/接收 OTA Topic",
+          "action": "AWAIT_OTA_MESSAGE"
+        }
+      },
+      "file": "payloads/51-notification-ota_available.json"
+    },
+    {
+      "name": "notification-ota_cancelled",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90011",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "OTA_CANCELLED",
+          "priority": "NORMAL",
+          "title": "OTA_CANCELLED",
+          "message": "取消待执行升级",
+          "action": "CANCEL_PENDING_OTA"
+        }
+      },
+      "file": "payloads/52-notification-ota_cancelled.json"
+    },
+    {
+      "name": "notification-security_policy_updated",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90012",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "SECURITY_POLICY_UPDATED",
+          "priority": "NORMAL",
+          "title": "SECURITY_POLICY_UPDATED",
+          "message": "Sync 最新安全策略",
+          "action": "SYNC"
+        }
+      },
+      "file": "payloads/53-notification-security_policy_updated.json"
+    },
+    {
+      "name": "notification-device_suspended",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90013",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "DEVICE_SUSPENDED",
+          "priority": "NORMAL",
+          "title": "DEVICE_SUSPENDED",
+          "message": "进入 Suspended 模式",
+          "action": "ENTER_SUSPENDED_MODE"
+        }
+      },
+      "file": "payloads/54-notification-device_suspended.json"
+    },
+    {
+      "name": "notification-device_retired",
+      "topic": "bnx/device/DEV001/notification",
+      "direction": "cloud-to-device",
+      "qos": 1,
+      "retain": false,
+      "note": "",
+      "payload": {
+        "meta": {
+          "id": "NTF-DEV001-90014",
+          "ts": "2026-10-18T08:00:00Z"
+        },
+        "data": {
+          "type": "DEVICE_RETIRED",
+          "priority": "NORMAL",
+          "title": "DEVICE_RETIRED",
+          "message": "进入 Retired 模式",
+          "action": "ENTER_RETIRED_MODE"
+        }
+      },
+      "file": "payloads/55-notification-device_retired.json"
+    }
+  ]
+}

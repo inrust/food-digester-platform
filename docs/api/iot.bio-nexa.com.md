@@ -4,6 +4,8 @@
 
 `iot.bio-nexa.com` 是规划的 IoT 自定义域名。**实际连接主机以 Onboarding `APPROVED` 响应中的 `mqtt.endpoint` 和运维提供的环境参数为准**；不能仅凭本文认定该域名已经部署。本文根据仓库契约和生产处理器整理，真实设备与目标 AWS 验收仍为 **NOT RUN / NO RECEIPT**。
 
+完整 JSON 与独立文件见 [设备 MQTT 完整报文样例](./mqtt-message-examples.md)，覆盖全部 11 类 Topic、22 种命令、13 类通知及命令/OTA 回执分支。
+
 ## 1. 联调前准备与首次连接
 
 设备方完成无 Token 的 CSR 申请；管理员核验并批准后，设备取得 `deviceId`、`certificate.certificatePem`、`certificate.certificateChain`、`mqtt.endpoint`、`rest.endpoint` 和 `configuration.heartbeatInterval`。设备私钥为生成 CSR 时保存在本地的私钥，首次接入云端不下发私钥。设备安装前确认公钥匹配。项目 CA 签发的同一叶证书同时用于 MQTT 与 REST；客户端链按签发 CA 到根 CA 顺序安装，服务端信任根另行配置。IoT 注册使用 `RegisterCertificateWithoutCA`，必须发送正确 SNI。

@@ -12,6 +12,8 @@
 
 管理后台及客户业务 API 使用 `api.bio-nexa.com`，不在本目录设备文档的范围内。持续上报心跳、传感器数据、报告和告警，以及接收命令/OTA/通知，请查阅 MQTT 联调说明；证书、同步、下载授权和媒体上传会话请查阅 Device REST API。
 
+设备方需要完整报文时，可直接查阅 [设备 MQTT 完整报文样例](./mqtt-message-examples.md)，并使用其中链接的独立 JSON 文件对照开发。
+
 ## 契约来源与优先级
 
 1. `docs/Device-Cloud-Communication-Design-解析.md`：设备通信源事实和原始六接口；
