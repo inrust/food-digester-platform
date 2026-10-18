@@ -126,16 +126,20 @@ export function validateCpuProfile(p) {
   }
   let at = p.startTime;
   const points = p.samples.map((id, i) => {
-    demand(nodes.has(id) && finite(p.timeDeltas[i]), 'CPU_PROFILE_SAMPLE');
+    demand(nodes.has(id), 'CPU_PROFILE_SAMPLE_NODE');
+    // V8 serializes signed differences between consecutive sample timestamps.
+    // Arrival order need not be chronological: reconstruct first, then validate
+    // each absolute timestamp. Never clamp a delta or discard a sample.
+    demand(Number.isSafeInteger(p.timeDeltas[i]), 'CPU_PROFILE_SAMPLE_DELTA');
     at += p.timeDeltas[i];
-    demand(at <= p.endTime + 1, 'CPU_PROFILE_SAMPLE_CLOCK');
+    demand(at >= p.startTime && at <= p.endTime + 1, 'CPU_PROFILE_SAMPLE_CLOCK');
     return {
       at,
       bucket: bucket(nodes.get(id)),
       ...(p.clockMapping ? { uncertaintyUs: p.clockMapping.uncertaintyUs } : {}),
     };
   });
-  return points;
+  return points.sort((a, b) => a.at - b.at);
 }
 export function attributeCpuSamples(points, spans) {
   const unique = new Set();

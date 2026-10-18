@@ -53,11 +53,11 @@ for (const [name, mutate, code] of [
     'CPU_PROFILE_SAMPLE',
   ],
   [
-    'negative interval',
+    'sample before profile start',
     (p) => {
       p.timeDeltas[0] = -1;
     },
-    'CPU_PROFILE_SAMPLE',
+    'CPU_PROFILE_SAMPLE_CLOCK',
   ],
   [
     'clock overrun',
@@ -179,4 +179,63 @@ test('mapping uncertainty makes boundary samples ambiguous instead of asserting 
     () => attributeCpuSamples([{ at, bucket: 'NODE_INTERNAL', uncertaintyUs: 99 }], spans),
     /CPU_SAMPLE_UNCERTAINTY/,
   );
+});
+
+test('signed V8 deltas retain paired samples and reconstruct timestamps without changing the raw profile', () => {
+  const p = profile();
+  p.nodes.push(
+    { id: 2, callFrame: { url: 'apps/example.ts', functionName: 'repository' } },
+    { id: 3, callFrame: { url: 'packages/observability/example.ts', functionName: 'observe' } },
+  );
+  p.samples = [3, 1, 2];
+  p.timeDeltas = [3000, -2000, 1000];
+  const original = structuredClone(p);
+  const points = validateCpuProfile(p);
+  assert.deepEqual(points, [
+    { at: 2000, bucket: 'NODE_INTERNAL' },
+    { at: 3000, bucket: 'REPOSITORY' },
+    { at: 4000, bucket: 'OBSERVATION' },
+  ]);
+  assert.deepEqual(p, original);
+  const [row] = attributeCpuSamples(points, [
+    { phase: 'one', start: { lower: 1950, upper: 2050 }, end: { lower: 4050, upper: 4150 } },
+  ]);
+  assert.deepEqual([row.inside, row.ambiguous, row.outside], [1, 2, 0]);
+  assert.equal(row.buckets.REPOSITORY, 1);
+});
+
+for (const offsetUs of [0, 5_117_315_336, -5_117_315_336])
+  test(`signed deltas preserve mapped clock uncertainty with epoch offset ${offsetUs}`, () => {
+    const p = mappedProfile(offsetUs);
+    p.timeDeltas = [3000, -2000, 1000];
+    const points = validateCpuProfile(p);
+    assert.deepEqual(
+      points.map((point) => point.at),
+      [10_000_002_050, 10_000_003_050, 10_000_004_050],
+    );
+    assert.ok(points.every((point) => point.uncertaintyUs === 150));
+  });
+
+for (const [name, deltas] of [
+  ['before start then recovery', [1000, -2001, 3001]],
+  ['after end then recovery', [6000, -4000, 1000]],
+])
+  test(`reject every out-of-profile sample even when later deltas recover: ${name}`, () => {
+    const p = profile();
+    p.timeDeltas = deltas;
+    assert.throws(() => validateCpuProfile(p), /CPU_PROFILE_SAMPLE_CLOCK/);
+  });
+
+for (const delta of [NaN, Infinity, -Infinity, 0.5, Number.MAX_SAFE_INTEGER + 1])
+  test(`reject non-protocol sample delta ${delta}`, () => {
+    const p = profile();
+    p.timeDeltas[1] = delta;
+    assert.throws(() => validateCpuProfile(p), /CPU_PROFILE_SAMPLE_DELTA/);
+  });
+
+test('an unknown node in an out-of-order profile still fails instead of being dropped', () => {
+  const p = profile();
+  p.samples[1] = 99;
+  p.timeDeltas = [3000, -2000, 1000];
+  assert.throws(() => validateCpuProfile(p), /CPU_PROFILE_SAMPLE_NODE/);
 });

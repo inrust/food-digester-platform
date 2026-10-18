@@ -1,0 +1,150 @@
+✔ public samples conserve per-window counts; boundary uncertainty is not CPU time (0.603167ms)
+✔ reject clock offset (0.15725ms)
+✔ reject clock end (0.040541ms)
+✔ reject bad sample id (0.050166ms)
+✔ reject negative interval (0.044833ms)
+✔ reject clock overrun (0.037083ms)
+✔ reject duplicate node (0.048792ms)
+✔ reject private path (0.041334ms)
+✔ reject missing delta (0.050292ms)
+✔ reject unbounded samples (0.181792ms)
+✔ reject CPU-time claim (0.03925ms)
+✔ duplicate or inverted spans cannot double count (0.062042ms)
+✔ fixed matrix includes off, measurement overhead, account, five location controls and four failures (0.176917ms)
+✔ map independently bracketed V8/hrtime clocks with offset 0 (0.3235ms)
+✔ map independently bracketed V8/hrtime clocks with offset 5117315336 (0.051541ms)
+✔ map independently bracketed V8/hrtime clocks with offset -5117315336 (0.0535ms)
+✔ reject inconsistent clock mapping: raw start (0.039125ms)
+✔ reject inconsistent clock mapping: raw end (0.024458ms)
+✔ reject inconsistent clock mapping: normalized start (0.029166ms)
+✔ reject inconsistent clock mapping: offset bounds (0.028584ms)
+✔ reject inconsistent clock mapping: uncertainty (0.024ms)
+✔ reject inconsistent clock mapping: mapping scope (0.02425ms)
+✔ mapping uncertainty makes boundary samples ambiguous instead of asserting false ownership (0.077167ms)
+✖ signed V8 deltas retain paired samples and reconstruct timestamps without changing the raw profile (0.094791ms)
+✖ signed deltas preserve mapped clock uncertainty with epoch offset 0 (0.050958ms)
+✖ signed deltas preserve mapped clock uncertainty with epoch offset 5117315336 (0.037333ms)
+✖ signed deltas preserve mapped clock uncertainty with epoch offset -5117315336 (0.036666ms)
+✖ reject every out-of-profile sample even when later deltas recover: before start then recovery (0.203417ms)
+✔ reject every out-of-profile sample even when later deltas recover: after end then recovery (0.022792ms)
+✔ reject non-protocol sample delta NaN (0.033041ms)
+✔ reject non-protocol sample delta Infinity (0.020125ms)
+✔ reject non-protocol sample delta -Infinity (0.019625ms)
+✖ reject non-protocol sample delta 0.5 (0.044917ms)
+✔ reject non-protocol sample delta 9007199254740992 (0.020458ms)
+✔ an unknown node in an out-of-order profile still fails instead of being dropped (0.028833ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 29
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 42.606875
+
+✖ failing tests:
+
+test at scripts/qa09-contract-cpu-proof.test.mjs:184:1
+✖ signed V8 deltas retain paired samples and reconstruct timestamps without changing the raw profile (0.094791ms)
+  Error: CPU_PROFILE_SAMPLE
+      at demand (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:28:17)
+      at file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:129:5
+      at Array.map (<anonymous>)
+      at validateCpuProfile (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:128:28)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.test.mjs:193:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+
+test at scripts/qa09-contract-cpu-proof.test.mjs:208:3
+✖ signed deltas preserve mapped clock uncertainty with epoch offset 0 (0.050958ms)
+  Error: CPU_PROFILE_SAMPLE
+      at demand (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:28:17)
+      at file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:129:5
+      at Array.map (<anonymous>)
+      at validateCpuProfile (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:128:28)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.test.mjs:211:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+
+test at scripts/qa09-contract-cpu-proof.test.mjs:208:3
+✖ signed deltas preserve mapped clock uncertainty with epoch offset 5117315336 (0.037333ms)
+  Error: CPU_PROFILE_SAMPLE
+      at demand (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:28:17)
+      at file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:129:5
+      at Array.map (<anonymous>)
+      at validateCpuProfile (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:128:28)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.test.mjs:211:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+
+test at scripts/qa09-contract-cpu-proof.test.mjs:208:3
+✖ signed deltas preserve mapped clock uncertainty with epoch offset -5117315336 (0.036666ms)
+  Error: CPU_PROFILE_SAMPLE
+      at demand (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:28:17)
+      at file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:129:5
+      at Array.map (<anonymous>)
+      at validateCpuProfile (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:128:28)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.test.mjs:211:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+
+test at scripts/qa09-contract-cpu-proof.test.mjs:220:3
+✖ reject every out-of-profile sample even when later deltas recover: before start then recovery (0.203417ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /CPU_PROFILE_SAMPLE_CLOCK/. Input:
+  
+  'Error: CPU_PROFILE_SAMPLE'
+  
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.test.mjs:223:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: CPU_PROFILE_SAMPLE
+        at demand (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:28:17)
+        at file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:129:5
+        at Array.map (<anonymous>)
+        at validateCpuProfile (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.mjs:128:28)
+        at file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.test.mjs:223:25
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.test.mjs:223:12)
+        at Test.runInAsyncScope (node:async_hooks:214:14)
+        at Test.run (node:internal/test_runner/test:1106:25),
+    expected: /CPU_PROFILE_SAMPLE_CLOCK/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at scripts/qa09-contract-cpu-proof.test.mjs:227:3
+✖ reject non-protocol sample delta 0.5 (0.044917ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/qa09-contract-cpu-proof.test.mjs:230:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /CPU_PROFILE_SAMPLE/,
+    operator: 'throws',
+    diff: 'simple'
+  }

@@ -1,0 +1,78 @@
+{
+  "gate": "PASS_LOCAL_CI_SAMPLE_REPAIR",
+  "baseCommit": "ff971a2e4e1e68de78c7bde90553a4dd17804eea",
+  "sourceFiles": {
+    ".gitattributes": "e5176d56d8b4c92a203d0e0ba9cc79c6514c41dfc68e3b6c435a8d97e57b8303",
+    "scripts/qa09-contract-cpu-proof.mjs": "052c2ea1f081128a319c20557a89fa81907ab71609cd1430db4662a602c0e17c",
+    "scripts/qa09-contract-cpu-proof.test.mjs": "af01ffc85ac54773a6dbd3060638d70e51d45b932b52bbe739514758ee1a6847"
+  },
+  "patchSha256": "8e35bb03fb61db288aeca30ebb9358d6ca67b293b3600ec23512a4858a84d0dc",
+  "proofTestsPassed": 35,
+  "runtimeTestsPassed": 58,
+  "fullVitest": {
+    "files": 198,
+    "tests": 1700,
+    "exitCode": 0
+  },
+  "checks": [
+    {
+      "name": "proof-final",
+      "command": [
+        "node",
+        "--test",
+        "scripts/qa09-contract-cpu-proof.test.mjs"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "lint-final",
+      "command": [
+        "/opt/homebrew/bin/pnpm",
+        "exec",
+        "eslint",
+        "scripts/qa09-contract-cpu-proof.mjs",
+        "scripts/qa09-contract-cpu-proof.test.mjs"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "format-final",
+      "command": [
+        "/opt/homebrew/bin/pnpm",
+        "exec",
+        "prettier",
+        "--check",
+        "scripts/qa09-contract-cpu-proof.mjs",
+        "scripts/qa09-contract-cpu-proof.test.mjs"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "secrets-final",
+      "command": [
+        "node",
+        "scripts/check-secrets.mjs"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "sensitive-sinks-final",
+      "command": [
+        "node",
+        "scripts/check-sensitive-sinks.mjs"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "originalHostedCi": "SUCCESS",
+  "originalDeployVerify": "FAIL_ONE_CPU_PROFILE_SAMPLE",
+  "failedHostedRawProfileAvailable": false,
+  "nativeLocalProfiles": 100,
+  "nativeLocalAnomalyReproduced": false,
+  "signedDeltaRegressionReproduced": true,
+  "newHostedVerification": "PENDING_PUSH",
+  "productionSourceChanged": false,
+  "fullQa09Accepted": false,
+  "productionReady": false,
+  "validatedAt": "2026-10-18T11:33:30.287243+00:00"
+}

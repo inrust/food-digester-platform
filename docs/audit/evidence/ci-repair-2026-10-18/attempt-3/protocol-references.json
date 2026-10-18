@@ -1,0 +1,21 @@
+{
+  "observedOn": "2026-10-18",
+  "sources": [
+    {
+      "url": "https://raw.githubusercontent.com/nodejs/node/v24.12.0/deps/v8/src/inspector/v8-profiler-agent-impl.cc",
+      "lines": "92-108",
+      "finding": "Node 24.12 V8 emits samples with node IDs and signed integer differences between adjacent sample timestamps."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/nodejs/node/v24.12.0/deps/v8/src/profiler/profile-generator.cc",
+      "lines": "572-588",
+      "finding": "V8 records samples only at or after profile start; insertion order is not explicitly sorted here."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/ChromeDevTools/devtools-frontend/main/front_end/models/cpu_profile/CPUProfileDataModel.ts",
+      "lines": "131-141,244-260",
+      "finding": "DevTools reconstructs absolute timestamps by summing deltas, then sorts samples paired with their timestamps."
+    }
+  ],
+  "limitations": "The failed hosted run did not retain its raw profile. The exact delta/node at the failing sample is unavailable. Native local diagnostic did not reproduce the intermittent failure in 100 profiles; signed-delta regression fixtures reproduce the old validator defect deterministically."
+}
