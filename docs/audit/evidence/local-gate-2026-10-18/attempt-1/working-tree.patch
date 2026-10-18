@@ -1,0 +1,258 @@
+diff --git a/.gitattributes b/.gitattributes
+index 93fd29c5..0c8c474b 100644
+--- a/.gitattributes
++++ b/.gitattributes
+@@ -1,3 +1,4 @@
+ # Preserve raw command receipts, including their original whitespace.
+ docs/audit/evidence/onboarding-first-request-2026-10-18/*.log -whitespace
+ docs/audit/evidence/onboarding-deploy-2026-10-18/**/*.log -whitespace
++docs/audit/evidence/local-gate-2026-10-18/**/*.log -whitespace
+diff --git a/.prettierignore b/.prettierignore
+index 691f43c8..44310697 100644
+--- a/.prettierignore
++++ b/.prettierignore
+@@ -3,6 +3,7 @@ dist/
+ .turbo/
+ coverage/
+ cdk.out/
++/build/
+ pnpm-lock.yaml
+ docs/
+ # 生成文件：格式由 scripts/generate-payload-types.mjs 决定，新鲜度由契约测试保证
+diff --git a/eslint.config.mjs b/eslint.config.mjs
+index 75124934..e7e582ef 100644
+--- a/eslint.config.mjs
++++ b/eslint.config.mjs
+@@ -6,6 +6,7 @@ export default tseslint.config(
+     ignores: [
+       '**/dist/**',
+       '**/node_modules/**',
++      'build/**',
+       'docs/**',
+       '**/coverage/**',
+       '.turbo/**',
+diff --git a/packages/database/test/helpers/contract-cpu-probe.ts b/packages/database/test/helpers/contract-cpu-probe.ts
+index aa95d687..63e5b23d 100644
+--- a/packages/database/test/helpers/contract-cpu-probe.ts
++++ b/packages/database/test/helpers/contract-cpu-probe.ts
+@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
+ import { relative } from 'node:path';
+ import { fileURLToPath } from 'node:url';
+ import type { CpuConfig } from '../../../../scripts/qa09-contract-cpu-proof.mjs';
++import { alignCpuClock } from '../../../../scripts/qa09-contract-cpu-proof.mjs';
+ 
+ export const monoUs = () => Number(process.hrtime.bigint() / 1000n);
+ type Bracket = { lower: number; upper: number };
+@@ -132,8 +133,12 @@ export class CpuProbe {
+       };
+     });
+     return {
+-      startTime: profile.startTime,
+-      endTime: profile.endTime,
++      ...alignCpuClock({
++        startTime: profile.startTime,
++        endTime: profile.endTime,
++        startBracket: this.startBracket!,
++        stopBracket,
++      }),
+       nodes,
+       samples: profile.samples ?? [],
+       timeDeltas: profile.timeDeltas ?? [],
+diff --git a/scripts/qa09-contract-cpu-proof.d.mts b/scripts/qa09-contract-cpu-proof.d.mts
+index abcb0ace..03b4c2b6 100644
+--- a/scripts/qa09-contract-cpu-proof.d.mts
++++ b/scripts/qa09-contract-cpu-proof.d.mts
+@@ -8,6 +8,25 @@ export interface CpuConfig {
+   resumeCpuMs: number;
+ }
+ export const cpuCases: Readonly<Record<string, CpuConfig>>;
+-export function validateCpuProfile(p: any): { at: number; bucket: string }[];
+-export function attributeCpuSamples(points: { at: number; bucket: string }[], spans: any[]): any[];
++export function alignCpuClock(input: {
++  startTime: number;
++  endTime: number;
++  startBracket: { lower: number; upper: number };
++  stopBracket: { lower: number; upper: number };
++}): {
++  rawClock: { startTime: number; endTime: number };
++  clockMapping: {
++    scope: string;
++    lowerOffsetUs: number;
++    upperOffsetUs: number;
++    uncertaintyUs: number;
++  };
++  startTime: number;
++  endTime: number;
++};
++export function validateCpuProfile(p: any): { at: number; bucket: string; uncertaintyUs?: number }[];
++export function attributeCpuSamples(
++  points: { at: number; bucket: string; uncertaintyUs?: number }[],
++  spans: any[],
++): any[];
+ export function summarizeCpuCase(r: any): any;
+diff --git a/scripts/qa09-contract-cpu-proof.mjs b/scripts/qa09-contract-cpu-proof.mjs
+index 65dd1594..d084d75d 100644
+--- a/scripts/qa09-contract-cpu-proof.mjs
++++ b/scripts/qa09-contract-cpu-proof.mjs
+@@ -29,6 +29,35 @@ const demand = (v, code) => {
+ };
+ const finite = (v) => Number.isFinite(v) && v >= 0;
+ const bracket = (v) => v && finite(v.lower) && finite(v.upper) && v.upper >= v.lower;
++// V8's monotonic clock and libuv's hrtime need not share an epoch (notably on macOS).
++// Both inspector handshakes constrain one constant offset. Retain their uncertainty
++// rather than pretending that translating the clock gives exact sample timestamps.
++export function alignCpuClock({ startTime, endTime, startBracket, stopBracket }) {
++  demand(
++    finite(startTime) &&
++      finite(endTime) &&
++      endTime >= startTime &&
++      bracket(startBracket) &&
++      bracket(stopBracket) &&
++      stopBracket.lower >= startBracket.upper,
++    'CPU_CLOCK_ALIGNMENT',
++  );
++  const lowerOffsetUs = Math.max(startBracket.lower - startTime, stopBracket.lower - endTime) - 100;
++  const upperOffsetUs = Math.min(startBracket.upper - startTime, stopBracket.upper - endTime) + 100;
++  demand(lowerOffsetUs <= upperOffsetUs, 'CPU_CLOCK_ALIGNMENT');
++  const offsetUs = (lowerOffsetUs + upperOffsetUs) / 2;
++  return {
++    rawClock: { startTime, endTime },
++    clockMapping: {
++      scope: 'V8_TO_HRTIME_BOUNDED_CONSTANT_OFFSET',
++      lowerOffsetUs,
++      upperOffsetUs,
++      uncertaintyUs: Math.max(100, (upperOffsetUs - lowerOffsetUs) / 2),
++    },
++    startTime: startTime + offsetUs,
++    endTime: endTime + offsetUs,
++  };
++}
+ function bucket(frame) {
+   const u = frame.url,
+     f = frame.functionName;
+@@ -49,6 +78,15 @@ export function validateCpuProfile(p) {
+       /^[a-f0-9]{64}$/.test(p.originalSha256),
+     'CPU_PROFILE_SCOPE',
+   );
++  if (p.rawClock !== undefined || p.clockMapping !== undefined) {
++    const aligned = alignCpuClock({ ...p.rawClock, startBracket: p.startBracket, stopBracket: p.stopBracket });
++    demand(
++      p.startTime === aligned.startTime &&
++        p.endTime === aligned.endTime &&
++        Object.entries(aligned.clockMapping).every(([key, value]) => p.clockMapping?.[key] === value),
++      'CPU_CLOCK_ALIGNMENT',
++    );
++  }
+   demand(
+     bracket(p.startBracket) &&
+       bracket(p.stopBracket) &&
+@@ -91,7 +129,11 @@ export function validateCpuProfile(p) {
+     demand(nodes.has(id) && finite(p.timeDeltas[i]), 'CPU_PROFILE_SAMPLE');
+     at += p.timeDeltas[i];
+     demand(at <= p.endTime + 1, 'CPU_PROFILE_SAMPLE_CLOCK');
+-    return { at, bucket: bucket(nodes.get(id)) };
++    return {
++      at,
++      bucket: bucket(nodes.get(id)),
++      ...(p.clockMapping ? { uncertaintyUs: p.clockMapping.uncertaintyUs } : {}),
++    };
+   });
+   return points;
+ }
+@@ -110,10 +152,12 @@ export function attributeCpuSamples(points, spans) {
+     const buckets = {},
+       counts = { inside: 0, ambiguous: 0, outside: 0 };
+     for (const p of points) {
+-      if (p.at - 100 >= s.start.upper && p.at + 100 <= s.end.lower) {
++      const uncertaintyUs = p.uncertaintyUs ?? 100;
++      demand(finite(uncertaintyUs) && uncertaintyUs >= 100, 'CPU_SAMPLE_UNCERTAINTY');
++      if (p.at - uncertaintyUs >= s.start.upper && p.at + uncertaintyUs <= s.end.lower) {
+         counts.inside++;
+         buckets[p.bucket] = (buckets[p.bucket] ?? 0) + 1;
+-      } else if (p.at + 100 >= s.start.lower && p.at - 100 <= s.end.upper) counts.ambiguous++;
++      } else if (p.at + uncertaintyUs >= s.start.lower && p.at - uncertaintyUs <= s.end.upper) counts.ambiguous++;
+       else counts.outside++;
+     }
+     demand(counts.inside + counts.ambiguous + counts.outside === points.length, 'CPU_SAMPLE_CONSERVATION');
+diff --git a/scripts/qa09-contract-cpu-proof.test.mjs b/scripts/qa09-contract-cpu-proof.test.mjs
+index b7db0125..1b789b5b 100644
+--- a/scripts/qa09-contract-cpu-proof.test.mjs
++++ b/scripts/qa09-contract-cpu-proof.test.mjs
+@@ -1,6 +1,12 @@
+ import { test } from 'node:test';
+ import assert from 'node:assert/strict';
+-import { validateCpuProfile, attributeCpuSamples, summarizeCpuCase, cpuCases } from './qa09-contract-cpu-proof.mjs';
++import {
++  alignCpuClock,
++  validateCpuProfile,
++  attributeCpuSamples,
++  summarizeCpuCase,
++  cpuCases,
++} from './qa09-contract-cpu-proof.mjs';
+ const profile = () => ({
+   scope: 'V8_MAIN_ISOLATE_LOCATION_SAMPLES_NOT_CPU_TIME',
+   intervalUs: 1000,
+@@ -114,3 +120,63 @@ test('fixed matrix includes off, measurement overhead, account, five location co
+   assert.equal(Object.keys(cpuCases).filter((k) => k.endsWith('reject')).length, 4);
+   assert.throws(() => summarizeCpuCase({ kind: 'qa09-runtime-public-seams/v1', case: 'profile-on' }), /CPU_SOURCE/);
+ });
++
++function mappedProfile(offsetUs) {
++  const p = profile();
++  const origin = 10_000_000_000;
++  p.startBracket = { lower: origin + 1000, upper: origin + 1100 };
++  p.stopBracket = { lower: origin + 5900, upper: origin + 6100 };
++  return {
++    ...p,
++    ...alignCpuClock({
++      startTime: origin + 1000 - offsetUs,
++      endTime: origin + 6000 - offsetUs,
++      startBracket: p.startBracket,
++      stopBracket: p.stopBracket,
++    }),
++  };
++}
++for (const offsetUs of [0, 5_117_315_336, -5_117_315_336])
++  test(`map independently bracketed V8/hrtime clocks with offset ${offsetUs}`, () => {
++    const p = mappedProfile(offsetUs);
++    assert.equal(p.rawClock.startTime, 10_000_001_000 - offsetUs);
++    assert.deepEqual(p.timeDeltas, [1000, 1000, 1000]);
++    assert.equal(p.clockToleranceUs, 100);
++    const points = validateCpuProfile(p);
++    assert.equal(points.length, 3);
++    assert.equal(points[0].at, 10_000_002_050);
++    assert.equal(points[0].uncertaintyUs, 150);
++  });
++
++for (const [name, mutate] of [
++  ['raw start', (p) => (p.rawClock.startTime -= 1000)],
++  ['raw end', (p) => (p.rawClock.endTime += 1000)],
++  ['normalized start', (p) => (p.startTime -= 101)],
++  ['offset bounds', (p) => (p.clockMapping.lowerOffsetUs -= 1)],
++  ['uncertainty', (p) => (p.clockMapping.uncertaintyUs = 100)],
++  ['mapping scope', (p) => (p.clockMapping.scope = 'EXACT_SAMPLE_TIME')],
++])
++  test(`reject inconsistent clock mapping: ${name}`, () => {
++    const p = mappedProfile(5_117_315_336);
++    mutate(p);
++    assert.throws(() => validateCpuProfile(p), /CPU_CLOCK_ALIGNMENT/);
++  });
++
++test('mapping uncertainty makes boundary samples ambiguous instead of asserting false ownership', () => {
++  const points = validateCpuProfile(mappedProfile(5_117_315_336));
++  const at = points[0].at;
++  const spans = [
++    { phase: 'one', start: { lower: at - 120, upper: at - 120 }, end: { lower: at + 120, upper: at + 120 } },
++  ];
++  const [mapped] = attributeCpuSamples(points, spans);
++  assert.deepEqual([mapped.inside, mapped.ambiguous, mapped.outside], [0, 1, 2]);
++  const [withoutUncertainty] = attributeCpuSamples(
++    points.map(({ at, bucket }) => ({ at, bucket })),
++    spans,
++  );
++  assert.equal(withoutUncertainty.inside, 1);
++  assert.throws(
++    () => attributeCpuSamples([{ at, bucket: 'NODE_INTERNAL', uncertaintyUs: 99 }], spans),
++    /CPU_SAMPLE_UNCERTAINTY/,
++  );
++});

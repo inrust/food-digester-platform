@@ -29,6 +29,35 @@ const demand = (v, code) => {
 };
 const finite = (v) => Number.isFinite(v) && v >= 0;
 const bracket = (v) => v && finite(v.lower) && finite(v.upper) && v.upper >= v.lower;
+// V8's monotonic clock and libuv's hrtime need not share an epoch (notably on macOS).
+// Both inspector handshakes constrain one constant offset. Retain their uncertainty
+// rather than pretending that translating the clock gives exact sample timestamps.
+export function alignCpuClock({ startTime, endTime, startBracket, stopBracket }) {
+  demand(
+    finite(startTime) &&
+      finite(endTime) &&
+      endTime >= startTime &&
+      bracket(startBracket) &&
+      bracket(stopBracket) &&
+      stopBracket.lower >= startBracket.upper,
+    'CPU_CLOCK_ALIGNMENT',
+  );
+  const lowerOffsetUs = Math.max(startBracket.lower - startTime, stopBracket.lower - endTime) - 100;
+  const upperOffsetUs = Math.min(startBracket.upper - startTime, stopBracket.upper - endTime) + 100;
+  demand(lowerOffsetUs <= upperOffsetUs, 'CPU_CLOCK_ALIGNMENT');
+  const offsetUs = (lowerOffsetUs + upperOffsetUs) / 2;
+  return {
+    rawClock: { startTime, endTime },
+    clockMapping: {
+      scope: 'V8_TO_HRTIME_BOUNDED_CONSTANT_OFFSET',
+      lowerOffsetUs,
+      upperOffsetUs,
+      uncertaintyUs: Math.max(100, (upperOffsetUs - lowerOffsetUs) / 2),
+    },
+    startTime: startTime + offsetUs,
+    endTime: endTime + offsetUs,
+  };
+}
 function bucket(frame) {
   const u = frame.url,
     f = frame.functionName;
@@ -49,6 +78,15 @@ export function validateCpuProfile(p) {
       /^[a-f0-9]{64}$/.test(p.originalSha256),
     'CPU_PROFILE_SCOPE',
   );
+  if (p.rawClock !== undefined || p.clockMapping !== undefined) {
+    const aligned = alignCpuClock({ ...p.rawClock, startBracket: p.startBracket, stopBracket: p.stopBracket });
+    demand(
+      p.startTime === aligned.startTime &&
+        p.endTime === aligned.endTime &&
+        Object.entries(aligned.clockMapping).every(([key, value]) => p.clockMapping?.[key] === value),
+      'CPU_CLOCK_ALIGNMENT',
+    );
+  }
   demand(
     bracket(p.startBracket) &&
       bracket(p.stopBracket) &&
@@ -91,7 +129,11 @@ export function validateCpuProfile(p) {
     demand(nodes.has(id) && finite(p.timeDeltas[i]), 'CPU_PROFILE_SAMPLE');
     at += p.timeDeltas[i];
     demand(at <= p.endTime + 1, 'CPU_PROFILE_SAMPLE_CLOCK');
-    return { at, bucket: bucket(nodes.get(id)) };
+    return {
+      at,
+      bucket: bucket(nodes.get(id)),
+      ...(p.clockMapping ? { uncertaintyUs: p.clockMapping.uncertaintyUs } : {}),
+    };
   });
   return points;
 }
@@ -110,10 +152,12 @@ export function attributeCpuSamples(points, spans) {
     const buckets = {},
       counts = { inside: 0, ambiguous: 0, outside: 0 };
     for (const p of points) {
-      if (p.at - 100 >= s.start.upper && p.at + 100 <= s.end.lower) {
+      const uncertaintyUs = p.uncertaintyUs ?? 100;
+      demand(finite(uncertaintyUs) && uncertaintyUs >= 100, 'CPU_SAMPLE_UNCERTAINTY');
+      if (p.at - uncertaintyUs >= s.start.upper && p.at + uncertaintyUs <= s.end.lower) {
         counts.inside++;
         buckets[p.bucket] = (buckets[p.bucket] ?? 0) + 1;
-      } else if (p.at + 100 >= s.start.lower && p.at - 100 <= s.end.upper) counts.ambiguous++;
+      } else if (p.at + uncertaintyUs >= s.start.lower && p.at - uncertaintyUs <= s.end.upper) counts.ambiguous++;
       else counts.outside++;
     }
     demand(counts.inside + counts.ambiguous + counts.outside === points.length, 'CPU_SAMPLE_CONSERVATION');

@@ -1,6 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { validateCpuProfile, attributeCpuSamples, summarizeCpuCase, cpuCases } from './qa09-contract-cpu-proof.mjs';
+import {
+  alignCpuClock,
+  validateCpuProfile,
+  attributeCpuSamples,
+  summarizeCpuCase,
+  cpuCases,
+} from './qa09-contract-cpu-proof.mjs';
 const profile = () => ({
   scope: 'V8_MAIN_ISOLATE_LOCATION_SAMPLES_NOT_CPU_TIME',
   intervalUs: 1000,
@@ -113,4 +119,64 @@ test('fixed matrix includes off, measurement overhead, account, five location co
   assert.equal(cpuCases['public-on'].profile, false);
   assert.equal(Object.keys(cpuCases).filter((k) => k.endsWith('reject')).length, 4);
   assert.throws(() => summarizeCpuCase({ kind: 'qa09-runtime-public-seams/v1', case: 'profile-on' }), /CPU_SOURCE/);
+});
+
+function mappedProfile(offsetUs) {
+  const p = profile();
+  const origin = 10_000_000_000;
+  p.startBracket = { lower: origin + 1000, upper: origin + 1100 };
+  p.stopBracket = { lower: origin + 5900, upper: origin + 6100 };
+  return {
+    ...p,
+    ...alignCpuClock({
+      startTime: origin + 1000 - offsetUs,
+      endTime: origin + 6000 - offsetUs,
+      startBracket: p.startBracket,
+      stopBracket: p.stopBracket,
+    }),
+  };
+}
+for (const offsetUs of [0, 5_117_315_336, -5_117_315_336])
+  test(`map independently bracketed V8/hrtime clocks with offset ${offsetUs}`, () => {
+    const p = mappedProfile(offsetUs);
+    assert.equal(p.rawClock.startTime, 10_000_001_000 - offsetUs);
+    assert.deepEqual(p.timeDeltas, [1000, 1000, 1000]);
+    assert.equal(p.clockToleranceUs, 100);
+    const points = validateCpuProfile(p);
+    assert.equal(points.length, 3);
+    assert.equal(points[0].at, 10_000_002_050);
+    assert.equal(points[0].uncertaintyUs, 150);
+  });
+
+for (const [name, mutate] of [
+  ['raw start', (p) => (p.rawClock.startTime -= 1000)],
+  ['raw end', (p) => (p.rawClock.endTime += 1000)],
+  ['normalized start', (p) => (p.startTime -= 101)],
+  ['offset bounds', (p) => (p.clockMapping.lowerOffsetUs -= 1)],
+  ['uncertainty', (p) => (p.clockMapping.uncertaintyUs = 100)],
+  ['mapping scope', (p) => (p.clockMapping.scope = 'EXACT_SAMPLE_TIME')],
+])
+  test(`reject inconsistent clock mapping: ${name}`, () => {
+    const p = mappedProfile(5_117_315_336);
+    mutate(p);
+    assert.throws(() => validateCpuProfile(p), /CPU_CLOCK_ALIGNMENT/);
+  });
+
+test('mapping uncertainty makes boundary samples ambiguous instead of asserting false ownership', () => {
+  const points = validateCpuProfile(mappedProfile(5_117_315_336));
+  const at = points[0].at;
+  const spans = [
+    { phase: 'one', start: { lower: at - 120, upper: at - 120 }, end: { lower: at + 120, upper: at + 120 } },
+  ];
+  const [mapped] = attributeCpuSamples(points, spans);
+  assert.deepEqual([mapped.inside, mapped.ambiguous, mapped.outside], [0, 1, 2]);
+  const [withoutUncertainty] = attributeCpuSamples(
+    points.map(({ at, bucket }) => ({ at, bucket })),
+    spans,
+  );
+  assert.equal(withoutUncertainty.inside, 1);
+  assert.throws(
+    () => attributeCpuSamples([{ at, bucket: 'NODE_INTERNAL', uncertaintyUs: 99 }], spans),
+    /CPU_SAMPLE_UNCERTAINTY/,
+  );
 });

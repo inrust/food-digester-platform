@@ -1,0 +1,79 @@
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ❯ packages/database/test/contract-dispatch-offline.test.ts (16 tests | 7 failed) 1029ms
+   × offline checkpoint and driver prefix ownership profile-on 67ms
+   × offline checkpoint and driver prefix ownership checkpoint-cpu 111ms
+   × offline checkpoint and driver prefix ownership checkpoint-output-cpu 133ms
+   × offline checkpoint and driver prefix ownership pre-driver-cpu 111ms
+   × offline checkpoint and driver prefix ownership driver-setup-cpu 149ms
+   × offline checkpoint and driver prefix ownership prefix-output-cpu 110ms
+   × offline checkpoint and driver prefix ownership public-bridge-cpu 160ms
+ ❯ packages/database/test/contract-cpu-runtime.test.ts (14 tests | 12 failed) 1366ms
+   × offline public CPU ownership profile-on 57ms
+   × offline public CPU ownership account-orm 49ms
+   × offline public CPU ownership checkpoint-cpu 123ms
+   × offline public CPU ownership adapter-submit-cpu 148ms
+   × offline public CPU ownership pg-submit-cpu 163ms
+   × offline public CPU ownership fields-cpu 142ms
+   × offline public CPU ownership resume-log-cpu 122ms
+   × offline public CPU ownership pg-wait 210ms
+   × offline public CPU ownership pg-reject 51ms
+   × offline public CPU ownership validation-reject 52ms
+   × offline public CPU ownership update-reject 56ms
+   × offline public CPU ownership audit-reject 59ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership profile-on
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership account-orm
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership checkpoint-cpu
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership adapter-submit-cpu
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership pg-submit-cpu
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership fields-cpu
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership resume-log-cpu
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership pg-wait
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership pg-reject
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership validation-reject
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership update-reject
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership audit-reject
+Error: CPU_SPAN_PROFILE_COVERAGE
+ ❯ demand scripts/qa09-contract-cpu-proof.mjs:28:17
+     26| });
+     27| const demand = (v, code) => {
+     28|   if (!v) throw Error(code);
+       |                 ^
+     29| };
+     30| const finite = (v) => Number.isFinite(v) && v >= 0;
+ ❯ Module.summarizeCpuCase scripts/qa09-contract-cpu-proof.mjs:159:9
+ ❯ packages/database/test/contract-cpu-runtime.test.ts:339:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership profile-on
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership checkpoint-cpu
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership checkpoint-output-cpu
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership pre-driver-cpu
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership driver-setup-cpu
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership prefix-output-cpu
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership public-bridge-cpu
+Error: CPU_CLOCK_ALIGNMENT
+ ❯ demand scripts/qa09-contract-cpu-proof.mjs:28:17
+     26| });
+     27| const demand = (v, code) => {
+     28|   if (!v) throw Error(code);
+       |                 ^
+     29| };
+     30| const finite = (v) => Number.isFinite(v) && v >= 0;
+ ❯ validateCpuProfile scripts/qa09-contract-cpu-proof.mjs:52:3
+ ❯ Module.validateDispatchReceipt scripts/qa09-contract-dispatch-proof.mjs:195:35
+ ❯ packages/database/test/contract-dispatch-offline.test.ts:437:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  19 failed | 11 passed (30)
+   Start at  18:15:37
+   Duration  1.66s (transform 262ms, setup 26ms, import 387ms, tests 2.40s, environment 0ms)
+

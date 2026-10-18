@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { CpuConfig } from '../../../../scripts/qa09-contract-cpu-proof.mjs';
+import { alignCpuClock } from '../../../../scripts/qa09-contract-cpu-proof.mjs';
 
 export const monoUs = () => Number(process.hrtime.bigint() / 1000n);
 type Bracket = { lower: number; upper: number };
@@ -132,8 +133,12 @@ export class CpuProbe {
       };
     });
     return {
-      startTime: profile.startTime,
-      endTime: profile.endTime,
+      ...alignCpuClock({
+        startTime: profile.startTime,
+        endTime: profile.endTime,
+        startBracket: this.startBracket!,
+        stopBracket,
+      }),
       nodes,
       samples: profile.samples ?? [],
       timeDeltas: profile.timeDeltas ?? [],
