@@ -111,6 +111,27 @@ export async function collectSnapshot(client, manifest) {
       legacyRequestsWithoutCsr,
       status: legacyRequestsWithoutCsr === '0' ? 'PASS' : 'RECONCILIATION_REQUIRED',
     };
+    // Fixed read-only query: preserve every historical request; never reconcile
+    // duplicate serials by deleting or updating their application history.
+    const duplicateSerialGroups = (
+      await client.query(
+        `SELECT serial_number, count(*)::text AS request_count,
+                jsonb_agg(jsonb_build_object('id', id, 'status', status) ORDER BY id) AS requests
+         FROM public.onboarding_requests
+         GROUP BY serial_number HAVING count(*) > 1
+         ORDER BY serial_number LIMIT 101`,
+      )
+    ).rows;
+    const onboardingSerialPrecheck = {
+      status: duplicateSerialGroups.length ? 'RECONCILIATION_REQUIRED' : 'PASS',
+      groups: duplicateSerialGroups.slice(0, 100),
+      truncated: duplicateSerialGroups.length > 100,
+      indexDefinitions: (
+        await client.query(
+          "SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'onboarding_requests' ORDER BY indexname",
+        )
+      ).rows,
+    };
     const legacyOnboardingAssociations = csrColumnsPresent
       ? []
       : (
@@ -151,6 +172,7 @@ export async function collectSnapshot(client, manifest) {
     }
     return {
       onboardingMigrationPrecheck,
+      onboardingSerialPrecheck,
       legacyOnboardingAssociations,
       cleanupCounts,
       preservationFingerprints,

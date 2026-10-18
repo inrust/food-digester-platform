@@ -60,10 +60,35 @@ test('snapshot uses repeatable read/read only, timeouts, fixed SELECTs and alway
   const result = await collectSnapshot(c, manifest);
   assert.equal(result.migrationComparison.status, 'PASS');
   assert.equal(result.counts.users.count, '2');
+  assert.deepEqual(result.onboardingSerialPrecheck, {
+    status: 'PASS',
+    groups: [],
+    truncated: false,
+    indexDefinitions: [],
+  });
   assert.equal(c.queries[0], 'BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
   assert.equal(c.queries.at(-1), 'ROLLBACK');
   assert.ok(c.queries.some((q) => q.includes('statement_timeout')));
   assert.ok(c.queries.every((q) => !/\b(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|COMMIT)\b/.test(q)));
+});
+test('historical duplicates block serial precheck without changing any request', async () => {
+  const c = mockClient();
+  const query = c.query.bind(c);
+  const group = {
+    serial_number: 'SN-OLD',
+    request_count: '2',
+    requests: [
+      { id: 'r1', status: 'REJECTED' },
+      { id: 'r2', status: 'PENDING' },
+    ],
+  };
+  c.query = async (sql) =>
+    sql.includes('GROUP BY serial_number HAVING count(*) > 1') ? { rows: [group] } : query(sql);
+  const result = await collectSnapshot(c, manifest);
+  assert.equal(result.onboardingSerialPrecheck.status, 'RECONCILIATION_REQUIRED');
+  assert.deepEqual(result.onboardingSerialPrecheck.groups, [group]);
+  assert.equal(result.onboardingSerialPrecheck.truncated, false);
+  assert.equal(c.queries.at(-1), 'ROLLBACK');
 });
 test('writable transaction rejected before business queries and rolled back', async () => {
   const c = mockClient({ writable: true });
