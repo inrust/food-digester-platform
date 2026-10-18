@@ -1,0 +1,36 @@
+{
+  "gate": "PASS",
+  "checks": [
+    {
+      "name": "secrets",
+      "command": [
+        "node",
+        "scripts/check-secrets.mjs"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "sensitive-sinks",
+      "command": [
+        "node",
+        "scripts/check-sensitive-sinks.mjs"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "audit-executor-syntax",
+      "exitCode": 0,
+      "note": "Syntax only; not a replacement for remote execution or SQL tests."
+    }
+  ],
+  "executorSha256": {
+    "collect-fixture.py": "3a0b5930a39dde620c0b9941c1b09f262db77e5a2123777a8d344b308f3732a8",
+    "fixture-executor.mjs": "f71479577a9c2751c209f427833bdb00c5d02522c30cef9b4a0133f548997758",
+    "fixture-executor.test.mjs": "98dca7bbd93ff6324ef79b0f9ece4f2a16fc1174e335d990a60e87bd43684bd0",
+    "run-onboarding-acceptance.mjs": "b5ae0643fbf84cfbab5986f7b1d315d94719f66bd00f9fb0b611d8c2e1e2ab77",
+    "validate-rollout.py": "d0d0a707d348ae7853662d2aefc6782a64d28062f2ae3a9bb5288bc25eb2fa17",
+    "verify-deployment-v2.py": "b4fb8425103a4791e6de1c409295fbceb0a74754d419aaadc066cde6503faa41",
+    "verify-deployment-v3.py": "95b881d6860174d1fac40baaaa7d1d749bd26a074a7182222e9216882f5c81d9",
+    "verify-deployment.py": "1f90aad116e4547a82943ad7ff3f4ee74baa45de88e1cf6a01aaa4bca1e5bde9"
+  }
+}

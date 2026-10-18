@@ -1,0 +1,61 @@
+{
+  "name": "fdp-test-onboarding-verify-20261018",
+  "description": "Temporary exact-commit local-equivalent verification; no migrations or deployment",
+  "source": {
+    "type": "S3",
+    "location": "fdp-test-migration-source-065986019555-ap-southeast-1/migration/onboarding-verify-24317c4cbe22318666c2ac7caae9e82f7e437eaa-git-only.zip",
+    "buildspec": "{\"version\": \"0.2\", \"phases\": {\"install\": {\"runtime-versions\": {\"nodejs\": 24}, \"commands\": [\"git reset --hard HEAD\", \"test \\\"$(git rev-parse HEAD)\\\" = \\\"$FDP_EXPECTED_SOURCE_COMMIT\\\"\", \"git diff --quiet HEAD\", \"npm install --global pnpm@10.20.0\", \"pnpm install --frozen-lockfile\", \"pnpm exec playwright install --with-deps chromium\"]}, \"build\": {\"commands\": [\"pnpm verify\"]}}}"
+  },
+  "artifacts": {
+    "type": "NO_ARTIFACTS"
+  },
+  "serviceRole": "arn:aws:iam::065986019555:role/fdp-test-migration-runner-role",
+  "environment": {
+    "type": "LINUX_CONTAINER",
+    "image": "aws/codebuild/standard:7.0",
+    "computeType": "BUILD_GENERAL1_SMALL",
+    "privilegedMode": false,
+    "environmentVariables": [
+      {
+        "name": "FDP_EXPECTED_SOURCE_COMMIT",
+        "value": "24317c4cbe22318666c2ac7caae9e82f7e437eaa",
+        "type": "PLAINTEXT"
+      }
+    ]
+  },
+  "vpcConfig": {
+    "vpcId": "vpc-0d287fdfa0a4a06bd",
+    "subnets": [
+      "subnet-0f52dca7a7253f7d1",
+      "subnet-0c1584eea5495f25a"
+    ],
+    "securityGroupIds": [
+      "sg-081d9a3ee5f6011e9"
+    ]
+  },
+  "logsConfig": {
+    "cloudWatchLogs": {
+      "status": "ENABLED",
+      "groupName": "fdp-test-app-MigrationRunnerLogsAA30B0B4-lzkIrNBXjMWf",
+      "streamName": "onboarding-linux-verify-20261018"
+    }
+  },
+  "timeoutInMinutes": 30,
+  "queuedTimeoutInMinutes": 5,
+  "concurrentBuildLimit": 1,
+  "autoRetryLimit": 0,
+  "tags": [
+    {
+      "key": "fdp:env",
+      "value": "test"
+    },
+    {
+      "key": "fdp:project",
+      "value": "food-digester-platform"
+    },
+    {
+      "key": "fdp:task",
+      "value": "onboarding-rollout-20261018"
+    }
+  ]
+}

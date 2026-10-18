@@ -1,0 +1,22 @@
+[
+  "aws",
+  "codebuild",
+  "start-build",
+  "--project-name",
+  "fdp-test-migration-runner",
+  "--source-version",
+  "AzkX6zYfUABdNguUwltNTgZ9c94lLG0B",
+  "--environment-variables-override",
+  "name=FDP_EXPECTED_SOURCE_COMMIT,value=24317c4cbe22318666c2ac7caae9e82f7e437eaa,type=PLAINTEXT",
+  "--idempotency-token",
+  "onboarding-schema-migration-20261018-1",
+  "--profile",
+  "esgiot-infra",
+  "--region",
+  "ap-southeast-1",
+  "--query",
+  "build.{id:id,status:buildStatus,startTime:startTime,sourceVersion:sourceVersion}",
+  "--output",
+  "json",
+  "--no-cli-pager"
+]

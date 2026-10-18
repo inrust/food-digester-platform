@@ -1,0 +1,19 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadExactOnboardingVerificationSource",
+      "Effect": "Allow",
+      "Action": "s3:GetObjectVersion",
+      "Resource": "arn:aws:s3:::fdp-test-migration-source-065986019555-ap-southeast-1/migration/onboarding-verify-24317c4cbe22318666c2ac7caae9e82f7e437eaa-git-only.zip",
+      "Condition": {
+        "StringEquals": {
+          "s3:VersionId": "SiQ4DzZfYgqACn02zdjZtU13mJ8_6c.F"
+        },
+        "DateLessThan": {
+          "aws:CurrentTime": "2026-10-18T11:24:46Z"
+        }
+      }
+    }
+  ]
+}

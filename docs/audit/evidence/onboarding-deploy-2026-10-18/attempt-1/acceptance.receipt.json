@@ -1,0 +1,439 @@
+{
+  "scope": "ONE_SYNTHETIC_DEVICE_REAL_TEST_API_NO_INVENTORY",
+  "gate": "PASS",
+  "applicationCommit": "24317c4cbe22318666c2ac7caae9e82f7e437eaa",
+  "versionReceipt": "docs/audit/evidence/onboarding-deploy-2026-10-18/attempt-1/deployed-version.json",
+  "prefix": "qa09-4e64061a51812c7c",
+  "serialNumber": "qa09-4e64061a51812c7c-onboarding",
+  "username": "qa09-4e64061a51812c7c-onboarding-admin@example.invalid",
+  "startedAt": "2026-10-18T09:52:08.555Z",
+  "operations": [
+    {
+      "name": "identity-create",
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:10.202Z",
+      "requestId": "2021b5f8-1e87-41e4-b595-00bc326324ee"
+    },
+    {
+      "name": "identity-group",
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:12.846Z",
+      "requestId": "bde56f49-7ee5-4146-82f1-841375c8ff02"
+    },
+    {
+      "name": "inventory-before",
+      "host": "api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/admin/devices",
+      "expected": 200,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:19.090Z",
+      "status": 200,
+      "gatewayRequestId": "c70d9ec5-ac57-4dd1-ac88-a190b26062a5",
+      "gatewayExtendedRequestId": "FbyBQE6cyQ0EBRw=",
+      "body": {
+        "data": []
+      }
+    },
+    {
+      "name": "first-request",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "expected": 201,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:25.297Z",
+      "status": 201,
+      "gatewayRequestId": "621bbb6a-f80f-4d47-aa4a-25a397411678",
+      "gatewayExtendedRequestId": "FbyCPGoiSQ0EKvw=",
+      "body": {
+        "requestId": "7dd81abe-08e5-4e25-a299-c0563c5be7a6",
+        "status": "PENDING"
+      }
+    },
+    {
+      "name": "duplicate-pending",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "expected": 409,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:30.430Z",
+      "status": 409,
+      "gatewayRequestId": "808c546a-6062-448c-a8b4-028fc674ba4d",
+      "gatewayExtendedRequestId": "FbyDAFdkSQ0ELcw=",
+      "body": {
+        "error": {
+          "code": "CONFLICT",
+          "requestId": "808c546a-6062-448c-a8b4-028fc674ba4d",
+          "alreadySubmitted": true
+        }
+      }
+    },
+    {
+      "name": "signed-pending-status",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "expected": 200,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:31.888Z",
+      "status": 200,
+      "gatewayRequestId": "8b0056d2-2a62-4d12-a585-d53db13670e5",
+      "gatewayExtendedRequestId": "FbyDFGllSQ0Eacw=",
+      "body": {
+        "status": "PENDING"
+      }
+    },
+    {
+      "name": "inventory-before-approval",
+      "host": "api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/admin/devices",
+      "expected": 200,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:32.364Z",
+      "status": 200,
+      "gatewayRequestId": "faeeeeeb-467b-400c-a8b0-3492de1d3ff4",
+      "gatewayExtendedRequestId": "FbyDUE62yQ0EHpg=",
+      "body": {
+        "data": []
+      }
+    },
+    {
+      "name": "admin-request-detail",
+      "host": "api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/7dd81abe-08e5-4e25-a299-c0563c5be7a6",
+      "expected": 200,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:33.999Z",
+      "status": 200,
+      "gatewayRequestId": "5e40cdd1-2cb0-439f-882e-67a3f4433f42",
+      "gatewayExtendedRequestId": "FbyDjH7pSQ0ELGQ=",
+      "body": {
+        "data": {
+          "requestId": "7dd81abe-08e5-4e25-a299-c0563c5be7a6",
+          "serialNumber": "qa09-4e64061a51812c7c-onboarding",
+          "status": "PENDING",
+          "version": 1,
+          "certificateProvisioningStatus": "NOT_STARTED",
+          "publicKeyFingerprint": "78244f3947bd162656f61ccce2d9f8a7ca7d262e95e65580cbb64bff7e768604"
+        }
+      }
+    },
+    {
+      "name": "admin-approve",
+      "host": "api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/7dd81abe-08e5-4e25-a299-c0563c5be7a6/approve",
+      "expected": 200,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:36.527Z",
+      "status": 200,
+      "gatewayRequestId": "c07a30dd-efc1-4588-846b-fc48c7aabee1",
+      "gatewayExtendedRequestId": "FbyDzGdjSQ0EIiw=",
+      "body": {
+        "data": {
+          "requestId": "7dd81abe-08e5-4e25-a299-c0563c5be7a6",
+          "serialNumber": "qa09-4e64061a51812c7c-onboarding",
+          "status": "APPROVED",
+          "version": 2,
+          "certificateProvisioningStatus": "QUEUED",
+          "publicKeyFingerprint": "78244f3947bd162656f61ccce2d9f8a7ca7d262e95e65580cbb64bff7e768604"
+        }
+      }
+    },
+    {
+      "name": "inventory-after-approval",
+      "host": "api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/admin/devices",
+      "expected": 200,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:37.556Z",
+      "status": 200,
+      "gatewayRequestId": "f921b7e4-5938-4dd9-ac24-97a82901a56f",
+      "gatewayExtendedRequestId": "FbyD-GVpSQ0ELZA=",
+      "body": {
+        "data": [
+          {
+            "id": "c85a3fca-8a0c-4479-b465-ac76cef3d7fc",
+            "serialNumber": "qa09-4e64061a51812c7c-onboarding",
+            "lifecycleStatus": "OnboardingApproved"
+          }
+        ]
+      }
+    },
+    {
+      "name": "duplicate-approved",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "expected": 409,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:38.291Z",
+      "status": 409,
+      "gatewayRequestId": "18bf1607-a11d-4fa7-ba6c-908b8d9192cd",
+      "gatewayExtendedRequestId": "FbyEOGMFSQ0EH8w=",
+      "body": {
+        "error": {
+          "code": "CONFLICT",
+          "requestId": "18bf1607-a11d-4fa7-ba6c-908b8d9192cd",
+          "alreadySubmitted": true
+        }
+      }
+    },
+    {
+      "name": "signed-certificate-status",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "expected": 200,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:39.626Z",
+      "status": 200,
+      "gatewayRequestId": "9fe8c9cb-437c-4d27-b4f6-2a16f1c47085",
+      "gatewayExtendedRequestId": "FbyEcGx2yQ0EFcg=",
+      "body": {
+        "status": "PENDING"
+      }
+    },
+    {
+      "name": "signed-certificate-status",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "expected": 200,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:52:51.127Z",
+      "status": 200,
+      "gatewayRequestId": "7662ece1-3088-4026-b960-d0607520a25e",
+      "gatewayExtendedRequestId": "FbyGbGZQSQ0ECjw=",
+      "body": {
+        "status": "PENDING"
+      }
+    },
+    {
+      "name": "signed-certificate-status",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "expected": 200,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:04.051Z",
+      "status": 200,
+      "gatewayRequestId": "e4c3c804-70ab-4b23-961a-ea48adb29480",
+      "gatewayExtendedRequestId": "FbyIQH8oyQ0EFdA=",
+      "body": {
+        "status": "PENDING"
+      }
+    },
+    {
+      "name": "signed-certificate-status",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "expected": 200,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:15.719Z",
+      "status": 200,
+      "gatewayRequestId": "5669c279-6df7-4716-8b1c-6b34d01ca3e6",
+      "gatewayExtendedRequestId": "FbyKEEDASQ0EBzg=",
+      "body": {
+        "status": "PENDING"
+      }
+    },
+    {
+      "name": "signed-certificate-status",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "expected": 200,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:27.048Z",
+      "status": 200,
+      "gatewayRequestId": "9e95072a-0879-40df-b26c-780565747c00",
+      "gatewayExtendedRequestId": "FbyL6E_ryQ0EBzg=",
+      "body": {
+        "status": "APPROVED",
+        "deviceId": "c85a3fca-8a0c-4479-b465-ac76cef3d7fc",
+        "certificateSha256": "9fd78f72e9b0390206e9edb9bfd60ac21e8e5b31ffe0a25c166c06734ae27eff",
+        "chainSha256": "447dfa9a580c6bfd3126c7661519e46820f3e4919b1862f39e2d1683a349a0de"
+      }
+    },
+    {
+      "name": "admin-provisioning-completed",
+      "host": "api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/7dd81abe-08e5-4e25-a299-c0563c5be7a6",
+      "expected": 200,
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:29.105Z",
+      "status": 200,
+      "gatewayRequestId": "2876d6f0-1db5-40f0-8f34-a9a06c67ac8c",
+      "gatewayExtendedRequestId": "FbyMKEoXSQ0EJEA=",
+      "body": {
+        "data": {
+          "requestId": "7dd81abe-08e5-4e25-a299-c0563c5be7a6",
+          "serialNumber": "qa09-4e64061a51812c7c-onboarding",
+          "status": "APPROVED",
+          "version": 2,
+          "certificateProvisioningStatus": "COMPLETED",
+          "publicKeyFingerprint": "78244f3947bd162656f61ccce2d9f8a7ca7d262e95e65580cbb64bff7e768604"
+        }
+      }
+    },
+    {
+      "name": "cleanup-principal-things",
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:30.789Z",
+      "requestId": "47efaf66-26be-412e-9df9-d711131b8eaa"
+    },
+    {
+      "name": "cleanup-attached-policies",
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:33.140Z",
+      "requestId": "3c677b45-fad1-47b9-ba4b-93c15361201e"
+    },
+    {
+      "name": "cleanup-inactivate-certificate",
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:33.517Z",
+      "requestId": "60f3da99-8975-4a74-85d4-f066b73d13ca"
+    },
+    {
+      "name": "cleanup-detach-thing",
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:33.877Z",
+      "requestId": "bf7768a0-c700-4b4a-9a58-77e76425a362"
+    },
+    {
+      "name": "cleanup-detach-policy",
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:34.226Z",
+      "requestId": "01bfb2da-bc7b-4b02-b9f3-df7a372ec832"
+    },
+    {
+      "name": "cleanup-delete-policy",
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:34.577Z",
+      "requestId": "cca87227-971e-4702-88e9-6cf17b08c06a"
+    },
+    {
+      "name": "cleanup-delete-certificate",
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:34.956Z",
+      "requestId": "6e20fb9c-dad3-4d8b-b899-251fdafe268d"
+    },
+    {
+      "name": "cleanup-delete-thing",
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:35.298Z",
+      "requestId": "e4edecd3-5990-45aa-8374-b4a4544cbe29"
+    },
+    {
+      "name": "cleanup-global-signout",
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:35.993Z",
+      "requestId": "ed40e2f3-29ea-4666-92c1-bb9f691fbb45"
+    },
+    {
+      "name": "cleanup-delete-identity",
+      "state": "PASS",
+      "startedAt": "2026-10-18T09:53:37.746Z",
+      "requestId": "fa18f4e2-5f79-4566-88ff-264c2c1b93fa"
+    }
+  ],
+  "checks": [
+    {
+      "name": "test-account",
+      "result": "PASS"
+    },
+    {
+      "name": "real-srp-new-password-challenge",
+      "result": "PASS"
+    },
+    {
+      "name": "real-srp-authenticated",
+      "result": "PASS"
+    },
+    {
+      "name": "no-preseeded-inventory",
+      "result": "PASS"
+    },
+    {
+      "name": "first-pending-id",
+      "result": "PASS"
+    },
+    {
+      "name": "duplicate-already-submitted",
+      "result": "PASS"
+    },
+    {
+      "name": "pending-status",
+      "result": "PASS"
+    },
+    {
+      "name": "request-does-not-create-inventory",
+      "result": "PASS"
+    },
+    {
+      "name": "admin-pending-details",
+      "result": "PASS"
+    },
+    {
+      "name": "approval-approved",
+      "result": "PASS"
+    },
+    {
+      "name": "approval-creates-one-device",
+      "result": "PASS"
+    },
+    {
+      "name": "issued-certificate-matches-local-private-key",
+      "result": "PASS"
+    },
+    {
+      "name": "issued-device-id",
+      "result": "PASS"
+    },
+    {
+      "name": "provisioning-job-completed",
+      "result": "PASS"
+    },
+    {
+      "name": "cleanup-only-own-thing",
+      "result": "PASS"
+    },
+    {
+      "name": "cleanup-only-own-policy",
+      "result": "PASS"
+    },
+    {
+      "name": "cleanup-certificate-absent",
+      "result": "PASS"
+    },
+    {
+      "name": "cleanup-identity-absent",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "type": "own-iot-resources",
+      "result": "PASS"
+    },
+    {
+      "type": "identity",
+      "result": "PASS"
+    }
+  ],
+  "fullQa09Accepted": false,
+  "productionReady": false,
+  "requestId": "7dd81abe-08e5-4e25-a299-c0563c5be7a6",
+  "deviceId": "c85a3fca-8a0c-4479-b465-ac76cef3d7fc",
+  "certificateId": "c1539c048658f07836f32d33db9e5bc270f9cb491c80ecd4a3d83d32d3ad7b0b",
+  "certificateFingerprint": "c1539c048658f07836f32d33db9e5bc270f9cb491c80ecd4a3d83d32d3ad7b0b",
+  "finishedAt": "2026-10-18T09:53:38.748Z"
+}
