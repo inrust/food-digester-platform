@@ -1,5 +1,5 @@
 export const ONBOARDING_TIMEOUT_POLICY = {
-  policyVersion: '1.0.0',
+  policyVersion: '1.1.0',
   status: 'frozen',
   deadline: { startsAt: 'CERTIFICATE_PACKAGE_STORED', seconds: 86_400, boundary: 'INCLUSIVE' },
   timeoutDisposition: {
@@ -13,7 +13,7 @@ export const ONBOARDING_TIMEOUT_POLICY = {
     afterDeadlineAutomaticResign: false,
   },
   lateHeartbeat: 'REJECT',
-  retry: { requiresNewToken: true, requiresNewRequest: true },
+  retry: { allowsNewRequest: false, requiresManualRecovery: true },
   consumers: ['BE-ONB-03', 'BE-ONB-04', 'QA-02', 'QA-04'],
 } as const;
 

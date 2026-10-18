@@ -61,25 +61,28 @@ interface Planted {
 }
 
 /** 落库一台库存设备 + 一条 CSR 申请；每台设备序列号唯一。 */
-async function plantRequest(overrides: { status?: string; requestModel?: string } = {}): Promise<Planted> {
+async function plantRequest(
+  overrides: { status?: string; requestModel?: string; withoutDevice?: boolean } = {},
+): Promise<Planted> {
   seq += 1;
   const serialNumber = `SN-ADM-${seq}`;
   const deviceId = `dev-adm-${seq}`;
-  await prisma.device.create({
-    data: {
-      id: deviceId,
-      serialNumber,
-      model: 'BNX-100',
-      hardwareVersion: 'HW1.0',
-      manufacturer: 'Hiddenjoy',
-      manufactureDate: new Date('2026-01-01T00:00:00Z'),
-      lifecycleStatus: 'PendingOnboarding',
-    },
-  });
+  if (!overrides.withoutDevice)
+    await prisma.device.create({
+      data: {
+        id: deviceId,
+        serialNumber,
+        model: 'BNX-100',
+        hardwareVersion: 'HW1.0',
+        manufacturer: 'Hiddenjoy',
+        manufactureDate: new Date('2026-01-01T00:00:00Z'),
+        lifecycleStatus: 'PendingOnboarding',
+      },
+    });
   const request = await prisma.onboardingRequest.create({
     data: {
       csrPem: 'TEST_CSR',
-      publicKeyFingerprint: 'a'.repeat(64),
+      publicKeyFingerprint: seq.toString(16).padStart(64, '0'),
       serialNumber,
       submittedBy: `DEVICE:${serialNumber}`,
       model: overrides.requestModel ?? 'BNX-100',
@@ -196,6 +199,80 @@ describe('GET /admin/onboarding/requests/:requestId（详情）', () => {
 });
 
 describe('POST approve / reject', () => {
+  test('无库存申请批准后创建台账、公钥绑定、状态历史和 Job', async () => {
+    const planted = await plantRequest({ withoutDevice: true });
+    const res = await handlers.approve(
+      req(superAdmin, { params: { requestId: planted.requestId }, headers: { 'If-Match': '1' } }),
+    );
+    assert.equal(res.status, 200);
+    const device = await prisma.device.findUniqueOrThrow({ where: { serialNumber: planted.serialNumber } });
+    assert.equal(device.lifecycleStatus, 'OnboardingApproved');
+    assert.equal(device.model, 'BNX-100');
+    assert.equal(device.customerId, null);
+    assert.equal(await prisma.devicePublicKey.count({ where: { deviceId: device.id } }), 1);
+    assert.equal(
+      await prisma.deviceStateHistory.count({ where: { deviceId: device.id, toStatus: 'OnboardingApproved' } }),
+      1,
+    );
+    assert.equal(await prisma.onboardingProvisioningJob.count({ where: { requestId: planted.requestId } }), 1);
+  });
+
+  test('无库存申请可拒绝，保留拒绝原因，不创建设备或 Job', async () => {
+    const planted = await plantRequest({ withoutDevice: true });
+    const res = await handlers.reject(
+      req(superAdmin, {
+        params: { requestId: planted.requestId },
+        headers: { 'If-Match': '1' },
+        body: { reason: '实物核验不通过' },
+      }),
+    );
+    assert.equal(res.status, 200);
+    assert.equal((res.body as DetailPayload).data.rejectReason, '实物核验不通过');
+    assert.equal(await prisma.device.count({ where: { serialNumber: planted.serialNumber } }), 0);
+    assert.equal(await prisma.onboardingProvisioningJob.count({ where: { requestId: planted.requestId } }), 0);
+    assert.equal(await prisma.auditLog.count({ where: { objectId: planted.requestId, result: 'SUCCESS' } }), 1);
+  });
+
+  test('无库存申请并发审批只创建一台设备与一个 Job', async () => {
+    const planted = await plantRequest({ withoutDevice: true });
+    const responses = await Promise.all(
+      Array.from({ length: 2 }, () =>
+        handlers.approve(req(superAdmin, { params: { requestId: planted.requestId }, headers: { 'If-Match': '1' } })),
+      ),
+    );
+    assert.deepEqual(responses.map((response) => response.status).sort(), [200, 409]);
+    assert.equal(await prisma.device.count({ where: { serialNumber: planted.serialNumber } }), 1);
+    assert.equal(await prisma.onboardingProvisioningJob.count({ where: { requestId: planted.requestId } }), 1);
+  });
+
+  test('跨设备公钥冲突会回滚批准、台账和 Job，保留失败审计', async () => {
+    const original = await plantRequest();
+    assert.equal(
+      (
+        await handlers.approve(
+          req(superAdmin, { params: { requestId: original.requestId }, headers: { 'If-Match': '1' } }),
+        )
+      ).status,
+      200,
+    );
+    const source = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: original.requestId } });
+    const other = await plantRequest({ withoutDevice: true });
+    await prisma.onboardingRequest.update({
+      where: { id: other.requestId },
+      data: { publicKeyFingerprint: source.publicKeyFingerprint },
+    });
+    const res = await handlers.approve(
+      req(superAdmin, { params: { requestId: other.requestId }, headers: { 'If-Match': '1' } }),
+    );
+    assert.equal(res.status, 409);
+    const unchanged = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: other.requestId } });
+    assert.equal(unchanged.status, 'PENDING');
+    assert.equal(unchanged.version, 1);
+    assert.equal(await prisma.device.count({ where: { serialNumber: other.serialNumber } }), 0);
+    assert.equal(await prisma.onboardingProvisioningJob.count({ where: { requestId: other.requestId } }), 0);
+    assert.equal(await prisma.auditLog.count({ where: { objectId: other.requestId, result: 'FAILURE' } }), 1);
+  });
+
   test('approve 正向：APPROVED + 设备 OnboardingApproved + 状态历史 + 同事务 Provisioning Job', async () => {
     const planted = await plantRequest();
     const res = await handlers.approve(

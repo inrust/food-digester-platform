@@ -2,10 +2,10 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bio-Nexa CMP Admin Onboarding Review API",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "BE-ONB-02 管理员 Onboarding 审批接口：待审批列表、详情、approve、reject。认证为 Cognito JWT；列表/详情需 onboarding:read，审批需 onboarding:approve（仅 PlatformSuperAdmin）。审批采用 If-Match 乐观锁防重复/并发审批；approve 在同一事务创建持久化 Provisioning Job，不返回私钥。通用响应/错误契约继承 openapi-base.json（CT-05）。",
-    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-017@1.0.0", "DEC-025@1.1.0"],
-    "x-decision-register-version": "1.36.0"
+    "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-017@1.1.0", "DEC-025@1.2.0"],
+    "x-decision-register-version": "1.37.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [
@@ -129,7 +129,7 @@
         "tags": ["admin"],
         "operationId": "approveOnboardingRequest",
         "summary": "批准 Onboarding 申请（仅 PlatformSuperAdmin）",
-        "description": "审批校验设备库存资料与申请一致；成功后将申请置为 APPROVED、设备生命周期迁移为 OnboardingApproved，并触发证书发放服务（不返回私钥）。If-Match 乐观锁：并发/重复审批最多一个成功。",
+        "description": "无需预先登记库存。批准时根据申请资料创建设备台账、绑定 CSR 公钥并迁移至 OnboardingApproved，同事务创建证书签发 Job；已有台账须资料一致且处于 PendingOnboarding。公钥已归属其他设备则回滚审批。If-Match 乐观锁保证并发/重复审批最多一个成功。",
         "security": [
           {
             "CognitoJwt": []

@@ -64,12 +64,12 @@ function signedHeaders(requestId: string, nonce: string) {
 }
 
 describe('无预置 Token 的 CSR Onboarding', () => {
-  test('匿名申请、相同公钥幂等、换钥冲突；签名轮询拒绝重放', async () => {
+  test('匿名申请、重复提交提示、换钥冲突；签名轮询拒绝重放', async () => {
     const request = checkedCreateOnboardingRequestHandler({ client: prisma, rateLimiter: limiter, now: () => NOW });
     const first = await request({ headers: {}, body, requestId: 'api-1' });
     expect(first.status).toBe(201);
     const requestId = (first.body as { requestId: string }).requestId;
-    expect((await request({ headers: {}, body, requestId: 'api-2' })).status).toBe(200);
+    expect((await request({ headers: {}, body, requestId: 'api-2' })).status).toBe(409);
     const other = csrFor(forge.pki.rsa.generateKeyPair(2048));
     const conflict = await request({ headers: {}, body: { ...body, csrPem: other }, requestId: 'api-3' });
     expect(conflict.status).toBe(409);
@@ -193,7 +193,7 @@ describe('无预置 Token 的 CSR Onboarding', () => {
           requestId: 'qa02-serial-not-found',
         })
       ).status,
-    ).toBe(404);
+    ).toBe(201);
     expect((await status({ headers: {}, query: {}, requestId: 'qa02-missing-query' })).status).toBe(400);
     const limited = createRateLimiter(new InMemoryRateLimitStore(), { limit: 1, windowSeconds: 60 }, () => NOW);
     const limitedRequest = checkedCreateOnboardingRequestHandler({
@@ -202,7 +202,7 @@ describe('无预置 Token 的 CSR Onboarding', () => {
       rateLimiter: limited,
     });
     const limitedInput = { headers: {}, body: { ...body, serialNumber: 'SN-QA02-RATE' }, requestId: 'qa02-rate' };
-    expect((await limitedRequest(limitedInput)).status).toBe(404);
+    expect((await limitedRequest(limitedInput)).status).toBe(201);
     expect((await limitedRequest(limitedInput)).status).toBe(429);
     const limitedStatus = checkedCreateOnboardingStatusHandler({
       client: prisma,

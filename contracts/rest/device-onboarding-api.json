@@ -2,17 +2,17 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bio-Nexa CMP Device Onboarding API",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "description": "设备首次接入统一使用无预置 Token 的 CSR 申请、管理员线下核验审批、CSR 私钥签名轮询；云端仅签发并返回公钥证书。",
     "x-decision-versions": [
       "PRI-001@1.0.0",
       "ADP-001@1.0.0",
       "DEC-003@1.1.0",
-      "DEC-017@1.0.0",
-      "DEC-025@1.1.0",
-      "DEC-026@1.0.0"
+      "DEC-017@1.1.0",
+      "DEC-025@1.2.0",
+      "DEC-026@1.1.0"
     ],
-    "x-decision-register-version": "1.36.0"
+    "x-decision-register-version": "1.37.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [
@@ -34,7 +34,7 @@
         "tags": ["device"],
         "operationId": "submitOnboardingRequest",
         "summary": "提交设备 Onboarding 申请",
-        "description": "设备自生成 RSA-2048 或更强密钥，提交已自签名 CSR 和资料；管理员线下核验后审批。相同序列号和公钥幂等重放；不同公钥返回 409。",
+        "description": "设备提交自签名 CSR 和资料即可首次申请，无需预先登记设备库存。序列号从未提交过则创建 PENDING；任何状态的已有申请均返回 409 CONFLICT，提示已提交，无需重复提交。管理员批准时创建设备台账并绑定公钥。",
         "security": [],
         "requestBody": {
           "required": true,
@@ -47,16 +47,6 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "幂等重放：该设备已存在 PENDING 申请，返回原 request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OnboardingRequestResult"
-                }
-              }
-            }
-          },
           "201": {
             "description": "申请已创建（PENDING）",
             "content": {
@@ -77,18 +67,8 @@
               }
             }
           },
-          "404": {
-            "description": "序列号不存在于设备库存（NOT_FOUND）",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "409": {
-            "description": "设备状态不允许或已有不同 CSR 公钥的待审核申请",
+            "description": "该序列号已经提交过申请，无需重复提交（CONFLICT；包括 PENDING/APPROVED/REJECTED/TIMED_OUT）",
             "content": {
               "application/json": {
                 "schema": {

@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.36.0",
-  "updatedAt": "2026-10-01T00:00:00Z",
+  "registerVersion": "1.37.0",
+  "updatedAt": "2026-10-18T00:00:00Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -593,13 +593,13 @@
     },
     {
       "id": "DEC-017",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "status": "frozen",
       "title": "Onboarding 超时",
       "conflict": "通信设计未定义证书签发后首次合法 Heartbeat 长期未到达时的截止时间、外部状态、证书处置、重签和重新申请规则。",
-      "provisionalValue": "方案 A：证书包存储成功时起算 24 小时首个合法 Heartbeat 硬截止，截止边界计入超时。超时后内部申请置 TIMED_OUT，外部映射 REJECTED/ONBOARDING_TIMEOUT；撤销未确认新证书并销毁密文包，设备回到既有 PendingOnboarding，不新增生命周期状态。迟到 Heartbeat 失败关闭，不自动重签；重新申请必须使用新 CSR 创建新申请。",
-      "approver": "业务方（用户确认）",
-      "approvedAt": "2026-09-04T11:12:55Z",
+      "provisionalValue": "证书包存储成功时起算 24 小时首个合法 Heartbeat 硬截止，截止边界计入超时。超时后内部申请置 TIMED_OUT，外部映射 REJECTED/ONBOARDING_TIMEOUT；撤销未确认新证书并销毁密文包，设备回到 PendingOnboarding。迟到 Heartbeat 失败关闭，不自动重签。同一序列号已提交过申请，超时后也不能创建新申请，须人工核查处置；本次不新增恢复或重置接口。",
+      "approver": "业务方（2026-10-18 用户明确业务流程）",
+      "approvedAt": "2026-10-18T00:00:00Z",
       "blockingTasks": ["BE-ONB-03", "BE-ONB-04", "QA-02", "QA-04"],
       "affectedModules": ["BE-ONB", "QA"],
       "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
@@ -615,6 +615,12 @@
           "at": "2026-09-04T11:12:55Z",
           "by": "业务方（用户确认）",
           "note": "批准方案 A：冻结证书包存储后 24 小时硬截止、TIMED_OUT 内部状态、REJECTED 外部映射、撤证销包、迟到失败关闭和新 Token 重新申请规则。"
+        },
+        {
+          "version": "1.1.0",
+          "at": "2026-10-18T00:00:00Z",
+          "by": "业务方（用户明确纠正 onboarding 流程）",
+          "note": "首次申请不查询库存；按序列号全状态去重；批准后创建设备并绑定公钥；重复申请含拒绝和超时统一返回已提交。历史审批和验收记录保留。"
         }
       ]
     },
@@ -773,13 +779,13 @@
     },
     {
       "id": "DEC-025",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "status": "frozen",
       "title": "无预置凭据设备首次 Onboarding",
       "conflict": "仅有印刷序列号且不能预写 Token 的设备无法调用旧版 Token 前置的首次申请；原签发路径还将云端私钥下发给设备。",
-      "provisionalValue": "新设备生成并保留 RSA-2048+ 私钥，提交自签名 CSR 与设备资料，不要求预置 Token；管理员依据线下管理制度核实实物与申请后审批；状态轮询按 CSR 私钥对方法、路径、requestId、时间戳和随机数签名，时间窗 300 秒且随机数不可重放；云端对原 CSR 公钥签发证书且只返回公钥证书。不保留旧 Token 申请和轮询分支，DEC-003 一次性证书包与 DEC-017 24 小时截止继续用于发证恢复，超时重新申请不再要求新 Token。",
-      "approver": "业务方及设备方（2026-09-29 方案评审确认）",
-      "approvedAt": "2026-09-29T00:00:00Z",
+      "provisionalValue": "设备自生成并保留 RSA-2048+ 私钥，首次提交自签名 CSR 和资料不要求预置 Token 或库存登记。服务端按序列号检查全部申请历史；从未提交则创建 PENDING，已提交则统一返回 409 CONFLICT 提示无需重复提交，不替换原 CSR 或返回原申请 ID。管理员线下核验后批准时在同一事务创建设备台账、绑定公钥、写状态历史并创建签发 Job；拒绝不创建设备。保留已有待接入台账兼容。签名轮询、私钥留设备、一次性公钥证书包规则不变。",
+      "approver": "业务方（2026-10-18 用户明确业务流程）",
+      "approvedAt": "2026-10-18T00:00:00Z",
       "blockingTasks": ["BE-ONB-01", "BE-ONB-02", "BE-ONB-03", "QA-02"],
       "affectedModules": ["AUTH", "BE-ONB", "SEC", "IAC"],
       "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
@@ -795,18 +801,24 @@
           "at": "2026-09-29T08:00:00Z",
           "by": "业务方（本次开发阶段澄清）",
           "note": "开发阶段无既有设备，不保留 Bearer Token 路径、签发模块与数据表；Onboarding 统一使用 CSR。"
+        },
+        {
+          "version": "1.2.0",
+          "at": "2026-10-18T00:00:00Z",
+          "by": "业务方（用户明确纠正 onboarding 流程）",
+          "note": "首次申请不查询库存；按序列号全状态去重；批准后创建设备并绑定公钥；重复申请含拒绝和超时统一返回已提交。历史审批和验收记录保留。"
         }
       ]
     },
     {
       "id": "DEC-026",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "status": "frozen",
       "title": "设备证书 CSR 轮换与双通道确认",
       "conflict": "首次接入保留设备私钥，但旧轮换返回云端私钥并仅以 Heartbeat 停用旧证，无法确认 REST 连通性。",
-      "provisionalValue": "统一设备生成密钥与新CSR；项目CA设置受控Device ID Subject/SAN，返回叶证书和完整CA chain；保留RegisterCertificateWithoutCA和首Heartbeat完成Onboarding；记录mqttVerifiedAt/restVerifiedAt。轮换新旧证并行最长24小时，双通道确认同事务撤销旧证并登记AWS INACTIVE意图，由现有Sweeper幂等重试。超时撤销新证并保留旧证；截止边界应用侧先行拒绝。跨设备复用公钥拒绝，同设备申请重试幂等。",
-      "approver": "业务方（本次方案实施授权）",
-      "approvedAt": "2026-10-01T00:00:00Z",
+      "provisionalValue": "统一设备生成密钥与新 CSR；项目 CA 设置受控 Device ID Subject/SAN，返回叶证书和完整 CA chain；保留 RegisterCertificateWithoutCA 和首 Heartbeat 完成 Onboarding，记录 mqttVerifiedAt/restVerifiedAt。轮换新旧证并行最长 24 小时，双通道确认同事务撤销旧证并登记 AWS INACTIVE 意图，由 Sweeper 重试。超时撤销新证并保留旧证；截止边界应用侧先行拒绝。跨设备复用公钥在绑定时拒绝；首次接入的公钥绑定移到管理员批准事务，同序列号重复申请统一提示已提交。轮换接口的幂等规则不变。",
+      "approver": "业务方（2026-10-18 用户明确业务流程）",
+      "approvedAt": "2026-10-18T00:00:00Z",
       "blockingTasks": ["BE-ONB-03", "BE-CERT-02", "BE-SYNC-01", "QA-02"],
       "affectedModules": ["AUTH", "BE-ONB", "BE-CERT", "BE-SYNC", "SEC", "DB", "IAC", "QA"],
       "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
@@ -816,6 +828,12 @@
           "at": "2026-10-01T00:00:00Z",
           "by": "业务方",
           "note": "按已确认的分层接入与CSR轮换方案实施，数字窗口沿用24小时证书交付周期，不改变DEC-017。"
+        },
+        {
+          "version": "1.1.0",
+          "at": "2026-10-18T00:00:00Z",
+          "by": "业务方（用户明确纠正 onboarding 流程）",
+          "note": "首次申请不查询库存；按序列号全状态去重；批准后创建设备并绑定公钥；重复申请含拒绝和超时统一返回已提交。历史审批和验收记录保留。"
         }
       ]
     }

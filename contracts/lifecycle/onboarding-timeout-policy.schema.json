@@ -15,7 +15,7 @@
   ],
   "additionalProperties": false,
   "properties": {
-    "policyVersion": { "const": "1.0.0" },
+    "policyVersion": { "const": "1.1.0" },
     "status": { "const": "frozen" },
     "x-decision-versions": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
     "deadline": {
@@ -55,11 +55,11 @@
     "lateHeartbeat": { "const": "REJECT" },
     "retry": {
       "type": "object",
-      "required": ["requiresNewToken", "requiresNewRequest"],
+      "required": ["allowsNewRequest", "requiresManualRecovery"],
       "additionalProperties": false,
       "properties": {
-        "requiresNewToken": { "const": true },
-        "requiresNewRequest": { "const": true }
+        "allowsNewRequest": { "const": false },
+        "requiresManualRecovery": { "const": true }
       }
     },
     "consumers": { "type": "array", "items": { "type": "string" }, "minItems": 1, "uniqueItems": true },

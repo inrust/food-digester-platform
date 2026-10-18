@@ -362,7 +362,7 @@ Token 必须一次一机、可撤销、有有效期并只保存 Hash。接口应
 ### 8.3 发证流程
 
 1. 设备按通信设计提交 `serialNumber`、`model`、`hardwareVersion`、`manufacturer` 和 `manufactureDate`；
-2. 云端验证 Onboarding Token、序列号和设备库存；
+2. 云端校验 CSR 与设备资料，并按序列号检查全状态申请历史；未提交则创建待审核申请，已提交返回 409，无库存前置查询；
 3. API 返回 `requestId` 和 `PENDING`，设备每 30 秒查询状态；
 4. 管理员审批；
 5. 云端创建 Device ID 和 AWS IoT Thing；

@@ -6,13 +6,13 @@ Base URL：`https://onboard-api.bio-nexa.com`。本文以 [可执行 OpenAPI](..
 
 ## 联调前提与职责
 
-设备方负责在设备本地生成并持久保存 **RSA 2048 位或更强的私钥**，生成 PKCS#10 PEM CSR，且私钥始终留在设备；设备还须能使用该私钥作 RSA-SHA256 签名、保存 `requestId` 和安装返回的证书。设备库存须预先有印刷序列号，处于 `PendingOnboarding`。管理员按照双方认可的线下管理制度核对实物、安装记录、申请时间和 CSR 公钥指纹后审批；**序列号与 CSR 本身不证明实物身份**。
+设备方负责在设备本地生成并持久保存 **RSA 2048 位或更强的私钥**，生成 PKCS#10 PEM CSR，且私钥始终留在设备；设备还须能使用该私钥作 RSA-SHA256 签名、保存 `requestId` 和安装返回的证书。首次申请不要求预先登记设备库存；管理员批准后，系统按申请资料创建设备台账。管理员按照双方认可的线下管理制度核对实物、安装记录、申请时间和 CSR 公钥指纹后审批；**序列号与 CSR 本身不证明实物身份**。
 
 审批通过后，云端对已申请的 CSR 公钥签发证书并注册 AWS IoT Core。新流程下发 `certificatePem` 与 `certificateChain`，云端不生成或返回设备私钥。设备用证书连接 IoT Core、发送首个合法 Heartbeat 后才完成接入；审批通过不等于接入完成。证书包 24 小时有效，超时按既有撤证及 `REJECTED/ONBOARDING_TIMEOUT` 规则收敛。目标 AWS 与真实设备联调：**NOT RUN / NO RECEIPT**。
 
 ## `POST /api/v1/device/onboarding/request`
 
-无需 `Authorization` 请求头。请求体为 JSON，未知字段拒绝；CSR 上限 8192 字符，必须是签名有效且 RSA 公钥至少 2048 位的 PEM PKCS#10 请求；CSR 签名仅允许 RSA-SHA256/384/512。Subject 属性不得包含控制字符，单项不超过 128 字符。跨设备复用公钥返回 `409 CONFLICT`，同一设备的申请重试允许复用该申请公钥。最终证书 CN 与 URI SAN 由服务器按库存 `deviceId` 设置，不复制 CSR 自报身份。
+无需 `Authorization` 请求头。请求体为 JSON，未知字段拒绝；CSR 上限 8192 字符，必须是签名有效且 RSA 公钥至少 2048 位的 PEM PKCS#10 请求；CSR 签名仅允许 RSA-SHA256/384/512。Subject 属性不得包含控制字符，单项不超过 128 字符。跨设备复用公钥在管理员批准并绑定时返回 `409 CONFLICT`，审批及新台账创建均回滚。最终证书 CN 与 URI SAN 由服务器按批准后生成的 `deviceId` 设置，不复制 CSR 自报身份。
 
 ```http
 POST /api/v1/device/onboarding/request HTTP/1.1
@@ -31,13 +31,21 @@ Content-Type: application/json
 }
 ```
 
-成功新建返回 `201`，同一序列号及相同公钥的 `PENDING` 重试返回 `200`：
+首次提交该序列号返回 `201`；设备应持久保存响应中的申请 ID：
 
 ```json
 { "requestId": "9cb7774e-9f10-48df-8d01-364c24023bc5", "status": "PENDING" }
 ```
 
-同序列号已有**不同公钥**的待审核申请返回 `409 CONFLICT`，不得静默替换旧申请。库存不存在返回 `404 NOT_FOUND`，设备状态不允许返回 `409 DEVICE_STATE_NOT_ALLOWED`；字段或 CSR 无效返回 `400 VALIDATION_FAILED`；限流返回 `429 RATE_LIMITED`。管理员需拒绝可疑申请，不能仅凭正确序列号审批。
+同序列号只要已经提交过申请，无论公钥是否相同、状态为 `PENDING`、`APPROVED`、`REJECTED` 或 `TIMED_OUT`，均返回 `409 CONFLICT`，提示已提交，无需重复提交；不覆盖旧申请，也不返回其申请 ID。本接口不查询设备库存，不再返回库存缺失的 404。字段或 CSR 无效返回 `400 VALIDATION_FAILED`；限流返回 `429 RATE_LIMITED`。管理员需拒绝可疑申请，不能仅凭正确序列号审批。拒绝或超时后的异常处置须人工核查，本接口不提供重新申请或重置能力。
+
+重复提交示例：
+
+```json
+{"error":{"code":"CONFLICT","message":"An onboarding request has already been submitted for this serial number; do not submit again","requestId":"<HTTP请求追踪ID>"}}
+```
+
+错误响应中的 `error.requestId` 仅用于追踪 HTTP 请求，不能用于查询原 onboarding 申请。
 
 ## `GET /api/v1/device/onboarding/status`
 

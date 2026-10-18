@@ -1,10 +1,8 @@
 /**
  * BE-ONB-01 Onboarding Request Repository。
  *
- * - 幂等依据：DB-01 部分唯一索引 onboarding_requests_one_pending_per_serial
- *   （同序列号仅一条 PENDING）；
- * - 并发重复提交：create 命中唯一冲突（P2002）后回读既有 PENDING 记录，
- *   由调用方幂等返回原 request，不产生第二条记录；
+ * - serial_number 全状态唯一；查询不按审批状态过滤。
+ * - 并发重复提交：create 命中唯一冲突（P2002）后返回已提交提示，不产生第二条记录。
  * - 只读/只增：本模块不提供更新/删除路径（审批写状态属 BE-ONB-02）。
  */
 import type { DbClient } from '@fdp/database';
@@ -41,10 +39,10 @@ export function isUniqueViolation(err: unknown): boolean {
   return typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'P2002';
 }
 
-/** 查询某序列号当前 PENDING 申请（幂等重放判定点）。 */
-export function findPendingOnboardingRequest(
+/** 查询某序列号是否曾提交申请，包括已批准、拒绝和超时。 */
+export function findOnboardingRequestBySerial(
   client: DbClient,
   serialNumber: string,
 ): Promise<OnboardingRequestRecord | null> {
-  return requests(client).findFirst({ where: { serialNumber, status: 'PENDING' } });
+  return requests(client).findFirst({ where: { serialNumber } });
 }

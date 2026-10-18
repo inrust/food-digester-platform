@@ -4,8 +4,8 @@
  * 审批链：
  * 1. reject 强制填写原因（VALIDATION_FAILED 400，前置校验不进事务）；
  * 2. 事务内（DOM-03 audited：业务写入 + SUCCESS 审计同 commit，失败独立记 FAILURE）：
- *    申请存在 → 设备库存资料与申请一致（审批校验设备资料）→ 设备处于 PendingOnboarding →
- *    条件更新 (status='PENDING', version=If-Match) 防重复/并发审批 →
+ *    申请存在 → 条件更新 (status='PENDING', version=If-Match) 防重复/并发审批 →
+ *    批准时按申请创建设备台账（兼容已有待接入台账）→
  *    DOM-01 生命周期迁移（OnboardingApproved/Rejected）+ 状态历史落库；
  * 3. approve 在同一事务写入持久化 Provisioning Job；独立 Worker 认领并重试 AWS 副作用，
  *    审批链绝不直接调用 AWS，也绝不向管理员返回私钥。
@@ -14,9 +14,10 @@
  * 自动遮蔽 token 类字段，审计不含 Token。
  */
 import type { DbClient } from '@fdp/database';
+import { randomUUID } from 'node:crypto';
 import { audited } from '@fdp/database';
 import { transitionLifecycle } from '@fdp/domain';
-import type { ActorContext } from '@fdp/auth';
+import { claimDevicePublicKey, type ActorContext } from '@fdp/auth';
 import { deviceConflict, requestNotFound, validationFailed } from './errors.js';
 import { findOnboardingRequestById, reviewOnboardingRequestWithVersion } from './repository.js';
 import type { AdminOnboardingRequestRecord } from './repository.js';
@@ -45,6 +46,7 @@ interface DeviceRow {
 
 interface DeviceDelegate {
   findFirst(args: { where: Record<string, unknown> }): Promise<DeviceRow | null>;
+  create(args: { data: Record<string, unknown> }): Promise<DeviceRow>;
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
 }
 
@@ -120,19 +122,6 @@ export async function reviewOnboardingRequest(
       const request = await findOnboardingRequestById(tx, input.requestId);
       if (!request) throw requestNotFound();
 
-      const device = assertDeviceReviewable(
-        await devices(tx).findFirst({ where: { serialNumber: request.serialNumber } }),
-        request,
-      );
-
-      // DOM-01 生命周期迁移（非法跳转/缺原因由领域层抛错，事务回滚）
-      const effects = transitionLifecycle(
-        { id: device.id, lifecycleStatus: device.lifecycleStatus as 'PendingOnboarding', operationalStatus: null },
-        input.decision === 'approve' ? 'OnboardingApproved' : 'Rejected',
-        { actorType: 'ADMIN', actorId: actor.actorId, actorRole: 'PlatformSuperAdmin' },
-        input.decision === 'approve' ? { deviceValidated: true } : { reason: reason ?? '' },
-      );
-
       // 条件更新：并发/重复审批最多一个成功
       const updated = await reviewOnboardingRequestWithVersion(tx, input.requestId, input.ifMatchVersion, {
         status: toStatus,
@@ -140,6 +129,38 @@ export async function reviewOnboardingRequest(
         reviewedBy: actor.actorId,
         reviewedAt: now,
       });
+
+      let device = await devices(tx).findFirst({ where: { serialNumber: request.serialNumber } });
+      if (!device && input.decision === 'reject') return updated;
+      if (!device) {
+        device = await devices(tx).create({
+          data: {
+            id: randomUUID(),
+            serialNumber: request.serialNumber,
+            model: request.model,
+            hardwareVersion: request.hardwareVersion,
+            manufacturer: request.manufacturer,
+            manufactureDate: request.manufactureDate,
+            lifecycleStatus: 'PendingOnboarding',
+          },
+        });
+      }
+      device = assertDeviceReviewable(device, request);
+      if (input.decision === 'approve') {
+        if (
+          !request.publicKeyFingerprint ||
+          !(await claimDevicePublicKey(tx, device.id, request.publicKeyFingerprint))
+        ) {
+          throw deviceConflict('CSR key is bound to another device or is missing');
+        }
+      }
+      // 台账、公钥归属、状态历史和 Job 与审批状态在同一事务提交。
+      const effects = transitionLifecycle(
+        { id: device.id, lifecycleStatus: device.lifecycleStatus as 'PendingOnboarding', operationalStatus: null },
+        input.decision === 'approve' ? 'OnboardingApproved' : 'Rejected',
+        { actorType: 'ADMIN', actorId: actor.actorId, actorRole: 'PlatformSuperAdmin' },
+        input.decision === 'approve' ? { deviceValidated: true } : { reason: reason ?? '' },
+      );
 
       await devices(tx).updateMany({
         where: { id: device.id },

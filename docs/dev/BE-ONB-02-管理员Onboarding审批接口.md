@@ -1,5 +1,7 @@
 # BE-ONB-02 管理员 Onboarding 审批接口
 
+> 2026-10-18 当前流程：首次申请不依赖库存，按序列号全状态去重；重复返回 409 CONFLICT。批准时原子创建设备台账、公钥绑定、状态历史与签发 Job；无库存拒绝不创建设备。拒绝或超时后不允许创建新申请，须人工核查处置。下方早期验收和实施记录保留历史，冲突时以本说明、[当前 API](../api/onboard-api.bio-nexa.com.md) 与 DEC-025@1.2.0 / DEC-017@1.1.0 为准。
+
 实现：[apps/cloud-api/src/admin/onboarding](../../apps/cloud-api/src/admin/onboarding)；契约：[contracts/rest/admin-onboarding-api.json](../../contracts/rest/admin-onboarding-api.json)；测试：[admin-onboarding.test.ts](../../apps/cloud-api/test/admin-onboarding.test.ts)（PGlite 真实 PostgreSQL + 全部 migration）、[admin-onboarding-parity.test.ts](../../apps/cloud-api/test/admin-onboarding-parity.test.ts)、[admin-onboarding-api.test.ts](../../contracts/rest/admin-onboarding-api.test.ts)。
 
 ## 1. 范围与事实源

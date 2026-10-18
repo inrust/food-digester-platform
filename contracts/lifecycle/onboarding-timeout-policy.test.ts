@@ -17,8 +17,8 @@ test('DEC-017 策略结构有效、已冻结且覆盖全部阻塞任务', () => 
   assert.deepEqual(validate(schema, 'onboarding-timeout-policy.schema.json', json, new SchemaRegistry('.')), []);
   const decision = register.decisions.find((item: { id: string }) => item.id === 'DEC-017');
   assert.equal(decision.status, 'frozen');
-  assert.equal(decision.version, '1.0.0');
-  assert.ok(json['x-decision-versions'].includes('DEC-017@1.0.0'));
+  assert.equal(decision.version, '1.1.0');
+  assert.ok(json['x-decision-versions'].includes('DEC-017@1.1.0'));
   assert.deepEqual(new Set(json.consumers), new Set(decision.blockingTasks));
   assert.deepEqual(json.pendingParameters, []);
 });
@@ -39,7 +39,7 @@ test('超时处置、迟到 Heartbeat 与重新申请规则失败关闭', () => 
   assert.equal(ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.beforeDeadlinePackageExpiry, 'REVOKE_AND_RESIGN');
   assert.equal(ONBOARDING_TIMEOUT_POLICY.timeoutDisposition.afterDeadlineAutomaticResign, false);
   assert.equal(ONBOARDING_TIMEOUT_POLICY.lateHeartbeat, 'REJECT');
-  assert.deepEqual(ONBOARDING_TIMEOUT_POLICY.retry, { requiresNewToken: true, requiresNewRequest: true });
+  assert.deepEqual(ONBOARDING_TIMEOUT_POLICY.retry, { allowsNewRequest: false, requiresManualRecovery: true });
 });
 
 test('TS 常量与 JSON 策略一致', () => {

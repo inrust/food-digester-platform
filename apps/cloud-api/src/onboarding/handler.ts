@@ -1,11 +1,11 @@
 /** POST /api/v1/device/onboarding/request：无预置凭据的 CSR 申请。 */
 import type { DbClient } from '@fdp/database';
-import { AuthError, createRateLimiter, PostgresRateLimitStore, claimDevicePublicKey } from '@fdp/auth';
+import { AuthError, createRateLimiter, PostgresRateLimitStore } from '@fdp/auth';
 import type { RateLimiter } from '@fdp/auth';
 import { inspectCsr } from './csr-proof.js';
 import { parseOnboardingRequestBody } from './dto.js';
-import { deviceStateNotAllowed, OnboardingApiError, serialNumberNotFound, validationFailed } from './errors.js';
-import { findPendingOnboardingRequest, isUniqueViolation } from './repository.js';
+import { alreadySubmitted, OnboardingApiError, validationFailed } from './errors.js';
+import { findOnboardingRequestBySerial, isUniqueViolation } from './repository.js';
 
 export interface OnboardingHttpRequest {
   readonly headers: Readonly<Record<string, string | undefined>>;
@@ -57,22 +57,11 @@ export function createOnboardingRequestHandler(
       await limiter.assertWithinLimit(`onboarding:csr:ip:${req.sourceIp ?? 'unknown'}`);
       await limiter.assertWithinLimit(`onboarding:csr:serial:${input.serialNumber}`);
 
-      const existing = await findPendingOnboardingRequest(deps.client, input.serialNumber);
-      if (existing) {
-        if (existing.publicKeyFingerprint !== fingerprint) throw new OnboardingApiError('CONFLICT');
-        return { status: 200, body: { requestId: existing.id, status: 'PENDING' } };
-      }
+      const existing = await findOnboardingRequestBySerial(deps.client, input.serialNumber);
+      if (existing) throw alreadySubmitted();
       const db = deps.client as unknown as {
-        device: {
-          findFirst(args: { where: { serialNumber: string } }): Promise<{ id: string; lifecycleStatus: string } | null>;
-        };
         onboardingRequest: { create(args: { data: Record<string, unknown> }): Promise<{ id: string }> };
       };
-      const inventory = await db.device.findFirst({ where: { serialNumber: input.serialNumber } });
-      if (!inventory) throw serialNumberNotFound();
-      if (inventory.lifecycleStatus !== 'PendingOnboarding') throw deviceStateNotAllowed();
-      if (!(await claimDevicePublicKey(deps.client, inventory.id, fingerprint)))
-        throw new OnboardingApiError('CONFLICT', 'CSR key is bound to another device');
       const data = {
         serialNumber: input.serialNumber,
         submittedBy: `DEVICE:${input.serialNumber}`,
@@ -89,11 +78,8 @@ export function createOnboardingRequestHandler(
         return { status: 201, body: { requestId: created.id, status: 'PENDING' } };
       } catch (err) {
         if (!isUniqueViolation(err)) throw err;
-        const winner = await findPendingOnboardingRequest(deps.client, input.serialNumber);
-        if (winner?.publicKeyFingerprint === fingerprint) {
-          return { status: 200, body: { requestId: winner.id, status: 'PENDING' } };
-        }
-        throw new OnboardingApiError('CONFLICT');
+        if (await findOnboardingRequestBySerial(deps.client, input.serialNumber)) throw alreadySubmitted();
+        throw err;
       }
     } catch (err) {
       if (err instanceof OnboardingApiError || err instanceof AuthError) {

@@ -70,7 +70,7 @@ test('管理端明确暴露内部 TIMED_OUT，列表状态过滤为封闭枚举'
     (item: { name?: string }) => item.name === 'status',
   );
   assert.deepEqual(parameter.schema.enum, status.enum);
-  assert.ok(doc.info['x-decision-versions'].includes('DEC-017@1.0.0'));
+  assert.ok(doc.info['x-decision-versions'].includes('DEC-017@1.1.0'));
 });
 
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {

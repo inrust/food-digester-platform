@@ -82,7 +82,7 @@ export const CERTIFICATE_PACKAGE_POLICY: CertificatePackagePolicy = {
   },
   pendingParameters: [],
   frozenUpgradePath:
-    '策略按 DEC-003@1.1.0 与 DEC-026@1.0.0 冻结；后续修改须新增决策版本、同步消费方并提供迁移与回滚说明。',
+    '策略按 DEC-003@1.1.0 与 DEC-026@1.1.0 冻结；后续修改须新增决策版本、同步消费方并提供迁移与回滚说明。',
 } as const;
 
 export class PolicyParameterPendingError extends Error {

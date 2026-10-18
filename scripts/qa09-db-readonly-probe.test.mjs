@@ -86,7 +86,7 @@ test('dedicated query project never changes migration project or passes StartBui
   const commands = JSON.parse(p.project.source.buildspec).phases;
   assert.ok(!JSON.stringify(commands).includes('migrate deploy'));
   assert.equal(p.project.vpcConfig.securityGroupIds[0], 'sg-081d9a3ee5f6011e9');
-  assert.equal(p.manifest.migrations.length, 40);
+  assert.equal(p.manifest.migrations.length, 41);
 });
 
 test('legacy onboarding rows without CSR columns require reconciliation before migration', async () => {

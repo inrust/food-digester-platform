@@ -46,15 +46,10 @@ export function validationFailed(message: string): OnboardingApiError {
   return new OnboardingApiError('VALIDATION_FAILED', message);
 }
 
-/** 404：序列号不存在于设备库存（对调用方不可见等同不存在）。 */
-export function serialNumberNotFound(): OnboardingApiError {
-  return new OnboardingApiError('NOT_FOUND', 'The serial number does not exist in the device inventory');
-}
-
-/** 409：设备已离开 PendingOnboarding（含已 Onboarded），不允许再提交申请。 */
-export function deviceStateNotAllowed(): OnboardingApiError {
+/** 409：同序列号曾提交过申请，不论当前状态或 CSR 是否相同。 */
+export function alreadySubmitted(): OnboardingApiError {
   return new OnboardingApiError(
-    'DEVICE_STATE_NOT_ALLOWED',
-    'The device is not in a state that allows an onboarding request',
+    'CONFLICT',
+    'An onboarding request has already been submitted for this serial number; do not submit again',
   );
 }

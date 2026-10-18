@@ -63,9 +63,12 @@ test('请求体包含设备资料和必填 CSR', () => {
   assert.ok(!('privateKey' in doc.components.schemas.OnboardingCertificate.properties));
 });
 
-test('成功响应含 requestId 与 PENDING 状态（200 幂等重放 / 201 新建）', () => {
+test('首次申请返回 201，重复申请返回 409，不再返回库存 404 或幂等 200', () => {
   const post = doc.paths['/api/v1/device/onboarding/request'].post;
-  for (const status of ['200', '201']) assert.ok(post.responses[status], `缺少 ${status} 响应`);
+  assert.ok(post.responses['201']);
+  assert.ok(post.responses['409']);
+  assert.equal(post.responses['200'], undefined);
+  assert.equal(post.responses['404'], undefined);
   const result = doc.components.schemas.OnboardingRequestResult;
   assert.deepEqual(result.required, ['requestId', 'status']);
   assert.deepEqual(result.properties.status.enum, ['PENDING']);
@@ -75,10 +78,10 @@ test('成功响应含 requestId 与 PENDING 状态（200 幂等重放 / 201 新�
   );
 });
 
-test('匿名申请负向响应覆盖稳定错误码语义：400/404/409/429/500', () => {
+test('匿名申请负向响应覆盖稳定错误码语义：400/409/429/500', () => {
   const post = doc.paths['/api/v1/device/onboarding/request'].post;
   const catalogStatuses = new Set(catalog.errorCodes.map((e: { httpStatus: number }) => String(e.httpStatus)));
-  for (const status of ['400', '404', '409', '429', '500']) {
+  for (const status of ['400', '409', '429', '500']) {
     assert.ok(post.responses[status], `缺少 ${status} 负向响应`);
     assert.ok(catalogStatuses.has(status), `${status} 不在 CT-05 错误码目录的 HTTP 状态集合中`);
   }

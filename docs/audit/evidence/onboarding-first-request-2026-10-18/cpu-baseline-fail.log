@@ -1,0 +1,79 @@
+
+ RUN  v4.1.11 /private/tmp/fdp-onboarding-baseline
+
+ ❯ packages/database/test/contract-dispatch-offline.test.ts (16 tests | 7 failed) 1035ms
+   × offline checkpoint and driver prefix ownership profile-on 55ms
+   × offline checkpoint and driver prefix ownership checkpoint-cpu 114ms
+   × offline checkpoint and driver prefix ownership checkpoint-output-cpu 112ms
+   × offline checkpoint and driver prefix ownership pre-driver-cpu 128ms
+   × offline checkpoint and driver prefix ownership driver-setup-cpu 137ms
+   × offline checkpoint and driver prefix ownership prefix-output-cpu 119ms
+   × offline checkpoint and driver prefix ownership public-bridge-cpu 132ms
+ ❯ packages/database/test/contract-cpu-runtime.test.ts (14 tests | 12 failed) 1260ms
+   × offline public CPU ownership profile-on 53ms
+   × offline public CPU ownership account-orm 56ms
+   × offline public CPU ownership checkpoint-cpu 104ms
+   × offline public CPU ownership adapter-submit-cpu 114ms
+   × offline public CPU ownership pg-submit-cpu 116ms
+   × offline public CPU ownership fields-cpu 137ms
+   × offline public CPU ownership resume-log-cpu 149ms
+   × offline public CPU ownership pg-wait 142ms
+   × offline public CPU ownership pg-reject 52ms
+   × offline public CPU ownership validation-reject 56ms
+   × offline public CPU ownership update-reject 56ms
+   × offline public CPU ownership audit-reject 61ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership profile-on
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership account-orm
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership checkpoint-cpu
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership adapter-submit-cpu
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership pg-submit-cpu
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership fields-cpu
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership resume-log-cpu
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership pg-wait
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership pg-reject
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership validation-reject
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership update-reject
+ FAIL  packages/database/test/contract-cpu-runtime.test.ts > offline public CPU ownership audit-reject
+Error: CPU_SPAN_PROFILE_COVERAGE
+ ❯ demand scripts/qa09-contract-cpu-proof.mjs:28:17
+     26| });
+     27| const demand = (v, code) => {
+     28|   if (!v) throw Error(code);
+       |                 ^
+     29| };
+     30| const finite = (v) => Number.isFinite(v) && v >= 0;
+ ❯ Module.summarizeCpuCase scripts/qa09-contract-cpu-proof.mjs:159:9
+ ❯ packages/database/test/contract-cpu-runtime.test.ts:339:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership profile-on
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership checkpoint-cpu
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership checkpoint-output-cpu
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership pre-driver-cpu
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership driver-setup-cpu
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership prefix-output-cpu
+ FAIL  packages/database/test/contract-dispatch-offline.test.ts > offline checkpoint and driver prefix ownership public-bridge-cpu
+Error: CPU_CLOCK_ALIGNMENT
+ ❯ demand scripts/qa09-contract-cpu-proof.mjs:28:17
+     26| });
+     27| const demand = (v, code) => {
+     28|   if (!v) throw Error(code);
+       |                 ^
+     29| };
+     30| const finite = (v) => Number.isFinite(v) && v >= 0;
+ ❯ validateCpuProfile scripts/qa09-contract-cpu-proof.mjs:52:3
+ ❯ Module.validateDispatchReceipt scripts/qa09-contract-dispatch-proof.mjs:195:35
+ ❯ packages/database/test/contract-dispatch-offline.test.ts:437:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  19 failed | 11 passed (30)
+   Start at  16:55:48
+   Duration  1.57s (transform 315ms, setup 24ms, import 442ms, tests 2.29s, environment 0ms)
+

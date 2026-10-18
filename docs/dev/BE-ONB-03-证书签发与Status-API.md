@@ -1,5 +1,7 @@
 # BE-ONB-03 证书签发与 Onboarding Status API
 
+> 2026-10-18 当前流程：首次申请不依赖库存，按序列号全状态去重；重复返回 409 CONFLICT。批准时原子创建设备台账、公钥绑定、状态历史与签发 Job；无库存拒绝不创建设备。拒绝或超时后不允许创建新申请，须人工核查处置。下方早期验收和实施记录保留历史，冲突时以本说明、[当前 API](../api/onboard-api.bio-nexa.com.md) 与 DEC-025@1.2.0 / DEC-017@1.1.0 为准。
+
 > 2026-10-01 实施更新：项目 CA 对设备 CSR 签发受控 Device ID CN/SAN 的客户端证书，保存 ARN、SPKI 指纹、serial、issuer 和真实有效期；公开包包含 `certificatePem + certificateChain`，APPROVED 增加 `rest.endpoint`。保留 RegisterCertificateWithoutCA 与 DEC-017 首 Heartbeat 激活，分别记录 MQTT/REST 验证时间。跨设备公钥复用由持久所有权表拒绝。 当前协议见 [设备 API 文档](../api/README.md)；下文较早验收记录保留历史，发生冲突时以本次更新和当前契约为准。
 
 实现：[provisioning](../../apps/cloud-api/src/provisioning)、[status-handler.ts](../../apps/cloud-api/src/onboarding/status-handler.ts)；契约：[device-onboarding-api.json](../../contracts/rest/device-onboarding-api.json)；测试：[provisioning.test.ts](../../apps/cloud-api/test/provisioning.test.ts)、[csr-onboarding.test.ts](../../apps/cloud-api/test/csr-onboarding.test.ts)。

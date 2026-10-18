@@ -128,7 +128,7 @@ CodeBuild 支持加入 VPC并访问私有 RDS。[CodeBuild VPC 支持](https://d
 
 ### 6. 准备验收数据
 
-1. 在数据库创建一台 `PendingOnboarding` 库存设备，记录印刷序列号。
+1. 准备从未提交过申请的实物序列号；不要求预先创建设备库存。管理员批准后系统按申请资料创建设备台账。
 2. 在测试设备本地生成 RSA 2048 位以上私钥及 PKCS#10 CSR；私钥不得上传或写入验收日志。
 3. 创建 Cognito `PlatformSuperAdmin` 测试用户，使用支持 Cognito SRP 的测试客户端取得 JWT。
 4. 按线下管理制度核对实物、安装记录与 CSR 公钥指纹。

@@ -251,7 +251,7 @@ model OnboardingRequest {
   id                    String    @id @default(uuid())
   csrPem                String    @map("csr_pem") @db.Text
   publicKeyFingerprint  String    @map("public_key_fingerprint")
-  serialNumber          String    @map("serial_number")
+  serialNumber          String    @unique @map("serial_number")
   submittedBy           String    @map("submitted_by")
   model                 String
   hardwareVersion       String    @map("hardware_version")
@@ -269,7 +269,7 @@ model OnboardingRequest {
 
   provisioningJob OnboardingProvisioningJob?
   proofNonces     OnboardingProofNonce[]
-  // 部分唯一索引（同序列号仅一条 PENDING）见 migration.sql 自定义约束
+  // 全状态唯一：已拒绝/超时的申请也不能再次提交。
 
   @@map("onboarding_requests")
 }

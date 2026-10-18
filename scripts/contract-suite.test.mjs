@@ -234,6 +234,6 @@ test('archived CSR upgrade mapping still verifies original baselines without rew
     compareBaselines(old, current),
     approvals,
     { contractVersion: '0.12.0', decisionRegisterVersion: '1.36.0' },
-    json('contracts/decisions/decision-register.json'),
+    json('contracts/testing/baselines/decision-register-1.36.0.json'),
   );
 });

@@ -1,19 +1,19 @@
 {
-  "fromContractVersion": "0.12.0",
-  "toContractVersion": "0.13.0",
-  "fromWireSha256": "5829ceceb45f95d0705c4238df210632b2bdeb1260a0773237222c96621ea892",
-  "toWireSha256": "eb084e9705569026fb11c99d5680c4d0a2bf50c27734f9a6ab600f18180d33e7",
-  "authorization": "用户本轮自然生命周期接线任务；遵循既有 DOM-01 与 DEC-020；不声明旧固件已支持可选确认",
+  "fromContractVersion": "0.13.0",
+  "toContractVersion": "0.14.0",
+  "fromWireSha256": "eb084e9705569026fb11c99d5680c4d0a2bf50c27734f9a6ab600f18180d33e7",
+  "toWireSha256": "87e39fafaedfb5910d96d4f1ab959c95caedc11311fe96c3763ff384a9e99a90",
+  "authorization": "业务方于 2026-10-18 明确纠正：首次申请不查库存，序列号已有任意申请则提示无需重复提交；批准时创建设备台账。",
   "changes": [
     {
-      "path": "/rest/syncDevice/responses/200/content/application/json/schema/properties/license/oneOf",
-      "kind": "constraint-changed",
-      "decision": "DEC-020@1.0.0"
+      "path": "/rest/submitOnboardingRequest/responses/200",
+      "kind": "constraint-removed",
+      "decision": "DEC-025@1.2.0"
     },
     {
-      "path": "/rest/syncDevice/responses/409",
-      "kind": "constraint-added",
-      "decision": "DEC-020@1.0.0"
+      "path": "/rest/submitOnboardingRequest/responses/404",
+      "kind": "constraint-removed",
+      "decision": "DEC-025@1.2.0"
     }
   ]
 }

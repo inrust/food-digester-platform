@@ -5,7 +5,7 @@ export { OnboardingApiError, ONBOARDING_API_ERROR_HTTP_STATUS } from './errors.j
 export type { OnboardingApiErrorCode } from './errors.js';
 export { parseOnboardingRequestBody } from './dto.js';
 export type { OnboardingRequestBody } from './dto.js';
-export { findPendingOnboardingRequest, isUniqueViolation } from './repository.js';
+export { findOnboardingRequestBySerial, isUniqueViolation } from './repository.js';
 export type { OnboardingRequestRecord } from './repository.js';
 export { createOnboardingRequestHandler } from './handler.js';
 export type { OnboardingHttpRequest, OnboardingHttpResponse, OnboardingRequestHandlerDeps } from './handler.js';
