@@ -31,7 +31,9 @@ MQTT 自定义域名 `iot.bio-nexa.com:8883` 的 TLS、临时 X.509 身份连接
 
 后续 [真实 CSR、首次激活及双通道轮换实测](../audit/2026-10-22-csr-lifecycle-live-test.md) 使用一台由申请、审批接口实际创建的软件设备，验证项目 CA 签发、签名领取、首次 Heartbeat 激活、REST Sync，以及 MQTT→REST / REST→MQTT 两种轮换确认顺序；核对了旧证 REST 拒绝、AWS IoT 停用和 MQTT 连接拒绝。该轮没有手工预置证书或修改生命周期，也未分配 Customer/Site/License；Sync 验证的是未分配设备快照。Onboarding 返回主机仍为既有 AWS Data-ATS 端点，本轮 MQTT 使用运维指定的自定义域名。
 
-设备方真实固件、实体业务动作、OTA 下载与安装、带业务分配的完整 Sync、其余 REST 操作、24 小时轮换超时回退及生产验收仍为 **NOT RUN**。各次限定通过范围以对应审计证据为准。
+另见 [带业务分配的完整 REST Sync 实测](../audit/2026-10-22-rest-sync-live-test.md)：通过真实管理 API 为新软件设备建立 Customer/Site、实际签发并激活的 License、型号/设备配置和设备用户，核对六域快照、用户交付/确认、配置版本与 ETag。**业务数据核对通过，但 REST 契约验收未通过**：服务返回 `operationalStatus.operationalStatus="ACTIVE"`，契约要求 `Active` 等 REST 枚举。该差异按失败保留，没有放宽契约或部署修复。
+
+设备方真实固件、独立 License HMAC 验签及 `VERIFIED → Active`、设备用户本地应用、实体业务动作、OTA 下载与安装、其余 REST 操作、24 小时轮换超时回退及生产验收仍为 **NOT RUN**；用户的 `ACKNOWLEDGED` 不代表已应用。各次限定通过范围以对应审计证据为准。
 
 ## 2026-10-01 证书契约升级
 

@@ -6,6 +6,8 @@
 
 随后 [真实 CSR 与双通道轮换实测](../audit/2026-10-22-csr-lifecycle-live-test.md) 验证了软件隔离设备通过真实申请/审批取得项目 CA 证书，用同一叶证书在本自定义域名发送首次 Heartbeat 并完成 `Onboarded` 激活、调用 REST Sync，以及两种顺序的证书轮换确认和旧证拒绝。该轮没有预置证书或修改生命周期；设备未分配客户、站点或 License，不代表业务已许可。真实固件、实体动作、OTA 安装、轮换 24 小时超时回退与生产验收仍未执行。
 
+[完整 REST Sync 后续实测](../audit/2026-10-22-rest-sync-live-test.md) 已用真实接入的软件设备核对带 Customer/Site、License、配置和设备用户的六域快照，以及配置/用户变化和云端确认记录。业务内容核对通过，REST 运行状态返回 `ACTIVE` 与契约 `Active` 的差异导致契约 Gate 为 FAIL；Heartbeat 的 MQTT 大写枚举和 REST 枚举应分别遵循各自契约。真实固件、独立 License 验签和本地应用仍未验证。
+
 **实际连接主机仍以 Onboarding `APPROVED` 响应中的 `mqtt.endpoint` 和运维提供的环境参数为准。** 仓库当前 Onboarding 入口仍通过 `iot.getDataEndpoint()` 获取默认 AWS Data-ATS 端点；上述限定实测不表示已修改其返回主机，也不代替设备方真实固件、实际业务动作或生产验收。
 
 完整 JSON 与独立文件见 [设备 MQTT 完整报文样例](./mqtt-message-examples.md)，覆盖全部 11 类 Topic、22 种命令、13 类通知及命令/OTA 回执分支。

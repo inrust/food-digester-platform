@@ -8,6 +8,8 @@
 
 [2026-10-22 真实 CSR 与双通道轮换实测](../audit/2026-10-22-csr-lifecycle-live-test.md) 已用项目 CA 签发的软件隔离设备证书验证本域名的 `POST /api/v1/device/sync`、`POST /api/v1/device/certificate/rotate`：未分配设备 Sync 成功；MQTT→REST 和 REST→MQTT 两种顺序均在双通道完成后确认新证并撤销旧证，旧证 REST 返回 401，后续 AWS IoT 停用及 MQTT 拒绝已核对。此结论不覆盖带客户/License/配置/用户的完整快照、其他四个操作、24 小时超时回退、真实固件或生产验收。
 
+[带分配的完整 REST Sync 实测](../audit/2026-10-22-rest-sync-live-test.md) 已核对 Customer/Site、有效 License、配置、设备用户、设备元数据及运行状态，覆盖用户版本交付/确认、配置优先级和 ETag。业务内容与云端记录匹配；**契约 Gate 为 FAIL**：真实响应的 `operationalStatus.operationalStatus` 为 `ACTIVE`，不符合 REST 契约的 `Active` / `Maintenance` / `Suspended` / `Retired` / `null`。以下规范枚举保持不变；此差异待服务修复与重新实测。软件设备仅声明 License `RECEIVED`，生命周期达到 `Licensed`，未声明独立验签成功或进入 `Active`。
+
 ## 认证、请求与错误
 
 - API Gateway Regional 自定义域名启用 mTLS。客户端在 TLS 握手中提供设备 X.509 证书。
@@ -120,9 +122,9 @@ curl --cert device-cert.pem --key device-private-key.pem \
 
 ## POST `/api/v1/device/sync`
 
-返回 Assignment、Device、License、Device Users、Configuration 和 Operational Status 的完整事实快照。成功响应完成序列化后，服务器按当前 mTLS 证书记录 `restVerifiedAt`；认证、参数校验或快照构建失败不记录。该时间证明服务器成功处理此证书请求，不是设备收包 ACK。若新证已有 MQTT 验证且仍在轮换窗口内，本次 Sync 同时触发轮换确认。V1 不做增量裁剪，不返回 `304`；`lastSyncTime` 只作为请求回显和兼容信息。
+返回 Assignment、Device、License、Device Users、Configuration 和 Operational Status 的完整事实快照。成功响应完成序列化后，服务器按当前 mTLS 证书记录 `restVerifiedAt`；认证、参数校验或快照构建失败不记录。该时间证明服务器成功处理此证书请求，不是设备收包 ACK。若新证已有 MQTT 验证且仍在轮换窗口内，本次 Sync 同时触发轮换确认。V1 不做增量裁剪，不返回 `304`；`lastSyncTime` 回显设备上次成功取得的快照时点，并用于确认此前已交付的设备用户版本，不代表设备已经应用内容。
 
-请求体可省略。存在时只能包含：
+请求体可省略。存在时只允许 `lastSyncTime` 和可选 `licenseConfirmation`；普通同步示例：
 
 ```json
 {
@@ -130,7 +132,23 @@ curl --cert device-cert.pem --key device-private-key.pem \
 }
 ```
 
-首次同步也可使用 `{ "lastSyncTime": null }`。
+首次同步也可使用 `{ "lastSyncTime": null }`。请求只允许这些字段，不能自报 `deviceId`、客户或站点来替代证书身份。
+
+设备实际收到带有效 License 的快照后，可在后续请求中提交：
+
+```json
+{
+  "lastSyncTime": "2026-09-24T03:00:00Z",
+  "licenseConfirmation": {
+    "licenseId": "LIC001",
+    "version": 1,
+    "snapshotEtag": "<上一份实际收到的快照 etag，64 位 hex>",
+    "status": "RECEIVED"
+  }
+}
+```
+
+`licenseConfirmation` 绑定服务器近 24 小时内已提交的实际快照、当前 License 版本、分配和证书：`RECEIVED` 驱动设备 `Assigned → Licensed`；设备独立验签成功后才能声明 `VERIFIED`，驱动 `Licensed → Active`。错误或失效绑定返回 `409 CONFLICT`。管理员将 **License 状态**激活为 `Active`，不等于设备生命周期已变为 `Active`；普通 Sync 和 `lastSyncTime` 也不替代 License 验签确认。
 
 成功响应示例：
 
@@ -166,6 +184,14 @@ curl --cert device-cert.pem --key device-private-key.pem \
     "entitlements": ["REMOTE_CONTROL", "OTA", "ESG_REPORTING"],
     "signature": "...",
     "version": 1,
+    "signaturePayload": {
+      "licenseId": "LIC001",
+      "deviceId": "DEV001",
+      "customerId": "CUS001",
+      "validFrom": "2026-01-01T00:00:00.000Z",
+      "validTo": "2027-12-31T00:00:00.000Z",
+      "entitlements": ["ESG_REPORTING", "OTA", "REMOTE_CONTROL"]
+    },
     "effective": true
   },
   "deviceUsers": [
@@ -198,12 +224,14 @@ curl --cert device-cert.pem --key device-private-key.pem \
 关键约束：
 
 - License 状态：`NO_LICENSE`、`DRAFT`、`ISSUED`、`ACTIVE`、`EXPIRING_SOON`、`RENEWED`、`EXPIRED`、`REVOKED`；Entitlement 仅为 `REMOTE_CONTROL`、`OTA`、`ESG_REPORTING`。
-- Device User `passwordHash` 是设备本地专用 Argon2id PHC 值，不是 Cognito 或云端账号密码 Hash；状态为 `ACTIVE` 或 `DISABLED`。
+- Device User `passwordHash` 是设备本地专用 Argon2id PHC 值，不是 Cognito 或云端账号密码 Hash。当前服务仅下发本 Customer 下 `ACTIVE` 且有效分配到本设备的用户；已停用、未分配或其他客户用户不进入快照。验证材料不得写入通用日志或公开审计附件。
+- 服务器记录用户版本进入快照的 `servedAt`；后续 `lastSyncTime` 覆盖该时间后记录 `acknowledgedAt`。管理端 `snapshotStatus=ACKNOWLEDGED` 仍不代表设备已应用，`deviceApplyStatus` 保持 `NOT_REPORTED`。
+- License 的 `signaturePayload` 提供实际签名所用的 UTC 时间戳、设备/客户绑定及排序后的 wire Entitlement；不能用显示用的日期字段重建签名载荷。
 - Configuration V1 固定四字段：Heartbeat 10～900 秒，Telemetry 5～3600 秒，Camera Refresh 1～1440 分钟，Temperature Threshold 0～120 °C。
 - `etag` 是稳定域内容的 SHA-256 内容版本；`snapshotAt`、连接状态和最后心跳等易变域不参与。
 - 同步节奏：Active 300 秒、Suspended 900 秒、Maintenance 900 秒；重新连接或收到同步类 MQTT Notification 后立即调用。
 
-响应状态：`200`、`400 VALIDATION_FAILED`、`401 UNAUTHENTICATED`、`403 FORBIDDEN`、`500 INTERNAL_ERROR`。
+响应状态：`200`、`400 VALIDATION_FAILED`、`401 UNAUTHENTICATED`、`403 FORBIDDEN`、`409 CONFLICT`、`500 INTERNAL_ERROR`。
 
 ## POST `/api/v1/device/deactivate`
 

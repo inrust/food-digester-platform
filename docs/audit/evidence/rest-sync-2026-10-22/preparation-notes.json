@@ -1,0 +1,21 @@
+{
+  "attempt1": {
+    "gate": "FAIL",
+    "resourceCreationStarted": false,
+    "operation": "events describe-rule",
+    "recordedError": "events:describe-rule:FAILED",
+    "cause": "UNKNOWN: original helper did not preserve stderr/status; later direct read and attempt-2/3 reads succeeded",
+    "correction": "CLI error capture now preserves stderr/status/signal in future failures; the original failure was not relabeled as a timeout"
+  },
+  "attempt2": {
+    "gate": "FAIL",
+    "checkerDefect": "JSON.stringify compared object field order; actual configuration contents matched",
+    "cleanupInitially": "ACTIVE_JOB_OR_OUTBOX_CLEANUP_HELD",
+    "correction": "isDeepStrictEqual plus regression test; subsequent cleanup waits for own asynchronous work",
+    "recovery": "PASS; same exact own ledger; customer/site tombstones were closed by scoped SQL with append-only cleanup audit; no business setup data was seeded"
+  },
+  "finalLiveGate": "FAIL_CONTRACT",
+  "finalBusinessGate": "PASS",
+  "verifierMaterial": "Device-user PHCs were stored in the test database as designed until cleanup. Locally they remained in process memory; Lambda observations and committed evidence retain only SHA-256 and parameter metadata. No passwords or complete PHCs were persisted in local receipts.",
+  "independentLicenseHmacVerification": "NOT_RUN; no signing-key extraction and no VERIFIED claim"
+}

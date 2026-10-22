@@ -114,3 +114,5 @@ AWS IoT 使用 `RegisterCertificateWithoutCA` 注册该叶证书，设备必须�
 [真实 CSR 与双通道轮换实测](../audit/2026-10-22-csr-lifecycle-live-test.md) 已验证：软件设备本地生成私钥/CSR，经本域名提交申请、管理员 API 审批、定时 Worker 使用项目 CA 签发、私钥签名轮询领取，再用同一叶证书发送 MQTT 首 Heartbeat 激活并调用 REST Sync。重复 nonce 返回 401；证书 CN/SAN、用途、签名链和 CSR 公钥匹配已核对。审批自动创建未分配设备台账，没有通过数据库预置证书或改写生命周期。
 
 该次证据限于共享 test 环境内的一台软件设备；设备方真实固件、安全存储、实际运行许可、首次接入超时/丢包恢复和生产验收未执行。返回的 MQTT Host 仍为默认 AWS Data-ATS，本轮实际连接使用运维指定的 `iot.bio-nexa.com`；未修改 Onboarding 返回配置。
+
+首次接入后，带客户/站点分配、License、配置及设备用户的后续验证见 [完整 REST Sync 实测](../audit/2026-10-22-rest-sync-live-test.md)。六域业务内容与云端记录匹配，但 REST 运行状态枚举存在大小写不一致，契约验收为 FAIL；不能由接入成功推定完整 REST 契约或设备业务激活通过。
