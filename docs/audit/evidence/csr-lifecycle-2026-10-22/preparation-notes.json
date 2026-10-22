@@ -1,0 +1,29 @@
+{
+  "preflight": [
+    {
+      "operation": "events describe-rule",
+      "guessedName": "fdp-test-certificate-package-sweeper",
+      "result": "ResourceNotFoundException",
+      "resolution": "list-rules verified actual name fdp-test-cert-package-sweeper; existing ENABLED rate(5 minutes) rule used unchanged"
+    }
+  ],
+  "localLoaderAttempts": [
+    {
+      "command": "node -e import(...)",
+      "result": "ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX"
+    },
+    {
+      "command": "node --experimental-transform-types -e import(...)",
+      "result": "ERR_MODULE_NOT_FOUND cognito-idp.js"
+    },
+    {
+      "command": "node --import tsx import(run-csr-lifecycle-smoke)",
+      "result": "FRESH_TARGET_AND_VERSION_REQUIRED from unguarded old run-qa09-a467-target import",
+      "resolution": "Do not import the CLI entry; new harness implements a fixed rotate-only mTLS request. Final import/tests and live run succeeded."
+    }
+  ],
+  "liveAttempts": 1,
+  "failedLiveAttempts": 0,
+  "privateKeysPersisted": false,
+  "scope": "These were preparation errors before creating the live test resources; no failed live run was discarded."
+}

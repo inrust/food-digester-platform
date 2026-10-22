@@ -108,3 +108,9 @@ GET
 AWS IoT 使用 `RegisterCertificateWithoutCA` 注册该叶证书，设备必须向实际 MQTT Host 发送 TLS SNI。此路径不要求在 AWS IoT 注册项目 CA；REST Truststore 必须信任项目 CA。客户端 CA chain 不能代替用于验证 MQTT/REST 服务端主机名和服务端证书的信任根。
 
 首次领取后先用新证书发送合法 Heartbeat，按 DEC-017 完成 Onboarding；随后向 `rest.endpoint` 调用 `POST /api/v1/device/sync`。平台分别记录 `mqttVerifiedAt` 与 `restVerifiedAt`，首次接入不等待 REST 验证才激活。轮换的双通道确认要求见 [Device API](./device-api.bio-nexa.com.md)。
+
+## 2026-10-22 限定实测
+
+[真实 CSR 与双通道轮换实测](../audit/2026-10-22-csr-lifecycle-live-test.md) 已验证：软件设备本地生成私钥/CSR，经本域名提交申请、管理员 API 审批、定时 Worker 使用项目 CA 签发、私钥签名轮询领取，再用同一叶证书发送 MQTT 首 Heartbeat 激活并调用 REST Sync。重复 nonce 返回 401；证书 CN/SAN、用途、签名链和 CSR 公钥匹配已核对。审批自动创建未分配设备台账，没有通过数据库预置证书或改写生命周期。
+
+该次证据限于共享 test 环境内的一台软件设备；设备方真实固件、安全存储、实际运行许可、首次接入超时/丢包恢复和生产验收未执行。返回的 MQTT Host 仍为默认 AWS Data-ATS，本轮实际连接使用运维指定的 `iot.bio-nexa.com`；未修改 Onboarding 返回配置。

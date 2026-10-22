@@ -1,0 +1,2748 @@
+{
+  "startedAt": "2026-10-22T11:16:16.151Z",
+  "scope": {
+    "serial": "csrprobe-8c4d3f19662ff1c3",
+    "username": "csrprobe-8c4d3f19662ff1c3@example.invalid"
+  },
+  "sourceCommit": "790d5b3cba30e6e4c2a3325eb92ee67d266ba293",
+  "sourceHashes": {
+    "scripts/run-csr-lifecycle-smoke.mjs": "5bdc1a278bbaa672c888b274b108812a2f1b24d80e4187c201db590c303b3bc0",
+    "scripts/csr-lifecycle-fixture.mjs": "886639be3171e33177d703b8bd1f954080ecddfb81375874527772125ca65145",
+    "scripts/run-qa09-ten-device-acceptance.mjs": "803db4d475634d2d2d14b51048a34421f0fbcba092a56590f5ae47f120aa0a79",
+    "scripts/run-qa09-a467-target.mjs": "030adb9d99e09a36af072c4079beb7969e234b94a86c1bd21276bdbe730aee4e",
+    "scripts/qa09-bounded-mqtt-connect.mjs": "1ccba1a3b0d1da7591b54eff6811807faaa83e747c4128d5c47d791299b2c71f",
+    "scripts/device-simulator/core.mjs": "db2e740ced4416e2d9707739a157922e99dad941a1ef2f9afceb1feb0ab748b7",
+    "apps/admin-web/src/auth/auth-flow.ts": "d1622dde9294c9e66c40bffc11f1110310380ba38dea824d61d08bf384f2b5cd",
+    "apps/admin-web/src/auth/cognito-idp.ts": "fe7491b150e02a539e35e5746944492b3daf924e0a09b7682da1111e2fc291d9",
+    "apps/admin-web/src/auth/srp.ts": "e4b12e2d9cfc127cbb2a6824c7d89872a508210f6fc22b114429a31a6e801bac"
+  },
+  "target": {
+    "account": "065986019555",
+    "region": "ap-southeast-1",
+    "stack": "fdp-test-app"
+  },
+  "mode": "REAL_APPLICATION_CSR_NO_DB_SEED",
+  "physicalDevice": false,
+  "fullQa09Accepted": false,
+  "privateKeysPersisted": false,
+  "checks": [
+    {
+      "id": "target-account",
+      "result": "PASS",
+      "at": "2026-10-22T11:16:18.029Z"
+    },
+    {
+      "id": "scheduled-workers-enabled",
+      "result": "PASS",
+      "at": "2026-10-22T11:16:33.113Z"
+    },
+    {
+      "id": "own-scope-initially-empty",
+      "result": "PASS",
+      "at": "2026-10-22T11:16:53.772Z"
+    },
+    {
+      "id": "real-srp-first-password-challenge",
+      "result": "PASS",
+      "at": "2026-10-22T11:17:00.168Z"
+    },
+    {
+      "id": "real-srp-admin-auth",
+      "result": "PASS",
+      "at": "2026-10-22T11:17:02.515Z"
+    },
+    {
+      "id": "real-csr-request-created",
+      "result": "PASS",
+      "at": "2026-10-22T11:17:10.264Z"
+    },
+    {
+      "id": "signed-pending",
+      "result": "PASS",
+      "at": "2026-10-22T11:17:14.203Z"
+    },
+    {
+      "id": "nonce-replay-denied",
+      "result": "PASS",
+      "at": "2026-10-22T11:17:14.821Z"
+    },
+    {
+      "id": "admin-review-pending",
+      "result": "PASS",
+      "at": "2026-10-22T11:17:20.584Z"
+    },
+    {
+      "id": "real-admin-approval",
+      "result": "PASS",
+      "at": "2026-10-22T11:17:23.084Z"
+    },
+    {
+      "id": "poll-http-6",
+      "result": "PASS",
+      "at": "2026-10-22T11:17:32.503Z"
+    },
+    {
+      "id": "poll-http-7",
+      "result": "PASS",
+      "at": "2026-10-22T11:17:41.747Z"
+    },
+    {
+      "id": "poll-http-8",
+      "result": "PASS",
+      "at": "2026-10-22T11:17:51.187Z"
+    },
+    {
+      "id": "poll-http-9",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:00.465Z"
+    },
+    {
+      "id": "poll-http-10",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:10.042Z"
+    },
+    {
+      "id": "poll-http-11",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:19.767Z"
+    },
+    {
+      "id": "certificate-delivered",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:19.768Z"
+    },
+    {
+      "id": "approval-created-unassigned-device",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:21.934Z"
+    },
+    {
+      "id": "pre-heartbeat-pending-claim",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:21.936Z"
+    },
+    {
+      "id": "real-thing-cert-policy-bindings",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:29.731Z"
+    },
+    {
+      "id": "initial-custom-domain-mqtt",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:31.518Z",
+      "outcome": "CONNECTED",
+      "errorCode": null
+    },
+    {
+      "id": "first-heartbeat",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:32.015Z",
+      "payload": {
+        "meta": {
+          "id": "HEARTBEAT-6BEAFAB6-1",
+          "ts": "2026-10-22T11:18:31.519Z",
+          "seq": 1,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "deviceStatus": "ONLINE",
+          "uptimeSeconds": 86400,
+          "firmwareVersion": "1.0.5",
+          "operationalStatus": "ACTIVE",
+          "machineRunning": true,
+          "machineMode": "PROCESSING",
+          "licenseStatus": "ACTIVE",
+          "licenseExpiryDate": "2027-12-31",
+          "networkType": "4G",
+          "networkStatus": "CONNECTED",
+          "signalStrength": -68,
+          "cpuUsagePct": 25,
+          "memoryUsagePct": 40,
+          "storageUsagePct": 30,
+          "sensorOverallStatus": "NORMAL",
+          "temperatureSensor": "NORMAL",
+          "humiditySensor": "NORMAL",
+          "weightSensor": "NORMAL",
+          "gasSensor": "NORMAL",
+          "certificateStatus": "VALID",
+          "tamperStatus": "NORMAL"
+        }
+      },
+      "rawSha256": "8624c42b052237869251b2f72a0799d49f82b2f69ad637df742f1b9701f7f699",
+      "puback": true
+    },
+    {
+      "id": "first-heartbeat-activates-before-rest",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:48.156Z"
+    },
+    {
+      "id": "initial-rest-sync-complete-empty-snapshot",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:53.746Z"
+    },
+    {
+      "id": "rotation-mqtt-real-csr-issued",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:59.804Z"
+    },
+    {
+      "id": "rotation-mqtt-fresh-key",
+      "result": "PASS",
+      "at": "2026-10-22T11:18:59.809Z"
+    },
+    {
+      "id": "rotation-mqtt-first-connect",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:01.374Z",
+      "outcome": "CONNECTED",
+      "errorCode": null
+    },
+    {
+      "id": "rotation-mqtt-only-heartbeat",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:01.897Z",
+      "payload": {
+        "meta": {
+          "id": "HEARTBEAT-6BEAFAB6-2",
+          "ts": "2026-10-22T11:19:01.375Z",
+          "seq": 2,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "deviceStatus": "ONLINE",
+          "uptimeSeconds": 86400,
+          "firmwareVersion": "1.0.5",
+          "operationalStatus": "ACTIVE",
+          "machineRunning": true,
+          "machineMode": "PROCESSING",
+          "licenseStatus": "ACTIVE",
+          "licenseExpiryDate": "2027-12-31",
+          "networkType": "4G",
+          "networkStatus": "CONNECTED",
+          "signalStrength": -68,
+          "cpuUsagePct": 25,
+          "memoryUsagePct": 40,
+          "storageUsagePct": 30,
+          "sensorOverallStatus": "NORMAL",
+          "temperatureSensor": "NORMAL",
+          "humiditySensor": "NORMAL",
+          "weightSensor": "NORMAL",
+          "gasSensor": "NORMAL",
+          "certificateStatus": "VALID",
+          "tamperStatus": "NORMAL"
+        }
+      },
+      "rawSha256": "c388fb5c1d1c3da326dbddf2f9358bf3eff356ff2b508620c62e6192e8b09c64",
+      "puback": true
+    },
+    {
+      "id": "old-rest-valid-after-mqtt-only",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:04.842Z"
+    },
+    {
+      "id": "old-iot-active-after-mqtt-only",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:06.687Z"
+    },
+    {
+      "id": "rotation-rest-second-sync-ok",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:08.436Z"
+    },
+    {
+      "id": "rotation-mqtt-dual-channel-confirmed",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:10.567Z"
+    },
+    {
+      "id": "old-rest-denied-after-mqtt-dual",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:11.039Z"
+    },
+    {
+      "id": "rotation-rest-real-csr-issued",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:12.400Z"
+    },
+    {
+      "id": "rotation-rest-fresh-key",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:12.403Z"
+    },
+    {
+      "id": "rotation-rest-only-sync-ok",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:14.625Z"
+    },
+    {
+      "id": "old-rest-valid-after-rest-only",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:18.676Z"
+    },
+    {
+      "id": "old-iot-active-after-rest-only",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:20.419Z"
+    },
+    {
+      "id": "rotation-mqtt-second-connect",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:22.874Z",
+      "outcome": "CONNECTED",
+      "errorCode": null
+    },
+    {
+      "id": "rotation-dual-heartbeat",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:23.394Z",
+      "payload": {
+        "meta": {
+          "id": "HEARTBEAT-6BEAFAB6-3",
+          "ts": "2026-10-22T11:19:22.875Z",
+          "seq": 3,
+          "schemaVer": "1.0"
+        },
+        "data": {
+          "deviceStatus": "ONLINE",
+          "uptimeSeconds": 86400,
+          "firmwareVersion": "1.0.5",
+          "operationalStatus": "ACTIVE",
+          "machineRunning": true,
+          "machineMode": "PROCESSING",
+          "licenseStatus": "ACTIVE",
+          "licenseExpiryDate": "2027-12-31",
+          "networkType": "4G",
+          "networkStatus": "CONNECTED",
+          "signalStrength": -68,
+          "cpuUsagePct": 25,
+          "memoryUsagePct": 40,
+          "storageUsagePct": 30,
+          "sensorOverallStatus": "NORMAL",
+          "temperatureSensor": "NORMAL",
+          "humiditySensor": "NORMAL",
+          "weightSensor": "NORMAL",
+          "gasSensor": "NORMAL",
+          "certificateStatus": "VALID",
+          "tamperStatus": "NORMAL"
+        }
+      },
+      "rawSha256": "69636a35c18669a05a6460748321d26d2cffcb1592d04c89ad2d7537bdc85d33",
+      "puback": true
+    },
+    {
+      "id": "rotation-rest-dual-channel-confirmed",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:25.530Z"
+    },
+    {
+      "id": "old-rest-denied-after-rest-dual",
+      "result": "PASS",
+      "at": "2026-10-22T11:19:26.043Z"
+    },
+    {
+      "id": "old-iot-deactivation-within-budget",
+      "result": "PASS",
+      "at": "2026-10-22T11:22:26.410Z"
+    },
+    {
+      "id": "sweeper-reconciled-both-old-certificates",
+      "result": "PASS",
+      "at": "2026-10-22T11:22:29.184Z"
+    },
+    {
+      "id": "adjacent-new-control-MQTT_THEN_REST",
+      "result": "PASS",
+      "at": "2026-10-22T11:22:32.140Z",
+      "outcome": "CONNECTED",
+      "errorCode": null
+    },
+    {
+      "id": "old-mqtt-denied-MQTT_THEN_REST",
+      "result": "PASS",
+      "at": "2026-10-22T11:22:32.141Z",
+      "outcome": "CLOSED_BEFORE_CONNACK"
+    },
+    {
+      "id": "adjacent-new-control-REST_THEN_MQTT",
+      "result": "PASS",
+      "at": "2026-10-22T11:22:35.326Z",
+      "outcome": "CONNECTED",
+      "errorCode": null
+    },
+    {
+      "id": "old-mqtt-denied-REST_THEN_MQTT",
+      "result": "PASS",
+      "at": "2026-10-22T11:22:35.327Z",
+      "outcome": "CLOSED_BEFORE_CONNACK"
+    },
+    {
+      "id": "latest-rest-still-valid",
+      "result": "PASS",
+      "at": "2026-10-22T11:22:38.259Z"
+    },
+    {
+      "id": "outside-devices-certificates-unchanged",
+      "result": "PASS",
+      "at": "2026-10-22T11:22:38.261Z"
+    },
+    {
+      "id": "deployed-workers-unchanged",
+      "result": "PASS",
+      "at": "2026-10-22T11:22:48.570Z"
+    },
+    {
+      "id": "cleanup-outside-baseline-preserved",
+      "result": "PASS",
+      "at": "2026-10-22T11:23:45.766Z"
+    }
+  ],
+  "http": [
+    {
+      "label": "csr-application",
+      "at": "2026-10-22T11:17:10.263Z",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "status": 201,
+      "requestId": "46ac40a6-5b72-410b-b2c9-c21422233889",
+      "latencyMs": 7695,
+      "body": {
+        "requestId": "8549d105-f537-42eb-8b4c-653262e1d302",
+        "status": "PENDING"
+      }
+    },
+    {
+      "label": "pending-signed-poll",
+      "at": "2026-10-22T11:17:14.202Z",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "status": 200,
+      "requestId": "8c1fa378-019b-4d87-9041-9bd00a79d2be",
+      "latencyMs": 3935,
+      "body": {
+        "status": "PENDING"
+      }
+    },
+    {
+      "label": "nonce-replay",
+      "at": "2026-10-22T11:17:14.820Z",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "status": 401,
+      "requestId": "693ebb5f-8d15-4434-abba-e255488d4425",
+      "latencyMs": 616,
+      "body": {
+        "error": {
+          "code": "UNAUTHENTICATED",
+          "message": "Invalid onboarding proof",
+          "requestId": "693ebb5f-8d15-4434-abba-e255488d4425"
+        }
+      }
+    },
+    {
+      "label": "admin-request-detail",
+      "at": "2026-10-22T11:17:20.583Z",
+      "host": "api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/admin/onboarding/requests/8549d105-f537-42eb-8b4c-653262e1d302",
+      "status": 200,
+      "requestId": "7f6aa123-1be7-41a0-bdc7-54c2917d5773",
+      "latencyMs": 5762,
+      "body": {
+        "data": {
+          "requestId": "8549d105-f537-42eb-8b4c-653262e1d302",
+          "serialNumber": "csrprobe-8c4d3f19662ff1c3",
+          "publicKeyFingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360",
+          "submittedBy": "DEVICE:csrprobe-8c4d3f19662ff1c3",
+          "model": "BNX-100",
+          "hardwareVersion": "1",
+          "manufacturer": "Bio-Nexa",
+          "manufactureDate": "2026-01-01",
+          "status": "PENDING",
+          "rejectReason": null,
+          "reviewedBy": null,
+          "reviewedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-22T11:17:09.971Z",
+          "certificateProvisioningStatus": "NOT_STARTED"
+        },
+        "meta": {
+          "requestId": "7f6aa123-1be7-41a0-bdc7-54c2917d5773",
+          "timestamp": "2026-10-22T11:17:20.345Z"
+        }
+      }
+    },
+    {
+      "label": "admin-approve",
+      "at": "2026-10-22T11:17:23.083Z",
+      "host": "api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/8549d105-f537-42eb-8b4c-653262e1d302/approve",
+      "status": 200,
+      "requestId": "3c3c9ce8-cc43-4663-aa8b-b2de5a1e7d53",
+      "latencyMs": 2498,
+      "body": {
+        "data": {
+          "requestId": "8549d105-f537-42eb-8b4c-653262e1d302",
+          "serialNumber": "csrprobe-8c4d3f19662ff1c3",
+          "publicKeyFingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360",
+          "submittedBy": "DEVICE:csrprobe-8c4d3f19662ff1c3",
+          "model": "BNX-100",
+          "hardwareVersion": "1",
+          "manufacturer": "Bio-Nexa",
+          "manufactureDate": "2026-01-01",
+          "status": "APPROVED",
+          "rejectReason": null,
+          "reviewedBy": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+          "reviewedAt": "2026-10-22T11:17:22.144Z",
+          "version": 2,
+          "createdAt": "2026-10-22T11:17:09.971Z",
+          "certificateProvisioningStatus": "QUEUED"
+        },
+        "meta": {
+          "requestId": "3c3c9ce8-cc43-4663-aa8b-b2de5a1e7d53",
+          "timestamp": "2026-10-22T11:17:22.863Z"
+        }
+      }
+    },
+    {
+      "label": "signed-certificate-poll",
+      "at": "2026-10-22T11:17:32.502Z",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "status": 200,
+      "requestId": "fcf45270-2cbb-49d3-abc1-dd1ab17fbe46",
+      "latencyMs": 3412,
+      "body": {
+        "status": "PENDING"
+      }
+    },
+    {
+      "label": "signed-certificate-poll",
+      "at": "2026-10-22T11:17:41.746Z",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "status": 200,
+      "requestId": "f23a47af-59e7-42ff-880f-9bca57fdbb0b",
+      "latencyMs": 3236,
+      "body": {
+        "status": "PENDING"
+      }
+    },
+    {
+      "label": "signed-certificate-poll",
+      "at": "2026-10-22T11:17:51.186Z",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "status": 200,
+      "requestId": "af68e949-a2be-4ee2-8f8e-57217da871e9",
+      "latencyMs": 3436,
+      "body": {
+        "status": "PENDING"
+      }
+    },
+    {
+      "label": "signed-certificate-poll",
+      "at": "2026-10-22T11:18:00.464Z",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "status": 200,
+      "requestId": "a42c51ed-ea5f-4273-968e-e6654f433fa5",
+      "latencyMs": 3271,
+      "body": {
+        "status": "PENDING"
+      }
+    },
+    {
+      "label": "signed-certificate-poll",
+      "at": "2026-10-22T11:18:10.041Z",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "status": 200,
+      "requestId": "d39bbacc-6065-46af-b92f-23acf1aff34a",
+      "latencyMs": 3572,
+      "body": {
+        "status": "PENDING"
+      }
+    },
+    {
+      "label": "signed-certificate-poll",
+      "at": "2026-10-22T11:18:19.766Z",
+      "host": "onboard-api.bio-nexa.com",
+      "method": "GET",
+      "path": "/api/v1/device/onboarding/status",
+      "status": 200,
+      "requestId": "af975b1c-c699-4c3a-9151-b5ffd90e244a",
+      "latencyMs": 3719,
+      "body": {
+        "status": "APPROVED",
+        "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "certificate": {
+          "certificatePem": "-----BEGIN CERTIFICATE-----\r\nMIIEWDCCAsCgAwIBAgIUA42l4C6xE8idLy+SC4nwb8w0QRcwDQYJKoZIhvcNAQEL\r\nBQAwZDELMAkGA1UEBhMCU0cxHzAdBgNVBAoMFkZvb2QgRGlnZXN0ZXIgUGxhdGZv\r\ncm0xETAPBgNVBAsMCFRlc3QgUEtJMSEwHwYDVQQDDBhGRFAgVGVzdCBJc3N1aW5n\r\nIENBIDIwMjYwHhcNMjYxMDIyMTExMzE2WhcNMjcxMDIyMTExODE2WjAvMS0wKwYD\r\nVQQDEyQ0ZmU2YmE0YS1kYjRjLTQ0YTgtOTJmNC0wYjhhMTk1MzI3MDIwggEiMA0G\r\nCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCL7ImafrPLPFkD9jOnpkg4Uen1sghM\r\nrwphMuMA9Eur0j1GQEzfriGAiGYou1NrDNETXpx34RiSZ8ycexUOAf9HnNR0GCpC\r\nY+u3dVSM3WvlrbrNiBMFUe34kr8DlZWlSBHe9IPbVuQTsv/F0IdqiOtqT8M89muk\r\nER70/uH+DM6d9XkIvLM4LYk/OzEr9H582x97+kRsxfRGIunf+9GKndc0i0dEDhN6\r\nAFDdsaZX1V0oFZGg8TX7eK/32k+MSFO8rEal/49uCKntCPdPcshSbgQhlHT34vp/\r\nUvBZN2aOTFM21WeUXEX44RZjAc4h3QdeRSKlxbwZI6Ci1o0cWaKMUwDrAgMBAAGj\r\ngbYwgbMwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYI\r\nKwYBBQUHAwIwHQYDVR0OBBYEFJJoBdkIvI6KEGnl+DvnfdHDsVw+MD4GA1UdEQQ3\r\nMDWGM3VybjpmZHA6ZGV2aWNlOjRmZTZiYTRhLWRiNGMtNDRhOC05MmY0LTBiOGEx\r\nOTUzMjcwMjAfBgNVHSMEGDAWgBRA1JxxZxvzl1vfd+irJkIrWuI91zANBgkqhkiG\r\n9w0BAQsFAAOCAYEAfR6zBEh+j4fYNv27zLi8+Ba/V/mS/F1UrCYryLEDNrWI5hXC\r\nOIWqClqTxPsxpNAf7gQfiXRd9VVtd/pDCpKn+WO1O0eXMvF0bEzhK8ufPAOJWICY\r\nh4ZGLYVkc9EdDxIlK7DWttsYR+CbsITCxWaiZZ9vE9+7TX3zgXko3mQ2sQfGjGFV\r\ncb83UW25W/XOA6H29abKUB+VU2N9MvQaapFvdBN5LdB3+z8RpNYqfdHQuOVHHWaE\r\nckKebWB+xrzs1ZG/qvYMrHJEgF2sCgmMWkR24VVRKLXrYtPwSDBwfxP1pNkVv3yv\r\nrwcmcbfQYNdbtl3cDIdsH3xL9sMgFVLllY7N4HOKsUZMTS3Jq7PdzjpO5l+vSsxy\r\nW823TDfucTGcMPxUQoq0cuvvwVR7amhs20vd23FOAcNfJyZ115cBcWE/opWZZzAb\r\nFxou9WCfmLOjOW1mxzFtEQ6v9KCeVZN93PZ6r5LGKEHSZD4DEiY7pmDMxeXHFpO5\r\neikssoIvlO04EL+Y\r\n-----END CERTIFICATE-----\r\n",
+          "certificateChain": "-----BEGIN CERTIFICATE-----\nMIIFLjCCAxagAwIBAgIJAIV28iBYKOPuMA0GCSqGSIb3DQEBCwUAMGExCzAJBgNV\nBAYTAlNHMR8wHQYDVQQKDBZGb29kIERpZ2VzdGVyIFBsYXRmb3JtMREwDwYDVQQL\nDAhUZXN0IFBLSTEeMBwGA1UEAwwVRkRQIFRlc3QgUm9vdCBDQSAyMDI2MB4XDTI2\nMDkxNzEyMDIzOFoXDTMxMDkxNjEyMDIzOFowZDELMAkGA1UEBhMCU0cxHzAdBgNV\nBAoMFkZvb2QgRGlnZXN0ZXIgUGxhdGZvcm0xETAPBgNVBAsMCFRlc3QgUEtJMSEw\nHwYDVQQDDBhGRFAgVGVzdCBJc3N1aW5nIENBIDIwMjYwggGiMA0GCSqGSIb3DQEB\nAQUAA4IBjwAwggGKAoIBgQCzfFE/mTk+v15sdSfs6MG6luXDn7niaFIgpTzJwc4O\nAS9KMGo2tU3OXXwxpQL/hynPaaMWuzPvLkzuJqLX0O5tSYipD2TyQcpr6Ska0MGb\nNSLjXXRS/m/qpfY9rAevvO8zrWft8Ys/f8A3Mq6Grkr/+ye1XS/zZzLrUsp3NyC+\nlr1aqezjiqQrxlvhG899aOIlHDjFUZCLl8nyAiRQ6Z9IoYgHL+0hpBRl/TUKbBK/\nddWFhvaO+XdD3k3ymjUDeFld2zsnT4T0eE0yHJYWNjMvIN2ZKZF6QXIseCaeYo+5\nEzYUmkZQy7U2vNUmoEh+urUSMF0H51AwRcy5una6ez7sQDBsINjgXTlM77U6Pgsr\n/Lt3Gy0CMO8dL9A7UGtmlwc8LfnYDlw4JjZGP55WQ3myl41CmSr515oo3RVJXKO7\nIq09IhjCx+wP451gPr7UiF29e3sQjihR6r/SQaPmevZqgoT6NZYaQ+UoO4j/U/u5\nbPqLdV1jOORTEss0jrg6I8kCAwEAAaNmMGQwHQYDVR0OBBYEFEDUnHFnG/OXW993\n6KsmQita4j3XMB8GA1UdIwQYMBaAFKMVKRTyn/weR6yhAvjWGvuFrZzKMBIGA1Ud\nEwEB/wQIMAYBAf8CAQAwDgYDVR0PAQH/BAQDAgEGMA0GCSqGSIb3DQEBCwUAA4IC\nAQB5Z49CkhfYVXaGoUpRe9LjOLNSi45IQsiQ1ctIrb9CgedDxF531cKQrOBGdJsq\nRLSfJA6crNhHP35YByWnGvlyzwx0o0Gzf5MYNVCXSzs/YhZTN6DBFIkBaGU3hEWT\n8TcBJpvtGIzoFQ34sDwLKfULrs6Lpkw+xhUDZP+3jZ3MIWYnb4gNIpOnqVAWSAd2\nDL+dFgi9DbBnSJX/YaHohbcF//Bxor87SzDG8KFeycDC3OawtA95wi/BFiDmTKlb\n764UPHUmIV+CHSKjs6RTGJHCEu0hzwFqcakYQLqgMDLKY/W7WScJ9LXuIVE3hPKW\nkMbvKC7rDzlWLYnUQ+OQ5CmcyTh6KVW9rhXJgyZyd+eD6hnh98iQrb/6WPuUVzlO\nm+zGghJIvSm+3YUG5dGhbTwhdl9ezNFjaqsXYNGOl+dh7P7yhIqhV9a/isyRm8F7\nXeDx5ugO11YBJK+GJn3xtLaoTm35F/bfB4i4BxwKVuKCr+cHTKSH6IKO/0wXc3/i\nIbYobGXj1YErVSp2IshCgZD+EqGRBbpb+iISQh8rqhk9KAjGvk5twpKRNPqirZGa\ngCP5OgE0jQSLLM8ZDma2iRyJIWCCjuB2XxuynIoU3kL0zgk6iC9ikNAjl7UOap7d\nnSTdhjHBEP8lWyJYzuU5S0QheqXRivlVG5M2xmQUK6eLXQ==\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIFqzCCA5OgAwIBAgIJAKlV/0AoVwl4MA0GCSqGSIb3DQEBCwUAMGExCzAJBgNV\nBAYTAlNHMR8wHQYDVQQKDBZGb29kIERpZ2VzdGVyIFBsYXRmb3JtMREwDwYDVQQL\nDAhUZXN0IFBLSTEeMBwGA1UEAwwVRkRQIFRlc3QgUm9vdCBDQSAyMDI2MB4XDTI2\nMDkxNzEyMDIzN1oXDTM2MDkxNDEyMDIzN1owYTELMAkGA1UEBhMCU0cxHzAdBgNV\nBAoMFkZvb2QgRGlnZXN0ZXIgUGxhdGZvcm0xETAPBgNVBAsMCFRlc3QgUEtJMR4w\nHAYDVQQDDBVGRFAgVGVzdCBSb290IENBIDIwMjYwggIiMA0GCSqGSIb3DQEBAQUA\nA4ICDwAwggIKAoICAQC15tvhjTQ+4PS3LzlF+lNNohA3BQX+IzjGs0yCaxWiRznY\nVrBdlX34n/zF+N2Isv5Iasg/98XtqJOjjf/h7ORsYsJpiR5hyXeempJntouIZoAe\nJ6e8tqGQt3v2WYctWt1aJliXBsXkIcetWwXk4ztG0cEL6qOF/qkQK6x7qasP42lN\nEih91N+7AqAaNrrJryupCLt6d/nmAYvSmnSVhrb6Q6UlDL91gWudJj6/aftUBKOR\nHeboy0kJ38FJlHcANoWHyTKuUR/7IpLinMvoT7XhRbQ4qCEpLqb8UIfmO1+AqAma\nPzawSpZIfGnAYGlC/HdMT6Q0A4Hd9jQr4EhztSDZqI1dMP16mKfc9w6q75fFM4Qw\np2ACssdyrzcSYlY2nIp7De/Mu4nePLNt4BSrUdt/l7zAZEywxGjh0IW/DoCoahuU\nLCHg/p90hrByqfGaj4ubRFju/9V3080A/Det2T5ztv14HOLuXnULjQz5QWmgajpf\nn035kSbH688/FIeRTUOvr3fiVGMXydTqqwHVCM2Cr44NmykrxSE2F95v7rz7SI6p\nHrUPZGN7HS8Vpe4GXAEv0zkHwks+Sw3GVZOiK4UfcCGyBPFBIVjiRJfElaEryd+9\nz7xwv/ew+M5RfgUvvP1MTBALI8+aHN6c5hJDu0EO69J0t/Xr9Fdl4cc6dmuZGwID\nAQABo2YwZDAdBgNVHQ4EFgQUoxUpFPKf/B5HrKEC+NYa+4WtnMowHwYDVR0jBBgw\nFoAUoxUpFPKf/B5HrKEC+NYa+4WtnMowEgYDVR0TAQH/BAgwBgEB/wIBATAOBgNV\nHQ8BAf8EBAMCAQYwDQYJKoZIhvcNAQELBQADggIBAJzDqfPfkhYV3G3EW0CoTLZM\nut0x1UejtFMISW/qir/Olt3g5R8a9LHGOll9yucBpcFeKvfNZH4vPwx7JWHQaU7W\n9YqOkToQBFkdDqgSlRXwx2cmkkyy//e/MrADtWk3vcDnzI2kfx437G99GqdQLRiX\n/Ge9/ItKi4LpPO04F7OCZdZOLS1FSWLgkemAkbcUogA+XwvjxKT16JCdVeytVpsg\nKcRITrimUvXUa8kZ7xTDROWSCnAewh8BqbDfHu5aaJSj7NYXDmLGalXsukS3a4qF\ncvmmjHkXB5R8ZbG27y3JX0WK9I1DJy8+0n0jupoN6qirjuIrTcLKDYDfx6Tgf0Jv\nMntPnrtSv/z1c+3cstdeB0mSef9YSm0krrVVBlmtFzvola/UB0pqjcIYfGwX2po0\n7rx38TDY++DVz/BwKr81d9VuhpzHj3W/axd3zWMZ+zM79YvEgvfFWZ30ZCOJ85+w\n8KxkTLOGTQQPRHbKOkXmaMcVjKLrpl+uypW3FFGBPkO1sEVqHtmxot9Gdt1gXUD/\nUc4ViUY4DnI18ZRzHAlP5QMcENByQY08pb2xwbbKpD7D/5K8mB4/pIhfBaafhsdU\nHldKVXgM0qjNXbUn+PY8t/6I81wA6kAVhWXdAl4q+YPYo7NIjB+IgF/26vz25lwr\n3a9RIty/dJd5mbXC3qgn\n-----END CERTIFICATE-----\n"
+        },
+        "rest": {
+          "endpoint": "https://device-api.bio-nexa.com"
+        },
+        "mqtt": {
+          "endpoint": "a323xp2aswsptd-ats.iot.ap-southeast-1.amazonaws.com"
+        },
+        "configuration": {
+          "heartbeatInterval": 60
+        }
+      }
+    },
+    {
+      "label": "initial-rest-sync",
+      "at": "2026-10-22T11:18:53.745Z",
+      "host": "device-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/sync",
+      "status": 200,
+      "body": {
+        "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "assignment": null,
+        "device": {
+          "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+          "alias": null,
+          "serialNumber": "csrprobe-8c4d3f19662ff1c3",
+          "model": "BNX-100",
+          "firmwareVersion": null
+        },
+        "license": null,
+        "deviceUsers": [],
+        "configuration": null,
+        "operationalStatus": {
+          "lifecycleStatus": "Onboarded",
+          "operationalStatus": "ACTIVE",
+          "connectivity": "ONLINE",
+          "lastHeartbeatAt": "2026-10-22T11:18:31.519Z",
+          "syncIntervalSeconds": 300
+        },
+        "snapshotAt": "2026-10-22T11:18:52.818Z",
+        "lastSyncTime": null,
+        "etag": "1c92a7616f7ea93b51f42815f19ddb41c3040eb1d4e116b1add920157917546d"
+      },
+      "requestId": "0fb27654-44ef-4744-a90c-49fc0db29aa8"
+    },
+    {
+      "label": "rotate-mqtt",
+      "at": "2026-10-22T11:18:59.803Z",
+      "host": "device-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/certificate/rotate",
+      "status": 200,
+      "body": {
+        "certificateId": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+        "certificatePem": "-----BEGIN CERTIFICATE-----\r\nMIIEWDCCAsCgAwIBAgIUJDLF/DSdJTeSxdA0gGbsUcf5QSswDQYJKoZIhvcNAQEL\r\nBQAwZDELMAkGA1UEBhMCU0cxHzAdBgNVBAoMFkZvb2QgRGlnZXN0ZXIgUGxhdGZv\r\ncm0xETAPBgNVBAsMCFRlc3QgUEtJMSEwHwYDVQQDDBhGRFAgVGVzdCBJc3N1aW5n\r\nIENBIDIwMjYwHhcNMjYxMDIyMTExMzU3WhcNMjcxMDIyMTExODU3WjAvMS0wKwYD\r\nVQQDEyQ0ZmU2YmE0YS1kYjRjLTQ0YTgtOTJmNC0wYjhhMTk1MzI3MDIwggEiMA0G\r\nCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDHdoChgXiRmnsqNKz23w9l+QzbqloC\r\nVTZJrM03D9kdLMaTYGwmTUHEhdjdZwlhTZ3nfWYDF2+wwwsOSsifdacsSbtinKYu\r\nR3/elMRkk4nelbsE4oadQoY9hNP9MnGsIzqE0HUNdwAgc3hltb/u3/R+GOWo9lkb\r\nNvKx8yr+1Ro6XSLEWh0VvtX3w35TwtVTwl+FMFKzuHk4c23znqR3f2giitCKjUfs\r\nNLLTYe782c2HS0oFNuw0Zx8nHXmMVNv6RRCXDeTzPn+LE5x1oDLo3TUyv48FEB1o\r\nsL0MbC0NWfT92gp773blqSsw6tW6FihkOXK23kBvK/p4DYvqh/3v91a3AgMBAAGj\r\ngbYwgbMwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYI\r\nKwYBBQUHAwIwHQYDVR0OBBYEFHF9ecUCwJMM8E8rqacVOcksAphyMD4GA1UdEQQ3\r\nMDWGM3VybjpmZHA6ZGV2aWNlOjRmZTZiYTRhLWRiNGMtNDRhOC05MmY0LTBiOGEx\r\nOTUzMjcwMjAfBgNVHSMEGDAWgBRA1JxxZxvzl1vfd+irJkIrWuI91zANBgkqhkiG\r\n9w0BAQsFAAOCAYEALo7C9lXNxDmCwEdxkRmKGQS6zSiq45373frX33Yp7NpNgMpT\r\nIeF2PbkUt1TroyAJwndHYM9G7a7X73BwRfsgHEBHmPyzknNE9YvOsWLVqbdwL00v\r\nGloO/bYJ9yV9S0W0p+bPgc+XQUYG5YTLslLSFyOJhMu32J7p0ejwbpUc+P/J7hsO\r\n4W9X67mNq3rqG4Hl6CeXOtBYNgug9T6yPvHWn6SPtj4Ep+NJxGSqQogcW/UBzVw6\r\nO8hRw79QNWRnRSw8JJnRTMjJryTmEHIgfzc05ukCHBHtL9b4n4rZQNk61YY41f93\r\nVI9nXjoe+d3oo8+nYm1lDoeHUAj+g4SG5WCPSwbXCZuh+5baYThFHr8uWVkoS/gq\r\npfpplf1U3//NTOu8N2KhJfYW8WRwBjairaNpuDzRbOGGFxAPtHVIltzbeFGKDXke\r\nzOy/vrNQRfIduldMGfQ9vAQf3ZTR0He1+eFrsSt94+J1zwtuO7+iCTqyOxRgirAd\r\neJeOrqRVslhSL3F8\r\n-----END CERTIFICATE-----\r\n",
+        "certificateChain": "-----BEGIN CERTIFICATE-----\nMIIFLjCCAxagAwIBAgIJAIV28iBYKOPuMA0GCSqGSIb3DQEBCwUAMGExCzAJBgNV\nBAYTAlNHMR8wHQYDVQQKDBZGb29kIERpZ2VzdGVyIFBsYXRmb3JtMREwDwYDVQQL\nDAhUZXN0IFBLSTEeMBwGA1UEAwwVRkRQIFRlc3QgUm9vdCBDQSAyMDI2MB4XDTI2\nMDkxNzEyMDIzOFoXDTMxMDkxNjEyMDIzOFowZDELMAkGA1UEBhMCU0cxHzAdBgNV\nBAoMFkZvb2QgRGlnZXN0ZXIgUGxhdGZvcm0xETAPBgNVBAsMCFRlc3QgUEtJMSEw\nHwYDVQQDDBhGRFAgVGVzdCBJc3N1aW5nIENBIDIwMjYwggGiMA0GCSqGSIb3DQEB\nAQUAA4IBjwAwggGKAoIBgQCzfFE/mTk+v15sdSfs6MG6luXDn7niaFIgpTzJwc4O\nAS9KMGo2tU3OXXwxpQL/hynPaaMWuzPvLkzuJqLX0O5tSYipD2TyQcpr6Ska0MGb\nNSLjXXRS/m/qpfY9rAevvO8zrWft8Ys/f8A3Mq6Grkr/+ye1XS/zZzLrUsp3NyC+\nlr1aqezjiqQrxlvhG899aOIlHDjFUZCLl8nyAiRQ6Z9IoYgHL+0hpBRl/TUKbBK/\nddWFhvaO+XdD3k3ymjUDeFld2zsnT4T0eE0yHJYWNjMvIN2ZKZF6QXIseCaeYo+5\nEzYUmkZQy7U2vNUmoEh+urUSMF0H51AwRcy5una6ez7sQDBsINjgXTlM77U6Pgsr\n/Lt3Gy0CMO8dL9A7UGtmlwc8LfnYDlw4JjZGP55WQ3myl41CmSr515oo3RVJXKO7\nIq09IhjCx+wP451gPr7UiF29e3sQjihR6r/SQaPmevZqgoT6NZYaQ+UoO4j/U/u5\nbPqLdV1jOORTEss0jrg6I8kCAwEAAaNmMGQwHQYDVR0OBBYEFEDUnHFnG/OXW993\n6KsmQita4j3XMB8GA1UdIwQYMBaAFKMVKRTyn/weR6yhAvjWGvuFrZzKMBIGA1Ud\nEwEB/wQIMAYBAf8CAQAwDgYDVR0PAQH/BAQDAgEGMA0GCSqGSIb3DQEBCwUAA4IC\nAQB5Z49CkhfYVXaGoUpRe9LjOLNSi45IQsiQ1ctIrb9CgedDxF531cKQrOBGdJsq\nRLSfJA6crNhHP35YByWnGvlyzwx0o0Gzf5MYNVCXSzs/YhZTN6DBFIkBaGU3hEWT\n8TcBJpvtGIzoFQ34sDwLKfULrs6Lpkw+xhUDZP+3jZ3MIWYnb4gNIpOnqVAWSAd2\nDL+dFgi9DbBnSJX/YaHohbcF//Bxor87SzDG8KFeycDC3OawtA95wi/BFiDmTKlb\n764UPHUmIV+CHSKjs6RTGJHCEu0hzwFqcakYQLqgMDLKY/W7WScJ9LXuIVE3hPKW\nkMbvKC7rDzlWLYnUQ+OQ5CmcyTh6KVW9rhXJgyZyd+eD6hnh98iQrb/6WPuUVzlO\nm+zGghJIvSm+3YUG5dGhbTwhdl9ezNFjaqsXYNGOl+dh7P7yhIqhV9a/isyRm8F7\nXeDx5ugO11YBJK+GJn3xtLaoTm35F/bfB4i4BxwKVuKCr+cHTKSH6IKO/0wXc3/i\nIbYobGXj1YErVSp2IshCgZD+EqGRBbpb+iISQh8rqhk9KAjGvk5twpKRNPqirZGa\ngCP5OgE0jQSLLM8ZDma2iRyJIWCCjuB2XxuynIoU3kL0zgk6iC9ikNAjl7UOap7d\nnSTdhjHBEP8lWyJYzuU5S0QheqXRivlVG5M2xmQUK6eLXQ==\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIFqzCCA5OgAwIBAgIJAKlV/0AoVwl4MA0GCSqGSIb3DQEBCwUAMGExCzAJBgNV\nBAYTAlNHMR8wHQYDVQQKDBZGb29kIERpZ2VzdGVyIFBsYXRmb3JtMREwDwYDVQQL\nDAhUZXN0IFBLSTEeMBwGA1UEAwwVRkRQIFRlc3QgUm9vdCBDQSAyMDI2MB4XDTI2\nMDkxNzEyMDIzN1oXDTM2MDkxNDEyMDIzN1owYTELMAkGA1UEBhMCU0cxHzAdBgNV\nBAoMFkZvb2QgRGlnZXN0ZXIgUGxhdGZvcm0xETAPBgNVBAsMCFRlc3QgUEtJMR4w\nHAYDVQQDDBVGRFAgVGVzdCBSb290IENBIDIwMjYwggIiMA0GCSqGSIb3DQEBAQUA\nA4ICDwAwggIKAoICAQC15tvhjTQ+4PS3LzlF+lNNohA3BQX+IzjGs0yCaxWiRznY\nVrBdlX34n/zF+N2Isv5Iasg/98XtqJOjjf/h7ORsYsJpiR5hyXeempJntouIZoAe\nJ6e8tqGQt3v2WYctWt1aJliXBsXkIcetWwXk4ztG0cEL6qOF/qkQK6x7qasP42lN\nEih91N+7AqAaNrrJryupCLt6d/nmAYvSmnSVhrb6Q6UlDL91gWudJj6/aftUBKOR\nHeboy0kJ38FJlHcANoWHyTKuUR/7IpLinMvoT7XhRbQ4qCEpLqb8UIfmO1+AqAma\nPzawSpZIfGnAYGlC/HdMT6Q0A4Hd9jQr4EhztSDZqI1dMP16mKfc9w6q75fFM4Qw\np2ACssdyrzcSYlY2nIp7De/Mu4nePLNt4BSrUdt/l7zAZEywxGjh0IW/DoCoahuU\nLCHg/p90hrByqfGaj4ubRFju/9V3080A/Det2T5ztv14HOLuXnULjQz5QWmgajpf\nn035kSbH688/FIeRTUOvr3fiVGMXydTqqwHVCM2Cr44NmykrxSE2F95v7rz7SI6p\nHrUPZGN7HS8Vpe4GXAEv0zkHwks+Sw3GVZOiK4UfcCGyBPFBIVjiRJfElaEryd+9\nz7xwv/ew+M5RfgUvvP1MTBALI8+aHN6c5hJDu0EO69J0t/Xr9Fdl4cc6dmuZGwID\nAQABo2YwZDAdBgNVHQ4EFgQUoxUpFPKf/B5HrKEC+NYa+4WtnMowHwYDVR0jBBgw\nFoAUoxUpFPKf/B5HrKEC+NYa+4WtnMowEgYDVR0TAQH/BAgwBgEB/wIBATAOBgNV\nHQ8BAf8EBAMCAQYwDQYJKoZIhvcNAQELBQADggIBAJzDqfPfkhYV3G3EW0CoTLZM\nut0x1UejtFMISW/qir/Olt3g5R8a9LHGOll9yucBpcFeKvfNZH4vPwx7JWHQaU7W\n9YqOkToQBFkdDqgSlRXwx2cmkkyy//e/MrADtWk3vcDnzI2kfx437G99GqdQLRiX\n/Ge9/ItKi4LpPO04F7OCZdZOLS1FSWLgkemAkbcUogA+XwvjxKT16JCdVeytVpsg\nKcRITrimUvXUa8kZ7xTDROWSCnAewh8BqbDfHu5aaJSj7NYXDmLGalXsukS3a4qF\ncvmmjHkXB5R8ZbG27y3JX0WK9I1DJy8+0n0jupoN6qirjuIrTcLKDYDfx6Tgf0Jv\nMntPnrtSv/z1c+3cstdeB0mSef9YSm0krrVVBlmtFzvola/UB0pqjcIYfGwX2po0\n7rx38TDY++DVz/BwKr81d9VuhpzHj3W/axd3zWMZ+zM79YvEgvfFWZ30ZCOJ85+w\n8KxkTLOGTQQPRHbKOkXmaMcVjKLrpl+uypW3FFGBPkO1sEVqHtmxot9Gdt1gXUD/\nUc4ViUY4DnI18ZRzHAlP5QMcENByQY08pb2xwbbKpD7D/5K8mB4/pIhfBaafhsdU\nHldKVXgM0qjNXbUn+PY8t/6I81wA6kAVhWXdAl4q+YPYo7NIjB+IgF/26vz25lwr\n3a9RIty/dJd5mbXC3qgn\n-----END CERTIFICATE-----\n",
+        "effectiveDate": "2026-10-22",
+        "expiryDate": "2027-10-22"
+      },
+      "requestId": "1784d44c-4311-4dda-935e-6d9b4668aa4e"
+    },
+    {
+      "label": "old-valid-after-mqtt-only",
+      "at": "2026-10-22T11:19:04.841Z",
+      "host": "device-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/sync",
+      "status": 200,
+      "body": {
+        "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "assignment": null,
+        "device": {
+          "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+          "alias": null,
+          "serialNumber": "csrprobe-8c4d3f19662ff1c3",
+          "model": "BNX-100",
+          "firmwareVersion": null
+        },
+        "license": null,
+        "deviceUsers": [],
+        "configuration": null,
+        "operationalStatus": {
+          "lifecycleStatus": "Onboarded",
+          "operationalStatus": "ACTIVE",
+          "connectivity": "ONLINE",
+          "lastHeartbeatAt": "2026-10-22T11:19:01.375Z",
+          "syncIntervalSeconds": 300
+        },
+        "snapshotAt": "2026-10-22T11:19:04.257Z",
+        "lastSyncTime": null,
+        "etag": "1c92a7616f7ea93b51f42815f19ddb41c3040eb1d4e116b1add920157917546d"
+      },
+      "requestId": "baa9893a-27d1-4bf9-ace6-8e804234bca6"
+    },
+    {
+      "label": "rotation-rest-second-sync",
+      "at": "2026-10-22T11:19:08.435Z",
+      "host": "device-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/sync",
+      "status": 200,
+      "body": {
+        "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "assignment": null,
+        "device": {
+          "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+          "alias": null,
+          "serialNumber": "csrprobe-8c4d3f19662ff1c3",
+          "model": "BNX-100",
+          "firmwareVersion": null
+        },
+        "license": null,
+        "deviceUsers": [],
+        "configuration": null,
+        "operationalStatus": {
+          "lifecycleStatus": "Onboarded",
+          "operationalStatus": "ACTIVE",
+          "connectivity": "ONLINE",
+          "lastHeartbeatAt": "2026-10-22T11:19:01.375Z",
+          "syncIntervalSeconds": 300
+        },
+        "snapshotAt": "2026-10-22T11:19:07.918Z",
+        "lastSyncTime": null,
+        "etag": "1c92a7616f7ea93b51f42815f19ddb41c3040eb1d4e116b1add920157917546d"
+      },
+      "requestId": "21d9dda1-7e4f-4314-9a36-c6645fbc1461"
+    },
+    {
+      "label": "old-revoked-after-mqtt-dual",
+      "at": "2026-10-22T11:19:11.038Z",
+      "host": "device-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/sync",
+      "status": 401,
+      "body": {
+        "error": {
+          "code": "UNAUTHENTICATED",
+          "message": "Authentication is required or the credential is invalid",
+          "requestId": "b2ff7388-a1f0-4384-be99-d3ac739a8388"
+        }
+      },
+      "requestId": "b2ff7388-a1f0-4384-be99-d3ac739a8388"
+    },
+    {
+      "label": "rotate-rest",
+      "at": "2026-10-22T11:19:12.399Z",
+      "host": "device-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/certificate/rotate",
+      "status": 200,
+      "body": {
+        "certificateId": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+        "certificatePem": "-----BEGIN CERTIFICATE-----\r\nMIIEWDCCAsCgAwIBAgIURcVeSxBT5SoMXWYmduYeQfZ9y8MwDQYJKoZIhvcNAQEL\r\nBQAwZDELMAkGA1UEBhMCU0cxHzAdBgNVBAoMFkZvb2QgRGlnZXN0ZXIgUGxhdGZv\r\ncm0xETAPBgNVBAsMCFRlc3QgUEtJMSEwHwYDVQQDDBhGRFAgVGVzdCBJc3N1aW5n\r\nIENBIDIwMjYwHhcNMjYxMDIyMTExNDExWhcNMjcxMDIyMTExOTExWjAvMS0wKwYD\r\nVQQDEyQ0ZmU2YmE0YS1kYjRjLTQ0YTgtOTJmNC0wYjhhMTk1MzI3MDIwggEiMA0G\r\nCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCz6CQJqcIQXFBc1HoL/1OScX8TO0qg\r\njmzSacyhadS02tpE6FU6GxD6d8NNFub+q9KpMDZLgq1JaM7sHbhsE+/KNqdt13aX\r\nohoDAarseTYNbjs9iyQlJqGGpE6qIyCMcuR9QyyaHX+//PwNkGV5Iq39GbNbqhsf\r\nP7XFSbH9ApcxSJRQ4e1I4y4e4ZrkMDejJ2F5gQCgvDCfRgTNJvfOH72pcrdqSnDU\r\nogAs6e7aq0cYCx+A8OpThPbcij/Iy6VhX7x68qnL7A68nkrlTOI4LwuKvgB/gt1v\r\nGwjnHxRpuTJwmDjoAGeoEs26vcjpWrKtA9Z7nZ82eGOHQggObQE2TihTAgMBAAGj\r\ngbYwgbMwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYI\r\nKwYBBQUHAwIwHQYDVR0OBBYEFO3P3GhY0nTzC2Bb0RrxNsMfVfmyMD4GA1UdEQQ3\r\nMDWGM3VybjpmZHA6ZGV2aWNlOjRmZTZiYTRhLWRiNGMtNDRhOC05MmY0LTBiOGEx\r\nOTUzMjcwMjAfBgNVHSMEGDAWgBRA1JxxZxvzl1vfd+irJkIrWuI91zANBgkqhkiG\r\n9w0BAQsFAAOCAYEAPhne0gfHj5Zot3cUbxnOoG3AuRAQRjDKGlDOQevM4yvn2mJE\r\nPc6nsxQqMD0mNvagBcYUVQLhZ9enk61dqSOyrNWYlZMWiS/kZ7gGpOEmOYxOubEt\r\nb9Nn/jBxrHrPCuQLc2Y0dWXJ6sj+T9GUhXcy2L909UfTiSHs9d+8E9L38JX4xLCD\r\n4Pao4JjvyBh+FY4hT3RScRxz84vngHDOAABb1LPvdZMNktNt0Yt6x7NM/8omX0X6\r\nrTc2VZB3zzcXulLLy3QTLoAVUXx23rQelDHW+cxsinvXrSJCHHtyHIv4XlvaKmV+\r\n7J9qMZbOjPFWKfYKKxbc8Aoiq13f24rc+aeJO336tdzaKJ2BjlpM+8n5Rbk+j8h/\r\nH5LIuVkSHpT3j9usGsw7bV0XXLVKrYxh13pCAmp/4RK7tg3pQ3E6LDId8FLRepZj\r\nubgW9R4r08V3grrcqbMEa7PZAjJ66uIUCmConMnfotZh/3sgBuifgDpJfOmkNgR0\r\nBPOvfyiXkyF9rdFu\r\n-----END CERTIFICATE-----\r\n",
+        "certificateChain": "-----BEGIN CERTIFICATE-----\nMIIFLjCCAxagAwIBAgIJAIV28iBYKOPuMA0GCSqGSIb3DQEBCwUAMGExCzAJBgNV\nBAYTAlNHMR8wHQYDVQQKDBZGb29kIERpZ2VzdGVyIFBsYXRmb3JtMREwDwYDVQQL\nDAhUZXN0IFBLSTEeMBwGA1UEAwwVRkRQIFRlc3QgUm9vdCBDQSAyMDI2MB4XDTI2\nMDkxNzEyMDIzOFoXDTMxMDkxNjEyMDIzOFowZDELMAkGA1UEBhMCU0cxHzAdBgNV\nBAoMFkZvb2QgRGlnZXN0ZXIgUGxhdGZvcm0xETAPBgNVBAsMCFRlc3QgUEtJMSEw\nHwYDVQQDDBhGRFAgVGVzdCBJc3N1aW5nIENBIDIwMjYwggGiMA0GCSqGSIb3DQEB\nAQUAA4IBjwAwggGKAoIBgQCzfFE/mTk+v15sdSfs6MG6luXDn7niaFIgpTzJwc4O\nAS9KMGo2tU3OXXwxpQL/hynPaaMWuzPvLkzuJqLX0O5tSYipD2TyQcpr6Ska0MGb\nNSLjXXRS/m/qpfY9rAevvO8zrWft8Ys/f8A3Mq6Grkr/+ye1XS/zZzLrUsp3NyC+\nlr1aqezjiqQrxlvhG899aOIlHDjFUZCLl8nyAiRQ6Z9IoYgHL+0hpBRl/TUKbBK/\nddWFhvaO+XdD3k3ymjUDeFld2zsnT4T0eE0yHJYWNjMvIN2ZKZF6QXIseCaeYo+5\nEzYUmkZQy7U2vNUmoEh+urUSMF0H51AwRcy5una6ez7sQDBsINjgXTlM77U6Pgsr\n/Lt3Gy0CMO8dL9A7UGtmlwc8LfnYDlw4JjZGP55WQ3myl41CmSr515oo3RVJXKO7\nIq09IhjCx+wP451gPr7UiF29e3sQjihR6r/SQaPmevZqgoT6NZYaQ+UoO4j/U/u5\nbPqLdV1jOORTEss0jrg6I8kCAwEAAaNmMGQwHQYDVR0OBBYEFEDUnHFnG/OXW993\n6KsmQita4j3XMB8GA1UdIwQYMBaAFKMVKRTyn/weR6yhAvjWGvuFrZzKMBIGA1Ud\nEwEB/wQIMAYBAf8CAQAwDgYDVR0PAQH/BAQDAgEGMA0GCSqGSIb3DQEBCwUAA4IC\nAQB5Z49CkhfYVXaGoUpRe9LjOLNSi45IQsiQ1ctIrb9CgedDxF531cKQrOBGdJsq\nRLSfJA6crNhHP35YByWnGvlyzwx0o0Gzf5MYNVCXSzs/YhZTN6DBFIkBaGU3hEWT\n8TcBJpvtGIzoFQ34sDwLKfULrs6Lpkw+xhUDZP+3jZ3MIWYnb4gNIpOnqVAWSAd2\nDL+dFgi9DbBnSJX/YaHohbcF//Bxor87SzDG8KFeycDC3OawtA95wi/BFiDmTKlb\n764UPHUmIV+CHSKjs6RTGJHCEu0hzwFqcakYQLqgMDLKY/W7WScJ9LXuIVE3hPKW\nkMbvKC7rDzlWLYnUQ+OQ5CmcyTh6KVW9rhXJgyZyd+eD6hnh98iQrb/6WPuUVzlO\nm+zGghJIvSm+3YUG5dGhbTwhdl9ezNFjaqsXYNGOl+dh7P7yhIqhV9a/isyRm8F7\nXeDx5ugO11YBJK+GJn3xtLaoTm35F/bfB4i4BxwKVuKCr+cHTKSH6IKO/0wXc3/i\nIbYobGXj1YErVSp2IshCgZD+EqGRBbpb+iISQh8rqhk9KAjGvk5twpKRNPqirZGa\ngCP5OgE0jQSLLM8ZDma2iRyJIWCCjuB2XxuynIoU3kL0zgk6iC9ikNAjl7UOap7d\nnSTdhjHBEP8lWyJYzuU5S0QheqXRivlVG5M2xmQUK6eLXQ==\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIFqzCCA5OgAwIBAgIJAKlV/0AoVwl4MA0GCSqGSIb3DQEBCwUAMGExCzAJBgNV\nBAYTAlNHMR8wHQYDVQQKDBZGb29kIERpZ2VzdGVyIFBsYXRmb3JtMREwDwYDVQQL\nDAhUZXN0IFBLSTEeMBwGA1UEAwwVRkRQIFRlc3QgUm9vdCBDQSAyMDI2MB4XDTI2\nMDkxNzEyMDIzN1oXDTM2MDkxNDEyMDIzN1owYTELMAkGA1UEBhMCU0cxHzAdBgNV\nBAoMFkZvb2QgRGlnZXN0ZXIgUGxhdGZvcm0xETAPBgNVBAsMCFRlc3QgUEtJMR4w\nHAYDVQQDDBVGRFAgVGVzdCBSb290IENBIDIwMjYwggIiMA0GCSqGSIb3DQEBAQUA\nA4ICDwAwggIKAoICAQC15tvhjTQ+4PS3LzlF+lNNohA3BQX+IzjGs0yCaxWiRznY\nVrBdlX34n/zF+N2Isv5Iasg/98XtqJOjjf/h7ORsYsJpiR5hyXeempJntouIZoAe\nJ6e8tqGQt3v2WYctWt1aJliXBsXkIcetWwXk4ztG0cEL6qOF/qkQK6x7qasP42lN\nEih91N+7AqAaNrrJryupCLt6d/nmAYvSmnSVhrb6Q6UlDL91gWudJj6/aftUBKOR\nHeboy0kJ38FJlHcANoWHyTKuUR/7IpLinMvoT7XhRbQ4qCEpLqb8UIfmO1+AqAma\nPzawSpZIfGnAYGlC/HdMT6Q0A4Hd9jQr4EhztSDZqI1dMP16mKfc9w6q75fFM4Qw\np2ACssdyrzcSYlY2nIp7De/Mu4nePLNt4BSrUdt/l7zAZEywxGjh0IW/DoCoahuU\nLCHg/p90hrByqfGaj4ubRFju/9V3080A/Det2T5ztv14HOLuXnULjQz5QWmgajpf\nn035kSbH688/FIeRTUOvr3fiVGMXydTqqwHVCM2Cr44NmykrxSE2F95v7rz7SI6p\nHrUPZGN7HS8Vpe4GXAEv0zkHwks+Sw3GVZOiK4UfcCGyBPFBIVjiRJfElaEryd+9\nz7xwv/ew+M5RfgUvvP1MTBALI8+aHN6c5hJDu0EO69J0t/Xr9Fdl4cc6dmuZGwID\nAQABo2YwZDAdBgNVHQ4EFgQUoxUpFPKf/B5HrKEC+NYa+4WtnMowHwYDVR0jBBgw\nFoAUoxUpFPKf/B5HrKEC+NYa+4WtnMowEgYDVR0TAQH/BAgwBgEB/wIBATAOBgNV\nHQ8BAf8EBAMCAQYwDQYJKoZIhvcNAQELBQADggIBAJzDqfPfkhYV3G3EW0CoTLZM\nut0x1UejtFMISW/qir/Olt3g5R8a9LHGOll9yucBpcFeKvfNZH4vPwx7JWHQaU7W\n9YqOkToQBFkdDqgSlRXwx2cmkkyy//e/MrADtWk3vcDnzI2kfx437G99GqdQLRiX\n/Ge9/ItKi4LpPO04F7OCZdZOLS1FSWLgkemAkbcUogA+XwvjxKT16JCdVeytVpsg\nKcRITrimUvXUa8kZ7xTDROWSCnAewh8BqbDfHu5aaJSj7NYXDmLGalXsukS3a4qF\ncvmmjHkXB5R8ZbG27y3JX0WK9I1DJy8+0n0jupoN6qirjuIrTcLKDYDfx6Tgf0Jv\nMntPnrtSv/z1c+3cstdeB0mSef9YSm0krrVVBlmtFzvola/UB0pqjcIYfGwX2po0\n7rx38TDY++DVz/BwKr81d9VuhpzHj3W/axd3zWMZ+zM79YvEgvfFWZ30ZCOJ85+w\n8KxkTLOGTQQPRHbKOkXmaMcVjKLrpl+uypW3FFGBPkO1sEVqHtmxot9Gdt1gXUD/\nUc4ViUY4DnI18ZRzHAlP5QMcENByQY08pb2xwbbKpD7D/5K8mB4/pIhfBaafhsdU\nHldKVXgM0qjNXbUn+PY8t/6I81wA6kAVhWXdAl4q+YPYo7NIjB+IgF/26vz25lwr\n3a9RIty/dJd5mbXC3qgn\n-----END CERTIFICATE-----\n",
+        "effectiveDate": "2026-10-22",
+        "expiryDate": "2027-10-22"
+      },
+      "requestId": "03623380-366f-4bc7-8e13-ea6c61a9cd50"
+    },
+    {
+      "label": "rotation-rest-only-sync",
+      "at": "2026-10-22T11:19:14.625Z",
+      "host": "device-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/sync",
+      "status": 200,
+      "body": {
+        "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "assignment": null,
+        "device": {
+          "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+          "alias": null,
+          "serialNumber": "csrprobe-8c4d3f19662ff1c3",
+          "model": "BNX-100",
+          "firmwareVersion": null
+        },
+        "license": null,
+        "deviceUsers": [],
+        "configuration": null,
+        "operationalStatus": {
+          "lifecycleStatus": "Onboarded",
+          "operationalStatus": "ACTIVE",
+          "connectivity": "ONLINE",
+          "lastHeartbeatAt": "2026-10-22T11:19:01.375Z",
+          "syncIntervalSeconds": 300
+        },
+        "snapshotAt": "2026-10-22T11:19:14.356Z",
+        "lastSyncTime": null,
+        "etag": "1c92a7616f7ea93b51f42815f19ddb41c3040eb1d4e116b1add920157917546d"
+      },
+      "requestId": "5349df9d-b02a-453e-ba6a-3610afb2cf54"
+    },
+    {
+      "label": "old-valid-after-rest-only",
+      "at": "2026-10-22T11:19:18.675Z",
+      "host": "device-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/sync",
+      "status": 200,
+      "body": {
+        "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "assignment": null,
+        "device": {
+          "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+          "alias": null,
+          "serialNumber": "csrprobe-8c4d3f19662ff1c3",
+          "model": "BNX-100",
+          "firmwareVersion": null
+        },
+        "license": null,
+        "deviceUsers": [],
+        "configuration": null,
+        "operationalStatus": {
+          "lifecycleStatus": "Onboarded",
+          "operationalStatus": "ACTIVE",
+          "connectivity": "ONLINE",
+          "lastHeartbeatAt": "2026-10-22T11:19:01.375Z",
+          "syncIntervalSeconds": 300
+        },
+        "snapshotAt": "2026-10-22T11:19:18.391Z",
+        "lastSyncTime": null,
+        "etag": "1c92a7616f7ea93b51f42815f19ddb41c3040eb1d4e116b1add920157917546d"
+      },
+      "requestId": "4e03856f-20cf-4e26-ac17-e7e307346809"
+    },
+    {
+      "label": "old-revoked-after-rest-dual",
+      "at": "2026-10-22T11:19:26.042Z",
+      "host": "device-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/sync",
+      "status": 401,
+      "body": {
+        "error": {
+          "code": "UNAUTHENTICATED",
+          "message": "Authentication is required or the credential is invalid",
+          "requestId": "888ffb42-6c0b-4d7f-8b5a-0fa51ab9768d"
+        }
+      },
+      "requestId": "888ffb42-6c0b-4d7f-8b5a-0fa51ab9768d"
+    },
+    {
+      "label": "latest-rest-valid-control",
+      "at": "2026-10-22T11:22:38.258Z",
+      "host": "device-api.bio-nexa.com",
+      "method": "POST",
+      "path": "/api/v1/device/sync",
+      "status": 200,
+      "body": {
+        "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "assignment": null,
+        "device": {
+          "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+          "alias": null,
+          "serialNumber": "csrprobe-8c4d3f19662ff1c3",
+          "model": "BNX-100",
+          "firmwareVersion": null
+        },
+        "license": null,
+        "deviceUsers": [],
+        "configuration": null,
+        "operationalStatus": {
+          "lifecycleStatus": "Onboarded",
+          "operationalStatus": "ACTIVE",
+          "connectivity": "ONLINE",
+          "lastHeartbeatAt": "2026-10-22T11:19:22.875Z",
+          "syncIntervalSeconds": 300
+        },
+        "snapshotAt": "2026-10-22T11:22:37.936Z",
+        "lastSyncTime": null,
+        "etag": "1c92a7616f7ea93b51f42815f19ddb41c3040eb1d4e116b1add920157917546d"
+      },
+      "requestId": "5517248c-985d-4ef0-9668-aa2aa2f13463"
+    }
+  ],
+  "database": [
+    {
+      "action": "observe",
+      "at": "2026-10-22T11:16:53.772Z",
+      "file": "001-observe-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "observe",
+      "at": "2026-10-22T11:18:21.934Z",
+      "file": "002-observe-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "observe",
+      "at": "2026-10-22T11:18:33.926Z",
+      "file": "003-observe-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "observe",
+      "at": "2026-10-22T11:18:41.264Z",
+      "file": "004-observe-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "observe",
+      "at": "2026-10-22T11:18:48.156Z",
+      "file": "005-observe-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "observe",
+      "at": "2026-10-22T11:18:55.936Z",
+      "file": "006-observe-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "observe",
+      "at": "2026-10-22T11:19:03.904Z",
+      "file": "007-observe-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "observe",
+      "at": "2026-10-22T11:19:10.566Z",
+      "file": "008-observe-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "observe",
+      "at": "2026-10-22T11:19:18.110Z",
+      "file": "009-observe-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "observe",
+      "at": "2026-10-22T11:19:25.530Z",
+      "file": "010-observe-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "observe",
+      "at": "2026-10-22T11:22:29.183Z",
+      "file": "011-observe-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "observe",
+      "at": "2026-10-22T11:22:50.549Z",
+      "file": "012-observe-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "cleanup",
+      "at": "2026-10-22T11:23:43.925Z",
+      "file": "013-cleanup-result.json",
+      "result": "PASS"
+    },
+    {
+      "action": "audit-empty",
+      "at": "2026-10-22T11:23:45.765Z",
+      "file": "014-audit-empty-result.json",
+      "result": "PASS"
+    }
+  ],
+  "certificates": [
+    {
+      "label": "initial",
+      "id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+      "fingerprint": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+      "publicKeyFingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360",
+      "subject": "CN=4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+      "san": "URI:urn:fdp:device:4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+      "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+      "notBefore": "Oct 22 11:13:16 2026 GMT",
+      "notAfter": "Oct 22 11:18:16 2027 GMT",
+      "digitalSignature": true,
+      "clientAuth": true,
+      "chainFingerprints": [
+        "ca597334fb7de02b1e9071e36ae244edf81e6fe6a811473b38efc57064a63c39",
+        "8524e43920f2ef7bf88fbcf5ac274b580c82f8c03f3cff5e31aa6c7cbe313952"
+      ]
+    },
+    {
+      "label": "rotation-mqtt",
+      "id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+      "fingerprint": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+      "publicKeyFingerprint": "6b7aba3c3ec98b94f1c37e335d6bb64b63f15a493d8903f424cfa1032a9e9720",
+      "subject": "CN=4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+      "san": "URI:urn:fdp:device:4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+      "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+      "notBefore": "Oct 22 11:13:57 2026 GMT",
+      "notAfter": "Oct 22 11:18:57 2027 GMT",
+      "digitalSignature": true,
+      "clientAuth": true,
+      "chainFingerprints": [
+        "ca597334fb7de02b1e9071e36ae244edf81e6fe6a811473b38efc57064a63c39",
+        "8524e43920f2ef7bf88fbcf5ac274b580c82f8c03f3cff5e31aa6c7cbe313952"
+      ]
+    },
+    {
+      "label": "rotation-rest",
+      "id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+      "fingerprint": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+      "publicKeyFingerprint": "40e0bf724aca653cf9ccb3eab47fe7a19efb8843bc16ffd7b4443697006c2106",
+      "subject": "CN=4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+      "san": "URI:urn:fdp:device:4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+      "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+      "notBefore": "Oct 22 11:14:11 2026 GMT",
+      "notAfter": "Oct 22 11:19:11 2027 GMT",
+      "digitalSignature": true,
+      "clientAuth": true,
+      "chainFingerprints": [
+        "ca597334fb7de02b1e9071e36ae244edf81e6fe6a811473b38efc57064a63c39",
+        "8524e43920f2ef7bf88fbcf5ac274b580c82f8c03f3cff5e31aa6c7cbe313952"
+      ]
+    }
+  ],
+  "rotations": [
+    {
+      "order": "MQTT_THEN_REST",
+      "oldId": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+      "startedAt": "2026-10-22T11:18:55.936Z",
+      "newId": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+      "single": {
+        "devices": [
+          {
+            "id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "serial_number": "csrprobe-8c4d3f19662ff1c3",
+            "customer_id": null,
+            "site_id": null,
+            "lifecycle_status": "Onboarded"
+          }
+        ],
+        "outsideFingerprints": [
+          {
+            "entity": "devices",
+            "count": "3",
+            "digest": "c3a1a6d27363a867b4c0a62fd6c8f271"
+          },
+          {
+            "entity": "certificates",
+            "count": "4",
+            "digest": "8ce5fb1cb03efeac923b40027fe27bf8"
+          }
+        ],
+        "certificates": [
+          {
+            "id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "status": "ACTIVE",
+            "fingerprint": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "public_key_fingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360",
+            "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+            "serial_number": "038DA5E02EB113C89D2F2F920B89F06FCC344117",
+            "mqtt_verified_at": "2026-10-22T11:18:40.486Z",
+            "rest_verified_at": "2026-10-22T11:18:53.218Z",
+            "claimed_at": "2026-10-22T11:18:40.486Z",
+            "rotated_from_id": null,
+            "rotation_deadline_at": null,
+            "rotation_confirmed_at": null,
+            "revoked_at": null,
+            "iot_deactivation_pending": false,
+            "iot_deactivation_attempts": 0,
+            "iot_deactivated_at": null,
+            "package_destroyed": true
+          },
+          {
+            "id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "status": "ACTIVE",
+            "fingerprint": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "public_key_fingerprint": "6b7aba3c3ec98b94f1c37e335d6bb64b63f15a493d8903f424cfa1032a9e9720",
+            "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+            "serial_number": "2432C5FC349D253792C5D0348066EC51C7F9412B",
+            "mqtt_verified_at": "2026-10-22T11:19:03.024Z",
+            "rest_verified_at": null,
+            "claimed_at": "2026-10-22T11:18:59.258Z",
+            "rotated_from_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "rotation_deadline_at": "2026-10-23T11:18:56.737Z",
+            "rotation_confirmed_at": null,
+            "revoked_at": null,
+            "iot_deactivation_pending": false,
+            "iot_deactivation_attempts": 0,
+            "iot_deactivated_at": null,
+            "package_destroyed": true
+          }
+        ],
+        "requests": [
+          {
+            "id": "8549d105-f537-42eb-8b4c-653262e1d302",
+            "serial_number": "csrprobe-8c4d3f19662ff1c3",
+            "status": "APPROVED",
+            "reviewed_by": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+            "reviewed_at": "2026-10-22T11:17:22.144Z",
+            "version": 2,
+            "onboarding_deadline_at": "2026-10-23T11:18:18.373Z"
+          }
+        ],
+        "jobs": [
+          {
+            "id": "9064298b-c764-4dfa-9d39-8ec1b0dcab95",
+            "status": "COMPLETED",
+            "attempts": 1,
+            "issued_certificate_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "completed_at": "2026-10-22T11:18:18.691Z"
+          }
+        ],
+        "receipts": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "topic_type": "heartbeat",
+            "seq": 1,
+            "payload_hash": "858e9d2608715542c4b585a52c2f5e619dd80f3413461615ed9e58b7378c04f6",
+            "result": "PROCESSED",
+            "processed_at": "2026-10-22T11:18:39.605Z"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "topic_type": "heartbeat",
+            "seq": 2,
+            "payload_hash": "da05c30d39881d50dd211c9852f0c4ef25104626dfb6217606a35bf51daae6c5",
+            "result": "PROCESSED",
+            "processed_at": "2026-10-22T11:19:02.724Z"
+          }
+        ],
+        "latest": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "last_heartbeat_at": "2026-10-22T11:19:01.375Z",
+            "connectivity": "ONLINE"
+          }
+        ],
+        "history": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "axis": "lifecycle",
+            "from_status": "PendingOnboarding",
+            "to_status": "OnboardingApproved",
+            "actor_type": "ADMIN",
+            "actor_id": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+            "reason": null,
+            "created_at": "2026-10-22T11:17:22.667Z"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "axis": "lifecycle",
+            "from_status": "OnboardingApproved",
+            "to_status": "Onboarded",
+            "actor_type": "SYSTEM",
+            "actor_id": "system:onboarding-completion",
+            "reason": null,
+            "created_at": "2026-10-22T11:18:41.168Z"
+          }
+        ],
+        "publicKeys": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "fingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "fingerprint": "6b7aba3c3ec98b94f1c37e335d6bb64b63f15a493d8903f424cfa1032a9e9720"
+          }
+        ],
+        "rotationRequests": [],
+        "outbox": [],
+        "nonceCount": 7,
+        "users": [],
+        "audits": [
+          {
+            "id": "575156b2-f73a-44b8-8516-f56ca72ebfe1",
+            "actor_id": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+            "object_type": "onboarding_request",
+            "object_id": "8549d105-f537-42eb-8b4c-653262e1d302",
+            "action": "onboarding.request.approve",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:17:22.807Z"
+          },
+          {
+            "id": "f2066e8f-373e-4e3f-9188-6293198eaa97",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "action": "CERT_PACKAGE_STORE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:18.480Z"
+          },
+          {
+            "id": "863cb97d-e2ce-480f-841c-b6de8f680d48",
+            "actor_id": null,
+            "object_type": "device",
+            "object_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "action": "onboarding.provision",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:18.632Z"
+          },
+          {
+            "id": "ee15d01c-4ed6-483b-b91c-162b6f0e828c",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:19.383Z"
+          },
+          {
+            "id": "ce0aaa19-d7f3-479b-9f4d-a9ac56ceb190",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:19.523Z"
+          },
+          {
+            "id": "b8c6c490-3492-48dc-a553-b6f70f5795ee",
+            "actor_id": "system:onboarding-completion",
+            "object_type": "device",
+            "object_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "action": "device.lifecycle.OnboardingApproved_to_Onboarded",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:41.689Z"
+          },
+          {
+            "id": "e6dabec5-fe6d-4eec-a97f-880e3963d716",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_ROTATION_START",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:58.802Z"
+          },
+          {
+            "id": "a14add24-d027-4ca2-8c99-322ace35cb6f",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_PACKAGE_STORE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:59.161Z"
+          },
+          {
+            "id": "79618b73-03d9-468c-996a-0195968d753f",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:59.319Z"
+          },
+          {
+            "id": "c1454154-f6bd-48cd-9766-fcfc53ba1fc0",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:59.399Z"
+          }
+        ]
+      },
+      "oldIotSingle": "ACTIVE",
+      "dual": {
+        "devices": [
+          {
+            "id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "serial_number": "csrprobe-8c4d3f19662ff1c3",
+            "customer_id": null,
+            "site_id": null,
+            "lifecycle_status": "Onboarded"
+          }
+        ],
+        "outsideFingerprints": [
+          {
+            "entity": "devices",
+            "count": "3",
+            "digest": "c3a1a6d27363a867b4c0a62fd6c8f271"
+          },
+          {
+            "entity": "certificates",
+            "count": "4",
+            "digest": "8ce5fb1cb03efeac923b40027fe27bf8"
+          }
+        ],
+        "certificates": [
+          {
+            "id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "status": "REVOKED",
+            "fingerprint": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "public_key_fingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360",
+            "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+            "serial_number": "038DA5E02EB113C89D2F2F920B89F06FCC344117",
+            "mqtt_verified_at": "2026-10-22T11:18:40.486Z",
+            "rest_verified_at": "2026-10-22T11:18:53.218Z",
+            "claimed_at": "2026-10-22T11:18:40.486Z",
+            "rotated_from_id": null,
+            "rotation_deadline_at": null,
+            "rotation_confirmed_at": null,
+            "revoked_at": "2026-10-22T11:19:07.965Z",
+            "iot_deactivation_pending": true,
+            "iot_deactivation_attempts": 0,
+            "iot_deactivated_at": null,
+            "package_destroyed": true
+          },
+          {
+            "id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "status": "ACTIVE",
+            "fingerprint": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "public_key_fingerprint": "6b7aba3c3ec98b94f1c37e335d6bb64b63f15a493d8903f424cfa1032a9e9720",
+            "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+            "serial_number": "2432C5FC349D253792C5D0348066EC51C7F9412B",
+            "mqtt_verified_at": "2026-10-22T11:19:03.024Z",
+            "rest_verified_at": "2026-10-22T11:19:07.965Z",
+            "claimed_at": "2026-10-22T11:18:59.258Z",
+            "rotated_from_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "rotation_deadline_at": "2026-10-23T11:18:56.737Z",
+            "rotation_confirmed_at": "2026-10-22T11:19:07.965Z",
+            "revoked_at": null,
+            "iot_deactivation_pending": false,
+            "iot_deactivation_attempts": 0,
+            "iot_deactivated_at": null,
+            "package_destroyed": true
+          }
+        ],
+        "requests": [
+          {
+            "id": "8549d105-f537-42eb-8b4c-653262e1d302",
+            "serial_number": "csrprobe-8c4d3f19662ff1c3",
+            "status": "APPROVED",
+            "reviewed_by": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+            "reviewed_at": "2026-10-22T11:17:22.144Z",
+            "version": 2,
+            "onboarding_deadline_at": "2026-10-23T11:18:18.373Z"
+          }
+        ],
+        "jobs": [
+          {
+            "id": "9064298b-c764-4dfa-9d39-8ec1b0dcab95",
+            "status": "COMPLETED",
+            "attempts": 1,
+            "issued_certificate_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "completed_at": "2026-10-22T11:18:18.691Z"
+          }
+        ],
+        "receipts": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "topic_type": "heartbeat",
+            "seq": 1,
+            "payload_hash": "858e9d2608715542c4b585a52c2f5e619dd80f3413461615ed9e58b7378c04f6",
+            "result": "PROCESSED",
+            "processed_at": "2026-10-22T11:18:39.605Z"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "topic_type": "heartbeat",
+            "seq": 2,
+            "payload_hash": "da05c30d39881d50dd211c9852f0c4ef25104626dfb6217606a35bf51daae6c5",
+            "result": "PROCESSED",
+            "processed_at": "2026-10-22T11:19:02.724Z"
+          }
+        ],
+        "latest": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "last_heartbeat_at": "2026-10-22T11:19:01.375Z",
+            "connectivity": "ONLINE"
+          }
+        ],
+        "history": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "axis": "lifecycle",
+            "from_status": "PendingOnboarding",
+            "to_status": "OnboardingApproved",
+            "actor_type": "ADMIN",
+            "actor_id": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+            "reason": null,
+            "created_at": "2026-10-22T11:17:22.667Z"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "axis": "lifecycle",
+            "from_status": "OnboardingApproved",
+            "to_status": "Onboarded",
+            "actor_type": "SYSTEM",
+            "actor_id": "system:onboarding-completion",
+            "reason": null,
+            "created_at": "2026-10-22T11:18:41.168Z"
+          }
+        ],
+        "publicKeys": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "fingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "fingerprint": "6b7aba3c3ec98b94f1c37e335d6bb64b63f15a493d8903f424cfa1032a9e9720"
+          }
+        ],
+        "rotationRequests": [],
+        "outbox": [],
+        "nonceCount": 7,
+        "users": [],
+        "audits": [
+          {
+            "id": "575156b2-f73a-44b8-8516-f56ca72ebfe1",
+            "actor_id": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+            "object_type": "onboarding_request",
+            "object_id": "8549d105-f537-42eb-8b4c-653262e1d302",
+            "action": "onboarding.request.approve",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:17:22.807Z"
+          },
+          {
+            "id": "f2066e8f-373e-4e3f-9188-6293198eaa97",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "action": "CERT_PACKAGE_STORE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:18.480Z"
+          },
+          {
+            "id": "863cb97d-e2ce-480f-841c-b6de8f680d48",
+            "actor_id": null,
+            "object_type": "device",
+            "object_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "action": "onboarding.provision",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:18.632Z"
+          },
+          {
+            "id": "ee15d01c-4ed6-483b-b91c-162b6f0e828c",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:19.383Z"
+          },
+          {
+            "id": "ce0aaa19-d7f3-479b-9f4d-a9ac56ceb190",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:19.523Z"
+          },
+          {
+            "id": "b8c6c490-3492-48dc-a553-b6f70f5795ee",
+            "actor_id": "system:onboarding-completion",
+            "object_type": "device",
+            "object_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "action": "device.lifecycle.OnboardingApproved_to_Onboarded",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:41.689Z"
+          },
+          {
+            "id": "e6dabec5-fe6d-4eec-a97f-880e3963d716",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_ROTATION_START",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:58.802Z"
+          },
+          {
+            "id": "a14add24-d027-4ca2-8c99-322ace35cb6f",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_PACKAGE_STORE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:59.161Z"
+          },
+          {
+            "id": "79618b73-03d9-468c-996a-0195968d753f",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:59.319Z"
+          },
+          {
+            "id": "c1454154-f6bd-48cd-9766-fcfc53ba1fc0",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:59.399Z"
+          },
+          {
+            "id": "ced9b286-bd85-44fa-8c8f-ad6cc934e51f",
+            "actor_id": "system:certificate-rotation",
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_ROTATION_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:19:08.138Z"
+          }
+        ]
+      },
+      "completedAt": "2026-10-22T11:19:11.039Z",
+      "oldIotStatus": "INACTIVE",
+      "oldMqttOutcome": "CLOSED_BEFORE_CONNACK",
+      "adjacentNewMqttControl": true,
+      "oldMqttDenial": "NO_CONNACK_WITH_INACTIVE_CERT_AND_ADJACENT_VALID_CONTROL"
+    },
+    {
+      "order": "REST_THEN_MQTT",
+      "oldId": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+      "startedAt": "2026-10-22T11:19:11.040Z",
+      "newId": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+      "single": {
+        "devices": [
+          {
+            "id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "serial_number": "csrprobe-8c4d3f19662ff1c3",
+            "customer_id": null,
+            "site_id": null,
+            "lifecycle_status": "Onboarded"
+          }
+        ],
+        "outsideFingerprints": [
+          {
+            "entity": "devices",
+            "count": "3",
+            "digest": "c3a1a6d27363a867b4c0a62fd6c8f271"
+          },
+          {
+            "entity": "certificates",
+            "count": "4",
+            "digest": "8ce5fb1cb03efeac923b40027fe27bf8"
+          }
+        ],
+        "certificates": [
+          {
+            "id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "status": "REVOKED",
+            "fingerprint": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "public_key_fingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360",
+            "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+            "serial_number": "038DA5E02EB113C89D2F2F920B89F06FCC344117",
+            "mqtt_verified_at": "2026-10-22T11:18:40.486Z",
+            "rest_verified_at": "2026-10-22T11:18:53.218Z",
+            "claimed_at": "2026-10-22T11:18:40.486Z",
+            "rotated_from_id": null,
+            "rotation_deadline_at": null,
+            "rotation_confirmed_at": null,
+            "revoked_at": "2026-10-22T11:19:07.965Z",
+            "iot_deactivation_pending": true,
+            "iot_deactivation_attempts": 0,
+            "iot_deactivated_at": null,
+            "package_destroyed": true
+          },
+          {
+            "id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "status": "ACTIVE",
+            "fingerprint": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "public_key_fingerprint": "6b7aba3c3ec98b94f1c37e335d6bb64b63f15a493d8903f424cfa1032a9e9720",
+            "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+            "serial_number": "2432C5FC349D253792C5D0348066EC51C7F9412B",
+            "mqtt_verified_at": "2026-10-22T11:19:03.024Z",
+            "rest_verified_at": "2026-10-22T11:19:07.965Z",
+            "claimed_at": "2026-10-22T11:18:59.258Z",
+            "rotated_from_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "rotation_deadline_at": "2026-10-23T11:18:56.737Z",
+            "rotation_confirmed_at": "2026-10-22T11:19:07.965Z",
+            "revoked_at": null,
+            "iot_deactivation_pending": false,
+            "iot_deactivation_attempts": 0,
+            "iot_deactivated_at": null,
+            "package_destroyed": true
+          },
+          {
+            "id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "status": "ACTIVE",
+            "fingerprint": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "public_key_fingerprint": "40e0bf724aca653cf9ccb3eab47fe7a19efb8843bc16ffd7b4443697006c2106",
+            "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+            "serial_number": "45C55E4B1053E52A0C5D662676E61E41F67DCBC3",
+            "mqtt_verified_at": null,
+            "rest_verified_at": "2026-10-22T11:19:14.379Z",
+            "claimed_at": "2026-10-22T11:19:12.121Z",
+            "rotated_from_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "rotation_deadline_at": "2026-10-23T11:19:11.384Z",
+            "rotation_confirmed_at": null,
+            "revoked_at": null,
+            "iot_deactivation_pending": false,
+            "iot_deactivation_attempts": 0,
+            "iot_deactivated_at": null,
+            "package_destroyed": true
+          }
+        ],
+        "requests": [
+          {
+            "id": "8549d105-f537-42eb-8b4c-653262e1d302",
+            "serial_number": "csrprobe-8c4d3f19662ff1c3",
+            "status": "APPROVED",
+            "reviewed_by": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+            "reviewed_at": "2026-10-22T11:17:22.144Z",
+            "version": 2,
+            "onboarding_deadline_at": "2026-10-23T11:18:18.373Z"
+          }
+        ],
+        "jobs": [
+          {
+            "id": "9064298b-c764-4dfa-9d39-8ec1b0dcab95",
+            "status": "COMPLETED",
+            "attempts": 1,
+            "issued_certificate_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "completed_at": "2026-10-22T11:18:18.691Z"
+          }
+        ],
+        "receipts": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "topic_type": "heartbeat",
+            "seq": 1,
+            "payload_hash": "858e9d2608715542c4b585a52c2f5e619dd80f3413461615ed9e58b7378c04f6",
+            "result": "PROCESSED",
+            "processed_at": "2026-10-22T11:18:39.605Z"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "topic_type": "heartbeat",
+            "seq": 2,
+            "payload_hash": "da05c30d39881d50dd211c9852f0c4ef25104626dfb6217606a35bf51daae6c5",
+            "result": "PROCESSED",
+            "processed_at": "2026-10-22T11:19:02.724Z"
+          }
+        ],
+        "latest": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "last_heartbeat_at": "2026-10-22T11:19:01.375Z",
+            "connectivity": "ONLINE"
+          }
+        ],
+        "history": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "axis": "lifecycle",
+            "from_status": "PendingOnboarding",
+            "to_status": "OnboardingApproved",
+            "actor_type": "ADMIN",
+            "actor_id": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+            "reason": null,
+            "created_at": "2026-10-22T11:17:22.667Z"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "axis": "lifecycle",
+            "from_status": "OnboardingApproved",
+            "to_status": "Onboarded",
+            "actor_type": "SYSTEM",
+            "actor_id": "system:onboarding-completion",
+            "reason": null,
+            "created_at": "2026-10-22T11:18:41.168Z"
+          }
+        ],
+        "publicKeys": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "fingerprint": "40e0bf724aca653cf9ccb3eab47fe7a19efb8843bc16ffd7b4443697006c2106"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "fingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "fingerprint": "6b7aba3c3ec98b94f1c37e335d6bb64b63f15a493d8903f424cfa1032a9e9720"
+          }
+        ],
+        "rotationRequests": [],
+        "outbox": [],
+        "nonceCount": 7,
+        "users": [],
+        "audits": [
+          {
+            "id": "575156b2-f73a-44b8-8516-f56ca72ebfe1",
+            "actor_id": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+            "object_type": "onboarding_request",
+            "object_id": "8549d105-f537-42eb-8b4c-653262e1d302",
+            "action": "onboarding.request.approve",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:17:22.807Z"
+          },
+          {
+            "id": "f2066e8f-373e-4e3f-9188-6293198eaa97",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "action": "CERT_PACKAGE_STORE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:18.480Z"
+          },
+          {
+            "id": "863cb97d-e2ce-480f-841c-b6de8f680d48",
+            "actor_id": null,
+            "object_type": "device",
+            "object_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "action": "onboarding.provision",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:18.632Z"
+          },
+          {
+            "id": "ee15d01c-4ed6-483b-b91c-162b6f0e828c",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:19.383Z"
+          },
+          {
+            "id": "ce0aaa19-d7f3-479b-9f4d-a9ac56ceb190",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:19.523Z"
+          },
+          {
+            "id": "b8c6c490-3492-48dc-a553-b6f70f5795ee",
+            "actor_id": "system:onboarding-completion",
+            "object_type": "device",
+            "object_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "action": "device.lifecycle.OnboardingApproved_to_Onboarded",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:41.689Z"
+          },
+          {
+            "id": "e6dabec5-fe6d-4eec-a97f-880e3963d716",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_ROTATION_START",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:58.802Z"
+          },
+          {
+            "id": "a14add24-d027-4ca2-8c99-322ace35cb6f",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_PACKAGE_STORE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:59.161Z"
+          },
+          {
+            "id": "79618b73-03d9-468c-996a-0195968d753f",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:59.319Z"
+          },
+          {
+            "id": "c1454154-f6bd-48cd-9766-fcfc53ba1fc0",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:59.399Z"
+          },
+          {
+            "id": "ced9b286-bd85-44fa-8c8f-ad6cc934e51f",
+            "actor_id": "system:certificate-rotation",
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_ROTATION_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:19:08.138Z"
+          },
+          {
+            "id": "f98e31bf-25b4-475b-83e3-00a4e66ef7ae",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "action": "CERT_ROTATION_START",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:19:12.055Z"
+          },
+          {
+            "id": "398c4d57-3ca2-4c99-983d-36c8cfdfe113",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "action": "CERT_PACKAGE_STORE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:19:12.106Z"
+          },
+          {
+            "id": "e7c5777f-0a8e-4642-ab60-77c1216159e2",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:19:12.138Z"
+          },
+          {
+            "id": "2861c176-2736-437d-95e0-58eb9fd9516e",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:19:12.164Z"
+          }
+        ]
+      },
+      "oldIotSingle": "ACTIVE",
+      "dual": {
+        "devices": [
+          {
+            "id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "serial_number": "csrprobe-8c4d3f19662ff1c3",
+            "customer_id": null,
+            "site_id": null,
+            "lifecycle_status": "Onboarded"
+          }
+        ],
+        "outsideFingerprints": [
+          {
+            "entity": "devices",
+            "count": "3",
+            "digest": "c3a1a6d27363a867b4c0a62fd6c8f271"
+          },
+          {
+            "entity": "certificates",
+            "count": "4",
+            "digest": "8ce5fb1cb03efeac923b40027fe27bf8"
+          }
+        ],
+        "certificates": [
+          {
+            "id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "status": "REVOKED",
+            "fingerprint": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "public_key_fingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360",
+            "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+            "serial_number": "038DA5E02EB113C89D2F2F920B89F06FCC344117",
+            "mqtt_verified_at": "2026-10-22T11:18:40.486Z",
+            "rest_verified_at": "2026-10-22T11:18:53.218Z",
+            "claimed_at": "2026-10-22T11:18:40.486Z",
+            "rotated_from_id": null,
+            "rotation_deadline_at": null,
+            "rotation_confirmed_at": null,
+            "revoked_at": "2026-10-22T11:19:07.965Z",
+            "iot_deactivation_pending": true,
+            "iot_deactivation_attempts": 0,
+            "iot_deactivated_at": null,
+            "package_destroyed": true
+          },
+          {
+            "id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "status": "REVOKED",
+            "fingerprint": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "public_key_fingerprint": "6b7aba3c3ec98b94f1c37e335d6bb64b63f15a493d8903f424cfa1032a9e9720",
+            "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+            "serial_number": "2432C5FC349D253792C5D0348066EC51C7F9412B",
+            "mqtt_verified_at": "2026-10-22T11:19:03.024Z",
+            "rest_verified_at": "2026-10-22T11:19:07.965Z",
+            "claimed_at": "2026-10-22T11:18:59.258Z",
+            "rotated_from_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "rotation_deadline_at": "2026-10-23T11:18:56.737Z",
+            "rotation_confirmed_at": "2026-10-22T11:19:07.965Z",
+            "revoked_at": "2026-10-22T11:19:23.569Z",
+            "iot_deactivation_pending": true,
+            "iot_deactivation_attempts": 0,
+            "iot_deactivated_at": null,
+            "package_destroyed": true
+          },
+          {
+            "id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "status": "ACTIVE",
+            "fingerprint": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "public_key_fingerprint": "40e0bf724aca653cf9ccb3eab47fe7a19efb8843bc16ffd7b4443697006c2106",
+            "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+            "serial_number": "45C55E4B1053E52A0C5D662676E61E41F67DCBC3",
+            "mqtt_verified_at": "2026-10-22T11:19:23.569Z",
+            "rest_verified_at": "2026-10-22T11:19:14.379Z",
+            "claimed_at": "2026-10-22T11:19:12.121Z",
+            "rotated_from_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "rotation_deadline_at": "2026-10-23T11:19:11.384Z",
+            "rotation_confirmed_at": "2026-10-22T11:19:23.569Z",
+            "revoked_at": null,
+            "iot_deactivation_pending": false,
+            "iot_deactivation_attempts": 0,
+            "iot_deactivated_at": null,
+            "package_destroyed": true
+          }
+        ],
+        "requests": [
+          {
+            "id": "8549d105-f537-42eb-8b4c-653262e1d302",
+            "serial_number": "csrprobe-8c4d3f19662ff1c3",
+            "status": "APPROVED",
+            "reviewed_by": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+            "reviewed_at": "2026-10-22T11:17:22.144Z",
+            "version": 2,
+            "onboarding_deadline_at": "2026-10-23T11:18:18.373Z"
+          }
+        ],
+        "jobs": [
+          {
+            "id": "9064298b-c764-4dfa-9d39-8ec1b0dcab95",
+            "status": "COMPLETED",
+            "attempts": 1,
+            "issued_certificate_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "completed_at": "2026-10-22T11:18:18.691Z"
+          }
+        ],
+        "receipts": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "topic_type": "heartbeat",
+            "seq": 1,
+            "payload_hash": "858e9d2608715542c4b585a52c2f5e619dd80f3413461615ed9e58b7378c04f6",
+            "result": "PROCESSED",
+            "processed_at": "2026-10-22T11:18:39.605Z"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "topic_type": "heartbeat",
+            "seq": 2,
+            "payload_hash": "da05c30d39881d50dd211c9852f0c4ef25104626dfb6217606a35bf51daae6c5",
+            "result": "PROCESSED",
+            "processed_at": "2026-10-22T11:19:02.724Z"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "topic_type": "heartbeat",
+            "seq": 3,
+            "payload_hash": "f5088c5a012b24212d886e1383945eedd2509d0efe78bd64cd0649ac4573199d",
+            "result": "PROCESSED",
+            "processed_at": "2026-10-22T11:19:23.487Z"
+          }
+        ],
+        "latest": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "last_heartbeat_at": "2026-10-22T11:19:22.875Z",
+            "connectivity": "ONLINE"
+          }
+        ],
+        "history": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "axis": "lifecycle",
+            "from_status": "PendingOnboarding",
+            "to_status": "OnboardingApproved",
+            "actor_type": "ADMIN",
+            "actor_id": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+            "reason": null,
+            "created_at": "2026-10-22T11:17:22.667Z"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "axis": "lifecycle",
+            "from_status": "OnboardingApproved",
+            "to_status": "Onboarded",
+            "actor_type": "SYSTEM",
+            "actor_id": "system:onboarding-completion",
+            "reason": null,
+            "created_at": "2026-10-22T11:18:41.168Z"
+          }
+        ],
+        "publicKeys": [
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "fingerprint": "40e0bf724aca653cf9ccb3eab47fe7a19efb8843bc16ffd7b4443697006c2106"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "fingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360"
+          },
+          {
+            "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "fingerprint": "6b7aba3c3ec98b94f1c37e335d6bb64b63f15a493d8903f424cfa1032a9e9720"
+          }
+        ],
+        "rotationRequests": [],
+        "outbox": [],
+        "nonceCount": 7,
+        "users": [],
+        "audits": [
+          {
+            "id": "575156b2-f73a-44b8-8516-f56ca72ebfe1",
+            "actor_id": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+            "object_type": "onboarding_request",
+            "object_id": "8549d105-f537-42eb-8b4c-653262e1d302",
+            "action": "onboarding.request.approve",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:17:22.807Z"
+          },
+          {
+            "id": "f2066e8f-373e-4e3f-9188-6293198eaa97",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "action": "CERT_PACKAGE_STORE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:18.480Z"
+          },
+          {
+            "id": "863cb97d-e2ce-480f-841c-b6de8f680d48",
+            "actor_id": null,
+            "object_type": "device",
+            "object_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "action": "onboarding.provision",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:18.632Z"
+          },
+          {
+            "id": "ee15d01c-4ed6-483b-b91c-162b6f0e828c",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:19.383Z"
+          },
+          {
+            "id": "ce0aaa19-d7f3-479b-9f4d-a9ac56ceb190",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+            "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:19.523Z"
+          },
+          {
+            "id": "b8c6c490-3492-48dc-a553-b6f70f5795ee",
+            "actor_id": "system:onboarding-completion",
+            "object_type": "device",
+            "object_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+            "action": "device.lifecycle.OnboardingApproved_to_Onboarded",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:41.689Z"
+          },
+          {
+            "id": "e6dabec5-fe6d-4eec-a97f-880e3963d716",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_ROTATION_START",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:58.802Z"
+          },
+          {
+            "id": "a14add24-d027-4ca2-8c99-322ace35cb6f",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_PACKAGE_STORE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:59.161Z"
+          },
+          {
+            "id": "79618b73-03d9-468c-996a-0195968d753f",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:59.319Z"
+          },
+          {
+            "id": "c1454154-f6bd-48cd-9766-fcfc53ba1fc0",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:18:59.399Z"
+          },
+          {
+            "id": "ced9b286-bd85-44fa-8c8f-ad6cc934e51f",
+            "actor_id": "system:certificate-rotation",
+            "object_type": "deviceCertificate",
+            "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+            "action": "CERT_ROTATION_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:19:08.138Z"
+          },
+          {
+            "id": "f98e31bf-25b4-475b-83e3-00a4e66ef7ae",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "action": "CERT_ROTATION_START",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:19:12.055Z"
+          },
+          {
+            "id": "398c4d57-3ca2-4c99-983d-36c8cfdfe113",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "action": "CERT_PACKAGE_STORE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:19:12.106Z"
+          },
+          {
+            "id": "e7c5777f-0a8e-4642-ab60-77c1216159e2",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:19:12.138Z"
+          },
+          {
+            "id": "2861c176-2736-437d-95e0-58eb9fd9516e",
+            "actor_id": null,
+            "object_type": "deviceCertificate",
+            "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:19:12.164Z"
+          },
+          {
+            "id": "3c7abceb-2bcd-4682-8479-902ebb84bc37",
+            "actor_id": "system:certificate-rotation",
+            "object_type": "deviceCertificate",
+            "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+            "action": "CERT_ROTATION_CONFIRM",
+            "result": "SUCCESS",
+            "created_at": "2026-10-22T11:19:23.768Z"
+          }
+        ]
+      },
+      "completedAt": "2026-10-22T11:19:26.044Z",
+      "oldIotStatus": "INACTIVE",
+      "oldMqttOutcome": "CLOSED_BEFORE_CONNACK",
+      "adjacentNewMqttControl": true,
+      "oldMqttDenial": "NO_CONNACK_WITH_INACTIVE_CERT_AND_ADJACENT_VALID_CONTROL"
+    }
+  ],
+  "cleanup": [
+    {
+      "label": "owned-iot-and-database",
+      "result": "PASS",
+      "at": "2026-10-22T11:23:45.767Z",
+      "detail": {
+        "deleted": {
+          "outbox": 0,
+          "certificate_rotation_requests": 0,
+          "device_user_sync_receipts": 0,
+          "ingestion_gaps": 0,
+          "ingestion_receipts": 3,
+          "device_latest_state": 1,
+          "device_state_history": 2,
+          "device_public_keys": 3,
+          "device_certificates": 3,
+          "nonces": 7,
+          "jobs": 1,
+          "requests": 1,
+          "devices": 1
+        },
+        "certificateIds": [
+          "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+          "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+          "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154"
+        ],
+        "policyNames": [
+          "fdp-device-4fe6ba4a-db4c-44a8-92f4-0b8a19532702"
+        ],
+        "devices": [
+          "4fe6ba4a-db4c-44a8-92f4-0b8a19532702"
+        ],
+        "auditRowsRetained": 18
+      }
+    },
+    {
+      "label": "cognito-user-removed",
+      "result": "PASS",
+      "at": "2026-10-22T11:23:51.154Z",
+      "detail": {
+        "username": "csrprobe-8c4d3f19662ff1c3@example.invalid",
+        "readback": "UserNotFoundException"
+      }
+    },
+    {
+      "label": "temporary-observer-removed",
+      "result": "PASS",
+      "at": "2026-10-22T11:23:54.712Z",
+      "detail": {
+        "name": "fdp-test-qa09-csrprobe-8c4d3f19662ff1c3",
+        "readback": "ResourceNotFoundException",
+        "cloudWatchLogs": "RETAINED_FOR_AUDIT"
+      }
+    }
+  ],
+  "gate": "PASS",
+  "workersBefore": [
+    {
+      "Name": "fdp-test-onboarding-api-handler",
+      "Hash": "+iY1URrFn9Ev351poaQVRNzRk2Ab/GYn3KVioXRJDeE=",
+      "Modified": "2026-10-18T09:44:04.000+0000",
+      "State": "Active"
+    },
+    {
+      "Name": "fdp-test-api",
+      "Hash": "HKmh30XjJNlmPsYfd1kUiQ/HdvcqZAZ+24yxLqMr1Qw=",
+      "Modified": "2026-10-18T09:44:04.000+0000",
+      "State": "Active"
+    },
+    {
+      "Name": "fdp-test-onboarding-provisioning",
+      "Hash": "LIMqJtYhljXVA7L5tm2xgFPOrBNB4zjpL567Xao4ulk=",
+      "Modified": "2026-10-18T09:44:04.000+0000",
+      "State": "Active"
+    },
+    {
+      "Name": "fdp-test-ingestion",
+      "Hash": "f2WLNxOd4+20RmoXtUQ68PV2XyN3EJ6rBxLg/XQWiFk=",
+      "Modified": "2026-10-18T09:44:03.000+0000",
+      "State": "Active"
+    },
+    {
+      "Name": "fdp-test-device-api-handler",
+      "Hash": "yPkbmprZkteKLJbW5ONt5+2P9qqO5X0O8DUzpsMR2q0=",
+      "Modified": "2026-10-18T09:44:03.000+0000",
+      "State": "Active"
+    },
+    {
+      "Name": "fdp-test-cert-package-sweeper",
+      "Hash": "cBsAhsuz82R5SqF61FLejk8BHkNSRS3iJgcCvBk2f/s=",
+      "Modified": "2026-10-18T09:44:03.000+0000",
+      "State": "Active"
+    }
+  ],
+  "schedules": [
+    {
+      "Name": "fdp-test-onboarding-provisioning",
+      "Arn": "arn:aws:events:ap-southeast-1:065986019555:rule/fdp-test-onboarding-provisioning",
+      "ScheduleExpression": "rate(1 minute)",
+      "State": "ENABLED",
+      "EventBusName": "default",
+      "CreatedBy": "065986019555"
+    },
+    {
+      "Name": "fdp-test-cert-package-sweeper",
+      "Arn": "arn:aws:events:ap-southeast-1:065986019555:rule/fdp-test-cert-package-sweeper",
+      "ScheduleExpression": "rate(5 minutes)",
+      "State": "ENABLED",
+      "EventBusName": "default",
+      "CreatedBy": "065986019555"
+    }
+  ],
+  "fixture": {
+    "name": "fdp-test-qa09-csrprobe-8c4d3f19662ff1c3",
+    "role": "arn:aws:iam::065986019555:role/fdp-test-replay-role",
+    "zipSha256": "c987999ef4ec6490c900d6581961da2e7a185866ed385c8248589f1bc2699129"
+  },
+  "baseline": {
+    "devices": [],
+    "outsideFingerprints": [
+      {
+        "entity": "devices",
+        "count": "3",
+        "digest": "c3a1a6d27363a867b4c0a62fd6c8f271"
+      },
+      {
+        "entity": "certificates",
+        "count": "4",
+        "digest": "8ce5fb1cb03efeac923b40027fe27bf8"
+      }
+    ],
+    "certificates": [],
+    "requests": [],
+    "jobs": [],
+    "receipts": [],
+    "latest": [],
+    "history": [],
+    "publicKeys": [],
+    "rotationRequests": [],
+    "outbox": [],
+    "nonceCount": 0,
+    "users": [],
+    "audits": []
+  },
+  "identity": {
+    "username": "csrprobe-8c4d3f19662ff1c3@example.invalid",
+    "sub": "292a15ec-b081-70e9-04af-8b8de6f14c26"
+  },
+  "requestId": "8549d105-f537-42eb-8b4c-653262e1d302",
+  "deviceId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+  "cloudProvisioning": {
+    "thing": {
+      "defaultClientId": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+      "thingName": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+      "thingId": "517227be-7f84-4847-b202-646d24ba5061",
+      "thingArn": "arn:aws:iot:ap-southeast-1:065986019555:thing/4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+      "attributes": {},
+      "version": 1
+    },
+    "principals": {
+      "principals": [
+        "arn:aws:iot:ap-southeast-1:065986019555:cert/de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912"
+      ]
+    },
+    "certificate": {
+      "certificateDescription": {
+        "certificateArn": "arn:aws:iot:ap-southeast-1:065986019555:cert/de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+        "certificateId": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+        "status": "ACTIVE",
+        "certificatePem": "-----BEGIN CERTIFICATE-----\r\nMIIEWDCCAsCgAwIBAgIUA42l4C6xE8idLy+SC4nwb8w0QRcwDQYJKoZIhvcNAQEL\r\nBQAwZDELMAkGA1UEBhMCU0cxHzAdBgNVBAoMFkZvb2QgRGlnZXN0ZXIgUGxhdGZv\r\ncm0xETAPBgNVBAsMCFRlc3QgUEtJMSEwHwYDVQQDDBhGRFAgVGVzdCBJc3N1aW5n\r\nIENBIDIwMjYwHhcNMjYxMDIyMTExMzE2WhcNMjcxMDIyMTExODE2WjAvMS0wKwYD\r\nVQQDEyQ0ZmU2YmE0YS1kYjRjLTQ0YTgtOTJmNC0wYjhhMTk1MzI3MDIwggEiMA0G\r\nCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCL7ImafrPLPFkD9jOnpkg4Uen1sghM\r\nrwphMuMA9Eur0j1GQEzfriGAiGYou1NrDNETXpx34RiSZ8ycexUOAf9HnNR0GCpC\r\nY+u3dVSM3WvlrbrNiBMFUe34kr8DlZWlSBHe9IPbVuQTsv/F0IdqiOtqT8M89muk\r\nER70/uH+DM6d9XkIvLM4LYk/OzEr9H582x97+kRsxfRGIunf+9GKndc0i0dEDhN6\r\nAFDdsaZX1V0oFZGg8TX7eK/32k+MSFO8rEal/49uCKntCPdPcshSbgQhlHT34vp/\r\nUvBZN2aOTFM21WeUXEX44RZjAc4h3QdeRSKlxbwZI6Ci1o0cWaKMUwDrAgMBAAGj\r\ngbYwgbMwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYI\r\nKwYBBQUHAwIwHQYDVR0OBBYEFJJoBdkIvI6KEGnl+DvnfdHDsVw+MD4GA1UdEQQ3\r\nMDWGM3VybjpmZHA6ZGV2aWNlOjRmZTZiYTRhLWRiNGMtNDRhOC05MmY0LTBiOGEx\r\nOTUzMjcwMjAfBgNVHSMEGDAWgBRA1JxxZxvzl1vfd+irJkIrWuI91zANBgkqhkiG\r\n9w0BAQsFAAOCAYEAfR6zBEh+j4fYNv27zLi8+Ba/V/mS/F1UrCYryLEDNrWI5hXC\r\nOIWqClqTxPsxpNAf7gQfiXRd9VVtd/pDCpKn+WO1O0eXMvF0bEzhK8ufPAOJWICY\r\nh4ZGLYVkc9EdDxIlK7DWttsYR+CbsITCxWaiZZ9vE9+7TX3zgXko3mQ2sQfGjGFV\r\ncb83UW25W/XOA6H29abKUB+VU2N9MvQaapFvdBN5LdB3+z8RpNYqfdHQuOVHHWaE\r\nckKebWB+xrzs1ZG/qvYMrHJEgF2sCgmMWkR24VVRKLXrYtPwSDBwfxP1pNkVv3yv\r\nrwcmcbfQYNdbtl3cDIdsH3xL9sMgFVLllY7N4HOKsUZMTS3Jq7PdzjpO5l+vSsxy\r\nW823TDfucTGcMPxUQoq0cuvvwVR7amhs20vd23FOAcNfJyZ115cBcWE/opWZZzAb\r\nFxou9WCfmLOjOW1mxzFtEQ6v9KCeVZN93PZ6r5LGKEHSZD4DEiY7pmDMxeXHFpO5\r\neikssoIvlO04EL+Y\r\n-----END CERTIFICATE-----\r\n",
+        "ownedBy": "065986019555",
+        "creationDate": "2026-10-22T19:18:17.690000+08:00",
+        "lastModifiedDate": "2026-10-22T19:18:17.690000+08:00",
+        "customerVersion": 1,
+        "transferData": {},
+        "generationId": "84767682-8b77-4f00-8fdc-8215e2c1a978",
+        "validity": {
+          "notBefore": "2026-10-22T19:13:16+08:00",
+          "notAfter": "2027-10-22T19:18:16+08:00"
+        },
+        "certificateMode": "SNI_ONLY"
+      }
+    },
+    "policies": {
+      "policies": [
+        {
+          "policyName": "fdp-device-4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+          "policyArn": "arn:aws:iot:ap-southeast-1:065986019555:policy/fdp-device-4fe6ba4a-db4c-44a8-92f4-0b8a19532702"
+        }
+      ]
+    }
+  },
+  "finalState": {
+    "devices": [
+      {
+        "id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "serial_number": "csrprobe-8c4d3f19662ff1c3",
+        "customer_id": null,
+        "site_id": null,
+        "lifecycle_status": "Onboarded"
+      }
+    ],
+    "outsideFingerprints": [
+      {
+        "entity": "devices",
+        "count": "3",
+        "digest": "c3a1a6d27363a867b4c0a62fd6c8f271"
+      },
+      {
+        "entity": "certificates",
+        "count": "4",
+        "digest": "8ce5fb1cb03efeac923b40027fe27bf8"
+      }
+    ],
+    "certificates": [
+      {
+        "id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+        "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "status": "REVOKED",
+        "fingerprint": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+        "public_key_fingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360",
+        "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+        "serial_number": "038DA5E02EB113C89D2F2F920B89F06FCC344117",
+        "mqtt_verified_at": "2026-10-22T11:18:40.486Z",
+        "rest_verified_at": "2026-10-22T11:18:53.218Z",
+        "claimed_at": "2026-10-22T11:18:40.486Z",
+        "rotated_from_id": null,
+        "rotation_deadline_at": null,
+        "rotation_confirmed_at": null,
+        "revoked_at": "2026-10-22T11:19:07.965Z",
+        "iot_deactivation_pending": false,
+        "iot_deactivation_attempts": 1,
+        "iot_deactivated_at": "2026-10-22T11:22:13.499Z",
+        "package_destroyed": true
+      },
+      {
+        "id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+        "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "status": "REVOKED",
+        "fingerprint": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+        "public_key_fingerprint": "6b7aba3c3ec98b94f1c37e335d6bb64b63f15a493d8903f424cfa1032a9e9720",
+        "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+        "serial_number": "2432C5FC349D253792C5D0348066EC51C7F9412B",
+        "mqtt_verified_at": "2026-10-22T11:19:03.024Z",
+        "rest_verified_at": "2026-10-22T11:19:07.965Z",
+        "claimed_at": "2026-10-22T11:18:59.258Z",
+        "rotated_from_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+        "rotation_deadline_at": "2026-10-23T11:18:56.737Z",
+        "rotation_confirmed_at": "2026-10-22T11:19:07.965Z",
+        "revoked_at": "2026-10-22T11:19:23.569Z",
+        "iot_deactivation_pending": false,
+        "iot_deactivation_attempts": 1,
+        "iot_deactivated_at": "2026-10-22T11:22:13.499Z",
+        "package_destroyed": true
+      },
+      {
+        "id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+        "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "status": "ACTIVE",
+        "fingerprint": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+        "public_key_fingerprint": "40e0bf724aca653cf9ccb3eab47fe7a19efb8843bc16ffd7b4443697006c2106",
+        "issuer": "C=SG\nO=Food Digester Platform\nOU=Test PKI\nCN=FDP Test Issuing CA 2026",
+        "serial_number": "45C55E4B1053E52A0C5D662676E61E41F67DCBC3",
+        "mqtt_verified_at": "2026-10-22T11:19:23.569Z",
+        "rest_verified_at": "2026-10-22T11:19:14.379Z",
+        "claimed_at": "2026-10-22T11:19:12.121Z",
+        "rotated_from_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+        "rotation_deadline_at": "2026-10-23T11:19:11.384Z",
+        "rotation_confirmed_at": "2026-10-22T11:19:23.569Z",
+        "revoked_at": null,
+        "iot_deactivation_pending": false,
+        "iot_deactivation_attempts": 0,
+        "iot_deactivated_at": null,
+        "package_destroyed": true
+      }
+    ],
+    "requests": [
+      {
+        "id": "8549d105-f537-42eb-8b4c-653262e1d302",
+        "serial_number": "csrprobe-8c4d3f19662ff1c3",
+        "status": "APPROVED",
+        "reviewed_by": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+        "reviewed_at": "2026-10-22T11:17:22.144Z",
+        "version": 2,
+        "onboarding_deadline_at": "2026-10-23T11:18:18.373Z"
+      }
+    ],
+    "jobs": [
+      {
+        "id": "9064298b-c764-4dfa-9d39-8ec1b0dcab95",
+        "status": "COMPLETED",
+        "attempts": 1,
+        "issued_certificate_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+        "completed_at": "2026-10-22T11:18:18.691Z"
+      }
+    ],
+    "receipts": [
+      {
+        "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "topic_type": "heartbeat",
+        "seq": 1,
+        "payload_hash": "858e9d2608715542c4b585a52c2f5e619dd80f3413461615ed9e58b7378c04f6",
+        "result": "PROCESSED",
+        "processed_at": "2026-10-22T11:18:39.605Z"
+      },
+      {
+        "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "topic_type": "heartbeat",
+        "seq": 2,
+        "payload_hash": "da05c30d39881d50dd211c9852f0c4ef25104626dfb6217606a35bf51daae6c5",
+        "result": "PROCESSED",
+        "processed_at": "2026-10-22T11:19:02.724Z"
+      },
+      {
+        "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "topic_type": "heartbeat",
+        "seq": 3,
+        "payload_hash": "f5088c5a012b24212d886e1383945eedd2509d0efe78bd64cd0649ac4573199d",
+        "result": "PROCESSED",
+        "processed_at": "2026-10-22T11:19:23.487Z"
+      }
+    ],
+    "latest": [
+      {
+        "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "last_heartbeat_at": "2026-10-22T11:19:22.875Z",
+        "connectivity": "ONLINE"
+      }
+    ],
+    "history": [
+      {
+        "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "axis": "lifecycle",
+        "from_status": "PendingOnboarding",
+        "to_status": "OnboardingApproved",
+        "actor_type": "ADMIN",
+        "actor_id": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+        "reason": null,
+        "created_at": "2026-10-22T11:17:22.667Z"
+      },
+      {
+        "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "axis": "lifecycle",
+        "from_status": "OnboardingApproved",
+        "to_status": "Onboarded",
+        "actor_type": "SYSTEM",
+        "actor_id": "system:onboarding-completion",
+        "reason": null,
+        "created_at": "2026-10-22T11:18:41.168Z"
+      }
+    ],
+    "publicKeys": [
+      {
+        "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "fingerprint": "40e0bf724aca653cf9ccb3eab47fe7a19efb8843bc16ffd7b4443697006c2106"
+      },
+      {
+        "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "fingerprint": "64522d298571ffdf5291badce7223380fe8cb5b0c89778fc9994040a35a56360"
+      },
+      {
+        "device_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "fingerprint": "6b7aba3c3ec98b94f1c37e335d6bb64b63f15a493d8903f424cfa1032a9e9720"
+      }
+    ],
+    "rotationRequests": [],
+    "outbox": [],
+    "nonceCount": 7,
+    "users": [],
+    "audits": [
+      {
+        "id": "575156b2-f73a-44b8-8516-f56ca72ebfe1",
+        "actor_id": "292a15ec-b081-70e9-04af-8b8de6f14c26",
+        "object_type": "onboarding_request",
+        "object_id": "8549d105-f537-42eb-8b4c-653262e1d302",
+        "action": "onboarding.request.approve",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:17:22.807Z"
+      },
+      {
+        "id": "f2066e8f-373e-4e3f-9188-6293198eaa97",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+        "action": "CERT_PACKAGE_STORE",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:18:18.480Z"
+      },
+      {
+        "id": "863cb97d-e2ce-480f-841c-b6de8f680d48",
+        "actor_id": null,
+        "object_type": "device",
+        "object_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "action": "onboarding.provision",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:18:18.632Z"
+      },
+      {
+        "id": "ee15d01c-4ed6-483b-b91c-162b6f0e828c",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+        "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:18:19.383Z"
+      },
+      {
+        "id": "ce0aaa19-d7f3-479b-9f4d-a9ac56ceb190",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+        "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:18:19.523Z"
+      },
+      {
+        "id": "b8c6c490-3492-48dc-a553-b6f70f5795ee",
+        "actor_id": "system:onboarding-completion",
+        "object_type": "device",
+        "object_id": "4fe6ba4a-db4c-44a8-92f4-0b8a19532702",
+        "action": "device.lifecycle.OnboardingApproved_to_Onboarded",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:18:41.689Z"
+      },
+      {
+        "id": "e6dabec5-fe6d-4eec-a97f-880e3963d716",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+        "action": "CERT_ROTATION_START",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:18:58.802Z"
+      },
+      {
+        "id": "a14add24-d027-4ca2-8c99-322ace35cb6f",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+        "action": "CERT_PACKAGE_STORE",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:18:59.161Z"
+      },
+      {
+        "id": "79618b73-03d9-468c-996a-0195968d753f",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+        "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:18:59.319Z"
+      },
+      {
+        "id": "c1454154-f6bd-48cd-9766-fcfc53ba1fc0",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+        "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:18:59.399Z"
+      },
+      {
+        "id": "ced9b286-bd85-44fa-8c8f-ad6cc934e51f",
+        "actor_id": "system:certificate-rotation",
+        "object_type": "deviceCertificate",
+        "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+        "action": "CERT_ROTATION_CONFIRM",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:19:08.138Z"
+      },
+      {
+        "id": "f98e31bf-25b4-475b-83e3-00a4e66ef7ae",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+        "action": "CERT_ROTATION_START",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:19:12.055Z"
+      },
+      {
+        "id": "398c4d57-3ca2-4c99-983d-36c8cfdfe113",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+        "action": "CERT_PACKAGE_STORE",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:19:12.106Z"
+      },
+      {
+        "id": "e7c5777f-0a8e-4642-ab60-77c1216159e2",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+        "action": "CERT_PACKAGE_DELIVERY_PREPARE",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:19:12.138Z"
+      },
+      {
+        "id": "2861c176-2736-437d-95e0-58eb9fd9516e",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+        "action": "CERT_PACKAGE_DELIVERY_CONFIRM",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:19:12.164Z"
+      },
+      {
+        "id": "3c7abceb-2bcd-4682-8479-902ebb84bc37",
+        "actor_id": "system:certificate-rotation",
+        "object_type": "deviceCertificate",
+        "object_id": "7876f8e1f92b0413e55abf980f289f15bf3f55a3c33b2c7c1f5a62fd1c072154",
+        "action": "CERT_ROTATION_CONFIRM",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:19:23.768Z"
+      },
+      {
+        "id": "40e1dbe3-11d6-49cc-a879-a9d6cd1e78b2",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "de552cc3e27344cba303fd6d97520bd909932e70c27cdcd3e49fab0a5b979912",
+        "action": "CERT_IOT_DEACTIVATED",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:22:13.888Z"
+      },
+      {
+        "id": "fe1560af-a594-4468-814b-80b146559fec",
+        "actor_id": null,
+        "object_type": "deviceCertificate",
+        "object_id": "9bd47f095dfa04c542affbfe4437da261958168e2cfbf2d9cc0def846edb14cd",
+        "action": "CERT_IOT_DEACTIVATED",
+        "result": "SUCCESS",
+        "created_at": "2026-10-22T11:22:14.240Z"
+      }
+    ]
+  },
+  "workersAfter": [
+    {
+      "Name": "fdp-test-onboarding-api-handler",
+      "Hash": "+iY1URrFn9Ev351poaQVRNzRk2Ab/GYn3KVioXRJDeE=",
+      "Modified": "2026-10-18T09:44:04.000+0000",
+      "State": "Active"
+    },
+    {
+      "Name": "fdp-test-api",
+      "Hash": "HKmh30XjJNlmPsYfd1kUiQ/HdvcqZAZ+24yxLqMr1Qw=",
+      "Modified": "2026-10-18T09:44:04.000+0000",
+      "State": "Active"
+    },
+    {
+      "Name": "fdp-test-onboarding-provisioning",
+      "Hash": "LIMqJtYhljXVA7L5tm2xgFPOrBNB4zjpL567Xao4ulk=",
+      "Modified": "2026-10-18T09:44:04.000+0000",
+      "State": "Active"
+    },
+    {
+      "Name": "fdp-test-ingestion",
+      "Hash": "f2WLNxOd4+20RmoXtUQ68PV2XyN3EJ6rBxLg/XQWiFk=",
+      "Modified": "2026-10-18T09:44:03.000+0000",
+      "State": "Active"
+    },
+    {
+      "Name": "fdp-test-device-api-handler",
+      "Hash": "yPkbmprZkteKLJbW5ONt5+2P9qqO5X0O8DUzpsMR2q0=",
+      "Modified": "2026-10-18T09:44:03.000+0000",
+      "State": "Active"
+    },
+    {
+      "Name": "fdp-test-cert-package-sweeper",
+      "Hash": "cBsAhsuz82R5SqF61FLejk8BHkNSRS3iJgcCvBk2f/s=",
+      "Modified": "2026-10-18T09:44:03.000+0000",
+      "State": "Active"
+    }
+  ],
+  "cleanupState": {
+    "devices": [],
+    "outsideFingerprints": [
+      {
+        "entity": "devices",
+        "count": "3",
+        "digest": "c3a1a6d27363a867b4c0a62fd6c8f271"
+      },
+      {
+        "entity": "certificates",
+        "count": "4",
+        "digest": "8ce5fb1cb03efeac923b40027fe27bf8"
+      }
+    ],
+    "certificates": [],
+    "requests": [],
+    "jobs": [],
+    "receipts": [],
+    "latest": [],
+    "history": [],
+    "publicKeys": [],
+    "rotationRequests": [],
+    "outbox": [],
+    "nonceCount": 0,
+    "users": [],
+    "audits": []
+  },
+  "finishedAt": "2026-10-22T11:23:54.712Z"
+}

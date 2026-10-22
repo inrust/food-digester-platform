@@ -6,6 +6,8 @@
 
 设备持续上报 Heartbeat、Telemetry、ESG Report、Alarm 等数据，以及接收命令、OTA 和通知，使用 MQTT。完整 Topic、字段、报文示例与联调要求见 [设备 MQTT 联调说明](./iot.bio-nexa.com.md)。
 
+[2026-10-22 真实 CSR 与双通道轮换实测](../audit/2026-10-22-csr-lifecycle-live-test.md) 已用项目 CA 签发的软件隔离设备证书验证本域名的 `POST /api/v1/device/sync`、`POST /api/v1/device/certificate/rotate`：未分配设备 Sync 成功；MQTT→REST 和 REST→MQTT 两种顺序均在双通道完成后确认新证并撤销旧证，旧证 REST 返回 401，后续 AWS IoT 停用及 MQTT 拒绝已核对。此结论不覆盖带客户/License/配置/用户的完整快照、其他四个操作、24 小时超时回退、真实固件或生产验收。
+
 ## 认证、请求与错误
 
 - API Gateway Regional 自定义域名启用 mTLS。客户端在 TLS 握手中提供设备 X.509 证书。
