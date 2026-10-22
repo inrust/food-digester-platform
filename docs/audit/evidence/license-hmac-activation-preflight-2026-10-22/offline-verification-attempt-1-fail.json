@@ -1,0 +1,13 @@
+{
+  "gate": "FAIL_OFFLINE_TOOL",
+  "command": [
+    "node",
+    "docs/audit/evidence/license-hmac-activation-preflight-2026-10-22/verify.mjs",
+    "--current-source"
+  ],
+  "outputRedirectedTo": "verification.json",
+  "observedError": "SyntaxError: Unexpected end of JSON input",
+  "cause": "Verifier attempted to parse its own output file while shell redirection had created an empty file.",
+  "correction": "Exclude verification.json from receipt parsing, consistent with its existing manifest exclusion.",
+  "targetBusinessRun": false
+}

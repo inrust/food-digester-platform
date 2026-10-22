@@ -1,0 +1,88 @@
+{
+  "localGate": "PASS_LOCAL_ONLY",
+  "targetGate": "BLOCKED_EXTERNAL_OPERATIONS_AUTHORITY",
+  "commands": [
+    {
+      "command": [
+        "node",
+        "node_modules/eslint/bin/eslint.js",
+        "scripts/qa09-device-license-verifier.mjs",
+        "scripts/qa09-a2-controlled-worker.mjs",
+        "scripts/license-hmac-verifier-entry.mjs",
+        "scripts/qa09-a2-verification.test.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/prettier/bin/prettier.cjs",
+        "--check",
+        "scripts/qa09-device-license-verifier.mjs",
+        "scripts/qa09-a2-controlled-worker.mjs",
+        "scripts/license-hmac-verifier-entry.mjs",
+        "scripts/qa09-a2-verification.test.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "Checking formatting...\nAll matched files use Prettier code style!\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "--check",
+        "docs/audit/evidence/license-hmac-activation-preflight-2026-10-22/verify.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "scripts/check-secrets.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "敏感信息扫描通过\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--cached",
+        "--check"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "links": {
+    "files": [
+      "docs/audit/2026-10-22-license-hmac-activation-preflight.md",
+      "docs/audit/evidence/license-hmac-activation-preflight-2026-10-22/operations-handoff.md",
+      "docs/api/README.md",
+      "docs/api/device-api.bio-nexa.com.md",
+      "docs/api/iot.bio-nexa.com.md",
+      "docs/api/mqtt-message-examples.md",
+      "docs/api/onboard-api.bio-nexa.com.md"
+    ],
+    "checked": 196,
+    "missing": []
+  },
+  "scriptRegression": {
+    "passed": 1459,
+    "total": 1459,
+    "evidence": "all-script-tests-attempt-2-pass.json"
+  },
+  "localLicenseSyncRegression": {
+    "passed": 10,
+    "total": 10,
+    "evidence": "local-license-sync-tests.json"
+  },
+  "whitespace": "PASS_CACHED_DIFF_CHECK",
+  "sourcePackageReconciliation": "PASS_PREPARED_SOURCE_BYTES_ONLY_NOT_RUNTIME"
+}

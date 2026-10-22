@@ -116,3 +116,5 @@ AWS IoT 使用 `RegisterCertificateWithoutCA` 注册该叶证书，设备必须�
 该次证据限于共享 test 环境内的一台软件设备；设备方真实固件、安全存储、实际运行许可、首次接入超时/丢包恢复和生产验收未执行。返回的 MQTT Host 仍为默认 AWS Data-ATS，本轮实际连接使用运维指定的 `iot.bio-nexa.com`；未修改 Onboarding 返回配置。
 
 首次接入后，带客户/站点分配、License、配置及设备用户的 [完整 REST Sync 首轮实测](../audit/2026-10-22-rest-sync-live-test.md) 保留枚举大小写契约失败；后续 [修复部署与隔离复测](../audit/2026-10-22-rest-sync-status-fix-live-test.md) 已通过 161/161 项检查、15 次成功 Sync 的 Schema 与九次业务快照核对，并清理测试资源。此结论不扩展到其他 REST 操作、真实固件或独立 License `VERIFIED → Active` 业务激活。
+
+[独立 License HMAC 与业务激活前置核验](../audit/2026-10-22-license-hmac-activation-preflight.md)确认运营尚未提供获权通道；独立验签及 `VERIFIED → Active` 保持 **BLOCKED / NOT_RUN**。本轮未创建新的申请、设备或证书；CSR 首次 Heartbeat 的 `Onboarded` 接入激活不等于 License 业务激活。

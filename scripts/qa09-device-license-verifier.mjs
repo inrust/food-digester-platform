@@ -5,9 +5,22 @@ export const TEST_LICENSE_SECRET_ARN =
   'arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-license-signing-key-OVgupB';
 export function validateVerifierInput(input, now = Date.now()) {
   const p = input?.license?.signaturePayload;
+  const legacyScope =
+    /^qa09-[a-f0-9]{16}$/.test(input?.prefix ?? '') &&
+    new RegExp('^' + input.prefix + '-(0[1-9]|10)$').test(input.deviceId ?? '') &&
+    input.deviceBinding === undefined;
+  const binding = input?.deviceBinding;
+  const csrScope =
+    /^syncprobe-[a-f0-9]{16}$/.test(input?.prefix ?? '') &&
+    /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(input.deviceId ?? '') &&
+    binding &&
+    Object.keys(binding).sort().join(',') === 'certificateFingerprint,deviceId,model,serialNumber' &&
+    binding.serialNumber === input.prefix &&
+    binding.model === 'SYNC-' + input.prefix.slice(10).toUpperCase() &&
+    binding.deviceId === input.deviceId &&
+    binding.certificateFingerprint === input.certificateFingerprint;
   if (
-    !/^qa09-[a-f0-9]{16}$/.test(input?.prefix ?? '') ||
-    !new RegExp('^' + input.prefix + '-(0[1-9]|10)$').test(input.deviceId ?? '') ||
+    (!legacyScope && !csrScope) ||
     !/^[a-f0-9-]{36}$/.test(input.customerId ?? '') ||
     !/^[a-f0-9]{40}$/.test(input.applicationCommit ?? '') ||
     !/^[a-f0-9]{64}$/.test(input.snapshotEtag ?? '') ||
@@ -73,6 +86,18 @@ export function verifyDeviceLicense(input, key, now = Date.now()) {
     licenseVersion: input.license.version,
     snapshotEtag: input.snapshotEtag,
     certificateFingerprint: input.certificateFingerprint,
+    ...(input.deviceBinding
+      ? {
+          deviceBindingSha256: digest(
+            JSON.stringify({
+              serialNumber: input.deviceBinding.serialNumber,
+              model: input.deviceBinding.model,
+              deviceId: input.deviceBinding.deviceId,
+              certificateFingerprint: input.deviceBinding.certificateFingerprint,
+            }),
+          ),
+        }
+      : {}),
     nonce: input.nonce,
     expiresAtMs: input.expiresAtMs,
     canonicalPayloadSha256: digest(canonical),

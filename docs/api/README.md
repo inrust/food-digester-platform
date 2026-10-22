@@ -33,6 +33,8 @@ MQTT 自定义域名 `iot.bio-nexa.com:8883` 的 TLS、临时 X.509 身份连接
 
 上一轮 [带业务分配的完整 REST Sync 实测](../audit/2026-10-22-rest-sync-live-test.md) 保留了运行状态 `ACTIVE` 与契约 `Active` 不一致的失败。后续 [状态修复、部署及隔离复测](../audit/2026-10-22-rest-sync-status-fix-live-test.md) 已验证新写入规范值、历史大写值读取兼容、真实 Heartbeat 恢复和 ETag 一致性：161/161 项检查通过，15 次成功 Sync 的 Schema 全部通过；Customer/Site、有效 License、配置和设备用户的九次完整快照比较匹配云端，测试资源已清理。MQTT 大写枚举保持原契约。
 
+截至 2026-10-22，[独立 License HMAC 与业务激活前置核验](../audit/2026-10-22-license-hmac-activation-preflight.md)确认专用 verifier 角色不存在，运营尚未提供获权通道。目标独立验签和 `VERIFIED → Active` 为 **BLOCKED / NOT_RUN**；本地工具回归不替代目标证明，本轮未创建云资源。运营交付通道后按报告中的绑定与清理步骤继续。
+
 设备方真实固件、独立 License HMAC 验签及 `VERIFIED → Active`、设备用户本地应用、实体业务动作、OTA 下载与安装、其余 REST 操作、24 小时轮换超时回退及生产验收仍为 **NOT RUN**；用户的 `ACKNOWLEDGED` 不代表已应用。各次限定通过范围以对应审计证据为准。
 
 ## 2026-10-01 证书契约升级

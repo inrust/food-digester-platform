@@ -10,6 +10,8 @@
 
 **实际连接主机仍以 Onboarding `APPROVED` 响应中的 `mqtt.endpoint` 和运维提供的环境参数为准。** 仓库当前 Onboarding 入口仍通过 `iot.getDataEndpoint()` 获取默认 AWS Data-ATS 端点；上述限定实测不表示已修改其返回主机，也不代替设备方真实固件、实际业务动作或生产验收。
 
+[独立 License HMAC 与业务激活前置核验](../audit/2026-10-22-license-hmac-activation-preflight.md)进一步确认运营尚未提供获权通道，目标独立验签及 `VERIFIED → Active` 为 **BLOCKED / NOT_RUN**。本轮仅作只读核验和本地工具准备，未创建云资源；MQTT 自报 `licenseStatus=ACTIVE` 仍不等于完成业务激活。
+
 完整 JSON 与独立文件见 [设备 MQTT 完整报文样例](./mqtt-message-examples.md)，覆盖全部 11 类 Topic、22 种命令、13 类通知及命令/OTA 回执分支。
 
 ## 1. 联调前准备与首次连接

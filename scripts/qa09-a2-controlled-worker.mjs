@@ -25,7 +25,7 @@ export async function runControlledA2(input, ports) {
   if (
     !['LICENSE_VERIFY', 'FIRMWARE_SIGN'].includes(input?.operation) ||
     JSON.stringify(input.sourceHashes) !== JSON.stringify(a2SourceHashes()) ||
-    !/^qa09-[a-f0-9]{16}$/.test(input.prefix ?? '') ||
+    (input.operation === 'FIRMWARE_SIGN' && !/^qa09-[a-f0-9]{16}$/.test(input.prefix ?? '')) ||
     !/^[a-f0-9]{40}$/.test(input.applicationCommit ?? '') ||
     !/^[a-f0-9]{32}$/.test(input.nonce ?? '') ||
     !Number.isFinite(input.expiresAtMs) ||

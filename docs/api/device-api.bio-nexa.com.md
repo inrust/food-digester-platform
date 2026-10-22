@@ -150,6 +150,8 @@ curl --cert device-cert.pem --key device-private-key.pem \
 
 `licenseConfirmation` 绑定服务器近 24 小时内已提交的实际快照、当前 License 版本、分配和证书：`RECEIVED` 驱动设备 `Assigned → Licensed`；设备独立验签成功后才能声明 `VERIFIED`，驱动 `Licensed → Active`。错误或失效绑定返回 `409 CONFLICT`。管理员将 **License 状态**激活为 `Active`，不等于设备生命周期已变为 `Active`；普通 Sync 和 `lastSyncTime` 也不替代 License 验签确认。
 
+2026-10-22 的[独立 License HMAC 与业务激活前置核验](../audit/2026-10-22-license-hmac-activation-preflight.md)确认运营尚未提供获权通道，专用 verifier 角色不存在；因此尚未对目标真实 License 执行独立 HMAC 或发送 `VERIFIED`，业务激活仍为 **BLOCKED / NOT_RUN**。本地验签工具及生命周期测试不替代目标证据；不能仅凭本页请求格式、服务端签名比对或 License `Active` 状态声明设备验签成功。
+
 成功响应示例：
 
 ```json
