@@ -8,7 +8,7 @@
 
 [2026-10-22 真实 CSR 与双通道轮换实测](../audit/2026-10-22-csr-lifecycle-live-test.md) 已用项目 CA 签发的软件隔离设备证书验证本域名的 `POST /api/v1/device/sync`、`POST /api/v1/device/certificate/rotate`：未分配设备 Sync 成功；MQTT→REST 和 REST→MQTT 两种顺序均在双通道完成后确认新证并撤销旧证，旧证 REST 返回 401，后续 AWS IoT 停用及 MQTT 拒绝已核对。此结论不覆盖带客户/License/配置/用户的完整快照、其他四个操作、24 小时超时回退、真实固件或生产验收。
 
-[带分配的完整 REST Sync 实测](../audit/2026-10-22-rest-sync-live-test.md) 已核对 Customer/Site、有效 License、配置、设备用户、设备元数据及运行状态，覆盖用户版本交付/确认、配置优先级和 ETag。业务内容与云端记录匹配；**契约 Gate 为 FAIL**：真实响应的 `operationalStatus.operationalStatus` 为 `ACTIVE`，不符合 REST 契约的 `Active` / `Maintenance` / `Suspended` / `Retired` / `null`。以下规范枚举保持不变；此差异待服务修复与重新实测。软件设备仅声明 License `RECEIVED`，生命周期达到 `Licensed`，未声明独立验签成功或进入 `Active`。
+上一轮 [完整 REST Sync 实测](../audit/2026-10-22-rest-sync-live-test.md) 的运行状态大小写契约失败保留；后续 [修复部署与隔离复测](../audit/2026-10-22-rest-sync-status-fix-live-test.md) 已通过 161/161 项检查，15 次成功 Sync 全部符合原响应 Schema，九次业务快照与云端一致。新 Heartbeat 写入 `Active`，历史 `ACTIVE` 读取时映射为 `Active`，恢复规范存储后的 ETag 一致；测试资源已清理。以下 REST 枚举不变，MQTT 仍使用其大写枚举。软件设备仅声明 License `RECEIVED`，生命周期达到 `Licensed`；独立 HMAC 验签、`VERIFIED → Active` 和真实固件仍未验证。
 
 ## 认证、请求与错误
 
@@ -224,6 +224,7 @@ curl --cert device-cert.pem --key device-private-key.pem \
 关键约束：
 
 - License 状态：`NO_LICENSE`、`DRAFT`、`ISSUED`、`ACTIVE`、`EXPIRING_SOON`、`RENEWED`、`EXPIRED`、`REVOKED`；Entitlement 仅为 `REMOTE_CONTROL`、`OTA`、`ESG_REPORTING`。
+- `operationalStatus.operationalStatus` 仅返回 `Active`、`Maintenance`、`Suspended`、`Retired` 或 `null`。Heartbeat 的 MQTT `ACTIVE` / `SUSPENDED` / `RETIRED` 在写入最新态时映射为 REST/领域规范值；读取历史大写记录时同样映射。该归一不更改设备生命周期、License 状态或 MQTT 报文。修复后，同一稳定快照使用历史值或规范值时 ETag 一致；修复前大写响应对应的旧 ETag 可发生一次变化，服务仍返回完整快照。
 - Device User `passwordHash` 是设备本地专用 Argon2id PHC 值，不是 Cognito 或云端账号密码 Hash。当前服务仅下发本 Customer 下 `ACTIVE` 且有效分配到本设备的用户；已停用、未分配或其他客户用户不进入快照。验证材料不得写入通用日志或公开审计附件。
 - 服务器记录用户版本进入快照的 `servedAt`；后续 `lastSyncTime` 覆盖该时间后记录 `acknowledgedAt`。管理端 `snapshotStatus=ACKNOWLEDGED` 仍不代表设备已应用，`deviceApplyStatus` 保持 `NOT_REPORTED`。
 - License 的 `signaturePayload` 提供实际签名所用的 UTC 时间戳、设备/客户绑定及排序后的 wire Entitlement；不能用显示用的日期字段重建签名载荷。

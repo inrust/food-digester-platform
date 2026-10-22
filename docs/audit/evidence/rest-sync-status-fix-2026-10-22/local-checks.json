@@ -1,0 +1,66 @@
+{
+  "recordedAt": "2026-10-22T12:34:50.753Z",
+  "sourceCommit": "a21008b73e23891c3c718183b38e4958d9259c5b",
+  "sourceHashes": {
+    "apps/cloud-api/src/device/sync.ts": "e71f1f0b9e455493b2809c6ef1621312b795440090f45974f52128c3eed6ada2",
+    "apps/cloud-api/test/device-sync.test.ts": "e2b08236ddc0e50de1fd112dd8021f9eddb1719dad7df001b12b72a7aa15d434",
+    "apps/ingestion-worker/src/heartbeat/handler.ts": "d13e61e60b9cbf4091479363d7bfb92df017ac280952d4f02efac218dd2043da",
+    "apps/ingestion-worker/test/heartbeat-handler.test.ts": "5de32e0e05de8109c73487315cd843efda0a300d1dfe51fe2a9a316cf0b8ea61",
+    "packages/domain/src/device-lifecycle.ts": "b1c3f9cb4a3f12a868e07d9e358f6d1626dc769c6c0fefc7174ed57ae00ba146",
+    "packages/domain/test/device-lifecycle.test.ts": "70443fb5ae9afcc563edbd838e7aee0d59f83f6d915584276e1524ae6fde567e",
+    "scripts/rest-sync-fixture.mjs": "ef5343aa28e0d796c4260b9cd72084af14e792348ab00ededa60f147a55d7336",
+    "scripts/rest-sync-smoke.test.mjs": "4d52e182189b7d6b3573e815f00926f5c6beb689dd31eab4131322b80a3548d8",
+    "scripts/run-rest-sync-smoke.mjs": "ec0040eb4ef275295ac0597567fc4aef690bf8e82d4fb9732ee77721c4b661f5"
+  },
+  "checks": [
+    {
+      "command": "node node_modules/vitest/vitest.mjs run apps/ingestion-worker/test apps/cloud-api/test/device-sync.test.ts apps/cloud-api/test/license-sync-lifecycle.test.ts packages/domain/test",
+      "exitCode": 0,
+      "tests": 329,
+      "log": "local-unit.log"
+    },
+    {
+      "command": "node --import tsx --test scripts/rest-sync-smoke.test.mjs contracts/rest/device-sync-api.test.ts scripts/contract-suite.test.mjs",
+      "exitCode": 0,
+      "tests": 37,
+      "log": "local-contract.log"
+    },
+    {
+      "command": "tsc: domain build; cloud-api, ingestion-worker and domain typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "eslint: nine changed source and test files",
+      "exitCode": 0
+    },
+    {
+      "command": "prettier --check: nine changed source and test files",
+      "exitCode": 0
+    },
+    {
+      "command": "node scripts/check-secrets.mjs",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "command": "node node_modules/vitest/vitest.mjs run infra/test/deployment-config.test.ts",
+      "exitCode": 1,
+      "reason": "pnpm wrapper attempted network fetch of @pnpm/exe; bundling failed before assertions",
+      "log": "deployment-template-attempt-1-fail.log"
+    },
+    {
+      "command": "PATH=/tmp/rest-sync-status-tools:$PATH node node_modules/vitest/vitest.mjs run infra/test/deployment-config.test.ts",
+      "pnpm": "/Users/anray/.cache/node/corepack/v1/pnpm/10.20.0/bin/pnpm.cjs",
+      "exitCode": 0,
+      "tests": 6,
+      "log": "deployment-template-attempt-2-pass.log"
+    },
+    {
+      "command": "node scripts/check-boundaries.mjs && node scripts/check-schemas.mjs && node scripts/build-openapi.mjs --check",
+      "exitCode": 0
+    }
+  ]
+}

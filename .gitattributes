@@ -7,3 +7,12 @@ docs/audit/evidence/ci-repair-2026-10-18/**/*.log -whitespace
 docs/audit/evidence/csr-lifecycle-2026-10-22/attempt-1/*.pem -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 # Preserve public certificate evidence from each REST Sync attempt byte-for-byte.
 docs/audit/evidence/rest-sync-2026-10-22/attempt-*/*.pem -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Preserve public certificate bytes from the status-fix regression run.
+docs/audit/evidence/rest-sync-status-fix-2026-10-22/attempt-*/*.pem -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# GitHub's log prefixes include trailing tabs/spaces on empty output lines.
+docs/audit/evidence/rest-sync-status-fix-2026-10-22/previous-deploy-failure-excerpt.log -whitespace
+docs/audit/evidence/rest-sync-status-fix-2026-10-22/deployment-diff-and-result.log -whitespace
+# Preserve test-runner EOF blank lines in these three sealed raw logs.
+docs/audit/evidence/rest-sync-status-fix-2026-10-22/deployment-template-attempt-1-fail.log -whitespace
+docs/audit/evidence/rest-sync-status-fix-2026-10-22/deployment-template-attempt-2-pass.log -whitespace
+docs/audit/evidence/rest-sync-status-fix-2026-10-22/local-unit.log -whitespace

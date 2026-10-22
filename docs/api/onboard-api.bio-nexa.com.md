@@ -8,7 +8,7 @@ Base URL：`https://onboard-api.bio-nexa.com`。本文以 [可执行 OpenAPI](..
 
 设备方负责在设备本地生成并持久保存 **RSA 2048 位或更强的私钥**，生成 PKCS#10 PEM CSR，且私钥始终留在设备；设备还须能使用该私钥作 RSA-SHA256 签名、保存 `requestId` 和安装返回的证书。首次申请不要求预先登记设备库存；管理员批准后，系统按申请资料创建设备台账。管理员按照双方认可的线下管理制度核对实物、安装记录、申请时间和 CSR 公钥指纹后审批；**序列号与 CSR 本身不证明实物身份**。
 
-审批通过后，云端对已申请的 CSR 公钥签发证书并注册 AWS IoT Core。新流程下发 `certificatePem` 与 `certificateChain`，云端不生成或返回设备私钥。设备用证书连接 IoT Core、发送首个合法 Heartbeat 后才完成接入；审批通过不等于接入完成。证书包 24 小时有效，超时按既有撤证及 `REJECTED/ONBOARDING_TIMEOUT` 规则收敛。目标 AWS 与真实设备联调：**NOT RUN / NO RECEIPT**。
+审批通过后，云端对已申请的 CSR 公钥签发证书并注册 AWS IoT Core。新流程下发 `certificatePem` 与 `certificateChain`，云端不生成或返回设备私钥。设备用证书连接 IoT Core、发送首个合法 Heartbeat 后才完成接入；审批通过不等于接入完成。证书包 24 小时有效，超时按既有撤证及 `REJECTED/ONBOARDING_TIMEOUT` 规则收敛。目标 AWS 的软件隔离设备接入与后续 Sync 已有 [实测回执](../audit/2026-10-22-rest-sync-status-fix-live-test.md)；真实固件和 24 小时超时回退仍为 **NOT RUN**。
 
 ## `POST /api/v1/device/onboarding/request`
 
@@ -115,4 +115,4 @@ AWS IoT 使用 `RegisterCertificateWithoutCA` 注册该叶证书，设备必须�
 
 该次证据限于共享 test 环境内的一台软件设备；设备方真实固件、安全存储、实际运行许可、首次接入超时/丢包恢复和生产验收未执行。返回的 MQTT Host 仍为默认 AWS Data-ATS，本轮实际连接使用运维指定的 `iot.bio-nexa.com`；未修改 Onboarding 返回配置。
 
-首次接入后，带客户/站点分配、License、配置及设备用户的后续验证见 [完整 REST Sync 实测](../audit/2026-10-22-rest-sync-live-test.md)。六域业务内容与云端记录匹配，但 REST 运行状态枚举存在大小写不一致，契约验收为 FAIL；不能由接入成功推定完整 REST 契约或设备业务激活通过。
+首次接入后，带客户/站点分配、License、配置及设备用户的 [完整 REST Sync 首轮实测](../audit/2026-10-22-rest-sync-live-test.md) 保留枚举大小写契约失败；后续 [修复部署与隔离复测](../audit/2026-10-22-rest-sync-status-fix-live-test.md) 已通过 161/161 项检查、15 次成功 Sync 的 Schema 与九次业务快照核对，并清理测试资源。此结论不扩展到其他 REST 操作、真实固件或独立 License `VERIFIED → Active` 业务激活。
