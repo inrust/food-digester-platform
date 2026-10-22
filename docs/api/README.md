@@ -6,7 +6,7 @@
 |---|---|---|
 | `onboard-api.bio-nexa.com` | 无需预置 Token；CSR 申请与私钥签名轮询 | [Onboarding API](./onboard-api.bio-nexa.com.md) |
 | `device-api.bio-nexa.com` | API Gateway mTLS + 应用层设备证书白名单；接入后使用 | [Device API](./device-api.bio-nexa.com.md) |
-| `iot.bio-nexa.com`（规划域名；实际使用 Onboarding 返回的 MQTT endpoint） | MQTT over TLS + 设备 X.509；8 类上行、3 类下行 | [设备 MQTT 联调说明](./iot.bio-nexa.com.md) |
+| `iot.bio-nexa.com`（2026-10-22 连接实测通过；实际主机仍以 Onboarding 与运维参数为准） | MQTT over TLS + 设备 X.509；8 类上行、3 类下行 | [设备 MQTT 联调说明](./iot.bio-nexa.com.md) |
 
 只有印刷序列号的设备使用 [无预置凭据 Onboarding 流程](./onboard-api.bio-nexa.com.md)。设备方与管理员须按线下制度核验申请与实物的对应关系。
 
@@ -27,7 +27,9 @@ MQTT 以 `contracts/mqtt/topic-catalog.json`、各 Topic JSON Schema、冻结策
 
 ## 当前交付边界
 
-仓库已将测试环境域名参数配置为上述两个生产式主机名，并具备 API Gateway、Lambda 路由及认证代码。本文仅证明仓库契约和代码接线，不证明 DNS、ACM、API Gateway mTLS、Truststore、数据库、IoT、KMS 或 S3 已在目标 AWS 环境成功部署。目标 AWS 运行验收：**NOT RUN / NO RECEIPT**。
+MQTT 自定义域名 `iot.bio-nexa.com:8883` 的 TLS、临时 X.509 身份连接、三个下行订阅许可和保活已于 2026-10-22 实测通过，见 [实测报告](../audit/2026-10-22-mqtt-custom-domain-live-test.md)。本次未发布业务消息，八类上行和三类下行的实际业务收发、设备方真实固件联调仍为 **NOT RUN**；Onboarding 返回主机仍按既有配置，不因该实测自动切换。
+
+REST 的 API Gateway mTLS、Truststore、数据库、KMS、S3 及完整 Onboarding / 业务验收须查阅各自证据，不能由本次 MQTT 连接结果推定。
 
 ## 2026-10-01 证书契约升级
 

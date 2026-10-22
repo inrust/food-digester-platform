@@ -1,8 +1,10 @@
 # 设备 MQTT 联调说明（`iot.bio-nexa.com`）
 
-版本基线：2026-10-01。本文供设备固件、网关软件和云端联调人员使用，覆盖持续数据上报、命令接收、OTA 状态和通知处理。当前契约为 **8 类上行 + 3 类下行**。设备持续发送数据使用 MQTT；证书、同步、下载授权及媒体上传会话使用 [Device REST API](./device-api.bio-nexa.com.md)，首次接入使用 [Onboarding API](./onboard-api.bio-nexa.com.md)。
+协议基线：2026-10-01；域名实测状态更新：2026-10-22。本文供设备固件、网关软件和云端联调人员使用，覆盖持续数据上报、命令接收、OTA 状态和通知处理。当前契约为 **8 类上行 + 3 类下行**。设备持续发送数据使用 MQTT；证书、同步、下载授权及媒体上传会话使用 [Device REST API](./device-api.bio-nexa.com.md)，首次接入使用 [Onboarding API](./onboard-api.bio-nexa.com.md)。
 
-`iot.bio-nexa.com` 是规划的 IoT 自定义域名。**实际连接主机以 Onboarding `APPROVED` 响应中的 `mqtt.endpoint` 和运维提供的环境参数为准**；不能仅凭本文认定该域名已经部署。本文根据仓库契约和生产处理器整理，真实设备与目标 AWS 验收仍为 **NOT RUN / NO RECEIPT**。
+`iot.bio-nexa.com:8883` 已于 **2026-10-22** 完成 AWS 新加坡区域的自定义域名实测：TLS 验证、临时 X.509 测试身份的 MQTT CONNECT、三个下行 Topic 的 SUBACK 和保活均通过，AWS 服务端同步确认 `connected=true`；见 [MQTT 自定义域名实测报告](../audit/2026-10-22-mqtt-custom-domain-live-test.md)。本次未发布业务消息，八类上行、三类下行的实际业务收发及设备方真实证书/固件联调仍为 **NOT RUN**。
+
+**实际连接主机仍以 Onboarding `APPROVED` 响应中的 `mqtt.endpoint` 和运维提供的环境参数为准。** 仓库当前 Onboarding 入口仍通过 `iot.getDataEndpoint()` 获取默认 AWS Data-ATS 端点；本次实测不表示已修改其返回主机，也不构成 Onboarding、业务处理或生产验收。
 
 完整 JSON 与独立文件见 [设备 MQTT 完整报文样例](./mqtt-message-examples.md)，覆盖全部 11 类 Topic、22 种命令、13 类通知及命令/OTA 回执分支。
 
