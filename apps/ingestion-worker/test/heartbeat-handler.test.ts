@@ -176,6 +176,24 @@ function handler() {
 }
 
 describe('createHeartbeatHandler（BE-IOT-04）', () => {
+  test.each([
+    ['ACTIVE', 'Active'],
+    ['SUSPENDED', 'Suspended'],
+    ['RETIRED', 'Retired'],
+  ])('MQTT %s 写入规范运行状态 %s，保留原始报文', async (wire, canonical) => {
+    const ctx = await plantDevice();
+    const message = heartbeatMessage(ctx, {
+      seq: 1,
+      ts: '2026-08-28T07:55:00.000Z',
+      data: { operationalStatus: wire },
+    });
+    const result = await handler()(message);
+    assert.equal(result.outcome, 'PROCESSED');
+    const state = await prisma.deviceLatestState.findUnique({ where: { deviceId: ctx.deviceId } });
+    assert.equal(state?.operationalStatus, canonical);
+    assert.equal(message.data.operationalStatus, wire);
+  });
+
   test('首次 Heartbeat：latest state 全字段落库（在线/uptime/固件/运行模式/License/网络/资源/传感器/证书/Tamper）', async () => {
     const ctx = await plantDevice();
     const result = await handler()(heartbeatMessage(ctx, { seq: 1, ts: '2026-08-28T07:55:00.000Z' }));
@@ -187,7 +205,7 @@ describe('createHeartbeatHandler（BE-IOT-04）', () => {
     assert.ok(state);
     assert.equal(state.connectivity, 'ONLINE');
     assert.equal(state.customerId, ctx.customerId);
-    assert.equal(state.operationalStatus, 'ACTIVE');
+    assert.equal(state.operationalStatus, 'Active');
     assert.isTrue(state.machineRunning);
     assert.equal(state.machineMode, 'PROCESSING');
     assert.equal(state.firmwareVersion, '1.2.3');

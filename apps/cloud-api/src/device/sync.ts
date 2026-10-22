@@ -30,6 +30,7 @@
 import { createHash } from 'node:crypto';
 import type { DbClient } from '@fdp/database';
 import type { DeviceAuthContext } from '@fdp/auth';
+import { normalizeOperationalStatus } from '@fdp/domain';
 import { EFFECTIVE_LICENSE_STATUSES } from '../admin/customer/repository.js';
 import { DEFAULT_CONNECTIVITY_THRESHOLD_MS, deriveConnectivity } from '../admin/device/repository.js';
 import { resolveEffectiveConfiguration } from '../admin/configuration/service.js';
@@ -464,7 +465,7 @@ export async function buildDeviceSyncSnapshot(
   const configuration = await resolveEffectiveConfiguration(deps, device.id, now);
 
   const operationalStatus =
-    latestState?.operationalStatus ??
+    normalizeOperationalStatus(latestState?.operationalStatus) ??
     (OPERATIONAL_FALLBACK_STATUSES.includes(device.lifecycleStatus as (typeof OPERATIONAL_FALLBACK_STATUSES)[number])
       ? device.lifecycleStatus
       : null);

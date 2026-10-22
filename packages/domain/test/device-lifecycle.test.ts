@@ -10,6 +10,7 @@ import {
   LIFECYCLE_TRANSITIONS,
   OPERATIONAL_TRANSITIONS,
   OPERATIONAL_STATUSES,
+  normalizeOperationalStatus,
   transitionLifecycle,
   transitionOperational,
   type Actor,
@@ -23,6 +24,16 @@ const SUPER_ADMIN: Actor = { actorType: 'ADMIN', actorId: 'admin-1', actorRole: 
 const OPERATOR: Actor = { actorType: 'ADMIN', actorId: 'op-1', actorRole: 'PlatformOperator' };
 const SYSTEM: Actor = { actorType: 'SYSTEM', actorId: 'system' };
 const DEVICE: Actor = { actorType: 'DEVICE', actorId: 'dev-x' };
+
+test('运行状态显式映射 MQTT 与领域枚举，不猜测未知值', () => {
+  for (const canonical of OPERATIONAL_STATUSES) {
+    expect(normalizeOperationalStatus(canonical)).toBe(canonical);
+    expect(normalizeOperationalStatus(canonical.toUpperCase())).toBe(canonical);
+  }
+  for (const unknown of [null, undefined, '', 'active', 'ONBOARDED', {}, 1]) {
+    expect(normalizeOperationalStatus(unknown)).toBeNull();
+  }
+});
 
 function device(
   lifecycleStatus: LifecycleStatus,

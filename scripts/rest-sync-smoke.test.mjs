@@ -257,3 +257,28 @@ test('parent closure refuses to run while an owned device remains', async () => 
   assert(!calls.some((s) => /^(DELETE|INSERT|UPDATE)/.test(s)));
   assert.equal(calls.at(-1), 'ROLLBACK');
 });
+
+test('legacy status probe refuses missing or noncanonical own state before any write', async () => {
+  for (const status of [undefined, 'ACTIVE', 'Suspended']) {
+    const calls = [];
+    const client = {
+      async query(sql) {
+        calls.push(sql);
+        return {
+          rows: sql.startsWith('SELECT id,serial_number')
+            ? [{ id: 'own', model: scope.model, customer_id: null, site_id: null }]
+            : sql.startsWith('SELECT device_id,customer_id,last_heartbeat_at')
+              ? status === undefined
+                ? []
+                : [{ device_id: 'own', operational_status: status }]
+              : sql.includes('count(*)::int AS n')
+                ? [{ n: 0 }]
+                : [],
+        };
+      },
+    };
+    await assert.rejects(execute(client, 'legacy-active', scope), /OWN_CANONICAL_STATE_REQUIRED/);
+    assert(!calls.some((s) => /^(DELETE|INSERT|UPDATE)/.test(s)));
+    assert.equal(calls.at(-1), 'ROLLBACK');
+  }
+});

@@ -14,6 +14,7 @@
  */
 import type { DbClient } from '@fdp/database';
 import type { SecurePackageService } from '@fdp/auth';
+import { normalizeOperationalStatus } from '@fdp/domain';
 import { hashPayload, processWithReceipt } from '../ingest/receipt.js';
 import type { ReceiptOutcome } from '../ingest/receipt.js';
 import type { ValidatedMessage } from '../ingest/pipeline.js';
@@ -67,7 +68,7 @@ function buildStateWrite(message: ValidatedMessage, occurredAt: Date): Record<st
     lastHeartbeatAt: occurredAt,
   };
   const scalarMap: Record<string, unknown> = {
-    operationalStatus: asString(data.operationalStatus),
+    operationalStatus: normalizeOperationalStatus(data.operationalStatus) ?? undefined,
     machineRunning: asBoolean(data.machineRunning),
     machineMode: asString(data.machineMode),
     firmwareVersion: asString(data.firmwareVersion),

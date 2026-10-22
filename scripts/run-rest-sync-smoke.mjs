@@ -40,6 +40,9 @@ export async function main(output) {
     'scripts/run-rest-sync-smoke.mjs',
     'scripts/rest-sync-fixture.mjs',
     'scripts/rest-sync-evidence.mjs',
+    'packages/domain/src/device-lifecycle.ts',
+    'apps/ingestion-worker/src/heartbeat/handler.ts',
+    'apps/cloud-api/src/device/sync.ts',
     'scripts/run-csr-lifecycle-smoke.mjs',
     'contracts/rest/openapi.bundle.json',
     'contracts/testing/device-contract.ts',
@@ -1009,6 +1012,30 @@ export async function main(output) {
             (archived.Versions ?? []).some((v) => v.Key.endsWith('part-' + sha(e.id).slice(0, 16) + '.json.gz')) &&
             (archived.Versions ?? []).some((v) => v.Key.endsWith('part-' + sha(e.id).slice(0, 16) + '.manifest.json')),
         ),
+    );
+    check('heartbeat-writes-canonical-operational-status', r.finalState.latest[0]?.operational_status === 'Active');
+    const canonicalBeforeLegacy = await mtls('canonical-before-legacy', initial);
+    r.legacyProbe = db('legacy-active');
+    check('legacy-probe-only-own-device', r.legacyProbe.legacyUpdate.device_id === deviceId);
+    const legacySync = await mtls('legacy-active-sync', initial);
+    const legacyState = db('observe');
+    check(
+      'legacy-read-normalized-without-rewriting-db',
+      legacyState.latest[0]?.operational_status === 'ACTIVE' &&
+        legacySync.raw.operationalStatus.operationalStatus === 'Active' &&
+        legacySync.raw.etag === canonicalBeforeLegacy.raw.etag,
+    );
+    await heartbeat('restore-canonical-heartbeat');
+    r.statusRestoredState = await waitFor(
+      'canonical-status-restored',
+      (s) =>
+        s.latest[0]?.operational_status === 'Active' && s.receipts.some((v) => v.seq === 3 && v.result === 'PROCESSED'),
+    );
+    const restoredSync = await mtls('restored-canonical-sync', initial);
+    check(
+      'restored-status-etag-stable',
+      restoredSync.raw.operationalStatus.operationalStatus === 'Active' &&
+        restoredSync.raw.etag === legacySync.raw.etag,
     );
     userPasswords.clear();
     r.workersAfter = readWorkers();

@@ -29,6 +29,26 @@ export type LifecycleStatus = (typeof LIFECYCLE_STATUSES)[number];
 export const OPERATIONAL_STATUSES = ['Active', 'Maintenance', 'Suspended', 'Retired'] as const;
 export type OperationalStatus = (typeof OPERATIONAL_STATUSES)[number];
 
+/** MQTT uses uppercase enums; domain/REST use title case. Unknown values are not statuses. */
+export function normalizeOperationalStatus(value: unknown): OperationalStatus | null {
+  switch (value) {
+    case 'ACTIVE':
+    case 'Active':
+      return 'Active';
+    case 'MAINTENANCE':
+    case 'Maintenance':
+      return 'Maintenance';
+    case 'SUSPENDED':
+    case 'Suspended':
+      return 'Suspended';
+    case 'RETIRED':
+    case 'Retired':
+      return 'Retired';
+    default:
+      return null;
+  }
+}
+
 export type ActorType = 'ADMIN' | 'DEVICE' | 'SYSTEM';
 
 export interface Actor {

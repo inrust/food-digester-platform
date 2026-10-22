@@ -15,11 +15,12 @@ export function validateScope(s) {
 }
 export async function execute(client, action, scope) {
   validateScope(scope);
-  if (!['observe', 'cleanup', 'audit-empty', 'close-parents'].includes(action)) throw Error('INVALID_ACTION');
+  if (!['observe', 'cleanup', 'audit-empty', 'close-parents', 'legacy-active'].includes(action))
+    throw Error('INVALID_ACTION');
   const q = (sql, args = []) => client.query(sql, args);
   const rows = async (sql, args = []) => (await q(sql, args)).rows;
   await q(
-    ['cleanup', 'close-parents'].includes(action)
+    ['cleanup', 'close-parents', 'legacy-active'].includes(action)
       ? 'BEGIN ISOLATION LEVEL SERIALIZABLE'
       : 'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY',
   );
@@ -215,7 +216,21 @@ export async function execute(client, action, scope) {
         state.users.some((u) => u.status !== 'DISABLED'))
     )
       throw Error('ACTIVE_OWN_ROWS_REMAIN');
-    if (action === 'close-parents') {
+    if (action === 'legacy-active') {
+      if (devices.length !== 1 || state.latest.length !== 1 || state.latest[0].operational_status !== 'Active')
+        throw Error('OWN_CANONICAL_STATE_REQUIRED');
+      const changed = await rows(
+        "UPDATE device_latest_state SET operational_status='ACTIVE' WHERE device_id=$1 AND operational_status='Active' RETURNING device_id,operational_status",
+        [devices[0].id],
+      );
+      if (changed.length !== 1) throw Error('OWN_LEGACY_UPDATE_RACE');
+      if (JSON.stringify(before) !== JSON.stringify(await outside())) throw Error('OUTSIDE_DATA_CHANGED');
+      if (JSON.stringify(outsideBusinessFingerprints) !== JSON.stringify(await businessOutside()))
+        throw Error('OUTSIDE_BUSINESS_DATA_CHANGED');
+      state.legacyUpdate = changed[0];
+      await q('COMMIT');
+      return state;
+    } else if (action === 'close-parents') {
       if (
         devices.length ||
         licenses.length ||

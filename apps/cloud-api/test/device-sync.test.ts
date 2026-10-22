@@ -246,6 +246,32 @@ const syncReceiptStore = () =>
   ).deviceUserSyncReceipt;
 
 describe('POST /api/v1/device/sync（完整事实快照）', () => {
+  test.each([
+    ['ACTIVE', 'Active', 300],
+    ['MAINTENANCE', 'Maintenance', 900],
+    ['SUSPENDED', 'Suspended', 300],
+    ['RETIRED', 'Retired', 300],
+  ] as const)('历史 MQTT %s 归一为 REST %s，ETag 与规范值一致', async (legacy, canonical, interval) => {
+    const ctx = await plantDevice({ lifecycleStatus: 'Onboarded', operationalStatus: legacy });
+    const first = await handler()({ identity: { clientCertPem: ctx.pem }, requestId: 'legacy-status' });
+    assert.equal(first.status, 200);
+    assert.equal(dataOf(first).operationalStatus.operationalStatus, canonical);
+    assert.equal(dataOf(first).operationalStatus.syncIntervalSeconds, interval);
+    await prisma.deviceLatestState.update({
+      where: { deviceId: ctx.deviceId },
+      data: { operationalStatus: canonical },
+    });
+    const second = await handler()({ identity: { clientCertPem: ctx.pem }, requestId: 'canonical-status' });
+    assert.equal(dataOf(first).etag, dataOf(second).etag);
+  });
+
+  test('未知最新态不能泄漏进 REST 枚举；无可用生命周期回退时为 null', async () => {
+    const ctx = await plantDevice({ lifecycleStatus: 'Onboarded', operationalStatus: 'UNRECOGNIZED' });
+    const res = await handler()({ identity: { clientCertPem: ctx.pem }, requestId: 'unknown-status' });
+    assert.equal(res.status, 200);
+    assert.isNull(dataOf(res).operationalStatus.operationalStatus);
+  });
+
   test('六域齐备：Assignment/Alias/License+签名/Device Users+验证材料/Configuration/Operational Status', async () => {
     const { deviceId, pem, customerId, siteId } = await plantDevice({
       lifecycleStatus: 'Active',
