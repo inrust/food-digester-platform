@@ -27,7 +27,7 @@ MQTT 以 `contracts/mqtt/topic-catalog.json`、各 Topic JSON Schema、冻结策
 
 ## 当前交付边界
 
-MQTT 自定义域名 `iot.bio-nexa.com:8883` 的 TLS、临时 X.509 身份连接、三个下行订阅许可和保活已于 2026-10-22 实测通过，见 [实测报告](../audit/2026-10-22-mqtt-custom-domain-live-test.md)。本次未发布业务消息，八类上行和三类下行的实际业务收发、设备方真实固件联调仍为 **NOT RUN**；Onboarding 返回主机仍按既有配置，不因该实测自动切换。
+MQTT 自定义域名 `iot.bio-nexa.com:8883` 的 TLS、临时 X.509 身份连接、三个下行订阅许可和保活已于 2026-10-22 实测通过，见 [实测报告](../audit/2026-10-22-mqtt-custom-domain-live-test.md)。另有 [8 类上行与 3 类下行业务实测](../audit/2026-10-22-mqtt-business-live-test.md)，在共享 test 环境使用独立软件设备和预置 fixture 核对了消息收发、云端状态和归档。设备方真实固件、实际命令动作、OTA 下载安装和完整 REST / Onboarding 流程仍为 **NOT RUN**；Onboarding 返回主机仍按既有配置。
 
 REST 的 API Gateway mTLS、Truststore、数据库、KMS、S3 及完整 Onboarding / 业务验收须查阅各自证据，不能由本次 MQTT 连接结果推定。
 

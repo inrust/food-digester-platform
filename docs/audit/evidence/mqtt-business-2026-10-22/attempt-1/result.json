@@ -1,0 +1,164 @@
+{
+  "startedAt": "2026-10-22T10:34:22.409Z",
+  "scope": {
+    "deviceId": "mqttbiz-6c095999c1b51130",
+    "customerId": "1365591d-2bcd-413e-a960-60a8b65f8d71",
+    "siteId": "e0a4e4b0-198d-444f-b592-27fb07aeb963",
+    "licenseId": "c7cfed5c-e16f-4530-a4b1-8ce43a106a78",
+    "packageId": "8cfe077e-38ef-4acf-9e62-c8d70a2b6319",
+    "campaignId": "8e675582-c109-4302-a0d7-4f4e76982f23",
+    "targetId": "496cde64-7454-4630-8e6a-1d0d5273f77d",
+    "mediaSessionId": "095b0616-8e24-42b7-930d-8149e71734b4",
+    "notificationId": "407b2483-f7a4-4d29-985e-377c1af48754",
+    "commandId": "CMD-MQTTBIZ-6C095999C1B51130-1",
+    "mediaHash": "24727b82a4a69a5c78397f79b4fdbfc273e3632a78dc267c8899d8661476dcfe",
+    "packageHash": "8caade7806cc923106c08f3e932479004e287ee3d14a4d15ceef957585dd0f61",
+    "packageBytes": 92,
+    "packageKey": "mqtt-business/mqttbiz-6c095999c1b51130/probe.bin",
+    "mediaKey": "media/1365591d-2bcd-413e-a960-60a8b65f8d71/mqttbiz-6c095999c1b51130/095b0616-8e24-42b7-930d-8149e71734b4/probe.png"
+  },
+  "host": "iot.bio-nexa.com",
+  "region": "ap-southeast-1",
+  "accountId": "065986019555",
+  "sourceCommit": "be2d03394f9c396e97b858470fb5ecd01b10ca19",
+  "sourceHashes": {
+    "scripts/run-mqtt-business-smoke.mjs": "317da142b99dc5df1686a5782407abef76759ad44fd0a5a6c53049440f97c474",
+    "scripts/mqtt-business-fixture.mjs": "c29ef241c98db3bd9d99a9fc47b3e3fa2da83792e851b9552c22e1d3d38769ab"
+  },
+  "mode": "OWN_FIXTURES_IN_SHARED_TEST_ENVIRONMENT",
+  "physicalDevice": false,
+  "projectCaOnboarding": false,
+  "firmwareInstall": false,
+  "privateKeysPersisted": false,
+  "operations": [
+    {
+      "action": "preflight",
+      "at": "2026-10-22T10:35:00.701Z",
+      "status": "PASS",
+      "receipt": "001-preflight-result.json"
+    }
+  ],
+  "uplink": [],
+  "downlink": [],
+  "observations": [],
+  "cleanup": [
+    {
+      "name": "detach-iot-policy",
+      "status": "PASS",
+      "detail": {}
+    },
+    {
+      "name": "detach-iot-principal",
+      "status": "PASS",
+      "detail": {}
+    },
+    {
+      "name": "deactivate-test-certificate",
+      "status": "PASS",
+      "detail": {}
+    },
+    {
+      "name": "delete-test-certificate",
+      "status": "PASS",
+      "detail": {}
+    },
+    {
+      "name": "delete-iot-policy",
+      "status": "PASS",
+      "detail": {}
+    },
+    {
+      "name": "delete-iot-thing",
+      "status": "PASS",
+      "detail": {}
+    },
+    {
+      "name": "delete-fixture-lambda",
+      "status": "PASS",
+      "detail": {
+        "StatusCode": 204
+      }
+    },
+    {
+      "name": "delete-fixture-log-group",
+      "status": "FAIL",
+      "error": "logs:delete-log-group:AccessDeniedException"
+    }
+  ],
+  "gate": "FAIL",
+  "domain": {
+    "domainConfigurationName": "bionexa-iot-prod",
+    "domainConfigurationArn": "arn:aws:iot:ap-southeast-1:065986019555:domainconfiguration/bionexa-iot-prod/cr5i2",
+    "domainName": "iot.bio-nexa.com",
+    "serverCertificates": [
+      {
+        "serverCertificateArn": "arn:aws:acm:ap-southeast-1:065986019555:certificate/3fca8412-e7d6-4348-aca8-2eb35cc54e8e",
+        "serverCertificateStatus": "VALID"
+      }
+    ],
+    "domainConfigurationStatus": "ENABLED",
+    "serviceType": "DATA",
+    "domainType": "CUSTOMER_MANAGED",
+    "lastStatusChangeDate": "2026-10-22T16:04:44.814000+08:00",
+    "tlsConfig": {
+      "securityPolicy": "IoTSecurityPolicy_TLS13_1_2_2022_10"
+    },
+    "serverCertificateConfig": {
+      "enableOCSPCheck": false
+    },
+    "authenticationType": "AWS_X509",
+    "applicationProtocol": "SECURE_MQTT"
+  },
+  "workers": [
+    {
+      "name": "fdp-test-ingestion",
+      "state": "Active",
+      "codeSha256": "f2WLNxOd4+20RmoXtUQ68PV2XyN3EJ6rBxLg/XQWiFk=",
+      "lastModified": "2026-10-18T09:44:03.000+0000"
+    },
+    {
+      "name": "fdp-test-command-publisher",
+      "state": "Active",
+      "codeSha256": "vHumLihryN9gsukWN63e+eIHwrNRvQdCTWgae8B8Kn8=",
+      "lastModified": "2026-10-18T09:44:04.000+0000"
+    },
+    {
+      "name": "fdp-test-ota-dispatcher",
+      "state": "Active",
+      "codeSha256": "k+/yiEssgpe9Jlty5XchSQfk5YltMbkyHM4ul99BuZ4=",
+      "lastModified": "2026-10-18T09:44:04.000+0000"
+    },
+    {
+      "name": "fdp-test-notification-publisher",
+      "state": "Active",
+      "codeSha256": "YG1hF1DSPCCX8nGIAIOvkwoizj0LlBdCGlK2YWVyFl0=",
+      "lastModified": "2026-10-18T09:44:04.000+0000"
+    },
+    {
+      "name": "fdp-test-outbox-publisher",
+      "state": "Active",
+      "codeSha256": "iM4I9D22MubhsY7s1r4PCYPZJje6t3YCblbnDKn9sVA=",
+      "lastModified": "2026-10-18T09:44:04.000+0000"
+    },
+    {
+      "name": "fdp-test-archive",
+      "state": "Active",
+      "codeSha256": "ID0zZCFV/Mr90AJvveKYJ8HiISHcUE/4I6jX/AGnGSE=",
+      "lastModified": "2026-10-13T12:39:53.000+0000"
+    }
+  ],
+  "buckets": {
+    "media": "fdp-test-media-065986019555",
+    "ota": "fdp-test-ota-065986019555",
+    "raw": "fdp-test-raw-065986019555"
+  },
+  "fixture": {
+    "name": "fdp-test-qa09-mqttbiz-6c095999c1b51130",
+    "role": "arn:aws:iam::065986019555:role/fdp-test-replay-role",
+    "codeSha256": "1cec7c8744e497f8cbf61dc059b2bb1285c475b7aae9438b1f2b42e61a5439fd"
+  },
+  "certificateId": "153d1af12c99d57a97cb5b025dde2e7135937b98dad26552c346efdb94c837de",
+  "failure": "s3api:put-object:AccessDenied",
+  "finishedAt": "2026-10-22T10:35:27.304Z",
+  "cleanupGate": "FAIL"
+}

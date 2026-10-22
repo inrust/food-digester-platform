@@ -792,6 +792,6 @@ audit.hash = SHA256(UTF8(canonical)).lowercaseHex()
 
 `.canonical.txt` 文件末尾为便于文本阅读添加了一个换行；计算 Hash 时只取该行 JSON 的 UTF-8 字节，不包含末尾换行。
 
-55 份报文已通过仓库 Schema 校验，11 类 Topic 的 data 字段已全部覆盖，5 个审计 Hash 已核验。ACK 序号不重复，命令与 OTA 关联 ID 已检查；这些属于离线样例校验。另有 [2026-10-22 MQTT 自定义域名实测](../audit/2026-10-22-mqtt-custom-domain-live-test.md) 验证 TLS、临时 X.509 身份连接、三个下行订阅许可和保活；本次未发布业务消息，这 55 份样例的实际 AWS 业务收发与设备方真机联调仍为 **NOT RUN**。
+55 份报文已通过仓库 Schema 校验，11 类 Topic 的 data 字段已全部覆盖，5 个审计 Hash 已核验。ACK 序号不重复，命令与 OTA 关联 ID 已检查；这些属于离线样例校验。另有 [2026-10-22 MQTT 自定义域名实测](../audit/2026-10-22-mqtt-custom-domain-live-test.md) 验证 TLS、临时 X.509 身份连接、三个下行订阅许可和保活；后续 [业务实测报告](../audit/2026-10-22-mqtt-business-live-test.md) 记录了独立软件设备的 8 类上行、3 类下行与云端处理核对。该实测没有逐一发送这里的全部 55 份样例，也不证明真实固件执行命令、REST 流程或 OTA 下载安装；这些完整场景仍需设备方联调。
 
 契约来源：[Topic 目录](../../contracts/mqtt/topic-catalog.json)、[命令目录](../../contracts/mqtt/command-catalog.json)、[通知目录](../../contracts/mqtt/notification-catalog.json)、[OTA ACK 状态策略](../../contracts/mqtt/ota-status-channel-policy.json)、[Hash 实现](../../contracts/mqtt/payload-normalization.ts)。
