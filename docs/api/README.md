@@ -14,6 +14,9 @@
 
 设备方需要完整报文时，可直接查阅 [设备 MQTT 完整报文样例](./mqtt-message-examples.md)，并使用其中链接的独立 JSON 文件对照开发。
 
+上位机与云端联调按 [上位机 MQTT 接口测试方案](./iot-device-test-plan.md) 执行，包含接入、正常业务、异常恢复及生命周期顺序。
+
+
 ## 契约来源与优先级
 
 1. `docs/Device-Cloud-Communication-Design-解析.md`：设备通信源事实和原始六接口；
