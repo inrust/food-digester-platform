@@ -1,6 +1,6 @@
 # 上位机 MQTT 接口测试方案
 
-适用范围为 [设备 MQTT 联调说明](./iot.bio-nexa.com.md) 的 8 类上行和 3 类下行。[Onboarding](./onboard-api.bio-nexa.com.md) 和 [Device REST](./device-api.bio-nexa.com.md) 仅覆盖完成 MQTT 闭环所需的操作。用例以目标测试环境的实际结果填写，初始状态均为 `NOT_RUN`。
+适用范围为 [设备 MQTT 联调说明](./iot.bio-nexa.com.md) 的 8 类上行和 3 类下行。[Onboarding](./onboard-api.bio-nexa.com.md) 和 [Device REST](./device-api.bio-nexa.com.md) 仅覆盖完成 MQTT 闭环所需的操作。
 
 ## 测试准备
 
