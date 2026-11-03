@@ -206,7 +206,8 @@ test('deployment template: unauthed OPTIONS only, fixed origin errors, pinned tr
   assert.equal(template.findOutputs('*').DeviceApiUrl.Value, 'https://device-api.bio-nexa.com/');
   assert.equal(template.findOutputs('*').AdminApiUrl.Value, 'https://api.bio-nexa.com/api/v1/');
   assert.equal(template.findOutputs('*').OnboardingApiUrl.Value, 'https://onboard-api.bio-nexa.com/');
-}, 30000);
+  // Full stack synthesis bundles Lambda assets and can exceed 30s on hosted runners.
+}, 120_000);
 
 test('preconnect context is default off and restricted to test capacity with explicit engine', () => {
   assert.isFalse(resolveConfig(new App({ context })).enableQa09AuthenticatedPreconnect);
