@@ -48,10 +48,27 @@ export function projectDeviceApi(api) {
 export function breakingChanges(before, after, path = '', direction = 'request') {
   const changes = [];
   const emit = (at, kind) => changes.push({ path: at, kind });
+  // This MQTT message-ID expansion preserves every value accepted by the previous pattern.
+  if (
+    direction === 'request' &&
+    path.startsWith('/mqtt/') &&
+    /\/properties\/meta(?:\/allOf\/\d+)?\/properties\/id\/pattern$/.test(path) &&
+    before === '^[A-Z0-9][A-Z0-9-]{0,127}$' &&
+    after === '^[A-Za-z0-9][A-Za-z0-9-]{0,127}$'
+  )
+    return changes;
   if (before === null || after === null || typeof before !== 'object' || typeof after !== 'object') {
     if (JSON.stringify(before) !== JSON.stringify(after)) emit(path, 'constraint-changed');
     return changes;
   }
+  if (
+    path.startsWith('/mqtt/') &&
+    path.endsWith('/properties/meta/allOf') &&
+    Array.isArray(before) &&
+    Array.isArray(after) &&
+    before.length === after.length
+  )
+    return before.flatMap((schema, index) => breakingChanges(schema, after[index], `${path}/${index}`, direction));
   if (Array.isArray(before) || Array.isArray(after)) {
     if (JSON.stringify(before) !== JSON.stringify(after)) emit(path, 'constraint-changed');
     return changes;

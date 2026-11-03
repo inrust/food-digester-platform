@@ -130,18 +130,21 @@ test('all device operations and declared response JSON Schemas compile; stable e
   const codes = json('contracts/rest/error-codes.json').errorCodes;
   assert.equal(new Set(codes.map((code) => code.code)).size, codes.length);
 });
-test('predecessor MQTT is compatible; known REST break requires exact version and frozen DEC approvals', async () => {
+test('lowercase MQTT message IDs are compatible with the preceding contract', async () => {
   const receipt = await checkBaselines();
-  assert.equal(receipt.status, 'APPROVED_BREAKING_UPGRADE');
-  const approvals = json('contracts/testing/compatibility-approvals.json');
+  assert.equal(receipt.status, 'COMPATIBLE');
+  assert.deepEqual(receipt.approvedBreakingChanges, []);
+});
+test('predecessor MQTT is compatible; known REST break requires exact version and frozen DEC approvals', async () => {
+  const approvals = json('contracts/testing/baselines/compatibility-approvals-0.14.0.json');
   const old = json(`contracts/testing/baselines/${approvals.fromContractVersion}.json`);
-  const current = snapshot();
+  const current = json(`contracts/testing/baselines/${approvals.toContractVersion}.json`);
   assert.deepEqual(
     compareBaselines({ ...old, rest: {}, errorCodes: [] }, { ...current, rest: {}, errorCodes: [] }),
     [],
   );
   const changes = compareBaselines(old, current);
-  const version = json('contracts/contract-version.json');
+  const version = current;
   const register = json('contracts/decisions/decision-register.json');
   assert.throws(() => enforceGovernance(changes, { ...approvals, changes: [] }, version, register), /UNAPPROVED_BREAK/);
   assert.throws(
