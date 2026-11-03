@@ -180,6 +180,13 @@ test('schemaVer 缺省按 1.0 归一化；非法 schemaVer 被拒绝', () => {
   assert.deepEqual(validate(schema, fileName, good, registry), [], 'schemaVer=1.0 应通过');
 });
 
+test('Heartbeat 接受包含小写设备 ID 的 meta.id', () => {
+  const { schema, fileName } = loadSchema('heartbeat');
+  const payload = JSON.parse(readFileSync(`${FIXTURE_DIR}/heartbeat.fixtures.json`, 'utf8')).valid[0];
+  payload.meta.id = 'HB-06a780b7-af9c-430a-944f-76805ef504bb-1';
+  assert.deepEqual(validate(schema, fileName, payload, registry), []);
+});
+
 test('meta.id 字符集与长度固定', () => {
   const { schema, fileName } = loadSchema('cmd');
   const base = JSON.parse(readFileSync(`${FIXTURE_DIR}/cmd.fixtures.json`, 'utf8')).valid[0];
