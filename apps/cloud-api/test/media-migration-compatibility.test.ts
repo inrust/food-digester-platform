@@ -86,7 +86,7 @@ test('published old request still returns its original shape, then registers and
   expect(body.data).not.toHaveProperty('triggerRef');
   const session = await db.prisma.mediaUploadSession.findUniqueOrThrow({ where: { id: body.data.sessionId } });
   expect(session.triggerId).toBeNull();
-  expect(session.sizeBytes).toBeNull();
+  expect(session.sizeBytes).toBe(image.length);
   objects.set(body.data.objectPath, image);
   const message = {
     meta: { id: 'LEGACY-MEDIA-MESSAGE', ts: now.toISOString() },

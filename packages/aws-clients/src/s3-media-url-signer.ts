@@ -18,10 +18,11 @@ export interface MediaUrlSignerPort {
   readonly signDownload: (input: { readonly key: string; readonly expiresAt: Date }) => Promise<string>;
 }
 
-function ttlSeconds(expiresAt: Date): number {
-  const ttl = Math.floor((expiresAt.getTime() - Date.now()) / 1000);
+function signingOptions(expiresAt: Date): { expiresIn: number; signingDate: Date } {
+  const signingDate = new Date(Date.now());
+  const ttl = Math.floor((expiresAt.getTime() - signingDate.getTime()) / 1000);
   if (ttl < 1 || ttl > 3600) throw new Error('Media presigned URL TTL must be between 1 and 3600 seconds');
-  return ttl;
+  return { expiresIn: ttl, signingDate };
 }
 
 function assertMediaKey(key: string): void {
@@ -53,14 +54,16 @@ export function createS3MediaUrlSigner(config: S3MediaUrlSignerConfig): MediaUrl
           ContentLength: input.contentLength,
           ChecksumSHA256: checksumBase64(input.checksumSha256),
         }),
-        { expiresIn: ttlSeconds(input.expiresAt) },
+        signingOptions(input.expiresAt),
       );
     },
     async signDownload(input) {
       assertMediaKey(input.key);
-      return presign(client, new GetObjectCommand({ Bucket: config.bucket, Key: input.key }), {
-        expiresIn: ttlSeconds(input.expiresAt),
-      });
+      return presign(
+        client,
+        new GetObjectCommand({ Bucket: config.bucket, Key: input.key }),
+        signingOptions(input.expiresAt),
+      );
     },
   };
 }

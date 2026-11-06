@@ -10,7 +10,7 @@ import type { ClientCertIdentity } from '@fdp/auth';
 import { mapDbErrorToHttp } from '@fdp/database';
 import { parseStrictObject } from '../admin/shared/strict-object.js';
 import { MediaError, mediaValidationFailed } from './errors.js';
-import { createMediaUploadSession } from './service.js';
+import { createMediaUploadSessionOutcome, parseMediaTriggerRef } from './service.js';
 import type { MediaDeps } from './service.js';
 
 export interface DeviceMediaRequest {
@@ -31,7 +31,19 @@ const SENSITIVE_LEAK_PATTERN = /(stack|sql|select |insert |update |delete from|a
 function toErrorResponse(err: unknown, req: DeviceMediaRequest): DeviceMediaResponse {
   if (err instanceof AuthError || err instanceof MediaError) {
     const message = SENSITIVE_LEAK_PATTERN.test(err.message) ? 'The request failed' : err.message;
-    return { status: err.httpStatus, body: { error: { code: err.code, message, requestId: req.requestId } } };
+    return {
+      status: err.httpStatus,
+      body: {
+        error: {
+          code: err.code,
+          message,
+          requestId: req.requestId,
+          ...(err instanceof MediaError && err.code === 'MEDIA_ALREADY_REGISTERED' && err.details
+            ? { details: err.details }
+            : {}),
+        },
+      },
+    };
   }
   const mapped = mapDbErrorToHttp(err);
   if (mapped.status !== 500) {
@@ -60,22 +72,28 @@ export function createDeviceMediaHandler(
     try {
       const body = parseStrictObject(
         req.body,
-        ['mediaType', 'fileName', 'sizeKb', 'sizeBytes', 'sha256'],
+        ['mediaType', 'fileName', 'sizeKb', 'sizeBytes', 'sha256', 'triggerRef'],
         mediaValidationFailed,
       );
       if (typeof body.sizeKb !== 'number') throw mediaValidationFailed('sizeKb is required');
       if (typeof body.sizeBytes !== 'number') throw mediaValidationFailed('sizeBytes is required');
       const auth = await verifyDeviceCertificate(deps.client, req.identity, { now: now() });
-      const view = await createMediaUploadSession(deps, auth, {
-        mediaType: requireString(body, 'mediaType'),
-        fileName: requireString(body, 'fileName'),
-        sizeKb: body.sizeKb,
-        sizeBytes: body.sizeBytes,
-        sha256: requireString(body, 'sha256'),
-      });
+      const outcome = await createMediaUploadSessionOutcome(
+        deps,
+        auth,
+        {
+          mediaType: requireString(body, 'mediaType'),
+          fileName: requireString(body, 'fileName'),
+          sizeKb: body.sizeKb,
+          sizeBytes: body.sizeBytes,
+          sha256: requireString(body, 'sha256'),
+          ...(Object.hasOwn(body, 'triggerRef') ? { triggerRef: parseMediaTriggerRef(body.triggerRef) } : {}),
+        },
+        req.identity,
+      );
       return {
-        status: 201,
-        body: { data: view, meta: { requestId: req.requestId, timestamp: now().toISOString() } },
+        status: outcome.status,
+        body: { data: outcome.view, meta: { requestId: req.requestId, timestamp: now().toISOString() } },
       };
     } catch (err) {
       return toErrorResponse(err, req);

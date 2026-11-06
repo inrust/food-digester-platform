@@ -1,21 +1,28 @@
 /**
- * BE-MED-01 Media API 错误。错误码对齐 CT-05（contracts/rest/error-codes.json）。
+ * Media API 错误：基础码对齐 CT-05，触发引用错误为 createMediaUploadSession 的局部契约扩展。
  */
 
-export type MediaErrorCode = 'VALIDATION_FAILED' | 'FORBIDDEN' | 'NOT_FOUND' | 'CONFLICT';
+export type MediaErrorCode =
+  'VALIDATION_FAILED' | 'FORBIDDEN' | 'NOT_FOUND' | 'CONFLICT' | 'MEDIA_TRIGGER_CONFLICT' | 'MEDIA_ALREADY_REGISTERED';
 
 export const MEDIA_ERROR_HTTP_STATUS: Readonly<Record<MediaErrorCode, number>> = {
   VALIDATION_FAILED: 400,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  MEDIA_TRIGGER_CONFLICT: 409,
+  MEDIA_ALREADY_REGISTERED: 409,
 } as const;
 
 export class MediaError extends Error {
   override readonly name = 'MediaError';
   readonly code: MediaErrorCode;
 
-  constructor(code: MediaErrorCode, message?: string) {
+  constructor(
+    code: MediaErrorCode,
+    message?: string,
+    readonly details?: { readonly mediaId: string },
+  ) {
     super(message ?? 'The request failed');
     this.code = code;
   }

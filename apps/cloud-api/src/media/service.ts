@@ -15,15 +15,12 @@
  * - 审计（DOM-03）：media.upload_session.create / media.object.register；
  * - 功能边界：不采集/转码媒体；保留期处置属 DEC-005/BE-ARC-02；不提供实时流媒体会话（DEC-009）。
  */
-import { randomUUID } from 'node:crypto';
 import type { DbClient, Page } from '@fdp/database';
-import { audited, decodeKeysetCursor, encodeKeysetCursor, normalizeLimit } from '@fdp/database';
+import { decodeKeysetCursor, encodeKeysetCursor, normalizeLimit } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
-import type { DeviceAuthContext } from '@fdp/auth';
 import { handleMediaMetadata } from '@fdp/media';
 import type { MediaUploadPolicyQuery } from '@fdp/media';
-import { mediaConflict, mediaForbidden, mediaNotFound, mediaValidationFailed } from './errors.js';
-import { buildMediaObjectKey } from './storage.js';
+import { mediaForbidden, mediaNotFound, mediaValidationFailed } from './errors.js';
 import type { MediaObjectStorage, MediaUrlSigner } from './storage.js';
 
 // ---------- 策略查询门面（组合根经 contracts/media/media-upload-policy.ts 接线；禁止复制冻结值） ----------
@@ -38,27 +35,7 @@ export interface MediaDeps {
   readonly uploadPolicy: MediaUploadPolicyQuery;
 }
 
-/** 允许发起上传会话的生命周期（Suspended/Retired 拒绝；Retired 由 AUTH-03 先行拒绝）。 */
-const UPLOAD_ALLOWED_LIFECYCLES = ['Active', 'Maintenance'] as const;
-
-const FILE_NAME_PATTERN = /^[A-Za-z0-9._-]{1,128}$/;
-const SHA256_PATTERN = /^[0-9A-Fa-f]{64}$/;
-
 // ---------- 行类型与数据访问 ----------
-
-interface MediaUploadSessionRow {
-  readonly id: string;
-  readonly deviceId: string;
-  readonly customerId: string;
-  readonly mediaType: string;
-  readonly fileName: string;
-  readonly sizeKb: number;
-  readonly declaredSha256: string | null;
-  readonly status: string;
-  readonly presignedUrlExpiresAt: Date;
-  readonly createdAt: Date;
-  readonly completedAt: Date | null;
-}
 
 interface MediaObjectRow {
   readonly id: string;
@@ -89,22 +66,9 @@ function table(client: DbClient, name: string): TableDelegate {
   return (client as unknown as Record<string, unknown>)[name] as TableDelegate;
 }
 
-const sessions = (c: DbClient) => table(c, 'mediaUploadSession');
 const mediaObjects = (c: DbClient) => table(c, 'mediaObject');
 
 // ---------- DTO ----------
-
-export interface MediaUploadSessionView {
-  readonly sessionId: string;
-  readonly mediaType: string;
-  readonly fileName: string;
-  readonly sizeKb: number;
-  readonly sizeBytes: number;
-  readonly objectPath: string;
-  readonly uploadUrl: string;
-  readonly uploadUrlExpiresAt: string;
-  readonly createdAt: string;
-}
 
 export interface MediaView {
   readonly mediaId: string;
@@ -134,133 +98,7 @@ function toMediaView(row: MediaObjectRow): MediaView {
   };
 }
 
-// ---------- 设备：创建上传会话 ----------
-
-export interface CreateMediaUploadSessionInput {
-  readonly mediaType: string;
-  readonly fileName: string;
-  readonly sizeKb: number;
-  /** 精确字节数；用于把预签名 PUT 的 Content-Length 绑定到申报对象。 */
-  readonly sizeBytes: number;
-  /** 设备申报的 SHA-256（hex64）；上传后服务端重算比对。 */
-  readonly sha256: string;
-}
-
-export async function createMediaUploadSession(
-  deps: MediaDeps,
-  auth: DeviceAuthContext,
-  input: CreateMediaUploadSessionInput,
-): Promise<MediaUploadSessionView> {
-  const now = deps.now?.() ?? new Date();
-  // 设备权限：生命周期 + 已分配 Customer（配额与 Key 前缀都需要 Customer 归属）
-  if (!(UPLOAD_ALLOWED_LIFECYCLES as readonly string[]).includes(auth.deviceLifecycleStatus)) {
-    throw mediaForbidden('The device lifecycle does not allow media upload');
-  }
-  if (!auth.customerId) {
-    throw mediaForbidden('The device is not assigned to a customer');
-  }
-  const customerId = auth.customerId;
-
-  // 类型/文件名/大小/Hash 校验（策略驱动）
-  if (!deps.uploadPolicy.getMediaTypes().includes(input.mediaType)) {
-    throw mediaValidationFailed('mediaType must be one of: IMAGE, VIDEO');
-  }
-  if (!FILE_NAME_PATTERN.test(input.fileName)) {
-    throw mediaValidationFailed('fileName must match ^[A-Za-z0-9._-]{1,128}$');
-  }
-  const maxSizeKb = deps.uploadPolicy.getMaxSizeKb(input.mediaType) ?? 0;
-  if (!Number.isInteger(input.sizeKb) || input.sizeKb < 1 || input.sizeKb > maxSizeKb) {
-    throw mediaValidationFailed(`sizeKb must be an integer between 1 and ${maxSizeKb}`);
-  }
-  if (
-    !Number.isSafeInteger(input.sizeBytes) ||
-    input.sizeBytes < 1 ||
-    Math.ceil(input.sizeBytes / 1024) !== input.sizeKb
-  ) {
-    throw mediaValidationFailed('sizeBytes must be a positive integer consistent with sizeKb');
-  }
-  if (!SHA256_PATTERN.test(input.sha256)) {
-    throw mediaValidationFailed('sha256 must be a 64-character hex string');
-  }
-
-  // 配额窗口：UTC 自然日。领取在下方事务中锁定 device 行后执行，避免 count → create 竞态。
-  const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-
-  const sessionId = randomUUID();
-  const objectPath = buildMediaObjectKey({
-    customerId,
-    deviceId: auth.deviceId,
-    sessionId,
-    fileName: input.fileName,
-  });
-  const ttl = deps.uploadPolicy.getUploadUrlTtlSeconds();
-  const uploadUrlExpiresAt = new Date(now.getTime() + ttl * 1000);
-
-  const row = await audited<MediaUploadSessionRow>(
-    deps.client,
-    {
-      objectType: 'media_upload_session',
-      objectId: sessionId,
-      action: 'media.upload_session.create',
-      reason: `mediaType=${input.mediaType} sizeKb=${input.sizeKb}`,
-      actorId: auth.deviceId,
-      customerId,
-      afterValue: () => ({
-        sessionId,
-        deviceId: auth.deviceId,
-        mediaType: input.mediaType,
-        fileName: input.fileName,
-        sizeKb: input.sizeKb,
-        status: 'ISSUED',
-      }),
-    },
-    async (tx) => {
-      await (
-        tx as DbClient & {
-          $queryRawUnsafe<T>(query: string, ...values: unknown[]): Promise<T>;
-        }
-      ).$queryRawUnsafe('SELECT id FROM "devices" WHERE id = $1 FOR UPDATE', auth.deviceId);
-      const todayCount = await sessions(tx).count({
-        where: { deviceId: auth.deviceId, createdAt: { gte: dayStart } },
-      });
-      if (todayCount >= deps.uploadPolicy.getDailyUploadQuotaPerDevice()) {
-        throw mediaConflict('The daily media upload quota for this device is exceeded');
-      }
-      return sessions(tx).create({
-        data: {
-          id: sessionId,
-          deviceId: auth.deviceId,
-          customerId,
-          mediaType: input.mediaType,
-          fileName: input.fileName,
-          sizeKb: input.sizeKb,
-          declaredSha256: input.sha256.toLowerCase(),
-          status: 'ISSUED',
-          presignedUrlExpiresAt: uploadUrlExpiresAt,
-          createdAt: now,
-        },
-      });
-    },
-  );
-
-  const uploadUrl = await deps.urlSigner.signUpload({
-    key: objectPath,
-    expiresAt: uploadUrlExpiresAt,
-    contentLength: input.sizeBytes,
-    checksumSha256: input.sha256,
-  });
-  return {
-    sessionId: row.id,
-    mediaType: row.mediaType,
-    fileName: row.fileName,
-    sizeKb: row.sizeKb,
-    sizeBytes: input.sizeBytes,
-    objectPath,
-    uploadUrl,
-    uploadUrlExpiresAt: uploadUrlExpiresAt.toISOString(),
-    createdAt: row.createdAt.toISOString(),
-  };
-}
+export * from './upload-session.js';
 
 export { handleMediaMetadata };
 

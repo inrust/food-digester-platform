@@ -53,3 +53,40 @@ describe('Media S3 URL 生产适配器', () => {
     }
   });
 });
+
+test('re-signing anchors actual SigV4 expiry before delayed credential resolution (offline static credentials)', async () => {
+  const { S3Client } = await import('@aws-sdk/client-s3');
+  let now = Date.parse('2026-11-06T08:00:00.650Z');
+  const clock = vi.spyOn(Date, 'now').mockImplementation(() => now);
+  const originalExpiry = new Date(now + 900000);
+  const client = new S3Client({
+    region: 'us-east-1',
+    credentials: async () => {
+      now += 5000;
+      return { accessKeyId: 'LOCAL_TEST_KEY', secretAccessKey: 'LOCAL_TEST_SECRET' };
+    },
+  });
+  const signer = createS3MediaUrlSigner({ bucket: 'local-test-media', client });
+  try {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const url = new URL(
+        await signer.signUpload({
+          key: 'media/c/d/s/capture.jpg',
+          expiresAt: originalExpiry,
+          contentLength: 811,
+          checksumSha256: 'ab'.repeat(32),
+        }),
+      );
+      const date = url.searchParams.get('X-Amz-Date')!;
+      const signedAt = Date.parse(date.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/, '$1-$2-$3T$4:$5:$6Z'));
+      expect(signedAt + Number(url.searchParams.get('X-Amz-Expires')) * 1000).toBeLessThanOrEqual(
+        originalExpiry.getTime(),
+      );
+      expect(url.searchParams.get('X-Amz-SignedHeaders')).toContain('content-length');
+      now += 60000;
+    }
+  } finally {
+    clock.mockRestore();
+    client.destroy();
+  }
+});
