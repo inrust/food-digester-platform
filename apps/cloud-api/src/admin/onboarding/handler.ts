@@ -31,6 +31,7 @@ export interface AdminHttpRequest {
 }
 
 export interface AdminHttpResponse {
+  readonly headers?: Readonly<Record<string, string>>;
   readonly status: number;
   readonly body: unknown;
 }

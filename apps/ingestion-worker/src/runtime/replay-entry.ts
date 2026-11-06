@@ -1,5 +1,5 @@
 import { createS3ArchiveObjectReader, createSqsJsonSender, resolveDatabaseUrl } from '@fdp/aws-clients';
-import { createPrismaClient } from '@fdp/database';
+import { createPreviewAwarePrismaClient } from '@fdp/aws-clients';
 import { createRedactingLogger } from '@fdp/observability';
 import { createReplayIngressSink } from '../replay/ingress-sink.js';
 import { createReplayWorker } from '../replay/worker.js';
@@ -42,7 +42,9 @@ let runtimeHandler: ((event: ReplaySqsEvent) => Promise<ReplaySqsResponse>) | un
 
 async function initialize() {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
+  const client = createPreviewAwarePrismaClient(
+    await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }),
+  );
   const executor = createReplayWorker({
     client,
     reader: createS3ArchiveObjectReader({ bucket: required('RAW_BUCKET_NAME'), region }),

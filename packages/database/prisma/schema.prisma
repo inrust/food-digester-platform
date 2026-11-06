@@ -136,6 +136,7 @@ model Device {
   customer Customer? @relation(fields: [customerId], references: [id])
   site     Site?     @relation(fields: [siteId], references: [id])
 
+  liveImagePolicy  DeviceLiveImagePolicy?
   assignments      DeviceAssignment[]
   stateHistory     DeviceStateHistory[]
   certificates     DeviceCertificate[]
@@ -1197,4 +1198,12 @@ model DevicePublicKey {
 
   @@index([deviceId])
   @@map("device_public_keys")
+}
+
+// Server allowlist: absent/disabled is closed; never inferred from JWT/configuration V1.
+model DeviceLiveImagePolicy {
+  deviceId String @id @map("device_id")
+  enabled Boolean @default(false)
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  @@map("device_live_image_policies")
 }

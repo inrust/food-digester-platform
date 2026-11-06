@@ -14,6 +14,36 @@ export interface DeliveredOperation {
  */
 export const DELIVERED_OPERATIONS = [
   {
+    operationId: 'renewLiveImageViewer',
+    method: 'PUT',
+    path: '/api/v1/admin/devices/{deviceId}/live-image/viewers/{viewerId}',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'releaseLiveImageViewer',
+    method: 'DELETE',
+    path: '/api/v1/admin/devices/{deviceId}/live-image/viewers/{viewerId}',
+    runtime: 'admin-api',
+  },
+  {
+    operationId: 'getDeviceLiveImageState',
+    method: 'GET',
+    path: '/api/v1/device/live-image/state',
+    runtime: 'device-api',
+  },
+  {
+    operationId: 'uploadDeviceLiveImageFrame',
+    method: 'POST',
+    path: '/api/v1/device/live-image/frames',
+    runtime: 'device-api',
+  },
+  {
+    operationId: 'getLatestLiveImage',
+    method: 'GET',
+    path: '/api/v1/admin/devices/{deviceId}/live-image/latest',
+    runtime: 'admin-api',
+  },
+  {
     operationId: 'submitOnboardingRequest',
     method: 'POST',
     path: '/api/v1/device/onboarding/request',

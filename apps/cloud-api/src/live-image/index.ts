@@ -28,3 +28,5 @@ export { LiveImageLatestService } from './latest-service.js';
 export type { LiveImageLatestDeps } from './latest-service.js';
 export { createLiveImageLatestHandler } from './handler.js';
 export type { LiveImageLatestSnapshot, LiveImageLatestStore } from './storage.js';
+
+export * from './postgres-authorization.js';

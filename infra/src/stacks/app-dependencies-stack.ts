@@ -25,6 +25,7 @@ import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
 import * as iam from 'aws-cdk-lib/aws-iam';
@@ -779,6 +780,11 @@ export class AppDependenciesStack extends Stack {
       ],
     });
 
+    vpc.addGatewayEndpoint('LiveImageDynamoEndpoint', {
+      service: ec2.GatewayVpcEndpointAwsService.DYNAMODB,
+      subnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
+    });
+
     const lambdaSecurityGroup = new ec2.SecurityGroup(this, 'LambdaSg', {
       vpc,
       securityGroupName: this.naming.name('lambda-sg'),
@@ -878,6 +884,25 @@ export class AppDependenciesStack extends Stack {
     data: DataResources,
     identity: IdentityResources,
   ): ComputeResources {
+    // CONTROL never expires: deleting epochs could resurrect stale authorization.
+    const liveControl = new dynamodb.Table(this, 'LiveImageControl', {
+      tableName: this.naming.name('live-image-control'),
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'sk', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+      removalPolicy: RemovalPolicy.RETAIN,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
+    });
+    const livePayload = new dynamodb.Table(this, 'LiveImagePayload', {
+      tableName: this.naming.name('live-image-payload'),
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'sk', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+      timeToLiveAttribute: 'ttl',
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
     const mkFunction = (
       id: string,
       suffix: string,
@@ -917,6 +942,9 @@ export class AppDependenciesStack extends Stack {
         reservedConcurrentExecutions: allocation?.reservedConcurrency,
         environment: {
           ...options.environment,
+          ...(options.environment.DB_SECRET_ARN
+            ? { LIVE_IMAGE_CONTROL_TABLE: liveControl.tableName, LIVE_IMAGE_PAYLOAD_TABLE: livePayload.tableName }
+            : {}),
           ...(allocation ? { FDP_DB_POOL_MAX: String(allocation.poolMax) } : {}),
           ENV_NAME: this.config.envName,
           // Node.js 20+ Lambda runtimes retain Amazon CAs here but no longer load them by default.
@@ -973,6 +1001,8 @@ export class AppDependenciesStack extends Stack {
     const dbSecretGrant = (fn: lambda.IFunction): void => {
       // grantRead 同时授予 Secret 加密 Key 的 kms:Decrypt（仅限 dataKey）
       data.db.secret?.grantRead(fn);
+      // Every authority writer may fence CONTROL; workers cannot read JPEG payloads.
+      liveControl.grant(fn, 'dynamodb:GetItem', 'dynamodb:PutItem');
     };
     const scheduleWithDlq = (id: string, suffix: string, fn: lambda.Function): void => {
       const dlq = new sqs.Queue(this, `${id}Dlq`, {
@@ -1490,6 +1520,7 @@ export class AppDependenciesStack extends Stack {
       copyArgon2Prebuilds: true,
     });
     dbSecretGrant(deviceApi);
+    livePayload.grant(deviceApi, 'dynamodb:GetItem', 'dynamodb:PutItem');
     storage.ota.grantRead(deviceApi, 'firmware-packages/*');
     storage.media.grantWrite(deviceApi, 'media/*');
     deviceApiRole.addToPrincipalPolicy(
@@ -1547,6 +1578,7 @@ export class AppDependenciesStack extends Stack {
       copyArgon2Prebuilds: true,
     });
     dbSecretGrant(api);
+    livePayload.grant(api, 'dynamodb:GetItem');
     if (messaging.commandPublish) {
       api.addEnvironment('COMMAND_PUBLISH_QUEUE_URL', messaging.commandPublish.queueUrl);
       messaging.commandPublish.grantSendMessages(api);

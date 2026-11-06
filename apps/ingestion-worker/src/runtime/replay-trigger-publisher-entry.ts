@@ -1,5 +1,5 @@
 import { createSqsJsonSender, resolveDatabaseUrl } from '@fdp/aws-clients';
-import { createPrismaClient } from '@fdp/database';
+import { createPreviewAwarePrismaClient } from '@fdp/aws-clients';
 import { createReplayTriggerPublisher } from '../replay/trigger-publisher.js';
 import type { ReplayTriggerPublishResult } from '../replay/trigger-publisher.js';
 
@@ -13,7 +13,9 @@ let publishPendingBatch: (() => Promise<ReplayTriggerPublishResult>) | undefined
 
 async function initialize(): Promise<() => Promise<ReplayTriggerPublishResult>> {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
+  const client = createPreviewAwarePrismaClient(
+    await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }),
+  );
   return createReplayTriggerPublisher({
     client,
     sender: createSqsJsonSender({ queueUrl: required('REPLAY_QUEUE_URL'), region }),

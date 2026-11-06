@@ -1,3 +1,9 @@
+import { createLazyLiveImageStoreFromEnv } from '@fdp/aws-clients';
+import {
+  createLiveImageLeaseHandlers,
+  createLiveImageLatestHandler,
+  PostgresLiveImageAuthorization,
+} from '../live-image/index.js';
 import { withDataPathTrace, observeDataPathPhase, observeDataPathSyncPhase } from '@fdp/observability';
 import { createRedactingLogger } from '@fdp/observability';
 import { observeRequest } from '@fdp/observability';
@@ -15,7 +21,8 @@ import {
   resolveDatabaseUrl,
   resolveSecretString,
 } from '@fdp/aws-clients';
-import { createPrismaClient, createAdminPreconnectCandidate } from '@fdp/database';
+import { createAdminPreconnectCandidate } from '@fdp/database';
+import { createPreviewAwarePrismaClient, withLiveImageAuthorityFromEnv } from '@fdp/aws-clients';
 import { createAdminOnboardingHandlers } from '../admin/onboarding/handler.js';
 import { createAdminCertificateRotationHandler } from '../admin/certificate-rotation/handler.js';
 import { createAdminReplayHandlers } from '../admin/replay/handler.js';
@@ -100,10 +107,10 @@ async function initialize() {
     () =>
       preconnectEnabled
         ? createAdminPreconnectCandidate(databaseUrl, contractLoadDetail, contractPublicBoundaries)
-        : { client: createPrismaClient(databaseUrl) },
+        : { client: createPreviewAwarePrismaClient(databaseUrl) },
     { processCpu: true },
   );
-  const client = runtimeClient.client;
+  const client = preconnectEnabled ? withLiveImageAuthorityFromEnv(runtimeClient.client) : runtimeClient.client;
   return observeDataPathSyncPhase(
     'runtime-route-assembly',
     () => {
@@ -138,7 +145,17 @@ async function initialize() {
             timeoutMs: 1000,
           })
         : undefined;
+      const liveDeps = {
+        store: createLazyLiveImageStoreFromEnv(),
+        authorization: new PostgresLiveImageAuthorization(client),
+      };
+      const live = createLiveImageLeaseHandlers(liveDeps);
       const routes = {
+        liveImage: {
+          renewViewer: live.renewViewer,
+          releaseViewer: live.releaseViewer,
+          latest: createLiveImageLatestHandler(liveDeps),
+        },
         onboarding: createAdminOnboardingHandlers({ client }),
         certificateRotation: createAdminCertificateRotationHandler({ client }),
         replay: createAdminReplayHandlers({ client }),

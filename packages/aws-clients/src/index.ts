@@ -47,3 +47,6 @@ export {
 export type { KmsFirmwareSignatureVerifierConfig, OtaFirmwareS3Config, OtaFirmwareS3Ports } from './ota-firmware.js';
 
 export { deviceCertificateMetadata } from './device-certificate-metadata.js';
+
+export * from './live-image-dynamodb.js';
+export * from './live-image-authority.js';

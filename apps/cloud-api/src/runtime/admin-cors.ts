@@ -38,7 +38,7 @@ export async function withAdminCors(
   const cors: Record<string, string> = allowed
     ? {
         'Access-Control-Allow-Origin': origin,
-        'Access-Control-Expose-Headers': 'ETag,X-Request-Id',
+        'Access-Control-Expose-Headers': 'ETag,X-Request-Id,Retry-After',
       }
     : {};
   const method = event.httpMethod ?? event.requestContext?.http?.method;
@@ -72,10 +72,17 @@ export async function withAdminCors(
   try {
     response = await next();
   } catch {
+    const preview = /^\/api\/v1\/admin\/devices\/[^/]+\/live-image(?:\/|$)/u.test(path);
     response = {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } }),
+      statusCode: preview ? 503 : 500,
+      headers: { 'Content-Type': 'application/json', ...(preview ? { 'Cache-Control': 'no-store' } : {}) },
+      body: JSON.stringify({
+        error: {
+          code: preview ? 'TEMPORARILY_UNAVAILABLE' : 'INTERNAL_ERROR',
+          message: 'Internal server error',
+          ...(preview ? { requestId: event.requestContext?.requestId ?? 'unknown' } : {}),
+        },
+      }),
     };
   }
   return {

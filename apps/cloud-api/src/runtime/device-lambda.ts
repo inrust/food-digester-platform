@@ -35,6 +35,7 @@ export interface DeviceRuntimeRequest {
   readonly query?: Readonly<Record<string, string | undefined>>;
   readonly body?: unknown;
   readonly requestId: string;
+  readonly headers: Readonly<Record<string, string | undefined>>;
 }
 
 export interface DeviceRuntimeResponse {
@@ -53,11 +54,13 @@ export interface DeviceRouteSet {
   readonly deactivate: DeviceRoute;
   readonly otaDownload: DeviceRoute;
   readonly mediaUpload: DeviceRoute;
+  readonly liveImageState?: DeviceRoute;
+  readonly liveImageFrame?: DeviceRoute;
 }
 
 const JSON_HEADERS = { 'content-type': 'application/json' } as const;
 
-function result(statusCode: number, body: unknown): ApiGatewayDeviceResult {
+function gatewayResult(statusCode: number, body: unknown): ApiGatewayDeviceResult {
   return { statusCode, headers: JSON_HEADERS, body: JSON.stringify(body) };
 }
 
@@ -70,22 +73,29 @@ export function createDeviceApiLambdaHandler(routes: DeviceRouteSet) {
     const method = (event.requestContext?.http?.method ?? event.httpMethod ?? '').toUpperCase();
     const path = event.rawPath ?? event.requestContext?.http?.path ?? event.path ?? '';
     const requestId = event.requestContext?.requestId ?? 'unknown';
+    const livePreview = path.startsWith('/api/v1/device/live-image/');
+    const result = (status: number, body: unknown) => {
+      const response = gatewayResult(status, body);
+      return { ...response, headers: { ...response.headers, ...(livePreview ? { 'Cache-Control': 'no-store' } : {}) } };
+    };
 
+    const matched = matchDeliveredOperation('device-api', method, path);
+    const isFrame = matched?.operation.operationId === 'uploadDeviceLiveImageFrame';
     let body: unknown;
     try {
       const encoded = event.body;
       const raw = encoded && event.isBase64Encoded ? Buffer.from(encoded, 'base64').toString('utf8') : encoded;
-      body = raw ? JSON.parse(raw) : undefined;
+      body = isFrame ? raw : raw ? JSON.parse(raw) : undefined;
     } catch {
       return result(400, {
         error: { code: 'VALIDATION_FAILED', message: 'Request body must be valid JSON', requestId },
       });
     }
 
-    const matched = matchDeliveredOperation('device-api', method, path);
     const clientCert = event.requestContext?.identity?.clientCert ?? event.requestContext?.authentication?.clientCert;
     const request: DeviceRuntimeRequest = {
       requestId,
+      headers: event.headers ?? {},
       ...(matched?.params ? { params: matched.params } : {}),
       ...(body !== undefined ? { body } : {}),
       ...(event.queryStringParameters ? { query: event.queryStringParameters } : {}),
@@ -94,6 +104,12 @@ export function createDeviceApiLambdaHandler(routes: DeviceRouteSet) {
 
     let route: DeviceRoute | undefined;
     switch (matched?.operation.operationId) {
+      case 'getDeviceLiveImageState':
+        route = routes.liveImageState;
+        break;
+      case 'uploadDeviceLiveImageFrame':
+        route = routes.liveImageFrame;
+        break;
       case 'getCertificateStatus':
         route = routes.certificateStatus;
         break;
@@ -123,7 +139,11 @@ export function createDeviceApiLambdaHandler(routes: DeviceRouteSet) {
       const response = await route(request);
       const serialized = response.body === undefined ? '' : JSON.stringify(response.body);
       await response.onCommitted?.();
-      return { statusCode: response.status, headers: { ...JSON_HEADERS, ...response.headers }, body: serialized };
+      return {
+        statusCode: response.status,
+        headers: { ...JSON_HEADERS, ...(livePreview ? { 'Cache-Control': 'no-store' } : {}), ...response.headers },
+        body: serialized,
+      };
     } catch {
       return result(500, {
         error: { code: 'INTERNAL_ERROR', message: 'Internal server error', requestId },

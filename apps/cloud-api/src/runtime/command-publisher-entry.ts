@@ -3,7 +3,7 @@ import { createRedactingLogger } from '@fdp/observability';
 import { consumeCommandNotifications, type CommandQueueEvent } from '../admin/command/queue-consumer.js';
 import type { CommandPublisherDeps } from '../admin/command/publisher.js';
 import { createAwsIotProvisioningClient, createIotDataPublisher, resolveDatabaseUrl } from '@fdp/aws-clients';
-import { createPrismaClient } from '@fdp/database';
+import { createPreviewAwarePrismaClient } from '@fdp/aws-clients';
 import { publishPendingCommands } from '../admin/command/publisher.js';
 import type { CommandPublishBatchResult } from '../admin/command/publisher.js';
 
@@ -19,7 +19,7 @@ let runtimeDeps: CommandPublisherDeps | undefined;
 
 async function initialize(observe: CommandPhaseObserver): Promise<CommandPublisherDeps> {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(
+  const client = createPreviewAwarePrismaClient(
     await observe('db-secret', () => resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region })),
   );
   const endpoint = await observe('iot-endpoint', () => createAwsIotProvisioningClient({ region }).getDataEndpoint());

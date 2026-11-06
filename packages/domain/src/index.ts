@@ -11,3 +11,5 @@ export * from './consumable.js';
 export * from './contract.js';
 export * from './alarm.js';
 export * from './command.js';
+
+export type * from './live-image-storage.js';

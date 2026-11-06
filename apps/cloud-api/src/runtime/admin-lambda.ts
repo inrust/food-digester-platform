@@ -71,6 +71,7 @@ export interface AdminLambdaRouterHooks {
 }
 
 export interface AdminOnboardingRouteSet {
+  readonly liveImage?: { renewViewer: AdminRoute; releaseViewer: AdminRoute; latest: AdminRoute };
   readonly onboarding: AdminOnboardingHandlers;
   readonly certificateRotation: AdminRoute;
   readonly replay: AdminReplayHandlers;
@@ -105,11 +106,15 @@ const header = (headers: Readonly<Record<string, string | undefined>>, wanted: s
   return entry?.[1];
 };
 
-function result(status: number, body: unknown): ApiGatewayAdminResult {
+function gatewayResult(
+  status: number,
+  body: unknown,
+  headers?: Readonly<Record<string, string>>,
+): ApiGatewayAdminResult {
   return {
     statusCode: status,
-    headers: { 'content-type': 'application/json' },
-    body: observeDataPathSyncPhase('response-serialize', () => JSON.stringify(body)),
+    headers: { 'content-type': 'application/json', ...headers },
+    body: observeDataPathSyncPhase('response-serialize', () => (body === undefined ? '' : JSON.stringify(body))),
   };
 }
 
@@ -120,6 +125,20 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
   const matched = matchDeliveredOperation('admin-api', method, path);
 
   return async (request) => {
+    if (matched && routes.liveImage) {
+      const operations: Record<string, AdminRoute> = {
+        renewLiveImageViewer: routes.liveImage.renewViewer,
+        releaseLiveImageViewer: routes.liveImage.releaseViewer,
+        getLatestLiveImage: routes.liveImage.latest,
+      };
+      const live = operations[matched.operation.operationId];
+      if (live)
+        return live({
+          ...request,
+          params: Object.fromEntries(Object.entries(matched.params).map(([k, v]) => [k, decodeURIComponent(v)])),
+        });
+    }
+
     if (matched?.operation.operationId === 'listOnboardingRequests') return routes.onboarding.list(request);
     if (
       matched?.operation.operationId === 'getOnboardingRequest' ||
@@ -342,6 +361,10 @@ export function createAdminLambdaRouter(
   const authenticator = createCognitoAuthenticator(config);
 
   return async (event: ApiGatewayAdminEvent): Promise<ApiGatewayAdminResult> => {
+    const path = event.rawPath ?? event.requestContext?.http?.path ?? event.path ?? '';
+    const livePreview = /^\/api\/v1\/admin\/devices\/[^/]+\/live-image(?:\/|$)/u.test(path);
+    const result = (status: number, body: unknown, extra?: Readonly<Record<string, string>>) =>
+      gatewayResult(status, body, { ...(livePreview ? { 'Cache-Control': 'no-store' } : {}), ...extra });
     const headers = event.headers ?? {};
     const requestId = event.requestContext?.requestId ?? 'unknown';
     let actor;
@@ -385,12 +408,18 @@ export function createAdminLambdaRouter(
         ...(sourceIp !== undefined ? { sourceIp } : {}),
         ...(userAgent !== undefined ? { userAgent } : {}),
       });
-      return result(response.status, response.body);
+      return result(response.status, response.body, response.headers);
     } catch (error) {
       if (error instanceof AuthError) {
         return result(error.httpStatus, { error: { code: error.code, message: error.message, requestId } });
       }
-      return result(500, { error: { code: 'INTERNAL_ERROR', message: 'Internal server error', requestId } });
+      return result(livePreview ? 503 : 500, {
+        error: {
+          code: livePreview ? 'TEMPORARILY_UNAVAILABLE' : 'INTERNAL_ERROR',
+          message: 'Internal server error',
+          requestId,
+        },
+      });
     }
   };
 }

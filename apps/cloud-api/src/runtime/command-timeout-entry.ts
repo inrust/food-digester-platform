@@ -1,5 +1,5 @@
 import { resolveDatabaseUrl } from '@fdp/aws-clients';
-import { createPrismaClient } from '@fdp/database';
+import { createPreviewAwarePrismaClient } from '@fdp/aws-clients';
 import { evaluateCommandTimeouts } from '../admin/command/timeout.js';
 import type { TimeoutEvaluationResult } from '../admin/command/timeout.js';
 
@@ -13,7 +13,9 @@ let evaluate: (() => Promise<TimeoutEvaluationResult>) | undefined;
 
 async function initialize(): Promise<() => Promise<TimeoutEvaluationResult>> {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
+  const client = createPreviewAwarePrismaClient(
+    await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }),
+  );
   return () => evaluateCommandTimeouts({ client });
 }
 

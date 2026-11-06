@@ -1,5 +1,5 @@
 import { resolveDatabaseUrl } from '@fdp/aws-clients';
-import { createPrismaClient } from '@fdp/database';
+import { createPreviewAwarePrismaClient } from '@fdp/aws-clients';
 import { createAggregationWorker } from '../aggregation/worker.js';
 import type { AggregationRunResult, AggregationWindow } from '../aggregation/worker.js';
 import type { AggregationRunObservation } from '../aggregation/worker.js';
@@ -59,7 +59,9 @@ export function summaryObservation(
 
 async function initialize() {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
+  const client = createPreviewAwarePrismaClient(
+    await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }),
+  );
   return createAggregationWorker({ client }).recomputeWindow;
 }
 

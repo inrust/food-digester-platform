@@ -1,5 +1,5 @@
 import { createS3ActivityExportPorts, resolveDatabaseUrl } from '@fdp/aws-clients';
-import { createPrismaClient } from '@fdp/database';
+import { createPreviewAwarePrismaClient } from '@fdp/aws-clients';
 import { processEsgExportJobs } from '../admin/esg/export-service.js';
 
 const required = (name: string): string => {
@@ -12,7 +12,9 @@ let run: (() => Promise<number>) | undefined;
 
 async function initialize() {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
+  const client = createPreviewAwarePrismaClient(
+    await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }),
+  );
   const ports = createS3ActivityExportPorts({ bucket: required('EXPORT_BUCKET_NAME'), region });
   const batchSize = Number(process.env.ESG_EXPORT_BATCH_SIZE ?? 10);
   const leaseSeconds = Number(process.env.ESG_EXPORT_LEASE_SECONDS ?? 300);

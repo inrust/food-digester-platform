@@ -1,5 +1,5 @@
 import { createAwsIotProvisioningClient, resolveDatabaseUrl } from '@fdp/aws-clients';
-import { createPrismaClient } from '@fdp/database';
+import { createPreviewAwarePrismaClient } from '@fdp/aws-clients';
 import type { RetirementTimeoutEvaluation } from '../admin/device-retirement/service.js';
 import { createRetirementTimeoutLambdaHandler } from './retirement-timeout-lambda.js';
 
@@ -21,7 +21,9 @@ let evaluate: (() => Promise<RetirementTimeoutEvaluation>) | undefined;
 
 async function initialize(): Promise<() => Promise<RetirementTimeoutEvaluation>> {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
+  const client = createPreviewAwarePrismaClient(
+    await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }),
+  );
   const limit = batchSize();
   return createRetirementTimeoutLambdaHandler(client, {
     batchSize: limit,

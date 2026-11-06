@@ -13,10 +13,11 @@ test('历史同序列号多条申请会阻止新迁移，保留历史数据和�
     'utf8',
   );
   const sql = readAllMigrationSql();
-  expect(sql.endsWith(migration)).toBe(true);
+  const migrationOffset = sql.indexOf(migration);
+  expect(migrationOffset).toBeGreaterThanOrEqual(0);
   const db = new PGlite({ extensions: { btree_gist } });
   try {
-    await db.exec(sql.slice(0, -migration.length));
+    await db.exec(sql.slice(0, migrationOffset));
     await db.exec(`INSERT INTO onboarding_requests
       (id, serial_number, submitted_by, model, hardware_version, manufacturer, manufacture_date, csr_pem, public_key_fingerprint, status)
       VALUES ('legacy-1', 'SN-LEGACY', 'DEVICE:SN-LEGACY', 'M', '1', 'B', '2026-01-01', 'CSR1', 'fp1', 'REJECTED'),

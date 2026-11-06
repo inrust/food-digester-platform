@@ -1,3 +1,9 @@
+import { createLazyLiveImageStoreFromEnv } from '@fdp/aws-clients';
+import {
+  createLiveImageLeaseHandlers,
+  createLiveImageFrameHandler,
+  PostgresLiveImageAuthorization,
+} from '../live-image/index.js';
 import {
   createAwsIotProvisioningClient,
   createKmsDataKeyProvider,
@@ -8,7 +14,7 @@ import {
   resolveDatabaseUrl,
 } from '@fdp/aws-clients';
 import { getMaintenanceSyncIntervalSeconds } from '@fdp/contracts/lifecycle/maintenance-behavior.js';
-import { createPrismaClient } from '@fdp/database';
+import { createPreviewAwarePrismaClient } from '@fdp/aws-clients';
 import {
   createCertificateRotateHandler,
   createCertificateStatusHandler,
@@ -46,7 +52,9 @@ let runtimeHandler: ((event: ApiGatewayDeviceEvent) => Promise<ApiGatewayDeviceR
 
 async function initialize() {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
+  const client = createPreviewAwarePrismaClient(
+    await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }),
+  );
   const certificateValiditySeconds = positiveNumber('CERTIFICATE_VALIDITY_SECONDS', 31_536_000);
   const iot = createAwsIotProvisioningClient({
     region,
@@ -59,7 +67,14 @@ async function initialize() {
   const keyProvider = createKmsDataKeyProvider({ keyId: required('CERT_PACKAGE_KEY_ARN'), region });
   const ota = createOtaFirmwareS3Ports({ bucket: required('OTA_BUCKET_NAME'), region });
   const mediaBucket = required('MEDIA_BUCKET_NAME');
+  const liveDeps = {
+    store: createLazyLiveImageStoreFromEnv(),
+    authorization: new PostgresLiveImageAuthorization(client),
+  };
+  const live = createLiveImageLeaseHandlers(liveDeps);
   return createDeviceApiLambdaHandler({
+    liveImageState: live.getDeviceState,
+    liveImageFrame: createLiveImageFrameHandler(liveDeps),
     certificateStatus: createCertificateStatusHandler({
       client,
       expiringSoonDays: positiveNumber('CERTIFICATE_EXPIRING_SOON_DAYS', 30),
@@ -97,6 +112,22 @@ async function initialize() {
 
 /** AWS Lambda 生产入口：冷启动完成 DB、AUTH-03、IoT/KMS 与冻结策略接线。 */
 export async function handler(event: ApiGatewayDeviceEvent): Promise<ApiGatewayDeviceResult> {
-  runtimeHandler ??= await initialize();
-  return runtimeHandler(event);
+  try {
+    runtimeHandler ??= await initialize();
+    return await runtimeHandler(event);
+  } catch (error) {
+    const path = event.rawPath ?? event.requestContext?.http?.path ?? event.path ?? '';
+    if (!path.startsWith('/api/v1/device/live-image/')) throw error;
+    return {
+      statusCode: 503,
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      body: JSON.stringify({
+        error: {
+          code: 'TEMPORARILY_UNAVAILABLE',
+          message: 'The request failed',
+          requestId: event.requestContext?.requestId ?? 'unknown',
+        },
+      }),
+    };
+  }
 }

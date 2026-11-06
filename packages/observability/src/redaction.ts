@@ -12,7 +12,7 @@ export const REDACTED = '[REDACTED]' as const;
 
 /** 命中即整体遮蔽的字段名（与 DOM-03 对齐）。 */
 export const SENSITIVE_KEY_PATTERN =
-  /private[_-]?key|password|passcode|secret|token|verifier|credential|api[_-]?key|access[_-]?key|authorization|cookie|session|jwt/i;
+  /image[_-]?base64|jpeg[_-]?base64|private[_-]?key|password|passcode|secret|token|verifier|credential|api[_-]?key|access[_-]?key|authorization|cookie|session|jwt/i;
 
 /** 值形态检测：命中片段替换为 [REDACTED]。 */
 const SENSITIVE_VALUE_PATTERNS: readonly RegExp[] = [

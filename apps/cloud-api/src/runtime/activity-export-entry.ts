@@ -1,5 +1,5 @@
 import { createS3ActivityExportPorts, resolveDatabaseUrl } from '@fdp/aws-clients';
-import { createPrismaClient } from '@fdp/database';
+import { createPreviewAwarePrismaClient } from '@fdp/aws-clients';
 import { processActivityExportJobs } from '../admin/device-console/export.js';
 import type { ActivityExportProcessResult } from '../admin/device-console/export.js';
 
@@ -19,7 +19,9 @@ let run: (() => Promise<ActivityExportProcessResult>) | undefined;
 
 async function initialize(): Promise<() => Promise<ActivityExportProcessResult>> {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
+  const client = createPreviewAwarePrismaClient(
+    await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }),
+  );
   const ports = createS3ActivityExportPorts({ bucket: required('EXPORT_BUCKET_NAME'), region });
   const batchSize = positiveInteger('ACTIVITY_EXPORT_BATCH_SIZE', 10);
   const leaseSeconds = positiveInteger('ACTIVITY_EXPORT_LEASE_SECONDS', 300);

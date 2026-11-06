@@ -19,3 +19,6 @@ export * from './advisory-lock.js';
 
 export { observeDatabaseEnginePreparation } from './client-preparation.js';
 export { observeContractLoad } from './contract-load-observation.js';
+
+export * from './live-image-authority.js';
+export * from './live-image-io.js';

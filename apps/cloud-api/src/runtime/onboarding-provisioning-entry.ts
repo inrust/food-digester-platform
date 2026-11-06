@@ -4,7 +4,7 @@ import {
   createProjectCaCertificateIssuer,
   resolveDatabaseUrl,
 } from '@fdp/aws-clients';
-import { createPrismaClient } from '@fdp/database';
+import { createPreviewAwarePrismaClient } from '@fdp/aws-clients';
 import { processOnboardingProvisioningJobs } from '../provisioning/worker.js';
 import { ProvisioningService } from '../provisioning/service.js';
 
@@ -18,7 +18,9 @@ let run: (() => ReturnType<typeof processOnboardingProvisioningJobs>) | undefine
 
 async function initialize() {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
+  const client = createPreviewAwarePrismaClient(
+    await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }),
+  );
   const certificateValiditySeconds = Number(process.env.CERTIFICATE_VALIDITY_SECONDS ?? 31_536_000);
   const provisioner = new ProvisioningService({
     client,

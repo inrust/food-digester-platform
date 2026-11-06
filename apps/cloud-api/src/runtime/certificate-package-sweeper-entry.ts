@@ -10,7 +10,7 @@ import {
   SecurePackageService,
   sweepCertificateLifecycle,
 } from '@fdp/auth';
-import { createPrismaClient } from '@fdp/database';
+import { createPreviewAwarePrismaClient } from '@fdp/aws-clients';
 import { ProvisioningService } from '../provisioning/service.js';
 
 const required = (name: string): string => {
@@ -30,7 +30,9 @@ interface SweepResult {
 
 async function initialize(): Promise<() => Promise<SweepResult>> {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
+  const client = createPreviewAwarePrismaClient(
+    await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }),
+  );
   const keyProvider = createKmsDataKeyProvider({ keyId: required('CERT_PACKAGE_KEY_ARN'), region });
   const securePackage = new SecurePackageService({
     db: client,

@@ -5,7 +5,7 @@ import {
   resolveDatabaseUrl,
 } from '@fdp/aws-clients';
 import { CERTIFICATE_PACKAGE_MAX_CLAIMS, CERTIFICATE_PACKAGE_RETENTION_SECONDS, SecurePackageService } from '@fdp/auth';
-import { createPrismaClient } from '@fdp/database';
+import { createPreviewAwarePrismaClient } from '@fdp/aws-clients';
 import { createOnboardingRequestHandler, createOnboardingStatusHandler } from '../onboarding/index.js';
 import { ProvisioningService } from '../provisioning/service.js';
 import {
@@ -24,7 +24,9 @@ let runtimeHandler: ((event: ApiGatewayOnboardingEvent) => Promise<ApiGatewayOnb
 
 async function initialize() {
   const region = required('AWS_REGION');
-  const client = createPrismaClient(await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }));
+  const client = createPreviewAwarePrismaClient(
+    await resolveDatabaseUrl({ secretArn: required('DB_SECRET_ARN'), region }),
+  );
   const keyProvider = createKmsDataKeyProvider({ keyId: required('CERT_PACKAGE_KEY_ARN'), region });
   const certificateValiditySeconds = Number(process.env.CERTIFICATE_VALIDITY_SECONDS ?? 31_536_000);
   const iot = createAwsIotProvisioningClient({
