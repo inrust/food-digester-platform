@@ -29,10 +29,11 @@ model Customer {
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz
 
-  sites     Site[]
-  users     UserScope[]
-  devices   Device[]
-  contracts Contract[]
+  sites         Site[]
+  users         UserScope[]
+  devices       Device[]
+  contracts     Contract[]
+  mediaTriggers MediaTrigger[]
 
   @@map("customers")
 }
@@ -137,6 +138,7 @@ model Device {
   site     Site?     @relation(fields: [siteId], references: [id])
 
   liveImagePolicy  DeviceLiveImagePolicy?
+  mediaTriggers    MediaTrigger[]
   assignments      DeviceAssignment[]
   stateHistory     DeviceStateHistory[]
   certificates     DeviceCertificate[]
@@ -742,24 +744,29 @@ model Alarm {
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
+  evidenceImage MediaEvidence?
+
+  @@unique([id, customerId, deviceId, sourceMessageId], map: "alarms_evidence_scope_key")
   @@index([customerId, severity, status])
   @@index([deviceId, detectedTime])
   @@map("alarms")
 }
 
 model DeviceEvent {
-  id              String   @id @default(uuid())
-  deviceId        String   @map("device_id")
-  customerId      String   @map("customer_id")
-  eventType       String   @map("event_type")
-  userId          String?  @map("user_id")
+  id              String         @id @default(uuid())
+  deviceId        String         @map("device_id")
+  customerId      String         @map("customer_id")
+  eventType       String         @map("event_type")
+  userId          String?        @map("user_id")
   username        String?
   source          String?
   remarks         String?
-  occurredAt      DateTime @map("occurred_at") @db.Timestamptz
-  sourceMessageId String?  @unique @map("source_message_id")
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  occurredAt      DateTime       @map("occurred_at") @db.Timestamptz
+  sourceMessageId String?        @unique @map("source_message_id")
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  evidenceImage   MediaEvidence?
 
+  @@unique([id, customerId, deviceId, sourceMessageId], map: "device_events_evidence_scope_key")
   @@index([deviceId, occurredAt])
   @@map("device_events")
 }
@@ -956,13 +963,18 @@ model MediaUploadSession {
   sizeKb                Int       @map("size_kb")
   // BE-MED-01：会话创建时设备申报的 SHA-256（hex）；上传后 Media Handler 重算比对
   declaredSha256        String?   @map("declared_sha256")
+  // Nullable for legacy sessions: never infer exact bytes from rounded KB.
+  sizeBytes             Int?      @map("size_bytes")
+  triggerId             String?   @map("trigger_id")
   status                String    @default("ISSUED") // ISSUED | COMPLETED | EXPIRED
   presignedUrlExpiresAt DateTime  @map("presigned_url_expires_at") @db.Timestamptz
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
   completedAt           DateTime? @map("completed_at") @db.Timestamptz
 
   mediaObject MediaObject?
+  trigger     MediaTrigger? @relation(fields: [triggerId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
+  @@index([triggerId, status, presignedUrlExpiresAt, id], map: "media_upload_sessions_trigger_lookup_idx")
   @@map("media_upload_sessions")
 }
 
@@ -983,7 +995,9 @@ model MediaObject {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   uploadSession MediaUploadSession? @relation(fields: [uploadSessionId], references: [id])
+  evidenceImage MediaEvidence?
 
+  @@unique([id, customerId, deviceId], map: "media_objects_evidence_scope_key")
   @@index([deviceId, captureTime])
   @@map("media_objects")
 }
@@ -1202,8 +1216,62 @@ model DevicePublicKey {
 
 // Server allowlist: absent/disabled is closed; never inferred from JWT/configuration V1.
 model DeviceLiveImagePolicy {
-  deviceId String @id @map("device_id")
-  enabled Boolean @default(false)
-  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  deviceId String  @id @map("device_id")
+  enabled  Boolean @default(false)
+  device   Device  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
   @@map("device_live_image_policies")
+}
+
+// IMG-09: durable trigger declaration, independent of upload attempts and matching state.
+model MediaTrigger {
+  id               String   @id @default(uuid())
+  customerId       String   @map("customer_id")
+  deviceId         String   @map("device_id")
+  kind             String // EVENT | ALARM
+  messageId        String   @map("message_id")
+  mediaType        String   @default("IMAGE") @map("media_type")
+  fileName         String   @map("file_name")
+  sizeBytes        Int      @map("size_bytes")
+  sizeKb           Int      @map("size_kb")
+  sha256Normalized String   @map("sha256_normalized")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  customer Customer             @relation(fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  device   Device               @relation(fields: [deviceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  sessions MediaUploadSession[]
+  evidence MediaEvidence?
+
+  @@unique([customerId, deviceId, kind, messageId], map: "media_triggers_ref_key")
+  // Referenced by the SQL-only composite scope FK on MediaEvidence.
+  @@unique([id, customerId, deviceId, kind, messageId], map: "media_triggers_evidence_scope_key")
+  @@map("media_triggers")
+}
+
+model MediaEvidence {
+  id            String    @id @default(uuid())
+  triggerId     String    @unique @map("trigger_id")
+  mediaId       String    @unique @map("media_id")
+  // Immutable scope copied from MediaTrigger; composite SQL FKs prevent cross-scope links.
+  customerId    String    @map("customer_id")
+  deviceId      String    @map("device_id")
+  kind          String
+  messageId     String    @map("message_id")
+  status        String    @default("PENDING") // PENDING -> LINKED | UNMATCHED
+  alarmId       String?   @unique @map("alarm_id")
+  eventId       String?   @unique @map("event_id")
+  registeredAt  DateTime  @default(now()) @map("registered_at") @db.Timestamptz
+  deadlineAt    DateTime  @map("deadline_at") @db.Timestamptz
+  nextAttemptAt DateTime? @default(now()) @map("next_attempt_at") @db.Timestamptz
+  attemptCount  Int       @default(0) @map("attempt_count")
+  failureReason String?   @map("failure_reason")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  trigger MediaTrigger @relation(fields: [triggerId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  media   MediaObject  @relation(fields: [mediaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  alarm   Alarm?       @relation(fields: [alarmId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  event   DeviceEvent? @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([status, nextAttemptAt, id], map: "media_evidence_pending_scan_idx")
+  @@map("media_evidence")
 }
