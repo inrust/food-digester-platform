@@ -8,6 +8,7 @@ export const DELIVERED_LAMBDA_LOGICAL_ID_PREFIXES = [
   'IngestionFn',
   'ArchiveFn',
   'OutboxPublisherFn',
+  'MediaEvidenceFn',
   'NotificationPublisherFn',
   'SummaryFn',
   'ReplayTriggerPublisherFn',

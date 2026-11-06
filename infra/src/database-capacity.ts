@@ -2,6 +2,7 @@
 export const DATABASE_FUNCTION_CONCURRENCY = Object.freeze({
   ingestion: 1,
   'outbox-publisher': 1,
+  'media-evidence': 1,
   'notification-publisher': 1,
   summary: 1,
   'replay-trigger-publisher': 1,

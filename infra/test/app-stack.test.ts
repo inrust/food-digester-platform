@@ -49,7 +49,7 @@ describe('资源命名（环境前缀）', () => {
       },
     });
     assert.equal(stack.stackName, 'fdp-staging-app');
-    // Stack construction bundles all 19 Lambda assets. Hosted CI exceeded 15s
+    // Stack construction bundles all 20 Lambda assets. Hosted CI exceeded 15s
     // (15.647–22.424s); allow build time without changing the naming assertion.
   }, 60_000);
 
@@ -90,6 +90,7 @@ describe('资源命名（环境前缀）', () => {
       'ingestion',
       'archive',
       'outbox-publisher',
+      'media-evidence',
       'notification-publisher',
       'summary',
       'replay-trigger-publisher',
@@ -257,6 +258,7 @@ describe('验收：IAM 最小权限', () => {
       'ingestion-role',
       'archive-role',
       'outbox-publisher-role',
+      'media-evidence-role',
       'replay-trigger-publisher-role',
       'replay-role',
       'api-role',
@@ -336,13 +338,13 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('19 个 Lambda 使用各自独立执行角色', () => {
+  test('20 个 Lambda 使用各自独立执行角色', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function')).filter((f) =>
       String(f.Properties.FunctionName ?? '').startsWith('fdp-test-'),
     );
-    assert.equal(fns.length, 19);
+    assert.equal(fns.length, 20);
     const roles = new Set(fns.map((f) => JSON.stringify(f.Properties.Role)));
-    assert.equal(roles.size, 19);
+    assert.equal(roles.size, 20);
   });
 
   test('P0 生产组合根与既有 API/sweeper 使用真实资产包而非内联 501 占位代码', () => {
@@ -350,6 +352,7 @@ describe('验收：IAM 最小权限', () => {
     for (const name of [
       'fdp-test-ingestion',
       'fdp-test-outbox-publisher',
+      'fdp-test-media-evidence',
       'fdp-test-notification-publisher',
       'fdp-test-archive',
       'fdp-test-summary',
@@ -375,11 +378,12 @@ describe('验收：IAM 最小权限', () => {
     }
   });
 
-  test('数据库型 Lambda 使用可审查的 Reserved Concurrency，理论连接峰值不超过 62', () => {
+  test('数据库型 Lambda 使用可审查的 Reserved Concurrency，理论连接峰值不超过 64', () => {
     const fns = Object.values(resourcesOfType(template, 'AWS::Lambda::Function'));
     const expected: Record<string, number> = {
       'fdp-test-ingestion': 1,
       'fdp-test-outbox-publisher': 1,
+      'fdp-test-media-evidence': 1,
       'fdp-test-notification-publisher': 1,
       'fdp-test-summary': 1,
       'fdp-test-replay-trigger-publisher': 1,
@@ -404,9 +408,9 @@ describe('验收：IAM 最小权限', () => {
     }
     assert.equal(
       Object.values(expected).reduce((sum, value) => sum + value, 0),
-      31,
+      32,
     );
-    assert.equal(31 * 2, 62);
+    assert.equal(32 * 2, 64);
     const archive = fns.find((candidate) => candidate.Properties.FunctionName === 'fdp-test-archive');
     assert.isDefined(archive);
     assert.isUndefined(archive.Properties.ReservedConcurrentExecutions, '不访问数据库的 Archive 不占数据库并发预算');
@@ -555,7 +559,7 @@ describe('验收：数据库凭据与消息管线', () => {
 
   test('Ingress/Archive/Replay 主队列配置 DLQ，全部队列 KMS 加密', () => {
     const queues = Object.values(resourcesOfType(template, 'AWS::SQS::Queue'));
-    assert.equal(queues.length, 11);
+    assert.equal(queues.length, 12);
     for (const queue of queues) {
       assert.isDefined(queue.Properties.KmsMasterKeyId, `队列 ${queue.Properties.QueueName} 未配置 KMS 加密`);
     }
@@ -589,7 +593,7 @@ describe('验收：数据库凭据与消息管线', () => {
     for (const esm of esms) {
       assert.equal(esm.Properties.FunctionResponseTypes?.[0], 'ReportBatchItemFailures');
     }
-    template.resourceCountIs('AWS::Events::Rule', 13);
+    template.resourceCountIs('AWS::Events::Rule', 14);
     for (const name of ['fdp-test-command-publisher', 'fdp-test-command-timeout', 'fdp-test-ota-dispatcher']) {
       template.hasResourceProperties('AWS::Events::Rule', {
         Name: name,

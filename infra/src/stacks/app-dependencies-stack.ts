@@ -74,6 +74,7 @@ const ONBOARDING_PROVISIONING_ENTRY = resolve(
 const CERT_SWEEPER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/cloud-api/src/runtime/certificate-package-sweeper-entry.ts');
 const INGESTION_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/ingestion-entry.ts');
 const OUTBOX_PUBLISHER_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/outbox-publisher-entry.ts');
+const MEDIA_EVIDENCE_ENTRY = resolve(WORKSPACE_ROOT, 'apps/ingestion-worker/src/runtime/media-evidence-entry.ts');
 const NOTIFICATION_PUBLISHER_ENTRY = resolve(
   WORKSPACE_ROOT,
   'apps/ingestion-worker/src/runtime/notification-publisher-entry.ts',
@@ -130,6 +131,7 @@ interface ComputeResources {
   readonly ingestion: lambda.Function;
   readonly archive: lambda.Function;
   readonly outboxPublisher: lambda.Function;
+  readonly mediaEvidence: lambda.Function;
   readonly notificationPublisher: lambda.Function;
   readonly summary: lambda.Function;
   readonly replayTriggerPublisher: lambda.Function;
@@ -475,6 +477,7 @@ export class AppDependenciesStack extends Stack {
       'ingestion',
       'archive',
       'outbox-publisher',
+      'media-evidence',
       'replay-trigger-publisher',
       'replay',
       API_ROLE_SUFFIX,
@@ -1109,6 +1112,15 @@ export class AppDependenciesStack extends Stack {
       targets: [new eventsTargets.LambdaFunction(outboxPublisher)],
     });
 
+    // IMG-12: dedicated durable evidence route/scan; independent from ARCHIVE backlog.
+    const mediaEvidence = mkFunction('MediaEvidenceFn', 'media-evidence', {
+      timeout: Duration.seconds(60),
+      environment: { DB_SECRET_ARN: dbSecret },
+      entry: MEDIA_EVIDENCE_ENTRY,
+    });
+    dbSecretGrant(mediaEvidence);
+    scheduleWithDlq('MediaEvidence', 'media-evidence', mediaEvidence);
+
     // Notification Publisher：独立消费 CT-04 通知事件，仅持有 IoT Publish 权限。
     const notificationPublisher = mkFunction('NotificationPublisherFn', 'notification-publisher', {
       timeout: Duration.seconds(60),
@@ -1626,6 +1638,7 @@ export class AppDependenciesStack extends Stack {
       ingestion,
       archive,
       outboxPublisher,
+      mediaEvidence,
       notificationPublisher,
       summary,
       replayTriggerPublisher,

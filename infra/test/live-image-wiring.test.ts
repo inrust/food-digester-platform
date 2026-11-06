@@ -29,7 +29,7 @@ test('every DB Lambda receives both table names and CONTROL-only fencing IAM; on
   const functions = Object.entries(resources).filter(
     ([, r]) => r.Type === 'AWS::Lambda::Function' && r.Properties.Environment?.Variables?.DB_SECRET_ARN,
   );
-  expect(functions).toHaveLength(18);
+  expect(functions).toHaveLength(19);
   for (const [id, fn] of functions) {
     const env = fn.Properties.Environment.Variables;
     expect(env.LIVE_IMAGE_CONTROL_TABLE).toBeDefined();

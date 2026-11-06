@@ -234,11 +234,11 @@ describe('IMG-11 atomic image registration', () => {
         messageId: f.trigger!.messageId,
         alarmId: null,
         eventId: null,
-        attemptCount: 0,
+        attemptCount: 1,
         failureReason: null,
       });
       expect(e.deadlineAt.getTime() - e.registeredAt.getTime()).toBe(86400000);
-      expect(e.nextAttemptAt).toEqual(e.registeredAt);
+      expect(e.nextAttemptAt?.getTime()).toBe(e.registeredAt.getTime() + 60000);
       const o = await db.prisma.outboxEvent.findUniqueOrThrow({
         where: { idempotencyKey: evidenceOutboxKey(f.trigger!.id) },
       });

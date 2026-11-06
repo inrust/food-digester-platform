@@ -49,3 +49,10 @@ IMG-10～13 的会话业务、同事务登记、解析和查询仍按原分工�
 [IMG-11 登记事务与验收](./IMG-11-图片登记事务与本地验收.md)已将生产登记拆分为事务外 S3 预检与事务内设备→Trigger→会话持锁提交；与 IMG-10 共用设备和 Trigger 锁。图片、PENDING Evidence、会话完成、receipt、唯一 Outbox 与审计/缺口处理共同提交或回滚。非空 sizeBytes 严格比较精确字节，历史 NULL 保留 KB 兼容；Hash 使用实际流式计算值。
 
 Outbox 类型为 MEDIA_EVIDENCE_REGISTERED，唯一键为 media-evidence:<triggerId>，不混入 ARCHIVE。本地已验证原有租约发送器可持久化重试；正式解析路由及消费者留给 IMG-12。重复消息不重置 Evidence 时间，旧会话被替换后不能登记；旧版绑定媒体若已完成但缺 Evidence/Outbox 则失败关闭，需上线前盘点，不自动补造 24 小时窗口。G2 继续 PARTIAL，未部署或迁移目标库。
+
+
+## IMG-12 实施补充（2026-11-06）
+
+[IMG-12 解析与验收](./IMG-12-图片关联解析与本地验收.md)已实现登记提交后首试、MEDIA_EVIDENCE_REGISTERED 持久化消费路由及独立分钟任务。Evidence 持锁后按原租户/设备和 sourceMessageId 精确匹配；告警已清除仍匹配原 ACTIVE，清除消息引用、明确范围不符或固定 24 小时到期转 UNMATCHED，终态不重开。
+
+扫描按 (nextAttemptAt,id) keyset 有界分页，默认 50×5 行，PENDING 下次时间不超过原 deadlineAt。新向前迁移只补 ARCHIVE/alarm/CLEARED 原消息查询的部分表达式索引及模型摘要，不修改历史行。独立 Lambda、分钟规则、重试/DLQ、权限及连接预算已通过离线检查；规则沿用 enableScheduledWorkers，目标开关未更改。G2 仍为 PARTIAL，IMG-13 和目标环境/真机证据待补，本批未部署或迁移目标库。

@@ -6,12 +6,12 @@ import { databaseCapacity } from '../src/database-capacity.js';
 test('complete capacity budget accounts for pools, worker concurrency, rotation and operations', () => {
   const candidate = databaseCapacity(true, true);
   assert.throws(() => databaseCapacity(false, true), /IMMEDIATE_PUBLISH_REQUIRES_CAPACITY/);
-  assert.equal(candidate.steadyConnections, 45);
-  assert.equal(candidate.required, 63);
-  assert.equal(candidate.headroom, 7);
+  assert.equal(candidate.steadyConnections, 46);
+  assert.equal(candidate.required, 64);
+  assert.equal(candidate.headroom, 6);
   assert.equal(candidate.functions.find((f) => f.name === 'api')?.reservedConcurrency, 12);
   assert.equal(candidate.functions.find((f) => f.name === 'command-publisher')?.poolMax, 1);
-  assert.equal(databaseCapacity(false, false).required, 80);
+  assert.equal(databaseCapacity(false, false).required, 82);
 });
 test('observability and immediate queue synth retain narrow logs and hard DB budgets', () => {
   const app = new App();

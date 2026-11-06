@@ -1,6 +1,7 @@
 /** BE-IOT-09: preflight outside SQL; receipt + registration + evidence/outbox commit together. */
+import { createRedactingLogger } from '@fdp/observability';
 import type { DbClient } from '@fdp/database';
-import { commitPreparedMediaMetadata, prepareMediaMetadata } from '@fdp/media';
+import { commitPreparedMediaMetadata, prepareMediaMetadata, resolveMediaEvidence } from '@fdp/media';
 import type { MediaMetadataMessage, MediaObjectStorage, MediaUploadPolicyQuery } from '@fdp/media';
 import { hashPayload, idempotencyKeyOf, processWithReceipt } from '../ingest/receipt.js';
 import { quarantineError } from '../ingest/errors.js';
@@ -26,7 +27,7 @@ export function createMediaHandler(deps: MediaHandlerDeps) {
       const known = await deps.client.ingestionReceipt.findUnique({ where: { idempotencyKey: idempotencyKeyOf(key) } });
       const preparation = known ? null : await prepareMediaMetadata(deps, key.deviceId, metadata);
       try {
-        await processWithReceipt(deps.client, {
+        const processed = await processWithReceipt(deps.client, {
           key,
           payloadHash: hashPayload(message.normalizedPayload),
           receivedAtMs: message.envelope.iotReceivedAt,
@@ -61,6 +62,23 @@ export function createMediaHandler(deps: MediaHandlerDeps) {
             return registered;
           },
         });
+        // Only the owner of a committed root transaction may start the immediate first attempt.
+        // Failure here cannot roll back registration; the durable Outbox/minute scan remains authoritative recovery.
+        if (
+          processed.result?.applied &&
+          !processed.result.replayed &&
+          processed.result.mediaId &&
+          typeof (deps.client as { $connect?: unknown }).$connect === 'function'
+        ) {
+          try {
+            const evidence = await deps.client.mediaEvidence.findUnique({
+              where: { mediaId: processed.result.mediaId },
+            });
+            if (evidence) await resolveMediaEvidence(deps, evidence.id);
+          } catch {
+            createRedactingLogger(console).warn(JSON.stringify({ event: 'media.evidence.immediate_retry_pending' }));
+          }
+        }
         return { handled: true };
       } catch (error) {
         // Cross-device sourceMessageId collision may lose a unique insert. Recheck only after
