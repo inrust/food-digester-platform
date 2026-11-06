@@ -149,7 +149,8 @@ export class DeviceContract {
     this.check(absolutize(schema.content['application/json'].schema), payload, `${id} ${response.status} response`);
     if (response.status >= 400) {
       const code = (payload as Json)?.error?.code;
-      if (this.errors.get(code) !== response.status) throw new Error(`${id}: ERROR_CODE_STATUS_MISMATCH`);
+      if ((operation['x-error-codes']?.[code] ?? this.errors.get(code)) !== response.status)
+        throw new Error(`${id}: ERROR_CODE_STATUS_MISMATCH`);
     }
   }
 }

@@ -111,7 +111,7 @@ test('REST request validation: required body/path/query/header, optional Sync, b
   assert.throws(() => deviceContract.assertRequest('getOnboardingStatus', { ...statusRequest, headers: {} }));
 });
 test('all device operations and declared response JSON Schemas compile; stable error catalog has no duplicates', () => {
-  assert.equal(deviceContract.operations.size, 8);
+  assert.equal(deviceContract.operations.size, 10);
   for (const [id, { operation }] of deviceContract.operations)
     for (const [status, response] of Object.entries(operation.responses)) {
       const resolved = deviceContract.resolve(response);
@@ -130,10 +130,16 @@ test('all device operations and declared response JSON Schemas compile; stable e
   const codes = json('contracts/rest/error-codes.json').errorCodes;
   assert.equal(new Set(codes.map((code) => code.code)).size, codes.length);
 });
-test('lowercase MQTT message IDs are compatible with the preceding contract', async () => {
+test('image contract upgrade has exact current decision approvals', async () => {
   const receipt = await checkBaselines();
-  assert.equal(receipt.status, 'COMPATIBLE');
-  assert.deepEqual(receipt.approvedBreakingChanges, []);
+  assert.equal(receipt.currentContractVersion, '0.16.0');
+  assert.equal(receipt.status, 'APPROVED_BREAKING_UPGRADE');
+  assert.ok(receipt.approvedBreakingChanges.length > 0);
+});
+test('historical lowercase MQTT upgrade remains compatible', () => {
+  const before = json('contracts/testing/baselines/0.14.0.json');
+  const after = json('contracts/testing/baselines/0.15.0.json');
+  assert.deepEqual(compareBaselines(before, after), []);
 });
 test('predecessor MQTT is compatible; known REST break requires exact version and frozen DEC approvals', async () => {
   const approvals = json('contracts/testing/baselines/compatibility-approvals-0.14.0.json');

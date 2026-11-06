@@ -98,6 +98,7 @@ test('策略消费者均为合法任务 ID 且覆盖 DEC-009 阻塞任务', () =
     CAMERA_INTERACTION_POLICY.viewing,
     CAMERA_INTERACTION_POLICY.refresh,
     CAMERA_INTERACTION_POLICY.liveStreaming,
+    CAMERA_INTERACTION_POLICY.liveImage,
   ]) {
     assert.ok(s.note.length > 0, '缺少 note');
     assert.ok(s.consumers.length > 0, '缺少 consumers');
@@ -127,4 +128,17 @@ test('TS 常量与 camera-interaction-policy.json 完全一致', () => {
   assert.deepEqual(policyJson.pendingParameters, [...CAMERA_INTERACTION_POLICY.pendingParameters]);
   assert.equal(policyJson.frozenUpgradePath, CAMERA_INTERACTION_POLICY.frozenUpgradePath);
   assert.equal(getCameraPolicyStatus(), 'frozen');
+});
+
+test('live-image-v1 is opt-in and its numeric policy matches JSON', () => {
+  assert.deepEqual(CAMERA_INTERACTION_POLICY.liveImage, policyJson.liveImage);
+  assert.equal(policyJson.liveImage.defaultEnabled, false);
+  assert.equal(policyJson.liveImage.pollIntervalMs, 5000);
+  assert.equal(policyJson.liveImage.uploadIntervalMs, 2000);
+  assert.equal(policyJson.liveImage.leaseSeconds, 30);
+  assert.equal(policyJson.liveImage.frameTtlSeconds, 10);
+  const registry = new SchemaRegistry(here);
+  const changed = structuredClone(policyJson);
+  changed.liveImage.frameTtlSeconds = 60;
+  assert.ok(validate(policySchema, 'camera-interaction-policy.schema.json', changed, registry).length > 0);
 });

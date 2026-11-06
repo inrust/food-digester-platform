@@ -3,7 +3,7 @@
  *
  * 事实源：contracts/domain/camera-interaction-policy.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-009@1.0.0（status=frozen，全部为定性规则，已可直接执行）。
+ * 决策追溯：DEC-009@2.0.0（status=frozen，包含归档入口与独立预览参数）。
  *
  * 消费方：BE-MED-01、FE-06（设备详情摄像头区）、FE-12、FE-14（Media 页面）。
  */
@@ -14,6 +14,29 @@ export type CameraViewingScope = 'latest-authorized-media-only' | 'history-timel
 export type CameraRefreshMode = 'manual-only' | 'polling' | 'push';
 
 export interface CameraInteractionPolicy {
+  readonly liveImage: {
+    readonly capability: string;
+    readonly defaultEnabled: boolean;
+    readonly activation: string;
+    readonly pollIntervalMs: number;
+    readonly uploadIntervalMs: number;
+    readonly readIntervalMs: number;
+    readonly leaseSeconds: number;
+    readonly renewAfterSeconds: number;
+    readonly frameTtlSeconds: number;
+    readonly dedupSeconds: number;
+    readonly minUploadIntervalMs: number;
+    readonly maxImageBytes: number;
+    readonly maxRequestBytes: number;
+    readonly defaultLongEdgePx: number;
+    readonly maxDimensionPx: number;
+    readonly maxPixels: number;
+    readonly maxFutureSkewSeconds: number;
+    readonly maxViewersPerDevice: number;
+    readonly consumers: readonly string[];
+    readonly note: string;
+  };
+
   readonly policyVersion: string;
   readonly status: CameraPolicyStatus;
   readonly viewing: {
@@ -37,11 +60,11 @@ export interface CameraInteractionPolicy {
 }
 
 /**
- * 冻结值（DEC-009 v1.0.0）：
- * V1 仅查看最新授权 Media 并手动刷新；实时视频流暂不实现。
+ * 冻结值（DEC-009 v2.0.0）：
+ * 既有归档入口手动刷新；liveImage 承接默认关闭的图片预览。
  */
 export const CAMERA_INTERACTION_POLICY: CameraInteractionPolicy = {
-  policyVersion: '1.0.0',
+  policyVersion: '2.0.0',
   status: 'frozen',
   viewing: {
     scope: 'latest-authorized-media-only',
@@ -51,15 +74,37 @@ export const CAMERA_INTERACTION_POLICY: CameraInteractionPolicy = {
   refresh: {
     mode: 'manual-only',
     consumers: ['FE-06', 'FE-12'],
-    note: '画面更新仅由用户手动刷新触发；禁止前端轮询定时拉取最新画面（自动刷新属于实时语义，V1 不提供）。',
+    note: '既有归档 Media 入口由用户手动刷新；启用的 liveImage 入口按独立租约和刷新参数运行。',
   },
   liveStreaming: {
     enabled: false,
     consumers: ['BE-MED-01', 'FE-06', 'FE-12'],
-    note: '实时视频流暂不实现：不提供播放/停止按钮、不接入任何流媒体协议、不预留 streaming 接口。上级协议未定义该能力；未经新版本决策前任何实时流实现视为越界。',
+    note: '实时视频流能力保持关闭；图片预览由 liveImage 的 REST 租约和 Base64 帧契约约束。',
   },
   pendingParameters: [],
-  frozenUpgradePath: '启用自动刷新或实时流必须提升 DEC-009 与 policyVersion，并先新增流媒体、鉴权、带宽和隐私契约。',
+  frozenUpgradePath: '变更预览参数、能力准入及媒体语义须提升 DEC-009 与策略版本。',
+  liveImage: {
+    capability: 'live-image-v1',
+    defaultEnabled: false,
+    activation: 'device-local-opt-in-and-server-device-allowlist',
+    pollIntervalMs: 5000,
+    uploadIntervalMs: 2000,
+    readIntervalMs: 2000,
+    leaseSeconds: 30,
+    renewAfterSeconds: 10,
+    frameTtlSeconds: 10,
+    dedupSeconds: 15,
+    minUploadIntervalMs: 1000,
+    maxImageBytes: 131072,
+    maxRequestBytes: 184320,
+    defaultLongEdgePx: 640,
+    maxDimensionPx: 1920,
+    maxPixels: 2073600,
+    maxFutureSkewSeconds: 2,
+    maxViewersPerDevice: 16,
+    consumers: ['IMG-01', 'IMG-02', 'IMG-03', 'IMG-04', 'BE-MED-01', 'FE-06'],
+    note: '设备本地版本支持且显式开启；服务端按 deviceId 白名单启用，两者均缺省关闭。旧媒体刷新策略仅用于已有归档入口。新接口按租约授权轮询。',
+  },
 } as const;
 
 /** 摄像头查看范围。V1 冻结为 latest-authorized-media-only。 */

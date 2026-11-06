@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.37.0",
-  "updatedAt": "2026-10-18T00:00:00Z",
+  "registerVersion": "1.38.0",
+  "updatedAt": "2026-11-06T00:00:00Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -353,16 +353,20 @@
     },
     {
       "id": "DEC-009",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "status": "frozen",
       "title": "摄像头交互语义",
       "conflict": "原型提供摄像头“播放/停止”和“实时画面”，但上级协议未定义实时流媒体能力。",
-      "provisionalValue": "V1 仅显示最新一张已授权 Media 并支持手动刷新；不提供自动轮询、播放/停止或实时视频流。",
+      "provisionalValue": "默认关闭的 live-image-v1 能力，5秒查询、2秒传图和读图、30秒租约及10秒有效帧；event/alarm IMAGE 通过 triggerRef 关联 S3 留档。旧设备归档媒体方式继续可用。",
       "approver": "Anray",
-      "approvedAt": "2026-09-04T08:33:33Z",
-      "blockingTasks": ["BE-MED-01", "FE-06", "FE-12", "FE-14"],
-      "affectedModules": ["BE-MED", "FE"],
-      "sourceRefs": ["device-cloud-communication-design", "admin-prototype"],
+      "approvedAt": "2026-11-06T00:00:00Z",
+      "blockingTasks": ["BE-MED-01", "FE-06", "FE-12", "FE-14", "IMG-01", "IMG-02", "IMG-03", "IMG-04"],
+      "affectedModules": ["BE-MED", "FE", "AUTH-03", "CT-02", "IMG"],
+      "sourceRefs": [
+        "device-cloud-communication-design",
+        "admin-prototype",
+        "docs/api/device-image-interface-design.md"
+      ],
       "history": [
         {
           "version": "0.1.0",
@@ -381,6 +385,12 @@
           "at": "2026-09-04T08:33:33Z",
           "by": "Anray",
           "note": "选择方案 009-A 并冻结：V1 仅显示最新一张已授权 Media 并支持手动刷新；不提供自动轮询、播放/停止或实时视频流。"
+        },
+        {
+          "version": "2.0.0",
+          "at": "2026-11-06T00:00:00Z",
+          "by": "Anray",
+          "note": "确认设备图片方案并授权 P0；接口和策略升级，后端及页面按后续阶段实施。能力启用和16查看者边界为本批实施细化。"
         }
       ]
     },

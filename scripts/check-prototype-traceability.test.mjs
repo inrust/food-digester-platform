@@ -62,11 +62,17 @@ test('真实矩阵：9 菜单、12 页面、每项均有处置结论', () => {
   for (const d of ['Adopt', 'Adapt', 'Reject']) assert.ok(dispositions.has(d), `缺少 ${d}`);
 });
 
-test('被拒绝的实时流、明文密码、状态混用不携带实现任务', () => {
+test('图片预览有明确后续任务，被拒绝的密码和状态混用不携带实现任务', () => {
   const m = realMatrix();
   const rejected = m.pages.flatMap((p) => p.elements).filter((e) => e.rejectCategory);
   const categories = new Set(rejected.map((e) => e.rejectCategory));
-  assert.ok(categories.has('realtime-stream'));
+  const camera = m.pages.flatMap((p) => p.elements).filter((e) => /camPlay|camStop/.test(e.id));
+  assert.equal(camera.length, 4);
+  for (const element of camera) {
+    assert.equal(element.disposition, 'Adapt');
+    assert.equal(element.source.taskId, 'IMG-14');
+    assert.ok(element.basis.includes('DEC-009@2.0.0'));
+  }
   assert.ok(categories.has('plaintext-password'));
   assert.ok(categories.has('mixed-status'));
   for (const e of rejected) {

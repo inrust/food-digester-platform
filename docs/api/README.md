@@ -45,3 +45,5 @@ MQTT 自定义域名 `iot.bio-nexa.com:8883` 的 TLS、临时 X.509 身份连接
 按 DEC-003@1.1.0 与 DEC-026@1.0.0，Onboarding `certificate` 增加必填 `certificateChain`，顶层增加 `rest.endpoint`；Rotate 必填 `csrPem`，返回 `certificateChain`，删除 `privateKey`。设备证书状态和管理端证书摘要增加 `mqttVerifiedAt`、`restVerifiedAt`、`rotationDeadlineAt`、`rotationConfirmedAt`，未知值为 `null`。这次轮换请求/响应是破坏性升级，固件与云端须一起切换；不保留云端生成设备私钥的兼容分支。
 
 同一项目 CA 叶证书在 MQTT 和 Device REST 使用；首次接入保留首 Heartbeat 激活，轮换使用 24 小时双通道确认与超时回退。迁移步骤、旧记录处理和未执行的目标 Gate 见 [实施验收](../audit/设备证书CSR轮换与双通道确认实施验收-2026-10-01.md)。
+
+设备图片功能的 0.16.0 新契约及 P0 样例见 [设备图片对接包](./device-image-device-package.md)，交付阶段和本地验证见 [P0 验收记录](../audit/2026-11-06-device-image-P0-G0.md)。新预览接口当前为 planned。

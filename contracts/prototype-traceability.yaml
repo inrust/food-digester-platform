@@ -1,7 +1,7 @@
 {
   "matrixVersion": "1.0.0",
   "updatedAt": "2026-08-26T00:00:00Z",
-  "x-decision-versions": ["PRI-001@1.0.0", "DEC-007@1.0.0", "DEC-008@1.0.0", "DEC-009@1.0.0", "DEC-010@1.0.0", "DEC-011@1.0.0", "DEC-012@1.0.0"],
+  "x-decision-versions": ["PRI-001@1.0.0", "DEC-007@1.0.0", "DEC-008@1.0.0", "DEC-009@2.0.0", "DEC-010@1.0.0", "DEC-011@1.0.0", "DEC-012@1.0.0"],
   "format": "YAML 1.2（JSON 语法子集），保证零依赖机器校验；QA-08 消费本文件",
   "source": {
     "prototype": "docs/index19.html",
@@ -59,9 +59,9 @@
         { "id": "device-view.field.consumables", "kind": "field", "name": "耗材投影", "disposition": "Adapt", "basis": "DEC-008@1.0.0：碳滤网/生物添加剂仅采用设备上报，unknown 不伪造百分比", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "consumables" } },
         { "id": "device-view.field.recentAlarms", "kind": "field", "name": "最近告警", "disposition": "Adopt", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "recentAlarms" } },
         { "id": "device-view.field.esg7d", "kind": "field", "name": "近7日 ESG", "disposition": "Adopt", "source": { "taskId": "BE-DEV-05", "api": "getDeviceConsole", "field": "esgLast7Days" } },
-        { "id": "device-view.button.camPlay", "kind": "button", "name": "摄像头播放", "disposition": "Reject", "rejectCategory": "realtime-stream", "basis": "DEC-009：协议未定义实时流媒体；不提供播放/停止语义" },
-        { "id": "device-view.button.camStop", "kind": "button", "name": "摄像头停止", "disposition": "Reject", "rejectCategory": "realtime-stream", "basis": "DEC-009：协议未定义实时流媒体；不提供播放/停止语义" },
-        { "id": "device-view.field.mediaPreview", "kind": "field", "name": "最新授权 Media 预览（替代实时画面）", "disposition": "Adapt", "basis": "DEC-009：仅查看 listMedia 返回 data 中的最新授权 Media 并手动刷新，不标注实时视频", "source": { "taskId": "BE-MED-01", "api": "listMedia", "field": "data" } }
+        { "id": "device-view.button.camPlay", "kind": "button", "name": "摄像头播放", "disposition": "Adapt", "basis": "DEC-009@2.0.0：图片预览开始与退出，由 IMG-14 后交付", "source": { "taskId": "IMG-14" } },
+        { "id": "device-view.button.camStop", "kind": "button", "name": "摄像头停止", "disposition": "Adapt", "basis": "DEC-009@2.0.0：图片预览开始与退出，由 IMG-14 后交付", "source": { "taskId": "IMG-14" } },
+        { "id": "device-view.field.mediaPreview", "kind": "field", "name": "最新授权 Media 预览（替代实时画面）", "disposition": "Adapt", "basis": "DEC-009@2.0.0：既有归档入口继续手动刷新，新预览由租约接口提供", "source": { "taskId": "BE-MED-01", "api": "listMedia", "field": "data" } }
       ]
     },
     {
@@ -83,8 +83,8 @@
         { "id": "device-operate.button.updateStrategy", "kind": "button", "name": "更新策略（旋转间隔 M/时长 N）", "disposition": "Reject", "basis": "DEC-018@1.0.0：旋转间隔/时长属于候选扩展，不进入 Configuration V1，也不生成设备命令" },
         { "id": "device-operate.button.updateThreshold", "kind": "button", "name": "更新阈值（温度阈值）", "disposition": "Adapt", "basis": "FE-12：温度阈值改走 Configuration 版本发布", "source": { "taskId": "BE-CFG-01", "api": "publishConfigurationVersion" } },
         { "id": "device-operate.button.saveAlias", "kind": "button", "name": "保存别名", "disposition": "Adapt", "basis": "BE-DEV-06：alias 白名单 + If-Match + 审计", "source": { "taskId": "BE-DEV-06", "api": "patchDeviceMetadata", "field": "alias" } },
-        { "id": "device-operate.button.camPlay", "kind": "button", "name": "摄像头播放", "disposition": "Reject", "rejectCategory": "realtime-stream", "basis": "DEC-009：不提供实时流；媒体面板只显示最新 Media" },
-        { "id": "device-operate.button.camStop", "kind": "button", "name": "摄像头停止", "disposition": "Reject", "rejectCategory": "realtime-stream", "basis": "DEC-009：不提供实时流" },
+        { "id": "device-operate.button.camPlay", "kind": "button", "name": "摄像头播放", "disposition": "Adapt", "basis": "DEC-009@2.0.0：图片预览开始与退出，由 IMG-14 后交付", "source": { "taskId": "IMG-14" } },
+        { "id": "device-operate.button.camStop", "kind": "button", "name": "摄像头停止", "disposition": "Adapt", "basis": "DEC-009@2.0.0：图片预览开始与退出，由 IMG-14 后交付", "source": { "taskId": "IMG-14" } },
         { "id": "device-operate.table.activityLog", "kind": "table-column", "name": "操作日志（时间/级别/内容）", "disposition": "Adapt", "basis": "BE-DEV-05：设备活动日志按级别和时间筛选", "source": { "taskId": "BE-DEV-05", "api": "listDeviceActivities", "field": "data" } },
         { "id": "device-operate.button.logFilter", "kind": "button", "name": "日志筛选", "disposition": "Adopt", "source": { "taskId": "BE-DEV-05", "api": "listDeviceActivities" } },
         { "id": "device-operate.button.logExport", "kind": "button", "name": "日志导出", "disposition": "Adapt", "basis": "BE-DEV-05：异步 CSV 导出，复用 Customer scope 与审计", "source": { "taskId": "BE-DEV-05", "api": "exportDeviceActivities" } }
