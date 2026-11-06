@@ -18,6 +18,7 @@ export default defineConfig({
       '@fdp/aws-clients': r('./packages/aws-clients/src/index.ts'),
       '@fdp/database': r('./packages/database/src/index.ts'),
       '@fdp/domain': r('./packages/domain/src/index.ts'),
+      '@fdp/media': r('./packages/media/src/index.ts'),
       '@fdp/infra': r('./infra/src/index.ts'),
       '@fdp/observability': r('./packages/observability/src/index.ts'),
     },

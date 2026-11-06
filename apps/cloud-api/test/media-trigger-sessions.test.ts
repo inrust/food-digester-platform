@@ -287,11 +287,11 @@ describe('IMG-10 expiry, registration and signing failure', () => {
     expect(data(await f.request()).sessionId).toBe(b.sessionId);
     expect(await db.prisma.mediaUploadSession.count({ where: { deviceId: f.deviceId } })).toBe(2);
   });
-  test('registered media yields 409 with mediaId even before Evidence exists, after expiry or soft deletion', async () => {
+  test('registered media yields 409 with mediaId after expiry or soft deletion', async () => {
     const f = await fixture(1),
       view = data(await f.request()),
       mediaId = await register(f, view);
-    expect(await db.prisma.mediaEvidence.count({ where: { mediaId } })).toBe(0);
+    expect(await db.prisma.mediaEvidence.count({ where: { mediaId } })).toBe(1);
     for (let i = 0; i < 2; i++) {
       f.advance(900000);
       const result = await f.request();
@@ -315,6 +315,61 @@ describe('IMG-10 expiry, registration and signing failure', () => {
     expect(code(result)).toBe('MEDIA_ALREADY_REGISTERED');
     expect((result.body as { error: { details: unknown } }).error.details).toEqual({ mediaId });
     expect(f.sign).toHaveBeenCalledTimes(1);
+  });
+  test('IMG-11: old metadata I/O loses to a replacement issuance; only the new session registers', async () => {
+    const f = await fixture();
+    const old = data(await f.request());
+    f.objects.set(old.objectPath, jpeg);
+    let replacement: MediaUploadSessionView | undefined;
+    const result = await handleMediaMetadata(
+      {
+        ...f.deps,
+        storage: {
+          ...f.deps.storage,
+          computeSha256: async () => {
+            f.advance(900000);
+            const next = await f.request();
+            expect(next.status).toBe(201);
+            replacement = data(next);
+            return legacy.sha256;
+          },
+        },
+      },
+      f.deviceId,
+      {
+        meta: { id: `MED-old-${randomUUID()}`, ts: new Date(f.now()).toISOString() },
+        data: {
+          mediaType: 'IMAGE',
+          captureTime: new Date(f.now()).toISOString(),
+          fileName: old.fileName,
+          sizeKb: old.sizeKb,
+          objectPath: old.objectPath,
+        },
+      },
+    );
+    expect(result).toEqual({ applied: false, reason: 'SESSION_NOT_OPEN' });
+    expect(await db.prisma.mediaObject.count({ where: { deviceId: f.deviceId } })).toBe(0);
+    expect(await db.prisma.mediaEvidence.count({ where: { deviceId: f.deviceId } })).toBe(0);
+    expect(
+      await db.prisma.outboxEvent.count({
+        where: {
+          idempotencyKey: {
+            startsWith: 'media-evidence:',
+          },
+          payload: { path: ['deviceId'], equals: f.deviceId },
+        },
+      }),
+    ).toBe(0);
+    expect(replacement).toBeDefined();
+    const mediaId = await register(f, replacement!);
+    const evidence = await db.prisma.mediaEvidence.findUniqueOrThrow({ where: { mediaId } });
+    expect(evidence.status).toBe('PENDING');
+    expect(await db.prisma.mediaObject.count({ where: { deviceId: f.deviceId } })).toBe(1);
+    expect(await db.prisma.mediaEvidence.count({ where: { deviceId: f.deviceId } })).toBe(1);
+    expect(code(await f.request())).toBe('MEDIA_ALREADY_REGISTERED');
+    expect((await db.prisma.mediaUploadSession.findUniqueOrThrow({ where: { id: old.sessionId } })).status).toBe(
+      'EXPIRED',
+    );
   });
   test('COMPLETED without a MediaObject fails closed and never consumes another quota slot', async () => {
     const f = await fixture();

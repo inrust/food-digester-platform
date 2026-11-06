@@ -9,7 +9,9 @@ const failures = (id: string) => [{ itemIdentifier: id }];
 
 test('QA03 eight routes: business + receipts + outbox + raw archive, duplicate redelivery', async () => {
   await withQa03Fixture('eight-routes', async (f) => {
-    const records = f.devices.flatMap((_, i) => TYPES.map((type) => f.record(type, i)));
+    // Tamper auto-suspends the device. Finish the legal media registration before that authority change.
+    const routes = [...TYPES.filter((type) => type !== 'tamper'), 'tamper' as const];
+    const records = f.devices.flatMap((_, i) => routes.map((type) => f.record(type, i)));
     assert.deepEqual((await f.ingest({ Records: records })).batchItemFailures, []);
     assert.deepEqual(f.quarantine, []);
     assert.equal(await f.prisma.ingestionReceipt.count(), 80);

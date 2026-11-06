@@ -42,3 +42,10 @@ IMG-10～13 的会话业务、同事务登记、解析和查询仍按原分工�
 [IMG-10 会话业务与验收](./IMG-10-触发图片上传会话与本地验收.md)已实现严格 triggerRef、不可变申报、200 重用、201 过期新办和两类 409。锁顺序是设备、Trigger 的 FOR NO KEY UPDATE、会话；Trigger 锁兼容登记端 KEY SHARE。实际登记事实采用 MediaObject 判断，与来源是否 LINKED 分开。
 
 新创建的会话保存已知精确字节，包括旧格式请求；历史 NULL 不回填。重签只使用存储的原到期时间、长度和 Hash，签名失败后重试不重复占额度。本批没有部署、迁移目标库或接入 IMG-11 同事务登记，后续仍须补齐登记消费者后才可启用完整触发链路。
+
+
+## IMG-11 实施补充（2026-11-06）
+
+[IMG-11 登记事务与验收](./IMG-11-图片登记事务与本地验收.md)已将生产登记拆分为事务外 S3 预检与事务内设备→Trigger→会话持锁提交；与 IMG-10 共用设备和 Trigger 锁。图片、PENDING Evidence、会话完成、receipt、唯一 Outbox 与审计/缺口处理共同提交或回滚。非空 sizeBytes 严格比较精确字节，历史 NULL 保留 KB 兼容；Hash 使用实际流式计算值。
+
+Outbox 类型为 MEDIA_EVIDENCE_REGISTERED，唯一键为 media-evidence:<triggerId>，不混入 ARCHIVE。本地已验证原有租约发送器可持久化重试；正式解析路由及消费者留给 IMG-12。重复消息不重置 Evidence 时间，旧会话被替换后不能登记；旧版绑定媒体若已完成但缺 Evidence/Outbox 则失败关闭，需上线前盘点，不自动补造 24 小时窗口。G2 继续 PARTIAL，未部署或迁移目标库。

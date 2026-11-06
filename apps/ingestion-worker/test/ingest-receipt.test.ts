@@ -352,3 +352,23 @@ test('nested transaction phase is callback-only and later outer rollback invalid
   assert.equal(await businessCount(deviceId), 0);
   assert.equal(await prisma.ingestionReceipt.count({ where: { deviceId } }), 0);
 });
+
+test('business P2002 without its own receipt remains a retryable constraint failure, not PAYLOAD_CONFLICT', async () => {
+  const idempotencyKey = `img11-existing-${nextDeviceId()}`;
+  await prisma.outboxEvent.create({
+    data: { eventType: 'IMG11_TEST', aggregateType: 'test', aggregateId: 'existing', idempotencyKey, payload: {} },
+  });
+  const key = { deviceId: nextDeviceId(), topicType: 'media', seq: 1 };
+  await rejects(
+    processWithReceipt(prisma, {
+      key,
+      payloadHash: 'hash',
+      business: async (tx) =>
+        tx.outboxEvent.create({
+          data: { eventType: 'IMG11_TEST', aggregateType: 'test', aggregateId: 'loser', idempotencyKey, payload: {} },
+        }),
+    }),
+    (error: unknown) => !(error instanceof IngestError) && (error as { code?: string }).code === 'P2002',
+  );
+  assert.equal(await prisma.ingestionReceipt.count({ where: { idempotencyKey: idempotencyKeyOf(key) } }), 0);
+});

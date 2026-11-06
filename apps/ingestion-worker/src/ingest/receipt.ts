@@ -150,7 +150,8 @@ export async function processWithReceipt<T>(
     observeReceiptResult('PROCESSED', receiptId, typeof (client as { $connect?: unknown }).$connect === 'function');
     return processed;
   } catch (err) {
-    if (!isUniqueViolation(err)) throw err;
+    // Caller-owned transactions may already be aborted. Only their owner may roll back/retry.
+    if (!isUniqueViolation(err) || typeof (client as { $connect?: unknown }).$connect !== 'function') throw err;
     // 并发/重复：回读胜出记录比较 Hash（DB-02 P2002 幂等兜底模式）
     const existing = await observeDataPathPhase('duplicate-readback', () =>
       receipts(client).findFirst({
@@ -165,6 +166,8 @@ export async function processWithReceipt<T>(
       );
       return { outcome: 'DUPLICATE_SKIPPED', result: undefined };
     }
+    // A business constraint failure is not a conflicting receipt. Its transaction rolled back.
+    if (!existing) throw err;
     // 相同键不同 Hash = 安全异常：隔离冲突消息，不覆盖原 receipt
     throw quarantineError(
       'PAYLOAD_CONFLICT',

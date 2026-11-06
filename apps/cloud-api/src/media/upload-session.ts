@@ -1,5 +1,6 @@
 /** IMG-10: device -> immutable trigger -> sessions. Signing never changes stored expiry. */
 import { randomUUID } from 'node:crypto';
+import { lockMediaDevice, lockMediaTrigger } from '@fdp/media';
 import { AuthError, verifyDeviceCertificate } from '@fdp/auth';
 import type { ClientCertIdentity, DeviceAuthContext } from '@fdp/auth';
 import { recordAudit, withTransaction } from '@fdp/database';
@@ -85,7 +86,7 @@ async function lockAndRefresh(
   now: () => Date,
   identity?: ClientCertIdentity,
 ): Promise<DeviceAuthContext> {
-  await tx.$queryRawUnsafe('SELECT id FROM devices WHERE id = $1 FOR UPDATE', auth.deviceId);
+  await lockMediaDevice(tx, auth.deviceId);
   let fresh: DeviceAuthContext;
   if (identity) {
     fresh = await verifyDeviceCertificate(tx, identity, { requestedDeviceId: auth.deviceId, now: now() });
@@ -162,7 +163,7 @@ export async function createMediaUploadSessionOutcome(
             },
           });
         // Serialize request writers, while permitting metadata's FK/declaration KEY SHARE read.
-        await tx.$queryRawUnsafe('SELECT id FROM media_triggers WHERE id = $1 FOR NO KEY UPDATE', trigger.id);
+        await lockMediaTrigger(tx, trigger.id);
         triggerId = trigger.id;
         if (
           trigger.mediaType !== input.mediaType ||

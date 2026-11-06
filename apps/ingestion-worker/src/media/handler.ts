@@ -1,9 +1,10 @@
-/** BE-IOT-09 Media Handler：复用 BE-MED-01 核心并纳入 BE-IOT-03 receipt 事务。 */
+/** BE-IOT-09: preflight outside SQL; receipt + registration + evidence/outbox commit together. */
 import type { DbClient } from '@fdp/database';
-import { handleMediaMetadata } from '@fdp/media';
+import { commitPreparedMediaMetadata, prepareMediaMetadata } from '@fdp/media';
 import type { MediaMetadataMessage, MediaObjectStorage, MediaUploadPolicyQuery } from '@fdp/media';
-import { hashPayload, processWithReceipt } from '../ingest/receipt.js';
+import { hashPayload, idempotencyKeyOf, processWithReceipt } from '../ingest/receipt.js';
 import { quarantineError } from '../ingest/errors.js';
+import { resolveDeviceContext } from '../ingest/identity.js';
 import type { ValidatedMessage } from '../ingest/pipeline.js';
 
 export interface MediaHandlerDeps {
@@ -17,34 +18,60 @@ export function createMediaHandler(deps: MediaHandlerDeps) {
   return async (message: ValidatedMessage): Promise<{ readonly handled: boolean }> => {
     if (message.envelope.iotType !== 'media') return { handled: false };
     const meta = message.envelope.payload.meta as Record<string, unknown>;
-    const seq = Number(meta.seq);
-    await processWithReceipt(deps.client, {
-      key: { deviceId: message.device.deviceId, topicType: 'media', seq },
-      payloadHash: hashPayload(message.normalizedPayload),
-      receivedAtMs: message.envelope.iotReceivedAt,
-      ...(deps.now ? { now: deps.now } : {}),
-      business: async (tx) => {
-        const registered = await handleMediaMetadata(
-          {
-            client: tx,
-            storage: deps.storage,
-            uploadPolicy: deps.uploadPolicy,
-            ...(deps.now ? { now: deps.now } : {}),
+    const key = { deviceId: message.device.deviceId, topicType: 'media', seq: Number(meta.seq) };
+    const metadata = message.normalizedPayload as unknown as MediaMetadataMessage;
+    // A known receipt is resolved by processWithReceipt, without requiring S3 to remain available.
+    // This read is an optimization only; the receipt unique key/advisory lock remains authoritative.
+    for (let attempt = 0; ; attempt++) {
+      const known = await deps.client.ingestionReceipt.findUnique({ where: { idempotencyKey: idempotencyKeyOf(key) } });
+      const preparation = known ? null : await prepareMediaMetadata(deps, key.deviceId, metadata);
+      try {
+        await processWithReceipt(deps.client, {
+          key,
+          payloadHash: hashPayload(message.normalizedPayload),
+          receivedAtMs: message.envelope.iotReceivedAt,
+          occurredAt: new Date(message.occurredAt),
+          customerId: message.device.customerId,
+          siteId: message.device.siteId ?? null,
+          ...(deps.now ? { now: deps.now } : {}),
+          business: async (tx, attribution) => {
+            if (!preparation) throw new Error('MEDIA_RECEIPT_CHANGED');
+            const registered = preparation.ready
+              ? await commitPreparedMediaMetadata(
+                  {
+                    ...deps,
+                    client: tx,
+                    validateAuthority: async (lockedTx) => {
+                      const fresh = await resolveDeviceContext(lockedTx, message.envelope, deps.now?.() ?? new Date());
+                      if (fresh.customerId !== message.device.customerId || attribution.customerId !== fresh.customerId)
+                        throw quarantineError('MEDIA_METADATA_REJECTED', 'data.objectPath', 'media ownership changed');
+                    },
+                  },
+                  preparation.prepared,
+                )
+              : preparation.result;
+            if (!registered.applied) {
+              const reason = registered.reason ?? 'INVALID_MESSAGE';
+              throw quarantineError(
+                reason === 'SESSION_EXPIRED' ? 'MEDIA_SESSION_EXPIRED' : 'MEDIA_METADATA_REJECTED',
+                'data.objectPath',
+                `media metadata rejected: ${reason}`,
+              );
+            }
+            return registered;
           },
-          message.device.deviceId,
-          message.envelope.payload as unknown as MediaMetadataMessage,
-        );
-        if (!registered.applied) {
-          const reason = registered.reason ?? 'INVALID_MESSAGE';
-          throw quarantineError(
-            reason === 'SESSION_EXPIRED' ? 'MEDIA_SESSION_EXPIRED' : 'MEDIA_METADATA_REJECTED',
-            'data.objectPath',
-            `media metadata rejected: ${reason}`,
-          );
-        }
-        return registered;
-      },
-    });
-    return { handled: true };
+        });
+        return { handled: true };
+      } catch (error) {
+        // Cross-device sourceMessageId collision may lose a unique insert. Recheck only after
+        // the outer transaction rolls back; never query inside an aborted transaction.
+        if (
+          attempt ||
+          typeof (deps.client as { $connect?: unknown }).$connect !== 'function' ||
+          (error as { code?: string })?.code !== 'P2002'
+        )
+          throw error;
+      }
+    }
   };
 }
