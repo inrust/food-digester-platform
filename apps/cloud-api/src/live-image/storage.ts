@@ -16,6 +16,7 @@ export interface LiveImageControl {
   readonly streamId: string | null;
   readonly viewers: readonly LiveImageViewerLease[];
   readonly latestCapturedAtMs: number | null;
+  /** Device-wide throttle survives stream and authorization changes. */
   readonly lastNewFrameAtMs: number | null;
 }
 
@@ -69,4 +70,58 @@ export interface LiveImageAuthorizationGuard {
    * explicit reset is allowed only after rechecking the authoritative state.
    */
   withExclusive<T>(deviceId: string, work: (scope: LiveImageAuthorizationScope) => Promise<T>): Promise<T>;
+}
+
+export interface LiveImageStoredFrame {
+  readonly deviceId: string;
+  readonly customerId: string;
+  readonly authEpoch: number;
+  readonly streamId: string;
+  readonly frameId: string;
+  readonly capturedAt: string;
+  readonly receivedAt: string;
+  readonly expiresAt: string;
+  readonly mimeType: 'image/jpeg';
+  readonly imageBase64: string;
+  /** Epoch seconds for physical collection only. */
+  readonly ttl: number;
+}
+
+export interface LiveImageFrameReceipt {
+  readonly deviceId: string;
+  readonly customerId: string;
+  readonly authEpoch: number;
+  readonly streamId: string;
+  readonly frameId: string;
+  readonly requestHash: string;
+  readonly receivedAt: string;
+  readonly expiresAt: string;
+  readonly dedupUntilMs: number;
+  readonly ttl: number;
+}
+
+export interface LiveImageUploadSnapshot {
+  readonly control: LiveImageControl | null;
+  readonly receipt: LiveImageFrameReceipt | null;
+}
+
+export interface LiveImageFrameCommit {
+  readonly expected: LiveImageControlVersion;
+  readonly control: LiveImageControl;
+  readonly frame: LiveImageStoredFrame;
+  readonly receipt: LiveImageFrameReceipt;
+}
+
+export interface LiveImageFrameStore extends LiveImageControlStore {
+  /** Transactional snapshot, keyed by device + canonical stream UUID + canonical frame UUID. */
+  readUploadSnapshot(deviceId: string, streamId: string, frameId: string): Promise<LiveImageUploadSnapshot>;
+  /**
+   * One all-or-nothing operation: conditionally update CONTROL and put FRAME/DEDUP.
+   * Check revision/epoch, customer, stream, enabled, unexpired viewers, timestamp
+   * watermark and per-device rate together. Use a fresh adapter submission clock
+   * to reject expired leases/frames. Bound transaction I/O by the lease/frame deadlines.
+   * Every frame/receipt write advances CONTROL revision; no separate best-effort writes.
+   * false is a conditional conflict or expired deadline; all other failures throw.
+   */
+  commitFrame(commit: LiveImageFrameCommit): Promise<boolean>;
 }

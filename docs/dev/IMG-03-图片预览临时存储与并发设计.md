@@ -16,7 +16,7 @@ DynamoDB 原生支持条件写及多项事务，适用于 Lambda 多实例共享
 | FRAME | streamId、authEpoch、customerId、frameId、capturedAt、receivedAt、expiresAt、mimeType、imageBase64、ttl。每设备一张 |
 | DEDUP 加 streamId 和 frameId | requestHash、receivedAt、expiresAt、dedupUntil、ttl。摘要 15 秒逻辑有效，结果沿用原时间 |
 
-CONTROL 的 revision 单调递增，不能因 TTL 删除重建而回绕。保留 CONTROL 元数据，流切换时清除帧水位并分配随机 UUID streamId。FRAME 和 DEDUP 可用 TTL 回收，读取和条件写始终显式判断逻辑截止。每帧标准 Base64 至多 174764 字符，180 KiB 请求限制与字段开销由契约测试核验，适配器另验序列化项目大小。
+CONTROL 的 revision 单调递增，不能因 TTL 删除重建而回绕。保留 CONTROL 元数据，流切换时清除采集时间水位并分配随机 UUID streamId。lastNewFrameAt 作为设备级限频时间跨流和授权代次保留，由 IMG-06 落实。FRAME 和 DEDUP 可用 TTL 回收，读取和条件写始终显式判断逻辑截止。每帧标准 Base64 至多 174764 字符，180 KiB 请求限制与字段开销由契约测试核验，适配器另验序列化项目大小。
 
 ## 原子边界
 

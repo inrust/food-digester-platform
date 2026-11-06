@@ -4,6 +4,8 @@ import type { AdminHttpRequest } from '../admin/onboarding/handler.js';
 import { rejectRequestBody } from '../admin/shared/strict-object.js';
 import { LiveImageLeaseError, LiveImageLeaseService } from './service.js';
 import type { LiveImageLeaseDeps } from './service.js';
+import { LiveImageFrameService } from './frame-service.js';
+import type { LiveImageFrameDeps } from './frame-service.js';
 
 export interface LiveImageLeaseResponse {
   readonly status: number;
@@ -16,14 +18,8 @@ export interface LiveImageDeviceStateRequest {
   readonly requestId: string;
 }
 
-export function createLiveImageLeaseHandlers(deps: LiveImageLeaseDeps) {
-  const service = new LiveImageLeaseService(deps);
-  const now = deps.now ?? (() => new Date());
-  const execute = async (
-    requestId: string,
-    work: () => Promise<unknown>,
-    status = 200,
-  ): Promise<LiveImageLeaseResponse> => {
+function createLiveImageResponder(now: () => Date) {
+  return async (requestId: string, work: () => Promise<unknown>, status = 200): Promise<LiveImageLeaseResponse> => {
     const headers: Record<string, string> = { 'Cache-Control': 'no-store' };
     try {
       const data = await work();
@@ -40,6 +36,11 @@ export function createLiveImageLeaseHandlers(deps: LiveImageLeaseDeps) {
       return { status: httpStatus, headers, body: { error: { code, message: 'The request failed', requestId } } };
     }
   };
+}
+
+export function createLiveImageLeaseHandlers(deps: LiveImageLeaseDeps) {
+  const service = new LiveImageLeaseService(deps);
+  const execute = createLiveImageResponder(deps.now ?? (() => new Date()));
   const actorOf = (req: AdminHttpRequest): ActorContext => {
     if (!req.actor) throw new LiveImageLeaseError('UNAUTHENTICATED');
     return req.actor;
@@ -69,4 +70,22 @@ export function createLiveImageLeaseHandlers(deps: LiveImageLeaseDeps) {
         return service.getDeviceState(req.identity);
       }),
   };
+}
+
+export interface LiveImageFrameRequest extends LiveImageDeviceStateRequest {
+  readonly headers: Readonly<Record<string, string | undefined>>;
+}
+
+export function createLiveImageFrameHandler(deps: LiveImageFrameDeps) {
+  const service = new LiveImageFrameService(deps);
+  const execute = createLiveImageResponder(deps.now ?? (() => new Date()));
+  return (req: LiveImageFrameRequest): Promise<LiveImageLeaseResponse> =>
+    execute(req.requestId, async () => {
+      if (!req.identity?.clientCertPem) throw new LiveImageLeaseError('UNAUTHENTICATED');
+      const contentType = Object.entries(req.headers).find(([key]) => key.toLowerCase() === 'content-type')?.[1];
+      if (contentType?.split(';')[0]?.trim().toLowerCase() !== 'application/json') {
+        throw new LiveImageLeaseError('UNSUPPORTED_MEDIA_TYPE');
+      }
+      return service.uploadFrame(req.identity, req.body);
+    });
 }

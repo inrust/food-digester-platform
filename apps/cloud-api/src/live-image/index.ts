@@ -11,3 +11,15 @@ export type {
   LiveImageAuthorizationScope,
   LiveImageAuthorizationGuard,
 } from './storage.js';
+
+export { LiveImageFrameService } from './frame-service.js';
+export type { LiveImageFrameDeps } from './frame-service.js';
+export { createLiveImageFrameHandler } from './handler.js';
+export type { LiveImageFrameRequest } from './handler.js';
+export type {
+  LiveImageStoredFrame,
+  LiveImageFrameReceipt,
+  LiveImageUploadSnapshot,
+  LiveImageFrameCommit,
+  LiveImageFrameStore,
+} from './storage.js';

@@ -18,6 +18,11 @@ const ERROR_STATUS = {
   NOT_FOUND: 404,
   RATE_LIMITED: 429,
   TEMPORARILY_UNAVAILABLE: 503,
+  LIVE_STREAM_INACTIVE: 409,
+  STALE_FRAME: 409,
+  FRAME_CONFLICT: 409,
+  PAYLOAD_TOO_LARGE: 413,
+  UNSUPPORTED_MEDIA_TYPE: 415,
 } as const;
 
 export class LiveImageLeaseError extends Error {
@@ -42,7 +47,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_CAS_ATTEMPTS = 5;
 const deny = () => new LiveImageLeaseError('FORBIDDEN');
 
-function isEligible(scope: LiveImageAuthorizationScope): boolean {
+export function isLiveImageEligible(scope: LiveImageAuthorizationScope): boolean {
   return (
     scope.featureEnabled &&
     !!scope.customerId &&
@@ -96,7 +101,7 @@ export class LiveImageLeaseService {
     for (let attempt = 0; attempt < MAX_CAS_ATTEMPTS; attempt++) {
       const result = await this.deps.authorization.withRead(access, async (scope) => {
         assertViewer(scope, access);
-        if (!isEligible(scope)) throw deny();
+        if (!isLiveImageEligible(scope)) throw deny();
         const stored = await this.deps.store.readControl(scope.deviceId);
         if (stored && (!stored.enabled || stored.customerId !== scope.customerId)) throw deny();
         const current = stored ?? {
@@ -134,7 +139,7 @@ export class LiveImageLeaseService {
         streamId,
         viewers: [...others, { actorId: scope.actor!.actorId, viewerId: normalizedViewerId, expiresAtMs }],
         latestCapturedAtMs: viewers.length === 0 ? null : current.latestCapturedAtMs,
-        lastNewFrameAtMs: viewers.length === 0 ? null : current.lastNewFrameAtMs,
+        lastNewFrameAtMs: current.lastNewFrameAtMs,
       };
       return {
         next,
@@ -161,7 +166,7 @@ export class LiveImageLeaseService {
           viewers,
           streamId: viewers.length ? current.streamId : null,
           latestCapturedAtMs: viewers.length ? current.latestCapturedAtMs : null,
-          lastNewFrameAtMs: viewers.length ? current.lastNewFrameAtMs : null,
+          lastNewFrameAtMs: current.lastNewFrameAtMs,
         },
         value: undefined,
       };
@@ -170,7 +175,7 @@ export class LiveImageLeaseService {
 
   async getDeviceState(identity: ClientCertIdentity): Promise<LiveState> {
     return this.deps.authorization.withRead({ kind: 'device', identity }, async (scope) => {
-      if (!isEligible(scope)) throw deny();
+      if (!isLiveImageEligible(scope)) throw deny();
       const current = await this.deps.store.readControl(scope.deviceId);
       if (current && (!current.enabled || current.customerId !== scope.customerId)) throw deny();
       const now = this.now().getTime();
@@ -209,7 +214,8 @@ export class LiveImageLeaseService {
           customerId: scope.customerId,
           revision: current.revision + 1,
           authEpoch: current.authEpoch + 1,
-          enabled: action === 'reset' && isEligible(scope),
+          enabled: action === 'reset' && isLiveImageEligible(scope),
+          lastNewFrameAtMs: current.lastNewFrameAtMs,
         };
         if (await this.deps.store.compareAndSwap(deviceId, stored, next)) {
           await changeAuthority?.();
