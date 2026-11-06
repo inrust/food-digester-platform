@@ -125,3 +125,18 @@ export interface LiveImageFrameStore extends LiveImageControlStore {
    */
   commitFrame(commit: LiveImageFrameCommit): Promise<boolean>;
 }
+
+export interface LiveImageLatestSnapshot {
+  readonly control: LiveImageControl | null;
+  readonly frame: LiveImageStoredFrame | null;
+}
+
+/** Read-only port: CONTROL and FRAME must come from one transactional snapshot. */
+export interface LiveImageLatestStore {
+  /**
+   * Return detached records from the same serialization point, never independent
+   * eventually consistent reads. Physical TTL presence does not imply visibility.
+   * Transport/authorization/corruption failures throw; no cached-frame fallback.
+   */
+  readLatestSnapshot(deviceId: string): Promise<LiveImageLatestSnapshot>;
+}

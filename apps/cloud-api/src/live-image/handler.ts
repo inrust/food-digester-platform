@@ -6,6 +6,8 @@ import { LiveImageLeaseError, LiveImageLeaseService } from './service.js';
 import type { LiveImageLeaseDeps } from './service.js';
 import { LiveImageFrameService } from './frame-service.js';
 import type { LiveImageFrameDeps } from './frame-service.js';
+import { LiveImageLatestService } from './latest-service.js';
+import type { LiveImageLatestDeps } from './latest-service.js';
 
 export interface LiveImageLeaseResponse {
   readonly status: number;
@@ -38,13 +40,14 @@ function createLiveImageResponder(now: () => Date) {
   };
 }
 
+function actorOf(req: AdminHttpRequest): ActorContext {
+  if (!req.actor) throw new LiveImageLeaseError('UNAUTHENTICATED');
+  return req.actor;
+}
+
 export function createLiveImageLeaseHandlers(deps: LiveImageLeaseDeps) {
   const service = new LiveImageLeaseService(deps);
   const execute = createLiveImageResponder(deps.now ?? (() => new Date()));
-  const actorOf = (req: AdminHttpRequest): ActorContext => {
-    if (!req.actor) throw new LiveImageLeaseError('UNAUTHENTICATED');
-    return req.actor;
-  };
   const bodyError = () => new LiveImageLeaseError('VALIDATION_FAILED');
   return {
     renewViewer: (req: AdminHttpRequest) =>
@@ -87,5 +90,16 @@ export function createLiveImageFrameHandler(deps: LiveImageFrameDeps) {
         throw new LiveImageLeaseError('UNSUPPORTED_MEDIA_TYPE');
       }
       return service.uploadFrame(req.identity, req.body);
+    });
+}
+
+export function createLiveImageLatestHandler(deps: LiveImageLatestDeps) {
+  const service = new LiveImageLatestService(deps);
+  const execute = createLiveImageResponder(deps.now ?? (() => new Date()));
+  return (req: AdminHttpRequest): Promise<LiveImageLeaseResponse> =>
+    execute(req.requestId, async () => {
+      const actor = actorOf(req);
+      rejectRequestBody(req.body, () => new LiveImageLeaseError('VALIDATION_FAILED'));
+      return service.getLatest(actor, req.params?.deviceId ?? '', req.query?.viewerId ?? '', req.query?.knownFrameId);
     });
 }

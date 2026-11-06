@@ -19,6 +19,7 @@ const ERROR_STATUS = {
   RATE_LIMITED: 429,
   TEMPORARILY_UNAVAILABLE: 503,
   LIVE_STREAM_INACTIVE: 409,
+  LIVE_VIEWER_EXPIRED: 409,
   STALE_FRAME: 409,
   FRAME_CONFLICT: 409,
   PAYLOAD_TOO_LARGE: 413,
@@ -56,7 +57,7 @@ export function isLiveImageEligible(scope: LiveImageAuthorizationScope): boolean
   );
 }
 
-function assertViewer(scope: LiveImageAuthorizationScope, access: LiveImageAccess): void {
+export function assertLiveImageViewer(scope: LiveImageAuthorizationScope, access: LiveImageAccess): void {
   if (access.kind !== 'viewer') return;
   const actor = scope.actor;
   if (!actor || actor.actorId !== access.actor.actorId || scope.deviceId !== access.deviceId) throw deny();
@@ -64,6 +65,11 @@ function assertViewer(scope: LiveImageAuthorizationScope, access: LiveImageAcces
     throw new LiveImageLeaseError('NOT_FOUND');
   }
   requirePermission(actor, 'media:read');
+}
+
+export function normalizeLiveImageUuid(value: string): string {
+  if (typeof value !== 'string' || !UUID.test(value)) throw new LiveImageLeaseError('VALIDATION_FAILED');
+  return value.toLowerCase();
 }
 
 function initialControl(deviceId: string): LiveImageControl {
@@ -100,7 +106,7 @@ export class LiveImageLeaseService {
   ): Promise<T> {
     for (let attempt = 0; attempt < MAX_CAS_ATTEMPTS; attempt++) {
       const result = await this.deps.authorization.withRead(access, async (scope) => {
-        assertViewer(scope, access);
+        assertLiveImageViewer(scope, access);
         if (!isLiveImageEligible(scope)) throw deny();
         const stored = await this.deps.store.readControl(scope.deviceId);
         if (stored && (!stored.enabled || stored.customerId !== scope.customerId)) throw deny();
@@ -227,7 +233,7 @@ export class LiveImageLeaseService {
   }
 
   private normalizeViewerId(deviceId: string, viewerId: string): string {
-    if (!deviceId || !UUID.test(viewerId)) throw new LiveImageLeaseError('VALIDATION_FAILED');
-    return viewerId.toLowerCase();
+    if (!deviceId) throw new LiveImageLeaseError('VALIDATION_FAILED');
+    return normalizeLiveImageUuid(viewerId);
   }
 }

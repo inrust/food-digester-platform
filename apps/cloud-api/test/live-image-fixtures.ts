@@ -3,6 +3,8 @@ import type { ActorContext, ClientCertIdentity } from '@fdp/auth';
 import {
   createLiveImageLeaseHandlers,
   createLiveImageFrameHandler,
+  createLiveImageLatestHandler,
+  LiveImageLatestService,
   LiveImageFrameService,
   LiveImageLeaseError,
   LiveImageLeaseService,
@@ -17,6 +19,7 @@ import type {
   LiveImageStoredFrame,
   LiveImageFrameReceipt,
   LiveImageFrameCommit,
+  LiveImageLatestStore,
 } from '../src/live-image/index.js';
 
 export function deferred() {
@@ -56,8 +59,21 @@ class ReadWriteLock {
 }
 
 /** Detached snapshots and atomic CAS shared by independently constructed services. */
-export class TestControlStore implements LiveImageFrameStore {
+export class TestControlStore implements LiveImageFrameStore, LiveImageLatestStore {
   readonly controls = new Map<string, LiveImageControl>();
+  beforeLatestSnapshot: (() => Promise<void>) | undefined;
+  afterLatestSnapshot: (() => Promise<void>) | undefined;
+  latestReads = 0;
+  async readLatestSnapshot(deviceId: string) {
+    await this.beforeLatestSnapshot?.();
+    const snapshot = structuredClone({
+      control: this.controls.get(deviceId) ?? null,
+      frame: this.frames.get(deviceId) ?? null,
+    });
+    this.latestReads++;
+    await this.afterLatestSnapshot?.();
+    return snapshot;
+  }
   readonly frames = new Map<string, LiveImageStoredFrame>();
   readonly receipts = new Map<string, LiveImageFrameReceipt>();
   beforeFrameCommit?: () => Promise<void>;
@@ -215,6 +231,8 @@ export function fixture() {
     handlers: createLiveImageLeaseHandlers(deps),
     frames: new LiveImageFrameService(deps),
     upload: createLiveImageFrameHandler(deps),
+    latest: new LiveImageLatestService(deps),
+    readLatest: createLiveImageLatestHandler(deps),
     now: () => clock,
     advance: (ms: number) => {
       clock += ms;
