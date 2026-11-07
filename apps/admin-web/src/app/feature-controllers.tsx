@@ -2,6 +2,7 @@ import { translate } from '../i18n/i18n.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
 import { hasPermission } from '@fdp/auth/browser';
+import { createMediaDownloadUrl } from '../pages/media/media-api.js';
 import { LiveImagePreview } from '../pages/devices/LiveImagePreview.js';
 import type { ApiClient } from '../api/http-client.js';
 import type { FilterOption } from '../components/ScopeFilter.js';
@@ -715,7 +716,17 @@ export function DeviceUsersController({
 }) {
   return <DeviceUsersPage {...useDeviceUsersPageProps({ api, session })} />;
 }
-export function AlarmsController({
+type AlarmsControllerProps = {
+  readonly api: ApiClient;
+  readonly session: SessionSnapshot;
+  readonly search: string;
+  readonly onNavigate: Navigate;
+};
+export function AlarmsController(props: AlarmsControllerProps) {
+  const { session } = props;
+  return <AlarmsInstance key={`${session.username}:${session.customerId}:${session.roles.join(',')}`} {...props} />;
+}
+function AlarmsInstance({
   api,
   session,
   search,
@@ -756,23 +767,34 @@ export function AlarmsController({
     })[]
   >([]);
   const selected = useRef<string | null>(null);
+  const detailGeneration = useRef(0);
+  const listGeneration = useRef({ alarm: 0, event: 0, tamper: 0 });
+  const requestEvidence = useCallback(
+    (id: string, signal?: AbortSignal) => createMediaDownloadUrl(api, id, signal),
+    [api],
+  );
   const load = useCallback(
     async (tab: AlarmTab, cursor?: string) => {
+      const generation = ++listGeneration.current[tab];
       if (tab === 'alarm') setAlarms((old) => ({ ...old, loading: true, error: undefined }));
       else if (tab === 'event') setEvents((old) => ({ ...old, loading: true, error: undefined }));
       else setTampers((old) => ({ ...old, loading: true, error: undefined }));
       try {
         if (tab === 'alarm') {
           const page = await fetchAlarms(api, urlState.alarm, cursor);
+          if (generation !== listGeneration.current[tab]) return;
           setAlarms({ rows: page.rows, loading: false, nextCursor: page.nextCursor });
         } else if (tab === 'event') {
           const page = await fetchDeviceEvents(api, urlState.event, cursor);
+          if (generation !== listGeneration.current[tab]) return;
           setEvents({ rows: page.rows, loading: false, nextCursor: page.nextCursor });
         } else {
           const page = await fetchTamperEvents(api, urlState.tamper, cursor);
+          if (generation !== listGeneration.current[tab]) return;
           setTampers({ rows: page.rows, loading: false, nextCursor: page.nextCursor });
         }
       } catch (error) {
+        if (generation !== listGeneration.current[tab]) return;
         if (tab === 'alarm') setAlarms((old) => ({ ...old, loading: false, error }));
         else if (tab === 'event') setEvents((old) => ({ ...old, loading: false, error }));
         else setTampers((old) => ({ ...old, loading: false, error }));
@@ -782,19 +804,28 @@ export function AlarmsController({
   );
   const loadDetail = useCallback(
     async (id: string) => {
+      const generation = ++detailGeneration.current;
       selected.current = id;
       setDetail({ kind: 'loading' });
       try {
         const alarm = await fetchAlarm(api, id);
-        if (selected.current === id) setDetail({ kind: 'ready', alarm });
+        if (selected.current === id && generation === detailGeneration.current) setDetail({ kind: 'ready', alarm });
       } catch (error) {
-        if (selected.current === id) setDetail({ kind: 'error', error });
+        if (selected.current === id && generation === detailGeneration.current) setDetail({ kind: 'error', error });
       }
     },
     [api],
   );
   useEffect(() => {
+    selected.current = null;
+    ++detailGeneration.current;
+    setDetail({ kind: 'none' });
     void load(urlState.tab);
+    return () => {
+      ++detailGeneration.current;
+      ++listGeneration.current[urlState.tab];
+      selected.current = null;
+    };
   }, [load, urlState.tab]);
   useEffect(() => {
     let active = true;
@@ -844,6 +875,8 @@ export function AlarmsController({
     <AlarmsPage
       key={search}
       role={roleOf(session)}
+      canReadEvidence={session.roles.some((role) => hasPermission(role, 'media:read'))}
+      onRequestEvidenceUrl={requestEvidence}
       isCustomerRole={session.customerId !== null}
       customerOptions={customerOptions}
       siteOptions={alarmSiteOptions}

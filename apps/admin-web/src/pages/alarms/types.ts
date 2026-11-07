@@ -2,49 +2,15 @@
  * FE-10 Alarm/Event/Tamper 数据类型：镜像 admin-alarm-api.json（BE-ALM-01）。
  */
 
-export type AlarmSeverity = 'INFO' | 'WARNING' | 'MAJOR' | 'CRITICAL';
-export type AlarmStatus = 'ACTIVE' | 'ACKNOWLEDGED' | 'CLEARED';
-
-export interface AlarmView {
-  readonly alarmId: string;
-  readonly deviceId: string;
-  readonly customerId: string;
-  readonly code: string;
-  readonly category: string;
-  readonly severity: AlarmSeverity;
-  readonly status: AlarmStatus;
-  readonly detectedTime: string;
-  readonly component: string | null;
-  readonly currentValue: string | null;
-  readonly threshold: string | null;
-  readonly unit: string | null;
-  readonly message: string | null;
-  readonly recommendedAction: string | null;
-  readonly acknowledgedBy: string | null;
-  readonly acknowledgedAt: string | null;
-  readonly acknowledgeReason: string | null;
-  readonly clearedBy: string | null;
-  readonly clearedAt: string | null;
-  readonly clearReason: string | null;
-  readonly createdAt: string;
-  readonly updatedAt: string;
-}
+import type { Alarm, DeviceEvent } from '@fdp/contracts/rest/image-types.js';
+export type AlarmView = Alarm;
+export type AlarmSeverity = Alarm['severity'];
+export type AlarmStatus = Alarm['status'];
+export type DeviceEventView = DeviceEvent;
 
 export interface AlarmHandleResultView extends AlarmView {
-  /** 幂等重放：目标状态已达成，无写入/审计/领域事件。 */
+  /** Idempotent replay of an already completed action. */
   readonly replayed: boolean;
-}
-
-export interface DeviceEventView {
-  readonly eventId: string;
-  readonly deviceId: string;
-  readonly customerId: string;
-  readonly eventType: string;
-  readonly userId: string | null;
-  readonly username: string | null;
-  readonly source: string | null;
-  readonly remarks: string | null;
-  readonly occurredAt: string;
 }
 
 export interface TamperEventView {

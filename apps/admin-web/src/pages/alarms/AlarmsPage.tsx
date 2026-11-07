@@ -15,6 +15,8 @@ import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
+import { EvidenceImageEntry } from './EvidenceImageEntry.js';
+import type { EvidenceDownloadRequest } from './EvidenceImageEntry.js';
 import { TimeText } from '../../components/TimeText.js';
 import type { FilterOption } from '../../components/ScopeFilter.js';
 import type { AlarmHandleResultView, AlarmView, DeviceEventView, TamperEventView } from './types.js';
@@ -52,6 +54,8 @@ export type AlarmDetailState =
     };
 export interface AlarmsPageProps {
   readonly role: Role;
+  readonly canReadEvidence?: boolean;
+  readonly onRequestEvidenceUrl?: EvidenceDownloadRequest;
   /** Customer 角色：隐藏客户筛选（服务端强制本 Customer scope）。 */
   readonly isCustomerRole: boolean;
   readonly customerOptions: readonly FilterOption[];
@@ -78,6 +82,8 @@ export interface AlarmsPageProps {
 }
 export function AlarmsPage({
   role,
+  canReadEvidence = false,
+  onRequestEvidenceUrl,
   isCustomerRole,
   customerOptions,
   siteOptions = [],
@@ -144,6 +150,9 @@ export function AlarmsPage({
     <div className="alarms-page" data-testid="alarms-page">
       <header className="page-header">
         <h1>{translate('design.page.alarms')}</h1>
+        <Button type="button" onClick={onRefresh} data-testid="alarm-refresh">
+          {translate('common.refresh')}
+        </Button>
       </header>
       <div className="tab-bar" role="tablist" data-testid="alarm-tabs">
         {ALARM_TABS.map((t) => (
@@ -274,6 +283,18 @@ export function AlarmsPage({
             { key: 'username', header: translate('page.0c7c09a07e12'), render: (e) => e.username ?? '—' },
             { key: 'source', header: translate('page.c63f79e6361e'), render: (e) => e.source ?? '—' },
             { key: 'remarks', header: translate('page.e0361480e3a5'), render: (e) => e.remarks ?? '—' },
+            {
+              key: 'evidenceImage',
+              header: translate('evidence.title'),
+              render: (e) => (
+                <EvidenceImageEntry
+                  sourceId={e.eventId}
+                  evidence={e.evidenceImage}
+                  canRead={canReadEvidence}
+                  {...(onRequestEvidenceUrl ? { requestUrl: onRequestEvidenceUrl } : {})}
+                />
+              ),
+            },
           ]}
           rows={events.rows === null ? null : [...events.rows]}
           rowKey={(e) => e.eventId}
@@ -396,6 +417,15 @@ export function AlarmsPage({
               </>
             ) : null}
           </dl>
+          <section aria-label={translate('evidence.title')}>
+            <h4>{translate('evidence.title')}</h4>
+            <EvidenceImageEntry
+              sourceId={alarm.alarmId}
+              evidence={alarm.evidenceImage}
+              canRead={canReadEvidence}
+              {...(onRequestEvidenceUrl ? { requestUrl: onRequestEvidenceUrl } : {})}
+            />
+          </section>
           <div className="detail-actions">
             <Button type="button" onClick={onCloseAlarmDetail}>
               {translate('page.6c14bd7f6f9e')}

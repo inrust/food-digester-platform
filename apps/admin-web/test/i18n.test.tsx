@@ -180,7 +180,7 @@ function uiSourceFiles(directory: string): string[] {
 test('全部页面模块及全量 UI 源码无硬编码中文文案（仅保留语言原生名称）', () => {
   const violations: string[] = [];
   const pageModules = uiSourceFiles(resolve(ROOT, 'src/pages')).filter((file) => file.endsWith('.tsx'));
-  assert.equal(pageModules.length, 25, '页面扫描范围必须覆盖 25 个 TSX 模块');
+  assert.equal(pageModules.length, 26, '页面扫描范围必须覆盖 26 个 TSX 模块');
   for (const file of uiSourceFiles(resolve(ROOT, 'src'))) {
     const source = stripComments(readFileSync(resolve(ROOT, file), 'utf8'));
     const lines = source.split('\n');

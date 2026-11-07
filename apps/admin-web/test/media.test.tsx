@@ -303,3 +303,11 @@ test('API 装配：listMedia 查询串；download-url 路径', async () => {
   assert.equal(calls[1]?.path, '/admin/media/med-1/download-url');
   assert.equal(calls[1]?.options.method, undefined);
 });
+test('IMG-16 download signing accepts cancellation/no-store without changing legacy calls', async () => {
+  const { api, calls } = stubApi(),
+    abort = new AbortController();
+  await createMediaDownloadUrl(api, 'media /one', abort.signal);
+  assert.equal(calls[0]?.path, '/admin/media/media%20%2Fone/download-url');
+  assert.equal(calls[0]?.options.signal, abort.signal);
+  assert.equal(calls[0]?.options.cache, 'no-store');
+});

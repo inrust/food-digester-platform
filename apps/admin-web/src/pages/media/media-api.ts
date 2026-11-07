@@ -44,9 +44,14 @@ export async function listMedia(api: ApiClient, filter: MediaListFilter, cursor?
 }
 
 /** 签发 15 分钟预签名下载 URL（每次调用实时签发；调用方不得持久缓存）。 */
-export async function createMediaDownloadUrl(api: ApiClient, mediaId: string): Promise<MediaDownloadUrlView> {
+export async function createMediaDownloadUrl(
+  api: ApiClient,
+  mediaId: string,
+  signal?: AbortSignal,
+): Promise<MediaDownloadUrlView> {
   const response = await api.request<{ data: MediaDownloadUrlView }>(
     `/admin/media/${encodeURIComponent(mediaId)}/download-url`,
+    ...(signal ? [{ signal, cache: 'no-store' as const }] : []),
   );
   return response.data;
 }

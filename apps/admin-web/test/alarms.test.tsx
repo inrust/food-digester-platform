@@ -338,3 +338,94 @@ test('API 装配：列表筛选查询串 + 游标；确认/清除 POST 携强制
   assert.equal(calls[2]?.options.method, 'POST');
   assert.deepEqual(calls[2]?.options.body, { reason: '已派单' });
 });
+
+// IMG-16: both views use the same association contract; alarm status never gates evidence access.
+test.each(['ACTIVE', 'ACKNOWLEDGED', 'CLEARED'] as const)(
+  'alarm %s retains its original evidence-image entry',
+  async (status) => {
+    const calls: string[] = [];
+    renderPage({
+      canReadEvidence: true,
+      alarmDetail: {
+        kind: 'ready',
+        alarm: makeAlarm({
+          status,
+          evidenceImage: { mediaId: 'media-original', captureTime: '2026-11-07T00:00:00Z', status: 'AVAILABLE' },
+        }),
+      },
+      onRequestEvidenceUrl: async (id) => {
+        calls.push(id);
+        return {
+          mediaId: id,
+          downloadUrl: 'https://archive.invalid/original.jpg',
+          downloadUrlExpiresAt: new Date(Date.now() + 900000).toISOString(),
+        };
+      },
+    });
+    await userEvent.setup().click(screen.getByTestId('evidence-open-alm-001'));
+    assert.ok(await screen.findByTestId('evidence-image'));
+    assert.deepEqual(calls, ['media-original']);
+  },
+);
+test('event rows distinguish unavailable permission, null association, AVAILABLE and DELETED without signing automatically', async () => {
+  const calls: string[] = [];
+  const row = {
+    deviceId: 'dev-001',
+    customerId: 'cust-1',
+    eventType: 'DOOR_OPEN',
+    userId: null,
+    username: null,
+    source: null,
+    remarks: null,
+    occurredAt: '2026-11-07T00:00:00Z',
+  };
+  renderPage({
+    canReadEvidence: true,
+    urlState: { ...DEFAULT_URL_STATE, tab: 'event' },
+    events: {
+      rows: [
+        { ...row, eventId: 'event-null', evidenceImage: null },
+        { ...row, eventId: 'event-omitted' },
+        {
+          ...row,
+          eventId: 'event-available',
+          evidenceImage: { mediaId: 'event-media', captureTime: row.occurredAt, status: 'AVAILABLE' },
+        },
+        {
+          ...row,
+          eventId: 'event-deleted',
+          evidenceImage: { mediaId: 'deleted-media', captureTime: row.occurredAt, status: 'DELETED' },
+        },
+      ],
+    },
+    onRequestEvidenceUrl: async (id) => {
+      calls.push(id);
+      return {
+        mediaId: id,
+        downloadUrl: 'https://archive.invalid/event.jpg',
+        downloadUrlExpiresAt: new Date(Date.now() + 900000).toISOString(),
+      };
+    },
+  });
+  assert.ok(within(screen.getByTestId('evidence-event-null')).getByText('此记录尚未关联图片。'));
+  assert.ok(screen.getByTestId('evidence-notProvided'));
+  assert.ok(screen.getByTestId('evidence-deleted'));
+  assert.deepEqual(calls, []);
+  await userEvent.setup().click(screen.getByTestId('evidence-open-event-available'));
+  assert.ok(await screen.findByTestId('evidence-image'));
+  assert.deepEqual(calls, ['event-media']);
+});
+test('permission absent suppresses alarm image metadata and actions even if a stale record still contains an association', () => {
+  renderPage({
+    canReadEvidence: false,
+    alarmDetail: {
+      kind: 'ready',
+      alarm: makeAlarm({
+        evidenceImage: { mediaId: 'private-media', captureTime: '2026-11-07T00:00:00Z', status: 'AVAILABLE' },
+      }),
+    },
+  });
+  assert.ok(screen.getByTestId('evidence-noPermission'));
+  assert.equal(screen.queryByTestId('evidence-open-alm-001'), null);
+  assert.ok(!screen.getByTestId('evidence-alm-001').textContent?.includes('private-media'));
+});
