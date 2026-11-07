@@ -56,3 +56,10 @@ Outbox 类型为 MEDIA_EVIDENCE_REGISTERED，唯一键为 media-evidence:<trigge
 [IMG-12 解析与验收](./IMG-12-图片关联解析与本地验收.md)已实现登记提交后首试、MEDIA_EVIDENCE_REGISTERED 持久化消费路由及独立分钟任务。Evidence 持锁后按原租户/设备和 sourceMessageId 精确匹配；告警已清除仍匹配原 ACTIVE，清除消息引用、明确范围不符或固定 24 小时到期转 UNMATCHED，终态不重开。
 
 扫描按 (nextAttemptAt,id) keyset 有界分页，默认 50×5 行，PENDING 下次时间不超过原 deadlineAt。新向前迁移只补 ARCHIVE/alarm/CLEARED 原消息查询的部分表达式索引及模型摘要，不修改历史行。独立 Lambda、分钟规则、重试/DLQ、权限及连接预算已通过离线检查；规则沿用 enableScheduledWorkers，目标开关未更改。G2 仍为 PARTIAL，IMG-13 和目标环境/真机证据待补，本批未部署或迁移目标库。
+
+
+## IMG-13 实施补充（2026-11-07）
+
+[IMG-13 查询与验收](./IMG-13-图片证据查询与本地验收.md)已实现告警详情和事件列表 evidenceImage：源读取权限与 media:read 同时满足才查询关联；无媒体权限省略字段，有权限但无 LINKED 返回 null，有关联返回原媒体的 mediaId/captureTime/AVAILABLE 或 DELETED。下载继续独立鉴权，DELETED 拒绝签名。
+
+图片按原来源与媒体的 Customer、设备和 sourceMessageId 校验，不按当前设备分配迁移历史归属。事件列表只批量加载当前页，告警清除后保留原 ACTIVE 对应图片；未新增迁移、wire 字段或权限点。本地两类触发已通过模拟存储/入库/JWT 查询链路，G2 仍为 PARTIAL，真实目标证据未补，本批不部署、不迁移目标库。

@@ -466,8 +466,11 @@ describe('契约一致性', () => {
     assert.equal(detail.status, 200);
     assert.deepEqual(
       Object.keys((detail.body as DataBody).data).sort(),
-      [...api.components.schemas.Alarm.required].sort(),
+      [...api.components.schemas.Alarm.required, 'evidenceImage'].sort(),
     );
+
+    assert.equal((detail.body as DataBody).data.evidenceImage, null);
+    assertOpenApiResponse('getAlarm', 200, detail.body);
 
     const ack = await h.acknowledge(req(operator, { params: { alarmId: alarm.id }, body: { reason: '契约' } }));
     assert.deepEqual(
@@ -479,7 +482,12 @@ describe('契约一致性', () => {
       data: { deviceId: tenant.deviceId, customerId: tenant.customerId, eventType: 'LOGIN', occurredAt: NOW },
     });
     const events = (await h.listEvents(req(superAdmin, { query: { customerId: tenant.customerId } }))).body as ListBody;
-    assert.deepEqual(Object.keys(events.data[0]).sort(), [...api.components.schemas.DeviceEvent.required].sort());
+    assert.deepEqual(
+      Object.keys(events.data[0]).sort(),
+      [...api.components.schemas.DeviceEvent.required, 'evidenceImage'].sort(),
+    );
+    assert.equal(events.data[0].evidenceImage, null);
+    assertOpenApiResponse('listDeviceEvents', 200, events);
 
     await prisma.tamperEvent.create({
       data: {

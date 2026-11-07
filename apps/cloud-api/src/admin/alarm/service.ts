@@ -25,6 +25,10 @@ import type { Page } from '@fdp/database';
 import { ALARM_SEVERITIES, ALARM_STATUSES, assertAlarmTransition } from '@fdp/domain';
 import type { AlarmStatus } from '@fdp/domain';
 import type { ActorContext } from '@fdp/auth';
+import { requirePermission } from '@fdp/auth';
+import { readEvidenceImages } from './evidence-query.js';
+import type { EvidenceImageView } from './evidence-query.js';
+export type { EvidenceImageView } from './evidence-query.js';
 import { alarmConflict, alarmNotFound, alarmValidationFailed } from './errors.js';
 
 /** Critical 告警状态迁移领域事件（通知适配器消费 Outbox）。 */
@@ -39,6 +43,7 @@ export interface AlarmDeps {
 
 interface AlarmRow {
   readonly id: string;
+  readonly sourceMessageId: string | null;
   readonly deviceId: string;
   readonly customerId: string;
   readonly code: string;
@@ -64,6 +69,7 @@ interface AlarmRow {
 
 interface EventRow {
   readonly id: string;
+  readonly sourceMessageId: string | null;
   readonly deviceId: string;
   readonly customerId: string;
   readonly eventType: string;
@@ -133,6 +139,7 @@ function devices(client: DbClient): DeviceScopeDelegate {
 // ---------- DTO ----------
 
 export interface AlarmView {
+  readonly evidenceImage?: EvidenceImageView | null;
   readonly alarmId: string;
   readonly deviceId: string;
   readonly customerId: string;
@@ -158,6 +165,7 @@ export interface AlarmView {
 }
 
 export interface DeviceEventView {
+  readonly evidenceImage?: EvidenceImageView | null;
   readonly eventId: string;
   readonly deviceId: string;
   readonly customerId: string;
@@ -335,10 +343,13 @@ export async function listAlarms(
 
 /** Alarm 详情（alarm:read；跨 Customer → 404 不泄露存在性）。 */
 export async function getAlarm(deps: AlarmDeps, actor: ActorContext, alarmId: string): Promise<AlarmView> {
-  const row = await alarms(deps.client).findFirst({ where: { id: alarmId } });
-  if (!row) throw alarmNotFound();
-  if (actor.actorType === 'customer' && row.customerId !== actor.customerId) throw alarmNotFound();
-  return toAlarmView(row);
+  requirePermission(actor, 'alarm:read');
+  const row = await alarms(deps.client).findFirst({
+    where: { id: alarmId, ...(actor.actorType === 'customer' ? { customerId: actor.customerId ?? '__none__' } : {}) },
+  });
+  if (!row || (actor.actorType === 'customer' && row.customerId !== actor.customerId)) throw alarmNotFound();
+  const images = await readEvidenceImages(deps.client, actor, 'ALARM', [row]);
+  return { ...toAlarmView(row), ...(images ? { evidenceImage: images.get(row.id) ?? null } : {}) };
 }
 
 // ---------- Alarm 处理（确认/清除） ----------
@@ -473,13 +484,18 @@ export async function listDeviceEvents(
   actor: ActorContext,
   filter: ListEventsFilter = {},
 ): Promise<Page<DeviceEventView>> {
+  requirePermission(actor, 'alarm:read');
   const limit = normalizeLimit(filter.limit ?? null);
   const where = await buildScopedWhere(deps.client, actor, filter, 'occurredAt');
   if (filter.eventType) where.eventType = filter.eventType;
   const after = decodeKeysetCursor(filter.cursor ?? null);
   if (after) where.id = { gt: after };
   const rows = await deviceEvents(deps.client).findMany({ where, orderBy: { id: 'asc' }, take: limit + 1 });
-  return paginate(rows, limit, toEventView);
+  const page = paginate(rows, limit, toEventView);
+  const images = await readEvidenceImages(deps.client, actor, 'EVENT', rows.slice(0, limit));
+  return images
+    ? { ...page, items: page.items.map((view) => ({ ...view, evidenceImage: images.get(view.eventId) ?? null })) }
+    : page;
 }
 
 export interface ListTamperEventsFilter extends BaseListFilter {
