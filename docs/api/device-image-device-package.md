@@ -2,9 +2,11 @@
 
 契约版本 0.16.0，DEC-009@2.0.0。五个预览接口和 triggerRef 扩展在 P0 定义，运行接线按 IMG-05 至 IMG-13 交付。完整机器契约见 [实时预览 OpenAPI](../../contracts/rest/live-image-api.json)、[上传会话](../../contracts/rest/device-media-api.json) 和 [生成类型](../../contracts/rest/image-types.ts)。
 
+2026-11-07 职责澄清：本仓库只负责云端对接包交付，第三方负责 App 实现；App 源码与真机验收不作为本包交付前置。实时预览的完整第三方说明、独立 OpenAPI 和可校验请求响应见 [第三方 App 云端接口包](./device-live-image-vendor-guide.md)。
+
 ## 能力启用与设备调用顺序
 
-设备本地增加可选 liveImage 配置，缺省 disabled。支持 live-image-v1 的 App 由设备方软件发布或现场配置显式开启。云端部署配置按原始 deviceId 白名单准入，缺省为空。设备本地与服务端均开启后才能预览。未启用设备继续使用原接口，不新增轮询。Configuration V1 的四个字段不增加预览字段，cameraRefreshInterval 不用于覆盖新的 2 秒周期。
+设备本地增加可选 liveImage 配置，缺省 disabled。支持 live-image-v1 的 App 由第三方软件发布或现场配置显式开启。云端按原始 deviceId 的 DeviceLiveImagePolicy.enabled 白名单记录准入，缺行/false 均关闭（IMG-08 实现，不由 App 写入）。设备本地与服务端均开启后才能预览。未启用设备继续使用原接口，不新增轮询。Configuration V1 的四个字段不增加预览字段，cameraRefreshInterval 不用于覆盖新的 2 秒周期。
 
 1. 按原流程连接、首次 Heartbeat 和 Sync，取得可信设备身份及归属。使用原设备 mTLS 证书调用 Device REST。
 2. 启用设备每 5 秒调用 GET /api/v1/device/live-image/state，无人查看时 IDLE。有租约时 ACTIVE 带 streamId、activeUntil、uploadIntervalMs 和 maxImageBytes。
@@ -48,14 +50,14 @@ REST 申请上传会话需要设备 mTLS。S3 PUT 使用返回的完整预签名
 
 [当前签名器](../../packages/aws-clients/src/s3-media-url-signer.ts) 的签名头和查询参数处理需在真实 S3 验收，当前状态 NOT_RUN。预签名 URL 的示例字符串不含可用凭据。
 
-## 设备方待补齐材料
+## 外部实施与后续环境参数（不作为本云端包交付前置）
 
 | 输入 | 负责人 | 需要时点 |
 |---|---|---|
 | 拍照 Event 类型和 Alarm code 白名单，至少各一类及可触发步骤 | 设备方和业务方 | IMG-18 与真机用例冻结前 |
-| 支持软件版本、设备本地开启配置、默认压缩质量与性能 | 设备方 | IMG-17 前 |
+| 支持软件版本、设备本地开启配置、默认压缩质量与性能 | 第三方 App 开发方 | 第三方实现自行管理 |
 | 预计启用数、同时查看数、实际图片大小分布 | 运营与设备方 | 共享存储负载评估和 IMG-23 前 |
 | 首帧可接受等待目标与网络条件 | 业务方和设备方 | IMG-22 验收前 |
 | 隔离设备 ID、归属、证书、平台角色和测试窗口 | 环境负责人 | IMG-21 前 |
 
-上述材料当前为 OPEN，P0 契约可以先行交付。目标环境、真机及性能结果为 NOT_RUN。
+上述参数保留为外部实施背景；不要求提供 App 仓库，也不阻塞本仓库云端接口包交付。目标环境调用未在本批执行，App 实现与真机验收由第三方自行负责。

@@ -1,0 +1,339 @@
+[
+  {
+    "id": "state-idle",
+    "operationId": "getDeviceLiveImageState",
+    "status": 200,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "data": {
+        "state": "IDLE",
+        "pollIntervalMs": 5000
+      },
+      "meta": {
+        "requestId": "sample-device-preview",
+        "timestamp": "2026-11-06T08:00:00.000Z"
+      }
+    }
+  },
+  {
+    "id": "state-active",
+    "operationId": "getDeviceLiveImageState",
+    "status": 200,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "data": {
+        "state": "ACTIVE",
+        "pollIntervalMs": 5000,
+        "streamId": "3874df1c-287c-43ee-9f18-6b25d26b9a08",
+        "activeUntil": "2026-11-06T08:00:30.000Z",
+        "uploadIntervalMs": 2000,
+        "maxImageBytes": 131072
+      },
+      "meta": {
+        "requestId": "sample-device-preview",
+        "timestamp": "2026-11-06T08:00:00.000Z"
+      }
+    }
+  },
+  {
+    "id": "frame-accepted",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 200,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "data": {
+        "frameId": "c674f6a1-9edc-47f0-8a48-2629a9e8c911",
+        "receivedAt": "2026-11-06T08:00:00.400Z",
+        "expiresAt": "2026-11-06T08:00:10.000Z",
+        "replayed": false
+      },
+      "meta": {
+        "requestId": "sample-device-preview",
+        "timestamp": "2026-11-06T08:00:00.400Z"
+      }
+    }
+  },
+  {
+    "id": "frame-replayed",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 200,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "data": {
+        "frameId": "c674f6a1-9edc-47f0-8a48-2629a9e8c911",
+        "receivedAt": "2026-11-06T08:00:00.400Z",
+        "expiresAt": "2026-11-06T08:00:10.000Z",
+        "replayed": true
+      },
+      "meta": {
+        "requestId": "sample-device-preview",
+        "timestamp": "2026-11-06T08:00:00.400Z"
+      }
+    }
+  },
+  {
+    "id": "frame-validation_failed",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 400,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "message": "The request failed",
+        "requestId": "sample-validation_failed"
+      }
+    }
+  },
+  {
+    "id": "state-validation_failed",
+    "operationId": "getDeviceLiveImageState",
+    "status": 400,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "message": "The request failed",
+        "requestId": "sample-validation_failed"
+      }
+    }
+  },
+  {
+    "id": "frame-unauthenticated",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 401,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "UNAUTHENTICATED",
+        "message": "The request failed",
+        "requestId": "sample-unauthenticated"
+      }
+    }
+  },
+  {
+    "id": "state-unauthenticated",
+    "operationId": "getDeviceLiveImageState",
+    "status": 401,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "UNAUTHENTICATED",
+        "message": "The request failed",
+        "requestId": "sample-unauthenticated"
+      }
+    }
+  },
+  {
+    "id": "frame-forbidden",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 403,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "The request failed",
+        "requestId": "sample-forbidden"
+      }
+    }
+  },
+  {
+    "id": "state-forbidden",
+    "operationId": "getDeviceLiveImageState",
+    "status": 403,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "The request failed",
+        "requestId": "sample-forbidden"
+      }
+    }
+  },
+  {
+    "id": "frame-not_found",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 404,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "The request failed",
+        "requestId": "sample-not_found"
+      }
+    }
+  },
+  {
+    "id": "state-not_found",
+    "operationId": "getDeviceLiveImageState",
+    "status": 404,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "The request failed",
+        "requestId": "sample-not_found"
+      }
+    }
+  },
+  {
+    "id": "frame-live_stream_inactive",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 409,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "LIVE_STREAM_INACTIVE",
+        "message": "The request failed",
+        "requestId": "sample-live_stream_inactive"
+      }
+    }
+  },
+  {
+    "id": "frame-stale_frame",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 409,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "STALE_FRAME",
+        "message": "The request failed",
+        "requestId": "sample-stale_frame"
+      }
+    }
+  },
+  {
+    "id": "frame-frame_conflict",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 409,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "FRAME_CONFLICT",
+        "message": "The request failed",
+        "requestId": "sample-frame_conflict"
+      }
+    }
+  },
+  {
+    "id": "frame-payload_too_large",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 413,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "PAYLOAD_TOO_LARGE",
+        "message": "The request failed",
+        "requestId": "sample-payload_too_large"
+      }
+    }
+  },
+  {
+    "id": "frame-unsupported_media_type",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 415,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "UNSUPPORTED_MEDIA_TYPE",
+        "message": "The request failed",
+        "requestId": "sample-unsupported_media_type"
+      }
+    }
+  },
+  {
+    "id": "frame-rate_limited",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 429,
+    "headers": {
+      "Cache-Control": "no-store",
+      "Retry-After": "1"
+    },
+    "body": {
+      "error": {
+        "code": "RATE_LIMITED",
+        "message": "The request failed",
+        "requestId": "sample-rate_limited"
+      }
+    }
+  },
+  {
+    "id": "state-rate_limited",
+    "operationId": "getDeviceLiveImageState",
+    "status": 429,
+    "headers": {
+      "Cache-Control": "no-store",
+      "Retry-After": "1"
+    },
+    "body": {
+      "error": {
+        "code": "RATE_LIMITED",
+        "message": "The request failed",
+        "requestId": "sample-rate_limited"
+      }
+    }
+  },
+  {
+    "id": "frame-temporarily_unavailable",
+    "operationId": "uploadDeviceLiveImageFrame",
+    "status": 503,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "TEMPORARILY_UNAVAILABLE",
+        "message": "The request failed",
+        "requestId": "sample-temporarily_unavailable"
+      }
+    }
+  },
+  {
+    "id": "state-temporarily_unavailable",
+    "operationId": "getDeviceLiveImageState",
+    "status": 503,
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "TEMPORARILY_UNAVAILABLE",
+        "message": "The request failed",
+        "requestId": "sample-temporarily_unavailable"
+      }
+    }
+  }
+]
