@@ -180,6 +180,8 @@ export const DEVICE_VIEW_COVERAGE: Readonly<Record<string, string>> = {
   'device-view.filter.region': 'scope-filter',
   'device-view.filter.subregion': 'scope-filter',
   'device-view.filter.device': 'scope-filter',
+  'device-view.button.camPlay': 'live-image-toggle',
+  'device-view.button.camStop': 'live-image-toggle',
   'device-view.button.apply': 'view-apply',
   'device-view.field.componentStates': 'console-components',
   'device-view.field.sensorReadings': 'console-sensors',

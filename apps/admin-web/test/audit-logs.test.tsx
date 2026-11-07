@@ -187,10 +187,14 @@ test('Customer 角色无 customerId 筛选；列表 403 → 无权界面', () =>
 test('脱敏纯逻辑：嵌套对象/数组/非敏感原样', () => {
   const sanitized = sanitizeForDisplay({
     password: 'x',
+    imageBase64: '/9j/image',
+    listOfFrames: [{ jpeg_base64: '/9j/another' }],
     list: [{ token: 'y', ok: 1 }],
     deep: { access_key: 'z', plain: 'v' },
   }) as Record<string, unknown>;
   assert.equal(sanitized['password'], REDACTED);
+  assert.equal(sanitized['imageBase64'], REDACTED);
+  assert.equal((sanitized['listOfFrames'] as Record<string, unknown>[])[0]?.['jpeg_base64'], REDACTED);
   assert.equal((sanitized['list'] as Record<string, unknown>[])[0]?.['token'], REDACTED);
   assert.equal((sanitized['list'] as Record<string, unknown>[])[0]?.['ok'], 1);
   assert.equal((sanitized['deep'] as Record<string, unknown>)['access_key'], REDACTED);

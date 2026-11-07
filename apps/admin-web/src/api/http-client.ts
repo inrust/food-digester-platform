@@ -16,7 +16,14 @@ export interface ApiFetchResponse {
 
 export type ApiFetch = (
   url: string,
-  init: { method: string; headers: Record<string, string>; body?: string },
+  init: {
+    method: string;
+    headers: Record<string, string>;
+    body?: string;
+    signal?: AbortSignal;
+    cache?: RequestCache;
+    keepalive?: boolean;
+  },
 ) => Promise<ApiFetchResponse>;
 
 /** 默认传输：全局 fetch；非 JSON 响应按 null 处理。 */
@@ -26,6 +33,9 @@ export function createHttpApiFetch(fetchFn: typeof fetch): ApiFetch {
       method: init.method,
       headers: init.headers,
       ...(init.body !== undefined ? { body: init.body } : {}),
+      ...(init.signal !== undefined ? { signal: init.signal } : {}),
+      ...(init.cache !== undefined ? { cache: init.cache } : {}),
+      ...(init.keepalive !== undefined ? { keepalive: init.keepalive } : {}),
     });
     let body: unknown = null;
     try {
@@ -40,6 +50,9 @@ export function createHttpApiFetch(fetchFn: typeof fetch): ApiFetch {
 export interface ApiRequestOptions {
   readonly method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   readonly body?: unknown;
+  readonly signal?: AbortSignal;
+  readonly cache?: RequestCache;
+  readonly keepalive?: boolean;
   readonly headers?: Record<string, string>;
   /** CT-05 写操作幂等键（Idempotency-Key）。 */
   readonly idempotencyKey?: string;
@@ -89,31 +102,40 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
     }
     if (options.idempotencyKey !== undefined) headers['Idempotency-Key'] = options.idempotencyKey;
     if (options.ifMatch !== undefined) headers['If-Match'] = String(options.ifMatch);
+    options.signal?.throwIfAborted();
     return deps.fetch(`${deps.baseUrl}${path}`, {
       method: options.method ?? 'GET',
       headers,
       ...(body !== undefined ? { body } : {}),
+      ...(options.signal !== undefined ? { signal: options.signal } : {}),
+      ...(options.cache !== undefined ? { cache: options.cache } : {}),
+      ...(options.keepalive !== undefined ? { keepalive: options.keepalive } : {}),
     });
   }
 
   async function request<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+    options.signal?.throwIfAborted();
     let idToken: string;
     try {
       idToken = await deps.session.ensureFreshIdToken();
     } catch {
+      options.signal?.throwIfAborted();
       // 无会话或刷新失败（会话已被 SessionManager 清除）→ 安全退出到登录页
       throw new UnauthenticatedError();
     }
 
     let response = await send(path, options, idToken);
+    options.signal?.throwIfAborted();
     if (response.status === 401) {
       // 竞态兜底：服务端判定过期 → 强制刷新后重试一次；仍 401 → 清会话安全退出
       try {
         idToken = await deps.session.ensureFreshIdToken({ forceRefresh: true });
       } catch {
+        options.signal?.throwIfAborted();
         throw new UnauthenticatedError();
       }
       response = await send(path, options, idToken);
+      options.signal?.throwIfAborted();
       if (response.status === 401) {
         deps.session.clearSession('unauthorized');
         throw new UnauthenticatedError();

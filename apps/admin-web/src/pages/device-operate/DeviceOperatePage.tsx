@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
@@ -88,6 +89,7 @@ export interface DeviceOperatePageProps {
   readonly onSelectDevice: (deviceId: string | null) => void;
   /** 当前选中设备（四轴状态 + Entitlement，用于门控与运行状态展示）。 */
   readonly selectedDevice: DeviceView | null;
+  readonly liveImagePreview?: ReactNode;
   readonly onSubmitCommand: (
     deviceId: string,
     input: CommandCreateInput,
@@ -127,6 +129,7 @@ export function DeviceOperatePage({
   selectedDeviceId,
   onSelectDevice,
   selectedDevice,
+  liveImagePreview,
   onSubmitCommand,
   commands,
   commandFilter,
@@ -302,6 +305,7 @@ export function DeviceOperatePage({
         <p className="field-hint">{translate('page.3df4035f6d6e')}</p>
       </section>
 
+      {liveImagePreview}
       {selectedDevice && hasPermission(role, 'device:write') ? (
         <Button
           type="button"

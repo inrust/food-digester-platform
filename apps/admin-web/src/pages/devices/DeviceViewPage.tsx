@@ -5,11 +5,12 @@ import { translate } from '../../i18n/i18n.js';
  *
  * - 每个动态数值显示单位与 observedAt/stale（BE-DEV-05 ObservedBlock）；
  * - 不请求原始 Telemetry 长期表（仅 getDeviceConsole 组合查询）；
- * - 媒体区：仅最新授权 Media 元数据 + 手动刷新（DEC-009：非实时流，不标注“实时视频”，无播放计时）；
+ * - 归档媒体保留手动刷新；独立实时图片区按 DEC-009 租约读取，不提供实时视频流；
  * - 不同设备切换：内容容器以 deviceId 为 key 强制重建，无数据残留；
  * - 403 → 明确无权状态（ErrorNotice）。
  */
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { ConsumableGauge } from '../../components/ConsumableGauge.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { FourAxisBadges } from '../../components/FourAxisBadge.js';
@@ -72,6 +73,7 @@ export interface DeviceViewPageProps {
   /** 当前选中设备（静态信息）；null = 未选择。 */
   readonly device: DeviceView | null;
   readonly consoleState: ConsoleState;
+  readonly liveImagePreview?: ReactNode;
   readonly mediaState?: MediaState;
   readonly activityState?: ActivityState;
   readonly filterOptions: {
@@ -362,6 +364,7 @@ function ConsoleContent({
 export function DeviceViewPage({
   device,
   consoleState,
+  liveImagePreview,
   mediaState = { status: 'idle' },
   activityState = { status: 'idle' },
   filterOptions,
@@ -397,6 +400,7 @@ export function DeviceViewPage({
         </Button>
       </div>
 
+      {liveImagePreview}
       {consoleState.status === 'idle' ? <p className="empty-state">{translate('page.4bca659f8ed9')}</p> : null}
       {consoleState.status === 'loading' ? (
         <div role="status" data-testid="console-loading">

@@ -159,7 +159,9 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       page = <SitesController api={services.api} session={session} toasts={toasts} />;
       break;
     case 'device-view':
-      page = <DeviceViewController api={services.api} search={location.search} onNavigate={navigate} />;
+      page = (
+        <DeviceViewController api={services.api} session={session} search={location.search} onNavigate={navigate} />
+      );
       break;
     case 'device-manage':
       page = (

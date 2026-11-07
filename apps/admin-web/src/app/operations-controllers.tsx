@@ -1,6 +1,8 @@
 import { translate } from '../i18n/i18n.js';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
+import { hasPermission } from '@fdp/auth/browser';
+import { LiveImagePreview } from '../pages/devices/LiveImagePreview.js';
 import type { ApiClient } from '../api/http-client.js';
 import { useUserTimeZone } from '../components/TimeText.js';
 import type { FilterOption } from '../components/ScopeFilter.js';
@@ -309,6 +311,9 @@ export function DeviceOperateController({
   const [devices, setDevices] = useState<readonly DeviceView[]>([]);
   const [sites, setSites] = useState<readonly SiteView[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initial);
+  useEffect(() => {
+    setSelectedId(new URLSearchParams(search).get('deviceId'));
+  }, [search]);
   const [selected, setSelected] = useState<DeviceView | null>(null);
   const [media, setMedia] = useState<LatestMediaView | null>(null);
   const [commandFilter, setCommandFilter] = useState<CommandListFilter>({ deviceId: initial });
@@ -371,6 +376,23 @@ export function DeviceOperateController({
       selectedDeviceId={selectedId}
       onSelectDevice={select}
       selectedDevice={selected}
+      liveImagePreview={
+        selected &&
+        selected.id === selectedId &&
+        selected.customer !== null &&
+        (session.customerId === null || session.customerId === selected.customer.id) &&
+        ['Active', 'Maintenance'].includes(selected.lifecycleStatus) &&
+        ['Active', 'Maintenance'].includes(selected.operationalStatus ?? '') &&
+        session.roles.some((role) => hasPermission(role, 'device:read')) &&
+        session.roles.some((role) => hasPermission(role, 'media:read')) ? (
+          <LiveImagePreview
+            key={`${session.username}:${session.customerId}:${session.roles.join(',')}:${selected.id}`}
+            api={api}
+            deviceId={selected.id}
+            label={selected.alias ?? selected.serialNumber}
+          />
+        ) : null
+      }
       onSubmitCommand={async (id, input) => {
         const result = await createDeviceCommand(api, id, input);
         await load(id);

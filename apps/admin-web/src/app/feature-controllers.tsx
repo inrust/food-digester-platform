@@ -1,6 +1,8 @@
 import { translate } from '../i18n/i18n.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
+import { hasPermission } from '@fdp/auth/browser';
+import { LiveImagePreview } from '../pages/devices/LiveImagePreview.js';
 import type { ApiClient } from '../api/http-client.js';
 import type { FilterOption } from '../components/ScopeFilter.js';
 import {
@@ -120,10 +122,12 @@ async function collectAll<T>(
 }
 export function DeviceViewController({
   api,
+  session,
   search,
   onNavigate,
 }: {
   readonly api: ApiClient;
+  readonly session: SessionSnapshot;
   readonly search: string;
   readonly onNavigate: Navigate;
 }) {
@@ -134,9 +138,11 @@ export function DeviceViewController({
   const [mediaState, setMediaState] = useState<MediaState>({ status: 'idle' });
   const [activityState, setActivityState] = useState<ActivityState>({ status: 'idle' });
   const selectedId = useRef<string | null>(null);
+  const [previewDeviceId, setPreviewDeviceId] = useState<string | null>(null);
   const loadConsole = useCallback(
     async (deviceId: string) => {
       selectedId.current = deviceId;
+      setPreviewDeviceId(deviceId);
       setConsoleState({ status: 'loading' });
       setMediaState({ status: 'loading' });
       setActivityState({ status: 'loading' });
@@ -193,7 +199,14 @@ export function DeviceViewController({
   }, [api]);
   useEffect(() => {
     const initialId = queryId(search);
-    if (initialId !== null && initialId !== selectedId.current) void loadConsole(initialId);
+    if (initialId === null && selectedId.current !== null) {
+      selectedId.current = null;
+      setPreviewDeviceId(null);
+      setDevice(null);
+      setConsoleState({ status: 'idle' });
+      setMediaState({ status: 'idle' });
+      setActivityState({ status: 'idle' });
+    } else if (initialId !== null && initialId !== selectedId.current) void loadConsole(initialId);
   }, [loadConsole, search]);
   const filterOptions = useMemo(() => {
     const regions = [...new Set(viewSites.map((site) => site.region).filter((v): v is string => v !== null))];
@@ -220,6 +233,24 @@ export function DeviceViewController({
   return (
     <DeviceViewPage
       device={device}
+      liveImagePreview={
+        device &&
+        device.id === previewDeviceId &&
+        device.customer !== null &&
+        (session.customerId === null || session.customerId === device.customer.id) &&
+        ['Active', 'Maintenance'].includes(device.lifecycleStatus) &&
+        ['Active', 'Maintenance'].includes(device.operationalStatus ?? '') &&
+        consoleState.status !== 'error' &&
+        session.roles.some((role) => hasPermission(role, 'device:read')) &&
+        session.roles.some((role) => hasPermission(role, 'media:read')) ? (
+          <LiveImagePreview
+            key={`${session.username}:${session.customerId}:${session.roles.join(',')}:${device.id}`}
+            api={api}
+            deviceId={device.id}
+            label={device.alias ?? device.serialNumber}
+          />
+        ) : null
+      }
       consoleState={consoleState}
       mediaState={mediaState}
       activityState={activityState}

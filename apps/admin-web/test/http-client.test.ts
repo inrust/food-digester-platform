@@ -146,3 +146,47 @@ test('无会话：不发任何请求，直接 UnauthenticatedError', async () =>
   await expectRejects(client.request('/admin/devices'), (err) => assert.ok(err instanceof UnauthenticatedError));
   assert.equal(calls.length, 0);
 });
+
+test('aborted preview never sends after waiting for token refresh', async () => {
+  const { client, session, calls } = setup({ session: makeSession(), script: [] });
+  const token = session.ensureFreshIdToken.bind(session);
+  let unblock!: () => void;
+  const wait = new Promise<void>((resolve) => {
+    unblock = resolve;
+  });
+  const original = session.ensureFreshIdToken;
+  session.ensureFreshIdToken = async () => {
+    await wait;
+    return token();
+  };
+  const abort = new AbortController();
+  const pending = client.request('/admin/devices/d/live-image/latest', { signal: abort.signal, cache: 'no-store' });
+  abort.abort();
+  unblock();
+  try {
+    await expectRejects(pending, (err) => assert.equal((err as Error).name, 'AbortError'));
+    assert.equal(calls.length, 0);
+  } finally {
+    session.ensureFreshIdToken = original;
+  }
+});
+
+test('aborted 401 response does not refresh, retry, or clear the session', async () => {
+  const { session } = setup({ session: makeSession(), script: [] });
+  const abort = new AbortController();
+  let calls = 0;
+  const client = createApiClient({
+    baseUrl: '/api/v1',
+    session,
+    fetch: async () => {
+      calls++;
+      abort.abort();
+      return { status: 401, body: {} };
+    },
+  });
+  await expectRejects(client.request('/preview', { signal: abort.signal }), (err) =>
+    assert.equal((err as Error).name, 'AbortError'),
+  );
+  assert.equal(calls, 1);
+  assert.equal(session.isAuthenticated(), true);
+});

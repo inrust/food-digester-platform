@@ -374,6 +374,8 @@ export const DEVICE_OPERATE_COVERAGE: Readonly<Record<string, string>> = {
   'device-operate.button.modeSwitch': 'quick-modeSwitch',
   'device-operate.button.factoryReset': 'quick-factoryReset',
   'device-operate.button.updateThreshold': 'goto-config-threshold',
+  'device-operate.button.camPlay': 'live-image-toggle',
+  'device-operate.button.camStop': 'live-image-toggle',
   'device-operate.button.saveAlias': 'alias-edit',
   'device-operate.table.activityLog': 'activity-table',
   'device-operate.button.logFilter': 'activity-filter-search',
