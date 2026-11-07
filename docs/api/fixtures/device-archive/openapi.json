@@ -1,0 +1,492 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Device Event/Alarm Archive - Cloud Handoff",
+    "version": "0.16.0",
+    "description": "Generated frozen upload-session contract. S3 PUT and MQTT are documented separately. No device registration-result endpoint or per-message business ACK topic is added.",
+    "x-decision-versions": [
+      "PRI-001@1.0.0",
+      "DEC-005@1.0.0",
+      "DEC-014@1.0.0",
+      "DEC-024@1.0.0",
+      "DEC-009@2.0.0"
+    ],
+    "x-decision-register-version": "1.38.0",
+    "x-delivery-scope": "cloud-interface-package"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [
+    {
+      "url": "https://device-api.example.invalid",
+      "description": "Example only; confirm the actual environment separately."
+    }
+  ],
+  "tags": [
+    {
+      "name": "device",
+      "description": "/api/v1/device/* 设备端 API",
+      "x-path-prefix": "/api/v1/device",
+      "x-auth": "DeviceMtls"
+    }
+  ],
+  "paths": {
+    "/api/v1/device/media/upload-sessions": {
+      "post": {
+        "tags": [
+          "device"
+        ],
+        "operationId": "createMediaUploadSession",
+        "summary": "创建 Media 上传会话：类型/大小/配额校验 → 设备前缀短期预签名上传 URL（201）",
+        "security": [
+          {
+            "DeviceMtls": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaUploadSessionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Same trigger and immutable declaration, valid session reused without extending deadline or consuming quota.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaUploadSessionSuccess"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "上传会话已签发（ISSUED）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaUploadSessionSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "description": "triggerRef optional. Same Customer/device/kind/messageId locks immutable declaration. Expired incomplete session may be replaced with new key and new quota. Completed trigger returns 409 with mediaId. Omitted triggerRef follows existing behavior.",
+        "x-error-codes": {
+          "MEDIA_TRIGGER_CONFLICT": 409,
+          "MEDIA_ALREADY_REGISTERED": 409
+        },
+        "x-implemented-extension-task": "IMG-10"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "MediaUploadSessionCreate": {
+        "type": "object",
+        "required": [
+          "mediaType",
+          "fileName",
+          "sizeKb",
+          "sizeBytes",
+          "sha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "VIDEO"
+            ],
+            "description": "CT-03 media.schema.json 枚举"
+          },
+          "fileName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._-]+$",
+            "description": "文件名（仅安全字符；objectPath 组成部分，禁止路径分隔符/穿越）"
+          },
+          "sizeKb": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "申报大小（ceil KB；DEC-024 冻结上限：IMAGE 10240 / VIDEO 204800）"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "精确字节数；必须满足 ceil(sizeBytes / 1024) = sizeKb，并绑定到预签名 PUT Content-Length"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{64}$",
+            "description": "申报的 SHA-256（hex；上传后服务端重算比对）"
+          },
+          "triggerRef": {
+            "$ref": "#/components/schemas/MediaTriggerRef"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "triggerRef"
+              ]
+            },
+            "then": {
+              "properties": {
+                "mediaType": {
+                  "const": "IMAGE"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "MediaTriggerRef": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "messageId"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "EVENT",
+              "ALARM"
+            ]
+          },
+          "messageId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,127}$",
+            "maxLength": 128
+          }
+        }
+      },
+      "MediaUploadSessionSuccess": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/MediaUploadSessionView"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "MediaUploadSessionView": {
+        "type": "object",
+        "required": [
+          "sessionId",
+          "mediaType",
+          "fileName",
+          "sizeKb",
+          "sizeBytes",
+          "objectPath",
+          "uploadUrl",
+          "uploadUrlExpiresAt",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "VIDEO"
+            ]
+          },
+          "fileName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sizeKb": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "objectPath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "服务端生成的对象 Key（media/{customerId}/{deviceId}/{sessionId}/{fileName}）；元数据报文 objectPath 必须与其逐字符相等"
+          },
+          "uploadUrl": {
+            "type": "string",
+            "pattern": "^https://",
+            "description": "DEC-024 冻结的 15 分钟预签名上传 URL（900s）"
+          },
+          "uploadUrlExpiresAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "triggerRef": {
+            "$ref": "#/components/schemas/MediaTriggerRef"
+          }
+        }
+      },
+      "UtcTimestamp": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+        "description": "UTC ISO 8601，以 Z 结尾"
+      },
+      "ResponseMeta": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "timestamp"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        }
+      },
+      "ErrorBody": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "requestId"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "description": "对客户端安全的描述；不得包含堆栈、SQL 或 AWS 内部错误"
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "VALIDATION_FAILED",
+          "CURSOR_INVALID",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "UNAUTHENTICATED",
+          "FORBIDDEN",
+          "NOT_FOUND",
+          "CONFLICT",
+          "VERSION_CONFLICT",
+          "IDEMPOTENCY_CONFLICT",
+          "DEVICE_STATE_NOT_ALLOWED",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ]
+      },
+      "MediaSessionConflict": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          },
+          {
+            "$ref": "#/components/schemas/MediaTriggerConflict"
+          },
+          {
+            "$ref": "#/components/schemas/MediaAlreadyRegistered"
+          }
+        ]
+      },
+      "MediaTriggerConflict": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "message",
+              "requestId"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "MEDIA_TRIGGER_CONFLICT"
+                ]
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1
+              },
+              "requestId": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      },
+      "MediaAlreadyRegistered": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "message",
+              "requestId",
+              "details"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "MEDIA_ALREADY_REGISTERED"
+                ]
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1
+              },
+              "requestId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "mediaId"
+                ],
+                "properties": {
+                  "mediaId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "DeviceMtls": {
+        "type": "mutualTLS",
+        "description": "设备 X.509 mTLS（API Gateway 自定义域名）"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "校验失败（VALIDATION_FAILED：未知字段、非对象 body，或 mediaType/fileName/sizeKb/sizeBytes/sha256 非法、不一致或超限）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证（证书缺失/未登记/非 ACTIVE/过期）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "设备生命周期不允许（Retired/Suspended）或未分配 Customer",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Quota CONFLICT, immutable declaration MEDIA_TRIGGER_CONFLICT, or completed MEDIA_ALREADY_REGISTERED (details.mediaId required).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MediaSessionConflict"
+            }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "内部错误（不暴露细节）",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

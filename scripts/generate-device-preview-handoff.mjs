@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
+import { subsetOpenApi } from './cloud-handoff-openapi.mjs';
 
 const root = new URL('../', import.meta.url);
 const sourceFiles = [
@@ -19,50 +20,12 @@ const live = read(sourceFiles[0]),
   base = read(sourceFiles[1]);
 export const DEVICE_PREVIEW_PATHS = ['/api/v1/device/live-image/state', '/api/v1/device/live-image/frames'];
 export function buildHandoff() {
-  const components = { schemas: {}, securitySchemes: {} };
-  const origins = new Map();
-  function rewrite(value, document = live) {
-    if (Array.isArray(value)) return value.map((entry) => rewrite(entry, document));
-    if (!value || typeof value !== 'object') return value;
-    if (value.$ref) {
-      const match = /^(?:(openapi-base|live-image-api)\.json)?#\/components\/(schemas|securitySchemes)\/([^/]+)$/.exec(
-        value.$ref,
-      );
-      if (!match) throw new Error(`UNSUPPORTED_HANDOFF_REF: ${value.$ref}`);
-      const [, file, kind, name] = match;
-      const source = file ? (file === 'openapi-base' ? base : live) : document;
-      const original = source.components[kind]?.[name];
-      if (!original) throw new Error(`MISSING_HANDOFF_REF: ${name}`);
-      if (original.$ref)
-        return {
-          ...rewrite(original, source),
-          ...Object.fromEntries(
-            Object.entries(value)
-              .filter(([key]) => key !== '$ref')
-              .map(([key, item]) => [key, rewrite(item, document)]),
-          ),
-        };
-      const key = `${kind}/${name}`;
-      if (origins.has(key) && origins.get(key) !== source) throw new Error(`AMBIGUOUS_HANDOFF_REF: ${name}`);
-      if (!origins.has(key)) {
-        origins.set(key, source);
-        components[kind][name] = {};
-        components[kind][name] = rewrite(original, source);
-      }
-      return {
-        ...Object.fromEntries(
-          Object.entries(value)
-            .filter(([key]) => key !== '$ref')
-            .map(([key, item]) => [key, rewrite(item, document)]),
-        ),
-        $ref: `#/components/${key}`,
-      };
-    }
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, rewrite(item, document)]));
-  }
-  const paths = Object.fromEntries(DEVICE_PREVIEW_PATHS.map((path) => [path, rewrite(live.paths[path])]));
-  // security requirement names are not $refs; import just the device scheme explicitly.
-  rewrite({ $ref: '#/components/securitySchemes/DeviceMtls' });
+  const { paths, components } = subsetOpenApi({
+    document: live,
+    documents: { 'openapi-base.json': base, 'live-image-api.json': live },
+    paths: DEVICE_PREVIEW_PATHS,
+    securitySchemes: ['DeviceMtls'],
+  });
   const openapi = {
     openapi: live.openapi,
     info: {

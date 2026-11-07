@@ -4,6 +4,8 @@
 
 2026-11-07 职责澄清：本仓库只负责云端对接包交付，第三方负责 App 实现；App 源码与真机验收不作为本包交付前置。实时预览的完整第三方说明、独立 OpenAPI 和可校验请求响应见 [第三方 App 云端接口包](./device-live-image-vendor-guide.md)。
 
+Event/Alarm 留档的独立 OpenAPI、不可变申报、200/201/409 分支、S3 签名头和 MQTT 登记确认样例见 [第三方留档云端接口包](./device-archive-vendor-guide.md)。该包与实时预览分别导出和校验。
+
 ## 能力启用与设备调用顺序
 
 设备本地增加可选 liveImage 配置，缺省 disabled。支持 live-image-v1 的 App 由第三方软件发布或现场配置显式开启。云端按原始 deviceId 的 DeviceLiveImagePolicy.enabled 白名单记录准入，缺行/false 均关闭（IMG-08 实现，不由 App 写入）。设备本地与服务端均开启后才能预览。未启用设备继续使用原接口，不新增轮询。Configuration V1 的四个字段不增加预览字段，cameraRefreshInterval 不用于覆盖新的 2 秒周期。
@@ -24,7 +26,7 @@ sips -g pixelWidth -g pixelHeight contracts/rest/fixtures/device-images/capture.
 node scripts/generate-image-contract-types.mjs --check
 ```
 
-样例校验验证 Base64 解码后的字节逐一一致、SHA-256、精确长度和 ceil KB，JPEG 解码尺寸由 sips 本地核对。JPEG 内容检查、捕获时间窗和业务权限由后续服务实现，不能仅依赖 Schema。
+样例校验验证 Base64 解码后的字节逐一一致、SHA-256、精确长度和 ceil KB，JPEG 解码尺寸由 sips 本地核对。现有预览服务执行有界 JPEG/时间窗检查，归档登记执行会话、对象、精确字节与 Hash 检查；静态 Schema 通过不替代这些业务校验，也不代表目标环境已部署。
 
 ## Event 和 Alarm 留档调用顺序
 

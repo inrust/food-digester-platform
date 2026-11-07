@@ -1,0 +1,282 @@
+[
+  {
+    "id": "event-created",
+    "operationId": "createMediaUploadSession",
+    "status": 201,
+    "body": {
+      "data": {
+        "sessionId": "EVENT-SESSION-001",
+        "mediaType": "IMAGE",
+        "fileName": "capture.jpg",
+        "sizeKb": 1,
+        "sizeBytes": 811,
+        "objectPath": "media/CUS001/DEV001/EVENT-SESSION-001/capture.jpg",
+        "uploadUrl": "https://archive.example.invalid/media/CUS001/DEV001/EVENT-SESSION-001/capture.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=EXAMPLE-NOT-A-CREDENTIAL%2F20261106%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261106T080000Z&X-Amz-Expires=900&X-Amz-SignedHeaders=content-length%3Bhost&x-amz-checksum-sha256=ff0UviCZF5vzsN0W5A42REESpM1YHt8sA7SXruuVBIQ%3D&X-Amz-Signature=EXAMPLE-NOT-A-VALID-SIGNATURE",
+        "uploadUrlExpiresAt": "2026-11-06T08:15:00.000Z",
+        "createdAt": "2026-11-06T08:00:00.000Z",
+        "triggerRef": {
+          "kind": "EVENT",
+          "messageId": "EVT-DEV001-185"
+        }
+      },
+      "meta": {
+        "requestId": "sample-archive",
+        "timestamp": "2026-11-06T08:00:00.000Z"
+      }
+    }
+  },
+  {
+    "id": "event-reused",
+    "operationId": "createMediaUploadSession",
+    "status": 200,
+    "body": {
+      "data": {
+        "sessionId": "EVENT-SESSION-001",
+        "mediaType": "IMAGE",
+        "fileName": "capture.jpg",
+        "sizeKb": 1,
+        "sizeBytes": 811,
+        "objectPath": "media/CUS001/DEV001/EVENT-SESSION-001/capture.jpg",
+        "uploadUrl": "https://archive.example.invalid/media/CUS001/DEV001/EVENT-SESSION-001/capture.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=EXAMPLE-NOT-A-CREDENTIAL%2F20261106%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261106T080500Z&X-Amz-Expires=600&X-Amz-SignedHeaders=content-length%3Bhost&x-amz-checksum-sha256=ff0UviCZF5vzsN0W5A42REESpM1YHt8sA7SXruuVBIQ%3D&X-Amz-Signature=EXAMPLE-NOT-A-VALID-SIGNATURE",
+        "uploadUrlExpiresAt": "2026-11-06T08:15:00.000Z",
+        "createdAt": "2026-11-06T08:00:00.000Z",
+        "triggerRef": {
+          "kind": "EVENT",
+          "messageId": "EVT-DEV001-185"
+        }
+      },
+      "meta": {
+        "requestId": "sample-archive",
+        "timestamp": "2026-11-06T08:05:00.000Z"
+      }
+    }
+  },
+  {
+    "id": "event-expired-new",
+    "operationId": "createMediaUploadSession",
+    "status": 201,
+    "body": {
+      "data": {
+        "sessionId": "EVENT-SESSION-002",
+        "mediaType": "IMAGE",
+        "fileName": "capture.jpg",
+        "sizeKb": 1,
+        "sizeBytes": 811,
+        "objectPath": "media/CUS001/DEV001/EVENT-SESSION-002/capture.jpg",
+        "uploadUrl": "https://archive.example.invalid/media/CUS001/DEV001/EVENT-SESSION-002/capture.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=EXAMPLE-NOT-A-CREDENTIAL%2F20261106%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261106T081600Z&X-Amz-Expires=900&X-Amz-SignedHeaders=content-length%3Bhost&x-amz-checksum-sha256=ff0UviCZF5vzsN0W5A42REESpM1YHt8sA7SXruuVBIQ%3D&X-Amz-Signature=EXAMPLE-NOT-A-VALID-SIGNATURE",
+        "uploadUrlExpiresAt": "2026-11-06T08:31:00.000Z",
+        "createdAt": "2026-11-06T08:16:00.000Z",
+        "triggerRef": {
+          "kind": "EVENT",
+          "messageId": "EVT-DEV001-185"
+        }
+      },
+      "meta": {
+        "requestId": "sample-archive",
+        "timestamp": "2026-11-06T08:16:00.000Z"
+      }
+    }
+  },
+  {
+    "id": "event-registered",
+    "operationId": "createMediaUploadSession",
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "MEDIA_ALREADY_REGISTERED",
+        "message": "The trigger image is already registered",
+        "requestId": "sample-registered",
+        "details": {
+          "mediaId": "EVENT-MEDIA-001"
+        }
+      }
+    }
+  },
+  {
+    "id": "alarm-created",
+    "operationId": "createMediaUploadSession",
+    "status": 201,
+    "body": {
+      "data": {
+        "sessionId": "ALARM-SESSION-001",
+        "mediaType": "IMAGE",
+        "fileName": "capture.jpg",
+        "sizeKb": 1,
+        "sizeBytes": 811,
+        "objectPath": "media/CUS001/DEV001/ALARM-SESSION-001/capture.jpg",
+        "uploadUrl": "https://archive.example.invalid/media/CUS001/DEV001/ALARM-SESSION-001/capture.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=EXAMPLE-NOT-A-CREDENTIAL%2F20261106%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261106T080000Z&X-Amz-Expires=900&X-Amz-SignedHeaders=content-length%3Bhost&x-amz-checksum-sha256=ff0UviCZF5vzsN0W5A42REESpM1YHt8sA7SXruuVBIQ%3D&X-Amz-Signature=EXAMPLE-NOT-A-VALID-SIGNATURE",
+        "uploadUrlExpiresAt": "2026-11-06T08:15:00.000Z",
+        "createdAt": "2026-11-06T08:00:00.000Z",
+        "triggerRef": {
+          "kind": "ALARM",
+          "messageId": "ALM-DEV001-184"
+        }
+      },
+      "meta": {
+        "requestId": "sample-archive",
+        "timestamp": "2026-11-06T08:00:00.000Z"
+      }
+    }
+  },
+  {
+    "id": "alarm-reused",
+    "operationId": "createMediaUploadSession",
+    "status": 200,
+    "body": {
+      "data": {
+        "sessionId": "ALARM-SESSION-001",
+        "mediaType": "IMAGE",
+        "fileName": "capture.jpg",
+        "sizeKb": 1,
+        "sizeBytes": 811,
+        "objectPath": "media/CUS001/DEV001/ALARM-SESSION-001/capture.jpg",
+        "uploadUrl": "https://archive.example.invalid/media/CUS001/DEV001/ALARM-SESSION-001/capture.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=EXAMPLE-NOT-A-CREDENTIAL%2F20261106%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261106T080500Z&X-Amz-Expires=600&X-Amz-SignedHeaders=content-length%3Bhost&x-amz-checksum-sha256=ff0UviCZF5vzsN0W5A42REESpM1YHt8sA7SXruuVBIQ%3D&X-Amz-Signature=EXAMPLE-NOT-A-VALID-SIGNATURE",
+        "uploadUrlExpiresAt": "2026-11-06T08:15:00.000Z",
+        "createdAt": "2026-11-06T08:00:00.000Z",
+        "triggerRef": {
+          "kind": "ALARM",
+          "messageId": "ALM-DEV001-184"
+        }
+      },
+      "meta": {
+        "requestId": "sample-archive",
+        "timestamp": "2026-11-06T08:05:00.000Z"
+      }
+    }
+  },
+  {
+    "id": "alarm-expired-new",
+    "operationId": "createMediaUploadSession",
+    "status": 201,
+    "body": {
+      "data": {
+        "sessionId": "ALARM-SESSION-002",
+        "mediaType": "IMAGE",
+        "fileName": "capture.jpg",
+        "sizeKb": 1,
+        "sizeBytes": 811,
+        "objectPath": "media/CUS001/DEV001/ALARM-SESSION-002/capture.jpg",
+        "uploadUrl": "https://archive.example.invalid/media/CUS001/DEV001/ALARM-SESSION-002/capture.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=EXAMPLE-NOT-A-CREDENTIAL%2F20261106%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261106T081600Z&X-Amz-Expires=900&X-Amz-SignedHeaders=content-length%3Bhost&x-amz-checksum-sha256=ff0UviCZF5vzsN0W5A42REESpM1YHt8sA7SXruuVBIQ%3D&X-Amz-Signature=EXAMPLE-NOT-A-VALID-SIGNATURE",
+        "uploadUrlExpiresAt": "2026-11-06T08:31:00.000Z",
+        "createdAt": "2026-11-06T08:16:00.000Z",
+        "triggerRef": {
+          "kind": "ALARM",
+          "messageId": "ALM-DEV001-184"
+        }
+      },
+      "meta": {
+        "requestId": "sample-archive",
+        "timestamp": "2026-11-06T08:16:00.000Z"
+      }
+    }
+  },
+  {
+    "id": "alarm-registered",
+    "operationId": "createMediaUploadSession",
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "MEDIA_ALREADY_REGISTERED",
+        "message": "The trigger image is already registered",
+        "requestId": "sample-registered",
+        "details": {
+          "mediaId": "ALARM-MEDIA-001"
+        }
+      }
+    }
+  },
+  {
+    "id": "validation_failed",
+    "operationId": "createMediaUploadSession",
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "message": "The request failed",
+        "requestId": "sample-validation_failed"
+      }
+    }
+  },
+  {
+    "id": "unauthenticated",
+    "operationId": "createMediaUploadSession",
+    "status": 401,
+    "body": {
+      "error": {
+        "code": "UNAUTHENTICATED",
+        "message": "The request failed",
+        "requestId": "sample-unauthenticated"
+      }
+    }
+  },
+  {
+    "id": "forbidden",
+    "operationId": "createMediaUploadSession",
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "The request failed",
+        "requestId": "sample-forbidden"
+      }
+    }
+  },
+  {
+    "id": "conflict",
+    "operationId": "createMediaUploadSession",
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "CONFLICT",
+        "message": "The request failed",
+        "requestId": "sample-conflict"
+      }
+    }
+  },
+  {
+    "id": "media_trigger_conflict",
+    "operationId": "createMediaUploadSession",
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "MEDIA_TRIGGER_CONFLICT",
+        "message": "The request failed",
+        "requestId": "sample-media_trigger_conflict"
+      }
+    }
+  },
+  {
+    "id": "internal_error",
+    "operationId": "createMediaUploadSession",
+    "status": 500,
+    "body": {
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "The request failed",
+        "requestId": "sample-internal_error"
+      }
+    }
+  },
+  {
+    "id": "legacy-created",
+    "operationId": "createMediaUploadSession",
+    "status": 201,
+    "body": {
+      "data": {
+        "sessionId": "LEGACY-SESSION-001",
+        "mediaType": "IMAGE",
+        "fileName": "capture.jpg",
+        "sizeKb": 1,
+        "sizeBytes": 811,
+        "objectPath": "media/CUS001/DEV001/LEGACY-SESSION-001/capture.jpg",
+        "uploadUrl": "https://archive.example.invalid/media/CUS001/DEV001/LEGACY-SESSION-001/capture.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=EXAMPLE-NOT-A-CREDENTIAL%2F20261106%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261106T080000Z&X-Amz-Expires=900&X-Amz-SignedHeaders=content-length%3Bhost&x-amz-checksum-sha256=ff0UviCZF5vzsN0W5A42REESpM1YHt8sA7SXruuVBIQ%3D&X-Amz-Signature=EXAMPLE-NOT-A-VALID-SIGNATURE",
+        "uploadUrlExpiresAt": "2026-11-06T08:15:00.000Z",
+        "createdAt": "2026-11-06T08:00:00.000Z"
+      },
+      "meta": {
+        "requestId": "sample-archive",
+        "timestamp": "2026-11-06T08:00:00.000Z"
+      }
+    }
+  }
+]

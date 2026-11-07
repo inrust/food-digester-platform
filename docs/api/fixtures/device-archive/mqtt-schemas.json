@@ -1,0 +1,257 @@
+{
+  "common.schema.json": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "common.schema.json",
+    "title": "MQTT 共享 meta/audit 定义",
+    "x-decision-versions": [
+      "DEC-002@1.0.0",
+      "DEC-006@1.0.0",
+      "DEC-013@1.0.0"
+    ],
+    "$defs": {
+      "utcDateTime": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+        "description": "UTC ISO 8601，必须以 Z 结尾（实施方案 7.2）。"
+      },
+      "metaBase": {
+        "type": "object",
+        "required": [
+          "id",
+          "ts"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,127}$",
+            "description": "全局唯一消息 ID，格式 {TopicType}-{DeviceId}-{SeqNo}，如 TEL-DEV001-10001；最大 128 字符。"
+          },
+          "ts": {
+            "$ref": "#/$defs/utcDateTime"
+          },
+          "seq": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "设备序号，同一设备同一消息类型内单调递增。上行运行消息必填（见 metaSeq）；下行 V1 不强制（DEC-006）。"
+          },
+          "schemaVer": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+$",
+            "default": "1.0",
+            "description": "通信设计未定义该字段，V1 缺省按 1.0 处理。"
+          }
+        }
+      },
+      "metaSeq": {
+        "description": "上行（Device→Cloud）消息 meta：seq 必填。",
+        "allOf": [
+          {
+            "$ref": "#/$defs/metaBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "seq"
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "type": "object",
+        "required": [
+          "hash"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "剔除 audit 后的 {meta,data} 按 RFC 8785 规范化并以 UTF-8 编码后计算的 SHA-256 小写十六进制摘要（DEC-013）；Telemetry/Report/Tamper 强制（DEC-002）。"
+          }
+        }
+      }
+    }
+  },
+  "event.schema.json": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "event.schema.json",
+    "title": "Event",
+    "x-typescript-name": "Event",
+    "x-decision-versions": [
+      "DEC-002@1.0.0",
+      "DEC-013@1.0.0"
+    ],
+    "type": "object",
+    "required": [
+      "meta",
+      "data"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "meta": {
+        "$ref": "common.schema.json#/$defs/metaSeq"
+      },
+      "data": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "eventType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "username": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "LOCAL",
+              "REMOTE"
+            ]
+          },
+          "remarks": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "alarm.schema.json": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "alarm.schema.json",
+    "title": "Alarm",
+    "x-typescript-name": "Alarm",
+    "x-decision-versions": [
+      "DEC-002@1.0.0",
+      "DEC-013@1.0.0"
+    ],
+    "type": "object",
+    "required": [
+      "meta",
+      "data"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "meta": {
+        "$ref": "common.schema.json#/$defs/metaSeq"
+      },
+      "data": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "INFO",
+              "WARNING",
+              "HIGH",
+              "CRITICAL"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "CLEARED"
+            ]
+          },
+          "detectedTime": {
+            "$ref": "common.schema.json#/$defs/utcDateTime"
+          },
+          "component": {
+            "type": "string",
+            "minLength": 1
+          },
+          "currentValue": {
+            "type": "number"
+          },
+          "threshold": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          },
+          "recommendedAction": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "media.schema.json": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "media.schema.json",
+    "title": "Media",
+    "x-typescript-name": "Media",
+    "x-decision-versions": [
+      "DEC-002@1.0.0",
+      "DEC-013@1.0.0"
+    ],
+    "type": "object",
+    "required": [
+      "meta",
+      "data"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "meta": {
+        "$ref": "common.schema.json#/$defs/metaSeq"
+      },
+      "data": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "VIDEO"
+            ]
+          },
+          "captureTime": {
+            "$ref": "common.schema.json#/$defs/utcDateTime"
+          },
+          "fileName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "objectPath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "云存储路径；授权前缀校验由 BE-IOT-08/BE-MED-01 处理。"
+          },
+          "sizeKb": {
+            "type": "number",
+            "minimum": 0
+          },
+          "durationSec": {
+            "type": "number",
+            "minimum": 0,
+            "description": "视频时长，图片为 0。"
+          }
+        }
+      }
+    }
+  }
+}
