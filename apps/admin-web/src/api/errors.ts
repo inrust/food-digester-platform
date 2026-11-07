@@ -9,7 +9,13 @@ export class ApiClientError extends Error {
 
   readonly requestId: string | null;
 
-  constructor(status: number, code: string, message: string, requestId: string | null = null) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    requestId: string | null = null,
+    readonly retryAfterMs: number | null = null,
+  ) {
     super(message);
     this.name = 'ApiClientError';
     this.status = status;

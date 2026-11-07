@@ -40,3 +40,24 @@ test('fetch transport propagates cancellation, no-store and keepalive without ch
     { method: 'DELETE', headers: { Authorization: 'test-token' }, signal, cache: 'no-store', keepalive: true },
   ]);
 });
+test.each([
+  ['7', 7000],
+  ['Sat, 07 Nov 2026 00:00:09 GMT', 9000],
+  ['0', 0],
+  ['garbage', undefined],
+  ['-1', undefined],
+  ['1.5', undefined],
+  ['99999999999999999999', undefined],
+])('fetch transport parses Retry-After %s without exposing unrelated headers', async (value, expected) => {
+  const now = vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-11-07T00:00:00Z'));
+  try {
+    const response = await createHttpApiFetch(
+      vi.fn(
+        async () => new Response('{}', { status: 429, headers: { 'Retry-After': value, 'X-Secret': 'hidden' } }),
+      ) as typeof fetch,
+    )('/preview', { method: 'GET', headers: {} });
+    expect(response).toEqual({ status: 429, body: {}, ...(expected === undefined ? {} : { retryAfterMs: expected }) });
+  } finally {
+    now.mockRestore();
+  }
+});

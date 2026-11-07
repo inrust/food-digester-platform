@@ -190,3 +190,18 @@ test('aborted 401 response does not refresh, retry, or clear the session', async
   assert.equal(calls, 1);
   assert.equal(session.isAuthenticated(), true);
 });
+
+test('Retry-After survives both enveloped and gateway errors without changing old errors', async () => {
+  const { session } = setup({ session: makeSession(), script: [] });
+  for (const body of [{ error: { code: 'RATE_LIMITED', message: 'busy', requestId: 'r' } }, '<html>busy</html>']) {
+    const client = createApiClient({
+      baseUrl: '/api/v1',
+      session,
+      fetch: async () => ({ status: 429, body, retryAfterMs: 9000 }),
+    });
+    await expectRejects(client.request('/preview'), (err) => {
+      assert.ok(err instanceof ApiClientError);
+      assert.equal(err.retryAfterMs, 9000);
+    });
+  }
+});

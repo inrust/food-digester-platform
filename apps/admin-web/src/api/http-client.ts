@@ -12,6 +12,7 @@ import type { SessionManager } from '../session/session-manager.js';
 export interface ApiFetchResponse {
   readonly status: number;
   readonly body: unknown;
+  readonly retryAfterMs?: number;
 }
 
 export type ApiFetch = (
@@ -43,7 +44,15 @@ export function createHttpApiFetch(fetchFn: typeof fetch): ApiFetch {
     } catch {
       body = null;
     }
-    return { status: response.status, body };
+    const rawRetry = response.headers.get('Retry-After');
+    const seconds = rawRetry !== null && /^\d+$/.test(rawRetry.trim()) ? Number(rawRetry) : NaN;
+    const date = rawRetry !== null && !Number.isFinite(seconds) ? Date.parse(rawRetry) : NaN;
+    const retryAfterMs = Number.isFinite(seconds) ? seconds * 1000 : date - Date.now();
+    return {
+      status: response.status,
+      body,
+      ...(Number.isSafeInteger(retryAfterMs) && retryAfterMs >= 0 ? { retryAfterMs } : {}),
+    };
   };
 }
 
@@ -154,9 +163,21 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
     if (response.status < 200 || response.status >= 300) {
       const envelope = parseErrorEnvelope(response.body);
       if (envelope !== null) {
-        throw new ApiClientError(response.status, envelope.code, envelope.message, envelope.requestId);
+        throw new ApiClientError(
+          response.status,
+          envelope.code,
+          envelope.message,
+          envelope.requestId,
+          response.retryAfterMs ?? null,
+        );
       }
-      throw new ApiClientError(response.status, 'INTERNAL_ERROR', 'The request failed');
+      throw new ApiClientError(
+        response.status,
+        'INTERNAL_ERROR',
+        'The request failed',
+        null,
+        response.retryAfterMs ?? null,
+      );
     }
 
     return response.body as T;

@@ -152,3 +152,121 @@ test('English UI uses translated labels and decode error stops the lease', async
   expect(screen.getByRole('button', { name: 'Reconnect' })).toBeTruthy();
   expect(f.request.mock.calls.at(-1)?.[1]?.method).toBe('DELETE');
 });
+
+test.each(['en', 'zh-CN'] as const)(
+  'terminal permission denial stays stopped across visibility changes with localized copy (%s)',
+  async (language) => {
+    const f = fixture();
+    f.fail();
+    render(
+      <I18nProvider initialLanguage={language}>
+        <LiveImagePreview api={f.api} deviceId="d-one" label="One" />
+      </I18nProvider>,
+    );
+    await open();
+    expect(screen.getByRole('alert').textContent).toContain(language === 'en' ? 'access was revoked' : '权限已失效');
+    expect(screen.getByRole('alert').textContent).not.toContain('denied');
+    const count = f.request.mock.calls.length;
+    await act(async () => {
+      visible = 'hidden';
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await act(async () => {
+      visible = 'visible';
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(f.request).toHaveBeenCalledTimes(count);
+    expect(screen.queryByTestId('live-image-frame')).toBeNull();
+  },
+);
+test('frame expiry has its own localized state even while the next read is stalled', async () => {
+  vi.useFakeTimers();
+  try {
+    const f = fixture();
+    const original = f.api.request;
+    let reads = 0;
+    f.api.request = async <T,>(path: string, options: ApiRequestOptions = {}) => {
+      if (!options.method && reads++ > 0) return new Promise<T>(() => {});
+      return original<T>(path, options);
+    };
+    render(<LiveImagePreview api={f.api} deviceId="d-one" label="One" />);
+    await open();
+    expect(screen.getByTestId('live-image-frame')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000);
+    });
+    expect(screen.queryByTestId('live-image-frame')).toBeNull();
+    expect(screen.getByRole('status').textContent).toContain('画面已过期');
+  } finally {
+    cleanup();
+    vi.useRealTimers();
+  }
+});
+test('rate-limit waiting survives hiding and reopening; old image is cleared immediately', async () => {
+  vi.useFakeTimers();
+  try {
+    const f = fixture();
+    const original = f.api.request;
+    let reads = 0;
+    f.api.request = async <T,>(path: string, options: ApiRequestOptions = {}) => {
+      if (!options.method && reads++ === 1)
+        throw new ApiClientError(429, 'RATE_LIMITED', 'private server detail', 'r', 15000);
+      return original<T>(path, options);
+    };
+    render(<LiveImagePreview api={f.api} deviceId="d-one" label="One" />);
+    await open();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.queryByTestId('live-image-frame')).toBeNull();
+    expect(screen.getByRole('status').textContent).toContain('自动重连');
+    expect(screen.queryByText(/private server detail/)).toBeNull();
+    await act(async () => {
+      visible = 'hidden';
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await act(async () => {
+      visible = 'visible';
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await open();
+    await open(); // Close/reopen still preserves the rate-limit deadline.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(14999);
+    });
+    expect(f.request.mock.calls.filter((call) => call[1]?.method === 'PUT')).toHaveLength(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(f.request.mock.calls.filter((call) => call[1]?.method === 'PUT')).toHaveLength(2);
+    expect(screen.getByTestId('live-image-frame')).toBeTruthy();
+  } finally {
+    cleanup();
+    vi.useRealTimers();
+  }
+});
+
+test('batched pagehide/pageshow cannot leave a visible preview with its old stopped engine', async () => {
+  const f = fixture();
+  render(<LiveImagePreview api={f.api} deviceId="d-one" label="One" />);
+  await open();
+  const first = f.request.mock.calls.find((call) => call[1]?.method === 'PUT')![0];
+  await act(async () => {
+    window.dispatchEvent(new Event('pagehide'));
+    window.dispatchEvent(new Event('pageshow'));
+  });
+  expect(f.request.mock.calls.filter((call) => call[1]?.method === 'PUT')).toHaveLength(2);
+  expect(f.request.mock.calls.filter((call) => call[1]?.method === 'PUT').at(-1)![0]).not.toBe(first);
+  expect(screen.getByTestId('live-image-frame')).toBeTruthy();
+});
+test('batched close/reopen restarts one engine and still uses a fresh viewer', async () => {
+  const f = fixture();
+  render(<LiveImagePreview api={f.api} deviceId="d-one" label="One" />);
+  await open();
+  await act(async () => {
+    fireEvent.click(screen.getByTestId('live-image-toggle'));
+    fireEvent.click(screen.getByTestId('live-image-toggle'));
+  });
+  expect(f.request.mock.calls.filter((call) => call[1]?.method === 'PUT')).toHaveLength(2);
+  expect(screen.getByTestId('live-image-frame')).toBeTruthy();
+});

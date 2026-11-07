@@ -6,6 +6,20 @@ import { PAGE_EN } from './pages.js';
  */
 export const EN: Readonly<Record<string, string>> = {
   ...PAGE_EN,
+  'liveImage.recovering': 'Reconnecting automatically. The previous image has been cleared.',
+  'liveImage.retryDelay': 'Waiting at least {seconds} seconds before reconnecting.',
+  'liveImage.reason.unauthenticated': 'Your session has expired. Sign in again to view device images.',
+  'liveImage.reason.forbidden': 'Image access was revoked. Check your permissions before reconnecting.',
+  'liveImage.reason.unavailable': 'This device is unavailable for preview. Check its assignment and status.',
+  'liveImage.reason.rateLimited': 'Too many requests. Waiting for the server retry period.',
+  'liveImage.reason.timeout': 'The image request timed out.',
+  'liveImage.reason.expired': 'The viewing session expired or changed. A new session is required.',
+  'liveImage.reason.service': 'The image service is temporarily unavailable.',
+  'liveImage.reason.invalid': 'The image response is invalid. Preview has stopped.',
+  'liveImage.reason.decode': 'The image could not be displayed. Preview has stopped.',
+  'liveImage.reason.network': 'The network request failed. Check your connection.',
+  'liveImage.exhausted':
+    'Automatic retries have stopped after three attempts. Check the connection before reconnecting.',
   'liveImage.retry': 'Reconnect',
   'liveImage.title': 'Live image preview',
   'liveImage.description': 'Open to receive device images. Close to stop viewing.',
@@ -13,6 +27,7 @@ export const EN: Readonly<Record<string, string>> = {
   'liveImage.close': 'Close image preview',
   'liveImage.closed': 'Preview closed',
   'liveImage.connecting': 'Connecting to device images…',
+  'liveImage.stale': 'The previous image expired. Waiting for a new device image.',
   'liveImage.waiting': 'Waiting for a new device image',
   'liveImage.ready': 'Image updated',
   'liveImage.paused': 'Page hidden. Preview paused.',
