@@ -196,7 +196,9 @@ function toAlarmView(row: AlarmRow): AlarmView {
     customerId: row.customerId,
     code: row.code,
     category: row.category,
-    severity: row.severity,
+    // MQTT freezes HIGH; the admin contract freezes the equivalent level as MAJOR.
+    // Normalize the response, retaining the ingested and historical database value.
+    severity: row.severity === 'HIGH' ? 'MAJOR' : row.severity,
     status: row.status,
     detectedTime: row.detectedTime.toISOString(),
     component: row.component,
@@ -333,7 +335,7 @@ export async function listAlarms(
   assertEnum(filter.status, ALARM_STATUSES, 'status');
   const limit = normalizeLimit(filter.limit ?? null);
   const where = await buildScopedWhere(deps.client, actor, filter, 'detectedTime');
-  if (filter.severity) where.severity = filter.severity;
+  if (filter.severity) where.severity = filter.severity === 'MAJOR' ? { in: ['MAJOR', 'HIGH'] } : filter.severity;
   if (filter.status) where.status = filter.status;
   const after = decodeKeysetCursor(filter.cursor ?? null);
   if (after) where.id = { gt: after };

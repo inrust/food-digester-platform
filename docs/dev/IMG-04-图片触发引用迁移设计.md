@@ -82,3 +82,9 @@ Outbox 类型为 MEDIA_EVIDENCE_REGISTERED，唯一键为 media-evidence:<trigge
 [IMG-16 页面与本地验收](./IMG-16-留档图片页面与本地验收.md)已在告警详情与事件行使用 evidenceImage 原始关联，复用媒体下载授权，区分省略、null、AVAILABLE、DELETED 和权限/下载失败。告警清除后仍可查看原图，刷新可发现迟到关联。签名链接仅在查看时申请，关闭、到期、切换记录和身份范围后清理；前端验证不替代服务器关联和授权。
 
 本批未更改数据库迁移、关联约束或实时预览。G3 仍为 PARTIAL，下一项为设备方 IMG-17 App 接入；真实云端和真机仍为 NOT_RUN。
+
+## IMG-19 云端组合验证补充（2026-11-07）
+
+[IMG-19 本地验收](./IMG-19-云端组合集成与本地验收.md)已组合真实客户端序列化、JWT/CORS/Lambda、PostgreSQL 鉴权与权威写协议、SQS Schema/分发/receipt、Outbox 和读取下载。新增 22 项，PGlite 执行全部迁移；预览 CAS 与对象端口为本地替身，不代表原生 DynamoDB 或多连接 PostgreSQL 验收。
+
+组合验证修复租约 PUT 多发空 JSON、knownFrameId 参数错位及 MQTT HIGH 与管理接口 MAJOR 的读取兼容。没有修改数据库或 wire 契约，旧消息/历史告警保留原值。G3 保持 PARTIAL，待 IMG-20 收口；App 与真机仍为第三方职责。

@@ -4,7 +4,6 @@ const root = (deviceId: string) => `/admin/devices/${encodeURIComponent(deviceId
 export function renewImageViewer(api: ApiClient, deviceId: string, viewerId: string, signal: AbortSignal) {
   return api.request<LiveLeaseSuccess>(`${root(deviceId)}/viewers/${encodeURIComponent(viewerId)}`, {
     method: 'PUT',
-    body: {},
     signal,
     cache: 'no-store',
   });
@@ -21,9 +20,9 @@ export function readLatestImage(
   deviceId: string,
   viewerId: string,
   signal: AbortSignal,
-  afterFrameId?: string,
+  knownFrameId?: string,
 ) {
   const query = new URLSearchParams({ viewerId });
-  if (afterFrameId) query.set('afterFrameId', afterFrameId);
+  if (knownFrameId) query.set('knownFrameId', knownFrameId);
   return api.request<LiveLatestSuccess>(`${root(deviceId)}/latest?${query}`, { signal, cache: 'no-store' });
 }

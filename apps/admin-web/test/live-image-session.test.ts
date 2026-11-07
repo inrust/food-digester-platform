@@ -77,7 +77,7 @@ test('acquires once, reads at 2s, renews at 10s, sends viewer/afterFrame IDs and
   expect(f.request.mock.calls[0]?.[0]).toContain('/device%20%2Fone/live-image/viewers/');
   await vi.advanceTimersByTimeAsync(2000);
   const read = f.request.mock.calls.at(-1)!;
-  expect(new URL(read[0], 'https://local.test').searchParams.get('afterFrameId')).toBe(frameId);
+  expect(new URL(read[0], 'https://local.test').searchParams.get('knownFrameId')).toBe(frameId);
   expect(new URL(read[0], 'https://local.test').searchParams.get('viewerId')).toBe(viewer);
   await vi.advanceTimersByTimeAsync(8000);
   expect(f.request.mock.calls.filter((call) => call[1]?.method === 'PUT')).toHaveLength(2);

@@ -2,7 +2,7 @@ import { expect, test, vi } from 'vitest';
 import { createHttpApiFetch } from '../src/api/http-client.js';
 import { readLatestImage, releaseImageViewer, renewImageViewer } from '../src/pages/devices/live-image-api.js';
 import type { ApiClient } from '../src/api/http-client.js';
-test('preview API adapters use escaped paths, JSON lease, per-viewer reads and keepalive release', async () => {
+test('preview API adapters use escaped paths, empty lease request, per-viewer reads and keepalive release', async () => {
   const request = vi.fn(async () => ({}));
   const api = { request: request as ApiClient['request'] },
     signal = new AbortController().signal;
@@ -11,10 +11,10 @@ test('preview API adapters use escaped paths, JSON lease, per-viewer reads and k
   await releaseImageViewer(api, 'd /?', 'v /?');
   expect(request.mock.calls[0]).toEqual([
     '/admin/devices/d%20%2F%3F/live-image/viewers/v%20%2F%3F',
-    { method: 'PUT', body: {}, signal, cache: 'no-store' },
+    { method: 'PUT', signal, cache: 'no-store' },
   ]);
   expect(request.mock.calls[1]).toEqual([
-    '/admin/devices/d%20%2F%3F/live-image/latest?viewerId=v+%2F%3F&afterFrameId=f+%2F%3F',
+    '/admin/devices/d%20%2F%3F/live-image/latest?viewerId=v+%2F%3F&knownFrameId=f+%2F%3F',
     { signal, cache: 'no-store' },
   ]);
   expect(request.mock.calls[2]).toEqual([

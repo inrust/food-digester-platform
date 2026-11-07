@@ -1,0 +1,184 @@
+{
+  "formatVersion": 1,
+  "task": "IMG-19",
+  "date": "2026-11-07",
+  "scope": "cloud-local-composition",
+  "referenceCommit": "8925cb6ad59478b1fa220fdb5f1ac6102e27126d",
+  "result": "PASS_LOCAL_COMPOSITION",
+  "gate": {
+    "id": "G3",
+    "status": "PARTIAL",
+    "formalGateReceipt": false,
+    "remaining": [
+      "IMG-20 complete quality gate and source evidence closure"
+    ]
+  },
+  "sourceFiles": [
+    {
+      "path": "apps/admin-web/src/pages/devices/live-image-api.ts",
+      "sha256": "da3733e0203b70099f646fc359492bfc3bd4050a35cb70065f68c96a29f716d2"
+    },
+    {
+      "path": "apps/admin-web/test/live-image-api.test.ts",
+      "sha256": "a70a0eca71a09c864508cf2aa39809de3a56248ac748c5526394f6455428e8cd"
+    },
+    {
+      "path": "apps/admin-web/test/live-image-session.test.ts",
+      "sha256": "3a5d08113e2b175d168d0b7343b97e3d2eb62a875f06db27031dc88331a44314"
+    },
+    {
+      "path": "apps/admin-web/e2e/live-image-shared-viewers.spec.ts",
+      "sha256": "5a83f810db3a1427954b47f8e0ba9e532c2c731efe2b1d6848981e53d78d140d"
+    },
+    {
+      "path": "apps/cloud-api/src/admin/alarm/service.ts",
+      "sha256": "a0db44c3f187b6e5553541310f90560e82c0989f6891844982a53e58a6fe1d9b"
+    },
+    {
+      "path": "apps/cloud-api/test/device-image-integration-fixtures.ts",
+      "sha256": "44b98060d337396f534da1f5e7fc17f2335fb2e9cbcf22d70df6d45dfb0696b0"
+    },
+    {
+      "path": "apps/cloud-api/test/device-image-composition.test.ts",
+      "sha256": "e748cf59493332bb365dee489f52395bb6ce8638d46f25767c4e02016e7db303"
+    },
+    {
+      "path": "apps/cloud-api/test/device-image-archive-composition.test.ts",
+      "sha256": "af2d772f583e1b7995fa8351d6498da61c046f41e1a8b2c9244ce1e81c9fbeda"
+    }
+  ],
+  "checks": [
+    {
+      "id": "composition",
+      "status": "PASS",
+      "files": 2,
+      "tests": 22,
+      "command": "pnpm exec vitest run apps/cloud-api/test/device-image-composition.test.ts apps/cloud-api/test/device-image-archive-composition.test.ts --maxWorkers=2"
+    },
+    {
+      "id": "vitest",
+      "status": "PASS",
+      "files": 220,
+      "tests": 2170,
+      "command": "pnpm exec vitest run --maxWorkers=4"
+    },
+    {
+      "id": "browser",
+      "status": "PASS",
+      "tests": 10,
+      "command": "pnpm --filter @fdp/admin-web exec playwright test e2e/live-image-preview.spec.ts e2e/live-image-recovery.spec.ts e2e/live-image-shared-viewers.spec.ts e2e/evidence-image.spec.ts",
+      "backend": "local route fixtures; not deployed cloud"
+    },
+    {
+      "id": "contracts",
+      "status": "PASS",
+      "tests": 319,
+      "command": "pnpm test:contracts"
+    },
+    {
+      "id": "handoff",
+      "status": "PASS",
+      "tests": 12,
+      "command": "node --import tsx --test scripts/device-preview-handoff.test.mjs scripts/device-archive-handoff.test.mjs"
+    },
+    {
+      "id": "gate-scripts",
+      "status": "PASS",
+      "tests": 17,
+      "command": "node --import tsx --test scripts/check-delivered-runtime.test.mjs scripts/check-migrations.test.mjs scripts/check-cdk-synth.test.mjs"
+    },
+    {
+      "id": "cloud-typecheck-build",
+      "status": "PASS",
+      "commands": [
+        "pnpm --filter @fdp/cloud-api... typecheck",
+        "pnpm --filter @fdp/cloud-api... build"
+      ]
+    },
+    {
+      "id": "web-typecheck-build",
+      "status": "PASS",
+      "commands": [
+        "pnpm --filter @fdp/admin-web typecheck",
+        "Playwright webServer Vite build"
+      ]
+    },
+    {
+      "id": "openapi-runtime",
+      "status": "PASS",
+      "operations": 134,
+      "commands": [
+        "pnpm openapi:check",
+        "node --import tsx scripts/check-delivered-runtime.mjs"
+      ]
+    },
+    {
+      "id": "offline-cdk",
+      "status": "PASS",
+      "command": "node scripts/check-cdk-synth.mjs",
+      "environment": "AWS metadata/credentials disabled; synthetic account; no deployment"
+    },
+    {
+      "id": "static",
+      "status": "PASS",
+      "checks": [
+        "migrations",
+        "boundaries",
+        "sensitive-sinks",
+        "secrets",
+        "admin-web-delivery",
+        "ESLint changed source",
+        "Prettier supported changed files",
+        "git diff --check"
+      ]
+    }
+  ],
+  "historicalFailures": [
+    {
+      "id": "lease-body",
+      "kind": "runtime-interop",
+      "observed": "frontend JSON {} rejected by the frozen no-request-body PUT contract",
+      "resolution": "remove the request body"
+    },
+    {
+      "id": "known-frame-query",
+      "kind": "runtime-interop",
+      "observed": "READY instead of UNCHANGED because afterFrameId was sent",
+      "resolution": "use frozen knownFrameId"
+    },
+    {
+      "id": "alarm-severity",
+      "kind": "runtime-interop",
+      "observed": "MQTT HIGH reached admin response outside its MAJOR enum",
+      "resolution": "normalize admin view and include HIGH in MAJOR filters; preserve original data"
+    },
+    {
+      "id": "harness",
+      "kind": "test-setup",
+      "observed": "partial unrelated routes, root delegate fault spy, disabled-account status, closed-state recovery, frozen throttle clock, test DOM libs",
+      "resolution": "complete inert routes; actual SQL rollback injection; enforce existing authority semantics; advance local clock; test-only DOM lib references"
+    }
+  ],
+  "unresolvedFailures": [],
+  "blocked": [],
+  "notRun": [
+    "FULL_PNPM_VERIFY_AND_IMG20_GATE",
+    "NATIVE_DYNAMODB_ATOMICITY",
+    "NATIVE_POSTGRES_MULTI_CONNECTION_LOCKS",
+    "PUBLIC_GATEWAY_MTLS_COGNITO_S3_IOT",
+    "REAL_NETWORK_LOAD_OR_PERFORMANCE",
+    "DEPLOYMENT_TARGET_MIGRATION_DEVICE_ENABLEMENT",
+    "GIT_PUSH"
+  ],
+  "outOfScope": [
+    "THIRD_PARTY_APP_IMPLEMENTATION",
+    "PHYSICAL_DEVICE_ACCEPTANCE"
+  ],
+  "localPorts": {
+    "sql": "PGlite applies all repository migrations in memory",
+    "previewStore": "detached snapshots and atomic CAS test port; SDK adapter unit checks run in full suite",
+    "objects": "in-memory bytes and local signing stubs",
+    "jwt": "locally signed RS256 and local JWKS",
+    "mtls": "trusted Gateway event context and local certificate fingerprint; no TLS handshake"
+  }
+}
