@@ -1,0 +1,89 @@
+{
+  "executable": false,
+  "approved": false,
+  "runId": "IMG21-FIXTURE-22d71f6bcb59dee6",
+  "requests": [
+    {
+      "operationId": "createCustomer",
+      "method": "POST",
+      "path": "/api/v1/admin/customers",
+      "body": {
+        "name": "IMG21 isolated 22d71f6bcb59dee6"
+      },
+      "pathBindings": "ONLY_IDS_RETURNED_BY_THIS_RUN",
+      "authorizationRef": null
+    },
+    {
+      "operationId": "createSite",
+      "method": "POST",
+      "path": "/api/v1/admin/sites",
+      "body": {
+        "customerId": "{{CREATED_CUSTOMER_ID}}",
+        "name": "IMG21 isolated site 22d71f6bcb59dee6",
+        "timezone": "Asia/Shanghai"
+      },
+      "pathBindings": "ONLY_IDS_RETURNED_BY_THIS_RUN",
+      "authorizationRef": null
+    },
+    {
+      "operationId": "submitOnboardingRequest",
+      "method": "POST",
+      "path": "/api/v1/device/onboarding/request",
+      "body": {
+        "serialNumber": "img21-22d71f6bcb59dee6",
+        "model": "IMG21-SIMULATOR",
+        "hardwareVersion": "1.0",
+        "manufacturer": "FDP cloud test",
+        "manufactureDate": "2026-11-08",
+        "csrPem": "-----BEGIN CERTIFICATE REQUEST-----\nMIIDZjCCAc4CAQAwITEfMB0GA1UEAwwWaW1nMjEtMjJkNzFmNmJjYjU5ZGVlNjCC\nAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBALzAEKjvJJQMa1WOrjQEJ6G0\nhxE8GT5B2gJ4YyM74o+0FanTvcXBl2dzGDNx5IbgRJY+gpat4fTnxdu/qQcmYyzb\ncvrqJ3GjB4omMT8l6HvLXgDVBAx5enko286F57vLAKUoLNjLUH0oWn/JSwE1SHhI\n2Fe9UxDSdGXNFhrTdqVHjOU3gWIZAh5wJejJRmi/bUOyU4dLqhSLbqnqpdwXD3oz\nPdlHAhg56zT0AItPqo+d+q8regqyzfuke8L8COXyK9JMd3OtQx/u96ZnNEDF96iU\n86TsWWZOuCFvNXWre4jMTAlw0uvwLFqlfJzGgF15Svk70ofMhAVXCZncQNqW8khf\nYljxtBwy91yCwTLiRoNRps8QNL4G5nO/76rfn6tRGaaEzvxWBSynitEGnjAq+gsX\nJI6X16fd1Y/Kh+c6YJEiyxfNtLsBaGa9w8xRezqWmYXwxF7ufDcPp1S4RJORcEF3\njBpm/nzxuhpMGCJiDuyZ2dxW7Tk7y5JjECMvWqYKuwIDAQABoAAwDQYJKoZIhvcN\nAQELBQADggGBAFHjudkaYoGfJ/5kiUyVO5uWt4B2fpsB+hNOd0usPx4qoLID49qG\ncamxybUx3SXaUQKYcU8b9Oy3TPi9vQ6n3ILWzZlRKNDyBlKKJmes3+/J0HQZ/Xy7\nMDLcaci2lyWLN8mprtttJpRaCsMr3ULQz0ocH43ut1Tufu2dJ8Kwzx2++DCANVPX\nPOszWe1y5Xk3V7WyoGkDM/2z4nfU1tikz37nDR4K9qU6L8c1yAk21dD9BmRfVtBm\ngRv8WkBaWfsWFYHY4x4wH/LQgwoObo8t/e5rbe6QHKoHzfbI7nKztllOBERQshjo\n8PD+Ky4LktAMXPdYG6XBsikdek7ZevLp67vbjbhlk3wakbodDPfAOi5zSGszdfVe\nVkvrh7fOYPChsWZ34OehHa0gMSTKLv4A7Bh32tWjMt7IXPO10G4GOpic9L6IL8ra\nhtcUkG/O4hlxkNdFNp5fxE2yi6o4nFS2PU4oR/7qb5XS9bpnCbKHNERFAT3vyFlZ\nfloX0QDbsrGpIg==\n-----END CERTIFICATE REQUEST-----\n"
+      },
+      "pathBindings": "ONLY_IDS_RETURNED_BY_THIS_RUN",
+      "authorizationRef": null
+    },
+    {
+      "operationId": "approveOnboardingRequest",
+      "method": "POST",
+      "path": "/api/v1/admin/onboarding/requests/{requestId}/approve",
+      "body": null,
+      "pathBindings": "ONLY_IDS_RETURNED_BY_THIS_RUN",
+      "authorizationRef": null
+    },
+    {
+      "operationId": "assignDevice",
+      "method": "POST",
+      "path": "/api/v1/admin/devices/{deviceId}/assignment",
+      "body": {
+        "customerId": "{{CREATED_CUSTOMER_ID}}",
+        "siteId": "{{CREATED_SITE_ID}}",
+        "reason": "IMG21 isolated simulator"
+      },
+      "pathBindings": "ONLY_IDS_RETURNED_BY_THIS_RUN",
+      "authorizationRef": null
+    },
+    {
+      "operationId": "createLicense",
+      "method": "POST",
+      "path": "/api/v1/admin/licenses",
+      "body": {
+        "deviceId": "{{CREATED_DEVICE_ID}}",
+        "validFrom": "2026-11-08",
+        "validTo": "2026-11-09",
+        "entitlements": [
+          "ESG_REPORTING"
+        ],
+        "reason": "Short test license for simulator Active eligibility; no ESG tests"
+      },
+      "pathBindings": "ONLY_IDS_RETURNED_BY_THIS_RUN",
+      "authorizationRef": null
+    },
+    {
+      "operationId": "issueLicense",
+      "method": "POST",
+      "path": "/api/v1/admin/licenses/{licenseId}/issue",
+      "body": null,
+      "pathBindings": "ONLY_IDS_RETURNED_BY_THIS_RUN",
+      "authorizationRef": null
+    }
+  ],
+  "datePolicy": "Client-date proposal only; if execution is later, re-propose valid dates before sending; no backdating."
+}

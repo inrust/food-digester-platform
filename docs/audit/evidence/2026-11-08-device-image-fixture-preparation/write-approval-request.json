@@ -1,0 +1,142 @@
+{
+  "formatVersion": 1,
+  "status": "PENDING_USER_CONFIRMATION",
+  "sourceCommit": "d1a7b81196d60ec320e760da3d18de403563fc12",
+  "protocolDigest": "59aa04f04df4a9b6b0cb5c76af407541b0bf5bc7b808887b7be9e8f5e2e6ee70",
+  "runId": "IMG21-FIXTURE-22d71f6bcb59dee6",
+  "target": {
+    "accountId": "065986019555",
+    "region": "ap-southeast-1",
+    "stackName": "fdp-test-app"
+  },
+  "approved": false,
+  "approvalReference": null,
+  "executionEnabled": false,
+  "requestedWrites": [
+    {
+      "id": "W01",
+      "target": "ap-southeast-1_hZMX8LpFo",
+      "actions": [
+        "AdminCreateUser",
+        "AdminSetUserPassword",
+        "AdminAddUserToGroup"
+      ],
+      "maximumUsers": 2,
+      "usernames": [
+        "img21-22d71f6bcb59dee6-viewer@example.invalid",
+        "img21-22d71f6bcb59dee6-provisioner@example.invalid"
+      ],
+      "groups": [
+        "CustomerViewer",
+        "PlatformSuperAdmin"
+      ],
+      "messageAction": "SUPPRESS",
+      "sendNotifications": false,
+      "secretPolicy": "Fresh random passwords stored only in mode0600 private workspace; no audit output"
+    },
+    {
+      "id": "W02",
+      "target": "users/user_roles/user_scopes",
+      "actions": [
+        "CREATE_OWN_USERS_AND_EXISTING_V1_ROLE_SCOPE"
+      ],
+      "maximumUsers": 2,
+      "authorityClient": "createPreviewAwarePrismaClient",
+      "bareSql": false,
+      "pristineAdminBootstrapCliAllowed": false,
+      "executor": "BOUND_CONTROLLED_VPC_WRITER_REQUIRED"
+    },
+    {
+      "id": "W03",
+      "target": "createCustomer/createSite/submitOnboardingRequest/approveOnboardingRequest/assignDevice",
+      "serialNumber": "img21-22d71f6bcb59dee6",
+      "maximumCustomers": 1,
+      "maximumSites": 1,
+      "maximumDevices": 1,
+      "certificateRegistration": "Only app CSR provisioning worker; no CA private key exported"
+    },
+    {
+      "id": "W04",
+      "target": "createLicense/issueLicense + device sync RECEIVED/VERIFIED",
+      "maximumLicenses": 1,
+      "entitlements": [
+        "ESG_REPORTING"
+      ],
+      "activation": "NORMAL_LICENSE_FLOW_ONLY",
+      "verifier": "EXISTING_DEDICATED_TEST_LICENSE_VERIFIER_IF_AUTHORIZED",
+      "exportHmacKey": false,
+      "manualLifecycleOrOperationalStatusUpdate": false
+    },
+    {
+      "id": "W05",
+      "target": "device_live_image_policies",
+      "maximumDevices": 1,
+      "deviceId": null,
+      "allowedSerialNumber": "img21-22d71f6bcb59dee6",
+      "deviceOptIn": true,
+      "enableServerPreview": true,
+      "authorityClient": "createPreviewAwarePrismaClient",
+      "directDynamoDbWrite": false,
+      "preconditions": [
+        "CREATED_ID_LEDGER",
+        "MATCHING_CUSTOMER",
+        "ACTIVE_LIFECYCLE_AND_OPERATION",
+        "CURRENT_CERTIFICATE",
+        "AUTHORITY_WRITER_VERSION_VERIFIED"
+      ]
+    },
+    {
+      "id": "W06",
+      "target": "fdp-test-qa09-readonly-runner",
+      "action": "StartBuild",
+      "maximumStarts": 1,
+      "purpose": "Native PG READ ONLY migration recheck; CodeBuild control-plane write still needs approval",
+      "request": null,
+      "buildspecOverrideAllowed": true,
+      "projectUpdateAllowed": false,
+      "sourceCheckRequired": true,
+      "overrideRule": "EXACT_PINNED_LOCAL_REQUEST_ONLY",
+      "requestFile": "readonly-db-start.request.json",
+      "requestSha256": "98747c1bcf79d31437ae963bdb7d8a4f011b62ee1765a0d0f33fc27cc8ad13ee",
+      "buildspecSha256": "b41dedd4c6d763dd903f38511df61f16f33041dd21190cc1e127630ec7b55513",
+      "defaultBuildspecBinding": "BLOCKED_SOURCE_DRIFT"
+    },
+    {
+      "id": "W07",
+      "target": "OWN_RUN_CLEANUP",
+      "actions": [
+        "DISABLE_OWN_PREVIEW_THROUGH_AUTHORITY",
+        "RELEASE_OWN_VIEWER",
+        "DISABLE_OWN_COGNITO_IDENTITIES",
+        "REVOKE_OWN_DEVICE_CERTIFICATE",
+        "REVOKE_OWN_TEST_LICENSE"
+      ],
+      "preserve": [
+        "CONTROL_AUTH_EPOCH",
+        "HISTORICAL_MEDIA_LINKS",
+        "RECEIPTS_AND_AUDIT"
+      ],
+      "bulkDeleteOrLifecycleBackdatingAllowed": false
+    }
+  ],
+  "notIncluded": [
+    "CLOUD_DEPLOYMENT",
+    "TARGET_MIGRATION",
+    "IAM_EXPANSION",
+    "NEW_SHARED_INFRASTRUCTURE",
+    "OTA_OR_REMOTE_CONTROL",
+    "EXISTING_DEVICE_USER_MODIFICATION",
+    "SHARED_FAULT_INJECTION",
+    "THIRD_PARTY_APP",
+    "PHYSICAL_DEVICE",
+    "GIT_PUSH"
+  ],
+  "stopConditions": [
+    "SOURCE_OR_ENVIRONMENT_DRIFT",
+    "MISSING_EXECUTOR_OR_PERMISSIONS",
+    "OUTSIDE_OWN_IDS",
+    "UNRESOLVED_PRIOR_WRITE",
+    "WINDOW_EXPIRED",
+    "LICENSE_VERIFIER_UNAVAILABLE"
+  ]
+}

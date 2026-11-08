@@ -1,0 +1,138 @@
+{
+  "formatVersion": 1,
+  "scope": "IMG21_ISOLATED_SIMULATED_DEVICE_IDENTITY_AND_WINDOW_PREPARATION",
+  "preparationBaseCommit": "0f4fc6ac",
+  "sourceCommit": "d1a7b81196d60ec320e760da3d18de403563fc12",
+  "protocolDigest": "59aa04f04df4a9b6b0cb5c76af407541b0bf5bc7b808887b7be9e8f5e2e6ee70",
+  "runId": "IMG21-FIXTURE-22d71f6bcb59dee6",
+  "status": "PASS_LOCAL_PREPARATION_TARGET_ADMISSION_BLOCKED",
+  "g4": "NOT_RUN",
+  "cloudReadOnlyMetadata": "OBSERVED",
+  "currentLambdaCodeHashesMatchingHistoricalArtifacts": 20,
+  "sourceCandidateDeploymentExactCommitProven": false,
+  "cloudWrites": 0,
+  "jobsStarted": 0,
+  "targetDatabaseConnections": 0,
+  "targetBusinessRequests": 0,
+  "identitiesCreatedInCloud": 0,
+  "deviceEnabled": false,
+  "localCsrPrepared": true,
+  "privateKeyStoredOutsideRepository": true,
+  "pushes": 0,
+  "providedTargetInputs": 9,
+  "blockedTargetInputs": 13,
+  "approvalStatus": "PENDING_USER_CONFIRMATION",
+  "preparationWindowStatus": "PROPOSED_90_MINUTES_NO_UTC_START_OR_END_APPROVED",
+  "g4WindowStatus": "PROPOSED_45_MINUTES_NOT_SCHEDULED",
+  "checks": [
+    {
+      "command": "python3 -B collectors/test_packet.py",
+      "tests": 13,
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": "node --import tsx collectors/check_requests.mjs",
+      "requests": 7,
+      "status": "PASS_SCHEMA_ONLY",
+      "exitCode": 0
+    },
+    {
+      "command": "node --import tsx --test scripts/device-image-target-package.test.mjs",
+      "tests": 136,
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": "prepare_packet.py twice",
+      "status": "PASS_REPRODUCIBLE_BYTES",
+      "files": 15
+    },
+    {
+      "command": [
+        "node",
+        "scripts/device-image-target-package.mjs",
+        "--cloud-admission",
+        "docs/audit/evidence/2026-11-08-device-image-fixture-preparation/inputs.json"
+      ],
+      "exitCode": 2,
+      "status": "PASS_EXPECTED_BLOCKED",
+      "blockedInputs": 13
+    },
+    {
+      "id": "format-check",
+      "command": [
+        "pnpm",
+        "exec",
+        "prettier",
+        "--check",
+        "docs/audit/evidence/2026-11-08-device-image-fixture-preparation/collectors/check_requests.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "boundaries",
+      "command": [
+        "node",
+        "scripts/check-boundaries.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "evidence",
+      "command": [
+        "node",
+        "scripts/check-eng-db-dom-evidence.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "sensitive-sinks",
+      "command": [
+        "node",
+        "scripts/check-sensitive-sinks.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "secrets",
+      "command": [
+        "node",
+        "scripts/check-secrets.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    }
+  ],
+  "failedAttempts": "failed-attempts.json",
+  "unresolvedLocalFailures": [],
+  "blocked": [
+    "13_ACTUAL_TARGET_INPUTS",
+    "EXACT_CANDIDATE_TARGET_VERSION_OR_REVIEWED_EQUIVALENCE_PROOF",
+    "DEFAULT_DB_JOB_BUILDSPEC_DRIFT",
+    "PENDING_USER_WRITE_SCOPE_AND_WINDOW_CONFIRMATION",
+    "CONTROLLED_IDENTITY_SCOPE_AND_ALLOWLIST_WRITER_BINDING",
+    "AUTHORIZED_LICENSE_VERIFIER"
+  ],
+  "notRun": [
+    "COGNITO_AND_DATABASE_USER_CREATION",
+    "CUSTOMER_SITE_DEVICE_ONBOARDING_AND_CERTIFICATE_ISSUANCE",
+    "LICENSE_ACTIVATION",
+    "DEVICE_OPT_IN_AND_SERVER_ALLOWLIST",
+    "CODEBUILD_START_AND_NATIVE_DATABASE_RECHECK",
+    "REAL_CF01_CF02_CF03_AND_CLEANUP",
+    "FULL_VERIFY_FULL_SCRIPT_SUITE_AND_BUILD_FOR_THIS_PREPARATION_COMMIT"
+  ],
+  "thirdPartyAppRequired": false,
+  "physicalDeviceRequired": false,
+  "nextAction": "REVIEW_AND_CONFIRM_PINNED_READONLY_JOB_AND_BOUNDED_FIXTURE_WRITE_SCOPE_BEFORE_ANY_MUTATION",
+  "sourceManifest": {
+    "path": "docs/audit/evidence/2026-11-08-device-image-fixture-preparation/sources.sha256",
+    "count": 8,
+    "sha256": "1198af5963359beda9e4f0f9cfebca37c2f93f16b6afdecc49618d26a6565feb"
+  }
+}
