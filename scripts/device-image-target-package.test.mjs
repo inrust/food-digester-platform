@@ -25,6 +25,8 @@ import {
   expectedMigrations,
   ar12Scope,
   readCandidateFiles,
+  readG3EvidenceFiles,
+  isPreparationSource,
 } from './device-image-target-package.mjs';
 
 import {
@@ -37,6 +39,19 @@ import {
 import { candidateFixture } from './test-support/device-image-candidate-fixture.mjs';
 
 const clone = (value) => structuredClone(value);
+test('preparation metadata cannot exempt application, infrastructure or shared handoff source', () => {
+  for (const path of [
+    'apps/cloud-api/src/runtime/admin-lambda.ts',
+    'packages/auth/src/permissions.ts',
+    'contracts/rest/openapi.bundle.json',
+    'infra/iam/FDP-CloudFormationExecutionPolicy.json',
+    'scripts/cloud-handoff-openapi.mjs',
+    'package.json',
+  ])
+    assert.equal(isPreparationSource(path), false, path);
+  assert.equal(isPreparationSource('scripts/device-image-target-package.mjs'), true);
+  assert.equal(isPreparationSource(`${PACKAGE}/candidate.json`), true);
+});
 function structuralFixture() {
   // Deliberately synthetic metadata in memory only. A structural PASS is never G4 PASS.
   const files = new Map();
@@ -220,7 +235,8 @@ test('G3 candidate binds historical hashes and rejects changed IAM source', asyn
   const binding = fixture.tool.verifyG3();
   assert.equal(binding.sourceCommit, CANDIDATE);
   assert.equal(binding.sources.count, 1693);
-  assert.equal(binding.artifacts.count, 34);
+  assert.equal(binding.artifacts.count, 14);
+  assert.equal(binding.verificationSources.count, 1713);
   assert.equal(binding.g4, 'NOT_RUN');
   const path = 'infra/iam/FDP-CloudFormationExecutionPolicy.json';
   writeFileSync(join(fixture.root, path), readFileSync(join(fixture.root, path), 'utf8') + '\n');
@@ -249,7 +265,7 @@ test('historical candidate package is deterministic, cwd-independent, complete a
   // The real checkout still uses the strict production verifier. A passing
   // historical fixture cannot turn changed runtime/IAM source into a fresh gate.
   const manifest = JSON.parse(readFileSync(join(ROOT, PACKAGE, 'candidate.json')));
-  const bytes = readCandidateFiles([manifest.sources.path])[manifest.sources.path];
+  const bytes = readG3EvidenceFiles([manifest.sources.path])[manifest.sources.path];
   const drift = manifestRows(bytes).find((row) => sha(readFileSync(join(ROOT, row.path))) !== row.sha256);
   if (drift) assert.throws(() => verifyG3(), { message: `CURRENT_G3_SOURCE_DRIFT:${drift.path}` });
   else assert.deepEqual(verifyG3(), fixture.tool.verifyG3());

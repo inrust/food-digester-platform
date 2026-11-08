@@ -19,9 +19,10 @@ import {
 } from './device-image-target-ar12-scope.mjs';
 
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
-export const CANDIDATE = '6dec17205fc87490e579b084dbcf2d29d5a7bdf5';
+export const CANDIDATE = '69c76e1dd508bf6e03dd21992194a8280109cd0a';
 export const PACKAGE = 'docs/api/fixtures/device-image-target';
-const G3 = 'docs/audit/evidence/2026-11-08-device-image-IMG20';
+export const G3 = 'docs/audit/evidence/2026-11-08-device-image-G3-rebind-69c76e1d';
+export const G3_EVIDENCE_COMMIT = '5742d6baabdae4a1abb1c1f44ed6b78f08547e2b';
 export const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const json = (value) => Buffer.from(JSON.stringify(value, null, 2) + '\n');
 const read = (path) => readFileSync(resolve(ROOT, path));
@@ -53,11 +54,12 @@ export function manifestRows(bytes) {
   if (new Set(rows.map((row) => row.path)).size !== rows.length) fail('DUPLICATE_HASH_PATH');
   return rows;
 }
-export function readCandidateFiles(paths) {
+function readGitFiles(commit, paths) {
+  if (!/^[a-f0-9]{40}$/u.test(commit)) fail('INVALID_GIT_BINDING');
   paths.forEach(safePath);
   const run = spawnSync('git', ['cat-file', '--batch'], {
     cwd: ROOT,
-    input: paths.map((path) => `${CANDIDATE}:${path}\n`).join(''),
+    input: paths.map((path) => `${commit}:${path}\n`).join(''),
     maxBuffer: 128 * 1024 * 1024,
   });
   if (run.status !== 0 || run.error) fail('CANDIDATE_GIT_READ_FAILED');
@@ -76,35 +78,88 @@ export function readCandidateFiles(paths) {
   if (offset !== run.stdout.length) fail('UNEXPECTED_GIT_OUTPUT');
   return values;
 }
+export const PREPARATION_SOURCE_FILES = [
+  'scripts/device-image-target-package.mjs',
+  'scripts/device-image-target-package.test.mjs',
+  'scripts/device-image-target-ar12-scope.mjs',
+  'scripts/device-image-target-cases.json',
+  'scripts/device-image-target-read-only.sql',
+  'scripts/test-support/device-image-candidate-fixture.mjs',
+  'docs/api/device-image-target-acceptance-guide.md',
+  'docs/api/device-image-AR12-acceptance-scope.md',
+];
+export const isPreparationSource = (path) => PREPARATION_SOURCE_FILES.includes(path) || path.startsWith(`${PACKAGE}/`);
+export const readCandidateFiles = (paths) => readGitFiles(CANDIDATE, paths);
+export const readG3EvidenceFiles = (paths) => readGitFiles(G3_EVIDENCE_COMMIT, paths);
 export function verifyG3() {
-  const names = ['result.json', 'sources.sha256', 'artifacts.sha256'].map((name) => `${G3}/${name}`);
-  const initial = readCandidateFiles(names);
+  const names = ['result.json', 'sources.sha256', 'artifacts.sha256', 'verification-sources.sha256'].map(
+    (name) => `${G3}/${name}`,
+  );
+  const initial = readG3EvidenceFiles(names);
   const receipt = JSON.parse(initial[names[0]]);
   if (
+    receipt.sourceCommit !== CANDIDATE ||
     receipt.gate?.status !== 'PASS_LOCAL' ||
     receipt.execution?.exitCode !== 0 ||
     receipt.fullVerifyStages?.length !== 22 ||
     receipt.fullVerifyStages.some((row) => row.status !== 'PASS') ||
     receipt.specializedReceipts?.length !== 7 ||
-    receipt.specializedReceipts.some((row) => row.status !== 'PASS')
+    receipt.specializedReceipts.some((row) => row.status !== 'PASS') ||
+    JSON.stringify(receipt.specializedReceipts.map((row) => row.id)) !==
+      JSON.stringify([
+        'device-contracts',
+        'iot-integration',
+        'core-api-integration',
+        'admin-e2e',
+        'security',
+        'reliability',
+        'prototype-regression',
+      ])
   )
     fail('G3_NOT_COMPLETE');
-  const sources = manifestRows(initial[names[1]]),
-    artifacts = manifestRows(initial[names[2]]);
-  if (sources.length !== receipt.sourceManifest.fileCount || sha(initial[names[1]]) !== receipt.sourceManifest.sha256)
-    fail('G3_MANIFEST_BINDING_DRIFT');
-  const all = [...sources, ...artifacts];
-  const blobs = readCandidateFiles([...new Set(all.map((row) => row.path))]);
-  for (const row of all) if (sha(blobs[row.path]) !== row.sha256) fail('G3_COMMITTED_ARTIFACT_DRIFT');
-  // The previous progress report and raw-log Git attributes are not executable G3 inputs.
+  const sources = manifestRows(initial[names[1]]);
+  const artifacts = manifestRows(initial[names[2]]);
+  const verified = manifestRows(initial[names[3]]);
+  for (const [rows, bytes, binding] of [
+    [sources, initial[names[1]], receipt.sourceManifest],
+    [verified, initial[names[3]], receipt.verificationSourceManifest],
+  ]) {
+    if (rows.length !== binding?.fileCount || sha(bytes) !== binding.sha256) fail('G3_MANIFEST_BINDING_DRIFT');
+  }
+  // Complete verify inputs remain sealed against candidate Git objects. Only the
+  // exact target-preparation protocol is independently versioned via protocolDigest.
+  const expectedDelivery = verified.filter((row) => !isPreparationSource(row.path));
+  const expectedPreparation = verified.filter((row) => isPreparationSource(row.path));
+  if (
+    JSON.stringify(sources) !== JSON.stringify(expectedDelivery) ||
+    JSON.stringify(receipt.preparationProtocolInputs) !==
+      JSON.stringify(expectedPreparation.map((row) => ({ path: row.path, candidateSha256: row.sha256 })))
+  )
+    fail('G3_SOURCE_SCOPE_DRIFT');
+  const committed = readCandidateFiles(verified.map((row) => row.path));
+  for (const row of verified) if (sha(committed[row.path]) !== row.sha256) fail('G3_COMMITTED_SOURCE_DRIFT');
+  const commands = JSON.parse(committed['package.json']).scripts.verify.split(' && ');
+  if (JSON.stringify(receipt.fullVerifyStages.map((row) => row.command)) !== JSON.stringify(commands))
+    fail('G3_COMMAND_SCOPE_DRIFT');
+  const evidence = readG3EvidenceFiles(artifacts.map((row) => row.path));
+  for (const row of artifacts) if (sha(evidence[row.path]) !== row.sha256) fail('G3_COMMITTED_ARTIFACT_DRIFT');
+  for (const row of receipt.specializedReceipts) {
+    const bytes = evidence[row.path];
+    const gate = bytes && JSON.parse(bytes);
+    if (!bytes || sha(bytes) !== row.receiptSha256 || gate.status !== 'PASS' || gate.baselineCommit !== CANDIDATE)
+      fail('G3_SPECIALIZED_RECEIPT_BINDING');
+  }
   for (const row of sources) if (sha(read(row.path)) !== row.sha256) fail(`CURRENT_G3_SOURCE_DRIFT:${row.path}`);
   return {
     sourceCommit: CANDIDATE,
+    evidenceCommit: G3_EVIDENCE_COMMIT,
     g3: 'PASS_LOCAL',
     g4: 'NOT_RUN',
     result: { path: names[0], sha256: sha(initial[names[0]]) },
     sources: { path: names[1], sha256: sha(initial[names[1]]), count: sources.length },
     artifacts: { path: names[2], sha256: sha(initial[names[2]]), count: artifacts.length },
+    verificationSources: { path: names[3], sha256: sha(initial[names[3]]), count: verified.length },
+    preparationScope: 'INDEPENDENT_PROTOCOL_DIGEST_AND_REGRESSION',
   };
 }
 export function protocolDigest() {
@@ -112,7 +167,7 @@ export function protocolDigest() {
     json(
       Object.fromEntries(
         [
-          'scripts/device-image-target-package.mjs',
+          ...PREPARATION_SOURCE_FILES,
           'scripts/device-image-target-ar12-scope.mjs',
           AR12_SCOPE_DOC,
           AR12_LOCAL_RECEIPT,
@@ -778,6 +833,7 @@ export function buildPackage() {
   const inputs = [
     'scripts/device-image-target-package.mjs',
     'scripts/device-image-target-package.test.mjs',
+    'scripts/test-support/device-image-candidate-fixture.mjs',
     'scripts/device-image-target-ar12-scope.mjs',
     AR12_SCOPE_DOC,
     AR12_LOCAL_RECEIPT,
@@ -816,7 +872,7 @@ export function writeOrCheck(check) {
     status: 'PASS_OFFLINE_PACKAGE',
     files: Object.keys(output).length,
     cases: cases().length,
-    g3: 'PASS_LOCAL_BOUND_TO_6dec1720',
+    g3: `PASS_LOCAL_BOUND_TO_${CANDIDATE.slice(0, 8)}`,
     g4: 'NOT_RUN',
     cloudRequests: 0,
   };

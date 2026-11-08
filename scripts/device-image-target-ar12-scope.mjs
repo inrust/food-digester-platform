@@ -3,8 +3,9 @@ import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 export const AR12_DECISION = 'AR12-V1-MEDIA-OMISSION-NA-1';
 export const AR12_SCOPE_DOC = 'docs/api/device-image-AR12-acceptance-scope.md';
-export const AR12_LOCAL_RECEIPT = 'docs/audit/evidence/2026-11-08-AR12-acceptance/local-regression.json';
-export const AR12_LOCAL_REPORT = 'docs/audit/evidence/2026-11-08-AR12-acceptance/branch-vitest.json';
+export const AR12_LOCAL_RECEIPT =
+  'docs/audit/evidence/2026-11-08-device-image-G3-rebind-preparation/local-regression.json';
+export const AR12_LOCAL_REPORT = 'docs/audit/evidence/2026-11-08-device-image-G3-rebind-preparation/branch-vitest.json';
 export const AR12_ROLES = ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor', 'CustomerAdmin', 'CustomerViewer'];
 export const AR12_SOURCE_FILES = [
   'packages/auth/src/roles.ts',

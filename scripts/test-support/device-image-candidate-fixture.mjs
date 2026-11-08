@@ -4,23 +4,29 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { ROOT, PACKAGE, manifestRows, readCandidateFiles } from '../device-image-target-package.mjs';
+import {
+  ROOT,
+  PACKAGE,
+  G3,
+  PREPARATION_SOURCE_FILES,
+  manifestRows,
+  readCandidateFiles,
+  readG3EvidenceFiles,
+} from '../device-image-target-package.mjs';
 
 export async function candidateFixture() {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'fdp-image-candidate-')));
   const cleanup = () => rmSync(root, { recursive: true, force: true });
   try {
-    const g3 = 'docs/audit/evidence/2026-11-08-device-image-IMG20';
+    const g3 = G3;
     const names = ['result.json', 'sources.sha256', 'artifacts.sha256'].map((name) => `${g3}/${name}`);
-    const manifests = readCandidateFiles(names);
-    const paths = [
-      ...new Set([
-        ...names,
-        ...manifestRows(manifests[names[1]]).map((row) => row.path),
-        ...manifestRows(manifests[names[2]]).map((row) => row.path),
-      ]),
-    ];
-    const blobs = readCandidateFiles(paths);
+    const manifests = readG3EvidenceFiles(names);
+    const sourcePaths = manifestRows(manifests[names[1]]).map((row) => row.path);
+    const artifactPaths = manifestRows(manifests[names[2]]).map((row) => row.path);
+    const blobs = {
+      ...readCandidateFiles(sourcePaths),
+      ...readG3EvidenceFiles([...new Set([...names, ...artifactPaths])]),
+    };
     for (const [path, bytes] of Object.entries(blobs)) {
       mkdirSync(dirname(join(root, path)), { recursive: true });
       writeFileSync(join(root, path), bytes);
@@ -30,6 +36,9 @@ export async function candidateFixture() {
     const manifest = JSON.parse(readFileSync(join(ROOT, PACKAGE, 'manifest.json')));
     const metadata = [
       ...Object.keys(manifest.inputs),
+      ...PREPARATION_SOURCE_FILES,
+      'docs/audit/evidence/2026-11-08-device-image-G3-rebind-preparation/local-regression.json',
+      'docs/audit/evidence/2026-11-08-device-image-G3-rebind-preparation/branch-vitest.json',
       ...Object.keys(manifest.files).map((name) => `${PACKAGE}/${name}`),
       `${PACKAGE}/manifest.json`,
     ];

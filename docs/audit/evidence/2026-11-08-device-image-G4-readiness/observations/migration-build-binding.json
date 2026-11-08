@@ -1,0 +1,44 @@
+{
+  "id": "fdp-test-migration-runner:558647be-f179-4544-abb0-f8c59b270bc2",
+  "status": "SUCCEEDED",
+  "sourceVersion": "lbBBi0En9M0ltDS.eKBh_f13gDMKBg9R",
+  "source": {
+    "type": "S3",
+    "location": "fdp-test-migration-source-065986019555-ap-southeast-1/migration/source.zip",
+    "buildspec": "{\n  \"version\": \"0.2\",\n  \"phases\": {\n    \"install\": {\n      \"runtime-versions\": {\n        \"nodejs\": 24\n      },\n      \"commands\": [\n        \"node scripts/check-migration-source.mjs\",\n        \"npm install --global pnpm@10.20.0\",\n        \"pnpm install --frozen-lockfile\",\n        \"curl --fail --silent --show-error https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o rds-ca-bundle.pem\"\n      ]\n    },\n    \"build\": {\n      \"commands\": [\n        \"node scripts/run-database-migrations.mjs\"\n      ]\n    }\n  }\n}",
+    "insecureSsl": false
+  },
+  "environment": [
+    {
+      "name": "FDP_EXPECTED_SOURCE_COMMIT",
+      "value": "69c76e1dd508bf6e03dd21992194a8280109cd0a",
+      "type": "PLAINTEXT"
+    },
+    {
+      "name": "DB_SECRET_ARN",
+      "value": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK",
+      "type": "PLAINTEXT"
+    }
+  ],
+  "serviceRole": "arn:aws:iam::065986019555:role/fdp-test-migration-runner-role",
+  "vpcConfig": {
+    "vpcId": "vpc-0d287fdfa0a4a06bd",
+    "subnets": [
+      "subnet-0f52dca7a7253f7d1",
+      "subnet-0c1584eea5495f25a"
+    ],
+    "securityGroupIds": [
+      "sg-081d9a3ee5f6011e9"
+    ]
+  },
+  "logs": {
+    "groupName": "fdp-test-app-MigrationRunnerLogsAA30B0B4-lzkIrNBXjMWf",
+    "streamName": "558647be-f179-4544-abb0-f8c59b270bc2",
+    "deepLink": "https://console.aws.amazon.com/cloudwatch/home?region=ap-southeast-1#logsV2:log-groups/log-group/fdp-test-app-MigrationRunnerLogsAA30B0B4-lzkIrNBXjMWf/log-events/558647be-f179-4544-abb0-f8c59b270bc2",
+    "cloudWatchLogsArn": "arn:aws:logs:ap-southeast-1:065986019555:log-group:fdp-test-app-MigrationRunnerLogsAA30B0B4-lzkIrNBXjMWf:log-stream:558647be-f179-4544-abb0-f8c59b270bc2",
+    "cloudWatchLogs": {
+      "status": "ENABLED",
+      "groupName": "fdp-test-app-MigrationRunnerLogsAA30B0B4-lzkIrNBXjMWf"
+    }
+  }
+}
