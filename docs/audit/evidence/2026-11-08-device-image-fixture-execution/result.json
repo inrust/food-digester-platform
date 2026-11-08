@@ -1,0 +1,205 @@
+{
+  "formatVersion": 1,
+  "scope": "APPROVED_IMG21_ISOLATED_PREPARATION_WITHOUT_DEPLOY_MIGRATION_IAM_OR_G4",
+  "preparationBaseCommit": "d69f4cc3",
+  "sourceCommit": "d1a7b81196d60ec320e760da3d18de403563fc12",
+  "g3EvidenceCommit": "1b1b879ffcf34be7cebd6fe87b8301ae5bd21356",
+  "protocolDigest": "59aa04f04df4a9b6b0cb5c76af407541b0bf5bc7b808887b7be9e8f5e2e6ee70",
+  "runId": "IMG21-FIXTURE-22d71f6bcb59dee6",
+  "status": "PARTIAL_PREPARATION_BLOCKED",
+  "approvalStatus": "APPROVED_BY_USER",
+  "preparationWindow": {
+    "startsAt": "2026-11-08T12:41:58.802738+00:00",
+    "endsAt": "2026-11-08T14:11:58.802738+00:00",
+    "durationMinutes": 90,
+    "scope": "PREPARATION_ONLY"
+  },
+  "recordedAt": "2026-11-08T12:57:43.171750+00:00",
+  "g3": "PASS_LOCAL_EXISTING_D1_EVIDENCE",
+  "g4": "NOT_RUN",
+  "approvedControlPlaneStartCalls": 1,
+  "knownBuildId": "fdp-test-qa09-readonly-runner:1686d06a-7776-4701-b1e9-7b2213cb4fd5",
+  "buildStatus": "SUCCEEDED",
+  "unknownWriteOutcomes": 0,
+  "startRetried": false,
+  "targetDatabaseBusinessWrites": 0,
+  "deployments": 0,
+  "targetMigrations": 0,
+  "iamChanges": 0,
+  "targetBusinessHttpRequests": 0,
+  "imageFramesUploaded": 0,
+  "eventAlarmImagesUploaded": 0,
+  "cognitoIdentitiesCreated": 0,
+  "customersDevicesCertificatesCreated": 0,
+  "previewDevicesEnabled": 0,
+  "pushes": 0,
+  "nativeReadOnly": {
+    "status": "PASS",
+    "migrations": 44,
+    "tables": 61,
+    "read_only": "on"
+  },
+  "steps": {
+    "W01": {
+      "status": "NOT_RUN",
+      "reason": "Avoid orphan Cognito identities while required DB writer is unavailable"
+    },
+    "W02": {
+      "status": "BLOCKED",
+      "reason": "No compatible existing single-device createPreviewAwarePrismaClient VPC executor; legacy ten-device fixture uses raw SQL and a different prefix"
+    },
+    "W03": {
+      "status": "NOT_RUN",
+      "reason": "No provisioner DB actor or own customer/device; no onboarding request submitted"
+    },
+    "W04": {
+      "status": "BLOCKED",
+      "reason": "Dedicated license verifier IAM role NoSuchEntity; existing local verifier rejects img21 serial/model; no role creation, expansion, scope forgery or manual Active transition"
+    },
+    "W05": {
+      "status": "NOT_RUN",
+      "reason": "No own Active device, current certificate or compliant authority writer; no opt-in/allowlist write"
+    },
+    "W06": {
+      "status": "PASS_NATIVE_READ_ONLY",
+      "buildId": "fdp-test-qa09-readonly-runner:1686d06a-7776-4701-b1e9-7b2213cb4fd5",
+      "startCalls": 1,
+      "databaseBusinessWrites": false
+    },
+    "W07": {
+      "status": "NOT_REQUIRED",
+      "reason": "No business fixtures/identities/allowlist/leases created. Build audit retained; planned Cognito identities confirmed ABSENT"
+    }
+  },
+  "providedInputs": 11,
+  "missingOrG4ExcludedInputs": 11,
+  "g4ScopeAndWindowIntentionallyNotProvided": true,
+  "actualBusinessCleanupRequired": false,
+  "scopeApprovalPersists": true,
+  "checks": [
+    {
+      "command": "python3 -B collectors/test_execution.py",
+      "status": "PASS",
+      "tests": 12,
+      "exitCode": 0
+    },
+    {
+      "command": "node --test scripts/qa09-db-readonly-probe.test.mjs scripts/qa09-readonly-preflight.test.mjs",
+      "status": "PASS",
+      "tests": 15,
+      "exitCode": 0
+    },
+    {
+      "command": "node --import tsx --test scripts/device-image-target-package.test.mjs",
+      "status": "PASS",
+      "tests": 136,
+      "exitCode": 0
+    },
+    {
+      "command": "assemble_results.py twice",
+      "status": "PASS_REPRODUCIBLE_BYTES",
+      "files": 6
+    },
+    {
+      "command": "--cloud-admission inputs.json",
+      "exitCode": 2,
+      "status": "PASS_EXPECTED_BLOCKED",
+      "missing": 11
+    },
+    {
+      "id": "format-check",
+      "command": [
+        "pnpm",
+        "exec",
+        "prettier",
+        "--check",
+        "docs/audit/evidence/2026-11-08-device-image-fixture-execution/collectors/collect_database.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "node-syntax",
+      "command": [
+        "node",
+        "--check",
+        "docs/audit/evidence/2026-11-08-device-image-fixture-execution/collectors/collect_database.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "boundaries",
+      "command": [
+        "node",
+        "scripts/check-boundaries.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "evidence",
+      "command": [
+        "node",
+        "scripts/check-eng-db-dom-evidence.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "sensitive-sinks",
+      "command": [
+        "node",
+        "scripts/check-sensitive-sinks.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "secrets",
+      "command": [
+        "node",
+        "scripts/check-secrets.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "package-check",
+      "command": [
+        "node",
+        "scripts/device-image-target-package.mjs",
+        "--check"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    }
+  ],
+  "retained": [
+    "INITIAL_OPERATOR_NOT_VERIFIED_BLOCKED_RESOLVED_BY_FRESH_STS_AND_SECOND_PREFLIGHT",
+    "INITIAL_OPERATOR_FAILURE_CAUSE_UNKNOWN_NOT_RECORDED",
+    "DEFAULT_PROJECT_BUILDSPEC_DRIFT_NOT_UPDATED",
+    "MISSING_COMPATIBLE_EXISTING_BOUND_WRITER",
+    "LICENSE_VERIFIER_ROLE_NO_SUCH_ENTITY",
+    "LICENSE_METADATA_VALIDATOR_REJECTS_APPROVED_IMG21_SCOPE",
+    "EXACT_CURRENT_CANDIDATE_DEPLOYMENT_BINDING_NOT_PROVEN"
+  ],
+  "unresolvedLocalFailures": [],
+  "notRun": [
+    "W01_COGNITO_USERS",
+    "W02_DATABASE_ACTORS_SCOPE",
+    "W03_ONBOARDING_AND_OWN_CUSTOMER_DEVICE",
+    "W04_LICENSE_AND_ACTIVE",
+    "W05_PREVIEW_OPT_IN_ALLOWLIST",
+    "REAL_G4_CF01_CF02_CF03",
+    "G4_EXECUTION_WINDOW_AND_SCOPE",
+    "FULL_VERIFY_BUILD_FULL_SCRIPT_SUITE_FOR_THIS_AUDIT_COMMIT"
+  ],
+  "appOrPhysicalDeviceRequired": false,
+  "nextTask": "Resolve compatible existing authority writer, authorized license verification channel and candidate deployment proof; do not deploy or expand IAM under this approval",
+  "sourceManifest": {
+    "path": "docs/audit/evidence/2026-11-08-device-image-fixture-execution/sources.sha256",
+    "sha256": "f4b8f611ca395e758c80498128cb6993f2e7618329bb9d553b50e22970833674",
+    "count": 20
+  }
+}

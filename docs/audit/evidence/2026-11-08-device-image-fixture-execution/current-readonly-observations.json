@@ -1,0 +1,518 @@
+{
+  "status": "OBSERVED_READONLY_METADATA",
+  "mode": "REAL_AWS_READ_ONLY",
+  "capturedAt": "2026-11-08T12:41:24.146205+00:00",
+  "accountId": "065986019555",
+  "region": "ap-southeast-1",
+  "stackName": "fdp-test-app",
+  "identity": {
+    "accountVerified": true,
+    "readOnlyRoleVerified": true
+  },
+  "stack": {
+    "status": "OBSERVED",
+    "operation": "cloudformation:describe-stacks",
+    "data": {
+      "StackName": "fdp-test-app",
+      "StackId": "arn:aws:cloudformation:ap-southeast-1:065986019555:stack/fdp-test-app/f6ae9780-b495-11f1-9a00-02ffeb9f5f63",
+      "StackStatus": "UPDATE_COMPLETE",
+      "Tags": [
+        {
+          "Key": "fdp:env",
+          "Value": "test"
+        },
+        {
+          "Key": "fdp:project",
+          "Value": "food-digester-platform"
+        },
+        {
+          "Key": "fdp:managed-by",
+          "Value": "cdk"
+        }
+      ],
+      "Outputs": [
+        {
+          "OutputKey": "OnboardingApiUrl",
+          "OutputValue": "https://onboard-api.bio-nexa.com/",
+          "Description": "Onboarding API endpoint with token authentication"
+        },
+        {
+          "OutputKey": "DeviceApiUrl",
+          "OutputValue": "https://device-api.bio-nexa.com/",
+          "Description": "Device API endpoint using the mTLS custom domain"
+        },
+        {
+          "OutputKey": "AdminBootstrapRunnerProjectName",
+          "OutputValue": "fdp-test-admin-bootstrap-runner"
+        },
+        {
+          "OutputKey": "MediaBucketName",
+          "OutputValue": "fdp-test-media-065986019555",
+          "Description": "S3 media files"
+        },
+        {
+          "OutputKey": "AdminApiUrl",
+          "OutputValue": "https://api.bio-nexa.com/api/v1/",
+          "Description": "Admin, customer, and internal API endpoint using Cognito and IAM"
+        },
+        {
+          "OutputKey": "UserPoolClientId",
+          "OutputValue": "5ljdjsf9g563mc1vdc7vjdjm09",
+          "Description": "Cognito Admin Web Client"
+        },
+        {
+          "OutputKey": "UserPoolId",
+          "OutputValue": "ap-southeast-1_hZMX8LpFo",
+          "Description": "Cognito User Pool"
+        }
+      ]
+    }
+  },
+  "functions": [
+    {
+      "name": "fdp-test-activity-export",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "KQcx4PmDEDg4ow83JQ57Ui0lWhDMeupquYQSKa79bXU=",
+        "revisionId": "9cf048f2-0618-4357-b2d1-4da9956ccbb8",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-api",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "o2c1ROvveL4qZq8lGY3nnqxM7NMWnXoSRlgIgt8/BBM=",
+        "revisionId": "da33f77e-0cc9-433b-87c0-9d356d9ab678",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-archive",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "ayU8Ym4HqKtZyOP/m2yOR0NMwU3MJTMLMjGsbiZj254=",
+        "revisionId": "e6eeb21c-3621-44fb-afb7-f2d8046bd9f4",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": null,
+        "payload": null
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-cert-package-sweeper",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "r4+ys8omMjOgDD3ZWdsebErRagODhiXQy41x2DdxztY=",
+        "revisionId": "609b9d16-f411-4ab7-9344-9f24ce97e5a8",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-command-publisher",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "5Mp8dx6AaTo3tVST1rLs9IWkgobMvA195/gS2OFdZJs=",
+        "revisionId": "706c9ee3-d373-4001-9e9b-c054fa2790d8",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-command-timeout",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "XmpyuNOCpupdrW5yKtwbKFFnSWU2HVEHTxwyahc/Hqo=",
+        "revisionId": "5fa404da-c60c-4ccb-883d-738408ebe748",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-device-api-handler",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "sA8W4aEQH57gwK+gWriomlH+/lZV6TsRKYaPDvbxZHI=",
+        "revisionId": "1191aa5e-630e-455c-bae2-d09a3afa6195",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-esg-export",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "Wc8Hh5A4fNP9Mb9nLlc1Lz8g7sAzyrsfISd2c6DVRng=",
+        "revisionId": "b73c22d1-c285-4321-bad2-ef5eaa4187fa",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-ingestion",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "D3OtuC+EG0bGyipfHkS48VpUlWrBKVFkUDEMPkj4zwg=",
+        "revisionId": "17558395-8a0f-4af3-b1a9-b2b604aeff7f",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-media-evidence",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "aMeLZg19YiqsFo+GJsfhY1xy8MiZaK4B1ip/vuDoOH0=",
+        "revisionId": "0f91ce16-89aa-493e-a2ea-064114854aa2",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-notification-publisher",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "xEcw5LtlpGTtW72pTc7sLDD/kP1ClFMcZYRlHv1dVow=",
+        "revisionId": "1bf8e7c5-84c7-427f-b721-0e56cb9603ce",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-onboarding-api-handler",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "Zb3VQssUXpMT4w5woxdg5Nnjd78v1VkGsQKdafS7pFo=",
+        "revisionId": "d228c41c-5c90-4ae1-90d0-f30c82d62332",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-onboarding-deadline",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "Z/nEmz3ChQqFJW0GlY+VJdfEz61PeF46UR29EUwQ4xk=",
+        "revisionId": "17c96b80-4be4-4151-966e-14b622791f10",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-onboarding-provisioning",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "oJ0CGnYRu5061Qg5mvm5DUvtEQNW6aNYHPGMiRALxfY=",
+        "revisionId": "dc411afa-f85b-469b-8cf9-101b34234999",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-ota-dispatcher",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "dTRd46bX+aMvLlFTFi0VIsIwTfEZHLXt0L71+SgN1NM=",
+        "revisionId": "8f596669-2082-4310-9374-1cb7cc399fb4",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-outbox-publisher",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "zez+h8l9jkgyZ6cilb+DNJWDOBm9B6PTODHzWTGxlfY=",
+        "revisionId": "61e3f2fd-6fd8-4f16-b57a-57889e8d8472",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-replay",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "FOHJ4WnrpYXEEMjqeORYqo99oiN0cOPftE7xOgh4M4o=",
+        "revisionId": "41b01a95-07e0-4335-ab4b-26315603c440",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-replay-trigger-publisher",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "OkjpbI0myIIUudWUEy8PRmWRaoRRELkCcBlmrZD0I+8=",
+        "revisionId": "e150b791-8dab-4c65-8d7b-ce5f0ddaea31",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-retirement-timeout",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "tUthU1MDEh+hrCs5BH0JOK5bMaCz6eLNCgwK51buV+o=",
+        "revisionId": "88d6737a-11a5-493a-8c7a-d528a71ec0b6",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    },
+    {
+      "name": "fdp-test-summary",
+      "status": "OBSERVED",
+      "operation": "lambda:get-function-configuration",
+      "data": {
+        "codeSha256": "OZ9qUnp8Q2WYsOSIC0NRr9v1Mmp0WrFDSbwiVaXOJ0o=",
+        "revisionId": "47c732e5-0271-46aa-9421-f7cb1c62a728",
+        "state": "Active",
+        "lastUpdateStatus": "Successful",
+        "control": "fdp-test-live-image-control",
+        "payload": "fdp-test-live-image-payload"
+      },
+      "matchesHistoricalCode": true,
+      "historicalRevisionUnchanged": true
+    }
+  ],
+  "tables": [
+    {
+      "table": "fdp-test-live-image-control",
+      "configuration": {
+        "status": "OBSERVED",
+        "operation": "dynamodb:describe-table",
+        "data": {
+          "name": "fdp-test-live-image-control",
+          "status": "ACTIVE",
+          "keys": [
+            {
+              "AttributeName": "pk",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "sk",
+              "KeyType": "RANGE"
+            }
+          ]
+        }
+      },
+      "ttl": {
+        "status": "OBSERVED",
+        "operation": "dynamodb:describe-time-to-live",
+        "data": {
+          "TimeToLiveStatus": "DISABLED"
+        }
+      }
+    },
+    {
+      "table": "fdp-test-live-image-payload",
+      "configuration": {
+        "status": "OBSERVED",
+        "operation": "dynamodb:describe-table",
+        "data": {
+          "name": "fdp-test-live-image-payload",
+          "status": "ACTIVE",
+          "keys": [
+            {
+              "AttributeName": "pk",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "sk",
+              "KeyType": "RANGE"
+            }
+          ]
+        }
+      },
+      "ttl": {
+        "status": "OBSERVED",
+        "operation": "dynamodb:describe-time-to-live",
+        "data": {
+          "TimeToLiveStatus": "ENABLED",
+          "AttributeName": "ttl"
+        }
+      }
+    }
+  ],
+  "cognitoClient": {
+    "status": "OBSERVED",
+    "operation": "cognito-idp:describe-user-pool-client",
+    "data": {
+      "pool": "ap-southeast-1_hZMX8LpFo",
+      "client": "5ljdjsf9g563mc1vdc7vjdjm09",
+      "flows": [
+        "ALLOW_REFRESH_TOKEN_AUTH",
+        "ALLOW_USER_SRP_AUTH"
+      ],
+      "tokenUnits": {}
+    }
+  },
+  "viewerGroup": {
+    "status": "OBSERVED",
+    "operation": "cognito-idp:get-group",
+    "data": {
+      "group": "CustomerViewer",
+      "pool": "ap-southeast-1_hZMX8LpFo"
+    }
+  },
+  "projects": {
+    "status": "OBSERVED",
+    "operation": "codebuild:batch-get-projects",
+    "data": {
+      "projects": [
+        {
+          "name": "fdp-test-qa09-readonly-runner",
+          "arn": "arn:aws:codebuild:ap-southeast-1:065986019555:project/fdp-test-qa09-readonly-runner",
+          "serviceRole": "arn:aws:iam::065986019555:role/fdp-test-migration-runner-role",
+          "vpc": {
+            "vpcId": "vpc-0d287fdfa0a4a06bd",
+            "subnets": [
+              "subnet-0f52dca7a7253f7d1",
+              "subnet-0c1584eea5495f25a"
+            ],
+            "securityGroupIds": [
+              "sg-081d9a3ee5f6011e9"
+            ]
+          },
+          "sourceType": "NO_SOURCE",
+          "image": "aws/codebuild/standard:7.0",
+          "variables": [
+            "DB_SECRET_ARN",
+            "QA09_DB_MANIFEST_B64",
+            "QA09_DB_PROBE_SHA256"
+          ]
+        },
+        {
+          "name": "fdp-test-admin-bootstrap-runner",
+          "arn": "arn:aws:codebuild:ap-southeast-1:065986019555:project/fdp-test-admin-bootstrap-runner",
+          "serviceRole": "arn:aws:iam::065986019555:role/fdp-test-admin-bootstrap-runner-role",
+          "vpc": {
+            "vpcId": "vpc-0d287fdfa0a4a06bd",
+            "subnets": [
+              "subnet-0f52dca7a7253f7d1",
+              "subnet-0c1584eea5495f25a"
+            ],
+            "securityGroupIds": [
+              "sg-056df8dcb3fe75dcb"
+            ]
+          },
+          "sourceType": "S3",
+          "image": "aws/codebuild/standard:7.0",
+          "variables": [
+            "DB_SECRET_ARN",
+            "USER_POOL_ID",
+            "FDP_EXPECTED_SOURCE_COMMIT",
+            "FDP_BOOTSTRAP_EMAIL",
+            "FDP_BOOTSTRAP_DISPLAY_NAME",
+            "FDP_BOOTSTRAP_CONFIRMATION"
+          ]
+        }
+      ],
+      "missing": []
+    }
+  },
+  "historicalDeploymentSourceCommit": "69c76e1dd508bf6e03dd21992194a8280109cd0a",
+  "sourceCandidate": "d1a7b81196d60ec320e760da3d18de403563fc12",
+  "currentDeploymentCommitProven": false,
+  "databaseQueried": false,
+  "identitiesCreated": 0,
+  "cloudWrites": 0,
+  "jobsStarted": 0,
+  "deviceActivations": 0,
+  "g4": "NOT_RUN"
+}
