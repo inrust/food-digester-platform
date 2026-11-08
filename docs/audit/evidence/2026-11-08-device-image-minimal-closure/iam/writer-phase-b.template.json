@@ -1,0 +1,111 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadOneSecret",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK"
+    },
+    {
+      "Sid": "DecryptOneSecretOnlyViaSecretsManager",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt"
+      ],
+      "Resource": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com",
+          "kms:EncryptionContext:SecretARN": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK"
+        }
+      }
+    },
+    {
+      "Sid": "ReadCognitoOwnedIdentityMetadata",
+      "Effect": "Allow",
+      "Action": [
+        "cognito-idp:AdminGetUser",
+        "cognito-idp:AdminListGroupsForUser"
+      ],
+      "Resource": "arn:aws:cognito-idp:ap-southeast-1:065986019555:userpool/ap-southeast-1_hZMX8LpFo"
+    },
+    {
+      "Sid": "ReadControlMetadataForExistingActorFence",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem"
+      ],
+      "Resource": "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control"
+    },
+    {
+      "Sid": "WriteOwnLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/lambda/fdp-test-img21-controlled-writer:log-stream:*"
+    },
+    {
+      "Sid": "AllowLambdaVpcEniManagement",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DescribeSubnets",
+        "ec2:DeleteNetworkInterface",
+        "ec2:AssignPrivateIpAddresses",
+        "ec2:UnassignPrivateIpAddresses"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyFunctionCodeEc2Calls",
+      "Effect": "Deny",
+      "Action": [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DescribeSubnets",
+        "ec2:DeleteNetworkInterface",
+        "ec2:AssignPrivateIpAddresses",
+        "ec2:UnassignPrivateIpAddresses"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "ArnEquals": {
+          "lambda:SourceFunctionArn": "arn:aws:lambda:ap-southeast-1:065986019555:function:fdp-test-img21-controlled-writer"
+        }
+      }
+    },
+    {
+      "Sid": "NeverDeleteControlEpoch",
+      "Effect": "Deny",
+      "Action": [
+        "dynamodb:DeleteItem",
+        "dynamodb:BatchWriteItem"
+      ],
+      "Resource": "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control"
+    },
+    {
+      "Sid": "PutOnlyApprovedServerAssignedDevice",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:PutItem"
+      ],
+      "Resource": "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control",
+      "Condition": {
+        "ForAllValues:StringEquals": {
+          "dynamodb:LeadingKeys": [
+            "DEVICE#{{BOUND_DEVICE_UUID}}"
+          ]
+        },
+        "Null": {
+          "dynamodb:LeadingKeys": "false"
+        }
+      }
+    }
+  ]
+}

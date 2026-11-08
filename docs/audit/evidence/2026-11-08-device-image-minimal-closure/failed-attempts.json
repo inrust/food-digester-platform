@@ -1,0 +1,41 @@
+{
+  "status": "RESOLVED_LOCAL_FAILURES_RETAINED",
+  "attempts": [
+    {
+      "id": "F01",
+      "status": "FAIL_RESOLVED",
+      "tests": 33,
+      "passed": 2,
+      "failed": 31,
+      "cause": "Wire date strings were supplied to existing cloud signer requiring Date",
+      "fix": "Only local fixture converted dates to Date; cloud signer unchanged",
+      "evidence": "failure-01-signer-fixture.log"
+    },
+    {
+      "id": "F02",
+      "status": "FAIL_RESOLVED",
+      "cause": "Git quoted non-ASCII paths caused strict metadata classifier to reject comparison",
+      "fix": "Use NUL-delimited Git paths, retaining strict source hashes and classification",
+      "evidence": "failure-02-git-path-comparison.log"
+    },
+    {
+      "id": "F03",
+      "status": "FAIL_RESOLVED",
+      "tests": 51,
+      "passed": 50,
+      "failed": 1,
+      "cause": "Extra generator argument serialized operator policy as a filename string",
+      "fix": "Correct write arguments and check all IAM draft structures; never submitted to AWS",
+      "evidence": "failure-03-policy-generation.log"
+    },
+    {
+      "id": "F04",
+      "status": "FAIL_RESOLVED",
+      "cause": "Check wrapper appended output redirection after Python heredoc terminator",
+      "fix": "Move redirection before heredoc; four Node syntax checks passed",
+      "evidence": "failure-04-check-invocation.log",
+      "evidenceKind": "RECONSTRUCTED_INVOCATION_ERROR_NOTE; original tool output retained in conversation"
+    }
+  ],
+  "unresolvedLocalFailures": []
+}

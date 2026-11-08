@@ -1,0 +1,50 @@
+[
+  {
+    "id": "format-check",
+    "command": "/opt/homebrew/bin/pnpm exec prettier --check --ignore-path /dev/null docs/audit/evidence/2026-11-08-device-image-minimal-closure/prepare.mjs docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/plan.test.mjs docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.mjs docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs",
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  {
+    "id": "eslint",
+    "command": "/opt/homebrew/bin/pnpm exec eslint --no-ignore --rule 'no-undef: off' docs/audit/evidence/2026-11-08-device-image-minimal-closure/prepare.mjs docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/plan.test.mjs docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.mjs docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs",
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  {
+    "id": "node-syntax",
+    "command": "node --check (four MJS files; see node-syntax.log)",
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  {
+    "id": "boundaries",
+    "command": "node scripts/check-boundaries.mjs",
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  {
+    "id": "evidence",
+    "command": "node scripts/check-eng-db-dom-evidence.mjs",
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  {
+    "id": "sensitive-sinks",
+    "command": "node scripts/check-sensitive-sinks.mjs",
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  {
+    "id": "secrets",
+    "command": "node scripts/check-secrets.mjs",
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  {
+    "id": "active-package-check",
+    "command": "node scripts/device-image-target-package.mjs --check",
+    "exitCode": 0,
+    "status": "PASS"
+  }
+]

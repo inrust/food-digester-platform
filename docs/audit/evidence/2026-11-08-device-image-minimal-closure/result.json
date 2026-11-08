@@ -1,0 +1,259 @@
+{
+  "status": "PASS_LOCAL_DESIGN_AND_REFERENCE_ONLY",
+  "baselineCommit": "91604a70",
+  "applicationCandidate": "d1a7b81196d60ec320e760da3d18de403563fc12",
+  "g3EvidenceCommit": "1b1b879ffcf34be7cebd6fe87b8301ae5bd21356",
+  "observedArtifactRelease": "69c76e1dd508bf6e03dd21992194a8280109cd0a",
+  "scope": [
+    "Controlled single-device writer design",
+    "Independent license verifier design",
+    "Two-stage IAM drafts and exact deployment-control delta",
+    "Proposed candidate equivalence binding, not enabled",
+    "Offline reference and policy checks"
+  ],
+  "changesToExistingRuntimeOrPolicies": 0,
+  "checks": [
+    {
+      "id": "offline-reference-policy",
+      "status": "PASS",
+      "tests": 52,
+      "passed": 52,
+      "failed": 0,
+      "command": "node --import tsx --test docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/*.test.mjs",
+      "evidence": "reference-tests.log"
+    },
+    {
+      "id": "existing-active-package-regression",
+      "status": "PASS",
+      "tests": 136,
+      "passed": 136,
+      "failed": 0,
+      "command": "node --import tsx --test scripts/device-image-target-package*.test.mjs",
+      "evidence": "active-package-tests.log"
+    },
+    {
+      "id": "reproducibility",
+      "status": "PASS",
+      "filesCompared": 11,
+      "evidence": "reproducibility.json"
+    },
+    {
+      "id": "format-check",
+      "command": "/opt/homebrew/bin/pnpm exec prettier --check --ignore-path /dev/null docs/audit/evidence/2026-11-08-device-image-minimal-closure/prepare.mjs docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/plan.test.mjs docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.mjs docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs",
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "eslint",
+      "command": "/opt/homebrew/bin/pnpm exec eslint --no-ignore --rule 'no-undef: off' docs/audit/evidence/2026-11-08-device-image-minimal-closure/prepare.mjs docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/plan.test.mjs docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.mjs docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs",
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "node-syntax",
+      "command": "node --check (four MJS files; see node-syntax.log)",
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "boundaries",
+      "command": "node scripts/check-boundaries.mjs",
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "evidence",
+      "command": "node scripts/check-eng-db-dom-evidence.mjs",
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "sensitive-sinks",
+      "command": "node scripts/check-sensitive-sinks.mjs",
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "secrets",
+      "command": "node scripts/check-secrets.mjs",
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "active-package-check",
+      "command": "node scripts/device-image-target-package.mjs --check",
+      "exitCode": 0,
+      "status": "PASS"
+    }
+  ],
+  "qualityScope": "Four new MJS files explicitly checked despite docs ignores. ESLint no-undef off matches Node MJS convention; no production lint rule changed.",
+  "comparison": {
+    "deliverySources": 1693,
+    "deliveryChanges": 0,
+    "buildInputTrees": 8,
+    "fullVerificationInputs": 1713,
+    "changedFullVerificationInputs": 12,
+    "matchingRetainedApplicationFunctionHashes": 20,
+    "historicalOnly": true,
+    "freshTargetObservations": 0,
+    "equivalenceAcceptanceApproved": false,
+    "defaultStrictAdmissionChanged": false
+  },
+  "failures": {
+    "resolvedLocalAttemptCount": 4,
+    "details": "failed-attempts.json",
+    "unresolvedLocalFailures": []
+  },
+  "blocked": [
+    {
+      "id": "deployedCommit",
+      "ownerRole": "发布负责人",
+      "status": "BLOCKED",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "deploymentProof",
+      "ownerRole": "发布负责人",
+      "status": "BLOCKED",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "runtimeVersionsProof",
+      "ownerRole": "云端运维",
+      "status": "BLOCKED",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "deviceId",
+      "ownerRole": "环境负责人",
+      "status": "BLOCKED",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "customerId",
+      "ownerRole": "环境负责人",
+      "status": "BLOCKED",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "deviceMtlsRef",
+      "ownerRole": "身份负责人",
+      "status": "BLOCKED",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "mqttIdentityRef",
+      "ownerRole": "身份负责人",
+      "status": "BLOCKED",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "viewerARef",
+      "ownerRole": "身份负责人",
+      "status": "BLOCKED",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "testScopeProof",
+      "ownerRole": "验收执行负责人",
+      "status": "BLOCKED",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "executionWindowProof",
+      "ownerRole": "验收执行负责人",
+      "status": "BLOCKED",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "sequenceReservation",
+      "ownerRole": "设备接入负责人",
+      "status": "BLOCKED",
+      "reason": "MISSING_TARGET_INPUT"
+    }
+  ],
+  "admission": {
+    "provided": 11,
+    "missingOrExcluded": 11,
+    "basis": "Retained prior admission; no new target inputs claimed",
+    "executionReady": false
+  },
+  "notImplemented": [
+    "Production writer handler and atomic ledger adapter",
+    "Target license verifier adapter and fixed-secret-version handling",
+    "Isolated Lambda/CDK resource wiring",
+    "Reviewed proof-v2/source-equivalence acceptance"
+  ],
+  "notRun": [
+    {
+      "id": "FULL_PNPM_VERIFY_BUILD_TYPECHECK",
+      "status": "NOT_RUN",
+      "reason": "Documentation, audit and offline prototypes only; no application or contract changes; existing G3 checked without claiming refreshed full G3"
+    },
+    {
+      "id": "AWS_IAM_SERVICE_EVALUATION",
+      "status": "NOT_RUN",
+      "reason": "Only static local templates; no cloud simulation or effective-permission validation"
+    },
+    {
+      "id": "FRESH_TARGET_READS",
+      "status": "NOT_RUN",
+      "reason": "No account calls in this local task; prior observations explicitly retained"
+    },
+    {
+      "id": "RESOURCE_DEPLOYMENT_IAM_POLICY_UPDATE",
+      "status": "NOT_RUN",
+      "reason": "Not authorized in this task"
+    },
+    {
+      "id": "TARGET_DB_MIGRATION",
+      "status": "NOT_RUN",
+      "reason": "No migration planned or executed"
+    },
+    {
+      "id": "NATIVE_PG_DDB_WRITE_CONCURRENCY",
+      "status": "NOT_RUN",
+      "reason": "Actual handler and authorized target execution pending"
+    },
+    {
+      "id": "REAL_LICENSE_SECRET_VERIFICATION",
+      "status": "NOT_RUN",
+      "reason": "Only synthetic keys and actual cloud signer used locally"
+    },
+    {
+      "id": "NEW_EXECUTION_WINDOW",
+      "status": "NOT_RUN",
+      "reason": "Prior preparation window cannot authorize deployment, IAM changes or G4"
+    },
+    {
+      "id": "CF01_CF02_CF03_REAL_IMAGES",
+      "status": "NOT_RUN",
+      "reason": "No real G4 transmission authorized"
+    },
+    {
+      "id": "APP_PHYSICAL_DEVICE_ACCEPTANCE",
+      "status": "NOT_RUN",
+      "reason": "Third-party responsibility; not a cloud Gate precondition"
+    }
+  ],
+  "g3": "Existing d1 candidate PASS_LOCAL evidence validated; no new runtime candidate certified",
+  "g4": "NOT_RUN",
+  "actions": {
+    "cloudAccountApiCalls": 0,
+    "targetWrites": 0,
+    "iamChanges": 0,
+    "deployments": 0,
+    "targetMigrations": 0,
+    "deviceEnables": 0,
+    "realG4Transmissions": 0,
+    "pushes": 0
+  },
+  "nextTask": "MC01: implement closed writer/atomic audit ledger and bound license-verifier handlers with local rollback, unknown-result and authorization tests; then MC02 local IaC review",
+  "applicationOrPhysicalDeviceRequired": false,
+  "hashes": {
+    "sourceManifest": "sources.sha256",
+    "artifactManifest": "artifacts.sha256",
+    "selfHashExcludedFromArtifactManifest": true,
+    "sourceCount": 26
+  }
+}

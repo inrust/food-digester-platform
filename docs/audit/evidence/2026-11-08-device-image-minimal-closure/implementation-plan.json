@@ -1,0 +1,86 @@
+{
+  "status": "DESIGN_AND_LOCAL_REFERENCE_ONLY",
+  "applicationCandidate": "d1a7b81196d60ec320e760da3d18de403563fc12",
+  "existingControlPlanePolicyEditsPlanned": [
+    "infra/iam/FDP-DeploymentBoundary.json",
+    "infra/iam/FDP-CloudFormationExecutionPolicy.json"
+  ],
+  "rolePath": "/img21/",
+  "deploymentAuthorized": false,
+  "iamChangesAuthorized": false,
+  "realG4Authorized": false,
+  "recommended": {
+    "writer": "Private versioned Lambda with existing authority wrapper",
+    "verifier": "Separate private versioned Lambda, exact license secret, no DB or DynamoDB",
+    "binding": "Proposed reviewed application-source equivalence; observed release remains 69c76e1d"
+  },
+  "newResources": {
+    "lambdaFunctions": 2,
+    "executionRoles": 2,
+    "permissionBoundaries": 2,
+    "logGroups": 2,
+    "newTables": 0,
+    "newPublicEndpoints": 0,
+    "newVpcs": 0,
+    "newSecrets": 0
+  },
+  "phases": [
+    {
+      "id": "MC01",
+      "work": "Implement closed writer, atomic DB audit ledger and single-run verifier handlers/adapters",
+      "status": "NOT_IMPLEMENTED"
+    },
+    {
+      "id": "MC02",
+      "work": "Implement isolated test-only IaC, phase A/B IAM, connection budget and fixed-version invocation",
+      "status": "NOT_IMPLEMENTED"
+    },
+    {
+      "id": "MC03",
+      "work": "Review source-equivalence mode and implement proof v2/tool bindings; refresh candidate G3 where required",
+      "status": "NOT_IMPLEMENTED"
+    },
+    {
+      "id": "MC04",
+      "work": "After separate authorization: phase A deployment, validate fixed version/policies and seed two own identities",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "MC05",
+      "work": "Normal application provisioning, immutable server-ID/certificate binding and publishing the bound verifier",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "MC06",
+      "work": "Bind one UUID to phase B PutItem and verifier version; validate permissions/authority/License and enable only own preview",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "MC07",
+      "work": "Fresh explicitly approved G4 window for CF01-CF03; cleanup and independent source review",
+      "status": "NOT_RUN"
+    }
+  ],
+  "requiredApprovals": [
+    "TWO_NEW_PRIVATE_TEST_FUNCTIONS_AND_SCOPED_ROLES_BOUNDARIES",
+    "CONTROL_METADATA_TABLE_READ_SCOPE_ACKNOWLEDGEMENT",
+    "PHASE_B_POLICY_UPDATE_AFTER_REAL_DEVICE_ID",
+    "VERSION_EQUIVALENCE_ACCEPTANCE_DECISION",
+    "NEW_PREPARATION_AND_G4_WINDOWS"
+  ],
+  "notRun": [
+    "WORKER_RUNTIME_IMPLEMENTATION",
+    "IAM_SERVICE_EVALUATION",
+    "DEPLOYMENT",
+    "NATIVE_WRITE_AND_DDB_CONCURRENCY",
+    "REAL_LICENSE_SECRET_ACCESS",
+    "FRESH_TARGET_VERSION_RECHECK",
+    "CF01_CF02_CF03"
+  ],
+  "activeAdmissionUnchanged": {
+    "provided": 11,
+    "missingOrExcluded": 11,
+    "g4": "NOT_RUN"
+  },
+  "appOrPhysicalDeviceRequired": false
+}

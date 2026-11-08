@@ -1,0 +1,444 @@
+✖ eligible owned device passes local contract only (0.778125ms)
+✖ writer reference rejects foreign device (0.072292ms)
+✖ writer reference rejects foreign tenant (0.056667ms)
+✖ writer reference rejects wrong serial (0.051792ms)
+✖ writer reference rejects extra device (0.044875ms)
+✖ writer reference rejects stale authority (0.043708ms)
+✖ writer reference rejects unlicensed device (0.040791ms)
+✖ writer reference rejects revoked certificate (0.037667ms)
+✖ writer reference rejects missing wrapper (0.048625ms)
+✖ writer reference rejects missing table environment (0.076083ms)
+✖ writer reference rejects arbitrary SQL input (0.047792ms)
+✖ writer reference rejects unknown operation (0.038125ms)
+✖ writer reference rejects expired window (0.035542ms)
+✖ writer reference rejects approval absent (0.032375ms)
+✖ writer reference rejects wrong account (0.031125ms)
+✖ new manifest-owned actor only; existing actor leases cannot be silently ignored (0.068375ms)
+✖ one-time device binding is immutable and requires trusted database ownership facts (0.062ms)
+✔ unknown and post-commit recovery failures never become blind retries or claimed rollback (0.138292ms)
+✖ local HMAC reference agrees with actual cloud signer for approved img21 binding and clears Buffer (0.110166ms)
+✖ invalid verifier binding foreign certificate is rejected before key access (0.069792ms)
+✖ invalid verifier binding foreign tenant is rejected before key access (0.052083ms)
+✖ invalid verifier binding old prefix rewrite is rejected before key access (0.051875ms)
+✖ invalid verifier binding wrong model is rejected before key access (0.049042ms)
+✖ invalid verifier binding unknown binding is rejected before key access (0.049084ms)
+✖ invalid verifier binding expired nonce is rejected before key access (0.05925ms)
+✖ invalid verifier binding overlong TTL is rejected before key access (0.050416ms)
+✖ invalid verifier binding wrong manifest is rejected before key access (0.063584ms)
+✖ invalid verifier binding wrong payload device is rejected before key access (0.046959ms)
+✖ invalid verifier binding invalid version is rejected before key access (0.04825ms)
+✖ invalid verifier binding duplicate entitlement is rejected before key access (0.042417ms)
+✖ invalid verifier binding non-UTC instant is rejected before key access (0.041875ms)
+✖ wrong key and response arriving after expiry are rejected and cleared (0.061625ms)
+✔ actual PGlite authority wrapper reads all policy CONTROL metadata for a fresh user, without writing foreign devices (830.56075ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 2
+ℹ fail 31
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1172.113334
+
+✖ failing tests:
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:21:1
+✖ eligible owned device passes local contract only (0.778125ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:21:70)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects foreign device (0.072292ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects foreign tenant (0.056667ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects wrong serial (0.051792ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects extra device (0.044875ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects stale authority (0.043708ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects unlicensed device (0.040791ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects revoked certificate (0.037667ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects missing wrapper (0.048625ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects missing table environment (0.076083ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects arbitrary SQL input (0.047792ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects unknown operation (0.038125ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects expired window (0.035542ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects approval absent (0.032375ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:3
+✖ writer reference rejects wrong account (0.031125ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:30:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:31:1
+✖ new manifest-owned actor only; existing actor leases cannot be silently ignored (0.068375ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:32:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:35:1
+✖ one-time device binding is immutable and requires trusted database ownership facts (0.062ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:36:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:46:1
+✖ local HMAC reference agrees with actual cloud signer for approved img21 binding and clears Buffer (0.110166ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:47:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:3
+✖ invalid verifier binding foreign certificate is rejected before key access (0.069792ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:91)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:3
+✖ invalid verifier binding foreign tenant is rejected before key access (0.052083ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:91)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:3
+✖ invalid verifier binding old prefix rewrite is rejected before key access (0.051875ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:91)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:3
+✖ invalid verifier binding wrong model is rejected before key access (0.049042ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:91)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:3
+✖ invalid verifier binding unknown binding is rejected before key access (0.049084ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:91)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:3
+✖ invalid verifier binding expired nonce is rejected before key access (0.05925ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:91)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:3
+✖ invalid verifier binding overlong TTL is rejected before key access (0.050416ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:91)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:3
+✖ invalid verifier binding wrong manifest is rejected before key access (0.063584ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:91)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:3
+✖ invalid verifier binding wrong payload device is rejected before key access (0.046959ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:91)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:3
+✖ invalid verifier binding invalid version is rejected before key access (0.04825ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:91)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:3
+✖ invalid verifier binding duplicate entitlement is rejected before key access (0.042417ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:91)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:3
+✖ invalid verifier binding non-UTC instant is rejected before key access (0.041875ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:59:91)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:60:1
+✖ wrong key and response arriving after expiry are rejected and cleared (0.061625ms)
+  TypeError [Error]: payload.validFrom.toISOString is not a function
+      at signLicensePayload (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api/src/admin/license/service.ts:198:34)
+      at fixture (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:18:371)
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/docs/audit/evidence/2026-11-08-device-image-minimal-closure/prototypes/reference-guards.test.mjs:61:42)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

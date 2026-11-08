@@ -1,0 +1,24 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeOnlyPublishedVersionsWithinApprovedWindow",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:InvokeFunction"
+      ],
+      "Resource": [
+        "arn:aws:lambda:ap-southeast-1:065986019555:function:fdp-test-img21-controlled-writer:{{WRITER_VERSION}}",
+        "arn:aws:lambda:ap-southeast-1:065986019555:function:fdp-test-img21-license-verifier:{{VERIFIER_VERSION}}"
+      ],
+      "Condition": {
+        "DateGreaterThanEquals": {
+          "aws:CurrentTime": "{{WINDOW_START_UTC}}"
+        },
+        "DateLessThan": {
+          "aws:CurrentTime": "{{WINDOW_END_UTC}}"
+        }
+      }
+    }
+  ]
+}
