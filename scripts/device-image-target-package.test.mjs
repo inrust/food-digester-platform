@@ -12,8 +12,6 @@ import {
   INPUTS,
   sha,
   verifyG3,
-  buildPackage,
-  writeOrCheck,
   inputTemplate,
   admission,
   receiptTemplate,
@@ -36,6 +34,7 @@ import {
   ar12ExclusionRecord,
   ar12VariantRecord,
 } from './device-image-target-ar12-scope.mjs';
+import { candidateFixture } from './test-support/device-image-candidate-fixture.mjs';
 
 const clone = (value) => structuredClone(value);
 function structuralFixture() {
@@ -215,25 +214,45 @@ function structuralFixture() {
     },
   };
 }
-test('G3 candidate binds all committed source and evidence hashes; current runtime is unchanged', () => {
-  const binding = verifyG3();
+test('G3 candidate binds historical hashes and rejects changed IAM source', async (t) => {
+  const fixture = await candidateFixture();
+  t.after(fixture.cleanup);
+  const binding = fixture.tool.verifyG3();
   assert.equal(binding.sourceCommit, CANDIDATE);
   assert.equal(binding.sources.count, 1693);
   assert.equal(binding.artifacts.count, 34);
   assert.equal(binding.g4, 'NOT_RUN');
+  const path = 'infra/iam/FDP-CloudFormationExecutionPolicy.json';
+  writeFileSync(join(fixture.root, path), readFileSync(join(fixture.root, path), 'utf8') + '\n');
+  assert.throws(() => fixture.tool.verifyG3(), { message: `CURRENT_G3_SOURCE_DRIFT:${path}` });
+  assert.throws(() => fixture.tool.buildPackage(), { message: `CURRENT_G3_SOURCE_DRIFT:${path}` });
+  const run = spawnSync(process.execPath, [join(fixture.root, 'scripts/device-image-target-package.mjs'), '--check'], {
+    encoding: 'utf8',
+  });
+  assert.equal(run.status, 1);
+  assert.match(run.stderr, /CURRENT_G3_SOURCE_DRIFT:infra\/iam\/FDP-CloudFormationExecutionPolicy.json/u);
 });
-test('generated package is deterministic, cwd-independent, complete and fresh', () => {
-  const a = buildPackage(),
-    b = buildPackage();
+test('historical candidate package is deterministic, cwd-independent, complete and fresh', async (t) => {
+  const fixture = await candidateFixture();
+  t.after(fixture.cleanup);
+  const a = fixture.tool.buildPackage(),
+    b = fixture.tool.buildPackage();
   assert.deepEqual(a, b);
   assert.equal(Object.keys(a).length, 12);
-  assert.equal(writeOrCheck(true).status, 'PASS_OFFLINE_PACKAGE');
-  const run = spawnSync(process.execPath, [join(ROOT, 'scripts/device-image-target-package.mjs'), '--check'], {
+  assert.equal(fixture.tool.writeOrCheck(true).status, 'PASS_OFFLINE_PACKAGE');
+  const run = spawnSync(process.execPath, [join(fixture.root, 'scripts/device-image-target-package.mjs'), '--check'], {
     cwd: tmpdir(),
     encoding: 'utf8',
   });
   assert.equal(run.status, 0, run.stderr);
   assert.equal(JSON.parse(run.stdout).cloudRequests, 0);
+  // The real checkout still uses the strict production verifier. A passing
+  // historical fixture cannot turn changed runtime/IAM source into a fresh gate.
+  const manifest = JSON.parse(readFileSync(join(ROOT, PACKAGE, 'candidate.json')));
+  const bytes = readCandidateFiles([manifest.sources.path])[manifest.sources.path];
+  const drift = manifestRows(bytes).find((row) => sha(readFileSync(join(ROOT, row.path))) !== row.sha256);
+  if (drift) assert.throws(() => verifyG3(), { message: `CURRENT_G3_SOURCE_DRIFT:${drift.path}` });
+  else assert.deepEqual(verifyG3(), fixture.tool.verifyG3());
 });
 test('case graph includes 44 cases and all five preview operations, full archive orders and authority variants', () => {
   const catalog = validateCases();

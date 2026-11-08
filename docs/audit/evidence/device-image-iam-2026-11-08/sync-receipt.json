@@ -1,0 +1,104 @@
+{
+  "account": "065986019555",
+  "region": "ap-southeast-1",
+  "authorization": "User explicitly authorized IAM synchronization and test deployment verification",
+  "policies": [
+    {
+      "name": "FDP-CloudFormationExecutionPolicy",
+      "arn": "arn:aws:iam::065986019555:policy/FDP-CloudFormationExecutionPolicy",
+      "previousDefault": "v8",
+      "sid": "ManageLiveImageTables",
+      "deleteArchivedVersion": "v4",
+      "newDefault": "v9",
+      "readbackMatches": true,
+      "appliedAt": "2026-11-08T09:40:07.195138+00:00",
+      "previousStatementsPreserved": true,
+      "addedStatement": {
+        "Sid": "ManageLiveImageTables",
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:CreateTable",
+          "dynamodb:DeleteTable",
+          "dynamodb:DescribeTable",
+          "dynamodb:UpdateTable",
+          "dynamodb:DescribeContinuousBackups",
+          "dynamodb:UpdateContinuousBackups",
+          "dynamodb:DescribeContributorInsights",
+          "dynamodb:DescribeKinesisStreamingDestination",
+          "dynamodb:DescribeTimeToLive",
+          "dynamodb:UpdateTimeToLive",
+          "dynamodb:GetResourcePolicy",
+          "dynamodb:ListTagsOfResource",
+          "dynamodb:TagResource",
+          "dynamodb:UntagResource"
+        ],
+        "Resource": [
+          "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control",
+          "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-payload"
+        ]
+      },
+      "documentSha256": "8699ec1b96ad22dc457a1715b3ae42a4138599db2347d1a572cfb17089640941",
+      "deletedVersionBackup": "FDP-CloudFormationExecutionPolicy-archived-v4.json"
+    },
+    {
+      "name": "FDP-DeploymentBoundary",
+      "arn": "arn:aws:iam::065986019555:policy/FDP-DeploymentBoundary",
+      "previousDefault": "v8",
+      "sid": "ManageLiveImageTables",
+      "deleteArchivedVersion": "v4",
+      "newDefault": "v9",
+      "readbackMatches": true,
+      "appliedAt": "2026-11-08T09:40:14.583132+00:00",
+      "previousStatementsPreserved": true,
+      "addedStatement": {
+        "Sid": "ManageLiveImageTables",
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:CreateTable",
+          "dynamodb:DeleteTable",
+          "dynamodb:DescribeTable",
+          "dynamodb:UpdateTable",
+          "dynamodb:DescribeContinuousBackups",
+          "dynamodb:UpdateContinuousBackups",
+          "dynamodb:DescribeContributorInsights",
+          "dynamodb:DescribeKinesisStreamingDestination",
+          "dynamodb:DescribeTimeToLive",
+          "dynamodb:UpdateTimeToLive",
+          "dynamodb:GetResourcePolicy",
+          "dynamodb:ListTagsOfResource",
+          "dynamodb:TagResource",
+          "dynamodb:UntagResource"
+        ],
+        "Resource": [
+          "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control",
+          "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-payload"
+        ]
+      },
+      "documentSha256": "015252a85421f03dae7179eebf8dd2bcb7fafdd1dae62b71632411e902d58bfe",
+      "deletedVersionBackup": "FDP-DeploymentBoundary-archived-v4.json"
+    },
+    {
+      "name": "FDP-ServiceBoundary",
+      "arn": "arn:aws:iam::065986019555:policy/FDP-ServiceBoundary",
+      "previousDefault": "v8",
+      "sid": "AllowLiveImageItemAccess",
+      "deleteArchivedVersion": null,
+      "newDefault": "v9",
+      "readbackMatches": true,
+      "appliedAt": "2026-11-08T09:40:20.092275+00:00",
+      "previousStatementsPreserved": true,
+      "addedStatement": {
+        "Sid": "AllowLiveImageItemAccess",
+        "Effect": "Allow",
+        "Action": ["dynamodb:GetItem", "dynamodb:PutItem"],
+        "Resource": [
+          "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control",
+          "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-payload"
+        ]
+      },
+      "documentSha256": "68139b49d7229f217b821ab25148a462769b508f525c089e0177cf189b44dc1c"
+    }
+  ],
+  "simulation": "BLOCKED_ACCESS_DENIED",
+  "deployment": "PENDING_REMOTE_VERIFICATION"
+}
