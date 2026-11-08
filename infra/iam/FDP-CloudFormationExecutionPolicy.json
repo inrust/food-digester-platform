@@ -43,6 +43,30 @@
       "Resource": "*"
     },
     {
+      "Sid": "ManageLiveImageTables",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:CreateTable",
+        "dynamodb:DeleteTable",
+        "dynamodb:DescribeTable",
+        "dynamodb:UpdateTable",
+        "dynamodb:DescribeContinuousBackups",
+        "dynamodb:UpdateContinuousBackups",
+        "dynamodb:DescribeContributorInsights",
+        "dynamodb:DescribeKinesisStreamingDestination",
+        "dynamodb:DescribeTimeToLive",
+        "dynamodb:UpdateTimeToLive",
+        "dynamodb:GetResourcePolicy",
+        "dynamodb:ListTagsOfResource",
+        "dynamodb:TagResource",
+        "dynamodb:UntagResource"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control",
+        "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-payload"
+      ]
+    },
+    {
       "Sid": "AllowFDPServiceRoleManagement",
       "Effect": "Allow",
       "Action": [

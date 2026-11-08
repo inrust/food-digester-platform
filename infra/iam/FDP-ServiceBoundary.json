@@ -40,6 +40,15 @@
       "Resource": "*"
     },
     {
+      "Sid": "AllowLiveImageItemAccess",
+      "Effect": "Allow",
+      "Action": ["dynamodb:GetItem", "dynamodb:PutItem"],
+      "Resource": [
+        "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control",
+        "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-payload"
+      ]
+    },
+    {
       "Sid": "DenyHumanCredentialAndBoundaryMutation",
       "Effect": "Deny",
       "Action": [

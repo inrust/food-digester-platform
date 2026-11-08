@@ -10,6 +10,44 @@ import {
 
 const root = resolve(import.meta.dirname, '..');
 
+test('live-image deployment grants and boundaries permit only the two test tables', () => {
+  const tables = [
+    'arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control',
+    'arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-payload',
+  ];
+  // Includes the provider's read handler, which runs even when optional features are absent.
+  const managementActions = [
+    'CreateTable',
+    'DeleteTable',
+    'DescribeTable',
+    'UpdateTable',
+    'DescribeContinuousBackups',
+    'UpdateContinuousBackups',
+    'DescribeContributorInsights',
+    'DescribeKinesisStreamingDestination',
+    'DescribeTimeToLive',
+    'UpdateTimeToLive',
+    'GetResourcePolicy',
+    'ListTagsOfResource',
+    'TagResource',
+    'UntagResource',
+  ].map((action) => `dynamodb:${action}`);
+  for (const name of ['FDP-CloudFormationExecutionPolicy', 'FDP-DeploymentBoundary', 'FDP-ServiceBoundary']) {
+    const policy = JSON.parse(readFileSync(resolve(root, `iam/${name}.json`), 'utf8'));
+    const statements = policy.Statement.filter(
+      (statement: { Effect: string; Action: string | string[] }) =>
+        statement.Effect === 'Allow' &&
+        [statement.Action].flat().some((action) => action === '*' || action.startsWith('dynamodb:')),
+    );
+    assert.lengthOf(statements, 1, `${name} must have a scoped DynamoDB allow`);
+    assert.sameMembers(statements[0].Resource, tables);
+    assert.sameMembers(
+      statements[0].Action,
+      name === 'FDP-ServiceBoundary' ? ['dynamodb:GetItem', 'dynamodb:PutItem'] : managementActions,
+    );
+  }
+});
+
 test('deployment naming matches the account-specific bootstrap contract', () => {
   assert.equal(FDP_BOOTSTRAP_QUALIFIER, 'fdptest01');
   assert.equal(FDP_SERVICE_BOUNDARY_NAME, 'FDP-ServiceBoundary');
