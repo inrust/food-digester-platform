@@ -1,0 +1,72 @@
+[
+  {
+    "id": "typecheck",
+    "command": "/opt/homebrew/bin/pnpm exec tsc -p tools/img21/tsconfig.json",
+    "exitCode": 0,
+    "status": "PASS",
+    "log": "typecheck-final.log"
+  },
+  {
+    "id": "lint",
+    "command": "/opt/homebrew/bin/pnpm exec eslint tools/img21",
+    "exitCode": 0,
+    "status": "PASS",
+    "log": "lint-final.log"
+  },
+  {
+    "id": "format",
+    "command": "/opt/homebrew/bin/pnpm exec prettier --check tools/img21",
+    "exitCode": 0,
+    "status": "PASS",
+    "log": "format-final.log"
+  },
+  {
+    "id": "authority-regression",
+    "command": "/opt/homebrew/bin/pnpm exec vitest run apps/cloud-api/test/live-image-postgres.test.ts packages/aws-clients/test/live-image-dynamodb.test.ts",
+    "exitCode": 0,
+    "status": "PASS",
+    "log": "authority-regression.log"
+  },
+  {
+    "id": "package-regression",
+    "command": "node --import tsx --test scripts/device-image-target-package.test.mjs",
+    "exitCode": 0,
+    "status": "PASS",
+    "log": "package-regression.log"
+  },
+  {
+    "id": "boundaries",
+    "command": "node scripts/check-boundaries.mjs",
+    "exitCode": 0,
+    "status": "PASS",
+    "log": "boundaries.log"
+  },
+  {
+    "id": "evidence",
+    "command": "node scripts/check-eng-db-dom-evidence.mjs",
+    "exitCode": 0,
+    "status": "PASS",
+    "log": "evidence.log"
+  },
+  {
+    "id": "secrets",
+    "command": "node scripts/check-secrets.mjs",
+    "exitCode": 0,
+    "status": "PASS",
+    "log": "secrets.log"
+  },
+  {
+    "id": "sensitive-sinks",
+    "command": "node scripts/check-sensitive-sinks.mjs",
+    "exitCode": 0,
+    "status": "PASS",
+    "log": "sensitive-sinks.log"
+  },
+  {
+    "id": "active-package-check",
+    "command": "node scripts/device-image-target-package.mjs --check",
+    "exitCode": 0,
+    "status": "PASS",
+    "log": "active-package-check.log"
+  }
+]

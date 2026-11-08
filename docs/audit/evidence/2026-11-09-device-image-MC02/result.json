@@ -1,0 +1,338 @@
+{
+  "status": "PASS_LOCAL_MC02",
+  "clientDate": "2026-11-09",
+  "baselineCommit": "1c237a48e196f9caf0de0d09b1916d98ab90b565",
+  "scope": "Independent tool IaC, rendered but unapplied policies, canonical manifests/ZIPs, post-publish numeric binding protocol and offline validation",
+  "applicationCandidate": "d1a7b81196d60ec320e760da3d18de403563fc12",
+  "applicationG3EvidenceCommit": "1b1b879ffcf34be7cebd6fe87b8301ae5bd21356",
+  "newToolsCertifiedByOldApplicationG3": false,
+  "checks": [
+    {
+      "id": "tool-tests",
+      "status": "PASS",
+      "tests": 120,
+      "priorMC01": 68,
+      "newMC02": 52,
+      "passed": 120,
+      "failed": 0,
+      "command": "pnpm exec vitest run --config tools/img21/vitest.config.mts",
+      "log": "tests.log"
+    },
+    {
+      "id": "independent-zip-validation",
+      "status": "PASS",
+      "artifacts": 2,
+      "method": "Python zipfile CRC/name/time/manifest/code checks, real built ESM handler imports and fail-closed invocation with network blocked",
+      "log": "package-check.log"
+    },
+    {
+      "id": "reproducibility",
+      "status": "PASS",
+      "filesCompared": 18,
+      "log": "reproducibility.log"
+    },
+    {
+      "id": "application-isolation",
+      "status": "PASS",
+      "command": "git diff --exit-code 1c237a48 -- apps packages contracts infra package.json pnpm-lock.yaml pnpm-workspace.yaml",
+      "unchangedPaths": [
+        "apps",
+        "packages",
+        "contracts",
+        "infra",
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml"
+      ]
+    },
+    {
+      "id": "typecheck",
+      "command": "/opt/homebrew/bin/pnpm exec tsc -p tools/img21/tsconfig.json",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "typecheck-final.log"
+    },
+    {
+      "id": "lint",
+      "command": "/opt/homebrew/bin/pnpm exec eslint tools/img21",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "lint-final.log"
+    },
+    {
+      "id": "format",
+      "command": "/opt/homebrew/bin/pnpm exec prettier --check tools/img21",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "format-final.log"
+    },
+    {
+      "id": "authority-regression",
+      "command": "/opt/homebrew/bin/pnpm exec vitest run apps/cloud-api/test/live-image-postgres.test.ts packages/aws-clients/test/live-image-dynamodb.test.ts",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "authority-regression.log",
+      "tests": 36,
+      "passed": 36,
+      "failed": 0
+    },
+    {
+      "id": "package-regression",
+      "command": "node --import tsx --test scripts/device-image-target-package.test.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "package-regression.log",
+      "tests": 136,
+      "passed": 136,
+      "failed": 0
+    },
+    {
+      "id": "boundaries",
+      "command": "node scripts/check-boundaries.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "boundaries.log"
+    },
+    {
+      "id": "evidence",
+      "command": "node scripts/check-eng-db-dom-evidence.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "evidence.log"
+    },
+    {
+      "id": "secrets",
+      "command": "node scripts/check-secrets.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "secrets.log"
+    },
+    {
+      "id": "sensitive-sinks",
+      "command": "node scripts/check-sensitive-sinks.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "sensitive-sinks.log"
+    },
+    {
+      "id": "active-package-check",
+      "command": "node scripts/device-image-target-package.mjs --check",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "active-package-check.log"
+    }
+  ],
+  "resources": {
+    "A": {
+      "AWS::IAM::ManagedPolicy": 1,
+      "AWS::IAM::Role": 1,
+      "AWS::Logs::LogGroup": 1,
+      "AWS::Lambda::Function": 1,
+      "AWS::Lambda::Version": 1,
+      "AWS::Lambda::EventInvokeConfig": 1
+    },
+    "B": {
+      "AWS::IAM::ManagedPolicy": 2,
+      "AWS::IAM::Role": 2,
+      "AWS::Logs::LogGroup": 2,
+      "AWS::Lambda::Function": 2,
+      "AWS::Lambda::Version": 2,
+      "AWS::Lambda::EventInvokeConfig": 2
+    }
+  },
+  "targetResourcesCreated": 0,
+  "policiesApplied": 0,
+  "invokeGrantGeneratedByLocalEntry": false,
+  "syntheticFixture": {
+    "fixtureClock": "2026-11-09T00:01:00.000Z",
+    "containsSyntheticCommitAndIds": true,
+    "notTargetAdmissionInput": true,
+    "deploymentReady": false,
+    "budgetExampleOnly": {
+      "ordinarySlots": 70,
+      "existingConnections": 46,
+      "writerConnections": 1,
+      "operationalReserve": 8,
+      "idleOverlapReserve": 10,
+      "required": 65,
+      "remaining": 5
+    },
+    "networkAttempts": 0
+  },
+  "publicationProtocol": {
+    "bindingMode": "PUBLISHED_POST_OBSERVATION",
+    "legacyFixedNumericModePreserved": true,
+    "latestOrAliasRejected": true,
+    "zipCodeSha256AndManifestEntityChecked": true,
+    "captureFreshnessMs": 15000,
+    "snapshotMaxAgeMs": 300000,
+    "writerAndVerifierGrantExpiriesSeparate": true,
+    "nativeReadAdapterExecuted": false,
+    "observerReadCommandsPerFunction": 13,
+    "grantApplicationImplemented": false
+  },
+  "failedRuns": 2,
+  "resolvedFailedRuns": 2,
+  "warningsResolved": 1,
+  "unresolvedLocalFailures": [],
+  "failureDetails": "failed-attempts.json",
+  "targetAdmission": {
+    "providedInputs": 11,
+    "missingOrExcluded": 11,
+    "basis": "Previously recorded preparation only; no fresh target observations or new actual IDs claimed",
+    "executionReady": false,
+    "blocked": [
+      {
+        "id": "deployedCommit",
+        "ownerRole": "发布负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "deploymentProof",
+        "ownerRole": "发布负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "runtimeVersionsProof",
+        "ownerRole": "云端运维",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "deviceId",
+        "ownerRole": "环境负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "customerId",
+        "ownerRole": "环境负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "deviceMtlsRef",
+        "ownerRole": "身份负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "mqttIdentityRef",
+        "ownerRole": "身份负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "viewerARef",
+        "ownerRole": "身份负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "testScopeProof",
+        "ownerRole": "验收执行负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "executionWindowProof",
+        "ownerRole": "验收执行负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "sequenceReservation",
+        "ownerRole": "设备接入负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      }
+    ]
+  },
+  "blockedDependencies": [
+    {
+      "id": "CONTROL_PLANE_REVIEW_AND_APPLY",
+      "status": "BLOCKED",
+      "reason": "Two existing IAM control-plane files unchanged; exact proposed delta requires later approval/effective-permission review"
+    },
+    {
+      "id": "NATIVE_BUDGET_NETWORK_AND_ACCOUNT_QUOTA",
+      "status": "BLOCKED",
+      "reason": "No fresh native connection/19-function capacity, SG/routes or account-concurrency evidence"
+    },
+    {
+      "id": "REAL_BINDING_AND_CURRENT_SNAPSHOT",
+      "status": "BLOCKED",
+      "reason": "Actual BIND_DEVICE receipt, device/customer/cert/license IDs and trusted fresh Sync evidence missing"
+    },
+    {
+      "id": "TARGET_PUBLICATIONS_AND_IDENTITY",
+      "status": "BLOCKED",
+      "reason": "No two published tool versions, immutable artifact/role/runtime observations or real observer/invoker permission proof"
+    },
+    {
+      "id": "MC03_CANDIDATE_BINDING",
+      "status": "BLOCKED",
+      "reason": "Tool/app source freeze, independent executionTools and exact/equivalent acceptance remain MC03; old strict validator unchanged"
+    },
+    {
+      "id": "NEW_TARGET_WINDOW",
+      "status": "BLOCKED",
+      "reason": "Local fixture dates and old preparation window are not target authorization"
+    }
+  ],
+  "notRun": [
+    {
+      "id": "FULL_PNPM_VERIFY",
+      "status": "NOT_RUN",
+      "reason": "Focused independent tool type/lint/tests/build/synth and unchanged application regressions run; no new full application G3 claimed"
+    },
+    {
+      "id": "REAL_AWS_CLI_READ_OBSERVER",
+      "status": "NOT_RUN",
+      "reason": "All observer calls used injected ports; local synth has no target command branch"
+    },
+    {
+      "id": "IAM_SERVICE_EVALUATION_AND_ACCESS_DENIED",
+      "status": "NOT_RUN",
+      "reason": "Static source policy assertions are not native IAM/effective permissions"
+    },
+    {
+      "id": "NATIVE_RDS_DYNAMODB_AND_ACCOUNT_QUOTAS",
+      "status": "NOT_RUN",
+      "reason": "PGlite and local source-budget example do not prove target concurrency or available connections"
+    },
+    {
+      "id": "ACTUAL_FUNCTION_PUBLICATION_AND_LINUX_EXECUTION",
+      "status": "NOT_RUN",
+      "reason": "No target upload, deployment, numeric publication or native business execution"
+    },
+    {
+      "id": "REAL_SECRET_ACCESS_AND_SYNC_SNAPSHOT",
+      "status": "NOT_RUN",
+      "reason": "Only synthetic keys/metadata; sourceRef string is not independent target provenance"
+    },
+    {
+      "id": "TARGET_IAM_APPLY_DB_MIGRATION_DEVICE_ENABLE",
+      "status": "NOT_RUN",
+      "reason": "Explicitly not authorized this task"
+    },
+    {
+      "id": "G4_CF01_CF02_CF03",
+      "status": "NOT_RUN",
+      "reason": "No real G4 image transmission authorized"
+    },
+    {
+      "id": "APP_OR_PHYSICAL_DEVICE_ACCEPTANCE",
+      "status": "NOT_RUN",
+      "reason": "Third-party responsibility, not a cloud Gate prerequisite"
+    }
+  ],
+  "g3": "Existing application evidence unchanged; current tool code has independent PASS_LOCAL_MC02 only; MC03 freeze/rebind pending",
+  "g4": "NOT_RUN",
+  "actions": {
+    "cloudAccountCalls": 0,
+    "targetWrites": 0,
+    "deployments": 0,
+    "iamChanges": 0,
+    "targetMigrations": 0,
+    "deviceEnables": 0,
+    "realG4Transmissions": 0,
+    "pushes": 0
+  },
+  "nextTask": "MC03 local candidate freeze, independent tool/source/quality manifest and application-version binding protocol; preserve default strict and all target blockers. No cloud work without a specific scope/window.",
+  "sourceManifest": "sources.sha256",
+  "artifactManifest": "artifacts.sha256",
+  "artifactManifestExcludesItself": true,
+  "sourceCount": 143
+}

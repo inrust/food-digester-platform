@@ -77,7 +77,13 @@ export interface Manifest {
   verifierVersion: string;
   licenseSecretVersion: string;
   verifierBinding: Binding | null;
-  verification: { licenseId: string; licenseVersion: number; snapshotEtag: string; expiresAt: string } | null;
+  verification: {
+    licenseId: string;
+    licenseVersion: number;
+    snapshotEtag: string;
+    expiresAt: string;
+    observedAt?: string;
+  } | null;
 }
 export interface BoundManifest {
   manifest: Readonly<Manifest>;
@@ -153,7 +159,9 @@ export function bindManifest(raw: string, expectedHash: string): BoundManifest {
     'IDENTITIES_MUST_DIFFER',
   );
   requireThat(
-    [m.writerVersion, m.verifierVersion].every((s) => typeof s === 'string' && /^[1-9][0-9]*$/u.test(s)) &&
+    [m.writerVersion, m.verifierVersion].every(
+      (s) => typeof s === 'string' && (s === 'PUBLISHED' || /^[1-9][0-9]*$/u.test(s)),
+    ) &&
       typeof m.licenseSecretVersion === 'string' &&
       /^[A-Za-z0-9-]{32,64}$/u.test(m.licenseSecretVersion),
     'NUMERIC_VERSION_AND_SECRET_VERSION_REQUIRED',
@@ -168,7 +176,19 @@ export function bindManifest(raw: string, expectedHash: string): BoundManifest {
     );
   }
   if (m.verification !== null) {
-    exactKeys(m.verification, ['licenseId', 'licenseVersion', 'snapshotEtag', 'expiresAt']);
+    exactKeys(m.verification, ['licenseId', 'licenseVersion', 'snapshotEtag', 'expiresAt'], ['observedAt']);
+    if (m.verification.observedAt !== undefined) {
+      const observed = Date.parse(m.verification.observedAt),
+        expires = Date.parse(m.verification.expiresAt);
+      requireThat(
+        Number.isFinite(observed) &&
+          new Date(observed).toISOString() === m.verification.observedAt &&
+          observed >= start &&
+          expires > observed &&
+          expires - observed <= 300000,
+        'SNAPSHOT_FIVE_MINUTE_LIMIT',
+      );
+    }
     requireThat(
       m.verifierBinding &&
         isUuid(m.verification.licenseId) &&
@@ -203,9 +223,10 @@ export function checkInvocation(bound: BoundManifest, kind: 'writer' | 'verifier
   const suffix = kind === 'writer' ? 'controlled-writer' : 'license-verifier';
   const version = bound.manifest[kind === 'writer' ? 'writerVersion' : 'verifierVersion'];
   requireThat(
-    ctx.functionVersion === version &&
+    /^[1-9][0-9]*$/u.test(ctx.functionVersion) &&
+      (version === 'PUBLISHED' || ctx.functionVersion === version) &&
       ctx.invokedFunctionArn ===
-        `arn:aws:lambda:${TARGET.region}:${TARGET.accountId}:function:fdp-test-img21-${suffix}:${version}`,
+        `arn:aws:lambda:${TARGET.region}:${TARGET.accountId}:function:fdp-test-img21-${suffix}:${ctx.functionVersion}`,
     'PUBLISHED_VERSION_REQUIRED',
   );
 }

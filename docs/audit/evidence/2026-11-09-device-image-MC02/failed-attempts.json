@@ -1,0 +1,30 @@
+{
+  "failedRuns": [
+    {
+      "id": "F01",
+      "status": "FAIL_RESOLVED",
+      "command": "pnpm exec tsc -p tools/img21/tsconfig.json",
+      "cause": "Three test-only type errors: readonly cloned Manifest, empty-array concat inferred never, untyped metadata record",
+      "fix": "Use explicit Manifest/record types and typed Action array; no runtime guard weakened",
+      "log": "failure-01-test-types.log"
+    },
+    {
+      "id": "F02",
+      "status": "FAIL_RESOLVED",
+      "command": "pnpm exec eslint tools/img21",
+      "cause": "Unused roleName test import",
+      "fix": "Remove unused import; no lint suppression",
+      "log": "failure-02-unused-import.log"
+    }
+  ],
+  "warnings": [
+    {
+      "id": "W01",
+      "status": "WARN_RESOLVED",
+      "cause": "CDK addDependency deprecated",
+      "fix": "Use installed CDK addResourceDependency API",
+      "log": "warning-01-deprecated-api.log"
+    }
+  ],
+  "unresolvedLocalFailures": []
+}

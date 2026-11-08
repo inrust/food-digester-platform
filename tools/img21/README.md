@@ -1,6 +1,6 @@
 # IMG-21 MC01 受控工具
 
-这是独立工具源码，未接入应用或 CDK 部署。Writer 和 Verifier 都导出真实 Lambda `handler`，缺少可信配置时拒绝执行。没有 AWS CLI、HTTP 管理入口、任意 SQL/Prisma 操作、设备生命周期修改或自动业务重试入口。
+这是独立工具源码及独立 IaC，未接入应用栈或目标部署。Writer 和 Verifier 都导出真实 Lambda `handler`，缺少可信配置时拒绝执行。没有 AWS CLI、HTTP 管理入口、任意 SQL/Prisma 操作、设备生命周期修改或自动业务重试入口。
 
 本地命令（仓库根目录）：
 
@@ -10,11 +10,12 @@ pnpm exec eslint tools/img21
 pnpm exec prettier --check tools/img21
 pnpm exec vitest run --config tools/img21/vitest.config.mts
 node tools/img21/build.mjs
+node --import tsx tools/img21/local-synth.ts
 ```
 
 `build/img21-mc01/` 生成两个 ESM 包、完整 esbuild 输入清单和 SHA256。SDK 从现有 aws-clients 包解析，共享包直接指向源码，不新增 workspace、不改锁文件或应用构建入口。依赖版本和实际输入以锁摘要及构建清单为准。Verifier 产物检查实际输出字节的依赖来源，不允许数据库、DynamoDB、Cognito 或应用代码进入其运行代码。测试可引用既有云端 signer 进行正向对照，Verifier 运行代码不引用 signer。
 
-构建包**未附带 run-manifest.json，不能直接用于目标验收**。MC02 需要按审批渲染各自固定的 `/var/task/run-manifest.json`，部署配置只注入该文件的 SHA256，且核对真实数字版本。调用者不能通过 event 指定配置、事实、SDK port、路径或密钥。`approvalRef` 是受信发布配置的一部分，普通字符串或本地构建不产生审批权限。版本发布/固定配置的绑定流程由 MC02 实现并验证；期望版本与真实版本不符时当前代码会拒绝执行。
+裸代码构建包未附带 run-manifest.json。MC02 的本地 synth 会另行打包两份带合成 manifest 的 ZIP，仅用于本地验证，不能作为目标准入材料。实际目标配置仍须按审批渲染各自固定的 `/var/task/run-manifest.json`，部署配置只注入文件 SHA256，并经发布后观察绑定真实数字版本。调用者不能通过 event 指定配置、事实、SDK port、路径或密钥。`approvalRef` 是受信发布配置的一部分，普通字符串或本地构建不产生审批权限。MC02 发布流程、调用权限和短期快照约束见 [MC02.md](./MC02.md)。旧固定数字模式保持精确匹配；新 PUBLISHED 模式要求真实数字调用上下文，再由发布后代码/配置核对及精确 Invoke 权限绑定该数字版本，禁止预猜编号。
 
 ## Writer
 
@@ -58,4 +59,4 @@ Writer 的 manifest/root 不能因发布 Verifier 而改写。Verifier 使用独
 
 本地测试使用应用的全量 migration 在 PGlite 内构造临时库、真实 Prisma/authority 包装器、合成 key 与 SDK command ports。夹具中的设备/用户激活与审计用于模拟正常业务 API 的已有事实，不是 Writer 可执行的额外动作。PGlite 单后端并发不证明 RDS 多连接锁或原生 DynamoDB CAS。
 
-MC02 的独立 IaC、权限增量、真实 role/边界、连接余量、目标 Secret 读取、数字版本与 manifest 发布和短期 snapshot 绑定均待完成。目标版本等价接收仍由 MC03 审查实现；旧 strict 规则保持不变。目标准备、恢复窗口及 G4 CF01/02/03 仍 NOT_RUN；App/真机不作为云端 Gate 前置。
+MC02 的独立 IaC、权限增量审阅、数字版本与两份 manifest/短期 snapshot 的本地流程已实现；真实 role/边界、连接余量、目标 Secret 读取及目标发布观察仍未执行。目标版本等价接收仍由 MC03 审查实现；旧 strict 规则保持不变。目标准备、恢复窗口及 G4 CF01/02/03 仍 NOT_RUN；App/真机不作为云端 Gate 前置。

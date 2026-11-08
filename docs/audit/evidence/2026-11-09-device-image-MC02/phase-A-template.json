@@ -1,0 +1,386 @@
+{
+  "Resources": {
+    "writerBoundary": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "ManagedPolicyName": "FDP-IMG21-WriterBoundary",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "ReadOneSecret",
+              "Effect": "Allow",
+              "Action": [
+                "secretsmanager:GetSecretValue"
+              ],
+              "Resource": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK"
+            },
+            {
+              "Sid": "DecryptOneSecretOnlyViaSecretsManager",
+              "Effect": "Allow",
+              "Action": [
+                "kms:Decrypt"
+              ],
+              "Resource": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c",
+              "Condition": {
+                "StringEquals": {
+                  "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com",
+                  "kms:EncryptionContext:SecretARN": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK"
+                }
+              }
+            },
+            {
+              "Sid": "ReadCognitoOwnedIdentityMetadata",
+              "Effect": "Allow",
+              "Action": [
+                "cognito-idp:AdminGetUser",
+                "cognito-idp:AdminListGroupsForUser"
+              ],
+              "Resource": "arn:aws:cognito-idp:ap-southeast-1:065986019555:userpool/ap-southeast-1_hZMX8LpFo"
+            },
+            {
+              "Sid": "ReadControlMetadataForExistingActorFence",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:GetItem"
+              ],
+              "Resource": "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control"
+            },
+            {
+              "Sid": "WriteOwnLogs",
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/lambda/fdp-test-img21-controlled-writer:log-stream:*"
+            },
+            {
+              "Sid": "AllowLambdaVpcEniManagement",
+              "Effect": "Allow",
+              "Action": [
+                "ec2:CreateNetworkInterface",
+                "ec2:DescribeNetworkInterfaces",
+                "ec2:DescribeSubnets",
+                "ec2:DeleteNetworkInterface",
+                "ec2:AssignPrivateIpAddresses",
+                "ec2:UnassignPrivateIpAddresses"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Sid": "DenyFunctionCodeEc2Calls",
+              "Effect": "Deny",
+              "Action": [
+                "ec2:CreateNetworkInterface",
+                "ec2:DescribeNetworkInterfaces",
+                "ec2:DescribeSubnets",
+                "ec2:DeleteNetworkInterface",
+                "ec2:AssignPrivateIpAddresses",
+                "ec2:UnassignPrivateIpAddresses"
+              ],
+              "Resource": "*",
+              "Condition": {
+                "ArnEquals": {
+                  "lambda:SourceFunctionArn": "arn:aws:lambda:ap-southeast-1:065986019555:function:fdp-test-img21-controlled-writer"
+                }
+              }
+            },
+            {
+              "Sid": "NeverDeleteControlEpoch",
+              "Effect": "Deny",
+              "Action": [
+                "dynamodb:DeleteItem",
+                "dynamodb:BatchWriteItem"
+              ],
+              "Resource": "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control"
+            },
+            {
+              "Sid": "MaximumControlPutCeilingNotAGrant",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:PutItem"
+              ],
+              "Resource": "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control"
+            }
+          ]
+        }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    },
+    "writerRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/img21/",
+        "PermissionsBoundary": {
+          "Ref": "writerBoundary"
+        },
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "ReadOneSecret",
+                  "Effect": "Allow",
+                  "Action": [
+                    "secretsmanager:GetSecretValue"
+                  ],
+                  "Resource": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK"
+                },
+                {
+                  "Sid": "DecryptOneSecretOnlyViaSecretsManager",
+                  "Effect": "Allow",
+                  "Action": [
+                    "kms:Decrypt"
+                  ],
+                  "Resource": "arn:aws:kms:ap-southeast-1:065986019555:key/22af85c4-76d3-40c9-a849-0621740afe6c",
+                  "Condition": {
+                    "StringEquals": {
+                      "kms:ViaService": "secretsmanager.ap-southeast-1.amazonaws.com",
+                      "kms:EncryptionContext:SecretARN": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-hBessK"
+                    }
+                  }
+                },
+                {
+                  "Sid": "ReadCognitoOwnedIdentityMetadata",
+                  "Effect": "Allow",
+                  "Action": [
+                    "cognito-idp:AdminGetUser",
+                    "cognito-idp:AdminListGroupsForUser"
+                  ],
+                  "Resource": "arn:aws:cognito-idp:ap-southeast-1:065986019555:userpool/ap-southeast-1_hZMX8LpFo"
+                },
+                {
+                  "Sid": "ReadControlMetadataForExistingActorFence",
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:GetItem"
+                  ],
+                  "Resource": "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control"
+                },
+                {
+                  "Sid": "WriteOwnLogs",
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "arn:aws:logs:ap-southeast-1:065986019555:log-group:/aws/lambda/fdp-test-img21-controlled-writer:log-stream:*"
+                },
+                {
+                  "Sid": "AllowLambdaVpcEniManagement",
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:CreateNetworkInterface",
+                    "ec2:DescribeNetworkInterfaces",
+                    "ec2:DescribeSubnets",
+                    "ec2:DeleteNetworkInterface",
+                    "ec2:AssignPrivateIpAddresses",
+                    "ec2:UnassignPrivateIpAddresses"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "DenyFunctionCodeEc2Calls",
+                  "Effect": "Deny",
+                  "Action": [
+                    "ec2:CreateNetworkInterface",
+                    "ec2:DescribeNetworkInterfaces",
+                    "ec2:DescribeSubnets",
+                    "ec2:DeleteNetworkInterface",
+                    "ec2:AssignPrivateIpAddresses",
+                    "ec2:UnassignPrivateIpAddresses"
+                  ],
+                  "Resource": "*",
+                  "Condition": {
+                    "ArnEquals": {
+                      "lambda:SourceFunctionArn": "arn:aws:lambda:ap-southeast-1:065986019555:function:fdp-test-img21-controlled-writer"
+                    }
+                  }
+                },
+                {
+                  "Sid": "NeverDeleteControlEpoch",
+                  "Effect": "Deny",
+                  "Action": [
+                    "dynamodb:DeleteItem",
+                    "dynamodb:BatchWriteItem"
+                  ],
+                  "Resource": "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control"
+                }
+              ]
+            },
+            "PolicyName": "IMG21Runtime"
+          }
+        ],
+        "RoleName": "fdp-test-img21-controlled-writer-role"
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    },
+    "writerLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/fdp-test-img21-controlled-writer",
+        "RetentionInDays": 30
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    },
+    "writerFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Architectures": [
+          "arm64"
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-065986019555-ap-southeast-1",
+          "S3Key": "c07bcca625ff2e6856910c31e36b415b44518a50c2fa528b9cafade8be22bc80.zip"
+        },
+        "Environment": {
+          "Variables": {
+            "IMG21_MANIFEST_SHA256": "9257d2b4e91d6ea85983e221c4f8baf451cf0908032b595c15f27dae0e4e1c23",
+            "LIVE_IMAGE_CONTROL_TABLE": "fdp-test-live-image-control",
+            "LIVE_IMAGE_PAYLOAD_TABLE": "fdp-test-live-image-payload",
+            "FDP_DB_POOL_MAX": "1"
+          }
+        },
+        "FunctionName": "fdp-test-img21-controlled-writer",
+        "Handler": "index.handler",
+        "LoggingConfig": {
+          "LogFormat": "JSON",
+          "LogGroup": "/aws/lambda/fdp-test-img21-controlled-writer"
+        },
+        "MemorySize": 512,
+        "ReservedConcurrentExecutions": 1,
+        "Role": {
+          "Fn::GetAtt": [
+            "writerRole",
+            "Arn"
+          ]
+        },
+        "Runtime": "nodejs24.x",
+        "RuntimeManagementConfig": {
+          "UpdateRuntimeOn": "FunctionUpdate"
+        },
+        "Timeout": 30,
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            "sg-056df8dcb3fe75dcb"
+          ],
+          "SubnetIds": [
+            "subnet-0f52dca7a7253f7d1",
+            "subnet-0c1584eea5495f25a"
+          ]
+        }
+      },
+      "DependsOn": [
+        "writerLogs",
+        "writerRole"
+      ],
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    },
+    "writerVersionfdc509ca07d8b9ef": {
+      "Type": "AWS::Lambda::Version",
+      "Properties": {
+        "CodeSha256": "/cUJygfYue/o04QsmDexdoaId7T8b4+MeUzx1nyDn7k=",
+        "Description": "IMG21 9257d2b4e91d6ea85983e221c4f8baf451cf0908032b595c15f27dae0e4e1c23",
+        "FunctionName": {
+          "Ref": "writerFunction"
+        }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    },
+    "writerNoAsyncRetryfdc509ca07d8b9ef": {
+      "Type": "AWS::Lambda::EventInvokeConfig",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "writerFunction"
+        },
+        "MaximumEventAgeInSeconds": 60,
+        "MaximumRetryAttempts": 0,
+        "Qualifier": {
+          "Fn::GetAtt": [
+            "writerVersionfdc509ca07d8b9ef",
+            "Version"
+          ]
+        }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    }
+  },
+  "Outputs": {
+    "writerPublishedArn": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "arn:aws:lambda:ap-southeast-1:065986019555:function:fdp-test-img21-controlled-writer:",
+            {
+              "Fn::GetAtt": [
+                "writerVersionfdc509ca07d8b9ef",
+                "Version"
+              ]
+            }
+          ]
+        ]
+      }
+    },
+    "writerManifestHash": {
+      "Value": "9257d2b4e91d6ea85983e221c4f8baf451cf0908032b595c15f27dae0e4e1c23"
+    },
+    "Admission": {
+      "Value": "NOT_GRANTED: post-publish observation and separate Invoke policy review required"
+    }
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Type": "AWS::SSM::Parameter::Value<String>",
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+    }
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5"
+                  ],
+                  {
+                    "Ref": "BootstrapVersion"
+                  }
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+        }
+      ]
+    }
+  }
+}

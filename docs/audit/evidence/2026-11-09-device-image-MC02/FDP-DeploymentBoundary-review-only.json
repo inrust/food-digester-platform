@@ -1,0 +1,285 @@
+{
+  "originalPath": "infra/iam/FDP-DeploymentBoundary.json",
+  "originalSha256": "14819f2e8a5c5a6355afbde1e20cc18005beb594f44141b2cda71781a8c87fa2",
+  "proposed": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "AllowFDPInfrastructureServices",
+        "Effect": "Allow",
+        "Action": [
+          "cloudformation:*",
+          "s3:*",
+          "ecr:*",
+          "ssm:*",
+          "ec2:*",
+          "lambda:*",
+          "apigateway:*",
+          "rds:*",
+          "secretsmanager:CreateSecret",
+          "secretsmanager:DeleteSecret",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetRandomPassword",
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:ListSecretVersionIds",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:PutResourcePolicy",
+          "secretsmanager:DeleteResourcePolicy",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:UpdateSecret",
+          "secretsmanager:TagResource",
+          "secretsmanager:UntagResource",
+          "kms:*",
+          "sqs:*",
+          "iot:*",
+          "cognito-idp:*",
+          "events:*",
+          "scheduler:*",
+          "logs:*",
+          "cloudwatch:*",
+          "sns:*",
+          "codebuild:*",
+          "acm:*",
+          "amplify:*",
+          "sts:GetCallerIdentity"
+        ],
+        "Resource": "*"
+      },
+      {
+        "Sid": "ManageLiveImageTables",
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:CreateTable",
+          "dynamodb:DeleteTable",
+          "dynamodb:DescribeTable",
+          "dynamodb:UpdateTable",
+          "dynamodb:DescribeContinuousBackups",
+          "dynamodb:UpdateContinuousBackups",
+          "dynamodb:DescribeContributorInsights",
+          "dynamodb:DescribeKinesisStreamingDestination",
+          "dynamodb:DescribeTimeToLive",
+          "dynamodb:UpdateTimeToLive",
+          "dynamodb:GetResourcePolicy",
+          "dynamodb:ListTagsOfResource",
+          "dynamodb:TagResource",
+          "dynamodb:UntagResource"
+        ],
+        "Resource": [
+          "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-control",
+          "arn:aws:dynamodb:ap-southeast-1:065986019555:table/fdp-test-live-image-payload"
+        ]
+      },
+      {
+        "Sid": "AllowFDPServiceRoleManagement",
+        "Effect": "Allow",
+        "Action": [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:GetRole",
+          "iam:UpdateRole",
+          "iam:TagRole",
+          "iam:UntagRole",
+          "iam:UpdateAssumeRolePolicy",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:ListAttachedRolePolicies",
+          "iam:PassRole",
+          "iam:PutRolePermissionsBoundary"
+        ],
+        "Resource": "arn:aws:iam::065986019555:role/fdp-test-*"
+      },
+      {
+        "Sid": "UpdateOnboardingRoleDescription",
+        "Effect": "Allow",
+        "Action": "iam:UpdateRoleDescription",
+        "Resource": "arn:aws:iam::065986019555:role/fdp-test-onboarding-api-role"
+      },
+      {
+        "Sid": "ManageMigrationRunnerBoundary",
+        "Effect": "Allow",
+        "Action": [
+          "iam:CreatePolicy",
+          "iam:DeletePolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:CreatePolicyVersion",
+          "iam:DeletePolicyVersion",
+          "iam:SetDefaultPolicyVersion",
+          "iam:ListPolicyVersions",
+          "iam:TagPolicy",
+          "iam:UntagPolicy"
+        ],
+        "Resource": "arn:aws:iam::065986019555:policy/FDP-MigrationRunnerBoundary"
+      },
+      {
+        "Sid": "CreateApiGatewayServiceLinkedRole",
+        "Effect": "Allow",
+        "Action": "iam:CreateServiceLinkedRole",
+        "Resource": "arn:aws:iam::065986019555:role/aws-service-role/ops.apigateway.amazonaws.com/AWSServiceRoleForAPIGateway",
+        "Condition": {
+          "StringEquals": {
+            "iam:AWSServiceName": "ops.apigateway.amazonaws.com"
+          }
+        }
+      },
+      {
+        "Sid": "CreateRdsServiceLinkedRole",
+        "Effect": "Allow",
+        "Action": "iam:CreateServiceLinkedRole",
+        "Resource": "arn:aws:iam::065986019555:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS",
+        "Condition": {
+          "StringEquals": {
+            "iam:AWSServiceName": "rds.amazonaws.com"
+          }
+        }
+      },
+      {
+        "Sid": "DenySecretReadsAndHumanCredentials",
+        "Effect": "Deny",
+        "Action": [
+          "iam:CreateUser",
+          "iam:CreateAccessKey",
+          "iam:DeleteRolePermissionsBoundary"
+        ],
+        "Resource": "*"
+      },
+      {
+        "Sid": "DenyNonDatabaseSecretReads",
+        "Effect": "Deny",
+        "Action": "secretsmanager:GetSecretValue",
+        "NotResource": "arn:aws:secretsmanager:ap-southeast-1:065986019555:secret:fdp-test-rds-credentials-*"
+      },
+      {
+        "Sid": "DenyWrongServiceBoundary",
+        "Effect": "Deny",
+        "Action": [
+          "iam:CreateRole",
+          "iam:PutRolePermissionsBoundary"
+        ],
+        "Resource": "arn:aws:iam::065986019555:role/fdp-test-*",
+        "Condition": {
+          "StringNotEquals": {
+            "iam:PermissionsBoundary": [
+              "arn:aws:iam::065986019555:policy/FDP-ServiceBoundary",
+              "arn:aws:iam::065986019555:policy/FDP-MigrationRunnerBoundary"
+            ]
+          }
+        }
+      },
+      {
+        "Sid": "CreateBoundIMG21WriterRole",
+        "Effect": "Allow",
+        "Action": [
+          "iam:CreateRole",
+          "iam:PutRolePermissionsBoundary"
+        ],
+        "Resource": "arn:aws:iam::065986019555:role/img21/fdp-test-img21-controlled-writer-role",
+        "Condition": {
+          "StringEquals": {
+            "iam:PermissionsBoundary": "arn:aws:iam::065986019555:policy/FDP-IMG21-WriterBoundary"
+          }
+        }
+      },
+      {
+        "Sid": "DenyUnboundedIMG21WriterRole",
+        "Effect": "Deny",
+        "Action": [
+          "iam:CreateRole",
+          "iam:PutRolePermissionsBoundary"
+        ],
+        "Resource": "arn:aws:iam::065986019555:role/img21/fdp-test-img21-controlled-writer-role",
+        "Condition": {
+          "StringNotEquals": {
+            "iam:PermissionsBoundary": "arn:aws:iam::065986019555:policy/FDP-IMG21-WriterBoundary"
+          }
+        }
+      },
+      {
+        "Sid": "CreateBoundIMG21VerifierRole",
+        "Effect": "Allow",
+        "Action": [
+          "iam:CreateRole",
+          "iam:PutRolePermissionsBoundary"
+        ],
+        "Resource": "arn:aws:iam::065986019555:role/img21/fdp-test-img21-license-verifier-role",
+        "Condition": {
+          "StringEquals": {
+            "iam:PermissionsBoundary": "arn:aws:iam::065986019555:policy/FDP-IMG21-VerifierBoundary"
+          }
+        }
+      },
+      {
+        "Sid": "DenyUnboundedIMG21VerifierRole",
+        "Effect": "Deny",
+        "Action": [
+          "iam:CreateRole",
+          "iam:PutRolePermissionsBoundary"
+        ],
+        "Resource": "arn:aws:iam::065986019555:role/img21/fdp-test-img21-license-verifier-role",
+        "Condition": {
+          "StringNotEquals": {
+            "iam:PermissionsBoundary": "arn:aws:iam::065986019555:policy/FDP-IMG21-VerifierBoundary"
+          }
+        }
+      },
+      {
+        "Sid": "ManageOnlyTwoIMG21RuntimeRoles",
+        "Effect": "Allow",
+        "Action": [
+          "iam:GetRole",
+          "iam:TagRole",
+          "iam:UntagRole",
+          "iam:PutRolePolicy",
+          "iam:GetRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:ListRolePolicies",
+          "iam:UpdateAssumeRolePolicy"
+        ],
+        "Resource": [
+          "arn:aws:iam::065986019555:role/img21/fdp-test-img21-controlled-writer-role",
+          "arn:aws:iam::065986019555:role/img21/fdp-test-img21-license-verifier-role"
+        ]
+      },
+      {
+        "Sid": "ManageOnlyTwoIMG21Boundaries",
+        "Effect": "Allow",
+        "Action": [
+          "iam:CreatePolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:CreatePolicyVersion",
+          "iam:DeletePolicyVersion",
+          "iam:SetDefaultPolicyVersion",
+          "iam:ListPolicyVersions",
+          "iam:TagPolicy",
+          "iam:UntagPolicy"
+        ],
+        "Resource": [
+          "arn:aws:iam::065986019555:policy/FDP-IMG21-WriterBoundary",
+          "arn:aws:iam::065986019555:policy/FDP-IMG21-VerifierBoundary"
+        ]
+      },
+      {
+        "Sid": "PassOnlyIMG21RolesToLambda",
+        "Effect": "Allow",
+        "Action": [
+          "iam:PassRole"
+        ],
+        "Resource": [
+          "arn:aws:iam::065986019555:role/img21/fdp-test-img21-controlled-writer-role",
+          "arn:aws:iam::065986019555:role/img21/fdp-test-img21-license-verifier-role"
+        ],
+        "Condition": {
+          "StringEquals": {
+            "iam:PassedToService": "lambda.amazonaws.com"
+          }
+        }
+      }
+    ]
+  },
+  "applied": false
+}

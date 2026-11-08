@@ -43,6 +43,8 @@ export function validateLicenseEvent(bound: BoundManifest, event: unknown, ctx: 
     b = m.verifierBinding,
     v = m.verification;
   requireThat(b && v, 'VERIFIER_BINDING_NOT_READY');
+  if (v.observedAt !== undefined)
+    requireThat(Date.parse(v.observedAt) <= now && now < Date.parse(v.observedAt) + 300000, 'SNAPSHOT_STALE_OR_FUTURE');
   exactKeys(event, [
     'runId',
     'manifestHash',
