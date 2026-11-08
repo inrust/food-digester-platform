@@ -2,6 +2,32 @@
 
 2026-11-08，按用户确认的六项范围组织。当前重新验证的候选为 `d1a7b81196d60ec320e760da3d18de403563fc12`，接口契约 `0.16.0`、DEC-009@2.0.0。**本轮只重新验证本地G3与重绑定，G4仍为NOT_RUN。** 工具不调用真实云端接口、不部署、不连接或迁移目标库、不启用目标设备。此前69c76e1d的目标检查及迁移见[历史准入推进报告](../audit/图片G3重新绑定与G4准入推进-2026-11-08.md)；其输入、CI/部署和观察保留原候选，不能直接改名为本轮d1a7b811的结果。App与真机由第三方负责。
 
+## 当前 G4 口径：云端图片接口闭环
+
+按本轮用户确认，**G4=云端图片接口验收，不依赖第三方 App 或真机通过**。用受控模拟设备发真实请求即可；G3 仍绑定 d1a7b811 和证据提交 1b1b879f。只有真实云端响应、业务确认和读回图片一致时才能判定目标通过，离线校验上限仍是 PASS_STRUCTURE_ONLY。
+
+| 核心用例 | 通过条件 |
+|---|---|
+| CF01 实时预览 | 平台申请租约、设备读取 ACTIVE/current streamId、POST JPEG/Base64 返回200、latest READY；解码后 JPEG 字节数与 SHA-256 一致；释放204 |
+| CF02 EVENT 留档 | 原事件 meta.id → triggerRef → 上传会话 → S3 原 JPEG → MQTT media 登记；同申报409 MEDIA_ALREADY_REGISTERED确认业务登记，事件查询 AVAILABLE，同一 mediaId 下载字节一致 |
+| CF03 ALARM 留档 | 同 CF02，但 triggerRef 引用 ACTIVE 原告警 meta.id，告警详情 AVAILABLE；不得用 CLEARED ID、PUBACK 或仅 S3 2xx 代替业务完成 |
+
+三项均 PASS，来源/版本/身份/时间窗可核验且本轮资源清理记录完整，即可在真实 G4 报告判定 PASS_CLOUD_INTERFACES。**不要求 App 安装包、相机、第三方测试报告、真机、SLA、原生故障注入或24小时观察先通过**。这些是独立后续验收/扩展回归，不计本次接口 Gate 的前置；其 FAIL/BLOCKED/NOT_RUN 原样保留。若发现图片链路本身失败、越权或数据泄漏，仍属于本接口 Gate 的失败，不能用缩小范围掩盖。
+
+原 44 项用例和 35 项输入保留为扩展回归套件，其完成与否不阻塞三项核心接口 Gate。下文中 AR12 五个可达变体、原生/24h/容量的“必测”和完整性检查均针对该扩展套件；V1 权限矩阵及唯一源码 N/A 规则不变。未执行扩展用例保持 NOT_RUN，不标免测或 PASS。
+
+新的云端核心入口（均只读本地文件/Git、绝不调用目标）：
+
+```bash
+node scripts/device-image-target-package.mjs --cloud-templates
+node scripts/device-image-target-package.mjs --cloud-admission <run-dir>/inputs.json
+node scripts/device-image-target-package.mjs --cloud-receipt <run-dir>/receipt.json <run-dir>/inputs.json
+```
+
+云端核心使用 profile=G4_CLOUD_INTERFACE_V1、22项输入、3项用例。proof、输入、receipt及证据均绑定同一候选/protocolDigest/runId；实时图读回、S3 Hash、triggerRef、业务登记和 AVAILABLE 关联都需精确匹配，不接收仅写 passed=true 的回执。`--cloud-templates` 是模板输出；模板不能算真实执行。`--cloud-admission` 检查执行窗口的 SCHEDULED/OPEN/EXPIRED 状态，过期阻塞；版本/迁移/运行证明须有本轮窗口内观察时间。窗口尚未确定时不自行填写批准日期。离线工具不签发真实执行授权，也不会给 G4 PASS。
+
+当前确认沿用 fdp-test-app（ap-southeast-1），设备和身份待准备；对应[准入工作包](../audit/evidence/2026-11-08-device-image-cloud-interface-readiness/inputs.json)、[版本审查](../audit/evidence/2026-11-08-device-image-cloud-interface-readiness/versions.review.json)及[执行安排](../audit/evidence/2026-11-08-device-image-cloud-interface-readiness/schedule.json)。9项环境定位从历史材料提取并按用户确认沿用，13项执行输入待补齐。历史证明不改 SHA、不伪造新观察，不自动部署或重复迁移。模拟客户端凭据仍必须对应独占隔离测试设备，不能借用现场设备身份。
+
 ## 1. 候选和 G3 证据绑定
 
 [包目录](./fixtures/device-image-target)包含 12 个生成文件；[组包与校验器](../../scripts/device-image-target-package.mjs)只使用本地文件和 `git cat-file`，没有 HTTP/AWS/数据库客户端、凭据读取或远程执行开关。
@@ -33,7 +59,7 @@ node scripts/device-image-target-package.mjs --check
 
 两条命令都不访问网络；第二条要求文件集合与内容逐字节一致。缺失、额外文件、源码/证据/包漂移均返回非零，不重建或修补旧 G3 证据。
 
-## 2. 环境、身份和权限输入
+## 2. 扩展套件的环境、身份和权限输入
 
 复制输入和 receipt 到同一独立 run 目录；用例实际执行前，环境负责人应提供以下信息。生成模板仍保留空值；当前候选未执行真实准入核验，后续实际材料必须单独保存在审计 evidence run 目录，不能把模板或历史输入当作本轮真实状态。不要从历史 QA09 材料照搬账户、设备、URL、Secret ARN 或部署结论。
 
@@ -137,7 +163,7 @@ DDB只收集CONTROL顶层 revision/authEpoch/customerId/streamId/enabled/activeU
 
 退役为终态：主设备A仅做可恢复的变更，退役变体使用已单独批准的一次性设备B，在B的跨范围检查完成后执行，随后按台账保留终态。不得通过裸SQL“恢复退役”。其余用例继续用A；故障恢复和关闭准入仍经独立权威写身份处理。
 
-## 6. 顺序、清理与 G4 判定
+## 6. 扩展套件顺序、清理与完整性判定
 
 推荐阶段：本地包 `--check` → 缺项登记与已部署环境证据 → PV01/02基本链路 → PV03～14 → AR01～13（并行预留真实24h观察）→ NC01～12受控窗口 → AR14配额耗尽 → OP01日志/OP02容量观察 → OP03清理 → OP04封存。JSON依赖是最低前置；不得在授权窗口未到、故障恢复失败、跨租户数据泄漏、错误目标或Hash/版本不一致时继续有风险写入。将后续用例记 BLOCKED/NOT_RUN，保留首次FAIL及重试批次。
 
@@ -155,6 +181,6 @@ node scripts/device-image-target-package.mjs --receipt \
   docs/api/fixtures/device-image-target/inputs.template.json
 ```
 
-模板返回NOT_RUN、退出2；缺项返回BLOCKED、错误/失败返回FAIL。具备全部目标结构材料且AR12源码N/A记录仍有效时，离线工具上限仍为 **PASS_STRUCTURE_ONLY、requiresRealExecutionReview=true，G4仍NOT_RUN**。有效N/A不再单独阻塞G4；44个用例及AR12五个可达变体仍须真实执行。离线文件校验不能证明材料来自真实云端；后续必须复核运行来源、部署/身份/持久化/观测链路，在独立G4报告判定。任何其余FAIL/BLOCKED/NOT_RUN、原生竞争/24h/清理或来源证据缺失，仍不得给G4通过。
+模板返回NOT_RUN、退出2；缺项返回BLOCKED、错误/失败返回FAIL。具备全部目标结构材料且AR12源码N/A记录仍有效时，离线工具上限仍为 **PASS_STRUCTURE_ONLY、requiresRealExecutionReview=true，G4仍NOT_RUN**。有效N/A不再单独阻塞扩展套件完整性；44个用例及AR12五个可达变体若要声称扩展套件完成，仍须真实执行。离线文件校验不能证明材料来自真实云端；后续必须复核运行来源、部署/身份/持久化/观测链路，在独立G4报告判定。其余FAIL/BLOCKED/NOT_RUN、原生竞争/24h或来源证据缺失，均保留为扩展套件未完成，不能给该套件完整通过；它们不自动阻塞本页三项核心接口 Gate。核心链路失败及本轮清理失败仍阻塞接口 Gate。
 
-第三方负责App与真机，云端执行器可以用受控模拟请求完成云端G4；G5真机结论单独记录。当前提供方/环境输入缺失不妨碍本次准备材料交付，也没有授权本包自动运行目标用例。
+第三方负责App与真机，云端执行器可独立完成CF01～CF03并交付G4；G5真机结论不参与接口Gate判定。当前提供方/环境输入缺失不妨碍本次准备材料交付，也没有授权本包自动运行目标用例。

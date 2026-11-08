@@ -1,0 +1,61 @@
+{
+  "status": "BLOCKED_MISSING_DEVICE_IDENTITY_AND_WINDOW",
+  "profile": "G4_CLOUD_INTERFACE_V1",
+  "sourceCommit": "d1a7b81196d60ec320e760da3d18de403563fc12",
+  "protocolDigest": "59aa04f04df4a9b6b0cb5c76af407541b0bf5bc7b808887b7be9e8f5e2e6ee70",
+  "runId": "IMG21-CLOUD-20261108-PREPARE01",
+  "timezone": "Asia/Shanghai",
+  "requestedStartsAt": null,
+  "requestedEndsAt": null,
+  "authorizedStartsAt": null,
+  "authorizedEndsAt": null,
+  "approved": false,
+  "estimateMinutes": 45,
+  "estimateIsNotAnApprovedWindowOrSla": true,
+  "steps": [
+    {
+      "order": 1,
+      "task": "Prepare exclusive simulated device/customer, mTLS/MQTT and viewer identity; no App required",
+      "state": "BLOCKED"
+    },
+    {
+      "order": 2,
+      "task": "Confirm actual target deployment/runtime and existing migration state inside authorized window",
+      "state": "NOT_RUN"
+    },
+    {
+      "order": 3,
+      "task": "Run CF01 on real public endpoints and compare decoded JPEG bytes",
+      "state": "NOT_RUN"
+    },
+    {
+      "order": 4,
+      "task": "Run CF02 EVENT then CF03 ACTIVE ALARM, S3/MQTT/AVAILABLE/download hash",
+      "state": "NOT_RUN"
+    },
+    {
+      "order": 5,
+      "task": "Release viewers; retain owned evidence; record cleanup ledger and sanitized artifacts",
+      "state": "NOT_RUN"
+    },
+    {
+      "order": 6,
+      "task": "Offline cloud receipt check plus independent real-source review; record PASS_CLOUD_INTERFACES or actual failures",
+      "state": "NOT_RUN"
+    }
+  ],
+  "notPrerequisites": [
+    "THIRD_PARTY_APP",
+    "PHYSICAL_DEVICE_TEST",
+    "24H_WINDOW",
+    "CAPACITY_SLA",
+    "NATIVE_FAULT_SUITE"
+  ],
+  "notAuthorizedByThisDraft": [
+    "DEPLOY",
+    "TARGET_MIGRATION",
+    "DEVICE_ENABLEMENT",
+    "TARGET_API_CALLS",
+    "PUSH"
+  ]
+}

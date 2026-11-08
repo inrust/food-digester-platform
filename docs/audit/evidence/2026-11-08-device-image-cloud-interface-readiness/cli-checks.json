@@ -1,0 +1,38 @@
+[
+  {
+    "command": [
+      "node",
+      "scripts/device-image-target-package.mjs",
+      "--check"
+    ],
+    "exitCode": 0,
+    "expectedStatus": "PASS_OFFLINE_PACKAGE",
+    "status": "PASS_EXPECTED_OUTCOME",
+    "cloudRequests": 0
+  },
+  {
+    "command": [
+      "node",
+      "scripts/device-image-target-package.mjs",
+      "--cloud-admission",
+      "docs/audit/evidence/2026-11-08-device-image-cloud-interface-readiness/inputs.json"
+    ],
+    "exitCode": 2,
+    "expectedStatus": "BLOCKED",
+    "status": "PASS_EXPECTED_OUTCOME",
+    "cloudRequests": 0
+  },
+  {
+    "command": [
+      "node",
+      "scripts/device-image-target-package.mjs",
+      "--cloud-receipt",
+      "docs/audit/evidence/2026-11-08-device-image-cloud-interface-readiness/receipt.json",
+      "docs/audit/evidence/2026-11-08-device-image-cloud-interface-readiness/inputs.json"
+    ],
+    "exitCode": 2,
+    "expectedStatus": "NOT_RUN",
+    "status": "PASS_EXPECTED_OUTCOME",
+    "cloudRequests": 0
+  }
+]

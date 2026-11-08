@@ -1,0 +1,74 @@
+{
+  "profile": "G4_CLOUD_INTERFACE_V1",
+  "sourceCommit": "d1a7b81196d60ec320e760da3d18de403563fc12",
+  "protocolDigest": "59aa04f04df4a9b6b0cb5c76af407541b0bf5bc7b808887b7be9e8f5e2e6ee70",
+  "cases": [
+    {
+      "id": "CF01",
+      "title": "实时 JPEG/Base64 帧上传、读取和释放",
+      "requiredVariants": [],
+      "evidenceKinds": [
+        "HTTP",
+        "CLIENT"
+      ],
+      "assertions": [
+        {
+          "id": "LEASE_STATE"
+        },
+        {
+          "id": "FRAME_ROUND_TRIP"
+        },
+        {
+          "id": "RELEASE"
+        }
+      ]
+    },
+    {
+      "id": "CF02",
+      "title": "EVENT 触发图片 S3 留档、MQTT 登记及关联读取",
+      "requiredVariants": [],
+      "evidenceKinds": [
+        "HTTP",
+        "S3",
+        "MQTT",
+        "CLIENT"
+      ],
+      "assertions": [
+        {
+          "id": "TRIGGER_REF"
+        },
+        {
+          "id": "REGISTERED_AVAILABLE"
+        },
+        {
+          "id": "IMAGE_ROUND_TRIP"
+        }
+      ]
+    },
+    {
+      "id": "CF03",
+      "title": "ALARM 触发图片 S3 留档、MQTT 登记及关联读取",
+      "requiredVariants": [],
+      "evidenceKinds": [
+        "HTTP",
+        "S3",
+        "MQTT",
+        "CLIENT"
+      ],
+      "assertions": [
+        {
+          "id": "TRIGGER_REF"
+        },
+        {
+          "id": "REGISTERED_AVAILABLE"
+        },
+        {
+          "id": "IMAGE_ROUND_TRIP"
+        }
+      ]
+    }
+  ],
+  "appRequired": false,
+  "physicalDeviceRequired": false,
+  "extended44Required": false
+}

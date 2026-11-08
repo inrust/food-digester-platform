@@ -217,6 +217,84 @@ export const INPUTS = [
   ['sequenceReservation', '设备接入负责人', 'proof'],
   ['cleanupPlan', '云端运维', 'proof'],
 ];
+export const CLOUD_PROFILE = 'G4_CLOUD_INTERFACE_V1';
+export const CLOUD_INPUT_IDS = [
+  'accountId',
+  'region',
+  'stackName',
+  'adminBaseUrl',
+  'deviceBaseUrl',
+  'mqttEndpoint',
+  'deployedCommit',
+  'deploymentProof',
+  'migrationProof',
+  'controlTable',
+  'payloadTable',
+  'archiveBucket',
+  'runtimeVersionsProof',
+  'deviceId',
+  'customerId',
+  'deviceMtlsRef',
+  'mqttIdentityRef',
+  'viewerARef',
+  'testScopeProof',
+  'executionWindowProof',
+  'sequenceReservation',
+  'cleanupPlan',
+];
+export function cloudCases() {
+  return [
+    {
+      id: 'CF01',
+      title: '实时 JPEG/Base64 帧上传、读取和释放',
+      requiredVariants: [],
+      evidenceKinds: ['HTTP', 'CLIENT'],
+      assertions: ['LEASE_STATE', 'FRAME_ROUND_TRIP', 'RELEASE'].map((id) => ({ id })),
+    },
+    ...['EVENT', 'ALARM'].map((kind, i) => ({
+      id: `CF0${i + 2}`,
+      title: `${kind} 触发图片 S3 留档、MQTT 登记及关联读取`,
+      requiredVariants: [],
+      evidenceKinds: ['HTTP', 'S3', 'MQTT', 'CLIENT'],
+      assertions: ['TRIGGER_REF', 'REGISTERED_AVAILABLE', 'IMAGE_ROUND_TRIP'].map((id) => ({ id })),
+    })),
+  ];
+}
+export function cloudInputTemplate() {
+  const input = inputTemplate();
+  return {
+    ...input,
+    profile: CLOUD_PROFILE,
+    runId: null,
+    entries: Object.fromEntries(CLOUD_INPUT_IDS.map((id) => [id, input.entries[id]])),
+  };
+}
+export function cloudReceiptTemplate() {
+  return {
+    formatVersion: 1,
+    profile: CLOUD_PROFILE,
+    sourceCommit: CANDIDATE,
+    protocolDigest: protocolDigest(),
+    mode: 'TARGET_CLOUD',
+    syntheticResponsesAllowed: false,
+    runId: null,
+    startedAt: null,
+    finishedAt: null,
+    environment: { accountId: null, region: null, stackName: null },
+    execution: 'NOT_RUN',
+    g4: 'NOT_RUN',
+    cases: cloudCases().map((row) => ({
+      id: row.id,
+      status: 'NOT_RUN',
+      assertions: [],
+      evidenceRefs: [],
+      variants: [],
+    })),
+    artifacts: [],
+    sourceExclusions: [],
+    cleanup: { status: 'NOT_RUN', ledgerRef: null },
+  };
+}
 export function inputTemplate() {
   return {
     formatVersion: 1,
@@ -254,6 +332,15 @@ function proofDetailsValid(id, d, input) {
         d.allAuthorityWritersOnCandidate === true
       );
     case 'testScopeProof':
+      if (input.profile === CLOUD_PROFILE)
+        return (
+          d.isolated === true &&
+          d.mayMutate === true &&
+          d.client === 'CONTROLLED_SIMULATOR' &&
+          JSON.stringify(d.deviceIds) === JSON.stringify([value('deviceId')]) &&
+          JSON.stringify(d.customerIds) === JSON.stringify([value('customerId')]) &&
+          JSON.stringify(d.caseIds) === JSON.stringify(cloudCases().map((row) => row.id))
+        );
       return (
         d.isolated === true &&
         d.mayMutate === true &&
@@ -333,6 +420,9 @@ export function ar12Scope(readWorking = read, readCandidate = readCandidateFiles
 export function admission(input, readArtifact = () => fail('ARTIFACT_READER_REQUIRED'), scopeProvider = ar12Scope) {
   const errors = [],
     blocked = [];
+  const cloud = input?.profile === CLOUD_PROFILE;
+  const definitions = cloud ? INPUTS.filter(([id]) => CLOUD_INPUT_IDS.includes(id)) : INPUTS;
+  if (input?.profile !== undefined && !cloud) errors.push('UNKNOWN_ACCEPTANCE_PROFILE');
   try {
     assertRedacted(input);
   } catch {
@@ -348,12 +438,13 @@ export function admission(input, readArtifact = () => fail('ARTIFACT_READER_REQU
   if (
     !input?.entries ||
     Object.keys(input.entries).sort().join() !==
-      INPUTS.map((row) => row[0])
+      definitions
+        .map((row) => row[0])
         .sort()
         .join()
   )
     errors.push('INPUT_INVENTORY_DRIFT');
-  for (const [id, owner, kind] of INPUTS) {
+  for (const [id, owner, kind] of definitions) {
     const entry = input?.entries?.[id];
     const value = entry?.value;
     if (!entry || entry.kind !== kind || entry.ownerRole !== owner) {
@@ -381,6 +472,11 @@ export function admission(input, readArtifact = () => fail('ARTIFACT_READER_REQU
           proof.region !== input.entries.region.value ||
           proof.stackName !== input.entries.stackName.value ||
           proof.passed !== true ||
+          (cloud &&
+            (proof.profile !== CLOUD_PROFILE ||
+              proof.protocolDigest !== protocolDigest() ||
+              proof.runId !== input.runId ||
+              !Number.isFinite(Date.parse(proof.capturedAt)))) ||
           !proofDetailsValid(id, proof.details, input)
         )
           fail('PROOF_SCOPE_MISMATCH');
@@ -426,7 +522,7 @@ export function admission(input, readArtifact = () => fail('ARTIFACT_READER_REQU
     if (input?.entries?.[a]?.value && input.entries[a].value === input.entries[b]?.value)
       errors.push(`IDENTITIES_NOT_DISTINCT:${a}:${b}`);
   try {
-    scopeProvider();
+    if (!cloud) scopeProvider();
   } catch {
     blocked.push({
       id: 'ar12ScopeRevalidationRequired',
@@ -439,6 +535,34 @@ export function admission(input, readArtifact = () => fail('ARTIFACT_READER_REQU
     errors,
     blocked,
     cloudRequests: 0,
+  };
+}
+export function cloudAdmission(input, readArtifact, now = Date.now()) {
+  const result = admission(input, readArtifact);
+  if (input?.profile !== CLOUD_PROFILE) result.errors.push('CLOUD_PROFILE_REQUIRED');
+  if (!/^IMG21-[A-Za-z0-9-]{8,64}$/u.test(input?.runId ?? ''))
+    result.blocked.push({ id: 'runId', ownerRole: '验收执行负责人', reason: 'MISSING_OR_INVALID_RUN_ID' });
+  let windowState = 'MISSING';
+  if (
+    input?.entries?.executionWindowProof?.value &&
+    !result.errors.includes('INVALID_TARGET_PROOF:executionWindowProof')
+  ) {
+    const proof = JSON.parse(readArtifact(safePath(input.entries.executionWindowProof.value.path)));
+    const window = proof.details;
+    windowState =
+      now < Date.parse(window.startsAt) ? 'SCHEDULED' : now > Date.parse(window.endsAt) ? 'EXPIRED' : 'OPEN';
+    if (windowState === 'EXPIRED')
+      result.blocked.push({ id: 'executionWindowProof', reason: 'EXECUTION_WINDOW_EXPIRED' });
+    if (JSON.stringify(window.caseIds) !== JSON.stringify(cloudCases().map((row) => row.id)))
+      result.errors.push('WINDOW_CASE_SCOPE_MISMATCH');
+  }
+  return {
+    ...result,
+    profile: CLOUD_PROFILE,
+    windowState,
+    status: result.errors.length ? 'FAIL' : result.blocked.length ? 'BLOCKED' : 'PASS_INPUT_STRUCTURE_ONLY',
+    executionReady: false,
+    requiresRealExecutionReview: true,
   };
 }
 export function assertRedacted(value) {
@@ -531,13 +655,86 @@ export function receiptTemplate() {
     cleanup: { status: 'NOT_RUN', ledgerRef: null },
   };
 }
+function cloudImageEvidenceValid(id, evidence, input) {
+  const data = (kind) => evidence.find((e) => e?.kind === kind)?.data;
+  const http = data('HTTP'),
+    client = data('CLIENT');
+  const hash = (v) => typeof v === 'string' && /^[a-f0-9]{64}$/u.test(v);
+  const text = (v) => typeof v === 'string' && !!v.trim();
+  if (
+    !http ||
+    !client ||
+    !text(input?.entries?.deviceId?.value) ||
+    !text(input?.entries?.customerId?.value) ||
+    http.deviceId !== input.entries.deviceId.value ||
+    http.customerId !== input.entries.customerId.value ||
+    !text(http.requestId) ||
+    !hash(client.sentSha256) ||
+    client.sentSha256 !== client.receivedSha256 ||
+    !Number.isSafeInteger(client.sizeBytes) ||
+    client.sizeBytes <= 0 ||
+    client.jpegDecoded !== true
+  )
+    return false;
+  if (id === 'CF01')
+    return (
+      http.leaseStatus === 200 &&
+      http.stateStatus === 200 &&
+      http.state === 'ACTIVE' &&
+      http.uploadStatus === 200 &&
+      http.latestStatus === 200 &&
+      http.latestState === 'READY' &&
+      text(http.streamId) &&
+      text(http.frameId) &&
+      client.streamId === http.streamId &&
+      client.frameId === http.frameId &&
+      http.releaseStatus === 204
+    );
+  const kind = id === 'CF02' ? 'EVENT' : 'ALARM';
+  const s3 = data('S3'),
+    mqtt = data('MQTT');
+  return (
+    s3 &&
+    mqtt &&
+    http.triggerKind === kind &&
+    text(http.sourceMessageId) &&
+    text(http.mediaId) &&
+    text(http.objectPath) &&
+    [200, 201].includes(http.sessionStatus) &&
+    http.registrationStatus === 409 &&
+    http.registrationCode === 'MEDIA_ALREADY_REGISTERED' &&
+    http.registeredMediaId === http.mediaId &&
+    http.queryStatus === 200 &&
+    http.evidenceStatus === 'AVAILABLE' &&
+    http.evidenceMediaId === http.mediaId &&
+    http.downloadStatus === 200 &&
+    s3.putStatus >= 200 &&
+    s3.putStatus < 300 &&
+    text(s3.requestId) &&
+    s3.objectPath === http.objectPath &&
+    s3.sha256 === client.sentSha256 &&
+    s3.sizeBytes === client.sizeBytes &&
+    mqtt.triggerKind === kind &&
+    mqtt.sourceMessageId === http.sourceMessageId &&
+    mqtt.triggerRefMessageId === http.sourceMessageId &&
+    mqtt.mediaObjectPath === http.objectPath &&
+    text(mqtt.mediaMessageId) &&
+    mqtt.mediaMessageId !== mqtt.sourceMessageId &&
+    http.evidenceSourceMessageId === http.sourceMessageId &&
+    client.mediaId === http.mediaId &&
+    (kind !== 'ALARM' || mqtt.alarmStatus === 'ACTIVE')
+  );
+}
 export function validateReceipt(receipt, input, readArtifact, scopeProvider = ar12Scope) {
   const errors = [],
     pending = [];
-  const planned = validateCases();
+  const cloud = receipt?.profile === CLOUD_PROFILE;
+  const planned = cloud ? cloudCases() : validateCases();
+  if (receipt?.profile !== undefined && !cloud) errors.push('UNKNOWN_ACCEPTANCE_PROFILE');
+  if (cloud !== (input?.profile === CLOUD_PROFILE)) errors.push('RECEIPT_INPUT_PROFILE_MISMATCH');
   let scope;
   try {
-    scope = scopeProvider();
+    if (!cloud) scope = scopeProvider();
   } catch {
     return {
       status: 'BLOCKED',
@@ -549,8 +746,9 @@ export function validateReceipt(receipt, input, readArtifact, scopeProvider = ar
   }
   if (
     !Array.isArray(receipt?.sourceExclusions) ||
-    receipt.sourceExclusions.length !== 1 ||
-    !isAr12Exclusion(receipt.sourceExclusions[0], scope)
+    (cloud
+      ? receipt.sourceExclusions.length !== 0
+      : receipt.sourceExclusions.length !== 1 || !isAr12Exclusion(receipt.sourceExclusions[0], scope))
   )
     errors.push('AR12_SOURCE_EXCLUSION_INVALID');
 
@@ -597,12 +795,18 @@ export function validateReceipt(receipt, input, readArtifact, scopeProvider = ar
         artifact.mode !== 'TARGET_CLOUD' ||
         artifact.syntheticResponsesAllowed !== false ||
         artifact.sourceCommit !== CANDIDATE ||
+        (cloud &&
+          (artifact.profile !== CLOUD_PROFILE ||
+            artifact.protocolDigest !== protocolDigest() ||
+            ![...planned.map((p) => p.id), 'OP03'].includes(artifact.caseId))) ||
         artifact.runId !== receipt.runId ||
         !artifact.caseId ||
         !artifact.kind ||
         artifact.accountId !== receipt.environment.accountId ||
         artifact.region !== receipt.environment.region ||
         artifact.stackName !== receipt.environment.stackName ||
+        !Number.isFinite(Date.parse(receipt.startedAt)) ||
+        !Number.isFinite(Date.parse(receipt.finishedAt)) ||
         !Number.isFinite(Date.parse(artifact.capturedAt)) ||
         Date.parse(artifact.capturedAt) < Date.parse(receipt.startedAt) ||
         Date.parse(artifact.capturedAt) > Date.parse(receipt.finishedAt)
@@ -676,6 +880,8 @@ export function validateReceipt(receipt, input, readArtifact, scopeProvider = ar
       plan.evidenceKinds.some((kind) => !evidence.some((e) => e?.kind === kind))
     )
       errors.push(`EVIDENCE_COVERAGE:${row.id}`);
+    if (cloud && !cloudImageEvidenceValid(row.id, evidence, input))
+      errors.push(`IMAGE_ROUND_TRIP_NOT_PROVEN:${row.id}`);
   }
   if (receipt?.execution === 'NOT_RUN' && rows.some((row) => row.status !== 'NOT_RUN'))
     errors.push('UNEXECUTED_CASE_CLAIM');
@@ -687,7 +893,9 @@ export function validateReceipt(receipt, input, readArtifact, scopeProvider = ar
       pending,
       cloudRequests: 0,
     };
-  const ready = admission(input, readArtifact, scopeProvider);
+  const ready = cloud
+    ? cloudAdmission(input, readArtifact, Date.parse(receipt.finishedAt))
+    : admission(input, readArtifact, scopeProvider);
   if (!ready.errors.length && !ready.blocked.some((row) => row.reason === 'MISSING_TARGET_INPUT')) {
     const window = JSON.parse(readArtifact(input.entries.executionWindowProof.value.path)).details;
     if (
@@ -695,8 +903,27 @@ export function validateReceipt(receipt, input, readArtifact, scopeProvider = ar
       Date.parse(receipt.finishedAt) > Date.parse(window.endsAt)
     )
       errors.push('OUTSIDE_AUTHORIZED_WINDOW');
-    if (Date.parse(receipt.finishedAt) - Date.parse(receipt.startedAt) < 86400000)
+    if (!cloud && Date.parse(receipt.finishedAt) - Date.parse(receipt.startedAt) < 86400000)
       errors.push('REAL_24H_WINDOW_NOT_PROVEN');
+    if (cloud) {
+      if (input.runId !== receipt.runId) errors.push('INPUT_RUN_MISMATCH');
+      const deployment = JSON.parse(readArtifact(safePath(input.entries.deploymentProof.value.path)));
+      const runtime = JSON.parse(readArtifact(safePath(input.entries.runtimeVersionsProof.value.path)));
+      if (
+        Object.keys(deployment.details.versions).some(
+          (key) => deployment.details.versions[key] !== runtime.details.versions[key],
+        )
+      )
+        errors.push('RUNTIME_VERSION_MISMATCH');
+      for (const id of ['deploymentProof', 'migrationProof', 'runtimeVersionsProof']) {
+        const proof = JSON.parse(readArtifact(safePath(input.entries[id].value.path)));
+        if (
+          Date.parse(proof.capturedAt) < Date.parse(window.startsAt) ||
+          Date.parse(proof.capturedAt) > Date.parse(receipt.finishedAt)
+        )
+          errors.push(`STALE_TARGET_OBSERVATION:${id}`);
+      }
+    }
   }
   errors.push(...ready.errors);
   if (
@@ -708,6 +935,16 @@ export function validateReceipt(receipt, input, readArtifact, scopeProvider = ar
     errors.push('INVALID_EXECUTION_WINDOW');
   for (const key of ['accountId', 'region', 'stackName'])
     if (receipt.environment?.[key] !== input?.entries?.[key]?.value) errors.push('RECEIPT_ENVIRONMENT_DRIFT');
+  if (cloud) {
+    const http = (id) =>
+      (rows.find((r) => r.id === id)?.evidenceRefs ?? [])
+        .map((ref) => refs.get(ref))
+        .find((artifact) => artifact?.kind === 'HTTP')?.data;
+    const event = http('CF02'),
+      alarm = http('CF03');
+    if (event && alarm && ['sourceMessageId', 'mediaId', 'objectPath'].some((key) => event[key] === alarm[key]))
+      errors.push('CLOUD_TRIGGER_IDENTITIES_REUSED');
+  }
   const cleanup = refs.get(receipt?.cleanup?.ledgerRef);
   if (receipt?.cleanup?.status !== 'PASS' || cleanup?.kind !== 'CLEANUP' || cleanup?.caseId !== 'OP03')
     errors.push('CLEANUP_NOT_PROVEN');
@@ -735,6 +972,14 @@ export function validateReceipt(receipt, input, readArtifact, scopeProvider = ar
     errors,
     blocked: ready.blocked,
     cloudRequests: 0,
+    ...(cloud
+      ? {
+          profile: CLOUD_PROFILE,
+          gateScope: 'CLOUD_IMAGE_INTERFACES_ONLY',
+          thirdPartyAppRequired: false,
+          extendedSuiteRequired: false,
+        }
+      : {}),
   };
 }
 export function buildPackage() {
@@ -770,6 +1015,15 @@ export function buildPackage() {
     'candidate.json': json({
       ...binding,
       preparation: 'OFFLINE_ONLY',
+      acceptance: {
+        profile: CLOUD_PROFILE,
+        requiredCases: cloudCases(),
+        thirdPartyAppRequired: false,
+        physicalDeviceRequired: false,
+        extended44Required: false,
+        extendedRegression: 'RETAINED_SEPARATELY_WITH_ORIGINAL_STATUSES',
+        offlineCannotPassG4: true,
+      },
       sixRequirements: [
         'candidate-and-G3',
         'environment-and-identity',
@@ -781,7 +1035,12 @@ export function buildPackage() {
       policy: parse('contracts/domain/camera-interaction-policy.json').liveImage,
     }),
     'inputs.template.json': json(inputTemplate()),
-    'cases.json': json({ formatVersion: 1, cases: catalog }),
+    'cases.json': json({
+      formatVersion: 1,
+      suite: 'EXTENDED_REGRESSION',
+      blocksCloudInterfaceGate: false,
+      cases: catalog,
+    }),
     'receipt.template.json': json(receiptTemplate()),
     'reachability.json': json({
       sourceCommit: CANDIDATE,
@@ -900,8 +1159,33 @@ export function main(args) {
       artifactReader(dirname(receipt)),
     );
   }
+  if (args.length === 1 && args[0] === '--cloud-templates') {
+    verifyG3();
+    return {
+      status: 'PASS_OFFLINE_TEMPLATES',
+      input: cloudInputTemplate(),
+      receipt: cloudReceiptTemplate(),
+      cases: cloudCases(),
+      cloudRequests: 0,
+      g4: 'NOT_RUN',
+    };
+  }
+  if (args.length === 2 && args[0] === '--cloud-admission') {
+    verifyG3();
+    const file = resolve(args[1]);
+    return cloudAdmission(JSON.parse(readFileSync(file)), artifactReader(dirname(file)));
+  }
+  if (args.length === 3 && args[0] === '--cloud-receipt') {
+    verifyG3();
+    const file = resolve(args[1]),
+      input = resolve(args[2]);
+    const receipt = JSON.parse(readFileSync(file)),
+      inputs = JSON.parse(readFileSync(input));
+    if (receipt.profile !== CLOUD_PROFILE || inputs.profile !== CLOUD_PROFILE) fail('CLOUD_PROFILE_REQUIRED');
+    return validateReceipt(receipt, inputs, artifactReader(dirname(file)));
+  }
   fail(
-    'USAGE: --generate | --check | --admission <inputs.json> | --receipt <receipt.json> <inputs.json>; offline only',
+    'USAGE: --generate | --check | --admission <inputs.json> | --receipt <receipt.json> <inputs.json> | --cloud-templates | --cloud-admission <inputs.json> | --cloud-receipt <receipt.json> <inputs.json>; offline only',
   );
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

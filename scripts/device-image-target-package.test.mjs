@@ -7,6 +7,12 @@ import { spawnSync } from 'node:child_process';
 import { createTestDb } from '../apps/cloud-api/test/helpers.ts';
 import {
   ROOT,
+  CLOUD_PROFILE,
+  CLOUD_INPUT_IDS,
+  cloudInputTemplate,
+  cloudReceiptTemplate,
+  cloudAdmission,
+  cloudCases,
   PACKAGE,
   CANDIDATE,
   INPUTS,
@@ -679,4 +685,259 @@ test('a filtered seven-case report cannot masquerade as the complete 34-case loc
         ? Buffer.from(JSON.stringify(record))
         : readFileSync(join(ROOT, p));
   assert.throws(() => ar12Scope(read, readCandidateFiles), /AR12_LOCAL_REGRESSION_NOT_PASSED/);
+});
+
+// Synthetic metadata stays in memory: even a fully valid fixture cannot produce G4 PASS.
+function cloudFixture() {
+  const original = structuralFixture();
+  const input = cloudInputTemplate();
+  input.runId = 'IMG21-CLOUD-fixture-0001';
+  for (const id of CLOUD_INPUT_IDS) input.entries[id] = clone(original.input.entries[id]);
+  const files = new Map();
+  const put = (path, value) => {
+    const bytes = Buffer.from(JSON.stringify(value));
+    files.set(path, bytes);
+    return { path, sha256: sha(bytes) };
+  };
+  for (const id of CLOUD_INPUT_IDS.filter((id) => input.entries[id].kind === 'proof')) {
+    const proof = JSON.parse(original.files.get(input.entries[id].value.path));
+    Object.assign(proof, {
+      profile: CLOUD_PROFILE,
+      protocolDigest: protocolDigest(),
+      runId: input.runId,
+      capturedAt: '2026-11-08T00:01:00Z',
+    });
+    if (id === 'testScopeProof')
+      proof.details = {
+        isolated: true,
+        mayMutate: true,
+        client: 'CONTROLLED_SIMULATOR',
+        deviceIds: [input.entries.deviceId.value],
+        customerIds: [input.entries.customerId.value],
+        caseIds: ['CF01', 'CF02', 'CF03'],
+      };
+    if (id === 'executionWindowProof')
+      proof.details = {
+        startsAt: '2026-11-08T00:00:00Z',
+        endsAt: '2026-11-08T01:00:00Z',
+        permittedCloudCases: true,
+        caseIds: ['CF01', 'CF02', 'CF03'],
+      };
+    input.entries[id].value = put(`proofs/${id}.json`, proof);
+  }
+  const receipt = cloudReceiptTemplate();
+  Object.assign(receipt, {
+    runId: input.runId,
+    startedAt: '2026-11-08T00:01:00Z',
+    finishedAt: '2026-11-08T00:30:00Z',
+    environment: {
+      accountId: input.entries.accountId.value,
+      region: input.entries.region.value,
+      stackName: input.entries.stackName.value,
+    },
+    execution: 'EXECUTED',
+  });
+  const digest = 'a'.repeat(64);
+  const add = (caseId, kind, data) => {
+    const id = `${caseId}-${kind}`;
+    receipt.artifacts.push({
+      id,
+      ...put(`${id}.json`, {
+        mode: 'TARGET_CLOUD',
+        profile: CLOUD_PROFILE,
+        protocolDigest: protocolDigest(),
+        sourceCommit: CANDIDATE,
+        syntheticResponsesAllowed: false,
+        runId: receipt.runId,
+        ...receipt.environment,
+        caseId,
+        kind,
+        capturedAt: '2026-11-08T00:10:00Z',
+        data,
+      }),
+    });
+    return id;
+  };
+  for (const row of receipt.cases) {
+    const plan = cloudCases().find((r) => r.id === row.id);
+    const http = {
+      deviceId: input.entries.deviceId.value,
+      customerId: input.entries.customerId.value,
+      requestId: 'fixture-request',
+    };
+    const client = { sentSha256: digest, receivedSha256: digest, sizeBytes: 811, jpegDecoded: true };
+    if (row.id === 'CF01') {
+      Object.assign(http, {
+        leaseStatus: 200,
+        stateStatus: 200,
+        state: 'ACTIVE',
+        uploadStatus: 200,
+        latestStatus: 200,
+        latestState: 'READY',
+        streamId: 'fixture-stream',
+        frameId: 'fixture-frame',
+        releaseStatus: 204,
+      });
+      Object.assign(client, { streamId: http.streamId, frameId: http.frameId });
+    } else {
+      const kind = row.id === 'CF02' ? 'EVENT' : 'ALARM';
+      Object.assign(http, {
+        triggerKind: kind,
+        sourceMessageId: `${row.id}-source`,
+        mediaId: `${row.id}-media`,
+        objectPath: `${row.id}/image.jpg`,
+        sessionStatus: 201,
+        registrationStatus: 409,
+        registrationCode: 'MEDIA_ALREADY_REGISTERED',
+        registeredMediaId: `${row.id}-media`,
+        evidenceMediaId: `${row.id}-media`,
+        queryStatus: 200,
+        evidenceStatus: 'AVAILABLE',
+        downloadStatus: 200,
+        evidenceSourceMessageId: `${row.id}-source`,
+      });
+      Object.assign(client, { mediaId: http.mediaId });
+      add(row.id, 'S3', {
+        putStatus: 200,
+        requestId: 'fixture-s3-request',
+        objectPath: http.objectPath,
+        sha256: digest,
+        sizeBytes: 811,
+      });
+      add(row.id, 'MQTT', {
+        triggerKind: kind,
+        sourceMessageId: http.sourceMessageId,
+        triggerRefMessageId: http.sourceMessageId,
+        mediaObjectPath: http.objectPath,
+        mediaMessageId: `${row.id}-media-message`,
+        ...(kind === 'ALARM' ? { alarmStatus: 'ACTIVE' } : {}),
+      });
+    }
+    add(row.id, 'HTTP', http);
+    add(row.id, 'CLIENT', client);
+    row.status = 'PASS';
+    row.assertions = plan.assertions.map(({ id }) => ({ id, passed: true }));
+    row.evidenceRefs = receipt.artifacts.filter((r) => r.id.startsWith(row.id)).map((r) => r.id);
+  }
+  receipt.cleanup = {
+    status: 'PASS',
+    ledgerRef: add('OP03', 'CLEANUP', {
+      entries: [
+        {
+          id: 'fixture-viewer',
+          resourceType: 'VIEWER',
+          ownerRunId: receipt.runId,
+          deviceId: input.entries.deviceId.value,
+          disposition: 'RELEASED',
+        },
+      ],
+      postChecks: { activeTestViewerCount: 0, faultConfigurationRestored: true, historicalLinksPreserved: true },
+    }),
+  };
+  return {
+    input,
+    receipt,
+    files,
+    read: (path) => {
+      assert.ok(files.has(path), path);
+      return files.get(path);
+    },
+    proof: (id, mutate) => {
+      const p = input.entries[id].value.path;
+      const v = JSON.parse(files.get(p));
+      mutate(v);
+      input.entries[id].value = put(p, v);
+    },
+    artifact: (id, mutate) => {
+      const a = receipt.artifacts.find((r) => r.id === id);
+      const v = JSON.parse(files.get(a.path));
+      mutate(v);
+      a.sha256 = put(a.path, v).sha256;
+    },
+  };
+}
+test('cloud Gate requires only preview and EVENT/ALARM interfaces, no App or extended/native/SLA inputs', () => {
+  const f = cloudFixture();
+  assert.equal(CLOUD_INPUT_IDS.length, 22);
+  for (const id of [
+    'nativeWindow',
+    'faultPlan',
+    'longWindow',
+    'scaleAndSla',
+    'otherDeviceId',
+    'otherDeviceMtlsRef',
+    'viewerBRef',
+  ])
+    assert.equal(f.input.entries[id], undefined, id);
+  assert.equal(cloudAdmission(f.input, f.read, Date.parse('2026-11-08T00:20:00Z')).status, 'PASS_INPUT_STRUCTURE_ONLY');
+  const r = validateReceipt(f.receipt, f.input, f.read);
+  assert.equal(r.status, 'PASS_STRUCTURE_ONLY');
+  assert.equal(r.g4, 'NOT_RUN');
+  assert.equal(r.thirdPartyAppRequired, false);
+  assert.equal(r.extendedSuiteRequired, false);
+  assert.equal(r.requiresRealExecutionReview, true);
+});
+test('cloud templates remain NOT_RUN and missing target inputs remain BLOCKED', () => {
+  const i = cloudInputTemplate(),
+    r = cloudReceiptTemplate();
+  assert.equal(cloudAdmission(i, () => assert.fail()).status, 'BLOCKED');
+  assert.equal(validateReceipt(r, i, () => assert.fail()).status, 'NOT_RUN');
+});
+test('cloud execution window can be scheduled but an expired window cannot admit a new run', () => {
+  const f = cloudFixture();
+  const scheduled = cloudAdmission(f.input, f.read, Date.parse('2026-11-07T23:00:00Z'));
+  assert.equal(scheduled.status, 'PASS_INPUT_STRUCTURE_ONLY');
+  assert.equal(scheduled.windowState, 'SCHEDULED');
+  assert.equal(scheduled.executionReady, false);
+  assert.equal(cloudAdmission(f.input, f.read, Date.parse('2026-11-08T02:00:00Z')).status, 'BLOCKED');
+});
+for (const [name, mutate] of [
+  ['wrong image hash', (f) => f.artifact('CF01-CLIENT', (a) => (a.data.receivedSha256 = 'b'.repeat(64)))],
+  ['not decoded JPEG', (f) => f.artifact('CF01-CLIENT', (a) => (a.data.jpegDecoded = false))],
+  ['wrong stream', (f) => f.artifact('CF01-CLIENT', (a) => (a.data.streamId = 'old-stream'))],
+  ['WAITING_FRAME', (f) => f.artifact('CF01-HTTP', (a) => (a.data.latestState = 'WAITING_FRAME'))],
+  ['foreign tenant', (f) => f.artifact('CF02-HTTP', (a) => (a.data.customerId = 'another-customer'))],
+  ['wrong triggerRef', (f) => f.artifact('CF02-MQTT', (a) => (a.data.triggerRefMessageId = 'wrong-message'))],
+  ['PUBACK without registration', (f) => f.artifact('CF02-HTTP', (a) => (a.data.registrationStatus = 200))],
+  ['unassociated image', (f) => f.artifact('CF02-HTTP', (a) => (a.data.evidenceStatus = null))],
+  ['ALARM clear instead of active', (f) => f.artifact('CF03-MQTT', (a) => (a.data.alarmStatus = 'CLEARED'))],
+  ['S3 object mismatch', (f) => f.artifact('CF03-S3', (a) => (a.data.objectPath = 'other-object'))],
+  ['S3 truncated bytes', (f) => f.artifact('CF02-S3', (a) => (a.data.sizeBytes = 1))],
+  ['download failed', (f) => f.artifact('CF03-HTTP', (a) => (a.data.downloadStatus = 403))],
+  ['wrong associated media', (f) => f.artifact('CF02-HTTP', (a) => (a.data.evidenceMediaId = 'other-media'))],
+  ['wrong registration media', (f) => f.artifact('CF03-HTTP', (a) => (a.data.registeredMediaId = 'other-media'))],
+  ['missing EVENT case', (f) => f.receipt.cases.splice(1, 1)],
+  ['raw target claim', (f) => (f.receipt.g4 = 'PASS')],
+  ['receipt profile replay', (f) => delete f.receipt.profile],
+  ['proof old candidate', (f) => f.proof('deploymentProof', (p) => (p.sourceCommit = '6'.repeat(40)))],
+  ['proof old protocol', (f) => f.proof('deploymentProof', (p) => (p.protocolDigest = '0'.repeat(64)))],
+  ['unapproved proof draft', (f) => f.proof('executionWindowProof', (p) => (p.passed = false))],
+  ['wrong run', (f) => (f.input.runId = 'IMG21-CLOUD-other-run')],
+  ['outside window', (f) => (f.receipt.finishedAt = '2026-11-08T02:00:00Z')],
+  ['old version observation', (f) => f.proof('runtimeVersionsProof', (p) => (p.capturedAt = '2026-11-07T23:59:00Z'))],
+  [
+    'mixed deployed versions',
+    (f) => f.proof('runtimeVersionsProof', (p) => (p.details.versions.adminApi = 'different-version')),
+  ],
+  ['local mocked evidence', (f) => f.artifact('CF01-HTTP', (a) => (a.mode = 'LOCAL_FIXTURE'))],
+  ['artifact wrong protocol', (f) => f.artifact('CF01-HTTP', (a) => (a.protocolDigest = '0'.repeat(64)))],
+  ['invalid receipt time', (f) => (f.receipt.startedAt = 'not-a-date')],
+  ['missing cleanup', (f) => (f.receipt.cleanup.status = 'NOT_RUN')],
+])
+  test(`cloud interface Gate rejects ${name}`, () => {
+    const f = cloudFixture();
+    mutate(f);
+    assert.equal(validateReceipt(f.receipt, f.input, f.read).status, 'FAIL');
+  });
+test('core FAIL and BLOCKED are retained, while lack of App artifacts has no effect', () => {
+  for (const status of ['FAIL', 'BLOCKED', 'NOT_RUN']) {
+    const f = cloudFixture();
+    f.receipt.cases[1].status = status;
+    assert.equal(validateReceipt(f.receipt, f.input, f.read).status, status);
+  }
+});
+test('cloud scope cannot request retirement, another device or expanded cases', () => {
+  const f = cloudFixture();
+  f.proof('testScopeProof', (p) => p.details.deviceIds.push('foreign-device'));
+  assert.equal(cloudAdmission(f.input, f.read, Date.parse('2026-11-08T00:20:00Z')).status, 'FAIL');
 });

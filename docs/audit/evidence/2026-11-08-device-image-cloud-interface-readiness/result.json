@@ -1,0 +1,240 @@
+{
+  "formatVersion": 1,
+  "scope": "IMG21_CLOUD_INTERFACE_GATE_OFFLINE_ADMISSION_PREPARATION",
+  "profile": "G4_CLOUD_INTERFACE_V1",
+  "sourceCommit": "d1a7b81196d60ec320e760da3d18de403563fc12",
+  "preparationBaseCommit": "afae9c0a05ba86658ccb533d04c40e53a04f32c3",
+  "g3EvidenceCommit": "1b1b879ffcf34be7cebd6fe87b8301ae5bd21356",
+  "protocolDigest": "59aa04f04df4a9b6b0cb5c76af407541b0bf5bc7b808887b7be9e8f5e2e6ee70",
+  "status": "PASS_OFFLINE_PREPARATION",
+  "g3": "PASS_LOCAL_PREVIOUSLY_SEALED_FOR_d1a7b811",
+  "g4": "NOT_RUN",
+  "thirdPartyAppRequired": false,
+  "physicalDeviceRequired": false,
+  "extended44Required": false,
+  "cloudCalls": 0,
+  "deployments": 0,
+  "targetDatabaseConnections": 0,
+  "targetMigrations": 0,
+  "deviceActivations": 0,
+  "pushes": 0,
+  "environmentFieldsProvided": 9,
+  "executionInputsBlocked": [
+    {
+      "id": "deployedCommit",
+      "ownerRole": "发布负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "deploymentProof",
+      "ownerRole": "发布负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "migrationProof",
+      "ownerRole": "数据库负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "runtimeVersionsProof",
+      "ownerRole": "云端运维",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "deviceId",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "customerId",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "deviceMtlsRef",
+      "ownerRole": "身份负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "mqttIdentityRef",
+      "ownerRole": "身份负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "viewerARef",
+      "ownerRole": "身份负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "testScopeProof",
+      "ownerRole": "验收执行负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "executionWindowProof",
+      "ownerRole": "验收执行负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "sequenceReservation",
+      "ownerRole": "设备接入负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "cleanupPlan",
+      "ownerRole": "云端运维",
+      "reason": "MISSING_TARGET_INPUT"
+    }
+  ],
+  "requiredCloudCases": [
+    "CF01",
+    "CF02",
+    "CF03"
+  ],
+  "targetCasesExecuted": 0,
+  "checks": [
+    {
+      "command": "node --import tsx --test scripts/device-image-target-package.test.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "tests": 136
+    },
+    {
+      "command": "pnpm test:scripts",
+      "exitCode": 0,
+      "status": "PASS",
+      "tests": 1658
+    },
+    {
+      "id": "eslint",
+      "command": [
+        "pnpm",
+        "exec",
+        "eslint",
+        "scripts/device-image-target-package.mjs",
+        "scripts/device-image-target-package.test.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "format-check",
+      "command": [
+        "pnpm",
+        "exec",
+        "prettier",
+        "--check",
+        "scripts/device-image-target-package.mjs",
+        "scripts/device-image-target-package.test.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "boundaries",
+      "command": [
+        "node",
+        "scripts/check-boundaries.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "evidence",
+      "command": [
+        "node",
+        "scripts/check-eng-db-dom-evidence.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "sensitive-sinks",
+      "command": [
+        "node",
+        "scripts/check-sensitive-sinks.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "secrets",
+      "command": [
+        "node",
+        "scripts/check-secrets.mjs"
+      ],
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/device-image-target-package.mjs",
+        "--check"
+      ],
+      "exitCode": 0,
+      "expectedStatus": "PASS_OFFLINE_PACKAGE",
+      "status": "PASS_EXPECTED_OUTCOME",
+      "cloudRequests": 0
+    },
+    {
+      "command": [
+        "node",
+        "scripts/device-image-target-package.mjs",
+        "--cloud-admission",
+        "docs/audit/evidence/2026-11-08-device-image-cloud-interface-readiness/inputs.json"
+      ],
+      "exitCode": 2,
+      "expectedStatus": "BLOCKED",
+      "status": "PASS_EXPECTED_OUTCOME",
+      "cloudRequests": 0
+    },
+    {
+      "command": [
+        "node",
+        "scripts/device-image-target-package.mjs",
+        "--cloud-receipt",
+        "docs/audit/evidence/2026-11-08-device-image-cloud-interface-readiness/receipt.json",
+        "docs/audit/evidence/2026-11-08-device-image-cloud-interface-readiness/inputs.json"
+      ],
+      "exitCode": 2,
+      "expectedStatus": "NOT_RUN",
+      "status": "PASS_EXPECTED_OUTCOME",
+      "cloudRequests": 0
+    },
+    {
+      "command": "python3 collectors/build-offline-package.py (twice)",
+      "status": "PASS_REPRODUCIBLE_BYTES",
+      "files": 13
+    }
+  ],
+  "sourceManifest": {
+    "path": "docs/audit/evidence/2026-11-08-device-image-cloud-interface-readiness/sources.sha256",
+    "count": 26,
+    "sha256": "72632b711ba3d8d2a74d54b54f73a7a8f929cc579f793057d871d0c139e8d00b"
+  },
+  "unresolvedLocalFailures": [],
+  "retainedHistoricalStatuses": [
+    "ASSET_BYTES_DOWNLOAD_BLOCKED",
+    "LEGACY_40_MIGRATION_PROBE_BLOCKED",
+    "OLD_CANDIDATE_INPUT_REJECTED"
+  ],
+  "notRun": [
+    "TARGET_DEPLOYMENT_RUNTIME_AND_MIGRATION_FRESH_OBSERVATION",
+    "CF01_REAL_PREVIEW_FRAMES",
+    "CF02_REAL_EVENT_ARCHIVE",
+    "CF03_REAL_ALARM_ARCHIVE",
+    "REAL_EXECUTION_AND_CLEANUP",
+    "FULL_VERIFY_FOR_THIS_PREPARATION_COMMIT"
+  ],
+  "independentExtendedNotRun": [
+    "NATIVE_MULTI_PROCESS_CONCURRENCY_AND_FAULTS",
+    "REAL_24H_TERMINAL_STATE",
+    "CAPACITY_AND_FIRST_FRAME_SLA"
+  ],
+  "thirdPartyOutOfScope": [
+    "APP_IMPLEMENTATION",
+    "PHYSICAL_DEVICE_ACCEPTANCE"
+  ],
+  "nextExecutableTask": "CLOUD_TEAM_PREPARE_EXCLUSIVE_SIMULATED_DEVICE_CUSTOMER_IDENTITIES_AND_CONFIRM_WINDOW"
+}

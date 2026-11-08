@@ -1,0 +1,63 @@
+[
+  {
+    "id": "eslint",
+    "command": [
+      "pnpm",
+      "exec",
+      "eslint",
+      "scripts/device-image-target-package.mjs",
+      "scripts/device-image-target-package.test.mjs"
+    ],
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  {
+    "id": "format-check",
+    "command": [
+      "pnpm",
+      "exec",
+      "prettier",
+      "--check",
+      "scripts/device-image-target-package.mjs",
+      "scripts/device-image-target-package.test.mjs"
+    ],
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  {
+    "id": "boundaries",
+    "command": [
+      "node",
+      "scripts/check-boundaries.mjs"
+    ],
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  {
+    "id": "evidence",
+    "command": [
+      "node",
+      "scripts/check-eng-db-dom-evidence.mjs"
+    ],
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  {
+    "id": "sensitive-sinks",
+    "command": [
+      "node",
+      "scripts/check-sensitive-sinks.mjs"
+    ],
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  {
+    "id": "secrets",
+    "command": [
+      "node",
+      "scripts/check-secrets.mjs"
+    ],
+    "exitCode": 0,
+    "status": "PASS"
+  }
+]

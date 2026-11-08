@@ -24,6 +24,80 @@
   },
   "preparationScope": "INDEPENDENT_PROTOCOL_DIGEST_AND_REGRESSION",
   "preparation": "OFFLINE_ONLY",
+  "acceptance": {
+    "profile": "G4_CLOUD_INTERFACE_V1",
+    "requiredCases": [
+      {
+        "id": "CF01",
+        "title": "实时 JPEG/Base64 帧上传、读取和释放",
+        "requiredVariants": [],
+        "evidenceKinds": [
+          "HTTP",
+          "CLIENT"
+        ],
+        "assertions": [
+          {
+            "id": "LEASE_STATE"
+          },
+          {
+            "id": "FRAME_ROUND_TRIP"
+          },
+          {
+            "id": "RELEASE"
+          }
+        ]
+      },
+      {
+        "id": "CF02",
+        "title": "EVENT 触发图片 S3 留档、MQTT 登记及关联读取",
+        "requiredVariants": [],
+        "evidenceKinds": [
+          "HTTP",
+          "S3",
+          "MQTT",
+          "CLIENT"
+        ],
+        "assertions": [
+          {
+            "id": "TRIGGER_REF"
+          },
+          {
+            "id": "REGISTERED_AVAILABLE"
+          },
+          {
+            "id": "IMAGE_ROUND_TRIP"
+          }
+        ]
+      },
+      {
+        "id": "CF03",
+        "title": "ALARM 触发图片 S3 留档、MQTT 登记及关联读取",
+        "requiredVariants": [],
+        "evidenceKinds": [
+          "HTTP",
+          "S3",
+          "MQTT",
+          "CLIENT"
+        ],
+        "assertions": [
+          {
+            "id": "TRIGGER_REF"
+          },
+          {
+            "id": "REGISTERED_AVAILABLE"
+          },
+          {
+            "id": "IMAGE_ROUND_TRIP"
+          }
+        ]
+      }
+    ],
+    "thirdPartyAppRequired": false,
+    "physicalDeviceRequired": false,
+    "extended44Required": false,
+    "extendedRegression": "RETAINED_SEPARATELY_WITH_ORIGINAL_STATUSES",
+    "offlineCannotPassG4": true
+  },
   "sixRequirements": [
     "candidate-and-G3",
     "environment-and-identity",
