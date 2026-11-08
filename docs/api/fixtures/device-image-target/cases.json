@@ -405,7 +405,7 @@
       ],
       "requiredInputs": [],
       "steps": [
-        "使用无media:read身份、其他租户身份、过期/伪造JWT和无登记证书分别访问。"
+        "Use a revoked/zero-role identity for whole-request rejection, then cross-tenant, expired/forged JWT and unregistered certificate variants. Do not fabricate a V1 role lacking only media:read."
       ],
       "assertions": [
         {
@@ -424,7 +424,7 @@
       ],
       "status": "NOT_RUN",
       "requiredVariants": [
-        "no-media-permission",
+        "revoked-or-zero-role",
         "cross-tenant",
         "expired-jwt",
         "forged-jwt",
@@ -929,7 +929,7 @@
       ],
       "requiredInputs": [],
       "steps": [
-        "当前有权限、无media:read、跨租户、未关联、删除和下载失败分别读取。"
+        "Execute allowed, cross-tenant, unassociated, deleted and download-failure target variants. Keep no-media-permission as NOT_APPLICABLE bound to AR12-V1-MEDIA-OMISSION-NA-1 and fresh local denial regression; never claim target PASS for it."
       ],
       "assertions": [
         {
@@ -938,7 +938,7 @@
         },
         {
           "id": "AR12-A2",
-          "expected": "未关联有读权限为null，无读取权限省略字段"
+          "expected": "Authorized but unassociated returns evidenceImage:null. The independent media-denial omission branch is recorded separately as source-bound NOT_APPLICABLE, not a target success."
         },
         {
           "id": "AR12-A3",

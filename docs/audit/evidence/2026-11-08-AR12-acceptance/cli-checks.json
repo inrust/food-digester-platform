@@ -1,0 +1,29 @@
+[
+  {
+    "id": "admission",
+    "command": [
+      "node",
+      "scripts/device-image-target-package.mjs",
+      "--admission",
+      "docs/api/fixtures/device-image-target/inputs.template.json"
+    ],
+    "exitCode": 2,
+    "expectedExitCode": 2,
+    "status": "PASS_EXPECTED_OUTCOME",
+    "observedStatus": "BLOCKED"
+  },
+  {
+    "id": "receipt",
+    "command": [
+      "node",
+      "scripts/device-image-target-package.mjs",
+      "--receipt",
+      "docs/api/fixtures/device-image-target/receipt.template.json",
+      "docs/api/fixtures/device-image-target/inputs.template.json"
+    ],
+    "exitCode": 2,
+    "expectedExitCode": 2,
+    "status": "PASS_EXPECTED_OUTCOME",
+    "observedStatus": "NOT_RUN"
+  }
+]

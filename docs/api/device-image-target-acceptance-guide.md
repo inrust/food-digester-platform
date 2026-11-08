@@ -12,9 +12,9 @@
 | `manifest.json` | 每个导出文件和组包脚本、测试、用例、SQL、指南及冻结输入的 SHA-256，不自哈希 |
 | `inputs.template.json` | 35 个目标输入、提供方角色、类型；全部 value=null，不能被当作已具备环境 |
 | `cases.json` | 44 个有依赖顺序的目标用例、断言 ID、证据种类、必要变体，全部 NOT_RUN |
-| `receipt.template.json` | 逐用例/断言/证据及清理结果模板，G4=NOT_RUN，无伪造运行值 |
+| `receipt.template.json` | 44个目标用例仍NOT_RUN；AR12单一源码不可达变体单列NOT_APPLICABLE及sourceExclusions，G4=NOT_RUN |
 | `resources.template.json` | runId 资源台账、原状态摘要和清理复核字段；初始空白 |
-| `reachability.json` | 候选源码确认的目标可达性限制及源摘要；没有离线豁免开关 |
+| `reachability.json` | AR12受源码约束的单一N/A决策、源码摘要和独立本地回归依据；不是通用豁免开关 |
 | `openapi.json` | 五个预览接口及归档申请/告警详情/事件查询/媒体下载的独立 OpenAPI；服务器刻意使用 `.invalid` |
 | `requests.json` | 真实 operationId、方法、完整路径、认证、请求体类型和声明状态；executable=false |
 | `capture.jpg`、`frame-request.template.json` | 811 字节、16×16 JPEG；完整 Base64，streamId/frameId/时间刻意保留变量，不可原样发送 |
@@ -22,7 +22,7 @@
 
 校验器从 **Git 候选对象**校验 IMG-20 的 1693 份源摘要和 34 份证据摘要；再检查工作区内原有 G3 输入字节不变。进度文档和日志 Git 属性属于 IMG-20 明确分开的归档元数据。不会用当前工作区修改过的计划冒充候选内旧文档，也不会把 IMG-20 result 的父提交 e20f3ce4 当成最终候选。
 
-新增准备脚本、用例、只读 SQL 和共享引用解析器另有 `protocolDigest`；输入和 receipt 必须绑定同一个摘要。修改执行包后必须重新生成，不得继续套用旧 receipt。G3 的完整 verify 是候选历史证据，本批新增工具的本地检查单独记录。
+新增准备脚本、AR12口径及本地回归依据、用例、只读 SQL 和共享引用解析器另有 `protocolDigest`；输入和 receipt 必须绑定同一个摘要。修改执行包后必须重新生成，不得继续套用旧 receipt。G3 的完整 verify 是候选历史证据，本批新增工具的本地检查单独记录。
 
 ```bash
 node scripts/device-image-target-package.mjs --generate
@@ -44,7 +44,7 @@ node scripts/device-image-target-package.mjs --check
 | controlTable / payloadTable / archiveBucket / runtimeVersionsProof | 云端运维 | 由实际栈输出和运行配置提供；核对两表、IAM/VPC endpoint、各运行版本，权威写入口均使用同一候选 |
 | deviceId / customerId / otherDeviceId / otherCustomerId | 环境负责人 | 两台隔离设备、两个不同客户；先记录归属/生命周期/运行状态/白名单基线 |
 | deviceMtlsRef / otherDeviceMtlsRef / mqttIdentityRef | 身份负责人 | 主设备及一次性设备的独立证书引用和MQTT引用；证书指纹、有效期、登记状态另外核对；不在包内放 PEM 私钥 |
-| viewerARef / viewerBRef / noMediaRoleRef / otherTenantRef | 身份负责人 | 两个独立 viewer 和跨租户身份；零角色身份可验证整个请求拒绝，但不能证明图片字段省略，后者保持下述 BLOCKED；不是复用同一 JWT 改 body 角色 |
+| viewerARef / viewerBRef / rejectedIdentityRef / otherTenantRef | 身份负责人 | 两个独立viewer、当前撤权/零角色等整个请求被拒绝的身份和跨租户身份；不要求制造V1不存在的仅缺图片权限角色，不手改JWT角色 |
 | authorityWriterRef | 云端运维 | 已包装的权威写入口/受控测试作业引用，恢复操作身份必须独立于被撤权的测试身份；不能用裸 SQL 或另建原始 client 绕过失效协议 |
 | testScopeProof / executionWindowProof | 验收执行负责人 | 本轮资源范围、可执行操作与时间窗、独占 runId；本次准备授权不等于目标执行授权 |
 | nativeWindow / faultPlan | 数据库/云端负责人 | 原生 PG 多连接、多进程、真实 DDB；故障范围/时限/恢复办法，最多本轮两台隔离设备 |
@@ -75,9 +75,9 @@ node scripts/device-image-target-package.mjs --check
 node scripts/device-image-target-package.mjs --admission docs/api/fixtures/device-image-target/inputs.template.json
 ```
 
-初始输出 BLOCKED、列出35个缺项及提供方，另加1项目标可达性限制，退出码 **2**。即使输入填齐且 proof 内容/Hash 匹配，当前候选仍有下述限制；校验器也不验证凭据可用、目标已部署或授权材料真实来源，不执行任何目标操作。
+初始输出 BLOCKED、列出35个缺项及提供方，退出码 **2**。AR12旧可达性阻塞按[明确口径](./device-image-AR12-acceptance-scope.md)改为单一、受源码约束的NOT_APPLICABLE，不再另加一项永久阻塞。输入填齐并满足proof结构后可为PASS_INPUT_STRUCTURE_ONLY，不证明凭据/部署/授权材料真实，也不执行任何目标操作。
 
-**源码限制：** 当前 `packages/auth/src/permissions.ts` 的五种固定角色均有 media:read，DEC-012 没有矩阵编辑 API。AR12 中“告警查询成功但仅省略图片字段”不能通过切换正常角色在公开目标入口构造；零角色或撤权会导致整个请求拒绝，不能代替该分支。IMG-13/19 的本地拒权注入也不能冒充目标实测。该变体保留为 BLOCKED（mediaPermissionDenyPath），由云端验收/权限策略负责人明确可达性与验收范围；本包不修改矩阵、不添加假角色、不自动豁免用例。此项不影响准备材料交付，但影响未来当前44项全通过的 G4 判定。
+**AR12记录：** V1五种固定角色均有media:read，“源查询200但仅省略图片字段”的组合不可通过切换正常角色构造。只将AR12/no-media-permission以决策AR12-V1-MEDIA-OMISSION-NA-1、固定候选/源码摘要及本地ALARM/EVENT拒权回归记录为NOT_APPLICABLE；不标目标PASS、不挂目标evidenceRefs，不免除AR12其余五个目标变体。源码、候选或本地回归发生漂移则恢复ar12ScopeRevalidationRequired BLOCKED；错用N/A或旧摘要receipt拒绝。不会改V1权限矩阵或添加假角色。
 
 ## 3. 五个预览接口执行用例（PV01～PV14）
 
@@ -106,7 +106,7 @@ CORS 由实际浏览器 Origin 与 OPTIONS 验证：精确允许来源，方法�
 4. 普通 HTTPS PUT 返回的完整 URL、原 JPEG 字节、精确 Content-Length；按实际 SignedHeaders 发送必要 Header。checksum 在 query 时原样保留，在 Header 时发原 SHA-256 的 Base64；不附 JWT、REST mTLS 证书，不重建 query，不把 ETag 当业务 Hash。记录 S3 请求ID/结果/字节Hash，**不记录完整 URL**。
 5. S3 成功后向自身 media Topic 发原字段 objectPath（逐字符取响应值）、captureTime、sizeKb等。PUBACK/S3 2xx 都不是业务登记；同一申报重复 POST 得409 MEDIA_ALREADY_REGISTERED + mediaId 才确认登记。没有 GET 登记状态或 receipt 查询接口。
 6. 持久层证明同事务 MediaObject + PENDING Evidence + COMPLETED session + ingestion receipt + Outbox；正常 worker 和分钟扫描解析原触发，精确同租户/同设备/sourceMessageId，最终查询 AVAILABLE。
-7. `GET /api/v1/admin/alarms/{alarmId}`、`GET /api/v1/admin/events`、`GET /api/v1/admin/media/{mediaId}/download-url` 验证读权限、未关联 null/无权省略、AVAILABLE、DELETED、下载失败，以及告警清除后原 ACTIVE 图片仍可读。
+7. `GET /api/v1/admin/alarms/{alarmId}`、`GET /api/v1/admin/events`、`GET /api/v1/admin/media/{mediaId}/download-url` 实测有权、跨租户、未关联null、AVAILABLE、DELETED、下载失败，以及清除后原ACTIVE图片仍可读。仅缺media:read时省略字段的实现分支按AR12源码N/A决策与本地拒权回归记录，不拿整个请求被拒绝的响应冒充该分支。
 
 AR05～14 要求真实重用/过期新办、签名头负例、精确字节/Hash、重复MQTT、新旧会话竞争、清除前后、两链路配额独立、旧请求/历史媒体兼容。900秒会话到期和24小时关联终态使用真实窗口，不修改目标时钟或人为 backdate 数据库代替观察。每分钟默认50行×5页 keyset 扫描，真实多消费者和有界重试记录保留。
 
@@ -141,7 +141,7 @@ DDB只收集CONTROL顶层 revision/authEpoch/customerId/streamId/enabled/activeU
 
 每轮唯一 runId 形式 `IMG21-...`；执行前就登记资源类型、设备/客户、ID/完整对象Key、归属本轮与否、原状态摘要、恢复方法和保留决策。只处理台账内对象；释放测试viewer，经权威入口恢复准入/权限/归属，验证无活跃测试租约/遗留故障。**不删除CONTROL或倒退epoch，不删除历史关联，不扫全桶，不用“cleanup成功”掩盖未清理资源。** S3生命周期、软删除和必须保留的审计/receipt分别记录，无法清理项显式保留。
 
-目标 receipt 每个用例必须覆盖全部断言 ID；每份 evidenceRef 的 JSON与Hash一致，并绑定相同 candidate/protocol/runId/account/region/stack/caseId/时间窗。证据种类包括 HTTP/GATEWAY/DEPLOYMENT/DB/DDB/S3/MQTT/WORKER/CLEANUP；DB必须 POSTGRESQL_NATIVE，DDB必须 AWS_DYNAMODB。规定变体必须逐项PASS且有对应variantId证据；不能靠改Hash把mock/PGlite或另一环境材料合法化。
+目标receipt每个用例必须覆盖全部目标断言ID；每份evidenceRef的JSON/Hash与candidate/protocol/runId/account/region/stack/caseId/时间窗一致。证据种类包括HTTP/GATEWAY/DEPLOYMENT/DB/DDB/S3/MQTT/WORKER/CLEANUP；DB须POSTGRESQL_NATIVE，DDB须AWS_DYNAMODB。规定的可达变体须逐项PASS且有variantId证据。唯一例外是AR12/no-media-permission：保留第六条变体记录为NOT_APPLICABLE、targetExecuted=false、目标evidenceRefs=[]，另有且仅有一条精确sourceExclusions记录绑定decisionId/sourceCommit/policyDigest。它不是目标PASS；其他变体或整项用例标N/A、删除该记录、假挂目标证据、旧摘要/旧输入形状均拒绝。不得借N/A覆盖实际FAIL/BLOCKED/NOT_RUN。
 
 证据 JSON至少含 mode、syntheticResponsesAllowed、sourceCommit、runId、accountId、region、stackName、caseId、kind、capturedAt；DB/DDB另含engine，有变体时含variantId。HTTP建议data只留方法、路径模板、状态、requestId、字节数/Hash/截止与脱敏错误码；跨服务记录原sourceMessageId/seq、mediaId、Outbox ID和运行版本。不要存 Base64、Token、私钥、Cookie、完整签名URL；可将敏感字段置 `[REDACTED]`，原图仅在受控临时区保存并记录Hash。
 
@@ -153,6 +153,6 @@ node scripts/device-image-target-package.mjs --receipt \
   docs/api/fixtures/device-image-target/inputs.template.json
 ```
 
-模板返回 NOT_RUN、退出2；缺项返回BLOCKED、错误/失败返回FAIL。校验器的通用上限为 **PASS_STRUCTURE_ONLY、requiresRealExecutionReview=true，G4仍NOT_RUN**；当前候选存在 mediaPermissionDenyPath，因此完整合成元数据也只返回 BLOCKED，不存在绕过开关。离线文件校验不可能证明材料确由真实云端产出；后续验收必须复核原运行来源、部署/身份/持久化/观测链路后，在独立G4目标验收报告判定PASS或不通过，而不能把组包工具的退出0当成G4。44项有FAIL、BLOCKED、NOT_RUN、原生竞争/24h/清理证据缺失或来源未核实时，G4不得标通过。
+模板返回NOT_RUN、退出2；缺项返回BLOCKED、错误/失败返回FAIL。具备全部目标结构材料且AR12源码N/A记录仍有效时，离线工具上限仍为 **PASS_STRUCTURE_ONLY、requiresRealExecutionReview=true，G4仍NOT_RUN**。有效N/A不再单独阻塞G4；44个用例及AR12五个可达变体仍须真实执行。离线文件校验不能证明材料来自真实云端；后续必须复核运行来源、部署/身份/持久化/观测链路，在独立G4报告判定。任何其余FAIL/BLOCKED/NOT_RUN、原生竞争/24h/清理或来源证据缺失，仍不得给G4通过。
 
 第三方负责App与真机，云端执行器可以用受控模拟请求完成云端G4；G5真机结论单独记录。当前提供方/环境输入缺失不妨碍本次准备材料交付，也没有授权本包自动运行目标用例。

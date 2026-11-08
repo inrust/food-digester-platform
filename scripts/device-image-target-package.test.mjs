@@ -25,7 +25,17 @@ import {
   assertRedacted,
   protocolDigest,
   expectedMigrations,
+  ar12Scope,
+  readCandidateFiles,
 } from './device-image-target-package.mjs';
+
+import {
+  AR12_SOURCE_FILES,
+  AR12_LOCAL_RECEIPT,
+  AR12_LOCAL_REPORT,
+  ar12ExclusionRecord,
+  ar12VariantRecord,
+} from './device-image-target-ar12-scope.mjs';
 
 const clone = (value) => structuredClone(value);
 function structuralFixture() {
@@ -184,11 +194,15 @@ function structuralFixture() {
     row.status = 'PASS';
     row.assertions = plan.assertions.map((a) => ({ id: a.id, passed: true }));
     row.evidenceRefs = plan.evidenceKinds.map((kind) => artifact(row, kind));
-    row.variants = plan.requiredVariants.map((id) => ({
-      id,
-      status: 'PASS',
-      evidenceRefs: [artifact(row, plan.evidenceKinds[0], id)],
-    }));
+    row.variants = plan.requiredVariants.map((id) =>
+      row.id === 'AR12' && id === 'no-media-permission'
+        ? ar12VariantRecord(ar12Scope())
+        : {
+            id,
+            status: 'PASS',
+            evidenceRefs: [artifact(row, plan.evidenceKinds[0], id)],
+          },
+    );
   }
   receipt.cleanup = { status: 'PASS', ledgerRef: 'OP03-CLEANUP' };
   return {
@@ -247,19 +261,19 @@ test('template admission is BLOCKED with every missing input attributed; target 
   const input = inputTemplate();
   const result = admission(input);
   assert.equal(result.status, 'BLOCKED');
-  assert.equal(result.blocked.length, 36);
+  assert.equal(result.blocked.length, 35);
   assert.ok(result.blocked.every((row) => row.ownerRole));
   const receipt = validateReceipt(receiptTemplate(), input, () => assert.fail('template must not read evidence'));
   assert.equal(receipt.status, 'NOT_RUN');
   assert.equal(receipt.g4, 'NOT_RUN');
   assert.equal(receipt.pending.length, 44);
 });
-test('complete synthetic metadata remains blocked by source reachability, never grants G4', () => {
+test('complete structural metadata with valid source exclusion does not grant G4', () => {
   const f = structuralFixture();
-  assert.equal(admission(f.input, f.read).status, 'BLOCKED');
+  assert.equal(admission(f.input, f.read).status, 'PASS_INPUT_STRUCTURE_ONLY');
   const result = validateReceipt(f.receipt, f.input, f.read);
-  assert.equal(result.status, 'BLOCKED');
-  assert.ok(result.blocked.some((row) => row.id === 'mediaPermissionDenyPath'));
+  assert.equal(result.status, 'PASS_STRUCTURE_ONLY');
+  assert.deepEqual(result.blocked, []);
   assert.equal(result.g4, 'NOT_RUN');
   assert.equal(result.requiresRealExecutionReview, true);
   assert.equal(result.cloudRequests, 0);
@@ -442,4 +456,192 @@ test('raw credentials hidden in additional input fields are rejected without ech
   assert.equal(result.status, 'FAIL');
   assert.ok(result.errors.includes('SENSITIVE_INPUT'));
   assert.equal(JSON.stringify(result).includes('not-a-real-password'), false);
+});
+
+test('AR12 retains six records: five target variants and exactly one source-bound N/A', () => {
+  const scope = ar12Scope(),
+    r = receiptTemplate(),
+    row = r.cases.find((row) => row.id === 'AR12');
+  assert.equal(row.status, 'NOT_RUN');
+  assert.equal(row.variants.length, 6);
+  assert.equal(row.variants.filter((v) => v.status === 'NOT_RUN').length, 5);
+  assert.deepEqual(
+    row.variants.find((v) => v.id === 'no-media-permission'),
+    ar12VariantRecord(scope),
+  );
+  assert.deepEqual(r.sourceExclusions, [ar12ExclusionRecord(scope)]);
+  assert.equal(scope.localRegression.passedTests, 34);
+  assert.equal(scope.targetExecutionProven, false);
+  assert.ok(INPUTS.some((row) => row[0] === 'rejectedIdentityRef'));
+  assert.ok(!INPUTS.some((row) => row[0] === 'noMediaRoleRef'));
+});
+for (const [name, mutate] of [
+  ['missing exclusion', (f) => delete f.receipt.sourceExclusions],
+  ['duplicate exclusion', (f) => f.receipt.sourceExclusions.push(clone(f.receipt.sourceExclusions[0]))],
+  ['wrong decision', (f) => (f.receipt.sourceExclusions[0].decisionId = 'waive-all')],
+  ['wrong candidate', (f) => (f.receipt.sourceExclusions[0].sourceCommit = 'a'.repeat(40))],
+  ['old policy digest', (f) => (f.receipt.sourceExclusions[0].policyDigest = 'a'.repeat(64))],
+  ['target evidence claim', (f) => (f.receipt.sourceExclusions[0].targetExecuted = true)],
+  ['attached target evidence', (f) => (f.receipt.sourceExclusions[0].evidenceRefs = ['AR12-HTTP'])],
+  ['N/A disguised as PASS', (f) => (f.receipt.sourceExclusions[0].status = 'PASS')],
+  ['whole AR12 skipped', (f) => (f.receipt.cases.find((r) => r.id === 'AR12').status = 'NOT_APPLICABLE')],
+  [
+    'branch claimed target PASS',
+    (f) =>
+      (f.receipt.cases.find((r) => r.id === 'AR12').variants.find((v) => v.id === 'no-media-permission').status =
+        'PASS'),
+  ],
+  [
+    'branch deleted',
+    (f) =>
+      (f.receipt.cases.find((r) => r.id === 'AR12').variants = f.receipt.cases
+        .find((r) => r.id === 'AR12')
+        .variants.filter((v) => v.id !== 'no-media-permission')),
+  ],
+  [
+    'other AR12 branch skipped',
+    (f) =>
+      (f.receipt.cases.find((r) => r.id === 'AR12').variants.find((v) => v.id === 'deleted').status = 'NOT_APPLICABLE'),
+  ],
+  ['another case skipped', (f) => (f.receipt.cases.find((r) => r.id === 'NC06').variants[0].status = 'NOT_APPLICABLE')],
+  ['missing AR12 target evidence', (f) => (f.receipt.cases.find((r) => r.id === 'AR12').evidenceRefs = [])],
+  ['target AR12 failure', (f) => (f.receipt.cases.find((r) => r.id === 'AR12').status = 'FAIL')],
+])
+  test(`source-bound N/A cannot waive: ${name}`, () => {
+    const f = structuralFixture();
+    mutate(f);
+    assert.equal(validateReceipt(f.receipt, f.input, f.read).status, 'FAIL');
+  });
+test('forged N/A is rejected even while the parent case is NOT_RUN', () => {
+  const r = receiptTemplate();
+  r.cases.find((row) => row.id === 'NC06').variants[0].status = 'NOT_APPLICABLE';
+  assert.equal(validateReceipt(r, inputTemplate(), () => assert.fail()).status, 'FAIL');
+});
+test('AR12 target BLOCKED/NOT_RUN still prevents completion', () => {
+  for (const status of ['BLOCKED', 'NOT_RUN']) {
+    const f = structuralFixture();
+    f.receipt.cases.find((r) => r.id === 'AR12').status = status;
+    assert.equal(validateReceipt(f.receipt, f.input, f.read).status, status);
+  }
+});
+test('permuted JSON object keys do not change the exact N/A decision', () => {
+  const f = structuralFixture();
+  f.receipt.sourceExclusions[0] = Object.fromEntries(Object.entries(f.receipt.sourceExclusions[0]).reverse());
+  assert.equal(validateReceipt(f.receipt, f.input, f.read).status, 'PASS_STRUCTURE_ONLY');
+});
+for (const path of AR12_SOURCE_FILES)
+  test(`source scope is invalidated by ${path} drift without editing runtime files`, () => {
+    const reader = (p) => {
+      const bytes = readFileSync(join(ROOT, p));
+      return p === path ? Buffer.concat([bytes, Buffer.from('\nchanged-fixture-only')]) : bytes;
+    };
+    assert.throws(() => ar12Scope(reader, readCandidateFiles), /AR12_SOURCE_SCOPE_DRIFT/);
+  });
+for (const name of [
+  'missing local receipt',
+  'failed local report',
+  'missing denial case',
+  'missing matrix role',
+  'rehash wrong source',
+])
+  test(`source exemption rejects ${name}`, () => {
+    const record = JSON.parse(readFileSync(join(ROOT, AR12_LOCAL_RECEIPT)));
+    const report = JSON.parse(readFileSync(join(ROOT, AR12_LOCAL_REPORT)));
+    if (name === 'failed local report') report.success = false;
+    if (name === 'missing denial case') report.testResults[0].assertionResults[0].title = 'not-the-required-test';
+    if (name === 'missing matrix role')
+      report.testResults[0].assertionResults.find(
+        (r) => r.title === 'Auditor follows the current permission matrix',
+      ).title = 'unknown role';
+    if (name === 'rehash wrong source') record.sourceHashes[AR12_SOURCE_FILES[0]] = 'a'.repeat(64);
+    if (name === 'missing denial case')
+      report.testResults[0].assertionResults.find(
+        (r) => r.title === 'ALARM missing media:read omits the field and never queries images',
+      ).title = 'unknown branch';
+    const reportBytes = Buffer.from(JSON.stringify(report));
+    record.report.sha256 = sha(reportBytes);
+    const reader = (p) => {
+      if (p === AR12_LOCAL_RECEIPT) {
+        if (name === 'missing local receipt') throw new Error('fixture missing');
+        return Buffer.from(JSON.stringify(record));
+      }
+      if (p === AR12_LOCAL_REPORT) return reportBytes;
+      return readFileSync(join(ROOT, p));
+    };
+    assert.throws(() => ar12Scope(reader, readCandidateFiles), /AR12_/);
+  });
+test('source/local regression loss restores BLOCKED rather than silently exempting the branch', () => {
+  const f = structuralFixture(),
+    scopeProvider = () => {
+      throw new Error('AR12_SCOPE_INVALID_FIXTURE');
+    };
+  const a = admission(f.input, f.read, scopeProvider);
+  assert.equal(a.status, 'BLOCKED');
+  assert.equal(a.blocked[0].id, 'ar12ScopeRevalidationRequired');
+  const r = validateReceipt(f.receipt, f.input, f.read, scopeProvider);
+  assert.equal(r.status, 'BLOCKED');
+  assert.equal(r.g4, 'NOT_RUN');
+});
+test('old receipt shapes cannot become current by only replacing protocolDigest', () => {
+  const r = receiptTemplate();
+  delete r.sourceExclusions;
+  r.cases.find((row) => row.id === 'AR12').variants.find((v) => v.id === 'no-media-permission').status = 'NOT_RUN';
+  assert.equal(validateReceipt(r, inputTemplate(), () => assert.fail()).status, 'FAIL');
+});
+
+test('active variant failure or blocker is retained under a NOT_RUN parent, even with valid source N/A', () => {
+  for (const status of ['FAIL', 'BLOCKED']) {
+    const r = receiptTemplate();
+    r.cases.find((row) => row.id === 'AR12').variants.find((v) => v.id === 'deleted').status = status;
+    assert.equal(validateReceipt(r, inputTemplate(), () => assert.fail()).status, status);
+  }
+});
+
+test('retired impossible-role input name is rejected rather than silently reused', () => {
+  const f = structuralFixture();
+  f.input.entries.noMediaRoleRef = f.input.entries.rejectedIdentityRef;
+  delete f.input.entries.rejectedIdentityRef;
+  assert.equal(admission(f.input, f.read).status, 'FAIL');
+});
+
+for (const [name, change] of [
+  ['delete source branch', (r) => (r.requiredVariants = r.requiredVariants.filter((v) => v !== 'no-media-permission'))],
+  ['delete active branch', (r) => (r.requiredVariants = r.requiredVariants.filter((v) => v !== 'deleted'))],
+  ['drop target evidence kind', (r) => r.evidenceKinds.pop()],
+  ['drop target assertion', (r) => r.assertions.pop()],
+])
+  test(`AR12 catalog cannot reduce target scope: ${name}`, () => {
+    const data = clone(cases());
+    change(data.find((r) => r.id === 'AR12'));
+    assert.throws(() => validateCases(data), /AR12_TARGET_SCOPE_REDUCED/);
+  });
+test('unreferenced target artifacts cannot claim execution of the source-only N/A branch', () => {
+  const f = structuralFixture();
+  const original = f.receipt.artifacts.find((row) => row.id === 'AR12-HTTP');
+  const value = JSON.parse(f.files.get(original.path));
+  value.variantId = 'no-media-permission';
+  const bytes = Buffer.from(JSON.stringify(value));
+  f.files.set('forged-na.json', bytes);
+  f.receipt.artifacts.push({ id: 'forged-na', path: 'forged-na.json', sha256: sha(bytes) });
+  assert.equal(validateReceipt(f.receipt, f.input, f.read).status, 'FAIL');
+});
+
+test('a filtered seven-case report cannot masquerade as the complete 34-case local regression', () => {
+  const record = JSON.parse(readFileSync(join(ROOT, AR12_LOCAL_RECEIPT))),
+    report = JSON.parse(readFileSync(join(ROOT, AR12_LOCAL_REPORT)));
+  report.testResults[0].assertionResults = report.testResults[0].assertionResults.filter(
+    (row) =>
+      row.title.includes('missing media:read omits') || row.title.includes('follows the current permission matrix'),
+  );
+  report.numPassedTests = 7;
+  report.numTotalTests = 7;
+  const bytes = Buffer.from(JSON.stringify(report));
+  record.report.sha256 = sha(bytes);
+  const read = (p) =>
+    p === AR12_LOCAL_REPORT
+      ? bytes
+      : p === AR12_LOCAL_RECEIPT
+        ? Buffer.from(JSON.stringify(record))
+        : readFileSync(join(ROOT, p));
+  assert.throws(() => ar12Scope(read, readCandidateFiles), /AR12_LOCAL_REGRESSION_NOT_PASSED/);
 });

@@ -7,6 +7,17 @@ import { resolve, dirname, isAbsolute } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { subsetOpenApi } from './cloud-handoff-openapi.mjs';
 
+import {
+  verifyAr12Scope,
+  ar12ExclusionRecord,
+  ar12VariantRecord,
+  isAr12Exclusion,
+  isAr12Variant,
+  AR12_LOCAL_RECEIPT,
+  AR12_LOCAL_REPORT,
+  AR12_SCOPE_DOC,
+} from './device-image-target-ar12-scope.mjs';
+
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const CANDIDATE = '6dec17205fc87490e579b084dbcf2d29d5a7bdf5';
 export const PACKAGE = 'docs/api/fixtures/device-image-target';
@@ -102,6 +113,10 @@ export function protocolDigest() {
       Object.fromEntries(
         [
           'scripts/device-image-target-package.mjs',
+          'scripts/device-image-target-ar12-scope.mjs',
+          AR12_SCOPE_DOC,
+          AR12_LOCAL_RECEIPT,
+          AR12_LOCAL_REPORT,
           'scripts/device-image-target-cases.json',
           'scripts/device-image-target-read-only.sql',
           'scripts/cloud-handoff-openapi.mjs',
@@ -135,7 +150,7 @@ export const INPUTS = [
   ['mqttIdentityRef', '身份负责人', 'ref'],
   ['viewerARef', '身份负责人', 'ref'],
   ['viewerBRef', '身份负责人', 'ref'],
-  ['noMediaRoleRef', '身份负责人', 'ref'],
+  ['rejectedIdentityRef', '身份负责人', 'ref'],
   ['otherTenantRef', '身份负责人', 'ref'],
   ['authorityWriterRef', '云端运维', 'ref'],
   ['testScopeProof', '验收执行负责人', 'proof'],
@@ -257,18 +272,10 @@ function proofDetailsValid(id, d, input) {
       return false;
   }
 }
-export const TARGET_BLOCKERS = [
-  {
-    id: 'mediaPermissionDenyPath',
-    ownerRole: 'Cloud acceptance and RBAC owner',
-    reason:
-      'V1 five fixed roles all include media:read; no matrix edit API. AR12 field-omission target variant cannot be produced by switching normal roles. Requires an explicit scope/reachability decision, not a fabricated role or local mock.',
-    caseId: 'AR12',
-    variantId: 'no-media-permission',
-    sourcePath: 'packages/auth/src/permissions.ts',
-  },
-];
-export function admission(input, readArtifact = () => fail('ARTIFACT_READER_REQUIRED')) {
+export function ar12Scope(readWorking = read, readCandidate = readCandidateFiles) {
+  return verifyAr12Scope({ candidate: CANDIDATE, readWorking, readCandidate });
+}
+export function admission(input, readArtifact = () => fail('ARTIFACT_READER_REQUIRED'), scopeProvider = ar12Scope) {
   const errors = [],
     blocked = [];
   try {
@@ -363,7 +370,15 @@ export function admission(input, readArtifact = () => fail('ARTIFACT_READER_REQU
   ])
     if (input?.entries?.[a]?.value && input.entries[a].value === input.entries[b]?.value)
       errors.push(`IDENTITIES_NOT_DISTINCT:${a}:${b}`);
-  blocked.push(...TARGET_BLOCKERS);
+  try {
+    scopeProvider();
+  } catch {
+    blocked.push({
+      id: 'ar12ScopeRevalidationRequired',
+      ownerRole: 'Cloud acceptance and RBAC owner',
+      reason: 'AR12_SOURCE_OR_LOCAL_REGRESSION_INVALID',
+    });
+  }
   return {
     status: errors.length ? 'FAIL' : blocked.length ? 'BLOCKED' : 'PASS_INPUT_STRUCTURE_ONLY',
     errors,
@@ -417,6 +432,19 @@ export function validateCases(rows = cases()) {
   }
   if (rows.length !== 44 || !['PV14', 'AR14', 'NC12', 'OP04'].every((id) => seen.has(id)))
     fail('INCOMPLETE_CASE_CATALOG');
+  const ar12 = rows.find((row) => row.id === 'AR12');
+  const variants = ['allowed', 'no-media-permission', 'cross-tenant', 'unassociated', 'deleted', 'download-failure'];
+  if (
+    !ar12 ||
+    ar12.requiredVariants?.length !== 6 ||
+    new Set(ar12.requiredVariants).size !== 6 ||
+    variants.some((id) => !ar12.requiredVariants.includes(id)) ||
+    ar12.evidenceKinds?.length !== 3 ||
+    ['HTTP', 'DB', 'S3'].some((kind) => !ar12.evidenceKinds.includes(kind)) ||
+    ar12.assertions?.length !== 3 ||
+    ['AR12-A1', 'AR12-A2', 'AR12-A3'].some((id) => !ar12.assertions.some((a) => a.id === id))
+  )
+    fail('AR12_TARGET_SCOPE_REDUCED');
   return rows;
 }
 export function receiptTemplate() {
@@ -437,16 +465,40 @@ export function receiptTemplate() {
       status: 'NOT_RUN',
       assertions: [],
       evidenceRefs: [],
-      variants: row.requiredVariants.map((id) => ({ id, status: 'NOT_RUN', evidenceRefs: [] })),
+      variants: row.requiredVariants.map((id) =>
+        row.id === 'AR12' && id === 'no-media-permission'
+          ? ar12VariantRecord(ar12Scope())
+          : { id, status: 'NOT_RUN', evidenceRefs: [] },
+      ),
     })),
     artifacts: [],
+    sourceExclusions: [ar12ExclusionRecord(ar12Scope())],
     cleanup: { status: 'NOT_RUN', ledgerRef: null },
   };
 }
-export function validateReceipt(receipt, input, readArtifact) {
+export function validateReceipt(receipt, input, readArtifact, scopeProvider = ar12Scope) {
   const errors = [],
     pending = [];
   const planned = validateCases();
+  let scope;
+  try {
+    scope = scopeProvider();
+  } catch {
+    return {
+      status: 'BLOCKED',
+      g4: 'NOT_RUN',
+      errors: [],
+      blocked: [{ id: 'ar12ScopeRevalidationRequired', reason: 'AR12_SOURCE_OR_LOCAL_REGRESSION_INVALID' }],
+      cloudRequests: 0,
+    };
+  }
+  if (
+    !Array.isArray(receipt?.sourceExclusions) ||
+    receipt.sourceExclusions.length !== 1 ||
+    !isAr12Exclusion(receipt.sourceExclusions[0], scope)
+  )
+    errors.push('AR12_SOURCE_EXCLUSION_INVALID');
+
   if (
     receipt?.protocolDigest !== protocolDigest() ||
     receipt?.formatVersion !== 1 ||
@@ -506,6 +558,8 @@ export function validateReceipt(receipt, input, readArtifact) {
         (artifact.kind === 'DDB' && artifact.engine !== 'AWS_DYNAMODB')
       )
         fail('LOCAL_STORAGE_CANNOT_PROVE_TARGET');
+      if (artifact.caseId === 'AR12' && artifact.variantId === 'no-media-permission')
+        fail('N_A_CANNOT_HAVE_TARGET_ARTIFACT');
       refs.set(row.id, artifact);
     } catch {
       errors.push(`INVALID_TARGET_ARTIFACT:${row?.id ?? 'missing'}`);
@@ -515,9 +569,25 @@ export function validateReceipt(receipt, input, readArtifact) {
     const plan = planned.find((p) => p.id === row.id);
     if (!plan) continue;
     if (!['PASS', 'FAIL', 'BLOCKED', 'NOT_RUN'].includes(row.status)) errors.push(`INVALID_CASE_STATUS:${row.id}`);
+    const allVariants = row.variants;
+    if (
+      allVariants.length !== plan.requiredVariants.length ||
+      new Set(allVariants.map((v) => v?.id)).size !== allVariants.length ||
+      plan.requiredVariants.some((id) => !allVariants.some((v) => v?.id === id))
+    )
+      errors.push(`VARIANT_INVENTORY:${row.id}`);
+    for (const variant of allVariants) {
+      const excluded = row.id === 'AR12' && variant?.id === 'no-media-permission';
+      if (excluded ? !isAr12Variant(variant, scope) : !['PASS', 'FAIL', 'BLOCKED', 'NOT_RUN'].includes(variant?.status))
+        errors.push(`INVALID_VARIANT_STATUS:${row.id}`);
+      if (!excluded && variant?.status === 'FAIL') errors.push(`CASE_VARIANT_FAILED:${row.id}:${variant.id}`);
+    }
     if (row.status === 'FAIL') errors.push(`CASE_FAILED:${row.id}`);
     else if (row.status !== 'PASS') {
-      pending.push({ id: row.id, status: row.status });
+      pending.push({
+        id: row.id,
+        status: row.status === 'NOT_RUN' && allVariants.some((v) => v?.status === 'BLOCKED') ? 'BLOCKED' : row.status,
+      });
       continue;
     }
     const variants = row.variants ?? [];
@@ -526,6 +596,7 @@ export function validateReceipt(receipt, input, readArtifact) {
       new Set(variants.map((v) => v.id)).size !== variants.length ||
       plan.requiredVariants.some(
         (id) =>
+          !(row.id === 'AR12' && id === 'no-media-permission' && variants.some((v) => isAr12Variant(v, scope))) &&
           !variants.some(
             (v) =>
               v.id === id &&
@@ -561,7 +632,7 @@ export function validateReceipt(receipt, input, readArtifact) {
       pending,
       cloudRequests: 0,
     };
-  const ready = admission(input, readArtifact);
+  const ready = admission(input, readArtifact, scopeProvider);
   if (!ready.errors.length && !ready.blocked.some((row) => row.reason === 'MISSING_TARGET_INPUT')) {
     const window = JSON.parse(readArtifact(input.entries.executionWindowProof.value.path)).details;
     if (
@@ -659,8 +730,9 @@ export function buildPackage() {
     'receipt.template.json': json(receiptTemplate()),
     'reachability.json': json({
       sourceCommit: CANDIDATE,
-      blockers: TARGET_BLOCKERS.map((row) => ({ ...row, sourceSha256: sha(read(row.sourcePath)) })),
-      note: 'Source-bound target limitation; not an App or physical-device blocker. No offline waiver switch.',
+      blockers: [],
+      sourceExclusions: [ar12Scope()],
+      note: 'Only AR12/no-media-permission is source-bound NOT_APPLICABLE. Other target checks remain mandatory. Local denial regression is not target evidence.',
     }),
     'resources.template.json': json({
       sourceCommit: CANDIDATE,
@@ -706,6 +778,10 @@ export function buildPackage() {
   const inputs = [
     'scripts/device-image-target-package.mjs',
     'scripts/device-image-target-package.test.mjs',
+    'scripts/device-image-target-ar12-scope.mjs',
+    AR12_SCOPE_DOC,
+    AR12_LOCAL_RECEIPT,
+    AR12_LOCAL_REPORT,
     'scripts/device-image-target-cases.json',
     'scripts/device-image-target-read-only.sql',
     'scripts/cloud-handoff-openapi.mjs',
