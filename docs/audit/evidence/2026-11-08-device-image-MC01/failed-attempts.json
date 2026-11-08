@@ -1,0 +1,63 @@
+{
+  "status": "RESOLVED_FAILURES_RETAINED",
+  "failedRuns": [
+    {
+      "id": "F01",
+      "status": "FAIL_RESOLVED",
+      "command": "vitest isolated Writer suite",
+      "total": 22,
+      "passed": 8,
+      "failed": 14,
+      "cause": "latestState.customerId omitted in local device fixture; existing PG integrity trigger rejected fixture",
+      "fix": "Supply fixture customerId; keep database trigger intact",
+      "log": "failure-01-pg-fixture.log"
+    },
+    {
+      "id": "F02",
+      "status": "FAIL_RESOLVED",
+      "command": "vitest combined initial suite",
+      "total": 55,
+      "passed": 40,
+      "failed": 15,
+      "cause": "Same PG fixture plus lowercase entitlement values used with actual cloud signer",
+      "fix": "Correct fixture customerId and use real REMOTE_CONTROL/OTA_UPDATE internal codes; no signer or validation weakening",
+      "log": "failure-02-fixture-and-signer.log"
+    },
+    {
+      "id": "F03",
+      "status": "FAIL_RESOLVED",
+      "command": "tsc tool suite",
+      "cause": "Fixture assigned readonly viewers property",
+      "fix": "Create a copied control object with new viewers",
+      "log": "failure-03-readonly-fixture.log"
+    },
+    {
+      "id": "F04",
+      "status": "FAIL_RESOLVED",
+      "command": "tsc tool suite",
+      "cause": "Negative ARN test inferred the literal license ARN too narrowly",
+      "fix": "Annotate fixture dependency with the actual SecretMaterial port type; runtime validation unchanged",
+      "log": "failure-04-secret-port-fixture-type.log"
+    },
+    {
+      "id": "F05",
+      "status": "FAIL_RESOLVED",
+      "command": "eslint tools/img21",
+      "cause": "MJS outside scripts scope lacked explicit Node URL/process imports",
+      "fix": "Import Node globals explicitly, without changing lint rules",
+      "log": "failure-05-node-globals.log"
+    },
+    {
+      "id": "F06",
+      "status": "FAIL_RESOLVED",
+      "command": "vitest full tool suite with two new safety regressions",
+      "total": 68,
+      "passed": 67,
+      "failed": 1,
+      "cause": "Read-back fixture copied deviceId/expectedAuthEpoch from a write into the strict READ_OPERATION contract",
+      "fix": "Use public four-field READ request; do not relax action schema",
+      "log": "failure-06-read-request-fixture.log"
+    }
+  ],
+  "unresolvedFailures": []
+}

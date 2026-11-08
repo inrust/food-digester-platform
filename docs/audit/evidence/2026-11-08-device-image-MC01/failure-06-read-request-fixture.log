@@ -1,0 +1,30 @@
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ❯ tools/img21/test/writer.test.ts (32 tests | 1 failed) 16739ms
+   × CONTROL read outage after successful reopen preserves committed SQL without falsely claiming closed preview 512ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tools/img21/test/writer.test.ts > CONTROL read outage after successful reopen preserves committed SQL without falsely claiming closed preview
+AssertionError: expected 'REJECTED' to be 'COMMITTED' // Object.is equality
+
+Expected: "COMMITTED"
+Received: "REJECTED"
+
+ ❯ tools/img21/test/writer.test.ts:461:71
+    459|   expect((await f.prisma.auditLog.findUnique({ where: { id: operationI…
+    460|   f.control.readControl = read;
+    461|   expect((await f.invoke({ ...q, action: 'READ_OPERATION' })).status).…
+       |                                                                       ^
+    462| });
+    463| test('window expiring while successful receipt is awaited rolls busine…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 67 passed (68)
+   Start at  22:36:39
+   Duration  17.50s (transform 180ms, setup 10ms, import 640ms, tests 16.75s, environment 0ms)
+

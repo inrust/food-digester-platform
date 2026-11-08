@@ -1,0 +1,325 @@
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ❯ tools/img21/test/writer.test.ts (22 tests | 14 failed) 11265ms
+   × real PG operations seed INVITED users, bind provenance, enable and disable using authority epochs 811ms
+   × SQL policy rollback keeps CONTROL fenced closed and never reports a commit 494ms
+   × post-commit reopen failure preserves SUCCESS receipt and records recovery without replaying mutation 491ms
+   × disabled provisioner fails closed before enabling preview 492ms
+   × role revoked fails closed before enabling preview 494ms
+   × tenant reassignment fails closed before enabling preview 537ms
+   × Cognito groups changed fails closed before enabling preview 543ms
+   × certificate revoked fails closed before enabling preview 544ms
+   × device suspended fails closed before enabling preview 491ms
+   × viewer scope changed fails closed before enabling preview 489ms
+   × stale epoch rejects; another device cannot replace immutable binding 490ms
+   × binding needs exact API approval and CSR certificate provenance, not serial prefix alone 489ms
+   × cleanup refuses foreign actor leases and additional scopes without fencing foreign records 489ms
+   × own viewer cleanup after certificate revocation and suspension closes leases without modifying lifecycle 480ms
+ ❯ tools/img21/test/verifier.test.ts (33 tests | 1 failed) 8ms
+   × independent verifier agrees with actual signer and returns only bound hashes and receipt metadata 4ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 15 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tools/img21/test/verifier.test.ts > independent verifier agrees with actual signer and returns only bound hashes and receipt metadata
+AssertionError: expected 'REJECTED' to be 'VERIFIED' // Object.is equality
+
+Expected: "VERIFIED"
+Received: "REJECTED"
+
+ ❯ tools/img21/test/verifier.test.ts:21:56
+     19| }
+     20| test('independent verifier agrees with actual signer and returns only …
+     21|  const f=fixture(),r=await f.invoke();expect(r.status).toBe('VERIFIED'…
+       |                                                        ^
+     22|  expect(r).toMatchObject({manifestHash:f.bound.hash,snapshotEtag:f.inp…
+     23|  expect(JSON.stringify(r)).not.toContain(f.input.license.signature);ex…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > real PG operations seed INVITED users, bind provenance, enable and disable using authority epochs
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device c73f3546-14ef-40fa-b6bf-5e658a4dc3b9`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:12:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > SQL policy rollback keeps CONTROL fenced closed and never reports a commit
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device a56ce3d9-50b8-41e5-8f44-e1eef1107297`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:34:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > post-commit reopen failure preserves SUCCESS receipt and records recovery without replaying mutation
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device 55dc704b-9dc8-4642-8a8b-28746fcf9213`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:43:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > disabled provisioner fails closed before enabling preview
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device 6df53551-40ea-47b4-96f7-71014fa15ce7`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:77:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > role revoked fails closed before enabling preview
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device d47760f4-d7bf-4656-a2eb-d952047faf9e`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:77:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > tenant reassignment fails closed before enabling preview
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device c130c8ff-f79e-4a02-a927-dd617e116979`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:77:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > Cognito groups changed fails closed before enabling preview
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device 84bc56a7-3621-46ce-8648-5a46be471c08`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:77:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > certificate revoked fails closed before enabling preview
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device 91723900-b711-47b3-a146-4c4067ebfb58`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:77:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > device suspended fails closed before enabling preview
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device 9958842a-6676-408e-bb15-2b5aa7c41a32`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:77:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > viewer scope changed fails closed before enabling preview
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device 09d16fae-584a-45c3-8361-fd90704ef760`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:77:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > stale epoch rejects; another device cannot replace immutable binding
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device bfe6bbef-6c35-4aec-ae87-1d5a77bd3938`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:81:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > binding needs exact API approval and CSR certificate provenance, not serial prefix alone
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device 63355eae-b83f-419a-ae7d-8329cde2f5dd`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:87:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > cleanup refuses foreign actor leases and additional scopes without fencing foreign records
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device a25be4f4-bfde-4645-a19b-1d1f924a320b`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:103:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/15]⎯
+
+ FAIL  tools/img21/test/writer.test.ts > own viewer cleanup after certificate revocation and suspension closes leases without modifying lifecycle
+PrismaClientKnownRequestError: 
+Invalid `f.prisma.device.create()` invocation in
+/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/tools/img21/test/fixtures.ts:55:25
+
+  52 const customer=await f.prisma.customer.create({data:{name:f.bound.manifest.customerName,createdAt:new Date(NOW-20000)}});
+  53 const site=await f.prisma.site.create({data:{name:f.bound.manifest.siteName,customerId:customer.id,createdAt:new Date(NOW-20000)}});
+  54 const deviceId=randomUUID();
+→ 55 await f.prisma.device.create(
+Database error. Code: `23514`. Message: `device/customer mismatch for device aa4ee010-d63a-4703-9379-f31a2a060181`
+ ❯ Jr.handleRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:12
+ ❯ Jr.handleAndLogRequestError node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:11
+ ❯ Jr.request node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:11
+ ❯ a node_modules/@prisma/client/src/runtime/getPrismaClient.ts:1014:23
+ ❯ provision tools/img21/test/fixtures.ts:55:3
+
+ ❯ tools/img21/test/writer.test.ts:111:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/15]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  15 failed | 40 passed (55)
+   Start at  22:18:47
+   Duration  12.01s (transform 165ms, setup 10ms, import 621ms, tests 11.27s, environment 0ms)
+

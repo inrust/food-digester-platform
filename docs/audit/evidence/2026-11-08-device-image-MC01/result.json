@@ -1,0 +1,287 @@
+{
+  "status": "PASS_LOCAL_MC01",
+  "baselineCommit": "bbb3c8d8049223c0abf44af07ba530d778c8a0ce",
+  "scope": "Actual isolated source, SDK adapters, atomic PG receipt, closed handlers and offline bundles; no resource activation",
+  "applicationCandidate": "d1a7b81196d60ec320e760da3d18de403563fc12",
+  "applicationG3EvidenceCommit": "1b1b879ffcf34be7cebd6fe87b8301ae5bd21356",
+  "newToolCertifiedByApplicationG3": false,
+  "delivered": [
+    "Closed seven-action Writer with immutable trusted run/device/identity binding",
+    "Existing preview-aware Prisma factory and PG authority wrapper",
+    "Durable operation intent; successful audit receipt atomic with business mutation",
+    "UNKNOWN query-only behavior; deterministic hash conflicts and rollback receipts",
+    "Committed SQL vs failed CONTROL recovery observation",
+    "Independent fixed-version license verifier and exact SDK secret/identity ports",
+    "Two ESM entry bundles, dependency isolation and reproducible source/artifact hashes"
+  ],
+  "checks": [
+    {
+      "id": "mc01-local-tests",
+      "status": "PASS",
+      "tests": 68,
+      "passed": 68,
+      "failed": 0,
+      "command": "pnpm exec vitest run --config tools/img21/vitest.config.mts",
+      "log": "tests.log"
+    },
+    {
+      "id": "existing-authority-regression",
+      "status": "PASS",
+      "tests": 36,
+      "passed": 36,
+      "failed": 0,
+      "command": "pnpm exec vitest run apps/cloud-api/test/live-image-postgres.test.ts packages/aws-clients/test/live-image-dynamodb.test.ts",
+      "log": "authority-regression.log"
+    },
+    {
+      "id": "bundle-smoke",
+      "status": "PASS",
+      "handlers": 2,
+      "networkCalls": 0,
+      "scope": "Built ESM imports, real handler exports and reject-without-trusted-config; no business cloud calls",
+      "log": "bundle-smoke.log"
+    },
+    {
+      "id": "reproducibility",
+      "status": "PASS",
+      "filesCompared": 5,
+      "log": "build-reproducibility.log"
+    },
+    {
+      "id": "typecheck",
+      "command": "/opt/homebrew/bin/pnpm exec tsc -p tools/img21/tsconfig.json",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "typecheck-final.log"
+    },
+    {
+      "id": "lint",
+      "command": "/opt/homebrew/bin/pnpm exec eslint tools/img21",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "lint-final.log"
+    },
+    {
+      "id": "format",
+      "command": "/opt/homebrew/bin/pnpm exec prettier --check tools/img21",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "format-final.log"
+    },
+    {
+      "id": "build",
+      "command": "node tools/img21/build.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "build.log"
+    },
+    {
+      "id": "existing-package-tests",
+      "command": "node --import tsx --test scripts/device-image-target-package.test.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "existing-package-tests.log",
+      "tests": 136,
+      "passed": 136,
+      "failed": 0
+    },
+    {
+      "id": "boundaries",
+      "command": "node scripts/check-boundaries.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "boundaries.log"
+    },
+    {
+      "id": "evidence",
+      "command": "node scripts/check-eng-db-dom-evidence.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "evidence.log"
+    },
+    {
+      "id": "sensitive-sinks",
+      "command": "node scripts/check-sensitive-sinks.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "sensitive-sinks.log"
+    },
+    {
+      "id": "secrets",
+      "command": "node scripts/check-secrets.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "secrets.log"
+    },
+    {
+      "id": "active-package-check",
+      "command": "node scripts/device-image-target-package.mjs --check",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "active-package-check.log"
+    }
+  ],
+  "build": "build-summary.json",
+  "sourceAndDependencyClosure": "built-artifacts.json",
+  "localBundleDirectory": "build/img21-mc01 (ignored; regenerate using build.mjs)",
+  "failureHistory": {
+    "failedRuns": 6,
+    "resolved": 6,
+    "unresolved": [],
+    "details": "failed-attempts.json"
+  },
+  "targetAdmission": {
+    "providedInputs": 11,
+    "missingOrExcluded": 11,
+    "basis": "Prior recorded preparation only; no new target input or observation claimed",
+    "executionReady": false,
+    "blocked": [
+      {
+        "id": "deployedCommit",
+        "ownerRole": "发布负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "deploymentProof",
+        "ownerRole": "发布负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "runtimeVersionsProof",
+        "ownerRole": "云端运维",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "deviceId",
+        "ownerRole": "环境负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "customerId",
+        "ownerRole": "环境负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "deviceMtlsRef",
+        "ownerRole": "身份负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "mqttIdentityRef",
+        "ownerRole": "身份负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "viewerARef",
+        "ownerRole": "身份负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "testScopeProof",
+        "ownerRole": "验收执行负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "executionWindowProof",
+        "ownerRole": "验收执行负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      },
+      {
+        "id": "sequenceReservation",
+        "ownerRole": "设备接入负责人",
+        "reason": "MISSING_TARGET_INPUT"
+      }
+    ]
+  },
+  "implementationCaveats": [
+    "PGlite runs real migrations/Prisma/authority behavior on one backend; not native multi-connection RDS/DynamoDB validation",
+    "Cognito and Secrets SDK transports are local command ports; real role/key access not proven",
+    "License HMAC does not authenticate outer version/status/ETag; independent trusted verifier manifest binds license/version/snapshot and expiry",
+    "Writer manifest/root must remain unchanged; Verifier has a separate immutable manifest hash; short-lived publication process remains MC02",
+    "Published numeric versions, runtime/role/policy hashes and manifest delivery remain MC02; source-equivalence acceptance remains MC03",
+    "Read-only operation receipt query may run after business window but still requires valid Invoke permission; new business or cleanup window cannot be self-granted",
+    "Persistent UNKNOWN is intentionally not automatically retried or cleared",
+    "A post-commit CONTROL read outage is SQL_COMMITTED_CONTROL_OBSERVATION_UNAVAILABLE, not evidence that preview is closed; only an observed disabled CONTROL gets the closed-recovery status"
+  ],
+  "blockedWork": [
+    {
+      "id": "TARGET_WRITER",
+      "status": "BLOCKED",
+      "reason": "Code implemented locally; no deployed fixed-version Writer/role, Phase A/B authorization or database connection-budget proof"
+    },
+    {
+      "id": "TARGET_VERIFIER",
+      "status": "BLOCKED",
+      "reason": "Code implemented locally; no deployed fixed version, real ID binding, current snapshot or controlled license secret permission proof"
+    },
+    {
+      "id": "TARGET_CANDIDATE_BINDING",
+      "status": "BLOCKED",
+      "reason": "Observed historical release not relabeled; proof v2/equivalence review remains MC03"
+    },
+    {
+      "id": "FRESH_TARGET_WINDOW",
+      "status": "BLOCKED",
+      "reason": "Old preparation window expired; no new deployment/IAM/G4 authorization claimed"
+    }
+  ],
+  "notRun": [
+    {
+      "id": "FULL_PNPM_VERIFY",
+      "status": "NOT_RUN",
+      "reason": "New isolated tools explicitly typechecked/linted/tested/built; full application pipeline not rerun or claimed as a new G3"
+    },
+    {
+      "id": "IAC_SYNTH_AND_IAM_SERVICE_EVALUATION",
+      "status": "NOT_RUN",
+      "reason": "MC02 resource wiring and actual policy evaluation not implemented in this batch"
+    },
+    {
+      "id": "LINUX_LAMBDA_TARGET_EXECUTION",
+      "status": "NOT_RUN",
+      "reason": "Local ESM imports/closure checked; target business execution and native packaging not exercised"
+    },
+    {
+      "id": "NATIVE_PG_DDB_CONCURRENCY",
+      "status": "NOT_RUN",
+      "reason": "Local real PG-compatible engine with memory control and SDK ports does not prove target races"
+    },
+    {
+      "id": "REAL_COGNITO_AND_SECRET_ACCESS",
+      "status": "NOT_RUN",
+      "reason": "Only local fixtures and synthetic key; no target calls"
+    },
+    {
+      "id": "DEPLOYMENT_IAM_CHANGE_DB_MIGRATION_DEVICE_ENABLE",
+      "status": "NOT_RUN",
+      "reason": "Explicitly outside this task"
+    },
+    {
+      "id": "G4_CF01_CF02_CF03",
+      "status": "NOT_RUN",
+      "reason": "No real G4 transmissions authorized"
+    },
+    {
+      "id": "APP_AND_PHYSICAL_DEVICE_ACCEPTANCE",
+      "status": "NOT_RUN",
+      "reason": "Third-party scope, not a cloud Gate precondition"
+    }
+  ],
+  "g3": "Existing application candidate evidence unchanged; PASS_LOCAL_MC01 is independent tool evidence, not a new full G3",
+  "g4": "NOT_RUN",
+  "actions": {
+    "cloudAccountCalls": 0,
+    "targetWrites": 0,
+    "deployments": 0,
+    "iamChanges": 0,
+    "targetMigrations": 0,
+    "deviceEnables": 0,
+    "realG4Transmissions": 0,
+    "pushes": 0
+  },
+  "nextTask": "MC02 local isolated IaC, phase A/B IAM, connection budget, numeric version and separate Writer/Verifier manifest/snapshot publication protocol. No target deployment without specific authorization.",
+  "sourceManifest": "sources.sha256",
+  "artifactManifest": "artifacts.sha256",
+  "artifactManifestExcludesItself": true,
+  "sourceCount": 127
+}
