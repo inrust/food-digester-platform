@@ -33,7 +33,7 @@ export function semanticSummary(matrix, executions) {
         };
       }),
   );
-  if (elements.length !== 117 || new Set(elements.map((e) => e.id)).size !== 117) throw Error('INVALID_117_INVENTORY');
+  if (elements.length !== 121 || new Set(elements.map((e) => e.id)).size !== 121) throw Error('INVALID_121_INVENTORY');
   const absence = Object.keys(ABSENCE).map((id) => {
     const rows = VIEWPORTS.map((width) => executions.find((r) => r.group === 'absence:' + id && r.width === width));
     return {
@@ -586,6 +586,11 @@ export async function runNonActiveBrowser(ctx, output) {
                   for (const id of ['#scope-subregion', '#scope-site', '#scope-device'])
                     await expect(page.locator(id)).toHaveValue('');
                   await expect(page.locator('#scope-subregion')).toBeDisabled();
+                  break;
+                case 'device-view.live-image':
+                case 'device-operate.live-image':
+                  row.result = 'NOT_RUN';
+                  row.reason = 'PREVIEW_REQUIRES_SEPARATE_OPT_IN_AND_DEVICE_FRAMES';
                   break;
                 case 'device-view.console': {
                   for (const id of ['console-components', 'console-consumables', 'console-alarms', 'console-esg7d'])

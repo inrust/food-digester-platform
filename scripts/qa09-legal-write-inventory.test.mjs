@@ -18,7 +18,7 @@ test('valid HTTP writes cannot be inflated by malformed, wrong role, wrong metho
     { ...base, method: 'GET' },
     { ...base, result: 'FAIL' },
   ]);
-  assert.equal(rows.length, 63);
+  assert.equal(rows.length, 65);
   const op = rows.find((r) => r.path.endsWith('/metadata'));
   assert.equal(op.roles.find((r) => r.role === 'PlatformOperator').checks.length, 1);
   assert.equal(op.roles.find((r) => r.role === 'CustomerViewer').result, 'NOT_APPLICABLE');

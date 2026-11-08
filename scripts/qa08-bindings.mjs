@@ -22,6 +22,8 @@ export const GROUPS = {
     'device-view.field.recentAlarms',
     'device-view.field.esg7d',
   ],
+  'device-view.live-image': ['device-view.button.camPlay', 'device-view.button.camStop'],
+  'device-operate.live-image': ['device-operate.button.camPlay', 'device-operate.button.camStop'],
   'device-view.media': ['device-view.field.mediaPreview'],
   'device-operate.commands': [
     'device-operate.button.agitatorForward',
@@ -148,11 +150,7 @@ export const GROUPS = {
 };
 // Defer/Reject means asserting the original feature is absent, not asserting it is implemented.
 export const ABSENCE = {
-  'device-view.button.camPlay': '摄像头播放|实时播放|播放摄像头',
-  'device-view.button.camStop': '摄像头停止|停止播放|停止摄像头',
   'device-operate.button.updateStrategy': '更新策略',
-  'device-operate.button.camPlay': '摄像头播放|实时播放|播放摄像头',
-  'device-operate.button.camStop': '摄像头停止|停止播放|停止摄像头',
   'device-group.column.enabledFlag': '是否启用',
   'device-group.column.enabledStatus': '启用状态',
   'device-group.req.column.creator': '录入人',

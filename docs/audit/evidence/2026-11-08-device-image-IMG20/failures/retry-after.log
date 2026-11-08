@@ -1,0 +1,64 @@
+
+> food-digester-platform@0.0.0 test:device-contracts /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx scripts/run-contract-suite.mjs /tmp/img20-device-check.json
+
+✔ QA-02 MQTT heartbeat: all valid/invalid fixtures, missing meta and type mutation (4.018834ms)
+✔ QA-02 MQTT telemetry: all valid/invalid fixtures, missing meta and type mutation (1.63125ms)
+✔ QA-02 MQTT report: all valid/invalid fixtures, missing meta and type mutation (1.763375ms)
+✔ QA-02 MQTT alarm: all valid/invalid fixtures, missing meta and type mutation (1.057125ms)
+✔ QA-02 MQTT event: all valid/invalid fixtures, missing meta and type mutation (0.674666ms)
+✔ QA-02 MQTT ack: all valid/invalid fixtures, missing meta and type mutation (0.940459ms)
+✔ QA-02 MQTT tamper: all valid/invalid fixtures, missing meta and type mutation (1.93525ms)
+✔ QA-02 MQTT media: all valid/invalid fixtures, missing meta and type mutation (1.175ms)
+✔ QA-02 MQTT cmd: all valid/invalid fixtures, missing meta and type mutation (1.155541ms)
+✔ QA-02 MQTT ota: all valid/invalid fixtures, missing meta and type mutation (1.087375ms)
+✔ QA-02 MQTT notification: all valid/invalid fixtures, missing meta and type mutation (0.916166ms)
+✔ MQTT semantic hash, discriminator and UTC calendar errors fail closed (0.375292ms)
+✔ full REST response: field deletion/type mutation/envelope/date/errors/status/headers are enforced (2.045375ms)
+✔ REST request validation: required body/path/query/header, optional Sync, bodyless Deactivate, no type coercion in JSON (3.207333ms)
+✔ all device operations and declared response JSON Schemas compile; stable error catalog has no duplicates (23.515041ms)
+✔ image contract upgrade has exact current decision approvals (12.009792ms)
+✔ historical lowercase MQTT upgrade remains compatible (1.419583ms)
+✔ predecessor MQTT is compatible; known REST break requires exact version and frozen DEC approvals (2.124583ms)
+✔ breaking contract mutations fail: removing fields/operations/status, changing type/required/security (35.748916ms)
+✔ receipt coverage gate fails closed for missing operations/statuses, no valid request and forged records (0.255208ms)
+✔ archived CSR upgrade mapping still verifies original baselines without rewriting history (2.060333ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 213.9545
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+ ❯ apps/cloud-api/test/device-image-contract-gate.test.ts (6 tests | 1 failed) 33ms
+   × IMG-20 device preview handlers preserve RATE_LIMITED under authority faults 3ms
+
+ Test Files  1 failed | 11 passed (12)
+      Tests  1 failed | 150 passed (151)
+   Start at  07:55:05
+   Duration  4.11s (transform 5.20s, setup 75ms, import 10.40s, tests 19.09s, environment 1ms)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  apps/cloud-api/test/device-image-contract-gate.test.ts > IMG-20 device preview handlers preserve RATE_LIMITED under authority faults
+Error: getDeviceLiveImageState response header Retry-After: data must be integer
+ ❯ DeviceContract.check contracts/testing/device-contract.ts:97:50
+     95|       this.compiled.set(key, validate);
+     96|     }
+     97|     if (!validate(structuredClone(value))) throw new Error(`${label}: …
+       |                                                  ^
+     98|   }
+     99|   assertRequest(id: string, request: ContractRequest): void {
+ ❯ DeviceContract.assertResponse contracts/testing/device-contract.ts:135:12
+ ❯ Object.state contracts/testing/device-contract.ts:178:20
+ ❯ apps/cloud-api/test/device-image-contract-gate.test.ts:56:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+CONTRACT_TEST_COMMAND_FAILED
+ ELIFECYCLE  Command failed with exit code 1.

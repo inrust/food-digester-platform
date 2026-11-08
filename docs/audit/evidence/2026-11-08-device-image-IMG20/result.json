@@ -1,0 +1,376 @@
+{
+  "formatVersion": 1,
+  "task": "IMG-20",
+  "date": "2026-11-08",
+  "scope": "cloud-local-quality-gate",
+  "referenceCommit": "e20f3ce4446156b9dcca89bbc1b4cde91b3e7148",
+  "candidateBinding": "referenceCommit plus verified source manifest; final containing commit reported by git history",
+  "result": "PASS_LOCAL_QUALITY_GATE",
+  "gate": {
+    "id": "G3",
+    "status": "PASS_LOCAL",
+    "achieved": true,
+    "fullRepositoryVerify": true,
+    "targetAcceptance": false
+  },
+  "execution": {
+    "command": "pnpm verify",
+    "startedAt": "2026-11-08T00:06:40.425865+00:00",
+    "finishedAt": "2026-11-08T00:17:33.341903+00:00",
+    "exitCode": 0
+  },
+  "sourceManifest": {
+    "path": "docs/audit/evidence/2026-11-08-device-image-IMG20/sources.sha256",
+    "sha256": "3bc73457eff8cc8cbc1d081869334925c90913922965dcad62533fe64c691f2f",
+    "fileCount": 1693,
+    "unchangedDuringVerification": true,
+    "scope": "tracked and nonignored untracked files in apps, packages, contracts, infra, scripts, docs/api and repository root; excludes development progress document and post-verification raw-log Git attributes; build outputs excluded by git rules",
+    "progressDocumentSealedSeparately": "docs/api/device-image-development-plan.md",
+    "postVerificationMetadataSealedSeparately": [
+      ".gitattributes",
+      "docs/api/device-image-development-plan.md"
+    ]
+  },
+  "fullVerifyStages": [
+    {
+      "command": "pnpm lint",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm format:check",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm typecheck",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm openapi:check",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm test",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm build",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm check:boundaries",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm check:schemas",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm check:migrations",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm check:evidence",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm check:secrets",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm check:sensitive-sinks",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm check:admin-web-delivery",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm check:admin-web-e2e",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm check:cmd-ota-delivery",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm test:device-contracts /tmp/fdp-device-contracts-gate.json",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm test:iot-integration /tmp/fdp-iot-integration-gate.json",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm test:core-api-integration /tmp/fdp-core-api-integration-gate.json",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm test:admin-e2e-suite /tmp/fdp-admin-e2e-gate.json",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm test:security-suite /tmp/fdp-security-gate.json",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm test:reliability-suite /tmp/fdp-reliability-gate.json",
+      "status": "PASS"
+    },
+    {
+      "command": "pnpm test:prototype-regression /tmp/fdp-prototype-regression-gate.json",
+      "status": "PASS"
+    }
+  ],
+  "checks": [
+    {
+      "id": "vitest",
+      "status": "PASS",
+      "files": 221,
+      "tests": 2176
+    },
+    {
+      "id": "contracts",
+      "status": "PASS",
+      "tests": 319
+    },
+    {
+      "id": "scripts",
+      "status": "PASS",
+      "tests": 1522
+    },
+    {
+      "id": "browser-default",
+      "status": "PASS",
+      "executions": 48
+    },
+    {
+      "id": "browser-strict",
+      "status": "PASS",
+      "distinctCases": 48,
+      "serial": 48,
+      "parallelRepeat": 96,
+      "totalExecutions": 144
+    },
+    {
+      "id": "prototype",
+      "status": "PASS",
+      "cases": 24,
+      "decisions": 128,
+      "positive": 121,
+      "negative": 7,
+      "snapshotUpdateMode": false
+    },
+    {
+      "id": "handoff-generators",
+      "status": "PASS",
+      "previewFiles": 5,
+      "archiveFiles": 11
+    },
+    {
+      "id": "baseline-format-only",
+      "status": "PASS",
+      "jsonDeepEqualToReference": true
+    }
+  ],
+  "specializedReceipts": [
+    {
+      "id": "device-contracts",
+      "status": "PASS",
+      "scope": "LOCAL_CONTRACT_AND_REAL_HANDLER",
+      "path": "docs/audit/evidence/2026-11-08-device-image-IMG20/gates/fdp-device-contracts-gate.json",
+      "receiptSha256": "1cd54c31c713a20895a871ff00504f142391d3a6ee46b701f1c4b3316c679388"
+    },
+    {
+      "id": "iot-integration",
+      "status": "PASS",
+      "scope": "LOCAL_INTEGRATION",
+      "path": "docs/audit/evidence/2026-11-08-device-image-IMG20/gates/fdp-iot-integration-gate.json",
+      "receiptSha256": "27398f8f5a72734802f4b3177a2f4030c51425379b35be28a4942deb562eb3eb"
+    },
+    {
+      "id": "core-api-integration",
+      "status": "PASS",
+      "scope": "LOCAL_API_INTEGRATION",
+      "path": "docs/audit/evidence/2026-11-08-device-image-IMG20/gates/fdp-core-api-integration-gate.json",
+      "receiptSha256": "4e7de4c2bab0e2716b20045470ae66a5cb733f9b57f79f4f9c7427e46106865b"
+    },
+    {
+      "id": "admin-e2e",
+      "status": "PASS",
+      "scope": "LOCAL_BROWSER_E2E",
+      "path": "docs/audit/evidence/2026-11-08-device-image-IMG20/gates/fdp-admin-e2e-gate.json",
+      "receiptSha256": "73cd677320655b5466294ad29d75f5ef83e6f8eb1e94a764bf2d1d9dbdcd9385"
+    },
+    {
+      "id": "security",
+      "status": "PASS",
+      "scope": "LOCAL_APPLICATION_SECURITY",
+      "path": "docs/audit/evidence/2026-11-08-device-image-IMG20/gates/fdp-security-gate.json",
+      "receiptSha256": "cf640a9a03f4c4c6fa7c6fd954ded82343ad0ce8066d5f71cf04b23876329032"
+    },
+    {
+      "id": "reliability",
+      "status": "PASS",
+      "scope": "LOCAL_LOAD_RELIABILITY",
+      "path": "docs/audit/evidence/2026-11-08-device-image-IMG20/gates/fdp-reliability-gate.json",
+      "receiptSha256": "ac7b20a762180e9fa33c82eebd0e94a6ca3bca0e4b55ba81da41c6c69e55bff7"
+    },
+    {
+      "id": "prototype-regression",
+      "status": "PASS",
+      "scope": "LOCAL_PROTOTYPE_BROWSER_REGRESSION",
+      "path": "docs/audit/evidence/2026-11-08-device-image-IMG20/gates/fdp-prototype-regression-gate.json",
+      "receiptSha256": "869fb17938da0eb3c18f085a91eea2d707c3a620390ed27fff6f631670dd37ae"
+    }
+  ],
+  "historicalFailures": [
+    {
+      "id": "format",
+      "status": "RESOLVED",
+      "logs": [
+        "failures/initial-format.log"
+      ]
+    },
+    {
+      "id": "browser-manifest",
+      "status": "RESOLVED",
+      "logs": [
+        "failures/initial-admin.log",
+        "failures/initial-admin.json"
+      ]
+    },
+    {
+      "id": "device-coverage",
+      "status": "RESOLVED",
+      "logs": [
+        "failures/initial-device.log",
+        "failures/initial-device.json"
+      ]
+    },
+    {
+      "id": "wire-response-header",
+      "status": "RESOLVED",
+      "logs": [
+        "failures/retry-after.log"
+      ]
+    },
+    {
+      "id": "strict-test-input-types",
+      "status": "RESOLVED",
+      "logs": [
+        "failures/test-typecheck.log",
+        "failures/e2e-typecheck.log"
+      ]
+    },
+    {
+      "id": "repository-script-drift",
+      "status": "RESOLVED",
+      "testsFailed": 12,
+      "logs": [
+        "failures/scripts-initial.log",
+        "failures/scripts-initial-execution.json"
+      ]
+    },
+    {
+      "id": "prototype-negative-and-inventory",
+      "status": "RESOLVED",
+      "logs": [
+        "failures/prototype-inventory.log",
+        "failures/prototype-negative-case.log"
+      ]
+    },
+    {
+      "id": "staged-raw-log-whitespace",
+      "status": "RESOLVED",
+      "reason": "Follow existing .gitattributes convention for this raw-log directory only; retain original runner bytes",
+      "logs": [
+        "failures/staged-whitespace.log"
+      ]
+    }
+  ],
+  "unresolvedFailures": [],
+  "blocked": [],
+  "notRun": [
+    {
+      "id": "native-storage-concurrency",
+      "reason": "No docker/postgres/initdb in PATH; native DynamoDB transactions/TTL and multi-connection PostgreSQL locks not executed; PGlite/CAS/SDK checks are local substitutes only"
+    },
+    {
+      "id": "public-cloud-data-path",
+      "reason": "Gateway/Cognito/mTLS/S3/IoT/SQS/Outbox public cross-service path not exercised"
+    },
+    {
+      "id": "target-load-and-sla",
+      "reason": "First-frame/refresh/frame-age/target capacity/cost not measured; reliability gate uses default local quick profile; full profile not run"
+    },
+    {
+      "id": "other-browser-matrix",
+      "reason": "Default Chromium gate only; Firefox/Edge/Chrome channel matrix not run"
+    },
+    {
+      "id": "deployment-target-migration-enablement-push",
+      "reason": "Excluded by explicit user instruction"
+    }
+  ],
+  "outOfScope": [
+    "Third-party App implementation",
+    "Camera and persistent queue integration",
+    "Physical device acceptance"
+  ],
+  "historicalEvidenceUnchanged": true,
+  "warnings": [
+    "Vite chunk size >500kB",
+    "NO_COLOR ignored when FORCE_COLOR is set"
+  ],
+  "artifactManifest": "docs/audit/evidence/2026-11-08-device-image-IMG20/artifacts.sha256",
+  "selfHashPolicy": "artifact manifest excludes itself; source manifest excludes evidence, post-verification raw-log Git attributes and progress/report documents",
+  "postVerificationChecks": [
+    {
+      "id": "progress-document-links",
+      "status": "PASS"
+    },
+    {
+      "id": "source-manifest-integrity",
+      "status": "PASS"
+    },
+    {
+      "id": "baseline-json-semantics",
+      "status": "PASS"
+    },
+    {
+      "id": "historical-evidence-unchanged",
+      "status": "PASS"
+    },
+    {
+      "id": "check:evidence",
+      "status": "PASS"
+    },
+    {
+      "id": "check:secrets",
+      "status": "PASS"
+    },
+    {
+      "id": "handoff-generators",
+      "status": "PASS"
+    },
+    {
+      "id": "git-diff-check",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-source-inventory",
+      "status": "PASS"
+    },
+    {
+      "id": "git-cached-diff-check",
+      "status": "PASS"
+    }
+  ],
+  "auxiliaryFailures": [
+    {
+      "id": "report-edit-encoding",
+      "status": "RESOLVED",
+      "reason": "Editing helper rejected a non-UTF-8 input before writing; report completed as UTF-8 text; no source mutation"
+    }
+  ]
+}

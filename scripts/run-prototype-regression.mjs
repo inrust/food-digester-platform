@@ -89,6 +89,7 @@ export function summarize(
     if (['device-view', 'esg-device'].includes(c.pageState)) flags.push('cascadingReset');
     if (['device-group', 'contract-detail'].includes(c.pageState)) flags.push('fourAxes');
     if (c.pageState === 'device-view') flags.push('staticMedia');
+    if (['device-view', 'device-operate'].includes(c.pageState)) flags.push('liveImage');
     if (c.pageState === 'device-consumable') flags.push('unknownNotInvented');
     if (c.pageState === 'settings') flags.push('noPlatformPassword');
     if (['device-operate', 'device-manage'].includes(c.pageState)) flags.push('entryPermissions');

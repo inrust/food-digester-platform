@@ -132,7 +132,8 @@ export class DeviceContract {
         if (header.required) throw new Error(`${id}: MISSING_RESPONSE_HEADER ${name}`);
         continue;
       }
-      this.check(absolutize(header.schema), value, `${id} response header ${name}`);
+      // HTTP headers use wire serialization even when their schema is numeric.
+      this.check(absolutize(header.schema), value, `${id} response header ${name}`, true);
     }
     if (!schema.content) {
       if (response.body !== undefined && response.body !== '') throw new Error(`${id}: UNDECLARED_RESPONSE_BODY`);

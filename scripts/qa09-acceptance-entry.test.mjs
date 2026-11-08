@@ -11,6 +11,7 @@ import {
   readBoundFile,
   contentSnapshot,
 } from './qa09-acceptance-context.mjs';
+import { buildFrozenScope } from './qa09-acceptance-scope.mjs';
 import { checkAcceptanceEntry } from './check-qa09-acceptance.mjs';
 import { REQUIRED_PROBES, checkAwsDataProcessingEvidence } from './check-aws-data-processing-evidence.mjs';
 
@@ -42,6 +43,13 @@ function fixture(action) {
   return Promise.resolve()
     .then(() => action(write))
     .finally(() => rmSync(directory, { recursive: true, force: true }));
+}
+// Bind a fresh local scope fixture for current executor tests. The sealed historical scope
+// remains immutable and is explicitly rejected below; no new target acceptance is claimed.
+async function currentScopeContext(write) {
+  const c = context();
+  c.frozenScope = write('current-scope.json', await buildFrozenScope(root));
+  return c;
 }
 function completeProcessingReceipt(c) {
   const passed = { passed: true, evidence: ['unit-test-only:not-a-target-receipt'] };
@@ -156,24 +164,30 @@ test('formal check accepts matching app/ledger/cleanup independently of HEAD, re
     row.receipt = write('wrong-app.json', receipt);
     assert.ok(checkAwsDataProcessingEvidence(root, row.receipt.path, c.versions.application.sourceCommit, c).length);
   }));
-test('entry rebuilds the exact frozen obligations and never promotes four scoped proofs to eight formal receipts', async () => {
-  const result = await checkAcceptanceEntry(root, context());
-  assert.equal(result.gate, 'PASS_A1_ENTRY_AND_FROZEN_INVENTORY');
-  assert.equal(result.formalPassCount, 0);
-  assert.equal(result.formalDomains.length, 8);
-  assert.equal(result.mandatorySupplemental.length, 23);
-  assert.equal(result.releaseDeferrals.length, 5);
+test('entry rebuilds current obligations without promoting historical proofs to formal receipts', async () =>
+  fixture(async (write) => {
+    const c = await currentScopeContext(write);
+    const result = await checkAcceptanceEntry(root, c);
+    assert.equal(result.gate, 'PASS_A1_ENTRY_AND_FROZEN_INVENTORY');
+    assert.equal(result.formalPassCount, 0);
+    assert.equal(result.formalDomains.length, 8);
+    assert.equal(result.mandatorySupplemental.length, 23);
+    assert.equal(result.releaseDeferrals.length, 5);
+    const scope = JSON.parse(readBoundFile(root, c.frozenScope));
+    const inventory = JSON.parse(readBoundFile(root, c.inventory));
+    assert.equal(scope.prototype.requiredElements.length, 121);
+    assert.equal(scope.prototype.forbiddenOrReadonly.length, 7);
+    assert.equal(inventory.operationRoleLedger.length, 112);
+    assert.equal(inventory.prototypeLedger.length, 117);
+    assert.equal(inventory.deduplicatedNeverRunGaps.length, 32);
+    assert.ok(inventory.evidence.every((item) => item.sourceEquivalent && item.configEquivalent));
+    assert.equal(result.qa09BusinessGate, 'PARTIAL');
+    assert.equal(result.fullQa09Accepted, false);
+  }));
+test('sealed historical 117-element scope cannot accept the current 121-element source', async () => {
   const c = context();
-  const scope = JSON.parse(readBoundFile(root, c.frozenScope));
-  const inventory = JSON.parse(readBoundFile(root, c.inventory));
-  assert.equal(scope.prototype.requiredElements.length, 117);
-  assert.equal(scope.prototype.forbiddenOrReadonly.length, 11);
-  assert.equal(inventory.operationRoleLedger.length, 112);
-  assert.equal(inventory.prototypeLedger.length, 117);
-  assert.equal(inventory.deduplicatedNeverRunGaps.length, 32);
-  assert.ok(inventory.evidence.every((item) => item.sourceEquivalent && item.configEquivalent));
-  assert.equal(result.qa09BusinessGate, 'PARTIAL');
-  assert.equal(result.fullQa09Accepted, false);
+  assert.equal(JSON.parse(readBoundFile(root, c.frozenScope)).prototype.requiredElements.length, 117);
+  await assert.rejects(checkAcceptanceEntry(root, c), /FROZEN_REQUIRED_SCOPE_DRIFT/);
 });
 test('rehashed scope deletions, security deferrals and unsupported inventory PASS are rejected', async () =>
   fixture(async (write) => {
@@ -188,21 +202,21 @@ test('rehashed scope deletions, security deferrals and unsupported inventory PAS
         scope.domains[0].requiredSets.UPLINK_TYPES.pop();
       },
     ]) {
-      const c = context(),
+      const c = await currentScopeContext(write),
         scope = JSON.parse(readBoundFile(root, c.frozenScope));
       mutate(scope);
       c.frozenScope = write('bad-scope.json', scope);
       await assert.rejects(checkAcceptanceEntry(root, c), /FROZEN_REQUIRED_SCOPE_DRIFT/);
     }
-    const c = context(),
+    const c = await currentScopeContext(write),
       inventory = JSON.parse(readBoundFile(root, c.inventory));
     inventory.mandatory[0].status = 'PASS';
     c.inventory = write('fake-pass.json', inventory);
     await assert.rejects(checkAcceptanceEntry(root, c), /PROMOTION_OR_SCOPE_DRIFT/);
   }));
 test('CLI default remains nonzero while explicit A1-only readiness succeeds with QA09 partial', async () =>
-  fixture((write) => {
-    const currentContext = write('current-entry-context.json', context());
+  fixture(async (write) => {
+    const currentContext = write('current-entry-context.json', await currentScopeContext(write));
     for (const entryOnly of [false, true]) {
       const run = spawnSync(
         process.execPath,

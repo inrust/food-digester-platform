@@ -1,0 +1,153 @@
+
+> food-digester-platform@0.0.0 verify /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks && pnpm check:admin-web-delivery && pnpm check:admin-web-e2e && pnpm check:cmd-ota-delivery && pnpm test:device-contracts /tmp/fdp-device-contracts-gate.json && pnpm test:iot-integration /tmp/fdp-iot-integration-gate.json && pnpm test:core-api-integration /tmp/fdp-core-api-integration-gate.json && pnpm test:admin-e2e-suite /tmp/fdp-admin-e2e-gate.json && pnpm test:security-suite /tmp/fdp-security-gate.json && pnpm test:reliability-suite /tmp/fdp-reliability-gate.json && pnpm test:prototype-regression /tmp/fdp-prototype-regression-gate.json
+
+
+> food-digester-platform@0.0.0 lint /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> eslint .
+
+
+> food-digester-platform@0.0.0 format:check /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> food-digester-platform@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> turbo run typecheck
+
+• turbo 2.10.11
+
+   • Packages in scope: @fdp/admin-web, @fdp/archive-worker, @fdp/auth, @fdp/aws-clients, @fdp/cloud-api, @fdp/contracts, @fdp/database, @fdp/domain, @fdp/infra, @fdp/ingestion-worker, @fdp/media, @fdp/observability, @fdp/summary-worker
+   • Running typecheck in 13 packages
+   • Remote caching disabled
+
+@fdp/infra:typecheck: cache miss, executing 9a2b7508f1c749cf
+@fdp/observability:build: cache miss, executing 00c1b5a6fca0942a
+@fdp/database:generate: cache miss, executing 231f70c8a5747a46
+@fdp/contracts:build: cache miss, executing 57d90f7d3e579acf
+@fdp/observability:typecheck: cache miss, executing ea8c5cbbac2012e7
+@fdp/contracts:typecheck: cache miss, executing 89206a03ecfa91ae
+@fdp/contracts:build: 
+@fdp/contracts:build: > @fdp/contracts@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/contracts
+@fdp/contracts:build: > node -e "console.log('@fdp/contracts 为源码契约包：内部使用 .ts 扩展名互引，不经 tsc 构建；消费方经 tsx/打包器直接使用源码')"
+@fdp/contracts:build: 
+@fdp/contracts:typecheck: 
+@fdp/contracts:typecheck: > @fdp/contracts@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/contracts
+@fdp/contracts:typecheck: > tsc -p tsconfig.json
+@fdp/contracts:typecheck: 
+@fdp/observability:build: 
+@fdp/observability:build: > @fdp/observability@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability
+@fdp/observability:build: > tsc -p tsconfig.build.json
+@fdp/observability:build: 
+@fdp/database:generate: 
+@fdp/database:generate: > @fdp/database@0.0.0 generate /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database
+@fdp/database:generate: > prisma generate
+@fdp/database:generate: 
+@fdp/infra:typecheck: 
+@fdp/infra:typecheck: > @fdp/infra@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/infra
+@fdp/infra:typecheck: > tsc -p tsconfig.json
+@fdp/infra:typecheck: 
+@fdp/observability:typecheck: 
+@fdp/observability:typecheck: > @fdp/observability@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability
+@fdp/observability:typecheck: > tsc -p tsconfig.json
+@fdp/observability:typecheck: 
+@fdp/contracts:build: @fdp/contracts 为源码契约包：内部使用 .ts 扩展名互引，不经 tsc 构建；消费方经 tsx/打包器直接使用源码
+@fdp/domain:typecheck: cache miss, executing 7cfcf5b96acc6b2e
+@fdp/domain:build: cache miss, executing 326f9e4be4e71206
+@fdp/domain:build: 
+@fdp/domain:build: > @fdp/domain@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/domain
+@fdp/domain:build: > tsc -p tsconfig.build.json
+@fdp/domain:build: 
+@fdp/domain:typecheck: 
+@fdp/domain:typecheck: > @fdp/domain@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/domain
+@fdp/domain:typecheck: > tsc -p tsconfig.json
+@fdp/domain:typecheck: 
+@fdp/database:generate: Loaded Prisma config from prisma.config.ts.
+@fdp/database:generate: 
+@fdp/database:generate: Prisma schema loaded from prisma/schema.prisma.
+@fdp/database:generate: 
+@fdp/database:generate: ✔ Generated Prisma Client (7.9.1) to ./src/generated in 151ms
+@fdp/database:generate: 
+@fdp/database:typecheck: cache miss, executing e3502de5f5904616
+@fdp/database:build: cache miss, executing 5e3a0c7d5215c017
+@fdp/database:build: 
+@fdp/database:build: > @fdp/database@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database
+@fdp/database:build: > tsc -p tsconfig.build.json
+@fdp/database:build: 
+@fdp/database:typecheck: 
+@fdp/database:typecheck: > @fdp/database@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database
+@fdp/database:typecheck: > tsc -p tsconfig.json
+@fdp/database:typecheck: 
+@fdp/media:build: cache miss, executing 69cd1470b15d1944
+@fdp/aws-clients:typecheck: cache miss, executing 5f9470d2f8e8709b
+@fdp/media:typecheck: cache miss, executing c6680cdae8ee6690
+@fdp/aws-clients:build: cache miss, executing 1388246697b3de48
+@fdp/aws-clients:build: 
+@fdp/aws-clients:build: > @fdp/aws-clients@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/aws-clients
+@fdp/aws-clients:build: > tsc -p tsconfig.build.json
+@fdp/aws-clients:build: 
+@fdp/media:build: 
+@fdp/media:build: > @fdp/media@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/media
+@fdp/media:build: > tsc -p tsconfig.build.json
+@fdp/media:build: 
+@fdp/aws-clients:typecheck: 
+@fdp/aws-clients:typecheck: > @fdp/aws-clients@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/aws-clients
+@fdp/aws-clients:typecheck: > tsc -p tsconfig.json
+@fdp/aws-clients:typecheck: 
+@fdp/media:typecheck: 
+@fdp/media:typecheck: > @fdp/media@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/media
+@fdp/media:typecheck: > tsc -p tsconfig.json
+@fdp/media:typecheck: 
+@fdp/auth:typecheck: cache miss, executing 7d770ac05ec34327
+@fdp/summary-worker:typecheck: cache miss, executing 1a22715addf717ce
+@fdp/auth:build: cache miss, executing 7373cbdbbf56a8ac
+@fdp/archive-worker:typecheck: cache miss, executing d6d09ab9bb062f5d
+@fdp/archive-worker:typecheck: 
+@fdp/archive-worker:typecheck: > @fdp/archive-worker@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/archive-worker
+@fdp/archive-worker:typecheck: > tsc -p tsconfig.json
+@fdp/archive-worker:typecheck: 
+@fdp/auth:typecheck: 
+@fdp/auth:typecheck: > @fdp/auth@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/auth
+@fdp/auth:typecheck: > tsc -p tsconfig.json
+@fdp/auth:typecheck: 
+@fdp/summary-worker:typecheck: 
+@fdp/summary-worker:typecheck: > @fdp/summary-worker@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/summary-worker
+@fdp/summary-worker:typecheck: > tsc -p tsconfig.json
+@fdp/summary-worker:typecheck: 
+@fdp/auth:build: 
+@fdp/auth:build: > @fdp/auth@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/auth
+@fdp/auth:build: > tsc -p tsconfig.build.json
+@fdp/auth:build: 
+@fdp/admin-web:typecheck: cache miss, executing 109210c6d8f16ff7
+@fdp/ingestion-worker:typecheck: cache miss, executing 51afad32019b9bfb
+@fdp/cloud-api:typecheck: cache miss, executing 17b429e835e26649
+@fdp/admin-web:typecheck: 
+@fdp/admin-web:typecheck: > @fdp/admin-web@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web
+@fdp/admin-web:typecheck: > tsc -p tsconfig.json && tsc -p tsconfig.e2e.json
+@fdp/admin-web:typecheck: 
+@fdp/cloud-api:typecheck: 
+@fdp/cloud-api:typecheck: > @fdp/cloud-api@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api
+@fdp/cloud-api:typecheck: > tsc -p tsconfig.json
+@fdp/cloud-api:typecheck: 
+@fdp/ingestion-worker:typecheck: 
+@fdp/ingestion-worker:typecheck: > @fdp/ingestion-worker@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/ingestion-worker
+@fdp/ingestion-worker:typecheck: > tsc -p tsconfig.json
+@fdp/ingestion-worker:typecheck: 
+@fdp/cloud-api:typecheck: test/device-image-contract-gate.test.ts(32,25): error TS2379: Argument of type '{ identity: undefined; requestId: string; }' is not assignable to parameter of type 'LiveImageDeviceStateRequest' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+@fdp/cloud-api:typecheck:   Types of property 'identity' are incompatible.
+@fdp/cloud-api:typecheck:     Type 'undefined' is not assignable to type 'ClientCertIdentity'.
+@fdp/cloud-api:typecheck: test/device-image-contract-gate.test.ts(35,31): error TS2379: Argument of type '{ identity: undefined; requestId: string; headers: { 'Content-Type': string; }; body: any; }' is not assignable to parameter of type 'LiveImageFrameRequest' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+@fdp/cloud-api:typecheck:   Types of property 'identity' are incompatible.
+@fdp/cloud-api:typecheck:     Type 'undefined' is not assignable to type 'ClientCertIdentity'.
+@fdp/cloud-api:typecheck:  ELIFECYCLE  Command failed with exit code 2.
+@fdp/cloud-api#typecheck:  ERROR  command (/Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api) /Users/anray/Library/pnpm/.tools/pnpm/10.20.0/bin/pnpm run typecheck exited (2)
+
+ Tasks:    20 successful, 21 total
+Cached:    0 cached, 21 total
+  Time:    8.689s 
+Failed:    @fdp/cloud-api#typecheck
+
+ ERROR  run failed: command  exited (2)
+ ELIFECYCLE  Command failed with exit code 2.
+ ELIFECYCLE  Command failed with exit code 2.

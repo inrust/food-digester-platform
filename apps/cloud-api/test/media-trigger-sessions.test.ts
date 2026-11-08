@@ -1,3 +1,4 @@
+import { contractHandler } from '../../../contracts/testing/device-contract.js';
 /** IMG-10 actual Prisma + migrated PGlite; signing/S3 stay local. */
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
@@ -81,7 +82,10 @@ async function fixture(quota = 100, wrapped = false) {
   const ref: MediaTriggerRef = { kind: 'ALARM', messageId: `ALM-${suffix}` };
   const body = { ...legacy, triggerRef: ref };
   const request = async (input: unknown = body): Promise<DeviceMediaResponse> => {
-    const response = await createDeviceMediaHandler(deps)({
+    const response = await contractHandler(
+      'createMediaUploadSession',
+      createDeviceMediaHandler(deps),
+    )({
       identity: { clientCertPem: pem },
       body: input,
       requestId: `req-${suffix}`,

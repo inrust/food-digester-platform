@@ -34,12 +34,14 @@ test('migration connection requires complete secret and verified TLS; special cr
 test('database verification derives every mapped Prisma table', () => {
   const schema = readFileSync('packages/database/prisma/schema.prisma', 'utf8');
   const tables = expectedTablesFromSchema(schema);
-  assert.equal(tables.length, 58);
+  assert.equal(tables.length, 61);
   assert.ok(tables.includes('device_public_keys'));
   assert.ok(tables.includes('onboarding_proof_nonces'));
   assert.ok(tables.includes('customers'));
   assert.ok(tables.includes('device_activity_export_jobs'));
   assert.ok(tables.includes('audit_logs'));
+  for (const table of ['device_live_image_policies', 'media_triggers', 'media_evidence'])
+    assert.ok(tables.includes(table));
   assert.equal(new Set(tables).size, tables.length);
 });
 test('runner without approved source fails without reporting credentials or driver details', () => {

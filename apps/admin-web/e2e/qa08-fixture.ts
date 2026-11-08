@@ -1,3 +1,4 @@
+import type { LiveLease, LiveReady } from '@fdp/contracts/rest/image-types.js';
 import { randomUUID, randomInt, createHash } from 'node:crypto';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -299,6 +300,28 @@ export const test = base.extend<{ qa08: Qa08 }>({
             },
           ]);
         if (path.startsWith('/api/v1/admin/devices')) {
+          if (path.includes('/live-image/viewers/')) {
+            if (method === 'DELETE') return route.fulfill({ status: 204, headers: { 'Cache-Control': 'no-store' } });
+            return send({
+              streamId: '10000000-0000-4000-8000-000000000001',
+              leaseExpiresAt: new Date(Date.parse(at) + 30000).toISOString(),
+              renewAfterSeconds: 10,
+              readIntervalMs: 2000,
+            } satisfies LiveLease);
+          }
+          if (path.endsWith('/live-image/latest')) {
+            return send({
+              state: 'READY',
+              streamId: '10000000-0000-4000-8000-000000000001',
+              frameId: '20000000-0000-4000-8000-000000000001',
+              capturedAt: at,
+              expiresAt: new Date(Date.parse(at) + 10000).toISOString(),
+              mimeType: 'image/jpeg',
+              imageBase64: readFileSync(
+                new URL('../../../contracts/rest/fixtures/device-images/capture.jpg', import.meta.url),
+              ).toString('base64'),
+            } satisfies LiveReady);
+          }
           if (path.endsWith('/console')) return send(f.console);
           if (path.endsWith('/metadata')) {
             f.device.alias = body.alias;

@@ -79,6 +79,51 @@ export const PROOFS = {
     'auditReadOnly',
   ],
 };
+/** Frozen IMG browser cases also require their structured behavioral evidence. */
+export const IMAGE_PROOFS = {
+  ...Object.fromEntries(
+    [
+      [1440, 'en', 'view'],
+      [375, 'zh-CN', 'view'],
+      [1440, 'en', 'operate'],
+    ].map(([width, language, page]) => [
+      `IMG-14 image preview lifecycle and layout ${page} ${width} ${language}`,
+      { key: 'imagePreviewLifecycle', expected: { width, language, released: 3 }, positive: ['readRequests'] },
+    ]),
+  ),
+  'IMG-15 independent frame deadline, stalled read and ignored late prior-session reply': {
+    key: 'imageDeadline',
+    expected: { independentExpiry: true, freshViewer: true, lateReplyIgnored: true },
+    positive: [],
+  },
+  ...Object.fromEntries(
+    ['en', 'zh-CN'].map((language) => [
+      `IMG-15 rate limit cooldown survives hide/reopen and permission revocation stops (${language})`,
+      { key: 'imageRecovery', expected: { language, retryAfterSeconds: 6, stoppedAfter403: true }, positive: [] },
+    ]),
+  ),
+  ...Object.fromEntries(
+    [
+      [1440, 'en'],
+      [375, 'zh-CN'],
+    ].map(([width, language]) => [
+      `IMG-16 alarm image stays available after clearing ${width} ${language}`,
+      { key: 'evidenceAlarm', expected: { width, language, sameOriginalAfterClear: true }, positive: ['signingCalls'] },
+    ]),
+  ),
+  'IMG-16 events distinguish associations and recover signing/image failures, with permission and missing-media errors':
+    {
+      key: 'evidenceEvents',
+      expected: { nullAndOmittedDistinct: true, deletedNoDownload: true, deniedAndMissingStop: true },
+      positive: ['retries'],
+    },
+  'IMG-19 two independent pages share a stream, one close leaves the other polling and authority denial stops the remaining page':
+    {
+      key: 'sharedImageViewers',
+      expected: { distinctViewers: 2, survivorPollsAfterClose: true, deniedStopsFrame: true },
+      positive: ['knownFrameIdUnchanged'],
+    },
+};
 export const REQUIRED_TITLES = [
   '无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫',
   '刷新失败清会话，API 403 保留会话并呈现无权',
@@ -100,6 +145,7 @@ export const REQUIRED_TITLES = [
   'FE-19 语言选择在刷新后保持',
   ...ROLES.map((role) => `QA05 role route and button matrix ${role}`),
   ...Object.keys(PROOFS),
+  ...Object.keys(IMAGE_PROOFS),
 ];
 function reportSpecs(report) {
   const specs = [];
@@ -205,6 +251,17 @@ export function summarizePhase(report, rows, repeatEach) {
   for (const [title, flags] of Object.entries(PROOFS))
     if (rows.filter((r) => r.title === title).some((r) => flags.some((flag) => r.proof[flag] !== true)))
       throw new Error('MISSING_WORKFLOW_PROOF');
+  for (const row of rows) {
+    const rule = IMAGE_PROOFS[row.title];
+    if (!rule) continue;
+    const proof = row.proof[rule.key];
+    if (
+      !proof ||
+      Object.entries(rule.expected).some(([key, value]) => proof[key] !== value) ||
+      rule.positive.some((key) => !Number.isSafeInteger(proof[key]) || proof[key] < 1)
+    )
+      throw new Error('MISSING_IMAGE_WORKFLOW_PROOF');
+  }
   const responses = rows.flatMap((r) => r.responses);
   if (!responses.some((r) => r.status === 403) || !responses.some((r) => r.status === 409))
     throw new Error('MISSING_NEGATIVE_RESPONSES');

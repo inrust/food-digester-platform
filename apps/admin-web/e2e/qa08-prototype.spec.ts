@@ -110,6 +110,29 @@ async function checkGroup(key: string, page: Page, q: Qa08, go: () => Promise<vo
       await expect(page.getByTestId('console-alarms')).toContainText(f.activity);
       await expect(page.getByTestId('console-esg7d')).toContainText(String(f.n));
       break;
+    case 'device-view.live-image':
+    case 'device-operate.live-image': {
+      const leases = q.calls.filter(
+        (call) => call.method === 'PUT' && call.path.includes('/live-image/viewers/'),
+      ).length;
+      await page.getByTestId('live-image-toggle').click();
+      await expect(page.getByTestId('live-image-frame')).toBeVisible();
+      await expect
+        .poll(() => page.getByTestId('live-image-frame').evaluate((node) => (node as HTMLImageElement).naturalWidth))
+        .toBeGreaterThan(0);
+      expect(
+        q.calls.filter((call) => call.method === 'PUT' && call.path.includes('/live-image/viewers/')),
+      ).toHaveLength(leases + 1);
+      await page.getByTestId('live-image-toggle').click();
+      await expect(page.getByTestId('live-image-frame')).toHaveCount(0);
+      await expect
+        .poll(
+          () => q.calls.filter((call) => call.method === 'DELETE' && call.path.includes('/live-image/viewers/')).length,
+        )
+        .toBeGreaterThan(0);
+      q.guards.liveImage = true;
+      break;
+    }
     case 'device-view.media':
       await expect(page.getByTestId('media-image')).toHaveAttribute('src', '/qa08-image.svg');
       await expect(page.getByTestId('media-video')).toHaveCount(0);

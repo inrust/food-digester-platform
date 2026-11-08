@@ -246,3 +246,31 @@ test('archived CSR upgrade mapping still verifies original baselines without rew
     json('contracts/testing/baselines/decision-register-1.36.0.json'),
   );
 });
+
+test('preview Retry-After validates HTTP string serialization without coercing JSON bodies', () => {
+  const response = {
+    status: 429,
+    headers: { 'Retry-After': '1', 'Cache-Control': 'no-store' },
+    body: { error: { code: 'RATE_LIMITED', message: 'Wait', requestId: 'img20-header' } },
+  };
+  deviceContract.assertResponse('getDeviceLiveImageState', response);
+  for (const value of ['nope', '0', '-1', '1.5', '1 second'])
+    assert.throws(() =>
+      deviceContract.assertResponse('getDeviceLiveImageState', {
+        ...response,
+        headers: { ...response.headers, 'Retry-After': value },
+      }),
+    );
+  assert.throws(() =>
+    deviceContract.assertResponse('getDeviceLiveImageState', {
+      ...response,
+      headers: { 'Cache-Control': 'no-store' },
+    }),
+  );
+  assert.throws(() =>
+    deviceContract.assertResponse('getDeviceLiveImageState', {
+      ...response,
+      body: { error: { ...response.body.error, requestId: 1 } },
+    }),
+  );
+});

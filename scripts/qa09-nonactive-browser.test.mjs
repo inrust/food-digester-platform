@@ -7,15 +7,15 @@ const matrix = JSON.parse(readFileSync('contracts/prototype-traceability.yaml'))
 const all = [...Object.keys(GROUPS), ...Object.keys(ABSENCE).map((id) => 'absence:' + id)].flatMap((group) =>
   VIEWPORTS.map((width) => ({ group, width, result: 'PASS' })),
 );
-test('117 elements require both real viewport receipts', () => {
+test('121 elements require both real viewport receipts', () => {
   const full = semanticSummary(matrix, all);
-  assert.deepEqual(full.counts, { PASS: 117, FAIL: 0, NOT_RUN: 0 });
+  assert.deepEqual(full.counts, { PASS: 121, FAIL: 0, NOT_RUN: 0 });
   assert.equal(full.gate, 'PASS');
   const missing = semanticSummary(
     matrix,
     all.filter((r) => r.width !== 375),
   );
-  assert.equal(missing.counts.NOT_RUN, 117);
+  assert.equal(missing.counts.NOT_RUN, 121);
   assert.equal(missing.gate, 'PARTIAL');
 });
 test('one failure fails all elements in the affected behavior group', () => {
@@ -47,7 +47,7 @@ test('Defer and Reject failures also block the browser Gate', () => {
     matrix,
     all.map((r) => (r.group.startsWith('absence:') && r.width === 375 ? { ...r, result: 'FAIL' } : r)),
   );
-  assert.equal(result.counts.PASS, 117);
+  assert.equal(result.counts.PASS, 121);
   assert.equal(result.gate, 'FAIL');
 });
 

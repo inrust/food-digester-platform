@@ -13,6 +13,7 @@ import {
   ROLES,
   ROUTES,
   PROOFS,
+  IMAGE_PROOFS,
 } from './run-admin-e2e.mjs';
 function fixture(repeatEach = 1) {
   const specs = [],
@@ -28,6 +29,12 @@ function fixture(repeatEach = 1) {
         results: [{ status: 'passed', retry: 0, errors: [] }],
       });
       const proof = Object.fromEntries((PROOFS[title] ?? []).map((flag) => [flag, true]));
+      const imageRule = IMAGE_PROOFS[title];
+      if (imageRule)
+        proof[imageRule.key] = {
+          ...imageRule.expected,
+          ...Object.fromEntries(imageRule.positive.map((key) => [key, 1])),
+        };
       const role = ROLES.find((r) => title === `QA05 role route and button matrix ${r}`);
       if (role) {
         proof.role = role;
@@ -81,7 +88,7 @@ test('serial and parallel repeated browser receipts are validated', () => {
   for (const repeat of [1, 2]) {
     const f = fixture(repeat);
     const summary = summarizePhase(f.report, f.rows, repeat);
-    assert.equal(summary.testCount, 38 * repeat);
+    assert.equal(summary.testCount, 48 * repeat);
     assert.equal(summary.buttonAssertions, 33 * repeat);
   }
 });
@@ -210,7 +217,7 @@ test('manifest exactly matches independent Playwright discovery', () => {
       env: { ...process.env, QA05_PHASE: 'serial' },
     }),
   );
-  assert.equal(validateDiscovery(report).distinctCases, 38);
+  assert.equal(validateDiscovery(report).distinctCases, 48);
 });
 for (const [name, mutate] of [
   ['missing case', (specs) => specs.pop()],
@@ -240,20 +247,20 @@ for (const title of Object.keys(PROOFS))
     delete f.rows.find((row) => row.title === title).proof[PROOFS[title][0]];
     assert.throws(() => summarizePhase(f.report, f.rows, 1), /MISSING_WORKFLOW_PROOF/);
   });
-test('serial and repeated phases require all 114 independent prefixes', () => {
+test('serial and repeated phases require all 144 independent prefixes', () => {
   const a = fixture();
   const b = fixture(2);
   b.rows.forEach((row, i) => {
     row.prefix = `QA05-${(i + 1000).toString(16).padStart(12, '0').toUpperCase()}`;
   });
   const phases = [summarizePhase(a.report, a.rows, 1), summarizePhase(b.report, b.rows, 2)];
-  assert.equal(validateCrossPhaseIsolation(phases), 114);
+  assert.equal(validateCrossPhaseIsolation(phases), 144);
   phases[1].tests[0].prefix = phases[0].tests[0].prefix;
   assert.throws(() => validateCrossPhaseIsolation(phases), /CROSS_PHASE_DATA_COLLISION/);
 });
 test('phase budget accounts for startup, executions and worker slots, with a finite ceiling', () => {
-  assert.equal(browserPhaseTimeoutMs(1, 1), 690000);
-  assert.equal(browserPhaseTimeoutMs(2, 2), 690000);
+  assert.equal(browserPhaseTimeoutMs(1, 1), 840000);
+  assert.equal(browserPhaseTimeoutMs(2, 2), 840000);
   assert.equal(browserPhaseTimeoutMs(2, 1), 900000);
   assert.equal(browserPhaseTimeoutMs(100, 2), 900000);
 });
@@ -292,3 +299,14 @@ test('spawn errors reject without disclosing raw process error details', () => {
 test('successful process may proceed to the strict report and trace validator', () => {
   assert.doesNotThrow(() => assertBrowserPhaseSucceeded({ status: 0 }, 'serial', 645000));
 });
+
+for (const [title, rule] of Object.entries(IMAGE_PROOFS)) {
+  for (const field of [null, ...Object.keys(rule.expected), ...rule.positive])
+    test(`image evidence fails closed: ${title} / ${field ?? 'missing proof'}`, () => {
+      const f = fixture();
+      const proof = f.rows.find((row) => row.title === title).proof;
+      if (field === null) delete proof[rule.key];
+      else delete proof[rule.key][field];
+      assert.throws(() => summarizePhase(f.report, f.rows, 1), /MISSING_IMAGE_WORKFLOW_PROOF/);
+    });
+}

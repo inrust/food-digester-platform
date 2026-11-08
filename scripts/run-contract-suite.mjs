@@ -16,6 +16,8 @@ export const DEVICE_TEST_FILES = [
   'license-sync-lifecycle',
   'device-deactivate',
   'media',
+  'media-trigger-sessions',
+  'device-image-contract-gate',
   'csr-onboarding',
   'ota-dispatch',
   'qa02-device-errors',

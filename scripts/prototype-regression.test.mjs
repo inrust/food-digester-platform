@@ -40,6 +40,7 @@ function fixture() {
           'cascadingReset',
           'fourAxes',
           'staticMedia',
+          'liveImage',
           'unknownNotInvented',
           'noPlatformPassword',
           'entryPermissions',
@@ -53,8 +54,8 @@ function fixture() {
 test('receipt covers all 128 decisions in two viewports', () => {
   const f = fixture();
   const c = summarize(f.report, f.rows, () => 'fixture-hash');
-  assert.equal(c.positiveAssertions, 234);
-  assert.equal(c.absenceAssertions, 22);
+  assert.equal(c.positiveAssertions, 242);
+  assert.equal(c.absenceAssertions, 14);
 });
 for (const [label, change] of [
   ['missing page', (f) => f.report.suites[0].specs.pop()],
@@ -67,7 +68,7 @@ for (const [label, change] of [
   ['updated baseline masquerades as regression', (f) => (f.rows[0].updatedSnapshots = true)],
   ['missing group', (f) => f.rows[0].groups.pop()],
   ['duplicate group', (f) => f.rows[0].groups.push(f.rows[0].groups[0])],
-  ['missing rejection assertion', (f) => f.rows[1].absence.pop()],
+  ['missing rejection assertion', (f) => f.rows.find((row) => row.absence.length).absence.pop()],
   ['missing menu', (f) => f.rows[0].menus.pop()],
   ['missing behavior guard', (f) => (f.rows[0].guards.dangerousConfirmation = false)],
   ['wrong viewport', (f) => (f.rows[0].viewport = 768)],
