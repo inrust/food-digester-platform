@@ -19,10 +19,10 @@ import {
 } from './device-image-target-ar12-scope.mjs';
 
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
-export const CANDIDATE = '69c76e1dd508bf6e03dd21992194a8280109cd0a';
+export const CANDIDATE = 'd1a7b81196d60ec320e760da3d18de403563fc12';
 export const PACKAGE = 'docs/api/fixtures/device-image-target';
-export const G3 = 'docs/audit/evidence/2026-11-08-device-image-G3-rebind-69c76e1d';
-export const G3_EVIDENCE_COMMIT = '5742d6baabdae4a1abb1c1f44ed6b78f08547e2b';
+export const G3 = 'docs/audit/evidence/2026-11-08-device-image-G3-rebind-d1a7b811';
+export const G3_EVIDENCE_COMMIT = '1b1b879ffcf34be7cebd6fe87b8301ae5bd21356';
 export const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const json = (value) => Buffer.from(JSON.stringify(value, null, 2) + '\n');
 const read = (path) => readFileSync(resolve(ROOT, path));

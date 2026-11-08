@@ -14,6 +14,8 @@ import {
   readG3EvidenceFiles,
 } from '../device-image-target-package.mjs';
 
+import { AR12_LOCAL_RECEIPT, AR12_LOCAL_REPORT } from '../device-image-target-ar12-scope.mjs';
+
 export async function candidateFixture() {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'fdp-image-candidate-')));
   const cleanup = () => rmSync(root, { recursive: true, force: true });
@@ -37,8 +39,8 @@ export async function candidateFixture() {
     const metadata = [
       ...Object.keys(manifest.inputs),
       ...PREPARATION_SOURCE_FILES,
-      'docs/audit/evidence/2026-11-08-device-image-G3-rebind-preparation/local-regression.json',
-      'docs/audit/evidence/2026-11-08-device-image-G3-rebind-preparation/branch-vitest.json',
+      AR12_LOCAL_RECEIPT,
+      AR12_LOCAL_REPORT,
       ...Object.keys(manifest.files).map((name) => `${PACKAGE}/${name}`),
       `${PACKAGE}/manifest.json`,
     ];

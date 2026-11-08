@@ -1,0 +1,172 @@
+{
+  "formatVersion": 1,
+  "scope": "IMG21_CURRENT_CANDIDATE_REVALIDATION_AND_OFFLINE_REBIND",
+  "sourceCommit": "d1a7b81196d60ec320e760da3d18de403563fc12",
+  "g3EvidenceCommit": "1b1b879ffcf34be7cebd6fe87b8301ae5bd21356",
+  "protocolDigest": "76f5bc57976dfe2a566eec3f71fa0d28b0ff0f93da4195f0876b3dc2ecfd188b",
+  "g3": "PASS_LOCAL",
+  "g4": "NOT_RUN",
+  "status": "PASS_LOCAL_PREPARATION",
+  "actualCloudCalls": 0,
+  "deployments": 0,
+  "targetDatabaseConnections": 0,
+  "targetMigrations": 0,
+  "deviceActivations": 0,
+  "pushes": 0,
+  "fullVerify": "SEALED_IN_G3_EVIDENCE_COMMIT_FOR_APPLICATION_CANDIDATE",
+  "checks": [
+    {
+      "command": "node --import tsx --test scripts/device-image-target-package.test.mjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "tests": 103,
+      "log": "package-tests.log"
+    },
+    {
+      "command": "pnpm test:scripts",
+      "status": "PASS",
+      "exitCode": 0,
+      "tests": 1625,
+      "log": "all-scripts.log"
+    },
+    {
+      "command": "pnpm exec vitest run apps/cloud-api/test/evidence-image-query.test.ts --reporter=json --outputFile=<local-report>",
+      "status": "PASS",
+      "exitCode": 0,
+      "tests": 34,
+      "log": "branch-vitest.log"
+    },
+    {
+      "command": "pnpm exec eslint <four changed MJS>",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "eslint.log"
+    },
+    {
+      "command": "pnpm exec prettier --check <four changed MJS>",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "format-check.log"
+    },
+    {
+      "command": "node scripts/check-boundaries.mjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "boundaries.log"
+    },
+    {
+      "command": "node scripts/check-eng-db-dom-evidence.mjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "evidence-check.log"
+    },
+    {
+      "command": "node scripts/check-sensitive-sinks.mjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "sensitive-sinks.log"
+    },
+    {
+      "command": "node scripts/check-secrets.mjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "secrets.log"
+    }
+  ],
+  "cliChecks": [
+    {
+      "id": "package-check",
+      "command": [
+        "node",
+        "scripts/device-image-target-package.mjs",
+        "--check"
+      ],
+      "expectedExitCode": 0,
+      "exitCode": 0,
+      "observedStatus": "PASS_OFFLINE_PACKAGE",
+      "checkStatus": "PASS_EXPECTED_OUTCOME",
+      "actualCloudCalls": 0
+    },
+    {
+      "id": "template-admission",
+      "command": [
+        "node",
+        "scripts/device-image-target-package.mjs",
+        "--admission",
+        "docs/api/fixtures/device-image-target/inputs.template.json"
+      ],
+      "expectedExitCode": 2,
+      "exitCode": 2,
+      "observedStatus": "BLOCKED",
+      "checkStatus": "PASS_EXPECTED_OUTCOME",
+      "actualCloudCalls": 0
+    },
+    {
+      "id": "template-receipt",
+      "command": [
+        "node",
+        "scripts/device-image-target-package.mjs",
+        "--receipt",
+        "docs/api/fixtures/device-image-target/receipt.template.json",
+        "docs/api/fixtures/device-image-target/inputs.template.json"
+      ],
+      "expectedExitCode": 2,
+      "exitCode": 2,
+      "observedStatus": "NOT_RUN",
+      "checkStatus": "PASS_EXPECTED_OUTCOME",
+      "actualCloudCalls": 0
+    },
+    {
+      "id": "historical-69c76e1d-inputs",
+      "command": [
+        "node",
+        "scripts/device-image-target-package.mjs",
+        "--admission",
+        "docs/audit/evidence/2026-11-08-device-image-G4-readiness/inputs.json"
+      ],
+      "expectedExitCode": 1,
+      "exitCode": 1,
+      "observedStatus": "FAIL",
+      "checkStatus": "PASS_EXPECTED_OUTCOME",
+      "actualCloudCalls": 0
+    }
+  ],
+  "sources": {
+    "path": "docs/audit/evidence/2026-11-08-device-image-G3-rebind-d1a7b811-preparation/sources.sha256",
+    "count": 25,
+    "sha256": "064973ff1a10cd99cd67cd0bfbcea9208deba6f56d002dbdc7be4a340360c9c8"
+  },
+  "unresolvedLocalFailures": [],
+  "localG3Blockers": [],
+  "targetAdmission": {
+    "status": "BLOCKED",
+    "missingInputs": 35,
+    "evidence": "template-admission.json"
+  },
+  "retainedHistoricalRejection": {
+    "status": "FAIL",
+    "checkStatus": "PASS_EXPECTED_REJECTION",
+    "originalCandidate": "69c76e1dd508bf6e03dd21992194a8280109cd0a",
+    "errors": [
+      "INVALID_INPUT_BINDING",
+      "DEPLOYED_CANDIDATE_MISMATCH",
+      "INVALID_TARGET_PROOF:deploymentProof",
+      "INVALID_TARGET_PROOF:migrationProof",
+      "INVALID_TARGET_PROOF:runtimeVersionsProof"
+    ],
+    "historicalMissingInputs": 21,
+    "evidence": "historical-input-rejection.json"
+  },
+  "notRun": [
+    "CURRENT_CANDIDATE_HOSTED_CI_AND_DEPLOYMENT_VERIFICATION",
+    "REAL_CLOUD_API_OR_TARGET_RECHECK",
+    "44_COMPLETE_G4_CASES",
+    "NATIVE_PG_DDB_CONCURRENCY_AUTHORITY_FAILURE_RECOVERY",
+    "REAL_24_HOUR_TERMINAL_STATE",
+    "CAPACITY_FIRST_FRAME_COST"
+  ],
+  "thirdPartyOutOfScope": [
+    "APP_IMPLEMENTATION",
+    "PHYSICAL_DEVICE_ACCEPTANCE"
+  ]
+}

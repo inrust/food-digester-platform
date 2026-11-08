@@ -235,7 +235,7 @@ test('G3 candidate binds historical hashes and rejects changed IAM source', asyn
   const binding = fixture.tool.verifyG3();
   assert.equal(binding.sourceCommit, CANDIDATE);
   assert.equal(binding.sources.count, 1693);
-  assert.equal(binding.artifacts.count, 14);
+  assert.equal(binding.artifacts.count, 13);
   assert.equal(binding.verificationSources.count, 1713);
   assert.equal(binding.g4, 'NOT_RUN');
   const path = 'infra/iam/FDP-CloudFormationExecutionPolicy.json';
