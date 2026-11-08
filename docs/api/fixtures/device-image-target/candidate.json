@@ -1,0 +1,57 @@
+{
+  "sourceCommit": "6dec17205fc87490e579b084dbcf2d29d5a7bdf5",
+  "g3": "PASS_LOCAL",
+  "g4": "NOT_RUN",
+  "result": {
+    "path": "docs/audit/evidence/2026-11-08-device-image-IMG20/result.json",
+    "sha256": "8e388a60f0bc031eecc4da5943d1f887e82d729a0722bde7603d60bfb375e966"
+  },
+  "sources": {
+    "path": "docs/audit/evidence/2026-11-08-device-image-IMG20/sources.sha256",
+    "sha256": "3bc73457eff8cc8cbc1d081869334925c90913922965dcad62533fe64c691f2f",
+    "count": 1693
+  },
+  "artifacts": {
+    "path": "docs/audit/evidence/2026-11-08-device-image-IMG20/artifacts.sha256",
+    "sha256": "a0472eb6c5ee340555d4dba57f3a2f568ad965049bede0122805145c3aa908c3",
+    "count": 34
+  },
+  "preparation": "OFFLINE_ONLY",
+  "sixRequirements": [
+    "candidate-and-G3",
+    "environment-and-identity",
+    "five-preview-operations",
+    "event-alarm-S3",
+    "native-concurrency-authority-recovery",
+    "execution-cleanup-G4"
+  ],
+  "policy": {
+    "capability": "live-image-v1",
+    "defaultEnabled": false,
+    "activation": "device-local-opt-in-and-server-device-allowlist",
+    "pollIntervalMs": 5000,
+    "uploadIntervalMs": 2000,
+    "readIntervalMs": 2000,
+    "leaseSeconds": 30,
+    "renewAfterSeconds": 10,
+    "frameTtlSeconds": 10,
+    "dedupSeconds": 15,
+    "minUploadIntervalMs": 1000,
+    "maxImageBytes": 131072,
+    "maxRequestBytes": 184320,
+    "defaultLongEdgePx": 640,
+    "maxDimensionPx": 1920,
+    "maxPixels": 2073600,
+    "maxFutureSkewSeconds": 2,
+    "maxViewersPerDevice": 16,
+    "consumers": [
+      "IMG-01",
+      "IMG-02",
+      "IMG-03",
+      "IMG-04",
+      "BE-MED-01",
+      "FE-06"
+    ],
+    "note": "设备本地版本支持且显式开启；服务端按 deviceId 白名单启用，两者均缺省关闭。旧媒体刷新策略仅用于已有归档入口。新接口按租约授权轮询。"
+  }
+}

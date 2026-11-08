@@ -1,0 +1,187 @@
+{
+  "executable": false,
+  "note": "Resolve route parameters and current response identifiers at execution time. No credentials embedded.",
+  "operations": [
+    {
+      "operationId": "getAlarm",
+      "method": "GET",
+      "path": "/api/v1/admin/alarms/{alarmId}",
+      "security": [
+        {
+          "CognitoJwt": []
+        }
+      ],
+      "body": "NONE",
+      "declaredStatuses": [
+        "200",
+        "401",
+        "403",
+        "404",
+        "500"
+      ]
+    },
+    {
+      "operationId": "listDeviceEvents",
+      "method": "GET",
+      "path": "/api/v1/admin/events",
+      "security": [
+        {
+          "CognitoJwt": []
+        }
+      ],
+      "body": "NONE",
+      "declaredStatuses": [
+        "200",
+        "400",
+        "401",
+        "403",
+        "500"
+      ]
+    },
+    {
+      "operationId": "createMediaDownloadUrl",
+      "method": "GET",
+      "path": "/api/v1/admin/media/{mediaId}/download-url",
+      "security": [
+        {
+          "CognitoJwt": []
+        }
+      ],
+      "body": "NONE",
+      "declaredStatuses": [
+        "200",
+        "401",
+        "403",
+        "404",
+        "500"
+      ]
+    },
+    {
+      "operationId": "createMediaUploadSession",
+      "method": "POST",
+      "path": "/api/v1/device/media/upload-sessions",
+      "security": [
+        {
+          "DeviceMtls": []
+        }
+      ],
+      "body": "JSON_FROM_FROZEN_SCHEMA",
+      "declaredStatuses": [
+        "200",
+        "201",
+        "400",
+        "401",
+        "403",
+        "409",
+        "500"
+      ]
+    },
+    {
+      "operationId": "renewLiveImageViewer",
+      "method": "PUT",
+      "path": "/api/v1/admin/devices/{deviceId}/live-image/viewers/{viewerId}",
+      "security": [
+        {
+          "CognitoJwt": []
+        }
+      ],
+      "body": "NONE",
+      "declaredStatuses": [
+        "200",
+        "400",
+        "401",
+        "403",
+        "404",
+        "409",
+        "429",
+        "503"
+      ]
+    },
+    {
+      "operationId": "releaseLiveImageViewer",
+      "method": "DELETE",
+      "path": "/api/v1/admin/devices/{deviceId}/live-image/viewers/{viewerId}",
+      "security": [
+        {
+          "CognitoJwt": []
+        }
+      ],
+      "body": "NONE",
+      "declaredStatuses": [
+        "204",
+        "400",
+        "401",
+        "403",
+        "404",
+        "409",
+        "429",
+        "503"
+      ]
+    },
+    {
+      "operationId": "getDeviceLiveImageState",
+      "method": "GET",
+      "path": "/api/v1/device/live-image/state",
+      "security": [
+        {
+          "DeviceMtls": []
+        }
+      ],
+      "body": "NONE",
+      "declaredStatuses": [
+        "200",
+        "400",
+        "401",
+        "403",
+        "404",
+        "409",
+        "429",
+        "503"
+      ]
+    },
+    {
+      "operationId": "uploadDeviceLiveImageFrame",
+      "method": "POST",
+      "path": "/api/v1/device/live-image/frames",
+      "security": [
+        {
+          "DeviceMtls": []
+        }
+      ],
+      "body": "JSON_FROM_FROZEN_SCHEMA",
+      "declaredStatuses": [
+        "200",
+        "400",
+        "401",
+        "403",
+        "404",
+        "409",
+        "413",
+        "415",
+        "429",
+        "503"
+      ]
+    },
+    {
+      "operationId": "getLatestLiveImage",
+      "method": "GET",
+      "path": "/api/v1/admin/devices/{deviceId}/live-image/latest",
+      "security": [
+        {
+          "CognitoJwt": []
+        }
+      ],
+      "body": "NONE",
+      "declaredStatuses": [
+        "200",
+        "400",
+        "401",
+        "403",
+        "404",
+        "409",
+        "429",
+        "503"
+      ]
+    }
+  ]
+}

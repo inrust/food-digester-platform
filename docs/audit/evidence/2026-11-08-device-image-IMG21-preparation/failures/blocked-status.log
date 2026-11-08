@@ -1,0 +1,90 @@
+✔ G3 candidate binds all committed source and evidence hashes; current runtime is unchanged (203.0535ms)
+✔ generated package is deterministic, cwd-independent, complete and fresh (910.969625ms)
+✔ case graph includes 44 cases and all five preview operations, full archive orders and authority variants (1.922042ms)
+✔ catalog rejects missing (1.651875ms)
+✔ catalog rejects duplicate (1.412542ms)
+✔ catalog rejects unknown operation (2.329542ms)
+✔ catalog rejects future dependency (1.511334ms)
+✔ catalog rejects preclaimed pass (1.424334ms)
+✔ template admission is BLOCKED with every missing input attributed; target receipt is NOT_RUN (2.195ms)
+✔ complete synthetic metadata only passes structural validation, never grants G4 (7.443334ms)
+✔ receipt/admission fails closed: wrong candidate (5.750375ms)
+✔ receipt/admission fails closed: old protocol (6.991875ms)
+✔ receipt/admission fails closed: mock mode (6.296833ms)
+✔ receipt/admission fails closed: synthetic permitted (5.733916ms)
+✔ receipt/admission fails closed: G4 promotion (5.805084ms)
+✔ receipt/admission fails closed: missing case (5.860083ms)
+✔ receipt/admission fails closed: duplicate case (5.4165ms)
+✔ receipt/admission fails closed: failed case (5.759167ms)
+✔ receipt/admission fails closed: missing assertion (5.602625ms)
+✔ receipt/admission fails closed: missing evidence kind (6.057458ms)
+✔ receipt/admission fails closed: wrong artifact hash (5.672292ms)
+✔ receipt/admission fails closed: missing variant (5.56075ms)
+✔ receipt/admission fails closed: unproven variant (5.429875ms)
+✔ receipt/admission fails closed: cleanup missing (6.157875ms)
+✔ receipt/admission fails closed: cross-run cleanup (5.529458ms)
+✔ receipt/admission fails closed: wrong environment (6.347791ms)
+✔ receipt/admission fails closed: unexecuted claim (5.259458ms)
+✔ receipt/admission fails closed: unsafe proof path (5.671292ms)
+✔ receipt/admission fails closed: wrong deployment (5.511375ms)
+✔ receipt/admission fails closed: same viewers (6.139458ms)
+✔ receipt/admission fails closed: invalid endpoint (6.0565ms)
+✖ BLOCKED and NOT_RUN evidence cannot be promoted even if other rows pass (6.3655ms)
+✔ rehashing cannot legitimize mock evidence (5.993708ms)
+✔ rehashing cannot legitimize different tenant environment (5.50525ms)
+✔ rehashing cannot legitimize different candidate (6.452666ms)
+✔ rehashing cannot legitimize outside window (5.910833ms)
+✔ rehashing cannot legitimize signed URL (5.646375ms)
+✔ rehashing cannot legitimize Base64 (5.544959ms)
+✔ artifact reader refuses traversal and symlink escapes without reading secrets (0.79125ms)
+✔ manifest parser rejects malformed, duplicate, absolute and parent paths (0.09875ms)
+✔ redaction checker rejects sensitive values while allowing opaque row identifiers and hashes (0.089208ms)
+✔ CLI has no cloud execution mode and all template target checks exit nonzero (102.657ms)
+✔ read-only probes execute against all local migrations; native PID diagnostic remains target-only (697.044583ms)
+✔ rehashing cannot replace detailed deploymentProof with a PASS flag (6.917875ms)
+✔ rehashing cannot replace detailed migrationProof with a PASS flag (3.707208ms)
+✔ rehashing cannot replace detailed runtimeVersionsProof with a PASS flag (3.870125ms)
+✔ rehashing cannot replace detailed testScopeProof with a PASS flag (4.11675ms)
+✔ rehashing cannot replace detailed executionWindowProof with a PASS flag (4.030792ms)
+✔ rehashing cannot replace detailed nativeWindow with a PASS flag (4.107125ms)
+✔ rehashing cannot replace detailed faultPlan with a PASS flag (3.976875ms)
+✔ rehashing cannot replace detailed longWindow with a PASS flag (5.700458ms)
+✔ rehashing cannot replace detailed scaleAndSla with a PASS flag (3.728834ms)
+✔ rehashing cannot replace detailed sequenceReservation with a PASS flag (3.637625ms)
+✔ rehashing cannot replace detailed cleanupPlan with a PASS flag (3.696083ms)
+✔ native storage evidence cannot be replaced by PGlite or a DDB command mock (13.000875ms)
+✔ short or unauthorized execution windows cannot claim the real 24 hour terminal case (12.189834ms)
+✔ rehashing an empty, foreign or epoch-deleting cleanup ledger is rejected (18.846792ms)
+ℹ tests 57
+ℹ suites 0
+ℹ pass 56
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2352.351291
+
+✖ failing tests:
+
+test at scripts/device-image-target-package.test.mjs:292:1
+✖ BLOCKED and NOT_RUN evidence cannot be promoted even if other rows pass (6.3655ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'NOT_RUN'
+  - 'BLOCKED'
+  
+      at TestContext.<anonymous> (file:///Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/scripts/device-image-target-package.test.mjs:296:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'NOT_RUN',
+    expected: 'BLOCKED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

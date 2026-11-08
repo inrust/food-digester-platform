@@ -1,0 +1,497 @@
+{
+  "formatVersion": 1,
+  "task": "IMG-21-preparation",
+  "date": "2026-11-08",
+  "referenceCommit": "6dec17205fc87490e579b084dbcf2d29d5a7bdf5",
+  "result": "PASS_OFFLINE_PREPARATION",
+  "scope": "cloud-target-acceptance-package-only",
+  "sixRequirementsConfirmedByUser": true,
+  "applicationCandidate": {
+    "g3": "PASS_LOCAL",
+    "sourceFilesVerified": 1693,
+    "artifactsVerified": 34,
+    "verification": "git candidate objects plus unchanged original G3 source inputs",
+    "fullVerifyRerunForThisCommit": false
+  },
+  "g4": {
+    "status": "NOT_RUN",
+    "achieved": false,
+    "actualCloudCalls": 0,
+    "targetCasesNotRun": 44
+  },
+  "delivery": {
+    "packageFiles": 12,
+    "caseCount": 44,
+    "previewCases": 14,
+    "archiveCases": 14,
+    "nativeCases": 12,
+    "operationalCases": 4,
+    "inputCount": 35,
+    "protocolDigest": "b40049c65b2c5ce8266d435fae90f91a61d94abe794e6b434e55f2d80d67e2d3",
+    "packageManifestSha256": "cf9b7279da0b19c35e53556f76850206b8b1cd49cc3f87c9d2a1e2041c73e90d"
+  },
+  "checks": [
+    {
+      "command": "node --import tsx --test scripts/device-image-target-package.test.mjs",
+      "status": "PASS",
+      "tests": 58,
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm test:scripts",
+      "status": "PASS",
+      "tests": 1580,
+      "exitCode": 0,
+      "localLoopbackAllowed": true
+    },
+    {
+      "command": "pnpm test:contracts",
+      "status": "PASS",
+      "tests": 319,
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm lint",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm format:check",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm openapi:check",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": "Redocly target subset",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm check:boundaries",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm check:migrations",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm check:runtime",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm check:evidence",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm check:sensitive-sinks",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm check:secrets",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": "preview and archive handoff --check",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "node",
+        "scripts/device-image-target-package.mjs",
+        "--check"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "checkStatus": "PASS_EXPECTED_OUTCOME",
+      "actualStatus": "PASS_OFFLINE_PACKAGE"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/device-image-target-package.mjs",
+        "--admission",
+        "docs/api/fixtures/device-image-target/inputs.template.json"
+      ],
+      "exitCode": 2,
+      "expectedExitCode": 2,
+      "checkStatus": "PASS_EXPECTED_OUTCOME",
+      "actualStatus": "BLOCKED"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/device-image-target-package.mjs",
+        "--receipt",
+        "docs/api/fixtures/device-image-target/receipt.template.json",
+        "docs/api/fixtures/device-image-target/inputs.template.json"
+      ],
+      "exitCode": 2,
+      "expectedExitCode": 2,
+      "checkStatus": "PASS_EXPECTED_OUTCOME",
+      "actualStatus": "NOT_RUN"
+    }
+  ],
+  "blocked": [
+    {
+      "id": "accountId",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "region",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "stackName",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "adminBaseUrl",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "deviceBaseUrl",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "webOrigin",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "mqttEndpoint",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "deployedCommit",
+      "ownerRole": "发布负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "deploymentProof",
+      "ownerRole": "发布负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "migrationProof",
+      "ownerRole": "数据库负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "controlTable",
+      "ownerRole": "云端运维",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "payloadTable",
+      "ownerRole": "云端运维",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "archiveBucket",
+      "ownerRole": "云端运维",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "runtimeVersionsProof",
+      "ownerRole": "云端运维",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "nativePgReadRef",
+      "ownerRole": "数据库负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "deviceId",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "customerId",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "otherDeviceId",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "otherCustomerId",
+      "ownerRole": "环境负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "deviceMtlsRef",
+      "ownerRole": "身份负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "otherDeviceMtlsRef",
+      "ownerRole": "Identity owner for disposable device",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "mqttIdentityRef",
+      "ownerRole": "身份负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "viewerARef",
+      "ownerRole": "身份负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "viewerBRef",
+      "ownerRole": "身份负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "noMediaRoleRef",
+      "ownerRole": "身份负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "otherTenantRef",
+      "ownerRole": "身份负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "authorityWriterRef",
+      "ownerRole": "云端运维",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "testScopeProof",
+      "ownerRole": "验收执行负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "executionWindowProof",
+      "ownerRole": "验收执行负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "nativeWindow",
+      "ownerRole": "数据库/云端负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "faultPlan",
+      "ownerRole": "云端运维",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "longWindow",
+      "ownerRole": "验收执行负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "scaleAndSla",
+      "ownerRole": "业务/运营负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "sequenceReservation",
+      "ownerRole": "设备接入负责人",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "cleanupPlan",
+      "ownerRole": "云端运维",
+      "reason": "MISSING_TARGET_INPUT"
+    },
+    {
+      "id": "mediaPermissionDenyPath",
+      "ownerRole": "Cloud acceptance and RBAC owner",
+      "reason": "V1 five fixed roles all include media:read; no matrix edit API. AR12 field-omission target variant cannot be produced by switching normal roles. Requires an explicit scope/reachability decision, not a fabricated role or local mock.",
+      "caseId": "AR12",
+      "variantId": "no-media-permission",
+      "sourcePath": "packages/auth/src/permissions.ts"
+    }
+  ],
+  "targetAdmissionStatus": "BLOCKED",
+  "unresolvedLocalFailures": [],
+  "historicalFailures": [
+    {
+      "id": "generator-syntax",
+      "status": "RESOLVED",
+      "path": "failures/generator-syntax.log"
+    },
+    {
+      "id": "parameter-alias-export",
+      "status": "RESOLVED",
+      "path": "failures/unsupported-parameter-alias.log"
+    },
+    {
+      "id": "blocked-top-level-status",
+      "status": "RESOLVED",
+      "path": "failures/blocked-status.log"
+    },
+    {
+      "id": "eslint",
+      "status": "RESOLVED",
+      "path": "failures/eslint.log"
+    },
+    {
+      "id": "sandbox-loopback",
+      "status": "RESOLVED",
+      "failedTests": 3,
+      "path": "failures/sandbox-loopback.log"
+    }
+  ],
+  "auxiliaryFailures": [
+    {
+      "id": "editing-helper-encoding",
+      "status": "RESOLVED",
+      "attempts": 2,
+      "sourceWrittenOnFailure": false
+    }
+  ],
+  "notRun": [
+    {
+      "id": "44-target-cases",
+      "status": "NOT_RUN",
+      "cases": [
+        "PV01",
+        "PV02",
+        "PV03",
+        "PV04",
+        "PV05",
+        "PV06",
+        "PV07",
+        "PV08",
+        "PV09",
+        "PV10",
+        "PV11",
+        "PV12",
+        "PV13",
+        "PV14",
+        "AR01",
+        "AR02",
+        "AR03",
+        "AR04",
+        "AR05",
+        "AR06",
+        "AR07",
+        "AR08",
+        "AR09",
+        "AR10",
+        "AR11",
+        "AR12",
+        "AR13",
+        "NC01",
+        "NC02",
+        "NC03",
+        "NC04",
+        "NC05",
+        "NC06",
+        "NC07",
+        "NC08",
+        "NC09",
+        "NC10",
+        "NC11",
+        "NC12",
+        "AR14",
+        "OP01",
+        "OP02",
+        "OP03",
+        "OP04"
+      ]
+    },
+    {
+      "id": "native-DDB-PG-concurrency",
+      "status": "NOT_RUN",
+      "reason": "No native services or target execution; local migrated PGlite validates business SQL only, not PID/advisory locking"
+    },
+    {
+      "id": "actual-cloud-public-path-and-observability",
+      "status": "NOT_RUN",
+      "reason": "No real HTTP/Cognito/mTLS/S3/IoT/SQS/DDB/PG/Outbox or target logs called/collected"
+    },
+    {
+      "id": "real-15-minute-and-24-hour-windows",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "target-scale-first-frame-performance-cost",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "deployment-target-migration-enablement-push",
+      "status": "NOT_RUN",
+      "reason": "Explicit user boundary"
+    },
+    {
+      "id": "full-verify-build-tsc-vitest-playwright-cdk",
+      "status": "NOT_RUN",
+      "reason": "No runtime TS/frontend/database schema/IaC changes; candidate historical G3 is not a new full verify result for preparation tooling"
+    }
+  ],
+  "outOfScope": [
+    "Third-party App implementation",
+    "Camera and durable queue implementation",
+    "Physical-device acceptance"
+  ],
+  "sources": {
+    "path": "docs/audit/evidence/2026-11-08-device-image-IMG21-preparation/sources.sha256",
+    "fileCount": 20,
+    "sha256": "1ed4bbd7a98c1752879de86f276f0bc2be53de9e3dc804c559d41d09501ddaa0"
+  },
+  "artifacts": {
+    "path": "docs/audit/evidence/2026-11-08-device-image-IMG21-preparation/artifacts.sha256",
+    "selfHashExcluded": true
+  },
+  "historicalEvidenceModified": false,
+  "warnings": [
+    "Local command tests and structural metadata do not prove target execution",
+    "G4 cannot be promoted by the offline tool; known V1 media permission reachability remains BLOCKED"
+  ],
+  "postChecks": [
+    {
+      "id": "three-document-link-inventories",
+      "status": "PASS"
+    },
+    {
+      "id": "twenty-source-hashes",
+      "status": "PASS"
+    },
+    {
+      "id": "nine-OpenAPI-operation-semantics",
+      "status": "PASS"
+    },
+    {
+      "id": "no-historical-audit-mutation",
+      "status": "PASS"
+    },
+    {
+      "id": "git-diff-check",
+      "status": "PASS"
+    },
+    {
+      "id": "secret-scan-including-archived-logs",
+      "status": "PASS"
+    },
+    {
+      "id": "document-evidence-gate",
+      "status": "PASS"
+    }
+  ]
+}

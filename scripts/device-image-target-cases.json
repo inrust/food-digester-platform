@@ -1,0 +1,1352 @@
+{
+  "formatVersion": 1,
+  "cases": [
+    {
+      "id": "PV01",
+      "area": "preview",
+      "title": "缺省关闭与旧设备",
+      "operations": ["renewLiveImageViewer", "getDeviceLiveImageState"],
+      "dependsOn": [],
+      "requiredInputs": [],
+      "steps": ["对未开白名单的隔离设备查询状态；旧设备继续原 Sync/MQTT/归档。"],
+      "assertions": [
+        {
+          "id": "PV01-A1",
+          "expected": "缺行/false 返回403 FORBIDDEN，不能记作IDLE"
+        },
+        {
+          "id": "PV01-A2",
+          "expected": "旧设备无新增轮询；旧请求仍可使用"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "PV02",
+      "area": "preview",
+      "title": "首次查看与五个接口",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer"
+      ],
+      "dependsOn": ["PV01"],
+      "requiredInputs": [],
+      "steps": [
+        "用预先单独准入的测试身份 PUT viewer，无请求体；设备 GET state；按返回流上传新 JPEG；GET latest；DELETE 本页租约。"
+      ],
+      "assertions": [
+        {
+          "id": "PV02-A1",
+          "expected": "PUT200及30秒租约/10秒续租/2秒读取"
+        },
+        {
+          "id": "PV02-A2",
+          "expected": "ACTIVE给当前streamId/5秒查询/2秒上传"
+        },
+        {
+          "id": "PV02-A3",
+          "expected": "POST200且latest READY的字节Hash与样例一致"
+        },
+        {
+          "id": "PV02-A4",
+          "expected": "DELETE204，之后旧流不再可见"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DDB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "PV03",
+      "area": "preview",
+      "title": "续租与同帧读取",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer"
+      ],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["有效期内续租，带knownFrameId读取同帧。"],
+      "assertions": [
+        {
+          "id": "PV03-A1",
+          "expected": "streamId不变，租约截止延长"
+        },
+        {
+          "id": "PV03-A2",
+          "expected": "UNCHANGED没有Base64且帧截止不变"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DDB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "PV04",
+      "area": "preview",
+      "title": "帧与租约独立截止",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer"
+      ],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["停止新帧但继续续租；随后停止续租。"],
+      "assertions": [
+        {
+          "id": "PV04-A1",
+          "expected": "10秒后WAITING_FRAME，无图体"
+        },
+        {
+          "id": "PV04-A2",
+          "expected": "30秒租约逻辑到期后409 LIVE_VIEWER_EXPIRED"
+        },
+        {
+          "id": "PV04-A3",
+          "expected": "不依赖DDB TTL删除"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DDB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "PV05",
+      "area": "preview",
+      "title": "两身份两viewer共享",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer"
+      ],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["两个独立当前身份各申请viewer；释放其中一份，另一份继续读。"],
+      "assertions": [
+        {
+          "id": "PV05-A1",
+          "expected": "共享stream且viewer所有者不可冒用"
+        },
+        {
+          "id": "PV05-A2",
+          "expected": "单页释放不终止另一份有效租约"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DDB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "PV06",
+      "area": "preview",
+      "title": "最后释放与新流",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer"
+      ],
+      "dependsOn": ["PV05"],
+      "requiredInputs": [],
+      "steps": ["最后viewer释放，再重新申请，尝试旧stream上传。"],
+      "assertions": [
+        {
+          "id": "PV06-A1",
+          "expected": "IDLE后新stream不同"
+        },
+        {
+          "id": "PV06-A2",
+          "expected": "旧流帧409 LIVE_STREAM_INACTIVE，旧图不得复活"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DDB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "PV07",
+      "area": "preview",
+      "title": "JPEG/Base64负例",
+      "operations": ["uploadDeviceLiveImageFrame"],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["逐个提交非标准Base64、data URI、空白、损坏JPEG、未知字段。"],
+      "assertions": [
+        {
+          "id": "PV07-A1",
+          "expected": "非法内容400 VALIDATION_FAILED"
+        },
+        {
+          "id": "PV07-A2",
+          "expected": "DDB中无部分帧或receipt"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DDB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "PV08",
+      "area": "preview",
+      "title": "传输与大小边界",
+      "operations": ["uploadDeviceLiveImageFrame"],
+      "dependsOn": ["PV07"],
+      "requiredInputs": [],
+      "steps": [
+        "分别提交非JSON MIME、131072/131073字节JPEG、184320/184321字节JSON及像素超限；网关先拒绝与应用拒绝分开记录。"
+      ],
+      "assertions": [
+        {
+          "id": "PV08-A1",
+          "expected": "415/413/400按实际冻结应用契约；超上限不入库"
+        },
+        {
+          "id": "PV08-A2",
+          "expected": "网关提前拒绝可为独立传输响应，记录状态/请求ID/字节数；不伪造应用JSON"
+        },
+        {
+          "id": "PV08-A3",
+          "expected": "边界内有效JPEG能被接受"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "GATEWAY", "DDB"],
+      "status": "NOT_RUN",
+      "requiredVariants": [
+        "wrong-mime",
+        "jpeg-at-limit",
+        "jpeg-over-limit",
+        "json-at-limit",
+        "json-over-limit",
+        "pixels-over-limit"
+      ]
+    },
+    {
+      "id": "PV09",
+      "area": "preview",
+      "title": "时钟与旧帧",
+      "operations": ["uploadDeviceLiveImageFrame"],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["过期、超过2秒超前、较旧capturedAt、相同时间不同frameId分别上传。"],
+      "assertions": [
+        {
+          "id": "PV09-A1",
+          "expected": "旧帧409 STALE_FRAME，未来超限400"
+        },
+        {
+          "id": "PV09-A2",
+          "expected": "最新采集水位不回退；严格边界按服务器时间测量"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DDB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "PV10",
+      "area": "preview",
+      "title": "幂等与冲突",
+      "operations": ["uploadDeviceLiveImageFrame"],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["相同frameId/原申报重传；更改同ID内容；15秒摘要截止前后分别观察。"],
+      "assertions": [
+        {
+          "id": "PV10-A1",
+          "expected": "近期重复replayed=true，原receivedAt/expiresAt不变"
+        },
+        {
+          "id": "PV10-A2",
+          "expected": "内容变化409 FRAME_CONFLICT；摘要过期不能延长帧或绕过水位"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DDB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "PV11",
+      "area": "preview",
+      "title": "上传与viewer限频",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer"
+      ],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["少于1000ms提交两张新帧；申请第17个viewer，同时测试已有viewer续租。"],
+      "assertions": [
+        {
+          "id": "PV11-A1",
+          "expected": "新帧429带Retry-After，之后可恢复"
+        },
+        {
+          "id": "PV11-A2",
+          "expected": "最多16个有效viewer；续租不占新槽位"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DDB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "PV12",
+      "area": "preview",
+      "title": "当前权限与跨租户",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer"
+      ],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["使用无media:read身份、其他租户身份、过期/伪造JWT和无登记证书分别访问。"],
+      "assertions": [
+        {
+          "id": "PV12-A1",
+          "expected": "403/404/401按冻结权限语义且无图泄漏"
+        },
+        {
+          "id": "PV12-A2",
+          "expected": "mTLS握手失败与应用401分开；不得伪造Gateway身份Header"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "GATEWAY"],
+      "status": "NOT_RUN",
+      "requiredVariants": [
+        "no-media-permission",
+        "cross-tenant",
+        "expired-jwt",
+        "forged-jwt",
+        "unregistered-certificate"
+      ]
+    },
+    {
+      "id": "PV13",
+      "area": "preview",
+      "title": "CORS与禁缓存",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer"
+      ],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["以精确webOrigin执行OPTIONS和实际请求；另用未批准Origin。"],
+      "assertions": [
+        {
+          "id": "PV13-A1",
+          "expected": "允许来源精确匹配，不用通配符"
+        },
+        {
+          "id": "PV13-A2",
+          "expected": "PUT/DELETE/GET预检及实际响应含正确CORS"
+        },
+        {
+          "id": "PV13-A3",
+          "expected": "Retry-After/ETag/X-Request-Id可读取；所有预览Cache-Control:no-store"
+        },
+        {
+          "id": "PV13-A4",
+          "expected": "不允许来源无准入头；不以curl成功代替浏览器CORS"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "GATEWAY"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "PV14",
+      "area": "preview",
+      "title": "公开入口与运行权限",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer"
+      ],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["核对部署Lambda版本、路由、VPC endpoint、表名及IAM；跨实例交替读写。"],
+      "assertions": [
+        {
+          "id": "PV14-A1",
+          "expected": "五接口均为正常公开路由，当前版本不是占位"
+        },
+        {
+          "id": "PV14-A2",
+          "expected": "CONTROL与PAYLOAD事务所需GetItem/PutItem及网络可达；未授权表访问拒绝"
+        },
+        {
+          "id": "PV14-A3",
+          "expected": "不同实例共享租约和最新帧"
+        }
+      ],
+      "evidenceKinds": ["DEPLOYMENT", "HTTP", "DDB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR01",
+      "area": "archive",
+      "title": "EVENT source-first",
+      "operations": ["createMediaUploadSession", "getAlarm", "listDeviceEvents", "createMediaDownloadUrl"],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["使用独占seq与新的原始meta.id；按指定先后发布触发与media，先申请会话并PUT JPEG。"],
+      "assertions": [
+        {
+          "id": "AR01-A1",
+          "expected": "triggerRef精确匹配同租户/设备/kind/sourceMessageId"
+        },
+        {
+          "id": "AR01-A2",
+          "expected": "201→S3成功→MQTT登记→同申报409 MEDIA_ALREADY_REGISTERED含mediaId"
+        },
+        {
+          "id": "AR01-A3",
+          "expected": "PENDING最终LINKED，正常读权限返回AVAILABLE"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "S3", "MQTT", "DB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR02",
+      "area": "archive",
+      "title": "EVENT media-first",
+      "operations": ["createMediaUploadSession", "getAlarm", "listDeviceEvents", "createMediaDownloadUrl"],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["使用独占seq与新的原始meta.id；按指定先后发布触发与media，先申请会话并PUT JPEG。"],
+      "assertions": [
+        {
+          "id": "AR02-A1",
+          "expected": "triggerRef精确匹配同租户/设备/kind/sourceMessageId"
+        },
+        {
+          "id": "AR02-A2",
+          "expected": "201→S3成功→MQTT登记→同申报409 MEDIA_ALREADY_REGISTERED含mediaId"
+        },
+        {
+          "id": "AR02-A3",
+          "expected": "PENDING最终LINKED，正常读权限返回AVAILABLE"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "S3", "MQTT", "DB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR03",
+      "area": "archive",
+      "title": "ALARM source-first",
+      "operations": ["createMediaUploadSession", "getAlarm", "listDeviceEvents", "createMediaDownloadUrl"],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["使用独占seq与新的原始meta.id；按指定先后发布触发与media，先申请会话并PUT JPEG。"],
+      "assertions": [
+        {
+          "id": "AR03-A1",
+          "expected": "triggerRef精确匹配同租户/设备/kind/sourceMessageId"
+        },
+        {
+          "id": "AR03-A2",
+          "expected": "201→S3成功→MQTT登记→同申报409 MEDIA_ALREADY_REGISTERED含mediaId"
+        },
+        {
+          "id": "AR03-A3",
+          "expected": "PENDING最终LINKED，正常读权限返回AVAILABLE"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "S3", "MQTT", "DB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR04",
+      "area": "archive",
+      "title": "ALARM media-first",
+      "operations": ["createMediaUploadSession", "getAlarm", "listDeviceEvents", "createMediaDownloadUrl"],
+      "dependsOn": ["PV02"],
+      "requiredInputs": [],
+      "steps": ["使用独占seq与新的原始meta.id；按指定先后发布触发与media，先申请会话并PUT JPEG。"],
+      "assertions": [
+        {
+          "id": "AR04-A1",
+          "expected": "triggerRef精确匹配同租户/设备/kind/sourceMessageId"
+        },
+        {
+          "id": "AR04-A2",
+          "expected": "201→S3成功→MQTT登记→同申报409 MEDIA_ALREADY_REGISTERED含mediaId"
+        },
+        {
+          "id": "AR04-A3",
+          "expected": "PENDING最终LINKED，正常读权限返回AVAILABLE"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "S3", "MQTT", "DB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR05",
+      "area": "archive",
+      "title": "有效会话重用",
+      "operations": ["createMediaUploadSession"],
+      "dependsOn": ["AR01"],
+      "requiredInputs": [],
+      "steps": [
+        "POST the same trigger/declaration concurrently while the original session is valid; verify one issuance and 200 reuse before running quota exhaustion."
+      ],
+      "assertions": [
+        {
+          "id": "AR05-A1",
+          "expected": "200同sessionId/path/createdAt/绝对截止，URL可变化"
+        },
+        {
+          "id": "AR05-A2",
+          "expected": "Only one new issued session; reuse does not consume additional quota or extend expiration. Exhausted-quota priority is measured in AR14."
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR06",
+      "area": "archive",
+      "title": "不可变申报冲突",
+      "operations": ["createMediaUploadSession"],
+      "dependsOn": ["AR01"],
+      "requiredInputs": [],
+      "steps": ["分别改变文件名、sizeBytes、sizeKb、Hash和类型，保持原引用。"],
+      "assertions": [
+        {
+          "id": "AR06-A1",
+          "expected": "非法申报400；合法但不一致409 MEDIA_TRIGGER_CONFLICT"
+        },
+        {
+          "id": "AR06-A2",
+          "expected": "冲突不返回已登记mediaId且不重新签发"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR07",
+      "area": "archive",
+      "title": "过期新办和迟到旧路径",
+      "operations": ["createMediaUploadSession"],
+      "dependsOn": ["AR05"],
+      "requiredInputs": ["longWindow"],
+      "steps": ["在真实900秒截止后重办，延迟提交旧路径media。"],
+      "assertions": [
+        {
+          "id": "AR07-A1",
+          "expected": "原申报不变，新201/session/path/新额度"
+        },
+        {
+          "id": "AR07-A2",
+          "expected": "旧路径不得胜过新会话，唯一触发只关联一张图"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "MQTT", "DB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR08",
+      "area": "archive",
+      "title": "签名头与二进制",
+      "operations": ["createMediaUploadSession"],
+      "dependsOn": ["AR01"],
+      "requiredInputs": [],
+      "steps": ["检查实际URL的SignedHeaders；按query或Header发送SHA256校验和与精确长度；分别故意缺签名头/改字节。"],
+      "assertions": [
+        {
+          "id": "AR08-A1",
+          "expected": "正确原JPEG PUT成功且SHA256一致"
+        },
+        {
+          "id": "AR08-A2",
+          "expected": "错误长度/校验和/签名拒绝，S3错误不套业务JSON"
+        },
+        {
+          "id": "AR08-A3",
+          "expected": "不附加JWT、REST设备证书或重建签名query；ETag不当Hash"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "S3", "DB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR09",
+      "area": "archive",
+      "title": "登记事务精确校验",
+      "operations": ["createMediaUploadSession", "getAlarm", "listDeviceEvents", "createMediaDownloadUrl"],
+      "dependsOn": ["AR01"],
+      "requiredInputs": [],
+      "steps": ["用有界隔离对象制造不存在、Hash不符、长度不符、跨会话路径。"],
+      "assertions": [
+        {
+          "id": "AR09-A1",
+          "expected": "无Media/Evidence/receipt/Outbox部分提交"
+        },
+        {
+          "id": "AR09-A2",
+          "expected": "合法重试原消息可恢复；未知上传结果先确认不重复新办"
+        }
+      ],
+      "evidenceKinds": ["S3", "MQTT", "DB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR10",
+      "area": "archive",
+      "title": "重复MQTT与原子唯一",
+      "operations": ["createMediaUploadSession", "getAlarm", "listDeviceEvents", "createMediaDownloadUrl"],
+      "dependsOn": ["AR01"],
+      "requiredInputs": [],
+      "steps": ["同一原media消息重复及并发投递；保持meta/seq/Hash不变。"],
+      "assertions": [
+        {
+          "id": "AR10-A1",
+          "expected": "一条receipt/Media/Evidence/Outbox，同会话COMPLETED"
+        },
+        {
+          "id": "AR10-A2",
+          "expected": "PUBACK不作为登记或关联成功"
+        }
+      ],
+      "evidenceKinds": ["MQTT", "DB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR11",
+      "area": "archive",
+      "title": "清除后仍可查看",
+      "operations": ["createMediaUploadSession", "getAlarm", "listDeviceEvents", "createMediaDownloadUrl"],
+      "dependsOn": ["AR03"],
+      "requiredInputs": [],
+      "steps": ["ALARM原ACTIVE之后CLEARED；分别在关联前后清除，再读取。"],
+      "assertions": [
+        {
+          "id": "AR11-A1",
+          "expected": "引用原ACTIVE meta.id而非CLEARED或code猜测"
+        },
+        {
+          "id": "AR11-A2",
+          "expected": "清除后原图片仍AVAILABLE且可签下载"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "MQTT", "DB"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR12",
+      "area": "archive",
+      "title": "查询权限与删除",
+      "operations": ["createMediaUploadSession", "getAlarm", "listDeviceEvents", "createMediaDownloadUrl"],
+      "dependsOn": ["AR01"],
+      "requiredInputs": [],
+      "steps": ["当前有权限、无media:read、跨租户、未关联、删除和下载失败分别读取。"],
+      "assertions": [
+        {
+          "id": "AR12-A1",
+          "expected": "AVAILABLE/DELETED保留元数据；DELETED不签下载"
+        },
+        {
+          "id": "AR12-A2",
+          "expected": "未关联有读权限为null，无读取权限省略字段"
+        },
+        {
+          "id": "AR12-A3",
+          "expected": "无权限/跨租户失败关闭；短时下载错误不改关联"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "S3"],
+      "status": "NOT_RUN",
+      "requiredVariants": [
+        "allowed",
+        "no-media-permission",
+        "cross-tenant",
+        "unassociated",
+        "deleted",
+        "download-failure"
+      ]
+    },
+    {
+      "id": "AR13",
+      "area": "archive",
+      "title": "关联重试与24小时终态",
+      "operations": ["createMediaUploadSession", "getAlarm", "listDeviceEvents", "createMediaDownloadUrl"],
+      "dependsOn": ["AR02"],
+      "requiredInputs": ["longWindow"],
+      "steps": ["留一份原触发缺失的隔离图片，观察真实分钟扫描，等待完整24小时窗口。"],
+      "assertions": [
+        {
+          "id": "AR13-A1",
+          "expected": "每分钟默认50行×5页有界keyset，按同租户/同设备/精确消息ID匹配"
+        },
+        {
+          "id": "AR13-A2",
+          "expected": "截止后UNMATCHED且不继续无界扫描；不可用改DB时间或本地fake clock冒充真实24小时"
+        }
+      ],
+      "evidenceKinds": ["DB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "NC01",
+      "area": "native",
+      "title": "两个实例首次租约CAS",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": ["nativeWindow", "faultPlan"],
+      "steps": ["并发从同一CONTROL版本申请两个viewer。"],
+      "assertions": [
+        {
+          "id": "NC01-A1",
+          "expected": "同stream且两份租约不丢，冲突重读后收敛"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "NC02",
+      "area": "native",
+      "title": "最后释放与上传竞争",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": ["nativeWindow", "faultPlan"],
+      "steps": ["设置真实DDB写入屏障并发最后DELETE与POST。"],
+      "assertions": [
+        {
+          "id": "NC02-A1",
+          "expected": "接受或409均需解释线性化点，最终IDLE不可读旧帧"
+        },
+        {
+          "id": "NC02-A2",
+          "expected": "CONTROL/FRAME/DEDUP无跨版本部分可见"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "NC03",
+      "area": "native",
+      "title": "重复与乱序发布竞争",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": ["nativeWindow", "faultPlan"],
+      "steps": ["并发相同frame、内容冲突frame和较旧capturedAt。"],
+      "assertions": [
+        {
+          "id": "NC03-A1",
+          "expected": "只发布一次，水位不回退，截止不延长"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "NC04",
+      "area": "native",
+      "title": "TTL与逻辑截止",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": ["nativeWindow", "faultPlan"],
+      "steps": ["观察PAYLOAD ttl/FRAME/DEDUP并在条目未物理删除时跨过截止。"],
+      "assertions": [
+        {
+          "id": "NC04-A1",
+          "expected": "CONTROL不设TTL，不删除授权epoch"
+        },
+        {
+          "id": "NC04-A2",
+          "expected": "逻辑过期已拒绝；TTL异步删除时间另记，不设硬到期SLA"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "NC05",
+      "area": "native",
+      "title": "原生PG共享与排他屏障",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": ["nativeWindow", "faultPlan"],
+      "steps": ["两独立连接固定barrier→设备/用户行锁→DDB顺序；暂停已授权读取并排队撤权写入。"],
+      "assertions": [
+        {
+          "id": "NC05-A1",
+          "expected": "写入等待已授权I/O排空；写提交后新读取拒绝"
+        },
+        {
+          "id": "NC05-A2",
+          "expected": "记录pg_locks/等待/事务PID；PGlite单连接不替代"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "NC06",
+      "area": "native",
+      "title": "角色/账号/租户/证书/挂起/退役",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": ["nativeWindow", "faultPlan"],
+      "steps": [
+        "分别用权威写入口改变真实隔离主体状态，重放旧JWT/流；恢复分开进行。",
+        "Use primary device A for reversible mutations; retire only the separately approved disposable device B, after its cross-scope checks. Never unretire or restore a retired lifecycle with raw SQL. Retain the terminal fixture in the run ledger."
+      ],
+      "assertions": [
+        {
+          "id": "NC06-A1",
+          "expected": "每次从当前DB重鉴权，旧权限或租户不能复活图片"
+        },
+        {
+          "id": "NC06-A2",
+          "expected": "失效先关闭CONTROL递增epoch，清租约/流后再SQL"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": [
+        "role",
+        "account",
+        "tenant",
+        "certificate",
+        "suspended",
+        "retired",
+        "unassigned",
+        "policy-disabled"
+      ]
+    },
+    {
+      "id": "NC07",
+      "area": "native",
+      "title": "SQL回滚与提交后恢复失败",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": ["nativeWindow", "faultPlan"],
+      "steps": ["授权故障计划中分别使SQL回滚和提交后DDB恢复失败。"],
+      "assertions": [
+        {
+          "id": "NC07-A1",
+          "expected": "SQL回滚不得部分提交；失效保持关闭"
+        },
+        {
+          "id": "NC07-A2",
+          "expected": "提交后恢复失败不能谎报SQL回滚，显式权威入口恢复且新代次无旧租约"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "NC08",
+      "area": "native",
+      "title": "未知DDB提交与迟到I/O",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": ["nativeWindow", "faultPlan"],
+      "steps": ["隔离故障注入延迟请求跨越事务/租约/帧截止。"],
+      "assertions": [
+        {
+          "id": "NC08-A1",
+          "expected": "只有确定条件冲突才按CAS重试；不明结果503并重新鉴权"
+        },
+        {
+          "id": "NC08-A2",
+          "expected": "迟到读取不返回图片，迟到写仍受CONTROL条件和原deadline约束"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "NC09",
+      "area": "native",
+      "title": "DDB不可达/限流与恢复",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": ["nativeWindow", "faultPlan"],
+      "steps": ["在有界隔离故障窗口注入网络失败或限流，恢复原配置。"],
+      "assertions": [
+        {
+          "id": "NC09-A1",
+          "expected": "安全503无Base64/凭据泄漏；故障期不假定没写入"
+        },
+        {
+          "id": "NC09-A2",
+          "expected": "恢复后新流/原幂等请求按协议收敛；记录锁预算1000ms/事务10000ms/I/O预算"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "NC10",
+      "area": "native",
+      "title": "归档登记与权威变更竞争",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": ["nativeWindow", "faultPlan"],
+      "steps": ["对象Hash读取暂停期间撤证/迁移；再恢复对象I/O。"],
+      "assertions": [
+        {
+          "id": "NC10-A1",
+          "expected": "设备→触发→会话锁序；提交重验身份和归属"
+        },
+        {
+          "id": "NC10-A2",
+          "expected": "无跨租户关联或部分登记"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "NC11",
+      "area": "native",
+      "title": "Outbox/分钟扫描多消费者竞争",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": ["nativeWindow", "faultPlan"],
+      "steps": ["两个实际worker同时领取相同隔离Outbox及到期分页行。"],
+      "assertions": [
+        {
+          "id": "NC11-A1",
+          "expected": "幂等LINKED/UNMATCHED终态，不重复关联；分页不越界"
+        },
+        {
+          "id": "NC11-A2",
+          "expected": "外层持久Outbox身份核验，租约所有权正确"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "NC12",
+      "area": "native",
+      "title": "注册失败事务与原消息恢复",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": ["nativeWindow", "faultPlan"],
+      "steps": ["在隔离故障窗口使登记事务Outbox写入失败，撤除故障后原消息重试。"],
+      "assertions": [
+        {
+          "id": "NC12-A1",
+          "expected": "Media/Evidence/session/receipt/Outbox同事务回滚"
+        },
+        {
+          "id": "NC12-A2",
+          "expected": "恢复后一次登记成功，不能用人工补数据库伪造原子性"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "AR14",
+      "area": "archive",
+      "title": "两链路独立和旧请求",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession"
+      ],
+      "dependsOn": [
+        "PV01",
+        "PV02",
+        "PV03",
+        "PV04",
+        "PV05",
+        "PV06",
+        "PV07",
+        "PV08",
+        "PV09",
+        "PV10",
+        "PV11",
+        "PV12",
+        "PV13",
+        "PV14",
+        "AR01",
+        "AR02",
+        "AR03",
+        "AR04",
+        "AR05",
+        "AR06",
+        "AR07",
+        "AR08",
+        "AR09",
+        "AR10",
+        "AR11",
+        "AR12",
+        "AR13",
+        "NC01",
+        "NC02",
+        "NC03",
+        "NC04",
+        "NC05",
+        "NC06",
+        "NC07",
+        "NC08",
+        "NC09",
+        "NC10",
+        "NC11",
+        "NC12"
+      ],
+      "requiredInputs": [],
+      "steps": [
+        "在有效预览同时执行EVENT与ALARM归档，并发送无triggerRef的旧请求。",
+        "Run legacy 201 compatibility before exhausting the device UTC-day quota. Only after all cases requiring new sessions: reach the approved bounded quota, verify 409 for new issuance, existing reuse/registered confirmation still work, and preview does not consume archive quota. Do not reset counters or backdate SQL."
+      ],
+      "assertions": [
+        {
+          "id": "AR14-A1",
+          "expected": "预览不消耗归档100次/UTC日配额；归档不改变live stream"
+        },
+        {
+          "id": "AR14-A2",
+          "expected": "旧请求仍新办201，历史nullable sizeBytes/triggerId媒体可读"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DB", "MQTT"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "OP01",
+      "area": "operations",
+      "title": "日志脱敏和请求关联",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer",
+        "createMediaUploadSession",
+        "getAlarm",
+        "listDeviceEvents",
+        "createMediaDownloadUrl"
+      ],
+      "dependsOn": ["PV02", "AR01"],
+      "requiredInputs": [],
+      "steps": ["按HTTP requestId/部署版本/源消息ID关联网关、Lambda、Outbox和扫描日志，扫描泄漏。"],
+      "assertions": [
+        {
+          "id": "OP01-A1",
+          "expected": "无Base64、JWT、私钥、完整签名URL或凭据入日志"
+        },
+        {
+          "id": "OP01-A2",
+          "expected": "有结果、字节数、错误类型和延迟可追踪；仅保存脱敏元数据与Hash"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "GATEWAY", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "OP02",
+      "area": "operations",
+      "title": "首帧与容量观察",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer"
+      ],
+      "dependsOn": ["PV02"],
+      "requiredInputs": ["scaleAndSla"],
+      "steps": ["按明确N/同时viewer/图片大小和等待目标记录首帧及刷新，不进行未批准压测。"],
+      "assertions": [
+        {
+          "id": "OP02-A1",
+          "expected": "输出实测值与未达目标明细，未知目标为BLOCKED而非通过"
+        },
+        {
+          "id": "OP02-A2",
+          "expected": "5秒状态约17280×N/日仅容量估算，不当目标SLA证据"
+        }
+      ],
+      "evidenceKinds": ["HTTP", "DDB", "WORKER"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "OP03",
+      "area": "operations",
+      "title": "有界清理与复核",
+      "operations": [
+        "renewLiveImageViewer",
+        "getDeviceLiveImageState",
+        "uploadDeviceLiveImageFrame",
+        "getLatestLiveImage",
+        "releaseLiveImageViewer"
+      ],
+      "dependsOn": [
+        "PV01",
+        "PV02",
+        "PV03",
+        "PV04",
+        "PV05",
+        "PV06",
+        "PV07",
+        "PV08",
+        "PV09",
+        "PV10",
+        "PV11",
+        "PV12",
+        "PV13",
+        "PV14",
+        "AR01",
+        "AR02",
+        "AR03",
+        "AR04",
+        "AR05",
+        "AR06",
+        "AR07",
+        "AR08",
+        "AR09",
+        "AR10",
+        "AR11",
+        "AR12",
+        "AR13",
+        "NC01",
+        "NC02",
+        "NC03",
+        "NC04",
+        "NC05",
+        "NC06",
+        "NC07",
+        "NC08",
+        "NC09",
+        "NC10",
+        "NC11",
+        "NC12",
+        "AR14",
+        "OP01",
+        "OP02"
+      ],
+      "requiredInputs": [],
+      "steps": ["按runId资源台账释放所有测试viewer，经权威入口恢复准入/权限/归属；按已批准保留策略处理测试对象。"],
+      "assertions": [
+        {
+          "id": "OP03-A1",
+          "expected": "只处理台账内对象/会话/消息，不扫全桶不批量删CONTROL"
+        },
+        {
+          "id": "OP03-A2",
+          "expected": "不删历史关联；软删除/retention另记；保留不可逆状态/费用清单"
+        },
+        {
+          "id": "OP03-A3",
+          "expected": "复核IDLE、无测试活跃租约、worker无遗留及故障配置已恢复"
+        }
+      ],
+      "evidenceKinds": ["CLEANUP", "DB", "DDB", "S3"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    },
+    {
+      "id": "OP04",
+      "area": "operations",
+      "title": "G4封存和停止规则",
+      "operations": [],
+      "dependsOn": ["OP03"],
+      "requiredInputs": [],
+      "steps": ["核对部署/候选SHA、全部用例、环境输入和清理证据；失败或超时保留原记录并停止有风险后续步骤。"],
+      "assertions": [
+        {
+          "id": "OP04-A1",
+          "expected": "FAIL/BLOCKED/NOT_RUN不被跳过升级；所有所需目标case PASS且清理PASS才可申请G4"
+        },
+        {
+          "id": "OP04-A2",
+          "expected": "App/真机OUT_OF_SCOPE，不能拿其缺项填云端通过"
+        },
+        {
+          "id": "OP04-A3",
+          "expected": "执行包本地校验PASS不等于G4，mock/PGlite不能补目标证据"
+        }
+      ],
+      "evidenceKinds": ["DEPLOYMENT", "CLEANUP"],
+      "status": "NOT_RUN",
+      "requiredVariants": []
+    }
+  ]
+}
