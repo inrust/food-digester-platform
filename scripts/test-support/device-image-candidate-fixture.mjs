@@ -39,6 +39,9 @@ export async function candidateFixture() {
     const metadata = [
       ...Object.keys(manifest.inputs),
       ...PREPARATION_SOURCE_FILES,
+      'scripts/device-image-version-binding.mjs',
+      'scripts/device-image-candidate.mjs',
+      'tools/image-acceptance/validate-publication.ts',
       AR12_LOCAL_RECEIPT,
       AR12_LOCAL_REPORT,
       ...Object.keys(manifest.files).map((name) => `${PACKAGE}/${name}`),

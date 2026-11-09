@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, realpathSync } from 'node:fs';
 import { resolve, dirname, isAbsolute } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { requireVersionPolicy, policyAllowsCommit, policyDetailsValid } from './device-image-version-binding.mjs';
 import { subsetOpenApi } from './cloud-handoff-openapi.mjs';
 
 import {
@@ -175,6 +176,9 @@ export function protocolDigest() {
           'scripts/device-image-target-cases.json',
           'scripts/device-image-target-read-only.sql',
           'scripts/cloud-handoff-openapi.mjs',
+          'scripts/device-image-version-binding.mjs',
+          'scripts/device-image-candidate.mjs',
+          'tools/image-acceptance/validate-publication.ts',
         ].map((path) => [path, sha(read(path))]),
       ),
     ),
@@ -309,7 +313,9 @@ export function expectedMigrations() {
     .filter((name) => /^\d{14}_/u.test(name))
     .sort();
 }
-function proofDetailsValid(id, d, input) {
+function proofDetailsValid(id, d, input, versionPolicy) {
+  if (versionPolicy && ['deploymentProof', 'runtimeVersionsProof'].includes(id))
+    return policyDetailsValid(versionPolicy, id, d);
   if (!d || typeof d !== 'object') return false;
   const value = (key) => input.entries[key].value;
   const text = (v) => typeof v === 'string' && !!v.trim();
@@ -417,7 +423,13 @@ function proofDetailsValid(id, d, input) {
 export function ar12Scope(readWorking = read, readCandidate = readCandidateFiles) {
   return verifyAr12Scope({ candidate: CANDIDATE, readWorking, readCandidate });
 }
-export function admission(input, readArtifact = () => fail('ARTIFACT_READER_REQUIRED'), scopeProvider = ar12Scope) {
+export function admission(
+  input,
+  readArtifact = () => fail('ARTIFACT_READER_REQUIRED'),
+  scopeProvider = ar12Scope,
+  versionPolicy,
+) {
+  requireVersionPolicy(versionPolicy);
   const errors = [],
     blocked = [];
   const cloud = input?.profile === CLOUD_PROFILE;
@@ -477,7 +489,7 @@ export function admission(input, readArtifact = () => fail('ARTIFACT_READER_REQU
               proof.protocolDigest !== protocolDigest() ||
               proof.runId !== input.runId ||
               !Number.isFinite(Date.parse(proof.capturedAt)))) ||
-          !proofDetailsValid(id, proof.details, input)
+          !proofDetailsValid(id, proof.details, input, versionPolicy)
         )
           fail('PROOF_SCOPE_MISMATCH');
       } catch {
@@ -494,7 +506,8 @@ export function admission(input, readArtifact = () => fail('ARTIFACT_READER_REQU
         continue;
       }
       if (kind === 'account' && !/^[0-9]{12}$/u.test(value)) errors.push(`INVALID_ACCOUNT:${id}`);
-      if (kind === 'commit' && value !== CANDIDATE) errors.push('DEPLOYED_CANDIDATE_MISMATCH');
+      if (kind === 'commit' && (versionPolicy ? !policyAllowsCommit(versionPolicy, value) : value !== CANDIDATE))
+        errors.push('DEPLOYED_CANDIDATE_MISMATCH');
       if (kind === 'ref' && !/^ref:[A-Za-z0-9/_:.-]+$/u.test(value)) errors.push(`INVALID_REFERENCE:${id}`);
       if (kind === 'url' || kind === 'origin') {
         try {
@@ -537,8 +550,8 @@ export function admission(input, readArtifact = () => fail('ARTIFACT_READER_REQU
     cloudRequests: 0,
   };
 }
-export function cloudAdmission(input, readArtifact, now = Date.now()) {
-  const result = admission(input, readArtifact);
+export function cloudAdmission(input, readArtifact, now = Date.now(), versionPolicy) {
+  const result = admission(input, readArtifact, ar12Scope, versionPolicy);
   if (input?.profile !== CLOUD_PROFILE) result.errors.push('CLOUD_PROFILE_REQUIRED');
   if (!/^IMG21-[A-Za-z0-9-]{8,64}$/u.test(input?.runId ?? ''))
     result.blocked.push({ id: 'runId', ownerRole: '验收执行负责人', reason: 'MISSING_OR_INVALID_RUN_ID' });
@@ -725,7 +738,8 @@ function cloudImageEvidenceValid(id, evidence, input) {
     (kind !== 'ALARM' || mqtt.alarmStatus === 'ACTIVE')
   );
 }
-export function validateReceipt(receipt, input, readArtifact, scopeProvider = ar12Scope) {
+export function validateReceipt(receipt, input, readArtifact, scopeProvider = ar12Scope, versionPolicy) {
+  requireVersionPolicy(versionPolicy);
   const errors = [],
     pending = [];
   const cloud = receipt?.profile === CLOUD_PROFILE;
@@ -894,8 +908,8 @@ export function validateReceipt(receipt, input, readArtifact, scopeProvider = ar
       cloudRequests: 0,
     };
   const ready = cloud
-    ? cloudAdmission(input, readArtifact, Date.parse(receipt.finishedAt))
-    : admission(input, readArtifact, scopeProvider);
+    ? cloudAdmission(input, readArtifact, Date.parse(receipt.finishedAt), versionPolicy)
+    : admission(input, readArtifact, scopeProvider, versionPolicy);
   if (!ready.errors.length && !ready.blocked.some((row) => row.reason === 'MISSING_TARGET_INPUT')) {
     const window = JSON.parse(readArtifact(input.entries.executionWindowProof.value.path)).details;
     if (
@@ -1100,6 +1114,9 @@ export function buildPackage() {
     'scripts/device-image-target-cases.json',
     'scripts/device-image-target-read-only.sql',
     'scripts/cloud-handoff-openapi.mjs',
+    'scripts/device-image-version-binding.mjs',
+    'scripts/device-image-candidate.mjs',
+    'tools/image-acceptance/validate-publication.ts',
     'docs/api/device-image-target-acceptance-guide.md',
     'contracts/rest/openapi.bundle.json',
     'contracts/domain/camera-interaction-policy.json',
