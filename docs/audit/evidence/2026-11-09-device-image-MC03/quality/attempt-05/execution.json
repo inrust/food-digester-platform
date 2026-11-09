@@ -1,0 +1,117 @@
+{
+  "status": "FAIL",
+  "candidate": "6766ae838444b1f69845e9bcfd887cc1cecae865",
+  "reason": "NON_LOOPBACK_ATTEMPTS_BLOCKED",
+  "checks": [
+    {
+      "id": "full-verify",
+      "command": "pnpm verify",
+      "startedAt": "2026-11-09T00:21:23.013Z",
+      "finishedAt": "2026-11-09T00:36:52.040Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-05/full-verify.log",
+        "sha256": "c6a2f5b41cc204ce7fbac66a4e7d61f81166b6107591bf24bfe8ea0c6e9ed207"
+      }
+    },
+    {
+      "id": "tool-typecheck",
+      "command": "pnpm exec tsc -p tools/img21/tsconfig.json",
+      "startedAt": "2026-11-09T00:36:52.044Z",
+      "finishedAt": "2026-11-09T00:36:55.079Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-05/tool-typecheck.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "id": "protocol-bridge-typecheck",
+      "command": "pnpm exec tsc -p tools/image-acceptance/tsconfig.json",
+      "startedAt": "2026-11-09T00:36:55.079Z",
+      "finishedAt": "2026-11-09T00:36:56.616Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-05/protocol-bridge-typecheck.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "id": "tool-tests",
+      "command": "pnpm exec vitest run --config tools/img21/vitest.config.mts",
+      "startedAt": "2026-11-09T00:36:56.617Z",
+      "finishedAt": "2026-11-09T00:37:17.425Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-05/tool-tests.log",
+        "sha256": "cdc60a0a8fc58e567f3f25bf1ff35bd2e3a7775e2e087283624460fadfbbc690"
+      }
+    },
+    {
+      "id": "tool-synth",
+      "command": "node --import tsx tools/img21/local-synth.ts",
+      "startedAt": "2026-11-09T00:37:17.425Z",
+      "finishedAt": "2026-11-09T00:37:20.228Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-05/tool-synth.log",
+        "sha256": "76d83e3f03abbd0fcc816686e44fe11e22d23187bcfa659d8c4165079373b1e2"
+      }
+    },
+    {
+      "id": "tool-package",
+      "command": "python3 scripts/test-support/image-mc03-tool-package.py",
+      "startedAt": "2026-11-09T00:37:20.228Z",
+      "finishedAt": "2026-11-09T00:37:20.576Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-05/tool-package.log",
+        "sha256": "05963d7cce6cfcb23d23db92634fc523f4054e6a0470fd5927a5de1e33e02f77"
+      }
+    },
+    {
+      "id": "tool-reproducibility",
+      "command": "node --import tsx tools/img21/local-synth.ts (repeat; compare bytes)",
+      "startedAt": "2026-11-09T00:37:20.588Z",
+      "finishedAt": "2026-11-09T00:37:23.314Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-05/tool-reproducibility.log",
+        "sha256": "76d83e3f03abbd0fcc816686e44fe11e22d23187bcfa659d8c4165079373b1e2"
+      }
+    },
+    {
+      "id": "version-protocol-tests",
+      "command": "node --import tsx --test scripts/device-image-version-binding.test.mjs scripts/device-image-target-package.test.mjs",
+      "startedAt": "2026-11-09T00:37:23.325Z",
+      "finishedAt": "2026-11-09T00:37:32.065Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-05/version-protocol-tests.log",
+        "sha256": "cc7597b563e781bb4f4ed3baebb8db2833f2a2551065d1fcc883bbbf3e28178b"
+      }
+    },
+    {
+      "id": "legacy-package-check",
+      "command": "node scripts/device-image-target-package.mjs --check",
+      "startedAt": "2026-11-09T00:37:32.066Z",
+      "finishedAt": "2026-11-09T00:37:32.362Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-05/legacy-package-check.log",
+        "sha256": "f7db25870ed9678fc253be9560942673cd4190023006a3a333c6ae2eca1cff58"
+      }
+    }
+  ],
+  "notRun": [],
+  "g4": "NOT_RUN"
+}

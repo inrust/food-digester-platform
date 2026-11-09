@@ -1,0 +1,397 @@
+{
+  "task": "QA-02",
+  "scope": "LOCAL_CONTRACT_AND_REAL_HANDLER",
+  "status": "PASS",
+  "baselineCommit": "6766ae838444b1f69845e9bcfd887cc1cecae865",
+  "sourceSha256": {
+    "contracts/testing/device-contract.ts": "8bf965235331810d46ab9a66e9300cf0e7e656f850ac60c81f2041e67e39e267",
+    "contracts/testing/mqtt-contract.ts": "2cc93ae3bdf3573dff54f87969767e8e135be256bb2b4e1d40faf26e51e9fe6f",
+    "contracts/testing/compatibility-approvals.json": "f2f5a9cff08e853e21324af11051925824db92f3e361d6646c26a5f749fe07c7",
+    "scripts/contract-suite/baseline.mjs": "f34aeeee69146b0fea37710b222ac1923095a1a91ce0ceaa0aca17dc70575d1c",
+    "scripts/contract-suite/compatibility.mjs": "3c44280771109f578fcdab00a1bb9dfd02b4c6c5013859f4658d8ca6d00855b3",
+    "scripts/contract-suite.test.mjs": "e39bfdbdcef24cb4620bce40990ed9474db089dafe33d5910951b0db6765e071",
+    "scripts/run-contract-suite.mjs": "74559539038ff0b7b416c0aeacbb22b63d052fcfbafc13fb1eaab7b92f61474d",
+    "apps/cloud-api/src/ota/download.ts": "311908a39025c8a73fda64f53a29e690012f80bbc1453b22805afc9b4c0ea553",
+    "apps/cloud-api/src/runtime/device-lambda.ts": "e9708ecac2cc4bd5b570c25b687a73bd14895c3ece56359b879edb66bf9c5363",
+    "apps/cloud-api/test/certificate-status.test.ts": "f5706418ac75b1cbd40d91fa431ade5120358ce4fd8ce3ca54d37284f08fc416",
+    "apps/cloud-api/test/certificate-rotate.test.ts": "37f4ce372405be7dba738b2b429195c926a069594666faae259490a35f5e77db",
+    "apps/cloud-api/test/device-sync.test.ts": "e2b08236ddc0e50de1fd112dd8021f9eddb1719dad7df001b12b72a7aa15d434",
+    "apps/cloud-api/test/license-sync-lifecycle.test.ts": "6040e0ea820b9f30f7e0f3b9f9abcd1ef2f6e9ba0075d3b9a6d8da6a74a9d301",
+    "apps/cloud-api/test/device-deactivate.test.ts": "0e1565a4e574593f51cb90b6082f613cac6ddd7783575f050e761bb00dbcc253",
+    "apps/cloud-api/test/media.test.ts": "d4660aeb795669cefc7930525caa4cd8cb2f909925348a71552bdcc078bfc57a",
+    "apps/cloud-api/test/media-trigger-sessions.test.ts": "0050a994383f7999d6ed919da9983d4e5fc7644a5d1b919029c5139d217eba22",
+    "apps/cloud-api/test/device-image-contract-gate.test.ts": "1f0b0452ed6e5c3a2c23c94d0ff4a92257a5880e31a2818a88d471b85096889d",
+    "apps/cloud-api/test/csr-onboarding.test.ts": "e4c07a1fb65e86aa6179f6ca782886aaa37bfd892f7a6ec80ad4267284e86507",
+    "apps/cloud-api/test/ota-dispatch.test.ts": "145dd33bc96f4bb91d3151c767f317612b36768a970327466d430556e3965cfa",
+    "apps/cloud-api/test/qa02-device-errors.test.ts": "7d252b22814ff342565c0a0cac4ea6235e369723ea660778fb6b4ac68a524ddf",
+    "apps/cloud-api/test/device-lambda-composition.test.ts": "167dac492561ba573ebdad3325603674e8ca42343a69753d59dd2cd7787a23ab"
+  },
+  "mqttSchemaCount": 11,
+  "mqtt": [
+    {
+      "topicType": "heartbeat",
+      "validFixtures": 2,
+      "invalidFixtures": 6,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "telemetry",
+      "validFixtures": 1,
+      "invalidFixtures": 4,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "report",
+      "validFixtures": 1,
+      "invalidFixtures": 4,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "alarm",
+      "validFixtures": 1,
+      "invalidFixtures": 4,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "event",
+      "validFixtures": 1,
+      "invalidFixtures": 3,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "ack",
+      "validFixtures": 2,
+      "invalidFixtures": 4,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "tamper",
+      "validFixtures": 1,
+      "invalidFixtures": 3,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "media",
+      "validFixtures": 1,
+      "invalidFixtures": 3,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "cmd",
+      "validFixtures": 1,
+      "invalidFixtures": 5,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "ota",
+      "validFixtures": 1,
+      "invalidFixtures": 4,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    },
+    {
+      "topicType": "notification",
+      "validFixtures": 1,
+      "invalidFixtures": 4,
+      "fieldDeletionDetected": true,
+      "typeMutationDetected": true
+    }
+  ],
+  "deviceOperationCoverage": "10/10",
+  "declaredResponseStatusCoverage": "100%",
+  "checkedResponses": 297,
+  "nonConformingResponses": 0,
+  "rest": [
+    {
+      "operationId": "getCertificateStatus",
+      "checkedResponses": 13,
+      "validRequests": 13,
+      "rejectedInvalidRequests": 0,
+      "declaredStatuses": [
+        200,
+        401,
+        403,
+        500
+      ],
+      "observedStatuses": [
+        200,
+        401,
+        403,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "rotateCertificate",
+      "checkedResponses": 15,
+      "validRequests": 12,
+      "rejectedInvalidRequests": 3,
+      "declaredStatuses": [
+        200,
+        400,
+        401,
+        403,
+        409,
+        500
+      ],
+      "observedStatuses": [
+        200,
+        400,
+        401,
+        403,
+        409,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "confirmDeactivation",
+      "checkedResponses": 16,
+      "validRequests": 12,
+      "rejectedInvalidRequests": 4,
+      "declaredStatuses": [
+        200,
+        400,
+        401,
+        404,
+        409,
+        500
+      ],
+      "observedStatuses": [
+        200,
+        400,
+        401,
+        404,
+        409,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "createMediaUploadSession",
+      "checkedResponses": 137,
+      "validRequests": 115,
+      "rejectedInvalidRequests": 22,
+      "declaredStatuses": [
+        200,
+        201,
+        400,
+        401,
+        403,
+        409,
+        500
+      ],
+      "observedStatuses": [
+        200,
+        201,
+        400,
+        401,
+        403,
+        409,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "submitOnboardingRequest",
+      "checkedResponses": 10,
+      "validRequests": 9,
+      "rejectedInvalidRequests": 1,
+      "declaredStatuses": [
+        201,
+        400,
+        409,
+        429,
+        500
+      ],
+      "observedStatuses": [
+        201,
+        400,
+        409,
+        429,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "getOnboardingStatus",
+      "checkedResponses": 12,
+      "validRequests": 10,
+      "rejectedInvalidRequests": 2,
+      "declaredStatuses": [
+        200,
+        400,
+        401,
+        404,
+        409,
+        429,
+        500
+      ],
+      "observedStatuses": [
+        200,
+        400,
+        401,
+        404,
+        409,
+        429,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "redeemOtaDownloadGrant",
+      "checkedResponses": 7,
+      "validRequests": 6,
+      "rejectedInvalidRequests": 1,
+      "declaredStatuses": [
+        307,
+        400,
+        401,
+        403,
+        404,
+        409,
+        500
+      ],
+      "observedStatuses": [
+        307,
+        400,
+        401,
+        403,
+        404,
+        409,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "syncDevice",
+      "checkedResponses": 69,
+      "validRequests": 66,
+      "rejectedInvalidRequests": 3,
+      "declaredStatuses": [
+        200,
+        400,
+        401,
+        403,
+        409,
+        500
+      ],
+      "observedStatuses": [
+        200,
+        400,
+        401,
+        403,
+        409,
+        500
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "getDeviceLiveImageState",
+      "checkedResponses": 8,
+      "validRequests": 7,
+      "rejectedInvalidRequests": 1,
+      "declaredStatuses": [
+        200,
+        400,
+        401,
+        403,
+        404,
+        409,
+        429,
+        503
+      ],
+      "observedStatuses": [
+        200,
+        400,
+        401,
+        403,
+        404,
+        409,
+        429,
+        503
+      ],
+      "missingStatuses": []
+    },
+    {
+      "operationId": "uploadDeviceLiveImageFrame",
+      "checkedResponses": 10,
+      "validRequests": 8,
+      "rejectedInvalidRequests": 2,
+      "declaredStatuses": [
+        200,
+        400,
+        401,
+        403,
+        404,
+        409,
+        413,
+        415,
+        429,
+        503
+      ],
+      "observedStatuses": [
+        200,
+        400,
+        401,
+        403,
+        404,
+        409,
+        413,
+        415,
+        429,
+        503
+      ],
+      "missingStatuses": []
+    }
+  ],
+  "compatibility": {
+    "previousContractVersion": "0.15.0",
+    "currentContractVersion": "0.16.0",
+    "status": "APPROVED_BREAKING_UPGRADE",
+    "approvedBreakingChanges": [
+      {
+        "path": "/rest/createMediaUploadSession/request/body/content/application/json/schema/allOf",
+        "kind": "constraint-added"
+      },
+      {
+        "path": "/rest/createMediaUploadSession/responses/200",
+        "kind": "constraint-added"
+      },
+      {
+        "path": "/rest/createMediaUploadSession/responses/201/content/application/json/schema/properties/data/properties/triggerRef",
+        "kind": "closed-response-field-added"
+      },
+      {
+        "path": "/rest/createMediaUploadSession/responses/409/content/application/json/schema/additionalProperties",
+        "kind": "constraint-removed"
+      },
+      {
+        "path": "/rest/createMediaUploadSession/responses/409/content/application/json/schema/oneOf",
+        "kind": "constraint-added"
+      },
+      {
+        "path": "/rest/createMediaUploadSession/responses/409/content/application/json/schema/properties/error",
+        "kind": "field-removed"
+      },
+      {
+        "path": "/rest/createMediaUploadSession/responses/409/content/application/json/schema/required/error",
+        "kind": "response-required-removed"
+      },
+      {
+        "path": "/rest/createMediaUploadSession/responses/409/content/application/json/schema/type",
+        "kind": "constraint-removed"
+      }
+    ]
+  },
+  "awsTargetAcceptance": "NOT RUN / NO RECEIPT"
+}

@@ -1,0 +1,64 @@
+{
+  "failures": [
+    {
+      "id": "F01",
+      "phase": "preflight lint",
+      "status": "FAIL_RESOLVED",
+      "reason": "Unused helper and chained property access formatting",
+      "evidence": "preflight/lint-first-fail.log",
+      "resolution": "Corrected source before initial freeze; no lint rule relaxed."
+    },
+    {
+      "id": "F02",
+      "phase": "quality attempt 01",
+      "status": "FAIL_RESOLVED",
+      "reason": "Global pnpm launcher tried non-loopback startup; stopped after blocked attempts",
+      "evidence": "quality/attempt-01/execution.json",
+      "resolution": "Use installed pinned pnpm for outer and nested scripts."
+    },
+    {
+      "id": "F03",
+      "phase": "quality attempt 02",
+      "status": "FAIL_RESOLVED",
+      "reason": "Three local listener cases failed EPERM on 127.0.0.1/::1; two external tool attempts blocked",
+      "evidence": "quality/attempt-02/execution.json",
+      "resolution": "Run guarded verification with local loopback access and disable Redocly telemetry/update check."
+    },
+    {
+      "id": "F04",
+      "phase": "quality attempt 04",
+      "status": "FAIL_RESOLVED",
+      "reason": "Existing parallel dispatch CPU timing test hit DISPATCH_PARENT_BOUND",
+      "evidence": "quality/attempt-04/execution.json",
+      "resolution": "Isolated original file passed all 16; use one worker for complete rerun. No application or timing assertion edited."
+    },
+    {
+      "id": "F05",
+      "phase": "quality attempt 05",
+      "status": "FAIL_RESOLVED",
+      "reason": "Full verify and all eight independent checks passed on the frozen source, but two non-loopback Node connection attempts were blocked before sending. The attempt cannot seal the catalog.",
+      "evidence": "quality/attempt-05/execution.json",
+      "guard": "quality/attempt-05/network-guard.log",
+      "resolution": "Rerun the same source with CI/offline settings, CDK telemetry disabled, and guard failure diagnostics. No guard rule or log changed. The final frozen-source repeat produced an empty guard log and sealed the catalog."
+    },
+    {
+      "id": "F06",
+      "phase": "quality attempt 06",
+      "status": "FAIL_RESOLVED",
+      "reason": "Diagnostic recorded checkpoint.prisma.io in Prisma CLI child, blocked before connection. Already ineligible for a clean seal; stopped at core API integration after 17 complete stages. Independent checks and later stages NOT_RUN for this attempt.",
+      "evidence": "quality/attempt-06/execution.json",
+      "guard": "quality/attempt-06/network-diagnostic.log",
+      "resolution": "Retry same frozen candidate with CHECKPOINT_DISABLE=1. No requests or test code changed. The final frozen-source repeat produced an empty guard log and sealed the catalog."
+    }
+  ],
+  "interrupted": [
+    {
+      "phase": "quality attempt 03",
+      "status": "NOT_RUN",
+      "evidence": "quality/attempt-03/execution.json"
+    }
+  ],
+  "developmentDiagnostics": "preflight/development-diagnostics.json",
+  "historicalAttemptLogsPreserved": true,
+  "finalDisposition": "PASS_LOCAL_FROZEN_CATALOG"
+}

@@ -1,0 +1,120 @@
+{
+  "status": "PASS_LOCAL_FROZEN_CATALOG",
+  "candidate": "6766ae838444b1f69845e9bcfd887cc1cecae865",
+  "inventoryCount": 20451,
+  "sourceCount": 1652,
+  "catalogSha256": "673694e8d25038edd40f29032ee05ac0eec93c9c6c4ed6f70d888f9661ea1ce9",
+  "applicationG3": "PASS_LOCAL",
+  "g4": "NOT_RUN",
+  "cloudCalls": 0,
+  "checks": [
+    {
+      "id": "full-verify",
+      "command": "pnpm verify",
+      "startedAt": "2026-11-09T00:44:37.666Z",
+      "finishedAt": "2026-11-09T01:00:02.087Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-07/full-verify.log",
+        "sha256": "df30c5117ab47d273ba90320de749d465be3a575cb7d659cb83bae4efcfdef7e"
+      }
+    },
+    {
+      "id": "tool-typecheck",
+      "command": "pnpm exec tsc -p tools/img21/tsconfig.json",
+      "startedAt": "2026-11-09T01:00:02.090Z",
+      "finishedAt": "2026-11-09T01:00:05.023Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-07/tool-typecheck.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "id": "protocol-bridge-typecheck",
+      "command": "pnpm exec tsc -p tools/image-acceptance/tsconfig.json",
+      "startedAt": "2026-11-09T01:00:05.023Z",
+      "finishedAt": "2026-11-09T01:00:06.472Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-07/protocol-bridge-typecheck.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "id": "tool-tests",
+      "command": "pnpm exec vitest run --config tools/img21/vitest.config.mts",
+      "startedAt": "2026-11-09T01:00:06.472Z",
+      "finishedAt": "2026-11-09T01:00:26.780Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-07/tool-tests.log",
+        "sha256": "b241a3627ac86e9b8cf2c99157950b371b9160240ab1b1857f62f1082e604f25"
+      }
+    },
+    {
+      "id": "tool-synth",
+      "command": "node --import tsx tools/img21/local-synth.ts",
+      "startedAt": "2026-11-09T01:00:26.780Z",
+      "finishedAt": "2026-11-09T01:00:29.595Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-07/tool-synth.log",
+        "sha256": "76d83e3f03abbd0fcc816686e44fe11e22d23187bcfa659d8c4165079373b1e2"
+      }
+    },
+    {
+      "id": "tool-package",
+      "command": "python3 scripts/test-support/image-mc03-tool-package.py",
+      "startedAt": "2026-11-09T01:00:29.595Z",
+      "finishedAt": "2026-11-09T01:00:29.927Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-07/tool-package.log",
+        "sha256": "05963d7cce6cfcb23d23db92634fc523f4054e6a0470fd5927a5de1e33e02f77"
+      }
+    },
+    {
+      "id": "tool-reproducibility",
+      "command": "node --import tsx tools/img21/local-synth.ts (repeat; compare bytes)",
+      "startedAt": "2026-11-09T01:00:29.938Z",
+      "finishedAt": "2026-11-09T01:00:32.714Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-07/tool-reproducibility.log",
+        "sha256": "76d83e3f03abbd0fcc816686e44fe11e22d23187bcfa659d8c4165079373b1e2"
+      }
+    },
+    {
+      "id": "version-protocol-tests",
+      "command": "node --import tsx --test scripts/device-image-version-binding.test.mjs scripts/device-image-target-package.test.mjs",
+      "startedAt": "2026-11-09T01:00:32.725Z",
+      "finishedAt": "2026-11-09T01:00:41.376Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-07/version-protocol-tests.log",
+        "sha256": "f305841155de10378e6e9acf92297a3a23fa578624463cc96e7d873344f3de7b"
+      }
+    },
+    {
+      "id": "legacy-package-check",
+      "command": "node scripts/device-image-target-package.mjs --check",
+      "startedAt": "2026-11-09T01:00:41.376Z",
+      "finishedAt": "2026-11-09T01:00:41.677Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "log": {
+        "path": "quality/attempt-07/legacy-package-check.log",
+        "sha256": "f7db25870ed9678fc253be9560942673cd4190023006a3a333c6ae2eca1cff58"
+      }
+    }
+  ]
+}

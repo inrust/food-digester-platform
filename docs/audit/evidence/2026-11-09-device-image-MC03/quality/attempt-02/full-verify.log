@@ -1,0 +1,2636 @@
+
+> food-digester-platform@0.0.0 verify /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> pnpm lint && pnpm format:check && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build && pnpm check:boundaries && pnpm check:schemas && pnpm check:migrations && pnpm check:evidence && pnpm check:secrets && pnpm check:sensitive-sinks && pnpm check:admin-web-delivery && pnpm check:admin-web-e2e && pnpm check:cmd-ota-delivery && pnpm test:device-contracts /tmp/fdp-device-contracts-gate.json && pnpm test:iot-integration /tmp/fdp-iot-integration-gate.json && pnpm test:core-api-integration /tmp/fdp-core-api-integration-gate.json && pnpm test:admin-e2e-suite /tmp/fdp-admin-e2e-gate.json && pnpm test:security-suite /tmp/fdp-security-gate.json && pnpm test:reliability-suite /tmp/fdp-reliability-gate.json && pnpm test:prototype-regression /tmp/fdp-prototype-regression-gate.json
+
+
+> food-digester-platform@0.0.0 lint /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> eslint .
+
+
+> food-digester-platform@0.0.0 format:check /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> food-digester-platform@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> turbo run typecheck
+
+• turbo 2.10.11
+
+   • Packages in scope: @fdp/admin-web, @fdp/archive-worker, @fdp/auth, @fdp/aws-clients, @fdp/cloud-api, @fdp/contracts, @fdp/database, @fdp/domain, @fdp/infra, @fdp/ingestion-worker, @fdp/media, @fdp/observability, @fdp/summary-worker
+   • Running typecheck in 13 packages
+   • Remote caching disabled
+
+@fdp/contracts:typecheck: cache miss, executing 1897d63515c34e70
+@fdp/observability:build: cache miss, executing 0e08ca4eb70789f6
+@fdp/database:generate: cache miss, executing 711a0ffb3013fa71
+@fdp/observability:typecheck: cache miss, executing 2929a21d9462b7f0
+@fdp/infra:typecheck: cache miss, executing a3cf15edf804f2b6
+@fdp/contracts:build: cache miss, executing fbbe9c11454e4f53
+@fdp/infra:typecheck: 
+@fdp/infra:typecheck: > @fdp/infra@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/infra
+@fdp/infra:typecheck: > tsc -p tsconfig.json
+@fdp/infra:typecheck: 
+@fdp/database:generate: 
+@fdp/database:generate: > @fdp/database@0.0.0 generate /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database
+@fdp/database:generate: > prisma generate
+@fdp/database:generate: 
+@fdp/contracts:typecheck: 
+@fdp/contracts:typecheck: > @fdp/contracts@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/contracts
+@fdp/contracts:typecheck: > tsc -p tsconfig.json
+@fdp/contracts:typecheck: 
+@fdp/observability:typecheck: 
+@fdp/observability:typecheck: > @fdp/observability@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability
+@fdp/observability:typecheck: > tsc -p tsconfig.json
+@fdp/observability:typecheck: 
+@fdp/observability:build: 
+@fdp/observability:build: > @fdp/observability@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/observability
+@fdp/observability:build: > tsc -p tsconfig.build.json
+@fdp/observability:build: 
+@fdp/contracts:build: 
+@fdp/contracts:build: > @fdp/contracts@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/contracts
+@fdp/contracts:build: > node -e "console.log('@fdp/contracts 为源码契约包：内部使用 .ts 扩展名互引，不经 tsc 构建；消费方经 tsx/打包器直接使用源码')"
+@fdp/contracts:build: 
+@fdp/contracts:build: @fdp/contracts 为源码契约包：内部使用 .ts 扩展名互引，不经 tsc 构建；消费方经 tsx/打包器直接使用源码
+@fdp/domain:build: cache miss, executing dee13445312ee26e
+@fdp/domain:typecheck: cache miss, executing 341707c2e4efa2ec
+@fdp/domain:typecheck: 
+@fdp/domain:typecheck: > @fdp/domain@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/domain
+@fdp/domain:typecheck: > tsc -p tsconfig.json
+@fdp/domain:typecheck: 
+@fdp/domain:build: 
+@fdp/domain:build: > @fdp/domain@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/domain
+@fdp/domain:build: > tsc -p tsconfig.build.json
+@fdp/domain:build: 
+@fdp/database:generate: Loaded Prisma config from prisma.config.ts.
+@fdp/database:generate: 
+@fdp/database:generate: Prisma schema loaded from prisma/schema.prisma.
+@fdp/database:generate: 
+@fdp/database:generate: ✔ Generated Prisma Client (7.9.1) to ./src/generated in 144ms
+@fdp/database:generate: 
+@fdp/database:typecheck: cache miss, executing 5298e80f89df5c1d
+@fdp/database:build: cache miss, executing d97223f842747cf5
+@fdp/database:typecheck: 
+@fdp/database:typecheck: > @fdp/database@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database
+@fdp/database:typecheck: > tsc -p tsconfig.json
+@fdp/database:typecheck: 
+@fdp/database:build: 
+@fdp/database:build: > @fdp/database@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/database
+@fdp/database:build: > tsc -p tsconfig.build.json
+@fdp/database:build: 
+@fdp/aws-clients:build: cache miss, executing 7d1aa7ab3a61c4a1
+@fdp/media:build: cache miss, executing 3f0634cfd1a1ea21
+@fdp/media:typecheck: cache miss, executing a81544d3846d735f
+@fdp/aws-clients:typecheck: cache miss, executing 784153521a861f1c
+@fdp/aws-clients:typecheck: 
+@fdp/aws-clients:typecheck: > @fdp/aws-clients@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/aws-clients
+@fdp/aws-clients:typecheck: > tsc -p tsconfig.json
+@fdp/aws-clients:typecheck: 
+@fdp/aws-clients:build: 
+@fdp/aws-clients:build: > @fdp/aws-clients@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/aws-clients
+@fdp/aws-clients:build: > tsc -p tsconfig.build.json
+@fdp/aws-clients:build: 
+@fdp/media:build: 
+@fdp/media:build: > @fdp/media@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/media
+@fdp/media:build: > tsc -p tsconfig.build.json
+@fdp/media:build: 
+@fdp/media:typecheck: 
+@fdp/media:typecheck: > @fdp/media@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/media
+@fdp/media:typecheck: > tsc -p tsconfig.json
+@fdp/media:typecheck: 
+@fdp/archive-worker:typecheck: cache miss, executing 7c7ca4a1936840b4
+@fdp/summary-worker:typecheck: cache miss, executing 0849637f8d6b2b70
+@fdp/auth:build: cache miss, executing 6f96fb428307a513
+@fdp/auth:typecheck: cache miss, executing 023210435b45dd8c
+@fdp/summary-worker:typecheck: 
+@fdp/summary-worker:typecheck: > @fdp/summary-worker@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/summary-worker
+@fdp/summary-worker:typecheck: > tsc -p tsconfig.json
+@fdp/summary-worker:typecheck: 
+@fdp/auth:typecheck: 
+@fdp/auth:typecheck: > @fdp/auth@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/auth
+@fdp/auth:typecheck: > tsc -p tsconfig.json
+@fdp/auth:typecheck: 
+@fdp/auth:build: 
+@fdp/auth:build: > @fdp/auth@0.0.0 build /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/packages/auth
+@fdp/auth:build: > tsc -p tsconfig.build.json
+@fdp/auth:build: 
+@fdp/archive-worker:typecheck: 
+@fdp/archive-worker:typecheck: > @fdp/archive-worker@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/archive-worker
+@fdp/archive-worker:typecheck: > tsc -p tsconfig.json
+@fdp/archive-worker:typecheck: 
+@fdp/admin-web:typecheck: cache miss, executing 29a9ecc43c59eb3d
+@fdp/ingestion-worker:typecheck: cache miss, executing fac58f76c2a19aed
+@fdp/cloud-api:typecheck: cache miss, executing b3e9b0ee6c9a1192
+@fdp/admin-web:typecheck: 
+@fdp/admin-web:typecheck: > @fdp/admin-web@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/admin-web
+@fdp/admin-web:typecheck: > tsc -p tsconfig.json && tsc -p tsconfig.e2e.json
+@fdp/admin-web:typecheck: 
+@fdp/ingestion-worker:typecheck: 
+@fdp/ingestion-worker:typecheck: > @fdp/ingestion-worker@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/ingestion-worker
+@fdp/ingestion-worker:typecheck: > tsc -p tsconfig.json
+@fdp/ingestion-worker:typecheck: 
+@fdp/cloud-api:typecheck: 
+@fdp/cloud-api:typecheck: > @fdp/cloud-api@0.0.0 typecheck /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/apps/cloud-api
+@fdp/cloud-api:typecheck: > tsc -p tsconfig.json
+@fdp/cloud-api:typecheck: 
+
+ Tasks:    21 successful, 21 total
+Cached:    0 cached, 21 total
+  Time:    8.771s 
+
+
+> food-digester-platform@0.0.0 openapi:check /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node scripts/build-openapi.mjs --check && redocly lint contracts/rest/openapi-base.json "contracts/rest/*-api.json" contracts/rest/openapi.bundle.json --extends spec
+
+OpenAPI bundle 新鲜：contracts/rest/openapi.bundle.json
+validating contracts/rest/openapi-base.json...
+contracts/rest/openapi-base.json: validated in 7ms
+
+validating contracts/rest/prototype-planned-api.json...
+contracts/rest/prototype-planned-api.json: validated in 4ms
+
+validating contracts/rest/live-image-api.json...
+contracts/rest/live-image-api.json: validated in 6ms
+
+validating contracts/rest/device-sync-api.json...
+contracts/rest/device-sync-api.json: validated in 3ms
+
+validating contracts/rest/device-ota-api.json...
+contracts/rest/device-ota-api.json: validated in 3ms
+
+validating contracts/rest/device-onboarding-api.json...
+contracts/rest/device-onboarding-api.json: validated in 3ms
+
+validating contracts/rest/device-media-api.json...
+contracts/rest/device-media-api.json: validated in 3ms
+
+validating contracts/rest/device-deactivate-api.json...
+contracts/rest/device-deactivate-api.json: validated in 2ms
+
+validating contracts/rest/device-certificate-api.json...
+contracts/rest/device-certificate-api.json: validated in 2ms
+
+validating contracts/rest/admin-user-api.json...
+contracts/rest/admin-user-api.json: validated in 3ms
+
+validating contracts/rest/admin-site-api.json...
+contracts/rest/admin-site-api.json: validated in 4ms
+
+validating contracts/rest/admin-settings-api.json...
+contracts/rest/admin-settings-api.json: validated in 3ms
+
+validating contracts/rest/admin-replay-api.json...
+contracts/rest/admin-replay-api.json: validated in 2ms
+
+validating contracts/rest/admin-ota-package-api.json...
+contracts/rest/admin-ota-package-api.json: validated in 3ms
+
+validating contracts/rest/admin-ota-campaign-api.json...
+contracts/rest/admin-ota-campaign-api.json: validated in 4ms
+
+validating contracts/rest/admin-onboarding-api.json...
+contracts/rest/admin-onboarding-api.json: validated in 3ms
+
+validating contracts/rest/admin-media-api.json...
+contracts/rest/admin-media-api.json: validated in 2ms
+
+validating contracts/rest/admin-license-api.json...
+contracts/rest/admin-license-api.json: validated in 4ms
+
+validating contracts/rest/admin-esg-api.json...
+contracts/rest/admin-esg-api.json: validated in 4ms
+
+validating contracts/rest/admin-device-user-api.json...
+contracts/rest/admin-device-user-api.json: validated in 3ms
+
+validating contracts/rest/admin-device-status-api.json...
+contracts/rest/admin-device-status-api.json: validated in 2ms
+
+validating contracts/rest/admin-device-retirement-api.json...
+contracts/rest/admin-device-retirement-api.json: validated in 2ms
+
+validating contracts/rest/admin-device-console-api.json...
+contracts/rest/admin-device-console-api.json: validated in 3ms
+
+validating contracts/rest/admin-device-assignment-api.json...
+contracts/rest/admin-device-assignment-api.json: validated in 2ms
+
+validating contracts/rest/admin-device-api.json...
+contracts/rest/admin-device-api.json: validated in 3ms
+
+validating contracts/rest/admin-dashboard-api.json...
+contracts/rest/admin-dashboard-api.json: validated in 2ms
+
+validating contracts/rest/admin-customer-api.json...
+contracts/rest/admin-customer-api.json: validated in 2ms
+
+validating contracts/rest/admin-contract-device-api.json...
+contracts/rest/admin-contract-device-api.json: validated in 2ms
+
+validating contracts/rest/admin-contract-api.json...
+contracts/rest/admin-contract-api.json: validated in 3ms
+
+validating contracts/rest/admin-consumable-request-api.json...
+contracts/rest/admin-consumable-request-api.json: validated in 2ms
+
+validating contracts/rest/admin-consumable-api.json...
+contracts/rest/admin-consumable-api.json: validated in 2ms
+
+validating contracts/rest/admin-configuration-api.json...
+contracts/rest/admin-configuration-api.json: validated in 3ms
+
+validating contracts/rest/admin-command-api.json...
+contracts/rest/admin-command-api.json: validated in 3ms
+
+validating contracts/rest/admin-certificate-rotation-api.json...
+contracts/rest/admin-certificate-rotation-api.json: validated in 2ms
+
+validating contracts/rest/admin-audit-api.json...
+contracts/rest/admin-audit-api.json: validated in 2ms
+
+validating contracts/rest/admin-alarm-api.json...
+contracts/rest/admin-alarm-api.json: validated in 3ms
+
+validating contracts/rest/openapi.bundle.json...
+contracts/rest/openapi.bundle.json: validated in 34ms
+
+Woohoo! Your API descriptions are valid. 🎉
+
+
+> food-digester-platform@0.0.0 test /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> vitest run && pnpm test:contracts && pnpm test:scripts
+
+
+ RUN  v4.1.11 /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+
+Bundling asset LiveImageTest/IngestionFn/Code/Stage...
+Bundling asset Qa09Perf/IngestionFn/Code/Stage...
+Bundling asset EvidenceWiring/IngestionFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset DeployTest/IngestionFn/Code/Stage...
+Bundling asset EvidenceWiring/ArchiveFn/Code/Stage...
+Bundling asset LiveImageTest/ArchiveFn/Code/Stage...
+Bundling asset Qa09Perf/ArchiveFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset DeployTest/ArchiveFn/Code/Stage...
+Bundling asset EvidenceWiring/OutboxPublisherFn/Code/Stage...
+Bundling asset DeployTest/OutboxPublisherFn/Code/Stage...
+Bundling asset Qa09Perf/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset LiveImageTest/OutboxPublisherFn/Code/Stage...
+Bundling asset DeployTest/MediaEvidenceFn/Code/Stage...
+Bundling asset Qa09Perf/MediaEvidenceFn/Code/Stage...
+Bundling asset EvidenceWiring/MediaEvidenceFn/Code/Stage...
+Bundling asset TestStack/MediaEvidenceFn/Code/Stage...
+Bundling asset LiveImageTest/MediaEvidenceFn/Code/Stage...
+Bundling asset Qa09Perf/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset EvidenceWiring/NotificationPublisherFn/Code/Stage...
+Bundling asset DeployTest/NotificationPublisherFn/Code/Stage...
+Bundling asset LiveImageTest/NotificationPublisherFn/Code/Stage...
+Bundling asset Qa09Perf/SummaryFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset EvidenceWiring/SummaryFn/Code/Stage...
+Bundling asset DeployTest/SummaryFn/Code/Stage...
+Bundling asset LiveImageTest/SummaryFn/Code/Stage...
+Bundling asset EvidenceWiring/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset Qa09Perf/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset DeployTest/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset LiveImageTest/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset EvidenceWiring/ReplayFn/Code/Stage...
+Bundling asset Qa09Perf/ReplayFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset DeployTest/ReplayFn/Code/Stage...
+Bundling asset LiveImageTest/ReplayFn/Code/Stage...
+Bundling asset EvidenceWiring/CertPackageSweeperFn/Code/Stage...
+Bundling asset Qa09Perf/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset DeployTest/CertPackageSweeperFn/Code/Stage...
+Bundling asset LiveImageTest/CertPackageSweeperFn/Code/Stage...
+Bundling asset EvidenceWiring/OnboardingDeadlineFn/Code/Stage...
+Bundling asset Qa09Perf/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset DeployTest/OnboardingDeadlineFn/Code/Stage...
+Bundling asset LiveImageTest/OnboardingDeadlineFn/Code/Stage...
+Bundling asset EvidenceWiring/RetirementTimeoutFn/Code/Stage...
+Bundling asset Qa09Perf/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset DeployTest/RetirementTimeoutFn/Code/Stage...
+Bundling asset LiveImageTest/RetirementTimeoutFn/Code/Stage...
+Bundling asset EvidenceWiring/ActivityExportFn/Code/Stage...
+Bundling asset Qa09Perf/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset LiveImageTest/ActivityExportFn/Code/Stage...
+Bundling asset DeployTest/ActivityExportFn/Code/Stage...
+Bundling asset EvidenceWiring/EsgExportFn/Code/Stage...
+Bundling asset Qa09Perf/EsgExportFn/Code/Stage...
+Bundling asset DeployTest/EsgExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset LiveImageTest/EsgExportFn/Code/Stage...
+Bundling asset EvidenceWiring/CommandPublisherFn/Code/Stage...
+Bundling asset Qa09Perf/CommandPublisherFn/Code/Stage...
+Bundling asset DeployTest/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset LiveImageTest/CommandPublisherFn/Code/Stage...
+Bundling asset EvidenceWiring/CommandTimeoutFn/Code/Stage...
+Bundling asset Qa09Perf/CommandTimeoutFn/Code/Stage...
+Bundling asset DeployTest/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset LiveImageTest/CommandTimeoutFn/Code/Stage...
+Bundling asset EvidenceWiring/OtaDispatcherFn/Code/Stage...
+Bundling asset Qa09Perf/OtaDispatcherFn/Code/Stage...
+Bundling asset DeployTest/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset LiveImageTest/OtaDispatcherFn/Code/Stage...
+Bundling asset EvidenceWiring/OnboardingApiFn/Code/Stage...
+Bundling asset Qa09Perf/OnboardingApiFn/Code/Stage...
+Bundling asset DeployTest/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset LiveImageTest/OnboardingApiFn/Code/Stage...
+Bundling asset EvidenceWiring/OnboardingProvisioningFn/Code/Stage...
+Bundling asset Qa09Perf/OnboardingProvisioningFn/Code/Stage...
+Bundling asset DeployTest/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset LiveImageTest/OnboardingProvisioningFn/Code/Stage...
+Bundling asset EvidenceWiring/DeviceApiFn/Code/Stage...
+Bundling asset Qa09Perf/DeviceApiFn/Code/Stage...
+Bundling asset DeployTest/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset LiveImageTest/DeviceApiFn/Code/Stage...
+Bundling asset EvidenceWiring/ApiFn/Code/Stage...
+Bundling asset Qa09Perf/ApiFn/Code/Stage...
+Bundling asset DeployTest/ApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset LiveImageTest/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/MediaEvidenceFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/MediaEvidenceFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/MediaEvidenceFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/MediaEvidenceFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/MediaEvidenceFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/MediaEvidenceFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/MediaEvidenceFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+Bundling asset Named/IngestionFn/Code/Stage...
+Bundling asset Named/ArchiveFn/Code/Stage...
+Bundling asset Named/OutboxPublisherFn/Code/Stage...
+Bundling asset Named/MediaEvidenceFn/Code/Stage...
+Bundling asset Named/NotificationPublisherFn/Code/Stage...
+Bundling asset Named/SummaryFn/Code/Stage...
+Bundling asset Named/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset Named/ReplayFn/Code/Stage...
+Bundling asset Named/CertPackageSweeperFn/Code/Stage...
+Bundling asset Named/OnboardingDeadlineFn/Code/Stage...
+Bundling asset Named/RetirementTimeoutFn/Code/Stage...
+Bundling asset Named/ActivityExportFn/Code/Stage...
+Bundling asset Named/EsgExportFn/Code/Stage...
+Bundling asset Named/CommandPublisherFn/Code/Stage...
+Bundling asset Named/CommandTimeoutFn/Code/Stage...
+Bundling asset Named/OtaDispatcherFn/Code/Stage...
+Bundling asset Named/OnboardingApiFn/Code/Stage...
+Bundling asset Named/OnboardingProvisioningFn/Code/Stage...
+Bundling asset Named/DeviceApiFn/Code/Stage...
+Bundling asset Named/ApiFn/Code/Stage...
+Bundling asset TestStack/IngestionFn/Code/Stage...
+Bundling asset TestStack/ArchiveFn/Code/Stage...
+Bundling asset TestStack/OutboxPublisherFn/Code/Stage...
+Bundling asset TestStack/MediaEvidenceFn/Code/Stage...
+Bundling asset TestStack/NotificationPublisherFn/Code/Stage...
+Bundling asset TestStack/SummaryFn/Code/Stage...
+Bundling asset TestStack/ReplayTriggerPublisherFn/Code/Stage...
+Bundling asset TestStack/ReplayFn/Code/Stage...
+Bundling asset TestStack/CertPackageSweeperFn/Code/Stage...
+Bundling asset TestStack/OnboardingDeadlineFn/Code/Stage...
+Bundling asset TestStack/RetirementTimeoutFn/Code/Stage...
+Bundling asset TestStack/ActivityExportFn/Code/Stage...
+Bundling asset TestStack/EsgExportFn/Code/Stage...
+Bundling asset TestStack/CommandPublisherFn/Code/Stage...
+Bundling asset TestStack/CommandTimeoutFn/Code/Stage...
+Bundling asset TestStack/OtaDispatcherFn/Code/Stage...
+Bundling asset TestStack/OnboardingApiFn/Code/Stage...
+Bundling asset TestStack/OnboardingProvisioningFn/Code/Stage...
+Bundling asset TestStack/DeviceApiFn/Code/Stage...
+Bundling asset TestStack/ApiFn/Code/Stage...
+
+ Test Files  221 passed (221)
+      Tests  2177 passed (2177)
+   Start at  08:15:13
+   Duration  79.23s (transform 9.93s, setup 1.40s, import 177.87s, tests 436.41s, environment 10.56s)
+
+
+> food-digester-platform@0.0.0 test:contracts /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> pnpm --filter @fdp/contracts test
+
+
+> @fdp/contracts@0.0.0 test /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform/contracts
+> node --import tsx --test mqtt/*.test.ts mqtt/*.test.mjs domain/*.test.ts lifecycle/*.test.ts media/*.test.ts security/*.test.ts rest/*.test.ts iot/*.test.mjs archive/*.test.mjs configuration/*.test.ts settings/*.test.ts
+
+✔ 合法 Manifest fixtures 通过校验 (1.311125ms)
+✔ 非法 Manifest fixtures 被拒绝 (0.208125ms)
+✔ DEC-016 已冻结且策略覆盖全部阻塞任务 (0.669125ms)
+✔ 三类来源使用独立 Envelope 与互斥前缀 (0.128458ms)
+✔ License/OTA 禁止伪装为 MQTT 原文，OTA 记录类型封闭 (0.064167ms)
+✔ 归档 Envelope 判别字段和版本固定 (0.053166ms)
+✔ DEC-018 策略结构有效、已冻结且覆盖全部阻塞任务 (1.087833ms)
+✔ V1 只允许四字段，范围、单位、默认值与冻结值一致 (0.082ms)
+✔ Admin Configuration 与 Device Sync OpenAPI 逐字段匹配统一策略 (0.133625ms)
+✔ TS 常量与 JSON 策略一致 (0.056084ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.7685ms)
+✔ 负向结构：实时流启用、非法范围/刷新模式与缺失字段被 Schema 拒绝 (0.327208ms)
+✔ x-decision-versions 引用 DEC-009 且版本与决策登记一致；prototype-traceability.yaml 同步 (0.058333ms)
+✔ 冻结值定性规则可执行：仅最新授权 Media、手动刷新、禁实时流 (0.056542ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-009 阻塞任务 (0.116584ms)
+✔ TS 常量与 camera-interaction-policy.json 完全一致 (0.092917ms)
+✔ live-image-v1 is opt-in and its numeric policy matches JSON (0.115458ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.785291ms)
+✔ 负向结构：数据来源篡改与缺失字段被 Schema 拒绝 (0.318459ms)
+✔ x-decision-versions 引用 DEC-008 且版本与决策登记一致；prototype-traceability.yaml 同步 (0.059916ms)
+✔ 冻结值定性规则可执行：封闭类型集合、仅设备上报、禁云端臆测 (0.102208ms)
+✔ 冻结参数可执行：正式名称、阈值和 24 小时过期规则 (0.21125ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-008 阻塞任务 (0.113875ms)
+✔ TS 常量与 consumables-policy.json 完全一致 (0.088084ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.769667ms)
+✔ 负向结构：联动规则反转与缺失字段被 Schema 拒绝 (0.275417ms)
+✔ x-decision-versions 引用 DEC-007 且版本与决策登记一致；prototype-traceability.yaml 同步 (0.058458ms)
+✔ 冻结值定性规则可执行：职责划分、联动与展示 (0.11175ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-007 阻塞任务与关联任务 (0.114208ms)
+✔ TS 常量与 contract-license-relation.json 完全一致 (0.070208ms)
+✔ DEC-019 alias 策略已冻结且无待定参数 (0.614792ms)
+✔ TS、JSON 与 Admin Device OpenAPI 使用同一 alias 规则 (0.095292ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.765083ms)
+✔ 负向结构：单字段混用、独立存储"启用"与缺失字段被 Schema 拒绝 (0.296917ms)
+✔ x-decision-versions 引用 DEC-010 且版本与决策登记一致；prototype-traceability.yaml 同步 (0.061416ms)
+✔ 冻结值定性规则可执行：四轴分离、禁单字段混用、派生原则 (0.098541ms)
+✔ 冻结参数可执行：启用由 Active 生命周期和有效 License 派生 (0.049541ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-010 阻塞任务与关联任务 (0.108375ms)
+✔ TS 常量与 device-status-axes-policy.json 完全一致 (0.060792ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.839875ms)
+✔ 负向结构：设备地域真值与缺失字段被 Schema 拒绝 (0.249083ms)
+✔ x-decision-versions 引用 DEC-011 且版本与决策登记一致；prototype-traceability.yaml 同步 (0.064916ms)
+✔ 冻结值定性规则可执行：层级链、Site 属性、设备仅关联 Site (0.109209ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-011 阻塞任务 (0.117708ms)
+✔ TS 常量与 geo-model-policy.json 完全一致 (0.0615ms)
+✔ last lease release racing frame upload, all six read/commit schedules (0.587834ms)
+✔ multiple viewers share a stream; stale renewal retries cannot lose another lease (0.116041ms)
+✔ older frame cannot overwrite newer frame, even with a late commit (0.063458ms)
+✔ authorization fence blocks an in-flight frame on revoke/tenant change to A (0.063667ms)
+✔ authorization fence blocks an in-flight frame on revoke/tenant change to B (0.047084ms)
+✔ expiry uses capture time as well as receipt time (0.0485ms)
+✔ dedup replay does not renew freshness; conflict and per-device rate enforced (0.072375ms)
+✔ revocation also fences duplicate replay observed before revocation (0.044875ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.785375ms)
+✔ 负向结构：AWS 授权、矩阵可编辑与缺失字段被 Schema 拒绝 (0.314542ms)
+✔ x-decision-versions 引用 DEC-012 且版本与决策登记一致；prototype-traceability.yaml 同步 (0.073875ms)
+✔ 冻结值定性规则可执行：封闭映射、界面名、AWS 权限与矩阵规则 (0.166625ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-012 阻塞任务 (0.121083ms)
+✔ TS 常量与 role-mapping-policy.json 完全一致 (0.072292ms)
+✔ Envelope 必填五个 iot* 上下文字段，Payload 平铺透传 (0.677625ms)
+✔ iotType 枚举与 topic-catalog 上行类型严格一致（8 个） (0.158167ms)
+✔ 所有合法 Fixture 通过校验（含 Payload 内不可信身份字段的样本） (0.296958ms)
+✔ 所有非法 Fixture 被稳定拒绝且错误路径正确 (0.129792ms)
+✔ 矩阵 JSON 通过自身 JSON Schema 结构校验 (0.908334ms)
+✔ 负向结构：缺失必填字段、非法枚举与额外行为键被 Schema 拒绝 (0.471916ms)
+✔ x-decision-versions 引用 DEC-001 且版本与决策登记一致 (0.0585ms)
+✔ 冻结值：独立状态；允许维护、同步、遥测、告警和 OTA (0.067292ms)
+✔ Maintenance Sync 节奏为 15 分钟（Suspended 节奏） (0.043583ms)
+✔ 失败关闭：未知行为拒绝并抛出稳定错误 (0.163917ms)
+✔ 命令策略与 command-catalog 一致：Maintenance 允许集合 == Suspended 允许集合 (0.10725ms)
+✔ 行为条目消费者均为合法任务 ID 且覆盖 DEC-001 阻塞任务 (0.116958ms)
+✔ TS 常量与 maintenance-behavior-matrix.json 完全一致 (0.132083ms)
+✔ DEC-017 策略结构有效、已冻结且覆盖全部阻塞任务 (0.984833ms)
+✔ 24 小时截止从证书包存储开始，截止边界包含在超时内 (0.980833ms)
+✔ 超时处置、迟到 Heartbeat 与重新申请规则失败关闭 (0.078875ms)
+✔ TS 常量与 JSON 策略一致 (0.06125ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (1.025958ms)
+✔ 负向结构：存储位置篡改、非法处置行为与缺失字段被 Schema 拒绝 (0.349ms)
+✔ x-decision-versions 引用 DEC-005 且版本与决策登记一致 (0.064958ms)
+✔ 冻结值定性规则可执行：RDS 元数据 / S3 文件分离 (0.058834ms)
+✔ 冻结参数可执行：元数据 365 天、文件 90 天且删除文件保留元数据 (0.075875ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-005 阻塞任务与关联任务 (0.116208ms)
+✔ TS 常量与 media-retention-policy.json 完全一致 (0.093208ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.745917ms)
+✔ 负向结构：客户端指定 Key、篡改冻结 TTL/配额与缺失字段被 Schema 拒绝 (0.295625ms)
+✔ 锁定规则：mediaTypes 与 CT-03 media.schema.json 枚举一致；客户端不得指定 Key (0.101333ms)
+✔ DEC-024 冻结值可执行且无待定参数 (0.05875ms)
+✔ TS 常量与 media-upload-policy.json 完全一致 (0.131ms)
+✔ 22 个 Command 全部唯一且覆盖六大分类 (0.729791ms)
+✔ 13 个 Notification 全部唯一且有设备动作映射 (0.125125ms)
+✔ 高风险标记与文档一致（EMERGENCY_STOP/FACTORY_RESET/SHUTDOWN/全部加热、排料、电机控制） (0.076417ms)
+✔ 允许状态矩阵无遗漏：22 命令 × 4 状态 (0.100209ms)
+✔ Suspended 仅允许安全停止、诊断、同步和维护/恢复类命令 (0.0635ms)
+✔ MAINTENANCE 按 Suspended 限制（DEC-001 冻结值） (0.045375ms)
+✔ 未知命令/通知在运行时被拒绝 (0.177125ms)
+✔ denyReason 稳定且允许时返回 null (0.044666ms)
+✔ TS 常量与 command-catalog.json / notification-catalog.json 完全一致 (0.105ms)
+✔ Schema 枚举与目录一致（cmd/ack command、notification type） (0.345416ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.764666ms)
+✔ 负向结构：非法取值与缺失字段被 Schema 拒绝 (0.383125ms)
+✔ x-decision-versions 引用 DEC-006 且版本与决策登记一致 (0.075083ms)
+✔ 冻结值可执行：V1 下行 seq 可选、上行必填、Command 以 meta.id 幂等 (0.060334ms)
+✔ 策略与 common.schema.json 一致：下行 metaBase 不要求 seq、id 必填；上行 metaSeq 要求 seq (0.059834ms)
+✔ 下行/上行 Schema 的 meta 引用与策略一致 (0.439083ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-006 阻塞任务 (0.130833ms)
+✔ TS 常量与 downlink-policy.json 完全一致 (0.108583ms)
+✔ DEC-015 策略冻结、可追溯且覆盖全部阻塞任务 (0.650834ms)
+✔ 唯一通道为既有 ACK；Topic 总数和 IoT 权限面不扩大 (0.067791ms)
+✔ ACK 判别字段、关联键和 OTA 状态与冻结策略一致 (0.055708ms)
+✔ 状态机只允许冻结的单向迁移；相同状态幂等 (0.059541ms)
+✔ TS 常量与 JSON 策略完全一致 (0.08175ms)
+✔ DEC-013 策略 JSON 通过自身 Schema 且覆盖登记阻塞任务 (1.939167ms)
+✔ DEC-013 策略关键值被 Schema 锁定，篡改时失败关闭 (0.41925ms)
+✔ DEC-013 策略冻结且无待定参数 (0.103041ms)
+✔ Heartbeat 旧嵌套结构在兼容期转换为正式扁平结构且不修改原对象 (0.457209ms)
+✔ Telemetry motorCurrentAmp 在兼容期转换为 currentAmp；同值并存允许、冲突失败关闭 (0.645417ms)
+✔ 兼容截止边界起拒绝嵌套结构、motorCurrentAmp 与 DISCHARING (0.22825ms)
+✔ RFC 8785 固定向量与 audit.hash 覆盖 {meta,data} (0.211125ms)
+✔ 11 类消息均有 Schema 和 Fixture，且每类 >=1 合法 + >=3 非法 (2.69225ms)
+✔ 所有合法 Fixture 通过校验 (2.808167ms)
+✔ 所有非法 Fixture 被稳定拒绝并返回明确错误路径 (3.740083ms)
+✔ 非法枚举被稳定拒绝且路径明确 (0.167792ms)
+✔ 单位/类型错误被拒绝（integer 不接受小数与字符串） (0.515208ms)
+✔ 缺少必填字段被拒绝（meta.id、上行 seq、Heartbeat 必填 data 字段） (0.446583ms)
+✔ 额外身份字段（customerId/tenantId/deviceId）在各层均被拒绝 (0.451583ms)
+✔ 下行消息 meta.seq 可选（DEC-006），上行强制 (0.300542ms)
+✔ Telemetry/Report/Tamper 强制 audit.hash；Command 禁止 audit（DEC-002） (0.412625ms)
+✔ DEC-013：Audited 合法 Fixture 携带可复算的 RFC 8785 audit.hash (0.449709ms)
+✔ schemaVer 缺省按 1.0 归一化；非法 schemaVer 被拒绝 (0.181333ms)
+✔ Heartbeat 接受包含小写设备 ID 的 meta.id (0.097833ms)
+✔ meta.id 字符集与长度固定 (0.102708ms)
+✔ payloads.ts 与 Schema 保持一致（生成器新鲜度） (1.241375ms)
+✔ 全部 Schema 的 x-decision-versions 可追溯到决策登记 (1.00525ms)
+✔ Telemetry current (0.399167ms)
+✔ Telemetry past 300s (0.044292ms)
+✔ Telemetry past 301s (0.034834ms)
+✔ Telemetry past 24h inclusive (0.032958ms)
+✔ Telemetry past 24h plus 1ms (0.032375ms)
+✔ Telemetry future 300s inclusive (0.027791ms)
+✔ Telemetry future 300s plus 1ms (0.027292ms)
+✔ other topics retain symmetric 300-second tolerance (0.084792ms)
+✔ configured tolerance affects future bound but cannot enlarge Telemetry history (0.05275ms)
+✔ invalid numeric policy inputs fail closed (0.075625ms)
+✔ Tier 登记 JSON 通过自身 JSON Schema 结构校验 (0.926458ms)
+✔ 负向结构：非法 Tier、未知 Topic 键与缺失字段被 Schema 拒绝 (0.429042ms)
+✔ x-decision-versions 引用 DEC-002 且版本与决策登记一致 (0.055125ms)
+✔ 冻结值：Telemetry/Report/Tamper 为 AUDITED，Command 及其余为 STANDARD (0.130667ms)
+✔ Tier 与 topic-catalog.json 的 payloadEnvelope 完全一致 (0.051833ms)
+✔ Tier 与 11 个 MQTT Schema 的 audit 强制完全一致 (1.222459ms)
+✔ 失败关闭：未知 Topic 拒绝并抛出稳定错误 (0.239375ms)
+✔ Tier 条目消费者均为合法任务 ID 且覆盖 DEC-002 阻塞任务 (0.147209ms)
+✔ 登记覆盖全部 11 个 Topic 且 TS 常量与 topic-tier.json 完全一致 (0.114083ms)
+✔ catalog 恰好包含 8 个上行和 3 个下行 Topic (0.658792ms)
+✔ 11 个 Topic 的方向与 QoS 矩阵全部符合契约 (0.116208ms)
+✔ TS 常量与 topic-catalog.json 完全一致 (0.083791ms)
+✔ 合法 Topic 可解析出 deviceId/type/direction (0.112ms)
+✔ buildTopic 与 parseTopic 往返一致 (0.079791ms)
+✔ 未知层级和空 deviceId 被拒绝 (0.235834ms)
+✔ buildTopic 拒绝空和非法 deviceId (0.071375ms)
+✔ 权限模板：设备只能发布自身上行、只能订阅自身下行 (0.096584ms)
+✔ 权限模板拒绝非法 deviceId (0.065208ms)
+✔ 六个端点齐备且 CognitoJwt 认证；响应码齐备 (0.707458ms)
+✔ 筛选参数齐备：severity/status/device/site/时间范围 + 游标分页 (0.094958ms)
+✔ Schema 封闭：Alarm 处理字段（操作者/原因/时间）与 replayed 齐备；确认/清除强制 reason (0.071667ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.362292ms)
+✔ 端点齐备且 CognitoJwt 认证：列表 + 详情 (0.643625ms)
+✔ 只读 API：不存在任何写路由（post/put/patch/delete） (0.0705ms)
+✔ 筛选参数齐备（actor/Customer/对象/动作/结果/时间 + 游标分页）；响应不暴露敏感字段 (0.113417ms)
+✔ 所有 $ref 可解析（内部引用 + openapi-base.json） (0.203459ms)
+✔ 端点存在且 Cognito 认证；轮换请求视图为七字段且不含密钥材料 (0.6385ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.174792ms)
+✔ 端点齐备且 CognitoJwt 认证；201 创建 + 200 幂等重放 + 409 冲突/状态门 (0.658375ms)
+✔ 命令枚举与 CT-04 目录 22 个白名单一致；确认凭证与 timeoutSec 边界齐备 (0.097209ms)
+✔ 响应 Schema 封闭且含 requestedBy/expiresAt/replayed/confirmedBy (0.05675ms)
+✔ BE-CMD-03 查询端点齐备：列表/详情 + 状态枚举 + attempts/acks 时间线 (0.1015ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.290375ms)
+✔ 七个端点齐备且 Cognito 认证；operationId 与响应码齐备 (0.677709ms)
+✔ Schema 封闭：DEC-018 冻结 V1 四字段、单位、范围与默认值 (0.184209ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.336459ms)
+✔ 列表与按需联系人端点齐备且 Cognito 认证；筛选参数齐备 (0.658875ms)
+✔ Schema 封闭：两种耗材列恒在；列表零联系人 PII；按需联系人独立；百分比 0~100 (0.0925ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.216917ms)
+✔ 六个端点齐备且 Cognito 认证；状态迁移强制 If-Match (0.795584ms)
+✔ Schema 封闭：四态枚举/source 固定 ADMIN/幂等 replayed/完整历史字段 (0.095916ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.282792ms)
+✔ 八个端点齐备且 Cognito 认证；写操作强制 If-Match (0.750458ms)
+✔ Schema 封闭：五态枚举/唯一编号/强制原因/派生状态/最小权限 contact (0.091417ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.328833ms)
+✔ 五个端点齐备且 Cognito 认证；operationId 与响应码齐备 (0.674666ms)
+✔ Schema 封闭：设备视图字段齐备/关联窗口/强制原因/批量语义 (0.092833ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.273542ms)
+✔ 六端点齐备且 Cognito 认证；写操作声明 If-Match；响应码齐备 (0.734958ms)
+✔ Customer 视图六字段封闭；status 枚举 ACTIVE|SUSPENDED；请求体封闭 (0.078916ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.28675ms)
+✔ 端点齐备且 CognitoJwt 认证：仅 GET 总览（只读，无写路由） (0.731292ms)
+✔ 总览 DTO 齐备：Contract/设备分布/在线率/今日 ESG/最新告警/设备卡片；四轴分离不合并 (0.174333ms)
+✔ 所有 $ref 可解析（内部引用 + openapi-base.json） (0.252291ms)
+✔ 列表/详情端点存在且 Cognito 认证；筛选参数齐备；响应码齐备 (1.154167ms)
+✔ Device 视图字段封闭（原型设备群表格字段均有来源）；证书仅摘要 (0.174584ms)
+✔ BE-DEV-06 元数据 PATCH 端点：白名单仅 alias + If-Match 乐观锁 + 409 冲突语义 (0.099334ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.284375ms)
+✔ 分配/历史端点齐备且 Cognito 认证；响应码齐备 (0.622083ms)
+✔ DeviceAssignment 视图封闭：授权窗口（assignedAt/endedAt）+ 幂等/通知字段齐备 (0.083375ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.195875ms)
+✔ 端点齐备且 CognitoJwt 认证：console/activities/export/导出详情 (0.659417ms)
+✔ 四轴分离 + 数据块 observedAt/stale/单位；最新 Media 可选块稳定可空 (0.110917ms)
+✔ 不透传 MQTT 原始消息、不含实时流/运维字段；所有 $ref 可解析 (0.333792ms)
+✔ retire/force-complete 端点齐备且 Cognito 认证；响应码齐备 (0.979ms)
+✔ 请求体封闭：retire 强制原因 + confirm 恒 true；视图封闭且通知枚举正确 (0.104458ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.224833ms)
+✔ suspend/reactivate 端点齐备且 Cognito 认证；响应码齐备 (0.6585ms)
+✔ 请求体封闭：挂起强制原因；恢复强制原因 + issueResolved 恒 true；通知枚举正确 (0.083375ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.205417ms)
+✔ 七个端点齐备且 Cognito 认证；写操作强制 If-Match (1.043208ms)
+✔ Schema 封闭：管理 DTO 无 PHC；写接口只受控接收 writeOnly password (0.104125ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.566041ms)
+✔ 八个端点齐备且 CognitoJwt 认证；导出创建返回 202 (0.68625ms)
+✔ 查询筛选参数齐备（customerId/siteId/deviceId/时间范围 + 游标）；reports 含 reportType (0.1ms)
+✔ Schema 封闭：导出数据集枚举、短期 URL 过期字段、CSV 一致性字段 (0.080084ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.369584ms)
+✔ 八个端点齐备且 Cognito 认证；operationId 与响应码齐备 (0.698375ms)
+✔ Schema 封闭：七态枚举/Entitlement 三码/签名字段/强制原因/幂等与派生字段 (0.096042ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.330625ms)
+✔ 四个审批端点存在且使用 Cognito JWT 认证 (0.635ms)
+✔ approve/reject 强制 If-Match；reject 强制 reason (0.107708ms)
+✔ 申请 DTO 不含 CSR 原文 (0.05125ms)
+✔ 管理端明确暴露内部 TIMED_OUT，列表状态过滤为封闭枚举 (0.054334ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.229583ms)
+✔ 端点齐备且 CognitoJwt 认证：创建/列表/详情/targets/扩大批次/pause/resume/cancel/retry (0.731958ms)
+✔ 首批强制恰好 1 台；最终全量审批契约封闭；状态机枚举封闭 (0.080583ms)
+✔ 视图封闭且不泄露内部字段；批次/重试结果结构稳定 (0.067625ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.353041ms)
+✔ 端点齐备且 CognitoJwt 认证：上传会话/complete/列表/详情 (1.307167ms)
+✔ packageType/sha256 与 CT-03 OTA Schema 一致；创建字段封闭且签名必填 (0.098666ms)
+✔ 状态机封闭：UPLOADED/VERIFIED/RETIRED；可发布=VERIFIED；视图不泄露信任根 (0.097167ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.256833ms)
+✔ 端点存在且 Cognito 认证；三端点（create/list/detail）响应码齐备 (0.858125ms)
+✔ ReplayJob 视图七字段封闭；状态枚举与统计字段齐备；scope 封闭 (0.097917ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.244792ms)
+✔ 端点齐备且 CognitoJwt 认证：列表/读取/更新（无删除与新建路由） (0.644667ms)
+✔ 封闭 key 集与乐观锁版本控制；固定枚举不可经 API 改写 (0.110042ms)
+✔ 所有 $ref 可解析（内部引用 + openapi-base.json） (0.202583ms)
+✔ 六端点齐备且 Cognito 认证；写操作声明 If-Match；响应码齐备 (0.700333ms)
+✔ Site 视图字段封闭（含 deviceCount/version）；status 枚举；请求体封闭且更新体不含 customerId (0.083667ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.307584ms)
+✔ 端点齐备且 CognitoJwt 认证：列表/邀请/角色/scope/停用/密码重置 (0.6855ms)
+✔ 角色封闭集与 DEC-012 映射；输入不含密码字段；响应不含凭证材料 (0.111208ms)
+✔ 所有 $ref 可解析（内部引用 + openapi-base.json） (0.272542ms)
+✔ 端点存在且使用 Device mTLS 认证 (0.622333ms)
+✔ 轮换契约：请求强制 currentCertificateId；响应五字段；409/403/400/401 齐整 (0.1075ms)
+✔ 状态契约为四态枚举且响应不含 PEM/私钥字段 (0.065833ms)
+✔ 状态查询由 mTLS 身份定位证书，不增加源稿未定义的 deviceId Query (0.041417ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.181833ms)
+✔ deactivate 端点齐备且 DeviceMtls 认证；响应码齐备 (0.775417ms)
+✔ 响应视图封闭：退役记录 + 证书摘要（无证书材料字段）；幂等字段齐备 (0.165ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.210625ms)
+✔ all positive and negative P0 schema vectors, including legacy requests (29.462ms)
+✔ five routes declare authentication, response shapes and no-store (0.592167ms)
+✔ binary JPEG, Base64, size and S3 checksum match the supplied sample (0.749958ms)
+✔ old Alarm and Event fields remain optional-extension compatible (1.963083ms)
+✔ prior request and session success remain valid under both published baselines (3.087042ms)
+✔ normal contract validator accepts scoped domain errors and rejects wrong status (2.97725ms)
+✔ all five operations accept positive wire inputs and reject negative ones (3.53175ms)
+✔ BE-ONB-01 端点存在且 CSR 首次申请无需预置 Token (0.589958ms)
+✔ 请求体包含设备资料和必填 CSR (0.094709ms)
+✔ 首次申请返回 201，重复申请返回 409，不再返回库存 404 或幂等 200 (0.060333ms)
+✔ 匿名申请负向响应覆盖稳定错误码语义：400/409/429/500 (0.064667ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.883542ms)
+✔ BE-ONB-03 status 端点：requestId 与 CSR 私钥签名，三态响应不含设备私钥 (0.120708ms)
+✔ BE-OTA-03 下载兑换必须使用 Device mTLS 且绑定 target/token (0.619333ms)
+✔ 一次性兑换响应禁止缓存，并封闭安全失败状态 (0.077375ms)
+✔ 六个设备 Endpoint 的 Method、Path 完整且认证方式符合 DEC-025 (0.713417ms)
+✔ Onboarding 按 DEC-026 增加 chain 与 REST，保留顶层结构，不使用 data/meta 包裹 (0.07875ms)
+✔ Certificate 与 Sync 关键字段遵循源稿日期、枚举、用户和配置结构 (0.09175ms)
+✔ 管理端 License/Device 投影不把源稿 OTA entitlement 改名为 OTA_UPDATE (0.045041ms)
+✔ 所有 REST OpenAPI 使用当前正式决策登记版本且无非法 SEC 决策引用 (7.212125ms)
+✔ sync 端点齐备且 DeviceMtls 认证；响应码齐备 (0.640709ms)
+✔ 请求体封闭：lastSyncTime 与可选许可证确认 (0.059541ms)
+✔ 快照顶层与源稿六域同形，兼容元数据不成为必填线协议 (0.190458ms)
+✔ Retired 退役确认待处理设备仍可 Sync，契约不在认证层全局拒绝 (0.074708ms)
+✔ 所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json） (0.241667ms)
+✔ 许可证确认绑定版本与快照，规范验签输入保留完整UTC时间 (0.060667ms)
+✔ 基座 SuccessResponse 结构：data + meta(requestId, UTC timestamp) (1.859875ms)
+✔ 游标分页响应与往返解析 (0.148958ms)
+✔ 非法游标返回 CURSOR_INVALID（400） (0.167292ms)
+✔ limit 归一化：默认 50，范围 1~100 (0.077334ms)
+✔ Idempotency-Key：缺失/非法被拒绝，合法值透传 (0.102792ms)
+✔ If-Match 并发版本冲突返回确定的 409 (0.186708ms)
+✔ 验证失败有确定响应（400 + VALIDATION_FAILED） (0.091125ms)
+✔ 异常映射器不泄露堆栈、SQL 或 AWS 内部错误 (0.057459ms)
+✔ 错误码目录、HTTP 状态映射与 OpenAPI ErrorCode 枚举三者一致 (0.101333ms)
+✔ OpenAPI 基座结构有效：四个 API 分组与安全方案 (0.106ms)
+✔ OpenAPI 基座所有内部 $ref 均可解析（无悬空引用） (0.142166ms)
+✔ 设备端：上传会话端点齐备且 DeviceMtls 认证；输入封闭；objectPath 由服务端签发 (0.6755ms)
+✔ 管理端：列表/下载端点齐备且 CognitoJwt 认证；视图不泄露内部存储信息 (0.134542ms)
+✔ Media 状态枚举封闭（AVAILABLE/DELETED）；配额/大小/TTL 引用 DEC-024 冻结值 (0.090375ms)
+✔ 所有 $ref 可解析（内部引用 + openapi-base.json） (0.272292ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.777667ms)
+✔ 负向结构：非法枚举、非空待冻结参数与缺失字段被 Schema 拒绝 (0.508875ms)
+✔ x-decision-versions 引用 DEC-003 且版本与决策登记一致 (0.074959ms)
+✔ 暂定值定性规则可执行：KMS 信封、一次性领取、成功即销毁、丢失重签 (0.07475ms)
+✔ 冻结参数可直接执行：24 小时、一次成功领取、无待定参数 (0.069083ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-003 阻塞任务与 SEC-01 (0.147584ms)
+✔ TS 常量与 certificate-package-policy.json 完全一致 (0.125875ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.797333ms)
+✔ 负向结构：复用云端 Hash、非独立 salt 与非法字段被 Schema 拒绝 (0.353333ms)
+✔ x-decision-versions 引用 DEC-004 且版本与决策登记一致 (0.055667ms)
+✔ 暂定值定性规则可执行：设备本地专用、禁复用云端 Hash、每用户 salt、仅 Sync 下发 (0.099541ms)
+✔ 冻结参数可直接执行：Argon2id PHC、固定参数与长度 (0.081209ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 DEC-004 阻塞任务 (0.113125ms)
+✔ TS 常量与 device-user-verifier-policy.json 完全一致 (0.090875ms)
+✔ 策略 JSON 通过自身 JSON Schema 结构校验 (0.787833ms)
+✔ 负向结构：跳过服务端验签、非失败关闭与内嵌信任根被 Schema 拒绝 (0.337625ms)
+✔ 暂定值定性规则可执行：服务端验签强制、失败关闭、载荷字段锁定、信任根带外分发 (0.104709ms)
+✔ DEC-022 冻结算法、信任根类型、编码且无待定参数 (0.057125ms)
+✔ DEC-022 固定 RSA/SHA-256 测试向量可复验 (0.663458ms)
+✔ 策略消费者均为合法任务 ID 且覆盖 BE-OTA-01 (0.114084ms)
+✔ TS 常量与 ota-package-signature-policy.json 完全一致 (0.08ms)
+✔ 四类业务设置共享版本化 JSON Schema 与运行时校验器 (23.617625ms)
+ℹ tests 319
+ℹ suites 0
+ℹ pass 319
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 712.945708
+
+> food-digester-platform@0.0.0 test:scripts /Users/anray/Documents/project/hiddenjoyacom/food-digester-platform
+> node --import tsx --test scripts/*.test.mjs
+
+✔ bootstrap input is bound to the normalized email and never accepts a password (0.814459ms)
+✔ successful bootstrap creates Cognito identity before committing linked database user (0.195042ms)
+✔ non-pristine Cognito or database fails before any mutation (0.179208ms)
+✔ database failure deletes Cognito identity and records compensated failure (0.7255ms)
+✔ failed Cognito compensation keeps reconciliation required (0.103125ms)
+✔ source approval requires exact SHA and packager embeds committed SHA (17257.079625ms)
+✔ runner without approved source fails closed without leaking configuration (28.0245ms)
+✔ serial and parallel repeated browser receipts are validated (3.060708ms)
+✔ fail closed: missing required flow (5.159042ms)
+✔ fail closed: skipped execution (0.284459ms)
+✔ fail closed: flaky execution (0.22525ms)
+✔ fail closed: retry hides failure (1.590958ms)
+✔ fail closed: unexpected error (0.155708ms)
+✔ fail closed: missing isolated trace (0.107916ms)
+✔ fail closed: data prefix reused (0.096208ms)
+✔ fail closed: context cleanup failed (0.102875ms)
+✔ fail closed: unmocked network request (0.135ms)
+✔ fail closed: missing role proof (0.185959ms)
+✔ fail closed: wrong route permission (0.191583ms)
+✔ fail closed: Auditor OTA write enabled (0.187042ms)
+✔ fail closed: missing MFA assertion (0.199292ms)
+✔ fail closed: missing conflict response (0.204208ms)
+✔ fail closed: missing forbidden response (0.1975ms)
+✔ fail closed: missing repeat (0.105ms)
+✔ repeat traces cannot duplicate the first execution (0.170542ms)
+✔ manifest exactly matches independent Playwright discovery (828.858417ms)
+✔ discovery fails closed: missing case (0.473167ms)
+✔ discovery fails closed: extra case (0.3765ms)
+✔ discovery fails closed: duplicate replacing required case (0.169416ms)
+✔ old Viewer permission cannot pass the updated matrix (0.203833ms)
+✔ required behavioral proof cannot be missing: 管理员邮件重置验证码 → 新密码 → 邮箱别名 SRP 登录 (375px) (0.198459ms)
+✔ required behavioral proof cannot be missing: 管理员邮件重置验证码 → 新密码 → 邮箱别名 SRP 登录 (1440px) (0.138084ms)
+✔ required behavioral proof cannot be missing: QA-09 设备管理长别名和序列号在375px完整换行且不裁切 (0.124166ms)
+✔ required behavioral proof cannot be missing: H-01 API 拒绝停用会话后清除浏览器会话并返回登录 (0.120667ms)
+✔ required behavioral proof cannot be missing: M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏 (0.140083ms)
+✔ required behavioral proof cannot be missing: UI redesign: all business routes at 1366x768 (0.146625ms)
+✔ required behavioral proof cannot be missing: UI redesign: all business routes at 1440x900 (0.290584ms)
+✔ required behavioral proof cannot be missing: UI redesign: all business routes at 1920x1080 (0.174083ms)
+✔ required behavioral proof cannot be missing: QA05 login SRP MFA error success logout without persisting password (0.167458ms)
+✔ required behavioral proof cannot be missing: QA05 ESG cursor totals export snapshot timezone and empty state (0.141458ms)
+✔ required behavioral proof cannot be missing: QA05 Command dangerous confirmation terminal result and publish failure (0.133083ms)
+✔ required behavioral proof cannot be missing: QA05 Media expiry renew 403 and audit read-only zero writes (0.142917ms)
+✔ serial and repeated phases require all 144 independent prefixes (0.630625ms)
+✔ phase budget accounts for startup, executions and worker slots, with a finite ceiling (0.051792ms)
+✔ invalid phase budget rejected: repeat=0 workers=1 (0.031792ms)
+✔ invalid phase budget rejected: repeat=1 workers=0 (0.02ms)
+✔ invalid phase budget rejected: repeat=0.5 workers=1 (0.018792ms)
+✔ invalid phase budget rejected: repeat=1 workers=0.5 (0.018917ms)
+✔ invalid phase budget rejected: repeat=Infinity workers=1 (0.019833ms)
+✔ invalid phase budget rejected: repeat=1 workers=NaN (0.017958ms)
+✔ real child-process timeout is classified and cannot create a successful phase (51.956209ms)
+✔ failed/killed process cannot pass: status=1 (0.062792ms)
+✔ failed/killed process cannot pass: status=null (0.028542ms)
+✔ spawn errors reject without disclosing raw process error details (0.197542ms)
+✔ successful process may proceed to the strict report and trace validator (0.055166ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout view 1440 en / missing proof (0.203ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout view 1440 en / width (0.14375ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout view 1440 en / language (0.124917ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout view 1440 en / released (0.124709ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout view 1440 en / readRequests (0.190125ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout view 375 zh-CN / missing proof (0.121167ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout view 375 zh-CN / width (0.122625ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout view 375 zh-CN / language (0.120875ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout view 375 zh-CN / released (0.131541ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout view 375 zh-CN / readRequests (0.12625ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout operate 1440 en / missing proof (0.973958ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout operate 1440 en / width (0.251584ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout operate 1440 en / language (0.162375ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout operate 1440 en / released (0.138833ms)
+✔ image evidence fails closed: IMG-14 image preview lifecycle and layout operate 1440 en / readRequests (0.202208ms)
+✔ image evidence fails closed: IMG-15 independent frame deadline, stalled read and ignored late prior-session reply / missing proof (0.712958ms)
+✔ image evidence fails closed: IMG-15 independent frame deadline, stalled read and ignored late prior-session reply / independentExpiry (0.309291ms)
+✔ image evidence fails closed: IMG-15 independent frame deadline, stalled read and ignored late prior-session reply / freshViewer (0.154ms)
+✔ image evidence fails closed: IMG-15 independent frame deadline, stalled read and ignored late prior-session reply / lateReplyIgnored (0.131708ms)
+✔ image evidence fails closed: IMG-15 rate limit cooldown survives hide/reopen and permission revocation stops (en) / missing proof (0.121875ms)
+✔ image evidence fails closed: IMG-15 rate limit cooldown survives hide/reopen and permission revocation stops (en) / language (0.130709ms)
+✔ image evidence fails closed: IMG-15 rate limit cooldown survives hide/reopen and permission revocation stops (en) / retryAfterSeconds (0.137584ms)
+✔ image evidence fails closed: IMG-15 rate limit cooldown survives hide/reopen and permission revocation stops (en) / stoppedAfter403 (0.127959ms)
+✔ image evidence fails closed: IMG-15 rate limit cooldown survives hide/reopen and permission revocation stops (zh-CN) / missing proof (0.115041ms)
+✔ image evidence fails closed: IMG-15 rate limit cooldown survives hide/reopen and permission revocation stops (zh-CN) / language (0.115042ms)
+✔ image evidence fails closed: IMG-15 rate limit cooldown survives hide/reopen and permission revocation stops (zh-CN) / retryAfterSeconds (0.604875ms)
+✔ image evidence fails closed: IMG-15 rate limit cooldown survives hide/reopen and permission revocation stops (zh-CN) / stoppedAfter403 (0.187875ms)
+✔ image evidence fails closed: IMG-16 alarm image stays available after clearing 1440 en / missing proof (0.150416ms)
+✔ image evidence fails closed: IMG-16 alarm image stays available after clearing 1440 en / width (0.134584ms)
+✔ image evidence fails closed: IMG-16 alarm image stays available after clearing 1440 en / language (0.125083ms)
+✔ image evidence fails closed: IMG-16 alarm image stays available after clearing 1440 en / sameOriginalAfterClear (0.117ms)
+✔ image evidence fails closed: IMG-16 alarm image stays available after clearing 1440 en / signingCalls (0.114292ms)
+✔ image evidence fails closed: IMG-16 alarm image stays available after clearing 375 zh-CN / missing proof (0.143ms)
+✔ image evidence fails closed: IMG-16 alarm image stays available after clearing 375 zh-CN / width (0.117166ms)
+✔ image evidence fails closed: IMG-16 alarm image stays available after clearing 375 zh-CN / language (0.11325ms)
+✔ image evidence fails closed: IMG-16 alarm image stays available after clearing 375 zh-CN / sameOriginalAfterClear (0.111667ms)
+✔ image evidence fails closed: IMG-16 alarm image stays available after clearing 375 zh-CN / signingCalls (0.112ms)
+✔ image evidence fails closed: IMG-16 events distinguish associations and recover signing/image failures, with permission and missing-media errors / missing proof (0.117417ms)
+✔ image evidence fails closed: IMG-16 events distinguish associations and recover signing/image failures, with permission and missing-media errors / nullAndOmittedDistinct (0.112083ms)
+✔ image evidence fails closed: IMG-16 events distinguish associations and recover signing/image failures, with permission and missing-media errors / deletedNoDownload (0.111167ms)
+✔ image evidence fails closed: IMG-16 events distinguish associations and recover signing/image failures, with permission and missing-media errors / deniedAndMissingStop (0.284333ms)
+✔ image evidence fails closed: IMG-16 events distinguish associations and recover signing/image failures, with permission and missing-media errors / retries (0.117375ms)
+✔ image evidence fails closed: IMG-19 two independent pages share a stream, one close leaves the other polling and authority denial stops the remaining page / missing proof (0.113917ms)
+✔ image evidence fails closed: IMG-19 two independent pages share a stream, one close leaves the other polling and authority denial stops the remaining page / distinctViewers (0.113458ms)
+✔ image evidence fails closed: IMG-19 two independent pages share a stream, one close leaves the other polling and authority denial stops the remaining page / survivorPollsAfterClose (0.119ms)
+✔ image evidence fails closed: IMG-19 two independent pages share a stream, one close leaves the other polling and authority denial stops the remaining page / deniedStopsFrame (0.111417ms)
+✔ image evidence fails closed: IMG-19 two independent pages share a stream, one close leaves the other polling and authority denial stops the remaining page / knownFrameIdUnchanged (0.111917ms)
+✔ disjoint event partition conserves total; reuse nulls are retained (0.451666ms)
+✔ reject inverted events (0.183167ms)
+✔ reject inconsistent delta (0.058958ms)
+✔ reject invalid missing tcp (0.052125ms)
+✔ reject negative total (0.049709ms)
+✔ reject wrong source (0.045875ms)
+✔ TCP/TLS details are retained without adding overlapping durations (0.065125ms)
+✔ 真实 OpenAPI 片段可确定性打包且无外部引用 (36.963ms)
+✔ bundle 新鲜度检查拒绝缺失或过期产物 (97.020917ms)
+✔ 失败示例：非法 OpenAPI 版本与缺少 responses 被拒绝 (0.175667ms)
+✔ 失败示例：全局重复 operationId 被拒绝 (0.078375ms)
+✔ 失败示例：非法 parameter 与 Schema 被拒绝 (0.13225ms)
+✔ 仓库提交的统一 bundle 与当前片段一致 (11.470542ms)
+✔ scoped Gate accepts the archived real-target receipt, without promoting full acceptance (25.746833ms)
+✔ scoped Gate rejects missing role (16.9985ms)
+✔ scoped Gate rejects wrong SHA (7.9555ms)
+✔ scoped Gate rejects unverified Lambda (19.562833ms)
+✔ scoped Gate rejects runtime drift (8.57025ms)
+✔ scoped Gate rejects mocked API (6.838708ms)
+✔ scoped Gate rejects empty tenant (6.879666ms)
+✔ scoped Gate rejects cross-Customer list leak (14.146792ms)
+✔ scoped Gate rejects Viewer mutation accepted (6.27575ms)
+✔ scoped Gate rejects expired old Token (14.819916ms)
+✔ scoped Gate rejects two duplicate successes (6.285042ms)
+✔ scoped Gate rejects two optimistic successes (6.664417ms)
+✔ scoped Gate rejects bundled Firefox (6.375917ms)
+✔ scoped Gate rejects missing browser-role case (19.736125ms)
+✔ scoped Gate rejects persisted edit belongs to another record (22.145916ms)
+✔ scoped Gate rejects forbidden page rendered as business page (6.93575ms)
+✔ scoped Gate rejects missing screenshot (1.804833ms)
+✔ scoped Gate rejects cleanup duplicate hides missing ID (8.4025ms)
+✔ scoped Gate rejects cleanup incomplete (6.464709ms)
+✔ scoped Gate rejects private credentials retained (8.912584ms)
+✔ scoped Gate rejects scope promoted (7.961084ms)
+✔ 当前管理后台源代码满足入口与组合根交付约束 (8.797459ms)
+✔ 缺少入口和构建产物时失败关闭 (0.394625ms)
+✔ FE-06 至 FE-19 任一任务或路由从事实源缺失时失败关闭 (6.079125ms)
+✔ FE-11 至 FE-15 任一任务、路由或页面标识缺失时失败关闭 (3.255125ms)
+✔ FE-06 至 FE-15 任一控制器或 operationId 缺失时失败关闭 (3.942916ms)
+✔ FE-11 至 FE-15 控制器或 operationId 缺失时失败关闭 (7.223083ms)
+✔ FE-16 至 FE-19 任一任务、路由、控制器、页面标识或 operationId 缺失时失败关闭 (2.945083ms)
+✔ App 移除显式页面分支时失败关闭 (3.560875ms)
+✔ 完整目标回执覆盖双提交、隔离环境、五角色、七路由、五闭环与清理 (43.567292ms)
+✔ 缺路由、角色、闭环或审计拒绝角色时失败关闭 (24.473542ms)
+✔ mock、泄露、短链持久化、危险操作与只读写请求均失败关闭 (22.427542ms)
+✔ 缺失回执、双部署提交漂移、HEAD 不一致与未清理均失败关闭 (19.109292ms)
+✔ 目标 Gate 是显式发布步骤且不进入普通 verify (0.209125ms)
+✔ 显式现有测试环境支持绑定；缺绑定、错账号、缺清理仍失败关闭 (76.376833ms)
+✔ 完整回执覆盖双提交、隔离环境、五角色、五路由、四闭环、隐私、双语布局与清理 (39.489334ms)
+✔ 缺路由、角色、闭环、locale 或 viewport 时失败关闭 (25.849291ms)
+✔ mock、权限、并发、泄露或布局不合格时失败关闭 (30.494333ms)
+✔ 缺失回执、双部署提交漂移、HEAD 不一致与未清理均失败关闭 (17.337792ms)
+✔ 目标 Gate 是显式发布步骤且不进入普通 verify (0.225875ms)
+✔ 显式现有测试环境支持绑定；缺绑定、错账号、缺清理仍失败关闭 (89.316708ms)
+✔ 完整路由、五角色、五业务闭环、租户、并发、敏感字段与清理回执通过 (0.851ms)
+✔ 缺路由、角色或业务闭环时失败关闭 (0.153791ms)
+✔ Cognito、部署 API、跨租户、并发与敏感字段证据不满足约束时失败关闭 (0.100708ms)
+✔ 缺失回执、部署提交或 sourceCommit 不一致时失败关闭 (0.518333ms)
+✔ 显式现有测试环境支持绑定；缺绑定、错账号、缺清理仍失败关闭 (0.194083ms)
+✔ 完整的 58 API、五角色、并发、ESG 与清理目标 AWS 回执通过 (6.085166ms)
+✔ 58 个回执 operationId 与九份正式业务 OpenAPI 精确一致 (2.80675ms)
+✔ API 缺项、角色缺项与跨 Customer 放行均失败关闭 (0.516459ms)
+✔ 并发或 ESG 证据不满足生产约束时失败关闭 (0.126708ms)
+✔ 缺失回执与 sourceCommit 不匹配均失败关闭 (0.831292ms)
+✔ 显式现有测试环境支持绑定；缺绑定、错账号、缺清理仍失败关闭 (0.278542ms)
+✔ 完整覆盖 25 API、五角色、竞态、退役与导出的隔离 AWS 回执通过 (2.57925ms)
+✔ 缺 operation、跨租户放行、竞态双成功、证书未失活与 MQTT/S3 缺口均失败关闭 (0.250583ms)
+✔ operation 成功状态与负向状态集合不完整时失败关闭 (0.098916ms)
+✔ 回执缺失、非法 JSON 或 sourceCommit 不一致时独立发布 Gate 失败 (0.804083ms)
+✔ 显式现有测试环境支持绑定；缺绑定、错账号、缺清理仍失败关闭 (0.210666ms)
+✔ 完整 Archive、Replay、Summary 目标 AWS 回执通过 (0.809708ms)
+✔ 缺探针、重复归档、Replay 复制业务行和空 Summary 均失败关闭 (0.227584ms)
+✔ 缺少回执或提交不一致时独立 Gate 失败 (0.595875ms)
+✔ 显式现有测试环境支持绑定；缺绑定、错账号、缺清理仍失败关闭 (0.174125ms)
+✔ 完整隔离 AWS 回执覆盖 8 Topic、负向路径、QA-03 与清理时通过 (0.877833ms)
+✔ 缺 Topic、未知 Topic 命中、Error Action 未恢复和原文漂移均失败关闭 (0.162291ms)
+✔ 未提供目标 AWS 回执时独立发布 Gate 明确失败 (0.42075ms)
+✔ 回执必须对应待发布的精确 Git 提交 (0.365917ms)
+✔ 显式现有测试环境支持绑定；缺绑定、错账号、缺清理仍失败关闭 (1.665667ms)
+✔ 完整的 15 API、角色、Cognito、并发、S3、Dashboard、审计与清理回执通过 (1.168709ms)
+✔ 15 个 operationId 与六份正式 OpenAPI 精确一致 (0.784667ms)
+✔ API、角色、租户或安全/并发探针缺口均失败关闭 (0.220375ms)
+✔ 缺失回执与 sourceCommit 不匹配均失败关闭 (0.602625ms)
+✔ 显式现有测试环境支持绑定；缺绑定、错账号、缺清理仍失败关闭 (0.2065ms)
+✔ 干净的依赖图通过检查 (2.2165ms)
+✔ 共享包反向依赖 apps 被识别为边界违规 (0.864292ms)
+✔ contracts 反向依赖 apps 被识别为边界违规 (0.598125ms)
+✔ apps 之间互相依赖被识别为边界违规 (1.805ms)
+✔ 工作区循环依赖被检出 (0.964792ms)
+✔ 非工作区依赖（外部 npm 包）不参与检查 (0.466167ms)
+✔ 当前仓库通过边界与循环依赖检查 (0.958458ms)
+✔ CDK WARNING 与规则校验编号会触发 Gate (0.518125ms)
+✔ 正常 synth 输出不会误报 (0.371375ms)
+✔ 已交付 Lambda 缺失或回退到内联 501 占位时 Gate 失败 (0.151083ms)
+✔ 已交付 Lambda 使用 S3 asset 时 Gate 通过 (0.059208ms)
+✔ CMD/OTA 生产接线 Gate 对 Worker/调度任一缺失均失败关闭 (0.748084ms)
+✔ CMD/OTA 生产接线 Gate 对 IoT/S3/KMS 权限缺失失败关闭 (0.227416ms)
+✔ 真实登记文件：结构校验通过，并准确识别当前未决 DEC (2.390042ms)
+✔ 真实契约版本文件：decisionRegisterVersion 与登记一致 (0.464042ms)
+✔ 契约版本不一致被拒绝 (0.349125ms)
+✔ 重复决策 ID 被拒绝（已知冲突必须有唯一决策 ID） (0.131667ms)
+✔ 原则与决策之间 ID 也全局唯一 (0.091542ms)
+✔ pending 决策携带批准人被拒绝 (0.062ms)
+✔ frozen 决策必须有批准人、批准时间和 >=1.0.0 版本 (0.103791ms)
+✔ blockingTasks 为空或格式非法被拒绝 (0.076458ms)
+✔ history 必须非空且末条版本与条目版本一致 (0.074542ms)
+✔ 非 UTC 时间戳被拒绝 (0.091417ms)
+✔ CLI validate 模式：真实文件退出码 0 且输出实际未决数；--fail-on-pending 按实际未决数返回 (3.2745ms)
+✔ CLI：结构错误退出码 1 (0.800292ms)
+✔ 追溯校验：合法 x-decision-versions 引用通过（Schema 可追溯到决策版本） (1.359792ms)
+✔ 追溯校验：不存在的决策 ID 被拒绝 (1.012959ms)
+✔ 追溯校验：引用版本与登记版本不一致被拒绝 (0.767792ms)
+✔ 追溯校验：缺少 x-decision-versions 或格式非法被拒绝 (0.774208ms)
+✔ 追溯校验：嵌套在 OpenAPI info 下的 x-decision-versions 可被递归发现 (0.756541ms)
+✔ 已交付 API（含管理后台 P1）的 134 个 OpenAPI operation 与生产路由双向一致 (6.855417ms)
+✔ 版本化已交付清单缺失、重复或引用不存在文件时失败关闭 (0.882584ms)
+✔ 缺失、额外、重复及 method/path 漂移均失败关闭 (0.126625ms)
+✔ CMD/OTA 治理 Gate 校验四份 REST 契约及 DEC-022/023 冻结状态 (3.717041ms)
+✔ 有效链接、无易漂移计数且工具链配对正确时通过 (1.586167ms)
+✔ 损坏的仓库内 Markdown 链接被拒绝 (0.76675ms)
+✔ 陈旧测试计数或不兼容工具链声明被拒绝 (1.275833ms)
+✔ 当前仓库 ENG/DB/DOM 与 IAC/AUTH/SEC 任务文档证据一致 (14.742833ms)
+✔ BE-IOT-01～08 文档全部纳入默认链接与证据门禁 (0.284209ms)
+✔ BE-ARC/RPL/ESG 四份文档及 P2 回归纳入默认证据门禁 (0.152333ms)
+✔ 11 份管理后台业务文档全部纳入默认链接与证据门禁 (0.079458ms)
+✔ BE-MED/RBAC/AUD/DASH/SET 五份文档纳入状态与 AWS 证据门禁 (0.061708ms)
+✔ FE-06～FE-10 五份前端文档纳入四层状态与目标回执门禁 (0.058541ms)
+✔ FE-11～FE-15 五份前端文档纳入四层状态与独立目标回执门禁 (0.099417ms)
+✔ 前端任务文档拒绝缺层级、问题责任字段、目标 Gate 和 P1 陈旧描述 (0.088375ms)
+✔ FE-11～FE-15 文档拒绝旧缺陷、任务级勾选及旧目标 Gate (0.061292ms)
+✔ BE-MED/RBAC/AUD/DASH/SET 文档拒绝缺状态层、陈旧参数和设置生效误述 (0.055167ms)
+✔ 管理后台业务文档拒绝缺证据引用和陈旧决策或部署说法 (0.050375ms)
+✔ BE-ARC/RPL/ESG 文档拒绝缺审计快照和生产接线边界外旧说法 (0.045208ms)
+✔ BE-IOT 文档拒绝缺少审计快照、Report P2002 与 Media 另路由旧说法 (0.056ms)
+✔ BE-IOT 严格负向探针必须保留为可定位的永久回归 (0.61375ms)
+✔ 安全任务文档拒绝历史计数、缺少 verify 命令与陈旧 DEC-012 状态 (0.05575ms)
+✔ 安全任务文档接受当前命令、审计快照引用与 frozen 决策 (0.039542ms)
+✔ 当前仓库（DB-01 已落地）Migration 结构通过 (8.825833ms)
+✔ schema.prisma 未落地时跳过并通过（骨架期行为） (0.462125ms)
+✔ 失败示例：Schema 已存在但无任何 Migration（未提交 Migration） (0.481417ms)
+✔ 失败示例：migrations/ 为空且缺少 migration_lock.toml (0.540625ms)
+✔ 失败示例：Migration 目录名非法与空 migration.sql (0.808375ms)
+✔ 合法 Migration 结构通过 (0.809ms)
+✔ 失败示例：已有旧 Migration 但 Schema 已变化且未登记快照 (0.666209ms)
+✔ 真实矩阵通过完整性检查 (1.380959ms)
+✔ 真实引用集合：41 个矩阵 API 与 13 个 routeId 全部可解析 (0.350625ms)
+✔ index19.html 源清单：9 个菜单、12 个页面、128 个元素与矩阵双向覆盖 (0.298542ms)
+✔ 真实矩阵：9 菜单、12 页面、每项均有处置结论 (0.215958ms)
+✔ 图片预览有明确后续任务，被拒绝的密码和状态混用不携带实现任务 (0.28475ms)
+✔ 矩阵的 x-decision-versions 可追溯到决策登记（DEC-007~012） (0.98725ms)
+✔ 缺少菜单或页面被拒绝 (0.255667ms)
+✔ 重复元素 ID 被拒绝 (0.075583ms)
+✔ Adapt/Reject 缺少依据被拒绝 (0.080833ms)
+✔ Adopt/Adapt 生产字段缺少 API 来源被拒绝 (0.109ms)
+✔ rejectCategory 项非 Reject 或携带实现任务被拒绝 (0.846459ms)
+✔ 未知角色被拒绝（R7） (0.195833ms)
+✔ 格式合法但不存在的 operationId、routeId 与响应字段被拒绝 (2.766167ms)
+✔ planned operation 的任务归属漂移被拒绝 (0.666125ms)
+✔ 源清单与矩阵任一侧删除元素均被双向覆盖检查拒绝 (2.234042ms)
+✔ index19.html 内容变化但未重新盘点源清单时失败关闭 (1.546208ms)
+✔ 重复 operationId 与 routeId 被引用索引拒绝 (0.839667ms)
+✔ CLI：真实矩阵退出码 0，违规矩阵退出码 1 (16.295916ms)
+✔ auxiliary budget proof accepts initial/complete (84.730041ms)
+✔ auxiliary budget proof accepts negative/complete (87.987958ms)
+✔ auxiliary budget proof accepts negative/rejected (100.061375ms)
+✔ auxiliary budget proof accepts initial/gateway-string (86.407083ms)
+✔ auxiliary budget proof accepts negative/gateway-string (83.847292ms)
+✔ auxiliary budget proof accepts negative/gateway-rejected-string (59.798ms)
+✔ auxiliary budget proof rejects completion event (60.905917ms)
+✔ auxiliary budget proof rejects phase event (89.559125ms)
+✔ auxiliary budget proof rejects reader bytes (72.570834ms)
+✔ auxiliary budget proof rejects collector bytes (73.703708ms)
+✔ auxiliary budget proof rejects child bytes (87.196917ms)
+✔ auxiliary budget proof rejects parent bytes (79.607209ms)
+✔ auxiliary budget proof rejects foreign batch (94.911042ms)
+✔ auxiliary budget proof rejects oversized batch (93.816334ms)
+✔ auxiliary budget proof rejects unowned call (99.606958ms)
+✔ auxiliary budget proof rejects missing page (113.846375ms)
+✔ auxiliary budget proof rejects failed page (70.713667ms)
+✔ auxiliary budget proof rejects changed budget (85.239208ms)
+✔ auxiliary budget proof rejects late receipt (71.099959ms)
+✔ auxiliary budget proof rejects partial reader (72.684042ms)
+✔ auxiliary budget proof rejects pending rows (98.575667ms)
+✔ auxiliary budget proof rejects missing record (242.681292ms)
+✔ auxiliary budget proof rejects duplicate record (153.781875ms)
+✔ auxiliary budget proof rejects payload field (91.939416ms)
+✔ auxiliary budget proof rejects nested field (181.244208ms)
+✔ auxiliary budget proof rejects report identity (173.912958ms)
+✔ auxiliary budget proof rejects gateway time (202.16475ms)
+✔ auxiliary budget proof rejects preserved call-limit partial (175.954125ms)
+✔ auxiliary budget proof rejects preserved timeout partial (73.075458ms)
+✔ auxiliary budget proof rejects preserved report-timeout partial (70.655625ms)
+✔ auxiliary checker rejects invalid Gateway epoch " 1791763200000" (81.730834ms)
+✔ auxiliary checker rejects invalid Gateway epoch "1791763200000 " (84.254583ms)
+✔ auxiliary checker rejects invalid Gateway epoch "1e12" (100.838542ms)
+✔ auxiliary checker rejects invalid Gateway epoch "1791763200000.0" (85.548333ms)
+✔ auxiliary checker rejects invalid Gateway epoch "01791763200000" (82.036958ms)
+✔ auxiliary checker rejects invalid Gateway epoch "9007199254740992" (76.483625ms)
+✔ auxiliary checker rejects invalid Gateway epoch "" (78.449125ms)
+✔ auxiliary checker rejects invalid Gateway epoch "１２３" (87.281625ms)
+✔ auxiliary checker rejects invalid Gateway epoch "NaN" (101.724666ms)
+✔ auxiliary checker rejects invalid Gateway epoch true (87.910625ms)
+✔ auxiliary checker rejects invalid Gateway epoch null (70.445833ms)
+✔ auxiliary checker rejects invalid Gateway epoch 1.5 (90.834584ms)
+✔ auxiliary checker rejects invalid Gateway epoch -1 (86.2765ms)
+✔ auxiliary checker rejects invalid Gateway epoch 9007199254740992 (68.367458ms)
+✔ design checker rejects deployed claim before loading unbound input (0.578875ms)
+✔ design checker rejects missing case before loading unbound input (0.076ms)
+✔ design checker rejects duplicate case before loading unbound input (0.053209ms)
+✔ design checker rejects widened record budget before loading unbound input (0.047958ms)
+✔ design checker rejects new network request before loading unbound input (0.050167ms)
+✔ design checker rejects path traversal before loading unbound input (0.045875ms)
+✔ design checker rejects changed bytes before loading unbound input (0.258333ms)
+✔ budget proof requires source bytes, every exact batch and full links without business/P95 claims (1.789ms)
+✔ budget proof rejects source drift (0.42475ms)
+✔ budget proof rejects collector drift (0.14475ms)
+✔ budget proof rejects reader drift (0.118417ms)
+✔ budget proof rejects projector drift (0.149666ms)
+✔ budget proof rejects prior drift (0.144625ms)
+✔ budget proof rejects unbound expected prior (0.127709ms)
+✔ budget proof rejects partial gate (0.096792ms)
+✔ budget proof rejects read error (0.120709ms)
+✔ budget proof rejects group error (0.199333ms)
+✔ budget proof rejects long timeout (0.115458ms)
+✔ budget proof rejects larger batch (0.090125ms)
+✔ budget proof rejects parallel reads (0.065709ms)
+✔ budget proof rejects retry (0.080167ms)
+✔ budget proof rejects expired total (0.072541ms)
+✔ budget proof rejects missing batch (0.267ms)
+✔ budget proof rejects out of order page (0.218708ms)
+✔ budget proof rejects out of order query (0.095334ms)
+✔ budget proof rejects gateway after lambda (0.175292ms)
+✔ budget proof rejects wrong invocation (0.130792ms)
+✔ budget proof rejects duplicate invocation (0.104375ms)
+✔ budget proof rejects missing link (0.100542ms)
+✔ budget proof rejects wrong count (0.10825ms)
+✔ implementation matrix replays bounded summaries and original business transaction ownership (16.948334ms)
+✔ implementation seal rejects targetClaim (0.334833ms)
+✔ implementation seal rejects caseOrder (0.170167ms)
+✔ implementation seal rejects extraCase (0.157625ms)
+✔ implementation seal rejects pathEscape (0.158917ms)
+✔ implementation seal rejects hash (0.436084ms)
+✔ implementation seal rejects replay (0.929291ms)
+✔ implementation seal rejects budget (0.18425ms)
+✔ implementation seal rejects capacity (0.173417ms)
+✔ schema2 fixed runtime matrix proves original ownership and degradation without target acceptance (11.988042ms)
+✔ owned matrix refuses target (0.352166ms)
+✔ owned matrix refuses budget (0.227333ms)
+✔ owned matrix refuses missing (0.204125ms)
+✔ owned matrix refuses path (0.800167ms)
+✔ owned matrix refuses bytes (0.505542ms)
+✔ owned matrix refuses design (2.955167ms)
+✔ historical schema1 cannot stand in for owned matrix even if its receipt hash is rebound (1.012416ms)
+✔ seal rejects changed bytes and traversal before resolving file paths (3.223166ms)
+✔ remaining scope cannot replace full core, Active acceptance or failed cleanups (0.481125ms)
+✔ 当前仓库全部 Schema、OpenAPI 片段与统一 bundle 通过引用校验 (80.118875ms)
+✔ 失败示例：悬空内部 $ref 被拒绝 (0.637708ms)
+✔ 失败示例：同目录相对 $ref 目标文件不存在被拒绝 (0.336625ms)
+✔ 失败示例：JSON 语法损坏的 Schema 被拒绝 (0.322541ms)
+✔ 失败示例：JSON Schema 2020-12 非法 type 被元 Schema 拒绝 (0.421292ms)
+✔ 失败示例：OpenAPI 基座缺少 paths 被拒绝 (0.428625ms)
+✔ 同目录相对 $ref 可解析时通过 (0.53675ms)
+✔ 失败示例：PEM 私钥块被检出 (0.56375ms)
+✔ 失败示例：AWS Access Key ID 被检出 (0.068375ms)
+✔ 失败示例：GitHub 令牌被检出 (0.050167ms)
+✔ 失败示例：Slack 令牌被检出 (0.043042ms)
+✔ 正常内容不误报 (0.374083ms)
+✔ 失败示例：未跟踪且未忽略文件中的私钥也被扫描 (53.318959ms)
+✔ 当前仓库通过敏感信息扫描 (7899.215291ms)
+✔ 超过1MiB的路径清单完整扫描，末尾敏感文件不能被截断跳过 (225.992875ms)
+✔ 生产源码直接 console 与 raw trace API 均被拒绝 (1.503292ms)
+✔ 测试目录可使用 console，生产统一 logger 允许 (0.676708ms)
+✔ 当前仓库生产源码通过 sink 门禁 (96.809ms)
+✔ QA-02 MQTT heartbeat: all valid/invalid fixtures, missing meta and type mutation (4.794584ms)
+✔ QA-02 MQTT telemetry: all valid/invalid fixtures, missing meta and type mutation (1.810084ms)
+✔ QA-02 MQTT report: all valid/invalid fixtures, missing meta and type mutation (1.943417ms)
+✔ QA-02 MQTT alarm: all valid/invalid fixtures, missing meta and type mutation (1.283417ms)
+✔ QA-02 MQTT event: all valid/invalid fixtures, missing meta and type mutation (2.460917ms)
+✔ QA-02 MQTT ack: all valid/invalid fixtures, missing meta and type mutation (1.348709ms)
+✔ QA-02 MQTT tamper: all valid/invalid fixtures, missing meta and type mutation (1.18475ms)
+✔ QA-02 MQTT media: all valid/invalid fixtures, missing meta and type mutation (1.067916ms)
+✔ QA-02 MQTT cmd: all valid/invalid fixtures, missing meta and type mutation (18.37525ms)
+✔ QA-02 MQTT ota: all valid/invalid fixtures, missing meta and type mutation (1.805667ms)
+✔ QA-02 MQTT notification: all valid/invalid fixtures, missing meta and type mutation (1.309958ms)
+✔ MQTT semantic hash, discriminator and UTC calendar errors fail closed (0.500791ms)
+✔ full REST response: field deletion/type mutation/envelope/date/errors/status/headers are enforced (2.962417ms)
+✔ REST request validation: required body/path/query/header, optional Sync, bodyless Deactivate, no type coercion in JSON (22.424375ms)
+✔ all device operations and declared response JSON Schemas compile; stable error catalog has no duplicates (53.123958ms)
+✔ image contract upgrade has exact current decision approvals (24.974625ms)
+✔ historical lowercase MQTT upgrade remains compatible (2.000375ms)
+✔ predecessor MQTT is compatible; known REST break requires exact version and frozen DEC approvals (2.337834ms)
+✔ breaking contract mutations fail: removing fields/operations/status, changing type/required/security (40.842333ms)
+✔ receipt coverage gate fails closed for missing operations/statuses, no valid request and forged records (0.304208ms)
+✔ archived CSR upgrade mapping still verifies original baselines without rewriting history (2.460375ms)
+✔ preview Retry-After validates HTTP string serialization without coercing JSON bodies (1.024583ms)
+✔ QA04 coverage Gate accepts complete matrix and proofs (0.781708ms)
+✔ QA04 coverage Gate rejects missing domain (0.213208ms)
+✔ QA04 coverage Gate rejects no negative path (0.454667ms)
+✔ QA04 coverage Gate rejects untrusted handler (0.084917ms)
+✔ QA04 coverage Gate rejects missing role (0.118583ms)
+✔ QA04 coverage Gate rejects cross-tenant leak (0.118042ms)
+✔ QA04 coverage Gate rejects two write winners (0.118625ms)
+✔ QA04 coverage Gate rejects duplicate audit (0.10875ms)
+✔ QA04 coverage Gate rejects rollback missing (0.124834ms)
+✔ QA04 coverage Gate rejects unclean resource (0.136167ms)
+✔ QA04 coverage Gate rejects reused isolation (0.101209ms)
+✔ QA04 coverage Gate rejects no observed replay (0.117458ms)
+✔ QA04 required acceptance cases are enforced (0.618833ms)
+✔ QA04 skipped assertion fails execution Gate (0.057708ms)
+✔ QA04 removed state-machine assertion fails coverage Gate (0.39425ms)
+✔ reject unknown or mismatched ownership before any SQL (0.854042ms)
+✔ real smoke needs explicit opt in and fresh output (0.563208ms)
+✔ MQTT only requires old active and REST unconfirmed (0.113708ms)
+✔ REST only requires old active and MQTT unconfirmed (0.043125ms)
+✔ dual proof rejects missing channel, wrong predecessor, expired confirmation and retained package (0.103334ms)
+✔ cleanup refuses a device assigned outside this unassigned test scope (0.142584ms)
+✔ migration source requires exact approved commit (0.498167ms)
+✔ migration connection requires complete secret and verified TLS; special credentials are encoded (1.521083ms)
+✔ database verification derives every mapped Prisma table (1.848458ms)
+✔ runner without approved source fails without reporting credentials or driver details (40.456208ms)
+✔ source packager archives committed tree, includes exact SHA and refuses overwriting ZIP (17248.41775ms)
+✔ standalone upload-session operation retains source auth, all statuses and conditional IMAGE rule (17.1315ms)
+✔ 15 actual HTTP response examples validate; registration requires mediaId, quota and trigger conflict stay distinct (39.277792ms)
+✔ reused sessions preserve immutable identity/deadline and expiry replacements use new object keys (11.431333ms)
+✔ MQTT trigger/media/replacement messages satisfy bundled frozen schemas and link to the exact request/session (9.149375ms)
+✔ S3 examples bind exact binary length/hash and both checksum placements without invented Authorization (0.233041ms)
+✔ hash/freshness cover all portable files and policy; generated export is cwd independent (46.227ms)
+✔ shared subset rejects missing paths/refs, ambiguous names and unsupported references (0.40575ms)
+✔ preparation metadata cannot exempt application, infrastructure or shared handoff source (0.885041ms)
+✔ G3 candidate binds historical hashes and rejects changed IAM source (4501.846583ms)
+✔ historical candidate package is deterministic, cwd-independent, complete and fresh (4656.862042ms)
+✔ case graph includes 44 cases and all five preview operations, full archive orders and authority variants (4.207541ms)
+✔ catalog rejects missing (1.906ms)
+✔ catalog rejects duplicate (1.637166ms)
+✔ catalog rejects unknown operation (1.688125ms)
+✔ catalog rejects future dependency (1.647334ms)
+✔ catalog rejects preclaimed pass (1.800333ms)
+✔ template admission is BLOCKED with every missing input attributed; target receipt is NOT_RUN (56.61525ms)
+✔ complete structural metadata with valid source exclusion does not grant G4 (68.180167ms)
+✔ receipt/admission fails closed: wrong candidate (49.741ms)
+✔ receipt/admission fails closed: old protocol (53.122041ms)
+✔ receipt/admission fails closed: mock mode (54.739167ms)
+✔ receipt/admission fails closed: synthetic permitted (53.846333ms)
+✔ receipt/admission fails closed: G4 promotion (51.296417ms)
+✔ receipt/admission fails closed: missing case (52.720458ms)
+✔ receipt/admission fails closed: duplicate case (50.689583ms)
+✔ receipt/admission fails closed: failed case (52.710625ms)
+✔ receipt/admission fails closed: missing assertion (52.126291ms)
+✔ receipt/admission fails closed: missing evidence kind (56.340667ms)
+✔ receipt/admission fails closed: wrong artifact hash (54.066167ms)
+✔ receipt/admission fails closed: missing variant (53.21525ms)
+✔ receipt/admission fails closed: unproven variant (49.9885ms)
+✔ receipt/admission fails closed: cleanup missing (48.668666ms)
+✔ receipt/admission fails closed: cross-run cleanup (47.902333ms)
+✔ receipt/admission fails closed: wrong environment (48.47425ms)
+✔ receipt/admission fails closed: unexecuted claim (41.637333ms)
+✔ receipt/admission fails closed: unsafe proof path (50.0045ms)
+✔ receipt/admission fails closed: wrong deployment (51.983333ms)
+✔ receipt/admission fails closed: same viewers (51.808375ms)
+✔ receipt/admission fails closed: invalid endpoint (51.539792ms)
+✔ BLOCKED and NOT_RUN evidence cannot be promoted even if other rows pass (81.942375ms)
+✔ rehashing cannot legitimize mock evidence (49.353542ms)
+✔ rehashing cannot legitimize different tenant environment (47.394208ms)
+✔ rehashing cannot legitimize different candidate (50.129834ms)
+✔ rehashing cannot legitimize outside window (52.426917ms)
+✔ rehashing cannot legitimize signed URL (53.03725ms)
+✔ rehashing cannot legitimize Base64 (58.430542ms)
+✔ artifact reader refuses traversal and symlink escapes without reading secrets (1.6255ms)
+✔ manifest parser rejects malformed, duplicate, absolute and parent paths (0.165458ms)
+✔ redaction checker rejects sensitive values while allowing opaque row identifiers and hashes (0.137875ms)
+✔ CLI has no cloud execution mode and all template target checks exit nonzero (145.285208ms)
+✔ read-only probes execute against all local migrations; native PID diagnostic remains target-only (775.700291ms)
+✔ rehashing cannot replace detailed deploymentProof with a PASS flag (41.559042ms)
+✔ rehashing cannot replace detailed migrationProof with a PASS flag (38.39625ms)
+✔ rehashing cannot replace detailed runtimeVersionsProof with a PASS flag (39.165709ms)
+✔ rehashing cannot replace detailed testScopeProof with a PASS flag (54.787708ms)
+✔ rehashing cannot replace detailed executionWindowProof with a PASS flag (39.844708ms)
+✔ rehashing cannot replace detailed nativeWindow with a PASS flag (46.639ms)
+✔ rehashing cannot replace detailed faultPlan with a PASS flag (46.28175ms)
+✔ rehashing cannot replace detailed longWindow with a PASS flag (39.039416ms)
+✔ rehashing cannot replace detailed scaleAndSla with a PASS flag (39.816459ms)
+✔ rehashing cannot replace detailed sequenceReservation with a PASS flag (41.418708ms)
+✔ rehashing cannot replace detailed cleanupPlan with a PASS flag (38.7815ms)
+✔ native storage evidence cannot be replaced by PGlite or a DDB command mock (94.574833ms)
+✔ short or unauthorized execution windows cannot claim the real 24 hour terminal case (96.806667ms)
+✔ rehashing an empty, foreign or epoch-deleting cleanup ledger is rejected (151.765166ms)
+✔ raw credentials hidden in additional input fields are rejected without echoing values (39.291333ms)
+✔ AR12 retains six records: five target variants and exactly one source-bound N/A (24.369166ms)
+✔ source-bound N/A cannot waive: missing exclusion (50.98125ms)
+✔ source-bound N/A cannot waive: duplicate exclusion (48.009458ms)
+✔ source-bound N/A cannot waive: wrong decision (48.504208ms)
+✔ source-bound N/A cannot waive: wrong candidate (51.311084ms)
+✔ source-bound N/A cannot waive: old policy digest (49.436084ms)
+✔ source-bound N/A cannot waive: target evidence claim (52.236208ms)
+✔ source-bound N/A cannot waive: attached target evidence (48.889ms)
+✔ source-bound N/A cannot waive: N/A disguised as PASS (47.492958ms)
+✔ source-bound N/A cannot waive: whole AR12 skipped (37.922375ms)
+✔ source-bound N/A cannot waive: branch claimed target PASS (44.213792ms)
+✔ source-bound N/A cannot waive: branch deleted (45.443625ms)
+✔ source-bound N/A cannot waive: other AR12 branch skipped (46.916625ms)
+✔ source-bound N/A cannot waive: another case skipped (47.131416ms)
+✔ source-bound N/A cannot waive: missing AR12 target evidence (46.489041ms)
+✔ source-bound N/A cannot waive: target AR12 failure (46.594083ms)
+✔ forged N/A is rejected even while the parent case is NOT_RUN (26.161084ms)
+✔ AR12 target BLOCKED/NOT_RUN still prevents completion (75.878833ms)
+✔ permuted JSON object keys do not change the exact N/A decision (44.662125ms)
+✔ source scope is invalidated by packages/auth/src/roles.ts drift without editing runtime files (7.032375ms)
+✔ source scope is invalidated by packages/auth/src/permissions.ts drift without editing runtime files (6.442917ms)
+✔ source scope is invalidated by packages/auth/src/guard.ts drift without editing runtime files (7.005541ms)
+✔ source scope is invalidated by packages/auth/src/cognito.ts drift without editing runtime files (6.582334ms)
+✔ source scope is invalidated by apps/cloud-api/src/runtime/admin-lambda.ts drift without editing runtime files (6.433417ms)
+✔ source scope is invalidated by apps/cloud-api/src/admin/alarm/evidence-query.ts drift without editing runtime files (6.457208ms)
+✔ source scope is invalidated by apps/cloud-api/src/admin/alarm/service.ts drift without editing runtime files (6.670208ms)
+✔ source scope is invalidated by apps/cloud-api/test/evidence-image-query.test.ts drift without editing runtime files (6.809834ms)
+✔ source scope is invalidated by contracts/decisions/decision-register.json drift without editing runtime files (6.88125ms)
+✔ source scope is invalidated by contracts/domain/role-mapping-policy.json drift without editing runtime files (7.040875ms)
+✔ source exemption rejects missing local receipt (7.644583ms)
+✔ source exemption rejects failed local report (7.920583ms)
+✔ source exemption rejects missing denial case (7.574125ms)
+✔ source exemption rejects missing matrix role (7.520834ms)
+✔ source exemption rejects rehash wrong source (8.034542ms)
+✔ source/local regression loss restores BLOCKED rather than silently exempting the branch (29.902959ms)
+✔ old receipt shapes cannot become current by only replacing protocolDigest (26.624708ms)
+✔ active variant failure or blocker is retained under a NOT_RUN parent, even with valid source N/A (50.714417ms)
+✔ retired impossible-role input name is rejected rather than silently reused (34.644875ms)
+✔ AR12 catalog cannot reduce target scope: delete source branch (2.049667ms)
+✔ AR12 catalog cannot reduce target scope: delete active branch (1.633084ms)
+✔ AR12 catalog cannot reduce target scope: drop target evidence kind (2.45525ms)
+✔ AR12 catalog cannot reduce target scope: drop target assertion (1.560417ms)
+✔ unreferenced target artifacts cannot claim execution of the source-only N/A branch (45.44875ms)
+✔ a filtered seven-case report cannot masquerade as the complete 34-case local regression (7.60325ms)
+✔ cloud Gate requires only preview and EVENT/ALARM interfaces, no App or extended/native/SLA inputs (44.908708ms)
+✔ cloud templates remain NOT_RUN and missing target inputs remain BLOCKED (1.465792ms)
+✔ cloud execution window can be scheduled but an expired window cannot admit a new run (39.541458ms)
+✔ cloud interface Gate rejects wrong image hash (44.461375ms)
+✔ cloud interface Gate rejects not decoded JPEG (44.056208ms)
+✔ cloud interface Gate rejects wrong stream (45.06925ms)
+✔ cloud interface Gate rejects WAITING_FRAME (42.978583ms)
+✔ cloud interface Gate rejects foreign tenant (41.63075ms)
+✔ cloud interface Gate rejects wrong triggerRef (44.016417ms)
+✔ cloud interface Gate rejects PUBACK without registration (41.325125ms)
+✔ cloud interface Gate rejects unassociated image (40.804042ms)
+✔ cloud interface Gate rejects ALARM clear instead of active (40.6855ms)
+✔ cloud interface Gate rejects S3 object mismatch (44.298166ms)
+✔ cloud interface Gate rejects S3 truncated bytes (44.785333ms)
+✔ cloud interface Gate rejects download failed (43.597667ms)
+✔ cloud interface Gate rejects wrong associated media (41.038708ms)
+✔ cloud interface Gate rejects wrong registration media (42.533041ms)
+✔ cloud interface Gate rejects missing EVENT case (41.672625ms)
+✔ cloud interface Gate rejects raw target claim (41.635292ms)
+✔ cloud interface Gate rejects receipt profile replay (47.068292ms)
+✔ cloud interface Gate rejects proof old candidate (41.314708ms)
+✔ cloud interface Gate rejects proof old protocol (44.062334ms)
+✔ cloud interface Gate rejects unapproved proof draft (41.696834ms)
+✔ cloud interface Gate rejects wrong run (40.786459ms)
+✔ cloud interface Gate rejects outside window (40.120792ms)
+✔ cloud interface Gate rejects old version observation (43.9165ms)
+✔ cloud interface Gate rejects mixed deployed versions (41.30525ms)
+✔ cloud interface Gate rejects local mocked evidence (40.132209ms)
+✔ cloud interface Gate rejects artifact wrong protocol (42.731459ms)
+✔ cloud interface Gate rejects invalid receipt time (46.375375ms)
+✔ cloud interface Gate rejects missing cleanup (45.691708ms)
+✔ core FAIL and BLOCKED are retained, while lack of App artifacts has no effect (121.288375ms)
+✔ cloud scope cannot request retirement, another device or expanded cases (38.845625ms)
+✔ actual historical source comparison recomputes 1693 unchanged delivery files, 8 build inputs and 12 preparation differences (1888.143042ms)
+✔ independent tool and authority inventory remains exact (0.125125ms)
+✔ V2 draft carries only 9 retained scalar values and no stale migration/cleanup proofs (24.137041ms)
+✔ legacy strict rejects historical commit, and plain JSON cannot override predicates (2.659375ms)
+✔ explicit strict V2 keeps actual deployed SHA and calls the independent tools validator (5.3505ms)
+✔ reviewed equivalence retains both SHAs and does not convert to strict (1.190375ms)
+✔ V2 rejects wrong candidate (0.931584ms)
+✔ V2 rejects synthetic source (0.836208ms)
+✔ V2 rejects strict history (0.756417ms)
+✔ V2 rejects relabel (0.754375ms)
+✔ V2 rejects wrong CI SHA (0.731084ms)
+✔ V2 rejects null S3 version (0.818958ms)
+✔ V2 rejects composite checksum (2.964667ms)
+✔ V2 rejects mismatched full object (1.01825ms)
+✔ V2 rejects missing function (0.841125ms)
+✔ V2 rejects duplicate function (0.724875ms)
+✔ V2 rejects runtime configuration drift (0.775417ms)
+✔ V2 rejects runtime revision drift (0.741625ms)
+✔ V2 rejects missing new Writer (0.723333ms)
+✔ V2 rejects old authority runtime table drift (0.73925ms)
+✔ V2 rejects missing verifier (0.659292ms)
+✔ V2 rejects wrong tool source (0.6695ms)
+✔ V2 rejects runtime qualified drift (0.693041ms)
+✔ V2 rejects expired prep shape (0.712208ms)
+✔ reviewed mode rejects different source (0.793958ms)
+✔ reviewed mode rejects expired review (0.733834ms)
+✔ reviewed mode rejects wrong comparison (0.722666ms)
+✔ reviewed mode rejects boolean only (0.635584ms)
+✔ reviewed mode rejects approval missing (0.716458ms)
+✔ artifact reference rejects traversal, substitution and duplicate/extra scope (0.09525ms)
+✔ tool validator failure cannot mint a V2 policy (2.589083ms)
+✔ runtime proof requires same version binding and five exact primary identities (1.586ms)
+✔ real writer ZIP/manifest/MC02 verifier bridge binds code only, not another invocation (208.774667ms)
+✔ real verifier ZIP/manifest/MC02 verifier bridge binds code only, not another invocation (321.491334ms)
+✔ bridge rejects copied tool source, changed code and mutable runtime drift (431.290208ms)
+✔ generated subset is self-contained and semantically identical to the two frozen device operations (2.011167ms)
+✔ all response examples validate against their actual operation/status schema; codes cannot masquerade as another status (22.027125ms)
+✔ complete JPEG/Base64 frame is valid and rejects missing stream, data URI, unknown field and wrong MIME (1.064166ms)
+✔ freshness and hashes bind every distributed file and canonical input (8.033541ms)
+✔ offline freshness command works from outside repository cwd (37.143458ms)
+✖ local TLS broker: 10 independent certificate sessions, QoS1, downlinks, reconnect and broker ACL rejection (142.723542ms)
+✔ 10 concurrent sessions: all topics, exact 5% duplicates / 2% delayed telemetry, replay and isolated bad Schema (126.137084ms)
+✔ cross-device publish, subscribe, receive and wildcard denied (0.726416ms)
+✔ invalid configuration, OTA transitions and test credential gate fail closed (0.818ms)
+✔ scripted failed command, missing target mapping and illegal downlink do not generate mixed ACK (0.330708ms)
+✔ all sessions close when one transport fails; no successful receipt (76.687875ms)
+✔ MQTT adapter rejects SUBACK denial and connection failures (0.216625ms)
+✔ CLI creates offline receipt and refuses ungated mqtts before reading credential paths (401.893708ms)
+✔ CDK wrapper accepts synth/diff and requires explicit deploy stack (0.868125ms)
+✔ CDK wrapper builds the whole workspace and fails closed on build errors (0.321458ms)
+✔ CDK wrapper uses local SSO but requires OIDC credentials in GitHub Actions (0.100166ms)
+✔ QA03 Gate accepts complete local integration receipt (1.175334ms)
+✔ QA03 Gate rejects missing scenario (0.773958ms)
+✔ QA03 Gate rejects unclean resources (0.109667ms)
+✔ QA03 Gate rejects reused isolation prefix (0.16175ms)
+✔ QA03 Gate rejects lost message (0.158833ms)
+✔ QA03 Gate rejects duplicate business record (0.220417ms)
+✔ QA03 Gate rejects missing raw proof (0.11975ms)
+✔ QA03 Gate rejects missing fault probe (0.127791ms)
+✔ fixture rejects non-owned device, cross-customer media key and unscoped object before SQL (1.041833ms)
+✔ fresh scope accepted (0.064458ms)
+✔ operator must explicitly enable cloud execution (0.566125ms)
+✔ PUBACK and downlinks alone cannot satisfy cloud business checks (0.190708ms)
+✔ published alarm snapshot remains unchanged when caller clears the next alarm (0.427125ms)
+✔ cleanup preserves append-only audits and closes their customer parent (0.251708ms)
+✔ archive reader separates JSON manifests from gzip data objects (0.068583ms)
+✔ receipt covers all 128 decisions in two viewports (2.309875ms)
+✔ fail closed: missing page (0.331833ms)
+✔ fail closed: skipped case (0.226792ms)
+✔ fail closed: flaky success (0.21075ms)
+✔ fail closed: retry (0.218333ms)
+✔ fail closed: unexpected external network (0.206834ms)
+✔ fail closed: fixture collision (0.187459ms)
+✔ fail closed: missing cleanup (0.181584ms)
+✔ fail closed: updated baseline masquerades as regression (0.209291ms)
+✔ fail closed: missing group (0.251958ms)
+✔ fail closed: duplicate group (0.206125ms)
+✔ fail closed: missing rejection assertion (0.24025ms)
+✔ fail closed: missing menu (0.194125ms)
+✔ fail closed: missing behavior guard (0.1895ms)
+✔ fail closed: wrong viewport (0.18125ms)
+✔ fail closed: snapshot hash mismatch (0.188541ms)
+✔ binding omission, duplication and reject implementation fail closed (0.315ms)
+✔ real CSR UUID scope requires exact serial/model/device/certificate binding and stable binding digest (1.481875ms)
+✔ CSR UUID scope rejects foreign or missing bindings before accessing any key (0.496292ms)
+✔ License-only entry pins application source and dedicated role; never routes firmware signing (1.10975ms)
+✔ independent verifier accepts actual cloud signer wire values and exports only bounded hashes (0.186167ms)
+✔ foreign/stale/expired/revoked/date-only/extra fields and signature drift fail before VERIFIED (0.238792ms)
+✔ invalid owned input never fetches a secret; wrong secret binding is rejected (0.1105ms)
+✔ firmware fixture is non-executable and requires the bound KMS key, RSA signature and exact bytes (28.897042ms)
+✔ controlled worker binds frozen sources, dedicated test role and current input before key access (0.97225ms)
+✔ Rotation preflight rejects disabled or incompatible sweep schedules before any new fixture writes (0.409ms)
+✔ Rotation gate requires both new channels, durable old revocation and actual old MQTT denial (0.189834ms)
+✔ One-device rotation mode cannot mix with a full or review execution or omit the specialized extension (0.097583ms)
+✔ Tablet proof requires all eight actual read pages, language, viewport and successful request IDs (0.298833ms)
+✔ historical SuperAdmin/empty-daily reliability evidence cannot close the new Operator and exact-production criteria (7.309417ms)
+✔ sanitized actual wave closes only three criteria; corrupted actor, consumer, daily, version or recovery fails closed (2.960334ms)
+✔ daily wait consumes actual bounded API envelope and times out without shared invocations (1.987208ms)
+✔ unknown Operator preparation freezes cleanup; no fake login or destructive recovery (0.210916ms)
+✔ known Operator cleanup checks exact disabled tombstone and stops unknown disable without retry (0.749292ms)
+✔ natural daily frame must belong to the selected Replay device; foreign and borrowed frames fail closed (0.141541ms)
+✔ only the observed nonexistent-read-route failure with exact terminal Replay and dedup can release recovery (4.686333ms)
+✔ resume allows only one published owned disable intent, not unrelated or unknown cleanup drift (1.254042ms)
+✔ A8 cannot close a non-A2 required security or browser gap with an A2 deferral (0.767583ms)
+✔ A8 rejects duplicate requirements and HTTP/free-form pass; full/release gates stay separate (0.091208ms)
+✔ A1 binds three different versions and retains recorded deployment/artifact/config proof (54.88075ms)
+✔ wrong app/deploy/environment, incomplete executor/doc versions and content drift fail closed (198.882ms)
+✔ existing environment never falls back to an isolated claim or accepts absent provenance (5.957583ms)
+✔ formal check accepts matching app/ledger/cleanup independently of HEAD, rejects cross-prefix/hash/source (451.065583ms)
+✔ entry rebuilds current obligations without promoting historical proofs to formal receipts (2601.865125ms)
+✔ sealed historical 117-element scope cannot accept the current 121-element source (53.364042ms)
+✔ rehashed scope deletions, security deferrals and unsupported inventory PASS are rejected (2061.369875ms)
+✔ CLI default remains nonzero while explicit A1-only readiness succeeds with QA09 partial (3309.021292ms)
+✔ actual config guard accepts R0/R1 and final false restore without declaring business/P95 (0.67175ms)
+✔ config rejects accountReadCandidate drift (0.125125ms)
+✔ config rejects pool drift (0.051833ms)
+✔ config rejects memory drift (0.050291ms)
+✔ config rejects preconnect drift (0.046625ms)
+✔ config rejects engineCpu drift (0.039333ms)
+✔ config rejects envName drift (0.037833ms)
+✔ config rejects revisionId drift (0.573208ms)
+✔ config rejects codeSha256 drift (0.053084ms)
+✔ config rejects state drift (0.0785ms)
+✔ config rejects architecture drift (0.046541ms)
+✔ config rejects source, inventory and concurrency drift (0.091041ms)
+✔ new detail receipts require explicit matching actual flag, including false restore (0.10275ms)
+✔ public mode is exact and guarded; missing actual field cannot pass true or false restore (0.174208ms)
+✔ real gzip bytes bind exact own devices, raw outbox hash and canonical published hash (2.980708ms)
+✔ scope expansion, unknown customer/device, modified bytes and missing archive fail closed (1.808417ms)
+✔ IoT normalized raw body binds outbox bytes while original publication binds canonical payload (2.419584ms)
+✔ quick MQTT profile requires exact additional telemetry ledger and cannot waive missing archives (2.735125ms)
+✔ archive deadline uses actual S3 modification times and cannot green an eventual late archive (1.251667ms)
+✔ redelivery rejects foreign archives, unbounded inventories and unbound certificates before AWS operations (1.746625ms)
+✔ C1 waits for both branches then independent query/checkout; C0 refuses candidate signal; warm absent is null (2.232208ms)
+✔ preconnect proof rejects missing (0.20325ms)
+✔ preconnect proof rejects duplicate (0.121625ms)
+✔ preconnect proof rejects failed (0.128208ms)
+✔ preconnect proof rejects foreign (0.130333ms)
+✔ preconnect proof rejects bad timestamp (0.203916ms)
+✔ preconnect proof rejects dispatch instead of settlement (0.101ms)
+✔ preconnect proof rejects not connection wait (0.110792ms)
+✔ preconnect proof rejects query before preparation (0.249042ms)
+✔ preconnect proof rejects checkout steals readiness (0.114708ms)
+✔ preconnect proof rejects outside hook (0.065792ms)
+✔ preconnect proof rejects invalid duration (0.052458ms)
+✔ preconnect proof rejects orphan (0.061833ms)
+✔ preconnect proof rejects consistently empty invocation identities (0.140541ms)
+✔ bounded auxiliary initial: complete (87.375833ms)
+✔ bounded auxiliary initial: gateway-string (102.497917ms)
+✔ bounded auxiliary initial: gateway-whitespace (108.983333ms)
+✔ bounded auxiliary initial: gateway-exponent (76.675333ms)
+✔ bounded auxiliary initial: gateway-fraction-string (59.656416ms)
+✔ bounded auxiliary initial: gateway-leading-zero (81.685792ms)
+✔ bounded auxiliary initial: gateway-unsafe-string (80.609791ms)
+✔ bounded auxiliary initial: gateway-bool (68.138792ms)
+✔ bounded auxiliary initial: gateway-number-fraction (209.864958ms)
+✔ bounded auxiliary initial: gateway-null (206.184292ms)
+✔ bounded auxiliary initial: gateway-empty (114.874041ms)
+✔ bounded auxiliary initial: gateway-unicode (178.112666ms)
+✔ bounded auxiliary initial: gateway-malformed (132.973375ms)
+✔ bounded auxiliary initial: gateway-negative (167.190166ms)
+✔ bounded auxiliary initial: gateway-string-outside (105.413917ms)
+✔ bounded auxiliary initial: timeout (131.856333ms)
+✔ bounded auxiliary initial: report-timeout (81.703625ms)
+✔ bounded auxiliary initial: deadline (80.377291ms)
+✔ bounded auxiliary initial: denied (67.271209ms)
+✔ bounded auxiliary initial: expired (79.859541ms)
+✔ bounded auxiliary initial: throttled (93.071375ms)
+✔ bounded auxiliary initial: unknown (98.465667ms)
+✔ bounded auxiliary initial: unavailable (84.557875ms)
+✔ bounded auxiliary initial: malformed (76.868417ms)
+✔ bounded auxiliary initial: repeat (85.3735ms)
+✔ bounded auxiliary initial: page-limit (82.642042ms)
+✔ bounded auxiliary initial: call-limit (102.945292ms)
+✔ bounded auxiliary initial: duplicate-gateway (68.690459ms)
+✔ bounded auxiliary initial: invalid-invocation (76.267542ms)
+✔ bounded auxiliary initial: invocation-reuse (90.360542ms)
+✔ bounded auxiliary initial: nested-field (94.189958ms)
+✔ bounded auxiliary initial: gateway-lambda (68.0485ms)
+✔ bounded auxiliary initial: duplicate-completion (64.056542ms)
+✔ bounded auxiliary initial: missing-report (71.733042ms)
+✔ bounded auxiliary initial: duplicate-report (74.748959ms)
+✔ bounded auxiliary initial: report-invalid-number (75.420167ms)
+✔ bounded auxiliary initial: source-drift (60.958709ms)
+✔ bounded auxiliary initial: output-exists (72.203542ms)
+✔ bounded auxiliary initial: short-initial (84.496709ms)
+✔ bounded auxiliary initial: parent-drift (69.916791ms)
+✔ bounded auxiliary initial: invalid-prefix (87.339417ms)
+✔ bounded auxiliary negative: complete (98.521625ms)
+✔ bounded auxiliary negative: gateway-string (92.660333ms)
+✔ bounded auxiliary negative: gateway-whitespace (68.615708ms)
+✔ bounded auxiliary negative: gateway-exponent (86.012709ms)
+✔ bounded auxiliary negative: gateway-fraction-string (78.045666ms)
+✔ bounded auxiliary negative: gateway-leading-zero (86.418292ms)
+✔ bounded auxiliary negative: gateway-unsafe-string (90.337208ms)
+✔ bounded auxiliary negative: gateway-bool (120.269083ms)
+✔ bounded auxiliary negative: gateway-number-fraction (98.895417ms)
+✔ bounded auxiliary negative: gateway-null (91.885542ms)
+✔ bounded auxiliary negative: gateway-empty (85.059041ms)
+✔ bounded auxiliary negative: gateway-unicode (122.023333ms)
+✔ bounded auxiliary negative: gateway-malformed (69.111709ms)
+✔ bounded auxiliary negative: gateway-negative (66.858291ms)
+✔ bounded auxiliary negative: gateway-string-outside (75.618208ms)
+✔ bounded auxiliary negative: timeout (67.383583ms)
+✔ bounded auxiliary negative: report-timeout (70.556291ms)
+✔ bounded auxiliary negative: deadline (71.816334ms)
+✔ bounded auxiliary negative: denied (60.635166ms)
+✔ bounded auxiliary negative: expired (64.768042ms)
+✔ bounded auxiliary negative: throttled (84.527ms)
+✔ bounded auxiliary negative: unknown (74.279583ms)
+✔ bounded auxiliary negative: unavailable (83.793541ms)
+✔ bounded auxiliary negative: malformed (84.213875ms)
+✔ bounded auxiliary negative: repeat (79.623958ms)
+✔ bounded auxiliary negative: page-limit (71.209125ms)
+✔ bounded auxiliary negative: call-limit (74.683709ms)
+✔ bounded auxiliary negative: duplicate-gateway (65.375084ms)
+✔ bounded auxiliary negative: invalid-invocation (96.664041ms)
+✔ bounded auxiliary negative: invocation-reuse (139.260042ms)
+✔ bounded auxiliary negative: nested-field (102.843625ms)
+✔ bounded auxiliary negative: gateway-lambda (78.015333ms)
+✔ bounded auxiliary negative: duplicate-completion (77.115041ms)
+✔ bounded auxiliary negative: missing-report (83.29225ms)
+✔ bounded auxiliary negative: duplicate-report (81.169166ms)
+✔ bounded auxiliary negative: report-invalid-number (64.033084ms)
+✔ bounded auxiliary negative: source-drift (91.885667ms)
+✔ bounded auxiliary negative: output-exists (81.656167ms)
+✔ bounded auxiliary negative: rejected (69.396542ms)
+✔ bounded auxiliary negative: gateway-rejected-string (74.902ms)
+✔ bounded auxiliary negative: rejected-leak (62.431375ms)
+✔ bounded auxiliary negative: gateway-time (98.274917ms)
+✔ bounded auxiliary negative: gateway-status (88.340542ms)
+✔ bounded auxiliary negative: extended-id (64.602375ms)
+✔ bounded auxiliary negative: duplicate-id (69.265417ms)
+✔ bounded auxiliary negative: latency-invalid (52.190583ms)
+✔ bounded auxiliary negative: time-invalid (54.330625ms)
+✔ auxiliary real CLI imports the sibling reader from an unrelated cwd in isolated Python (118.067209ms)
+✔ auxiliary actual CLI preserves a safe failure and refuses to reread an existing output (695.5215ms)
+✔ Close without error settles and closes its owned client instead of leaving top-level await unresolved (0.535667ms)
+✔ Missing all MQTT events reaches a hard deadline and never proves old certificate rejection (6.026625ms)
+✔ An actual connect is a positive control and cannot be counted as denied (0.232167ms)
+✔ nominal 30x profile cannot conceal a slower real publish window (3.306417ms)
+✔ version proof requires CI deploy Amplify exact commit and 19 distinct verified artifact bytes (0.390458ms)
+✔ own-fixture fault grant rejects shared changes and unknown faults while retaining deployment boundary (0.320667ms)
+✔ database proof rejects foreign build, source, role and nonzero cleanup instead of trusting child PASS (0.458208ms)
+✔ path matcher is anchored, escapes literals, and respects method (1.816792ms)
+✔ HTTP observations deduplicate by version/request without transferring acceptance or changing domains (0.407708ms)
+✔ denial, failed check, wrong actor and unknown request cannot close lawful-write gaps (0.3395ms)
+✔ current cleanup is required and HTTP scope cannot upgrade full business acceptance (0.092167ms)
+✔ signed session aggregate label alone cannot replace per-role unexpired token and cleanup evidence (0.105708ms)
+✔ browser claims require actual disable response, unchanged cancel, scope, screenshot and zero notification writes (0.119583ms)
+✔ same request cannot be attributed to different roles or operations (0.097125ms)
+✔ target gates reject missing finish cleanup required case and foreign device before live calls (0.777666ms)
+✔ business cleanup preserves outside rows, rejects baseline drift and deletes own dependent rows atomically (2054.553625ms)
+✔ fault injection rejects missing authorization and foreign export identity without mutation (0.748417ms)
+✔ assertion-only validation cannot stand in for cleanup or whole target acceptance (0.134666ms)
+✔ nonActive scope cannot enter the full wave that contains Active dependent probes (0.931416ms)
+✔ foundation mode cannot be mistaken for full core or browser acceptance (0.09775ms)
+✔ complete intermediate/root chain matches truststore and private key (3.758458ms)
+✔ missing root is distinguished from valid signing certificate and key (0.3905ms)
+✔ wrong parent, expired chain and wrong private key fail independently (0.908042ms)
+✔ oversized worker chain, malformed values and arbitrary canaries never leak (1.247584ms)
+✔ receipt gate accepts completed diagnostic with invalid chain, rejects data leak and missing cleanup (2.604041ms)
+✔ approved exact Worker, Secret, KMS and original expiry scope is accepted (0.775209ms)
+✔ removing role condition, wildcard Secret or extended expiry is rejected (0.335333ms)
+✔ unrestricted KMS, different context or extra secret permissions are rejected (0.172042ms)
+✔ repair gate requires retained versions, exact output binding and all cleanup (3.073042ms)
+✔ only root field changes, original version remains immutable and AWSPREVIOUS (4.407541ms)
+✔ baseline drift prevents all writes (0.118292ms)
+✔ wrong fixed root prevents all writes (0.325167ms)
+✔ unknown put outcome recovers immutable token without a second put (1.198959ms)
+✔ candidate mutation fails before promotion (0.337916ms)
+✔ concurrent current movement after candidate write is preserved (0.586041ms)
+✔ unknown promotion response is recovered from current stages (2.925292ms)
+✔ post-promotion failed readback rolls back only the known current candidate (1.271375ms)
+✔ invalid version token rejects before accessing any secret (0.885083ms)
+✔ rollback refuses to overwrite a concurrent foreign current version (1.350875ms)
+✔ unknown AWS errors are returned as fixed codes without secret exception text (1.356458ms)
+✔ successful promotion waits for metadata visibility without repeating stage writes (1.04875ms)
+✔ existing current candidate is verified using read-only store without new versions or stage writes (0.8745ms)
+✔ read-only recovery rejects changed fields without rolling back an existing current version (0.289833ms)
+✔ capacity planning includes operational and rotation idle overlap and rejects naive concurrency increase (0.466708ms)
+✔ read recovery preserves original timeout, reads only one started ID and never replays a mutation (26.695291ms)
+✔ known authorization, expired SSO, invalid JSON and unknown failures never retry (58.786417ms)
+✔ two read recoveries are the global bound, repeated timeout remains FAIL (14.967416ms)
+✔ started Build waiting is bounded by polls and elapsed time; non-success terminal status never admits cleanup (20.622958ms)
+✔ every cloud ownership field and raw Plan is required before reading results (13.799625ms)
+✔ CLI failure records exit/signal/timing, classifies recognized errors and stores no stderr or credentials (1.551417ms)
+✔ cleanup observer persists each success/failure and preserves failure identity without raw message, stack or input (0.308667ms)
+✔ sign-out failure still deletes and verifies own identity, retains failure and cannot admit cleanup PASS (0.198834ms)
+✔ only UserNotFound proves absence, failed delete is retained, and surviving identity fails closed (0.257875ms)
+✔ partition preserves 722ms without treating CPU as exclusive scheduling or compiler time (3.776ms)
+✔ split rejects missing setup (0.092125ms)
+✔ split rejects setup gap (0.081791ms)
+✔ split rejects setup wrong boundary (0.06225ms)
+✔ split rejects missing (0.051625ms)
+✔ split rejects duplicate (0.051667ms)
+✔ split rejects foreign (1.579125ms)
+✔ split rejects invalid CPU (0.070334ms)
+✔ split rejects no CPU (0.067958ms)
+✔ split rejects wrong boundary (0.106875ms)
+✔ split rejects failed (0.071084ms)
+✔ split rejects gap (0.053125ms)
+✔ split rejects overlap (0.044375ms)
+✔ split rejects fake duration (0.048459ms)
+✔ split rejects connection claim (0.038875ms)
+✔ target observer setup gap remains rejected: 737ms/17ms (0.084875ms)
+✔ target observer setup gap remains rejected: 498ms/18ms (0.03625ms)
+✔ target observer setup gap remains rejected: 40ms/20ms (0.040417ms)
+✔ explicit setup covers 17ms without shifting original entrance (0.069417ms)
+✔ explicit setup covers 18ms without shifting original entrance (0.052084ms)
+✔ explicit setup covers 20ms without shifting original entrance (0.633458ms)
+✔ contract readback requires the actual nested association and matching device snapshot (0.807375ms)
+✔ role, specialized validation, cleanup and content binding are required for persistence (0.860625ms)
+✔ A2 and unavailable inputs cannot be promoted by generic persistence proofs (0.719417ms)
+✔ semantic inventory never transfers changed contracts or unavailable notifications (0.434208ms)
+✔ current containment does not resolve historical execution uncertainty (0.318459ms)
+✔ range reads keep the original default and permit bounded slow-link retry (0.3895ms)
+✔ range reads reject unbounded, ambiguous and below-default timeouts (0.194416ms)
+✔ read-only asset concurrency stays bounded independently of DB/API capacity (0.106416ms)
+✔ whole-asset reads remain within the existing 32 MiB artifact bound and retain the default (0.075792ms)
+✔ S3 full-object verification rejects multipart/composite, wrong version/size/hash and absent SHA256 (0.126916ms)
+✔ constructor and projection reject malformed diagnostic fields (2.186834ms)
+✔ actual Cognito fetch transport preserves only closed one-hop cause ECONNRESET (0.291625ms)
+✔ actual Cognito fetch transport preserves only closed one-hop cause ETIMEDOUT (0.078333ms)
+✔ actual Cognito fetch transport preserves only closed one-hop cause ENOTFOUND (0.076208ms)
+✔ actual Cognito fetch transport preserves only closed one-hop cause UND_ERR_CONNECT_TIMEOUT (0.095333ms)
+✔ actual Cognito fetch transport preserves only closed one-hop cause UND_ERR_HEADERS_TIMEOUT (0.063667ms)
+✔ actual Cognito fetch transport preserves only closed one-hop cause UND_ERR_BODY_TIMEOUT (0.064417ms)
+✔ actual Cognito fetch transport preserves only closed one-hop cause UND_ERR_SOCKET (0.065209ms)
+✔ unknown transport cause, arbitrary metadata and messages never cross the boundary (1.740375ms)
+✔ actual GlobalSignOut HTTP rejection 400/INVALID_CREDENTIALS retains safe metadata only (19.064458ms)
+✔ actual GlobalSignOut HTTP rejection 429/RATE_LIMITED retains safe metadata only (0.2045ms)
+✔ actual GlobalSignOut HTTP rejection 500/UNKNOWN retains safe metadata only (0.12475ms)
+✔ actual GlobalSignOut HTTP rejection 503/UNKNOWN retains safe metadata only (0.737875ms)
+✔ malformed JSON body 200 fails closed, including void GlobalSignOut (0.173542ms)
+✔ malformed JSON body 503 fails closed, including void GlobalSignOut (0.166625ms)
+✔ body stream reset is distinct from initial fetch failure (0.298416ms)
+✔ valid JSON but invalid authentication reply has REPLY stage (0.236166ms)
+✔ wrong password and unknown user remain indistinguishable even in safe projection (0.104ms)
+✔ actual mapped sign-out error still deletes/reads absence but never grants cleanup PASS (8.311958ms)
+✔ successful signout is one request, and request shape remains unchanged (0.173125ms)
+✔ cold sampler collector binds exact own REPORT and safe client metrics: patch (69.979875ms)
+✔ cold sampler collector binds exact own REPORT and safe client metrics: audit (108.020791ms)
+✔ two batches preserve six own contracts, six winners/conflicts and audits with a hard concurrency/request bound (38.344125ms)
+✔ unknown write drains siblings and waits for Lambda quiescence without retry or false PASS (15.203792ms)
+✔ audit drift fails closed: audit-id (13.699875ms)
+✔ audit drift fails closed: foreign-list (17.743459ms)
+✔ foreign context, missing baseline or excess batches fail before any dispatch/receipt (1.761792ms)
+✔ sampling correlation ledger rejects foreign or missing HTTP rows even with a valid business result (28.296833ms)
+✔ DLQ scope requires closed ledger, 20 exact IDs and fresh empty database proof (0.848459ms)
+✔ one-shot worker deletes only exact retired pointers, restores unknown visibility, and exports no bodies or handles (10.99275ms)
+✔ six exact request/time/status/extended/Lambda links pass without saving unrelated fields or requests (226.0525ms)
+✔ correlation refuses complete proof for time (205.49475ms)
+✔ correlation refuses complete proof for lambda-id (94.801958ms)
+✔ correlation refuses complete proof for duplicate (235.139709ms)
+✔ correlation refuses complete proof for missing-http (141.649792ms)
+✔ audit GET binds list/detail operation and timeout UUID without claiming client success (204.98225ms)
+✔ public samples conserve per-window counts; boundary uncertainty is not CPU time (1.385375ms)
+✔ reject clock offset (0.200625ms)
+✔ reject clock end (0.052125ms)
+✔ reject bad sample id (0.056958ms)
+✔ reject sample before profile start (0.061292ms)
+✔ reject clock overrun (0.044125ms)
+✔ reject duplicate node (0.05025ms)
+✔ reject private path (0.045333ms)
+✔ reject missing delta (0.062584ms)
+✔ reject unbounded samples (0.457917ms)
+✔ reject CPU-time claim (0.05875ms)
+✔ duplicate or inverted spans cannot double count (0.234167ms)
+✔ fixed matrix includes off, measurement overhead, account, five location controls and four failures (0.224875ms)
+✔ map independently bracketed V8/hrtime clocks with offset 0 (0.97ms)
+✔ map independently bracketed V8/hrtime clocks with offset 5117315336 (0.16375ms)
+✔ map independently bracketed V8/hrtime clocks with offset -5117315336 (0.136333ms)
+✔ reject inconsistent clock mapping: raw start (0.406375ms)
+✔ reject inconsistent clock mapping: raw end (0.21875ms)
+✔ reject inconsistent clock mapping: normalized start (0.154541ms)
+✔ reject inconsistent clock mapping: offset bounds (0.090041ms)
+✔ reject inconsistent clock mapping: uncertainty (0.082542ms)
+✔ reject inconsistent clock mapping: mapping scope (0.273583ms)
+✔ mapping uncertainty makes boundary samples ambiguous instead of asserting false ownership (0.315625ms)
+✔ signed V8 deltas retain paired samples and reconstruct timestamps without changing the raw profile (0.5565ms)
+✔ signed deltas preserve mapped clock uncertainty with epoch offset 0 (0.214667ms)
+✔ signed deltas preserve mapped clock uncertainty with epoch offset 5117315336 (0.244792ms)
+✔ signed deltas preserve mapped clock uncertainty with epoch offset -5117315336 (0.108ms)
+✔ reject every out-of-profile sample even when later deltas recover: before start then recovery (0.327834ms)
+✔ reject every out-of-profile sample even when later deltas recover: after end then recovery (0.04975ms)
+✔ reject non-protocol sample delta NaN (0.103625ms)
+✔ reject non-protocol sample delta Infinity (0.107792ms)
+✔ reject non-protocol sample delta -Infinity (0.172709ms)
+✔ reject non-protocol sample delta 0.5 (0.040208ms)
+✔ reject non-protocol sample delta 9007199254740992 (0.040625ms)
+✔ an unknown node in an out-of-order profile still fails instead of being dropped (0.051125ms)
+✔ disjoint bounds conserve both parent brackets, outputs and main-isolate sample counts (1.0475ms)
+✔ output crossing a boundary stays ambiguous; no residual is manufactured (0.138167ms)
+✔ rejects missing point (0.16625ms)
+✔ rejects duplicate point (0.054ms)
+✔ rejects wrong owner (0.051875ms)
+✔ rejects backwards clock (0.050791ms)
+✔ rejects negative CPU (0.04525ms)
+✔ rejects decreasing CPU (0.0435ms)
+✔ rejects missing output owner (0.053333ms)
+✔ rejects overflow (0.095125ms)
+✔ rejects foreign output (0.05525ms)
+✔ rejects probe failure (0.046167ms)
+✔ rejects output throw (0.040209ms)
+✔ rejects unknown phase (0.037792ms)
+✔ rejects duplicate ordinal (0.037417ms)
+✔ rejects unknown interval (0.036625ms)
+✔ rejects duplicate public call (0.037125ms)
+✔ rejects overlap (0.040666ms)
+✔ receipt loaders reject target receipts and unknown cases (0.114167ms)
+✔ design adopts only two proven seams; new flag/target wiring remain unimplemented and default off (0.813333ms)
+✔ reject unreviewed production input (0.180333ms)
+✔ reject unreviewed pool input (0.052208ms)
+✔ reject unreviewed memory input (0.043083ms)
+✔ reject unreviewed concurrency input (0.051792ms)
+✔ reject unreviewed records input (0.049959ms)
+✔ reject unreviewed bytes input (0.046167ms)
+✔ reject unreviewed summaries input (0.037958ms)
+✔ reject unreviewed database input (0.053292ms)
+✔ reject unreviewed available input (0.078125ms)
+✔ reject unreviewed requests input (0.056708ms)
+✔ reject unreviewed privateProfiler input (0.036958ms)
+✔ reject unreviewed extraRead input (0.029834ms)
+✔ reject unreviewed await input (0.03025ms)
+✔ reject unreviewed yield input (0.0255ms)
+✔ reject unreviewed missingPublic input (0.031917ms)
+✔ reject unreviewed missingDetail input (0.028833ms)
+✔ reject unreviewed missingEngine input (0.027542ms)
+✔ reject unreviewed missingPreconnect input (0.030833ms)
+✔ reject unreviewed accountConfounder input (0.026208ms)
+✔ unknown controls and mutation cannot widen the fixed plan (0.0645ms)
+✔ partition conserves driver prefix/call/tail; terminal output is outside after-model, CPU is never subtracted (5.450542ms)
+✔ reject overlapping output (0.242375ms)
+✔ reject duplicate ordinal (0.068334ms)
+✔ reject negative CPU (0.051875ms)
+✔ reject public port before driver (0.061416ms)
+✔ reject two public owners (0.050959ms)
+✔ reject unknown phase (0.045625ms)
+✔ reject non-shared span (0.061208ms)
+✔ reject recursive diagnostic emission (0.05425ms)
+✔ reject missing degraded status (0.093542ms)
+✔ straddling output remains ambiguous and is not subtracted from either segment (0.111833ms)
+✔ degraded receipts preserve measurements but disable residual subtraction (0.121625ms)
+✔ full proposed summary has distinct owner IDs, bounded bytes and no detailed output/payload fields (0.125709ms)
+✔ public child proof retains legacy partition and never implies compiler/server/P95 attribution (12.207958ms)
+✔ detail rejects missing (0.282708ms)
+✔ detail rejects duplicate (0.176333ms)
+✔ detail rejects foreign (0.179834ms)
+✔ detail rejects failed (0.138792ms)
+✔ detail rejects boundary (0.194958ms)
+✔ detail rejects CPU (0.10275ms)
+✔ detail rejects negative CPU (0.083708ms)
+✔ detail rejects fraction (0.125958ms)
+✔ detail rejects wait (0.134833ms)
+✔ detail rejects wrong wait (0.088333ms)
+✔ detail rejects gap (0.0855ms)
+✔ detail rejects overlap (0.069209ms)
+✔ detail rejects coverage (0.067167ms)
+✔ detail rejects invalid time (0.077208ms)
+✔ detail rejects off (0.073375ms)
+✔ detail rejects two pg (0.060917ms)
+✔ detail rejects unsettled (0.057625ms)
+✔ detail rejects root (0.058333ms)
+✔ fresh planner preserves fixed budget, demands both detail modes, never dispatches (0.278375ms)
+✔ legacy manifests cannot be promoted to detailed target proof (3.174708ms)
+✔ hosted detail input byte binding is explicit and rejects run, mode, budget, context and hash drift (0.537041ms)
+✔ checkpoint splits public await only and rejects legacy target promotion (0.276333ms)
+✔ checkpoint rejects missing (0.086125ms)
+✔ checkpoint rejects duplicate (0.070333ms)
+✔ checkpoint rejects foreign (0.0575ms)
+✔ checkpoint rejects failure (0.071375ms)
+✔ checkpoint rejects CPU (0.057041ms)
+✔ checkpoint rejects negative (0.062792ms)
+✔ checkpoint rejects boundary (0.049042ms)
+✔ checkpoint rejects wait (0.051042ms)
+✔ checkpoint rejects gap (0.06225ms)
+✔ checkpoint rejects overlap (0.068917ms)
+✔ checkpoint rejects coverage (0.064834ms)
+✔ checkpoint rejects invalid time (0.06025ms)
+✔ await planner holds native candidate off and old manifests cannot satisfy new proof (15.767167ms)
+✔ driver partition separates controlled wait and result access without causal claims (4.33675ms)
+✔ reject crossed boundary (0.335ms)
+✔ reject nonfinite boundary (0.111125ms)
+✔ reject missing boundary (0.525834ms)
+✔ reject wrong sample order (5.241583ms)
+✔ reject extra sample (0.13725ms)
+✔ reject hidden query retry (1.119292ms)
+✔ reject unreleased connection (0.311459ms)
+✔ reject extra pool (0.401375ms)
+✔ reject target equivalence (1.287541ms)
+✔ reject compiler-only claim (2.303125ms)
+✔ reject server-only claim (0.304375ms)
+✔ reject wrong controlled recipe (2.082375ms)
+✔ reject wrong account mode (0.169125ms)
+✔ reject unproved phases (0.106334ms)
+✔ cold summary requires exact transactional physical proof and never copies payloads (12.436209ms)
+✔ strict load split preserves 5ms coverage and only public boundary attribution (0.121333ms)
+✔ rejects foreign request (5.687834ms)
+✔ rejects duplicate (10.876541ms)
+✔ rejects missing model boundary (0.176125ms)
+✔ rejects multiple SQL (0.085666ms)
+✔ rejects root query (0.065583ms)
+✔ rejects duplicate ownership (0.065125ms)
+✔ rejects CPU attribution (0.078875ms)
+✔ rejects boundary guess (1.433083ms)
+✔ rejects gap (0.155125ms)
+✔ rejects overlap (0.072625ms)
+✔ rejects failure (0.064125ms)
+✔ rejects invalid wait (0.044792ms)
+✔ summary and comparable observer inputs keep account native in both groups and restore all candidates off (0.759583ms)
+✔ strict observer rejects missing (0.074667ms)
+✔ strict observer rejects duplicate (0.049541ms)
+✔ strict observer rejects foreign (0.045542ms)
+✔ strict observer rejects gateway (0.045833ms)
+✔ strict observer rejects time (0.03925ms)
+✔ strict observer rejects degraded (0.266375ms)
+✔ strict observer rejects overbudget (0.22575ms)
+✔ strict observer rejects modelClaim (0.2295ms)
+✔ strict observer rejects conservation (0.154584ms)
+✔ strict observer rejects missingSegment (0.065958ms)
+✔ strict observer rejects order (0.057334ms)
+✔ strict observer rejects unsafeCpu (0.046542ms)
+✔ strict observer rejects link (0.030708ms)
+✔ push always resolves observer false despite inherited true; manual true is recorded end to end (0.463041ms)
+✔ manual observer cannot bypass QA09_REQUESTED_PRECONNECT (0.230666ms)
+✔ manual observer cannot bypass QA09_REQUESTED_ENGINE (0.0795ms)
+✔ manual observer cannot bypass QA09_REQUESTED_CONTRACT_DETAIL (0.055459ms)
+✔ manual observer cannot bypass QA09_REQUESTED_CONTRACT_PUBLIC (0.084708ms)
+✔ pair binds all modes with only observer false/true; config requires actual observed switch even when off (0.571333ms)
+✔ observer pair reuses closed receipt/cold budgets with account=true in both groups; incomplete stages cannot pass (3.789667ms)
+✔ runtime receipt replay rejects business count/status/identity/budget forgery (0.919666ms)
+✔ new required Gate accepts schema2 and refuses historical schema1; deployment receipt describes schema without changing defaults (0.86525ms)
+✔ owned stage validation rejects missing (0.226333ms)
+✔ owned stage validation rejects duplicate (0.127208ms)
+✔ owned stage validation rejects order (0.0625ms)
+✔ owned stage validation rejects negative (0.35625ms)
+✔ owned stage validation rejects boolean (0.072875ms)
+✔ owned stage validation rejects nan (0.041875ms)
+✔ owned stage validation rejects afterQueue (0.713333ms)
+✔ owned stage validation rejects prefix (0.070875ms)
+✔ owned stage validation rejects callback (0.061959ms)
+✔ owned stage validation rejects scope (0.056417ms)
+✔ owned stage validation rejects overhead (0.231917ms)
+✔ owned parent window is tied to the original rounded after-queue phase (0.757875ms)
+✔ phase proof covers success, conditional conflict and all audit reads without declaring latency/cleanup acceptance (3.224542ms)
+✔ cold 409 gate requires matching cold phase flags and successful runtime initialization (4.030708ms)
+✔ new account gate requires nested hook, Prisma query, first driver query and checkout on every request (0.882292ms)
+✔ account gate rejects missing (0.270666ms)
+✔ account gate rejects duplicate (1.2645ms)
+✔ account gate rejects failure (0.214375ms)
+✔ account gate rejects wait-boundary (0.196ms)
+✔ account gate rejects timestamp (0.170291ms)
+✔ account gate rejects outside-hook (0.178792ms)
+✔ phase proof rejects foreign-invocation (0.146167ms)
+✔ phase proof rejects missing-transaction (0.099167ms)
+✔ phase proof rejects conflict-code (0.093417ms)
+✔ phase proof rejects missing-http (0.051667ms)
+✔ phase proof rejects other-run (0.051375ms)
+✔ bounded sampler requires physical Init Duration as well as application cold phases and retains client metrics (0.588042ms)
+✔ bounded sampler rejects foreign-report (0.164542ms)
+✔ bounded sampler rejects duplicate-report (0.118333ms)
+✔ bounded sampler rejects no-socket-metrics (0.156708ms)
+✔ bounded sampler rejects missing-body (0.299042ms)
+✔ bounded sampler rejects over-budget (0.129542ms)
+✔ bounded sampler rejects missing-audit (0.098208ms)
+✔ client preparation requires actual dispatch, cold adapter suffix and leaves warm adapter timings absent (0.713708ms)
+✔ client preparation rejects missing prepare (0.222583ms)
+✔ client preparation rejects settlement is not driver dispatch (0.176791ms)
+✔ client preparation rejects preparation after driver start (0.157167ms)
+✔ client preparation rejects cold missing suffix (0.596833ms)
+✔ client preparation rejects suffix outside preparation (0.213333ms)
+✔ client preparation rejects wrong invocation (0.170375ms)
+✔ client preparation cannot bypass account phase checks (0.134ms)
+✔ engine CPU mode proves preparation before model, preserves driver boundary and refuses old lazy ownership (2.929917ms)
+✔ runtime assembly opt-in preserves both engine ownership modes and rejects old partial runtime receipts (4.529875ms)
+✔ parent phase Gate requires engine/runtime and C1 settlement before queries; C0 refuses candidate phases (1.54875ms)
+✔ new contract-load split opt-in cannot reuse an older unsplit target receipt (0.106959ms)
+✔ success audits bind precisely and conflicts never have a success audit (0.36325ms)
+✔ audit proof rejects duplicate (0.137833ms)
+✔ audit proof rejects wrong-version (0.059125ms)
+✔ audit proof rejects conflict-success (0.047125ms)
+✔ Gateway overlap cannot conceal serialized Lambda executions (0.30325ms)
+✔ public partitions and required absence remain strict; no compiler/server/P95 claim (5.70725ms)
+✔ public rejects missing (0.32375ms)
+✔ public rejects duplicate (0.148917ms)
+✔ public rejects foreign (0.120834ms)
+✔ public rejects failure (0.137666ms)
+✔ public rejects boundary (0.10175ms)
+✔ public rejects cpu (0.09425ms)
+✔ public rejects negative (0.088667ms)
+✔ public rejects fraction (0.140583ms)
+✔ public rejects wait (0.153708ms)
+✔ public rejects gap (0.107333ms)
+✔ public rejects overlap (0.092292ms)
+✔ public rejects coverage (0.091959ms)
+✔ public rejects time (0.080833ms)
+✔ public rejects off (0.081583ms)
+✔ public rejects model unsupported (0.072959ms)
+✔ public rejects driver duplicate (0.069375ms)
+✔ public rejects pg missing (0.079416ms)
+✔ public rejects model duplicate (0.080708ms)
+✔ public rejects root (0.060125ms)
+✔ planner binds both public modes to fixed budget; legacy manifests cannot upgrade (1.060584ms)
+✔ new public deployed proof cannot infer old missing fields as true (0.577167ms)
+✔ public matrix summary rejects ownership/scope/control/trace tampering without executing runner (1.923375ms)
+✔ full phase checker wires public required proof and cannot silently accept a missing/foreign child (2.663584ms)
+✔ three races accept either winner, bind every successful write to audit and advance once per version (19.680125ms)
+✔ early failure still drains the late sibling before readback and never retries or reports PASS (0.993625ms)
+✔ race fails closed for double-winner (4.023458ms)
+✔ race fails closed for gateway-id (5.268167ms)
+✔ race fails closed for audit-id (13.653583ms)
+✔ foreign context fails before dispatch or receipt writes (0.737167ms)
+✔ historical read scope rejects any resource outside the exact sealed old contract before live calls (0.117375ms)
+✔ read-only completion accepts only all six settled exact successful PATCH receipts (0.775916ms)
+✔ cleanup/completion guard rejects unknown-write (0.198708ms)
+✔ cleanup/completion guard rejects foreign-site (0.084958ms)
+✔ cleanup/completion guard rejects wrong-account (0.071417ms)
+✔ cleanup/completion guard rejects unfinished (0.073416ms)
+✔ cleanup/completion guard rejects gateway-id (0.074041ms)
+✔ complete public-port receipt retains strict parent proof and microsecond partitions (4.114167ms)
+✔ public await-to-adapter span includes driver prefix without relaxing the 5ms bound (0.485708ms)
+✔ public await-to-adapter span cannot escape the adjacent after-queue and driver parents (0.337875ms)
+✔ public adapter entrance beyond driver completion fails the strict wall bound (0.199333ms)
+✔ public adapter return before settlement is contained by driver plus result (0.662292ms)
+✔ afterQueue parent containment rejects one microsecond beyond the existing 5ms bound (0.150041ms)
+✔ adapter parent containment rejects one microsecond beyond the existing 5ms bound (0.117042ms)
+✔ result parent containment rejects one microsecond beyond the existing 5ms bound (0.110208ms)
+✔ strict offline receipt rejects old source (0.106084ms)
+✔ strict offline receipt rejects claims (0.130958ms)
+✔ strict offline receipt rejects compiler (0.097875ms)
+✔ strict offline receipt rejects pool (1.041959ms)
+✔ strict offline receipt rejects scheduling (0.100125ms)
+✔ strict offline receipt rejects control (0.089834ms)
+✔ strict offline receipt rejects missing (0.105083ms)
+✔ strict offline receipt rejects duplicate (0.080542ms)
+✔ strict offline receipt rejects foreign mark (0.078458ms)
+✔ strict offline receipt rejects foreign phase (0.08275ms)
+✔ strict offline receipt rejects reverse (0.095667ms)
+✔ strict offline receipt rejects fraction (0.075667ms)
+✔ strict offline receipt rejects negative cpu (0.089958ms)
+✔ strict offline receipt rejects missing wall (0.068917ms)
+✔ strict offline receipt rejects wall outside (0.17575ms)
+✔ strict offline receipt rejects incomplete pg (0.068875ms)
+✔ strict offline receipt rejects sequence (0.111625ms)
+✔ strict offline receipt rejects leak (0.057ms)
+✔ strict offline receipt rejects extra pool (0.054542ms)
+✔ strict offline receipt rejects retry (0.05325ms)
+✔ strict offline receipt rejects network (0.053625ms)
+✔ strict offline receipt rejects missing downstream (0.053792ms)
+✔ strict offline receipt rejects cpu scope (0.05725ms)
+✔ strict offline receipt rejects wrong phase boundary (0.080458ms)
+✔ CPU partition uses counter differences and never sums nested windows (0.181ms)
+✔ injection must land in its named window, not only increase total load (0.160417ms)
+✔ runner refuses all existing directories before starting any process (0.381459ms)
+✔ log projection redacts payload/error details and rejects unrecognized events (0.890958ms)
+✔ serialized AWS log projection preserves closed event names through the 20-sequence Gate (1.713916ms)
+✔ specific redelivery needs matching SQS ID, final disposition and durable duplicate receipt (0.135208ms)
+✔ 20 sequence stage Gate rejects incomplete coverage and unrelated device evidence (0.441333ms)
+✔ completed Build result tolerates delayed/truncated CloudWatch visibility and transient read failure without rerunning SQL (0.838459ms)
+✔ wrong/multiple/failed frames and AccessDenied reject immediately, absent result fails closed after bounded reads (0.895875ms)
+✔ expired SSO is a terminal authentication condition, never a transient log retry (0.085334ms)
+✔ CloudWatch 250000-character fragments reassemble exact source-bound metadata without accepting truncation or another frame (22.254ms)
+✔ large fixture observations round-trip through bounded gzip without losing metadata (9.64825ms)
+✔ compressed fixture frames reject corruption, noncanonical data and decompression bombs (23.460625ms)
+✔ compressed metadata still requires the exact expected source/build/action binding (1.666833ms)
+✔ fixed manifest rejects unsafe SQL identifiers, missing hash and duplicates (0.926ms)
+✔ migration comparison distinguishes missing, tampered, unfinished and rolled-back migrations (0.151167ms)
+✔ snapshot uses repeatable read/read only, timeouts, fixed SELECTs and always rolls back (0.662625ms)
+✔ historical duplicates block serial precheck without changing any request (0.169417ms)
+✔ writable transaction rejected before business queries and rolled back (0.191042ms)
+✔ query failure rolls back instead of yielding partial PASS (0.100708ms)
+✔ dedicated query project never changes migration project or passes StartBuild overrides (25.36125ms)
+✔ legacy onboarding rows without CSR columns require reconciliation before migration (0.174875ms)
+✔ query success preserves real migration BLOCKED instead of promoting readiness (0.767167ms)
+✔ wrong build, writable transaction, unbound hash and fabricated migration PASS rejected (0.317125ms)
+✔ missing table count cannot become complete SQL evidence (0.2885ms)
+✔ explicit manual false overrides repository true and preserves capacity/immediate context (0.7935ms)
+✔ manual deployment rejects branch/SHA, missing mode, phase drift and unsupported events before cloud work (0.157583ms)
+✔ push keeps existing resolved defaults but cannot ignore explicit invalid input (0.069833ms)
+✔ input pair gate never implies target acceptance and rejects SHA/config/context/duplicate run drift (0.406917ms)
+✔ workflow records input receipt before verification/AWS and never interpolates manual input into shell (0.243583ms)
+✔ C0/C1 same SHA and engine=true differ only preconnect; push cannot turn candidate on (0.347833ms)
+✔ R0/R1 input pair binds same SHA and budget, differs only account read; push always off (0.342417ms)
+✔ detail is off on push, manual detail requires guarded preconnect and round trips both R inputs (0.310584ms)
+✔ public deployment remains default-off/push-off and binds identical guarded R modes including legacy false (0.343667ms)
+✔ entity merge requires actual decisions on both viewports, scoped devices, versions and cleanup (0.667209ms)
+✔ certificate merge cannot use review-only parent to claim real dual-channel certificate entity (0.108083ms)
+✔ HTTP empty lists are valid natural-wait observations; missing data never implies empty (0.885ms)
+✔ actual PostgreSQL telemetry/report handlers, aggregation, archive manifests and four exports agree without Active (2508.2305ms)
+✔ CSV parser owns quoting, embedded newline, schema, truncation and size boundaries (0.553792ms)
+✔ natural schedule reads have a total deadline, own late completion and never invoke a worker (0.185042ms)
+✔ Report cleanup admits only exact own customer prefixes and retains closed action/UUID plans (0.161875ms)
+✔ unknown readonly audit preserves failure but cannot strand resources after proven cleanup commit (0.056ms)
+✔ baseline normal/exact collection shares every ownership/PG/CPU field without business requests (100.239125ms)
+✔ cold normal/exact collection shares every ownership/PG/CPU field without business requests (105.433666ms)
+✔ audit normal/exact collection shares every ownership/PG/CPU field without business requests (104.107042ms)
+✔ exact collection rejects source before another AWS read and preserves prior bytes (79.141833ms)
+✔ exact collection rejects raw-bytes before another AWS read and preserves prior bytes (71.876792ms)
+✔ exact collection rejects time before another AWS read and preserves prior bytes (117.676208ms)
+✔ exact collection rejects duplicate before another AWS read and preserves prior bytes (91.317042ms)
+✔ exact collection rejects id before another AWS read and preserves prior bytes (99.677584ms)
+✔ exact collection rejects shared before another AWS read and preserves prior bytes (85.145667ms)
+✔ exact collection rejects extended before another AWS read and preserves prior bytes (62.358125ms)
+✔ exact collection rejects overwrite before another AWS read and preserves prior bytes (70.520458ms)
+✔ exact collection rejects over-limit before another AWS read and preserves prior bytes (74.75275ms)
+✔ parent snapshot covers every executed child source before any cloud fixture starts (6.052333ms)
+✔ pre-start rejection is persisted and never retried; no started receipt or SQL is invented (979.578042ms)
+✔ post-start authorization rejection retains exact Build receipt and failed read with no restart (527.973833ms)
+✔ terminal failed Build remains FAIL, is known terminal and never reads successful frame (506.777084ms)
+✔ in-budget transient read recovers the same Build, retains original FAIL and runs mutation once (2624.842958ms)
+✔ lost start response is UNKNOWN, never assumed unstarted, restarted or attributed to an invented Build (480.230042ms)
+✔ pre-start get-caller-identity recovers twice with immutable failures and exactly one StartBuild (1072.752833ms)
+✔ pre-start batch-get-projects recovers twice with immutable failures and exactly one StartBuild (1020.759208ms)
+✔ pre-start project network fails closed before mutation or StartBuild (952.784125ms)
+✔ pre-start project AccessDeniedException fails closed before mutation or StartBuild (403.251959ms)
+✔ pre-start project expired fails closed before mutation or StartBuild (384.34525ms)
+✔ pre-start project unknown fails closed before mutation or StartBuild (379.771625ms)
+✔ pre-start project invalid-json fails closed before mutation or StartBuild (379.798459ms)
+✔ update-project network failure is never retried or followed by StartBuild (404.727083ms)
+✔ create-project network failure is never retried or followed by StartBuild (397.688916ms)
+✔ successful read with wrongAccount never retries semantic verification (343.831292ms)
+✔ successful read with wrongRole never retries semantic verification (372.5595ms)
+✔ project read recovery permits one reviewed update-project and one StartBuild (761.673792ms)
+✔ project read recovery permits one reviewed create-project and one StartBuild (771.332584ms)
+✔ recovered project read never converts a later lost StartBuild response into a safe retry (695.374875ms)
+✔ formal mapping cannot promote scoped evidence or cross version/prefix/cleanup boundaries (1.075ms)
+✔ request UUID is durable before a single dispatch and credentials never enter receipts (10.943792ms)
+✔ failed AWAIT_HEADERS preserves correlation without retry (0.381083ms)
+✔ failed READ_BODY preserves correlation without retry (0.116625ms)
+✔ malformed JSON cannot become a successful HTTP receipt (0.194708ms)
+✔ socket events split DNS/TCP/TLS; receipts contain no URL, authorization or socket details (1.53025ms)
+✖ real delayed body is measured separately; a reused connection has absent DNS/TCP/TLS, not invented zeros (6.91325ms)
+✖ total deadline aborts an unfinished response body; no complete-body receipt or retry (1.843167ms)
+✔ injected fetch cannot masquerade as detailed socket observation (0.31175ms)
+✔ layout diagnostic fails closed before AWS calls for foreign, finished or unbound fixtures (0.841333ms)
+✔ diagnostic cleanup retains all actions and fails closed: absent (0.559458ms)
+✔ diagnostic cleanup retains all actions and fails closed: still-present (0.057166ms)
+✔ diagnostic cleanup retains all actions and fails closed: read-denied (0.055458ms)
+✔ diagnostic cleanup retains all actions and fails closed: signout-failed (0.068333ms)
+✔ diagnostic cleanup retains all actions and fails closed: delete-failed (0.060375ms)
+✔ snapshot must be available encrypted manual and exact whitelist cannot expand (0.460416ms)
+✔ real local SQL retires exactly two jobs/requests and preserves every other table (1419.694042ms)
+✔ live status drift aborts with original rows intact (806.456416ms)
+✔ unexpected cascade/trigger changing a preserved table rolls back all deletes (774.653167ms)
+✔ valid HTTP writes cannot be inflated by malformed, wrong role, wrong method or failed requests (1.063917ms)
+✔ target License wire sequence proves ExpiringSoon renewal and Renewed activation using real handlers and PostgreSQL (1831.827458ms)
+✔ bounded log reader stops safely: before-start (78.69375ms)
+✔ bounded log reader stops safely: timeout (52.142875ms)
+✔ bounded log reader stops safely: unavailable (65.510459ms)
+✔ bounded log reader stops safely: denied (50.439458ms)
+✔ bounded log reader stops safely: sso (50.001959ms)
+✔ bounded log reader stops safely: throttled (59.269ms)
+✔ bounded log reader stops safely: unknown (59.737334ms)
+✔ bounded log reader stops safely: late (57.778458ms)
+✔ bounded log reader stops safely: deadline (65.792084ms)
+✔ bounded log reader stops safely: repeat (57.664416ms)
+✔ bounded log reader stops safely: page-limit (64.821ms)
+✔ bounded log reader stops safely: call-limit (59.77375ms)
+✔ bounded log reader stops safely: invalid-json (59.043042ms)
+✔ bounded log reader stops safely: invalid-events (37.724625ms)
+✔ bounded log reader stops safely: missing-events (65.610792ms)
+✔ bounded log reader stops safely: many-events (46.375417ms)
+✔ bounded log reader stops safely: invalid-token (37.394875ms)
+✔ bounded log reader stops safely: empty-token (66.294625ms)
+✔ bounded log reader stops safely: long-token (65.844959ms)
+✔ bounded log reader stops safely: oversize (69.272208ms)
+✔ bounded log reader stops safely: finish-deadline (64.350083ms)
+✔ submillisecond remaining budget is positive and cannot round into an expired receipt (108.33875ms)
+✔ actual exact collector reads 6 invocations once in serial batches of at most three (82.4565ms)
+✔ actual exact collector reads 12 invocations once in serial batches of at most three (71.073167ms)
+✔ actual exact collector reads 19 invocations once in serial batches of at most three (83.500291ms)
+✔ actual collector paginates each batch before advancing to the next, without duplicates (102.250875ms)
+✔ actual collector retains first batch and all request rows after partial-timeout (76.321084ms)
+✔ actual collector retains first batch and all request rows after between-batches (56.750375ms)
+✔ actual collector rejects prior-drift before any AWS read (67.563458ms)
+✔ actual collector rejects source-drift before any AWS read (77.112208ms)
+✔ actual collector rejects missing-hash before any AWS read (54.537916ms)
+✔ actual collector rejects invalid-hash before any AWS read (58.523708ms)
+✔ actual collector rejects orphan-hash before any AWS read (58.85675ms)
+✔ actual collector rejects overwrite before any AWS read (61.174292ms)
+✔ duplicate Lambda completion remains PARTIAL with bounded reads (71.043708ms)
+✔ ordinary collection also reports the shared budget without exact filters (66.465167ms)
+✔ ordinary collector stops after gateway timeout and marks Lambda not started (61.024666ms)
+✔ planner never dispatches and matchable inputs never accept P95 or causal benefit (0.72475ms)
+✔ pair rejects drift or missing proof sourceCommit (0.092458ms)
+✔ pair rejects drift or missing proof memoryMiB (0.062292ms)
+✔ pair rejects drift or missing proof architecture (0.05125ms)
+✔ pair rejects drift or missing proof poolMax (0.067166ms)
+✔ pair rejects drift or missing proof actorRole (0.053541ms)
+✔ pair rejects drift or missing proof accountState (0.043834ms)
+✔ pair rejects drift or missing proof operationId (0.048917ms)
+✔ pair rejects drift or missing proof expectedStatus (0.058584ms)
+✔ pair rejects drift or missing proof authenticatedPreconnect (0.108209ms)
+✔ pair rejects drift or missing proof engineCpuDiagnosis (0.05725ms)
+✔ pair rejects drift or missing proof artifactSetSha256 (0.043542ms)
+✔ pair rejects drift or missing proof lambdaCount (0.066375ms)
+✔ pair rejects drift or missing proof cleanupGate (0.040292ms)
+✔ pair rejects drift or missing proof source (0.052084ms)
+✔ pair rejects drift or missing proof coldProofGroup (0.031042ms)
+✔ pair rejects drift or missing proof naturalCold409Count (0.038375ms)
+✔ pair rejects drift or missing proof platformInitDurationMs (0.052417ms)
+✔ pair rejects drift or missing proof clientSplitGate (0.035ms)
+✔ pair rejects drift or missing proof firstCheckoutOwned (0.031ms)
+✔ pair rejects drift or missing proof startedAt (0.026584ms)
+✔ actual receipt loader rejects byte drift and directory escape before reading semantic proof (2.727833ms)
+✔ matched independent sampling stays distinct from baseline and cannot accept a missing group (0.103584ms)
+✔ recovery sub-gate checks all preserved tables without accepting full QA09 (0.633417ms)
+✔ version mismatch, missing migration and changed certificate/other business data fail closed (0.495667ms)
+✔ retirement evidence cannot hide wrong deleted IDs or lose preservation proof (0.280167ms)
+✔ retirement project has fixed source and never modifies readonly/migration runner (21.408166ms)
+✔ Archive proof requires exact nonempty outbox, actual queue invocation and versioned object bytes (1.694584ms)
+✔ Summary proves natural same-request completion and exact persisted digest, not time proximity (0.368667ms)
+✔ Partial response cannot upgrade direct fixture IDs to real SQS retry or DLQ evidence (0.105833ms)
+✔ Remaining-only mode requires explicit hook and cannot combine review or unknown modes (0.08525ms)
+✔ Existing-role reader only accepts ten fixed own versioned files and no arbitrary prefix (0.475542ms)
+✔ Actual broker envelope remains byte-bound separately from the published payload and certificate (0.305958ms)
+✔ Minimum scope keeps truth and disallows all new privilege channels (0.623666ms)
+✔ Direct handler proof binds both synthetic successes to one real invocation and exact own object (55.482416ms)
+✔ Reused natural association requires real nonempty upsert, same request and actual daily persistence count (2.145125ms)
+✔ Queue association proves actual business/storage completion without claiming an unperformed normal byte readback (0.854333ms)
+✔ Temporal logs, foreign keys, direct fixture IDs, missing DB commitment or cleanup cannot close queue association (0.374333ms)
+✔ explicit three-material authorization changes the phase without waiving retained cleanup or business proofs (13.722792ms)
+✔ HTTP coverage and missing independent proof cannot pass after materials are deferred (0.372958ms)
+✔ formal minimum receipts require every scoped domain and its exact evidence/version bindings (0.791709ms)
+✔ minimum acceptance preserves historical UNKNOWN and cannot promote original full gates or release readiness (0.207625ms)
+✔ real Sync observation redacts secret domains and cannot treat delivery as firmware verification (0.525833ms)
+✔ receipt runner sends only RECEIVED and redacts complete snapshots even with device password hashes (0.4455ms)
+✔ receipt runner fails closed for mismatched snapshots and refused confirmation (0.145417ms)
+✔ 121 elements require both real viewport receipts (3.963792ms)
+✔ one failure fails all elements in the affected behavior group (0.621ms)
+✔ Active dependent operations are explicit NOT_RUN, not successful disabled checks (0.548292ms)
+✔ duplicate, foreign and invalid viewport receipts fail closed (0.582458ms)
+✔ Defer and Reject failures also block the browser Gate (0.534542ms)
+✔ CSV proof rejects empty, foreign and malformed downloads while parsing quoted data (0.236542ms)
+✔ parent success persists entries before launch and observes each owned cleanup without changing writes (4.302416ms)
+✔ parent keeps observe failure, continues remaining cleanup, and cannot close PASS (0.555875ms)
+✔ parent keeps cleanup failure, continues remaining cleanup, and cannot close PASS (0.450584ms)
+✔ parent keeps baseline failure, continues remaining cleanup, and cannot close PASS (0.477625ms)
+✔ parent keeps refresh failure, continues remaining cleanup, and cannot close PASS (0.508ms)
+✔ parent keeps cleanup-customer-b failure, continues remaining cleanup, and cannot close PASS (0.398208ms)
+✔ parent keeps verify-customer-gone-b failure, continues remaining cleanup, and cannot close PASS (2.010042ms)
+✔ parent keeps scope failure, continues remaining cleanup, and cannot close PASS (1.203667ms)
+✔ parent keeps signout failure, continues remaining cleanup, and cannot close PASS (1.166208ms)
+✔ parent keeps delete failure, continues remaining cleanup, and cannot close PASS (4.118875ms)
+✔ parent keeps get failure, continues remaining cleanup, and cannot close PASS (2.711958ms)
+✔ parent keeps survives failure, continues remaining cleanup, and cannot close PASS (3.337ms)
+✔ no session uses only owned admin signout and records the actual SDK operation (0.450958ms)
+✔ failed or unknown startup is persisted once without restarting or guessing a Build ID (0.2375ms)
+✔ normal and exact collectors share strict bounded observer projection and strip top-level/nested payloads (95.70675ms)
+✔ required observer collector retains PARTIAL for missing (77.035375ms)
+✔ required observer collector retains PARTIAL for duplicate (65.942167ms)
+✔ required observer collector retains PARTIAL for foreign (78.382583ms)
+✔ required observer collector retains PARTIAL for operation (69.32525ms)
+✔ required observer collector retains PARTIAL for time (86.834625ms)
+✔ required observer collector retains PARTIAL for schema (88.193417ms)
+✔ required observer collector retains PARTIAL for degraded (110.379833ms)
+✔ required observer collector retains PARTIAL for budget (112.921042ms)
+✔ required observer collector retains PARTIAL for residual (87.370458ms)
+✔ required observer collector retains PARTIAL for duplicate-segment (75.618583ms)
+✔ observer timestamp must belong to its own request window even within a wider batch window (83.801875ms)
+✔ schema2 owned summary is projected identically by normal/exact collectors without payload leaks (85.633834ms)
+✔ schema2 required collection fails closed for legacy (68.785291ms)
+✔ schema2 required collection fails closed for missing (64.021042ms)
+✔ schema2 required collection fails closed for duplicate (81.351ms)
+✔ schema2 required collection fails closed for order (66.051ms)
+✔ schema2 required collection fails closed for conservation (66.700958ms)
+✔ schema2 required collection fails closed for prefix (62.08025ms)
+✔ schema2 required collection fails closed for callback (63.29275ms)
+✔ schema2 required collection fails closed for bool (61.594917ms)
+✔ schema2 required collection fails closed for claim (62.116334ms)
+✔ schema2 required collection fails closed for overhead (65.759ms)
+✔ real actor sub stays distinct from database userId and cannot be replaced with a convenient identifier (1.185042ms)
+✔ reopens own TLS session after same-clientId negative probe and closes on failure (0.710375ms)
+✔ foreign MQTT scope is rejected before connection (0.099583ms)
+✔ S3 fallback accepts exact owned version cleanup and rejects bucket, customer and pagination expansion (0.519208ms)
+✔ export scope rejects a foreign device before API, AWS or output writes (0.590417ms)
+✔ domain cleanup refuses live run, foreign customer name, missing DB cleanup and out-of-scope objects (0.715958ms)
+✔ unseeded identity cleanup rejects unfinished, foreign, seeded and pre-existing admin ledgers (0.523375ms)
+✔ Cognito canonical UUID is allowed only with exact own email and creation within this failed run (0.197125ms)
+✔ partial assembly validation cannot sign formal acceptance (1.330625ms)
+✔ missing operations and arbitrary HTTP flags cannot satisfy a partial domain proof (0.139375ms)
+✔ ancillary requirements remain explicitly unaccepted (0.168291ms)
+✔ P95 uses all actual samples and rejects empty or invalid measurements (0.431625ms)
+✔ complete P95 excludes censored timeouts and refuses partial sample acceptance (0.111ms)
+✔ performance summary refuses to report P95 PASS for missing or incomplete actual samples (71.25275ms)
+✔ atomic snapshot binds the actual mutation request and executing role (0.347916ms)
+✔ read-only pool probe distinguishes one connection, recovery and incomplete capacity acceptance (1.504792ms)
+✔ observed connection-budget violation refuses a pool PASS receipt (1.043ms)
+✔ foreign probe application name is rejected before database access (0.07275ms)
+✔ CPU ancestry attributes minified constructor and compile samples exclusively (0.4165ms)
+✔ curl metrics differences preserve boundaries and reject bad ordering or nonfinite values (0.490833ms)
+✔ curl probes are six bounded verified GETs with no credential/config/retry path; proxy prevents dispatch (1.109417ms)
+✔ curl failures retain siblings and discard raw error text (0.168625ms)
+✔ allowlisted temporary CLI_READ_TIMEOUT has at most two read recoveries (4.4465ms)
+✔ allowlisted temporary CLI_NETWORK_ERROR has at most two read recoveries (0.156208ms)
+✔ allowlisted temporary ThrottlingException has at most two read recoveries (0.111ms)
+✔ allowlisted temporary TooManyRequestsException has at most two read recoveries (0.099834ms)
+✔ allowlisted temporary RequestTimeout has at most two read recoveries (0.094125ms)
+✔ allowlisted temporary RequestTimeoutException has at most two read recoveries (0.071ms)
+✔ allowlisted temporary ServiceUnavailableException has at most two read recoveries (0.073ms)
+✔ allowlisted temporary NetworkingError has at most two read recoveries (0.057333ms)
+✔ terminal or unknown AccessDeniedException is never retried (0.645375ms)
+✔ terminal or unknown SSO_SESSION_EXPIRED is never retried (0.121917ms)
+✔ terminal or unknown CLI_FAILED is never retried (0.060708ms)
+✔ terminal or unknown CLI_INVALID_JSON is never retried (0.063083ms)
+✔ terminal or unknown CLI_OUTPUT_LIMIT is never retried (0.037875ms)
+✔ terminal or unknown InvalidParameterException is never retried (0.054958ms)
+✔ terminal or unknown ResourceNotFoundException is never retried (0.060166ms)
+✔ terminal or unknown UNKNOWN is never retried (0.040916ms)
+✔ exhausted attempts preserve the last error and three failures (0.17575ms)
+✔ remaining deadline bounds the CLI and never admits an over-deadline success (0.089333ms)
+✔ deadline includes backoff and prevents another call after budget exhaustion (0.062625ms)
+✔ scheduler overshoot never issues a later read (0.058375ms)
+✔ writes, post-start reads, foreign operations and expanded budgets are rejected before callback (0.131791ms)
+✔ CLI timeout is bounded and SDK retries remain disabled (0.308541ms)
+✔ scheduled publishing overlaps slow PUBACK and drains failures without abandoning in-flight writes (18.056042ms)
+✔ Read-only historical evidence transfers only within unchanged source and current real read control (0.373625ms)
+✔ A write, another role, missing request ID or viewport cannot be relabeled as a reusable read proof (0.099375ms)
+✔ only exact test account and readonly role accepted (0.463708ms)
+✔ stack identity, region, project and test tag fail closed (0.099666ms)
+✔ permission denial is unverified, never classified as absent (0.11275ms)
+✔ metadata health never promotes missing business evidence to AWS PASS (0.214208ms)
+✔ five groups with unconfirmed or disabled users do not prove usable identities (0.079292ms)
+✔ missing target receipts and version mismatch remain blockers (0.070833ms)
+✔ existing test environment requires neither new account nor stack and retains real-response/cleanup boundaries (0.218333ms)
+✔ real sub-scope acceptance cannot claim whole QA09 (0.939042ms)
+✔ unfinished execution, missing role probe and failed assertion rejected (0.143375ms)
+✔ missing cleanup, wrong target, secrets and source tampering rejected (0.764834ms)
+✔ identity cleanup only accepts this run and the five known role identities (0.478625ms)
+✔ record cleanup requires exact run namespace, not merely a partial prefix (0.096625ms)
+✔ recovery excludes explicitly later own SLO records without waiving original bytes or deadlines (3.956208ms)
+✔ later record exemption never includes other devices or customers (2.593875ms)
+✔ site compensation rejects foreign-route before any AWS command (145.415334ms)
+✔ site compensation rejects failed-cleanup before any AWS command (158.4895ms)
+✔ site compensation rejects unbound-parent before any AWS command (139.262792ms)
+✔ nonempty Replay requires exact scope, terminal success, real scan and zero failures (0.600792ms)
+✔ consumer proof binds root and final to all identities and one invocation (0.153667ms)
+✔ single submission persists uncertainty first, never retries denial, timeout or missing ID (7.945583ms)
+✔ small consumer pages project metadata and stop on repeated tokens, failures and total budget (0.733166ms)
+✔ dedup gate refuses empty frames, missing tables and changed receipt/aggregate/archive data (0.236333ms)
+✔ real readonly SQL verifies owned device/customer scope and leaves outside and owned rows intact (1271.412417ms)
+✔ Replay observation discovers only exact owned duplicate IDs without claiming Job-to-SQS producer mapping (0.597959ms)
+✔ consumer reader fails closed on oversized pages and page cap without mutation recovery (0.180167ms)
+✔ fresh own MQTT session closes predecessor, disables reconnect and cannot touch a foreign device (0.447542ms)
+✔ PUBACK has a bounded functional deadline, owns late rejection and never resubmits unknown publication (213.935583ms)
+✔ cleanup never starts under unknown/running write ownership or retries an unknown cleanup Build (0.281459ms)
+✔ remaining target rejects foreign fixture before an API or database call (0.9225ms)
+✔ unproved license activation fails legal stage and independent stage failures remain explicit without credentials (4.21425ms)
+✔ nonempty hourly/receipt/archive scope is independent of unexercised daily rollup; original full Gate stays unchanged (1.477042ms)
+✔ narrow proof refuses missing/empty/changed business rows, foreign devices, duplicate seq and outside drift (1.039ms)
+✔ only bounded fields are projected and an exact unique Job/source/SQS tuple proves production (1.979458ms)
+✔ collector reads the exact fixed log group; truncation and repeated tokens cannot pass (0.387334ms)
+✔ terminal Replay alone never releases cleanup; exact root and final consumer outcomes are required (0.157792ms)
+✔ per-request service throttling requires both unique IDs and bound access-row time/status, never minute metrics (0.394042ms)
+✔ QA09 rollout separates logging, budget and event publication and rejects silent phase mistakes (0.766458ms)
+✔ engine CPU diagnosis is explicit and only allowed after pool budget rollout (0.094833ms)
+✔ runtime assembly has ordered nested CPU intervals without additive initialization totals (1.297958ms)
+✔ runtime proof rejects absent, duplicate, failed, foreign IDs, overlap, bad CPU and invalid durations (0.333458ms)
+✔ security retest rejects foreign fixture before any credential or live API access (0.546834ms)
+✔ six tampered tokens require HTTP rejection and keep credentials out of receipt (0.672167ms)
+✔ unknown seed outcome requires observed complete own set or proven empty set, never a blind retry (0.817917ms)
+✔ semantic SQL creates two scoped read models without lifecycle or authentication claims and refuses reuse (1359.514917ms)
+✔ semantic SQL refuses scope/state drift: lifecycle_status='Active' (201.863709ms)
+✔ semantic SQL refuses scope/state drift: site_id=NULL (206.789208ms)
+✔ semantic SQL refuses scope/state drift: customer_id='22222222-2222-2222-2222-222222222222' WHERE customer_id='11111111-1111-1111-1111-111111111111' (200.768ms)
+✔ semantic SQL refuses scope/state drift: name='outside' (186.574458ms)
+✔ platform exports require the exact ledger and own frozen filters; foreign jobs remain unchanged (262.930958ms)
+✔ business session cleanup never accepts a foreign email id role scope or lifecycle (0.695166ms)
+✔ session fixtures require exact own customer and site binding before cleanup (0.134334ms)
+✔ complete narrow real-environment scope never accepts full QA09 (1.274333ms)
+✔ missing mTLS, shared keys, different ingress/archive bytes and missing cleanup fail closed (0.6765ms)
+✔ CodeBuild inline source fits service limit and decompresses to exact reviewed bytes (36.071125ms)
+✔ exact own-ten plan rejects expansion, historical identity and wrong customer namespace (46.139625ms)
+✔ real SQL creates exact fixtures and cleanup preserves original devices/certificates (1114.571334ms)
+✔ unexpected original-data trigger mutation rolls back fixture creation (535.326375ms)
+✔ processing provisioning job prevents cleanup without deleting any own devices (472.85475ms)
+✔ CSR proofs bind method, path, request ID, timestamp, nonce and independent key (131.797417ms)
+✔ closed-fixture audit and request outbox cleanup require ledger and preserve unrelated events (445.056042ms)
+✔ closed-fixture access rejects missing approval audit and live customer (441.054416ms)
+✔ unseeded capacity attempt has read-only empty audit with deleted customers and fixed original baseline (452.52875ms)
+✔ business-only Onboarded fixtures preserve original rows, refuse reuse and make no certificate/authentication claim (451.911958ms)
+✔ unseeded timeout audit reads only exact prefix and cannot mutate original or retry customer creation (443.656208ms)
+✔ active lifecycle fixture changes exactly two own states and never claims a natural path (459.053917ms)
+✔ capacity probe executes a read-only transaction and leaves fixture and original rows unchanged (431.451667ms)
+✔ review-only mode cannot run without an explicit review hook or with unknown options (0.504667ms)
+✔ fixture CLI distinguishes expired SSO from authorization rejection and transport timeouts (0.175417ms)
+✔ final empty audit rejects remaining owned signal or outbox rows after device cleanup (435.287834ms)
+✔ TLS diagnostic bounds independent reads to 12 and six concurrent; fake observations cannot claim real target source (41.135917ms)
+✔ TLS diagnostic retains settled siblings, missing samples and unexpected HTTP/authentication as PARTIAL (0.474875ms)
+✔ zero exact matches preserves UNKNOWN, never proves nonexecution or permits restart (1.458958ms)
+✔ unique exact IN_PROGRESS resolves identity only (0.248041ms)
+✔ unique exact SUCCEEDED resolves identity only (0.119666ms)
+✔ unique exact FAILED resolves identity only (1.668875ms)
+✔ unique exact FAULT resolves identity only (0.696791ms)
+✔ unique exact STOPPED resolves identity only (0.517ms)
+✔ unique exact TIMED_OUT resolves identity only (0.325708ms)
+✔ two exact builds are ambiguous even if both succeeded (0.173833ms)
+✔ foreign serviceRole cannot acquire ownership (0.139417ms)
+✔ foreign sourceType cannot acquire ownership (0.122083ms)
+✔ foreign buildspec cannot acquire ownership (0.082666ms)
+✔ foreign vpcConfig cannot acquire ownership (0.142917ms)
+✔ foreign sourceHash cannot acquire ownership (0.10875ms)
+✔ foreign planBytes cannot acquire ownership (0.085333ms)
+✔ foreign duplicatePlan cannot acquire ownership (0.066875ms)
+✔ foreign planType cannot acquire ownership (0.06575ms)
+✔ truncated recent window cannot resolve; an older boundary is required (0.145041ms)
+✔ outside start window 2026-10-10T23:57:59Z is blocked (0.061875ms)
+✔ outside start window 2026-10-11T00:00:41Z is blocked (0.051834ms)
+✔ malformed dates, duplicate IDs, bound drift and known started receipts fail closed (0.467667ms)
+✔ global two transient read recoveries, ledger and original failures are retained (0.76175ms)
+✔ permanent AWS_list-builds-for-project_AccessDeniedException has no retry (0.500917ms)
+✔ permanent AWS_list-builds-for-project_SSO_SESSION_EXPIRED has no retry (0.075083ms)
+✔ permanent CLI_INVALID_JSON has no retry (0.069083ms)
+✔ permanent CLI_FAILED has no retry (0.054791ms)
+✔ repeated transient failure stops at three reads across the fixed inventory operation (0.125541ms)
+✔ elapsed read budget, wrong account, incomplete inventory and foreign returned IDs block admission (0.360167ms)
+✔ real reader wrapper calls only fixed read APIs, does not persist other build payloads, and refuses overwrite (2.549959ms)
+✔ serial inventory 0: exact batches, no early unique acceptance, no payload persistence (0.3625ms)
+✔ serial inventory 1: exact batches, no early unique acceptance, no payload persistence (0.197292ms)
+✔ serial inventory 5: exact batches, no early unique acceptance, no payload persistence (0.235084ms)
+✔ serial inventory 6: exact batches, no early unique acceptance, no payload persistence (0.217875ms)
+✔ serial inventory 12: exact batches, no early unique acceptance, no payload persistence (0.427417ms)
+✔ serial inventory 50: exact batches, no early unique acceptance, no payload persistence (2.516917ms)
+✔ later batch ambiguity blocks the early exact match; later old boundary closes window coverage (2.419541ms)
+✔ batch response duplicate fails closed without proceeding to the next batch (0.577584ms)
+✔ batch response missing fails closed without proceeding to the next batch (0.380875ms)
+✔ batch response foreign fails closed without proceeding to the next batch (0.175709ms)
+✔ batch response cross-batch fails closed without proceeding to the next batch (0.107625ms)
+✔ batch response non-array fails closed without proceeding to the next batch (0.091084ms)
+✔ batch response invalid-time fails closed without proceeding to the next batch (0.142083ms)
+✔ invalid list null cannot trigger any detail read (0.50375ms)
+✔ invalid list ["fdp-test-qa09-ten-device-fixtures:00000000-1111-1111-1111-1111111111 cannot trigger any detail read (0.044458ms)
+✔ invalid list ["fdp-test-qa09-ten-device-fixtures:11111111-1111-1111-1111-1111111111 cannot trigger any detail read (0.039416ms)
+✔ invalid list ["foreign-project:11111111-1111-1111-1111-111111111111"] cannot trigger any detail read (0.053541ms)
+✔ invalid total budget 0 makes no AWS call (0.071959ms)
+✔ invalid total budget -1 makes no AWS call (0.04175ms)
+✔ invalid total budget 90001 makes no AWS call (0.043125ms)
+✔ invalid total budget 1.5 makes no AWS call (0.038083ms)
+✔ invalid total budget NaN makes no AWS call (0.037833ms)
+✔ single total deadline shrinks the final CLI allowance and prevents all later batches (0.182916ms)
+✔ observation persistence time counts against the total deadline before the next read (0.071125ms)
+✔ two global recoveries in different batches use at most fourteen CLI invocations for fifty IDs (1.549792ms)
+✔ third transient across distinct batches cannot reset the recovery allowance (0.811083ms)
+✔ actual CLI entry uses read-only small batches, immutable original bytes and identity-only receipts (714.444209ms)
+✔ RUNNING observation cost cannot start a read after the deadline (0.210167ms)
+✔ wrapper no-match retains original failure, safe partial observations and no restart authority (2.7915ms)
+✔ wrapper ambiguous retains original failure, safe partial observations and no restart authority (2.393333ms)
+✔ wrapper partial retains original failure, safe partial observations and no restart authority (2.2435ms)
+✔ wrapper denied retains original failure, safe partial observations and no restart authority (1.72825ms)
+✔ only exact fresh suppressed identities and matching customer scopes are allowed (0.795292ms)
+✔ real SQL seeds only INVITED and preserves outside users; duplicate seed never replays (1069.42875ms)
+✔ foreign customer and outside-user trigger mutation roll back all seed writes (503.796834ms)
+✔ identity provisioning suppresses delivery, requires real returned subject, and cannot act on foreign names (0.974584ms)
+✔ response rejection is owned even when the browser action fails first (0.586125ms)
+✔ unknown fixture start is preserved and surfaced as a stop condition without replay (1.051541ms)
+✔ cleanup recovery rejects foreign identities and sites before any AWS operation (321.658208ms)
+✔ version binding preserves prior defaults and accepts exact new target (0.636584ms)
+✔ invalid version input is rejected before any AWS operation (0.139625ms)
+✔ all delivered writes have an explicit permission and own or absent object path (0.697041ms)
+✔ identical claims still change signed payload bytes rather than unused base64 signature bits (0.118542ms)
+✔ Gateway 403 rejects tampered signatures while protected 2xx must fail (2.021042ms)
+✔ quick has exact cadence, 24 historical hours, 30x burst, 5% duplicates and 2% delayed delivery (3.242583ms)
+✔ full plan contains 86400 historical Telemetry samples for 10 devices at 10-second cadence (188.616417ms)
+✔ unknown profile fails closed (0.175333ms)
+✔ P95 uses nearest rank and does not mutate input (0.144875ms)
+✔ invalid latency  rejected (0.068167ms)
+✔ invalid latency NaN rejected (0.044708ms)
+✔ invalid latency Infinity rejected (0.039542ms)
+✔ invalid latency -1 rejected (0.044792ms)
+✔ independent checker verifies count average min max and UTC buckets (0.25425ms)
+✔ complete reliability proof passes (0.761375ms)
+✔ Gate rejects missing trace (0.4495ms)
+✔ Gate rejects duplicate trace (0.410583ms)
+✔ Gate rejects failed cleanup (0.406583ms)
+✔ Gate rejects wrong profile (0.501042ms)
+✔ Gate rejects wrong cadence (0.393708ms)
+✔ Gate rejects untracked loss (0.365042ms)
+✔ Gate rejects duplicate business row (0.37825ms)
+✔ Gate rejects missing archive (0.356834ms)
+✔ Gate rejects missing reorder (0.372333ms)
+✔ Gate rejects missing retry (0.384875ms)
+✔ Gate rejects unresolved gap (0.39325ms)
+✔ Gate rejects worker not paused (0.372708ms)
+✔ Gate rejects no backlog (0.365375ms)
+✔ Gate rejects unscoped replay (0.3625ms)
+✔ Gate rejects duplicate MQTT publish (0.36075ms)
+✔ Gate rejects late ACK changed terminal state (0.372792ms)
+✔ Gate rejects telemetry P95 failed (0.763292ms)
+✔ Gate rejects command P95 failed (0.461917ms)
+✔ Gate rejects NaN P95 (0.434125ms)
+✔ Gate rejects missing latency samples (0.430292ms)
+✔ requires explicit live opt-in before creating output/resources (1.338416ms)
+✔ observer/cleanup rejects broad names, foreign model and setup writes before SQL (1.253208ms)
+✔ cleanup stops when own serial is assigned to an unrelated parent (0.201208ms)
+✔ public snapshot redacts verifier, records DEC-004 parameters, preserves original data (0.310875ms)
+✔ reject malformed KDF/length before publishing evidence (0.22775ms)
+✔ stable ETag ignores volatile fields and changes for each stable domain (0.218667ms)
+✔ full snapshot comparison detects tenant, license, config, filtered-user and receipt-hash drift (0.697292ms)
+✔ archive prefix needs a precise customer id (0.072917ms)
+✔ wire contract rejects uppercase MQTT status in REST and accepts title case REST value (9.033417ms)
+✔ JSON field ordering does not change configuration equality (0.226709ms)
+✔ parent closure refuses to run while an owned device remains (0.359959ms)
+✔ legacy status probe refuses missing or noncanonical own state before any write (0.606958ms)
+✔ security receipt accepts complete execution and all observed acceptance proofs (3.20475ms)
+✔ execution fails closed: deleted required test (1.026125ms)
+✔ execution fails closed: missing file (0.115708ms)
+✔ execution fails closed: pending test (0.077ms)
+✔ execution fails closed: failed test (0.328083ms)
+✔ proof fails closed: missing proof (0.120458ms)
+✔ proof fails closed: reused prefix (0.087667ms)
+✔ proof fails closed: cleanup incomplete (0.08325ms)
+✔ proof fails closed: expired JWT accepted (0.087167ms)
+✔ proof fails closed: missing write operation (0.121583ms)
+✔ proof fails closed: forged identity accepted (0.095291ms)
+✔ proof fails closed: route resolved before auth (0.081667ms)
+✔ proof fails closed: cross tenant allowed (0.093ms)
+✔ proof fails closed: unauthorized side effect (0.084667ms)
+✔ proof fails closed: prototype pollution (0.084875ms)
+✔ proof fails closed: malicious media signed (0.077458ms)
+✔ proof fails closed: malicious media persisted (0.078792ms)
+✔ proof fails closed: leak ignored (0.083ms)
+✔ proof fails closed: unscanned audit (0.121459ms)
+✔ proof fails closed: unscanned snapshot (0.116333ms)
+✔ proof fails closed: partial response scan (0.1ms)
+✔ independent scanner rejects nested secrets raw JWT Error private key and signed URL without echoing values (2.136334ms)
+✔ scanner detects opaque canary leakage and permits null redacted values and public certificate (0.233417ms)
+ℹ tests 1693
+ℹ suites 0
+ℹ pass 1690
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 17741.562208
+
+✖ failing tests:
+
+test at scripts/device-simulator-mtls.test.mjs:15:1
+✖ local TLS broker: 10 independent certificate sessions, QoS1, downlinks, reconnect and broker ACL rejection (142.723542ms)
+  Error: listen EPERM: operation not permitted ::1
+      at Server.setupListenHandle [as _listen2] (node:net:2368:21)
+      at listenInCluster (node:net:2499:12)
+      at GetAddrInfoReqWrap.callback (node:net:2728:7)
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:135:8) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '::1'
+  }
+
+test at scripts/qa09-https-transport.test.mjs:74:1
+✖ real delayed body is measured separately; a reused connection has absent DNS/TCP/TLS, not invented zeros (6.91325ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2368:21)
+      at listenInCluster (node:net:2499:12)
+      at node:net:2728:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at scripts/qa09-https-transport.test.mjs:97:1
+✖ total deadline aborts an unfinished response body; no complete-body receipt or retry (1.843167ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:2368:21)
+      at listenInCluster (node:net:2499:12)
+      at node:net:2728:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+ ELIFECYCLE  Command failed with exit code 1.
+ ELIFECYCLE  Test failed. See above for more details.
+ ELIFECYCLE  Command failed with exit code 1.

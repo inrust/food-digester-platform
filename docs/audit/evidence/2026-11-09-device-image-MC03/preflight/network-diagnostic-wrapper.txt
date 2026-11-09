@@ -1,0 +1,24 @@
+import net from 'node:net';
+import { appendFileSync } from 'node:fs';
+const log = (host, error) => {
+  if (error?.message !== 'MC03_OFFLINE_NETWORK_GUARD') return;
+  appendFileSync(process.env.FDP_MC03_OFFLINE_GUARD_LOG.replace(/network-guard\.log$/u, 'network-diagnostic.log'),
+    JSON.stringify({ time: new Date().toISOString(), tool: process.argv[1]?.split('/').at(-1), hostname: typeof host === 'string' ? host : undefined, stack: error.stack?.split('\n').slice(1, 8) }) + '\n');
+};
+const connect = net.Socket.prototype.connect;
+net.Socket.prototype.connect = function (...args) {
+  try { return connect.apply(this, args); } catch (error) {
+    const first = Array.isArray(args[0]) ? args[0][0] : args[0];
+    log(first && typeof first === 'object' ? first.host : typeof first === 'number' ? args[1] : undefined, error);
+    throw error;
+  }
+};
+const fetch = globalThis.fetch;
+globalThis.fetch = async (input, options) => {
+  try { return await fetch(input, options); } catch (error) {
+    if (error?.message === 'MC03_OFFLINE_NETWORK_GUARD') {
+      log(new URL(typeof input === 'string' || input instanceof URL ? input : input.url).hostname, error);
+    }
+    throw error;
+  }
+};
