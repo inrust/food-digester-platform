@@ -47,6 +47,12 @@ try {
     jsonHash(stable(input.current)) === jsonHash(stable(input.publication)),
     'TOOL_CURRENT_SOURCE_OR_POLICY_DRIFT',
   );
+  requireThat(
+    bound.manifest.approvalRef === input.preparationWindow.authorizationRef &&
+      bound.manifest.window.startsAt === input.preparationWindow.startsAt &&
+      bound.manifest.window.endsAt === input.preparationWindow.endsAt,
+    'TOOL_PREPARATION_AUTHORIZATION_DRIFT',
+  );
   const t = Date.parse(input.publication.capturedAt);
   requireThat(
     Date.parse(input.preparationWindow.startsAt) <= t && t <= Date.parse(input.preparationWindow.endsAt),

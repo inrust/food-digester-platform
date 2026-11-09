@@ -311,7 +311,10 @@ export function compareApplicationSources(candidate, observed, deliveryPaths, ve
       .toString()
       .trim(),
   }));
-  const changedPaths = git(['diff', '--name-only', '-z', observed, candidate]).toString().split('\0').filter(Boolean);
+  const changedPaths = git(['diff', '--name-only', '--no-renames', '-z', observed, candidate])
+    .toString()
+    .split('\0')
+    .filter(Boolean);
   const excluded = new Set(preparationPaths);
   const nonMetadata = changedPaths.filter(
     (p) =>

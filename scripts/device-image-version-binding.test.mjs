@@ -407,6 +407,7 @@ test('runtime proof requires same version binding and five exact primary identit
 function bridgeFixture(id) {
   const f = fixtureInput();
   f.manifest.toolCommit = TOOLS;
+  f.manifest.approvalRef = 'ref:local-fixture';
   const w = renderWriterManifest(f.manifest),
     bound = id === 'writer' ? w : renderVerifierManifest(w, f.snapshot, now),
     code = Buffer.from('export const handler=()=>{}'),
@@ -481,7 +482,7 @@ function bridgeFixture(id) {
     current: { ...structuredClone(obs), capturedAt: iso(now + 600000) },
     network: f.network,
     deviceId: f.snapshot.binding.deviceId,
-    preparationWindow: { startsAt: iso(now - 1000), endsAt: iso(now + 600000) },
+    preparationWindow: { ...f.manifest.window, authorizationRef: f.manifest.approvalRef },
     applicationCandidate: APP,
     toolSourceCommit: TOOLS,
     bareEntrySha256: hash(code),
@@ -513,6 +514,9 @@ test('bridge rejects copied tool source, changed code and mutable runtime drift'
     },
     (x) => {
       x.preparationWindow.startsAt = iso(now + 1);
+    },
+    (x) => {
+      x.preparationWindow.authorizationRef = 'ref:other-run';
     },
   ]) {
     const f = bridgeFixture('verifier');

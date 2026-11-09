@@ -7,7 +7,7 @@
 - **应用候选**：d1a7b811；保留原 G3 证据 1b1b879f，核验1693交付源及8个构建输入。它是应用身份，与当前工具源码提交及仓库候选分开。
 - **独立工具源码**：4a99ce1e 的 `tools/img21` 整树。Writer、Verifier 清单分别绑定 bare entry SHA256、构建输入闭包和本地测试；两者只证明本地代码，真实 ZIP 和发布版本仍缺。完整权威写入口是原19个应用入口加 Writer；Verifier 不具有写权限。
 - **仓库与协议候选**：本轮协议实现提交。先提交源码，再在该提交上运行 `pnpm verify` 的22阶段、7份专门回执及工具 typecheck/test/synth/ZIP/复算、协议回归；结果和日志另提交。完整 Git tree/库存与非 docs 文件内容摘要绑定；证据提交只允许向 MC03 专用证据目录写入，不豁免其他运行/构建源。旧 G3 固定20个 preparation inputs 的范围不变。新协议依赖显式纳入协议摘要。
-- **历史部署**：69c76e1d 是保留的历史观察 SHA。离线重算1693交付文件、1713完整检查输入及8个构建树，留存实际差异（12项完整检查输入不同）。对照结果仅源比较；不声称该部署是 d1，也不构成新观察、发布审批或真实 G4。
+- **历史部署**：69c76e1d 是保留的历史观察 SHA。离线重算1693交付文件、1713完整检查输入及8个构建树，禁用重命名折叠，留存两侧实际路径差异（12项完整检查输入不同）。对照结果仅源比较；不声称该部署是 d1，也不构成新观察、发布审批或真实 G4。
 
 [冻结目录与结果](../../docs/audit/evidence/2026-11-09-device-image-MC03/result.json)。重复验证 `node scripts/device-image-candidate.mjs --check`。新候选源码或工具一旦改动，重新冻结和执行适用质量检查；不能沿用旧 digest。
 
@@ -33,7 +33,7 @@ V2 仍使用旧22项核心输入和原证据/用例/清理校验，新增输入�
 | applicationArtifacts         | 20项精确函数名。每项包含实际 sourceCommit、CodeSha256、configurationHash、revisionId、Active/Successful、artifact。artifact 含实际 CI sourceCommit/安全 CI run 引用、S3 bucket/key、非 null 固定 VersionId、sizeBytes、FULL_OBJECT checksumType；sha256 使用 Lambda CodeSha256 的 Base64 编码，两者一致                     |
 | reviewRef 实体               | kind=APPLICATION_SOURCE_EQUIVALENCE_REVIEW、mode=TARGET_REVIEW、syntheticResponsesAllowed=false、decision=ACCEPT_APPLICATION_SOURCE_ONLY、两候选及真实观察 SHA、重算 comparisonDigest、reviewerRef、独立审批记录引用、完整 UTC reviewedAt/expiresAt。只批准应用源码，不覆盖工具、IAM、执行窗口或目标 G4                     |
 | executionTools               | 只有 writer、verifier，源码4a99ce1e，实际数字 qualifiedArn、manifestRef、zipRef、publicationRef、networkRef。各自固定 S3 artifact {sourceCommit,ciRunRef,s3Bucket,s3Key,versionId,sizeBytes,checksumType,sha256}；工具 ZIP 的 sha256 为 HEX，读取 ZIP 字节校验，使用 SHA256 Base64 与 Lambda CodeSha256 对照                |
-| preparationWindow            | 完整 UTC startsAt/endsAt，最长90分钟及独立 authorizationRef。初始工具发布记录须在该准备窗口内；不是 G4 运行窗口，不能复用已过期授权                                                                                                                                                                                         |
+| preparationWindow            | 完整 UTC startsAt/endsAt，最长90分钟及独立 authorizationRef。初始工具发布记录须在该准备窗口内，且两份 manifest 中的窗口和批准引用须精确相同；不是 G4 运行窗口，不能复用已过期授权                                                                                                                                           |
 | runtimeVersionsProof.details | 同一 versionBindingRef、同一真实部署 SHA/五版本值、两表名、20项 applicationRuntime（name、codeSha256、configurationHash、revisionId）、20项 authorityWriters（原19+Writer，name、controlTable、payloadTable、configurationHash、codeSha256）、两项 toolRuntime（id、sourceCommit、qualifiedArn、zipSha256、observationRef） |
 
 工具校验子进程重用 MC02 的 ZIP 实体、manifest 与发布验证器，仅消费保存的元数据，不调用 AWS。检查初始发布时刻的 Verifier 五分钟规则；G4 当前元数据还须在 G4 窗口内观察，代码、配置、角色、边界和 runtime 必须与初始记录一致。此复核**不重新授予 Invoke**，不会因已用完的 Verifier 快照自然过期而把独立图像接口验收变成重复验签。需要再次调用 Verifier 时仍按 MC02 新鲜快照流程。工具当前元数据和授权材料未知均保留缺项，不从合成栈/fixture 填造。
