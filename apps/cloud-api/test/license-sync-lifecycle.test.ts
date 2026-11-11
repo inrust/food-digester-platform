@@ -171,6 +171,35 @@ test('ordinary Sync repairs an already-active License once without either device
   assert.equal(snapshot.operationalStatus.lifecycleStatus, 'Active');
 });
 
+test('Sync returns a retryable conflict when the device activation update no longer applies', async () => {
+  const f = await fixture();
+  await activeLicense(f);
+  await db.pg.exec(`
+    CREATE FUNCTION skip_sync_activation() RETURNS trigger AS $$
+    BEGIN
+      IF OLD.id = '${f.device.id}' AND NEW.lifecycle_status = 'Active' THEN
+        RETURN NULL;
+      END IF;
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+    CREATE TRIGGER skip_sync_activation BEFORE UPDATE ON devices
+      FOR EACH ROW EXECUTE FUNCTION skip_sync_activation();
+  `);
+  try {
+    const response = await f.call({ lastSyncTime: null });
+    assert.equal(response.status, 409);
+    assert.equal((response.body as { error: { code: string } }).error.code, 'CONFLICT');
+    assert.equal(await lifecycle(f.device.id), 'Assigned');
+    assert.equal(await db.prisma.deviceLatestState.count({ where: { deviceId: f.device.id } }), 0);
+    assert.equal(await db.prisma.deviceStateHistory.count({ where: { deviceId: f.device.id } }), 0);
+    assert.equal(await db.prisma.auditLog.count({ where: { objectId: f.device.id, result: 'SUCCESS' } }), 0);
+  } finally {
+    await db.pg.exec('DROP TRIGGER skip_sync_activation ON devices; DROP FUNCTION skip_sync_activation();');
+  }
+  assert.equal((await f.serve()).operationalStatus.lifecycleStatus, 'Active');
+});
+
 test('old RECEIVED and VERIFIED request shapes remain accepted and cannot activate an Issued license', async () => {
   const f = await fixture();
   const s = await f.serve();

@@ -1,6 +1,7 @@
 import { recordAudit, type DbClient } from '@fdp/database';
 import { licenseStateNotAllowed } from '../admin/license/errors.js';
 import { transitionLifecycle, type LifecycleStatus, type OperationalStatus } from '@fdp/domain';
+import { DeviceSyncError } from './sync.js';
 
 interface ActivationLicense {
   readonly id: string;
@@ -65,7 +66,11 @@ export async function activateDeviceForCloudLicense(
     where: { id: device.id, customerId: device.customerId, lifecycleStatus: device.lifecycleStatus },
     data: { lifecycleStatus: 'Active' },
   });
-  if (updated.count !== 1) throw new Error('CLOUD_LICENSE_ACTIVATION_CONFLICT');
+  if (updated.count !== 1) {
+    if (source === 'SYNC_RECONCILIATION')
+      throw new DeviceSyncError('CONFLICT', 'The device state changed during license reconciliation');
+    throw new Error('CLOUD_LICENSE_ACTIVATION_CONFLICT');
+  }
   await tx.deviceLatestState.upsert({
     where: { deviceId: device.id },
     create: { deviceId: device.id, customerId: device.customerId, operationalStatus: 'Active' },
