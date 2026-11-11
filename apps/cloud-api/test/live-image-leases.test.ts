@@ -159,7 +159,6 @@ describe('mandatory authorization guard and fencing', () => {
     expect(f.store.controls.get('device-1')!.viewers).toHaveLength(1);
   });
   for (const change of [
-    { featureEnabled: false },
     { customerId: null },
     { lifecycleStatus: 'Suspended' },
     { lifecycleStatus: 'Retired' },
@@ -194,7 +193,7 @@ describe('mandatory authorization guard and fencing', () => {
     const renewing = f.service.renewViewer(actor(), 'device-1', randomUUID());
     await entered.promise;
     let done = false;
-    const revoking = f.service.fenceAuthorization('device-1', 'invalidate').then(() => {
+    const revoking = f.service.fenceAuthorization('device-1').then(() => {
       done = true;
     });
     await Promise.resolve();
@@ -206,21 +205,19 @@ describe('mandatory authorization guard and fencing', () => {
     expect(control.enabled).toBe(false);
     expect(control.viewers).toHaveLength(0);
     expect(control.authEpoch).toBe(2);
-    expect((await f.handlers.getDeviceState({ identity: cert, requestId: 'state' })).status).toBe(403);
+    expect((await f.handlers.getDeviceState({ identity: cert, requestId: 'state' })).body).toMatchObject({
+      data: { state: 'IDLE' },
+    });
   });
-  test('failed authority mutation stays closed until explicit reset; tenant switch has new epoch and stream', async () => {
+  test('tenant switch after fencing starts a new epoch and stream without an enable step', async () => {
     const f = fixture();
     const viewer = randomUUID();
     const old = await f.service.renewViewer(actor(), 'device-1', viewer);
-    await f.service.fenceAuthorization('device-1', 'invalidate');
-    // Simulate authoritative SQL rollback: its old Active/A state remains, CONTROL remains closed.
-    expect((await f.handlers.renewViewer(request(viewer))).status).toBe(403);
+    await f.service.fenceAuthorization('device-1');
     await f.authorization.withExclusive('device-1', async () => {
       f.authorization.scope = { ...f.authorization.scope, customerId: 'customer-B' };
       f.authorization.actors.set('alice', actor('alice', 'customer-B'));
     });
-    expect((await f.handlers.renewViewer(request(viewer))).status).toBe(403);
-    await f.service.fenceAuthorization('device-1', 'reset');
     const next = await f.service.renewViewer(actor(), 'device-1', viewer);
     expect(next.streamId).not.toBe(old.streamId);
     expect(f.store.controls.get('device-1')).toMatchObject({ customerId: 'customer-B', authEpoch: 3 });
@@ -265,26 +262,28 @@ test('viewer UUID spelling is canonicalized consistently for renew and release',
   expect(await f.service.getDeviceState(cert)).toMatchObject({ state: 'IDLE' });
 });
 
-test('authority mutation runs after fencing under the exclusive lock; failure leaves it closed', async () => {
+test('failed authority mutation leaves the old stream closed and a fresh lease can recover', async () => {
   const f = fixture();
   const id = randomUUID();
-  await f.service.renewViewer(actor(), 'device-1', id);
+  const old = await f.service.renewViewer(actor(), 'device-1', id);
   await expect(
-    f.service.fenceAuthorization('device-1', 'invalidate', async () => {
+    f.service.fenceAuthorization('device-1', async () => {
       expect(f.store.controls.get('device-1')!.enabled).toBe(false);
       throw new Error('authority transaction rolled back');
     }),
   ).rejects.toThrow('authority transaction rolled back');
-  expect((await f.handlers.renewViewer(request(id))).status).toBe(403);
-  await f.service.fenceAuthorization('device-1', 'reset');
-  expect((await f.handlers.renewViewer(request(id))).status).toBe(200);
+  expect(await f.service.getDeviceState(cert)).toMatchObject({ state: 'IDLE' });
+  await f.service.releaseViewer(actor(), 'device-1', id);
+  expect(f.store.controls.get('device-1')!.enabled).toBe(false);
+  const next = await f.service.renewViewer(actor(), 'device-1', id);
+  expect(next.streamId).not.toBe(old.streamId);
 });
 
 test('authorization write callback completes before new reads enter the guard', async () => {
   const f = fixture();
   const entered = deferred();
   const resume = deferred();
-  const invalidation = f.service.fenceAuthorization('device-1', 'invalidate', async () => {
+  const invalidation = f.service.fenceAuthorization('device-1', async () => {
     entered.resolve();
     await resume.promise;
     f.authorization.certificateActive = false;

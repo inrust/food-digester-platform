@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 import type { ActorContext } from '@fdp/auth';
 import { certificateFingerprintFromPem } from '@fdp/auth';
 import { withLiveImageAuthority } from '@fdp/aws-clients';
@@ -94,22 +94,24 @@ beforeEach(async () => {
       scopes: { deleteMany: {}, create: { customerId: 'customer-a' } },
     },
   });
-  await db.prisma.deviceLiveImagePolicy.upsert({
-    where: { deviceId: 'camera' },
-    create: { deviceId: 'camera', enabled: true },
-    update: { enabled: true },
-  });
   store = new TestControlStore();
   client = withLiveImageAuthority(db.prisma, store);
   guard = new PostgresLiveImageAuthorization(client, () => now);
   leases = new LiveImageLeaseService({ store, authorization: guard, now: () => now });
 });
 describe('IMG-08 PostgreSQL fresh authorization and authority protocol (PGlite)', () => {
-  test('server allowlist defaults closed; explicit enable permits a lease', async () => {
-    await client.deviceLiveImagePolicy.delete({ where: { deviceId: 'camera' } });
-    await expect(leases.renewViewer(actor, 'camera', viewer)).rejects.toMatchObject({ code: 'FORBIDDEN' });
-    await client.deviceLiveImagePolicy.create({ data: { deviceId: 'camera', enabled: true } });
-    expect(await leases.renewViewer(actor, 'camera', viewer)).toHaveProperty('streamId');
+  test.each([null, false, true])('legacy policy %s has no effect on preview eligibility', async (enabled) => {
+    if (enabled !== null) await db.prisma.deviceLiveImagePolicy.create({ data: { deviceId: 'camera', enabled } });
+    try {
+      await expect(leases.getDeviceState({ clientCertPem: pem })).resolves.toMatchObject({ state: 'IDLE' });
+      const lease = await leases.renewViewer(actor, 'camera', viewer);
+      await expect(leases.getDeviceState({ clientCertPem: pem })).resolves.toMatchObject({
+        state: 'ACTIVE',
+        streamId: lease.streamId,
+      });
+    } finally {
+      await db.prisma.deviceLiveImagePolicy.deleteMany({ where: { deviceId: 'camera' } });
+    }
   });
   test('uses current database roles rather than JWT roles', async () => {
     await leases.renewViewer(actor, 'camera', viewer);
@@ -142,11 +144,6 @@ describe('IMG-08 PostgreSQL fresh authorization and authority protocol (PGlite)'
       'retire',
       (tx: PrismaClient) => tx.device.update({ where: { id: 'camera' }, data: { lifecycleStatus: 'Retired' } }),
     ],
-    [
-      'disable capability',
-      (tx: PrismaClient) =>
-        tx.deviceLiveImagePolicy.update({ where: { deviceId: 'camera' }, data: { enabled: false } }),
-    ],
   ] as const)('%s clears prior stream before authority commit', async (_name, mutate) => {
     await leases.renewViewer(actor, 'camera', viewer);
     const old = (await store.readControl('camera'))!;
@@ -162,8 +159,8 @@ describe('IMG-08 PostgreSQL fresh authorization and authority protocol (PGlite)'
     await client.deviceCertificate.update({ where: { id: 'cert' }, data: { status: 'REVOKED', revokedAt: now } });
     await expect(leases.getDeviceState({ clientCertPem: pem })).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
   });
-  test('fence exists before SQL and failed SQL stays closed until explicit policy recheck', async () => {
-    await leases.renewViewer(actor, 'camera', viewer);
+  test('fence exists before SQL and rollback can only recover by opening a fresh stream', async () => {
+    const previous = await leases.renewViewer(actor, 'camera', viewer);
     await expect(
       client.$transaction(async (tx) => {
         await tx.device.update({ where: { id: 'camera' }, data: { lifecycleStatus: 'Suspended' } });
@@ -172,12 +169,10 @@ describe('IMG-08 PostgreSQL fresh authorization and authority protocol (PGlite)'
       }),
     ).rejects.toThrow('force rollback');
     expect((await db.prisma.device.findUnique({ where: { id: 'camera' } }))!.lifecycleStatus).toBe('Active');
-    await expect(leases.renewViewer(actor, 'camera', viewer)).rejects.toMatchObject({ code: 'FORBIDDEN' });
-    // An ordinary authority write may not reopen a fence left by a rolled back transaction.
-    await client.user.update({ where: { id: 'user-a' }, data: { status: 'ACTIVE' } });
     expect((await store.readControl('camera'))!.enabled).toBe(false);
-    await client.deviceLiveImagePolicy.update({ where: { deviceId: 'camera' }, data: { enabled: true } });
-    await expect(leases.renewViewer(actor, 'camera', viewer)).resolves.toBeDefined();
+    await expect(leases.getDeviceState({ clientCertPem: pem })).resolves.toMatchObject({ state: 'IDLE' });
+    const next = await leases.renewViewer(actor, 'camera', viewer);
+    expect(next.streamId).not.toBe(previous.streamId);
   });
   test('DynamoDB failure aborts authority SQL and never falls back to local state', async () => {
     await leases.renewViewer(actor, 'camera', viewer);
@@ -220,10 +215,10 @@ describe('IMG-08 PostgreSQL fresh authorization and authority protocol (PGlite)'
   });
   test('root client mutations inside exclusive service callback reuse transaction, no nested commit', async () => {
     await leases.renewViewer(actor, 'camera', viewer);
-    await leases.fenceAuthorization('camera', 'invalidate', async () => {
-      await client.deviceLiveImagePolicy.update({ where: { deviceId: 'camera' }, data: { enabled: false } });
+    await leases.fenceAuthorization('camera', async () => {
+      await client.device.update({ where: { id: 'camera' }, data: { lifecycleStatus: 'Suspended' } });
     });
-    expect((await db.prisma.deviceLiveImagePolicy.findUnique({ where: { deviceId: 'camera' } }))!.enabled).toBe(false);
+    expect((await db.prisma.device.findUnique({ where: { id: 'camera' } }))!.lifecycleStatus).toBe('Suspended');
     expect((await store.readControl('camera'))!.enabled).toBe(false);
   });
 });
@@ -248,59 +243,6 @@ test('in-flight guarded read finishes before queued authority commit; subsequent
   expect(await read).toBe('old snapshot');
   await write;
   await expect(leases.renewViewer(actor, 'camera', viewer)).rejects.toMatchObject({ code: 'FORBIDDEN' });
-});
-test('post-commit DynamoDB reset failure preserves successful SQL, closed preview, and fixed recovery signal', async () => {
-  await leases.renewViewer(actor, 'camera', viewer);
-  const cas = store.compareAndSwap.bind(store),
-    warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-  store.compareAndSwap = (id, expected, next) => {
-    if (next.enabled) throw new Error('private reset transport failure');
-    return cas(id, expected, next);
-  };
-  try {
-    expect((await client.user.update({ where: { id: 'user-a' }, data: { status: 'DISABLED' } })).status).toBe(
-      'DISABLED',
-    );
-    expect((await store.readControl('camera'))!.enabled).toBe(false);
-    expect(warn).toHaveBeenCalledWith('live-image.authority.recheck-required');
-    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('private'));
-  } finally {
-    warn.mockRestore();
-  }
-});
-test('post-commit recheck never reopens a newer fence, including a later rolled-back writer', async () => {
-  await leases.renewViewer(actor, 'camera', viewer);
-  let inject = true;
-  const rawTx = db.prisma.$transaction.bind(db.prisma);
-  const raw = new Proxy(db.prisma, {
-    get(target, prop) {
-      if (prop === '$transaction')
-        return async (...args: unknown[]) => {
-          const result = await (rawTx as (...args: unknown[]) => Promise<unknown>)(...args);
-          if (inject) {
-            inject = false;
-            const current = store.controls.get('camera')!;
-            store.controls.set('camera', {
-              ...current,
-              revision: current.revision + 1,
-              authEpoch: current.authEpoch + 1,
-              enabled: false,
-            });
-          }
-          return result;
-        };
-      return Reflect.get(target, prop);
-    },
-  });
-  const wrapped = withLiveImageAuthority(raw, store),
-    warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-  try {
-    await wrapped.userRole.deleteMany({ where: { userId: 'user-a' } });
-    expect((await store.readControl('camera'))!.enabled).toBe(false);
-    expect(warn).toHaveBeenCalledWith('live-image.authority.recheck-required');
-  } finally {
-    warn.mockRestore();
-  }
 });
 test('row-lock SELECT and repository-owned onboarding rate counters do not invalidate active streams', async () => {
   const { PostgresRateLimitStore } = await import('@fdp/auth');
@@ -347,9 +289,6 @@ test('five HTTP preview routes run renew -> state -> JPEG upload -> READY/UNCHAN
       headers: { authorization: `Bearer ${token}` },
       ...(queryStringParameters ? { queryStringParameters } : {}),
     });
-  const lease = await call('PUT', `viewers/${viewer}`);
-  expect(lease.statusCode).toBe(200);
-  const streamId = JSON.parse(lease.body).data.streamId;
   const unused = async () => ({ status: 404, body: {} });
   const device = createDeviceApiLambdaHandler({
     certificateStatus: unused,
@@ -369,6 +308,12 @@ test('five HTTP preview routes run renew -> state -> JPEG upload -> READY/UNCHAN
       requestContext: { identity: { clientCert: { clientCertPem: pem } } },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
+  const idle = await deviceCall('GET', 'state');
+  expect(idle.statusCode).toBe(200);
+  expect(JSON.parse(idle.body).data).toEqual({ state: 'IDLE', pollIntervalMs: 5000 });
+  const lease = await call('PUT', `viewers/${viewer}`);
+  expect(lease.statusCode).toBe(200);
+  const streamId = JSON.parse(lease.body).data.streamId;
   expect(JSON.parse((await deviceCall('GET', 'state')).body).data).toMatchObject({ state: 'ACTIVE', streamId });
   const imageBase64 = readFileSync(
     new URL('../../../contracts/rest/fixtures/device-images/capture.jpg', import.meta.url),
@@ -411,7 +356,6 @@ test('device and user revocation preserve unrelated device streams; JSON data ca
       manufactureDate: now,
       customerId: 'customer-b',
       lifecycleStatus: 'Active',
-      liveImagePolicy: { create: { enabled: true } },
     },
   });
   try {

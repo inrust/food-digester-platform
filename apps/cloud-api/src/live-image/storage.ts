@@ -24,7 +24,6 @@ export interface LiveImageAuthorizationScope {
   readonly customerId: string | null;
   readonly lifecycleStatus: string;
   readonly operationalStatus: string | null;
-  readonly featureEnabled: boolean;
   readonly actor?: ActorContext;
 }
 

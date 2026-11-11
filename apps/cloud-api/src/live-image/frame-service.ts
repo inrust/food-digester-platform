@@ -41,10 +41,13 @@ export class LiveImageFrameService {
         if (!isLiveImageEligible(scope)) throw new LiveImageLeaseError('FORBIDDEN');
         const snapshot = await this.deps.store.readUploadSnapshot(scope.deviceId, streamId, frameId);
         const control = snapshot.control;
-        if (control && (!control.enabled || control.customerId !== scope.customerId))
-          throw new LiveImageLeaseError('FORBIDDEN');
+        if (control?.enabled && control.customerId !== scope.customerId) throw new LiveImageLeaseError('FORBIDDEN');
         let now = this.now().getTime();
-        if (!control || control.streamId !== streamId || !control.viewers.some((lease) => lease.expiresAtMs > now)) {
+        if (
+          !control?.enabled ||
+          control.streamId !== streamId ||
+          !control.viewers.some((lease) => lease.expiresAtMs > now)
+        ) {
           throw new LiveImageLeaseError('LIVE_STREAM_INACTIVE');
         }
         const prior = snapshot.receipt;

@@ -3,7 +3,7 @@
  *
  * 事实源：contracts/domain/camera-interaction-policy.json
  * （本文件常量必须与之一致，由单元测试强制）。
- * 决策追溯：DEC-009@2.0.0（status=frozen，包含归档入口与独立预览参数）。
+ * 决策追溯：DEC-009@2.1.0（status=frozen，包含归档入口与独立预览参数）。
  *
  * 消费方：BE-MED-01、FE-06（设备详情摄像头区）、FE-12、FE-14（Media 页面）。
  */
@@ -60,11 +60,11 @@ export interface CameraInteractionPolicy {
 }
 
 /**
- * 冻结值（DEC-009 v2.0.0）：
+ * 冻结值（DEC-009 v2.1.0）：
  * 既有归档入口手动刷新；liveImage 承接默认关闭的图片预览。
  */
 export const CAMERA_INTERACTION_POLICY: CameraInteractionPolicy = {
-  policyVersion: '2.0.0',
+  policyVersion: '2.1.0',
   status: 'frozen',
   viewing: {
     scope: 'latest-authorized-media-only',
@@ -86,7 +86,7 @@ export const CAMERA_INTERACTION_POLICY: CameraInteractionPolicy = {
   liveImage: {
     capability: 'live-image-v1',
     defaultEnabled: false,
-    activation: 'device-local-opt-in-and-server-device-allowlist',
+    activation: 'device-local-opt-in',
     pollIntervalMs: 5000,
     uploadIntervalMs: 2000,
     readIntervalMs: 2000,
@@ -103,7 +103,7 @@ export const CAMERA_INTERACTION_POLICY: CameraInteractionPolicy = {
     maxFutureSkewSeconds: 2,
     maxViewersPerDevice: 16,
     consumers: ['IMG-01', 'IMG-02', 'IMG-03', 'IMG-04', 'BE-MED-01', 'FE-06'],
-    note: '设备本地版本支持且显式开启；服务端按 deviceId 白名单启用，两者均缺省关闭。旧媒体刷新策略仅用于已有归档入口。新接口按租约授权轮询。',
+    note: '设备本地版本支持且显式开启。云端按有效证书、客户归属、生命周期、运行状态及查看者权限与租约准入。旧媒体刷新策略仅用于已有归档入口。',
   },
 } as const;
 

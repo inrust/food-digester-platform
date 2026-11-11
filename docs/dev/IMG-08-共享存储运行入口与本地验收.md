@@ -1,5 +1,7 @@
 # IMG-08 共享存储、运行入口与本地验收
 
+本文记录 IMG-08 原交付及其验收口径。DEC-009@2.1.0 后，生产预览准入和权威写入均已解除对白名单的依赖，当前规则见 [DEC-009 更新记录](../../contracts/decisions/changes/DEC-009-upgrade-2.1.0.md)。
+
 2026-11-06，基于本地提交 `cb8ddcdb` 实施 IMG-08。初始分支为 main，工作区干净，已有四个未推送提交。本批只交付本地实现、迁移文件、IaC 定义及验证，不执行部署、迁移到目标库或 Git 推送。
 
 依据为[接口设计](../api/device-image-interface-design.md)、[开发计划](../api/device-image-development-plan.md)、[P0 存储并发设计](./IMG-03-图片预览临时存储与并发设计.md)及 IMG-05～IMG-07 已有服务。刷新、租约、帧有效期、去重与限频数值均沿用冻结策略。

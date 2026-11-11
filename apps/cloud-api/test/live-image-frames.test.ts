@@ -344,7 +344,7 @@ describe('IMG-06 atomic publication and authorization races', () => {
     const f = await active();
     f.store.frameConflicts = 1;
     f.authorization.afterRead = async () => {
-      await f.service.fenceAuthorization('device-1', 'invalidate', async () => {
+      await f.service.fenceAuthorization('device-1', async () => {
         f.authorization.certificateActive = false;
       });
     };
@@ -363,7 +363,7 @@ describe('IMG-06 atomic publication and authorization races', () => {
     const uploading = f.send();
     await entered.promise;
     let revoked = false;
-    const revoking = f.service.fenceAuthorization('device-1', 'invalidate').then(() => {
+    const revoking = f.service.fenceAuthorization('device-1').then(() => {
       revoked = true;
     });
     await Promise.resolve();
@@ -371,11 +371,10 @@ describe('IMG-06 atomic publication and authorization races', () => {
     resume.resolve();
     expect((await uploading).status).toBe(200);
     await revoking;
-    expect((await f.send()).status).toBe(403);
+    expect((await f.send()).status).toBe(409);
     expect(f.store.controls.get('device-1')!.authEpoch).toBe(2);
   });
   for (const change of [
-    { featureEnabled: false },
     { lifecycleStatus: 'Suspended' },
     { lifecycleStatus: 'Retired' },
     { operationalStatus: 'Suspended' },
@@ -389,14 +388,13 @@ describe('IMG-06 atomic publication and authorization races', () => {
       expect(f.store.frameWrites).toBe(1);
     });
   }
-  test('new customer cannot use a previous stream or its receipt after reset', async () => {
+  test('new customer cannot use a previous stream or its receipt after fencing', async () => {
     const f = await active();
     await f.send();
-    await f.service.fenceAuthorization('device-1', 'invalidate', async () => {
+    await f.service.fenceAuthorization('device-1', async () => {
       f.authorization.scope = { ...f.authorization.scope, customerId: 'customer-B' };
       f.authorization.actors.set('alice', actor('alice', 'customer-B'));
     });
-    await f.service.fenceAuthorization('device-1', 'reset');
     const next = await f.service.renewViewer(actor(), 'device-1', randomUUID());
     expect((await f.send()).body).toMatchObject({ error: { code: 'LIVE_STREAM_INACTIVE' } });
     f.advance(1000);
@@ -421,15 +419,14 @@ describe('IMG-06 atomic publication and authorization races', () => {
   });
 });
 
-test('stream churn and explicit authority reset cannot bypass the per-device interval', async () => {
+test('stream churn and authority fencing cannot bypass the per-device interval', async () => {
   const f = await active();
   await f.send();
   await f.service.releaseViewer(actor(), 'device-1', f.viewerId);
   const next = await f.service.renewViewer(actor(), 'device-1', randomUUID());
   const payload = { ...f.payload, streamId: next.streamId, frameId: randomUUID() };
   expect((await f.send(payload)).status).toBe(429);
-  await f.service.fenceAuthorization('device-1', 'invalidate');
-  await f.service.fenceAuthorization('device-1', 'reset');
+  await f.service.fenceAuthorization('device-1');
   const reset = await f.service.renewViewer(actor(), 'device-1', randomUUID());
   expect((await f.send({ ...payload, streamId: reset.streamId })).status).toBe(429);
   f.advance(1000);
@@ -442,11 +439,11 @@ test('viewer role revocation fences an in-flight device retry', async () => {
   const f = await active();
   f.store.frameConflicts = 1;
   f.authorization.afterRead = async () => {
-    await f.service.fenceAuthorization('device-1', 'invalidate', async () => {
+    await f.service.fenceAuthorization('device-1', async () => {
       f.authorization.actors.delete('alice');
     });
   };
-  expect((await f.send()).status).toBe(403);
+  expect((await f.send()).status).toBe(409);
   expect(f.store.frameWrites).toBe(0);
 });
 

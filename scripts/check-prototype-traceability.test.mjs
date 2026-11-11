@@ -71,7 +71,7 @@ test('图片预览有明确后续任务，被拒绝的密码和状态混用不�
   for (const element of camera) {
     assert.equal(element.disposition, 'Adapt');
     assert.equal(element.source.taskId, 'IMG-14');
-    assert.ok(element.basis.includes('DEC-009@2.0.0'));
+    assert.ok(element.basis.includes('DEC-009@2.1.0'));
   }
   assert.ok(categories.has('plaintext-password'));
   assert.ok(categories.has('mixed-status'));

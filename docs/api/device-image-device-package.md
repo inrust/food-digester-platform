@@ -1,6 +1,6 @@
 # 设备图片功能对接包
 
-契约版本 0.16.0，DEC-009@2.0.0。五个预览接口和 triggerRef 扩展在 P0 定义，运行接线按 IMG-05 至 IMG-13 交付。完整机器契约见 [实时预览 OpenAPI](../../contracts/rest/live-image-api.json)、[上传会话](../../contracts/rest/device-media-api.json) 和 [生成类型](../../contracts/rest/image-types.ts)。
+实时预览接口结构版本 0.16.0，准入按 DEC-009@2.1.0 执行。五个预览接口和 triggerRef 扩展在 P0 定义，运行接线按 IMG-05 至 IMG-13 交付。完整机器契约见 [实时预览 OpenAPI](../../contracts/rest/live-image-api.json)、[上传会话](../../contracts/rest/device-media-api.json) 和 [生成类型](../../contracts/rest/image-types.ts)。
 
 2026-11-07 职责澄清：本仓库只负责云端对接包交付，第三方负责 App 实现；App 源码与真机验收不作为本包交付前置。实时预览的完整第三方说明、独立 OpenAPI 和可校验请求响应见 [第三方 App 云端接口包](./device-live-image-vendor-guide.md)。
 
@@ -8,7 +8,7 @@ Event/Alarm 留档的独立 OpenAPI、不可变申报、200/201/409 分支、S3 
 
 ## 能力启用与设备调用顺序
 
-设备本地增加可选 liveImage 配置，缺省 disabled。支持 live-image-v1 的 App 由第三方软件发布或现场配置显式开启。云端按原始 deviceId 的 DeviceLiveImagePolicy.enabled 白名单记录准入，缺行/false 均关闭（IMG-08 实现，不由 App 写入）。设备本地与服务端均开启后才能预览。未启用设备继续使用原接口，不新增轮询。Configuration V1 的四个字段不增加预览字段，cameraRefreshInterval 不用于覆盖新的 2 秒周期。
+设备本地增加可选 liveImage 配置，缺省 disabled。支持 live-image-v1 的 App 由第三方软件发布或现场配置显式开启。云端复用设备证书、客户归属、生命周期和运行状态判断准入，现有管理员流程无需逐设备开通。授权查看者申请租约后，设备查询到 ACTIVE 才上传图片。未启用设备继续使用原接口，不新增轮询。Configuration V1 的四个字段不增加预览字段，cameraRefreshInterval 不用于覆盖新的 2 秒周期。
 
 1. 按原流程连接、首次 Heartbeat 和普通 Sync，取得可信设备身份及归属。有效 License 由管理员现有激活流程在云端自动激活设备；已有生效 License 的历史设备由普通 Sync 补齐。使用原设备 mTLS 证书调用 Device REST。
 2. 启用设备每 5 秒调用 GET /api/v1/device/live-image/state，无人查看时 IDLE。有租约时 ACTIVE 带 streamId、activeUntil、uploadIntervalMs 和 maxImageBytes。

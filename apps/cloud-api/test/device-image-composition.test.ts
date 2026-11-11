@@ -120,7 +120,7 @@ test('storage exception yields safe HTTP 503 without partial frame; identical re
   expect(retry.body.data.expiresAt).toBe(new Date(Date.parse(frame.capturedAt) + 10000).toISOString());
   expect((await readLatestImage(f.bob.api, f.deviceId, v.b, signal())).data.state).toBe('READY');
 });
-test.each(['role', 'account', 'suspend', 'retire', 'capability'] as const)(
+test.each(['role', 'account', 'suspend', 'retire'] as const)(
   'authoritative %s write invalidates old HTTP viewers and frames',
   async (kind) => {
     const f = await imageIntegrationFixture(db),
@@ -136,8 +136,6 @@ test.each(['role', 'account', 'suspend', 'retire', 'capability'] as const)(
       });
     if (kind === 'retire')
       await f.client.device.update({ where: { id: f.deviceId }, data: { lifecycleStatus: 'Retired' } });
-    if (kind === 'capability')
-      await f.client.deviceLiveImagePolicy.update({ where: { deviceId: f.deviceId }, data: { enabled: false } });
     expect(f.store.controls.get(f.deviceId)!.authEpoch).toBeGreaterThan(epoch);
     expect(f.store.controls.get(f.deviceId)!.viewers).toEqual([]);
     await expect(readLatestImage(f.alice.api, f.deviceId, v.a, signal())).rejects.toMatchObject(
@@ -146,19 +144,12 @@ test.each(['role', 'account', 'suspend', 'retire', 'capability'] as const)(
     expect((await f.device('live-image/frames', f.frame(v.stream))).status).toBe(
       kind === 'role' || kind === 'account' ? 409 : 403,
     );
-    if (kind === 'suspend' || kind === 'capability') {
-      if (kind === 'suspend')
-        await f.client.deviceLatestState.update({
-          where: { deviceId: f.deviceId },
-          data: { operationalStatus: 'Active' },
-        });
-      else await f.client.deviceLiveImagePolicy.update({ where: { deviceId: f.deviceId }, data: { enabled: true } });
-      if (kind === 'suspend') {
-        await expect(renewImageViewer(f.bob.api, f.deviceId, randomUUID(), signal())).rejects.toMatchObject({
-          status: 403,
-        });
-        await f.client.deviceLiveImagePolicy.update({ where: { deviceId: f.deviceId }, data: { enabled: true } });
-      }
+    if (kind === 'suspend') {
+      await f.client.deviceLatestState.update({
+        where: { deviceId: f.deviceId },
+        data: { operationalStatus: 'Active' },
+      });
+      expect((await f.device('live-image/state')).body.data.state).toBe('IDLE');
       const id = randomUUID(),
         fresh = await renewImageViewer(f.bob.api, f.deviceId, id, signal());
       expect(fresh.data.streamId).not.toBe(v.stream);

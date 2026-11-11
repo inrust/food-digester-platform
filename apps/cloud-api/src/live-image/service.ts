@@ -50,7 +50,6 @@ const deny = () => new LiveImageLeaseError('FORBIDDEN');
 
 export function isLiveImageEligible(scope: LiveImageAuthorizationScope): boolean {
   return (
-    scope.featureEnabled &&
     !!scope.customerId &&
     ['Active', 'Maintenance'].includes(scope.lifecycleStatus) &&
     ['Active', 'Maintenance'].includes(scope.operationalStatus ?? '')
@@ -103,19 +102,26 @@ export class LiveImageLeaseService {
       scope: LiveImageAuthorizationScope,
       now: number,
     ) => { next: LiveImageControl; value: T },
+    whenClosed?: () => T,
   ): Promise<T> {
     for (let attempt = 0; attempt < MAX_CAS_ATTEMPTS; attempt++) {
       const result = await this.deps.authorization.withRead(access, async (scope) => {
         assertLiveImageViewer(scope, access);
         if (!isLiveImageEligible(scope)) throw deny();
         const stored = await this.deps.store.readControl(scope.deviceId);
-        if (stored && (!stored.enabled || stored.customerId !== scope.customerId)) throw deny();
-        const current = stored ?? {
-          ...initialControl(scope.deviceId),
-          customerId: scope.customerId,
-          authEpoch: 1,
-          enabled: true,
-        };
+        if (stored?.enabled && stored.customerId !== scope.customerId) throw deny();
+        if (!stored?.enabled && whenClosed) return { saved: true, value: whenClosed() };
+        // Reopen only under fresh authorization. A fence's old stream and leases never return.
+        const current = stored?.enabled
+          ? stored
+          : {
+              ...initialControl(scope.deviceId),
+              customerId: scope.customerId,
+              revision: stored?.revision ?? 0,
+              authEpoch: (stored?.authEpoch ?? 0) + 1,
+              enabled: true,
+              lastNewFrameAtMs: stored?.lastNewFrameAtMs ?? null,
+            };
         const { next, value } = change(current, scope, this.now().getTime());
         const saved = await this.deps.store.compareAndSwap(scope.deviceId, stored, {
           ...next,
@@ -161,32 +167,38 @@ export class LiveImageLeaseService {
 
   async releaseViewer(actor: ActorContext, deviceId: string, viewerId: string): Promise<void> {
     const normalizedViewerId = this.normalizeViewerId(deviceId, viewerId);
-    await this.update({ kind: 'viewer', actor, deviceId }, (current, scope, now) => {
-      const viewers = current.viewers.filter(
-        (lease) =>
-          lease.expiresAtMs > now && !(lease.actorId === scope.actor!.actorId && lease.viewerId === normalizedViewerId),
-      );
-      return {
-        next: {
-          ...current,
-          viewers,
-          streamId: viewers.length ? current.streamId : null,
-          latestCapturedAtMs: viewers.length ? current.latestCapturedAtMs : null,
-          lastNewFrameAtMs: current.lastNewFrameAtMs,
-        },
-        value: undefined,
-      };
-    });
+    await this.update(
+      { kind: 'viewer', actor, deviceId },
+      (current, scope, now) => {
+        const viewers = current.viewers.filter(
+          (lease) =>
+            lease.expiresAtMs > now &&
+            !(lease.actorId === scope.actor!.actorId && lease.viewerId === normalizedViewerId),
+        );
+        return {
+          next: {
+            ...current,
+            viewers,
+            streamId: viewers.length ? current.streamId : null,
+            latestCapturedAtMs: viewers.length ? current.latestCapturedAtMs : null,
+            lastNewFrameAtMs: current.lastNewFrameAtMs,
+          },
+          value: undefined,
+        };
+      },
+      () => undefined,
+    );
   }
 
   async getDeviceState(identity: ClientCertIdentity): Promise<LiveState> {
     return this.deps.authorization.withRead({ kind: 'device', identity }, async (scope) => {
       if (!isLiveImageEligible(scope)) throw deny();
       const current = await this.deps.store.readControl(scope.deviceId);
-      if (current && (!current.enabled || current.customerId !== scope.customerId)) throw deny();
+      if (current?.enabled && current.customerId !== scope.customerId) throw deny();
+      if (!current?.enabled) return { state: 'IDLE', pollIntervalMs: 5000 };
       const now = this.now().getTime();
-      const leases = current?.viewers.filter((lease) => lease.expiresAtMs > now) ?? [];
-      if (!current?.streamId || leases.length === 0) return { state: 'IDLE', pollIntervalMs: 5000 };
+      const leases = current.viewers.filter((lease) => lease.expiresAtMs > now);
+      if (!current.streamId || leases.length === 0) return { state: 'IDLE', pollIntervalMs: 5000 };
       return {
         state: 'ACTIVE',
         pollIntervalMs: 5000,
@@ -199,17 +211,7 @@ export class LiveImageLeaseService {
   }
 
   /** Trusted writer hook. The guard keeps its exclusive lock through the authority mutation. */
-  async fenceAuthorization(
-    deviceId: string,
-    action: 'invalidate',
-    changeAuthority?: () => Promise<void>,
-  ): Promise<void>;
-  async fenceAuthorization(deviceId: string, action: 'reset'): Promise<void>;
-  async fenceAuthorization(
-    deviceId: string,
-    action: 'invalidate' | 'reset',
-    changeAuthority?: () => Promise<void>,
-  ): Promise<void> {
+  async fenceAuthorization(deviceId: string, changeAuthority?: () => Promise<void>): Promise<void> {
     await this.deps.authorization.withExclusive(deviceId, async (scope) => {
       if (scope.deviceId !== deviceId) throw deny();
       for (let attempt = 0; attempt < MAX_CAS_ATTEMPTS; attempt++) {
@@ -220,7 +222,7 @@ export class LiveImageLeaseService {
           customerId: scope.customerId,
           revision: current.revision + 1,
           authEpoch: current.authEpoch + 1,
-          enabled: action === 'reset' && isLiveImageEligible(scope),
+          enabled: false,
           lastNewFrameAtMs: current.lastNewFrameAtMs,
         };
         if (await this.deps.store.compareAndSwap(deviceId, stored, next)) {

@@ -23,7 +23,7 @@ export class PostgresLiveImageAuthorization implements LiveImageAuthorizationGua
     await tx.$queryRawUnsafe('SELECT id FROM devices WHERE id = $1 FOR SHARE', deviceId);
     const device = await tx.device.findUnique({
       where: { id: deviceId },
-      include: { latestState: true, liveImagePolicy: true },
+      include: { latestState: true },
     });
     if (!device) throw new LiveImageLeaseError('NOT_FOUND');
     return {
@@ -31,7 +31,6 @@ export class PostgresLiveImageAuthorization implements LiveImageAuthorizationGua
       customerId: device.customerId,
       lifecycleStatus: device.lifecycleStatus,
       operationalStatus: device.latestState?.operationalStatus ?? null,
-      featureEnabled: device.liveImagePolicy?.enabled ?? false,
       ...(actor ? { actor } : {}),
     };
   }

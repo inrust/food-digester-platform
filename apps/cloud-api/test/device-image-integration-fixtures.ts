@@ -76,7 +76,6 @@ export async function imageIntegrationFixture(db: Awaited<ReturnType<typeof crea
       notAfter: new Date('2028-01-01Z'),
     },
   });
-  await db.prisma.deviceLiveImagePolicy.create({ data: { deviceId, enabled: true } });
   const store = new TestControlStore();
   store.now = () => time;
   const client = withLiveImageAuthority(db.prisma, store);

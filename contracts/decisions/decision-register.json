@@ -1,5 +1,5 @@
 {
-  "registerVersion": "1.39.0",
+  "registerVersion": "1.40.0",
   "updatedAt": "2026-11-11T00:00:00Z",
   "sourceDocuments": [
     {
@@ -353,13 +353,13 @@
     },
     {
       "id": "DEC-009",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "status": "frozen",
       "title": "摄像头交互语义",
       "conflict": "原型提供摄像头“播放/停止”和“实时画面”，但上级协议未定义实时流媒体能力。",
-      "provisionalValue": "默认关闭的 live-image-v1 能力，5秒查询、2秒传图和读图、30秒租约及10秒有效帧；event/alarm IMAGE 通过 triggerRef 关联 S3 留档。旧设备归档媒体方式继续可用。",
+      "provisionalValue": "live-image-v1 由设备本地启用，云端按设备证书、客户归属、设备状态和查看租约准入，5秒查询、2秒传图和读图、30秒租约及10秒有效帧；event/alarm IMAGE 通过 triggerRef 关联 S3 留档。旧设备归档媒体方式继续可用。",
       "approver": "Anray",
-      "approvedAt": "2026-11-06T00:00:00Z",
+      "approvedAt": "2026-11-11T00:00:00Z",
       "blockingTasks": ["BE-MED-01", "FE-06", "FE-12", "FE-14", "IMG-01", "IMG-02", "IMG-03", "IMG-04"],
       "affectedModules": ["BE-MED", "FE", "AUTH-03", "CT-02", "IMG"],
       "sourceRefs": [
@@ -391,6 +391,12 @@
           "at": "2026-11-06T00:00:00Z",
           "by": "Anray",
           "note": "确认设备图片方案并授权 P0；接口和策略升级，后端及页面按后续阶段实施。能力启用和16查看者边界为本批实施细化。"
+        },
+        {
+          "version": "2.1.0",
+          "at": "2026-11-11T00:00:00Z",
+          "by": "Anray",
+          "note": "移除服务端逐设备预览白名单。复用设备现有认证、归属和状态，以及查看者权限与租约；设备本地能力开关继续适用。"
         }
       ]
     },

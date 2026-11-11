@@ -126,7 +126,7 @@ export function buildHandoff() {
   const sha256 = (buffer) => createHash('sha256').update(buffer).digest('hex');
   files['manifest.json'] = json({
     contractVersion: live.info.version,
-    decision: 'DEC-009@2.0.0',
+    decision: live.info['x-decision-versions'][0],
     scope: 'cloud-interface-package-only',
     fixtureClock: timestamp,
     sourceFiles: sourceFiles.map((path) => ({ path, sha256: sha256(bytes(path)) })),

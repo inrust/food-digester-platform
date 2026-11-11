@@ -173,7 +173,6 @@ export class TestAuthorization implements LiveImageAuthorizationGuard {
     customerId: 'customer-A',
     lifecycleStatus: 'Active',
     operationalStatus: 'Active',
-    featureEnabled: true,
   };
   readonly actors = new Map<string, ActorContext>([
     ['alice', actor()],

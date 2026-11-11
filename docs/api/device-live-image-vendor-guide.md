@@ -1,6 +1,6 @@
 # 第三方 App 对接：设备实时图片云端接口
 
-交付日期：2026-11-07。云平台参考提交 `aac4ebc8`，冻结契约 `0.16.0`、DEC-009@2.0.0。
+更新于 2026-11-11。实时预览接口结构版本为 `0.16.0`，云端准入按 DEC-009@2.1.0 执行。
 
 本包只交付云端接口说明、可导入 OpenAPI 和可校验样例。App 实现及真机验收由第三方自行负责，不是本包交付前置。本包不部署、不迁移目标库、不启用任何目标设备，也不证明设计域名已经部署本功能。
 
@@ -29,7 +29,7 @@
 | POST | `/api/v1/device/live-image/frames` | 200 | 上传一张当前预览 JPEG 的 Base64 |
 
 - 使用既有设备 X.509 证书做 mTLS。设备身份由证书确定，不传 deviceId、customerId、viewerId 或 Authorization JWT；不伪造携带设备身份的 HTTP Header。
-- 云端每次请求重新校验证书、设备归属、生命周期、运行状态和功能准入。须已分配 Customer，生命周期和运行状态均为 Active 或 Maintenance。
+- 云端每次请求重新校验证书、设备归属、生命周期和运行状态。须已分配 Customer，生命周期和运行状态均为 Active 或 Maintenance。
 - POST 使用 `Content-Type: application/json`；JSON 封闭对象，拒绝额外字段。
 - 两接口响应为 `Cache-Control: no-store`。不要缓存或复用旧状态响应来恢复上传。
 - TLS/网关错误可能在 JSON 业务响应之前发生，不保证所有错误都有 JSON 错误体。不得因 TLS 失败降级到 HTTP、关闭证书校验或改用平台 JWT。
@@ -38,7 +38,7 @@
 
 设备支持 `live-image-v1` 后，由第三方通过本地软件或现场配置显式 opt-in，缺省关闭。未开启时不增加这两条调用，既有 MQTT、Sync 和归档流程继续使用。Configuration V1 不新增预览字段，cameraRefreshInterval 不覆盖下面的周期。
 
-服务端准入当前实际实现为 `device_live_image_policies` 的逐 deviceId 记录（`DeviceLiveImagePolicy.enabled`），缺行/false 均关闭；不是 App 可写配置，也不是请求里传 enabled。关闭时返回 403 FORBIDDEN，而不是 IDLE。没有面向设备的“开启白名单”接口。云端管理员必须通过已有权威写入口维护准入，[操作边界见 IMG-08](../dev/IMG-08-共享存储运行入口与本地验收.md#白名单启用关闭和恢复)，本包不执行该操作。
+设备完成原有接入并满足上述条件后，即可用原设备证书查询状态，云端无需逐设备开通。无人查看返回 `200 IDLE`。只有授权用户在平台打开预览并持有有效租约时，设备才会收到 `ACTIVE` 和可用于上传的 `streamId`。
 
 ## 3. 查询查看状态
 
@@ -137,7 +137,7 @@ JSON 错误体统一为 `{"error":{"code":"…","message":"The request failed","
 |---|---|
 | 400 VALIDATION_FAILED | 检查字段、UUID、UTC、Base64 与 JPEG；不得原样高频重试坏请求 |
 | 401 UNAUTHENTICATED | 停止预览调用，检查设备证书/认证；按原设备认证恢复流程处理，不能换 JWT 绕过 |
-| 403 FORBIDDEN | 功能未准入、设备挂起/退役/取消分配、归属或授权变化等均可能拒绝。立即停采、停帧；不得假设只是无人查看，不进入 2 秒重试循环 |
+| 403 FORBIDDEN | 设备挂起、退役、取消分配或归属异常时可能拒绝。立即停采、停帧；不得假设只是无人查看，不进入 2 秒重试循环 |
 | 404 NOT_FOUND | 停止当前预览，由云端按 requestId 核查；不尝试更换 deviceId 访问其他设备 |
 | 409 LIVE_STREAM_INACTIVE | 立即停止旧流，重新查询 state，只有新的有效 ACTIVE 才能采新帧 |
 | 409 STALE_FRAME | 帧已过 10 秒有效期，或不晚于最近帧；丢弃旧帧，核查采集时钟/顺序，不改 capturedAt 后伪装重传 |

@@ -255,7 +255,6 @@ describe('IMG-07 viewer admission and authority', () => {
     });
   });
   for (const change of [
-    { featureEnabled: false },
     { lifecycleStatus: 'Suspended' },
     { lifecycleStatus: 'Retired' },
     { operationalStatus: 'Suspended' },
@@ -275,7 +274,7 @@ describe('IMG-07 viewer admission and authority', () => {
       const f = await active();
       f.store.controls.set('device-1', { ...f.store.controls.get('device-1')!, ...change });
       const response = await f.read();
-      expect(response.status).toBe(403);
+      expect(response.status).toBe('enabled' in change ? 409 : 403);
       expectNoImage(response);
     });
   }
@@ -416,7 +415,7 @@ describe('IMG-07 transactional snapshot races', () => {
     await entered.promise;
     let done = false;
     const revoking = f.service
-      .fenceAuthorization('device-1', 'invalidate', async () => {
+      .fenceAuthorization('device-1', async () => {
         f.authorization.actors.set('alice', { ...actor(), roles: [] });
       })
       .then(() => {
@@ -435,7 +434,7 @@ describe('IMG-07 transactional snapshot races', () => {
     const f = await active();
     const entered = deferred();
     const resume = deferred();
-    const revoking = f.service.fenceAuthorization('device-1', 'invalidate', async () => {
+    const revoking = f.service.fenceAuthorization('device-1', async () => {
       entered.resolve();
       await resume.promise;
       f.authorization.actors.delete('alice');
@@ -458,11 +457,10 @@ describe('IMG-07 transactional snapshot races', () => {
   test('tenant and epoch changes discard old images and old viewer leases on reopening', async () => {
     const f = await active();
     await f.read();
-    await f.service.fenceAuthorization('device-1', 'invalidate', async () => {
+    await f.service.fenceAuthorization('device-1', async () => {
       f.authorization.scope = { ...f.authorization.scope, customerId: 'customer-B' };
       f.authorization.actors.set('alice', actor('alice', 'customer-B'));
     });
-    await f.service.fenceAuthorization('device-1', 'reset');
     expect((await f.read()).status).toBe(409);
     const lease = await f.service.renewViewer(actor(), 'device-1', f.viewerId);
     const waiting = await f.read(f.payload.frameId);

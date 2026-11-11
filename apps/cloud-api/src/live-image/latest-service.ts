@@ -27,13 +27,19 @@ export class LiveImageLatestService {
       if (!isLiveImageEligible(scope)) throw new LiveImageLeaseError('FORBIDDEN');
       const { control, frame } = await this.deps.store.readLatestSnapshot(deviceId);
       const now = this.now().getTime();
-      if (control && (!control.enabled || control.deviceId !== deviceId || control.customerId !== scope.customerId)) {
+      if (control && (control.deviceId !== deviceId || (control.enabled && control.customerId !== scope.customerId))) {
         throw new LiveImageLeaseError('FORBIDDEN');
       }
       const lease = control?.viewers.find(
         (item) => item.actorId === scope.actor!.actorId && item.viewerId === normalizedViewerId,
       );
-      if (!control?.streamId || !lease || !Number.isFinite(lease.expiresAtMs) || lease.expiresAtMs <= now)
+      if (
+        !control?.enabled ||
+        !control.streamId ||
+        !lease ||
+        !Number.isFinite(lease.expiresAtMs) ||
+        lease.expiresAtMs <= now
+      )
         throw new LiveImageLeaseError('LIVE_VIEWER_EXPIRED');
       const waiting: LiveLatest = { state: 'WAITING_FRAME', streamId: control.streamId };
       if (

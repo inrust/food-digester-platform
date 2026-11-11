@@ -1,9 +1,9 @@
 {
-  "policyVersion": "2.0.0",
-  "updatedAt": "2026-11-06T00:00:00Z",
-  "x-decision-versions": ["DEC-009@2.0.0"],
+  "policyVersion": "2.1.0",
+  "updatedAt": "2026-11-11T00:00:00Z",
+  "x-decision-versions": ["DEC-009@2.1.0"],
   "status": "frozen",
-  "description": "DEC-009@2.0.0：按需 Base64 图片预览及事件告警 S3 留档，旧设备按原媒体方式运行。",
+  "description": "DEC-009@2.1.0：按需 Base64 图片预览及事件告警 S3 留档，旧设备按原媒体方式运行。",
   "viewing": {
     "scope": "latest-authorized-media-only",
     "consumers": ["BE-MED-01", "FE-06", "FE-12", "FE-14"],
@@ -24,7 +24,7 @@
   "liveImage": {
     "capability": "live-image-v1",
     "defaultEnabled": false,
-    "activation": "device-local-opt-in-and-server-device-allowlist",
+    "activation": "device-local-opt-in",
     "pollIntervalMs": 5000,
     "uploadIntervalMs": 2000,
     "readIntervalMs": 2000,
@@ -41,6 +41,6 @@
     "maxFutureSkewSeconds": 2,
     "maxViewersPerDevice": 16,
     "consumers": ["IMG-01", "IMG-02", "IMG-03", "IMG-04", "BE-MED-01", "FE-06"],
-    "note": "设备本地版本支持且显式开启；服务端按 deviceId 白名单启用，两者均缺省关闭。旧媒体刷新策略仅用于已有归档入口。新接口按租约授权轮询。"
+    "note": "设备本地版本支持且显式开启。云端按有效证书、客户归属、生命周期、运行状态及查看者权限与租约准入。旧媒体刷新策略仅用于已有归档入口。"
   }
 }
