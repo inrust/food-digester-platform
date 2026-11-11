@@ -1,5 +1,8 @@
 # Device-Cloud Communication Design 解析与信息汇编
 
+> 2026-11-11 已批准流程调整（DEC-027@1.0.0）：现有管理员 License 激活操作自动激活符合条件的设备。设备继续普通 Sync 和本地 License 检查；取消 RECEIVED/VERIFIED 两次设备确认作为云端激活前置。历史设备由普通 Sync 幂等补齐。下文保留源 PDF 的流程提取，现行实现见 [设备 REST 文档](./api/device-api.bio-nexa.com.md)。
+
+
 > 2026-10-01 已批准协议覆盖：下文源文件中的 `certificatePem + privateKey` 和仅 Heartbeat 轮换确认是历史设计事实，不能作为现行协议。当前 Onboarding 返回公开叶证书、完整 CA chain 和 MQTT/REST endpoint；Rotate 接收设备新 CSR，仅返回叶证书及 chain，双通道确认后撤销旧证。见 [设备 API 文档](./api/README.md)、DEC-003@1.1.0 与 DEC-026@1.0.0。
 > **2026-09-29 实施变更**：本文保留原始方案/来源记录；首次接入已统一改为无 Token 的 CSR 申请、管理员线下核验审批、CSR 私钥签名轮询及只下发公钥证书。本文关于预置 Onboarding Token、`onboarding_tokens` 表或首次下发私钥的描述不再是实施依据；以 [现行 Onboarding API](api/onboard-api.bio-nexa.com.md) 与 [可执行 OpenAPI](../contracts/rest/device-onboarding-api.json) 为准。
 

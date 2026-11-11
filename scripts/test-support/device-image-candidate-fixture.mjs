@@ -57,6 +57,9 @@ export async function candidateFixture() {
     if (git.status !== 0) throw new Error('CANDIDATE_FIXTURE_GIT_DIRECTORY');
     writeFileSync(join(root, '.git'), `gitdir: ${git.stdout.trim()}\n`);
     const tool = await import(pathToFileURL(join(root, 'scripts/device-image-target-package.mjs')).href);
+    // Recompute only this isolated protocol package after overlaying current test tooling.
+    // Frozen application blobs and historical G3 receipts remain unchanged.
+    tool.writeOrCheck(false);
     return { root, tool, cleanup };
   } catch (error) {
     cleanup();

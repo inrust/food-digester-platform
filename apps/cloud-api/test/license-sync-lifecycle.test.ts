@@ -2,11 +2,11 @@ import { contractHandler } from '../../../contracts/testing/device-contract.js';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, test, assert } from 'vitest';
 import { certificateFingerprintFromPem } from '@fdp/auth';
-import { assertOpenApiResponse } from './openapi-response.js';
 import { createTestDb } from './helpers.js';
 import { createDeviceSyncHandler } from '../src/device/sync-handler.js';
 import { type DeviceSyncSnapshot, parseSyncRequest } from '../src/device/sync.js';
-import { signLicensePayload, verifyLicensePayloadSignature } from '../src/admin/license/service.js';
+import { signLicensePayload } from '../src/admin/license/service.js';
+import { createAdminLicenseHandlers } from '../src/admin/license/handler.js';
 const NOW = new Date('2026-10-04T10:00:00.123Z');
 let clock = NOW;
 let db: Awaited<ReturnType<typeof createTestDb>>;
@@ -103,206 +103,202 @@ async function fixture() {
     });
   return { device, license, certificate, call, serve, confirm };
 }
-test('real PostgreSQL: served snapshot and signed local verification drive Assigned→Licensed→Active once', async () => {
-  const f = await fixture();
-  const s = await f.serve();
-  assert.equal(s.operationalStatus.lifecycleStatus, 'Assigned');
-  assert.equal((await db.prisma.device.findUnique({ where: { id: f.device.id } }))!.lifecycleStatus, 'Assigned');
-  const payload = s.license!.signaturePayload;
-  assert.notEqual(payload.validFrom, s.license!.validFrom);
-  assert.isTrue(
-    verifyLicensePayloadSignature(
-      { active: KEY },
-      { ...payload, validFrom: new Date(payload.validFrom), validTo: new Date(payload.validTo) },
-      s.license!.signature!,
-    ),
-  );
-  assert.isFalse(
-    verifyLicensePayloadSignature(
-      { active: 'wrong-key' },
-      { ...payload, validFrom: new Date(payload.validFrom), validTo: new Date(payload.validTo) },
-      s.license!.signature!,
-    ),
-  );
-  assert.equal((await f.confirm(s, 'VERIFIED')).status, 409);
-  const received = await f.confirm(s, 'RECEIVED');
-  assert.equal(received.status, 200);
-  assert.equal((received.body as DeviceSyncSnapshot).operationalStatus.lifecycleStatus, 'Licensed');
-  const active = await f.confirm(s, 'VERIFIED');
-  assert.equal(active.status, 200);
-  assert.equal((active.body as DeviceSyncSnapshot).operationalStatus.lifecycleStatus, 'Active');
-  assert.equal((active.body as DeviceSyncSnapshot).operationalStatus.operationalStatus, 'Active');
-  assert.equal((await f.confirm(s, 'RECEIVED')).status, 200);
-  assert.equal((await f.confirm(s, 'VERIFIED')).status, 200);
-  const history = await db.prisma.deviceStateHistory.findMany({
-    where: { deviceId: f.device.id },
-    orderBy: { createdAt: 'asc' },
+
+const admin = {
+  actorId: 'cloud-admin',
+  username: 'cloud-admin',
+  actorType: 'platform' as const,
+  roles: ['PlatformSuperAdmin'] as const,
+  customerId: null,
+  tokenUse: 'access' as const,
+};
+const activate = (licenseId: string) =>
+  createAdminLicenseHandlers({
+    client: db.prisma,
+    signingKey: KEY,
+    now: () => clock,
+  }).activate({
+    actor: { ...admin, roles: [...admin.roles] },
+    params: { licenseId },
+    headers: {},
+    requestId: randomUUID(),
   });
+async function lifecycle(deviceId: string) {
+  return (await db.prisma.device.findUniqueOrThrow({ where: { id: deviceId } })).lifecycleStatus;
+}
+async function activeLicense(f: Awaited<ReturnType<typeof fixture>>, status = 'Active') {
+  await db.prisma.license.update({ where: { id: f.license.id }, data: { status } });
+}
+
+test('administrator License activation commits device activation, operational state, audit and notification together', async () => {
+  const f = await fixture();
+  assert.equal((await activate(f.license.id)).status, 200);
+  assert.equal(await lifecycle(f.device.id), 'Active');
+  assert.equal((await f.serve()).operationalStatus.lifecycleStatus, 'Active');
+  const history = await db.prisma.deviceStateHistory.findMany({ where: { deviceId: f.device.id } });
   assert.deepEqual(
-    history.filter((x) => x.axis === 'lifecycle').map((x) => [x.fromStatus, x.toStatus, x.actorType]),
+    history.map((x) => [x.axis, x.fromStatus, x.toStatus, x.actorType]),
     [
-      ['Assigned', 'Licensed', 'SYSTEM'],
-      ['Licensed', 'Active', 'DEVICE'],
+      ['lifecycle', 'Assigned', 'Active', 'SYSTEM'],
+      ['operational', null, 'Active', 'SYSTEM'],
     ],
   );
-  assert.equal(history.filter((x) => x.axis === 'operational').length, 1);
+  const audit = await db.prisma.auditLog.findFirstOrThrow({ where: { objectId: f.device.id, result: 'SUCCESS' } });
+  assert.equal(audit.actorId, admin.actorId);
+  assert.equal((audit.afterValue as Record<string, unknown>).activationSource, 'LICENSE_OPERATION');
   assert.equal(
-    await db.prisma.auditLog.count({ where: { objectId: f.license.id, action: 'device.license.snapshot-served' } }),
+    await db.prisma.outboxEvent.count({ where: { aggregateId: f.license.id, eventType: 'LICENSE_CHANGED' } }),
     1,
   );
   assert.equal(
     await db.prisma.auditLog.count({ where: { objectId: f.license.id, action: 'device.license.verified' } }),
-    1,
-  );
-  const audit = JSON.stringify(await db.prisma.auditLog.findMany({ where: { objectId: f.license.id } }));
-  assert.notInclude(audit, s.license!.signature!);
-  assert.notInclude(audit, KEY);
-});
-test('a built but uncommitted response and lastSyncTime cannot prove license delivery', async () => {
-  const f = await fixture();
-  const r = await f.call({ lastSyncTime: NOW.toISOString() });
-  assert.equal(r.status, 200);
-  assert.equal((await f.confirm(r.body as DeviceSyncSnapshot, 'RECEIVED')).status, 409);
-  assert.equal((await db.prisma.device.findUnique({ where: { id: f.device.id } }))!.lifecycleStatus, 'Assigned');
-});
-test('cross-device and forged etag confirmation are rejected without state change', async () => {
-  const a = await fixture(),
-    b = await fixture();
-  const s = await a.serve();
-  assert.equal(
-    (
-      await b.call({
-        licenseConfirmation: {
-          licenseId: a.license.id,
-          version: s.license!.version,
-          snapshotEtag: s.etag,
-          status: 'RECEIVED',
-        },
-      })
-    ).status,
-    409,
-  );
-  assert.equal((await a.confirm({ ...s, etag: '0'.repeat(64) }, 'RECEIVED')).status, 409);
-  assert.equal(await db.prisma.deviceStateHistory.count({ where: { deviceId: a.device.id } }), 0);
-});
-test('renewed version or changed signature invalidates a previously served confirmation', async () => {
-  const f = await fixture(),
-    s = await f.serve();
-  await db.prisma.license.update({
-    where: { id: f.license.id },
-    data: { version: { increment: 1 }, signature: 'v1.changed' },
-  });
-  assert.equal((await f.confirm(s, 'RECEIVED')).status, 409);
-  assert.equal(await db.prisma.deviceStateHistory.count({ where: { deviceId: f.device.id } }), 0);
-});
-test('expired/revoked licenses and changed assignment cannot activate a device', async () => {
-  for (const change of ['expired', 'revoked', 'assignment']) {
-    const f = await fixture(),
-      s = await f.serve();
-    assert.equal((await f.confirm(s, 'RECEIVED')).status, 200);
-    if (change === 'expired') await db.prisma.license.update({ where: { id: f.license.id }, data: { validTo: NOW } });
-    if (change === 'revoked')
-      await db.prisma.license.update({ where: { id: f.license.id }, data: { status: 'Revoked' } });
-    if (change === 'assignment')
-      await db.prisma.deviceAssignment.updateMany({
-        where: { deviceId: f.device.id },
-        data: { status: 'ENDED', endedAt: NOW },
-      });
-    assert.equal((await f.confirm(s, 'VERIFIED')).status, 409);
-    assert.equal((await db.prisma.device.findUnique({ where: { id: f.device.id } }))!.lifecycleStatus, 'Licensed');
-  }
-});
-test('receipt expires after24h and a rotated certificate cannot reuse old certificate delivery', async () => {
-  const f = await fixture(),
-    s = await f.serve();
-  clock = new Date(NOW.getTime() + 86400001);
-  assert.equal((await f.confirm(s, 'RECEIVED')).status, 409);
-  clock = new Date(NOW.getTime() + 86400000);
-  assert.equal((await f.confirm(s, 'RECEIVED')).status, 200);
-  clock = NOW;
-  await db.prisma.deviceCertificate.update({ where: { id: f.certificate.id }, data: { status: 'REVOKED' } });
-  assert.equal((await f.confirm(s, 'RECEIVED')).status, 401);
-  const pem = `-----BEGIN CERTIFICATE-----\n${Buffer.from('rotated-' + f.device.id).toString('base64')}\n-----END CERTIFICATE-----`;
-  await db.prisma.deviceCertificate.create({
-    data: {
-      id: randomUUID(),
-      deviceId: f.device.id,
-      fingerprint: certificateFingerprintFromPem(pem),
-      status: 'ACTIVE',
-      notBefore: NOW,
-      notAfter: new Date(NOW.getTime() + 7 * 86400000),
-    },
-  });
-  const rotated = await createDeviceSyncHandler({
-    client: db.prisma,
-    now: () => clock,
-    maintenanceSyncIntervalSeconds: 900,
-  })({
-    identity: { clientCertPem: pem },
-    body: {
-      licenseConfirmation: {
-        licenseId: f.license.id,
-        version: s.license!.version,
-        snapshotEtag: s.etag,
-        status: 'RECEIVED',
-      },
-    },
-    requestId: randomUUID(),
-  });
-  assert.equal(rotated.status, 409);
-});
-test('stale confirmation cannot restore Suspended and serializable concurrent confirmations do not duplicate history', async () => {
-  const f = await fixture(),
-    s = await f.serve();
-  const responses = await Promise.all([f.confirm(s, 'RECEIVED'), f.confirm(s, 'RECEIVED')]);
-  assert.isTrue(responses.every((r) => [200, 409].includes(r.status)));
-  assert.equal(await db.prisma.deviceStateHistory.count({ where: { deviceId: f.device.id, axis: 'lifecycle' } }), 1);
-  await db.prisma.device.update({ where: { id: f.device.id }, data: { lifecycleStatus: 'Suspended' } });
-  assert.equal((await f.confirm(s, 'VERIFIED')).status, 409);
-  assert.equal((await db.prisma.device.findUnique({ where: { id: f.device.id } }))!.lifecycleStatus, 'Suspended');
-});
-test('confirmation schema fails closed on unknown fields and malformed identifiers', () => {
-  for (const c of [
-    null,
-    { licenseId: randomUUID(), version: 1, snapshotEtag: 'a'.repeat(64), status: 'VERIFIED', verified: true },
-    { licenseId: randomUUID(), version: 0, snapshotEtag: 'a'.repeat(64), status: 'RECEIVED' },
-    { licenseId: randomUUID(), version: 1, snapshotEtag: 'bad', status: 'RECEIVED' },
-  ])
-    assert.throws(() => parseSyncRequest({ licenseConfirmation: c }));
-});
-
-test('confirmation audit failure rolls back lifecycle, operational mirror and history atomically', async () => {
-  const f = await fixture(),
-    s = await f.serve();
-  await db.pg.exec(`CREATE FUNCTION qa09_reject_confirmation() RETURNS trigger LANGUAGE plpgsql AS $$
-    BEGIN IF NEW.action = 'device.license.received' THEN RAISE EXCEPTION 'test audit unavailable'; END IF; RETURN NEW; END $$;
-    CREATE TRIGGER qa09_reject_confirmation BEFORE INSERT ON audit_logs FOR EACH ROW EXECUTE FUNCTION qa09_reject_confirmation();`);
-  try {
-    assert.equal((await f.confirm(s, 'RECEIVED')).status, 500);
-    assert.equal(
-      (await db.prisma.device.findUniqueOrThrow({ where: { id: f.device.id } })).lifecycleStatus,
-      'Assigned',
-    );
-    assert.equal(await db.prisma.deviceStateHistory.count({ where: { deviceId: f.device.id } }), 0);
-    assert.equal(
-      await db.prisma.auditLog.count({ where: { objectId: f.license.id, action: 'device.license.received' } }),
-      0,
-    );
-  } finally {
-    await db.pg.exec('DROP TRIGGER qa09_reject_confirmation ON audit_logs; DROP FUNCTION qa09_reject_confirmation();');
-  }
-  assert.equal((await f.confirm(s, 'RECEIVED')).status, 200);
-});
-
-test('unsigned Draft response is contract-valid and cannot create a delivery acknowledgement', async () => {
-  const f = await fixture();
-  await db.prisma.license.update({ where: { id: f.license.id }, data: { status: 'Draft', signature: null } });
-  const snapshot = await f.serve();
-  assertOpenApiResponse('syncDevice', 200, snapshot);
-  assert.equal(snapshot.license!.signature, null);
-  assert.equal((await f.confirm(snapshot, 'RECEIVED')).status, 409);
-  assert.equal(
-    await db.prisma.auditLog.count({ where: { objectId: f.license.id, action: 'device.license.snapshot-served' } }),
     0,
   );
+});
+
+test('ordinary Sync repairs an already-active License once without either device confirmation', async () => {
+  const f = await fixture();
+  await activeLicense(f);
+  const results = await Promise.all([f.call({ lastSyncTime: null }), f.call({ lastSyncTime: null })]);
+  assert.deepEqual(
+    results.map((x) => x.status),
+    [200, 200],
+  );
+  assert.equal(await lifecycle(f.device.id), 'Active');
+  assert.equal(await db.prisma.deviceStateHistory.count({ where: { deviceId: f.device.id, axis: 'lifecycle' } }), 1);
+  assert.equal(await db.prisma.auditLog.count({ where: { objectId: f.device.id, result: 'SUCCESS' } }), 1);
+  const snapshot = await f.serve();
+  assert.equal(snapshot.operationalStatus.lifecycleStatus, 'Active');
+});
+
+test('old RECEIVED and VERIFIED request shapes remain accepted and cannot activate an Issued license', async () => {
+  const f = await fixture();
+  const s = await f.serve();
+  assert.equal((await f.confirm(s, 'RECEIVED')).status, 200);
+  assert.equal((await f.confirm(s, 'VERIFIED')).status, 200);
+  assert.equal(await lifecycle(f.device.id), 'Assigned');
+  await activeLicense(f);
+  assert.equal((await f.confirm(s, 'RECEIVED')).status, 200);
+  assert.equal(await lifecycle(f.device.id), 'Active');
+  assert.equal(
+    await db.prisma.auditLog.count({ where: { objectId: f.license.id, action: { startsWith: 'device.license.' } } }),
+    0,
+  );
+});
+
+for (const state of ['Licensed', 'Suspended', 'Retired', 'Onboarded']) {
+  test('cloud reconciliation respects lifecycle ' + state, async () => {
+    const f = await fixture();
+    await db.prisma.device.update({ where: { id: f.device.id }, data: { lifecycleStatus: state } });
+    await activeLicense(f);
+    const r = await f.call();
+    // Retired Sync additionally requires its existing retirement window.
+    assert.equal(r.status, state === 'Retired' ? 403 : 200);
+    assert.equal(await lifecycle(f.device.id), state === 'Licensed' ? 'Active' : state);
+  });
+}
+
+for (const bad of [
+  'expired',
+  'future',
+  'revoked',
+  'unsigned',
+  'ended-assignment',
+  'moved-site',
+  'suspended-operational',
+]) {
+  test('ordinary Sync never activates ' + bad, async () => {
+    const f = await fixture();
+    await activeLicense(f);
+    if (bad === 'expired')
+      await db.prisma.license.update({ where: { id: f.license.id }, data: { validTo: new Date(NOW.getTime() - 1) } });
+    if (bad === 'future')
+      await db.prisma.license.update({ where: { id: f.license.id }, data: { validFrom: new Date(NOW.getTime() + 1) } });
+    if (bad === 'revoked') await db.prisma.license.update({ where: { id: f.license.id }, data: { status: 'Revoked' } });
+    if (bad === 'unsigned') await db.prisma.license.update({ where: { id: f.license.id }, data: { signature: null } });
+    if (bad === 'ended-assignment')
+      await db.prisma.deviceAssignment.updateMany({
+        where: { deviceId: f.device.id },
+        data: { endedAt: new Date(NOW.getTime() - 1) },
+      });
+    if (bad === 'moved-site') await db.prisma.device.update({ where: { id: f.device.id }, data: { siteId: null } });
+    if (bad === 'suspended-operational')
+      await db.prisma.deviceLatestState.create({
+        data: { deviceId: f.device.id, customerId: f.device.customerId, operationalStatus: 'Suspended' },
+      });
+    assert.equal((await f.call()).status, 200);
+    assert.equal(await lifecycle(f.device.id), 'Assigned');
+  });
+}
+
+test('License activation and device activation roll back together if device history fails', async () => {
+  const f = await fixture();
+  await db.pg
+    .exec(`CREATE FUNCTION cloud_activation_fail() RETURNS trigger AS $$ BEGIN IF NEW.device_id='${f.device.id}' THEN RAISE EXCEPTION 'history failure'; END IF; RETURN NEW; END; $$ LANGUAGE plpgsql;
+    CREATE TRIGGER cloud_activation_fail BEFORE INSERT ON device_state_history FOR EACH ROW EXECUTE FUNCTION cloud_activation_fail();`);
+  try {
+    assert.equal((await activate(f.license.id)).status, 500);
+    assert.equal((await db.prisma.license.findUniqueOrThrow({ where: { id: f.license.id } })).status, 'Issued');
+    assert.equal(await lifecycle(f.device.id), 'Assigned');
+    assert.equal(await db.prisma.licenseHistory.count({ where: { licenseId: f.license.id } }), 0);
+    assert.equal(await db.prisma.outboxEvent.count({ where: { aggregateId: f.license.id } }), 0);
+    assert.equal(await db.prisma.auditLog.count({ where: { objectId: f.device.id, result: 'SUCCESS' } }), 0);
+  } finally {
+    await db.pg.exec(
+      'DROP TRIGGER cloud_activation_fail ON device_state_history; DROP FUNCTION cloud_activation_fail();',
+    );
+  }
+});
+
+test('License activation before validFrom and unauthorized administrator cannot activate the device', async () => {
+  const f = await fixture();
+  await db.prisma.license.update({ where: { id: f.license.id }, data: { validFrom: new Date(NOW.getTime() + 1000) } });
+  assert.equal((await activate(f.license.id)).status, 409);
+  const h = createAdminLicenseHandlers({ client: db.prisma, signingKey: KEY, now: () => clock });
+  assert.equal(
+    (
+      await h.activate({
+        actor: { ...admin, roles: ['Auditor'] },
+        params: { licenseId: f.license.id },
+        headers: {},
+        requestId: 'denied',
+      })
+    ).status,
+    403,
+  );
+  assert.equal(await lifecycle(f.device.id), 'Assigned');
+});
+
+test('legacy confirmation values still use strict validation', () => {
+  assert.throws(() => parseSyncRequest({ licenseConfirmation: { status: 'INVALID' } }));
+  assert.throws(() => parseSyncRequest({ unexpected: true }));
+});
+
+test('administrator activation rejects a missing current assignment and rolls back License changes', async () => {
+  const f = await fixture();
+  await db.prisma.deviceAssignment.updateMany({
+    where: { deviceId: f.device.id },
+    data: { status: 'ENDED', endedAt: NOW },
+  });
+  assert.equal((await activate(f.license.id)).status, 409);
+  assert.equal(await lifecycle(f.device.id), 'Assigned');
+  assert.equal((await db.prisma.license.findUniqueOrThrow({ where: { id: f.license.id } })).status, 'Issued');
+});
+
+test('revoked certificate cannot reconcile an otherwise active License', async () => {
+  const f = await fixture();
+  await activeLicense(f);
+  await db.prisma.deviceCertificate.update({
+    where: { id: f.certificate.id },
+    data: { revokedAt: NOW, status: 'REVOKED' },
+  });
+  assert.equal((await f.call()).status, 401);
+  assert.equal(await lifecycle(f.device.id), 'Assigned');
+});
+
+test('future and expired licenses do not activate through the administrator operation', async () => {
+  const f = await fixture();
+  await db.prisma.license.update({ where: { id: f.license.id }, data: { validTo: new Date(NOW.getTime() - 1) } });
+  assert.equal((await activate(f.license.id)).status, 409);
+  assert.equal(await lifecycle(f.device.id), 'Assigned');
 });

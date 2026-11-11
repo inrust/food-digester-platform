@@ -32,6 +32,7 @@ import {
   transitionLicense,
 } from '@fdp/domain';
 import type { EntitlementCode, LicenseSnapshot, LicenseStatus, LicenseTransitionEffects } from '@fdp/domain';
+import { activateDeviceForCloudLicense } from '../../device/license-activation.js';
 import type { ActorContext } from '@fdp/auth';
 import { licenseConflict, licenseNotFound, licenseStateNotAllowed, licenseValidationFailed } from './errors.js';
 
@@ -269,6 +270,8 @@ async function applyTransition(
   data: Record<string, unknown>,
   occurredAt: Date,
 ): Promise<LicenseRow> {
+  await tx.$queryRawUnsafe('SELECT id FROM devices WHERE id = $1 FOR UPDATE', row.deviceId);
+  await tx.$queryRawUnsafe('SELECT id FROM licenses WHERE id = $1 FOR UPDATE', row.id);
   const { count } = await licenses(tx).updateMany({
     where: { id: row.id, version: row.version },
     data: { ...data, status: effects.to, version: { increment: 1 } },
@@ -325,6 +328,13 @@ async function applyTransition(
 
   const fresh = await licenses(tx).findFirst({ where: { id: row.id }, include: { entitlements: true } });
   if (!fresh) throw licenseNotFound();
+  await activateDeviceForCloudLicense(
+    tx,
+    fresh,
+    occurredAt,
+    effects.auditEvent.actorId ?? 'system:license',
+    'LICENSE_OPERATION',
+  );
   return fresh;
 }
 
@@ -548,8 +558,8 @@ export async function activateLicense(
     actor,
     options.licenseId,
     (_row, snapshot, now) => {
-      if (snapshot.status === 'Issued' && now < snapshot.validFrom) {
-        throw licenseStateNotAllowed('The license is not yet valid (validFrom is in the future)');
+      if (snapshot.status === 'Issued' && (now < snapshot.validFrom || now >= snapshot.validTo)) {
+        throw licenseStateNotAllowed('The license is outside its validity period');
       }
       // DOM-02：Issued→Active 为 SYSTEM/DEVICE 迁移；管理端触发等价于系统激活事件
       const effects = transitionLicense(snapshot, 'Active', { actorType: 'SYSTEM', actorId: actor.actorId });

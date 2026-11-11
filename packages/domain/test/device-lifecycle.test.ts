@@ -65,6 +65,8 @@ const LEGAL: ReadonlyArray<{
   },
   { from: 'Onboarded', to: 'Assigned', actor: SUPER_ADMIN, ctx: { assignment: { customerId: 'c1', siteId: 's1' } } },
   { from: 'Assigned', to: 'Licensed', actor: SYSTEM, ctx: { licenseIssuedAndSynced: true } },
+  { from: 'Assigned', to: 'Active', actor: SYSTEM, ctx: { cloudLicenseActive: true } },
+  { from: 'Licensed', to: 'Active', actor: SYSTEM, ctx: { cloudLicenseActive: true } },
   { from: 'Licensed', to: 'Active', actor: DEVICE, ctx: { licenseVerifiedByDevice: true } },
   { from: 'Active', to: 'Suspended', actor: OPERATOR, ctx: { reason: '安全调查' } },
   // BE-IOT-07 Tamper 安全策略自动挂起（SYSTEM actor + 策略原因）
@@ -281,4 +283,13 @@ describe('失败纯度：状态与历史不变化', () => {
     }
     expect(effects).toBeNull();
   });
+});
+
+test('cloud activation requires a server-authorized active License fact', () => {
+  for (const state of ['Assigned', 'Licensed'] as const) {
+    expect(() => transitionLifecycle(device(state), 'Active', SYSTEM, {})).toThrow(/cloudLicenseActive/);
+    expect(() => transitionLifecycle(device(state), 'Active', SYSTEM, { cloudLicenseActive: false })).toThrow(
+      /cloudLicenseActive/,
+    );
+  }
 });

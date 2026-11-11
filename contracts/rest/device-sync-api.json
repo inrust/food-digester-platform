@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bio-Nexa CMP Unified Device Sync API",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "BE-SYNC-01 统一设备同步接口（mTLS 认证，设备自身身份）：接收 lastSyncTime，按 Device-Cloud Communication Design 的字段名和嵌套结构返回 Assignment、Device、License、Configuration、Device Users 与 Operational Status 的完整顶层快照。V1 不按 lastSyncTime 或 etag 裁剪必要域。Retired 且退役确认待处理的设备仍可调用 Sync 获取最新状态；生命周期 Endpoint Allowlist 与证书认证分离。错误响应继承 openapi-base.json（CT-05）。",
     "x-decision-versions": [
       "PRI-001@1.0.0",
@@ -12,9 +12,10 @@
       "DEC-014@1.0.0",
       "DEC-018@1.0.0",
       "DEC-020@1.0.0",
-      "DEC-024@1.0.0"
+      "DEC-024@1.0.0",
+      "DEC-027@1.0.0"
     ],
-    "x-decision-register-version": "1.38.0"
+    "x-decision-register-version": "1.39.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [
@@ -36,7 +37,7 @@
         "tags": ["device"],
         "operationId": "syncDevice",
         "summary": "统一设备同步（完整事实源快照）",
-        "description": "身份即设备（mTLS 客户端证书，AUTH-03）。封闭请求允许 lastSyncTime 与可选 licenseConfirmation；后者绑定已提交的近24小时快照、当前许可证版本、分配和证书。RECEIVED 驱动 Assigned→Licensed；设备独立验签成功后才能声明 VERIFIED，驱动 Licensed→Active。响应始终返回全量快照，etag 为稳定域 SHA-256。",
+        "description": "设备使用 mTLS 拉取完整快照。License 激活由云端完成；历史 Assigned/Licensed 设备在普通 Sync 时依据已有生效的云端 License 幂等补齐为 Active。licenseConfirmation 仅保留旧请求结构兼容，不驱动设备状态，不生成设备确认回执。",
         "security": [
           {
             "DeviceMtls": []
@@ -140,7 +141,8 @@
             "description": "上一次成功同步时点；首次同步为 null（或可省略请求体）"
           },
           "licenseConfirmation": {
-            "$ref": "#/components/schemas/LicenseConfirmation"
+            "$ref": "#/components/schemas/LicenseConfirmation",
+            "description": "兼容字段，继续校验原结构，但不再参与激活；新客户端仅提交 lastSyncTime。"
           }
         }
       },
@@ -486,7 +488,7 @@
           "status": {
             "type": "string",
             "enum": ["RECEIVED", "VERIFIED"],
-            "description": "VERIFIED 是已认证设备的独立验签声明；服务端不会代替固件完成验签。"
+            "description": "历史确认值，仅保留结构兼容。当前设备激活由云端 License 操作或普通 Sync 补齐。"
           }
         }
       },

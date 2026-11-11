@@ -124,7 +124,7 @@ curl --cert device-cert.pem --key device-private-key.pem \
 
 返回 Assignment、Device、License、Device Users、Configuration 和 Operational Status 的完整事实快照。成功响应完成序列化后，服务器按当前 mTLS 证书记录 `restVerifiedAt`；认证、参数校验或快照构建失败不记录。该时间证明服务器成功处理此证书请求，不是设备收包 ACK。若新证已有 MQTT 验证且仍在轮换窗口内，本次 Sync 同时触发轮换确认。V1 不做增量裁剪，不返回 `304`；`lastSyncTime` 回显设备上次成功取得的快照时点，并用于确认此前已交付的设备用户版本，不代表设备已经应用内容。
 
-请求体可省略。存在时只允许 `lastSyncTime` 和可选 `licenseConfirmation`；普通同步示例：
+请求体可省略。普通请求使用 `lastSyncTime`，旧客户端的可选 `licenseConfirmation` 保留结构兼容。
 
 ```json
 {
@@ -134,23 +134,11 @@ curl --cert device-cert.pem --key device-private-key.pem \
 
 首次同步也可使用 `{ "lastSyncTime": null }`。请求只允许这些字段，不能自报 `deviceId`、客户或站点来替代证书身份。
 
-设备实际收到带有效 License 的快照后，可在后续请求中提交：
+2026-11-11 按已确认的 DEC-027@1.0.0 简化激活流程。管理员在现有流程中激活有效 License 时，云端在同一事务中将满足当前客户/站点分配条件的 Assigned/Licensed 设备激活为 Active，记录运行状态和云端来源审计。App 使用普通 Sync 获取最新状态和 License，继续执行本地 License 检查。
 
-```json
-{
-  "lastSyncTime": "2026-09-24T03:00:00Z",
-  "licenseConfirmation": {
-    "licenseId": "LIC001",
-    "version": 1,
-    "snapshotEtag": "<上一份实际收到的快照 etag，64 位 hex>",
-    "status": "RECEIVED"
-  }
-}
-```
+历史设备已有生效的 Active/ExpiringSoon/Renewed License 时，下一次普通 Sync 会幂等补齐设备激活。云端会重新检查授权有效期、签名存在性、证书和当前归属，保留 Suspended/Retired 状态。
 
-`licenseConfirmation` 绑定服务器近 24 小时内已提交的实际快照、当前 License 版本、分配和证书：`RECEIVED` 驱动设备 `Assigned → Licensed`；设备独立验签成功后才能声明 `VERIFIED`，驱动 `Licensed → Active`。错误或失效绑定返回 `409 CONFLICT`。管理员将 **License 状态**激活为 `Active`，不等于设备生命周期已变为 `Active`；普通 Sync 和 `lastSyncTime` 也不替代 License 验签确认。
-
-2026-10-22 的[独立 License HMAC 与业务激活前置核验](../audit/2026-10-22-license-hmac-activation-preflight.md)确认运营尚未提供获权通道，专用 verifier 角色不存在；因此尚未对目标真实 License 执行独立 HMAC 或发送 `VERIFIED`，业务激活仍为 **BLOCKED / NOT_RUN**。本地验签工具及生命周期测试不替代目标证据；不能仅凭本页请求格式、服务端签名比对或 License `Active` 状态声明设备验签成功。
+旧客户端的可选 `licenseConfirmation` 字段继续进行结构校验，兼容原请求；云端激活统一以服务器 License 和分配事实为依据。新客户端只需 `lastSyncTime`，无需额外发送 RECEIVED 或 VERIFIED。历史验签与同步测试记录保留原候选和测试结论。
 
 成功响应示例：
 

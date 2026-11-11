@@ -22,6 +22,16 @@ test('target License wire sequence proves ExpiringSoon renewal and Renewed activ
         siteId: s.id,
       },
     });
+    await prisma.deviceAssignment.create({
+      data: {
+        deviceId: 'qa09-local-device',
+        customerId: c.id,
+        siteId: s.id,
+        status: 'ACTIVE',
+        assignedBy: 'qa09-local-operator',
+        assignedAt: new Date(now - 60000),
+      },
+    });
     const h = createAdminLicenseHandlers({
       client: prisma,
       signingKey: 'qa09-local-signing-key',
@@ -74,7 +84,7 @@ test('target License wire sequence proves ExpiringSoon renewal and Renewed activ
     });
     assert.deepEqual(observations, [
       { status: 'Issued', device: 'Assigned' },
-      { status: 'Active', device: 'Assigned' },
+      { status: 'Active', device: 'Active' },
     ]);
     assert.equal(rows.find((x) => x.id === 'license-before-renew-evaluate').status, 'ExpiringSoon');
     assert.equal(rows.find((x) => x.id === 'license-renew-replay').replayed, true);

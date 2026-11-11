@@ -1,11 +1,25 @@
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, mkdtempSync, writeFileSync, symlinkSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createTestDb } from '../apps/cloud-api/test/helpers.ts';
+
 import {
+  AR12_SOURCE_FILES,
+  AR12_LOCAL_RECEIPT,
+  AR12_LOCAL_REPORT,
+  ar12ExclusionRecord,
+  ar12VariantRecord,
+} from './device-image-target-ar12-scope.mjs';
+import { candidateFixture } from './test-support/device-image-candidate-fixture.mjs';
+import { ROOT as CURRENT_ROOT, verifyG3 as verifyCurrentG3 } from './device-image-target-package.mjs';
+
+// The protocol under test remains bound to its historical source, even as the application evolves.
+const historicalCandidate = await candidateFixture();
+after(() => historicalCandidate.cleanup());
+const {
   ROOT,
   CLOUD_PROFILE,
   CLOUD_INPUT_IDS,
@@ -17,7 +31,6 @@ import {
   CANDIDATE,
   INPUTS,
   sha,
-  verifyG3,
   inputTemplate,
   admission,
   receiptTemplate,
@@ -33,16 +46,7 @@ import {
   readCandidateFiles,
   readG3EvidenceFiles,
   isPreparationSource,
-} from './device-image-target-package.mjs';
-
-import {
-  AR12_SOURCE_FILES,
-  AR12_LOCAL_RECEIPT,
-  AR12_LOCAL_REPORT,
-  ar12ExclusionRecord,
-  ar12VariantRecord,
-} from './device-image-target-ar12-scope.mjs';
-import { candidateFixture } from './test-support/device-image-candidate-fixture.mjs';
+} = historicalCandidate.tool;
 
 const clone = (value) => structuredClone(value);
 test('preparation metadata cannot exempt application, infrastructure or shared handoff source', () => {
@@ -272,9 +276,9 @@ test('historical candidate package is deterministic, cwd-independent, complete a
   // historical fixture cannot turn changed runtime/IAM source into a fresh gate.
   const manifest = JSON.parse(readFileSync(join(ROOT, PACKAGE, 'candidate.json')));
   const bytes = readG3EvidenceFiles([manifest.sources.path])[manifest.sources.path];
-  const drift = manifestRows(bytes).find((row) => sha(readFileSync(join(ROOT, row.path))) !== row.sha256);
-  if (drift) assert.throws(() => verifyG3(), { message: `CURRENT_G3_SOURCE_DRIFT:${drift.path}` });
-  else assert.deepEqual(verifyG3(), fixture.tool.verifyG3());
+  const drift = manifestRows(bytes).find((row) => sha(readFileSync(join(CURRENT_ROOT, row.path))) !== row.sha256);
+  if (drift) assert.throws(() => verifyCurrentG3(), { message: `CURRENT_G3_SOURCE_DRIFT:${drift.path}` });
+  else assert.deepEqual(verifyCurrentG3(), fixture.tool.verifyG3());
 });
 test('case graph includes 44 cases and all five preview operations, full archive orders and authority variants', () => {
   const catalog = validateCases();

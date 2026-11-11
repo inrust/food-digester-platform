@@ -88,7 +88,7 @@ export interface DeviceSyncDeps {
 const UTC_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
 
 /**
- * 解析 Sync 请求体（封闭 Schema：lastSyncTime 与可选 licenseConfirmation）。
+ * 解析 Sync 请求体（lastSyncTime 与结构兼容的旧 licenseConfirmation）。
  * body 缺省 → lastSyncTime=null（首次同步）；lastSyncTime 为 null 或 UTC ISO 8601（Z 结尾）。
  */
 export interface LicenseConfirmation {
@@ -99,6 +99,7 @@ export interface LicenseConfirmation {
 }
 export interface SyncRequestInput {
   readonly lastSyncTime: string | null;
+  /** @deprecated 结构兼容字段；设备激活由云端 License 流程完成。 */
   readonly licenseConfirmation?: LicenseConfirmation;
 }
 export function parseSyncRequest(body: unknown): SyncRequestInput {

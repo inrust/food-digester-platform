@@ -10,7 +10,7 @@ Event/Alarm 留档的独立 OpenAPI、不可变申报、200/201/409 分支、S3 
 
 设备本地增加可选 liveImage 配置，缺省 disabled。支持 live-image-v1 的 App 由第三方软件发布或现场配置显式开启。云端按原始 deviceId 的 DeviceLiveImagePolicy.enabled 白名单记录准入，缺行/false 均关闭（IMG-08 实现，不由 App 写入）。设备本地与服务端均开启后才能预览。未启用设备继续使用原接口，不新增轮询。Configuration V1 的四个字段不增加预览字段，cameraRefreshInterval 不用于覆盖新的 2 秒周期。
 
-1. 按原流程连接、首次 Heartbeat 和 Sync，取得可信设备身份及归属。使用原设备 mTLS 证书调用 Device REST。
+1. 按原流程连接、首次 Heartbeat 和普通 Sync，取得可信设备身份及归属。有效 License 由管理员现有激活流程在云端自动激活设备；已有生效 License 的历史设备由普通 Sync 补齐。使用原设备 mTLS 证书调用 Device REST。
 2. 启用设备每 5 秒调用 GET /api/v1/device/live-image/state，无人查看时 IDLE。有租约时 ACTIVE 带 streamId、activeUntil、uploadIntervalMs 和 maxImageBytes。
 3. 每 2 秒抓 JPEG，以新的 frameId、UTC capturedAt 和无前缀 Base64 POST /api/v1/device/live-image/frames。上次仍在发送时跳过本次采集。沿用同一个请求重试时不修改任何字段，旧流请求丢弃。
 4. 租约到期、状态 IDLE、403 或 LIVE_STREAM_INACTIVE 时停止传图。断网恢复后先查状态，再拍新帧。请求超过 180 KiB、原图超过 128 KiB 或 JPEG 尺寸超限须先调整采集规格。

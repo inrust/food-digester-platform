@@ -1,6 +1,6 @@
 {
-  "registerVersion": "1.38.0",
-  "updatedAt": "2026-11-06T00:00:00Z",
+  "registerVersion": "1.39.0",
+  "updatedAt": "2026-11-11T00:00:00Z",
   "sourceDocuments": [
     {
       "tier": 1,
@@ -844,6 +844,27 @@
           "at": "2026-10-18T00:00:00Z",
           "by": "业务方（用户明确纠正 onboarding 流程）",
           "note": "首次申请不查询库存；按序列号全状态去重；批准后创建设备并绑定公钥；重复申请含拒绝和超时统一返回已提交。历史审批和验收记录保留。"
+        }
+      ]
+    },
+    {
+      "id": "DEC-027",
+      "version": "1.0.0",
+      "status": "frozen",
+      "title": "License 云端自动激活设备",
+      "conflict": "此前实现要求设备通过两次 Sync 声明 RECEIVED/VERIFIED 才能从 Assigned 进入 Active，源设计未规定两次确认，阻断仅做普通 Sync 的既有设备。",
+      "provisionalValue": "现有管理员激活 License 操作在同一事务内自动将符合当前客户/站点有效分配、有效期和签名条件的 Assigned/Licensed 设备激活为 Active，并写入运行状态、状态历史和云端来源审计。此前已由云端激活的 Active/ExpiringSoon/Renewed License 在设备下一次普通 Sync 时幂等补齐；Issued/Draft/过期/撤销/无签名、已挂起/退役/未分配设备均不自动激活。旧 licenseConfirmation 字段保留结构兼容但不再驱动状态或生成设备验签回执。设备继续普通 Sync 和本地 License 检查。",
+      "approver": "Anray（本轮用户指令）",
+      "approvedAt": "2026-11-11T00:00:00Z",
+      "blockingTasks": ["DOM-01", "BE-LIC-01", "BE-SYNC-01"],
+      "affectedModules": ["DOM", "BE-LIC", "BE-SYNC", "CT", "QA"],
+      "sourceRefs": ["device-cloud-communication-design", "aws-implementation-plan"],
+      "history": [
+        {
+          "version": "1.0.0",
+          "at": "2026-11-11T00:00:00Z",
+          "by": "Anray（本轮用户指令）",
+          "note": "经讨论按原设计简化，取消两次设备端确认，由云端直接激活设备，并接入现有管理员操作流程，无额外管理员步骤。历史设备普通 Sync 自动补齐是本次兼容实现。"
         }
       ]
     }

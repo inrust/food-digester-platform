@@ -94,6 +94,8 @@ export interface TransitionContext {
   readonly licenseIssuedAndSynced?: boolean;
   /** 设备本地验证许可证有效。 */
   readonly licenseVerifiedByDevice?: boolean;
+  /** 云端已批准且当前生效的 License，归属和分配已校验。 */
+  readonly cloudLicenseActive?: boolean;
   /** 管理员批准恢复且问题已解决（Suspended → Active）。 */
   readonly issueResolvedApproved?: boolean;
   /** 原因（挂起/退役/拒绝/恢复/维护进出必填）。 */
@@ -138,8 +140,12 @@ export const LIFECYCLE_TRANSITIONS: Readonly<Record<LifecycleStatus, readonly Li
     },
   ],
   Onboarded: [{ to: 'Assigned', actorTypes: ['ADMIN'], actorRoles: SUPER_ADMIN, requires: ['assignment'] }],
-  Assigned: [{ to: 'Licensed', actorTypes: ['SYSTEM'], requires: ['licenseIssuedAndSynced'] }],
+  Assigned: [
+    { to: 'Licensed', actorTypes: ['SYSTEM'], requires: ['licenseIssuedAndSynced'] },
+    { to: 'Active', actorTypes: ['SYSTEM'], requires: ['cloudLicenseActive'], operationalMirror: 'Active' },
+  ],
   Licensed: [
+    { to: 'Active', actorTypes: ['SYSTEM'], requires: ['cloudLicenseActive'], operationalMirror: 'Active' },
     { to: 'Active', actorTypes: ['DEVICE'], requires: ['licenseVerifiedByDevice'], operationalMirror: 'Active' },
   ],
   Active: [
