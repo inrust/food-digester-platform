@@ -3,7 +3,7 @@ import { DesignProvider } from '../components/DesignProvider.js';
 import { translate } from '../i18n/i18n.js';
 import { useCallback, useEffect, useState } from 'react';
 import { ToastHost, useToastQueue } from '../components/Toast.js';
-import { TimeZoneProvider } from '../components/TimeText.js';
+import { resetUserTimeZonePreference, TimeZoneProvider } from '../components/TimeText.js';
 import { I18nProvider, useI18n } from '../i18n/i18n.js';
 import { resolveRoute } from '../router/guard.js';
 import { AppShell } from '../shell/AppShell.js';
@@ -137,6 +137,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       <LoginPage
         auth={services.auth}
         onAuthenticated={() => {
+          resetUserTimeZonePreference();
           setSessionRevision((value) => value + 1);
           navigate(safeReturnPath(new URLSearchParams(location.search).get('returnTo')), { replace: true });
         }}

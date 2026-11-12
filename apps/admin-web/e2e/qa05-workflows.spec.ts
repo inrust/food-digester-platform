@@ -114,6 +114,7 @@ test('QA05 login SRP MFA error success logout without persisting password', asyn
   });
   await page.route('**/api/v1/admin/dashboard/overview', (route) => json(route, { data: dashboard }));
   await page.goto('/login');
+  await page.evaluate(() => localStorage.setItem('fdp.admin.time-zone.v1', 'UTC'));
   await page.locator('#username').fill(qa05.prefix);
   await page.locator('#password').fill('QA05-Synthetic-Password-42!');
   await page.locator('button[type=submit]').click();
@@ -125,6 +126,7 @@ test('QA05 login SRP MFA error success logout without persisting password', asyn
   await page.locator('button[type=submit]').click();
   await expect(page).toHaveURL(/\/dashboard/);
   await expect(page.getByTestId('user-badge')).toContainText(qa05.prefix);
+  await expect(page.getByTestId('time-zone-select')).toHaveValue('Asia/Shanghai');
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain(
     'QA05-Synthetic-Password-42!',
   );

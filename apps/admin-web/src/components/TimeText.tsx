@@ -8,6 +8,10 @@ export const DEFAULT_TIME_ZONE = 'Asia/Shanghai';
 export const SUPPORTED_TIME_ZONES = ['UTC', 'Asia/Shanghai', 'Europe/London', 'America/New_York'] as const;
 const TIME_ZONE_KEY = 'fdp.admin.time-zone.v1';
 
+export function resetUserTimeZonePreference(): void {
+  window.localStorage.removeItem(TIME_ZONE_KEY);
+}
+
 export function isSupportedTimeZone(value: string): boolean {
   try {
     new Intl.DateTimeFormat('zh-CN', { timeZone: value });
