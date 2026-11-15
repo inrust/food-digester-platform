@@ -2,10 +2,11 @@
  * BE-ONB-01 Onboarding Request Repository。
  *
  * - serial_number 全状态唯一；查询不按审批状态过滤。
- * - 并发重复提交：create 命中唯一冲突（P2002）后返回已提交提示，不产生第二条记录。
- * - 只读/只增：本模块不提供更新/删除路径（审批写状态属 BE-ONB-02）。
+ * - 旧申请超时且撤证完成后，可原子替换为一条新的待审申请。
  */
-import type { DbClient } from '@fdp/database';
+import type { DbClient, Prisma } from '@fdp/database';
+import { recordAudit, withTransaction } from '@fdp/database';
+import { alreadySubmitted, OnboardingApiError } from './errors.js';
 
 export interface OnboardingRequestRecord {
   readonly id: string;
@@ -27,7 +28,6 @@ export interface OnboardingRequestRecord {
 
 interface OnboardingRequestDelegate {
   findFirst(args: { where: Record<string, unknown> }): Promise<OnboardingRequestRecord | null>;
-  create(args: { data: Record<string, unknown> }): Promise<OnboardingRequestRecord>;
 }
 
 function requests(client: DbClient): OnboardingRequestDelegate {
@@ -45,4 +45,38 @@ export function findOnboardingRequestBySerial(
   serialNumber: string,
 ): Promise<OnboardingRequestRecord | null> {
   return requests(client).findFirst({ where: { serialNumber } });
+}
+
+export function createOrReplaceTimedOutRequest(
+  client: DbClient,
+  data: Prisma.OnboardingRequestCreateInput,
+): Promise<{ id: string }> {
+  return withTransaction(client, async (tx) => {
+    // 锁住旧申请，避免另一笔重提或状态轮询在清理期间写入关联记录。
+    const [previous] = await tx.$queryRaw<{ id: string; status: string; revocationCompletedAt: Date | null }[]>`
+      SELECT id, status, revocation_completed_at AS "revocationCompletedAt"
+      FROM onboarding_requests
+      WHERE serial_number = ${data.serialNumber}
+      FOR UPDATE
+    `;
+    if (!previous) return tx.onboardingRequest.create({ data, select: { id: true } });
+    // 撤证重试依赖旧申请。云端撤证确认前保留记录，让超时任务继续收敛。
+    if (previous.status !== 'TIMED_OUT') throw alreadySubmitted();
+    if (!previous.revocationCompletedAt) {
+      throw new OnboardingApiError('CONFLICT', 'Certificate revocation is pending; try again later');
+    }
+
+    await tx.onboardingProofNonce.deleteMany({ where: { requestId: previous.id } });
+    await tx.onboardingProvisioningJob.deleteMany({ where: { requestId: previous.id } });
+    await tx.onboardingRequest.delete({ where: { id: previous.id } });
+    const created = await tx.onboardingRequest.create({ data, select: { id: true } });
+    await recordAudit(tx, {
+      objectType: 'onboarding_request',
+      objectId: previous.id,
+      action: 'onboarding.request.resubmit',
+      result: 'SUCCESS',
+      afterValue: { requestId: created.id },
+    });
+    return created;
+  });
 }

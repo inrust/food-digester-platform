@@ -5,7 +5,7 @@ import type { RateLimiter } from '@fdp/auth';
 import { inspectCsr } from './csr-proof.js';
 import { parseOnboardingRequestBody } from './dto.js';
 import { alreadySubmitted, OnboardingApiError, validationFailed } from './errors.js';
-import { findOnboardingRequestBySerial, isUniqueViolation } from './repository.js';
+import { createOrReplaceTimedOutRequest, findOnboardingRequestBySerial, isUniqueViolation } from './repository.js';
 
 export interface OnboardingHttpRequest {
   readonly headers: Readonly<Record<string, string | undefined>>;
@@ -57,11 +57,6 @@ export function createOnboardingRequestHandler(
       await limiter.assertWithinLimit(`onboarding:csr:ip:${req.sourceIp ?? 'unknown'}`);
       await limiter.assertWithinLimit(`onboarding:csr:serial:${input.serialNumber}`);
 
-      const existing = await findOnboardingRequestBySerial(deps.client, input.serialNumber);
-      if (existing) throw alreadySubmitted();
-      const db = deps.client as unknown as {
-        onboardingRequest: { create(args: { data: Record<string, unknown> }): Promise<{ id: string }> };
-      };
       const data = {
         serialNumber: input.serialNumber,
         submittedBy: `DEVICE:${input.serialNumber}`,
@@ -74,7 +69,7 @@ export function createOnboardingRequestHandler(
         status: 'PENDING',
       };
       try {
-        const created = await db.onboardingRequest.create({ data });
+        const created = await createOrReplaceTimedOutRequest(deps.client, data);
         return { status: 201, body: { requestId: created.id, status: 'PENDING' } };
       } catch (err) {
         if (!isUniqueViolation(err)) throw err;

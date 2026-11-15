@@ -56,10 +56,10 @@ const body = {
   csrPem,
 };
 
-function signedHeaders(requestId: string, nonce: string) {
+function signedHeaders(requestId: string, nonce: string, signer = keys.privateKey) {
   const timestamp = String(NOW.getTime());
   const source = `GET\n/api/v1/device/onboarding/status\n${requestId}\n${timestamp}\n${nonce}`;
-  const signature = createSign('sha256').update(source).sign(forge.pki.privateKeyToPem(keys.privateKey), 'base64');
+  const signature = createSign('sha256').update(source).sign(forge.pki.privateKeyToPem(signer), 'base64');
   return { 'x-onboarding-timestamp': timestamp, 'x-onboarding-nonce': nonce, 'x-onboarding-signature': signature };
 }
 
@@ -70,7 +70,8 @@ describe('无预置 Token 的 CSR Onboarding', () => {
     expect(first.status).toBe(201);
     const requestId = (first.body as { requestId: string }).requestId;
     expect((await request({ headers: {}, body, requestId: 'api-2' })).status).toBe(409);
-    const other = csrFor(forge.pki.rsa.generateKeyPair(2048));
+    const otherKeys = forge.pki.rsa.generateKeyPair(2048);
+    const other = csrFor(otherKeys);
     const conflict = await request({ headers: {}, body: { ...body, csrPem: other }, requestId: 'api-3' });
     expect(conflict.status).toBe(409);
     const stored = await prisma.onboardingRequest.findUniqueOrThrow({ where: { id: requestId } });
@@ -224,6 +225,27 @@ describe('无预置 Token 的 CSR Onboarding', () => {
     };
     expect((await limitedStatus(limitedPoll)).status).toBe(200);
     expect((await limitedStatus(limitedPoll)).status).toBe(429);
+
+    await prisma.deviceCertificate.update({
+      where: { id: 'cert-csr-1' },
+      data: { status: 'REVOKED', revokedAt: NOW },
+    });
+    await prisma.onboardingRequest.update({
+      where: { id: requestId },
+      data: { status: 'TIMED_OUT', timedOutAt: NOW, revocationCompletedAt: NOW },
+    });
+    const replacement = await request({ headers: {}, body: { ...body, csrPem: other }, requestId: 'api-reapply' });
+    expect(replacement.status).toBe(201);
+    const newId = (replacement.body as { requestId: string }).requestId;
+    const pollWith = (id: string, signer: forge.pki.rsa.PrivateKey) =>
+      status({
+        headers: signedHeaders(id, randomBytes(24).toString('base64url'), signer),
+        query: { requestId: id },
+        requestId: 'api-reapply-status',
+      });
+    expect((await pollWith(requestId, keys.privateKey)).status).toBe(401);
+    expect((await pollWith(newId, keys.privateKey)).status).toBe(401);
+    expect(await pollWith(newId, otherKeys.privateKey)).toMatchObject({ status: 200, body: { status: 'PENDING' } });
   });
 });
 

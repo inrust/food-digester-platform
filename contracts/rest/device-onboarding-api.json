@@ -34,7 +34,7 @@
         "tags": ["device"],
         "operationId": "submitOnboardingRequest",
         "summary": "提交设备 Onboarding 申请",
-        "description": "设备提交自签名 CSR 和资料即可首次申请，无需预先登记设备库存。序列号从未提交过则创建 PENDING；任何状态的已有申请均返回 409 CONFLICT，提示已提交，无需重复提交。管理员批准时创建设备台账并绑定公钥。",
+        "description": "设备提交自签名 CSR 和资料即可首次申请，无需预先登记设备库存。首次提交创建 PENDING。旧申请超时且撤证完成后，同序列号可重新提交，旧申请与关联的轮询随机数和发证任务被原子替换，返回新的 PENDING 申请 ID。其他重复提交返回 409 CONFLICT。新申请仍需管理员审核，批准时创建或复用设备台账并绑定公钥。",
         "security": [],
         "requestBody": {
           "required": true,
@@ -68,7 +68,7 @@
             }
           },
           "409": {
-            "description": "该序列号已经提交过申请，无需重复提交（CONFLICT；包括 PENDING/APPROVED/REJECTED/TIMED_OUT）",
+            "description": "该序列号已有 PENDING、APPROVED、REJECTED 或撤证未完成的 TIMED_OUT 申请（CONFLICT）",
             "content": {
               "application/json": {
                 "schema": {

@@ -117,7 +117,9 @@ export function createOnboardingStatusHandler(
           },
         });
       } catch (error) {
-        if (isUniqueViolation(error)) throw new OnboardingApiError('UNAUTHENTICATED');
+        if (isUniqueViolation(error) || (error as { code?: string } | null)?.code === 'P2003') {
+          throw new OnboardingApiError('UNAUTHENTICATED');
+        }
         throw error;
       }
       await db.onboardingProofNonce.deleteMany({ where: { expiresAt: { lt: now() } } });
@@ -166,6 +168,7 @@ async function resolveStatus(
   const db = deps.client as unknown as {
     device: { findFirst(args: { where: { serialNumber: string } }): Promise<{ id: string } | null> };
     deviceCertificate: { findFirst(args: { where: Record<string, unknown> }): Promise<CertificateRow | null> };
+    onboardingRequest: { findFirst(args: { where: { id: string; status: string } }): Promise<{ id: string } | null> };
   };
   const device = await db.device.findFirst({ where: { serialNumber: request.serialNumber } });
   const certificate = device
@@ -174,6 +177,10 @@ async function resolveStatus(
       })
     : null;
   if (!device || !certificate) return { body: { status: 'PENDING' } };
+  // 旧轮询可能在查找证书之前被重提流程替换，不能用旧申请恢复新申请的证书包。
+  if (!(await db.onboardingRequest.findFirst({ where: { id: request.id, status: 'APPROVED' } }))) {
+    throw new OnboardingApiError('UNAUTHENTICATED');
+  }
   if (certificate.packageExpiresAt && certificate.packageExpiresAt.getTime() <= current.getTime()) {
     await deps.deliveryRecovery.recoverExpiredPackage(request, certificate.id);
     return { body: { status: 'PENDING' } };

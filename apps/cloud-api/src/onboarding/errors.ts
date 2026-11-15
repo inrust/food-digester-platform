@@ -46,7 +46,7 @@ export function validationFailed(message: string): OnboardingApiError {
   return new OnboardingApiError('VALIDATION_FAILED', message);
 }
 
-/** 409：同序列号曾提交过申请，不论当前状态或 CSR 是否相同。 */
+/** 409：同序列号已有不能替换的申请。 */
 export function alreadySubmitted(): OnboardingApiError {
   return new OnboardingApiError(
     'CONFLICT',
