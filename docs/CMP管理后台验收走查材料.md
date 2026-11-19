@@ -4,7 +4,7 @@
 
 | 项目 | 当前结论 |
 | --- | --- |
-| 验收候选 | [`d1afec5e`](https://github.com/inrust/food-digester-platform/commit/d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8)。前端构建 172、管理 API、OpenAPI、固定 Migration Runner 和托管验证均绑定该 SHA。 [同 SHA 回执](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json) |
+| 验收基线 | [`d1afec5e`](https://github.com/inrust/food-digester-platform/commit/d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8)。前端构建 172、管理 API、OpenAPI、固定 Migration Runner 和托管验证均绑定该 SHA。 [同 SHA 回执](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json) |
 | 本地回归 | [`d1afec5e`](https://github.com/inrust/food-digester-platform/commit/d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8) 完整 `pnpm verify` 退出 0，已登记四项双语重置回归。管理后台类型检查、定向 Vitest 24 项及定向 Playwright 7 项通过。 [本轮检查](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json) |
 | 完整验证追验 | 候选 `353d2deb` 的完整 `pnpm verify` 在 `test:scripts` 失败。仅修改验收脚本的修复候选 [`fc1793dc`](https://github.com/inrust/food-digester-platform/commit/fc1793dca6359d5dc16d7f8c6e8e84fcf8520dc5) 完整 `pnpm verify` 通过。 [追验回执](audit/evidence/cmp-t12-353d2deb/target-preflight.json) |
 | 目标环境 | 原候选 `fc1793dc` 的共享测试环境四项版本证据已对齐。原候选 44 项验收索引为 10 项 PASS、1 项 FAIL、33 项 NOT_RUN，其中 31 项有部分实测记录。P1 首批为 5 项 PASS、0 项 FAIL、10 项 NOT_RUN，其中 9 项有部分实测记录。 [目标实测回执](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json) |
@@ -153,11 +153,11 @@
 | `RESOLVED` · CMP-36 | 专用业务用户角色嵌套确认、实际写入和审计读回通过，角色已恢复为只读。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3043) |
 | `RESOLVED` · CMP-07、CMP-10 | 真实设备状态和授权组合、证书及空分配历史已补测。 [快捷操作](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json#L974) · [设备详情](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json#L1005) |
 | `RESOLVED` · CMP-02 真实零台 | 专用空租户 C 的真实接口、双语概览、列表和租户隔离均通过。 [零台实测](audit/evidence/cmp-t12-353d2deb/target-signoff-d1afec5e.json#L344) |
-| `NOT_RUN` · CMP-34 后续全链路 | 接入可信耗材采集后，在获准的测试设置下读回真实剩余量与自定义阈值，再验证 FE-18 分档与设置恢复。 本次合成分档范围已确认签收。 [后续验收范围](audit/evidence/cmp-t12-353d2deb/target-signoff-d1afec5e.json#L703) |
+| `NOT_RUN` · CMP-34 后续全链路 | 接入可信耗材采集后，在获准的测试设置下读回真实剩余量与自定义阈值，再验证 FE-18 分档与设置恢复。后续任务已独立登记。 [GitHub Issue #2](https://github.com/inrust/food-digester-platform/issues/2) · [原始签收回执](audit/evidence/cmp-t12-353d2deb/target-signoff-d1afec5e.json#L703) |
 | `OPEN` · D5 可信回执 | 两台专用同型号模拟设备与真实 mTLS Sync 均验证了云端生效版本。缺少匹配的可信应用回执时，设备实际应用版本按契约显示未知。当前样本的设备侧实际应用仍为未知。 |
-| `PASS` · 本次验收范围 | 记录本次会话的签收范围。项目方具名签字及归档待登记。 [签收记录](audit/evidence/cmp-t12-353d2deb/target-signoff-d1afec5e.json) |
+| `PASS` · 本次验收范围 | 用户已书面确认 T12 按本次约定范围签收。 [签收记录](#5-t12-签收记录) |
 
-共享测试当前候选为 [`d1afec5e`](https://github.com/inrust/food-digester-platform/commit/d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8)。本修复的直接回退版本是 [`07a385f4`](https://github.com/inrust/food-digester-platform/commit/07a385f4a1193e70334b9438914b0e1e2d9cca76)，其前端和管理 API 应成对回退，届时将恢复两处重置缺口。整体项目回退仍可参考 [`97cdd503`](https://github.com/inrust/food-digester-platform/commit/97cdd503db32f350a4f1d283b70200c817bbf8c1) 的历史配套产物。已增加的普通索引可保留，本轮回退演练为 `NOT_RUN`。
+本次共享测试验收以 [`d1afec5e`](https://github.com/inrust/food-digester-platform/commit/d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8) 为基线。本修复的直接回退版本是 [`07a385f4`](https://github.com/inrust/food-digester-platform/commit/07a385f4a1193e70334b9438914b0e1e2d9cca76)，其前端和管理 API 应成对回退，届时将恢复两处重置缺口。整体项目回退仍可参考 [`97cdd503`](https://github.com/inrust/food-digester-platform/commit/97cdd503db32f350a4f1d283b70200c817bbf8c1) 的历史配套产物。已增加的普通索引可保留，本轮回退演练为 `NOT_RUN`。
 
 | 失败范围 | 可回退的源码版本 | 回退注意点 |
 | --- | --- | --- |
@@ -175,9 +175,9 @@
 | 项目 | 签收记录 |
 | --- | --- |
 | 候选与环境 | `d1afec5e`，共享测试，前端构建 172。API、OpenAPI、Migration Runner 和托管验证见同 SHA 回执。 |
-| 范围与日期 | 本次会话书面确认，2026-11-19（Asia/Shanghai）。44 项均符合本次约定范围，既有通过项保留各自证据 SHA。 |
+| 签收范围与日期 | 用户于 2026-11-19（Asia/Shanghai）在本次会话书面确认 T12 按约定范围签收。44 项均符合该范围，既有通过项保留各自证据 SHA。 |
 | CMP-02 | 真实空租户的概览、列表和租户隔离通过。 |
 | CMP-34 | 合成读数分档按本次确认范围通过。真实采集、投影及实际自定义阈值全链路列为后续，状态 `NOT_RUN`。 |
-| 归档 | 项目方具名签字待登记。目标库查询计划、回退演练以及 D5 可信设备回执沿用本材料中的状态。 |
+| 归档 | 本材料登记此次书面签收确认，原始证据完整保留。目标库查询计划、回退演练及 D5 可信设备回执沿用历史状态。 |
 
 [签收及逐项回执](audit/evidence/cmp-t12-353d2deb/target-signoff-d1afec5e.json) · [剩余样本补验原回执](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json)
