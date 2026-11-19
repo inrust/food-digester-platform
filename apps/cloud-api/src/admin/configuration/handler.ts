@@ -7,13 +7,14 @@
  * - POST /api/v1/admin/configurations                                  创建配置（按设备/型号二选一）
  * - GET  /api/v1/admin/configurations                                  列表（targetModel/targetDeviceId 过滤）
  * - GET  /api/v1/admin/configurations/{configurationId}                详情（版本 + 派生只读上下文）
+ * - GET  /api/v1/admin/configurations/{configurationId}/effective-devices          目标设备的云端生效配置
  * - POST /api/v1/admin/configurations/{configurationId}/versions       创建不可变版本（DRAFT）
  * - POST /api/v1/admin/configurations/{configurationId}/versions/{version}/publish  发布（CONFIG_CHANGED）
  * - GET  /api/v1/admin/configurations/{configurationId}/versions/{version}          版本详情（旧版本审计读取）
  * - GET  /api/v1/admin/configurations/{configurationId}/versions/{version}/status   发布同步状态
  * 响应契约对齐 CT-05：data + meta{requestId,timestamp}；错误 {error{code,message,requestId}}。
  */
-import { AuthError, withAuthorization } from '@fdp/auth';
+import { AuthError, forbidden, withAuthorization } from '@fdp/auth';
 import type { ActorContext } from '@fdp/auth';
 import { ConfigurationError } from '@fdp/domain';
 import { mapDbErrorToHttp } from '@fdp/database';
@@ -26,6 +27,7 @@ import {
   getConfigurationVersion,
   getConfigurationVersionStatus,
   listConfigurations,
+  listEffectiveConfigurationDevices,
   publishConfigurationVersion,
 } from './service.js';
 import type { ConfigurationDeps } from './service.js';
@@ -37,6 +39,7 @@ export interface AdminConfigurationHandlers {
   create(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   list(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   detail(req: AdminHttpRequest): Promise<AdminHttpResponse>;
+  effectiveDevices(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   createVersion(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   publishVersion(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   getVersion(req: AdminHttpRequest): Promise<AdminHttpResponse>;
@@ -138,6 +141,30 @@ export function createAdminConfigurationHandlers(deps: AdminConfigurationHandler
     return { status: 200, body: { data: view, meta: meta(req) } };
   });
 
+  const effectiveDevices = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
+    { permission: 'config:read' },
+    async (req) => {
+      if (req.actor.actorType !== 'platform') throw forbidden('Configuration device listing requires a platform role');
+      const at = now();
+      const page = await listEffectiveConfigurationDevices(
+        deps,
+        requireParam(req, 'configurationId'),
+        {
+          cursor: req.query?.cursor ?? null,
+          limit: req.query?.limit ?? null,
+        },
+        at,
+      );
+      return {
+        status: 200,
+        body: {
+          data: page.items,
+          meta: { requestId: req.requestId, timestamp: at.toISOString(), nextCursor: page.nextCursor },
+        },
+      };
+    },
+  );
+
   const createVersion = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'config:publish' },
     async (req) => {
@@ -209,6 +236,7 @@ export function createAdminConfigurationHandlers(deps: AdminConfigurationHandler
     create: wrap(create),
     list: wrap(list),
     detail: wrap(detail),
+    effectiveDevices: wrap(effectiveDevices),
     createVersion: wrap(createVersion),
     publishVersion: wrap(publishVersion),
     getVersion: wrap(getVersion),

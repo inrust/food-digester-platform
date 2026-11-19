@@ -215,6 +215,7 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
       createConfiguration: routes.configurations.create,
       listConfigurations: routes.configurations.list,
       getConfiguration: routes.configurations.detail,
+      listEffectiveConfigurationDevices: routes.configurations.effectiveDevices,
       createConfigurationVersion: routes.configurations.createVersion,
       publishConfigurationVersion: routes.configurations.publishVersion,
       getConfigurationVersion: routes.configurations.getVersion,

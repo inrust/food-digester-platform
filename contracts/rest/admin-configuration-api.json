@@ -89,6 +89,35 @@
         }
       }
     },
+    "/api/v1/admin/configurations/{configurationId}/effective-devices": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "listEffectiveConfigurationDevices",
+        "summary": "按设备查看配置方案当前的云端生效版本",
+        "description": "仅持有 config:read 的平台角色。枚举当前方案按设备 ID 或型号定向的未退役设备，按设备 ID 升序分页。每页以 meta.timestamp 为解析时点，复用设备 Sync 的设备定向优先和有效版本规则，生效项可能来自其他方案。无目标返回空列表，无生效配置返回 null。当前协议没有可信的设备配置应用回执，deviceAppliedConfiguration 为 null（未知）。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "configurationId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "$ref": "openapi-base.json#/components/parameters/Cursor" },
+          { "$ref": "openapi-base.json#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "目标设备与生效配置",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ConfigurationEffectiveDeviceListSuccess" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
     "/api/v1/admin/configurations/{configurationId}/versions": {
       "post": {
         "tags": ["admin"],
@@ -183,7 +212,7 @@
         "tags": ["admin"],
         "operationId": "getConfigurationVersionStatus",
         "summary": "发布同步状态（每目标设备的通知投递状态）",
-        "description": "notificationStatus 为 CONFIG_CHANGED Outbox 投递状态（PENDING/PUBLISHED/FAILED）；设备确认回执由 BE-SYNC-01 的 lastSyncTime 机制补齐。",
+        "description": "notificationStatus 为此版本 CONFIG_CHANGED Outbox 投递状态（PENDING/PUBLISHED/FAILED）。设备实际应用情况需要单独的版本回执。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "configurationId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
@@ -210,7 +239,7 @@
     },
     "responses": {
       "BadRequest": {
-        "description": "校验失败（VALIDATION_FAILED：四字段越界或缺失、候选扩展字段、派生字段、V1 排除字段）",
+        "description": "请求校验失败（VALIDATION_FAILED），或游标无效（CURSOR_INVALID）",
         "content": {
           "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
         }
@@ -431,6 +460,52 @@
             "items": { "type": "string" },
             "description": "收到 CONFIG_CHANGED 通知的目标设备"
           }
+        }
+      },
+      "CloudEffectiveConfiguration": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["configurationId", "name", "version", "effectiveAt", "source"],
+        "properties": {
+          "configurationId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string" },
+          "version": { "type": "integer", "minimum": 1 },
+          "effectiveAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "source": { "type": "string", "enum": ["DEVICE", "MODEL"] }
+        }
+      },
+      "ConfigurationEffectiveDevice": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deviceId",
+          "serialNumber",
+          "alias",
+          "model",
+          "cloudEffectiveConfiguration",
+          "deviceAppliedConfiguration"
+        ],
+        "properties": {
+          "deviceId": { "type": "string", "minLength": 1 },
+          "serialNumber": { "type": "string" },
+          "alias": { "type": ["string", "null"] },
+          "model": { "type": "string" },
+          "cloudEffectiveConfiguration": {
+            "oneOf": [{ "$ref": "#/components/schemas/CloudEffectiveConfiguration" }, { "type": "null" }]
+          },
+          "deviceAppliedConfiguration": {
+            "type": "null",
+            "description": "当前协议未提供可信设备配置应用回执，null 表示未知"
+          }
+        }
+      },
+      "ConfigurationEffectiveDeviceListSuccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta"],
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/ConfigurationEffectiveDevice" } },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
         }
       },
       "ConfigurationSyncStatusTarget": {

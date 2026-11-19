@@ -68,6 +68,7 @@ const routeSet = (): AdminOnboardingRouteSet => ({
     unbind: handler(),
   },
   configurations: {
+    effectiveDevices: handler(),
     create: handler(),
     list: handler(),
     detail: handler(),
@@ -145,7 +146,7 @@ const routeSet = (): AdminOnboardingRouteSet => ({
 });
 
 describe('AUTH-01 管理 API Lambda 组合根', () => {
-  test('P0 范围 86 个管理业务 operation 全部可达真实 Handler', async () => {
+  test('已交付管理业务 operation 全部可达真实 Handler', async () => {
     const targetIds = new Set([
       'createLicense',
       'createContract',
@@ -160,7 +161,7 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
     const operations = DELIVERED_OPERATIONS.slice(firstTargetIndex).filter(
       (operation) => operation.runtime === 'admin-api',
     );
-    assert.equal(operations.length, 87);
+    assert.equal(operations.length, 88);
     for (const operation of operations) {
       const path = operation.path.replaceAll(/\{[^}]+\}/gu, 'encoded%2Fid');
       const response = await createAdminRoute(

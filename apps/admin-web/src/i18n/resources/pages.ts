@@ -14,7 +14,7 @@ export const PAGE_ZH_CN: Readonly<Record<string, string>> = {
   'page.00ff953569d7': '1（灰度）',
   'page.0132ce7298ec': '型号',
   'page.013e5baba559': 'Campaign 详情',
-  'page.0150205d5c21': '同步状态',
+  'page.0150205d5c21': 'CONFIG_CHANGED 投递状态',
   'page.019d8bd79329': '投料量 (kg)',
   'page.01c92b795c11': '拒绝新增设备申请',
   'page.01f2c16cda65': '设备',
@@ -657,7 +657,6 @@ export const PAGE_ZH_CN: Readonly<Record<string, string>> = {
   'page.ccd01125a13d': '客户详情',
   'page.cd3f9415a4e3': '（身份上下文取得）；等待设备执行（',
   'page.cd7f88e92bbd': '配置详情：',
-  'page.cdc8a1890529': '生效时间（可选，RFC 3339 UTC；缺省为发布时间）',
   'page.cec6d632492e': '终止合约',
   'page.cee3cff2e854':
     '固件上传（预签名 URL + Hash/签名校验）与同步更新（受控 Campaign，首批 1 台灰度）均在 OTA 页完成； 不直接向单设备推送未校验文件。',
@@ -1164,7 +1163,7 @@ export const PAGE_EN: Readonly<Record<string, string>> = {
   'page.00ff953569d7': '1 (Canary/Staged rollout)',
   'page.0132ce7298ec': 'Model',
   'page.013e5baba559': 'Campaign details',
-  'page.0150205d5c21': 'Synchronization status',
+  'page.0150205d5c21': 'CONFIG_CHANGED delivery status',
   'page.019d8bd79329': 'Feeding quantity (kg)',
   'page.01c92b795c11': 'Refuse to apply for new equipment',
   'page.01f2c16cda65': 'Equipment',
@@ -1840,7 +1839,6 @@ export const PAGE_EN: Readonly<Record<string, string>> = {
   'page.ccd01125a13d': 'Customer Details',
   'page.cd3f9415a4e3': '(Retrieved from identity context); awaiting device execution (',
   'page.cd7f88e92bbd': 'Configuration details:',
-  'page.cdc8a1890529': 'Effective time (optional, RFC 3339 UTC; default is release time)',
   'page.cec6d632492e': 'Termination of contract',
   'page.cee3cff2e854':
     'Firmware upload (presigned URL + hash/signature verification) and synchronous updates (controlled Campaign, initial canary rollout to 1 device) are both performed on the OTA page; unverified files are not pushed directly to individual devices.',

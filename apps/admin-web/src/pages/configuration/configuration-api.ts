@@ -4,11 +4,13 @@
  * - payload 为 DEC-018@1.0.0 四字段完整快照；前端仅提交四字段（派生字段/候选扩展/网络字段
  *   不进入表单，提交即 400 由服务端兜底）；
  * - 发布：DRAFT→PUBLISHED，历史版本不可覆盖（重复发布 → 409 由页面呈现）；
- * - 同步状态：CONFIG_CHANGED Outbox 投递状态（设备确认回执由 BE-SYNC-01 lastSyncTime 补齐）。
+ * - 同步状态：CONFIG_CHANGED Outbox 投递状态（按版本查询通知，配置实际应用需要独立回执）。
  */
 import type { ApiClient } from '../../api/http-client.js';
 import type {
   ConfigurationDetailView,
+  ConfigurationEffectiveDeviceView,
+  ConfigurationEffectiveDevicePage,
   ConfigurationPublishResultView,
   ConfigurationSummaryView,
   ConfigurationSyncStatusView,
@@ -100,4 +102,18 @@ export async function fetchConfigurationVersionStatus(
     `${configurationPath(configurationId)}/versions/${version}/status`,
   );
   return response.data;
+}
+
+export async function fetchEffectiveConfigurationDevices(
+  api: ApiClient,
+  configurationId: string,
+  cursor: string | null,
+): Promise<ConfigurationEffectiveDevicePage> {
+  const params = new URLSearchParams({ limit: '25' });
+  if (cursor !== null) params.set('cursor', cursor);
+  const response = await api.request<{
+    data: ConfigurationEffectiveDeviceView[];
+    meta: { nextCursor: string | null; timestamp: string };
+  }>(`${configurationPath(configurationId)}/effective-devices?${params}`);
+  return { rows: response.data, nextCursor: response.meta.nextCursor, timestamp: response.meta.timestamp };
 }

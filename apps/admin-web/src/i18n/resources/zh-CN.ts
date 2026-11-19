@@ -195,6 +195,23 @@ export const ZH_CN: Readonly<Record<string, string>> = {
   'ui.consumableThresholdSetting': '耗材展示阈值来自业务设置 alarm.thresholds（版本 v{version}）。',
   'ui.consumableThresholdFallback': '耗材展示阈值使用明确回退值 10%/30%（原因：{reason}）。',
   // ---------- 通用 ----------
+  'configuration.publish.effectiveAt': '生效时间（可选）',
+  'configuration.publish.timeZone': '按 {timeZone} 录入。留空则发布时生效。',
+  'configuration.publish.invalidTime': '请输入完整有效的日期和时间。',
+  'configuration.devices.title': '目标设备的配置版本',
+  'configuration.devices.explanation':
+    '显示方案当前目标中的非退役设备。云端版本采用设备 Sync 的解析规则。各版本的 CONFIG_CHANGED 投递状态可在版本历史中查看。',
+  'configuration.devices.load': '查看目标设备',
+  'configuration.devices.evaluatedAt': '云端版本查询时间',
+  'configuration.devices.empty': '此方案当前没有目标设备。',
+  'configuration.devices.device': '设备',
+  'configuration.devices.cloud': '云端当前生效配置',
+  'configuration.devices.noEffective': '无生效配置',
+  'configuration.devices.sourceDevice': '来源：设备定向',
+  'configuration.devices.sourceModel': '来源：型号定向',
+  'configuration.devices.applied': '设备实际应用版本',
+  'configuration.devices.unknown': '未知（无匹配回执）',
+
   'common.loading': '加载中…',
   'common.refresh': '刷新',
   'common.prevPage': '上一页',

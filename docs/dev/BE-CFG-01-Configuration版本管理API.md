@@ -26,7 +26,8 @@
 | `POST .../versions` | `config:publish` | 创建 DRAFT 版本：统一策略约束四字段完整快照，越界、缺失、候选扩展或未知字段 → 400；版本号 = max+1（并发 P2002 → 409）；201 |
 | `POST .../versions/{version}/publish` | `config:publish` | DRAFT→PUBLISHED 条件更新（重复/并发 → 409）；effectiveAt 缺省为发布时间；每个非 Retired 目标设备一条 CONFIG_CHANGED Outbox（`bnx/device/{id}/notification`，data `{type, action:'SYNC'}`，aggregateId=versionId） |
 | `GET .../versions/{version}` | `config:read` | 版本详情（旧版本审计读取） |
-| `GET .../versions/{version}/status` | `config:read` | 同步状态：每目标设备的通知投递状态（Outbox PENDING/PUBLISHED/FAILED；设备确认回执由 BE-SYNC-01 补齐） |
+| `GET .../effective-devices` | 平台角色的 `config:read` | 按 ID 升序分页（默认 50，最大 100，使用 `meta.nextCursor`）。每页以 `meta.timestamp` 时刻解析非退役目标设备的云端配置，并标明设备或型号定向。目标为空返回 `[]`，设备无生效配置返回 `null`。 |
+| `GET .../versions/{version}/status` | `config:read` | 按版本读取每目标设备 CONFIG_CHANGED 的 Outbox 状态（PENDING/PUBLISHED/FAILED）。 |
 
 **审计**：`configuration.create` / `configuration.create_version` / `configuration.publish` 各一次（DOM-03 audited，SUCCESS 与业务同事务）。
 
@@ -54,7 +55,7 @@ DEC-018 聚焦测试 29/29 通过；全仓 `pnpm verify` 退出 0：实现测试
 
 ## 5. 未决风险
 
-- 同步状态当前仅覆盖通知投递（Outbox）；设备确认回执依赖 BE-SYNC-01 的 lastSyncTime/版本号机制；
+- 同步状态当前仅覆盖通知投递（Outbox）；当前设备协议未提供可匹配到具体配置版本的应用回执，`deviceAppliedConfiguration` 返回 `null`；
 - 同一设备允许存在多个设备定向配置，Sync 解析取最近生效者；如需唯一可在后续加部分唯一索引；
 - Contract 派生取"当前时间窗内最新合同"（BE-CON-01/02 未实现，状态机对齐后可能需调整选择规则）；
 - CONFIG_CHANGED 实际 MQTT 投递依赖下行分发器（Outbox 当前仅归档链路）。

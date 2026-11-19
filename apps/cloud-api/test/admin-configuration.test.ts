@@ -460,3 +460,158 @@ describe('契约一致性', () => {
     }
   });
 });
+
+describe('CMP-17 / D5 target device versions', () => {
+  test('paginates current targets and resolves device overrides, scheduled versions and missing configurations with Sync', async () => {
+    const h = handlers();
+    const model = 'CMP-17-MODEL';
+    const first = await plantDevice({ model, alias: 'CMP-17 override' });
+    const second = await plantDevice({ model });
+    const retired = await plantDevice({ model, lifecycle: 'Retired' });
+    const unconfigured = await plantDevice({ model: 'CMP-17-FUTURE' });
+    const scheduledAt = new Date(NOW.getTime() + DAY_MS);
+    const publish = async (configurationId: string, effectiveAt?: Date) => {
+      const { version, versionId } = await createVersion(h, configurationId);
+      const res = await h.publishVersion(
+        req(operator, {
+          params: { configurationId, version: String(version) },
+          body: effectiveAt === undefined ? {} : { effectiveAt: effectiveAt.toISOString() },
+        }),
+      );
+      assert.equal(res.status, 200, JSON.stringify(res.body));
+      return versionId as string;
+    };
+    const createModel = async (name: string, targetModel: string) => {
+      const res = await h.create(req(operator, { body: { name, targetModel } }));
+      assert.equal(res.status, 201);
+      return (res.body as DataBody).data.configurationId as string;
+    };
+    const modelPlan = await createModel('CMP-17 shared plan', model);
+    const deliveredVersion = await publish(modelPlan);
+    await publish(modelPlan, scheduledAt);
+    await prisma.outboxEvent.updateMany({ where: { aggregateId: deliveredVersion }, data: { status: 'PUBLISHED' } });
+    const overridePlan = (await createDeviceConfig(h, first.deviceId)).configurationId as string;
+    const earlier = new Date(NOW.getTime() - DAY_MS);
+    await publish(overridePlan, earlier);
+    const futureOverride = (await createDeviceConfig(h, second.deviceId)).configurationId as string;
+    await publish(futureOverride, new Date(scheduledAt.getTime() + DAY_MS));
+    const futureOnly = await createModel('CMP-17 future only', 'CMP-17-FUTURE');
+    await publish(futureOnly, scheduledAt);
+    const empty = await createModel('CMP-17 empty', 'CMP-17-EMPTY');
+
+    const read = async (configurationId: string, query: Record<string, string> = {}, at = NOW) => {
+      const response = await createAdminConfigurationHandlers({ client: prisma, now: () => at }).effectiveDevices(
+        req(auditor, { params: { configurationId }, query }),
+      );
+      assert.equal(response.status, 200, JSON.stringify(response.body));
+      assertOpenApiResponse('listEffectiveConfigurationDevices', 200, response.body);
+      return response.body as {
+        data: Record<string, unknown>[];
+        meta: { nextCursor: string | null; timestamp: string };
+      };
+    };
+
+    const modelRows = await read(modelPlan);
+    assert.deepEqual(
+      modelRows.data.map((row) => row.deviceId),
+      [first.deviceId, second.deviceId].sort(),
+    );
+    const page1 = await read(modelPlan, { limit: '1' });
+    assert.isString(page1.meta.nextCursor);
+    const page2 = await read(modelPlan, { limit: '1', cursor: page1.meta.nextCursor! });
+    assert.isNull(page2.meta.nextCursor);
+    assert.deepEqual([...page1.data, ...page2.data], modelRows.data);
+    assert.notInclude(
+      modelRows.data.map((row) => row.deviceId),
+      retired.deviceId,
+    );
+    const firstRow = modelRows.data.find((row) => row.deviceId === first.deviceId);
+    const secondRow = modelRows.data.find((row) => row.deviceId === second.deviceId);
+    assert.include(firstRow, { alias: 'CMP-17 override', model, deviceAppliedConfiguration: null });
+    assert.deepEqual(firstRow?.cloudEffectiveConfiguration, {
+      configurationId: overridePlan,
+      name: `Cfg ${first.deviceId}`,
+      version: 1,
+      effectiveAt: earlier.toISOString(),
+      source: 'DEVICE',
+    });
+    assert.deepEqual(secondRow?.cloudEffectiveConfiguration, {
+      configurationId: modelPlan,
+      name: 'CMP-17 shared plan',
+      version: 1,
+      effectiveAt: NOW.toISOString(),
+      source: 'MODEL',
+    });
+    assert.deepEqual((await read(overridePlan)).data, [firstRow]);
+    assert.deepEqual(
+      (await read(futureOnly)).data.map((row) => [
+        row.deviceId,
+        row.cloudEffectiveConfiguration,
+        row.deviceAppliedConfiguration,
+      ]),
+      [[unconfigured.deviceId, null, null]],
+    );
+    assert.deepEqual((await read(empty)).data, []);
+    assert.isNull((await read(empty)).meta.nextCursor);
+
+    const scheduled = await read(modelPlan, {}, scheduledAt);
+    assert.equal(scheduled.meta.timestamp, scheduledAt.toISOString());
+    assert.deepEqual(
+      scheduled.data.find((row) => row.deviceId === first.deviceId),
+      firstRow,
+    );
+    for (const row of scheduled.data) {
+      const sync = await resolveEffectiveConfiguration({ client: prisma }, row.deviceId as string, scheduledAt);
+      const cloud = row.cloudEffectiveConfiguration as Record<string, unknown>;
+      assert.include(cloud, {
+        configurationId: sync?.configurationId,
+        version: sync?.version,
+        effectiveAt: sync?.effectiveAt,
+      });
+      assert.equal(cloud.version, row.deviceId === second.deviceId ? 2 : 1);
+      assert.isNull(row.deviceAppliedConfiguration);
+    }
+
+    for (const [version, notificationStatus] of [
+      ['1', 'PUBLISHED'],
+      ['2', 'PENDING'],
+    ] as const) {
+      const status = await h.versionStatus(req(auditor, { params: { configurationId: modelPlan, version } }));
+      assert.equal(status.status, 200);
+      const { data } = status.body as DataBody;
+      assert.equal(data.version, Number(version));
+      assert.sameDeepMembers(data.targets as unknown[], [
+        { deviceId: first.deviceId, notificationStatus },
+        { deviceId: second.deviceId, notificationStatus },
+      ]);
+    }
+  });
+
+  test('requires platform config:read and validates the cursor, page size and configuration ID', async () => {
+    const h = handlers();
+    const { deviceId } = await plantDevice({ model: 'CMP-17-RBAC' });
+    const { configurationId } = await createDeviceConfig(h, deviceId);
+    const params = { configurationId: configurationId as string };
+    const customerViewer: ActorContext = { ...customerAdmin, roles: ['CustomerViewer'] };
+    for (const [actor, status] of [
+      [superAdmin, 200],
+      [operator, 200],
+      [auditor, 200],
+      [customerAdmin, 403],
+      [customerViewer, 403],
+      [undefined, 401],
+    ] as const) {
+      const response = await h.effectiveDevices(req(actor, { params }));
+      assert.equal(response.status, status);
+      assertOpenApiResponse('listEffectiveConfigurationDevices', status, response.body);
+    }
+    for (const query of [{ cursor: 'invalid-cursor' }, { limit: '0' }, { limit: '101' }, { limit: '1.5' }]) {
+      const response = await h.effectiveDevices(req(auditor, { params, query }));
+      assert.equal(response.status, 400, JSON.stringify(response.body));
+      assertOpenApiResponse('listEffectiveConfigurationDevices', 400, response.body);
+    }
+    const missing = await h.effectiveDevices(req(auditor, { params: { configurationId: 'cmp-17-missing' } }));
+    assert.equal(missing.status, 404);
+    assertOpenApiResponse('listEffectiveConfigurationDevices', 404, missing.body);
+  });
+});

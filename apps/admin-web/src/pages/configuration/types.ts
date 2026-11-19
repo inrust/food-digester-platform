@@ -62,3 +62,24 @@ export interface ConfigurationSyncStatusView {
   readonly effectiveAt: string | null;
   readonly targets: readonly ConfigurationSyncStatusTargetView[];
 }
+
+export interface ConfigurationEffectiveDeviceView {
+  readonly deviceId: string;
+  readonly serialNumber: string;
+  readonly alias: string | null;
+  readonly model: string;
+  readonly cloudEffectiveConfiguration: {
+    readonly configurationId: string;
+    readonly name: string;
+    readonly version: number;
+    readonly effectiveAt: string;
+    readonly source: 'DEVICE' | 'MODEL';
+  } | null;
+  readonly deviceAppliedConfiguration: null;
+}
+
+export interface ConfigurationEffectiveDevicePage {
+  readonly rows: readonly ConfigurationEffectiveDeviceView[];
+  readonly nextCursor: string | null;
+  readonly timestamp: string;
+}

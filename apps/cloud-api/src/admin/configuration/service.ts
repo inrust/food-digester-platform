@@ -15,10 +15,10 @@
  *   否则型号定向；已发布且已到 effectiveAt 的最高版本（DOM selectEffectiveVersion）。
  *
  * 功能边界：不实现设备端应用配置；同步状态当前为通知投递状态（Outbox status），
- * 设备确认回执由 BE-SYNC-01 的 lastSyncTime 机制补齐。
+ * 现有 Sync lastSyncTime 不承载配置版本应用回执。
  */
-import type { DbClient } from '@fdp/database';
-import { audited } from '@fdp/database';
+import type { DbClient, Page, PageArgs } from '@fdp/database';
+import { audited, decodeKeysetCursor, encodeKeysetCursor, normalizeLimit } from '@fdp/database';
 import { assertPublishableVersion, selectEffectiveVersion, validateConfigurationPayload } from '@fdp/domain';
 import type { ConfigurationPayload } from '@fdp/domain';
 import type { ActorContext } from '@fdp/auth';
@@ -187,6 +187,7 @@ async function loadConfiguration(client: DbClient, configurationId: string): Pro
 
 interface DeviceRow {
   readonly id: string;
+  readonly serialNumber: string;
   readonly model: string;
   readonly alias: string | null;
   readonly customerId: string | null;
@@ -471,7 +472,7 @@ export async function getConfigurationVersion(
   return toVersionView(await loadVersion(deps.client, configurationId, version));
 }
 
-/** 发布同步状态（config:read）：通知投递状态 = CONFIG_CHANGED Outbox 状态（设备回执由 BE-SYNC-01 补齐）。 */
+/** 发布同步状态（config:read）：通知投递状态 = CONFIG_CHANGED Outbox 状态（按版本独立读取）。 */
 export async function getConfigurationVersionStatus(
   deps: ConfigurationDeps,
   configurationId: string,
@@ -495,10 +496,56 @@ export async function getConfigurationVersionStatus(
   };
 }
 
-/**
- * Sync 读取路径（BE-SYNC-01 消费）：设备有效配置 = 设备定向优先，否则型号定向；
- * 已发布且已到 effectiveAt 的最高版本（selectEffectiveVersion）；跨配置并列时取最近生效者。
- */
+interface EffectiveSelection {
+  readonly row: ConfigurationRow;
+  readonly version: VersionRow;
+  readonly effectiveAt: Date;
+}
+
+type ConfigurationTargetDevice = Pick<DeviceRow, 'id' | 'model'>;
+
+/** Shared by Sync and the admin device page. Select within plan before comparing effective times across plans. */
+async function loadEffectiveSelections(
+  client: DbClient,
+  targets: readonly ConfigurationTargetDevice[],
+  at: Date,
+): Promise<(device: ConfigurationTargetDevice) => EffectiveSelection | null> {
+  if (targets.length === 0) return () => null;
+  const candidates = await configurations(client).findMany({
+    where: {
+      OR: [
+        { targetDeviceId: { in: targets.map(({ id }) => id) } },
+        { targetModel: { in: [...new Set(targets.map(({ model }) => model))] } },
+      ],
+    },
+    include: {
+      versions: {
+        where: { status: 'PUBLISHED', effectiveAt: { lte: at } },
+        orderBy: { version: 'desc' },
+        take: 1,
+      },
+    },
+  });
+  const byDevice = new Map<string, EffectiveSelection>();
+  const byModel = new Map<string, EffectiveSelection>();
+  for (const row of candidates) {
+    const version = selectEffectiveVersion(row.versions ?? [], at);
+    const target = row.targetDeviceId ?? row.targetModel;
+    if (version === null || version.effectiveAt === null || target === null) continue;
+    const effectiveAt = version.effectiveAt;
+    const index = row.targetDeviceId !== null ? byDevice : byModel;
+    const previous = index.get(target);
+    if (previous !== undefined) {
+      const order =
+        effectiveAt.getTime() - previous.effectiveAt.getTime() ||
+        version.createdAt.getTime() - previous.version.createdAt.getTime();
+      if (order < 0 || (order === 0 && row.id <= previous.row.id)) continue;
+    }
+    index.set(target, { row, version, effectiveAt });
+  }
+  return (device) => byDevice.get(device.id) ?? byModel.get(device.model) ?? null;
+}
+
 export async function resolveEffectiveConfiguration(
   deps: ConfigurationDeps,
   deviceId: string,
@@ -507,41 +554,77 @@ export async function resolveEffectiveConfiguration(
   const now = at ?? deps.now?.() ?? new Date();
   const device = await devices(deps.client).findFirst({ where: { id: deviceId } });
   if (!device) throw configurationNotFound();
-
-  const deviceConfigs = await configurations(deps.client).findMany({
-    where: { targetDeviceId: deviceId },
-    include: { versions: true },
-  });
-  const pick = (rows: readonly ConfigurationRow[]): { row: ConfigurationRow; version: VersionRow } | null => {
-    let best: { row: ConfigurationRow; version: VersionRow } | null = null;
-    for (const row of rows) {
-      const v = selectEffectiveVersion(row.versions ?? [], now);
-      if (!v) continue;
-      if (
-        best === null ||
-        (v.effectiveAt as Date).getTime() > (best.version.effectiveAt as Date).getTime() ||
-        ((v.effectiveAt as Date).getTime() === (best.version.effectiveAt as Date).getTime() &&
-          v.createdAt.getTime() > best.version.createdAt.getTime())
-      ) {
-        best = { row, version: v as VersionRow };
-      }
-    }
-    return best;
-  };
-
-  let best = pick(deviceConfigs);
-  if (best === null) {
-    const modelConfigs = await configurations(deps.client).findMany({
-      where: { targetModel: device.model },
-      include: { versions: true },
-    });
-    best = pick(modelConfigs);
-  }
-  if (best === null) return null;
+  const resolve = await loadEffectiveSelections(deps.client, [device], now);
+  const selected = resolve(device);
+  if (selected === null) return null;
   return {
-    configurationId: best.row.id,
-    version: best.version.version,
-    payload: best.version.payload as ConfigurationPayload,
-    effectiveAt: (best.version.effectiveAt as Date).toISOString(),
+    configurationId: selected.row.id,
+    version: selected.version.version,
+    payload: selected.version.payload as ConfigurationPayload,
+    effectiveAt: selected.effectiveAt.toISOString(),
   };
+}
+
+export interface ConfigurationEffectiveDeviceView {
+  readonly deviceId: string;
+  readonly serialNumber: string;
+  readonly alias: string | null;
+  readonly model: string;
+  readonly cloudEffectiveConfiguration: {
+    readonly configurationId: string;
+    readonly name: string;
+    readonly version: number;
+    readonly effectiveAt: string;
+    readonly source: 'DEVICE' | 'MODEL';
+  } | null;
+  /** Sync only serves a snapshot. The current protocol has no matching configuration apply receipt. */
+  readonly deviceAppliedConfiguration: null;
+}
+
+export async function listEffectiveConfigurationDevices(
+  deps: ConfigurationDeps,
+  configurationId: string,
+  pagination: PageArgs,
+  at: Date,
+): Promise<Page<ConfigurationEffectiveDeviceView>> {
+  const limit = normalizeLimit(pagination.limit);
+  const after = decodeKeysetCursor(pagination.cursor);
+  const target = await configurations(deps.client).findFirst({ where: { id: configurationId } });
+  if (!target) throw configurationNotFound();
+  if (target.targetDeviceId === null && target.targetModel === null) return { items: [], nextCursor: null };
+  const rows = await devices(deps.client).findMany({
+    where: {
+      AND: [
+        target.targetDeviceId !== null ? { id: target.targetDeviceId } : { model: target.targetModel },
+        { lifecycleStatus: { not: 'Retired' } },
+        ...(after !== null ? [{ id: { gt: after } }] : []),
+      ],
+    },
+    orderBy: { id: 'asc' },
+    take: limit + 1,
+  });
+  const page = rows.slice(0, limit);
+  const resolve = await loadEffectiveSelections(deps.client, page, at);
+  const items = page.map((device): ConfigurationEffectiveDeviceView => {
+    const selected = resolve(device);
+    return {
+      deviceId: device.id,
+      serialNumber: device.serialNumber,
+      alias: device.alias,
+      model: device.model,
+      cloudEffectiveConfiguration:
+        selected === null
+          ? null
+          : {
+              configurationId: selected.row.id,
+              name: selected.row.name,
+              version: selected.version.version,
+              effectiveAt: selected.effectiveAt.toISOString(),
+              source: selected.row.targetDeviceId !== null ? 'DEVICE' : 'MODEL',
+            },
+      deviceAppliedConfiguration: null,
+    };
+  });
+  const last = page.at(-1);
+  return { items, nextCursor: rows.length > limit && last ? encodeKeysetCursor(last.id) : null };
 }

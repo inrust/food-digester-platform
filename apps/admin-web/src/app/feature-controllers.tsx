@@ -28,6 +28,7 @@ import {
   createConfigurationVersion,
   publishConfigurationVersion,
   fetchConfigurationVersionStatus,
+  fetchEffectiveConfigurationDevices,
 } from '../pages/configuration/configuration-api.js';
 import { EMPTY_CONFIGURATION_FILTER, ConfigurationsPage } from '../pages/configuration/ConfigurationsPage.js';
 import type { ConfigurationDetailState, ConfigurationFilter } from '../pages/configuration/ConfigurationsPage.js';
@@ -483,7 +484,11 @@ export function ConfigurationsController({
   const [detail, setDetail] = useState<ConfigurationDetailState>({ kind: 'none' });
   const selected = useRef<{ id: string } | null>(null);
   const latestList = useRef(0);
-  const latestSync = useRef(0);
+  const latestSync = useRef(new Map<number, object>());
+  const loadEffectiveDevices = useCallback(
+    (id: string, cursor: string | null) => fetchEffectiveConfigurationDevices(api, id, cursor),
+    [api],
+  );
   const loadList = useCallback(
     async (preserveRows = false) => {
       const request = ++latestList.current;
@@ -504,6 +509,7 @@ export function ConfigurationsController({
     async (id: string, preserveDetail = false) => {
       const request = { id };
       selected.current = request;
+      latestSync.current.clear();
       setDetail((current) =>
         preserveDetail && current.kind === 'ready' && current.detail.configurationId === id
           ? { ...current, refreshing: true }
@@ -511,7 +517,7 @@ export function ConfigurationsController({
       );
       try {
         const next = await fetchConfiguration(api, id);
-        if (selected.current === request) setDetail({ kind: 'ready', detail: next, sync: { kind: 'none' } });
+        if (selected.current === request) setDetail({ kind: 'ready', detail: next, sync: {} });
       } catch (error) {
         if (selected.current === request) setDetail({ kind: 'error', error });
       }
@@ -538,15 +544,17 @@ export function ConfigurationsController({
         selected.current = null;
         setDetail({ kind: 'none' });
       }}
+      onLoadEffectiveDevices={loadEffectiveDevices}
       onLoadSyncStatus={(version) => {
         const selection = selected.current;
         if (selection === null) return;
-        const request = ++latestSync.current;
-        setDetail((old) => (old.kind === 'ready' ? { ...old, sync: { kind: 'loading', version } } : old));
-        const finish = (sync: Extract<ConfigurationDetailState, { kind: 'ready' }>['sync']) => {
-          if (selected.current !== selection || latestSync.current !== request) return;
-          setDetail((old) => (old.kind === 'ready' ? { ...old, sync } : old));
+        const request = {};
+        latestSync.current.set(version, request);
+        const finish = (status: NonNullable<Extract<ConfigurationDetailState, { kind: 'ready' }>['sync'][number]>) => {
+          if (selected.current !== selection || latestSync.current.get(version) !== request) return;
+          setDetail((old) => (old.kind === 'ready' ? { ...old, sync: { ...old.sync, [version]: status } } : old));
         };
+        finish({ kind: 'loading', version });
         void fetchConfigurationVersionStatus(api, selection.id, version).then(
           (data) => finish({ kind: 'ready', data }),
           (error: unknown) => finish({ kind: 'error', version, error }),

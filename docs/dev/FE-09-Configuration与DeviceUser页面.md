@@ -41,7 +41,8 @@
 | 详情 | 版本历史（不可变：payload 四字段只读展示含单位，无编辑入口）；派生上下文（Alias/Site/Region/Subregion/Contract 只读，不随配置提交） |
 | 新建配置 | 名称 + 目标二选一（型号/设备）+ 可选原因 |
 | 新建版本 | 四字段表单（默认值预填、前端范围/整数预校验、字段级错误）；changeNote/reason；仅提交四字段快照 |
-| 发布 | 仅 DRAFT 可发布（已发布版本按钮禁用并提示"历史版本不可覆盖"）；可选 effectiveAt（RFC 3339 校验）+ reason；成功后提示 CONFIG_CHANGED |
+| 目标设备版本 | 分页展示当前非退役目标设备，按设备 Sync 口径显示云端方案、版本、生效时间和来源。设备应用版本缺少可信匹配回执时显示「未知」。历史版本中的 CONFIG_CHANGED 投递状态可按版本分别查看。 |
+| 发布 | 仅 DRAFT 可发布（已发布版本按钮禁用并提示"历史版本不可覆盖"）；日期时间选择器按显示时区录入，转成 RFC 3339 UTC 提交，留空时由服务端采用发布时间；保留 reason；成功后提示 CONFIG_CHANGED |
 | 同步状态 | PUBLISHED 版本可查每目标设备投递状态（PENDING/PUBLISHED/FAILED） |
 
 ### Device User（/device-users）

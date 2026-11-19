@@ -7,7 +7,7 @@
  * - 派生上下文只读；同步状态投递展示；Auditor 只读。
  */
 import { afterEach, assert, test } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import type { ApiClient, ApiRequestOptions } from '../src/api/http-client.js';
 import { ConfigurationsPage } from '../src/pages/configuration/ConfigurationsPage.js';
@@ -94,6 +94,7 @@ function renderPage(overrides: Partial<ConfigurationsPageProps> = {}) {
     detail: { kind: 'none' },
     onSelect: (id) => calls.selected.push(id),
     onCloseDetail: () => {},
+    onLoadEffectiveDevices: async () => ({ rows: [], nextCursor: null, timestamp: DETAIL.createdAt }),
     onLoadSyncStatus: (v) => calls.syncLoaded.push(v),
     onCreate: async (input) => {
       calls.created.push(input);
@@ -121,7 +122,7 @@ function disabled(testid: string): boolean {
 
 test('版本表单只渲染 V1 四字段且单位正确；候选扩展字段不存在于 DOM', async () => {
   const user = userEvent.setup();
-  renderPage({ detail: { kind: 'ready', detail: DETAIL, sync: { kind: 'none' } } });
+  renderPage({ detail: { kind: 'ready', detail: DETAIL, sync: {} } });
   // 打开新建版本表单
   await user.click(screen.getByTestId('config-version-create'));
   const form = screen.getByTestId('config-version-form');
@@ -165,7 +166,7 @@ test('版本表单只渲染 V1 四字段且单位正确；候选扩展字段不�
 
 test('非法范围/非整数有字段级错误且禁止提交；合法后提交四字段快照', async () => {
   const user = userEvent.setup();
-  const { calls } = renderPage({ detail: { kind: 'ready', detail: DETAIL, sync: { kind: 'none' } } });
+  const { calls } = renderPage({ detail: { kind: 'ready', detail: DETAIL, sync: {} } });
   await user.click(screen.getByTestId('config-version-create'));
   const form = screen.getByTestId('config-version-form');
 
@@ -213,7 +214,7 @@ test('非法范围/非整数有字段级错误且禁止提交；合法后提交�
 // ---------- 验收：发布后版本只读 ----------
 
 test('发布后版本只读：PUBLISHED 无编辑入口且发布禁用；DRAFT 可发布；历史版本 payload 完整展示', () => {
-  renderPage({ detail: { kind: 'ready', detail: DETAIL, sync: { kind: 'none' } } });
+  renderPage({ detail: { kind: 'ready', detail: DETAIL, sync: {} } });
   const publishedCard = screen.getByTestId('config-version-1');
   assert.equal(publishedCard.hasAttribute('open'), false);
   // 只读展示（无 input）
@@ -234,20 +235,24 @@ test('发布后版本只读：PUBLISHED 无编辑入口且发布禁用；DRAFT �
 
 test('发布：生效时间可选且需合法；成功后提示 CONFIG_CHANGED 通知', async () => {
   const user = userEvent.setup();
-  const { calls } = renderPage({ detail: { kind: 'ready', detail: DETAIL, sync: { kind: 'none' } } });
+  const { calls } = renderPage({ detail: { kind: 'ready', detail: DETAIL, sync: {} } });
   await user.click(screen.getByTestId('config-expand-2'));
   await user.click(screen.getByTestId('config-publish-2'));
   const form = screen.getByTestId('config-publish-form');
   assert.ok(form.textContent?.includes('CONFIG_CHANGED'));
-  await user.type(within(form).getByTestId('publish-effective-at'), 'not-a-date');
+  const time = within(form).getByTestId('publish-effective-at');
+  assert.ok(form.textContent?.includes('Asia/Shanghai'));
+  Object.defineProperty(time, 'validity', { configurable: true, value: { badInput: true } });
+  fireEvent.input(time);
   assert.ok(disabled('config-publish'));
-  await user.clear(within(form).getByTestId('publish-effective-at'));
-  await user.type(within(form).getByTestId('publish-effective-at'), '2026-09-07T00:00:00Z');
+  assert.match(within(form).getByRole('alert').textContent ?? '', /请输入完整有效的日期和时间/);
+  Reflect.deleteProperty(time, 'validity');
+  fireEvent.input(time, { target: { value: '2026-09-07T00:30' } });
   await user.type(within(form).getByTestId('publish-reason'), '例行发布');
   await user.click(within(form).getByTestId('config-publish'));
   await screen.findByTestId('action-notice');
   assert.deepEqual(calls.published, [
-    { configurationId: 'cfg-001', version: 2, effectiveAt: '2026-09-07T00:00:00Z', reason: '例行发布' },
+    { configurationId: 'cfg-001', version: 2, effectiveAt: '2026-09-06T16:30:00.000Z', reason: '例行发布' },
   ]);
 });
 
@@ -258,16 +263,18 @@ test('同步状态：PUBLISHED 版本可查询每设备投递状态', async () =
       kind: 'ready',
       detail: DETAIL,
       sync: {
-        kind: 'ready',
-        data: {
-          configurationId: 'cfg-001',
-          version: 1,
-          status: 'PUBLISHED',
-          effectiveAt: '2026-09-01T03:00:00Z',
-          targets: [
-            { deviceId: 'dev-001', notificationStatus: 'PUBLISHED' },
-            { deviceId: 'dev-002', notificationStatus: 'PENDING' },
-          ],
+        1: {
+          kind: 'ready',
+          data: {
+            configurationId: 'cfg-001',
+            version: 1,
+            status: 'PUBLISHED',
+            effectiveAt: '2026-09-01T03:00:00Z',
+            targets: [
+              { deviceId: 'dev-001', notificationStatus: 'PUBLISHED' },
+              { deviceId: 'dev-002', notificationStatus: 'PENDING' },
+            ],
+          },
         },
       },
     },
@@ -282,7 +289,7 @@ test('同步状态：PUBLISHED 版本可查询每设备投递状态', async () =
 // ---------- 派生上下文与权限 ----------
 
 test('派生上下文只读展示（Alias/Site/Region/Subregion/Contract），无输入控件', () => {
-  renderPage({ detail: { kind: 'ready', detail: DETAIL, sync: { kind: 'none' } } });
+  renderPage({ detail: { kind: 'ready', detail: DETAIL, sync: {} } });
   const context = screen.getByTestId('config-derived-context');
   assert.ok(context.textContent?.includes('食堂1号机'));
   assert.ok(context.textContent?.includes('华东'));
@@ -292,7 +299,7 @@ test('派生上下文只读展示（Alias/Site/Region/Subregion/Contract），�
 });
 
 test('Auditor 只读：无新建配置/新建版本按钮，发布禁用', () => {
-  renderPage({ role: 'Auditor', detail: { kind: 'ready', detail: DETAIL, sync: { kind: 'none' } } });
+  renderPage({ role: 'Auditor', detail: { kind: 'ready', detail: DETAIL, sync: {} } });
   assert.equal(screen.queryByTestId('config-create'), null);
   assert.equal(screen.queryByTestId('config-version-create'), null);
   assert.ok(disabled('config-publish-2'));

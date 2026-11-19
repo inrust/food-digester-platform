@@ -205,6 +205,23 @@ export const EN: Readonly<Record<string, string>> = {
   'ui.consumableThresholdFallback':
     'Consumable display thresholds use the explicit 10%/30% fallback (reason: {reason}).',
   // ---------- Common ----------
+  'configuration.publish.effectiveAt': 'Effective time (optional)',
+  'configuration.publish.timeZone': 'Enter the time in {timeZone}. Leave blank to take effect on publication.',
+  'configuration.publish.invalidTime': 'Enter a complete, valid date and time.',
+  'configuration.devices.title': 'Configuration versions by target device',
+  'configuration.devices.explanation':
+    'Shows current targets excluding retired devices. The cloud version uses the device Sync rules. See version history for CONFIG_CHANGED delivery status.',
+  'configuration.devices.load': 'View target devices',
+  'configuration.devices.evaluatedAt': 'Cloud version checked at',
+  'configuration.devices.empty': 'This plan currently has no target devices.',
+  'configuration.devices.device': 'Device',
+  'configuration.devices.cloud': 'Current cloud configuration',
+  'configuration.devices.noEffective': 'No effective configuration',
+  'configuration.devices.sourceDevice': 'Source: device target',
+  'configuration.devices.sourceModel': 'Source: model target',
+  'configuration.devices.applied': 'Version applied by device',
+  'configuration.devices.unknown': 'Unknown (no matching receipt)',
+
   'common.loading': 'Loading…',
   'common.refresh': 'Refresh',
   'common.prevPage': 'Previous',

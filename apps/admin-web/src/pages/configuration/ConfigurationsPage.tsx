@@ -1,6 +1,6 @@
 import { FilterBar } from '../../components/FilterBar.js';
 import { Button, Input, TextArea } from '../../components/ui.js';
-import { translate } from '../../i18n/i18n.js';
+import { translate, useI18n } from '../../i18n/i18n.js';
 /**
  * FE-09 Configuration 管理页（/configurations）：DEC-018@1.0.0 V1 四字段配置。
  *
@@ -19,9 +19,12 @@ import { hasPermission } from '@fdp/auth/browser';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
 import { NumberText, UnitValueText } from '../../components/LocaleValue.js';
-import { TimeText } from '../../components/TimeText.js';
+import { TimeText, useUserTimeZone } from '../../components/TimeText.js';
+import { zonedDateTimeToUtcIso } from '../../components/date-time.js';
+import { ConfigurationEffectiveDevices } from './ConfigurationEffectiveDevices.js';
 import type {
   ConfigurationDetailView,
+  ConfigurationEffectiveDevicePage,
   ConfigurationPayloadView,
   ConfigurationSummaryView,
   ConfigurationSyncStatusView,
@@ -72,7 +75,7 @@ export type ConfigurationDetailState =
   | {
       readonly kind: 'ready';
       readonly detail: ConfigurationDetailView;
-      readonly sync: SyncStatusState;
+      readonly sync: Readonly<Partial<Record<number, SyncStatusState>>>;
       readonly refreshing?: boolean;
     };
 export interface ConfigurationFilter {
@@ -94,6 +97,7 @@ export interface ConfigurationsPageProps {
   readonly onSelect: (configurationId: string) => void;
   readonly onCloseDetail: () => void;
   readonly onLoadSyncStatus: (version: number) => void;
+  readonly onLoadEffectiveDevices: (id: string, cursor: string | null) => Promise<ConfigurationEffectiveDevicePage>;
   readonly onCreate: (input: {
     name: string;
     targetModel?: string;
@@ -127,6 +131,7 @@ export function ConfigurationsPage({
   onSelect,
   onCloseDetail,
   onLoadSyncStatus,
+  onLoadEffectiveDevices,
   onCreate,
   onCreateVersion,
   onPublish,
@@ -402,6 +407,12 @@ export function ConfigurationsPage({
                 </Button>
               </div>
             ) : null}
+            <ConfigurationEffectiveDevices
+              key={detailView.configurationId}
+              configurationId={detailView.configurationId}
+              onLoadPage={onLoadEffectiveDevices}
+              refreshing={detailRefreshing}
+            />
             <section className="detail-card" aria-label={translate('page.8770418ba3a0')}>
               <h4>{translate('page.8770418ba3a0')}</h4>
               {detailView.versions.length === 0 ? (
@@ -424,7 +435,7 @@ export function ConfigurationsPage({
                         version={v}
                         canWrite={canWrite}
                         busy={busy || detailRefreshing}
-                        sync={detail.sync}
+                        sync={detail.sync[v.version] ?? { kind: 'none' }}
                         onPublishIntent={() => setPublishTarget(v.version)}
                         onLoadSyncStatus={() => onLoadSyncStatus(v.version)}
                       />
@@ -774,23 +785,42 @@ function PublishForm({
   readonly busy: boolean;
   readonly onSubmit: (effectiveAt: string, reason: string) => void;
 }) {
+  const { timeZone } = useUserTimeZone();
+  const { t } = useI18n();
+  const input = useRef<HTMLInputElement>(null);
   const [effectiveAt, setEffectiveAt] = useState('');
+  const [invalidInput, setInvalidInput] = useState(false);
   const [reason, setReason] = useState('');
-  const effectiveAtTrimmed = effectiveAt.trim();
-  const effectiveAtInvalid = effectiveAtTrimmed !== '' && Number.isNaN(Date.parse(effectiveAtTrimmed));
+  const utc = effectiveAt === '' ? '' : zonedDateTimeToUtcIso(effectiveAt, timeZone);
+  const effectiveAtInvalid = invalidInput || utc === null;
   return (
     <div className="publish-form" data-testid="config-publish-form">
       <p>{translate('page.f18eb02bde07')}</p>
       <div className="dialog-field">
-        <label htmlFor="publish-effective-at">{translate('page.cdc8a1890529')}</label>
+        <label htmlFor="publish-effective-at">{t('configuration.publish.effectiveAt')}</label>
         <Input
           id="publish-effective-at"
           data-testid="publish-effective-at"
-          placeholder="2026-09-07T00:00:00Z"
+          ref={input}
+          type="datetime-local"
+          step={1}
+          aria-invalid={effectiveAtInvalid}
+          aria-describedby={effectiveAtInvalid ? 'publish-time-help publish-time-error' : 'publish-time-help'}
           value={effectiveAt}
-          onChange={(event) => setEffectiveAt(event.target.value)}
+          onInput={({ currentTarget }) => {
+            // Incomplete native input can also have an empty value.
+            setInvalidInput(currentTarget.validity.badInput);
+            setEffectiveAt(currentTarget.value);
+          }}
         />
-        {effectiveAtInvalid ? <p className="field-hint">{translate('page.f05613710d62')}</p> : null}
+        <p id="publish-time-help" className="field-hint">
+          {t('configuration.publish.timeZone', { timeZone })}
+        </p>
+        {effectiveAtInvalid ? (
+          <p id="publish-time-error" className="field-error" role="alert">
+            {t('configuration.publish.invalidTime')}
+          </p>
+        ) : null}
       </div>
       <div className="dialog-field">
         <label htmlFor="publish-reason">{translate('page.f734d80c7189')}</label>
@@ -807,7 +837,9 @@ function PublishForm({
           className="primary-button"
           data-testid="config-publish"
           disabled={busy || effectiveAtInvalid}
-          onClick={() => onSubmit(effectiveAtTrimmed, reason.trim())}
+          onClick={() => {
+            if (utc !== null && input.current?.validity.badInput === false) onSubmit(utc, reason.trim());
+          }}
         >
           {translate('page.221f71a458cf')}
         </Button>

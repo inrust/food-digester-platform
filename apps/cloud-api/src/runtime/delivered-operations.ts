@@ -344,6 +344,12 @@ export const DELIVERED_OPERATIONS = [
     runtime: 'admin-api',
   },
   {
+    operationId: 'listEffectiveConfigurationDevices',
+    method: 'GET',
+    path: '/api/v1/admin/configurations/{configurationId}/effective-devices',
+    runtime: 'admin-api',
+  },
+  {
     operationId: 'createConfigurationVersion',
     method: 'POST',
     path: '/api/v1/admin/configurations/{configurationId}/versions',

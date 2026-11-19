@@ -36,6 +36,12 @@ test('七个端点齐备且 Cognito 认证；operationId 与响应码齐备', ()
     ['/api/v1/admin/configurations', 'get', 'listConfigurations', ['200', '401', '403', '500']],
     ['/api/v1/admin/configurations/{configurationId}', 'get', 'getConfiguration', ['200', '401', '403', '404', '500']],
     [
+      '/api/v1/admin/configurations/{configurationId}/effective-devices',
+      'get',
+      'listEffectiveConfigurationDevices',
+      ['200', '400', '401', '403', '404', '500'],
+    ],
+    [
       '/api/v1/admin/configurations/{configurationId}/versions',
       'post',
       'createConfigurationVersion',
@@ -127,4 +133,23 @@ test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.
     assert.ok(targetDoc, `$ref 目标文件不允许: ${ref}`);
     assert.notEqual(resolvePointer(targetDoc, pointer), undefined, `悬空引用: ${ref}`);
   }
+});
+
+test('CMP-17 declares keyset pagination, selection sources, no effective version, and unknown device application', () => {
+  const endpoint = doc.paths['/api/v1/admin/configurations/{configurationId}/effective-devices'].get;
+  assert.match(endpoint.description, /config:read/);
+  assert.deepEqual(
+    endpoint.parameters.slice(1).map((parameter: { $ref: string }) => parameter.$ref),
+    ['openapi-base.json#/components/parameters/Cursor', 'openapi-base.json#/components/parameters/Limit'],
+  );
+  const schemas = doc.components.schemas;
+  assert.deepEqual(schemas.CloudEffectiveConfiguration.properties.source.enum, ['DEVICE', 'MODEL']);
+  assert.deepEqual(schemas.ConfigurationEffectiveDevice.properties.cloudEffectiveConfiguration.oneOf.at(-1), {
+    type: 'null',
+  });
+  assert.equal(schemas.ConfigurationEffectiveDevice.properties.deviceAppliedConfiguration.type, 'null');
+  assert.equal(
+    schemas.ConfigurationEffectiveDeviceListSuccess.properties.meta.$ref,
+    'openapi-base.json#/components/schemas/PageMeta',
+  );
 });
